@@ -20,16 +20,6 @@ const toSentenceCase = (str) => {
   return str.toLowerCase().charAt(0).toUpperCase() + str.slice(1)
 }
 
-export const formatSubjectName = (query) => {
-  if (query.toLowerCase().startsWith('all ')) {
-    query = query.substring(4)
-  } else if (query.toLowerCase().startsWith('show ')) {
-    query = query.substring(5)
-  }
-
-  return toSentenceCase(query)
-}
-
 export default class DataExplorerInput extends React.Component {
   constructor(props) {
     super(props)
@@ -75,14 +65,15 @@ export default class DataExplorerInput extends React.Component {
 
   isAggSeed(subject) {
     return (
-      subject.name.toLowerCase().startsWith('monthly change in') ||
-      subject.name.toLowerCase().startsWith('yearly change in') ||
-      subject.name.toLowerCase().startsWith('weekly change in') ||
-      subject.name.toLowerCase().startsWith('daily change in') ||
-      subject.name.toLowerCase().endsWith('by day') ||
-      subject.name.toLowerCase().endsWith('by week') ||
-      subject.name.toLowerCase().endsWith('by month') ||
-      subject.name.toLowerCase().endsWith('by year')
+      subject.display_name.toLowerCase().startsWith('monthly change in') ||
+      subject.display_name.toLowerCase().startsWith('yearly change in') ||
+      subject.display_name.toLowerCase().startsWith('weekly change in') ||
+      subject.display_name.toLowerCase().startsWith('daily change in') ||
+      subject.display_name.toLowerCase().endsWith('by day') ||
+      subject.display_name.toLowerCase().endsWith('by week') ||
+      subject.display_name.toLowerCase().endsWith('by month') ||
+      subject.display_name.toLowerCase().endsWith('by year') ||
+      subject.display_name.toLowerCase().includes('percent change')
     )
   }
   fetchAllSubjects = () => {
@@ -94,12 +85,11 @@ export default class DataExplorerInput extends React.Component {
           .map((subject) => {
             return {
               ...subject,
-              name: formatSubjectName(subject.query),
               type: DEConstants.SUBJECT_TYPE,
             }
           })
           .filter((subject) => !this.isAggSeed(subject))
-          .sort((a, b) => a.name.localeCompare(b.name))
+          .sort((a, b) => a.display_name.localeCompare(b.display_name))
       }
 
       if (this._isMounted) {
@@ -121,7 +111,7 @@ export default class DataExplorerInput extends React.Component {
 
     var reg = new RegExp(`^${input.toLowerCase()}`)
     return this.state.allSubjects.filter((subject) => {
-      const term = subject.name.toLowerCase()
+      const term = subject.display_name.toLowerCase()
       if (term.match(reg)) {
         return subject
       }
@@ -150,7 +140,7 @@ export default class DataExplorerInput extends React.Component {
     if (this._isMounted) {
       this.userSelectedValue = null
       this.setState({
-        inputValue: subject.name,
+        inputValue: subject.display_name,
         recentSuggestions: this.getNewRecentSuggestions(subject),
       })
       this.props.onSelection(subject)
@@ -229,8 +219,8 @@ export default class DataExplorerInput extends React.Component {
 
   userSelectedSuggestionHandler = (selectedItem) => {
     this.userSelectedValue = selectedItem
-    if (selectedItem?.name && this._isMounted) {
-      this.setState({ inputValue: selectedItem.name })
+    if (selectedItem?.display_name && this._isMounted) {
+      this.setState({ inputValue: selectedItem.display_name })
     }
   }
 
