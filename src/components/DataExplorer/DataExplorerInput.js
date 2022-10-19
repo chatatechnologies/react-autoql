@@ -73,7 +73,7 @@ export default class DataExplorerInput extends React.Component {
       subject.display_name.toLowerCase().endsWith('by week') ||
       subject.display_name.toLowerCase().endsWith('by month') ||
       subject.display_name.toLowerCase().endsWith('by year') ||
-      subject.display_name.toLowerCase().includes('percent change')
+      subject.display_name.toLowerCase().includes('change in')
     )
   }
   fetchAllSubjects = () => {
