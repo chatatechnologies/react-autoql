@@ -31,6 +31,15 @@
     overflow: auto;
   }
 
+  .custom-scrollbar-view:hover::-webkit-scrollbar-corner {
+    background-color: transparent;
+  }
+  .custom-scrollbar-view:hover::-webkit-scrollbar-track,
+  .custom-scrollbar-view:hover::-webkit-scrollbar-track-piece,
+  .custom-scrollbar-view::-webkit-scrollbar-corner {
+    background-color: transparent;
+  }
+
   .data-explorer-data-preview {
     flex: 0 0 auto;
     overflow: hidden;
