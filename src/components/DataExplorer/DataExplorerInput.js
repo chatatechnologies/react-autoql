@@ -65,15 +65,10 @@ export default class DataExplorerInput extends React.Component {
 
   isAggSeed(subject) {
     return (
-      subject.display_name.toLowerCase().startsWith('monthly change in') ||
-      subject.display_name.toLowerCase().startsWith('yearly change in') ||
-      subject.display_name.toLowerCase().startsWith('weekly change in') ||
-      subject.display_name.toLowerCase().startsWith('daily change in') ||
       subject.display_name.toLowerCase().endsWith('by day') ||
       subject.display_name.toLowerCase().endsWith('by week') ||
       subject.display_name.toLowerCase().endsWith('by month') ||
-      subject.display_name.toLowerCase().endsWith('by year') ||
-      subject.display_name.toLowerCase().includes('change in')
+      subject.display_name.toLowerCase().endsWith('by year')
     )
   }
   fetchAllSubjects = () => {
