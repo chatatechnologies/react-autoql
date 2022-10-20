@@ -47,7 +47,7 @@ export default class DataExplorerInput extends React.Component {
 
   static defaultProps = {
     authentication: {},
-    inputPlaceholder: 'Search subjects',
+    inputPlaceholder: 'Search terms or topics',
     onClearInputClick: () => {},
     onSelection: () => {},
   }
@@ -317,7 +317,7 @@ export default class DataExplorerInput extends React.Component {
     // Suggestion list
     if (inputIsEmpty) {
       sections.push({
-        title: 'All Subjects',
+        title: 'All Topics',
         suggestions: this.state.allSubjects,
       })
     } else if (hasSuggestions) {
