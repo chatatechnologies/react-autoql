@@ -75,7 +75,6 @@
       min-width: 100%;
       table-layout: fixed;
       border-collapse: collapse;
-      height: 175px;
     }
     thead {
       th {
@@ -101,7 +100,7 @@
     }
     tbody {
       tr {
-        height: 27px;
+        height: 24px;
         &:not(:last-child) {
           border-bottom: 1px solid var(--react-autoql-border-color);
         }
