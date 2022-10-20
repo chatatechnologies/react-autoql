@@ -243,7 +243,7 @@ export default class DataExplorerInput extends React.Component {
             vlMatches = response.data.data.matches.map((match) => {
               return {
                 ...match,
-                name: `${match.keyword} (${match.show_message})`,
+                display_name: `${match.keyword} (${match.show_message})`,
                 type: DEConstants.VL_TYPE,
               }
             })
