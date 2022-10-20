@@ -1054,8 +1054,7 @@ export const animateInputText = ({ text = '', inputRef, callback = () => {}, tot
 }
 
 export const currentEventLoopEnd = () => {
-  if (!process) {
-    return
-  }
-  return new Promise((resolve) => process.nextTick(resolve))
+  return new Promise((resolve) => {
+    setTimeout(resolve, 0)
+  })
 }
