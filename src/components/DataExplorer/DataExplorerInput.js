@@ -150,7 +150,7 @@ export default class DataExplorerInput extends React.Component {
   submitRawText = (text, skipQueryValidation) => {
     const subject = {
       type: 'text',
-      name: text,
+      display_name: text,
     }
     this.props.onSelection(subject, skipQueryValidation)
     this.setState({
