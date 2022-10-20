@@ -134,7 +134,7 @@ export default class DataExplorer extends React.Component {
 
     return (
       <div className='data-preview'>
-        <CustomScrollbars autoHeight autoHeightMin={0} autoHeightMax={maxHeight}>
+        <CustomScrollbars autoHeight autoHide={false} autoHeightMin={0} autoHeightMax={maxHeight}>
           {!!this.state.error ? (
             <div className='data-preview-error-message'>
               <div>{this.state.error.message}</div>
