@@ -14,6 +14,7 @@ import SplitterLayout from 'react-splitter-layout'
 import { QueryOutput } from '../../QueryOutput'
 import { VizToolbar } from '../../VizToolbar'
 import { OptionsToolbar } from '../../OptionsToolbar'
+
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import LoadingDots from '../../LoadingDots/LoadingDots.js'
 import { Icon } from '../../Icon'

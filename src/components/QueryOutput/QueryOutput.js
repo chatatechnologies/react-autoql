@@ -134,6 +134,7 @@ export class QueryOutput extends React.Component {
       visibleRowChangeCount: 0,
       visiblePivotRowChangeCount: 0,
       columnChangeCount: 0,
+      isChartZoomed: false,
     }
   }
 
@@ -251,6 +252,7 @@ export class QueryOutput extends React.Component {
       if (this.state.visibleRows?.length !== prevState.visibleRows?.length) {
         this.props.onRowChange()
       }
+      console.log('254', this.props.autoZoomToolbarRef)
 
       // If columns changed, regenerate data if necessary
       // If table filtered or columns changed, regenerate pivot data and supported display types
@@ -322,7 +324,9 @@ export class QueryOutput extends React.Component {
     this.props.onDisplayTypeChange(displayType)
     this.setState({ displayType })
   }
-
+  setIsZoomed = () => {
+    this.setState({ isChartZoomed: !this.state.isChartZoomed })
+  }
   displayTypeInvalidWarning = (displayType) => {
     console.warn(
       `Initial display type "${this.props.initialDisplayType}" provided is not valid for this dataset. Using ${
@@ -763,6 +767,7 @@ export class QueryOutput extends React.Component {
   updateToolbars = () => {
     this.updateVizToolbar()
     this.updateOptionsToolbar()
+    this.updateAutoZoomToolbar()
   }
 
   updateVizToolbar = () => {
@@ -774,6 +779,13 @@ export class QueryOutput extends React.Component {
   updateOptionsToolbar = () => {
     if (this.props.optionsToolbarRef?._isMounted) {
       this.props.optionsToolbarRef.forceUpdate()
+    }
+  }
+  updateAutoZoomToolbar = () => {
+    console.log('781', this.props)
+    if (this.props.autoZoomToolbarRef?._isMounted) {
+      console.log('782', this.props)
+      this.props.autoZoomToolbarRef.forceUpdate()
     }
   }
 
@@ -1571,6 +1583,7 @@ export class QueryOutput extends React.Component {
           width={this.props.width}
           onNewData={this.onNewData}
           isDrilldown={this.isDrilldown()}
+          isChartZoomed={this.state.isChartZoomed}
         />
       </ErrorBoundary>
     )
