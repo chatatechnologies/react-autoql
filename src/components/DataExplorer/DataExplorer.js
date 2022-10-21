@@ -92,9 +92,7 @@ export default class DataExplorer extends React.Component {
           <p>{this.props.introMessage}</p>
         ) : (
           <div>
-            <p>
-              Explore your data and discover what you can ask AutoQL. Simply enter a topic in the search bar above and:
-            </p>
+            <p>Explore your data and discover what you can ask AutoQL. Simply enter a term or topic above and:</p>
             <div className='intro-message-list-container'>
               <div>
                 <p>
