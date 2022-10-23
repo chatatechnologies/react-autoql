@@ -142,14 +142,24 @@ export default class DataExplorerInput extends React.Component {
     }
   }
 
-  submitRawText = (text, skipQueryValidation) => {
-    const subject = {
-      type: 'text',
-      display_name: text,
+  submitRawText = (text = '', skipQueryValidation) => {
+    let subject = this.state.allSubjects.find(
+      (subj) => subj.display_name.toLowerCase().trim() === text.toLowerCase().trim(),
+    )
+
+    if (subject) {
+      this.selectSubject(subject)
+    } else {
+      subject = {
+        type: 'text',
+        display_name: text,
+      }
     }
+
     this.props.onSelection(subject, skipQueryValidation)
     this.setState({
       recentSuggestions: this.getNewRecentSuggestions(subject),
+      inputValue: subject.display_name,
     })
   }
 

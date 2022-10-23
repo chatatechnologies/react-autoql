@@ -59,7 +59,7 @@ export class DataMessenger extends React.Component {
         <span>
           Get helpful information about trading and investing, simply by asking a question in your own words. Results
           are returned from content on{' '}
-          <a href='https://www.investopedia.com/' target='_blank' rel="noopener noreferrer">
+          <a href='https://www.investopedia.com/' target='_blank' rel='noopener noreferrer'>
             Investopedia®
           </a>
           , including applicable reference links.
@@ -260,8 +260,10 @@ export class DataMessenger extends React.Component {
             <TopicsCascader
               topics={response.data.data.topics}
               enableExploreQueriesTab={this.props.enableExploreQueriesTab}
+              enableDataExplorerTab={this.props.enableDataExplorerTab}
               onTopicClick={this.onTopicClick}
               onExploreQueriesClick={this.openExploreQueries}
+              onDataExplorerClick={this.openDataExplorer}
             />
           )
 
@@ -312,6 +314,14 @@ export class DataMessenger extends React.Component {
     this.setState({ activePage: 'explore-queries' }, () => {
       if (topic && this.exploreQueriesRef?.animateQITextAndSubmit) {
         this.exploreQueriesRef?.animateQITextAndSubmit(topic)
+      }
+    })
+  }
+
+  openDataExplorer = (topic) => {
+    this.setState({ activePage: 'data-explorer' }, () => {
+      if (topic && this.dataExplorerRef?.animateDETextAndSubmit) {
+        this.dataExplorerRef?.animateDETextAndSubmit(topic)
       }
     })
   }
@@ -859,8 +869,12 @@ export class DataMessenger extends React.Component {
     if (placement === 'right') {
       const offset = _get(this.state.startingResizePosition, 'x') - e.pageX
       let newWidth = _get(this.state.startingResizePosition, 'width') + offset
-      if (newWidth > maxWidth) {newWidth = maxWidth}
-      if (newWidth < this.minWidth) {newWidth = this.minWidth}
+      if (newWidth > maxWidth) {
+        newWidth = maxWidth
+      }
+      if (newWidth < this.minWidth) {
+        newWidth = this.minWidth
+      }
       if (Number(newWidth)) {
         this.setState({
           width: newWidth,
@@ -870,8 +884,12 @@ export class DataMessenger extends React.Component {
     } else if (placement === 'left') {
       const offset = e.pageX - _get(this.state.startingResizePosition, 'x')
       let newWidth = _get(this.state.startingResizePosition, 'width') + offset
-      if (newWidth > maxWidth) {newWidth = maxWidth}
-      if (newWidth < this.minWidth) {newWidth = this.minWidth}
+      if (newWidth > maxWidth) {
+        newWidth = maxWidth
+      }
+      if (newWidth < this.minWidth) {
+        newWidth = this.minWidth
+      }
       if (Number(newWidth)) {
         this.setState({
           width: newWidth,
@@ -881,8 +899,12 @@ export class DataMessenger extends React.Component {
     } else if (placement === 'bottom') {
       const offset = _get(this.state.startingResizePosition, 'y') - e.pageY
       let newHeight = _get(this.state.startingResizePosition, 'height') + offset
-      if (newHeight > maxHeight) {newHeight = maxHeight}
-      if (newHeight < this.minHeight) {newHeight = this.minHeight}
+      if (newHeight > maxHeight) {
+        newHeight = maxHeight
+      }
+      if (newHeight < this.minHeight) {
+        newHeight = this.minHeight
+      }
       if (Number(newHeight)) {
         this.setState({
           height: newHeight,
@@ -892,8 +914,12 @@ export class DataMessenger extends React.Component {
     } else if (placement === 'top') {
       const offset = e.pageY - _get(this.state.startingResizePosition, 'y')
       let newHeight = _get(this.state.startingResizePosition, 'height') + offset
-      if (newHeight > this.maxHeight) {newHeight = this.maxHeight}
-      if (newHeight < this.minHeight) {newHeight = this.minHeight}
+      if (newHeight > this.maxHeight) {
+        newHeight = this.maxHeight
+      }
+      if (newHeight < this.minHeight) {
+        newHeight = this.minHeight
+      }
       if (Number(newHeight)) {
         this.setState({
           height: newHeight,
