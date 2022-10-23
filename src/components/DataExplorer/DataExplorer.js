@@ -113,9 +113,15 @@ export default class DataExplorer extends React.Component {
     )
   }
 
+  animateDETextAndSubmit = (text) => {
+    if (this.inputRef?._isMounted) {
+      this.inputRef.animateTextAndSubmit(text)
+    }
+  }
+
   onValidationSuggestionClick = (text) => {
     this.querySuggestionsKey = uuid()
-    this.inputRef?.animateTextAndSubmit(text)
+    this.animateDETextAndSubmit(text)
   }
 
   renderDataPreview = () => {
