@@ -375,9 +375,9 @@ export default class OptionsToolbar extends React.Component {
               style={
                 this.state.isCSVDownloading
                   ? {
-                    pointerEvents: 'none', // This makes it not clickable
-                    opacity: 0.6, // This grays it out to look disabled
-                  }
+                      pointerEvents: 'none', // This makes it not clickable
+                      opacity: 0.6, // This grays it out to look disabled
+                    }
                   : null
               }
             >
