@@ -200,7 +200,9 @@ export default class DataExplorer extends React.Component {
           className='data-explorer-data-preview'
           data-test='data-explorer-data-preview'
           title={this.renderDataPreviewTitle()}
-          subtitle={<em>{this.props.subject?.display_name} data snapshot</em>}
+          subtitle={
+            <em>Below is a snapshot of the data returned from this query; it is not a comprehensive data response.</em>
+          }
         >
           {this.state.loading ? this.renderLoadingContainer() : this.renderDataPreviewGrid()}
         </Card>
