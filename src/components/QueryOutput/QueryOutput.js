@@ -253,7 +253,7 @@ export class QueryOutput extends React.Component {
         this.props.onRowChange()
       }
       console.log('254', this.props.autoZoomToolbarRef)
-
+      console.log('255', this.props.vizToolbarRef)
       // If columns changed, regenerate data if necessary
       // If table filtered or columns changed, regenerate pivot data and supported display types
       // Using a count variable so it doesn't have to deep compare on every udpate
@@ -325,6 +325,8 @@ export class QueryOutput extends React.Component {
     this.setState({ displayType })
   }
   setIsZoomed = () => {
+    console.log('328', this.state.isChartZoomed)
+
     this.setState({ isChartZoomed: !this.state.isChartZoomed })
   }
   displayTypeInvalidWarning = (displayType) => {
@@ -771,6 +773,7 @@ export class QueryOutput extends React.Component {
   }
 
   updateVizToolbar = () => {
+    console.log('776', this.props)
     if (this.props.vizToolbarRef?._isMounted) {
       this.props.vizToolbarRef.forceUpdate()
     }

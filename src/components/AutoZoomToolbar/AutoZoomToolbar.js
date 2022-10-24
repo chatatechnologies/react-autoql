@@ -46,7 +46,8 @@ class AutoZoomToolbar extends React.Component {
   }
 
   render = () => {
-    if (this.props.isChart) {
+    if (this.props.isChart && this.props.responseRef) {
+      console.log('50this.props.responseRef', this.props.responseRef)
       return (
         <ErrorBoundary>
           <div className={`${this.props.className || ''} react-autoql-toolbar auto-zoom-toolbar vertical`}>
