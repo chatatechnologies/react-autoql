@@ -4,7 +4,7 @@ import InfiniteScroll from 'react-infinite-scroller'
 import { Scrollbars } from 'react-custom-scrollbars-2'
 
 import { QueryValidationMessage } from '../QueryValidationMessage'
-import { fetchExploreQueries } from '../../js/queryService'
+import { fetchDataExplorerSuggestions } from '../../js/queryService'
 import { LoadingDots } from '../LoadingDots'
 import { Spinner } from '../Spinner'
 import { Icon } from '../Icon'
@@ -71,7 +71,7 @@ export default class QuerySuggestionList extends React.Component {
       newState.queryList = undefined
     }
     this.setState(newState)
-    fetchExploreQueries({
+    fetchDataExplorerSuggestions({
       ...this.props.authentication,
       keywords: topicText,
       pageSize: this.pageSize,
