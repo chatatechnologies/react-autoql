@@ -15,12 +15,14 @@ export default class Steps extends React.Component {
     steps: PropTypes.arrayOf(PropTypes.shape({})),
     initialActiveStep: PropTypes.number,
     collapsible: PropTypes.bool,
+    isEditMode: PropTypes.bool,
   }
 
   static defaultProps = {
     steps: undefined,
     initialActiveStep: undefined,
     collapsible: true,
+    isEditMode: false,
   }
 
   state = {
@@ -69,6 +71,13 @@ export default class Steps extends React.Component {
 
   onStepTitleClick = (i, step) => {
     try {
+
+      let newActiveStep = i
+      // if current current step is not complete then block user from proceeding to the next step.
+      if (!this.props.isEditMode && newActiveStep > 0 && !this.props.steps?.[newActiveStep - 1]?.complete) {
+        return
+      }
+
       if (step && step.onClick) {
         step.onClick()
       }
@@ -76,8 +85,6 @@ export default class Steps extends React.Component {
       if (this.autoHideTimeout) {
         clearTimeout(this.autoHideTimeout)
       }
-
-      let newActiveStep = i
 
       // If there is an active step, explicitly set the height
       // at the moment of the click then back to 0
@@ -129,6 +136,17 @@ export default class Steps extends React.Component {
     return ''
   }
 
+  getIsStepTitleDisabled = (i, step) => {
+    if (i !== 0 &&
+      i !== this.state?.activeStep &&
+      !step?.complete &&
+      !this.props.steps?.[i - 1]?.complete
+    ) {
+      return ' disabled'
+    }
+    return ''
+  }
+
   render = () => {
     if (!this.props.steps || !this.props.steps.length) {
       return null
@@ -155,7 +173,9 @@ export default class Steps extends React.Component {
                     data-test={`react-autoql-step-title-${i}`}
                     onClick={() => this.onStepTitleClick(i, step)}
                   >
-                    <div className='react-autoql-step-title'>{step.title}</div>
+                    <div className={`react-autoql-step-title${this.getIsStepTitleDisabled(i, step)}`}>
+                      {step.title}
+                    </div>
                   </div>
                   <div
                     id={`react-autoql-step-content-${this.COMPONENT_KEY}-${i}`}
