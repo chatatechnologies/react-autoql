@@ -574,6 +574,59 @@ export const fetchExploreQueries = ({
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 
+export const fetchDataExplorerSuggestions = ({
+  keywords,
+  pageSize,
+  pageNumber,
+  domain,
+  apiKey,
+  token,
+  skipQueryValidation,
+} = {}) => {
+  const exploreQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${encodeURIComponent(
+    keywords,
+  )}&page_size=${pageSize}&page=${pageNumber}&scope=context`
+
+  if (!token || !domain || !apiKey) {
+    return Promise.reject(new Error('Unauthenticated'))
+  }
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  if (!skipQueryValidation) {
+    return runQueryValidation({
+      text: keywords,
+      domain,
+      apiKey,
+      token,
+    })
+      .then((queryValidationResponse) => {
+        if (_get(queryValidationResponse, 'data.data.replacements.length') > 0) {
+          return Promise.resolve(queryValidationResponse)
+        }
+        return axios
+          .get(exploreQueriesUrl, config)
+          .then((response) => Promise.resolve(response))
+          .catch((error) => Promise.reject(_get(error, 'response.data')))
+      })
+      .catch(() => {
+        return axios
+          .get(exploreQueriesUrl, config)
+          .then((response) => Promise.resolve(response))
+          .catch((error) => Promise.reject(_get(error, 'response.data')))
+      })
+  }
+
+  return axios
+    .get(exploreQueriesUrl, config)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
+}
+
 export const reportProblem = ({ message, queryId, domain, apiKey, token } = {}) => {
   if (!queryId) {
     return Promise.reject(new Error('No query ID supplied'))
