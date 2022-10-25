@@ -877,22 +877,21 @@ export class DashboardTile extends React.Component {
       <div className={`dashboard-tile-toolbars-container ${dataLimitWarningIcon ? 'left-padding' : ''}`}>
         <div className='dashboard-tile-toolbars-left-container'>
           {this.props.isEditing && (isSecondHalf || !this.getIsSplitView()) && this.renderSplitViewBtn()}
-          {!this.props.isDragging && this.props.isEditing && <VizToolbar {...vizToolbarProps} />}
+          {this.props.isEditing && <VizToolbar {...vizToolbarProps} shouldRender={!this.props.isDragging} />}
         </div>
         <div className='dashboard-tile-toolbars-right-container'>
-          {!this.props.isDragging && (
-            <OptionsToolbar
-              authentication={getAuthentication(this.props.authentication)}
-              autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-              onErrorCallback={this.props.onErrorCallback}
-              onSuccessAlert={this.props.onSuccessCallback}
-              onCSVDownloadStart={this.onCSVDownloadStart}
-              onCSVDownloadProgress={this.onCSVDownloadProgress}
-              onCSVDownloadFinish={this.onCSVDownloadFinish}
-              rebuildTooltips={this.props.rebuildTooltips}
-              {...optionsToolbarProps}
-            />
-          )}
+          <OptionsToolbar
+            authentication={getAuthentication(this.props.authentication)}
+            autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+            onErrorCallback={this.props.onErrorCallback}
+            onSuccessAlert={this.props.onSuccessCallback}
+            onCSVDownloadStart={this.onCSVDownloadStart}
+            onCSVDownloadProgress={this.onCSVDownloadProgress}
+            onCSVDownloadFinish={this.onCSVDownloadFinish}
+            rebuildTooltips={this.props.rebuildTooltips}
+            shouldRender={!this.props.isDragging}
+            {...optionsToolbarProps}
+          />
         </div>
       </div>
     )

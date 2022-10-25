@@ -247,7 +247,10 @@ export class QueryOutput extends React.Component {
         ReactTooltip.hide()
       }
 
-      if (this.state.visibleRows?.length !== prevState.visibleRows?.length) {
+      if (
+        this.state.visibleRows?.length !== prevState.visibleRows?.length ||
+        (this.state.displayType === 'table' && prevState.displayType === 'text')
+      ) {
         this.props.onRowChange()
       }
 
