@@ -523,7 +523,6 @@ export default class ChataChart extends Component {
 
   getCommonChartProps = () => {
     const { topMargin, bottomMargin, rightMargin, leftMargin, bottomLegendMargin } = this.state
-    console.log('526', this.props)
     const { numberColumnIndices, columns } = this.props
 
     let innerPadding = this.INNER_PADDING
