@@ -47,16 +47,16 @@ class DataAlertModal extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    onSave: () => {},
-    onErrorCallback: () => {},
+    onSave: () => { },
+    onErrorCallback: () => { },
     initialQuery: undefined,
     currentDataAlert: undefined,
     isVisible: false,
     allowDelete: true,
-    onClose: () => {},
+    onClose: () => { },
     isManagement: false,
-    onManagementCreateDataAlert: () => {},
-    onManagementDeleteDataAlert: () => {},
+    onManagementCreateDataAlert: () => { },
+    onManagementDeleteDataAlert: () => { },
     title: 'Create Data Alert',
     titleIcon: undefined,
     enableQueryValidation: true,
@@ -302,7 +302,7 @@ class DataAlertModal extends React.Component {
               isExpressionValidated: true,
             })
             if (this.stepsRef) {
-              this.stepsRef.nextStep()
+              setTimeout(() => this.stepsRef.nextStep(), 500)
             }
           })
           .catch((error) => {
@@ -386,7 +386,7 @@ class DataAlertModal extends React.Component {
     }
   }
 
-  renderNextBtn = (className, disabled, onclick = () => {}, text) => {
+  renderNextBtn = (className, disabled, onclick = () => { }, text) => {
     return (
       <Button
         className={className}
@@ -492,7 +492,7 @@ class DataAlertModal extends React.Component {
             : this.renderNextBtn(
               'first-step-next-btn',
               this.props.enableQueryValidation &&
-                  (!this.state.isExpressionValidated || !this.state.isExpressionValid),
+              (!this.state.isExpressionValidated || !this.state.isExpressionValid),
             )}
         </div>
       </div>
@@ -656,7 +656,7 @@ class DataAlertModal extends React.Component {
         >
           {this.props.isVisible && (
             <div className='notification-modal-content'>
-              <Steps ref={(r) => (this.stepsRef = r)} steps={steps} />
+              <Steps ref={(r) => (this.stepsRef = r)} steps={steps} isEditMode={!!this.props?.currentDataAlert?.id} />
             </div>
           )}
         </Modal>
