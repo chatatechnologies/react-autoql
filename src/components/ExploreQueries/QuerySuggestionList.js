@@ -9,6 +9,8 @@ import { LoadingDots } from '../LoadingDots'
 import { Spinner } from '../Spinner'
 import { Icon } from '../Icon'
 
+import DEConstants from '../DataExplorer/constants'
+
 export default class QuerySuggestionList extends React.Component {
   constructor(props) {
     super(props)
@@ -66,10 +68,12 @@ export default class QuerySuggestionList extends React.Component {
     } else {
       newState.loading = true
     }
-    const topicText = this.props.topicText
+
+    const { topicText } = this.props
     if (topicText !== this.state.keywords) {
       newState.queryList = undefined
     }
+
     this.setState(newState)
     fetchDataExplorerSuggestions({
       ...this.props.authentication,
@@ -77,6 +81,8 @@ export default class QuerySuggestionList extends React.Component {
       pageSize: this.pageSize,
       pageNumber: page,
       skipQueryValidation: this.props.skipQueryValidation,
+      scope: this.props.topic?.type === DEConstants.SUBJECT_TYPE ? 'context' : 'wide',
+      isRawText: this.props.topic?.type === 'text',
     })
       .then((response) => {
         this.props.onSuggestionListResponse({ response })

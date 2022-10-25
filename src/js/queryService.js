@@ -580,10 +580,16 @@ export const fetchDataExplorerSuggestions = ({
   apiKey,
   token,
   skipQueryValidation,
+  scope,
+  isRawText,
 } = {}) => {
+  if (isRawText) {
+    return fetchExploreQueries({ keywords, pageSize, pageNumber, domain, apiKey, token, skipQueryValidation })
+  }
+
   const exploreQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${encodeURIComponent(
     keywords,
-  )}&page_size=${pageSize}&page=${pageNumber}&scope=context`
+  )}&page_size=${pageSize}&page=${pageNumber}&scope=${scope}`
 
   if (!token || !domain || !apiKey) {
     return Promise.reject(new Error('Unauthenticated'))
