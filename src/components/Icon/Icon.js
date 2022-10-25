@@ -15,6 +15,8 @@ import { AiOutlineMenu } from '@react-icons/all-files/ai/AiOutlineMenu'
 import { AiOutlineQuestionCircle } from '@react-icons/all-files/ai/AiOutlineQuestionCircle'
 import { AiOutlineTag } from '@react-icons/all-files/ai/AiOutlineTag'
 import { AiOutlineFileSearch } from '@react-icons/all-files/ai/AiOutlineFileSearch'
+import { AiOutlineZoomIn } from '@react-icons/all-files/ai/AiOutlineZoomIn'
+import { AiOutlineZoomOut } from '@react-icons/all-files/ai/AiOutlineZoomOut'
 
 import { BiLineChart } from '@react-icons/all-files/bi/BiLineChart'
 import { BiSearchAlt } from '@react-icons/all-files/bi/BiSearchAlt'
@@ -401,6 +403,14 @@ export default class Icon extends React.Component {
       }
       case 'warning-triangle': {
         icon = <FiAlertTriangle />
+        break
+      }
+      case 'zoom-in': {
+        icon = <AiOutlineZoomIn />
+        break
+      }
+      case 'zoom-out': {
+        icon = <AiOutlineZoomOut />
         break
       }
       default: {
