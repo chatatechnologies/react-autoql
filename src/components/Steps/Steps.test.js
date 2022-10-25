@@ -89,7 +89,7 @@ describe('renders correctly', () => {
   })
 
   test('collapses on click when prop is set to true', () => {
-    const wrapper = setup({ collapsible: true })
+    const wrapper = setup({ collapsible: true, steps: [{ complete: true }, { complete: true }, { complete: true }] })
     const secondStepTitleElement = findByTestAttr(wrapper, 'react-autoql-step-title-1')
     secondStepTitleElement.simulate('click')
     const stepContainer = findByTestAttr(wrapper, 'react-autoql-step-container-0')
