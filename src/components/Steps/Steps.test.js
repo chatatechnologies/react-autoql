@@ -56,13 +56,19 @@ describe('renders correctly', () => {
   })
 
   test('increments step when nextStep is called', () => {
-    const wrapper = setup()
+    const wrapper = setup({ steps: [{ complete: true }] })
     wrapper.instance().nextStep()
     expect(wrapper.state(['activeStep'])).toBe(1)
   })
 
+  test('Do no increment step when nextStep is called and current step is not complete', () => {
+    const wrapper = setup({ steps: [{ complete: false }] })
+    wrapper.instance().nextStep()
+    expect(wrapper.state(['activeStep'])).toBe(0)
+  })
+
   test('changes active step when title is clicked', () => {
-    const wrapper = setup()
+    const wrapper = setup({ steps: [{ complete: true }, { complete: true }] })
     const secondStepTitleElement = findByTestAttr(wrapper, 'react-autoql-step-title-1')
     secondStepTitleElement.simulate('click')
     expect(wrapper.state(['activeStep'])).toBe(1)
@@ -70,7 +76,7 @@ describe('renders correctly', () => {
 
   test('onStepClick prop is called when step is clicked', () => {
     const onClick = jest.fn()
-    const wrapper = setup({ steps: [{ onClick }, { onClick }] })
+    const wrapper = setup({ steps: [{ complete: true, onClick }, { complete: true, onClick }] })
     const secondStepTitleElement = findByTestAttr(wrapper, 'react-autoql-step-title-1')
     secondStepTitleElement.simulate('click')
     expect(onClick).toHaveBeenCalled()
@@ -89,7 +95,7 @@ describe('renders correctly', () => {
   })
 
   test('collapses on click when prop is set to true', () => {
-    const wrapper = setup({ collapsible: true, steps: [{ complete: true }, { complete: true }, { complete: true }] })
+    const wrapper = setup({ collapsible: true, steps: [{ complete: true }, { complete: true }] })
     const secondStepTitleElement = findByTestAttr(wrapper, 'react-autoql-step-title-1')
     secondStepTitleElement.simulate('click')
     const stepContainer = findByTestAttr(wrapper, 'react-autoql-step-container-0')
