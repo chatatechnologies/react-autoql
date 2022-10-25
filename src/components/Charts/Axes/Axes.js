@@ -17,7 +17,6 @@ export default class Axes extends React.Component {
     this.axisLabelPaddingLeft = 10
     this.maxRows = 5000
     this.initialRowNumber = 50
-    this.visualizingSpan = document.getElementById('visualizing-span')
     this.labelInlineStyles = {
       fontSize: 12,
       fontFamily: 'inherit',
