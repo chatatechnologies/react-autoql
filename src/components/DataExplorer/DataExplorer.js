@@ -181,7 +181,7 @@ export default class DataExplorer extends React.Component {
             <QuerySuggestionList
               key={this.querySuggestionsKey}
               authentication={this.props.authentication}
-              topicText={selectedTopic?.display_name}
+              topicText={selectedTopic?.name}
               executeQuery={this.props.executeQuery}
               skipQueryValidation={this.state.skipQueryValidation}
               onValidationSuggestionClick={this.onValidationSuggestionClick}
