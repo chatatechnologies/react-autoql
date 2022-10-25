@@ -58,7 +58,9 @@ export default class ChataColumnChart extends Component {
 
   setChartData = (props) => {
     let numberColumnIndices = props.numberColumnIndices
-    if (props.visibleSeriesIndices?.length) {numberColumnIndices = props.visibleSeriesIndices}
+    if (props.visibleSeriesIndices?.length) {
+      numberColumnIndices = props.visibleSeriesIndices
+    }
 
     const { minValue, maxValue } = getMinAndMaxValues(props.data, numberColumnIndices)
 

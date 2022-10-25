@@ -32,6 +32,7 @@ import {
 import './ChataChart.scss'
 import { getColumnTypeAmounts, isColumnDateType } from '../../QueryOutput/columnHelpers'
 import { getChartColorVars, getThemeValue } from '../../../theme/configureTheme'
+import { Spinner } from '../../Spinner'
 
 export default class ChataChart extends Component {
   constructor(props) {
@@ -43,6 +44,7 @@ export default class ChataChart extends Component {
     this.INNER_PADDING = 0.25
     this.OUTER_PADDING = 0.5
     this.AXIS_LABEL_PADDING = 30
+    this.TWO_AXIS_LABEL_PADDING = 60
     this.DEFAULT_BOTTOM_MARGIN = 100
 
     this.firstRender = true
@@ -57,6 +59,7 @@ export default class ChataChart extends Component {
       bottomMargin: this.PADDING,
       bottomLegendMargin: 0,
       loading: true,
+      isLoadingMoreRows: false,
     }
   }
 
@@ -156,7 +159,9 @@ export default class ChataChart extends Component {
       this.updateMargins()
       return
     }
-
+    if (this.props.data !== prevProps.data) {
+      shouldForceUpdate = true
+    }
     if (shouldForceUpdate) {
       this.forceUpdate()
     }
@@ -313,6 +318,9 @@ export default class ChataChart extends Component {
 
     const xAxisBBox = this.xAxis ? this.xAxis.getBBox() : {}
     let bottomMargin = Math.ceil(xAxisBBox.height) + bottomLegendMargin + this.AXIS_LABEL_PADDING // margin to include axis label
+    if (this.props.totalRowsNumber >= 50) {
+      bottomMargin = Math.ceil(xAxisBBox.height) + bottomLegendMargin + this.TWO_AXIS_LABEL_PADDING // margin to include 2 axis label
+    }
     if (xAxisBBox.height === 0) {
       bottomMargin = this.DEFAULT_BOTTOM_MARGIN // if no xAxisBBox available, set bottomMargin to default as 463
     }
@@ -323,16 +331,20 @@ export default class ChataChart extends Component {
     }
 
     return bottomMargin || this.state.bottomMargin
-
-    // If we can find a way to clip the legend, this will work
-    // const axesTop = axesBbox.y + chartContainerBbox.y // axes bbox Y is relative to chart container bbox Y
-    // const axesBottom = axesTop + axesBbox.height
-    // const containerBottom = chartContainerBbox.y + chartContainerBbox.height - this.AXIS_LABEL_PADDING
-    // let bottomMargin = this.state.bottomMargin
-    // bottomMargin += axesBottom - containerBottom
-
-    // return bottomMargin
   }
+
+  // If we can find a way to clip the legend, this will work
+  // getNewBottomMargin = (chartContainerBbox, axesBbox) => {
+  //   const axesTop = axesBbox.y + chartContainerBbox.y
+  //   const axesBottom = axesTop + axesBbox.height
+  //   const containerBottom =
+  //     chartContainerBbox.y +
+  //     chartContainerBbox.height -
+  //     this.X_AXIS_LABEL_HEIGHT
+  //   let bottomMargin = this.state.bottomMargin
+  //   bottomMargin += axesBottom - containerBottom
+  //   return bottomMargin
+  // }
 
   // Keep this in case we need it later
   getNewTopMargin = () => {
@@ -511,7 +523,6 @@ export default class ChataChart extends Component {
 
   getCommonChartProps = () => {
     const { topMargin, bottomMargin, rightMargin, leftMargin, bottomLegendMargin } = this.state
-
     const { numberColumnIndices, columns } = this.props
 
     let innerPadding = this.INNER_PADDING
@@ -531,6 +542,7 @@ export default class ChataChart extends Component {
 
     return {
       ...this.props,
+      setIsLoadingMoreRows: (isLoading) => this.setState({ isLoadingMoreRows: isLoading }),
       key: undefined,
       data: this.state.aggregatedData || this.props.data,
       colorScale: this.colorScale,
@@ -561,6 +573,7 @@ export default class ChataChart extends Component {
       tooltipID: this.props.tooltipID,
       chartContainerRef: this.chartContainerRef,
       popoverParentElement: this.props.popoverParentElement || this.chartContainerRef,
+      totalRowsNumber: this.props.totalRowsNumber,
     }
   }
 
@@ -571,7 +584,13 @@ export default class ChataChart extends Component {
     newArray.unshift(itemToRemove)
     return newArray
   }
-
+  renderChartLoader = () => {
+    return (
+      <div className='chart-loader chart-page-loader'>
+        <Spinner />
+      </div>
+    )
+  }
   renderColumnChart = (dataType) => <ChataColumnChart {...this.getCommonChartProps({ dataType })} />
 
   renderBarChart = (dataType) => <ChataBarChart {...this.getCommonChartProps({ dataType })} />
@@ -640,10 +659,14 @@ export default class ChataChart extends Component {
           ref={(r) => (this.chartContainerRef = r)}
           data-test='react-autoql-chart'
           className={`react-autoql-chart-container ${this.state.isLoading || this.props.isResizing ? 'loading' : ''}`}
-          style={{ flexBasis: chartHeight ? `${chartHeight}px` : '100vh' }}
+          style={{
+            flexBasis: chartHeight ? `${chartHeight}px` : '100vh',
+            pointerEvents: this.state.isLoadingMoreRows ? 'none' : 'unset',
+          }}
         >
           {!this.firstRender && !this.props.isResizing && (
             <Fragment>
+              {this.state.isLoadingMoreRows && this.renderChartLoader()}
               <svg
                 ref={(r) => (this.chartRef = r)}
                 xmlns='http://www.w3.org/2000/svg'

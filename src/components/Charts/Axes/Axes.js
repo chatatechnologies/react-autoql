@@ -1,27 +1,32 @@
 import React from 'react'
 import _get from 'lodash.get'
 import { v4 as uuid } from 'uuid'
-
 import { Axis } from '../Axis'
 import AxisSelector from './AxisSelector'
+import RowNumberSelector from './RowNumberSelector'
 import { getBBoxFromRef } from '../../../js/Util'
 import { axesDefaultProps, axesPropTypes } from '../helpers'
 
 export default class Axes extends React.Component {
   constructor(props) {
     super(props)
-
+    this.COMPONENT_ID = uuid()
     this.xAxisKey = uuid()
     this.yAxisKey = uuid()
     this.axisLabelPaddingTop = 5
     this.axisLabelPaddingLeft = 10
-
+    this.maxRows = 5000
+    this.initialRowNumber = 50
     this.labelInlineStyles = {
       fontSize: 12,
       fontFamily: 'inherit',
       fill: 'currentColor',
       fillOpacity: 0.9,
       cursor: 'default',
+    }
+
+    this.state = {
+      currentRowNumber: this.props.dataLength,
     }
   }
 
@@ -36,7 +41,23 @@ export default class Axes extends React.Component {
     const fontSize = parseInt(ref?.style?.fontSize, 10)
     return isNaN(fontSize) ? 0 : fontSize
   }
+  componentDidUpdate = (prevProps, prevState) => {
+    if (prevState.currentRowNumber !== this.state.currentRowNumber) {
+      this.forceUpdate()
+    }
+  }
 
+  renderLoadMoreDropdown = (currentRowNumber, totalRowNumber) => {
+    return (
+      <tspan id={`load-more-drop-down-span-${this.COMPONENT_ID}`}>
+        <tspan id={`visualizing-span-${this.COMPONENT_ID}`}>{`Visualizing `}</tspan>
+        <tspan style={{ textDecoration: 'underline' }} id={`row-number-span-${this.COMPONENT_ID}`}>
+          {currentRowNumber}
+        </tspan>
+        {` / ${totalRowNumber} rows`}
+      </tspan>
+    )
+  }
   renderAxisLabel = (title = '', hasDropdown) => {
     if (title.length > 35) {
       return (
@@ -64,6 +85,86 @@ export default class Axes extends React.Component {
     )
   }
 
+  renderXAxisLoadMoreDropdown = (currentRowNumber, totalRowNumber) => {
+    let rowNumberSpan = document.getElementById(`row-number-span-${this.COMPONENT_ID}`)
+    let visualizingSpan = document.getElementById(`visualizing-span-${this.COMPONENT_ID}`)
+    let loadMoreDropDownSpan = document.getElementById(`load-more-drop-down-span-${this.COMPONENT_ID}`)
+    let spanWidth
+    let visualizingSpanWidth
+    let loadMoreDropDownSpanWidth
+    if (rowNumberSpan) {
+      spanWidth = rowNumberSpan.getBoundingClientRect().width + 5
+    }
+    if (visualizingSpan) {
+      visualizingSpanWidth = visualizingSpan.getBoundingClientRect().width
+    }
+    if (loadMoreDropDownSpan) {
+      loadMoreDropDownSpanWidth = loadMoreDropDownSpan.getBoundingClientRect().width
+    }
+    const xCenter =
+      (this.props.width - this.props.leftMargin + this.props.rightMargin) / 2 +
+      this.props.leftMargin -
+      this.props.rightMargin
+    const xLabelBbox = getBBoxFromRef(this.LoadMoreDropdownRef)
+    const xLabelTextWidth = xLabelBbox ? xLabelBbox.width : 0
+    const xLabelTextHeight = this.getLabelTextHeight(this.LoadMoreDropdownRef)
+    const halfTextHeight = xLabelTextHeight / 2
+    const xLabelY = this.props.height - (this.props.bottomLegendMargin || 0) - this.axisLabelPaddingTop - halfTextHeight
+    const xBorderX = xCenter - xLabelTextWidth / 2 - this.axisLabelPaddingLeft
+    const xBorderHeight = xLabelTextHeight + 2 * this.axisLabelPaddingTop
+    return (
+      <g>
+        <text
+          ref={(r) => (this.LoadMoreDropdownRef = r)}
+          className='x-axis-label'
+          data-test='x-axis-label'
+          textAnchor='middle'
+          fontWeight='bold'
+          y={xLabelY + 4}
+          x={xCenter}
+          style={this.labelInlineStyles}
+        >
+          {this.renderLoadMoreDropdown(currentRowNumber, totalRowNumber)}
+        </text>
+
+        {totalRowNumber > this.maxRows && loadMoreDropDownSpanWidth !== undefined ? (
+          <svg
+            stroke='currentColor'
+            fill='#ffcc00'
+            strokeWidth='0'
+            viewBox='0 0 24 24'
+            height='1.4em'
+            width='1.4em'
+            xmlns='http://www.w3.org/2000/svg'
+            x={xBorderX + loadMoreDropDownSpanWidth + 15}
+            y={xLabelY - 11}
+            data-tip='Row limit (5000) reached. Try applying a filter or narrowing your search to return full results.'
+            data-for={this.props.tooltipID}
+          >
+            <path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z'></path>
+          </svg>
+        ) : null}
+        {typeof visualizingSpanWidth == 'number' ? (
+          <RowNumberSelector
+            {...this.props}
+            column={this.props.xCol}
+            positions={['top', 'bottom']}
+            align='center'
+            childProps={{
+              x: xBorderX + visualizingSpanWidth + 7,
+              y: xLabelY - 12,
+              width: spanWidth,
+              height: xBorderHeight,
+            }}
+            totalRowNumber={this.props.totalRowsNumber}
+            setCurrentRowNumber={(currentRowNumber) => {
+              this.setState({ currentRowNumber })
+            }}
+          />
+        ) : null}
+      </g>
+    )
+  }
   renderXAxisLabel = (xAxisTitle) => {
     const xCenter =
       (this.props.width - this.props.leftMargin + this.props.rightMargin) / 2 +
@@ -77,10 +178,13 @@ export default class Axes extends React.Component {
 
     /* <text> element's y coordinate is anchored on the middle baseline,
     so we need to shift the element up by half of it's height */
-    const xLabelY = this.props.height - (this.props.bottomLegendMargin || 0) - this.axisLabelPaddingTop - halfTextHeight
-
+    let xLabelY = this.props.height - (this.props.bottomLegendMargin || 0) - this.axisLabelPaddingTop - halfTextHeight
     const xBorderX = xCenter - xLabelTextWidth / 2 - this.axisLabelPaddingLeft
-    const xBorderY = xLabelY - halfTextHeight - this.axisLabelPaddingTop
+    let xBorderY = xLabelY - halfTextHeight - this.axisLabelPaddingTop
+    if (this.props.totalRowsNumber >= this.initialRowNumber) {
+      xBorderY = xBorderY - 20
+      xLabelY = xLabelY - 20
+    }
     const xBorderWidth = xLabelTextWidth + 2 * this.axisLabelPaddingLeft
     const xBorderHeight = xLabelTextHeight + 2 * this.axisLabelPaddingTop
 
@@ -263,6 +367,9 @@ export default class Axes extends React.Component {
       <g>
         {this.renderYAxisLabel(yAxisTitle)}
         {this.renderXAxisLabel(xAxisTitle)}
+        {this.props.totalRowsNumber > this.initialRowNumber &&
+          this.renderXAxisLoadMoreDropdown(this.state.currentRowNumber, this.props.totalRowsNumber)}
+
         <g className='react-autoql-axes' data-test='react-autoql-axes'>
           {this.renderXAxis(xAxisTitle)}
           {this.renderYAxis(yAxisTitle)}
