@@ -64,7 +64,7 @@ export default class ChataBarChart extends Component {
     if (props.visibleSeriesIndices?.length) {
       numberColumnIndices = props.visibleSeriesIndices
     }
-    const { minValue, maxValue } = getMinAndMaxValues(props.data, numberColumnIndices, this.props.isChartZoomed)
+    const { minValue, maxValue } = getMinAndMaxValues(props.data, numberColumnIndices)
 
     const rangeStart = props.leftMargin
     let rangeEnd = props.width - props.rightMargin

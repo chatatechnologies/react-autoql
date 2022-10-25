@@ -123,18 +123,6 @@
       }
     }
 
-    .auto-zoom-vertical {
-      display: flex;
-      position: absolute;
-      align-items:flex-end;
-      justify-content: flex-end;
-      transition: opacity 0.3s ease, color 0.3s ease;
-      width: 100%;
-      top: 20px;
-      right: -10px;
-      z-index: 3;
-    }
-
     .react-autoql-toolbar:not(.active) {
       pointer-events: none;
       visibility: hidden;

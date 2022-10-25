@@ -344,20 +344,16 @@ export const getMinValueFromKeyValueObj = (obj) => {
   return minValue
 }
 
-export const getMinAndMaxValues = (data, numberColumnIndices, isZoomedIn) => {
-  console.log('348hi')
+export const getMinAndMaxValues = (data, numberColumnIndices) => {
   try {
     const maxValuesFromArrays = []
     const minValuesFromArrays = []
-
     numberColumnIndices.forEach((colIndex, i) => {
       maxValuesFromArrays.push(max(data, (d) => convertToNumber(d[colIndex])))
       minValuesFromArrays.push(min(data, (d) => convertToNumber(d[colIndex])))
     })
-
     let maxValue = max(maxValuesFromArrays)
     let minValue = min(minValuesFromArrays)
-
     // In order to see the chart elements we need to make sure
     // that the max and min values are different.
     // Use this if block below is commented out
@@ -371,12 +367,10 @@ export const getMinAndMaxValues = (data, numberColumnIndices, isZoomedIn) => {
 
     // Always show 0 on the y axis
     // Keep this for future use
-    if (!isZoomedIn) {
-      if (maxValue > 0 && minValue > 0) {
-        minValue = 0
-      } else if (maxValue < 0 && minValue < 0) {
-        maxValue = 0
-      }
+    if (maxValue > 0 && minValue > 0) {
+      minValue = 0
+    } else if (maxValue < 0 && minValue < 0) {
+      maxValue = 0
     }
 
     return {

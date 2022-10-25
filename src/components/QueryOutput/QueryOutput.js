@@ -134,7 +134,6 @@ export class QueryOutput extends React.Component {
       visibleRowChangeCount: 0,
       visiblePivotRowChangeCount: 0,
       columnChangeCount: 0,
-      isChartZoomed: false,
     }
   }
 
@@ -255,8 +254,6 @@ export class QueryOutput extends React.Component {
       ) {
         this.props.onRowChange()
       }
-      console.log('254', this.props.autoZoomToolbarRef)
-      console.log('255', this.props.vizToolbarRef)
       // If columns changed, regenerate data if necessary
       // If table filtered or columns changed, regenerate pivot data and supported display types
       // Using a count variable so it doesn't have to deep compare on every udpate
@@ -326,11 +323,6 @@ export class QueryOutput extends React.Component {
 
     this.props.onDisplayTypeChange(displayType)
     this.setState({ displayType })
-  }
-  setIsZoomed = () => {
-    console.log('328', this.state.isChartZoomed)
-
-    this.setState({ isChartZoomed: !this.state.isChartZoomed })
   }
   displayTypeInvalidWarning = (displayType) => {
     console.warn(
@@ -777,11 +769,9 @@ export class QueryOutput extends React.Component {
   updateToolbars = () => {
     this.updateVizToolbar()
     this.updateOptionsToolbar()
-    this.updateAutoZoomToolbar()
   }
 
   updateVizToolbar = () => {
-    console.log('776', this.props)
     if (this.props.vizToolbarRef?._isMounted) {
       this.props.vizToolbarRef.forceUpdate()
     }
@@ -790,13 +780,6 @@ export class QueryOutput extends React.Component {
   updateOptionsToolbar = () => {
     if (this.props.optionsToolbarRef?._isMounted) {
       this.props.optionsToolbarRef.forceUpdate()
-    }
-  }
-  updateAutoZoomToolbar = () => {
-    console.log('781', this.props)
-    if (this.props.autoZoomToolbarRef?._isMounted) {
-      console.log('782', this.props)
-      this.props.autoZoomToolbarRef.forceUpdate()
     }
   }
 
@@ -1550,7 +1533,6 @@ export class QueryOutput extends React.Component {
   }
 
   renderChart = () => {
-    console.log('this.queryResponse', this.queryResponse)
     if (!this.tableData || !this.state.columns || !this.tableConfig) {
       console.error('Required table data was missing')
       return this.renderMessage('Error: There was no data supplied for this chart')
@@ -1595,7 +1577,6 @@ export class QueryOutput extends React.Component {
           width={this.props.width}
           onNewData={this.onNewData}
           isDrilldown={this.isDrilldown()}
-          isChartZoomed={this.state.isChartZoomed}
           totalRowsNumber={this.queryResponse?.data?.data?.count_rows}
         />
       </ErrorBoundary>
@@ -1844,7 +1825,6 @@ export class QueryOutput extends React.Component {
     return (
       <div className={`query-output-footer${!shouldRenderRT ? ' no-margin' : ''}`}>
         {shouldRenderRT && this.renderReverseTranslation()}
-        {/* {shouldRenderDLW && this.renderDataLimitWarning()} */}
       </div>
     )
   }

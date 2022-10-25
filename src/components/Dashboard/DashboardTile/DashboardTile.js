@@ -14,8 +14,6 @@ import SplitterLayout from 'react-splitter-layout'
 import { QueryOutput } from '../../QueryOutput'
 import { VizToolbar } from '../../VizToolbar'
 import { OptionsToolbar } from '../../OptionsToolbar'
-import { AutoZoomToolbar } from '../../AutoZoomToolbar'
-import { isChartType } from '../../../js/Util'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import LoadingDots from '../../LoadingDots/LoadingDots.js'
 import { Icon } from '../../Icon'
@@ -872,43 +870,29 @@ export class DashboardTile extends React.Component {
       tileId: this.props.tile.i,
     })
 
-  renderAutoZoomToolbar = (autoZoomToolbarProps) => {
-    console.log('dashboard', autoZoomToolbarProps)
-    console.log('ref', this.state.responseRef)
-    return (
-      <div>
-        <AutoZoomToolbar {...autoZoomToolbarProps} shouldRender={!this.props.isDragging} />
-      </div>
-    )
-  }
-
-  renderToolbars = ({ queryOutputProps, vizToolbarProps, optionsToolbarProps, autoZoomToolbarProps, isSecondHalf }) => {
+  renderToolbars = ({ queryOutputProps, vizToolbarProps, optionsToolbarProps, isSecondHalf }) => {
     const dataLimitWarningIcon = document.querySelector(`#${queryOutputProps.key} .dashboard-data-limit-warning-icon`)
-    console.log('this.props.isDragging', this.props.isDragging)
-    return (
-      <div>
-        <div className={`dashboard-tile-toolbars-container ${dataLimitWarningIcon ? 'left-padding' : ''}`}>
-          <div className='dashboard-tile-toolbars-left-container'>
-            {this.props.isEditing && (isSecondHalf || !this.getIsSplitView()) && this.renderSplitViewBtn()}
-            {this.props.isEditing && <VizToolbar {...vizToolbarProps} shouldRender={!this.props.isDragging} />}
-          </div>
-          <div className='dashboard-tile-toolbars-right-container'>
-            <OptionsToolbar
-              authentication={getAuthentication(this.props.authentication)}
-              autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-              onErrorCallback={this.props.onErrorCallback}
-              onSuccessAlert={this.props.onSuccessCallback}
-              onCSVDownloadStart={this.onCSVDownloadStart}
-              onCSVDownloadProgress={this.onCSVDownloadProgress}
-              onCSVDownloadFinish={this.onCSVDownloadFinish}
-              rebuildTooltips={this.props.rebuildTooltips}
-              {...optionsToolbarProps}
-              shouldRender={!this.props.isDragging}
-            />
-          </div>
-        </div>
 
-        <div className='auto-zoom-vertical'>{this.renderAutoZoomToolbar(autoZoomToolbarProps)}</div>
+    return (
+      <div className={`dashboard-tile-toolbars-container ${dataLimitWarningIcon ? 'left-padding' : ''}`}>
+        <div className='dashboard-tile-toolbars-left-container'>
+          {this.props.isEditing && (isSecondHalf || !this.getIsSplitView()) && this.renderSplitViewBtn()}
+          {this.props.isEditing && <VizToolbar {...vizToolbarProps} shouldRender={!this.props.isDragging} />}
+        </div>
+        <div className='dashboard-tile-toolbars-right-container'>
+          <OptionsToolbar
+            authentication={getAuthentication(this.props.authentication)}
+            autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+            onErrorCallback={this.props.onErrorCallback}
+            onSuccessAlert={this.props.onSuccessCallback}
+            onCSVDownloadStart={this.onCSVDownloadStart}
+            onCSVDownloadProgress={this.onCSVDownloadProgress}
+            onCSVDownloadFinish={this.onCSVDownloadFinish}
+            rebuildTooltips={this.props.rebuildTooltips}
+            shouldRender={!this.props.isDragging}
+            {...optionsToolbarProps}
+          />
+        </div>
       </div>
     )
   }
@@ -945,7 +929,6 @@ export class DashboardTile extends React.Component {
     queryOutputProps = {},
     vizToolbarProps = {},
     optionsToolbarProps = {},
-    autoZoomToolbarProps = {},
     isSecondHalf,
     isExecuting,
     isExecuted,
@@ -963,7 +946,6 @@ export class DashboardTile extends React.Component {
         {this.renderToolbars({
           queryOutputProps,
           vizToolbarProps,
-          autoZoomToolbarProps,
           optionsToolbarProps,
           isSecondHalf,
         })}
@@ -972,8 +954,6 @@ export class DashboardTile extends React.Component {
   }
 
   renderTopResponse = () => {
-    const isChart = this.props.displayType && isChartType(this.props.displayType)
-    console.log('vizToolbarRef', this.vizToolbarRef)
     const isExecuting = this.state.isTopExecuting
     const isExecuted = this.state.isTopExecuted
 
@@ -989,7 +969,6 @@ export class DashboardTile extends React.Component {
         ref: (ref) => ref && ref !== this.state.responseRef && this.setState({ responseRef: ref }),
         optionsToolbarRef: this.optionsToolbarRef,
         vizToolbarRef: this.vizToolbarRef,
-        autoZoomToolbarRef: this.state.autoZoomToolbarRef,
         key: `dashboard-tile-query-top-${this.FIRST_QUERY_RESPONSE_KEY}`,
         initialDisplayType,
         queryResponse: this.props.queryResponse,
@@ -1021,12 +1000,6 @@ export class DashboardTile extends React.Component {
         ref: (r) => !this.state.optionsToolbarRef && this.setState({ optionsToolbarRef: r }),
         responseRef: this.state.responseRef,
       },
-      autoZoomToolbarProps: {
-        // ref: (r) => (this.autoZoomToolbarRef = r),
-        ref: (r) => !this.state.autoZoomToolbarRef && this.setState({ autoZoomToolbarRef: r }),
-        responseRef: this.state.responseRef,
-        isChart: isChart,
-      },
     })
   }
 
@@ -1038,8 +1011,6 @@ export class DashboardTile extends React.Component {
   }
 
   renderBottomResponse = () => {
-    const isChart = this.props.secondDisplayType && isChartType(this.props.secondDisplayType)
-    console.log('isChart', isChart)
     const isQuerySameAsTop = this.areTopAndBottomSameQuery()
 
     let isExecuting = this.state.isBottomExecuting
@@ -1070,7 +1041,7 @@ export class DashboardTile extends React.Component {
         ref: (ref) => ref && ref !== this.state.secondResponseRef && this.setState({ secondResponseRef: ref }),
         optionsToolbarRef: this.secondOptionsToolbarRef,
         vizToolbarRef: this.secondVizToolbarRef,
-        autoZoomToolbarRef: this.state.secondAutoZoomToolbarRef,
+        initialDisplayType,
         queryResponse: this.props.secondQueryResponse || this.props.queryResponse,
         initialTableConfigs: this.props.tile.secondDataConfig,
         onTableConfigChange: this.onSecondDataConfigChange,
@@ -1100,12 +1071,6 @@ export class DashboardTile extends React.Component {
       optionsToolbarProps: {
         ref: (r) => !this.state.secondOptionsToolbarRef && this.setState({ secondOptionsToolbarRef: r }),
         responseRef: this.state.secondResponseRef,
-      },
-      autoZoomToolbarProps: {
-        // ref: (r) => (this.secondAutoZoomToolbarRef = r),
-        ref: (r) => !this.state.secondAutoZoomToolbarRef && this.setState({ secondAutoZoomToolbarRef: r }),
-        responseRef: this.state.secondResponseRef,
-        isChart: isChart,
       },
       isSecondHalf: true,
     })

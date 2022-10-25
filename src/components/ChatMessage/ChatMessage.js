@@ -4,7 +4,7 @@ import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEqual from 'lodash.isequal'
 import ReactTooltip from 'react-tooltip'
-import { Icon } from '../../components/Icon'
+
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
 import {
@@ -19,7 +19,6 @@ import {
 import { QueryOutput } from '../QueryOutput'
 import { VizToolbar } from '../VizToolbar'
 import { OptionsToolbar } from '../OptionsToolbar'
-import { AutoZoomToolbar } from '../AutoZoomToolbar'
 import { Spinner } from '../Spinner'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
@@ -246,7 +245,6 @@ export default class ChatMessage extends React.Component {
           ref={(ref) => ref && ref !== this.state.responseRef && this.setState({ responseRef: ref })}
           optionsToolbarRef={this.optionsToolbarRef}
           vizToolbarRef={this.vizToolbarRef}
-          autoZoomToolbarRef={this.autoZoomToolbarRef}
           authentication={getAuthentication(this.props.authentication)}
           autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
           queryResponse={this.props.response}
@@ -341,20 +339,6 @@ export default class ChatMessage extends React.Component {
       </div>
     )
   }
-  renderAutoZoomToolbar = (isChart) => {
-    return (
-      <div>
-        {this.props.isResponse && this.props.type !== 'text' ? (
-          <AutoZoomToolbar
-            ref={(r) => (this.autoZoomToolbarRef = r)}
-            isChart={isChart}
-            responseRef={this.state.responseRef}
-            shouldRender={!this.props.isResizing}
-          />
-        ) : null}
-      </div>
-    )
-  }
 
   render = () => {
     const isChart = this.state.displayType && isChartType(this.state.displayType)
@@ -379,12 +363,9 @@ export default class ChatMessage extends React.Component {
               ${this.props.isActive ? ' active' : ''}`}
           >
             {this.renderContent()}
-            <div>
-              <div className='chat-message-toolbars-container'>
-                {this.renderLeftToolbar()}
-                {this.renderRightToolbar()}
-              </div>
-              <div className='auto-zoom-vertical'>{this.renderAutoZoomToolbar(isChart)}</div>
+            <div className='chat-message-toolbars-container'>
+              {this.renderLeftToolbar()}
+              {this.renderRightToolbar()}
             </div>
           </div>
         </div>

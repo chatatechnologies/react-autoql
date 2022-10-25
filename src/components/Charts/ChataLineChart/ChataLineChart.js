@@ -61,7 +61,7 @@ export default class ChataLineChart extends Component {
     if (props.visibleSeriesIndices?.length) {
       numberColumnIndices = props.visibleSeriesIndices
     }
-    const { minValue, maxValue } = getMinAndMaxValues(props.data, numberColumnIndices, this.props.isChartZoomed)
+    const { minValue, maxValue } = getMinAndMaxValues(props.data, numberColumnIndices)
 
     this.xScale = scaleBand()
       .domain(props.data.map((d) => d[props.stringColumnIndex]))
