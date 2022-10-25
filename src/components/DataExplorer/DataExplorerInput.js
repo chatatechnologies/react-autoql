@@ -20,16 +20,6 @@ const toSentenceCase = (str) => {
   return str.toLowerCase().charAt(0).toUpperCase() + str.slice(1)
 }
 
-export const formatSubjectName = (query) => {
-  if (query.toLowerCase().startsWith('all ')) {
-    query = query.substring(4)
-  } else if (query.toLowerCase().startsWith('show ')) {
-    query = query.substring(5)
-  }
-
-  return toSentenceCase(query)
-}
-
 export default class DataExplorerInput extends React.Component {
   constructor(props) {
     super(props)
@@ -57,7 +47,7 @@ export default class DataExplorerInput extends React.Component {
 
   static defaultProps = {
     authentication: {},
-    inputPlaceholder: 'Search subjects',
+    inputPlaceholder: 'Search terms or topics',
     onClearInputClick: () => {},
     onSelection: () => {},
   }
@@ -75,14 +65,10 @@ export default class DataExplorerInput extends React.Component {
 
   isAggSeed(subject) {
     return (
-      subject.name.toLowerCase().startsWith('monthly change in') ||
-      subject.name.toLowerCase().startsWith('yearly change in') ||
-      subject.name.toLowerCase().startsWith('weekly change in') ||
-      subject.name.toLowerCase().startsWith('daily change in') ||
-      subject.name.toLowerCase().endsWith('by day') ||
-      subject.name.toLowerCase().endsWith('by week') ||
-      subject.name.toLowerCase().endsWith('by month') ||
-      subject.name.toLowerCase().endsWith('by year')
+      subject.display_name.toLowerCase().endsWith('by day') ||
+      subject.display_name.toLowerCase().endsWith('by week') ||
+      subject.display_name.toLowerCase().endsWith('by month') ||
+      subject.display_name.toLowerCase().endsWith('by year')
     )
   }
   fetchAllSubjects = () => {
@@ -94,12 +80,11 @@ export default class DataExplorerInput extends React.Component {
           .map((subject) => {
             return {
               ...subject,
-              name: formatSubjectName(subject.query),
               type: DEConstants.SUBJECT_TYPE,
             }
           })
           .filter((subject) => !this.isAggSeed(subject))
-          .sort((a, b) => a.name.localeCompare(b.name))
+          .sort((a, b) => a.display_name.localeCompare(b.display_name))
       }
 
       if (this._isMounted) {
@@ -121,7 +106,7 @@ export default class DataExplorerInput extends React.Component {
 
     var reg = new RegExp(`^${input.toLowerCase()}`)
     return this.state.allSubjects.filter((subject) => {
-      const term = subject.name.toLowerCase()
+      const term = subject.display_name.toLowerCase()
       if (term.match(reg)) {
         return subject
       }
@@ -150,21 +135,31 @@ export default class DataExplorerInput extends React.Component {
     if (this._isMounted) {
       this.userSelectedValue = null
       this.setState({
-        inputValue: subject.name,
+        inputValue: subject.display_name,
         recentSuggestions: this.getNewRecentSuggestions(subject),
       })
       this.props.onSelection(subject)
     }
   }
 
-  submitRawText = (text, skipQueryValidation) => {
-    const subject = {
-      type: 'text',
-      name: text,
+  submitRawText = (text = '', skipQueryValidation) => {
+    let subject = this.state.allSubjects.find(
+      (subj) => subj.display_name.toLowerCase().trim() === text.toLowerCase().trim(),
+    )
+
+    if (subject) {
+      this.selectSubject(subject)
+    } else {
+      subject = {
+        type: 'text',
+        display_name: text,
+      }
     }
+
     this.props.onSelection(subject, skipQueryValidation)
     this.setState({
       recentSuggestions: this.getNewRecentSuggestions(subject),
+      inputValue: subject.display_name,
     })
   }
 
@@ -229,8 +224,8 @@ export default class DataExplorerInput extends React.Component {
 
   userSelectedSuggestionHandler = (selectedItem) => {
     this.userSelectedValue = selectedItem
-    if (selectedItem?.name && this._isMounted) {
-      this.setState({ inputValue: selectedItem.name })
+    if (selectedItem?.display_name && this._isMounted) {
+      this.setState({ inputValue: selectedItem.display_name })
     }
   }
 
@@ -253,7 +248,7 @@ export default class DataExplorerInput extends React.Component {
             vlMatches = response.data.data.matches.map((match) => {
               return {
                 ...match,
-                name: `${match.keyword} (${match.show_message})`,
+                display_name: `${match.keyword} (${match.show_message})`,
                 type: DEConstants.VL_TYPE,
               }
             })
@@ -332,7 +327,7 @@ export default class DataExplorerInput extends React.Component {
     // Suggestion list
     if (inputIsEmpty) {
       sections.push({
-        title: 'All Subjects',
+        title: 'All Topics',
         suggestions: this.state.allSubjects,
       })
     } else if (hasSuggestions) {

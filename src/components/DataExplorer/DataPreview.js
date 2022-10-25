@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import _isEqual from 'lodash.isequal'
+import axios from 'axios'
 
 import { Card } from '../Card'
 import { CustomScrollbars } from '../CustomScrollbars'
@@ -13,6 +14,7 @@ import { Icon } from '../Icon'
 import { getDataFormatting, dataFormattingDefault } from '../../props/defaults'
 import { dataFormattingType } from '../../props/types'
 import { formatElement } from '../../js/Util.js'
+import { responseErrors } from '../../js/errorMessages'
 
 import './DataPreview.scss'
 
@@ -64,19 +66,29 @@ export default class DataExplorer extends React.Component {
     this._isMounted = false
   }
 
+  cancelCurrentRequest = () => {
+    this.axiosSource?.cancel(responseErrors.CANCELLED)
+  }
+
   getDataPreview = () => {
-    this.setState({ loading: true, error: false, dataPreview: undefined })
+    this.cancelCurrentRequest()
+    this.axiosSource = axios.CancelToken.source()
+
+    this.setState({ loading: true, error: undefined, dataPreview: undefined })
     fetchDataPreview({
       ...this.props.authentication,
-      subject: this.props.subject?.display_name,
+      subject: this.props.subject?.name,
       numRows: this.DATA_PREVIEW_ROWS,
+      cancelToken: this.axiosSource.token,
     })
       .then((response) => {
         this.setState({ dataPreview: response, loading: false })
       })
       .catch((error) => {
-        console.error(error)
-        this.setState({ loading: false, error: true })
+        if (error?.message !== responseErrors.CANCELLED) {
+          console.error(error)
+          this.setState({ loading: false, error: error?.response?.data })
+        }
       })
   }
 
@@ -109,7 +121,7 @@ export default class DataExplorer extends React.Component {
     const rows = this.state.dataPreview?.data?.data?.rows
     const columns = this.state.dataPreview?.data?.data?.columns
 
-    if (!columns || !rows) {
+    if (!this.state.error && (!columns || !rows)) {
       return null
     }
 
@@ -122,28 +134,40 @@ export default class DataExplorer extends React.Component {
 
     return (
       <div className='data-preview'>
-        <CustomScrollbars autoHeight autoHeightMin={0} autoHeightMax={maxHeight}>
-          <table>
-            <thead>
-              <tr>
-                {columns.map((col, i) => {
-                  return <th key={`col-header-${i}`}>{this.formatColumnHeader(col)}</th>
+        <CustomScrollbars autoHide={false} style={{ height: '165px' }}>
+          {!!this.state.error ? (
+            <div className='data-preview-error-message'>
+              <div>{this.state.error.message}</div>
+              {this.state.error.reference_id && (
+                <>
+                  <br />
+                  <div>Error ID: {this.state.error.reference_id}</div>
+                </>
+              )}
+            </div>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  {columns.map((col, i) => {
+                    return <th key={`col-header-${i}`}>{this.formatColumnHeader(col)}</th>
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, i) => {
+                  return (
+                    <tr key={`row-${i}`} className='data-preview-row'>
+                      {row.map((cell, j) => {
+                        const column = columns[j]
+                        return <td key={`cell-${j}`}>{this.formatCell({ cell, column, config })}</td>
+                      })}
+                    </tr>
+                  )
                 })}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, i) => {
-                return (
-                  <tr key={`row-${i}`} className='data-preview-row'>
-                    {row.map((cell, j) => {
-                      const column = columns[j]
-                      return <td key={`cell-${j}`}>{this.formatCell({ cell, column, config })}</td>
-                    })}
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          )}
         </CustomScrollbars>
       </div>
     )
@@ -176,7 +200,7 @@ export default class DataExplorer extends React.Component {
           className='data-explorer-data-preview'
           data-test='data-explorer-data-preview'
           title={this.renderDataPreviewTitle()}
-          subtitle={<em>{this.props.subject?.name} data snapshot</em>}
+          subtitle={<em>{this.props.subject?.display_name} data snapshot</em>}
         >
           {this.state.loading ? this.renderLoadingContainer() : this.renderDataPreviewGrid()}
         </Card>

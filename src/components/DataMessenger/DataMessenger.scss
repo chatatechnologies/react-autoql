@@ -311,6 +311,7 @@
   transition: opacity 0.2s ease 0s !important;
   opacity: 1 !important;
   overflow: hidden !important;
+  background-color: var(--react-autoql-background-color-secondary);
 }
 
 .clear-messages-confirm-popover {

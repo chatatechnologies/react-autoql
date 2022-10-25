@@ -32,7 +32,7 @@ describe('calls autocomplete at the right time', () => {
   beforeAll(() => {
     wrapper = mount(<DataExplorerInput {...defaultProps} />)
     wrapper.setState({
-      allSubjects: [{ name: 'test subject', type: 'subject' }],
+      allSubjects: [{ display_name: 'test subject', type: 'subject', nane: 'test-subject' }],
     })
     inputComponent = findByTestAttr(wrapper, 'data-explorer-input-component')
   })

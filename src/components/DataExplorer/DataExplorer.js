@@ -92,9 +92,7 @@ export default class DataExplorer extends React.Component {
           <p>{this.props.introMessage}</p>
         ) : (
           <div>
-            <p>
-              Explore your data and discover what you can ask AutoQL. Simply enter a topic in the search bar above and:
-            </p>
+            <p>Explore your data and discover what you can ask AutoQL. Simply enter a term or topic above and:</p>
             <div className='intro-message-list-container'>
               <div>
                 <p>
@@ -115,9 +113,15 @@ export default class DataExplorer extends React.Component {
     )
   }
 
+  animateDETextAndSubmit = (text) => {
+    if (this.inputRef?._isMounted) {
+      this.inputRef.animateTextAndSubmit(text)
+    }
+  }
+
   onValidationSuggestionClick = (text) => {
     this.querySuggestionsKey = uuid()
-    this.inputRef?.animateTextAndSubmit(text)
+    this.animateDETextAndSubmit(text)
   }
 
   renderDataPreview = () => {
@@ -156,7 +160,7 @@ export default class DataExplorer extends React.Component {
     return (
       <div>
         <Icon style={{ fontSize: '20px' }} type='react-autoql-bubbles-outlined' /> Query Suggestions for "
-        {selectedTopic?.name}"
+        {selectedTopic?.display_name}"
       </div>
     )
   }
@@ -177,7 +181,7 @@ export default class DataExplorer extends React.Component {
             <QuerySuggestionList
               key={this.querySuggestionsKey}
               authentication={this.props.authentication}
-              topicText={selectedTopic?.name}
+              topicText={selectedTopic?.display_name}
               executeQuery={this.props.executeQuery}
               skipQueryValidation={this.state.skipQueryValidation}
               onValidationSuggestionClick={this.onValidationSuggestionClick}
@@ -287,7 +291,7 @@ export default class DataExplorer extends React.Component {
   }
 
   renderColumnQuerySuggestions = (column) => {
-    const subject = this.state.selectedSubject?.name || ''
+    const subject = this.state.selectedSubject?.display_name || ''
     if (!subject) {
       return null
     }

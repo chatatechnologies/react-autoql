@@ -628,6 +628,7 @@ export const fetchDataPreview = ({
   token,
   source = 'data_explorer.user',
   numRows = 10,
+  cancelToken,
 } = {}) => {
   if (!subject) {
     return Promise.reject(new Error('No subject supplied for data preview'))
@@ -643,6 +644,7 @@ export const fetchDataPreview = ({
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    cancelToken,
   }
 
   const data = {
@@ -654,5 +656,5 @@ export const fetchDataPreview = ({
   return axios
     .post(url, data, config)
     .then((response) => Promise.resolve(response))
-    .catch((error) => Promise.reject(_get(error, 'response.data')))
+    .catch((error) => Promise.reject(error))
 }
