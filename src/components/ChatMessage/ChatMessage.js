@@ -349,6 +349,7 @@ export default class ChatMessage extends React.Component {
             ref={(r) => (this.autoZoomToolbarRef = r)}
             isChart={isChart}
             responseRef={this.state.responseRef}
+            shouldRender={!this.props.isResizing}
           />
         ) : null}
       </div>
@@ -378,15 +379,13 @@ export default class ChatMessage extends React.Component {
               ${this.props.isActive ? ' active' : ''}`}
           >
             {this.renderContent()}
-            {!this.props.isResizing && (
-              <div>
-                <div className='chat-message-toolbars-container'>
-                  {this.renderLeftToolbar()}
-                  {this.renderRightToolbar()}
-                </div>
-                <div className='auto-zoom-vertical'>{this.renderAutoZoomToolbar(isChart)}</div>
+            <div>
+              <div className='chat-message-toolbars-container'>
+                {this.renderLeftToolbar()}
+                {this.renderRightToolbar()}
               </div>
-            )}
+              <div className='auto-zoom-vertical'>{this.renderAutoZoomToolbar(isChart)}</div>
+            </div>
           </div>
         </div>
       </ErrorBoundary>

@@ -16,12 +16,14 @@ class AutoZoomToolbar extends React.Component {
     disableCharts: PropTypes.bool,
     vertical: PropTypes.bool,
     isChart: PropTypes.bool,
+    shouldRender: PropTypes.bool,
   }
 
   static defaultProps = {
     disableCharts: false,
     vertical: false,
     isChart: false,
+    shouldRender: true,
   }
 
   componentDidMount = () => {
@@ -46,6 +48,9 @@ class AutoZoomToolbar extends React.Component {
   }
 
   render = () => {
+    if (!this.props.shouldRender) {
+      return null
+    }
     if (this.props.isChart && this.props.responseRef) {
       console.log('50this.props.responseRef', this.props.responseRef)
       return (
