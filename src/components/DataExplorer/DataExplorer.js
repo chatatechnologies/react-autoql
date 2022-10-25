@@ -171,6 +171,11 @@ export default class DataExplorer extends React.Component {
       return null
     }
 
+    let topicText = selectedTopic.display_name
+    if (selectedTopic.type === DEConstants.SUBJECT_TYPE) {
+      topicText = selectedTopic.name
+    }
+
     return (
       <div className='data-explorer-section query-suggestions'>
         <Card
@@ -181,7 +186,8 @@ export default class DataExplorer extends React.Component {
             <QuerySuggestionList
               key={this.querySuggestionsKey}
               authentication={this.props.authentication}
-              topicText={selectedTopic?.name}
+              topicText={topicText}
+              topic={selectedTopic}
               executeQuery={this.props.executeQuery}
               skipQueryValidation={this.state.skipQueryValidation}
               onValidationSuggestionClick={this.onValidationSuggestionClick}
