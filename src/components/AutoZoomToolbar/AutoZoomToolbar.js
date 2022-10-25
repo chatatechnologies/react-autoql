@@ -48,6 +48,7 @@ class AutoZoomToolbar extends React.Component {
   }
 
   render = () => {
+    console.log('123')
     if (!this.props.shouldRender) {
       return null
     }

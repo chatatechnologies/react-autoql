@@ -907,9 +907,8 @@ export class DashboardTile extends React.Component {
             />
           </div>
         </div>
-        {!this.props.isDragging && (
-          <div className='auto-zoom-vertical'>{this.renderAutoZoomToolbar(autoZoomToolbarProps)}</div>
-        )}
+
+        <div className='auto-zoom-vertical'>{this.renderAutoZoomToolbar(autoZoomToolbarProps)}</div>
       </div>
     )
   }
@@ -990,7 +989,7 @@ export class DashboardTile extends React.Component {
         ref: (ref) => ref && ref !== this.state.responseRef && this.setState({ responseRef: ref }),
         optionsToolbarRef: this.optionsToolbarRef,
         vizToolbarRef: this.vizToolbarRef,
-        autoZoomToolbarRef: this.autoZoomToolbarRef,
+        autoZoomToolbarRef: this.state.autoZoomToolbarRef,
         key: `dashboard-tile-query-top-${this.FIRST_QUERY_RESPONSE_KEY}`,
         initialDisplayType,
         queryResponse: this.props.queryResponse,
@@ -1023,8 +1022,8 @@ export class DashboardTile extends React.Component {
         responseRef: this.state.responseRef,
       },
       autoZoomToolbarProps: {
-        ref: (r) => (this.autoZoomToolbarRef = r),
-        // ref: (r) => !this.state.autoZoomToolbarRef && this.setState({ autoZoomToolbarRef: r }),
+        // ref: (r) => (this.autoZoomToolbarRef = r),
+        ref: (r) => !this.state.autoZoomToolbarRef && this.setState({ autoZoomToolbarRef: r }),
         responseRef: this.state.responseRef,
         isChart: isChart,
       },
@@ -1071,7 +1070,7 @@ export class DashboardTile extends React.Component {
         ref: (ref) => ref && ref !== this.state.secondResponseRef && this.setState({ secondResponseRef: ref }),
         optionsToolbarRef: this.secondOptionsToolbarRef,
         vizToolbarRef: this.secondVizToolbarRef,
-        autoZoomToolbarRef: this.secondAutoZoomToolbarRef,
+        autoZoomToolbarRef: this.state.secondAutoZoomToolbarRef,
         queryResponse: this.props.secondQueryResponse || this.props.queryResponse,
         initialTableConfigs: this.props.tile.secondDataConfig,
         onTableConfigChange: this.onSecondDataConfigChange,
@@ -1103,8 +1102,8 @@ export class DashboardTile extends React.Component {
         responseRef: this.state.secondResponseRef,
       },
       autoZoomToolbarProps: {
-        ref: (r) => (this.secondAutoZoomToolbarRef = r),
-        // ref: (r) => !this.state.secondAutoZoomToolbarRef && this.setState({ secondAutoZoomToolbarRef: r }),
+        // ref: (r) => (this.secondAutoZoomToolbarRef = r),
+        ref: (r) => !this.state.secondAutoZoomToolbarRef && this.setState({ secondAutoZoomToolbarRef: r }),
         responseRef: this.state.secondResponseRef,
         isChart: isChart,
       },

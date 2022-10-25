@@ -1550,6 +1550,7 @@ export class QueryOutput extends React.Component {
   }
 
   renderChart = () => {
+    console.log('this.queryResponse', this.queryResponse)
     if (!this.tableData || !this.state.columns || !this.tableConfig) {
       console.error('Required table data was missing')
       return this.renderMessage('Error: There was no data supplied for this chart')
@@ -1595,6 +1596,7 @@ export class QueryOutput extends React.Component {
           onNewData={this.onNewData}
           isDrilldown={this.isDrilldown()}
           isChartZoomed={this.state.isChartZoomed}
+          totalRowsNumber={this.queryResponse?.data?.data?.count_rows}
         />
       </ErrorBoundary>
     )

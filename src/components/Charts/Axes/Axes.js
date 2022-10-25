@@ -157,7 +157,7 @@ export default class Axes extends React.Component {
               width: spanWidth,
               height: xBorderHeight,
             }}
-            totalRowNumber={this.props.devTotalRowNumber}
+            totalRowNumber={this.props.totalRowsNumber}
             setCurrentRowNumber={(currentRowNumber) => {
               this.setState({ currentRowNumber })
             }}
@@ -182,7 +182,7 @@ export default class Axes extends React.Component {
     let xLabelY = this.props.height - (this.props.bottomLegendMargin || 0) - this.axisLabelPaddingTop - halfTextHeight
     const xBorderX = xCenter - xLabelTextWidth / 2 - this.axisLabelPaddingLeft
     let xBorderY = xLabelY - halfTextHeight - this.axisLabelPaddingTop
-    if (this.props.devTotalRowNumber >= this.initialRowNumber) {
+    if (this.props.totalRowsNumber >= this.initialRowNumber) {
       xBorderY = xBorderY - 20
       xLabelY = xLabelY - 20
     }
@@ -368,8 +368,8 @@ export default class Axes extends React.Component {
       <g>
         {this.renderYAxisLabel(yAxisTitle)}
         {this.renderXAxisLabel(xAxisTitle)}
-        {this.props.devTotalRowNumber > this.initialRowNumber &&
-          this.renderXAxisLoadMoreDropdown(this.state.currentRowNumber, this.props.devTotalRowNumber)}
+        {this.props.totalRowsNumber > this.initialRowNumber &&
+          this.renderXAxisLoadMoreDropdown(this.state.currentRowNumber, this.props.totalRowsNumber)}
 
         <g className='react-autoql-axes' data-test='react-autoql-axes'>
           {this.renderXAxis(xAxisTitle)}

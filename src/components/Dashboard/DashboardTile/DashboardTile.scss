@@ -95,6 +95,7 @@
 }
 
 .react-autoql-dashboard-tile:hover .dashboard-tile-toolbars-container,
+.react-autoql-dashboard-tile:hover .auto-zoom-vertical,
 .react-autoql-dashboard-tile:hover .split-view-query-btn {
   visibility: visible;
   opacity: 1;
@@ -147,6 +148,9 @@
   .dashboard-tile-response-wrapper.editing {
   .dashboard-tile-toolbars-container {
     padding: 13px;
+  }
+  .auto-zoom-vertical{
+    padding:16px
   }
 
   .layout-splitter {
@@ -526,7 +530,12 @@
   transition: opacity 0.3s ease, color 0.3s ease;
   width: 100%;
   top: 20px;
-  right: -10px;
+  right: -3px;
   z-index: 3;
   padding: 10px;
+  visibility: hidden;
+  opacity: 0;
+}
+.react-autoql-tooltip{
+  word-break: unset;
 }
