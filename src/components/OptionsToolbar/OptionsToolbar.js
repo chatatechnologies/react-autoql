@@ -30,6 +30,7 @@ export default class OptionsToolbar extends React.Component {
     autoQLConfig: autoQLConfigType,
 
     enableDeleteBtn: PropTypes.bool,
+    shouldRender: PropTypes.bool,
     onSuccessAlert: PropTypes.func,
     onErrorCallback: PropTypes.func,
     onNewNotificationCallback: PropTypes.func,
@@ -45,6 +46,7 @@ export default class OptionsToolbar extends React.Component {
     autoQLConfig: autoQLConfigDefault,
 
     enableDeleteBtn: false,
+    shouldRender: true,
     onSuccessAlert: () => {},
     onErrorCallback: () => {},
     onNewNotificationCallback: () => {},
@@ -659,7 +661,7 @@ export default class OptionsToolbar extends React.Component {
     const shouldShowButton = this.getShouldShowButtonObj()
 
     // If there is nothing to put in the toolbar, don't render it
-    if (!Object.values(shouldShowButton).find((showButton) => showButton === true)) {
+    if (!this.props.shouldRender || !Object.values(shouldShowButton).find((showButton) => showButton === true)) {
       return null
     }
 
