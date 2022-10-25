@@ -121,7 +121,7 @@ export default class ChataTable extends React.Component {
       loading: false,
       pageLoading: false,
       scrollLoading: false,
-      isLastPage: false,
+      isLastPage: this.lastPage === 1,
       ref: null,
     }
   }
@@ -402,7 +402,9 @@ export default class ChataTable extends React.Component {
     if (filterTagElements?.length) {
       filterTagElements.forEach((filterTag) => {
         try {
-          if (filterTag.parentNode && this._isMounted) {filterTag.parentNode.removeChild(filterTag)}
+          if (filterTag.parentNode && this._isMounted) {
+            filterTag.parentNode.removeChild(filterTag)
+          }
         } catch (error) {}
       })
     }
@@ -515,7 +517,7 @@ export default class ChataTable extends React.Component {
           ${this.state.isFiltering ? 'filtering' : ''}
           ${this.props.isResizing ? 'resizing' : ''}
           ${this.supportsInfiniteScroll ? 'infinite' : 'limited'}
-          ${this.state.isLastPage ? 'last-page' : ''}
+          ${this.supportsInfiniteScroll && this.state.isLastPage ? 'last-page' : ''}
           ${this.props.pivot ? 'pivot' : ''}`}
           style={{
             ...this.props.style,

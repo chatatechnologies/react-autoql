@@ -209,6 +209,11 @@ export default class ChataChart extends Component {
     const { stringColumnIndex, numberColumnIndices, data, columns } = props
     const stringColumn = columns[stringColumnIndex]
     let sortedData
+
+    if (data?.length === 1) {
+      return data
+    }
+
     if (isColumnDateType(stringColumn)) {
       sortedData = sortDataByDate(data, columns, 'chart')
     } else {
@@ -218,6 +223,7 @@ export default class ChataChart extends Component {
     if (props.isPivot) {
       return sortedData
     }
+
     const aggregatedData = []
 
     let rowSum = _cloneDeep(sortedData[0])

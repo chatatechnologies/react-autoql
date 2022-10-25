@@ -309,6 +309,7 @@ export default class ChatMessage extends React.Component {
             ref={(r) => (this.optionsToolbarRef = r)}
             responseRef={this.state.responseRef}
             className={'chat-message-toolbar right'}
+            shouldRender={!this.props.isResizing}
             authentication={this.props.authentication}
             autoQLConfig={this.props.autoQLConfig}
             onCSVDownloadStart={this.onCSVDownloadStart}
@@ -334,6 +335,7 @@ export default class ChatMessage extends React.Component {
             ref={(r) => (this.vizToolbarRef = r)}
             responseRef={this.state.responseRef}
             className='chat-message-toolbar left'
+            shouldRender={!this.props.isResizing}
           />
         ) : null}
       </div>

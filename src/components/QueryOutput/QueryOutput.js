@@ -249,7 +249,10 @@ export class QueryOutput extends React.Component {
         ReactTooltip.hide()
       }
 
-      if (this.state.visibleRows?.length !== prevState.visibleRows?.length) {
+      if (
+        this.state.visibleRows?.length !== prevState.visibleRows?.length ||
+        (this.state.displayType === 'table' && prevState.displayType === 'text')
+      ) {
         this.props.onRowChange()
       }
       console.log('254', this.props.autoZoomToolbarRef)
@@ -414,6 +417,11 @@ export class QueryOutput extends React.Component {
     /* Each provided column must exist in the original
        query response columns for it to be valid */
     const origColumns = this.queryResponse?.data?.data?.columns
+
+    if (!columns?.length || !origColumns?.length) {
+      return false
+    }
+
     return columns.every((column) =>
       origColumns.find((origColumn) => {
         column.name === origColumn.name
