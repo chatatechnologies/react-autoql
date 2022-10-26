@@ -103,7 +103,7 @@ export default class ChataTable extends React.Component {
       this.tableOptions.ajaxURL = 'https://required-placeholder-url.com'
       this.tableOptions.ajaxSorting = true
       this.tableOptions.ajaxFiltering = true
-      this.tableOptions.virtualDomHoz = true
+      this.tableOptions.virtualDomHoz = false
       this.tableOptions.progressiveRenderSize = 5
       this.tableOptions.progressiveRenderMargin = 100
       this.tableOptions.ajaxLoader = true
