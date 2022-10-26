@@ -128,8 +128,12 @@ export const scaleZero = (scale) => {
 
   const min = domain[0]
   const max = domain[domain?.length - 1]
-  if (min > 0 && max > 0) {return scale(min)}
-  if (min < 0 && max < 0) {return scale(max)}
+  if (min > 0 && max > 0) {
+    return scale(min)
+  }
+  if (min < 0 && max < 0) {
+    return scale(max)
+  }
   return scale(0)
 }
 
@@ -270,7 +274,9 @@ export const calculateMinAndMaxSums = (data, stringColumnIndex, numberColumnIndi
     numberColumnIndices.forEach((colIndex) => {
       const rawValue = row[colIndex]
       let value = Number(rawValue)
-      if (isNaN(value)) {value = 0}
+      if (isNaN(value)) {
+        value = 0
+      }
 
       if (value >= 0) {
         // Calculate positive sum
@@ -342,15 +348,12 @@ export const getMinAndMaxValues = (data, numberColumnIndices) => {
   try {
     const maxValuesFromArrays = []
     const minValuesFromArrays = []
-
     numberColumnIndices.forEach((colIndex, i) => {
       maxValuesFromArrays.push(max(data, (d) => convertToNumber(d[colIndex])))
       minValuesFromArrays.push(min(data, (d) => convertToNumber(d[colIndex])))
     })
-
     let maxValue = max(maxValuesFromArrays)
     let minValue = min(minValuesFromArrays)
-
     // In order to see the chart elements we need to make sure
     // that the max and min values are different.
     // Use this if block below is commented out

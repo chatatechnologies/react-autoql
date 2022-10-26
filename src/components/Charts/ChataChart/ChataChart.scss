@@ -154,3 +154,26 @@
   background: var(--react-autoql-background-color-secondary);
   padding: 5px;
 }
+
+.chart-loader {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  opacity:0.6;
+  background-color: var(--react-autoql-background-color-primary);
+  color: var(--react-autoql-accent-color);
+  border-radius: 10%;
+
+  &.chart-page-loader {
+    top: 25%;
+    bottom: 0;
+    right: 0;
+    left: 50%;
+    width:  40px;
+    height:  40px;
+  }
+
+ 
+}

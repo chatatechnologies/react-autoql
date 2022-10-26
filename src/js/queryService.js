@@ -308,6 +308,7 @@ export const runDrilldown = ({
   orders,
   tableFilters,
   cancelToken,
+  pageSize,
 } = {}) => {
   if (!queryID) {
     console.error('No query ID supplied to drilldown function')
@@ -325,6 +326,7 @@ export const runDrilldown = ({
     filters: tableFilters,
     orders,
     test,
+    page_size: pageSize,
   }
 
   const config = {
@@ -530,7 +532,7 @@ export const fetchExploreQueries = ({
   const commaSeparatedKeywords = keywords ? keywords.split(' ') : []
   const exploreQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${encodeURIComponent(
     commaSeparatedKeywords,
-  )}&page_size=${pageSize}&page=${pageNumber}`
+  )}&page_size=${pageSize}&page=${pageNumber}&enable_history=false`
 
   if (!token || !domain || !apiKey) {
     return Promise.reject(new Error('Unauthenticated'))
@@ -589,7 +591,7 @@ export const fetchDataExplorerSuggestions = ({
 
   const exploreQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${encodeURIComponent(
     keywords,
-  )}&page_size=${pageSize}&page=${pageNumber}&scope=${scope}`
+  )}&page_size=${pageSize}&page=${pageNumber}&scope=${scope}&enable_history=false`
 
   if (!token || !domain || !apiKey) {
     return Promise.reject(new Error('Unauthenticated'))
