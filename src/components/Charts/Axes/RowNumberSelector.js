@@ -12,7 +12,6 @@ import { responseErrors } from '../../../js/errorMessages'
 export default class RowNumberSelector extends React.Component {
   constructor(props) {
     super(props)
-    this.formattedTableParams = props.formattedTableParams
     this.state = {
       isOpen: false,
     }
@@ -42,8 +41,8 @@ export default class RowNumberSelector extends React.Component {
         test: this.props.queryRequestData?.test,
         groupBys: this.props.queryRequestData?.columns,
         queryID: this.props.queryRequestData?.original_query_id, // todo: get original query ID from drillown response
-        orders: this.formattedTableParams?.sorters,
-        tableFilters: this.formattedTableParams?.filters,
+        orders: this.props.formattedTableParams?.sorters,
+        tableFilters: this.props.formattedTableParams?.filters,
         cancelToken: this.axiosSource.token,
         pageSize: pageSize,
       })
@@ -57,8 +56,8 @@ export default class RowNumberSelector extends React.Component {
         filters: this.props.queryRequestData?.session_filter_locks,
         test: this.props.queryRequestData?.test,
         pageSize: pageSize,
-        orders: this.formattedTableParams?.sorters,
-        tableFilters: this.formattedTableParams?.filters,
+        orders: this.props.formattedTableParams?.sorters,
+        tableFilters: this.props.formattedTableParams?.filters,
         cancelToken: this.axiosSource.token,
       })
     }

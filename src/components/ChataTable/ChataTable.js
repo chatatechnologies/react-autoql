@@ -262,7 +262,7 @@ export default class ChataTable extends React.Component {
         before callbacks are invoked */
         await currentEventLoopEnd()
 
-        this.props.onTableParamsChange(params)
+        this.props.onTableParamsChange(params, nextTableParamsFormatted)
         this.props.onNewData(responseWrapper)
       }
 
