@@ -1571,6 +1571,7 @@ export class QueryOutput extends React.Component {
           onChartClick={this.onChartClick}
           isResizing={this.props.isResizing}
           enableDynamicCharting={this.props.enableDynamicCharting}
+          enableAjaxTableData={this.props.enableAjaxTableData}
           tooltipID={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
           rebuildTooltips={this.rebuildTooltips}
           height={this.props.height}
@@ -1797,9 +1798,9 @@ export class QueryOutput extends React.Component {
   }
 
   shouldRenderDataLimitWarning = () => {
-    const isTableAndAjax = this.props.enableAjaxTableData && this.state.displayType === 'table'
-
-    return !isTableAndAjax && this.isDataLimited() && !areAllColumnsHidden(this.getColumns())
+    const isTableAndNotAjax = !this.props.enableAjaxTableData && this.state.displayType === 'table'
+    const isChartAndNotAjax = !this.props.enableAjaxTableData && isChartType(this.state.displayType)
+    return this.isDataLimited() && !areAllColumnsHidden(this.getColumns()) && (isTableAndNotAjax || isChartAndNotAjax)
   }
 
   renderDataLimitWarning = () => {
@@ -1825,6 +1826,7 @@ export class QueryOutput extends React.Component {
     return (
       <div className={`query-output-footer${!shouldRenderRT ? ' no-margin' : ''}`}>
         {shouldRenderRT && this.renderReverseTranslation()}
+        {shouldRenderDLW && this.renderDataLimitWarning()}
       </div>
     )
   }

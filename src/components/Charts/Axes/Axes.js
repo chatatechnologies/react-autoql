@@ -367,7 +367,8 @@ export default class Axes extends React.Component {
       <g>
         {this.renderYAxisLabel(yAxisTitle)}
         {this.renderXAxisLabel(xAxisTitle)}
-        {this.props.totalRowsNumber > this.initialRowNumber &&
+        {this.props.enableAjaxTableData &&
+          this.props.totalRowsNumber > this.initialRowNumber &&
           this.renderXAxisLoadMoreDropdown(this.state.currentRowNumber, this.props.totalRowsNumber)}
 
         <g className='react-autoql-axes' data-test='react-autoql-axes'>
