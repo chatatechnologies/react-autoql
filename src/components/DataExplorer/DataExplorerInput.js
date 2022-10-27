@@ -72,27 +72,29 @@ export default class DataExplorerInput extends React.Component {
     )
   }
   fetchAllSubjects = () => {
-    fetchSubjectList({ ...this.props.authentication }).then((response) => {
-      const subjects = response?.data?.data?.subjects || []
-      let allSubjects = []
-      if (subjects.length) {
-        allSubjects = subjects
-          .map((subject) => {
-            return {
-              ...subject,
-              type: DEConstants.SUBJECT_TYPE,
-            }
-          })
-          .filter((subject) => !this.isAggSeed(subject))
-          .sort((a, b) => a.display_name.localeCompare(b.display_name))
-      }
+    fetchSubjectList({ ...this.props.authentication })
+      .then((response) => {
+        const subjects = response?.data?.data?.subjects || []
+        let allSubjects = []
+        if (subjects.length) {
+          allSubjects = subjects
+            .map((subject) => {
+              return {
+                ...subject,
+                type: DEConstants.SUBJECT_TYPE,
+              }
+            })
+            .filter((subject) => !this.isAggSeed(subject))
+            .sort((a, b) => a.display_name.localeCompare(b.display_name))
+        }
 
-      if (this._isMounted) {
-        this.setState({
-          allSubjects,
-        })
-      }
-    })
+        if (this._isMounted) {
+          this.setState({
+            allSubjects,
+          })
+        }
+      })
+      .catch((error) => console.error(error))
   }
 
   blurInput = () => {
