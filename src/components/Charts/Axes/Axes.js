@@ -48,10 +48,15 @@ export default class Axes extends React.Component {
   }
 
   renderLoadMoreDropdown = (currentRowNumber, totalRowNumber) => {
+    const style = {}
+    if (this.props.totalRowsNumber > this.initialRowNumber) {
+      style.textDecoration = 'underline'
+    }
+
     return (
       <tspan id={`load-more-drop-down-span-${this.COMPONENT_ID}`}>
         <tspan id={`visualizing-span-${this.COMPONENT_ID}`}>{`Visualizing `}</tspan>
-        <tspan style={{ textDecoration: 'underline' }} id={`row-number-span-${this.COMPONENT_ID}`}>
+        <tspan style={style} id={`row-number-span-${this.COMPONENT_ID}`}>
           {currentRowNumber}
         </tspan>
         {` / ${totalRowNumber} rows`}
@@ -91,7 +96,7 @@ export default class Axes extends React.Component {
     let loadMoreDropDownSpan = document.getElementById(`load-more-drop-down-span-${this.COMPONENT_ID}`)
     let spanWidth
     let visualizingSpanWidth
-    let loadMoreDropDownSpanWidth
+    let loadMoreDropDownSpanWidth = 0
     if (rowNumberSpan) {
       spanWidth = rowNumberSpan.getBoundingClientRect().width + 5
     }
@@ -99,7 +104,7 @@ export default class Axes extends React.Component {
       visualizingSpanWidth = visualizingSpan.getBoundingClientRect().width
     }
     if (loadMoreDropDownSpan) {
-      loadMoreDropDownSpanWidth = loadMoreDropDownSpan.getBoundingClientRect().width
+      loadMoreDropDownSpanWidth = loadMoreDropDownSpan.getBoundingClientRect().width || 0
     }
     const xCenter =
       (this.props.width - this.props.leftMargin + this.props.rightMargin) / 2 +
@@ -127,7 +132,7 @@ export default class Axes extends React.Component {
           {this.renderLoadMoreDropdown(currentRowNumber, totalRowNumber)}
         </text>
 
-        {totalRowNumber > this.maxRows && loadMoreDropDownSpanWidth !== undefined ? (
+        {totalRowNumber > this.maxRows ? (
           <svg
             stroke='currentColor'
             fill='#ffcc00'
@@ -144,7 +149,7 @@ export default class Axes extends React.Component {
             <path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z'></path>
           </svg>
         ) : null}
-        {typeof visualizingSpanWidth == 'number' ? (
+        {totalRowNumber > this.initialRowNumber && typeof visualizingSpanWidth == 'number' ? (
           <RowNumberSelector
             {...this.props}
             column={this.props.xCol}
@@ -181,7 +186,8 @@ export default class Axes extends React.Component {
     let xLabelY = this.props.height - (this.props.bottomLegendMargin || 0) - this.axisLabelPaddingTop - halfTextHeight
     const xBorderX = xCenter - xLabelTextWidth / 2 - this.axisLabelPaddingLeft
     let xBorderY = xLabelY - halfTextHeight - this.axisLabelPaddingTop
-    if (this.props.totalRowsNumber >= this.initialRowNumber) {
+    if (this.props.enableAjaxTableData) {
+      // Add extra space for row count display
       xBorderY = xBorderY - 20
       xLabelY = xLabelY - 20
     }
@@ -368,7 +374,6 @@ export default class Axes extends React.Component {
         {this.renderYAxisLabel(yAxisTitle)}
         {this.renderXAxisLabel(xAxisTitle)}
         {this.props.enableAjaxTableData &&
-          this.props.totalRowsNumber > this.initialRowNumber &&
           this.renderXAxisLoadMoreDropdown(this.state.currentRowNumber, this.props.totalRowsNumber)}
 
         <g className='react-autoql-axes' data-test='react-autoql-axes'>

@@ -44,7 +44,6 @@ export default class ChataChart extends Component {
     this.INNER_PADDING = 0.25
     this.OUTER_PADDING = 0.5
     this.AXIS_LABEL_PADDING = 30
-    this.TWO_AXIS_LABEL_PADDING = 60
     this.DEFAULT_BOTTOM_MARGIN = 100
 
     this.firstRender = true
@@ -318,12 +317,15 @@ export default class ChataChart extends Component {
 
     const xAxisBBox = this.xAxis ? this.xAxis.getBBox() : {}
     let bottomMargin = Math.ceil(xAxisBBox.height) + bottomLegendMargin + this.AXIS_LABEL_PADDING // margin to include axis label
-    if (this.props.totalRowsNumber >= 50) {
-      bottomMargin = Math.ceil(xAxisBBox.height) + bottomLegendMargin + this.TWO_AXIS_LABEL_PADDING // margin to include 2 axis label
-    }
+
     if (xAxisBBox.height === 0) {
       bottomMargin = this.DEFAULT_BOTTOM_MARGIN // if no xAxisBBox available, set bottomMargin to default as 463
     }
+
+    if (this.props.enableAjaxTableData) {
+      bottomMargin = bottomMargin + this.AXIS_LABEL_PADDING // margin to include row count summary
+    }
+
     // only for bar charts (vertical grid lines mess with the axis size)
     if (this.props.type === 'bar' || this.props.type === 'stacked_bar') {
       const innerTickSize = chartContainerBbox.height - this.state.topMargin - this.state.bottomMargin

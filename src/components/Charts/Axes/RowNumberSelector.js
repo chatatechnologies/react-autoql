@@ -65,7 +65,7 @@ export default class RowNumberSelector extends React.Component {
   loadMoreChartData = async (pageSize) => {
     try {
       let response
-      if (pageSize === 'Maximum') {
+      if (pageSize === '5000 (Maximum)') {
         pageSize = this.props.totalRowNumber
         if (this.props.totalRowNumber > 5000) {
           pageSize = 5000
@@ -93,7 +93,7 @@ export default class RowNumberSelector extends React.Component {
       rowNumberList.push(currentRowNumber)
       currentRowNumber = currentRowNumber * 10
     }
-    rowNumberList.push('Maximum')
+    rowNumberList.push('5000 (Maximum)')
     return rowNumberList
   }
   renderSelectorContent = () => {
