@@ -5,12 +5,7 @@ import { Axes } from '../Axes'
 import { Squares } from '../Squares'
 import { shouldLabelsRotate, getLongestLabelInPx } from '../../../js/Util.js'
 import { getDataFormatting } from '../../../props/defaults'
-import {
-  chartDefaultProps,
-  chartPropTypes,
-  getTickValues,
-  shouldRecalculateLongestLabel,
-} from '../helpers.js'
+import { chartDefaultProps, chartPropTypes, getTickValues, shouldRecalculateLongestLabel } from '../helpers.js'
 
 export default class ChataHeatmapChart extends Component {
   constructor(props) {
@@ -39,10 +34,7 @@ export default class ChataHeatmapChart extends Component {
   }
 
   setLabelRotationValue = (props) => {
-    const rotateLabels = shouldLabelsRotate(
-      this.xScale.bandwidth(),
-      this.longestLabelWidth
-    )
+    const rotateLabels = shouldLabelsRotate(this.xScale.bandwidth(), this.longestLabelWidth)
 
     if (typeof rotateLabels !== 'undefined') {
       this.rotateLabels = rotateLabels
@@ -53,35 +45,44 @@ export default class ChataHeatmapChart extends Component {
     this.longestLabelWidth = getLongestLabelInPx(
       this.xTickValues,
       props.columns[props.stringColumnIndex],
-      getDataFormatting(props.dataFormatting)
+      getDataFormatting(props.dataFormatting),
     )
   }
 
   setChartData = (props) => {
     this.yLabelArray = props.legendLabels.map((d) => d.label)
-    this.squareHeight = props.height / this.yLabelArray.length
+    this.squareHeight = props.innerHeight / this.yLabelArray.length
+
+    const xRangeStart = props.leftMargin + 10
+    let xRangeEnd = props.width - props.rightMargin
+    if (xRangeEnd < xRangeStart) {
+      xRangeEnd = xRangeStart
+    }
 
     this.xScale = scaleBand()
       .domain(props.data.map((d) => d[props.stringColumnIndex]))
-      .range([props.leftMargin + 10, props.width - props.rightMargin])
+      .range([xRangeStart, xRangeEnd])
       .paddingInner(0.01)
 
-    this.yScale = scaleBand()
-      .domain(this.yLabelArray)
-      .range([props.height - props.bottomMargin, props.topMargin])
-      .paddingInner(0.01)
+    const yRangeEnd = props.topMargin
+    let yRangeStart = props.height - props.bottomMargin
+    if (yRangeStart < yRangeEnd) {
+      yRangeStart = yRangeEnd
+    }
 
-    this.xTickValues = getTickValues(
-      this.xScale.bandwidth(),
-      props.width,
-      this.xScale.domain()
-    )
+    this.yScale = scaleBand().domain(this.yLabelArray).range([yRangeStart, yRangeEnd]).paddingInner(0.01)
 
-    this.yTickValues = getTickValues(
-      this.squareHeight,
-      props.height,
-      this.yLabelArray
-    )
+    this.xTickValues = getTickValues({
+      tickHeight: this.xScale.bandwidth(),
+      fullHeight: props.innerWidth,
+      labelArray: this.xScale.domain(),
+    })
+
+    this.yTickValues = getTickValues({
+      tickHeight: this.squareHeight,
+      fullHeight: props.innerHeight,
+      labelArray: this.yLabelArray,
+    })
   }
 
   render = () => {
@@ -89,10 +90,8 @@ export default class ChataHeatmapChart extends Component {
     this.setLabelRotationValue(this.props)
 
     return (
-      <g
-        data-test="react-autoql-heatmap-chart"
-        className="react-autoql-heatmap-chart"
-      >
+      <g data-test='react-autoql-heatmap-chart' className='react-autoql-heatmap-chart'>
+        {this.props.marginAdjustmentFinished && <Squares {...this.props} xScale={this.xScale} yScale={this.yScale} />}
         <Axes
           {...this.props}
           xScale={this.xScale}
@@ -104,9 +103,6 @@ export default class ChataHeatmapChart extends Component {
           rotateLabels={this.rotateLabels}
           yGridLines
         />
-        {this.props.marginAdjustmentFinished && (
-          <Squares {...this.props} xScale={this.xScale} yScale={this.yScale} />
-        )}
       </g>
     )
   }

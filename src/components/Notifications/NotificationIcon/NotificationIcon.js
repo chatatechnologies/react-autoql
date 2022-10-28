@@ -1,26 +1,34 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
+import { v4 as uuid } from 'uuid'
 
 import { Icon } from '../../Icon'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import {
-  fetchNotificationCount,
-  resetNotificationCount,
-} from '../../../js/notificationService'
+import { fetchNotificationCount, resetNotificationCount } from '../../../js/notificationService'
 
 import { authenticationType } from '../../../props/types'
-import {
-  authenticationDefault,
-  getAuthentication,
-} from '../../../props/defaults'
+import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
 import './NotificationIcon.scss'
+import { withTheme } from '../../../theme'
 
-export default class NotificationIcon extends React.Component {
-  NUMBER_OF_NOTIFICATIONS_TO_FETCH = 10
-  FAILED_POLL_ATTEMPTS = 0
+class NotificationIcon extends React.Component {
+  constructor(props) {
+    super(props)
+
+    this.NUMBER_OF_NOTIFICATIONS_TO_FETCH = 10
+    this.INTERVAL_LENGTH = 90 * 1000
+    this.FAILED_POLL_ATTEMPTS = 0
+    this.COMPONENT_KEY = uuid()
+    this.HAS_FETCHED_COUNT = false
+    this.pollInterval = undefined
+
+    this.state = {
+      count: 0,
+    }
+  }
 
   static propTypes = {
     authentication: authenticationType,
@@ -31,9 +39,9 @@ export default class NotificationIcon extends React.Component {
     clearCountOnClick: PropTypes.bool,
     onNewNotification: PropTypes.func,
     onErrorCallback: PropTypes.func,
-    isAlreadyMountedInDOM: PropTypes.bool,
     pausePolling: PropTypes.bool,
     count: PropTypes.number,
+    onCount: PropTypes.func,
   }
 
   static defaultProps = {
@@ -44,44 +52,34 @@ export default class NotificationIcon extends React.Component {
     clearCountOnClick: true,
     onNewNotification: () => {},
     onErrorCallback: () => {},
-    isAlreadyMountedInDOM: false,
     pausePolling: false,
     count: undefined,
+    onCount: () => {},
   }
 
-  state = {
-    count: 0,
-  }
-
-  timerID
   componentDidMount = async () => {
     this._isMounted = true
+    this.getNotificationCount()
+    this.clearPollingComponent()
+    this.subscribeToNotificationCount()
+  }
 
-    /**
-     * If Data Messenger has enableNotificationsTab = true and
-     * the NotificationIcon is also present, subscribeToNotificationCount()
-     * will occasionally trigger an infinite loop.
-     *
-     * Data Messenger will first check to see that the NotificationIcon
-     * isn't already present before triggering this function inside.
-     */
-
-    if (!this.props.isAlreadyMountedInDOM) {
-      this.subscribeToNotificationCount()
+  componentDidUpdate = (prevProps, prevState) => {
+    if (this.state.count !== prevState.count) {
+      this.props.onCount(this.state.count)
     }
   }
 
   componentWillUnmount = () => {
     this._isMounted = false
-    clearInterval(this.timerID)
+    this.clearPollingComponent()
+    clearInterval(this.pollInterval)
   }
 
   getNotificationCount = (currentCount) => {
     const count = currentCount || this.state.count
 
     if (this.props.pausePolling) {
-      return Promise.resolve(count)
-    } else if (!Number.isNaN(this.props.count)) {
       return Promise.resolve(count)
     }
 
@@ -93,26 +91,43 @@ export default class NotificationIcon extends React.Component {
         const newCount = _get(response, 'data.data.unacknowledged')
         if (newCount && newCount !== this.state.count) {
           this.setState({ count: newCount })
-          this.props.onNewNotification()
+          if (this.HAS_FETCHED_COUNT) {
+            this.props.onNewNotification(newCount)
+          }
         }
+        this.HAS_FETCHED_COUNT = true
         return Promise.resolve(newCount)
       })
       .catch((error) => {
-        return Promise.reject(error)
+        console.error(error)
+        return this.props.onErrorCallback(error)
       })
   }
 
+  clearPollingComponent = () => {
+    sessionStorage.setItem('pollingComponent', '')
+  }
+
+  setPollingComponent = () => {
+    sessionStorage.setItem('pollingComponent', this.COMPONENT_KEY)
+  }
+
+  getPollingComponent = () => {
+    return sessionStorage.getItem('pollingComponent')
+  }
+
   subscribeToNotificationCount = (count) => {
-    if (this._isMounted) {
+    const pollingComponent = this.getPollingComponent()
+    const shouldPoll = !pollingComponent || pollingComponent === this.COMPONENT_KEY
+
+    if (this._isMounted && shouldPoll) {
       /**
        * For short polling notifications, we needed to set the interval on FE side.
        * Interval set to trigger every 90 seconds.
        */
-      if (this.timerID) {
-        clearInterval(this.timerID)
-      }
-
-      this.timerID = setInterval(() => {
+      clearInterval(this.pollInterval)
+      this.setPollingComponent()
+      this.pollInterval = setInterval(() => {
         this.getNotificationCount(count)
           .then((newCount) => {
             // Got a new count, now we want to reconnect
@@ -122,14 +137,13 @@ export default class NotificationIcon extends React.Component {
           .catch((error) => {
             if (this.FAILED_POLL_ATTEMPTS === 5) {
               const error = new Error(
-                'There were 5 failed attempts to poll for notifications. Unsubscribing from notification count.'
+                'There were 5 failed attempts to poll for notifications. Unsubscribing from notification count.',
               )
               console.error(error)
               this.props.onErrorCallback(error)
 
-              clearInterval(this.timerID)
-
-              throw new Error(error)
+              clearInterval(this.pollInterval)
+              return
             } else if (_get(error, 'response.status') == 504) {
               // Timed out because there were no changes
               // Let's connect again
@@ -142,7 +156,7 @@ export default class NotificationIcon extends React.Component {
             }
             this.FAILED_POLL_ATTEMPTS += 1
           })
-      }, 90 * 1000)
+      }, this.INTERVAL_LENGTH)
     }
   }
 
@@ -156,16 +170,24 @@ export default class NotificationIcon extends React.Component {
       })
   }
 
+  getCurrentCount = () => {
+    if (typeof this.props.count === 'number') {
+      return this.props.count
+    }
+
+    return this.state.count
+  }
+
   renderBadge = () => {
     const { overflowCount } = this.props
-    const { count } = this.state
+    const count = this.getCurrentCount()
 
     if (!count) {
       return null
     }
 
     if (this.props.useDot) {
-      return <div className="react-autoql-notifications-badge-dot" />
+      return <div className='react-autoql-notifications-badge-dot' />
     }
 
     let finalCount = count
@@ -173,18 +195,17 @@ export default class NotificationIcon extends React.Component {
       finalCount = `${overflowCount}+`
     }
 
-    return <div className="react-autoql-notifications-badge">{finalCount}</div>
+    return <div className='react-autoql-notifications-badge'>{finalCount}</div>
   }
 
   render = () => {
     return (
       <ErrorBoundary>
         <div
-          className={`react-autoql-notifications-button-container ${
-            this.props.useDot ? 'dot' : ''
-          }
-        ${!this.state.count ? 'no-badge' : ''}`}
-          data-test="notification-button"
+          className={`react-autoql-notifications-button-container ${this.props.useDot ? 'dot' : ''}
+          ${this.props.className || ''}
+        ${!this.state.count && !this.props.count ? 'no-badge' : ''}`}
+          data-test='notification-button'
           style={{ ...this.props.style }}
           onClick={() => {
             if (this.props.clearCountOnClick) {
@@ -192,13 +213,12 @@ export default class NotificationIcon extends React.Component {
             }
           }}
         >
-          <Icon
-            type="notification"
-            className="react-autoql-notifications-button"
-          />
+          <Icon type='notification' className='react-autoql-notifications-button' />
           {this.renderBadge()}
         </div>
       </ErrorBoundary>
     )
   }
 }
+
+export default withTheme(NotificationIcon)

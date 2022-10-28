@@ -10,12 +10,8 @@ import { Radio } from '../../Radio'
 import { Icon } from '../../Icon'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import { authenticationType, themeConfigType } from '../../../props/types'
-import {
-  authenticationDefault,
-  themeConfigDefault,
-  getAuthentication,
-} from '../../../props/defaults'
+import { authenticationType } from '../../../props/types'
+import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
 import './ExpressionBuilder.scss'
 
@@ -54,7 +50,6 @@ export default class ExpressionBuilder extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
-    themeConfig: themeConfigType,
     expression: PropTypes.arrayOf(PropTypes.shape({})), // This is the expression of the existing notification if you are editing one. I should change the name of this at some point
     readOnly: PropTypes.bool, // Set this to true if you want a summary of the expression without needing to interact with it
     onChange: PropTypes.func, // this returns 2 params (isSectionComplete, expressionJSON)
@@ -62,7 +57,6 @@ export default class ExpressionBuilder extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
     expression: undefined,
     readOnly: false,
     onChange: () => {},
@@ -187,17 +181,12 @@ export default class ExpressionBuilder extends React.Component {
     }
 
     return (
-      <div
-        className={`data-alerts-container ${
-          this.props.readOnly ? 'read-only' : ''
-        }`}
-      >
+      <div className={`data-alerts-container ${this.props.readOnly ? 'read-only' : ''}`}>
         {!!this.state.groups.length &&
           this.state.groups.map((group, i) => {
             return (
               <div key={`expression-group-readonly-${group.id}-${i}`}>
                 <Group
-                  themeConfig={this.props.themeConfig}
                   ref={(r) => (this.groupRefs[i] = r)}
                   groupId={group.id}
                   disableAddGroupBtn={true}
@@ -212,10 +201,7 @@ export default class ExpressionBuilder extends React.Component {
                 />
                 {i !== this.state.groups.length - 1 && (
                   <div style={{ textAlign: 'center', margin: '2px' }}>
-                    <span
-                      className="read-only-rule-term"
-                      style={{ width: '100%' }}
-                    >
+                    <span className='read-only-rule-term' style={{ width: '100%' }}>
                       {conditionText}
                     </span>
                   </div>
@@ -231,37 +217,25 @@ export default class ExpressionBuilder extends React.Component {
     const hasOnlyOneGroup = this.state.groups.length <= 1
 
     return (
-      <div
-        className={`data-alerts-container ${
-          this.props.readOnly ? 'read-only' : ''
-        }`}
-      >
+      <div className={`data-alerts-container ${this.props.readOnly ? 'read-only' : ''}`}>
         {!hasOnlyOneGroup && (
-          <div
-            className="notification-rule-and-or-select"
-            style={{ marginBottom: '10px' }}
-          >
+          <div className='notification-rule-and-or-select' style={{ marginBottom: '10px' }}>
             Notify me when{' '}
             <Radio
-              themeConfig={this.props.themeConfig}
               options={['ALL', 'ANY']}
               value={this.state.andOrValue}
-              type="button"
+              type='button'
               onChange={(value) => this.setState({ andOrValue: value })}
             />{' '}
             of the following conditions are met:
           </div>
         )}
-        <div
-          className="notification-rule-outer-container"
-          data-test="notification-rules"
-        >
+        <div className='notification-rule-outer-container' data-test='notification-rules'>
           {!!this.state.groups.length &&
             this.state.groups.map((group, i) => {
               return (
                 <Group
                   authentication={getAuthentication(this.props.authentication)}
-                  themeConfig={this.props.themeConfig}
                   ref={(r) => (this.groupRefs[i] = r)}
                   key={`group-${group.id}-${i}`}
                   groupId={group.id}
@@ -279,15 +253,12 @@ export default class ExpressionBuilder extends React.Component {
             })}
           {!this.props.readOnly && (
             <div
-              className="notification-rule-add-group-btn"
+              className='notification-rule-add-group-btn'
               onClick={this.addGroup}
-              data-tip="Add Condition Group"
-              data-for="notification-expression-tooltip"
+              data-tip='Add Condition Group'
+              data-for='notification-expression-tooltip'
             >
-              <Icon
-                type="plus"
-                className="react-autoql-notification-add-icon"
-              />
+              <Icon type='plus' className='react-autoql-notification-add-icon' />
             </div>
           )}
         </div>
@@ -300,9 +271,9 @@ export default class ExpressionBuilder extends React.Component {
       <ErrorBoundary>
         {this.props.readOnly ? this.renderReadOnlyRules() : this.renderRules()}
         <ReactTooltip
-          className="react-autoql-drawer-tooltip"
-          id="notification-expression-tooltip"
-          effect="solid"
+          className='react-autoql-tooltip'
+          id='notification-expression-tooltip'
+          effect='solid'
           delayShow={500}
           html
         />

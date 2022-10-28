@@ -7,15 +7,14 @@ import axios from 'axios'
 import { Icon } from '../Icon'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import PropTypes from 'prop-types'
-import { authenticationDefault, themeConfigDefault } from '../../props/defaults'
-import { authenticationType, themeConfigType } from '../../props/types'
-import Popover from 'react-tiny-popover'
+import { authenticationDefault } from '../../props/defaults'
+import { authenticationType } from '../../props/types'
+import { Popover } from 'react-tiny-popover'
 import './SpeechToTextButton.scss'
 
 export default class SpeechToTextBtn extends React.Component {
   static propTypes = {
     authentication: authenticationType,
-    themeConfig: themeConfigType,
     transcript: PropTypes.string,
     interimTranscript: PropTypes.string,
     finalTranscript: PropTypes.string,
@@ -26,7 +25,6 @@ export default class SpeechToTextBtn extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
   }
 
   state = {
@@ -66,9 +64,9 @@ export default class SpeechToTextBtn extends React.Component {
 
         this.recordAudio.startRecording()
       },
-      function(error) {
+      function (error) {
         console.error(JSON.stringify(error))
-      }
+      },
     )
   }
 
@@ -78,18 +76,18 @@ export default class SpeechToTextBtn extends React.Component {
         //  isConfirmingRecording: true,
         currentFile: file,
         currentBlob: blob,
-        //hasPlayedBack: false,
+        // hasPlayedBack: false,
       },
       () => {
         this.sendWavFile(file)
-      }
+      },
     )
   }
 
   stopRecording = () => {
     this.setState({ isRecording: false })
     this.recordAudio.stopRecording(() => {
-      let blob = this.recordAudio.getBlob()
+      const blob = this.recordAudio.getBlob()
       this.onRecordStop(this.blobToFile(blob), blob)
       try {
         this.stream.getTracks().forEach((track) => track.stop())
@@ -100,18 +98,16 @@ export default class SpeechToTextBtn extends React.Component {
   }
 
   blobToFile = (theBlob) => {
-    //A Blob() is almost a File() - it's just missing the two properties below which we will add
+    // A Blob() is almost a File() - it's just missing the two properties below which we will add
     theBlob.lastModifiedDate = new Date()
     theBlob.name = 'speech.wav'
     return theBlob
   }
 
   getMediaPermissionStatus = () => {
-    return navigator.permissions
-      .query({ name: 'microphone' })
-      .then(function(permissionStatus) {
-        return permissionStatus.state
-      })
+    return navigator.permissions.query({ name: 'microphone' }).then(function (permissionStatus) {
+      return permissionStatus.state
+    })
   }
 
   onMouseDown = () => {
@@ -138,20 +134,16 @@ export default class SpeechToTextBtn extends React.Component {
         if (error.response.status === 404) {
           this.setState(
             {
-              errorMessage:
-                'Oops! Speech-to-text has not been enabled. Try typing a query instead.',
+              errorMessage: 'Oops! Speech-to-text has not been enabled. Try typing a query instead.',
             },
             () => {
               this.setState({ showPopoverMessage: true })
-            }
+            },
           )
         } else {
-          this.setState(
-            { errorMessage: 'Oops! Something wrong with your account' },
-            () => {
-              this.setState({ showPopoverMessage: true })
-            }
-          )
+          this.setState({ errorMessage: 'Oops! Something wrong with your account' }, () => {
+            this.setState({ showPopoverMessage: true })
+          })
         }
       })
   }
@@ -171,33 +163,29 @@ export default class SpeechToTextBtn extends React.Component {
                 paddingRight: '10px',
               }}
             >
-              <Icon type="warning-triangle" /> {this.state.errorMessage}
+              <Icon type='warning-triangle' /> {this.state.errorMessage}
             </div>
           )}
           onClickOutside={() => this.setState({ showPopoverMessage: false })}
         >
           <button
-            id="react-autoql-voice-record-button"
-            data-test="speech-to-text-btn"
-            className={`chat-voice-record-button${
-              this.state.isRecording ? ' listening' : ''
-            }`}
+            id='react-autoql-voice-record-button'
+            data-test='speech-to-text-btn'
+            className={`chat-voice-record-button${this.state.isRecording ? ' listening' : ''}`}
             onMouseDown={this.onMouseDown}
             onMouseUp={this.stopRecording}
-            onMouseLeave={
-              this.state.isRecording ? this.stopRecording : undefined
-            }
-            data-tip="Hold for voice-to-text"
-            data-for="react-autoql-speech-to-text-tooltip"
+            onMouseLeave={this.state.isRecording ? this.stopRecording : undefined}
+            data-tip='Hold for voice-to-text'
+            data-for='react-autoql-speech-to-text-tooltip'
             data-tip-disable={this.state.isRecording}
           >
-            <Icon type="microphone" />
+            <Icon type='microphone' />
           </button>
         </Popover>
         <ReactTooltip
-          className="react-autoql-tooltip"
-          id="react-autoql-speech-to-text-tooltip"
-          effect="solid"
+          className='react-autoql-tooltip'
+          id='react-autoql-speech-to-text-tooltip'
+          effect='solid'
           delayShow={800}
         />
       </ErrorBoundary>

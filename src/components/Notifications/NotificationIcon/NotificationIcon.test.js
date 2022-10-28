@@ -11,7 +11,7 @@ const defaultProps = {
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
-  const wrapper = shallow(<NotificationIcon {...setupProps} />)
+  const wrapper = shallow(<NotificationIcon {...setupProps} />).dive()
   if (state) {
     wrapper.setState(state)
   }
@@ -21,10 +21,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const notificationButtonComponent = findByTestAttr(
-      wrapper,
-      'notification-button'
-    )
+    const notificationButtonComponent = findByTestAttr(wrapper, 'notification-button')
     expect(notificationButtonComponent.exists()).toBe(true)
   })
 })

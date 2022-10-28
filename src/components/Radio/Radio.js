@@ -36,7 +36,7 @@ export default class Radio extends React.Component {
       <ErrorBoundary>
         <div
           className={`react-autoql-radio-btn-container react-autoql-radio-btn-container-buttons ${this.props.className}`}
-          data-test="react-autoql-radio"
+          data-test='react-autoql-radio'
         >
           {this.props.options.map((option, i) => {
             let isActive = this.props.value === option
@@ -48,6 +48,7 @@ export default class Radio extends React.Component {
                 key={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}
                 className={`react-autoql-radio-btn
                   ${isActive ? ' active' : ''}`}
+                data-test='react-autoql-radio-btn'
                 onClick={() => this.props.onChange(option)}
                 data-tip={this.props.tooltips?.[i]}
                 data-for={this.props.tooltipId}
@@ -67,7 +68,7 @@ export default class Radio extends React.Component {
       <ErrorBoundary>
         <div
           className={`react-autoql-radio-btn-container react-autoql-radio-btn-container-list ${this.props.className}`}
-          data-test="react-autoql-radio"
+          data-test='react-autoql-radio'
         >
           {this.props.options.map((option, i) => {
             let isActive = this.props.value === option
@@ -79,7 +80,7 @@ export default class Radio extends React.Component {
                 <input
                   id={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}
                   name={`react-autoql-radio-${this.COMPONENT_KEY}`}
-                  type="radio"
+                  type='radio'
                   defaultChecked={isActive}
                 />
                 <label

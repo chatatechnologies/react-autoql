@@ -7,12 +7,9 @@ import { v4 as uuid } from 'uuid'
 
 import { Icon } from '../Icon'
 
-import { authenticationType, themeConfigType } from '../../props/types'
-import {
-  themeConfigDefault,
-  authenticationDefault,
-  getAuthentication,
-} from '../../props/defaults'
+import { authenticationType } from '../../props/types'
+import { authenticationDefault, getAuthentication } from '../../props/defaults'
+import { constructRTArray } from '../../js/reverseTranslationHelpers'
 
 import { fetchVLAutocomplete } from '../../js/queryService'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -24,7 +21,7 @@ export default class ReverseTranslation extends React.Component {
     super(props)
 
     this.COMPONENT_KEY = uuid()
-    this.reverseTranslationArray = props.reverseTranslation
+    this.reverseTranslationArray = constructRTArray(props.reverseTranslation)
 
     this.state = {
       isValidated: false,
@@ -33,7 +30,6 @@ export default class ReverseTranslation extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
-    themeConfig: themeConfigType,
     interpretation: PropTypes.array,
     onValueLabelClick: PropTypes.func,
     appliedFilters: PropTypes.array,
@@ -42,7 +38,6 @@ export default class ReverseTranslation extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
     interpretation: [],
     appliedFilters: [],
     reverseTranslation: [],
@@ -71,9 +66,7 @@ export default class ReverseTranslation extends React.Component {
   validateAndUpdateValueLabels = () => {
     if (this.reverseTranslationArray.length) {
       const valueLabelValidationPromises = []
-      const validatedInterpretationArray = _cloneDeep(
-        this.reverseTranslationArray
-      )
+      const validatedInterpretationArray = _cloneDeep(this.reverseTranslationArray)
       this.reverseTranslationArray.forEach((chunk, i) => {
         if (chunk.c_type === 'VALUE_LABEL') {
           valueLabelValidationPromises.push(
@@ -84,7 +77,7 @@ export default class ReverseTranslation extends React.Component {
               if (_get(response, 'data.data.matches.length')) {
                 validatedInterpretationArray[i].c_type = 'VALIDATED_VALUE_LABEL'
               }
-            })
+            }),
           )
         }
       })
@@ -101,17 +94,16 @@ export default class ReverseTranslation extends React.Component {
   renderFilterLockLink = (text) => {
     return (
       <a
-        id="react-autoql-interpreted-value-label"
-        className="react-autoql-condition-link-filtered"
-        data-test="react-autoql-condition-link"
+        id='react-autoql-interpreted-value-label'
+        className='react-autoql-condition-link-filtered'
+        data-test='react-autoql-condition-link'
         onClick={(e) => {
           e.stopPropagation()
           this.props.onValueLabelClick(text)
         }}
       >
         {' '}
-        {this.props.appliedFilters.includes(text) && <Icon type="lock" />}{' '}
-        {<span>{text}</span>}
+        {this.props.appliedFilters.includes(text) && <Icon type='lock' />} {<span>{text}</span>}
       </a>
     )
   }
@@ -147,18 +139,14 @@ export default class ReverseTranslation extends React.Component {
       <ErrorBoundary>
         <div
           id={this.COMPONENT_KEY}
-          className="react-autoql-reverse-translation-container"
-          data-test="react-autoql-reverse-translation-container"
+          className='react-autoql-reverse-translation-container'
+          data-test='react-autoql-reverse-translation-container'
         >
-          <div className="react-autoql-reverse-translation">
-            <Icon type="info" />
+          <div className='react-autoql-reverse-translation'>
+            <Icon type='info' />
             <strong> Interpreted as: </strong>
             {this.reverseTranslationArray.map((chunk, i) => {
-              return (
-                <span key={`rt-item-${this.COMPONENT_KEY}-${i}`}>
-                  {this.renderInterpretationChunk(chunk)}
-                </span>
-              )
+              return <span key={`rt-item-${this.COMPONENT_KEY}-${i}`}>{this.renderInterpretationChunk(chunk)}</span>
             })}
           </div>
         </div>

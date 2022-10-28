@@ -4,6 +4,8 @@
   flex-grow: 1;
   flex-shrink: 1;
   overflow: hidden;
+  color: var(--react-autoql-text-color-primary);
+  background: var(--react-autoql-background-color-secondary);
 
   svg {
     // set transparent in css but keep background in inline style for exporting to png
@@ -15,70 +17,85 @@
     opacity: 0;
     transition: none;
   }
-}
 
-/* These are not inline styles since they do not apply to saved PNG charts */
-.react-autoql-chart-container .square {
-  transition: fill-opacity 0.3s ease;
-}
+  /* These are not inline styles since they do not apply to saved PNG charts */
+  .bar,
+  .column,
+  .line,
+  .slice,
+  .stacked-area,
+  .stacked-bar,
+  .stacked-column,
+  .swatch {
+    transition: fill-opacity 0.3s ease;
+    fill-opacity: 1 !important;
+    outline: none !important;
+    &:hover,
+    &.active {
+      fill-opacity: 0.7 !important;
+    }
+  }
+  .line-dot,
+  .vertex-dot {
+    transition: opacity 0.3s ease;
+    opacity: 0 !important;
+    outline: none !important;
+    &:hover,
+    &.active {
+      opacity: 1 !important;
+    }
+  }
+  .square {
+    transition: fill 0.2s ease;
+    outline: none !important;
+    &:hover,
+    &.active {
+      stroke-opacity: 0.5;
+      stroke: currentColor;
+      stroke-width: 1px;
+      fill: currentColor;
+    }
+  }
 
-.react-autoql-chart-container .bar,
-/* .react-autoql-chart-container .line-dot, */
-.react-autoql-chart-container .stacked-bar,
-.react-autoql-chart-container .circle {
-  transition: fill-opacity 0.3s ease;
-  fill-opacity: 0.7 !important;
-}
+  .circle {
+    transition: fill-opacity 0.2s ease;
+    fill-opacity: 0.7;
+    outline: none !important;
+    &:hover,
+    &.active {
+      fill-opacity: 1 !important;
+    }
+  }
 
-.react-autoql-chart-container .bar:hover,
-/* .react-autoql-chart-container .line-dot:hover, */
-.react-autoql-chart-container .stacked-bar:hover,
-.react-autoql-chart-container .circle:hover,
-.react-autoql-chart-container .square:hover {
-  fill-opacity: 1 !important;
-}
+  g.tick {
+    transition: opacity 0.3s ease;
+  }
 
-.react-autoql-chart-container .vertex-dot:hover,
-.react-autoql-chart-container .line-dot:hover,
-.react-autoql-chart-container .line-dot.active {
-  opacity: 1 !important;
-}
+  .react-autoql-heatmap-chart g.tick line,
+  .react-autoql-bubble-chart g.tick line {
+    opacity: 0 !important; // we need to render the tick lines so the bounding box calcs are correct. But we dont want to see them
+  }
 
-.react-autoql-chart-container .bar.active,
-/* .react-autoql-chart-container .line-dot.active, */
-.react-autoql-chart-container .stacked-bar.active {
-  fill-opacity: 1 !important;
-}
+  .axis {
+    font-family: inherit;
+  }
 
-.axis {
-  font-family: inherit;
-}
-
-.pie-chart .labels {
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.react-autoql-chart-container g.tick {
-  transition: opacity 0.3s ease;
-}
-
-.react-autoql-chart-container .react-autoql-heatmap-chart g.tick line,
-.react-autoql-chart-container .react-autoql-bubble-chart g.tick line {
-  opacity: 0 !important; // we need to render the tick lines so the bounding box calcs are correct. But we dont want to see them
+  .pie-chart .labels {
+    font-size: 12px;
+    font-weight: 600;
+  }
 }
 
 .axis-selector-container {
-  background: var(--react-autoql-background-color-primary);
+  background: var(--react-autoql-background-color-secondary);
   color: var(--react-autoql-text-color-primary);
   z-index: 9999;
   padding: 5px 0;
-  max-height: 300px;
   min-width: 150px;
-  overflow-y: auto;
 
   .axis-select-option.active {
     background: var(--react-autoql-hover-color);
+    outline: none !important;
   }
   .react-autoql-checkbox {
     margin-left: 20px;
@@ -134,6 +151,29 @@
 }
 
 .axis-selector-apply-btn {
-  background: var(--react-autoql-background-color-primary);
+  background: var(--react-autoql-background-color-secondary);
   padding: 5px;
+}
+
+.chart-loader {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  opacity:0.6;
+  background-color: var(--react-autoql-background-color-primary);
+  color: var(--react-autoql-accent-color);
+  border-radius: 10%;
+
+  &.chart-page-loader {
+    top: 25%;
+    bottom: 0;
+    right: 0;
+    left: 50%;
+    width:  40px;
+    height:  40px;
+  }
+
+ 
 }

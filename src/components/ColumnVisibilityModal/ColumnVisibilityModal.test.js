@@ -5,7 +5,7 @@ import { findByTestAttr } from '../../../test/testUtils'
 import ColumnVisibilityModal from './ColumnVisibilityModal'
 
 const defaultProps = {
-  columns: []
+  columns: [],
 }
 
 const setup = (props = {}, state = null) => {
@@ -20,10 +20,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const columnVisibilityModalComponent = findByTestAttr(
-      wrapper,
-      'column-visibility-modal'
-    )
+    const columnVisibilityModalComponent = findByTestAttr(wrapper, 'column-visibility-modal')
     expect(columnVisibilityModalComponent.exists()).toBe(true)
   })
 })

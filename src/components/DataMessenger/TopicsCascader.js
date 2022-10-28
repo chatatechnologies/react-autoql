@@ -44,10 +44,10 @@ export default class TopicsCascader extends React.Component {
 
     return (
       <ErrorBoundary>
-        <div>
+        <div data-test='topics-message-cascader-component'>
           {lang.introPrompt}
           <br />
-          <div className="topics-container">
+          <div className='topics-container'>
             <Cascader
               options={this.topics}
               onFinalOptionClick={(option) => {
@@ -56,22 +56,30 @@ export default class TopicsCascader extends React.Component {
                   source: ['data_messenger', 'welcome_prompt'],
                 })
               }}
-              showSeeMoreButton={this.props.enableExploreQueriesTab}
-              onSeeMoreClick={
-                // (label) => this.runTopicInExporeQueries(label)
-                (label) => this.props.onExploreQueriesClick(label)
-              }
+              showSeeMoreButton={this.props.enableExploreQueriesTab || this.props.enableDataExplorerTab}
+              onSeeMoreClick={(label) => {
+                if (this.props.enableDataExplorerTab) {
+                  this.props.onDataExplorerClick(label)
+                } else if (this.props.enableExploreQueriesTab) {
+                  this.props.onExploreQueriesClick(label)
+                }
+              }}
             />
           </div>
-          {this.props.enableExploreQueriesTab && (
+          {this.props.enableExploreQueriesTab && !this.props.enableDataExplorerTab && (
             <div>
               {lang.use}{' '}
-              <span
-                className="intro-qi-link"
-                onClick={this.props.onExploreQueriesClick}
-              >
-                <Icon type="light-bulb" style={{ marginRight: '-3px' }} />{' '}
-                {lang.exploreQueries}
+              <span className='intro-qi-link' onClick={this.props.onExploreQueriesClick}>
+                <Icon type='light-bulb' style={{ marginRight: '-3px' }} /> {lang.exploreQueries}
+              </span>{' '}
+              {lang.explorePrompt}
+            </div>
+          )}
+          {this.props.enableDataExplorerTab && (
+            <div>
+              {lang.use}{' '}
+              <span className='intro-qi-link' onClick={this.props.onDataExplorerClick}>
+                <Icon type='data-search' style={{ marginRight: '-3px' }} /> {lang.dataExplorer}
               </span>{' '}
               {lang.explorePrompt}
             </div>

@@ -1,23 +1,5 @@
-.react-autoql-drawer .chat-message-container {
-  scroll-behavior: smooth !important;
-  max-height: calc(100% - 140px);
-  overflow-y: auto;
-  overflow-x: hidden;
-  flex: 1;
-
-  .custom-scrollbar-container {
-    overflow-x: hidden !important;
-    margin-bottom: 0 !important;
-  }
-}
-
-/* custom scrollbar */
-.react-autoql-drawer .chat-message-container > div:last-child {
-  opacity: 0;
-  transition: opacity 200ms ease;
-}
-.react-autoql-drawer .chat-message-container:hover > div:last-child {
-  opacity: 1;
+.chat-content-scroll-container {
+  flex: 1 0 0px;
 }
 
 .react-autoql-drawer .response-loading-container {
@@ -27,14 +9,15 @@
 }
 
 .react-autoql-drawer .chat-bar-container {
+  flex: 0 0 auto;
   position: relative;
   padding: 10px;
 }
 
 .react-autoql-drawer .watermark {
-  color: var(--react-autoql-text-color-primary);
+  color: var(--react-autoql-text-color-placeholder);
   text-align: center;
-  opacity: 0.2;
+  opacity: 0.7;
   top: 6px;
   width: calc(100% - 10px);
   font-size: 13px;

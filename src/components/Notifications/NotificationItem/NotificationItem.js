@@ -21,14 +21,10 @@ import {
   fetchRule,
 } from '../../../js/notificationService'
 import dayjs from '../../../js/dayjsWithPlugins'
-import { getDefaultDisplayType, capitalizeFirstChar } from '../../../js/Util'
+import { capitalizeFirstChar } from '../../../js/Util'
 
-import { authenticationType, themeConfigType } from '../../../props/types'
-import {
-  authenticationDefault,
-  themeConfigDefault,
-  getAuthentication,
-} from '../../../props/defaults'
+import { authenticationType } from '../../../props/types'
+import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
 import './NotificationItem.scss'
 
@@ -36,11 +32,9 @@ dayjs.extend(advancedFormat)
 
 export default class NotificationItem extends React.Component {
   COMPONENT_KEY = uuid()
-  supportedDisplayTypes = []
 
   static propTypes = {
     authentication: authenticationType,
-    themeConfig: themeConfigType,
     notification: PropTypes.shape({}).isRequired,
     activeNotificationData: PropTypes.shape({}),
     showNotificationDetails: PropTypes.bool,
@@ -49,6 +43,7 @@ export default class NotificationItem extends React.Component {
     onDismissCallback: PropTypes.func,
     onDeleteCallback: PropTypes.func,
     onDeleteSuccessCallback: PropTypes.func,
+    onDismissSuccessCallback: PropTypes.func,
     onErrorCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     enableAjaxTableData: PropTypes.bool.isRequired,
@@ -56,7 +51,6 @@ export default class NotificationItem extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
     activeNotificationData: undefined,
     showNotificationDetails: true,
     autoChartAggregations: false,
@@ -65,34 +59,14 @@ export default class NotificationItem extends React.Component {
     onDismissCallback: () => {},
     onDeleteCallback: () => {},
     onDeleteSuccessCallback: () => {},
+    onDismissSuccessCallback: () => {},
     onErrorCallback: () => {},
   }
 
   state = {
-    supportedDisplayTypes: [],
     ruleStatus: undefined,
     ruleDetails: undefined,
     fullyExpanded: false,
-  }
-
-  componentDidUpdate = (prevProps) => {
-    if (
-      !prevProps.activeNotificationData &&
-      this.props.activeNotificationData
-    ) {
-      const queryResponse = {
-        data: this.props.activeNotificationData,
-      }
-      const displayType =
-        this.props.autoChartAggregations &&
-        this.state.supportedDisplayTypes.includes('column')
-          ? 'column'
-          : getDefaultDisplayType(
-              queryResponse,
-              this.props.autoChartAggregations
-            )
-      this.setState({ displayType })
-    }
   }
 
   getIsTriggered = (state) => {
@@ -142,10 +116,14 @@ export default class NotificationItem extends React.Component {
     dismissNotification({
       ...getAuthentication(this.props.authentication),
       notificationId: notification.id,
-    }).catch((error) => {
-      console.error(error)
-      this.props.onErrorCallback(error)
     })
+      .then(() => {
+        this.props.onDismissSuccessCallback()
+      })
+      .catch((error) => {
+        console.error(error)
+        this.props.onErrorCallback(error)
+      })
   }
 
   onDeleteClick = (e, notification) => {
@@ -185,9 +163,7 @@ export default class NotificationItem extends React.Component {
     const time = dayjs.unix(timestamp).format('h:mma')
     const day = dayjs.unix(timestamp).format('MM-DD-YY')
     const today = dayjs().format('MM-DD-YY')
-    const yesterday = dayjs()
-      .subtract(1, 'd')
-      .format('MM-DD-YY')
+    const yesterday = dayjs().subtract(1, 'd').format('MM-DD-YY')
 
     if (day === today) {
       return `Today at ${time}`
@@ -199,37 +175,30 @@ export default class NotificationItem extends React.Component {
     return `${dayjs.unix(timestamp).format('MMMM Do, YYYY')} at ${time}`
   }
 
-  renderAlertColorStrip = () => (
-    <div className="react-autoql-notification-alert-strip" />
-  )
+  renderAlertColorStrip = () => <div className='react-autoql-notification-alert-strip' />
 
   renderNotificationHeader = (notification) => {
     return (
       <div
-        className="react-autoql-notification-list-item-header"
+        className='react-autoql-notification-list-item-header'
         onClick={() => {
           this.onClick(notification)
         }}
       >
-        <div className="react-autoql-notification-display-name-container">
-          <div className="react-autoql-notification-display-name">
-            {notification.title}
-          </div>
-          <div className="react-autoql-notification-description">
-            {notification.message}
-          </div>
-          <div className="react-autoql-notification-timestamp">
-            <Icon type="calendar" />{' '}
-            {this.formatTimestamp(notification.created_at)}
+        <div className='react-autoql-notification-display-name-container'>
+          <div className='react-autoql-notification-display-name'>{notification.title}</div>
+          <div className='react-autoql-notification-description'>{notification.message}</div>
+          <div className='react-autoql-notification-timestamp'>
+            <Icon type='calendar' /> {this.formatTimestamp(notification.created_at)}
           </div>
         </div>
         {this.getIsTriggered(notification.state) ? (
-          <div className="react-autoql-notification-dismiss-btn">
+          <div className='react-autoql-notification-dismiss-btn'>
             <Icon
-              type="notification-off"
-              className="react-autoql-notification-dismiss-icon"
-              data-tip="Dismiss"
-              data-for="react-autoql-notification-tooltip"
+              type='notification-off'
+              className='react-autoql-notification-dismiss-icon'
+              data-tip='Dismiss'
+              data-for='react-autoql-notification-tooltip'
               onClick={(e) => {
                 this.onDismissClick(e, notification)
                 ReactTooltip.hide()
@@ -237,12 +206,12 @@ export default class NotificationItem extends React.Component {
             />
           </div>
         ) : (
-          <div className="react-autoql-notification-dismiss-btn">
+          <div className='react-autoql-notification-dismiss-btn'>
             <Icon
-              type="close"
-              className="react-autoql-notification-delete-icon"
-              data-tip="Delete"
-              data-for="react-autoql-notification-tooltip"
+              type='close'
+              className='react-autoql-notification-delete-icon'
+              data-tip='Delete'
+              data-for='react-autoql-notification-tooltip'
               onClick={(e) => {
                 this.onDeleteClick(e, notification)
                 ReactTooltip.hide()
@@ -262,21 +231,15 @@ export default class NotificationItem extends React.Component {
 
     if (status === 'ACTIVE' || status === 'WAITING') {
       return (
-        <Button
-          onClick={() => this.changeRuleStatus(notification, 'INACTIVE')}
-          type="default"
-        >
-          <Icon type="notification-off" /> Turn Data Alert Off
+        <Button onClick={() => this.changeRuleStatus(notification, 'INACTIVE')} type='default'>
+          <Icon type='notification-off' /> Turn Data Alert Off
         </Button>
       )
     }
 
     return (
-      <Button
-        onClick={() => this.changeRuleStatus(notification, 'ACTIVE')}
-        type="default"
-      >
-        <Icon type="notification" /> Turn Data Alert On
+      <Button onClick={() => this.changeRuleStatus(notification, 'ACTIVE')} type='default'>
+        <Icon type='notification' /> Turn Data Alert On
       </Button>
     )
   }
@@ -285,19 +248,12 @@ export default class NotificationItem extends React.Component {
     if (!this.state.ruleDetails || this.state.ruleDetails.type === 'PROJECT') {
       return <div />
     } else if (_isEmpty(this.state.ruleDetails)) {
-      return (
-        <div className="notification-deleted-text">
-          This Data Alert no longer exists.
-        </div>
-      )
+      return <div className='notification-deleted-text'>This Data Alert no longer exists.</div>
     }
 
     return (
-      <Button
-        onClick={() => this.props.onEditClick(this.state.ruleDetails)}
-        type="default"
-      >
-        <Icon type="edit" /> Edit Data Alert
+      <Button onClick={() => this.props.onEditClick(this.state.ruleDetails)} type='default'>
+        <Icon type='edit' /> Edit Data Alert
       </Button>
     )
   }
@@ -305,7 +261,7 @@ export default class NotificationItem extends React.Component {
   renderNotificationFooter = (notification) => {
     return (
       <div
-        className="react-autoql-notification-extra-content"
+        className='react-autoql-notification-extra-content'
         style={{ display: 'flex', justifyContent: 'space-between' }}
       >
         {this.renderTurnOnNotificationIcon(notification)}
@@ -327,68 +283,41 @@ export default class NotificationItem extends React.Component {
     }
 
     return (
-      <div
-        className={`react-autoql-notification-expanded-content ${
-          notification.expanded ? ' visible' : ''
-        }`}
-      >
-        <div className="react-autoql-notification-details-container">
-          <div
-            className="react-autoql-notification-data-container"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="react-autoql-notificaton-chart-container">
+      <div className={`react-autoql-notification-expanded-content ${notification.expanded ? ' visible' : ''}`}>
+        <div className='react-autoql-notification-details-container'>
+          <div className='react-autoql-notification-data-container' onClick={(e) => e.stopPropagation()}>
+            <div className='react-autoql-notificaton-chart-container'>
               {this.props.activeNotificationData && notification.expanded ? (
                 <Fragment>
-                  <div className="react-autoql-notification-query-title">
-                    {queryTitleCapitalized}
-                  </div>
+                  <div className='react-autoql-notification-query-title'>{queryTitleCapitalized}</div>
                   <QueryOutput
+                    style={{ flex: '1' }}
                     authentication={this.props.authentication}
                     ref={(r) => (this.OUTPUT_REF = r)}
+                    key={queryResponse?.data?.data?.query_id}
                     queryResponse={queryResponse}
                     autoQLConfig={{ enableDrilldowns: false }}
-                    themeConfig={this.props.themeConfig}
-                    displayType={this.state.displayType}
                     autoChartAggregations={this.props.autoChartAggregations}
-                    style={{ flex: '1' }}
                     enableAjaxTableData={this.props.enableAjaxTableData}
-                    onSupportedDisplayTypesChange={(supportedDisplayTypes) =>
-                      this.setState({ supportedDisplayTypes })
-                    }
-                    onRecommendedDisplayType={(displayType) =>
-                      this.setState({ displayType })
-                    }
                   />
                 </Fragment>
               ) : (
-                <div className="loading-container-centered">
+                <div className='loading-container-centered'>
                   <LoadingDots />
                 </div>
               )}
             </div>
-            {_get(this.state.supportedDisplayTypes, 'length') > 1 && (
-              <div className="react-autoql-notification-viz-switcher">
-                <VizToolbar
-                  themeConfig={this.props.themeConfig}
-                  supportedDisplayTypes={this.state.supportedDisplayTypes}
-                  displayType={this.state.displayType}
-                  onDisplayTypeChange={(displayType) =>
-                    this.setState({ displayType })
-                  }
-                  vertical
-                />
+            {this.OUTPUT_REF?.supportedDisplayTypes?.length > 1 && (
+              <div className='react-autoql-notification-viz-switcher'>
+                <VizToolbar ref={(r) => (this.vizToolbarRef = r)} responseRef={this.OUTPUT_REF} vertical />
               </div>
             )}
           </div>
           {this.props.showNotificationDetails && notification.expanded && (
-            <div className="react-autoql-notification-details">
-              <div className="react-autoql-notification-details-title">
-                Conditions:
-              </div>
+            <div className='react-autoql-notification-details'>
+              <div className='react-autoql-notification-details-title'>Conditions:</div>
               <ExpressionBuilderSimple
                 authentication={getAuthentication(this.props.authentication)}
-                themeConfig={this.props.themeConfig}
                 key={`expression-builder-${this.COMPONENT_KEY}`}
                 expression={_get(notification, 'expression')}
                 readOnly

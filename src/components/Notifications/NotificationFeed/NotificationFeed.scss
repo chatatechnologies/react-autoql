@@ -3,7 +3,7 @@
   padding-top: 100px;
   color: var(--react-autoql-text-color-primary);
   height: 100%;
-  background: var(--react-autoql-background-color-secondary);
+  background: var(--react-autoql-background-color-primary);
 }
 
 .empty-notifications-message {
@@ -31,16 +31,11 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--react-autoql-background-color-secondary);
+  background: var(--react-autoql-background-color-primary);
 
   .notification-feed-list {
     padding: 0 20px;
     padding-top: 0;
-  }
-
-  .loader {
-    text-align: center;
-    margin: 10px;
   }
 }
 

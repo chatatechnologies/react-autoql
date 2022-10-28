@@ -11,12 +11,8 @@ import { Icon } from '../../Icon'
 import { Button } from '../../Button'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import { authenticationType, themeConfigType } from '../../../props/types'
-import {
-  authenticationDefault,
-  themeConfigDefault,
-  getAuthentication,
-} from '../../../props/defaults'
+import { authenticationType } from '../../../props/types'
+import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 import { fetchAutocomplete } from '../../../js/queryService'
 import { capitalizeFirstChar } from '../../../js/Util'
 
@@ -38,8 +34,7 @@ const getInitialStateData = (initialData) => {
       input2Value,
       conditionSelectValue: initialData[0].condition,
       secondTermType: initialData[1].term_type,
-      isComplete:
-        !!_get(input1Value, 'length') && !!_get(input2Value, 'length'),
+      isComplete: !!_get(input1Value, 'length') && !!_get(input2Value, 'length'),
     }
   }
 
@@ -69,7 +64,6 @@ export default class RuleSimple extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
-    themeConfig: themeConfigType,
     ruleId: PropTypes.string,
     onUpdate: PropTypes.func,
     initialData: PropTypes.arrayOf(PropTypes.shape({})),
@@ -78,7 +72,6 @@ export default class RuleSimple extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
     ruleId: undefined,
     onUpdate: () => {},
     initialData: undefined,
@@ -155,9 +148,7 @@ export default class RuleSimple extends React.Component {
         id: this.TERM_ID_2,
         term_type: this.isNumerical(input2Value) ? 'constant' : 'query',
         condition: 'TERMINATOR',
-        term_value: this.isNumerical(input2Value)
-          ? parseNum(input2Value)
-          : input2Value,
+        term_value: this.isNumerical(input2Value) ? parseNum(input2Value) : input2Value,
       },
     ]
   }
@@ -175,17 +166,14 @@ export default class RuleSimple extends React.Component {
 
     // If just one word, strip everything but numbers
     const strippedSymbolsStr = parseNum(num)
-    return !Number.isNaN(Number(strippedSymbolsStr))
+    return !isNaN(Number(strippedSymbolsStr))
   }
 
   isComplete = () => {
     if (this.state.conditionSelectValue === 'EXISTS') {
       return !!this.state.input1Value
     } else {
-      return (
-        !!_get(this.state.input1Value, 'length') &&
-        !!_get(this.state.input2Value, 'length')
-      )
+      return !!_get(this.state.input1Value, 'length') && !!_get(this.state.input2Value, 'length')
     }
   }
 
@@ -194,10 +182,7 @@ export default class RuleSimple extends React.Component {
   }
 
   userSelectedSuggestionHandler = (userSelectedValueFromSuggestionBox) => {
-    if (
-      userSelectedValueFromSuggestionBox &&
-      userSelectedValueFromSuggestionBox.name
-    ) {
+    if (userSelectedValueFromSuggestionBox && userSelectedValueFromSuggestionBox.name) {
       this.userSelectedValue = userSelectedValueFromSuggestionBox.name
       this.userSelectedSuggestion = true
       this.setState({ inputValue: userSelectedValueFromSuggestionBox.name })
@@ -220,7 +205,7 @@ export default class RuleSimple extends React.Component {
 
           const sortingArray = []
           let suggestionsMatchArray = []
-          let autoCompleteArray = []
+          const autoCompleteArray = []
           suggestionsMatchArray = body.matches
           for (let i = 0; i < suggestionsMatchArray.length; i++) {
             sortingArray.push(suggestionsMatchArray[i])
@@ -275,20 +260,14 @@ export default class RuleSimple extends React.Component {
     return (
       <ErrorBoundary>
         <div>
-          <span className="read-only-rule-term">{`${capitalizeFirstChar(
-            this.state.input1Value
-          )}`}</span>
-          <span className="read-only-rule-term">{`${this.renderConditionOperator(
-            this.state.conditionSelectValue
+          <span className='read-only-rule-term'>{`${capitalizeFirstChar(this.state.input1Value)}`}</span>
+          <span className='read-only-rule-term'>{`${this.renderConditionOperator(
+            this.state.conditionSelectValue,
           )}`}</span>
           {this.state.conditionSelectValue !== 'EXISTS' && (
-            <span className="read-only-rule-term">
-              {capitalizeFirstChar(this.state.input2Value)}
-            </span>
+            <span className='read-only-rule-term'>{capitalizeFirstChar(this.state.input2Value)}</span>
           )}
-          {this.props.andOrValue && (
-            <span className="read-only-rule-term">{this.props.andOrValue}</span>
-          )}
+          {this.props.andOrValue && <span className='read-only-rule-term'>{this.props.andOrValue}</span>}
         </div>
       </ErrorBoundary>
     )
@@ -296,9 +275,8 @@ export default class RuleSimple extends React.Component {
 
   renderValidationError = () => {
     return (
-      <div className="expression-term-validation-error">
-        <Icon type="warning-triangle" /> That query is invalid. Try entering a
-        different query.
+      <div className='expression-term-validation-error'>
+        <Icon type='warning-triangle' /> That query is invalid. Try entering a different query.
       </div>
     )
   }
@@ -321,7 +299,6 @@ export default class RuleSimple extends React.Component {
   renderConditionSelector = () => {
     return (
       <Select
-        themeConfig={this.props.themeConfig}
         options={[
           { value: 'GREATER_THAN', label: '>', tooltip: 'Greater Than' },
           { value: 'LESS_THAN', label: '<', tooltip: 'Less Than' },
@@ -333,7 +310,7 @@ export default class RuleSimple extends React.Component {
           },
         ]}
         value={this.state.conditionSelectValue}
-        className="react-autoql-rule-condition-select"
+        className='react-autoql-rule-condition-select'
         onChange={(value) => {
           this.setState({ conditionSelectValue: value })
         }}
@@ -345,14 +322,11 @@ export default class RuleSimple extends React.Component {
   renderRule = () => {
     return (
       <ErrorBoundary>
-        <div
-          className="react-autoql-notification-rule-container"
-          data-test="rule"
-        >
-          <div className="react-autoql-rule-first-input-container">
-            <div className="react-autoql-rule-input">
+        <div className='react-autoql-notification-rule-container' data-test='rule'>
+          <div className='react-autoql-rule-first-input-container'>
+            <div className='react-autoql-rule-input'>
               <Input
-                placeholder="Type a query"
+                placeholder='Type a query'
                 value={this.state.input1Value}
                 onChange={(e) => this.setState({ input1Value: e.target.value })}
               />
@@ -366,17 +340,17 @@ export default class RuleSimple extends React.Component {
             }`}
           >
             {this.renderConditionSelector()}
-            <div className="react-autoql-rule-input">
+            <div className='react-autoql-rule-input'>
               <Input
-                placeholder="Type a query or number"
+                placeholder='Type a query or number'
                 value={this.state.input2Value}
                 onChange={(e) => this.setState({ input2Value: e.target.value })}
               />
               {!this.state.isSecondTermValid && this.renderValidationError()}
             </div>
             <Icon
-              className="react-autoql-delete-compare-btn"
-              type="close"
+              className='react-autoql-delete-compare-btn'
+              type='close'
               onClick={() => this.setState({ conditionSelectValue: 'EXISTS' })}
             />
           </div>

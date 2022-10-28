@@ -1,19 +1,20 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import InfiniteScroll from 'react-infinite-scroller'
 import ReactTooltip from 'react-tooltip'
 
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { fetchExploreQueries } from '../../js/queryService'
-import { CustomScrollbars } from '../CustomScrollbars'
+import { InfiniteScrollAutoQL } from '../InfiniteScroll'
+import { animateInputText } from '../../js/Util'
 import { LoadingDots } from '../LoadingDots'
+import { withTheme } from '../../theme'
 import { Spinner } from '../Spinner'
 import { Icon } from '../Icon'
 
 import './ExploreQueries.scss'
 
-export default class ExploreQueries extends React.Component {
+export class ExploreQueries extends React.Component {
   constructor(props) {
     super(props)
 
@@ -42,15 +43,30 @@ export default class ExploreQueries extends React.Component {
     inputPlaceholder: 'Search relevant queries by topic',
   }
 
+  componentDidMount = () => {
+    if (this.props.shouldRender) {
+      this.focusInput()
+    }
+  }
+
   componentDidUpdate = (prevProps) => {
     if (this.props.shouldRender && !prevProps.shouldRender) {
-      this.inputRef?.focus()
+      this.focusInput()
     }
+  }
+
+  componentWillUnmount = () => {
+    clearTimeout(this.animateTextDelay)
+    clearTimeout(this.animateTextTimeout)
+  }
+
+  focusInput = () => {
+    this.inputRef?.focus()
   }
 
   loadMore = (page, skipQueryValidation) => {
     if (this.state.loading) {
-      return
+      return Promise.resolve()
     }
 
     const newState = {
@@ -71,7 +87,7 @@ export default class ExploreQueries extends React.Component {
 
     this.setState(newState)
 
-    fetchExploreQueries({
+    return fetchExploreQueries({
       ...this.props.authentication,
       keywords: inputValue,
       pageSize: this.pageSize,
@@ -89,10 +105,7 @@ export default class ExploreQueries extends React.Component {
         } else {
           const currentPage = response?.data?.data?.pagination?.current_page
           const totalPages = response?.data?.data?.pagination?.total_pages
-          if (
-            currentPage >= totalPages ||
-            !response?.data?.data?.items?.length
-          ) {
+          if (currentPage >= totalPages || !response?.data?.data?.items?.length) {
             finishedState.hasMore = false
           }
 
@@ -107,10 +120,12 @@ export default class ExploreQueries extends React.Component {
         }
 
         this.setState(finishedState)
+        return Promise.resolve()
       })
       .catch((error) => {
         this.setState({ loading: false, initialLoading: false })
         console.error(error)
+        return Promise.reject()
       })
   }
 
@@ -126,27 +141,17 @@ export default class ExploreQueries extends React.Component {
 
   onValidationSuggestionClick = (queryValidationObj) => {
     const keywords = queryValidationObj.query
-    this.animateQITextAndSubmit(keywords)
+    this.animateQITextAndSubmit(keywords, true)
   }
 
-  animateQITextAndSubmit = (text) => {
-    if (typeof text === 'string' && text?.length) {
-      clearTimeout(this.animateTextTimeout)
-      for (let i = 1; i <= text.length; i++) {
-        this.animateTextTimeout = setTimeout(() => {
-          this.setState(
-            {
-              inputValue: text.slice(0, i),
-            },
-            () => {
-              if (i === text.length) {
-                this.loadMore(1)
-              }
-            }
-          )
-        }, i * 50)
-      }
-    }
+  animateQITextAndSubmit = (text, skipQueryValidation) => {
+    return animateInputText({
+      text,
+      inputRef: this.inputRef,
+      callback: () => {
+        this.setState({ inputValue: text }, () => this.loadMore(1, skipQueryValidation))
+      },
+    })
   }
 
   clearExploreQueries = () => {
@@ -158,27 +163,21 @@ export default class ExploreQueries extends React.Component {
         validationResponse: undefined,
       },
       () => {
-        this.inputRef?.focus()
-      }
+        this.focusInput()
+      },
     )
   }
 
   renderIntroMessage = () => {
     return (
-      <div className="query-tips-result-placeholder">
+      <div className='query-tips-result-placeholder'>
         <h2>Welcome to Explore Queries</h2>
         {this.props.introMessage ? (
           <p>{this.props.introMessage}</p>
         ) : (
           <>
-            <p>
-              Discover what you can ask by entering a topic in the search bar
-              above.
-            </p>
-            <p>
-              Simply click on any of the returned options to run the query in
-              Data Messenger.
-            </p>
+            <p>Discover what you can ask by entering a topic in the search bar above.</p>
+            <p>Simply click on any of the returned options to run the query in Data Messenger.</p>
           </>
         )}
       </div>
@@ -188,7 +187,7 @@ export default class ExploreQueries extends React.Component {
   renderQueryList = () => {
     if (this.state.initialLoading) {
       return (
-        <div className="query-tips-result-placeholder">
+        <div className='query-tips-result-placeholder'>
           <LoadingDots />
         </div>
       )
@@ -196,13 +195,13 @@ export default class ExploreQueries extends React.Component {
 
     if (this.state.validationResponse) {
       return (
-        <div className="query-tips-result-placeholder">
+        <div className='query-tips-result-placeholder'>
           <QueryValidationMessage
             response={this.state.validationResponse}
             onSuggestionClick={this.onValidationSuggestionClick}
             autoSelectSuggestion={true}
-            submitText="Search"
-            submitIcon="search"
+            submitText='Search'
+            submitIcon='search'
           />
         </div>
       )
@@ -214,46 +213,41 @@ export default class ExploreQueries extends React.Component {
 
     if (this.state.queryList?.length === 0) {
       return (
-        <div className="query-tips-result-placeholder">
+        <div className='query-tips-result-placeholder'>
           <p>
-            Sorry, I couldn’t find any queries matching your input. Try entering
-            a different topic or keyword instead.
+            Sorry, I couldn’t find any queries matching your input. Try entering a different topic or keyword instead.
           </p>
         </div>
       )
     }
 
     return (
-      <CustomScrollbars>
-        <InfiniteScroll
-          pageStart={1}
-          loadMore={this.loadMore}
-          hasMore={this.state.hasMore}
-          useWindow={false}
-          initialLoad={false}
-          threshold={100}
-          loader={
-            <div className="loader" key={0}>
-              <Spinner
-                style={{ width: '19px', height: '20px', color: '#999' }}
-              />
+      <InfiniteScrollAutoQL
+        pageStart={1}
+        loadMore={this.loadMore}
+        hasMore={this.state.hasMore}
+        useWindow={false}
+        initialLoad={false}
+        threshold={100}
+        loader={
+          <div className='react-autoql-spinner-centered' key={0}>
+            <Spinner style={{ width: '19px', height: '20px', color: '#999' }} />
+          </div>
+        }
+      >
+        {this.state.queryList.map((query, i) => {
+          return (
+            <div
+              className='query-tip-item animated-item'
+              onClick={() => this.props.executeQuery(query)}
+              key={`query-tip-${i}`}
+              style={{ display: 'block' }}
+            >
+              {query}
             </div>
-          }
-        >
-          {this.state.queryList.map((query, i) => {
-            return (
-              <div
-                className="query-tip-item animated-item"
-                onClick={() => this.props.executeQuery(query)}
-                key={`query-tip-${i}`}
-                style={{ display: 'block' }}
-              >
-                {query}
-              </div>
-            )
-          })}
-        </InfiniteScroll>
-      </CustomScrollbars>
+          )
+        })}
+      </InfiniteScrollAutoQL>
     )
   }
 
@@ -266,25 +260,24 @@ export default class ExploreQueries extends React.Component {
       <ErrorBoundary>
         <div
           ref={(r) => (this.exploreQueriesPage = r)}
-          className="query-tips-page-container"
-          data-test="query-tips-tab"
+          className='query-tips-page-container'
+          data-test='query-tips-tab'
         >
-          <div
-            className="react-autoql-chatbar-input-container"
-            style={{ animation: 'slideDown 0.5s ease' }}
-          >
+          <div className='react-autoql-chatbar-input-container' style={{ animation: 'slideDown 0.5s ease' }}>
             <input
-              className="react-autoql-chatbar-input left-padding right-padding"
+              className='react-autoql-chatbar-input left-padding right-padding'
               placeholder={this.props.inputPlaceholder}
               value={this.state.inputValue}
               onChange={this.onInputChange}
               onKeyPress={this.onKeyPress}
+              spellCheck={false}
               ref={(ref) => (this.inputRef = ref)}
+              data-test='explore-queries-input-bar'
               autoFocus
             />
-            <div className="chat-bar-input-icon">
+            <div className='chat-bar-input-icon'>
               <Icon
-                type="search"
+                type='search'
                 style={{
                   width: '19px',
                   height: '20px',
@@ -293,28 +286,19 @@ export default class ExploreQueries extends React.Component {
               />
             </div>
             <div
-              className={`chat-bar-clear-btn ${
-                this.state.queryList?.length || this.state.inputValue
-                  ? 'visible'
-                  : ''
-              }`}
-              data-for="explore-queries-tooltips"
-              data-tip="Clear Search"
+              className={`chat-bar-clear-btn ${this.state.queryList?.length || this.state.inputValue ? 'visible' : ''}`}
+              data-for='explore-queries-tooltips'
+              data-tip='Clear Search'
             >
-              <Icon type="close" onClick={this.clearExploreQueries} />
+              <Icon type='close' onClick={this.clearExploreQueries} />
             </div>
           </div>
-          <div className="query-tips-result-container">
-            {this.renderQueryList()}
-          </div>
+          <div className='query-tips-result-container'>{this.renderQueryList()}</div>
         </div>
-        <ReactTooltip
-          className="react-autoql-tooltip"
-          id="explore-queries-tooltips"
-          delayShow={800}
-          effect="solid"
-        />
+        <ReactTooltip className='react-autoql-tooltip' id='explore-queries-tooltips' delayShow={800} effect='solid' />
       </ErrorBoundary>
     )
   }
 }
+
+export default withTheme(ExploreQueries)

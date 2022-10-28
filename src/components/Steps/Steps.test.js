@@ -3,6 +3,7 @@ import { shallow, render, mount, html } from 'enzyme'
 
 import { findByTestAttr, ignoreConsoleErrors } from '../../../test/testUtils'
 import Steps from './Steps'
+import { currentEventLoopEnd } from '../../js/Util'
 
 const defaultProps = {
   steps: [{}, {}],
@@ -41,8 +42,10 @@ describe('renders correctly', () => {
   })
 
   test('does not use activeStep prop if its invalid', () => {
-    ignoreConsoleErrors(() => {
+    ignoreConsoleErrors(async () => {
       const wrapper = setup({ initialActiveStep: 'invalidStep' })
+      wrapper.update()
+      await currentEventLoopEnd()
       expect(wrapper.state(['activeStep'])).toBe(0)
     })
   })
@@ -53,61 +56,49 @@ describe('renders correctly', () => {
   })
 
   test('increments step when nextStep is called', () => {
-    const wrapper = setup()
+    const wrapper = setup({ steps: [{ complete: true }] })
     wrapper.instance().nextStep()
     expect(wrapper.state(['activeStep'])).toBe(1)
   })
 
+  test('Do no increment step when nextStep is called and current step is not complete', () => {
+    const wrapper = setup({ steps: [{ complete: false }] })
+    wrapper.instance().nextStep()
+    expect(wrapper.state(['activeStep'])).toBe(0)
+  })
+
   test('changes active step when title is clicked', () => {
-    const wrapper = setup()
-    const secondStepTitleElement = findByTestAttr(
-      wrapper,
-      'react-autoql-step-title-1'
-    )
+    const wrapper = setup({ steps: [{ complete: true }, { complete: true }] })
+    const secondStepTitleElement = findByTestAttr(wrapper, 'react-autoql-step-title-1')
     secondStepTitleElement.simulate('click')
     expect(wrapper.state(['activeStep'])).toBe(1)
   })
 
   test('onStepClick prop is called when step is clicked', () => {
     const onClick = jest.fn()
-    const wrapper = setup({ steps: [{ onClick }, { onClick }] })
-    const secondStepTitleElement = findByTestAttr(
-      wrapper,
-      'react-autoql-step-title-1'
-    )
+    const wrapper = setup({ steps: [{ complete: true, onClick }, { complete: true, onClick }] })
+    const secondStepTitleElement = findByTestAttr(wrapper, 'react-autoql-step-title-1')
     secondStepTitleElement.simulate('click')
     expect(onClick).toHaveBeenCalled()
   })
 
   test('first step content is visible by default when collapsible is true', () => {
     const wrapper = setup({ collapsible: true })
-    const stepContainer = findByTestAttr(
-      wrapper,
-      'react-autoql-step-container-0'
-    )
+    const stepContainer = findByTestAttr(wrapper, 'react-autoql-step-container-0')
     expect(stepContainer.hasClass('active')).toBe(true)
   })
 
   test('first step content does not have active class if collapsible is false', () => {
     const wrapper = setup({ collapsible: false })
-    const stepContainer = findByTestAttr(
-      wrapper,
-      'react-autoql-step-container-0'
-    )
+    const stepContainer = findByTestAttr(wrapper, 'react-autoql-step-container-0')
     expect(stepContainer.hasClass('active')).toBe(false)
   })
 
   test('collapses on click when prop is set to true', () => {
-    const wrapper = setup({ collapsible: true })
-    const secondStepTitleElement = findByTestAttr(
-      wrapper,
-      'react-autoql-step-title-1'
-    )
+    const wrapper = setup({ collapsible: true, steps: [{ complete: true }, { complete: true }] })
+    const secondStepTitleElement = findByTestAttr(wrapper, 'react-autoql-step-title-1')
     secondStepTitleElement.simulate('click')
-    const stepContainer = findByTestAttr(
-      wrapper,
-      'react-autoql-step-container-0'
-    )
+    const stepContainer = findByTestAttr(wrapper, 'react-autoql-step-container-0')
     expect(stepContainer.hasClass('active')).toBe(false)
   })
 })

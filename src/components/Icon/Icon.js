@@ -13,8 +13,15 @@ import { AiOutlineEdit } from '@react-icons/all-files/ai/AiOutlineEdit'
 import { AiOutlineFileText } from '@react-icons/all-files/ai/AiOutlineFileText'
 import { AiOutlineMenu } from '@react-icons/all-files/ai/AiOutlineMenu'
 import { AiOutlineQuestionCircle } from '@react-icons/all-files/ai/AiOutlineQuestionCircle'
+import { AiOutlineTag } from '@react-icons/all-files/ai/AiOutlineTag'
+import { AiOutlineFileSearch } from '@react-icons/all-files/ai/AiOutlineFileSearch'
 
 import { BiLineChart } from '@react-icons/all-files/bi/BiLineChart'
+import { BiSearchAlt } from '@react-icons/all-files/bi/BiSearchAlt'
+import { BiBookmark } from '@react-icons/all-files/bi/BiBookmark'
+import { BiBook } from '@react-icons/all-files/bi/BiBook'
+import { BiNote } from '@react-icons/all-files/bi/BiNote'
+import { BiAbacus } from '@react-icons/all-files/bi/BiAbacus'
 
 import { BsArrowBarDown } from '@react-icons/all-files/bs/BsArrowBarDown'
 import { BsArrowBarUp } from '@react-icons/all-files/bs/BsArrowBarUp'
@@ -56,8 +63,7 @@ import { MdInfoOutline } from '@react-icons/all-files/md/MdInfoOutline'
 import { MdLock } from '@react-icons/all-files/md/MdLock'
 import { MdLockOpen } from '@react-icons/all-files/md/MdLockOpen'
 import { MdPlayCircleOutline } from '@react-icons/all-files/md/MdPlayCircleOutline'
-
-import { TiSortNumerically } from '@react-icons/all-files/ti/TiSortNumerically'
+import { MdAttachMoney } from '@react-icons/all-files/md/MdAttachMoney'
 
 import {
   bubblesIcon,
@@ -79,14 +85,11 @@ import {
   gradCapIcon,
 } from '../../svgIcons.js'
 
-import slackLogo from '../../images/slack-logo.png'
-import teamsLogo from '../../images/ms-teams-logo.png'
-
 import './Icon.scss'
 
 export default class Icon extends React.Component {
   static propTypes = {
-    type: PropTypes.string.isRequired,
+    type: PropTypes.string,
     size: PropTypes.number, // used for the image icons ie. react-autoql-bubbles
     showBadge: PropTypes.bool,
     color: PropTypes.string,
@@ -103,16 +106,14 @@ export default class Icon extends React.Component {
   }
 
   render = () => {
-    const {
-      type,
-      size,
-      showBadge,
-      warning,
-      danger,
-      ...nativeProps
-    } = this.props
+    const { type, size, showBadge, warning, danger, ...nativeProps } = this.props
 
     let icon = null
+
+    if (!this.props.type) {
+      return null
+    }
+
     switch (this.props.type) {
       case 'back': {
         icon = <FiArrowLeft />
@@ -120,6 +121,14 @@ export default class Icon extends React.Component {
       }
       case 'bar-chart': {
         icon = barChartIcon
+        break
+      }
+      case 'book': {
+        icon = <BiBook />
+        break
+      }
+      case 'bookmark': {
+        icon = <BiBookmark />
         break
       }
       case 'stacked-bar-chart': {
@@ -182,7 +191,10 @@ export default class Icon extends React.Component {
         icon = <FiMinimize />
         break
       }
-
+      case 'money': {
+        icon = <MdAttachMoney />
+        break
+      }
       case 'close-circle': {
         icon = <IoIosCloseCircleOutline />
         break
@@ -271,18 +283,6 @@ export default class Icon extends React.Component {
         icon = stackedLineIcon
         break
       }
-      case 'teams': {
-        icon = (
-          <img
-            className="slack-logo"
-            src={teamsLogo}
-            alt="Slack"
-            style={{ ...this.props.style, height: '1em', width: '1em' }}
-            draggable="false"
-          />
-        )
-        break
-      }
       case 'menu': {
         icon = <AiOutlineMenu />
         break
@@ -299,6 +299,10 @@ export default class Icon extends React.Component {
         icon = <FiMoreHorizontal />
         break
       }
+      case 'note': {
+        icon = <BiNote />
+        break
+      }
       case 'notification': {
         icon = <FiBell />
         break
@@ -311,8 +315,8 @@ export default class Icon extends React.Component {
         icon = <FiPauseCircle />
         break
       }
-      case 'numbers': {
-        icon = <TiSortNumerically />
+      case 'abacus': {
+        icon = <BiAbacus />
         break
       }
       case 'pie-chart': {
@@ -331,6 +335,10 @@ export default class Icon extends React.Component {
         icon = <FiPlus />
         break
       }
+      case 'preview': {
+        icon = <AiOutlineFileSearch />
+        break
+      }
       case 'question': {
         icon = <AiOutlineQuestionCircle />
         break
@@ -347,24 +355,16 @@ export default class Icon extends React.Component {
         icon = <IoIosSearch />
         break
       }
+      case 'data-search': {
+        icon = <BiSearchAlt />
+        break
+      }
       case 'send': {
         icon = <FiSend />
         break
       }
       case 'settings': {
         icon = <FiSettings />
-        break
-      }
-      case 'slack': {
-        icon = (
-          <img
-            className="slack-logo"
-            src={slackLogo}
-            alt="Slack"
-            style={{ ...this.props.style, height: '1em', width: '1em' }}
-            draggable="false"
-          />
-        )
         break
       }
       case 'split-view': {
@@ -377,6 +377,10 @@ export default class Icon extends React.Component {
       }
       case 'table': {
         icon = tableIcon
+        break
+      }
+      case 'tag': {
+        icon = <AiOutlineTag />
         break
       }
       case 'title': {
@@ -408,7 +412,7 @@ export default class Icon extends React.Component {
       <ErrorBoundary>
         <span
           {...nativeProps}
-          data-test="react-autoql-icon"
+          data-test='react-autoql-icon'
           className={`react-autoql-icon
             ${this.props.className || ''}
             ${this.props.type}
@@ -421,7 +425,7 @@ export default class Icon extends React.Component {
           }}
         >
           {icon}
-          {this.props.showBadge && <div className="react-autoql-badge" />}
+          {this.props.showBadge && <div className='react-autoql-badge' />}
         </span>
       </ErrorBoundary>
     )

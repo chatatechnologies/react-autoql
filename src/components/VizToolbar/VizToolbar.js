@@ -1,34 +1,51 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
+import ReactTooltip from 'react-tooltip'
+import { v4 as uuid } from 'uuid'
 
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-
-import { themeConfigType } from '../../props/types'
-import { themeConfigDefault } from '../../props/defaults'
+import { Icon } from '../Icon'
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './VizToolbar.scss'
 
-import { Icon } from '../Icon'
-
 class VizToolbar extends React.Component {
-  static propTypes = {
-    themeConfig: themeConfigType,
+  COMPONENT_KEY = uuid()
 
-    supportedDisplayTypes: PropTypes.arrayOf(PropTypes.string).isRequired,
-    onDisplayTypeChange: PropTypes.func.isRequired,
-    displayType: PropTypes.string,
+  static propTypes = {
+    onDisplayTypeChange: PropTypes.func,
+    shouldRender: PropTypes.bool,
     disableCharts: PropTypes.bool,
     vertical: PropTypes.bool,
   }
 
   static defaultProps = {
-    themeConfig: themeConfigDefault,
-
-    displayType: undefined,
+    onDisplayTypeChange: () => {},
+    shouldRender: true,
     disableCharts: false,
     vertical: false,
+  }
+
+  componentDidMount = () => {
+    this._isMounted = true
+    this.rebuildTooltips()
+  }
+
+  componentDidUpdate = () => {
+    this.rebuildTooltips()
+  }
+
+  componentWillUnmount = () => {
+    this._isMounted = false
+  }
+
+  rebuildTooltips = () => {
+    if (this.props.rebuildTooltips) {
+      this.props.rebuildTooltips()
+    } else {
+      ReactTooltip.rebuild()
+    }
   }
 
   showDisplayTypeButton = (displayType) => {
@@ -36,22 +53,35 @@ class VizToolbar extends React.Component {
       return false
     }
 
-    return (
-      this.props.supportedDisplayTypes &&
-      this.props.supportedDisplayTypes.includes(displayType) &&
-      this.props.displayType !== displayType
-    )
+    const supportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
+    return supportedDisplayTypes && supportedDisplayTypes.includes(displayType)
+  }
+
+  onDisplayTypeChange = (displayType) => {
+    if (this.props.responseRef?._isMounted) {
+      this.props.responseRef?.changeDisplayType(displayType)
+    }
+  }
+
+  getCurrentDisplayType = () => {
+    return this.props.responseRef?.state?.displayType
+  }
+
+  getCurrentSupportedDisplayTypes = () => {
+    return this.props.responseRef?.state?.supportedDisplayTypes
   }
 
   createVisButton = (displayType, name, icon) => {
     if (this.showDisplayTypeButton(displayType)) {
+      const selectedDisplayType = this.getCurrentDisplayType()
+
       return (
         <button
-          onClick={() => this.props.onDisplayTypeChange(displayType)}
-          className="react-autoql-toolbar-btn"
+          onClick={() => this.onDisplayTypeChange(displayType)}
+          className={`react-autoql-toolbar-btn ${displayType === selectedDisplayType ? 'selected' : ''}`}
           data-tip={name}
-          data-for="react-autoql-toolbar-btn-tooltip"
-          data-test="viz-toolbar-button"
+          data-for={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
+          data-test='viz-toolbar-button'
         >
           {icon}
         </button>
@@ -62,81 +92,45 @@ class VizToolbar extends React.Component {
   }
 
   render = () => {
-    const { displayType, supportedDisplayTypes } = this.props
+    const displayType = this.getCurrentDisplayType()
+    const supportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
 
     if (
+      !this.props.shouldRender ||
       !supportedDisplayTypes ||
       supportedDisplayTypes.length <= 1 ||
-      (!supportedDisplayTypes.includes('pivot_table') &&
-        this.props.disableCharts)
+      (!supportedDisplayTypes.includes('pivot_table') && this.props.disableCharts)
     ) {
       return null
     }
 
-    if (
-      TABLE_TYPES.includes(displayType) ||
-      CHART_TYPES.includes(displayType)
-    ) {
+    if (TABLE_TYPES.includes(displayType) || CHART_TYPES.includes(displayType)) {
       return (
         <ErrorBoundary>
           <div
-            className={`${this.props.className || ''} viz-toolbar ${
+            className={`${this.props.className || ''} react-autoql-toolbar viz-toolbar ${
               this.props.vertical ? 'vertical' : ''
             }`}
-            data-test="viz-toolbar"
+            data-test='viz-toolbar'
           >
-            {this.createVisButton('table', 'Table', <Icon type="table" />)}
-            {this.createVisButton(
-              'pivot_table',
-              'Pivot Table',
-              <Icon type="pivot-table" />
-            )}
-            {this.createVisButton(
-              'column',
-              'Column Chart',
-              <Icon type="column-chart" />
-            )}
-            {this.createVisButton(
-              'bar',
-              'Bar Chart',
-              <Icon type="bar-chart" />
-            )}
-            {this.createVisButton(
-              'line',
-              'Line Chart',
-              <Icon type="line-chart" />
-            )}
-            {this.createVisButton(
-              'pie',
-              'Pie Chart',
-              <Icon type="pie-chart" />
-            )}
-            {this.createVisButton(
-              'heatmap',
-              'Heatmap',
-              <Icon type="heatmap" />
-            )}
-            {this.createVisButton(
-              'bubble',
-              'Bubble Chart',
-              <Icon type="bubble-chart" />
-            )}
-            {this.createVisButton(
-              'stacked_bar',
-              'Stacked Bar Chart',
-              <Icon type="stacked-bar-chart" />
-            )}
-            {this.createVisButton(
-              'stacked_column',
-              'Stacked Column Chart',
-              <Icon type="stacked-column-chart" />
-            )}
-            {this.createVisButton(
-              'stacked_line',
-              'Stacked Area Chart',
-              <Icon type="stacked-line-chart" />
-            )}
+            {this.createVisButton('table', 'Table', <Icon type='table' />)}
+            {this.createVisButton('pivot_table', 'Pivot View', <Icon type='pivot-table' />)}
+            {this.createVisButton('column', 'Column Chart', <Icon type='column-chart' />)}
+            {this.createVisButton('bar', 'Bar Chart', <Icon type='bar-chart' />)}
+            {this.createVisButton('line', 'Line Chart', <Icon type='line-chart' />)}
+            {this.createVisButton('pie', 'Pie Chart', <Icon type='pie-chart' />)}
+            {this.createVisButton('heatmap', 'Heatmap', <Icon type='heatmap' />)}
+            {this.createVisButton('bubble', 'Bubble Chart', <Icon type='bubble-chart' />)}
+            {this.createVisButton('stacked_bar', 'Stacked Bar Chart', <Icon type='stacked-bar-chart' />)}
+            {this.createVisButton('stacked_column', 'Stacked Column Chart', <Icon type='stacked-column-chart' />)}
+            {this.createVisButton('stacked_line', 'Stacked Area Chart', <Icon type='stacked-line-chart' />)}
           </div>
+          <ReactTooltip
+            className='react-autoql-tooltip'
+            id={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
+            effect='solid'
+            delayShow={800}
+          />
         </ErrorBoundary>
       )
     }

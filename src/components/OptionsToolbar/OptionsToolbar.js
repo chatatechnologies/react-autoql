@@ -1,47 +1,24 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import Popover from 'react-tiny-popover'
+import { Popover } from 'react-tiny-popover'
 import { v4 as uuid } from 'uuid'
-import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import ReactTooltip from 'react-tooltip'
 import { format } from 'sql-formatter'
 import { Icon } from '../Icon'
 import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import { DataAlertModal } from '../Notifications'
-import { QueryOutput } from '../QueryOutput'
 import { Modal } from '../Modal'
-import { SendToSlackModal } from '../SendToSlackModal'
-import { SendToTeamsModal } from '../SendToTeamsModal'
 import { Button } from '../Button'
 import ReportProblemModal from './ReportProblemModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import {
-  setColumnVisibility,
-  reportProblem,
-  exportCSV,
-} from '../../js/queryService'
+import { setColumnVisibility, exportCSV } from '../../js/queryService'
 
-import {
-  isTableType,
-  areAllColumnsHidden,
-  areSomeColumnsHidden,
-  isChartType,
-} from '../../js/Util'
+import { isTableType, areAllColumnsHidden, areSomeColumnsHidden, isChartType } from '../../js/Util'
 
-import {
-  autoQLConfigType,
-  authenticationType,
-  themeConfigType,
-} from '../../props/types'
-import {
-  autoQLConfigDefault,
-  authenticationDefault,
-  themeConfigDefault,
-  getAuthentication,
-  getAutoQLConfig,
-} from '../../props/defaults'
+import { autoQLConfigType, authenticationType } from '../../props/types'
+import { autoQLConfigDefault, authenticationDefault, getAuthentication, getAutoQLConfig } from '../../props/defaults'
 
 import './OptionsToolbar.scss'
 
@@ -51,15 +28,13 @@ export default class OptionsToolbar extends React.Component {
   static propTypes = {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
-    themeConfig: themeConfigType,
 
-    responseRef: PropTypes.instanceOf(QueryOutput),
     enableDeleteBtn: PropTypes.bool,
+    shouldRender: PropTypes.bool,
     onSuccessAlert: PropTypes.func,
     onErrorCallback: PropTypes.func,
     onNewNotificationCallback: PropTypes.func,
     deleteMessageCallback: PropTypes.func,
-    onFilterClick: PropTypes.func,
     onCSVDownloadStart: PropTypes.func,
     onCSVDownloadFinish: PropTypes.func,
     onCSVDownloadProgress: PropTypes.func,
@@ -69,15 +44,13 @@ export default class OptionsToolbar extends React.Component {
   static defaultProps = {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
-    themeConfig: themeConfigDefault,
 
-    responseRef: undefined,
     enableDeleteBtn: false,
+    shouldRender: true,
     onSuccessAlert: () => {},
     onErrorCallback: () => {},
     onNewNotificationCallback: () => {},
     deleteMessageCallback: () => {},
-    onFilterClick: () => {},
     onColumnVisibilitySave: () => {},
     onCSVDownloadStart: () => {},
     onCSVDownloadFinish: () => {},
@@ -100,6 +73,9 @@ export default class OptionsToolbar extends React.Component {
     if (prevState.activeMenu === 'sql' && this.state.activeMenu !== 'sql') {
       this.setState({ sqlCopySuccess: false })
     }
+    if (prevProps.displayType !== this.props.displayType) {
+      this.setState({ activeMenu: undefined })
+    }
     this.rebuildTooltips()
   }
 
@@ -118,18 +94,13 @@ export default class OptionsToolbar extends React.Component {
   }
 
   onTableFilter = (newTableData) => {
-    const displayType = _get(this.props.responseRef, 'props.displayType')
+    const displayType = this.props.responseRef?.state?.displayType
     if (displayType === 'table') {
       // this shouldn't be affected when editing a pivot table
       this.setState({
-        disableChartingOptions: _get(newTableData, 'length') < 2,
+        disableChartingOptions: newTableData?.length < 2,
       })
     }
-  }
-
-  toggleTableFilter = () => {
-    this.filtering = !this.filtering
-    this.props.onFilterClick({ isFilteringTable: this.filtering })
   }
 
   setTemporaryState = (key, value, duration) => {
@@ -141,7 +112,7 @@ export default class OptionsToolbar extends React.Component {
 
   copyTableToClipboard = () => {
     if (this.props.responseRef) {
-      this.props.responseRef.copyTableToClipboard()
+      this.props.responseRef?.copyTableToClipboard()
       this.props.onSuccessAlert('Successfully copied table to clipboard!')
       this.setTemporaryState('copiedTable', true, 1000)
       ReactTooltip.hide()
@@ -174,10 +145,7 @@ export default class OptionsToolbar extends React.Component {
         link.click()
 
         const exportLimit = parseInt(response?.headers?.export_limit)
-        const limitReached =
-          response?.headers?.limit_reached?.toLowerCase() == 'true'
-            ? true
-            : false
+        const limitReached = response?.headers?.limit_reached?.toLowerCase() == 'true' ? true : false
 
         this.props.onCSVDownloadFinish({
           id: uniqueId,
@@ -193,12 +161,12 @@ export default class OptionsToolbar extends React.Component {
 
   onCSVMenuButtonClick = () => {
     this.setState({ activeMenu: undefined })
-    const displayType = _get(this.props.responseRef, 'props.displayType')
+    const displayType = this.props.responseRef?.state?.displayType
     const isPivotTable = displayType === 'pivot_table'
     const uniqueId = uuid()
 
     if (isPivotTable) {
-      if (_get(this.props, 'responseRef.pivotTableRef._isMounted')) {
+      if (this.props.responseRef?.pivotTableRef?._isMounted) {
         this.props.onCSVDownloadStart({ id: uniqueId })
         this.props.responseRef?.pivotTableRef
           ?.saveAsCSV(2000)
@@ -217,9 +185,7 @@ export default class OptionsToolbar extends React.Component {
   }
 
   saveChartAsPNG = () => {
-    if (this.props.responseRef) {
-      this.props.responseRef.saveChartAsPNG()
-    }
+    this.props.responseRef?.saveChartAsPNG()
   }
 
   deleteMessage = () => {
@@ -228,16 +194,14 @@ export default class OptionsToolbar extends React.Component {
   }
 
   copySQL = () => {
-    const sql = _get(this.props.responseRef, 'queryResponse.data.data.sql')
+    const sql = this.props.responseRef?.queryResponse?.data?.data?.sql
     const el = document.createElement('textarea')
     el.value = sql
     document.body.appendChild(el)
     el.select()
     document.execCommand('copy')
     this.setTemporaryState('copiedSQL', true, 1000)
-    this.props.onSuccessAlert(
-      'Successfully copied generated query to clipboard!'
-    )
+    this.props.onSuccessAlert('Successfully copied generated query to clipboard!')
 
     this.setState({ sqlCopySuccess: true })
     ReactTooltip.hide()
@@ -272,7 +236,7 @@ export default class OptionsToolbar extends React.Component {
         }
 
         if (this.props.responseRef) {
-          this.props.responseRef.updateColumns(formattedColumns)
+          this.props.responseRef?.updateColumns(formattedColumns)
         }
 
         this.props.onColumnVisibilitySave(formattedColumns)
@@ -288,7 +252,7 @@ export default class OptionsToolbar extends React.Component {
   }
 
   renderHideColumnsModal = () => {
-    const cols = _get(this.props.responseRef, 'queryResponse.data.data.columns')
+    const cols = this.props.responseRef?.getColumns()
     if (!cols || !cols.length) {
       return null
     }
@@ -304,7 +268,6 @@ export default class OptionsToolbar extends React.Component {
     return (
       <ErrorBoundary>
         <ColumnVisibilityModal
-          themeConfig={this.props.themeConfig}
           columns={columns}
           isVisible={this.state.isHideColumnsModalVisible}
           onClose={() => this.setState({ isHideColumnsModalVisible: false })}
@@ -316,16 +279,12 @@ export default class OptionsToolbar extends React.Component {
   }
 
   renderDataAlertModal = () => {
-    const initialQuery = _get(
-      this.props.responseRef,
-      'queryResponse.data.data.text'
-    )
+    const initialQuery = this.props.responseRef?.queryResponse?.data?.data?.text
 
     return (
       <ErrorBoundary>
         <DataAlertModal
           authentication={getAuthentication(this.props.authentication)}
-          themeConfig={this.props.themeConfig}
           isVisible={this.state.activeMenu === 'notification'}
           initialQuery={initialQuery}
           onClose={() => this.setState({ activeMenu: undefined })}
@@ -375,8 +334,8 @@ export default class OptionsToolbar extends React.Component {
 
   renderReportProblemMenu = () => {
     return (
-      <div className="report-problem-menu">
-        <ul className="context-menu-list">
+      <div className='report-problem-menu'>
+        <ul className='context-menu-list'>
           <li
             onClick={() => {
               this.setState({ activeMenu: undefined })
@@ -393,9 +352,7 @@ export default class OptionsToolbar extends React.Component {
           >
             The data is incomplete
           </li>
-          <li onClick={() => this.setState({ activeMenu: 'other-problem' })}>
-            Other...
-          </li>
+          <li onClick={() => this.setState({ activeMenu: 'other-problem' })}>Other...</li>
         </ul>
       </div>
     )
@@ -412,32 +369,27 @@ export default class OptionsToolbar extends React.Component {
 
   renderMoreOptionsMenu = (props, shouldShowButton) => {
     return (
-      <div
-        className="more-options-menu"
-        data-test="react-autoql-toolbar-more-options"
-      >
-        <ul className="context-menu-list">
+      <div className='more-options-menu' data-test='react-autoql-toolbar-more-options'>
+        <ul className='context-menu-list'>
           {shouldShowButton.showSaveAsCSVButton && (
             <li
               onClick={this.onCSVMenuButtonClick}
               style={
                 this.state.isCSVDownloading
                   ? {
-                      pointerEvents: 'none', //This makes it not clickable
-                      opacity: 0.6, //This grays it out to look disabled
+                      pointerEvents: 'none', // This makes it not clickable
+                      opacity: 0.6, // This grays it out to look disabled
                     }
                   : null
               }
             >
               <Icon
-                type="download"
+                type='download'
                 style={{
                   marginRight: '7px',
                 }}
               />
-              {this.state.isCSVDownloading
-                ? 'CSV file downloading...'
-                : 'Download as CSV'}
+              {this.state.isCSVDownloading ? 'CSV file downloading...' : 'Download as CSV'}
             </li>
           )}
           {shouldShowButton.showSaveAsPNGButton && (
@@ -448,7 +400,7 @@ export default class OptionsToolbar extends React.Component {
               }}
             >
               <Icon
-                type="download"
+                type='download'
                 style={{
                   marginRight: '7px',
                 }}
@@ -464,7 +416,7 @@ export default class OptionsToolbar extends React.Component {
               }}
             >
               <Icon
-                type="copy"
+                type='copy'
                 style={{
                   marginRight: '7px',
                 }}
@@ -478,7 +430,7 @@ export default class OptionsToolbar extends React.Component {
                 this.setState({ activeMenu: 'sql' })
               }}
             >
-              <Icon type="database" /> View generated SQL
+              <Icon type='database' /> View generated SQL
             </li>
           )}
           {shouldShowButton.showCreateNotificationIcon && (
@@ -487,38 +439,8 @@ export default class OptionsToolbar extends React.Component {
                 this.setState({ activeMenu: 'notification' })
               }}
             >
-              <Icon
-                style={{ verticalAlign: 'middle', marginRight: '7px' }}
-                type="notification"
-              />
+              <Icon style={{ verticalAlign: 'middle', marginRight: '7px' }} type='notification' />
               Create a Data Alert...
-            </li>
-          )}
-          {shouldShowButton.showShareToSlackButton && (
-            <li
-              onClick={() => {
-                this.setState({ activeMenu: 'slack' })
-              }}
-            >
-              <Icon style={{ marginRight: '5px' }} type="slack" />
-              Send to Slack...
-            </li>
-          )}
-          {shouldShowButton.showShareToTeamsButton && (
-            <li
-              onClick={() => {
-                this.setState({ activeMenu: 'teams' })
-              }}
-            >
-              <Icon
-                style={{
-                  display: 'inline-block',
-                  marginRight: '5px',
-                  marginTop: '-2px',
-                }}
-                type="teams"
-              />
-              Send to Teams...
             </li>
           )}
         </ul>
@@ -528,10 +450,8 @@ export default class OptionsToolbar extends React.Component {
 
   isDrilldownResponse = () => {
     try {
-      const queryText = _get(
-        this.props.responseRef,
-        'queryResponse.data.data.text'
-      )
+      const queryText = this.props.responseRef?.queryResponse?.data?.data?.text
+
       if (queryText.split(' ')[0] === 'Drilldown:') {
         return true
       }
@@ -541,44 +461,8 @@ export default class OptionsToolbar extends React.Component {
     }
   }
 
-  renderSendToSlackModal = () => {
-    if (getAutoQLConfig(this.props.autoQLConfig).enableSlackSharing) {
-      return (
-        <SendToSlackModal
-          themeConfig={this.props.themeConfig}
-          authentication={getAuthentication(this.props.authentication)}
-          isVisible={this.state.activeMenu === 'slack'}
-          responseRef={this.props.responseRef}
-          onErrorCallback={this.props.onErrorCallback}
-          onClose={() => {
-            this.setState({ activeMenu: undefined })
-          }}
-        />
-      )
-    }
-    return null
-  }
-
-  renderSendToTeamsModal = () => {
-    if (getAutoQLConfig(this.props.autoQLConfig).enableTeamsSharing) {
-      return (
-        <SendToTeamsModal
-          authentication={getAuthentication(this.props.authentication)}
-          themeConfig={this.props.themeConfig}
-          isVisible={this.state.activeMenu === 'teams'}
-          responseRef={this.props.responseRef}
-          onErrorCallback={this.props.onErrorCallback}
-          onClose={() => {
-            this.setState({ activeMenu: undefined })
-          }}
-        />
-      )
-    }
-    return null
-  }
-
   renderSQLModal = () => {
-    const sql = _get(this.props.responseRef, 'queryResponse.data.data.sql[0]')
+    const sql = this.props.responseRef?.queryResponse?.data?.data?.sql?.[0]
     if (!sql) {
       return null
     }
@@ -586,40 +470,28 @@ export default class OptionsToolbar extends React.Component {
     return (
       <ErrorBoundary>
         <Modal
-          themeConfig={this.props.themeConfig}
           isVisible={this.state.activeMenu === 'sql'}
           footer={
             <div>
-              <Button
-                type="primary"
-                onClick={() => this.setState({ activeMenu: undefined })}
-              >
+              <Button type='primary' onClick={() => this.setState({ activeMenu: undefined })}>
                 Ok
               </Button>
             </div>
           }
           onClose={() => this.setState({ activeMenu: undefined })}
-          title="Generated SQL"
+          title='Generated SQL'
           enableBodyScroll={false}
-          width="600px"
+          width='600px'
         >
-          <div className="copy-sql-modal-content">
-            <textarea
-              className="copy-sql-formatted-text"
-              value={`${format(sql)}`}
-              disabled
-            />
+          <div className='copy-sql-modal-content'>
+            <textarea className='copy-sql-formatted-text' value={`${format(sql)}`} disabled />
             <Button
-              className={`copy-sql-btn ${
-                this.state.sqlCopySuccess ? 'sql-copied' : ''
-              }`}
+              className={`copy-sql-btn ${this.state.sqlCopySuccess ? 'sql-copied' : ''}`}
               onClick={this.copySQL}
-              tooltip="Copy to Clipboard"
+              tooltip='Copy to Clipboard'
             >
-              <Icon type="copy" />
-              {this.state.sqlCopySuccess && (
-                <Icon type="check" className="sql-copied" />
-              )}
+              <Icon type='copy' />
+              {this.state.sqlCopySuccess && <Icon type='check' className='sql-copied' />}
             </Button>
           </div>
         </Modal>
@@ -631,37 +503,31 @@ export default class OptionsToolbar extends React.Component {
     return (
       <ErrorBoundary>
         <div
-          className={`autoql-options-toolbar
+          className={`react-autoql-toolbar options-toolbar
         ${this.state.activeMenu ? 'active' : ''}
         ${this.props.className || ''}`}
-          data-test="autoql-options-toolbar"
+          data-test='autoql-options-toolbar'
         >
           {shouldShowButton.showFilterButton && (
             <button
-              onClick={this.toggleTableFilter}
-              className={this.getMenuItemClass(
-                shouldShowButton.showFilterButton
-              )}
-              data-tip="Filter table"
+              onClick={this.props.responseRef?.toggleTableFilter}
+              className={this.getMenuItemClass(shouldShowButton.showFilterButton)}
+              data-tip='Filter table'
               data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
+              data-test='react-autoql-filter-button'
             >
-              <Icon type="filter" />
+              <Icon type='filter' />
             </button>
           )}
           {shouldShowButton.showHideColumnsButton && (
             <button
               onClick={this.showHideColumnsModal}
-              className={this.getMenuItemClass(
-                shouldShowButton.showHideColumnsButton
-              )}
-              data-tip="Show/hide columns"
+              className={this.getMenuItemClass(shouldShowButton.showHideColumnsButton)}
+              data-tip='Show/hide columns'
               data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
-              data-test="options-toolbar-col-vis"
+              data-test='options-toolbar-col-vis'
             >
-              <Icon
-                type="eye"
-                showBadge={shouldShowButton.showHiddenColsBadge}
-              />
+              <Icon type='eye' showBadge={shouldShowButton.showHiddenColsBadge} />
             </button>
           )}
           {shouldShowButton.showReportProblemButton && (
@@ -672,75 +538,69 @@ export default class OptionsToolbar extends React.Component {
               onClickOutside={() => {
                 this.setState({ activeMenu: undefined })
               }}
-              position="bottom" // preferred position
+              positions={['bottom', 'top']}
               content={(props) => this.renderReportProblemMenu(props)}
+              parentElement={this.props.popoverParentElement}
+              boundaryElement={this.props.popoverParentElement}
             >
               <button
                 onClick={() => {
                   this.setState({ activeMenu: 'report-problem' })
                 }}
-                className={this.getMenuItemClass(
-                  shouldShowButton.showReportProblemButton
-                )}
-                data-tip="Report a problem"
+                className={this.getMenuItemClass(shouldShowButton.showReportProblemButton)}
+                data-tip='Report a problem'
                 data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
               >
-                <Icon type="warning-triangle" />
+                <Icon type='warning-triangle' />
               </button>
             </Popover>
           )}
           {shouldShowButton.showRefreshDataButton && (
             <button
               onClick={this.refreshData}
-              className={this.getMenuItemClass(
-                shouldShowButton.showRefreshDataButton
-              )}
-              data-tip="Re-run query"
+              className={this.getMenuItemClass(shouldShowButton.showRefreshDataButton)}
+              data-tip='Re-run query'
               data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
-              data-test="options-toolbar-trash-btn"
+              data-test='options-toolbar-trash-btn'
             >
-              <Icon type="refresh" />
+              <Icon type='refresh' />
             </button>
           )}
           {shouldShowButton.showDeleteButton && (
             <button
               onClick={this.deleteMessage}
-              className={this.getMenuItemClass(
-                shouldShowButton.showDeleteButton
-              )}
-              data-tip="Delete data response"
+              className={this.getMenuItemClass(shouldShowButton.showDeleteButton)}
+              data-tip='Delete data response'
               data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
-              data-test="options-toolbar-trash-btn"
+              data-test='options-toolbar-trash-btn'
             >
-              <Icon type="trash" />
+              <Icon type='trash' />
             </button>
           )}
           {shouldShowButton.showMoreOptionsButton && (
             <Popover
               key={uuid()}
               isOpen={this.state.activeMenu === 'more-options'}
-              position="bottom"
+              positions={['bottom', 'top']}
               padding={8}
               onClickOutside={() => {
                 this.setState({ activeMenu: undefined })
               }}
-              content={(props) =>
-                this.renderMoreOptionsMenu(props, shouldShowButton)
-              }
+              content={(props) => this.renderMoreOptionsMenu(props, shouldShowButton)}
+              parentElement={this.props.popoverParentElement}
+              boundaryElement={this.props.popoverParentElement}
             >
               <button
                 onClick={() => {
                   ReactTooltip.hide()
                   this.setState({ activeMenu: 'more-options' })
                 }}
-                className={this.getMenuItemClass(
-                  shouldShowButton.showMoreOptionsButton
-                )}
-                data-tip="More options"
+                className={this.getMenuItemClass(shouldShowButton.showMoreOptionsButton)}
+                data-tip='More options'
                 data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
-                data-test="react-autoql-toolbar-more-options-btn"
+                data-test='react-autoql-toolbar-more-options-btn'
               >
-                <Icon type="more-vertical" />
+                <Icon type='more-vertical' />
               </button>
             </Popover>
           )}
@@ -752,48 +612,36 @@ export default class OptionsToolbar extends React.Component {
   getShouldShowButtonObj = () => {
     let shouldShowButton = {}
     try {
-      const displayType = _get(this.props.responseRef, 'props.displayType')
+      const displayType = this.props.responseRef?.state?.displayType
+      const columns = this.props.responseRef?.getColumns()
       const isTable = isTableType(displayType)
       const isChart = isChartType(displayType)
-      const response = _get(this.props.responseRef, 'queryResponse')
-      const isDataResponse = _get(response, 'data.data.display_type') === 'data'
-      const allColumnsHidden = areAllColumnsHidden(response)
-      const someColumnsHidden = areSomeColumnsHidden(response)
-      const numRows = _get(response, 'data.data.rows.length')
+      const isPivotTable = displayType === 'pivot_table'
+      const response = this.props.responseRef?.queryResponse
+      const isDataResponse = response?.data?.data?.display_type === 'data'
+      const allColumnsHidden = areAllColumnsHidden(columns)
+      const someColumnsHidden = areSomeColumnsHidden(columns)
+      const numRows = response?.data?.data?.rows?.length
       const hasData = numRows > 0
-      const hasMoreThanOneRow = numRows > 1
+      const isFiltered = !!this.props.responseRef?.tableParams?.filters?.length
+      const hasMoreThanOneRow = (numRows > 1 && !isFiltered) || !!isFiltered
       const autoQLConfig = getAutoQLConfig(this.props.autoQLConfig)
 
       shouldShowButton = {
-        showFilterButton: isTable && !allColumnsHidden && hasMoreThanOneRow,
+        showFilterButton: isTable && !isPivotTable && !allColumnsHidden && hasMoreThanOneRow,
         showCopyButton: isTable && !allColumnsHidden,
         showSaveAsPNGButton: isChart,
         showHideColumnsButton:
           autoQLConfig.enableColumnVisibilityManager &&
           hasData &&
-          (displayType === 'table' ||
-            (displayType === 'text' && allColumnsHidden)),
+          (displayType === 'table' || (displayType === 'text' && allColumnsHidden)),
         showHiddenColsBadge: someColumnsHidden,
         showSQLButton: isDataResponse && autoQLConfig.debug,
-        showSaveAsCSVButton:
-          isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
+        showSaveAsCSVButton: isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
         showDeleteButton: this.props.enableDeleteBtn,
-        showReportProblemButton:
-          autoQLConfig.enableReportProblem &&
-          !!_get(response, 'data.data.query_id'),
-        showCreateNotificationIcon:
-          isDataResponse &&
-          autoQLConfig.enableNotifications &&
-          !this.isDrilldownResponse(),
+        showReportProblemButton: autoQLConfig.enableReportProblem && !!response?.data?.data?.query_id,
+        showCreateNotificationIcon: isDataResponse && autoQLConfig.enableNotifications && !this.isDrilldownResponse(),
         showRefreshDataButton: false,
-        showShareToSlackButton: false,
-        // This feature is disabled indefinitely
-        // isDataResponse &&
-        // autoQLConfig.enableSlackSharing,
-        showShareToTeamsButton: false,
-        // This feature is disabled indefinitely
-        // isDataResponse &&
-        // autoQLConfig.enableTeamsSharing,
       }
 
       shouldShowButton.showMoreOptionsButton =
@@ -801,9 +649,7 @@ export default class OptionsToolbar extends React.Component {
         shouldShowButton.showSQLButton ||
         shouldShowButton.showCreateNotificationIcon ||
         shouldShowButton.showSaveAsCSVButton ||
-        shouldShowButton.showSaveAsPNGButton ||
-        shouldShowButton.showShareToSlackButton ||
-        shouldShowButton.showShareToTeamsButton
+        shouldShowButton.showSaveAsPNGButton
     } catch (error) {
       console.error(error)
     }
@@ -815,25 +661,21 @@ export default class OptionsToolbar extends React.Component {
     const shouldShowButton = this.getShouldShowButtonObj()
 
     // If there is nothing to put in the toolbar, don't render it
-    if (
-      !Object.values(shouldShowButton).find((showButton) => showButton === true)
-    ) {
+    if (!this.props.shouldRender || !Object.values(shouldShowButton).find((showButton) => showButton === true)) {
       return null
     }
 
     return (
       <ErrorBoundary>
         {this.renderToolbar(shouldShowButton)}
-        {shouldShowButton.showHideColumnsButton &&
-          this.renderHideColumnsModal()}
-        {shouldShowButton.showReportProblemButton &&
-          this.renderReportProblemModal()}
+        {shouldShowButton.showHideColumnsButton && this.renderHideColumnsModal()}
+        {shouldShowButton.showReportProblemButton && this.renderReportProblemModal()}
         {shouldShowButton.showMoreOptionsButton && this.renderDataAlertModal()}
         {shouldShowButton.showSQLButton && this.renderSQLModal()}
         <ReactTooltip
-          className="react-autoql-tooltip"
+          className='react-autoql-tooltip'
           id={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
-          effect="solid"
+          effect='solid'
           delayShow={800}
         />
       </ErrorBoundary>

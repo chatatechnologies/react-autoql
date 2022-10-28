@@ -7,18 +7,38 @@ import 'react-tabulator/lib/styles.css' // default theme
 import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
 
 export default class TableWrapper extends React.Component {
-  static defaultProps = {}
+  constructor(props) {
+    super(props)
+
+    this.isTableMounted = false
+
+    this.state = {}
+  }
+
+  static defaultProps = {
+    onTableMount: () => {},
+  }
 
   shouldComponentUpdate = () => {
-    return false
+    return !this.ref
   }
 
   render = () => {
     return (
       <ReactTabulator
         {...this.props}
+        className={`table-condensed ${this.props.className}`}
+        id={`react-tabulator-id-${this.props.tableKey}`}
         key={this.props.tableKey}
-        ref={this.props.tableRef}
+        ref={(ref) => {
+          // Wait for event loop to finish so table is rendered in DOM
+          setTimeout(() => {
+            if (ref?.table && !this.ref) {
+              this.props.onTableMount(ref)
+              this.ref = ref
+            }
+          }, 0)
+        }}
       />
     )
   }

@@ -19,10 +19,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders regular pivot chart data correctly', () => {
     const wrapper = setup(pivotSampleProps)
-    const stackedLineChartComponent = findByTestAttr(
-      wrapper,
-      'react-autoql-stacked-line-chart'
-    )
+    const stackedLineChartComponent = findByTestAttr(wrapper, 'react-autoql-stacked-line-chart')
     expect(stackedLineChartComponent.exists()).toBe(true)
   })
 })

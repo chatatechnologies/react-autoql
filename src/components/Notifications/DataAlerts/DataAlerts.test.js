@@ -11,7 +11,7 @@ const defaultProps = {
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
-  const wrapper = shallow(<DataAlerts {...setupProps} />)
+  const wrapper = shallow(<DataAlerts {...setupProps} />).dive()
   if (state) {
     wrapper.setState(state)
   }
@@ -21,10 +21,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const notificationSettingsComponent = findByTestAttr(
-      wrapper,
-      'notification-settings'
-    )
+    const notificationSettingsComponent = findByTestAttr(wrapper, 'notification-settings')
     expect(notificationSettingsComponent.exists()).toBe(true)
   })
 })

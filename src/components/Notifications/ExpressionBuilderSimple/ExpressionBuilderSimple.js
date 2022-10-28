@@ -10,12 +10,8 @@ import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import { RuleSimple } from '../RuleSimple'
 import { Icon } from '../../Icon'
 
-import { authenticationType, themeConfigType } from '../../../props/types'
-import {
-  authenticationDefault,
-  themeConfigDefault,
-  getAuthentication,
-} from '../../../props/defaults'
+import { authenticationType } from '../../../props/types'
+import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
 import './ExpressionBuilderSimple.scss'
 
@@ -24,10 +20,7 @@ const getInitialStateData = (initialData) => {
   let expression = undefined
   let expressionError = false
 
-  if (
-    Array.isArray(initialData) &&
-    _get(initialData, '[0].term_type') === 'query'
-  ) {
+  if (Array.isArray(initialData) && _get(initialData, '[0].term_type') === 'query') {
     // If expression is just 1 set of terms (new format)
     expression = initialData
   } else if (_get(initialData, 'term_value[0].term_type') === 'query') {
@@ -35,14 +28,9 @@ const getInitialStateData = (initialData) => {
     expression = initialData.term_value
   } else if (_get(initialData, '[0].term_type') === 'group') {
     // Here we will check for legacy data alert formats (deprecated - remove later)
-    if (
-      _get(initialData.length > 1) ||
-      _get(initialData, '[0].term_value.length') > 1
-    ) {
+    if (_get(initialData.length > 1) || _get(initialData, '[0].term_value.length') > 1) {
       expressionError = true
-    } else if (
-      _get(initialData, '[0].term_value[0].term_value[0].term_type') === 'query'
-    ) {
+    } else if (_get(initialData, '[0].term_value[0].term_value[0].term_type') === 'query') {
       expression = _cloneDeep(initialData[0].term_value[0].term_value)
     } else {
       expressionError = true
@@ -62,7 +50,6 @@ export default class ExpressionBuilderSimple extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
-    themeConfig: themeConfigType,
     expression: PropTypes.oneOfType([PropTypes.shape({}), PropTypes.array]), // This is the expression of the existing notification if you are editing one. I should change the name of this at some point
     readOnly: PropTypes.bool, // Set this to true if you want a summary of the expression without needing to interact with it
     onChange: PropTypes.func, // this returns 2 params (isSectionComplete, expressionJSON)
@@ -70,7 +57,6 @@ export default class ExpressionBuilderSimple extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
     expression: undefined,
     readOnly: false,
     onChange: () => {},
@@ -157,26 +143,20 @@ export default class ExpressionBuilderSimple extends React.Component {
 
   renderExpressionErrorMessage = () => {
     return (
-      <div className="expression-error-message">
-        <Icon type="warning" warning /> Unable to display conditions. This Data
-        Alert may be part of an older system that is no longer supported.{' '}
-        <a onClick={this.resetConditions}>Reset Conditions</a>
+      <div className='expression-error-message'>
+        <Icon type='warning' warning /> Unable to display conditions. This Data Alert may be part of an older system
+        that is no longer supported. <a onClick={this.resetConditions}>Reset Conditions</a>
       </div>
     )
   }
 
   renderReadOnlyRule = () => {
     return (
-      <div
-        className={`data-alerts-container ${
-          this.props.readOnly ? 'read-only' : ''
-        }`}
-      >
+      <div className={`data-alerts-container ${this.props.readOnly ? 'read-only' : ''}`}>
         {this.state.expressionError ? (
           this.renderExpressionErrorMessage()
         ) : (
           <RuleSimple
-            themeConfig={this.props.themeConfig}
             ref={(r) => (this.ruleRef = r)}
             ruleId={_get(this.state.expression, 'id', uuid())}
             onUpdate={this.onRuleUpdate}
@@ -190,21 +170,13 @@ export default class ExpressionBuilderSimple extends React.Component {
 
   renderRule = () => {
     return (
-      <div
-        className={`data-alerts-container ${
-          this.props.readOnly ? 'read-only' : ''
-        }`}
-      >
-        <div
-          className="notification-rule-outer-container"
-          data-test="notification-rules"
-        >
+      <div className={`data-alerts-container ${this.props.readOnly ? 'read-only' : ''}`}>
+        <div className='notification-rule-outer-container' data-test='notification-rules'>
           {this.state.expressionError ? (
             this.renderExpressionErrorMessage()
           ) : (
             <RuleSimple
               authentication={getAuthentication(this.props.authentication)}
-              themeConfig={this.props.themeConfig}
               ref={(r) => (this.ruleRef = r)}
               ruleId={_get(this.state.expression, 'id', uuid())}
               onUpdate={this.onRuleUpdate}
@@ -221,9 +193,9 @@ export default class ExpressionBuilderSimple extends React.Component {
       <ErrorBoundary>
         {this.props.readOnly ? this.renderReadOnlyRule() : this.renderRule()}
         <ReactTooltip
-          className="react-autoql-drawer-tooltip"
-          id="notification-expression-tooltip"
-          effect="solid"
+          className='react-autoql-tooltip'
+          id='notification-expression-tooltip'
+          effect='solid'
           delayShow={500}
           html
         />

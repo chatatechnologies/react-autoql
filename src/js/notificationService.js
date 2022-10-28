@@ -1,5 +1,6 @@
 import axios from 'axios'
 import _get from 'lodash.get'
+import _cloneDeep from 'lodash.clonedeep'
 
 const generalErrorMessage = 'Something went wrong. Please try again.'
 
@@ -29,12 +30,7 @@ export const isExpressionQueryValid = ({ query, domain, apiKey, token }) => {
   return axios.post(url, data, config)
 }
 
-export const fetchNotificationCount = ({
-  domain,
-  apiKey,
-  token,
-  unacknowledged = 0,
-}) => {
+export const fetchNotificationCount = ({ domain, apiKey, token, unacknowledged = 0 }) => {
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
   }
@@ -61,13 +57,7 @@ export const fetchNotificationCount = ({
     })
 }
 
-export const fetchNotificationFeed = ({
-  domain,
-  apiKey,
-  token,
-  offset,
-  limit,
-}) => {
+export const fetchNotificationFeed = ({ domain, apiKey, token, offset, limit }) => {
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
@@ -91,12 +81,7 @@ export const fetchNotificationFeed = ({
     })
 }
 
-export const fetchNotificationChannels = ({
-  domain,
-  apiKey,
-  token,
-  channelType,
-}) => {
+export const fetchNotificationChannels = ({ domain, apiKey, token, channelType }) => {
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
   }
@@ -122,7 +107,7 @@ export const fetchNotificationChannels = ({
     })
 }
 
-export const fetchDataAlerts = ({ domain, apiKey, token, type = 'user' }) => {
+export const fetchDataAlerts = ({ domain, apiKey, token }) => {
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
@@ -199,12 +184,7 @@ export const resetNotificationCount = ({ domain, apiKey, token }) => {
     })
 }
 
-export const deleteNotification = ({
-  notificationId,
-  domain,
-  apiKey,
-  token,
-}) => {
+export const deleteNotification = ({ notificationId, domain, apiKey, token }) => {
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
@@ -261,12 +241,7 @@ export const dismissAllNotifications = ({ domain, apiKey, token }) => {
     })
 }
 
-export const dismissNotification = ({
-  notificationId,
-  domain,
-  apiKey,
-  token,
-}) => {
+export const dismissNotification = ({ notificationId, domain, apiKey, token }) => {
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
@@ -299,14 +274,80 @@ export const dismissNotification = ({
     })
 }
 
-export const updateDataAlertStatus = ({
-  dataAlertId,
-  status,
-  type,
-  domain,
-  apiKey,
-  token,
-}) => {
+export const removeUserFromProjectRule = ({ dataAlertId, token, domain, apiKey }) => {
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  const url = `${domain}/autoql/api/v1/data-alerts/${dataAlertId}/user?key=${apiKey}`
+
+  return axios
+    .delete(url, config)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => {
+      return Promise.reject(_get(error, 'response.data'), new Error(generalErrorMessage))
+    })
+}
+
+export const addUserToProjectRule = ({ dataAlertId, token, domain, apiKey }) => {
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  const url = `${domain}/autoql/api/v1/data-alerts/${dataAlertId}/user?key=${apiKey}`
+
+  return axios
+    .post(url, {}, config)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => {
+      return Promise.reject(_get(error, 'response.data'), new Error(generalErrorMessage))
+    })
+}
+
+export const toggleProjectDataAlertStatus = ({ dataAlertId, status, token, domain, apiKey }) => {
+  if (status === 'INACTIVE') {
+    return removeUserFromProjectRule({
+      dataAlertId,
+      token,
+      domain,
+      apiKey,
+    })
+  } else {
+    return addUserToProjectRule({
+      dataAlertId,
+      token,
+      domain,
+      apiKey,
+    })
+  }
+}
+
+export const toggleCustomDataAlertStatus = ({ dataAlertId, status, token, domain, apiKey }) => {
+  const data = {
+    status,
+  }
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  const url = `${domain}/autoql/api/v1/data-alerts/${dataAlertId}?key=${apiKey}`
+
+  return axios
+    .put(url, data, config)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => {
+      return Promise.reject(_get(error, 'response.data'))
+    })
+}
+
+export const updateDataAlertStatus = ({ dataAlertId, status, type, domain, apiKey, token }) => {
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
@@ -334,82 +375,6 @@ export const updateDataAlertStatus = ({
       apiKey,
     })
   }
-}
-
-export const toggleCustomDataAlertStatus = ({
-  dataAlertId,
-  status,
-  token,
-  domain,
-  apiKey,
-}) => {
-  const data = {
-    status,
-  }
-
-  const config = {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  }
-
-  const url = `${domain}/autoql/api/v1/data-alerts/${dataAlertId}?key=${apiKey}`
-
-  return axios
-    .put(url, data, config)
-    .then((response) => Promise.resolve(response))
-    .catch((error) => {
-      return Promise.reject(_get(error, 'response.data'))
-    })
-}
-
-export const removeUserFromProjectRule = ({
-  dataAlertId,
-  token,
-  domain,
-  apiKey,
-}) => {
-  const config = {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  }
-
-  const url = `${domain}/autoql/api/v1/data-alerts/${dataAlertId}/user?key=${apiKey}`
-
-  return axios
-    .delete(url, config)
-    .then((response) => Promise.resolve(response))
-    .catch((error) => {
-      return Promise.reject(
-        _get(error, 'response.data'),
-        new Error(generalErrorMessage)
-      )
-    })
-}
-export const addUserToProjectRule = ({
-  dataAlertId,
-  token,
-  domain,
-  apiKey,
-}) => {
-  const config = {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  }
-
-  const url = `${domain}/autoql/api/v1/data-alerts/${dataAlertId}/user?key=${apiKey}`
-
-  return axios
-    .post(url, {}, config)
-    .then((response) => Promise.resolve(response))
-    .catch((error) => {
-      return Promise.reject(
-        _get(error, 'response.data'),
-        new Error(generalErrorMessage)
-      )
-    })
 }
 
 export const createNotificationChannel = ({
@@ -451,14 +416,7 @@ export const createNotificationChannel = ({
     })
 }
 
-export const sendDataToChannel = ({
-  token,
-  domain,
-  apiKey,
-  channelId,
-  fileName,
-  base64Data,
-}) => {
+export const sendDataToChannel = ({ token, domain, apiKey, channelId, fileName, base64Data }) => {
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
@@ -483,30 +441,6 @@ export const sendDataToChannel = ({
     .catch((error) => {
       return Promise.reject(_get(error, 'response.data'))
     })
-}
-
-export const toggleProjectDataAlertStatus = ({
-  dataAlertId,
-  status,
-  token,
-  domain,
-  apiKey,
-}) => {
-  if (status === 'INACTIVE') {
-    return removeUserFromProjectRule({
-      dataAlertId,
-      token,
-      domain,
-      apiKey,
-    })
-  } else {
-    return addUserToProjectRule({
-      dataAlertId,
-      token,
-      domain,
-      apiKey,
-    })
-  }
 }
 
 export const updateDataAlert = ({ dataAlert, domain, apiKey, token }) => {
@@ -549,7 +483,8 @@ export const createDataAlert = ({ dataAlert, domain, apiKey, token }) => {
     },
   })
 
-  const { id, ...data } = dataAlert
+  const data = _cloneDeep(dataAlert)
+  delete data.id
 
   const url = `${domain}/autoql/api/v1/data-alerts?key=${apiKey}`
 
@@ -613,12 +548,7 @@ export const deleteDataAlert = (dataAlertId, authObject) => {
     })
 }
 
-export const removeNotificationChannel = ({
-  channelId,
-  domain,
-  apiKey,
-  token,
-}) => {
+export const removeNotificationChannel = ({ channelId, domain, apiKey, token }) => {
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))

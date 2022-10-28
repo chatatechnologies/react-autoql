@@ -12,6 +12,7 @@ import {
   runDrilldown,
   setColumnVisibility,
   fetchExploreQueries,
+  isError500Type,
 } from './queryService'
 
 import responseTestCases from '../../test/responseTestCases'
@@ -117,7 +118,10 @@ describe('runQuery', () => {
 
     axios.get.mockImplementationOnce(() => Promise.resolve(validationResponse))
     axios.post.mockImplementationOnce(() => Promise.resolve(data))
-    await expect(runQuery(input)).resolves.toEqual(data)
+
+    const queryResponse = runQuery(input)
+
+    await expect(queryResponse).resolves.toEqual(data)
   })
 
   test('returns validation response when there are suggestions', async () => {
@@ -252,9 +256,7 @@ describe('runQueryOnly', () => {
   })
 
   test('returns parse error is data is a string', async () => {
-    axios.post.mockImplementationOnce(() =>
-      Promise.resolve({ data: 'this is a string' })
-    )
+    axios.post.mockImplementationOnce(() => Promise.resolve({ data: 'this is a string' }))
     await expect(runQueryOnly(allQueryParams)).rejects.toEqual({
       error: 'Parse error',
     })
@@ -280,7 +282,7 @@ describe('runQueryOnly', () => {
         response: {
           data: { message: 'there was an error', reference_id: '1.1.1' },
         },
-      })
+      }),
     )
 
     await expect(runQueryOnly(allQueryParams)).rejects.toEqual({
@@ -355,9 +357,7 @@ describe('setColumnVisibility', () => {
 
   test('sets column visibility successfully with all params provided', async () => {
     axios.put.mockImplementationOnce(() => Promise.resolve(data))
-    await expect(setColumnVisibility(colVisibilityParams)).resolves.toEqual(
-      data
-    )
+    await expect(setColumnVisibility(colVisibilityParams)).resolves.toEqual(data)
   })
 
   test('throws unauthenticated error when no params are provided', async () => {
@@ -365,9 +365,7 @@ describe('setColumnVisibility', () => {
   })
 
   test('doesnt crash if call fails', async () => {
-    axios.put.mockImplementationOnce(() =>
-      Promise.reject({ response: { data: { message: 'an error occurred' } } })
-    )
+    axios.put.mockImplementationOnce(() => Promise.reject({ response: { data: { message: 'an error occurred' } } }))
     await expect(setColumnVisibility(colVisibilityParams)).rejects.toEqual({
       message: 'an error occurred',
     })
@@ -414,9 +412,7 @@ describe('fetchAutocomplete', () => {
 
   test('fetches autocomplete data successfully with all params provided', async () => {
     axios.get.mockImplementationOnce(() => Promise.resolve(data))
-    await expect(fetchAutocomplete(allAutocompleteParams)).resolves.toEqual(
-      data
-    )
+    await expect(fetchAutocomplete(allAutocompleteParams)).resolves.toEqual(data)
   })
 
   test('throws no query supplied error if no input params are supplied', async () => {
@@ -460,9 +456,7 @@ describe('reportProblem', () => {
 
   test('doesnt crash if call fails', async () => {
     axios.put.mockImplementationOnce(() => Promise.reject(sampleErrorResponse))
-    await expect(reportProblem(allReportProblemParams)).rejects.toEqual(
-      sampleErrorResponse.response.data
-    )
+    await expect(reportProblem(allReportProblemParams)).rejects.toEqual(sampleErrorResponse.response.data)
   })
 
   test('reports successfully with no message provided', async () => {
@@ -497,9 +491,7 @@ describe('fetchSuggestions', () => {
 
   test('fetches suggestions successfully with all params provided', async () => {
     axios.get.mockImplementationOnce(() => Promise.resolve(data))
-    await expect(fetchSuggestions(allFetchSuggestionsParams)).resolves.toEqual(
-      data
-    )
+    await expect(fetchSuggestions(allFetchSuggestionsParams)).resolves.toEqual(data)
   })
 
   test('throws unauthenticated error if no params provided', async () => {
@@ -541,9 +533,7 @@ describe('fetchExploreQueries', () => {
 
   test('fetches related queries successfully with all params provided', async () => {
     axios.get.mockImplementationOnce(() => Promise.resolve(data))
-    await expect(fetchExploreQueries(allRelatedQueriesParams)).resolves.toEqual(
-      data
-    )
+    await expect(fetchExploreQueries(allRelatedQueriesParams)).resolves.toEqual(data)
   })
 
   test('throws unauthenticated error if no params provided', async () => {
@@ -556,32 +546,38 @@ describe('fetchExploreQueries', () => {
       skipQueryValidation: false,
     }
 
-    axios.get.mockImplementationOnce(() =>
-      Promise.resolve(validationTestCases[0])
-    )
-    await expect(fetchExploreQueries(input)).resolves.toEqual(
-      validationTestCases[0]
-    )
+    axios.get.mockImplementationOnce(() => Promise.resolve(validationTestCases[0]))
+    await expect(fetchExploreQueries(input)).resolves.toEqual(validationTestCases[0])
   })
 
   test('fetches correctly when validation suggestions are empty', async () => {
-    const input = {
-      ...allRelatedQueriesParams,
-      skipQueryValidation: false,
-    }
-
     axios.get.mockImplementationOnce(() => Promise.resolve(data))
-    await expect(fetchExploreQueries(allRelatedQueriesParams)).resolves.toEqual(
-      data
-    )
+    await expect(fetchExploreQueries(allRelatedQueriesParams)).resolves.toEqual(data)
   })
 
   test('doesnt crash if call fails', async () => {
-    axios.get.mockImplementationOnce(() =>
-      Promise.reject({ response: { data: { message: 'an error occurred' } } })
-    )
+    axios.get.mockImplementationOnce(() => Promise.reject({ response: { data: { message: 'an error occurred' } } }))
     await expect(fetchExploreQueries(allRelatedQueriesParams)).rejects.toEqual({
       message: 'an error occurred',
+    })
+  })
+
+  describe('error 500 type', () => {
+    test('1.1.430 is not 500 type', () => {
+      const referenceId = '1.1.430'
+      expect(isError500Type(referenceId)).toBe(false)
+    })
+    test('1.1.500 is 500 type', () => {
+      const referenceId = '1.1.500'
+      expect(isError500Type(referenceId)).toBe(true)
+    })
+    test('1.1.530 is error type', () => {
+      const referenceId = '1.1.530'
+      expect(isError500Type(referenceId)).toBe(true)
+    })
+    test('undefined is not 500 type', () => {
+      const referenceId = undefined
+      expect(isError500Type(referenceId)).toBe(false)
     })
   })
 })

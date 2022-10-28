@@ -41,9 +41,7 @@ export default class Button extends React.Component {
         return type
       }
     } catch (error) {
-      console.warn(
-        'Warning: The type provided was invalid, using "default" instead'
-      )
+      console.warn('Warning: The type provided was invalid, using "default" instead')
       return 'default'
     }
     return 'default'
@@ -56,9 +54,7 @@ export default class Button extends React.Component {
         return trimmedSize
       }
     } catch (error) {
-      console.warn(
-        'Warning: The size provided was invalid, using "large" instead'
-      )
+      console.warn('Warning: The size provided was invalid, using "large" instead')
       return 'large'
     }
     return 'large'
@@ -77,24 +73,22 @@ export default class Button extends React.Component {
           ${type}
           ${size}
           ${isDisabled ? ' disabled' : ''}`}
-          data-test="react-autoql-btn"
+          data-test='react-autoql-btn'
           data-multiline={this.props.multiline}
           style={{ ...this.props.style }}
           onClick={this.props.onClick}
           data-tip={this.props.tooltip}
           data-for={this.COMPONENT_KEY}
         >
-          {this.props.loading && (
-            <Spinner data-test="react-autoql-btn-loading" />
-          )}
+          {this.props.loading && <Spinner data-test='react-autoql-btn-loading' />}
           {this.props.children}
         </button>
         <ReactTooltip
-          className="react-autoql-drawer-tooltip"
+          className='react-autoql-tooltip'
           id={this.COMPONENT_KEY}
-          effect="solid"
+          effect='solid'
           delayShow={500}
-          place="top"
+          place='top'
         />
       </ErrorBoundary>
     )

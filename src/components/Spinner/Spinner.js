@@ -7,11 +7,7 @@ import './Spinner.scss'
 function Spinner(props) {
   return (
     <ErrorBoundary>
-      <div
-        className="spinner-loader"
-        data-test="react-autoql-spinner"
-        {...props}
-      ></div>
+      <div className='spinner-loader' data-test='react-autoql-spinner' {...props}></div>
     </ErrorBoundary>
   )
 }

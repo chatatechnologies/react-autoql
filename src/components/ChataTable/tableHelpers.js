@@ -1,6 +1,6 @@
 import { isColumnNumberType } from '../QueryOutput/columnHelpers'
 
-export const getTableConfigState = (params, tableRef) => {
+export const formatTableParams = (params, tableRef) => {
   const formattedSorters = formatSortersForAPI(params, tableRef)
   const formattedFilters = formatFiltersForAPI(params, tableRef)
 
@@ -14,8 +14,8 @@ export const getTableConfigState = (params, tableRef) => {
 }
 
 export const formatSortersForAPI = (params, tableRef) => {
-  let sorters = []
-  if (params?.sorters?.length > 0) {
+  const sorters = []
+  if (params?.sorters?.length > 0 && tableRef) {
     params.sorters.forEach((sorter) => {
       try {
         const column = tableRef.table.getColumn(sorter.field).getDefinition()
@@ -35,7 +35,7 @@ export const formatSortersForAPI = (params, tableRef) => {
 
 export const formatNumberFilterValue = (headerValue = '') => {
   const strNumber = headerValue.trim().replace(/[^0-9.]/g, '')
-  let value = Number(strNumber)
+  const value = Number(strNumber)
   if (!strNumber || isNaN(value)) {
     throw new Error('Unable to convert string to number')
   }
@@ -57,10 +57,10 @@ export const formatNumberFilterValue = (headerValue = '') => {
 export const formatFiltersForAPI = (params, tableRef) => {
   // for Number type column =,<,>,<=  >=
   // for String the operator is = or like
-  let filters = []
+  const filters = []
 
   // test to see if there is an error, if it continues for loop
-  if (params?.filters?.length > 0) {
+  if (params?.filters?.length > 0 && tableRef) {
     params.filters.forEach((filter) => {
       try {
         const column = tableRef.table.getColumn(filter.field).getDefinition()

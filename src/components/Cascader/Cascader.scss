@@ -16,11 +16,9 @@
     white-space: pre-wrap;
 
     &.hidden {
-      // width: 0;
       max-width: 0;
 
       span {
-        // display: none;
         white-space: nowrap;
       }
 
@@ -53,13 +51,14 @@
       justify-content: space-between;
       border-radius: 2px;
       padding-left: 10px;
+      transition: color 0.1s ease, background-color 0.2s ease;
 
       .option-arrow {
         opacity: 0.7;
       }
       .option-execute-icon {
         opacity: 0;
-        color: var(--react-autoql-accent-text-color);
+        color: var(--react-autoql-text-color-accent);
         font-size: 16px;
         vertical-align: middle;
       }
@@ -67,7 +66,7 @@
       &:hover,
       &.active {
         background-color: var(--react-autoql-accent-color, #26a7df);
-        color: var(--react-autoql-accent-text-color);
+        color: var(--react-autoql-text-color-accent);
 
         .option-execute-icon {
           opacity: 1;

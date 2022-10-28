@@ -7,21 +7,15 @@ import { Icon } from '../../Icon'
 import { Rule } from '../Rule'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import { authenticationType, themeConfigType } from '../../../props/types'
-import {
-  authenticationDefault,
-  themeConfigDefault,
-  getAuthentication,
-} from '../../../props/defaults'
+import { authenticationType } from '../../../props/types'
+import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
 import './Group.scss'
 
 const isGroup = (termValue) => {
   return (
     termValue[0] &&
-    (termValue[0].condition === 'AND' ||
-      termValue[0].condition === 'OR' ||
-      termValue[0].condition === 'TERMINATOR')
+    (termValue[0].condition === 'AND' || termValue[0].condition === 'OR' || termValue[0].condition === 'TERMINATOR')
   )
 }
 
@@ -61,7 +55,6 @@ export default class Group extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
-    themeConfig: themeConfigType,
     groupId: PropTypes.string,
     onDelete: PropTypes.func,
     onUpdate: PropTypes.func,
@@ -73,7 +66,6 @@ export default class Group extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
     groupId: undefined,
     disableAddGroupBtn: false,
     hideTopCondition: false,
@@ -201,13 +193,12 @@ export default class Group extends React.Component {
 
   renderAllAnySelect = () => {
     return (
-      <div className="notification-rule-and-or-select">
+      <div className='notification-rule-and-or-select'>
         Notify me when{' '}
         <Radio
-          themeConfig={this.props.themeConfig}
           options={['ALL', 'ANY']}
           value={this.state.andOrSelectValue}
-          type="button"
+          type='button'
           onChange={(value) => this.setState({ andOrSelectValue: value })}
         />{' '}
         of the following conditions are met:
@@ -222,14 +213,10 @@ export default class Group extends React.Component {
 
     return (
       <div
-        className="react-autoql-notification-group-delete-btn"
+        className='react-autoql-notification-group-delete-btn'
         onClick={() => this.props.onDelete(this.props.groupId)}
       >
-        <Icon
-          type="close"
-          data-tip="Remove Condition Group"
-          data-for="notification-expression-tooltip"
-        />
+        <Icon type='close' data-tip='Remove Condition Group' data-for='notification-expression-tooltip' />
       </div>
     )
   }
@@ -240,16 +227,13 @@ export default class Group extends React.Component {
     }
 
     return (
-      <div className="notification-rule-btn-container">
-        <div
-          className="react-autoql-notification-rule-add-btn"
-          onClick={this.addRule}
-        >
+      <div className='notification-rule-btn-container'>
+        <div className='react-autoql-notification-rule-add-btn' onClick={this.addRule}>
           <Icon
-            type="plus"
-            className="react-autoql-notification-add-icon"
-            data-tip="Add Condition"
-            data-for="notification-expression-tooltip"
+            type='plus'
+            className='react-autoql-notification-add-icon'
+            data-tip='Add Condition'
+            data-for='notification-expression-tooltip'
           />
         </div>
       </div>
@@ -257,35 +241,25 @@ export default class Group extends React.Component {
   }
 
   renderGroup = () => {
-    const hasOnlyOneRule =
-      this.state.rules.filter((rule) => rule.type === 'rule').length <= 1
+    const hasOnlyOneRule = this.state.rules.filter((rule) => rule.type === 'rule').length <= 1
 
     return (
       <ErrorBoundary>
-        <div
-          className="notification-group-wrapper"
-          style={{ marginLeft: this.props.onlyGroup ? '0px' : '50px' }}
-        >
+        <div className='notification-group-wrapper' style={{ marginLeft: this.props.onlyGroup ? '0px' : '50px' }}>
           {!this.props.onlyGroup && (
             <div
-              className="notification-and-or-break"
+              className='notification-and-or-break'
               style={{
                 top: this.props.hideTopCondition ? '0px' : '-19px',
-                height: this.props.hideTopCondition
-                  ? '100%'
-                  : 'calc(100% + 19px)',
+                height: this.props.hideTopCondition ? '100%' : 'calc(100% + 19px)',
               }}
             >
               {!this.props.hideTopCondition && (
                 <div
-                  className="notification-and-or-text"
+                  className='notification-and-or-text'
                   style={{
-                    background:
-                      this.props.topCondition === 'ALL' ? '#bae9ff' : '#fffaca',
-                    border:
-                      this.props.topCondition === 'ALL'
-                        ? '1px solid rgb(144, 221, 255)'
-                        : '1px solid #FFEB3B',
+                    background: this.props.topCondition === 'ALL' ? '#bae9ff' : '#fffaca',
+                    border: this.props.topCondition === 'ALL' ? '1px solid rgb(144, 221, 255)' : '1px solid #FFEB3B',
                   }}
                 >
                   {this.props.topCondition === 'ALL' ? 'AND' : 'OR'}
@@ -294,19 +268,14 @@ export default class Group extends React.Component {
             </div>
           )}
           <div
-            className={`react-autoql-notification-group-container${
-              hasOnlyOneRule ? ' disable-first-delete' : ''
-            }`}
-            data-test="rule-group"
+            className={`react-autoql-notification-group-container${hasOnlyOneRule ? ' disable-first-delete' : ''}`}
+            data-test='rule-group'
           >
             {this.state.rules.map((rule, i) => {
               if (rule.type === 'rule') {
                 return (
                   <Rule
-                    authentication={getAuthentication(
-                      this.props.authentication
-                    )}
-                    themeConfig={this.props.themeConfig}
+                    authentication={getAuthentication(this.props.authentication)}
                     ref={(r) => (this.ruleRefs[i] = r)}
                     ruleId={rule.id}
                     key={rule.id}
@@ -321,10 +290,7 @@ export default class Group extends React.Component {
               } else if (rule.type === 'group') {
                 return (
                   <Group
-                    authentication={getAuthentication(
-                      this.props.authentication
-                    )}
-                    themeConfig={this.props.themeConfig}
+                    authentication={getAuthentication(this.props.authentication)}
                     groupId={rule.id}
                     key={rule.id}
                     initialData={rule.termValue}
@@ -345,8 +311,7 @@ export default class Group extends React.Component {
   }
 
   renderReadOnlyGroup = () => {
-    const hasOnlyOneRule =
-      this.state.rules.filter((rule) => rule.type === 'rule').length <= 1
+    const hasOnlyOneRule = this.state.rules.filter((rule) => rule.type === 'rule').length <= 1
 
     let conditionText = null
     if (this.state.andOrSelectValue === 'ALL') {
@@ -357,11 +322,7 @@ export default class Group extends React.Component {
 
     return (
       <ErrorBoundary>
-        <div
-          className={`notification-read-only-group ${
-            hasOnlyOneRule ? ' no-border' : ''
-          }`}
-        >
+        <div className={`notification-read-only-group ${hasOnlyOneRule ? ' no-border' : ''}`}>
           {this.state.rules.map((rule, i) => {
             if (rule.type === 'rule') {
               return (
@@ -370,9 +331,7 @@ export default class Group extends React.Component {
                   ref={(r) => (this.ruleRefs[i] = r)}
                   ruleId={rule.id}
                   initialData={rule.termValue}
-                  andOrValue={
-                    i !== this.state.rules.length - 1 ? conditionText : null
-                  }
+                  andOrValue={i !== this.state.rules.length - 1 ? conditionText : null}
                   enableQueryValidation={false}
                   readOnly
                 />
@@ -381,10 +340,7 @@ export default class Group extends React.Component {
               return (
                 <div key={`group-${rule.id}`}>
                   <Group
-                    authentication={getAuthentication(
-                      this.props.authentication
-                    )}
-                    themeConfig={this.props.themeConfig}
+                    authentication={getAuthentication(this.props.authentication)}
                     groupId={rule.id}
                     initialData={rule.termValue}
                     enableQueryValidation={false}
@@ -392,9 +348,7 @@ export default class Group extends React.Component {
                   />
                   {i !== this.state.rules.length - 1 && (
                     <div>
-                      <span className="read-only-rule-term">
-                        {conditionText}
-                      </span>
+                      <span className='read-only-rule-term'>{conditionText}</span>
                     </div>
                   )}
                 </div>

@@ -10,7 +10,7 @@
   width: 35px;
   border-radius: 20px;
   background: var(--react-autoql-accent-color, #26a7df);
-  color: var(--react-autoql-accent-text-color);
+  color: var(--react-autoql-text-color-accent);
   line-height: 38px;
   text-align: center;
   font-size: 20px;
@@ -75,7 +75,7 @@
       border: 1px solid;
       line-height: 22px;
       text-align: center;
-      background: var(--react-autoql-background-color-primary, white);
+      background: var(--react-autoql-background-color-secondary, white);
       color: var(--react-autoql-text-color-placeholder, rgba(0, 0, 0, 0.2));
       transition: all 0.3s ease;
       cursor: pointer;

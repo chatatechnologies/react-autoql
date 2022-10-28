@@ -9,6 +9,7 @@ import analyzer from 'rollup-plugin-analyzer'
 import gzipPlugin from 'rollup-plugin-gzip'
 import { visualizer } from 'rollup-plugin-visualizer'
 import bundleSize from 'rollup-plugin-bundle-size'
+import commonjs from 'rollup-plugin-commonjs'
 
 import pkg from './package.json'
 
@@ -34,11 +35,13 @@ const makeExternalPredicate = (externalArr) => {
 const common = {
   input: 'src/index.js',
   plugins: [
-    resolve(),
+    resolve({
+      mainFields: ['main', 'module'],
+    }),
     postcss({
       plugins: [autoprefixer],
       extensions: ['.css, .scss'],
-      extract: true,
+      extract: 'autoql.esm.css',
       minimize: false,
     }),
     image(),
@@ -47,6 +50,7 @@ const common = {
       exclude: 'node_modules/**',
       ignore: ['./example'],
     }),
+    commonjs(),
     !development && terser(),
     gzipPlugin(),
     test && visualizer(),
@@ -59,12 +63,19 @@ const common = {
   external: makeExternalPredicate(external),
 }
 
-const outputs = [
-  {
-    file: `${dist}/${bundle}.esm.js`,
-    format: 'esm', // use ES modules to support tree-shaking
-  },
-]
+const outputs = []
+
+outputs.push({
+  file: `${dist}/${bundle}.esm.js`,
+  format: 'esm', // use ES modules to support tree-shaking
+})
+
+if (!development) {
+  outputs.push({
+    file: `${dist}/${bundle}.cjs.js`,
+    format: 'cjs',
+  })
+}
 
 export default outputs.map((output) => ({
   ...common,

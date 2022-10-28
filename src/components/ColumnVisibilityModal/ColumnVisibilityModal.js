@@ -5,19 +5,14 @@ import _cloneDeep from 'lodash.clonedeep'
 import { Modal } from '../Modal'
 import { SelectableList } from '../SelectableList'
 
-import { themeConfigType } from '../../props/types'
-import { themeConfigDefault } from '../../props/defaults'
-
 import './ColumnVisibilityModal.scss'
 
 export default class ColumnVisibilityModal extends React.Component {
   static propTypes = {
-    themeConfig: themeConfigType,
     isSettingColumns: PropTypes.bool,
   }
 
   static defaultProps = {
-    themeConfig: themeConfigDefault,
     isSettingColumns: false,
   }
 
@@ -39,14 +34,14 @@ export default class ColumnVisibilityModal extends React.Component {
         isVisible={this.props.isVisible}
         onClose={this.props.onClose}
         onConfirm={() => this.props.onConfirm(this.state.columns)}
-        title="Show/Hide Columns"
+        title='Show/Hide Columns'
         enableBodyScroll={true}
-        width="600px"
-        confirmText="Apply"
+        width='600px'
+        confirmText='Apply'
         style={{ marginTop: '45px' }}
         confirmLoading={this.props.isSettingColumns}
       >
-        <div data-test="column-visibility-modal" style={{ padding: '0 15px' }}>
+        <div data-test='column-visibility-modal' style={{ padding: '0 15px' }}>
           <SelectableList
             columns={[{ name: 'Column Name' }, { name: 'Visibility ' }]}
             items={this.state.columns}

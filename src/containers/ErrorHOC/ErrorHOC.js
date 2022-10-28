@@ -15,6 +15,8 @@ export default class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch = (error, info) => {
+    console.error('Error HOC caught error:', error)
+
     // Display fallback UI
     this.setState({ hasError: true })
     console.error(error)
@@ -32,7 +34,7 @@ export default class ErrorBoundary extends React.Component {
   render = () => {
     if (this.state.hasError) {
       // You can render any custom fallback UI
-      return <div data-test="error-container">{this.getErrorMessage()}</div>
+      return <div data-test='error-container'>{this.getErrorMessage()}</div>
     }
     return this.props.children
   }

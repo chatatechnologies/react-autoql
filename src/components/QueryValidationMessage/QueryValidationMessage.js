@@ -8,15 +8,11 @@ import { Icon } from '../Icon'
 import { Select } from '../Select'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { themeConfigType } from '../../props/types'
-import { themeConfigDefault } from '../../props/defaults'
-
 export default class QueryValidationMessage extends React.Component {
   originalReplaceWords = []
   suggestionLists = []
 
   static propTypes = {
-    themeConfig: themeConfigType,
     response: PropTypes.shape({}),
     onSuggestionClick: PropTypes.func,
     autoSelectSuggestion: PropTypes.bool,
@@ -27,7 +23,6 @@ export default class QueryValidationMessage extends React.Component {
   }
 
   static defaultProps = {
-    themeConfig: themeConfigDefault,
     response: undefined,
     autoSelectSuggestion: true,
     initialSelections: undefined,
@@ -52,27 +47,19 @@ export default class QueryValidationMessage extends React.Component {
     const suggestionLists = []
     if (replacements.length) {
       replacements.forEach((suggestionInfo) => {
-        const originalWord = query.slice(
-          suggestionInfo.start,
-          suggestionInfo.end
-        )
+        const originalWord = query.slice(suggestionInfo.start, suggestionInfo.end)
 
         // Add ID to each original suggestion
-        const originalSuggestionList = suggestionInfo.suggestions.map(
-          (suggestion) => {
-            return {
-              id: uuid(),
-              hidden: false,
-              ...suggestion,
-            }
+        const originalSuggestionList = suggestionInfo.suggestions.map((suggestion) => {
+          return {
+            id: uuid(),
+            hidden: false,
+            ...suggestion,
           }
-        )
+        })
 
         // Add original query value to suggestion list
-        const list = [
-          ...originalSuggestionList,
-          { id: uuid(), text: originalWord },
-        ]
+        const list = [...originalSuggestionList, { id: uuid(), text: originalWord }]
 
         suggestionLists.push(list)
       })
@@ -106,9 +93,7 @@ export default class QueryValidationMessage extends React.Component {
     this.props.initialSelections.forEach((selection, index) => {
       if (
         !this.suggestionLists[index] ||
-        !this.suggestionLists[index].find(
-          (suggestion) => suggestion.text === selection.text
-        )
+        !this.suggestionLists[index].find((suggestion) => suggestion.text === selection.text)
       ) {
         isValid = false
       }
@@ -130,9 +115,7 @@ export default class QueryValidationMessage extends React.Component {
         const startIndex = queryValidationQueryString.length
         suggestion.start = startIndex
         suggestion.end = startIndex + suggestion.text.length
-        queryValidationQueryString = queryValidationQueryString.concat(
-          suggestion.text
-        )
+        queryValidationQueryString = queryValidationQueryString.concat(suggestion.text)
       }
     })
   }
@@ -143,23 +126,17 @@ export default class QueryValidationMessage extends React.Component {
     if (this.props.initialSelections && this.isInitialSelectionValid()) {
       // Replace IDs with new ones from user
       this.suggestionLists.forEach((suggestionList, index) => {
-        suggestionList.find(
-          (suggestion) =>
-            suggestion.text === this.props.initialSelections[index].text
-        ).id = this.props.initialSelections[index].id || uuid()
+        suggestionList.find((suggestion) => suggestion.text === this.props.initialSelections[index].text).id =
+          this.props.initialSelections[index].id || uuid()
       })
 
       selectedSuggestions = this.props.initialSelections
     } else if (this.props.autoSelectSuggestion) {
       // Use first suggestion in list
-      selectedSuggestions = this.suggestionLists.map(
-        (suggestionList) => suggestionList[0]
-      )
+      selectedSuggestions = this.suggestionLists.map((suggestionList) => suggestionList[0])
     } else {
       // Use original query (last value)
-      selectedSuggestions = this.suggestionLists.map(
-        (suggestionList) => suggestionList[suggestionList.length - 1]
-      )
+      selectedSuggestions = this.suggestionLists.map((suggestionList) => suggestionList[suggestionList.length - 1])
     }
 
     this.updateStartAndEndIndexes(selectedSuggestions)
@@ -189,16 +166,14 @@ export default class QueryValidationMessage extends React.Component {
       return
     }
 
-    const newSuggestion = this.suggestionLists[index].find(
-      (suggestion) => suggestion.id === suggestionId
-    )
+    const newSuggestion = this.suggestionLists[index].find((suggestion) => suggestion.id === suggestionId)
     const newSelectedSuggestions = _cloneDeep(this.state.selectedSuggestions)
     newSelectedSuggestions[index] = newSuggestion
 
     // If user provided callback for validation selection
     this.props.onQueryValidationSelectOption(
       this.getQueryValidationQueryText(newSelectedSuggestions),
-      newSelectedSuggestions
+      newSelectedSuggestions,
     )
 
     this.updateStartAndEndIndexes(newSelectedSuggestions)
@@ -215,13 +190,13 @@ export default class QueryValidationMessage extends React.Component {
           }
         }
         return suggestion
-      })
+      }),
     )
 
     // Update list in callback
     this.props.onQueryValidationSelectOption(
       this.getQueryValidationQueryText(newSelectedSuggestions),
-      newSelectedSuggestions
+      newSelectedSuggestions,
     )
 
     this.updateStartAndEndIndexes(newSelectedSuggestions)
@@ -231,9 +206,7 @@ export default class QueryValidationMessage extends React.Component {
   }
 
   renderWordSelector = (suggestionDropdownIndex) => {
-    const suggestion = _cloneDeep(
-      this.state.selectedSuggestions[suggestionDropdownIndex]
-    )
+    const suggestion = _cloneDeep(this.state.selectedSuggestions[suggestionDropdownIndex])
     if (!suggestion || suggestion.hidden) {
       return null
     }
@@ -253,11 +226,18 @@ export default class QueryValidationMessage extends React.Component {
 
       // The last word is the original suggestion, append "original word" to the list label
       if (i === wordList.length - 1) {
-        option.listLabel = `${option.label} (Original term)`
+        option.listLabel = (
+          <span>
+            {option.label} <em>(Original term)</em>
+          </span>
+        )
       } else {
-        option.listLabel = `${suggestionItem.text}${
-          suggestionItem.value_label ? ` (${suggestionItem.value_label})` : ''
-        }`
+        option.listLabel = (
+          <span>
+            {suggestionItem.text}
+            {suggestionItem.value_label ? <em> ({suggestionItem.value_label})</em> : null}
+          </span>
+        )
       }
 
       options.push(option)
@@ -267,29 +247,20 @@ export default class QueryValidationMessage extends React.Component {
       value: 'remove-word',
       label: (
         <span>
-          <Icon type="trash" /> Remove term
+          <Icon type='trash' /> Remove term
         </span>
       ),
     })
 
     return (
-      <div
-        className="react-autoql-query-validation-selector-container"
-        key={`query-element-${suggestion.id}`}
-      >
+      <div className='react-autoql-query-validation-selector-container' key={`query-element-${suggestion.id}`}>
         <Select
-          themeConfig={this.props.themeConfig}
           options={options}
           key={uuid()}
           value={suggestion.id}
-          className="react-autoql-query-validation-select"
-          popupClassname="query-validation-select"
-          onChange={(value) =>
-            this.onChangeQueryValidationSelectOption(
-              value,
-              suggestionDropdownIndex
-            )
-          }
+          className='react-autoql-query-validation-select'
+          popupClassname='query-validation-select'
+          onChange={(value) => this.onChangeQueryValidationSelectOption(value, suggestionDropdownIndex)}
         />
       </div>
     )
@@ -297,12 +268,10 @@ export default class QueryValidationMessage extends React.Component {
 
   renderQueryValidationQuery = () => {
     return (
-      <div className="react-autoql-query-validation-query">
+      <div className='react-autoql-query-validation-query'>
         {this.plainTextList.map((textValue, index) => {
-          const textElement = (
-            <span key={`query-element-${index}`}>{textValue}</span>
-          )
-          let suggestionElement = this.renderWordSelector(index)
+          const textElement = <span key={`query-element-${index}`}>{textValue}</span>
+          const suggestionElement = this.renderWordSelector(index)
 
           return (
             <span key={uuid()}>
@@ -321,9 +290,7 @@ export default class QueryValidationMessage extends React.Component {
       queryValidationQueryText = queryValidationQueryText.concat(word)
       const suggestion = newSelectedSuggestions[dropdownIndex]
       if (suggestion && !suggestion.hidden) {
-        queryValidationQueryText = queryValidationQueryText.concat(
-          suggestion.text
-        )
+        queryValidationQueryText = queryValidationQueryText.concat(suggestion.text)
       }
     })
 
@@ -331,38 +298,30 @@ export default class QueryValidationMessage extends React.Component {
   }
 
   renderResponse = () => {
-    if (
-      !this.state.selectedSuggestions ||
-      !this.state.selectedSuggestions.length
-    ) {
+    if (!this.state.selectedSuggestions || !this.state.selectedSuggestions.length) {
       return null
     }
 
     return (
-      <div className="react-autoql-query-validation-container">
-        <div className="react-autoql-query-validation-description">
+      <div className='react-autoql-query-validation-container'>
+        <div className='react-autoql-query-validation-description'>
           <span>
             {this.props.message ||
-              `I need your help matching a term you used to the exact corresponding term in your database. Verify by selecting the correct term from the menu below:`}
+              'I need your help matching a term you used to the exact corresponding term in your database. Verify by selecting the correct term from the menu below:'}
           </span>
         </div>
         <div>
           {this.renderQueryValidationQuery()}
           <button
-            className="react-autoql-query-validation-execute-btn"
+            className='react-autoql-query-validation-execute-btn'
             onClick={() => {
               this.props.onSuggestionClick({
-                query: this.getQueryValidationQueryText(
-                  this.state.selectedSuggestions
-                ),
+                query: this.getQueryValidationQueryText(this.state.selectedSuggestions),
                 userSelection: this.state.selectedSuggestions,
               })
             }}
           >
-            <Icon
-              type={this.props.submitIcon || 'play'}
-              className="react-autoql-execute-query-icon"
-            />
+            <Icon type={this.props.submitIcon || 'play'} className='react-autoql-execute-query-icon' />
             {this.props.submitText || 'Run Query'}
           </button>
         </div>
@@ -373,9 +332,7 @@ export default class QueryValidationMessage extends React.Component {
   render = () => {
     return (
       <ErrorBoundary>
-        <div className="react-autoql-response-content-container">
-          {this.renderResponse()}
-        </div>
+        <div className='react-autoql-response-content-container'>{this.renderResponse()}</div>
       </ErrorBoundary>
     )
   }

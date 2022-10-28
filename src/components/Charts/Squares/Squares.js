@@ -3,32 +3,17 @@ import { scaleLinear } from 'd3-scale'
 import { max, min } from 'd3-array'
 import _get from 'lodash.get'
 
-import {
-  chartElementDefaultProps,
-  chartElementPropTypes,
-  getTooltipContent,
-  getKey,
-} from '../helpers'
+import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, getKey } from '../helpers'
 
 export default class Squares extends Component {
   constructor(props) {
     super(props)
 
-    const maxValue = max(
-      props.data.map((row) =>
-        max(row.filter((value, i) => props.numberColumnIndices.includes(i)))
-      )
-    )
+    const maxValue = max(props.data.map((row) => max(row.filter((value, i) => props.numberColumnIndices.includes(i)))))
 
-    const minValue = min(
-      props.data.map((row) =>
-        min(row.filter((value, i) => props.numberColumnIndices.includes(i)))
-      )
-    )
+    const minValue = min(props.data.map((row) => min(row.filter((value, i) => props.numberColumnIndices.includes(i)))))
 
-    this.opacityScale = scaleLinear()
-      .domain([minValue, maxValue])
-      .range([0, 1])
+    this.opacityScale = scaleLinear().domain([minValue, maxValue]).range([0, 1])
 
     this.state = {
       activeKey: this.props.activeChartElementKey,
@@ -41,15 +26,14 @@ export default class Squares extends Component {
   onSquareClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)
 
-    this.props.onChartClick(
+    this.props.onChartClick({
       row,
-      colIndex,
-      this.props.columns,
-      this.props.stringColumnIndex,
-      this.props.legendColumn,
-      this.props.numberColumnIndex,
-      newActiveKey
-    )
+      columnIndex: colIndex,
+      columns: this.props.columns,
+      stringColumnIndex: this.props.stringColumnIndex,
+      legendColumn: this.props.legendColumn,
+      activeKey: newActiveKey,
+    })
 
     this.setState({ activeKey: newActiveKey })
   }
@@ -82,7 +66,7 @@ export default class Squares extends Component {
         if (!columns[colIndex].isSeriesHidden) {
           const rawValue = row[colIndex]
           const valueNumber = Number(rawValue)
-          const value = !Number.isNaN(valueNumber) ? valueNumber : 0
+          const value = !isNaN(valueNumber) ? valueNumber : 0
 
           const xLabel = row[stringColumnIndex]
           const yLabel = legendLabels[i].label
@@ -102,12 +86,8 @@ export default class Squares extends Component {
           squares.push(
             <rect
               key={getKey(colIndex, index)}
-              data-test="squares"
-              className={`square${
-                this.state.activeKey === getKey(colIndex, index)
-                  ? ' active'
-                  : ''
-              }`}
+              data-test='squares'
+              className={`square${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
               x={xScale(xLabel)}
               y={yScale(yLabel)}
               width={xScale.bandwidth()}
@@ -115,23 +95,10 @@ export default class Squares extends Component {
               onClick={() => this.onSquareClick(row, colIndex, index)}
               data-tip={tooltip}
               data-for={this.props.tooltipID}
-              stroke={activeFillColor}
-              strokeWidth="2px"
-              strokeOpacity={
-                this.state.activeKey === getKey(colIndex, index) ? 1 : 0
-              }
-              // chosen color for positive values and red for negative values
-              fill={
-                this.state.activeKey === getKey(colIndex, index)
-                  ? activeFillColor
-                  : fillColor
-              }
-              fillOpacity={
-                this.state.activeKey === getKey(colIndex, index)
-                  ? 1
-                  : this.opacityScale(Math.abs(value))
-              }
-            />
+              style={{ color: activeFillColor }}
+              fill={fillColor}
+              fillOpacity={this.opacityScale(Math.abs(value))}
+            />,
           )
         }
       })

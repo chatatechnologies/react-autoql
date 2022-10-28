@@ -1,11 +1,6 @@
 import React, { Component } from 'react'
 import _get from 'lodash.get'
-import {
-  chartElementDefaultProps,
-  chartElementPropTypes,
-  getKey,
-  getTooltipContent,
-} from '../helpers'
+import { chartElementDefaultProps, chartElementPropTypes, getKey, getTooltipContent } from '../helpers'
 
 export default class Line extends Component {
   static propTypes = chartElementPropTypes
@@ -18,31 +13,24 @@ export default class Line extends Component {
   onDotClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)
 
-    this.props.onChartClick(
+    this.props.onChartClick({
       row,
-      colIndex,
-      this.props.columns,
-      this.props.stringColumnIndex,
-      this.props.legendColumn,
-      this.props.numberColumnIndex,
-      newActiveKey
-    )
+      columnIndex: colIndex,
+      columns: this.props.columns,
+      stringColumnIndex: this.props.stringColumnIndex,
+      legendColumn: this.props.legendColumn,
+      activeKey: newActiveKey,
+    })
 
     this.setState({ activeKey: newActiveKey })
   }
 
   makePolyline = () => {
-    const {
-      columns,
-      numberColumnIndices,
-      stringColumnIndex,
-      yScale,
-      xScale,
-    } = this.props
+    const { columns, numberColumnIndices, stringColumnIndex, yScale, xScale } = this.props
 
-    let polylines = []
+    const polylines = []
     numberColumnIndices.forEach((colIndex, i) => {
-      let vertices = []
+      const vertices = []
       if (!columns[colIndex].isSeriesHidden) {
         this.props.data.forEach((d, index) => {
           const value = d[colIndex]
@@ -50,14 +38,11 @@ export default class Line extends Component {
           const nextRow = this.props.data[index + 1]
 
           // If the visual difference between vertices is not noticeable, dont even render
-          const isFirstOrLastPoint =
-            index === 0 || index === this.props.data.length - 1
+          const isFirstOrLastPoint = index === 0 || index === this.props.data.length - 1
           if (
             !isFirstOrLastPoint &&
             Math.abs(yScale(value) - yScale(prevRow?.[colIndex])) < 0.05 &&
-            Math.abs(
-              yScale(prevRow?.[colIndex]) - yScale(nextRow?.[colIndex])
-            ) < 0.05
+            Math.abs(yScale(prevRow?.[colIndex]) - yScale(nextRow?.[colIndex])) < 0.05
           ) {
             return
           }
@@ -81,9 +66,9 @@ export default class Line extends Component {
       const polyline = (
         <polyline
           key={`line-${getKey(0, i)}`}
-          className="line"
+          className='line'
           points={polylinePoints}
-          fill="none"
+          fill='none'
           stroke={this.props.colorScale(i)}
           strokeWidth={1}
           opacity={0.7}
@@ -97,15 +82,7 @@ export default class Line extends Component {
   }
 
   makeDots = (numVisibleSeries) => {
-    const {
-      columns,
-      legendColumn,
-      numberColumnIndices,
-      stringColumnIndex,
-      dataFormatting,
-      yScale,
-      xScale,
-    } = this.props
+    const { columns, legendColumn, numberColumnIndices, stringColumnIndex, dataFormatting, yScale, xScale } = this.props
 
     const allDots = []
     numberColumnIndices.forEach((colIndex, i) => {
@@ -135,11 +112,7 @@ export default class Line extends Component {
           allDots.push(
             <circle
               key={getKey(colIndex, index)}
-              className={`line-dot${
-                this.state.activeKey === getKey(colIndex, index)
-                  ? ' active'
-                  : ''
-              }`}
+              className={`line-dot${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
               cy={cy}
               cx={xScale(d[stringColumnIndex]) + xShift}
               r={3}
@@ -158,7 +131,7 @@ export default class Line extends Component {
                     ? this.props.colorScale(i)
                     : this.props.backgroundColor || '#fff',
               }}
-            />
+            />,
           )
         })
       }
@@ -178,7 +151,7 @@ export default class Line extends Component {
     }
 
     return (
-      <g data-test="line">
+      <g data-test='line'>
         {this.makePolyline()}
         {this.makeDots(numVisibleSeries)}
       </g>

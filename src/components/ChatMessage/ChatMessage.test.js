@@ -28,7 +28,7 @@ const sampleResponse = {
       ],
       display_type: 'data',
       interpretation:
-        "Amount (Sum), lower of Classification of 'revenue', and, Date greater than or equal '2020-05-01T00:00:00.000Z', and, Date below '2020-05-31T23:59:59.000Z'",
+        'Amount (Sum), lower of Classification of \'revenue\', and, Date greater than or equal \'2020-05-01T00:00:00.000Z\', and, Date below \'2020-05-31T23:59:59.000Z\'',
       query_id: 'q_uwOMur9eTtSxyKh_GSI1bQ',
       rows: [
         [148644.9600000001, 1],

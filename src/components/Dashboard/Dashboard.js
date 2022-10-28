@@ -16,22 +16,15 @@ import { LoadingDots } from '../LoadingDots'
 import ReportProblemModal from '../OptionsToolbar/ReportProblemModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { CHART_TYPES } from '../../js/Constants'
-import { setCSSVars } from '../../js/Util'
-import {
-  authenticationType,
-  autoQLConfigType,
-  dataFormattingType,
-  themeConfigType,
-} from '../../props/types'
+import { withTheme } from '../../theme'
+import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import {
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
-  themeConfigDefault,
   getAuthentication,
   getDataFormatting,
   getAutoQLConfig,
-  getThemeConfig,
 } from '../../props/defaults'
 import 'react-grid-layout/css/styles.css'
 import 'react-splitter-layout/lib/index.css'
@@ -59,7 +52,7 @@ const unExecuteDashboard = (ref) => {
   }
 }
 
-class Dashboard extends React.Component {
+class DashboardWithoutTheme extends React.Component {
   tileRefs = {}
   debounceTime = 50
   onChangeTiles = null
@@ -71,7 +64,6 @@ class Dashboard extends React.Component {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
-    themeConfig: themeConfigType,
 
     tiles: PropTypes.arrayOf(PropTypes.shape({})),
     executeOnMount: PropTypes.bool,
@@ -96,7 +88,6 @@ class Dashboard extends React.Component {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
-    themeConfig: themeConfigDefault,
 
     tiles: [],
     executeOnMount: true,
@@ -118,7 +109,6 @@ class Dashboard extends React.Component {
 
   state = {
     isDragging: false,
-    drilldownDisplayType: 'table',
     isReportProblemOpen: false,
   }
 
@@ -127,34 +117,19 @@ class Dashboard extends React.Component {
     if (this.props.executeOnMount) {
       this.executeDashboard()
     }
-    this.setStyles()
     window.addEventListener('resize', this.onWindowResize)
   }
 
   componentDidUpdate = (prevProps) => {
-    if (
-      !_isEqual(
-        getThemeConfig(this.props.themeConfig),
-        getThemeConfig(prevProps.themeConfig)
-      )
-    ) {
-      this.setStyles()
-    }
-
     // Re-run dashboard once exiting edit mode (if prop is set to true)
-    if (
-      prevProps.isEditing &&
-      !this.props.isEditing &&
-      this.props.executeOnStopEditing
-    ) {
+    if (prevProps.isEditing && !this.props.isEditing && this.props.executeOnStopEditing) {
       this.executeDashboard()
     }
 
     // If tile structure changed, set previous tile state for undo feature
     if (
       this.getChangeDetection(this.props.tiles, prevProps.tiles) &&
-      _get(prevProps, `tiles[${prevProps.tiles.length} - 1].y`) !==
-        Number.MAX_VALUE
+      _get(prevProps, `tiles[${prevProps.tiles.length} - 1].y`) !== Number.MAX_VALUE
     ) {
       this.setState({
         justPerformedUndo: false,
@@ -235,33 +210,31 @@ class Dashboard extends React.Component {
     return debouncedPromise
   }
 
-  setStyles = () => {
-    setCSSVars(this.props.themeConfig)
-  }
-
   onWindowResize = (e) => {
     if (!this.currentWindowWidth) {
       this.currentWindowWidth = window.innerWidth
     }
 
-    let hasWidthChanged = e.target.innerWidth !== this.currentWindowWidth
+    const hasWidthChanged = e.target.innerWidth !== this.currentWindowWidth
     if (!hasWidthChanged) {
       return
     }
 
-    if (!this.state.isWindowResizing) {
-      this.currentWindowWidth = window.innerWidth
-      this.setState({ isWindowResizing: true })
-    }
+    if (this._isMounted) {
+      if (!this.state.isWindowResizing) {
+        this.currentWindowWidth = window.innerWidth
+        this.setState({ isWindowResizing: true })
+      }
 
-    // Only re-render if width changed
-    if (hasWidthChanged) {
-      this.windowResizeTimer = setTimeout(() => {
-        if (hasWidthChanged) {
-          this.currentWindowWidth = undefined
-          this.setState({ isWindowResizing: false })
-        }
-      }, 300)
+      // Only re-render if width changed
+      if (hasWidthChanged) {
+        this.windowResizeTimer = setTimeout(() => {
+          if (hasWidthChanged) {
+            this.currentWindowWidth = undefined
+            this.setState({ isWindowResizing: false })
+          }
+        }, 300)
+      }
     }
   }
 
@@ -292,44 +265,74 @@ class Dashboard extends React.Component {
   getChangeDetection = (oldTiles, newTiles, ignoreInputs) => {
     return !_isEqual(
       this.getChangeDetectionTileStructure(oldTiles, ignoreInputs),
-      this.getChangeDetectionTileStructure(newTiles, ignoreInputs)
+      this.getChangeDetectionTileStructure(newTiles, ignoreInputs),
     )
   }
 
   getChangeDetectionTileStructure = (tiles, ignoreInputs) => {
     try {
-      const newTiles = tiles.map((tile) => {
-        return {
-          query: !ignoreInputs && tile.query,
-          title: !ignoreInputs && tile.title,
-          i: tile.i,
-          w: tile.w,
-          h: tile.h,
-          x: tile.x,
-          y: tile.y,
-        }
-      })
+      if (tiles?.length) {
+        const newTiles = tiles.map((tile) => {
+          if (!tile) {
+            return
+          }
 
-      return newTiles
+          return {
+            query: !ignoreInputs && tile.query,
+            title: !ignoreInputs && tile.title,
+            i: tile.i,
+            w: tile.w,
+            h: tile.h,
+            x: tile.x,
+            y: tile.y,
+          }
+        })
+
+        return newTiles
+      }
     } catch (error) {
       console.error(error)
     }
+
+    return tiles
   }
 
-  scrollToNewTile = () => {
+  scrollToNewTile = (key) => {
     this.scrollToNewTileTimeout = setTimeout(() => {
-      if (this.ref) {
-        this.ref.scrollIntoView({
-          block: 'end',
-          inline: 'nearest',
-          behavior: 'smooth',
-        })
-      }
+      try {
+        const newTileRef = this.tileRefs?.[key]?.ref
+        if (newTileRef) {
+          const dashboardBbox = this.ref?.parentElement?.getBoundingClientRect()
+          const dashboardTop = dashboardBbox.y
+          const dashboardBottom = dashboardTop + dashboardBbox.height
+          const tileBbox = newTileRef?.getBoundingClientRect()
+          const tileTop = tileBbox.y
+          const tileBottom = tileTop + tileBbox.height
+
+          if (tileBottom > dashboardBottom) {
+            newTileRef.scrollIntoView(false)
+          } else if (tileTop < dashboardTop) {
+            newTileRef.scrollIntoView(true)
+          }
+        }
+      } catch (error) {}
     }, 200)
   }
 
+  refreshLayout = () => {
+    // Must dispatch a resize event for react-grid-layout to update
+    window.dispatchEvent(new Event('resize'))
+
+    // Must toggle resizing on then off for charts to detect the change and resize
+    this.setState({ isWindowResizing: true }, () => {
+      this.setState({
+        isWindowResizing: false,
+      })
+    })
+  }
+
   onMoveStart = () => {
-    if (!this.state.isDragging) {
+    if (!this.state.isDragging && this._isMounted) {
       this.setState({ isDragging: true })
     }
   }
@@ -392,7 +395,7 @@ class Dashboard extends React.Component {
 
       this.debouncedOnChange(tiles)
         .then(() => {
-          this.scrollToNewTile()
+          this.scrollToNewTile(id)
         })
         .catch((error) => {
           console.error(error)
@@ -435,10 +438,7 @@ class Dashboard extends React.Component {
         ...params,
       }
 
-      if (
-        Object.keys(params).includes('query') &&
-        params.query !== originalTiles[tileIndex].query
-      ) {
+      if (Object.keys(params).includes('query') && params.query !== originalTiles[tileIndex].query) {
         tiles[tileIndex].dataConfig = undefined
         tiles[tileIndex].skipQueryValidation = false
       } else if (
@@ -496,11 +496,9 @@ class Dashboard extends React.Component {
   }
 
   shouldShowOriginalQuery = (tile) => {
-    if (!tile) return false
+    if (!tile) {return false}
 
-    const displayType = this.state.isDrilldownSecondHalf
-      ? tile.secondDisplayType
-      : tile.displayType
+    const displayType = this.state.isDrilldownSecondHalf ? tile.secondDisplayType : tile.displayType
 
     return CHART_TYPES.includes(displayType)
   }
@@ -511,29 +509,21 @@ class Dashboard extends React.Component {
 
   renderDrilldownTable = () => {
     return (
-      <div className="react-autoql-dashboard-drilldown-table">
+      <div className='react-autoql-dashboard-drilldown-table'>
         {this.state.isDrilldownRunning ? (
-          <div className="dashboard-tile-loading-container">
+          <div className='dashboard-tile-loading-container'>
             <LoadingDots />
           </div>
         ) : (
           <QueryOutput
             ref={(r) => (this.drilldownTableRef = r)}
-            displayType={this.state.drilldownDisplayType}
-            onRecommendedDisplayType={(drilldownDisplayType) => {
-              this.setState({ drilldownDisplayType })
-            }}
+            initialDisplayType='table'
+            isResizing={this.state.isAnimatingModal}
             authentication={getAuthentication(this.props.authentication)}
             autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-            themeConfig={this.props.themeConfig}
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
             queryResponse={this.state.activeDrilldownResponse}
             renderTooltips={false}
-            onUpdate={this.rebuildTooltips}
-            isAnimatingContainer={this.state.isAnimatingModal}
-            backgroundColor={document.documentElement.style.getPropertyValue(
-              '--react-autoql-background-color-primary'
-            )}
             reportProblemCallback={this.reportProblemCallback}
             enableAjaxTableData={this.props.enableAjaxTableData}
             rebuildTooltips={this.rebuildTooltips}
@@ -552,14 +542,10 @@ class Dashboard extends React.Component {
               isDrilldownChartHidden: !this.state.isDrilldownChartHidden,
             })
           }}
-          tooltip={
-            this.state.isDrilldownChartHidden ? 'Show Chart' : 'Hide Chart'
-          }
+          tooltip={this.state.isDrilldownChartHidden ? 'Show Chart' : 'Hide Chart'}
         >
-          <Icon type="chart" />
-          <Icon
-            type={this.state.isDrilldownChartHidden ? 'expand' : 'collapse'}
-          />
+          <Icon type='chart' />
+          <Icon type={this.state.isDrilldownChartHidden ? 'expand' : 'collapse'} />
         </Button>
       </div>
     )
@@ -569,7 +555,7 @@ class Dashboard extends React.Component {
     return (
       <ReportProblemModal
         authentication={this.props.authentication}
-        contentClassName="dashboard-drilldown-report-problem-modal"
+        contentClassName='dashboard-drilldown-report-problem-modal'
         onClose={() => {
           this.setState({
             isReportProblemOpen: false,
@@ -596,9 +582,7 @@ class Dashboard extends React.Component {
   renderDrilldownModal = () => {
     try {
       const tiles = this.getMostRecentTiles()
-      const tile = tiles.find(
-        (tile) => tile.i === this.state.activeDrilldownTile
-      )
+      const tile = tiles.find((tile) => tile.i === this.state.activeDrilldownTile)
 
       let title
       let queryResponse
@@ -616,26 +600,23 @@ class Dashboard extends React.Component {
         dataConfig = tile.dataConfig
       }
 
-      const renderTopHalf =
-        this.state.isDrilldownChartHidden || !this.shouldShowOriginalQuery(tile)
+      const renderTopHalf = this.state.isDrilldownChartHidden || !this.shouldShowOriginalQuery(tile)
 
       return (
         <Modal
-          themeConfig={this.props.themeConfig}
-          className="dashboard-drilldown-modal"
+          className='dashboard-drilldown-modal'
           contentClassName={`dashboard-drilldown-modal-content
             ${this.state.isDrilldownChartHidden ? 'chart-hidden' : ''}
             ${!this.shouldShowOriginalQuery(tile) ? 'top-hidden' : ''}`}
           title={title}
           isVisible={this.state.isDrilldownModalVisible}
-          width="90vw"
-          height="100vh"
-          confirmText="Done"
+          width='90vw'
+          height='100vh'
+          confirmText='Done'
           showFooter={false}
           onClose={() => {
             this.setState({
               isDrilldownModalVisible: false,
-              drilldownDisplayType: 'table',
               activeDrilldownTile: null,
             })
           }}
@@ -652,25 +633,20 @@ class Dashboard extends React.Component {
                     this.setState({})
                   }}
                 >
-                  <div className="react-autoql-dashboard-drilldown-original">
+                  <div className='react-autoql-dashboard-drilldown-original'>
                     {this.shouldShowOriginalQuery(tile) && (
                       <>
                         <QueryOutput
                           key={`dashboard-drilldown-chart-${this.state.activeDrilldownTile}`}
                           authentication={this.props.authentication}
                           autoQLConfig={this.props.autoQLConfig}
-                          themeConfig={this.props.themeConfig}
-                          dataFormatting={getDataFormatting(
-                            this.props.dataFormatting
-                          )}
+                          dataFormatting={getDataFormatting(this.props.dataFormatting)}
+                          isResizing={this.state.isAnimatingModal}
                           queryResponse={_cloneDeep(queryResponse)}
-                          displayType={displayType}
-                          tableConfigs={_cloneDeep(dataConfig)}
-                          onUpdate={this.rebuildTooltips}
-                          isAnimatingContainer={this.state.isAnimatingModal}
-                          autoChartAggregations={
-                            this.props.autoChartAggregations
-                          }
+                          initialDisplayType={displayType}
+                          initialTableConfigs={_cloneDeep(dataConfig)}
+                          rebuildTooltips={this.rebuildTooltips}
+                          autoChartAggregations={this.props.autoChartAggregations}
                           onDrilldownStart={(activeKey) =>
                             this.onDrilldownStart({
                               tileId: tile.i,
@@ -679,12 +655,7 @@ class Dashboard extends React.Component {
                             })
                           }
                           onDrilldownEnd={this.onDrilldownEnd}
-                          activeChartElementKey={
-                            this.state.activeDrilldownChartElementKey
-                          }
-                          backgroundColor={document.documentElement.style.getPropertyValue(
-                            '--react-autoql-background-color-primary'
-                          )}
+                          activeChartElementKey={this.state.activeDrilldownChartElementKey}
                           enableAjaxTableData={this.props.enableAjaxTableData}
                           reportProblemCallback={this.reportProblemCallback}
                         />
@@ -711,10 +682,10 @@ class Dashboard extends React.Component {
   renderEmptyDashboardMessage = () => {
     if (this.props.isEditable && !this.props.isEditing) {
       return (
-        <div className="empty-dashboard-message-container">
+        <div className='empty-dashboard-message-container'>
           Start building a{' '}
           <span
-            className="empty-dashboard-new-tile-btn"
+            className='empty-dashboard-new-tile-btn'
             onClick={() => {
               this.props.startEditingCallback()
             }}
@@ -725,10 +696,10 @@ class Dashboard extends React.Component {
       )
     } else if (this.props.isEditing) {
       return (
-        <div className="empty-dashboard-message-container">
+        <div className='empty-dashboard-message-container'>
           Add a{' '}
           <span
-            className="empty-dashboard-new-tile-btn"
+            className='empty-dashboard-new-tile-btn'
             onClick={() => {
               this.addTile()
             }}
@@ -741,9 +712,8 @@ class Dashboard extends React.Component {
     }
 
     return (
-      <div className="empty-dashboard-message-container">
-        This dashboard doesn't have any tiles. Please contact your administrator
-        to add tiles to this dashboard
+      <div className='empty-dashboard-message-container'>
+        This dashboard doesn't have any tiles. Please contact your administrator to add tiles to this dashboard
       </div>
     )
   }
@@ -775,12 +745,12 @@ class Dashboard extends React.Component {
         onResizeStart={this.onMoveStart}
         onDragStop={this.onMoveEnd}
         onResizeStop={this.onMoveEnd}
-        className="react-autoql-dashboard"
+        className='react-autoql-dashboard'
         rowHeight={60}
         cols={12}
         isDraggable={this.props.isEditing}
         isResizable={this.props.isEditing}
-        draggableHandle=".react-autoql-dashboard-tile-drag-handle"
+        draggableHandle='.react-autoql-dashboard-tile-drag-handle'
         layout={tileLayout}
         margin={[20, 20]}
       >
@@ -789,9 +759,9 @@ class Dashboard extends React.Component {
             innerDivClass={`react-autoql-dashboard-tile ${tile.i}`}
             tileRef={(ref) => (this.tileRefs[tile.key] = ref)}
             key={tile.key}
+            dashboardRef={this.ref}
             authentication={getAuthentication(this.props.authentication)}
             autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-            themeConfig={this.props.themeConfig}
             tile={{ ...tile, i: tile.key, maxH: 12, minH: 2, minW: 3 }}
             displayType={tile.displayType}
             secondDisplayType={tile.secondDisplayType}
@@ -830,29 +800,25 @@ class Dashboard extends React.Component {
         <Fragment>
           <div
             ref={(ref) => (this.ref = ref)}
-            className={`react-autoql-dashboard-container${
-              this.props.isEditing ? ' edit-mode' : ''
-            }`}
-            data-test="react-autoql-dashboard"
+            className={`react-autoql-dashboard-container${this.props.isEditing ? ' edit-mode' : ''}`}
+            data-test='react-autoql-dashboard'
           >
-            {tiles.length
-              ? this.renderTiles()
-              : this.renderEmptyDashboardMessage()}
+            {tiles.length ? this.renderTiles() : this.renderEmptyDashboardMessage()}
           </div>
           {!this.state.isDragging && this.renderDrilldownModal()}
           {this.renderReportProblemModal()}
           <ReactTooltip
-            className="react-autoql-dashboard-tooltip"
-            id="react-autoql-dashboard-toolbar-btn-tooltip"
-            effect="solid"
+            className='react-autoql-dashboard-tooltip'
+            id='react-autoql-dashboard-toolbar-btn-tooltip'
+            effect='solid'
             delayShow={500}
             html
           />
           <ReactTooltip
-            place="left"
-            className="react-autoql-chart-tooltip"
-            id="dashboard-data-limit-warning-tooltip"
-            effect="solid"
+            place='left'
+            className='react-autoql-chart-tooltip'
+            id='dashboard-data-limit-warning-tooltip'
+            effect='solid'
             html
           />
         </Fragment>
@@ -861,4 +827,5 @@ class Dashboard extends React.Component {
   }
 }
 
+const Dashboard = withTheme(DashboardWithoutTheme)
 export { Dashboard, executeDashboard, unExecuteDashboard }

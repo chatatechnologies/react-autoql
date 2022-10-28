@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEmpty from 'lodash.isempty'
-import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
 import ReactTooltip from 'react-tooltip'
 
@@ -15,27 +14,17 @@ import { Button } from '../../Button'
 import { Icon } from '../../Icon'
 import { ExpressionBuilderSimple } from '../ExpressionBuilderSimple'
 import { ScheduleBuilder } from '../ScheduleBuilder'
-import { setCSSVars } from '../../../js/Util'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import {
-  createDataAlert,
-  updateDataAlert,
-  deleteDataAlert,
-  validateExpression,
-} from '../../../js/notificationService'
+import { createDataAlert, updateDataAlert, deleteDataAlert, validateExpression } from '../../../js/notificationService'
 
-import { authenticationType, themeConfigType } from '../../../props/types'
-import {
-  authenticationDefault,
-  themeConfigDefault,
-  getAuthentication,
-  getThemeConfig,
-} from '../../../props/defaults'
+import { authenticationType } from '../../../props/types'
+import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
 import './DataAlertModal.scss'
+import { withTheme } from '../../../theme'
 
-export default class DataAlertModal extends React.Component {
+class DataAlertModal extends React.Component {
   NEW_NOTIFICATION_MODAL_ID = uuid()
 
   static propTypes = {
@@ -47,32 +36,27 @@ export default class DataAlertModal extends React.Component {
     isVisible: PropTypes.bool,
     allowDelete: PropTypes.bool,
     onClose: PropTypes.func,
-    themeConfig: themeConfigType,
     isManagement: PropTypes.bool,
     onManagementCreateDataAlert: PropTypes.func,
     onManagementDeleteDataAlert: PropTypes.func,
     title: PropTypes.string,
-    titleIcon: PropTypes.oneOfType([
-      PropTypes.element,
-      PropTypes.instanceOf(Icon),
-    ]),
+    titleIcon: PropTypes.oneOfType([PropTypes.element, PropTypes.instanceOf(Icon)]),
     enableQueryValidation: PropTypes.bool,
     onValidate: PropTypes.func,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
-    onSave: () => {},
-    onErrorCallback: () => {},
+    onSave: () => { },
+    onErrorCallback: () => { },
     initialQuery: undefined,
     currentDataAlert: undefined,
     isVisible: false,
     allowDelete: true,
-    onClose: () => {},
-    themeConfig: themeConfigDefault,
+    onClose: () => { },
     isManagement: false,
-    onManagementCreateDataAlert: () => {},
-    onManagementDeleteDataAlert: () => {},
+    onManagementCreateDataAlert: () => { },
+    onManagementDeleteDataAlert: () => { },
     title: 'Create Data Alert',
     titleIcon: undefined,
     enableQueryValidation: true,
@@ -91,21 +75,10 @@ export default class DataAlertModal extends React.Component {
   }
 
   componentDidMount = () => {
-    setCSSVars(this.props.themeConfig)
-
     this.initializeFields()
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (
-      !_isEqual(
-        getThemeConfig(this.props.themeConfig),
-        getThemeConfig(prevProps.themeConfig)
-      )
-    ) {
-      setCSSVars(this.props.themeConfig)
-    }
-
     if (!this.props.isVisible && prevProps.isVisible) {
       setTimeout(this.resetFields, 500)
     }
@@ -113,24 +86,16 @@ export default class DataAlertModal extends React.Component {
       this.initializeFields()
     }
 
-    if (
-      this.props.initialQuery &&
-      this.props.initialQuery !== prevProps.initialQuery
-    ) {
+    if (this.props.initialQuery && this.props.initialQuery !== prevProps.initialQuery) {
       this.resetFields()
-      const expressionJSON = this.createExpressionJSONFromQuery(
-        this.props.initialQuery
-      )
+      const expressionJSON = this.createExpressionJSONFromQuery(this.props.initialQuery)
       this.setState({
         isExpressionSectionComplete: true,
         expressionJSON,
       })
     }
 
-    if (
-      this.state.frequencyCategorySelectValue !==
-      prevState.frequencyCategorySelectValue
-    ) {
+    if (this.state.frequencyCategorySelectValue !== prevState.frequencyCategorySelectValue) {
       // Reset checkbox and frequency select values
       this.setState({
         everyCheckboxValue: false,
@@ -165,13 +130,8 @@ export default class DataAlertModal extends React.Component {
         isDataReturnDirty: true,
         expressionJSON: _get(this.props.currentDataAlert, 'expression'),
       })
-    } else if (
-      this.props.initialQuery &&
-      typeof this.props.initialQuery === 'string'
-    ) {
-      const expressionJSON = this.createExpressionJSONFromQuery(
-        this.props.initialQuery
-      )
+    } else if (this.props.initialQuery && typeof this.props.initialQuery === 'string') {
+      const expressionJSON = this.createExpressionJSONFromQuery(this.props.initialQuery)
       this.setState({
         isExpressionSectionComplete: true,
         expressionJSON,
@@ -342,7 +302,7 @@ export default class DataAlertModal extends React.Component {
               isExpressionValidated: true,
             })
             if (this.stepsRef) {
-              this.stepsRef.nextStep()
+              setTimeout(() => this.stepsRef.nextStep(), 500)
             }
           })
           .catch((error) => {
@@ -388,36 +348,29 @@ export default class DataAlertModal extends React.Component {
             }}
           >
             <Icon
-              className="expression-valid-checkmark"
-              type="check"
-              data-for="react-autoql-data-alert-modal-tooltip"
-              data-tip="Expression is valid"
+              className='expression-valid-checkmark'
+              type='check'
+              data-for='react-autoql-data-alert-modal-tooltip'
+              data-tip='Expression is valid'
             />
           </span>
         )}
-        {this.state.isExpressionValidated &&
-          !this.state.isExpressionValid &&
-          !!this.state.expressionError && (
-            <div className="expression-invalid-message-container">
-              <span className="expression-invalid-message">
-                <Icon type="warning-triangle" />
-              </span>{' '}
-              <p
-                className="expression-invalid-message"
-                style={{ maxWidth: '80%', marginTop: 0, marginRight: 0 }}
-              >
-                {this.state.expressionError}
-              </p>
-            </div>
-          )}
+        {this.state.isExpressionValidated && !this.state.isExpressionValid && !!this.state.expressionError && (
+          <div className='expression-invalid-message-container'>
+            <span className='expression-invalid-message'>
+              <Icon type='warning-triangle' />
+            </span>{' '}
+            <p className='expression-invalid-message' style={{ maxWidth: '80%', marginTop: 0, marginRight: 0 }}>
+              {this.state.expressionError}
+            </p>
+          </div>
+        )}
         <Button
-          type="default"
           onClick={this.validateExpression}
           loading={this.state.isValidating}
-          type="primary"
+          type='primary'
           disabled={
-            !this.state.titleInput ||
-            !_get(this.expressionRef, 'state.expression[0].term_value') // only checking for empty state of the first input value
+            !this.state.titleInput || !_get(this.expressionRef, 'state.expression[0].term_value') // only checking for empty state of the first input value
           }
           style={{ position: 'absolute', right: 0 }}
         >
@@ -433,7 +386,7 @@ export default class DataAlertModal extends React.Component {
     }
   }
 
-  renderNextBtn = (className, disabled, onclick = () => {}, text) => {
+  renderNextBtn = (className, disabled, onclick = () => { }, text) => {
     return (
       <Button
         className={className}
@@ -444,7 +397,7 @@ export default class DataAlertModal extends React.Component {
           }
         }}
         disabled={disabled}
-        type="primary"
+        type='primary'
       >
         {text || 'Continue'}
       </Button>
@@ -473,14 +426,13 @@ export default class DataAlertModal extends React.Component {
           <div style={{ width: '80%' }}>
             <p>Name your Data Alert:</p>
             <Input
-              className="react-autoql-notification-display-name-input"
-              placeholder="Add an Alert Name"
-              icon="title"
-              maxLength="50"
+              className='react-autoql-notification-display-name-input'
+              placeholder='Add an Alert Name'
+              icon='title'
+              maxLength='50'
               value={this.state.titleInput}
               onChange={(e) => {
-                const isFirstSectionComplete =
-                  this.state.isExpressionSectionComplete && !!e.target.value
+                const isFirstSectionComplete = this.state.isExpressionSectionComplete && !!e.target.value
                 this.setState({
                   titleInput: e.target.value,
                   isFirstSectionComplete,
@@ -490,18 +442,18 @@ export default class DataAlertModal extends React.Component {
           </div>
           <div style={{ width: '20%', marginLeft: 10, marginTop: 35 }}>
             <ReactTooltip
-              className="react-autoql-drawer-tooltip"
-              id="react-autoql-data-alert-query-name-tooltip"
-              effect="solid"
+              className='react-autoql-tooltip'
+              id='react-autoql-data-alert-query-name-tooltip'
+              effect='solid'
               delayShow={500}
-              place="top"
+              place='top'
             />
             <Icon
-              data-for="react-autoql-data-alert-query-name-tooltip"
-              data-tip="This will be visible to anyone who gets notified when this Alert is triggered."
-              type="info"
+              className='react-autoql-data-alert-query-name-tooltip-icon'
+              data-for='react-autoql-data-alert-query-name-tooltip'
+              data-tip='This will be visible to anyone who gets notified when this Alert is triggered.'
+              type='info'
               size={24}
-              color="#26A7Df"
             />
           </div>
         </div>
@@ -510,44 +462,38 @@ export default class DataAlertModal extends React.Component {
             <p>Notify me when:</p>
             <ExpressionBuilderSimple
               authentication={getAuthentication(this.props.authentication)}
-              themeConfig={this.props.themeConfig}
               ref={(r) => (this.expressionRef = r)}
               key={`expression-${this.NEW_NOTIFICATION_MODAL_ID}`}
               onChange={this.onExpressionChange}
               enableQueryValidation={this.props.enableQueryValidation}
-              expression={_get(
-                this.props.currentDataAlert,
-                'expression',
-                this.state.expressionJSON
-              )}
+              expression={_get(this.props.currentDataAlert, 'expression', this.state.expressionJSON)}
             />
           </div>
           <div style={{ width: '20%', marginLeft: 10, marginTop: 35 }}>
             <ReactTooltip
-              className="react-autoql-drawer-tooltip"
-              id="react-autoql-data-alert-query-name-tooltip"
-              effect="solid"
+              className='react-autoql-tooltip'
+              id='react-autoql-data-alert-query-name-tooltip'
+              effect='solid'
               delayShow={500}
-              place="top"
+              place='top'
             />
             <Icon
-              data-for="react-autoql-data-alert-query-name-tooltip"
-              data-tip="Your query should describe the result you wish to be alerted about."
-              type="info"
+              data-for='react-autoql-data-alert-query-name-tooltip'
+              data-tip='Your query should describe the result you wish to be alerted about.'
+              type='info'
               size={24}
-              color="#26A7Df"
+              color='#26A7Df'
             />
           </div>
         </div>
-        <div className="step-btn-container">
+        <div className='step-btn-container'>
           {this.props.enableQueryValidation
             ? this.renderValidateBtn()
             : this.renderNextBtn(
-                'first-step-next-btn',
-                this.props.enableQueryValidation &&
-                  (!this.state.isExpressionValidated ||
-                    !this.state.isExpressionValid)
-              )}
+              'first-step-next-btn',
+              this.props.enableQueryValidation &&
+              (!this.state.isExpressionValidated || !this.state.isExpressionValid),
+            )}
         </div>
       </div>
     )
@@ -557,7 +503,6 @@ export default class DataAlertModal extends React.Component {
     return (
       <div>
         <ScheduleBuilder
-          themeConfig={this.props.themeConfig}
           ref={(r) => (this.scheduleBuilderRef = r)}
           key={`schedule-${this.NEW_NOTIFICATION_MODAL_ID}`}
           dataAlert={this.props.currentDataAlert}
@@ -566,12 +511,10 @@ export default class DataAlertModal extends React.Component {
           }}
           onErrorCallback={this.props.onErrorCallback}
         />
-        <div className="step-btn-container">
+        <div className='step-btn-container'>
           {this.renderBackBtn('second-step-back-btn')}
-          {this.renderNextBtn(
-            'second-step-next-btn',
-            !this.state.isScheduleSectionComplete,
-            () => this.setState({ isThirdSectionDirty: true })
+          {this.renderNextBtn('second-step-next-btn', !this.state.isScheduleSectionComplete, () =>
+            this.setState({ isThirdSectionDirty: true }),
           )}
         </div>
       </div>
@@ -583,16 +526,14 @@ export default class DataAlertModal extends React.Component {
       <div>
         <p>Optional:</p>
         <Input
-          className="react-autoql-notification-message-input"
-          placeholder="This message will be visible when a notification is sent."
-          type="multi"
-          maxLength="200"
+          className='react-autoql-notification-message-input'
+          placeholder='This message will be visible when a notification is sent.'
+          type='multi'
+          maxLength='200'
           value={this.state.messageInput}
           onChange={(e) => this.setState({ messageInput: e.target.value })}
         />
-        <div className="step-btn-container">
-          {this.renderBackBtn('second-step-back-btn')}
-        </div>
+        <div className='step-btn-container'>{this.renderBackBtn('second-step-back-btn')}</div>
       </div>
     )
   }
@@ -632,10 +573,7 @@ export default class DataAlertModal extends React.Component {
         title: 'Set Up Your Alert',
         content: this.renderSetUpDataAlertStep(),
         complete: this.isFirstSectionComplete(),
-        error:
-          this.props.enableQueryValidation &&
-          this.state.isExpressionValidated &&
-          !this.state.isExpressionValid,
+        error: this.props.enableQueryValidation && this.state.isExpressionValidated && !this.state.isExpressionValid,
       },
       {
         title: 'Set Notification Preferences',
@@ -645,8 +583,7 @@ export default class DataAlertModal extends React.Component {
       {
         title: 'Compose Notification Message',
         content: this.renderAlertPreferencesStep(),
-        complete:
-          this.state.isThirdSectionDirty || !!this.props.currentDataAlert,
+        complete: this.state.isThirdSectionDirty || !!this.props.currentDataAlert,
         onClick: () => {
           this.setState({ isThirdSectionDirty: true })
         },
@@ -665,22 +602,15 @@ export default class DataAlertModal extends React.Component {
     return (
       <ErrorBoundary>
         <ReactTooltip
-          className="react-autoql-drawer-tooltip"
-          id="react-autoql-data-alert-modal-tooltip"
-          effect="solid"
+          className='react-autoql-tooltip'
+          id='react-autoql-data-alert-modal-tooltip'
+          effect='solid'
           delayShow={500}
           html
         />
         <Modal
-          themeConfig={this.props.themeConfig}
           title={this.props.title}
-          titleIcon={
-            !_isEmpty(this.props.currentDataAlert) ? (
-              <Icon type="edit" />
-            ) : (
-              <span />
-            )
-          }
+          titleIcon={!_isEmpty(this.props.currentDataAlert) ? <Icon type='edit' /> : <span />}
           ref={(r) => (this.modalRef = r)}
           isVisible={this.props.isVisible}
           onClose={this.props.onClose}
@@ -691,7 +621,7 @@ export default class DataAlertModal extends React.Component {
               <div>
                 {this.props.currentDataAlert && this.props.allowDelete && (
                   <Button
-                    type="danger"
+                    type='danger'
                     onClick={() => {
                       this.setState({ isConfirmDeleteModalVisible: true })
                     }}
@@ -703,7 +633,8 @@ export default class DataAlertModal extends React.Component {
               </div>
               <div>
                 <Button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation()
                     if (this.modalRef) {
                       this.modalRef.onClose()
                     }
@@ -712,7 +643,7 @@ export default class DataAlertModal extends React.Component {
                   Cancel
                 </Button>
                 <Button
-                  type="primary"
+                  type='primary'
                   loading={this.state.isSavingDataAlert}
                   onClick={this.onDataAlertSave}
                   disabled={this.isSaveButtonDisabled(steps)}
@@ -724,12 +655,8 @@ export default class DataAlertModal extends React.Component {
           }
         >
           {this.props.isVisible && (
-            <div className="notification-modal-content">
-              <Steps
-                themeConfig={this.props.themeConfig}
-                ref={(r) => (this.stepsRef = r)}
-                steps={steps}
-              />
+            <div className='notification-modal-content'>
+              <Steps ref={(r) => (this.stepsRef = r)} steps={steps} isEditMode={!!this.props?.currentDataAlert?.id} />
             </div>
           )}
         </Modal>
@@ -740,15 +667,15 @@ export default class DataAlertModal extends React.Component {
           onClose={() => {
             this.setState({ isConfirmDeleteModalVisible: false })
           }}
-          confirmText="Delete"
-          width="450px"
+          confirmText='Delete'
+          width='450px'
         >
           <h3>Are you sure you want to delete this Data Alert?</h3>
-          <p>
-            You will no longer be notified about these changes in your data.
-          </p>
+          <p>You will no longer be notified about these changes in your data.</p>
         </ConfirmModal>
       </ErrorBoundary>
     )
   }
 }
+
+export default withTheme(DataAlertModal)

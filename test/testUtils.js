@@ -13,7 +13,7 @@ export const checkProps = (component, conformingProps) => {
   expect(propError).toBeUndefined()
 }
 
-export const ignoreConsoleErrors = callback => {
+export const ignoreConsoleErrors = (callback) => {
   const originalError = console.error
   console.error = jest.fn()
   callback()

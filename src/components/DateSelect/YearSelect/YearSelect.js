@@ -109,9 +109,7 @@ export default class YearSelect extends React.Component {
           // Do not allow to deselect last value if allowNullValue is false
           return this.props.value
         }
-        finalOption = this.props.value.filter(
-          (value) => value !== selectedValue
-        )
+        finalOption = this.props.value.filter((value) => value !== selectedValue)
       } else {
         // Select it
         finalOption = [...this.props.value, selectedValue]
@@ -122,10 +120,7 @@ export default class YearSelect extends React.Component {
 
   render = () => {
     return (
-      <div
-        className="react-autoql-radio-btn-container year-select"
-        data-test="react-autoql-year-select"
-      >
+      <div className='react-autoql-radio-btn-container year-select' data-test='react-autoql-year-select'>
         {days.map((option, i) => {
           let isActive = this.props.value === option.value
           if (this.props.multiSelect) {

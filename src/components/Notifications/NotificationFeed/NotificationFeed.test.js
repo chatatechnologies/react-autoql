@@ -12,7 +12,7 @@ const defaultProps = {
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
-  const wrapper = shallow(<NotificationFeed {...setupProps} />)
+  const wrapper = shallow(<NotificationFeed {...setupProps} />).dive()
   if (state) {
     wrapper.setState(state)
   }
@@ -22,10 +22,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const notificationListComponent = findByTestAttr(
-      wrapper,
-      'notification-list'
-    )
+    const notificationListComponent = findByTestAttr(wrapper, 'notification-list')
     expect(notificationListComponent.exists()).toBe(true)
   })
 })

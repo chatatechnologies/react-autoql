@@ -5,12 +5,7 @@ import { Axes } from '../Axes'
 import { Circles } from '../Circles'
 import { shouldLabelsRotate, getLongestLabelInPx } from '../../../js/Util.js'
 import { getDataFormatting } from '../../../props/defaults'
-import {
-  chartDefaultProps,
-  chartPropTypes,
-  getTickValues,
-  shouldRecalculateLongestLabel,
-} from '../helpers.js'
+import { chartDefaultProps, chartPropTypes, getTickValues, shouldRecalculateLongestLabel } from '../helpers.js'
 
 export default class ChataBubbleChart extends Component {
   constructor(props) {
@@ -39,10 +34,7 @@ export default class ChataBubbleChart extends Component {
   }
 
   setLabelRotationValue = (props) => {
-    const rotateLabels = shouldLabelsRotate(
-      this.xScale.bandwidth(),
-      this.longestLabelWidth
-    )
+    const rotateLabels = shouldLabelsRotate(this.xScale.bandwidth(), this.longestLabelWidth)
 
     if (typeof rotateLabels !== 'undefined') {
       this.rotateLabels = rotateLabels
@@ -53,34 +45,44 @@ export default class ChataBubbleChart extends Component {
     this.longestLabelWidth = getLongestLabelInPx(
       this.xTickValues,
       props.columns[props.stringColumnIndex],
-      getDataFormatting(props.dataFormatting)
+      getDataFormatting(props.dataFormatting),
     )
   }
 
   setChartData = (props) => {
     this.yLabelArray = props.legendLabels.map((d) => d.label)
-    this.circleHeight = props.height / this.yLabelArray.length
+    this.circleHeight = props.innerHeight / this.yLabelArray.length
+
+    const xRangeStart = props.leftMargin
+    let xRangeEnd = props.width - props.rightMargin
+    if (xRangeEnd < xRangeStart) {
+      xRangeEnd = xRangeStart
+    }
 
     this.xScale = scaleBand()
       .domain(props.data.map((d) => d[props.stringColumnIndex]))
-      .range([props.leftMargin, props.width - props.rightMargin])
+      .range([xRangeStart, xRangeEnd])
       .paddingOuter(0.5)
 
-    this.yScale = scaleBand()
-      .domain(this.yLabelArray)
-      .range([props.height - props.bottomMargin, props.topMargin])
+    const yRangeEnd = props.topMargin
+    let yRangeStart = props.height - props.bottomMargin
+    if (yRangeStart < yRangeEnd) {
+      yRangeStart = yRangeEnd
+    }
 
-    this.xTickValues = getTickValues(
-      this.xScale.bandwidth(),
-      props.width,
-      this.xScale.domain()
-    )
+    this.yScale = scaleBand().domain(this.yLabelArray).range([yRangeStart, yRangeEnd])
 
-    this.yTickValues = getTickValues(
-      this.circleHeight,
-      props.height,
-      this.yLabelArray
-    )
+    this.xTickValues = getTickValues({
+      tickHeight: this.xScale.bandwidth(),
+      fullHeight: props.innerWidth,
+      labelArray: this.xScale.domain(),
+    })
+
+    this.yTickValues = getTickValues({
+      tickHeight: this.circleHeight,
+      fullHeight: props.innerHeight,
+      labelArray: this.yLabelArray,
+    })
   }
 
   render = () => {
@@ -88,10 +90,8 @@ export default class ChataBubbleChart extends Component {
     this.setLabelRotationValue(this.props)
 
     return (
-      <g
-        className="react-autoql-bubble-chart"
-        data-test="react-autoql-bubble-chart"
-      >
+      <g className='react-autoql-bubble-chart' data-test='react-autoql-bubble-chart'>
+        <Circles {...this.props} xScale={this.xScale} yScale={this.yScale} />
         <Axes
           {...this.props}
           xScale={this.xScale}
@@ -103,7 +103,6 @@ export default class ChataBubbleChart extends Component {
           rotateLabels={this.rotateLabels}
           yGridLines
         />
-        <Circles {...this.props} xScale={this.xScale} yScale={this.yScale} />
       </g>
     )
   }

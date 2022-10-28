@@ -8,19 +8,12 @@ import { Icon } from '../Icon'
 import { ConfirmModal } from '../ConfirmModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { themeConfigType } from '../../props/types'
-import { themeConfigDefault } from '../../props/defaults'
-
 import './Modal.scss'
 
 export default class Modal extends React.Component {
   static propTypes = {
-    themeConfig: themeConfigType,
     title: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
-    titleIcon: PropTypes.oneOfType([
-      PropTypes.element,
-      PropTypes.instanceOf(Icon),
-    ]),
+    titleIcon: PropTypes.oneOfType([PropTypes.element, PropTypes.instanceOf(Icon)]),
     isVisible: PropTypes.bool,
     onClose: PropTypes.func,
     onConfirm: PropTypes.func,
@@ -37,7 +30,6 @@ export default class Modal extends React.Component {
   }
 
   static defaultProps = {
-    themeConfig: themeConfigDefault,
     title: '',
     titleIcon: undefined,
     isVisible: false,
@@ -75,12 +67,12 @@ export default class Modal extends React.Component {
     return (
       <div>
         {this.props.showCancelButton && (
-          <Button type="default" onClick={this.onClose}>
+          <Button type='default' onClick={this.onClose}>
             Cancel
           </Button>
         )}
         <Button
-          type="primary"
+          type='primary'
           onClick={this.props.onConfirm}
           loading={this.props.confirmLoading}
           disabled={this.props.confirmDisabled}
@@ -96,14 +88,12 @@ export default class Modal extends React.Component {
       <ErrorBoundary>
         <ReactModal
           isOpen={this.props.isVisible}
-          bodyOpenClassName={`react-autoql-modal-container${
-            this.props.className ? ` ${this.props.className}` : ''
-          }`}
+          bodyOpenClassName={`react-autoql-modal-container${this.props.className ? ` ${this.props.className}` : ''}`}
           className={this.props.contentClassName}
           ariaHideApp={false}
           contentLocation={{ top: 0, left: 0 }}
           closeTimeoutMS={200}
-          data-test="react-autoql-modal"
+          data-test='react-autoql-modal'
           style={{
             content: {
               ...this.props.style,
@@ -113,34 +103,26 @@ export default class Modal extends React.Component {
             },
           }}
         >
-          <div className="react-autoql-modal-header">
+          <div className='react-autoql-modal-header'>
             {this.props.titleIcon} {this.props.title}
-            <Icon
-              type="close"
-              className="react-autoql-modal-close-btn"
-              onClick={this.onClose}
-            />
+            <Icon type='close' className='react-autoql-modal-close-btn' onClick={this.onClose} />
           </div>
           <div
-            className="react-autoql-modal-body"
+            className='react-autoql-modal-body'
             style={{
               overflow: this.props.enableBodyScroll ? 'auto' : 'hidden',
             }}
           >
             {this.props.children}
           </div>
-          {this.props.showFooter && (
-            <div className="react-autoql-modal-footer">
-              {this.renderFooter()}
-            </div>
-          )}
+          {this.props.showFooter && <div className='react-autoql-modal-footer'>{this.renderFooter()}</div>}
         </ReactModal>
         <ConfirmModal
           isVisible={this.state.isConfirmCloseModalVisible}
           onClose={() => {
             this.setState({ isConfirmCloseModalVisible: false })
           }}
-          confirmText="Discard Changes"
+          confirmText='Discard Changes'
           onConfirm={() => {
             this.setState({ isConfirmCloseModalVisible: false })
             this.props.onClose()

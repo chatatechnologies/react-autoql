@@ -1,12 +1,6 @@
 import React, { Component } from 'react'
 import _get from 'lodash.get'
-import {
-  chartElementDefaultProps,
-  chartElementPropTypes,
-  getTooltipContent,
-  scaleZero,
-  getKey,
-} from '../helpers'
+import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, scaleZero, getKey } from '../helpers'
 
 export default class Bars extends Component {
   static propTypes = chartElementPropTypes
@@ -19,29 +13,20 @@ export default class Bars extends Component {
   onBarClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)
 
-    this.props.onChartClick(
+    this.props.onChartClick({
       row,
-      colIndex,
-      this.props.columns,
-      this.props.stringColumnIndex,
-      this.props.legendColumn,
-      this.props.numberColumnIndex,
-      newActiveKey
-    )
+      columnIndex: colIndex,
+      columns: this.props.columns,
+      stringColumnIndex: this.props.stringColumnIndex,
+      legendColumn: this.props.legendColumn,
+      activeKey: newActiveKey,
+    })
 
     this.setState({ activeKey: newActiveKey })
   }
 
   render = () => {
-    const {
-      columns,
-      legendColumn,
-      numberColumnIndices,
-      stringColumnIndex,
-      dataFormatting,
-      yScale,
-      xScale,
-    } = this.props
+    const { columns, legendColumn, numberColumnIndices, stringColumnIndex, dataFormatting, yScale, xScale } = this.props
 
     const visibleSeries = numberColumnIndices.filter((colIndex) => {
       return !columns[colIndex].isSeriesHidden
@@ -65,7 +50,7 @@ export default class Bars extends Component {
             }
 
             let width = Math.abs(xScale(value) - scaleZero(xScale))
-            if (Number.isNaN(width)) {
+            if (isNaN(width)) {
               width = 0
             }
 
@@ -89,11 +74,7 @@ export default class Bars extends Component {
             return (
               <rect
                 key={getKey(colIndex, index)}
-                className={`bar${
-                  this.state.activeKey === getKey(colIndex, index)
-                    ? ' active'
-                    : ''
-                }`}
+                className={`bar${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
                 data-test={`bar-${i}-${index}`}
                 y={finalBarYPosition}
                 x={value > 0 ? scaleZero(xScale) : xScale(value)}
@@ -105,12 +86,12 @@ export default class Bars extends Component {
                 style={{ fill: this.props.colorScale(i), fillOpacity: 0.7 }}
               />
             )
-          })
+          }),
         )
         visibleIndex += 1
       }
     })
 
-    return <g data-test="bars">{allBars}</g>
+    return <g data-test='bars'>{allBars}</g>
   }
 }

@@ -1,11 +1,6 @@
 import React, { Component } from 'react'
 import _get from 'lodash.get'
-import {
-  chartElementDefaultProps,
-  chartElementPropTypes,
-  getTooltipContent,
-  getKey,
-} from '../helpers'
+import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, getKey } from '../helpers'
 
 export default class StackedLines extends Component {
   static propTypes = chartElementPropTypes
@@ -18,15 +13,14 @@ export default class StackedLines extends Component {
   onDotClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)
 
-    this.props.onChartClick(
+    this.props.onChartClick({
       row,
-      colIndex,
-      this.props.columns,
-      this.props.stringColumnIndex,
-      this.props.legendColumn,
-      this.props.numberColumnIndex,
-      newActiveKey
-    )
+      columnIndex: colIndex,
+      columns: this.props.columns,
+      stringColumnIndex: this.props.stringColumnIndex,
+      legendColumn: this.props.legendColumn,
+      activeKey: newActiveKey,
+    })
 
     this.setState({ activeKey: newActiveKey })
   }
@@ -44,9 +38,7 @@ export default class StackedLines extends Component {
     return (
       <circle
         key={`dot-${getKey(colIndex, index)}`}
-        className={`vertex-dot${
-          this.state.activeKey === getKey(colIndex, index) ? ' active' : ''
-        }`}
+        className={`vertex-dot${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
         cy={y}
         cx={x}
         r={4}
@@ -77,6 +69,7 @@ export default class StackedLines extends Component {
     return (
       <polygon
         key={`polygon-${getKey(stringColumnIndex, i)}`}
+        className={`stacked-area${this.state.activeKey === getKey(stringColumnIndex, i) ? ' active' : ''}`}
         points={polygonPoints}
         data-tip={`
             <div>
@@ -84,23 +77,17 @@ export default class StackedLines extends Component {
             </div>
           `}
         data-for={this.props.tooltipID}
-        data-effect="float"
+        data-effect='float'
         style={{
           fill: this.props.colorScale(i),
-          fillOpacity: 1,
+          fillOpacity: 0.7,
         }}
       />
     )
   }
 
   render = () => {
-    const {
-      columns,
-      numberColumnIndices,
-      stringColumnIndex,
-      yScale,
-      xScale,
-    } = this.props
+    const { columns, numberColumnIndices, stringColumnIndex, yScale, xScale } = this.props
 
     const visibleSeries = numberColumnIndices.filter((colIndex) => {
       return !columns[colIndex].isSeriesHidden
@@ -114,7 +101,7 @@ export default class StackedLines extends Component {
     const polygonVertexDots = []
 
     let minValue = yScale.domain()[0]
-    if (minValue < 0) minValue = 0
+    if (minValue < 0) {minValue = 0}
 
     let prevValues = []
     let prevPolygonVertices = []
@@ -124,8 +111,8 @@ export default class StackedLines extends Component {
     })
 
     numberColumnIndices.forEach((colIndex, i) => {
-      let currentValues = []
-      let currentPolygonVertices = []
+      const currentValues = []
+      const currentPolygonVertices = []
       if (!columns[colIndex].isSeriesHidden) {
         this.props.data.forEach((d, index) => {
           const rawValue = d[colIndex]
@@ -141,14 +128,7 @@ export default class StackedLines extends Component {
           currentPolygonVertices.push([x, y])
 
           if (value !== 0) {
-            const polygonVertexDot = this.createPolygonVertexDot(
-              d,
-              i,
-              x,
-              y,
-              colIndex,
-              index
-            )
+            const polygonVertexDot = this.createPolygonVertexDot(d, i, x, y, colIndex, index)
             polygonVertexDots.push(polygonVertexDot)
           }
         })
@@ -164,7 +144,7 @@ export default class StackedLines extends Component {
     })
 
     return (
-      <g data-test="stacked-lines">
+      <g data-test='stacked-lines'>
         {polygons}
         {polygonVertexDots}
       </g>

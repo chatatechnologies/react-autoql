@@ -47,16 +47,7 @@ export default class Checkbox extends React.Component {
   }
 
   render = () => {
-    const {
-      label,
-      type,
-      indeterminate,
-      hasError,
-      style,
-      onChange,
-      checked,
-      ...nativeProps
-    } = this.props
+    const { label, type, indeterminate, hasError, style, onChange, checked, ...nativeProps } = this.props
 
     const checkboxClassname = `
       react-autoql-checkbox
@@ -79,13 +70,14 @@ export default class Checkbox extends React.Component {
       <ErrorBoundary>
         <div
           className={`react-autoql-checkbox-container ${this.props.className}`}
-          data-test="react-autoql-checkbox"
+          data-test='react-autoql-checkbox-container'
           style={this.props.style}
         >
           <div className={checkboxClassname}>
             <input
               {...nativeProps}
-              type="checkbox"
+              type='checkbox'
+              data-test='react-autoql-checkbox'
               className={inputClassname}
               ref={(el) => (this.selector = el)}
               id={this.ID}
@@ -93,13 +85,13 @@ export default class Checkbox extends React.Component {
               onChange={this.onCheckedChange}
             />
             {this.props.checked && this.props.type === 'default' && (
-              <div className="react-autoql-checkbox-tick">
-                <Icon type="check" />
+              <div className='react-autoql-checkbox-tick'>
+                <Icon type='check' />
               </div>
             )}
             {label && (
               <div
-                className="react-autoql-checkbox-label"
+                className='react-autoql-checkbox-label'
                 onClick={(e) => {
                   this.selector.click()
                 }}

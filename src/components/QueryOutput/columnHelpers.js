@@ -16,12 +16,7 @@ export const isAggregation = (columns) => {
 export const isColumnNumberType = (col) => {
   const type = col?.type
 
-  return (
-    type === 'DOLLAR_AMT' ||
-    type === 'QUANTITY' ||
-    type === 'PERCENT' ||
-    type === 'RATIO'
-  )
+  return type === 'DOLLAR_AMT' || type === 'QUANTITY' || type === 'PERCENT' || type === 'RATIO'
 }
 
 export const isColumnStringType = (col) => {
@@ -98,16 +93,11 @@ export const getMultiSeriesColumnIndex = (columns) => {
     return undefined
   }
 
-  return columns.findIndex(
-    (col) => col && col.is_visible && col.multi_series === true
-  )
+  return columns.findIndex((col) => col && col.is_visible && col.multi_series === true)
 }
 
 export const getDateColumnIndex = (columns) => {
-  return columns.findIndex(
-    (col) =>
-      col.is_visible && (col.type === 'DATE' || col.type === 'DATE_STRING')
-  )
+  return columns.findIndex((col) => col.is_visible && (col.type === 'DATE' || col.type === 'DATE_STRING'))
 }
 
 export const getStringColumnIndices = (columns, supportsPivot) => {
@@ -120,11 +110,7 @@ export const getStringColumnIndices = (columns, supportsPivot) => {
   const stringColumnIndices = []
 
   columns.forEach((col, index) => {
-    if (
-      (isColumnStringType(col) || col.groupable) &&
-      index !== multiSeriesIndex &&
-      col.is_visible
-    ) {
+    if ((isColumnStringType(col) || col.groupable) && index !== multiSeriesIndex && col.is_visible) {
       stringColumnIndices.push(index)
     }
   })
@@ -136,9 +122,7 @@ export const getStringColumnIndices = (columns, supportsPivot) => {
   if (supportsPivot) {
     // Use date column if its a groupable, otherwise use first groupable column
     const isDateColumnGroupable = _get(columns[dateColumnIndex], 'groupable')
-    stringColumnIndex = isDateColumnGroupable
-      ? dateColumnIndex
-      : columns.findIndex((col) => col.groupable)
+    stringColumnIndex = isDateColumnGroupable ? dateColumnIndex : columns.findIndex((col) => col.groupable)
   } else if (dateColumnIndex >= 0) {
     stringColumnIndex = dateColumnIndex
   } else if (stringColumnIndices[1] >= 0) {

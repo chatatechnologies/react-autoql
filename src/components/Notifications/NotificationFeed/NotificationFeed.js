@@ -15,24 +15,16 @@ import { CustomScrollbars } from '../../CustomScrollbars'
 import { Spinner } from '../../Spinner'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import {
-  fetchNotificationFeed,
-  dismissAllNotifications,
-} from '../../../js/notificationService'
+import { fetchNotificationFeed, dismissAllNotifications } from '../../../js/notificationService'
 
-import { authenticationType, themeConfigType } from '../../../props/types'
-import {
-  authenticationDefault,
-  themeConfigDefault,
-  getAuthentication,
-  getThemeConfig,
-} from '../../../props/defaults'
-import { setCSSVars } from '../../../js/Util'
+import { authenticationType } from '../../../props/types'
+import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
 import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
 import './NotificationFeed.scss'
+import { withTheme } from '../../../theme'
 
-export default class NotificationFeed extends React.Component {
+class NotificationFeed extends React.Component {
   MODAL_COMPONENT_KEY = uuid()
   NOTIFICATION_FETCH_LIMIT = 10
   // Open event source http connection here to receive SSE
@@ -42,13 +34,15 @@ export default class NotificationFeed extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
-    themeConfig: themeConfigType,
     onCollapseCallback: PropTypes.func,
     onExpandCallback: PropTypes.func,
     activeNotificationData: PropTypes.shape({}),
     showNotificationDetails: PropTypes.bool,
     onErrorCallback: PropTypes.func,
     onSuccessCallback: PropTypes.func,
+    onDismissCallback: PropTypes.func,
+    onDeleteCallback: PropTypes.func,
+    onChange: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     showCreateAlertBtn: PropTypes.bool,
     enableAjaxTableData: PropTypes.bool,
@@ -57,7 +51,6 @@ export default class NotificationFeed extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
     activeNotificationData: undefined,
     showNotificationDetails: true,
     autoChartAggregations: false,
@@ -68,6 +61,9 @@ export default class NotificationFeed extends React.Component {
     onExpandCallback: () => {},
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
+    onDismissCallback: () => {},
+    onDeleteCallback: () => {},
+    onChange: () => {},
   }
 
   state = {
@@ -79,19 +75,16 @@ export default class NotificationFeed extends React.Component {
   }
 
   componentDidMount = () => {
+    this._isMounted = true
     this.getNotifications()
-    setCSSVars(this.props.themeConfig)
   }
 
-  componentDidUpdate = (prevProps) => {
-    if (
-      !_isEqual(
-        getThemeConfig(this.props.themeConfig),
-        getThemeConfig(prevProps.themeConfig)
-      )
-    ) {
-      setCSSVars(this.props.themeConfig)
-    }
+  componentWillUnmount = () => {
+    this._isMounted = false
+  }
+
+  componentWillUnmount = () => {
+    this._isMounted = false
   }
 
   getNotifications = () => {
@@ -111,26 +104,28 @@ export default class NotificationFeed extends React.Component {
           pagination = data.pagination
         }
 
-        const hasMore =
-          !data?.items?.length ||
-          notificationList?.length === data?.pagination?.total_items
+        const hasMore = !data?.items?.length || notificationList?.length === data?.pagination?.total_items
 
-        this.setState({
-          notificationList,
-          pagination,
-          nextOffset,
-          hasMore,
-          isFetchingFirstNotifications: false,
-          fetchNotificationsError: null,
-        })
+        if (this._isMounted) {
+          this.setState({
+            notificationList,
+            pagination,
+            nextOffset,
+            hasMore,
+            isFetchingFirstNotifications: false,
+            fetchNotificationsError: null,
+          })
+        }
       })
       .catch((error) => {
         console.error(error)
         this.props.onErrorCallback(error)
-        this.setState({
-          isFetchingFirstNotifications: false,
-          fetchNotificationsError: error,
-        })
+        if (this._isMounted) {
+          this.setState({
+            isFetchingFirstNotifications: false,
+            fetchNotificationsError: error,
+          })
+        }
       })
   }
 
@@ -143,13 +138,12 @@ export default class NotificationFeed extends React.Component {
     }).then((response) => {
       const newNotifications = this.detectNewNotifications(response.items)
 
-      if (!newNotifications.length) {
+      if (_isEqual(response.items, this.state.notificationList)) {
         return
       }
 
-      if (newNotifications.length === 10) {
+      if (!newNotifications?.length || newNotifications?.length === 10) {
         // Reset list and pagination to new list
-        // This will probably never happen
         this.setState({
           notificationList: response.items,
           pagination: response.pagination,
@@ -215,10 +209,15 @@ export default class NotificationFeed extends React.Component {
 
     dismissAllNotifications({
       ...getAuthentication(this.props.authentication),
-    }).catch((error) => {
-      console.error(error)
-      this.props.onErrorCallback(error)
     })
+      .then(() => {
+        this.props.onDismissCallback(newList)
+        this.props.onChange(newList)
+      })
+      .catch((error) => {
+        console.error(error)
+        this.props.onErrorCallback(error)
+      })
   }
 
   onDismissClick = (notification) => {
@@ -231,17 +230,22 @@ export default class NotificationFeed extends React.Component {
       }
       return n
     })
-    this.setState({ notificationList: newList })
+    this.setState({ notificationList: newList }, () => {
+      this.props.onDismissCallback(newList)
+    })
   }
 
   onDeleteClick = (notification) => {
-    const newList = this.state.notificationList.filter(
-      (n) => n.id !== notification.id
+    const newList = this.state.notificationList.filter((n) => n.id !== notification.id)
+    this.setState(
+      {
+        notificationList: newList,
+        nextOffset: this.state.nextOffset > 0 ? this.state.nextOffset - 1 : 0,
+      },
+      () => {
+        this.props.onDeleteCallback(newList)
+      },
     )
-    this.setState({
-      notificationList: newList,
-      nextOffset: this.state.nextOffset > 0 ? this.state.nextOffset - 1 : 0,
-    })
   }
 
   onDataAlertSave = () => {
@@ -251,13 +255,9 @@ export default class NotificationFeed extends React.Component {
   }
 
   renderDismissAllButton = () => (
-    <div
-      key="dismiss-all-btn"
-      className="react-autoql-notification-dismiss-all"
-    >
+    <div key='dismiss-all-btn' className='react-autoql-notification-dismiss-all'>
       <span onClick={this.onDismissAllClick}>
-        <Icon type="notification-off" style={{ verticalAlign: 'middle' }} />{' '}
-        Dismiss All
+        <Icon type='notification-off' style={{ verticalAlign: 'middle' }} /> Dismiss All
       </span>
     </div>
   )
@@ -271,17 +271,14 @@ export default class NotificationFeed extends React.Component {
       <DataAlertModal
         key={this.MODAL_COMPONENT_KEY}
         authentication={getAuthentication(this.props.authentication)}
-        themeConfig={this.props.themeConfig}
         isVisible={this.state.isEditModalVisible}
         onClose={() => this.setState({ isEditModalVisible: false })}
         currentDataAlert={this.state.activeDataAlert}
         onSave={this.onDataAlertSave}
         onErrorCallback={this.props.onErrorCallback}
         allowDelete={false}
-        title={
-          this.state.activeDataAlert ? 'Edit Data Alert' : 'Create Data Alert'
-        }
-        titleIcon={this.state.activeDataAlert ? <Icon type="edit" /> : <span />}
+        title={this.state.activeDataAlert ? 'Edit Data Alert' : 'Create Data Alert'}
+        titleIcon={this.state.activeDataAlert ? <Icon type='edit' /> : <span />}
       />
     )
   }
@@ -293,19 +290,13 @@ export default class NotificationFeed extends React.Component {
 
     if (this.state.isFetchingFirstNotifications) {
       return (
-        <div
-          className="notification-list-loading-container"
-          data-test="notification-list"
-        >
+        <div className='notification-list-loading-container' data-test='notification-list'>
           Loading...
         </div>
       )
     } else if (this.state.fetchNotificationsError) {
       return (
-        <div
-          className="notification-list-loading-container"
-          data-test="notification-list"
-        >
+        <div className='notification-list-loading-container' data-test='notification-list'>
           Oh no! Something went wrong while accessing your notifications.
           <div style={{ textAlign: 'center', marginTop: '10px' }}>
             <Button onClick={this.getInitialNotifications}>Try Again</Button>
@@ -316,14 +307,11 @@ export default class NotificationFeed extends React.Component {
 
     return (
       <ErrorBoundary>
-        <div
-          className="react-autoql-notification-list-container"
-          data-test="notification-list"
-        >
+        <div className='react-autoql-notification-list-container' data-test='notification-list'>
           <ReactTooltip
-            className="react-autoql-drawer-tooltip"
-            id="react-autoql-notification-tooltip"
-            effect="solid"
+            className='react-autoql-tooltip'
+            id='react-autoql-notification-tooltip'
+            effect='solid'
             delayShow={500}
             html
           />
@@ -335,31 +323,29 @@ export default class NotificationFeed extends React.Component {
                   initialLoad={false}
                   pageStart={0}
                   loadMore={this.getNotifications}
-                  hasMore={
-                    this.state.pagination.total_items >
-                    this.state.notificationList.length
-                  }
+                  hasMore={this.state.pagination.total_items > this.state.notificationList.length}
                   loader={
-                    <div className="loader" key={0}>
+                    <div className='react-autoql-spinner-centered' key={0}>
                       <Spinner />
                     </div>
                   }
                   useWindow={false}
                 >
-                  <div className="notification-feed-list">
+                  <div className='notification-feed-list'>
                     {this.state.notificationList.map((notification, i) => {
                       return (
                         <NotificationItem
                           key={`notification-item-${i}`}
-                          authentication={getAuthentication(
-                            this.props.authentication
-                          )}
-                          themeConfig={this.props.themeConfig}
+                          authentication={getAuthentication(this.props.authentication)}
                           notification={notification}
                           onClick={this.onItemClick}
                           onDismissCallback={this.onDismissClick}
+                          onDismissSuccessCallback={() => {
+                            this.props.onChange(this.state.notificationList)
+                          }}
                           onDeleteCallback={this.onDeleteClick}
                           onDeleteSuccessCallback={() => {
+                            this.props.onChange(this.state.notificationList)
                             this.getNotifications()
                           }}
                           onExpandCallback={(notification) => {
@@ -369,15 +355,9 @@ export default class NotificationFeed extends React.Component {
                             })
                           }}
                           onCollapseCallback={this.props.onCollapseCallback}
-                          activeNotificationData={
-                            this.props.activeNotificationData
-                          }
-                          autoChartAggregations={
-                            this.props.autoChartAggregations
-                          }
-                          showNotificationDetails={
-                            this.props.showNotificationDetails
-                          }
+                          activeNotificationData={this.props.activeNotificationData}
+                          autoChartAggregations={this.props.autoChartAggregations}
+                          showNotificationDetails={this.props.showNotificationDetails}
                           onErrorCallback={this.props.onErrorCallback}
                           onEditClick={(dataAlert) => {
                             this.setState({ activeDataAlert: dataAlert })
@@ -392,19 +372,13 @@ export default class NotificationFeed extends React.Component {
               </CustomScrollbars>
             </Fragment>
           ) : (
-            <div className="empty-notifications-message">
-              <img className="empty-notifications-img" src={emptyStateImg} />
-              <div className="empty-notifications-title">
-                No notifications yet.
-              </div>
+            <div className='empty-notifications-message'>
+              <img className='empty-notifications-img' src={emptyStateImg} />
+              <div className='empty-notifications-title'>No notifications yet.</div>
               <div>Stay tuned!</div>
               <br />
               {this.props.showCreateAlertBtn && (
-                <Button
-                  style={{ marginTop: '10px' }}
-                  type="primary"
-                  onClick={this.showEditDataAlertModal}
-                >
+                <Button style={{ marginTop: '10px' }} type='primary' onClick={this.showEditDataAlertModal}>
                   Create Data Alert
                 </Button>
               )}
@@ -416,3 +390,5 @@ export default class NotificationFeed extends React.Component {
     )
   }
 }
+
+export default withTheme(NotificationFeed)

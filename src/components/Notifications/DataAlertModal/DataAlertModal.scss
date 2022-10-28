@@ -8,7 +8,7 @@
   .step-btn-container {
     text-align: right;
     display: flex;
-    min-height: 20px;
+    min-height: 30px;
   }
 }
 
@@ -29,4 +29,8 @@
 .expression-invalid-message {
   color: var(--react-autoql-danger-color);
   display: 'inline-block';
+}
+
+.react-autoql-data-alert-query-name-tooltip-icon {
+  color: var(--react-autoql-info-color);
 }

@@ -7,7 +7,9 @@ const isIsoDate = (str) => {
   }
 
   try {
-    if (!/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(str)) return false
+    if (!/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(str)) {
+      return false
+    }
     var d = new Date(str)
     return d.toISOString() === str
   } catch (error) {
@@ -15,33 +17,34 @@ const isIsoDate = (str) => {
   }
 }
 
-export const constructRTArray = (response) => {
+const formatChunkWithDates = (chunk) => {
   try {
-    const interpretation = _get(response, 'data.data.parsed_interpretation')
-    if (!interpretation) {
-      return undefined
-    }
-
-    const reverseTranslationArray = []
-
-    if (_get(interpretation, 'length')) {
-      interpretation.forEach((chunk) => {
-        if (chunk.c_type === 'FILTER') {
-          const chunkedFilterArray = parseFilterChunk(chunk)
-          chunkedFilterArray.forEach((filterChunk) => {
-            reverseTranslationArray.push(filterChunk)
-          })
-        } else {
-          reverseTranslationArray.push(chunk)
+    const textArray = chunk.eng.split(' ')
+    const textWithDatesArray = textArray.map((text) => {
+      if (isIsoDate(text)) {
+        const formattedDate = dayjs(text).utc().format('ll')
+        if (formattedDate !== 'Invalid Date') {
+          return formattedDate
         }
-      })
-    }
+      }
+      return text
+    })
 
-    return reverseTranslationArray
+    const textWithDates = textWithDatesArray.join(' ')
+    return {
+      c_type: 'DATE',
+      eng: textWithDates,
+    }
   } catch (error) {
-    console.error(error)
-    return undefined
+    return {
+      c_type: 'TEXT',
+      eng: chunk.eng,
+    }
   }
+}
+
+const removeEscape = (input) => {
+  return input.substring(1, input.length - 1).replace("''", "'")
 }
 
 const splitStrByReplacements = (str, replacements, type) => {
@@ -88,8 +91,8 @@ const parseFilterChunk = (chunk) => {
     const input = chunk.eng
 
     let match
-    let replacements = []
-    while ((match = reg.exec(input)) != null) {
+    const replacements = []
+    while ((match = reg.exec(input)) !== null) {
       replacements.push(match)
     }
 
@@ -99,11 +102,7 @@ const parseFilterChunk = (chunk) => {
       return [formattedChunk]
     }
 
-    const splitFilterArray = splitStrByReplacements(
-      input,
-      replacements,
-      'VALUE_LABEL'
-    )
+    const splitFilterArray = splitStrByReplacements(input, replacements, 'VALUE_LABEL')
 
     return splitFilterArray
   } catch (error) {
@@ -117,34 +116,30 @@ const parseFilterChunk = (chunk) => {
   }
 }
 
-const formatChunkWithDates = (chunk) => {
+export const constructRTArray = (interpretation) => {
   try {
-    const textArray = chunk.eng.split(' ')
-    const textWithDatesArray = textArray.map((text) => {
-      if (isIsoDate(text)) {
-        const formattedDate = dayjs(text)
-          .utc()
-          .format('ll')
-        if (formattedDate !== 'Invalid Date') {
-          return formattedDate
+    if (!interpretation) {
+      return undefined
+    }
+
+    const reverseTranslationArray = []
+
+    if (_get(interpretation, 'length')) {
+      interpretation.forEach((chunk) => {
+        if (chunk.c_type === 'FILTER') {
+          const chunkedFilterArray = parseFilterChunk(chunk)
+          chunkedFilterArray.forEach((filterChunk) => {
+            reverseTranslationArray.push(filterChunk)
+          })
+        } else {
+          reverseTranslationArray.push(chunk)
         }
-      }
-      return text
-    })
-
-    const textWithDates = textWithDatesArray.join(' ')
-    return {
-      c_type: 'DATE',
-      eng: textWithDates,
+      })
     }
+
+    return reverseTranslationArray
   } catch (error) {
-    return {
-      c_type: 'TEXT',
-      eng: chunk.eng,
-    }
+    console.error(error)
+    return undefined
   }
-}
-
-const removeEscape = (input) => {
-  return input.substring(1, input.length - 1).replace("''", "'")
 }

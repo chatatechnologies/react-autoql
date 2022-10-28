@@ -18,10 +18,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const notificationRulesComponent = findByTestAttr(
-      wrapper,
-      'notification-rules'
-    )
+    const notificationRulesComponent = findByTestAttr(wrapper, 'notification-rules')
     expect(notificationRulesComponent.exists()).toBe(true)
   })
 })
