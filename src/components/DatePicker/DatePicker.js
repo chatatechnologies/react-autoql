@@ -1,21 +1,15 @@
 import React from 'react'
 import { DateRange } from 'react-date-range'
 
-import { getThemeConfig, themeConfigDefault } from '../../props/defaults'
-import { themeConfigType } from '../../props/types'
-
 import './DatePicker.scss'
 import 'react-date-range/dist/styles.css' // main style file
 import 'react-date-range/dist/theme/default.css' // theme css file
+import { getThemeValue } from '../../theme/configureTheme'
 
 export default class DatePicker extends React.Component {
-  static propTypes = {
-    themeConfig: themeConfigType,
-  }
+  static propTypes = {}
 
-  static defaultProps = {
-    themeConfig: themeConfigDefault,
-  }
+  static defaultProps = {}
 
   state = {
     ranges: [
@@ -33,7 +27,7 @@ export default class DatePicker extends React.Component {
   }
 
   render = () => {
-    const { accentColor } = getThemeConfig(this.props.themeConfig)
+    const accentColor = getThemeValue('accent-color')
 
     return (
       <DateRange
