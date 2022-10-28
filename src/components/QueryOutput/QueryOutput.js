@@ -1161,10 +1161,10 @@ export class QueryOutput extends React.Component {
 
   setHeaderFilterPlaceholder = (col) => {
     if ((col.type === 'DATE' || col.type === 'DATE_STRING') && !col.pivot) {
-      return 'pick range...'
+      return 'pick range'
     }
 
-    return 'filter...'
+    return 'filter'
   }
 
   formatColumnsForTable = (columns) => {
@@ -1615,6 +1615,7 @@ export class QueryOutput extends React.Component {
         originalQueryID={this.props.originalQueryID}
         isDrilldown={this.isDrilldown()}
         isQueryOutputMounted={this._isMounted}
+        popoverParentElement={this.props.popoverParentElement}
         supportsDrilldowns={
           isAggregation(this.state.columns) && getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
         }

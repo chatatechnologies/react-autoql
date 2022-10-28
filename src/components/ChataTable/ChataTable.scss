@@ -33,6 +33,18 @@
   }
 }
 
+.react-autoql-table-date-picker {
+  background: var(--react-autoql-background-color-secondary);
+  color: var(--react-autoql-text-color-primary);
+  padding: 15px;
+  padding-bottom: 5px;
+
+  h3 {
+    margin-top: 0;
+    margin-left: 5px;
+  }
+}
+
 .react-autoql-table {
   margin-bottom: 0 !important;
 }
@@ -46,10 +58,7 @@
 .react-autoql-table.tabulator .tabulator-tableHolder .tabulator-table {
   background-color: inherit;
 }
-.react-autoql-table-container:not(.supports-drilldown)
-  .react-autoql-table.tabulator
-  .tabulator-row
-  .tabulator-cell {
+.react-autoql-table-container:not(.supports-drilldown) .react-autoql-table.tabulator .tabulator-row .tabulator-cell {
   cursor: text;
 }
 .react-autoql-table-container.supports-drilldown
@@ -67,21 +76,13 @@
 }
 
 .react-autoql-table-container.supports-drilldown {
-  &.pivot
-    .react-autoql-table.tabulator
-    .tabulator-row
-    .tabulator-cell:not(.pivot-category):hover,
-  &:not(.pivot)
-    .react-autoql-table.tabulator
-    .tabulator-row:hover
-    .tabulator-cell {
+  &.pivot .react-autoql-table.tabulator .tabulator-row .tabulator-cell:not(.pivot-category):hover,
+  &:not(.pivot) .react-autoql-table.tabulator .tabulator-row:hover .tabulator-cell {
     color: var(--react-autoql-accent-color);
   }
 }
 
-.react-autoql-table.tabulator
-  .tabulator-header
-  .tabulator-col.tabulator-sortable:hover {
+.react-autoql-table.tabulator .tabulator-header .tabulator-col.tabulator-sortable:hover {
   background-color: var(--react-autoql-hover-color) !important;
 }
 .react-autoql-table.tabulator .tabulator-header .tabulator-col,
@@ -137,9 +138,7 @@
   // }
 
   &.limited .tabulator-col .tabulator-header-filter,
-  &.infinite
-    .tabulator-col:not(.DATE_STRING):not(.DATE)
-    .tabulator-header-filter {
+  &.infinite .tabulator-col:not(.DATE_STRING):not(.DATE) .tabulator-header-filter {
     display: inline;
   }
 
@@ -165,28 +164,17 @@
   }
 }
 
-.react-autoql-table.tabulator
-  .tabulator-header
-  .tabulator-col
-  .tabulator-col-content {
+.react-autoql-table.tabulator .tabulator-header .tabulator-col .tabulator-col-content {
   padding: 8px 5px;
 }
-.react-autoql-table.tabulator
-  .tabulator-header
-  .tabulator-col
-  .tabulator-col-content
-  .tabulator-arrow {
+.react-autoql-table.tabulator .tabulator-header .tabulator-col .tabulator-col-content .tabulator-arrow {
   opacity: 0;
   border-left: 4px solid transparent !important;
   border-right: 4px solid transparent !important;
   right: 4px;
   top: calc(50% - 3px);
 }
-.react-autoql-table.tabulator
-  .tabulator-header
-  .tabulator-col:hover
-  .tabulator-col-content
-  .tabulator-arrow {
+.react-autoql-table.tabulator .tabulator-header .tabulator-col:hover .tabulator-col-content .tabulator-arrow {
   opacity: 1 !important;
 }
 .react-autoql-table.tabulator

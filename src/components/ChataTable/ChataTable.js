@@ -158,9 +158,9 @@ export default class ChataTable extends React.Component {
   componentDidMount = () => {
     this._isMounted = true
     this.firstRender = false
-    // this.setTableHeaderValues = setTimeout(() => {
-    //   this.setDateFilterClickListeners()
-    // }, 100)
+    this.clickListenerTimeout = setTimeout(() => {
+      this.setDateFilterClickListeners()
+    }, 100)
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -191,7 +191,7 @@ export default class ChataTable extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
-    clearTimeout(this.setTableHeaderValues)
+    clearTimeout(this.clickListenerTimeout)
     clearTimeout(this.setDimensionsTimeout)
     this.cancelCurrentRequest()
     this.resetFilterTags()
@@ -411,28 +411,28 @@ export default class ChataTable extends React.Component {
     }
 
     columns.forEach((col) => {
-      // if ((col.type === 'DATE' || col.type === 'DATE_STRING') && !col.pivot) {
-      const inputElement = document.querySelector(
-        `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"] .tabulator-col-content input`,
-      )
+      if (col.type === 'DATE' && !col.pivot) {
+        // || col.type === 'DATE_STRING') ) {
+        const inputElement = document.querySelector(
+          `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"] .tabulator-col-content input`,
+        )
 
-      console.log('table ID:', this.TABLE_ID)
-
-      if (inputElement) {
-        inputElement.addEventListener('click', (e) => {
-          const coords = inputElement.getBoundingClientRect()
-          console.log('input x and y:', {
-            top: coords.top,
-            left: coords.left,
+        if (inputElement) {
+          inputElement.addEventListener('click', (e) => {
+            const coords = e.target.getBoundingClientRect()
+            const tableCoords = this.tableContainer.getBoundingClientRect()
+            if (coords?.top && coords?.left) {
+              this.setState({
+                datePickerLocation: {
+                  top: coords.top - tableCoords.top + coords.height + 5,
+                  left: coords.left - tableCoords.left,
+                },
+                datePickerColumn: col,
+              })
+            }
           })
-          this.setState({
-            datePickerLocation: { top: coords.top, left: coords.left },
-            datePickerColumn: col,
-          })
-          console.log('COLUMN INPUT CLICKED!', e, col)
-        })
+        }
       }
-      // }
     })
   }
 
@@ -495,8 +495,17 @@ export default class ChataTable extends React.Component {
     this.settingFilterInputs = false
   }
 
-  handleSelect = (date) => {
-    console.log(date)
+  onDateRangeSelection = (dateRangeSelection) => {
+    const { startDate, endDate } = dateRangeSelection
+
+    const startDateObj = new Date(startDate)
+    const endDateObj = new Date(endDate)
+
+    const startDateISO8601 = startDateObj.toISOString()
+    const endDateISO8601 = endDateObj.toISOString()
+
+    console.log({ startDateISO8601, endDateISO8601 })
+    // make ajax query here
   }
 
   setSorters = (ref) => {
@@ -577,56 +586,54 @@ export default class ChataTable extends React.Component {
 
     return (
       <Popover
-        isOpen={!!this.state.datePickerLocation}
-        // align="end"
-        // position="bottom"
-        reposition={false}
+        isOpen={!!this.state.datePickerColumn}
+        align='start'
+        positions={['bottom', 'right']}
+        // reposition={false}
         onClickOutside={(e) => {
-          e.stopPropagation()
+          // e.stopPropagation()
           this.setState({
-            datePickerLocation: undefined,
+            //   datePickerLocation: undefined,
             datePickerColumn: undefined,
           })
         }}
         content={
-          <div style={{ padding: '20px', background: 'white' }}>
-            <h3 style={{ marginTop: 0 }}>{this.state.datePickerColumn?.display_name}</h3>
-            <DatePicker themeConfig={this.props.themeConfig} />
+          <div className='react-autoql-table-date-picker'>
+            <h3>{this.state.datePickerColumn?.display_name}</h3>
+            <DatePicker onSelection={this.onDateRangeSelection} />
           </div>
         }
-        contentLocation={({ targetRect, popoverRect, position, align, nudgedLeft, nudgedTop }) => {
-          console.log({
-            targetRect,
-            popoverRect,
-            position,
-            align,
-            nudgedLeft,
-            nudgedTop,
-          })
-          let top = this.state.datePickerLocation.top
-          let left = this.state.datePickerLocation.left
+        // parentElement={this.props.popoverParentElement}
+        // boundaryElement={this.props.popoverParentElement}
+        // contentLocation={({ targetRect, popoverRect, position, align, nudgedLeft, nudgedTop }) => {
+        //   let top = this.state.datePickerLocation.top
+        //   let left = this.state.datePickerLocation.left
 
-          // const {
-          //   documentHeight,
-          //   documentWidth,
-          // } = this.getDocumentHeightAndWidth()
+        //   // const {
+        //   //   documentHeight,
+        //   //   documentWidth,
+        //   // } = this.getDocumentHeightAndWidth()
 
-          // const datePickerBottom = top + popoverRect.height
-          // console.log('bottom comparison:', datePickerBottom, documentHeight)
-          // if (datePickerBottom > documentHeight) {
-          //   top = top - (datePickerBottom - documentHeight)
-          // }
+        //   // const datePickerBottom = top + popoverRect.height
+        //   // if (datePickerBottom > documentHeight) {
+        //   //   top = top - (datePickerBottom - documentHeight)
+        //   // }
 
-          // const datePickerRight = left + popoverRect.width
-          // console.log('right comparison:', datePickerRight, documentWidth)
-          // if (datePickerRight > documentWidth) {
-          //   left = left - (datePickerRight - documentWidth)
-          // }
+        //   // const datePickerRight = left + popoverRect.width
+        //   // if (datePickerRight > documentWidth) {
+        //   //   left = left - (datePickerRight - documentWidth)
+        //   // }
 
-          return { top, left }
-        }}
+        //   return { top, left }
+        // }}
       >
-        <div />
+        <div
+          style={{
+            position: 'absolute',
+            top: this.state.datePickerLocation?.top,
+            left: this.state.datePickerLocation?.left,
+          }}
+        />
       </Popover>
     )
   }
@@ -652,7 +659,6 @@ export default class ChataTable extends React.Component {
             flexBasis: this.props.isResizing || this.isLoading() || this.isUpdating ? height : 'auto',
           }}
         >
-          {/* <DatePicker /> */}
           {this.props.data && this.props.columns && (
             <TableWrapper
               tableKey={`react-autoql-table-${this.TABLE_ID}`}
