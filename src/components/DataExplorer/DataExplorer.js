@@ -9,13 +9,14 @@ import DataPreview from './DataPreview'
 import DEConstants from './constants'
 
 import { QuerySuggestionList } from '../ExploreQueries'
-import { authenticationType } from '../../props/types'
+import { authenticationType, dataFormattingType } from '../../props/types'
 import { CustomScrollbars } from '../CustomScrollbars'
 import { TopicName } from './TopicName'
 import { Icon } from '../Icon'
 import { Card } from '../Card'
 
 import './DataExplorer.scss'
+import { dataFormattingDefault } from '../../props/defaults'
 
 export default class DataExplorer extends React.Component {
   constructor(props) {
@@ -33,16 +34,22 @@ export default class DataExplorer extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
+    dataFormatting: dataFormattingType,
     shouldRender: PropTypes.bool,
     inputPlaceholder: PropTypes.string,
+    introMessage: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
     rebuildTooltips: PropTypes.func,
+    executeQuery: PropTypes.func,
   }
 
   static defaultProps = {
     authentication: {},
+    dataFormatting: dataFormattingDefault,
     shouldRender: true,
     inputPlaceholder: undefined,
-    rebuildTooltips: () => {},
+    introMessage: undefined,
+    rebuildTooltips: undefined,
+    executeQuery: () => {},
   }
 
   componentDidMount = () => {
