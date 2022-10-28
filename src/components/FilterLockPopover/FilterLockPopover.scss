@@ -11,7 +11,7 @@
   .filter-lock-menu-content-container {
     background: var(--react-autoql-background-color-secondary);
     color: var(--react-autoql-text-color-primary);
-    box-shadow: 0px 0 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0px 0 8px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
     transition: opacity 0.1s ease 0s !important;
     border: 1px solid #ababab52;
     padding: 0 !important;
@@ -272,7 +272,7 @@
     color: var(--react-autoql-text-color-primary);
 
     &:hover {
-      box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
+      box-shadow: 0px 0px 5px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
     }
 
     &::placeholder {
@@ -299,7 +299,7 @@
       font-size: 15px;
       font-weight: normal;
       z-index: 2;
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
+      box-shadow: 0 1px 3px 0 var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
       text-align: left;
       border-radius: 4px;
       width: 100%;

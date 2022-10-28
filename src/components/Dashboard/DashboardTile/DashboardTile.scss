@@ -6,7 +6,7 @@
   overflow: hidden;
 
   border-radius: 4px;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
+  box-shadow: 0 1px 3px 0 var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
 }
 
 .react-autoql-dashboard-tile-inner-div {
@@ -143,8 +143,7 @@
 .react-autoql-dashboard-tile-inner-div.split .dashboard-tile-response-wrapper {
   padding: 0;
 }
-.react-autoql-dashboard-tile-inner-div
-  .dashboard-tile-response-wrapper.editing {
+.react-autoql-dashboard-tile-inner-div .dashboard-tile-response-wrapper.editing {
   .dashboard-tile-toolbars-container {
     padding: 13px;
   }
@@ -163,8 +162,7 @@
 }
 
 /* Safetynet styles specific to dashboard tiles */
-.react-autoql-dashboard-tile-inner-div
-  .dashboard-tile-response-wrapper.editing {
+.react-autoql-dashboard-tile-inner-div .dashboard-tile-response-wrapper.editing {
   height: 100%;
   width: 100%;
   overflow-x: auto;
@@ -173,10 +171,8 @@
 .react-autoql-dashboard-tile-inner-div .react-autoql-query-validation-query {
   white-space: nowrap;
 }
-.dashboard-tile-response-wrapper.small
-  .react-autoql-query-validation-description,
-.dashboard-tile-response-wrapper.small
-  .react-autoql-query-validation-execute-btn {
+.dashboard-tile-response-wrapper.small .react-autoql-query-validation-description,
+.dashboard-tile-response-wrapper.small .react-autoql-query-validation-execute-btn {
   display: none;
 }
 
@@ -393,8 +389,7 @@
   padding: 0;
   margin: 0;
 }
-.dashboard-tile-input-container
-  .react-autosuggest__suggestions-container--open {
+.dashboard-tile-input-container .react-autosuggest__suggestions-container--open {
   background-color: var(--react-autoql-background-color-secondary);
   border: 1px solid var(--react-autoql-border-color);
   color: var(--react-autoql-text-color-primary);
@@ -411,8 +406,7 @@
   vertical-align: middle;
   height: 23px;
 }
-.dashboard-tile-input-container
-  .react-autosuggest__suggestions-container--open {
+.dashboard-tile-input-container .react-autosuggest__suggestions-container--open {
   position: absolute;
   bottom: unset;
   padding-top: 5px;
@@ -425,7 +419,7 @@
   font-weight: normal;
   z-index: 2;
   overflow: hidden;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
+  box-shadow: 0 1px 3px 0 var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
   text-align: left;
   width: 100%;
   top: 35px;
@@ -473,10 +467,8 @@
   bottom: 4px;
   right: 4px;
   opacity: 0;
-  border-right: 1px solid
-    var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.4)) !important;
-  border-bottom: 1px solid
-    var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.4)) !important;
+  border-right: 1px solid var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.4)) !important;
+  border-bottom: 1px solid var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.4)) !important;
   transition: opacity 0.3s ease;
   cursor: se-resize;
 }
