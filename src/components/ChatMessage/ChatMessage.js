@@ -211,6 +211,16 @@ export default class ChatMessage extends React.Component {
         })
       }
     }, 0)
+
+    setTimeout(() => {
+      if (this.messageContainerRef && !this.isScrolledIntoView(this.messageContainerRef)) {
+        this.messageContainerRef.scrollIntoView({
+          block,
+          inline,
+          behavior,
+        })
+      }
+    }, 1000)
   }
 
   updateDataConfig = (config) => {

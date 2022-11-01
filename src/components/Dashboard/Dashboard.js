@@ -229,7 +229,7 @@ class DashboardWithoutTheme extends React.Component {
       // Only re-render if width changed
       if (hasWidthChanged) {
         this.windowResizeTimer = setTimeout(() => {
-          if (hasWidthChanged) {
+          if (hasWidthChanged && this._isMounted) {
             this.currentWindowWidth = undefined
             this.setState({ isWindowResizing: false })
           }
@@ -349,9 +349,11 @@ class DashboardWithoutTheme extends React.Component {
       // Delaying this makes the snap back animation much smoother
       // after moving a tile
       this.stopDraggingTimeout = setTimeout(() => {
-        this.setState({
-          isDragging: false,
-        })
+        if (this._isMounted) {
+          this.setState({
+            isDragging: false,
+          })
+        }
       }, 100)
     } catch (error) {
       console.error(error)
@@ -469,9 +471,11 @@ class DashboardWithoutTheme extends React.Component {
       })
 
       this.animationTimeout = setTimeout(() => {
-        this.setState({
-          isAnimatingModal: false,
-        })
+        if (this._isMounted) {
+          this.setState({
+            isAnimatingModal: false,
+          })
+        }
       }, 500)
     }
   }
@@ -496,7 +500,9 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   shouldShowOriginalQuery = (tile) => {
-    if (!tile) {return false}
+    if (!tile) {
+      return false
+    }
 
     const displayType = this.state.isDrilldownSecondHalf ? tile.secondDisplayType : tile.displayType
 

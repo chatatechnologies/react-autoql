@@ -158,12 +158,18 @@ export default class ChataTable extends React.Component {
   componentDidMount = () => {
     this._isMounted = true
     this.firstRender = false
-    this.clickListenerTimeout = setTimeout(() => {
-      this.setDateFilterClickListeners()
-    }, 100)
+
+    // Enable once calendar GUI feature is complete
+    // this.clickListenerTimeout = setTimeout(() => {
+    //   this.setDateFilterClickListeners()
+    // }, 100)
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
+    if (!!this.state.datePickerColumn && !nextState.datePickerColumn) {
+      return true
+    }
+
     if (
       (this.state.scrollLoading && nextState.scrollLoading) ||
       (this.state.pageLoading && nextState.pageLoading) ||
@@ -181,7 +187,8 @@ export default class ChataTable extends React.Component {
     if (!this.state.isFiltering && prevState.isFiltering) {
       try {
         this.setFilterTags()
-        this.setDateFilterClickListeners()
+        // Enable once calendar GUI feature is complete
+        // this.setDateFilterClickListeners()
       } catch (error) {
         console.error(error)
         this.props.onErrorCallback(error)
@@ -193,6 +200,7 @@ export default class ChataTable extends React.Component {
     this._isMounted = false
     clearTimeout(this.clickListenerTimeout)
     clearTimeout(this.setDimensionsTimeout)
+    clearTimeout(this.setStateTimeout)
     this.cancelCurrentRequest()
     this.resetFilterTags()
     this.existingFilterTag = undefined
@@ -201,8 +209,8 @@ export default class ChataTable extends React.Component {
 
   setTableHeight = () => {
     this.setDimensionsTimeout = setTimeout(() => {
-      if (this.ref && !this.props.isResizing) {
-        const tableHeight = this.ref?.ref.offsetHeight
+      if (this.ref?.ref && !this.props.isResizing) {
+        const tableHeight = this.ref.ref.offsetHeight
         if (tableHeight) {
           this.tableHeight = tableHeight
         }
@@ -404,6 +412,19 @@ export default class ChataTable extends React.Component {
     return Promise.reject()
   }
 
+  debounceSetState = (state) => {
+    this.stateToSet = {
+      ...this.stateToSet,
+      ...state,
+    }
+
+    clearTimeout(this.setStateTimeout)
+    this.setStateTimeout = setTimeout(() => {
+      this.setState(this.stateToSet)
+      this.stateToSet = {}
+    }, 50)
+  }
+
   setDateFilterClickListeners = () => {
     const columns = this.ref?.table?.getColumnDefinitions()
     if (!columns) {
@@ -412,17 +433,22 @@ export default class ChataTable extends React.Component {
 
     columns.forEach((col) => {
       if (col.type === 'DATE' && !col.pivot) {
-        // || col.type === 'DATE_STRING') ) {
         const inputElement = document.querySelector(
           `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"] .tabulator-col-content input`,
         )
 
         if (inputElement) {
+          inputElement.addEventListener('search', (e) => {
+            // When "x" button is clicked in the input box
+            this.debounceSetState({
+              datePickerColumn: undefined,
+            })
+          })
           inputElement.addEventListener('click', (e) => {
             const coords = e.target.getBoundingClientRect()
             const tableCoords = this.tableContainer.getBoundingClientRect()
             if (coords?.top && coords?.left) {
-              this.setState({
+              this.debounceSetState({
                 datePickerLocation: {
                   top: coords.top - tableCoords.top + coords.height + 5,
                   left: coords.left - tableCoords.left,
@@ -498,14 +524,28 @@ export default class ChataTable extends React.Component {
   onDateRangeSelection = (dateRangeSelection) => {
     const { startDate, endDate } = dateRangeSelection
 
+    if (!startDate || !endDate) {
+      return
+    }
+
     const startDateObj = new Date(startDate)
     const endDateObj = new Date(endDate)
 
     const startDateISO8601 = startDateObj.toISOString()
     const endDateISO8601 = endDateObj.toISOString()
 
-    console.log({ startDateISO8601, endDateISO8601 })
-    // make ajax query here
+    const inputElement = document.querySelector(
+      `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${this.state.datePickerColumn.field}"] .tabulator-col-content input`,
+    )
+
+    // this.setState({
+    //   datePickerColumn: undefined,
+    // })
+
+    if (inputElement) {
+      inputElement.focus()
+      inputElement.value = `${startDateISO8601},${endDateISO8601}`
+    }
   }
 
   setSorters = (ref) => {
@@ -580,20 +620,18 @@ export default class ChataTable extends React.Component {
   }
 
   renderDatePickerPopover = () => {
-    // if (!this.columnHeaderElements?.length) {
-    //   return null
-    // }
+    if (!this.state.datePickerColumn) {
+      return null
+    }
 
     return (
       <Popover
         isOpen={!!this.state.datePickerColumn}
         align='start'
         positions={['bottom', 'right']}
-        // reposition={false}
         onClickOutside={(e) => {
-          // e.stopPropagation()
+          e.stopPropagation()
           this.setState({
-            //   datePickerLocation: undefined,
             datePickerColumn: undefined,
           })
         }}
@@ -603,29 +641,6 @@ export default class ChataTable extends React.Component {
             <DatePicker onSelection={this.onDateRangeSelection} />
           </div>
         }
-        // parentElement={this.props.popoverParentElement}
-        // boundaryElement={this.props.popoverParentElement}
-        // contentLocation={({ targetRect, popoverRect, position, align, nudgedLeft, nudgedTop }) => {
-        //   let top = this.state.datePickerLocation.top
-        //   let left = this.state.datePickerLocation.left
-
-        //   // const {
-        //   //   documentHeight,
-        //   //   documentWidth,
-        //   // } = this.getDocumentHeightAndWidth()
-
-        //   // const datePickerBottom = top + popoverRect.height
-        //   // if (datePickerBottom > documentHeight) {
-        //   //   top = top - (datePickerBottom - documentHeight)
-        //   // }
-
-        //   // const datePickerRight = left + popoverRect.width
-        //   // if (datePickerRight > documentWidth) {
-        //   //   left = left - (datePickerRight - documentWidth)
-        //   // }
-
-        //   return { top, left }
-        // }}
       >
         <div
           style={{

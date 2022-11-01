@@ -19,7 +19,7 @@
   color: var(--react-autoql-text-color-primary);
   border: 1px solid var(--react-autoql-border-color) !important;
   background: var(--react-autoql-background-color-secondary) !important;
-  box-shadow: 0 0 14px 1px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0 14px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
   padding: 0 !important;
 
   margin: auto auto;
