@@ -81,7 +81,7 @@ export default class RuleSimple extends React.Component {
   state = {
     input1Value: '',
     input2Value: '',
-    conditionSelectValue: 'GREATER_THAN',
+    conditionSelectValue: 'EXISTS',
     secondTermType: 'query',
     isFirstTermValid: true,
     isSecondTermValid: true,
