@@ -1239,11 +1239,7 @@ export class QueryOutput extends React.Component {
 
       // Always have filtering enabled, but only
       // display if filtering is toggled by user
-      if (newCol.type === 'DATE' || newCol.type === 'DATE_STRING') {
-        newCol.headerFilter = false
-      } else {
-        newCol.headerFilter = 'input'
-      }
+      newCol.headerFilter = 'input'
       newCol.headerFilterPlaceholder = this.setHeaderFilterPlaceholder(newCol)
 
       // Need to set custom filters for cells that are

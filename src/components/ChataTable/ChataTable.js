@@ -538,10 +538,6 @@ export default class ChataTable extends React.Component {
       `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${this.state.datePickerColumn.field}"] .tabulator-col-content input`,
     )
 
-    // this.setState({
-    //   datePickerColumn: undefined,
-    // })
-
     if (inputElement) {
       inputElement.focus()
       inputElement.value = `${startDateISO8601},${endDateISO8601}`
@@ -578,29 +574,6 @@ export default class ChataTable extends React.Component {
     }
 
     return undefined
-  }
-
-  getDocumentHeightAndWidth = () => {
-    const body = document.body
-    const html = document.documentElement
-
-    const documentHeight = Math.max(
-      body.scrollHeight,
-      body.offsetHeight,
-      html.clientHeight,
-      html.scrollHeight,
-      html.offsetHeight,
-    )
-
-    const documentWidth = Math.max(
-      body.scrollWidth,
-      body.offsetWidth,
-      html.clientWidth,
-      html.scrollWidth,
-      html.offsetWidth,
-    )
-
-    return { documentHeight, documentWidth }
   }
 
   renderPageLoader = () => {
