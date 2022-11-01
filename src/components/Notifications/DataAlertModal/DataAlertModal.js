@@ -47,16 +47,16 @@ class DataAlertModal extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    onSave: () => { },
-    onErrorCallback: () => { },
+    onSave: () => {},
+    onErrorCallback: () => {},
     initialQuery: undefined,
     currentDataAlert: undefined,
     isVisible: false,
     allowDelete: true,
-    onClose: () => { },
+    onClose: () => {},
     isManagement: false,
-    onManagementCreateDataAlert: () => { },
-    onManagementDeleteDataAlert: () => { },
+    onManagementCreateDataAlert: () => {},
+    onManagementDeleteDataAlert: () => {},
     title: 'Create Data Alert',
     titleIcon: undefined,
     enableQueryValidation: true,
@@ -386,7 +386,7 @@ class DataAlertModal extends React.Component {
     }
   }
 
-  renderNextBtn = (className, disabled, onclick = () => { }, text) => {
+  renderNextBtn = (className, disabled, onclick = () => {}, text) => {
     return (
       <Button
         className={className}
@@ -478,11 +478,11 @@ class DataAlertModal extends React.Component {
               place='top'
             />
             <Icon
+              className='react-autoql-data-alert-query-name-tooltip-icon'
               data-for='react-autoql-data-alert-query-name-tooltip'
               data-tip='Your query should describe the result you wish to be alerted about.'
               type='info'
               size={24}
-              color='#26A7Df'
             />
           </div>
         </div>
@@ -490,10 +490,10 @@ class DataAlertModal extends React.Component {
           {this.props.enableQueryValidation
             ? this.renderValidateBtn()
             : this.renderNextBtn(
-              'first-step-next-btn',
-              this.props.enableQueryValidation &&
-              (!this.state.isExpressionValidated || !this.state.isExpressionValid),
-            )}
+                'first-step-next-btn',
+                this.props.enableQueryValidation &&
+                  (!this.state.isExpressionValidated || !this.state.isExpressionValid),
+              )}
         </div>
       </div>
     )
