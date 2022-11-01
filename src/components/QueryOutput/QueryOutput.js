@@ -718,13 +718,11 @@ export class QueryOutput extends React.Component {
           this.cancelCurrentRequest()
           this.axiosSource = axios.CancelToken.source()
           const queryRequestData = this.queryResponse?.data?.data?.fe_req
-          const columnName = this.state.columns[stringColumnIndex]?.name
           const allFilters = this.getCombinedFilters()
-          const clickedFilter = {
-            name: columnName,
-            operator: '=',
+          const clickedFilter = this.constructFilter({
+            column: this.state.columns[stringColumnIndex],
             value: row[stringColumnIndex],
-          }
+          })
 
           const existingClickedFilterIndex = allFilters.findIndex((filter) => filter.name === clickedFilter.name)
 
@@ -761,6 +759,26 @@ export class QueryOutput extends React.Component {
         console.error(error)
         this.props.onDrilldownEnd({ error: 'Error processing drilldown' })
       }
+    }
+  }
+
+  // Function to get a filter properly formatted for the request based on the column type
+  constructFilter = ({ column, value }) => {
+    let formattedValue = value
+    let operator = '='
+    if (column.type === 'DATE') {
+      const isoDate = dayjs.unix(value).utc()
+      const isoDateStart = isoDate.startOf('day').toISOString()
+      const isoDateEnd = isoDate.endOf('day').toISOString()
+
+      formattedValue = `${isoDateStart},${isoDateEnd}`
+      operator = 'between'
+    }
+
+    return {
+      name: column.name,
+      operator,
+      value: formattedValue,
     }
   }
 
@@ -1159,6 +1177,14 @@ export class QueryOutput extends React.Component {
     return undefined
   }
 
+  setHeaderFilterPlaceholder = (col) => {
+    if ((col.type === 'DATE' || col.type === 'DATE_STRING') && !col.pivot) {
+      return 'pick range'
+    }
+
+    return 'filter'
+  }
+
   formatColumnsForTable = (columns) => {
     // todo: do this inside of chatatable
     if (!columns) {
@@ -1214,6 +1240,7 @@ export class QueryOutput extends React.Component {
       // Always have filtering enabled, but only
       // display if filtering is toggled by user
       newCol.headerFilter = 'input'
+      newCol.headerFilterPlaceholder = this.setHeaderFilterPlaceholder(newCol)
 
       // Need to set custom filters for cells that are
       // displayed differently than the data (ie. dates)
@@ -1287,6 +1314,7 @@ export class QueryOutput extends React.Component {
           cssClass: 'pivot-category',
           sorter: dateSortFn,
           headerFilter: false,
+          headerFilterPlaceholder: 'filter...',
         },
       ]
 
@@ -1605,6 +1633,7 @@ export class QueryOutput extends React.Component {
         originalQueryID={this.props.originalQueryID}
         isDrilldown={this.isDrilldown()}
         isQueryOutputMounted={this._isMounted}
+        popoverParentElement={this.props.popoverParentElement}
         supportsDrilldowns={
           isAggregation(this.state.columns) && getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
         }

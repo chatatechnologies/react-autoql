@@ -15,6 +15,7 @@ export const LIGHT_THEME = {
   'warning-color': '#ffcc00',
   'success-color': '#2aca4d',
   'info-color': '#28a8e0',
+  'box-shadow-color': '#00000026',
 }
 
 export const DARK_THEME = {
@@ -34,4 +35,5 @@ export const DARK_THEME = {
   'warning-color': '#ffcc00',
   'success-color': '#2aca4d',
   'info-color': '#28a8e0',
+  'box-shadow-color': '#00000066',
 }

@@ -41,8 +41,7 @@
 
   .spinner-loader:after {
     border: 1px solid var(--react-autoql-accent-color);
-    border-color: var(--react-autoql-accent-color) transparent
-      var(--react-autoql-accent-color) transparent;
+    border-color: var(--react-autoql-accent-color) transparent var(--react-autoql-accent-color) transparent;
   }
 
   &.response {
@@ -54,7 +53,7 @@
     .chat-message-bubble {
       background: var(--react-autoql-background-color-secondary);
       color: var(--react-autoql-text-color-primary);
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
+      box-shadow: 0 1px 3px 0 var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
     }
 
     .chat-message-bubble:not(.text) {
@@ -72,7 +71,7 @@
     .chat-message-bubble {
       background: var(--react-autoql-accent-color);
       color: var(--react-autoql-text-color-accent);
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
+      box-shadow: 0 1px 3px 0 var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
     }
   }
 

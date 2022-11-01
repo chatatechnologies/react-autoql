@@ -8,7 +8,7 @@
     margin: 20px;
     margin-top: 10px;
     border-radius: 4px;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
+    box-shadow: 0 1px 3px 0 var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
     background-color: var(--react-autoql-background-color-secondary);
     overflow: hidden;
 
@@ -64,8 +64,7 @@
       height: 56px;
       padding-left: 25px;
       padding-right: 8px;
-      border-bottom: 1px solid
-        var(--react-autoql-border-color, rgba(0, 0, 0, 0.05));
+      border-bottom: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.05));
     }
 
     .react-autoql-notification-enable-checkbox {
