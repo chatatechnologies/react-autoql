@@ -1,4 +1,4 @@
-FROM node:14-alpine
+FROM node:14-alpine as build
 
 WORKDIR /app/react-autoql/
 
@@ -14,14 +14,20 @@ COPY dist .
 
 WORKDIR /app
 
-COPY example/.package.json .
-COPY example/package.json .
-COPY example/environments.json .
+ADD example .
+
+ENV NODE_ENV=ci
 
 RUN npm i
 
-ADD example .
+# Create a production build
+RUN npm run build
 
-EXPOSE 3001
+FROM nginx:1.22.0-alpine
 
-CMD ["npm", "start"]
+COPY config/nginx_template.conf .
+COPY config/start_npm.sh .
+COPY --from=build //app/build /usr/share/nginx/html/
+
+RUN chmod +x start_npm.sh
+ENTRYPOINT ["./start_npm.sh"]
