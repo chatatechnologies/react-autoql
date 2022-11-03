@@ -124,7 +124,7 @@
   background: var(--bg-color);
   border: 2px solid var(--border-color);
   color: var(--react-autoql-text-color);
-  box-shadow: rgba(102, 105, 109, 0.2) 0px 8px 24px;
+  box-shadow: var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15)) 0px 8px 24px;
 
   &.place-bottom {
     &::before {

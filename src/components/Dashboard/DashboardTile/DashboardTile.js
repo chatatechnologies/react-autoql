@@ -983,6 +983,7 @@ export class DashboardTile extends React.Component {
             tileId: this.props.tile.i,
             isSecondHalf: false,
             activeKey,
+            queryOutputRef: this.state.responseRef,
           }),
         onDrilldownEnd: this.props.onDrilldownEnd,
         onQueryValidationSelectOption: this.onQueryValidationSelectOption,
@@ -1055,6 +1056,7 @@ export class DashboardTile extends React.Component {
             tileId: this.props.tile.i,
             isSecondHalf: true,
             activeKey,
+            queryOutputRef: this.state.secondResponseRef,
           })
         },
         onDrilldownEnd: this.props.onDrilldownEnd,

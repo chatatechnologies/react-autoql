@@ -229,7 +229,7 @@ class DashboardWithoutTheme extends React.Component {
       // Only re-render if width changed
       if (hasWidthChanged) {
         this.windowResizeTimer = setTimeout(() => {
-          if (hasWidthChanged) {
+          if (hasWidthChanged && this._isMounted) {
             this.currentWindowWidth = undefined
             this.setState({ isWindowResizing: false })
           }
@@ -349,9 +349,11 @@ class DashboardWithoutTheme extends React.Component {
       // Delaying this makes the snap back animation much smoother
       // after moving a tile
       this.stopDraggingTimeout = setTimeout(() => {
-        this.setState({
-          isDragging: false,
-        })
+        if (this._isMounted) {
+          this.setState({
+            isDragging: false,
+          })
+        }
       }, 100)
     } catch (error) {
       console.error(error)
@@ -455,7 +457,7 @@ class DashboardWithoutTheme extends React.Component {
     }
   }
 
-  onDrilldownStart = ({ tileId, activeKey, isSecondHalf }) => {
+  onDrilldownStart = ({ tileId, activeKey, isSecondHalf, queryOutputRef }) => {
     if (getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns) {
       this.setState({
         isDrilldownRunning: true,
@@ -464,14 +466,17 @@ class DashboardWithoutTheme extends React.Component {
         isDrilldownSecondHalf: isSecondHalf,
         activeDrilldownTile: tileId || this.state.activeDrilldownTile,
         activeDrilldownResponse: null,
+        activeDrilldownRef: queryOutputRef,
         activeDrilldownChartElementKey: activeKey,
         isAnimatingModal: !this.state.isDrilldownModalVisible,
       })
 
       this.animationTimeout = setTimeout(() => {
-        this.setState({
-          isAnimatingModal: false,
-        })
+        if (this._isMounted) {
+          this.setState({
+            isAnimatingModal: false,
+          })
+        }
       }, 500)
     }
   }
@@ -495,10 +500,11 @@ class DashboardWithoutTheme extends React.Component {
     }
   }
 
-  shouldShowOriginalQuery = (tile) => {
-    if (!tile) {return false}
-
-    const displayType = this.state.isDrilldownSecondHalf ? tile.secondDisplayType : tile.displayType
+  shouldShowOriginalQuery = () => {
+    const displayType = this.state.activeDrilldownRef?.state?.displayType
+    if (!displayType) {
+      return false
+    }
 
     return CHART_TYPES.includes(displayType)
   }
@@ -581,34 +587,20 @@ class DashboardWithoutTheme extends React.Component {
 
   renderDrilldownModal = () => {
     try {
-      const tiles = this.getMostRecentTiles()
-      const tile = tiles.find((tile) => tile.i === this.state.activeDrilldownTile)
-
-      let title
-      let queryResponse
-      let displayType
-      let dataConfig
-      if (tile && this.state.isDrilldownSecondHalf) {
-        title = tile.secondQuery
-        queryResponse = tile.secondQueryResponse || tile.queryResponse
-        displayType = tile.secondDisplayType
-        dataConfig = tile.secondDataConfig
-      } else if (tile && !this.state.isDrilldownSecondHalf) {
-        title = tile.title || tile.query
-        queryResponse = tile.queryResponse
-        displayType = tile.displayType
-        dataConfig = tile.dataConfig
+      const queryResponse = _cloneDeep(this.state.activeDrilldownRef?.queryResponse)
+      if (queryResponse) {
+        queryResponse.data.data.columns = this.state.activeDrilldownRef.state.columns
       }
 
-      const renderTopHalf = this.state.isDrilldownChartHidden || !this.shouldShowOriginalQuery(tile)
+      const renderTopHalf = this.state.isDrilldownChartHidden || !this.shouldShowOriginalQuery()
 
       return (
         <Modal
           className='dashboard-drilldown-modal'
           contentClassName={`dashboard-drilldown-modal-content
             ${this.state.isDrilldownChartHidden ? 'chart-hidden' : ''}
-            ${!this.shouldShowOriginalQuery(tile) ? 'top-hidden' : ''}`}
-          title={title}
+            ${!this.shouldShowOriginalQuery() ? 'top-hidden' : ''}`}
+          title={this.state.activeDrilldownRef?.queryResponse?.data?.data?.text}
           isVisible={this.state.isDrilldownModalVisible}
           width='90vw'
           height='100vh'
@@ -623,7 +615,7 @@ class DashboardWithoutTheme extends React.Component {
         >
           {this.state.isDrilldownModalVisible && (
             <Fragment>
-              {tile && (
+              {this.state.activeDrilldownRef && (
                 <SplitterLayout
                   vertical={true}
                   percentage={true}
@@ -634,31 +626,22 @@ class DashboardWithoutTheme extends React.Component {
                   }}
                 >
                   <div className='react-autoql-dashboard-drilldown-original'>
-                    {this.shouldShowOriginalQuery(tile) && (
+                    {this.shouldShowOriginalQuery() && (
                       <>
-                        <QueryOutput
-                          key={`dashboard-drilldown-chart-${this.state.activeDrilldownTile}`}
-                          authentication={this.props.authentication}
-                          autoQLConfig={this.props.autoQLConfig}
-                          dataFormatting={getDataFormatting(this.props.dataFormatting)}
-                          isResizing={this.state.isAnimatingModal}
-                          queryResponse={_cloneDeep(queryResponse)}
-                          initialDisplayType={displayType}
-                          initialTableConfigs={_cloneDeep(dataConfig)}
-                          rebuildTooltips={this.rebuildTooltips}
-                          autoChartAggregations={this.props.autoChartAggregations}
-                          onDrilldownStart={(activeKey) =>
-                            this.onDrilldownStart({
-                              tileId: tile.i,
-                              activeKey,
-                              isSecondHalf: this.state.isDrilldownSecondHalf,
-                            })
-                          }
-                          onDrilldownEnd={this.onDrilldownEnd}
-                          activeChartElementKey={this.state.activeDrilldownChartElementKey}
-                          enableAjaxTableData={this.props.enableAjaxTableData}
-                          reportProblemCallback={this.reportProblemCallback}
-                        />
+                        {this.state.activeDrilldownRef && (
+                          <QueryOutput
+                            {...this.state.activeDrilldownRef.props}
+                            queryResponse={queryResponse}
+                            isResizing={this.state.isAnimatingModal}
+                            key={`dashboard-drilldown-chart-${this.state.activeDrilldownTile}`}
+                            activeChartElementKey={this.state.activeDrilldownChartElementKey}
+                            initialDisplayType={this.state.activeDrilldownRef.state.displayType}
+                            initialTableConfigs={{
+                              tableConfig: this.state.activeDrilldownRef.tableConfig,
+                              pivotTableConfig: this.state.activeDrilldownRef.pivotTableConfig,
+                            }}
+                          />
+                        )}
                         {this.renderChartCollapseBtn('bottom')}
                       </>
                     )}
@@ -666,7 +649,7 @@ class DashboardWithoutTheme extends React.Component {
                   {this.renderDrilldownTable()}
                 </SplitterLayout>
               )}
-              {this.shouldShowOriginalQuery(tile) &&
+              {this.shouldShowOriginalQuery() &&
                 this.state.isDrilldownChartHidden &&
                 this.renderChartCollapseBtn('top')}
             </Fragment>

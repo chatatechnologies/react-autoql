@@ -7,6 +7,7 @@ import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
 import parse from 'html-react-parser'
+import axios from 'axios'
 
 import { scaleOrdinal } from 'd3-scale'
 
@@ -25,6 +26,7 @@ import { ChataChart } from '../Charts/ChataChart'
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { Icon } from '../Icon'
 
+import { responseErrors } from '../../js/errorMessages'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import errorMessages from '../../js/errorMessages'
 
@@ -54,7 +56,7 @@ import {
   isAggregation,
 } from './columnHelpers.js'
 
-import { sendSuggestion, runDrilldown } from '../../js/queryService'
+import { sendSuggestion, runDrilldown, runQueryOnly } from '../../js/queryService'
 
 import './QueryOutput.scss'
 import { MONTH_NAMES } from '../../js/Constants'
@@ -88,7 +90,6 @@ export class QueryOutput extends React.Component {
     this.queryID = _get(this.queryResponse, 'data.data.query_id')
     this.interpretation = _get(this.queryResponse, 'data.data.parsed_interpretation')
     this.tableParams = {}
-    this.formattedTableParams = {}
     this.tableID = uuid()
     this.pivotTableID = uuid()
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
@@ -124,6 +125,13 @@ export class QueryOutput extends React.Component {
 
     const displayType = this.getDisplayTypeFromInitial(props)
     props.onDisplayTypeChange(displayType)
+
+    // Set initial table params to be any filters or sorters that
+    // are already present in the current query
+    this.formattedTableParams = {
+      filters: this.queryResponse?.data?.data?.fe_req?.filters || [],
+      sorters: this.queryResponse?.data?.data?.fe_req?.sorters || [],
+    }
 
     this.state = {
       displayType,
@@ -673,6 +681,10 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  cancelCurrentRequest = () => {
+    this.axiosSource?.cancel(responseErrors.CANCELLED)
+  }
+
   processDrilldown = async ({ groupBys, supportedByAPI, row, activeKey, stringColumnIndex }) => {
     if (getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns) {
       try {
@@ -694,16 +706,102 @@ export class QueryOutput extends React.Component {
           }
         } else if (!isNaN(stringColumnIndex) && !!row?.length) {
           this.props.onDrilldownStart(activeKey)
-          const response = this.getFilterDrilldown({ stringColumnIndex, row })
-          setTimeout(() => {
-            this.props.onDrilldownEnd({ response })
-          }, 1500)
+
+          // ------------ 1. Use FE for filter drilldown -----------
+          // const response = this.getFilterDrilldown({ stringColumnIndex, row })
+          // setTimeout(() => {
+          //   this.props.onDrilldownEnd({ response })
+          // }, 1500)
+          // -------------------------------------------------------
+
+          // --------- 2. Use subquery for filter drilldown --------
+          this.cancelCurrentRequest()
+          this.axiosSource = axios.CancelToken.source()
+          const queryRequestData = this.queryResponse?.data?.data?.fe_req
+          const allFilters = this.getCombinedFilters()
+          const clickedFilter = this.constructFilter({
+            column: this.state.columns[stringColumnIndex],
+            value: row[stringColumnIndex],
+          })
+
+          const existingClickedFilterIndex = allFilters.findIndex((filter) => filter.name === clickedFilter.name)
+
+          if (existingClickedFilterIndex >= 0) {
+            // Filter already exists, overwrite existing filter with clicked value
+            allFilters[existingClickedFilterIndex] = clickedFilter
+          } else {
+            // Filter didn't exist yet, add it to the list
+            allFilters.push(clickedFilter)
+          }
+
+          const response = await runQueryOnly({
+            ...getAuthentication(this.props.authentication),
+            ...getAutoQLConfig(this.props.autoQLConfig),
+            query: queryRequestData?.text,
+            source: queryRequestData?.source,
+            debug: queryRequestData?.translation === 'include',
+            formattedUserSelection: queryRequestData?.user_selection,
+            filters: queryRequestData?.session_filter_locks,
+            test: queryRequestData?.test,
+            pageSize: queryRequestData?.page_size,
+            orders: this.formattedTableParams?.sorters,
+            tableFilters: allFilters,
+            cancelToken: this.axiosSource.token,
+          })
+
+          this.props.onDrilldownEnd({
+            response,
+            originalQueryID: this.queryID,
+          })
+          // -------------------------------------------------------
         }
       } catch (error) {
         console.error(error)
         this.props.onDrilldownEnd({ error: 'Error processing drilldown' })
       }
     }
+  }
+
+  // Function to get a filter properly formatted for the request based on the column type
+  constructFilter = ({ column, value }) => {
+    let formattedValue = value
+    let operator = '='
+    if (column.type === 'DATE') {
+      const isoDate = dayjs.unix(value).utc()
+      const isoDateStart = isoDate.startOf('day').toISOString()
+      const isoDateEnd = isoDate.endOf('day').toISOString()
+
+      formattedValue = `${isoDateStart},${isoDateEnd}`
+      operator = 'between'
+    }
+
+    return {
+      name: column.name,
+      operator,
+      value: formattedValue,
+    }
+  }
+
+  // Function to combine original query filters and current table filters
+  getCombinedFilters = (newFilters) => {
+    const queryRequestData = this.queryResponse?.data?.data?.fe_req
+    const queryFilters = queryRequestData?.filters || []
+    const tableFilters = newFilters || this.formattedTableParams?.filters || []
+
+    const allFilters = []
+
+    tableFilters.forEach((tableFilter) => {
+      const foundQueryFilter = queryFilters.find((filter) => filter.name === tableFilter.name)
+      allFilters.push(foundQueryFilter ?? tableFilter)
+    })
+
+    queryFilters.forEach((queryFilter) => {
+      if (!allFilters.find((filter) => filter.name === queryFilter.name)) {
+        allFilters.push(queryFilter)
+      }
+    })
+
+    return allFilters
   }
 
   onTableCellClick = (cell) => {
@@ -805,7 +903,7 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  onTableParamsChange = (params, formattedTableParams) => {
+  onTableParamsChange = (params, formattedTableParams = {}) => {
     this.tableParams = _cloneDeep(params)
     this.formattedTableParams = formattedTableParams
   }
@@ -1079,6 +1177,14 @@ export class QueryOutput extends React.Component {
     return undefined
   }
 
+  setHeaderFilterPlaceholder = (col) => {
+    if ((col.type === 'DATE' || col.type === 'DATE_STRING') && !col.pivot) {
+      return 'pick range'
+    }
+
+    return 'filter'
+  }
+
   formatColumnsForTable = (columns) => {
     // todo: do this inside of chatatable
     if (!columns) {
@@ -1134,6 +1240,7 @@ export class QueryOutput extends React.Component {
       // Always have filtering enabled, but only
       // display if filtering is toggled by user
       newCol.headerFilter = 'input'
+      newCol.headerFilterPlaceholder = this.setHeaderFilterPlaceholder(newCol)
 
       // Need to set custom filters for cells that are
       // displayed differently than the data (ie. dates)
@@ -1207,6 +1314,7 @@ export class QueryOutput extends React.Component {
           cssClass: 'pivot-category',
           sorter: dateSortFn,
           headerFilter: false,
+          headerFilterPlaceholder: 'filter...',
         },
       ]
 
@@ -1525,6 +1633,7 @@ export class QueryOutput extends React.Component {
         originalQueryID={this.props.originalQueryID}
         isDrilldown={this.isDrilldown()}
         isQueryOutputMounted={this._isMounted}
+        popoverParentElement={this.props.popoverParentElement}
         supportsDrilldowns={
           isAggregation(this.state.columns) && getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
         }
@@ -1544,10 +1653,16 @@ export class QueryOutput extends React.Component {
     }
 
     const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
+    const combinedFilters = this.getCombinedFilters()
+    const formattedTableParams = {
+      ...this.formattedTableParams,
+      filters: combinedFilters,
+    }
+
     return (
       <ErrorBoundary>
         <ChataChart
-          formattedTableParams={this.formattedTableParams}
+          formattedTableParams={formattedTableParams}
           authentication={this.props.authentication}
           queryRequestData={this.queryResponse?.data?.data?.fe_req}
           pageSize={_get(this.queryResponse, 'data.data.row_limit')}

@@ -5,7 +5,6 @@ import { ReactTabulator } from 'react-tabulator'
 
 import 'react-tabulator/lib/styles.css' // default theme
 import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
-import './ChataTable.scss'
 
 export default class TableWrapper extends React.Component {
   constructor(props) {

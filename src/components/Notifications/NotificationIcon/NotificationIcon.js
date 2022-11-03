@@ -99,7 +99,8 @@ class NotificationIcon extends React.Component {
         return Promise.resolve(newCount)
       })
       .catch((error) => {
-        return Promise.reject(error)
+        console.error(error)
+        return this.props.onErrorCallback(error)
       })
   }
 
