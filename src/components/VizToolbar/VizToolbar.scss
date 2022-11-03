@@ -1,12 +1,12 @@
 .viz-toolbar {
+  display: inline-block;
   background: inherit;
   padding: 5px;
   border-radius: 6px;
   line-height: 28px;
-  border: 1px solid #d3d3d352;
-  text-align: left;
-  display: inline-block;
   background: var(--react-autoql-background-color-secondary);
+  border: 1px solid var(--react-autoql-border-color);
+  box-shadow: 0px 2px 3px -2px var(--react-autoql-box-shadow-color);
 
   &.vertical .react-autoql-toolbar-btn {
     display: block;
