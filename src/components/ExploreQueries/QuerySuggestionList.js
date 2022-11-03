@@ -80,7 +80,7 @@ export default class QuerySuggestionList extends React.Component {
       keywords: topicText,
       pageSize: this.pageSize,
       pageNumber: page,
-      skipQueryValidation: this.props.skipQueryValidation,
+      skipQueryValidation: this.props.skipQueryValidation || page > 1,
       scope: this.props.topic?.type === DEConstants.SUBJECT_TYPE ? 'context' : 'wide',
       isRawText: this.props.topic?.type === 'text',
     })
