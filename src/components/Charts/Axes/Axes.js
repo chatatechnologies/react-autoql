@@ -4,6 +4,7 @@ import { v4 as uuid } from 'uuid'
 import { Axis } from '../Axis'
 import AxisSelector from './AxisSelector'
 import RowNumberSelector from './RowNumberSelector'
+import AxisScaler from './AxisScaler'
 import { getBBoxFromRef } from '../../../js/Util'
 import { axesDefaultProps, axesPropTypes } from '../helpers'
 
@@ -378,6 +379,18 @@ export default class Axes extends React.Component {
 
         <g className='react-autoql-axes' data-test='react-autoql-axes'>
           {this.renderXAxis(xAxisTitle)}
+          <AxisScaler
+            {...this.props}
+            column={this.props.xCol}
+            positions={['top', 'bottom']}
+            align='center'
+            childProps={{
+              x: '???',
+              y: '???',
+              height: '???',
+              width: '???',
+            }}
+          />
           {this.renderYAxis(yAxisTitle)}
         </g>
       </g>

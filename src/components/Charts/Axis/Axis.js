@@ -366,7 +366,9 @@ export default class Axis extends Component {
       // because they might overlap the legend
       (!this.props.rotateLabels ? this.props.bottomMargin : 44) + // distance to bottom of axis labels
       20
-    if (legendClippingHeight < 0) {legendClippingHeight = 0}
+    if (legendClippingHeight < 0) {
+      legendClippingHeight = 0
+    }
 
     return (
       <g data-test='axis'>
