@@ -191,33 +191,6 @@ export const getTooltipContent = ({ row, columns, colIndex, stringColumnIndex, l
   }
 }
 
-// export const getLegendLabelsForMultiSeries = (
-//   data,
-//   columns,
-//   legendColumnIndex,
-//   colorScale
-// ) => {
-//   if (isNaN(legendColumnIndex)) {
-//     return undefined
-//   }
-
-//   try {
-//     const labelArray = data.map((r) => r[legendColumnIndex])
-//     const uniqueLabels = [...new Set(labelArray)]
-//     const legendLabels = {}
-//     uniqueLabels.forEach((label, i) => {
-//       legendLabels[label] = {
-//         color: colorScale(i),
-//         hidden: columns[columnIndex].isSeriesHidden,
-//       }
-//     })
-//     return uniqueLabels
-//   } catch (error) {
-//     console.error(error)
-//     return []
-//   }
-// }
-
 export const getLegendLabelsForMultiSeries = (columns, colorScale, numberColumnIndices = []) => {
   try {
     if (numberColumnIndices.length < 1) {
@@ -496,4 +469,20 @@ export const getTickValues = ({ tickHeight, fullHeight, labelArray, scale }) => 
   }
 
   return labelArray
+}
+
+export const mergeBboxes = (boundingBoxes) => {
+  let minLeft
+  let maxBottom
+  let maxRight
+  let minTop
+
+  boundingBoxes.forEach(({ left, bottom, right, top }) => {
+    if (minLeft === undefined || left < minLeft) minLeft = left
+    if (maxBottom === undefined || bottom > maxBottom) maxBottom = bottom
+    if (maxRight === undefined || right > maxRight) maxRight = right
+    if (minTop === undefined || top < minTop) minTop = top
+  })
+
+  return { x: minLeft, y: minTop, height: Math.abs(maxBottom - minTop), width: Math.abs(maxRight - minLeft) }
 }
