@@ -65,12 +65,6 @@ export default class RowNumberSelector extends React.Component {
   loadMoreChartData = async (pageSize) => {
     try {
       let response
-      if (pageSize === '5000 (Maximum)') {
-        pageSize = this.props.totalRowNumber
-        if (this.props.totalRowNumber > 5000) {
-          pageSize = 5000
-        }
-      }
       this.props.setCurrentRowNumber(pageSize)
       response = await this.getNewChartData(pageSize)
       this.props.setIsLoadingMoreRows(false)
@@ -93,7 +87,12 @@ export default class RowNumberSelector extends React.Component {
       rowNumberList.push(currentRowNumber)
       currentRowNumber = currentRowNumber * 10
     }
-    rowNumberList.push('5000 (Maximum)')
+    if (totalRows > 5000) {
+      rowNumberList.push(5000)
+    } else {
+      rowNumberList.push(totalRows)
+    }
+
     return rowNumberList
   }
   renderSelectorContent = () => {
@@ -119,16 +118,22 @@ export default class RowNumberSelector extends React.Component {
         >
           <ul className='axis-selector-content'>
             {this.rowNumberListConstructor(this.props.totalRowNumber).map((rowNumber, i) => {
+              let rowNumberString = rowNumber
+              if (rowNumber === 5000) {
+                rowNumberString = '5000 (Maximum)'
+              } else if (rowNumber !== 50 && rowNumber !== 500) {
+                rowNumberString = `${rowNumber} (All)`
+              }
               return (
                 <li
-                  className={`string-select-list-item ${rowNumber === this.props.stringColumnIndex ? 'active' : ''}`}
+                  className={`string-select-list-item ${rowNumber === this.props.currentRowNumber ? 'active' : ''}`}
                   key={`string-column-select-${i}`}
                   onClick={() => {
                     this.closeSelector()
                     this.loadMoreChartData(rowNumber)
                   }}
                 >
-                  {rowNumber}
+                  {rowNumberString}
                 </li>
               )
             })}

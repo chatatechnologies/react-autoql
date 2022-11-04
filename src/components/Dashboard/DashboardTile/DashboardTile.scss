@@ -189,6 +189,13 @@
   }
 
   .react-autoql-response-content-container {
+    padding: 7px;
+    align-items: center;
+  }
+}
+
+.dashboard-tile-response-wrapper.editing .dashboard-tile-response-container {
+  .react-autoql-response-content-container {
     padding: 7px 12px 20px 18px;
     align-items: center;
   }
