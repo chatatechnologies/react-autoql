@@ -6,7 +6,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   background-color: inherit;
   font-size: 14px;
   overflow: hidden;
@@ -134,7 +134,9 @@
     margin: 0;
   }
 }
-
+.query-output-table-row-count{
+  padding-top: 10px;
+}
 .dashboard-data-limit-warning-icon {
   color: var(--react-autoql-warning-color) !important;
   margin-left: 10px;
