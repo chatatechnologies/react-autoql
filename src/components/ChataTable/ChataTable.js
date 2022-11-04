@@ -270,7 +270,10 @@ export default class ChataTable extends React.Component {
         this.props.onNewPage(response?.rows)
       } else {
         this.setState({ pageLoading: true })
-        const responseWrapper = await this.sortOrFilterData(props, nextTableParamsFormatted)
+        const responseWrapper = await props.queryFn({
+          tableFilters: nextTableParamsFormatted?.filters,
+          orders: nextTableParamsFormatted?.sorters,
+        })
         this.queryID = responseWrapper?.data?.data?.query_id
         response = { ..._get(responseWrapper, 'data.data', {}), page: 1 }
 
@@ -323,38 +326,6 @@ export default class ChataTable extends React.Component {
       queryId: this.queryID,
       cancelToken: this.axiosSource.token,
     })
-  }
-
-  sortOrFilterData = (props, tableParams) => {
-    if (props.isDrilldown) {
-      return runDrilldown({
-        ...getAuthentication(props.authentication),
-        source: props.queryRequestData?.source,
-        debug: props.queryRequestData?.translation === 'include',
-        formattedUserSelection: props.queryRequestData?.user_selection,
-        filters: props.queryRequestData?.session_filter_locks,
-        test: props.queryRequestData?.test,
-        groupBys: props.queryRequestData?.columns,
-        queryID: props.originalQueryID, // todo: get original query ID from drillown response
-        orders: tableParams?.sorters,
-        tableFilters: tableParams?.filters,
-        cancelToken: this.axiosSource.token,
-      })
-    } else {
-      return runQueryOnly({
-        ...getAuthentication(props.authentication),
-        query: props.queryRequestData?.text,
-        source: props.queryRequestData?.source,
-        debug: props.queryRequestData?.translation === 'include',
-        formattedUserSelection: props.queryRequestData?.user_selection,
-        filters: props.queryRequestData?.session_filter_locks,
-        test: props.queryRequestData?.test,
-        pageSize: props.queryRequestData?.page_size,
-        orders: tableParams?.sorters,
-        tableFilters: tableParams?.filters,
-        cancelToken: this.axiosSource.token,
-      })
-    }
   }
 
   ajaxResponseFunc = (props, response) => {
