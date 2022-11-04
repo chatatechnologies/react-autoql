@@ -898,6 +898,9 @@ export class QueryOutput extends React.Component {
 
     try {
       this.tableData = [...this.tableData, ...rows]
+      this.setState({
+        visibleRowChangeCount: this.state.visibleRowChangeCount + 1,
+      })
     } catch (error) {
       console.error(error)
     }
@@ -1891,7 +1894,19 @@ export class QueryOutput extends React.Component {
 
     return null
   }
-
+  renderTableRowCount = () => {
+    const currentRowsNumber = this.tableData?.length
+    const totalRowsNumber = this.queryResponse?.data?.data?.count_rows
+    const shouldRenderTRC =
+      this.state.displayType === 'table' && this.props.enableAjaxTableData && totalRowsNumber && currentRowsNumber
+    return (
+      shouldRenderTRC && (
+        <div className='query-output-table-row-count'>
+          <span>{`Scrolled ${currentRowsNumber} / ${totalRowsNumber} rows`}</span>
+        </div>
+      )
+    )
+  }
   shouldRenderReverseTranslation = () => {
     return (
       getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
@@ -1958,6 +1973,7 @@ export class QueryOutput extends React.Component {
           ${isTableType(this.state.displayType) ? 'table' : ''}`}
         >
           {this.renderResponse()}
+          {this.renderTableRowCount()}
           {this.renderFooter()}
         </div>
         <ReactTooltip
