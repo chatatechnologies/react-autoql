@@ -209,7 +209,8 @@ export const runQueryOnly = (params = {}) => {
         return Promise.reject({ error: 'Unauthenticated' })
       }
       const referenceId = error?.response?.data?.reference_id
-      if (referenceId === '1.1.430' || referenceId === '1.1.431' || isError500Type(referenceId)) {
+      const isSubquery = tableFilters?.length || orders?.length
+      if (!isSubquery && (referenceId === '1.1.430' || referenceId === '1.1.431' || isError500Type(referenceId))) {
         const queryId = error?.response?.data?.data?.query_id
         return fetchSuggestions({
           query,
