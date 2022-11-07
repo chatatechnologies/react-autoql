@@ -485,7 +485,7 @@ export class QueryOutput extends React.Component {
       if (this.shouldGenerateTableData()) {
         this.generateTableData()
         if (this.shouldGeneratePivotData()) {
-          this.generatePivotTableData({
+          this.generatePivotData({
             isFirstGeneration: true,
           })
         }
