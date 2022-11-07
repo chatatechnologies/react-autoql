@@ -522,11 +522,16 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
       // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
       const supportedDisplayTypes = ['table']
 
-      if (numRows <= maxRowsForPivot) {
-        supportedDisplayTypes.push('pivot_table')
-      }
+      // Comment out for now so chart row count doesnt change display type
+      // if (numRows <= maxRowsForPivot) {
+      supportedDisplayTypes.push('pivot_table')
+      // }
 
-      if (numRows <= maxRowsForPivot && pivotDataHasLength) {
+      if (
+        // Comment out for now so chart row count doesnt change display type
+        // numRows <= maxRowsForPivot &&
+        pivotDataHasLength
+      ) {
         supportedDisplayTypes.push(
           'stacked_column',
           'stacked_bar',
@@ -537,9 +542,11 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
           'bubble',
           'heatmap',
         )
-      } else if (numRows > maxRowsForPivot) {
-        console.warn('Supported Display Types: Rows exceeded 1000, only allowing regular table display type')
       }
+      // Comment out for now so chart row count doesnt change display type
+      // else if (numRows > maxRowsForPivot) {
+      //   console.warn('Supported Display Types: Rows exceeded 1000, only allowing regular table display type')
+      // }
 
       return supportedDisplayTypes
     } else if (supports2DCharts(visibleColumns, numRows)) {
