@@ -1916,12 +1916,15 @@ export class QueryOutput extends React.Component {
     const totalRowsNumber = this.queryResponse?.data?.data?.count_rows
     const shouldRenderTRC =
       this.state.displayType === 'table' && this.props.enableAjaxTableData && totalRowsNumber && currentRowsNumber
+
+    if (!shouldRenderTRC) {
+      return null
+    }
+
     return (
-      shouldRenderTRC && (
-        <div className='query-output-table-row-count'>
-          <span>{`Scrolled ${currentRowsNumber} / ${totalRowsNumber} rows`}</span>
-        </div>
-      )
+      <div className='query-output-table-row-count'>
+        <span>{`Scrolled ${currentRowsNumber} / ${totalRowsNumber} rows`}</span>
+      </div>
     )
   }
   shouldRenderReverseTranslation = () => {
