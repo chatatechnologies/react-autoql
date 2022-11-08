@@ -20,9 +20,7 @@ export default class AxisScaler extends React.Component {
         stroke='transparent'
         strokeWidth='1px'
         rx='4'
-        onClick={() => {
-          this.props.setIsChartScaled()
-        }}
+        onClick={this.props.setIsChartScaled}
       />
     )
   }
