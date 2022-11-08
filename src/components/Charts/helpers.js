@@ -191,33 +191,6 @@ export const getTooltipContent = ({ row, columns, colIndex, stringColumnIndex, l
   }
 }
 
-// export const getLegendLabelsForMultiSeries = (
-//   data,
-//   columns,
-//   legendColumnIndex,
-//   colorScale
-// ) => {
-//   if (isNaN(legendColumnIndex)) {
-//     return undefined
-//   }
-
-//   try {
-//     const labelArray = data.map((r) => r[legendColumnIndex])
-//     const uniqueLabels = [...new Set(labelArray)]
-//     const legendLabels = {}
-//     uniqueLabels.forEach((label, i) => {
-//       legendLabels[label] = {
-//         color: colorScale(i),
-//         hidden: columns[columnIndex].isSeriesHidden,
-//       }
-//     })
-//     return uniqueLabels
-//   } catch (error) {
-//     console.error(error)
-//     return []
-//   }
-// }
-
 export const getLegendLabelsForMultiSeries = (columns, colorScale, numberColumnIndices = []) => {
   try {
     if (numberColumnIndices.length < 1) {
@@ -344,7 +317,7 @@ export const getMinValueFromKeyValueObj = (obj) => {
   return minValue
 }
 
-export const getMinAndMaxValues = (data, numberColumnIndices) => {
+export const getMinAndMaxValues = (data, numberColumnIndices, isChartScaled) => {
   try {
     const maxValuesFromArrays = []
     const minValuesFromArrays = []
@@ -357,20 +330,25 @@ export const getMinAndMaxValues = (data, numberColumnIndices) => {
     // In order to see the chart elements we need to make sure
     // that the max and min values are different.
     // Use this if block below is commented out
-    // if (maxValue === minValue) {
-    //   if (minValue > 0) {
-    //     minValue = 0
-    //   } else if (maxValue < 0) {
-    //     maxValue = 0
-    //   }
-    // }
+    if (maxValue === minValue) {
+      if (minValue > 0) {
+        minValue = 0
+      } else if (maxValue < 0) {
+        maxValue = 0
+      }
+    }
 
     // Always show 0 on the y axis
     // Keep this for future use
-    if (maxValue > 0 && minValue > 0) {
-      minValue = 0
-    } else if (maxValue < 0 && minValue < 0) {
-      maxValue = 0
+    const scaleRatio = maxValue / minValue
+    const isDisableChartScale = !isChartScaled || (maxValue > 0 && minValue < 0) || scaleRatio > 1000
+
+    if (isDisableChartScale) {
+      if (maxValue > 0 && minValue > 0) {
+        minValue = 0
+      } else if (maxValue < 0 && minValue < 0) {
+        maxValue = 0
+      }
     }
 
     return {
@@ -496,4 +474,20 @@ export const getTickValues = ({ tickHeight, fullHeight, labelArray, scale }) => 
   }
 
   return labelArray
+}
+
+export const mergeBboxes = (boundingBoxes) => {
+  let minLeft
+  let maxBottom
+  let maxRight
+  let minTop
+
+  boundingBoxes.forEach(({ left, bottom, right, top }) => {
+    if (minLeft === undefined || left < minLeft) minLeft = left
+    if (maxBottom === undefined || bottom > maxBottom) maxBottom = bottom
+    if (maxRight === undefined || right > maxRight) maxRight = right
+    if (minTop === undefined || top < minTop) minTop = top
+  })
+
+  return { x: minLeft, y: minTop, height: Math.abs(maxBottom - minTop), width: Math.abs(maxRight - minLeft) }
 }
