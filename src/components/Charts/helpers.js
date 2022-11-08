@@ -317,7 +317,7 @@ export const getMinValueFromKeyValueObj = (obj) => {
   return minValue
 }
 
-export const getMinAndMaxValues = (data, numberColumnIndices) => {
+export const getMinAndMaxValues = (data, numberColumnIndices, isChartScaled) => {
   try {
     const maxValuesFromArrays = []
     const minValuesFromArrays = []
@@ -330,20 +330,25 @@ export const getMinAndMaxValues = (data, numberColumnIndices) => {
     // In order to see the chart elements we need to make sure
     // that the max and min values are different.
     // Use this if block below is commented out
-    // if (maxValue === minValue) {
-    //   if (minValue > 0) {
-    //     minValue = 0
-    //   } else if (maxValue < 0) {
-    //     maxValue = 0
-    //   }
-    // }
+    if (maxValue === minValue) {
+      if (minValue > 0) {
+        minValue = 0
+      } else if (maxValue < 0) {
+        maxValue = 0
+      }
+    }
 
     // Always show 0 on the y axis
     // Keep this for future use
-    if (maxValue > 0 && minValue > 0) {
-      minValue = 0
-    } else if (maxValue < 0 && minValue < 0) {
-      maxValue = 0
+    const scaleRatio = maxValue / minValue
+    const isDisableChartScale = !isChartScaled || (maxValue > 0 && minValue < 0) || scaleRatio > 1000
+
+    if (isDisableChartScale) {
+      if (maxValue > 0 && minValue > 0) {
+        minValue = 0
+      } else if (maxValue < 0 && minValue < 0) {
+        maxValue = 0
+      }
     }
 
     return {

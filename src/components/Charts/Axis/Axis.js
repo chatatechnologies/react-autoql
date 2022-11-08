@@ -124,7 +124,7 @@ export default class Axis extends Component {
 
   styleAxisScalerBorder = () => {
     select(this.axisScaler)
-      .attr('class', 'legend-title-border')
+      .attr('class', 'axis-scaler-border')
       .attr('transform', this.props.translate)
       .attr('width', _get(this.labelBBox, 'width', 0) + this.BUTTON_PADDING * 2)
       .attr('height', _get(this.labelBBox, 'height', 0) + this.BUTTON_PADDING * 2)
@@ -479,7 +479,7 @@ export default class Axis extends Component {
             })`}
           />
         )}
-        {!!this.labelBBox && this.props.scale?.type === 'LINEAR' && (
+        {!!this.labelBBox && this.props.scale?.type === 'LINEAR' && this.props.scale?.domain().length !== 1 && (
           <AxisScaler
             {...this.props}
             positions={['top', 'bottom']}
