@@ -4,15 +4,16 @@ import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 
-import { select } from 'd3-selection'
+import { select, selectAll } from 'd3-selection'
 import { axisLeft, axisBottom } from 'd3-axis'
 import { scaleOrdinal } from 'd3-scale'
 
 import LegendSelector from './LegendSelector'
 import legendColor from '../Legend/Legend'
+import AxisScaler from './AxisScaler'
 
 import { formatChartLabel, removeFromDOM } from '../../../js/Util.js'
-import { axesDefaultProps, axesPropTypes } from '../helpers.js'
+import { axesDefaultProps, axesPropTypes, mergeBboxes } from '../helpers.js'
 
 import './Axis.scss'
 
@@ -22,6 +23,7 @@ export default class Axis extends Component {
 
     this.LEGEND_PADDING = 130
     this.LEGEND_ID = `axis-${uuid()}`
+    this.BUTTON_PADDING = 5
     this.swatchElements = []
   }
 
@@ -106,10 +108,10 @@ export default class Axis extends Component {
 
     select(this.legendBorder)
       .attr('class', 'legend-title-border')
-      .attr('width', _get(this.titleBBox, 'width', 0) + 20)
-      .attr('height', _get(this.titleBBox, 'height', 0) + 10)
-      .attr('x', _get(this.titleBBox, 'x', 0) - 10)
-      .attr('y', _get(this.titleBBox, 'y', 0) - 10)
+      .attr('width', _get(this.titleBBox, 'width', 0) + this.BUTTON_PADDING * 2)
+      .attr('height', _get(this.titleBBox, 'height', 0) + this.BUTTON_PADDING * 2)
+      .attr('x', _get(this.titleBBox, 'x', 0) - this.BUTTON_PADDING)
+      .attr('y', _get(this.titleBBox, 'y', 0) - this.BUTTON_PADDING)
       .attr('stroke', 'transparent')
       .attr('stroke-width', '1px')
       .attr('fill', 'transparent')
@@ -118,6 +120,20 @@ export default class Axis extends Component {
     // Move to front
     this.legendElement = select(this.legendBorder).node()
     this.legendElement.parentNode.appendChild(this.legendElement)
+  }
+
+  styleAxisScalerBorder = () => {
+    select(this.axisScaler)
+      .attr('class', 'axis-scaler-border')
+      .attr('transform', this.props.translate)
+      .attr('width', _get(this.labelBBox, 'width', 0) + this.BUTTON_PADDING * 2)
+      .attr('height', _get(this.labelBBox, 'height', 0) + this.BUTTON_PADDING * 2)
+      .attr('x', _get(this.labelBBox, 'x', 0) - this.BUTTON_PADDING)
+      .attr('y', _get(this.labelBBox, 'y', 0) - this.BUTTON_PADDING)
+      .attr('stroke', 'transparent')
+      .attr('stroke-width', '1px')
+      .attr('fill', 'transparent')
+      .attr('rx', 4)
   }
 
   // TODO: remove last visible legend label if it is cut off
@@ -352,6 +368,37 @@ export default class Axis extends Component {
       .filter((d) => d == 0)
       .select('line')
       .style('opacity', 0.3)
+
+    if (this.props.scale?.type === 'LINEAR' && this.axisElement) {
+      // svg coordinate system is different from clientRect coordinate system
+      // we need to get the deltas first, then we can apply them to the bounding rect
+      const axisBBox = this.axisElement.getBBox()
+      const axisBoundingRect = this.axisElement.getBoundingClientRect()
+
+      const xDiff = axisBoundingRect.x - axisBBox.x
+      const yDiff = axisBoundingRect.y - axisBBox.y
+
+      const labelBboxes = []
+      select(this.axisElement)
+        .selectAll('g.tick text')
+        .each(function () {
+          const textBoundingRect = select(this).node().getBoundingClientRect()
+          const textBBox = {
+            left: textBoundingRect.left - xDiff,
+            bottom: textBoundingRect.bottom - yDiff,
+            right: textBoundingRect.right - xDiff,
+            top: textBoundingRect.top - yDiff,
+          }
+
+          labelBboxes.push(textBBox)
+        })
+
+      if (labelBboxes) {
+        const allLabelsBbox = mergeBboxes(labelBboxes)
+        this.labelBBox = allLabelsBbox
+      }
+      this.styleAxisScalerBorder()
+    }
   }
 
   render = () => {
@@ -366,7 +413,9 @@ export default class Axis extends Component {
       // because they might overlap the legend
       (!this.props.rotateLabels ? this.props.bottomMargin : 44) + // distance to bottom of axis labels
       20
-    if (legendClippingHeight < 0) {legendClippingHeight = 0}
+    if (legendClippingHeight < 0) {
+      legendClippingHeight = 0
+    }
 
     return (
       <g data-test='axis'>
@@ -407,10 +456,11 @@ export default class Axis extends Component {
                 align='end'
                 childProps={{
                   ref: (r) => (this.legendBorder = r),
-                  x: _get(this.titleBBox, 'x', 0) - 10,
-                  y: _get(this.titleBBox, 'y', 0) - 10,
-                  width: _get(this.titleBBox, 'width', 0) + 20,
-                  height: _get(this.titleBBox, 'height', 0) + 10,
+                  x: _get(this.titleBBox, 'x', 0) - this.BUTTON_PADDING,
+                  y: _get(this.titleBBox, 'y', 0) - this.BUTTON_PADDING,
+                  width: _get(this.titleBBox, 'width', 0) + this.BUTTON_PADDING * 2,
+                  height: _get(this.titleBBox, 'height', 0) + this.BUTTON_PADDING * 2,
+                  transform: this.props.translate,
                 }}
               />
             )}
@@ -427,6 +477,20 @@ export default class Axis extends Component {
             transform={`translate(${(this.props.width - marginLeft) / 2 + marginLeft - legendDx},${
               this.props.height - 30
             })`}
+          />
+        )}
+        {!!this.labelBBox && this.props.scale?.type === 'LINEAR' && this.props.scale?.domain().length !== 1 && (
+          <AxisScaler
+            {...this.props}
+            positions={['top', 'bottom']}
+            align='center'
+            childProps={{
+              ref: (r) => (this.axisScaler = r),
+              x: _get(this.labelBBox, 'x', 0) - this.BUTTON_PADDING,
+              y: _get(this.labelBBox, 'y', 0) - this.BUTTON_PADDING,
+              width: _get(this.labelBBox, 'width', 0) + this.BUTTON_PADDING * 2,
+              height: _get(this.labelBBox, 'height', 0) + this.BUTTON_PADDING * 2,
+            }}
           />
         )}
       </g>

@@ -62,7 +62,7 @@ export default class ChataColumnChart extends Component {
       numberColumnIndices = props.visibleSeriesIndices
     }
 
-    const { minValue, maxValue } = getMinAndMaxValues(props.data, numberColumnIndices)
+    const { minValue, maxValue } = getMinAndMaxValues(props.data, numberColumnIndices, this.props.isChartScaled)
 
     this.xScale = scaleBand()
       .domain(props.data.map((d) => d[props.stringColumnIndex]))

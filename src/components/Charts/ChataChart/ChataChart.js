@@ -59,6 +59,7 @@ export default class ChataChart extends Component {
       bottomLegendMargin: 0,
       loading: true,
       isLoadingMoreRows: false,
+      isChartScaled: false,
     }
   }
 
@@ -374,6 +375,9 @@ export default class ChataChart extends Component {
       this.updateMarginsToDebounce()
     }, delay)
   }
+  setIsChartScaled = () => {
+    this.setState({ isChartScaled: !this.state.isChartScaled })
+  }
 
   updateMarginsToDebounce = () => {
     this.newMargins = undefined
@@ -576,6 +580,8 @@ export default class ChataChart extends Component {
       chartContainerRef: this.chartContainerRef,
       popoverParentElement: this.props.popoverParentElement || this.chartContainerRef,
       totalRowsNumber: this.props.totalRowsNumber,
+      isChartScaled: this.state.isChartScaled,
+      setIsChartScaled: this.setIsChartScaled,
     }
   }
 
