@@ -82,7 +82,7 @@ export default class ChataTable extends React.Component {
           }
           setTimeout(() => {
             this.setState({ loading: false })
-          }, 100)
+          }, 0)
         } else {
           this.unlockTableHeight()
         }
