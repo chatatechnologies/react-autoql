@@ -260,7 +260,10 @@ export class QueryOutput extends React.Component {
         this.state.visibleRows?.length !== prevState.visibleRows?.length ||
         (this.state.displayType === 'table' && prevState.displayType === 'text')
       ) {
-        this.props.onRowChange()
+        // Wait for tabulator to finish rendering in DOM
+        setTimeout(() => {
+          this.props.onRowChange()
+        }, 0)
       }
       // If columns changed, regenerate data if necessary
       // If table filtered or columns changed, regenerate pivot data and supported display types
@@ -716,6 +719,7 @@ export class QueryOutput extends React.Component {
 
       const drilldownResponse = _cloneDeep(this.queryResponse)
       drilldownResponse.data.data.rows = filteredRows
+      drilldownResponse.data.data.count_rows = filteredRows.length
       return drilldownResponse
     } catch (error) {
       console.error(error)
@@ -748,27 +752,29 @@ export class QueryOutput extends React.Component {
         } else if (!isNaN(stringColumnIndex) && !!row?.length) {
           this.props.onDrilldownStart(activeKey)
 
-          // ------------ 1. Use FE for filter drilldown -----------
-          // const response = this.getFilterDrilldown({ stringColumnIndex, row })
-          // setTimeout(() => {
-          //   this.props.onDrilldownEnd({ response })
-          // }, 1500)
-          // -------------------------------------------------------
+          if (!this.isDataLimited()) {
+            // ------------ 1. Use FE for filter drilldown -----------
+            const response = this.getFilterDrilldown({ stringColumnIndex, row })
+            setTimeout(() => {
+              this.props.onDrilldownEnd({ response })
+            }, 1500)
+            // -------------------------------------------------------
+          } else {
+            // --------- 2. Use subquery for filter drilldown --------
+            const clickedFilter = this.constructFilter({
+              column: this.state.columns[stringColumnIndex],
+              value: row[stringColumnIndex],
+            })
 
-          // --------- 2. Use subquery for filter drilldown --------
-          const clickedFilter = this.constructFilter({
-            column: this.state.columns[stringColumnIndex],
-            value: row[stringColumnIndex],
-          })
+            const allFilters = this.getCombinedFilters(clickedFilter)
+            const response = await this.queryFn({ tableFilters: allFilters })
 
-          const allFilters = this.getCombinedFilters(clickedFilter)
-          const response = await this.queryFn({ tableFilters: allFilters })
-
-          this.props.onDrilldownEnd({
-            response,
-            originalQueryID: this.queryID,
-          })
-          // -------------------------------------------------------
+            this.props.onDrilldownEnd({
+              response,
+              originalQueryID: this.queryID,
+            })
+            // -------------------------------------------------------
+          }
         }
       } catch (error) {
         console.error(error)
@@ -1650,13 +1656,17 @@ export class QueryOutput extends React.Component {
         onNewData={this.onNewData}
         isResizing={this.props.isResizing}
         pageSize={_get(this.queryResponse, 'data.data.row_limit')}
-        useInfiniteScroll={this.props.enableAjaxTableData}
+        useInfiniteScroll={this.props.enableAjaxTableData && this.isDataLimited()}
         queryRequestData={this.queryResponse?.data?.data?.fe_req}
         queryText={this.queryResponse?.data?.data?.text}
         originalQueryID={this.props.originalQueryID}
         isDrilldown={this.isDrilldown()}
         isQueryOutputMounted={this._isMounted}
         popoverParentElement={this.props.popoverParentElement}
+        onSetTableHeight={(height) => {
+          this.tableHeight = height
+        }}
+        height={this.tableHeight}
         supportsDrilldowns={
           isAggregation(this.state.columns) && getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
         }
@@ -1769,13 +1779,13 @@ export class QueryOutput extends React.Component {
 
   isDataLimited = () => {
     const numRows = this.queryResponse?.data?.data?.rows?.length
-    const maxRowLimit = this.queryResponse?.data?.data?.row_limit
+    const totalRows = this.queryResponse?.data?.data?.count_rows
 
-    if (!numRows || !maxRowLimit) {
+    if (!numRows || !totalRows) {
       return false
     }
 
-    return numRows === maxRowLimit
+    return numRows < totalRows
   }
 
   noDataFound = () => {
