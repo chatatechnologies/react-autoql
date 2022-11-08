@@ -781,7 +781,11 @@ export class QueryOutput extends React.Component {
   constructFilter = ({ column, value }) => {
     let formattedValue = value
     let operator = '='
-    if (column.type === 'DATE') {
+
+    if (formattedValue === null) {
+      formattedValue = 'NULL'
+      operator = 'is'
+    } else if (column.type === 'DATE') {
       const isoDate = dayjs.unix(value).utc()
       const isoDateStart = isoDate.startOf('day').toISOString()
       const isoDateEnd = isoDate.endOf('day').toISOString()
