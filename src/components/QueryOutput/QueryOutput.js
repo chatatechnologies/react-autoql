@@ -1708,6 +1708,7 @@ export class QueryOutput extends React.Component {
           changeNumberColumnIndices={this.onChangeNumberColumnIndices}
           onChartClick={this.onChartClick}
           isResizing={this.props.isResizing}
+          isDrilldownChartHidden={this.props.isDrilldownChartHidden}
           enableDynamicCharting={this.props.enableDynamicCharting}
           enableAjaxTableData={this.props.enableAjaxTableData}
           tooltipID={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
