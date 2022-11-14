@@ -134,7 +134,7 @@ export default class ChataChart extends Component {
       }
       this.rebuildTooltips()
     }
-    if (!this.props.isDrilldownChartHidden & prevProps.isDrilldownChartHidden) {
+    if (!this.props.isDrilldownChartHidden && prevProps.isDrilldownChartHidden) {
       this.rebuildTooltips()
     }
 
