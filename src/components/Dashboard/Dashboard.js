@@ -633,6 +633,7 @@ class DashboardWithoutTheme extends React.Component {
                             {...this.state.activeDrilldownRef.props}
                             queryResponse={queryResponse}
                             isResizing={this.state.isAnimatingModal}
+                            isDrilldownChartHidden={this.state.isDrilldownChartHidden}
                             key={`dashboard-drilldown-chart-${this.state.activeDrilldownTile}`}
                             activeChartElementKey={this.state.activeDrilldownChartElementKey}
                             initialDisplayType={this.state.activeDrilldownRef.state.displayType}
