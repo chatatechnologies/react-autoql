@@ -683,7 +683,6 @@ export class QueryOutput extends React.Component {
         ...getAutoQLConfig(this.props.autoQLConfig),
         source: queryRequestData?.source,
         debug: queryRequestData?.translation === 'include',
-        formattedUserSelection: queryRequestData?.user_selection,
         filters: queryRequestData?.session_filter_locks,
         test: queryRequestData?.test,
         groupBys: queryRequestData?.columns,
@@ -700,7 +699,7 @@ export class QueryOutput extends React.Component {
       query: queryRequestData?.text,
       source: queryRequestData?.source,
       debug: queryRequestData?.translation === 'include',
-      formattedUserSelection: queryRequestData?.user_selection,
+      userSelection: queryRequestData?.disambiguation,
       filters: queryRequestData?.session_filter_locks,
       test: queryRequestData?.test,
       pageSize: queryRequestData?.page_size,
@@ -1719,6 +1718,7 @@ export class QueryOutput extends React.Component {
           changeNumberColumnIndices={this.onChangeNumberColumnIndices}
           onChartClick={this.onChartClick}
           isResizing={this.props.isResizing}
+          isDrilldownChartHidden={this.props.isDrilldownChartHidden}
           enableDynamicCharting={this.props.enableDynamicCharting}
           enableAjaxTableData={this.props.enableAjaxTableData}
           tooltipID={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
