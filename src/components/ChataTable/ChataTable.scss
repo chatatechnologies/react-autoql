@@ -132,9 +132,9 @@
     height: 72px !important;
   }
 
-  &.infinite .tabulator-col.DATE_STRING .tabulator-header-filter,
-  &.infinite .tabulator-col.DATE .tabulator-header-filter,
-  &.infinite .tabulator-col.DRILLDOWN .tabulator-header-filter {
+  .tabulator-col.DATE .tabulator-header-filter,
+  .tabulator-col.DATE_STRING .tabulator-header-filter,
+  .tabulator-col.DRILLDOWN .tabulator-header-filter {
     display: none !important;
   }
 
