@@ -921,6 +921,7 @@ export class DashboardTile extends React.Component {
         rebuildTooltips={this.props.rebuildTooltips}
         popoverParentElement={this.props.dashboardRef}
         showQueryInterpretation={this.props.isEditing}
+        reverseTranslationPlacement='top'
         {...queryOutputProps}
       />
     )

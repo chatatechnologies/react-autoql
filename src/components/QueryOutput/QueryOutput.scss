@@ -121,8 +121,19 @@
     line-height: 18px;
   }
 }
+.query-output-footer-top {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  max-height: 150px;
+  width: 100%;
+  margin-top: 10px;
 
-.query-output-footer {
+  &.no-margin {
+    margin: 0;
+  }
+}
+.query-output-footer-bottom {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
