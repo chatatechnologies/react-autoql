@@ -140,7 +140,11 @@
 
     .react-autoql-response-content-container.table .query-output-footer {
       min-height: 33px;
+      &.top{
+        min-height: unset;
+      }
     }
+    
   }
 
   .dashboard-tile-response-wrapper.editing {

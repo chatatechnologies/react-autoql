@@ -1978,10 +1978,10 @@ export class QueryOutput extends React.Component {
   renderFooter = () => {
     const shouldRenderRT = this.shouldRenderReverseTranslation()
     const shouldRenderDLW = this.shouldRenderDataLimitWarning()
-    const footerClassName =
-      this.props.reverseTranslationPlacement === 'top'
-        ? `query-output-footer-top${!shouldRenderRT ? ' no-margin' : ''}`
-        : `query-output-footer-bottom${!shouldRenderRT ? ' no-margin' : ''}`
+    const footerClassName = `query-output-footer ${!shouldRenderRT ? 'no-margin' : ''} ${
+      this.props.reverseTranslationPlacement
+    }`
+
     return (
       <div className={footerClassName}>
         {shouldRenderRT && this.renderReverseTranslation()}
