@@ -343,7 +343,7 @@ export default class ChataTable extends React.Component {
 
     if (isLastPage && !this.state.isLastPage) {
       this.setState({ isLastPage: true })
-    } else if (this.state.isLastPage) {
+    } else if (!isLastPage && this.state.isLastPage) {
       this.setState({ isLastPage: false })
     }
 
