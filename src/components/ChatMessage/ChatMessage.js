@@ -220,7 +220,7 @@ export default class ChatMessage extends React.Component {
           behavior,
         })
       }
-    }, 1000)
+    }, 100)
   }
 
   updateDataConfig = (config) => {
