@@ -609,6 +609,7 @@ class DataAlertModal extends React.Component {
           html
         />
         <Modal
+          overlayStyle={{ zIndex: '9998' }}
           title={this.props.title}
           titleIcon={!_isEmpty(this.props.currentDataAlert) ? <Icon type='edit' /> : <span />}
           ref={(r) => (this.modalRef = r)}

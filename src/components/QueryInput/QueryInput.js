@@ -156,7 +156,7 @@ class QueryInput extends React.Component {
   }
 
   cancelQuery = () => {
-    this.axiosSource.cancel(responseErrors.CANCELLED)
+    this.axiosSource?.cancel(responseErrors.CANCELLED)
   }
 
   submitQuery = ({ queryText, userSelection, skipQueryValidation, source } = {}) => {
