@@ -456,7 +456,7 @@ export class DataMessenger extends React.Component {
             <div
               className={`tab${page === 'data-messenger' ? ' active' : ''}`}
               onClick={() => this.setState({ activePage: 'data-messenger' })}
-              data-tip='Data Messenger'
+              data-tip='Home'
               data-for='react-autoql-header-tooltip'
             >
               <Icon type='react-autoql-bubbles-outlined' />
