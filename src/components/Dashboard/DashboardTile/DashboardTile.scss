@@ -112,52 +112,57 @@
   opacity: 0;
 }
 
-.react-autoql-dashboard-tile-inner-div .single-value-response {
-  font-size: 32px;
-  margin-top: -6px;
-  opacity: 0.9;
-}
-
-.react-autoql-dashboard-tile-inner-div .dashboard-tile-response-wrapper {
-  height: calc(100% - 47px);
-  width: 100%;
-  padding-top: 0;
-  background: inherit;
-
-  .layout-splitter {
-    height: 1px !important;
-    color: var(--react-autoql-border-color);
-    opacity: 0.3;
-    pointer-events: none;
+.react-autoql-dashboard-tile-inner-div {
+  .single-value-response {
+    font-size: 32px;
+    margin-top: -6px;
+    opacity: 0.9;
   }
 
-  .react-autoql-table {
+  .react-autoql-table,
+  .query-output-table-row-count {
     color: var(--react-autoql-text-color-primary);
     font-size: 11px;
   }
 
-  .react-autoql-response-content-container.table .query-output-footer {
-    min-height: 33px;
-  }
-}
-.react-autoql-dashboard-tile-inner-div.split .dashboard-tile-response-wrapper {
-  padding: 0;
-}
-.react-autoql-dashboard-tile-inner-div .dashboard-tile-response-wrapper.editing {
-  .dashboard-tile-toolbars-container {
-    padding: 13px;
+  .dashboard-tile-response-wrapper {
+    height: calc(100% - 47px);
+    width: 100%;
+    padding-top: 0;
+    background: inherit;
+
+    .layout-splitter {
+      height: 1px !important;
+      color: var(--react-autoql-border-color);
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    .react-autoql-response-content-container.table .query-output-footer {
+      min-height: 33px;
+    }
   }
 
-  .layout-splitter {
-    display: block;
-    pointer-events: unset;
-    height: 4px !important;
-    color: var(--react-autoql-text-color-primary);
-    opacity: 0.8;
+  .dashboard-tile-response-wrapper.editing {
+    .dashboard-tile-toolbars-container {
+      padding: 13px;
+    }
+
+    .layout-splitter {
+      display: block;
+      pointer-events: unset;
+      height: 4px !important;
+      color: var(--react-autoql-text-color-primary);
+      opacity: 0.8;
+    }
+
+    .react-autoql-toolbar-btn.active {
+      color: var(--react-autoql-accent-color);
+    }
   }
 
-  .react-autoql-toolbar-btn.active {
-    color: var(--react-autoql-accent-color);
+  &.split .dashboard-tile-response-wrapper {
+    padding: 0;
   }
 }
 

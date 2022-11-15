@@ -33,7 +33,7 @@ const transformUserSelection = (userSelection) => {
       finalUserSelection.push({
         start: suggestion.start,
         end: suggestion.end,
-        value: suggestion.text,
+        value: suggestion.text || suggestion.value,
         value_label: suggestion.value_label || 'ORIGINAL_TEXT',
         canonical: suggestion.canonical || 'ORIGINAL_TEXT',
       })
