@@ -180,11 +180,7 @@ export default class ChataTable extends React.Component {
       return true
     }
 
-    if (
-      (this.state.scrollLoading && nextState.scrollLoading) ||
-      (this.state.pageLoading && nextState.pageLoading) // ||
-      // (this.state.loading && nextState.loading)
-    ) {
+    if ((this.state.scrollLoading && nextState.scrollLoading) || (this.state.pageLoading && nextState.pageLoading)) {
       return false
     }
 
