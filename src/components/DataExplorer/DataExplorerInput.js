@@ -5,16 +5,18 @@ import Autosuggest from 'react-autosuggest'
 import { v4 as uuid } from 'uuid'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEqual from 'lodash.isequal'
+import axios from 'axios'
 
 import DEConstants from './constants'
 import { authenticationType } from '../../props/types'
-import { fetchVLAutocomplete, fetchSubjectList } from '../../js/queryService'
+import { fetchDataExplorerAutocomplete, fetchSubjectList } from '../../js/queryService'
 import { Icon } from '../Icon'
 import { TopicName } from './TopicName'
 import { animateInputText } from '../../js/Util'
 import { CustomScrollbars } from '../CustomScrollbars'
 
 import './DataExplorerInput.scss'
+import { responseErrors } from '../../js/errorMessages'
 
 const toSentenceCase = (str) => {
   return str.toLowerCase().charAt(0).toUpperCase() + str.slice(1)
@@ -101,19 +103,21 @@ export default class DataExplorerInput extends React.Component {
     this.autoSuggest?.input?.blur()
   }
 
-  subjectAutocompleteMatch = (input) => {
-    if (input == '') {
-      return []
-    }
+  // Keep this in case we want to revert back
+  // It seems to be much faster than QC searching the cache
+  // subjectAutocompleteMatch = (input) => {
+  //   if (input == '') {
+  //     return []
+  //   }
 
-    var reg = new RegExp(`^${input.toLowerCase()}`)
-    return this.state.allSubjects.filter((subject) => {
-      const term = subject.display_name.toLowerCase()
-      if (term.match(reg)) {
-        return subject
-      }
-    })
-  }
+  //   var reg = new RegExp(`^${input.toLowerCase()}`)
+  //   return this.state.allSubjects.filter((subject) => {
+  //     const term = subject.display_name.toLowerCase()
+  //     if (term.match(reg)) {
+  //       return subject
+  //     }
+  //   })
+  // }
 
   getNewRecentSuggestions = (subject) => {
     const recentSuggestions = _cloneDeep(this.state.recentSuggestions)
@@ -231,44 +235,37 @@ export default class DataExplorerInput extends React.Component {
     }
   }
 
+  cancelCurrentRequest = () => {
+    this.axiosSource?.cancel(responseErrors.CANCELLED)
+  }
+
   requestSuggestions = () => {
-    this.setState({ loadingAutocomplete: true })
+    this.setState({ loadingAutocomplete: true, loadingAutocompleteText: value })
 
     const value = this.userTypedValue
-    const subjectMatches = this.subjectAutocompleteMatch(value) || []
 
     clearTimeout(this.autoCompleteTimer)
+    this.cancelCurrentRequest()
+    this.axiosSource = axios.CancelToken.source()
     this.autoCompleteTimer = setTimeout(() => {
-      fetchVLAutocomplete({
+      fetchDataExplorerAutocomplete({
         suggestion: value,
         ...this.props.authentication,
+        cancelToken: this.axiosSource?.token,
       })
-        .then((response) => {
-          // ----- remove this once the new endpoint is ready -----
-          let vlMatches = []
-          if (response?.data?.data?.matches?.length) {
-            vlMatches = response.data.data.matches.map((match) => {
-              return {
-                ...match,
-                display_name: `${match.keyword} (${match.show_message})`,
-                type: DEConstants.VL_TYPE,
-              }
-            })
-          }
-          // -------------------------------------------------------
-
-          const allMatches = [...subjectMatches, ...vlMatches]
-
+        .then((suggestions) => {
           this.setState({
-            suggestions: allMatches,
+            suggestions,
             loadingAutocomplete: false,
           })
         })
         .catch((error) => {
-          console.error(error)
-          this.setState({ suggestions: [], loadingAutocomplete: false })
+          if (error?.data?.message !== responseErrors.CANCELLED) {
+            console.error(error)
+            this.setState({ suggestions: [], loadingAutocomplete: false })
+          }
         })
-    }, 300)
+    }, 100)
   }
 
   onSuggestionsFetchRequested = ({ value }) => {
@@ -315,7 +312,7 @@ export default class DataExplorerInput extends React.Component {
     const hasRecentSuggestions = !!this.state.recentSuggestions?.length
     const inputIsEmpty = !this.userTypedValue
     const doneLoading = !this.state.loadingAutocomplete
-    const hasSuggestions = !!this.state.suggestions?.length && doneLoading
+    const hasSuggestions = !!this.state.suggestions?.length // && doneLoading
     const noSuggestions = !this.state.suggestions?.length && doneLoading
 
     // Recently used
@@ -334,12 +331,12 @@ export default class DataExplorerInput extends React.Component {
       })
     } else if (hasSuggestions) {
       sections.push({
-        title: `Related to "${this.userTypedValue}"`,
+        title: `Related to "${this.state.loadingAutocompleteText}"`,
         suggestions: this.state.suggestions,
       })
     } else if (noSuggestions) {
       sections.push({
-        title: `Related to "${this.userTypedValue}"`,
+        title: `Related to "${this.state.loadingAutocompleteText}"`,
         suggestions: [{ name: '' }],
         emptyState: true,
       })
