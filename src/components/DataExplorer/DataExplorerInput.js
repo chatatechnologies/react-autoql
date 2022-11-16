@@ -246,7 +246,7 @@ export default class DataExplorerInput extends React.Component {
 
     clearTimeout(this.autoCompleteTimer)
     this.cancelCurrentRequest()
-    this.axiosSource = axios.CancelToken.source()
+    this.axiosSource = axios.CancelToken?.source()
     this.autoCompleteTimer = setTimeout(() => {
       fetchDataExplorerAutocomplete({
         suggestion: value,

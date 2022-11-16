@@ -81,7 +81,7 @@ export default class DataExplorer extends React.Component {
 
   getDataPreview = () => {
     this.cancelCurrentRequest()
-    this.axiosSource = axios.CancelToken.source()
+    this.axiosSource = axios.CancelToken?.source()
 
     this.setState({ loading: true, error: undefined, dataPreview: undefined })
     fetchDataPreview({
