@@ -355,7 +355,7 @@ export class DashboardTile extends React.Component {
     this.axiosSource?.cancel(responseErrors.CANCELLED)
 
     // Create new cancel tokens for each query
-    this.axiosSource = axios.CancelToken.source()
+    this.axiosSource = axios.CancelToken?.source()
     this.secondAxiosSource = axios.CancelToken.source()
 
     const q1 = query || this.props.tile.defaultSelectedSuggestion || this.state.query

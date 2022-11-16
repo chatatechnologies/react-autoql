@@ -204,7 +204,7 @@ export default class FilterLockPopover extends React.Component {
       this.axiosSource.cancel(responseErrors.CANCELLED)
     }
 
-    this.axiosSource = axios.CancelToken.source()
+    this.axiosSource = axios.CancelToken?.source()
 
     fetchVLAutocomplete({
       ...getAuthentication(this.props.authentication),
@@ -328,11 +328,15 @@ export default class FilterLockPopover extends React.Component {
 
         const updatedFilter = filterList.find((filter) => this.getKey(filter) === this.getKey(newFilter))
 
-        if (!updatedFilter) {throw new Error('Filter not found in the api response')}
+        if (!updatedFilter) {
+          throw new Error('Filter not found in the api response')
+        }
 
         if (this.findFilter(newFilter)) {
           const updatedFilters = this.state.filters.map((filter) => {
-            if (this.getKey(filter) === this.getKey(updatedFilter)) {return updatedFilter}
+            if (this.getKey(filter) === this.getKey(updatedFilter)) {
+              return updatedFilter
+            }
             return filter
           })
           this.setState({ filters: updatedFilters })

@@ -677,7 +677,7 @@ export class QueryOutput extends React.Component {
     const allFilters = this.getCombinedFilters()
 
     this.cancelCurrentRequest()
-    this.axiosSource = axios.CancelToken.source()
+    this.axiosSource = axios.CancelToken?.source()
 
     if (this.isDrilldown()) {
       return runDrilldown({

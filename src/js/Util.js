@@ -2,7 +2,8 @@ import _get from 'lodash.get'
 import _filter from 'lodash.filter'
 import dayjs from './dayjsWithPlugins'
 
-import { CHART_TYPES, TABLE_TYPES, WEEKDAY_NAMES, MONTH_NAMES, SEASON_NAMES } from './Constants'
+import { CHART_TYPES, TABLE_TYPES, WEEKDAY_NAMES, MONTH_NAMES, SEASON_NAMES, TIMESTAMP_FORMATS } from './Constants'
+import { dataFormattingDefault } from '../props/defaults'
 
 import {
   getColumnTypeAmounts,
@@ -30,6 +31,77 @@ export const isDayJSDateValid = (date) => {
   return date !== 'Invalid Date'
 }
 
+export const formatDateType = (element, column = {}, config = {}) => {
+  if (config.timestampFormat === TIMESTAMP_FORMATS.iso8601 && column.precision) {
+    return formatISODateWithPrecision(element, column, config)
+  }
+
+  return formatEpochDate(element, column, config)
+}
+
+export const formatDateStringType = (element, column = {}, config = {}) => {
+  if (config.timestampFormat === TIMESTAMP_FORMATS.iso8601 && column.precision) {
+    return formatStringDateWithPrecision(element, column, config)
+  }
+  return formatStringDate(element, config)
+}
+
+export const formatISODateWithPrecision = (value, col = {}, config = {}) => {
+  if (!value) {
+    return undefined
+  }
+
+  const dayMonthYearFormat = config.dayMonthYearFormat || dataFormattingDefault.dayMonthYearFormat
+  const dateDayJS = dayjs(value)
+  let date = dateDayJS.format(dayMonthYearFormat)
+
+  try {
+    switch (col.precision) {
+      case 'DAY': {
+        // default
+        break
+      }
+      case 'WEEK': {
+        const dateJSStart = dateDayJS.startOf('week').format('MMM D')
+        const dateJSEnd = dateDayJS.endOf('week').format('MMM D')
+        const week = dateDayJS.week()
+        const year = dateDayJS.format('YYYY')
+        date = `${dateJSStart} - ${dateJSEnd}, ${year} (Week ${week})`
+        break
+      }
+      case 'MONTH': {
+        const monthYearFormat = config.monthYearFormat || dataFormattingDefault.monthYearFormat
+        date = dateDayJS.format(monthYearFormat)
+        break
+      }
+      case 'QUARTER': {
+        const quarter = dateDayJS.quarter()
+        const year = dateDayJS.format('YYYY')
+        date = `${year}-Q${quarter}`
+        break
+      }
+      case 'YEAR': {
+        date = dateDayJS.format('YYYY')
+        break
+      }
+      case 'DATE_HOUR': {
+        date = dateDayJS.format(`${dayMonthYearFormat} h:00A`)
+        break
+      }
+      case 'DATE_MINUTE': {
+        date = dateDayJS.format(`${dayMonthYearFormat} h:mmA`)
+        break
+      }
+      default: {
+        break
+      }
+    }
+    return date
+  } catch (error) {
+    console.error(error)
+  }
+}
+
 export const formatEpochDate = (value, col = {}, config = {}) => {
   if (!value) {
     // If this is 0, its most likely not the right date
@@ -40,8 +112,8 @@ export const formatEpochDate = (value, col = {}, config = {}) => {
   try {
     const { monthYearFormat, dayMonthYearFormat } = config
     const year = 'YYYY'
-    const monthYear = monthYearFormat || 'MMM YYYY'
-    const dayMonthYear = dayMonthYearFormat || 'll'
+    const monthYear = monthYearFormat || dataFormattingDefault.monthYearFormat
+    const dayMonthYear = dayMonthYearFormat || dataFormattingDefault.dayMonthYearFormat
 
     // Use title to determine significant digits of date format
     const title = col.title
@@ -72,6 +144,42 @@ export const formatEpochDate = (value, col = {}, config = {}) => {
   }
 }
 
+export const formatStringDateWithPrecision = (value, col, config = {}) => {
+  if (!value) {
+    return undefined
+  }
+
+  let formattedValue = value
+  try {
+    switch (col.precision) {
+      case 'DOW': {
+        if (!isNaN(value) && value >= 1 && value <= 7) {
+          formattedValue = WEEKDAY_NAMES[value - 1]
+        }
+        break
+      }
+      case 'HOUR': {
+        const dayjsTime = dayjs(value, 'THH:mm:ss.SSSZ')
+        formattedValue = dayjsTime.format('h:00A')
+        break
+      }
+      case 'MINUTE': {
+        const dayjsTime = dayjs(value, 'THH:mm:ss.SSSZ')
+        formattedValue = dayjsTime.format('h:mmA')
+        break
+      }
+      default: {
+        formattedValue = value
+        break
+      }
+    }
+    return formattedValue
+  } catch (error) {
+    console.error(error)
+    return value
+  }
+}
+
 export const formatStringDate = (value, config) => {
   if (!value) {
     return undefined
@@ -91,8 +199,8 @@ export const formatStringDate = (value, config) => {
     }
 
     const { monthYearFormat, dayMonthYearFormat } = config
-    const monthYear = monthYearFormat || 'MMM YYYY'
-    const dayMonthYear = dayMonthYearFormat || 'll'
+    const monthYear = monthYearFormat || dataFormattingDefault.monthYearFormat
+    const dayMonthYear = dayMonthYearFormat || dataFormattingDefault.dayMonthYearFormat
 
     if (day) {
       const date = dayjs(value).format(dayMonthYear)
@@ -169,11 +277,11 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
       break
     }
     case 'DATE': {
-      formattedLabel = formatEpochDate(d, col, config)
+      formattedLabel = formatDateType(d, col, config)
       break
     }
     case 'DATE_STRING': {
-      formattedLabel = formatStringDate(d, config)
+      formattedLabel = formatDateStringType(d, col, config)
       break
     }
     case 'PERCENT': {
@@ -253,11 +361,11 @@ export const formatElement = ({ element, column, config = {}, htmlElement }) => 
           break
         }
         case 'DATE': {
-          formattedElement = formatEpochDate(element, column, config)
+          formattedElement = formatDateType(element, column, config)
           break
         }
         case 'DATE_STRING': {
-          formattedElement = formatStringDate(element, config)
+          formattedElement = formatDateStringType(element, column, config)
           break
         }
         case 'RATIO': {
@@ -924,7 +1032,7 @@ export const removeFromDOM = (elem) => {
   }
 }
 
-export const dateSortFn = (a, b) => {
+export const dateSortFn = (a, b, isChart) => {
   try {
     if (!a && !b) {
       return 0
@@ -960,13 +1068,17 @@ export const dateSortFn = (a, b) => {
       }
       // If one is a weekday name
       else if (WEEKDAY_NAMES.includes(a.trim())) {
+        const multiplier = isChart ? -1 : 1
+
         const aDayIndex = WEEKDAY_NAMES.findIndex((d) => d === a.trim())
         const bDayIndex = WEEKDAY_NAMES.findIndex((d) => d === b.trim())
 
+        let sortValue = a - b
         if (aDayIndex >= 0 && bDayIndex >= 0) {
-          return bDayIndex - aDayIndex
+          sortValue = aDayIndex - bDayIndex
         }
-        return b - a
+
+        return sortValue * multiplier
       }
       // If one is a month name
       else if (MONTH_NAMES.includes(a.trim())) {
@@ -1007,7 +1119,7 @@ export const sortDataByDate = (data, tableColumns, isChart) => {
       if (!isChart) {
         sortedData = [...data].sort((a, b) => dateSortFn(a[dateColumnIndex], b[dateColumnIndex]))
       } else {
-        sortedData = [...data].sort((a, b) => -1 * dateSortFn(a[dateColumnIndex], b[dateColumnIndex]))
+        sortedData = [...data].sort((a, b) => -1 * dateSortFn(a[dateColumnIndex], b[dateColumnIndex], isChart))
       }
       return sortedData
     }

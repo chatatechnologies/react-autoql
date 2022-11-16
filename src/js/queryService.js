@@ -1,6 +1,8 @@
 import axios from 'axios'
 import _get from 'lodash.get'
 import { responseErrors } from './errorMessages'
+import { dataFormattingDefault } from '../props/defaults'
+import DEConstants from '../components/DataExplorer/constants'
 
 const formatErrorResponse = (error) => {
   if (error?.message === responseErrors.CANCELLED) {
@@ -165,6 +167,7 @@ export const runQueryOnly = (params = {}) => {
     orders,
     filters: tableFilters,
     page_size: pageSize,
+    date_format: dataFormattingDefault.timestampFormat,
   }
 
   if (!query || !query.trim()) {
@@ -384,6 +387,63 @@ export const fetchAutocomplete = ({ suggestion, domain, apiKey, token } = {}) =>
     .get(url, config)
     .then((response) => Promise.resolve(response))
     .catch((error) => Promise.reject(_get(error, 'response.data')))
+}
+
+export const fetchDataExplorerAutocomplete = ({ suggestion, domain, token, apiKey, cancelToken } = {}) => {
+  if (!suggestion || !suggestion.trim()) {
+    return Promise.reject(new Error('No query supplied'))
+  }
+
+  if (!domain || !apiKey || !token) {
+    return Promise.reject(new Error('Unauthenticated'))
+  }
+
+  const url = `${domain}/autoql/api/v1/query/vlsubjects?text=${encodeURIComponent(suggestion)}&key=${apiKey}`
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    cancelToken,
+  }
+
+  return axios
+    .get(url, config)
+    .then((response) => {
+      let vlMatches = []
+      if (response?.data?.data?.suggestions?.value_labels?.length) {
+        const vlMatchesTrimmed = response.data.data.suggestions.value_labels.slice(0, 10)
+        vlMatches = vlMatchesTrimmed.map((vl) => {
+          return {
+            ...vl,
+            display_name: `${vl.keyword} (${vl.show_message})`,
+            type: DEConstants.VL_TYPE,
+          }
+        })
+      }
+
+      let subjectMatches = []
+      if (response?.data?.data?.suggestions?.subjects?.length) {
+        subjectMatches = response.data.data.suggestions.subjects.map((subject) => {
+          return {
+            ...subject,
+            type: DEConstants.SUBJECT_TYPE,
+          }
+        })
+      }
+
+      const allMatches = [...subjectMatches, ...vlMatches]
+      return Promise.resolve(allMatches)
+    })
+    .catch((error) => {
+      if (error?.message === responseErrors.CANCELLED) {
+        return Promise.reject({
+          data: { message: responseErrors.CANCELLED },
+        })
+      }
+
+      return Promise.reject(_get(error, 'response.data'))
+    })
 }
 
 export const fetchVLAutocomplete = ({ suggestion, domain, token, apiKey, cancelToken } = {}) => {

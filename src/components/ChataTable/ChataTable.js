@@ -296,7 +296,7 @@ export default class ChataTable extends React.Component {
       }
 
       this.cancelCurrentRequest()
-      this.axiosSource = axios.CancelToken.source()
+      this.axiosSource = axios.CancelToken?.source()
 
       let response
       if (params?.page > 1) {

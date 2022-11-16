@@ -1,3 +1,5 @@
+import { TIMESTAMP_FORMATS } from '../js/Constants'
+
 export const authenticationDefault = {
   token: undefined,
   apiKey: undefined,
@@ -7,12 +9,13 @@ export const authenticationDefault = {
 }
 
 export const dataFormattingDefault = {
+  timestampFormat: TIMESTAMP_FORMATS.iso8601,
   currencyCode: 'USD',
   languageCode: 'en-US',
   currencyDecimals: 2,
   quantityDecimals: 1,
   comparisonDisplay: 'PERCENT',
-  monthYearFormat: 'MMM YYYY',
+  monthYearFormat: 'MMMM YYYY',
   dayMonthYearFormat: 'll',
 }
 
