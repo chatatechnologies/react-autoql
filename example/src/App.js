@@ -282,7 +282,7 @@ export default class App extends Component {
   }
 
   testAuthentication = () => {
-    const url = `${this.state.domain}/autoql/api/v1/query/related-queries?key=${this.state.apiKey}&search=test`
+    const url = `${this.state.domain}/autoql/api/v1/query/related-queries?key=${this.state.apiKey}&search=a&scope=narrow`
     const token = getStoredProp('jwtToken')
 
     const config = {}

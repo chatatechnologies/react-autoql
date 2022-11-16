@@ -159,6 +159,7 @@ export class QueryOutput extends React.Component {
     queryValidationSelections: PropTypes.arrayOf(PropTypes.shape({})),
     renderSuggestionsAsDropdown: PropTypes.bool,
     defaultSelectedSuggestion: PropTypes.string,
+    reverseTranslationPlacement: PropTypes.string,
     activeChartElementKey: PropTypes.string,
     preferredDisplayType: PropTypes.string,
     isResizing: PropTypes.bool,
@@ -193,6 +194,7 @@ export class QueryOutput extends React.Component {
     queryValidationSelections: undefined,
     renderSuggestionsAsDropdown: false,
     defaultSelectedSuggestion: undefined,
+    reverseTranslationPlacement: 'bottom',
     activeChartElementKey: undefined,
     isResizing: false,
     enableDynamicCharting: true,
@@ -675,7 +677,7 @@ export class QueryOutput extends React.Component {
     const allFilters = this.getCombinedFilters()
 
     this.cancelCurrentRequest()
-    this.axiosSource = axios.CancelToken.source()
+    this.axiosSource = axios.CancelToken?.source()
 
     if (this.isDrilldown()) {
       return runDrilldown({
@@ -1986,9 +1988,12 @@ export class QueryOutput extends React.Component {
   renderFooter = () => {
     const shouldRenderRT = this.shouldRenderReverseTranslation()
     const shouldRenderDLW = this.shouldRenderDataLimitWarning()
+    const footerClassName = `query-output-footer ${!shouldRenderRT ? 'no-margin' : ''} ${
+      this.props.reverseTranslationPlacement
+    }`
 
     return (
-      <div className={`query-output-footer${!shouldRenderRT ? ' no-margin' : ''}`}>
+      <div className={footerClassName}>
         {shouldRenderRT && this.renderReverseTranslation()}
         {shouldRenderDLW && this.renderDataLimitWarning()}
       </div>
@@ -2006,9 +2011,10 @@ export class QueryOutput extends React.Component {
           className={`react-autoql-response-content-container
           ${isTableType(this.state.displayType) ? 'table' : ''}`}
         >
+          {this.props.reverseTranslationPlacement === 'top' && this.renderFooter()}
           {this.renderResponse()}
           {this.renderTableRowCount()}
-          {this.renderFooter()}
+          {this.props.reverseTranslationPlacement !== 'top' && this.renderFooter()}
         </div>
         <ReactTooltip
           className='react-autoql-tooltip'

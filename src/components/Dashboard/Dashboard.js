@@ -533,6 +533,8 @@ class DashboardWithoutTheme extends React.Component {
             reportProblemCallback={this.reportProblemCallback}
             enableAjaxTableData={this.props.enableAjaxTableData}
             rebuildTooltips={this.rebuildTooltips}
+            showQueryInterpretation={this.props.isEditing}
+            reverseTranslationPlacement='top'
           />
         )}
       </div>
@@ -641,6 +643,8 @@ class DashboardWithoutTheme extends React.Component {
                               tableConfig: this.state.activeDrilldownRef.tableConfig,
                               pivotTableConfig: this.state.activeDrilldownRef.pivotTableConfig,
                             }}
+                            showQueryInterpretation={this.props.isEditing}
+                            reverseTranslationPlacement='top'
                           />
                         )}
                         {this.renderChartCollapseBtn('bottom')}

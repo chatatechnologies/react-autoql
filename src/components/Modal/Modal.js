@@ -101,6 +101,7 @@ export default class Modal extends React.Component {
               width: this.props.width,
               height: this.props.height,
             },
+            overlay: { ...this.props.overlayStyle },
           }}
         >
           <div className='react-autoql-modal-header'>
