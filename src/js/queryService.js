@@ -1,6 +1,7 @@
 import axios from 'axios'
 import _get from 'lodash.get'
 import { responseErrors } from './errorMessages'
+import { dataFormattingDefault } from '../props/defaults'
 
 const formatErrorResponse = (error) => {
   if (error?.message === responseErrors.CANCELLED) {
@@ -165,6 +166,7 @@ export const runQueryOnly = (params = {}) => {
     orders,
     filters: tableFilters,
     page_size: pageSize,
+    date_format: dataFormattingDefault.timestampFormat,
   }
 
   if (!query || !query.trim()) {
