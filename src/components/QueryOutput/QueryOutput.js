@@ -672,7 +672,7 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  queryFn = (args = {}) => {
+  queryFn = (args = { pageSize: 50 }) => {
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
     const allFilters = this.getCombinedFilters()
 
@@ -742,6 +742,7 @@ export class QueryOutput extends React.Component {
               ...getAutoQLConfig(this.props.autoQLConfig),
               queryID: this.queryID,
               groupBys,
+              pageSize: 50,
             })
             this.props.onDrilldownEnd({
               response,
