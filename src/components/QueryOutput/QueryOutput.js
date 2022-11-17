@@ -672,7 +672,7 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  queryFn = (args = { pageSize: 50 }) => {
+  queryFn = (args = {}) => {
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
     const allFilters = this.getCombinedFilters()
 
@@ -769,7 +769,7 @@ export class QueryOutput extends React.Component {
             })
 
             const allFilters = this.getCombinedFilters(clickedFilter)
-            const response = await this.queryFn({ tableFilters: allFilters })
+            const response = await this.queryFn({ tableFilters: allFilters, pageSize: 50 })
 
             this.props.onDrilldownEnd({
               response,
