@@ -1150,7 +1150,27 @@ export class QueryOutput extends React.Component {
 
   setFilterFunction = (col) => {
     const self = this
-    if (col.type === 'DATE' || col.type === 'DATE_STRING') {
+    if (col.type === 'DATE') {
+      const isISO8601 = !!col.precision
+      return (headerValue, rowValue, rowData, filterParams) => {
+        try {
+          const rowValueDayJS = isISO8601 ? dayjs.utc(rowValue) : dayjs.unix(rowValue).utc()
+
+          const dates = headerValue.split(' to ')
+          const startDate = dayjs.utc(dates[0]).utc()
+          const endDate = dayjs.utc(dates[1]).utc().endOf('day')
+
+          const isAfterStartDate = rowValueDayJS.isAfter(startDate)
+          const isBeforeEndDate = rowValueDayJS.isBefore(endDate)
+
+          return isAfterStartDate && isBeforeEndDate
+        } catch (error) {
+          console.error(error)
+          this.props.onErrorCallback(error)
+          return false
+        }
+      }
+    } else if (col.type === 'DATE_STRING') {
       return (headerValue, rowValue, rowData, filterParams) => {
         try {
           const formattedElement = formatElement({
