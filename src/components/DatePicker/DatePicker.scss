@@ -50,13 +50,18 @@
         color: var(--react-autoql-text-color-placeholder);
       }
 
+      .rdrDayDisabled {
+        background-color: var(--react-autoql-hover-color);
+        opacity: 0.3;
+      }
+
       .rarDayHovered {
       }
 
-      .rdrDay:not(.rdrDayPassive) .rdrInRange ~ .rdrDayNumber span,
-      .rdrDay:not(.rdrDayPassive) .rdrStartEdge ~ .rdrDayNumber span,
-      .rdrDay:not(.rdrDayPassive) .rdrEndEdge ~ .rdrDayNumber span,
-      .rdrDay:not(.rdrDayPassive) .rdrSelected ~ .rdrDayNumber span {
+      .rdrDay:not(.rdrDayPassive):not(.rdrDayDisabled) .rdrInRange ~ .rdrDayNumber span,
+      .rdrDay:not(.rdrDayPassive):not(.rdrDayDisabled) .rdrStartEdge ~ .rdrDayNumber span,
+      .rdrDay:not(.rdrDayPassive):not(.rdrDayDisabled) .rdrEndEdge ~ .rdrDayNumber span,
+      .rdrDay:not(.rdrDayPassive):not(.rdrDayDisabled) .rdrSelected ~ .rdrDayNumber span {
         color: var(--react-autoql-text-color-accent);
       }
 

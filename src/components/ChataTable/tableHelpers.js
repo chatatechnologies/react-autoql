@@ -1,4 +1,5 @@
 import { isColumnNumberType } from '../QueryOutput/columnHelpers'
+import dayjs from '../../js/dayjsWithPlugins'
 
 export const formatTableParams = (params, tableRef) => {
   const formattedSorters = formatSortersForAPI(params, tableRef)
@@ -74,6 +75,12 @@ export const formatFiltersForAPI = (params, tableRef) => {
           const formatted = formatNumberFilterValue(filter.value)
           filterObj.operator = formatted.operator
           filterObj.value = formatted.value
+        } else if (column.type === 'DATE') {
+          const dates = filter.value.split(' to ')
+          const startDate = dayjs.utc(dates[0]).startOf('day').toISOString()
+          const endDate = dayjs.utc(dates[1]).endOf('day').toISOString()
+          filterObj.value = `${startDate},${endDate}`
+          filterObj.operator = 'between'
         }
 
         filters.push(filterObj)

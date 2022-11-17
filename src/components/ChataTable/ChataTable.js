@@ -10,14 +10,13 @@ import { Popover } from 'react-tiny-popover'
 import TableWrapper from './TableWrapper'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { responseErrors } from '../../js/errorMessages'
-import { getAuthentication } from '../../props/defaults'
+import { getAuthentication, getAutoQLConfig } from '../../props/defaults'
 import { formatTableParams } from './tableHelpers'
 import { Spinner } from '../Spinner'
-import { runQueryOnly, runQueryNewPage, runDrilldown } from '../../js/queryService'
-import { getTableConfigState } from './tableHelpers'
+import { runQueryNewPage } from '../../js/queryService'
 import { DatePicker } from '../DatePicker'
 
-import { currentEventLoopEnd } from '../../js/Util'
+import { currentEventLoopEnd, formatElement } from '../../js/Util'
 
 import 'react-tabulator/lib/styles.css' // default theme
 import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
@@ -169,10 +168,9 @@ export default class ChataTable extends React.Component {
     this._isMounted = true
     this.firstRender = false
 
-    // Enable once calendar GUI feature is complete
-    // this.clickListenerTimeout = setTimeout(() => {
-    //   this.setDateFilterClickListeners()
-    // }, 100)
+    this.clickListenerTimeout = setTimeout(() => {
+      this.setDateFilterClickListeners()
+    }, 100)
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -193,8 +191,7 @@ export default class ChataTable extends React.Component {
     if (!this.state.isFiltering && prevState.isFiltering) {
       try {
         this.setFilterTags()
-        // Enable once calendar GUI feature is complete
-        // this.setDateFilterClickListeners()
+        this.setDateFilterClickListeners()
       } catch (error) {
         console.error(error)
         this.props.onErrorCallback(error)
@@ -449,6 +446,8 @@ export default class ChataTable extends React.Component {
               datePickerColumn: undefined,
             })
           })
+
+          // Open Calendar Picker when user clicks on this field
           inputElement.addEventListener('click', (e) => {
             const coords = e.target.getBoundingClientRect()
             const tableCoords = this.tableContainer.getBoundingClientRect()
@@ -461,6 +460,15 @@ export default class ChataTable extends React.Component {
                 datePickerColumn: col,
               })
             }
+          })
+
+          // Do not allow user to type in this field
+          const keyboardEvents = ['keypress', 'keydown', 'keyup']
+          keyboardEvents.forEach((evt) => {
+            inputElement.addEventListener(evt, (e) => {
+              e.stopPropagation()
+              e.preventDefault()
+            })
           })
         }
       }
@@ -533,19 +541,33 @@ export default class ChataTable extends React.Component {
       return
     }
 
-    const startDateObj = new Date(startDate)
-    const endDateObj = new Date(endDate)
-
-    const startDateISO8601 = startDateObj.toISOString()
-    const endDateISO8601 = endDateObj.toISOString()
-
     const inputElement = document.querySelector(
       `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${this.state.datePickerColumn.field}"] .tabulator-col-content input`,
     )
 
     if (inputElement) {
+      // this.ref?.table?.updateColumnDefinition(this.state.datePickerColumn.field, { minWidth: '230px' })
+
+      const formattedStartDate = formatElement({
+        element: startDate.toISOString(),
+        column: this.state.datePickerColumn,
+        config: getAutoQLConfig(this.props.autoQLConfig).dataFormatting,
+      })
+
+      const formattedEndDate = formatElement({
+        element: endDate.toISOString(),
+        column: this.state.datePickerColumn,
+        config: getAutoQLConfig(this.props.autoQLConfig).dataFormatting,
+      })
+
       inputElement.focus()
-      inputElement.value = `${startDateISO8601},${endDateISO8601}`
+      inputElement.value = `${formattedStartDate} to ${formattedEndDate}`
+      inputElement.blur()
+      this.currentDateRangeSelections = {
+        [this.state.datePickerColumn.field]: dateRangeSelection,
+      }
+
+      this.setState({ datePickerColumn: undefined })
     }
   }
 
@@ -616,7 +638,11 @@ export default class ChataTable extends React.Component {
         content={
           <div className='react-autoql-table-date-picker'>
             <h3>{this.state.datePickerColumn?.display_name}</h3>
-            <DatePicker onSelection={this.onDateRangeSelection} />
+            <DatePicker
+              initialRange={this.currentDateRangeSelections?.[this.state.datePickerColumn.field]}
+              onSelection={this.onDateRangeSelection}
+              validRange={this.state.datePickerColumn.dateRange}
+            />
           </div>
         }
       >

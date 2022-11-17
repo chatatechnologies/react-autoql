@@ -1,4 +1,5 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import { DateRange } from 'react-date-range'
 import { getThemeValue } from '../../theme/configureTheme'
 
@@ -7,23 +8,37 @@ import 'react-date-range/dist/theme/default.css' // theme css file
 import './DatePicker.scss'
 
 export default class DatePicker extends React.Component {
-  static propTypes = {}
+  constructor(props) {
+    super(props)
 
-  static defaultProps = {}
+    this.state = {
+      ranges: [
+        {
+          startDate: props.initialRange?.startDate ?? props.validRange?.startDate ?? new Date(),
+          endDate: props.initialRange?.endDate ?? props.validRange?.endDate ?? new Date(),
+          key: 'selection',
+        },
+      ],
+    }
+  }
 
-  state = {
-    ranges: [
-      {
-        startDate: new Date(),
-        endDate: new Date(),
-        key: 'selection',
-      },
-    ],
+  static propTypes = {
+    initialRange: PropTypes.shape({}),
+    validRange: PropTypes.shape({}),
+  }
+
+  static defaultProps = {
+    initialRange: undefined,
+    validRange: undefined,
   }
 
   handleSelect = (ranges) => {
-    this.setState({ ranges: [ranges.selection] })
-    this.props.onSelection(ranges.selection)
+    this.setState({ ranges: [ranges.selection] }, () => {
+      const focusedRange = this.datePicker?.state?.focusedRange
+      if (focusedRange.every((index) => index === 0)) {
+        this.props.onSelection(ranges.selection)
+      }
+    })
   }
 
   render = () => {
@@ -32,10 +47,15 @@ export default class DatePicker extends React.Component {
     return (
       <div className='react-autoql-date-picker'>
         <DateRange
+          ref={(r) => (this.datePicker = r)}
           ranges={this.state.ranges}
           onChange={this.handleSelect}
+          minDate={this.props.validRange?.startDate}
+          maxDate={this.props.validRange?.endDate}
+          dragSelectionEnabled={false}
           rangeColors={[accentColor]} // defines color for selection preview.
           // Keep all below for reference until feature is complete
+          // onRangeFocusChange={this.handleRangeFocusChange}
           // scroll={ // infinite scroll behaviour configuration. Check out Infinite Scroll section
           //   {
           //     enabled: true,

@@ -26,9 +26,8 @@ import { ChataChart } from '../Charts/ChataChart'
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { Icon } from '../Icon'
 
-import { responseErrors } from '../../js/errorMessages'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import errorMessages from '../../js/errorMessages'
+import errorMessages, { responseErrors } from '../../js/errorMessages'
 
 import {
   onlyUnique,
@@ -57,11 +56,10 @@ import {
 } from './columnHelpers.js'
 
 import { sendSuggestion, runDrilldown, runQueryOnly } from '../../js/queryService'
-
-import './QueryOutput.scss'
 import { MONTH_NAMES } from '../../js/Constants'
 import { ReverseTranslation } from '../ReverseTranslation'
 import { getChartColorVars } from '../../theme/configureTheme'
+import { getColumnDateRanges } from '../../js/dateUtils'
 import { withTheme } from '../../theme'
 
 import './QueryOutput.scss'
@@ -87,6 +85,7 @@ export class QueryOutput extends React.Component {
     this.QUERY_VALIDATION_KEY = uuid()
 
     this.queryResponse = _cloneDeep(props.queryResponse)
+    this.columnDateRanges = getColumnDateRanges(props.queryResponse)
     this.queryID = _get(this.queryResponse, 'data.data.query_id')
     this.interpretation = _get(this.queryResponse, 'data.data.parsed_interpretation')
     this.tableParams = {}
@@ -1218,7 +1217,7 @@ export class QueryOutput extends React.Component {
   }
 
   setHeaderFilterPlaceholder = (col) => {
-    if ((col.type === 'DATE' || col.type === 'DATE_STRING') && !col.pivot) {
+    if (col.type === 'DATE' && !col.pivot) {
       return 'pick range'
     }
 
@@ -1234,19 +1233,14 @@ export class QueryOutput extends React.Component {
     const formattedColumns = columns.map((col, i) => {
       const newCol = _cloneDeep(col)
 
-      const drilldownGroupby = this.queryResponse?.data?.data?.fe_req?.columns?.find(
-        (column) => newCol.name === column.name,
-      )
-
+      newCol.id = uuid()
       newCol.field = `${i}`
       newCol.title = col.display_name
-      if (drilldownGroupby) {
-        newCol.title = `${newCol.title} <em>(Clicked: "${drilldownGroupby.value}")</em>`
-      }
-      newCol.id = uuid()
 
       // Visibility flag: this can be changed through the column visibility editor modal
       newCol.visible = col.is_visible
+
+      newCol.minWidth = '90px'
 
       // Cell alignment
       if (newCol.type === 'DOLLAR_AMT' || newCol.type === 'RATIO' || newCol.type === 'NUMBER') {
@@ -1279,6 +1273,24 @@ export class QueryOutput extends React.Component {
       // Allow proper chronological sorting for date strings
       newCol.sorter = this.setSorterFunction(newCol)
       newCol.headerSort = !!this.props.enableTableSorting
+
+      // Show drilldown filter value in column title so user knows they can't filter on this column
+      const drilldownGroupby = this.queryResponse?.data?.data?.fe_req?.columns?.find(
+        (column) => newCol.name === column.name,
+      )
+      if (drilldownGroupby) {
+        newCol.title = `${newCol.title} <em>(Clicked: "${drilldownGroupby.value}")</em>`
+      }
+
+      // Check if a date range is available
+      const dateRange = this.columnDateRanges.find((rangeObj) => {
+        return newCol.type === 'DATE' && rangeObj.columnName === newCol.display_name
+      })
+
+      if (dateRange) {
+        newCol.dateRange = dateRange
+        newCol.minWidth = '125px'
+      }
 
       return newCol
     })
@@ -1643,10 +1655,12 @@ export class QueryOutput extends React.Component {
     return (
       <ChataTable
         authentication={this.props.authentication}
+        autoQLConfig={this.props.autoQLConfig}
         key={this.tableID}
         ref={(ref) => (this.tableRef = ref)}
         columns={this.state.columns}
         data={this.tableData}
+        columnDateRanges={this.columnDateRanges}
         onCellClick={this.onTableCellClick}
         queryID={this.queryID}
         initialParams={this.tableParams}

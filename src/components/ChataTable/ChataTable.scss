@@ -132,14 +132,13 @@
     height: 72px !important;
   }
 
-  .tabulator-col.DATE .tabulator-header-filter,
-  .tabulator-col.DATE_STRING .tabulator-header-filter,
+  &.infinite .tabulator-col.DATE_STRING .tabulator-header-filter,
   .tabulator-col.DRILLDOWN .tabulator-header-filter {
-    display: none !important;
+    display: none;
   }
 
   &.limited .tabulator-col .tabulator-header-filter,
-  &.infinite .tabulator-col:not(.DATE_STRING):not(.DATE) .tabulator-header-filter {
+  &.infinite .tabulator-col:not(.DATE_STRING) .tabulator-header-filter {
     display: inline;
   }
 
@@ -224,6 +223,7 @@
   background: transparent;
   padding: 4px 9px !important;
   outline: none !important;
+  text-overflow: ellipsis;
 }
 .react-autoql-table .tabulator-header-filter input:focus {
   border: 1px solid #28a8e0;
