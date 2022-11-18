@@ -685,6 +685,7 @@ export class QueryOutput extends React.Component {
         source: queryRequestData?.source,
         debug: queryRequestData?.translation === 'include',
         filters: queryRequestData?.session_filter_locks,
+        pageSize: queryRequestData?.page_size,
         test: queryRequestData?.test,
         groupBys: queryRequestData?.columns,
         queryID: this.props.originalQueryID,
@@ -739,6 +740,7 @@ export class QueryOutput extends React.Component {
             const response = await runDrilldown({
               ...getAuthentication(this.props.authentication),
               ...getAutoQLConfig(this.props.autoQLConfig),
+              pageSize: this.props.dataPageSize,
               queryID: this.queryID,
               groupBys,
             })
@@ -1261,6 +1263,9 @@ export class QueryOutput extends React.Component {
       newCol.visible = col.is_visible
 
       newCol.minWidth = '90px'
+      if (newCol.type === 'DATE') {
+        newCol.minWidth = '125px'
+      }
 
       // Cell alignment
       if (newCol.type === 'DOLLAR_AMT' || newCol.type === 'RATIO' || newCol.type === 'NUMBER') {
@@ -1309,7 +1314,6 @@ export class QueryOutput extends React.Component {
 
       if (dateRange) {
         newCol.dateRange = dateRange
-        newCol.minWidth = '125px'
       }
 
       return newCol

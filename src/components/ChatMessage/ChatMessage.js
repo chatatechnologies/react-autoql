@@ -288,6 +288,7 @@ export default class ChatMessage extends React.Component {
           onDisplayTypeChange={this.onDisplayTypeChange}
           mutable={false}
           showSuggestionPrefix={false}
+          dataPageSize={this.props.dataPageSize}
           popoverParentElement={this.props.popoverParentElement}
           reportProblemCallback={() => {
             if (this.optionsToolbarRef?._isMounted) {
@@ -353,6 +354,7 @@ export default class ChatMessage extends React.Component {
 
   render = () => {
     const isChart = this.state.displayType && isChartType(this.state.displayType)
+    const hasRT = !!this.state.responseRef?.queryResponse?.data?.data?.parsed_interpretation
 
     return (
       <ErrorBoundary>
@@ -380,15 +382,17 @@ export default class ChatMessage extends React.Component {
             </div>
           </div>
         </div>
-        <div className='chat-message-rt-container'>
-          <ReverseTranslation
-            authentication={this.props.authentication}
-            onValueLabelClick={this.props.onRTValueLabelClick}
-            appliedFilters={this.props.appliedFilters}
-            isResizing={this.props.isResizing}
-            reverseTranslation={this.state.responseRef?.queryResponse?.data?.data?.parsed_interpretation}
-          />
-        </div>
+        {hasRT ? (
+          <div className='chat-message-rt-container'>
+            <ReverseTranslation
+              authentication={this.props.authentication}
+              onValueLabelClick={this.props.onRTValueLabelClick}
+              appliedFilters={this.props.appliedFilters}
+              isResizing={this.props.isResizing}
+              reverseTranslation={this.state.responseRef.queryResponse.data.data.parsed_interpretation}
+            />
+          </div>
+        ) : null}
       </ErrorBoundary>
     )
   }

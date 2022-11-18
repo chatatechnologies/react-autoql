@@ -124,7 +124,6 @@ export default class Axes extends React.Component {
           className='x-axis-label'
           data-test='x-axis-label'
           textAnchor='middle'
-          fontWeight='bold'
           y={xLabelY + 4}
           x={xCenter}
           style={this.labelInlineStyles}

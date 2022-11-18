@@ -392,6 +392,7 @@ export default class ChatContent extends React.Component {
                   queryRequestData={message.queryRequestData}
                   popoverParentElement={this.state.chatContentRef}
                   isVisibleInDOM={this.props.shouldRender}
+                  dataPageSize={this.props.dataPageSize}
                   source={this.props.source}
                 />
               )
