@@ -9,7 +9,7 @@
   }
 
   &:not(.no-max-height) {
-    max-height: 85%;
+    max-height: 81%;
   }
 
   &:first-of-type {
@@ -58,7 +58,6 @@
 
     .chat-message-bubble:not(.text) {
       min-width: 125px;
-      padding-bottom: 15px;
     }
   }
 
@@ -134,6 +133,10 @@
       opacity: 1;
     }
   }
+}
+
+.chat-message-rt-container {
+  padding: 0 20px;
 }
 
 /* animations */

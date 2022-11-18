@@ -19,6 +19,7 @@ import {
 import { QueryOutput } from '../QueryOutput'
 import { VizToolbar } from '../VizToolbar'
 import { OptionsToolbar } from '../OptionsToolbar'
+import { ReverseTranslation } from '../ReverseTranslation'
 import { Spinner } from '../Spinner'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
@@ -278,7 +279,7 @@ export default class ChatMessage extends React.Component {
           onTableConfigChange={this.updateDataConfig}
           onNoneOfTheseClick={this.props.onNoneOfTheseClick}
           autoChartAggregations={this.props.autoChartAggregations}
-          showQueryInterpretation
+          showQueryInterpretation={false}
           enableFilterLocking={this.props.enableFilterLocking}
           onRTValueLabelClick={this.props.onRTValueLabelClick}
           rebuildTooltips={this.props.rebuildTooltips}
@@ -378,6 +379,15 @@ export default class ChatMessage extends React.Component {
               {this.renderRightToolbar()}
             </div>
           </div>
+        </div>
+        <div className='chat-message-rt-container'>
+          <ReverseTranslation
+            authentication={this.props.authentication}
+            onValueLabelClick={this.props.onRTValueLabelClick}
+            appliedFilters={this.props.appliedFilters}
+            isResizing={this.props.isResizing}
+            reverseTranslation={this.state.responseRef?.queryResponse?.data?.data?.parsed_interpretation}
+          />
         </div>
       </ErrorBoundary>
     )
