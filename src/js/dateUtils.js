@@ -31,15 +31,27 @@ const getDateRangeIntersection = (aRange, bRange) => {
 }
 
 const getColumnNameForDateRange = (chunkEng) => {
-  // Select all parentheses groups
-  const bracketRegex = /\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g
+  try {
+    // Select all parentheses groups
+    const bracketRegex = /\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g
+    const textInBrackets = chunkEng.match(bracketRegex)
 
-  // Take the one on the very end of the string
-  const columnNameBrackets = chunkEng.match(bracketRegex).slice(-1).pop()
+    if (!textInBrackets) {
+      return null
+    }
 
-  // Remove the outer brackets from it
-  const columnNameWithoutBrackets = columnNameBrackets.slice(1, -1)
-  return columnNameWithoutBrackets
+    // Take the one on the very end of the string
+    const columnNameBracketGroup = textInBrackets.slice(-1)
+    const columnNameBrackets = columnNameBracketGroup.pop()
+
+    // Remove the outer brackets from it
+    const columnNameWithoutBrackets = columnNameBrackets.slice(1, -1)
+
+    return columnNameWithoutBrackets
+  } catch (error) {
+    console.error(error)
+    return null
+  }
 }
 
 const getStartAndEndDateFromDateStrs = (dateRangeStrs) => {
@@ -66,7 +78,9 @@ const getStartAndEndDateFromDateStrs = (dateRangeStrs) => {
 }
 
 const getDateRangesFromInterpretation = (parsedInterpretation) => {
-  const parsedInterpretationFilters = parsedInterpretation.filter((chunk) => chunk.c_type === 'FILTER')
+  const parsedInterpretationFilters = parsedInterpretation.filter(
+    (chunk) => chunk.c_type === 'FILTER' || chunk.c_type === 'SEED',
+  )
   if (!parsedInterpretationFilters.length) {
     return []
   }
@@ -77,20 +91,22 @@ const getDateRangesFromInterpretation = (parsedInterpretation) => {
     const dateStrs = splitEng.filter((word) => isISODate(word))
     if (dateStrs.length) {
       const columnName = getColumnNameForDateRange(chunk.eng)
-      const { startDate, endDate } = getStartAndEndDateFromDateStrs(dateStrs)
+      if (columnName) {
+        const { startDate, endDate } = getStartAndEndDateFromDateStrs(dateStrs)
 
-      let columnDateRange = { columnName, startDate, endDate }
+        let columnDateRange = { columnName, startDate, endDate }
 
-      // If the column has more than 1 date range in the RT, pick the smallest one
-      const existingColumnDateRangeIndex = dateRanges.findIndex((filter) => filter.columnName === columnName)
-      if (existingColumnDateRangeIndex >= 0) {
-        const existingColumnDateRange = dateRanges[existingColumnDateRangeIndex]
-        dateRanges[existingColumnDateRangeIndex] = {
-          ...dateRanges[existingColumnDateRangeIndex],
-          ...getDateRangeIntersection(columnDateRange, existingColumnDateRange),
+        // If the column has more than 1 date range in the RT, pick the smallest one
+        const existingColumnDateRangeIndex = dateRanges.findIndex((filter) => filter.columnName === columnName)
+        if (existingColumnDateRangeIndex >= 0) {
+          const existingColumnDateRange = dateRanges[existingColumnDateRangeIndex]
+          dateRanges[existingColumnDateRangeIndex] = {
+            ...dateRanges[existingColumnDateRangeIndex],
+            ...getDateRangeIntersection(columnDateRange, existingColumnDateRange),
+          }
+        } else {
+          dateRanges.push(columnDateRange)
         }
-      } else {
-        dateRanges.push(columnDateRange)
       }
     }
   })

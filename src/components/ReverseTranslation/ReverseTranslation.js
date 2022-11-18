@@ -46,7 +46,7 @@ export default class ReverseTranslation extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
-    if (this.props.onValueLabelClick) {
+    if (this.props.onValueLabelClick && this.state.reverseTranslationArray?.length) {
       this.validateAndUpdateValueLabels()
     }
   }
@@ -63,9 +63,13 @@ export default class ReverseTranslation extends React.Component {
     return true
   }
 
-  componentDidUpdate = (prevProps) => {
+  componentDidUpdate = (prevProps, prevState) => {
     if (!prevProps.reverseTranslation?.length && this.props.reverseTranslation?.length) {
       this.setState({ reverseTranslationArray: constructRTArray(this.props.reverseTranslation) })
+    }
+
+    if (!prevState.reverseTranslationArray?.length && this.state.reverseTranslationArray?.length) {
+      this.validateAndUpdateValueLabels()
     }
   }
 

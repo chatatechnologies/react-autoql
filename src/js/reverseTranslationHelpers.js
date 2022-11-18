@@ -126,7 +126,7 @@ export const constructRTArray = (interpretation) => {
 
     if (_get(interpretation, 'length')) {
       interpretation.forEach((chunk) => {
-        if (chunk.c_type === 'FILTER') {
+        if (chunk.c_type === 'FILTER' || chunk.c_type === 'SEED') {
           const chunkedFilterArray = parseFilterChunk(chunk)
           chunkedFilterArray.forEach((filterChunk) => {
             reverseTranslationArray.push(filterChunk)

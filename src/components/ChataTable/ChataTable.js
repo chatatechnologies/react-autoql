@@ -40,7 +40,6 @@ export default class ChataTable extends React.Component {
       dataLoadError: (error) => console.error(error),
       selectableCheck: () => false,
       layout: 'fitDataFill',
-      textSize: '9px',
       clipboard: true,
       download: true,
       downloadConfig: {

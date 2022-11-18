@@ -125,6 +125,10 @@
     font-size: 11px;
   }
 
+  .query-output-table-row-count {
+    padding: 0;
+  }
+
   .dashboard-tile-response-wrapper {
     height: calc(100% - 47px);
     width: 100%;
@@ -140,11 +144,10 @@
 
     .react-autoql-response-content-container.table .query-output-footer {
       min-height: 33px;
-      &.top{
+      &.top {
         min-height: unset;
       }
     }
-    
   }
 
   .dashboard-tile-response-wrapper.editing {
@@ -193,19 +196,15 @@
 
   cursor: default;
 
-  .react-autoql-table-container {
-    padding: 15px 20px 0px 20px;
-  }
-
   .react-autoql-response-content-container {
-    padding: 7px;
+    padding: 8px 15px 20px 15px;
     align-items: center;
   }
 }
 
 .dashboard-tile-response-wrapper.editing .dashboard-tile-response-container {
   .react-autoql-response-content-container {
-    padding: 7px 12px 20px 18px;
+    padding: 7px 12px 32px 18px;
     align-items: center;
   }
 }

@@ -95,7 +95,11 @@
 }
 .react-autoql-table.tabulator {
   background-color: inherit;
+  font-size: 12px;
   flex: 1;
+  &.table-condensed .tabulator-tableHolder .tabulator-table .tabulator-row {
+    min-height: 24px;
+  }
 }
 .react-autoql-table .tabulator-row {
   /* user-select: none; This breaks copy/paste */
@@ -229,7 +233,9 @@
   border: 1px solid #28a8e0;
 }
 .tabulator-table .tabulator-row .tabulator-cell {
-  min-height: 32px;
+  min-height: 20px;
+  height: 28px;
+  line-height: 20px;
 }
 
 /* Center header titles */
