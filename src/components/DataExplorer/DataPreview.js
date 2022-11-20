@@ -36,6 +36,9 @@ export default class DataExplorer extends React.Component {
     shouldRender: PropTypes.bool,
     subject: PropTypes.shape({}),
     rebuildTooltips: PropTypes.func,
+    toggleCollapseCounter: PropTypes.number,
+    onCollapse: PropTypes.func,
+    defaultCollapsed: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -44,6 +47,9 @@ export default class DataExplorer extends React.Component {
     shouldRender: true,
     subject: null,
     rebuildTooltips: undefined,
+    toggleCollapseCounter: null,
+    onCollapse: () => {},
+    defaultCollapsed: false,
   }
 
   componentDidMount = () => {
@@ -212,6 +218,9 @@ export default class DataExplorer extends React.Component {
           subtitle={
             <em>Below is a snapshot of the data returned from this query; it is not a comprehensive data response.</em>
           }
+          toggleCollapseCounter={this.props.toggleCollapseCounter}
+          onCollapse={this.props.onCollapse}
+          defaultCollapsed={this.props.defaultCollapsed}
         >
           {this.state.loading ? this.renderLoadingContainer() : this.renderDataPreviewGrid()}
         </Card>

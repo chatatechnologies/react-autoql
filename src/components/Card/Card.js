@@ -22,19 +22,31 @@ export default class Cascader extends React.Component {
     title: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
     subtitle: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
     defaultCollapsed: PropTypes.bool,
+    toggleCollapseCounter: PropTypes.number,
+    onCollapse: PropTypes.func,
   }
 
   static defaultProps = {
     title: null,
     subtitle: null,
     defaultCollapsed: false,
+    toggleCollapseCounter: null,
+    onCollapse: () => {},
   }
 
   componentWillUnmount = () => {
     clearTimeout(this.collapseTimer)
   }
+  componentDidUpdate = (prevProps, prevState) => {
+    if (this.props.toggleCollapseCounter !== prevProps.toggleCollapseCounter) {
+      this.toggleCollapse('isSmallScreen')
+    }
+  }
 
-  toggleCollapse = () => {
+  toggleCollapse = (status) => {
+    if (status !== 'isSmallScreen') {
+      this.props.onCollapse()
+    }
     if (this.contentRef) {
       let contentHeight = this.contentRef.offsetHeight
       if (this.state.isCollapsed) {
