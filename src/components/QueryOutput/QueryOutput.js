@@ -743,6 +743,7 @@ export class QueryOutput extends React.Component {
               pageSize: this.props.dataPageSize,
               queryID: this.queryID,
               groupBys,
+              pageSize: 50,
             })
             this.props.onDrilldownEnd({
               response,
@@ -769,7 +770,7 @@ export class QueryOutput extends React.Component {
             })
 
             const allFilters = this.getCombinedFilters(clickedFilter)
-            const response = await this.queryFn({ tableFilters: allFilters })
+            const response = await this.queryFn({ tableFilters: allFilters, pageSize: 50 })
 
             this.props.onDrilldownEnd({
               response,
