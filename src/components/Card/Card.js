@@ -22,34 +22,90 @@ export default class Cascader extends React.Component {
     title: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
     subtitle: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
     defaultCollapsed: PropTypes.bool,
-    toggleCollapseCounter: PropTypes.number,
-    onCollapse: PropTypes.func,
+    isCollapsed: PropTypes.bool,
+    onIsCollapsedChange: PropTypes.func,
   }
 
   static defaultProps = {
     title: null,
     subtitle: null,
     defaultCollapsed: false,
-    toggleCollapseCounter: null,
-    onCollapse: () => {},
+    isCollapsed: undefined,
+    onIsCollapsedChange: () => {},
+  }
+
+  componentDidMount = () => {
+    // Wait for animation to finish, then set card height
+    this.initialCollapseTimer = setTimeout(() => {
+      this.saveCurrentCardHeight()
+    }, 400)
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (this.props.isCollapsed !== prevProps.isCollapsed) {
+      const currentIsCollapsed = this.getIsCSSCollapsed()
+      if (typeof currentIsCollapsed === 'boolean' && currentIsCollapsed !== this.props.isCollapsed) {
+        this.setIsCollapsedCSS(this.props.isCollapsed)
+        this.forceUpdate()
+      }
+    }
   }
 
   componentWillUnmount = () => {
     clearTimeout(this.collapseTimer)
+    clearTimeout(this.initialCollapseTimer)
   }
-  componentDidUpdate = (prevProps, prevState) => {
-    if (this.props.toggleCollapseCounter !== prevProps.toggleCollapseCounter) {
-      this.toggleCollapse('isSmallScreen')
+
+  getIsCSSCollapsed = () => {
+    if (this.contentRef?.style) {
+      return this.contentRef.style.visibility === 'hidden'
+    }
+
+    return undefined
+  }
+
+  getIsCollapsed = () => {
+    if (typeof this.props.isCollapsed === 'boolean') {
+      return this.props.isCollapsed
+    }
+
+    return this.state.isCollapsed
+  }
+
+  handleClick = () => {
+    this.setIsCollapsedCSS(!this.getIsCSSCollapsed())
+  }
+
+  saveCurrentCardHeight = () => {
+    if (!this.contentRef) {
+      return
+    }
+
+    const isCollapsed = this.getIsCollapsed()
+    if (isCollapsed) {
+      this.contentRef.style.maxHeight = '0px'
+      this.contentRef.style.visibility = 'hidden'
+      this.contentRef.style.position = 'absolute'
+    } else {
+      const contentHeight = this.contentRef.offsetHeight || 0
+      this.contentRef.style.maxHeight = `${contentHeight}px`
+      this.contentRef.style.position = 'relative'
+      this.contentRef.style.visibility = 'visible'
     }
   }
 
-  toggleCollapse = (status) => {
-    if (status !== 'isSmallScreen') {
-      this.props.onCollapse()
+  setIsCollapsedCSS = (isCollapsed) => {
+    const isCSSCollapsed = this.getIsCSSCollapsed()
+    const isValueDifferentFromCSS = (isCollapsed && isCSSCollapsed) || (!isCollapsed && !isCSSCollapsed)
+
+    // If card is already collapsed, exit
+    if (isValueDifferentFromCSS) {
+      return
     }
+
     if (this.contentRef) {
       let contentHeight = this.contentRef.offsetHeight
-      if (this.state.isCollapsed) {
+      if (!isCollapsed) {
         if (this.collapseTimer) {
           clearTimeout(this.collapseTimer)
           this.contentRef.style.visibility = 'hidden'
@@ -59,7 +115,7 @@ export default class Cascader extends React.Component {
         // ---------- set max height without transition ------------
         this.contentRef.style.maxHeight = 'unset'
         contentHeight = this.contentRef.offsetHeight
-        this.contentRef.style.maxHeight = 0
+        this.contentRef.style.maxHeight = '0px'
         // ---------------------------------------------------------
 
         this.contentRef.style.position = 'relative'
@@ -73,7 +129,7 @@ export default class Cascader extends React.Component {
         this.contentRef.style.maxHeight = `${contentHeight}px`
 
         setTimeout(() => {
-          this.contentRef.style.maxHeight = 0
+          this.contentRef.style.maxHeight = '0px'
         }, 0)
 
         // Unset max height after animation is complete
@@ -84,9 +140,8 @@ export default class Cascader extends React.Component {
       }
     }
 
-    this.setState({
-      isCollapsed: !this.state.isCollapsed,
-    })
+    this.props.onIsCollapsedChange(isCollapsed)
+    this.setState({ isCollapsed })
   }
 
   render = () => {
@@ -94,13 +149,13 @@ export default class Cascader extends React.Component {
       <ErrorBoundary>
         <div
           className={`react-autoql-card
-          ${this.state.isCollapsed ? ' collapsed' : ''}
+          ${this.getIsCollapsed() ? ' collapsed' : ''}
           ${this.props.className ? this.props.className : ''}`}
           style={this.props.style}
         >
-          <div className='react-autoql-card-title' onClick={this.toggleCollapse}>
+          <div className='react-autoql-card-title' onClick={this.handleClick}>
             <div>{this.props.title}</div>
-            <Icon type={this.state.isCollapsed ? 'caret-left' : 'caret-down'} />
+            <Icon type={this.getIsCollapsed() ? 'caret-left' : 'caret-down'} />
           </div>
           <div ref={(r) => (this.contentRef = r)} className='react-autoql-card-content'>
             {!!this.props.subtitle && <div className='react-autoql-card-subtitle'>{this.props.subtitle}</div>}
