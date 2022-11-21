@@ -42,6 +42,7 @@ export default class DataExplorer extends React.Component {
     introMessage: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
     rebuildTooltips: PropTypes.func,
     executeQuery: PropTypes.func,
+    isSmallScreen: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -52,6 +53,7 @@ export default class DataExplorer extends React.Component {
     introMessage: undefined,
     rebuildTooltips: undefined,
     executeQuery: () => {},
+    isSmallScreen: false,
   }
 
   componentDidMount = () => {
