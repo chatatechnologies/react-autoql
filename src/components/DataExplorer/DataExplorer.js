@@ -191,13 +191,14 @@ export default class DataExplorer extends React.Component {
     if (selectedTopic.type === DEConstants.SUBJECT_TYPE) {
       topicText = selectedTopic.name
     }
-
+    const isDefaultCollapsed =
+      !this.state.selectedSubject || this.state.activeTopicType !== DEConstants.SUBJECT_TYPE ? false : true
     return (
       <div className='data-explorer-section query-suggestions'>
         <Card
           title={this.renderQuerySuggestionCardTitle(selectedTopic)}
           subtitle={<em>Click on a query to run it in Data Messenger</em>}
-          defaultCollapsed={this.props.isSmallScreen ? true : undefined}
+          defaultCollapsed={this.props.isSmallScreen ? isDefaultCollapsed : undefined}
           toggleCollapseCounter={
             this.props.isSmallScreen ? this.state.QuerySuggestionListToggleCollapseCounter : undefined
           }
