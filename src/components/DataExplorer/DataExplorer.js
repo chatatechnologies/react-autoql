@@ -256,7 +256,10 @@ export default class DataExplorer extends React.Component {
 
     return (
       <div className='data-explorer-title exploring-title'>
-        <div>
+        <div
+          key={`data-explorer-title exploring-title-${selectedTopic.name}`}
+          className='data-explorer-title-animated-container'
+        >
           Exploring "<TopicName topic={selectedTopic} />"
         </div>
       </div>
@@ -271,7 +274,10 @@ export default class DataExplorer extends React.Component {
     return (
       <div className='data-explorer-result-container'>
         <CustomScrollbars autoHide={false}>
-          <div className='data-explorer-sections-container'>
+          <div
+            key={`data-explorer-sections-container-${this.state.selectedSubject?.name}`}
+            className='data-explorer-sections-container'
+          >
             {this.renderDataPreview()}
             {/* {this.renderVLSubjectList()} */}
             {this.renderQuerySuggestions()}

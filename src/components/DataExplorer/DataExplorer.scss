@@ -9,6 +9,26 @@
   min-height: 0;
   color: var(--react-autoql-text-color-primary);
 
+  .data-explorer-title-animated-container {
+    animation: slideDown 0.4s cubic-bezier(0.26, 0.26, 0, 1);
+    animation-fill-mode: both;
+  }
+
+  .data-explorer-section,
+  .data-explorer-intro-message {
+    opacity: 0;
+    transform: translateY(100%);
+    animation: slideUp 0.6s cubic-bezier(0.26, 0.26, 0, 1);
+    animation-fill-mode: forwards;
+    animation-delay: 0s;
+  }
+
+  @for $i from 1 through 2 {
+    .data-explorer-section:nth-of-type(#{$i}) {
+      animation-delay: 0.2s * ($i - 1);
+    }
+  }
+
   .data-explorer-intro-message {
     color: var(--react-autoql-text-color-primary);
     text-align: center;
@@ -105,6 +125,10 @@
     display: flex;
     justify-content: center;
     align-items: center;
+
+    &.data-preview {
+      height: 165px;
+    }
   }
   .query-suggestion-list-scroll-component {
     color: var(--react-autoql-text-color-primary);
@@ -157,5 +181,24 @@
     &.visible {
       visibility: visible;
     }
+  }
+}
+
+@keyframes slideDown {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(0%);
+  }
+}
+@keyframes slideUp {
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0%);
+    opacity: 1;
   }
 }
