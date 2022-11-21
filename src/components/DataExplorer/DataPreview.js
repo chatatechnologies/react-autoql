@@ -184,7 +184,7 @@ export default class DataExplorer extends React.Component {
 
   renderLoadingContainer = () => {
     return (
-      <div className='data-explorer-card-placeholder'>
+      <div className='data-explorer-card-placeholder data-preview'>
         <LoadingDots />
       </div>
     )
