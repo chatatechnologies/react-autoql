@@ -29,8 +29,8 @@ export default class DataExplorer extends React.Component {
       selectedSubject: null,
       selectedVL: null,
       isQuerySuggestionSectionVisible: true,
-      QuerySuggestionListToggleCollapseCounter: 0,
-      DataPreviewToggleCollapseCounter: 0,
+      isQuerySuggestionCollapsed: true,
+      isDataPreviewCollapsed: false,
     }
   }
 
@@ -149,10 +149,11 @@ export default class DataExplorer extends React.Component {
           shouldRender={this.props.shouldRender}
           rebuildTooltips={this.props.rebuildTooltips}
           dataExplorerRef={this.dataExplorerPage}
-          toggleCollapseCounter={this.props.isSmallScreen ? this.state.DataPreviewToggleCollapseCounter : undefined}
-          onCollapse={() => {
+          isCollapsed={this.props.isSmallScreen ? this.state.isDataPreviewCollapsed : undefined}
+          onIsCollapsedChange={(isCollapsed) => {
             this.setState({
-              QuerySuggestionListToggleCollapseCounter: this.state.QuerySuggestionListToggleCollapseCounter + 1,
+              isDataPreviewCollapsed: isCollapsed,
+              isQuerySuggestionCollapsed: isCollapsed ? this.state.isQuerySuggestionCollapsed : true,
             })
           }}
           defaultCollapsed={this.props.isSmallScreen ? false : undefined}
@@ -201,12 +202,11 @@ export default class DataExplorer extends React.Component {
           title={this.renderQuerySuggestionCardTitle(selectedTopic)}
           subtitle={<em>Click on a query to run it in Data Messenger</em>}
           defaultCollapsed={this.props.isSmallScreen ? isDefaultCollapsed : undefined}
-          toggleCollapseCounter={
-            this.props.isSmallScreen ? this.state.QuerySuggestionListToggleCollapseCounter : undefined
-          }
-          onCollapse={() => {
+          isCollapsed={this.props.isSmallScreen ? this.state.isQuerySuggestionCollapsed : undefined}
+          onIsCollapsedChange={(isCollapsed) => {
             this.setState({
-              DataPreviewToggleCollapseCounter: this.state.DataPreviewToggleCollapseCounter + 1,
+              isQuerySuggestionCollapsed: isCollapsed,
+              isDataPreviewCollapsed: isCollapsed ? this.state.isDataPreviewCollapsed : true,
             })
           }}
         >

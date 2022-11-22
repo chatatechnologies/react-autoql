@@ -36,8 +36,8 @@ export default class DataExplorer extends React.Component {
     shouldRender: PropTypes.bool,
     subject: PropTypes.shape({}),
     rebuildTooltips: PropTypes.func,
-    toggleCollapseCounter: PropTypes.number,
-    onCollapse: PropTypes.func,
+    isCollapsed: PropTypes.bool,
+    onIsCollapsedChange: PropTypes.func,
     defaultCollapsed: PropTypes.bool,
   }
 
@@ -47,8 +47,8 @@ export default class DataExplorer extends React.Component {
     shouldRender: true,
     subject: null,
     rebuildTooltips: undefined,
-    toggleCollapseCounter: null,
-    onCollapse: () => {},
+    isCollapsed: undefined,
+    onIsCollapsedChange: () => {},
     defaultCollapsed: false,
   }
 
@@ -218,8 +218,8 @@ export default class DataExplorer extends React.Component {
           subtitle={
             <em>Below is a snapshot of the data returned from this query; it is not a comprehensive data response.</em>
           }
-          toggleCollapseCounter={this.props.toggleCollapseCounter}
-          onCollapse={this.props.onCollapse}
+          isCollapsed={this.props.isCollapsed}
+          onIsCollapsedChange={this.props.onIsCollapsedChange}
           defaultCollapsed={this.props.defaultCollapsed}
         >
           {this.state.loading ? this.renderLoadingContainer() : this.renderDataPreviewGrid()}
