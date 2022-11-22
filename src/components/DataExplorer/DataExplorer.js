@@ -29,6 +29,8 @@ export default class DataExplorer extends React.Component {
       selectedSubject: null,
       selectedVL: null,
       isQuerySuggestionSectionVisible: true,
+      isQuerySuggestionCollapsed: true,
+      isDataPreviewCollapsed: false,
     }
   }
 
@@ -40,6 +42,7 @@ export default class DataExplorer extends React.Component {
     introMessage: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
     rebuildTooltips: PropTypes.func,
     executeQuery: PropTypes.func,
+    isSmallScreen: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -50,6 +53,7 @@ export default class DataExplorer extends React.Component {
     introMessage: undefined,
     rebuildTooltips: undefined,
     executeQuery: () => {},
+    isSmallScreen: false,
   }
 
   componentDidMount = () => {
@@ -145,6 +149,14 @@ export default class DataExplorer extends React.Component {
           shouldRender={this.props.shouldRender}
           rebuildTooltips={this.props.rebuildTooltips}
           dataExplorerRef={this.dataExplorerPage}
+          isCollapsed={this.props.isSmallScreen ? this.state.isDataPreviewCollapsed : undefined}
+          onIsCollapsedChange={(isCollapsed) => {
+            this.setState({
+              isDataPreviewCollapsed: isCollapsed,
+              isQuerySuggestionCollapsed: isCollapsed ? this.state.isQuerySuggestionCollapsed : true,
+            })
+          }}
+          defaultCollapsed={this.props.isSmallScreen ? false : undefined}
         />
       </div>
     )
@@ -182,12 +194,21 @@ export default class DataExplorer extends React.Component {
     if (selectedTopic.type === DEConstants.SUBJECT_TYPE) {
       topicText = selectedTopic.name
     }
-
+    const isDefaultCollapsed =
+      !this.state.selectedSubject || this.state.activeTopicType !== DEConstants.SUBJECT_TYPE ? false : true
     return (
       <div className='data-explorer-section query-suggestions'>
         <Card
           title={this.renderQuerySuggestionCardTitle(selectedTopic)}
           subtitle={<em>Click on a query to run it in Data Messenger</em>}
+          defaultCollapsed={this.props.isSmallScreen ? isDefaultCollapsed : undefined}
+          isCollapsed={this.props.isSmallScreen ? this.state.isQuerySuggestionCollapsed : undefined}
+          onIsCollapsedChange={(isCollapsed) => {
+            this.setState({
+              isQuerySuggestionCollapsed: isCollapsed,
+              isDataPreviewCollapsed: isCollapsed ? this.state.isDataPreviewCollapsed : true,
+            })
+          }}
         >
           <div className='data-explorer-query-suggestion-list'>
             <QuerySuggestionList
@@ -238,7 +259,10 @@ export default class DataExplorer extends React.Component {
 
     return (
       <div className='data-explorer-title exploring-title'>
-        <div>
+        <div
+          key={`data-explorer-title exploring-title-${selectedTopic.name}`}
+          className='data-explorer-title-animated-container'
+        >
           Exploring "<TopicName topic={selectedTopic} />"
         </div>
       </div>
@@ -253,7 +277,10 @@ export default class DataExplorer extends React.Component {
     return (
       <div className='data-explorer-result-container'>
         <CustomScrollbars autoHide={false}>
-          <div className='data-explorer-sections-container'>
+          <div
+            key={`data-explorer-sections-container-${this.state.selectedSubject?.name}`}
+            className='data-explorer-sections-container'
+          >
             {this.renderDataPreview()}
             {/* {this.renderVLSubjectList()} */}
             {this.renderQuerySuggestions()}

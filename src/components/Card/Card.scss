@@ -33,6 +33,8 @@
 
   &.collapsed {
     .react-autoql-card-content {
+      visibility: hidden;
+      position: absolute;
       pointer-events: none;
       opacity: 0;
     }

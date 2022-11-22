@@ -65,9 +65,9 @@
 }
 
 // Set delay per List Item
-@for $i from 0 through 10 {
+@for $i from 1 through 10 {
   .react-autoql-notification-list-item:nth-of-type(#{$i}) {
-    animation-delay: 0.1s * $i;
+    animation-delay: 0.1s * ($i - 1);
   }
 }
 
