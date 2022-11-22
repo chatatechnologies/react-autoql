@@ -162,6 +162,7 @@ export default class Axes extends React.Component {
               height: xBorderHeight,
             }}
             totalRowNumber={this.props.totalRowsNumber}
+            currentRowNumber={this.state.currentRowNumber}
             setCurrentRowNumber={(currentRowNumber) => {
               this.setState({ currentRowNumber })
             }}

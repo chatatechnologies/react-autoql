@@ -16,6 +16,15 @@ g.legendOrdinal tspan {
     stroke: var(--react-autoql-accent-color) !important;
   }
 }
+.axis-scaler-border {
+  cursor: pointer;
+  stroke: transparent;
+  opacity: 0.5;
+
+  &:hover {
+    stroke: transparent !important;
+  }
+}
 
 .react-autoql-axis-selector-arrow {
   opacity: 1 !important;

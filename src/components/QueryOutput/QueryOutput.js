@@ -159,6 +159,7 @@ export class QueryOutput extends React.Component {
     queryValidationSelections: PropTypes.arrayOf(PropTypes.shape({})),
     renderSuggestionsAsDropdown: PropTypes.bool,
     defaultSelectedSuggestion: PropTypes.string,
+    reverseTranslationPlacement: PropTypes.string,
     activeChartElementKey: PropTypes.string,
     preferredDisplayType: PropTypes.string,
     isResizing: PropTypes.bool,
@@ -193,6 +194,7 @@ export class QueryOutput extends React.Component {
     queryValidationSelections: undefined,
     renderSuggestionsAsDropdown: false,
     defaultSelectedSuggestion: undefined,
+    reverseTranslationPlacement: 'bottom',
     activeChartElementKey: undefined,
     isResizing: false,
     enableDynamicCharting: true,
@@ -260,7 +262,10 @@ export class QueryOutput extends React.Component {
         this.state.visibleRows?.length !== prevState.visibleRows?.length ||
         (this.state.displayType === 'table' && prevState.displayType === 'text')
       ) {
-        this.props.onRowChange()
+        // Wait for tabulator to finish rendering in DOM
+        setTimeout(() => {
+          this.props.onRowChange()
+        }, 0)
       }
       // If columns changed, regenerate data if necessary
       // If table filtered or columns changed, regenerate pivot data and supported display types
@@ -485,7 +490,7 @@ export class QueryOutput extends React.Component {
       if (this.shouldGenerateTableData()) {
         this.generateTableData()
         if (this.shouldGeneratePivotData()) {
-          this.generatePivotTableData({
+          this.generatePivotData({
             isFirstGeneration: true,
           })
         }
@@ -667,6 +672,46 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  queryFn = (args = {}) => {
+    const queryRequestData = this.queryResponse?.data?.data?.fe_req
+    const allFilters = this.getCombinedFilters()
+
+    this.cancelCurrentRequest()
+    this.axiosSource = axios.CancelToken?.source()
+
+    if (this.isDrilldown()) {
+      return runDrilldown({
+        ...getAuthentication(this.props.authentication),
+        ...getAutoQLConfig(this.props.autoQLConfig),
+        source: queryRequestData?.source,
+        debug: queryRequestData?.translation === 'include',
+        filters: queryRequestData?.session_filter_locks,
+        test: queryRequestData?.test,
+        groupBys: queryRequestData?.columns,
+        queryID: this.props.originalQueryID,
+        orders: this.formattedTableParams?.sorters,
+        tableFilters: allFilters,
+        cancelToken: this.axiosSource.token,
+        ...args,
+      })
+    }
+    return runQueryOnly({
+      ...getAuthentication(this.props.authentication),
+      ...getAutoQLConfig(this.props.autoQLConfig),
+      query: queryRequestData?.text,
+      source: queryRequestData?.source,
+      debug: queryRequestData?.translation === 'include',
+      userSelection: queryRequestData?.disambiguation,
+      filters: queryRequestData?.session_filter_locks,
+      test: queryRequestData?.test,
+      pageSize: queryRequestData?.page_size,
+      orders: this.formattedTableParams?.sorters,
+      tableFilters: allFilters,
+      cancelToken: this.axiosSource.token,
+      ...args,
+    })
+  }
+
   getFilterDrilldown = ({ stringColumnIndex, row }) => {
     try {
       const filteredRows = this.tableData?.filter((origRow) => {
@@ -675,6 +720,7 @@ export class QueryOutput extends React.Component {
 
       const drilldownResponse = _cloneDeep(this.queryResponse)
       drilldownResponse.data.data.rows = filteredRows
+      drilldownResponse.data.data.count_rows = filteredRows.length
       return drilldownResponse
     } catch (error) {
       console.error(error)
@@ -696,6 +742,7 @@ export class QueryOutput extends React.Component {
               ...getAutoQLConfig(this.props.autoQLConfig),
               queryID: this.queryID,
               groupBys,
+              pageSize: 50,
             })
             this.props.onDrilldownEnd({
               response,
@@ -707,53 +754,29 @@ export class QueryOutput extends React.Component {
         } else if (!isNaN(stringColumnIndex) && !!row?.length) {
           this.props.onDrilldownStart(activeKey)
 
-          // ------------ 1. Use FE for filter drilldown -----------
-          // const response = this.getFilterDrilldown({ stringColumnIndex, row })
-          // setTimeout(() => {
-          //   this.props.onDrilldownEnd({ response })
-          // }, 1500)
-          // -------------------------------------------------------
-
-          // --------- 2. Use subquery for filter drilldown --------
-          this.cancelCurrentRequest()
-          this.axiosSource = axios.CancelToken.source()
-          const queryRequestData = this.queryResponse?.data?.data?.fe_req
-          const allFilters = this.getCombinedFilters()
-          const clickedFilter = this.constructFilter({
-            column: this.state.columns[stringColumnIndex],
-            value: row[stringColumnIndex],
-          })
-
-          const existingClickedFilterIndex = allFilters.findIndex((filter) => filter.name === clickedFilter.name)
-
-          if (existingClickedFilterIndex >= 0) {
-            // Filter already exists, overwrite existing filter with clicked value
-            allFilters[existingClickedFilterIndex] = clickedFilter
+          if (!this.isDataLimited()) {
+            // ------------ 1. Use FE for filter drilldown -----------
+            const response = this.getFilterDrilldown({ stringColumnIndex, row })
+            setTimeout(() => {
+              this.props.onDrilldownEnd({ response })
+            }, 1500)
+            // -------------------------------------------------------
           } else {
-            // Filter didn't exist yet, add it to the list
-            allFilters.push(clickedFilter)
+            // --------- 2. Use subquery for filter drilldown --------
+            const clickedFilter = this.constructFilter({
+              column: this.state.columns[stringColumnIndex],
+              value: row[stringColumnIndex],
+            })
+
+            const allFilters = this.getCombinedFilters(clickedFilter)
+            const response = await this.queryFn({ tableFilters: allFilters, pageSize: 50 })
+
+            this.props.onDrilldownEnd({
+              response,
+              originalQueryID: this.queryID,
+            })
+            // -------------------------------------------------------
           }
-
-          const response = await runQueryOnly({
-            ...getAuthentication(this.props.authentication),
-            ...getAutoQLConfig(this.props.autoQLConfig),
-            query: queryRequestData?.text,
-            source: queryRequestData?.source,
-            debug: queryRequestData?.translation === 'include',
-            formattedUserSelection: queryRequestData?.user_selection,
-            filters: queryRequestData?.session_filter_locks,
-            test: queryRequestData?.test,
-            pageSize: queryRequestData?.page_size,
-            orders: this.formattedTableParams?.sorters,
-            tableFilters: allFilters,
-            cancelToken: this.axiosSource.token,
-          })
-
-          this.props.onDrilldownEnd({
-            response,
-            originalQueryID: this.queryID,
-          })
-          // -------------------------------------------------------
         }
       } catch (error) {
         console.error(error)
@@ -766,7 +789,11 @@ export class QueryOutput extends React.Component {
   constructFilter = ({ column, value }) => {
     let formattedValue = value
     let operator = '='
-    if (column.type === 'DATE') {
+
+    if (formattedValue === null) {
+      formattedValue = 'NULL'
+      operator = 'is'
+    } else if (column.type === 'DATE') {
       const isoDate = dayjs.unix(value).utc()
       const isoDateStart = isoDate.startOf('day').toISOString()
       const isoDateEnd = isoDate.endOf('day').toISOString()
@@ -783,10 +810,10 @@ export class QueryOutput extends React.Component {
   }
 
   // Function to combine original query filters and current table filters
-  getCombinedFilters = (newFilters) => {
+  getCombinedFilters = (newFilter) => {
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
     const queryFilters = queryRequestData?.filters || []
-    const tableFilters = newFilters || this.formattedTableParams?.filters || []
+    const tableFilters = this.formattedTableParams?.filters || []
 
     const allFilters = []
 
@@ -800,6 +827,17 @@ export class QueryOutput extends React.Component {
         allFilters.push(queryFilter)
       }
     })
+
+    if (newFilter) {
+      const existingClickedFilterIndex = allFilters.findIndex((filter) => filter.name === newFilter.name)
+      if (existingClickedFilterIndex >= 0) {
+        // Filter already exists, overwrite existing filter with clicked value
+        allFilters[existingClickedFilterIndex] = newFilter
+      } else {
+        // Filter didn't exist yet, add it to the list
+        allFilters.push(newFilter)
+      }
+    }
 
     return allFilters
   }
@@ -898,6 +936,9 @@ export class QueryOutput extends React.Component {
 
     try {
       this.tableData = [...this.tableData, ...rows]
+      this.setState({
+        visibleRowChangeCount: this.state.visibleRowChangeCount + 1,
+      })
     } catch (error) {
       console.error(error)
     }
@@ -1192,27 +1233,17 @@ export class QueryOutput extends React.Component {
     }
 
     const formattedColumns = columns.map((col, i) => {
-      /**
-       * EDIT:
-       * We no longer want to default to one over the other. Howeever,
-       * I would like to hang onto this code for now incase we do want to
-       * include either/or in some cases in the future
-       */
-      // Regardless of the BE response, we want to default to percent
-      // if (
-      //   (col.type === 'RATIO' || col.type === 'NUMBER') &&
-      //   _get(
-      //     getDataFormatting(this.props.dataFormatting),
-      //     'comparisonDisplay'
-      //   ) === 'PERCENT'
-      // ) {
-      //   col.type = 'PERCENT'
-      // }
-
       const newCol = _cloneDeep(col)
+
+      const drilldownGroupby = this.queryResponse?.data?.data?.fe_req?.columns?.find(
+        (column) => newCol.name === column.name,
+      )
 
       newCol.field = `${i}`
       newCol.title = col.display_name
+      if (drilldownGroupby) {
+        newCol.title = `${newCol.title} <em>(Clicked: "${drilldownGroupby.value}")</em>`
+      }
       newCol.id = uuid()
 
       // Visibility flag: this can be changed through the column visibility editor modal
@@ -1225,7 +1256,7 @@ export class QueryOutput extends React.Component {
         newCol.hozAlign = 'center'
       }
 
-      newCol.cssClass = newCol.type
+      newCol.cssClass = `${newCol.type} ${drilldownGroupby ? 'DRILLDOWN' : null}`
 
       // Cell formattingg
       newCol.formatter = (cell, formatterParams, onRendered) => {
@@ -1627,16 +1658,21 @@ export class QueryOutput extends React.Component {
         onNewData={this.onNewData}
         isResizing={this.props.isResizing}
         pageSize={_get(this.queryResponse, 'data.data.row_limit')}
-        useInfiniteScroll={this.props.enableAjaxTableData}
+        useInfiniteScroll={this.props.enableAjaxTableData && this.isDataLimited()}
         queryRequestData={this.queryResponse?.data?.data?.fe_req}
         queryText={this.queryResponse?.data?.data?.text}
         originalQueryID={this.props.originalQueryID}
         isDrilldown={this.isDrilldown()}
         isQueryOutputMounted={this._isMounted}
         popoverParentElement={this.props.popoverParentElement}
+        onSetTableHeight={(height) => {
+          this.tableHeight = height
+        }}
+        height={this.tableHeight}
         supportsDrilldowns={
           isAggregation(this.state.columns) && getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
         }
+        queryFn={this.queryFn}
       />
     )
   }
@@ -1685,6 +1721,7 @@ export class QueryOutput extends React.Component {
           changeNumberColumnIndices={this.onChangeNumberColumnIndices}
           onChartClick={this.onChartClick}
           isResizing={this.props.isResizing}
+          isDrilldownChartHidden={this.props.isDrilldownChartHidden}
           enableDynamicCharting={this.props.enableDynamicCharting}
           enableAjaxTableData={this.props.enableAjaxTableData}
           tooltipID={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
@@ -1745,13 +1782,13 @@ export class QueryOutput extends React.Component {
 
   isDataLimited = () => {
     const numRows = this.queryResponse?.data?.data?.rows?.length
-    const maxRowLimit = this.queryResponse?.data?.data?.row_limit
+    const totalRows = this.queryResponse?.data?.data?.count_rows
 
-    if (!numRows || !maxRowLimit) {
+    if (!numRows || !totalRows) {
       return false
     }
 
-    return numRows === maxRowLimit
+    return numRows < totalRows
   }
 
   noDataFound = () => {
@@ -1891,7 +1928,22 @@ export class QueryOutput extends React.Component {
 
     return null
   }
+  renderTableRowCount = () => {
+    const currentRowsNumber = this.tableData?.length
+    const totalRowsNumber = this.queryResponse?.data?.data?.count_rows
+    const shouldRenderTRC =
+      this.state.displayType === 'table' && this.props.enableAjaxTableData && totalRowsNumber && currentRowsNumber
 
+    if (!shouldRenderTRC) {
+      return null
+    }
+
+    return (
+      <div className='query-output-table-row-count'>
+        <span>{`Scrolled ${currentRowsNumber} / ${totalRowsNumber} rows`}</span>
+      </div>
+    )
+  }
   shouldRenderReverseTranslation = () => {
     return (
       getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
@@ -1937,9 +1989,12 @@ export class QueryOutput extends React.Component {
   renderFooter = () => {
     const shouldRenderRT = this.shouldRenderReverseTranslation()
     const shouldRenderDLW = this.shouldRenderDataLimitWarning()
+    const footerClassName = `query-output-footer ${!shouldRenderRT ? 'no-margin' : ''} ${
+      this.props.reverseTranslationPlacement
+    }`
 
     return (
-      <div className={`query-output-footer${!shouldRenderRT ? ' no-margin' : ''}`}>
+      <div className={footerClassName}>
         {shouldRenderRT && this.renderReverseTranslation()}
         {shouldRenderDLW && this.renderDataLimitWarning()}
       </div>
@@ -1957,8 +2012,10 @@ export class QueryOutput extends React.Component {
           className={`react-autoql-response-content-container
           ${isTableType(this.state.displayType) ? 'table' : ''}`}
         >
+          {this.props.reverseTranslationPlacement === 'top' && this.renderFooter()}
           {this.renderResponse()}
-          {this.renderFooter()}
+          {this.renderTableRowCount()}
+          {this.props.reverseTranslationPlacement !== 'top' && this.renderFooter()}
         </div>
         <ReactTooltip
           className='react-autoql-tooltip'

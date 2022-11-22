@@ -156,7 +156,7 @@ class QueryInput extends React.Component {
   }
 
   cancelQuery = () => {
-    this.axiosSource.cancel(responseErrors.CANCELLED)
+    this.axiosSource?.cancel(responseErrors.CANCELLED)
   }
 
   submitQuery = ({ queryText, userSelection, skipQueryValidation, source } = {}) => {
@@ -192,7 +192,7 @@ class QueryInput extends React.Component {
       newSource.push('user')
     }
 
-    this.axiosSource = axios.CancelToken.source()
+    this.axiosSource = axios.CancelToken?.source()
 
     const requestData = {
       query,

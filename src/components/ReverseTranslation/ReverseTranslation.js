@@ -4,6 +4,7 @@ import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.filter'
 import { v4 as uuid } from 'uuid'
+import ReactTooltip from 'react-tooltip'
 
 import { Icon } from '../Icon'
 
@@ -143,13 +144,24 @@ export default class ReverseTranslation extends React.Component {
           data-test='react-autoql-reverse-translation-container'
         >
           <div className='react-autoql-reverse-translation'>
-            <Icon type='info' />
+            <Icon
+              type='info'
+              data-tip={'This statement reflects how your query was interpreted in order to return this data response.'}
+              data-for={`react-autoql-reverse-translation-tooltip-${this.COMPONENT_KEY}`}
+            />
             <strong> Interpreted as: </strong>
             {this.reverseTranslationArray.map((chunk, i) => {
               return <span key={`rt-item-${this.COMPONENT_KEY}-${i}`}>{this.renderInterpretationChunk(chunk)}</span>
             })}
           </div>
         </div>
+        <ReactTooltip
+          className='react-autoql-reverse-translation-tooltip'
+          id={`react-autoql-reverse-translation-tooltip-${this.COMPONENT_KEY}`}
+          effect='solid'
+          place='left'
+          html
+        />
       </ErrorBoundary>
     )
   }
