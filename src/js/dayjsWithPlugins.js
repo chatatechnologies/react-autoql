@@ -1,13 +1,19 @@
 import dayjs from 'dayjs'
 import advancedFormat from 'dayjs/plugin/advancedFormat'
-import LocalizedFormat from 'dayjs/plugin/localizedFormat'
+import localizedFormat from 'dayjs/plugin/localizedFormat'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
+import weekOfYear from 'dayjs/plugin/weekOfYear'
+import quarterOfYear from 'dayjs/plugin/quarterOfYear'
+import customParseFormat from 'dayjs/plugin/customParseFormat'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
+dayjs.extend(weekOfYear)
+dayjs.extend(quarterOfYear)
 dayjs.extend(advancedFormat)
-dayjs.extend(LocalizedFormat)
+dayjs.extend(localizedFormat)
+dayjs.extend(customParseFormat)
 ;(function applyLocale() {
   const specificLanguageCode = window.navigator.language || 'en'
   const genericLanguageCode = specificLanguageCode.split('-')[0]

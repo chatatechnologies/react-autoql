@@ -19,10 +19,7 @@ const bundle = 'autoql'
 const development = process.env.NODE_ENV === 'dev'
 const test = process.env.NODE_ENV === 'test'
 
-const external = [
-  ...Object.keys(pkg.peerDependencies || {}),
-  ...Object.keys(pkg.dependencies || {}),
-]
+const external = [...Object.keys(pkg.peerDependencies || {}), ...Object.keys(pkg.dependencies || {})]
 
 const makeExternalPredicate = (externalArr) => {
   if (externalArr.length === 0) {

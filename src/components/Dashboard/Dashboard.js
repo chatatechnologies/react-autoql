@@ -533,6 +533,8 @@ class DashboardWithoutTheme extends React.Component {
             reportProblemCallback={this.reportProblemCallback}
             enableAjaxTableData={this.props.enableAjaxTableData}
             rebuildTooltips={this.rebuildTooltips}
+            showQueryInterpretation={this.props.isEditing}
+            reverseTranslationPlacement='top'
           />
         )}
       </div>
@@ -633,6 +635,7 @@ class DashboardWithoutTheme extends React.Component {
                             {...this.state.activeDrilldownRef.props}
                             queryResponse={queryResponse}
                             isResizing={this.state.isAnimatingModal}
+                            isDrilldownChartHidden={this.state.isDrilldownChartHidden}
                             key={`dashboard-drilldown-chart-${this.state.activeDrilldownTile}`}
                             activeChartElementKey={this.state.activeDrilldownChartElementKey}
                             initialDisplayType={this.state.activeDrilldownRef.state.displayType}
@@ -640,6 +643,8 @@ class DashboardWithoutTheme extends React.Component {
                               tableConfig: this.state.activeDrilldownRef.tableConfig,
                               pivotTableConfig: this.state.activeDrilldownRef.pivotTableConfig,
                             }}
+                            showQueryInterpretation={this.props.isEditing}
+                            reverseTranslationPlacement='top'
                           />
                         )}
                         {this.renderChartCollapseBtn('bottom')}

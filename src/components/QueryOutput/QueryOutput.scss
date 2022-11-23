@@ -121,10 +121,8 @@
     line-height: 18px;
   }
 }
-
-.query-output-footer {
+.query-output-footer{
   display: flex;
-  justify-content: space-between;
   align-items: flex-end;
   max-height: 150px;
   width: 100%;
@@ -133,7 +131,14 @@
   &.no-margin {
     margin: 0;
   }
+  &.top{
+    justify-content: center;
+  }
+  &.bottom{
+    justify-content:space-between
+  }
 }
+
 .query-output-table-row-count{
   padding-top: 10px;
 }

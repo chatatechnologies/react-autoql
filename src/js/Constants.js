@@ -35,6 +35,10 @@ export const MONTH_NAMES = [
   'December',
 ]
 
-export const WEEKDAY_NAMES = ['Sunday', 'Saturday', 'Friday', 'Thursday', 'Wednesday', 'Tuesday', 'Monday']
+export const WEEKDAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 export const SEASON_NAMES = ['SP', 'SU', 'FA', 'HO']
+export const TIMESTAMP_FORMATS = {
+  epoch: 'epoch',
+  iso8601: 'ISO_8601',
+}

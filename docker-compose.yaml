@@ -1,0 +1,21 @@
+version: "3.8"
+services:
+  react_autoql:
+    build:
+      context: .
+      dockerfile: ./docker/react-autoql/Dockerfile
+    container_name: react_autoql_c
+    environment:
+      - GH_TOKEN=${gh_token}
+      - NPM_TOKEN=${npm_token}
+  test_page:
+    build:
+      context: .
+      dockerfile: ./docker/test-page/Dockerfile
+    container_name: test_page_c
+    ports:
+      - '8080:8080'
+    stdin_open: true
+    tty: true
+    environment:
+      - SERVER_HOST=localhost
