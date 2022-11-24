@@ -3,15 +3,19 @@ import advancedFormat from 'dayjs/plugin/advancedFormat'
 import localizedFormat from 'dayjs/plugin/localizedFormat'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
+import isBetween from 'dayjs/plugin/isBetween'
 import weekOfYear from 'dayjs/plugin/weekOfYear'
 import quarterOfYear from 'dayjs/plugin/quarterOfYear'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
+dayjs.extend(isBetween)
 dayjs.extend(weekOfYear)
 dayjs.extend(quarterOfYear)
 dayjs.extend(advancedFormat)
+dayjs.extend(isSameOrBefore)
 dayjs.extend(localizedFormat)
 dayjs.extend(customParseFormat)
 ;(function applyLocale() {

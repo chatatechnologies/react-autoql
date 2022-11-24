@@ -1,6 +1,7 @@
 .react-autoql-date-picker {
   .rdrCalendarWrapper,
-  .rdrDateRangeWrapper {
+  .rdrDateRangeWrapper,
+  .react-autoql-month-range-picker {
     background: var(--react-autoql-background-color-secondary);
     color: var(--react-autoql-text-color-primary);
 
@@ -20,23 +21,6 @@
     }
 
     .rdrMonthAndYearWrapper {
-      .rdrNextPrevButton {
-        background-color: var(--react-autoql-border-color);
-        color: var(--react-autoql-text-color-primary);
-        opacity: 0.8;
-
-        &:hover {
-          opacity: 0.5;
-        }
-
-        &.rdrPprevButton i {
-          border-color: transparent var(--react-autoql-text-color-primary) transparent transparent;
-        }
-        &.rdrNextButton i {
-          border-color: transparent transparent transparent var(--react-autoql-text-color-primary);
-        }
-      }
-
       select {
         color: var(--react-autoql-text-color-primary);
         &:hover {
@@ -90,6 +74,23 @@
       .rdrEndEdge {
         background: var(--react-autoql-accent-color);
       }
+    }
+  }
+
+  .rdrNextPrevButton {
+    background-color: var(--react-autoql-border-color);
+    color: var(--react-autoql-text-color-primary);
+    opacity: 0.8;
+
+    &:hover {
+      opacity: 0.5;
+    }
+
+    &.rdrPprevButton i {
+      border-color: transparent var(--react-autoql-text-color-primary) transparent transparent;
+    }
+    &.rdrNextButton i {
+      border-color: transparent transparent transparent var(--react-autoql-text-color-primary);
     }
   }
 }

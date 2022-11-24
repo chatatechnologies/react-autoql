@@ -42,3 +42,15 @@ export const TIMESTAMP_FORMATS = {
   epoch: 'epoch',
   iso8601: 'ISO_8601',
 }
+
+export const PRECISION_TYPES = {
+  day: 'DAY',
+  month: 'MONTH',
+  year: 'YEAR',
+  week: 'WEEK',
+  quarter: 'QUARTER',
+  dateHour: 'DATE_HOUR',
+  dateMinute: 'DATE_MINUTE',
+  hour: 'HOUR',
+  minute: 'MINUTE',
+}

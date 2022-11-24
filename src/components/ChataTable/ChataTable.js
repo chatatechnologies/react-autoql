@@ -636,11 +636,12 @@ export default class ChataTable extends React.Component {
         }}
         content={
           <div className='react-autoql-table-date-picker'>
-            <h3>{this.state.datePickerColumn?.display_name}</h3>
+            <h3>{this.state.datePickerColumn.display_name}</h3>
             <DatePicker
               initialRange={this.currentDateRangeSelections?.[this.state.datePickerColumn.field]}
               onSelection={this.onDateRangeSelection}
               validRange={this.state.datePickerColumn.dateRange}
+              type={this.state.datePickerColumn.precision}
             />
           </div>
         }
