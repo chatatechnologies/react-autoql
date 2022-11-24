@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { v4 as uuid } from 'uuid'
 import dayjs from '../../js/dayjsWithPlugins'
+import { v4 as uuid } from 'uuid'
 
 import './MonthRangePicker.scss'
 
@@ -14,14 +14,20 @@ export default class MonthRangePicker extends React.Component {
     const now = dayjs()
 
     let visibleYear = now.year()
-    let selectedStart = now
-    let selectedEnd = now
-    if (this.props.initialRange) {
-      const startDateDayJS = dayjs(this.props.initialRange.startDate)
-      const endDateDayJS = dayjs(this.props.initialRange.endDate)
-      visibleYear = endDateDayJS.year()
-      selectedStart = startDateDayJS
-      selectedEnd = endDateDayJS
+    let selectedStart = now.startOf('month')
+    let selectedEnd = now.endOf('month')
+
+    if (props.initialRange) {
+      selectedStart = dayjs(this.props.initialRange.startDate).startOf('month')
+      selectedEnd = dayjs(this.props.initialRange.endDate).endOf('month')
+      visibleYear = selectedEnd.year()
+    } else if (
+      props.minDate &&
+      props.maxDate &&
+      (now.isBefore(dayjs(props.minDate)) || now.isAfter(dayjs(props.maxDate)))
+    ) {
+      selectedStart = dayjs(props.minDate).startOf('month')
+      selectedEnd = dayjs(props.maxDate).endOf('month')
     }
 
     this.state = {
@@ -31,15 +37,20 @@ export default class MonthRangePicker extends React.Component {
       selectedEnd,
       previewStart: undefined,
       previewEnd: undefined,
+      focusedDateDisplay: 'start',
     }
   }
 
   static propTypes = {
-    initialRange: PropTypes.arrayOf(PropTypes.instanceOf(Date)),
+    minDate: PropTypes.instanceOf(Date),
+    maxDate: PropTypes.instanceOf(Date),
+    initialRange: PropTypes.shape({ startDate: PropTypes.instanceOf(Date), endDate: PropTypes.instanceOf(Date) }),
     onRangeSelection: PropTypes.func,
   }
 
   static defaultProps = {
+    minDate: undefined,
+    maxDate: undefined,
     initialRange: undefined,
     onRangeSelection: () => {},
   }
@@ -53,21 +64,22 @@ export default class MonthRangePicker extends React.Component {
 
   handleMonthHover = (timestamp) => {
     const { selectedStart } = this.state
-    let previewStart = timestamp
-    let previewEnd = timestamp
-    if (selectedStart && !this.state.selectedEnd) {
-      if (timestamp.isBefore(selectedStart)) {
-        previewEnd = selectedStart
-      } else if (selectedStart.isBefore(timestamp)) {
-        previewStart = selectedStart
+    let previewStart = timestamp.startOf('month')
+    let previewEnd = timestamp.endOf('month')
+
+    if (selectedStart && this.state.focusedDateDisplay === 'end') {
+      if (previewEnd.isBefore(selectedStart)) {
+        previewEnd = selectedStart.endOf('month')
+      } else if (selectedStart.isBefore(previewStart)) {
+        previewStart = selectedStart.startOf('month')
       }
     }
 
-    this.setState({ previewMonth: timestamp, previewStart, previewEnd })
+    this.setState({ previewStart, previewEnd })
   }
 
   handleMonthClick = (timestamp) => {
-    if (!this.state.selectedStart || !!this.state.selectedEnd) {
+    if (this.state.focusedDateDisplay === 'start') {
       this.onMonthStartSelection(timestamp)
     } else {
       this.onMonthEndSelection(timestamp)
@@ -83,23 +95,29 @@ export default class MonthRangePicker extends React.Component {
   }
 
   onMonthStartSelection = (timestamp) => {
-    this.setState({ selectedStart: timestamp, selectedEnd: undefined })
+    this.setState({ selectedStart: timestamp.startOf('month'), selectedEnd: undefined, focusedDateDisplay: 'end' })
   }
 
   onMonthEndSelection = (timestamp) => {
     try {
       const { selectedStart } = this.state
+      if (!selectedStart) {
+        this.setState({ selectedEnd: timestamp, focusedDateDisplay: 'start' })
+      }
 
       const rangeSelection = [selectedStart, timestamp]
       if (selectedStart.isAfter(timestamp)) {
         rangeSelection.reverse()
       }
 
-      this.setState({ selectedStart: rangeSelection[0], selectedEnd: rangeSelection[1] })
+      const selectedStartMonthStart = rangeSelection[0].startOf('month')
+      const selectedEndMonthEnd = rangeSelection[0].endOf('month')
+
+      this.setState({ selectedStart: selectedStartMonthStart, selectedEnd: selectedEndMonthEnd })
 
       this.props.onRangeSelection({
-        startDate: rangeSelection[0].startOf('month').toDate(),
-        endDate: rangeSelection[1].endOf('month').toDate(),
+        startDate: selectedStartMonthStart.toDate(),
+        endDate: selectedEndMonthEnd.toDate(),
       })
     } catch (error) {
       console.error(error)
@@ -107,17 +125,33 @@ export default class MonthRangePicker extends React.Component {
   }
 
   renderDateDisplay = () => {
+    const startDateText = this.state.selectedStart?.startOf('month').format('MMM YYYY') ?? ''
+    const endDateText = this.state.selectedEnd?.startOf('month').format('MMM YYYY') ?? startDateText ?? ''
+
     return (
       <div className='rdrDateDisplayWrapper'>
         <div className='rdrDateDisplay'>
-          <span className='rdrDateInput rdrDateDisplayItem'>
-            <input readOnly placeholder='Early' value={this.state.selectedStart?.startOf('month').format('MMM YYYY')} />
+          <span
+            className={`rdrDateInput rdrDateDisplayItem
+              ${this.state.focusedDateDisplay === 'start' ? 'rdrDateDisplayItemActive' : ''}`}
+          >
+            <input
+              readOnly
+              placeholder='Early'
+              value={startDateText}
+              onClick={() => this.setState({ focusedDateDisplay: 'start' })}
+            />
           </span>
-          <span className='rdrDateInput rdrDateDisplayItem'>
+          <span
+            className={`rdrDateInput rdrDateDisplayItem ${
+              this.state.focusedDateDisplay === 'end' ? 'rdrDateDisplayItemActive' : ''
+            }`}
+          >
             <input
               readOnly
               placeholder='Continuous'
-              value={this.state.selectedEnd?.startOf('month').format('MMM YYYY')}
+              value={endDateText}
+              onClick={() => this.setState({ focusedDateDisplay: 'end' })}
             />
           </span>
         </div>
@@ -126,8 +160,12 @@ export default class MonthRangePicker extends React.Component {
   }
 
   renderYearPicker = () => {
-    const lowerYearLimit = dayjs(new Date()).add(-100, 'year').year()
-    const upperYearLimit = dayjs(new Date()).add(20, 'year').year()
+    const lowerYearLimit = this.props.minDate
+      ? dayjs(this.props.minDate).year()
+      : dayjs(new Date()).add(-100, 'year').year()
+    const upperYearLimit = this.props.maxDate
+      ? dayjs(this.props.maxDate).year()
+      : dayjs(new Date()).add(20, 'year').year()
 
     return (
       <div className={`react-autoql-month-picker-year`}>
@@ -163,6 +201,39 @@ export default class MonthRangePicker extends React.Component {
     )
   }
 
+  isSelected = (timestamp) => {
+    const { selectedStart, selectedEnd } = this.state
+    const isSelectedStart = timestamp.startOf('month').isSame(selectedStart?.startOf('month'))
+    const isSelectedEnd =
+      (isSelectedStart && !selectedEnd) || timestamp.endOf('month').isSame(selectedEnd?.endOf('month'))
+    const isSelected = isSelectedStart || isSelectedEnd || this.selectedRangeIncludesMonth(timestamp)
+
+    return {
+      isSelected,
+      isSelectedStart,
+      isSelectedEnd,
+    }
+  }
+
+  isPreview = (timestamp) => {
+    const { previewStart, previewEnd } = this.state
+    const isPreviewStart = timestamp.startOf('month').isSame(previewStart)
+    const isPreviewEnd = timestamp.endOf('month').isSame(previewEnd)
+    const isPreview = isPreviewStart || isPreviewEnd || timestamp.isBetween(previewStart, previewEnd, 'month')
+
+    return {
+      isPreview,
+      isPreviewStart,
+      isPreviewEnd,
+    }
+  }
+
+  isDisabled = (timestamp) => {
+    const isBeforeMinDate = this.props.minDate && timestamp.isBefore(dayjs(this.props.minDate).startOf('month'))
+    const isAfterMaxDate = this.props.maxDate && timestamp.isAfter(dayjs(this.props.maxDate).endOf('month'))
+    return isBeforeMinDate || isAfterMaxDate
+  }
+
   renderMonthGrid = () => {
     const monthGrid = [
       [0, 1, 2],
@@ -177,31 +248,31 @@ export default class MonthRangePicker extends React.Component {
           return (
             <div className='month-picker-row' key={`month-row-${i}`}>
               {monthRow.map((month) => {
-                const { selectedStart, selectedEnd, previewStart, previewEnd } = this.state
                 const timestamp = dayjs(`${this.state.visibleYear}-${month + 1}-15`)
                 const monthName = dayjs(`2021-${month + 1}-15`).format('MMM')
+
+                const { isSelected, isSelectedStart, isSelectedEnd } = this.isSelected(timestamp)
+                const { isPreview, isPreviewStart, isPreviewEnd } = this.isPreview(timestamp)
+                const isDisabled = this.isDisabled(timestamp)
                 const isThisMonth = month === dayjs().month()
-                const isStart = timestamp.startOf('month').isSame(selectedStart?.startOf('month'))
-                const isEnd = (isStart && !selectedEnd) || timestamp.endOf('month').isSame(selectedEnd?.endOf('month'))
-                const isActive = isStart || isEnd || this.selectedRangeIncludesMonth(timestamp)
-                const isPreviewStart = timestamp.isSame(previewStart)
-                const isPreviewEnd = timestamp.isSame(previewEnd)
-                const isPreview =
-                  isPreviewStart || isPreviewEnd || timestamp.isBetween(previewStart, previewEnd, 'month')
+
                 return (
                   <div
                     key={month}
                     className={`month-picker-month
                             ${isThisMonth ? ' current-month' : ''}
-                            ${isStart ? ' selection-start' : ''}
-                            ${isEnd ? ' selection-end' : ''}
-                            ${isActive ? ' active' : ''}
+                            ${isSelectedStart ? ' selection-start' : ''}
+                            ${isSelectedEnd ? ' selection-end' : ''}
+                            ${isSelected ? ' active' : ''}
                             ${isPreviewStart ? ' preview-start' : ''}
                             ${isPreviewEnd ? ' preview-end' : ''}
-                            ${isPreview ? ' preview' : ''}`}
+                            ${isPreview ? ' preview' : ''}
+                            ${isDisabled ? ' rdrDayDisabled' : ''}`}
                     onClick={() => this.handleMonthClick(timestamp)}
-                    onMouseEnter={() => this.handleMonthHover(timestamp)}
-                    onMouseLeave={() => this.setState({ previewStart: undefined, previewEnd: undefined })}
+                    onMouseEnter={() => !isDisabled && this.handleMonthHover(timestamp)}
+                    onMouseLeave={() =>
+                      !isDisabled && this.setState({ previewStart: undefined, previewEnd: undefined })
+                    }
                   >
                     <div className='month-picker-month-text-wrapper'>
                       <div className='month-picker-month-text'>

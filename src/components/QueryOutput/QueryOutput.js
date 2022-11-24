@@ -1680,7 +1680,7 @@ export class QueryOutput extends React.Component {
     return (
       <ChataTable
         authentication={this.props.authentication}
-        autoQLConfig={this.props.autoQLConfig}
+        dataFormatting={this.props.dataFormatting}
         key={this.tableID}
         ref={(ref) => (this.tableRef = ref)}
         columns={this.state.columns}

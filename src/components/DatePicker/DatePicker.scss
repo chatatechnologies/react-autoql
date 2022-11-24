@@ -29,17 +29,16 @@
       }
     }
 
+    .rdrDayDisabled {
+      background-color: var(--react-autoql-hover-color);
+      pointer-events: none;
+      cursor: not-allowed;
+      opacity: 0.3;
+    }
+
     .rdrMonths {
       .rdrWeekDay {
         color: var(--react-autoql-text-color-placeholder);
-      }
-
-      .rdrDayDisabled {
-        background-color: var(--react-autoql-hover-color);
-        opacity: 0.3;
-      }
-
-      .rarDayHovered {
       }
 
       .rdrDay:not(.rdrDayPassive):not(.rdrDayDisabled) .rdrInRange ~ .rdrDayNumber span,
@@ -84,6 +83,11 @@
 
     &:hover {
       opacity: 0.5;
+    }
+
+    &:disabled {
+      opacity: 0.5 !important;
+      cursor: not-allowed;
     }
 
     &.rdrPprevButton i {

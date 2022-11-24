@@ -10,7 +10,7 @@ import { Popover } from 'react-tiny-popover'
 import TableWrapper from './TableWrapper'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { responseErrors } from '../../js/errorMessages'
-import { getAuthentication, getAutoQLConfig } from '../../props/defaults'
+import { getAuthentication, getDataFormatting } from '../../props/defaults'
 import { formatTableParams } from './tableHelpers'
 import { Spinner } from '../Spinner'
 import { runQueryNewPage } from '../../js/queryService'
@@ -550,17 +550,22 @@ export default class ChataTable extends React.Component {
       const formattedStartDate = formatElement({
         element: startDate.toISOString(),
         column: this.state.datePickerColumn,
-        config: getAutoQLConfig(this.props.autoQLConfig).dataFormatting,
+        config: getDataFormatting(this.props.dataFormatting),
       })
 
       const formattedEndDate = formatElement({
         element: endDate.toISOString(),
         column: this.state.datePickerColumn,
-        config: getAutoQLConfig(this.props.autoQLConfig).dataFormatting,
+        config: getDataFormatting(this.props.dataFormatting),
       })
 
+      let filterInputText = `${formattedStartDate} to ${formattedEndDate}`
+      if (formattedStartDate === formattedEndDate) {
+        filterInputText = formattedStartDate
+      }
+
       inputElement.focus()
-      inputElement.value = `${formattedStartDate} to ${formattedEndDate}`
+      inputElement.value = filterInputText
       inputElement.blur()
       this.currentDateRangeSelections = {
         [this.state.datePickerColumn.field]: dateRangeSelection,

@@ -78,7 +78,10 @@ export const formatFiltersForAPI = (params, tableRef) => {
         } else if (column.type === 'DATE') {
           const dates = filter.value.split(' to ')
           const startDate = dayjs.utc(dates[0]).startOf('day').toISOString()
-          const endDate = dayjs.utc(dates[1]).endOf('day').toISOString()
+          const endDate = dayjs
+            .utc(dates[1] ?? dates[0])
+            .endOf('day')
+            .toISOString()
           filterObj.value = `${startDate},${endDate}`
           filterObj.operator = 'between'
         }
