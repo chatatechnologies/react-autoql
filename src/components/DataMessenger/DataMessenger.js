@@ -181,7 +181,6 @@ export class DataMessenger extends React.Component {
   componentDidMount = () => {
     this._isMounted = true
     try {
-      document.addEventListener('visibilitychange', this.onWindowResize)
       window.addEventListener('resize', this.onWindowResize)
 
       if (this.props.enableQueryQuickStartTopics) {
@@ -244,7 +243,6 @@ export class DataMessenger extends React.Component {
     try {
       this._isMounted = false
       window.removeEventListener('resize', this.onWindowResize)
-      document.removeEventListener('visibilitychange', this.onWindowResize)
 
       clearTimeout(this.windowResizeTimer)
       clearTimeout(this.executeQueryTimeout)

@@ -22,10 +22,10 @@ export default class ReverseTranslation extends React.Component {
     super(props)
 
     this.COMPONENT_KEY = uuid()
-    this.reverseTranslationArray = constructRTArray(props.reverseTranslation)
 
     this.state = {
       isValidated: false,
+      reverseTranslationArray: constructRTArray(props.reverseTranslation),
     }
   }
 
@@ -47,17 +47,31 @@ export default class ReverseTranslation extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
-    if (this.props.onValueLabelClick) {
+    if (this.props.onValueLabelClick && this.state.reverseTranslationArray?.length) {
       this.validateAndUpdateValueLabels()
     }
   }
 
   shouldComponentUpdate = (nextProps) => {
-    if (this.props.isResizing && nextProps.isResizing) {
+    if (nextProps.reverseTranslation?.length && !this.props.reverseTranslation?.length) {
+      return true
+    }
+
+    if (nextProps.isResizing && this.props.isResizing) {
       return false
     }
 
     return true
+  }
+
+  componentDidUpdate = (prevProps, prevState) => {
+    if (!prevProps.reverseTranslation?.length && this.props.reverseTranslation?.length) {
+      this.setState({ reverseTranslationArray: constructRTArray(this.props.reverseTranslation) })
+    }
+
+    if (!prevState.reverseTranslationArray?.length && this.state.reverseTranslationArray?.length) {
+      this.validateAndUpdateValueLabels()
+    }
   }
 
   componentWillUnmount = () => {
@@ -65,10 +79,10 @@ export default class ReverseTranslation extends React.Component {
   }
 
   validateAndUpdateValueLabels = () => {
-    if (this.reverseTranslationArray.length) {
+    if (this.state.reverseTranslationArray.length) {
       const valueLabelValidationPromises = []
-      const validatedInterpretationArray = _cloneDeep(this.reverseTranslationArray)
-      this.reverseTranslationArray.forEach((chunk, i) => {
+      const validatedInterpretationArray = _cloneDeep(this.state.reverseTranslationArray)
+      this.state.reverseTranslationArray.forEach((chunk, i) => {
         if (chunk.c_type === 'VALUE_LABEL') {
           valueLabelValidationPromises.push(
             fetchVLAutocomplete({
@@ -85,8 +99,7 @@ export default class ReverseTranslation extends React.Component {
 
       Promise.all(valueLabelValidationPromises).then(() => {
         if (this._isMounted) {
-          this.reverseTranslationArray = validatedInterpretationArray
-          this.setState({ isValidated: true })
+          this.setState({ isValidated: true, reverseTranslationArray: validatedInterpretationArray })
         }
       })
     }
@@ -132,7 +145,7 @@ export default class ReverseTranslation extends React.Component {
   }
 
   render = () => {
-    if (!_get(this.reverseTranslationArray, 'length')) {
+    if (!_get(this.state.reverseTranslationArray, 'length')) {
       return null
     }
 
@@ -150,7 +163,7 @@ export default class ReverseTranslation extends React.Component {
               data-for={`react-autoql-reverse-translation-tooltip-${this.COMPONENT_KEY}`}
             />
             <strong> Interpreted as: </strong>
-            {this.reverseTranslationArray.map((chunk, i) => {
+            {this.state.reverseTranslationArray.map((chunk, i) => {
               return <span key={`rt-item-${this.COMPONENT_KEY}-${i}`}>{this.renderInterpretationChunk(chunk)}</span>
             })}
           </div>

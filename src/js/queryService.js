@@ -3,6 +3,7 @@ import _get from 'lodash.get'
 import { responseErrors } from './errorMessages'
 import { dataFormattingDefault } from '../props/defaults'
 import DEConstants from '../components/DataExplorer/constants'
+import dayjs from './dayjsWithPlugins'
 
 const formatErrorResponse = (error) => {
   if (error?.message === responseErrors.CANCELLED) {
