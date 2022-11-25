@@ -3,6 +3,7 @@ import _get from 'lodash.get'
 import { responseErrors } from './errorMessages'
 import { dataFormattingDefault } from '../props/defaults'
 import DEConstants from '../components/DataExplorer/constants'
+import dayjs from './dayjsWithPlugins'
 
 const formatErrorResponse = (error) => {
   if (error?.message === responseErrors.CANCELLED) {
@@ -195,6 +196,16 @@ export const runQueryOnly = (params = {}) => {
         throw new Error('Parse error')
       }
 
+      if (response?.data?.data?.columns?.length) {
+        response.data.data.columns.forEach((col, i) => {
+          if (col.type === 'DATE') {
+            response.data.data.rows.forEach((row) => {
+              row[i] = dayjs.unix(row[i]).toISOString()
+            })
+            col.precision = 'YEAR'
+          }
+        })
+      }
       return Promise.resolve(response)
     })
     .catch((error) => {
