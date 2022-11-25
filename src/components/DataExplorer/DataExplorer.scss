@@ -9,11 +9,6 @@
   min-height: 0;
   color: var(--react-autoql-text-color-primary);
 
-  .data-explorer-title-animated-container {
-    animation: slideDown 0.4s cubic-bezier(0.26, 0.26, 0, 1);
-    animation-fill-mode: both;
-  }
-
   .data-explorer-section,
   .data-explorer-intro-message {
     opacity: 0;
@@ -57,26 +52,6 @@
 
   .data-explorer-topic-icon {
     margin-right: 5px;
-  }
-
-  .exploring-title {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    flex-wrap: nowrap;
-    align-items: flex-end;
-    font-size: 16px;
-    margin-bottom: 10px;
-    padding: 0px 30px;
-
-    .clear-explorer-content-btn {
-      cursor: pointer;
-      font-size: 14px;
-
-      &:hover {
-        color: var(--react-autoql-accent-color);
-      }
-    }
   }
 
   .data-explorer-result-container {

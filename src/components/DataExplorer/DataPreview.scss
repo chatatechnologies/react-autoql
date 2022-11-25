@@ -126,37 +126,13 @@
   color: var(--react-autoql-text-color);
   box-shadow: var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15)) 0px 8px 24px;
 
-  &.place-bottom {
-    &::before {
-      border-bottom-color: var(--border-color) !important;
-    }
-    &::after {
-      border-bottom-color: var(--bg-color) !important;
-    }
-  }
-  &.place-top {
-    &::before {
-      border-top-color: var(--border-color) !important;
-    }
-    &::after {
-      border-top-color: var(--bg-color) !important;
-    }
-  }
-  &.place-right {
-    &::before {
-      border-right-color: var(--border-color) !important;
-    }
-    &::after {
-      border-right-color: var(--bg-color) !important;
-    }
-  }
-  &.place-left {
-    &::before {
-      border-left-color: var(--border-color) !important;
-    }
-    &::after {
-      border-left-color: var(--bg-color) !important;
-    }
+  &.place-bottom::after,
+  &.place-top::after,
+  &.place-left::after,
+  &.place-right::after {
+    border-right: 2px solid var(--react-autoql-border-color);
+    border-top: 2px solid var(--react-autoql-border-color);
+    background: var(--bg-color);
   }
 
   p {
