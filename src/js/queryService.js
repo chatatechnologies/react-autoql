@@ -196,16 +196,6 @@ export const runQueryOnly = (params = {}) => {
         throw new Error('Parse error')
       }
 
-      if (response?.data?.data?.columns?.length) {
-        response.data.data.columns.forEach((col, i) => {
-          if (col.type === 'DATE') {
-            response.data.data.rows.forEach((row) => {
-              row[i] = dayjs.unix(row[i]).toISOString()
-            })
-            col.precision = 'YEAR'
-          }
-        })
-      }
       return Promise.resolve(response)
     })
     .catch((error) => {
