@@ -36,6 +36,9 @@ export default class DataExplorer extends React.Component {
     shouldRender: PropTypes.bool,
     subject: PropTypes.shape({}),
     rebuildTooltips: PropTypes.func,
+    isCollapsed: PropTypes.bool,
+    onIsCollapsedChange: PropTypes.func,
+    defaultCollapsed: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -44,6 +47,9 @@ export default class DataExplorer extends React.Component {
     shouldRender: true,
     subject: null,
     rebuildTooltips: undefined,
+    isCollapsed: undefined,
+    onIsCollapsedChange: () => {},
+    defaultCollapsed: false,
   }
 
   componentDidMount = () => {
@@ -184,7 +190,7 @@ export default class DataExplorer extends React.Component {
 
   renderLoadingContainer = () => {
     return (
-      <div className='data-explorer-card-placeholder'>
+      <div className='data-explorer-card-placeholder data-preview'>
         <LoadingDots />
       </div>
     )
@@ -212,6 +218,9 @@ export default class DataExplorer extends React.Component {
           subtitle={
             <em>Below is a snapshot of the data returned from this query; it is not a comprehensive data response.</em>
           }
+          isCollapsed={this.props.isCollapsed}
+          onIsCollapsedChange={this.props.onIsCollapsedChange}
+          defaultCollapsed={this.props.defaultCollapsed}
         >
           {this.state.loading ? this.renderLoadingContainer() : this.renderDataPreviewGrid()}
         </Card>

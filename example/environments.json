@@ -8,5 +8,10 @@
     "dependencies": {
       "react-autoql": "file:../"
     }
+  },
+  "ci": {
+    "dependencies": {
+      "react-autoql": "file:./react-autoql"
+    }
   }
 }
