@@ -1157,6 +1157,10 @@ export class QueryOutput extends React.Component {
       const isISO8601 = !!col.precision
       return (headerValue, rowValue, rowData, filterParams) => {
         try {
+          if (!rowValue) {
+            return false
+          }
+
           const rowValueDayJS = isISO8601 ? dayjs.utc(rowValue) : dayjs.unix(rowValue).utc()
 
           const dates = headerValue.split(' to ')
@@ -1176,6 +1180,10 @@ export class QueryOutput extends React.Component {
     } else if (col.type === 'DATE_STRING') {
       return (headerValue, rowValue, rowData, filterParams) => {
         try {
+          if (!rowValue) {
+            return false
+          }
+
           const formattedElement = formatElement({
             element: rowValue,
             column: col,
@@ -1194,6 +1202,10 @@ export class QueryOutput extends React.Component {
     } else if (col.type === 'DOLLAR_AMT' || col.type === 'QUANTITY' || col.type === 'PERCENT' || col.type === 'RATIO') {
       return (headerValue, rowValue, rowData, filterParams) => {
         try {
+          if (!rowValue) {
+            return false
+          }
+
           const trimmedValue = headerValue.trim()
           if (trimmedValue.length >= 2) {
             const number = Number(trimmedValue.substr(1).replace(/[^0-9.]/g, ''))
@@ -1212,9 +1224,10 @@ export class QueryOutput extends React.Component {
             }
           }
 
-          // No logical operators detected, just compare strings
-          const strippedHeader = headerValue.replace(/[^0-9.]/g, '')
-          return rowValue.toString().includes(strippedHeader)
+          // No logical operators detected, just compare numbers
+          const number = parseFloat(rowValue?.replace(/[^0-9.]/g, ''))
+          const filterNumber = parseFloat(headerValue?.replace(/[^0-9.]/g, ''))
+          return !isNaN(number) && number === filterNumber
         } catch (error) {
           console.error(error)
           this.props.onErrorCallback(error)
