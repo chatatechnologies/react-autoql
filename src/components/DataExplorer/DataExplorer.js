@@ -200,7 +200,6 @@ export default class DataExplorer extends React.Component {
       <div className='data-explorer-section query-suggestions'>
         <Card
           title={this.renderQuerySuggestionCardTitle(selectedTopic)}
-          subtitle={<em>Click on a query to run it in Data Messenger</em>}
           defaultCollapsed={this.props.isSmallScreen ? isDefaultCollapsed : undefined}
           isCollapsed={this.props.isSmallScreen ? this.state.isQuerySuggestionCollapsed : undefined}
           onIsCollapsedChange={(isCollapsed) => {
@@ -249,24 +248,6 @@ export default class DataExplorer extends React.Component {
       selectedVL: null,
       selectedKeywords: null,
     })
-  }
-
-  renderSelectionTitle = () => {
-    const selectedTopic = this.getSelectedTopic()
-    if (!selectedTopic) {
-      return null
-    }
-
-    return (
-      <div className='data-explorer-title exploring-title'>
-        <div
-          key={`data-explorer-title exploring-title-${selectedTopic.name}`}
-          className='data-explorer-title-animated-container'
-        >
-          Exploring "<TopicName topic={selectedTopic} />"
-        </div>
-      </div>
-    )
   }
 
   renderDataExplorerContent = () => {
@@ -422,7 +403,6 @@ export default class DataExplorer extends React.Component {
             dataExplorerRef={this.dataExplorerPage}
             onClearInputClick={this.clearContent}
           />
-          {this.renderSelectionTitle()}
           {this.renderDataExplorerContent()}
           <ReactTooltip
             className='data-preview-tooltip'

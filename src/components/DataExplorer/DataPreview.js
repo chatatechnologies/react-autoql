@@ -215,9 +215,6 @@ export default class DataExplorer extends React.Component {
           className='data-explorer-data-preview'
           data-test='data-explorer-data-preview'
           title={this.renderDataPreviewTitle()}
-          subtitle={
-            <em>Below is a snapshot of the data returned from this query; it is not a comprehensive data response.</em>
-          }
           isCollapsed={this.props.isCollapsed}
           onIsCollapsedChange={this.props.onIsCollapsedChange}
           defaultCollapsed={this.props.defaultCollapsed}
