@@ -1,4 +1,5 @@
 import { isColumnNumberType } from '../QueryOutput/columnHelpers'
+import dayjs from '../../js/dayjsWithPlugins'
 
 export const formatTableParams = (params, tableRef) => {
   const formattedSorters = formatSortersForAPI(params, tableRef)
@@ -54,6 +55,35 @@ export const formatNumberFilterValue = (headerValue = '') => {
   return { value: strNumber, operator }
 }
 
+const getPrecisionForDayJS = (colPrecision) => {
+  switch (colPrecision) {
+    case 'DAY': {
+      return 'day'
+    }
+    case 'MONTH': {
+      return 'month'
+    }
+    case 'YEAR': {
+      return 'year'
+    }
+    case 'WEEK': {
+      return 'week'
+    }
+    case 'QUARTER': {
+      return 'quarter'
+    }
+    case 'HOUR' || 'DATE_HOUR': {
+      return 'hour'
+    }
+    case 'MINUTE' || 'DATE_MINUTE': {
+      return 'minute'
+    }
+    default: {
+      return 'day'
+    }
+  }
+}
+
 export const formatFiltersForAPI = (params, tableRef) => {
   // for Number type column =,<,>,<=  >=
   // for String the operator is = or like
@@ -74,6 +104,16 @@ export const formatFiltersForAPI = (params, tableRef) => {
           const formatted = formatNumberFilterValue(filter.value)
           filterObj.operator = formatted.operator
           filterObj.value = formatted.value
+        } else if (column.type === 'DATE') {
+          const dates = filter.value.split(' to ')
+          const precision = getPrecisionForDayJS(column.precision)
+          const startDate = dayjs.utc(dates[0]).startOf(precision).toISOString()
+          const endDate = dayjs
+            .utc(dates[1] ?? dates[0])
+            .endOf(precision)
+            .toISOString()
+          filterObj.value = `${startDate},${endDate}`
+          filterObj.operator = 'between'
         }
 
         filters.push(filterObj)

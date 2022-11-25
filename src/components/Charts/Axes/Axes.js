@@ -54,7 +54,7 @@ export default class Axes extends React.Component {
     }
 
     return (
-      <tspan id={`load-more-drop-down-span-${this.COMPONENT_ID}`}>
+      <tspan className='load-more-drop-down-span' id={`load-more-drop-down-span-${this.COMPONENT_ID}`}>
         <tspan id={`visualizing-span-${this.COMPONENT_ID}`}>{`Visualizing `}</tspan>
         <tspan style={style} id={`row-number-span-${this.COMPONENT_ID}`}>
           {currentRowNumber}
@@ -124,7 +124,6 @@ export default class Axes extends React.Component {
           className='x-axis-label'
           data-test='x-axis-label'
           textAnchor='middle'
-          fontWeight='bold'
           y={xLabelY + 4}
           x={xCenter}
           style={this.labelInlineStyles}
