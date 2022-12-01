@@ -172,7 +172,7 @@ export default class ReverseTranslation extends React.Component {
           className='react-autoql-reverse-translation-tooltip'
           id={`react-autoql-reverse-translation-tooltip-${this.COMPONENT_KEY}`}
           effect='solid'
-          place='left'
+          place='right'
           html
         />
       </ErrorBoundary>
