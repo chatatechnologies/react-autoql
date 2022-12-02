@@ -130,9 +130,10 @@ export default class DataExplorer extends React.Component {
     }
   }
 
-  onValidationSuggestionClick = (text) => {
+  onValidationSuggestionClick = ({ query, userSelection }) => {
     this.querySuggestionsKey = uuid()
-    this.animateDETextAndSubmit(text)
+    this.animateDETextAndSubmit(query)
+    this.setState({ userSelection })
   }
 
   renderDataPreview = () => {
@@ -190,10 +191,6 @@ export default class DataExplorer extends React.Component {
       return null
     }
 
-    let topicText = selectedTopic.display_name
-    if (selectedTopic.type === DEConstants.SUBJECT_TYPE) {
-      topicText = selectedTopic.name
-    }
     const isDefaultCollapsed =
       !this.state.selectedSubject || this.state.activeTopicType !== DEConstants.SUBJECT_TYPE ? false : true
     return (
@@ -213,12 +210,17 @@ export default class DataExplorer extends React.Component {
             <QuerySuggestionList
               key={this.querySuggestionsKey}
               authentication={this.props.authentication}
-              topicText={topicText}
-              topic={selectedTopic}
+              context={this.state.selectedSubject?.name}
+              valueLabel={this.state.selectedVL}
+              searchText={this.state.selectedKeywords?.display_name}
+              selectedType={this.state.activeTopicType}
               executeQuery={this.props.executeQuery}
               skipQueryValidation={this.state.skipQueryValidation}
+              userSelection={this.state.userSelection}
               onValidationSuggestionClick={this.onValidationSuggestionClick}
-              onSuggestionListResponse={() => this.setState({ skipQueryValidation: false })}
+              onSuggestionListResponse={() =>
+                this.setState({ querySuggestionContentKey: uuid(), skipQueryValidation: false })
+              }
             />
           </div>
         </Card>
