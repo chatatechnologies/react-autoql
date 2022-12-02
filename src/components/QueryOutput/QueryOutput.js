@@ -1165,7 +1165,10 @@ export class QueryOutput extends React.Component {
 
           const dates = headerValue.split(' to ')
           const startDate = dayjs.utc(dates[0]).utc()
-          const endDate = dayjs.utc(dates[1]).utc().endOf('day')
+          const endDate = dayjs
+            .utc(dates[1] ?? dates[0])
+            .utc()
+            .endOf('day')
 
           const isAfterStartDate = rowValueDayJS.isAfter(startDate)
           const isBeforeEndDate = rowValueDayJS.isBefore(endDate)

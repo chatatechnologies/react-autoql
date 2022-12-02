@@ -1,9 +1,7 @@
 import axios from 'axios'
 import _get from 'lodash.get'
 import { responseErrors } from './errorMessages'
-import { dataFormattingDefault } from '../props/defaults'
 import DEConstants from '../components/DataExplorer/constants'
-import dayjs from './dayjsWithPlugins'
 
 const formatErrorResponse = (error) => {
   if (error?.message === responseErrors.CANCELLED) {
@@ -168,7 +166,7 @@ export const runQueryOnly = (params = {}) => {
     orders,
     filters: tableFilters,
     page_size: pageSize,
-    date_format: dataFormattingDefault.timestampFormat,
+    v2_dates: 1,
   }
 
   if (!query || !query.trim()) {
@@ -636,28 +634,43 @@ export const fetchExploreQueries = ({
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 
-export const fetchDataExplorerSuggestions = ({
-  keywords,
+const transformVLForDataExplorerSuggestions = (vl) => {
+  return {
+    name: vl.keyword,
+    alias_name: vl.show_message,
+    canonical: vl.canonical,
+  }
+}
+
+export const fetchDataExplorerSuggestions = async ({
   pageSize,
   pageNumber,
   domain,
   apiKey,
   token,
+  text,
+  context,
+  selectedVL,
+  userVLSelection = [],
   skipQueryValidation,
-  scope,
-  isRawText,
 } = {}) => {
-  if (isRawText) {
-    return fetchExploreQueries({ keywords, pageSize, pageNumber, domain, apiKey, token, skipQueryValidation })
-  }
-
-  const exploreQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${encodeURIComponent(
-    keywords,
-  )}&page_size=${pageSize}&page=${pageNumber}&scope=${scope}&enable_history=false`
-
   if (!token || !domain || !apiKey) {
     return Promise.reject(new Error('Unauthenticated'))
   }
+
+  if (!skipQueryValidation) {
+    const queryValidationResponse = await runQueryValidation({
+      text,
+      domain,
+      apiKey,
+      token,
+    })
+    if (queryValidationResponse?.data?.data?.replacements?.length > 0) {
+      return Promise.resolve(queryValidationResponse)
+    }
+  }
+
+  const exploreQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}`
 
   const config = {
     headers: {
@@ -665,32 +678,25 @@ export const fetchDataExplorerSuggestions = ({
     },
   }
 
-  if (!skipQueryValidation) {
-    return runQueryValidation({
-      text: keywords,
-      domain,
-      apiKey,
-      token,
-    })
-      .then((queryValidationResponse) => {
-        if (_get(queryValidationResponse, 'data.data.replacements.length') > 0) {
-          return Promise.resolve(queryValidationResponse)
-        }
-        return axios
-          .get(exploreQueriesUrl, config)
-          .then((response) => Promise.resolve(response))
-          .catch((error) => Promise.reject(_get(error, 'response.data')))
-      })
-      .catch(() => {
-        return axios
-          .get(exploreQueriesUrl, config)
-          .then((response) => Promise.resolve(response))
-          .catch((error) => Promise.reject(_get(error, 'response.data')))
-      })
+  let vlInfo = []
+  if (selectedVL) {
+    vlInfo.push(transformVLForDataExplorerSuggestions(selectedVL))
+  }
+  if (userVLSelection) {
+    const transformedVLs = userVLSelection.map((vl) => transformVLForDataExplorerSuggestions(vl))
+    vlInfo = [...vlInfo, ...transformedVLs]
+  }
+
+  const data = {
+    page: pageNumber,
+    page_size: pageSize,
+    search_terms: text,
+    context,
+    value_label_info: vlInfo,
   }
 
   return axios
-    .get(exploreQueriesUrl, config)
+    .post(exploreQueriesUrl, data, config)
     .then((response) => Promise.resolve(response))
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
