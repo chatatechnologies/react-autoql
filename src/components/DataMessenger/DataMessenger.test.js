@@ -157,31 +157,3 @@ describe('Suggestion query response flow', () => {
     })
   })
 })
-
-describe('Query topics flow', () => {
-  const messengerComponent = mount(<DataMessenger defaultOpen />)
-  const exploreQueriesInstance = messengerComponent.find('ExploreQueries').instance()
-  jest.spyOn(exploreQueriesInstance, 'animateQITextAndSubmit')
-  var topicsMessage
-
-  test('topics render if provided by endpoint', () => {
-    messengerComponent.update()
-    topicsMessage = findByTestAttr(messengerComponent, 'topics-message-cascader-component')
-    expect(topicsMessage.exists()).toBe(true)
-  })
-  test('default active page is data-messenger', () => {
-    expect(messengerComponent.state(['activePage'])).toBe('data-messenger')
-  })
-  test('explore queries opens on "see more" click', () => {
-    const firstOption = findByTestAttr(topicsMessage, 'options-item-0-0')
-    firstOption.simulate('click')
-    messengerComponent.update()
-    const seeMoreButton = findByTestAttr(messengerComponent, 'see-more-option')
-    seeMoreButton.simulate('click')
-    messengerComponent.update()
-    expect(messengerComponent.state(['activePage'])).toBe('explore-queries')
-  })
-  test('explore queries input populates automatically on "see more" click', () => {
-    expect(exploreQueriesInstance.animateQITextAndSubmit).toHaveBeenCalledWith('Order Flow')
-  })
-})
