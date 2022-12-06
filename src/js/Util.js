@@ -43,6 +43,7 @@ export const formatDateStringType = (element, column = {}, config = {}) => {
   if (config.timestampFormat === TIMESTAMP_FORMATS.iso8601 && column.precision) {
     return formatStringDateWithPrecision(element, column, config)
   }
+
   return formatStringDate(element, config)
 }
 
@@ -52,7 +53,7 @@ export const formatISODateWithPrecision = (value, col = {}, config = {}) => {
   }
 
   const dayMonthYearFormat = config.dayMonthYearFormat || dataFormattingDefault.dayMonthYearFormat
-  const dateDayJS = dayjs(value)
+  const dateDayJS = dayjs(value).utc()
   let date = dateDayJS.format(dayMonthYearFormat)
 
   try {
@@ -117,20 +118,21 @@ export const formatEpochDate = (value, col = {}, config = {}) => {
 
     // Use title to determine significant digits of date format
     const title = col.title
-    let date = dayjs.unix(value).utc().format(dayMonthYear)
+    const dayJSObj = dayjs.unix(value).utc()
+    let date = dayJSObj.format(dayMonthYear)
 
     if (isNaN(Number(value))) {
       // Not an epoch time. Try converting using dayjs
       if (title && title.toLowerCase().includes('year')) {
-        date = dayjs(value).format(year)
+        date = dayJSObj.format(year)
       } else if (title && title.toLowerCase().includes('month')) {
-        date = dayjs(value).format(monthYear)
+        date = dayJSObj.format(monthYear)
       }
-      date = dayjs(value).format(dayMonthYear)
+      date = dayJSObj.format(dayMonthYear)
     } else if (title && title.toLowerCase().includes('year')) {
-      date = dayjs.unix(value).utc().format(year)
+      date = dayJSObj.format(year)
     } else if (title && title.toLowerCase().includes('month')) {
-      date = dayjs.unix(value).utc().format(monthYear)
+      date = dayJSObj.format(monthYear)
     }
 
     if (isDayJSDateValid(date)) {
@@ -159,13 +161,17 @@ export const formatStringDateWithPrecision = (value, col, config = {}) => {
         break
       }
       case 'HOUR': {
-        const dayjsTime = dayjs(value, 'THH:mm:ss.SSSZ')
+        const dayjsTime = dayjs(value, 'THH:mm:ss.SSSZ').utc()
         formattedValue = dayjsTime.format('h:00A')
         break
       }
       case 'MINUTE': {
-        const dayjsTime = dayjs(value, 'THH:mm:ss.SSSZ')
+        const dayjsTime = dayjs(value, 'THH:mm:ss.SSSZ').utc()
         formattedValue = dayjsTime.format('h:mmA')
+        break
+      }
+      case 'MONTH': {
+        formattedValue = value
         break
       }
       default: {
@@ -201,14 +207,15 @@ export const formatStringDate = (value, config) => {
     const { monthYearFormat, dayMonthYearFormat } = config
     const monthYear = monthYearFormat || dataFormattingDefault.monthYearFormat
     const dayMonthYear = dayMonthYearFormat || dataFormattingDefault.dayMonthYearFormat
+    const dayJSObj = dayjs(value).utc()
 
     if (day) {
-      const date = dayjs(value).format(dayMonthYear)
+      const date = dayJSObj.format(dayMonthYear)
       if (isDayJSDateValid(date)) {
         return date
       }
     } else if (month) {
-      const date = dayjs(value).format(monthYear)
+      const date = dayJSObj.format(monthYear)
       if (isDayJSDateValid(date)) {
         return date
       }
@@ -308,6 +315,14 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
   }
 
   return { fullWidthLabel, formattedLabel, isTruncated }
+}
+
+export const getDayJSObj = ({ value, column, config }) => {
+  if (config.timestampFormat === TIMESTAMP_FORMATS.iso8601 && column.precision) {
+    return dayjs(value).utc()
+  }
+
+  return dayjs.unix(value).utc()
 }
 
 export const formatElement = ({ element, column, config = {}, htmlElement }) => {

@@ -43,6 +43,7 @@ import {
   areAllColumnsHidden,
   sortDataByDate,
   dateSortFn,
+  getDayJSObj,
 } from '../../js/Util.js'
 
 import {
@@ -795,7 +796,7 @@ export class QueryOutput extends React.Component {
       formattedValue = 'NULL'
       operator = 'is'
     } else if (column.type === 'DATE') {
-      const isoDate = dayjs.unix(value).utc()
+      const isoDate = getDayJSObj({ value, column, config: this.props.dataFormatting })
       const isoDateStart = isoDate.startOf('day').toISOString()
       const isoDateEnd = isoDate.endOf('day').toISOString()
 
@@ -1161,7 +1162,7 @@ export class QueryOutput extends React.Component {
             return false
           }
 
-          const rowValueDayJS = isISO8601 ? dayjs.utc(rowValue) : dayjs.unix(rowValue).utc()
+          const rowValueDayJS = getDayJSObj({ value: rowValue, column: col, config: this.props.dataFormatting })
 
           const dates = headerValue.split(' to ')
           const startDate = dayjs.utc(dates[0]).utc()
@@ -1342,7 +1343,12 @@ export class QueryOutput extends React.Component {
   formatDatePivotYear = (data, dateColumnIndex) => {
     const columns = this.getColumns()
     if (columns[dateColumnIndex].type === 'DATE') {
-      return dayjs.unix(data[dateColumnIndex]).utc().format('YYYY')
+      const dayJSObj = getDayJSObj({
+        value: data[dateColumnIndex],
+        column: columns[dateColumnIndex],
+        config: this.props.dataFormatting,
+      })
+      return dayJSObj.year().toString()
     }
     return dayjs(data[dateColumnIndex]).format('YYYY')
   }
@@ -1350,7 +1356,12 @@ export class QueryOutput extends React.Component {
   formatDatePivotMonth = (data, dateColumnIndex) => {
     const columns = this.getColumns()
     if (columns[dateColumnIndex].type === 'DATE') {
-      return dayjs.unix(data[dateColumnIndex]).format('MMMM')
+      const dayJSObj = getDayJSObj({
+        value: data[dateColumnIndex],
+        column: columns[dateColumnIndex],
+        config: this.props.dataFormatting,
+      })
+      return dayJSObj.format('MMMM')
     }
     return dayjs(data[dateColumnIndex]).format('MMMM')
   }
@@ -1367,7 +1378,12 @@ export class QueryOutput extends React.Component {
 
       const allYears = tableData.map((d) => {
         if (columns[dateColumnIndex].type === 'DATE') {
-          return Number(dayjs.unix(d[dateColumnIndex]).utc().format('YYYY'))
+          const dayJSObj = getDayJSObj({
+            value: d[dateColumnIndex],
+            column: columns[dateColumnIndex],
+            config: this.props.dataFormatting,
+          })
+          return dayJSObj.year()
         }
         return Number(dayjs(d[dateColumnIndex]).format('YYYY'))
       })
@@ -1380,24 +1396,35 @@ export class QueryOutput extends React.Component {
           return map
         }, {})
 
+      const pivotMonthColumn = {
+        ...columns[dateColumnIndex],
+        title: 'Month',
+        name: 'Month',
+        field: '0',
+        frozen: true,
+        visible: true,
+        is_visible: true,
+        type: 'DATE_STRING',
+        datePivot: true,
+        origColumn: columns[dateColumnIndex],
+        pivot: true,
+        cssClass: 'pivot-category',
+        sorter: dateSortFn,
+        headerFilter: false,
+        headerFilterPlaceholder: 'filter...',
+      }
+
       // Generate new column array
       const pivotTableColumns = [
         {
-          ...columns[dateColumnIndex],
-          title: 'Month',
-          name: 'Month',
-          field: '0',
-          frozen: true,
-          visible: true,
-          is_visible: true,
-          type: 'DATE_STRING',
-          datePivot: true,
-          origColumn: columns[dateColumnIndex],
-          pivot: true,
-          cssClass: 'pivot-category',
-          sorter: dateSortFn,
-          headerFilter: false,
-          headerFilterPlaceholder: 'filter...',
+          ...pivotMonthColumn,
+          formatter: (cell) =>
+            formatElement({
+              element: cell.getValue(),
+              column: pivotMonthColumn,
+              config: getDataFormatting(this.props.dataFormatting),
+              htmlElement: cell.getElement(),
+            }),
         },
       ]
 
@@ -1441,7 +1468,7 @@ export class QueryOutput extends React.Component {
           }
           pivotTableColumns[pivotColumnIndex].origValues[month] = {
             name: columns[dateColumnIndex]?.name,
-            value: row[dateColumnIndex],
+            value: row[dateColumnIndex] || '',
           }
         }
       })
