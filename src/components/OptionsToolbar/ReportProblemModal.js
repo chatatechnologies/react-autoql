@@ -26,10 +26,17 @@ export default class ReportProblemModal extends React.Component {
 
   state = {
     reportProblemMessage: undefined,
+    problemType: undefined,
   }
 
   componentDidMount = () => {
     this._isMounted = true
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (!this.props.isVisible && prevProps.isVisible) {
+      this.setState({ problemType: undefined, reportProblemMessage: undefined })
+    }
   }
 
   componentWillUnmount = () => {
