@@ -104,6 +104,10 @@ export const runQueryNewPage = ({ queryId, domain, apiKey, token, page, cancelTo
     return Promise.reject({ error: 'Unauthenticated' })
   }
 
+  const data = {
+    v2_dates: 1,
+  }
+
   const config = {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -112,7 +116,7 @@ export const runQueryNewPage = ({ queryId, domain, apiKey, token, page, cancelTo
   }
 
   return axios
-    .post(url, {}, config)
+    .post(url, data, config)
     .then((response) => {
       if (response.data && typeof response.data === 'string') {
         throw new Error('Parse error')
@@ -330,6 +334,7 @@ export const runDrilldown = ({
     orders,
     test,
     page_size: pageSize,
+    v2_dates: 1,
   }
 
   const config = {
