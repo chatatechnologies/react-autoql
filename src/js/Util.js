@@ -118,7 +118,14 @@ export const formatEpochDate = (value, col = {}, config = {}) => {
 
     // Use title to determine significant digits of date format
     const title = col.title
-    const dayJSObj = dayjs.unix(value).utc()
+
+    let dayJSObj
+    if (Number.isNaN(Number(value))) {
+      dayJSObj = dayjs(value).utc()
+    } else {
+      dayJSObj = dayjs.unix(value).utc()
+    }
+
     let date = dayJSObj.format(dayMonthYear)
 
     if (isNaN(Number(value))) {
