@@ -254,7 +254,9 @@ export default class MonthRangePicker extends React.Component {
                 const { isSelected, isSelectedStart, isSelectedEnd } = this.isSelected(timestamp)
                 const { isPreview, isPreviewStart, isPreviewEnd } = this.isPreview(timestamp)
                 const isDisabled = this.isDisabled(timestamp)
-                const isThisMonth = month === dayjs().month()
+                const isThisMonth = month === dayjs().month() && this.state.visibleYear == dayjs().year()
+
+                console.log({ year: dayjs().year(), visibleYear: this.state.visibleYear })
 
                 return (
                   <div
