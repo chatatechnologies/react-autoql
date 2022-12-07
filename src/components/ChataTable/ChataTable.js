@@ -441,6 +441,7 @@ export default class ChataTable extends React.Component {
         if (inputElement) {
           inputElement.addEventListener('search', (e) => {
             // When "x" button is clicked in the input box
+            this.currentDateRangeSelections = {}
             this.debounceSetState({
               datePickerColumn: undefined,
             })
