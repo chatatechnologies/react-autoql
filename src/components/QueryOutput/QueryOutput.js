@@ -60,7 +60,7 @@ import { sendSuggestion, runDrilldown, runQueryOnly } from '../../js/queryServic
 import { MONTH_NAMES } from '../../js/Constants'
 import { ReverseTranslation } from '../ReverseTranslation'
 import { getChartColorVars } from '../../theme/configureTheme'
-import { getColumnDateRanges, getPrecisionForDayJS } from '../../js/dateUtils'
+import { getColumnDateRanges, getFilterPrecision, getPrecisionForDayJS } from '../../js/dateUtils'
 import { withTheme } from '../../theme'
 
 import './QueryOutput.scss'
@@ -1165,14 +1165,9 @@ export class QueryOutput extends React.Component {
           const rowValueDayJS = getDayJSObj({ value: rowValue, column: col, config: this.props.dataFormatting })
 
           const dates = headerValue.split(' to ')
-          const precision = getPrecisionForDayJS(col.precision)
+          const precision = getPrecisionForDayJS(getFilterPrecision(col.precision))
           const startDate = dayjs.utc(dates[0]).startOf(precision)
-          let endDate = startDate
-          if (dates[1]) {
-            endDate = dayjs.utc(dates[1]).endOf(precision)
-          }
-
-          console.log({ startDate, endDate })
+          const endDate = dayjs.utc(dates[1] ?? dates[0]).endOf(precision)
 
           const isAfterStartDate = startDate.isSameOrBefore(rowValueDayJS)
           const isBeforeEndDate = rowValueDayJS.isSameOrBefore(endDate)
