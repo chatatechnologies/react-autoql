@@ -292,7 +292,7 @@ export default class ChatMessage extends React.Component {
           popoverParentElement={this.props.popoverParentElement}
           reportProblemCallback={() => {
             if (this.optionsToolbarRef?._isMounted) {
-              this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
+              this.optionsToolbarRef?.openReportProblemModal()
             }
           }}
         />

@@ -546,8 +546,6 @@ export default class ChataTable extends React.Component {
     )
 
     if (inputElement) {
-      // this.ref?.table?.updateColumnDefinition(this.state.datePickerColumn.field, { minWidth: '230px' })
-
       const formattedStartDate = formatElement({
         element: startDate.toISOString(),
         column: this.state.datePickerColumn,
