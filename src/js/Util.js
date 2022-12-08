@@ -2,7 +2,15 @@ import _get from 'lodash.get'
 import _filter from 'lodash.filter'
 import dayjs from './dayjsWithPlugins'
 
-import { CHART_TYPES, TABLE_TYPES, WEEKDAY_NAMES, MONTH_NAMES, SEASON_NAMES, TIMESTAMP_FORMATS } from './Constants'
+import {
+  CHART_TYPES,
+  TABLE_TYPES,
+  WEEKDAY_NAMES,
+  MONTH_NAMES,
+  SEASON_NAMES,
+  TIMESTAMP_FORMATS,
+  PRECISION_TYPES,
+} from './Constants'
 import { dataFormattingDefault } from '../props/defaults'
 
 import {
@@ -31,9 +39,9 @@ export const isDayJSDateValid = (date) => {
   return date !== 'Invalid Date'
 }
 
-export const formatDateType = (element, column = {}, config = {}) => {
+export const formatDateType = (element, column = {}, config = {}, precision) => {
   if (config.timestampFormat === TIMESTAMP_FORMATS.iso8601 && column.precision) {
-    return formatISODateWithPrecision(element, column, config)
+    return formatISODateWithPrecision(element, column, config, precision)
   }
 
   return formatEpochDate(element, column, config)
@@ -47,22 +55,23 @@ export const formatDateStringType = (element, column = {}, config = {}) => {
   return formatStringDate(element, config)
 }
 
-export const formatISODateWithPrecision = (value, col = {}, config = {}) => {
+export const formatISODateWithPrecision = (value, col = {}, config = {}, customPrecision) => {
   if (!value) {
     return undefined
   }
 
+  const precision = customPrecision ?? col.precision
   const dayMonthYearFormat = config.dayMonthYearFormat || dataFormattingDefault.dayMonthYearFormat
   const dateDayJS = dayjs(value).utc()
   let date = dateDayJS.format(dayMonthYearFormat)
 
   try {
-    switch (col.precision) {
-      case 'DAY': {
+    switch (precision) {
+      case PRECISION_TYPES.DAY: {
         // default
         break
       }
-      case 'WEEK': {
+      case PRECISION_TYPES.WEEK: {
         const dateJSStart = dateDayJS.startOf('week').format('MMM D')
         const dateJSEnd = dateDayJS.endOf('week').format('MMM D')
         const week = dateDayJS.week()
@@ -70,26 +79,26 @@ export const formatISODateWithPrecision = (value, col = {}, config = {}) => {
         date = `${dateJSStart} - ${dateJSEnd}, ${year} (Week ${week})`
         break
       }
-      case 'MONTH': {
+      case PRECISION_TYPES.MONTH: {
         const monthYearFormat = config.monthYearFormat || dataFormattingDefault.monthYearFormat
         date = dateDayJS.format(monthYearFormat)
         break
       }
-      case 'QUARTER': {
+      case PRECISION_TYPES.QUARTER: {
         const quarter = dateDayJS.quarter()
         const year = dateDayJS.format('YYYY')
         date = `${year}-Q${quarter}`
         break
       }
-      case 'YEAR': {
+      case PRECISION_TYPES.YEAR: {
         date = dateDayJS.format('YYYY')
         break
       }
-      case 'DATE_HOUR': {
+      case PRECISION_TYPES.DATE_HOUR: {
         date = dateDayJS.format(`${dayMonthYearFormat} h:00A`)
         break
       }
-      case 'DATE_MINUTE': {
+      case PRECISION_TYPES.DATE_MINUTE: {
         date = dateDayJS.format(`${dayMonthYearFormat} h:mmA`)
         break
       }
@@ -332,7 +341,7 @@ export const getDayJSObj = ({ value, column, config }) => {
   return dayjs.unix(value).utc()
 }
 
-export const formatElement = ({ element, column, config = {}, htmlElement }) => {
+export const formatElement = ({ element, column, config = {}, htmlElement, precision }) => {
   try {
     let formattedElement = element
     const { currencyCode, languageCode, currencyDecimals, quantityDecimals } = config
@@ -383,7 +392,7 @@ export const formatElement = ({ element, column, config = {}, htmlElement }) => 
           break
         }
         case 'DATE': {
-          formattedElement = formatDateType(element, column, config)
+          formattedElement = formatDateType(element, column, config, precision)
           break
         }
         case 'DATE_STRING': {

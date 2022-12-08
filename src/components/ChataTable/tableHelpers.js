@@ -1,4 +1,5 @@
 import { isColumnNumberType } from '../QueryOutput/columnHelpers'
+import { getPrecisionForDayJS } from '../../js/dateUtils'
 import dayjs from '../../js/dayjsWithPlugins'
 
 export const formatTableParams = (params, tableRef) => {
@@ -53,35 +54,6 @@ export const formatNumberFilterValue = (headerValue = '') => {
   }
 
   return { value: strNumber, operator }
-}
-
-const getPrecisionForDayJS = (colPrecision) => {
-  switch (colPrecision) {
-    case 'DAY': {
-      return 'day'
-    }
-    case 'MONTH': {
-      return 'month'
-    }
-    case 'YEAR': {
-      return 'year'
-    }
-    case 'WEEK': {
-      return 'week'
-    }
-    case 'QUARTER': {
-      return 'quarter'
-    }
-    case 'HOUR' || 'DATE_HOUR': {
-      return 'hour'
-    }
-    case 'MINUTE' || 'DATE_MINUTE': {
-      return 'minute'
-    }
-    default: {
-      return 'day'
-    }
-  }
 }
 
 export const formatFiltersForAPI = (params, tableRef) => {

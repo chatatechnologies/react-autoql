@@ -34,7 +34,7 @@ export default class DatePicker extends React.Component {
   static defaultProps = {
     initialRange: undefined,
     validRange: undefined,
-    type: PRECISION_TYPES.day,
+    type: PRECISION_TYPES.DAY,
   }
 
   handleSelect = (ranges) => {
@@ -48,7 +48,7 @@ export default class DatePicker extends React.Component {
 
   renderDatePicker = () => {
     switch (this.props.type) {
-      case PRECISION_TYPES.month || PRECISION_TYPES.quarter: {
+      case PRECISION_TYPES.MONTH || PRECISION_TYPES.QUARTER: {
         return (
           <MonthRange
             onRangeSelection={(selection) => this.props.onSelection(selection)}
@@ -58,7 +58,7 @@ export default class DatePicker extends React.Component {
           />
         )
       }
-      case PRECISION_TYPES.year: {
+      case PRECISION_TYPES.YEAR: {
         return (
           <YearRange
             onRangeSelection={(selection) => this.props.onSelection(selection)}

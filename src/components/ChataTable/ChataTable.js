@@ -6,6 +6,7 @@ import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import { Popover } from 'react-tiny-popover'
+import dayjs from '../../js/dayjsWithPlugins'
 
 import TableWrapper from './TableWrapper'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -15,8 +16,9 @@ import { formatTableParams } from './tableHelpers'
 import { Spinner } from '../Spinner'
 import { runQueryNewPage } from '../../js/queryService'
 import { DatePicker } from '../DatePicker'
-
-import { currentEventLoopEnd, formatElement } from '../../js/Util'
+import { getFilterPrecision } from '../../js/dateUtils'
+import { DAYJS_PRECISION_FORMATS } from '../../js/Constants'
+import { currentEventLoopEnd } from '../../js/Util'
 
 import 'react-tabulator/lib/styles.css' // default theme
 import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
@@ -535,28 +537,28 @@ export default class ChataTable extends React.Component {
   }
 
   onDateRangeSelection = (dateRangeSelection) => {
+    const column = this.state.datePickerColumn
     const { startDate, endDate } = dateRangeSelection
 
-    if (!startDate || !endDate) {
+    if (!startDate || !endDate || !column) {
       return
     }
 
     const inputElement = document.querySelector(
-      `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${this.state.datePickerColumn.field}"] .tabulator-col-content input`,
+      `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${column.field}"] .tabulator-col-content input`,
     )
 
     if (inputElement) {
-      const formattedStartDate = formatElement({
-        element: startDate.toISOString(),
-        column: this.state.datePickerColumn,
-        config: getDataFormatting(this.props.dataFormatting),
-      })
+      const filterPrecision = getFilterPrecision(column)
+      const dayJSFormatStr = DAYJS_PRECISION_FORMATS[filterPrecision]
 
-      const formattedEndDate = formatElement({
-        element: endDate.toISOString(),
-        column: this.state.datePickerColumn,
-        config: getDataFormatting(this.props.dataFormatting),
-      })
+      const startDateStr = dayjs(startDate).format(dayJSFormatStr)
+      const startDateUTC = dayjs.utc(startDateStr).toISOString()
+      const formattedStartDate = dayjs(startDateUTC).format(dayJSFormatStr)
+
+      const endDateStr = dayjs(endDate).format(dayJSFormatStr)
+      const endDateUTC = dayjs.utc(endDateStr).toISOString()
+      const formattedEndDate = dayjs(endDateUTC).format(dayJSFormatStr)
 
       let filterInputText = `${formattedStartDate} to ${formattedEndDate}`
       if (formattedStartDate === formattedEndDate) {
@@ -567,7 +569,7 @@ export default class ChataTable extends React.Component {
       inputElement.value = filterInputText
       inputElement.blur()
       this.currentDateRangeSelections = {
-        [this.state.datePickerColumn.field]: dateRangeSelection,
+        [column.field]: dateRangeSelection,
       }
 
       this.setState({ datePickerColumn: undefined })

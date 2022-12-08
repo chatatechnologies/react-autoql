@@ -60,7 +60,7 @@ import { sendSuggestion, runDrilldown, runQueryOnly } from '../../js/queryServic
 import { MONTH_NAMES } from '../../js/Constants'
 import { ReverseTranslation } from '../ReverseTranslation'
 import { getChartColorVars } from '../../theme/configureTheme'
-import { getColumnDateRanges } from '../../js/dateUtils'
+import { getColumnDateRanges, getPrecisionForDayJS } from '../../js/dateUtils'
 import { withTheme } from '../../theme'
 
 import './QueryOutput.scss'
@@ -797,8 +797,9 @@ export class QueryOutput extends React.Component {
       operator = 'is'
     } else if (column.type === 'DATE') {
       const isoDate = getDayJSObj({ value, column, config: this.props.dataFormatting })
-      const isoDateStart = isoDate.startOf('day').toISOString()
-      const isoDateEnd = isoDate.endOf('day').toISOString()
+      const precision = getPrecisionForDayJS(column.precision)
+      const isoDateStart = isoDate.startOf(precision).toISOString()
+      const isoDateEnd = isoDate.endOf(precision).toISOString()
 
       formattedValue = `${isoDateStart},${isoDateEnd}`
       operator = 'between'
@@ -1155,7 +1156,6 @@ export class QueryOutput extends React.Component {
   setFilterFunction = (col) => {
     const self = this
     if (col.type === 'DATE') {
-      const isISO8601 = !!col.precision
       return (headerValue, rowValue, rowData, filterParams) => {
         try {
           if (!rowValue) {
@@ -1165,14 +1165,17 @@ export class QueryOutput extends React.Component {
           const rowValueDayJS = getDayJSObj({ value: rowValue, column: col, config: this.props.dataFormatting })
 
           const dates = headerValue.split(' to ')
-          const startDate = dayjs.utc(dates[0]).utc()
-          const endDate = dayjs
-            .utc(dates[1] ?? dates[0])
-            .utc()
-            .endOf('day')
+          const precision = getPrecisionForDayJS(col.precision)
+          const startDate = dayjs.utc(dates[0]).startOf(precision)
+          let endDate = startDate
+          if (dates[1]) {
+            endDate = dayjs.utc(dates[1]).endOf(precision)
+          }
 
-          const isAfterStartDate = rowValueDayJS.isAfter(startDate)
-          const isBeforeEndDate = rowValueDayJS.isBefore(endDate)
+          console.log({ startDate, endDate })
+
+          const isAfterStartDate = startDate.isSameOrBefore(rowValueDayJS)
+          const isBeforeEndDate = rowValueDayJS.isSameOrBefore(endDate)
 
           return isAfterStartDate && isBeforeEndDate
         } catch (error) {
@@ -1327,7 +1330,7 @@ export class QueryOutput extends React.Component {
 
       // Check if a date range is available
       const dateRange = this.columnDateRanges.find((rangeObj) => {
-        return newCol.type === 'DATE' && rangeObj.columnName === newCol.display_name
+        return newCol.type === 'DATE' && (rangeObj.columnName === newCol.display_name || !!newCol.groupable)
       })
 
       if (dateRange) {

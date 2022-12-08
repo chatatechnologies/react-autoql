@@ -44,13 +44,21 @@ export const TIMESTAMP_FORMATS = {
 }
 
 export const PRECISION_TYPES = {
-  day: 'DAY',
-  month: 'MONTH',
-  year: 'YEAR',
-  week: 'WEEK',
-  quarter: 'QUARTER',
-  dateHour: 'DATE_HOUR',
-  dateMinute: 'DATE_MINUTE',
-  hour: 'HOUR',
-  minute: 'MINUTE',
+  DAY: 'DAY',
+  MONTH: 'MONTH',
+  YEAR: 'YEAR',
+  WEEK: 'WEEK',
+  QUARTER: 'QUARTER',
+  DATE_HOUR: 'DATE_HOUR',
+  DATE_MINUTE: 'DATE_MINUTE',
+  HOUR: 'HOUR',
+  MINUTE: 'MINUTE',
+}
+
+export const DAYJS_PRECISION_FORMATS = {
+  DAY: 'll',
+  MONTH: 'MMMM YYYY',
+  YEAR: 'YYYY',
+  DATE_HOUR: 'll h:00A',
+  DATE_MINUTE: 'll h:mmA',
 }
