@@ -332,32 +332,6 @@ export default class OptionsToolbar extends React.Component {
     }
   }
 
-  renderReportProblemMenu = () => {
-    return (
-      <div className='report-problem-menu'>
-        <ul className='context-menu-list'>
-          <li
-            onClick={() => {
-              this.setState({ activeMenu: undefined })
-              this.reportQueryProblem('The data is incorrect')
-            }}
-          >
-            The data is incorrect
-          </li>
-          <li
-            onClick={() => {
-              this.setState({ activeMenu: undefined })
-              this.reportQueryProblem('The data is incomplete')
-            }}
-          >
-            The data is incomplete
-          </li>
-          <li onClick={() => this.setState({ activeMenu: 'report-problem' })}>Other...</li>
-        </ul>
-      </div>
-    )
-  }
-
   refreshData = () => {
     // todo: Refresh data inside QueryOutput
     return
@@ -461,6 +435,10 @@ export default class OptionsToolbar extends React.Component {
     }
   }
 
+  openReportProblemModal = () => {
+    this.setState({ activeMenu: 'report-problem' })
+  }
+
   renderSQLModal = () => {
     const sql = this.props.responseRef?.queryResponse?.data?.data?.sql?.[0]
     if (!sql) {
@@ -532,9 +510,7 @@ export default class OptionsToolbar extends React.Component {
           )}
           {shouldShowButton.showReportProblemButton && (
             <button
-              onClick={() => {
-                this.setState({ activeMenu: 'report-problem' })
-              }}
+              onClick={this.openReportProblemModal}
               className={this.getMenuItemClass(shouldShowButton.showReportProblemButton)}
               data-tip='Report a problem'
               data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
