@@ -111,7 +111,7 @@ export default class MonthRangePicker extends React.Component {
       }
 
       const selectedStartMonthStart = rangeSelection[0].startOf('month')
-      const selectedEndMonthEnd = rangeSelection[0].endOf('month')
+      const selectedEndMonthEnd = rangeSelection[1].endOf('month')
 
       this.setState({ selectedStart: selectedStartMonthStart, selectedEnd: selectedEndMonthEnd })
 

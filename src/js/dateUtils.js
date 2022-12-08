@@ -1,3 +1,4 @@
+import { PRECISION_TYPES } from './Constants'
 import dayjs from './dayjsWithPlugins'
 
 const isISODate = (str) => {
@@ -51,6 +52,44 @@ const getColumnNameForDateRange = (chunkEng) => {
   } catch (error) {
     console.error(error)
     return null
+  }
+}
+
+export const getFilterPrecision = (col = {}) => {
+  const { precision } = col
+  if (precision === PRECISION_TYPES.MONTH || precision === PRECISION_TYPES.YEAR) {
+    return precision
+  }
+
+  return PRECISION_TYPES.DAY
+}
+
+export const getPrecisionForDayJS = (colPrecision) => {
+  switch (colPrecision) {
+    case PRECISION_TYPES.DAY: {
+      return 'day'
+    }
+    case PRECISION_TYPES.MONTH: {
+      return 'month'
+    }
+    case PRECISION_TYPES.YEAR: {
+      return 'year'
+    }
+    case PRECISION_TYPES.WEEK: {
+      return 'week'
+    }
+    case PRECISION_TYPES.QUARTER: {
+      return 'quarter'
+    }
+    case PRECISION_TYPES.HOUR || PRECISION_TYPES.DATE_HOUR: {
+      return 'hour'
+    }
+    case PRECISION_TYPES.MINUTE || PRECISION_TYPES.DATE_MINUTE: {
+      return 'minute'
+    }
+    default: {
+      return 'day'
+    }
   }
 }
 
