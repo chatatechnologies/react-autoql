@@ -10,7 +10,6 @@ import _isEmpty from 'lodash.isempty'
 import _isEqual from 'lodash.isequal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { ChatContent } from '../ChatContent'
-import TopicsCascader from './TopicsCascader'
 import { withTheme } from '../../theme'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
@@ -26,7 +25,6 @@ import { DataExplorer } from '../DataExplorer'
 import { DataAlertModal } from '../Notifications/DataAlertModal'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
-import { fetchTopics } from '../../js/queryService'
 import { FilterLockPopover } from '../FilterLockPopover'
 
 // Styles
@@ -46,9 +44,20 @@ export class DataMessenger extends React.Component {
     this.DEFAULT_AJAX_PAGE_SIZE = 50
 
     this.dataMessengerIntroMessages = [
-      props.introMessage
-        ? `${props.introMessage}`
-        : `Hi ${props.userDisplayName || 'there'}! Let’s dive into your data. What can I help you discover today?`,
+      props.introMessage ? (
+        `${props.introMessage}`
+      ) : (
+        <>
+          <span>Hi {props.userDisplayName || 'there'}! Let’s dive into your data.</span>
+          <br />
+          <br />
+          <span>Get started by asking a query below, or use </span>
+          <span className='intro-qi-link' onClick={this.openDataExplorer}>
+            <Icon type='data-search' style={{ marginRight: '-3px' }} /> {lang.dataExplorer}
+          </span>
+          <span> to discover what data is available to you!</span>
+        </>
+      ),
     ]
 
     this.dprMessengerIntroMessages = [
@@ -181,12 +190,7 @@ export class DataMessenger extends React.Component {
   componentDidMount = () => {
     this._isMounted = true
     try {
-      document.addEventListener('visibilitychange', this.onWindowResize)
       window.addEventListener('resize', this.onWindowResize)
-
-      if (this.props.enableQueryQuickStartTopics) {
-        this.setQueryTopics()
-      }
     } catch (error) {
       console.error(error)
       this.setState({ hasError: true })
@@ -244,38 +248,11 @@ export class DataMessenger extends React.Component {
     try {
       this._isMounted = false
       window.removeEventListener('resize', this.onWindowResize)
-      document.removeEventListener('visibilitychange', this.onWindowResize)
 
       clearTimeout(this.windowResizeTimer)
       clearTimeout(this.executeQueryTimeout)
       clearTimeout(this.rebuildTooltipsTimer)
     } catch (error) {}
-  }
-
-  setQueryTopics = () => {
-    fetchTopics(this.props.authentication)
-      .then((response) => {
-        if (this.dataMessengerContentRef?._isMounted && !!response?.data?.data?.topics?.length) {
-          const topicsContent = (
-            <TopicsCascader
-              topics={response.data.data.topics}
-              enableExploreQueriesTab={this.props.enableExploreQueriesTab}
-              enableDataExplorerTab={this.props.enableDataExplorerTab}
-              onTopicClick={this.onTopicClick}
-              onExploreQueriesClick={this.openExploreQueries}
-              onDataExplorerClick={this.openDataExplorer}
-            />
-          )
-
-          this.dataMessengerIntroMessages.push(topicsContent)
-          if (this.dataMessengerContentRef?._isMounted) {
-            this.dataMessengerContentRef?.addIntroMessage(topicsContent)
-          }
-        }
-      })
-      .catch((error) => {
-        console.error(error)
-      })
   }
 
   rebuildTooltips = (delay = 500) => {

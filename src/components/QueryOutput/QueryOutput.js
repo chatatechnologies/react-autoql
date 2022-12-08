@@ -26,9 +26,8 @@ import { ChataChart } from '../Charts/ChataChart'
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { Icon } from '../Icon'
 
-import { responseErrors } from '../../js/errorMessages'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import errorMessages from '../../js/errorMessages'
+import errorMessages, { responseErrors } from '../../js/errorMessages'
 
 import {
   onlyUnique,
@@ -44,6 +43,7 @@ import {
   areAllColumnsHidden,
   sortDataByDate,
   dateSortFn,
+  getDayJSObj,
 } from '../../js/Util.js'
 
 import {
@@ -57,11 +57,10 @@ import {
 } from './columnHelpers.js'
 
 import { sendSuggestion, runDrilldown, runQueryOnly } from '../../js/queryService'
-
-import './QueryOutput.scss'
 import { MONTH_NAMES } from '../../js/Constants'
 import { ReverseTranslation } from '../ReverseTranslation'
 import { getChartColorVars } from '../../theme/configureTheme'
+import { getColumnDateRanges } from '../../js/dateUtils'
 import { withTheme } from '../../theme'
 
 import './QueryOutput.scss'
@@ -87,6 +86,7 @@ export class QueryOutput extends React.Component {
     this.QUERY_VALIDATION_KEY = uuid()
 
     this.queryResponse = _cloneDeep(props.queryResponse)
+    this.columnDateRanges = getColumnDateRanges(props.queryResponse)
     this.queryID = _get(this.queryResponse, 'data.data.query_id')
     this.interpretation = _get(this.queryResponse, 'data.data.parsed_interpretation')
     this.tableParams = {}
@@ -686,6 +686,7 @@ export class QueryOutput extends React.Component {
         source: queryRequestData?.source,
         debug: queryRequestData?.translation === 'include',
         filters: queryRequestData?.session_filter_locks,
+        pageSize: queryRequestData?.page_size,
         test: queryRequestData?.test,
         groupBys: queryRequestData?.columns,
         queryID: this.props.originalQueryID,
@@ -740,6 +741,7 @@ export class QueryOutput extends React.Component {
             const response = await runDrilldown({
               ...getAuthentication(this.props.authentication),
               ...getAutoQLConfig(this.props.autoQLConfig),
+              pageSize: this.props.dataPageSize,
               queryID: this.queryID,
               groupBys,
               pageSize: 50,
@@ -794,7 +796,7 @@ export class QueryOutput extends React.Component {
       formattedValue = 'NULL'
       operator = 'is'
     } else if (column.type === 'DATE') {
-      const isoDate = dayjs.unix(value).utc()
+      const isoDate = getDayJSObj({ value, column, config: this.props.dataFormatting })
       const isoDateStart = isoDate.startOf('day').toISOString()
       const isoDateEnd = isoDate.endOf('day').toISOString()
 
@@ -1152,9 +1154,40 @@ export class QueryOutput extends React.Component {
 
   setFilterFunction = (col) => {
     const self = this
-    if (col.type === 'DATE' || col.type === 'DATE_STRING') {
+    if (col.type === 'DATE') {
+      const isISO8601 = !!col.precision
       return (headerValue, rowValue, rowData, filterParams) => {
         try {
+          if (!rowValue) {
+            return false
+          }
+
+          const rowValueDayJS = getDayJSObj({ value: rowValue, column: col, config: this.props.dataFormatting })
+
+          const dates = headerValue.split(' to ')
+          const startDate = dayjs.utc(dates[0]).utc()
+          const endDate = dayjs
+            .utc(dates[1] ?? dates[0])
+            .utc()
+            .endOf('day')
+
+          const isAfterStartDate = rowValueDayJS.isAfter(startDate)
+          const isBeforeEndDate = rowValueDayJS.isBefore(endDate)
+
+          return isAfterStartDate && isBeforeEndDate
+        } catch (error) {
+          console.error(error)
+          this.props.onErrorCallback(error)
+          return false
+        }
+      }
+    } else if (col.type === 'DATE_STRING') {
+      return (headerValue, rowValue, rowData, filterParams) => {
+        try {
+          if (!rowValue) {
+            return false
+          }
+
           const formattedElement = formatElement({
             element: rowValue,
             column: col,
@@ -1173,6 +1206,10 @@ export class QueryOutput extends React.Component {
     } else if (col.type === 'DOLLAR_AMT' || col.type === 'QUANTITY' || col.type === 'PERCENT' || col.type === 'RATIO') {
       return (headerValue, rowValue, rowData, filterParams) => {
         try {
+          if (!rowValue) {
+            return false
+          }
+
           const trimmedValue = headerValue.trim()
           if (trimmedValue.length >= 2) {
             const number = Number(trimmedValue.substr(1).replace(/[^0-9.]/g, ''))
@@ -1191,9 +1228,10 @@ export class QueryOutput extends React.Component {
             }
           }
 
-          // No logical operators detected, just compare strings
-          const strippedHeader = headerValue.replace(/[^0-9.]/g, '')
-          return rowValue.toString().includes(strippedHeader)
+          // No logical operators detected, just compare numbers
+          const number = parseFloat(rowValue?.replace(/[^0-9.]/g, ''))
+          const filterNumber = parseFloat(headerValue?.replace(/[^0-9.]/g, ''))
+          return !isNaN(number) && number === filterNumber
         } catch (error) {
           console.error(error)
           this.props.onErrorCallback(error)
@@ -1219,7 +1257,7 @@ export class QueryOutput extends React.Component {
   }
 
   setHeaderFilterPlaceholder = (col) => {
-    if ((col.type === 'DATE' || col.type === 'DATE_STRING') && !col.pivot) {
+    if (col.type === 'DATE' && !col.pivot) {
       return 'pick range'
     }
 
@@ -1235,19 +1273,17 @@ export class QueryOutput extends React.Component {
     const formattedColumns = columns.map((col, i) => {
       const newCol = _cloneDeep(col)
 
-      const drilldownGroupby = this.queryResponse?.data?.data?.fe_req?.columns?.find(
-        (column) => newCol.name === column.name,
-      )
-
+      newCol.id = uuid()
       newCol.field = `${i}`
       newCol.title = col.display_name
-      if (drilldownGroupby) {
-        newCol.title = `${newCol.title} <em>(Clicked: "${drilldownGroupby.value}")</em>`
-      }
-      newCol.id = uuid()
 
       // Visibility flag: this can be changed through the column visibility editor modal
       newCol.visible = col.is_visible
+
+      newCol.minWidth = '90px'
+      if (newCol.type === 'DATE') {
+        newCol.minWidth = '125px'
+      }
 
       // Cell alignment
       if (newCol.type === 'DOLLAR_AMT' || newCol.type === 'RATIO' || newCol.type === 'NUMBER') {
@@ -1281,6 +1317,23 @@ export class QueryOutput extends React.Component {
       newCol.sorter = this.setSorterFunction(newCol)
       newCol.headerSort = !!this.props.enableTableSorting
 
+      // Show drilldown filter value in column title so user knows they can't filter on this column
+      const drilldownGroupby = this.queryResponse?.data?.data?.fe_req?.columns?.find(
+        (column) => newCol.name === column.name,
+      )
+      if (drilldownGroupby) {
+        newCol.title = `${newCol.title} <em>(Clicked: "${drilldownGroupby.value}")</em>`
+      }
+
+      // Check if a date range is available
+      const dateRange = this.columnDateRanges.find((rangeObj) => {
+        return newCol.type === 'DATE' && rangeObj.columnName === newCol.display_name
+      })
+
+      if (dateRange) {
+        newCol.dateRange = dateRange
+      }
+
       return newCol
     })
 
@@ -1290,7 +1343,12 @@ export class QueryOutput extends React.Component {
   formatDatePivotYear = (data, dateColumnIndex) => {
     const columns = this.getColumns()
     if (columns[dateColumnIndex].type === 'DATE') {
-      return dayjs.unix(data[dateColumnIndex]).utc().format('YYYY')
+      const dayJSObj = getDayJSObj({
+        value: data[dateColumnIndex],
+        column: columns[dateColumnIndex],
+        config: this.props.dataFormatting,
+      })
+      return dayJSObj.year().toString()
     }
     return dayjs(data[dateColumnIndex]).format('YYYY')
   }
@@ -1298,7 +1356,12 @@ export class QueryOutput extends React.Component {
   formatDatePivotMonth = (data, dateColumnIndex) => {
     const columns = this.getColumns()
     if (columns[dateColumnIndex].type === 'DATE') {
-      return dayjs.unix(data[dateColumnIndex]).format('MMMM')
+      const dayJSObj = getDayJSObj({
+        value: data[dateColumnIndex],
+        column: columns[dateColumnIndex],
+        config: this.props.dataFormatting,
+      })
+      return dayJSObj.format('MMMM')
     }
     return dayjs(data[dateColumnIndex]).format('MMMM')
   }
@@ -1315,7 +1378,12 @@ export class QueryOutput extends React.Component {
 
       const allYears = tableData.map((d) => {
         if (columns[dateColumnIndex].type === 'DATE') {
-          return Number(dayjs.unix(d[dateColumnIndex]).utc().format('YYYY'))
+          const dayJSObj = getDayJSObj({
+            value: d[dateColumnIndex],
+            column: columns[dateColumnIndex],
+            config: this.props.dataFormatting,
+          })
+          return dayJSObj.year()
         }
         return Number(dayjs(d[dateColumnIndex]).format('YYYY'))
       })
@@ -1328,24 +1396,35 @@ export class QueryOutput extends React.Component {
           return map
         }, {})
 
+      const pivotMonthColumn = {
+        ...columns[dateColumnIndex],
+        title: 'Month',
+        name: 'Month',
+        field: '0',
+        frozen: true,
+        visible: true,
+        is_visible: true,
+        type: 'DATE_STRING',
+        datePivot: true,
+        origColumn: columns[dateColumnIndex],
+        pivot: true,
+        cssClass: 'pivot-category',
+        sorter: dateSortFn,
+        headerFilter: false,
+        headerFilterPlaceholder: 'filter...',
+      }
+
       // Generate new column array
       const pivotTableColumns = [
         {
-          ...columns[dateColumnIndex],
-          title: 'Month',
-          name: 'Month',
-          field: '0',
-          frozen: true,
-          visible: true,
-          is_visible: true,
-          type: 'DATE_STRING',
-          datePivot: true,
-          origColumn: columns[dateColumnIndex],
-          pivot: true,
-          cssClass: 'pivot-category',
-          sorter: dateSortFn,
-          headerFilter: false,
-          headerFilterPlaceholder: 'filter...',
+          ...pivotMonthColumn,
+          formatter: (cell) =>
+            formatElement({
+              element: cell.getValue(),
+              column: pivotMonthColumn,
+              config: getDataFormatting(this.props.dataFormatting),
+              htmlElement: cell.getElement(),
+            }),
         },
       ]
 
@@ -1389,7 +1468,7 @@ export class QueryOutput extends React.Component {
           }
           pivotTableColumns[pivotColumnIndex].origValues[month] = {
             name: columns[dateColumnIndex]?.name,
-            value: row[dateColumnIndex],
+            value: row[dateColumnIndex] || '',
           }
         }
       })
@@ -1644,10 +1723,12 @@ export class QueryOutput extends React.Component {
     return (
       <ChataTable
         authentication={this.props.authentication}
+        dataFormatting={this.props.dataFormatting}
         key={this.tableID}
         ref={(ref) => (this.tableRef = ref)}
         columns={this.state.columns}
         data={this.tableData}
+        columnDateRanges={this.columnDateRanges}
         onCellClick={this.onTableCellClick}
         queryID={this.queryID}
         initialParams={this.tableParams}

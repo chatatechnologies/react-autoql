@@ -8,6 +8,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { reportProblem } from '../../js/queryService'
 import { authenticationType } from '../../props/types'
 import { authenticationDefault, getAuthentication } from '../../props/defaults'
+import { Radio } from '../Radio'
 
 export default class ReportProblemModal extends React.Component {
   static propTypes = {
@@ -25,21 +26,35 @@ export default class ReportProblemModal extends React.Component {
 
   state = {
     reportProblemMessage: undefined,
+    problemType: undefined,
   }
 
   componentDidMount = () => {
     this._isMounted = true
   }
 
+  componentDidUpdate = (prevProps) => {
+    if (!this.props.isVisible && prevProps.isVisible) {
+      this.setState({ problemType: undefined, reportProblemMessage: undefined })
+    }
+  }
+
   componentWillUnmount = () => {
     this._isMounted = false
   }
 
-  reportQueryProblem = (reason) => {
+  reportQueryProblem = () => {
+    let message = this.state.problemType
+    if (this.state.problemType === 'Other') {
+      message = this.state.reportProblemMessage
+    } else if (this.state.reportProblemMessage) {
+      message = `${message} - ${this.state.reportProblemMessage}`
+    }
+
     const queryId = _get(this.props.responseRef, 'queryResponse.data.data.query_id')
     this.setState({ isReportingProblem: true })
     reportProblem({
-      message: reason,
+      message,
       queryId,
       ...getAuthentication(this.props.authentication),
     })
@@ -73,7 +88,7 @@ export default class ReportProblemModal extends React.Component {
             })
           }}
           onConfirm={() => {
-            this.reportQueryProblem(this.state.reportProblemMessage)
+            this.reportQueryProblem()
             this.setState({
               reportProblemMessage: undefined,
             })
@@ -83,17 +98,29 @@ export default class ReportProblemModal extends React.Component {
           enableBodyScroll={true}
           width='600px'
           confirmText='Report'
-          confirmDisabled={this.state.reportProblemMessage ? false : true}
+          confirmDisabled={
+            !this.state.problemType || (this.state.problemType === 'Other' && !this.state.reportProblemMessage)
+          }
         >
-          Please tell us more about the problem you are experiencing:
-          <textarea
-            className='report-problem-text-area'
-            onChange={(e) =>
-              this.setState({
-                reportProblemMessage: e.target.value,
-              })
-            }
-          />
+          <div className='report-problem-modal-body'>
+            <h3>What's happening?</h3>
+            <Radio
+              className='report-problem-radio-group'
+              options={['The data is incorrect', 'The data is incomplete', 'Other']}
+              data-test='report-problem-radio-group'
+              value={this.state.problemType}
+              onChange={(value) => this.setState({ problemType: value })}
+            />
+            Please tell us more about the problem you are experiencing:
+            <textarea
+              className='report-problem-text-area'
+              onChange={(e) =>
+                this.setState({
+                  reportProblemMessage: e.target.value,
+                })
+              }
+            />
+          </div>
         </Modal>
       </ErrorBoundary>
     )

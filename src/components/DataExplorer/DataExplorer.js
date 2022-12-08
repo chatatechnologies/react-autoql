@@ -130,9 +130,10 @@ export default class DataExplorer extends React.Component {
     }
   }
 
-  onValidationSuggestionClick = (text) => {
+  onValidationSuggestionClick = ({ query, userSelection }) => {
     this.querySuggestionsKey = uuid()
-    this.animateDETextAndSubmit(text)
+    this.animateDETextAndSubmit(query)
+    this.setState({ userSelection })
   }
 
   renderDataPreview = () => {
@@ -190,17 +191,12 @@ export default class DataExplorer extends React.Component {
       return null
     }
 
-    let topicText = selectedTopic.display_name
-    if (selectedTopic.type === DEConstants.SUBJECT_TYPE) {
-      topicText = selectedTopic.name
-    }
     const isDefaultCollapsed =
       !this.state.selectedSubject || this.state.activeTopicType !== DEConstants.SUBJECT_TYPE ? false : true
     return (
       <div className='data-explorer-section query-suggestions'>
         <Card
           title={this.renderQuerySuggestionCardTitle(selectedTopic)}
-          subtitle={<em>Click on a query to run it in Data Messenger</em>}
           defaultCollapsed={this.props.isSmallScreen ? isDefaultCollapsed : undefined}
           isCollapsed={this.props.isSmallScreen ? this.state.isQuerySuggestionCollapsed : undefined}
           onIsCollapsedChange={(isCollapsed) => {
@@ -214,12 +210,17 @@ export default class DataExplorer extends React.Component {
             <QuerySuggestionList
               key={this.querySuggestionsKey}
               authentication={this.props.authentication}
-              topicText={topicText}
-              topic={selectedTopic}
+              context={this.state.selectedSubject?.name}
+              valueLabel={this.state.selectedVL}
+              searchText={this.state.selectedKeywords?.display_name}
+              selectedType={this.state.activeTopicType}
               executeQuery={this.props.executeQuery}
               skipQueryValidation={this.state.skipQueryValidation}
+              userSelection={this.state.userSelection}
               onValidationSuggestionClick={this.onValidationSuggestionClick}
-              onSuggestionListResponse={() => this.setState({ skipQueryValidation: false })}
+              onSuggestionListResponse={() =>
+                this.setState({ querySuggestionContentKey: uuid(), skipQueryValidation: false })
+              }
             />
           </div>
         </Card>
@@ -249,24 +250,6 @@ export default class DataExplorer extends React.Component {
       selectedVL: null,
       selectedKeywords: null,
     })
-  }
-
-  renderSelectionTitle = () => {
-    const selectedTopic = this.getSelectedTopic()
-    if (!selectedTopic) {
-      return null
-    }
-
-    return (
-      <div className='data-explorer-title exploring-title'>
-        <div
-          key={`data-explorer-title exploring-title-${selectedTopic.name}`}
-          className='data-explorer-title-animated-container'
-        >
-          Exploring "<TopicName topic={selectedTopic} />"
-        </div>
-      </div>
-    )
   }
 
   renderDataExplorerContent = () => {
@@ -422,7 +405,6 @@ export default class DataExplorer extends React.Component {
             dataExplorerRef={this.dataExplorerPage}
             onClearInputClick={this.clearContent}
           />
-          {this.renderSelectionTitle()}
           {this.renderDataExplorerContent()}
           <ReactTooltip
             className='data-preview-tooltip'

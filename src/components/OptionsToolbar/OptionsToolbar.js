@@ -321,7 +321,7 @@ export default class OptionsToolbar extends React.Component {
           }
         }}
         responseRef={this.props.responseRef}
-        isVisible={this.state.activeMenu === 'other-problem'}
+        isVisible={this.state.activeMenu === 'report-problem'}
       />
     )
   }
@@ -352,7 +352,7 @@ export default class OptionsToolbar extends React.Component {
           >
             The data is incomplete
           </li>
-          <li onClick={() => this.setState({ activeMenu: 'other-problem' })}>Other...</li>
+          <li onClick={() => this.setState({ activeMenu: 'report-problem' })}>Other...</li>
         </ul>
       </div>
     )
@@ -531,29 +531,16 @@ export default class OptionsToolbar extends React.Component {
             </button>
           )}
           {shouldShowButton.showReportProblemButton && (
-            <Popover
-              key={uuid()}
-              isOpen={this.state.activeMenu === 'report-problem'}
-              padding={8}
-              onClickOutside={() => {
-                this.setState({ activeMenu: undefined })
+            <button
+              onClick={() => {
+                this.setState({ activeMenu: 'report-problem' })
               }}
-              positions={['bottom', 'top']}
-              content={(props) => this.renderReportProblemMenu(props)}
-              parentElement={this.props.popoverParentElement}
-              boundaryElement={this.props.popoverParentElement}
+              className={this.getMenuItemClass(shouldShowButton.showReportProblemButton)}
+              data-tip='Report a problem'
+              data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
             >
-              <button
-                onClick={() => {
-                  this.setState({ activeMenu: 'report-problem' })
-                }}
-                className={this.getMenuItemClass(shouldShowButton.showReportProblemButton)}
-                data-tip='Report a problem'
-                data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
-              >
-                <Icon type='warning-triangle' />
-              </button>
-            </Popover>
+              <Icon type='warning-triangle' />
+            </button>
           )}
           {shouldShowButton.showRefreshDataButton && (
             <button

@@ -83,6 +83,7 @@ export default class ChatContent extends React.Component {
   componentWillUnmount = () => {
     this._isMounted = false
     clearTimeout(this.feedbackTimeout)
+    clearTimeout(this.responseDelayTimeout)
   }
 
   focusInput = () => {
@@ -129,7 +130,8 @@ export default class ChatContent extends React.Component {
     clearTimeout(this.feedbackTimeout)
     this.feedbackTimeout = setTimeout(() => {
       if (this._isMounted) {
-        this.setState({ isChataThinking: false })
+        clearTimeout(this.responseDelayTimeout)
+        this.setState({ isChataThinking: false, isInputDisabled: false })
         this.addResponseMessage({
           content: (
             <div className='feedback-message'>
@@ -149,7 +151,8 @@ export default class ChatContent extends React.Component {
 
   onDrilldownEnd = ({ response, error, originalQueryID } = {}) => {
     if (this._isMounted) {
-      this.setState({ isChataThinking: false })
+      clearTimeout(this.responseDelayTimeout)
+      this.setState({ isChataThinking: false, isInputDisabled: false })
 
       if (response) {
         this.addResponseMessage({ response, originalQueryID })
@@ -255,7 +258,10 @@ export default class ChatContent extends React.Component {
 
   onInputSubmit = (query) => {
     this.addRequestMessage(query)
-    this.setState({ isChataThinking: true })
+    this.setState({ isInputDisabled: true })
+    this.responseDelayTimeout = setTimeout(() => {
+      this.setState({ isChataThinking: true })
+    }, 600)
   }
 
   onResponse = (response, query) => {
@@ -282,7 +288,8 @@ export default class ChatContent extends React.Component {
         this.addResponseMessage({ response, query })
       }
 
-      this.setState({ isChataThinking: false })
+      clearTimeout(this.responseDelayTimeout)
+      this.setState({ isChataThinking: false, isInputDisabled: false })
       this.focusInput()
     }
   }
@@ -392,6 +399,7 @@ export default class ChatContent extends React.Component {
                   queryRequestData={message.queryRequestData}
                   popoverParentElement={this.state.chatContentRef}
                   isVisibleInDOM={this.props.shouldRender}
+                  dataPageSize={this.props.dataPageSize}
                   source={this.props.source}
                 />
               )
@@ -415,7 +423,7 @@ export default class ChatContent extends React.Component {
             autoQLConfig={this.props.autoQLConfig}
             onSubmit={this.onInputSubmit}
             onResponseCallback={this.onResponse}
-            isDisabled={this.state.isChataThinking}
+            isDisabled={this.state.isInputDisabled}
             enableVoiceRecord={this.props.enableVoiceRecord}
             autoCompletePlacement='above'
             showChataIcon={false}

@@ -618,9 +618,6 @@ export class DashboardTile extends React.Component {
                 className='dashboard-tile-input title'
                 placeholder='Add descriptive title (optional)'
                 value={this.state.title}
-                data-tip='Title'
-                data-for='react-autoql-dashboard-toolbar-btn-tooltip'
-                data-place='bottom'
                 onChange={(e) => this.setState({ title: e.target.value })}
                 onFocus={() => this.setState({ isTitleInputFocused: true })}
                 onBlur={(e) => {

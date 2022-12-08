@@ -2,14 +2,13 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import InfiniteScroll from 'react-infinite-scroller'
 import { Scrollbars } from 'react-custom-scrollbars-2'
+import _isEqual from 'lodash.isequal'
 
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { fetchDataExplorerSuggestions } from '../../js/queryService'
 import { LoadingDots } from '../LoadingDots'
 import { Spinner } from '../Spinner'
 import { Icon } from '../Icon'
-
-import DEConstants from '../DataExplorer/constants'
 
 export default class QuerySuggestionList extends React.Component {
   constructor(props) {
@@ -27,27 +26,33 @@ export default class QuerySuggestionList extends React.Component {
   }
 
   static propTypes = {
-    topicText: PropTypes.string,
+    searchText: PropTypes.string,
+    subject: PropTypes.shape({}),
+    valueLabel: PropTypes.shape({}),
     skipQueryValidation: PropTypes.bool,
     onSuggestionListResponse: PropTypes.func,
     executeQuery: PropTypes.func,
   }
 
   static defaultProps = {
-    topicText: null,
+    searchText: '',
+    subject: undefined,
+    valueLabel: undefined,
     skipQueryValidation: false,
     onSuggestionListResponse: () => {},
     executeQuery: () => {},
   }
 
   componentDidMount = () => {
-    if (this.props.topicText) {
-      this.loadMore(1)
-    }
+    this.loadMore(1)
   }
 
   componentDidUpdate = (prevProps) => {
-    if (this.props.topicText && this.props.topicText !== prevProps.topicText) {
+    if (
+      (this.props.searchText && this.props.searchText !== prevProps.searchText) ||
+      this.props.context !== prevProps.context ||
+      !_isEqual(this.props.valueLabel, prevProps.valueLabel)
+    ) {
       this.setState({ queryList: undefined }, () => {
         this.loadMore(1)
       })
@@ -55,7 +60,7 @@ export default class QuerySuggestionList extends React.Component {
   }
 
   loadMore = (page) => {
-    if (this.state.loading) {
+    if (this.state.loading || (!this.props.searchText && !this.props.context && !this.props.valueLabel)) {
       return
     }
 
@@ -69,20 +74,21 @@ export default class QuerySuggestionList extends React.Component {
       newState.loading = true
     }
 
-    const { topicText } = this.props
-    if (topicText !== this.state.keywords) {
+    const { searchText } = this.props
+    if (searchText !== this.state.keywords) {
       newState.queryList = undefined
     }
 
     this.setState(newState)
     fetchDataExplorerSuggestions({
       ...this.props.authentication,
-      keywords: topicText,
       pageSize: this.pageSize,
       pageNumber: page,
+      text: this.props.searchText,
+      selectedVL: this.props.valueLabel,
+      userVLSelection: this.props.userSelection,
+      context: this.props.context,
       skipQueryValidation: this.props.skipQueryValidation || page > 1,
-      scope: this.props.topic?.type === DEConstants.SUBJECT_TYPE ? 'context' : 'wide',
-      isRawText: this.props.topic?.type === 'text',
     })
       .then((response) => {
         this.props.onSuggestionListResponse({ response })
@@ -105,7 +111,7 @@ export default class QuerySuggestionList extends React.Component {
             const newQueryList = this.state.queryList.concat(newQueries)
             finishedState.queryList = newQueryList
           }
-          finishedState.keywords = topicText
+          finishedState.keywords = searchText
         }
         this.setState(finishedState)
       })
@@ -117,7 +123,7 @@ export default class QuerySuggestionList extends React.Component {
   }
 
   onValidationSuggestionClick = (queryValidationObj) => {
-    this.props.onValidationSuggestionClick(queryValidationObj.query)
+    this.props.onValidationSuggestionClick(queryValidationObj)
   }
 
   clearQueryList = () => {
