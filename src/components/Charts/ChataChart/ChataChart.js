@@ -10,6 +10,7 @@ import _isEmpty from 'lodash.isempty'
 
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
+import { sum, mean, count, deviation, variance, median, min, max } from 'd3-array'
 
 import { ChataColumnChart } from '../ChataColumnChart'
 import { ChataBarChart } from '../ChataBarChart'
@@ -21,7 +22,7 @@ import { ChataStackedBarChart } from '../ChataStackedBarChart'
 import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 import { ChataStackedLineChart } from '../ChataStackedLineChart'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
-import { svgToPng, sortDataByDate, formatChartLabel } from '../../../js/Util.js'
+import { svgToPng, sortDataByDate, formatChartLabel, onlyUnique } from '../../../js/Util.js'
 import {
   chartContainerDefaultProps,
   chartContainerPropTypes,
@@ -52,6 +53,7 @@ export default class ChataChart extends Component {
     this.colorScale = scaleOrdinal().range(chartColors)
     this.state = {
       aggregatedData: this.aggregateRowData(props),
+      aggType: 'sum',
       leftMargin: this.PADDING,
       rightMargin: this.PADDING,
       topMargin: this.PADDING,
@@ -208,8 +210,57 @@ export default class ChataChart extends Component {
     return { chartHeight, chartWidth, innerHeight, innerWidth }
   }
 
+  aggregateFn = (dataset) => {
+    switch (this.state?.aggType) {
+      case 'avg': {
+        return mean(dataset)
+      }
+      case 'median': {
+        return median(dataset)
+      }
+      case 'min': {
+        return min(dataset)
+      }
+      case 'max': {
+        return max(dataset)
+      }
+      case 'deviation': {
+        return deviation(dataset)
+      }
+      case 'variance': {
+        return variance(dataset)
+      }
+      case 'count': {
+        return count(dataset)
+      }
+      case 'count-distinct': {
+        const uniqueDataset = dataset.filter(onlyUnique)
+        return count(uniqueDataset)
+      }
+      default: {
+        // SUM by default
+        return sum(dataset)
+      }
+    }
+  }
+
+  addValuesToAggDataset = (props, datasetsToAggregate, currentRow) => {
+    const { numberColumnIndices, columns } = props
+    numberColumnIndices.forEach((columnIndex) => {
+      const column = columns[columnIndex]
+      if (column.visible) {
+        const value = Number(currentRow[columnIndex])
+        if (datasetsToAggregate[columnIndex]) {
+          datasetsToAggregate[columnIndex].push(value)
+        } else {
+          datasetsToAggregate[columnIndex] = [value]
+        }
+      }
+    })
+  }
+
   aggregateRowData = (props) => {
-    const { stringColumnIndex, numberColumnIndices, data, columns } = props
+    const { stringColumnIndex, data, columns } = props
     const stringColumn = columns[stringColumnIndex]
     let sortedData
 
@@ -229,47 +280,57 @@ export default class ChataChart extends Component {
 
     const aggregatedData = []
 
-    let rowSum = _cloneDeep(sortedData[0])
+    let prevRow
+    let datasetsToAggregate = {}
     sortedData.forEach((currentRow, i) => {
-      const currentCategory =
-        formatChartLabel({
-          d: currentRow?.[stringColumnIndex],
-          col: stringColumn,
-          config: this.props.dataFormatting,
-        })?.fullWidthLabel ?? currentRow?.[stringColumnIndex]
-      const prevCategory =
-        formatChartLabel({
-          d: rowSum?.[stringColumnIndex],
-          col: stringColumn,
-          config: this.props.dataFormatting,
-        })?.fullWidthLabel ?? rowSum?.[stringColumnIndex]
+      const isLastRow = i === sortedData.length - 1
 
-      if (i === 0 && i < sortedData.length - 1) {
-        return
-      } else if (currentCategory !== prevCategory) {
-        aggregatedData.push(rowSum)
-        rowSum = _cloneDeep(currentRow)
-      } else {
-        const newRow = _cloneDeep(currentRow)
-        numberColumnIndices.forEach((columnIndex) => {
-          let currentValue = Number(newRow[columnIndex])
-          let sumValue = Number(rowSum[columnIndex])
-          if (isNaN(currentValue)) {
-            currentValue = 0
-          }
-          if (isNaN(sumValue)) {
-            sumValue = 0
-          }
-          newRow[columnIndex] = currentValue + sumValue
-        })
-
-        rowSum = newRow
+      let currentLabel
+      if (currentRow) {
+        currentLabel =
+          formatChartLabel({
+            d: currentRow[stringColumnIndex],
+            col: stringColumn,
+            config: this.props.dataFormatting,
+          })?.fullWidthLabel ?? currentRow[stringColumnIndex]
       }
 
-      if (i === sortedData.length - 1) {
-        aggregatedData.push(rowSum)
+      let prevLabel
+      if (prevRow) {
+        prevLabel =
+          formatChartLabel({
+            d: prevRow[stringColumnIndex],
+            col: stringColumn,
+            config: this.props.dataFormatting,
+          })?.fullWidthLabel ?? prevRow[stringColumnIndex]
       }
+
+      const labelChanged = currentLabel && prevLabel && currentLabel !== prevLabel
+
+      if (!labelChanged || isLastRow) {
+        this.addValuesToAggDataset(props, datasetsToAggregate, currentRow)
+      }
+
+      if (labelChanged || isLastRow) {
+        // Category changed, finish aggregation and add row to dataset
+        if (Object.keys(datasetsToAggregate)?.length) {
+          const newRow = _cloneDeep(prevRow)
+          Object.keys(datasetsToAggregate).forEach((columnIndex) => {
+            newRow[columnIndex] = this.aggregateFn(datasetsToAggregate[columnIndex])
+          })
+
+          aggregatedData.push(newRow)
+
+          datasetsToAggregate = {}
+          this.addValuesToAggDataset(props, datasetsToAggregate, currentRow)
+        } else {
+          aggregatedData.push(currentRow)
+        }
+      }
+
+      prevRow = currentRow
     })
+
     return aggregatedData
   }
 
