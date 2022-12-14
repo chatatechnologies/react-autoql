@@ -266,8 +266,13 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
 
   const { currencyCode, languageCode } = config
 
+  let type = col.type
+  if (['count', 'deviation', 'variance'].includes(col.aggType)) {
+    type = 'QUANTITY'
+  }
+
   let formattedLabel = d
-  switch (col.type) {
+  switch (type) {
     case 'STRING': {
       break
     }
@@ -341,13 +346,18 @@ export const getDayJSObj = ({ value, column, config }) => {
   return dayjs.unix(value).utc()
 }
 
-export const formatElement = ({ element, column, config = {}, htmlElement, precision }) => {
+export const formatElement = ({ element, column, config = {}, htmlElement, precision, isChart }) => {
   try {
     let formattedElement = element
     const { currencyCode, languageCode, currencyDecimals, quantityDecimals } = config
 
+    let type = column?.type
+    if (isChart && ['count', 'deviation', 'variance'].includes(column?.aggType)) {
+      type = 'QUANTITY'
+    }
+
     if (column) {
-      switch (column.type) {
+      switch (type) {
         case 'STRING': {
           // do nothing
           break

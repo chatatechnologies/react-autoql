@@ -164,12 +164,14 @@ export const getTooltipContent = ({ row, columns, colIndex, stringColumnIndex, l
       element: row[stringColumnIndex],
       column: stringColumn,
       config: dataFormatting,
+      isChart: true,
     })
 
     const numberValue = formatElement({
       element: row[colIndex] || 0,
       column: columns[colIndex],
       config: dataFormatting,
+      isChart: true,
     })
 
     const column = columns[colIndex]
