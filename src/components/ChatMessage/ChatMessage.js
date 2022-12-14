@@ -331,6 +331,7 @@ export default class ChatMessage extends React.Component {
             rebuildTooltips={this.props.rebuildTooltips}
             popoverParentElement={this.props.popoverParentElement}
             deleteMessageCallback={() => this.props.deleteMessageCallback(this.props.id)}
+            createDataAlertCallback={this.props.createDataAlertCallback}
           />
         ) : null}
       </div>
