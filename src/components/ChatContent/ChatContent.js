@@ -386,6 +386,7 @@ export default class ChatContent extends React.Component {
                   onErrorCallback={this.props.onErrorCallback}
                   onSuccessAlert={this.props.onSuccessAlert}
                   deleteMessageCallback={this.deleteMessage}
+                  createDataAlertCallback={this.props.createDataAlertCallback}
                   scrollContainerRef={this.messengerScrollComponent?.ref}
                   isResizing={this.props.isResizing}
                   enableDynamicCharting={this.props.enableDynamicCharting}
