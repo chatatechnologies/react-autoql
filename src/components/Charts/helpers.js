@@ -204,10 +204,20 @@ export const getLegendLabelsForMultiSeries = (columns, colorScale, numberColumnI
       return []
     }
 
+    const numberColumns = numberColumnIndices.map((index) => columns[index])
+    const allAggTypesSame = numberColumns.every((col) => col.aggType === numberColumns[0].aggType)
+
     const legendLabels = numberColumnIndices.map((columnIndex, i) => {
       const column = columns[columnIndex]
+      let label = column.title
+      if (!allAggTypesSame) {
+        const aggTypeDisplayName = AGG_TYPES.find((agg) => agg.value === column?.aggType)?.displayName
+        if (aggTypeDisplayName) {
+          label = `${label} (${aggTypeDisplayName})`
+        }
+      }
       return {
-        label: column.title,
+        label,
         color: colorScale(i),
         hidden: column.isSeriesHidden,
         columnIndex,
