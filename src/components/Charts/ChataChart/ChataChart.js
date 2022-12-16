@@ -34,6 +34,9 @@ import './ChataChart.scss'
 import { getColumnTypeAmounts, isColumnDateType } from '../../QueryOutput/columnHelpers'
 import { getChartColorVars, getThemeValue } from '../../../theme/configureTheme'
 import { Spinner } from '../../Spinner'
+import { AGG_TYPES } from '../../../js/Constants'
+
+const defaultAggType = 'sum'
 
 export default class ChataChart extends Component {
   constructor(props) {
@@ -49,11 +52,14 @@ export default class ChataChart extends Component {
 
     this.firstRender = true
     this.recursiveUpdateCount = 0
+    this.previousAggType = undefined
 
     this.colorScale = scaleOrdinal().range(chartColors)
+
+    const aggregatedData = this.aggregateRowData(props)
+
     this.state = {
-      aggregatedData: this.aggregateRowData(props),
-      aggType: 'sum',
+      aggregatedData,
       leftMargin: this.PADDING,
       rightMargin: this.PADDING,
       topMargin: this.PADDING,
@@ -146,7 +152,8 @@ export default class ChataChart extends Component {
 
     if (dataStructureChanged(this.props, prevProps)) {
       shouldUpdateMargins = true
-      newState.aggregatedData = this.aggregateRowData(this.props)
+      const aggregatedData = this.aggregateRowData(this.props)
+      newState.aggregatedData = aggregatedData
       this.rebuildTooltips()
     }
 
@@ -210,8 +217,9 @@ export default class ChataChart extends Component {
     return { chartHeight, chartWidth, innerHeight, innerWidth }
   }
 
-  aggregateFn = (dataset) => {
-    switch (this.state?.aggType) {
+  aggregateFn = (dataset, aggType) => {
+    const aggregateType = aggType || this.state?.aggType
+    switch (aggregateType) {
       case 'avg': {
         return mean(dataset)
       }
@@ -259,7 +267,7 @@ export default class ChataChart extends Component {
     })
   }
 
-  aggregateRowData = (props) => {
+  aggregateRowData = (props, aggType) => {
     const { stringColumnIndex, data, columns } = props
     const stringColumn = columns[stringColumnIndex]
     let sortedData
@@ -316,7 +324,8 @@ export default class ChataChart extends Component {
         if (Object.keys(datasetsToAggregate)?.length) {
           const newRow = _cloneDeep(prevRow)
           Object.keys(datasetsToAggregate).forEach((columnIndex) => {
-            newRow[columnIndex] = this.aggregateFn(datasetsToAggregate[columnIndex])
+            const aggregateType = columns[columnIndex].aggType || defaultAggType
+            newRow[columnIndex] = this.aggregateFn(datasetsToAggregate[columnIndex], aggregateType)
           })
 
           aggregatedData.push(newRow)
@@ -330,6 +339,17 @@ export default class ChataChart extends Component {
 
       prevRow = currentRow
     })
+
+    // if (aggregateType !== this.previousAggType) {
+    //   const newColumns = _cloneDeep(this.props.columns)
+    //   this.props.numberColumnIndices.forEach((colIndex) => {
+    //     newColumns[colIndex].aggType = aggregateType
+    //   })
+
+    //   this.props.updateColumns(newColumns)
+    // }
+
+    // this.previousAggType = aggregateType
 
     return aggregatedData
   }
@@ -509,6 +529,10 @@ export default class ChataChart extends Component {
     return leftDiff > 10 || topDiff > 10 || rightDiff > 10 || bottomDiff > 10
   }
 
+  changeNumberColumnIndices = (indices, newColumns) => {
+    this.props.changeNumberColumnIndices(indices, newColumns)
+  }
+
   getBase64Data = () => {
     const svgElement = this.chartRef
     if (!svgElement) {
@@ -555,6 +579,8 @@ export default class ChataChart extends Component {
 
   getNumberAxisTitle = () => {
     const { columns, numberColumnIndices } = this.props
+    let title = ''
+
     try {
       const numberColumns = columns.filter((col, i) => {
         return numberColumnIndices.includes(i)
@@ -566,29 +592,38 @@ export default class ChataChart extends Component {
 
       // If there are different titles for any of the columns, return a generic label based on the type
       const allTitlesEqual = !numberColumns.find((col) => {
-        return col.display_name !== numberColumns[0].display_name
+        title = col.display_name !== numberColumns[0].display_name
       })
 
       if (allTitlesEqual) {
-        return _get(numberColumns, '[0].display_name')
+        title = _get(numberColumns, '[0].display_name')
       }
 
       const columnType = _get(numberColumns, '[0].type')
       if (columnType === 'DOLLAR_AMT') {
-        return 'Amount'
+        title = 'Amount'
       } else if (columnType === 'QUANTITY') {
-        return 'Quantity'
+        title = 'Quantity'
       } else if (columnType === 'RATIO') {
-        return 'Ratio'
+        title = 'Ratio'
       } else if (columnType === 'PERCENT') {
-        return 'Percent'
+        title = 'Percent'
       }
 
-      return undefined
+      const aggTypes = numberColumns.map((col) => col.aggType)
+      const allAggTypesSame = aggTypes.every((aggType) => aggType === aggTypes[0])
+
+      if (allAggTypesSame) {
+        const aggTypeDisplayName = AGG_TYPES.find((agg) => agg.value === numberColumns[0].aggType)?.displayName
+        if (aggTypeDisplayName) {
+          title = `${title} (${aggTypeDisplayName})`
+        }
+      }
     } catch (error) {
       console.error(error)
-      return undefined
     }
+
+    return title
   }
 
   getCommonChartProps = () => {
@@ -641,11 +676,14 @@ export default class ChataChart extends Component {
       onStringColumnSelect: this.onStringColumnSelect,
       onLabelChange: this.updateMargins,
       tooltipID: this.props.tooltipID,
+      chartTooltipID: this.props.chartTooltipID,
       chartContainerRef: this.chartContainerRef,
       popoverParentElement: this.props.popoverParentElement || this.chartContainerRef,
       totalRowsNumber: this.props.totalRowsNumber,
       isChartScaled: this.state.isChartScaled,
       setIsChartScaled: this.setIsChartScaled,
+      changeNumberColumnIndices: this.changeNumberColumnIndices,
+      rebuildTooltips: this.rebuildTooltips,
     }
   }
 

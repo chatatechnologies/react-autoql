@@ -44,6 +44,7 @@ import {
   sortDataByDate,
   dateSortFn,
   getDayJSObj,
+  getNumberOfGroupables,
 } from '../../js/Util.js'
 
 import {
@@ -1033,7 +1034,7 @@ export class QueryOutput extends React.Component {
     this.forceUpdate()
   }
 
-  onChangeNumberColumnIndices = (indices) => {
+  onChangeNumberColumnIndices = (indices, newColumns) => {
     if (!indices) {
       return
     }
@@ -1046,7 +1047,7 @@ export class QueryOutput extends React.Component {
       this.tableConfig.numberColumnIndex = indices[0]
     }
 
-    this.forceUpdate()
+    this.updateColumns(newColumns)
   }
 
   setPivotTableConfig = (isFirstGeneration) => {
@@ -1256,10 +1257,10 @@ export class QueryOutput extends React.Component {
 
   setHeaderFilterPlaceholder = (col) => {
     if (col.type === 'DATE' && !col.pivot) {
-      return 'pick range'
+      return 'Pick range'
     }
 
-    return 'filter'
+    return 'Filter'
   }
 
   formatColumnsForTable = (columns) => {
@@ -1267,6 +1268,8 @@ export class QueryOutput extends React.Component {
     if (!columns) {
       return null
     }
+
+    const isListQuery = getNumberOfGroupables(columns) === 0
 
     const formattedColumns = columns.map((col, i) => {
       const newCol = _cloneDeep(col)
@@ -1320,7 +1323,13 @@ export class QueryOutput extends React.Component {
         (column) => newCol.name === column.name,
       )
       if (drilldownGroupby) {
+        newCol.isDrilldownColumn = true
         newCol.title = `${newCol.title} <em>(Clicked: "${drilldownGroupby.value}")</em>`
+      }
+
+      // Set aggregate type is data is list query
+      if (isListQuery) {
+        newCol.aggType = col.aggType || 'sum'
       }
 
       // Check if a date range is available
@@ -1803,13 +1812,16 @@ export class QueryOutput extends React.Component {
           isDrilldownChartHidden={this.props.isDrilldownChartHidden}
           enableDynamicCharting={this.props.enableDynamicCharting}
           enableAjaxTableData={this.props.enableAjaxTableData}
-          tooltipID={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
+          tooltipID={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
+          chartTooltipID={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
           rebuildTooltips={this.rebuildTooltips}
           height={this.props.height}
           width={this.props.width}
           onNewData={this.onNewData}
           isDrilldown={this.isDrilldown()}
           totalRowsNumber={this.queryResponse?.data?.data?.count_rows}
+          updateColumns={this.updateColumns}
+          columnChangeCount={this.state.columnChangeCount}
         />
       </ErrorBoundary>
     )
@@ -2100,7 +2112,7 @@ export class QueryOutput extends React.Component {
           className='react-autoql-tooltip'
           id={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
           effect='solid'
-          place='left'
+          place='top'
           html
         />
         <ReactTooltip

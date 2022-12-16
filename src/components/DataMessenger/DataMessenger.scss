@@ -287,7 +287,7 @@
   transition: none;
   text-align: left;
   opacity: 1 !important;
-  z-index: 99999 !important; /* necessary to show up on top of rc drawer */
+  z-index: 999999 !important; /* necessary to show up on top of rc drawer */
   max-width: 300px;
   word-break: break-word;
 }

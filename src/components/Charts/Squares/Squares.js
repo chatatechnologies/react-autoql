@@ -94,7 +94,7 @@ export default class Squares extends Component {
               height={yScale.bandwidth()}
               onClick={() => this.onSquareClick(row, colIndex, index)}
               data-tip={tooltip}
-              data-for={this.props.tooltipID}
+              data-for={this.props.chartTooltipID}
               style={{ color: activeFillColor }}
               fill={fillColor}
               fillOpacity={this.opacityScale(Math.abs(value))}

@@ -44,7 +44,7 @@ export default class StackedLines extends Component {
         r={4}
         onClick={() => this.onDotClick(d, colIndex, i)}
         data-tip={tooltip}
-        data-for={this.props.tooltipID}
+        data-for={this.props.chartTooltipID}
         style={{
           opacity: this.state.activeKey === getKey(colIndex, index) ? 1 : 0,
           cursor: 'pointer',
@@ -76,7 +76,7 @@ export default class StackedLines extends Component {
               <strong>${this.props.legendTitle}</strong>: ${this.props.legendLabels[i].label}
             </div>
           `}
-        data-for={this.props.tooltipID}
+        data-for={this.props.chartTooltipID}
         data-effect='float'
         style={{
           fill: this.props.colorScale(i),
@@ -101,7 +101,9 @@ export default class StackedLines extends Component {
     const polygonVertexDots = []
 
     let minValue = yScale.domain()[0]
-    if (minValue < 0) {minValue = 0}
+    if (minValue < 0) {
+      minValue = 0
+    }
 
     let prevValues = []
     let prevPolygonVertices = []

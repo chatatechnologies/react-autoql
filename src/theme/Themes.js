@@ -4,7 +4,7 @@ export const LIGHT_THEME = {
   'background-color-secondary': '#ffffff',
   'background-color-tertiary': '#cccccc',
   'border-color': '#e6e6e6',
-  'hover-color': '#ececec',
+  'hover-color': '#f6f7f9',
   'text-color-primary': '#4f4f4f',
   'text-color-accent': '#ffffff',
   'text-color-placeholder': '#0000005e',

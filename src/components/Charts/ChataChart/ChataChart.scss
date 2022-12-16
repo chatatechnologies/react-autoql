@@ -90,26 +90,76 @@
   background: var(--react-autoql-background-color-secondary);
   color: var(--react-autoql-text-color-primary);
   z-index: 9999;
-  padding: 5px 0;
   min-width: 150px;
+  display: flex;
+  flex-direction: row;
+
+  h4 {
+    margin: 0;
+    margin-top: 5px;
+    margin-bottom: 15px;
+  }
+
+  .axis-agg-type-selector {
+    width: 175px;
+    border-left: 1px solid var(--react-autoql-border-color);
+    padding: 10px 20px;
+
+    .agg-type-selector-fields {
+      font-size: 12px;
+      font-style: italic;
+    }
+
+    .react-autoql-radio-btn-container-list {
+      p {
+        font-size: 12px;
+        margin: 4px 0px;
+
+        [type='radio']:checked + label,
+        [type='radio']:not(:checked) + label {
+          padding-left: 22px;
+          line-height: 17px;
+
+          &:before {
+            width: 15px;
+            height: 15px;
+          }
+
+          &:after {
+            width: 9px;
+            height: 9px;
+          }
+        }
+      }
+    }
+  }
 
   .axis-select-option.active {
     background: var(--react-autoql-hover-color);
     outline: none !important;
   }
-  .react-autoql-checkbox {
+  .react-autoql-list-item .react-autoql-checkbox {
     margin-left: 20px;
-
-    .react-autoql-checkbox__input {
-      width: 18px;
-      height: 18px;
-    }
+  }
+  .react-autoql-checkbox-tick {
+    left: 2px;
+  }
+  .react-autoql-checkbox__input {
+    width: 16px;
+    height: 16px;
   }
   .react-autoql-list-item {
-    padding-left: 25px;
-    padding-right: 15px;
+    padding: 0;
+    padding-left: 12px;
+    padding-right: 10px;
     font-size: 12px;
-    line-height: 28px;
+    line-height: 25px;
+    cursor: pointer;
+
+    &.checked .agg-type-symbol {
+      color: var(--react-autoql-accent-color);
+      font-weight: 600;
+    }
   }
 
   .string-select-list-item {
@@ -122,12 +172,34 @@
   }
 
   .number-selector-header {
-    margin-top: 10px;
-    padding: 0px 18px;
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 10px;
+    margin-right: 8px;
     font-size: 12px;
-    padding-bottom: 7px;
-    font-weight: 500;
-    opacity: 0.6;
+    border-bottom: 1px solid var(--react-autoql-border-color);
+    background: var(--react-autoql-background-color-primary);
+
+    .number-selector-header-title {
+      font-weight: 600;
+      svg {
+        stroke-width: 0.5px;
+      }
+    }
+  }
+
+  .axis-series-selector {
+    padding: 10px 8px 5px 20px;
+
+    .react-autoql-selectable-list {
+      padding-right: 8px;
+      margin-bottom: 10px;
+    }
+
+    .agg-type-symbol {
+      display: inline-block;
+      width: 20px;
+    }
   }
 
   .axis-selector-content {

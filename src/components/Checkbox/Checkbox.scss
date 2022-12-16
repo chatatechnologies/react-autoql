@@ -15,7 +15,7 @@
 
   .react-autoql-checkbox--switch__input:checked,
   .react-autoql-checkbox__input:checked {
-    border-color: var(--react-autoql-accent-color, #26a7df);
+    border-color: var(--react-autoql-accent-color, #26a7df) !important;
     background: var(--react-autoql-accent-color, #26a7df);
   }
 }
@@ -101,8 +101,6 @@
   width: 36px;
   height: 20px;
   border-radius: 16px;
-  background: var(--react-autoql-background-color-tertiary);
-  border: 1px solid var(--react-autoql-background-color-tertiary);
 }
 .react-autoql-checkbox--switch__input::before {
   top: 2px;
@@ -112,8 +110,7 @@
   border-radius: 50%;
   background: var(--react-autoql-text-color-accent);
 }
-.react-autoql-checkbox--switch__input:checked
-  + .react-autoql-checkbox--switch__label::after {
+.react-autoql-checkbox--switch__input:checked + .react-autoql-checkbox--switch__label::after {
   content: 'on';
 }
 .react-autoql-checkbox--switch__input:checked::before {
@@ -128,16 +125,13 @@
   line-height: 100%;
 }
 
-.react-autoql-modal-container
-  .react-autoql-checkbox__input:not(.react-autoql-checkbox--switch__input),
-.react-autoql-drawer
-  .react-autoql-checkbox__input:not(.react-autoql-checkbox--switch__input) {
-  border-color: var(--react-autoql-accent-color);
+.react-autoql-modal-container .react-autoql-checkbox__input:not(.react-autoql-checkbox--switch__input),
+.react-autoql-drawer .react-autoql-checkbox__input:not(.react-autoql-checkbox--switch__input) {
+  border-color: #ddd;
+  background: var(--react-autoql-background-color-secondary);
 }
 
-.react-autoql-modal-container
-  .react-autoql-checkbox__input::before:not(.react-autoql-checkbox--switch__input),
-.react-autoql-drawer
-  .react-autoql-checkbox__input::before:not(.react-autoql-checkbox--switch__input) {
+.react-autoql-modal-container .react-autoql-checkbox__input::before:not(.react-autoql-checkbox--switch__input),
+.react-autoql-drawer .react-autoql-checkbox__input::before:not(.react-autoql-checkbox--switch__input) {
   background: var(--react-autoql-accent-color);
 }

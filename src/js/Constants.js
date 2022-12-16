@@ -62,3 +62,51 @@ export const DAYJS_PRECISION_FORMATS = {
   DATE_HOUR: 'll h:00A',
   DATE_MINUTE: 'll h:mmA',
 }
+
+export const AGG_TYPES = [
+  {
+    displayName: 'Sum',
+    value: 'sum',
+    tooltip: '<strong>Sum:</strong> Values that have the same label will be added up.',
+  },
+  {
+    displayName: 'Average',
+    value: 'avg',
+    tooltip: '<strong>Average:</strong> Values that have the same label will be averaged.',
+  },
+  // {
+  //   displayName: 'Median',
+  //   value: 'median',
+  //   tooltip: 'The median (middle) value will be shown for all data points with same label.',
+  // },
+  // {
+  //   displayName: 'Minimum',
+  //   value: 'min',
+  //   tooltip: 'The smallest value will be shown for all data points with same label.',
+  // },
+  // {
+  //   displayName: 'Maximum',
+  //   value: 'max',
+  //   tooltip: 'The largest value will be shown for all data points with same label.',
+  // },
+  // {
+  //   displayName: 'Standard deviation',
+  //   value: 'deviation',
+  //   tooltip: 'The standard deviation will be shown for all data points with the same label.',
+  // },
+  // {
+  //   displayName: 'Variance',
+  //   value: 'variance',
+  //   tooltip: 'The variance will be shown for all data points with the same label.',
+  // },
+  {
+    displayName: 'Count',
+    value: 'count',
+    tooltip:
+      '<strong>Count:</strong> The total number of non-blank values will be shown for all data points with the same label.',
+  },
+  // {
+  //   displayName: 'Distinct Count',
+  //   value: 'count-distinct',
+  // },
+]

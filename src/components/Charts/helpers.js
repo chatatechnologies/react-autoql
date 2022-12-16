@@ -6,6 +6,7 @@ import _isEqual from 'lodash.isequal'
 import { formatElement } from '../../js/Util'
 import { dataFormattingType } from '../../props/types'
 import { dataFormattingDefault } from '../../props/defaults'
+import { AGG_TYPES } from '../../js/Constants'
 
 export const chartContainerPropTypes = {
   dataFormatting: dataFormattingType,
@@ -158,7 +159,11 @@ export const getTooltipContent = ({ row, columns, colIndex, stringColumnIndex, l
     const numberColumn = columns[colIndex]
 
     const stringTitle = stringColumn.title
-    const numberTitle = numberColumn.origColumn ? numberColumn.origColumn.title : numberColumn.title
+    let numberTitle = numberColumn.origColumn ? numberColumn.origColumn.title : numberColumn.title
+    const aggTypeDisplayName = AGG_TYPES.find((agg) => agg.value === numberColumn.aggType)?.displayName
+    if (aggTypeDisplayName) {
+      numberTitle = `${numberTitle} (${aggTypeDisplayName})`
+    }
 
     const stringValue = formatElement({
       element: row[stringColumnIndex],

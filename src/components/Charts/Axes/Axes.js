@@ -66,7 +66,7 @@ export default class Axes extends React.Component {
   renderAxisLabel = (title = '', hasDropdown) => {
     if (title.length > 35) {
       return (
-        <tspan data-tip={title} data-for={this.props.tooltipID} data-test='axis-label'>
+        <tspan data-tip={title} data-for={this.props.chartTooltipID} data-test='axis-label'>
           {`${title.substring(0, 35)}...`}
         </tspan>
       )
@@ -143,7 +143,7 @@ export default class Axes extends React.Component {
             x={xBorderX + loadMoreDropDownSpanWidth + 15}
             y={xLabelY - 11}
             data-tip='Row limit (5000) reached. Try applying a filter or narrowing your search to return full results.'
-            data-for={this.props.tooltipID}
+            data-for={this.props.chartTooltipID}
           >
             <path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z'></path>
           </svg>

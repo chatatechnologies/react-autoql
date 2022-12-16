@@ -82,6 +82,7 @@ export default class Checkbox extends React.Component {
               ref={(el) => (this.selector = el)}
               id={this.ID}
               checked={this.props.checked}
+              onClick={(e) => e.stopPropagation()}
               onChange={this.onCheckedChange}
             />
             {this.props.checked && this.props.type === 'default' && (

@@ -166,7 +166,7 @@ export default class Axis extends Component {
       .attr('fill', (d) => {
         return self.colorScale(d.data.value[self.props.stringColumnIndex])
       })
-      .attr('data-for', this.props.tooltipID)
+      .attr('data-for', this.props.chartTooltipID)
       .attr('data-tip', function (d) {
         return getTooltipContent({
           row: d.data.value,

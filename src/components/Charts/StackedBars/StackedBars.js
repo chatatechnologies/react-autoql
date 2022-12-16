@@ -86,7 +86,7 @@ export default class StackedColumns extends Component {
               height={yScale.bandwidth()}
               onClick={() => this.onColumnClick(d, colIndex, index)}
               data-tip={tooltip}
-              data-for={this.props.tooltipID}
+              data-for={this.props.chartTooltipID}
               style={{
                 fill: this.props.colorScale(i),
                 fillOpacity: 0.7,

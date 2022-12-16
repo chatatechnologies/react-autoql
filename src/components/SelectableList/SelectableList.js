@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.clonedeep'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
 
 import { Checkbox } from '../Checkbox'
@@ -10,6 +11,14 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import './SelectableList.scss'
 
 export default class SelectableList extends React.Component {
+  constructor(props) {
+    super(props)
+
+    this.state = {
+      selected: [],
+    }
+  }
+
   static propTypes = {
     columns: PropTypes.arrayOf(PropTypes.shape({})),
     items: PropTypes.arrayOf(PropTypes.shape({})),
@@ -22,8 +31,9 @@ export default class SelectableList extends React.Component {
     items: [],
   }
 
-  state = {
-    selected: [],
+  selectAll = () => {
+    const selected = Array.from(Array(this.props.items?.length ?? 0).keys())
+    this.setState({ selected })
   }
 
   unselectAll = () => {
@@ -40,7 +50,7 @@ export default class SelectableList extends React.Component {
     return array
   }
 
-  handleShiftSelect = (index) => {
+  handleShiftSelect = (index, item) => {
     if (this.state.selected.length) {
       const currentFirstSelected = Math.min(...this.state.selected)
       let newSelected = [index]
@@ -50,11 +60,12 @@ export default class SelectableList extends React.Component {
         newSelected = this.interpolateArray(currentFirstSelected, index)
       }
 
-      this.props.onSelect(newSelected)
+      const newSelectedItems = newSelected.map((selectedIndex) => this.props.items[selectedIndex])
+      this.props.onSelect(newSelected, newSelectedItems)
       this.setState({ selected: newSelected })
     } else {
       // Nothing currently selected, just select the clicked row
-      this.props.onSelect([index])
+      this.props.onSelect([index], [item])
       this.setState({ selected: [index] })
     }
   }
@@ -70,24 +81,46 @@ export default class SelectableList extends React.Component {
     this.setState({ selected: newSelected })
   }
 
-  handleMultipleCheck = (items) => {
-    const allItemsChecked = this.state.selected.every((index) => items[index].checked)
-
-    if (allItemsChecked) {
-      this.state.selected.forEach((index) => {
-        items[index].checked = false
-      })
-    } else {
-      this.state.selected.forEach((index) => {
-        items[index].checked = true
-      })
-    }
-
+  checkAll = () => {
+    const items = this.props.items.map((item) => ({
+      ...item,
+      checked: true,
+    }))
     this.props.onChange(items)
   }
 
+  unCheckAll = () => {
+    const items = this.props.items.map((item) => ({
+      ...item,
+      checked: false,
+    }))
+    this.props.onChange(items)
+  }
+
+  handleMultipleCheck = (items) => {
+    const { selected } = this.state
+    const allItemsChecked = selected.every((index) => items[index].checked)
+
+    const newItems = this.props.items.map((item, i) => {
+      if (allItemsChecked && selected.includes(i)) {
+        return {
+          ...item,
+          checked: false,
+        }
+      } else if (selected.includes(i)) {
+        return {
+          ...item,
+          checked: true,
+        }
+      }
+      return item
+    })
+
+    this.props.onChange(newItems)
+  }
+
   render = () => {
-    const items = _cloneDeep(this.props.items)
+    const { items } = this.props
 
     return (
       <ErrorBoundary>
@@ -109,15 +142,11 @@ export default class SelectableList extends React.Component {
                       <Checkbox
                         checked={allItemsChecked}
                         style={{ marginLeft: '10px' }}
-                        onChange={() => {
+                        onChange={(e) => {
                           if (allItemsChecked) {
-                            items.forEach((item) => {
-                              item.checked = false
-                            })
+                            this.unCheckAll()
                           } else {
-                            items.forEach((item) => {
-                              item.checked = true
-                            })
+                            this.checkAll()
                           }
                           this.props.onChange(items)
                         }}
@@ -133,14 +162,16 @@ export default class SelectableList extends React.Component {
             return (
               <div
                 key={`list-item-${uuid()}`}
-                className={`react-autoql-list-item${this.state.selected.includes(index) ? ' selected' : ''}`}
+                className={`react-autoql-list-item
+                ${this.state.selected.includes(index) ? 'selected' : ''}
+                ${item.checked ? 'checked' : ''}`}
                 onClick={(e) => {
                   if (e.shiftKey) {
-                    this.handleShiftSelect(index)
+                    this.handleShiftSelect(index, item)
                   } else if (e.ctrlKey || e.metaKey) {
-                    this.handleCtrlSelect(index)
+                    this.handleCtrlSelect(index, item)
                   } else {
-                    this.props.onSelect([index])
+                    this.props.onSelect([index], [item])
                     this.setState({ selected: [index] })
                   }
                 }}
@@ -153,8 +184,18 @@ export default class SelectableList extends React.Component {
                       if (this.state.selected.length > 1 && this.state.selected.includes(index)) {
                         this.handleMultipleCheck(items)
                       } else {
-                        item.checked = !item.checked
-                        this.props.onChange(items)
+                        const newItems = items.map((newItem, i) => {
+                          if (index === i) {
+                            return {
+                              ...newItem,
+                              checked: !newItem.checked,
+                            }
+                          }
+
+                          return newItem
+                        })
+
+                        this.props.onChange(newItems)
                       }
                     }}
                   />
