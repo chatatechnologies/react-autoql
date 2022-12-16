@@ -1328,7 +1328,7 @@ export class QueryOutput extends React.Component {
       }
 
       // Set aggregate type is data is list query
-      if (isListQuery) {
+      if (isListQuery && isColumnNumberType(col)) {
         newCol.aggType = col.aggType || 'sum'
       }
 

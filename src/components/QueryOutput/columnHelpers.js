@@ -105,6 +105,14 @@ export const getStringColumnIndices = (columns, supportsPivot) => {
     return undefined
   }
 
+  const drilldownIndex = columns.findIndex((col) => col.isDrilldownColumn)
+  if (drilldownIndex >= 0) {
+    return {
+      stringColumnIndices: [drilldownIndex],
+      stringColumnIndex: drilldownIndex,
+    }
+  }
+
   const multiSeriesIndex = getMultiSeriesColumnIndex(columns)
   const dateColumnIndex = getDateColumnIndex(columns)
   const stringColumnIndices = []
