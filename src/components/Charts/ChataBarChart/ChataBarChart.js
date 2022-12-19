@@ -5,6 +5,7 @@ import _get from 'lodash.get'
 
 import { Axes } from '../Axes'
 import { Bars } from '../Bars'
+import { Legend } from '../Legend'
 
 import {
   getTickValues,

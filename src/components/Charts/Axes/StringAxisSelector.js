@@ -1,7 +1,5 @@
 import React from 'react'
-import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
-import { v4 as uuid } from 'uuid'
 import { Popover } from 'react-tiny-popover'
 import { axesDefaultProps, axesPropTypes } from '../helpers'
 import { CustomScrollbars } from '../../CustomScrollbars'
@@ -58,7 +56,7 @@ export default class StringAxisSelector extends React.Component {
                     this.props.changeStringColumnIndex(colIndex)
                   }}
                 >
-                  {_get(this.props.columns, `[${colIndex}].title`)}
+                  {this.props.columns?.[colIndex]?.display_name}
                 </li>
               )
             })}

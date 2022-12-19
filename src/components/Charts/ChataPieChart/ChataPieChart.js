@@ -9,7 +9,7 @@ import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
 import { pie, arc } from 'd3-shape'
 import { entries } from 'd3-collection'
-import legendColor from '../Legend/Legend'
+import legendColor from '../D3Legend/D3Legend'
 
 import { formatElement, removeFromDOM } from '../../../js/Util'
 import { chartDefaultProps, chartPropTypes, getTooltipContent } from '../helpers'

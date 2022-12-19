@@ -1,266 +1,347 @@
-/* This code is copied from the d3-svg-legend package
-(https://github.com/susielu/d3-legend) which appears to
-not be supported anymore.
+import React, { Component } from 'react'
+import PropTypes from 'prop-types'
+import { v4 as uuid } from 'uuid'
+import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
 
-In order to address new security vulnerabilities, this
-legend file has been copied into our repo instead. */
+import { select } from 'd3-selection'
+import { scaleOrdinal } from 'd3-scale'
 
-import helper from './legendHelpers'
-import { dispatch } from 'd3-dispatch'
-import { scaleLinear } from 'd3-scale'
-import { formatLocale, formatSpecifier } from 'd3-format'
-import { symbol, symbolCircle } from 'd3-shape'
+import legendColor from '../D3Legend/D3Legend'
 
-import { sum } from 'd3-array'
+import { removeFromDOM } from '../../../js/Util.js'
 
-export default function color() {
-  let scale = scaleLinear(),
-    shape = 'path',
-    shapeWidth = 15,
-    shapeHeight = 15,
-    shapeRadius = 10,
-    shapePadding = 2,
-    cells = [5],
-    cellFilter,
-    labels = [],
-    classPrefix = '',
-    useClass = false,
-    title = '',
-    locale = helper.d3_defaultLocale,
-    specifier = helper.d3_defaultFormatSpecifier,
-    labelOffset = 10,
-    labelAlign = 'middle',
-    labelDelimiter = helper.d3_defaultDelimiter,
-    labelWrap,
-    orient = 'vertical',
-    ascending = false,
-    path = symbol().type(symbolCircle).size(75)(),
-    titleWidth,
-    legendDispatcher = dispatch('cellover', 'cellout', 'cellclick')
+export default class Legend extends Component {
+  constructor(props) {
+    super(props)
 
-  function legend(svg) {
-    const type = helper.d3_calcType(scale, ascending, cells, labels, locale.format(specifier), labelDelimiter),
-      legendG = svg.selectAll('g').data([scale])
+    this.LEGEND_WIDTH = 130
+    this.LEGEND_ID = `axis-${uuid()}`
+    this.BUTTON_PADDING = 5
+    this.swatchElements = []
+  }
 
-    legendG
-      .enter()
-      .append('g')
-      .attr('class', classPrefix + 'legendCells')
+  static propTypes = {
+    legendTitle: PropTypes.string,
+    legendLabels: PropTypes.arrayOf(PropTypes.shape({})),
+    legendColumn: PropTypes.shape({}),
+    hasRightLegend: PropTypes.bool,
+    hasBottomLegend: PropTypes.bool,
+    onLabelChange: PropTypes.func,
+    onLegendClick: PropTypes.func,
+    onLegendTitleClick: PropTypes.func,
+    numberColumnIndices: PropTypes.arrayOf(PropTypes.number),
+    topMargin: PropTypes.number,
+    bottomMargin: PropTypes.number,
+    rightLegendMargin: PropTypes.number,
+    scale: PropTypes.func,
+    col: PropTypes.shape({}),
+    translate: PropTypes.string,
+    height: PropTypes.number,
+    width: PropTypes.number,
+  }
 
-    if (cellFilter) {
-      helper.d3_filterCells(type, cellFilter)
+  static defaultProps = {
+    legendTitle: undefined,
+    onLabelChange: () => {},
+    onLegendClick: () => {},
+    onLegendTitleClick: () => {},
+    translate: undefined,
+  }
+
+  componentDidMount = () => {
+    if (this.props.hasRightLegend || this.props.hasBottomLegend) {
+      // https://d3-legend.susielu.com/
+      this.renderLegend()
+    }
+  }
+
+  componentDidUpdate = (prevProps) => {
+    // only render legend once... unless labels changed
+    if (
+      (this.props.hasRightLegend || this.props.hasBottomLegend) &&
+      !_isEqual(this.props.legendLabels, prevProps.legendLabels)
+    ) {
+      this.renderLegend()
+    }
+  }
+
+  componentWillUnmount = () => {
+    removeFromDOM(this.legendElement)
+    removeFromDOM(this.legendSwatchElements)
+    removeFromDOM(this.swatchElements)
+  }
+
+  // TODO: remove last visible legend label if it is cut off
+  removeOverlappingLegendLabels = () => {
+    // const legendContainer = select(
+    //   `#legend-bounding-box-${this.LEGEND_ID}`
+    // ).node()
+    // select(this.rightLegendElement)
+    //   .selectAll('.cell')
+    //   .attr('opacity', function(d) {
+    //     // todo: fix this so the bboxes are absolute and intersection is possible
+    //     const tspanElement = select(this)
+    //       .select('tspan')
+    //       .node()
+    //     const isOverflowing = doesElementOverflowContainer(
+    //       this,
+    //       legendContainer
+    //     )
+    //     if (isOverflowing) {
+    //       return 0
+    //     }
+    //     return 1
+    //   })
+  }
+
+  styleLegendTitleNoBorder = (svg) => {
+    svg
+      .select('.legendTitle')
+      .style('font-weight', 'bold')
+      .style('transform', 'translate(0, -5px)')
+      .attr('data-test', 'legend-title')
+      .attr('fill-opacity', 0.9)
+  }
+
+  styleLegendTitleWithBorder = (svg) => {
+    svg
+      .select('.legendTitle')
+      .style('font-weight', 'bold')
+      .style('transform', 'translate(0, -5px)')
+      .attr('data-test', 'legend-title')
+      .append('tspan')
+      .text('  ▼')
+      .style('font-size', '8px')
+      .style('opacity', 0)
+      .attr('class', 'react-autoql-axis-selector-arrow')
+
+    // Add border that shows on hover
+    this.titleBBox = {}
+    try {
+      this.titleBBox = svg.select('.legendTitle').node().getBBox()
+    } catch (error) {
+      console.error(error)
     }
 
-    let cell = svg
-      .select('.' + classPrefix + 'legendCells')
-      .selectAll('.' + classPrefix + 'cell')
-      .data(type.data)
+    select(this.legendBorder)
+      .attr('class', 'legend-title-border')
+      .attr('width', _get(this.titleBBox, 'width', 0))
+      .attr('height', _get(this.titleBBox, 'height', 0))
+      .attr('x', _get(this.titleBBox, 'x', 0))
+      .attr('y', _get(this.titleBBox, 'y', 0))
+      .attr('stroke', 'transparent')
+      .attr('stroke-width', '1px')
+      .attr('fill', 'transparent')
+      .attr('rx', 4)
 
-    const cellEnter = cell
-      .enter()
-      .append('g')
-      .attr('class', classPrefix + 'cell')
-    cellEnter.append(shape).attr('class', classPrefix + 'swatch')
+    // Move to front
+    this.legendElement = select(this.legendBorder).node()
+    if (this.legendElement) {
+      removeFromDOM(this.legendElement)
+      this.legendElement.parentNode.appendChild(this.legendElement)
+    }
+  }
 
-    let shapes = svg.selectAll('g.' + classPrefix + 'cell ' + shape + '.' + classPrefix + 'swatch').data(type.data)
+  renderLegend = () => {
+    try {
+      const self = this
+      const { legendLabels } = this.props
 
-    // add event handlers
-    helper.d3_addEvents(cellEnter, legendDispatcher)
-
-    cell.exit().transition().style('opacity', 0).remove()
-    shapes.exit().transition().style('opacity', 0).remove()
-
-    shapes = shapes.merge(shapes)
-
-    helper.d3_drawShapes(shape, shapes, shapeHeight, shapeWidth, shapeRadius, path)
-    const text = helper.d3_addText(svg, cellEnter, type.labels, classPrefix, labelWrap)
-
-    // we need to merge the selection, otherwise changes in the legend (e.g. change of orientation) are applied only to the new cells and not the existing ones.
-    cell = cellEnter.merge(cell)
-
-    // sets placement
-    const textSize = text.nodes().map((d) => d.getBBox()),
-      shapeSize = shapes.nodes().map((d) => d.getBBox())
-    // sets scale
-    // everything is fill except for line which is stroke,
-    if (!useClass) {
-      if (shape == 'line') {
-        shapes.style('stroke', type.feature)
-      } else {
-        shapes.style('fill', type.feature)
+      if (!legendLabels) {
+        return
       }
-    } else {
-      shapes.attr('class', (d) => `${classPrefix}swatch ${type.feature(d)}`)
-    }
 
-    let cellTrans,
-      textTrans,
-      textAlign = labelAlign == 'start' ? 0 : labelAlign == 'middle' ? 0.5 : 1
+      const legendScale = this.getLegendScale(legendLabels)
 
-    // positions cells and text
-    if (orient === 'vertical') {
-      const cellSize = textSize.map((d, i) => Math.max(d.height, shapeSize[i].height))
+      if (this.props.hasRightLegend) {
+        this.legendSVG = select(this.rightLegendElement)
 
-      cellTrans = (d, i) => {
-        const height = sum(cellSize.slice(0, i))
-        return `translate(0, ${height + i * shapePadding})`
+        this.legendSVG
+          .attr('class', 'legendOrdinal')
+          .style('fill', 'currentColor')
+          .style('fill-opacity', '1')
+          .style('font-family', 'inherit')
+          .style('font-size', '10px')
+
+        var legendOrdinal = legendColor()
+          .orient('vertical')
+          .shapePadding(6)
+          .labelWrap(100)
+          .scale(legendScale)
+          .on('cellclick', function (d) {
+            self.props.onLabelChange({ setLoading: false })
+            self.props.onLegendClick(legendLabels.find((label) => label.label === d))
+          })
+
+        if (this.props.legendTitle) {
+          legendOrdinal.title(this.props.legendTitle).titleWidth(100)
+        }
+
+        this.legendSVG.call(legendOrdinal).style('font-family', 'inherit')
+
+        if (this.props.legendTitle) {
+          if (this.props.onLegendTitleClick) {
+            this.styleLegendTitleWithBorder(this.legendSVG)
+          } else {
+            this.styleLegendTitleNoBorder(this.legendSVG)
+          }
+        }
+
+        // adjust container width to exact width of legend
+        // this is so the updateMargins function works properly
+        const legendWidth = select(this.rightLegendElement).node()?.getBBox()?.width || 0
+        select(this.legendClippingContainer).attr('width', legendWidth)
+        this.legendSVG.attr('clip-path', `url(#legend-clip-area-${this.LEGEND_ID})`)
+      } else if (this.props.hasBottomLegend) {
+        this.legendSVG = select(this.bottomLegendElement)
+        this.legendSVG
+          .attr('class', 'legendOrdinal')
+          .style('fill', 'currentColor')
+          .style('fill-opacity', '1')
+          .style('font-family', 'inherit')
+          .style('font-size', '10px')
+
+        var legendOrdinal = legendColor()
+          .orient('horizontal')
+          .shapePadding(self.LEGEND_WIDTH)
+          .labelWrap(120)
+          .labelAlign('left')
+          .scale(legendScale)
+          .on('cellclick', function (d) {
+            self.props.onLegendClick(d)
+          })
+
+        this.legendSVG.call(legendOrdinal).style('font-family', 'inherit')
       }
 
-      textTrans = (d, i) =>
-        `translate( ${shapeSize[i].width + shapeSize[i].x + labelOffset}, ${
-          shapeSize[i].y + shapeSize[i].height / 2 + 5
-        })`
-    } else if (orient === 'horizontal') {
-      cellTrans = (d, i) => `translate(${i * (shapeSize[i].width + shapePadding)},0)`
-      textTrans = (d, i) => `translate(${shapeSize[i].width * textAlign + shapeSize[i].x},
-          ${shapeSize[i].height + shapeSize[i].y + labelOffset + 8})`
+      this.applyStylesForHiddenSeries(legendLabels)
+      // todo: get this working properly
+      this.removeOverlappingLegendLabels()
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  applyStylesForHiddenSeries = (legendLabels) => {
+    try {
+      const legendLabelTexts = legendLabels
+        .filter((l) => {
+          return l.hidden
+        })
+        .map((l) => l.label)
+
+      this.legendSwatchElements = document.querySelectorAll(`#${this.LEGEND_ID} .label`)
+
+      if (this.legendSwatchElements) {
+        this.legendSwatchElements.forEach((el, i) => {
+          const textStrings = []
+          el.querySelectorAll('tspan').forEach((tspan) => {
+            textStrings.push(tspan.textContent)
+          })
+
+          const legendLabelText = textStrings.join(' ')
+          this.swatchElements[i] = el.parentElement.querySelector('.swatch')
+
+          if (legendLabelTexts.includes(legendLabelText)) {
+            this.swatchElements[i].style.opacity = 0.3
+          } else {
+            this.swatchElements[i].style.opacity = 1
+          }
+        })
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  getLegendScale = (legendLabels) => {
+    const colorRange = legendLabels.map((obj) => {
+      return obj.color
+    })
+
+    return scaleOrdinal()
+      .domain(
+        legendLabels.map((obj) => {
+          return obj.label
+        }),
+      )
+      .range(colorRange)
+  }
+
+  render = () => {
+    const numSeries = this.props.numberColumnIndices?.length || 0
+    const legendDx = (this.LEGEND_WIDTH * (numSeries - 1)) / 2
+    const marginLeft = this.props.leftMargin || 0
+
+    let legendClippingHeight =
+      this.props.height -
+      this.props.topMargin -
+      // make legend smaller if labels are not rotated
+      // because they might overlap the legend
+      (!this.props.rotateLabels ? this.props.bottomMargin : 44) + // distance to bottom of axis labels
+      20
+    if (legendClippingHeight < 0) {
+      legendClippingHeight = 0
     }
 
-    helper.d3_placement(orient, cell, cellTrans, text, textTrans, labelAlign)
-    helper.d3_title(svg, title, classPrefix, titleWidth)
-
-    cell.transition().style('opacity', 1)
+    return (
+      <g data-test='legend'>
+        {this.props.hasRightLegend && (
+          <g
+            ref={(el) => {
+              this.rightLegendElement = el
+            }}
+            id={this.LEGEND_ID}
+            data-test='right-legend'
+            className='legendOrdinal right-legend'
+            transform={`translate(${this.props.width - this.props.rightLegendMargin}, ${
+              this.props.legendTitle ? '30' : '25'
+            })`}
+          >
+            <clipPath id={`legend-clip-area-${this.LEGEND_ID}`}>
+              <rect
+                ref={(el) => {
+                  this.legendClippingContainer = el
+                }}
+                id={`legend-bounding-box-${this.LEGEND_ID}`}
+                height={legendClippingHeight}
+                width={this.props.rightLegendMargin}
+                style={{ transform: `translate(0px, -30px)` }}
+              />
+            </clipPath>
+            {/* {this.props.legendColumn && (
+              <LegendSelector
+                {...this.props}
+                column={this.props.legendColumn}
+                positions={['bottom']}
+                align='end'
+                childProps={{
+                  ref: (r) => (this.legendBorder = r),
+                  x: _get(this.titleBBox, 'x', 0),
+                  y: _get(this.titleBBox, 'y', 0),
+                  width: _get(this.titleBBox, 'width', 0) + this.BUTTON_PADDING * 2,
+                  height: _get(this.titleBBox, 'height', 0) + this.BUTTON_PADDING * 2,
+                  //   transform: this.props.translate,
+                }}
+              />
+            )} */}
+          </g>
+        )}
+        {this.props.hasBottomLegend && (
+          <g
+            ref={(el) => {
+              this.bottomLegendElement = el
+            }}
+            data-test='bottom-legend'
+            id={this.LEGEND_ID}
+            className='legendOrdinal'
+            transform={`translate(${(this.props.width - marginLeft) / 2 + marginLeft - legendDx},${
+              this.props.height - 30
+            })`}
+          />
+        )}
+      </g>
+    )
   }
-
-  legend.scale = function (_) {
-    if (!arguments.length) {return scale}
-    scale = _
-    return legend
-  }
-
-  legend.cells = function (_) {
-    if (!arguments.length) {return cells}
-    if (_.length > 1 || _ >= 2) {
-      cells = _
-    }
-    return legend
-  }
-
-  legend.cellFilter = function (_) {
-    if (!arguments.length) {return cellFilter}
-    cellFilter = _
-    return legend
-  }
-
-  legend.shapeWidth = function (_) {
-    if (!arguments.length) {return shapeWidth}
-    shapeWidth = +_
-    return legend
-  }
-
-  legend.shapeHeight = function (_) {
-    if (!arguments.length) {return shapeHeight}
-    shapeHeight = +_
-    return legend
-  }
-
-  legend.shapeRadius = function (_) {
-    if (!arguments.length) {return shapeRadius}
-    shapeRadius = +_
-    return legend
-  }
-
-  legend.shapePadding = function (_) {
-    if (!arguments.length) {return shapePadding}
-    shapePadding = +_
-    return legend
-  }
-
-  legend.labels = function (_) {
-    if (!arguments.length) {return labels}
-    labels = _
-    return legend
-  }
-
-  legend.labelAlign = function (_) {
-    if (!arguments.length) {return labelAlign}
-    if (_ == 'start' || _ == 'end' || _ == 'middle') {
-      labelAlign = _
-    }
-    return legend
-  }
-
-  legend.locale = function (_) {
-    if (!arguments.length) {return locale}
-    locale = formatLocale(_)
-    return legend
-  }
-
-  legend.labelFormat = function (_) {
-    if (!arguments.length) {return legend.locale().format(specifier)}
-    specifier = formatSpecifier(_)
-    return legend
-  }
-
-  legend.labelOffset = function (_) {
-    if (!arguments.length) {return labelOffset}
-    labelOffset = +_
-    return legend
-  }
-
-  legend.labelDelimiter = function (_) {
-    if (!arguments.length) {return labelDelimiter}
-    labelDelimiter = _
-    return legend
-  }
-
-  legend.labelWrap = function (_) {
-    if (!arguments.length) {return labelWrap}
-    labelWrap = _
-    return legend
-  }
-
-  legend.useClass = function (_) {
-    if (!arguments.length) {return useClass}
-    if (_ === true || _ === false) {
-      useClass = _
-    }
-    return legend
-  }
-
-  legend.orient = function (_) {
-    if (!arguments.length) {return orient}
-    _ = _.toLowerCase()
-    if (_ == 'horizontal' || _ == 'vertical') {
-      orient = _
-    }
-    return legend
-  }
-
-  legend.ascending = function (_) {
-    if (!arguments.length) {return ascending}
-    ascending = !!_
-    return legend
-  }
-
-  legend.classPrefix = function (_) {
-    if (!arguments.length) {return classPrefix}
-    classPrefix = _
-    return legend
-  }
-
-  legend.title = function (_) {
-    if (!arguments.length) {return title}
-    title = _
-    return legend
-  }
-
-  legend.titleWidth = function (_) {
-    if (!arguments.length) {return titleWidth}
-    titleWidth = _
-    return legend
-  }
-
-  legend.textWrap = function (_) {
-    if (!arguments.length) {return textWrap}
-    textWrap = _
-    return legend
-  }
-
-  legend.on = function () {
-    const value = legendDispatcher.on.apply(legendDispatcher, arguments)
-    return value === legendDispatcher ? legend : value
-  }
-
-  return legend
 }

@@ -13,6 +13,8 @@ export default class Axes extends React.Component {
     this.COMPONENT_ID = uuid()
     this.xAxisKey = uuid()
     this.yAxisKey = uuid()
+    this.xAxis2Key = uuid()
+    this.yAxis2Key = uuid()
     this.axisLabelPaddingTop = 5
     this.axisLabelPaddingLeft = 10
     this.maxRows = 5000
@@ -45,6 +47,15 @@ export default class Axes extends React.Component {
     if (prevState.currentRowNumber !== this.state.currentRowNumber) {
       this.forceUpdate()
     }
+  }
+
+  getXCenter = () => {
+    return (
+      (this.props.width - this.props.leftMargin + this.props.rightMargin + this.props.rightLegendMargin) / 2 +
+      this.props.leftMargin -
+      this.props.rightMargin -
+      this.props.rightLegendMargin
+    )
   }
 
   renderLoadMoreDropdown = (currentRowNumber, totalRowNumber) => {
@@ -106,10 +117,7 @@ export default class Axes extends React.Component {
     if (loadMoreDropDownSpan) {
       loadMoreDropDownSpanWidth = loadMoreDropDownSpan.getBoundingClientRect().width || 0
     }
-    const xCenter =
-      (this.props.width - this.props.leftMargin + this.props.rightMargin) / 2 +
-      this.props.leftMargin -
-      this.props.rightMargin
+    const xCenter = this.getXCenter()
     const xLabelBbox = getBBoxFromRef(this.LoadMoreDropdownRef)
     const xLabelTextWidth = xLabelBbox ? xLabelBbox.width : 0
     const xLabelTextHeight = this.getLabelTextHeight(this.LoadMoreDropdownRef)
@@ -171,11 +179,7 @@ export default class Axes extends React.Component {
     )
   }
   renderXAxisLabel = (xAxisTitle) => {
-    const xCenter =
-      (this.props.width - this.props.leftMargin + this.props.rightMargin) / 2 +
-      this.props.leftMargin -
-      this.props.rightMargin
-
+    const xCenter = this.getXCenter()
     const xLabelBbox = getBBoxFromRef(this.xLabelRef)
     const xLabelTextWidth = xLabelBbox ? xLabelBbox.width : 0
     const xLabelTextHeight = this.getLabelTextHeight(this.xLabelRef)
@@ -317,6 +321,14 @@ export default class Axes extends React.Component {
     )
   }
 
+  renderXAxis2Label = () => {
+    return null
+  }
+
+  renderYAxis2Label = () => {
+    return null
+  }
+
   renderXAxis = (xAxisTitle) => {
     return (
       <Axis
@@ -327,7 +339,7 @@ export default class Axes extends React.Component {
         translate={`translate(0, ${this.props.height - this.props.bottomMargin})`}
         tickSizeInner={-this.props.height + this.props.topMargin + this.props.bottomMargin}
         ticks={this.props.xTicks}
-        width={this.props.width - this.props.rightMargin}
+        width={this.props.width - this.props.rightLegendMargin}
         col={this.props.xCol}
         title={xAxisTitle}
         showGridLines={this.props.xGridLines}
@@ -343,13 +355,44 @@ export default class Axes extends React.Component {
         orient='Left'
         scale={this.props.yScale}
         translate={`translate(${this.props.leftMargin}, 0)`}
-        tickSizeInner={-this.props.width + this.props.leftMargin + this.props.rightMargin}
+        tickSizeInner={-this.props.innerWidth}
         ticks={this.props.yTicks}
         height={this.props.height}
-        width={this.props.width - this.props.rightMargin}
+        width={this.props.width - this.props.rightLegendMargin}
         col={this.props.yCol}
         title={yAxisTitle}
         showGridLines={this.props.yGridLines}
+      />
+    )
+  }
+
+  renderXAxis2 = (title) => {
+    // top
+    if (!title) {
+      return null
+    }
+  }
+
+  renderYAxis2 = (title) => {
+    if (!title) {
+      return null
+    }
+
+    return (
+      <Axis
+        {...this.props}
+        key={this.yAxis2Key}
+        orient='Right'
+        scale={this.props.yScale2}
+        translate={`translate(${this.props.leftMargin}, 0)`}
+        tickSizeInner={this.props.innerWidth}
+        ticks={this.props.yTicks2}
+        height={this.props.height}
+        col={this.props.yCol2}
+        title={title}
+        showGridLines={this.props.yGridLines}
+        hasRightLegend={false}
+        hasBottomLegend={false}
       />
     )
   }
@@ -368,17 +411,23 @@ export default class Axes extends React.Component {
 
     const xAxisTitle = this.props.xAxisTitle || this.props.xCol?.display_name
     const yAxisTitle = this.props.yAxisTitle || this.props.yCol?.display_name
+    const xAxis2Title = this.props.xAxis2Title || this.props.xCol2?.display_name
+    const yAxis2Title = this.props.yAxis2Title || this.props.yCol2?.display_name
 
     return (
       <g>
         {this.renderYAxisLabel(yAxisTitle)}
         {this.renderXAxisLabel(xAxisTitle)}
+        {/* {this.renderYAxis2Label(yAxis2Title)}
+        {this.renderXAxis2Label(xAxis2Title)} */}
         {this.props.enableAjaxTableData &&
           this.renderXAxisLoadMoreDropdown(this.state.currentRowNumber, this.props.totalRowsNumber)}
 
         <g className='react-autoql-axes' data-test='react-autoql-axes'>
           {this.renderXAxis(xAxisTitle)}
           {this.renderYAxis(yAxisTitle)}
+          {this.renderXAxis2(xAxis2Title)}
+          {this.renderYAxis2(yAxis2Title)}
         </g>
       </g>
     )
