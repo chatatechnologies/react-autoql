@@ -64,13 +64,20 @@ export default class ChataColumnChart extends Component {
       numberColumnIndices = props.visibleSeriesIndices
     }
 
-    const { minValue, maxValue } = getMinAndMaxValues(props.data, numberColumnIndices, props.isChartScaled)
-
     this.xScale = scaleBand()
       .domain(props.data.map((d) => d[props.stringColumnIndex]))
       .range([props.leftMargin, props.width - props.rightMargin - props.rightLegendMargin])
       .paddingInner(props.innerPadding)
       .paddingOuter(props.outerPadding)
+
+    this.tickWidth = getTickWidth(this.xScale, props.innerPadding)
+    this.xTickValues = getTickValues({
+      tickHeight: this.tickWidth,
+      fullHeight: props.innerWidth,
+      labelArray: this.xScale.domain(),
+    })
+
+    const { minValue, maxValue } = getMinAndMaxValues(props.data, numberColumnIndices, props.isChartScaled)
 
     const rangeEnd = props.topMargin
     let rangeStart = props.height - props.bottomMargin
@@ -79,16 +86,6 @@ export default class ChataColumnChart extends Component {
     }
 
     this.yScale = scaleLinear().domain([minValue, maxValue]).range([rangeStart, rangeEnd])
-    this.yScale.minValue = minValue
-    this.yScale.maxValue = maxValue
-    this.yScale.type = 'LINEAR'
-
-    this.tickWidth = getTickWidth(this.xScale, props.innerPadding)
-    this.xTickValues = getTickValues({
-      tickHeight: this.tickWidth,
-      fullHeight: props.innerWidth,
-      labelArray: this.xScale.domain(),
-    })
 
     this.yLabelArray = this.yScale.ticks()
     this.tickHeight = props.innerHeight / this.yLabelArray?.length
@@ -100,11 +97,13 @@ export default class ChataColumnChart extends Component {
     })
 
     const minMax2 = getMinAndMaxValues(props.data, [numberColumnIndices[1]], props.isChartScaled)
-    this.yScale2 = scaleLinear().domain([minMax2.minValue, minMax2.maxValue]).range([rangeStart, rangeEnd])
+    const tempYScale2 = scaleLinear().domain([minMax2.minValue, minMax2.maxValue]).range([rangeStart, rangeEnd])
 
-    const yTickValues2 = [...this.yScale2?.ticks(this.yTickValues.length)]
+    const yTickValues2 = [...tempYScale2?.ticks(this.yTickValues.length)]
     const numYTickValues2 = yTickValues2.length
-    if (numYTickValues2 < this.yTickValues.length) {
+    if (numYTickValues2 === this.yTickValues.length) {
+      this.yTickValues2 = yTickValues2
+    } else if (numYTickValues2 < this.yTickValues.length) {
       const difference = this.yTickValues.length - numYTickValues2
       const interval = Math.abs(yTickValues2[1] - yTickValues2[0])
 
@@ -113,15 +112,42 @@ export default class ChataColumnChart extends Component {
         yTickValues2.push(tickValue)
       }
 
-      this.yScale2 = scaleLinear()
-        .domain([yTickValues2[0], yTickValues2[yTickValues2.length - 1]])
-        .range([rangeStart, rangeEnd])
-      this.yScale2.minValue = minMax2.minValue
-      this.yScale2.maxValue = minMax2.maxValue
-      this.yScale2.type = 'LINEAR'
+      this.yTickValues2 = yTickValues2
+    } else if (numYTickValues2 > this.yTickValues.length) {
+      this.yTickValues2 = getTickValues({
+        tickHeight: this.tickHeight,
+        fullHeight: props.innerHeight,
+        labelArray: yTickValues2,
+        scale: tempYScale2,
+      })
+
+      const newYTickValues = [...this.yTickValues]
+      const difference = this.yTickValues2.length - this.yTickValues.length
+      const interval = Math.abs(this.yTickValues[1] - this.yTickValues[0])
+
+      for (let i = 0; i < difference; i++) {
+        const tickValue = (i + this.yTickValues.length) * interval
+        newYTickValues.push(tickValue)
+      }
+
+      this.yTickValues = newYTickValues
     }
 
-    this.yTickValues2 = yTickValues2
+    this.yScale = scaleLinear()
+      .domain([this.yTickValues[0], this.yTickValues[this.yTickValues.length - 1]])
+      .range([rangeStart, rangeEnd])
+    this.yScale.minValue = minValue
+    this.yScale.maxValue = maxValue
+    this.yScale.type = 'LINEAR'
+
+    this.yScale2 = scaleLinear()
+      .domain([this.yTickValues2[0], this.yTickValues2[this.yTickValues2.length - 1]])
+      .range([rangeStart, rangeEnd])
+    this.yScale2.minValue = minMax2.minValue
+    this.yScale2.maxValue = minMax2.maxValue
+    this.yScale2.type = 'LINEAR'
+
+    console.log('recalculating tick values', { tickValues2: this.yTickValues2 })
   }
 
   render = () => {

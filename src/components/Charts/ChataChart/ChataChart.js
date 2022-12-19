@@ -367,12 +367,12 @@ export default class ChataChart extends Component {
   getNewRightMargin = (chartContainerBbox, axesBbox, leftMargin, rightLegendMargin) => {
     const axesLeft = axesBbox.x + chartContainerBbox.x
     const axesRight = axesLeft + axesBbox.width
-    const containerRight = chartContainerBbox.x + chartContainerBbox.width
-    const rightDiff = axesRight + rightLegendMargin - containerRight
+    const containerRight = chartContainerBbox.x + chartContainerBbox.width - rightLegendMargin
+    const rightDiff = axesRight + containerRight
 
     const leftMarginDiff = leftMargin - this.state.leftMargin
-    const maxMargin = chartContainerBbox.width - leftMarginDiff
-    const calculatedMargin = rightDiff + this.AXIS_LABEL_PADDING - rightLegendMargin + this.LEGEND_PADDING
+    const maxMargin = chartContainerBbox.width - leftMarginDiff - rightLegendMargin
+    const calculatedMargin = rightDiff + this.AXIS_LABEL_PADDING + this.LEGEND_PADDING
 
     let rightMargin = this.state.rightMargin
     if (calculatedMargin < maxMargin) {
