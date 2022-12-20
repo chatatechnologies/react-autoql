@@ -8,11 +8,13 @@ import _cloneDeep from 'lodash.clonedeep'
 import {
   chartDefaultProps,
   chartPropTypes,
+  getBandScalesAndTickValues,
+  getLinearScalesAndTickValues,
   getMinAndMaxValues,
   getTickValues,
   shouldRecalculateLongestLabel,
 } from '../helpers.js'
-import { shouldLabelsRotate, getTickWidth, getLongestLabelInPx } from '../../../js/Util'
+import { shouldLabelsRotate, getLongestLabelInPx } from '../../../js/Util'
 import { getDataFormatting } from '../../../props/defaults'
 import { Legend } from '../Legend'
 
@@ -64,90 +66,95 @@ export default class ChataColumnChart extends Component {
       numberColumnIndices = props.visibleSeriesIndices
     }
 
-    this.xScale = scaleBand()
-      .domain(props.data.map((d) => d[props.stringColumnIndex]))
-      .range([props.leftMargin, props.width - props.rightMargin - props.rightLegendMargin])
-      .paddingInner(props.innerPadding)
-      .paddingOuter(props.outerPadding)
+    const xScaleAndTicks = getBandScalesAndTickValues(props, props.stringColumnIndex)
+    this.xScale = xScaleAndTicks.scale
+    this.xTickValues = xScaleAndTicks.tickValues
 
-    this.tickWidth = getTickWidth(this.xScale, props.innerPadding)
-    this.xTickValues = getTickValues({
-      tickHeight: this.tickWidth,
-      fullHeight: props.innerWidth,
-      labelArray: this.xScale.domain(),
-    })
+    const yScalesAndTicks = getLinearScalesAndTickValues(props, numberColumnIndices)
+    this.yScale = yScalesAndTicks.scale
+    this.yTickValues = yScalesAndTicks.tickValues
+    this.yScale2 = yScalesAndTicks.scale2
+    this.yTickValues2 = yScalesAndTicks.tickValues2
 
-    const { minValue, maxValue } = getMinAndMaxValues(props.data, numberColumnIndices, props.isChartScaled)
+    // const { minValue, maxValue } = getMinAndMaxValues(props.data, numberColumnIndices, props.isChartScaled)
 
-    const rangeEnd = props.topMargin
-    let rangeStart = props.height - props.bottomMargin
-    if (rangeStart < rangeEnd) {
-      rangeStart = rangeEnd
-    }
+    // const rangeEnd = props.topMargin
+    // let rangeStart = props.height - props.bottomMargin
+    // if (rangeStart < rangeEnd) {
+    //   rangeStart = rangeEnd
+    // }
 
-    this.yScale = scaleLinear().domain([minValue, maxValue]).range([rangeStart, rangeEnd])
+    // const tempYScale = scaleLinear().domain([minValue, maxValue]).range([rangeStart, rangeEnd])
+    // tempYScale.type = 'LINEAR'
+    // tempYScale.minValue = minValue
+    // tempYScale.maxValue = maxValue
 
-    this.yLabelArray = this.yScale.ticks()
-    this.tickHeight = props.innerHeight / this.yLabelArray?.length
-    this.yTickValues = getTickValues({
-      tickHeight: this.tickHeight,
-      fullHeight: props.innerHeight,
-      labelArray: this.yLabelArray,
-      scale: this.yScale,
-    })
+    // this.yLabelArray = tempYScale.ticks()
+    // this.tickHeight = props.innerHeight / this.yLabelArray?.length
+    // this.yTickValues = getTickValues({
+    //   tickHeight: this.tickHeight,
+    //   fullHeight: props.innerHeight,
+    //   labelArray: this.yLabelArray,
+    //   scale: tempYScale,
+    // })
 
-    const minMax2 = getMinAndMaxValues(props.data, [numberColumnIndices[1]], props.isChartScaled)
-    const tempYScale2 = scaleLinear().domain([minMax2.minValue, minMax2.maxValue]).range([rangeStart, rangeEnd])
+    // this.yScale = scaleLinear()
+    //   .domain(this.yTickValues[0], this.yTickValues[this.yTickValues.length - 1])
+    //   .range([rangeStart, rangeEnd])
 
-    const yTickValues2 = [...tempYScale2?.ticks(this.yTickValues.length)]
-    const numYTickValues2 = yTickValues2.length
-    if (numYTickValues2 === this.yTickValues.length) {
-      this.yTickValues2 = yTickValues2
-    } else if (numYTickValues2 < this.yTickValues.length) {
-      const difference = this.yTickValues.length - numYTickValues2
-      const interval = Math.abs(yTickValues2[1] - yTickValues2[0])
+    // const minMax2 = getMinAndMaxValues(props.data, [numberColumnIndices[1]], props.isChartScaled)
+    // const tempYScale2 = scaleLinear().domain([minMax2.minValue, minMax2.maxValue]).range([rangeStart, rangeEnd])
+    // tempYScale2.type = 'LINEAR'
+    // tempYScale2.minValue = minMax2.minValue
+    // tempYScale2.maxValue = minMax2.maxValue
 
-      for (let i = 0; i < difference; i++) {
-        const tickValue = (i + numYTickValues2) * interval
-        yTickValues2.push(tickValue)
-      }
+    // const yTickValues2 = [...tempYScale2?.ticks(this.yTickValues.length)]
+    // const numYTickValues2 = yTickValues2.length
+    // if (numYTickValues2 === this.yTickValues.length) {
+    //   this.yTickValues2 = yTickValues2
+    // } else if (numYTickValues2 < this.yTickValues.length) {
+    //   const difference = this.yTickValues.length - numYTickValues2
+    //   const interval = Math.abs(yTickValues2[1] - yTickValues2[0])
 
-      this.yTickValues2 = yTickValues2
-    } else if (numYTickValues2 > this.yTickValues.length) {
-      this.yTickValues2 = getTickValues({
-        tickHeight: this.tickHeight,
-        fullHeight: props.innerHeight,
-        labelArray: yTickValues2,
-        scale: tempYScale2,
-      })
+    //   for (let i = 0; i < difference; i++) {
+    //     const tickValue = (i + numYTickValues2) * interval
+    //     yTickValues2.push(tickValue)
+    //   }
 
-      const newYTickValues = [...this.yTickValues]
-      const difference = this.yTickValues2.length - this.yTickValues.length
-      const interval = Math.abs(this.yTickValues[1] - this.yTickValues[0])
+    //   this.yTickValues2 = yTickValues2
+    // } else if (numYTickValues2 > this.yTickValues.length) {
+    //   this.yTickValues2 = getTickValues({
+    //     tickHeight: this.tickHeight,
+    //     fullHeight: props.innerHeight,
+    //     labelArray: yTickValues2,
+    //     scale: tempYScale2,
+    //   })
 
-      for (let i = 0; i < difference; i++) {
-        const tickValue = (i + this.yTickValues.length) * interval
-        newYTickValues.push(tickValue)
-      }
+    //   const newYTickValues = [...this.yTickValues]
+    //   const difference = this.yTickValues2.length - this.yTickValues.length
+    //   const interval = Math.abs(this.yTickValues[1] - this.yTickValues[0])
 
-      this.yTickValues = newYTickValues
-    }
+    //   for (let i = 0; i < difference; i++) {
+    //     const tickValue = (i + this.yTickValues.length) * interval
+    //     newYTickValues.push(tickValue)
+    //   }
 
-    this.yScale = scaleLinear()
-      .domain([this.yTickValues[0], this.yTickValues[this.yTickValues.length - 1]])
-      .range([rangeStart, rangeEnd])
-    this.yScale.minValue = minValue
-    this.yScale.maxValue = maxValue
-    this.yScale.type = 'LINEAR'
+    //   this.yTickValues = newYTickValues
+    // }
 
-    this.yScale2 = scaleLinear()
-      .domain([this.yTickValues2[0], this.yTickValues2[this.yTickValues2.length - 1]])
-      .range([rangeStart, rangeEnd])
-    this.yScale2.minValue = minMax2.minValue
-    this.yScale2.maxValue = minMax2.maxValue
-    this.yScale2.type = 'LINEAR'
+    // this.yScale = scaleLinear()
+    //   .domain([this.yTickValues[0], this.yTickValues[this.yTickValues.length - 1]])
+    //   .range([rangeStart, rangeEnd])
+    // this.yScale.minValue = minValue
+    // this.yScale.maxValue = maxValue
+    // this.yScale.type = 'LINEAR'
 
-    console.log('recalculating tick values', { tickValues2: this.yTickValues2 })
+    // this.yScale2 = scaleLinear()
+    //   .domain([this.yTickValues2[0], this.yTickValues2[this.yTickValues2.length - 1]])
+    //   .range([rangeStart, rangeEnd])
+    // this.yScale2.minValue = minMax2.minValue
+    // this.yScale2.maxValue = minMax2.maxValue
+    // this.yScale2.type = 'LINEAR'
   }
 
   render = () => {

@@ -11,9 +11,10 @@ import {
   chartPropTypes,
   getTickValues,
   shouldRecalculateLongestLabel,
+  getTickWidth,
 } from '../helpers.js'
 
-import { shouldLabelsRotate, getTickWidth, getLongestLabelInPx } from '../../../js/Util'
+import { shouldLabelsRotate, getLongestLabelInPx } from '../../../js/Util'
 
 import { getDataFormatting } from '../../../props/defaults'
 
@@ -61,7 +62,9 @@ export default class ChataStackedColumnChart extends Component {
 
   setChartData = (props) => {
     let numberColumnIndices = props.numberColumnIndices
-    if (props.visibleSeriesIndices?.length) {numberColumnIndices = props.visibleSeriesIndices}
+    if (props.visibleSeriesIndices?.length) {
+      numberColumnIndices = props.visibleSeriesIndices
+    }
     const { maxValue, minValue } = calculateMinAndMaxSums(props.data, props.stringColumnIndex, numberColumnIndices)
 
     this.xScale = scaleBand()

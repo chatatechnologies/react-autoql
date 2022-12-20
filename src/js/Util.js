@@ -975,16 +975,6 @@ export const shouldLabelsRotate = (tickWidth, longestLabelWidth) => {
   return tickWidth < longestLabelWidth
 }
 
-export const getTickWidth = (scale, innerPadding) => {
-  try {
-    const width = scale.bandwidth() + innerPadding * scale.bandwidth() * 2
-    return width
-  } catch (error) {
-    console.error(error)
-    return 0
-  }
-}
-
 export const getQueryParams = (url) => {
   try {
     const queryParams = {}

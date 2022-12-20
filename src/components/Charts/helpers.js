@@ -2,6 +2,7 @@ import PropTypes from 'prop-types'
 import { max, min } from 'd3-array'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
+import { scaleLinear, scaleBand } from 'd3-scale'
 
 import { formatElement } from '../../js/Util'
 import { dataFormattingType } from '../../props/types'
@@ -398,6 +399,111 @@ export const getLegendLocation = (seriesArray, displayType) => {
   return undefined
 }
 
+export const getTickWidth = (scale, innerPadding) => {
+  try {
+    const width = scale.bandwidth() + innerPadding * scale.bandwidth() * 2
+    return width
+  } catch (error) {
+    console.error(error)
+    return 0
+  }
+}
+
+export const getBandScalesAndTickValues = (props, columnIndex) => {
+  const scale = scaleBand()
+    .domain(props.data.map((d) => d[columnIndex]))
+    .range([props.leftMargin, props.width - props.rightMargin - props.rightLegendMargin])
+    .paddingInner(props.innerPadding)
+    .paddingOuter(props.outerPadding)
+
+  const tickWidth = getTickWidth(scale, props.innerPadding)
+  const tickValues = getTickValues({
+    tickHeight: tickWidth,
+    fullHeight: props.innerWidth,
+    labelArray: scale.domain(),
+  })
+
+  return { scale, tickValues }
+}
+
+export const getLinearScalesAndTickValues = (props, columnIndices) => {
+  const { minValue, maxValue } = getMinAndMaxValues(props.data, columnIndices, props.isChartScaled)
+
+  const rangeEnd = props.topMargin
+  let rangeStart = props.height - props.bottomMargin
+  if (rangeStart < rangeEnd) {
+    rangeStart = rangeEnd
+  }
+
+  const tempYScale = scaleLinear().domain([minValue, maxValue]).range([rangeStart, rangeEnd])
+  tempYScale.type = 'LINEAR'
+  tempYScale.minValue = minValue
+  tempYScale.maxValue = maxValue
+
+  const tempYLabelArray = tempYScale.ticks()
+  const tempTickHeight = props.innerHeight / tempYLabelArray?.length
+  let tickValues = getTickValues({
+    tickHeight: tempTickHeight,
+    fullHeight: props.innerHeight,
+    labelArray: tempYLabelArray,
+    scale: tempYScale,
+  })
+
+  const minMax2 = getMinAndMaxValues(props.data, [columnIndices[1]], props.isChartScaled)
+  const tempYScale2 = scaleLinear().domain([minMax2.minValue, minMax2.maxValue]).range([rangeStart, rangeEnd])
+  tempYScale2.type = 'LINEAR'
+  tempYScale2.minValue = minMax2.minValue
+  tempYScale2.maxValue = minMax2.maxValue
+
+  let tickValues2 = [...tempYScale2?.ticks(tickValues.length)]
+  const numtickValues2 = tickValues2.length
+  if (numtickValues2 === tickValues.length) {
+    // do nothing, ticks line up already
+  } else if (numtickValues2 < tickValues.length) {
+    const difference = tickValues.length - numtickValues2
+    const interval = Math.abs(tickValues2[1] - tickValues2[0])
+
+    for (let i = 0; i < difference; i++) {
+      const tickValue = (i + numtickValues2) * interval
+      tickValues2.push(tickValue)
+    }
+  } else if (numtickValues2 > tickValues.length) {
+    tickValues2 = getTickValues({
+      tickHeight: props.innerHeight / tickValues2?.length,
+      fullHeight: props.innerHeight,
+      labelArray: tickValues2,
+      scale: tempYScale2,
+    })
+
+    const newTickValues = [...tickValues]
+    const difference = tickValues2.length - tickValues.length
+    const interval = Math.abs(tickValues[1] - tickValues[0])
+
+    for (let i = 0; i < difference; i++) {
+      const tickValue = (i + tickValues.length) * interval
+      newTickValues.push(tickValue)
+    }
+
+    tickValues = newTickValues
+  }
+
+  const scale = scaleLinear()
+    .domain([tickValues[0], tickValues[tickValues.length - 1]])
+    .range([rangeStart, rangeEnd])
+  scale.minValue = minValue
+  scale.maxValue = maxValue
+  scale.type = 'LINEAR'
+
+  const scale2 = scaleLinear()
+    .domain([tickValues2[0], tickValues2[tickValues2.length - 1]])
+    .range([rangeStart, rangeEnd])
+  scale2.minValue = minMax2.minValue
+  scale2.maxValue = minMax2.maxValue
+  scale2.type = 'LINEAR'
+
+  return { scale, scale2, tickValues, tickValues2 }
+}
+
 export const doesElementOverflowContainer = (element, container) => {
   const elementBBox = element.getBBox()
   const containerBBox = container.getBBox()
@@ -427,6 +533,7 @@ export const doesElementOverflowContainer = (element, container) => {
 
 export const getNiceTickValues = ({ tickValues, scale }) => {
   const { minValue, maxValue } = scale
+
   if (minValue === undefined || maxValue === undefined) {
     console.warn('Tried to make nice labels but max/min values were not provided')
     return tickValues
@@ -466,7 +573,7 @@ export const getTickValues = ({ tickHeight, fullHeight, labelArray, scale }) => 
     const minTextHeightInPx = 16
     const interval = Math.ceil((labelArray.length * minTextHeightInPx) / fullHeight)
 
-    let tickValues = labelArray
+    let tickValues = [...labelArray]
     if (tickHeight < minTextHeightInPx) {
       tickValues = []
 
