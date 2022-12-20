@@ -25,8 +25,7 @@ export default class Legend extends Component {
     legendTitle: PropTypes.string,
     legendLabels: PropTypes.arrayOf(PropTypes.shape({})),
     legendColumn: PropTypes.shape({}),
-    hasRightLegend: PropTypes.bool,
-    hasBottomLegend: PropTypes.bool,
+    placement: PropTypes.string,
     onLabelChange: PropTypes.func,
     onLegendClick: PropTypes.func,
     onLegendTitleClick: PropTypes.func,
@@ -47,10 +46,11 @@ export default class Legend extends Component {
     onLegendClick: () => {},
     onLegendTitleClick: () => {},
     translate: undefined,
+    placement: 'right',
   }
 
   componentDidMount = () => {
-    if (this.props.hasRightLegend || this.props.hasBottomLegend) {
+    if (this.props.placement === 'right' || this.props.placement === 'bottom') {
       // https://d3-legend.susielu.com/
       this.renderLegend()
     }
@@ -59,7 +59,7 @@ export default class Legend extends Component {
   componentDidUpdate = (prevProps) => {
     // only render legend once... unless labels changed
     if (
-      (this.props.hasRightLegend || this.props.hasBottomLegend) &&
+      (this.props.placement === 'right' || this.props.placement === 'bottom') &&
       !_isEqual(this.props.legendLabels, prevProps.legendLabels)
     ) {
       this.renderLegend()
@@ -154,7 +154,7 @@ export default class Legend extends Component {
 
       const legendScale = this.getLegendScale(legendLabels)
 
-      if (this.props.hasRightLegend) {
+      if (this.props.placement === 'right') {
         this.legendSVG = select(this.rightLegendElement)
 
         this.legendSVG
@@ -193,7 +193,7 @@ export default class Legend extends Component {
         const legendWidth = select(this.rightLegendElement).node()?.getBBox()?.width || 0
         select(this.legendClippingContainer).attr('width', legendWidth)
         this.legendSVG.attr('clip-path', `url(#legend-clip-area-${this.LEGEND_ID})`)
-      } else if (this.props.hasBottomLegend) {
+      } else if (this.props.placement === 'bottom') {
         this.legendSVG = select(this.bottomLegendElement)
         this.legendSVG
           .attr('class', 'legendOrdinal')
@@ -287,7 +287,7 @@ export default class Legend extends Component {
 
     return (
       <g data-test='legend'>
-        {this.props.hasRightLegend && (
+        {this.props.placement === 'right' && (
           <g
             ref={(el) => {
               this.rightLegendElement = el
@@ -328,7 +328,7 @@ export default class Legend extends Component {
             )} */}
           </g>
         )}
-        {this.props.hasBottomLegend && (
+        {this.props.placement === 'bottom' && (
           <g
             ref={(el) => {
               this.bottomLegendElement = el

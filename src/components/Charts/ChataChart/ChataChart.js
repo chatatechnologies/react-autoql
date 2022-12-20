@@ -643,10 +643,10 @@ export default class ChataChart extends Component {
 
   getCommonChartProps = () => {
     const { topMargin, bottomMargin, rightMargin, leftMargin, rightLegendMargin, bottomLegendMargin } = this.state
-    const { numberColumnIndices, columns } = this.props
+    const { numberColumnIndices, numberColumnIndices2, columns } = this.props
 
     let innerPadding = this.INNER_PADDING
-    if (numberColumnIndices.length > 1) {
+    if (numberColumnIndices.length > 1 || numberColumnIndices2 > 1) {
       innerPadding = 0.1
     }
 
@@ -655,6 +655,10 @@ export default class ChataChart extends Component {
     const hasMultipleStringColumns = amountOfStringColumns > 1
 
     const visibleSeriesIndices = numberColumnIndices.filter(
+      (colIndex) => columns?.[colIndex] && !columns[colIndex].isSeriesHidden,
+    )
+
+    const visibleSeriesIndices2 = numberColumnIndices2.filter(
       (colIndex) => columns?.[colIndex] && !columns[colIndex].isSeriesHidden,
     )
 
@@ -688,6 +692,7 @@ export default class ChataChart extends Component {
       legendLabels: this.getLegendLabels(),
       // legendPadding: this.LEGEND_PADDING,
       visibleSeriesIndices,
+      visibleSeriesIndices2,
       numberAxisTitle: this.getNumberAxisTitle(),
       stringAxisTitle: this.getStringAxisTitle(),
       onStringColumnSelect: this.onStringColumnSelect,

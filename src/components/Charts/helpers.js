@@ -409,12 +409,14 @@ export const getTickWidth = (scale, innerPadding) => {
   }
 }
 
-export const getBandScalesAndTickValues = (props, columnIndex) => {
-  const scale = scaleBand()
-    .domain(props.data.map((d) => d[columnIndex]))
-    .range([props.leftMargin, props.width - props.rightMargin - props.rightLegendMargin])
-    .paddingInner(props.innerPadding)
-    .paddingOuter(props.outerPadding)
+export const getBandScalesAndTickValues = ({ props, columnIndex, axis }) => {
+  // const scale = scaleBand()
+  //   .domain(props.data.map((d) => d[columnIndex]))
+  //   .range([props.leftMargin, props.width - props.rightMargin - props.rightLegendMargin])
+  //   .paddingInner(props.innerPadding)
+  //   .paddingOuter(props.outerPadding)
+
+  const scale = getBandScale({ props, columnIndex, axis })
 
   const tickWidth = getTickWidth(scale, props.innerPadding)
   const tickValues = getTickValues({
@@ -426,19 +428,54 @@ export const getBandScalesAndTickValues = (props, columnIndex) => {
   return { scale, tickValues }
 }
 
-export const getLinearScalesAndTickValues = (props, columnIndices) => {
-  const { minValue, maxValue } = getMinAndMaxValues(props.data, columnIndices, props.isChartScaled)
-
-  const rangeEnd = props.topMargin
-  let rangeStart = props.height - props.bottomMargin
-  if (rangeStart < rangeEnd) {
-    rangeStart = rangeEnd
+export const getRangeForAxis = (props, axis) => {
+  let rangeStart
+  let rangeEnd
+  if (axis === 'x') {
+    rangeStart = props.leftMargin
+    rangeEnd = props.width - props.rightMargin - props.rightLegendMargin
+    if (rangeEnd < rangeStart) {
+      rangeEnd = rangeStart
+    }
+  } else if (axis === 'y') {
+    rangeEnd = props.topMargin
+    rangeStart = props.height - props.bottomMargin
+    if (rangeStart < rangeEnd) {
+      rangeStart = rangeEnd
+    }
   }
 
-  const tempYScale = scaleLinear().domain([minValue, maxValue]).range([rangeStart, rangeEnd])
-  tempYScale.type = 'LINEAR'
-  tempYScale.minValue = minValue
-  tempYScale.maxValue = maxValue
+  return { rangeStart, rangeEnd }
+}
+
+export const getBandScale = ({ props, columnIndex, axis }) => {
+  const { rangeStart, rangeEnd } = getRangeForAxis(props, axis)
+
+  const scale = scaleBand()
+    .domain(props.data.map((d) => d[columnIndex]))
+    .range([rangeStart, rangeEnd])
+    .paddingInner(props.innerPadding)
+    .paddingOuter(props.outerPadding)
+
+  scale.type = 'BAND'
+
+  return scale
+}
+
+export const getLinearScale = (props, minValue, maxValue, axis) => {
+  const { rangeStart, rangeEnd } = getRangeForAxis(props, axis)
+  const scale = scaleLinear().domain([minValue, maxValue]).range([rangeStart, rangeEnd])
+  scale.type = 'LINEAR'
+  scale.minValue = minValue
+  scale.maxValue = maxValue
+
+  return scale
+}
+
+export const getLinearScalesAndTickValues = ({ props, columnIndices1, columnIndices2, axis }) => {
+  const { minValue, maxValue } = getMinAndMaxValues(props.data, columnIndices1, props.isChartScaled)
+
+  const tempYScale = getLinearScale(props, minValue, maxValue, axis)
 
   const tempYLabelArray = tempYScale.ticks()
   const tempTickHeight = props.innerHeight / tempYLabelArray?.length
@@ -449,11 +486,8 @@ export const getLinearScalesAndTickValues = (props, columnIndices) => {
     scale: tempYScale,
   })
 
-  const minMax2 = getMinAndMaxValues(props.data, [columnIndices[1]], props.isChartScaled)
-  const tempYScale2 = scaleLinear().domain([minMax2.minValue, minMax2.maxValue]).range([rangeStart, rangeEnd])
-  tempYScale2.type = 'LINEAR'
-  tempYScale2.minValue = minMax2.minValue
-  tempYScale2.maxValue = minMax2.maxValue
+  const minMax2 = getMinAndMaxValues(props.data, columnIndices2, props.isChartScaled)
+  const tempYScale2 = getLinearScale(props, minMax2.minValue, minMax2.maxValue, axis)
 
   let tickValues2 = [...tempYScale2?.ticks(tickValues.length)]
   const numtickValues2 = tickValues2.length
@@ -487,19 +521,8 @@ export const getLinearScalesAndTickValues = (props, columnIndices) => {
     tickValues = newTickValues
   }
 
-  const scale = scaleLinear()
-    .domain([tickValues[0], tickValues[tickValues.length - 1]])
-    .range([rangeStart, rangeEnd])
-  scale.minValue = minValue
-  scale.maxValue = maxValue
-  scale.type = 'LINEAR'
-
-  const scale2 = scaleLinear()
-    .domain([tickValues2[0], tickValues2[tickValues2.length - 1]])
-    .range([rangeStart, rangeEnd])
-  scale2.minValue = minMax2.minValue
-  scale2.maxValue = minMax2.maxValue
-  scale2.type = 'LINEAR'
+  const scale = getLinearScale(props, tickValues[0], tickValues[tickValues.length - 1], axis)
+  const scale2 = getLinearScale(props, tickValues2[0], tickValues2[tickValues2.length - 1], axis)
 
   return { scale, scale2, tickValues, tickValues2 }
 }

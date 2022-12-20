@@ -374,7 +374,7 @@ export default class Axes extends React.Component {
   }
 
   renderYAxis2 = (title) => {
-    if (!title) {
+    if (!this.props.yCol2 || !this.props.yScale2) {
       return null
     }
 

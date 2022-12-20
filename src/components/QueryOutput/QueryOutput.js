@@ -1044,7 +1044,9 @@ export class QueryOutput extends React.Component {
       this.pivotTableConfig.numberColumnIndex = indices[0]
     } else {
       this.tableConfig.numberColumnIndices = indices
+      this.tableConfig.numberColumnIndices2 = indices
       this.tableConfig.numberColumnIndex = indices[0]
+      this.tableConfig.numberColumnIndex2 = indices[0]
     }
 
     this.updateColumns(newColumns)
@@ -1111,6 +1113,8 @@ export class QueryOutput extends React.Component {
       const { numberColumnIndex, numberColumnIndices } = getNumberColumnIndices(columns)
       this.tableConfig.numberColumnIndices = numberColumnIndices
       this.tableConfig.numberColumnIndex = numberColumnIndex
+      this.tableConfig.numberColumnIndices2 = numberColumnIndices
+      this.tableConfig.numberColumnIndex2 = numberColumnIndex
     }
 
     // Set legend index if there should be one
