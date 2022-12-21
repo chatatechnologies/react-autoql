@@ -205,12 +205,12 @@ export default class ChataChart extends Component {
       chartHeight = 0
     }
 
-    let innerHeight = chartHeight - bottomMargin - topMargin - bottomLegendMargin - this.AXIS_LABEL_PADDING
+    let innerHeight = chartHeight - bottomMargin - topMargin - bottomLegendMargin
     if (innerHeight < 0) {
       innerHeight = 0
     }
 
-    let innerWidth = chartWidth - leftMargin - rightMargin - rightLegendMargin - this.AXIS_LABEL_PADDING
+    let innerWidth = chartWidth - leftMargin - rightMargin - rightLegendMargin
     if (innerWidth < 0) {
       innerWidth = 0
     }
@@ -365,14 +365,20 @@ export default class ChataChart extends Component {
   }
 
   getNewRightMargin = (chartContainerBbox, axesBbox, leftMargin, rightLegendMargin) => {
+    const axesWidth = axesBbox.width
+    const containerWidth = chartContainerBbox.width - rightLegendMargin
+
     const axesLeft = axesBbox.x + chartContainerBbox.x
-    const axesRight = axesLeft + axesBbox.width
-    const containerRight = chartContainerBbox.x + chartContainerBbox.width - rightLegendMargin
-    const rightDiff = axesRight + containerRight
+    const axesRight = axesLeft + axesWidth
+
+    const containerLeft = chartContainerBbox.x
+    const containerRight = containerLeft + containerWidth
+
+    const rightDiff = axesRight - containerRight
 
     const leftMarginDiff = leftMargin - this.state.leftMargin
-    const maxMargin = chartContainerBbox.width - leftMarginDiff - rightLegendMargin
-    const calculatedMargin = rightDiff + this.AXIS_LABEL_PADDING + this.LEGEND_PADDING
+    const maxMargin = containerWidth - leftMarginDiff - rightLegendMargin
+    const calculatedMargin = this.state.rightMargin + rightDiff + this.LEGEND_PADDING
 
     let rightMargin = this.state.rightMargin
     if (calculatedMargin < maxMargin) {
@@ -380,10 +386,6 @@ export default class ChataChart extends Component {
     } else {
       rightMargin = this.PADDING
     }
-
-    // if (rightLegendMargin && rightMargin - rightLegendMargin > 0) {
-    //   rightMargin = rightMargin - rightLegendMargin
-    // }
 
     return rightMargin
   }

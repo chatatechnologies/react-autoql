@@ -4,7 +4,7 @@ import { Line } from '../Line'
 import { scaleLinear, scaleBand } from 'd3-scale'
 import _get from 'lodash.get'
 
-import { shouldLabelsRotate, getLongestLabelInPx } from '../../../js/Util'
+import { shouldLabelsRotate, getLongestLabelInPx, formatElement } from '../../../js/Util'
 import { getDataFormatting } from '../../../props/defaults'
 import {
   chartDefaultProps,
@@ -82,17 +82,17 @@ export default class ChataLineChart extends Component {
 
     this.tickWidth = props.innerWidth / (this.xScale?.domain()?.length || 1)
     this.xTickValues = getTickValues({
-      tickHeight: this.tickWidth,
-      fullHeight: props.innerWidth,
-      labelArray: this.xScale.domain(),
+      tickSize: this.tickWidth,
+      fullSize: props.innerWidth,
+      initialTicks: this.xScale.domain(),
     })
 
     this.yLabelArray = this.yScale.ticks()
     this.tickHeight = props.innerHeight / this.yLabelArray?.length
     this.yTickValues = getTickValues({
-      tickHeight: this.tickHeight,
-      fullHeight: props.innerHeight,
-      labelArray: this.yLabelArray,
+      tickSize: this.tickHeight,
+      fullSize: props.innerHeight,
+      initialTicks: this.yLabelArray,
       scale: this.yScale,
     })
   }

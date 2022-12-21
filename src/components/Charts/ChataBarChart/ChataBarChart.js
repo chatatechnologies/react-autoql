@@ -87,17 +87,17 @@ export default class ChataBarChart extends Component {
     this.yLabelArray = props.data.map((el) => el[props.stringColumnIndex])
     this.barHeight = props.innerHeight / props.data.length
     this.yTickValues = getTickValues({
-      tickHeight: this.barHeight,
-      fullHeight: props.innerHeight,
-      labelArray: this.yLabelArray,
+      tickSize: this.barHeight,
+      fullSize: props.innerHeight,
+      initialTicks: this.yLabelArray,
     })
 
     this.xLabelArray = this.xScale.ticks()
     this.tickWidth = props.innerWidth / this.xLabelArray?.length
     this.xTickValues = getTickValues({
-      tickHeight: this.tickWidth,
-      fullHeight: props.innerWidth,
-      labelArray: this.xLabelArray,
+      tickSize: this.tickWidth,
+      fullSize: props.innerWidth,
+      initialTicks: this.xLabelArray,
       scale: this.xScale,
     })
   }

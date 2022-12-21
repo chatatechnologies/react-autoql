@@ -73,15 +73,15 @@ export default class ChataBubbleChart extends Component {
     this.yScale = scaleBand().domain(this.yLabelArray).range([yRangeStart, yRangeEnd])
 
     this.xTickValues = getTickValues({
-      tickHeight: this.xScale.bandwidth(),
-      fullHeight: props.innerWidth,
-      labelArray: this.xScale.domain(),
+      tickSize: this.xScale.bandwidth(),
+      fullSize: props.innerWidth,
+      initialTicks: this.xScale.domain(),
     })
 
     this.yTickValues = getTickValues({
-      tickHeight: this.circleHeight,
-      fullHeight: props.innerHeight,
-      labelArray: this.yLabelArray,
+      tickSize: this.circleHeight,
+      fullSize: props.innerHeight,
+      initialTicks: this.yLabelArray,
     })
   }
 

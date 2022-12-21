@@ -5,8 +5,9 @@ import { Columns } from '../Columns'
 import {
   chartDefaultProps,
   chartPropTypes,
-  getBandScalesAndTickValues,
-  getLinearScalesAndTickValues,
+  getBandScales,
+  getLinearScales,
+  getTickSize,
   shouldRecalculateLongestLabel,
 } from '../helpers.js'
 
@@ -41,7 +42,7 @@ export default class ChataColumnChart extends Component {
   }
 
   setLabelRotationValue = (props) => {
-    const rotateLabels = shouldLabelsRotate(this.tickWidth, this.longestLabelWidth)
+    const rotateLabels = shouldLabelsRotate(this.xScale?.tickSizePx, this.longestLabelWidth)
 
     if (typeof rotateLabels !== 'undefined') {
       this.rotateLabels = rotateLabels
@@ -50,7 +51,7 @@ export default class ChataColumnChart extends Component {
 
   setLongestLabelWidth = (props) => {
     this.longestLabelWidth = getLongestLabelInPx(
-      this.xTickValues,
+      this.xScale.tickLabels,
       props.columns[props.stringColumnIndex],
       getDataFormatting(props.dataFormatting),
     )
@@ -67,20 +68,19 @@ export default class ChataColumnChart extends Component {
       numberColumnIndices2 = props.visibleSeriesIndices2
     }
 
-    const xScaleAndTicks = getBandScalesAndTickValues({ props, columnIndex: props.stringColumnIndex, axis: 'x' })
-    this.xScale = xScaleAndTicks.scale
-    this.xTickValues = xScaleAndTicks.tickValues
+    const xScale = getBandScales({ props, columnIndex: props.stringColumnIndex, axis: 'x' })
+    this.xScale = xScale.scale
 
-    const yScalesAndTicks = getLinearScalesAndTickValues({
+    const yScalesAndTicks = getLinearScales({
       props,
       columnIndices1: numberColumnIndices,
       columnIndices2: numberColumnIndices2,
       axis: 'y',
     })
     this.yScale = yScalesAndTicks.scale
-    this.yTickValues = yScalesAndTicks.tickValues
+    this.yTickValues = this.yScale.tickLabels
     this.yScale2 = yScalesAndTicks.scale2
-    this.yTickValues2 = yScalesAndTicks.tickValues2
+    this.yTickValues2 = this.yScale2.tickLabels
   }
 
   render = () => {
@@ -101,9 +101,9 @@ export default class ChataColumnChart extends Component {
           xCol={this.props.columns[this.props.stringColumnIndex]}
           yCol={yCol}
           yCol2={yCol2}
-          xTicks={this.xTickValues}
-          yTicks={this.yTickValues}
-          yTicks2={this.yTickValues2}
+          xTicks={this.xScale.tickLabels}
+          yTicks={this.yScale.tickLabels}
+          yTicks2={this.yScale2.tickLabels}
           rotateLabels={this.rotateLabels}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}

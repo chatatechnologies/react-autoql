@@ -11,7 +11,6 @@ import {
   chartPropTypes,
   getTickValues,
   shouldRecalculateLongestLabel,
-  getTickWidth,
 } from '../helpers.js'
 
 import { shouldLabelsRotate, getLongestLabelInPx } from '../../../js/Util'
@@ -84,19 +83,19 @@ export default class ChataStackedColumnChart extends Component {
     this.yScale.maxValue = maxValue
     this.yScale.type = 'LINEAR'
 
-    this.tickWidth = getTickWidth(this.xScale, props.innerPadding)
+    this.tickWidth = this.xScale.bandwidth()
     this.xTickValues = getTickValues({
-      tickHeight: this.tickWidth,
-      fullHeight: props.innerWidth,
-      labelArray: this.xScale.domain(),
+      tickSize: this.tickWidth,
+      fullSize: props.innerWidth,
+      initialTicks: this.xScale.domain(),
     })
 
     this.yLabelArray = this.yScale.ticks()
     this.tickHeight = props.innerHeight / this.yLabelArray?.length
     this.yTickValues = getTickValues({
-      tickHeight: this.tickHeight,
-      fullHeight: props.innerHeight,
-      labelArray: this.yLabelArray,
+      tickSize: this.tickHeight,
+      fullSize: props.innerHeight,
+      initialTicks: this.yLabelArray,
       scale: this.yScale,
     })
   }

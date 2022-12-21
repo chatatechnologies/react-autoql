@@ -59,7 +59,9 @@ export default class ChataStackedLineChart extends Component {
 
   setChartData = (props) => {
     let numberColumnIndices = props.numberColumnIndices
-    if (props.visibleSeriesIndices?.length) {numberColumnIndices = props.visibleSeriesIndices}
+    if (props.visibleSeriesIndices?.length) {
+      numberColumnIndices = props.visibleSeriesIndices
+    }
     const { maxValue, minValue } = calculateMinAndMaxSums(props.data, props.stringColumnIndex, numberColumnIndices)
 
     this.xScale = scaleBand()
@@ -81,17 +83,17 @@ export default class ChataStackedLineChart extends Component {
 
     this.tickWidth = props.innerWidth / (this.xScale?.domain()?.length || 1)
     this.xTickValues = getTickValues({
-      tickHeight: this.tickWidth,
-      fullHeight: props.innerWidth,
-      labelArray: this.xScale.domain(),
+      tickSize: this.tickWidth,
+      fullSize: props.innerWidth,
+      initialTicks: this.xScale.domain(),
     })
 
     this.yLabelArray = this.yScale.ticks()
     this.tickHeight = props.innerHeight / this.yLabelArray?.length
     this.yTickValues = getTickValues({
-      tickHeight: this.tickHeight,
-      fullHeight: props.innerHeight,
-      labelArray: this.yLabelArray,
+      tickSize: this.tickHeight,
+      fullSize: props.innerHeight,
+      initialTicks: this.yLabelArray,
       scale: this.yScale,
     })
   }

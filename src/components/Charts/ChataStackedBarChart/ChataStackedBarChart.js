@@ -59,7 +59,9 @@ export default class ChataStackedBarChart extends Component {
 
   setChartData = (props) => {
     let numberColumnIndices = props.numberColumnIndices
-    if (props.visibleSeriesIndices?.length) {numberColumnIndices = props.visibleSeriesIndices}
+    if (props.visibleSeriesIndices?.length) {
+      numberColumnIndices = props.visibleSeriesIndices
+    }
     const { maxValue, minValue } = calculateMinAndMaxSums(props.data, props.stringColumnIndex, numberColumnIndices)
 
     const rangeStart = props.leftMargin
@@ -85,17 +87,17 @@ export default class ChataStackedBarChart extends Component {
 
     this.barHeight = props.height / props.data.length
     this.yTickValues = getTickValues({
-      tickHeight: this.barHeight,
-      fullHeight: props.innerHeight,
-      labelArray: this.yLabelArray,
+      tickSize: this.barHeight,
+      fullSize: props.innerHeight,
+      initialTicks: this.yLabelArray,
     })
 
     this.xLabelArray = this.xScale.ticks()
     this.tickWidth = props.innerWidth / this.xLabelArray?.length
     this.xTickValues = getTickValues({
-      tickHeight: this.tickWidth,
-      fullHeight: props.innerWidth,
-      labelArray: this.xLabelArray,
+      tickSize: this.tickWidth,
+      fullSize: props.innerWidth,
+      initialTicks: this.xLabelArray,
       scale: this.xScale,
     })
   }

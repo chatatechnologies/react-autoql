@@ -1,10 +1,10 @@
 import PropTypes from 'prop-types'
-import { max, min } from 'd3-array'
+import { max, min, ticks } from 'd3-array'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import { scaleLinear, scaleBand } from 'd3-scale'
 
-import { formatElement } from '../../js/Util'
+import { formatChartLabel, formatElement } from '../../js/Util'
 import { dataFormattingType } from '../../props/types'
 import { dataFormattingDefault } from '../../props/defaults'
 import { AGG_TYPES } from '../../js/Constants'
@@ -399,33 +399,10 @@ export const getLegendLocation = (seriesArray, displayType) => {
   return undefined
 }
 
-export const getTickWidth = (scale, innerPadding) => {
-  try {
-    const width = scale.bandwidth() + innerPadding * scale.bandwidth() * 2
-    return width
-  } catch (error) {
-    console.error(error)
-    return 0
-  }
-}
-
-export const getBandScalesAndTickValues = ({ props, columnIndex, axis }) => {
-  // const scale = scaleBand()
-  //   .domain(props.data.map((d) => d[columnIndex]))
-  //   .range([props.leftMargin, props.width - props.rightMargin - props.rightLegendMargin])
-  //   .paddingInner(props.innerPadding)
-  //   .paddingOuter(props.outerPadding)
-
+export const getBandScales = ({ props, columnIndex, axis }) => {
   const scale = getBandScale({ props, columnIndex, axis })
-
-  const tickWidth = getTickWidth(scale, props.innerPadding)
-  const tickValues = getTickValues({
-    tickHeight: tickWidth,
-    fullHeight: props.innerWidth,
-    labelArray: scale.domain(),
-  })
-
-  return { scale, tickValues }
+  const scale2 = getBandScale({ props, columnIndex, axis })
+  return { scale, scale2 }
 }
 
 export const getRangeForAxis = (props, axis) => {
@@ -445,86 +422,103 @@ export const getRangeForAxis = (props, axis) => {
     }
   }
 
-  return { rangeStart, rangeEnd }
+  return [rangeStart, rangeEnd]
 }
 
 export const getBandScale = ({ props, columnIndex, axis }) => {
-  const { rangeStart, rangeEnd } = getRangeForAxis(props, axis)
+  const range = getRangeForAxis(props, axis)
+  const domain = props.data.map((d) => d[columnIndex])
 
   const scale = scaleBand()
-    .domain(props.data.map((d) => d[columnIndex]))
-    .range([rangeStart, rangeEnd])
+    .domain(domain)
+    .range(range)
     .paddingInner(props.innerPadding)
     .paddingOuter(props.outerPadding)
 
   scale.type = 'BAND'
+  scale.tickLabels = getTickValues({ scale, props, axis, initialTicks: domain })
+  scale.tickSizePx = getTickSize(props, axis, scale)
 
   return scale
 }
 
-export const getLinearScale = (props, minValue, maxValue, axis) => {
-  const { rangeStart, rangeEnd } = getRangeForAxis(props, axis)
-  const scale = scaleLinear().domain([minValue, maxValue]).range([rangeStart, rangeEnd])
-  scale.type = 'LINEAR'
-  scale.minValue = minValue
-  scale.maxValue = maxValue
-
-  return scale
-}
-
-export const getLinearScalesAndTickValues = ({ props, columnIndices1, columnIndices2, axis }) => {
-  const { minValue, maxValue } = getMinAndMaxValues(props.data, columnIndices1, props.isChartScaled)
-
-  const tempYScale = getLinearScale(props, minValue, maxValue, axis)
-
-  const tempYLabelArray = tempYScale.ticks()
-  const tempTickHeight = props.innerHeight / tempYLabelArray?.length
-  let tickValues = getTickValues({
-    tickHeight: tempTickHeight,
-    fullHeight: props.innerHeight,
-    labelArray: tempYLabelArray,
-    scale: tempYScale,
-  })
-
-  const minMax2 = getMinAndMaxValues(props.data, columnIndices2, props.isChartScaled)
-  const tempYScale2 = getLinearScale(props, minMax2.minValue, minMax2.maxValue, axis)
-
-  let tickValues2 = [...tempYScale2?.ticks(tickValues.length)]
-  const numtickValues2 = tickValues2.length
-  if (numtickValues2 === tickValues.length) {
-    // do nothing, ticks line up already
-  } else if (numtickValues2 < tickValues.length) {
-    const difference = tickValues.length - numtickValues2
-    const interval = Math.abs(tickValues2[1] - tickValues2[0])
-
-    for (let i = 0; i < difference; i++) {
-      const tickValue = (i + numtickValues2) * interval
-      tickValues2.push(tickValue)
-    }
-  } else if (numtickValues2 > tickValues.length) {
-    tickValues2 = getTickValues({
-      tickHeight: props.innerHeight / tickValues2?.length,
-      fullHeight: props.innerHeight,
-      labelArray: tickValues2,
-      scale: tempYScale2,
-    })
-
-    const newTickValues = [...tickValues]
-    const difference = tickValues2.length - tickValues.length
-    const interval = Math.abs(tickValues[1] - tickValues[0])
-
-    for (let i = 0; i < difference; i++) {
-      const tickValue = (i + tickValues.length) * interval
-      newTickValues.push(tickValue)
-    }
-
-    tickValues = newTickValues
+export const getLinearScale = ({ props, minValue, maxValue, axis, tickValues }) => {
+  const range = getRangeForAxis(props, axis)
+  let domain = [minValue, maxValue]
+  if (tickValues) {
+    domain = [tickValues[0], tickValues[tickValues.length - 1]]
   }
 
-  const scale = getLinearScale(props, tickValues[0], tickValues[tickValues.length - 1], axis)
-  const scale2 = getLinearScale(props, tickValues2[0], tickValues2[tickValues2.length - 1], axis)
+  if (!tickValues) {
+  }
 
-  return { scale, scale2, tickValues, tickValues2 }
+  const scale = scaleLinear().domain(domain).range(range)
+  scale.minValue = minValue
+  scale.maxValue = maxValue
+  scale.type = 'LINEAR'
+
+  if (tickValues) {
+    scale.ticks(tickValues)
+  } else {
+    const niceTickValues = getTickValues({
+      props,
+      axis,
+      scale,
+    })
+
+    scale.tickLabels = [...niceTickValues]
+    scale.ticks(niceTickValues)
+  }
+
+  const tickSizePx = getTickSize(props, axis, scale, tickValues)
+  scale.tickSizePx = tickSizePx
+
+  return scale
+}
+
+export const getLinearScales = ({ props, columnIndices1, columnIndices2, axis }) => {
+  const minMax = getMinAndMaxValues(props.data, columnIndices1, props.isChartScaled)
+  const minValue = minMax.minValue
+  const maxValue = minMax.maxValue
+  const tempScale1 = getLinearScale({ props, minValue, maxValue, axis })
+
+  const minMax2 = getMinAndMaxValues(props.data, columnIndices2, props.isChartScaled)
+  const minValue2 = minMax2.minValue
+  const maxValue2 = minMax2.maxValue
+  const tempScale2 = getLinearScale({ props, minValue: minValue2, maxValue: maxValue2, axis })
+
+  const tickValues1 = tempScale1.tickLabels
+  const tickValues2 = tempScale2.tickLabels
+
+  const numTickValues1 = tickValues1?.length
+  const numTickValues2 = tickValues2?.length
+
+  const newTickValues1 = [...tickValues1]
+  const newTickValues2 = [...tickValues2]
+  if (numTickValues1 === numTickValues2) {
+    // do nothing, ticks line up already
+  } else if (numTickValues2 < numTickValues1) {
+    const difference = numTickValues1 - numTickValues2
+    const interval = tickValues2[1] - tickValues2[0]
+
+    for (let i = 0; i < difference; i++) {
+      const tickValue = (i + numTickValues2) * interval
+      newTickValues2.push(tickValue)
+    }
+  } else if (numTickValues2 > numTickValues1) {
+    const difference = numTickValues2 - numTickValues1
+    const interval = tickValues1[1] - tickValues1[0]
+
+    for (let i = 0; i < difference; i++) {
+      const tickValue = (i + numTickValues1) * interval
+      newTickValues1.push(tickValue)
+    }
+  }
+
+  const scale = getLinearScale({ props, axis, tickValues: newTickValues1 })
+  const scale2 = getLinearScale({ props, axis, tickValues: newTickValues2 })
+
+  return { scale, scale2 }
 }
 
 export const doesElementOverflowContainer = (element, container) => {
@@ -554,7 +548,7 @@ export const doesElementOverflowContainer = (element, container) => {
   return false
 }
 
-export const getNiceTickValues = ({ tickValues, scale }) => {
+export const getNiceTickValues = ({ tickValues, scale, props, axis }) => {
   const { minValue, maxValue } = scale
 
   if (minValue === undefined || maxValue === undefined) {
@@ -584,24 +578,59 @@ export const getNiceTickValues = ({ tickValues, scale }) => {
       newTickValues.push(newMaxTickValue)
     }
 
-    scale.domain([newMinTickValue, newMaxTickValue])
+    scale.domain([newTickValues[0], newTickValues[newTickValues.length - 1]])
+    scale.ticks(newTickValues)
+    const tickSizePx = getTickSize(props, axis, scale, newTickValues)
+    scale.tickSizePx = tickSizePx
     return newTickValues
   } catch (error) {
     return tickValues
   }
 }
 
-export const getTickValues = ({ tickHeight, fullHeight, labelArray, scale }) => {
-  try {
-    const minTextHeightInPx = 16
-    const interval = Math.ceil((labelArray.length * minTextHeightInPx) / fullHeight)
+export const getTickSize = (props, axis, scale, tickValues) => {
+  let numTicks = 1
+  if (tickValues) {
+    numTicks = tickValues.length
+  } else if (scale.tickLabels) {
+    numTicks = scale.tickLabels?.length
+  }
 
-    let tickValues = [...labelArray]
-    if (tickHeight < minTextHeightInPx) {
+  const fullSize = axis === 'x' ? props.innerWidth : props.innerHeight
+
+  const tickSizeWithPadding = fullSize / numTicks
+  const outerPaddingInPx = tickSizeWithPadding * props.outerPadding
+  const fullSizeWithoutPadding = fullSize - 2 * outerPaddingInPx
+  const tickSize = fullSizeWithoutPadding / numTicks
+
+  return tickSize
+}
+
+export const getTickValues = ({ scale, initialTicks, props, axis }) => {
+  try {
+    let ticksArray
+    if (initialTicks) {
+      ticksArray = [...initialTicks]
+    } else if (scale?.ticks && typeof scale.ticks === 'function') {
+      ticksArray = scale.ticks()
+    }
+
+    if (!ticksArray) {
+      return []
+    }
+
+    const tickSizePx = getTickSize(props, axis, scale, initialTicks)
+    const minTextHeightInPx = 16
+
+    const fullSize = axis === 'x' ? props.innerWidth : props.innerHeight
+    const interval = Math.ceil((ticksArray.length * minTextHeightInPx) / fullSize)
+
+    let tickValues = [...ticksArray]
+    if (tickSizePx < minTextHeightInPx) {
       tickValues = []
 
       // We want to do this in the reverse direction so the highest value is always included
-      labelArray.forEach((label, index) => {
+      ticksArray.forEach((label, index) => {
         if (index % interval === 0) {
           tickValues.push(label)
         }
@@ -612,6 +641,8 @@ export const getTickValues = ({ tickHeight, fullHeight, labelArray, scale }) => 
       tickValues = getNiceTickValues({
         tickValues,
         scale,
+        props,
+        axis,
       })
     }
 
@@ -620,7 +651,7 @@ export const getTickValues = ({ tickHeight, fullHeight, labelArray, scale }) => 
     console.error(error)
   }
 
-  return labelArray
+  return initialTicks || []
 }
 
 export const mergeBboxes = (boundingBoxes) => {

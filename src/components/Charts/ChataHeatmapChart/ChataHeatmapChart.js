@@ -73,15 +73,15 @@ export default class ChataHeatmapChart extends Component {
     this.yScale = scaleBand().domain(this.yLabelArray).range([yRangeStart, yRangeEnd]).paddingInner(0.01)
 
     this.xTickValues = getTickValues({
-      tickHeight: this.xScale.bandwidth(),
-      fullHeight: props.innerWidth,
-      labelArray: this.xScale.domain(),
+      tickSize: this.xScale.bandwidth(),
+      fullSize: props.innerWidth,
+      initialTicks: this.xScale.domain(),
     })
 
     this.yTickValues = getTickValues({
-      tickHeight: this.squareHeight,
-      fullHeight: props.innerHeight,
-      labelArray: this.yLabelArray,
+      tickSize: this.squareHeight,
+      fullSize: props.innerHeight,
+      initialTicks: this.yLabelArray,
     })
   }
 
