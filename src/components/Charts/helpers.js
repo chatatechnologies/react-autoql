@@ -58,6 +58,8 @@ export const chartDefaultProps = {
   rightMargin: 0,
   topMargin: 0,
   bottomMargin: 0,
+  deltaX: 0,
+  deltaY: 0,
 }
 
 export const axesPropTypes = {
@@ -409,14 +411,18 @@ export const getRangeForAxis = (props, axis) => {
   let rangeStart
   let rangeEnd
   if (axis === 'x') {
-    rangeStart = props.leftMargin
-    rangeEnd = props.width - props.rightMargin - props.rightLegendMargin
+    // rangeStart = props.leftMargin + AXIS_LABEL_SIZE
+    rangeStart = 0
+    const innerWidth = props.width - props.deltaX
+    rangeEnd = rangeStart + innerWidth
     if (rangeEnd < rangeStart) {
       rangeEnd = rangeStart
     }
   } else if (axis === 'y') {
-    rangeEnd = props.topMargin
-    rangeStart = props.height - props.bottomMargin
+    const innerHeight = props.height - props.deltaY
+    rangeEnd = props.deltaY
+    rangeStart = rangeEnd + innerHeight
+
     if (rangeStart < rangeEnd) {
       rangeStart = rangeEnd
     }

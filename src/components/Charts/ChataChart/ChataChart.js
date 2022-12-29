@@ -43,7 +43,7 @@ export default class ChataChart extends Component {
     const chartColors = getChartColorVars()
 
     this.CHART_ID = uuid()
-    this.PADDING = 20
+    this.PADDING = 10
     this.INNER_PADDING = 0.25
     this.OUTER_PADDING = 0.5
     this.LEGEND_PADDING = 10
@@ -64,8 +64,11 @@ export default class ChataChart extends Component {
       rightMargin: this.PADDING,
       topMargin: this.PADDING,
       bottomMargin: this.PADDING,
+      rightAxisMargin: 150,
       rightLegendMargin: 0,
       bottomLegendMargin: 0,
+      deltaX: 0,
+      deltaY: 0,
       loading: true,
       isLoadingMoreRows: false,
       isChartScaled: false,
@@ -97,6 +100,11 @@ export default class ChataChart extends Component {
     if (!this.props.isResizing) {
       this.rebuildTooltips()
     }
+
+    setTimeout(() => {
+      this.setDeltaX()
+      this.setDeltaY()
+    }, 0)
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -114,7 +122,7 @@ export default class ChataChart extends Component {
   componentDidUpdate = (prevProps, prevState) => {
     const newState = {}
     let shouldForceUpdate = false
-    let shouldUpdateMargins = false
+    // let shouldUpdateMargins = false
 
     const { chartHeight, chartWidth } = this.getChartDimensions()
 
@@ -152,7 +160,7 @@ export default class ChataChart extends Component {
     }
 
     if (dataStructureChanged(this.props, prevProps)) {
-      shouldUpdateMargins = true
+      // shouldUpdateMargins = true
       const aggregatedData = this.aggregateRowData(this.props)
       newState.aggregatedData = aggregatedData
       this.rebuildTooltips()
@@ -163,15 +171,16 @@ export default class ChataChart extends Component {
     if (!_isEmpty(newState)) {
       shouldForceUpdate = false
       this.setState(newState, () => {
-        if (shouldUpdateMargins) {
-          this.updateMargins()
-        }
+        // if (shouldUpdateMargins) {
+        //   this.updateMargins()
+        // }
       })
       return
-    } else if (shouldUpdateMargins) {
-      this.updateMargins()
-      return
     }
+    // else if (shouldUpdateMargins) {
+    //   this.updateMargins()
+    //   return
+    // }
     if (this.props.data !== prevProps.data) {
       shouldForceUpdate = true
     }
@@ -192,10 +201,27 @@ export default class ChataChart extends Component {
     this.axes = undefined
   }
 
-  getChartDimensions = () => {
-    const { topMargin, bottomMargin, rightMargin, leftMargin, rightLegendMargin, bottomLegendMargin } = this.state
+  setDeltaX = () => {
+    if (this.innerChartRef?.chartRef?.getBBox) {
+      const axisBBoxX = this.innerChartRef.chartRef.getBBox()?.x ?? 0
+      const deltaX = -1 * axisBBoxX
+      this.setState({ deltaX })
+    }
+  }
 
-    let chartWidth = this.props.width ?? this.chartContainerRef?.clientWidth
+  setDeltaY = () => {
+    if (this.innerChartRef?.chartRef?.getBBox) {
+      const axisBBoxHeight = this.innerChartRef.chartRef.getBBox()?.height ?? 0
+      const chartHeight = this.chartContainerRef?.clientHeight ?? 0
+      const deltaY = axisBBoxHeight - chartHeight + 10
+      this.setState({ deltaY })
+    }
+  }
+
+  getChartDimensions = () => {
+    const { topMargin, bottomMargin, rightMargin, leftMargin, rightLegendMargin, rightAxisMargin } = this.state
+
+    let chartWidth = this.props.width ?? this.chartContainerRef?.clientWidth - rightLegendMargin
     if (chartWidth < 0) {
       chartWidth = 0
     }
@@ -205,12 +231,12 @@ export default class ChataChart extends Component {
       chartHeight = 0
     }
 
-    let innerHeight = chartHeight - bottomMargin - topMargin - bottomLegendMargin
+    let innerHeight = chartHeight - bottomMargin - topMargin
     if (innerHeight < 0) {
       innerHeight = 0
     }
 
-    let innerWidth = chartWidth - leftMargin - rightMargin - rightLegendMargin
+    let innerWidth = chartWidth - leftMargin - rightMargin - rightAxisMargin
     if (innerWidth < 0) {
       innerWidth = 0
     }
@@ -355,83 +381,85 @@ export default class ChataChart extends Component {
     return aggregatedData
   }
 
-  getNewLeftMargin = (chartContainerBbox, axesBbox) => {
-    const containerLeft = chartContainerBbox.x
-    const axesLeft = axesBbox.x + containerLeft
-    let leftMargin = this.state.leftMargin
+  // getNewLeftMargin = (chartContainerBbox, axesBbox) => {
+  //   const containerLeft = chartContainerBbox.x
+  //   const axesLeft = axesBbox.x + containerLeft
+  //   let leftMargin = this.state.leftMargin
 
-    leftMargin += containerLeft - axesLeft + this.AXIS_LABEL_PADDING
-    return leftMargin
-  }
+  //   leftMargin += containerLeft - axesLeft // + this.AXIS_LABEL_PADDING
+  //   return leftMargin
+  // }
 
-  getNewRightMargin = (chartContainerBbox, axesBbox, leftMargin, rightLegendMargin) => {
-    const axesWidth = axesBbox.width
-    const containerWidth = chartContainerBbox.width - rightLegendMargin
+  // getNewRightMargin = (chartContainerBbox, axesBbox, leftMargin, rightLegendMargin) => {
+  //   const axesWidth = axesBbox.width // + rightLegendMargin
+  //   const containerWidth = chartContainerBbox.width - rightLegendMargin
 
-    const axesLeft = axesBbox.x + chartContainerBbox.x
-    const axesRight = axesLeft + axesWidth
+  //   const axesLeft = axesBbox.x + chartContainerBbox.x
+  //   const axesRight = axesLeft + axesWidth // + rightLegendMargin
 
-    const containerLeft = chartContainerBbox.x
-    const containerRight = containerLeft + containerWidth
+  //   const containerLeft = chartContainerBbox.x
+  //   const containerRight = containerLeft + containerWidth
 
-    const rightDiff = axesRight - containerRight
+  //   const rightMarginDiff = axesRight - containerRight
+  //   const leftMarginDiff = leftMargin - this.state.leftMargin
 
-    const leftMarginDiff = leftMargin - this.state.leftMargin
-    const maxMargin = containerWidth - leftMarginDiff - rightLegendMargin
-    const calculatedMargin = this.state.rightMargin + rightDiff + this.LEGEND_PADDING
+  //   const maxMargin = containerWidth - leftMarginDiff
+  //   const calculatedMargin = this.state.rightMargin + rightMarginDiff - leftMarginDiff + this.LEGEND_PADDING // - rightLegendMargin
 
-    let rightMargin = this.state.rightMargin
-    if (calculatedMargin < maxMargin) {
-      rightMargin = calculatedMargin
-    } else {
-      rightMargin = this.PADDING
-    }
+  //   let rightMargin = this.state.rightMargin
+  //   if (calculatedMargin < maxMargin) {
+  //     rightMargin = calculatedMargin
+  //   } else {
+  //     rightMargin = this.PADDING
+  //   }
 
-    return rightMargin
-  }
+  //   return 100
 
-  getNewRightLegendMargin = (legendBBox) => {
-    let rightLegendMargin = 0
-    const legendLocation = getLegendLocation(this.props.numberColumnIndices, this.props.type)
-    if (legendLocation === 'right' && legendBBox?.width) {
-      rightLegendMargin = legendBBox.width + this.LEGEND_PADDING
-    }
+  //   // return rightMargin
+  // }
 
-    return rightLegendMargin
-  }
+  // getNewRightLegendMargin = (legendBBox) => {
+  //   let rightLegendMargin = 0
+  //   const legendLocation = getLegendLocation(this.props.numberColumnIndices, this.props.type)
+  //   if (legendLocation === 'right' && legendBBox?.width) {
+  //     rightLegendMargin = legendBBox.width + this.LEGEND_PADDING
+  //   }
+
+  //   return rightLegendMargin
+  // }
 
   getLegendLabels = () => {
     return getLegendLabelsForMultiSeries(this.props.columns, this.colorScale, this.props.numberColumnIndices)
   }
 
-  getNewBottomMargin = (chartContainerBbox, legendBBox) => {
-    let bottomLegendMargin = 0
-    const legendLocation = getLegendLocation(this.props.numberColumnIndices, this.props.type)
-    if (legendLocation === 'bottom' && legendBBox?.height) {
-      bottomLegendMargin = legendBBox.height + 10
-    }
+  // getNewBottomMargin = (chartContainerBbox, legendBBox) => {
+  //   let bottomLegendMargin = 0
+  //   const legendLocation = getLegendLocation(this.props.numberColumnIndices, this.props.type)
+  //   if (legendLocation === 'bottom' && legendBBox?.height) {
+  //     bottomLegendMargin = legendBBox.height + 10
+  //   }
 
-    this.xAxis = select(this.chartRef).select('.axis-Bottom').node()
+  //   this.xAxis = select(this.chartRef).select('.axis-Bottom').node()
 
-    const xAxisBBox = this.xAxis ? this.xAxis.getBBox() : {}
-    let bottomMargin = Math.ceil(xAxisBBox.height) + bottomLegendMargin + this.AXIS_LABEL_PADDING // margin to include axis label
+  //   const xAxisBBox = this.xAxis ? this.xAxis.getBBox() : {}
+  //   let bottomMargin = Math.ceil(xAxisBBox.height) + bottomLegendMargin // + this.AXIS_LABEL_PADDING // margin to include axis label
 
-    if (xAxisBBox.height === 0) {
-      bottomMargin = this.DEFAULT_BOTTOM_MARGIN // if no xAxisBBox available, set bottomMargin to default
-    }
+  //   if (xAxisBBox.height === 0) {
+  //     bottomMargin = this.DEFAULT_BOTTOM_MARGIN // if no xAxisBBox available, set bottomMargin to default
+  //   }
 
-    if (this.props.enableAjaxTableData) {
-      bottomMargin = bottomMargin + this.AXIS_LABEL_PADDING // margin to include row count summary
-    }
+  //   if (this.props.enableAjaxTableData) {
+  //     bottomMargin = bottomMargin // + this.AXIS_LABEL_PADDING // margin to include row count summary
+  //   }
 
-    // only for bar charts (vertical grid lines mess with the axis size)
-    if (this.props.type === 'bar' || this.props.type === 'stacked_bar') {
-      const innerTickSize = chartContainerBbox.height - this.state.topMargin - this.state.bottomMargin
-      bottomMargin = bottomMargin - innerTickSize
-    }
+  //   // only for bar charts (vertical grid lines mess with the axis size)
+  //   if (this.props.type === 'bar' || this.props.type === 'stacked_bar') {
+  //     const innerTickSize = chartContainerBbox.height - this.state.topMargin - this.state.bottomMargin
+  //     bottomMargin = bottomMargin - innerTickSize
+  //   }
 
-    return bottomMargin || this.state.bottomMargin
-  }
+  //   return bottomMargin || this.state.bottomMargin
+  // }
 
   // If we can find a way to clip the legend, this will work
   // getNewBottomMargin = (chartContainerBbox, axesBbox) => {
@@ -447,9 +475,9 @@ export default class ChataChart extends Component {
   // }
 
   // Keep this in case we need it later
-  getNewTopMargin = () => {
-    return this.PADDING
-  }
+  // getNewTopMargin = () => {
+  //   return this.PADDING
+  // }
 
   rebuildTooltips = (delay = 500) => {
     if (this.props.rebuildTooltips) {
@@ -463,67 +491,70 @@ export default class ChataChart extends Component {
   }
 
   updateMargins = ({ setLoading = true, delay = 100 } = {}) => {
-    if (!this.state.isLoading && setLoading) {
-      this.setState({ isLoading: true })
-    }
+    return
+    // if (!this.state.isLoading && setLoading) {
+    //   this.setState({ isLoading: true })
+    // }
 
-    clearTimeout(this.updateMarginsDebounced)
-    this.updateMarginsDebounced = setTimeout(() => {
-      this.updateMarginsToDebounce()
-    }, delay)
+    // clearTimeout(this.updateMarginsDebounced)
+    // this.updateMarginsDebounced = setTimeout(() => {
+    //   this.updateMarginsToDebounce()
+    // }, delay)
   }
   setIsChartScaled = () => {
     this.setState({ isChartScaled: !this.state.isChartScaled })
   }
 
-  updateMarginsToDebounce = () => {
-    this.newMargins = undefined
+  // updateMarginsToDebounce = () => {
+  //   this.newMargins = undefined
 
-    try {
-      this.axes = document.querySelector(`#react-autoql-chart-${this.CHART_ID} .react-autoql-axes`)
+  //   try {
+  //     this.axes = document.querySelector(`#react-autoql-chart-${this.CHART_ID} .react-autoql-axes-chart`)
 
-      if (!this.chartContainerRef || !this.axes) {
-        this.clearLoading()
-        return
-      }
+  //     if (
+  //       !this.chartContainerRef // || !this.axes
+  //     ) {
+  //       this.clearLoading()
+  //       return
+  //     }
 
-      const chartContainerBbox = this.chartContainerRef.getBoundingClientRect()
-      const axesBbox = this.axes.getBBox()
-      const legendBbox = select(this.chartRef)?.select('.legendOrdinal')?.node()?.getBBox()
+  //     const chartContainerBbox = this.chartContainerRef.getBoundingClientRect()
+  //     const axesBbox = this.axes.getBBox()
+  //     const legendBbox = select(this.chartRef)?.select('.legendOrdinal')?.node()?.getBBox()
 
-      const rightLegendMargin = this.getNewRightLegendMargin(legendBbox)
+  //     const rightLegendMargin = this.getNewRightLegendMargin(legendBbox)
 
-      const leftMargin = this.getNewLeftMargin(chartContainerBbox, axesBbox)
-      const rightMargin = this.getNewRightMargin(chartContainerBbox, axesBbox, leftMargin, rightLegendMargin)
-      const topMargin = this.getNewTopMargin()
-      const bottomMargin = this.getNewBottomMargin(chartContainerBbox, legendBbox)
+  //     const leftMargin = this.getNewLeftMargin(chartContainerBbox, axesBbox)
+  //     const rightMargin = this.getNewRightMargin(chartContainerBbox, axesBbox, leftMargin, rightLegendMargin)
+  //     const topMargin = this.getNewTopMargin()
+  //     const bottomMargin = this.getNewBottomMargin(chartContainerBbox, legendBbox)
 
-      this.newMargins = {
-        leftMargin,
-        topMargin,
-        rightMargin,
-        bottomMargin,
-        rightLegendMargin,
-      }
+  //     this.newMargins = {
+  //       leftMargin,
+  //       topMargin,
+  //       rightMargin,
+  //       bottomMargin,
+  //       rightLegendMargin,
+  //     }
 
-      this.isMarginDiffSignificant = this.isMarginDifferenceSignificant()
+  //     this.isMarginDiffSignificant = this.isMarginDifferenceSignificant()
 
-      if (this.isMarginDiffSignificant) {
-        this.marginAdjustmentFinished = true
-        this.setState({ ...this.newMargins }, () => {
-          this.clearLoading()
-        })
-      } else {
-        this.marginAdjustmentFinished = true
-        this.clearLoading()
-      }
-    } catch (error) {
-      // Something went wrong rendering the chart.
-      console.error(error)
-      this.marginAdjustmentFinished = true
-      this.clearLoading()
-    }
-  }
+  //     if (this.isMarginDiffSignificant) {
+  //       this.marginAdjustmentFinished = true
+  //       this.setState({ ...this.newMargins }, () => {
+  //         this.clearLoading()
+  //       })
+  //     } else {
+  //       this.marginAdjustmentFinished = true
+  //       this.clearLoading()
+  //     }
+  //   } catch (error) {
+  //     // Something went wrong rendering the chart.
+  //     console.error(error)
+  //     this.marginAdjustmentFinished = true
+  //     this.clearLoading()
+  //   }
+  // }
 
   clearLoading = () => {
     clearTimeout(this.loadingTimeout)
@@ -644,7 +675,8 @@ export default class ChataChart extends Component {
   }
 
   getCommonChartProps = () => {
-    const { topMargin, bottomMargin, rightMargin, leftMargin, rightLegendMargin, bottomLegendMargin } = this.state
+    const { topMargin, bottomMargin, rightMargin, leftMargin, rightLegendMargin, bottomLegendMargin, deltaX, deltaY } =
+      this.state
     const { numberColumnIndices, numberColumnIndices2, columns } = this.props
 
     let innerPadding = this.INNER_PADDING
@@ -669,6 +701,7 @@ export default class ChataChart extends Component {
     return {
       ...this.props,
       setIsLoadingMoreRows: (isLoading) => this.setState({ isLoadingMoreRows: isLoading }),
+      ref: (r) => (this.innerChartRef = r),
       key: undefined,
       data: this.state.aggregatedData || this.props.data,
       colorScale: this.colorScale,
@@ -686,6 +719,8 @@ export default class ChataChart extends Component {
       leftMargin,
       rightLegendMargin,
       bottomLegendMargin,
+      deltaX,
+      deltaY,
       hasMultipleNumberColumns,
       hasMultipleStringColumns,
       marginAdjustmentFinished: this.state.loading,
@@ -799,7 +834,7 @@ export default class ChataChart extends Component {
               <svg
                 ref={(r) => (this.chartRef = r)}
                 xmlns='http://www.w3.org/2000/svg'
-                width={chartWidth}
+                width={chartWidth + this.state.rightLegendMargin}
                 height={chartHeight}
                 style={{
                   fontFamily: chartFontFamily,

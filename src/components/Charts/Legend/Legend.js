@@ -285,6 +285,11 @@ export default class Legend extends Component {
       legendClippingHeight = 0
     }
 
+    let translateX = this.props.width
+    // if (this.props.axesRef) {
+    //   translateX = this.props.axesRef.getBBox().width
+    // }
+
     return (
       <g data-test='legend'>
         {this.props.placement === 'right' && (
@@ -295,9 +300,7 @@ export default class Legend extends Component {
             id={this.LEGEND_ID}
             data-test='right-legend'
             className='legendOrdinal right-legend'
-            transform={`translate(${this.props.width - this.props.rightLegendMargin}, ${
-              this.props.legendTitle ? '30' : '25'
-            })`}
+            transform={`translate(${translateX}, ${this.props.legendTitle ? '30' : '25'})`}
           >
             <clipPath id={`legend-clip-area-${this.LEGEND_ID}`}>
               <rect

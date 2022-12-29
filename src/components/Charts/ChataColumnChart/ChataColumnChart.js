@@ -68,7 +68,12 @@ export default class ChataColumnChart extends Component {
       numberColumnIndices2 = props.visibleSeriesIndices2
     }
 
-    const xScale = getBandScales({ props, columnIndex: props.stringColumnIndex, axis: 'x' })
+    const xScale = getBandScales({
+      props,
+      columnIndex: props.stringColumnIndex,
+      axis: 'x',
+    })
+
     this.xScale = xScale.scale
 
     const yScalesAndTicks = getLinearScales({
@@ -91,10 +96,16 @@ export default class ChataColumnChart extends Component {
     const yCol2 = this.props.columns[this.props.numberColumnIndex2]
 
     return (
-      <g data-test='react-autoql-column-chart'>
+      <g
+        className='react-autoql-axes-chart'
+        data-test='react-autoql-column-chart'
+        ref={(r) => (this.chartRef = r)}
+        transform={`translate(${this.props.deltaX}, -${this.props.deltaY - 10})`}
+      >
         {this.props.marginAdjustmentFinished && <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />}
         <Axes
           {...this.props}
+          ref={(r) => (this.axesRef = r)}
           xScale={this.xScale}
           yScale={this.yScale}
           yScale2={this.yScale2}
@@ -114,15 +125,16 @@ export default class ChataColumnChart extends Component {
           yAxis2Title={this.props.numberAxisTitle}
           yGridLines
         />
-        {!!this.props.legendLocation && (
+        {/* {!!this.props.legendLocation && (
           <Legend
             {...this.props}
             xScale={this.xScale}
             scale={this.yScale}
             col={yCol}
             placement={this.props.legendLocation}
+            axesRef={this.axesRef?.ref}
           />
-        )}
+        )} */}
       </g>
     )
   }
