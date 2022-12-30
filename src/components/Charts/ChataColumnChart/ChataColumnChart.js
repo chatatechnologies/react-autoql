@@ -100,7 +100,7 @@ export default class ChataColumnChart extends Component {
         className='react-autoql-axes-chart'
         data-test='react-autoql-column-chart'
         ref={(r) => (this.chartRef = r)}
-        transform={`translate(${this.props.deltaX}, -${this.props.deltaY - 10})`}
+        transform={`translate(${this.props.deltaX}, ${-1 * (this.props.deltaY - 10)})`}
       >
         {this.props.marginAdjustmentFinished && <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />}
         <Axes

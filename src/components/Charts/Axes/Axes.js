@@ -54,12 +54,17 @@ export default class Axes extends React.Component {
   }
 
   getXCenter = () => {
-    return (
-      // (this.props.width - this.props.leftMargin + this.props.rightMargin) / 2 +
-      // this.props.leftMargin -
-      // this.props.rightMargin
-      this.props.width / 2
-    )
+    const innerWidth = xScaleRange[1] - xScaleRange[0]
+    const xCenter = this.props.deltaX + innerWidth / 2
+
+    return xCenter
+
+    // return (
+    //   // (this.props.width - this.props.leftMargin + this.props.rightMargin) / 2 +
+    //   // this.props.leftMargin -
+    //   // this.props.rightMargin
+    //   this.props.width / 2
+    // )
   }
 
   renderLoadMoreDropdown = (currentRowNumber, totalRowNumber) => {
@@ -182,6 +187,7 @@ export default class Axes extends React.Component {
       </g>
     )
   }
+
   renderXAxisLabel = (xAxisTitle) => {
     const xCenter = this.getXCenter()
     const xLabelBbox = getBBoxFromRef(this.xLabelRef)
@@ -431,9 +437,9 @@ export default class Axes extends React.Component {
 
     return (
       <g ref={(r) => (this.ref = r)}>
-        {/* {this.renderYAxisLabel(yAxisTitle)}
-        {this.renderXAxisLabel(xAxisTitle)}
-        {this.renderYAxis2Label(yAxis2Title)}
+        {/* {this.renderYAxisLabel(yAxisTitle)} */}
+        {/* {this.renderXAxisLabel(xAxisTitle)} */}
+        {/* {this.renderYAxis2Label(yAxis2Title)}
         {this.renderXAxis2Label(xAxis2Title)}
         {this.props.enableAjaxTableData &&
           this.renderXAxisLoadMoreDropdown(this.state.currentRowNumber, this.props.totalRowsNumber)} */}

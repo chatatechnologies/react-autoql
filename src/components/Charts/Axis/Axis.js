@@ -10,7 +10,7 @@ import { axisLeft, axisBottom, axisTop, axisRight } from 'd3-axis'
 import AxisScaler from './AxisScaler'
 import AxisSelector from '../Axes/AxisSelector'
 
-import { formatChartLabel } from '../../../js/Util.js'
+import { formatChartLabel, getBBoxFromRef } from '../../../js/Util.js'
 import { axesDefaultProps, axesPropTypes, mergeBboxes } from '../helpers.js'
 
 import './Axis.scss'
@@ -22,7 +22,8 @@ export default class Axis extends Component {
     this.LEGEND_PADDING = 130
     this.LEGEND_ID = `axis-${uuid()}`
     this.BUTTON_PADDING = 5
-    this.AXIS_TITLE_PADDING = 20
+    this.AXIS_TITLE_PADDING = 10
+    this.axisTitlePaddingLeft = 10
     this.swatchElements = []
     this.labelInlineStyles = {
       fontSize: 12,
@@ -183,7 +184,7 @@ export default class Axis extends Component {
       .select('line')
       .style('opacity', 0.3)
 
-    if (this.props.scale?.type === 'LINEAR' && this.axisElement) {
+    if (this.axisElement) {
       // svg coordinate system is different from clientRect coordinate system
       // we need to get the deltas first, then we can apply them to the bounding rect
       const axisBBox = this.axisElement.getBBox()
@@ -211,7 +212,10 @@ export default class Axis extends Component {
         const allLabelsBbox = mergeBboxes(labelBboxes)
         this.labelBBox = allLabelsBbox
       }
-      this.styleAxisScalerBorder()
+
+      if (this.props.scale?.type === 'LINEAR') {
+        this.styleAxisScalerBorder()
+      }
     }
   }
 
@@ -247,14 +251,76 @@ export default class Axis extends Component {
     )
   }
 
+  renderXAxisTitle = (xAxisTitle) => {
+    const xLabelBbox = getBBoxFromRef(this.xTitleRef)
+    const xLabelTextWidth = xLabelBbox ? xLabelBbox.width : 0
+    const xLabelTextHeight = this.getLabelTextHeight(this.xTitleRef)
+    const halfTextHeight = xLabelTextHeight / 2
+
+    const range = this.props.scale?.range() || [0, 0]
+    const innerWidth = range[1] - range[0]
+    const xCenter = innerWidth / 2
+
+    /* <text> element's y coordinate is anchored on the middle baseline,
+    so we need to shift the element up by half of it's height */
+    const labelBBoxHeight = this.labelBBox?.height ?? 0
+    let xLabelY = this.props.translateY + labelBBoxHeight + this.AXIS_TITLE_PADDING + xLabelTextHeight / 2
+
+    const xBorderX = xCenter - xLabelTextWidth / 2 - this.axisLabelPaddingLeft
+    let xBorderY = xLabelY - halfTextHeight - this.axisLabelPaddingTop
+    // if (this.props.enableAjaxTableData) {
+    //   // Add extra space for row count display
+    //   xBorderY = xBorderY - 20
+    //   xLabelY = xLabelY - 20
+    // }
+    const xBorderWidth = xLabelTextWidth + 2 * this.axisLabelPaddingLeft
+    const xBorderHeight = xLabelTextHeight + 2 * this.axisLabelPaddingTop
+
+    return (
+      <g>
+        <text
+          ref={(r) => (this.xTitleRef = r)}
+          className='x-axis-label'
+          data-test='x-axis-label'
+          dominantBaseline='middle'
+          textAnchor='middle'
+          fontWeight='bold'
+          y={xLabelY}
+          x={xCenter}
+          style={this.labelInlineStyles}
+        >
+          {this.renderAxisTitle(xAxisTitle, this.props.hasXDropdown)}
+        </text>
+        {this.props.hasXDropdown && (
+          <AxisSelector
+            {...this.props}
+            column={this.props.xCol}
+            positions={['top', 'bottom']}
+            align='center'
+            childProps={{
+              x: xBorderX,
+              y: xBorderY,
+              width: xBorderWidth,
+              height: xBorderHeight,
+            }}
+          />
+        )}
+      </g>
+    )
+  }
+
   renderYAxisTitle = (yAxisTitle) => {
+    const range = this.props.scale?.range() || [0, 0]
+    const innerHeight = range[0] - range[1]
+    const yCenter = -1 * (this.props.deltaY + innerHeight / 2)
+
     const chartBoundingRect = this.props.chartContainerRef?.getBoundingClientRect()
-    const yLabelBoundingRect = this.yLabelRef?.getBoundingClientRect()
+    const yLabelBoundingRect = this.yTitleRef?.getBoundingClientRect()
 
     const chartContainerHeight = chartBoundingRect?.height ?? 0
     const yLabelHeight = yLabelBoundingRect?.height ?? 0
 
-    const yLabelTextHeight = this.getLabelTextHeight(this.yLabelRef)
+    const yLabelTextHeight = this.getLabelTextHeight(this.yTitleRef)
 
     const yLabelTop = yLabelBoundingRect?.top
     const chartTop = chartBoundingRect?.top
@@ -265,7 +331,8 @@ export default class Axis extends Component {
     // const yLabelY = -1 * (this.props.deltaX ?? 0)
     const labelBBoxWidth = this.labelBBox?.width ?? 0
     const yLabelY = -1 * (labelBBoxWidth + this.AXIS_TITLE_PADDING + yLabelTextHeight / 2)
-    let yLabelX = -((chartContainerHeight - this.props.bottomMargin) / 2)
+    // let yLabelX = -((chartContainerHeight - this.props.deltaY) / 2)
+    let yLabelX = yCenter
 
     if (yAxisTitle !== this.previousYAxisTitle) {
       // Label changed, reset all svg transforms
@@ -305,11 +372,9 @@ export default class Axis extends Component {
     const transform = this.yLabelTransform || 'rotate(-90)'
 
     return (
-      <g
-      // transform={transform}
-      >
+      <g>
         <text
-          ref={(r) => (this.yLabelRef = r)}
+          ref={(r) => (this.yTitleRef = r)}
           id={`y-axis-label-${this.yAxisKey}`}
           className='y-axis-label'
           data-test='y-axis-label'
@@ -369,6 +434,8 @@ export default class Axis extends Component {
           transform={`translate(${this.props.translateX}, ${this.props.translateY})`}
         />
         {this.props.orient === 'Left' && this.renderYAxisTitle(this.props.yAxisTitle || this.props.yCol?.display_name)}
+        {this.props.orient === 'Bottom' &&
+          this.renderXAxisTitle(this.props.xAxisTitle || this.props.xCol?.display_name)}
         {!!this.labelBBox && this.props.scale?.type === 'LINEAR' && this.props.scale?.domain().length !== 1 && (
           <AxisScaler
             {...this.props}

@@ -213,7 +213,7 @@ export default class ChataChart extends Component {
     if (this.innerChartRef?.chartRef?.getBBox) {
       const axisBBoxHeight = this.innerChartRef.chartRef.getBBox()?.height ?? 0
       const chartHeight = this.chartContainerRef?.clientHeight ?? 0
-      const deltaY = axisBBoxHeight - chartHeight + 10
+      const deltaY = axisBBoxHeight - chartHeight // + 10
       this.setState({ deltaY })
     }
   }
