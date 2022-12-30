@@ -37,6 +37,7 @@ export default class Axes extends React.Component {
   static defaultProps = axesDefaultProps
 
   componentDidMount = () => {
+    console.log('AXES DID MOUNT')
     this.props.onLabelChange()
     // setTimeout(() => {
     //   this.forceUpdate()

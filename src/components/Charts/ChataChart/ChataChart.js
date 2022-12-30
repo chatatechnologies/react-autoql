@@ -42,7 +42,6 @@ export default class ChataChart extends Component {
     super(props)
     const chartColors = getChartColorVars()
 
-    this.CHART_ID = uuid()
     this.PADDING = 10
     this.INNER_PADDING = 0.25
     this.OUTER_PADDING = 0.5
@@ -59,6 +58,7 @@ export default class ChataChart extends Component {
     const aggregatedData = this.aggregateRowData(props)
 
     this.state = {
+      chartID: uuid(),
       aggregatedData,
       leftMargin: this.PADDING,
       rightMargin: this.PADDING,
@@ -69,7 +69,7 @@ export default class ChataChart extends Component {
       bottomLegendMargin: 0,
       deltaX: 0,
       deltaY: 0,
-      loading: true,
+      // isLoading: true,
       isLoadingMoreRows: false,
       isChartScaled: false,
     }
@@ -94,6 +94,7 @@ export default class ChataChart extends Component {
     // The first render is to determine the chart size based on its parent container
     this.firstRender = false
     if (!this.props.isResizing) {
+      console.log('force updating on MOUNT')
       this.forceUpdate()
     }
 
@@ -101,10 +102,7 @@ export default class ChataChart extends Component {
       this.rebuildTooltips()
     }
 
-    setTimeout(() => {
-      this.setDeltaX()
-      this.setDeltaY()
-    }, 0)
+    this.setDeltas()
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -112,9 +110,9 @@ export default class ChataChart extends Component {
       return false
     }
 
-    if (this.state.isLoading && nextState.isLoading) {
-      return false
-    }
+    // if (this.state.isLoading && nextState.isLoading) {
+    //   return false
+    // }
 
     return true
   }
@@ -122,15 +120,25 @@ export default class ChataChart extends Component {
   componentDidUpdate = (prevProps, prevState) => {
     const newState = {}
     let shouldForceUpdate = false
-    // let shouldUpdateMargins = false
+    let shouldUpdateMargins = false
+
+    // if (this.state.chartID !== prevState.chartID) {
+    //   this.setDeltas()
+    // }
 
     const { chartHeight, chartWidth } = this.getChartDimensions()
 
     if (
-      !this.state.isLoading &&
+      // !this.state.isLoading &&
       this.recursiveUpdateCount < 2 &&
       (chartWidth !== this.chartWidth || chartHeight !== this.chartHeight)
     ) {
+      console.log('RECURSIVE UPDATE BLOCK', {
+        chartWidth,
+        thisChartWidth: this.chartWidth,
+        chartHeight,
+        thisChartHeight: this.chartHeight,
+      })
       shouldForceUpdate = true
       this.recursiveUpdateCount++
       clearTimeout(this.recursiveUpdateTimeout)
@@ -156,11 +164,12 @@ export default class ChataChart extends Component {
     }
 
     if (this.props.type !== prevProps.type) {
+      shouldUpdateMargins = true
       this.rebuildTooltips()
     }
 
     if (dataStructureChanged(this.props, prevProps)) {
-      // shouldUpdateMargins = true
+      shouldUpdateMargins = true
       const aggregatedData = this.aggregateRowData(this.props)
       newState.aggregatedData = aggregatedData
       this.rebuildTooltips()
@@ -171,16 +180,17 @@ export default class ChataChart extends Component {
     if (!_isEmpty(newState)) {
       shouldForceUpdate = false
       this.setState(newState, () => {
-        // if (shouldUpdateMargins) {
-        //   this.updateMargins()
-        // }
+        if (shouldUpdateMargins) {
+          this.setDeltas()
+          //   this.updateMargins()
+        }
       })
       return
+    } else if (shouldUpdateMargins) {
+      this.setDeltas()
+      //   this.updateMargins()
+      //   return
     }
-    // else if (shouldUpdateMargins) {
-    //   this.updateMargins()
-    //   return
-    // }
     if (this.props.data !== prevProps.data) {
       shouldForceUpdate = true
     }
@@ -201,21 +211,27 @@ export default class ChataChart extends Component {
     this.axes = undefined
   }
 
-  setDeltaX = () => {
-    if (this.innerChartRef?.chartRef?.getBBox) {
-      const axisBBoxX = this.innerChartRef.chartRef.getBBox()?.x ?? 0
-      const deltaX = -1 * axisBBoxX
-      this.setState({ deltaX })
-    }
-  }
+  setDeltas = () => {
+    this.setState({ deltaX: 0, deltaY: 0, isLoading: true }, () => {
+      setTimeout(() => {
+        let deltaX = 0
+        if (this.innerChartRef?.chartRef?.getBBox) {
+          const axisBBoxX = this.innerChartRef.chartRef.getBBox()?.x ?? 0
+          deltaX = -1 * axisBBoxX
+        }
 
-  setDeltaY = () => {
-    if (this.innerChartRef?.chartRef?.getBBox) {
-      const axisBBoxHeight = this.innerChartRef.chartRef.getBBox()?.height ?? 0
-      const chartHeight = this.chartContainerRef?.clientHeight ?? 0
-      const deltaY = axisBBoxHeight - chartHeight // + 10
-      this.setState({ deltaY })
-    }
+        let deltaY = 0
+        if (this.innerChartRef?.chartRef?.getBBox) {
+          const axisBBoxHeight = this.innerChartRef.chartRef.getBBox()?.height ?? 0
+          const chartHeight = this.chartContainerRef?.clientHeight ?? 0
+          deltaY = axisBBoxHeight - chartHeight
+        }
+
+        this.setState({ deltaX, deltaY }, () => {
+          this.setState({ isLoading: false })
+        })
+      }, 0)
+    })
   }
 
   getChartDimensions = () => {
@@ -509,7 +525,7 @@ export default class ChataChart extends Component {
   //   this.newMargins = undefined
 
   //   try {
-  //     this.axes = document.querySelector(`#react-autoql-chart-${this.CHART_ID} .react-autoql-axes-chart`)
+  //     this.axes = document.querySelector(`#react-autoql-chart-${this.state.chartID} .react-autoql-axes-chart`)
 
   //     if (
   //       !this.chartContainerRef // || !this.axes
@@ -579,6 +595,9 @@ export default class ChataChart extends Component {
 
   changeNumberColumnIndices = (indices, newColumns) => {
     this.props.changeNumberColumnIndices(indices, newColumns)
+    console.log('setting new chart ID')
+    this.setState({ chartID: uuid() })
+    // this.forceUpdate()
   }
 
   getBase64Data = () => {
@@ -702,7 +721,8 @@ export default class ChataChart extends Component {
       ...this.props,
       setIsLoadingMoreRows: (isLoading) => this.setState({ isLoadingMoreRows: isLoading }),
       ref: (r) => (this.innerChartRef = r),
-      key: undefined,
+      key: `chata-inner-chart-${this.state.chartID}`,
+      // key: undefined,
       data: this.state.aggregatedData || this.props.data,
       colorScale: this.colorScale,
       innerPadding,
@@ -723,7 +743,8 @@ export default class ChataChart extends Component {
       deltaY,
       hasMultipleNumberColumns,
       hasMultipleStringColumns,
-      marginAdjustmentFinished: this.state.loading,
+      // marginAdjustmentFinished: !this.state.isLoading,
+      marginAdjustmentFinished: true,
       legendTitle: this.props.legendColumn?.title || 'Category',
       legendLocation: getLegendLocation(numberColumnIndices, this.props.type),
       legendLabels: this.getLegendLabels(),
@@ -740,7 +761,7 @@ export default class ChataChart extends Component {
       popoverParentElement: this.props.popoverParentElement || this.chartContainerRef,
       totalRowsNumber: this.props.totalRowsNumber,
       isChartScaled: this.state.isChartScaled,
-      chartID: this.CHART_ID,
+      chartID: this.state.chartID,
       setIsChartScaled: this.setIsChartScaled,
       changeNumberColumnIndices: this.changeNumberColumnIndices,
       rebuildTooltips: this.rebuildTooltips,
@@ -819,7 +840,7 @@ export default class ChataChart extends Component {
     return (
       <ErrorBoundary>
         <div
-          id={`react-autoql-chart-${this.CHART_ID}`}
+          id={`react-autoql-chart-${this.state.chartID}`}
           ref={(r) => (this.chartContainerRef = r)}
           data-test='react-autoql-chart'
           className={`react-autoql-chart-container ${this.state.isLoading || this.props.isResizing ? 'loading' : ''}`}

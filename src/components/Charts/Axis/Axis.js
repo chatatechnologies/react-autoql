@@ -22,8 +22,9 @@ export default class Axis extends Component {
     this.LEGEND_PADDING = 130
     this.LEGEND_ID = `axis-${uuid()}`
     this.BUTTON_PADDING = 5
-    this.AXIS_TITLE_PADDING = 10
+    this.AXIS_TITLE_PADDING = 20
     this.axisTitlePaddingLeft = 10
+    this.axisTitlePaddingTop = 5
     this.swatchElements = []
     this.labelInlineStyles = {
       fontSize: 12,
@@ -54,6 +55,7 @@ export default class Axis extends Component {
   }
 
   componentDidMount = () => {
+    console.log('AXIS DID MOUNT')
     this.renderAxis()
     this.props.onLabelChange()
   }
@@ -266,15 +268,15 @@ export default class Axis extends Component {
     const labelBBoxHeight = this.labelBBox?.height ?? 0
     let xLabelY = this.props.translateY + labelBBoxHeight + this.AXIS_TITLE_PADDING + xLabelTextHeight / 2
 
-    const xBorderX = xCenter - xLabelTextWidth / 2 - this.axisLabelPaddingLeft
-    let xBorderY = xLabelY - halfTextHeight - this.axisLabelPaddingTop
+    const xBorderX = xCenter - xLabelTextWidth / 2 - this.axisTitlePaddingLeft
+    let xBorderY = xLabelY - halfTextHeight - this.axisTitlePaddingTop
     // if (this.props.enableAjaxTableData) {
     //   // Add extra space for row count display
     //   xBorderY = xBorderY - 20
     //   xLabelY = xLabelY - 20
     // }
-    const xBorderWidth = xLabelTextWidth + 2 * this.axisLabelPaddingLeft
-    const xBorderHeight = xLabelTextHeight + 2 * this.axisLabelPaddingTop
+    const xBorderWidth = xLabelTextWidth + 2 * this.axisTitlePaddingLeft
+    const xBorderHeight = xLabelTextHeight + 2 * this.axisTitlePaddingTop
 
     return (
       <g>
@@ -319,6 +321,7 @@ export default class Axis extends Component {
 
     const chartContainerHeight = chartBoundingRect?.height ?? 0
     const yLabelHeight = yLabelBoundingRect?.height ?? 0
+    const yLabelWidth = yLabelBoundingRect?.width ?? 0
 
     const yLabelTextHeight = this.getLabelTextHeight(this.yTitleRef)
 
@@ -326,12 +329,8 @@ export default class Axis extends Component {
     const chartTop = chartBoundingRect?.top
 
     // X and Y are switched from the rotation (anchored in the middle)
-    // const yLabelY = yLabelTextHeight
-
-    // const yLabelY = -1 * (this.props.deltaX ?? 0)
     const labelBBoxWidth = this.labelBBox?.width ?? 0
     const yLabelY = -1 * (labelBBoxWidth + this.AXIS_TITLE_PADDING + yLabelTextHeight / 2)
-    // let yLabelX = -((chartContainerHeight - this.props.deltaY) / 2)
     let yLabelX = yCenter
 
     if (yAxisTitle !== this.previousYAxisTitle) {
@@ -368,6 +367,7 @@ export default class Axis extends Component {
     const yBorderWidth = yLabelHeight + 2 * this.axisTitlePaddingLeft
     const yBorderHeight = yLabelTextHeight + 2 * this.axisTitlePaddingTop
     const yBorderX = yLabelX - yLabelHeight / 2 - this.axisTitlePaddingLeft
+    const yBorderY = yLabelY - yLabelWidth / 2 - this.axisTitlePaddingTop
 
     const transform = this.yLabelTransform || 'rotate(-90)'
 
@@ -390,7 +390,7 @@ export default class Axis extends Component {
         >
           {this.renderAxisTitle(yAxisTitle, this.props.hasYDropdown)}
         </text>
-        {/* {this.props.hasYDropdown && (
+        {this.props.hasYDropdown && (
           <AxisSelector
             {...this.props}
             column={this.props.yCol}
@@ -401,10 +401,10 @@ export default class Axis extends Component {
               width: yBorderWidth,
               height: yBorderHeight,
               x: yBorderX,
-              y: 0,
+              y: yBorderY,
             }}
           />
-        )} */}
+        )}
       </g>
     )
   }
