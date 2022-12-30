@@ -55,9 +55,7 @@ export default class Axis extends Component {
   }
 
   componentDidMount = () => {
-    console.log('AXIS DID MOUNT')
     this.renderAxis()
-    this.props.onLabelChange()
   }
 
   componentDidUpdate = (prevProps) => {

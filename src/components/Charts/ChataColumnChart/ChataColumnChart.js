@@ -27,11 +27,6 @@ export default class ChataColumnChart extends Component {
   static propTypes = chartPropTypes
   static defaultProps = chartDefaultProps
 
-  componentDidMount = () => {
-    console.log('COLUMN CHART DID MOUNT')
-    this.props.onLabelChange()
-  }
-
   shouldComponentUpdate = () => {
     return true
   }

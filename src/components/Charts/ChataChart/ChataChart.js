@@ -94,7 +94,6 @@ export default class ChataChart extends Component {
     // The first render is to determine the chart size based on its parent container
     this.firstRender = false
     if (!this.props.isResizing) {
-      console.log('force updating on MOUNT')
       this.forceUpdate()
     }
 
@@ -110,9 +109,9 @@ export default class ChataChart extends Component {
       return false
     }
 
-    // if (this.state.isLoading && nextState.isLoading) {
-    //   return false
-    // }
+    if (this.state.isLoading && nextState.isLoading) {
+      return false
+    }
 
     return true
   }
@@ -122,10 +121,6 @@ export default class ChataChart extends Component {
     let shouldForceUpdate = false
     let shouldUpdateMargins = false
 
-    // if (this.state.chartID !== prevState.chartID) {
-    //   this.setDeltas()
-    // }
-
     const { chartHeight, chartWidth } = this.getChartDimensions()
 
     if (
@@ -133,12 +128,6 @@ export default class ChataChart extends Component {
       this.recursiveUpdateCount < 2 &&
       (chartWidth !== this.chartWidth || chartHeight !== this.chartHeight)
     ) {
-      console.log('RECURSIVE UPDATE BLOCK', {
-        chartWidth,
-        thisChartWidth: this.chartWidth,
-        chartHeight,
-        thisChartHeight: this.chartHeight,
-      })
       shouldForceUpdate = true
       this.recursiveUpdateCount++
       clearTimeout(this.recursiveUpdateTimeout)
@@ -182,14 +171,12 @@ export default class ChataChart extends Component {
       this.setState(newState, () => {
         if (shouldUpdateMargins) {
           this.setDeltas()
-          //   this.updateMargins()
         }
       })
       return
     } else if (shouldUpdateMargins) {
       this.setDeltas()
-      //   this.updateMargins()
-      //   return
+      return
     }
     if (this.props.data !== prevProps.data) {
       shouldForceUpdate = true
@@ -506,71 +493,9 @@ export default class ChataChart extends Component {
     }
   }
 
-  updateMargins = ({ setLoading = true, delay = 100 } = {}) => {
-    return
-    // if (!this.state.isLoading && setLoading) {
-    //   this.setState({ isLoading: true })
-    // }
-
-    // clearTimeout(this.updateMarginsDebounced)
-    // this.updateMarginsDebounced = setTimeout(() => {
-    //   this.updateMarginsToDebounce()
-    // }, delay)
-  }
   setIsChartScaled = () => {
     this.setState({ isChartScaled: !this.state.isChartScaled })
   }
-
-  // updateMarginsToDebounce = () => {
-  //   this.newMargins = undefined
-
-  //   try {
-  //     this.axes = document.querySelector(`#react-autoql-chart-${this.state.chartID} .react-autoql-axes-chart`)
-
-  //     if (
-  //       !this.chartContainerRef // || !this.axes
-  //     ) {
-  //       this.clearLoading()
-  //       return
-  //     }
-
-  //     const chartContainerBbox = this.chartContainerRef.getBoundingClientRect()
-  //     const axesBbox = this.axes.getBBox()
-  //     const legendBbox = select(this.chartRef)?.select('.legendOrdinal')?.node()?.getBBox()
-
-  //     const rightLegendMargin = this.getNewRightLegendMargin(legendBbox)
-
-  //     const leftMargin = this.getNewLeftMargin(chartContainerBbox, axesBbox)
-  //     const rightMargin = this.getNewRightMargin(chartContainerBbox, axesBbox, leftMargin, rightLegendMargin)
-  //     const topMargin = this.getNewTopMargin()
-  //     const bottomMargin = this.getNewBottomMargin(chartContainerBbox, legendBbox)
-
-  //     this.newMargins = {
-  //       leftMargin,
-  //       topMargin,
-  //       rightMargin,
-  //       bottomMargin,
-  //       rightLegendMargin,
-  //     }
-
-  //     this.isMarginDiffSignificant = this.isMarginDifferenceSignificant()
-
-  //     if (this.isMarginDiffSignificant) {
-  //       this.marginAdjustmentFinished = true
-  //       this.setState({ ...this.newMargins }, () => {
-  //         this.clearLoading()
-  //       })
-  //     } else {
-  //       this.marginAdjustmentFinished = true
-  //       this.clearLoading()
-  //     }
-  //   } catch (error) {
-  //     // Something went wrong rendering the chart.
-  //     console.error(error)
-  //     this.marginAdjustmentFinished = true
-  //     this.clearLoading()
-  //   }
-  // }
 
   clearLoading = () => {
     clearTimeout(this.loadingTimeout)
@@ -595,7 +520,6 @@ export default class ChataChart extends Component {
 
   changeNumberColumnIndices = (indices, newColumns) => {
     this.props.changeNumberColumnIndices(indices, newColumns)
-    console.log('setting new chart ID')
     this.setState({ chartID: uuid() })
     // this.forceUpdate()
   }
@@ -748,13 +672,13 @@ export default class ChataChart extends Component {
       legendTitle: this.props.legendColumn?.title || 'Category',
       legendLocation: getLegendLocation(numberColumnIndices, this.props.type),
       legendLabels: this.getLegendLabels(),
+      onLabelChange: this.setDeltas,
       // legendPadding: this.LEGEND_PADDING,
       visibleSeriesIndices,
       visibleSeriesIndices2,
       numberAxisTitle: this.getNumberAxisTitle(),
       stringAxisTitle: this.getStringAxisTitle(),
       onStringColumnSelect: this.onStringColumnSelect,
-      onLabelChange: this.updateMargins,
       tooltipID: this.props.tooltipID,
       chartTooltipID: this.props.chartTooltipID,
       chartContainerRef: this.chartContainerRef,

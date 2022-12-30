@@ -443,7 +443,7 @@ export const getBandScale = ({ props, columnIndex, axis }) => {
 
   scale.type = 'BAND'
   scale.tickLabels = getTickValues({ scale, props, axis, initialTicks: domain })
-  scale.tickSizePx = getTickSize(props, axis, scale)
+  scale.tickSizePx = getTickSize(props, scale)
 
   return scale
 }
@@ -476,7 +476,7 @@ export const getLinearScale = ({ props, minValue, maxValue, axis, tickValues }) 
     scale.ticks(niceTickValues)
   }
 
-  const tickSizePx = getTickSize(props, axis, scale, tickValues)
+  const tickSizePx = getTickSize(props, scale, tickValues)
   scale.tickSizePx = tickSizePx
 
   return scale
@@ -586,7 +586,7 @@ export const getNiceTickValues = ({ tickValues, scale, props, axis }) => {
 
     scale.domain([newTickValues[0], newTickValues[newTickValues.length - 1]])
     scale.ticks(newTickValues)
-    const tickSizePx = getTickSize(props, axis, scale, newTickValues)
+    const tickSizePx = getTickSize(props, scale, newTickValues)
     scale.tickSizePx = tickSizePx
     return newTickValues
   } catch (error) {
@@ -594,7 +594,7 @@ export const getNiceTickValues = ({ tickValues, scale, props, axis }) => {
   }
 }
 
-export const getTickSize = (props, axis, scale, tickValues) => {
+export const getTickSize = (props, scale, tickValues) => {
   let numTicks = 1
   if (tickValues) {
     numTicks = tickValues.length
@@ -602,14 +602,14 @@ export const getTickSize = (props, axis, scale, tickValues) => {
     numTicks = scale.tickLabels?.length
   }
 
-  const fullSize = axis === 'x' ? props.innerWidth : props.innerHeight
+  const rangeStart = scale?.range()?.[1] ?? 0
+  const rangeEnd = scale?.range()?.[0] ?? 0
+  const fullSize = Math.abs(rangeEnd - rangeStart)
 
-  const tickSizeWithPadding = fullSize / numTicks
-  const outerPaddingInPx = tickSizeWithPadding * props.outerPadding
-  const fullSizeWithoutPadding = fullSize - 2 * outerPaddingInPx
-  const tickSize = fullSizeWithoutPadding / numTicks
+  const tickSizeWithoutPadding = fullSize / (2 * props.outerPadding + numTicks + (numTicks + 1) * props.innerPadding)
+  const tickSizeWithInnerPadding = tickSizeWithoutPadding + props.innerPadding * tickSizeWithoutPadding
 
-  return tickSize
+  return tickSizeWithInnerPadding
 }
 
 export const getTickValues = ({ scale, initialTicks, props, axis }) => {
@@ -625,10 +625,10 @@ export const getTickValues = ({ scale, initialTicks, props, axis }) => {
       return []
     }
 
-    const tickSizePx = getTickSize(props, axis, scale, initialTicks)
+    const tickSizePx = getTickSize(props, scale, initialTicks)
     const minTextHeightInPx = 16
 
-    const fullSize = axis === 'x' ? props.innerWidth : props.innerHeight
+    const fullSize = Math.abs(scale?.range()?.[1] - scale?.range()?.[0]) ?? 1
     const interval = Math.ceil((ticksArray.length * minTextHeightInPx) / fullSize)
 
     let tickValues = [...ticksArray]

@@ -36,18 +36,11 @@ export default class Axes extends React.Component {
   static propTypes = axesPropTypes
   static defaultProps = axesDefaultProps
 
-  componentDidMount = () => {
-    console.log('AXES DID MOUNT')
-    this.props.onLabelChange()
-    // setTimeout(() => {
-    //   this.forceUpdate()
-    // }, 1000)
-  }
-
   getLabelTextHeight = (ref) => {
     const fontSize = parseInt(ref?.style?.fontSize, 10)
     return isNaN(fontSize) ? 0 : fontSize
   }
+
   componentDidUpdate = (prevProps, prevState) => {
     if (prevState.currentRowNumber !== this.state.currentRowNumber) {
       this.forceUpdate()
@@ -355,7 +348,7 @@ export default class Axes extends React.Component {
         translateY={this.props.deltaY + innerHeight}
         tickSizeInner={-this.props.height + this.props.topMargin + this.props.bottomMargin}
         ticks={this.props.xTicks}
-        rotateLabels={true}
+        rotateLabels={this.props.rotateLabels}
         col={this.props.xCol}
         title={xAxisTitle}
         showGridLines={this.props.xGridLines}
