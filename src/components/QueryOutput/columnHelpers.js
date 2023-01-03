@@ -51,31 +51,50 @@ export const getNumberColumnIndices = (columns) => {
     }
   })
 
+  let numberColumnIndices
+  let numberColumnIndex
+  let numberColumnIndices2
+  let numberColumnIndex2
+
   // Returning highest priority of non-empty arrays
   if (dollarAmtIndices.length) {
-    return {
-      numberColumnIndices: dollarAmtIndices,
-      numberColumnIndex: dollarAmtIndices[0],
+    if (!numberColumnIndices) {
+      numberColumnIndices = dollarAmtIndices
+      numberColumnIndex = dollarAmtIndices[0]
+    } else if (!numberColumnIndices2) {
+      numberColumnIndices2 = dollarAmtIndices
+      numberColumnIndex2 = dollarAmtIndices[0]
     }
   }
 
   if (quantityIndices.length) {
-    return {
-      numberColumnIndices: quantityIndices,
-      numberColumnIndex: quantityIndices[0],
+    if (!numberColumnIndices) {
+      numberColumnIndices = quantityIndices
+      numberColumnIndex = quantityIndices[0]
+    } else if (!numberColumnIndices2) {
+      numberColumnIndices2 = quantityIndices
+      numberColumnIndex2 = quantityIndices[0]
     }
   }
 
   if (ratioIndices.length) {
-    return {
-      numberColumnIndices: ratioIndices,
-      numberColumnIndex: ratioIndices[0],
+    if (!numberColumnIndices) {
+      numberColumnIndices = ratioIndices
+      numberColumnIndex = ratioIndices[0]
+    } else if (!numberColumnIndices2) {
+      numberColumnIndices2 = ratioIndices
+      numberColumnIndex2 = ratioIndices[0]
     }
   }
 
   return {
-    numberColumnIndices: [],
-    numberColumnIndex: undefined,
+    numberColumnIndices: numberColumnIndices ?? [],
+    numberColumnIndex: numberColumnIndex ?? undefined,
+    numberColumnIndices2: numberColumnIndices2 ?? [],
+    numberColumnIndex2: numberColumnIndex2 ?? undefined,
+    dollarAmtIndices,
+    quantityIndices,
+    ratioIndices,
   }
 }
 

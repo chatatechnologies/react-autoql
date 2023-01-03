@@ -1034,6 +1034,22 @@ export class QueryOutput extends React.Component {
     this.forceUpdate()
   }
 
+  onChangeNumberColumnIndices2 = (indices, newColumns) => {
+    if (!indices) {
+      return
+    }
+
+    if (this.supportsPivot() && !this.supportsDatePivot()) {
+      this.pivotTableConfig.numberColumnIndices2 = indices
+      this.pivotTableConfig.numberColumnIndex2 = indices[0]
+    } else {
+      this.tableConfig.numberColumnIndices2 = indices
+      this.tableConfig.numberColumnIndex2 = indices[0]
+    }
+
+    this.updateColumns(newColumns)
+  }
+
   onChangeNumberColumnIndices = (indices, newColumns) => {
     if (!indices) {
       return
@@ -1044,9 +1060,7 @@ export class QueryOutput extends React.Component {
       this.pivotTableConfig.numberColumnIndex = indices[0]
     } else {
       this.tableConfig.numberColumnIndices = indices
-      this.tableConfig.numberColumnIndices2 = indices
       this.tableConfig.numberColumnIndex = indices[0]
-      this.tableConfig.numberColumnIndex2 = indices[0]
     }
 
     this.updateColumns(newColumns)
@@ -1078,10 +1092,13 @@ export class QueryOutput extends React.Component {
 
     // Set number type columns and number series columns (linear axis)
     if (isFirstGeneration || !this.pivotTableConfig.numberColumnIndices) {
-      const { numberColumnIndex, numberColumnIndices } = getNumberColumnIndices(columns)
+      const { numberColumnIndex, numberColumnIndices, numberColumnIndex2, numberColumnIndices2 } =
+        getNumberColumnIndices(columns)
 
       this.pivotTableConfig.numberColumnIndices = numberColumnIndices
       this.pivotTableConfig.numberColumnIndex = numberColumnIndex
+      this.pivotTableConfig.numberColumnIndices2 = numberColumnIndices2
+      this.pivotTableConfig.numberColumnIndex2 = numberColumnIndex2
     }
 
     if (!_isEqual(prevPivotTableConfig, this.pivotTableConfig)) {
@@ -1110,11 +1127,12 @@ export class QueryOutput extends React.Component {
 
     // Set number type columns and number series columns (linear axis)
     if (!this.tableConfig.numberColumnIndices || !(this.tableConfig.numberColumnIndex >= 0)) {
-      const { numberColumnIndex, numberColumnIndices } = getNumberColumnIndices(columns)
+      const { numberColumnIndex, numberColumnIndices, numberColumnIndex2, numberColumnIndices2 } =
+        getNumberColumnIndices(columns)
       this.tableConfig.numberColumnIndices = numberColumnIndices
       this.tableConfig.numberColumnIndex = numberColumnIndex
-      this.tableConfig.numberColumnIndices2 = numberColumnIndices
-      this.tableConfig.numberColumnIndex2 = numberColumnIndex
+      this.tableConfig.numberColumnIndices2 = numberColumnIndices2
+      this.tableConfig.numberColumnIndex2 = numberColumnIndex2
     }
 
     // Set legend index if there should be one

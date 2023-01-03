@@ -475,16 +475,11 @@ export const getPNGBase64 = (svgElement) => {
 }
 
 export const getBBoxFromRef = (ref) => {
-  let bbox
-  try {
-    if (ref) {
-      bbox = ref.getBBox()
-    }
-  } catch (error) {
-    console.error(error)
+  if (!ref || !ref.getBBox) {
+    return
   }
 
-  return bbox
+  return ref.getBBox()
 }
 
 /**

@@ -424,7 +424,7 @@ export default class Axis extends Component {
     }
 
     return (
-      <g data-test='axis'>
+      <g data-test='axis' ref={(r) => (this.ref = r)}>
         <g
           className={`axis axis-${this.props.orient}
             ${this.props.rotateLabels ? ' rotated' : ''}`}

@@ -21,7 +21,7 @@ import { ChataStackedBarChart } from '../ChataStackedBarChart'
 import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 import { ChataStackedLineChart } from '../ChataStackedLineChart'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
-import { svgToPng, sortDataByDate, formatChartLabel, onlyUnique } from '../../../js/Util.js'
+import { svgToPng, sortDataByDate, formatChartLabel, onlyUnique, getBBoxFromRef } from '../../../js/Util.js'
 import {
   chartContainerDefaultProps,
   chartContainerPropTypes,
@@ -64,7 +64,7 @@ export default class ChataChart extends Component {
       rightMargin: this.PADDING,
       topMargin: this.PADDING,
       bottomMargin: this.PADDING,
-      rightAxisMargin: 150,
+      rightAxisMargin: 0,
       rightLegendMargin: 0,
       bottomLegendMargin: 0,
       deltaX: 0,
@@ -188,33 +188,24 @@ export default class ChataChart extends Component {
 
   componentWillUnmount = () => {
     clearTimeout(this.recursiveUpdateTimeout)
-
-    if (this.getNewMargins) {
-      this.getNewMargins.cancel()
-    }
-
-    this.legend = undefined
-    this.xAxis = undefined
-    this.axes = undefined
   }
 
   setDeltas = () => {
     this.setState({ deltaX: 0, deltaY: 0, isLoading: true }, () => {
       setTimeout(() => {
-        let deltaX = 0
-        if (this.innerChartRef?.chartRef?.getBBox) {
-          const axisBBoxX = this.innerChartRef.chartRef.getBBox()?.x ?? 0
-          deltaX = -1 * axisBBoxX
-        }
+        // Get distance in px to shift to the right
+        const axisBBoxX = getBBoxFromRef(this.innerChartRef.chartRef)?.x ?? 0
+        const deltaX = -1 * axisBBoxX
 
-        let deltaY = 0
-        if (this.innerChartRef?.chartRef?.getBBox) {
-          const axisBBoxHeight = this.innerChartRef.chartRef.getBBox()?.height ?? 0
-          const chartHeight = this.chartContainerRef?.clientHeight ?? 0
-          deltaY = axisBBoxHeight - chartHeight
-        }
+        // Get distance in px to shift down
+        const axisBBoxHeight = getBBoxFromRef(this.innerChartRef.chartRef)?.height ?? 0
+        const chartHeight = this.chartContainerRef?.clientHeight ?? 0
+        const deltaY = axisBBoxHeight - chartHeight
 
-        this.setState({ deltaX, deltaY }, () => {
+        const rightAxisMargin = getBBoxFromRef(this.innerChartRef?.axesRef?.yAxis2Ref?.ref)?.width ?? 0
+        const topAxisMargin = getBBoxFromRef(this.innerChartRef?.axesRef?.xAxis2Ref?.ref)?.height ?? 0
+
+        this.setState({ deltaX, deltaY, rightAxisMargin, topAxisMargin }, () => {
           this.setState({ isLoading: false })
         })
       }, 0)
@@ -222,9 +213,9 @@ export default class ChataChart extends Component {
   }
 
   getChartDimensions = () => {
-    const { topMargin, bottomMargin, rightMargin, leftMargin, rightLegendMargin, rightAxisMargin } = this.state
+    const { topMargin, bottomMargin, rightMargin, leftMargin, rightAxisMargin } = this.state
 
-    let chartWidth = this.props.width ?? this.chartContainerRef?.clientWidth - rightLegendMargin
+    let chartWidth = this.props.width ?? this.chartContainerRef?.clientWidth - rightAxisMargin
     if (chartWidth < 0) {
       chartWidth = 0
     }
@@ -779,7 +770,7 @@ export default class ChataChart extends Component {
               <svg
                 ref={(r) => (this.chartRef = r)}
                 xmlns='http://www.w3.org/2000/svg'
-                width={chartWidth + this.state.rightLegendMargin}
+                width={chartWidth + this.state.rightAxisMargin}
                 height={chartHeight}
                 style={{
                   fontFamily: chartFontFamily,
