@@ -46,18 +46,10 @@ export const chartPropTypes = {
   width: PropTypes.number.isRequired,
   innerHeight: PropTypes.number.isRequired,
   innerWidth: PropTypes.number.isRequired,
-  leftMargin: PropTypes.number,
-  rightMargin: PropTypes.number,
-  topMargin: PropTypes.number,
-  bottomMargin: PropTypes.number,
 }
 
 export const chartDefaultProps = {
   ...chartContainerDefaultProps,
-  leftMargin: 0,
-  rightMargin: 0,
-  topMargin: 0,
-  bottomMargin: 0,
   deltaX: 0,
   deltaY: 0,
 }
@@ -411,7 +403,6 @@ export const getRangeForAxis = (props, axis) => {
   let rangeStart
   let rangeEnd
   if (axis === 'x') {
-    // rangeStart = props.leftMargin + AXIS_LABEL_SIZE
     rangeStart = 0
     const innerWidth = props.width - props.deltaX
     rangeEnd = rangeStart + innerWidth
@@ -419,8 +410,8 @@ export const getRangeForAxis = (props, axis) => {
       rangeEnd = rangeStart
     }
   } else if (axis === 'y') {
-    const innerHeight = props.height - props.deltaY
-    rangeEnd = props.deltaY
+    const innerHeight = props.height
+    rangeEnd = 0
     rangeStart = rangeEnd + innerHeight
 
     if (rangeStart < rangeEnd) {

@@ -1,9 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
-import _get from 'lodash.get'
-import _isEqual from 'lodash.isequal'
-
 import { select } from 'd3-selection'
 import { axisLeft, axisBottom, axisTop, axisRight } from 'd3-axis'
 
@@ -19,6 +16,7 @@ export default class Axis extends Component {
   constructor(props) {
     super(props)
 
+    this.AXIS_KEY = uuid()
     this.LEGEND_PADDING = 130
     this.LEGEND_ID = `axis-${uuid()}`
     this.BUTTON_PADDING = 5
@@ -61,24 +59,24 @@ export default class Axis extends Component {
   componentDidUpdate = (prevProps) => {
     this.renderAxis()
 
-    if (this.props.rotateLabels !== prevProps.rotateLabels) {
-      this.props.onLabelChange()
-    }
+    // if (this.props.rotateLabels !== prevProps.rotateLabels) {
+    //   this.props.onLabelChange()
+    // }
   }
 
-  styleAxisScalerBorder = () => {
-    select(this.axisScaler)
-      .attr('class', 'axis-scaler-border')
-      .attr('transform', `translate(${this.props.translateX ?? 0}, ${this.props.translateY ?? 0})`)
-      .attr('width', _get(this.labelBBox, 'width', 0) + this.BUTTON_PADDING * 2)
-      .attr('height', _get(this.labelBBox, 'height', 0) + this.BUTTON_PADDING * 2)
-      .attr('x', _get(this.labelBBox, 'x', 0) - this.BUTTON_PADDING)
-      .attr('y', _get(this.labelBBox, 'y', 0) - this.BUTTON_PADDING)
-      .attr('stroke', 'transparent')
-      .attr('stroke-width', '1px')
-      .attr('fill', 'transparent')
-      .attr('rx', 4)
-  }
+  // styleAxisScalerBorder = () => {
+  //   select(this.axisScaler)
+  //     .attr('class', 'axis-scaler-border')
+  //     .attr('transform', `translate(${this.props.translateX ?? 0}, ${this.props.translateY ?? 0})`)
+  //     .attr('width', (this.labelBBox?.width ?? 0) + this.BUTTON_PADDING * 2)
+  //     .attr('height', (this.labelBBox?.height ?? 0) + this.BUTTON_PADDING * 2)
+  //     .attr('x', (this.labelBBox?.x ?? 0) - this.BUTTON_PADDING)
+  //     .attr('y', (this.labelBBox?.y ?? 0) - this.BUTTON_PADDING)
+  //     .attr('stroke', 'transparent')
+  //     .attr('stroke-width', '1px')
+  //     .attr('fill', 'transparent')
+  //     .attr('rx', 4)
+  // }
 
   renderAxis = () => {
     const self = this
@@ -122,6 +120,8 @@ export default class Axis extends Component {
 
     if (this.props.orient === 'Left') {
       axis.tickSizeInner(-this.props.innerWidth)
+    } else if (this.props.orient === 'Bottom') {
+      axis.tickSizeInner(10)
     }
 
     if (this.axisElement) {
@@ -143,7 +143,7 @@ export default class Axis extends Component {
         .selectAll('.tick text')
         .style('transform', 'rotate(0)')
         .style('text-anchor', 'middle')
-        .attr('dy', '10px')
+        .attr('dy', '1em')
         .attr('dx', '0')
         .attr('fill-opacity', '1')
         .style('font-family', 'inherit')
@@ -198,33 +198,39 @@ export default class Axis extends Component {
         .selectAll('g.tick text')
         .each(function () {
           const textBoundingRect = select(this).node().getBoundingClientRect()
-          const textBBox = {
+
+          // const left = textBoundingRect.left - xDiff
+          // const bottom = textBoundingRect.bottom - yDiff
+          // const right = textBoundingRect.right - xDiff
+          // const top = textBoundingRect.top - yDiff
+          // const textBBox = { left, bottom, right, top }
+
+          labelBboxes.push({
             left: textBoundingRect.left - xDiff,
             bottom: textBoundingRect.bottom - yDiff,
             right: textBoundingRect.right - xDiff,
             top: textBoundingRect.top - yDiff,
-          }
-
-          labelBboxes.push(textBBox)
+          })
         })
 
       if (labelBboxes) {
         const allLabelsBbox = mergeBboxes(labelBboxes)
-        this.labelBBox = allLabelsBbox
+        this.labelBBox = { ...allLabelsBbox }
       }
 
-      if (this.props.scale?.type === 'LINEAR') {
-        this.styleAxisScalerBorder()
-      }
+      // if (this.props.scale?.type === 'LINEAR') {
+      //   this.styleAxisScalerBorder()
+      // }
     }
   }
 
-  getLabelTextHeight = (ref) => {
+  getTitleTextHeight = (ref) => {
     const fontSize = parseInt(ref?.style?.fontSize, 10)
     return isNaN(fontSize) ? 0 : fontSize
   }
 
-  renderAxisTitle = (title = '', hasDropdown) => {
+  renderAxisTitleText = () => {
+    const { title = '', hasDropdown } = this.props
     if (title.length > 35) {
       return (
         <tspan data-tip={title} data-for={this.props.chartTooltipID} data-test='axis-label'>
@@ -251,10 +257,10 @@ export default class Axis extends Component {
     )
   }
 
-  renderXAxisTitle = (xAxisTitle) => {
-    const xLabelBbox = getBBoxFromRef(this.xTitleRef)
+  renderBottomAxisTitle = () => {
+    const xLabelBbox = getBBoxFromRef(this.bottomTitleRef)
     const xLabelTextWidth = xLabelBbox ? xLabelBbox.width : 0
-    const xLabelTextHeight = this.getLabelTextHeight(this.xTitleRef)
+    const xLabelTextHeight = this.getTitleTextHeight(this.bottomTitleRef)
     const halfTextHeight = xLabelTextHeight / 2
 
     const range = this.props.scale?.range() || [0, 0]
@@ -263,8 +269,8 @@ export default class Axis extends Component {
 
     /* <text> element's y coordinate is anchored on the middle baseline,
     so we need to shift the element up by half of it's height */
-    const labelBBoxHeight = this.labelBBox?.height ?? 0
-    let xLabelY = this.props.translateY + labelBBoxHeight + this.AXIS_TITLE_PADDING + xLabelTextHeight / 2
+    const labelBBoxYBottom = (this.labelBBox?.y ?? 0) + (this.labelBBox?.height ?? 0)
+    let xLabelY = labelBBoxYBottom + this.AXIS_TITLE_PADDING + 0.5 * xLabelTextHeight
 
     const xBorderX = xCenter - xLabelTextWidth / 2 - this.axisTitlePaddingLeft
     let xBorderY = xLabelY - halfTextHeight - this.axisTitlePaddingTop
@@ -279,7 +285,7 @@ export default class Axis extends Component {
     return (
       <g>
         <text
-          ref={(r) => (this.xTitleRef = r)}
+          ref={(r) => (this.bottomTitleRef = r)}
           className='x-axis-label'
           data-test='x-axis-label'
           dominantBaseline='middle'
@@ -289,12 +295,12 @@ export default class Axis extends Component {
           x={xCenter}
           style={this.labelInlineStyles}
         >
-          {this.renderAxisTitle(xAxisTitle, this.props.hasXDropdown)}
+          {this.renderAxisTitleText()}
         </text>
-        {this.props.hasXDropdown && (
+        {this.props.hasDropdown && (
           <AxisSelector
             {...this.props}
-            column={this.props.xCol}
+            column={this.props.col}
             positions={['top', 'bottom']}
             align='center'
             childProps={{
@@ -309,29 +315,30 @@ export default class Axis extends Component {
     )
   }
 
-  renderYAxisTitle = (yAxisTitle) => {
+  renderLeftAxisTitle = () => {
+    const { title } = this.props
     const range = this.props.scale?.range() || [0, 0]
     const innerHeight = range[0] - range[1]
-    const yCenter = -1 * (this.props.deltaY + innerHeight / 2)
+    const yCenter = -0.5 * innerHeight
 
     const chartBoundingRect = this.props.chartContainerRef?.getBoundingClientRect()
-    const yLabelBoundingRect = this.yTitleRef?.getBoundingClientRect()
+    const yLabelBoundingRect = this.leftTitleRef?.getBoundingClientRect()
 
     const chartContainerHeight = chartBoundingRect?.height ?? 0
     const yLabelHeight = yLabelBoundingRect?.height ?? 0
     const yLabelWidth = yLabelBoundingRect?.width ?? 0
 
-    const yLabelTextHeight = this.getLabelTextHeight(this.yTitleRef)
+    const yLabelTextHeight = this.getTitleTextHeight(this.leftTitleRef)
 
     const yLabelTop = yLabelBoundingRect?.top
     const chartTop = chartBoundingRect?.top
 
     // X and Y are switched from the rotation (anchored in the middle)
-    const labelBBoxWidth = this.labelBBox?.width ?? 0
-    const yLabelY = -1 * (labelBBoxWidth + this.AXIS_TITLE_PADDING + yLabelTextHeight / 2)
+    const labelBBoxX = this.labelBBox?.x ?? 0
+    const yLabelY = labelBBoxX - this.AXIS_TITLE_PADDING - 0.5 * yLabelTextHeight
     let yLabelX = yCenter
 
-    if (yAxisTitle !== this.previousYAxisTitle) {
+    if (title !== this.previousLeftAxisTitle) {
       // Label changed, reset all svg transforms
       this.originalYLabelHeight = undefined
       this.yLabelTransform = undefined
@@ -341,14 +348,14 @@ export default class Axis extends Component {
       this.originalYLabelHeight = yLabelHeight
       this.justChangedYLabel = false
     }
-    this.previousYAxisTitle = yAxisTitle
+    this.previousLeftAxisTitle = title
 
     let textLength
     if (this.originalYLabelHeight > chartContainerHeight) {
       // Squeeze text to fit in full height
       this.yLabelTransform = 'rotate(-90)'
       this.topDifference = undefined
-      yLabelX = -((chartContainerHeight - this.props.bottomMargin) / 2)
+      yLabelX = -0.5 * chartContainerHeight
       textLength = Math.floor(chartContainerHeight - this.props.chartContainerPadding)
     } else if (yLabelTop < chartTop) {
       // Y Label can fit, it is just outside of container. Shift it down
@@ -372,10 +379,10 @@ export default class Axis extends Component {
     return (
       <g>
         <text
-          ref={(r) => (this.yTitleRef = r)}
-          id={`y-axis-label-${this.yAxisKey}`}
-          className='y-axis-label'
-          data-test='y-axis-label'
+          ref={(r) => (this.leftTitleRef = r)}
+          id={`left-axis-title-${this.AXIS_KEY}`}
+          className='left-axis-title'
+          data-test='left-axis-title'
           dominantBaseline='middle'
           textAnchor='middle'
           fontWeight='bold'
@@ -386,12 +393,12 @@ export default class Axis extends Component {
           lengthAdjust='spacingAndGlyphs'
           style={this.labelInlineStyles}
         >
-          {this.renderAxisTitle(yAxisTitle, this.props.hasYDropdown)}
+          {this.renderAxisTitleText()}
         </text>
-        {this.props.hasYDropdown && (
+        {this.props.hasDropdown && (
           <AxisSelector
             {...this.props}
-            column={this.props.yCol}
+            column={this.props.col}
             positions={['right']}
             align='center'
             childProps={{
@@ -407,47 +414,169 @@ export default class Axis extends Component {
     )
   }
 
+  renderRightAxisTitle = () => {
+    const { title } = this.props
+    const range = this.props.scale?.range() || [0, 0]
+    const innerHeight = range[0] - range[1]
+    const yCenter = -0.5 * innerHeight
+
+    const chartBoundingRect = this.props.chartContainerRef?.getBoundingClientRect()
+    const yLabelBoundingRect = this.rightTitleRef?.getBoundingClientRect()
+
+    const chartContainerHeight = chartBoundingRect?.height ?? 0
+    const yLabelHeight = yLabelBoundingRect?.height ?? 0
+    const yLabelWidth = yLabelBoundingRect?.width ?? 0
+
+    const yLabelTextHeight = this.getTitleTextHeight(this.rightTitleRef)
+
+    const yLabelTop = yLabelBoundingRect?.top
+    const chartTop = chartBoundingRect?.top
+
+    // X and Y are switched from the rotation (anchored in the middle)
+    const labelBBoxRightX = (this.labelBBox?.x ?? 0) + (this.labelBBox?.width ?? 0)
+    const yLabelY = labelBBoxRightX + this.AXIS_TITLE_PADDING + 0.5 * yLabelTextHeight
+    let yLabelX = yCenter
+
+    if (title !== this.previousRightAxisTitle) {
+      // Label changed, reset all svg transforms
+      this.originalRightTitleHeight = undefined
+      this.rightTitleTransform = undefined
+      this.rightTitleTopDifference = undefined
+      this.justChangedRightTitle = true
+    } else if (this.justChangedRightTitle) {
+      this.originalRightTitleHeight = yLabelHeight
+      this.justChangedRightTitle = false
+    }
+    this.previousRightAxisTitle = title
+
+    let textLength
+    if (this.originalRightTitleHeight > chartContainerHeight) {
+      // Squeeze text to fit in full height
+      this.rightTitleTransform = 'rotate(-90)'
+      this.rightTitleTopDifference = undefined
+      yLabelX = -0.5 * chartContainerHeight
+      textLength = Math.floor(chartContainerHeight - this.props.chartContainerPadding)
+    } else if (yLabelTop < chartTop) {
+      // Y Label can fit, it is just outside of container. Shift it down
+      const prevTopDifference = this.rightTitleTopDifference ?? 0
+      const topDifference = Math.floor(yLabelTop - chartTop - this.axisTitlePaddingLeft)
+
+      this.rightTitleTopDifference = topDifference + prevTopDifference
+      this.rightTitleTransform = `rotate(-90) translate(${this.rightTitleTopDifference}, 0)`
+    } else if (this.originalRightTitleHeight < chartContainerHeight) {
+      this.rightTitleTransform = undefined
+      this.rightTitleTopDifference = undefined
+    }
+
+    const yBorderWidth = yLabelHeight + 2 * this.axisTitlePaddingLeft
+    const yBorderHeight = yLabelTextHeight + 2 * this.axisTitlePaddingTop
+    const yBorderX = yLabelX - yLabelHeight / 2 - this.axisTitlePaddingLeft
+    const yBorderY = yLabelY - yLabelWidth / 2 - this.axisTitlePaddingTop
+
+    const transform = this.rightTitleTransform || 'rotate(-90)'
+
+    return (
+      <g>
+        <text
+          ref={(r) => (this.rightTitleRef = r)}
+          id={`right-axis-title-${this.AXIS_KEY}`}
+          className='right-axis-title'
+          data-test='right-axis-title'
+          dominantBaseline='middle'
+          textAnchor='middle'
+          fontWeight='bold'
+          transform={transform}
+          x={yLabelX}
+          y={yLabelY}
+          textLength={textLength}
+          lengthAdjust='spacingAndGlyphs'
+          style={this.labelInlineStyles}
+        >
+          {this.renderAxisTitleText()}
+        </text>
+        {this.props.hasDropdown && (
+          <AxisSelector
+            {...this.props}
+            column={this.props.col}
+            positions={['left']}
+            align='center'
+            childProps={{
+              transform,
+              width: yBorderWidth,
+              height: yBorderHeight,
+              x: yBorderX,
+              y: yBorderY,
+            }}
+          />
+        )}
+      </g>
+    )
+  }
+
+  renderTopAxisTitle = () => {}
+
+  renderAxisTitle = () => {
+    const { orient } = this.props
+
+    switch (orient) {
+      case 'Left': {
+        return this.renderLeftAxisTitle()
+      }
+      case 'Right': {
+        return this.renderRightAxisTitle()
+      }
+      case 'Bottom': {
+        return this.renderBottomAxisTitle()
+      }
+      case 'Top': {
+        return this.renderTopAxisTitle()
+      }
+      default: {
+        return null
+      }
+    }
+  }
+
   render = () => {
     // const numSeries = this.props.numberColumnIndices?.length || 0
     // const legendDx = (this.LEGEND_PADDING * (numSeries - 1)) / 2
     // const marginLeft = this.props.leftMargin || 0
 
-    let legendClippingHeight =
-      this.props.height -
-      this.props.topMargin -
-      // make legend smaller if labels are not rotated
-      // because they might overlap the legend
-      (!this.props.rotateLabels ? this.props.bottomMargin : 44) + // distance to bottom of axis labels
-      20
-    if (legendClippingHeight < 0) {
-      legendClippingHeight = 0
-    }
+    // let legendClippingHeight =
+    //   this.props.height -
+    //   // this.props.topMargin -
+    //   // make legend smaller if labels are not rotated
+    //   // because they might overlap the legend
+    //   (!this.props.rotateLabels ? 0 : 44) + // distance to bottom of axis labels
+    //   20
+    // if (legendClippingHeight < 0) {
+    //   legendClippingHeight = 0
+    // }
 
     return (
-      <g data-test='axis' ref={(r) => (this.ref = r)}>
+      <g
+        data-test='axis'
+        ref={(r) => (this.ref = r)}
+        transform={`translate(${this.props.translateX}, ${this.props.translateY})`}
+      >
         <g
           className={`axis axis-${this.props.orient}
             ${this.props.rotateLabels ? ' rotated' : ''}`}
           ref={(el) => (this.axisElement = el)}
-          transform={`translate(${this.props.translateX}, ${this.props.translateY})`}
         />
-        {this.props.orient === 'Left' && this.renderYAxisTitle(this.props.yAxisTitle || this.props.yCol?.display_name)}
-        {this.props.orient === 'Bottom' &&
-          this.renderXAxisTitle(this.props.xAxisTitle || this.props.xCol?.display_name)}
-        {!!this.labelBBox && this.props.scale?.type === 'LINEAR' && this.props.scale?.domain().length !== 1 && (
+        {this.renderAxisTitle()}
+        {/* {!!this.labelBBox && this.props.scale?.type === 'LINEAR' && this.props.scale?.domain().length !== 1 && (
           <AxisScaler
-            {...this.props}
-            positions={['top', 'bottom']}
-            align='center'
+            setIsChartScaled={this.props.setIsChartScaled}
             childProps={{
               ref: (r) => (this.axisScaler = r),
-              x: _get(this.labelBBox, 'x', 0) - this.BUTTON_PADDING,
-              y: _get(this.labelBBox, 'y', 0) - this.BUTTON_PADDING,
-              width: _get(this.labelBBox, 'width', 0) + this.BUTTON_PADDING * 2,
-              height: _get(this.labelBBox, 'height', 0) + this.BUTTON_PADDING * 2,
+              x: (this.labelBBox?.x ?? 0) - this.BUTTON_PADDING,
+              y: (this.labelBBox?.y ?? 0) - this.BUTTON_PADDING,
+              width: (this.labelBBox?.width ?? 0) + this.BUTTON_PADDING * 2,
+              height: (this.labelBBox?.height ?? 0) + this.BUTTON_PADDING * 2,
             }}
           />
-        )}
+        )} */}
       </g>
     )
   }

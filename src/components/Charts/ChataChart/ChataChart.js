@@ -62,9 +62,10 @@ export default class ChataChart extends Component {
       aggregatedData,
       leftMargin: this.PADDING,
       rightMargin: this.PADDING,
-      topMargin: this.PADDING,
-      bottomMargin: this.PADDING,
+      // topMargin: this.PADDING,
+      // bottomMargin: this.PADDING,
       rightAxisMargin: 0,
+      bottomAxisMargin: 0,
       rightLegendMargin: 0,
       bottomLegendMargin: 0,
       deltaX: 0,
@@ -121,12 +122,12 @@ export default class ChataChart extends Component {
     let shouldForceUpdate = false
     let shouldUpdateMargins = false
 
-    const { chartHeight, chartWidth } = this.getChartDimensions()
+    const { outerHeight, outerWidth } = this.getChartDimensions()
 
     if (
       // !this.state.isLoading &&
       this.recursiveUpdateCount < 2 &&
-      (chartWidth !== this.chartWidth || chartHeight !== this.chartHeight)
+      (outerWidth !== this.outerWidth || outerHeight !== this.outerHeight)
     ) {
       shouldForceUpdate = true
       this.recursiveUpdateCount++
@@ -136,8 +137,8 @@ export default class ChataChart extends Component {
       }, 500)
     }
 
-    this.chartHeight = chartHeight
-    this.chartWidth = chartWidth
+    this.outerHeight = outerHeight
+    this.outerWidth = outerWidth
 
     if (!this.props.isResizing && prevProps.isResizing) {
       // Fill max message container after resize
@@ -193,19 +194,21 @@ export default class ChataChart extends Component {
   setDeltas = () => {
     this.setState({ deltaX: 0, deltaY: 0, isLoading: true }, () => {
       setTimeout(() => {
+        const rightAxisMargin = getBBoxFromRef(this.innerChartRef?.axesRef?.rightAxis?.ref)?.width ?? 0
+        const bottomAxisMargin = getBBoxFromRef(this.innerChartRef?.axesRef?.bottomAxis?.ref)?.height ?? 0
+
         // Get distance in px to shift to the right
         const axisBBoxX = getBBoxFromRef(this.innerChartRef.chartRef)?.x ?? 0
         const deltaX = -1 * axisBBoxX
 
         // Get distance in px to shift down
-        const axisBBoxHeight = getBBoxFromRef(this.innerChartRef.chartRef)?.height ?? 0
-        const chartHeight = this.chartContainerRef?.clientHeight ?? 0
-        const deltaY = axisBBoxHeight - chartHeight
+        // const axisBBoxHeight = getBBoxFromRef(this.innerChartRef.chartRef)?.height ?? 0
+        // const outerHeight = this.chartContainerRef?.clientHeight ?? 0
+        // const deltaY = axisBBoxHeight - outerHeight
+        const axisBBoxY = getBBoxFromRef(this.innerChartRef.chartRef)?.y ?? 0
+        const deltaY = -1 * axisBBoxY
 
-        const rightAxisMargin = getBBoxFromRef(this.innerChartRef?.axesRef?.yAxis2Ref?.ref)?.width ?? 0
-        const topAxisMargin = getBBoxFromRef(this.innerChartRef?.axesRef?.xAxis2Ref?.ref)?.height ?? 0
-
-        this.setState({ deltaX, deltaY, rightAxisMargin, topAxisMargin }, () => {
+        this.setState({ deltaX, deltaY, rightAxisMargin, bottomAxisMargin }, () => {
           this.setState({ isLoading: false })
         })
       }, 0)
@@ -213,29 +216,25 @@ export default class ChataChart extends Component {
   }
 
   getChartDimensions = () => {
-    const { topMargin, bottomMargin, rightMargin, leftMargin, rightAxisMargin } = this.state
+    const { rightAxisMargin, bottomAxisMargin } = this.state
 
-    let chartWidth = this.props.width ?? this.chartContainerRef?.clientWidth - rightAxisMargin
-    if (chartWidth < 0) {
-      chartWidth = 0
-    }
+    const containerWidth = this.props.width ?? this.chartContainerRef?.clientWidth ?? 0
+    const containerHeight = this.props.height ?? this.chartContainerRef?.clientHeight ?? 0
 
-    let chartHeight = this.props.height ?? this.chartContainerRef?.clientHeight
-    if (chartHeight < 0) {
-      chartHeight = 0
-    }
-
-    let innerHeight = chartHeight - bottomMargin - topMargin
-    if (innerHeight < 0) {
-      innerHeight = 0
-    }
-
-    let innerWidth = chartWidth - leftMargin - rightMargin - rightAxisMargin
+    let innerWidth = containerWidth - rightAxisMargin
     if (innerWidth < 0) {
       innerWidth = 0
     }
 
-    return { chartHeight, chartWidth, innerHeight, innerWidth }
+    let innerHeight = containerHeight - bottomAxisMargin
+    if (innerHeight < 0) {
+      innerHeight = 0
+    }
+
+    const outerWidth = containerWidth
+    const outerHeight = containerHeight
+
+    return { outerHeight, outerWidth, innerHeight, innerWidth }
   }
 
   aggregateFn = (dataset, aggType) => {
@@ -495,19 +494,19 @@ export default class ChataChart extends Component {
     }, 100)
   }
 
-  isMarginDifferenceSignificant = () => {
-    if (!this.newMargins) {
-      return false
-    }
+  // isMarginDifferenceSignificant = () => {
+  //   if (!this.newMargins) {
+  //     return false
+  //   }
 
-    const { leftMargin, topMargin, rightLegendMargin, bottomMargin } = this.newMargins
-    const leftDiff = Math.abs(leftMargin - this.state.leftMargin)
-    const topDiff = Math.abs(topMargin - this.state.topMargin)
-    const rightDiff = Math.abs(rightLegendMargin - this.state.rightLegendMargin)
-    const bottomDiff = Math.abs(bottomMargin - this.state.bottomMargin)
+  //   const { leftMargin, topMargin, rightLegendMargin, bottomMargin } = this.newMargins
+  //   const leftDiff = Math.abs(leftMargin - this.state.leftMargin)
+  //   const topDiff = Math.abs(topMargin - this.state.topMargin)
+  //   const rightDiff = Math.abs(rightLegendMargin - this.state.rightLegendMargin)
+  //   const bottomDiff = Math.abs(bottomMargin - this.state.bottomMargin)
 
-    return leftDiff > 10 || topDiff > 10 || rightDiff > 10 || bottomDiff > 10
-  }
+  //   return leftDiff > 10 || topDiff > 10 || rightDiff > 10 || bottomDiff > 10
+  // }
 
   changeNumberColumnIndices = (indices, newColumns) => {
     this.props.changeNumberColumnIndices(indices, newColumns)
@@ -559,13 +558,13 @@ export default class ChataChart extends Component {
     return columns?.[stringColumnIndex]?.display_name
   }
 
-  getNumberAxisTitle = () => {
-    const { columns, numberColumnIndices } = this.props
+  getNumberAxisTitle = (columnIndices) => {
+    const { columns } = this.props
     let title = ''
 
     try {
       const numberColumns = columns.filter((col, i) => {
-        return numberColumnIndices.includes(i)
+        return columnIndices.includes(i)
       })
 
       if (!numberColumns?.length) {
@@ -609,9 +608,19 @@ export default class ChataChart extends Component {
   }
 
   getCommonChartProps = () => {
-    const { topMargin, bottomMargin, rightMargin, leftMargin, rightLegendMargin, bottomLegendMargin, deltaX, deltaY } =
-      this.state
-    const { numberColumnIndices, numberColumnIndices2, columns } = this.props
+    const {
+      // topMargin,
+      // bottomMargin,
+      rightMargin,
+      leftMargin,
+      rightLegendMargin,
+      bottomLegendMargin,
+      deltaX,
+      deltaY,
+      rightAxisMargin,
+      bottomAxisMargin,
+    } = this.state
+    const { numberColumnIndices, numberColumnIndices2, columns, enableDynamicCharting } = this.props
 
     let innerPadding = this.INNER_PADDING
     if (numberColumnIndices.length > 1 || numberColumnIndices2 > 1) {
@@ -630,7 +639,7 @@ export default class ChataChart extends Component {
       (colIndex) => columns?.[colIndex] && !columns[colIndex].isSeriesHidden,
     )
 
-    const { chartHeight, chartWidth, innerHeight, innerWidth } = this.getChartDimensions()
+    const { innerHeight, innerWidth } = this.getChartDimensions()
 
     return {
       ...this.props,
@@ -644,20 +653,24 @@ export default class ChataChart extends Component {
       outerPadding: this.OUTER_PADDING,
       chartContainerPadding: this.PADDING,
       colorScale: this.colorScale,
-      height: chartHeight,
-      width: chartWidth,
-      innerHeight,
-      innerWidth: innerWidth,
-      topMargin,
-      bottomMargin,
+      height: innerHeight,
+      width: innerWidth,
+      // innerHeight,
+      // innerWidth,
+      // topMargin,
+      // bottomMargin,
       rightMargin,
       leftMargin,
       rightLegendMargin,
       bottomLegendMargin,
       deltaX,
       deltaY,
+      rightAxisMargin,
+      bottomAxisMargin,
       hasMultipleNumberColumns,
       hasMultipleStringColumns,
+      hasStringDropdown: enableDynamicCharting && hasMultipleStringColumns,
+      hasNumberDropdown: enableDynamicCharting && hasMultipleNumberColumns,
       // marginAdjustmentFinished: !this.state.isLoading,
       marginAdjustmentFinished: true,
       legendTitle: this.props.legendColumn?.title || 'Category',
@@ -667,7 +680,8 @@ export default class ChataChart extends Component {
       // legendPadding: this.LEGEND_PADDING,
       visibleSeriesIndices,
       visibleSeriesIndices2,
-      numberAxisTitle: this.getNumberAxisTitle(),
+      numberAxisTitle: this.getNumberAxisTitle(visibleSeriesIndices),
+      numberAxisTitle2: this.getNumberAxisTitle(visibleSeriesIndices2),
       stringAxisTitle: this.getStringAxisTitle(),
       onStringColumnSelect: this.onStringColumnSelect,
       tooltipID: this.props.tooltipID,
@@ -745,7 +759,7 @@ export default class ChataChart extends Component {
   }
 
   render = () => {
-    const { chartHeight, chartWidth } = this.getChartDimensions()
+    const { outerHeight, outerWidth } = this.getChartDimensions()
 
     // We need to set these inline in order for them to be applied in the exported PNG
     const chartFontFamily = getThemeValue('font-family')
@@ -760,7 +774,7 @@ export default class ChataChart extends Component {
           data-test='react-autoql-chart'
           className={`react-autoql-chart-container ${this.state.isLoading || this.props.isResizing ? 'loading' : ''}`}
           style={{
-            flexBasis: chartHeight ? `${chartHeight}px` : '100vh',
+            flexBasis: outerHeight ? `${outerHeight}px` : '100vh',
             pointerEvents: this.state.isLoadingMoreRows ? 'none' : 'unset',
           }}
         >
@@ -770,8 +784,8 @@ export default class ChataChart extends Component {
               <svg
                 ref={(r) => (this.chartRef = r)}
                 xmlns='http://www.w3.org/2000/svg'
-                width={chartWidth + this.state.rightAxisMargin}
-                height={chartHeight}
+                width={outerWidth}
+                height={outerHeight}
                 style={{
                   fontFamily: chartFontFamily,
                   color: chartTextColor,

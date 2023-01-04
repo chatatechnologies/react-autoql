@@ -7,13 +7,11 @@ import {
   chartPropTypes,
   getBandScales,
   getLinearScales,
-  getTickSize,
   shouldRecalculateLongestLabel,
 } from '../helpers.js'
 
 import { shouldLabelsRotate, getLongestLabelInPx } from '../../../js/Util'
 import { getDataFormatting } from '../../../props/defaults'
-import { Legend } from '../Legend'
 
 export default class ChataColumnChart extends Component {
   constructor(props) {
@@ -96,7 +94,7 @@ export default class ChataColumnChart extends Component {
         className='react-autoql-axes-chart'
         data-test='react-autoql-column-chart'
         ref={(r) => (this.chartRef = r)}
-        transform={`translate(${this.props.deltaX}, ${-1 * (this.props.deltaY - 10)})`}
+        transform={`translate(${this.props.deltaX}, ${this.props.deltaY})`}
       >
         {this.props.marginAdjustmentFinished && <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />}
         <Axes
@@ -114,11 +112,11 @@ export default class ChataColumnChart extends Component {
           rotateLabels={this.rotateLabels}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}
-          hasXDropdown={this.props.enableDynamicCharting && this.props.hasMultipleStringColumns}
-          hasYDropdown={this.props.enableDynamicCharting && this.props.hasMultipleNumberColumns}
-          xAxisTitle={this.props.stringAxisTitle}
-          yAxisTitle={this.props.numberAxisTitle}
-          yAxis2Title={this.props.numberAxisTitle}
+          hasXDropdown={this.props.hasStringDropdown}
+          hasYDropdown={this.props.hasNumberDropdown}
+          leftAxisTitle={this.props.numberAxisTitle}
+          rightAxisTitle={this.props.numberAxisTitle2}
+          bottomAxisTitle={this.props.stringAxisTitle}
           yGridLines
         />
         {/* {!!this.props.legendLocation && (
