@@ -50,10 +50,16 @@ export default class Axis extends Component {
     translate: undefined,
     translateX: 0,
     translateY: 0,
+    onAxisRenderComplete: () => {},
   }
 
   componentDidMount = () => {
     this.renderAxis()
+    // Render a second time so the title knows where to be placed
+    // based on the width of the tick labels
+    this.forceUpdate(() => {
+      this.props.onAxisRenderComplete()
+    })
   }
 
   componentDidUpdate = (prevProps) => {
@@ -122,6 +128,8 @@ export default class Axis extends Component {
       axis.tickSizeInner(-this.props.innerWidth)
     } else if (this.props.orient === 'Bottom') {
       axis.tickSizeInner(10)
+    } else if (this.props.orient === 'Right') {
+      axis.tickSizeInner(0)
     }
 
     if (this.axisElement) {

@@ -2,6 +2,7 @@ import React from 'react'
 import { v4 as uuid } from 'uuid'
 import { Axis } from '../Axis'
 import RowNumberSelector from './RowNumberSelector'
+import { Legend } from '../Legend'
 import { getBBoxFromRef } from '../../../js/Util'
 import { axesDefaultProps, axesPropTypes } from '../helpers'
 
@@ -33,15 +34,23 @@ export default class Axes extends React.Component {
   static propTypes = axesPropTypes
   static defaultProps = axesDefaultProps
 
-  getLabelTextHeight = (ref) => {
-    const fontSize = parseInt(ref?.style?.fontSize, 10)
-    return isNaN(fontSize) ? 0 : fontSize
-  }
+  componentDidMount = () => {}
 
   componentDidUpdate = (prevProps, prevState) => {
     if (prevState.currentRowNumber !== this.state.currentRowNumber) {
       this.forceUpdate()
     }
+  }
+
+  onAxisRenderComplete = () => {
+    this.forceUpdate(() => {
+      this.props.onAxesRenderComplete()
+    })
+  }
+
+  getLabelTextHeight = (ref) => {
+    const fontSize = parseInt(ref?.style?.fontSize, 10)
+    return isNaN(fontSize) ? 0 : fontSize
   }
 
   getXCenter = () => {
@@ -221,27 +230,52 @@ export default class Axes extends React.Component {
   }
 
   renderRightAxis = (innerWidth) => {
-    if (!this.props.yCol2 || !this.props.yScale2) {
-      return null
+    // if (!this.props.yCol2 || !this.props.yScale2) {
+    //   return null
+    // }
+
+    return (
+      <g ref={(r) => (this.rightAxis = r)} transform={`translate(${innerWidth}, 0)`}>
+        <Axis
+          {...this.props}
+          ref={(r) => (this.rightAxisWithoutLegend = r)}
+          key={this.rightAxisKey}
+          orient='Right'
+          scale={this.props.yScale2}
+          translateX={0}
+          translateY={0}
+          ticks={this.props.yTicks2}
+          col={this.props.yCol2}
+          title={this.props.rightAxisTitle}
+          showGridLines={false}
+          hasRightLegend={false}
+          hasBottomLegend={false}
+          hasDropdown={this.props.hasYDropdown}
+          onAxisRenderComplete={this.onAxisRenderComplete}
+        />
+        {this.renderRightLegend()}
+      </g>
+    )
+  }
+
+  renderRightLegend = () => {
+    let legendScale
+    if (this.props.linearAxis === 'y') {
+      legendScale = this.props.yScale
+    } else if (this.props.linearAxis === 'x') {
+      legendScale = this.props.xScale
+    }
+
+    let translateX = this.axisLabelPaddingLeft
+    const rightAxisWidth = getBBoxFromRef(this.rightAxisWithoutLegend?.ref)?.width
+    if (rightAxisWidth) {
+      translateX += rightAxisWidth
     }
 
     return (
-      <Axis
-        {...this.props}
-        ref={(r) => (this.rightAxis = r)}
-        key={this.rightAxisKey}
-        orient='Right'
-        scale={this.props.yScale2}
-        translateX={innerWidth}
-        translateY={0}
-        ticks={this.props.yTicks2}
-        col={this.props.yCol2}
-        title={this.props.rightAxisTitle}
-        showGridLines={false}
-        hasRightLegend={false}
-        hasBottomLegend={false}
-        hasDropdown={this.props.hasYDropdown}
-      />
+      <g transform={`translate(${translateX},0)`}>
+        <Legend {...this.props} scale={legendScale} placement={this.props.legendLocation} />
+      </g>
     )
   }
 

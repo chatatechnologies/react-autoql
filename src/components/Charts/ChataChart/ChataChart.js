@@ -98,7 +98,7 @@ export default class ChataChart extends Component {
       this.rebuildTooltips()
     }
 
-    this.setDeltas()
+    // this.setDeltas()
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -113,78 +113,25 @@ export default class ChataChart extends Component {
     return true
   }
 
-  componentDidUpdate = (prevProps, prevState) => {
-    const newState = {}
-    let shouldForceUpdate = false
-    let shouldUpdateMargins = false
-
-    const { outerHeight, outerWidth } = this.getChartDimensions()
-
+  componentDidUpdate = (prevProps) => {
     if (
-      // !this.state.isLoading &&
-      this.recursiveUpdateCount < 2 &&
-      (outerWidth !== this.outerWidth || outerHeight !== this.outerHeight)
+      (!this.props.isResizing && prevProps.isResizing) ||
+      (!this.props.isDrilldownChartHidden && prevProps.isDrilldownChartHidden) ||
+      this.props.type !== prevProps.type
     ) {
-      shouldForceUpdate = true
-      this.recursiveUpdateCount++
-      clearTimeout(this.recursiveUpdateTimeout)
-      this.recursiveUpdateTimeout = setTimeout(() => {
-        this.recursiveUpdateCount = 0
-      }, 500)
-    }
-
-    this.outerHeight = outerHeight
-    this.outerWidth = outerWidth
-
-    if (!this.props.isResizing && prevProps.isResizing) {
-      // Fill max message container after resize
-      // No need to update margins, they should stay the same
-      if (this.chartContainerRef) {
-        this.chartContainerRef.style.flexBasis = '100vh'
-        shouldForceUpdate = true
-      }
-      this.rebuildTooltips()
-    }
-    if (!this.props.isDrilldownChartHidden && prevProps.isDrilldownChartHidden) {
-      this.rebuildTooltips()
-    }
-
-    if (this.props.type !== prevProps.type) {
-      shouldUpdateMargins = true
       this.rebuildTooltips()
     }
 
     if (dataStructureChanged(this.props, prevProps)) {
-      shouldUpdateMargins = true
       const aggregatedData = this.aggregateRowData(this.props)
-      newState.aggregatedData = aggregatedData
-      this.rebuildTooltips()
-    }
-
-    // --------- Only update state once after checking new props -----------
-    // ----------- keep this at the bottom of componentDidMount ------------
-    if (!_isEmpty(newState)) {
-      shouldForceUpdate = false
-      this.setState(newState, () => {
-        if (shouldUpdateMargins) {
-          this.setDeltas()
-        }
+      this.setState({ aggregatedData }, () => {
+        this.rebuildTooltips()
       })
-      return
-    } else if (shouldUpdateMargins) {
-      this.setDeltas()
-      return
-    }
-    if (this.props.data !== prevProps.data) {
-      shouldForceUpdate = true
-    }
-    if (shouldForceUpdate) {
-      this.forceUpdate()
     }
   }
 
-  componentWillUnmount = () => {
-    clearTimeout(this.recursiveUpdateTimeout)
+  onAxesRenderComplete = () => {
+    this.setDeltas()
   }
 
   setDeltas = () => {
@@ -199,7 +146,8 @@ export default class ChataChart extends Component {
         const deltaY = -1 * axesBBoxY + this.PADDING
 
         const rightAxisMargin =
-          Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.rightAxis?.ref)?.width ?? 0) + this.PADDING
+          Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.rightAxis)?.width ?? 0) + this.PADDING
+
         const bottomAxisMargin =
           Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.bottomAxis?.ref)?.height ?? 0) + this.PADDING
 
@@ -282,7 +230,7 @@ export default class ChataChart extends Component {
     })
   }
 
-  aggregateRowData = (props, aggType) => {
+  aggregateRowData = (props) => {
     const { stringColumnIndex, data, columns } = props
     const stringColumn = columns[stringColumnIndex]
     let sortedData
@@ -355,17 +303,6 @@ export default class ChataChart extends Component {
       prevRow = currentRow
     })
 
-    // if (aggregateType !== this.previousAggType) {
-    //   const newColumns = _cloneDeep(this.props.columns)
-    //   this.props.numberColumnIndices.forEach((colIndex) => {
-    //     newColumns[colIndex].aggType = aggregateType
-    //   })
-
-    //   this.props.updateColumns(newColumns)
-    // }
-
-    // this.previousAggType = aggregateType
-
     return aggregatedData
   }
 
@@ -398,7 +335,6 @@ export default class ChataChart extends Component {
   changeNumberColumnIndices = (indices, newColumns) => {
     this.props.changeNumberColumnIndices(indices, newColumns)
     this.setState({ chartID: uuid() })
-    // this.forceUpdate()
   }
 
   getBase64Data = () => {
@@ -522,7 +458,6 @@ export default class ChataChart extends Component {
       setIsLoadingMoreRows: (isLoading) => this.setState({ isLoadingMoreRows: isLoading }),
       ref: (r) => (this.innerChartRef = r),
       key: `chata-inner-chart-${this.state.chartID}`,
-      // key: undefined,
       data: this.state.aggregatedData || this.props.data,
       colorScale: this.colorScale,
       innerPadding,
@@ -540,13 +475,11 @@ export default class ChataChart extends Component {
       hasMultipleStringColumns,
       hasStringDropdown: enableDynamicCharting && hasMultipleStringColumns,
       hasNumberDropdown: enableDynamicCharting && hasMultipleNumberColumns,
-      // marginAdjustmentFinished: !this.state.isLoading,
       marginAdjustmentFinished: true,
       legendTitle: this.props.legendColumn?.title || 'Category',
       legendLocation: getLegendLocation(numberColumnIndices, this.props.type),
       legendLabels: this.getLegendLabels(),
-      onLabelChange: this.setDeltas,
-      // legendPadding: this.LEGEND_PADDING,
+      // onLabelChange: this.setDeltas,
       visibleSeriesIndices,
       visibleSeriesIndices2,
       numberAxisTitle: this.getNumberAxisTitle(visibleSeriesIndices),
@@ -563,6 +496,7 @@ export default class ChataChart extends Component {
       setIsChartScaled: this.setIsChartScaled,
       changeNumberColumnIndices: this.changeNumberColumnIndices,
       rebuildTooltips: this.rebuildTooltips,
+      onAxesRenderComplete: this.onAxesRenderComplete,
     }
   }
 

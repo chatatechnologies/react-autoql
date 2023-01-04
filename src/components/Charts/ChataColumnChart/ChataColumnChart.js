@@ -109,6 +109,7 @@ export default class ChataColumnChart extends Component {
           xTicks={this.xScale.tickLabels}
           yTicks={this.yScale.tickLabels}
           yTicks2={this.yScale2.tickLabels}
+          linearAxis='y'
           rotateLabels={this.rotateLabels}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}

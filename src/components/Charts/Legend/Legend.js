@@ -34,7 +34,6 @@ export default class Legend extends Component {
     bottomMargin: PropTypes.number,
     rightLegendMargin: PropTypes.number,
     scale: PropTypes.func,
-    col: PropTypes.shape({}),
     translate: PropTypes.string,
     height: PropTypes.number,
     width: PropTypes.number,
@@ -164,13 +163,17 @@ export default class Legend extends Component {
           .style('font-family', 'inherit')
           .style('font-size', '10px')
 
+        if (this.props.legendTitle) {
+          this.legendSVG.attr('transform', 'translate(0,10)')
+        }
+
         var legendOrdinal = legendColor()
           .orient('vertical')
           .shapePadding(6)
           .labelWrap(100)
           .scale(legendScale)
           .on('cellclick', function (d) {
-            self.props.onLabelChange({ setLoading: false })
+            // self.props.onLabelChange({ setLoading: false })
             self.props.onLegendClick(legendLabels.find((label) => label.label === d))
           })
 
@@ -270,22 +273,20 @@ export default class Legend extends Component {
   }
 
   render = () => {
-    const numSeries = this.props.numberColumnIndices?.length || 0
-    const legendDx = (this.LEGEND_WIDTH * (numSeries - 1)) / 2
-    const marginLeft = this.props.leftMargin || 0
+    // const numSeries = this.props.numberColumnIndices?.length || 0
+    // const legendDx = (this.LEGEND_WIDTH * (numSeries - 1)) / 2
+    // const marginLeft = this.props.leftMargin || 0
 
-    let legendClippingHeight =
-      this.props.height -
-      this.props.topMargin -
-      // make legend smaller if labels are not rotated
-      // because they might overlap the legend
-      (!this.props.rotateLabels ? this.props.bottomMargin : 44) + // distance to bottom of axis labels
-      20
+    let legendClippingHeight = this.props.height // -
+    // make legend smaller if labels are not rotated
+    // because they might overlap the legend
+    // (!this.props.rotateLabels ? this.props.bottomMargin : 44) + // distance to bottom of axis labels
+    // 20
     if (legendClippingHeight < 0) {
       legendClippingHeight = 0
     }
 
-    let translateX = this.props.width
+    // let translateX = this.props.width
     // if (this.props.axesRef) {
     //   translateX = this.props.axesRef.getBBox().width
     // }
@@ -300,9 +301,9 @@ export default class Legend extends Component {
             id={this.LEGEND_ID}
             data-test='right-legend'
             className='legendOrdinal right-legend'
-            transform={`translate(${translateX}, ${this.props.legendTitle ? '30' : '25'})`}
+            // transform={`translate(0, ${this.props.legendTitle ? '30' : '25'})`}
           >
-            <clipPath id={`legend-clip-area-${this.LEGEND_ID}`}>
+            {/* <clipPath id={`legend-clip-area-${this.LEGEND_ID}`}>
               <rect
                 ref={(el) => {
                   this.legendClippingContainer = el
@@ -310,9 +311,9 @@ export default class Legend extends Component {
                 id={`legend-bounding-box-${this.LEGEND_ID}`}
                 height={legendClippingHeight}
                 width={this.props.rightLegendMargin}
-                style={{ transform: `translate(0px, -30px)` }}
+                // style={{ transform: `translate(0px, -30px)` }}
               />
-            </clipPath>
+            </clipPath> */}
             {/* {this.props.legendColumn && (
               <LegendSelector
                 {...this.props}
@@ -339,9 +340,9 @@ export default class Legend extends Component {
             data-test='bottom-legend'
             id={this.LEGEND_ID}
             className='legendOrdinal'
-            transform={`translate(${(this.props.width - marginLeft) / 2 + marginLeft - legendDx},${
-              this.props.height - 30
-            })`}
+            // transform={`translate(${(this.props.width - marginLeft) / 2 + marginLeft - legendDx},${
+            //   this.props.height - 30
+            // })`}
           />
         )}
       </g>
