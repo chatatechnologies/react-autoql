@@ -23,6 +23,7 @@ import { currentEventLoopEnd } from '../../js/Util'
 import 'react-tabulator/lib/styles.css' // default theme
 import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
 import './ChataTable.scss'
+import { Button } from '../Button'
 
 export default class ChataTable extends React.Component {
   constructor(props) {
@@ -535,10 +536,13 @@ export default class ChataTable extends React.Component {
 
     this.settingFilterInputs = false
   }
-
-  onDateRangeSelection = (dateRangeSelection) => {
+  onDateRangeSelectionApplied = () => {
+    this.setState({ datePickerColumn: undefined })
     const column = this.state.datePickerColumn
-    const { startDate, endDate } = dateRangeSelection
+    if (!this.state.dateRangeSelection) {
+      return
+    }
+    const { startDate, endDate } = this.state.dateRangeSelection
 
     if (!startDate || !endDate || !column) {
       return
@@ -569,11 +573,12 @@ export default class ChataTable extends React.Component {
       inputElement.value = filterInputText
       inputElement.blur()
       this.currentDateRangeSelections = {
-        [column.field]: dateRangeSelection,
+        [column.field]: this.state.dateRangeSelection,
       }
-
-      this.setState({ datePickerColumn: undefined })
     }
+  }
+  onDateRangeSelection = (dateRangeSelection) => {
+    this.setState({ dateRangeSelection })
   }
 
   setSorters = (ref) => {
@@ -649,6 +654,9 @@ export default class ChataTable extends React.Component {
               validRange={this.state.datePickerColumn.dateRange}
               type={this.state.datePickerColumn.precision}
             />
+            <Button type='primary' onClick={this.onDateRangeSelectionApplied}>
+              Apply
+            </Button>
           </div>
         }
       >
