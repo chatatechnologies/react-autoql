@@ -44,14 +44,12 @@ export const chartPropTypes = {
   visibleSeriesIndices: PropTypes.arrayOf(PropTypes.number).isRequired,
   height: PropTypes.number.isRequired,
   width: PropTypes.number.isRequired,
-  innerHeight: PropTypes.number.isRequired,
-  innerWidth: PropTypes.number.isRequired,
+  deltaX: PropTypes.number.isRequired,
+  deltaY: PropTypes.number.isRequired,
 }
 
 export const chartDefaultProps = {
   ...chartContainerDefaultProps,
-  deltaX: 0,
-  deltaY: 0,
 }
 
 export const axesPropTypes = {
@@ -404,7 +402,7 @@ export const getRangeForAxis = (props, axis) => {
   let rangeEnd
   if (axis === 'x') {
     rangeStart = 0
-    const innerWidth = props.width - props.deltaX
+    const innerWidth = props.width
     rangeEnd = rangeStart + innerWidth
     if (rangeEnd < rangeStart) {
       rangeEnd = rangeStart

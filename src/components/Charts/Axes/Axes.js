@@ -186,7 +186,7 @@ export default class Axes extends React.Component {
         translateY={innerHeight}
         ticks={this.props.xTicks}
         // rotateLabels={this.props.rotateLabels}
-        rotateLabels={false}
+        rotateLabels={true}
         col={this.props.xCol}
         title={this.props.bottomAxisTitle}
         showGridLines={this.props.xGridLines}

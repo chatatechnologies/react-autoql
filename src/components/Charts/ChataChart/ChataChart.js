@@ -42,7 +42,7 @@ export default class ChataChart extends Component {
     super(props)
     const chartColors = getChartColorVars()
 
-    this.PADDING = 10
+    this.PADDING = 5
     this.INNER_PADDING = 0.25
     this.OUTER_PADDING = 0.5
     this.LEGEND_PADDING = 10
@@ -60,10 +60,6 @@ export default class ChataChart extends Component {
     this.state = {
       chartID: uuid(),
       aggregatedData,
-      leftMargin: this.PADDING,
-      rightMargin: this.PADDING,
-      // topMargin: this.PADDING,
-      // bottomMargin: this.PADDING,
       rightAxisMargin: 0,
       bottomAxisMargin: 0,
       rightLegendMargin: 0,
@@ -194,19 +190,18 @@ export default class ChataChart extends Component {
   setDeltas = () => {
     this.setState({ deltaX: 0, deltaY: 0, isLoading: true }, () => {
       setTimeout(() => {
-        const rightAxisMargin = getBBoxFromRef(this.innerChartRef?.axesRef?.rightAxis?.ref)?.width ?? 0
-        const bottomAxisMargin = getBBoxFromRef(this.innerChartRef?.axesRef?.bottomAxis?.ref)?.height ?? 0
-
         // Get distance in px to shift to the right
-        const axisBBoxX = getBBoxFromRef(this.innerChartRef.chartRef)?.x ?? 0
-        const deltaX = -1 * axisBBoxX
+        const axesBBoxX = Math.ceil(getBBoxFromRef(this.innerChartRef.chartRef)?.x ?? 0)
+        const deltaX = -1 * axesBBoxX + this.PADDING
 
         // Get distance in px to shift down
-        // const axisBBoxHeight = getBBoxFromRef(this.innerChartRef.chartRef)?.height ?? 0
-        // const outerHeight = this.chartContainerRef?.clientHeight ?? 0
-        // const deltaY = axisBBoxHeight - outerHeight
-        const axisBBoxY = getBBoxFromRef(this.innerChartRef.chartRef)?.y ?? 0
-        const deltaY = -1 * axisBBoxY
+        const axesBBoxY = Math.ceil(getBBoxFromRef(this.innerChartRef.chartRef)?.y ?? 0)
+        const deltaY = -1 * axesBBoxY + this.PADDING
+
+        const rightAxisMargin =
+          Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.rightAxis?.ref)?.width ?? 0) + this.PADDING
+        const bottomAxisMargin =
+          Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.bottomAxis?.ref)?.height ?? 0) + this.PADDING
 
         this.setState({ deltaX, deltaY, rightAxisMargin, bottomAxisMargin }, () => {
           this.setState({ isLoading: false })
@@ -216,23 +211,23 @@ export default class ChataChart extends Component {
   }
 
   getChartDimensions = () => {
-    const { rightAxisMargin, bottomAxisMargin } = this.state
+    const { rightAxisMargin, bottomAxisMargin, deltaX, deltaY } = this.state
 
     const containerWidth = this.props.width ?? this.chartContainerRef?.clientWidth ?? 0
     const containerHeight = this.props.height ?? this.chartContainerRef?.clientHeight ?? 0
 
-    let innerWidth = containerWidth - rightAxisMargin
+    let innerWidth = Math.floor(containerWidth - rightAxisMargin - deltaX)
     if (innerWidth < 0) {
       innerWidth = 0
     }
 
-    let innerHeight = containerHeight - bottomAxisMargin
+    let innerHeight = Math.floor(containerHeight - bottomAxisMargin - deltaY)
     if (innerHeight < 0) {
       innerHeight = 0
     }
 
-    const outerWidth = containerWidth
-    const outerHeight = containerHeight
+    const outerWidth = Math.ceil(containerWidth)
+    const outerHeight = Math.ceil(containerHeight)
 
     return { outerHeight, outerWidth, innerHeight, innerWidth }
   }
@@ -374,103 +369,9 @@ export default class ChataChart extends Component {
     return aggregatedData
   }
 
-  // getNewLeftMargin = (chartContainerBbox, axesBbox) => {
-  //   const containerLeft = chartContainerBbox.x
-  //   const axesLeft = axesBbox.x + containerLeft
-  //   let leftMargin = this.state.leftMargin
-
-  //   leftMargin += containerLeft - axesLeft // + this.AXIS_LABEL_PADDING
-  //   return leftMargin
-  // }
-
-  // getNewRightMargin = (chartContainerBbox, axesBbox, leftMargin, rightLegendMargin) => {
-  //   const axesWidth = axesBbox.width // + rightLegendMargin
-  //   const containerWidth = chartContainerBbox.width - rightLegendMargin
-
-  //   const axesLeft = axesBbox.x + chartContainerBbox.x
-  //   const axesRight = axesLeft + axesWidth // + rightLegendMargin
-
-  //   const containerLeft = chartContainerBbox.x
-  //   const containerRight = containerLeft + containerWidth
-
-  //   const rightMarginDiff = axesRight - containerRight
-  //   const leftMarginDiff = leftMargin - this.state.leftMargin
-
-  //   const maxMargin = containerWidth - leftMarginDiff
-  //   const calculatedMargin = this.state.rightMargin + rightMarginDiff - leftMarginDiff + this.LEGEND_PADDING // - rightLegendMargin
-
-  //   let rightMargin = this.state.rightMargin
-  //   if (calculatedMargin < maxMargin) {
-  //     rightMargin = calculatedMargin
-  //   } else {
-  //     rightMargin = this.PADDING
-  //   }
-
-  //   return 100
-
-  //   // return rightMargin
-  // }
-
-  // getNewRightLegendMargin = (legendBBox) => {
-  //   let rightLegendMargin = 0
-  //   const legendLocation = getLegendLocation(this.props.numberColumnIndices, this.props.type)
-  //   if (legendLocation === 'right' && legendBBox?.width) {
-  //     rightLegendMargin = legendBBox.width + this.LEGEND_PADDING
-  //   }
-
-  //   return rightLegendMargin
-  // }
-
   getLegendLabels = () => {
     return getLegendLabelsForMultiSeries(this.props.columns, this.colorScale, this.props.numberColumnIndices)
   }
-
-  // getNewBottomMargin = (chartContainerBbox, legendBBox) => {
-  //   let bottomLegendMargin = 0
-  //   const legendLocation = getLegendLocation(this.props.numberColumnIndices, this.props.type)
-  //   if (legendLocation === 'bottom' && legendBBox?.height) {
-  //     bottomLegendMargin = legendBBox.height + 10
-  //   }
-
-  //   this.xAxis = select(this.chartRef).select('.axis-Bottom').node()
-
-  //   const xAxisBBox = this.xAxis ? this.xAxis.getBBox() : {}
-  //   let bottomMargin = Math.ceil(xAxisBBox.height) + bottomLegendMargin // + this.AXIS_LABEL_PADDING // margin to include axis label
-
-  //   if (xAxisBBox.height === 0) {
-  //     bottomMargin = this.DEFAULT_BOTTOM_MARGIN // if no xAxisBBox available, set bottomMargin to default
-  //   }
-
-  //   if (this.props.enableAjaxTableData) {
-  //     bottomMargin = bottomMargin // + this.AXIS_LABEL_PADDING // margin to include row count summary
-  //   }
-
-  //   // only for bar charts (vertical grid lines mess with the axis size)
-  //   if (this.props.type === 'bar' || this.props.type === 'stacked_bar') {
-  //     const innerTickSize = chartContainerBbox.height - this.state.topMargin - this.state.bottomMargin
-  //     bottomMargin = bottomMargin - innerTickSize
-  //   }
-
-  //   return bottomMargin || this.state.bottomMargin
-  // }
-
-  // If we can find a way to clip the legend, this will work
-  // getNewBottomMargin = (chartContainerBbox, axesBbox) => {
-  //   const axesTop = axesBbox.y + chartContainerBbox.y
-  //   const axesBottom = axesTop + axesBbox.height
-  //   const containerBottom =
-  //     chartContainerBbox.y +
-  //     chartContainerBbox.height -
-  //     this.X_AXIS_LABEL_HEIGHT
-  //   let bottomMargin = this.state.bottomMargin
-  //   bottomMargin += axesBottom - containerBottom
-  //   return bottomMargin
-  // }
-
-  // Keep this in case we need it later
-  // getNewTopMargin = () => {
-  //   return this.PADDING
-  // }
 
   rebuildTooltips = (delay = 500) => {
     if (this.props.rebuildTooltips) {
@@ -493,20 +394,6 @@ export default class ChataChart extends Component {
       this.setState({ isLoading: false })
     }, 100)
   }
-
-  // isMarginDifferenceSignificant = () => {
-  //   if (!this.newMargins) {
-  //     return false
-  //   }
-
-  //   const { leftMargin, topMargin, rightLegendMargin, bottomMargin } = this.newMargins
-  //   const leftDiff = Math.abs(leftMargin - this.state.leftMargin)
-  //   const topDiff = Math.abs(topMargin - this.state.topMargin)
-  //   const rightDiff = Math.abs(rightLegendMargin - this.state.rightLegendMargin)
-  //   const bottomDiff = Math.abs(bottomMargin - this.state.bottomMargin)
-
-  //   return leftDiff > 10 || topDiff > 10 || rightDiff > 10 || bottomDiff > 10
-  // }
 
   changeNumberColumnIndices = (indices, newColumns) => {
     this.props.changeNumberColumnIndices(indices, newColumns)
@@ -608,18 +495,7 @@ export default class ChataChart extends Component {
   }
 
   getCommonChartProps = () => {
-    const {
-      // topMargin,
-      // bottomMargin,
-      rightMargin,
-      leftMargin,
-      rightLegendMargin,
-      bottomLegendMargin,
-      deltaX,
-      deltaY,
-      rightAxisMargin,
-      bottomAxisMargin,
-    } = this.state
+    const { rightLegendMargin, bottomLegendMargin, deltaX, deltaY, rightAxisMargin, bottomAxisMargin } = this.state
     const { numberColumnIndices, numberColumnIndices2, columns, enableDynamicCharting } = this.props
 
     let innerPadding = this.INNER_PADDING
@@ -651,16 +527,9 @@ export default class ChataChart extends Component {
       colorScale: this.colorScale,
       innerPadding,
       outerPadding: this.OUTER_PADDING,
-      chartContainerPadding: this.PADDING,
       colorScale: this.colorScale,
       height: innerHeight,
       width: innerWidth,
-      // innerHeight,
-      // innerWidth,
-      // topMargin,
-      // bottomMargin,
-      rightMargin,
-      leftMargin,
       rightLegendMargin,
       bottomLegendMargin,
       deltaX,

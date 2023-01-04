@@ -356,7 +356,7 @@ export default class Axis extends Component {
       this.yLabelTransform = 'rotate(-90)'
       this.topDifference = undefined
       yLabelX = -0.5 * chartContainerHeight
-      textLength = Math.floor(chartContainerHeight - this.props.chartContainerPadding)
+      textLength = Math.floor(chartContainerHeight)
     } else if (yLabelTop < chartTop) {
       // Y Label can fit, it is just outside of container. Shift it down
       const prevTopDifference = this.topDifference ?? 0
@@ -455,7 +455,7 @@ export default class Axis extends Component {
       this.rightTitleTransform = 'rotate(-90)'
       this.rightTitleTopDifference = undefined
       yLabelX = -0.5 * chartContainerHeight
-      textLength = Math.floor(chartContainerHeight - this.props.chartContainerPadding)
+      textLength = Math.floor(chartContainerHeight)
     } else if (yLabelTop < chartTop) {
       // Y Label can fit, it is just outside of container. Shift it down
       const prevTopDifference = this.rightTitleTopDifference ?? 0
