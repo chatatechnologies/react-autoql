@@ -571,6 +571,7 @@ export default class ChataTable extends React.Component {
 
       inputElement.focus()
       inputElement.value = filterInputText
+      inputElement.title = filterInputText
       inputElement.blur()
       this.currentDateRangeSelections = {
         [column.field]: this.state.dateRangeSelection,
