@@ -117,7 +117,7 @@ export default class RowNumberSelector extends React.Component {
           }}
         >
           <ul className='axis-selector-content'>
-            {this.rowNumberListConstructor(this.props.totalRowNumber).map((rowNumber, i) => {
+            {this.rowNumberListConstructor(this.props.totalRowCount).map((rowNumber, i) => {
               let rowNumberString = rowNumber
               if (rowNumber === 5000) {
                 rowNumberString = '5000 (Maximum)'

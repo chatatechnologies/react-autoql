@@ -6,6 +6,7 @@ import { axisLeft, axisBottom, axisTop, axisRight } from 'd3-axis'
 
 import AxisScaler from './AxisScaler'
 import AxisSelector from '../Axes/AxisSelector'
+import LoadMoreDropdown from './LoadMoreDropdown'
 
 import { formatChartLabel, getBBoxFromRef } from '../../../js/Util.js'
 import { axesDefaultProps, axesPropTypes, mergeBboxes } from '../helpers.js'
@@ -17,19 +18,24 @@ export default class Axis extends Component {
     super(props)
 
     this.AXIS_KEY = uuid()
-    this.LEGEND_PADDING = 130
     this.LEGEND_ID = `axis-${uuid()}`
     this.BUTTON_PADDING = 5
-    this.AXIS_TITLE_PADDING = 20
-    this.axisTitlePaddingLeft = 10
-    this.axisTitlePaddingTop = 5
+    this.AXIS_TITLE_PADDING = 15
+    this.AXIS_TITLE_BORDER_PADDING_LEFT = 10
+    this.AXIS_TITLE_BORDER_PADDING_TOP = 5
     this.swatchElements = []
+    this.maxRows = 5000
+    this.initialRowNumber = 50
     this.labelInlineStyles = {
       fontSize: 12,
       fontFamily: 'inherit',
       fill: 'currentColor',
       fillOpacity: 0.9,
       cursor: 'default',
+    }
+
+    this.state = {
+      currentRowNumber: this.props.dataLength,
     }
   }
 
@@ -280,15 +286,15 @@ export default class Axis extends Component {
     const labelBBoxYBottom = (this.labelBBox?.y ?? 0) + (this.labelBBox?.height ?? 0)
     let xLabelY = labelBBoxYBottom + this.AXIS_TITLE_PADDING + 0.5 * xLabelTextHeight
 
-    const xBorderX = xCenter - xLabelTextWidth / 2 - this.axisTitlePaddingLeft
-    let xBorderY = xLabelY - halfTextHeight - this.axisTitlePaddingTop
+    const xBorderX = xCenter - xLabelTextWidth / 2 - this.AXIS_TITLE_BORDER_PADDING_LEFT
+    let xBorderY = xLabelY - halfTextHeight - this.AXIS_TITLE_BORDER_PADDING_TOP
     // if (this.props.enableAjaxTableData) {
     //   // Add extra space for row count display
     //   xBorderY = xBorderY - 20
     //   xLabelY = xLabelY - 20
     // }
-    const xBorderWidth = xLabelTextWidth + 2 * this.axisTitlePaddingLeft
-    const xBorderHeight = xLabelTextHeight + 2 * this.axisTitlePaddingTop
+    const xBorderWidth = xLabelTextWidth + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
+    const xBorderHeight = xLabelTextHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP
 
     return (
       <g>
@@ -368,7 +374,7 @@ export default class Axis extends Component {
     } else if (yLabelTop < chartTop) {
       // Y Label can fit, it is just outside of container. Shift it down
       const prevTopDifference = this.topDifference ?? 0
-      const topDifference = Math.floor(yLabelTop - chartTop - this.axisTitlePaddingLeft)
+      const topDifference = Math.floor(yLabelTop - chartTop - this.AXIS_TITLE_BORDER_PADDING_LEFT)
 
       this.topDifference = topDifference + prevTopDifference
       this.yLabelTransform = `rotate(-90) translate(${this.topDifference}, 0)`
@@ -377,10 +383,10 @@ export default class Axis extends Component {
       this.topDifference = undefined
     }
 
-    const yBorderWidth = yLabelHeight + 2 * this.axisTitlePaddingLeft
-    const yBorderHeight = yLabelTextHeight + 2 * this.axisTitlePaddingTop
-    const yBorderX = yLabelX - yLabelHeight / 2 - this.axisTitlePaddingLeft
-    const yBorderY = yLabelY - yLabelWidth / 2 - this.axisTitlePaddingTop
+    const yBorderWidth = yLabelHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
+    const yBorderHeight = yLabelTextHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP
+    const yBorderX = yLabelX - yLabelHeight / 2 - this.AXIS_TITLE_BORDER_PADDING_LEFT
+    const yBorderY = yLabelY - yLabelWidth / 2 - this.AXIS_TITLE_BORDER_PADDING_TOP
 
     const transform = this.yLabelTransform || 'rotate(-90)'
 
@@ -467,7 +473,7 @@ export default class Axis extends Component {
     } else if (yLabelTop < chartTop) {
       // Y Label can fit, it is just outside of container. Shift it down
       const prevTopDifference = this.rightTitleTopDifference ?? 0
-      const topDifference = Math.floor(yLabelTop - chartTop - this.axisTitlePaddingLeft)
+      const topDifference = Math.floor(yLabelTop - chartTop - this.AXIS_TITLE_BORDER_PADDING_LEFT)
 
       this.rightTitleTopDifference = topDifference + prevTopDifference
       this.rightTitleTransform = `rotate(-90) translate(${this.rightTitleTopDifference}, 0)`
@@ -476,10 +482,10 @@ export default class Axis extends Component {
       this.rightTitleTopDifference = undefined
     }
 
-    const yBorderWidth = yLabelHeight + 2 * this.axisTitlePaddingLeft
-    const yBorderHeight = yLabelTextHeight + 2 * this.axisTitlePaddingTop
-    const yBorderX = yLabelX - yLabelHeight / 2 - this.axisTitlePaddingLeft
-    const yBorderY = yLabelY - yLabelWidth / 2 - this.axisTitlePaddingTop
+    const yBorderWidth = yLabelHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
+    const yBorderHeight = yLabelTextHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP
+    const yBorderX = yLabelX - yLabelHeight / 2 - this.AXIS_TITLE_BORDER_PADDING_LEFT
+    const yBorderY = yLabelY - yLabelWidth / 2 - this.AXIS_TITLE_BORDER_PADDING_TOP
 
     const transform = this.rightTitleTransform || 'rotate(-90)'
 
@@ -545,6 +551,21 @@ export default class Axis extends Component {
     }
   }
 
+  renderLoadMoreDropdown = () => {
+    if (this.props.orient !== 'Bottom' || !this.props.enableAjaxTableData) {
+      return null
+    }
+
+    const titleBBox = getBBoxFromRef(this.bottomTitleRef)
+    const translateY = (titleBBox?.y ?? 0) + (titleBBox?.height ?? 0)
+
+    return (
+      <g transform={`translate(${this.props.innerWidth / 2},${translateY})`}>
+        <LoadMoreDropdown {...this.props} />
+      </g>
+    )
+  }
+
   render = () => {
     // const numSeries = this.props.numberColumnIndices?.length || 0
     // const legendDx = (this.LEGEND_PADDING * (numSeries - 1)) / 2
@@ -573,6 +594,7 @@ export default class Axis extends Component {
           ref={(el) => (this.axisElement = el)}
         />
         {this.renderAxisTitle()}
+        {this.renderLoadMoreDropdown()}
         {/* {!!this.labelBBox && this.props.scale?.type === 'LINEAR' && this.props.scale?.domain().length !== 1 && (
           <AxisScaler
             setIsChartScaled={this.props.setIsChartScaled}

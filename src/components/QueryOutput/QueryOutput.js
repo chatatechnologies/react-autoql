@@ -1841,7 +1841,7 @@ export class QueryOutput extends React.Component {
           width={this.props.width}
           onNewData={this.onNewData}
           isDrilldown={this.isDrilldown()}
-          totalRowsNumber={this.queryResponse?.data?.data?.count_rows}
+          totalRowCount={this.queryResponse?.data?.data?.count_rows}
           updateColumns={this.updateColumns}
           columnChangeCount={this.state.columnChangeCount}
         />
@@ -2042,10 +2042,10 @@ export class QueryOutput extends React.Component {
     return null
   }
   renderTableRowCount = () => {
-    const currentRowsNumber = this.tableData?.length
-    const totalRowsNumber = this.queryResponse?.data?.data?.count_rows
+    const currentRowCount = this.tableData?.length
+    const totalRowCount = this.queryResponse?.data?.data?.count_rows
     const shouldRenderTRC =
-      this.state.displayType === 'table' && this.props.enableAjaxTableData && totalRowsNumber && currentRowsNumber
+      this.state.displayType === 'table' && this.props.enableAjaxTableData && totalRowCount && currentRowCount
 
     if (!shouldRenderTRC) {
       return null
@@ -2053,7 +2053,7 @@ export class QueryOutput extends React.Component {
 
     return (
       <div className='query-output-table-row-count'>
-        <span>{`Scrolled ${currentRowsNumber} / ${totalRowsNumber} rows`}</span>
+        <span>{`Scrolled ${currentRowCount} / ${totalRowCount} rows`}</span>
       </div>
     )
   }

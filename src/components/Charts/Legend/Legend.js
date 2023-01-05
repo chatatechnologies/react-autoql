@@ -43,7 +43,6 @@ export default class Legend extends Component {
     legendTitle: undefined,
     onLabelChange: () => {},
     onLegendClick: () => {},
-    onLegendTitleClick: () => {},
     translate: undefined,
     placement: 'right',
   }

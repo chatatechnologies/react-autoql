@@ -79,7 +79,7 @@ export default class ChataColumnChart extends Component {
     this.yScale = yScalesAndTicks.scale
     this.yTickValues = this.yScale.tickLabels
     this.yScale2 = yScalesAndTicks.scale2
-    this.yTickValues2 = this.yScale2.tickLabels
+    this.yTickValues2 = this.yScale2?.tickLabels
   }
 
   render = () => {
@@ -108,7 +108,7 @@ export default class ChataColumnChart extends Component {
           yCol2={yCol2}
           xTicks={this.xScale.tickLabels}
           yTicks={this.yScale.tickLabels}
-          yTicks2={this.yScale2.tickLabels}
+          yTicks2={this.yScale2?.tickLabels}
           linearAxis='y'
           rotateLabels={this.rotateLabels}
           hasRightLegend={this.props.legendLocation === 'right'}

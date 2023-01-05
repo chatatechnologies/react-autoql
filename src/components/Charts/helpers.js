@@ -242,6 +242,7 @@ export const convertToNumber = (value) => {
     }
     return number
   } catch (error) {
+    console.error(error)
     return 0
   }
 }

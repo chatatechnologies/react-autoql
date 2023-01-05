@@ -580,7 +580,7 @@ export const supportsRegularPivotTable = (columns, dataLength) => {
 }
 
 export const supports2DCharts = (columns, dataLength) => {
-  if (dataLength <= 1) {
+  if (dataLength <= 0) {
     return false
   }
 
