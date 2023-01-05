@@ -809,6 +809,13 @@ class DashboardWithoutTheme extends React.Component {
             effect='solid'
             html
           />
+          <ReactTooltip
+            className='react-autoql-dashboard-tooltip'
+            id='react-autoql-dashboard-tile-title-tooltip'
+            effect='solid'
+            delayShow={500}
+            html
+          />
         </Fragment>
       </ErrorBoundary>
     )
