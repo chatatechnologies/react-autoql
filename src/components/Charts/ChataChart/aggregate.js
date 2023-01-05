@@ -2,37 +2,33 @@ import _sortBy from 'lodash.sortby'
 import _cloneDeep from 'lodash.clonedeep'
 import { sum, mean, count, deviation, variance, median, min, max } from 'd3-array'
 
-import { sortDataByDate, formatChartLabel, onlyUnique, getBBoxFromRef } from '../../../js/Util.js'
-import { isColumnDateType } from '../../QueryOutput/columnHelpers'
+import { formatChartLabel, onlyUnique } from '../../../js/Util.js'
 import { DEFAULT_AGG_TYPE } from '../../../js/Constants'
 
-const getLabelFromRow = (row, props) => {
-  const { stringColumnIndex, columns } = props
-  const stringColumn = columns[stringColumnIndex]
+const getLabelFromRow = ({ row, index, columns, dataFormatting }) => {
+  const column = columns[index]
 
   let label
   if (row) {
     label =
       formatChartLabel({
-        d: row[stringColumnIndex],
-        col: stringColumn,
-
-        config: props.dataFormatting,
-      })?.fullWidthLabel ?? row[stringColumnIndex]
+        d: row[index],
+        col: column,
+        config: dataFormatting,
+      })?.fullWidthLabel ?? row[index]
   }
   return label
 }
 
-const addValuesToAggDataset = (props, datasetsToAggregate, currentRow) => {
-  const { numberColumnIndices, columns } = props
-  numberColumnIndices.forEach((columnIndex) => {
-    const column = columns[columnIndex]
+const addValuesToAggDataset = ({ numberIndices, columns, datasetsToAggregate, row }) => {
+  numberIndices.forEach((index) => {
+    const column = columns[index]
     if (column.visible) {
-      const value = Number(currentRow[columnIndex])
-      if (datasetsToAggregate[columnIndex]) {
-        datasetsToAggregate[columnIndex].push(value)
+      const value = Number(row[index])
+      if (datasetsToAggregate[index]) {
+        datasetsToAggregate[index].push(value)
       } else {
-        datasetsToAggregate[columnIndex] = [value]
+        datasetsToAggregate[index] = [value]
       }
     }
   })
@@ -74,33 +70,20 @@ const aggregateFn = (dataset, aggType) => {
 
 const aggregateRow = (row, datasetsToAggregate, columns) => {
   const newRow = _cloneDeep(row)
-  Object.keys(datasetsToAggregate).forEach((columnIndex) => {
-    const aggregateType = columns[columnIndex].aggType || DEFAULT_AGG_TYPE
-    newRow[columnIndex] = aggregateFn(datasetsToAggregate[columnIndex], aggregateType)
+  Object.keys(datasetsToAggregate).forEach((index) => {
+    const aggregateType = columns[index].aggType || DEFAULT_AGG_TYPE
+    newRow[index] = aggregateFn(datasetsToAggregate[index], aggregateType)
   })
   return newRow
 }
 
-export const aggregateData = (props) => {
-  const { stringColumnIndex, data, columns } = props
-  const stringColumn = columns[stringColumnIndex]
-
+export const aggregateData = ({ data, aggIndex, columns, numberIndices, dataFormatting }) => {
   if (!(data?.length > 1)) {
     return data
   }
 
-  let sortedData
-  if (isColumnDateType(stringColumn)) {
-    sortedData = sortDataByDate(data, columns, 'chart')
-  } else {
-    sortedData = _sortBy(data, (row) => row?.[stringColumnIndex])
-  }
-
-  if (props.isPivot) {
-    return sortedData
-  }
-
   const aggregatedData = []
+  const sortedData = _sortBy(data, (row) => row?.[aggIndex])
 
   let prevRow
   let datasetsToAggregate = {}
@@ -108,30 +91,24 @@ export const aggregateData = (props) => {
     const currentRow = _cloneDeep(row)
     const isLastRow = i === sortedData.length - 1
 
-    const currentLabel = getLabelFromRow(currentRow, props)
-    const prevLabel = getLabelFromRow(prevRow, props)
+    const currentLabel = getLabelFromRow({ row: currentRow, index: aggIndex, columns, dataFormatting })
+    const prevLabel = getLabelFromRow({ row: prevRow, index: aggIndex, columns, dataFormatting })
     const labelChanged = currentLabel && prevLabel && currentLabel !== prevLabel
 
-    if (!labelChanged) {
-      addValuesToAggDataset(props, datasetsToAggregate, currentRow)
-      if (isLastRow) {
-        const newRow = aggregateRow(currentRow, datasetsToAggregate, columns)
-        aggregatedData.push(newRow)
-        return
-      }
-    } else if (labelChanged) {
+    if (labelChanged) {
       // label changed so we will do the aggregation then push the row to the data array
       const newRow = aggregateRow(prevRow, datasetsToAggregate, columns)
       aggregatedData.push(newRow)
 
-      if (isLastRow) {
-        aggregatedData.push(currentRow)
-        return
-      }
-
       // then we reset the agg set and add the current row to it
       datasetsToAggregate = {}
-      addValuesToAggDataset(props, datasetsToAggregate, currentRow)
+    }
+
+    addValuesToAggDataset({ numberIndices, columns, datasetsToAggregate, row: currentRow })
+    if (isLastRow) {
+      const lastRow = aggregateRow(currentRow, datasetsToAggregate, columns)
+      aggregatedData.push(lastRow)
+      return
     }
 
     prevRow = currentRow

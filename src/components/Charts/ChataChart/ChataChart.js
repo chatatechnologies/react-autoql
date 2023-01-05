@@ -16,7 +16,7 @@ import { ChataStackedLineChart } from '../ChataStackedLineChart'
 import { Spinner } from '../../Spinner'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import { svgToPng, getBBoxFromRef } from '../../../js/Util.js'
+import { svgToPng, getBBoxFromRef, sortDataByDate } from '../../../js/Util.js'
 import {
   chartContainerDefaultProps,
   chartContainerPropTypes,
@@ -49,11 +49,11 @@ export default class ChataChart extends Component {
 
     this.colorScale = scaleOrdinal().range(chartColors)
 
-    const aggregatedData = aggregateData(props)
+    const data = this.getData(props)
 
     this.state = {
       chartID: uuid(),
-      aggregatedData,
+      data,
       rightAxisMargin: 0,
       bottomAxisMargin: 0,
       rightLegendMargin: 0,
@@ -91,8 +91,6 @@ export default class ChataChart extends Component {
     if (!this.props.isResizing) {
       this.rebuildTooltips()
     }
-
-    // this.setDeltas()
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -127,8 +125,8 @@ export default class ChataChart extends Component {
     }
 
     if (dataStructureChanged(this.props, prevProps)) {
-      const aggregatedData = aggregateData(this.props)
-      this.setState({ aggregatedData }, () => {
+      const data = this.getData(this.props)
+      this.setState({ data }, () => {
         this.rebuildTooltips()
       })
       return
@@ -136,6 +134,20 @@ export default class ChataChart extends Component {
 
     if (shouldForceUpdate) {
       this.forceUpdate()
+    }
+  }
+
+  getData = (props) => {
+    if (props.isPivot) {
+      return sortDataByDate(props.data, props.columns, 'chart')
+    } else {
+      return aggregateData({
+        data: props.data,
+        aggIndex: props.stringColumnIndex,
+        columns: props.columns,
+        numberIndices: props.numberColumnIndices,
+        dataFormatting: props.dataFormatting,
+      })
     }
   }
 
@@ -341,7 +353,7 @@ export default class ChataChart extends Component {
       setIsLoadingMoreRows: (isLoading) => this.setState({ isLoadingMoreRows: isLoading }),
       ref: (r) => (this.innerChartRef = r),
       key: `chata-inner-chart-${this.state.chartID}`,
-      data: this.state.aggregatedData || this.props.data,
+      data: this.state.data || this.props.data,
       colorScale: this.colorScale,
       innerPadding,
       outerPadding: this.OUTER_PADDING,
