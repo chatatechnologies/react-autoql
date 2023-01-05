@@ -70,6 +70,8 @@ export const axesPropTypes = {
   xAxisTitle: PropTypes.string,
   yAxisTitle: PropTypes.string,
   legendTitle: PropTypes.string,
+  innerHeight: PropTypes.number,
+  innerWidth: PropTypes.number,
 }
 
 export const axesDefaultProps = {
@@ -86,6 +88,8 @@ export const axesDefaultProps = {
   xAxisTitle: undefined,
   yAxisTitle: undefined,
   legendTitle: undefined,
+  innerHeight: 0,
+  innerWidth: 0,
 }
 
 export const chartElementPropTypes = {

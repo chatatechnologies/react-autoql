@@ -26,47 +26,65 @@ export default class Axes extends React.Component {
   }
 
   onAxisRenderComplete = (orient) => {
+    console.log('completed:', orient)
     switch (orient) {
       case 'Right': {
         this.rightAxisComplete = true
+        break
       }
       case 'Left': {
         this.leftAxisComplete = true
+        break
       }
       case 'Bottom': {
         this.bottomAxisComplete = true
+        break
       }
       case 'Top': {
         this.topAxisComplete = true
+        break
+      }
+      default: {
+        break
       }
     }
 
-    if (!this.shouldRenderRightAxis(this.props)) {
+    if (!this.shouldRenderRightAxis() && !this.rightAxisComplete) {
+      console.log('NO RIGHT AXIS')
       this.rightAxisComplete = true
     }
 
-    if (!this.shouldRenderTopAxis(this.props)) {
+    if (!this.shouldRenderTopAxis() && !this.topAxisComplete) {
+      console.log('NO TOP AXIS')
       this.topAxisComplete = true
     }
 
     if (this.topAxisComplete && this.bottomAxisComplete && this.leftAxisComplete && this.rightAxisComplete) {
       this.forceUpdate(() => {
+        console.log('ON AXES RENDER COMPLETE')
         this.props.onAxesRenderComplete()
+      })
+    } else {
+      console.log('one of the axes is not completed', {
+        top: this.topAxisComplete,
+        bottom: this.bottomAxisComplete,
+        left: this.leftAxisComplete,
+        right: this.rightAxisComplete,
       })
     }
   }
 
-  renderBottomAxis = (innerHeight, innerWidth) => {
-    const orient = 'Bottom'
+  renderBottomAxis = (innerWidth, innerHeight) => {
     return (
       <Axis
         {...this.props}
         ref={(r) => (this.bottomAxis = r)}
         key={this.BOTTOM_AXIS_KEY}
-        orient={orient}
+        orient='Bottom'
         scale={this.props.xScale}
-        translateY={innerHeight}
         ticks={this.props.xTicks}
+        translateY={0}
+        translateX={0}
         // rotateLabels={this.props.rotateLabels}
         rotateLabels={true}
         col={this.props.xCol}
@@ -74,55 +92,59 @@ export default class Axes extends React.Component {
         showGridLines={this.props.xGridLines}
         hasDropdown={this.props.hasXDropdown}
         innerWidth={innerWidth}
-        onAxisRenderComplete={() => this.onAxisRenderComplete(orient)}
+        innerHeight={innerHeight}
+        onAxisRenderComplete={this.onAxisRenderComplete}
       />
     )
   }
 
-  renderLeftAxis = (innerWidth) => {
-    const orient = 'Left'
+  renderLeftAxis = (innerWidth, innerHeight) => {
     return (
       <Axis
         {...this.props}
         key={this.LEFT_AXIS_KEY}
-        orient={orient}
+        orient='Left'
         scale={this.props.yScale}
-        innerWidth={innerWidth}
         ticks={this.props.yTicks}
-        translateY={0}
         col={this.props.yCol}
         title={this.props.leftAxisTitle}
         showGridLines={this.props.yGridLines}
         hasDropdown={this.props.hasYDropdown}
-        onAxisRenderComplete={() => this.onAxisRenderComplete(orient)}
+        innerWidth={innerWidth}
+        innerHeight={innerHeight}
+        translateY={0}
+        translateX={0}
+        onAxisRenderComplete={this.onAxisRenderComplete}
       />
     )
   }
 
-  shouldRenderTopAxis = (props) => {
+  shouldRenderTopAxis = () => {
     return false
-  }
-
-  renderTopAxis = (title) => {
-    if (!title) {
-      return null
-    }
-  }
-
-  shouldRenderRightAxis = (props) => {
-    const shouldRenderAxis = !!props.yCol2 && !!props.yScale2
+    const shouldRenderAxis = !!props.xCol2 && !!props.xScale2
     return shouldRenderAxis
   }
 
-  renderRightAxis = (innerWidth) => {
+  renderTopAxis = (innerWidth, innerHeight) => {
+    if (!this.shouldRenderTopAxis()) {
+      return null
+    }
+
+    return null
+  }
+
+  shouldRenderRightAxis = () => {
     const shouldRenderAxis = !!this.props.yCol2 && !!this.props.yScale2
+    return shouldRenderAxis
+  }
+
+  renderRightAxis = (innerWidth, innerHeight) => {
+    const shouldRenderAxis = this.shouldRenderRightAxis()
     const shouldRenderLegend = !!this.props.legendLocation
 
     if (!shouldRenderAxis && !shouldRenderLegend) {
       return null
     }
-
-    const orient = 'Right'
 
     return (
       <g ref={(r) => (this.rightAxis = r)} transform={`translate(${innerWidth}, 0)`}>
@@ -131,10 +153,8 @@ export default class Axes extends React.Component {
             {...this.props}
             ref={(r) => (this.rightAxisWithoutLegend = r)}
             key={this.RIGHT_AXIS_KEY}
-            orient={orient}
+            orient='Right'
             scale={this.props.yScale2}
-            translateX={0}
-            translateY={0}
             ticks={this.props.yTicks2}
             col={this.props.yCol2}
             title={this.props.rightAxisTitle}
@@ -142,7 +162,9 @@ export default class Axes extends React.Component {
             hasRightLegend={false}
             hasBottomLegend={false}
             hasDropdown={this.props.hasYDropdown}
-            onAxisRenderComplete={() => this.onAxisRenderComplete(orient)}
+            innerWidth={innerWidth}
+            innerHeight={innerHeight}
+            onAxisRenderComplete={this.onAxisRenderComplete}
           />
         )}
         {shouldRenderLegend && this.renderRightLegend()}
@@ -192,9 +214,10 @@ export default class Axes extends React.Component {
     return (
       <g ref={(r) => (this.ref = r)}>
         <g className='react-autoql-axes' data-test='react-autoql-axes'>
-          {this.renderBottomAxis(innerHeight, innerWidth)}
-          {this.renderLeftAxis(innerWidth)}
-          {this.renderRightAxis(innerWidth)}
+          {this.renderBottomAxis(innerWidth, innerHeight)}
+          {this.renderLeftAxis(innerWidth, innerHeight)}
+          {this.renderRightAxis(innerWidth, innerHeight)}
+          {this.renderTopAxis(innerWidth, innerHeight)}
         </g>
       </g>
     )

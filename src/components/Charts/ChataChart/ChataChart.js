@@ -113,6 +113,7 @@ export default class ChataChart extends Component {
       (!this.props.isDrilldownChartHidden && prevProps.isDrilldownChartHidden) ||
       this.props.type !== prevProps.type
     ) {
+      this.setState({ chartID: uuid(), deltaX: 0, deltaY: 0, bottomAxisMargin: 0, rightAxisMargin: 0 })
       this.rebuildTooltips()
     }
 
@@ -126,7 +127,7 @@ export default class ChataChart extends Component {
 
     if (dataStructureChanged(this.props, prevProps)) {
       const data = this.getData(this.props)
-      this.setState({ data }, () => {
+      this.setState({ data, chartID: uuid(), deltaX: 0, deltaY: 0, bottomAxisMargin: 0, rightAxisMargin: 0 }, () => {
         this.rebuildTooltips()
       })
       return
@@ -152,25 +153,37 @@ export default class ChataChart extends Component {
   }
 
   onAxesRenderComplete = () => {
-    this.setDeltas()
+    console.log('AXES RENDER COMPLETE')
+    this.adjustChartPosition()
   }
 
-  setDeltas = () => {
+  adjustChartPosition = () => {
     this.setState({ deltaX: 0, deltaY: 0, isLoading: true }, () => {
       setTimeout(() => {
+        const axesBBox = getBBoxFromRef(this.innerChartRef?.chartRef)
+
         // Get distance in px to shift to the right
-        const axesBBoxX = Math.ceil(getBBoxFromRef(this.innerChartRef.chartRef)?.x ?? 0)
+        const axesBBoxX = Math.ceil(axesBBox?.x ?? 0)
         const deltaX = -1 * axesBBoxX + this.PADDING
 
-        // Get distance in px to shift down
-        const axesBBoxY = Math.ceil(getBBoxFromRef(this.innerChartRef.chartRef)?.y ?? 0)
-        const deltaY = -1 * axesBBoxY + this.PADDING
+        const deltaY =
+          -1 * Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.topAxis?.ref)?.height ?? 0) + this.PADDING
 
         const rightAxisMargin =
           Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.rightAxis)?.width ?? 0) + this.PADDING
 
-        const bottomAxisMargin =
-          Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.bottomAxis?.ref)?.height ?? 0) + this.PADDING
+        // Get height difference in px to determine proper chart height
+        const axesBBoxHeight = Math.ceil(axesBBox?.height ?? 0)
+        const axesBBoxYBottom = Math.ceil(axesBBox?.y ?? 0) + axesBBoxHeight
+        const containerHeight = this.props.height ?? this.chartContainerRef?.clientHeight ?? 0
+        console.log({ containerHeight, axesBBoxHeight })
+        let bottomAxisMargin = axesBBoxHeight - containerHeight + this.PADDING
+        if (bottomAxisMargin < 0) {
+          bottomAxisMargin = 0
+        }
+
+        // const bottomAxisMargin =
+        //   Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.bottomAxis?.ref)?.height ?? 0) + this.PADDING
 
         this.setState({ deltaX, deltaY, rightAxisMargin, bottomAxisMargin }, () => {
           this.setState({ isLoading: false })
@@ -190,10 +203,14 @@ export default class ChataChart extends Component {
       innerWidth = 0
     }
 
+    console.log({ bottomAxisMargin })
+
     let innerHeight = Math.floor(containerHeight - bottomAxisMargin - deltaY)
     if (innerHeight < 0) {
       innerHeight = 0
     }
+
+    console.log({ bottomAxisMargin, deltaY })
 
     const outerWidth = Math.ceil(containerWidth)
     const outerHeight = Math.ceil(containerHeight)
@@ -229,7 +246,7 @@ export default class ChataChart extends Component {
 
   changeNumberColumnIndices = (indices, newColumns) => {
     this.props.changeNumberColumnIndices(indices, newColumns)
-    this.setState({ chartID: uuid() })
+    // this.setState({ chartID: uuid() })
   }
 
   getBase64Data = () => {
@@ -352,7 +369,8 @@ export default class ChataChart extends Component {
       ...this.props,
       setIsLoadingMoreRows: (isLoading) => this.setState({ isLoadingMoreRows: isLoading }),
       ref: (r) => (this.innerChartRef = r),
-      key: `chata-inner-chart-${this.state.chartID}`,
+      // key: `chata-inner-chart-${this.state.chartID}`,
+      key: undefined,
       data: this.state.data || this.props.data,
       colorScale: this.colorScale,
       innerPadding,
@@ -374,7 +392,7 @@ export default class ChataChart extends Component {
       legendTitle: this.props.legendColumn?.title || 'Category',
       legendLocation: getLegendLocation(numberColumnIndices, this.props.type),
       legendLabels: this.getLegendLabels(),
-      // onLabelChange: this.setDeltas,
+      // onLabelChange: this.adjustChartPosition,
       visibleSeriesIndices,
       visibleSeriesIndices2,
       numberAxisTitle: this.getNumberAxisTitle(visibleSeriesIndices),
@@ -460,6 +478,7 @@ export default class ChataChart extends Component {
       <ErrorBoundary>
         <div
           id={`react-autoql-chart-${this.state.chartID}`}
+          key={`react-autoql-chart-${this.state.chartID}`}
           ref={(r) => (this.chartContainerRef = r)}
           data-test='react-autoql-chart'
           className={`react-autoql-chart-container ${this.state.isLoading || this.props.isResizing ? 'loading' : ''}`}

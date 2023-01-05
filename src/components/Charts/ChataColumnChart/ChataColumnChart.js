@@ -76,10 +76,13 @@ export default class ChataColumnChart extends Component {
       columnIndices2: numberColumnIndices2,
       axis: 'y',
     })
+
     this.yScale = yScalesAndTicks.scale
     this.yTickValues = this.yScale.tickLabels
     this.yScale2 = yScalesAndTicks.scale2
     this.yTickValues2 = this.yScale2?.tickLabels
+
+    console.log('yscale range:', this.yScale?.range())
   }
 
   render = () => {
@@ -91,9 +94,9 @@ export default class ChataColumnChart extends Component {
 
     return (
       <g
+        ref={(r) => (this.chartRef = r)}
         className='react-autoql-axes-chart'
         data-test='react-autoql-column-chart'
-        ref={(r) => (this.chartRef = r)}
         transform={`translate(${this.props.deltaX}, ${this.props.deltaY})`}
       >
         {this.props.marginAdjustmentFinished && <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />}
@@ -120,16 +123,6 @@ export default class ChataColumnChart extends Component {
           bottomAxisTitle={this.props.stringAxisTitle}
           yGridLines
         />
-        {/* {!!this.props.legendLocation && (
-          <Legend
-            {...this.props}
-            xScale={this.xScale}
-            scale={this.yScale}
-            col={yCol}
-            placement={this.props.legendLocation}
-            axesRef={this.axesRef?.ref}
-          />
-        )} */}
       </g>
     )
   }

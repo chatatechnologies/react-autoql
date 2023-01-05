@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
+import _cloneDeep from 'lodash.clonedeep'
 import { v4 as uuid } from 'uuid'
 import { select } from 'd3-selection'
 import { axisLeft, axisBottom, axisTop, axisRight } from 'd3-axis'
@@ -60,12 +61,16 @@ export default class Axis extends Component {
   }
 
   componentDidMount = () => {
+    this._isMounted = true
     this.renderAxis()
     // Render a second time so the title knows where to be placed
     // based on the width of the tick labels
+    // setTimeout(() => {
     this.forceUpdate(() => {
-      this.props.onAxisRenderComplete()
+      console.log('ON AXIS RENDER COMPLETE', this.props.orient)
+      this.props.onAxisRenderComplete(this.props.orient)
     })
+    // }, 1000)
   }
 
   componentDidUpdate = (prevProps) => {
@@ -89,6 +94,10 @@ export default class Axis extends Component {
   //     .attr('fill', 'transparent')
   //     .attr('rx', 4)
   // }
+
+  componentWillUnmount = () => {
+    this._isMounted = false
+  }
 
   renderAxis = () => {
     const self = this
@@ -130,11 +139,27 @@ export default class Axis extends Component {
       axis.tickValues(this.props.ticks)
     }
 
-    if (this.props.orient === 'Left') {
+    // if (this.props.orient === 'Left') {
+    //   axis.tickSizeInner(-this.props.innerWidth)
+    // } else if (this.props.orient === 'Bottom') {
+    //   axis.tickSizeInner(10)
+    // } else if (this.props.orient === 'Right') {
+    //   axis.tickSizeInner(0)
+    // }
+
+    // axis.tickSizeOuter(20)
+    if (
+      this.props.orient === 'Left' && // && this.props.linearAxis === 'y'
+      this.props.innerWidth
+    ) {
       axis.tickSizeInner(-this.props.innerWidth)
-    } else if (this.props.orient === 'Bottom') {
-      axis.tickSizeInner(10)
-    } else if (this.props.orient === 'Right') {
+    } else if (
+      this.props.orient === 'Bottom' && // && this.props.linearAxis === 'x'
+      this.props.innerHeight
+    ) {
+      axis.tickSizeInner(this.props.innerHeight)
+      // axis.tickSizeInner(200)
+    } else {
       axis.tickSizeInner(0)
     }
 
@@ -213,12 +238,6 @@ export default class Axis extends Component {
         .each(function () {
           const textBoundingRect = select(this).node().getBoundingClientRect()
 
-          // const left = textBoundingRect.left - xDiff
-          // const bottom = textBoundingRect.bottom - yDiff
-          // const right = textBoundingRect.right - xDiff
-          // const top = textBoundingRect.top - yDiff
-          // const textBBox = { left, bottom, right, top }
-
           labelBboxes.push({
             left: textBoundingRect.left - xDiff,
             bottom: textBoundingRect.bottom - yDiff,
@@ -281,20 +300,34 @@ export default class Axis extends Component {
     const innerWidth = range[1] - range[0]
     const xCenter = innerWidth / 2
 
+    console.log('RENDERING BOTTOM AXIS TITLE. THIS IS THE LABEL BBOX:', _cloneDeep(this.labelBBox))
     /* <text> element's y coordinate is anchored on the middle baseline,
     so we need to shift the element up by half of it's height */
-    const labelBBoxYBottom = (this.labelBBox?.y ?? 0) + (this.labelBBox?.height ?? 0)
-    let xLabelY = labelBBoxYBottom + this.AXIS_TITLE_PADDING + 0.5 * xLabelTextHeight
 
-    const xBorderX = xCenter - xLabelTextWidth / 2 - this.AXIS_TITLE_BORDER_PADDING_LEFT
-    let xBorderY = xLabelY - halfTextHeight - this.AXIS_TITLE_BORDER_PADDING_TOP
+    // let xLabelY = labelBBoxYBottom + this.AXIS_TITLE_PADDING + 0.5 * xLabelTextHeight
+    // const xBorderX = xCenter - xLabelTextWidth / 2 - this.AXIS_TITLE_BORDER_PADDING_LEFT
+    // let xBorderY = xLabelY - halfTextHeight - this.AXIS_TITLE_BORDER_PADDING_TOP
     // if (this.props.enableAjaxTableData) {
     //   // Add extra space for row count display
     //   xBorderY = xBorderY - 20
     //   xLabelY = xLabelY - 20
     // }
-    const xBorderWidth = xLabelTextWidth + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
+    // const xBorderWidth = xLabelTextWidth + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
+    // const xBorderHeight = xLabelTextHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP
+
+    const labelBBoxHeight = this.labelBBox?.height ?? 0
+
+    const xLabelX = this.props.innerWidth / 2
+    const xLabelY = this.props.innerHeight + labelBBoxHeight + 20
+
+    const xLabelBoundingRect = this.bottomTitleRef?.getBoundingClientRect()
+    const xLabelHeight = xLabelBoundingRect?.height ?? 0
+    const xLabelWidth = xLabelBoundingRect?.width ?? 0
+
+    const xBorderWidth = xLabelWidth + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
     const xBorderHeight = xLabelTextHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP
+    const xBorderX = xLabelX - xLabelWidth / 2 - this.AXIS_TITLE_BORDER_PADDING_LEFT
+    const xBorderY = xLabelY - xLabelHeight / 2 - this.AXIS_TITLE_BORDER_PADDING_TOP
 
     return (
       <g>
@@ -305,8 +338,8 @@ export default class Axis extends Component {
           dominantBaseline='middle'
           textAnchor='middle'
           fontWeight='bold'
+          x={xLabelX}
           y={xLabelY}
-          x={xCenter}
           style={this.labelInlineStyles}
         >
           {this.renderAxisTitleText()}
@@ -556,11 +589,10 @@ export default class Axis extends Component {
       return null
     }
 
-    const titleBBox = getBBoxFromRef(this.bottomTitleRef)
-    const translateY = (titleBBox?.y ?? 0) + (titleBBox?.height ?? 0)
+    const labelBBoxHeight = this.labelBBox?.height ?? 0
 
     return (
-      <g transform={`translate(${this.props.innerWidth / 2},${translateY})`}>
+      <g transform={`translate(${this.props.innerWidth / 2},${this.props.innerHeight + labelBBoxHeight + 40})`}>
         <LoadMoreDropdown {...this.props} />
       </g>
     )
