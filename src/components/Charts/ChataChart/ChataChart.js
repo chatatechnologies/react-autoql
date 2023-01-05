@@ -2,14 +2,7 @@ import React, { Component, Fragment } from 'react'
 import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 import { v4 as uuid } from 'uuid'
-import _isEqual from 'lodash.isequal'
-import _sortBy from 'lodash.sortby'
-import _cloneDeep from 'lodash.clonedeep'
-import _isEmpty from 'lodash.isempty'
-
-import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
-import { sum, mean, count, deviation, variance, median, min, max } from 'd3-array'
 
 import { ChataColumnChart } from '../ChataColumnChart'
 import { ChataBarChart } from '../ChataBarChart'
@@ -20,8 +13,10 @@ import { ChataBubbleChart } from '../ChataBubbleChart'
 import { ChataStackedBarChart } from '../ChataStackedBarChart'
 import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 import { ChataStackedLineChart } from '../ChataStackedLineChart'
+import { Spinner } from '../../Spinner'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
-import { svgToPng, sortDataByDate, formatChartLabel, onlyUnique, getBBoxFromRef } from '../../../js/Util.js'
+
+import { svgToPng, getBBoxFromRef } from '../../../js/Util.js'
 import {
   chartContainerDefaultProps,
   chartContainerPropTypes,
@@ -29,13 +24,12 @@ import {
   getLegendLabelsForMultiSeries,
   getLegendLocation,
 } from '../helpers.js'
-import './ChataChart.scss'
-import { getColumnTypeAmounts, isColumnDateType } from '../../QueryOutput/columnHelpers'
+import { getColumnTypeAmounts } from '../../QueryOutput/columnHelpers'
 import { getChartColorVars, getThemeValue } from '../../../theme/configureTheme'
-import { Spinner } from '../../Spinner'
 import { AGG_TYPES } from '../../../js/Constants'
+import { aggregateData } from './aggregate'
 
-const defaultAggType = 'sum'
+import './ChataChart.scss'
 
 export default class ChataChart extends Component {
   constructor(props) {
@@ -55,7 +49,7 @@ export default class ChataChart extends Component {
 
     this.colorScale = scaleOrdinal().range(chartColors)
 
-    const aggregatedData = this.aggregateRowData(props)
+    const aggregatedData = aggregateData(props)
 
     this.state = {
       chartID: uuid(),
@@ -133,7 +127,7 @@ export default class ChataChart extends Component {
     }
 
     if (dataStructureChanged(this.props, prevProps)) {
-      const aggregatedData = this.aggregateRowData(this.props)
+      const aggregatedData = aggregateData(this.props)
       this.setState({ aggregatedData }, () => {
         this.rebuildTooltips()
       })
@@ -193,265 +187,6 @@ export default class ChataChart extends Component {
     const outerHeight = Math.ceil(containerHeight)
 
     return { outerHeight, outerWidth, innerHeight, innerWidth }
-  }
-
-  aggregateFn = (dataset, aggType) => {
-    const aggregateType = aggType || this.state?.aggType
-    switch (aggregateType) {
-      case 'avg': {
-        return mean(dataset)
-      }
-      case 'median': {
-        return median(dataset)
-      }
-      case 'min': {
-        return min(dataset)
-      }
-      case 'max': {
-        return max(dataset)
-      }
-      case 'deviation': {
-        return deviation(dataset)
-      }
-      case 'variance': {
-        return variance(dataset)
-      }
-      case 'count': {
-        return count(dataset)
-      }
-      case 'count-distinct': {
-        const uniqueDataset = dataset.filter(onlyUnique)
-        return count(uniqueDataset)
-      }
-      default: {
-        // SUM by default
-        return sum(dataset)
-      }
-    }
-  }
-
-  addValuesToAggDataset = (props, datasetsToAggregate, currentRow) => {
-    const { numberColumnIndices, columns } = props
-    numberColumnIndices.forEach((columnIndex) => {
-      const column = columns[columnIndex]
-      if (column.visible) {
-        const value = Number(currentRow[columnIndex])
-        if (datasetsToAggregate[columnIndex]) {
-          datasetsToAggregate[columnIndex].push(value)
-        } else {
-          datasetsToAggregate[columnIndex] = [value]
-        }
-      }
-    })
-  }
-
-  aggregateRowData2 = (props) => {
-    const { stringColumnIndex, data, columns } = props
-    const stringColumn = columns[stringColumnIndex]
-    let sortedData
-
-    if (data?.length === 1) {
-      return data
-    }
-
-    if (isColumnDateType(stringColumn)) {
-      sortedData = sortDataByDate(data, columns, 'chart')
-    } else {
-      sortedData = _sortBy(props.data, (row) => row?.[stringColumnIndex])
-    }
-
-    if (props.isPivot) {
-      return sortedData
-    }
-
-    const aggregatedData = []
-
-    let prevRow
-    let datasetsToAggregate = {}
-    sortedData.forEach((row, i) => {
-      console.log(i)
-      const currentRow = [...row]
-      const isFirstRow = i === 0
-      const isSecondRow = i === 1
-      const isLastRow = i === sortedData.length - 1
-
-      let currentLabel
-      if (currentRow) {
-        currentLabel =
-          formatChartLabel({
-            d: currentRow[stringColumnIndex],
-            col: stringColumn,
-            config: this.props.dataFormatting,
-          })?.fullWidthLabel ?? currentRow[stringColumnIndex]
-      }
-
-      let prevLabel
-      if (prevRow) {
-        prevLabel =
-          formatChartLabel({
-            d: prevRow[stringColumnIndex],
-            col: stringColumn,
-            config: this.props.dataFormatting,
-          })?.fullWidthLabel ?? prevRow[stringColumnIndex]
-      }
-
-      const labelChanged = currentLabel && prevLabel && currentLabel !== prevLabel
-
-      if (labelChanged) {
-        if (isLastRow) {
-          console.log('it was the last row, so we are just going to add the row to the data')
-          aggregatedData.push(currentRow)
-          // prevRow = _cloneDeep(currentRow)
-          return
-        } else if (isSecondRow) {
-          const previousRow = _cloneDeep(prevRow)
-          aggregatedData.push(previousRow)
-        } else {
-          // this.addValuesToAggDataset(props, datasetsToAggregate, currentRow)
-          console.log('label changed! Adding a new row to the agg set. It is not added to the data yet', {
-            datasetsToAggregate,
-            labelChanged,
-            isFirstRow,
-          })
-        }
-
-        prevRow = _cloneDeep(currentRow)
-      }
-
-      if (isFirstRow) {
-        console.log('its the first row! what does this mean')
-      }
-
-      // if (!labelChanged) {
-      console.log('about to perform the agg OR add the row if the label didnt change')
-      // Category changed, finish aggregation and add row to dataset
-      if (!labelChanged && Object.keys(datasetsToAggregate)?.length) {
-        console.log(
-          'label DIDNT change, and there is a valid agg dataset to add to, need to perform agg function on it now',
-          { labelChanged, isLastRow },
-        )
-
-        const newRow = _cloneDeep(prevRow)
-        Object.keys(datasetsToAggregate).forEach((columnIndex) => {
-          const aggregateType = columns[columnIndex].aggType || defaultAggType
-          newRow[columnIndex] = this.aggregateFn(datasetsToAggregate[columnIndex], aggregateType)
-        })
-
-        console.log('pushing new row')
-        aggregatedData.push(newRow)
-
-        datasetsToAggregate = {}
-        // this.addValuesToAggDataset(props, datasetsToAggregate, currentRow)
-      } else if (!labelChanged) {
-        console.log(
-          'label didnt change, but there was no valid agg dataset to add to. Its probably the first row. Ignoring',
-        )
-        aggregatedData.push(currentRow)
-      }
-
-      prevRow = _cloneDeep(currentRow)
-      return
-    })
-
-    console.log({ aggregatedData })
-
-    return aggregatedData
-  }
-
-  getLabelFromRow = (row, props) => {
-    const { stringColumnIndex, columns } = props
-    const stringColumn = columns[stringColumnIndex]
-
-    let label
-    if (row) {
-      label =
-        formatChartLabel({
-          d: row[stringColumnIndex],
-          col: stringColumn,
-          config: this.props.dataFormatting,
-        })?.fullWidthLabel ?? row[stringColumnIndex]
-    }
-    return label
-  }
-
-  aggregateRowData = (props) => {
-    const { stringColumnIndex, data, columns } = props
-    const stringColumn = columns[stringColumnIndex]
-    let sortedData
-
-    if (data?.length === 1) {
-      return data
-    }
-
-    if (isColumnDateType(stringColumn)) {
-      sortedData = sortDataByDate(data, columns, 'chart')
-    } else {
-      sortedData = _sortBy(props.data, (row) => row?.[stringColumnIndex])
-    }
-
-    if (props.isPivot) {
-      return sortedData
-    }
-
-    const aggregatedData = []
-
-    let prevRow
-    let datasetsToAggregate = {}
-    sortedData.forEach((row, i) => {
-      console.log(i)
-      const currentRow = _cloneDeep(row)
-      const isFirstRow = i === 0
-      const isLastRow = i === sortedData.length - 1
-
-      const currentLabel = this.getLabelFromRow(currentRow, props)
-      const prevLabel = this.getLabelFromRow(prevRow, props)
-      const labelChanged = currentLabel && prevLabel && currentLabel !== prevLabel
-
-      if (isLastRow && !labelChanged) {
-        console.log('is last row but label didnt change')
-        this.addValuesToAggDataset(props, datasetsToAggregate, currentRow)
-        const newRow = _cloneDeep(currentRow)
-        Object.keys(datasetsToAggregate).forEach((columnIndex) => {
-          const aggregateType = columns[columnIndex].aggType || defaultAggType
-          newRow[columnIndex] = this.aggregateFn(datasetsToAggregate[columnIndex], aggregateType)
-        })
-        aggregatedData.push(newRow)
-        return
-        // }
-        // } else if (isFirstRow) {
-        //   console.log('is first row and there is more data')
-        //   this.addValuesToAggDataset(props, datasetsToAggregate, currentRow)
-      } else if (!labelChanged) {
-        // label didn't change so now we add the data to the agg dataset
-        console.log('label didnt change, so adding to the agg dataset')
-        this.addValuesToAggDataset(props, datasetsToAggregate, currentRow)
-      } else if (labelChanged) {
-        console.log('label changed. doing aggregation now then pushing row')
-        // label changed so we will do the aggregation then push the row to the data array
-        const newRow = _cloneDeep(prevRow)
-        Object.keys(datasetsToAggregate).forEach((columnIndex) => {
-          const aggregateType = columns[columnIndex].aggType || defaultAggType
-          newRow[columnIndex] = this.aggregateFn(datasetsToAggregate[columnIndex], aggregateType)
-        })
-
-        aggregatedData.push(newRow)
-        if (isLastRow) {
-          aggregatedData.push(currentRow)
-          return
-        }
-
-        // then we reset the agg set and add the current row to it
-        datasetsToAggregate = {}
-        this.addValuesToAggDataset(props, datasetsToAggregate, currentRow)
-      }
-
-      prevRow = currentRow
-      return
-    })
-
-    console.log({ aggregatedData })
-
-    return aggregatedData
   }
 
   getLegendLabels = () => {
@@ -646,14 +381,6 @@ export default class ChataChart extends Component {
       rebuildTooltips: this.rebuildTooltips,
       onAxesRenderComplete: this.onAxesRenderComplete,
     }
-  }
-
-  moveIndexToFront = (index, array) => {
-    const newArray = _cloneDeep(array)
-    const itemToRemove = array[index]
-    newArray.slice(index, index + 1)
-    newArray.unshift(itemToRemove)
-    return newArray
   }
 
   renderChartLoader = () => {

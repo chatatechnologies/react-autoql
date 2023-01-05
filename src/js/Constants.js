@@ -63,6 +63,8 @@ export const DAYJS_PRECISION_FORMATS = {
   DATE_MINUTE: 'll h:mmA',
 }
 
+export const DEFAULT_AGG_TYPE = 'sum'
+
 export const AGG_TYPES = [
   {
     displayName: 'Sum',
