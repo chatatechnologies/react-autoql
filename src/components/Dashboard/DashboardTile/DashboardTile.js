@@ -38,6 +38,7 @@ let autoCompleteArray = []
 export class DashboardTile extends React.Component {
   constructor(props) {
     super(props)
+    this.dashboardTileTitleRef = React.createRef()
 
     this.COMPONENT_KEY = uuid()
     this.FIRST_QUERY_RESPONSE_KEY = uuid()
@@ -545,7 +546,7 @@ export class DashboardTile extends React.Component {
   }
 
   isTitleOverFlow = () => {
-    const dashboardTileTitleElement = document.querySelector(`#dashboard-tile-title-${this.COMPONENT_KEY}`)
+    const dashboardTileTitleElement = this.dashboardTileTitleRef.current
     if (dashboardTileTitleElement) {
       const elemWidth = dashboardTileTitleElement.getBoundingClientRect().width
       const parentWidth = dashboardTileTitleElement.parentElement.getBoundingClientRect().width
@@ -662,6 +663,7 @@ export class DashboardTile extends React.Component {
     return (
       <div className='dashboard-tile-title-container'>
         <span
+          ref={this.dashboardTileTitleRef}
           className='dashboard-tile-title'
           id={`dashboard-tile-title-${this.COMPONENT_KEY}`}
           data-tip={this.state.isTitleOverFlow ? this.props.tile.title || this.props.tile.query || 'Untitled' : null}
