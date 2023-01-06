@@ -1,20 +1,15 @@
 import React, { Component } from 'react'
-import { scaleLinear, scaleBand } from 'd3-scale'
-import _isEqual from 'lodash.isequal'
-import _get from 'lodash.get'
-
 import { Axes } from '../Axes'
 import { Bars } from '../Bars'
 
 import {
   getBandScale,
-  getTickValues,
   chartPropTypes,
   chartDefaultProps,
-  getMinAndMaxValues,
   shouldRecalculateLongestLabel,
   getLinearScales,
 } from '../helpers.js'
+
 import { shouldLabelsRotate, getLongestLabelInPx } from '../../../js/Util'
 import { getDataFormatting } from '../../../props/defaults'
 
@@ -29,10 +24,6 @@ export default class ChataBarChart extends Component {
 
   static propTypes = chartPropTypes
   static defaultProps = chartDefaultProps
-
-  componentDidMount = () => {
-    this.props.onLabelChange()
-  }
 
   shouldComponentUpdate = () => {
     return true

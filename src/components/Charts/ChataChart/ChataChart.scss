@@ -35,7 +35,18 @@
       fill-opacity: 0.7 !important;
     }
   }
-  .line-dot,
+  .line-dot {
+    .line-dot-inner-circle {
+      transition: opacity 0.3s ease;
+      opacity: 0 !important;
+      outline: none !important;
+    }
+    &:hover .line-dot-inner-circle,
+    &.active .line-dot-inner-circle {
+      opacity: 1 !important;
+    }
+  }
+
   .vertex-dot {
     transition: opacity 0.3s ease;
     opacity: 0 !important;
@@ -69,10 +80,12 @@
 
   g.tick {
     transition: opacity 0.3s ease;
+    pointer-events: none;
   }
 
   .react-autoql-heatmap-chart g.tick line,
   .react-autoql-bubble-chart g.tick line {
+    pointer-events: none;
     opacity: 0 !important; // we need to render the tick lines so the bounding box calcs are correct. But we dont want to see them
   }
 

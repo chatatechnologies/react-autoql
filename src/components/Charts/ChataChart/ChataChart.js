@@ -38,8 +38,6 @@ export default class ChataChart extends Component {
     const chartColors = getChartColorVars()
 
     this.PADDING = 6
-    this.INNER_PADDING = 0.25
-    this.OUTER_PADDING = 0.5
     this.LEGEND_PADDING = 50
     this.AXIS_LABEL_PADDING = 30
     this.DEFAULT_BOTTOM_MARGIN = 100
@@ -343,11 +341,6 @@ export default class ChataChart extends Component {
     const { deltaX, deltaY, rightAxisMargin, bottomAxisMargin } = this.state
     const { numberColumnIndices, numberColumnIndices2, columns, enableDynamicCharting } = this.props
 
-    let innerPadding = this.INNER_PADDING
-    if (numberColumnIndices.length > 1 || numberColumnIndices2 > 1) {
-      innerPadding = 0.1
-    }
-
     const { amountOfNumberColumns, amountOfStringColumns } = getColumnTypeAmounts(columns)
     const hasMultipleNumberColumns = amountOfNumberColumns > 1
     const hasMultipleStringColumns = amountOfStringColumns > 1
@@ -370,8 +363,6 @@ export default class ChataChart extends Component {
       key: undefined,
       data: this.state.data || this.props.data,
       colorScale: this.colorScale,
-      innerPadding,
-      outerPadding: this.OUTER_PADDING,
       colorScale: this.colorScale,
       height: innerHeight,
       width: innerWidth,

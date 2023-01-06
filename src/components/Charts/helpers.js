@@ -396,12 +396,6 @@ export const getLegendLocation = (seriesArray, displayType) => {
   return undefined
 }
 
-export const getBandScales = ({ props, columnIndex, axis }) => {
-  const scale = getBandScale({ props, columnIndex, axis })
-  const scale2 = getBandScale({ props, columnIndex, axis })
-  return { scale, scale2 }
-}
-
 export const getRangeForAxis = (props, axis) => {
   let rangeStart
   let rangeEnd
@@ -425,15 +419,11 @@ export const getRangeForAxis = (props, axis) => {
   return [rangeStart, rangeEnd]
 }
 
-export const getBandScale = ({ props, columnIndex, axis }) => {
+export const getBandScale = ({ props, columnIndex, axis, outerPadding = 0.5, innerPadding = 0.1 }) => {
   const range = getRangeForAxis(props, axis)
   const domain = props.data.map((d) => d[columnIndex])
 
-  const scale = scaleBand()
-    .domain(domain)
-    .range(range)
-    .paddingInner(props.innerPadding)
-    .paddingOuter(props.outerPadding)
+  const scale = scaleBand().domain(domain).range(range).paddingInner(innerPadding).paddingOuter(outerPadding)
 
   scale.type = 'BAND'
   scale.tickLabels = getTickValues({ scale, props, axis, initialTicks: domain })

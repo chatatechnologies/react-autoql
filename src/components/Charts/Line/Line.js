@@ -1,5 +1,4 @@
 import React, { Component } from 'react'
-import _get from 'lodash.get'
 import { chartElementDefaultProps, chartElementPropTypes, getKey, getTooltipContent } from '../helpers'
 
 export default class Line extends Component {
@@ -70,7 +69,7 @@ export default class Line extends Component {
           points={polylinePoints}
           fill='none'
           stroke={this.props.colorScale(i)}
-          strokeWidth={1}
+          strokeWidth={1.5}
           opacity={0.7}
         />
       )
@@ -81,7 +80,7 @@ export default class Line extends Component {
     return polylines
   }
 
-  makeDots = (numVisibleSeries) => {
+  makeDots = () => {
     const { columns, legendColumn, numberColumnIndices, stringColumnIndex, dataFormatting, yScale, xScale } = this.props
 
     const allDots = []
@@ -109,18 +108,15 @@ export default class Line extends Component {
             dataFormatting,
           })
 
-          allDots.push(
+          const circle = (
             <circle
+              className='line-dot-inner-circle'
               key={getKey(colIndex, index)}
-              className={`line-dot${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
               cy={cy}
               cx={xScale(d[stringColumnIndex]) + xShift}
               r={3}
-              onClick={() => this.onDotClick(d, colIndex, index)}
-              data-tip={tooltip}
-              data-for={this.props.chartTooltipID}
               style={{
-                cursor: 'pointer',
+                pointerEvents: 'none',
                 stroke: this.props.colorScale(i),
                 strokeWidth: 2,
                 strokeOpacity: 0.7,
@@ -131,7 +127,36 @@ export default class Line extends Component {
                     ? this.props.colorScale(i)
                     : this.props.backgroundColor || '#fff',
               }}
-            />,
+            />
+          )
+
+          // Render a bigger transparent circle so it's easier for the user
+          // to hover over and see tooltip
+          const transparentHoverCircle = (
+            <circle
+              key={`hover-circle-${getKey(colIndex, index)}`}
+              cy={cy}
+              cx={xScale(d[stringColumnIndex]) + xShift}
+              r={10}
+              style={{
+                stroke: 'transparent',
+                fill: 'transparent',
+                cursor: 'pointer',
+              }}
+            />
+          )
+
+          allDots.push(
+            <g
+              className={`line-dot${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
+              key={`circle-group-${getKey(colIndex, index)}`}
+              onClick={() => this.onDotClick(d, colIndex, index)}
+              data-tip={tooltip}
+              data-for={this.props.chartTooltipID}
+            >
+              {circle}
+              {transparentHoverCircle}
+            </g>,
           )
         })
       }
@@ -153,7 +178,7 @@ export default class Line extends Component {
     return (
       <g data-test='line'>
         {this.makePolyline()}
-        {this.makeDots(numVisibleSeries)}
+        {this.makeDots()}
       </g>
     )
   }

@@ -5,7 +5,7 @@ import { Columns } from '../Columns'
 import {
   chartDefaultProps,
   chartPropTypes,
-  getBandScales,
+  getBandScale,
   getLinearScales,
   shouldRecalculateLongestLabel,
 } from '../helpers.js'
@@ -62,13 +62,11 @@ export default class ChataColumnChart extends Component {
       numberColumnIndices2 = props.visibleSeriesIndices2
     }
 
-    const xScale = getBandScales({
+    this.xScale = getBandScale({
       props,
       columnIndex: props.stringColumnIndex,
       axis: 'x',
     })
-
-    this.xScale = xScale.scale
 
     const yScalesAndTicks = getLinearScales({
       props,
