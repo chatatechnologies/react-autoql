@@ -38,6 +38,7 @@ let autoCompleteArray = []
 export class DashboardTile extends React.Component {
   constructor(props) {
     super(props)
+    this.dashboardTileTitleRef = React.createRef()
 
     this.COMPONENT_KEY = uuid()
     this.FIRST_QUERY_RESPONSE_KEY = uuid()
@@ -55,6 +56,7 @@ export class DashboardTile extends React.Component {
       isBottomExecuting: false,
       suggestions: [],
       isSecondQueryInputOpen: false,
+      isTitleOverFlow: false,
     }
   }
 
@@ -125,6 +127,9 @@ export class DashboardTile extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    if (prevProps.tile !== this.props.tile) {
+      this.setState({ isTitleOverFlow: this.isTitleOverFlow() })
+    }
     // If query or title change from props (due to undo for example), update state
     if (_get(this.props, 'tile.title') !== _get(prevProps, 'tile.title')) {
       this.setState({ title: _get(this.props, 'tile.title') })
@@ -540,6 +545,15 @@ export class DashboardTile extends React.Component {
     })
   }
 
+  isTitleOverFlow = () => {
+    const dashboardTileTitleElement = this.dashboardTileTitleRef.current
+    if (dashboardTileTitleElement) {
+      const elemWidth = dashboardTileTitleElement.getBoundingClientRect().width
+      const parentWidth = dashboardTileTitleElement.parentElement.getBoundingClientRect().width
+      return elemWidth > parentWidth
+    }
+    return false
+  }
   renderHeader = () => {
     if (this.props.isEditing) {
       return (
@@ -617,6 +631,8 @@ export class DashboardTile extends React.Component {
               <input
                 className='dashboard-tile-input title'
                 placeholder='Add descriptive title (optional)'
+                data-tip='Title'
+                data-for='react-autoql-dashboard-toolbar-btn-tooltip'
                 value={this.state.title}
                 onChange={(e) => this.setState({ title: e.target.value })}
                 onFocus={() => this.setState({ isTitleInputFocused: true })}
@@ -646,7 +662,15 @@ export class DashboardTile extends React.Component {
 
     return (
       <div className='dashboard-tile-title-container'>
-        <span className='dashboard-tile-title'>{this.props.tile.title || this.props.tile.query || 'Untitled'}</span>
+        <span
+          ref={this.dashboardTileTitleRef}
+          className='dashboard-tile-title'
+          id={`dashboard-tile-title-${this.COMPONENT_KEY}`}
+          data-tip={this.state.isTitleOverFlow ? this.props.tile.title || this.props.tile.query || 'Untitled' : null}
+          data-for='react-autoql-dashboard-tile-title-tooltip'
+        >
+          {this.props.tile.title || this.props.tile.query || 'Untitled'}
+        </span>
         <div className='dashboard-tile-title-divider'></div>
       </div>
     )
