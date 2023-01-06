@@ -255,13 +255,10 @@ export const calculateMinAndMaxSums = (data, stringColumnIndex, numberColumnIndi
   const positiveSumsObject = {}
   const negativeSumsObject = {}
 
-  console.log({ stringColumnIndex, numberColumnIndices })
-
   // Loop through data array to get maximum and minimum sums of postive and negative values
   // These will be used to get the max and min values for the x Scale (data values)
   data.forEach((row) => {
     const label = row[stringColumnIndex]
-    console.log({ label })
     numberColumnIndices.forEach((colIndex) => {
       const rawValue = row[colIndex]
       let value = Number(rawValue)
@@ -290,8 +287,6 @@ export const calculateMinAndMaxSums = (data, stringColumnIndex, numberColumnIndi
   // Get max and min sums from those sum objects
   const maxValue = getMaxValueFromKeyValueObj(positiveSumsObject)
   const minValue = getMinValueFromKeyValueObj(negativeSumsObject)
-
-  console.log({ minValue, maxValue })
 
   return {
     maxValue,
@@ -428,14 +423,14 @@ export const getRangeForAxis = (props, axis) => {
   return [rangeStart, rangeEnd]
 }
 
-export const getBandScale = ({ props, columnIndex, axis, outerPadding = 0.5, innerPadding = 0.1 }) => {
+export const getBandScale = ({ props, columnIndex, axis, outerPadding = 0.5, innerPadding = 0.1, domain }) => {
   const range = getRangeForAxis(props, axis)
-  const domain = props.data.map((d) => d[columnIndex])
+  const scaleDomain = domain ?? props.data.map((d) => d[columnIndex])
 
-  const scale = scaleBand().domain(domain).range(range).paddingInner(innerPadding).paddingOuter(outerPadding)
+  const scale = scaleBand().domain(scaleDomain).range(range).paddingInner(innerPadding).paddingOuter(outerPadding)
 
   scale.type = 'BAND'
-  scale.tickLabels = getTickValues({ scale, props, axis, initialTicks: domain })
+  scale.tickLabels = getTickValues({ scale, props, axis, initialTicks: scaleDomain })
   scale.tickSizePx = getTickSize(props, scale)
 
   return scale

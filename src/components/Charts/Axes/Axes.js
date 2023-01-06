@@ -71,7 +71,7 @@ export default class Axes extends React.Component {
         key={this.BOTTOM_AXIS_KEY}
         orient='Bottom'
         scale={this.props.xScale}
-        ticks={this.props.xTicks}
+        ticks={this.props.xScale?.tickLabels}
         translateY={0}
         translateX={0}
         // rotateLabels={this.props.rotateLabels}
@@ -95,7 +95,7 @@ export default class Axes extends React.Component {
         ref={(r) => (this.leftAxis = r)}
         orient='Left'
         scale={this.props.yScale}
-        ticks={this.props.yTicks}
+        ticks={this.props.yScale?.tickLabels}
         col={this.props.yCol}
         title={this.props.leftAxisTitle}
         showGridLines={this.props.yGridLines}
@@ -145,7 +145,7 @@ export default class Axes extends React.Component {
             key={this.RIGHT_AXIS_KEY}
             orient='Right'
             scale={this.props.yScale2}
-            ticks={this.props.yTicks2}
+            ticks={this.props.yScale2?.tickLabels}
             col={this.props.yCol2}
             title={this.props.rightAxisTitle}
             showGridLines={false}

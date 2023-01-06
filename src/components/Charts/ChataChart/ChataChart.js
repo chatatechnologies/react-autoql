@@ -341,8 +341,6 @@ export default class ChataChart extends Component {
     const { deltaX, deltaY, rightAxisMargin, bottomAxisMargin } = this.state
     const { numberColumnIndices, numberColumnIndices2, columns, enableDynamicCharting } = this.props
 
-    console.log({ numberColumnIndices, numberColumnIndices2 })
-
     const { amountOfNumberColumns, amountOfStringColumns } = getColumnTypeAmounts(columns)
     const hasMultipleNumberColumns = amountOfNumberColumns > 1
     const hasMultipleStringColumns = amountOfStringColumns > 1

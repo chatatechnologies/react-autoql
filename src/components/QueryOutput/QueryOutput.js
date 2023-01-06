@@ -1805,8 +1805,6 @@ export class QueryOutput extends React.Component {
       filters: combinedFilters,
     }
 
-    console.log({ usePivotData })
-
     return (
       <ErrorBoundary>
         <ChataChart

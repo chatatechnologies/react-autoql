@@ -106,9 +106,6 @@ export default class ChataBarChart extends Component {
           xCol={xCol}
           xCol2={xCol2}
           yCol={this.props.columns[this.props.stringColumnIndex]}
-          yTicks={this.yTickValues}
-          xTicks={this.xTickValues}
-          xTicks2={this.xTickValues2}
           linearAxis='x'
           rotateLabels={this.rotateLabels}
           hasRightLegend={this.props.legendLocation === 'right'}

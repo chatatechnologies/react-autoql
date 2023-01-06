@@ -132,8 +132,9 @@ export default class Axis extends Component {
         }).formattedLabel
       })
 
-    if (this.props.ticks?.length) {
-      axis.tickValues(this.props.ticks)
+    const tickValues = this.props.scale?.tickLabels
+    if (tickValues?.length) {
+      axis.tickValues(tickValues)
     }
 
     if (this.props.orient === 'Left' && this.props.innerWidth) {
