@@ -255,10 +255,13 @@ export const calculateMinAndMaxSums = (data, stringColumnIndex, numberColumnIndi
   const positiveSumsObject = {}
   const negativeSumsObject = {}
 
+  console.log({ stringColumnIndex, numberColumnIndices })
+
   // Loop through data array to get maximum and minimum sums of postive and negative values
   // These will be used to get the max and min values for the x Scale (data values)
   data.forEach((row) => {
     const label = row[stringColumnIndex]
+    console.log({ label })
     numberColumnIndices.forEach((colIndex) => {
       const rawValue = row[colIndex]
       let value = Number(rawValue)
@@ -287,6 +290,8 @@ export const calculateMinAndMaxSums = (data, stringColumnIndex, numberColumnIndi
   // Get max and min sums from those sum objects
   const maxValue = getMaxValueFromKeyValueObj(positiveSumsObject)
   const minValue = getMinValueFromKeyValueObj(negativeSumsObject)
+
+  console.log({ minValue, maxValue })
 
   return {
     maxValue,
@@ -332,7 +337,11 @@ export const getMinValueFromKeyValueObj = (obj) => {
   return minValue
 }
 
-export const getMinAndMaxValues = (data, numberColumnIndices, isChartScaled) => {
+export const getMinAndMaxValues = (data, numberColumnIndices, isChartScaled, sum, stringColumnIndex) => {
+  if (sum) {
+    return calculateMinAndMaxSums(data, stringColumnIndex, numberColumnIndices)
+  }
+
   try {
     const maxValuesFromArrays = []
     const minValuesFromArrays = []
@@ -464,8 +473,8 @@ export const getLinearScale = ({ props, minValue, maxValue, axis, tickValues, nu
   return scale
 }
 
-export const getLinearScales = ({ props, columnIndices1, columnIndices2, axis }) => {
-  const minMax = getMinAndMaxValues(props.data, columnIndices1, props.isChartScaled)
+export const getLinearScales = ({ props, columnIndices1, columnIndices2, axis, stacked }) => {
+  const minMax = getMinAndMaxValues(props.data, columnIndices1, props.isChartScaled, stacked, props.stringColumnIndex)
   const minValue = minMax.minValue
   const maxValue = minMax.maxValue
   const tempScale1 = getLinearScale({ props, minValue, maxValue, axis })
@@ -477,7 +486,7 @@ export const getLinearScales = ({ props, columnIndices1, columnIndices2, axis })
   }
 
   // If there are 2 y axes, we need to line up the number of ticks and their values
-  const minMax2 = getMinAndMaxValues(props.data, columnIndices2, props.isChartScaled)
+  const minMax2 = getMinAndMaxValues(props.data, columnIndices2, props.isChartScaled, stacked, props.stringColumnIndex)
   const minValue2 = minMax2.minValue
   const maxValue2 = minMax2.maxValue
 
@@ -660,17 +669,30 @@ export const getTickValues = ({ scale, initialTicks, props, axis, numTicks }) =>
 }
 
 export const mergeBboxes = (boundingBoxes) => {
-  let minLeft
-  let maxBottom
-  let maxRight
-  let minTop
+  if (!boundingBoxes?.length || !boundingBoxes.find((bbox) => !!bbox)) {
+    return undefined
+  }
 
-  boundingBoxes.forEach(({ left, bottom, right, top }) => {
-    if (minLeft === undefined || left < minLeft) minLeft = left
-    if (maxBottom === undefined || bottom > maxBottom) maxBottom = bottom
-    if (maxRight === undefined || right > maxRight) maxRight = right
-    if (minTop === undefined || top < minTop) minTop = top
-  })
+  try {
+    let minLeft
+    let maxBottom
+    let maxRight
+    let minTop
 
-  return { x: minLeft, y: minTop, height: Math.abs(maxBottom - minTop), width: Math.abs(maxRight - minLeft) }
+    boundingBoxes.forEach(({ left, bottom, right, top } = {}) => {
+      if (isNaN(left) || isNaN(bottom) || isNaN(right) || isNaN(top)) {
+        return
+      }
+
+      if (minLeft === undefined || left < minLeft) minLeft = left
+      if (maxBottom === undefined || bottom > maxBottom) maxBottom = bottom
+      if (maxRight === undefined || right > maxRight) maxRight = right
+      if (minTop === undefined || top < minTop) minTop = top
+    })
+
+    return { x: minLeft, y: minTop, height: Math.abs(maxBottom - minTop), width: Math.abs(maxRight - minLeft) }
+  } catch (error) {
+    console.error(error)
+    return undefined
+  }
 }

@@ -169,7 +169,7 @@ export default class ChataChart extends Component {
         const leftAxisBBox = this.innerChartRef?.axesRef?.leftAxis?.ref?.getBoundingClientRect()
         const bottomAxisBBox = this.innerChartRef?.axesRef?.bottomAxis?.ref?.getBoundingClientRect()
         const leftBottomBBox = mergeBboxes([leftAxisBBox, bottomAxisBBox])
-        const leftBottomHeight = leftBottomBBox?.height
+        const leftBottomHeight = leftBottomBBox?.height ?? containerHeight
         const containerHeight = this.props.height ?? this.chartContainerRef?.clientHeight ?? 0
         let bottomAxisMargin = Math.ceil(leftBottomHeight - containerHeight + this.PADDING)
         if (bottomAxisMargin < 0) {
@@ -340,6 +340,8 @@ export default class ChataChart extends Component {
   getCommonChartProps = () => {
     const { deltaX, deltaY, rightAxisMargin, bottomAxisMargin } = this.state
     const { numberColumnIndices, numberColumnIndices2, columns, enableDynamicCharting } = this.props
+
+    console.log({ numberColumnIndices, numberColumnIndices2 })
 
     const { amountOfNumberColumns, amountOfStringColumns } = getColumnTypeAmounts(columns)
     const hasMultipleNumberColumns = amountOfNumberColumns > 1

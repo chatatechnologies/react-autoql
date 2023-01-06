@@ -81,42 +81,6 @@ export default class ChataBarChart extends Component {
     this.xScale2 = xScalesAndTicks.scale2
     this.xTickValues2 = this.xScale2?.tickLabels
   }
-  //   const { minValue, maxValue } = getMinAndMaxValues(props.data, numberColumnIndices, this.props.isChartScaled)
-
-  //   const rangeStart = props.leftMargin
-  //   let rangeEnd = props.width - props.rightMargin
-  //   if (rangeEnd < rangeStart) {
-  //     rangeEnd = rangeStart
-  //   }
-
-  //   this.xScale = scaleLinear().domain([minValue, maxValue]).range([rangeStart, rangeEnd])
-  //   this.xScale.minValue = minValue
-  //   this.xScale.maxValue = maxValue
-  //   this.xScale.type = 'LINEAR'
-
-  //   this.yScale = scaleBand()
-  //     .domain(props.data.map((d) => d[props.stringColumnIndex]))
-  //     .range([props.height - props.bottomMargin, props.topMargin])
-  //     .paddingInner(props.innerPadding)
-  //     .paddingOuter(props.outerPadding)
-
-  //   this.yLabelArray = props.data.map((el) => el[props.stringColumnIndex])
-  //   this.barHeight = props.innerHeight / props.data.length
-  //   this.yTickValues = getTickValues({
-  //     tickSize: this.barHeight,
-  //     fullSize: props.innerHeight,
-  //     initialTicks: this.yLabelArray,
-  //   })
-
-  //   this.xLabelArray = this.xScale.ticks()
-  //   this.tickWidth = props.innerWidth / this.xLabelArray?.length
-  //   this.xTickValues = getTickValues({
-  //     tickSize: this.tickWidth,
-  //     fullSize: props.innerWidth,
-  //     initialTicks: this.xLabelArray,
-  //     scale: this.xScale,
-  //   })
-  // }
 
   render = () => {
     this.setChartData(this.props)
@@ -141,16 +105,16 @@ export default class ChataBarChart extends Component {
           yScale={this.yScale}
           xCol={xCol}
           xCol2={xCol2}
-          linearAxis='x'
           yCol={this.props.columns[this.props.stringColumnIndex]}
           yTicks={this.yTickValues}
           xTicks={this.xTickValues}
           xTicks2={this.xTickValues2}
+          linearAxis='x'
           rotateLabels={this.rotateLabels}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}
-          hasXDropdown={this.props.enableDynamicCharting && this.props.hasMultipleNumberColumns}
-          hasYDropdown={this.props.enableDynamicCharting && this.props.hasMultipleStringColumns}
+          hasXDropdown={this.props.hasNumberDropdown}
+          hasYDropdown={this.props.hasStringDropdown}
           leftAxisTitle={this.props.stringAxisTitle}
           bottomAxisTitle={this.props.numberAxisTitle}
           topAxisTitle={this.props.numberAxisTitle2}

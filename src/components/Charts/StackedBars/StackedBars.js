@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import _get from 'lodash.get'
 import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, getKey } from '../helpers'
 
-export default class StackedColumns extends Component {
+export default class StackedBars extends Component {
   static propTypes = chartElementPropTypes
   static defaultProps = chartElementDefaultProps
 

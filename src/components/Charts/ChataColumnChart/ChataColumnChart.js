@@ -35,7 +35,7 @@ export default class ChataColumnChart extends Component {
     }
   }
 
-  setLabelRotationValue = (props) => {
+  setLabelRotationValue = () => {
     const rotateLabels = shouldLabelsRotate(this.xScale?.tickSizePx, this.longestLabelWidth)
 
     if (typeof rotateLabels !== 'undefined') {

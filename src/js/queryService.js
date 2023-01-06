@@ -105,7 +105,7 @@ export const runQueryNewPage = ({ queryId, domain, apiKey, token, page, cancelTo
   }
 
   const data = {
-    v2_dates: 1,
+    date_format: 'ISO8601',
   }
 
   const config = {
@@ -170,7 +170,7 @@ export const runQueryOnly = (params = {}) => {
     orders,
     filters: tableFilters,
     page_size: pageSize,
-    v2_dates: 1,
+    date_format: 'ISO8601',
   }
 
   if (!query || !query.trim()) {
@@ -334,7 +334,7 @@ export const runDrilldown = ({
     orders,
     test,
     page_size: pageSize,
-    v2_dates: 1,
+    date_format: 'ISO8601',
   }
 
   const config = {

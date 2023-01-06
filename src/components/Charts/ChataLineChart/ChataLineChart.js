@@ -81,33 +81,6 @@ export default class ChataLineChart extends Component {
     this.yTickValues = this.yScale.tickLabels
     this.yScale2 = yScalesAndTicks.scale2
     this.yTickValues2 = this.yScale2?.tickLabels
-
-    // const rangeEnd = props.topMargin
-    // let rangeStart = props.height - props.bottomMargin
-    // if (rangeStart < rangeEnd) {
-    //   rangeStart = rangeEnd
-    // }
-
-    // this.yScale = scaleLinear().domain([minValue, maxValue]).range([rangeStart, rangeEnd])
-    // this.yScale.minValue = minValue
-    // this.yScale.maxValue = maxValue
-    // this.yScale.type = 'LINEAR'
-
-    // this.tickWidth = props.innerWidth / (this.xScale?.domain()?.length || 1)
-    // this.xTickValues = getTickValues({
-    //   tickSize: this.tickWidth,
-    //   fullSize: props.innerWidth,
-    //   initialTicks: this.xScale.domain(),
-    // })
-
-    // this.yLabelArray = this.yScale.ticks()
-    // this.tickHeight = props.innerHeight / this.yLabelArray?.length
-    // this.yTickValues = getTickValues({
-    //   tickSize: this.tickHeight,
-    //   fullSize: props.innerHeight,
-    //   initialTicks: this.yLabelArray,
-    //   scale: this.yScale,
-    // })
   }
 
   render = () => {
@@ -132,7 +105,7 @@ export default class ChataLineChart extends Component {
           yScale={this.yScale}
           yScale2={this.yScale2}
           xCol={this.props.columns[this.props.stringColumnIndex]}
-          yCol={this.props.columns[this.props.numberColumnIndex]}
+          yCol={yCol}
           yCol2={yCol2}
           xTicks={this.xTickValues}
           yTicks={this.yTickValues}
@@ -140,8 +113,8 @@ export default class ChataLineChart extends Component {
           rotateLabels={this.rotateLabels}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}
-          hasXDropdown={this.props.enableDynamicCharting && this.props.hasMultipleStringColumns}
-          hasYDropdown={this.props.enableDynamicCharting && this.props.hasMultipleNumberColumns}
+          hasXDropdown={this.props.hasStringDropdown}
+          hasYDropdown={this.props.hasNumberDropdown}
           leftAxisTitle={this.props.numberAxisTitle}
           rightAxisTitle={this.props.numberAxisTitle2}
           bottomAxisTitle={this.props.stringAxisTitle}
