@@ -414,7 +414,7 @@ export const getRangeForAxis = (props, axis) => {
     }
   } else if (axis === 'y') {
     const innerHeight = props.height
-    rangeEnd = 0
+    rangeEnd = props.deltaY
     rangeStart = rangeEnd + innerHeight
 
     if (rangeStart < rangeEnd) {

@@ -23,6 +23,7 @@ import {
   dataStructureChanged,
   getLegendLabelsForMultiSeries,
   getLegendLocation,
+  mergeBboxes,
 } from '../helpers.js'
 import { getColumnTypeAmounts } from '../../QueryOutput/columnHelpers'
 import { getChartColorVars, getThemeValue } from '../../../theme/configureTheme'
@@ -36,10 +37,10 @@ export default class ChataChart extends Component {
     super(props)
     const chartColors = getChartColorVars()
 
-    this.PADDING = 5
+    this.PADDING = 6
     this.INNER_PADDING = 0.25
     this.OUTER_PADDING = 0.5
-    this.LEGEND_PADDING = 10
+    this.LEGEND_PADDING = 50
     this.AXIS_LABEL_PADDING = 30
     this.DEFAULT_BOTTOM_MARGIN = 100
 
@@ -56,8 +57,6 @@ export default class ChataChart extends Component {
       data,
       rightAxisMargin: 0,
       bottomAxisMargin: 0,
-      rightLegendMargin: 0,
-      bottomLegendMargin: 0,
       deltaX: 0,
       deltaY: 0,
       // isLoading: true,
@@ -153,7 +152,6 @@ export default class ChataChart extends Component {
   }
 
   onAxesRenderComplete = () => {
-    console.log('AXES RENDER COMPLETE')
     this.adjustChartPosition()
   }
 
@@ -169,21 +167,24 @@ export default class ChataChart extends Component {
         const deltaY =
           -1 * Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.topAxis?.ref)?.height ?? 0) + this.PADDING
 
-        const rightAxisMargin =
-          Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.rightAxis)?.width ?? 0) + this.PADDING
-
         // Get height difference in px to determine proper chart height
-        const axesBBoxHeight = Math.ceil(axesBBox?.height ?? 0)
-        const axesBBoxYBottom = Math.ceil(axesBBox?.y ?? 0) + axesBBoxHeight
+        const leftAxisBBox = this.innerChartRef?.axesRef?.leftAxis?.ref?.getBoundingClientRect()
+        const bottomAxisBBox = this.innerChartRef?.axesRef?.bottomAxis?.ref?.getBoundingClientRect()
+        const leftBottomBBox = mergeBboxes([leftAxisBBox, bottomAxisBBox])
+        const leftBottomHeight = leftBottomBBox?.height
         const containerHeight = this.props.height ?? this.chartContainerRef?.clientHeight ?? 0
-        console.log({ containerHeight, axesBBoxHeight })
-        let bottomAxisMargin = axesBBoxHeight - containerHeight + this.PADDING
+        let bottomAxisMargin = Math.ceil(leftBottomHeight - containerHeight + this.PADDING)
         if (bottomAxisMargin < 0) {
           bottomAxisMargin = 0
         }
 
-        // const bottomAxisMargin =
-        //   Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.bottomAxis?.ref)?.height ?? 0) + this.PADDING
+        let rightAxisMargin =
+          Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.rightAxis)?.width ?? 0) + this.PADDING
+
+        // const hasLegend = !!getLegendLocation(this.props.numberColumnIndices, this.props.type)
+        // if (hasLegend) {
+        //   rightAxisMargin += this.LEGEND_PADDING
+        // }
 
         this.setState({ deltaX, deltaY, rightAxisMargin, bottomAxisMargin }, () => {
           this.setState({ isLoading: false })
@@ -203,14 +204,10 @@ export default class ChataChart extends Component {
       innerWidth = 0
     }
 
-    console.log({ bottomAxisMargin })
-
     let innerHeight = Math.floor(containerHeight - bottomAxisMargin - deltaY)
     if (innerHeight < 0) {
       innerHeight = 0
     }
-
-    console.log({ bottomAxisMargin, deltaY })
 
     const outerWidth = Math.ceil(containerWidth)
     const outerHeight = Math.ceil(containerHeight)
@@ -343,7 +340,7 @@ export default class ChataChart extends Component {
   }
 
   getCommonChartProps = () => {
-    const { rightLegendMargin, bottomLegendMargin, deltaX, deltaY, rightAxisMargin, bottomAxisMargin } = this.state
+    const { deltaX, deltaY, rightAxisMargin, bottomAxisMargin } = this.state
     const { numberColumnIndices, numberColumnIndices2, columns, enableDynamicCharting } = this.props
 
     let innerPadding = this.INNER_PADDING
@@ -378,8 +375,6 @@ export default class ChataChart extends Component {
       colorScale: this.colorScale,
       height: innerHeight,
       width: innerWidth,
-      rightLegendMargin,
-      bottomLegendMargin,
       deltaX,
       deltaY,
       rightAxisMargin,

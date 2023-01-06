@@ -65,12 +65,9 @@ export default class Axis extends Component {
     this.renderAxis()
     // Render a second time so the title knows where to be placed
     // based on the width of the tick labels
-    // setTimeout(() => {
     this.forceUpdate(() => {
-      console.log('ON AXIS RENDER COMPLETE', this.props.orient)
       this.props.onAxisRenderComplete(this.props.orient)
     })
-    // }, 1000)
   }
 
   componentDidUpdate = (prevProps) => {
@@ -139,26 +136,10 @@ export default class Axis extends Component {
       axis.tickValues(this.props.ticks)
     }
 
-    // if (this.props.orient === 'Left') {
-    //   axis.tickSizeInner(-this.props.innerWidth)
-    // } else if (this.props.orient === 'Bottom') {
-    //   axis.tickSizeInner(10)
-    // } else if (this.props.orient === 'Right') {
-    //   axis.tickSizeInner(0)
-    // }
-
-    // axis.tickSizeOuter(20)
-    if (
-      this.props.orient === 'Left' && // && this.props.linearAxis === 'y'
-      this.props.innerWidth
-    ) {
+    if (this.props.orient === 'Left' && this.props.innerWidth) {
       axis.tickSizeInner(-this.props.innerWidth)
-    } else if (
-      this.props.orient === 'Bottom' && // && this.props.linearAxis === 'x'
-      this.props.innerHeight
-    ) {
+    } else if (this.props.orient === 'Bottom' && this.props.innerHeight) {
       axis.tickSizeInner(this.props.innerHeight)
-      // axis.tickSizeInner(200)
     } else {
       axis.tickSizeInner(0)
     }
@@ -173,15 +154,15 @@ export default class Axis extends Component {
         .selectAll('.tick text')
         .style('font-family', 'inherit')
         .style('text-anchor', 'end')
-        .attr('transform', 'rotate(-45)')
-        .attr('dy', '0.5em')
+        .attr('transform', `rotate(-45, 0, ${this.props.innerHeight})`)
+        .attr('dy', '1em')
         .attr('dx', '-0.5em')
         .attr('fill-opacity', '1')
     } else if (this.props.orient === 'Bottom' && !this.props.rotateLabels) {
       select(this.axisElement)
         .selectAll('.tick text')
-        .style('transform', 'rotate(0)')
-        .style('text-anchor', 'middle')
+        .attr('transform', 'rotate(0)')
+        .attr('text-anchor', 'middle')
         .attr('dy', '1em')
         .attr('dx', '0')
         .attr('fill-opacity', '1')
@@ -209,19 +190,25 @@ export default class Axis extends Component {
 
     select(this.axisElement).selectAll('.axis path').style('display', 'none')
 
-    select(this.axisElement)
-      .selectAll('.axis line')
-      .style('stroke-width', '1px')
-      .style('stroke', 'currentColor')
-      .style('opacity', '0.08')
-      .style('shape-rendering', 'crispedges')
+    if (this.props.scale?.type !== 'LINEAR') {
+      select(this.axisElement).selectAll('g.tick').select('line').style('opacity', 0)
+    } else {
+      select(this.axisElement)
+        .selectAll('.axis line')
+        .style('stroke-width', '1px')
+        .style('stroke', 'currentColor')
+        .style('opacity', '0.08')
+        .style('shape-rendering', 'crispedges')
 
-    // Make tick line at 0 darker
-    select(this.axisElement)
-      .selectAll('g.tick')
-      .filter((d) => d == 0)
-      .select('line')
-      .style('opacity', 0.3)
+      select(this.axisElement).selectAll('g.tick').select('line').style('opacity', 0.1)
+
+      // Make tick line at 0 darker
+      select(this.axisElement)
+        .selectAll('g.tick')
+        .filter((d) => d == 0)
+        .select('line')
+        .style('opacity', 0.3)
+    }
 
     if (this.axisElement) {
       // svg coordinate system is different from clientRect coordinate system
@@ -292,37 +279,15 @@ export default class Axis extends Component {
 
   renderBottomAxisTitle = () => {
     const xLabelBbox = getBBoxFromRef(this.bottomTitleRef)
-    const xLabelTextWidth = xLabelBbox ? xLabelBbox.width : 0
     const xLabelTextHeight = this.getTitleTextHeight(this.bottomTitleRef)
-    const halfTextHeight = xLabelTextHeight / 2
-
-    const range = this.props.scale?.range() || [0, 0]
-    const innerWidth = range[1] - range[0]
-    const xCenter = innerWidth / 2
-
-    console.log('RENDERING BOTTOM AXIS TITLE. THIS IS THE LABEL BBOX:', _cloneDeep(this.labelBBox))
-    /* <text> element's y coordinate is anchored on the middle baseline,
-    so we need to shift the element up by half of it's height */
-
-    // let xLabelY = labelBBoxYBottom + this.AXIS_TITLE_PADDING + 0.5 * xLabelTextHeight
-    // const xBorderX = xCenter - xLabelTextWidth / 2 - this.AXIS_TITLE_BORDER_PADDING_LEFT
-    // let xBorderY = xLabelY - halfTextHeight - this.AXIS_TITLE_BORDER_PADDING_TOP
-    // if (this.props.enableAjaxTableData) {
-    //   // Add extra space for row count display
-    //   xBorderY = xBorderY - 20
-    //   xLabelY = xLabelY - 20
-    // }
-    // const xBorderWidth = xLabelTextWidth + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
-    // const xBorderHeight = xLabelTextHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP
 
     const labelBBoxHeight = this.labelBBox?.height ?? 0
 
     const xLabelX = this.props.innerWidth / 2
-    const xLabelY = this.props.innerHeight + labelBBoxHeight + 20
+    const xLabelY = this.props.innerHeight + labelBBoxHeight + 2 * this.AXIS_TITLE_PADDING
 
-    const xLabelBoundingRect = this.bottomTitleRef?.getBoundingClientRect()
-    const xLabelHeight = xLabelBoundingRect?.height ?? 0
-    const xLabelWidth = xLabelBoundingRect?.width ?? 0
+    const xLabelHeight = xLabelBbox?.height ?? 0
+    const xLabelWidth = xLabelBbox?.width ?? 0
 
     const xBorderWidth = xLabelWidth + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
     const xBorderHeight = xLabelTextHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP

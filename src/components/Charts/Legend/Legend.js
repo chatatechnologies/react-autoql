@@ -9,15 +9,16 @@ import { scaleOrdinal } from 'd3-scale'
 
 import legendColor from '../D3Legend/D3Legend'
 
-import { removeFromDOM } from '../../../js/Util.js'
+import { getBBoxFromRef, removeFromDOM } from '../../../js/Util.js'
 
 export default class Legend extends Component {
   constructor(props) {
     super(props)
 
-    this.LEGEND_WIDTH = 130
+    this.MAX_LEGEND_WIDTH = 200
     this.LEGEND_ID = `axis-${uuid()}`
     this.BUTTON_PADDING = 5
+    this.LEFT_PADDING = 20
     this.swatchElements = []
   }
 
@@ -32,7 +33,6 @@ export default class Legend extends Component {
     numberColumnIndices: PropTypes.arrayOf(PropTypes.number),
     topMargin: PropTypes.number,
     bottomMargin: PropTypes.number,
-    rightLegendMargin: PropTypes.number,
     scale: PropTypes.func,
     translate: PropTypes.string,
     height: PropTypes.number,
@@ -97,7 +97,7 @@ export default class Legend extends Component {
     svg
       .select('.legendTitle')
       .style('font-weight', 'bold')
-      .style('transform', 'translate(0, -5px)')
+      // .style('transform', 'translate(0, -5px)')
       .attr('data-test', 'legend-title')
       .attr('fill-opacity', 0.9)
   }
@@ -106,7 +106,7 @@ export default class Legend extends Component {
     svg
       .select('.legendTitle')
       .style('font-weight', 'bold')
-      .style('transform', 'translate(0, -5px)')
+      // .style('transform', 'translate(0, -5px)')
       .attr('data-test', 'legend-title')
       .append('tspan')
       .text('  ▼')
@@ -162,9 +162,9 @@ export default class Legend extends Component {
           .style('font-family', 'inherit')
           .style('font-size', '10px')
 
-        if (this.props.legendTitle) {
-          this.legendSVG.attr('transform', 'translate(0,10)')
-        }
+        // if (this.props.legendTitle) {
+        //   this.legendSVG.attr('transform', 'translate(0,10)')
+        // }
 
         var legendOrdinal = legendColor()
           .orient('vertical')
@@ -273,7 +273,7 @@ export default class Legend extends Component {
 
   render = () => {
     // const numSeries = this.props.numberColumnIndices?.length || 0
-    // const legendDx = (this.LEGEND_WIDTH * (numSeries - 1)) / 2
+    // const legendDx = (this.MAX_LEGEND_WIDTH * (numSeries - 1)) / 2
     // const marginLeft = this.props.leftMargin || 0
 
     let legendClippingHeight = this.props.height // -
@@ -290,6 +290,8 @@ export default class Legend extends Component {
     //   translateX = this.props.axesRef.getBBox().width
     // }
 
+    const legendWidth = getBBoxFromRef(this.rightLegendElement)?.width ?? 0
+
     return (
       <g data-test='legend'>
         {this.props.placement === 'right' && (
@@ -300,19 +302,8 @@ export default class Legend extends Component {
             id={this.LEGEND_ID}
             data-test='right-legend'
             className='legendOrdinal right-legend'
-            // transform={`translate(0, ${this.props.legendTitle ? '30' : '25'})`}
+            transform={`translate(${this.LEFT_PADDING}, ${this.props.legendTitle ? 10 : 0})`}
           >
-            {/* <clipPath id={`legend-clip-area-${this.LEGEND_ID}`}>
-              <rect
-                ref={(el) => {
-                  this.legendClippingContainer = el
-                }}
-                id={`legend-bounding-box-${this.LEGEND_ID}`}
-                height={legendClippingHeight}
-                width={this.props.rightLegendMargin}
-                // style={{ transform: `translate(0px, -30px)` }}
-              />
-            </clipPath> */}
             {/* {this.props.legendColumn && (
               <LegendSelector
                 {...this.props}
@@ -331,6 +322,17 @@ export default class Legend extends Component {
             )} */}
           </g>
         )}
+        {/* <clipPath id={`legend-clip-area-${this.LEGEND_ID}`}> */}
+        <rect
+          ref={(el) => {
+            this.legendClippingContainer = el
+          }}
+          id={`legend-bounding-box-${this.LEGEND_ID}`}
+          height={this.props.height}
+          width={legendWidth + this.LEFT_PADDING}
+          style={{ stroke: 'transparent', fill: 'transparent', pointerEvents: 'none' }}
+        />
+        {/* </clipPath> */}
         {this.props.placement === 'bottom' && (
           <g
             ref={(el) => {

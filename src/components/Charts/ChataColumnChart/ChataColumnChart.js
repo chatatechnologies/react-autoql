@@ -81,8 +81,6 @@ export default class ChataColumnChart extends Component {
     this.yTickValues = this.yScale.tickLabels
     this.yScale2 = yScalesAndTicks.scale2
     this.yTickValues2 = this.yScale2?.tickLabels
-
-    console.log('yscale range:', this.yScale?.range())
   }
 
   render = () => {

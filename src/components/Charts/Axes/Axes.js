@@ -26,7 +26,6 @@ export default class Axes extends React.Component {
   }
 
   onAxisRenderComplete = (orient) => {
-    console.log('completed:', orient)
     switch (orient) {
       case 'Right': {
         this.rightAxisComplete = true
@@ -50,26 +49,16 @@ export default class Axes extends React.Component {
     }
 
     if (!this.shouldRenderRightAxis() && !this.rightAxisComplete) {
-      console.log('NO RIGHT AXIS')
       this.rightAxisComplete = true
     }
 
     if (!this.shouldRenderTopAxis() && !this.topAxisComplete) {
-      console.log('NO TOP AXIS')
       this.topAxisComplete = true
     }
 
     if (this.topAxisComplete && this.bottomAxisComplete && this.leftAxisComplete && this.rightAxisComplete) {
       this.forceUpdate(() => {
-        console.log('ON AXES RENDER COMPLETE')
         this.props.onAxesRenderComplete()
-      })
-    } else {
-      console.log('one of the axes is not completed', {
-        top: this.topAxisComplete,
-        bottom: this.bottomAxisComplete,
-        left: this.leftAxisComplete,
-        right: this.rightAxisComplete,
       })
     }
   }
@@ -103,6 +92,7 @@ export default class Axes extends React.Component {
       <Axis
         {...this.props}
         key={this.LEFT_AXIS_KEY}
+        ref={(r) => (this.leftAxis = r)}
         orient='Left'
         scale={this.props.yScale}
         ticks={this.props.yTicks}
@@ -180,11 +170,7 @@ export default class Axes extends React.Component {
       legendScale = this.props.xScale
     }
 
-    let translateX = this.LEGEND_PADDING
-    const rightAxisWidth = getBBoxFromRef(this.rightAxisWithoutLegend?.ref)?.width
-    if (rightAxisWidth) {
-      translateX += rightAxisWidth
-    }
+    const translateX = getBBoxFromRef(this.rightAxisWithoutLegend?.ref)?.width ?? 0
 
     return (
       <g transform={`translate(${translateX},0)`}>
