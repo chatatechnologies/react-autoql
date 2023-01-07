@@ -112,8 +112,6 @@ export default class ChataStackedColumnChart extends Component {
           rotateLabels={this.rotateLabels}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}
-          hasXDropdown={this.props.hasStringDropdown}
-          hasYDropdown={this.props.hasNumberDropdown}
           leftAxisTitle={this.props.numberAxisTitle}
           rightAxisTitle={this.props.numberAxisTitle2}
           bottomAxisTitle={this.props.stringAxisTitle}

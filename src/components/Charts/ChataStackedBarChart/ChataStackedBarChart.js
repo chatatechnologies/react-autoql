@@ -113,8 +113,6 @@ export default class ChataStackedBarChart extends Component {
           rotateLabels={this.rotateLabels}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}
-          hasXDropdown={this.props.hasNumberDropdown}
-          hasYDropdown={this.props.hasStringDropdown}
           leftAxisTitle={this.props.stringAxisTitle}
           bottomAxisTitle={this.props.numberAxisTitle}
           topAxisTitle={this.props.numberAxisTitle2}
