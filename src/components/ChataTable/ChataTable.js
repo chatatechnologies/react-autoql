@@ -54,25 +54,30 @@ export default class ChataTable extends React.Component {
       initialSort: !this.supportsInfiniteScroll ? _cloneDeep(props.initialParams?.sorters) : undefined,
       initialFilter: !this.supportsInfiniteScroll ? _cloneDeep(props.initialParams?.filters) : undefined,
       dataSorting: (sorters) => {
-        this.lockTableHeight()
-        const formattedSorters = sorters.map((sorter) => {
-          return {
-            dir: sorter.dir,
-            field: sorter.field,
+        if (this._isMounted) {
+          this.lockTableHeight()
+          const formattedSorters = sorters.map((sorter) => {
+            return {
+              dir: sorter.dir,
+              field: sorter.field,
+            }
+          })
+
+          if (this.tableParams?.sorters && !_isEqual(formattedSorters, this.tableParams?.sorters)) {
+            this.isSorting = true
+            this.setLoading(true)
           }
-        })
-        if (this.tableParams?.sorters && !_isEqual(formattedSorters, this.tableParams?.sorters) && this._isMounted) {
-          this.isSorting = true
-          this.setState({ loading: true })
         }
       },
-      dataFiltering: (filters) => {
-        this.lockTableHeight()
-        const headerFilters = this.ref?.table?.getHeaderFilters()
+      dataFiltering: () => {
+        if (this._isMounted) {
+          this.lockTableHeight()
+          const headerFilters = this.ref?.table?.getHeaderFilters()
 
-        if (headerFilters && !_isEqual(headerFilters, this.tableParams?.filters) && this._isMounted) {
-          this.isFiltering = true
-          this.setState({ loading: true })
+          if (headerFilters && !_isEqual(headerFilters, this.tableParams?.filters)) {
+            this.isFiltering = true
+            this.setLoading(true)
+          }
         }
       },
       dataSorted: (sorters, rows) => {
@@ -82,7 +87,7 @@ export default class ChataTable extends React.Component {
             props.onSorterCallback(sorters)
           }
           setTimeout(() => {
-            this.setState({ loading: false })
+            this.setLoading(false)
           }, 0)
         } else {
           this.unlockTableHeight()
@@ -102,7 +107,7 @@ export default class ChataTable extends React.Component {
           }
 
           setTimeout(() => {
-            this.setState({ loading: false })
+            this.setLoading(false)
           }, 0)
         }
       },
@@ -212,13 +217,15 @@ export default class ChataTable extends React.Component {
     this.filterTagElements = undefined
   }
 
+  setLoading = (loading) => {
+    // Don't update state unnecessarily
+    if (loading !== this.state.loading) {
+      this.setState({ loading })
+    }
+  }
+
   lockTableHeight = () => {
-    if (
-      (this.tableHeight || this.tableContainer?.style) &&
-      !this.state.pageLoading &&
-      !this.firstRender &&
-      !this.props.isResizing
-    ) {
+    if (this.tableContainer?.style && !this.state.pageLoading && !this.firstRender && !this.props.isResizing) {
       const height = this.tableHeight || getComputedStyle(this.tableContainer)?.height
       this.tableContainer.style.flexBasis = height
     }
