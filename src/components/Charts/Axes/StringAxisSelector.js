@@ -25,6 +25,10 @@ export default class StringAxisSelector extends React.Component {
   }
 
   renderSelectorContent = ({ position, childRect, popoverRect }) => {
+    if (this.props.hidden) {
+      return null
+    }
+
     let maxHeight = 300
     const minHeight = 35
     const padding = 50
@@ -82,7 +86,7 @@ export default class StringAxisSelector extends React.Component {
       >
         <rect
           {...this.props.childProps}
-          className='axis-label-border'
+          className={`axis-label-border ${this.props.hidden ? 'hidden' : ''}`}
           data-test='axis-label-border'
           onClick={this.openSelector}
           fill='transparent'

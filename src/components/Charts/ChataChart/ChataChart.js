@@ -294,7 +294,7 @@ export default class ChataChart extends Component {
 
     try {
       const numberColumns = columns.filter((col, i) => {
-        return columnIndices.includes(i)
+        return columnIndices?.includes(i)
       })
 
       if (!numberColumns?.length) {
@@ -349,7 +349,7 @@ export default class ChataChart extends Component {
       (colIndex) => columns?.[colIndex] && !columns[colIndex].isSeriesHidden,
     )
 
-    const visibleSeriesIndices2 = numberColumnIndices2.filter(
+    const visibleSeriesIndices2 = numberColumnIndices2?.filter(
       (colIndex) => columns?.[colIndex] && !columns[colIndex].isSeriesHidden,
     )
 

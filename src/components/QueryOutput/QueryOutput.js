@@ -268,15 +268,18 @@ export class QueryOutput extends React.Component {
           this.props.onRowChange()
         }, 0)
       }
+
       // If columns changed, regenerate data if necessary
       // If table filtered or columns changed, regenerate pivot data and supported display types
       // Using a count variable so it doesn't have to deep compare on every udpate
-      if (
-        this.state.columnChangeCount !== prevState.columnChangeCount ||
-        this.state.visibleRowChangeCount !== prevState.visibleRowChangeCount
-      ) {
-        this.setTableConfig()
-        this.props.onColumnChange(this.state.columns)
+      const columnsChanged = this.state.columnChangeCount !== prevState.columnChangeCount
+      const rowsChanged = this.state.visibleRowChangeCount !== prevState.visibleRowChangeCount
+      if (columnsChanged || rowsChanged) {
+        if (columnsChanged) {
+          this.setTableConfig()
+          this.props.onColumnChange(this.state.columns)
+        }
+
         if (this.shouldGeneratePivotData()) {
           this.generatePivotData({
             isFirstGeneration: true,

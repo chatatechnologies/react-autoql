@@ -312,20 +312,19 @@ export default class Axis extends Component {
         >
           {this.renderAxisTitleText()}
         </text>
-        {this.props.hasDropdown && (
-          <AxisSelector
-            {...this.props}
-            column={this.props.col}
-            positions={['top', 'bottom']}
-            align='center'
-            childProps={{
-              x: xBorderX,
-              y: xBorderY,
-              width: xBorderWidth,
-              height: xBorderHeight,
-            }}
-          />
-        )}
+        <AxisSelector
+          {...this.props}
+          hidden={!this.props.hasDropdown}
+          column={this.props.col}
+          positions={['top', 'bottom']}
+          align='center'
+          childProps={{
+            x: xBorderX,
+            y: xBorderY,
+            width: xBorderWidth,
+            height: xBorderHeight,
+          }}
+        />
       </g>
     )
   }
@@ -410,21 +409,20 @@ export default class Axis extends Component {
         >
           {this.renderAxisTitleText()}
         </text>
-        {this.props.hasDropdown && (
-          <AxisSelector
-            {...this.props}
-            column={this.props.col}
-            positions={['right']}
-            align='center'
-            childProps={{
-              transform,
-              width: yBorderWidth,
-              height: yBorderHeight,
-              x: yBorderX,
-              y: yBorderY,
-            }}
-          />
-        )}
+        <AxisSelector
+          {...this.props}
+          hidden={!this.props.hasDropdown}
+          column={this.props.col}
+          positions={['right']}
+          align='center'
+          childProps={{
+            transform,
+            width: yBorderWidth,
+            height: yBorderHeight,
+            x: yBorderX,
+            y: yBorderY,
+          }}
+        />
       </g>
     )
   }
@@ -509,21 +507,20 @@ export default class Axis extends Component {
         >
           {this.renderAxisTitleText()}
         </text>
-        {this.props.hasDropdown && (
-          <AxisSelector
-            {...this.props}
-            column={this.props.col}
-            positions={['left']}
-            align='center'
-            childProps={{
-              transform,
-              width: yBorderWidth,
-              height: yBorderHeight,
-              x: yBorderX,
-              y: yBorderY,
-            }}
-          />
-        )}
+        <AxisSelector
+          {...this.props}
+          hidden={!this.props.hasDropdown}
+          column={this.props.col}
+          positions={['left']}
+          align='center'
+          childProps={{
+            transform,
+            width: yBorderWidth,
+            height: yBorderHeight,
+            x: yBorderX,
+            y: yBorderY,
+          }}
+        />
       </g>
     )
   }
@@ -560,7 +557,7 @@ export default class Axis extends Component {
     const labelBBoxHeight = this.labelBBox?.height ?? 0
 
     return (
-      <g transform={`translate(${this.props.innerWidth / 2},${this.props.innerHeight + labelBBoxHeight + 40})`}>
+      <g transform={`translate(${this.props.innerWidth / 2},${this.props.innerHeight + labelBBoxHeight + 46})`}>
         <LoadMoreDropdown {...this.props} />
       </g>
     )

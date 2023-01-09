@@ -8,12 +8,19 @@ g.legendOrdinal tspan {
 
 .axis-label-border,
 .legend-title-border {
-  cursor: pointer;
-  stroke: transparent;
-  opacity: 0.5;
+  &.hidden {
+    stroke: transparent;
+    opacity: 0;
+  }
 
-  &:hover {
-    stroke: var(--react-autoql-accent-color) !important;
+  &:not(.hidden) {
+    cursor: pointer;
+    stroke: transparent;
+    opacity: 0.5;
+
+    &:hover {
+      stroke: var(--react-autoql-accent-color) !important;
+    }
   }
 }
 .axis-scaler-border {

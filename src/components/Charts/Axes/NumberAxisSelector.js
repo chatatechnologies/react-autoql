@@ -204,6 +204,10 @@ export default class NumberAxisSelector extends React.Component {
   }
 
   renderSelectorContent = () => {
+    if (this.props.hidden) {
+      return null
+    }
+
     let maxHeight = 300
     const minHeight = 75
     const padding = 100
@@ -399,7 +403,7 @@ export default class NumberAxisSelector extends React.Component {
       >
         <rect
           {...this.props.childProps}
-          className='axis-label-border'
+          className={`axis-label-border ${this.props.hidden ? 'hidden' : ''}`}
           data-test='axis-label-border'
           onClick={this.openSelector}
           fill='transparent'
