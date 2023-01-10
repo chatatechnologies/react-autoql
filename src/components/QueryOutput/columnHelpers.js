@@ -34,67 +34,45 @@ export const isColumnDateType = (col) => {
 }
 
 export const getNumberColumnIndices = (columns) => {
-  const dollarAmtIndices = []
-  const quantityIndices = []
-  const ratioIndices = []
+  const currencyColumnIndices = []
+  const quantityColumnIndices = []
+  const ratioColumnIndices = []
 
   columns.forEach((col, index) => {
     const { type } = col
     if (col.is_visible && !col.pivot) {
       if (type === 'DOLLAR_AMT') {
-        dollarAmtIndices.push(index)
+        currencyColumnIndices.push(index)
       } else if (type === 'QUANTITY') {
-        quantityIndices.push(index)
+        quantityColumnIndices.push(index)
       } else if (type === 'PERCENT' || type === 'RATIO') {
-        ratioIndices.push(index)
+        ratioColumnIndices.push(index)
       }
     }
   })
 
-  let numberColumnIndices
-  let numberColumnIndex
-  let numberColumnIndices2
-  let numberColumnIndex2
+  let numberColumnIndices = []
 
   // Returning highest priority of non-empty arrays
-  if (dollarAmtIndices.length) {
-    if (!numberColumnIndices) {
-      numberColumnIndices = dollarAmtIndices
-      numberColumnIndex = dollarAmtIndices[0]
-    } else if (!numberColumnIndices2) {
-      numberColumnIndices2 = dollarAmtIndices
-      numberColumnIndex2 = dollarAmtIndices[0]
-    }
-  }
-
-  if (quantityIndices.length) {
-    if (!numberColumnIndices) {
-      numberColumnIndices = quantityIndices
-      numberColumnIndex = quantityIndices[0]
-    } else if (!numberColumnIndices2) {
-      numberColumnIndices2 = quantityIndices
-      numberColumnIndex2 = quantityIndices[0]
-    }
-  }
-
-  if (ratioIndices.length) {
-    if (!numberColumnIndices) {
-      numberColumnIndices = ratioIndices
-      numberColumnIndex = ratioIndices[0]
-    } else if (!numberColumnIndices2) {
-      numberColumnIndices2 = ratioIndices
-      numberColumnIndex2 = ratioIndices[0]
-    }
+  if (currencyColumnIndices.length) {
+    numberColumnIndices = currencyColumnIndices
+  } else if (quantityColumnIndices.length) {
+    numberColumnIndices = quantityColumnIndices
+  } else if (ratioColumnIndices.length) {
+    numberColumnIndices = ratioColumnIndices
   }
 
   return {
-    numberColumnIndices: numberColumnIndices ?? [],
-    numberColumnIndex: numberColumnIndex ?? undefined,
-    numberColumnIndices2: numberColumnIndices2 ?? [],
-    numberColumnIndex2: numberColumnIndex2 ?? undefined,
-    dollarAmtIndices,
-    quantityIndices,
-    ratioIndices,
+    numberColumnIndices: numberColumnIndices,
+    numberColumnIndex: numberColumnIndices[0],
+    numberColumnIndices2: [],
+    numberColumnIndex2: undefined,
+    currencyColumnIndices: currencyColumnIndices ?? [],
+    currencyColumnIndex: currencyColumnIndices[0],
+    quantityColumnIndices: quantityColumnIndices ?? [],
+    quantityColumnIndex: quantityColumnIndices[0],
+    ratioColumnIndices: ratioColumnIndices ?? [],
+    ratioColumnIndex: ratioColumnIndices[0],
   }
 }
 

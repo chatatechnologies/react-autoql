@@ -25,22 +25,16 @@ export default class Columns extends Component {
     this.setState({ activeKey: newActiveKey })
   }
 
-  render = () => {
-    const { columns, legendColumn, numberColumnIndices, stringColumnIndex, dataFormatting, xScale, yScale } = this.props
+  getBars = (columnIndices, yScale, startIndex = 0) => {
+    const { columns, legendColumn, stringColumnIndex, dataFormatting, xScale } = this.props
 
-    const visibleSeries = numberColumnIndices.filter((colIndex) => {
-      return !columns[colIndex].isSeriesHidden
-    })
-
-    if (!visibleSeries.length) {
+    if (!columnIndices?.length || !yScale || !this.barWidth) {
       return null
     }
 
+    let visibleIndex = startIndex
     const allBars = []
-    const barWidth = xScale.bandwidth() / visibleSeries.length
-
-    let visibleIndex = 0
-    numberColumnIndices.forEach((colIndex, i) => {
+    columnIndices.forEach((colIndex, i) => {
       if (!columns[colIndex].isSeriesHidden) {
         allBars.push(
           this.props.data.map((d, index) => {
@@ -62,7 +56,7 @@ export default class Columns extends Component {
             }
 
             const x0 = xScale(d[stringColumnIndex])
-            const dX = visibleIndex * barWidth
+            const dX = visibleIndex * this.barWidth
             const finalBarXPosition = x0 + dX
 
             const tooltip = getTooltipContent({
@@ -84,7 +78,7 @@ export default class Columns extends Component {
                 x={finalBarXPosition}
                 y={y}
                 height={height}
-                width={barWidth}
+                width={this.barWidth}
                 onClick={() => this.onColumnClick(d, colIndex, index)}
                 data-tip={tooltip}
                 data-for={this.props.chartTooltipID}
@@ -96,7 +90,35 @@ export default class Columns extends Component {
         visibleIndex += 1
       }
     })
+    return allBars
+  }
 
-    return <g data-test='columns'>{allBars}</g>
+  render = () => {
+    const { columns, numberColumnIndices, numberColumnIndices2, xScale, yScale, yScale2 } = this.props
+
+    const visibleSeries = numberColumnIndices.filter((colIndex) => {
+      return !columns[colIndex].isSeriesHidden
+    })
+
+    const visibleSeries2 = numberColumnIndices2.filter((colIndex) => {
+      return !columns[colIndex].isSeriesHidden
+    })
+
+    if (!visibleSeries.length) {
+      return null
+    }
+
+    const numBars = visibleSeries.length + (visibleSeries2?.length ?? 0)
+    this.barWidth = xScale.bandwidth() / numBars
+
+    const series1Bars = this.getBars(numberColumnIndices, yScale)
+    const series2Bars = this.getBars(numberColumnIndices2, yScale2, visibleSeries?.length)
+
+    return (
+      <g data-test='columns'>
+        {series1Bars}
+        {series2Bars}
+      </g>
+    )
   }
 }

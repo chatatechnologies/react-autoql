@@ -35,6 +35,12 @@ export const MONTH_NAMES = [
   'December',
 ]
 
+export const COLUMN_TYPES = {
+  CURRENCY: 'DOLLAR_AMT',
+  QUANTITY: 'QUANTITY',
+  RATIO: 'RATIO',
+}
+
 export const WEEKDAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 export const SEASON_NAMES = ['SP', 'SU', 'FA', 'HO']

@@ -95,7 +95,9 @@ export default class ChataColumnChart extends Component {
         data-test='react-autoql-column-chart'
         transform={`translate(${this.props.deltaX}, ${this.props.deltaY})`}
       >
-        {this.props.marginAdjustmentFinished && <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />}
+        {this.props.marginAdjustmentFinished && (
+          <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} yScale2={this.yScale2} />
+        )}
         <Axes
           {...this.props}
           ref={(r) => (this.axesRef = r)}

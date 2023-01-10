@@ -239,8 +239,8 @@ export default class ChataChart extends Component {
     }, 100)
   }
 
-  changeNumberColumnIndices = (indices, newColumns) => {
-    this.props.changeNumberColumnIndices(indices, newColumns)
+  changeNumberColumnIndices = (indices, indices2, newColumns) => {
+    this.props.changeNumberColumnIndices(indices, indices2, newColumns)
     // this.setState({ chartID: uuid() })
   }
 
@@ -340,6 +340,8 @@ export default class ChataChart extends Component {
   getCommonChartProps = () => {
     const { deltaX, deltaY, rightAxisMargin, bottomAxisMargin } = this.state
     const { numberColumnIndices, numberColumnIndices2, columns, enableDynamicCharting } = this.props
+
+    console.log({ numberColumnIndices, numberColumnIndices2 })
 
     const { amountOfNumberColumns, amountOfStringColumns } = getColumnTypeAmounts(columns)
     const hasMultipleNumberColumns = amountOfNumberColumns > 1

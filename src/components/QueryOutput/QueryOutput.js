@@ -468,6 +468,12 @@ export class QueryOutput extends React.Component {
         return false
       }
 
+      // To keep dashboards backwards compatible, we need to add
+      // numberColumnIndices2 array to the tableConfig
+      if (!tableConfig.numberColumnIndices2) {
+        tableConfig.numberColumnIndices2 = []
+      }
+
       return true
     } catch (error) {
       return false
@@ -1037,23 +1043,7 @@ export class QueryOutput extends React.Component {
     this.forceUpdate()
   }
 
-  onChangeNumberColumnIndices2 = (indices, newColumns) => {
-    if (!indices) {
-      return
-    }
-
-    if (this.supportsPivot() && !this.supportsDatePivot()) {
-      this.pivotTableConfig.numberColumnIndices2 = indices
-      this.pivotTableConfig.numberColumnIndex2 = indices[0]
-    } else {
-      this.tableConfig.numberColumnIndices2 = indices
-      this.tableConfig.numberColumnIndex2 = indices[0]
-    }
-
-    this.updateColumns(newColumns)
-  }
-
-  onChangeNumberColumnIndices = (indices, newColumns) => {
+  onChangeNumberColumnIndices = (indices, indices2 = [], newColumns) => {
     if (!indices) {
       return
     }
@@ -1061,9 +1051,13 @@ export class QueryOutput extends React.Component {
     if (this.supportsPivot() && !this.supportsDatePivot()) {
       this.pivotTableConfig.numberColumnIndices = indices
       this.pivotTableConfig.numberColumnIndex = indices[0]
+      this.pivotTableConfig.numberColumnIndices2 = indices2
+      this.pivotTableConfig.numberColumnIndex2 = indices2[0]
     } else {
       this.tableConfig.numberColumnIndices = indices
       this.tableConfig.numberColumnIndex = indices[0]
+      this.tableConfig.numberColumnIndices2 = indices2
+      this.tableConfig.numberColumnIndex2 = indices2[0]
     }
 
     this.updateColumns(newColumns)
@@ -1095,13 +1089,23 @@ export class QueryOutput extends React.Component {
 
     // Set number type columns and number series columns (linear axis)
     if (isFirstGeneration || !this.pivotTableConfig.numberColumnIndices) {
-      const { numberColumnIndex, numberColumnIndices, numberColumnIndex2, numberColumnIndices2 } =
-        getNumberColumnIndices(columns)
+      const {
+        numberColumnIndex,
+        numberColumnIndices,
+        numberColumnIndex2,
+        numberColumnIndices2,
+        currencyColumnIndices,
+        quantityColumnIndices,
+        ratioColumnIndices,
+      } = getNumberColumnIndices(columns)
 
       this.pivotTableConfig.numberColumnIndices = numberColumnIndices
       this.pivotTableConfig.numberColumnIndex = numberColumnIndex
       this.pivotTableConfig.numberColumnIndices2 = numberColumnIndices2
       this.pivotTableConfig.numberColumnIndex2 = numberColumnIndex2
+      this.pivotTableConfig.currencyColumnIndices = currencyColumnIndices
+      this.pivotTableConfig.quantityColumnIndices = quantityColumnIndices
+      this.pivotTableConfig.ratioColumnIndices = ratioColumnIndices
     }
 
     if (!_isEqual(prevPivotTableConfig, this.pivotTableConfig)) {
@@ -1130,12 +1134,22 @@ export class QueryOutput extends React.Component {
 
     // Set number type columns and number series columns (linear axis)
     if (!this.tableConfig.numberColumnIndices || !(this.tableConfig.numberColumnIndex >= 0)) {
-      const { numberColumnIndex, numberColumnIndices, numberColumnIndex2, numberColumnIndices2 } =
-        getNumberColumnIndices(columns)
+      const {
+        numberColumnIndex,
+        numberColumnIndices,
+        numberColumnIndex2,
+        numberColumnIndices2,
+        currencyColumnIndices,
+        quantityColumnIndices,
+        ratioColumnIndices,
+      } = getNumberColumnIndices(columns)
       this.tableConfig.numberColumnIndices = numberColumnIndices
       this.tableConfig.numberColumnIndex = numberColumnIndex
       this.tableConfig.numberColumnIndices2 = numberColumnIndices2
       this.tableConfig.numberColumnIndex2 = numberColumnIndex2
+      this.tableConfig.currencyColumnIndices = currencyColumnIndices
+      this.tableConfig.quantityColumnIndices = quantityColumnIndices
+      this.tableConfig.ratioColumnIndices = ratioColumnIndices
     }
 
     // Set legend index if there should be one

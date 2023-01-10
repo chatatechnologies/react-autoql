@@ -1,7 +1,4 @@
 import React, { Fragment } from 'react'
-import _get from 'lodash.get'
-import _isEqual from 'lodash.isequal'
-import _cloneDeep from 'lodash.clonedeep'
 import { v4 as uuid } from 'uuid'
 import { Popover } from 'react-tiny-popover'
 import { SelectableList } from '../../SelectableList'
@@ -9,7 +6,7 @@ import { Button } from '../../Button'
 import { axesDefaultProps, axesPropTypes, dataStructureChanged } from '../helpers'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { Checkbox } from '../../Checkbox'
-import { AGG_TYPES } from '../../../js/Constants'
+import { AGG_TYPES, COLUMN_TYPES } from '../../../js/Constants'
 
 const aggHTMLCodes = {
   sum: <>&Sigma;</>,
@@ -126,16 +123,40 @@ export default class NumberAxisSelector extends React.Component {
     )
   }
 
-  getCurrencyColumns = () => {
-    return this.state.columns?.filter((col) => col.type === 'DOLLAR_AMT')
+  getCheckedIndices = (type) => {
+    const checkedColumns = this.state.checkedColumns?.filter((index) => this.state.columns[index].type === type)
+    return checkedColumns?.length ? checkedColumns : undefined
   }
 
-  getQuantityColumns = () => {
-    return this.state.columns?.filter((col) => col.type === 'QUANTITY')
+  isColumnChecked = (col) => {
+    return !!col && this.state.checkedColumns?.includes(Number(col.field))
   }
 
-  getRatioColumns = () => {
-    return this.state.columns?.filter((col) => col.type === 'RATIO')
+  getCurrencyColumns = (selected) => {
+    let currencyColumns = this.state.columns?.filter((col) => col.type === COLUMN_TYPES.CURRENCY)
+    if (selected) {
+      return currencyColumns?.filter((col) => this.isColumnChecked(col))
+    }
+
+    return currencyColumns
+  }
+
+  getQuantityColumns = (selected) => {
+    let quantityColumns = this.state.columns?.filter((col) => col.type === COLUMN_TYPES.QUANTITY)
+    if (selected) {
+      return quantityColumns?.filter((col) => this.isColumnChecked(col))
+    }
+
+    return quantityColumns
+  }
+
+  getRatioColumns = (selected) => {
+    let ratioColumns = this.state.columns?.filter((col) => col.type === COLUMN_TYPES.RATIO)
+    if (selected) {
+      return ratioColumns?.filter((col) => this.isColumnChecked(col))
+    }
+
+    return ratioColumns
   }
 
   getSelectableListItems = (type) => {
@@ -198,7 +219,7 @@ export default class NumberAxisSelector extends React.Component {
     })
 
     this.setState({
-      activeNumberType: 'DOLLAR_AMT',
+      activeNumberType: COLUMN_TYPES.CURRENCY,
       checkedColumns: newCheckedColumns,
     })
   }
@@ -222,16 +243,16 @@ export default class NumberAxisSelector extends React.Component {
     const { selectedColumns, checkedColumns, columns } = this.state
 
     const currencyColumns = this.getCurrencyColumns()
-    const currencyListItems = this.getSelectableListItems('DOLLAR_AMT')
-    const allCurrencyChecked = this.getAllChecked('DOLLAR_AMT')
+    const currencyListItems = this.getSelectableListItems(COLUMN_TYPES.CURRENCY)
+    const allCurrencyChecked = this.getAllChecked(COLUMN_TYPES.CURRENCY)
 
     const quantityColumns = this.getQuantityColumns()
-    const quantityListItems = this.getSelectableListItems('QUANTITY')
-    const allQuantityChecked = this.getAllChecked('QUANTITY')
+    const quantityListItems = this.getSelectableListItems(COLUMN_TYPES.QUANTITY)
+    const allQuantityChecked = this.getAllChecked(COLUMN_TYPES.QUANTITY)
 
     const ratioColumns = this.getRatioColumns()
-    const ratioListItems = this.getSelectableListItems('RATIO')
-    const allRatioChecked = this.getAllChecked('RATIO')
+    const ratioListItems = this.getSelectableListItems(COLUMN_TYPES.RATIO)
+    const allRatioChecked = this.getAllChecked(COLUMN_TYPES.RATIO)
 
     return (
       <div
@@ -376,7 +397,11 @@ export default class NumberAxisSelector extends React.Component {
             type='primary'
             disabled={!this.state.checkedColumns?.length}
             onClick={() => {
-              this.props.changeNumberColumnIndices(this.state.checkedColumns, this.state.columns)
+              const numberColumnIndices = this.getCheckedIndices(COLUMN_TYPES.CURRENCY) ?? []
+              const numberColumnIndices2 =
+                this.getCheckedIndices(COLUMN_TYPES.QUANTITY) ?? this.getCheckedIndices(COLUMN_TYPES.RATIO)
+
+              this.props.changeNumberColumnIndices(numberColumnIndices, numberColumnIndices2, this.state.columns)
               this.closeSelector()
             }}
           >
