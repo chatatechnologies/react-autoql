@@ -35,6 +35,7 @@ export default class OptionsToolbar extends React.Component {
     onErrorCallback: PropTypes.func,
     onNewNotificationCallback: PropTypes.func,
     deleteMessageCallback: PropTypes.func,
+    createDataAlertCallback: PropTypes.func,
     onCSVDownloadStart: PropTypes.func,
     onCSVDownloadFinish: PropTypes.func,
     onCSVDownloadProgress: PropTypes.func,
@@ -51,6 +52,7 @@ export default class OptionsToolbar extends React.Component {
     onErrorCallback: () => {},
     onNewNotificationCallback: () => {},
     deleteMessageCallback: () => {},
+    createDataAlertCallback: () => {},
     onColumnVisibilitySave: () => {},
     onCSVDownloadStart: () => {},
     onCSVDownloadFinish: () => {},
@@ -411,6 +413,7 @@ export default class OptionsToolbar extends React.Component {
             <li
               onClick={() => {
                 this.setState({ activeMenu: 'notification' })
+                this.props.createDataAlertCallback()
               }}
             >
               <Icon style={{ verticalAlign: 'middle', marginRight: '7px' }} type='notification' />

@@ -287,6 +287,11 @@ export class DataMessenger extends React.Component {
     }, 300)
   }
 
+  closeDataMessenger = () => {
+    this.dmRef.setState({ open: false })
+    this.setState({ isVisible: false })
+  }
+
   openExploreQueries = (topic) => {
     this.setState({ activePage: 'explore-queries' }, () => {
       if (topic && this.exploreQueriesRef?.animateQITextAndSubmit) {
@@ -653,10 +658,7 @@ export class DataMessenger extends React.Component {
       <Fragment>
         <div className='react-autoql-header-left-container'>
           <button
-            onClick={() => {
-              this.dmRef.setState({ open: false })
-              this.setState({ isVisible: false })
-            }}
+            onClick={this.closeDataMessenger}
             className='react-autoql-drawer-header-btn close'
             data-tip={lang.closeDataMessenger}
             data-for='react-autoql-header-tooltip'
@@ -722,6 +724,7 @@ export class DataMessenger extends React.Component {
           autoChartAggregations={this.props.autoChartAggregations}
           popoverParentElement={this.messengerDrawerRef}
           dataPageSize={dataPageSize}
+          createDataAlertCallback={this.closeDataMessenger}
         />
       </ErrorBoundary>
     )
@@ -759,6 +762,7 @@ export class DataMessenger extends React.Component {
             enableDrilldowns: false,
             enableReportProblem: false,
           }}
+          createDataAlertCallback={this.closeDataMessenger}
         />
       </ErrorBoundary>
     )
