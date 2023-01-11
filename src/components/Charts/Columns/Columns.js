@@ -100,7 +100,7 @@ export default class Columns extends Component {
       return !columns[colIndex].isSeriesHidden
     })
 
-    const visibleSeries2 = numberColumnIndices2.filter((colIndex) => {
+    const visibleSeries2 = numberColumnIndices2?.filter((colIndex) => {
       return !columns[colIndex].isSeriesHidden
     })
 
@@ -108,11 +108,14 @@ export default class Columns extends Component {
       return null
     }
 
-    const numBars = visibleSeries.length + (visibleSeries2?.length ?? 0)
+    const numBarsSeries1 = visibleSeries.length
+    const numBarsSeries2 = yScale2 ? visibleSeries2?.length ?? 0 : 0
+    const numBars = numBarsSeries1 + numBarsSeries2
+
     this.barWidth = xScale.bandwidth() / numBars
 
     const series1Bars = this.getBars(numberColumnIndices, yScale)
-    const series2Bars = this.getBars(numberColumnIndices2, yScale2, visibleSeries?.length)
+    const series2Bars = this.getBars(numberColumnIndices2, yScale2, numBarsSeries1)
 
     return (
       <g data-test='columns'>

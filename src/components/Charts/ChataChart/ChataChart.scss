@@ -38,7 +38,8 @@
   .line-dot {
     .line-dot-inner-circle {
       transition: opacity 0.3s ease;
-      opacity: 0 !important;
+      // opacity: 0 !important;
+      opacity: 1 !important;
       outline: none !important;
     }
     &:hover .line-dot-inner-circle,
@@ -171,7 +172,6 @@
 
     &.checked .agg-type-symbol {
       color: var(--react-autoql-accent-color);
-      font-weight: 600;
     }
   }
 
@@ -212,6 +212,7 @@
     .agg-type-symbol {
       display: inline-block;
       width: 20px;
+      font-weight: 600;
     }
   }
 

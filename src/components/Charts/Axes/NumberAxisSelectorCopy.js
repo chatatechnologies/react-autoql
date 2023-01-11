@@ -1,5 +1,4 @@
 import React, { Fragment } from 'react'
-import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
 import { Popover } from 'react-tiny-popover'
 import { SelectableList } from '../../SelectableList'
@@ -20,10 +19,6 @@ export default class NumberAxisSelector extends React.Component {
     super(props)
 
     this.COMPONENT_KEY = uuid()
-
-    this.currencySelectRef
-    this.quantitySelectRef
-    this.ratioSelectRef
 
     this.state = {
       isOpen: false,
@@ -397,15 +392,9 @@ export default class NumberAxisSelector extends React.Component {
             type='primary'
             disabled={!this.state.checkedColumns?.length}
             onClick={() => {
-              let checkedCurrencyIndices = this.getCheckedIndices(COLUMN_TYPES.CURRENCY)
-              let checkedQuantityIndices = this.getCheckedIndices(COLUMN_TYPES.QUANTITY)
-              let checkedRatioIndices = this.getCheckedIndices(COLUMN_TYPES.RATIO)
-
-              const numberColumnIndices = checkedCurrencyIndices ?? checkedQuantityIndices ?? checkedRatioIndices ?? []
-              let numberColumnIndices2 = checkedQuantityIndices ?? checkedRatioIndices ?? []
-              if (_isEqual(numberColumnIndices, checkedQuantityIndices)) {
-                numberColumnIndices2 = checkedRatioIndices ?? []
-              }
+              const numberColumnIndices = this.getCheckedIndices(COLUMN_TYPES.CURRENCY) ?? []
+              const numberColumnIndices2 =
+                this.getCheckedIndices(COLUMN_TYPES.QUANTITY) ?? this.getCheckedIndices(COLUMN_TYPES.RATIO)
 
               this.props.changeNumberColumnIndices(numberColumnIndices, numberColumnIndices2, this.state.columns)
               this.closeSelector()

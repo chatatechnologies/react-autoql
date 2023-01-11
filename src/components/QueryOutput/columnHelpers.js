@@ -51,20 +51,23 @@ export const getNumberColumnIndices = (columns) => {
     }
   })
 
-  let numberColumnIndices = []
+  let allNumberColumnIndices = []
 
   // Returning highest priority of non-empty arrays
   if (currencyColumnIndices.length) {
-    numberColumnIndices = currencyColumnIndices
+    allNumberColumnIndices = currencyColumnIndices
   } else if (quantityColumnIndices.length) {
-    numberColumnIndices = quantityColumnIndices
+    allNumberColumnIndices = quantityColumnIndices
   } else if (ratioColumnIndices.length) {
-    numberColumnIndices = ratioColumnIndices
+    allNumberColumnIndices = ratioColumnIndices
   }
 
+  const numberColumnIndex = allNumberColumnIndices[0]
+  const numberColumnIndices = !isNaN(numberColumnIndex) ? [numberColumnIndex] : []
+
   return {
-    numberColumnIndices: numberColumnIndices,
-    numberColumnIndex: numberColumnIndices[0],
+    numberColumnIndex,
+    numberColumnIndices,
     numberColumnIndices2: [],
     numberColumnIndex2: undefined,
     currencyColumnIndices: currencyColumnIndices ?? [],

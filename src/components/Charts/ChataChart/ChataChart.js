@@ -16,7 +16,7 @@ import { ChataStackedLineChart } from '../ChataStackedLineChart'
 import { Spinner } from '../../Spinner'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import { svgToPng, getBBoxFromRef, sortDataByDate } from '../../../js/Util.js'
+import { svgToPng, getBBoxFromRef, sortDataByDate, getCurrencySymbol } from '../../../js/Util.js'
 import {
   chartContainerDefaultProps,
   chartContainerPropTypes,
@@ -27,7 +27,7 @@ import {
 } from '../helpers.js'
 import { getColumnTypeAmounts } from '../../QueryOutput/columnHelpers'
 import { getChartColorVars, getThemeValue } from '../../../theme/configureTheme'
-import { AGG_TYPES } from '../../../js/Constants'
+import { AGG_TYPES, COLUMN_TYPES } from '../../../js/Constants'
 import { aggregateData } from './aggregate'
 
 import './ChataChart.scss'
@@ -291,6 +291,7 @@ export default class ChataChart extends Component {
   getNumberAxisTitle = (columnIndices) => {
     const { columns } = this.props
     let title = ''
+    let unit = ''
 
     try {
       const numberColumns = columns.filter((col, i) => {
@@ -303,45 +304,51 @@ export default class ChataChart extends Component {
 
       // If there are different titles for any of the columns, return a generic label based on the type
       const allTitlesEqual = !numberColumns.find((col) => {
-        title = col.display_name !== numberColumns[0].display_name
+        return col.display_name !== numberColumns[0].display_name
       })
+
+      const columnType = numberColumns?.[0]?.type
 
       if (allTitlesEqual) {
         title = numberColumns?.[0]?.display_name
+      } else {
+        if (columnType === COLUMN_TYPES.CURRENCY) {
+          title = 'Amount'
+        } else if (columnType === COLUMN_TYPES.QUANTITY) {
+          title = 'Quantity'
+        } else if (columnType === COLUMN_TYPES.RATIO) {
+          title = 'Ratio'
+        }
       }
 
-      const columnType = numberColumns?.[0]?.type
-      if (columnType === 'DOLLAR_AMT') {
-        title = 'Amount'
-      } else if (columnType === 'QUANTITY') {
-        title = 'Quantity'
-      } else if (columnType === 'RATIO') {
-        title = 'Ratio'
-      } else if (columnType === 'PERCENT') {
-        title = 'Percent'
+      if (columnType === COLUMN_TYPES.CURRENCY) {
+        unit = getCurrencySymbol(this.props.dataFormatting) ?? ''
       }
 
       const aggTypes = numberColumns.map((col) => col.aggType)
       const allAggTypesSame = aggTypes.every((aggType) => aggType === aggTypes[0])
 
+      let aggTypeDisplayName = ''
       if (allAggTypesSame) {
-        const aggTypeDisplayName = AGG_TYPES.find((agg) => agg.value === numberColumns[0].aggType)?.displayName
-        if (aggTypeDisplayName) {
-          title = `${title} (${aggTypeDisplayName})`
-        }
+        aggTypeDisplayName = AGG_TYPES.find((agg) => agg.value === numberColumns[0].aggType)?.displayName
       }
+
+      let fullTitle = title
+      if (unit || aggTypeDisplayName) {
+        const spacer = !!unit && !!aggTypeDisplayName ? ' ' : ''
+        fullTitle = `${title} (${aggTypeDisplayName}${spacer}${unit})`
+      }
+
+      return fullTitle
     } catch (error) {
       console.error(error)
+      return title
     }
-
-    return title
   }
 
   getCommonChartProps = () => {
     const { deltaX, deltaY, rightAxisMargin, bottomAxisMargin } = this.state
     const { numberColumnIndices, numberColumnIndices2, columns, enableDynamicCharting } = this.props
-
-    console.log({ numberColumnIndices, numberColumnIndices2 })
 
     const { amountOfNumberColumns, amountOfStringColumns } = getColumnTypeAmounts(columns)
     const hasMultipleNumberColumns = amountOfNumberColumns > 1

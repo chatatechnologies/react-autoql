@@ -35,6 +35,20 @@ export const makeEmptyArray = (w, h, value = '') => {
   return arr
 }
 
+export const getCurrencySymbol = (dataFormatting) => {
+  try {
+    const formattedParts = new Intl.NumberFormat(dataFormatting.languageCode, {
+      style: 'currency',
+      currency: dataFormatting.currencyCode,
+    }).formatToParts(0)
+    const symbol = formattedParts.find((part) => part?.type === 'currency')?.value
+    return symbol
+  } catch (error) {
+    console.error(error)
+    return
+  }
+}
+
 export const isDayJSDateValid = (date) => {
   return date !== 'Invalid Date'
 }

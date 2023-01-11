@@ -9,7 +9,7 @@ import { dataFormattingType } from '../../props/types'
 import { dataFormattingDefault } from '../../props/defaults'
 import { AGG_TYPES } from '../../js/Constants'
 
-const DEFAULT_INNER_PADDING = 0.1
+const DEFAULT_INNER_PADDING = 0.2
 const DEFAULT_OUTER_PADDING = 0.5
 
 export const chartContainerPropTypes = {

@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import { Axes } from '../Axes'
 import { Columns } from '../Columns'
+import { Line } from '../Line'
 
 import {
   chartDefaultProps,
@@ -96,7 +97,17 @@ export default class ChataColumnChart extends Component {
         transform={`translate(${this.props.deltaX}, ${this.props.deltaY})`}
       >
         {this.props.marginAdjustmentFinished && (
-          <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} yScale2={this.yScale2} />
+          <>
+            <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />
+            {!!this.yScale2 && (
+              <Line
+                {...this.props}
+                numberColumnIndices={this.props.numberColumnIndices2}
+                xScale={this.xScale}
+                yScale={this.yScale2}
+              />
+            )}
+          </>
         )}
         <Axes
           {...this.props}

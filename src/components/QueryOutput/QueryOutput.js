@@ -476,6 +476,7 @@ export class QueryOutput extends React.Component {
 
       return true
     } catch (error) {
+      console.warn(error)
       return false
     }
   }
