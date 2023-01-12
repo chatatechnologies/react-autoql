@@ -6,7 +6,7 @@ steps:
       - "-exc"
       - |
         [ -z $TAG_NAME ] && IMAGE_TAG='debug' || IMAGE_TAG=$TAG_NAME
-        /kaniko/executor --destination=us.gcr.io/$PROJECT_ID/$REPO_NAME:$$IMAGE_TAG --cache=true --cache-ttl=6000h --log-timestamp --snapshotMode=redo
+        /kaniko/executor --destination=us.gcr.io/$PROJECT_ID/$REPO_NAME:$$IMAGE_TAG --cache=true --cache-ttl=6000h --use-new-run --snapshotMode=redo
 
   # This step Test & Deploy Helm Chart, Test Deploy
   - name: "us.gcr.io/$PROJECT_ID/gcp-azure-base:v1"
@@ -17,8 +17,8 @@ steps:
       - |
         PROJECT_ID=$PROJECT_ID BUILD_ID=$BUILD_ID COMMIT_SHA=$COMMIT_SHA REVISION_ID=$REVISION_ID SHORT_SHA=$SHORT_SHA REPO_NAME=$REPO_NAME BRANCH_NAME=$BRANCH_NAME TAG_NAME=$TAG_NAME
         _DEBUG=$_DEBUG
-        [ -f ./config/cloudbuild_before_release.sh ] && source ./config/cloudbuild_before_release.sh
-        source ./config/cloudbuild_release.sh
+        [ -f ./config/cloudbuild_before_deploy.sh ] && source ./config/cloudbuild_before_deploy.sh
+        source ./config/cloudbuild_deploy.sh
     secretEnv:
       [
         "NPM_TOKEN",
