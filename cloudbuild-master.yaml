@@ -5,7 +5,7 @@ steps:
     args:
       - "-exc"
       - |
-        ls al
+        ls -al
         pwd
 
     secretEnv: ["NPM_TOKEN", "GH_TOKEN"]
