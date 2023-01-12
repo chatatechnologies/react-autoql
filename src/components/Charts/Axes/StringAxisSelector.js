@@ -21,7 +21,9 @@ export default class StringAxisSelector extends React.Component {
   }
 
   closeSelector = () => {
-    this.setState({ isOpen: false })
+    if (this.state.isOpen) {
+      this.setState({ isOpen: false })
+    }
   }
 
   renderSelectorContent = ({ position, childRect, popoverRect }) => {

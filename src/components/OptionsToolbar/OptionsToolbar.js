@@ -71,6 +71,14 @@ export default class OptionsToolbar extends React.Component {
     this.rebuildTooltips()
   }
 
+  shouldComponentUpdate = (nextProps) => {
+    if (!nextProps.shouldRender) {
+      return false
+    }
+
+    return true
+  }
+
   componentDidUpdate = (prevProps, prevState) => {
     if (prevState.activeMenu === 'sql' && this.state.activeMenu !== 'sql') {
       this.setState({ sqlCopySuccess: false })
@@ -627,7 +635,7 @@ export default class OptionsToolbar extends React.Component {
     const shouldShowButton = this.getShouldShowButtonObj()
 
     // If there is nothing to put in the toolbar, don't render it
-    if (!this.props.shouldRender || !Object.values(shouldShowButton).find((showButton) => showButton === true)) {
+    if (!Object.values(shouldShowButton).find((showButton) => showButton === true)) {
       return null
     }
 

@@ -25,7 +25,9 @@ export default class RowNumberSelector extends React.Component {
   }
 
   closeSelector = () => {
-    this.setState({ isOpen: false })
+    if (this.state.isOpen) {
+      this.setState({ isOpen: false })
+    }
   }
 
   axiosSource = axios.CancelToken.source()

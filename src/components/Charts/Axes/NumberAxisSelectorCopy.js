@@ -53,7 +53,9 @@ export default class NumberAxisSelector extends React.Component {
   }
 
   closeSelector = () => {
-    this.setState({ isOpen: false, selectedColumns: [] })
+    if (this.state.isOpen) {
+      this.setState({ isOpen: false, selectedColumns: [] })
+    }
   }
 
   onAggTypeCheck = (aggType) => {

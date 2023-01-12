@@ -180,6 +180,7 @@ export class QueryOutput extends React.Component {
     showSuggestionPrefix: PropTypes.bool,
     onDisplayTypeChange: PropTypes.func,
     onColumnChange: PropTypes.func,
+    shouldRender: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -210,6 +211,7 @@ export class QueryOutput extends React.Component {
     onRTValueLabelClick: undefined,
     mutable: true,
     showSuggestionPrefix: true,
+    shouldRender: true,
     onRowChange: () => {},
     onTableConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
@@ -231,6 +233,10 @@ export class QueryOutput extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps) => {
+    if (!nextProps.shouldRender) {
+      return false
+    }
+
     if (this.props.isResizing && nextProps.isResizing) {
       return false
     }
@@ -310,9 +316,13 @@ export class QueryOutput extends React.Component {
   }
 
   componentWillUnmount = () => {
-    this._isMounted = false
-    ReactTooltip.hide()
-    clearTimeout(this.rebuildTooltipsTimer)
+    try {
+      this._isMounted = false
+      ReactTooltip.hide()
+      clearTimeout(this.rebuildTooltipsTimer)
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   rebuildTooltips = (delay = 500) => {
@@ -324,6 +334,7 @@ export class QueryOutput extends React.Component {
         ReactTooltip.rebuild()
       }, delay)
     }
+    return
   }
 
   onTableConfigChange = () => {

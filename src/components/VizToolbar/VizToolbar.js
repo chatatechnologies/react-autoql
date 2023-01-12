@@ -32,6 +32,14 @@ class VizToolbar extends React.Component {
     this.rebuildTooltips()
   }
 
+  shouldComponentUpdate = (nextProps) => {
+    if (!nextProps.shouldRender) {
+      return false
+    }
+
+    return true
+  }
+
   componentDidUpdate = () => {
     this.rebuildTooltips()
   }
@@ -96,7 +104,6 @@ class VizToolbar extends React.Component {
     const supportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
 
     if (
-      !this.props.shouldRender ||
       !supportedDisplayTypes ||
       supportedDisplayTypes.length <= 1 ||
       (!supportedDisplayTypes.includes('pivot_table') && this.props.disableCharts)
