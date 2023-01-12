@@ -6,7 +6,7 @@ steps:
       - "-exc"
       - |
         [ -z $TAG_NAME ] && IMAGE_TAG='debug' || IMAGE_TAG=$TAG_NAME
-        /kaniko/executor --destination=us.gcr.io/$PROJECT_ID/$REPO_NAME:$$IMAGE_TAG --cache=true --cache-ttl=6000h --log-timestamp --snapshotMode=redo
+        /kaniko/executor --destination=us.gcr.io/$PROJECT_ID/$REPO_NAME:$$IMAGE_TAG --cache=false --cache-ttl=6000h --log-timestamp --snapshotMode=redo
 
   # This step Test & Deploy Helm Chart, Test Deploy
   - name: "us.gcr.io/$PROJECT_ID/gcp-azure-base:v1"

@@ -13,7 +13,8 @@ RUN npm ci
 
 # build widgets
 RUN npm run build
-# RUN ls -al 
+RUN ls -al 
+RUN ls -al dist 
 
 # buid app
 # COPY dist .
