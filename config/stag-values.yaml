@@ -76,7 +76,7 @@ readinessProbe: # {}
     port: app-port
   initialDelaySeconds: 10
   timeoutSeconds: 1
-  failureThreshold: 20
+  failureThreshold: 10
 
 # service type must be one of NodePort, ClusterIP or LoadBalancer
 #   NodePort - service is available at NodeIP:NodePort
