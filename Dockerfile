@@ -25,7 +25,7 @@ RUN npm run build
 
 # # Create a production build
 # RUN npm run build
-ls -al 
+RUN ls -al 
 
 FROM nginx:1.22.0-alpine
 
