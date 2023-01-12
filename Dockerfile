@@ -16,10 +16,10 @@ RUN npm run build
 RUN ls -al 
 
 # buid app
-COPY dist .
+# COPY dist .
 RUN ls -al 
-WORKDIR /app
-RUN ls -al 
+# WORKDIR /app
+# RUN ls -al 
 ADD example .
 RUN ls -al 
 ENV NODE_ENV=ci
