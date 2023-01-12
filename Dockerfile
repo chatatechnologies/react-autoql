@@ -16,7 +16,7 @@ RUN npm run build
 RUN ls -al 
 RUN ls -al dist 
 
-# buid app
+# buid example app
 # COPY dist .
 RUN ls -al 
 WORKDIR /app
@@ -31,7 +31,7 @@ RUN ls -al
 RUN npm run build
 
 RUN ls -al 
-
+RUN ls -al /app/build
 # FROM nginx:1.22.0-alpine
 
 # COPY config/nginx_template.conf .
