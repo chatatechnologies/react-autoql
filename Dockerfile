@@ -15,21 +15,21 @@ RUN npm ci
 RUN npm run build
 RUN ls -al 
 
-# # buid app
-# COPY dist .
-# RUN ls -al 
-# WORKDIR /app
-# RUN ls -al 
-# ADD example .
-# RUN ls -al 
-# ENV NODE_ENV=ci
-# RUN npm i
-# RUN ls -al 
+# buid app
+COPY dist .
+RUN ls -al 
+WORKDIR /app
+RUN ls -al 
+ADD example .
+RUN ls -al 
+ENV NODE_ENV=ci
+RUN npm i
+RUN ls -al 
 
-# # # Create a production build
-# RUN npm run build
+# Create a production build
+RUN npm run build
 
-# RUN ls -al 
+RUN ls -al 
 
 # FROM nginx:1.22.0-alpine
 
