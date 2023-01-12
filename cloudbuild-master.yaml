@@ -38,16 +38,6 @@ availableSecrets:
       env: "NPM_TOKEN"
     - versionName: projects/$PROJECT_NUMBER/secrets/gh_token/versions/latest
       env: "GH_TOKEN"
-    - versionName: projects/$PROJECT_NUMBER/secrets/azure_sp_secret/versions/latest
-      env: "azure_sp_secret"
-    - versionName: projects/$PROJECT_NUMBER/secrets/azure_sp_username/versions/latest
-      env: "azure_sp_username"
-    - versionName: projects/$PROJECT_NUMBER/secrets/azure_sp_tenantid/versions/latest
-      env: "azure_sp_tenantid"
-    - versionName: projects/$PROJECT_NUMBER/secrets/cloudbuild_msg_repo/versions/latest
-      env: "cloudbuild_msg_repo"
-    - versionName: projects/$PROJECT_NUMBER/secrets/cloudbuild_msg_pubsub_topic/versions/latest
-      env: "cloudbuild_msg_pubsub_topic"
 options:
   substitution_option: "ALLOW_LOOSE"
 
