@@ -5,36 +5,12 @@ steps:
     args:
       - "-exc"
       - |
-        ls -al
-        pwd
         npm ci
         npm i react@16.14.0 react-dom@16.14.0 -D
         npm run test
         npx semantic-release --dry-run
 
     secretEnv: ["NPM_TOKEN", "GH_TOKEN"]
-
-  # # This step Test & Release widgets
-  # - name: "us.gcr.io/$PROJECT_ID/gcp-azure-base:v1"
-  #   id: Test and Release react-autoql npm package
-  #   entrypoint: /bin/bash
-  #   args:
-  #     - "-exc"
-  #     - |
-  #       PROJECT_ID=$PROJECT_ID BUILD_ID=$BUILD_ID COMMIT_SHA=$COMMIT_SHA REVISION_ID=$REVISION_ID SHORT_SHA=$SHORT_SHA REPO_NAME=$REPO_NAME BRANCH_NAME=$BRANCH_NAME TAG_NAME=$TAG_NAME
-  #       _DEBUG=$_DEBUG
-  #       [ -f ./config/cloudbuild_before_release.sh ] && source ./config/cloudbuild_before_release.sh
-  #       source ./config/cloudbuild_release.sh
-  #   secretEnv:
-  #     [
-  #       "npm_token",
-  #       "gh_token",
-  #       "azure_sp_secret",
-  #       "azure_sp_username",
-  #       "azure_sp_tenantid",
-  #       "cloudbuild_msg_repo",
-  #       "cloudbuild_msg_pubsub_topic",
-  #     ]
 
 availableSecrets:
   secretManager:
