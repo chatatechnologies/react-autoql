@@ -8,37 +8,23 @@ COPY package*.json .
 COPY rollup.config.js .
 COPY babel.config.js .
 ADD src src
-# clean install of the dependencies
-RUN npm ci
 
+# clean install of the dependencies and 
 # build widgets
-RUN npm run build
-RUN ls -al 
-RUN ls -al dist 
+RUN npm ci && npm run build
 
 # buid example app
-# COPY dist .
-RUN ls -al 
 WORKDIR /app
-RUN ls -al 
 ADD example .
-RUN ls -al 
 ENV NODE_ENV=ci
-RUN npm i
-RUN ls -al 
+RUN npm i && npm run build
 
-# Create a production build
-RUN npm run build
+# final clean image
+FROM nginx:1.22.0-alpine
 
-RUN ls -al 
-RUN ls -al /app/build
-# FROM nginx:1.22.0-alpine
+COPY config/nginx_template.conf .
+COPY config/start_npm.sh .
+COPY --from=build /app/build /usr/share/nginx/html/
 
-# COPY config/nginx_template.conf .
-# COPY config/start_npm.sh .
-# COPY --from=build /app/build /usr/share/nginx/html/
-
-# RUN ls -al /usr/share/nginx/html/
-
-# RUN chmod +x start_npm.sh
-# ENTRYPOINT ["./start_npm.sh"]
+RUN chmod +x start_npm.sh
+ENTRYPOINT ["./start_npm.sh"]

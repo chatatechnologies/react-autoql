@@ -52,7 +52,7 @@ tolerations:
     value: "true"
 
 image:
-  repository: us.gcr.io/staging-245514/autoql-excel-plugin
+  repository: us.gcr.io/staging-245514/react-autoql
   # this value is set when a tagged commit is built and deployed
   # tag: v1.0.0
   pullPolicy: IfNotPresent
@@ -131,9 +131,6 @@ secrets: []
 #   and are exposed in the main container
 env: #{}
   SERVER_HOST: ${SERVER_HOST}
-  BACKEND_URL: ${BACKEND_URL}
-  IS_PORTABLE: ${IS_PORTABLE}
-  EXCEL_PLUGIN_INTEGRATOR_ID: ${EXCEL_PLUGIN_INTEGRATOR_ID}
 configMaps: []
   # define the configmap
   # - name: otherconfig
