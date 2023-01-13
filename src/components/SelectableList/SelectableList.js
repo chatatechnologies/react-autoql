@@ -1,11 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import _cloneDeep from 'lodash.clonedeep'
-import _get from 'lodash.get'
-import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
 
 import { Checkbox } from '../Checkbox'
+import { deepEqual } from '../../js/Util'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './SelectableList.scss'
@@ -29,6 +27,10 @@ export default class SelectableList extends React.Component {
     onSelect: () => {},
     columns: [],
     items: [],
+  }
+
+  shouldComponentUpdate = (nextProps, nextState) => {
+    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
   }
 
   selectAll = () => {
@@ -131,7 +133,7 @@ export default class SelectableList extends React.Component {
             e.stopPropagation()
           }}
         >
-          {!!_get(this.props.columns, 'length') && (
+          {!!this.props.columns?.length && (
             <div className='col-visibility-header'>
               {this.props.columns.map((col, index) => {
                 if (index === this.props.columns.length - 1) {

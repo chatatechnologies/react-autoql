@@ -22,7 +22,7 @@ import Autosuggest from 'react-autosuggest'
 import SpeechToTextButtonBrowser from '../SpeechToTextButton/SpeechToTextButtonBrowser'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { animateInputText } from '../../js/Util'
+import { animateInputText, deepEqual } from '../../js/Util'
 import { dprQuery } from '../../js/dprService'
 import { withTheme } from '../../theme'
 
@@ -92,12 +92,12 @@ class QueryInput extends React.Component {
     this._isMounted = true
   }
 
-  shouldComponentUpdate = (nextProps) => {
+  shouldComponentUpdate = (nextProps, nextState) => {
     if (this.props.isResizing && nextProps.isResizing) {
       return false
     }
 
-    return true
+    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
   }
 
   componentDidUpdate = (prevProps) => {

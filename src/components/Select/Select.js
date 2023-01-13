@@ -47,7 +47,9 @@ export default class Select extends React.Component {
           isOpen={this.state.isOpen}
           positions={['bottom']} // if you'd like, supply an array of preferred positions ordered by priority
           padding={0}
-          onClickOutside={() => this.setState({ isOpen: false })}
+          onClickOutside={() => {
+            this.setState({ isOpen: false })
+          }}
           content={({ position, nudgedLeft, nudgedTop, targetRect, popoverRect }) => {
             return (
               <div

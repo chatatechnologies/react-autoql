@@ -238,7 +238,7 @@ export default class Legend extends Component {
       if (this.legendSwatchElements) {
         this.legendSwatchElements.forEach((el, i) => {
           const textStrings = []
-          el.querySelectorAll('tspan').forEach((tspan) => {
+          el?.querySelectorAll('tspan').forEach((tspan) => {
             textStrings.push(tspan.textContent)
           })
 

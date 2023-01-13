@@ -1133,9 +1133,9 @@ export default class App extends Component {
         inputValue={this.state.inputValue}
         className={`${this.state.activeIntegrator}`}
         enableDPRTab={!!this.state.dprKey}
-        authentication={this.getAuthProp()}
-        autoQLConfig={this.getAutoQLConfigProp()}
-        dataFormatting={this.getDataFormattingProp()}
+        authentication={this.props.authentication}
+        autoQLConfig={this.props.autoQLConfig}
+        dataFormatting={this.props.dataFormatting}
         key={this.state.componentKey}
         AutoAEId={this.state.componentKey}
         maskClosable
@@ -1187,9 +1187,9 @@ export default class App extends Component {
     return (
       <div>
         <QueryInput
-          authentication={this.getAuthProp()}
-          autoQLConfig={this.getAutoQLConfigProp()}
-          dataFormatting={this.getDataFormattingProp()}
+          authentication={this.props.authentication}
+          autoQLConfig={this.props.autoQLConfig}
+          dataFormatting={this.props.dataFormatting}
           ref={(r) => (this.queryInputRef = r)}
           autoCompletePlacement='below'
           clearQueryOnSubmit={false}
@@ -1214,7 +1214,7 @@ export default class App extends Component {
             }}
           >
             <QueryOutput
-              authentication={this.getAuthProp()}
+              authentication={this.props.authentication}
               queryInputRef={this.queryInputRef}
               queryResponse={this.state.response}
             />
@@ -1237,6 +1237,10 @@ export default class App extends Component {
     }
   }
 
+  handleTileChange = (newTiles) => {
+    this.setState({ dashboardTiles: newTiles })
+  }
+
   renderConfirmDeleteDashboardModal = () => {
     return Modal.confirm({
       icon: <ExclamationCircleOutlined />,
@@ -1248,6 +1252,12 @@ export default class App extends Component {
       title: 'Are you sure you want to delete this Dashboard?',
     })
   }
+
+  setIsEditing = () => {
+    this.setState({ isEditing: true })
+  }
+
+  openNewDashboardModal = () => this.setState({ isNewDashboardModalOpen: true })
 
   renderDashboardPage = () => {
     if (this.state.isFetchingDashboard) {
@@ -1370,11 +1380,11 @@ export default class App extends Component {
             <Dashboard
               ref={(ref) => (this.dashboardRef = ref)}
               key={this.state.activeDashboardId}
-              authentication={this.getAuthProp()}
-              autoQLConfig={this.getAutoQLConfigProp()}
-              dataFormatting={this.getDataFormattingProp()}
+              authentication={this.props.authentication}
+              autoQLConfig={this.props.autoQLConfig}
+              dataFormatting={this.props.dataFormatting}
               isEditing={this.state.isEditing}
-              startEditingCallback={() => this.setState({ isEditing: true })}
+              startEditingCallback={this.setIsEditing}
               executeOnMount={this.state.runDashboardAutomatically}
               executeOnStopEditing={this.state.runDashboardAutomatically}
               enableDynamicCharting={this.state.enableDynamicCharting}
@@ -1384,14 +1394,12 @@ export default class App extends Component {
               onSuccessCallback={this.onSuccess}
               autoChartAggregations={this.state.autoChartAggregations}
               enableAjaxTableData={this.state.pagination}
-              onChange={(newTiles) => {
-                this.setState({ dashboardTiles: newTiles })
-              }}
+              onChange={this.handleTileChange}
             />
           </Fragment>
         ) : (
           <div style={{ marginTop: '100px', textAlign: 'center' }}>
-            <Button type='primary' onClick={() => this.setState({ isNewDashboardModalOpen: true })}>
+            <Button type='primary' onClick={this.openNewDashboardModal}>
               Create a new Dashboard
             </Button>
           </div>
@@ -1429,7 +1437,7 @@ export default class App extends Component {
           label: (
             <NotificationIcon
               ref={(r) => (this.notificationBadgeRef = r)}
-              authentication={this.getAuthProp()}
+              authentication={this.props.authentication}
               clearCountOnClick={false}
               style={{ fontSize: '18px' }}
               onNewNotification={() => {
@@ -1539,7 +1547,7 @@ export default class App extends Component {
 
     return (
       <QueryOutput
-        authentication={this.getAuthProp()}
+        authentication={this.props.authentication}
         queryResponse={this.state.activeNotificationContent}
         initialDisplayType='table'
       />
@@ -1557,7 +1565,7 @@ export default class App extends Component {
       >
         <NotificationFeed
           ref={(ref) => (this.notificationListRef = ref)}
-          authentication={this.getAuthProp()}
+          authentication={this.props.authentication}
           onExpandCallback={this.fetchNotificationContent}
           autoChartAggregations={this.state.autoChartAggregations}
           showCreateAlertBtn={true}
@@ -1582,7 +1590,7 @@ export default class App extends Component {
         }}
       >
         <DataAlerts
-          authentication={this.getAuthProp()}
+          authentication={this.props.authentication}
           onErrorCallback={this.onError}
           showCreateAlertBtn
           onSuccessAlert={this.onSuccess}
@@ -1648,7 +1656,7 @@ export default class App extends Component {
       case 'speech': {
         pageToRender = (
           <SpeechToTextPage
-            authentication={this.getAuthProp()}
+            authentication={this.props.authentication}
             userEmail={this.state.displayName}
             projectID={this.state.projectId}
           />

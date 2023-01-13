@@ -146,7 +146,7 @@ class DataAlerts extends React.Component {
       <DataAlertModal
         ref={(r) => (this.editModalRef = r)}
         key={this.COMPONENT_KEY}
-        authentication={getAuthentication(this.props.authentication)}
+        authentication={this.props.authentication}
         isVisible={this.state.isEditModalVisible}
         onClose={() => this.setState({ isEditModalVisible: false })}
         currentDataAlert={this.state.activeDataAlert}

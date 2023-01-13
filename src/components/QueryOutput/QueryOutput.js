@@ -45,6 +45,7 @@ import {
   dateSortFn,
   getDayJSObj,
   getNumberOfGroupables,
+  deepEqual,
 } from '../../js/Util.js'
 
 import {
@@ -232,7 +233,7 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  shouldComponentUpdate = (nextProps) => {
+  shouldComponentUpdate = (nextProps, nextState) => {
     if (!nextProps.shouldRender) {
       return false
     }
@@ -245,7 +246,7 @@ export class QueryOutput extends React.Component {
       return false
     }
 
-    return true
+    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -644,21 +645,23 @@ export class QueryOutput extends React.Component {
 
   renderSingleValueResponse = () => {
     return (
-      <div className='single-value-response-container'>
-        <a
-          className={`single-value-response ${
-            getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? ' with-drilldown' : ''
-          }`}
-          onClick={() => {
-            this.processDrilldown({ groupBys: [], supportedByAPI: true })
-          }}
-        >
-          {formatElement({
-            element: _get(this.queryResponse, 'data.data.rows[0][0]'),
-            column: this.state.columns?.[0],
-            config: getDataFormatting(this.props.dataFormatting),
-          })}
-        </a>
+      <div className='single-value-response-flex-container'>
+        <div className='single-value-response-container'>
+          <a
+            className={`single-value-response ${
+              getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? ' with-drilldown' : ''
+            }`}
+            onClick={() => {
+              this.processDrilldown({ groupBys: [], supportedByAPI: true })
+            }}
+          >
+            {formatElement({
+              element: _get(this.queryResponse, 'data.data.rows[0][0]'),
+              column: this.state.columns?.[0],
+              config: getDataFormatting(this.props.dataFormatting),
+            })}
+          </a>
+        </div>
       </div>
     )
   }
@@ -1205,6 +1208,11 @@ export class QueryOutput extends React.Component {
     })
   }
 
+  getColumnSortingDirection = (col) => {
+    console.log('get sort caret direction here')
+    return undefined
+  }
+
   setFilterFunction = (col) => {
     const self = this
     if (col.type === 'DATE') {
@@ -1368,6 +1376,7 @@ export class QueryOutput extends React.Component {
       // Allow proper chronological sorting for date strings
       newCol.sorter = this.setSorterFunction(newCol)
       newCol.headerSort = !!this.props.enableTableSorting
+      newCol.headerSortStartingDir = this.getColumnSortingDirection(newCol)
 
       // Show drilldown filter value in column title so user knows they can't filter on this column
       const drilldownGroupby = this.queryResponse?.data?.data?.fe_req?.columns?.find(
@@ -1851,7 +1860,7 @@ export class QueryOutput extends React.Component {
           }
           columns={usePivotData ? this.pivotTableColumns : this.state.columns}
           isPivot={usePivotData}
-          dataFormatting={getDataFormatting(this.props.dataFormatting)}
+          dataFormatting={this.props.dataFormatting}
           activeChartElementKey={this.props.activeChartElementKey}
           onLegendClick={this.onLegendClick}
           legendColumn={this.state.columns[this.tableConfig?.legendColumnIndex]}

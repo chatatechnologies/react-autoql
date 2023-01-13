@@ -240,23 +240,27 @@
   max-width: 300px;
 }
 
-.single-value-response-container {
-  width: 100%;
-  text-align: center;
+.single-value-response-flex-container {
+  flex: 1;
 
-  .single-value-response {
-    color: inherit;
-    cursor: unset;
-    font-size: 20px;
-    &:hover {
+  .single-value-response-container {
+    width: 100%;
+    text-align: center;
+
+    .single-value-response {
       color: inherit;
+      cursor: unset;
+      font-size: 20px;
+      &:hover {
+        color: inherit;
+      }
     }
-  }
-  .single-value-response.with-drilldown:hover {
-    color: inherit;
-    text-decoration: underline;
-    font-weight: 600;
-    cursor: pointer;
+    .single-value-response.with-drilldown:hover {
+      color: inherit;
+      text-decoration: underline;
+      font-weight: 600;
+      cursor: pointer;
+    }
   }
 }
 

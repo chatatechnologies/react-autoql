@@ -25,9 +25,9 @@ export default class ChataLineChart extends Component {
   static propTypes = chartPropTypes
   static defaultProps = chartDefaultProps
 
-  shouldComponentUpdate = () => {
-    return true
-  }
+  // shouldComponentUpdate = () => {
+  //   return true
+  // }
 
   componentDidUpdate = (prevProps) => {
     if (shouldRecalculateLongestLabel(prevProps, this.props)) {

@@ -53,6 +53,7 @@ export default class ChatContent extends React.Component {
     sessionId: PropTypes.string,
     isResizing: PropTypes.bool,
     source: PropTypes.arrayOf(PropTypes.string),
+    shouldRender: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -62,6 +63,7 @@ export default class ChatContent extends React.Component {
     dataPageSize: undefined,
     source: [],
     onRTValueLabelClick: undefined,
+    shouldRender: true,
   }
 
   componentDidMount = () => {

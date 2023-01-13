@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import { Popover } from 'react-tiny-popover'
 import { v4 as uuid } from 'uuid'
 import _isEqual from 'lodash.isequal'
+import _difference from 'lodash.difference'
 import ReactTooltip from 'react-tooltip'
 import { format } from 'sql-formatter'
 import { Icon } from '../Icon'
@@ -15,7 +16,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { setColumnVisibility, exportCSV } from '../../js/queryService'
 
-import { isTableType, areAllColumnsHidden, areSomeColumnsHidden, isChartType } from '../../js/Util'
+import { isTableType, areAllColumnsHidden, areSomeColumnsHidden, isChartType, deepEqual } from '../../js/Util'
 
 import { autoQLConfigType, authenticationType } from '../../props/types'
 import { autoQLConfigDefault, authenticationDefault, getAuthentication, getAutoQLConfig } from '../../props/defaults'
@@ -71,12 +72,15 @@ export default class OptionsToolbar extends React.Component {
     this.rebuildTooltips()
   }
 
-  shouldComponentUpdate = (nextProps) => {
+  shouldComponentUpdate = (nextProps, nextState) => {
     if (!nextProps.shouldRender) {
       return false
     }
 
-    return true
+    const propsEqual = deepEqual(this.props, nextProps)
+    const stateEqual = deepEqual(this.state, nextState)
+
+    return !propsEqual || !stateEqual
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -217,9 +221,9 @@ export default class OptionsToolbar extends React.Component {
     ReactTooltip.hide()
   }
 
-  showHideColumnsModal = () => {
-    this.setState({ isHideColumnsModalVisible: true })
-  }
+  showHideColumnsModal = () => this.setState({ isHideColumnsModalVisible: true })
+  closeColumnVisibilityModal = () => this.setState({ isHideColumnsModalVisible: false })
+  closeDataAlertModal = () => this.setState({ activeMenu: undefined })
 
   onColumnVisibilitySave = (columns) => {
     const { authentication } = this.props
@@ -280,12 +284,17 @@ export default class OptionsToolbar extends React.Component {
         <ColumnVisibilityModal
           columns={columns}
           isVisible={this.state.isHideColumnsModalVisible}
-          onClose={() => this.setState({ isHideColumnsModalVisible: false })}
+          onClose={this.closeColumnVisibilityModal}
           isSettingColumns={this.state.isSettingColumnVisibility}
           onConfirm={this.onColumnVisibilitySave}
         />
       </ErrorBoundary>
     )
+  }
+
+  onDataAlertSave = () => {
+    this.props.onSuccessAlert('Successfully created a notification')
+    this.setState({ activeMenu: undefined })
   }
 
   renderDataAlertModal = () => {
@@ -294,15 +303,12 @@ export default class OptionsToolbar extends React.Component {
     return (
       <ErrorBoundary>
         <DataAlertModal
-          authentication={getAuthentication(this.props.authentication)}
+          authentication={this.props.authentication}
           isVisible={this.state.activeMenu === 'notification'}
           initialQuery={initialQuery}
-          onClose={() => this.setState({ activeMenu: undefined })}
+          onClose={this.closeDataAlertModal}
           onErrorCallback={this.props.onErrorCallback}
-          onSave={() => {
-            this.props.onSuccessAlert('Successfully created a notification')
-            this.setState({ activeMenu: undefined })
-          }}
+          onSave={this.onDataAlertSave}
         />
       </ErrorBoundary>
     )
@@ -553,7 +559,7 @@ export default class OptionsToolbar extends React.Component {
           )}
           {shouldShowButton.showMoreOptionsButton && (
             <Popover
-              key={uuid()}
+              key={`more-options-button-${this.COMPONENT_KEY}`}
               isOpen={this.state.activeMenu === 'more-options'}
               positions={['bottom', 'top']}
               padding={8}
@@ -644,7 +650,7 @@ export default class OptionsToolbar extends React.Component {
         {this.renderToolbar(shouldShowButton)}
         {shouldShowButton.showHideColumnsButton && this.renderHideColumnsModal()}
         {shouldShowButton.showReportProblemButton && this.renderReportProblemModal()}
-        {shouldShowButton.showMoreOptionsButton && this.renderDataAlertModal()}
+        {shouldShowButton.showCreateNotificationIcon && this.renderDataAlertModal()}
         {shouldShowButton.showSQLButton && this.renderSQLModal()}
         <ReactTooltip
           className='react-autoql-tooltip'

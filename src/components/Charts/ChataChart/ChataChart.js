@@ -16,7 +16,7 @@ import { ChataStackedLineChart } from '../ChataStackedLineChart'
 import { Spinner } from '../../Spinner'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import { svgToPng, getBBoxFromRef, sortDataByDate, getCurrencySymbol } from '../../../js/Util.js'
+import { svgToPng, getBBoxFromRef, sortDataByDate, getCurrencySymbol, deepEqual } from '../../../js/Util.js'
 import {
   chartContainerDefaultProps,
   chartContainerPropTypes,
@@ -99,7 +99,10 @@ export default class ChataChart extends Component {
       return false
     }
 
-    return true
+    const propsEqual = deepEqual(this.props, nextProps)
+    const stateEqual = deepEqual(this.state, nextState)
+
+    return !propsEqual || !stateEqual
   }
 
   componentDidUpdate = (prevProps) => {

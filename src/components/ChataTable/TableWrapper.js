@@ -1,44 +1,31 @@
 import React from 'react'
-import _get from 'lodash.get'
-import _isEqual from 'lodash.isequal'
+import PropTypes from 'prop-types'
 import { ReactTabulator } from 'react-tabulator'
 
 import 'react-tabulator/lib/styles.css' // default theme
 import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
 
 export default class TableWrapper extends React.Component {
-  constructor(props) {
-    super(props)
-
-    this.isTableMounted = false
-
-    this.state = {}
+  static propTypes = {
+    tableKey: PropTypes.string,
   }
 
   static defaultProps = {
-    onTableMount: () => {},
+    tableKey: undefined,
   }
 
   shouldComponentUpdate = () => {
-    return !this.ref
+    return false
   }
 
   render = () => {
     return (
       <ReactTabulator
         {...this.props}
+        ref={(r) => (this.tableRef = r)}
         className={`table-condensed ${this.props.className}`}
         id={`react-tabulator-id-${this.props.tableKey}`}
         key={this.props.tableKey}
-        ref={(ref) => {
-          // Wait for event loop to finish so table is rendered in DOM
-          setTimeout(() => {
-            if (ref?.table && !this.ref) {
-              this.props.onTableMount(ref)
-              this.ref = ref
-            }
-          }, 0)
-        }}
       />
     )
   }

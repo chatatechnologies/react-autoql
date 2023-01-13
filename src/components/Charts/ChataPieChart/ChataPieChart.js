@@ -85,7 +85,10 @@ export default class Axis extends Component {
       return false
     }
 
-    return true
+    const propsEqual = deepEqual(this.props, nextProps)
+    const stateEqual = deepEqual(this.state, nextState)
+
+    return !propsEqual || !stateEqual
   }
 
   componentDidUpdate = () => {

@@ -23,7 +23,7 @@ import { ReverseTranslation } from '../ReverseTranslation'
 import { Spinner } from '../Spinner'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { isChartType } from '../../js/Util'
+import { isChartType, deepEqual } from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
 
 import './ChatMessage.scss'
@@ -115,12 +115,12 @@ export default class ChatMessage extends React.Component {
     this.setIsAnimating()
   }
 
-  shouldComponentUpdate = (nextProps) => {
+  shouldComponentUpdate = (nextProps, nextState) => {
     if (this.props.isResizing && nextProps.isResizing) {
       return false
     }
 
-    return true
+    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -256,14 +256,14 @@ export default class ChatMessage extends React.Component {
           ref={(ref) => ref && ref !== this.state.responseRef && this.setState({ responseRef: ref })}
           optionsToolbarRef={this.optionsToolbarRef}
           vizToolbarRef={this.vizToolbarRef}
-          authentication={getAuthentication(this.props.authentication)}
-          autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+          authentication={this.props.authentication}
+          autoQLConfig={this.props.autoQLConfig}
           queryResponse={this.props.response}
           onSuggestionClick={this.props.onSuggestionClick}
           isQueryRunning={this.props.isChataThinking}
           copyToClipboard={this.copyToClipboard}
           tableOptions={this.props.tableOptions}
-          dataFormatting={getDataFormatting(this.props.dataFormatting)}
+          dataFormatting={this.props.dataFormatting}
           appliedFilters={this.props.appliedFilters}
           onDrilldownStart={this.props.onDrilldownStart}
           onDrilldownEnd={this.props.onDrilldownEnd}
@@ -311,6 +311,8 @@ export default class ChatMessage extends React.Component {
     })
   }
 
+  onDeleteMessage = () => this.props.deleteMessageCallback(this.props.id)
+
   renderRightToolbar = () => {
     return (
       <div className='chat-message-toolbar right'>
@@ -330,7 +332,7 @@ export default class ChatMessage extends React.Component {
             enableDeleteBtn={!this.props.isIntroMessage}
             rebuildTooltips={this.props.rebuildTooltips}
             popoverParentElement={this.props.popoverParentElement}
-            deleteMessageCallback={() => this.props.deleteMessageCallback(this.props.id)}
+            deleteMessageCallback={this.onDeleteMessage}
             createDataAlertCallback={this.props.createDataAlertCallback}
           />
         ) : null}

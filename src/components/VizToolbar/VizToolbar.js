@@ -9,6 +9,7 @@ import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './VizToolbar.scss'
+import { deepEqual } from '../../js/Util'
 
 class VizToolbar extends React.Component {
   COMPONENT_KEY = uuid()
@@ -32,12 +33,12 @@ class VizToolbar extends React.Component {
     this.rebuildTooltips()
   }
 
-  shouldComponentUpdate = (nextProps) => {
+  shouldComponentUpdate = (nextProps, nextState) => {
     if (!nextProps.shouldRender) {
       return false
     }
 
-    return true
+    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
   }
 
   componentDidUpdate = () => {

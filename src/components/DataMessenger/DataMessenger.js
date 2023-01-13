@@ -255,6 +255,15 @@ export class DataMessenger extends React.Component {
     } catch (error) {}
   }
 
+  onError = () => this.props.onErrorCallback('Something went wrong when creating this notification. Please try again.')
+
+  onSave = () => {
+    this.props.onSuccessAlert('Notification created!')
+    this.setState({ isDataAlertModalVisible: false })
+  }
+
+  onClose = () => this.setState({ isDataAlertModalVisible: false })
+
   rebuildTooltips = (delay = 500) => {
     clearTimeout(this.rebuildTooltipsTimer)
     this.rebuildTooltipsTimer = setTimeout(() => {
@@ -973,20 +982,16 @@ export class DataMessenger extends React.Component {
       <DataAlertModal
         authentication={this.props.authentication}
         isVisible={this.state.isDataAlertModalVisible}
-        onClose={() => this.setState({ isDataAlertModalVisible: false })}
-        onSave={() => {
-          this.props.onSuccessAlert('Notification created!')
-          this.setState({ isDataAlertModalVisible: false })
-        }}
-        onErrorCallback={() =>
-          this.props.onErrorCallback('Something went wrong when creating this notification. Please try again.')
-        }
+        onClose={this.onClose}
+        onSave={this.onSave}
+        onErrorCallback={this.onError}
         initialQuery={this.state.activeQuery}
       />
     )
   }
 
   render = () => {
+    return null
     if (this.state.hasError) {
       return null
     }

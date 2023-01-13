@@ -317,7 +317,7 @@ export default class NotificationItem extends React.Component {
             <div className='react-autoql-notification-details'>
               <div className='react-autoql-notification-details-title'>Conditions:</div>
               <ExpressionBuilderSimple
-                authentication={getAuthentication(this.props.authentication)}
+                authentication={this.props.authentication}
                 key={`expression-builder-${this.COMPONENT_KEY}`}
                 expression={_get(notification, 'expression')}
                 readOnly

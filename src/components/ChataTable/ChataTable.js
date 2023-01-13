@@ -18,7 +18,7 @@ import { runQueryNewPage } from '../../js/queryService'
 import { DatePicker } from '../DatePicker'
 import { getFilterPrecision } from '../../js/dateUtils'
 import { DAYJS_PRECISION_FORMATS } from '../../js/Constants'
-import { currentEventLoopEnd } from '../../js/Util'
+import { currentEventLoopEnd, deepEqual } from '../../js/Util'
 
 import 'react-tabulator/lib/styles.css' // default theme
 import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
@@ -41,6 +41,13 @@ export default class ChataTable extends React.Component {
     this.tableOptions = {
       dataLoadError: (error) => console.error(error),
       selectableCheck: () => false,
+      renderComplete: () => {
+        if (!this.tabulatorMounted) {
+          this.tabulatorMounted = true
+          this.onTabulatorMount()
+        }
+      },
+      tableDestroyed: () => {},
       layout: 'fitDataFill',
       clipboard: true,
       download: true,
@@ -60,14 +67,16 @@ export default class ChataTable extends React.Component {
             field: sorter.field,
           }
         })
-        if (this.tableParams?.sorters && !_isEqual(formattedSorters, this.tableParams?.sorters) && this._isMounted) {
+        if (this.tableParams?.sorters && !_isEqual(formattedSorters, this.tableParams?.sorters)) {
           this.isSorting = true
-          this.setState({ loading: true })
+          if (this._isMounted) {
+            this.setState({ loading: true })
+          }
         }
       },
       dataFiltering: (filters) => {
         this.lockTableHeight()
-        const headerFilters = this.ref?.table?.getHeaderFilters()
+        const headerFilters = this.ref?.tableRef?.table?.getHeaderFilters()
 
         if (headerFilters && !_isEqual(headerFilters, this.tableParams?.filters) && this._isMounted) {
           this.isFiltering = true
@@ -93,7 +102,7 @@ export default class ChataTable extends React.Component {
 
           // The filters provided to this function don't include header filters
           // We only use header filters so we have to use the function below
-          const headerFilters = this.ref?.table?.getHeaderFilters()
+          const headerFilters = this.ref?.tableRef?.table?.getHeaderFilters()
 
           if (!this.supportsInfiniteScroll) {
             this.tableParams.filters = _cloneDeep(headerFilters)
@@ -140,6 +149,7 @@ export default class ChataTable extends React.Component {
   static propTypes = {
     data: PropTypes.arrayOf(PropTypes.array),
     columns: PropTypes.arrayOf(PropTypes.shape({})),
+    shouldRender: PropTypes.bool,
     onFilterCallback: PropTypes.func,
     onSorterCallback: PropTypes.func,
     onTableParamsChange: PropTypes.func,
@@ -157,6 +167,7 @@ export default class ChataTable extends React.Component {
     pageSize: 0,
     useInfiniteScroll: true,
     source: [],
+    shouldRender: true,
     onFilterCallback: () => {},
     onSorterCallback: () => {},
     onTableParamsChange: () => {},
@@ -179,11 +190,19 @@ export default class ChataTable extends React.Component {
       return true
     }
 
-    if ((this.state.scrollLoading && nextState.scrollLoading) || (this.state.pageLoading && nextState.pageLoading)) {
+    if (
+      (this.state.scrollLoading && nextState.scrollLoading) ||
+      (this.state.pageLoading && nextState.pageLoading) ||
+      (this.props.isResizing && nextProps.isResizing)
+    ) {
       return false
     }
 
-    return true
+    if (!nextProps.shouldRender) {
+      return false
+    }
+
+    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -201,17 +220,22 @@ export default class ChataTable extends React.Component {
   }
 
   componentWillUnmount = () => {
-    this._isMounted = false
-    clearTimeout(this.clickListenerTimeout)
-    clearTimeout(this.setDimensionsTimeout)
-    clearTimeout(this.setStateTimeout)
-    this.cancelCurrentRequest()
-    this.resetFilterTags()
-    this.existingFilterTag = undefined
-    this.filterTagElements = undefined
+    try {
+      this._isMounted = false
+      clearTimeout(this.clickListenerTimeout)
+      clearTimeout(this.setDimensionsTimeout)
+      clearTimeout(this.setStateTimeout)
+      this.cancelCurrentRequest()
+      // this.resetFilterTags()
+      // this.existingFilterTag = undefined
+      // this.filterTagElements = undefined
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   lockTableHeight = () => {
+    return
     if (
       (this.tableHeight || this.tableContainer?.style) &&
       !this.state.pageLoading &&
@@ -224,11 +248,11 @@ export default class ChataTable extends React.Component {
   }
 
   unlockTableHeight = () => {
-    setTimeout(() => {
-      if (this.tableContainer?.style && !this.state.pageLoading && !this.firstRender && !this.props.isResizing) {
-        this.tableContainer.style.flexBasis = 'auto'
-      }
-    }, 0)
+    // setTimeout(() => {
+    if (this.tableContainer?.style && !this.state.pageLoading && !this.firstRender && !this.props.isResizing) {
+      this.tableContainer.style.flexBasis = 'auto'
+    }
+    // }, 0)
   }
 
   saveCurrentTableHeight = () => {
@@ -256,13 +280,11 @@ export default class ChataTable extends React.Component {
     )
   }
 
-  onTabulatorMount = async (tableRef) => {
-    this.ref = tableRef
-
+  onTabulatorMount = async () => {
     await currentEventLoopEnd()
 
-    this.setSorters(tableRef)
-    this.setFilters(tableRef)
+    this.setSorters()
+    this.setFilters()
     this.setFilterTags()
     this.saveCurrentTableHeight()
 
@@ -279,8 +301,8 @@ export default class ChataTable extends React.Component {
         return Promise.resolve()
       }
 
-      const tableParamsFormatted = formatTableParams(this.tableParams, this.ref)
-      const nextTableParamsFormatted = formatTableParams(params, this.ref)
+      const tableParamsFormatted = formatTableParams(this.tableParams, this.ref?.tableRef)
+      const nextTableParamsFormatted = formatTableParams(params, this.ref?.tableRef)
 
       if (_isEqual(tableParamsFormatted, nextTableParamsFormatted)) {
         return Promise.resolve()
@@ -390,15 +412,15 @@ export default class ChataTable extends React.Component {
   }
 
   copyToClipboard = () => {
-    if (this._isMounted && this.ref?.table) {
-      this.ref.table.copyToClipboard('active', true)
+    if (this._isMounted && this.ref?.tableRef?.table) {
+      this.ref?.tableRef?.table.copyToClipboard('active', true)
     }
   }
 
   saveAsCSV = (delay) => {
     try {
-      if (this._isMounted && this.ref?.table) {
-        let tableClone = _cloneDeep(this.ref.table)
+      if (this._isMounted && this.ref?.tableRef?.table) {
+        let tableClone = _cloneDeep(this.ref?.tableRef?.table)
         return new Promise((resolve, reject) => {
           setTimeout(() => {
             tableClone.download('csv', 'export.csv', {
@@ -429,7 +451,7 @@ export default class ChataTable extends React.Component {
   }
 
   setDateFilterClickListeners = () => {
-    const columns = this.ref?.table?.getColumnDefinitions()
+    const columns = this.ref?.tableRef?.table?.getColumnDefinitions()
     if (!columns) {
       return
     }
@@ -478,7 +500,9 @@ export default class ChataTable extends React.Component {
   }
 
   resetFilterTags = () => {
-    const filterTagElements = document.querySelectorAll(`#react-autoql-table-container-${this.TABLE_ID} .filter-tag`)
+    const filterTagElements = this.tableContainer?.querySelectorAll(
+      `#react-autoql-table-container-${this.TABLE_ID} .filter-tag`,
+    )
 
     if (filterTagElements?.length) {
       filterTagElements.forEach((filterTag) => {
@@ -489,6 +513,8 @@ export default class ChataTable extends React.Component {
         } catch (error) {}
       })
     }
+
+    return
   }
 
   setFilterTags = () => {
@@ -513,18 +539,20 @@ export default class ChataTable extends React.Component {
         }
       })
     }
+
+    return
   }
 
-  setFilters = (ref) => {
+  setFilters = () => {
     const filterValues = this.tableParams?.filters
     this.settingFilterInputs = true
 
     if (filterValues) {
       filterValues.forEach((filter, i) => {
         try {
-          ref.table.setHeaderFilterValue(filter.field, filter.value)
+          this.ref?.tableRef?.table.setHeaderFilterValue(filter.field, filter.value)
           if (!this.supportsInfiniteScroll) {
-            ref.table.setFilter(filter.field, filter.type, filter.value)
+            this.ref?.tableRef?.table.setFilter(filter.field, filter.type, filter.value)
           }
         } catch (error) {
           console.error(error)
@@ -576,14 +604,14 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  setSorters = (ref) => {
+  setSorters = () => {
     const sorterValues = this.tableParams?.sorters
     this.settingSorters = true
 
     if (sorterValues) {
       sorterValues.forEach((sorter, i) => {
         try {
-          ref.table.setSort(sorter.field, sorter.dir)
+          this.ref?.tableRef?.table.setSort(sorter.field, sorter.dir)
         } catch (error) {
           console.error(error)
           this.props.onErrorCallback(error)
@@ -686,14 +714,13 @@ export default class ChataTable extends React.Component {
         >
           {this.props.data && this.props.columns && (
             <TableWrapper
+              ref={(r) => (this.ref = r)}
               tableKey={`react-autoql-table-${this.TABLE_ID}`}
               id={`react-autoql-table-${this.TABLE_ID}`}
               key={`react-autoql-table-wrapper-${this.TABLE_ID}`}
               data-test='autoql-tabulator-table'
               columns={this.props.columns}
               data={this.supportsInfiniteScroll ? [] : this.props.data}
-              onTableMount={this.onTabulatorMount}
-              cellClick={this.cellClick}
               options={this.tableOptions}
               data-custom-attr='test-custom-attribute'
               className='react-autoql-table'

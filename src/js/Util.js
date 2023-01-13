@@ -1,5 +1,6 @@
 import _get from 'lodash.get'
 import _filter from 'lodash.filter'
+import _isEqual from 'lodash.isequal'
 import dayjs from './dayjsWithPlugins'
 
 import {
@@ -1216,4 +1217,56 @@ export const currentEventLoopEnd = () => {
   return new Promise((resolve) => {
     setTimeout(resolve, 0)
   })
+}
+
+export const difference = (objA, objB) => {
+  const diff = []
+  Object.keys(Object.assign({}, objA, objB)).forEach((key) => {
+    if (typeof objA[key] === 'function' && typeof objB[key] === 'function') {
+      if (!functionsEqual(objA[key], objB[key])) {
+        diff.push({
+          key,
+          objA: objA[key],
+          objB: objB[key],
+        })
+      }
+    } else if (!Object.is(objA[key], objB[key])) {
+      diff.push({
+        key,
+        objA: objA[key],
+        objB: objB[key],
+      })
+    }
+  })
+  return diff
+}
+
+const functionsEqual = (a, b) => {
+  return a?.toString() == b?.toString()
+}
+
+export const deepEqual = (objA, objB) => {
+  if (_isEqual(objA, objB)) {
+    return true
+  }
+
+  const keysA = Object.keys(objA)
+  const keysB = Object.keys(objB)
+
+  if (keysA.length !== keysB.length) {
+    return false
+  }
+
+  for (let i = 0; i < keysA.length; i++) {
+    // Dont deep compare functions
+    if (typeof objA[keysA[i]] === 'function' && typeof objB[keysA[i]] === 'function') {
+      if (!functionsEqual(objA[keysA[i]], objB[keysA[i]])) {
+        return false
+      }
+    } else if (!hasOwnProperty.call(objB, keysA[i]) || !_isEqual(objA[keysA[i]], objB[keysA[i]])) {
+      return false
+    }
+  }
+
+  return true
 }

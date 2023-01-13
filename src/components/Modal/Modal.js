@@ -1,11 +1,11 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import ReactModal from 'react-modal'
-import _isEqual from 'lodash.isequal'
 
 import { Button } from '../Button'
 import { Icon } from '../Icon'
 import { ConfirmModal } from '../ConfirmModal'
+import { deepEqual, difference } from '../../js/Util'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Modal.scss'
@@ -27,6 +27,7 @@ export default class Modal extends React.Component {
     confirmDisabled: PropTypes.bool,
     footer: PropTypes.element,
     confirmOnClose: PropTypes.bool,
+    shouldRender: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -43,12 +44,21 @@ export default class Modal extends React.Component {
     footer: undefined,
     confirmDisabled: false,
     confirmOnClose: false,
+    shouldRender: true,
     onClose: () => {},
     onConfirm: () => {},
   }
 
   state = {
     isConfirmCloseModalVisible: false,
+  }
+
+  shouldComponentUpdate = (nextProps, nextState) => {
+    if (!nextProps.shouldRender) {
+      return false
+    }
+
+    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
   }
 
   onClose = (deleteFromPortal = true) => {
@@ -118,20 +128,22 @@ export default class Modal extends React.Component {
           </div>
           {this.props.showFooter && <div className='react-autoql-modal-footer'>{this.renderFooter()}</div>}
         </ReactModal>
-        <ConfirmModal
-          isVisible={this.state.isConfirmCloseModalVisible}
-          onClose={() => {
-            this.setState({ isConfirmCloseModalVisible: false })
-          }}
-          confirmText='Discard Changes'
-          onConfirm={() => {
-            this.setState({ isConfirmCloseModalVisible: false })
-            this.props.onClose()
-          }}
-        >
-          <h3>Are you sure you want to leave this page?</h3>
-          <p>All unsaved changes will be lost.</p>
-        </ConfirmModal>
+        {!!this.props.confirmOnClose && (
+          <ConfirmModal
+            isVisible={this.state.isConfirmCloseModalVisible}
+            onClose={() => {
+              this.setState({ isConfirmCloseModalVisible: false })
+            }}
+            confirmText='Discard Changes'
+            onConfirm={() => {
+              this.setState({ isConfirmCloseModalVisible: false })
+              this.props.onClose()
+            }}
+          >
+            <h3>Are you sure you want to leave this page?</h3>
+            <p>All unsaved changes will be lost.</p>
+          </ConfirmModal>
+        )}
       </ErrorBoundary>
     )
   }
