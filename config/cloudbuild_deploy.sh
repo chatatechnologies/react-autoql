@@ -80,7 +80,7 @@ if [ -z "$TAG_NAME" ]; then
     exit 0
 else
 
-    _SLACK_WEBHOOK_URL='https://hooks.slack.com/services/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'
+    _SLACK_WEBHOOK_URL=$cloudbuild_slack_token
     echo $PROJECT_ID
 
     case $PROJECT_ID in

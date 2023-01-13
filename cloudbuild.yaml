@@ -28,6 +28,7 @@ steps:
         "azure_sp_tenantid",
         "cloudbuild_msg_repo",
         "cloudbuild_msg_pubsub_topic",
+        "cloudbuild_slack_token,",
       ]
 
 availableSecrets:
@@ -46,6 +47,8 @@ availableSecrets:
       env: "cloudbuild_msg_repo"
     - versionName: projects/$PROJECT_NUMBER/secrets/cloudbuild_msg_pubsub_topic/versions/latest
       env: "cloudbuild_msg_pubsub_topic"
+    - versionName: projects/$PROJECT_NUMBER/secrets/cloudbuild_slack_token/versions/latest
+      env: "cloudbuild_slack_token"
 options:
   substitution_option: "ALLOW_LOOSE"
 
