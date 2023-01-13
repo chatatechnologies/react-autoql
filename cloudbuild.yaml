@@ -16,7 +16,7 @@ steps:
       - "-exc"
       - |
         PROJECT_ID=$PROJECT_ID BUILD_ID=$BUILD_ID COMMIT_SHA=$COMMIT_SHA REVISION_ID=$REVISION_ID SHORT_SHA=$SHORT_SHA REPO_NAME=$REPO_NAME BRANCH_NAME=$BRANCH_NAME TAG_NAME=$TAG_NAME
-        _DEBUG=$_DEBUG
+        _DEBUG=$_DEBUG 
         [ -f ./config/cloudbuild_before_deploy.sh ] && source ./config/cloudbuild_before_deploy.sh
         source ./config/cloudbuild_deploy.sh
     secretEnv:
@@ -28,7 +28,7 @@ steps:
         "azure_sp_tenantid",
         "cloudbuild_msg_repo",
         "cloudbuild_msg_pubsub_topic",
-        "cloudbuild_slack_token,",
+        "cloudbuild_slack_token",
       ]
 
 availableSecrets:
