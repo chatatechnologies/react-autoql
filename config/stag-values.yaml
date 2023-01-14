@@ -1,0 +1,139 @@
+# configuration file for staging
+# namespace is also configured for the leader-elector below, must be equal
+namespace: staging
+env: ${ENV}
+isJava: false
+replicaCount: ${REPLICACOUNT}
+
+# create a service account
+rbac:
+  enabled: false
+
+# https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
+hpa:
+  enabled: false
+  # enter the full hpa spec here, the scaleTargetRef is set to the deployment
+  spec:
+    maxReplicas: 5
+    minReplicas: 2
+    targetCPUUtilizationPercentage: 70
+
+# if you define a name for the port you can reference it by that name
+# in the service/probe configurations
+ports: # []
+  - name: app-port
+    containerPort: 8080
+    protocol: TCP
+
+affinity: 
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - preference:
+          matchExpressions:
+          - key: cloud.google.com/gke-preemptible
+            operator: Exists
+        weight: 100
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: app
+              operator: In
+              values:
+              - ${app}
+          topologyKey: kubernetes.io/hostname
+        weight: 100
+
+tolerations:
+  - effect: NoSchedule
+    key: cloud.google.com/gke-preemptible
+    operator: Equal
+    value: "true"
+
+image:
+  repository: us.gcr.io/staging-245514/react-autoql
+  # this value is set when a tagged commit is built and deployed
+  # tag: v1.0.0
+  pullPolicy: IfNotPresent
+  imagePullSecrets:
+    - name: ${IMAGEPULLSECRET}
+
+# configure the liveness/rediness probe
+# https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/
+livenessProbe: # {}
+  httpGet:
+    path: /
+    port: app-port
+  initialDelaySeconds: 10
+  timeoutSeconds: 1
+  failureThreshold: 30
+
+# when the application is ready to recieve requests
+readinessProbe: # {}
+  httpGet:
+    path: /
+    port: app-port
+  initialDelaySeconds: 10
+  timeoutSeconds: 1
+  failureThreshold: 10
+
+# service type must be one of NodePort, ClusterIP or LoadBalancer
+#   NodePort - service is available at NodeIP:NodePort
+#   ClusetrIP - default, only reachable from within the cluster
+#   LoadBlancer - provision a loadbalancer from the cloud provider
+service:
+  type: ClusterIP
+  # port: 80
+  # portName: app-port  # this name is used by the ingress and service
+
+ingress:
+  enabled: false
+
+sidecars: []
+  # - name: cloudsql-proxy
+  #   image: gcr.io/cloudsql-docker/gce-proxy:1.11
+  #   command: ["/cloud_sql_proxy",
+  #             "-instances=mystic-sound-143520:us-central1:postgresql=tcp:5432",
+  #             "-credential_file=/secrets/cloudsql/credentials.json"]
+  #   volumeMounts:
+  #     - name: cloudsql-instance-credentials
+  #       mountPath: /secrets/cloudsql
+  #       readOnly: true
+
+# list of containers that run before the launch of the main container
+initContainers: []
+
+# configure memory/cpu resources for main container
+# https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+resources:
+  requests:
+    cpu: ${CPU}
+    memory: ${MEMORY}
+  limits:
+    memory: ${MEMORYLIMIT}
+# configure volumes for main container
+volumes: []
+  # - name: cloudsql-instance-credentials
+  #   secret:
+  #     secretName: cloudsql-instance-credentials
+  # - name: cloudsql
+  #   emptyDir:
+
+# all values must be base64 encoded, ie `cat value.txt | base64 -`
+secrets: []
+  # - name: secretName
+  #     values:
+  #       key: "value"
+  #       key2: "value2"
+
+# environment variables are stored as an appconfig-appname configmap
+#   and are exposed in the main container
+env: #{}
+  SERVER_HOST: ${SERVER_HOST}
+configMaps: []
+  # define the configmap
+  # - name: otherconfig
+  #   values:
+  #     KEY: VALUE
+  #     MY_HELLO: bonjour

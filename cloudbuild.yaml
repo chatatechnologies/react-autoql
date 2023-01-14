@@ -1,73 +1,67 @@
 steps:
-  # Clone the repository and check tags
-  - name: 'us.gcr.io/$PROJECT_ID/gcp-azure-base:v1'
-    id: Clone and Check Tags
-    entrypoint: /bin/bash
-    args:
-      - '-exc'
-      - |
-        echo "Branch Name: $BRANCH_NAME"
-        echo "Git commit SHA: $COMMIT_SHA"
-        exit 0
-        if [ -n "$TAG_NAME" ];then
-          LAST_TAG=$$(git ls-remote --tags --refs --symref git@github.com:chatatechnologies/$REPO_NAME.git | cut -d'/' -f 3 | grep -E -o '^v[0-9]+.[0-9]+.[0-9]+(-(alpha|beta|rc)(.[0-9]+))?$' | sed '/-/!{s/$/_/;}' | sort -Vr | sed 's/_$//' | head -n 1)
-          if [ "$TAG_NAME" != "$$LAST_TAG" ]; then
-            echo "Tag $TAG_NAME must greater than latest tag $$LAST_TAG"
-            exit 1
-          fi
-        fi
-
-  - name: 'gcr.io/kaniko-project/executor:debug-${_KANIKO_VERSION}'
+  - name: "gcr.io/kaniko-project/executor:debug-${_KANIKO_VERSION}"
     id: Build
     entrypoint: /busybox/sh
     args:
-      - '-exc'
+      - "-exc"
       - |
         [ -z $TAG_NAME ] && IMAGE_TAG='debug' || IMAGE_TAG=$TAG_NAME
-        /kaniko/executor --destination=us.gcr.io/$PROJECT_ID/$REPO_NAME:$$IMAGE_TAG --cache=true --cache-ttl=6000h --log-timestamp --snapshotMode=redo
+        /kaniko/executor --destination=us.gcr.io/$PROJECT_ID/$REPO_NAME:$$IMAGE_TAG --cache=true --cache-ttl=6000h --use-new-run --snapshotMode=redo
 
-  # This step Test & Release widgets
-  - name: 'us.gcr.io/$PROJECT_ID/gcp-azure-base:v1'
-    id: Test and Release react-autoql npm package
+  # This step Test & Deploy Helm Chart, Test Deploy
+  - name: "us.gcr.io/$PROJECT_ID/gcp-azure-base:v1"
+    id: Deploy
     entrypoint: /bin/bash
     args:
-      - '-exc'
+      - "-exc"
       - |
         PROJECT_ID=$PROJECT_ID BUILD_ID=$BUILD_ID COMMIT_SHA=$COMMIT_SHA REVISION_ID=$REVISION_ID SHORT_SHA=$SHORT_SHA REPO_NAME=$REPO_NAME BRANCH_NAME=$BRANCH_NAME TAG_NAME=$TAG_NAME
-        _DEBUG=$_DEBUG
-        [ -f ./config/cloudbuild_before_release.sh ] && source ./config/cloudbuild_before_release.sh
-        source ./config/cloudbuild_release.sh
+        _DEBUG=$_DEBUG 
+        [ -f ./config/cloudbuild_before_deploy.sh ] && source ./config/cloudbuild_before_deploy.sh
+        source ./config/cloudbuild_deploy.sh
     secretEnv:
       [
-        'npm_token',
-        'gh_token',
-        'azure_sp_secret',
-        'azure_sp_username',
-        'azure_sp_tenantid',
-        'cloudbuild_msg_repo',
-        'cloudbuild_msg_pubsub_topic',
+        "NPM_TOKEN",
+        "GH_TOKEN",
+        "azure_sp_secret",
+        "azure_sp_username",
+        "azure_sp_tenantid",
+        "cloudbuild_msg_repo",
+        "cloudbuild_msg_pubsub_topic",
+        "cloudbuild_slack_token",
       ]
 
 availableSecrets:
   secretManager:
     - versionName: projects/$PROJECT_NUMBER/secrets/npm_token/versions/latest
-      env: 'npm_token'
+      env: "NPM_TOKEN"
     - versionName: projects/$PROJECT_NUMBER/secrets/gh_token/versions/latest
-      env: 'gh_token'
+      env: "GH_TOKEN"
     - versionName: projects/$PROJECT_NUMBER/secrets/azure_sp_secret/versions/latest
-      env: 'azure_sp_secret'
+      env: "azure_sp_secret"
     - versionName: projects/$PROJECT_NUMBER/secrets/azure_sp_username/versions/latest
-      env: 'azure_sp_username'
+      env: "azure_sp_username"
     - versionName: projects/$PROJECT_NUMBER/secrets/azure_sp_tenantid/versions/latest
-      env: 'azure_sp_tenantid'
+      env: "azure_sp_tenantid"
     - versionName: projects/$PROJECT_NUMBER/secrets/cloudbuild_msg_repo/versions/latest
-      env: 'cloudbuild_msg_repo'
+      env: "cloudbuild_msg_repo"
     - versionName: projects/$PROJECT_NUMBER/secrets/cloudbuild_msg_pubsub_topic/versions/latest
-      env: 'cloudbuild_msg_pubsub_topic'
+      env: "cloudbuild_msg_pubsub_topic"
+    - versionName: projects/$PROJECT_NUMBER/secrets/cloudbuild_slack_token/versions/latest
+      env: "cloudbuild_slack_token"
 options:
-  substitution_option: 'ALLOW_LOOSE'
+  substitution_option: "ALLOW_LOOSE"
 
 timeout: 14400s
 
 tags:
-  ['$REPO_NAME', '$COMMIT_SHA', '$SHORT_SHA', '$PROJECT_ID', '$BRANCH_NAME', '$TAG_NAME', '$REVISION_ID', '$BUILD_ID']
+  [
+    "$REPO_NAME",
+    "$COMMIT_SHA",
+    "$SHORT_SHA",
+    "$PROJECT_ID",
+    "$BRANCH_NAME",
+    "$TAG_NAME",
+    "$REVISION_ID",
+    "$BUILD_ID",
+  ]
