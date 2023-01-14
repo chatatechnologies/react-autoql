@@ -20,14 +20,18 @@ export default class ChataBarChart extends Component {
     this.setChartData(props)
     this.setLongestLabelWidth(props)
     this.setLabelRotationValue(props)
+
+    this.state = {
+      isChartScaled: false,
+    }
   }
 
   static propTypes = chartPropTypes
   static defaultProps = chartDefaultProps
 
-  // shouldComponentUpdate = () => {
-  //   return true
-  // }
+  shouldComponentUpdate = () => {
+    return true
+  }
 
   componentDidUpdate = (prevProps) => {
     if (shouldRecalculateLongestLabel(prevProps, this.props)) {
@@ -74,12 +78,17 @@ export default class ChataBarChart extends Component {
       columnIndices1: numberColumnIndices,
       columnIndices2: numberColumnIndices2,
       axis: 'x',
+      isScaled: this.state?.isChartScaled,
     })
 
     this.xScale = xScalesAndTicks.scale
     this.xTickValues = this.xScale.tickLabels
     this.xScale2 = xScalesAndTicks.scale2
     this.xTickValues2 = this.xScale2?.tickLabels
+  }
+
+  toggleChartScale = () => {
+    this.setState({ isChartScaled: !this.state.isChartScaled })
   }
 
   render = () => {

@@ -476,25 +476,6 @@ export const getLinearScale = ({ props, minValue, maxValue, axis, tickValues, nu
       isScaled,
     })
   scale.isScaled = isScaled
-  // scale.toggleScale0 = function () {
-  //   this.scale0 = !this.scale0
-  //   const { minValue, maxValue } = getMinAndMaxValues(
-  //     props.data,
-  //     props.numberColumnIndices,
-  //     this.scale0,
-  //     this.stacked,
-  //     props.stringColumnIndex,
-  //   )
-  //   this.domain([minValue, maxValue])
-  //   this.minValue = minValue
-  //   this.maxValue = maxValue
-  //   scale.tickLabels = getTickValues({
-  //     props,
-  //     scale,
-  //     numTicks,
-  //   })
-  //   console.log('toggling scale', this, this.scale0, this.type)
-  // }
 
   return scale
 }

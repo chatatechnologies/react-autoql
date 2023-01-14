@@ -63,6 +63,7 @@ export default class Axis extends Component {
   componentDidMount = () => {
     this._isMounted = true
     this.renderAxis()
+
     // Render a second time so the title knows where to be placed
     // based on the width of the tick labels
     this.forceUpdate(() => {
@@ -226,6 +227,12 @@ export default class Axis extends Component {
         const allLabelsBbox = mergeBboxes(labelBboxes)
         this.labelBBox = { ...allLabelsBbox }
       }
+
+      select(this.axisScaler)
+        .attr('x', (this.labelBBox?.x ?? 0) - this.BUTTON_PADDING)
+        .attr('y', (this.labelBBox?.y ?? 0) - this.BUTTON_PADDING)
+        .attr('width', (this.labelBBox?.width ?? 0) + this.BUTTON_PADDING * 2)
+        .attr('height', (this.labelBBox?.height ?? 0) + this.BUTTON_PADDING * 2)
     }
   }
 
@@ -578,6 +585,28 @@ export default class Axis extends Component {
     )
   }
 
+  shouldRenderAxisScaler = () => {
+    return !!this.labelBBox && this.props.scale?.type === 'LINEAR' && this.props.scale?.domain().length !== 1
+  }
+
+  renderAxisScaler = () => {
+    return (
+      this.shouldRenderAxisScaler() && (
+        <AxisScaler
+          toggleChartScale={this.props.toggleChartScale}
+          labelBBox={this.labelBBox}
+          childProps={{
+            ref: (r) => (this.axisScaler = r),
+            x: (this.labelBBox?.x ?? 0) - this.BUTTON_PADDING,
+            y: (this.labelBBox?.y ?? 0) - this.BUTTON_PADDING,
+            width: (this.labelBBox?.width ?? 0) + this.BUTTON_PADDING * 2,
+            height: (this.labelBBox?.height ?? 0) + this.BUTTON_PADDING * 2,
+          }}
+        />
+      )
+    )
+  }
+
   render = () => {
     // const numSeries = this.props.numberColumnIndices?.length || 0
     // const legendDx = (this.LEGEND_PADDING * (numSeries - 1)) / 2
@@ -607,19 +636,7 @@ export default class Axis extends Component {
         />
         {this.renderAxisTitle()}
         {this.renderLoadMoreDropdown()}
-        {!!this.labelBBox && this.props.scale?.type === 'LINEAR' && this.props.scale?.domain().length !== 1 && (
-          <AxisScaler
-            toggleChartScale={this.props.toggleChartScale}
-            labelBBox={this.labelBBox}
-            childProps={{
-              ref: (r) => (this.axisScaler = r),
-              x: (this.labelBBox?.x ?? 0) - this.BUTTON_PADDING,
-              y: (this.labelBBox?.y ?? 0) - this.BUTTON_PADDING,
-              width: (this.labelBBox?.width ?? 0) + this.BUTTON_PADDING * 2,
-              height: (this.labelBBox?.height ?? 0) + this.BUTTON_PADDING * 2,
-            }}
-          />
-        )}
+        {this.renderAxisScaler()}
       </g>
     )
   }

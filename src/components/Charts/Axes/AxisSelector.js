@@ -6,9 +6,9 @@ import { isColumnNumberType, isColumnStringType } from '../../QueryOutput/column
 import { deepEqual } from '../../../js/Util'
 
 export default class AxisSelector extends React.Component {
-  shouldComponentUpdate = (nextProps, nextState) => {
-    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
-  }
+  // shouldComponentUpdate = (nextProps, nextState) => {
+  //   return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
+  // }
 
   render = () => {
     if (isColumnNumberType(this.props.column)) {
