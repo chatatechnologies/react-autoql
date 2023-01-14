@@ -96,7 +96,6 @@ export default class ChataBarChart extends Component {
         data-test='react-autoql-bar-chart'
         transform={`translate(${this.props.deltaX}, ${this.props.deltaY})`}
       >
-        {this.props.marginAdjustmentFinished && <Bars {...this.props} xScale={this.xScale} yScale={this.yScale} />}
         <Axes
           {...this.props}
           ref={(r) => (this.axesRef = r)}
@@ -115,8 +114,11 @@ export default class ChataBarChart extends Component {
           leftAxisTitle={this.props.stringAxisTitle}
           bottomAxisTitle={this.props.numberAxisTitle}
           topAxisTitle={this.props.numberAxisTitle2}
+          toggleChartScale={this.toggleChartScale}
           xGridLines
-        />
+        >
+          {this.props.marginAdjustmentFinished && <Bars {...this.props} xScale={this.xScale} yScale={this.yScale} />}
+        </Axes>
       </g>
     )
   }

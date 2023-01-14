@@ -59,7 +59,6 @@ export default class ChataChart extends Component {
       deltaY: 0,
       // isLoading: true,
       isLoadingMoreRows: false,
-      isChartScaled: false,
     }
   }
 
@@ -231,10 +230,6 @@ export default class ChataChart extends Component {
     }
   }
 
-  setIsChartScaled = () => {
-    this.setState({ isChartScaled: !this.state.isChartScaled })
-  }
-
   clearLoading = () => {
     clearTimeout(this.loadingTimeout)
     this.loadingTimeout = setTimeout(() => {
@@ -402,9 +397,7 @@ export default class ChataChart extends Component {
       chartContainerRef: this.chartContainerRef,
       popoverParentElement: this.props.popoverParentElement || this.chartContainerRef,
       totalRowCount: this.props.totalRowCount,
-      isChartScaled: this.state.isChartScaled,
       chartID: this.state.chartID,
-      setIsChartScaled: this.setIsChartScaled,
       changeNumberColumnIndices: this.changeNumberColumnIndices,
       rebuildTooltips: this.rebuildTooltips,
       onAxesRenderComplete: this.onAxesRenderComplete,

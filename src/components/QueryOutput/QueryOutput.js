@@ -488,7 +488,7 @@ export class QueryOutput extends React.Component {
 
       return true
     } catch (error) {
-      console.warn(error)
+      console.warn('Saved table config was not valid for dashboard tile response', error?.message)
       return false
     }
   }
@@ -1208,11 +1208,6 @@ export class QueryOutput extends React.Component {
     })
   }
 
-  getColumnSortingDirection = (col) => {
-    console.log('get sort caret direction here')
-    return undefined
-  }
-
   setFilterFunction = (col) => {
     const self = this
     if (col.type === 'DATE') {
@@ -1376,7 +1371,7 @@ export class QueryOutput extends React.Component {
       // Allow proper chronological sorting for date strings
       newCol.sorter = this.setSorterFunction(newCol)
       newCol.headerSort = !!this.props.enableTableSorting
-      newCol.headerSortStartingDir = this.getColumnSortingDirection(newCol)
+      // newCol.headerSortStartingDir = this.getColumnSortingDirection(newCol)
 
       // Show drilldown filter value in column title so user knows they can't filter on this column
       const drilldownGroupby = this.queryResponse?.data?.data?.fe_req?.columns?.find(

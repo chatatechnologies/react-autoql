@@ -1,15 +1,14 @@
 import React from 'react'
-import _get from 'lodash.get'
-import _isEqual from 'lodash.isequal'
 import NumberAxisSelector from './NumberAxisSelector'
 import StringAxisSelector from './StringAxisSelector'
 
 import { isColumnNumberType, isColumnStringType } from '../../QueryOutput/columnHelpers'
-import { axesDefaultProps, axesPropTypes } from '../helpers'
+import { deepEqual } from '../../../js/Util'
 
 export default class AxisSelector extends React.Component {
-  static propTypes = axesPropTypes
-  static defaultProps = axesDefaultProps
+  shouldComponentUpdate = (nextProps, nextState) => {
+    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
+  }
 
   render = () => {
     if (isColumnNumberType(this.props.column)) {

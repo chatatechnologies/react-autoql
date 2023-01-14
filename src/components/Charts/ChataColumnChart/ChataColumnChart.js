@@ -21,6 +21,10 @@ export default class ChataColumnChart extends Component {
     this.setChartData(props)
     this.setLongestLabelWidth(props)
     this.setLabelRotationValue(props)
+
+    this.state = {
+      isChartScaled: false,
+    }
   }
 
   static propTypes = chartPropTypes
@@ -74,12 +78,17 @@ export default class ChataColumnChart extends Component {
       columnIndices1: numberColumnIndices,
       columnIndices2: numberColumnIndices2,
       axis: 'y',
+      isScaled: this.state?.isChartScaled,
     })
 
     this.yScale = yScalesAndTicks.scale
     this.yTickValues = this.yScale.tickLabels
     this.yScale2 = yScalesAndTicks.scale2
     this.yTickValues2 = this.yScale2?.tickLabels
+  }
+
+  toggleChartScale = () => {
+    this.setState({ isChartScaled: !this.state.isChartScaled })
   }
 
   render = () => {
@@ -96,19 +105,6 @@ export default class ChataColumnChart extends Component {
         data-test='react-autoql-column-chart'
         transform={`translate(${this.props.deltaX}, ${this.props.deltaY})`}
       >
-        {this.props.marginAdjustmentFinished && (
-          <>
-            <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />
-            {!!this.yScale2 && (
-              <Line
-                {...this.props}
-                numberColumnIndices={this.props.numberColumnIndices2}
-                xScale={this.xScale}
-                yScale={this.yScale2}
-              />
-            )}
-          </>
-        )}
         <Axes
           {...this.props}
           ref={(r) => (this.axesRef = r)}
@@ -127,8 +123,23 @@ export default class ChataColumnChart extends Component {
           leftAxisTitle={this.props.numberAxisTitle}
           rightAxisTitle={this.props.numberAxisTitle2}
           bottomAxisTitle={this.props.stringAxisTitle}
+          toggleChartScale={this.toggleChartScale}
           yGridLines
-        />
+        >
+          {this.props.marginAdjustmentFinished && (
+            <>
+              <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />
+              {!!this.yScale2 && (
+                <Line
+                  {...this.props}
+                  numberColumnIndices={this.props.numberColumnIndices2}
+                  xScale={this.xScale}
+                  yScale={this.yScale2}
+                />
+              )}
+            </>
+          )}
+        </Axes>
       </g>
     )
   }

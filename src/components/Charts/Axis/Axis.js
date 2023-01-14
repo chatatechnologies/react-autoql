@@ -78,20 +78,6 @@ export default class Axis extends Component {
     // }
   }
 
-  // styleAxisScalerBorder = () => {
-  //   select(this.axisScaler)
-  //     .attr('class', 'axis-scaler-border')
-  //     .attr('transform', `translate(${this.props.translateX ?? 0}, ${this.props.translateY ?? 0})`)
-  //     .attr('width', (this.labelBBox?.width ?? 0) + this.BUTTON_PADDING * 2)
-  //     .attr('height', (this.labelBBox?.height ?? 0) + this.BUTTON_PADDING * 2)
-  //     .attr('x', (this.labelBBox?.x ?? 0) - this.BUTTON_PADDING)
-  //     .attr('y', (this.labelBBox?.y ?? 0) - this.BUTTON_PADDING)
-  //     .attr('stroke', 'transparent')
-  //     .attr('stroke-width', '1px')
-  //     .attr('fill', 'transparent')
-  //     .attr('rx', 4)
-  // }
-
   componentWillUnmount = () => {
     this._isMounted = false
   }
@@ -240,10 +226,6 @@ export default class Axis extends Component {
         const allLabelsBbox = mergeBboxes(labelBboxes)
         this.labelBBox = { ...allLabelsBbox }
       }
-
-      // if (this.props.scale?.type === 'LINEAR') {
-      //   this.styleAxisScalerBorder()
-      // }
     }
   }
 
@@ -313,9 +295,20 @@ export default class Axis extends Component {
           {this.renderAxisTitleText()}
         </text>
         <AxisSelector
-          {...this.props}
+          chartContainerRef={this.props.chartContainerRef}
+          changeNumberColumnIndices={this.props.changeNumberColumnIndices}
+          changeStringColumnIndex={this.props.changeStringColumnIndex}
+          legendColumn={this.props.legendColumn}
+          popoverParentElement={this.props.popoverParentElement}
+          rebuildTooltips={this.props.rebuildTooltips}
+          numberColumnIndices={this.props.numberColumnIndices}
+          numberColumnIndices2={this.props.numberColumnIndices2}
+          stringColumnIndices={this.props.stringColumnIndices}
+          stringColumnIndex={this.props.stringColumnIndex}
+          tooltipID={this.props.tooltipID}
           hidden={!this.props.hasDropdown}
           column={this.props.col}
+          columns={this.props.columns}
           positions={['top', 'bottom']}
           align='center'
           childProps={{
@@ -410,9 +403,20 @@ export default class Axis extends Component {
           {this.renderAxisTitleText()}
         </text>
         <AxisSelector
-          {...this.props}
+          chartContainerRef={this.props.chartContainerRef}
+          changeNumberColumnIndices={this.props.changeNumberColumnIndices}
+          changeStringColumnIndex={this.props.changeStringColumnIndex}
+          legendColumn={this.props.legendColumn}
+          popoverParentElement={this.props.popoverParentElement}
+          rebuildTooltips={this.props.rebuildTooltips}
+          numberColumnIndices={this.props.numberColumnIndices}
+          numberColumnIndices2={this.props.numberColumnIndices2}
+          stringColumnIndices={this.props.stringColumnIndices}
+          stringColumnIndex={this.props.stringColumnIndex}
+          tooltipID={this.props.tooltipID}
           hidden={!this.props.hasDropdown}
           column={this.props.col}
+          columns={this.props.columns}
           positions={['right']}
           align='center'
           childProps={{
@@ -508,9 +512,20 @@ export default class Axis extends Component {
           {this.renderAxisTitleText()}
         </text>
         <AxisSelector
-          {...this.props}
+          chartContainerRef={this.props.chartContainerRef}
+          changeNumberColumnIndices={this.props.changeNumberColumnIndices}
+          changeStringColumnIndex={this.props.changeStringColumnIndex}
+          legendColumn={this.props.legendColumn}
+          popoverParentElement={this.props.popoverParentElement}
+          rebuildTooltips={this.props.rebuildTooltips}
+          numberColumnIndices={this.props.numberColumnIndices}
+          numberColumnIndices2={this.props.numberColumnIndices2}
+          stringColumnIndices={this.props.stringColumnIndices}
+          stringColumnIndex={this.props.stringColumnIndex}
+          tooltipID={this.props.tooltipID}
           hidden={!this.props.hasDropdown}
           column={this.props.col}
+          columns={this.props.columns}
           positions={['left']}
           align='center'
           childProps={{
@@ -592,9 +607,10 @@ export default class Axis extends Component {
         />
         {this.renderAxisTitle()}
         {this.renderLoadMoreDropdown()}
-        {/* {!!this.labelBBox && this.props.scale?.type === 'LINEAR' && this.props.scale?.domain().length !== 1 && (
+        {!!this.labelBBox && this.props.scale?.type === 'LINEAR' && this.props.scale?.domain().length !== 1 && (
           <AxisScaler
-            setIsChartScaled={this.props.setIsChartScaled}
+            toggleChartScale={this.props.toggleChartScale}
+            labelBBox={this.labelBBox}
             childProps={{
               ref: (r) => (this.axisScaler = r),
               x: (this.labelBBox?.x ?? 0) - this.BUTTON_PADDING,
@@ -603,7 +619,7 @@ export default class Axis extends Component {
               height: (this.labelBBox?.height ?? 0) + this.BUTTON_PADDING * 2,
             }}
           />
-        )} */}
+        )}
       </g>
     )
   }

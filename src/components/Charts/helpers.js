@@ -254,7 +254,7 @@ export const convertToNumber = (value) => {
   }
 }
 
-export const calculateMinAndMaxSums = (data, stringColumnIndex, numberColumnIndices) => {
+export const calculateMinAndMaxSums = (data, stringColumnIndex, numberColumnIndices, isScaled) => {
   const positiveSumsObject = {}
   const negativeSumsObject = {}
 
@@ -288,8 +288,18 @@ export const calculateMinAndMaxSums = (data, stringColumnIndex, numberColumnIndi
   })
 
   // Get max and min sums from those sum objects
-  const maxValue = getMaxValueFromKeyValueObj(positiveSumsObject)
-  const minValue = getMinValueFromKeyValueObj(negativeSumsObject)
+  let maxValue = getMaxValueFromKeyValueObj(positiveSumsObject)
+  let minValue = getMinValueFromKeyValueObj(negativeSumsObject)
+
+  const scaleRatio = maxValue / minValue
+  const disableChartScale = !isScaled || (maxValue > 0 && minValue < 0) || scaleRatio > 1000
+  if (disableChartScale) {
+    if (maxValue > 0 && minValue > 0) {
+      minValue = 0
+    } else if (maxValue < 0 && minValue < 0) {
+      maxValue = 0
+    }
+  }
 
   return {
     maxValue,
@@ -335,9 +345,9 @@ export const getMinValueFromKeyValueObj = (obj) => {
   return minValue
 }
 
-export const getMinAndMaxValues = (data, numberColumnIndices, isChartScaled, sum, stringColumnIndex) => {
+export const getMinAndMaxValues = (data, numberColumnIndices, isScaled, sum, stringColumnIndex) => {
   if (sum) {
-    return calculateMinAndMaxSums(data, stringColumnIndex, numberColumnIndices)
+    return calculateMinAndMaxSums(data, stringColumnIndex, numberColumnIndices, isScaled)
   }
 
   try {
@@ -363,9 +373,9 @@ export const getMinAndMaxValues = (data, numberColumnIndices, isChartScaled, sum
     // Always show 0 on the y axis
     // Keep this for future use
     const scaleRatio = maxValue / minValue
-    const isDisableChartScale = !isChartScaled || (maxValue > 0 && minValue < 0) || scaleRatio > 1000
+    const disableChartScale = !isScaled || (maxValue > 0 && minValue < 0) || scaleRatio > 1000
 
-    if (isDisableChartScale) {
+    if (disableChartScale) {
       if (maxValue > 0 && minValue > 0) {
         minValue = 0
       } else if (maxValue < 0 && minValue < 0) {
@@ -444,7 +454,9 @@ export const getBandScale = ({
   return scale
 }
 
-export const getLinearScale = ({ props, minValue, maxValue, axis, tickValues, numTicks }) => {
+export const scaleTo0 = (scale) => {}
+
+export const getLinearScale = ({ props, minValue, maxValue, axis, tickValues, numTicks, stacked, isScaled }) => {
   const range = getRangeForAxis(props, axis)
   const min = minValue ?? tickValues?.[0] ?? 0
   const max = maxValue ?? tickValues?.[tickValues?.length - 1] ?? min
@@ -453,6 +465,7 @@ export const getLinearScale = ({ props, minValue, maxValue, axis, tickValues, nu
   const scale = scaleLinear().domain(domain).range(range)
   scale.minValue = min
   scale.maxValue = max
+  scale.stacked = !!stacked
   scale.type = 'LINEAR'
   scale.tickLabels =
     tickValues ??
@@ -460,16 +473,37 @@ export const getLinearScale = ({ props, minValue, maxValue, axis, tickValues, nu
       props,
       scale,
       numTicks,
+      isScaled,
     })
+  scale.isScaled = isScaled
+  // scale.toggleScale0 = function () {
+  //   this.scale0 = !this.scale0
+  //   const { minValue, maxValue } = getMinAndMaxValues(
+  //     props.data,
+  //     props.numberColumnIndices,
+  //     this.scale0,
+  //     this.stacked,
+  //     props.stringColumnIndex,
+  //   )
+  //   this.domain([minValue, maxValue])
+  //   this.minValue = minValue
+  //   this.maxValue = maxValue
+  //   scale.tickLabels = getTickValues({
+  //     props,
+  //     scale,
+  //     numTicks,
+  //   })
+  //   console.log('toggling scale', this, this.scale0, this.type)
+  // }
 
   return scale
 }
 
-export const getLinearScales = ({ props, columnIndices1, columnIndices2, axis, stacked }) => {
-  const minMax = getMinAndMaxValues(props.data, columnIndices1, props.isChartScaled, stacked, props.stringColumnIndex)
+export const getLinearScales = ({ props, columnIndices1, columnIndices2, axis, stacked, isScaled }) => {
+  const minMax = getMinAndMaxValues(props.data, columnIndices1, isScaled, stacked, props.stringColumnIndex)
   const minValue = minMax.minValue
   const maxValue = minMax.maxValue
-  const tempScale1 = getLinearScale({ props, minValue, maxValue, axis })
+  const tempScale1 = getLinearScale({ props, minValue, maxValue, axis, stacked, isScaled })
 
   if (!columnIndices2?.length) {
     return {
@@ -478,7 +512,7 @@ export const getLinearScales = ({ props, columnIndices1, columnIndices2, axis, s
   }
 
   // If there are 2 y axes, we need to line up the number of ticks and their values
-  const minMax2 = getMinAndMaxValues(props.data, columnIndices2, props.isChartScaled, stacked, props.stringColumnIndex)
+  const minMax2 = getMinAndMaxValues(props.data, columnIndices2, isScaled, stacked, props.stringColumnIndex)
   const minValue2 = minMax2.minValue
   const maxValue2 = minMax2.maxValue
 
@@ -488,6 +522,8 @@ export const getLinearScales = ({ props, columnIndices1, columnIndices2, axis, s
     maxValue: maxValue2,
     axis,
     numTicks: tempScale1.tickLabels?.length ?? undefined,
+    stacked,
+    isScaled,
   })
 
   const tickValues1 = tempScale1.tickLabels
@@ -520,8 +556,8 @@ export const getLinearScales = ({ props, columnIndices1, columnIndices2, axis, s
     }
   }
 
-  const scale = getLinearScale({ props, axis, tickValues: newTickValues1 })
-  const scale2 = getLinearScale({ props, axis, tickValues: newTickValues2 })
+  const scale = getLinearScale({ props, axis, tickValues: newTickValues1, stacked, isScaled })
+  const scale2 = getLinearScale({ props, axis, tickValues: newTickValues2, stacked, isScaled })
 
   return { scale, scale2 }
 }

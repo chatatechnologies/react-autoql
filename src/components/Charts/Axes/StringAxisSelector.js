@@ -1,7 +1,5 @@
 import React from 'react'
-import _isEqual from 'lodash.isequal'
 import { Popover } from 'react-tiny-popover'
-import { axesDefaultProps, axesPropTypes } from '../helpers'
 import { CustomScrollbars } from '../../CustomScrollbars'
 
 export default class StringAxisSelector extends React.Component {
@@ -12,9 +10,6 @@ export default class StringAxisSelector extends React.Component {
       isOpen: false,
     }
   }
-
-  static propTypes = axesPropTypes
-  static defaultProps = axesDefaultProps
 
   openSelector = () => {
     this.setState({ isOpen: true })
@@ -40,6 +35,10 @@ export default class StringAxisSelector extends React.Component {
       maxHeight = chartHeight - padding
     } else if (chartHeight && chartHeight < minHeight + padding) {
       maxHeight = minHeight
+    }
+
+    if (maxHeight > Window.innerHeight) {
+      maxHeight = Window.innerHeight
     }
 
     return (

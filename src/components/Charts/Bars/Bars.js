@@ -10,6 +10,10 @@ export default class Bars extends Component {
     activeKey: this.props.activeChartElementKey,
   }
 
+  shouldComponentUpdate = () => {
+    return true
+  }
+
   onBarClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)
 

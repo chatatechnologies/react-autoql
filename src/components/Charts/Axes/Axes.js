@@ -199,6 +199,7 @@ export default class Axes extends React.Component {
 
     return (
       <g ref={(r) => (this.ref = r)}>
+        {this.props.children}
         <g className='react-autoql-axes' data-test='react-autoql-axes'>
           {this.renderBottomAxis(innerWidth, innerHeight)}
           {this.renderLeftAxis(innerWidth, innerHeight)}

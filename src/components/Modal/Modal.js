@@ -54,7 +54,7 @@ export default class Modal extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
-    if (!nextProps.shouldRender) {
+    if (!nextProps.shouldRender && !this.props.shouldRender) {
       return false
     }
 
