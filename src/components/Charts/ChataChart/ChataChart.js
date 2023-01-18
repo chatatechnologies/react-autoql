@@ -104,8 +104,15 @@ export default class ChataChart extends Component {
   componentDidUpdate = (prevProps, prevState) => {
     let shouldForceUpdate = false
 
+    if (!this.props.isResizing && prevProps.isResizing) {
+      // debounce this call so it's not fired too many times while dragging mouse
+      // clearTimeout(this.adjustChartPositionTimeout)
+      // this.adjustChartPositionTimeout = setTimeout(() => {
+      this.adjustChartPosition()
+      // }, 500)
+    }
+
     if (
-      (!this.props.isResizing && prevProps.isResizing) ||
       (!this.props.isDrilldownChartHidden && prevProps.isDrilldownChartHidden) ||
       this.props.type !== prevProps.type
     ) {
@@ -134,6 +141,10 @@ export default class ChataChart extends Component {
     }
   }
 
+  componentWillUnmount = () => {
+    clearTimeout(this.adjustChartPositionTimeout)
+  }
+
   getData = (props) => {
     if (props.isPivot) {
       return sortDataByDate(props.data, props.columns, 'chart')
@@ -152,41 +163,40 @@ export default class ChataChart extends Component {
     this.adjustChartPosition()
   }
 
-  adjustVerticalPosition = async () => {
+  adjustVerticalPosition = () => {
     // Adjust bottom and top axes second time to account for label rotation
-    const { deltaY } = await this.getDeltas()
-    const { innerHeight } = await this.getMargins(deltaY)
-    this.setState({ deltaY, innerHeight }, () => {
-      this.setState({ isLoading: false })
-    })
+    // Debounce in case multiple axes have rotated labels, we only want to
+    // do the adjustment once
+    clearTimeout(this.adjustVerticalPositionTimeout)
+    this.adjustVerticalPositionTimeout = setTimeout(() => {
+      const { deltaY } = this.getDeltas()
+      const { innerHeight } = this.getMargins(deltaY)
+      this.setState({ deltaY, innerHeight }, () => {
+        this.setState({ isLoading: false })
+      })
+    }, 100)
   }
 
   adjustChartPosition = () => {
-    this.setState({ deltaX: 0, deltaY: 0, bottomAxisMargin: 0, rightAxisMargin: 0, isLoading: true }, async () => {
-      const { deltaX, deltaY } = await this.getDeltas()
-      const { rightAxisMargin, innerHeight } = await this.getMargins()
-
-      // Reset deltas and margins to get new baseline
+    this.setState({ deltaX: 0, deltaY: 0, bottomAxisMargin: 0, rightAxisMargin: 0, isLoading: true }, () => {
+      const { deltaX, deltaY } = this.getDeltas()
+      const { rightAxisMargin, innerHeight } = this.getMargins()
       this.setState({ deltaX, deltaY, rightAxisMargin, innerHeight })
     })
   }
 
   getDeltas = () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const axesBBox = getBBoxFromRef(this.innerChartRef?.chartRef)
+    const axesBBox = getBBoxFromRef(this.innerChartRef?.chartRef)
 
-        // Get distance in px to shift to the right
-        const axesBBoxX = Math.ceil(axesBBox?.x ?? 0)
-        const deltaX = -1 * axesBBoxX + this.PADDING
+    // Get distance in px to shift to the right
+    const axesBBoxX = Math.ceil(axesBBox?.x ?? 0)
+    const deltaX = -1 * axesBBoxX + this.PADDING
 
-        const deltaY =
-          Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.topAxis?.ref)?.height ?? this.AXIS_TITLE_PADDING) +
-          this.PADDING
+    const deltaY =
+      Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.topAxis?.ref)?.height ?? this.AXIS_TITLE_PADDING) +
+      this.PADDING
 
-        resolve({ deltaX, deltaY })
-      }, 0)
-    })
+    return { deltaX, deltaY }
   }
 
   getAxesBBox = () => {
@@ -198,27 +208,22 @@ export default class ChataChart extends Component {
     return axesBBox
   }
 
-  getMargins = async () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // GET NEW INNER HEIGHT BASED ON RANGE VALUES????
-        // axes height - full range = height of all margins. then figure out new inner height based on all margins
-        const containerHeight = this.props.height ?? this.chartContainerRef?.clientHeight ?? 0
-        const axesBBox = this.getAxesBBox()
+  getMargins = () => {
+    // GET NEW INNER HEIGHT BASED ON RANGE VALUES????
+    // axes height - full range = height of all margins. then figure out new inner height based on all margins
+    const containerHeight = this.props.height ?? this.chartContainerRef?.clientHeight ?? 0
+    const axesBBox = this.getAxesBBox()
 
-        let innerHeight = containerHeight
-        if (this.innerChartRef?.yScale && axesBBox) {
-          const axesHeight = axesBBox.height
-          const rangeInPx = this.innerChartRef.yScale.range()[0] - this.innerChartRef.yScale.range()[1]
-          const totalVerticalMargins = axesHeight - rangeInPx
-          innerHeight = containerHeight - totalVerticalMargins - 2 * this.PADDING
-        }
+    let innerHeight = containerHeight
+    if (this.innerChartRef?.yScale && axesBBox) {
+      const axesHeight = axesBBox.height
+      const rangeInPx = this.innerChartRef.yScale.range()[0] - this.innerChartRef.yScale.range()[1]
+      const totalVerticalMargins = axesHeight - rangeInPx
+      innerHeight = containerHeight - totalVerticalMargins - 2 * this.PADDING
+    }
 
-        let rightAxisMargin =
-          Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.rightAxis)?.width ?? 0) + this.PADDING
-        resolve({ rightAxisMargin, innerHeight })
-      }, 0)
-    })
+    let rightAxisMargin = Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.rightAxis)?.width ?? 0) + this.PADDING
+    return { rightAxisMargin, innerHeight }
   }
 
   getChartDimensions = () => {

@@ -94,19 +94,13 @@ export default class Legend extends Component {
   }
 
   styleLegendTitleNoBorder = (svg) => {
-    svg
-      .select('.legendTitle')
-      .style('font-weight', 'bold')
-      // .style('transform', 'translate(0, -5px)')
-      .attr('data-test', 'legend-title')
-      .attr('fill-opacity', 0.9)
+    svg.select('.legendTitle').style('font-weight', 'bold').attr('data-test', 'legend-title').attr('fill-opacity', 0.9)
   }
 
   styleLegendTitleWithBorder = (svg) => {
     svg
       .select('.legendTitle')
       .style('font-weight', 'bold')
-      // .style('transform', 'translate(0, -5px)')
       .attr('data-test', 'legend-title')
       .append('tspan')
       .text('  ▼')
@@ -161,10 +155,6 @@ export default class Legend extends Component {
           .style('fill-opacity', '1')
           .style('font-family', 'inherit')
           .style('font-size', '10px')
-
-        // if (this.props.legendTitle) {
-        //   this.legendSVG.attr('transform', 'translate(0,10)')
-        // }
 
         var legendOrdinal = legendColor()
           .orient('vertical')
@@ -328,9 +318,6 @@ export default class Legend extends Component {
             data-test='bottom-legend'
             id={this.LEGEND_ID}
             className='legendOrdinal'
-            // transform={`translate(${(this.props.width - marginLeft) / 2 + marginLeft - legendDx},${
-            //   this.props.height - 30
-            // })`}
           />
         )}
       </g>

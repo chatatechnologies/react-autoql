@@ -243,7 +243,7 @@ class DashboardWithoutTheme extends React.Component {
             this.currentWindowWidth = undefined
             this.setState({ isWindowResizing: false })
           }
-        }, 300)
+        }, 500)
       }
     }
   }

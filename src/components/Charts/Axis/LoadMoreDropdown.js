@@ -54,7 +54,7 @@ export default class LoadMoreDropdown extends Component {
     const allTextBBox = getBBoxFromRef(this.allText)
     const allTextWidth = allTextBBox?.width ?? 0
     const warningIconX = allTextBBox?.x + allTextWidth + 5
-    const warningIconY = -3
+    const warningIconY = -5
 
     select(this.warningIcon).attr('x', warningIconX).attr('y', warningIconY)
   }

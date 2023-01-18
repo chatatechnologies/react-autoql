@@ -185,9 +185,10 @@ export default class Axes extends React.Component {
     }
 
     const translateX = getBBoxFromRef(this.rightAxisWithoutLegend?.ref)?.width ?? 0
+    const translateY = this.shouldRenderTopAxis() ? 10 : 0
 
     return (
-      <g transform={`translate(${translateX},0)`}>
+      <g transform={`translate(${translateX},${translateY})`}>
         <Legend {...this.props} scale={legendScale} placement={this.props.legendLocation} />
       </g>
     )
