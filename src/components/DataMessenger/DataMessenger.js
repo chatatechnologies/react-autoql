@@ -991,7 +991,6 @@ export class DataMessenger extends React.Component {
   }
 
   render = () => {
-    return null
     if (this.state.hasError) {
       return null
     }

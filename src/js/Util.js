@@ -948,43 +948,6 @@ export const getChartLabelTextWidthInPx = (text) => {
   }
 }
 
-export const getLongestLabelInPx = (labels, col, config) => {
-  if (!labels?.length || !col) {
-    return 0
-  }
-
-  let max = getChartLabelTextWidthInPx(formatChartLabel({ d: labels[0], col, config }))
-
-  labels.forEach((label) => {
-    const formattedLabel = formatChartLabel({
-      d: label,
-      col,
-      config,
-    }).formattedLabel
-    const newLabelWidth = getChartLabelTextWidthInPx(formattedLabel)
-
-    if (newLabelWidth > max) {
-      max = newLabelWidth
-    }
-  })
-
-  return max
-}
-
-export const shouldLabelsRotate = (tickWidth, longestLabelWidth) => {
-  if (isNaN(tickWidth) || isNaN(longestLabelWidth)) {
-    return undefined
-  }
-
-  // If it is close, default to rotating them.
-  const widthDifference = tickWidth - longestLabelWidth
-  if (Math.abs(widthDifference) < 5) {
-    return true
-  }
-
-  return tickWidth < longestLabelWidth
-}
-
 export const getQueryParams = (url) => {
   try {
     const queryParams = {}

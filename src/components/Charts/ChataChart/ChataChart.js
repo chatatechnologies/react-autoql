@@ -39,7 +39,7 @@ export default class ChataChart extends Component {
 
     this.PADDING = 6
     this.LEGEND_PADDING = 50
-    this.AXIS_LABEL_PADDING = 30
+    this.AXIS_TITLE_PADDING = 15
     this.DEFAULT_BOTTOM_MARGIN = 100
 
     this.firstRender = true
@@ -152,21 +152,22 @@ export default class ChataChart extends Component {
     this.adjustChartPosition()
   }
 
-  adjustBottomMargin = async () => {
-    // Adjust bottom axis second time to account for label rotation
-    const { bottomAxisMargin } = await this.getMargins()
-    this.setState({ bottomAxisMargin }, () => {
+  adjustVerticalPosition = async () => {
+    // Adjust bottom and top axes second time to account for label rotation
+    const { deltaY } = await this.getDeltas()
+    const { innerHeight } = await this.getMargins(deltaY)
+    this.setState({ deltaY, innerHeight }, () => {
       this.setState({ isLoading: false })
     })
   }
 
-  adjustChartPosition = (callback) => {
-    this.setState({ deltaX: 0, deltaY: 0, isLoading: true }, async () => {
+  adjustChartPosition = () => {
+    this.setState({ deltaX: 0, deltaY: 0, bottomAxisMargin: 0, rightAxisMargin: 0, isLoading: true }, async () => {
       const { deltaX, deltaY } = await this.getDeltas()
-      const { rightAxisMargin, bottomAxisMargin } = await this.getMargins()
+      const { rightAxisMargin, innerHeight } = await this.getMargins()
 
       // Reset deltas and margins to get new baseline
-      this.setState({ deltaX, deltaY, rightAxisMargin, bottomAxisMargin })
+      this.setState({ deltaX, deltaY, rightAxisMargin, innerHeight })
     })
   }
 
@@ -177,35 +178,45 @@ export default class ChataChart extends Component {
 
         // Get distance in px to shift to the right
         const axesBBoxX = Math.ceil(axesBBox?.x ?? 0)
-        const deltaX = deltaX ?? -1 * axesBBoxX + this.PADDING
+        const deltaX = -1 * axesBBoxX + this.PADDING
 
         const deltaY =
-          deltaY ??
-          -1 * Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.topAxis?.ref)?.height ?? 0) + this.PADDING
+          Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.topAxis?.ref)?.height ?? this.AXIS_TITLE_PADDING) +
+          this.PADDING
 
         resolve({ deltaX, deltaY })
       }, 0)
     })
   }
 
+  getAxesBBox = () => {
+    const leftAxisBBox = this.innerChartRef?.axesRef?.leftAxis?.ref?.getBoundingClientRect()
+    const bottomAxisBBox = this.innerChartRef?.axesRef?.bottomAxis?.ref?.getBoundingClientRect()
+    const rightAxisBBox = this.innerChartRef?.axesRef?.rightAxis?.ref?.getBoundingClientRect()
+    const topAxisBBox = this.innerChartRef?.axesRef?.topAxis?.ref?.getBoundingClientRect()
+    const axesBBox = mergeBboxes([leftAxisBBox, bottomAxisBBox, rightAxisBBox, topAxisBBox])
+    return axesBBox
+  }
+
   getMargins = async () => {
     return new Promise((resolve) => {
       setTimeout(() => {
-        // Get height difference in px to determine proper chart height
-        const leftAxisBBox = this.innerChartRef?.axesRef?.leftAxis?.ref?.getBoundingClientRect()
-        const bottomAxisBBox = this.innerChartRef?.axesRef?.bottomAxis?.ref?.getBoundingClientRect()
-        const leftBottomBBox = mergeBboxes([leftAxisBBox, bottomAxisBBox])
-        const leftBottomHeight = leftBottomBBox?.height ?? containerHeight
+        // GET NEW INNER HEIGHT BASED ON RANGE VALUES????
+        // axes height - full range = height of all margins. then figure out new inner height based on all margins
         const containerHeight = this.props.height ?? this.chartContainerRef?.clientHeight ?? 0
-        let bottomAxisMargin =
-          this.state.bottomAxisMargin + Math.ceil(leftBottomHeight - containerHeight + this.PADDING)
-        if (bottomAxisMargin < 0) {
-          bottomAxisMargin = 0
+        const axesBBox = this.getAxesBBox()
+
+        let innerHeight = containerHeight
+        if (this.innerChartRef?.yScale && axesBBox) {
+          const axesHeight = axesBBox.height
+          const rangeInPx = this.innerChartRef.yScale.range()[0] - this.innerChartRef.yScale.range()[1]
+          const totalVerticalMargins = axesHeight - rangeInPx
+          innerHeight = containerHeight - totalVerticalMargins - 2 * this.PADDING
         }
 
         let rightAxisMargin =
           Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.rightAxis)?.width ?? 0) + this.PADDING
-        resolve({ rightAxisMargin, bottomAxisMargin })
+        resolve({ rightAxisMargin, innerHeight })
       }, 0)
     })
   }
@@ -221,10 +232,12 @@ export default class ChataChart extends Component {
       innerWidth = 0
     }
 
-    let innerHeight = Math.floor(containerHeight - bottomAxisMargin - deltaY)
-    if (innerHeight < 0) {
-      innerHeight = 0
-    }
+    // let innerHeight = Math.floor(containerHeight - bottomAxisMargin - deltaY)
+    // if (innerHeight < 0) {
+    //   innerHeight = 0
+    // }
+
+    const innerHeight = this.state.innerHeight ?? containerHeight
 
     const outerWidth = Math.ceil(containerWidth)
     const outerHeight = Math.ceil(containerHeight)
@@ -402,7 +415,7 @@ export default class ChataChart extends Component {
       legendTitle: this.props.legendColumn?.title || 'Category',
       legendLocation: getLegendLocation(numberColumnIndices, this.props.type),
       legendLabels: this.getLegendLabels(),
-      onLabelRotation: this.adjustBottomMargin,
+      onLabelRotation: this.adjustVerticalPosition,
       visibleSeriesIndices,
       visibleSeriesIndices2,
       numberAxisTitle: this.getNumberAxisTitle(visibleSeriesIndices),

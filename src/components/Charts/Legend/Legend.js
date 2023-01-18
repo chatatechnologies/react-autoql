@@ -272,23 +272,10 @@ export default class Legend extends Component {
   }
 
   render = () => {
-    // const numSeries = this.props.numberColumnIndices?.length || 0
-    // const legendDx = (this.MAX_LEGEND_WIDTH * (numSeries - 1)) / 2
-    // const marginLeft = this.props.leftMargin || 0
-
     let legendClippingHeight = this.props.height // -
-    // make legend smaller if labels are not rotated
-    // because they might overlap the legend
-    // (!this.props.rotateLabels ? this.props.bottomMargin : 44) + // distance to bottom of axis labels
-    // 20
     if (legendClippingHeight < 0) {
       legendClippingHeight = 0
     }
-
-    // let translateX = this.props.width
-    // if (this.props.axesRef) {
-    //   translateX = this.props.axesRef.getBBox().width
-    // }
 
     const legendWidth = getBBoxFromRef(this.rightLegendElement)?.width ?? 0
 

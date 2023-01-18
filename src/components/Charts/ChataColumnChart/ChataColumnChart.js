@@ -3,24 +3,14 @@ import { Axes } from '../Axes'
 import { Columns } from '../Columns'
 import { Line } from '../Line'
 
-import {
-  chartDefaultProps,
-  chartPropTypes,
-  getBandScale,
-  getLinearScales,
-  shouldRecalculateLongestLabel,
-} from '../helpers.js'
-
-import { shouldLabelsRotate, getLongestLabelInPx } from '../../../js/Util'
-import { getDataFormatting } from '../../../props/defaults'
+import { chartDefaultProps, chartPropTypes, getBandScale, getLinearScales } from '../helpers.js'
+import { deepEqual } from '../../../js/Util'
 
 export default class ChataColumnChart extends Component {
   constructor(props) {
     super(props)
 
     this.setChartData(props)
-    this.setLongestLabelWidth(props)
-    this.setLabelRotationValue(props)
 
     this.state = {
       isChartScaled: false,
@@ -30,30 +20,11 @@ export default class ChataColumnChart extends Component {
   static propTypes = chartPropTypes
   static defaultProps = chartDefaultProps
 
-  // shouldComponentUpdate = () => {
-  //   return true
-  // }
+  shouldComponentUpdate = (nextProps, nextState) => {
+    const propsEqual = deepEqual(this.props, nextProps)
+    const stateEqual = deepEqual(this.state, nextState)
 
-  componentDidUpdate = (prevProps) => {
-    if (shouldRecalculateLongestLabel(prevProps, this.props)) {
-      this.setLongestLabelWidth(this.props)
-    }
-  }
-
-  setLabelRotationValue = () => {
-    const rotateLabels = shouldLabelsRotate(this.xScale?.tickSizePx, this.longestLabelWidth)
-
-    if (typeof rotateLabels !== 'undefined') {
-      this.rotateLabels = rotateLabels
-    }
-  }
-
-  setLongestLabelWidth = (props) => {
-    this.longestLabelWidth = getLongestLabelInPx(
-      this.xScale.tickLabels,
-      props.columns[props.stringColumnIndex],
-      getDataFormatting(props.dataFormatting),
-    )
+    return !propsEqual || !stateEqual
   }
 
   setChartData = (props) => {
@@ -92,7 +63,6 @@ export default class ChataColumnChart extends Component {
 
   render = () => {
     this.setChartData(this.props)
-    this.setLabelRotationValue(this.props)
 
     const yCol = this.props.columns[this.props.numberColumnIndex]
     const yCol2 = this.props.columns[this.props.numberColumnIndex2]
@@ -114,7 +84,6 @@ export default class ChataColumnChart extends Component {
           yCol={yCol}
           yCol2={yCol2}
           linearAxis='y'
-          rotateLabels={this.rotateLabels}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}
           hasXDropdown={this.props.hasStringDropdown}

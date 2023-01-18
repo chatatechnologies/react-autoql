@@ -2,48 +2,17 @@ import React, { Component } from 'react'
 import { Axes } from '../Axes'
 import { Circles } from '../Circles'
 
-import { chartDefaultProps, chartPropTypes, getBandScale, shouldRecalculateLongestLabel } from '../helpers.js'
-
-import { shouldLabelsRotate, getLongestLabelInPx } from '../../../js/Util.js'
-import { getDataFormatting } from '../../../props/defaults'
+import { chartDefaultProps, chartPropTypes, getBandScale } from '../helpers.js'
 
 export default class ChataBubbleChart extends Component {
   constructor(props) {
     super(props)
 
     this.setChartData(props)
-    this.setLongestLabelWidth(props)
-    this.setLabelRotationValue(props)
   }
 
   static propTypes = chartPropTypes
   static defaultProps = chartDefaultProps
-
-  // shouldComponentUpdate = () => {
-  //   return true
-  // }
-
-  componentDidUpdate = (prevProps) => {
-    if (shouldRecalculateLongestLabel(prevProps, this.props)) {
-      this.setLongestLabelWidth(this.props)
-    }
-  }
-
-  setLabelRotationValue = (props) => {
-    const rotateLabels = shouldLabelsRotate(this.xScale.bandwidth(), this.longestLabelWidth)
-
-    if (typeof rotateLabels !== 'undefined') {
-      this.rotateLabels = rotateLabels
-    }
-  }
-
-  setLongestLabelWidth = (props) => {
-    this.longestLabelWidth = getLongestLabelInPx(
-      this.xTickValues,
-      props.columns[props.stringColumnIndex],
-      getDataFormatting(props.dataFormatting),
-    )
-  }
 
   setChartData = (props) => {
     this.xScale = getBandScale({
@@ -63,7 +32,6 @@ export default class ChataBubbleChart extends Component {
 
   render = () => {
     this.setChartData(this.props)
-    this.setLabelRotationValue(this.props)
 
     return (
       <g
@@ -80,7 +48,6 @@ export default class ChataBubbleChart extends Component {
           yScale={this.yScale}
           xCol={this.props.columns[this.props.stringColumnIndex]}
           yCol={this.props.legendColumn}
-          rotateLabels={this.rotateLabels}
           bottomAxisTitle={this.props.stringAxisTitle}
           leftAxisTitle={this.props.legendTitle}
         />

@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import { deepEqual } from '../../../js/Util'
 
 import { Axes } from '../Axes'
 import { Bars } from '../Bars'
@@ -18,6 +19,13 @@ export default class ChataBarChart extends Component {
 
   static propTypes = chartPropTypes
   static defaultProps = chartDefaultProps
+
+  shouldComponentUpdate = (nextProps, nextState) => {
+    const propsEqual = deepEqual(this.props, nextProps)
+    const stateEqual = deepEqual(this.state, nextState)
+
+    return !propsEqual || !stateEqual
+  }
 
   setChartData = (props) => {
     let numberColumnIndices = props.numberColumnIndices

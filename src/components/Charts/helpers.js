@@ -66,7 +66,6 @@ export const axesPropTypes = {
   yTicks: PropTypes.array,
   xGridLines: PropTypes.bool,
   yGridLines: PropTypes.bool,
-  rotateLabels: PropTypes.bool,
   hasRightLegend: PropTypes.bool,
   hasBottomLegend: PropTypes.bool,
   hasXDropdown: PropTypes.bool,
@@ -84,7 +83,6 @@ export const axesDefaultProps = {
   yTicks: undefined,
   xGridLines: false,
   yGridLines: false,
-  rotateLabels: false,
   hasRightLegend: false,
   hasBottomLegend: false,
   hasXDropdown: false,
@@ -163,16 +161,6 @@ export const labelsShouldRotate = (axisElement) => {
     })
 
   return didOverlap
-}
-
-export const shouldRecalculateLongestLabel = (prevProps, props) => {
-  return (
-    props.marginAdjustmentFinished &&
-    (prevProps?.data?.length !== props.data?.length ||
-      !_isEqual(prevProps.numberColumnIndices, props.numberColumnIndices) ||
-      !_isEqual(prevProps.legendLabels, props.legendLabels) ||
-      prevProps.stringColumnIndex !== props.stringColumnIndex)
-  )
 }
 
 export const getTooltipContent = ({ row, columns, colIndex, stringColumnIndex, legendColumn, dataFormatting }) => {
@@ -448,8 +436,8 @@ export const getRangeForAxis = (props, axis) => {
     }
   } else if (axis === 'y') {
     const innerHeight = props.height
-    rangeEnd = props.deltaY
-    rangeStart = rangeEnd + innerHeight
+    rangeEnd = 0 // props.deltaY
+    rangeStart = innerHeight // + rangeEnd
 
     if (rangeStart < rangeEnd) {
       rangeStart = rangeEnd

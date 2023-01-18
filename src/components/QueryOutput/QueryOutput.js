@@ -353,6 +353,7 @@ export class QueryOutput extends React.Component {
     this.props.onDisplayTypeChange(displayType)
     this.setState({ displayType })
   }
+
   displayTypeInvalidWarning = (displayType) => {
     console.warn(
       `Initial display type "${this.props.initialDisplayType}" provided is not valid for this dataset. Using ${
@@ -394,7 +395,6 @@ export class QueryOutput extends React.Component {
     else if (
       !isDisplayTypeValid(props.queryResponse, displayType, this.tableData?.length, this.pivotTableData?.length)
     ) {
-      this.displayTypeInvalidWarning(displayType)
       displayType = defaultDisplayType
     }
 
@@ -488,7 +488,7 @@ export class QueryOutput extends React.Component {
 
       return true
     } catch (error) {
-      console.warn('Saved table config was not valid for dashboard tile response', error?.message)
+      console.debug('Saved table config was not valid for dashboard tile response', error?.message)
       return false
     }
   }

@@ -13,6 +13,7 @@ export default class Axes extends React.Component {
     this.BOTTOM_AXIS_KEY = uuid()
     this.LEFT_AXIS_KEY = uuid()
     this.RIGHT_AXIS_KEY = uuid()
+    this.TOP_AXIS_KEY = uuid()
   }
 
   static propTypes = {
@@ -106,8 +107,7 @@ export default class Axes extends React.Component {
   }
 
   shouldRenderTopAxis = () => {
-    return false
-    const shouldRenderAxis = !!props.xCol2 && !!props.xScale2
+    const shouldRenderAxis = !!this.props.xCol2 && !!this.props.xScale2
     return shouldRenderAxis
   }
 
@@ -116,7 +116,25 @@ export default class Axes extends React.Component {
       return null
     }
 
-    return null
+    return (
+      <Axis
+        {...this.props}
+        key={this.TOP_AXIS_KEY}
+        ref={(r) => (this.topAxis = r)}
+        orient='Top'
+        scale={this.props.xScale2}
+        ticks={this.props.xScale2?.tickLabels}
+        col={this.props.xCol2}
+        title={this.props.topAxisTitle}
+        showGridLines={false}
+        hasDropdown={this.props.hasXDropdown}
+        innerWidth={innerWidth}
+        innerHeight={innerHeight}
+        translateY={0}
+        translateX={0}
+        onAxisRenderComplete={this.onAxisRenderComplete}
+      />
+    )
   }
 
   shouldRenderRightAxis = () => {

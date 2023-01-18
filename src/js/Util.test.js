@@ -626,20 +626,3 @@ describe('getMinValueFromKeyValueObj', () => {
     expect(getMinValueFromKeyValueObj(inputObject)).toEqual(-5)
   })
 })
-
-// export const getChartLabelTextWidthInPx = text
-// export const getLongestLabelInPx = (labels, col, config)
-// export const getTickWidth = (scale, innerPadding)
-// export const getQueryParams = url
-// export const getNumberColumnIndices = columns
-// export const getPadding = element
-// export const capitalizeFirstChar = string
-// export const isSingleValueResponse = response
-// export const isTableResponse = (response, displayType)
-// export const getGroupBysFromTable = (row, tableColumns)
-// getGroupBysFromPivotTable = (
-//   cell,
-//   tableColumns,
-//   pivotTableColumns,
-//   originalColumnData
-// )
