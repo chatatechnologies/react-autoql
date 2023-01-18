@@ -10,7 +10,7 @@ import AxisSelector from '../Axes/AxisSelector'
 import LoadMoreDropdown from './LoadMoreDropdown'
 
 import { formatChartLabel, getBBoxFromRef } from '../../../js/Util.js'
-import { axesDefaultProps, axesPropTypes, mergeBboxes } from '../helpers.js'
+import { axesDefaultProps, axesPropTypes, mergeBboxes, labelsShouldRotate } from '../helpers.js'
 
 import './Axis.scss'
 
@@ -66,24 +66,19 @@ export default class Axis extends Component {
 
     // Render a second time so the title knows where to be placed
     // based on the width of the tick labels
-    this.forceUpdate(() => {
-      this.props.onAxisRenderComplete(this.props.orient)
-    })
+    this.setState({ axisRenderComplete: true })
   }
 
-  componentDidUpdate = (prevProps) => {
-    this.renderAxis()
-
-    // if (this.props.rotateLabels !== prevProps.rotateLabels) {
-    //   this.props.onLabelChange()
-    // }
+  componentDidUpdate = (prevProps, prevState) => {
+    const renderJustCompleted = this.state.axisRenderComplete && !prevState.axisRenderComplete
+    this.renderAxis(renderJustCompleted)
   }
 
   componentWillUnmount = () => {
     this._isMounted = false
   }
 
-  renderAxis = () => {
+  renderAxis = (renderComplete) => {
     const self = this
     let axis
     switch (this.props.orient) {
@@ -136,18 +131,19 @@ export default class Axis extends Component {
       select(this.axisElement).call(axis)
     }
 
-    if (this.props.orient === 'Bottom' && this.props.rotateLabels) {
-      // translate labels slightly to line up with ticks once rotated
-      select(this.axisElement)
-        .selectAll('.tick text')
-        .style('font-family', 'inherit')
-        .style('text-anchor', 'end')
-        .attr('dominant-baseline', 'text-top')
-        .attr('transform', `rotate(-45, 0, ${this.props.innerHeight})`)
-        .attr('dy', '1em')
-        .attr('dx', '-1em')
-        .attr('fill-opacity', '1')
-    } else if (this.props.orient === 'Bottom' && !this.props.rotateLabels) {
+    // if (this.props.orient === 'Bottom' && this.state.rotateLabels) {
+    //   // translate labels slightly to line up with ticks once rotated
+    //   select(this.axisElement)
+    //     .selectAll('.tick text')
+    //     .style('font-family', 'inherit')
+    //     .style('text-anchor', 'end')
+    //     .attr('dominant-baseline', 'text-top')
+    //     .attr('transform', `rotate(-45, 0, ${this.props.innerHeight})`)
+    //     .attr('dy', '1em')
+    //     .attr('dx', '-1em')
+    //     .attr('fill-opacity', '1')
+    // } else
+    if (this.props.orient === 'Bottom') {
       select(this.axisElement)
         .selectAll('.tick text')
         .attr('transform', 'rotate(0)')
@@ -157,6 +153,22 @@ export default class Axis extends Component {
         .attr('dx', '0')
         .attr('fill-opacity', '1')
         .style('font-family', 'inherit')
+
+      // check if labels need to be rotated...
+      const labelsOverlap = labelsShouldRotate(this.axisElement)
+
+      if (labelsOverlap) {
+        select(this.axisElement)
+          .selectAll('.tick text')
+          .style('text-anchor', 'end')
+          .attr('dominant-baseline', 'text-top')
+          .attr('transform', `rotate(-45, 0, ${this.props.innerHeight})`)
+          .attr('dy', '1em')
+          .attr('dx', '-1em')
+      }
+
+      this.prevLabelsShouldRotate = this.labelsShouldRotate
+      this.labelsShouldRotate = labelsOverlap
     }
 
     select(this.axisElement)
@@ -228,11 +240,38 @@ export default class Axis extends Component {
         this.labelBBox = { ...allLabelsBbox }
       }
 
+      // adjust position of axis title
+      if (this.props.orient === 'Bottom') {
+        const labelBBoxHeight = this.labelBBox?.height ?? 0
+        const xLabelX = this.props.innerWidth / 2
+        const xLabelY = this.props.innerHeight + labelBBoxHeight + 2 * this.AXIS_TITLE_PADDING
+
+        select(this.titleRef).attr('x', xLabelX).attr('y', xLabelY)
+
+        select(this.loadMoreDropdown).attr('transform', `translate(${this.props.innerWidth / 2}, ${xLabelY + 15})`)
+      }
+
+      const titleBBox = getBBoxFromRef(this.titleRef)
+      const titleHeight = titleBBox?.height ?? 0
+      const titleWidth = titleBBox?.width ?? 0
+
+      select(this.axisSelector?.ref?.popoverRef)
+        .attr('width', titleWidth + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT)
+        .attr('height', titleHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP)
+        .attr('x', titleBBox?.x - this.AXIS_TITLE_BORDER_PADDING_LEFT)
+        .attr('y', titleBBox?.y - this.AXIS_TITLE_BORDER_PADDING_TOP)
+
       select(this.axisScaler)
         .attr('x', (this.labelBBox?.x ?? 0) - this.BUTTON_PADDING)
         .attr('y', (this.labelBBox?.y ?? 0) - this.BUTTON_PADDING)
         .attr('width', (this.labelBBox?.width ?? 0) + this.BUTTON_PADDING * 2)
         .attr('height', (this.labelBBox?.height ?? 0) + this.BUTTON_PADDING * 2)
+    }
+
+    if (renderComplete) {
+      this.props.onAxisRenderComplete(this.props.orient)
+    } else if (this.prevLabelsShouldRotate !== this.labelsShouldRotate) {
+      this.props.onLabelRotation()
     }
   }
 
@@ -270,8 +309,8 @@ export default class Axis extends Component {
   }
 
   renderBottomAxisTitle = () => {
-    const xLabelBbox = getBBoxFromRef(this.bottomTitleRef)
-    const xLabelTextHeight = this.getTitleTextHeight(this.bottomTitleRef)
+    const xLabelBbox = getBBoxFromRef(this.titleRef)
+    const titleTextHeight = this.getTitleTextHeight(this.titleRef)
 
     const labelBBoxHeight = this.labelBBox?.height ?? 0
 
@@ -282,14 +321,14 @@ export default class Axis extends Component {
     const xLabelWidth = xLabelBbox?.width ?? 0
 
     const xBorderWidth = xLabelWidth + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
-    const xBorderHeight = xLabelTextHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP
+    const xBorderHeight = titleTextHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP
     const xBorderX = xLabelX - xLabelWidth / 2 - this.AXIS_TITLE_BORDER_PADDING_LEFT
     const xBorderY = xLabelY - xLabelHeight / 2 - this.AXIS_TITLE_BORDER_PADDING_TOP
 
     return (
       <g>
         <text
-          ref={(r) => (this.bottomTitleRef = r)}
+          ref={(r) => (this.titleRef = r)}
           className='x-axis-label'
           data-test='x-axis-label'
           dominantBaseline='middle'
@@ -302,6 +341,7 @@ export default class Axis extends Component {
           {this.renderAxisTitleText()}
         </text>
         <AxisSelector
+          ref={(r) => (this.axisSelector = r)}
           chartContainerRef={this.props.chartContainerRef}
           changeNumberColumnIndices={this.props.changeNumberColumnIndices}
           changeStringColumnIndex={this.props.changeStringColumnIndex}
@@ -336,13 +376,13 @@ export default class Axis extends Component {
     const yCenter = -0.5 * innerHeight
 
     const chartBoundingRect = this.props.chartContainerRef?.getBoundingClientRect()
-    const yLabelBoundingRect = this.leftTitleRef?.getBoundingClientRect()
+    const yLabelBoundingRect = this.titleRef?.getBoundingClientRect()
 
     const chartContainerHeight = chartBoundingRect?.height ?? 0
     const yLabelHeight = yLabelBoundingRect?.height ?? 0
     const yLabelWidth = yLabelBoundingRect?.width ?? 0
 
-    const yLabelTextHeight = this.getTitleTextHeight(this.leftTitleRef)
+    const yLabelTextHeight = this.getTitleTextHeight(this.titleRef)
 
     const yLabelTop = yLabelBoundingRect?.top
     const chartTop = chartBoundingRect?.top
@@ -393,7 +433,7 @@ export default class Axis extends Component {
     return (
       <g>
         <text
-          ref={(r) => (this.leftTitleRef = r)}
+          ref={(r) => (this.titleRef = r)}
           id={`left-axis-title-${this.AXIS_KEY}`}
           className='left-axis-title'
           data-test='left-axis-title'
@@ -410,6 +450,7 @@ export default class Axis extends Component {
           {this.renderAxisTitleText()}
         </text>
         <AxisSelector
+          ref={(r) => (this.axisSelector = r)}
           chartContainerRef={this.props.chartContainerRef}
           changeNumberColumnIndices={this.props.changeNumberColumnIndices}
           changeStringColumnIndex={this.props.changeStringColumnIndex}
@@ -519,6 +560,7 @@ export default class Axis extends Component {
           {this.renderAxisTitleText()}
         </text>
         <AxisSelector
+          ref={(r) => (this.axisSelector = r)}
           chartContainerRef={this.props.chartContainerRef}
           changeNumberColumnIndices={this.props.changeNumberColumnIndices}
           changeStringColumnIndex={this.props.changeStringColumnIndex}
@@ -576,10 +618,13 @@ export default class Axis extends Component {
       return null
     }
 
-    const labelBBoxHeight = this.labelBBox?.height ?? 0
+    const titleBBox = getBBoxFromRef(this.titleRef)
 
     return (
-      <g transform={`translate(${this.props.innerWidth / 2},${this.props.innerHeight + labelBBoxHeight + 46})`}>
+      <g
+        ref={(r) => (this.loadMoreDropdown = r)}
+        // transform={`translate(${this.props.innerWidth / 2}, ${titleBBox?.y + titleBBox?.height})`}
+      >
         <LoadMoreDropdown {...this.props} />
       </g>
     )
@@ -617,7 +662,7 @@ export default class Axis extends Component {
     //   // this.props.topMargin -
     //   // make legend smaller if labels are not rotated
     //   // because they might overlap the legend
-    //   (!this.props.rotateLabels ? 0 : 44) + // distance to bottom of axis labels
+    //   (!this.state.rotateLabels ? 0 : 44) + // distance to bottom of axis labels
     //   20
     // if (legendClippingHeight < 0) {
     //   legendClippingHeight = 0
@@ -629,11 +674,7 @@ export default class Axis extends Component {
         ref={(r) => (this.ref = r)}
         transform={`translate(${this.props.translateX}, ${this.props.translateY})`}
       >
-        <g
-          className={`axis axis-${this.props.orient}
-            ${this.props.rotateLabels ? ' rotated' : ''}`}
-          ref={(el) => (this.axisElement = el)}
-        />
+        <g className={`axis axis-${this.props.orient}`} ref={(el) => (this.axisElement = el)} />
         {this.renderAxisTitle()}
         {this.renderLoadMoreDropdown()}
         {this.renderAxisScaler()}

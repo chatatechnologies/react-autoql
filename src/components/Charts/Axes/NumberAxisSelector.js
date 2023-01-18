@@ -38,7 +38,8 @@ export default class NumberAxisSelector extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
-    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
+    return true
+    // return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -451,7 +452,7 @@ export default class NumberAxisSelector extends React.Component {
         padding={10}
       >
         <rect
-          {...this.props.childProps}
+          // {...this.props.childProps}
           className={`axis-label-border ${this.props.hidden ? 'hidden' : ''}`}
           data-test='axis-label-border'
           onClick={this.openSelector}

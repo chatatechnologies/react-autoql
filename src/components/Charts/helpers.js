@@ -3,6 +3,7 @@ import { max, min, ticks } from 'd3-array'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import { scaleLinear, scaleBand } from 'd3-scale'
+import { select } from 'd3-selection'
 
 import { formatChartLabel, formatElement } from '../../js/Util'
 import { dataFormattingType } from '../../props/types'
@@ -140,6 +141,28 @@ export const scaleZero = (scale) => {
 
 export const getKey = (rowIndex, cellIndex) => {
   return `${rowIndex}-${cellIndex}`
+}
+
+export const labelsShouldRotate = (axisElement) => {
+  let prevBBox
+  let didOverlap = false
+  const padding = 10
+  select(axisElement)
+    .selectAll('g.tick text')
+    .each(function () {
+      if (!didOverlap) {
+        const textBoundingRect = select(this).node().getBoundingClientRect()
+        if (prevBBox) {
+          if (textBoundingRect.x < prevBBox.x + prevBBox.width + padding) {
+            didOverlap = true
+          }
+        }
+
+        prevBBox = textBoundingRect
+      }
+    })
+
+  return didOverlap
 }
 
 export const shouldRecalculateLongestLabel = (prevProps, props) => {

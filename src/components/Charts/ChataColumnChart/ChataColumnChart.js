@@ -66,7 +66,6 @@ export default class ChataColumnChart extends Component {
     if (props.visibleSeriesIndices2?.length) {
       numberColumnIndices2 = props.visibleSeriesIndices2
     }
-
     this.xScale = getBandScale({
       props,
       columnIndex: props.stringColumnIndex,

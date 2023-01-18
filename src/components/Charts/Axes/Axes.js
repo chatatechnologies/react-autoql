@@ -57,9 +57,7 @@ export default class Axes extends React.Component {
     }
 
     if (this.topAxisComplete && this.bottomAxisComplete && this.leftAxisComplete && this.rightAxisComplete) {
-      this.forceUpdate(() => {
-        this.props.onAxesRenderComplete()
-      })
+      this.props.onAxesRenderComplete()
     }
   }
 
@@ -74,8 +72,6 @@ export default class Axes extends React.Component {
         ticks={this.props.xScale?.tickLabels}
         translateY={0}
         translateX={0}
-        // rotateLabels={this.props.rotateLabels}
-        rotateLabels={true}
         col={this.props.xCol}
         title={this.props.bottomAxisTitle}
         showGridLines={this.props.xGridLines}

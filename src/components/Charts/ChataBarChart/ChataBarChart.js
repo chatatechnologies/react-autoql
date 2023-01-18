@@ -1,25 +1,15 @@
 import React, { Component } from 'react'
+
 import { Axes } from '../Axes'
 import { Bars } from '../Bars'
 
-import {
-  getBandScale,
-  chartPropTypes,
-  chartDefaultProps,
-  shouldRecalculateLongestLabel,
-  getLinearScales,
-} from '../helpers.js'
-
-import { shouldLabelsRotate, getLongestLabelInPx } from '../../../js/Util'
-import { getDataFormatting } from '../../../props/defaults'
+import { getBandScale, chartPropTypes, chartDefaultProps, getLinearScales } from '../helpers.js'
 
 export default class ChataBarChart extends Component {
   constructor(props) {
     super(props)
 
     this.setChartData(props)
-    this.setLongestLabelWidth(props)
-    this.setLabelRotationValue(props)
 
     this.state = {
       isChartScaled: false,
@@ -28,33 +18,6 @@ export default class ChataBarChart extends Component {
 
   static propTypes = chartPropTypes
   static defaultProps = chartDefaultProps
-
-  shouldComponentUpdate = () => {
-    return true
-  }
-
-  componentDidUpdate = (prevProps) => {
-    if (shouldRecalculateLongestLabel(prevProps, this.props)) {
-      this.setLongestLabelWidth(this.props)
-    }
-  }
-
-  setLabelRotationValue = (props) => {
-    const tickWidth = props.innerWidth / this.xScale.ticks().length
-    const rotateLabels = shouldLabelsRotate(tickWidth, this.longestLabelWidth)
-
-    if (typeof rotateLabels !== 'undefined') {
-      this.rotateLabels = rotateLabels
-    }
-  }
-
-  setLongestLabelWidth = (props) => {
-    this.longestLabelWidth = getLongestLabelInPx(
-      this.xLabelArray,
-      props.columns[props.numberColumnIndex],
-      getDataFormatting(props.dataFormatting),
-    )
-  }
 
   setChartData = (props) => {
     let numberColumnIndices = props.numberColumnIndices
@@ -93,7 +56,6 @@ export default class ChataBarChart extends Component {
 
   render = () => {
     this.setChartData(this.props)
-    this.setLabelRotationValue(this.props)
 
     const xCol = this.props.columns[this.props.numberColumnIndex]
     const xCol2 = this.props.columns[this.props.numberColumnIndex2]
@@ -115,7 +77,6 @@ export default class ChataBarChart extends Component {
           xCol2={xCol2}
           yCol={this.props.columns[this.props.stringColumnIndex]}
           linearAxis='x'
-          rotateLabels={this.rotateLabels}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}
           hasXDropdown={this.props.hasNumberDropdown}

@@ -31,6 +31,7 @@ export default class RowNumberSelector extends React.Component {
   }
 
   axiosSource = axios.CancelToken.source()
+
   getNewChartData = (pageSize) => {
     this.props.setIsLoadingMoreRows(true)
     if (this.props.isDrilldown) {
@@ -160,7 +161,7 @@ export default class RowNumberSelector extends React.Component {
         padding={10}
       >
         <rect
-          {...this.props.childProps}
+          // {...this.props.childProps}
           className='axis-label-border'
           data-test='axis-label-border'
           onClick={this.openSelector}

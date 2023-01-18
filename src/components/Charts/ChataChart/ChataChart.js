@@ -58,6 +58,7 @@ export default class ChataChart extends Component {
       deltaX: 0,
       deltaY: 0,
       // isLoading: true,
+      secondRender: false,
       isLoadingMoreRows: false,
     }
   }
@@ -94,17 +95,13 @@ export default class ChataChart extends Component {
       return false
     }
 
-    if (this.state.isLoading && nextState.isLoading) {
-      return false
-    }
-
     const propsEqual = deepEqual(this.props, nextProps)
     const stateEqual = deepEqual(this.state, nextState)
 
     return !propsEqual || !stateEqual
   }
 
-  componentDidUpdate = (prevProps) => {
+  componentDidUpdate = (prevProps, prevState) => {
     let shouldForceUpdate = false
 
     if (
@@ -155,40 +152,60 @@ export default class ChataChart extends Component {
     this.adjustChartPosition()
   }
 
-  adjustChartPosition = () => {
-    this.setState({ deltaX: 0, deltaY: 0, isLoading: true }, () => {
+  adjustBottomMargin = async () => {
+    // Adjust bottom axis second time to account for label rotation
+    const { bottomAxisMargin } = await this.getMargins()
+    this.setState({ bottomAxisMargin }, () => {
+      this.setState({ isLoading: false })
+    })
+  }
+
+  adjustChartPosition = (callback) => {
+    this.setState({ deltaX: 0, deltaY: 0, isLoading: true }, async () => {
+      const { deltaX, deltaY } = await this.getDeltas()
+      const { rightAxisMargin, bottomAxisMargin } = await this.getMargins()
+
+      // Reset deltas and margins to get new baseline
+      this.setState({ deltaX, deltaY, rightAxisMargin, bottomAxisMargin })
+    })
+  }
+
+  getDeltas = () => {
+    return new Promise((resolve) => {
       setTimeout(() => {
         const axesBBox = getBBoxFromRef(this.innerChartRef?.chartRef)
 
         // Get distance in px to shift to the right
         const axesBBoxX = Math.ceil(axesBBox?.x ?? 0)
-        const deltaX = -1 * axesBBoxX + this.PADDING
+        const deltaX = deltaX ?? -1 * axesBBoxX + this.PADDING
 
         const deltaY =
+          deltaY ??
           -1 * Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.topAxis?.ref)?.height ?? 0) + this.PADDING
 
+        resolve({ deltaX, deltaY })
+      }, 0)
+    })
+  }
+
+  getMargins = async () => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
         // Get height difference in px to determine proper chart height
         const leftAxisBBox = this.innerChartRef?.axesRef?.leftAxis?.ref?.getBoundingClientRect()
         const bottomAxisBBox = this.innerChartRef?.axesRef?.bottomAxis?.ref?.getBoundingClientRect()
         const leftBottomBBox = mergeBboxes([leftAxisBBox, bottomAxisBBox])
         const leftBottomHeight = leftBottomBBox?.height ?? containerHeight
         const containerHeight = this.props.height ?? this.chartContainerRef?.clientHeight ?? 0
-        let bottomAxisMargin = Math.ceil(leftBottomHeight - containerHeight + this.PADDING)
+        let bottomAxisMargin =
+          this.state.bottomAxisMargin + Math.ceil(leftBottomHeight - containerHeight + this.PADDING)
         if (bottomAxisMargin < 0) {
           bottomAxisMargin = 0
         }
 
         let rightAxisMargin =
           Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.rightAxis)?.width ?? 0) + this.PADDING
-
-        // const hasLegend = !!getLegendLocation(this.props.numberColumnIndices, this.props.type)
-        // if (hasLegend) {
-        //   rightAxisMargin += this.LEGEND_PADDING
-        // }
-
-        this.setState({ deltaX, deltaY, rightAxisMargin, bottomAxisMargin }, () => {
-          this.setState({ isLoading: false })
-        })
+        resolve({ rightAxisMargin, bottomAxisMargin })
       }, 0)
     })
   }
@@ -385,7 +402,7 @@ export default class ChataChart extends Component {
       legendTitle: this.props.legendColumn?.title || 'Category',
       legendLocation: getLegendLocation(numberColumnIndices, this.props.type),
       legendLabels: this.getLegendLabels(),
-      // onLabelChange: this.adjustChartPosition,
+      onLabelRotation: this.adjustBottomMargin,
       visibleSeriesIndices,
       visibleSeriesIndices2,
       numberAxisTitle: this.getNumberAxisTitle(visibleSeriesIndices),
@@ -398,6 +415,9 @@ export default class ChataChart extends Component {
       popoverParentElement: this.props.popoverParentElement || this.chartContainerRef,
       totalRowCount: this.props.totalRowCount,
       chartID: this.state.chartID,
+      // secondRender: this.state.secondRender,
+      // firstRenderComplete: '',
+      // onSecondRender: '',
       changeNumberColumnIndices: this.changeNumberColumnIndices,
       rebuildTooltips: this.rebuildTooltips,
       onAxesRenderComplete: this.onAxesRenderComplete,

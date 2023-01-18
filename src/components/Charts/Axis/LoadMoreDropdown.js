@@ -3,6 +3,7 @@ import RowNumberSelector from './RowNumberSelector'
 
 import { getBBoxFromRef } from '../../../js/Util.js'
 import { axesDefaultProps, axesPropTypes } from '../helpers.js'
+import { select } from 'd3-selection'
 
 export default class LoadMoreDropdown extends Component {
   constructor(props) {
@@ -27,10 +28,35 @@ export default class LoadMoreDropdown extends Component {
     ...axesDefaultProps,
   }
 
+  componentDidMount = () => {
+    this.applyStyles()
+  }
+
   componentDidUpdate = (prevProps, prevState) => {
     if (this.state.currentRowNumber !== prevState.currentRowNumber) {
       this.forceUpdate()
     }
+
+    this.applyStyles()
+  }
+
+  applyStyles = () => {
+    const currentRowNumberBBox = getBBoxFromRef(this.currentRowNumber)
+    const rowNumWidth = currentRowNumberBBox?.width ?? 0
+    const rowNumHeight = currentRowNumberBBox?.height ?? 0
+
+    select(this.rowNumberSelector?.popoverRef)
+      .attr('x', currentRowNumberBBox?.x - this.BUTTON_PADDING_LEFT)
+      .attr('y', currentRowNumberBBox?.y - this.BUTTON_PADDING_TOP)
+      .attr('width', rowNumWidth + 2 * this.BUTTON_PADDING_LEFT)
+      .attr('height', rowNumHeight + 2 * this.BUTTON_PADDING_TOP)
+
+    const allTextBBox = getBBoxFromRef(this.allText)
+    const allTextWidth = allTextBBox?.width ?? 0
+    const warningIconX = allTextBBox?.x + allTextWidth + 5
+    const warningIconY = -3
+
+    select(this.warningIcon).attr('x', warningIconX).attr('y', warningIconY)
   }
 
   renderRowCountText = () => {
@@ -41,12 +67,13 @@ export default class LoadMoreDropdown extends Component {
 
     return (
       <text
+        ref={(r) => (this.ref = r)}
         className='x-axis-label'
         data-test='x-axis-label'
         dominantBaseline='hanging'
         textAnchor='middle'
-        y={0}
-        x={0}
+        // y={0}
+        // x={0}
         style={{
           fontSize: this.fontSize,
           fontFamily: 'inherit',
@@ -71,27 +98,17 @@ export default class LoadMoreDropdown extends Component {
   }
 
   renderRowDropdownButton = () => {
-    const currentRowNumberBBox = getBBoxFromRef(this.currentRowNumber)
-    const rowNumWidth = currentRowNumberBBox?.width ?? 0
-    const rowNumHeight = currentRowNumberBBox?.height ?? 0
-    const rowNumberSelectorBorderPosition = {
-      x: currentRowNumberBBox?.x - this.BUTTON_PADDING_LEFT,
-      y: currentRowNumberBBox?.y - this.BUTTON_PADDING_TOP,
-      width: rowNumWidth + 2 * this.BUTTON_PADDING_LEFT,
-      height: rowNumHeight + 2 * this.BUTTON_PADDING_TOP,
-    }
-
-    if (!currentRowNumberBBox || !(this.props.totalRowCount > this.initialRowNumber)) {
+    if (!(this.props.totalRowCount > this.initialRowNumber)) {
       return null
     }
 
     return (
       <RowNumberSelector
         {...this.props}
+        ref={(r) => (this.rowNumberSelector = r)}
         column={this.props.xCol}
         positions={['top', 'bottom']}
         align='center'
-        childProps={{ ...rowNumberSelectorBorderPosition }}
         totalRowCount={this.props.totalRowCount}
         currentRowNumber={this.state.currentRowNumber}
         setCurrentRowNumber={(currentRowNumber) => {
@@ -106,17 +123,18 @@ export default class LoadMoreDropdown extends Component {
       return null
     }
 
-    const allTextBBox = getBBoxFromRef(this.allText)
-    const allTextWidth = allTextBBox?.width ?? 0
-    const warningIconX = allTextBBox?.x + allTextWidth + 5
-    const warningIconY = allTextBBox?.y - 3
+    // const allTextBBox = getBBoxFromRef(this.allText)
+    // const allTextWidth = allTextBBox?.width ?? 0
+    // const warningIconX = allTextBBox?.x + allTextWidth + 5
+    // const warningIconY = allTextBBox?.y - 3
 
-    if (isNaN(warningIconX) || isNaN(warningIconY)) {
-      return null
-    }
+    // if (isNaN(warningIconX) || isNaN(warningIconY)) {
+    //   return null
+    // }
 
     return (
       <svg
+        ref={(r) => (this.warningIcon = r)}
         stroke='currentColor'
         fill='#ffcc00'
         strokeWidth='0'
@@ -124,8 +142,8 @@ export default class LoadMoreDropdown extends Component {
         height='1.4em'
         width='1.4em'
         xmlns='http://www.w3.org/2000/svg'
-        x={warningIconX}
-        y={warningIconY}
+        // x={warningIconX}
+        // y={warningIconY}
         data-tip='Row limit (5000) reached. Try applying a filter or narrowing your search to return full results.'
         data-for={this.props.chartTooltipID}
       >
