@@ -783,6 +783,7 @@ export const fetchDataPreview = ({
     subject,
     page_size: numRows,
     source,
+    date_format: 'ISO8601',
   }
 
   return axios
