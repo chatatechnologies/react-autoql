@@ -87,9 +87,6 @@ export default class Line extends Component {
     numberColumnIndices.forEach((colIndex, i) => {
       if (!columns[colIndex].isSeriesHidden) {
         this.props.data.forEach((d, index) => {
-          if (index === this.props.data.length - 1) {
-            console.log('on last line dot... it should render')
-          }
           const value = d[colIndex]
           if (!value) {
             return
