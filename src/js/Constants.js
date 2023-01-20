@@ -18,6 +18,7 @@ export const CHART_TYPES = [
   'stacked_bar',
   'stacked_column',
   'stacked_line',
+  'column_line',
 ]
 
 export const MONTH_NAMES = [

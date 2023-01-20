@@ -5,6 +5,7 @@ import { Axis } from '../Axis'
 import { Legend } from '../Legend'
 import { getBBoxFromRef } from '../../../js/Util'
 import { axesDefaultProps, axesPropTypes } from '../helpers'
+import { select } from 'd3-selection'
 
 export default class Axes extends React.Component {
   constructor(props) {
@@ -26,6 +27,12 @@ export default class Axes extends React.Component {
     onAxesRenderComplete: () => {},
   }
 
+  // componentDidUpdate = () => {
+  //   const translateX = getBBoxFromRef(this.rightAxisWithoutLegend?.ref)?.width ?? 0
+  //   const translateY = this.shouldRenderTopAxis() ? 10 : 0
+  //   select(this.legendRef).attr('transform', `translate(${translateX},${translateY})`)
+  // }
+
   onAxisRenderComplete = (orient) => {
     switch (orient) {
       case 'Right': {
@@ -44,6 +51,10 @@ export default class Axes extends React.Component {
         this.topAxisComplete = true
         break
       }
+      case 'Legend': {
+        this.legendComplete = true
+        break
+      }
       default: {
         break
       }
@@ -57,8 +68,20 @@ export default class Axes extends React.Component {
       this.topAxisComplete = true
     }
 
-    if (this.topAxisComplete && this.bottomAxisComplete && this.leftAxisComplete && this.rightAxisComplete) {
-      this.props.onAxesRenderComplete()
+    if (!this.shouldRenderLegend() && !this.legendComplete) {
+      this.legendComplete = true
+    }
+
+    if (
+      this.topAxisComplete &&
+      this.bottomAxisComplete &&
+      this.leftAxisComplete &&
+      this.rightAxisComplete &&
+      this.legendComplete
+    ) {
+      this.forceUpdate(() => {
+        this.props.onAxesRenderComplete()
+      })
     }
   }
 
@@ -142,9 +165,13 @@ export default class Axes extends React.Component {
     return shouldRenderAxis
   }
 
+  shouldRenderLegend = () => {
+    return !!this.props.legendLocation
+  }
+
   renderRightAxis = (innerWidth, innerHeight) => {
     const shouldRenderAxis = this.shouldRenderRightAxis()
-    const shouldRenderLegend = !!this.props.legendLocation
+    const shouldRenderLegend = this.shouldRenderLegend()
 
     if (!shouldRenderAxis && !shouldRenderLegend) {
       return null
@@ -188,8 +215,13 @@ export default class Axes extends React.Component {
     const translateY = this.shouldRenderTopAxis() ? 10 : 0
 
     return (
-      <g transform={`translate(${translateX},${translateY})`}>
-        <Legend {...this.props} scale={legendScale} placement={this.props.legendLocation} />
+      <g ref={(r) => (this.legendRef = r)} transform={`translate(${translateX},${translateY})`}>
+        <Legend
+          {...this.props}
+          scale={legendScale}
+          placement={this.props.legendLocation}
+          onRenderComplete={() => this.onAxisRenderComplete('Legend')}
+        />
       </g>
     )
   }

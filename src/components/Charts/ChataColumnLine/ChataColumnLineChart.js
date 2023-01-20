@@ -1,12 +1,12 @@
 import React, { Component } from 'react'
+import { Axes } from '../Axes'
+import { Columns } from '../Columns'
+import { Line } from '../Line'
+
+import { chartDefaultProps, chartPropTypes, getBandScale, getLinearScales } from '../helpers.js'
 import { deepEqual } from '../../../js/Util'
 
-import { Axes } from '../Axes'
-import { Bars } from '../Bars'
-
-import { getBandScale, chartPropTypes, chartDefaultProps, getLinearScales } from '../helpers.js'
-
-export default class ChataBarChart extends Component {
+export default class ChataColumnLineChart extends Component {
   constructor(props) {
     super(props)
 
@@ -37,25 +37,24 @@ export default class ChataBarChart extends Component {
     if (props.visibleSeriesIndices2?.length) {
       numberColumnIndices2 = props.visibleSeriesIndices2
     }
-
-    this.yScale = getBandScale({
+    this.xScale = getBandScale({
       props,
       columnIndex: props.stringColumnIndex,
-      axis: 'y',
+      axis: 'x',
     })
 
-    const xScalesAndTicks = getLinearScales({
+    const yScalesAndTicks = getLinearScales({
       props,
       columnIndices1: numberColumnIndices,
       columnIndices2: numberColumnIndices2,
-      axis: 'x',
+      axis: 'y',
       isScaled: this.state?.isChartScaled,
     })
 
-    this.xScale = xScalesAndTicks.scale
-    this.xTickValues = this.xScale.tickLabels
-    this.xScale2 = xScalesAndTicks.scale2
-    this.xTickValues2 = this.xScale2?.tickLabels
+    this.yScale = yScalesAndTicks.scale
+    this.yTickValues = this.yScale.tickLabels
+    this.yScale2 = yScalesAndTicks.scale2
+    this.yTickValues2 = this.yScale2?.tickLabels
   }
 
   toggleChartScale = () => {
@@ -65,13 +64,14 @@ export default class ChataBarChart extends Component {
   render = () => {
     this.setChartData(this.props)
 
-    const xCol = this.props.columns[this.props.numberColumnIndex]
+    const yCol = this.props.columns[this.props.numberColumnIndex]
+    const yCol2 = this.props.columns[this.props.numberColumnIndex2]
 
     return (
       <g
         ref={(r) => (this.chartRef = r)}
         className='react-autoql-axes-chart'
-        data-test='react-autoql-bar-chart'
+        data-test='react-autoql-column-chart'
         transform={`translate(${this.props.deltaX}, ${this.props.deltaY})`}
       >
         <Axes
@@ -79,19 +79,34 @@ export default class ChataBarChart extends Component {
           ref={(r) => (this.axesRef = r)}
           xScale={this.xScale}
           yScale={this.yScale}
-          xCol={xCol}
-          yCol={this.props.columns[this.props.stringColumnIndex]}
-          linearAxis='x'
+          yScale2={this.yScale2}
+          xCol={this.props.columns[this.props.stringColumnIndex]}
+          yCol={yCol}
+          yCol2={yCol2}
+          linearAxis='y'
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}
-          hasXDropdown={this.props.hasNumberDropdown}
-          hasYDropdown={this.props.hasStringDropdown}
-          leftAxisTitle={this.props.stringAxisTitle}
-          bottomAxisTitle={this.props.numberAxisTitle}
+          hasXDropdown={this.props.hasStringDropdown}
+          hasYDropdown={this.props.hasNumberDropdown}
+          leftAxisTitle={this.props.numberAxisTitle}
+          rightAxisTitle={this.props.numberAxisTitle2}
+          bottomAxisTitle={this.props.stringAxisTitle}
           toggleChartScale={this.toggleChartScale}
-          xGridLines
+          yGridLines
         >
-          {this.props.marginAdjustmentFinished && <Bars {...this.props} xScale={this.xScale} yScale={this.yScale} />}
+          {this.props.marginAdjustmentFinished && (
+            <>
+              <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />
+              {!!this.yScale2 && (
+                <Line
+                  {...this.props}
+                  numberColumnIndices={this.props.numberColumnIndices2}
+                  xScale={this.xScale}
+                  yScale={this.yScale2}
+                />
+              )}
+            </>
+          )}
         </Axes>
       </g>
     )

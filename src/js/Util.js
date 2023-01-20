@@ -19,6 +19,8 @@ import {
   shouldPlotMultiSeries,
   isAggregation,
   getDateColumnIndex,
+  getStringColumnIndices,
+  isColumnDateType,
 } from '../components/QueryOutput/columnHelpers'
 
 export const onlyUnique = (value, index, self) => {
@@ -594,6 +596,11 @@ export const supportsRegularPivotTable = (columns, dataLength) => {
   return hasTwoGroupables && columns.length === 3
 }
 
+export const hasDateColumn = (columns) => {
+  const hasDateColumn = !!columns.filter((col) => isColumnDateType(col))
+  return hasDateColumn
+}
+
 export const supports2DCharts = (columns, dataLength) => {
   if (dataLength <= 1) {
     return false
@@ -691,16 +698,11 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
         // numRows <= maxRowsForPivot &&
         pivotDataHasLength
       ) {
-        supportedDisplayTypes.push(
-          'stacked_column',
-          'stacked_bar',
-          'stacked_line',
-          'column',
-          'bar',
-          'line',
-          'bubble',
-          'heatmap',
-        )
+        supportedDisplayTypes.push('stacked_column', 'stacked_bar', 'column', 'bar', 'bubble', 'heatmap')
+
+        if (hasDateColumn(visibleColumns)) {
+          supportedDisplayTypes.push('stacked_line', 'line')
+        }
       }
       // Comment out for now so chart row count doesnt change display type
       // else if (numRows > maxRowsForPivot) {
@@ -711,10 +713,19 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
     } else if (supports2DCharts(visibleColumns, numRows)) {
       // If there is at least one string column and one number
       // column, we should be able to chart anything
-      const supportedDisplayTypes = ['table', 'column', 'bar', 'line']
+      const supportedDisplayTypes = ['table', 'column', 'bar']
+
+      if (hasDateColumn(visibleColumns)) {
+        supportedDisplayTypes.push('line')
+      }
 
       if (numRows > 1 && numRows <= maxRowsForPieChart) {
         supportedDisplayTypes.push('pie')
+      }
+
+      const { amountOfNumberColumns } = getColumnTypeAmounts(visibleColumns)
+      if (amountOfNumberColumns > 1) {
+        supportedDisplayTypes.push('column_line')
       }
 
       // create pivot based on month and year

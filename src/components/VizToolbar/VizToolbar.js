@@ -1,15 +1,14 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import _isEqual from 'lodash.isequal'
 import ReactTooltip from 'react-tooltip'
 import { v4 as uuid } from 'uuid'
 
 import { Icon } from '../Icon'
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { deepEqual } from '../../js/Util'
 
 import './VizToolbar.scss'
-import { deepEqual } from '../../js/Util'
 
 class VizToolbar extends React.Component {
   COMPONENT_KEY = uuid()
@@ -132,6 +131,7 @@ class VizToolbar extends React.Component {
             {this.createVisButton('stacked_bar', 'Stacked Bar Chart', <Icon type='stacked-bar-chart' />)}
             {this.createVisButton('stacked_column', 'Stacked Column Chart', <Icon type='stacked-column-chart' />)}
             {this.createVisButton('stacked_line', 'Stacked Area Chart', <Icon type='stacked-line-chart' />)}
+            {this.createVisButton('column_line', 'Column Line Combo Chart', <Icon type='column-line-chart' />)}
           </div>
           <ReactTooltip
             className='react-autoql-tooltip'

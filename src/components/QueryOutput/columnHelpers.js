@@ -1,4 +1,5 @@
 import _get from 'lodash.get'
+import { getVisibleColumns } from '../../js/Util'
 
 export const isAggregation = (columns) => {
   try {
@@ -51,25 +52,53 @@ export const getNumberColumnIndices = (columns) => {
     }
   })
 
-  let allNumberColumnIndices = []
+  let numberColumnIndex
+  let numberColumnIndices = []
+  let numberColumnIndex2
+  let numberColumnIndices2 = []
+  let numberColumnIndexType
 
   // Returning highest priority of non-empty arrays
   if (currencyColumnIndices.length) {
-    allNumberColumnIndices = currencyColumnIndices
+    numberColumnIndex = currencyColumnIndices[0]
+    numberColumnIndexType = 'currency'
   } else if (quantityColumnIndices.length) {
-    allNumberColumnIndices = quantityColumnIndices
+    numberColumnIndex = quantityColumnIndices[0]
+    numberColumnIndexType = 'quantity'
   } else if (ratioColumnIndices.length) {
-    allNumberColumnIndices = ratioColumnIndices
+    numberColumnIndex = ratioColumnIndices[0]
+    numberColumnIndexType = 'ratio'
   }
 
-  const numberColumnIndex = allNumberColumnIndices[0]
-  const numberColumnIndices = !isNaN(numberColumnIndex) ? [numberColumnIndex] : []
+  numberColumnIndices = [numberColumnIndex]
+
+  if (numberColumnIndexType === 'currency') {
+    if (quantityColumnIndices.length) {
+      numberColumnIndex2 = quantityColumnIndices[0]
+    } else if (ratioColumnIndices.length) {
+      numberColumnIndex2 = ratioColumnIndices[0]
+    } else if (currencyColumnIndices.length > 1) {
+      numberColumnIndex2 = currencyColumnIndices[1]
+    }
+  } else if (numberColumnIndexType === 'quantity') {
+    if (ratioColumnIndices.length) {
+      numberColumnIndex2 = ratioColumnIndices[0]
+    } else if (quantityColumnIndices.length > 1) {
+      numberColumnIndex2 = quantityColumnIndices[1]
+    }
+  } else if (numberColumnIndexType === 'ratio' && quantityColumnIndices.length > 1) {
+    numberColumnIndex2 = ratioColumnIndices[1]
+  }
+
+  if (!isNaN(numberColumnIndex2)) {
+    numberColumnIndices2 = [numberColumnIndex2]
+  }
 
   return {
     numberColumnIndex,
     numberColumnIndices,
-    numberColumnIndices2: [],
-    numberColumnIndex2: undefined,
+    numberColumnIndices2,
+    numberColumnIndex2,
     currencyColumnIndices: currencyColumnIndices ?? [],
     currencyColumnIndex: currencyColumnIndices[0],
     quantityColumnIndices: quantityColumnIndices ?? [],

@@ -483,7 +483,9 @@ export class QueryOutput extends React.Component {
       // To keep dashboards backwards compatible, we need to add
       // numberColumnIndices2 array to the tableConfig
       if (!tableConfig.numberColumnIndices2) {
-        tableConfig.numberColumnIndices2 = []
+        const { numberColumnIndices2, numberColumnIndex2 } = getNumberColumnIndices(columns)
+        tableConfig.numberColumnIndices2 = numberColumnIndices2
+        tableConfig.numberColumnIndex2 = numberColumnIndex2
       }
 
       return true

@@ -13,6 +13,7 @@ import { ChataBubbleChart } from '../ChataBubbleChart'
 import { ChataStackedBarChart } from '../ChataStackedBarChart'
 import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 import { ChataStackedLineChart } from '../ChataStackedLineChart'
+import { ChataColumnLineChart } from '../ChataColumnLine'
 import { Spinner } from '../../Spinner'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
@@ -25,6 +26,7 @@ import {
   getLegendLocation,
   mergeBboxes,
 } from '../helpers.js'
+
 import { getColumnTypeAmounts } from '../../QueryOutput/columnHelpers'
 import { getChartColorVars, getThemeValue } from '../../../theme/configureTheme'
 import { AGG_TYPES, COLUMN_TYPES } from '../../../js/Constants'
@@ -35,30 +37,21 @@ import './ChataChart.scss'
 export default class ChataChart extends Component {
   constructor(props) {
     super(props)
+    const data = this.getData(props)
     const chartColors = getChartColorVars()
 
     this.PADDING = 6
-    this.LEGEND_PADDING = 50
-    this.AXIS_TITLE_PADDING = 15
-    this.DEFAULT_BOTTOM_MARGIN = 100
+    this.FONT_SIZE = 12
 
     this.firstRender = true
-    this.recursiveUpdateCount = 0
-    this.previousAggType = undefined
-
     this.colorScale = scaleOrdinal().range(chartColors)
-
-    const data = this.getData(props)
 
     this.state = {
       chartID: uuid(),
       data,
-      rightAxisMargin: 0,
-      bottomAxisMargin: 0,
-      deltaX: 0,
-      deltaY: 0,
-      // isLoading: true,
-      secondRender: false,
+      deltaX: this.PADDING,
+      deltaY: this.PADDING,
+      isLoading: true,
       isLoadingMoreRows: false,
     }
   }
@@ -105,18 +98,14 @@ export default class ChataChart extends Component {
     let shouldForceUpdate = false
 
     if (!this.props.isResizing && prevProps.isResizing) {
-      // debounce this call so it's not fired too many times while dragging mouse
-      // clearTimeout(this.adjustChartPositionTimeout)
-      // this.adjustChartPositionTimeout = setTimeout(() => {
       this.adjustChartPosition()
-      // }, 500)
     }
 
     if (
       (!this.props.isDrilldownChartHidden && prevProps.isDrilldownChartHidden) ||
       this.props.type !== prevProps.type
     ) {
-      this.setState({ chartID: uuid(), deltaX: 0, deltaY: 0, bottomAxisMargin: 0, rightAxisMargin: 0 })
+      this.setState({ chartID: uuid(), deltaX: 0, deltaY: 0 })
       this.rebuildTooltips()
     }
 
@@ -130,7 +119,7 @@ export default class ChataChart extends Component {
 
     if (dataStructureChanged(this.props, prevProps)) {
       const data = this.getData(this.props)
-      this.setState({ data, chartID: uuid(), deltaX: 0, deltaY: 0, bottomAxisMargin: 0, rightAxisMargin: 0 }, () => {
+      this.setState({ data, chartID: uuid(), deltaX: 0, deltaY: 0 }, () => {
         this.rebuildTooltips()
       })
       return
@@ -142,7 +131,8 @@ export default class ChataChart extends Component {
   }
 
   componentWillUnmount = () => {
-    clearTimeout(this.adjustChartPositionTimeout)
+    clearTimeout(this.rebuildTooltipsTimer)
+    clearTimeout(this.adjustVerticalPositionTimeout)
   }
 
   getData = (props) => {
@@ -159,10 +149,6 @@ export default class ChataChart extends Component {
     }
   }
 
-  onAxesRenderComplete = () => {
-    this.adjustChartPosition()
-  }
-
   adjustVerticalPosition = () => {
     // Adjust bottom and top axes second time to account for label rotation
     // Debounce in case multiple axes have rotated labels, we only want to
@@ -170,19 +156,17 @@ export default class ChataChart extends Component {
     clearTimeout(this.adjustVerticalPositionTimeout)
     this.adjustVerticalPositionTimeout = setTimeout(() => {
       const { deltaY } = this.getDeltas()
-      const { innerHeight } = this.getMargins(deltaY)
+      const { innerHeight } = this.getMargins()
       this.setState({ deltaY, innerHeight }, () => {
         this.setState({ isLoading: false })
       })
-    }, 100)
+    }, 0)
   }
 
   adjustChartPosition = () => {
-    this.setState({ deltaX: 0, deltaY: 0, bottomAxisMargin: 0, rightAxisMargin: 0, isLoading: true }, () => {
-      const { deltaX, deltaY } = this.getDeltas()
-      const { rightAxisMargin, innerHeight } = this.getMargins()
-      this.setState({ deltaX, deltaY, rightAxisMargin, innerHeight })
-    })
+    const { deltaX, deltaY } = this.getDeltas()
+    const { innerHeight, innerWidth } = this.getMargins()
+    this.setState({ deltaX, deltaY, innerHeight, innerWidth, isLoading: false })
   }
 
   getDeltas = () => {
@@ -192,56 +176,57 @@ export default class ChataChart extends Component {
     const axesBBoxX = Math.ceil(axesBBox?.x ?? 0)
     const deltaX = -1 * axesBBoxX + this.PADDING
 
-    const deltaY =
-      Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.topAxis?.ref)?.height ?? this.AXIS_TITLE_PADDING) +
-      this.PADDING
+    // Get distance in px to shift down
+    const axesBBoxY = Math.ceil(axesBBox?.y ?? 0)
+    const deltaY = -1 * axesBBoxY + this.PADDING
 
     return { deltaX, deltaY }
   }
 
-  getAxesBBox = () => {
+  getRenderedChartHeight = () => {
     const leftAxisBBox = this.innerChartRef?.axesRef?.leftAxis?.ref?.getBoundingClientRect()
     const bottomAxisBBox = this.innerChartRef?.axesRef?.bottomAxis?.ref?.getBoundingClientRect()
     const rightAxisBBox = this.innerChartRef?.axesRef?.rightAxis?.ref?.getBoundingClientRect()
     const topAxisBBox = this.innerChartRef?.axesRef?.topAxis?.ref?.getBoundingClientRect()
     const axesBBox = mergeBboxes([leftAxisBBox, bottomAxisBBox, rightAxisBBox, topAxisBBox])
-    return axesBBox
+    return axesBBox?.height
+  }
+
+  getRenderedChartWidth = () => {
+    const chartBBox = this.innerChartRef?.chartRef?.getBoundingClientRect()
+    return chartBBox?.width
   }
 
   getMargins = () => {
-    // GET NEW INNER HEIGHT BASED ON RANGE VALUES????
-    // axes height - full range = height of all margins. then figure out new inner height based on all margins
-    const containerHeight = this.props.height ?? this.chartContainerRef?.clientHeight ?? 0
-    const axesBBox = this.getAxesBBox()
-
-    let innerHeight = containerHeight
-    if (this.innerChartRef?.yScale && axesBBox) {
-      const axesHeight = axesBBox.height
-      const rangeInPx = this.innerChartRef.yScale.range()[0] - this.innerChartRef.yScale.range()[1]
-      const totalVerticalMargins = axesHeight - rangeInPx
-      innerHeight = containerHeight - totalVerticalMargins - 2 * this.PADDING
+    let innerWidth = containerWidth
+    const chartWidth = this.getRenderedChartWidth()
+    const containerWidth = this.props.width ?? this.chartContainerRef?.clientWidth ?? 0
+    if (this.innerChartRef?.xScale && chartWidth) {
+      const rangeInPx = this.innerChartRef.xScale.range()[1] - this.innerChartRef.xScale.range()[0]
+      const totalHorizontalMargins = chartWidth - rangeInPx
+      innerWidth = containerWidth - totalHorizontalMargins - this.PADDING
     }
 
-    let rightAxisMargin = Math.ceil(getBBoxFromRef(this.innerChartRef?.axesRef?.rightAxis)?.width ?? 0) + this.PADDING
-    return { rightAxisMargin, innerHeight }
+    let innerHeight = containerHeight
+    const chartHeight = this.getRenderedChartHeight()
+    const containerHeight = this.props.height ?? this.chartContainerRef?.clientHeight ?? 0
+    if (this.innerChartRef?.yScale && chartHeight) {
+      const rangeInPx = this.innerChartRef.yScale.range()[0] - this.innerChartRef.yScale.range()[1]
+      const totalVerticalMargins = chartHeight - rangeInPx
+      innerHeight = containerHeight - totalVerticalMargins - this.PADDING
+      if (this.props.type === 'bar' || this.props.type === 'stacked_bar') {
+        innerHeight -= this.FONT_SIZE
+      }
+    }
+
+    return { innerWidth, innerHeight }
   }
 
   getChartDimensions = () => {
-    const { rightAxisMargin, bottomAxisMargin, deltaX, deltaY } = this.state
-
     const containerWidth = this.props.width ?? this.chartContainerRef?.clientWidth ?? 0
     const containerHeight = this.props.height ?? this.chartContainerRef?.clientHeight ?? 0
 
-    let innerWidth = Math.floor(containerWidth - rightAxisMargin - deltaX)
-    if (innerWidth < 0) {
-      innerWidth = 0
-    }
-
-    // let innerHeight = Math.floor(containerHeight - bottomAxisMargin - deltaY)
-    // if (innerHeight < 0) {
-    //   innerHeight = 0
-    // }
-
+    const innerWidth = this.state.innerWidth ?? containerWidth
     const innerHeight = this.state.innerHeight ?? containerHeight
 
     const outerWidth = Math.ceil(containerWidth)
@@ -265,16 +250,8 @@ export default class ChataChart extends Component {
     }
   }
 
-  clearLoading = () => {
-    clearTimeout(this.loadingTimeout)
-    this.loadingTimeout = setTimeout(() => {
-      this.setState({ isLoading: false })
-    }, 100)
-  }
-
   changeNumberColumnIndices = (indices, indices2, newColumns) => {
     this.props.changeNumberColumnIndices(indices, indices2, newColumns)
-    // this.setState({ chartID: uuid() })
   }
 
   getBase64Data = () => {
@@ -380,7 +357,7 @@ export default class ChataChart extends Component {
   }
 
   getCommonChartProps = () => {
-    const { deltaX, deltaY, rightAxisMargin, bottomAxisMargin } = this.state
+    const { deltaX, deltaY } = this.state
     const { numberColumnIndices, numberColumnIndices2, columns, enableDynamicCharting } = this.props
 
     const { amountOfNumberColumns, amountOfStringColumns } = getColumnTypeAmounts(columns)
@@ -401,7 +378,6 @@ export default class ChataChart extends Component {
       ...this.props,
       setIsLoadingMoreRows: (isLoading) => this.setState({ isLoadingMoreRows: isLoading }),
       ref: (r) => (this.innerChartRef = r),
-      // key: `chata-inner-chart-${this.state.chartID}`,
       key: undefined,
       data: this.state.data || this.props.data,
       colorScale: this.colorScale,
@@ -410,8 +386,6 @@ export default class ChataChart extends Component {
       width: innerWidth,
       deltaX,
       deltaY,
-      rightAxisMargin,
-      bottomAxisMargin,
       hasMultipleNumberColumns,
       hasMultipleStringColumns,
       hasStringDropdown: enableDynamicCharting && hasMultipleStringColumns,
@@ -433,12 +407,9 @@ export default class ChataChart extends Component {
       popoverParentElement: this.props.popoverParentElement || this.chartContainerRef,
       totalRowCount: this.props.totalRowCount,
       chartID: this.state.chartID,
-      // secondRender: this.state.secondRender,
-      // firstRenderComplete: '',
-      // onSecondRender: '',
       changeNumberColumnIndices: this.changeNumberColumnIndices,
       rebuildTooltips: this.rebuildTooltips,
-      onAxesRenderComplete: this.onAxesRenderComplete,
+      onAxesRenderComplete: this.adjustChartPosition,
     }
   }
 
@@ -459,6 +430,7 @@ export default class ChataChart extends Component {
   renderStackedColumnChart = () => <ChataStackedColumnChart {...this.getCommonChartProps()} />
   renderStackedBarChart = () => <ChataStackedBarChart {...this.getCommonChartProps()} />
   renderStackedLineChart = () => <ChataStackedLineChart {...this.getCommonChartProps()} />
+  renderColumnLineChart = () => <ChataColumnLineChart {...this.getCommonChartProps()} />
 
   renderChart = () => {
     switch (this.props.type) {
@@ -488,6 +460,9 @@ export default class ChataChart extends Component {
       }
       case 'stacked_line': {
         return this.renderStackedLineChart()
+      }
+      case 'column_line': {
+        return this.renderColumnLineChart()
       }
       default: {
         return 'Unknown Display Type'

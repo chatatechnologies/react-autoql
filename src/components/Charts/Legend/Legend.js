@@ -20,6 +20,7 @@ export default class Legend extends Component {
     this.BUTTON_PADDING = 5
     this.LEFT_PADDING = 20
     this.swatchElements = []
+    this.justMounted = true
   }
 
   static propTypes = {
@@ -37,21 +38,24 @@ export default class Legend extends Component {
     translate: PropTypes.string,
     height: PropTypes.number,
     width: PropTypes.number,
+    onRenderComplete: PropTypes.func,
   }
 
   static defaultProps = {
     legendTitle: undefined,
     onLabelChange: () => {},
     onLegendClick: () => {},
+    onRenderComplete: () => {},
     translate: undefined,
     placement: 'right',
   }
 
   componentDidMount = () => {
-    if (this.props.placement === 'right' || this.props.placement === 'bottom') {
-      // https://d3-legend.susielu.com/
-      this.renderLegend()
-    }
+    // if (this.props.placement === 'right' || this.props.placement === 'bottom') {
+    // https://d3-legend.susielu.com/
+    this.renderLegend()
+    this.forceUpdate()
+    // }
   }
 
   componentDidUpdate = (prevProps) => {
@@ -62,6 +66,11 @@ export default class Legend extends Component {
     ) {
       this.renderLegend()
     }
+
+    // if (this.justMounted) {
+    //   this.justMounted = false
+    //   this.props.onRenderComplete()
+    // }
   }
 
   componentWillUnmount = () => {
@@ -93,12 +102,16 @@ export default class Legend extends Component {
     //   })
   }
 
-  styleLegendTitleNoBorder = (svg) => {
-    svg.select('.legendTitle').style('font-weight', 'bold').attr('data-test', 'legend-title').attr('fill-opacity', 0.9)
+  styleLegendTitleNoBorder = () => {
+    select(this.rightLegendElement)
+      .select('.legendTitle')
+      .style('font-weight', 'bold')
+      .attr('data-test', 'legend-title')
+      .attr('fill-opacity', 0.9)
   }
 
-  styleLegendTitleWithBorder = (svg) => {
-    svg
+  styleLegendTitleWithBorder = () => {
+    select(this.rightLegendElement)
       .select('.legendTitle')
       .style('font-weight', 'bold')
       .attr('data-test', 'legend-title')
@@ -111,28 +124,28 @@ export default class Legend extends Component {
     // Add border that shows on hover
     this.titleBBox = {}
     try {
-      this.titleBBox = svg.select('.legendTitle').node().getBBox()
+      this.titleBBox = select(this.rightLegendElement).select('.legendTitle').node().getBBox()
     } catch (error) {
       console.error(error)
     }
 
-    select(this.legendBorder)
-      .attr('class', 'legend-title-border')
-      .attr('width', _get(this.titleBBox, 'width', 0))
-      .attr('height', _get(this.titleBBox, 'height', 0))
-      .attr('x', _get(this.titleBBox, 'x', 0))
-      .attr('y', _get(this.titleBBox, 'y', 0))
-      .attr('stroke', 'transparent')
-      .attr('stroke-width', '1px')
-      .attr('fill', 'transparent')
-      .attr('rx', 4)
+    // select(this.legendBorder)
+    //   .attr('class', 'legend-title-border')
+    //   .attr('width', _get(this.titleBBox, 'width', 0))
+    //   .attr('height', _get(this.titleBBox, 'height', 0))
+    //   .attr('x', _get(this.titleBBox, 'x', 0))
+    //   .attr('y', _get(this.titleBBox, 'y', 0))
+    //   .attr('stroke', 'transparent')
+    //   .attr('stroke-width', '1px')
+    //   .attr('fill', 'transparent')
+    //   .attr('rx', 4)
 
     // Move to front
-    this.legendElement = select(this.legendBorder).node()
-    if (this.legendElement) {
-      removeFromDOM(this.legendElement)
-      this.legendElement.parentNode.appendChild(this.legendElement)
-    }
+    // this.legendElement = select(this.legendBorder).node()
+    // if (this.legendElement) {
+    //   removeFromDOM(this.legendElement)
+    //   this.legendElement.parentNode.appendChild(this.legendElement)
+    // }
   }
 
   renderLegend = () => {
@@ -147,9 +160,7 @@ export default class Legend extends Component {
       const legendScale = this.getLegendScale(legendLabels)
 
       if (this.props.placement === 'right') {
-        this.legendSVG = select(this.rightLegendElement)
-
-        this.legendSVG
+        select(this.rightLegendElement)
           .attr('class', 'legendOrdinal')
           .style('fill', 'currentColor')
           .style('fill-opacity', '1')
@@ -170,13 +181,13 @@ export default class Legend extends Component {
           legendOrdinal.title(this.props.legendTitle).titleWidth(100)
         }
 
-        this.legendSVG.call(legendOrdinal).style('font-family', 'inherit')
+        select(this.rightLegendElement).call(legendOrdinal).style('font-family', 'inherit')
 
         if (this.props.legendTitle) {
           if (this.props.onLegendTitleClick) {
-            this.styleLegendTitleWithBorder(this.legendSVG)
+            this.styleLegendTitleWithBorder()
           } else {
-            this.styleLegendTitleNoBorder(this.legendSVG)
+            this.styleLegendTitleNoBorder()
           }
         }
 
@@ -184,10 +195,9 @@ export default class Legend extends Component {
         // this is so the updateMargins function works properly
         const legendWidth = select(this.rightLegendElement).node()?.getBBox()?.width || 0
         select(this.legendClippingContainer).attr('width', legendWidth)
-        this.legendSVG.attr('clip-path', `url(#legend-clip-area-${this.LEGEND_ID})`)
+        select(this.rightLegendElement).attr('clip-path', `url(#legend-clip-area-${this.LEGEND_ID})`)
       } else if (this.props.placement === 'bottom') {
-        this.legendSVG = select(this.bottomLegendElement)
-        this.legendSVG
+        select(this.bottomLegendElement)
           .attr('class', 'legendOrdinal')
           .style('fill', 'currentColor')
           .style('fill-opacity', '1')
@@ -204,7 +214,7 @@ export default class Legend extends Component {
             self.props.onLegendClick(d)
           })
 
-        this.legendSVG.call(legendOrdinal).style('font-family', 'inherit')
+        select(this.bottomLegendElement).call(legendOrdinal).style('font-family', 'inherit')
       }
 
       this.applyStylesForHiddenSeries(legendLabels)
@@ -212,6 +222,11 @@ export default class Legend extends Component {
       this.removeOverlappingLegendLabels()
     } catch (error) {
       console.error(error)
+    }
+
+    if (this.justMounted) {
+      this.justMounted = false
+      this.props.onRenderComplete()
     }
   }
 

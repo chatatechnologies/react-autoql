@@ -285,6 +285,22 @@ export const bubbleChartIcon = (
   </svg>
 )
 
+export const columnLineIcon = (
+  <svg x='0px' y='0px' width='16px' height='16px' viewBox='0 0 16 16'>
+    <path
+      class='chart-icon-svg-0'
+      d='M13,4.2H9.5c-0.5,0-0.9,0.4-0.9,0.9v1.3h-3c-0.5,0-0.9,0.4-0.9,0.9v2.4h-3C1.4,9.6,1,10,1,10.5v4.7
+C1,15.6,1.4,16,1.9,16h3h1.4h2.4h1.4h3c0.5,0,0.9-0.4,0.9-0.9v-10C13.9,4.6,13.5,4.2,13,4.2z M4.8,14.6H2.4V11h2.4V14.6z M8.7,14.6
+H6.2v-5V7.8h2.4V14.6z M12.5,14.6h-2.4V6.4V5.6h2.4V14.6z'
+    />
+    <path
+      class='chart-icon-svg-0'
+      d='M5.5,5.5c-0.1,0-0.2,0-0.3-0.1l-4-1.7C0.9,3.6,0.7,3.2,0.9,2.9C1,2.5,1.4,2.3,1.8,2.5L5.4,4L9,0.3
+c0.2-0.2,0.5-0.3,0.8-0.1l4,1.9c0.3,0.2,0.5,0.6,0.3,0.9c-0.2,0.4-0.6,0.5-0.9,0.3L9.6,1.7L6,5.3C5.9,5.4,5.7,5.5,5.5,5.5z'
+    />
+  </svg>
+)
+
 export const splitViewIcon = (
   <svg x='0px' y='0px' width='16px' height='16px' viewBox='0 0 16 16'>
     <g>
