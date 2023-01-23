@@ -66,6 +66,12 @@ export default class Circles extends Component {
 
     const circles = []
 
+    const yBandwidth = yScale.bandwidth() || 0
+    const xBandwidth = xScale.bandwidth() || 0
+
+    const color0 = colorScale(0)
+    const color1 = colorScale(1)
+
     this.props.data.forEach((row, index) => {
       numberColumnIndices.forEach((colIndex, i) => {
         if (!columns[colIndex].isSeriesHidden) {
@@ -85,13 +91,16 @@ export default class Circles extends Component {
             dataFormatting,
           })
 
+          const scaleX = xScale(xLabel)
+          const scaleY = yScale(yLabel)
+
           circles.push(
             <circle
               key={getKey(colIndex, index)}
               data-test='circles'
               className={`circle${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
-              cx={xScale(xLabel) + xScale.bandwidth() / 2}
-              cy={yScale(yLabel) + yScale.bandwidth() / 2}
+              cx={scaleX + xBandwidth / 2}
+              cy={scaleY + yBandwidth / 2}
               r={value < 0 ? 0 : this.radiusScale(value) / 2}
               onClick={() => this.onCircleClick(row, colIndex, index)}
               data-tip={tooltip}
@@ -99,7 +108,7 @@ export default class Circles extends Component {
               style={{
                 stroke: 'transparent',
                 strokeWidth: 10,
-                fill: this.state.activeKey === getKey(colIndex, index) ? colorScale(1) : colorScale(0),
+                fill: this.state.activeKey === getKey(colIndex, index) ? color1 : color0,
                 fillOpacity: 0.7,
               }}
             />,

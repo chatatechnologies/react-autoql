@@ -248,11 +248,11 @@ export default class ChataTable extends React.Component {
   }
 
   unlockTableHeight = () => {
-    // setTimeout(() => {
-    if (this.tableContainer?.style && !this.state.pageLoading && !this.firstRender && !this.props.isResizing) {
-      this.tableContainer.style.flexBasis = 'auto'
-    }
-    // }, 0)
+    setTimeout(() => {
+      if (this.tableContainer?.style && !this.state.pageLoading && !this.firstRender && !this.props.isResizing) {
+        this.tableContainer.style.flexBasis = 'auto'
+      }
+    }, 0)
   }
 
   saveCurrentTableHeight = () => {

@@ -94,39 +94,28 @@ export default class ChataChart extends Component {
     return !propsEqual || !stateEqual
   }
 
-  componentDidUpdate = (prevProps, prevState) => {
-    let shouldForceUpdate = false
-
+  componentDidUpdate = (prevProps) => {
     if (!this.props.isResizing && prevProps.isResizing) {
-      this.adjustChartPosition()
+      if (this.chartContainerRef) {
+        this.chartContainerRef.style.flexBasis = '100vh'
+      }
+      this.setState({ chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
     }
 
     if (
       (!this.props.isDrilldownChartHidden && prevProps.isDrilldownChartHidden) ||
       this.props.type !== prevProps.type
     ) {
-      this.setState({ chartID: uuid(), deltaX: 0, deltaY: 0 })
+      this.setState({ chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
       this.rebuildTooltips()
-    }
-
-    if (!this.props.isResizing && prevProps.isResizing) {
-      // Fill max message container after resize
-      if (this.chartContainerRef) {
-        this.chartContainerRef.style.flexBasis = '100vh'
-        shouldForceUpdate = true
-      }
     }
 
     if (dataStructureChanged(this.props, prevProps)) {
       const data = this.getData(this.props)
-      this.setState({ data, chartID: uuid(), deltaX: 0, deltaY: 0 }, () => {
+      this.setState({ data, chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true }, () => {
         this.rebuildTooltips()
       })
       return
-    }
-
-    if (shouldForceUpdate) {
-      this.forceUpdate()
     }
   }
 
@@ -166,7 +155,7 @@ export default class ChataChart extends Component {
   adjustChartPosition = () => {
     const { deltaX, deltaY } = this.getDeltas()
     const { innerHeight, innerWidth } = this.getMargins()
-    this.setState({ deltaX, deltaY, innerHeight, innerWidth, isLoading: false })
+    this.setState({ deltaX, deltaY, innerHeight, innerWidth })
   }
 
   getDeltas = () => {
@@ -217,6 +206,14 @@ export default class ChataChart extends Component {
       if (this.props.type === 'bar' || this.props.type === 'stacked_bar') {
         innerHeight -= this.FONT_SIZE
       }
+    }
+
+    if (innerWidth < 0) {
+      innerWidth = 0
+    }
+
+    if (innerHeight < 0) {
+      innerHeight = 0
     }
 
     return { innerWidth, innerHeight }

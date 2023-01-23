@@ -1,7 +1,6 @@
 import React, { Component } from 'react'
 import { Axes } from '../Axes'
 import { Columns } from '../Columns'
-import { Line } from '../Line'
 
 import { chartDefaultProps, chartPropTypes, getBandScale, getLinearScales } from '../helpers.js'
 import { deepEqual } from '../../../js/Util'
@@ -76,7 +75,6 @@ export default class ChataColumnChart extends Component {
       >
         <Axes
           {...this.props}
-          // key={this.state.id}
           ref={(r) => (this.axesRef = r)}
           xScale={this.xScale}
           yScale={this.yScale}
@@ -95,19 +93,7 @@ export default class ChataColumnChart extends Component {
           toggleChartScale={this.toggleChartScale}
           yGridLines
         >
-          {this.props.marginAdjustmentFinished && (
-            <>
-              <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />
-              {!!this.yScale2 && (
-                <Line
-                  {...this.props}
-                  numberColumnIndices={this.props.numberColumnIndices2}
-                  xScale={this.xScale}
-                  yScale={this.yScale2}
-                />
-              )}
-            </>
-          )}
+          {this.props.marginAdjustmentFinished && <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />}
         </Axes>
       </g>
     )

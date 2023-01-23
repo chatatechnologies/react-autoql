@@ -67,6 +67,10 @@ export default class ChataColumnLineChart extends Component {
     const yCol = this.props.columns[this.props.numberColumnIndex]
     const yCol2 = this.props.columns[this.props.numberColumnIndex2]
 
+    if (!this.props.height || !this.props.width) {
+      return null
+    }
+
     return (
       <g
         ref={(r) => (this.chartRef = r)}

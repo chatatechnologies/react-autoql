@@ -131,6 +131,10 @@ class DashboardWithoutTheme extends React.Component {
       this.executeDashboard()
     }
 
+    if (!prevProps.isEditing && this.props.isEditing) {
+      this.refreshTileLayouts()
+    }
+
     // If tile structure changed, set previous tile state for undo feature
     if (
       this.getChangeDetection(this.props.tiles, prevProps.tiles) &&
@@ -245,6 +249,18 @@ class DashboardWithoutTheme extends React.Component {
           }
         }, 500)
       }
+    }
+  }
+
+  refreshTileLayouts = () => {
+    try {
+      for (var dashboardTile in this.tileRefs) {
+        if (this.tileRefs[dashboardTile]) {
+          this.tileRefs[dashboardTile].refreshLayout()
+        }
+      }
+    } catch (error) {
+      console.error(error)
     }
   }
 

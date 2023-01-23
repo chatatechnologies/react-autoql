@@ -135,6 +135,11 @@ export class DashboardTile extends React.Component {
     }
   }
 
+  refreshLayout = () => {
+    this.state.responseRef?.refreshLayout()
+    this.state.secondResponseRef?.refreshLayout()
+  }
+
   cancelAllQueries = () => {
     this.axiosSource?.cancel(responseErrors.CANCELLED)
     this.secondAxiosSource?.cancel(responseErrors.CANCELLED)

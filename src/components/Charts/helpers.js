@@ -467,13 +467,22 @@ export const getBandScale = ({
 
 export const scaleTo0 = (scale) => {}
 
-export const getLinearScale = ({ props, minValue, maxValue, axis, tickValues, numTicks, stacked, isScaled }) => {
-  const range = getRangeForAxis(props, axis)
-  const min = minValue ?? tickValues?.[0] ?? 0
-  const max = maxValue ?? tickValues?.[tickValues?.length - 1] ?? min
-  const domain = [min, max]
+export const getLinearScale = ({ props, minValue, maxValue, axis, range, tickValues, numTicks, stacked, isScaled }) => {
+  let min = minValue ?? tickValues?.[0]
+  let max = maxValue ?? tickValues?.[tickValues?.length - 1]
 
-  const scale = scaleLinear().domain(domain).range(range)
+  if (isNaN(min)) {
+    min = 0
+  }
+
+  if (isNaN(max)) {
+    max = min
+  }
+
+  const domain = [min, max]
+  const scaleRange = range ?? getRangeForAxis(props, axis)
+
+  const scale = scaleLinear().domain(domain).range(scaleRange)
   scale.minValue = min
   scale.maxValue = max
   scale.stacked = !!stacked
@@ -486,6 +495,7 @@ export const getLinearScale = ({ props, minValue, maxValue, axis, tickValues, nu
       numTicks,
       isScaled,
     })
+
   scale.isScaled = isScaled
 
   return scale
@@ -509,20 +519,19 @@ export const getLinearScales = ({ props, columnIndices1, columnIndices2, axis, s
   const maxValue2 = minMax2.maxValue
 
   const tempScale2 = getLinearScale({
-    props,
     minValue: minValue2,
     maxValue: maxValue2,
-    axis,
+    range: tempScale1.range(),
     numTicks: tempScale1.tickLabels?.length ?? undefined,
     stacked,
     isScaled,
   })
 
-  const tickValues1 = tempScale1.tickLabels
-  const tickValues2 = tempScale2.tickLabels
+  const tickValues1 = tempScale1.tickLabels || []
+  const tickValues2 = tempScale2.tickLabels || []
 
-  const numTickValues1 = tickValues1?.length
-  const numTickValues2 = tickValues2?.length
+  const numTickValues1 = tickValues1.length
+  const numTickValues2 = tickValues2.length
 
   const newTickValues1 = [...tickValues1]
   const newTickValues2 = [...tickValues2]
@@ -549,7 +558,7 @@ export const getLinearScales = ({ props, columnIndices1, columnIndices2, axis, s
   }
 
   const scale = getLinearScale({ props, axis, tickValues: newTickValues1, stacked, isScaled })
-  const scale2 = getLinearScale({ props, axis, tickValues: newTickValues2, stacked, isScaled })
+  const scale2 = getLinearScale({ range: scale.range(), tickValues: newTickValues2, stacked, isScaled })
 
   return { scale, scale2 }
 }
@@ -586,10 +595,10 @@ export const getNiceTickValues = ({ tickValues, scale }) => {
 
   if (minValue === undefined || maxValue === undefined) {
     console.warn('Tried to make nice labels but max/min values were not provided')
-    return // tickValues
+    return tickValues
   } else if (tickValues?.length < 2) {
     // Could not make nice labels because there was only 1 tick
-    return // tickValues
+    return tickValues
   }
 
   const newTickValues = [...tickValues]
@@ -626,9 +635,10 @@ export const getTickSizeFromNumTicks = ({
   innerPadding = DEFAULT_INNER_PADDING,
   outerPadding = DEFAULT_OUTER_PADDING,
 }) => {
+  const fontSize = 12
   const rangeStart = scale?.range()?.[1] ?? 0
   const rangeEnd = scale?.range()?.[0] ?? 0
-  const fullSize = Math.abs(rangeEnd - rangeStart)
+  const fullSize = Math.abs(rangeEnd - rangeStart) + fontSize
 
   if (scale.type === 'LINEAR') {
     const tickSize = fullSize / numTicks
@@ -657,14 +667,16 @@ export const getTickValues = ({ scale, initialTicks, props, numTicks, innerPaddi
       return
     }
 
-    const minTextHeightInPx = 16
-
-    const fullSize = Math.abs(scale?.range()?.[1] - scale?.range()?.[0]) ?? 1
-    const interval = Math.ceil((tickValues.length * minTextHeightInPx) / fullSize)
+    const fontSize = 12
+    const minimumTickSize = 20
+    const fullSize = (Math.abs(scale?.range()?.[1] - scale?.range()?.[0]) ?? 1) + fontSize
+    const interval = Math.ceil((tickValues.length * minimumTickSize) / fullSize)
 
     let newTickValues = [...tickValues]
 
-    if (tickSize < minTextHeightInPx) {
+    if (tickSize < minimumTickSize) {
+      // We only want to do this if we doxpnt already want a specific number
+      // of ticks (numTicks) since it will change the number of ticks
       newTickValues = []
 
       // We want to do this in the reverse direction so the highest value is always included

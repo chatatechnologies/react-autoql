@@ -326,6 +326,12 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  refreshLayout = () => {
+    if (this.chartRef) {
+      this.chartRef?.adjustChartPosition()
+    }
+  }
+
   rebuildTooltips = (delay = 500) => {
     if (this.props.rebuildTooltips) {
       this.props.rebuildTooltips(delay)

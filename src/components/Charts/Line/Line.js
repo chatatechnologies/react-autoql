@@ -93,7 +93,7 @@ export default class Line extends Component {
           }
 
           const cy = yScale(value)
-          if (cy < 0.05) {
+          if (!cy || cy < 0.05) {
             return
           }
 
