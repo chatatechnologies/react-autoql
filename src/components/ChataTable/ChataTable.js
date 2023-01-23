@@ -61,9 +61,7 @@ export default class ChataTable extends React.Component {
       initialSort: !this.supportsInfiniteScroll ? _cloneDeep(props.initialParams?.sorters) : undefined,
       initialFilter: !this.supportsInfiniteScroll ? _cloneDeep(props.initialParams?.filters) : undefined,
       dataSorting: (sorters) => {
-        if (this.tabulatorMounted) {
-          this.lockTableHeight()
-        }
+        this.lockTableHeight()
         const formattedSorters = sorters.map((sorter) => {
           return {
             dir: sorter.dir,
@@ -78,9 +76,7 @@ export default class ChataTable extends React.Component {
         }
       },
       dataFiltering: (filters) => {
-        if (this.tabulatorMounted) {
-          this.lockTableHeight()
-        }
+        this.lockTableHeight()
         const headerFilters = this.ref?.tableRef?.table?.getHeaderFilters()
 
         if (headerFilters && !_isEqual(headerFilters, this.tableParams?.filters) && this._isMounted) {
@@ -242,7 +238,8 @@ export default class ChataTable extends React.Component {
       (this.tableHeight || this.tableContainer?.style) &&
       !this.state.pageLoading &&
       !this.firstRender &&
-      !this.props.isResizing
+      !this.props.isResizing &&
+      !this.props.isAnimating
     ) {
       const height = this.tableHeight || getComputedStyle(this.tableContainer)?.height
       this.tableContainer.style.flexBasis = height
@@ -258,12 +255,16 @@ export default class ChataTable extends React.Component {
   }
 
   saveCurrentTableHeight = () => {
+    clearTimeout(this.setDimensionsTimeout)
     this.setDimensionsTimeout = setTimeout(() => {
-      if (this.ref?.ref && !this.props.isResizing && !this.isLoading()) {
-        const tableHeight = getComputedStyle(this.tableContainer)?.height
+      if (this.tabulatorMounted && !this.props.isResizing && !this.props.isAnimating && !this.isLoading()) {
+        const tableStyle = getComputedStyle(this.tableContainer)
+        const tableHeight = tableStyle?.height
+        const tableWidth = tableStyle?.width
 
         if (tableHeight) {
           this.tableHeight = tableHeight
+          this.tableWidth = tableWidth
           this.props.onSetTableHeight(tableHeight)
         }
       }
@@ -703,6 +704,7 @@ export default class ChataTable extends React.Component {
 
   render = () => {
     const height = this.getTableHeight()
+    const width = this.tableWidth || 'auto'
 
     return (
       <ErrorBoundary>
@@ -714,12 +716,14 @@ export default class ChataTable extends React.Component {
           ${this.props.supportsDrilldowns ? 'supports-drilldown' : ''}
           ${this.state.isFiltering ? 'filtering' : ''}
           ${this.props.isResizing ? 'resizing' : ''}
+          ${this.props.isAnimating ? 'animating' : ''}
           ${this.supportsInfiniteScroll ? 'infinite' : 'limited'}
           ${this.supportsInfiniteScroll && this.state.isLastPage ? 'last-page' : ''}
           ${this.props.pivot ? 'pivot' : ''}`}
           style={{
             ...this.props.style,
             flexBasis: this.props.isResizing || this.isLoading() ? height : 'auto',
+            width: this.props.isResizing ? width : 'auto',
           }}
         >
           {this.props.data && this.props.columns && (

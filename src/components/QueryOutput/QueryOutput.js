@@ -1781,6 +1781,7 @@ export class QueryOutput extends React.Component {
             columns={this.pivotTableColumns}
             data={this.pivotTableData}
             onCellClick={this.onTableCellClick}
+            isAnimating={this.props.isAnimating}
             isResizing={this.props.isResizing}
             useInfiniteScroll={false}
             supportsDrilldowns={true}
@@ -1807,6 +1808,7 @@ export class QueryOutput extends React.Component {
         onTableParamsChange={this.onTableParamsChange}
         onNewPage={this.onNewPage}
         onNewData={this.onNewData}
+        isAnimating={this.props.isAnimating}
         isResizing={this.props.isResizing}
         pageSize={_get(this.queryResponse, 'data.data.row_limit')}
         useInfiniteScroll={this.props.enableAjaxTableData && this.isDataLimited()}

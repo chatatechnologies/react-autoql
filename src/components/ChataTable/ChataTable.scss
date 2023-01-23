@@ -119,11 +119,19 @@
   background-color: inherit;
 }
 
+.react-autoql-table-container.animating {
+  .react-autoql-table {
+    // This cant be display: none because tabulator needs
+    // to reference the dom element for its initial render
+    visibility: hidden;
+  }
+}
+
 .react-autoql-table-container.resizing {
   width: 100vw;
 
   .react-autoql-table {
-    visibility: hidden;
+    display: none;
   }
 }
 

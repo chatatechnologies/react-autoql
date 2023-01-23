@@ -146,6 +146,7 @@ export default class ChatMessage extends React.Component {
   }
 
   clearIsAnimatingIn500ms = () => {
+    clearTimeout(this.animationTimeout)
     this.animationTimeout = setTimeout(() => {
       this.setState({ isAnimatingMessageBubble: false })
       this.props.scrollToBottom()
@@ -273,7 +274,8 @@ export default class ChatMessage extends React.Component {
           backgroundColor={document.documentElement.style.getPropertyValue('--react-autoql-background-color-secondary')}
           onErrorCallback={this.props.onErrorCallback}
           enableColumnHeaderContextMenu={true}
-          isResizing={this.props.isResizing || this.state.isAnimatingMessageBubble}
+          isAnimating={this.state.isAnimatingMessageBubble}
+          isResizing={this.props.isResizing}
           enableDynamicCharting={this.props.enableDynamicCharting}
           initialTableConfigs={this.state.dataConfig}
           onTableConfigChange={this.updateDataConfig}
