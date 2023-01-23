@@ -14,9 +14,9 @@ export default class TableWrapper extends React.Component {
     tableKey: undefined,
   }
 
-  shouldComponentUpdate = () => {
-    return false
-  }
+  // shouldComponentUpdate = () => {
+  //   return false
+  // }
 
   render = () => {
     return (

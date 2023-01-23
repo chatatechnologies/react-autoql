@@ -37,13 +37,14 @@ export default class ChataTable extends React.Component {
     this.queryID = props.queryID
     this.supportsInfiniteScroll = props.useInfiniteScroll && !!props.pageSize
     this.tableParams = _cloneDeep(props.initialParams)
+    this.isFiltering = false
+    this.isSorting = false
 
     this.tableOptions = {
       dataLoadError: (error) => console.error(error),
       selectableCheck: () => false,
       renderComplete: () => {
-        if (!this.tabulatorMounted) {
-          this.tabulatorMounted = true
+        if (!this.tabulatorMounted && !this.hasSetInitialData) {
           this.onTabulatorMount()
         }
       },
@@ -60,7 +61,9 @@ export default class ChataTable extends React.Component {
       initialSort: !this.supportsInfiniteScroll ? _cloneDeep(props.initialParams?.sorters) : undefined,
       initialFilter: !this.supportsInfiniteScroll ? _cloneDeep(props.initialParams?.filters) : undefined,
       dataSorting: (sorters) => {
-        this.lockTableHeight()
+        if (this.tabulatorMounted) {
+          this.lockTableHeight()
+        }
         const formattedSorters = sorters.map((sorter) => {
           return {
             dir: sorter.dir,
@@ -75,7 +78,9 @@ export default class ChataTable extends React.Component {
         }
       },
       dataFiltering: (filters) => {
-        this.lockTableHeight()
+        if (this.tabulatorMounted) {
+          this.lockTableHeight()
+        }
         const headerFilters = this.ref?.tableRef?.table?.getHeaderFilters()
 
         if (headerFilters && !_isEqual(headerFilters, this.tableParams?.filters) && this._isMounted) {
@@ -131,13 +136,11 @@ export default class ChataTable extends React.Component {
       this.tableOptions.ajaxLoaderError = ''
       this.tableOptions.ajaxRequestFunc = (url, config, params) => this.ajaxRequestFunc(props, params)
       this.tableOptions.ajaxResponse = (url, params, response) => this.ajaxResponseFunc(props, response)
-      this.tableOptions.ajaxError = (error) => {
-        console.error(error)
-      }
     }
 
     this.state = {
       isFiltering: false,
+      isSorting: false,
       loading: false,
       pageLoading: false,
       scrollLoading: false,
@@ -226,16 +229,15 @@ export default class ChataTable extends React.Component {
       clearTimeout(this.setDimensionsTimeout)
       clearTimeout(this.setStateTimeout)
       this.cancelCurrentRequest()
-      // this.resetFilterTags()
-      // this.existingFilterTag = undefined
-      // this.filterTagElements = undefined
+      this.resetFilterTags()
+      this.existingFilterTag = undefined
+      this.filterTagElements = undefined
     } catch (error) {
       console.error(error)
     }
   }
 
   lockTableHeight = () => {
-    return
     if (
       (this.tableHeight || this.tableContainer?.style) &&
       !this.state.pageLoading &&
@@ -281,6 +283,8 @@ export default class ChataTable extends React.Component {
   }
 
   onTabulatorMount = async () => {
+    this.tabulatorMounted = true
+
     await currentEventLoopEnd()
 
     this.setSorters()
@@ -289,6 +293,7 @@ export default class ChataTable extends React.Component {
     this.saveCurrentTableHeight()
 
     this.hasSetInitialParams = true
+    this.pauseRequestFn = false
   }
 
   cancelCurrentRequest = () => {
@@ -298,6 +303,7 @@ export default class ChataTable extends React.Component {
   ajaxRequestFunc = async (props, params) => {
     try {
       if (this.settingFilterInputs || !this.hasSetInitialData) {
+        this.pauseRequestFn = true
         return Promise.resolve()
       }
 
@@ -389,6 +395,10 @@ export default class ChataTable extends React.Component {
         data: props.data,
         last_page: this.lastPage,
       }
+    }
+
+    if (!response) {
+      return
     }
 
     this.currentPage = response.page
