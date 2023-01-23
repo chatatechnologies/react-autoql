@@ -129,7 +129,7 @@ export const formatEpochDate = (value, col = {}, config = {}) => {
     const title = col.title
 
     let dayJSObj
-    if (isNaN(parseInt(value))) {
+    if (isNaN(parseFloat(value))) {
       dayJSObj = dayjs(value).utc()
     } else {
       dayJSObj = dayjs.unix(value).utc()
@@ -137,7 +137,7 @@ export const formatEpochDate = (value, col = {}, config = {}) => {
 
     let date = dayJSObj.format(dayMonthYear)
 
-    if (isNaN(parseInt(value))) {
+    if (isNaN(parseFloat(value))) {
       // Not an epoch time. Try converting using dayjs
       if (title && title.toLowerCase().includes('year')) {
         date = dayJSObj.format(year)
@@ -354,7 +354,7 @@ export const formatElement = ({ element, column, config = {}, htmlElement, preci
         }
         case 'DOLLAR_AMT': {
           // We will need to grab the actual currency symbol here. Will that be returned in the query response?
-          if (!isNaN(parseInt(element))) {
+          if (!isNaN(parseFloat(element))) {
             const currency = currencyCode || 'USD'
             const validatedCurrencyDecimals = currencyDecimals || currencyDecimals === 0 ? currencyDecimals : undefined
 
@@ -380,8 +380,8 @@ export const formatElement = ({ element, column, config = {}, htmlElement, preci
         case 'QUANTITY': {
           const validatedQuantityDecimals = quantityDecimals || quantityDecimals === 0 ? quantityDecimals : 1
 
-          if (!isNaN(parseInt(element))) {
-            const numDecimals = parseInt(element) % 1 !== 0 ? validatedQuantityDecimals : 0
+          if (!isNaN(parseFloat(element))) {
+            const numDecimals = parseFloat(element) % 1 !== 0 ? validatedQuantityDecimals : 0
 
             formattedElement = new Intl.NumberFormat(languageCode, {
               minimumFractionDigits: numDecimals,
@@ -400,7 +400,7 @@ export const formatElement = ({ element, column, config = {}, htmlElement, preci
           break
         }
         case 'RATIO': {
-          if (!isNaN(parseInt(element))) {
+          if (!isNaN(parseFloat(element))) {
             formattedElement = new Intl.NumberFormat(languageCode, {
               minimumFractionDigits: 4,
               maximumFractionDigits: 4,
@@ -409,8 +409,8 @@ export const formatElement = ({ element, column, config = {}, htmlElement, preci
           break
         }
         case 'PERCENT': {
-          if (!isNaN(parseInt(element))) {
-            const p = parseInt(element) / 100
+          if (!isNaN(parseFloat(element))) {
+            const p = parseFloat(element) / 100
 
             formattedElement = new Intl.NumberFormat(languageCode, {
               style: 'percent',
