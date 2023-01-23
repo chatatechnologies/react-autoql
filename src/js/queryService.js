@@ -255,26 +255,26 @@ export const runQueryValidation = ({ text, domain, apiKey, token } = {}) => {
 }
 
 export const runQuery = (params) => {
-  // if (params?.enableQueryValidation && !params?.skipQueryValidation) {
-  //   return runQueryValidation({
-  //     text: params?.query,
-  //     domain: params?.domain,
-  //     apiKey: params?.apiKey,
-  //     token: params?.token,
-  //   })
-  //     .then((response) => {
-  //       if (failedValidation(response)) {
-  //         return Promise.resolve(response)
-  //       }
-  //       return runQueryOnly(params)
-  //     })
-  //     .catch((error) => {
-  //       if (error?.data?.message !== responseErrors.CANCELLED) {
-  //         console.error(error)
-  //       }
-  //       return Promise.reject(error)
-  //     })
-  // }
+  if (params?.enableQueryValidation && !params?.skipQueryValidation) {
+    return runQueryValidation({
+      text: params?.query,
+      domain: params?.domain,
+      apiKey: params?.apiKey,
+      token: params?.token,
+    })
+      .then((response) => {
+        if (failedValidation(response)) {
+          return Promise.resolve(response)
+        }
+        return runQueryOnly(params)
+      })
+      .catch((error) => {
+        if (error?.data?.message !== responseErrors.CANCELLED) {
+          console.error(error)
+        }
+        return Promise.reject(error)
+      })
+  }
 
   return runQueryOnly(params)
 }
@@ -609,29 +609,29 @@ export const fetchExploreQueries = ({
     },
   }
 
-  // if (!skipQueryValidation) {
-  //   return runQueryValidation({
-  //     text: keywords,
-  //     domain,
-  //     apiKey,
-  //     token,
-  //   })
-  //     .then((queryValidationResponse) => {
-  //       if (_get(queryValidationResponse, 'data.data.replacements.length') > 0) {
-  //         return Promise.resolve(queryValidationResponse)
-  //       }
-  //       return axios
-  //         .get(exploreQueriesUrl, config)
-  //         .then((response) => Promise.resolve(response))
-  //         .catch((error) => Promise.reject(_get(error, 'response.data')))
-  //     })
-  //     .catch(() => {
-  //       return axios
-  //         .get(exploreQueriesUrl, config)
-  //         .then((response) => Promise.resolve(response))
-  //         .catch((error) => Promise.reject(_get(error, 'response.data')))
-  //     })
-  // }
+  if (!skipQueryValidation) {
+    return runQueryValidation({
+      text: keywords,
+      domain,
+      apiKey,
+      token,
+    })
+      .then((queryValidationResponse) => {
+        if (_get(queryValidationResponse, 'data.data.replacements.length') > 0) {
+          return Promise.resolve(queryValidationResponse)
+        }
+        return axios
+          .get(exploreQueriesUrl, config)
+          .then((response) => Promise.resolve(response))
+          .catch((error) => Promise.reject(_get(error, 'response.data')))
+      })
+      .catch(() => {
+        return axios
+          .get(exploreQueriesUrl, config)
+          .then((response) => Promise.resolve(response))
+          .catch((error) => Promise.reject(_get(error, 'response.data')))
+      })
+  }
 
   return axios
     .get(exploreQueriesUrl, config)
@@ -663,17 +663,17 @@ export const fetchDataExplorerSuggestions = async ({
     return Promise.reject(new Error('Unauthenticated'))
   }
 
-  // if (!skipQueryValidation) {
-  //   const queryValidationResponse = await runQueryValidation({
-  //     text,
-  //     domain,
-  //     apiKey,
-  //     token,
-  //   })
-  //   if (queryValidationResponse?.data?.data?.replacements?.length > 0) {
-  //     return Promise.resolve(queryValidationResponse)
-  //   }
-  // }
+  if (!skipQueryValidation) {
+    const queryValidationResponse = await runQueryValidation({
+      text,
+      domain,
+      apiKey,
+      token,
+    })
+    if (queryValidationResponse?.data?.data?.replacements?.length > 0) {
+      return Promise.resolve(queryValidationResponse)
+    }
+  }
 
   const exploreQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}`
 

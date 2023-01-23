@@ -510,12 +510,12 @@ describe('getSupportedDisplayTypes', () => {
       'pivot_table',
       'stacked_column',
       'stacked_bar',
-      'stacked_line',
       'column',
       'bar',
-      'line',
       'bubble',
       'heatmap',
+      'stacked_line',
+      'line',
     ])
   })
 })

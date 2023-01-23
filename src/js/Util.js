@@ -1219,9 +1219,21 @@ const functionsEqual = (a, b) => {
   return a?.toString() == b?.toString()
 }
 
+const isObject = (obj) => {
+  return typeof obj === 'object' && !Array.isArray(obj) && obj !== null && obj !== undefined
+}
+
 export const deepEqual = (objA, objB) => {
-  if (_isEqual(objA, objB)) {
+  const lodashIsEqual = _isEqual(objA, objB)
+  if (lodashIsEqual) {
     return true
+  }
+
+  const objAIsObject = isObject(objA)
+  const objBIsObject = isObject(objB)
+
+  if (!objAIsObject || !objBIsObject) {
+    return lodashIsEqual
   }
 
   const keysA = Object.keys(objA)

@@ -75,6 +75,7 @@ export const axesPropTypes = {
   legendTitle: PropTypes.string,
   innerHeight: PropTypes.number,
   innerWidth: PropTypes.number,
+  onLabelRotation: PropTypes.func,
 }
 
 export const axesDefaultProps = {
@@ -92,6 +93,7 @@ export const axesDefaultProps = {
   legendTitle: undefined,
   innerHeight: 0,
   innerWidth: 0,
+  onLabelRotation: () => {},
 }
 
 export const chartElementPropTypes = {

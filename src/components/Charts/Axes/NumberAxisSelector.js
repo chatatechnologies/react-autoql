@@ -1,4 +1,5 @@
 import React, { Fragment } from 'react'
+import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
 import { Popover } from 'react-tiny-popover'
@@ -8,6 +9,8 @@ import { axesDefaultProps, axesPropTypes, dataStructureChanged } from '../helper
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { Checkbox } from '../../Checkbox'
 import { AGG_TYPES, COLUMN_TYPES } from '../../../js/Constants'
+import { dataConfigType } from '../../../props/types'
+import { dataConfigDefault } from '../../../props/defaults'
 import { deepEqual, difference } from '../../../js/Util'
 
 const aggHTMLCodes = {
@@ -31,6 +34,18 @@ export default class NumberAxisSelector extends React.Component {
       checkedColumns,
       columns: props.columns,
     }
+  }
+
+  static propTypes = {
+    ...dataConfigType,
+    rebuildTooltips: PropTypes.func,
+    changeNumberColumnIndices: PropTypes.func,
+  }
+
+  static defaultProps = {
+    ...dataConfigDefault,
+    rebuildTooltips: () => {},
+    changeNumberColumnIndices: () => {},
   }
 
   componentDidMount = () => {

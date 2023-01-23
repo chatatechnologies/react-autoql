@@ -199,11 +199,17 @@ export default class Axis extends Component {
     if (this.axisElement) {
       // svg coordinate system is different from clientRect coordinate system
       // we need to get the deltas first, then we can apply them to the bounding rect
-      const axisBBox = this.axisElement.getBBox()
-      const axisBoundingRect = this.axisElement.getBoundingClientRect()
+      const axisBBox = this.axisElement.getBBox ? this.axisElement.getBBox() : undefined
+      const axisBoundingRect = this.axisElement.getBoundingClientRect
+        ? this.axisElement.getBoundingClientRect()
+        : undefined
 
-      const xDiff = axisBoundingRect.x - axisBBox.x
-      const yDiff = axisBoundingRect.y - axisBBox.y
+      let xDiff = 0
+      let yDiff = 0
+      if (!!axisBBox && !!axisBoundingRect) {
+        xDiff = axisBoundingRect?.x - axisBBox?.x
+        yDiff = axisBoundingRect?.y - axisBBox?.y
+      }
 
       const labelBboxes = []
       select(this.axisElement)

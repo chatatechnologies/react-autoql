@@ -18,7 +18,7 @@ const setup = (props = {}, state = null) => {
 }
 
 describe('renders correctly', () => {
-  test('renders number axis selector if number column provided', () => {
+  test('renders string axis selector if string column provided', () => {
     const wrapper = setup(pivotSampleProps)
     const stringSelector = findByTestAttr(wrapper, 'axis-label-border')
     expect(stringSelector.exists()).toBe(true)
