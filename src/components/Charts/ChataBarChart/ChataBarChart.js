@@ -33,11 +33,6 @@ export default class ChataBarChart extends Component {
       numberColumnIndices = props.visibleSeriesIndices
     }
 
-    let numberColumnIndices2 = props.numberColumnIndices2
-    if (props.visibleSeriesIndices2?.length) {
-      numberColumnIndices2 = props.visibleSeriesIndices2
-    }
-
     this.yScale = getBandScale({
       props,
       columnIndex: props.stringColumnIndex,
@@ -47,15 +42,12 @@ export default class ChataBarChart extends Component {
     const xScalesAndTicks = getLinearScales({
       props,
       columnIndices1: numberColumnIndices,
-      columnIndices2: numberColumnIndices2,
       axis: 'x',
       isScaled: this.state?.isChartScaled,
     })
 
     this.xScale = xScalesAndTicks.scale
     this.xTickValues = this.xScale.tickLabels
-    this.xScale2 = xScalesAndTicks.scale2
-    this.xTickValues2 = this.xScale2?.tickLabels
   }
 
   toggleChartScale = () => {

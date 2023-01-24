@@ -1,5 +1,5 @@
 import _get from 'lodash.get'
-import { getVisibleColumns } from '../../js/Util'
+import { getVisibleColumns, supportsRegularPivotTable } from '../../js/Util'
 
 export const isAggregation = (columns) => {
   try {
@@ -34,7 +34,7 @@ export const isColumnDateType = (col) => {
   }
 }
 
-export const getNumberColumnIndices = (columns) => {
+export const getNumberColumnIndices = (columns, isPivot) => {
   const currencyColumnIndices = []
   const quantityColumnIndices = []
   const ratioColumnIndices = []
@@ -61,37 +61,42 @@ export const getNumberColumnIndices = (columns) => {
   // Returning highest priority of non-empty arrays
   if (currencyColumnIndices.length) {
     numberColumnIndex = currencyColumnIndices[0]
+    numberColumnIndices = currencyColumnIndices
     numberColumnIndexType = 'currency'
   } else if (quantityColumnIndices.length) {
     numberColumnIndex = quantityColumnIndices[0]
+    numberColumnIndices = quantityColumnIndices
     numberColumnIndexType = 'quantity'
   } else if (ratioColumnIndices.length) {
     numberColumnIndex = ratioColumnIndices[0]
+    numberColumnIndices = ratioColumnIndices
     numberColumnIndexType = 'ratio'
   }
 
-  numberColumnIndices = [numberColumnIndex]
+  if (!isPivot) {
+    numberColumnIndices = [numberColumnIndex]
 
-  if (numberColumnIndexType === 'currency') {
-    if (quantityColumnIndices.length) {
-      numberColumnIndex2 = quantityColumnIndices[0]
-    } else if (ratioColumnIndices.length) {
-      numberColumnIndex2 = ratioColumnIndices[0]
-    } else if (currencyColumnIndices.length > 1) {
-      numberColumnIndex2 = currencyColumnIndices[1]
+    if (numberColumnIndexType === 'currency') {
+      if (quantityColumnIndices.length) {
+        numberColumnIndex2 = quantityColumnIndices[0]
+      } else if (ratioColumnIndices.length) {
+        numberColumnIndex2 = ratioColumnIndices[0]
+      } else if (currencyColumnIndices.length > 1) {
+        numberColumnIndex2 = currencyColumnIndices[1]
+      }
+    } else if (numberColumnIndexType === 'quantity') {
+      if (ratioColumnIndices.length) {
+        numberColumnIndex2 = ratioColumnIndices[0]
+      } else if (quantityColumnIndices.length > 1) {
+        numberColumnIndex2 = quantityColumnIndices[1]
+      }
+    } else if (numberColumnIndexType === 'ratio' && quantityColumnIndices.length > 1) {
+      numberColumnIndex2 = ratioColumnIndices[1]
     }
-  } else if (numberColumnIndexType === 'quantity') {
-    if (ratioColumnIndices.length) {
-      numberColumnIndex2 = ratioColumnIndices[0]
-    } else if (quantityColumnIndices.length > 1) {
-      numberColumnIndex2 = quantityColumnIndices[1]
-    }
-  } else if (numberColumnIndexType === 'ratio' && quantityColumnIndices.length > 1) {
-    numberColumnIndex2 = ratioColumnIndices[1]
-  }
 
-  if (!isNaN(numberColumnIndex2)) {
-    numberColumnIndices2 = [numberColumnIndex2]
+    if (!isNaN(numberColumnIndex2)) {
+      numberColumnIndices2 = [numberColumnIndex2]
+    }
   }
 
   return {

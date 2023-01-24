@@ -337,7 +337,7 @@ export default class ChataChart extends Component {
 
       let aggTypeDisplayName = ''
       if (allAggTypesSame) {
-        aggTypeDisplayName = AGG_TYPES.find((agg) => agg.value === numberColumns[0].aggType)?.displayName
+        aggTypeDisplayName = AGG_TYPES.find((agg) => agg.value === numberColumns[0].aggType)?.displayName ?? ''
       }
 
       let fullTitle = title

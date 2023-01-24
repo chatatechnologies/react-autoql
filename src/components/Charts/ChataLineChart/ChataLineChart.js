@@ -20,11 +20,6 @@ export default class ChataLineChart extends Component {
       numberColumnIndices = props.visibleSeriesIndices
     }
 
-    let numberColumnIndices2 = props.numberColumnIndices2
-    if (props.visibleSeriesIndices2?.length) {
-      numberColumnIndices2 = props.visibleSeriesIndices2
-    }
-
     this.xScale = getBandScale({
       props,
       columnIndex: props.stringColumnIndex,
@@ -36,21 +31,17 @@ export default class ChataLineChart extends Component {
     const yScalesAndTicks = getLinearScales({
       props,
       columnIndices1: numberColumnIndices,
-      columnIndices2: numberColumnIndices2,
       axis: 'y',
     })
 
     this.yScale = yScalesAndTicks.scale
     this.yTickValues = this.yScale.tickLabels
-    this.yScale2 = yScalesAndTicks.scale2
-    this.yTickValues2 = this.yScale2?.tickLabels
   }
 
   render = () => {
     this.setChartData(this.props)
 
     const yCol = this.props.columns[this.props.numberColumnIndex]
-    const yCol2 = this.props.columns[this.props.numberColumnIndex2]
 
     return (
       <g
@@ -65,16 +56,13 @@ export default class ChataLineChart extends Component {
           ref={(r) => (this.axesRef = r)}
           xScale={this.xScale}
           yScale={this.yScale}
-          yScale2={this.yScale2}
           xCol={this.props.columns[this.props.stringColumnIndex]}
           yCol={yCol}
-          yCol2={yCol2}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}
           hasXDropdown={this.props.hasStringDropdown}
           hasYDropdown={this.props.hasNumberDropdown}
           leftAxisTitle={this.props.numberAxisTitle}
-          rightAxisTitle={this.props.numberAxisTitle2}
           bottomAxisTitle={this.props.stringAxisTitle}
           yGridLines
         />

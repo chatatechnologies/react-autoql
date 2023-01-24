@@ -20,11 +20,6 @@ export default class ChataStackedBarChart extends Component {
       numberColumnIndices = props.visibleSeriesIndices
     }
 
-    let numberColumnIndices2 = props.numberColumnIndices2
-    if (props.visibleSeriesIndices2?.length) {
-      numberColumnIndices2 = props.visibleSeriesIndices2
-    }
-
     this.yScale = getBandScale({
       props,
       columnIndex: props.stringColumnIndex,
@@ -34,7 +29,6 @@ export default class ChataStackedBarChart extends Component {
     const xScalesAndTicks = getLinearScales({
       props,
       columnIndices1: numberColumnIndices,
-      columnIndices2: numberColumnIndices2,
       axis: 'x',
       stacked: true,
     })

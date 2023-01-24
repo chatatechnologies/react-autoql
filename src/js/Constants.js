@@ -46,8 +46,8 @@ export const WEEKDAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Fri
 
 export const SEASON_NAMES = ['SP', 'SU', 'FA', 'HO']
 export const TIMESTAMP_FORMATS = {
-  epoch: 'epoch',
-  iso8601: 'ISO_8601',
+  epoch: 'EPOCH',
+  iso8601: 'ISO8601',
 }
 
 export const PRECISION_TYPES = {

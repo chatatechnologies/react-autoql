@@ -441,7 +441,8 @@ export class QueryOutput extends React.Component {
   }
 
   supportsDatePivot = () => {
-    return this.supportsPivot() && this.state.columns?.length === 2
+    const columns = this.getColumns()
+    return this.supportsPivot() && columns?.length === 2
   }
 
   usePivotDataForChart = () => {
@@ -497,7 +498,10 @@ export class QueryOutput extends React.Component {
       // To keep dashboards backwards compatible, we need to add
       // numberColumnIndices2 array to the tableConfig
       if (!tableConfig.numberColumnIndices2) {
-        const { numberColumnIndices2, numberColumnIndex2 } = getNumberColumnIndices(columns)
+        const { numberColumnIndices2, numberColumnIndex2 } = getNumberColumnIndices(
+          columns,
+          this.supportsPivot() && !this.supportsDatePivot(),
+        )
         tableConfig.numberColumnIndices2 = numberColumnIndices2
         tableConfig.numberColumnIndex2 = numberColumnIndex2
       }
@@ -1129,7 +1133,7 @@ export class QueryOutput extends React.Component {
         currencyColumnIndices,
         quantityColumnIndices,
         ratioColumnIndices,
-      } = getNumberColumnIndices(columns)
+      } = getNumberColumnIndices(columns, this.supportsPivot() && !this.supportsDatePivot())
 
       this.pivotTableConfig.numberColumnIndices = numberColumnIndices
       this.pivotTableConfig.numberColumnIndex = numberColumnIndex
@@ -1174,7 +1178,7 @@ export class QueryOutput extends React.Component {
         currencyColumnIndices,
         quantityColumnIndices,
         ratioColumnIndices,
-      } = getNumberColumnIndices(columns)
+      } = getNumberColumnIndices(columns, this.supportsPivot() && !this.supportsDatePivot())
       this.tableConfig.numberColumnIndices = numberColumnIndices
       this.tableConfig.numberColumnIndex = numberColumnIndex
       this.tableConfig.numberColumnIndices2 = numberColumnIndices2
@@ -1203,7 +1207,6 @@ export class QueryOutput extends React.Component {
         is_visible: true,
         visible: true,
       })),
-      isDataLimited: this.isDataLimited(),
     })
   }
 
