@@ -8,7 +8,7 @@ COPY babel.config.js .
 ADD src src
 
 RUN npm ci
-RUN npm run build
+# RUN npm run build
 
 COPY dist .
 
@@ -18,7 +18,8 @@ ADD example .
 
 ENV NODE_ENV=ci
 
-RUN npm i --foreground-scripts
+RUN npm i file:./react-autoql
+RUN npm i --production
 
 # Create a production build
 RUN npm run build
