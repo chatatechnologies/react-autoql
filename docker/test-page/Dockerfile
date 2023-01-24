@@ -18,7 +18,7 @@ ADD example .
 
 ENV NODE_ENV=ci
 
-RUN sudo npm i
+RUN npm i --unsafe-perm
 
 # Create a production build
 RUN npm run build
