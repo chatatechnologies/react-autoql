@@ -38,6 +38,10 @@
   color: var(--react-autoql-text-color-primary);
   padding: 15px;
   padding-bottom: 5px;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  flex-direction: column;
 
   h3 {
     margin-top: 0;

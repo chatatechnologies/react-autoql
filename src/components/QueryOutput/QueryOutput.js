@@ -384,6 +384,7 @@ export class QueryOutput extends React.Component {
       this.getDataLength(),
       this.getPivotDataLength(),
       preferredDisplayType,
+      this.isDataLimited(),
     )
   }
 
@@ -399,7 +400,14 @@ export class QueryOutput extends React.Component {
     }
     // If prop is provided, but it isn't supported by the dataset, use default display type
     else if (
-      !isDisplayTypeValid(props.queryResponse, displayType, this.tableData?.length, this.pivotTableData?.length)
+      !isDisplayTypeValid(
+        props.queryResponse,
+        displayType,
+        this.tableData?.length,
+        this.pivotTableData?.length,
+        this.getColumns(),
+        this.isDataLimited(),
+      )
     ) {
       displayType = defaultDisplayType
     }
@@ -972,6 +980,7 @@ export class QueryOutput extends React.Component {
 
     try {
       this.tableData = [...this.tableData, ...rows]
+
       this.setState({
         visibleRowChangeCount: this.state.visibleRowChangeCount + 1,
       })
@@ -1194,6 +1203,7 @@ export class QueryOutput extends React.Component {
         is_visible: true,
         visible: true,
       })),
+      isDataLimited: this.isDataLimited(),
     })
   }
 
@@ -1204,6 +1214,7 @@ export class QueryOutput extends React.Component {
       this.getDataLength(),
       this.getPivotDataLength(),
       this.getColumns(),
+      this.isDataLimited(),
     )
   }
 
@@ -1213,6 +1224,7 @@ export class QueryOutput extends React.Component {
       columns: this.getColumns(),
       dataLength: this.getDataLength(),
       pivotDataLength: this.getPivotDataLength(),
+      isDataLimited: this.isDataLimited(),
     })
   }
 
@@ -1937,7 +1949,7 @@ export class QueryOutput extends React.Component {
   }
 
   isDataLimited = () => {
-    const numRows = this.queryResponse?.data?.data?.rows?.length
+    const numRows = this.tableData?.length ?? this.queryResponse?.data?.data?.rows?.length
     const totalRows = this.queryResponse?.data?.data?.count_rows
 
     if (!numRows || !totalRows) {
