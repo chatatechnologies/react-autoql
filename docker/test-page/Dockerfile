@@ -18,7 +18,7 @@ ADD example .
 
 ENV NODE_ENV=ci
 
-RUN npm i
+RUN sudo npm i
 
 # Create a production build
 RUN npm run build
