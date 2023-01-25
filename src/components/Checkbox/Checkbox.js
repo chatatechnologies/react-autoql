@@ -57,7 +57,7 @@ export default class Checkbox extends React.Component {
 
     const inputClassname = `
       react-autoql-checkbox__input
-      ${type === 'switch' ? 'react-autoql-checkbox--switch__input' : ''}
+      ${type === 'switch' ? 'react-autoql-checkbox--switch__input' : 'react-autoql-checkbox--checkbox__input'}
       ${hasError ? 'react-autoql-checkbox--has-error__input' : ''}
     `
 

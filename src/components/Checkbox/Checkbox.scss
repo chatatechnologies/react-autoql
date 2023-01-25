@@ -36,8 +36,11 @@
   outline: none;
   background: transparent;
   border: 1px solid;
-  border-color: var(--react-autoql-accent-color, #26a7df);
   border-radius: 2px;
+
+  &:not(.react-autoql-checkbox--switch__input) {
+    border-color: var(--react-autoql-accent-color, #26a7df);
+  }
 
   cursor: pointer;
 }
@@ -101,6 +104,8 @@
   width: 36px;
   height: 20px;
   border-radius: 16px;
+  background: var(--react-autoql-background-color-tertiary);
+  border: 1px solid var(--react-autoql-background-color-tertiary);
 }
 .react-autoql-checkbox--switch__input::before {
   top: 2px;
@@ -108,7 +113,7 @@
   bottom: 2px;
   left: 2px;
   border-radius: 50%;
-  background: var(--react-autoql-text-color-accent);
+  background: #fff;
 }
 .react-autoql-checkbox--switch__input:checked + .react-autoql-checkbox--switch__label::after {
   content: 'on';
