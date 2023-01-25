@@ -135,6 +135,7 @@ export const getDateColumnIndex = (columns) => {
 }
 
 export const getStringColumnIndices = (columns, supportsPivot) => {
+  console.log('GETTING STRING COLUMN INDICES', { columns, supportsPivot })
   if (!columns) {
     return undefined
   }
@@ -153,7 +154,10 @@ export const getStringColumnIndices = (columns, supportsPivot) => {
 
   columns.forEach((col, index) => {
     if ((isColumnStringType(col) || col.groupable) && index !== multiSeriesIndex && col.is_visible) {
+      console.log('column was string type!', { col })
       stringColumnIndices.push(index)
+    } else {
+      console.log('column was NOT string type:', { col })
     }
   })
 
