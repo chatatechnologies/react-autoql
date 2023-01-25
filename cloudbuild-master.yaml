@@ -1,0 +1,27 @@
+steps:
+  - name: 'tarampampam/node:14-alpine'
+    id: build-and-test
+    entrypoint: /bin/bash
+    args:
+      - '-exc'
+      - |
+        npm ci
+        npm i react@16.14.0 react-dom@16.14.0 -D
+        npm run test
+        npx semantic-release
+
+    secretEnv: ['NPM_TOKEN', 'GH_TOKEN']
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/$PROJECT_NUMBER/secrets/npm_token/versions/latest
+      env: 'NPM_TOKEN'
+    - versionName: projects/$PROJECT_NUMBER/secrets/gh_token/versions/latest
+      env: 'GH_TOKEN'
+options:
+  substitution_option: 'ALLOW_LOOSE'
+
+timeout: 14400s
+
+tags:
+  ['$REPO_NAME', '$COMMIT_SHA', '$SHORT_SHA', '$PROJECT_ID', '$BRANCH_NAME', '$TAG_NAME', '$REVISION_ID', '$BUILD_ID']

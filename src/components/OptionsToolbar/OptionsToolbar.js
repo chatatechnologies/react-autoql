@@ -22,7 +22,7 @@ import { autoQLConfigDefault, authenticationDefault, getAuthentication, getAutoQ
 
 import './OptionsToolbar.scss'
 
-export default class OptionsToolbar extends React.Component {
+export class OptionsToolbar extends React.Component {
   COMPONENT_KEY = uuid()
 
   static propTypes = {
@@ -648,3 +648,5 @@ export default class OptionsToolbar extends React.Component {
     )
   }
 }
+
+export default React.forwardRef(({ ...props }, ref) => <OptionsToolbar {...props} ref={ref} />)

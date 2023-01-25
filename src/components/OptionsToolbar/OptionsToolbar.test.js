@@ -2,7 +2,7 @@ import React from 'react'
 import { shallow, mount } from 'enzyme'
 import { findByTestAttr } from '../../../test/testUtils'
 import { QueryOutput } from '../QueryOutput/QueryOutput'
-import OptionsToolbar from './OptionsToolbar'
+import { OptionsToolbar } from './OptionsToolbar'
 import responseTestCases from '../../../test/responseTestCases'
 
 const defaultProps = OptionsToolbar.defaultProps
@@ -22,7 +22,7 @@ const setup = (props = {}, queryOutputProps = {}, state = null) => {
     />,
   )
 
-  const setupProps = { ...defaultProps, ...props }
+  const setupProps = { ...OptionsToolbar.defaultProps, ...props }
   const wrapper = shallow(<OptionsToolbar {...setupProps} responseRef={responseRef} />)
 
   return { wrapper, queryOutputComponent }

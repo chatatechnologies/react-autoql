@@ -129,7 +129,7 @@ export const formatEpochDate = (value, col = {}, config = {}) => {
     const title = col.title
 
     let dayJSObj
-    if (Number.isNaN(Number(value))) {
+    if (isNaN(parseFloat(value))) {
       dayJSObj = dayjs(value).utc()
     } else {
       dayJSObj = dayjs.unix(value).utc()
@@ -137,7 +137,7 @@ export const formatEpochDate = (value, col = {}, config = {}) => {
 
     let date = dayJSObj.format(dayMonthYear)
 
-    if (isNaN(Number(value))) {
+    if (isNaN(parseFloat(value))) {
       // Not an epoch time. Try converting using dayjs
       if (title && title.toLowerCase().includes('year')) {
         date = dayJSObj.format(year)
@@ -354,7 +354,7 @@ export const formatElement = ({ element, column, config = {}, htmlElement, preci
         }
         case 'DOLLAR_AMT': {
           // We will need to grab the actual currency symbol here. Will that be returned in the query response?
-          if (!isNaN(Number(element))) {
+          if (!isNaN(parseFloat(element))) {
             const currency = currencyCode || 'USD'
             const validatedCurrencyDecimals = currencyDecimals || currencyDecimals === 0 ? currencyDecimals : undefined
 
@@ -380,8 +380,8 @@ export const formatElement = ({ element, column, config = {}, htmlElement, preci
         case 'QUANTITY': {
           const validatedQuantityDecimals = quantityDecimals || quantityDecimals === 0 ? quantityDecimals : 1
 
-          if (!isNaN(Number(element))) {
-            const numDecimals = Number(element) % 1 !== 0 ? validatedQuantityDecimals : 0
+          if (!isNaN(parseFloat(element))) {
+            const numDecimals = parseFloat(element) % 1 !== 0 ? validatedQuantityDecimals : 0
 
             formattedElement = new Intl.NumberFormat(languageCode, {
               minimumFractionDigits: numDecimals,
@@ -400,7 +400,7 @@ export const formatElement = ({ element, column, config = {}, htmlElement, preci
           break
         }
         case 'RATIO': {
-          if (!isNaN(Number(element))) {
+          if (!isNaN(parseFloat(element))) {
             formattedElement = new Intl.NumberFormat(languageCode, {
               minimumFractionDigits: 4,
               maximumFractionDigits: 4,
@@ -409,8 +409,8 @@ export const formatElement = ({ element, column, config = {}, htmlElement, preci
           break
         }
         case 'PERCENT': {
-          if (!isNaN(Number(element))) {
-            const p = Number(element) / 100
+          if (!isNaN(parseFloat(element))) {
+            const p = parseFloat(element) / 100
 
             formattedElement = new Intl.NumberFormat(languageCode, {
               style: 'percent',
@@ -565,6 +565,14 @@ export const getGroupableColumns = (columns) => {
 export const isChartType = (type) => CHART_TYPES.includes(type)
 export const isTableType = (type) => TABLE_TYPES.includes(type)
 
+export const supportsDatePivotTable = (columns) => {
+  const dateColumnIndex = columns.findIndex((col) => col.type === 'DATE' || col.type === 'DATE_STRING')
+  const dateColumn = columns[dateColumnIndex]
+
+  // Todo: use new date column precision instead of substr search for "month"
+  return dateColumn && dateColumn?.display_name?.toLowerCase().includes('month') && columns?.length === 2
+}
+
 export const supportsRegularPivotTable = (columns, dataLength) => {
   if (dataLength <= 1) {
     return false
@@ -623,7 +631,7 @@ export const isSingleValueResponse = (response) => {
   return _get(response, 'data.data.rows.length') === 1 && _get(response, 'data.data.rows[0].length') === 1
 }
 
-export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotDataLength } = {}) => {
+export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotDataLength, isDataLimited } = {}) => {
   try {
     if (!_get(response, 'data.data.display_type')) {
       return []
@@ -661,10 +669,9 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
       // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
       const supportedDisplayTypes = ['table']
 
-      // Comment out for now so chart row count doesnt change display type
-      // if (numRows <= maxRowsForPivot) {
-      supportedDisplayTypes.push('pivot_table')
-      // }
+      if (!isDataLimited) {
+        supportedDisplayTypes.push('pivot_table')
+      }
 
       if (
         // Comment out for now so chart row count doesnt change display type
@@ -697,12 +704,11 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
         supportedDisplayTypes.push('pie')
       }
 
-      // create pivot based on month and year
-      const dateColumnIndex = visibleColumns.findIndex((col) => col.type === 'DATE' || col.type === 'DATE_STRING')
-      const dateColumn = visibleColumns[dateColumnIndex]
-
       // Check if date pivot should be supported
-      if (dateColumn && dateColumn?.display_name?.toLowerCase().includes('month') && visibleColumns?.length === 2) {
+      if (!isDataLimited && supportsDatePivotTable(visibleColumns, numRows)) {
+        // create pivot based on month and year
+        const dateColumnIndex = visibleColumns.findIndex((col) => col.type === 'DATE' || col.type === 'DATE_STRING')
+        const dateColumn = visibleColumns[dateColumnIndex]
         const data = _get(response, 'data.data.rows')
         const uniqueYears = []
         data.forEach((row) => {
@@ -733,12 +739,13 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
   }
 }
 
-export const isDisplayTypeValid = (response, displayType, dataLength, pivotDataLength, columns) => {
+export const isDisplayTypeValid = (response, displayType, dataLength, pivotDataLength, columns, isDataLimited) => {
   const supportedDisplayTypes = getSupportedDisplayTypes({
     response,
     columns,
     dataLength,
     pivotDataLength,
+    isDataLimited,
   })
   const isValid = displayType && supportedDisplayTypes.includes(displayType)
 
@@ -769,12 +776,14 @@ export const getDefaultDisplayType = (
   dataLength,
   pivotDataLength,
   preferredDisplayType,
+  isDataLimited,
 ) => {
   const supportedDisplayTypes = getSupportedDisplayTypes({
     response,
     columns,
     dataLength,
     pivotDataLength,
+    isDataLimited,
   })
 
   if (preferredDisplayType && supportedDisplayTypes.includes(preferredDisplayType)) {
