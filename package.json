@@ -24,7 +24,6 @@
     "watch": "npm-watch",
     "dev": "npm run watch devscript",
     "devscript": "export NODE_ENV=dev && npm run build",
-    "packexample": "cd example/package && npm pack ../..",
     "test": "jest --silent=false",
     "test:changed": "jest --onlyChanged",
     "test:watch": "jest --watch",
