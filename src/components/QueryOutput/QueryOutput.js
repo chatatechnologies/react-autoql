@@ -345,11 +345,6 @@ export class QueryOutput extends React.Component {
   }
 
   onTableConfigChange = () => {
-    console.log('ON TABLE CONFIG CHANGE', {
-      tableConfig: this.tableConfig,
-      pivotTableConfig: this.pivotTableConfig,
-    })
-
     this.props.onTableConfigChange({
       tableConfig: this.tableConfig,
       pivotTableConfig: this.pivotTableConfig,
@@ -1036,24 +1031,25 @@ export class QueryOutput extends React.Component {
   }
 
   onLegendClick = (d) => {
-    console.log('on legend click', { d })
     const columnIndex = d?.columnIndex
-    const newColumns = this.supportsPivot() ? [...this.pivotTableColumns] : [...this.state.columns]
+    const usePivotData = this.usePivotDataForChart()
+    const newColumns = usePivotData ? _cloneDeep(this.pivotTableColumns) : _cloneDeep(this.state.columns)
+    if (!newColumns?.length) {
+      return
+    }
+
     newColumns[columnIndex].isSeriesHidden = !newColumns[columnIndex].isSeriesHidden
 
-    if (this.supportsPivot()) {
+    if (usePivotData) {
       this.pivotTableColumns = newColumns
+      this.forceUpdate()
     } else {
       const formattedColumns = this.formatColumnsForTable(newColumns)
       this.setState({ columns: formattedColumns })
     }
-
-    console.log('new columns:')
-    this.forceUpdate()
   }
 
   onChangeStringColumnIndex = (index) => {
-    console.log('ON CHANGE STRING COLUMN INDEX!!!!', index)
     if (this.usePivotDataForChart()) {
       if (this.pivotTableConfig.legendColumnIndex === index) {
         this.pivotTableConfig.legendColumnIndex = undefined
@@ -1061,7 +1057,6 @@ export class QueryOutput extends React.Component {
       this.pivotTableConfig.stringColumnIndex = index
       this.generatePivotTableData()
     } else {
-      console.log('changing string column for NON pivot table')
       if (this.tableConfig.legendColumnIndex === index) {
         this.tableConfig.legendColumnIndex = undefined
       }
@@ -1080,7 +1075,6 @@ export class QueryOutput extends React.Component {
 
       this.generatePivotTableData()
     } else {
-      console.log('changing string column for NON pivot table 2')
       if (this.tableConfig.stringColumnIndex === index) {
         this.tableConfig.stringColumnIndex = undefined
       }
@@ -1090,7 +1084,6 @@ export class QueryOutput extends React.Component {
   }
 
   onChangeNumberColumnIndices = (indices, indices2 = [], newColumns) => {
-    console.log('CHANGING NUMBER COLUMN INDICES', { indices, indices2, newColumns })
     if (!indices) {
       return
     }
@@ -1100,6 +1093,7 @@ export class QueryOutput extends React.Component {
       this.pivotTableConfig.numberColumnIndex = indices[0]
       this.pivotTableConfig.numberColumnIndices2 = indices2
       this.pivotTableConfig.numberColumnIndex2 = indices2[0]
+      // Todo: pivot columns should live in state
       this.pivotTableColumns = newColumns
       this.forceUpdate()
     } else {
@@ -1159,12 +1153,6 @@ export class QueryOutput extends React.Component {
     if (!_isEqual(prevPivotTableConfig, this.pivotTableConfig)) {
       this.onTableConfigChange()
     }
-
-    console.log('SETTING NEW PIVOT TABLE CONFIG', {
-      isFirstGeneration,
-      prevPivotTableConfig,
-      newConfig: this.pivotTableConfig,
-    })
   }
 
   setTableConfig = () => {
@@ -2191,7 +2179,6 @@ export class QueryOutput extends React.Component {
   }
 
   render = () => {
-    console.log('new pivot table config:', { pivotTableConfig: this.pivotTableConfig, columns: this.state.columns })
     return (
       <ErrorBoundary>
         <div

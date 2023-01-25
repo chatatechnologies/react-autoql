@@ -148,6 +148,16 @@ export default class Legend extends Component {
     // }
   }
 
+  onClick = (labelText) => {
+    const label = this.props.legendLabels?.find((l) => l.label === labelText)
+    const isHidingLabel = !label?.hidden
+    const visibleLegendLabels = this.props.legendLabels?.filter((l) => !l.hidden)
+    const allowClick = !isHidingLabel || visibleLegendLabels?.length > 1
+    if (allowClick) {
+      this.props.onLegendClick(label)
+    }
+  }
+
   renderLegend = () => {
     try {
       const self = this
@@ -173,8 +183,7 @@ export default class Legend extends Component {
           .labelWrap(100)
           .scale(legendScale)
           .on('cellclick', function (d) {
-            // self.props.onLabelChange({ setLoading: false })
-            self.props.onLegendClick(legendLabels.find((label) => label.label === d))
+            self.onClick(d)
           })
 
         if (this.props.legendTitle) {
@@ -211,7 +220,7 @@ export default class Legend extends Component {
           .labelAlign('left')
           .scale(legendScale)
           .on('cellclick', function (d) {
-            self.props.onLegendClick(d)
+            self.onClick(d)
           })
 
         select(this.bottomLegendElement).call(legendOrdinal).style('font-family', 'inherit')

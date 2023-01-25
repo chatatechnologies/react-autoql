@@ -115,7 +115,7 @@ export default class ChataChart extends Component {
       this.setState({ data, chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true }, () => {
         this.rebuildTooltips()
       })
-      return
+      return true
     }
   }
 
