@@ -17,6 +17,8 @@ RUN npm ci && npm run build
 WORKDIR /app
 ADD example .
 ENV NODE_ENV=ci
+
+RUN npm i file:./react-autoql
 RUN npm i && npm run build
 
 # final clean image

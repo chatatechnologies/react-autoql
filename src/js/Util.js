@@ -665,14 +665,13 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
       pivotDataHasLength = !!pivotDataLength
     }
 
-    if (!isDataLimited && supportsRegularPivotTable(visibleColumns, numRows)) {
+    if (supportsRegularPivotTable(visibleColumns, numRows)) {
       // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
       const supportedDisplayTypes = ['table']
 
-      // Comment out for now so chart row count doesnt change display type
-      // if (numRows <= maxRowsForPivot) {
-      supportedDisplayTypes.push('pivot_table')
-      // }
+      if (!isDataLimited) {
+        supportedDisplayTypes.push('pivot_table')
+      }
 
       if (
         // Comment out for now so chart row count doesnt change display type
