@@ -24,7 +24,6 @@
     "watch": "npm-watch",
     "dev": "npm run watch devscript",
     "devscript": "export NODE_ENV=dev && npm run build",
-    "packexample": "cd example/package && npm pack ../..",
     "test": "jest --silent=false",
     "test:changed": "jest --onlyChanged",
     "test:watch": "jest --watch",
@@ -43,7 +42,6 @@
   "style": "dist/autoql.esm.css",
   "husky": {
     "hooks": {
-      "pre-commit": "npm run build && npm run packexample && git add example/package/react-autoql-0.0.0-semantically-released.tgz",
       "pre-push": "npx jest --clearCache && npm run test"
     }
   },
