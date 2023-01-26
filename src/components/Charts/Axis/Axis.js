@@ -448,7 +448,7 @@ export default class Axis extends Component {
                 style={{ transform: 'translate(-30px, -30px)' }}
               />
             </clipPath>
-            {this.props.legendColumn && (
+            {/* {this.props.legendColumn && (
               <LegendSelector
                 {...this.props}
                 column={this.props.legendColumn}
@@ -463,7 +463,7 @@ export default class Axis extends Component {
                   transform: this.props.translate,
                 }}
               />
-            )}
+            )} */}
           </g>
         )}
         {this.props.hasBottomLegend && (

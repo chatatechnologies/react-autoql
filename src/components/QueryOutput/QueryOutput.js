@@ -996,10 +996,10 @@ export class QueryOutput extends React.Component {
 
   onLegendClick = (d) => {
     const columnIndex = d?.columnIndex
-    const newColumns = this.supportsPivot() ? [...this.pivotTableColumns] : [...this.state.columns]
+    const newColumns = this.usePivotDataForChart() ? [...this.pivotTableColumns] : [...this.state.columns]
     newColumns[columnIndex].isSeriesHidden = !newColumns[columnIndex].isSeriesHidden
 
-    if (this.supportsPivot()) {
+    if (this.usePivotDataForChart()) {
       this.pivotTableColumns = newColumns
     } else {
       const formattedColumns = this.formatColumnsForTable(newColumns)
@@ -1010,7 +1010,7 @@ export class QueryOutput extends React.Component {
   }
 
   onChangeStringColumnIndex = (index) => {
-    if (this.supportsPivot() && !this.supportsDatePivot()) {
+    if (this.usePivotDataForChart()) {
       if (this.pivotTableConfig.legendColumnIndex === index) {
         this.pivotTableConfig.legendColumnIndex = undefined
       }
@@ -1027,7 +1027,7 @@ export class QueryOutput extends React.Component {
   }
 
   onChangeLegendColumnIndex = (index) => {
-    if (this.supportsPivot() && !this.supportsDatePivot()) {
+    if (this.usePivotDataForChart()) {
       if (this.pivotTableConfig.stringColumnIndex === index) {
         this.pivotTableConfig.stringColumnIndex = undefined
       }
@@ -1048,7 +1048,7 @@ export class QueryOutput extends React.Component {
       return
     }
 
-    if (this.supportsPivot() && !this.supportsDatePivot()) {
+    if (this.usePivotDataForChart()) {
       this.pivotTableConfig.numberColumnIndices = indices
       this.pivotTableConfig.numberColumnIndex = indices[0]
     } else {
@@ -1141,7 +1141,6 @@ export class QueryOutput extends React.Component {
         is_visible: true,
         visible: true,
       })),
-      isDataLimited: this.isDataLimited(),
     })
   }
 
