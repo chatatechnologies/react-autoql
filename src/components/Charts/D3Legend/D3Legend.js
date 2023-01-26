@@ -9,7 +9,7 @@ import helper from './legendHelpers'
 import { dispatch } from 'd3-dispatch'
 import { scaleLinear } from 'd3-scale'
 import { formatLocale, formatSpecifier } from 'd3-format'
-import { symbol, symbolCircle } from 'd3-shape'
+import { symbol, symbolCircle, symbolSquare } from 'd3-shape'
 
 import { sum } from 'd3-array'
 
@@ -123,13 +123,17 @@ export default function color() {
   }
 
   legend.scale = function (_) {
-    if (!arguments.length) {return scale}
+    if (!arguments.length) {
+      return scale
+    }
     scale = _
     return legend
   }
 
   legend.cells = function (_) {
-    if (!arguments.length) {return cells}
+    if (!arguments.length) {
+      return cells
+    }
     if (_.length > 1 || _ >= 2) {
       cells = _
     }
@@ -137,43 +141,73 @@ export default function color() {
   }
 
   legend.cellFilter = function (_) {
-    if (!arguments.length) {return cellFilter}
+    if (!arguments.length) {
+      return cellFilter
+    }
     cellFilter = _
     return legend
   }
 
+  legend.shape = function (_) {
+    if (!arguments.length) {
+      return shape
+    }
+    shape = _
+    return legend
+  }
+
+  legend.path = function (_) {
+    if (!arguments.length) {
+      return path
+    }
+    path = _
+    return legend
+  }
+
   legend.shapeWidth = function (_) {
-    if (!arguments.length) {return shapeWidth}
+    if (!arguments.length) {
+      return shapeWidth
+    }
     shapeWidth = +_
     return legend
   }
 
   legend.shapeHeight = function (_) {
-    if (!arguments.length) {return shapeHeight}
+    if (!arguments.length) {
+      return shapeHeight
+    }
     shapeHeight = +_
     return legend
   }
 
   legend.shapeRadius = function (_) {
-    if (!arguments.length) {return shapeRadius}
+    if (!arguments.length) {
+      return shapeRadius
+    }
     shapeRadius = +_
     return legend
   }
 
   legend.shapePadding = function (_) {
-    if (!arguments.length) {return shapePadding}
+    if (!arguments.length) {
+      return shapePadding
+    }
     shapePadding = +_
     return legend
   }
 
   legend.labels = function (_) {
-    if (!arguments.length) {return labels}
+    if (!arguments.length) {
+      return labels
+    }
     labels = _
     return legend
   }
 
   legend.labelAlign = function (_) {
-    if (!arguments.length) {return labelAlign}
+    if (!arguments.length) {
+      return labelAlign
+    }
     if (_ == 'start' || _ == 'end' || _ == 'middle') {
       labelAlign = _
     }
@@ -181,37 +215,49 @@ export default function color() {
   }
 
   legend.locale = function (_) {
-    if (!arguments.length) {return locale}
+    if (!arguments.length) {
+      return locale
+    }
     locale = formatLocale(_)
     return legend
   }
 
   legend.labelFormat = function (_) {
-    if (!arguments.length) {return legend.locale().format(specifier)}
+    if (!arguments.length) {
+      return legend.locale().format(specifier)
+    }
     specifier = formatSpecifier(_)
     return legend
   }
 
   legend.labelOffset = function (_) {
-    if (!arguments.length) {return labelOffset}
+    if (!arguments.length) {
+      return labelOffset
+    }
     labelOffset = +_
     return legend
   }
 
   legend.labelDelimiter = function (_) {
-    if (!arguments.length) {return labelDelimiter}
+    if (!arguments.length) {
+      return labelDelimiter
+    }
     labelDelimiter = _
     return legend
   }
 
   legend.labelWrap = function (_) {
-    if (!arguments.length) {return labelWrap}
+    if (!arguments.length) {
+      return labelWrap
+    }
     labelWrap = _
     return legend
   }
 
   legend.useClass = function (_) {
-    if (!arguments.length) {return useClass}
+    if (!arguments.length) {
+      return useClass
+    }
     if (_ === true || _ === false) {
       useClass = _
     }
@@ -219,7 +265,9 @@ export default function color() {
   }
 
   legend.orient = function (_) {
-    if (!arguments.length) {return orient}
+    if (!arguments.length) {
+      return orient
+    }
     _ = _.toLowerCase()
     if (_ == 'horizontal' || _ == 'vertical') {
       orient = _
@@ -228,31 +276,41 @@ export default function color() {
   }
 
   legend.ascending = function (_) {
-    if (!arguments.length) {return ascending}
+    if (!arguments.length) {
+      return ascending
+    }
     ascending = !!_
     return legend
   }
 
   legend.classPrefix = function (_) {
-    if (!arguments.length) {return classPrefix}
+    if (!arguments.length) {
+      return classPrefix
+    }
     classPrefix = _
     return legend
   }
 
   legend.title = function (_) {
-    if (!arguments.length) {return title}
+    if (!arguments.length) {
+      return title
+    }
     title = _
     return legend
   }
 
   legend.titleWidth = function (_) {
-    if (!arguments.length) {return titleWidth}
+    if (!arguments.length) {
+      return titleWidth
+    }
     titleWidth = _
     return legend
   }
 
   legend.textWrap = function (_) {
-    if (!arguments.length) {return textWrap}
+    if (!arguments.length) {
+      return textWrap
+    }
     textWrap = _
     return legend
   }

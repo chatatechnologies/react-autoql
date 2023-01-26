@@ -316,7 +316,7 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
       break
     }
     case 'QUANTITY': {
-      if (Number(d)) {
+      if (!isNaN(parseFloat(d))) {
         formattedLabel = new Intl.NumberFormat(languageCode).format(d)
       }
       break

@@ -463,13 +463,25 @@ export const getBandScale = ({
   const scale = scaleBand().domain(scaleDomain).range(range).paddingInner(innerPadding).paddingOuter(outerPadding)
   scale.type = 'BAND'
   scale.tickLabels = getTickValues({ scale, props, initialTicks: scaleDomain, innerPadding, outerPadding })
+  scale.column = props.columns[columnIndex]
 
   return scale
 }
 
 export const scaleTo0 = (scale) => {}
 
-export const getLinearScale = ({ props, minValue, maxValue, axis, range, tickValues, numTicks, stacked, isScaled }) => {
+export const getLinearScale = ({
+  props,
+  minValue,
+  maxValue,
+  axis,
+  range,
+  tickValues,
+  numTicks,
+  stacked,
+  isScaled,
+  columnIndex,
+}) => {
   let min = minValue ?? tickValues?.[0]
   let max = maxValue ?? tickValues?.[tickValues?.length - 1]
 
@@ -487,6 +499,7 @@ export const getLinearScale = ({ props, minValue, maxValue, axis, range, tickVal
   const scale = scaleLinear().domain(domain).range(scaleRange)
   scale.minValue = min
   scale.maxValue = max
+  scale.column = props.columns[columnIndex]
   scale.stacked = !!stacked
   scale.type = 'LINEAR'
   scale.tickLabels =
@@ -503,11 +516,19 @@ export const getLinearScale = ({ props, minValue, maxValue, axis, range, tickVal
   return scale
 }
 
-export const getLinearScales = ({ props, columnIndices1, columnIndices2, axis, stacked, isScaled }) => {
+export const getLinearScales = ({ props, columnIndices1 = [], columnIndices2 = [], axis, stacked, isScaled }) => {
   const minMax = getMinAndMaxValues(props.data, columnIndices1, isScaled, stacked, props.stringColumnIndex)
   const minValue = minMax.minValue
   const maxValue = minMax.maxValue
-  const tempScale1 = getLinearScale({ props, minValue, maxValue, axis, stacked, isScaled })
+  const tempScale1 = getLinearScale({
+    props,
+    minValue,
+    maxValue,
+    axis,
+    stacked,
+    isScaled,
+    columnIndex: columnIndices1[0],
+  })
 
   if (!columnIndices2?.length) {
     return {
@@ -521,12 +542,14 @@ export const getLinearScales = ({ props, columnIndices1, columnIndices2, axis, s
   const maxValue2 = minMax2.maxValue
 
   const tempScale2 = getLinearScale({
+    props,
     minValue: minValue2,
     maxValue: maxValue2,
     range: tempScale1.range(),
     numTicks: tempScale1.tickLabels?.length ?? undefined,
     stacked,
     isScaled,
+    columnIndex: columnIndices2[0],
   })
 
   const tickValues1 = tempScale1.tickLabels || []
@@ -559,8 +582,22 @@ export const getLinearScales = ({ props, columnIndices1, columnIndices2, axis, s
     }
   }
 
-  const scale = getLinearScale({ props, axis, tickValues: newTickValues1, stacked, isScaled })
-  const scale2 = getLinearScale({ range: scale.range(), tickValues: newTickValues2, stacked, isScaled })
+  const scale = getLinearScale({
+    props,
+    axis,
+    tickValues: newTickValues1,
+    stacked,
+    isScaled,
+    columnIndex: columnIndices1[0],
+  })
+  const scale2 = getLinearScale({
+    props,
+    range: scale.range(),
+    tickValues: newTickValues2,
+    stacked,
+    isScaled,
+    columnIndex: columnIndices2[0],
+  })
 
   return { scale, scale2 }
 }

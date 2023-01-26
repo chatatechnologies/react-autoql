@@ -69,7 +69,7 @@ export default class NumberAxisSelector extends React.Component {
 
   getCheckedFromNumberColumnIndices = (props) => {
     const checkedColumns1 = props.numberColumnIndices ?? []
-    const checkedColumns2 = props.numberColumnIndices2 ?? []
+    const checkedColumns2 = this.props.hasSecondAxis ? props.numberColumnIndices2 ?? [] : []
     return [...checkedColumns1, ...checkedColumns2]
   }
 
@@ -194,15 +194,17 @@ export default class NumberAxisSelector extends React.Component {
       const item = {
         content: (
           <div>
-            <div
-              className='agg-type-symbol'
-              data-tip={aggTooltip}
-              data-for={this.props.tooltipID}
-              data-delay-show={800}
-              data-place='top'
-            >
-              {aggHTMLCodes[col.aggType]}
-            </div>
+            {!this.props.isAggregation && (
+              <div
+                className='agg-type-symbol'
+                data-tip={aggTooltip}
+                data-for={this.props.tooltipID}
+                data-delay-show={800}
+                data-place='top'
+              >
+                {aggHTMLCodes[col.aggType]}
+              </div>
+            )}
             {col.title}
           </div>
         ),
@@ -286,9 +288,12 @@ export default class NumberAxisSelector extends React.Component {
               let checkedRatioIndices = this.getCheckedIndices(COLUMN_TYPES.RATIO)
 
               const numberColumnIndices = checkedCurrencyIndices ?? checkedQuantityIndices ?? checkedRatioIndices ?? []
-              let numberColumnIndices2 = checkedQuantityIndices ?? checkedRatioIndices ?? []
-              if (_isEqual(numberColumnIndices, checkedQuantityIndices)) {
-                numberColumnIndices2 = checkedRatioIndices ?? []
+              let numberColumnIndices2
+              if (this.props.hasSecondAxis) {
+                numberColumnIndices2 = checkedQuantityIndices ?? checkedRatioIndices ?? []
+                if (_isEqual(numberColumnIndices, checkedQuantityIndices)) {
+                  numberColumnIndices2 = checkedRatioIndices ?? []
+                }
               }
 
               this.props.changeNumberColumnIndices(numberColumnIndices, numberColumnIndices2, this.state.columns)
@@ -422,7 +427,18 @@ export default class NumberAxisSelector extends React.Component {
     )
   }
 
+  shouldRenderAggSelector = () => {
+    if (this.props.isAggregation) {
+      return false
+    }
+    return true
+  }
+
   renderAggSelector = (minHeight, maxHeight) => {
+    if (!this.shouldRenderAggSelector()) {
+      return null
+    }
+
     const { selectedColumns, columns } = this.state
 
     return (

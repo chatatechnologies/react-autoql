@@ -96,13 +96,14 @@ export default class Axes extends React.Component {
         ticks={this.props.xScale?.tickLabels}
         translateY={0}
         translateX={0}
-        col={this.props.xCol}
+        numberColumnIndices={this.props.numberColumnIndices}
         title={this.props.bottomAxisTitle}
         showGridLines={this.props.xGridLines}
         hasDropdown={this.props.hasXDropdown}
         innerWidth={innerWidth}
         innerHeight={innerHeight}
         onAxisRenderComplete={this.onAxisRenderComplete}
+        hasSecondAxis={this.hasSecondAxis()}
       />
     )
   }
@@ -116,15 +117,16 @@ export default class Axes extends React.Component {
         orient='Left'
         scale={this.props.yScale}
         ticks={this.props.yScale?.tickLabels}
-        col={this.props.yCol}
         title={this.props.leftAxisTitle}
         showGridLines={this.props.yGridLines}
         hasDropdown={this.props.hasYDropdown}
+        numberColumnIndices={this.props.numberColumnIndices}
         innerWidth={innerWidth}
         innerHeight={innerHeight}
         translateY={0}
         translateX={0}
         onAxisRenderComplete={this.onAxisRenderComplete}
+        hasSecondAxis={this.hasSecondAxis()}
       />
     )
   }
@@ -147,15 +149,16 @@ export default class Axes extends React.Component {
         orient='Top'
         scale={this.props.xScale2}
         ticks={this.props.xScale2?.tickLabels}
-        col={this.props.xCol2}
         title={this.props.topAxisTitle}
         showGridLines={false}
         hasDropdown={this.props.hasXDropdown}
+        numberColumnIndices={this.props.numberColumnIndices2}
         innerWidth={innerWidth}
         innerHeight={innerHeight}
         translateY={0}
         translateX={0}
         onAxisRenderComplete={this.onAxisRenderComplete}
+        hasSecondAxis={this.hasSecondAxis()}
       />
     )
   }
@@ -187,8 +190,8 @@ export default class Axes extends React.Component {
             orient='Right'
             scale={this.props.yScale2}
             ticks={this.props.yScale2?.tickLabels}
-            col={this.props.yCol2}
             title={this.props.rightAxisTitle}
+            numberColumnIndices={this.props.numberColumnIndices2}
             showGridLines={false}
             hasRightLegend={false}
             hasBottomLegend={false}
@@ -196,6 +199,7 @@ export default class Axes extends React.Component {
             innerWidth={innerWidth}
             innerHeight={innerHeight}
             onAxisRenderComplete={this.onAxisRenderComplete}
+            hasSecondAxis={this.hasSecondAxis()}
           />
         )}
         {shouldRenderLegend && this.renderRightLegend()}
@@ -203,14 +207,11 @@ export default class Axes extends React.Component {
     )
   }
 
-  renderRightLegend = () => {
-    let legendScale
-    if (this.props.linearAxis === 'y') {
-      legendScale = this.props.yScale
-    } else if (this.props.linearAxis === 'x') {
-      legendScale = this.props.xScale
-    }
+  hasSecondAxis = () => {
+    return this.shouldRenderRightAxis() || this.shouldRenderTopAxis()
+  }
 
+  renderRightLegend = () => {
     const translateX = getBBoxFromRef(this.rightAxisWithoutLegend?.ref)?.width ?? 0
     const translateY = this.shouldRenderTopAxis() ? 10 : 0
 
@@ -218,9 +219,13 @@ export default class Axes extends React.Component {
       <g ref={(r) => (this.legendRef = r)} transform={`translate(${translateX},${translateY})`}>
         <Legend
           {...this.props}
-          scale={legendScale}
+          title={this.props.numberAxisTitle}
+          title2={this.props.numberAxisTitle2}
+          legendColumnIndices={this.props.numberColumnIndices}
+          legendColumnIndices2={this.props.numberColumnIndices2}
           placement={this.props.legendLocation}
           onRenderComplete={() => this.onAxisRenderComplete('Legend')}
+          hasSecondAxis={this.hasSecondAxis()}
         />
       </g>
     )

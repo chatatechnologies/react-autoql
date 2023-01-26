@@ -378,7 +378,6 @@ export default class ChataChart extends Component {
       key: undefined,
       data: this.state.data || this.props.data,
       colorScale: this.colorScale,
-      colorScale: this.colorScale,
       height: innerHeight,
       width: innerWidth,
       deltaX,

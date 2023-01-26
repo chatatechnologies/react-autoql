@@ -43,7 +43,6 @@ export default class Axis extends Component {
   static propTypes = {
     ...axesPropTypes,
     scale: PropTypes.func.isRequired,
-    col: PropTypes.shape({}).isRequired,
     ticks: PropTypes.array,
     orient: PropTypes.string,
     translateX: PropTypes.number,
@@ -109,7 +108,7 @@ export default class Axis extends Component {
       .tickFormat(function (d) {
         return formatChartLabel({
           d,
-          col: self.props.col,
+          col: self.props.scale?.column,
           config: self.props.dataFormatting,
         }).formattedLabel
       })
@@ -164,7 +163,7 @@ export default class Axis extends Component {
       .attr('data-tip', function (d) {
         const { fullWidthLabel, isTruncated } = formatChartLabel({
           d,
-          col: self.props.col,
+          col: self.props.scale?.column,
           config: self.props.dataFormatting,
         })
         if (isTruncated) {
@@ -276,6 +275,33 @@ export default class Axis extends Component {
     return isNaN(fontSize) ? 12 : fontSize
   }
 
+  renderAxisSelector = ({ positions, align, childProps }) => {
+    return (
+      <AxisSelector
+        ref={(r) => (this.axisSelector = r)}
+        chartContainerRef={this.props.chartContainerRef}
+        changeNumberColumnIndices={this.props.changeNumberColumnIndices}
+        changeStringColumnIndex={this.props.changeStringColumnIndex}
+        legendColumn={this.props.legendColumn}
+        popoverParentElement={this.props.popoverParentElement}
+        rebuildTooltips={this.props.rebuildTooltips}
+        numberColumnIndices={this.props.numberColumnIndices}
+        numberColumnIndices2={this.props.numberColumnIndices2}
+        stringColumnIndices={this.props.stringColumnIndices}
+        stringColumnIndex={this.props.stringColumnIndex}
+        isAggregation={this.props.isAggregation}
+        tooltipID={this.props.tooltipID}
+        hidden={!this.props.hasDropdown}
+        columns={this.props.columns}
+        scale={this.props.scale}
+        align='center'
+        positions={positions}
+        childProps={childProps}
+        hasSecondAxis={this.props.hasSecondAxis}
+      />
+    )
+  }
+
   renderAxisTitleText = () => {
     const { title = '', hasDropdown } = this.props
     if (title.length > 35) {
@@ -333,31 +359,15 @@ export default class Axis extends Component {
         >
           {this.renderAxisTitleText()}
         </text>
-        <AxisSelector
-          ref={(r) => (this.axisSelector = r)}
-          chartContainerRef={this.props.chartContainerRef}
-          changeNumberColumnIndices={this.props.changeNumberColumnIndices}
-          changeStringColumnIndex={this.props.changeStringColumnIndex}
-          legendColumn={this.props.legendColumn}
-          popoverParentElement={this.props.popoverParentElement}
-          rebuildTooltips={this.props.rebuildTooltips}
-          numberColumnIndices={this.props.numberColumnIndices}
-          numberColumnIndices2={this.props.numberColumnIndices2}
-          stringColumnIndices={this.props.stringColumnIndices}
-          stringColumnIndex={this.props.stringColumnIndex}
-          tooltipID={this.props.tooltipID}
-          hidden={!this.props.hasDropdown}
-          column={this.props.col}
-          columns={this.props.columns}
-          positions={['top', 'bottom']}
-          align='center'
-          childProps={{
+        {this.renderAxisSelector({
+          positions: ['top', 'bottom'],
+          childProps: {
             x: xBorderX,
             y: xBorderY,
             width: xBorderWidth,
             height: xBorderHeight,
-          }}
-        />
+          },
+        })}
       </g>
     )
   }
@@ -440,32 +450,16 @@ export default class Axis extends Component {
         >
           {this.renderAxisTitleText()}
         </text>
-        <AxisSelector
-          ref={(r) => (this.axisSelector = r)}
-          chartContainerRef={this.props.chartContainerRef}
-          changeNumberColumnIndices={this.props.changeNumberColumnIndices}
-          changeStringColumnIndex={this.props.changeStringColumnIndex}
-          legendColumn={this.props.legendColumn}
-          popoverParentElement={this.props.popoverParentElement}
-          rebuildTooltips={this.props.rebuildTooltips}
-          numberColumnIndices={this.props.numberColumnIndices}
-          numberColumnIndices2={this.props.numberColumnIndices2}
-          stringColumnIndices={this.props.stringColumnIndices}
-          stringColumnIndex={this.props.stringColumnIndex}
-          tooltipID={this.props.tooltipID}
-          hidden={!this.props.hasDropdown}
-          column={this.props.col}
-          columns={this.props.columns}
-          positions={['right']}
-          align='center'
-          childProps={{
+        {this.renderAxisSelector({
+          positions: ['right'],
+          childProps: {
             transform,
             width: yBorderWidth,
             height: yBorderHeight,
             x: yBorderX,
             y: yBorderY,
-          }}
-        />
+          },
+        })}
       </g>
     )
   }
@@ -548,32 +542,16 @@ export default class Axis extends Component {
         >
           {this.renderAxisTitleText()}
         </text>
-        <AxisSelector
-          ref={(r) => (this.axisSelector = r)}
-          chartContainerRef={this.props.chartContainerRef}
-          changeNumberColumnIndices={this.props.changeNumberColumnIndices}
-          changeStringColumnIndex={this.props.changeStringColumnIndex}
-          legendColumn={this.props.legendColumn}
-          popoverParentElement={this.props.popoverParentElement}
-          rebuildTooltips={this.props.rebuildTooltips}
-          numberColumnIndices={this.props.numberColumnIndices}
-          numberColumnIndices2={this.props.numberColumnIndices2}
-          stringColumnIndices={this.props.stringColumnIndices}
-          stringColumnIndex={this.props.stringColumnIndex}
-          tooltipID={this.props.tooltipID}
-          hidden={!this.props.hasDropdown}
-          column={this.props.col}
-          columns={this.props.columns}
-          positions={['left']}
-          align='center'
-          childProps={{
+        {this.renderAxisSelector({
+          positions: ['left'],
+          childProps: {
             transform,
             width: yBorderWidth,
             height: yBorderHeight,
             x: yBorderX,
             y: yBorderY,
-          }}
-        />
+          },
+        })}
       </g>
     )
   }
@@ -607,31 +585,15 @@ export default class Axis extends Component {
         >
           {this.renderAxisTitleText()}
         </text>
-        <AxisSelector
-          ref={(r) => (this.axisSelector = r)}
-          chartContainerRef={this.props.chartContainerRef}
-          changeNumberColumnIndices={this.props.changeNumberColumnIndices}
-          changeStringColumnIndex={this.props.changeStringColumnIndex}
-          legendColumn={this.props.legendColumn}
-          popoverParentElement={this.props.popoverParentElement}
-          rebuildTooltips={this.props.rebuildTooltips}
-          numberColumnIndices={this.props.numberColumnIndices}
-          numberColumnIndices2={this.props.numberColumnIndices2}
-          stringColumnIndices={this.props.stringColumnIndices}
-          stringColumnIndex={this.props.stringColumnIndex}
-          tooltipID={this.props.tooltipID}
-          hidden={!this.props.hasDropdown}
-          column={this.props.col}
-          columns={this.props.columns}
-          positions={['bottom', 'top']}
-          align='center'
-          childProps={{
+        {this.renderAxisSelector({
+          positions: ['bottom', 'top'],
+          childProps: {
             x: xBorderX,
             y: xBorderY,
             width: xBorderWidth,
             height: xBorderHeight,
-          }}
-        />
+          },
+        })}
       </g>
     )
   }

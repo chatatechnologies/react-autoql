@@ -8,9 +8,9 @@ export default class AxisSelector extends React.Component {
   shouldComponentUpdate = () => true
 
   render = () => {
-    if (isColumnNumberType(this.props.column)) {
+    if (this.props.scale?.type === 'LINEAR') {
       return <NumberAxisSelector {...this.props} data-test='number-axis-selector' ref={(r) => (this.ref = r)} />
-    } else if (isColumnStringType(this.props.column)) {
+    } else if (this.props.scale?.type === 'BAND') {
       return <StringAxisSelector {...this.props} data-test='string-axis-selector' ref={(r) => (this.ref = r)} />
     }
 

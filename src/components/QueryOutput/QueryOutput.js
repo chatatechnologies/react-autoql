@@ -1030,7 +1030,7 @@ export class QueryOutput extends React.Component {
     this.tableParams.sorters = _cloneDeep(sorters)
   }
 
-  onLegendClick = (d) => {
+  onLegendClick = (d, isSecondLegend) => {
     const columnIndex = d?.columnIndex
     const usePivotData = this.usePivotDataForChart()
     const newColumns = usePivotData ? _cloneDeep(this.pivotTableColumns) : _cloneDeep(this.state.columns)
@@ -1083,7 +1083,7 @@ export class QueryOutput extends React.Component {
     this.forceUpdate()
   }
 
-  onChangeNumberColumnIndices = (indices, indices2 = [], newColumns) => {
+  onChangeNumberColumnIndices = (indices, indices2, newColumns) => {
     if (!indices) {
       return
     }
@@ -1091,16 +1091,22 @@ export class QueryOutput extends React.Component {
     if (this.usePivotDataForChart()) {
       this.pivotTableConfig.numberColumnIndices = indices
       this.pivotTableConfig.numberColumnIndex = indices[0]
-      this.pivotTableConfig.numberColumnIndices2 = indices2
-      this.pivotTableConfig.numberColumnIndex2 = indices2[0]
+      if (indices2) {
+        this.pivotTableConfig.numberColumnIndices2 = indices2
+        this.pivotTableConfig.numberColumnIndex2 = indices2[0]
+      }
+
       // Todo: pivot columns should live in state
       this.pivotTableColumns = newColumns
       this.forceUpdate()
     } else {
       this.tableConfig.numberColumnIndices = indices
       this.tableConfig.numberColumnIndex = indices[0]
-      this.tableConfig.numberColumnIndices2 = indices2
-      this.tableConfig.numberColumnIndex2 = indices2[0]
+      if (indices2) {
+        this.tableConfig.numberColumnIndices2 = indices2
+        this.tableConfig.numberColumnIndex2 = indices2[0]
+      }
+
       this.updateColumns(newColumns)
     }
   }
@@ -1879,6 +1885,7 @@ export class QueryOutput extends React.Component {
           dataLength={this.tableData.length}
           ref={(ref) => (this.chartRef = ref)}
           type={this.state.displayType}
+          isAggregation={isAggregation(this.state.columns)}
           popoverParentElement={this.props.popoverParentElement}
           {...tableConfig}
           data={
