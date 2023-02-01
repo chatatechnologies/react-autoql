@@ -69,6 +69,7 @@ export default class ChataBarChart extends Component {
         <Axes
           {...this.props}
           ref={(r) => (this.axesRef = r)}
+          chartRef={this.chartRef}
           xScale={this.xScale}
           yScale={this.yScale}
           xCol={xCol}

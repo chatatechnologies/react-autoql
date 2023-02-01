@@ -1216,8 +1216,8 @@ export class QueryOutput extends React.Component {
       response: this.queryResponse,
       columns: this.queryResponse?.data?.data?.columns?.map((col) => ({
         ...col,
-        is_visible: true,
-        visible: true,
+        // is_visible: true,
+        // visible: true,
       })),
     })
   }
@@ -1902,6 +1902,7 @@ export class QueryOutput extends React.Component {
           changeNumberColumnIndices={this.onChangeNumberColumnIndices}
           onChartClick={this.onChartClick}
           isResizing={this.props.isResizing}
+          isAnimating={this.props.isAnimating}
           isDrilldownChartHidden={this.props.isDrilldownChartHidden}
           enableDynamicCharting={this.props.enableDynamicCharting}
           enableAjaxTableData={this.props.enableAjaxTableData}

@@ -27,12 +27,6 @@ export default class Axes extends React.Component {
     onAxesRenderComplete: () => {},
   }
 
-  // componentDidUpdate = () => {
-  //   const translateX = getBBoxFromRef(this.rightAxisWithoutLegend?.ref)?.width ?? 0
-  //   const translateY = this.shouldRenderTopAxis() ? 10 : 0
-  //   select(this.legendRef).attr('transform', `translate(${translateX},${translateY})`)
-  // }
-
   onAxisRenderComplete = (orient) => {
     switch (orient) {
       case 'Right': {
@@ -132,8 +126,7 @@ export default class Axes extends React.Component {
   }
 
   shouldRenderTopAxis = () => {
-    const shouldRenderAxis = !!this.props.xCol2 && !!this.props.xScale2
-    return shouldRenderAxis
+    return !!this.props.xScale2
   }
 
   renderTopAxis = (innerWidth, innerHeight) => {
@@ -216,9 +209,11 @@ export default class Axes extends React.Component {
     const translateY = this.shouldRenderTopAxis() ? 10 : 0
 
     return (
-      <g ref={(r) => (this.legendRef = r)} transform={`translate(${translateX},${translateY})`}>
+      <g transform={`translate(${translateX},${translateY})`}>
         <Legend
           {...this.props}
+          ref={(r) => (this.legendRef = r)}
+          axesRef={this.ref}
           title={this.props.numberAxisTitle}
           title2={this.props.numberAxisTitle2}
           legendColumnIndices={this.props.numberColumnIndices}
@@ -232,14 +227,7 @@ export default class Axes extends React.Component {
   }
 
   render = () => {
-    if (
-      !this.props.yScale ||
-      !this.props.xScale ||
-      !this.props.height ||
-      !this.props.width ||
-      !this.props.xCol ||
-      !this.props.yCol
-    ) {
+    if (!this.props.yScale || !this.props.xScale || !this.props.height || !this.props.width) {
       return null
     }
 

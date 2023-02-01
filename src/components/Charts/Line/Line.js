@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import { getThemeValue } from '../../../theme/configureTheme'
 import { chartElementDefaultProps, chartElementPropTypes, getKey, getTooltipContent } from '../helpers'
 
 export default class Line extends Component {
@@ -24,10 +25,12 @@ export default class Line extends Component {
     this.setState({ activeKey: newActiveKey })
   }
 
-  makePolyline = () => {
+  makePolylines = () => {
     const { columns, numberColumnIndices, stringColumnIndex, yScale, xScale } = this.props
+    const backgroundColor = getThemeValue('background-color-secondary')
 
     const polylines = []
+    const outerPolylines = []
     numberColumnIndices.forEach((colIndex, i) => {
       const vertices = []
       if (!columns[colIndex].isSeriesHidden) {
@@ -70,20 +73,36 @@ export default class Line extends Component {
           fill='none'
           stroke={this.props.colorScale(i)}
           strokeWidth={1.5}
-          opacity={0.7}
+        />
+      )
+
+      const outerPolyline = (
+        <polyline
+          key={`line-outer-${getKey(0, i)}`}
+          className='line-outer'
+          points={polylinePoints}
+          fill='none'
+          stroke={backgroundColor}
+          strokeOpacity={0.3}
+          strokeWidth={3}
         />
       )
 
       polylines.push(polyline)
+      outerPolylines.push(outerPolyline)
     })
 
-    return polylines
+    return { polylines, outerPolylines }
   }
 
   makeDots = () => {
     const { columns, legendColumn, numberColumnIndices, stringColumnIndex, dataFormatting, yScale, xScale } = this.props
+    const backgroundColor = getThemeValue('background-color-secondary')
 
-    const allDots = []
+    const shouldShowDots = this.props.width / this.props.data?.length > 10
+
+    const innerDots = []
+    const outerDots = []
     numberColumnIndices.forEach((colIndex, i) => {
       if (!columns[colIndex].isSeriesHidden) {
         this.props.data.forEach((d, index) => {
@@ -108,31 +127,9 @@ export default class Line extends Component {
             dataFormatting,
           })
 
-          const circle = (
-            <circle
-              className='line-dot-inner-circle'
-              key={getKey(colIndex, index)}
-              cy={cy}
-              cx={xScale(d[stringColumnIndex]) + xShift}
-              r={3}
-              style={{
-                pointerEvents: 'none',
-                stroke: this.props.colorScale(i),
-                strokeWidth: 2,
-                strokeOpacity: 0.7,
-                fillOpacity: 1,
-                opacity: 0,
-                fill:
-                  this.state.activeKey === getKey(colIndex, index)
-                    ? this.props.colorScale(i)
-                    : this.props.backgroundColor || '#fff',
-              }}
-            />
-          )
-
           // Render a bigger transparent circle so it's easier for the user
           // to hover over and see tooltip
-          const transparentHoverCircle = (
+          const transparentHoverVertex = (
             <circle
               key={`hover-circle-${getKey(colIndex, index)}`}
               cy={cy}
@@ -145,8 +142,44 @@ export default class Line extends Component {
               }}
             />
           )
+          const circle = (
+            <circle
+              className='line-dot-inner-circle'
+              key={getKey(colIndex, index)}
+              cy={cy}
+              cx={xScale(d[stringColumnIndex]) + xShift}
+              r={2.5}
+              style={{
+                pointerEvents: 'none',
+                stroke: this.props.colorScale(i),
+                strokeWidth: 3.5,
+                color: this.props.colorScale(i),
+                opacity: shouldShowDots ? 1 : 0,
+                fill:
+                  this.state.activeKey === getKey(colIndex, index)
+                    ? this.props.colorScale(i)
+                    : backgroundColor || '#fff',
+              }}
+            />
+          )
 
-          allDots.push(
+          const circleOuter = (
+            <circle
+              className='line-dot-outer-circle'
+              key={getKey(colIndex, index)}
+              cy={cy}
+              cx={xScale(d[stringColumnIndex]) + xShift}
+              r={5}
+              style={{
+                stroke: 'none',
+                fill: backgroundColor,
+                fillOpacity: 0.3,
+                opacity: shouldShowDots ? 1 : 0,
+              }}
+            />
+          )
+
+          innerDots.push(
             <g
               className={`line-dot${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
               key={`circle-group-${getKey(colIndex, index)}`}
@@ -155,14 +188,23 @@ export default class Line extends Component {
               data-for={this.props.chartTooltipID}
             >
               {circle}
-              {transparentHoverCircle}
+              {transparentHoverVertex}
+            </g>,
+          )
+
+          outerDots.push(
+            <g
+              className={`line-dot-outer${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
+              key={`circle-group-outer-${getKey(colIndex, index)}`}
+            >
+              {circleOuter}
             </g>,
           )
         })
       }
     })
 
-    return allDots
+    return { innerDots, outerDots }
   }
 
   render = () => {
@@ -175,10 +217,15 @@ export default class Line extends Component {
       return null
     }
 
+    const { polylines, outerPolylines } = this.makePolylines()
+    const { innerDots, outerDots } = this.makeDots()
+
     return (
       <g data-test='line'>
-        {this.makePolyline()}
-        {this.makeDots()}
+        {outerPolylines}
+        {outerDots}
+        {polylines}
+        {innerDots}
       </g>
     )
   }

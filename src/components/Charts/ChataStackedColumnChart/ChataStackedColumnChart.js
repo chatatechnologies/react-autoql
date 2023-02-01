@@ -26,15 +26,14 @@ export default class ChataStackedColumnChart extends Component {
       axis: 'x',
     })
 
-    const yScalesAndTicks = getLinearScales({
+    const yScales = getLinearScales({
       props,
       columnIndices1: numberColumnIndices,
       axis: 'y',
       stacked: true,
     })
 
-    this.yScale = yScalesAndTicks.scale
-    this.yTickValues = this.yScale.tickLabels
+    this.yScale = yScales.scale
   }
 
   render = () => {
@@ -55,6 +54,7 @@ export default class ChataStackedColumnChart extends Component {
         <Axes
           {...this.props}
           ref={(r) => (this.axesRef = r)}
+          chartRef={this.chartRef}
           xScale={this.xScale}
           yScale={this.yScale}
           xCol={this.props.columns[this.props.stringColumnIndex]}

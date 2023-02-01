@@ -68,6 +68,7 @@ export default class ChataColumnChart extends Component {
         <Axes
           {...this.props}
           ref={(r) => (this.axesRef = r)}
+          chartRef={this.chartRef}
           xScale={this.xScale}
           yScale={this.yScale}
           xCol={this.props.columns[this.props.stringColumnIndex]}

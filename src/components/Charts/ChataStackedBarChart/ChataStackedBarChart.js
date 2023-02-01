@@ -58,6 +58,7 @@ export default class ChataStackedBarChart extends Component {
         <Axes
           {...this.props}
           ref={(r) => (this.axesRef = r)}
+          chartRef={this.chartRef}
           xScale={this.xScale}
           xScale2={this.xScale2}
           yScale={this.yScale}

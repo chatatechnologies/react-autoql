@@ -1,6 +1,3 @@
-import _get from 'lodash.get'
-import { getVisibleColumns, supportsRegularPivotTable } from '../../js/Util'
-
 export const isAggregation = (columns) => {
   try {
     let isAgg = false
@@ -163,7 +160,7 @@ export const getStringColumnIndices = (columns, supportsPivot) => {
   let stringColumnIndex = stringColumnIndices[0]
   if (supportsPivot) {
     // Use date column if its a groupable, otherwise use first groupable column
-    const isDateColumnGroupable = _get(columns[dateColumnIndex], 'groupable')
+    const isDateColumnGroupable = columns[dateColumnIndex]?.groupable
     stringColumnIndex = isDateColumnGroupable ? dateColumnIndex : columns.findIndex((col) => col.groupable)
   } else if (dateColumnIndex >= 0) {
     stringColumnIndex = dateColumnIndex

@@ -5,7 +5,7 @@ import _isEqual from 'lodash.isequal'
 import { scaleLinear, scaleBand } from 'd3-scale'
 import { select } from 'd3-selection'
 
-import { formatChartLabel, formatElement } from '../../js/Util'
+import { deepEqual, difference, formatChartLabel, formatElement } from '../../js/Util'
 import { dataFormattingType } from '../../props/types'
 import { dataFormattingDefault } from '../../props/defaults'
 import { AGG_TYPES } from '../../js/Constants'
@@ -118,6 +118,27 @@ export const dataStructureChanged = (props, prevProps) => {
     !_isEqual(props.stringColumnIndices, prevProps.stringColumnIndices) ||
     (props.type === 'pie' && !_isEqual(props.data, prevProps.data))
   )
+}
+
+export const onlySeriesVisibilityChanged = (props, prevProps) => {
+  if (_isEqual(props.columns, prevProps.columns)) {
+    return false
+  }
+
+  const columnsFiltered = props.columns.map((col) => {
+    return {
+      ...col,
+      isSeriesHidden: undefined,
+    }
+  })
+  const prevColumnsFiltered = prevProps.columns.map((col) => {
+    return {
+      ...col,
+      isSeriesHidden: undefined,
+    }
+  })
+
+  return deepEqual(columnsFiltered, prevColumnsFiltered)
 }
 
 export const scaleZero = (scale) => {
@@ -407,6 +428,10 @@ export const getMinAndMaxValues = (data, numberColumnIndices, isScaled, sum, str
 }
 
 export const getLegendLocation = (seriesArray, displayType) => {
+  if (displayType === 'column-line') {
+    return 'right'
+  }
+
   if (seriesArray?.length < 2) {
     return undefined
   }

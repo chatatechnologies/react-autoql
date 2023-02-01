@@ -601,7 +601,7 @@ export const supportsRegularPivotTable = (columns, dataLength) => {
   }
 
   const hasTwoGroupables = getNumberOfGroupables(columns) === 2
-  return hasTwoGroupables && columns.length === 3
+  return hasTwoGroupables && columns.length >= 3
 }
 
 export const hasDateColumn = (columns) => {
@@ -1056,7 +1056,7 @@ export const removeFromDOM = (elem) => {
   }
 }
 
-export const dateSortFn = (a, b, isChart) => {
+export const dateSortFn = (a, b) => {
   try {
     if (!a && !b) {
       return 0
@@ -1092,7 +1092,7 @@ export const dateSortFn = (a, b, isChart) => {
       }
       // If one is a weekday name
       else if (WEEKDAY_NAMES.includes(a.trim())) {
-        const multiplier = isChart ? -1 : 1
+        // const multiplier = isChart ? -1 : 1
 
         const aDayIndex = WEEKDAY_NAMES.findIndex((d) => d === a.trim())
         const bDayIndex = WEEKDAY_NAMES.findIndex((d) => d === b.trim())
@@ -1132,7 +1132,7 @@ export const dateSortFn = (a, b, isChart) => {
   }
 }
 
-export const sortDataByDate = (data, tableColumns, isChart) => {
+export const sortDataByDate = (data, tableColumns, reverse) => {
   try {
     if (!data || typeof data !== 'object') {
       return data
@@ -1140,10 +1140,10 @@ export const sortDataByDate = (data, tableColumns, isChart) => {
     const dateColumnIndex = getDateColumnIndex(tableColumns)
     if (dateColumnIndex >= 0) {
       let sortedData
-      if (!isChart) {
+      if (!reverse) {
         sortedData = [...data].sort((a, b) => dateSortFn(a[dateColumnIndex], b[dateColumnIndex]))
       } else {
-        sortedData = [...data].sort((a, b) => -1 * dateSortFn(a[dateColumnIndex], b[dateColumnIndex], isChart))
+        sortedData = [...data].sort((a, b) => -1 * dateSortFn(a[dateColumnIndex], b[dateColumnIndex]))
       }
       return sortedData
     }

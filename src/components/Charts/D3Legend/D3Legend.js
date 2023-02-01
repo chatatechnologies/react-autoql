@@ -28,7 +28,7 @@ export default function color() {
     title = '',
     locale = helper.d3_defaultLocale,
     specifier = helper.d3_defaultFormatSpecifier,
-    labelOffset = 10,
+    labelOffset = 20,
     labelAlign = 'middle',
     labelDelimiter = helper.d3_defaultDelimiter,
     labelWrap,
@@ -108,7 +108,7 @@ export default function color() {
 
       textTrans = (d, i) =>
         `translate( ${shapeSize[i].width + shapeSize[i].x + labelOffset}, ${
-          shapeSize[i].y + shapeSize[i].height / 2 + 5
+          shapeSize[i].y + shapeSize[i].height / 2 + 4
         })`
     } else if (orient === 'horizontal') {
       cellTrans = (d, i) => `translate(${i * (shapeSize[i].width + shapePadding)},0)`

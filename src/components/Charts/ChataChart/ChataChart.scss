@@ -18,32 +18,103 @@
     transition: none;
   }
 
+  .legendCells {
+    .cell {
+      &.hidden {
+        text {
+          color: var(--react-autoql-background-disabled);
+          opacity: 0.4 !important;
+        }
+        line.swatch,
+        path.swatch {
+          // fill-opacity: 0.1 !important;
+          // stroke-opacity: 0.1 !important;
+          // fill: var(--react-autoql-text-color-primary) !important;
+          // stroke: var(--react-autoql-text-color-primary) !important;
+
+          fill: var(--react-autoql-background-color-disabled) !important;
+          stroke: var(--react-autoql-background-color-disabled) !important;
+        }
+      }
+      // &.visible {
+      //   text {
+      //     opacity: 1;
+      //   }
+      //   line.swatch,
+      //   path.swatch {
+      //     fill-opacity: 1 !important;
+      //     stroke-opacity: 1 !important;
+      //   }
+      // }
+
+      &:hover path.swatch {
+        stroke-width: 2px;
+      }
+      &:hover line.swatch {
+        stroke-width: 3px;
+      }
+
+      text:hover {
+        font-weight: 600;
+      }
+    }
+  }
+
+  path.swatch {
+    outline: none !important;
+    fill-opacity: 1;
+    &:hover,
+    &.active {
+      fill-opacity: 0.7;
+    }
+  }
+  line.swatch {
+    stroke-width: 2px;
+    outline: none !important;
+    &:hover,
+    &.active {
+      stroke-width: 3px;
+    }
+  }
+
   /* These are not inline styles since they do not apply to saved PNG charts */
+  .bar,
+  .column,
+  .slice,
+  .stacked-bar,
+  .stacked-column {
+    cursor: pointer;
+  }
+
   .bar,
   .column,
   .line,
   .slice,
   .stacked-area,
   .stacked-bar,
-  .stacked-column,
-  .swatch {
+  .stacked-column {
     transition: fill-opacity 0.3s ease;
     fill-opacity: 1 !important;
     outline: none !important;
+
     &:hover,
     &.active {
       fill-opacity: 0.7 !important;
     }
   }
   .line-dot {
-    .line-dot-inner-circle {
-      transition: opacity 0.3s ease;
-      // opacity: 0 !important;
-      opacity: 1 !important;
-      outline: none !important;
+    outline: none !important;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+
+    .line-dot-inner-circle,
+    .line-dot-outer-circle {
+      transition: fill 0.3s ease, stroke 0.3s ease;
+      paint-order: stroke;
     }
     &:hover .line-dot-inner-circle,
     &.active .line-dot-inner-circle {
+      fill: currentColor !important;
       opacity: 1 !important;
     }
   }
@@ -81,6 +152,11 @@
 
   g.tick {
     transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  .line,
+  .line-outer {
     pointer-events: none;
   }
 

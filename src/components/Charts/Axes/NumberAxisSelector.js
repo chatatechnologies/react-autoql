@@ -193,8 +193,8 @@ export default class NumberAxisSelector extends React.Component {
 
       const item = {
         content: (
-          <div>
-            {!this.props.isAggregation && (
+          <div key={`column-agg-type-symbol-${this.COMPONENT_KEY}`}>
+            {!this.props.isAggregation && col.aggType && (
               <div
                 className='agg-type-symbol'
                 data-tip={aggTooltip}
@@ -227,7 +227,7 @@ export default class NumberAxisSelector extends React.Component {
     this.setState({ selectedColumns: selectedColumnIndices })
   }
 
-  onColumnCheck = (columns) => {
+  onColumnCheck = (columns, columnType) => {
     const { checkedColumns } = this.state
     const newCheckedColumns = [...checkedColumns]
     columns.forEach((col) => {
@@ -352,7 +352,7 @@ export default class NumberAxisSelector extends React.Component {
                 ref={(r) => (this.currencySelectRef = r)}
                 items={currencyListItems}
                 onSelect={this.onColumnSelection}
-                onChange={this.onColumnCheck}
+                onChange={(columns) => this.onColumnCheck(columns, COLUMN_TYPES.CURRENCY)}
               />
             </Fragment>
           )}
@@ -385,7 +385,7 @@ export default class NumberAxisSelector extends React.Component {
                 ref={(r) => (this.quantitySelectRef = r)}
                 items={quantityListItems}
                 onSelect={this.onColumnSelection}
-                onChange={this.onColumnCheck}
+                onChange={(columns) => this.onColumnCheck(columns, COLUMN_TYPES.QUANTITY)}
               />
             </Fragment>
           )}
@@ -418,7 +418,7 @@ export default class NumberAxisSelector extends React.Component {
                 ref={(r) => (this.ratioSelectRef = r)}
                 items={ratioListItems}
                 onSelect={this.onColumnSelection}
-                onChange={this.onColumnCheck}
+                onChange={(columns) => this.onColumnCheck(columns, COLUMN_TYPES.RATIO)}
               />
             </Fragment>
           )}
@@ -471,7 +471,7 @@ export default class NumberAxisSelector extends React.Component {
       <Popover
         isOpen={this.state.isOpen}
         ref={(r) => (this.popoverRef = r)}
-        content={this.renderSelectorContent}
+        content={this.renderSelectorContent()}
         onClickOutside={this.closeSelector}
         parentElement={this.props.popoverParentElement}
         boundaryElement={this.props.popoverParentElement}

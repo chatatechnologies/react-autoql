@@ -150,7 +150,7 @@ export default class ChatMessage extends React.Component {
     this.animationTimeout = setTimeout(() => {
       this.setState({ isAnimatingMessageBubble: false })
       this.props.scrollToBottom()
-    }, 500)
+    }, 600)
   }
 
   onCSVDownloadFinish = ({ error, exportLimit, limitReached }) => {
