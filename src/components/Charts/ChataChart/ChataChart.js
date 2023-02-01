@@ -42,7 +42,7 @@ export default class ChataChart extends Component {
     const data = this.getData(props)
     const chartColors = getChartColorVars()
 
-    this.PADDING = 20
+    this.PADDING = 10
     this.FONT_SIZE = 12
 
     this.firstRender = true
@@ -167,7 +167,7 @@ export default class ChataChart extends Component {
       const { deltaX, deltaY } = this.getDeltas()
       const { innerHeight, innerWidth } = this.getInnerDimensions()
       this.setState({ deltaX, deltaY, innerHeight, innerWidth }, () => {
-        this.setFinishedLoading()
+        this.adjustVerticalPosition()
       })
     }, 0)
   }

@@ -518,7 +518,7 @@ export default class Axis extends Component {
       const xLabelY = labelBBoxTop - this.AXIS_TITLE_PADDING
 
       select(this.titleRef).attr('x', xLabelX).attr('y', xLabelY)
-    } else if (this.props.orient === 'Left') {
+    } else if (this.props.orient === 'Left' || this.props.orient === 'Right') {
       if (this.props.chartRef) {
         // Get original container height and top before adding axis title
         const chartContainerBBox = this.props.chartRef?.getBoundingClientRect()
