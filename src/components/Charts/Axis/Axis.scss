@@ -37,6 +37,182 @@ g.legendOrdinal tspan {
   opacity: 1 !important;
 }
 
+// .react-tiny-popover-container {
+//   width: 400px !important;
+//   height: 350px !important;
+// }
+
+.number-axis-selector-popover {
+  height: 350px;
+  width: 400px;
+  overflow: hidden;
+
+  .number-axis-selector-popover-content {
+    background: var(--react-autoql-background-color-secondary);
+    color: var(--react-autoql-text-color-primary);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    z-index: 9999;
+
+    h4 {
+      margin: 0;
+      margin-top: 5px;
+      margin-bottom: 15px;
+    }
+
+    .axis-agg-type-selector {
+      width: 175px;
+      border-left: 1px solid var(--react-autoql-border-color);
+      padding: 10px 20px;
+
+      .agg-type-selector-fields {
+        font-size: 12px;
+        font-style: italic;
+      }
+
+      .react-autoql-radio-btn-container-list {
+        p {
+          font-size: 12px;
+          margin: 4px 0px;
+
+          [type='radio']:checked + label,
+          [type='radio']:not(:checked) + label {
+            padding-left: 22px;
+            line-height: 17px;
+
+            &:before {
+              width: 15px;
+              height: 15px;
+            }
+
+            &:after {
+              width: 9px;
+              height: 9px;
+            }
+          }
+        }
+      }
+    }
+
+    .axis-select-option.active {
+      background: var(--react-autoql-hover-color);
+      outline: none !important;
+    }
+    .react-autoql-list-item .react-autoql-checkbox {
+      margin-left: 20px;
+    }
+    .react-autoql-checkbox-tick {
+      left: 2px;
+    }
+    .react-autoql-checkbox__input {
+      width: 16px;
+      height: 16px;
+    }
+    .react-autoql-list-item {
+      padding: 0;
+      padding-right: 10px;
+      font-size: 12px;
+      line-height: 25px;
+      cursor: pointer;
+
+      &.checked .agg-type-symbol {
+        color: var(--react-autoql-accent-color);
+      }
+    }
+
+    .string-select-list-item {
+      font-size: 12px;
+      line-height: 28px;
+
+      &.active {
+        background: rgba(0, 0, 0, 0.04);
+      }
+    }
+
+    .number-selector-header {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 10px;
+      margin-right: 8px;
+      font-size: 12px;
+      border-bottom: 1px solid var(--react-autoql-border-color);
+      background: var(--react-autoql-background-color-primary);
+
+      .number-selector-header-title {
+        font-weight: 600;
+        svg {
+          stroke-width: 0.5px;
+        }
+      }
+    }
+
+    .axis-series-selector {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      padding: 10px 8px 5px 20px;
+
+      .axis-series-selector-scroll-container {
+        flex: 1;
+      }
+
+      .react-autoql-selectable-list {
+        padding-right: 8px;
+        margin-bottom: 10px;
+      }
+    }
+
+    .react-autoql-select.agg-type-symbol {
+      display: inline-block;
+      font-weight: 600;
+      font-size: 12px;
+      line-height: 22px;
+      height: 22px;
+      margin: 3px 10px;
+      padding: 0 8px;
+    }
+  }
+
+  .axis-selector-apply-btn {
+    background: var(--react-autoql-background-color-secondary);
+    padding: 5px;
+  }
+}
+
+.agg-type-symbol-select {
+  .react-autoql-select-popup li {
+    font-size: 12px;
+    line-height: 28px;
+    height: 28px;
+
+    .agg-select-list-symbol {
+      font-weight: 600;
+      margin-right: 10px;
+    }
+  }
+}
+
+.axis-selector-content {
+  list-style-type: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+
+  li {
+    color: var(--react-autoql-text-color-primary);
+    width: 100%;
+    height: 30px;
+    line-height: 30px;
+    padding: 0 15px;
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+  }
+}
+
 g.legendOrdinal .legendTitle tspan {
   letter-spacing: 0.04em !important;
   font-size: 12px;

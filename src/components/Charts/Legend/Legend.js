@@ -280,11 +280,13 @@ export default class Legend extends Component {
         .selectAll('.cell')
         .each(function (label) {
           const legendLabel = legendLabels.find((l) => l.label === label)
-          select(this).select('.swatch').attr('stroke', legendLabel.color).attr('stroke-location', 'outside')
-          if (legendLabel.hidden) {
-            select(this).attr('class', 'cell hidden')
-          } else {
-            select(this).attr('class', 'cell visible')
+          if (legendLabel) {
+            select(this).select('.swatch').attr('stroke', legendLabel.color).attr('stroke-location', 'outside')
+            if (legendLabel.hidden) {
+              select(this).attr('class', 'cell hidden')
+            } else {
+              select(this).attr('class', 'cell visible')
+            }
           }
         })
     } catch (error) {

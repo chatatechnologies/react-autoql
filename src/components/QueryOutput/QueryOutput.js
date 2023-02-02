@@ -356,6 +356,10 @@ export class QueryOutput extends React.Component {
       this.tableID = uuid()
     }
 
+    if (displayType === 'column_line') {
+      console.log('we must check if the current column config is valid. If not, we need to change it')
+    }
+
     this.props.onDisplayTypeChange(displayType)
     this.setState({ displayType })
   }
@@ -1086,6 +1090,16 @@ export class QueryOutput extends React.Component {
   onChangeNumberColumnIndices = (indices, indices2, newColumns) => {
     if (!indices) {
       return
+    }
+
+    console.log(
+      'CHANGING NUMBER COL INDICES. we need to check validity every time to make sure the second axis columns dont overlap with the first',
+      { indices, indices2 },
+    )
+
+    const indicesIntersect = indices.filter((index) => indices2.includes(index))?.length
+    if (indicesIntersect) {
+      console.log('column indices have overlapping values!! You must do something about this')
     }
 
     if (this.usePivotDataForChart()) {
@@ -1906,8 +1920,8 @@ export class QueryOutput extends React.Component {
           isDrilldownChartHidden={this.props.isDrilldownChartHidden}
           enableDynamicCharting={this.props.enableDynamicCharting}
           enableAjaxTableData={this.props.enableAjaxTableData}
-          tooltipID={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
-          chartTooltipID={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
+          tooltipID={this.props.tooltipID ?? `react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
+          chartTooltipID={this.props.chartTooltipID ?? `react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
           rebuildTooltips={this.rebuildTooltips}
           height={this.props.height}
           width={this.props.width}
@@ -2164,7 +2178,7 @@ export class QueryOutput extends React.Component {
         <Icon
           type='warning'
           data-tip={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached. Try querying a smaller time-frame to ensure all your data is displayed.`}
-          data-for={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
+          data-for={this.props.tooltipID ?? `react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
           data-place={isReverseTranslationRendered ? 'left' : 'right'}
         />
       </div>
@@ -2202,19 +2216,23 @@ export class QueryOutput extends React.Component {
           {this.renderTableRowCount()}
           {this.props.reverseTranslationPlacement !== 'top' && this.renderFooter()}
         </div>
-        <ReactTooltip
-          className='react-autoql-tooltip'
-          id={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
-          effect='solid'
-          place='top'
-          html
-        />
-        <ReactTooltip
-          className='react-autoql-chart-tooltip'
-          id={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
-          effect='solid'
-          html
-        />
+        {!this.props.tooltipID && (
+          <ReactTooltip
+            className='react-autoql-tooltip'
+            id={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
+            effect='solid'
+            place='top'
+            html
+          />
+        )}
+        {!this.props.chartTooltipID && (
+          <ReactTooltip
+            className='react-autoql-chart-tooltip'
+            id={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
+            effect='solid'
+            html
+          />
+        )}
       </ErrorBoundary>
     )
   }

@@ -5,13 +5,10 @@ import { v4 as uuid } from 'uuid'
 import { Popover } from 'react-tiny-popover'
 import { SelectableList } from '../../SelectableList'
 import { Button } from '../../Button'
-// import { axesDefaultProps, axesPropTypes, dataStructureChanged } from '../helpers'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { Checkbox } from '../../Checkbox'
 import { AGG_TYPES, COLUMN_TYPES } from '../../../js/Constants'
-// import { dataConfigType } from '../../../props/types'
-// import { dataConfigDefault } from '../../../props/defaults'
-// import { deepEqual, difference } from '../../../js/Util'
+import { Select } from '../../Select'
 
 const aggHTMLCodes = {
   sum: <>&Sigma;</>,
@@ -28,7 +25,6 @@ export default class NumberAxisSelector extends React.Component {
     const checkedColumns = this.getCheckedFromNumberColumnIndices(props)
 
     this.state = {
-      isOpen: false,
       aggType: undefined,
       selectedColumns: [],
       checkedColumns,
@@ -50,10 +46,10 @@ export default class NumberAxisSelector extends React.Component {
     this.props.rebuildTooltips()
   }
 
-  shouldComponentUpdate = (nextProps, nextState) => {
-    return true
-    // return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
-  }
+  // shouldComponentUpdate = (nextProps, nextState) => {
+  //   return true
+  //   // return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
+  // }
 
   componentDidUpdate = (prevProps, prevState) => {
     this.props.rebuildTooltips()
@@ -73,14 +69,19 @@ export default class NumberAxisSelector extends React.Component {
     return [...checkedColumns1, ...checkedColumns2]
   }
 
-  openSelector = () => {
-    this.setState({ isOpen: true })
-  }
+  onAggTypeSelect = (aggType, column) => {
+    const { columns } = this.state
+    const newColumns = columns.map((col) => {
+      if (col.field === column.field) {
+        return {
+          ...col,
+          aggType,
+        }
+      }
+      return col
+    })
 
-  closeSelector = () => {
-    if (this.state.isOpen) {
-      this.setState({ isOpen: false, selectedColumns: [] })
-    }
+    this.setState({ columns: newColumns })
   }
 
   onAggTypeCheck = (aggType) => {
@@ -146,8 +147,8 @@ export default class NumberAxisSelector extends React.Component {
     )
   }
 
-  getCheckedIndices = (type) => {
-    const checkedColumns = this.state.checkedColumns?.filter((index) => this.state.columns[index].type === type)
+  getCheckedIndices = (type, columns = this.state.checkedColumns) => {
+    const checkedColumns = columns?.filter((index) => this.state.columns[index].type === type)
     return checkedColumns?.length ? checkedColumns : undefined
   }
 
@@ -189,21 +190,35 @@ export default class NumberAxisSelector extends React.Component {
 
       const checked = this.state.checkedColumns.includes(i)
 
-      const aggTooltip = AGG_TYPES.find((agg) => agg.value === col.aggType)?.tooltip
-
       const item = {
         content: (
           <div key={`column-agg-type-symbol-${this.COMPONENT_KEY}`}>
             {!this.props.isAggregation && col.aggType && (
-              <div
+              <Select
                 className='agg-type-symbol'
-                data-tip={aggTooltip}
-                data-for={this.props.tooltipID}
-                data-delay-show={800}
-                data-place='top'
-              >
-                {aggHTMLCodes[col.aggType]}
-              </div>
+                popupClassname='agg-type-symbol-select'
+                parentElement={this.props.popoverParentElement}
+                boundaryElement={this.props.popoverParentElement}
+                value={col.aggType}
+                align='start'
+                size='small'
+                options={AGG_TYPES.map((agg) => {
+                  return {
+                    value: agg.value,
+                    label: aggHTMLCodes[agg.value],
+                    listLabel: (
+                      <span>
+                        <span className='agg-select-list-symbol'>{aggHTMLCodes[agg.value]}</span>
+                        {agg.displayName}
+                      </span>
+                    ),
+                    tooltip: agg.tooltip,
+                  }
+                })}
+                onChange={(value) => {
+                  this.onAggTypeSelect(value, col)
+                }}
+              />
             )}
             {col.title}
           </div>
@@ -227,8 +242,23 @@ export default class NumberAxisSelector extends React.Component {
     this.setState({ selectedColumns: selectedColumnIndices })
   }
 
-  onColumnCheck = (columns, columnType) => {
+  onColumnCheck = (columns, changedColumns, checked, columnType) => {
     const { checkedColumns } = this.state
+
+    if (checked) {
+      console.log('attempting to check this column:', { columns, changedColumns, checked, columnType })
+      const checkedColumnsDifferentType = checkedColumns.filter(
+        (index) => this.state.columns[index].type !== columnType,
+      )
+
+      if (checkedColumnsDifferentType?.length) {
+        console.log('currently checked columns that are different types', checkedColumnsDifferentType)
+        console.log('WARN USER NOW!! SWITCH TO COLUMN_LINE CHART')
+      }
+    } else {
+      console.log('JUST UNCHECKED A COLUMN')
+    }
+
     const newCheckedColumns = [...checkedColumns]
     columns.forEach((col) => {
       const indexOfCheckedColumns = newCheckedColumns.indexOf(col.columnIndex)
@@ -251,7 +281,7 @@ export default class NumberAxisSelector extends React.Component {
     }
 
     let maxHeight = 300
-    const minHeight = 75
+    const minHeight = 100
     const padding = 100
 
     const chartHeight = this.props.chartContainerRef?.clientHeight
@@ -267,41 +297,44 @@ export default class NumberAxisSelector extends React.Component {
 
     return (
       <div
+        ref={(r) => (this.popoverContent = r)}
         id='chata-chart-popover'
-        onClick={(e) => {
-          e.stopPropagation()
-        }}
+        className='number-axis-selector-popover'
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className='axis-selector-container'>
+        <div className='number-axis-selector-popover-content'>
+          {/* <div className='axis-selector-container'>  */}
           {this.renderSeriesSelector(minHeight, maxHeight)}
-          {this.renderAggSelector(minHeight, maxHeight)}
-        </div>
+          {/* {this.renderAggSelector(minHeight, maxHeight)}
+        </div> */}
 
-        <div className='axis-selector-apply-btn'>
-          <Button
-            style={{ width: 'calc(100% - 10px)' }}
-            type='primary'
-            disabled={!this.state.checkedColumns?.length}
-            onClick={() => {
-              let checkedCurrencyIndices = this.getCheckedIndices(COLUMN_TYPES.CURRENCY)
-              let checkedQuantityIndices = this.getCheckedIndices(COLUMN_TYPES.QUANTITY)
-              let checkedRatioIndices = this.getCheckedIndices(COLUMN_TYPES.RATIO)
+          <div className='axis-selector-apply-btn'>
+            <Button
+              style={{ width: 'calc(100% - 10px)' }}
+              type='primary'
+              disabled={!this.state.checkedColumns?.length}
+              onClick={() => {
+                let checkedCurrencyIndices = this.getCheckedIndices(COLUMN_TYPES.CURRENCY)
+                let checkedQuantityIndices = this.getCheckedIndices(COLUMN_TYPES.QUANTITY)
+                let checkedRatioIndices = this.getCheckedIndices(COLUMN_TYPES.RATIO)
 
-              const numberColumnIndices = checkedCurrencyIndices ?? checkedQuantityIndices ?? checkedRatioIndices ?? []
-              let numberColumnIndices2
-              if (this.props.hasSecondAxis) {
-                numberColumnIndices2 = checkedQuantityIndices ?? checkedRatioIndices ?? []
-                if (_isEqual(numberColumnIndices, checkedQuantityIndices)) {
-                  numberColumnIndices2 = checkedRatioIndices ?? []
+                const numberColumnIndices =
+                  checkedCurrencyIndices ?? checkedQuantityIndices ?? checkedRatioIndices ?? []
+                let numberColumnIndices2 = this.props.numberColumnIndices2
+                if (this.props.hasSecondAxis) {
+                  numberColumnIndices2 = checkedQuantityIndices ?? checkedRatioIndices ?? []
+                  if (_isEqual(numberColumnIndices, checkedQuantityIndices)) {
+                    numberColumnIndices2 = checkedRatioIndices ?? []
+                  }
                 }
-              }
 
-              this.props.changeNumberColumnIndices(numberColumnIndices, numberColumnIndices2, this.state.columns)
-              this.closeSelector()
-            }}
-          >
-            Apply
-          </Button>
+                this.props.changeNumberColumnIndices(numberColumnIndices, numberColumnIndices2, this.state.columns)
+                this.props.closeSelector()
+              }}
+            >
+              Apply
+            </Button>
+          </div>
         </div>
       </div>
     )
@@ -323,106 +356,115 @@ export default class NumberAxisSelector extends React.Component {
     return (
       <div className='axis-series-selector'>
         <h4>Fields</h4>
-        <CustomScrollbars autoHide={false} autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
-          {!!currencyColumns.length && (
-            <Fragment>
-              <div className='number-selector-header'>
-                <div className='number-selector-header-title'>
-                  {this.state.columns && this.props.legendColumn !== undefined ? (
-                    <span>{this.props.legendColumn.display_name}</span>
-                  ) : (
-                    <span>Currency Fields</span>
-                  )}
+        <div className='axis-series-selector-scroll-container'>
+          <CustomScrollbars autoHide={false}>
+            {!!currencyColumns.length && (
+              <Fragment>
+                <div className='number-selector-header'>
+                  <div className='number-selector-header-title'>
+                    {this.state.columns && this.props.legendColumn !== undefined ? (
+                      <span>{this.props.legendColumn.display_name}</span>
+                    ) : (
+                      <span>Currency Fields</span>
+                    )}
+                  </div>
+                  <div>
+                    <Checkbox
+                      checked={allCurrencyChecked}
+                      style={{ marginLeft: '10px' }}
+                      onChange={() => {
+                        if (allCurrencyChecked) {
+                          this.currencySelectRef?.unCheckAll()
+                        } else {
+                          this.currencySelectRef?.checkAll()
+                        }
+                      }}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Checkbox
-                    checked={allCurrencyChecked}
-                    style={{ marginLeft: '10px' }}
-                    onChange={() => {
-                      if (allCurrencyChecked) {
-                        this.currencySelectRef?.unCheckAll()
-                      } else {
-                        this.currencySelectRef?.checkAll()
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-              <SelectableList
-                ref={(r) => (this.currencySelectRef = r)}
-                items={currencyListItems}
-                onSelect={this.onColumnSelection}
-                onChange={(columns) => this.onColumnCheck(columns, COLUMN_TYPES.CURRENCY)}
-              />
-            </Fragment>
-          )}
+                <SelectableList
+                  ref={(r) => (this.currencySelectRef = r)}
+                  items={currencyListItems}
+                  onSelect={this.onColumnSelection}
+                  onChange={(allColumns, changedColumns, checked) =>
+                    this.onColumnCheck(allColumns, changedColumns, checked, COLUMN_TYPES.CURRENCY)
+                  }
+                />
+              </Fragment>
+            )}
 
-          {!!quantityColumns.length && (
-            <Fragment>
-              <div className='number-selector-header'>
-                <div className='number-selector-header-title'>
-                  {this.state.columns && this.props.legendColumn !== undefined ? (
-                    <span>{this.props.legendColumn.display_name}</span>
-                  ) : (
-                    <span>Quantity Fields</span>
-                  )}
+            {!!quantityColumns.length && (
+              <Fragment>
+                <div className='number-selector-header'>
+                  <div className='number-selector-header-title'>
+                    {this.state.columns && this.props.legendColumn !== undefined ? (
+                      <span>{this.props.legendColumn.display_name}</span>
+                    ) : (
+                      <span>Quantity Fields</span>
+                    )}
+                  </div>
+                  <div>
+                    <Checkbox
+                      checked={allQuantityChecked}
+                      style={{ marginLeft: '10px' }}
+                      onChange={() => {
+                        if (allQuantityChecked) {
+                          this.quantitySelectRef?.unCheckAll()
+                        } else {
+                          this.quantitySelectRef?.checkAll()
+                        }
+                      }}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Checkbox
-                    checked={allQuantityChecked}
-                    style={{ marginLeft: '10px' }}
-                    onChange={() => {
-                      if (allQuantityChecked) {
-                        this.quantitySelectRef?.unCheckAll()
-                      } else {
-                        this.quantitySelectRef?.checkAll()
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-              <SelectableList
-                ref={(r) => (this.quantitySelectRef = r)}
-                items={quantityListItems}
-                onSelect={this.onColumnSelection}
-                onChange={(columns) => this.onColumnCheck(columns, COLUMN_TYPES.QUANTITY)}
-              />
-            </Fragment>
-          )}
+                <SelectableList
+                  ref={(r) => (this.quantitySelectRef = r)}
+                  items={quantityListItems}
+                  onSelect={this.onColumnSelection}
+                  onChange={(allColumns, changedColumns, checked) =>
+                    this.onColumnCheck(allColumns, changedColumns, checked, COLUMN_TYPES.QUANTITY)
+                  }
+                />
+              </Fragment>
+            )}
 
-          {!!ratioColumns.length && (
-            <Fragment>
-              <div className='number-selector-header'>
-                <div className='number-selector-header-title'>
-                  {this.state.columns && this.props.legendColumn !== undefined ? (
-                    <span>{this.props.legendColumn.display_name}</span>
-                  ) : (
-                    <span>Ratio Fields</span>
-                  )}
+            {!!ratioColumns.length && (
+              <Fragment>
+                <div className='number-selector-header'>
+                  <div className='number-selector-header-title'>
+                    {this.state.columns && this.props.legendColumn !== undefined ? (
+                      <span>{this.props.legendColumn.display_name}</span>
+                    ) : (
+                      <span>Ratio Fields</span>
+                    )}
+                  </div>
+                  <div>
+                    Select All{' '}
+                    <Checkbox
+                      checked={allRatioChecked}
+                      style={{ marginLeft: '10px' }}
+                      onChange={() => {
+                        if (allRatioChecked) {
+                          this.ratioSelectRef?.unCheckAll()
+                        } else {
+                          this.ratioSelectRef?.checkAll()
+                        }
+                      }}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Checkbox
-                    checked={allRatioChecked}
-                    style={{ marginLeft: '10px' }}
-                    onChange={() => {
-                      if (allRatioChecked) {
-                        this.ratioSelectRef?.unCheckAll()
-                      } else {
-                        this.ratioSelectRef?.checkAll()
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-              <SelectableList
-                ref={(r) => (this.ratioSelectRef = r)}
-                items={ratioListItems}
-                onSelect={this.onColumnSelection}
-                onChange={(columns) => this.onColumnCheck(columns, COLUMN_TYPES.RATIO)}
-              />
-            </Fragment>
-          )}
-        </CustomScrollbars>
+                <SelectableList
+                  ref={(r) => (this.ratioSelectRef = r)}
+                  items={ratioListItems}
+                  onSelect={this.onColumnSelection}
+                  onChange={(allColumns, changedColumns, checked) =>
+                    this.onColumnCheck(allColumns, changedColumns, checked, COLUMN_TYPES.RATIO)
+                  }
+                />
+              </Fragment>
+            )}
+          </CustomScrollbars>
+        </div>
       </div>
     )
   }
@@ -469,10 +511,15 @@ export default class NumberAxisSelector extends React.Component {
   render = () => {
     return (
       <Popover
-        isOpen={this.state.isOpen}
-        ref={(r) => (this.popoverRef = r)}
+        id={`number-axis-selector-${this.COMPONENT_KEY}`}
+        isOpen={this.props.isOpen}
         content={this.renderSelectorContent()}
-        onClickOutside={this.closeSelector}
+        ref={this.props.axisSelectorRef}
+        onClickOutside={(e) => {
+          e.stopPropagation()
+          e.preventDefault()
+          this.props.closeSelector()
+        }}
         parentElement={this.props.popoverParentElement}
         boundaryElement={this.props.popoverParentElement}
         positions={this.props.positions}
@@ -480,16 +527,7 @@ export default class NumberAxisSelector extends React.Component {
         reposition={true}
         padding={10}
       >
-        <rect
-          // {...this.props.childProps}
-          className={`axis-label-border ${this.props.hidden ? 'hidden' : ''}`}
-          data-test='axis-label-border'
-          onClick={this.openSelector}
-          fill='transparent'
-          stroke='transparent'
-          strokeWidth='1px'
-          rx='4'
-        />
+        {this.props.children}
       </Popover>
     )
   }

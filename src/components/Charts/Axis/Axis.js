@@ -269,10 +269,17 @@ export default class Axis extends Component {
     return isNaN(fontSize) ? 12 : fontSize
   }
 
-  renderAxisSelector = ({ positions, align, childProps }) => {
+  openSelector = () => {
+    this.setState({ isAxisSelectorOpen: true })
+  }
+
+  closeSelector = () => {
+    this.setState({ isAxisSelectorOpen: false })
+  }
+
+  renderAxisSelector = ({ positions, childProps }) => {
     return (
       <AxisSelector
-        ref={(r) => (this.axisSelector = r)}
         chartType={this.props.type}
         chartContainerRef={this.props.chartContainerRef}
         changeNumberColumnIndices={this.props.changeNumberColumnIndices}
@@ -293,7 +300,20 @@ export default class Axis extends Component {
         positions={positions}
         childProps={childProps}
         hasSecondAxis={this.props.hasSecondAxis}
-      />
+        axisSelectorRef={(r) => (this.axisSelector = r)}
+        isOpen={this.state.isAxisSelectorOpen}
+        closeSelector={this.closeSelector}
+      >
+        <rect
+          className={`axis-label-border ${this.props.hidden ? 'hidden' : ''}`}
+          data-test='axis-label-border'
+          onClick={this.openSelector}
+          fill='transparent'
+          stroke='transparent'
+          strokeWidth='1px'
+          rx='4'
+        />
+      </AxisSelector>
     )
   }
 
@@ -488,7 +508,7 @@ export default class Axis extends Component {
     const titleHeight = titleBBox?.height ?? 0
     const titleWidth = titleBBox?.width ?? 0
 
-    select(this.axisSelector?.ref?.popoverRef)
+    select(this.axisSelector)
       .attr('width', titleWidth + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT)
       .attr('height', titleHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP)
       .attr('x', titleBBox?.x - this.AXIS_TITLE_BORDER_PADDING_LEFT)

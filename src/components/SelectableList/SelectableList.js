@@ -58,7 +58,11 @@ export default class SelectableList extends React.Component {
         newSelected = this.interpolateArray(currentFirstSelected, index)
       }
 
-      const newSelectedItems = newSelected.map((selectedIndex) => this.props.items[selectedIndex])
+      const newSelectedItems = newSelected.map((selectedIndex) => {
+        return {
+          ...this.props.items[selectedIndex],
+        }
+      })
       this.props.onSelect(newSelected, newSelectedItems)
       this.setState({ selected: newSelected })
     } else {
@@ -84,7 +88,7 @@ export default class SelectableList extends React.Component {
       ...item,
       checked: true,
     }))
-    this.props.onChange(items)
+    this.props.onChange(items, items, true)
   }
 
   unCheckAll = () => {
@@ -92,15 +96,17 @@ export default class SelectableList extends React.Component {
       ...item,
       checked: false,
     }))
-    this.props.onChange(items)
+    this.props.onChange(items, items, false)
   }
 
   handleMultipleCheck = (items) => {
     const { selected } = this.state
     const allItemsChecked = selected.every((index) => items[index].checked)
 
+    let checked = true
     const newItems = this.props.items.map((item, i) => {
       if (allItemsChecked && selected.includes(i)) {
+        checked = false
         return {
           ...item,
           checked: false,
@@ -114,7 +120,7 @@ export default class SelectableList extends React.Component {
       return item
     })
 
-    this.props.onChange(newItems)
+    this.props.onChange(newItems, selected, checked)
   }
 
   render = () => {
@@ -146,7 +152,6 @@ export default class SelectableList extends React.Component {
                           } else {
                             this.checkAll()
                           }
-                          this.props.onChange(items)
                         }}
                       />
                     </div>
@@ -156,51 +161,52 @@ export default class SelectableList extends React.Component {
               })}
             </div>
           )}
-          {items.map((item, index) => {
-            return (
-              <div
-                key={`list-item-${uuid()}`}
-                className={`react-autoql-list-item
+          {!!items?.length &&
+            items.map((item, index) => {
+              return (
+                <div
+                  key={`list-item-${uuid()}`}
+                  className={`react-autoql-list-item
                 ${this.state.selected.includes(index) ? 'selected' : ''}
                 ${item.checked ? 'checked' : ''}`}
-                onClick={(e) => {
-                  if (e.shiftKey) {
-                    this.handleShiftSelect(index, item)
-                  } else if (e.ctrlKey || e.metaKey) {
-                    this.handleCtrlSelect(index, item)
-                  } else {
-                    this.props.onSelect([index], [item])
-                    this.setState({ selected: [index] })
-                  }
-                }}
-              >
-                <div>{item.content} </div>
-                <div>
-                  <Checkbox
-                    checked={item.checked}
-                    onChange={() => {
-                      if (this.state.selected.length > 1 && this.state.selected.includes(index)) {
-                        this.handleMultipleCheck(items)
-                      } else {
-                        const newItems = items.map((newItem, i) => {
-                          if (index === i) {
-                            return {
-                              ...newItem,
-                              checked: !newItem.checked,
+                  onClick={(e) => {
+                    if (e.shiftKey) {
+                      this.handleShiftSelect(index, item)
+                    } else if (e.ctrlKey || e.metaKey) {
+                      this.handleCtrlSelect(index, item)
+                    } else {
+                      this.props.onSelect([index], [item])
+                      this.setState({ selected: [index] })
+                    }
+                  }}
+                >
+                  <div>{item.content}</div>
+                  <div>
+                    <Checkbox
+                      checked={item.checked}
+                      onChange={() => {
+                        if (this.state.selected.length > 1 && this.state.selected.includes(index)) {
+                          this.handleMultipleCheck(items)
+                        } else {
+                          const newItems = items.map((newItem, i) => {
+                            if (index === i) {
+                              return {
+                                ...newItem,
+                                checked: !newItem.checked,
+                              }
                             }
-                          }
 
-                          return newItem
-                        })
+                            return newItem
+                          })
 
-                        this.props.onChange(newItems)
-                      }
-                    }}
-                  />
+                          this.props.onChange(newItems, [item], !item.checked)
+                        }
+                      }}
+                    />
+                  </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
         </div>
       </ErrorBoundary>
     )

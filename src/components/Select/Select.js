@@ -44,10 +44,17 @@ export default class Select extends React.Component {
     return (
       <ErrorBoundary>
         <Popover
+          id={`select-popover-${this.ID}`}
+          key={`select-popover-${this.ID}`}
           isOpen={this.state.isOpen}
-          positions={['bottom']} // if you'd like, supply an array of preferred positions ordered by priority
+          positions={this.props.positions ?? ['bottom']}
+          align={this.props.align}
           padding={0}
-          onClickOutside={() => {
+          clickOutsideCapture={false}
+          parentElement={this.props.parentElement}
+          onClickOutside={(e) => {
+            e.stopPropagation()
+            e.preventDefault()
             this.setState({ isOpen: false })
           }}
           content={({ position, nudgedLeft, nudgedTop, targetRect, popoverRect }) => {
@@ -69,7 +76,9 @@ export default class Select extends React.Component {
                       <li
                         key={`select-option-${this.ID}-${option.value}`}
                         className={`react-autoql-select-option${option.value === this.props.value ? ' active' : ''}`}
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          e.preventDefault()
                           this.setState({ isOpen: false })
                           this.props.onChange(option.value)
                         }}
@@ -88,7 +97,10 @@ export default class Select extends React.Component {
           <div
             className={`react-autoql-select ${this.props.className}`}
             data-test='react-autoql-select'
-            onClick={() => this.setState({ isOpen: !this.state.isOpen })}
+            onClick={(e) => {
+              e.stopPropagation()
+              this.setState({ isOpen: !this.state.isOpen })
+            }}
             style={this.props.style}
           >
             {_get(

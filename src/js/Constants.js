@@ -76,12 +76,12 @@ export const AGG_TYPES = [
   {
     displayName: 'Sum',
     value: 'sum',
-    tooltip: '<strong>Sum:</strong> Values that have the same label will be added up.',
+    tooltip: '<strong>Sum:</strong> Values that have the same chart axis label will be added up.',
   },
   {
     displayName: 'Average',
     value: 'avg',
-    tooltip: '<strong>Average:</strong> Values that have the same label will be averaged.',
+    tooltip: '<strong>Average:</strong> Values that have the same chart axis label will be averaged.',
   },
   // {
   //   displayName: 'Median',

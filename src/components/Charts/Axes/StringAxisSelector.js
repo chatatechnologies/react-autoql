@@ -1,24 +1,13 @@
 import React from 'react'
 import { Popover } from 'react-tiny-popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
+import { v4 as uuid } from 'uuid'
 
 export default class StringAxisSelector extends React.Component {
   constructor(props) {
     super(props)
 
-    this.state = {
-      isOpen: false,
-    }
-  }
-
-  openSelector = () => {
-    this.setState({ isOpen: true })
-  }
-
-  closeSelector = () => {
-    if (this.state.isOpen) {
-      this.setState({ isOpen: false })
-    }
+    this.COMPONENT_KEY = uuid()
   }
 
   renderSelectorContent = ({ position, childRect, popoverRect }) => {
@@ -57,7 +46,7 @@ export default class StringAxisSelector extends React.Component {
                   className={`string-select-list-item ${colIndex === this.props.stringColumnIndex ? 'active' : ''}`}
                   key={`string-column-select-${i}`}
                   onClick={() => {
-                    this.closeSelector()
+                    this.props.closeSelector()
                     this.props.changeStringColumnIndex(colIndex)
                   }}
                 >
@@ -74,10 +63,11 @@ export default class StringAxisSelector extends React.Component {
   render = () => {
     return (
       <Popover
-        isOpen={this.state.isOpen}
-        ref={(r) => (this.popoverRef = r)}
+        id={`string-axis-selector-${this.COMPONENT_KEY}`}
+        ref={this.props.axisSelectorRef}
+        isOpen={this.props.isOpen}
         content={this.renderSelectorContent}
-        onClickOutside={this.closeSelector}
+        onClickOutside={this.props.closeSelector}
         parentElement={this.props.popoverParentElement}
         boundaryElement={this.props.popoverParentElement}
         positions={this.props.positions}
@@ -85,16 +75,7 @@ export default class StringAxisSelector extends React.Component {
         reposition={true}
         padding={10}
       >
-        <rect
-          {...this.props.childProps}
-          className={`axis-label-border ${this.props.hidden ? 'hidden' : ''}`}
-          data-test='axis-label-border'
-          onClick={this.openSelector}
-          fill='transparent'
-          stroke='transparent'
-          strokeWidth='1px'
-          rx='4'
-        />
+        {this.props.children}
       </Popover>
     )
   }
