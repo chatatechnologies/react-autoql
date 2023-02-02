@@ -280,20 +280,22 @@ export default class NumberAxisSelector extends React.Component {
       return null
     }
 
-    let maxHeight = 300
+    const maxHeight = 300
     const minHeight = 100
-    const padding = 100
+    // const padding = 100
 
-    const chartHeight = this.props.chartContainerRef?.clientHeight
-    if (chartHeight && chartHeight > minHeight + padding) {
-      maxHeight = chartHeight - padding
-    } else if (chartHeight && chartHeight < minHeight + padding) {
-      maxHeight = minHeight
-    }
+    // const chartHeight = this.props.chartContainerRef?.clientHeight
+    // if (chartHeight && chartHeight > minHeight + padding) {
+    //   maxHeight = chartHeight - padding
+    // } else if (chartHeight && chartHeight < minHeight + padding) {
+    //   maxHeight = minHeight
+    // }
 
-    if (maxHeight > Window.innerHeight) {
-      maxHeight = Window.innerHeight
-    }
+    // if (maxHeight > 300) {
+    //   maxHeight = 300
+    // } else if (maxHeight > Window.innerHeight) {
+    //   maxHeight = Window.innerHeight
+    // }
 
     return (
       <div
@@ -357,9 +359,9 @@ export default class NumberAxisSelector extends React.Component {
       <div className='axis-series-selector'>
         <h4>Fields</h4>
         <div className='axis-series-selector-scroll-container'>
-          <CustomScrollbars autoHide={false}>
+          <div className='number-selector-field-group-container'>
             {!!currencyColumns.length && (
-              <Fragment>
+              <div className='number-selector-field-group'>
                 <div className='number-selector-header'>
                   <div className='number-selector-header-title'>
                     {this.state.columns && this.props.legendColumn !== undefined ? (
@@ -382,19 +384,21 @@ export default class NumberAxisSelector extends React.Component {
                     />
                   </div>
                 </div>
-                <SelectableList
-                  ref={(r) => (this.currencySelectRef = r)}
-                  items={currencyListItems}
-                  onSelect={this.onColumnSelection}
-                  onChange={(allColumns, changedColumns, checked) =>
-                    this.onColumnCheck(allColumns, changedColumns, checked, COLUMN_TYPES.CURRENCY)
-                  }
-                />
-              </Fragment>
+                <CustomScrollbars autoHide={false} autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
+                  <SelectableList
+                    ref={(r) => (this.currencySelectRef = r)}
+                    items={currencyListItems}
+                    onSelect={this.onColumnSelection}
+                    onChange={(allColumns, changedColumns, checked) =>
+                      this.onColumnCheck(allColumns, changedColumns, checked, COLUMN_TYPES.CURRENCY)
+                    }
+                  />
+                </CustomScrollbars>
+              </div>
             )}
 
             {!!quantityColumns.length && (
-              <Fragment>
+              <div className='number-selector-field-group'>
                 <div className='number-selector-header'>
                   <div className='number-selector-header-title'>
                     {this.state.columns && this.props.legendColumn !== undefined ? (
@@ -417,19 +421,21 @@ export default class NumberAxisSelector extends React.Component {
                     />
                   </div>
                 </div>
-                <SelectableList
-                  ref={(r) => (this.quantitySelectRef = r)}
-                  items={quantityListItems}
-                  onSelect={this.onColumnSelection}
-                  onChange={(allColumns, changedColumns, checked) =>
-                    this.onColumnCheck(allColumns, changedColumns, checked, COLUMN_TYPES.QUANTITY)
-                  }
-                />
-              </Fragment>
+                <CustomScrollbars autoHide={false} autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
+                  <SelectableList
+                    ref={(r) => (this.quantitySelectRef = r)}
+                    items={quantityListItems}
+                    onSelect={this.onColumnSelection}
+                    onChange={(allColumns, changedColumns, checked) =>
+                      this.onColumnCheck(allColumns, changedColumns, checked, COLUMN_TYPES.QUANTITY)
+                    }
+                  />
+                </CustomScrollbars>
+              </div>
             )}
 
             {!!ratioColumns.length && (
-              <Fragment>
+              <div className='number-selector-field-group'>
                 <div className='number-selector-header'>
                   <div className='number-selector-header-title'>
                     {this.state.columns && this.props.legendColumn !== undefined ? (
@@ -453,17 +459,19 @@ export default class NumberAxisSelector extends React.Component {
                     />
                   </div>
                 </div>
-                <SelectableList
-                  ref={(r) => (this.ratioSelectRef = r)}
-                  items={ratioListItems}
-                  onSelect={this.onColumnSelection}
-                  onChange={(allColumns, changedColumns, checked) =>
-                    this.onColumnCheck(allColumns, changedColumns, checked, COLUMN_TYPES.RATIO)
-                  }
-                />
-              </Fragment>
+                <CustomScrollbars autoHide={false} autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
+                  <SelectableList
+                    ref={(r) => (this.ratioSelectRef = r)}
+                    items={ratioListItems}
+                    onSelect={this.onColumnSelection}
+                    onChange={(allColumns, changedColumns, checked) =>
+                      this.onColumnCheck(allColumns, changedColumns, checked, COLUMN_TYPES.RATIO)
+                    }
+                  />
+                </CustomScrollbars>
+              </div>
             )}
-          </CustomScrollbars>
+          </div>
         </div>
       </div>
     )

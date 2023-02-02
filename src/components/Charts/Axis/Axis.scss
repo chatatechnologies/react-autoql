@@ -43,8 +43,10 @@ g.legendOrdinal tspan {
 // }
 
 .number-axis-selector-popover {
-  height: 350px;
-  width: 400px;
+  height: 'auto';
+  width: 'auto';
+  // height: 350px;
+  // width: 400px;
   overflow: hidden;
 
   .number-axis-selector-popover-content {
@@ -60,6 +62,19 @@ g.legendOrdinal tspan {
       margin-top: 5px;
       margin-bottom: 15px;
     }
+
+    .number-selector-field-group-container {
+      display: flex;
+      flex-direction: row;
+
+      .number-selector-field-group {
+        max-width: 300px;
+      }
+    }
+
+    // .react-autoql-list-item:not(.checked) .agg-type-symbol {
+    //   display: none;
+    // }
 
     .axis-agg-type-selector {
       width: 175px;
