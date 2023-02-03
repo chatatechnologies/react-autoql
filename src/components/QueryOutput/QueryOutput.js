@@ -559,7 +559,11 @@ export class QueryOutput extends React.Component {
     } else {
       const columns = cols || this.getColumns()
       this.tableID = uuid()
-      this.tableData = sortDataByDate(this.queryResponse?.data?.data?.rows, columns)
+      if (!this.isDataLimited()) {
+        this.tableData = sortDataByDate(this.queryResponse?.data?.data?.rows, columns, 'desc', 'isTable')
+      } else {
+        this.tableData = this.queryResponse?.data?.data?.rows
+      }
 
       this.setTableConfig()
       if (this._isMounted) {
@@ -1347,7 +1351,7 @@ export class QueryOutput extends React.Component {
 
   setSorterFunction = (col) => {
     if (col.type === 'DATE' || col.type === 'DATE_STRING') {
-      return (a, b) => dateSortFn(b, a)
+      return (a, b) => dateSortFn(a, b, col, 'isTable')
     } else if (col.type === 'STRING') {
       // There is some bug in tabulator where its not sorting
       // certain columns. This explicitly sets the sorter so
@@ -1507,8 +1511,10 @@ export class QueryOutput extends React.Component {
           return map
         }, {})
 
+      const origDateColumn = columns[dateColumnIndex]
+
       const pivotMonthColumn = {
-        ...columns[dateColumnIndex],
+        ...origDateColumn,
         title: 'Month',
         name: 'Month',
         field: '0',
@@ -1517,10 +1523,10 @@ export class QueryOutput extends React.Component {
         is_visible: true,
         type: 'DATE_STRING',
         datePivot: true,
-        origColumn: columns[dateColumnIndex],
+        origColumn: origDateColumn,
         pivot: true,
         cssClass: 'pivot-category',
-        sorter: dateSortFn,
+        sorter: (a, b) => dateSortFn(a, b, origDateColumn, 'isTable'),
         headerFilter: false,
         headerFilterPlaceholder: 'filter...',
       }
@@ -1608,7 +1614,7 @@ export class QueryOutput extends React.Component {
 
       const { legendColumnIndex, stringColumnIndex, numberColumnIndex } = this.tableConfig
 
-      let uniqueValues0 = sortDataByDate(tableData, columns)
+      let uniqueValues0 = sortDataByDate(tableData, columns, 'desc', 'isTable')
         .map((d) => d[stringColumnIndex])
         .filter(onlyUnique)
         .reduce((map, title, i) => {
@@ -1616,7 +1622,7 @@ export class QueryOutput extends React.Component {
           return map
         }, {})
 
-      let uniqueValues1 = sortDataByDate(tableData, columns)
+      let uniqueValues1 = sortDataByDate(tableData, columns, 'desc', 'isTable')
         .map((d) => d[legendColumnIndex])
         .filter(onlyUnique)
         .reduce((map, title, i) => {

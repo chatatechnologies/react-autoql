@@ -6,11 +6,12 @@ import dayjs from './dayjsWithPlugins'
 import {
   CHART_TYPES,
   TABLE_TYPES,
-  WEEKDAY_NAMES,
+  WEEKDAY_NAMES_MON,
   MONTH_NAMES,
   SEASON_NAMES,
   TIMESTAMP_FORMATS,
   PRECISION_TYPES,
+  WEEKDAY_NAMES_SUN,
 } from './Constants'
 import { dataFormattingDefault } from '../props/defaults'
 
@@ -22,6 +23,7 @@ import {
   getStringColumnIndices,
   isColumnDateType,
 } from '../components/QueryOutput/columnHelpers'
+import { findIndex } from 'lodash'
 
 export const onlyUnique = (value, index, self) => {
   return self.indexOf(value) === index
@@ -52,33 +54,29 @@ export const getCurrencySymbol = (dataFormatting) => {
   }
 }
 
-export const isDayJSDateValid = (date) => {
-  return date !== 'Invalid Date'
-}
-
-export const formatDateType = (element, column = {}, config = {}, precision) => {
+export const formatDateType = (element, column = {}, config = {}) => {
   const isInteger = !isNaN(Number(element))
-  if (config.timestampFormat === TIMESTAMP_FORMATS.iso8601 && column.precision && !isInteger) {
-    return formatISODateWithPrecision(element, column, config, precision)
+  if (column.precision && !isInteger) {
+    return formatISODateWithPrecision(element, column, config)
   }
 
   return formatEpochDate(element, column, config)
 }
 
 export const formatDateStringType = (element, column = {}, config = {}) => {
-  if (config.timestampFormat === TIMESTAMP_FORMATS.iso8601 && column.precision) {
+  if (column.precision) {
     return formatStringDateWithPrecision(element, column, config)
   }
 
   return formatStringDate(element, config)
 }
 
-export const formatISODateWithPrecision = (value, col = {}, config = {}, customPrecision) => {
+export const formatISODateWithPrecision = (value, col = {}, config = {}) => {
   if (!value) {
     return undefined
   }
 
-  const precision = customPrecision ?? col.precision
+  const precision = col.precision
   const dayMonthYearFormat = config.dayMonthYearFormat || dataFormattingDefault.dayMonthYearFormat
   const dateDayJS = dayjs(value).utc()
 
@@ -158,6 +156,10 @@ export const formatEpochDate = (value, col = {}, config = {}) => {
       dayJSObj = dayjs.unix(value).utc()
     }
 
+    if (!dayJSObj.isValid()) {
+      return value
+    }
+
     let date = dayJSObj.format(dayMonthYear)
 
     if (isNaN(parseFloat(value))) {
@@ -174,15 +176,78 @@ export const formatEpochDate = (value, col = {}, config = {}) => {
       date = dayJSObj.format(monthYear)
     }
 
-    if (isDayJSDateValid(date)) {
-      return date
-    }
-
-    return value
+    return date
   } catch (error) {
     console.error(error)
     return value
   }
+}
+
+const formatDOW = (value, col) => {
+  let dowStyle = col.dow_style
+
+  if (!dowStyle) {
+    dowStyle = 'NUM_1_MON'
+  }
+
+  let formattedValue = value
+  let weekdayNumber = Number(value)
+  switch (dowStyle) {
+    case 'NUM_1_MON': {
+      const weekdays = WEEKDAY_NAMES_MON
+      const index = weekdayNumber - 1
+      if (index >= 0) {
+        formattedValue = weekdays[index]
+      } else {
+        console.warn(`dow style is NUM_1_MON but the value could not be converted to a number: ${value}`)
+      }
+      break
+    }
+    case 'NUM_1_SUN': {
+      const weekdays = WEEKDAY_NAMES_SUN
+      const index = weekdayNumber - 1
+      if (index >= 0) {
+        formattedValue = weekdays[index]
+      } else {
+        console.warn(`dow style is NUM_1_SUN but the value could not be converted to a number: ${value}`)
+      }
+      break
+    }
+    case 'NUM_0_MON': {
+      const weekdays = WEEKDAY_NAMES_MON
+      if (weekdayNumber >= 0) {
+        formattedValue = weekdays[weekdayNumber]
+      } else {
+        console.warn(`dow style is NUM_0_MON but the value could not be converted to a number: ${value}`)
+      }
+      break
+    }
+    case 'NUM_0_SUN': {
+      const weekdays = WEEKDAY_NAMES_SUN
+      if (weekdayNumber >= 0) {
+        formattedValue = weekdays[weekdayNumber]
+      } else {
+        console.warn(`dow style is NUM_0_SUN but the value could not be converted to a number: ${value}`)
+      }
+      break
+    }
+    case 'ALPHA_MON':
+    case 'ALPHA_SUN': {
+      const weekday = WEEKDAY_NAMES_MON.find((weekday) => weekday.toLowerCase().includes(value.toLowerCase()))
+      if (weekday) {
+        formattedValue = weekday
+      } else {
+        console.warn(`dow style is ALPHA but the value could not be matched to a weekday name: ${value}`)
+      }
+      break
+    }
+    default: {
+      console.warn(`could not format dow value. dow_style was not recognized: ${col.dow_style}`)
+      break
+    }
+  }
+
+  return formattedValue
 }
 
 export const formatStringDateWithPrecision = (value, col, config = {}) => {
@@ -194,22 +259,26 @@ export const formatStringDateWithPrecision = (value, col, config = {}) => {
   try {
     switch (col.precision) {
       case 'DOW': {
-        if (!isNaN(value) && value >= 1 && value <= 7) {
-          formattedValue = WEEKDAY_NAMES[value - 1]
-        }
+        formattedValue = formatDOW(value, col)
         break
       }
       case 'HOUR': {
         const dayjsTime = dayjs(value, 'THH:mm:ss.SSSZ').utc()
-        formattedValue = dayjsTime.format('h:00A')
+        if (dayjsTime.isValid()) {
+          formattedValue = dayjsTime.format('h:00A')
+        }
         break
       }
       case 'MINUTE': {
         const dayjsTime = dayjs(value, 'THH:mm:ss.SSSZ').utc()
-        formattedValue = dayjsTime.format('h:mmA')
+        if (dayjsTime.isValid()) {
+          formattedValue = dayjsTime.format('h:mmA')
+        }
         break
       }
       case 'MONTH': {
+        // This shouldnt be an ISO string since its a DATE_STRING, but
+        // if it is valid, we should use it
         formattedValue = value
         break
       }
@@ -248,22 +317,21 @@ export const formatStringDate = (value, config) => {
     const dayMonthYear = dayMonthYearFormat || dataFormattingDefault.dayMonthYearFormat
     const dayJSObj = dayjs(value).utc()
 
+    if (!dayJSObj.isValid()) {
+      return value
+    }
+
+    let date = value
     if (day) {
-      const date = dayJSObj.format(dayMonthYear)
-      if (isDayJSDateValid(date)) {
-        return date
-      }
+      date = dayJSObj.format(dayMonthYear)
     } else if (month) {
-      const date = dayJSObj.format(monthYear)
-      if (isDayJSDateValid(date)) {
-        return date
-      }
+      date = dayJSObj.format(monthYear)
     } else if (week) {
       // dayjs doesn't format this correctly
-      return value
     } else if (year) {
-      return year
+      date = year
     }
+    return date
   }
 
   // Unable to parse...
@@ -362,14 +430,14 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
 }
 
 export const getDayJSObj = ({ value, column, config }) => {
-  if (config.timestampFormat === TIMESTAMP_FORMATS.iso8601 && column.precision) {
+  if (column.precision || !isNaN(Number(value))) {
     return dayjs(value).utc()
   }
 
   return dayjs.unix(value).utc()
 }
 
-export const formatElement = ({ element, column, config = {}, htmlElement, precision, isChart }) => {
+export const formatElement = ({ element, column, config = {}, htmlElement, isChart }) => {
   try {
     let formattedElement = element
     const { currencyCode, languageCode, currencyDecimals, quantityDecimals } = config
@@ -425,7 +493,7 @@ export const formatElement = ({ element, column, config = {}, htmlElement, preci
           break
         }
         case 'DATE': {
-          formattedElement = formatDateType(element, column, config, precision)
+          formattedElement = formatDateType(element, column, config)
           break
         }
         case 'DATE_STRING': {
@@ -1062,7 +1130,91 @@ export const removeFromDOM = (elem) => {
   }
 }
 
-export const dateSortFn = (a, b) => {
+const dateStringSortFnWithoutPrecision = (a, b) => {
+  // If one is a YYYY-WW
+  if (a.includes('-W')) {
+    const aDateYear = a.substring(0, 4)
+    const bDateYear = b.substring(0, 4)
+    if (aDateYear !== bDateYear) {
+      return aDateYear - bDateYear
+    } else {
+      const aDateWeek = a.substring(6, 8)
+      const bDateWeek = b.substring(6, 8)
+      return aDateWeek - bDateWeek
+    }
+  }
+  // If one is a weekday name
+  else if (WEEKDAY_NAMES_MON.includes(a.trim())) {
+    const aDayIndex = WEEKDAY_NAMES_MON.findIndex((d) => d.toLowerCase().includes(a.trim().toLowerCase()))
+    const bDayIndex = WEEKDAY_NAMES_MON.findIndex((d) => d.toLowerCase().includes(b.trim().toLowerCase()))
+
+    let sortValue = a - b
+    if (aDayIndex >= 0 && bDayIndex >= 0) {
+      sortValue = aDayIndex - bDayIndex
+    }
+
+    return sortValue
+  }
+  // If one is a month name
+  else if (MONTH_NAMES.includes(a.trim())) {
+    const aMonthIndex = MONTH_NAMES.findIndex((m) => m === a.trim())
+    const bMonthIndex = MONTH_NAMES.findIndex((m) => m === b.trim())
+    if (aMonthIndex >= 0 && bMonthIndex >= 0) {
+      return bMonthIndex - aMonthIndex
+    }
+    return a - b
+  } else if (SEASON_NAMES.includes(a.substr(0, 2))) {
+    const aSeasonIndex = SEASON_NAMES.findIndex((s) => s === a.substr(0, 2))
+    const bSeasonIndex = SEASON_NAMES.findIndex((s) => s === b.substr(0, 2))
+    const aYear = Number(a.substr(2))
+    const bYear = Number(b.substr(2))
+
+    if (aYear === bYear) {
+      return aSeasonIndex - bSeasonIndex
+    }
+
+    return aYear - bYear
+  }
+
+  return a - b
+}
+
+export const dateStringSortFn = (a, b, col = {}) => {
+  switch (col.precision) {
+    case 'DOW': {
+      const dowStyle = col.dow_style ?? 'ALPHA_MON'
+      let aIndex = WEEKDAY_NAMES_MON.findIndex((dow) => dow.toLowerCase().includes(a.toLowerCase()))
+      let bIndex = WEEKDAY_NAMES_MON.findIndex((dow) => dow.toLowerCase().includes(b.toLowerCase()))
+      if (dowStyle === 'ALPHA_SUN') {
+        aIndex = WEEKDAY_NAMES_SUN.findIndex((dow) => dow.toLowerCase().includes(a.toLowerCase()))
+        bIndex = WEEKDAY_NAMES_SUN.findIndex((dow) => dow.toLowerCase().includes(b.toLowerCase()))
+      }
+
+      return aIndex - bIndex
+    }
+    case 'HOUR':
+    case 'MINUTE': {
+      const aDayjsTime = dayjs(a, 'THH:mm:ss.SSSZ').utc()
+      const bDayjsTime = dayjs(b, 'THH:mm:ss.SSSZ').utc()
+      return aDayjsTime.unix() - bDayjsTime.unix()
+    }
+    case 'MONTH': {
+      MONTH_NAMES
+      const aMonthIndex = MONTH_NAMES.findIndex((m) => m.toLowerCase() === a.trim().toLowerCase())
+      const bMonthIndex = MONTH_NAMES.findIndex((m) => m.toLowerCase() === b.trim().toLowerCase())
+      return aMonthIndex - bMonthIndex
+    }
+    default: {
+      // If precision is unknown or not specified, default
+      // to the way we use to sort this type of data:
+      return dateStringSortFnWithoutPrecision(a, b)
+    }
+  }
+
+  return a - b
+}
+
+export const dateSortFn = (a, b, col = {}, isTable) => {
   try {
     if (!a && !b) {
       return 0
@@ -1076,83 +1228,45 @@ export const dateSortFn = (a, b) => {
     let aDate = Number(a)
     let bDate = Number(b)
 
+    let sortValue = aDate - bDate
+
     // If one is not a number, use dayjs to format
     if (isNaN(aDate) || isNaN(bDate)) {
-      aDate = dayjs(a).unix()
-      bDate = dayjs(b).unix()
-    }
-
-    // Finally if all else fails, just compare the 2 values directly
-    if (!aDate || !bDate) {
-      // If one is a YYYY-WW
-      if (a.includes('-W')) {
-        const aDateYear = a.substring(0, 4)
-        const bDateYear = b.substring(0, 4)
-        if (aDateYear !== bDateYear) {
-          return bDateYear - aDateYear
-        } else {
-          const aDateWeek = a.substring(6, 8)
-          const bDateWeek = b.substring(6, 8)
-          return bDateWeek - aDateWeek
-        }
-      }
-      // If one is a weekday name
-      else if (WEEKDAY_NAMES.includes(a.trim())) {
-        // const multiplier = isChart ? -1 : 1
-
-        const aDayIndex = WEEKDAY_NAMES.findIndex((d) => d === a.trim())
-        const bDayIndex = WEEKDAY_NAMES.findIndex((d) => d === b.trim())
-
-        let sortValue = a - b
-        if (aDayIndex >= 0 && bDayIndex >= 0) {
-          sortValue = aDayIndex - bDayIndex
-        }
-
-        return sortValue * multiplier
-      }
-      // If one is a month name
-      else if (MONTH_NAMES.includes(a.trim())) {
-        const aMonthIndex = MONTH_NAMES.findIndex((m) => m === a.trim())
-        const bMonthIndex = MONTH_NAMES.findIndex((m) => m === b.trim())
-        if (aMonthIndex >= 0 && bMonthIndex >= 0) {
-          return bMonthIndex - aMonthIndex
-        }
-        return b - a
-      } else if (SEASON_NAMES.includes(a.substr(0, 2))) {
-        const aSeasonIndex = SEASON_NAMES.findIndex((s) => s === a.substr(0, 2))
-        const bSeasonIndex = SEASON_NAMES.findIndex((s) => s === b.substr(0, 2))
-        const aYear = Number(a.substr(2))
-        const bYear = Number(b.substr(2))
-
-        if (aYear === bYear) {
-          return bSeasonIndex - aSeasonIndex
-        }
-
-        return bYear - aYear
+      if (col.type === 'DATE_STRING') {
+        sortValue = dateStringSortFn(a, b, col)
+      } else {
+        sortValue = dayjs(a).unix() - dayjs(b).unix()
       }
     }
-    return bDate - aDate
+
+    if (isTable && col.precision === 'DOW') {
+      sortValue = -1 * sortValue
+    }
+    return sortValue
   } catch (error) {
     console.error(error)
     return -1
   }
 }
 
-export const sortDataByDate = (data, tableColumns, reverse) => {
+export const sortDataByDate = (data, tableColumns, sortDirection = 'desc', isTable) => {
   try {
     if (!data || typeof data !== 'object') {
       return data
     }
+
     const dateColumnIndex = getDateColumnIndex(tableColumns)
+    const dateColumn = tableColumns[dateColumnIndex]
+
     if (dateColumnIndex >= 0) {
-      let sortedData
-      if (!reverse) {
-        sortedData = [...data].sort((a, b) => dateSortFn(a[dateColumnIndex], b[dateColumnIndex]))
-      } else {
-        sortedData = [...data].sort((a, b) => -1 * dateSortFn(a[dateColumnIndex], b[dateColumnIndex]))
-      }
+      let multiplier = sortDirection === 'desc' ? -1 : 1
+      const sortedData = [...data].sort(
+        (a, b) => multiplier * dateSortFn(a[dateColumnIndex], b[dateColumnIndex], dateColumn, isTable),
+      )
+
       return sortedData
     }
+
     return data
   } catch (error) {
     console.error(error)

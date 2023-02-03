@@ -81,10 +81,12 @@ export const getPrecisionForDayJS = (colPrecision) => {
     case PRECISION_TYPES.QUARTER: {
       return 'quarter'
     }
-    case PRECISION_TYPES.HOUR || PRECISION_TYPES.DATE_HOUR: {
+    case PRECISION_TYPES.HOUR:
+    case PRECISION_TYPES.DATE_HOUR: {
       return 'hour'
     }
-    case PRECISION_TYPES.MINUTE || PRECISION_TYPES.DATE_MINUTE: {
+    case PRECISION_TYPES.MINUTE:
+    case PRECISION_TYPES.DATE_MINUTE: {
       return 'minute'
     }
     default: {

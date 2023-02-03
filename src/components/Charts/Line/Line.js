@@ -134,7 +134,7 @@ export default class Line extends Component {
               key={`hover-circle-${getKey(colIndex, index)}`}
               cy={cy}
               cx={xScale(d[stringColumnIndex]) + xShift}
-              r={10}
+              r={6}
               style={{
                 stroke: 'transparent',
                 fill: 'transparent',
@@ -181,7 +181,9 @@ export default class Line extends Component {
 
           innerDots.push(
             <g
-              className={`line-dot${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
+              className={`line-dot${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}${
+                shouldShowDots ? '' : ' hidden-dot'
+              }`}
               key={`circle-group-${getKey(colIndex, index)}`}
               onClick={() => this.onDotClick(d, colIndex, index)}
               data-tip={tooltip}

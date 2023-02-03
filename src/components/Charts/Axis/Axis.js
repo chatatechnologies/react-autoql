@@ -72,7 +72,6 @@ export default class Axis extends Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    console.log('AXIS UPDATED')
     const renderJustCompleted = this.state.axisRenderComplete && !prevState.axisRenderComplete
     this.renderAxis(renderJustCompleted)
   }

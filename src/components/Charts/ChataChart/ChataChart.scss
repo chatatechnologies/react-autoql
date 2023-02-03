@@ -109,9 +109,23 @@
 
     .line-dot-inner-circle,
     .line-dot-outer-circle {
-      transition: fill 0.3s ease, stroke 0.3s ease;
       paint-order: stroke;
     }
+
+    &.hidden-dot {
+      .line-dot-inner-circle {
+        transition: opacity 0.2s ease;
+        fill: currentColor !important;
+      }
+    }
+
+    &:not(.hidden-dot) {
+      .line-dot-outer-circle,
+      .line-dot-inner-circle {
+        transition: fill 0.3s ease, stroke 0.3s ease;
+      }
+    }
+
     &:hover .line-dot-inner-circle,
     &.active .line-dot-inner-circle {
       fill: currentColor !important;
