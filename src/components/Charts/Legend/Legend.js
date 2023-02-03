@@ -26,7 +26,6 @@ export default class Legend extends Component {
 
   static propTypes = {
     title: PropTypes.string,
-    legendLabels: PropTypes.arrayOf(PropTypes.shape({})),
     legendColumn: PropTypes.shape({}),
     placement: PropTypes.string,
     onLabelChange: PropTypes.func,
@@ -54,19 +53,7 @@ export default class Legend extends Component {
   componentDidMount = () => {
     // https://d3-legend.susielu.com/
     this.renderAllLegends()
-    // this.forceUpdate()
   }
-
-  // shouldComponentUpdate = (nextProps) => {
-  //   // Only render legend once... unless labels/visibility changed
-  //   if (
-  //     (this.props.placement === 'right' || this.props.placement === 'bottom') &&
-  //     !_isEqual(this.props.legendLabels, nextProps.legendLabels)
-  //   ) {
-  //     return true
-  //   }
-  //   return false
-  // }
 
   componentDidUpdate = () => {
     this.renderAllLegends()
@@ -90,13 +77,16 @@ export default class Legend extends Component {
   }
 
   removeHiddenLegendLabels = (legendElement) => {
+    const self = this
     const legendContainerBBox = this.legendClippingContainer?.getBoundingClientRect()
     const legendBottom = (legendContainerBBox?.y ?? 0) + (legendContainerBBox?.height ?? 0)
     let hasRemovedElement = false
 
+    const filteredLegendLabels = []
+
     select(legendElement)
       .selectAll('.cell')
-      .each(function () {
+      .each(function (label) {
         if (hasRemovedElement) {
           select(this).remove()
         } else {
@@ -107,9 +97,16 @@ export default class Legend extends Component {
             // Setting this to true lets loop skip bounding rect calculation
             // since every cell after this one should be removed
             hasRemovedElement = true
+          } else {
+            const legendLabel = self.legendLabels.find((l) => l.label === label)
+            filteredLegendLabels.push(legendLabel)
           }
         }
       })
+
+    if (filteredLegendLabels?.length) {
+      this.legendLabels = filteredLegendLabels
+    }
   }
 
   styleLegendTitleNoBorder = (legendElement) => {
@@ -159,10 +156,10 @@ export default class Legend extends Component {
     // }
   }
 
-  onClick = (labelText, legendLabels) => {
-    const label = legendLabels?.find((l) => l.label === labelText)
+  onClick = (labelText) => {
+    const label = this.legendLabels?.find((l) => l.label === labelText)
     const isHidingLabel = !label?.hidden
-    const visibleLegendLabels = legendLabels?.filter((l) => !l.hidden)
+    const visibleLegendLabels = this.legendLabels?.filter((l) => !l.hidden)
     const allowClick = !isHidingLabel || visibleLegendLabels?.length > 1
     if (allowClick) {
       this.props.onLegendClick(label)
@@ -172,14 +169,16 @@ export default class Legend extends Component {
   renderLegend = (legendElement, columnIndices, title, isSecondLegend) => {
     try {
       const self = this
-      // const { legendLabels } = this.props
-      const legendLabels = getLegendLabelsForMultiSeries(this.props.columns, this.props.colorScale, columnIndices)
 
-      if (!legendLabels) {
+      if (!this.legendLabels) {
+        this.legendLabels = getLegendLabelsForMultiSeries(this.props.columns, this.props.colorScale, columnIndices)
+      }
+
+      if (!this.legendLabels) {
         return
       }
 
-      const legendScale = this.getLegendScale(legendLabels)
+      const legendScale = this.getLegendScale()
 
       if (this.props.placement === 'right') {
         select(legendElement)
@@ -197,7 +196,7 @@ export default class Legend extends Component {
           .labelOffset(10)
           .scale(legendScale)
           .on('cellclick', function (d) {
-            self.onClick(d, legendLabels)
+            self.onClick(d)
           })
         if (isSecondLegend) {
           legendOrdinal.shape('line')
@@ -240,9 +239,15 @@ export default class Legend extends Component {
             legendWidth = this.MAX_LEGEND_WIDTH
           }
 
-          const axesHeight = this.props.axesRef?.getBoundingClientRect()?.height ?? this.props.height
+          const bottomAxisBBox = getBBoxFromRef(this.props.bottomAxis?.ref)
+          const topAxisBBox = getBBoxFromRef(this.props.topAxis?.ref)
+          const horizontalAxesBBox = mergeBboxes([bottomAxisBBox, topAxisBBox])
+          let maxLegendHeight = horizontalAxesBBox?.height
+          if (!maxLegendHeight) {
+            maxLegendHeight = (this.props.yScale?.range()?.[0] ?? 0) - (this.props.yScale?.range()?.[1] ?? 0)
+          }
           select(this.legendClippingContainer)
-            .attr('height', axesHeight)
+            .attr('height', maxLegendHeight)
             .attr('width', legendWidth + this.LEFT_PADDING)
         }
 
@@ -262,24 +267,25 @@ export default class Legend extends Component {
           .labelAlign('left')
           .scale(legendScale)
           .on('cellclick', function (d) {
-            self.onClick(d, legendLabels)
+            self.onClick(d)
           })
 
         select(this.bottomLegendElement).call(legendOrdinal).style('font-family', 'inherit')
       }
 
-      this.applyStylesForHiddenSeries(legendLabels, legendElement)
+      this.applyStylesForHiddenSeries(legendElement)
     } catch (error) {
       console.error(error)
     }
   }
 
-  applyStylesForHiddenSeries = (legendLabels, legendElement) => {
+  applyStylesForHiddenSeries = (legendElement) => {
+    const self = this
     try {
       select(legendElement)
         .selectAll('.cell')
         .each(function (label) {
-          const legendLabel = legendLabels.find((l) => l.label === label)
+          const legendLabel = self.legendLabels.find((l) => l.label === label)
           if (legendLabel) {
             select(this).select('.swatch').attr('stroke', legendLabel.color).attr('stroke-location', 'outside')
             if (legendLabel.hidden) {
@@ -294,14 +300,14 @@ export default class Legend extends Component {
     }
   }
 
-  getLegendScale = (legendLabels) => {
-    const colorRange = legendLabels.map((obj) => {
+  getLegendScale = () => {
+    const colorRange = this.legendLabels.map((obj) => {
       return obj.color
     })
 
     return scaleOrdinal()
       .domain(
-        legendLabels.map((obj) => {
+        this.legendLabels.map((obj) => {
           return obj.label
         }),
       )

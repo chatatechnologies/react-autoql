@@ -213,7 +213,8 @@ export default class Axes extends React.Component {
         <Legend
           {...this.props}
           ref={(r) => (this.legendRef = r)}
-          axesRef={this.ref}
+          bottomAxis={this.bottomAxis}
+          topAxis={this.topAxis}
           title={this.props.numberAxisTitle}
           title2={this.props.numberAxisTitle2}
           legendColumnIndices={this.props.numberColumnIndices}

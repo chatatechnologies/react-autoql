@@ -768,8 +768,14 @@ export const getTickValues = ({ scale, initialTicks, props, numTicks, innerPaddi
 }
 
 export const mergeBboxes = (boundingBoxes) => {
-  if (!boundingBoxes?.length || !boundingBoxes.find((bbox) => !!bbox)) {
+  const filteredBBoxes = boundingBoxes.filter((bbox) => !!bbox)
+
+  if (!filteredBBoxes?.length) {
     return undefined
+  }
+
+  if (filteredBBoxes.length === 1) {
+    return filteredBBoxes[0]
   }
 
   try {
@@ -778,7 +784,7 @@ export const mergeBboxes = (boundingBoxes) => {
     let maxRight
     let minTop
 
-    boundingBoxes.forEach(({ left, bottom, right, top } = {}) => {
+    filteredBBoxes.forEach(({ left, bottom, right, top } = {}) => {
       if (isNaN(left) || isNaN(bottom) || isNaN(right) || isNaN(top)) {
         return
       }
