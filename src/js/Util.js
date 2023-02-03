@@ -669,13 +669,48 @@ export const supportsDatePivotTable = (columns) => {
   return dateColumn && dateColumn?.display_name?.toLowerCase().includes('month') && columns?.length === 2
 }
 
-export const supportsRegularPivotTable = (columns, dataLength) => {
+export const supportsRegularPivotTable = (columns, dataLength, data) => {
   if (dataLength <= 1) {
     return false
   }
 
-  const hasTwoGroupables = getNumberOfGroupables(columns) === 2
-  return hasTwoGroupables && columns.length >= 3
+  const groupbyColumns = getGroupableColumns(columns)
+  const hasTwoGroupables = groupbyColumns?.length === 2
+
+  if (!hasTwoGroupables) {
+    return false
+  }
+
+  const visibleColumns = getVisibleColumns(columns)
+  const groupbyColumn1Visible = columns[groupbyColumns[0]].is_visible
+  const groupbyColumn2Visible = columns[groupbyColumns[1]].is_visible
+  if (!groupbyColumn1Visible || !groupbyColumn2Visible || !(visibleColumns?.length >= 3)) {
+    return false
+  }
+
+  let uniqueData1Length
+  let uniqueData2Length
+  if (hasTwoGroupables) {
+    const column1Data = data.map((row) => {
+      return row[groupbyColumns[0]]
+    })
+
+    const column2Data = data.map((row) => {
+      return row[groupbyColumns[1]]
+    })
+
+    uniqueData1Length = column1Data?.filter(onlyUnique)?.length ?? 0
+    uniqueData2Length = column2Data?.filter(onlyUnique)?.length ?? 0
+  }
+
+  if (uniqueData1Length > 15 && uniqueData2Length > 15) {
+    console.warn(
+      `Pivot table will not be supported since there are too many unique fields. The calculated dimensions would be: ${uniqueData1Length} x ${uniqueData2Length}`,
+    )
+    return false
+  }
+
+  return true
 }
 
 export const hasDateColumn = (columns) => {
@@ -734,7 +769,7 @@ export const isSingleValueResponse = (response) => {
 
 export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotDataLength, isDataLimited } = {}) => {
   try {
-    if (!_get(response, 'data.data.display_type')) {
+    if (!response?.data?.data?.display_type) {
       return []
     }
     // There should be 3 types: data, suggestion, help
@@ -766,7 +801,7 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
       pivotDataHasLength = !!pivotDataLength
     }
 
-    if (supportsRegularPivotTable(visibleColumns, numRows)) {
+    if (supportsRegularPivotTable(columns, numRows, response?.data?.data?.rows)) {
       // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
       const supportedDisplayTypes = ['table']
 

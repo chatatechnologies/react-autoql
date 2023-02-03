@@ -1878,6 +1878,7 @@ export class QueryOutput extends React.Component {
   }
 
   renderChart = () => {
+    console.log('use pivot data for chart?', this.usePivotDataForChart())
     if (!this.tableData || !this.state.columns || !this.tableConfig) {
       console.error('Required table data was missing')
       return this.renderMessage('Error: There was no data supplied for this chart')
