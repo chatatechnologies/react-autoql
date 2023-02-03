@@ -57,7 +57,8 @@ export const isDayJSDateValid = (date) => {
 }
 
 export const formatDateType = (element, column = {}, config = {}, precision) => {
-  if (config.timestampFormat === TIMESTAMP_FORMATS.iso8601 && column.precision) {
+  const isInteger = !isNaN(Number(element))
+  if (config.timestampFormat === TIMESTAMP_FORMATS.iso8601 && column.precision && !isInteger) {
     return formatISODateWithPrecision(element, column, config, precision)
   }
 
@@ -80,6 +81,11 @@ export const formatISODateWithPrecision = (value, col = {}, config = {}, customP
   const precision = customPrecision ?? col.precision
   const dayMonthYearFormat = config.dayMonthYearFormat || dataFormattingDefault.dayMonthYearFormat
   const dateDayJS = dayjs(value).utc()
+
+  if (!dateDayJS.isValid()) {
+    return value
+  }
+
   let date = dateDayJS.format(dayMonthYearFormat)
 
   try {
