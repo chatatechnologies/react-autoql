@@ -682,30 +682,41 @@ export const supportsRegularPivotTable = (columns, dataLength, data) => {
   }
 
   const visibleColumns = getVisibleColumns(columns)
-  const groupbyColumn1Visible = columns[groupbyColumns[0]].is_visible
-  const groupbyColumn2Visible = columns[groupbyColumns[1]].is_visible
-  if (!groupbyColumn1Visible || !groupbyColumn2Visible || !(visibleColumns?.length >= 3)) {
+  const groupbyColumn1 = columns[groupbyColumns[0]]
+  const groupbyColumn2 = columns[groupbyColumns[1]]
+  if (!groupbyColumn1.is_visible || !groupbyColumn2.is_visible || !(visibleColumns?.length >= 3)) {
     return false
   }
 
-  let uniqueData1Length
-  let uniqueData2Length
-  if (hasTwoGroupables) {
-    const column1Data = data.map((row) => {
-      return row[groupbyColumns[0]]
-    })
+  const column1Data = data.map((row) => {
+    return row[groupbyColumns[0]]
+  })
 
-    const column2Data = data.map((row) => {
-      return row[groupbyColumns[1]]
-    })
+  const column2Data = data.map((row) => {
+    return row[groupbyColumns[1]]
+  })
 
-    uniqueData1Length = column1Data?.filter(onlyUnique)?.length ?? 0
-    uniqueData2Length = column2Data?.filter(onlyUnique)?.length ?? 0
+  const maxLegendLabels = 15
+  const uniqueData1Length = column1Data?.filter(onlyUnique)?.length ?? 0
+  const uniqueData2Length = column2Data?.filter(onlyUnique)?.length ?? 0
+
+  if (uniqueData1Length > maxLegendLabels && uniqueData2Length > maxLegendLabels) {
+    console.debug(
+      `Info: Pivot table will not be supported since there are too many unique fields. The calculated dimensions would be: ${uniqueData1Length} x ${uniqueData2Length}`,
+    )
+    return false
   }
 
-  if (uniqueData1Length > 15 && uniqueData2Length > 15) {
-    console.warn(
-      `Pivot table will not be supported since there are too many unique fields. The calculated dimensions would be: ${uniqueData1Length} x ${uniqueData2Length}`,
+  if (isColumnDateType(groupbyColumn1) && uniqueData2Length > maxLegendLabels) {
+    console.debug(
+      `Info: Pivot table will not be supported since there are too many unique fields. The legend would have ${uniqueData2Length} fields`,
+    )
+    return false
+  }
+
+  if (isColumnDateType(groupbyColumn2) && uniqueData1Length > maxLegendLabels) {
+    console.debug(
+      `Info: Pivot table will not be supported since there are too many unique fields. The legend would have ${uniqueData1Length} fields`,
     )
     return false
   }

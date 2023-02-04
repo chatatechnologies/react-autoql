@@ -1878,9 +1878,8 @@ export class QueryOutput extends React.Component {
   }
 
   renderChart = () => {
-    console.log('use pivot data for chart?', this.usePivotDataForChart())
     if (!this.tableData || !this.state.columns || !this.tableConfig) {
-      console.error('Required table data was missing')
+      console.error('Required table data was missing for chart')
       return this.renderMessage('Error: There was no data supplied for this chart')
     }
 
@@ -1896,6 +1895,12 @@ export class QueryOutput extends React.Component {
       filters: combinedFilters,
     }
 
+    let isChartDataAggregated = false
+    const numberOfGroupbys = getNumberOfGroupables(this.state.columns)
+    if (numberOfGroupbys === 1 || (numberOfGroupbys >= 2 && this.usePivotData)) {
+      isChartDataAggregated = true
+    }
+
     return (
       <ErrorBoundary>
         <ChataChart
@@ -1906,7 +1911,7 @@ export class QueryOutput extends React.Component {
           dataLength={this.tableData.length}
           ref={(ref) => (this.chartRef = ref)}
           type={this.state.displayType}
-          isAggregation={isAggregation(this.state.columns)}
+          isDataAggregated={isChartDataAggregated}
           popoverParentElement={this.props.popoverParentElement}
           {...tableConfig}
           data={

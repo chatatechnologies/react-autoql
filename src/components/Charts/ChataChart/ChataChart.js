@@ -127,7 +127,7 @@ export default class ChataChart extends Component {
   }
 
   getData = (props) => {
-    if (props.isAggregation) {
+    if (props.isDataAggregated) {
       return sortDataByDate(props.data, props.columns, 'asc')
     } else {
       return aggregateData({

@@ -10,7 +10,7 @@ import { symbol, symbolSquare } from 'd3-shape'
 
 import legendColor from '../D3Legend/D3Legend'
 
-import { getBBoxFromRef, removeFromDOM } from '../../../js/Util.js'
+import { deepEqual, getBBoxFromRef, removeFromDOM } from '../../../js/Util.js'
 import { getLegendLabelsForMultiSeries, mergeBboxes } from '../helpers'
 
 export default class Legend extends Component {
@@ -21,6 +21,7 @@ export default class Legend extends Component {
     this.LEGEND_ID = `axis-${uuid()}`
     this.BUTTON_PADDING = 5
     this.LEFT_PADDING = 20
+    this.BOTTOM_PADDING = 10
     this.justMounted = true
   }
 
@@ -55,7 +56,23 @@ export default class Legend extends Component {
     this.renderAllLegends()
   }
 
+  shouldComponentUpdate = (nextProps) => {
+    if (!deepEqual(this.props.columns, nextProps.columns)) {
+      console.log('COLUMNS CHANGED, UPDATING')
+      return true
+    }
+
+    if (this.props.height !== nextProps.height) {
+      console.log('HEIGHT CHANGED, UPDATING')
+      return true
+    }
+
+    console.log('LEGEND NOT UPDATING')
+    return false
+  }
+
   componentDidUpdate = () => {
+    console.log('legend updated!')
     this.renderAllLegends()
   }
 
@@ -77,12 +94,10 @@ export default class Legend extends Component {
   }
 
   removeHiddenLegendLabels = (legendElement) => {
-    const self = this
     const legendContainerBBox = this.legendClippingContainer?.getBoundingClientRect()
     const legendBottom = (legendContainerBBox?.y ?? 0) + (legendContainerBBox?.height ?? 0)
-    let hasRemovedElement = false
 
-    const filteredLegendLabels = []
+    let hasRemovedElement = false
 
     select(legendElement)
       .selectAll('.cell')
@@ -94,19 +109,13 @@ export default class Legend extends Component {
           const cellBottom = (cellBBox?.y ?? 0) + (cellBBox?.height ?? 0)
           if (cellBottom > legendBottom) {
             select(this).remove()
+
             // Setting this to true lets loop skip bounding rect calculation
             // since every cell after this one should be removed
             hasRemovedElement = true
-          } else {
-            const legendLabel = self.legendLabels.find((l) => l.label === label)
-            filteredLegendLabels.push(legendLabel)
           }
         }
       })
-
-    if (filteredLegendLabels?.length) {
-      this.legendLabels = filteredLegendLabels
-    }
   }
 
   styleLegendTitleNoBorder = (legendElement) => {
@@ -170,9 +179,9 @@ export default class Legend extends Component {
     try {
       const self = this
 
-      if (!this.legendLabels) {
-        this.legendLabels = getLegendLabelsForMultiSeries(this.props.columns, this.props.colorScale, columnIndices)
-      }
+      // if (!this.legendLabels) {
+      this.legendLabels = getLegendLabelsForMultiSeries(this.props.columns, this.props.colorScale, columnIndices)
+      // }
 
       if (!this.legendLabels) {
         return
@@ -239,15 +248,9 @@ export default class Legend extends Component {
             legendWidth = this.MAX_LEGEND_WIDTH
           }
 
-          const bottomAxisBBox = getBBoxFromRef(this.props.bottomAxis?.ref)
-          const topAxisBBox = getBBoxFromRef(this.props.topAxis?.ref)
-          const horizontalAxesBBox = mergeBboxes([bottomAxisBBox, topAxisBBox])
-          let maxLegendHeight = horizontalAxesBBox?.height
-          if (!maxLegendHeight) {
-            maxLegendHeight = (this.props.yScale?.range()?.[0] ?? 0) - (this.props.yScale?.range()?.[1] ?? 0)
-          }
+          const maxLegendHeight = (this.props.yScale?.range()?.[0] ?? 0) - (this.props.yScale?.range()?.[1] ?? 0) + 10
           select(this.legendClippingContainer)
-            .attr('height', maxLegendHeight)
+            .attr('height', maxLegendHeight + this.BOTTOM_PADDING)
             .attr('width', legendWidth + this.LEFT_PADDING)
         }
 

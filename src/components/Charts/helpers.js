@@ -493,8 +493,6 @@ export const getBandScale = ({
   return scale
 }
 
-export const scaleTo0 = (scale) => {}
-
 export const getLinearScale = ({
   props,
   minValue,
@@ -739,7 +737,7 @@ export const getTickValues = ({ scale, initialTicks, props, numTicks, innerPaddi
     let newTickValues = [...tickValues]
 
     if (tickSize < minimumTickSize) {
-      // We only want to do this if we doxpnt already want a specific number
+      // We only want to do this if we dont already want a specific number
       // of ticks (numTicks) since it will change the number of ticks
       newTickValues = []
 
@@ -772,10 +770,6 @@ export const mergeBboxes = (boundingBoxes) => {
 
   if (!filteredBBoxes?.length) {
     return undefined
-  }
-
-  if (filteredBBoxes.length === 1) {
-    return filteredBBoxes[0]
   }
 
   try {
