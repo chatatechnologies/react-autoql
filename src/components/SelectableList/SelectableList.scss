@@ -12,6 +12,11 @@
   &.selected {
     background: var(--react-autoql-hover-color);
   }
+
+  &.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
 }
 
 .col-visibility-header {

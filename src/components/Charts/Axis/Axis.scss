@@ -148,7 +148,8 @@ g.legendOrdinal tspan {
     .number-selector-header {
       display: flex;
       justify-content: space-between;
-      padding: 6px 10px;
+      margin-bottom: 5px;
+      padding: 10px;
       margin-right: 8px;
       font-size: 12px;
       border-bottom: 1px solid var(--react-autoql-border-color);
@@ -166,7 +167,7 @@ g.legendOrdinal tspan {
       display: flex;
       flex-direction: column;
       flex: 1;
-      padding: 10px 8px 5px 20px;
+      padding: 18px 8px 5px 20px;
 
       .axis-series-selector-scroll-container {
         flex: 1;

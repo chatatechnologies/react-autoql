@@ -428,7 +428,7 @@ export const getMinAndMaxValues = (data, numberColumnIndices, isScaled, sum, str
 }
 
 export const getLegendLocation = (seriesArray, displayType) => {
-  if (displayType === 'column-line') {
+  if (displayType === 'column_line') {
     return 'right'
   }
 

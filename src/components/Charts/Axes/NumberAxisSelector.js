@@ -52,6 +52,7 @@ export default class NumberAxisSelector extends React.Component {
   // }
 
   componentDidUpdate = (prevProps, prevState) => {
+    console.log('NUMBER AXIS SELECTOR UPDATED')
     this.props.rebuildTooltips()
 
     if (!prevState.isOpen && this.state.isOpen) {
@@ -64,9 +65,11 @@ export default class NumberAxisSelector extends React.Component {
   }
 
   getCheckedFromNumberColumnIndices = (props) => {
-    const checkedColumns1 = props.numberColumnIndices ?? []
-    const checkedColumns2 = this.props.hasSecondAxis ? props.numberColumnIndices2 ?? [] : []
-    return [...checkedColumns1, ...checkedColumns2]
+    if (props.isSecondAxis) {
+      return props.numberColumnIndices2 ?? []
+    } else {
+      return props.numberColumnIndices ?? []
+    }
   }
 
   onAggTypeSelect = (aggType, column) => {
@@ -156,9 +159,9 @@ export default class NumberAxisSelector extends React.Component {
     return !!col && this.state.checkedColumns?.includes(Number(col.field))
   }
 
-  getCurrencyColumns = () => {
-    let currencyColumns = this.state.columns?.filter((col) => col.type === COLUMN_TYPES.CURRENCY)
-    return currencyColumns
+  getColumnsOfType = (type) => {
+    const columns = this.state.columns?.filter((col) => col.type === type)
+    return columns
   }
 
   getQuantityColumns = (selected) => {
@@ -183,14 +186,18 @@ export default class NumberAxisSelector extends React.Component {
     const { columns } = this.state
     const items = []
 
+    const otherAxisColumns = this.getOtherAxisColumns()
+
     columns.forEach((col, i) => {
       if (col.type !== type || !col.is_visible || col.pivot) {
         return
       }
 
       const checked = this.state.checkedColumns.includes(i)
+      const disabled = otherAxisColumns.includes(i)
 
       const item = {
+        key: `selectable-list-item-${this.COMPONENT_KEY}-${type}-${i}`,
         content: (
           <div key={`column-agg-type-symbol-${this.COMPONENT_KEY}`}>
             {!this.props.isAggregation && col.aggType && (
@@ -223,6 +230,7 @@ export default class NumberAxisSelector extends React.Component {
             {col.title}
           </div>
         ),
+        disabled,
         checked,
         columnIndex: i,
       }
@@ -233,8 +241,29 @@ export default class NumberAxisSelector extends React.Component {
     return items
   }
 
+  getOtherAxisColumns = () => {
+    return this.props.isSecondAxis ? this.props.numberColumnIndices : this.props.numberColumnIndices2
+  }
+
+  areAllDisabled = (type) => {
+    const otherAxisColumnsOfType = this.getOtherAxisColumns()?.filter(
+      (colIndex) => this.state.columns[colIndex].type === type,
+    )
+    const allColumnsOfType = this.getColumnsOfType(type)
+
+    console.log({ otherAxisColumnsOfType, allColumnsOfType })
+    return otherAxisColumnsOfType?.length === allColumnsOfType?.length
+  }
+
   getAllChecked = (type) => {
-    return this.state.columns.every((col, i) => type !== col.type || this.state.checkedColumns.includes(i))
+    const otherAxisColumns = this.getOtherAxisColumns()
+    const areAllDisabled = this.areAllDisabled(type)
+    return (
+      !areAllDisabled &&
+      this.state.columns.every(
+        (col, i) => type !== col.type || this.state.checkedColumns.includes(i) || otherAxisColumns.includes(i),
+      )
+    )
   }
 
   onColumnSelection = (selected, selectedColumns) => {
@@ -320,17 +349,23 @@ export default class NumberAxisSelector extends React.Component {
                 let checkedQuantityIndices = this.getCheckedIndices(COLUMN_TYPES.QUANTITY)
                 let checkedRatioIndices = this.getCheckedIndices(COLUMN_TYPES.RATIO)
 
-                const numberColumnIndices =
-                  checkedCurrencyIndices ?? checkedQuantityIndices ?? checkedRatioIndices ?? []
-                let numberColumnIndices2 = this.props.numberColumnIndices2
-                if (this.props.hasSecondAxis) {
-                  numberColumnIndices2 = checkedQuantityIndices ?? checkedRatioIndices ?? []
-                  if (_isEqual(numberColumnIndices, checkedQuantityIndices)) {
-                    numberColumnIndices2 = checkedRatioIndices ?? []
-                  }
+                const indices = checkedCurrencyIndices ?? checkedQuantityIndices ?? checkedRatioIndices ?? []
+                // let numberColumnIndices2 = this.props.numberColumnIndices2
+                // if (this.props.hasSecondAxis) {
+                //   numberColumnIndices2 = checkedQuantityIndices ?? checkedRatioIndices ?? []
+                //   if (_isEqual(numberColumnIndices, checkedQuantityIndices)) {
+                //     numberColumnIndices2 = checkedRatioIndices ?? []
+                //   }
+                // }
+
+                if (this.props.isSecondAxis) {
+                  console.log('IS SECOND AXIS!')
+                  this.props.changeNumberColumnIndices(this.props.numberColumnIndices, indices, this.state.columns)
+                } else {
+                  console.log('IS NOT SECOND AXIS!')
+                  this.props.changeNumberColumnIndices(indices, this.props.numberColumnIndices2, this.state.columns)
                 }
 
-                this.props.changeNumberColumnIndices(numberColumnIndices, numberColumnIndices2, this.state.columns)
                 this.props.closeSelector()
               }}
             >
@@ -343,21 +378,24 @@ export default class NumberAxisSelector extends React.Component {
   }
 
   renderSeriesSelector = (minHeight, maxHeight) => {
-    const currencyColumns = this.getCurrencyColumns()
+    const currencyColumns = this.getColumnsOfType(COLUMN_TYPES.CURRENCY)
     const currencyListItems = this.getSelectableListItems(COLUMN_TYPES.CURRENCY)
     const allCurrencyChecked = this.getAllChecked(COLUMN_TYPES.CURRENCY)
+    const allCurrencyDisabled = this.areAllDisabled(COLUMN_TYPES.CURRENCY)
 
-    const quantityColumns = this.getQuantityColumns()
+    const quantityColumns = this.getColumnsOfType(COLUMN_TYPES.QUANTITY)
     const quantityListItems = this.getSelectableListItems(COLUMN_TYPES.QUANTITY)
     const allQuantityChecked = this.getAllChecked(COLUMN_TYPES.QUANTITY)
+    const allQuantityDisabled = this.areAllDisabled(COLUMN_TYPES.QUANTITY)
 
-    const ratioColumns = this.getRatioColumns()
+    const ratioColumns = this.getColumnsOfType(COLUMN_TYPES.RATIO)
     const ratioListItems = this.getSelectableListItems(COLUMN_TYPES.RATIO)
     const allRatioChecked = this.getAllChecked(COLUMN_TYPES.RATIO)
+    const allRatioDisabled = this.areAllDisabled(COLUMN_TYPES.RATIO)
 
     return (
       <div className='axis-series-selector'>
-        <h4>Fields</h4>
+        {/* <h4>Fields</h4> */}
         <div className='axis-series-selector-scroll-container'>
           <div className='number-selector-field-group-container'>
             {!!currencyColumns.length && (
@@ -373,6 +411,7 @@ export default class NumberAxisSelector extends React.Component {
                   <div>
                     <Checkbox
                       checked={allCurrencyChecked}
+                      disabled={allCurrencyDisabled}
                       style={{ marginLeft: '10px' }}
                       onChange={() => {
                         if (allCurrencyChecked) {
@@ -411,6 +450,7 @@ export default class NumberAxisSelector extends React.Component {
                     <Checkbox
                       checked={allQuantityChecked}
                       style={{ marginLeft: '10px' }}
+                      disabled={allQuantityDisabled}
                       onChange={() => {
                         if (allQuantityChecked) {
                           this.quantitySelectRef?.unCheckAll()
@@ -448,6 +488,7 @@ export default class NumberAxisSelector extends React.Component {
                     Select All{' '}
                     <Checkbox
                       checked={allRatioChecked}
+                      disabled={allRatioDisabled}
                       style={{ marginLeft: '10px' }}
                       onChange={() => {
                         if (allRatioChecked) {

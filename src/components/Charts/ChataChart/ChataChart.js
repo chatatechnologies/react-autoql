@@ -26,7 +26,6 @@ import {
   getLegendLabelsForMultiSeries,
   getLegendLocation,
   mergeBboxes,
-  onlySeriesVisibilityChanged,
 } from '../helpers.js'
 
 import { getColumnTypeAmounts } from '../../QueryOutput/columnHelpers'
@@ -407,7 +406,7 @@ export default class ChataChart extends Component {
       (colIndex) => columns?.[colIndex] && !columns[colIndex].isSeriesHidden,
     )
 
-    const { innerHeight, innerWidth } = this.getInnerDimensions()
+    const { innerHeight, innerWidth, outerHeight, outerWidth } = this.getInnerDimensions()
 
     return {
       ...this.props,
@@ -419,6 +418,8 @@ export default class ChataChart extends Component {
       colorScale: this.colorScale,
       height: innerHeight,
       width: innerWidth,
+      outerHeight,
+      outerWidth,
       deltaX,
       deltaY,
       chartPadding: this.PADDING,

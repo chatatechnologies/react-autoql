@@ -58,21 +58,17 @@ export default class Legend extends Component {
 
   shouldComponentUpdate = (nextProps) => {
     if (!deepEqual(this.props.columns, nextProps.columns)) {
-      console.log('COLUMNS CHANGED, UPDATING')
       return true
     }
 
     if (this.props.height !== nextProps.height) {
-      console.log('HEIGHT CHANGED, UPDATING')
       return true
     }
 
-    console.log('LEGEND NOT UPDATING')
     return false
   }
 
   componentDidUpdate = () => {
-    console.log('legend updated!')
     this.renderAllLegends()
   }
 
@@ -359,7 +355,7 @@ export default class Legend extends Component {
         <rect
           ref={(el) => (this.legendClippingContainer = el)}
           width={0}
-          height={this.props.height}
+          height={this.props.outerHeight}
           transform='translate(0,-15)'
           style={{ stroke: 'transparent', fill: 'transparent', pointerEvents: 'none' }}
         />

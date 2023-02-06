@@ -117,6 +117,18 @@ export default class Axis extends Component {
     }
   }
 
+  styleAxisLabels = () => {
+    if (this.props.orient === 'Bottom') {
+      select(this.axisElement).selectAll('.tick text').attr('transform', 'translate(0, 5)')
+    } else if (this.props.orient === 'Top') {
+      select(this.axisElement).selectAll('.tick text').attr('transform', 'translate(0, -5)')
+    } else if (this.props.orient === 'Left') {
+      select(this.axisElement).selectAll('.tick text').attr('transform', 'translate(-5, 0)')
+    } else if (this.props.orient === 'Right') {
+      select(this.axisElement).selectAll('.tick text').attr('transform', 'translate(5, 0)')
+    }
+  }
+
   rotateLabelsIfNeeded = () => {
     if (this.props.orient === 'Bottom' || this.props.orient === 'Top') {
       // check if labels need to be rotated...
@@ -128,7 +140,7 @@ export default class Axis extends Component {
             .selectAll('.tick text')
             .style('text-anchor', 'end')
             .attr('dominant-baseline', 'text-top')
-            .attr('transform', `rotate(-45, 0, ${this.props.innerHeight}) translate(-5, 0)`)
+            .attr('transform', `rotate(-45, 0, ${this.props.innerHeight}) translate(-6, 2)`)
         } else if (this.props.orient === 'Top') {
           select(this.axisElement)
             .selectAll('.tick text')
@@ -194,6 +206,7 @@ export default class Axis extends Component {
     this.setTickValues(axis)
     this.setTickSize(axis)
     this.applyAxis(axis)
+    this.styleAxisLabels()
     this.rotateLabelsIfNeeded()
     this.addTooltipsToLabels()
 
@@ -277,7 +290,7 @@ export default class Axis extends Component {
     this.setState({ isAxisSelectorOpen: false })
   }
 
-  renderAxisSelector = ({ positions, childProps }) => {
+  renderAxisSelector = ({ positions, isSecondAxis, childProps }) => {
     return (
       <AxisSelector
         chartType={this.props.type}
@@ -303,6 +316,7 @@ export default class Axis extends Component {
         axisSelectorRef={(r) => (this.axisSelector = r)}
         isOpen={this.state.isAxisSelectorOpen}
         closeSelector={this.closeSelector}
+        isSecondAxis={isSecondAxis}
       >
         <rect
           className={`axis-label-border ${this.props.hidden ? 'hidden' : ''}`}
@@ -375,7 +389,7 @@ export default class Axis extends Component {
           {this.renderAxisTitleText()}
         </text>
         {this.renderAxisSelector({
-          positions: ['top', 'bottom'],
+          positions: ['top', 'bottom', 'left', 'right'],
           childProps: {
             x: xBorderX,
             y: xBorderY,
@@ -415,7 +429,7 @@ export default class Axis extends Component {
           {this.renderAxisTitleText()}
         </text>
         {this.renderAxisSelector({
-          positions: ['right'],
+          positions: ['right', 'bottom', 'left', 'top'],
           childProps: {
             transform,
           },
@@ -452,7 +466,8 @@ export default class Axis extends Component {
           {this.renderAxisTitleText()}
         </text>
         {this.renderAxisSelector({
-          positions: ['left'],
+          isSecondAxis: true,
+          positions: ['left', 'top', 'bottom', 'right'],
           childProps: {
             transform,
           },
@@ -491,7 +506,8 @@ export default class Axis extends Component {
           {this.renderAxisTitleText()}
         </text>
         {this.renderAxisSelector({
-          positions: ['bottom', 'top'],
+          isSecondAxis: true,
+          positions: ['bottom', 'top', 'left', 'right'],
           childProps: {
             x: xBorderX,
             y: xBorderY,

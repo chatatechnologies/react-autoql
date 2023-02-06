@@ -15,8 +15,14 @@
 
   .react-autoql-checkbox--switch__input:checked,
   .react-autoql-checkbox__input:checked {
-    border-color: var(--react-autoql-accent-color, #26a7df) !important;
-    background: var(--react-autoql-accent-color, #26a7df);
+    &:not(:disabled) {
+      border-color: var(--react-autoql-accent-color, #26a7df) !important;
+      background: var(--react-autoql-accent-color, #26a7df);
+    }
+    &:disabled {
+      border-color: var(--react-autoql-background-color-disabled-dark) !important;
+      background: var(--react-autoql-background-color-disabled-dark);
+    }
   }
 }
 .react-autoql-checkbox__label {
@@ -34,12 +40,16 @@
   -webkit-appearance: none;
   -moz-appearance: none;
   outline: none;
-  background: transparent;
+  background: var(--react-autoql-background-color-checkbox);
   border: 1px solid;
   border-radius: 2px;
 
   &:not(.react-autoql-checkbox--switch__input) {
     border-color: var(--react-autoql-accent-color, #26a7df);
+  }
+
+  &:disabled {
+    opacity: 0.5;
   }
 
   cursor: pointer;
@@ -79,14 +89,14 @@
   bottom: 7px;
 }
 .react-autoql-checkbox__input:disabled {
-  border-color: #5a5358;
+  border-color: var(--react-autoql-background-color-disabled-dark);
   cursor: default;
 }
 .react-autoql-checkbox__input:disabled::before {
-  background-color: #5a5358;
+  background-color: var(--react-autoql-background-color-disabled-dark);
 }
 .react-autoql-checkbox__input:disabled + .react-autoql-checkbox__label {
-  color: gray;
+  color: var(--react-autoql-background-color-disabled-dark);
   cursor: default;
 }
 .react-autoql-checkbox--has-error__input {

@@ -696,7 +696,7 @@ export const supportsRegularPivotTable = (columns, dataLength, data) => {
     return row[groupbyColumns[1]]
   })
 
-  const maxLegendLabels = 15
+  const maxLegendLabels = 20
   const uniqueData1Length = column1Data?.filter(onlyUnique)?.length ?? 0
   const uniqueData2Length = column2Data?.filter(onlyUnique)?.length ?? 0
 

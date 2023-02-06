@@ -12,6 +12,8 @@ export default class SelectableList extends React.Component {
   constructor(props) {
     super(props)
 
+    this.KEY = uuid()
+
     this.state = {
       selected: [],
     }
@@ -29,8 +31,22 @@ export default class SelectableList extends React.Component {
     items: [],
   }
 
+  componentDidMount = () => {
+    console.log('SELECTABLE LIST MOUNTED')
+  }
+
+  componentDidUpdate = () => {
+    console.log('SELECTABLE LIST UPDATED')
+  }
+
   selectAll = () => {
-    const selected = Array.from(Array(this.props.items?.length ?? 0).keys())
+    const selected = []
+    this.props.items.forEach((item, i) => {
+      if (!item.disabled) {
+        selected.push(i)
+      }
+    })
+
     this.setState({ selected })
   }
 
@@ -57,6 +73,8 @@ export default class SelectableList extends React.Component {
       } else if (index > currentFirstSelected) {
         newSelected = this.interpolateArray(currentFirstSelected, index)
       }
+
+      newSelected = newSelected.filter((i) => !this.props.items[i].disabled)
 
       const newSelectedItems = newSelected.map((selectedIndex) => {
         return {
@@ -86,7 +104,7 @@ export default class SelectableList extends React.Component {
   checkAll = () => {
     const items = this.props.items.map((item) => ({
       ...item,
-      checked: true,
+      checked: !item.disabled ? true : item.checked,
     }))
     this.props.onChange(items, items, true)
   }
@@ -94,7 +112,7 @@ export default class SelectableList extends React.Component {
   unCheckAll = () => {
     const items = this.props.items.map((item) => ({
       ...item,
-      checked: false,
+      checked: !item.disabled ? false : item.checked,
     }))
     this.props.onChange(items, items, false)
   }
@@ -139,12 +157,19 @@ export default class SelectableList extends React.Component {
             <div className='col-visibility-header'>
               {this.props.columns.map((col, index) => {
                 if (index === this.props.columns.length - 1) {
-                  const allItemsChecked = items.every((col) => col.checked)
+                  const allItemsChecked =
+                    items.find((col) => col.checked) && items.every((col) => col.checked || col.disabled)
+                  console.log(
+                    'all items disabled?',
+                    items.every((col) => col.disabled),
+                    { items },
+                  )
                   return (
                     <div key={`list-header-${index}`}>
                       {col.name}
                       <Checkbox
                         checked={allItemsChecked}
+                        disabled={items.every((col) => col.disabled)}
                         style={{ marginLeft: '10px' }}
                         onChange={(e) => {
                           if (allItemsChecked) {
@@ -165,9 +190,10 @@ export default class SelectableList extends React.Component {
             items.map((item, index) => {
               return (
                 <div
-                  key={`list-item-${uuid()}`}
+                  key={item.key ?? `list-item-${index}-${this.KEY}`}
                   className={`react-autoql-list-item
                 ${this.state.selected.includes(index) ? 'selected' : ''}
+                ${item.disabled ? 'disabled' : ''}
                 ${item.checked ? 'checked' : ''}`}
                   onClick={(e) => {
                     if (e.shiftKey) {
@@ -184,6 +210,7 @@ export default class SelectableList extends React.Component {
                   <div>
                     <Checkbox
                       checked={item.checked}
+                      disabled={item.disabled}
                       onChange={() => {
                         if (this.state.selected.length > 1 && this.state.selected.includes(index)) {
                           this.handleMultipleCheck(items)

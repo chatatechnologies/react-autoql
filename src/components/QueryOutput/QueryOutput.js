@@ -485,9 +485,28 @@ export class QueryOutput extends React.Component {
         return false
       }
 
+      if (
+        !isNaN(tableConfig.numberColumnIndex) &&
+        !isNaN(tableConfig.numberColumnIndex2) &&
+        tableConfig.numberColumnIndex === tableConfig.numberColumnIndex2
+      ) {
+        console.log('NUMBER COLUMN INDEX WAS THE SAME AS INDEX2')
+        return false
+      }
+
+      if (
+        numberColumnIndices.length &&
+        numberColumnIndices2.length &&
+        numberColumnIndices.filter((index) => numberColumnIndices2.includes(index))
+      ) {
+        console.log('THERE WERE OVERLAPPING NUMBER COLUMN INDICES, THIS WILL THROW AN ERROR')
+        return false
+      }
+
       const areNumberColumnsValid = tableConfig.numberColumnIndices.every((index) => {
         return columns[index] && isColumnNumberType(columns[index])
       })
+
       if (!areNumberColumnsValid) {
         return false
       }
@@ -1096,14 +1115,17 @@ export class QueryOutput extends React.Component {
       return
     }
 
-    console.log(
-      'CHANGING NUMBER COL INDICES. we need to check validity every time to make sure the second axis columns dont overlap with the first',
-      { indices, indices2 },
-    )
+    // console.log(
+    //   'CHANGING NUMBER COL INDICES. we need to check validity every time to make sure the second axis columns dont overlap with the first',
+    //   { indices, indices2 },
+    // )
 
-    const indicesIntersect = indices.filter((index) => indices2.includes(index))?.length
+    const indicesIntersection = indices.filter((index) => indices2.includes(index))
+    const indicesIntersect = !!indicesIntersection?.length
+    console.log({ indicesIntersection, indices, indices2 })
     if (indicesIntersect) {
       console.log('column indices have overlapping values!! You must do something about this')
+      return
     }
 
     if (this.usePivotDataForChart()) {
