@@ -7,7 +7,7 @@ import { SelectableList } from '../../SelectableList'
 import { Button } from '../../Button'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { Checkbox } from '../../Checkbox'
-import { AGG_TYPES, COLUMN_TYPES } from '../../../js/Constants'
+import { AGG_TYPES, COLUMN_TYPES, COLUMN_TYPE_DISPLAY_NAMES } from '../../../js/Constants'
 import { Select } from '../../Select'
 
 const aggHTMLCodes = {
@@ -21,6 +21,7 @@ export default class NumberAxisSelector extends React.Component {
     super(props)
 
     this.COMPONENT_KEY = uuid()
+    this.listRefs = {}
 
     const checkedColumns = this.getCheckedFromNumberColumnIndices(props)
 
@@ -86,99 +87,9 @@ export default class NumberAxisSelector extends React.Component {
     this.setState({ columns: newColumns })
   }
 
-  onAggTypeCheck = (aggType) => {
-    // update columns with agg type
-    const { columns, selectedColumns } = this.state
-    const newColumns = columns.map((col) => {
-      const selected = selectedColumns.find((colIndex) => columns[colIndex].field === col.field)
-      if (selected) {
-        return {
-          ...col,
-          aggType,
-        }
-      }
-      return col
-    })
-
-    this.setState({ columns: newColumns })
-  }
-
-  renderAggRadioGroup = () => {
-    let aggType
-    const { selectedColumns, columns } = this.state
-    const oneSelected = selectedColumns.length === 1
-    const multipleSelectedButAllSameType =
-      selectedColumns.length > 1 &&
-      selectedColumns.every((colIndex) => columns[colIndex].aggType === columns[selectedColumns[0]].aggType)
-
-    if (oneSelected || multipleSelectedButAllSameType) {
-      const column = this.state.columns[selectedColumns[0]]
-      aggType = column?.aggType
-    }
-
-    return (
-      <div className={`react-autoql-radio-btn-container react-autoql-radio-btn-container-list`}>
-        {AGG_TYPES.map((agg, i) => {
-          return (
-            <div
-              key={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}
-              data-tip={agg.tooltip}
-              data-for={this.props.tooltipID}
-              data-delay-show={1000}
-              data-place='top'
-            >
-              <p>
-                <input
-                  key={`react-autoql-radio-input-${this.COMPONENT_KEY}-${uuid()}`}
-                  id={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}
-                  name={`react-autoql-radio-${this.COMPONENT_KEY}`}
-                  type='radio'
-                  defaultChecked={aggType === agg.value}
-                />
-                <label
-                  htmlFor={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}
-                  onClick={() => this.onAggTypeCheck(agg.value)}
-                >
-                  {agg.displayName} <em style={{ letterSpacing: '1px' }}>({aggHTMLCodes[agg.value]})</em>
-                </label>
-              </p>
-            </div>
-          )
-        })}
-      </div>
-    )
-  }
-
-  getCheckedIndices = (type, columns = this.state.checkedColumns) => {
-    const checkedColumns = columns?.filter((index) => this.state.columns[index].type === type)
-    return checkedColumns?.length ? checkedColumns : undefined
-  }
-
-  isColumnChecked = (col) => {
-    return !!col && this.state.checkedColumns?.includes(Number(col.field))
-  }
-
   getColumnsOfType = (type) => {
     const columns = this.state.columns?.filter((col) => col.type === type)
     return columns
-  }
-
-  getQuantityColumns = (selected) => {
-    let quantityColumns = this.state.columns?.filter((col) => col.type === COLUMN_TYPES.QUANTITY)
-    if (selected) {
-      return quantityColumns?.filter((col) => this.isColumnChecked(col))
-    }
-
-    return quantityColumns
-  }
-
-  getRatioColumns = (selected) => {
-    let ratioColumns = this.state.columns?.filter((col) => col.type === COLUMN_TYPES.RATIO)
-    if (selected) {
-      return ratioColumns?.filter((col) => this.isColumnChecked(col))
-    }
-
-    return ratioColumns
   }
 
   getSelectableListItems = (type) => {
@@ -195,6 +106,8 @@ export default class NumberAxisSelector extends React.Component {
       const checked = this.state.checkedColumns.includes(i)
       const disabled = otherAxisColumns.includes(i)
 
+      const aggTypeObj = AGG_TYPES.find((agg) => agg.value === col.aggType)
+
       const item = {
         key: `selectable-list-item-${this.COMPONENT_KEY}-${type}-${i}`,
         content: (
@@ -207,6 +120,7 @@ export default class NumberAxisSelector extends React.Component {
                 popoverBoundaryElement={this.props.popoverParentElement}
                 rebuildTooltips={this.props.rebuildTooltips}
                 tooltipID={this.props.tooltipID}
+                tooltip={aggTypeObj.tooltip}
                 value={col.aggType}
                 align='start'
                 size='small'
@@ -271,7 +185,7 @@ export default class NumberAxisSelector extends React.Component {
     this.setState({ selectedColumns: selectedColumnIndices })
   }
 
-  onColumnCheck = (columns, changedColumns, checked, columnType) => {
+  onColumnCheck = (columns) => {
     const { checkedColumns } = this.state
 
     const newCheckedColumns = [...checkedColumns]
@@ -285,7 +199,6 @@ export default class NumberAxisSelector extends React.Component {
     })
 
     this.setState({
-      activeNumberType: COLUMN_TYPES.CURRENCY,
       checkedColumns: newCheckedColumns,
     })
   }
@@ -295,156 +208,74 @@ export default class NumberAxisSelector extends React.Component {
       return null
     }
 
-    const maxHeight = 300
-    const minHeight = 100
-
     return (
-      <div
-        ref={(r) => (this.popoverContentRef = r)}
-        className='chata-chart-popover number-axis-selector-popover'
-        // onClick={(e) => e.stopPropagation()}
-      >
+      <div ref={(r) => (this.popoverContentRef = r)} className='number-axis-selector-popover'>
         <div className='number-axis-selector-popover-content'>
-          {this.renderSeriesSelector(minHeight, maxHeight)}
+          {this.renderSeriesSelectors()}
           {this.renderApplyButton()}
         </div>
       </div>
     )
   }
 
-  renderSeriesSelector = (minHeight, maxHeight) => {
-    const currencyColumns = this.getColumnsOfType(COLUMN_TYPES.CURRENCY)
-    const currencyListItems = this.getSelectableListItems(COLUMN_TYPES.CURRENCY)
-    const allCurrencyChecked = this.getAllChecked(COLUMN_TYPES.CURRENCY)
-    const allCurrencyDisabled = this.areAllDisabled(COLUMN_TYPES.CURRENCY)
+  renderSeriesSelector = (type) => {
+    const columnsOfType = this.getColumnsOfType(type)
+    if (!columnsOfType?.length) {
+      return null
+    }
 
-    const quantityColumns = this.getColumnsOfType(COLUMN_TYPES.QUANTITY)
-    const quantityListItems = this.getSelectableListItems(COLUMN_TYPES.QUANTITY)
-    const allQuantityChecked = this.getAllChecked(COLUMN_TYPES.QUANTITY)
-    const allQuantityDisabled = this.areAllDisabled(COLUMN_TYPES.QUANTITY)
+    const maxHeight = 300
+    const minHeight = 100
 
-    const ratioColumns = this.getColumnsOfType(COLUMN_TYPES.RATIO)
-    const ratioListItems = this.getSelectableListItems(COLUMN_TYPES.RATIO)
-    const allRatioChecked = this.getAllChecked(COLUMN_TYPES.RATIO)
-    const allRatioDisabled = this.areAllDisabled(COLUMN_TYPES.RATIO)
+    const title = COLUMN_TYPE_DISPLAY_NAMES[type]
+    const listItems = this.getSelectableListItems(type)
+    const allChecked = this.getAllChecked(type)
+    const allDisabled = this.areAllDisabled(type)
 
+    return (
+      <div className='number-selector-field-group'>
+        <div className='number-selector-header'>
+          <div className='number-selector-header-title'>
+            {this.state.columns && this.props.legendColumn !== undefined ? (
+              <span>{this.props.legendColumn.display_name}</span>
+            ) : (
+              <span>{title} Fields</span>
+            )}
+          </div>
+          <div>
+            <Checkbox
+              checked={allChecked}
+              disabled={allDisabled}
+              className='number-selector-list-checkbox'
+              onChange={() => {
+                if (allChecked) {
+                  this.listRefs[type]?.unCheckAll()
+                } else {
+                  this.listRefs[type]?.checkAll()
+                }
+              }}
+            />
+          </div>
+        </div>
+        <CustomScrollbars autoHide={false} autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
+          <SelectableList
+            ref={(r) => (this.listRefs[type] = r)}
+            items={listItems}
+            onSelect={this.onColumnSelection}
+            onChange={this.onColumnCheck}
+          />
+        </CustomScrollbars>
+      </div>
+    )
+  }
+
+  renderSeriesSelectors = () => {
     return (
       <div className='axis-series-selector'>
         <div className='number-selector-field-group-container'>
-          {!!currencyColumns.length && (
-            <div className='number-selector-field-group'>
-              <div className='number-selector-header'>
-                <div className='number-selector-header-title'>
-                  {this.state.columns && this.props.legendColumn !== undefined ? (
-                    <span>{this.props.legendColumn.display_name}</span>
-                  ) : (
-                    <span>Currency Fields</span>
-                  )}
-                </div>
-                <div>
-                  <Checkbox
-                    checked={allCurrencyChecked}
-                    disabled={allCurrencyDisabled}
-                    style={{ marginLeft: '10px' }}
-                    onChange={() => {
-                      if (allCurrencyChecked) {
-                        this.currencySelectRef?.unCheckAll()
-                      } else {
-                        this.currencySelectRef?.checkAll()
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-              <CustomScrollbars autoHide={false} autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
-                <SelectableList
-                  ref={(r) => (this.currencySelectRef = r)}
-                  items={currencyListItems}
-                  onSelect={this.onColumnSelection}
-                  onChange={(allColumns, changedColumns, checked) =>
-                    this.onColumnCheck(allColumns, changedColumns, checked, COLUMN_TYPES.CURRENCY)
-                  }
-                />
-              </CustomScrollbars>
-            </div>
-          )}
-
-          {!!quantityColumns.length && (
-            <div className='number-selector-field-group'>
-              <div className='number-selector-header'>
-                <div className='number-selector-header-title'>
-                  {this.state.columns && this.props.legendColumn !== undefined ? (
-                    <span>{this.props.legendColumn.display_name}</span>
-                  ) : (
-                    <span>Quantity Fields</span>
-                  )}
-                </div>
-                <div>
-                  <Checkbox
-                    checked={allQuantityChecked}
-                    style={{ marginLeft: '10px' }}
-                    disabled={allQuantityDisabled}
-                    onChange={() => {
-                      if (allQuantityChecked) {
-                        this.quantitySelectRef?.unCheckAll()
-                      } else {
-                        this.quantitySelectRef?.checkAll()
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-              <CustomScrollbars autoHide={false} autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
-                <SelectableList
-                  ref={(r) => (this.quantitySelectRef = r)}
-                  items={quantityListItems}
-                  onSelect={this.onColumnSelection}
-                  onChange={(allColumns, changedColumns, checked) =>
-                    this.onColumnCheck(allColumns, changedColumns, checked, COLUMN_TYPES.QUANTITY)
-                  }
-                />
-              </CustomScrollbars>
-            </div>
-          )}
-
-          {!!ratioColumns.length && (
-            <div className='number-selector-field-group'>
-              <div className='number-selector-header'>
-                <div className='number-selector-header-title'>
-                  {this.state.columns && this.props.legendColumn !== undefined ? (
-                    <span>{this.props.legendColumn.display_name}</span>
-                  ) : (
-                    <span>Ratio Fields</span>
-                  )}
-                </div>
-                <div>
-                  Select All{' '}
-                  <Checkbox
-                    checked={allRatioChecked}
-                    disabled={allRatioDisabled}
-                    style={{ marginLeft: '10px' }}
-                    onChange={() => {
-                      if (allRatioChecked) {
-                        this.ratioSelectRef?.unCheckAll()
-                      } else {
-                        this.ratioSelectRef?.checkAll()
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-              <CustomScrollbars autoHide={false} autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
-                <SelectableList
-                  ref={(r) => (this.ratioSelectRef = r)}
-                  items={ratioListItems}
-                  onSelect={this.onColumnSelection}
-                  onChange={(allColumns, changedColumns, checked) =>
-                    this.onColumnCheck(allColumns, changedColumns, checked, COLUMN_TYPES.RATIO)
-                  }
-                />
-              </CustomScrollbars>
-            </div>
-          )}
+          {Object.keys(COLUMN_TYPES).map((key) => {
+            return this.renderSeriesSelector(COLUMN_TYPES[key])
+          })}
         </div>
       </div>
     )

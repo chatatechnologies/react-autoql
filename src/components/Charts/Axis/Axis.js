@@ -46,7 +46,6 @@ export default class Axis extends Component {
   static propTypes = {
     ...axesPropTypes,
     scale: PropTypes.func.isRequired,
-    ticks: PropTypes.array,
     orient: PropTypes.string,
     translateX: PropTypes.number,
     translateY: PropTypes.number,
@@ -55,7 +54,6 @@ export default class Axis extends Component {
   static defaultProps = {
     ...axesDefaultProps,
     orient: 'Bottom',
-    ticks: undefined,
     translate: undefined,
     translateX: 0,
     translateY: 0,
@@ -85,13 +83,9 @@ export default class Axis extends Component {
   }
 
   setTickValues = (axis) => {
-    const self = this
+    const { scale } = this.props
     axis.tickFormat(function (d) {
-      return formatChartLabel({
-        d,
-        col: self.props.scale?.column,
-        config: self.props.dataFormatting,
-      }).formattedLabel
+      return formatChartLabel({ d, scale })?.formattedLabel
     })
 
     const tickValues = this.props.scale?.tickLabels
@@ -156,7 +150,8 @@ export default class Axis extends Component {
   }
 
   addTooltipsToLabels = () => {
-    const self = this
+    const { scale } = this.props
+
     select(this.axisElement)
       .selectAll('.axis text')
       .style('fill', 'currentColor')
@@ -164,21 +159,13 @@ export default class Axis extends Component {
       .style('font-family', 'inherit')
       .attr('data-for', this.props.chartTooltipID)
       .attr('data-tip', function (d) {
-        const { fullWidthLabel, isTruncated } = formatChartLabel({
-          d,
-          col: self.props.scale?.column,
-          config: self.props.dataFormatting,
-        })
-        if (isTruncated) {
-          return fullWidthLabel
-        }
-        return null
+        const { fullWidthLabel, isTruncated } = formatChartLabel({ d, scale })
+        return isTruncated ? fullWidthLabel : null
       })
       .attr('data-effect', 'float')
   }
 
   renderAxis = (renderComplete) => {
-    const self = this
     let axis
     switch (this.props.orient) {
       case 'Bottom': {
@@ -334,7 +321,9 @@ export default class Axis extends Component {
   }
 
   renderAxisTitleText = () => {
-    const { title = '', hasDropdown } = this.props
+    const { scale, hasDropdown } = this.props
+    const title = scale?.title ?? ''
+
     if (title.length > 35) {
       return (
         <tspan data-tip={title} data-for={this.props.chartTooltipID} data-test='axis-label'>

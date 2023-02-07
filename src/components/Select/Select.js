@@ -19,14 +19,15 @@ export default class Select extends React.Component {
     value: PropTypes.string,
     label: PropTypes.string,
     size: PropTypes.string,
+    rebuildTooltips: PropTypes.func,
   }
 
   static defaultProps = {
     onChange: () => {},
     options: [],
-    popupClassname: undefined,
-    value: undefined,
-    label: undefined,
+    popupClassname: null,
+    value: null,
+    label: null,
     size: 'large',
     style: {},
     rebuildTooltips: () => {},
@@ -36,9 +37,17 @@ export default class Select extends React.Component {
     isOpen: false,
   }
 
+  componentDidMount = () => {
+    this.props.rebuildTooltips()
+  }
+
   componentDidUpdate = (nextProps, nextState) => {
     if (this.state.isOpen !== nextState.isOpen) {
       ReactTooltip.hide()
+      this.props.rebuildTooltips()
+    }
+
+    if (this.props.value !== nextProps.value) {
       this.props.rebuildTooltips()
     }
   }
@@ -53,6 +62,10 @@ export default class Select extends React.Component {
           this.setState({ isOpen: !this.state.isOpen })
         }}
         style={this.props.style}
+        data-tip={this.props.tooltip}
+        data-for={this.props.tooltipID}
+        data-offset={10}
+        data-delay-show={500}
       >
         {_get(
           this.props.options.find((option) => option.value === this.props.value),
@@ -95,6 +108,7 @@ export default class Select extends React.Component {
                 }}
                 data-tip={option.tooltip || null}
                 data-for={this.props.tooltipID ?? `select-tooltip-${this.ID}`}
+                data-offset={10}
               >
                 {option.listLabel || option.label}
               </li>

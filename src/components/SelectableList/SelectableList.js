@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 
 import { Checkbox } from '../Checkbox'
-import { deepEqual, difference } from '../../js/Util'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './SelectableList.scss'

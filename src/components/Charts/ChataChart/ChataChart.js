@@ -25,12 +25,12 @@ import {
   dataStructureChanged,
   getLegendLabelsForMultiSeries,
   getLegendLocation,
+  getLinearAxisTitle,
   mergeBboxes,
 } from '../helpers.js'
 
 import { getColumnTypeAmounts } from '../../QueryOutput/columnHelpers'
 import { getChartColorVars, getThemeValue } from '../../../theme/configureTheme'
-import { AGG_TYPES, COLUMN_TYPES } from '../../../js/Constants'
 import { aggregateData } from './aggregate'
 
 import './ChataChart.scss'
@@ -327,72 +327,11 @@ export default class ChataChart extends Component {
       })
   }
 
-  getStringAxisTitle = () => {
-    const { columns, stringColumnIndex } = this.props
-    return columns?.[stringColumnIndex]?.display_name
-  }
-
-  getNumberAxisTitle = (columnIndices) => {
-    const { columns } = this.props
-    let title = ''
-    let unit = ''
-
-    try {
-      const numberColumns = columns.filter((col, i) => {
-        return columnIndices?.includes(i)
-      })
-
-      if (!numberColumns?.length) {
-        return undefined
-      }
-
-      // If there are different titles for any of the columns, return a generic label based on the type
-      const allTitlesEqual = !numberColumns.find((col) => {
-        return col.display_name !== numberColumns[0].display_name
-      })
-
-      const columnType = numberColumns?.[0]?.type
-
-      if (allTitlesEqual) {
-        title = numberColumns?.[0]?.display_name
-      } else {
-        if (columnType === COLUMN_TYPES.CURRENCY) {
-          title = 'Amount'
-        } else if (columnType === COLUMN_TYPES.QUANTITY) {
-          title = 'Quantity'
-        } else if (columnType === COLUMN_TYPES.RATIO) {
-          title = 'Ratio'
-        }
-      }
-
-      if (columnType === COLUMN_TYPES.CURRENCY) {
-        unit = getCurrencySymbol(this.props.dataFormatting) ?? ''
-      }
-
-      const aggTypes = numberColumns.map((col) => col.aggType)
-      const allAggTypesSame = aggTypes.every((aggType) => aggType === aggTypes[0])
-
-      let aggTypeDisplayName = ''
-      if (allAggTypesSame) {
-        aggTypeDisplayName = AGG_TYPES.find((agg) => agg.value === numberColumns[0].aggType)?.displayName ?? ''
-      }
-
-      let fullTitle = title
-      if (unit || aggTypeDisplayName) {
-        const spacer = !!unit && !!aggTypeDisplayName ? ' ' : ''
-        fullTitle = `${title} (${aggTypeDisplayName}${spacer}${unit})`
-      }
-
-      return fullTitle
-    } catch (error) {
-      console.error(error)
-      return title
-    }
-  }
-
   getCommonChartProps = () => {
     const { deltaX, deltaY } = this.state
     const { numberColumnIndices, numberColumnIndices2, columns, enableDynamicCharting } = this.props
+    const numberColumns = numberColumnIndices.map((index) => this.props.columns[index])
+    const numberColumns2 = numberColumnIndices2.map((index) => this.props.columns[index])
 
     const { amountOfNumberColumns, amountOfStringColumns } = getColumnTypeAmounts(columns)
     const hasMultipleNumberColumns = amountOfNumberColumns > 1
@@ -434,9 +373,15 @@ export default class ChataChart extends Component {
       onLabelRotation: this.adjustVerticalPosition,
       visibleSeriesIndices,
       visibleSeriesIndices2,
-      numberAxisTitle: this.getNumberAxisTitle(visibleSeriesIndices),
-      numberAxisTitle2: this.getNumberAxisTitle(visibleSeriesIndices2),
-      stringAxisTitle: this.getStringAxisTitle(),
+      // numberAxisTitle: getLinearAxisTitle({
+      //   numberColumns: numberColumns,
+      //   dataFormatting: this.props.dataFormatting,
+      // }),
+      // numberAxisTitle2: getLinearAxisTitle({
+      //   numberColumns: numberColumns2,
+      //   dataFormatting: this.props.dataFormatting,
+      // }),
+      // stringAxisTitle: this.getStringAxisTitle(),
       onStringColumnSelect: this.onStringColumnSelect,
       tooltipID: this.props.tooltipID,
       chartTooltipID: this.props.chartTooltipID,

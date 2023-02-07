@@ -87,10 +87,8 @@ export default class Axes extends React.Component {
         key={this.BOTTOM_AXIS_KEY}
         orient='Bottom'
         scale={this.props.xScale}
-        ticks={this.props.xScale?.tickLabels}
         translateY={0}
         translateX={0}
-        title={this.props.bottomAxisTitle}
         showGridLines={this.props.xGridLines}
         hasDropdown={this.props.hasXDropdown}
         innerWidth={innerWidth}
@@ -109,8 +107,6 @@ export default class Axes extends React.Component {
         ref={(r) => (this.leftAxis = r)}
         orient='Left'
         scale={this.props.yScale}
-        ticks={this.props.yScale?.tickLabels}
-        title={this.props.leftAxisTitle}
         showGridLines={this.props.yGridLines}
         hasDropdown={this.props.hasYDropdown}
         innerWidth={innerWidth}
@@ -139,8 +135,6 @@ export default class Axes extends React.Component {
         ref={(r) => (this.topAxis = r)}
         orient='Top'
         scale={this.props.xScale2}
-        ticks={this.props.xScale2?.tickLabels}
-        title={this.props.topAxisTitle}
         showGridLines={false}
         hasDropdown={this.props.hasXDropdown}
         innerWidth={innerWidth}
@@ -179,8 +173,6 @@ export default class Axes extends React.Component {
             key={this.RIGHT_AXIS_KEY}
             orient='Right'
             scale={this.props.yScale2}
-            ticks={this.props.yScale2?.tickLabels}
-            title={this.props.rightAxisTitle}
             showGridLines={false}
             hasRightLegend={false}
             hasBottomLegend={false}
@@ -209,10 +201,6 @@ export default class Axes extends React.Component {
         <Legend
           {...this.props}
           ref={(r) => (this.legendRef = r)}
-          bottomAxis={this.bottomAxis}
-          topAxis={this.topAxis}
-          title={this.props.numberAxisTitle}
-          title2={this.props.numberAxisTitle2}
           legendColumnIndices={this.props.numberColumnIndices}
           legendColumnIndices2={this.props.numberColumnIndices2}
           placement={this.props.legendLocation}

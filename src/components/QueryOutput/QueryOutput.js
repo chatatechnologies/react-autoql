@@ -66,6 +66,7 @@ import { getColumnDateRanges, getFilterPrecision, getPrecisionForDayJS } from '.
 import { withTheme } from '../../theme'
 
 import './QueryOutput.scss'
+import { getUnitsForColumn } from '../Charts/helpers'
 
 String.prototype.isUpperCase = function () {
   return this.valueOf().toUpperCase() === this.valueOf()

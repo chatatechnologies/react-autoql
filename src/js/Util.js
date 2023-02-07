@@ -12,8 +12,10 @@ import {
   TIMESTAMP_FORMATS,
   PRECISION_TYPES,
   WEEKDAY_NAMES_SUN,
+  AGG_TYPES,
+  COLUMN_TYPES,
 } from './Constants'
-import { dataFormattingDefault } from '../props/defaults'
+import { dataFormattingDefault, getDataFormatting } from '../props/defaults'
 
 import {
   getColumnTypeAmounts,
@@ -338,14 +340,16 @@ export const formatStringDate = (value, config) => {
   return value
 }
 
-export const formatChartLabel = ({ d, col = {}, config = {} }) => {
-  if (d === null) {
+export const formatChartLabel = ({ d, scale }) => {
+  if (d === null || !scale) {
     return {
       fullWidthLabel: 'Untitled Category',
       formattedLabel: 'Untitled Category',
       isTruncated: false,
     }
   }
+
+  const col = scale.column
 
   if (!col || !col.type) {
     return {
@@ -355,10 +359,11 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
     }
   }
 
+  const config = scale.dataFormatting || getDataFormatting()
   const { currencyCode, languageCode } = config
 
   let type = col.type
-  if (['count', 'deviation', 'variance'].includes(col.aggType)) {
+  if (scale.units === 'none') {
     type = 'QUANTITY'
   }
 

@@ -5,10 +5,10 @@ import _isEqual from 'lodash.isequal'
 import { scaleLinear, scaleBand } from 'd3-scale'
 import { select } from 'd3-selection'
 
-import { deepEqual, difference, formatChartLabel, formatElement } from '../../js/Util'
+import { deepEqual, difference, formatChartLabel, formatElement, getCurrencySymbol } from '../../js/Util'
 import { dataFormattingType } from '../../props/types'
-import { dataFormattingDefault } from '../../props/defaults'
-import { AGG_TYPES } from '../../js/Constants'
+import { dataFormattingDefault, getDataFormatting } from '../../props/defaults'
+import { AGG_TYPES, COLUMN_TYPES } from '../../js/Constants'
 
 const DEFAULT_INNER_PADDING = 0.2
 const DEFAULT_OUTER_PADDING = 0.5
@@ -484,13 +484,91 @@ export const getBandScale = ({
 }) => {
   const range = getRangeForAxis(props, axis)
   const scaleDomain = domain ?? props.data.map((d) => d[columnIndex])
+  const axisColumns = props.stringColumnIndices?.map((index) => props.columns[index])
 
   const scale = scaleBand().domain(scaleDomain).range(range).paddingInner(innerPadding).paddingOuter(outerPadding)
   scale.type = 'BAND'
-  scale.tickLabels = getTickValues({ scale, props, initialTicks: scaleDomain, innerPadding, outerPadding })
+  scale.dataFormatting = props.dataFormatting
   scale.column = props.columns[columnIndex]
+  scale.title = scale.column?.display_name
+  scale.fields = axisColumns
+  scale.tickLabels = getTickValues({ scale, props, initialTicks: scaleDomain, innerPadding, outerPadding })
 
   return scale
+}
+
+export const getUnitsForColumn = (column) => {
+  let aggUnit
+  if (column.aggType) {
+    aggUnit = AGG_TYPES.find((aggType) => aggType.value === column.aggType)?.unit
+  }
+
+  switch (aggUnit) {
+    case 'none': {
+      return 'none'
+    }
+    case 'inherit':
+    default: {
+      break
+    }
+  }
+
+  if (column.type === COLUMN_TYPES.CURRENCY) {
+    return 'currency'
+  } else if (column.type === COLUMN_TYPES.QUANTITY) {
+    return 'none'
+  } else if (column.type === COLUMN_TYPES.RATIO) {
+    return 'none'
+  } else if (column.type === COLUMN_TYPES.PERCENT) {
+    return 'percent'
+  }
+}
+
+export const getLinearAxisTitle = ({ numberColumns, dataFormatting }) => {
+  try {
+    if (!numberColumns?.length) {
+      return undefined
+    }
+
+    let title = 'Amount'
+
+    // If there are different titles for any of the columns, return a generic label based on the type
+    const allTitlesEqual = !numberColumns.find((col) => {
+      return col.display_name !== numberColumns[0].display_name
+    })
+
+    if (allTitlesEqual) {
+      title = numberColumns[0].display_name
+    }
+
+    const units = getNumberAxisUnits(numberColumns)
+    if (units === 'currency') {
+      const currencySymbol = getCurrencySymbol(dataFormatting)
+      if (currencySymbol) {
+        title = `${title} (${currencySymbol})`
+      }
+    } else if (units === 'percent') {
+      title = `${title} (%)`
+    }
+
+    return title
+  } catch (error) {
+    console.error(error)
+    return title
+  }
+}
+
+export const getNumberAxisUnits = (numberColumns) => {
+  const unitsArray = numberColumns.map((col) => {
+    return getUnitsForColumn(col)
+  })
+
+  const allUnitsEqual = !unitsArray.find((unit) => unit !== unitsArray[0])
+  if (allUnitsEqual) {
+    return unitsArray[0]
+  }
+
+  return 'none'
 }
 
 export const getLinearScale = ({
@@ -504,6 +582,7 @@ export const getLinearScale = ({
   stacked,
   isScaled,
   columnIndex,
+  columnIndices,
 }) => {
   let min = minValue ?? tickValues?.[0]
   let max = maxValue ?? tickValues?.[tickValues?.length - 1]
@@ -518,13 +597,24 @@ export const getLinearScale = ({
 
   const domain = [min, max]
   const scaleRange = range ?? getRangeForAxis(props, axis)
+  const axisColumns = columnIndices.map((index) => props.columns[index])
+  const units = getNumberAxisUnits(axisColumns)
+  const title = getLinearAxisTitle({
+    numberColumns: axisColumns,
+    dataFormatting: props.dataFormatting,
+  })
 
   const scale = scaleLinear().domain(domain).range(scaleRange)
   scale.minValue = min
   scale.maxValue = max
   scale.column = props.columns[columnIndex]
+  scale.fields = axisColumns
+  scale.dataFormatting = props.dataFormatting
   scale.stacked = !!stacked
   scale.type = 'LINEAR'
+  scale.units = units
+  scale.title = title
+
   scale.tickLabels =
     tickValues ??
     getTickValues({
@@ -551,6 +641,7 @@ export const getLinearScales = ({ props, columnIndices1 = [], columnIndices2 = [
     stacked,
     isScaled,
     columnIndex: columnIndices1[0],
+    columnIndices: columnIndices1,
   })
 
   if (!columnIndices2?.length) {
@@ -573,6 +664,7 @@ export const getLinearScales = ({ props, columnIndices1 = [], columnIndices2 = [
     stacked,
     isScaled,
     columnIndex: columnIndices2[0],
+    columnIndices: columnIndices2,
   })
 
   const tickValues1 = tempScale1.tickLabels || []
@@ -612,6 +704,7 @@ export const getLinearScales = ({ props, columnIndices1 = [], columnIndices2 = [
     stacked,
     isScaled,
     columnIndex: columnIndices1[0],
+    columnIndices: columnIndices1,
   })
   const scale2 = getLinearScale({
     props,
@@ -620,6 +713,7 @@ export const getLinearScales = ({ props, columnIndices1 = [], columnIndices2 = [
     stacked,
     isScaled,
     columnIndex: columnIndices2[0],
+    columnIndices: columnIndices2,
   })
 
   return { scale, scale2 }
