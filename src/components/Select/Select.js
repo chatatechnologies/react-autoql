@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import { Popover } from 'react-tiny-popover'
 import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
-import _isEqual from 'lodash.isequal'
 import ReactTooltip from 'react-tooltip'
 
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -39,6 +38,7 @@ export default class Select extends React.Component {
 
   componentDidUpdate = (nextProps, nextState) => {
     if (this.state.isOpen !== nextState.isOpen) {
+      ReactTooltip.hide()
       this.props.rebuildTooltips()
     }
   }
@@ -69,13 +69,45 @@ export default class Select extends React.Component {
     )
   }
 
+  renderPopoverContent = () => {
+    return (
+      <div
+        className={`react-autoql-select-popup-container ${this.props.popupClassname || ''}`}
+        style={{ width: this.props.style.width }}
+      >
+        {!!this.props.tooltipID && (
+          <ReactTooltip
+            id={`select-tooltip-${this.ID}`}
+            className='react-autoql-tooltip'
+            effect='solid'
+            delayShow={500}
+          />
+        )}
+        <ul className='react-autoql-select-popup'>
+          {this.props.options.map((option) => {
+            return (
+              <li
+                key={`select-option-${this.ID}-${option.value}`}
+                className={`react-autoql-select-option${option.value === this.props.value ? ' active' : ''}`}
+                onClick={() => {
+                  this.setState({ isOpen: false })
+                  this.props.onChange(option.value)
+                }}
+                data-tip={option.tooltip || null}
+                data-for={this.props.tooltipID ?? `select-tooltip-${this.ID}`}
+              >
+                {option.listLabel || option.label}
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+    )
+  }
+
   render = () => {
     if (!this.props.options) {
       return null
-    }
-
-    if (!this.state.isOpen) {
-      return this.renderSelect()
     }
 
     return (
@@ -87,55 +119,10 @@ export default class Select extends React.Component {
           positions={this.props.positions ?? ['bottom']}
           align={this.props.align}
           padding={0}
-          // clickOutsideCapture={false}
           parentElement={this.props.popoverParentElement}
           boundaryElement={this.props.popoverBoundaryElement}
-          onClickOutside={(e) => {
-            console.log('ON CLICK OUTSIDE SELECT...')
-            // e.stopPropagation()
-            // e.preventDefault()
-            // this.setState({ isOpen: false })
-          }}
-          content={
-            // ({ position, nudgedLeft, nudgedTop, targetRect, popoverRect }) => {
-            // return (
-            <div
-              className={`react-autoql-select-popup-container ${this.props.popupClassname || ''}`}
-              style={{ width: this.props.style.width }}
-            >
-              {!!this.props.tooltipID && (
-                <ReactTooltip
-                  id={`select-tooltip-${this.ID}`}
-                  className='react-autoql-tooltip'
-                  effect='solid'
-                  delayShow={500}
-                />
-              )}
-              <ul className='react-autoql-select-popup'>
-                {this.props.options.map((option) => {
-                  return (
-                    <li
-                      key={`select-option-${this.ID}-${option.value}`}
-                      className={`react-autoql-select-option${option.value === this.props.value ? ' active' : ''}`}
-                      onClick={(e) => {
-                        console.log('CLICKED ON AN OPTION!', option.value)
-                        // e.stopPropagation()
-                        // e.preventDefault()
-                        this.setState({ isOpen: false })
-                        this.props.onChange(option.value)
-                      }}
-                      data-tip={option.tooltip || null}
-                      data-for={this.props.tooltipID ?? `select-tooltip-${this.ID}`}
-                    >
-                      {option.listLabel || option.label}
-                    </li>
-                  )
-                })}
-              </ul>
-            </div>
-            //   )
-            // }
-          }
+          onClickOutside={() => this.setState({ isOpen: false })}
+          content={this.renderPopoverContent()}
         >
           {this.renderSelect()}
         </Popover>

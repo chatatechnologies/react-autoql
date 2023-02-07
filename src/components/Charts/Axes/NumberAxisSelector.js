@@ -224,7 +224,6 @@ export default class NumberAxisSelector extends React.Component {
                   }
                 })}
                 onChange={(value) => {
-                  console.log('SELECT AGG TYPE:', { value, col })
                   this.onAggTypeSelect(value, col)
                 }}
               />
@@ -484,9 +483,8 @@ export default class NumberAxisSelector extends React.Component {
         content={this.renderSelectorContent()}
         ref={this.props.axisSelectorRef}
         onClickOutside={(e) => {
-          console.log('ON CLICK OUTSIDE')
-          // e.stopPropagation()
-          // e.preventDefault()
+          e.stopPropagation()
+          e.preventDefault()
           this.props.closeSelector()
         }}
         parentElement={this.props.popoverParentElement}

@@ -141,9 +141,9 @@ export default class SelectableList extends React.Component {
         <div
           className='react-autoql-selectable-list'
           data-test='selectable-list'
-          onClick={(e) => {
-            e.stopPropagation()
-          }}
+          // onClick={(e) => {
+          //   e.stopPropagation()
+          // }}
         >
           {!!this.props.columns?.length && (
             <div className='col-visibility-header'>
