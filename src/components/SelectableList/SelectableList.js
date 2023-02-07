@@ -31,14 +31,6 @@ export default class SelectableList extends React.Component {
     items: [],
   }
 
-  componentDidMount = () => {
-    console.log('SELECTABLE LIST MOUNTED')
-  }
-
-  componentDidUpdate = () => {
-    console.log('SELECTABLE LIST UPDATED')
-  }
-
   selectAll = () => {
     const selected = []
     this.props.items.forEach((item, i) => {
@@ -159,11 +151,6 @@ export default class SelectableList extends React.Component {
                 if (index === this.props.columns.length - 1) {
                   const allItemsChecked =
                     items.find((col) => col.checked) && items.every((col) => col.checked || col.disabled)
-                  console.log(
-                    'all items disabled?',
-                    items.every((col) => col.disabled),
-                    { items },
-                  )
                   return (
                     <div key={`list-header-${index}`}>
                       {col.name}

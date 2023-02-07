@@ -48,10 +48,6 @@
     border-color: var(--react-autoql-accent-color, #26a7df);
   }
 
-  &:disabled {
-    opacity: 0.5;
-  }
-
   cursor: pointer;
 }
 .react-autoql-checkbox__input::before {
@@ -89,7 +85,8 @@
   bottom: 7px;
 }
 .react-autoql-checkbox__input:disabled {
-  border-color: var(--react-autoql-background-color-disabled-dark);
+  border-color: var(--react-autoql-background-color-disabled-dark) !important;
+  background: var(--react-autoql-background-color-disabled) !important;
   cursor: default;
 }
 .react-autoql-checkbox__input:disabled::before {
@@ -142,7 +139,7 @@
 
 .react-autoql-modal-container .react-autoql-checkbox__input:not(.react-autoql-checkbox--switch__input),
 .react-autoql-drawer .react-autoql-checkbox__input:not(.react-autoql-checkbox--switch__input) {
-  border-color: #ddd;
+  border-color: var(--react-autoql-accent-color);
   background: var(--react-autoql-background-color-secondary);
 }
 

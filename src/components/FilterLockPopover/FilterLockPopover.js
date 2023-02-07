@@ -91,7 +91,6 @@ export class FilterLockPopover extends React.Component {
         arrowSize={10}
       >
         <FilterLockPopoverContent
-          ref={(r) => (this.popoverContentRef = r)}
           authentication={this.props.authentication}
           isOpen={this.props.isOpen}
           onClose={this.props.onClose}

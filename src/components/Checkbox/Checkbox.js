@@ -30,7 +30,6 @@ export default class Checkbox extends React.Component {
   }
 
   componentDidMount = () => {
-    console.log('CHECKBOX MOUNTED')
     // Apply the indeterminate attribute of the checkbox input
     if (this.selector) {
       this.selector.indeterminate = this.props.indeterminate

@@ -350,11 +350,7 @@ export default class ChatContent extends React.Component {
 
     return (
       <ErrorBoundary>
-        <div
-          ref={(r) => !this.state.chatContentRef && this.setState({ chatContentRef: r })}
-          className='chat-content-scroll-container'
-          style={{ display }}
-        >
+        <div ref={(r) => (this.chatContentRef = r)} className='chat-content-scroll-container' style={{ display }}>
           <CustomScrollbars ref={(r) => (this.messengerScrollComponent = r)}>
             {this.state.messages.map((message) => {
               return (
@@ -400,7 +396,7 @@ export default class ChatContent extends React.Component {
                   enableAjaxTableData={this.props.enableAjaxTableData}
                   rebuildTooltips={this.props.rebuildTooltips}
                   queryRequestData={message.queryRequestData}
-                  popoverParentElement={this.state.chatContentRef}
+                  popoverParentElement={this.chatContentRef}
                   isVisibleInDOM={this.props.shouldRender}
                   dataPageSize={this.props.dataPageSize}
                   source={this.props.source}

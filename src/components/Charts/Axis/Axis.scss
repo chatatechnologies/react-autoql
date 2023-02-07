@@ -1,6 +1,5 @@
 g.legendOrdinal,
 g.legendOrdinal tspan {
-  // stroke-width: 10px;
   stroke: transparent;
   letter-spacing: 0; // not clickable if larger than 0
   cursor: pointer;
@@ -37,24 +36,13 @@ g.legendOrdinal tspan {
   opacity: 1 !important;
 }
 
-// .react-tiny-popover-container {
-//   width: 400px !important;
-//   height: 350px !important;
-// }
-
 .number-axis-selector-popover {
-  height: 'auto';
-  width: 'auto';
-  // height: 350px;
-  // width: 400px;
-  overflow: hidden;
-
   .number-axis-selector-popover-content {
-    background: var(--react-autoql-background-color-secondary);
-    color: var(--react-autoql-text-color-primary);
     display: flex;
     flex-direction: column;
-    height: 100%;
+    background: var(--react-autoql-background-color-secondary);
+    color: var(--react-autoql-text-color-primary);
+    padding: 10px;
     z-index: 9999;
 
     h4 {
@@ -64,17 +52,17 @@ g.legendOrdinal tspan {
     }
 
     .number-selector-field-group-container {
-      display: flex;
-      flex-direction: row;
+      white-space: nowrap;
 
       .number-selector-field-group {
-        max-width: 300px;
+        display: inline-block;
+        vertical-align: top;
+
+        &:not(:last-of-type) {
+          padding-right: 8px;
+        }
       }
     }
-
-    // .react-autoql-list-item:not(.checked) .agg-type-symbol {
-    //   display: none;
-    // }
 
     .axis-agg-type-selector {
       width: 175px;
@@ -129,19 +117,10 @@ g.legendOrdinal tspan {
       padding-right: 10px;
       font-size: 12px;
       line-height: 25px;
-      cursor: pointer;
+      cursor: default;
 
       &.checked .agg-type-symbol {
         color: var(--react-autoql-accent-color);
-      }
-    }
-
-    .string-select-list-item {
-      font-size: 12px;
-      line-height: 28px;
-
-      &.active {
-        background: rgba(0, 0, 0, 0.04);
       }
     }
 
@@ -150,7 +129,6 @@ g.legendOrdinal tspan {
       justify-content: space-between;
       margin-bottom: 5px;
       padding: 10px;
-      margin-right: 8px;
       font-size: 12px;
       border-bottom: 1px solid var(--react-autoql-border-color);
       background: var(--react-autoql-background-color-primary);
@@ -164,17 +142,7 @@ g.legendOrdinal tspan {
     }
 
     .axis-series-selector {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-      padding: 18px 8px 5px 20px;
-
-      .axis-series-selector-scroll-container {
-        flex: 1;
-      }
-
       .react-autoql-selectable-list {
-        padding-right: 8px;
         margin-bottom: 10px;
       }
     }
@@ -190,9 +158,11 @@ g.legendOrdinal tspan {
     }
   }
 
-  .axis-selector-apply-btn {
-    background: var(--react-autoql-background-color-secondary);
-    padding: 5px;
+  .axis-selector-apply-btn-container {
+    .axis-selector-apply-btn {
+      margin: 0;
+      width: 100%;
+    }
   }
 }
 
@@ -225,6 +195,24 @@ g.legendOrdinal tspan {
 
     &:hover {
       background: rgba(0, 0, 0, 0.05);
+    }
+  }
+}
+
+.string-axis-selector-popover-content {
+  display: flex;
+  flex-direction: column;
+  background: var(--react-autoql-background-color-secondary);
+  color: var(--react-autoql-text-color-primary);
+  padding: 5px;
+  z-index: 9999;
+
+  .string-select-list-item {
+    font-size: 12px;
+    line-height: 28px;
+
+    &.active {
+      background: rgba(0, 0, 0, 0.04);
     }
   }
 }

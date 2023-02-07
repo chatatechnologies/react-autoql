@@ -269,6 +269,7 @@ export default class Axis extends Component {
 
     this.adjustTitleToFit()
     this.adjustAxisSelectorBorder()
+    this.adjustAxisScalerBorder()
 
     if (renderComplete) {
       this.props.onAxisRenderComplete(this.props.orient)
@@ -290,7 +291,7 @@ export default class Axis extends Component {
     this.setState({ isAxisSelectorOpen: false })
   }
 
-  renderAxisSelector = ({ positions, isSecondAxis, childProps }) => {
+  renderAxisSelector = ({ positions, isSecondAxis, childProps = {} }) => {
     return (
       <AxisSelector
         chartType={this.props.type}
@@ -310,6 +311,7 @@ export default class Axis extends Component {
         columns={this.props.columns}
         scale={this.props.scale}
         align='center'
+        position='right'
         positions={positions}
         childProps={childProps}
         hasSecondAxis={this.props.hasSecondAxis}
@@ -364,15 +366,6 @@ export default class Axis extends Component {
     const xLabelX = this.props.innerWidth / 2
     const xLabelY = labelBBoxBottom + this.AXIS_TITLE_PADDING
 
-    const xLabelBbox = getBBoxFromRef(this.titleRef)
-    const titleTextHeight = this.getTitleTextHeight()
-    const xLabelHeight = xLabelBbox?.height ?? 0
-    const xLabelWidth = xLabelBbox?.width ?? 0
-    const xBorderWidth = xLabelWidth + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
-    const xBorderHeight = titleTextHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP
-    const xBorderX = xLabelX - xLabelWidth / 2 - this.AXIS_TITLE_BORDER_PADDING_LEFT
-    const xBorderY = xLabelY - xLabelHeight / 2 - this.AXIS_TITLE_BORDER_PADDING_TOP
-
     return (
       <g>
         <text
@@ -390,12 +383,6 @@ export default class Axis extends Component {
         </text>
         {this.renderAxisSelector({
           positions: ['top', 'bottom', 'left', 'right'],
-          childProps: {
-            x: xBorderX,
-            y: xBorderY,
-            width: xBorderWidth,
-            height: xBorderHeight,
-          },
         })}
       </g>
     )
@@ -429,10 +416,8 @@ export default class Axis extends Component {
           {this.renderAxisTitleText()}
         </text>
         {this.renderAxisSelector({
-          positions: ['right', 'bottom', 'left', 'top'],
-          childProps: {
-            transform,
-          },
+          // positions: ['right', 'bottom', 'left', 'top'],
+          positions: ['right'],
         })}
       </g>
     )
@@ -468,9 +453,9 @@ export default class Axis extends Component {
         {this.renderAxisSelector({
           isSecondAxis: true,
           positions: ['left', 'top', 'bottom', 'right'],
-          childProps: {
-            transform,
-          },
+          // childProps: {
+          //   transform,
+          // },
         })}
       </g>
     )
@@ -480,15 +465,6 @@ export default class Axis extends Component {
     const labelBBoxY = this.labelBBox?.y ?? 0
     const xLabelX = this.props.innerWidth / 2
     const xLabelY = labelBBoxY - this.AXIS_TITLE_PADDING
-
-    const xLabelBbox = getBBoxFromRef(this.titleRef)
-    const titleTextHeight = this.getTitleTextHeight()
-    const xLabelHeight = xLabelBbox?.height ?? 0
-    const xLabelWidth = xLabelBbox?.width ?? 0
-    const xBorderWidth = xLabelWidth + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
-    const xBorderHeight = titleTextHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP
-    const xBorderX = xLabelX - xLabelWidth / 2 - this.AXIS_TITLE_BORDER_PADDING_LEFT
-    const xBorderY = xLabelY - xLabelHeight / 2 - this.AXIS_TITLE_BORDER_PADDING_TOP
 
     return (
       <g>
@@ -508,12 +484,6 @@ export default class Axis extends Component {
         {this.renderAxisSelector({
           isSecondAxis: true,
           positions: ['bottom', 'top', 'left', 'right'],
-          childProps: {
-            x: xBorderX,
-            y: xBorderY,
-            width: xBorderWidth,
-            height: xBorderHeight,
-          },
         })}
       </g>
     )
@@ -525,19 +495,19 @@ export default class Axis extends Component {
     const titleWidth = titleBBox?.width ?? 0
 
     select(this.axisSelector)
-      .attr('width', titleWidth + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT)
-      .attr('height', titleHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP)
-      .attr('x', titleBBox?.x - this.AXIS_TITLE_BORDER_PADDING_LEFT)
-      .attr('y', titleBBox?.y - this.AXIS_TITLE_BORDER_PADDING_TOP)
       .attr('transform', this.titleRef?.getAttribute('transform'))
+      .attr('width', Math.round(titleWidth + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT))
+      .attr('height', Math.round(titleHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP))
+      .attr('x', Math.round(titleBBox?.x - this.AXIS_TITLE_BORDER_PADDING_LEFT))
+      .attr('y', Math.round(titleBBox?.y - this.AXIS_TITLE_BORDER_PADDING_TOP))
   }
 
   adjustAxisScalerBorder = () => {
     select(this.axisScaler)
-      .attr('x', (this.labelBBox?.x ?? 0) - this.BUTTON_PADDING)
-      .attr('y', (this.labelBBox?.y ?? 0) - this.BUTTON_PADDING)
-      .attr('width', (this.labelBBox?.width ?? 0) + this.BUTTON_PADDING * 2)
-      .attr('height', (this.labelBBox?.height ?? 0) + this.BUTTON_PADDING * 2)
+      .attr('x', Math.round((this.labelBBox?.x ?? 0) - this.BUTTON_PADDING))
+      .attr('y', Math.round((this.labelBBox?.y ?? 0) - this.BUTTON_PADDING))
+      .attr('width', Math.round((this.labelBBox?.width ?? 0) + this.BUTTON_PADDING * 2))
+      .attr('height', Math.round((this.labelBBox?.height ?? 0) + this.BUTTON_PADDING * 2))
   }
 
   adjustTitleToFit = () => {
@@ -627,10 +597,10 @@ export default class Axis extends Component {
           labelBBox={this.labelBBox}
           childProps={{
             ref: (r) => (this.axisScaler = r),
-            x: (this.labelBBox?.x ?? 0) - this.BUTTON_PADDING,
-            y: (this.labelBBox?.y ?? 0) - this.BUTTON_PADDING,
-            width: (this.labelBBox?.width ?? 0) + this.BUTTON_PADDING * 2,
-            height: (this.labelBBox?.height ?? 0) + this.BUTTON_PADDING * 2,
+            // x: (this.labelBBox?.x ?? 0) - this.BUTTON_PADDING,
+            // y: (this.labelBBox?.y ?? 0) - this.BUTTON_PADDING,
+            // width: (this.labelBBox?.width ?? 0) + this.BUTTON_PADDING * 2,
+            // height: (this.labelBBox?.height ?? 0) + this.BUTTON_PADDING * 2,
           }}
         />
       )

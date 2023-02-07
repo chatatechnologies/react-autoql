@@ -356,10 +356,6 @@ export class QueryOutput extends React.Component {
       this.tableID = uuid()
     }
 
-    if (displayType === 'column_line') {
-      console.log('we must check if the current column config is valid. If not, we need to change it')
-    }
-
     this.props.onDisplayTypeChange(displayType)
     this.setState({ displayType })
   }
@@ -478,10 +474,17 @@ export class QueryOutput extends React.Component {
         isNaN(Number(tableConfig.numberColumnIndex)) ||
         isNaN(Number(tableConfig.stringColumnIndex))
       ) {
+        console.debug('Table config provided was incomplete')
         return false
       }
 
-      if (!Array.isArray(tableConfig.numberColumnIndices) || !Array.isArray(tableConfig.stringColumnIndices)) {
+      if (!Array.isArray(tableConfig.numberColumnIndices)) {
+        console.debug('Number column indices array not valid in table config')
+        return false
+      }
+
+      if (!Array.isArray(tableConfig.stringColumnIndices)) {
+        console.debug('String column indices array not valid in table config')
         return false
       }
 
@@ -490,16 +493,16 @@ export class QueryOutput extends React.Component {
         !isNaN(tableConfig.numberColumnIndex2) &&
         tableConfig.numberColumnIndex === tableConfig.numberColumnIndex2
       ) {
-        console.log('NUMBER COLUMN INDEX WAS THE SAME AS INDEX2')
+        console.debug('Both axes reference the same number column index')
         return false
       }
 
       if (
-        numberColumnIndices.length &&
-        numberColumnIndices2.length &&
-        numberColumnIndices.filter((index) => numberColumnIndices2.includes(index))
+        tableConfig.numberColumnIndices.length &&
+        tableConfig.numberColumnIndices2.length &&
+        tableConfig.numberColumnIndices.filter((index) => tableConfig.numberColumnIndices2.includes(index)).length
       ) {
-        console.log('THERE WERE OVERLAPPING NUMBER COLUMN INDICES, THIS WILL THROW AN ERROR')
+        console.debug('Both axes reference one or more of the same number column index')
         return false
       }
 
@@ -508,6 +511,7 @@ export class QueryOutput extends React.Component {
       })
 
       if (!areNumberColumnsValid) {
+        console.debug('Saved number indices are not number columns')
         return false
       }
 
@@ -515,6 +519,7 @@ export class QueryOutput extends React.Component {
         return columns[index] && isColumnStringType(columns[index])
       })
       if (!areStringColumnsValid) {
+        console.debug('Saved string indices are not string columns')
         return false
       }
 
@@ -531,7 +536,7 @@ export class QueryOutput extends React.Component {
 
       return true
     } catch (error) {
-      console.debug('Saved table config was not valid for dashboard tile response', error?.message)
+      console.debug('Saved table config was not valid for dashboard tile response:', error?.message)
       return false
     }
   }
@@ -1115,16 +1120,10 @@ export class QueryOutput extends React.Component {
       return
     }
 
-    // console.log(
-    //   'CHANGING NUMBER COL INDICES. we need to check validity every time to make sure the second axis columns dont overlap with the first',
-    //   { indices, indices2 },
-    // )
-
     const indicesIntersection = indices.filter((index) => indices2.includes(index))
     const indicesIntersect = !!indicesIntersection?.length
-    console.log({ indicesIntersection, indices, indices2 })
     if (indicesIntersect) {
-      console.log('column indices have overlapping values!! You must do something about this')
+      console.debug('Selected columns already exist on the other axis. Exiting')
       return
     }
 

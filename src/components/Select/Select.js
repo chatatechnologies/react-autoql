@@ -30,15 +30,52 @@ export default class Select extends React.Component {
     label: undefined,
     size: 'large',
     style: {},
+    rebuildTooltips: () => {},
   }
 
   state = {
     isOpen: false,
   }
 
+  componentDidUpdate = (nextProps, nextState) => {
+    if (this.state.isOpen !== nextState.isOpen) {
+      this.props.rebuildTooltips()
+    }
+  }
+
+  renderSelect = () => {
+    return (
+      <div
+        className={`react-autoql-select ${this.props.className}`}
+        data-test='react-autoql-select'
+        onClick={(e) => {
+          // e.stopPropagation()
+          this.setState({ isOpen: !this.state.isOpen })
+        }}
+        style={this.props.style}
+      >
+        {_get(
+          this.props.options.find((option) => option.value === this.props.value),
+          'label',
+        ) ||
+          _get(
+            this.props.options.find((option) => option.value === this.props.value),
+            'value',
+            <span style={{ color: 'rgba(0,0,0,0.4)', fontStyle: 'italic' }}>
+              {this.props.selectionPlaceholder || 'Select an item'}
+            </span>,
+          )}
+      </div>
+    )
+  }
+
   render = () => {
     if (!this.props.options) {
       return null
+    }
+
+    if (!this.state.isOpen) {
+      return this.renderSelect()
     }
 
     return (
@@ -50,71 +87,57 @@ export default class Select extends React.Component {
           positions={this.props.positions ?? ['bottom']}
           align={this.props.align}
           padding={0}
-          clickOutsideCapture={false}
-          parentElement={this.props.parentElement}
+          // clickOutsideCapture={false}
+          parentElement={this.props.popoverParentElement}
+          boundaryElement={this.props.popoverBoundaryElement}
           onClickOutside={(e) => {
-            e.stopPropagation()
-            e.preventDefault()
-            this.setState({ isOpen: false })
+            console.log('ON CLICK OUTSIDE SELECT...')
+            // e.stopPropagation()
+            // e.preventDefault()
+            // this.setState({ isOpen: false })
           }}
-          content={({ position, nudgedLeft, nudgedTop, targetRect, popoverRect }) => {
-            return (
-              <div
-                className={`react-autoql-select-popup-container ${this.props.popupClassname || ''}`}
-                style={{ width: this.props.style.width }}
-              >
+          content={
+            // ({ position, nudgedLeft, nudgedTop, targetRect, popoverRect }) => {
+            // return (
+            <div
+              className={`react-autoql-select-popup-container ${this.props.popupClassname || ''}`}
+              style={{ width: this.props.style.width }}
+            >
+              {!!this.props.tooltipID && (
                 <ReactTooltip
                   id={`select-tooltip-${this.ID}`}
                   className='react-autoql-tooltip'
                   effect='solid'
                   delayShow={500}
                 />
-
-                <ul className='react-autoql-select-popup'>
-                  {this.props.options.map((option) => {
-                    return (
-                      <li
-                        key={`select-option-${this.ID}-${option.value}`}
-                        className={`react-autoql-select-option${option.value === this.props.value ? ' active' : ''}`}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          e.preventDefault()
-                          this.setState({ isOpen: false })
-                          this.props.onChange(option.value)
-                        }}
-                        data-tip={option.tooltip || null}
-                        data-for={`select-tooltip-${this.ID}`}
-                      >
-                        {option.listLabel || option.label}
-                      </li>
-                    )
-                  })}
-                </ul>
-              </div>
-            )
-          }}
-        >
-          <div
-            className={`react-autoql-select ${this.props.className}`}
-            data-test='react-autoql-select'
-            onClick={(e) => {
-              e.stopPropagation()
-              this.setState({ isOpen: !this.state.isOpen })
-            }}
-            style={this.props.style}
-          >
-            {_get(
-              this.props.options.find((option) => option.value === this.props.value),
-              'label',
-            ) ||
-              _get(
-                this.props.options.find((option) => option.value === this.props.value),
-                'value',
-                <span style={{ color: 'rgba(0,0,0,0.4)', fontStyle: 'italic' }}>
-                  {this.props.selectionPlaceholder || 'Select an item'}
-                </span>,
               )}
-          </div>
+              <ul className='react-autoql-select-popup'>
+                {this.props.options.map((option) => {
+                  return (
+                    <li
+                      key={`select-option-${this.ID}-${option.value}`}
+                      className={`react-autoql-select-option${option.value === this.props.value ? ' active' : ''}`}
+                      onClick={(e) => {
+                        console.log('CLICKED ON AN OPTION!', option.value)
+                        // e.stopPropagation()
+                        // e.preventDefault()
+                        this.setState({ isOpen: false })
+                        this.props.onChange(option.value)
+                      }}
+                      data-tip={option.tooltip || null}
+                      data-for={this.props.tooltipID ?? `select-tooltip-${this.ID}`}
+                    >
+                      {option.listLabel || option.label}
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+            //   )
+            // }
+          }
+        >
+          {this.renderSelect()}
         </Popover>
       </ErrorBoundary>
     )
