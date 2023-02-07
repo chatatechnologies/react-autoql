@@ -97,92 +97,13 @@ export default class App extends Component {
   state = {
     pagination: true,
     maintenance: false,
-    currentPage: 'chatbar', // 'drawer'
+    currentPage: 'drawer',
     isNewDashboardModalOpen: false,
     componentKey: uuid(),
     placement: 'right',
     showHandle: true,
     theme: 'light',
-    response: {
-      data: {
-        message: 'Success',
-        data: {
-          interpretation: 'total store sales by Day of Week',
-          display_type: 'data',
-          row_limit: 50,
-          chart_images: null,
-          session_locked_conditions: [],
-          text: 'Dow for each total store sale',
-          fe_req: {
-            page_size: 50,
-            chart_images: 'exclude',
-            source: 'data_messenger',
-            debug: false,
-            session_locked_conditions: {},
-            test: false,
-            text: 'Dow for each total store sale',
-            v2_dates: 0,
-            session_filter_conditions: [],
-            date_format: 'ISO8601',
-            disambiguation: [],
-            orders: [],
-            translation: 'exclude',
-            filters: [],
-          },
-          count_rows: 7,
-          columns: [
-            {
-              is_visible: true,
-              groupable: true,
-              precision: 'DOW',
-              display_name: 'Day of Week',
-              name: 'dayofweek(public.date_dimension.date)',
-              type: 'DATE_STRING',
-              multi_series: false,
-              dow_style: 'ALPHA_MON',
-            },
-            {
-              is_visible: true,
-              groupable: false,
-              precision: '',
-              display_name: 'Total Store Sales',
-              name: 'sum(store.store_sales_fact.sales_dollar_amount)',
-              type: 'DOLLAR_AMT',
-              multi_series: false,
-              dow_style: '',
-            },
-          ],
-          sql: [''],
-          rows: [
-            ['Wed', '201347594'],
-            ['thursday', '200364172'],
-            ['sat', '197839258'],
-            ['mon', '197028185'],
-            ['sun', '196589424'],
-            ['Friday', '194135994'],
-            ['Tues', '192561043'],
-          ],
-          persistent_locked_conditions: [],
-          parsed_interpretation: [
-            {
-              c_type: 'PREFIX',
-              eng: 'total',
-            },
-            {
-              c_type: 'SEED',
-              eng: 'store sales',
-            },
-            {
-              c_type: 'GROUPBY',
-              eng: 'by Day of Week',
-            },
-          ],
-          query_id: 'q_z5XvXsudSJOeIzH_ullhcQ',
-          condition_filter: [],
-        },
-        reference_id: '1.1.210',
-      },
-    },
+    response: undefined,
     showMask: true,
     shiftScreen: false,
     userDisplayName: 'Nikki',
@@ -372,7 +293,6 @@ export default class App extends Component {
       activeIntegrator: this.getActiveIntegrator(),
       componentKey: uuid(),
     })
-    return Promise.resolve()
 
     const url = `${this.state.domain}/autoql/api/v1/query/related-queries?key=${this.state.apiKey}&search=a&scope=narrow`
     const token = getStoredProp('jwtToken')
