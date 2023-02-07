@@ -113,7 +113,7 @@ export default class Axis extends Component {
 
   styleAxisLabels = () => {
     if (this.props.orient === 'Bottom') {
-      select(this.axisElement).selectAll('.tick text').attr('transform', 'translate(0, 5)')
+      select(this.axisElement).selectAll('.tick text').attr('transform', 'translate(0, 10)')
     } else if (this.props.orient === 'Top') {
       select(this.axisElement).selectAll('.tick text').attr('transform', 'translate(0, -5)')
     } else if (this.props.orient === 'Left') {

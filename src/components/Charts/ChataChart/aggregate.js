@@ -10,12 +10,7 @@ const getLabelFromRow = ({ row, index, columns, dataFormatting }) => {
 
   let label
   if (row) {
-    label =
-      formatChartLabel({
-        d: row[index],
-        col: column,
-        config: dataFormatting,
-      })?.fullWidthLabel ?? row[index]
+    label = formatChartLabel({ d: row[index], column, dataFormatting })?.fullWidthLabel ?? row[index]
   }
   return label
 }

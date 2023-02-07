@@ -90,7 +90,7 @@ export const AGG_TYPES = [
     tooltip: '<strong>Sum:</strong> Values that have the same chart axis label will be added up.',
   },
   {
-    displayName: 'Average',
+    displayName: 'Avg',
     value: 'avg',
     unit: 'inherit',
     tooltip: '<strong>Average:</strong> Values that have the same chart axis label will be averaged.',

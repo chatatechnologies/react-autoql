@@ -340,8 +340,8 @@ export const formatStringDate = (value, config) => {
   return value
 }
 
-export const formatChartLabel = ({ d, scale }) => {
-  if (d === null || !scale) {
+export const formatChartLabel = ({ d, scale, column, dataFormatting }) => {
+  if (d === null) {
     return {
       fullWidthLabel: 'Untitled Category',
       formattedLabel: 'Untitled Category',
@@ -349,7 +349,7 @@ export const formatChartLabel = ({ d, scale }) => {
     }
   }
 
-  const col = scale.column
+  const col = column ?? scale.column
 
   if (!col || !col.type) {
     return {
@@ -359,11 +359,11 @@ export const formatChartLabel = ({ d, scale }) => {
     }
   }
 
-  const config = scale.dataFormatting || getDataFormatting()
+  const config = dataFormatting ?? scale?.dataFormatting ?? getDataFormatting()
   const { currencyCode, languageCode } = config
 
   let type = col.type
-  if (scale.units === 'none') {
+  if (scale?.units === 'none') {
     type = 'QUANTITY'
   }
 

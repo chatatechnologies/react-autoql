@@ -1,8 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
-import _get from 'lodash.get'
-import _isEqual from 'lodash.isequal'
 
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
@@ -10,8 +8,9 @@ import { symbol, symbolSquare } from 'd3-shape'
 
 import legendColor from '../D3Legend/D3Legend'
 
-import { deepEqual, getBBoxFromRef, removeFromDOM } from '../../../js/Util.js'
+import { deepEqual, removeFromDOM } from '../../../js/Util.js'
 import { getLegendLabelsForMultiSeries, mergeBboxes } from '../helpers'
+import { AGG_TYPES, COLUMN_TYPE_DISPLAY_NAMES } from '../../../js/Constants'
 
 export default class Legend extends Component {
   constructor(props) {
@@ -77,10 +76,10 @@ export default class Legend extends Component {
   }
 
   renderAllLegends = () => {
-    this.renderLegend(this.rightLegendElement, this.props.legendColumnIndices, this.props.title)
+    this.renderLegend(this.rightLegendElement, this.props.legendColumnIndices)
     if (this.props.hasSecondAxis) {
       const isSecondLegend = true
-      this.renderLegend(this.rightLegendElement2, this.props.numberColumnIndices2, this.props.title2, isSecondLegend)
+      this.renderLegend(this.rightLegendElement2, this.props.numberColumnIndices2, isSecondLegend)
     }
 
     if (this.justMounted) {
@@ -141,24 +140,6 @@ export default class Legend extends Component {
     } catch (error) {
       console.error(error)
     }
-
-    // select(this.legendBorder)
-    //   .attr('class', 'legend-title-border')
-    //   .attr('width', _get(this.titleBBox, 'width', 0))
-    //   .attr('height', _get(this.titleBBox, 'height', 0))
-    //   .attr('x', _get(this.titleBBox, 'x', 0))
-    //   .attr('y', _get(this.titleBBox, 'y', 0))
-    //   .attr('stroke', 'transparent')
-    //   .attr('stroke-width', '1px')
-    //   .attr('fill', 'transparent')
-    //   .attr('rx', 4)
-
-    // Move to front
-    // this.legendElement = select(this.legendBorder).node()
-    // if (this.legendElement) {
-    //   removeFromDOM(this.legendElement)
-    //   this.legendElement.parentNode.appendChild(this.legendElement)
-    // }
   }
 
   onClick = (labelText, legendLabels) => {
@@ -172,15 +153,42 @@ export default class Legend extends Component {
     }
   }
 
-  renderLegend = (legendElement, columnIndices, title, isSecondLegend) => {
+  getLegendTitleFromColumns = (columnIndices) => {
+    let title = 'Fields'
+
+    const legendColumns = columnIndices.map((index) => this.props.columns[index])
+
+    const columnTypeArray = columnIndices.map((index) => this.props.columns[index].type)
+    const allTypesEqual = !columnTypeArray.find((type) => type !== columnTypeArray[0])
+    if (allTypesEqual) {
+      const columnTypeName = COLUMN_TYPE_DISPLAY_NAMES[columnTypeArray[0]]
+      if (columnTypeName) {
+        title = `${columnTypeName} ${title}`
+      }
+    }
+
+    const aggTypeArray = legendColumns.map((col) => col.aggType)
+    const allAggTypesEqual = !aggTypeArray.find((agg) => agg !== aggTypeArray[0])
+    if (allAggTypesEqual) {
+      const aggName = AGG_TYPES.find((agg) => agg.value === aggTypeArray[0])?.displayName
+      if (aggName) {
+        title = `${title} (${aggName})`
+      }
+    }
+
+    return title
+  }
+
+  renderLegend = (legendElement, columnIndices, isSecondLegend) => {
     try {
       const self = this
-      const legendLabels = getLegendLabelsForMultiSeries(this.props.columns, this.props.colorScale, columnIndices)
 
+      const legendLabels = getLegendLabelsForMultiSeries(this.props.columns, this.props.colorScale, columnIndices)
       if (!legendLabels) {
         return
       }
 
+      const title = this.getLegendTitleFromColumns(columnIndices)
       const legendScale = this.getLegendScale(legendLabels)
 
       if (this.props.placement === 'right') {
@@ -330,11 +338,11 @@ export default class Legend extends Component {
                 align='end'
                 childProps={{
                   ref: (r) => (this.legendBorder = r),
-                  x: _get(this.titleBBox, 'x', 0),
-                  y: _get(this.titleBBox, 'y', 0),
-                  width: _get(this.titleBBox, 'width', 0) + this.BUTTON_PADDING * 2,
-                  height: _get(this.titleBBox, 'height', 0) + this.BUTTON_PADDING * 2,
-                  //   transform: this.props.translate,
+                  x: (this.titleBBox?.x ?? 0),
+                  y: (this.titleBBox?.y ?? 0),
+                  width: (this.titleBBox?.width ?? 0) + this.BUTTON_PADDING * 2,
+                  height: (this.titleBBox?.height ?? 0) + this.BUTTON_PADDING * 2,
+                  transform: this.props.translate,
                 }}
               />
             )} */}
