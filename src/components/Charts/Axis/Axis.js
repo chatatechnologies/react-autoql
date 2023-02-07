@@ -281,7 +281,6 @@ export default class Axis extends Component {
   renderAxisSelector = ({ positions, isSecondAxis, childProps = {} }) => {
     return (
       <AxisSelector
-        chartType={this.props.type}
         chartContainerRef={this.props.chartContainerRef}
         changeNumberColumnIndices={this.props.changeNumberColumnIndices}
         changeStringColumnIndex={this.props.changeStringColumnIndex}
@@ -292,6 +291,7 @@ export default class Axis extends Component {
         numberColumnIndices2={this.props.numberColumnIndices2}
         stringColumnIndices={this.props.stringColumnIndices}
         stringColumnIndex={this.props.stringColumnIndex}
+        dateColumnsOnly={this.props.dateColumnsOnly}
         isAggregation={this.props.isAggregation}
         tooltipID={this.props.tooltipID}
         hidden={!this.props.hasDropdown}

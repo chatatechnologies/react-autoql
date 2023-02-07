@@ -29,11 +29,12 @@ import {
   mergeBboxes,
 } from '../helpers.js'
 
-import { getColumnTypeAmounts } from '../../QueryOutput/columnHelpers'
+import { getColumnTypeAmounts, getDateColumnIndex, isColumnDateType } from '../../QueryOutput/columnHelpers'
 import { getChartColorVars, getThemeValue } from '../../../theme/configureTheme'
 import { aggregateData } from './aggregate'
 
 import './ChataChart.scss'
+import { DATE_ONLY_CHART_TYPES } from '../../../js/Constants'
 
 export default class ChataChart extends Component {
   constructor(props) {
@@ -104,6 +105,13 @@ export default class ChataChart extends Component {
     }
 
     if (
+      this.props.type !== prevProps.type &&
+      DATE_ONLY_CHART_TYPES.includes(this.props.type) &&
+      !isColumnDateType(this.props.columns[this.props.stringColumnIndex])
+    ) {
+      const dateColumnIndex = getDateColumnIndex(this.props.columns)
+      this.props.changeStringColumnIndex(dateColumnIndex)
+    } else if (
       (!this.props.isDrilldownChartHidden && prevProps.isDrilldownChartHidden) ||
       (prevProps.type && this.props.type !== prevProps.type)
     ) {
@@ -373,16 +381,6 @@ export default class ChataChart extends Component {
       onLabelRotation: this.adjustVerticalPosition,
       visibleSeriesIndices,
       visibleSeriesIndices2,
-      // numberAxisTitle: getLinearAxisTitle({
-      //   numberColumns: numberColumns,
-      //   dataFormatting: this.props.dataFormatting,
-      // }),
-      // numberAxisTitle2: getLinearAxisTitle({
-      //   numberColumns: numberColumns2,
-      //   dataFormatting: this.props.dataFormatting,
-      // }),
-      // stringAxisTitle: this.getStringAxisTitle(),
-      onStringColumnSelect: this.onStringColumnSelect,
       tooltipID: this.props.tooltipID,
       chartTooltipID: this.props.chartTooltipID,
       chartContainerRef: this.chartContainerRef,

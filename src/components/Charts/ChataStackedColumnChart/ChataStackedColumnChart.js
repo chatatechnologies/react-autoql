@@ -62,8 +62,6 @@ export default class ChataStackedColumnChart extends Component {
           linearAxis='y'
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}
-          leftAxisTitle={this.props.numberAxisTitle}
-          bottomAxisTitle={this.props.stringAxisTitle}
           yGridLines
         />
       </g>

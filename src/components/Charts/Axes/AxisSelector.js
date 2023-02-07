@@ -3,8 +3,6 @@ import { v4 as uuid } from 'uuid'
 import NumberAxisSelector from './NumberAxisSelector'
 import StringAxisSelector from './StringAxisSelector'
 
-import { isColumnNumberType, isColumnStringType } from '../../QueryOutput/columnHelpers'
-
 export default class AxisSelector extends React.Component {
   constructor(props) {
     super(props)

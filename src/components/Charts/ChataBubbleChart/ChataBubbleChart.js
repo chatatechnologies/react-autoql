@@ -49,8 +49,6 @@ export default class ChataBubbleChart extends Component {
           yScale={this.yScale}
           xCol={this.props.columns[this.props.stringColumnIndex]}
           yCol={this.props.legendColumn}
-          bottomAxisTitle={this.props.stringAxisTitle}
-          leftAxisTitle={this.props.legendTitle}
         />
       </g>
     )

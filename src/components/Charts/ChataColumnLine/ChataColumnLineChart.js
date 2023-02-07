@@ -93,9 +93,6 @@ export default class ChataColumnLineChart extends Component {
           hasBottomLegend={this.props.legendLocation === 'bottom'}
           hasXDropdown={this.props.hasStringDropdown}
           hasYDropdown={this.props.hasNumberDropdown}
-          leftAxisTitle={this.props.numberAxisTitle}
-          rightAxisTitle={this.props.numberAxisTitle2}
-          bottomAxisTitle={this.props.stringAxisTitle}
           toggleChartScale={this.toggleChartScale}
           yGridLines
         >

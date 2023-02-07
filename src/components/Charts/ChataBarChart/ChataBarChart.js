@@ -79,8 +79,6 @@ export default class ChataBarChart extends Component {
           hasBottomLegend={this.props.legendLocation === 'bottom'}
           hasXDropdown={this.props.hasNumberDropdown}
           hasYDropdown={this.props.hasStringDropdown}
-          // leftAxisTitle={this.props.stringAxisTitle}
-          // bottomAxisTitle={this.props.numberAxisTitle}
           toggleChartScale={this.toggleChartScale}
           xGridLines
         >

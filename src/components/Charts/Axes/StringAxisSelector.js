@@ -2,12 +2,23 @@ import React from 'react'
 import { Popover } from 'react-tiny-popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { v4 as uuid } from 'uuid'
+import { isColumnDateType } from '../../QueryOutput/columnHelpers'
 
 export default class StringAxisSelector extends React.Component {
   constructor(props) {
     super(props)
 
     this.COMPONENT_KEY = uuid()
+  }
+
+  getDateColumnIndices = () => {
+    const dateColumnIndices = []
+    this.props.columns.forEach((col, i) => {
+      if (isColumnDateType(col) && col.is_visible) {
+        dateColumnIndices.push(i)
+      }
+    })
+    return dateColumnIndices
   }
 
   renderSelectorContent = ({ position, childRect, popoverRect }) => {
@@ -30,6 +41,11 @@ export default class StringAxisSelector extends React.Component {
       maxHeight = Window.innerHeight
     }
 
+    let columnIndices = this.props.stringColumnIndices
+    if (this.props.dateColumnsOnly) {
+      columnIndices = this.getDateColumnIndices()
+    }
+
     return (
       <div className='string-axis-selector-popover-content'>
         <CustomScrollbars autoHide={false} autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
@@ -41,7 +57,7 @@ export default class StringAxisSelector extends React.Component {
             }}
           >
             <ul className='axis-selector-content'>
-              {this.props.stringColumnIndices.map((colIndex, i) => {
+              {columnIndices.map((colIndex, i) => {
                 return (
                   <li
                     className={`string-select-list-item ${colIndex === this.props.stringColumnIndex ? 'active' : ''}`}
