@@ -318,11 +318,17 @@ export class DataMessenger extends React.Component {
   }
 
   toggleFullScreen = (isFullScreen, maxWidth, maxHeight) => {
-    this.setState({
-      width: isFullScreen ? this.props.width : maxWidth,
-      height: isFullScreen ? this.props.height : maxHeight,
-      isSizeMaximum: isFullScreen ? false : true,
-    })
+    this.setState(
+      {
+        width: isFullScreen ? this.props.width : maxWidth,
+        height: isFullScreen ? this.props.height : maxHeight,
+        isSizeMaximum: isFullScreen ? false : true,
+        isResizing: true,
+      },
+      () => {
+        this.setState({ isResizing: false })
+      },
+    )
     ReactTooltip.hide()
   }
 
