@@ -541,15 +541,25 @@ export const getLinearAxisTitle = ({ numberColumns, dataFormatting }) => {
       title = numberColumns[0].display_name
     }
 
-    const units = getNumberAxisUnits(numberColumns)
-    if (units === 'currency') {
-      const currencySymbol = getCurrencySymbol(dataFormatting)
-      if (currencySymbol) {
-        title = `${title} (${currencySymbol})`
+    const aggTypeArray = numberColumns.map((col) => col.aggType)
+    const allAggTypesEqual = !aggTypeArray.find((agg) => agg !== aggTypeArray[0])
+    if (allAggTypesEqual) {
+      const aggName = AGG_TYPES.find((agg) => agg.value === aggTypeArray[0])?.displayName
+      if (aggName) {
+        title = `${title} (${aggName})`
       }
-    } else if (units === 'percent') {
-      title = `${title} (%)`
     }
+
+    // Remove this for simplicity, we may want to add the units to the title later
+    // const units = getNumberAxisUnits(numberColumns)
+    // if (units === 'currency') {
+    //   const currencySymbol = getCurrencySymbol(dataFormatting)
+    //   if (currencySymbol) {
+    //     title = `${title} (${currencySymbol})`
+    //   }
+    // } else if (units === 'percent') {
+    //   title = `${title} (%)`
+    // }
 
     return title
   } catch (error) {
