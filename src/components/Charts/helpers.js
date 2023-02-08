@@ -62,17 +62,8 @@ export const axesPropTypes = {
   yScale: PropTypes.func.isRequired,
   xCol: PropTypes.shape({}).isRequired,
   yCol: PropTypes.shape({}).isRequired,
-  xTicks: PropTypes.array,
-  yTicks: PropTypes.array,
-  xGridLines: PropTypes.bool,
-  yGridLines: PropTypes.bool,
   hasRightLegend: PropTypes.bool,
   hasBottomLegend: PropTypes.bool,
-  hasXDropdown: PropTypes.bool,
-  hasYDropdown: PropTypes.bool,
-  xAxisTitle: PropTypes.string,
-  yAxisTitle: PropTypes.string,
-  legendTitle: PropTypes.string,
   innerHeight: PropTypes.number,
   innerWidth: PropTypes.number,
   onLabelRotation: PropTypes.func,
@@ -80,17 +71,8 @@ export const axesPropTypes = {
 
 export const axesDefaultProps = {
   ...chartDefaultProps,
-  xTicks: undefined,
-  yTicks: undefined,
-  xGridLines: false,
-  yGridLines: false,
   hasRightLegend: false,
   hasBottomLegend: false,
-  hasXDropdown: false,
-  hasYDropdown: false,
-  xAxisTitle: undefined,
-  yAxisTitle: undefined,
-  legendTitle: undefined,
   innerHeight: 0,
   innerWidth: 0,
   onLabelRotation: () => {},
@@ -492,6 +474,7 @@ export const getBandScale = ({
   scale.column = props.columns[columnIndex]
   scale.title = scale.column?.display_name
   scale.fields = axisColumns
+  scale.hasDropdown = props.enableAxisDropdown && props.stringColumnIndices?.length > 1
   scale.tickLabels = getTickValues({ scale, props, initialTicks: scaleDomain, innerPadding, outerPadding })
 
   return scale
@@ -620,6 +603,7 @@ export const getLinearScale = ({
   scale.column = props.columns[columnIndex]
   scale.fields = axisColumns
   scale.dataFormatting = props.dataFormatting
+  scale.hasDropdown = props.enableAxisDropdown && columnIndices?.length > 1
   scale.stacked = !!stacked
   scale.type = 'LINEAR'
   scale.units = units

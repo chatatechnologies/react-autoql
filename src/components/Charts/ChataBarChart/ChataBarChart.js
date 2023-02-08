@@ -77,10 +77,7 @@ export default class ChataBarChart extends Component {
           linearAxis='x'
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}
-          hasXDropdown={this.props.hasNumberDropdown}
-          hasYDropdown={this.props.hasStringDropdown}
           toggleChartScale={this.toggleChartScale}
-          xGridLines
         >
           {this.props.marginAdjustmentFinished && <Bars {...this.props} xScale={this.xScale} yScale={this.yScale} />}
         </Axes>

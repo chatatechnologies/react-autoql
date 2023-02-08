@@ -740,7 +740,7 @@ export const supportsRegularPivotTable = (columns, dataLength, data) => {
 }
 
 export const hasDateColumn = (columns) => {
-  const hasDateColumn = !!columns.filter((col) => isColumnDateType(col))
+  const hasDateColumn = !!columns.filter((col) => isColumnDateType(col))?.length
   return hasDateColumn
 }
 

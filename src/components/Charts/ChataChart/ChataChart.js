@@ -46,7 +46,9 @@ export default class ChataChart extends Component {
 
     this.firstRender = true
     this.colorScale = scaleOrdinal().range(chartColors)
-    this.secondColorScale = scaleOrdinal().range(rotateArray(chartColors, -1))
+
+    const numSeries = this.props.numberColumnIndices?.length ?? 1
+    this.secondColorScale = scaleOrdinal().range(rotateArray(chartColors, -1 * numSeries))
 
     this.state = {
       chartID: uuid(),
@@ -338,12 +340,6 @@ export default class ChataChart extends Component {
   getCommonChartProps = () => {
     const { deltaX, deltaY } = this.state
     const { numberColumnIndices, numberColumnIndices2, columns, enableDynamicCharting } = this.props
-    const numberColumns = numberColumnIndices.map((index) => this.props.columns[index])
-    const numberColumns2 = numberColumnIndices2.map((index) => this.props.columns[index])
-
-    const { amountOfNumberColumns, amountOfStringColumns } = getColumnTypeAmounts(columns)
-    const hasMultipleNumberColumns = amountOfNumberColumns > 1
-    const hasMultipleStringColumns = amountOfStringColumns > 1
 
     const visibleSeriesIndices = numberColumnIndices.filter(
       (colIndex) => columns?.[colIndex] && !columns[colIndex].isSeriesHidden,
@@ -371,12 +367,8 @@ export default class ChataChart extends Component {
       deltaX,
       deltaY,
       chartPadding: this.PADDING,
-      hasMultipleNumberColumns,
-      hasMultipleStringColumns,
-      hasStringDropdown: enableDynamicCharting && hasMultipleStringColumns && !this.props.isPivot,
-      hasNumberDropdown: enableDynamicCharting && hasMultipleNumberColumns && !this.props.isPivot,
+      enableAxisDropdown: enableDynamicCharting && !this.props.isPivot,
       marginAdjustmentFinished: true,
-      legendTitle: this.props.legendColumn?.title || 'Category',
       legendLocation: getLegendLocation(numberColumnIndices, this.props.type),
       legendLabels: this.getLegendLabels(),
       onLabelRotation: this.adjustVerticalPosition,

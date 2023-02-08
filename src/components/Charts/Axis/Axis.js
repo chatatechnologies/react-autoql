@@ -293,7 +293,7 @@ export default class Axis extends Component {
         dateColumnsOnly={this.props.dateColumnsOnly}
         isAggregation={this.props.isAggregation}
         tooltipID={this.props.tooltipID}
-        hidden={!this.props.hasDropdown}
+        hidden={!this.shouldRenderAxisSelector()}
         columns={this.props.columns}
         scale={this.props.scale}
         align='center'
@@ -307,7 +307,7 @@ export default class Axis extends Component {
         isSecondAxis={isSecondAxis}
       >
         <rect
-          className={`axis-label-border ${this.props.hidden ? 'hidden' : ''}`}
+          className={`axis-label-border ${this.shouldRenderAxisSelector() ? '' : 'hidden'}`}
           data-test='axis-label-border'
           onClick={this.openSelector}
           fill='transparent'
@@ -320,7 +320,7 @@ export default class Axis extends Component {
   }
 
   renderAxisTitleText = () => {
-    const { scale, hasDropdown } = this.props
+    const { scale } = this.props
     const title = scale?.title ?? ''
 
     if (title.length > 35) {
@@ -334,7 +334,7 @@ export default class Axis extends Component {
     return (
       <tspan data-test='axis-label'>
         <tspan ref={(r) => (this.titleText = r)}>{title}</tspan>
-        {hasDropdown && (
+        {this.shouldRenderAxisSelector() && (
           <tspan
             className='react-autoql-axis-selector-arrow'
             data-test='dropdown-arrow'
@@ -404,8 +404,7 @@ export default class Axis extends Component {
           {this.renderAxisTitleText()}
         </text>
         {this.renderAxisSelector({
-          // positions: ['right', 'bottom', 'left', 'top'],
-          positions: ['right'],
+          positions: ['right', 'bottom', 'left', 'top'],
         })}
       </g>
     )
@@ -441,9 +440,6 @@ export default class Axis extends Component {
         {this.renderAxisSelector({
           isSecondAxis: true,
           positions: ['left', 'top', 'bottom', 'right'],
-          // childProps: {
-          //   transform,
-          // },
         })}
       </g>
     )
@@ -573,6 +569,10 @@ export default class Axis extends Component {
     )
   }
 
+  shouldRenderAxisSelector = () => {
+    return this.props.scale?.hasDropdown
+  }
+
   shouldRenderAxisScaler = () => {
     return !!this.labelBBox && this.props.scale?.type === 'LINEAR' && this.props.scale?.domain().length !== 1
   }
@@ -585,10 +585,6 @@ export default class Axis extends Component {
           labelBBox={this.labelBBox}
           childProps={{
             ref: (r) => (this.axisScaler = r),
-            // x: (this.labelBBox?.x ?? 0) - this.BUTTON_PADDING,
-            // y: (this.labelBBox?.y ?? 0) - this.BUTTON_PADDING,
-            // width: (this.labelBBox?.width ?? 0) + this.BUTTON_PADDING * 2,
-            // height: (this.labelBBox?.height ?? 0) + this.BUTTON_PADDING * 2,
           }}
         />
       )
@@ -596,21 +592,6 @@ export default class Axis extends Component {
   }
 
   render = () => {
-    // const numSeries = this.props.numberColumnIndices?.length || 0
-    // const legendDx = (this.LEGEND_PADDING * (numSeries - 1)) / 2
-    // const marginLeft = this.props.leftMargin || 0
-
-    // let legendClippingHeight =
-    //   this.props.height -
-    //   // this.props.topMargin -
-    //   // make legend smaller if labels are not rotated
-    //   // because they might overlap the legend
-    //   (!this.state.rotateLabels ? 0 : 44) + // distance to bottom of axis labels
-    //   20
-    // if (legendClippingHeight < 0) {
-    //   legendClippingHeight = 0
-    // }
-
     return (
       <g
         data-test='axis'

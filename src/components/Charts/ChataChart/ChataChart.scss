@@ -107,10 +107,10 @@
     stroke-linecap: round;
     stroke-linejoin: round;
 
-    .line-dot-inner-circle,
-    .line-dot-outer-circle {
-      paint-order: stroke;
-    }
+    // .line-dot-inner-circle,
+    // .line-dot-outer-circle {
+    //   paint-order: stroke;
+    // }
 
     &.hidden-dot {
       .line-dot-inner-circle {

@@ -34,18 +34,18 @@ export default class Line extends Component {
 
   makePaths = () => {
     const { columns, numberColumnIndices, stringColumnIndex, yScale, xScale } = this.props
-    const backgroundColor = getThemeValue('background-color-secondary')
 
     const paths = []
-    const outerPaths = []
     numberColumnIndices.forEach((colIndex, i) => {
       const vertices = []
       if (!columns[colIndex].isSeriesHidden) {
         this.props.data.forEach((d, index) => {
           const value = d[colIndex]
-          const prevRow = this.props.data[index - 1]
-          const nextRow = this.props.data[index + 1]
 
+          // This breaks when bezier curve is applied.
+          // We can enable it if we dont want to smooth the line
+          // const prevRow = this.props.data[index - 1]
+          // const nextRow = this.props.data[index + 1]
           // If the visual difference between vertices is not noticeable, dont even render
           // const isFirstOrLastPoint = index === 0 || index === this.props.data.length - 1
           // if (
@@ -79,23 +79,27 @@ export default class Line extends Component {
         />
       )
 
-      const outerPath = (
-        <path
-          key={`line-outer-${getKey(0, i)}`}
-          className='line-outer'
-          d={d}
-          fill='none'
-          stroke={backgroundColor}
-          strokeOpacity={0.3}
-          strokeWidth={3}
-        />
-      )
+      // This outer path is for adding a slight border to the path
+      // in order to differentiate between its background if the bars
+      // are the same color. We can enable it in the future if it
+      // becomes an issue
+      // const outerPath = (
+      //   <path
+      //     key={`line-outer-${getKey(0, i)}`}
+      //     className='line-outer'
+      //     d={d}
+      //     fill='none'
+      //     stroke={backgroundColor}
+      //     strokeOpacity={0.3}
+      //     strokeWidth={3}
+      //   />
+      // )
+      // outerPaths.push(outerPath)
 
-      outerPaths.push(outerPath)
       paths.push(path)
     })
 
-    return { paths, outerPaths }
+    return { paths }
   }
 
   makeCircles = () => {
@@ -156,6 +160,7 @@ export default class Line extends Component {
                 pointerEvents: 'none',
                 stroke: this.props.colorScale(i),
                 strokeWidth: 3.5,
+                paintOrder: 'stroke',
                 color: this.props.colorScale(i),
                 opacity: largeDataset ? 0 : 1,
                 fill:

@@ -89,8 +89,6 @@ export default class Axes extends React.Component {
         scale={this.props.xScale}
         translateY={0}
         translateX={0}
-        showGridLines={this.props.xGridLines}
-        hasDropdown={this.props.hasXDropdown}
         innerWidth={innerWidth}
         innerHeight={innerHeight}
         onAxisRenderComplete={this.onAxisRenderComplete}
@@ -108,7 +106,6 @@ export default class Axes extends React.Component {
         orient='Left'
         scale={this.props.yScale}
         showGridLines={this.props.yGridLines}
-        hasDropdown={this.props.hasYDropdown}
         innerWidth={innerWidth}
         innerHeight={innerHeight}
         translateY={0}
@@ -136,7 +133,6 @@ export default class Axes extends React.Component {
         orient='Top'
         scale={this.props.xScale2}
         showGridLines={false}
-        hasDropdown={this.props.hasXDropdown}
         innerWidth={innerWidth}
         innerHeight={innerHeight}
         translateY={0}
@@ -176,7 +172,6 @@ export default class Axes extends React.Component {
             showGridLines={false}
             hasRightLegend={false}
             hasBottomLegend={false}
-            hasDropdown={this.props.hasYDropdown}
             innerWidth={innerWidth}
             innerHeight={innerHeight}
             onAxisRenderComplete={this.onAxisRenderComplete}

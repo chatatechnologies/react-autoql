@@ -61,8 +61,6 @@ export default class ChataLineChart extends Component {
           yCol={yCol}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}
-          hasXDropdown={this.props.hasStringDropdown}
-          hasYDropdown={this.props.hasNumberDropdown}
           dateColumnsOnly
           yGridLines
         />
