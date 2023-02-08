@@ -8,9 +8,10 @@ import { symbol, symbolSquare } from 'd3-shape'
 
 import legendColor from '../D3Legend/D3Legend'
 
-import { deepEqual, removeFromDOM } from '../../../js/Util.js'
+import { deepEqual, removeFromDOM, rotateArray } from '../../../js/Util.js'
 import { getLegendLabelsForMultiSeries, mergeBboxes } from '../helpers'
 import { AGG_TYPES, COLUMN_TYPE_DISPLAY_NAMES } from '../../../js/Constants'
+import { getChartColorVars } from '../../../theme/configureTheme'
 
 export default class Legend extends Component {
   constructor(props) {
@@ -76,10 +77,15 @@ export default class Legend extends Component {
   }
 
   renderAllLegends = () => {
-    this.renderLegend(this.rightLegendElement, this.props.legendColumnIndices)
+    this.renderLegend(this.rightLegendElement, this.props.legendColumnIndices, this.props.colorScale)
     if (this.props.hasSecondAxis) {
       const isSecondLegend = true
-      this.renderLegend(this.rightLegendElement2, this.props.numberColumnIndices2, isSecondLegend)
+      this.renderLegend(
+        this.rightLegendElement2,
+        this.props.numberColumnIndices2,
+        this.props.secondColorScale,
+        isSecondLegend,
+      )
     }
 
     if (this.justMounted) {
@@ -179,11 +185,11 @@ export default class Legend extends Component {
     return title
   }
 
-  renderLegend = (legendElement, columnIndices, isSecondLegend) => {
+  renderLegend = (legendElement, columnIndices, colorScale, isSecondLegend) => {
     try {
       const self = this
 
-      const legendLabels = getLegendLabelsForMultiSeries(this.props.columns, this.props.colorScale, columnIndices)
+      const legendLabels = getLegendLabelsForMultiSeries(this.props.columns, colorScale, columnIndices)
       if (!legendLabels) {
         return
       }

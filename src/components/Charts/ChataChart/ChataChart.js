@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 import { v4 as uuid } from 'uuid'
 import { scaleOrdinal } from 'd3-scale'
-import { select } from 'd3-selection'
 
 import { ChataColumnChart } from '../ChataColumnChart'
 import { ChataBarChart } from '../ChataBarChart'
@@ -18,23 +17,23 @@ import { ChataColumnLineChart } from '../ChataColumnLine'
 import { Spinner } from '../../Spinner'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import { svgToPng, getBBoxFromRef, sortDataByDate, getCurrencySymbol, deepEqual, difference } from '../../../js/Util.js'
+import { svgToPng, getBBoxFromRef, sortDataByDate, deepEqual, rotateArray } from '../../../js/Util.js'
+
 import {
   chartContainerDefaultProps,
   chartContainerPropTypes,
   dataStructureChanged,
   getLegendLabelsForMultiSeries,
   getLegendLocation,
-  getLinearAxisTitle,
   mergeBboxes,
 } from '../helpers.js'
 
 import { getColumnTypeAmounts, getDateColumnIndex, isColumnDateType } from '../../QueryOutput/columnHelpers'
 import { getChartColorVars, getThemeValue } from '../../../theme/configureTheme'
 import { aggregateData } from './aggregate'
+import { DATE_ONLY_CHART_TYPES } from '../../../js/Constants'
 
 import './ChataChart.scss'
-import { DATE_ONLY_CHART_TYPES } from '../../../js/Constants'
 
 export default class ChataChart extends Component {
   constructor(props) {
@@ -47,6 +46,7 @@ export default class ChataChart extends Component {
 
     this.firstRender = true
     this.colorScale = scaleOrdinal().range(chartColors)
+    this.secondColorScale = scaleOrdinal().range(rotateArray(chartColors, -1))
 
     this.state = {
       chartID: uuid(),
@@ -363,6 +363,7 @@ export default class ChataChart extends Component {
       key: undefined,
       data: this.state.data || this.props.data,
       colorScale: this.colorScale,
+      secondColorScale: this.secondColorScale,
       height: innerHeight,
       width: innerWidth,
       outerHeight,

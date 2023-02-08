@@ -27,6 +27,16 @@ import {
 } from '../components/QueryOutput/columnHelpers'
 import { findIndex } from 'lodash'
 
+export const rotateArray = (array, n) => {
+  const rotated = [...array]
+  n = n % array.length
+  if (n < 0) n = array.length + n
+  for (let i = 0; i < n; i++) {
+    rotated.unshift(rotated.pop())
+  }
+  return rotated
+}
+
 export const onlyUnique = (value, index, self) => {
   return self.indexOf(value) === index
 }

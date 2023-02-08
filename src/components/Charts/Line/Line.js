@@ -222,13 +222,11 @@ export default class Line extends Component {
       return null
     }
 
-    const { outerPaths, paths } = this.makePaths()
-    const { innerCircles, outerCircles } = this.makeCircles()
+    const { paths } = this.makePaths()
+    const { innerCircles } = this.makeCircles()
 
     return (
       <g data-test='line'>
-        {outerPaths}
-        {outerCircles}
         {paths}
         {innerCircles}
       </g>
