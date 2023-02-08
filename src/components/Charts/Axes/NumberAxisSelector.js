@@ -233,7 +233,7 @@ export default class NumberAxisSelector extends React.Component {
     const allDisabled = this.areAllDisabled(type)
 
     return (
-      <div className='number-selector-field-group'>
+      <div className='number-selector-field-group' key={`series-selector-group-${type}-${this.COMPONENT_KEY}`}>
         <div className='number-selector-header'>
           <div className='number-selector-header-title'>
             {this.state.columns && this.props.legendColumn !== undefined ? (

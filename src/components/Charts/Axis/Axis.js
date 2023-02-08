@@ -1,6 +1,5 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import _cloneDeep from 'lodash.clonedeep'
 import { v4 as uuid } from 'uuid'
 import { select } from 'd3-selection'
 import { axisLeft, axisBottom, axisTop, axisRight } from 'd3-axis'
