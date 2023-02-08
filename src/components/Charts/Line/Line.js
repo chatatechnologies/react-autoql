@@ -1,14 +1,21 @@
 import React, { Component } from 'react'
 import { getThemeValue } from '../../../theme/configureTheme'
+import { createSVGPath } from './lineFns'
 import { chartElementDefaultProps, chartElementPropTypes, getKey, getTooltipContent } from '../helpers'
 
 export default class Line extends Component {
+  constructor(props) {
+    super(props)
+
+    this.PATH_SMOOTHING = 0.2
+
+    this.state = {
+      activeKey: this.props.activeChartElementKey,
+    }
+  }
+
   static propTypes = chartElementPropTypes
   static defaultProps = chartElementDefaultProps
-
-  state = {
-    activeKey: this.props.activeChartElementKey,
-  }
 
   onDotClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)
@@ -25,12 +32,12 @@ export default class Line extends Component {
     this.setState({ activeKey: newActiveKey })
   }
 
-  makePolylines = () => {
+  makePaths = () => {
     const { columns, numberColumnIndices, stringColumnIndex, yScale, xScale } = this.props
     const backgroundColor = getThemeValue('background-color-secondary')
 
-    const polylines = []
-    const outerPolylines = []
+    const paths = []
+    const outerPaths = []
     numberColumnIndices.forEach((colIndex, i) => {
       const vertices = []
       if (!columns[colIndex].isSeriesHidden) {
@@ -40,14 +47,14 @@ export default class Line extends Component {
           const nextRow = this.props.data[index + 1]
 
           // If the visual difference between vertices is not noticeable, dont even render
-          const isFirstOrLastPoint = index === 0 || index === this.props.data.length - 1
-          if (
-            !isFirstOrLastPoint &&
-            Math.abs(yScale(value) - yScale(prevRow?.[colIndex])) < 0.05 &&
-            Math.abs(yScale(prevRow?.[colIndex]) - yScale(nextRow?.[colIndex])) < 0.05
-          ) {
-            return
-          }
+          // const isFirstOrLastPoint = index === 0 || index === this.props.data.length - 1
+          // if (
+          //   !isFirstOrLastPoint &&
+          //   Math.abs(yScale(value) - yScale(prevRow?.[colIndex])) < 0.05 &&
+          //   Math.abs(yScale(prevRow?.[colIndex]) - yScale(nextRow?.[colIndex])) < 0.05
+          // ) {
+          //   return
+          // }
 
           const xShift = xScale.bandwidth() / 2
           const minValue = yScale.domain()[0]
@@ -59,28 +66,24 @@ export default class Line extends Component {
         })
       }
 
-      const polylinePoints = vertices
-        .map((xy) => {
-          return xy.join(',')
-        })
-        .join(' ')
+      const d = createSVGPath(vertices, this.PATH_SMOOTHING)
 
-      const polyline = (
-        <polyline
+      const path = (
+        <path
           key={`line-${getKey(0, i)}`}
           className='line'
-          points={polylinePoints}
+          d={d}
           fill='none'
           stroke={this.props.colorScale(i)}
           strokeWidth={1.5}
         />
       )
 
-      const outerPolyline = (
-        <polyline
+      const outerPath = (
+        <path
           key={`line-outer-${getKey(0, i)}`}
           className='line-outer'
-          points={polylinePoints}
+          d={d}
           fill='none'
           stroke={backgroundColor}
           strokeOpacity={0.3}
@@ -88,21 +91,21 @@ export default class Line extends Component {
         />
       )
 
-      polylines.push(polyline)
-      outerPolylines.push(outerPolyline)
+      outerPaths.push(outerPath)
+      paths.push(path)
     })
 
-    return { polylines, outerPolylines }
+    return { paths, outerPaths }
   }
 
-  makeDots = () => {
+  makeCircles = () => {
     const { columns, legendColumn, numberColumnIndices, stringColumnIndex, dataFormatting, yScale, xScale } = this.props
     const backgroundColor = getThemeValue('background-color-secondary')
 
-    const shouldShowDots = this.props.width / this.props.data?.length > 10
+    const largeDataset = this.props.width / this.props.data?.length < 10
 
-    const innerDots = []
-    const outerDots = []
+    const innerCircles = []
+    const outerCircles = []
     numberColumnIndices.forEach((colIndex, i) => {
       if (!columns[colIndex].isSeriesHidden) {
         this.props.data.forEach((d, index) => {
@@ -154,7 +157,7 @@ export default class Line extends Component {
                 stroke: this.props.colorScale(i),
                 strokeWidth: 3.5,
                 color: this.props.colorScale(i),
-                opacity: shouldShowDots ? 1 : 0,
+                opacity: largeDataset ? 0 : 1,
                 fill:
                   this.state.activeKey === getKey(colIndex, index)
                     ? this.props.colorScale(i)
@@ -174,15 +177,15 @@ export default class Line extends Component {
                 stroke: 'none',
                 fill: backgroundColor,
                 fillOpacity: 0.3,
-                opacity: shouldShowDots ? 1 : 0,
+                opacity: largeDataset ? 0 : 1,
               }}
             />
           )
 
-          innerDots.push(
+          innerCircles.push(
             <g
               className={`line-dot${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}${
-                shouldShowDots ? '' : ' hidden-dot'
+                largeDataset ? ' hidden-dot' : ''
               }`}
               key={`circle-group-${getKey(colIndex, index)}`}
               onClick={() => this.onDotClick(d, colIndex, index)}
@@ -194,7 +197,7 @@ export default class Line extends Component {
             </g>,
           )
 
-          outerDots.push(
+          outerCircles.push(
             <g
               className={`line-dot-outer${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
               key={`circle-group-outer-${getKey(colIndex, index)}`}
@@ -206,7 +209,7 @@ export default class Line extends Component {
       }
     })
 
-    return { innerDots, outerDots }
+    return { innerCircles, outerCircles }
   }
 
   render = () => {
@@ -219,15 +222,15 @@ export default class Line extends Component {
       return null
     }
 
-    const { polylines, outerPolylines } = this.makePolylines()
-    const { innerDots, outerDots } = this.makeDots()
+    const { outerPaths, paths } = this.makePaths()
+    const { innerCircles, outerCircles } = this.makeCircles()
 
     return (
       <g data-test='line'>
-        {outerPolylines}
-        {outerDots}
-        {polylines}
-        {innerDots}
+        {outerPaths}
+        {outerCircles}
+        {paths}
+        {innerCircles}
       </g>
     )
   }
