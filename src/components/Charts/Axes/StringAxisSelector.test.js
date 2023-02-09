@@ -11,7 +11,9 @@ const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
   const wrapper = mount(
     <svg width='300px' height='300px'>
-      <StringAxisSelector {...setupProps} />
+      <StringAxisSelector {...setupProps}>
+        <div data-test='string-axis-selector'>test</div>
+      </StringAxisSelector>
     </svg>,
   )
   return wrapper
@@ -20,7 +22,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders string axis selector if string column provided', () => {
     const wrapper = setup(pivotSampleProps)
-    const stringSelector = findByTestAttr(wrapper, 'axis-label-border')
+    const stringSelector = findByTestAttr(wrapper, 'string-axis-selector')
     expect(stringSelector.exists()).toBe(true)
   })
 })

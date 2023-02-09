@@ -13,13 +13,12 @@ export const isAggregation = (columns) => {
 
 export const isColumnNumberType = (col) => {
   const type = col?.type
-
   return type === 'DOLLAR_AMT' || type === 'QUANTITY' || type === 'PERCENT' || type === 'RATIO'
 }
 
 export const isColumnStringType = (col) => {
   const type = col?.type
-  return type === 'STRING' || type === 'DATE_STRING' || type === 'DATE'
+  return type === 'STRING' || type === 'DATE_STRING' || type === 'DATE' || type === 'UNKNOWN'
 }
 
 export const isColumnDateType = (col) => {
@@ -136,23 +135,23 @@ export const getStringColumnIndices = (columns, supportsPivot) => {
     return undefined
   }
 
-  const drilldownIndex = columns.findIndex((col) => col.isDrilldownColumn)
-  if (drilldownIndex >= 0) {
-    return {
-      stringColumnIndices: [drilldownIndex],
-      stringColumnIndex: drilldownIndex,
-    }
-  }
-
+  const stringColumnIndices = []
   const multiSeriesIndex = getMultiSeriesColumnIndex(columns)
   const dateColumnIndex = getDateColumnIndex(columns)
-  const stringColumnIndices = []
 
   columns.forEach((col, index) => {
     if ((isColumnStringType(col) || col.groupable) && index !== multiSeriesIndex && col.is_visible) {
       stringColumnIndices.push(index)
     }
   })
+
+  const drilldownIndex = columns.findIndex((col) => col.isDrilldownColumn)
+  if (drilldownIndex >= 0) {
+    return {
+      stringColumnIndices,
+      stringColumnIndex: drilldownIndex,
+    }
+  }
 
   // We will usually want to take the second column because the first one
   // will most likely have all of the same value. Grab the first column only

@@ -8,7 +8,7 @@ import { select } from 'd3-selection'
 import { deepEqual, difference, formatChartLabel, formatElement, getCurrencySymbol } from '../../js/Util'
 import { dataFormattingType } from '../../props/types'
 import { dataFormattingDefault, getDataFormatting } from '../../props/defaults'
-import { AGG_TYPES, COLUMN_TYPES } from '../../js/Constants'
+import { AGG_TYPES, NUMBER_COLUMN_TYPES } from '../../js/Constants'
 
 const DEFAULT_INNER_PADDING = 0.2
 const DEFAULT_OUTER_PADDING = 0.5
@@ -48,20 +48,20 @@ export const chartPropTypes = {
   visibleSeriesIndices: PropTypes.arrayOf(PropTypes.number).isRequired,
   height: PropTypes.number.isRequired,
   width: PropTypes.number.isRequired,
-  deltaX: PropTypes.number.isRequired,
-  deltaY: PropTypes.number.isRequired,
+  deltaX: PropTypes.number,
+  deltaY: PropTypes.number,
 }
 
 export const chartDefaultProps = {
   ...chartContainerDefaultProps,
+  deltaX: 0,
+  deltaY: 0,
 }
 
 export const axesPropTypes = {
   ...chartPropTypes,
   xScale: PropTypes.func.isRequired,
   yScale: PropTypes.func.isRequired,
-  xCol: PropTypes.shape({}).isRequired,
-  yCol: PropTypes.shape({}).isRequired,
   hasRightLegend: PropTypes.bool,
   hasBottomLegend: PropTypes.bool,
   innerHeight: PropTypes.number,
@@ -174,8 +174,11 @@ export const getTooltipContent = ({ row, columns, colIndex, stringColumnIndex, l
     const stringColumn = columns[stringColumnIndex]
     const numberColumn = columns[colIndex]
 
-    const stringTitle = stringColumn.title
-    let numberTitle = numberColumn.origColumn ? numberColumn.origColumn.title : numberColumn.title
+    const stringTitle = stringColumn.tooltipTitle ?? stringColumn.title
+    let numberTitle = numberColumn.origColumn
+      ? numberColumn.origColumn.tooltipTitle ?? numberColumn.origColumn.title
+      : numberColumn.tooltipTitle ?? numberColumn.title
+
     const aggTypeDisplayName = AGG_TYPES.find((agg) => agg.value === numberColumn.aggType)?.displayName
     if (aggTypeDisplayName) {
       numberTitle = `${numberTitle} (${aggTypeDisplayName})`
@@ -197,7 +200,11 @@ export const getTooltipContent = ({ row, columns, colIndex, stringColumnIndex, l
 
     const column = columns[colIndex]
     const tooltipLine1 =
-      !!legendColumn && !!column?.origColumn ? `<div><strong>${legendColumn.title}:</strong> ${column.title}</div>` : ''
+      !!legendColumn && !!column?.origColumn
+        ? `<div><strong>${legendColumn.tooltipTitle ?? legendColumn.title}:</strong> ${
+            column.tooltipTitle ?? column.title
+          }</div>`
+        : ''
     const tooltipLine2 = `<div><strong>${stringTitle}:</strong> ${stringValue}</div>`
     const tooltipLine3 = `<div><strong>${numberTitle}:</strong> ${numberValue}</div>`
 
@@ -469,6 +476,7 @@ export const getBandScale = ({
   const axisColumns = props.stringColumnIndices?.map((index) => props.columns[index])
 
   const scale = scaleBand().domain(scaleDomain).range(range).paddingInner(innerPadding).paddingOuter(outerPadding)
+
   scale.type = 'BAND'
   scale.dataFormatting = props.dataFormatting
   scale.column = props.columns[columnIndex]
@@ -477,6 +485,10 @@ export const getBandScale = ({
   scale.hasDropdown = props.enableAxisDropdown && props.stringColumnIndices?.length > 1
   scale.tickLabels = getTickValues({ scale, props, initialTicks: scaleDomain, innerPadding, outerPadding })
 
+  console.log('should show string dropdown??', {
+    enableDropdown: props.enableAxisDropdown,
+    indices: props.stringColumnIndices,
+  })
   return scale
 }
 
@@ -496,13 +508,13 @@ export const getUnitsForColumn = (column) => {
     }
   }
 
-  if (column.type === COLUMN_TYPES.CURRENCY) {
+  if (column.type === NUMBER_COLUMN_TYPES.CURRENCY) {
     return 'currency'
-  } else if (column.type === COLUMN_TYPES.QUANTITY) {
+  } else if (column.type === NUMBER_COLUMN_TYPES.QUANTITY) {
     return 'none'
-  } else if (column.type === COLUMN_TYPES.RATIO) {
+  } else if (column.type === NUMBER_COLUMN_TYPES.RATIO) {
     return 'none'
-  } else if (column.type === COLUMN_TYPES.PERCENT) {
+  } else if (column.type === NUMBER_COLUMN_TYPES.PERCENT) {
     return 'percent'
   }
 }
@@ -590,7 +602,7 @@ export const getLinearScale = ({
 
   const domain = [min, max]
   const scaleRange = range ?? getRangeForAxis(props, axis)
-  const axisColumns = columnIndices.map((index) => props.columns[index])
+  const axisColumns = columnIndices?.map((index) => props.columns[index]) ?? []
   const units = getNumberAxisUnits(axisColumns)
   const title = getLinearAxisTitle({
     numberColumns: axisColumns,
@@ -603,7 +615,7 @@ export const getLinearScale = ({
   scale.column = props.columns[columnIndex]
   scale.fields = axisColumns
   scale.dataFormatting = props.dataFormatting
-  scale.hasDropdown = props.enableAxisDropdown && columnIndices?.length > 1
+  scale.hasDropdown = props.enableAxisDropdown
   scale.stacked = !!stacked
   scale.type = 'LINEAR'
   scale.units = units

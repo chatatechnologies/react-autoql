@@ -79,6 +79,10 @@ export default class StringAxisSelector extends React.Component {
   }
 
   render = () => {
+    if (!this.props.children) {
+      return null
+    }
+
     return (
       <Popover
         id={`string-axis-selector-${this.COMPONENT_KEY}`}

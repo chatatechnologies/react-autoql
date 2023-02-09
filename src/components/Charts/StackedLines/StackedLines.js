@@ -73,7 +73,7 @@ export default class StackedLines extends Component {
         points={polygonPoints}
         data-tip={`
             <div>
-              <strong>${this.props.legendTitle}</strong>: ${this.props.legendLabels[i].label}
+              <strong>Field</strong>: ${this.props.legendLabels[i].label}
             </div>
           `}
         data-for={this.props.chartTooltipID}

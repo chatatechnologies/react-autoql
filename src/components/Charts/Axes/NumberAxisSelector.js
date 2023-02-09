@@ -7,7 +7,7 @@ import { SelectableList } from '../../SelectableList'
 import { Button } from '../../Button'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { Checkbox } from '../../Checkbox'
-import { AGG_TYPES, COLUMN_TYPES, COLUMN_TYPE_DISPLAY_NAMES } from '../../../js/Constants'
+import { AGG_TYPES, NUMBER_COLUMN_TYPES, NUMBER_COLUMN_TYPE_DISPLAY_NAMES } from '../../../js/Constants'
 import { Select } from '../../Select'
 
 const aggHTMLCodes = {
@@ -157,7 +157,11 @@ export default class NumberAxisSelector extends React.Component {
   }
 
   getOtherAxisColumns = () => {
-    return this.props.isSecondAxis ? this.props.numberColumnIndices : this.props.numberColumnIndices2
+    if (!this.props.hasSecondAxis) {
+      return []
+    }
+
+    return this.props.isSecondAxis ? this.props.numberColumnIndices ?? [] : this.props.numberColumnIndices2 ?? []
   }
 
   areAllDisabled = (type) => {
@@ -227,7 +231,7 @@ export default class NumberAxisSelector extends React.Component {
     const maxHeight = 300
     const minHeight = 100
 
-    const title = COLUMN_TYPE_DISPLAY_NAMES[type]
+    const title = NUMBER_COLUMN_TYPE_DISPLAY_NAMES[type]
     const listItems = this.getSelectableListItems(type)
     const allChecked = this.getAllChecked(type)
     const allDisabled = this.areAllDisabled(type)
@@ -273,8 +277,8 @@ export default class NumberAxisSelector extends React.Component {
     return (
       <div className='axis-series-selector'>
         <div className='number-selector-field-group-container'>
-          {Object.keys(COLUMN_TYPES).map((key) => {
-            return this.renderSeriesSelector(COLUMN_TYPES[key])
+          {Object.keys(NUMBER_COLUMN_TYPES).map((key) => {
+            return this.renderSeriesSelector(NUMBER_COLUMN_TYPES[key])
           })}
         </div>
       </div>
@@ -307,6 +311,10 @@ export default class NumberAxisSelector extends React.Component {
   }
 
   render = () => {
+    if (!this.props.children) {
+      return null
+    }
+
     return (
       <Popover
         id={`number-axis-selector-${this.COMPONENT_KEY}`}

@@ -20,8 +20,8 @@ describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup({
       ...pivotSampleProps,
-      xScale: pivotSampleProps.numberScale,
-      yScale: pivotSampleProps.stringScale,
+      xScale: pivotSampleProps.numberScale(),
+      yScale: pivotSampleProps.stringScale(),
     })
     const stackedBarsComponent = findByTestAttr(wrapper, 'stacked-bars')
     expect(stackedBarsComponent.exists()).toBe(true)

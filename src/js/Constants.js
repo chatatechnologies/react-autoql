@@ -38,14 +38,14 @@ export const MONTH_NAMES = [
   'December',
 ]
 
-export const COLUMN_TYPES = {
+export const NUMBER_COLUMN_TYPES = {
   CURRENCY: 'DOLLAR_AMT',
   QUANTITY: 'QUANTITY',
   RATIO: 'RATIO',
   PERCENT: 'PERCENT',
 }
 
-export const COLUMN_TYPE_DISPLAY_NAMES = {
+export const NUMBER_COLUMN_TYPE_DISPLAY_NAMES = {
   DOLLAR_AMT: 'Currency',
   QUANTITY: 'Quantity',
   RATIO: 'Ratio',

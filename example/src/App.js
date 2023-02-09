@@ -111,7 +111,7 @@ export default class App extends Component {
     enableAutocomplete: true,
     enableQueryInterpretation: true,
     enableFilterLocking: true,
-    enableQueryValidation: true,
+    enableQueryValidation: false,
     enableQuerySuggestions: true,
     enableDrilldowns: true,
     enableExploreQueriesTab: true,
@@ -288,13 +288,7 @@ export default class App extends Component {
   }
 
   testAuthentication = () => {
-    this.setState({
-      isAuthenticated: true,
-      activeIntegrator: this.getActiveIntegrator(),
-      componentKey: uuid(),
-    })
-
-    const url = `${this.state.domain}/autoql/api/v1/query/related-queries?key=${this.state.apiKey}&search=a&scope=narrow`
+    const url = `${this.state.domain}/autoql/api/v1/query/related-queries?key=${this.state.apiKey}&search=sales`
     const token = getStoredProp('jwtToken')
 
     const config = {}

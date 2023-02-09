@@ -20,8 +20,8 @@ describe('renders correctly', () => {
   test('renders regular pivot chart data correctly', () => {
     const wrapper = setup({
       ...pivotSampleProps,
-      xScale: pivotSampleProps.stringScale,
-      yScale: pivotSampleProps.stringScale,
+      xScale: pivotSampleProps.stringScale(),
+      yScale: pivotSampleProps.stringScale(),
     })
     const squaresComponent = findByTestAttr(wrapper, 'squares')
     expect(squaresComponent.exists()).toBe(true)

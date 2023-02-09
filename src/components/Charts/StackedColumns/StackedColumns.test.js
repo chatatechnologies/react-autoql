@@ -20,8 +20,8 @@ describe('renders correctly', () => {
   test('renders regular pivot chart data correctly', () => {
     const wrapper = setup({
       ...pivotSampleProps,
-      xScale: pivotSampleProps.stringScale,
-      yScale: pivotSampleProps.numberScale,
+      xScale: pivotSampleProps.stringScale(),
+      yScale: pivotSampleProps.numberScale(),
     })
     const stackedColumnsComponent = findByTestAttr(wrapper, 'stacked-columns')
     expect(stackedColumnsComponent.exists()).toBe(true)

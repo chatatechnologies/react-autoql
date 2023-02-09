@@ -10,7 +10,7 @@ import legendColor from '../D3Legend/D3Legend'
 
 import { deepEqual, removeFromDOM, rotateArray } from '../../../js/Util.js'
 import { getLegendLabelsForMultiSeries, mergeBboxes } from '../helpers'
-import { AGG_TYPES, COLUMN_TYPE_DISPLAY_NAMES } from '../../../js/Constants'
+import { AGG_TYPES, NUMBER_COLUMN_TYPE_DISPLAY_NAMES } from '../../../js/Constants'
 import { getChartColorVars } from '../../../theme/configureTheme'
 
 export default class Legend extends Component {
@@ -167,7 +167,7 @@ export default class Legend extends Component {
     const columnTypeArray = columnIndices.map((index) => this.props.columns[index].type)
     const allTypesEqual = !columnTypeArray.find((type) => type !== columnTypeArray[0])
     if (allTypesEqual) {
-      const columnTypeName = COLUMN_TYPE_DISPLAY_NAMES[columnTypeArray[0]]
+      const columnTypeName = NUMBER_COLUMN_TYPE_DISPLAY_NAMES[columnTypeArray[0]]
       if (columnTypeName) {
         title = `${columnTypeName} ${title}`
       }

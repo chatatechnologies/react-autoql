@@ -152,12 +152,32 @@ export default {
     stringColumnIndices: [0, 1, 2, 3, 4, 5],
     height: 500,
     width: 500,
-    stringScale: scaleBand()
-      .domain(listData.map((d) => d[0]))
-      .range([0, 500])
-      .paddingInner(1)
-      .paddingOuter(0),
-    numberScale: scaleLinear().domain([5000000, 20000000]).range([0, 500]).nice(),
+    stringScale: (params = {}) => {
+      const scale = scaleBand()
+      scale
+        .domain(listData.map((d) => d[0]))
+        .range([0, 500])
+        .paddingInner(1)
+        .paddingOuter(0)
+
+      if (params && Object.keys(params)?.length) {
+        Object.keys(params).forEach((key) => {
+          scale[key] = params[key]
+        })
+      }
+
+      return scale
+    },
+    numberScale: (params = {}) => {
+      const scale = scaleLinear()
+      scale.domain([5000000, 20000000]).range([0, 500]).nice()
+      if (params && Object.keys(params)?.length) {
+        Object.keys(params).forEach((key) => {
+          scale[key] = params[key]
+        })
+      }
+      return scale
+    },
     colorScale: scaleOrdinal().range(['red', 'blue']),
     onLabelChange: () => {},
   },
@@ -169,12 +189,30 @@ export default {
     visibleSeriesIndices: [1, 2],
     stringColumnIndex: 0,
     stringColumnIndices: [0],
-    stringScale: scaleBand()
-      .domain(pivotData.map((d) => d[0]))
-      .range([0, 500])
-      .paddingInner(1)
-      .paddingOuter(0),
-    numberScale: scaleLinear().domain([5000000, 20000000]).range([0, 500]).nice(),
+    stringScale: (params = {}) => {
+      const scale = scaleBand()
+      scale
+        .domain(pivotData.map((d) => d[0]))
+        .range([0, 500])
+        .paddingInner(1)
+        .paddingOuter(0)
+      if (params && Object.keys(params)?.length) {
+        Object.keys(params).forEach((key) => {
+          scale[key] = params[key]
+        })
+      }
+      return scale
+    },
+    numberScale: (params = {}) => {
+      const scale = scaleLinear()
+      scale.domain([5000000, 20000000]).range([0, 500]).nice()
+      if (params && Object.keys(params)?.length) {
+        Object.keys(params).forEach((key) => {
+          scale[key] = params[key]
+        })
+      }
+      return scale
+    },
     legendLabels: [
       {
         color: '#26A7E9',
@@ -239,12 +277,30 @@ export default {
     stringColumnIndices: [0],
     height: 500,
     width: 500,
-    stringScale: scaleBand()
-      .domain(datePivotData.map((d) => d[0]))
-      .range([0, 500])
-      .paddingInner(1)
-      .paddingOuter(0),
-    numberScale: scaleLinear().domain([0, 1000]).range([0, 500]).nice(),
+    stringScale: (params = {}) => {
+      const scale = scaleBand()
+      scale
+        .domain(datePivotData.map((d) => d[0]))
+        .range([0, 500])
+        .paddingInner(1)
+        .paddingOuter(0)
+      if (params && Object.keys(params)?.length) {
+        Object.keys(params).forEach((key) => {
+          scale[key] = params[key]
+        })
+      }
+      return scale
+    },
+    numberScale: (params = {}) => {
+      const scale = scaleLinear()
+      scale.domain([0, 1000]).range([0, 500]).nice()
+      if (params && Object.keys(params)?.length) {
+        Object.keys(params).forEach((key) => {
+          scale[key] = params[key]
+        })
+      }
+      return scale
+    },
     colorScale: scaleOrdinal().range(['red', 'blue']),
     onLabelChange: () => {},
   },

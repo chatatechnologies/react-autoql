@@ -5,8 +5,8 @@ import Bars from './Bars'
 import sampleProps from '../chartTestData'
 
 const scales = {
-  xScale: sampleProps.pivot.numberScale,
-  yScale: sampleProps.pivot.stringScale,
+  xScale: sampleProps.pivot.numberScale(),
+  yScale: sampleProps.pivot.stringScale(),
 }
 
 const pivotSampleProps = {

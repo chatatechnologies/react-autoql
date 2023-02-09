@@ -9,11 +9,8 @@ import {
   WEEKDAY_NAMES_MON,
   MONTH_NAMES,
   SEASON_NAMES,
-  TIMESTAMP_FORMATS,
   PRECISION_TYPES,
   WEEKDAY_NAMES_SUN,
-  AGG_TYPES,
-  COLUMN_TYPES,
 } from './Constants'
 import { dataFormattingDefault, getDataFormatting } from '../props/defaults'
 
@@ -359,7 +356,7 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting }) => {
     }
   }
 
-  const col = column ?? scale.column
+  const col = column ?? scale?.column
 
   if (!col || !col.type) {
     return {
@@ -703,13 +700,15 @@ export const supportsRegularPivotTable = (columns, dataLength, data) => {
     return false
   }
 
-  const column1Data = data.map((row) => {
-    return row[groupbyColumns[0]]
-  })
+  const column1Data =
+    data?.map((row) => {
+      return row[groupbyColumns[0]]
+    }) ?? []
 
-  const column2Data = data.map((row) => {
-    return row[groupbyColumns[1]]
-  })
+  const column2Data =
+    data?.map((row) => {
+      return row[groupbyColumns[1]]
+    }) ?? []
 
   const maxLegendLabels = 20
   const uniqueData1Length = column1Data?.filter(onlyUnique)?.length ?? 0
@@ -805,11 +804,11 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
       return [displayType]
     }
 
-    const rows = _get(response, 'data.data.rows', [])
-    const allColumns = columns || _get(response, 'data.data.columns')
+    const rows = response?.data?.data?.rows ?? []
+    const allColumns = columns || response?.data?.data?.columns
     const visibleColumns = getVisibleColumns(allColumns)
 
-    if (!_get(visibleColumns, 'length') || !_get(rows, 'length')) {
+    if (!visibleColumns?.length || !rows?.length) {
       return ['text']
     }
 
@@ -817,7 +816,6 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
       return ['single-value']
     }
 
-    const maxRowsForPivot = 1000
     const maxRowsForPieChart = 10
     const numRows = dataLength ?? rows.length
 
@@ -827,7 +825,7 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
       pivotDataHasLength = !!pivotDataLength
     }
 
-    if (supportsRegularPivotTable(columns, numRows, response?.data?.data?.rows)) {
+    if (supportsRegularPivotTable(visibleColumns, numRows, response?.data?.data?.rows)) {
       // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
       const supportedDisplayTypes = ['table']
 
@@ -908,7 +906,7 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
 export const isDisplayTypeValid = (response, displayType, dataLength, pivotDataLength, columns, isDataLimited) => {
   const supportedDisplayTypes = getSupportedDisplayTypes({
     response,
-    columns,
+    columns: columns ?? response?.data?.data?.columns,
     dataLength,
     pivotDataLength,
     isDataLimited,
@@ -946,7 +944,7 @@ export const getDefaultDisplayType = (
 ) => {
   const supportedDisplayTypes = getSupportedDisplayTypes({
     response,
-    columns,
+    columns: columns ?? response?.data?.data?.columns,
     dataLength,
     pivotDataLength,
     isDataLimited,

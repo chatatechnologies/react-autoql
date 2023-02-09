@@ -133,7 +133,7 @@ export default class Axis extends Component {
             .selectAll('.tick text')
             .style('text-anchor', 'end')
             .attr('dominant-baseline', 'text-top')
-            .attr('transform', `rotate(-45, 0, ${this.props.innerHeight}) translate(-6, 2)`)
+            .attr('transform', `rotate(-45, 0, ${this.props.innerHeight}) translate(-10, 0)`)
         } else if (this.props.orient === 'Top') {
           select(this.axisElement)
             .selectAll('.tick text')

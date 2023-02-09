@@ -1,6 +1,7 @@
 import React from 'react'
 import { mount } from 'enzyme'
 import Axis from './Axis'
+import _cloneDeep from 'lodash.clonedeep'
 import { findByTestAttr } from '../../../../test/testUtils'
 import sampleProps from '../chartTestData'
 
@@ -24,10 +25,11 @@ describe('renders correctly', () => {
   test('renders list data chart correctly', () => {
     const wrapper = setup({
       ...listSampleProps,
-      col: listSampleProps.columns[listSampleProps.stringColumnIndex],
-      scale: listSampleProps.stringScale,
+      scale: listSampleProps.stringScale({
+        title: listSampleProps.columns[listSampleProps.stringColumnIndex].display_name,
+        column: listSampleProps.columns[listSampleProps.stringColumnIndex],
+      }),
       orient: 'Left',
-      title: listSampleProps.columns[listSampleProps.stringColumnIndex].display_name,
     })
     const axisComponent = findByTestAttr(wrapper, 'axis')
     expect(axisComponent.exists()).toBe(true)
@@ -37,9 +39,10 @@ describe('renders correctly', () => {
     const wrapper = setup({
       ...pivotSampleProps,
       col: pivotSampleProps.columns[pivotSampleProps.numberColumnIndex],
-      scale: pivotSampleProps.numberScale,
+      scale: pivotSampleProps.numberScale({
+        title: pivotSampleProps.columns[pivotSampleProps.numberColumnIndex].display_name,
+      }),
       orient: 'Bottom',
-      title: pivotSampleProps.columns[pivotSampleProps.numberColumnIndex].display_name,
     })
     const axisComponent = findByTestAttr(wrapper, 'axis')
     expect(axisComponent.exists()).toBe(true)
@@ -48,8 +51,9 @@ describe('renders correctly', () => {
   test('renders date pivot data chart correctly', () => {
     const wrapper = setup({
       ...datePivotSampleProps,
-      col: datePivotSampleProps.columns[datePivotSampleProps.stringColumnIndex],
-      scale: datePivotSampleProps.stringScale,
+      scale: datePivotSampleProps.stringScale({
+        column: datePivotSampleProps.columns[datePivotSampleProps.stringColumnIndex],
+      }),
       orient: 'Left',
     })
     const axisComponent = findByTestAttr(wrapper, 'axis')
@@ -64,9 +68,10 @@ describe('after mount', () => {
         const wrapper = setup({
           ...pivotSampleProps,
           col: pivotSampleProps.columns[pivotSampleProps.stringColumnIndex],
-          scale: pivotSampleProps.stringScale,
+          scale: pivotSampleProps.stringScale({
+            title: pivotSampleProps.columns[pivotSampleProps.stringColumnIndex].display_name,
+          }),
           orient: 'Left',
-          title: pivotSampleProps.columns[pivotSampleProps.stringColumnIndex].display_name,
         })
 
         // const xLabel = findByTestAttr(wrapper, 'x-axis-label')
@@ -78,9 +83,10 @@ describe('after mount', () => {
         const wrapper = setup({
           ...pivotSampleProps,
           col: pivotSampleProps.columns[pivotSampleProps.numberColumnIndex],
-          scale: pivotSampleProps.numberScale,
+          scale: pivotSampleProps.numberScale({
+            title: pivotSampleProps.columns[pivotSampleProps.numberColumnIndex].display_name,
+          }),
           orient: 'Bottom',
-          title: pivotSampleProps.columns[pivotSampleProps.numberColumnIndex].display_name,
         })
 
         test('renders number axis label', () => {
@@ -97,10 +103,11 @@ describe('after mount', () => {
           const wrapper2 = setup({
             ...pivotSampleProps,
             col: pivotSampleProps.columns[pivotSampleProps.numberColumnIndex],
-            scale: pivotSampleProps.numberScale,
+            scale: pivotSampleProps.numberScale({
+              title: pivotSampleProps.columns[pivotSampleProps.numberColumnIndex].display_name,
+              hasDropdown: true,
+            }),
             orient: 'Bottom',
-            title: pivotSampleProps.columns[pivotSampleProps.numberColumnIndex].display_name,
-            hasDropdown: true,
           })
 
           const labelArrow = findByTestAttr(wrapper2, 'dropdown-arrow')
@@ -113,9 +120,10 @@ describe('after mount', () => {
       const wrapper = setup({
         ...datePivotSampleProps,
         col: pivotSampleProps.columns[pivotSampleProps.numberColumnIndex],
-        scale: pivotSampleProps.numberScale,
         orient: 'Bottom',
-        title: 'x title test loooong title to test a very very very very very very very long title',
+        scale: pivotSampleProps.numberScale({
+          title: 'x title test loooong title to test a very very very very very very very long title',
+        }),
       })
 
       test('renders long axis label with ellipsis', () => {

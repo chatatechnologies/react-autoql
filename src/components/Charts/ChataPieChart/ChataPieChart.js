@@ -64,12 +64,14 @@ export default class ChataPieChart extends Component {
 
   static propTypes = {
     ...chartPropTypes,
+    onAxesRenderComplete: PropTypes.func,
     backgroundColor: PropTypes.string,
     margin: PropTypes.number,
   }
 
   static defaultProps = {
     ...chartDefaultProps,
+    onAxesRenderComplete: () => {},
     backgroundColor: 'transparent',
     margin: 40,
   }

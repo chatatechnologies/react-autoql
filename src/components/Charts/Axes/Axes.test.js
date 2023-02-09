@@ -5,32 +5,24 @@ import React from 'react'
 import { mount } from 'enzyme'
 import Axes from './Axes'
 import sampleProps from '../chartTestData'
-import { findByTestAttr, ignoreConsoleErrors } from '../../../../test/testUtils'
-
-var yLabelRef
+import { findByTestAttr } from '../../../../test/testUtils'
 
 const pivotSampleProps = {
   ...sampleProps.pivot,
-  xScale: sampleProps.pivot.numberScale,
-  yScale: sampleProps.pivot.stringScale,
-  xCol: sampleProps.pivot.columns[sampleProps.pivot.numberColumnIndex],
-  yCol: sampleProps.pivot.columns[sampleProps.pivot.stringColumnIndex],
+  xScale: sampleProps.pivot.numberScale(),
+  yScale: sampleProps.pivot.stringScale(),
 }
 
 const datePivotSampleProps = {
   ...sampleProps.datePivot,
-  xScale: sampleProps.datePivot.stringScale,
-  yScale: sampleProps.datePivot.numberScale,
-  xCol: sampleProps.datePivot.columns[sampleProps.datePivot.stringColumnIndex],
-  yCol: sampleProps.datePivot.columns[sampleProps.datePivot.numberColumnIndex],
+  xScale: sampleProps.datePivot.stringScale(),
+  yScale: sampleProps.datePivot.numberScale(),
 }
 
 const listSampleProps = {
   ...sampleProps.list,
-  xScale: sampleProps.list.stringScale,
-  yScale: sampleProps.list.numberScale,
-  xCol: sampleProps.list.columns[sampleProps.list.stringColumnIndex],
-  yCol: sampleProps.list.columns[sampleProps.list.numberColumnIndex],
+  xScale: sampleProps.list.stringScale(),
+  yScale: sampleProps.list.numberScale(),
 }
 
 const defaultProps = Axes.defaultProps
@@ -39,7 +31,7 @@ const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
   const wrapper = mount(
     <svg width='300px' height='300px'>
-      <Axes {...setupProps} />
+      <Axes {...setupProps}></Axes>
     </svg>,
   )
   return wrapper
