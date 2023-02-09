@@ -1121,13 +1121,6 @@ export class QueryOutput extends React.Component {
       return
     }
 
-    const indicesIntersection = indices.filter((index) => indices2.includes(index))
-    const indicesIntersect = !!indicesIntersection?.length
-    if (indicesIntersect) {
-      console.debug('Selected columns already exist on the other axis. Exiting')
-      return
-    }
-
     if (this.usePivotDataForChart()) {
       this.pivotTableConfig.numberColumnIndices = indices
       this.pivotTableConfig.numberColumnIndex = indices[0]
@@ -1137,7 +1130,10 @@ export class QueryOutput extends React.Component {
       }
 
       // Todo: pivot columns should live in state
-      this.pivotTableColumns = newColumns
+      if (newColumns) {
+        this.pivotTableColumns = newColumns
+      }
+
       this.forceUpdate()
     } else {
       this.tableConfig.numberColumnIndices = indices
@@ -1147,7 +1143,8 @@ export class QueryOutput extends React.Component {
         this.tableConfig.numberColumnIndex2 = indices2[0]
       }
 
-      this.updateColumns(newColumns)
+      const columns = newColumns ?? this.state.columns
+      this.updateColumns(columns)
     }
   }
 

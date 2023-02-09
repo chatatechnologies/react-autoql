@@ -23,6 +23,8 @@ export const CHART_TYPES = [
 
 export const DATE_ONLY_CHART_TYPES = ['line', 'stacked_line']
 
+export const DOUBLE_AXIS_CHART_TYPES = ['column_line']
+
 export const MONTH_NAMES = [
   'January',
   'February',

@@ -31,7 +31,7 @@ import {
 import { getColumnTypeAmounts, getDateColumnIndex, isColumnDateType } from '../../QueryOutput/columnHelpers'
 import { getChartColorVars, getThemeValue } from '../../../theme/configureTheme'
 import { aggregateData } from './aggregate'
-import { DATE_ONLY_CHART_TYPES } from '../../../js/Constants'
+import { DATE_ONLY_CHART_TYPES, DOUBLE_AXIS_CHART_TYPES } from '../../../js/Constants'
 
 import './ChataChart.scss'
 
@@ -113,6 +113,18 @@ export default class ChataChart extends Component {
     ) {
       const dateColumnIndex = getDateColumnIndex(this.props.columns)
       this.props.changeStringColumnIndex(dateColumnIndex)
+    } else if (this.props.type !== prevProps.type && DOUBLE_AXIS_CHART_TYPES.includes(this.props.type)) {
+      const indicesIntersection = this.props.numberColumnIndices.filter((index) =>
+        this.props.numberColumnIndices2.includes(index),
+      )
+      const indicesIntersect = !!indicesIntersection?.length
+      if (indicesIntersect) {
+        console.debug('Selected columns already exist on the other axis. Exiting')
+        const newNumberColumnIndices = this.props.numberColumnIndices.filter(
+          (index) => !this.props.numberColumnIndices2.includes(index),
+        )
+        this.props.changeNumberColumnIndices(newNumberColumnIndices, this.props.numberColumnIndices2)
+      }
     } else if (
       (!this.props.isDrilldownChartHidden && prevProps.isDrilldownChartHidden) ||
       (prevProps.type && this.props.type !== prevProps.type)
