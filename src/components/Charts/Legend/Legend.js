@@ -217,6 +217,8 @@ export default class Legend extends Component {
           })
         if (isSecondLegend) {
           legendOrdinal.shape('line')
+        } else if (this.props.shape) {
+          legendOrdinal.shape(this.props.shape)
         }
 
         if (title) {

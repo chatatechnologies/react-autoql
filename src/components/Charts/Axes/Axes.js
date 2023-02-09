@@ -201,6 +201,7 @@ export default class Axes extends React.Component {
           placement={this.props.legendLocation}
           onRenderComplete={() => this.onAxisRenderComplete('Legend')}
           hasSecondAxis={this.hasSecondAxis()}
+          shape={this.props.legendShape}
         />
       </g>
     )
