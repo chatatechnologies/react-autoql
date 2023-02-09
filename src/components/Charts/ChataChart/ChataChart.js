@@ -28,7 +28,7 @@ import {
   mergeBboxes,
 } from '../helpers.js'
 
-import { getColumnTypeAmounts, getDateColumnIndex, isColumnDateType } from '../../QueryOutput/columnHelpers'
+import { getDateColumnIndex, isColumnDateType } from '../../QueryOutput/columnHelpers'
 import { getChartColorVars, getThemeValue } from '../../../theme/configureTheme'
 import { aggregateData } from './aggregate'
 import { DATE_ONLY_CHART_TYPES, DOUBLE_AXIS_CHART_TYPES } from '../../../js/Constants'
@@ -39,16 +39,11 @@ export default class ChataChart extends Component {
   constructor(props) {
     super(props)
     const data = this.getData(props)
-    const chartColors = getChartColorVars()
 
     this.PADDING = 10
     this.FONT_SIZE = 12
 
     this.firstRender = true
-    this.colorScale = scaleOrdinal().range(chartColors)
-
-    const numSeries = this.props.numberColumnIndices?.length ?? 1
-    this.secondColorScale = scaleOrdinal().range(rotateArray(chartColors, -1 * numSeries))
 
     this.state = {
       chartID: uuid(),
@@ -145,6 +140,14 @@ export default class ChataChart extends Component {
   componentWillUnmount = () => {
     clearTimeout(this.rebuildTooltipsTimer)
     clearTimeout(this.adjustVerticalPositionTimeout)
+  }
+
+  getColorScales = () => {
+    const { chartColors, chartColorsDark } = getChartColorVars()
+    const numSeries = this.props.numberColumnIndices?.length ?? 1
+    const colorScale = scaleOrdinal().range(chartColors)
+    const colorScale2 = scaleOrdinal().range(rotateArray(chartColorsDark, -1 * numSeries))
+    return { colorScale, colorScale2 }
   }
 
   getData = (props) => {
@@ -292,7 +295,11 @@ export default class ChataChart extends Component {
   }
 
   getLegendLabels = () => {
-    return getLegendLabelsForMultiSeries(this.props.columns, this.colorScale, this.props.numberColumnIndices)
+    return getLegendLabelsForMultiSeries(
+      this.props.columns,
+      this.getColorScales()?.colorScale,
+      this.props.numberColumnIndices,
+    )
   }
 
   rebuildTooltips = (delay = 500) => {
@@ -362,6 +369,7 @@ export default class ChataChart extends Component {
     )
 
     const { innerHeight, innerWidth, outerHeight, outerWidth } = this.getInnerDimensions()
+    const { colorScale, colorScale2 } = this.getColorScales()
 
     return {
       ...this.props,
@@ -370,8 +378,8 @@ export default class ChataChart extends Component {
       innerChartRef: this.innerChartRef?.chartRef,
       key: undefined,
       data: this.state.data || this.props.data,
-      colorScale: this.colorScale,
-      secondColorScale: this.secondColorScale,
+      colorScale,
+      colorScale2,
       height: innerHeight,
       width: innerWidth,
       outerHeight,

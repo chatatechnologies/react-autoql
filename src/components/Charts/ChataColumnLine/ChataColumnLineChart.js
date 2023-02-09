@@ -103,7 +103,7 @@ export default class ChataColumnLineChart extends Component {
                   numberColumnIndices={this.props.numberColumnIndices2}
                   xScale={this.xScale}
                   yScale={this.yScale2}
-                  colorScale={this.props.secondColorScale}
+                  colorScale={this.props.colorScale2}
                 />
               )}
             </>

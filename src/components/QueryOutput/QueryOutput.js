@@ -115,10 +115,6 @@ export class QueryOutput extends React.Component {
       this.pivotTableConfig = _cloneDeep(pivotTableConfig)
     }
 
-    // Set theme colors
-    const chartColors = getChartColorVars()
-    this.colorScale = scaleOrdinal().range(chartColors)
-
     // --------- generate data before mount --------
     this.generateAllData()
     // -------------------------------------------

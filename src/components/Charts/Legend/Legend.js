@@ -8,10 +8,9 @@ import { symbol, symbolSquare } from 'd3-shape'
 
 import legendColor from '../D3Legend/D3Legend'
 
-import { deepEqual, removeFromDOM, rotateArray } from '../../../js/Util.js'
+import { deepEqual, removeFromDOM } from '../../../js/Util.js'
 import { getLegendLabelsForMultiSeries, mergeBboxes } from '../helpers'
 import { AGG_TYPES, NUMBER_COLUMN_TYPE_DISPLAY_NAMES } from '../../../js/Constants'
-import { getChartColorVars } from '../../../theme/configureTheme'
 
 export default class Legend extends Component {
   constructor(props) {
@@ -83,7 +82,7 @@ export default class Legend extends Component {
       this.renderLegend(
         this.rightLegendElement2,
         this.props.numberColumnIndices2,
-        this.props.secondColorScale,
+        this.props.colorScale2,
         isSecondLegend,
       )
     }

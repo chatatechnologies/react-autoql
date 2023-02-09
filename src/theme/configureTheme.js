@@ -43,6 +43,31 @@ const getYIQFromHex = (hex) => {
   return yiq
 }
 
+const lightenDarkenColor = (col, amt) => {
+  let usePound = false
+  if (col[0] == '#') {
+    col = col.slice(1)
+    usePound = true
+  }
+
+  const num = parseInt(col, 16)
+
+  let r = (num >> 16) + amt
+  if (r > 255) r = 255
+  else if (r < 0) r = 0
+
+  let b = ((num >> 8) & 0x00ff) + amt
+  if (b > 255) b = 255
+  else if (b < 0) b = 0
+
+  let g = (num & 0x0000ff) + amt
+  if (g > 255) g = 255
+  else if (g < 0) g = 0
+
+  const string = '000000' + (g | (b << 8) | (r << 16)).toString(16)
+  return (usePound ? '#' : '') + string.substring(string.length - 6)
+}
+
 export const getThemeValue = (property) => {
   return document.documentElement.style.getPropertyValue(`--react-autoql-${property}`)
 }
@@ -62,22 +87,25 @@ export const getThemeType = () => {
 export const getChartColorVars = () => {
   try {
     const chartColors = []
+    const chartColorsDark = []
     const maxLoops = 100
     let counter = 0
     while (counter < maxLoops) {
       try {
         const chartColor = getThemeValue(`chart-color-${counter}`)
+        const chartColorDark = getThemeValue(`chart-color-dark-${counter}`) ?? chartColor
         if (chartColor) {
           chartColors.push(chartColor)
+          chartColorsDark.push(chartColorDark)
         } else {
-          return chartColors
+          return { chartColors, chartColorsDark }
         }
       } catch (error) {
         // do nothing
       }
       counter += 1
     }
-    return chartColors
+    return { chartColors, chartColorsDark }
   } catch (error) {
     console.error('Could not get chart color css vars. See below for error details')
     console.error(error)
@@ -104,6 +132,9 @@ const setChartColors = (providedChartColors, themeStyles) => {
 
   chartColors.forEach((color, i) => {
     themeStyles[`chart-color-${i}`] = color
+
+    const darkerColor = lightenDarkenColor(color, -10)
+    themeStyles[`chart-color-dark-${i}`] = darkerColor
   })
 }
 

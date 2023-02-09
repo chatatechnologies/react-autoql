@@ -31,7 +31,7 @@ export default class ChataPieChart extends Component {
         return parseFloat(b) - parseFloat(a)
       })
 
-    const chartColors = getChartColorVars()
+    const { chartColors } = getChartColorVars()
     this.colorScale = scaleOrdinal()
       .domain(
         this.sortedData.map((d) => {
@@ -250,7 +250,7 @@ export default class ChataPieChart extends Component {
   renderLegend = () => {
     const self = this
     const { height } = this.props
-    const chartColors = getChartColorVars()
+    const { chartColors } = getChartColorVars()
 
     let legendScale
     if (this.state.legendLabels) {
