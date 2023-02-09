@@ -9,8 +9,6 @@ import dayjs from '../../js/dayjsWithPlugins'
 import parse from 'html-react-parser'
 import axios from 'axios'
 
-import { scaleOrdinal } from 'd3-scale'
-
 import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
 import {
   dataFormattingDefault,
