@@ -1216,11 +1216,8 @@ export class QueryOutput extends React.Component {
     // Set string type columns (ordinal axis)
     if (!this.tableConfig.stringColumnIndices || !(this.tableConfig.stringColumnIndex >= 0)) {
       const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(columns)
-      console.log('got string column indicies', { stringColumnIndices, allColumns: columns })
       this.tableConfig.stringColumnIndices = stringColumnIndices
       this.tableConfig.stringColumnIndex = stringColumnIndex
-    } else {
-      console.log('table config already exists??', this.tableConfig)
     }
 
     // Set number type columns and number series columns (linear axis)

@@ -485,10 +485,6 @@ export const getBandScale = ({
   scale.hasDropdown = props.enableAxisDropdown && props.stringColumnIndices?.length > 1
   scale.tickLabels = getTickValues({ scale, props, initialTicks: scaleDomain, innerPadding, outerPadding })
 
-  console.log('should show string dropdown??', {
-    enableDropdown: props.enableAxisDropdown,
-    indices: props.stringColumnIndices,
-  })
   return scale
 }
 
