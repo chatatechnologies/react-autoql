@@ -107,11 +107,6 @@
     stroke-linecap: round;
     stroke-linejoin: round;
 
-    // .line-dot-inner-circle,
-    // .line-dot-outer-circle {
-    //   paint-order: stroke;
-    // }
-
     &.hidden-dot {
       .line-dot-inner-circle {
         transition: opacity 0.2s ease;
@@ -165,8 +160,13 @@
   }
 
   g.tick {
-    transition: opacity 0.3s ease;
-    pointer-events: none;
+    text {
+      cursor: default;
+    }
+
+    line {
+      pointer-events: none;
+    }
   }
 
   .line,

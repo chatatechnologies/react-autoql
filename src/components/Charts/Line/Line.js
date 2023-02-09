@@ -75,7 +75,7 @@ export default class Line extends Component {
           d={d}
           fill='none'
           stroke={this.props.colorScale(i)}
-          strokeWidth={1.5}
+          strokeWidth={2}
         />
       )
 
@@ -159,7 +159,7 @@ export default class Line extends Component {
               style={{
                 pointerEvents: 'none',
                 stroke: this.props.colorScale(i),
-                strokeWidth: 3.5,
+                strokeWidth: 4,
                 paintOrder: 'stroke',
                 color: this.props.colorScale(i),
                 opacity: largeDataset ? 0 : 1,
