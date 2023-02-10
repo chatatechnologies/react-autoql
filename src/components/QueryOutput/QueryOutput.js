@@ -4,6 +4,7 @@ import { v4 as uuid } from 'uuid'
 import ReactTooltip from 'react-tooltip'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
+import _isEmpty from 'lodash.isempty'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
 import parse from 'html-react-parser'
@@ -246,6 +247,9 @@ export class QueryOutput extends React.Component {
 
   componentDidUpdate = (prevProps, prevState) => {
     try {
+      const newState = {}
+      let shouldForceUpdate = false
+
       // If data config was changed here, tell the parent
       if (
         !_isEqual(this.props.initialTableConfigs, {
@@ -287,12 +291,12 @@ export class QueryOutput extends React.Component {
             isFirstGeneration: true,
             newTableData: this.state.visibleRows,
           })
-          this.forceUpdate()
+          shouldForceUpdate = true
         }
 
         const newSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
         if (!_isEqual(newSupportedDisplayTypes, this.state.supportedDisplayTypes)) {
-          this.setState({ supportedDisplayTypes: newSupportedDisplayTypes })
+          newState.supportedDisplayTypes = newSupportedDisplayTypes
         }
       }
 
@@ -300,12 +304,16 @@ export class QueryOutput extends React.Component {
         !_isEqual(this.state.supportedDisplayTypes, prevState.supportedDisplayTypes) &&
         !this.isCurrentDisplayTypeValid()
       ) {
-        this.setState({
-          displayType: this.getUpdatedDefaultDisplayType('table'),
-        })
+        newState.displayType = this.getUpdatedDefaultDisplayType('table')
       }
 
       this.updateToolbars()
+
+      if (!_isEmpty(newState)) {
+        this.setState(newState)
+      } else if (shouldForceUpdate) {
+        this.forceUpdate()
+      }
     } catch (error) {
       console.error(error)
     }

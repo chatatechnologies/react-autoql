@@ -35,9 +35,9 @@ let autoCompleteArray = []
 export class DashboardTile extends React.Component {
   constructor(props) {
     super(props)
-    this.dashboardTileTitleRef = React.createRef()
-    this.optionsToolbarRef = React.createRef()
-    this.secondOptionsToolbarRef = React.createRef()
+    this.dashboardTileTitleRef = undefined
+    this.optionsToolbarRef = undefined
+    this.secondOptionsToolbarRef = undefined
     this.COMPONENT_KEY = uuid()
     this.FIRST_QUERY_RESPONSE_KEY = uuid()
     this.SECOND_QUERY_RESPONSE_KEY = uuid()
@@ -548,7 +548,7 @@ export class DashboardTile extends React.Component {
   }
 
   isTitleOverFlow = () => {
-    const dashboardTileTitleElement = this.dashboardTileTitleRef.current
+    const dashboardTileTitleElement = this.dashboardTileTitleRef
     if (dashboardTileTitleElement) {
       const elemWidth = dashboardTileTitleElement.getBoundingClientRect().width
       const parentWidth = dashboardTileTitleElement.parentElement.getBoundingClientRect().width
@@ -556,6 +556,7 @@ export class DashboardTile extends React.Component {
     }
     return false
   }
+
   renderHeader = () => {
     if (this.props.isEditing) {
       return (
@@ -753,14 +754,14 @@ export class DashboardTile extends React.Component {
   }
 
   reportProblemCallback = () => {
-    if (this.optionsToolbarRef?.current._isMounted) {
-      this.optionsToolbarRef.current.openReportProblemModal()
+    if (this.optionsToolbarRef?._isMounted) {
+      this.optionsToolbarRef.openReportProblemModal()
     }
   }
 
   secondReportProblemCallback = () => {
-    if (this.secondOptionsToolbarRef?.current._isMounted) {
-      this.secondOptionsToolbarRef.current.openReportProblemModal()
+    if (this.secondOptionsToolbarRef?._isMounted) {
+      this.secondOptionsToolbarRef.openReportProblemModal()
     }
   }
 
@@ -1017,7 +1018,7 @@ export class DashboardTile extends React.Component {
       queryOutputProps: {
         ref: (ref) => ref && ref !== this.state.responseRef && this.setState({ responseRef: ref }),
         optionsToolbarRef: this.optionsToolbarRef,
-        vizToolbarRef: this.state.vizToolbarRef,
+        vizToolbarRef: this.vizToolbarRef,
         key: `dashboard-tile-query-top-${this.FIRST_QUERY_RESPONSE_KEY}`,
         initialDisplayType,
         queryResponse: this.props.queryResponse,
@@ -1037,11 +1038,11 @@ export class DashboardTile extends React.Component {
         onColumnChange: this.onColumnChange,
       },
       vizToolbarProps: {
-        ref: (r) => !this.state.vizToolbarRef && this.setState({ vizToolbarRef: r }),
+        ref: (r) => (this.vizToolbarRef = r),
         responseRef: this.state.responseRef,
       },
       optionsToolbarProps: {
-        ref: this.optionsToolbarRef,
+        ref: (r) => (this.optionsToolbarRef = r),
         responseRef: this.state.responseRef,
       },
     })
@@ -1084,7 +1085,7 @@ export class DashboardTile extends React.Component {
         key: `dashboard-tile-query-bottom-${this.SECOND_QUERY_RESPONSE_KEY}`,
         ref: (ref) => ref && ref !== this.state.secondResponseRef && this.setState({ secondResponseRef: ref }),
         optionsToolbarRef: this.secondOptionsToolbarRef,
-        vizToolbarRef: this.state.secondVizToolbarRef,
+        vizToolbarRef: this.secondVizToolbarRef,
         initialDisplayType,
         queryResponse: this.props.secondQueryResponse || this.props.queryResponse,
         initialTableConfigs: this.props.tile.secondDataConfig,
@@ -1110,11 +1111,11 @@ export class DashboardTile extends React.Component {
         onColumnChange: this.onSecondColumnChange,
       },
       vizToolbarProps: {
-        ref: (r) => !this.state.secondVizToolbarRef && this.setState({ secondVizToolbarRef: r }),
+        ref: (r) => (this.secondVizToolbarRef = r),
         responseRef: this.state.secondResponseRef,
       },
       optionsToolbarProps: {
-        ref: this.secondOptionsToolbarRef,
+        ref: (r) => (this.secondOptionsToolbarRef = r),
         responseRef: this.state.secondResponseRef,
       },
       isSecondHalf: true,
