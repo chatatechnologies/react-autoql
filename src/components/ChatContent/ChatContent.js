@@ -286,7 +286,7 @@ export default class ChatContent extends React.Component {
             </span>
           ),
         })
-      } else if (response?.data?.message !== responseErrors.CANCELLED) {
+      } else {
         this.addResponseMessage({ response, query })
       }
 

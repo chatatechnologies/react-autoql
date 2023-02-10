@@ -2025,7 +2025,18 @@ export class QueryOutput extends React.Component {
       if (typeof error === 'object') {
         let errorMessage = errorMessages.GENERAL_QUERY
 
-        if (error.message) {
+        if (error?.message === responseErrors?.CANCELLED) {
+          errorMessage = (
+            <span>
+              Query cancelled{' '}
+              <Icon
+                data-tip='Pressing the ESC key will cancel the current query request. If you wish to re-run your last query, simply press the UP arrow in the input bar then hit ENTER.'
+                data-for={this.props.tooltipID ?? `react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
+                type='question'
+              />
+            </span>
+          )
+        } else if (error?.message) {
           // Replace the "<report>" text with link
           errorMessage = error.message
           if (this.props.reportProblemCallback) {

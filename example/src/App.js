@@ -114,7 +114,7 @@ export default class App extends Component {
     enableQueryValidation: false,
     enableQuerySuggestions: true,
     enableDrilldowns: true,
-    enableExploreQueriesTab: true,
+    enableExploreQueriesTab: false,
     enableDataExplorerTab: true,
     enableNotificationsTab: true,
     enableNotifications: true,
@@ -1502,7 +1502,7 @@ export default class App extends Component {
   renderNewDashboardModal = () => {
     return (
       <Modal
-        visible={this.state.isNewDashboardModalOpen}
+        open={this.state.isNewDashboardModalOpen}
         confirmLoading={this.state.isSavingDashboard}
         onOk={this.createDashboard}
         okText='Create Dashboard'

@@ -90,6 +90,7 @@ class QueryInput extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
+    document.addEventListener('keydown', this.onEscKeypress)
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -111,6 +112,17 @@ class QueryInput extends React.Component {
     clearTimeout(this.autoCompleteTimer)
     clearTimeout(this.queryValidationTimer)
     clearTimeout(this.caretMoveTimeout)
+    document.removeEventListener('keydown', this.onEscKeypress)
+  }
+
+  onEscKeypress = (event) => {
+    if (event.key === 'Escape') {
+      // If esc key was not pressed in combination with ctrl or alt or shift
+      const isNotCombinedKey = !(event.ctrlKey || event.altKey || event.shiftKey)
+      if (isNotCombinedKey) {
+        this.cancelQuery()
+      }
+    }
   }
 
   animateInputTextAndSubmit = ({ query, userSelection, source, skipQueryValidation }) => {
