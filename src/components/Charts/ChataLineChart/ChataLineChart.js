@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { Axes } from '../Axes'
 import { Line } from '../Line'
 
-import { chartDefaultProps, chartPropTypes, getBandScale, getLinearScales } from '../helpers.js'
+import { chartDefaultProps, chartPropTypes, getBandScale, getLinearScales, getTimeScale } from '../helpers.js'
 
 export default class ChataLineChart extends Component {
   constructor(props) {
@@ -20,12 +20,10 @@ export default class ChataLineChart extends Component {
       numberColumnIndices = props.visibleSeriesIndices
     }
 
-    this.xScale = getBandScale({
+    this.xScale = getTimeScale({
       props,
       columnIndex: props.stringColumnIndex,
       axis: 'x',
-      innerPadding: 0.8,
-      outerPadding: 0,
     })
 
     const yScalesAndTicks = getLinearScales({

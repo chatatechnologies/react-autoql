@@ -41,7 +41,7 @@ export default class Bars extends Component {
     }
 
     const allBars = []
-    const barHeight = yScale.bandwidth() / visibleSeries.length
+    const barHeight = yScale.tickSize / visibleSeries.length
 
     let visibleIndex = 0
     numberColumnIndices.forEach((colIndex, i) => {

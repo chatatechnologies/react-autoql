@@ -120,7 +120,9 @@ export default class ChataChart extends Component {
         )
         this.props.changeNumberColumnIndices(newNumberColumnIndices, this.props.numberColumnIndices2)
       }
-    } else if (
+    }
+
+    if (
       (!this.props.isDrilldownChartHidden && prevProps.isDrilldownChartHidden) ||
       (prevProps.type && this.props.type !== prevProps.type)
     ) {

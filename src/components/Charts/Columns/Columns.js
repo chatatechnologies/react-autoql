@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
-import _get from 'lodash.get'
 import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, scaleZero, getKey } from '../helpers'
+import { getDayJSObj } from '../../../js/Util'
 
 export default class Columns extends Component {
   static propTypes = chartElementPropTypes
@@ -55,7 +55,7 @@ export default class Columns extends Component {
               return null
             }
 
-            const x0 = xScale(d[stringColumnIndex])
+            const x0 = xScale.getValue(d[stringColumnIndex])
             const dX = visibleIndex * this.barWidth
             const finalBarXPosition = x0 + dX
 
@@ -112,16 +112,10 @@ export default class Columns extends Component {
     const numBarsSeries2 = yScale2 ? visibleSeries2?.length ?? 0 : 0
     const numBars = numBarsSeries1 + numBarsSeries2
 
-    this.barWidth = xScale.bandwidth() / numBars
+    this.barWidth = (xScale.bandwidth ? xScale.bandwidth() : 0) / numBars
 
-    const series1Bars = this.getBars(numberColumnIndices, yScale)
-    const series2Bars = this.getBars(numberColumnIndices2, yScale2, numBarsSeries1)
+    const bars = this.getBars(numberColumnIndices, yScale)
 
-    return (
-      <g data-test='columns'>
-        {series1Bars}
-        {series2Bars}
-      </g>
-    )
+    return <g data-test='columns'>{bars}</g>
   }
 }

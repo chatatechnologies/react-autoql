@@ -8,8 +8,13 @@ const line = (a, b) => {
 }
 
 const controlPoint = (current, previous, next, reverse, smoothing = 0.2) => {
-  const p = previous || current
-  const n = next || current
+  let p = previous
+  let n = next
+  if (!previous || !next) {
+    p = current
+    n = current
+  }
+
   const o = line(p, n)
   const angle = o.angle + (reverse ? Math.PI : 0)
   const length = o.length * smoothing

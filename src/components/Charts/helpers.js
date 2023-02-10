@@ -2,10 +2,10 @@ import PropTypes from 'prop-types'
 import { max, min, ticks } from 'd3-array'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
-import { scaleLinear, scaleBand } from 'd3-scale'
+import { scaleLinear, scaleBand, scaleTime } from 'd3-scale'
 import { select } from 'd3-selection'
 
-import { deepEqual, difference, formatChartLabel, formatElement, getCurrencySymbol } from '../../js/Util'
+import { deepEqual, difference, formatChartLabel, formatElement, getCurrencySymbol, getDayJSObj } from '../../js/Util'
 import { dataFormattingType } from '../../props/types'
 import { dataFormattingDefault, getDataFormatting } from '../../props/defaults'
 import { AGG_TYPES, NUMBER_COLUMN_TYPES } from '../../js/Constants'
@@ -463,6 +463,42 @@ export const getRangeForAxis = (props, axis) => {
   return [rangeStart, rangeEnd]
 }
 
+export const getTimeScale = ({ props, columnIndex, axis, domain }) => {
+  const range = getRangeForAxis(props, axis)
+
+  const dateArray = props.data.map((d) => {
+    return getDayJSObj({
+      value: d[columnIndex],
+      column: props.columns[columnIndex],
+      config: props.dataFormatting,
+    }).toDate()
+  })
+
+  const minDate = min(dateArray)
+  const maxDate = max(dateArray)
+  const scaleDomain = domain ?? [minDate, maxDate]
+  const axisColumns = props.stringColumnIndices?.map((index) => props.columns[index])
+
+  const scale = scaleTime().domain(scaleDomain).range(range)
+
+  scale.type = 'TIME'
+  scale.minValue = minDate
+  scale.maxValue = maxDate
+  scale.dataFormatting = props.dataFormatting
+  scale.column = props.columns[columnIndex]
+  scale.title = scale.column?.display_name
+  scale.fields = axisColumns
+  scale.hasDropdown = props.enableAxisDropdown && props.stringColumnIndices?.length > 1
+  scale.tickLabels = getTickValues({ scale, props })
+
+  scale.tickSize = 0
+  scale.getValue = (value) => {
+    return scale(getDayJSObj({ value, column: scale.column }).toDate())
+  }
+
+  return scale
+}
+
 export const getBandScale = ({
   props,
   columnIndex,
@@ -482,8 +518,12 @@ export const getBandScale = ({
   scale.column = props.columns[columnIndex]
   scale.title = scale.column?.display_name
   scale.fields = axisColumns
+  scale.tickSize = scale.bandwidth()
   scale.hasDropdown = props.enableAxisDropdown && props.stringColumnIndices?.length > 1
   scale.tickLabels = getTickValues({ scale, props, initialTicks: scaleDomain, innerPadding, outerPadding })
+  scale.getValue = (value) => {
+    return scale(value)
+  }
 
   return scale
 }
@@ -626,7 +666,12 @@ export const getLinearScale = ({
       isScaled,
     })
 
+  scale.tickSize = 0
   scale.isScaled = isScaled
+
+  scale.getValue = (value) => {
+    return scale(value)
+  }
 
   return scale
 }
@@ -748,6 +793,63 @@ export const doesElementOverflowContainer = (element, container) => {
   return false
 }
 
+const getEpochFromDate = (date) => {
+  if (date?.getTime) {
+    return date.getTime()
+  }
+
+  return
+}
+
+export const getNiceDateTickValues = ({ tickValues, scale }) => {
+  try {
+    if (tickValues?.length < 2) {
+      // Can not make nice labels with only 1 tick
+      return tickValues
+    }
+
+    const { minValue, maxValue } = scale
+
+    if (minValue === undefined || maxValue === undefined) {
+      throw new Error('Tried to make nice labels but max/min values were not provided')
+    }
+
+    const minSeconds = getEpochFromDate(minValue)
+    const maxSeconds = getEpochFromDate(maxValue)
+
+    if (!minSeconds || !maxSeconds) {
+      throw new Error('Tried to make nice labels but could not convert min and max dates to epoch')
+    }
+
+    const newTickValues = [...tickValues]
+    const tickRange = getEpochFromDate(tickValues[1]) - getEpochFromDate(tickValues[0])
+    const minTickValue = getEpochFromDate(tickValues[0])
+    const maxTickValue = getEpochFromDate(tickValues[tickValues.length - 1])
+
+    if (!tickRange || isNaN(minTickValue) || isNaN(maxTickValue)) {
+      throw new Error('Tried to make nice labels but could not convert tick values to epoch')
+    }
+
+    let newMinTickValue = minTickValue
+    let newMaxTickValue = maxTickValue
+    if (minSeconds < minTickValue) {
+      newMinTickValue = minTickValue - tickRange
+      newTickValues.unshift(new Date(newMinTickValue))
+    }
+
+    if (maxSeconds > maxTickValue) {
+      newMaxTickValue = maxTickValue + tickRange
+      newTickValues.push(new Date(newMaxTickValue))
+    }
+
+    scale.domain([new Date(newTickValues[0]), new Date(newTickValues[newTickValues.length - 1])])
+    return newTickValues
+  } catch (error) {
+    console.error(error)
+    return tickValues
+  }
+}
+
 export const getNiceTickValues = ({ tickValues, scale }) => {
   const { minValue, maxValue } = scale
 
@@ -798,7 +900,7 @@ export const getTickSizeFromNumTicks = ({
   const rangeEnd = scale?.range()?.[0] ?? 0
   const fullSize = Math.abs(rangeEnd - rangeStart) + fontSize
 
-  if (scale.type === 'LINEAR') {
+  if (scale.type !== 'BAND') {
     const tickSize = fullSize / numTicks
     return tickSize
   }
@@ -847,6 +949,12 @@ export const getTickValues = ({ scale, initialTicks, props, numTicks, innerPaddi
 
     if (scale?.type === 'LINEAR') {
       return getNiceTickValues({
+        tickValues: newTickValues,
+        scale,
+        props,
+      })
+    } else if (scale?.type === 'TIME') {
+      return getNiceDateTickValues({
         tickValues: newTickValues,
         scale,
         props,

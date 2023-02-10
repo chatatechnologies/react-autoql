@@ -125,9 +125,6 @@ export default class ChatMessage extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (this.props.isVisibleInDOM && !prevProps.isVisibleInDOM) {
-      this.setIsAnimating()
-    }
     ReactTooltip.hide()
   }
 

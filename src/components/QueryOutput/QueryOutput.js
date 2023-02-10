@@ -1057,7 +1057,7 @@ export class QueryOutput extends React.Component {
     this.tableParams.sorters = _cloneDeep(sorters)
   }
 
-  onLegendClick = (d, isSecondLegend) => {
+  onLegendClick = (d) => {
     const columnIndex = d?.columnIndex
     const usePivotData = this.usePivotDataForChart()
     const newColumns = usePivotData ? _cloneDeep(this.pivotTableColumns) : _cloneDeep(this.state.columns)

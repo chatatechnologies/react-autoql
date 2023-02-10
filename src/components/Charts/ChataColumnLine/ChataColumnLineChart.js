@@ -3,8 +3,9 @@ import { Axes } from '../Axes'
 import { Columns } from '../Columns'
 import { Line } from '../Line'
 
-import { chartDefaultProps, chartPropTypes, getBandScale, getLinearScales } from '../helpers.js'
+import { chartDefaultProps, chartPropTypes, getBandScale, getTimeScale, getLinearScales } from '../helpers.js'
 import { deepEqual } from '../../../js/Util'
+import { isColumnDateType } from '../../QueryOutput/columnHelpers'
 
 export default class ChataColumnLineChart extends Component {
   constructor(props) {
@@ -37,6 +38,7 @@ export default class ChataColumnLineChart extends Component {
     if (props.visibleSeriesIndices2?.length) {
       numberColumnIndices2 = props.visibleSeriesIndices2
     }
+
     this.xScale = getBandScale({
       props,
       columnIndex: props.stringColumnIndex,
