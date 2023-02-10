@@ -107,6 +107,7 @@ export default class ChatMessage extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
+    this.props.scrollToBottom()
     this.scrollToBottomTimeout = setTimeout(() => {
       this.props.scrollToBottom()
     }, 100)

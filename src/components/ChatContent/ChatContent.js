@@ -343,14 +343,20 @@ export default class ChatContent extends React.Component {
   }
 
   render = () => {
-    let display
+    let visibility
+    let opacity
     if (!this.props.shouldRender) {
-      display = 'none'
+      visibility = 'hidden'
+      opacity = '0'
     }
 
     return (
       <ErrorBoundary>
-        <div ref={(r) => (this.chatContentRef = r)} className='chat-content-scroll-container' style={{ display }}>
+        <div
+          ref={(r) => (this.chatContentRef = r)}
+          className={`chat-content-scroll-container ${this.props.shouldRender ? '' : 'react-autoql-content-hidden'}`}
+          style={{ visibility, opacity }}
+        >
           <CustomScrollbars ref={(r) => (this.messengerScrollComponent = r)}>
             {this.state.messages.map((message) => {
               return (
@@ -410,7 +416,10 @@ export default class ChatContent extends React.Component {
             </div>
           )}
         </div>
-        <div style={{ display }} className='chat-bar-container'>
+        <div
+          style={{ visibility, opacity }}
+          className={`chat-bar-container ${this.props.shouldRender ? '' : 'react-autoql-content-hidden'}`}
+        >
           <div className='watermark'>
             <Icon type='react-autoql-bubbles-outlined' />
             {lang.run}
