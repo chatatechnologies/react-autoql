@@ -1,13 +1,12 @@
 import PropTypes from 'prop-types'
-import { max, min, ticks } from 'd3-array'
-import _get from 'lodash.get'
+import { max, min } from 'd3-array'
 import _isEqual from 'lodash.isequal'
 import { scaleLinear, scaleBand, scaleTime } from 'd3-scale'
 import { select } from 'd3-selection'
 
-import { deepEqual, difference, formatChartLabel, formatElement, getCurrencySymbol, getDayJSObj } from '../../js/Util'
+import { deepEqual, formatElement, getDayJSObj } from '../../js/Util'
 import { dataFormattingType } from '../../props/types'
-import { dataFormattingDefault, getDataFormatting } from '../../props/defaults'
+import { dataFormattingDefault } from '../../props/defaults'
 import { AGG_TYPES, NUMBER_COLUMN_TYPES } from '../../js/Constants'
 
 const DEFAULT_INNER_PADDING = 0.2
@@ -429,9 +428,9 @@ export const getLegendLocation = (seriesArray, displayType) => {
     return undefined
   } else if (displayType === 'stacked_column' || displayType === 'stacked_bar' || displayType === 'stacked_line') {
     return 'right'
-  } else if (_get(seriesArray, 'length') > 2) {
+  } else if (seriesArray?.length > 2) {
     return 'right'
-  } else if (_get(seriesArray, 'length') > 1) {
+  } else if (seriesArray?.length > 1) {
     return 'right'
     // Todo: the margins are not working correctly, disable this for now
     // return 'bottom'
@@ -464,16 +463,28 @@ export const getRangeForAxis = (props, axis) => {
 }
 
 export const getTimeScale = ({ props, columnIndex, axis, domain }) => {
-  const range = getRangeForAxis(props, axis)
-
+  let error = false
   const dateArray = props.data.map((d) => {
-    return getDayJSObj({
+    const dayjsObj = getDayJSObj({
       value: d[columnIndex],
       column: props.columns[columnIndex],
       config: props.dataFormatting,
-    }).toDate()
+    })
+
+    if (dayjsObj?.isValid()) {
+      return dayjsObj.toDate()
+    }
+
+    error = true
+    return
   })
 
+  if (error) {
+    // There was an error converting all values to dates - use band scale instead
+    return getBandScale({ props, columnIndex, axis, domain })
+  }
+
+  const range = getRangeForAxis(props, axis)
   const minDate = min(dateArray)
   const maxDate = max(dateArray)
   const scaleDomain = domain ?? [minDate, maxDate]

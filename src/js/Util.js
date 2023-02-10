@@ -258,6 +258,33 @@ const formatDOW = (value, col) => {
   return formattedValue
 }
 
+export const getDayjsObjForStringType = (value, col) => {
+  if (!value) {
+    return undefined
+  }
+
+  try {
+    switch (col.precision) {
+      case 'DOW': {
+        return undefined
+      }
+      case 'HOUR':
+      case 'MINUTE': {
+        return dayjs(value, 'THH:mm:ss.SSSZ').utc()
+      }
+      case 'MONTH': {
+        return undefined
+      }
+      default: {
+        return undefined
+      }
+    }
+  } catch (error) {
+    console.error(error)
+    return undefined
+  }
+}
+
 export const formatStringDateWithPrecision = (value, col, config = {}) => {
   if (!value) {
     return undefined
@@ -447,6 +474,10 @@ export const isNumber = (str) => {
 }
 
 export const getDayJSObj = ({ value, column, config }) => {
+  if (column.type === 'DATE_STRING') {
+    return getDayjsObjForStringType(value, column)
+  }
+
   if (isNumber(value)) {
     return dayjs.unix(value).utc()
   }
@@ -1330,12 +1361,11 @@ export const sortDataByDate = (data, tableColumns, sortDirection = 'desc', isTab
 
       return sortedData
     }
-
-    return { data }
   } catch (error) {
     console.error(error)
-    return { data, hasError: true }
   }
+
+  return data
 }
 
 export const handleTooltipBoundaryCollision = (e, self) => {

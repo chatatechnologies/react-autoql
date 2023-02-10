@@ -17,7 +17,7 @@ export default class AxisSelector extends React.Component {
           {this.props.children}
         </NumberAxisSelector>
       )
-    } else if (this.props.scale?.type === 'BAND') {
+    } else if (this.props.scale?.type === 'BAND' || this.props.scale?.type === 'TIME') {
       return (
         <StringAxisSelector {...this.props} key={this.KEY} data-test='string-axis-selector' ref={(r) => (this.ref = r)}>
           {this.props.children}
