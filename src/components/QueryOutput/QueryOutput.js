@@ -1911,7 +1911,7 @@ export class QueryOutput extends React.Component {
 
     let isChartDataAggregated = false
     const numberOfGroupbys = getNumberOfGroupables(this.state.columns)
-    if (numberOfGroupbys === 1 || (numberOfGroupbys >= 2 && this.usePivotData)) {
+    if (numberOfGroupbys === 1 || (numberOfGroupbys >= 2 && usePivotData)) {
       isChartDataAggregated = true
     }
 

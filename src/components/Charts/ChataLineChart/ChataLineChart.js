@@ -20,11 +20,19 @@ export default class ChataLineChart extends Component {
       numberColumnIndices = props.visibleSeriesIndices
     }
 
-    this.xScale = getTimeScale({
-      props,
-      columnIndex: props.stringColumnIndex,
-      axis: 'x',
-    })
+    if (!this.props.disableTimeScale) {
+      this.xScale = getTimeScale({
+        props,
+        columnIndex: props.stringColumnIndex,
+        axis: 'x',
+      })
+    } else {
+      this.xScale = getBandScale({
+        props,
+        columnIndex: props.stringColumnIndex,
+        axis: 'x',
+      })
+    }
 
     const yScalesAndTicks = getLinearScales({
       props,

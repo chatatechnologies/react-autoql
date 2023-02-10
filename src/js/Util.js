@@ -63,21 +63,20 @@ export const getCurrencySymbol = (dataFormatting) => {
   }
 }
 
-export const formatDateType = (element, column = {}, config = {}) => {
-  const isInteger = !isNaN(Number(element))
-  if (column.precision && !isInteger) {
-    return formatISODateWithPrecision(element, column, config)
+export const formatDateType = (element, column = {}, config = {}, isDateObj) => {
+  if (isNumber(element)) {
+    return formatEpochDate(element, column, config)
   }
 
-  return formatEpochDate(element, column, config)
+  return formatISODateWithPrecision(element, column, config)
 }
 
-export const formatDateStringType = (element, column = {}, config = {}) => {
+export const formatDateStringType = (element, column = {}, config = {}, scale) => {
   if (column.precision) {
-    return formatStringDateWithPrecision(element, column, config)
+    return formatStringDateWithPrecision(element, column, config, scale)
   }
 
-  return formatStringDate(element, config)
+  return formatStringDate(element, config, scale)
 }
 
 export const formatISODateWithPrecision = (value, col = {}, config = {}) => {
@@ -408,11 +407,13 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting }) => {
       break
     }
     case 'DATE': {
-      formattedLabel = formatDateType(d, col, config)
+      const isDateObj = scale?.type === 'TIME'
+      formattedLabel = formatDateType(d, col, config, isDateObj)
+
       break
     }
     case 'DATE_STRING': {
-      formattedLabel = formatDateStringType(d, col, config)
+      formattedLabel = formatDateStringType(d, col, config, scale)
       break
     }
     case 'PERCENT': {
@@ -441,12 +442,16 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting }) => {
   return { fullWidthLabel, formattedLabel, isTruncated }
 }
 
+export const isNumber = (str) => {
+  return /^\d+$/.test(str)
+}
+
 export const getDayJSObj = ({ value, column, config }) => {
-  if (column.precision || !isNaN(Number(value))) {
-    return dayjs(value).utc()
+  if (isNumber(value)) {
+    return dayjs.unix(value).utc()
   }
 
-  return dayjs.unix(value).utc()
+  return dayjs(value).utc()
 }
 
 export const formatElement = ({ element, column, config = {}, htmlElement, isChart }) => {
@@ -1311,7 +1316,7 @@ export const dateSortFn = (a, b, col = {}, isTable) => {
 export const sortDataByDate = (data, tableColumns, sortDirection = 'desc', isTable) => {
   try {
     if (!data || typeof data !== 'object') {
-      return data
+      throw new Error('Could not sort data by date - no data supplied')
     }
 
     const dateColumnIndex = getDateColumnIndex(tableColumns)
@@ -1326,10 +1331,10 @@ export const sortDataByDate = (data, tableColumns, sortDirection = 'desc', isTab
       return sortedData
     }
 
-    return data
+    return { data }
   } catch (error) {
     console.error(error)
-    return data
+    return { data, hasError: true }
   }
 }
 

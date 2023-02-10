@@ -380,6 +380,7 @@ export default class ChataChart extends Component {
       innerChartRef: this.innerChartRef?.chartRef,
       key: undefined,
       data: this.state.data || this.props.data,
+      disableTimeScale: this.disableTimeScale,
       colorScale,
       colorScale2,
       height: innerHeight,
