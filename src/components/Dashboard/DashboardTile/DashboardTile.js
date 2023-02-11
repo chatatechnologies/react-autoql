@@ -674,7 +674,7 @@ export class DashboardTile extends React.Component {
     return (
       <div className='dashboard-tile-title-container'>
         <span
-          ref={this.dashboardTileTitleRef}
+          ref={(r) => (this.dashboardTileTitleRef = r)}
           className='dashboard-tile-title'
           id={`dashboard-tile-title-${this.COMPONENT_KEY}`}
           data-tip={this.state.isTitleOverFlow ? this.props.tile.title || this.props.tile.query || 'Untitled' : null}

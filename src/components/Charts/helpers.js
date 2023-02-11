@@ -1,13 +1,14 @@
 import PropTypes from 'prop-types'
 import { max, min } from 'd3-array'
 import _isEqual from 'lodash.isequal'
+import dayjs from '../../js/dayjsWithPlugins'
 import { scaleLinear, scaleBand, scaleTime } from 'd3-scale'
 import { select } from 'd3-selection'
 
 import { deepEqual, formatElement, getDayJSObj } from '../../js/Util'
 import { dataFormattingType } from '../../props/types'
 import { dataFormattingDefault } from '../../props/defaults'
-import { AGG_TYPES, NUMBER_COLUMN_TYPES } from '../../js/Constants'
+import { AGG_TYPES, DAYJS_PRECISION_FORMATS, NUMBER_COLUMN_TYPES } from '../../js/Constants'
 
 const DEFAULT_INNER_PADDING = 0.2
 const DEFAULT_OUTER_PADDING = 0.5
@@ -472,7 +473,7 @@ export const getTimeScale = ({ props, columnIndex, axis, domain }) => {
     })
 
     if (dayjsObj?.isValid()) {
-      return dayjsObj.toDate()
+      return DateUTC(dayjsObj.valueOf())
     }
 
     error = true
@@ -804,12 +805,23 @@ export const doesElementOverflowContainer = (element, container) => {
   return false
 }
 
-const getEpochFromDate = (date) => {
+const getEpochFromDate = (date, precision, precisionFrame) => {
   if (date?.getTime) {
+    if (precision && precisionFrame === 'start') {
+      return dayjs(date).utc().startOf(precision).valueOf()
+    } else if (precision && precisionFrame === 'end') {
+      return dayjs(date).utc().endOf(precision).valueOf()
+    }
     return date.getTime()
   }
 
   return
+}
+
+export const DateUTC = (d) => {
+  const date = new Date(d)
+  date.setTime(date.getTime() + date.getTimezoneOffset() * 60 * 1000)
+  return date
 }
 
 export const getNiceDateTickValues = ({ tickValues, scale }) => {
@@ -834,8 +846,10 @@ export const getNiceDateTickValues = ({ tickValues, scale }) => {
 
     const newTickValues = [...tickValues]
     const tickRange = getEpochFromDate(tickValues[1]) - getEpochFromDate(tickValues[0])
-    const minTickValue = getEpochFromDate(tickValues[0])
-    const maxTickValue = getEpochFromDate(tickValues[tickValues.length - 1])
+
+    const dayjsPrecision = DAYJS_PRECISION_FORMATS[scale?.column?.precision]
+    const minTickValue = getEpochFromDate(tickValues[0], dayjsPrecision, 'start')
+    const maxTickValue = getEpochFromDate(tickValues[tickValues.length - 1], dayjsPrecision, 'end')
 
     if (!tickRange || isNaN(minTickValue) || isNaN(maxTickValue)) {
       throw new Error('Tried to make nice labels but could not convert tick values to epoch')
@@ -845,15 +859,15 @@ export const getNiceDateTickValues = ({ tickValues, scale }) => {
     let newMaxTickValue = maxTickValue
     if (minSeconds < minTickValue) {
       newMinTickValue = minTickValue - tickRange
-      newTickValues.unshift(new Date(newMinTickValue))
+      newTickValues.unshift(DateUTC(newMinTickValue))
     }
 
     if (maxSeconds > maxTickValue) {
       newMaxTickValue = maxTickValue + tickRange
-      newTickValues.push(new Date(newMaxTickValue))
+      newTickValues.push(DateUTC(newMaxTickValue))
     }
 
-    scale.domain([new Date(newTickValues[0]), new Date(newTickValues[newTickValues.length - 1])])
+    scale.domain([DateUTC(newTickValues[0]), DateUTC(newTickValues[newTickValues.length - 1])])
     return newTickValues
   } catch (error) {
     console.error(error)

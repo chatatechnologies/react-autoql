@@ -86,7 +86,7 @@ export const formatISODateWithPrecision = (value, col = {}, config = {}) => {
 
   const precision = col.precision
   const dayMonthYearFormat = config.dayMonthYearFormat || dataFormattingDefault.dayMonthYearFormat
-  const dateDayJS = dayjs(value).utc()
+  const dateDayJS = dayjs.utc(value).utc()
 
   if (!dateDayJS.isValid()) {
     return value
@@ -159,7 +159,7 @@ export const formatEpochDate = (value, col = {}, config = {}) => {
 
     let dayJSObj
     if (isNaN(parseFloat(value))) {
-      dayJSObj = dayjs(value).utc()
+      dayJSObj = dayjs.utc(value).utc()
     } else {
       dayJSObj = dayjs.unix(value).utc()
     }
@@ -270,7 +270,7 @@ export const getDayjsObjForStringType = (value, col) => {
       }
       case 'HOUR':
       case 'MINUTE': {
-        return dayjs(value, 'THH:mm:ss.SSSZ').utc()
+        return dayjs.utc(value, 'THH:mm:ss.SSSZ').utc()
       }
       case 'MONTH': {
         return undefined
@@ -298,14 +298,14 @@ export const formatStringDateWithPrecision = (value, col, config = {}) => {
         break
       }
       case 'HOUR': {
-        const dayjsTime = dayjs(value, 'THH:mm:ss.SSSZ').utc()
+        const dayjsTime = dayjs.utc(value, 'THH:mm:ss.SSSZ').utc()
         if (dayjsTime.isValid()) {
           formattedValue = dayjsTime.format('h:00A')
         }
         break
       }
       case 'MINUTE': {
-        const dayjsTime = dayjs(value, 'THH:mm:ss.SSSZ').utc()
+        const dayjsTime = dayjs.utc(value, 'THH:mm:ss.SSSZ').utc()
         if (dayjsTime.isValid()) {
           formattedValue = dayjsTime.format('h:mmA')
         }
@@ -350,7 +350,7 @@ export const formatStringDate = (value, config) => {
     const { monthYearFormat, dayMonthYearFormat } = config
     const monthYear = monthYearFormat || dataFormattingDefault.monthYearFormat
     const dayMonthYear = dayMonthYearFormat || dataFormattingDefault.dayMonthYearFormat
-    const dayJSObj = dayjs(value).utc()
+    const dayJSObj = dayjs.utc(value).utc()
 
     if (!dayJSObj.isValid()) {
       return value
@@ -482,7 +482,7 @@ export const getDayJSObj = ({ value, column, config }) => {
     return dayjs.unix(value).utc()
   }
 
-  return dayjs(value).utc()
+  return dayjs.utc(value).utc()
 }
 
 export const formatElement = ({ element, column, config = {}, htmlElement, isChart }) => {
@@ -1289,8 +1289,8 @@ export const dateStringSortFn = (a, b, col = {}) => {
     }
     case 'HOUR':
     case 'MINUTE': {
-      const aDayjsTime = dayjs(a, 'THH:mm:ss.SSSZ').utc()
-      const bDayjsTime = dayjs(b, 'THH:mm:ss.SSSZ').utc()
+      const aDayjsTime = dayjs.utc(a, 'THH:mm:ss.SSSZ').utc()
+      const bDayjsTime = dayjs.utc(b, 'THH:mm:ss.SSSZ').utc()
       return aDayjsTime.unix() - bDayjsTime.unix()
     }
     case 'MONTH': {
@@ -1330,7 +1330,7 @@ export const dateSortFn = (a, b, col = {}, isTable) => {
       if (col.type === 'DATE_STRING') {
         sortValue = dateStringSortFn(a, b, col)
       } else {
-        sortValue = dayjs(a).unix() - dayjs(b).unix()
+        sortValue = dayjs.utc(a).unix() - dayjs.utc(b).unix()
       }
     }
 
