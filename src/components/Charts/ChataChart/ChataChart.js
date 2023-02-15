@@ -83,7 +83,7 @@ export default class ChataChart extends Component {
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
-    if (nextProps.isResizing && this.props.isResizing) {
+    if ((nextProps.isResizing && this.props.isResizing) || (nextProps.hidden && this.props.hidden)) {
       return false
     }
 
@@ -94,7 +94,18 @@ export default class ChataChart extends Component {
   }
 
   componentDidUpdate = (prevProps) => {
-    if (!this.props.isResizing && prevProps.isResizing) {
+    if (this.firstRender === true && !this.props.hidden) {
+      this.firstRender = false
+    }
+
+    if (this.props.hidden && !prevProps.hidden) {
+      this.firstRender = true
+    }
+
+    if (
+      (!this.props.isResizing && prevProps.isResizing && !this.props.hidden) ||
+      (!this.props.hidden && prevProps.hidden)
+    ) {
       if (this.chartContainerRef) {
         this.chartContainerRef.style.flexBasis = '100vh'
       }
@@ -177,25 +188,29 @@ export default class ChataChart extends Component {
     // Adjust bottom and top axes second time to account for label rotation
     // Debounce in case multiple axes have rotated labels, we only want to
     // do the adjustment once
-    clearTimeout(this.adjustVerticalPositionTimeout)
-    this.adjustVerticalPositionTimeout = setTimeout(() => {
-      const { deltaY } = this.getDeltas()
-      const { innerHeight } = this.getInnerDimensions()
-      this.setState({ deltaY, innerHeight }, () => {
-        this.setFinishedLoading()
-      })
-    }, 0)
+    if (!this.props.hidden) {
+      clearTimeout(this.adjustVerticalPositionTimeout)
+      this.adjustVerticalPositionTimeout = setTimeout(() => {
+        const { deltaY } = this.getDeltas()
+        const { innerHeight } = this.getInnerDimensions()
+        this.setState({ deltaY, innerHeight }, () => {
+          this.setFinishedLoading()
+        })
+      }, 0)
+    }
   }
 
   adjustChartPosition = () => {
-    clearTimeout(this.adjustPositionTimeout)
-    this.adjustPositionTimeout = setTimeout(() => {
-      const { deltaX, deltaY } = this.getDeltas()
-      const { innerHeight, innerWidth } = this.getInnerDimensions()
-      this.setState({ deltaX, deltaY, innerHeight, innerWidth }, () => {
-        this.adjustVerticalPosition()
-      })
-    }, 0)
+    if (!this.props.hidden) {
+      clearTimeout(this.adjustPositionTimeout)
+      this.adjustPositionTimeout = setTimeout(() => {
+        const { deltaX, deltaY } = this.getDeltas()
+        const { innerHeight, innerWidth } = this.getInnerDimensions()
+        this.setState({ deltaX, deltaY, innerHeight, innerWidth }, () => {
+          this.adjustVerticalPosition()
+        })
+      }, 0)
+    }
   }
 
   getDeltas = () => {
@@ -273,10 +288,8 @@ export default class ChataChart extends Component {
 
     const outerWidth = Math.ceil(containerWidth)
     const outerHeight = Math.ceil(containerHeight)
-    const outerX = this.chartContainerRef?.x ?? 0
-    const outerY = this.chartContainerRef?.y ?? 0
 
-    return { outerHeight, outerWidth, outerX, outerY }
+    return { outerHeight, outerWidth }
   }
 
   getChartDimensions = () => {
@@ -474,6 +487,11 @@ export default class ChataChart extends Component {
     const chartTextColor = getThemeValue('text-color-primary')
     const chartBackgroundColor = getThemeValue('background-color-secondary')
 
+    const style = {}
+    if (!this.props.hidden) {
+      style.flexBasis = outerHeight ? `${outerHeight}px` : '100vh'
+    }
+
     return (
       <ErrorBoundary>
         <div
@@ -481,11 +499,11 @@ export default class ChataChart extends Component {
           key={`react-autoql-chart-${this.state.chartID}`}
           ref={(r) => (this.chartContainerRef = r)}
           data-test='react-autoql-chart'
-          className={`react-autoql-chart-container ${this.state.isLoading || this.props.isResizing ? 'loading' : ''}`}
-          style={{
-            flexBasis: outerHeight ? `${outerHeight}px` : '100vh',
-            pointerEvents: this.state.isLoadingMoreRows ? 'none' : 'unset',
-          }}
+          className={`react-autoql-chart-container
+            ${this.state.isLoading || this.props.isResizing ? 'loading' : ''}
+            ${this.state.isLoadingMoreRows ? 'loading-rows' : ''}
+            ${this.props.hidden ? 'hidden' : ''}`}
+          style={style}
         >
           {!this.firstRender && !this.props.isResizing && !this.props.isAnimating && (
             <Fragment>

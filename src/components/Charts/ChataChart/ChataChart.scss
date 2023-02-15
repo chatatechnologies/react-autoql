@@ -7,6 +7,13 @@
   color: var(--react-autoql-text-color-primary);
   background: var(--react-autoql-background-color-secondary);
 
+  &.hidden {
+    visibility: hidden;
+    flex: 0 0 0;
+    opacity: 0;
+    flex-basis: 0 !important;
+  }
+
   svg {
     // set transparent in css but keep background in inline style for exporting to png
     background: transparent !important;
@@ -16,6 +23,10 @@
   &.loading {
     opacity: 0;
     transition: none;
+  }
+
+  &.loading-rows {
+    pointer-events: none;
   }
 
   .legendCells {

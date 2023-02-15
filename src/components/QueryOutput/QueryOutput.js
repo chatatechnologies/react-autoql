@@ -355,10 +355,6 @@ export class QueryOutput extends React.Component {
   }
 
   changeDisplayType = (displayType) => {
-    if (displayType !== 'table') {
-      this.tableID = uuid()
-    }
-
     this.props.onDisplayTypeChange(displayType)
     this.setState({ displayType })
   }
@@ -549,7 +545,7 @@ export class QueryOutput extends React.Component {
       // Change table ID so a new ChataTable mounts after column change
       // An alternative would be to manually set the new columns in tabulator:
       // this.tableRef.ref.table.setColumns(columns)
-      this.tableID = uuid()
+      // this.tableID = uuid()
       this.setState({
         columns: this.formatColumnsForTable(columns),
         columnChangeCount: this.state.columnChangeCount + 1,
@@ -585,7 +581,7 @@ export class QueryOutput extends React.Component {
       this.tableData = newTableData
     } else {
       const columns = cols || this.getColumns()
-      this.tableID = uuid()
+      // this.tableID = uuid()
       if (!this.isDataLimited()) {
         this.tableData = sortDataByDate(this.queryResponse?.data?.data?.rows, columns, 'desc', 'isTable')
       } else {
@@ -1408,6 +1404,7 @@ export class QueryOutput extends React.Component {
 
       // Visibility flag: this can be changed through the column visibility editor modal
       newCol.visible = col.is_visible
+      newCol.download = col.is_visible
 
       newCol.minWidth = '90px'
       if (newCol.type === 'DATE') {
@@ -1832,7 +1829,7 @@ export class QueryOutput extends React.Component {
     )
   }
 
-  renderTable = () => {
+  renderTables = () => {
     if (areAllColumnsHidden(this.getColumns())) {
       return this.renderAllColumnsHiddenMessage()
     }
@@ -1841,61 +1838,64 @@ export class QueryOutput extends React.Component {
       return this.renderMessage('Error: There was no data supplied for this table')
     }
 
-    if (this.state.displayType === 'pivot_table') {
-      return (
-        <ErrorBoundary>
+    const pivotTableAvailable = this.getCurrentSupportedDisplayTypes().includes('pivot_table')
+
+    return (
+      <ErrorBoundary>
+        {pivotTableAvailable && (
           <ChataTable
-            key={this.pivotTableID}
+            // key={this.pivotTableID}
             ref={(ref) => (this.pivotTableRef = ref)}
             columns={this.pivotTableColumns}
             data={this.pivotTableData}
             onCellClick={this.onTableCellClick}
             isAnimating={this.props.isAnimating}
             isResizing={this.props.isResizing}
+            hidden={this.state.displayType !== 'pivot_table'}
             useInfiniteScroll={false}
             supportsDrilldowns={true}
             pivot
           />
-        </ErrorBoundary>
-      )
-    }
-
-    return (
-      <ChataTable
-        authentication={this.props.authentication}
-        dataFormatting={this.props.dataFormatting}
-        key={this.tableID}
-        ref={(ref) => (this.tableRef = ref)}
-        columns={this.state.columns}
-        data={this.tableData}
-        columnDateRanges={this.columnDateRanges}
-        onCellClick={this.onTableCellClick}
-        queryID={this.queryID}
-        initialParams={this.tableParams}
-        onFilterCallback={this.onTableFilter}
-        onSorterCallback={this.onTableSort}
-        onTableParamsChange={this.onTableParamsChange}
-        onNewPage={this.onNewPage}
-        onNewData={this.onNewData}
-        isAnimating={this.props.isAnimating}
-        isResizing={this.props.isResizing}
-        pageSize={_get(this.queryResponse, 'data.data.row_limit')}
-        useInfiniteScroll={this.props.enableAjaxTableData && this.isDataLimited()}
-        queryRequestData={this.queryResponse?.data?.data?.fe_req}
-        queryText={this.queryResponse?.data?.data?.text}
-        originalQueryID={this.props.originalQueryID}
-        isDrilldown={this.isDrilldown()}
-        isQueryOutputMounted={this._isMounted}
-        popoverParentElement={this.props.popoverParentElement}
-        onSetTableHeight={(height) => {
-          this.tableHeight = height
-        }}
-        height={this.tableHeight}
-        supportsDrilldowns={
-          isAggregation(this.state.columns) && getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
-        }
-        queryFn={this.queryFn}
-      />
+        )}
+        <ChataTable
+          authentication={this.props.authentication}
+          dataFormatting={this.props.dataFormatting}
+          // key={this.tableID}
+          ref={(ref) => (this.tableRef = ref)}
+          columns={this.state.columns}
+          data={this.tableData}
+          columnDateRanges={this.columnDateRanges}
+          onCellClick={this.onTableCellClick}
+          queryID={this.queryID}
+          initialParams={this.tableParams}
+          onFilterCallback={this.onTableFilter}
+          onSorterCallback={this.onTableSort}
+          onTableParamsChange={this.onTableParamsChange}
+          onNewPage={this.onNewPage}
+          onNewData={this.onNewData}
+          isAnimating={this.props.isAnimating}
+          isResizing={this.props.isResizing}
+          pageSize={_get(this.queryResponse, 'data.data.row_limit')}
+          useInfiniteScroll={this.props.enableAjaxTableData && this.isDataLimited()}
+          enableAjaxTableData={this.props.enableAjaxTableData}
+          queryRequestData={this.queryResponse?.data?.data?.fe_req}
+          queryText={this.queryResponse?.data?.data?.text}
+          originalQueryID={this.props.originalQueryID}
+          isDrilldown={this.isDrilldown()}
+          isQueryOutputMounted={this._isMounted}
+          popoverParentElement={this.props.popoverParentElement}
+          hidden={this.state.displayType !== 'table'}
+          totalRows={this.queryResponse?.data?.data?.count_rows}
+          // onSetTableHeight={(height) => {
+          //   this.tableHeight = height
+          // }}
+          // height={this.tableHeight}
+          supportsDrilldowns={
+            isAggregation(this.state.columns) && getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
+          }
+          queryFn={this.queryFn}
+        />
+      </ErrorBoundary>
     )
   }
 
@@ -1926,6 +1926,7 @@ export class QueryOutput extends React.Component {
     return (
       <ErrorBoundary>
         <ChataChart
+          hidden={!isChartType(this.state.displayType)}
           formattedTableParams={formattedTableParams}
           authentication={this.props.authentication}
           queryRequestData={this.queryResponse?.data?.data?.fe_req}
@@ -2159,10 +2160,13 @@ export class QueryOutput extends React.Component {
         return this.renderTextResponse()
       } else if (displayType === 'single-value') {
         return this.renderSingleValueResponse()
-      } else if (isTableType(displayType)) {
-        return this.renderTable()
-      } else if (isChartType(displayType)) {
-        return this.renderChart()
+      } else if (isTableType(displayType) || isChartType(displayType)) {
+        return (
+          <>
+            {this.renderChart()}
+            {this.renderTables()}
+          </>
+        )
       }
 
       console.warn(`display type not recognized: ${this.state.displayType} - rendering as plain text`)
@@ -2172,22 +2176,7 @@ export class QueryOutput extends React.Component {
 
     return null
   }
-  renderTableRowCount = () => {
-    const currentRowCount = this.tableData?.length
-    const totalRowCount = this.queryResponse?.data?.data?.count_rows
-    const shouldRenderTRC =
-      this.state.displayType === 'table' && this.props.enableAjaxTableData && totalRowCount && currentRowCount
 
-    if (!shouldRenderTRC) {
-      return null
-    }
-
-    return (
-      <div className='query-output-table-row-count'>
-        <span>{`Scrolled ${currentRowCount} / ${totalRowCount} rows`}</span>
-      </div>
-    )
-  }
   shouldRenderReverseTranslation = () => {
     return (
       getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
@@ -2258,7 +2247,6 @@ export class QueryOutput extends React.Component {
         >
           {this.props.reverseTranslationPlacement === 'top' && this.renderFooter()}
           {this.renderResponse()}
-          {this.renderTableRowCount()}
           {this.props.reverseTranslationPlacement !== 'top' && this.renderFooter()}
         </div>
         {!this.props.tooltipID && (

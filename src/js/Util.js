@@ -19,10 +19,8 @@ import {
   shouldPlotMultiSeries,
   isAggregation,
   getDateColumnIndex,
-  getStringColumnIndices,
   isColumnDateType,
 } from '../components/QueryOutput/columnHelpers'
-import { findIndex } from 'lodash'
 
 export const rotateArray = (array, n) => {
   const rotated = [...array]

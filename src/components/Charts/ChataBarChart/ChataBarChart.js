@@ -13,7 +13,7 @@ export default class ChataBarChart extends Component {
     this.setChartData(props)
 
     this.state = {
-      isChartScaled: false,
+      isChartScaled: true,
     }
   }
 

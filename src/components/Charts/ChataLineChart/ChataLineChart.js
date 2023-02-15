@@ -14,34 +14,43 @@ export default class ChataLineChart extends Component {
   static propTypes = chartPropTypes
   static defaultProps = chartDefaultProps
 
+  state = {
+    isChartScaled: true,
+  }
+
   setChartData = (props) => {
     let numberColumnIndices = props.numberColumnIndices
     if (props.visibleSeriesIndices?.length) {
       numberColumnIndices = props.visibleSeriesIndices
     }
 
-    if (!this.props.disableTimeScale) {
-      this.xScale = getTimeScale({
-        props,
-        columnIndex: props.stringColumnIndex,
-        axis: 'x',
-      })
-    } else {
-      this.xScale = getBandScale({
-        props,
-        columnIndex: props.stringColumnIndex,
-        axis: 'x',
-      })
-    }
+    // if (!this.props.disableTimeScale) {
+    //   this.xScale = getTimeScale({
+    //     props,
+    //     columnIndex: props.stringColumnIndex,
+    //     axis: 'x',
+    //   })
+    // } else {
+    this.xScale = getBandScale({
+      props,
+      columnIndex: props.stringColumnIndex,
+      axis: 'x',
+    })
+    // }
 
     const yScalesAndTicks = getLinearScales({
       props,
       columnIndices1: numberColumnIndices,
       axis: 'y',
+      isScaled: this.state?.isChartScaled,
     })
 
     this.yScale = yScalesAndTicks.scale
     this.yTickValues = this.yScale.tickLabels
+  }
+
+  toggleChartScale = () => {
+    this.setState({ isChartScaled: !this.state.isChartScaled })
   }
 
   render = () => {
@@ -67,6 +76,7 @@ export default class ChataLineChart extends Component {
           yCol={yCol}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}
+          toggleChartScale={this.toggleChartScale}
           legendShape='line'
           dateColumnsOnly
           yGridLines

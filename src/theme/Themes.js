@@ -19,6 +19,7 @@ export const LIGHT_THEME = {
   'success-color': '#2aca4d',
   'info-color': '#28a8e0',
   'box-shadow-color': '#00000026',
+  'mask-color': '#0000000f',
 }
 
 export const DARK_THEME = {
@@ -41,4 +42,5 @@ export const DARK_THEME = {
   'success-color': '#2aca4d',
   'info-color': '#28a8e0',
   'box-shadow-color': '#00000066',
+  'mask-color': '#0000000f',
 }

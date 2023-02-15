@@ -12,7 +12,7 @@ export default class ChataColumnChart extends Component {
     this.setChartData(props)
 
     this.state = {
-      isChartScaled: false,
+      isChartScaled: true,
     }
   }
 
