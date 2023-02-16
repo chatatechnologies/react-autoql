@@ -17,6 +17,7 @@
   svg {
     // set transparent in css but keep background in inline style for exporting to png
     background: transparent !important;
+    color: var(--react-autoql-text-color-primary) !important;
   }
 
   transition: opacity 0.2s ease;
@@ -126,6 +127,10 @@
     }
 
     &:not(.hidden-dot) {
+      .line-dot-inner-circle {
+        fill: var(--react-autoql-background-color-secondary) !important;
+      }
+
       .line-dot-outer-circle,
       .line-dot-inner-circle {
         transition: fill 0.3s ease, stroke 0.3s ease;
