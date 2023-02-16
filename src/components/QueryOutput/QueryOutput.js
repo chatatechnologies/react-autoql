@@ -851,12 +851,14 @@ export class QueryOutput extends React.Component {
             })
 
             const allFilters = this.getCombinedFilters(clickedFilter)
-            const response = await this.queryFn({ tableFilters: allFilters, pageSize: 50 })
+            let response
+            try {
+              response = await this.queryFn({ tableFilters: allFilters, pageSize: 50 })
+            } catch (error) {
+              response = error
+            }
 
-            this.props.onDrilldownEnd({
-              response,
-              originalQueryID: this.queryID,
-            })
+            this.props.onDrilldownEnd({ response, originalQueryID: this.queryID })
             // -------------------------------------------------------
           }
         }
