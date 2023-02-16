@@ -36,9 +36,15 @@
   height: 100%;
   width: 100%;
 }
+.react-autoql-response-content-container.chart {
+  width: 100vw;
+  max-width: 100%;
+  overflow: hidden;
+}
+
 .react-autoql-response-content-container.table::-webkit-scrollbar {
-  width: 0;
-  height: 0;
+  // width: 0;
+  // height: 0;
 }
 
 .react-autoql-suggestion-btn {
@@ -140,6 +146,8 @@
 }
 
 .query-output-table-row-count {
+  position: absolute;
+  bottom: 0;
   width: 100%;
   padding-top: 3px;
   font-size: 13px;
@@ -236,26 +244,31 @@
   transition: all 0.2s ease !important;
   text-align: left !important;
   opacity: 1 !important;
-  z-index: 99999 !important; /* necessary to show up on top of rc drawer */
+  z-index: 999999 !important; /* necessary to show up on top of rc drawer */
+  max-width: 300px;
 }
 
-.single-value-response-container {
-  width: 100%;
-  text-align: center;
+.single-value-response-flex-container {
+  flex: 1;
 
-  .single-value-response {
-    color: inherit;
-    cursor: unset;
-    font-size: 20px;
-    &:hover {
+  .single-value-response-container {
+    width: 100%;
+    text-align: center;
+
+    .single-value-response {
       color: inherit;
+      cursor: unset;
+      font-size: 20px;
+      &:hover {
+        color: inherit;
+      }
     }
-  }
-  .single-value-response.with-drilldown:hover {
-    color: inherit;
-    text-decoration: underline;
-    font-weight: 600;
-    cursor: pointer;
+    .single-value-response.with-drilldown:hover {
+      color: inherit;
+      text-decoration: underline;
+      font-weight: 600;
+      cursor: pointer;
+    }
   }
 }
 

@@ -1,24 +1,36 @@
 import _get from 'lodash.get'
 import _filter from 'lodash.filter'
+import _isEqual from 'lodash.isequal'
 import dayjs from './dayjsWithPlugins'
 
 import {
   CHART_TYPES,
   TABLE_TYPES,
-  WEEKDAY_NAMES,
+  WEEKDAY_NAMES_MON,
   MONTH_NAMES,
   SEASON_NAMES,
-  TIMESTAMP_FORMATS,
   PRECISION_TYPES,
+  WEEKDAY_NAMES_SUN,
 } from './Constants'
-import { dataFormattingDefault } from '../props/defaults'
+import { dataFormattingDefault, getDataFormatting } from '../props/defaults'
 
 import {
   getColumnTypeAmounts,
   shouldPlotMultiSeries,
   isAggregation,
   getDateColumnIndex,
+  isColumnDateType,
 } from '../components/QueryOutput/columnHelpers'
+
+export const rotateArray = (array, n) => {
+  const rotated = [...array]
+  n = n % array.length
+  if (n < 0) n = array.length + n
+  for (let i = 0; i < n; i++) {
+    rotated.unshift(rotated.pop())
+  }
+  return rotated
+}
 
 export const onlyUnique = (value, index, self) => {
   return self.indexOf(value) === index
@@ -35,34 +47,49 @@ export const makeEmptyArray = (w, h, value = '') => {
   return arr
 }
 
-export const isDayJSDateValid = (date) => {
-  return date !== 'Invalid Date'
+export const getCurrencySymbol = (dataFormatting) => {
+  try {
+    const formattedParts = new Intl.NumberFormat(dataFormatting.languageCode, {
+      style: 'currency',
+      currency: dataFormatting.currencyCode,
+    }).formatToParts(0)
+    const symbol = formattedParts.find((part) => part?.type === 'currency')?.value
+    return symbol
+  } catch (error) {
+    console.error(error)
+    return
+  }
 }
 
-export const formatDateType = (element, column = {}, config = {}, precision) => {
-  if (config.timestampFormat === TIMESTAMP_FORMATS.iso8601 && column.precision) {
-    return formatISODateWithPrecision(element, column, config, precision)
+export const formatDateType = (element, column = {}, config = {}, isDateObj) => {
+  if (isNumber(element)) {
+    return formatEpochDate(element, column, config)
   }
 
-  return formatEpochDate(element, column, config)
+  return formatISODateWithPrecision(element, column, config)
 }
 
-export const formatDateStringType = (element, column = {}, config = {}) => {
-  if (config.timestampFormat === TIMESTAMP_FORMATS.iso8601 && column.precision) {
-    return formatStringDateWithPrecision(element, column, config)
+export const formatDateStringType = (element, column = {}, config = {}, scale) => {
+  if (column.precision) {
+    return formatStringDateWithPrecision(element, column, config, scale)
   }
 
-  return formatStringDate(element, config)
+  return formatStringDate(element, config, scale)
 }
 
-export const formatISODateWithPrecision = (value, col = {}, config = {}, customPrecision) => {
+export const formatISODateWithPrecision = (value, col = {}, config = {}) => {
   if (!value) {
     return undefined
   }
 
-  const precision = customPrecision ?? col.precision
+  const precision = col.precision
   const dayMonthYearFormat = config.dayMonthYearFormat || dataFormattingDefault.dayMonthYearFormat
-  const dateDayJS = dayjs(value).utc()
+  const dateDayJS = dayjs.utc(value).utc()
+
+  if (!dateDayJS.isValid()) {
+    return value
+  }
+
   let date = dateDayJS.format(dayMonthYearFormat)
 
   try {
@@ -130,9 +157,13 @@ export const formatEpochDate = (value, col = {}, config = {}) => {
 
     let dayJSObj
     if (isNaN(parseFloat(value))) {
-      dayJSObj = dayjs(value).utc()
+      dayJSObj = dayjs.utc(value).utc()
     } else {
       dayJSObj = dayjs.unix(value).utc()
+    }
+
+    if (!dayJSObj.isValid()) {
+      return value
     }
 
     let date = dayJSObj.format(dayMonthYear)
@@ -151,14 +182,104 @@ export const formatEpochDate = (value, col = {}, config = {}) => {
       date = dayJSObj.format(monthYear)
     }
 
-    if (isDayJSDateValid(date)) {
-      return date
-    }
-
-    return value
+    return date
   } catch (error) {
     console.error(error)
     return value
+  }
+}
+
+const formatDOW = (value, col) => {
+  let dowStyle = col.dow_style
+
+  if (!dowStyle) {
+    dowStyle = 'NUM_1_MON'
+  }
+
+  let formattedValue = value
+  let weekdayNumber = Number(value)
+  switch (dowStyle) {
+    case 'NUM_1_MON': {
+      const weekdays = WEEKDAY_NAMES_MON
+      const index = weekdayNumber - 1
+      if (index >= 0) {
+        formattedValue = weekdays[index]
+      } else {
+        console.warn(`dow style is NUM_1_MON but the value could not be converted to a number: ${value}`)
+      }
+      break
+    }
+    case 'NUM_1_SUN': {
+      const weekdays = WEEKDAY_NAMES_SUN
+      const index = weekdayNumber - 1
+      if (index >= 0) {
+        formattedValue = weekdays[index]
+      } else {
+        console.warn(`dow style is NUM_1_SUN but the value could not be converted to a number: ${value}`)
+      }
+      break
+    }
+    case 'NUM_0_MON': {
+      const weekdays = WEEKDAY_NAMES_MON
+      if (weekdayNumber >= 0) {
+        formattedValue = weekdays[weekdayNumber]
+      } else {
+        console.warn(`dow style is NUM_0_MON but the value could not be converted to a number: ${value}`)
+      }
+      break
+    }
+    case 'NUM_0_SUN': {
+      const weekdays = WEEKDAY_NAMES_SUN
+      if (weekdayNumber >= 0) {
+        formattedValue = weekdays[weekdayNumber]
+      } else {
+        console.warn(`dow style is NUM_0_SUN but the value could not be converted to a number: ${value}`)
+      }
+      break
+    }
+    case 'ALPHA_MON':
+    case 'ALPHA_SUN': {
+      const weekday = WEEKDAY_NAMES_MON.find((weekday) => weekday.toLowerCase().includes(value.toLowerCase()))
+      if (weekday) {
+        formattedValue = weekday
+      } else {
+        console.warn(`dow style is ALPHA but the value could not be matched to a weekday name: ${value}`)
+      }
+      break
+    }
+    default: {
+      console.warn(`could not format dow value. dow_style was not recognized: ${col.dow_style}`)
+      break
+    }
+  }
+
+  return formattedValue
+}
+
+export const getDayjsObjForStringType = (value, col) => {
+  if (!value) {
+    return undefined
+  }
+
+  try {
+    switch (col.precision) {
+      case 'DOW': {
+        return undefined
+      }
+      case 'HOUR':
+      case 'MINUTE': {
+        return dayjs.utc(value, 'THH:mm:ss.SSSZ').utc()
+      }
+      case 'MONTH': {
+        return undefined
+      }
+      default: {
+        return undefined
+      }
+    }
+  } catch (error) {
+    console.error(error)
+    return undefined
   }
 }
 
@@ -171,22 +292,26 @@ export const formatStringDateWithPrecision = (value, col, config = {}) => {
   try {
     switch (col.precision) {
       case 'DOW': {
-        if (!isNaN(value) && value >= 1 && value <= 7) {
-          formattedValue = WEEKDAY_NAMES[value - 1]
-        }
+        formattedValue = formatDOW(value, col)
         break
       }
       case 'HOUR': {
-        const dayjsTime = dayjs(value, 'THH:mm:ss.SSSZ').utc()
-        formattedValue = dayjsTime.format('h:00A')
+        const dayjsTime = dayjs.utc(value, 'THH:mm:ss.SSSZ').utc()
+        if (dayjsTime.isValid()) {
+          formattedValue = dayjsTime.format('h:00A')
+        }
         break
       }
       case 'MINUTE': {
-        const dayjsTime = dayjs(value, 'THH:mm:ss.SSSZ').utc()
-        formattedValue = dayjsTime.format('h:mmA')
+        const dayjsTime = dayjs.utc(value, 'THH:mm:ss.SSSZ').utc()
+        if (dayjsTime.isValid()) {
+          formattedValue = dayjsTime.format('h:mmA')
+        }
         break
       }
       case 'MONTH': {
+        // This shouldnt be an ISO string since its a DATE_STRING, but
+        // if it is valid, we should use it
         formattedValue = value
         break
       }
@@ -223,31 +348,30 @@ export const formatStringDate = (value, config) => {
     const { monthYearFormat, dayMonthYearFormat } = config
     const monthYear = monthYearFormat || dataFormattingDefault.monthYearFormat
     const dayMonthYear = dayMonthYearFormat || dataFormattingDefault.dayMonthYearFormat
-    const dayJSObj = dayjs(value).utc()
+    const dayJSObj = dayjs.utc(value).utc()
 
+    if (!dayJSObj.isValid()) {
+      return value
+    }
+
+    let date = value
     if (day) {
-      const date = dayJSObj.format(dayMonthYear)
-      if (isDayJSDateValid(date)) {
-        return date
-      }
+      date = dayJSObj.format(dayMonthYear)
     } else if (month) {
-      const date = dayJSObj.format(monthYear)
-      if (isDayJSDateValid(date)) {
-        return date
-      }
+      date = dayJSObj.format(monthYear)
     } else if (week) {
       // dayjs doesn't format this correctly
-      return value
     } else if (year) {
-      return year
+      date = year
     }
+    return date
   }
 
   // Unable to parse...
   return value
 }
 
-export const formatChartLabel = ({ d, col = {}, config = {} }) => {
+export const formatChartLabel = ({ d, scale, column, dataFormatting }) => {
   if (d === null) {
     return {
       fullWidthLabel: 'Untitled Category',
@@ -255,6 +379,8 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
       isTruncated: false,
     }
   }
+
+  const col = column ?? scale?.column
 
   if (!col || !col.type) {
     return {
@@ -264,10 +390,16 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
     }
   }
 
+  const config = dataFormatting ?? scale?.dataFormatting ?? getDataFormatting()
   const { currencyCode, languageCode } = config
 
+  let type = col.type
+  if (scale?.units === 'none') {
+    type = 'QUANTITY'
+  }
+
   let formattedLabel = d
-  switch (col.type) {
+  switch (type) {
     case 'STRING': {
       break
     }
@@ -294,17 +426,19 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
       break
     }
     case 'QUANTITY': {
-      if (Number(d)) {
+      if (!isNaN(parseFloat(d))) {
         formattedLabel = new Intl.NumberFormat(languageCode).format(d)
       }
       break
     }
     case 'DATE': {
-      formattedLabel = formatDateType(d, col, config)
+      const isDateObj = scale?.type === 'TIME'
+      formattedLabel = formatDateType(d, col, config, isDateObj)
+
       break
     }
     case 'DATE_STRING': {
-      formattedLabel = formatDateStringType(d, col, config)
+      formattedLabel = formatDateStringType(d, col, config, scale)
       break
     }
     case 'PERCENT': {
@@ -333,21 +467,34 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
   return { fullWidthLabel, formattedLabel, isTruncated }
 }
 
-export const getDayJSObj = ({ value, column, config }) => {
-  if (config.timestampFormat === TIMESTAMP_FORMATS.iso8601 && column.precision) {
-    return dayjs(value).utc()
-  }
-
-  return dayjs.unix(value).utc()
+export const isNumber = (str) => {
+  return /^\d+$/.test(str)
 }
 
-export const formatElement = ({ element, column, config = {}, htmlElement, precision }) => {
+export const getDayJSObj = ({ value, column, config }) => {
+  if (column.type === 'DATE_STRING') {
+    return getDayjsObjForStringType(value, column)
+  }
+
+  if (isNumber(value)) {
+    return dayjs.unix(value).utc()
+  }
+
+  return dayjs.utc(value).utc()
+}
+
+export const formatElement = ({ element, column, config = {}, htmlElement, isChart }) => {
   try {
     let formattedElement = element
     const { currencyCode, languageCode, currencyDecimals, quantityDecimals } = config
 
+    let type = column?.type
+    if (isChart && ['count', 'deviation', 'variance'].includes(column?.aggType)) {
+      type = 'QUANTITY'
+    }
+
     if (column) {
-      switch (column.type) {
+      switch (type) {
         case 'STRING': {
           // do nothing
           break
@@ -392,7 +539,7 @@ export const formatElement = ({ element, column, config = {}, htmlElement, preci
           break
         }
         case 'DATE': {
-          formattedElement = formatDateType(element, column, config, precision)
+          formattedElement = formatDateType(element, column, config)
           break
         }
         case 'DATE_STRING': {
@@ -465,16 +612,11 @@ export const getPNGBase64 = (svgElement) => {
 }
 
 export const getBBoxFromRef = (ref) => {
-  let bbox
-  try {
-    if (ref) {
-      bbox = ref.getBBox()
-    }
-  } catch (error) {
-    console.error(error)
+  if (!ref || !ref.getBBox) {
+    return
   }
 
-  return bbox
+  return ref.getBBox()
 }
 
 /**
@@ -573,13 +715,66 @@ export const supportsDatePivotTable = (columns) => {
   return dateColumn && dateColumn?.display_name?.toLowerCase().includes('month') && columns?.length === 2
 }
 
-export const supportsRegularPivotTable = (columns, dataLength) => {
+export const supportsRegularPivotTable = (columns, dataLength, data) => {
   if (dataLength <= 1) {
     return false
   }
 
-  const hasTwoGroupables = getNumberOfGroupables(columns) === 2
-  return hasTwoGroupables && columns.length === 3
+  const groupbyColumns = getGroupableColumns(columns)
+  const hasTwoGroupables = groupbyColumns?.length === 2
+
+  if (!hasTwoGroupables) {
+    return false
+  }
+
+  const visibleColumns = getVisibleColumns(columns)
+  const groupbyColumn1 = columns[groupbyColumns[0]]
+  const groupbyColumn2 = columns[groupbyColumns[1]]
+  if (!groupbyColumn1.is_visible || !groupbyColumn2.is_visible || !(visibleColumns?.length >= 3)) {
+    return false
+  }
+
+  const column1Data =
+    data?.map((row) => {
+      return row[groupbyColumns[0]]
+    }) ?? []
+
+  const column2Data =
+    data?.map((row) => {
+      return row[groupbyColumns[1]]
+    }) ?? []
+
+  const maxLegendLabels = 20
+  const uniqueData1Length = column1Data?.filter(onlyUnique)?.length ?? 0
+  const uniqueData2Length = column2Data?.filter(onlyUnique)?.length ?? 0
+
+  if (uniqueData1Length > maxLegendLabels && uniqueData2Length > maxLegendLabels) {
+    console.debug(
+      `Info: Pivot table will not be supported since there are too many unique fields. The calculated dimensions would be: ${uniqueData1Length} x ${uniqueData2Length}`,
+    )
+    return false
+  }
+
+  if (isColumnDateType(groupbyColumn1) && uniqueData2Length > maxLegendLabels) {
+    console.debug(
+      `Info: Pivot table will not be supported since there are too many unique fields. The legend would have ${uniqueData2Length} fields`,
+    )
+    return false
+  }
+
+  if (isColumnDateType(groupbyColumn2) && uniqueData1Length > maxLegendLabels) {
+    console.debug(
+      `Info: Pivot table will not be supported since there are too many unique fields. The legend would have ${uniqueData1Length} fields`,
+    )
+    return false
+  }
+
+  return true
+}
+
+export const hasDateColumn = (columns) => {
+  const hasDateColumn = !!columns.filter((col) => isColumnDateType(col))?.length
+  return hasDateColumn
 }
 
 export const supports2DCharts = (columns, dataLength) => {
@@ -633,7 +828,7 @@ export const isSingleValueResponse = (response) => {
 
 export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotDataLength, isDataLimited } = {}) => {
   try {
-    if (!_get(response, 'data.data.display_type')) {
+    if (!response?.data?.data?.display_type) {
       return []
     }
     // There should be 3 types: data, suggestion, help
@@ -643,11 +838,11 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
       return [displayType]
     }
 
-    const rows = _get(response, 'data.data.rows', [])
-    const allColumns = columns || _get(response, 'data.data.columns')
+    const rows = response?.data?.data?.rows ?? []
+    const allColumns = columns || response?.data?.data?.columns
     const visibleColumns = getVisibleColumns(allColumns)
 
-    if (!_get(visibleColumns, 'length') || !_get(rows, 'length')) {
+    if (!visibleColumns?.length || !rows?.length) {
       return ['text']
     }
 
@@ -655,7 +850,6 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
       return ['single-value']
     }
 
-    const maxRowsForPivot = 1000
     const maxRowsForPieChart = 10
     const numRows = dataLength ?? rows.length
 
@@ -665,7 +859,7 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
       pivotDataHasLength = !!pivotDataLength
     }
 
-    if (supportsRegularPivotTable(visibleColumns, numRows)) {
+    if (supportsRegularPivotTable(visibleColumns, numRows, response?.data?.data?.rows)) {
       // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
       const supportedDisplayTypes = ['table']
 
@@ -678,16 +872,11 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
         // numRows <= maxRowsForPivot &&
         pivotDataHasLength
       ) {
-        supportedDisplayTypes.push(
-          'stacked_column',
-          'stacked_bar',
-          'stacked_line',
-          'column',
-          'bar',
-          'line',
-          'bubble',
-          'heatmap',
-        )
+        supportedDisplayTypes.push('stacked_column', 'stacked_bar', 'column', 'bar', 'bubble', 'heatmap')
+
+        if (hasDateColumn(visibleColumns)) {
+          supportedDisplayTypes.push('stacked_line', 'line')
+        }
       }
       // Comment out for now so chart row count doesnt change display type
       // else if (numRows > maxRowsForPivot) {
@@ -698,10 +887,19 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
     } else if (supports2DCharts(visibleColumns, numRows)) {
       // If there is at least one string column and one number
       // column, we should be able to chart anything
-      const supportedDisplayTypes = ['table', 'column', 'bar', 'line']
+      const supportedDisplayTypes = ['table', 'column', 'bar']
+
+      if (hasDateColumn(visibleColumns)) {
+        supportedDisplayTypes.push('line')
+      }
 
       if (numRows > 1 && numRows <= maxRowsForPieChart) {
         supportedDisplayTypes.push('pie')
+      }
+
+      const { amountOfNumberColumns } = getColumnTypeAmounts(visibleColumns)
+      if (amountOfNumberColumns > 1) {
+        supportedDisplayTypes.push('column_line')
       }
 
       // Check if date pivot should be supported
@@ -742,7 +940,7 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
 export const isDisplayTypeValid = (response, displayType, dataLength, pivotDataLength, columns, isDataLimited) => {
   const supportedDisplayTypes = getSupportedDisplayTypes({
     response,
-    columns,
+    columns: columns ?? response?.data?.data?.columns,
     dataLength,
     pivotDataLength,
     isDataLimited,
@@ -780,7 +978,7 @@ export const getDefaultDisplayType = (
 ) => {
   const supportedDisplayTypes = getSupportedDisplayTypes({
     response,
-    columns,
+    columns: columns ?? response?.data?.data?.columns,
     dataLength,
     pivotDataLength,
     isDataLimited,
@@ -937,53 +1135,6 @@ export const getChartLabelTextWidthInPx = (text) => {
   }
 }
 
-export const getLongestLabelInPx = (labels, col, config) => {
-  if (!labels?.length || !col) {
-    return 0
-  }
-
-  let max = getChartLabelTextWidthInPx(formatChartLabel({ d: labels[0], col, config }))
-
-  labels.forEach((label) => {
-    const formattedLabel = formatChartLabel({
-      d: label,
-      col,
-      config,
-    }).formattedLabel
-    const newLabelWidth = getChartLabelTextWidthInPx(formattedLabel)
-
-    if (newLabelWidth > max) {
-      max = newLabelWidth
-    }
-  })
-
-  return max
-}
-
-export const shouldLabelsRotate = (tickWidth, longestLabelWidth) => {
-  if (isNaN(tickWidth) || isNaN(longestLabelWidth)) {
-    return undefined
-  }
-
-  // If it is close, default to rotating them.
-  const widthDifference = tickWidth - longestLabelWidth
-  if (Math.abs(widthDifference) < 5) {
-    return true
-  }
-
-  return tickWidth < longestLabelWidth
-}
-
-export const getTickWidth = (scale, innerPadding) => {
-  try {
-    const width = scale.bandwidth() + innerPadding * scale.bandwidth() * 2
-    return width
-  } catch (error) {
-    console.error(error)
-    return 0
-  }
-}
-
 export const getQueryParams = (url) => {
   try {
     const queryParams = {}
@@ -1072,7 +1223,91 @@ export const removeFromDOM = (elem) => {
   }
 }
 
-export const dateSortFn = (a, b, isChart) => {
+const dateStringSortFnWithoutPrecision = (a, b) => {
+  // If one is a YYYY-WW
+  if (a.includes('-W')) {
+    const aDateYear = a.substring(0, 4)
+    const bDateYear = b.substring(0, 4)
+    if (aDateYear !== bDateYear) {
+      return aDateYear - bDateYear
+    } else {
+      const aDateWeek = a.substring(6, 8)
+      const bDateWeek = b.substring(6, 8)
+      return aDateWeek - bDateWeek
+    }
+  }
+  // If one is a weekday name
+  else if (WEEKDAY_NAMES_MON.includes(a.trim())) {
+    const aDayIndex = WEEKDAY_NAMES_MON.findIndex((d) => d.toLowerCase().includes(a.trim().toLowerCase()))
+    const bDayIndex = WEEKDAY_NAMES_MON.findIndex((d) => d.toLowerCase().includes(b.trim().toLowerCase()))
+
+    let sortValue = a - b
+    if (aDayIndex >= 0 && bDayIndex >= 0) {
+      sortValue = aDayIndex - bDayIndex
+    }
+
+    return sortValue
+  }
+  // If one is a month name
+  else if (MONTH_NAMES.includes(a.trim())) {
+    const aMonthIndex = MONTH_NAMES.findIndex((m) => m === a.trim())
+    const bMonthIndex = MONTH_NAMES.findIndex((m) => m === b.trim())
+    if (aMonthIndex >= 0 && bMonthIndex >= 0) {
+      return bMonthIndex - aMonthIndex
+    }
+    return a - b
+  } else if (SEASON_NAMES.includes(a.substr(0, 2))) {
+    const aSeasonIndex = SEASON_NAMES.findIndex((s) => s === a.substr(0, 2))
+    const bSeasonIndex = SEASON_NAMES.findIndex((s) => s === b.substr(0, 2))
+    const aYear = Number(a.substr(2))
+    const bYear = Number(b.substr(2))
+
+    if (aYear === bYear) {
+      return aSeasonIndex - bSeasonIndex
+    }
+
+    return aYear - bYear
+  }
+
+  return a - b
+}
+
+export const dateStringSortFn = (a, b, col = {}) => {
+  switch (col.precision) {
+    case 'DOW': {
+      const dowStyle = col.dow_style ?? 'ALPHA_MON'
+      let aIndex = WEEKDAY_NAMES_MON.findIndex((dow) => dow.toLowerCase().includes(a.toLowerCase()))
+      let bIndex = WEEKDAY_NAMES_MON.findIndex((dow) => dow.toLowerCase().includes(b.toLowerCase()))
+      if (dowStyle === 'ALPHA_SUN') {
+        aIndex = WEEKDAY_NAMES_SUN.findIndex((dow) => dow.toLowerCase().includes(a.toLowerCase()))
+        bIndex = WEEKDAY_NAMES_SUN.findIndex((dow) => dow.toLowerCase().includes(b.toLowerCase()))
+      }
+
+      return aIndex - bIndex
+    }
+    case 'HOUR':
+    case 'MINUTE': {
+      const aDayjsTime = dayjs.utc(a, 'THH:mm:ss.SSSZ').utc()
+      const bDayjsTime = dayjs.utc(b, 'THH:mm:ss.SSSZ').utc()
+      return aDayjsTime.unix() - bDayjsTime.unix()
+    }
+    case 'MONTH': {
+      MONTH_NAMES
+      const aMonthIndex = MONTH_NAMES.findIndex((m) => m.toLowerCase() === a.trim().toLowerCase())
+      const bMonthIndex = MONTH_NAMES.findIndex((m) => m.toLowerCase() === b.trim().toLowerCase())
+      return aMonthIndex - bMonthIndex
+    }
+    default: {
+      // If precision is unknown or not specified, default
+      // to the way we use to sort this type of data:
+      return dateStringSortFnWithoutPrecision(a, b)
+    }
+  }
+
+  return a - b
+}
+
+export const dateSortFn = (a, b, col = {}, isTable) => {
   try {
     if (!a && !b) {
       return 0
@@ -1086,88 +1321,49 @@ export const dateSortFn = (a, b, isChart) => {
     let aDate = Number(a)
     let bDate = Number(b)
 
+    let sortValue = aDate - bDate
+
     // If one is not a number, use dayjs to format
     if (isNaN(aDate) || isNaN(bDate)) {
-      aDate = dayjs(a).unix()
-      bDate = dayjs(b).unix()
-    }
-
-    // Finally if all else fails, just compare the 2 values directly
-    if (!aDate || !bDate) {
-      // If one is a YYYY-WW
-      if (a.includes('-W')) {
-        const aDateYear = a.substring(0, 4)
-        const bDateYear = b.substring(0, 4)
-        if (aDateYear !== bDateYear) {
-          return bDateYear - aDateYear
-        } else {
-          const aDateWeek = a.substring(6, 8)
-          const bDateWeek = b.substring(6, 8)
-          return bDateWeek - aDateWeek
-        }
-      }
-      // If one is a weekday name
-      else if (WEEKDAY_NAMES.includes(a.trim())) {
-        const multiplier = isChart ? -1 : 1
-
-        const aDayIndex = WEEKDAY_NAMES.findIndex((d) => d === a.trim())
-        const bDayIndex = WEEKDAY_NAMES.findIndex((d) => d === b.trim())
-
-        let sortValue = a - b
-        if (aDayIndex >= 0 && bDayIndex >= 0) {
-          sortValue = aDayIndex - bDayIndex
-        }
-
-        return sortValue * multiplier
-      }
-      // If one is a month name
-      else if (MONTH_NAMES.includes(a.trim())) {
-        const aMonthIndex = MONTH_NAMES.findIndex((m) => m === a.trim())
-        const bMonthIndex = MONTH_NAMES.findIndex((m) => m === b.trim())
-        if (aMonthIndex >= 0 && bMonthIndex >= 0) {
-          return bMonthIndex - aMonthIndex
-        }
-        return b - a
-      } else if (SEASON_NAMES.includes(a.substr(0, 2))) {
-        const aSeasonIndex = SEASON_NAMES.findIndex((s) => s === a.substr(0, 2))
-        const bSeasonIndex = SEASON_NAMES.findIndex((s) => s === b.substr(0, 2))
-        const aYear = Number(a.substr(2))
-        const bYear = Number(b.substr(2))
-
-        if (aYear === bYear) {
-          return bSeasonIndex - aSeasonIndex
-        }
-
-        return bYear - aYear
+      if (col.type === 'DATE_STRING') {
+        sortValue = dateStringSortFn(a, b, col)
+      } else {
+        sortValue = dayjs.utc(a).unix() - dayjs.utc(b).unix()
       }
     }
-    return bDate - aDate
+
+    if (isTable && col.precision === 'DOW') {
+      sortValue = -1 * sortValue
+    }
+    return sortValue
   } catch (error) {
     console.error(error)
     return -1
   }
 }
 
-export const sortDataByDate = (data, tableColumns, isChart) => {
+export const sortDataByDate = (data, tableColumns, sortDirection = 'desc', isTable) => {
   try {
     if (!data || typeof data !== 'object') {
-      return data
+      throw new Error('Could not sort data by date - no data supplied')
     }
+
     const dateColumnIndex = getDateColumnIndex(tableColumns)
+    const dateColumn = tableColumns[dateColumnIndex]
+
     if (dateColumnIndex >= 0) {
-      let sortedData
-      if (!isChart) {
-        sortedData = [...data].sort((a, b) => dateSortFn(a[dateColumnIndex], b[dateColumnIndex]))
-      } else {
-        sortedData = [...data].sort((a, b) => -1 * dateSortFn(a[dateColumnIndex], b[dateColumnIndex], isChart))
-      }
+      let multiplier = sortDirection === 'desc' ? -1 : 1
+      const sortedData = [...data].sort(
+        (a, b) => multiplier * dateSortFn(a[dateColumnIndex], b[dateColumnIndex], dateColumn, isTable),
+      )
+
       return sortedData
     }
-    return data
   } catch (error) {
     console.error(error)
-    return data
   }
+
+  return data
 }
 
 export const handleTooltipBoundaryCollision = (e, self) => {
@@ -1216,4 +1412,68 @@ export const currentEventLoopEnd = () => {
   return new Promise((resolve) => {
     setTimeout(resolve, 0)
   })
+}
+
+export const difference = (objA, objB) => {
+  const diff = []
+  Object.keys(Object.assign({}, objA, objB)).forEach((key) => {
+    if (typeof objA[key] === 'function' && typeof objB[key] === 'function') {
+      if (!functionsEqual(objA[key], objB[key])) {
+        diff.push({
+          key,
+          objA: objA[key],
+          objB: objB[key],
+        })
+      }
+    } else if (!Object.is(objA[key], objB[key])) {
+      diff.push({
+        key,
+        objA: objA[key],
+        objB: objB[key],
+      })
+    }
+  })
+  return diff
+}
+
+const functionsEqual = (a, b) => {
+  return a?.toString() == b?.toString()
+}
+
+const isObject = (obj) => {
+  return typeof obj === 'object' && !Array.isArray(obj) && obj !== null && obj !== undefined
+}
+
+export const deepEqual = (objA, objB) => {
+  const lodashIsEqual = _isEqual(objA, objB)
+  if (lodashIsEqual) {
+    return true
+  }
+
+  const objAIsObject = isObject(objA)
+  const objBIsObject = isObject(objB)
+
+  if (!objAIsObject || !objBIsObject) {
+    return lodashIsEqual
+  }
+
+  const keysA = Object.keys(objA)
+  const keysB = Object.keys(objB)
+
+  if (keysA.length !== keysB.length) {
+    return false
+  }
+
+  for (let i = 0; i < keysA.length; i++) {
+    // Dont deep compare functions
+    if (typeof objA[keysA[i]] === 'function' && typeof objB[keysA[i]] === 'function') {
+      if (!functionsEqual(objA[keysA[i]], objB[keysA[i]])) {
+        return false
+      }
+    } else if (!hasOwnProperty.call(objB, keysA[i]) || !_isEqual(objA[keysA[i]], objB[keysA[i]])) {
+      return false
+    }
+  }
+
+  return true
 }

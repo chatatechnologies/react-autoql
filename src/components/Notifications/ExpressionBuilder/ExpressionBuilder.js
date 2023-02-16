@@ -235,7 +235,7 @@ export default class ExpressionBuilder extends React.Component {
             this.state.groups.map((group, i) => {
               return (
                 <Group
-                  authentication={getAuthentication(this.props.authentication)}
+                  authentication={this.props.authentication}
                   ref={(r) => (this.groupRefs[i] = r)}
                   key={`group-${group.id}-${i}`}
                   groupId={group.id}

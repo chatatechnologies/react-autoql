@@ -176,7 +176,7 @@ export default class ExpressionBuilderSimple extends React.Component {
             this.renderExpressionErrorMessage()
           ) : (
             <RuleSimple
-              authentication={getAuthentication(this.props.authentication)}
+              authentication={this.props.authentication}
               ref={(r) => (this.ruleRef = r)}
               ruleId={_get(this.state.expression, 'id', uuid())}
               onUpdate={this.onRuleUpdate}

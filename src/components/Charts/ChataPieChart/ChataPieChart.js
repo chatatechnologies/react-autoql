@@ -1,24 +1,22 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
-import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
+import ReactTooltip from 'react-tooltip'
 import { v4 as uuid } from 'uuid'
-
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
 import { pie, arc } from 'd3-shape'
 import { entries } from 'd3-collection'
-import legendColor from '../Legend/Legend'
+import legendColor from '../D3Legend/D3Legend'
 
-import { formatElement, removeFromDOM } from '../../../js/Util'
+import { deepEqual, formatElement, removeFromDOM } from '../../../js/Util'
 import { chartDefaultProps, chartPropTypes, getTooltipContent } from '../helpers'
-import ReactTooltip from 'react-tooltip'
 import { getChartColorVars } from '../../../theme/configureTheme'
 
 import 'd3-transition'
 
-export default class Axis extends Component {
+export default class ChataPieChart extends Component {
   constructor(props) {
     super(props)
 
@@ -33,7 +31,7 @@ export default class Axis extends Component {
         return parseFloat(b) - parseFloat(a)
       })
 
-    const chartColors = getChartColorVars()
+    const { chartColors } = getChartColorVars()
     this.colorScale = scaleOrdinal()
       .domain(
         this.sortedData.map((d) => {
@@ -66,12 +64,14 @@ export default class Axis extends Component {
 
   static propTypes = {
     ...chartPropTypes,
+    onAxesRenderComplete: PropTypes.func,
     backgroundColor: PropTypes.string,
     margin: PropTypes.number,
   }
 
   static defaultProps = {
     ...chartDefaultProps,
+    onAxesRenderComplete: () => {},
     backgroundColor: 'transparent',
     margin: 40,
   }
@@ -85,7 +85,10 @@ export default class Axis extends Component {
       return false
     }
 
-    return true
+    const propsEqual = deepEqual(this.props, nextProps)
+    const stateEqual = deepEqual(this.state, nextState)
+
+    return !propsEqual || !stateEqual
   }
 
   componentDidUpdate = () => {
@@ -120,6 +123,11 @@ export default class Axis extends Component {
 
     // Finally, translate container of legend and pie chart to center of parent container
     this.centerVisualization()
+
+    if (!this.renderComplete) {
+      this.renderComplete = true
+      this.props.onAxesRenderComplete()
+    }
   }
 
   renderPieContainer = () => {
@@ -166,7 +174,7 @@ export default class Axis extends Component {
       .attr('fill', (d) => {
         return self.colorScale(d.data.value[self.props.stringColumnIndex])
       })
-      .attr('data-for', this.props.tooltipID)
+      .attr('data-for', this.props.chartTooltipID)
       .attr('data-tip', function (d) {
         return getTooltipContent({
           row: d.data.value,
@@ -224,18 +232,25 @@ export default class Axis extends Component {
   onLegendClick = (legendObjStr) => {
     const legendObj = JSON.parse(legendObjStr)
     const index = legendObj?.dataIndex
-    if (this.state.legendLabels?.[index]) {
+    const legendLabel = this.state.legendLabels?.[index]
+    if (!legendLabel) {
+      return
+    }
+
+    const onlyLabelVisible = this.state.legendLabels.every((label) => label.label === legendLabel.label || label.hidden)
+    if (!onlyLabelVisible) {
       const newLegendLabels = _cloneDeep(this.state.legendLabels)
       newLegendLabels[index].hidden = !this.state.legendLabels[index].hidden
-      this.setState({ legendLabels: newLegendLabels })
+      this.setState({ legendLabels: newLegendLabels }, () => {
+        ReactTooltip.rebuild()
+      })
     }
-    ReactTooltip.rebuild()
   }
 
   renderLegend = () => {
     const self = this
     const { height } = this.props
-    const chartColors = getChartColorVars()
+    const { chartColors } = getChartColorVars()
 
     let legendScale
     if (this.state.legendLabels) {
@@ -265,6 +280,7 @@ export default class Axis extends Component {
       .shapePadding(5)
       .labels(self.state.legendLabels.map((labelObj) => labelObj.label))
       .labelWrap(legendWrapLength)
+      .labelOffset(10)
       .scale(legendScale)
       .on('cellclick', this.onLegendClick)
 

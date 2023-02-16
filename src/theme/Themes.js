@@ -3,8 +3,11 @@ export const LIGHT_THEME = {
   'background-color-primary': '#F1F3F5',
   'background-color-secondary': '#ffffff',
   'background-color-tertiary': '#cccccc',
+  'background-color-disabled': '#ededed',
+  'background-color-disabled-dark': '#857d83',
+  'background-color-checkbox': '#ffffff',
   'border-color': '#e6e6e6',
-  'hover-color': '#ececec',
+  'hover-color': '#f6f7f9',
   'text-color-primary': '#4f4f4f',
   'text-color-accent': '#ffffff',
   'text-color-placeholder': '#0000005e',
@@ -16,6 +19,7 @@ export const LIGHT_THEME = {
   'success-color': '#2aca4d',
   'info-color': '#28a8e0',
   'box-shadow-color': '#00000026',
+  'mask-color': '#0000000f',
 }
 
 export const DARK_THEME = {
@@ -23,6 +27,8 @@ export const DARK_THEME = {
   'background-color-primary': '#20252A',
   'background-color-secondary': '#3B3F46',
   'background-color-tertiary': '#292929',
+  'background-color-disabled': '#5d6167',
+  'background-color-disabled-dark': '#857d83',
   'border-color': '#53565c',
   'hover-color': '#4a4f56',
   'text-color-primary': '#ececec',
@@ -36,4 +42,5 @@ export const DARK_THEME = {
   'success-color': '#2aca4d',
   'info-color': '#28a8e0',
   'box-shadow-color': '#00000066',
+  'mask-color': '#0000000f',
 }

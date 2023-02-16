@@ -2,9 +2,9 @@ import { isColumnNumberType } from '../QueryOutput/columnHelpers'
 import { getPrecisionForDayJS } from '../../js/dateUtils'
 import dayjs from '../../js/dayjsWithPlugins'
 
-export const formatTableParams = (params, tableRef) => {
-  const formattedSorters = formatSortersForAPI(params, tableRef)
-  const formattedFilters = formatFiltersForAPI(params, tableRef)
+export const formatTableParams = (params, table, columns) => {
+  const formattedSorters = formatSortersForAPI(params, table, columns)
+  const formattedFilters = formatFiltersForAPI(params, table, columns)
 
   const configState = {
     sorters: formattedSorters,
@@ -15,16 +15,19 @@ export const formatTableParams = (params, tableRef) => {
   return configState
 }
 
-export const formatSortersForAPI = (params, tableRef) => {
+export const formatSortersForAPI = (params, table, columns) => {
   const sorters = []
-  if (params?.sorters?.length > 0 && tableRef) {
-    params.sorters.forEach((sorter) => {
+  if (params?.sort?.length > 0 && table) {
+    params.sort.forEach((sorter) => {
       try {
-        const column = tableRef.table.getColumn(sorter.field).getDefinition()
-        const name = column.name
-        const sort = sorter.dir.toUpperCase()
-        if (name && sort) {
-          sorters.push({ name, sort })
+        const column = columns?.[Number(sorter.field)]
+        if (column) {
+          const name = column.name
+          const sort = sorter.dir.toUpperCase()
+
+          if (name && sort) {
+            sorters.push({ name, sort })
+          }
         }
       } catch (error) {
         console.error(error)
@@ -56,39 +59,41 @@ export const formatNumberFilterValue = (headerValue = '') => {
   return { value: strNumber, operator }
 }
 
-export const formatFiltersForAPI = (params, tableRef) => {
+export const formatFiltersForAPI = (params, table, columns) => {
   // for Number type column =,<,>,<=  >=
   // for String the operator is = or like
   const filters = []
 
   // test to see if there is an error, if it continues for loop
-  if (params?.filters?.length > 0 && tableRef) {
-    params.filters.forEach((filter) => {
+  if (params?.filter?.length > 0 && table) {
+    params.filter.forEach((filter) => {
       try {
-        const column = tableRef.table.getColumn(filter.field).getDefinition()
-        const filterObj = {
-          name: column.name,
-          value: filter.value,
-          operator: 'like',
-        }
+        const column = columns?.[Number(filter.field)]
+        if (column) {
+          const filterObj = {
+            name: column.name,
+            value: filter.value,
+            operator: 'like',
+          }
 
-        if (isColumnNumberType(column)) {
-          const formatted = formatNumberFilterValue(filter.value)
-          filterObj.operator = formatted.operator
-          filterObj.value = formatted.value
-        } else if (column.type === 'DATE') {
-          const dates = filter.value.split(' to ')
-          const precision = getPrecisionForDayJS(column.precision)
-          const startDate = dayjs.utc(dates[0]).startOf(precision).toISOString()
-          const endDate = dayjs
-            .utc(dates[1] ?? dates[0])
-            .endOf(precision)
-            .toISOString()
-          filterObj.value = `${startDate},${endDate}`
-          filterObj.operator = 'between'
-        }
+          if (isColumnNumberType(column)) {
+            const formatted = formatNumberFilterValue(filter.value)
+            filterObj.operator = formatted.operator
+            filterObj.value = formatted.value
+          } else if (column.type === 'DATE') {
+            const dates = filter.value.split(' to ')
+            const precision = getPrecisionForDayJS(column.precision)
+            const startDate = dayjs.utc(dates[0]).startOf(precision).toISOString()
+            const endDate = dayjs
+              .utc(dates[1] ?? dates[0])
+              .endOf(precision)
+              .toISOString()
+            filterObj.value = `${startDate},${endDate}`
+            filterObj.operator = 'between'
+          }
 
-        filters.push(filterObj)
+          filters.push(filterObj)
+        }
       } catch (error) {
         console.warn(error)
       }

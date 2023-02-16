@@ -25,10 +25,13 @@ export default class RowNumberSelector extends React.Component {
   }
 
   closeSelector = () => {
-    this.setState({ isOpen: false })
+    if (this.state.isOpen) {
+      this.setState({ isOpen: false })
+    }
   }
 
   axiosSource = axios.CancelToken.source()
+
   getNewChartData = (pageSize) => {
     this.props.setIsLoadingMoreRows(true)
     if (this.props.isDrilldown) {
@@ -117,7 +120,7 @@ export default class RowNumberSelector extends React.Component {
           }}
         >
           <ul className='axis-selector-content'>
-            {this.rowNumberListConstructor(this.props.totalRowNumber).map((rowNumber, i) => {
+            {this.rowNumberListConstructor(this.props.totalRowCount).map((rowNumber, i) => {
               let rowNumberString = rowNumber
               if (rowNumber === 5000) {
                 rowNumberString = '5000 (Maximum)'
@@ -158,7 +161,7 @@ export default class RowNumberSelector extends React.Component {
         padding={10}
       >
         <rect
-          {...this.props.childProps}
+          // {...this.props.childProps}
           className='axis-label-border'
           data-test='axis-label-border'
           onClick={this.openSelector}

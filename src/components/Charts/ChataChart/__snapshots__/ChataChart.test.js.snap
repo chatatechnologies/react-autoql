@@ -11,8 +11,8 @@ exports[`tooltip content renders correctly for pivot table data bar tooltip rend
 exports[`tooltip content renders correctly for pivot table data bubble tooltip renders as expected 1`] = `
 "<div>
         <div><strong>Customer Region:</strong> MidWest</div>
-        <div><strong>Customer Name:</strong> Americom</div>
-        <div><strong>Total Online Sales:</strong> $0.00</div>
+        <div><strong>Customer Name:</strong> Everdata</div>
+        <div><strong>Total Online Sales:</strong> $277,579.00</div>
       </div>"
 `;
 
@@ -27,8 +27,8 @@ exports[`tooltip content renders correctly for pivot table data column tooltip r
 exports[`tooltip content renders correctly for pivot table data heatmap tooltip renders as expected 1`] = `
 "<div>
         <div><strong>Customer Region:</strong> MidWest</div>
-        <div><strong>Customer Name:</strong> Americom</div>
-        <div><strong>Total Online Sales:</strong> $0.00</div>
+        <div><strong>Customer Name:</strong> Everdata</div>
+        <div><strong>Total Online Sales:</strong> $277,579.00</div>
       </div>"
 `;
 
@@ -42,17 +42,17 @@ exports[`tooltip content renders correctly for pivot table data line tooltip ren
 
 exports[`tooltip content renders correctly for pivot table data stacked bar tooltip renders as expected 1`] = `
 "<div>
-        <div><strong>Customer Region:</strong> South</div>
-        <div><strong>Customer Name:</strong> Americom</div>
-        <div><strong>Total Online Sales:</strong> $168,002.00</div>
+        <div><strong>Customer Region:</strong> MidWest</div>
+        <div><strong>Customer Name:</strong> Everdata</div>
+        <div><strong>Total Online Sales:</strong> $277,579.00</div>
       </div>"
 `;
 
 exports[`tooltip content renders correctly for pivot table data stacked column tooltip renders as expected 1`] = `
 "<div>
-        <div><strong>Customer Region:</strong> South</div>
-        <div><strong>Customer Name:</strong> Americom</div>
-        <div><strong>Total Online Sales:</strong> $168,002.00</div>
+        <div><strong>Customer Region:</strong> MidWest</div>
+        <div><strong>Customer Name:</strong> Everdata</div>
+        <div><strong>Total Online Sales:</strong> $277,579.00</div>
       </div>"
 `;
 

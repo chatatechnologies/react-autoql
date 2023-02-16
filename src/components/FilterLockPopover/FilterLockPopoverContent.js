@@ -536,8 +536,6 @@ export default class FilterLockPopover extends React.Component {
   }
 
   renderSuggestion = ({ name }) => {
-    this.rebuildTooltips()
-
     if (!name.keyword) {
       return null
     }

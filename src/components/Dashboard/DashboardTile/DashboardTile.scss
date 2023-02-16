@@ -119,6 +119,13 @@
     opacity: 0.9;
   }
 
+  .tabulator-header-contents {
+    height: 32px !important;
+  }
+  .react-autoql-table-container.filtering .tabulator-header-contents {
+    height: 55px !important;
+  }
+
   .react-autoql-table,
   .query-output-table-row-count {
     color: var(--react-autoql-text-color-primary);
@@ -130,9 +137,10 @@
   }
 
   .dashboard-tile-response-wrapper {
-    height: calc(100% - 47px);
+    flex: 1;
     width: 100%;
     padding-top: 0;
+    overflow: hidden;
     background: inherit;
 
     .layout-splitter {
@@ -197,6 +205,7 @@
   cursor: default;
 
   .react-autoql-response-content-container {
+    position: relative;
     padding: 8px 15px 20px 15px;
     align-items: center;
   }
@@ -204,7 +213,8 @@
 
 .dashboard-tile-response-wrapper.editing .dashboard-tile-response-container {
   .react-autoql-response-content-container {
-    padding: 7px 12px 32px 18px;
+    box-sizing: content-box;
+    width: calc(100% - 40px);
     align-items: center;
   }
 }

@@ -5,8 +5,8 @@ import Columns from './Columns'
 import sampleProps from '../chartTestData'
 
 const scales = {
-  xScale: sampleProps.pivot.stringScale,
-  yScale: sampleProps.pivot.numberScale,
+  xScale: sampleProps.pivot.stringScale(),
+  yScale: sampleProps.pivot.numberScale(),
 }
 
 const pivotSampleProps = {

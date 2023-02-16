@@ -275,7 +275,7 @@ export default class Group extends React.Component {
               if (rule.type === 'rule') {
                 return (
                   <Rule
-                    authentication={getAuthentication(this.props.authentication)}
+                    authentication={this.props.authentication}
                     ref={(r) => (this.ruleRefs[i] = r)}
                     ruleId={rule.id}
                     key={rule.id}
@@ -290,7 +290,7 @@ export default class Group extends React.Component {
               } else if (rule.type === 'group') {
                 return (
                   <Group
-                    authentication={getAuthentication(this.props.authentication)}
+                    authentication={this.props.authentication}
                     groupId={rule.id}
                     key={rule.id}
                     initialData={rule.termValue}
@@ -340,7 +340,7 @@ export default class Group extends React.Component {
               return (
                 <div key={`group-${rule.id}`}>
                   <Group
-                    authentication={getAuthentication(this.props.authentication)}
+                    authentication={this.props.authentication}
                     groupId={rule.id}
                     initialData={rule.termValue}
                     enableQueryValidation={false}

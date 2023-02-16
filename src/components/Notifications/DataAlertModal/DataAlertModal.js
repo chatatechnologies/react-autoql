@@ -25,7 +25,23 @@ import './DataAlertModal.scss'
 import { withTheme } from '../../../theme'
 
 class DataAlertModal extends React.Component {
-  NEW_NOTIFICATION_MODAL_ID = uuid()
+  constructor(props) {
+    super(props)
+
+    this.COMPONENT_KEY = uuid()
+    this.NEW_NOTIFICATION_MODAL_ID = uuid()
+
+    this.state = {
+      titleInput: '',
+      messageInput: '',
+      isExpressionSectionComplete: false,
+      expressionJSON: [],
+      isExpressionValidated: false,
+      isScheduleSectionComplete: false,
+      isDataReturnDirty: false,
+      isConfirmDeleteModalVisible: false,
+    }
+  }
 
   static propTypes = {
     authentication: authenticationType,
@@ -61,17 +77,6 @@ class DataAlertModal extends React.Component {
     titleIcon: undefined,
     enableQueryValidation: true,
     onValidate: undefined,
-  }
-
-  state = {
-    titleInput: '',
-    messageInput: '',
-    isExpressionSectionComplete: false,
-    expressionJSON: [],
-    isExpressionValidated: false,
-    isScheduleSectionComplete: false,
-    isDataReturnDirty: false,
-    isConfirmDeleteModalVisible: false,
   }
 
   componentDidMount = () => {
@@ -461,7 +466,7 @@ class DataAlertModal extends React.Component {
           <div style={{ width: '80%' }}>
             <p>Notify me when:</p>
             <ExpressionBuilderSimple
-              authentication={getAuthentication(this.props.authentication)}
+              authentication={this.props.authentication}
               ref={(r) => (this.expressionRef = r)}
               key={`expression-${this.NEW_NOTIFICATION_MODAL_ID}`}
               onChange={this.onExpressionChange}
@@ -611,7 +616,13 @@ class DataAlertModal extends React.Component {
         <Modal
           overlayStyle={{ zIndex: '9998' }}
           title={this.props.title}
-          titleIcon={!_isEmpty(this.props.currentDataAlert) ? <Icon type='edit' /> : <span />}
+          titleIcon={
+            !_isEmpty(this.props.currentDataAlert) ? (
+              <Icon key={`title-icon-${this.COMPONENT_KEY}`} type='edit' />
+            ) : (
+              <span key={`title-icon-${this.COMPONENT_KEY}`} />
+            )
+          }
           ref={(r) => (this.modalRef = r)}
           isVisible={this.props.isVisible}
           onClose={this.props.onClose}

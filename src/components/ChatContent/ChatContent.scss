@@ -1,17 +1,22 @@
 .chat-content-scroll-container {
-  flex: 1 0 0px;
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  padding-bottom: 155px;
 }
 
 .react-autoql-drawer .response-loading-container {
   position: absolute;
-  bottom: 45px;
+  bottom: 102px;
   left: 20px;
 }
 
 .react-autoql-drawer .chat-bar-container {
-  flex: 0 0 auto;
-  position: relative;
+  position: absolute;
+  bottom: 0;
   padding: 10px;
+  height: 102px;
+  width: 100%;
 }
 
 .react-autoql-drawer .watermark {
