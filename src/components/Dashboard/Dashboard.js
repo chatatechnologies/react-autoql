@@ -67,6 +67,7 @@ class DashboardWithoutTheme extends React.Component {
     this.state = {
       isDragging: false,
       isReportProblemOpen: false,
+      isResizingDrilldown: false,
     }
   }
 
@@ -687,8 +688,11 @@ class DashboardWithoutTheme extends React.Component {
                 percentage={true}
                 secondaryInitialSize={50}
                 primaryMinSize={renderTopHalf ? 0 : 35}
+                onDragStart={() => {
+                  this.setState({ isResizingDrilldown: true })
+                }}
                 onDragEnd={() => {
-                  this.setState({})
+                  this.setState({ isResizingDrilldown: false })
                 }}
               >
                 <div className='react-autoql-dashboard-drilldown-original'>
@@ -698,7 +702,6 @@ class DashboardWithoutTheme extends React.Component {
                         <QueryOutput
                           {...this.activeDrilldownRef.props}
                           queryResponse={queryResponse}
-                          isResizing={this.state.isAnimatingModal}
                           isDrilldownChartHidden={this.state.isDrilldownChartHidden}
                           key={`dashboard-drilldown-chart-${this.state.activeDrilldownTile}`}
                           activeChartElementKey={this.state.activeDrilldownChartElementKey}
@@ -707,6 +710,8 @@ class DashboardWithoutTheme extends React.Component {
                             tableConfig: this.activeDrilldownRef.tableConfig,
                             pivotTableConfig: this.activeDrilldownRef.pivotTableConfig,
                           }}
+                          isAnimating={this.state.isAnimatingModal}
+                          isResizing={this.state.isResizingDrilldown}
                           showQueryInterpretation={this.props.isEditing}
                           reverseTranslationPlacement='top'
                           height='100%'
