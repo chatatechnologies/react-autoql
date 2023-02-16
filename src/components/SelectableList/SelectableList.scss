@@ -4,6 +4,7 @@
   justify-content: space-between;
   line-height: 36px;
   user-select: none;
+  cursor: default;
 
   &:hover {
     background: var(--react-autoql-hover-color);
@@ -11,6 +12,11 @@
 
   &.selected {
     background: var(--react-autoql-hover-color);
+  }
+
+  &.disabled {
+    opacity: 0.4;
+    pointer-events: none;
   }
 }
 

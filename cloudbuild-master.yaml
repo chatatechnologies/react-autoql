@@ -8,7 +8,7 @@ steps:
         npm ci
         npm i react@16.14.0 react-dom@16.14.0 -D
         npm run test
-        npx semantic-release
+        npx semantic-release --no-ci
 
     secretEnv: ['NPM_TOKEN', 'GH_TOKEN']
 

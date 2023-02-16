@@ -22,7 +22,7 @@ import Autosuggest from 'react-autosuggest'
 import SpeechToTextButtonBrowser from '../SpeechToTextButton/SpeechToTextButtonBrowser'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { animateInputText } from '../../js/Util'
+import { animateInputText, deepEqual } from '../../js/Util'
 import { dprQuery } from '../../js/dprService'
 import { withTheme } from '../../theme'
 
@@ -90,14 +90,15 @@ class QueryInput extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
+    document.addEventListener('keydown', this.onEscKeypress)
   }
 
-  shouldComponentUpdate = (nextProps) => {
+  shouldComponentUpdate = (nextProps, nextState) => {
     if (this.props.isResizing && nextProps.isResizing) {
       return false
     }
 
-    return true
+    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
   }
 
   componentDidUpdate = (prevProps) => {
@@ -111,6 +112,17 @@ class QueryInput extends React.Component {
     clearTimeout(this.autoCompleteTimer)
     clearTimeout(this.queryValidationTimer)
     clearTimeout(this.caretMoveTimeout)
+    document.removeEventListener('keydown', this.onEscKeypress)
+  }
+
+  onEscKeypress = (event) => {
+    if (event.key === 'Escape') {
+      // If esc key was not pressed in combination with ctrl or alt or shift
+      const isNotCombinedKey = !(event.ctrlKey || event.altKey || event.shiftKey)
+      if (isNotCombinedKey) {
+        this.cancelQuery()
+      }
+    }
   }
 
   animateInputTextAndSubmit = ({ query, userSelection, source, skipQueryValidation }) => {

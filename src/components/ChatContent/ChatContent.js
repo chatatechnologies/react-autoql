@@ -53,6 +53,7 @@ export default class ChatContent extends React.Component {
     sessionId: PropTypes.string,
     isResizing: PropTypes.bool,
     source: PropTypes.arrayOf(PropTypes.string),
+    shouldRender: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -62,6 +63,7 @@ export default class ChatContent extends React.Component {
     dataPageSize: undefined,
     source: [],
     onRTValueLabelClick: undefined,
+    shouldRender: true,
   }
 
   componentDidMount = () => {
@@ -89,13 +91,6 @@ export default class ChatContent extends React.Component {
   focusInput = () => {
     if (this.queryInputRef?._isMounted) {
       this.queryInputRef.focus()
-    }
-  }
-
-  escFunction = (event) => {
-    if (this.state.isVisible && event.keyCode === 27) {
-      // todo: add this functionality back
-      // cancelQuery()
     }
   }
 
@@ -284,7 +279,7 @@ export default class ChatContent extends React.Component {
             </span>
           ),
         })
-      } else if (response?.data?.message !== responseErrors.CANCELLED) {
+      } else {
         this.addResponseMessage({ response, query })
       }
 
@@ -341,17 +336,19 @@ export default class ChatContent extends React.Component {
   }
 
   render = () => {
-    let display
+    let visibility
+    let opacity
     if (!this.props.shouldRender) {
-      display = 'none'
+      visibility = 'hidden'
+      opacity = '0'
     }
 
     return (
       <ErrorBoundary>
         <div
-          ref={(r) => !this.state.chatContentRef && this.setState({ chatContentRef: r })}
-          className='chat-content-scroll-container'
-          style={{ display }}
+          ref={(r) => (this.chatContentRef = r)}
+          className={`chat-content-scroll-container ${this.props.shouldRender ? '' : 'react-autoql-content-hidden'}`}
+          style={{ visibility, opacity }}
         >
           <CustomScrollbars ref={(r) => (this.messengerScrollComponent = r)}>
             {this.state.messages.map((message) => {
@@ -369,7 +366,6 @@ export default class ChatContent extends React.Component {
                   queryId={message.queryId}
                   queryText={message.query}
                   originalQueryID={message.originalQueryID}
-                  scrollRef={this.messengerScrollComponent?.ref}
                   isDataMessengerOpen={this.props.isDataMessengerOpen}
                   isActive={this.state.activeMessageId === message.id}
                   addMessageToDM={this.addResponseMessage}
@@ -398,7 +394,7 @@ export default class ChatContent extends React.Component {
                   enableAjaxTableData={this.props.enableAjaxTableData}
                   rebuildTooltips={this.props.rebuildTooltips}
                   queryRequestData={message.queryRequestData}
-                  popoverParentElement={this.state.chatContentRef}
+                  popoverParentElement={this.chatContentRef}
                   isVisibleInDOM={this.props.shouldRender}
                   dataPageSize={this.props.dataPageSize}
                   source={this.props.source}
@@ -412,7 +408,10 @@ export default class ChatContent extends React.Component {
             </div>
           )}
         </div>
-        <div style={{ display }} className='chat-bar-container'>
+        <div
+          style={{ visibility, opacity }}
+          className={`chat-bar-container ${this.props.shouldRender ? '' : 'react-autoql-content-hidden'}`}
+        >
           <div className='watermark'>
             <Icon type='react-autoql-bubbles-outlined' />
             {lang.run}

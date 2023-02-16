@@ -1,19 +1,16 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
-import _get from 'lodash.get'
+import { select } from 'd3-selection'
+import { axisLeft, axisBottom, axisTop, axisRight } from 'd3-axis'
 import _isEqual from 'lodash.isequal'
 
-import { select, selectAll } from 'd3-selection'
-import { axisLeft, axisBottom } from 'd3-axis'
-import { scaleOrdinal } from 'd3-scale'
-
-import LegendSelector from './LegendSelector'
-import legendColor from '../Legend/Legend'
 import AxisScaler from './AxisScaler'
+import AxisSelector from '../Axes/AxisSelector'
+import LoadMoreDropdown from './LoadMoreDropdown'
 
-import { formatChartLabel, removeFromDOM } from '../../../js/Util.js'
-import { axesDefaultProps, axesPropTypes, mergeBboxes } from '../helpers.js'
+import { deepEqual, formatChartLabel, getBBoxFromRef } from '../../../js/Util.js'
+import { axesDefaultProps, axesPropTypes, mergeBboxes, labelsShouldRotate } from '../helpers.js'
 
 import './Axis.scss'
 
@@ -21,478 +18,605 @@ export default class Axis extends Component {
   constructor(props) {
     super(props)
 
-    this.LEGEND_PADDING = 130
+    this.AXIS_KEY = uuid()
     this.LEGEND_ID = `axis-${uuid()}`
     this.BUTTON_PADDING = 5
+    this.AXIS_TITLE_PADDING = 20
+    this.AXIS_TITLE_BORDER_PADDING_LEFT = 10
+    this.AXIS_TITLE_BORDER_PADDING_TOP = 5
     this.swatchElements = []
+    this.maxRows = 5000
+    this.initialRowNumber = 50
+    this.labelInlineStyles = {
+      fontSize: 12,
+      fontFamily: 'inherit',
+      fill: 'currentColor',
+      fillOpacity: 0.9,
+      cursor: 'default',
+    }
+
+    this.labelsShouldRotate = false
+    this.prevLabelsShouldRotate = false
+
+    this.state = {
+      currentRowNumber: this.props.dataLength,
+    }
   }
 
   static propTypes = {
     ...axesPropTypes,
     scale: PropTypes.func.isRequired,
-    col: PropTypes.shape({}).isRequired,
-    ticks: PropTypes.array,
     orient: PropTypes.string,
-    tickSizeInner: PropTypes.number,
-    translate: PropTypes.string,
+    translateX: PropTypes.number,
+    translateY: PropTypes.number,
   }
 
   static defaultProps = {
     ...axesDefaultProps,
     orient: 'Bottom',
-    ticks: undefined,
-    tickSizeInner: undefined,
     translate: undefined,
+    translateX: 0,
+    translateY: 0,
+    onAxisRenderComplete: () => {},
   }
 
   componentDidMount = () => {
+    this._isMounted = true
     this.renderAxis()
-    if (this.props.hasRightLegend || this.props.hasBottomLegend) {
-      // https://d3-legend.susielu.com/
-      this.renderLegend()
-    }
 
-    this.props.onLabelChange()
+    // Render a second time so the title knows where to be placed
+    // based on the width of the tick labels
+    this.setState({ axisRenderComplete: true })
   }
 
-  componentDidUpdate = (prevProps) => {
-    this.renderAxis()
-
-    // only render legend once... unless labels changed
-    if (
-      (this.props.hasRightLegend || this.props.hasBottomLegend) &&
-      !_isEqual(this.props.legendLabels, prevProps.legendLabels)
-    ) {
-      this.renderLegend()
-    }
-
-    if (this.props.rotateLabels !== prevProps.rotateLabels) {
-      this.props.onLabelChange()
-    }
+  componentDidUpdate = (prevProps, prevState) => {
+    const renderJustCompleted = this.state.axisRenderComplete && !prevState.axisRenderComplete
+    this.renderAxis(renderJustCompleted)
   }
 
   componentWillUnmount = () => {
-    removeFromDOM(this.legendElement)
-    removeFromDOM(this.legendSwatchElements)
-    removeFromDOM(this.swatchElements)
+    this._isMounted = false
   }
 
-  styleLegendTitleNoBorder = (svg) => {
-    svg
-      .select('.legendTitle')
-      .style('font-weight', 'bold')
-      .style('transform', 'translate(0, -5px)')
-      .attr('data-test', 'legend-title')
-      .attr('fill-opacity', 0.9)
+  setScale = (axis) => {
+    axis.scale(this.props.scale)
   }
 
-  styleLegendTitleWithBorder = (svg) => {
-    svg
-      .select('.legendTitle')
-      .style('font-weight', 'bold')
-      .style('transform', 'translate(0, -5px)')
-      .attr('data-test', 'legend-title')
-      .append('tspan')
-      .text('  ▼')
-      .style('font-size', '8px')
-      .style('opacity', 0)
-      .attr('class', 'react-autoql-axis-selector-arrow')
-
-    // Add border that shows on hover
-    this.titleBBox = {}
-    try {
-      this.titleBBox = svg.select('.legendTitle').node().getBBox()
-    } catch (error) {
-      console.error(error)
-    }
-
-    select(this.legendBorder)
-      .attr('class', 'legend-title-border')
-      .attr('width', _get(this.titleBBox, 'width', 0) + this.BUTTON_PADDING * 2)
-      .attr('height', _get(this.titleBBox, 'height', 0) + this.BUTTON_PADDING * 2)
-      .attr('x', _get(this.titleBBox, 'x', 0) - this.BUTTON_PADDING)
-      .attr('y', _get(this.titleBBox, 'y', 0) - this.BUTTON_PADDING)
-      .attr('stroke', 'transparent')
-      .attr('stroke-width', '1px')
-      .attr('fill', 'transparent')
-      .attr('rx', 4)
-
-    // Move to front
-    this.legendElement = select(this.legendBorder).node()
-    this.legendElement.parentNode.appendChild(this.legendElement)
-  }
-
-  styleAxisScalerBorder = () => {
-    select(this.axisScaler)
-      .attr('class', 'axis-scaler-border')
-      .attr('transform', this.props.translate)
-      .attr('width', _get(this.labelBBox, 'width', 0) + this.BUTTON_PADDING * 2)
-      .attr('height', _get(this.labelBBox, 'height', 0) + this.BUTTON_PADDING * 2)
-      .attr('x', _get(this.labelBBox, 'x', 0) - this.BUTTON_PADDING)
-      .attr('y', _get(this.labelBBox, 'y', 0) - this.BUTTON_PADDING)
-      .attr('stroke', 'transparent')
-      .attr('stroke-width', '1px')
-      .attr('fill', 'transparent')
-      .attr('rx', 4)
-  }
-
-  // TODO: remove last visible legend label if it is cut off
-  // removeOverlappingLegendLabels = () => {
-  //   const legendContainer = select(
-  //     `#legend-bounding-box-${this.LEGEND_ID}`
-  //   ).node()
-
-  //   select(this.rightLegendElement)
-  //     .selectAll('.cell')
-  //     .attr('opacity', function(d) {
-  //       // todo: fix this so the bboxes are absolute and intersection is possible
-  //       // const tspanElement = select(this)
-  //       //   .select('tspan')
-  //       //   .node()
-  //       // const isOverflowing = doesElementOverflowContainer(
-  //       //   this,
-  //       //   legendContainer
-  //       // )
-  //       // if (isOverflowing) {
-  //       //   return 0
-  //       // }
-  //       // return 1
-  //     })
-  // }
-
-  renderLegend = () => {
-    try {
-      const self = this
-      const { legendLabels } = this.props
-
-      if (!legendLabels) {
-        return
-      }
-
-      const legendScale = this.getLegendScale(legendLabels)
-
-      if (this.props.hasRightLegend) {
-        this.legendSVG = select(this.rightLegendElement)
-
-        this.legendSVG
-          .attr('class', 'legendOrdinal')
-          .style('fill', 'currentColor')
-          .style('fill-opacity', '1')
-          .style('font-family', 'inherit')
-          .style('font-size', '10px')
-
-        var legendOrdinal = legendColor()
-          .orient('vertical')
-          .shapePadding(5)
-          .labelWrap(100)
-          .scale(legendScale)
-          .on('cellclick', function (d) {
-            self.props.onLabelChange({ setLoading: false })
-            self.props.onLegendClick(legendLabels.find((label) => label.label === d))
-          })
-
-        if (this.props.legendTitle) {
-          legendOrdinal.title(this.props.legendTitle).titleWidth(100)
-        }
-
-        this.legendSVG.call(legendOrdinal).style('font-family', 'inherit')
-
-        if (this.props.legendTitle) {
-          if (this.props.onLegendTitleClick) {
-            this.styleLegendTitleWithBorder(this.legendSVG)
-          } else {
-            this.styleLegendTitleNoBorder(this.legendSVG)
-          }
-        }
-
-        // adjust container width to exact width of legend
-        // this is so the updateMargins function works properly
-        const legendWidth = select(this.rightLegendElement).node().getBBox().width
-        select(this.legendClippingContainer).attr('width', legendWidth + 30)
-        this.legendSVG.attr('clip-path', `url(#legend-clip-area-${this.LEGEND_ID})`)
-      } else if (this.props.hasBottomLegend) {
-        this.legendSVG = select(this.bottomLegendElement)
-        this.legendSVG
-          .attr('class', 'legendOrdinal')
-          .style('fill', 'currentColor')
-          .style('fill-opacity', '1')
-          .style('font-family', 'inherit')
-          .style('font-size', '10px')
-
-        var legendOrdinal = legendColor()
-          .orient('horizontal')
-          .shapePadding(self.LEGEND_PADDING)
-          .labelWrap(120)
-          .labelAlign('left')
-          .scale(legendScale)
-          .on('cellclick', function (d) {
-            self.props.onLegendClick(d)
-          })
-
-        this.legendSVG.call(legendOrdinal).style('font-family', 'inherit')
-      }
-
-      this.applyStylesForHiddenSeries(legendLabels)
-      // todo: get this working properly
-      // this.removeOverlappingLegendLabels()
-    } catch (error) {
-      console.error(error)
-    }
-  }
-
-  applyStylesForHiddenSeries = (legendLabels) => {
-    try {
-      const legendLabelTexts = legendLabels
-        .filter((l) => {
-          return l.hidden
-        })
-        .map((l) => l.label)
-
-      this.legendSwatchElements = document.querySelectorAll(`#${this.LEGEND_ID} .label`)
-
-      if (this.legendSwatchElements) {
-        this.legendSwatchElements.forEach((el, i) => {
-          const textStrings = []
-          el.querySelectorAll('tspan').forEach((tspan) => {
-            textStrings.push(tspan.textContent)
-          })
-
-          const legendLabelText = textStrings.join(' ')
-          this.swatchElements[i] = el.parentElement.querySelector('.swatch')
-
-          if (legendLabelTexts.includes(legendLabelText)) {
-            this.swatchElements[i].style.opacity = 0.3
-          } else {
-            this.swatchElements[i].style.opacity = 1
-          }
-        })
-      }
-    } catch (error) {
-      console.error(error)
-    }
-  }
-
-  getLegendScale = (legendLabels) => {
-    const colorRange = legendLabels.map((obj) => {
-      return obj.color
+  setTickValues = (axis) => {
+    const { scale } = this.props
+    axis.tickFormat(function (d) {
+      return formatChartLabel({ d, scale })?.formattedLabel
     })
 
-    return scaleOrdinal()
-      .domain(
-        legendLabels.map((obj) => {
-          return obj.label
-        }),
-      )
-      .range(colorRange)
+    const tickValues = this.props.scale?.tickLabels
+    if (tickValues?.length) {
+      axis.tickValues(tickValues)
+    }
   }
 
-  renderAxis = () => {
-    const self = this
-    const axis = this.props.orient === 'Bottom' ? axisBottom() : axisLeft()
-
-    axis
-      .scale(this.props.scale)
-      .tickSizeOuter(0)
-      .tickFormat(function (d) {
-        return formatChartLabel({
-          d,
-          col: self.props.col,
-          config: self.props.dataFormatting,
-        }).formattedLabel
-      })
-
-    if (this.props.ticks?.length) {
-      axis.tickValues(this.props.ticks)
+  setTickSize = (axis) => {
+    axis.tickSizeOuter(0)
+    if (this.props.orient === 'Left' && this.props.innerWidth) {
+      axis.tickSizeInner(-this.props.innerWidth)
+    } else if (this.props.orient === 'Bottom' && this.props.innerHeight) {
+      axis.tickSizeInner(this.props.innerHeight)
+    } else {
+      axis.tickSizeInner(0)
     }
+  }
 
-    if (this.props.showGridLines) {
-      axis.tickSizeInner(this.props.tickSizeInner)
-    }
-
+  applyAxis = (axis) => {
     if (this.axisElement) {
       select(this.axisElement).call(axis)
     }
+  }
 
-    if (this.props.orient === 'Bottom' && this.props.rotateLabels) {
-      // translate labels slightly to line up with ticks once rotated
-      select(this.axisElement)
-        .selectAll('.tick text')
-        .style('transform', 'rotate(-45deg)')
-        .style('text-anchor', 'end')
-        .attr('dy', '0.5em')
-        .attr('dx', '-0.5em')
-        .attr('fill-opacity', '1')
-        .style('font-family', 'inherit')
-    } else if (this.props.orient === 'Bottom' && !this.props.rotateLabels) {
-      select(this.axisElement)
-        .selectAll('.tick text')
-        .style('transform', 'rotate(0deg)')
-        .style('text-anchor', 'middle')
-        .attr('dy', '10px')
-        .attr('dx', '0')
-        .attr('fill-opacity', '1')
-        .style('font-family', 'inherit')
+  styleAxisLabels = () => {
+    if (this.props.orient === 'Bottom') {
+      select(this.axisElement).selectAll('.tick text').attr('transform', 'translate(0, 10)')
+    } else if (this.props.orient === 'Top') {
+      select(this.axisElement).selectAll('.tick text').attr('transform', 'translate(0, -5)')
+    } else if (this.props.orient === 'Left') {
+      select(this.axisElement).selectAll('.tick text').attr('transform', 'translate(-5, 0)')
+    } else if (this.props.orient === 'Right') {
+      select(this.axisElement).selectAll('.tick text').attr('transform', 'translate(5, 0)')
     }
+  }
+
+  rotateLabelsIfNeeded = () => {
+    if (this.props.orient === 'Bottom' || this.props.orient === 'Top') {
+      // check if labels need to be rotated...
+      const labelsOverlap = labelsShouldRotate(this.axisElement)
+
+      if (labelsOverlap) {
+        if (this.props.orient === 'Bottom') {
+          select(this.axisElement)
+            .selectAll('.tick text')
+            .style('text-anchor', 'end')
+            .attr('dominant-baseline', 'text-top')
+            .attr('transform', `rotate(-45, 0, ${this.props.innerHeight}) translate(-10, 0)`)
+        } else if (this.props.orient === 'Top') {
+          select(this.axisElement)
+            .selectAll('.tick text')
+            .style('text-anchor', 'start')
+            .attr('dominant-baseline', 'auto')
+            .attr('transform', `rotate(-45, 0, 0) translate(5, 0)`)
+        }
+      }
+
+      this.prevLabelsShouldRotate = this.labelsShouldRotate
+      this.labelsShouldRotate = labelsOverlap
+    }
+  }
+
+  addTooltipsToLabels = () => {
+    const { scale } = this.props
 
     select(this.axisElement)
       .selectAll('.axis text')
       .style('fill', 'currentColor')
       .style('fill-opacity', '1')
       .style('font-family', 'inherit')
-      .attr('data-for', this.props.tooltipID)
+      .attr('data-for', this.props.chartTooltipID)
       .attr('data-tip', function (d) {
-        const { fullWidthLabel, isTruncated } = formatChartLabel({
-          d,
-          col: self.props.col,
-          config: self.props.dataFormatting,
-        })
-        if (isTruncated) {
-          return fullWidthLabel
-        }
-        return null
+        const { fullWidthLabel, isTruncated } = formatChartLabel({ d, scale })
+        return isTruncated ? fullWidthLabel : null
       })
       .attr('data-effect', 'float')
+  }
+
+  renderAxis = (renderComplete) => {
+    let axis
+    switch (this.props.orient) {
+      case 'Bottom': {
+        axis = axisBottom()
+        break
+      }
+      case 'Left': {
+        axis = axisLeft()
+        break
+      }
+      case 'Right': {
+        axis = axisRight()
+        break
+      }
+      case 'Top': {
+        axis = axisTop()
+        break
+      }
+      default: {
+        break
+      }
+    }
+
+    this.setScale(axis)
+    this.setTickValues(axis)
+    this.setTickSize(axis)
+    this.applyAxis(axis)
+    this.styleAxisLabels()
+    this.rotateLabelsIfNeeded()
+    this.addTooltipsToLabels()
 
     select(this.axisElement).selectAll('.axis path').style('display', 'none')
 
-    select(this.axisElement)
-      .selectAll('.axis line')
-      .style('stroke-width', '1px')
-      .style('stroke', 'currentColor')
-      .style('opacity', '0.08')
-      .style('shape-rendering', 'crispedges')
+    if (this.props.scale?.type !== 'LINEAR') {
+      select(this.axisElement).selectAll('g.tick').select('line').style('opacity', 0)
+    } else {
+      select(this.axisElement)
+        .selectAll('.axis line')
+        .style('stroke-width', '1px')
+        .style('stroke', 'currentColor')
+        .style('opacity', '0.08')
+        .style('shape-rendering', 'crispedges')
 
-    // Make tick line at 0 darker
-    select(this.axisElement)
-      .selectAll('g.tick')
-      .filter((d) => d == 0)
-      .select('line')
-      .style('opacity', 0.3)
+      select(this.axisElement).selectAll('g.tick').select('line').style('opacity', 0.1)
 
-    if (this.props.scale?.type === 'LINEAR' && this.axisElement) {
+      // Make tick line at 0 darker
+      select(this.axisElement)
+        .selectAll('g.tick')
+        .filter((d) => d == 0)
+        .select('line')
+        .style('opacity', 0.3)
+    }
+
+    if (this.axisElement) {
       // svg coordinate system is different from clientRect coordinate system
       // we need to get the deltas first, then we can apply them to the bounding rect
-      const axisBBox = this.axisElement.getBBox()
-      const axisBoundingRect = this.axisElement.getBoundingClientRect()
+      const axisBBox = this.axisElement.getBBox ? this.axisElement.getBBox() : undefined
+      const axisBoundingRect = this.axisElement.getBoundingClientRect
+        ? this.axisElement.getBoundingClientRect()
+        : undefined
 
-      const xDiff = axisBoundingRect.x - axisBBox.x
-      const yDiff = axisBoundingRect.y - axisBBox.y
+      let xDiff = 0
+      let yDiff = 0
+      if (!!axisBBox && !!axisBoundingRect) {
+        xDiff = axisBoundingRect?.x - axisBBox?.x
+        yDiff = axisBoundingRect?.y - axisBBox?.y
+      }
 
       const labelBboxes = []
       select(this.axisElement)
         .selectAll('g.tick text')
         .each(function () {
           const textBoundingRect = select(this).node().getBoundingClientRect()
-          const textBBox = {
+
+          labelBboxes.push({
             left: textBoundingRect.left - xDiff,
             bottom: textBoundingRect.bottom - yDiff,
             right: textBoundingRect.right - xDiff,
             top: textBoundingRect.top - yDiff,
-          }
-
-          labelBboxes.push(textBBox)
+          })
         })
 
       if (labelBboxes) {
         const allLabelsBbox = mergeBboxes(labelBboxes)
-        this.labelBBox = allLabelsBbox
+        this.labelBBox = { ...allLabelsBbox }
       }
-      this.styleAxisScalerBorder()
+    }
+
+    this.adjustTitleToFit()
+    this.adjustAxisSelectorBorder()
+    this.adjustAxisScalerBorder()
+
+    if (renderComplete) {
+      this.props.onAxisRenderComplete(this.props.orient)
+    } else if (this.state.axisRenderComplete && this.prevLabelsShouldRotate !== this.labelsShouldRotate) {
+      this.props.onLabelRotation()
     }
   }
 
-  render = () => {
-    const numSeries = this.props.numberColumnIndices?.length || 0
-    const legendDx = (this.LEGEND_PADDING * (numSeries - 1)) / 2
-    const marginLeft = this.props.leftMargin || 0
+  getTitleTextHeight = () => {
+    const fontSize = parseInt(this.titleRef?.style?.fontSize, 10)
+    return isNaN(fontSize) ? 12 : fontSize
+  }
 
-    let legendClippingHeight =
-      this.props.height -
-      this.props.topMargin -
-      // make legend smaller if labels are not rotated
-      // because they might overlap the legend
-      (!this.props.rotateLabels ? this.props.bottomMargin : 44) + // distance to bottom of axis labels
-      20
-    if (legendClippingHeight < 0) {
-      legendClippingHeight = 0
+  openSelector = () => {
+    this.setState({ isAxisSelectorOpen: true })
+  }
+
+  closeSelector = () => {
+    this.setState({ isAxisSelectorOpen: false })
+  }
+
+  renderAxisSelector = ({ positions, isSecondAxis, childProps = {} }) => {
+    return (
+      <AxisSelector
+        chartContainerRef={this.props.chartContainerRef}
+        changeNumberColumnIndices={this.props.changeNumberColumnIndices}
+        changeStringColumnIndex={this.props.changeStringColumnIndex}
+        legendColumn={this.props.legendColumn}
+        popoverParentElement={this.props.popoverParentElement}
+        rebuildTooltips={this.props.rebuildTooltips}
+        numberColumnIndices={this.props.numberColumnIndices}
+        numberColumnIndices2={this.props.numberColumnIndices2}
+        stringColumnIndices={this.props.stringColumnIndices}
+        stringColumnIndex={this.props.stringColumnIndex}
+        dateColumnsOnly={this.props.dateColumnsOnly}
+        isAggregation={this.props.isAggregation}
+        tooltipID={this.props.tooltipID}
+        hidden={!this.shouldRenderAxisSelector()}
+        columns={this.props.columns}
+        scale={this.props.scale}
+        align='center'
+        position='right'
+        positions={positions}
+        childProps={childProps}
+        hasSecondAxis={this.props.hasSecondAxis}
+        axisSelectorRef={(r) => (this.axisSelector = r)}
+        isOpen={this.state.isAxisSelectorOpen}
+        closeSelector={this.closeSelector}
+        isSecondAxis={isSecondAxis}
+      >
+        <rect
+          className={`axis-label-border ${this.shouldRenderAxisSelector() ? '' : 'hidden'}`}
+          data-test='axis-label-border'
+          onClick={this.openSelector}
+          fill='transparent'
+          stroke='transparent'
+          strokeWidth='1px'
+          rx='4'
+        />
+      </AxisSelector>
+    )
+  }
+
+  renderAxisTitleText = () => {
+    const { scale } = this.props
+    const title = scale?.title ?? ''
+
+    if (title.length > 35) {
+      return (
+        <tspan data-tip={title} data-for={this.props.chartTooltipID} data-test='axis-label'>
+          {`${title.substring(0, 35)}...`}
+        </tspan>
+      )
     }
 
     return (
-      <g data-test='axis'>
-        <g
-          className={`axis axis-${this.props.orient}
-        ${this.props.rotateLabels ? ' rotated' : ''}`}
-          ref={(el) => {
-            this.axisElement = el
-          }}
-          transform={this.props.translate}
-        />
-        {this.props.hasRightLegend && (
-          <g
-            ref={(el) => {
-              this.rightLegendElement = el
-            }}
-            id={this.LEGEND_ID}
-            data-test='right-legend'
-            className='legendOrdinal right-legend'
-            transform={`translate(${this.props.width + 15}, ${this.props.legendTitle ? '30' : '25'})`}
+      <tspan data-test='axis-label'>
+        <tspan ref={(r) => (this.titleText = r)}>{title}</tspan>
+        {this.shouldRenderAxisSelector() && (
+          <tspan
+            className='react-autoql-axis-selector-arrow'
+            data-test='dropdown-arrow'
+            opacity='0' // use css to style so it isnt exported in the png
+            fontSize='8px'
           >
-            <clipPath id={`legend-clip-area-${this.LEGEND_ID}`}>
-              <rect
-                ref={(el) => {
-                  this.legendClippingContainer = el
-                }}
-                id={`legend-bounding-box-${this.LEGEND_ID}`}
-                height={legendClippingHeight}
-                width={this.props.rightMargin + 30}
-                style={{ transform: 'translate(-30px, -30px)' }}
-              />
-            </clipPath>
-            {this.props.legendColumn && (
-              <LegendSelector
-                {...this.props}
-                column={this.props.legendColumn}
-                positions={['bottom']}
-                align='end'
-                childProps={{
-                  ref: (r) => (this.legendBorder = r),
-                  x: _get(this.titleBBox, 'x', 0) - this.BUTTON_PADDING,
-                  y: _get(this.titleBBox, 'y', 0) - this.BUTTON_PADDING,
-                  width: _get(this.titleBBox, 'width', 0) + this.BUTTON_PADDING * 2,
-                  height: _get(this.titleBBox, 'height', 0) + this.BUTTON_PADDING * 2,
-                  transform: this.props.translate,
-                }}
-              />
-            )}
-          </g>
+            {' '}
+            &#9660;
+          </tspan>
         )}
-        {this.props.hasBottomLegend && (
-          <g
-            ref={(el) => {
-              this.bottomLegendElement = el
-            }}
-            data-test='bottom-legend'
-            id={this.LEGEND_ID}
-            className='legendOrdinal'
-            transform={`translate(${(this.props.width - marginLeft) / 2 + marginLeft - legendDx},${
-              this.props.height - 30
-            })`}
-          />
-        )}
-        {!!this.labelBBox && this.props.scale?.type === 'LINEAR' && this.props.scale?.domain().length !== 1 && (
-          <AxisScaler
-            {...this.props}
-            positions={['top', 'bottom']}
-            align='center'
-            childProps={{
-              ref: (r) => (this.axisScaler = r),
-              x: _get(this.labelBBox, 'x', 0) - this.BUTTON_PADDING,
-              y: _get(this.labelBBox, 'y', 0) - this.BUTTON_PADDING,
-              width: _get(this.labelBBox, 'width', 0) + this.BUTTON_PADDING * 2,
-              height: _get(this.labelBBox, 'height', 0) + this.BUTTON_PADDING * 2,
-            }}
-          />
-        )}
+      </tspan>
+    )
+  }
+
+  renderBottomAxisTitle = () => {
+    const labelBBoxBottom = (this.labelBBox?.y ?? 0) + (this.labelBBox?.height ?? 0)
+    const xLabelX = this.props.innerWidth / 2
+    const xLabelY = labelBBoxBottom + this.AXIS_TITLE_PADDING
+
+    return (
+      <g>
+        <text
+          ref={(r) => (this.titleRef = r)}
+          className='x-axis-label'
+          data-test='x-axis-label'
+          dominantBaseline='middle'
+          textAnchor='middle'
+          fontWeight='bold'
+          x={xLabelX}
+          y={xLabelY}
+          style={this.labelInlineStyles}
+        >
+          {this.renderAxisTitleText()}
+        </text>
+        {this.renderAxisSelector({
+          positions: ['top', 'bottom', 'left', 'right'],
+        })}
+      </g>
+    )
+  }
+
+  renderLeftAxisTitle = () => {
+    // X and Y are switched from the rotation (anchored in the middle)
+    const labelBBoxX = this.labelBBox?.x ?? 0
+    const yLabelY = labelBBoxX - this.AXIS_TITLE_PADDING
+    const yLabelX = -0.5 * this.props.innerHeight
+
+    const transform = 'rotate(-90)'
+
+    return (
+      <g>
+        <text
+          ref={(r) => (this.titleRef = r)}
+          id={`left-axis-title-${this.AXIS_KEY}`}
+          className='left-axis-title'
+          data-test='left-axis-title'
+          dominantBaseline='middle'
+          textAnchor='middle'
+          fontWeight='bold'
+          transform={transform}
+          x={yLabelX}
+          y={yLabelY}
+          textLength={10}
+          lengthAdjust='spacingAndGlyphs'
+          style={this.labelInlineStyles}
+        >
+          {this.renderAxisTitleText()}
+        </text>
+        {this.renderAxisSelector({
+          positions: ['right', 'bottom', 'left', 'top'],
+        })}
+      </g>
+    )
+  }
+
+  renderRightAxisTitle = () => {
+    // X and Y are switched from the rotation (anchored in the middle)
+    const labelBBoxRightX = (this.labelBBox?.x ?? 0) + (this.labelBBox?.width ?? 0)
+    const yLabelY = labelBBoxRightX + this.AXIS_TITLE_PADDING
+    const yLabelX = -0.5 * this.props.innerHeight
+
+    const transform = 'rotate(-90)'
+
+    return (
+      <g>
+        <text
+          ref={(r) => (this.titleRef = r)}
+          id={`right-axis-title-${this.AXIS_KEY}`}
+          className='right-axis-title'
+          data-test='right-axis-title'
+          dominantBaseline='middle'
+          textAnchor='middle'
+          fontWeight='bold'
+          transform={transform}
+          x={yLabelX}
+          y={yLabelY}
+          textLength={10}
+          lengthAdjust='spacingAndGlyphs'
+          style={this.labelInlineStyles}
+        >
+          {this.renderAxisTitleText()}
+        </text>
+        {this.renderAxisSelector({
+          isSecondAxis: true,
+          positions: ['left', 'top', 'bottom', 'right'],
+        })}
+      </g>
+    )
+  }
+
+  renderTopAxisTitle = () => {
+    const labelBBoxY = this.labelBBox?.y ?? 0
+    const xLabelX = this.props.innerWidth / 2
+    const xLabelY = labelBBoxY - this.AXIS_TITLE_PADDING
+
+    return (
+      <g>
+        <text
+          ref={(r) => (this.titleRef = r)}
+          className='x-axis-label'
+          data-test='x-axis-label'
+          dominantBaseline='middle'
+          textAnchor='middle'
+          fontWeight='bold'
+          x={xLabelX}
+          y={xLabelY}
+          style={this.labelInlineStyles}
+        >
+          {this.renderAxisTitleText()}
+        </text>
+        {this.renderAxisSelector({
+          isSecondAxis: true,
+          positions: ['bottom', 'top', 'left', 'right'],
+        })}
+      </g>
+    )
+  }
+
+  adjustAxisSelectorBorder = () => {
+    if (!this.titleRef) {
+      return
+    }
+
+    const titleBBox = getBBoxFromRef(this.titleRef)
+    const titleHeight = titleBBox?.height ?? 0
+    const titleWidth = titleBBox?.width ?? 0
+
+    select(this.axisSelector)
+      .attr('transform', this.titleRef?.getAttribute('transform'))
+      .attr('width', Math.round(titleWidth + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT))
+      .attr('height', Math.round(titleHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP))
+      .attr('x', Math.round(titleBBox?.x - this.AXIS_TITLE_BORDER_PADDING_LEFT))
+      .attr('y', Math.round(titleBBox?.y - this.AXIS_TITLE_BORDER_PADDING_TOP))
+  }
+
+  adjustAxisScalerBorder = () => {
+    if (!this.axisScaler) {
+      return
+    }
+
+    select(this.axisScaler)
+      .attr('x', Math.round((this.labelBBox?.x ?? 0) - this.BUTTON_PADDING))
+      .attr('y', Math.round((this.labelBBox?.y ?? 0) - this.BUTTON_PADDING))
+      .attr('width', Math.round((this.labelBBox?.width ?? 0) + this.BUTTON_PADDING * 2))
+      .attr('height', Math.round((this.labelBBox?.height ?? 0) + this.BUTTON_PADDING * 2))
+  }
+
+  adjustTitleToFit = () => {
+    if (!this.titleRef) {
+      return
+    }
+
+    if (this.props.orient === 'Bottom') {
+      const labelBBoxBottom = (this.labelBBox?.y ?? 0) + (this.labelBBox?.height ?? 0)
+      const xLabelX = this.props.innerWidth / 2
+      const xLabelY = labelBBoxBottom + this.AXIS_TITLE_PADDING
+
+      select(this.titleRef).attr('x', xLabelX).attr('y', xLabelY)
+      select(this.loadMoreDropdown).attr('transform', `translate(${xLabelX}, ${xLabelY + 15})`)
+    } else if (this.props.orient === 'Top') {
+      const labelBBoxTop = this.labelBBox?.y ?? 0
+      const xLabelX = this.props.innerWidth / 2
+      const xLabelY = labelBBoxTop - this.AXIS_TITLE_PADDING
+
+      select(this.titleRef).attr('x', xLabelX).attr('y', xLabelY)
+    } else if (this.props.orient === 'Left' || this.props.orient === 'Right') {
+      if (this.props.chartRef) {
+        // Get original container height and top before adding axis title
+        const chartContainerBBox = this.props.chartRef?.getBoundingClientRect()
+        const chartContainerHeight = chartContainerBBox?.height
+        const chartContainerTop = chartContainerBBox?.y
+        select(this.titleRef).attr('textLength', null)
+        const yLabelBBox = this.titleRef.getBoundingClientRect()
+        const yLabelHeight = (yLabelBBox.height ?? 0) + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
+        if (yLabelHeight > chartContainerHeight) {
+          // Squeeze text to fit in full height
+          let textLength = Math.floor(chartContainerHeight) - 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
+          if (textLength < 0) {
+            textLength = 10
+          }
+          select(this.titleRef).attr('textLength', textLength)
+        }
+        const yLabelBBoxAfterTextLength = this.titleRef.getBoundingClientRect()
+        const yTitleTop = yLabelBBoxAfterTextLength.top - this.AXIS_TITLE_BORDER_PADDING_LEFT
+        if (yTitleTop < chartContainerTop) {
+          const overflow = chartContainerTop - yTitleTop
+          select(this.titleRef).attr('transform', `rotate(-90) translate(${-overflow}, 0)`)
+        }
+      }
+    }
+  }
+
+  renderAxisTitle = () => {
+    const { orient } = this.props
+
+    switch (orient) {
+      case 'Left': {
+        return this.renderLeftAxisTitle()
+      }
+      case 'Right': {
+        return this.renderRightAxisTitle()
+      }
+      case 'Bottom': {
+        return this.renderBottomAxisTitle()
+      }
+      case 'Top': {
+        return this.renderTopAxisTitle()
+      }
+      default: {
+        return null
+      }
+    }
+  }
+
+  renderLoadMoreDropdown = () => {
+    if (this.props.orient !== 'Bottom' || !this.props.enableAjaxTableData) {
+      return null
+    }
+
+    return (
+      <g ref={(r) => (this.loadMoreDropdown = r)}>
+        <LoadMoreDropdown {...this.props} />
+      </g>
+    )
+  }
+
+  shouldRenderAxisSelector = () => {
+    return this.props.scale?.hasDropdown
+  }
+
+  shouldRenderAxisScaler = () => {
+    return !!this.labelBBox && this.props.scale?.type === 'LINEAR' && this.props.scale?.domain().length !== 1
+  }
+
+  renderAxisScaler = () => {
+    if (!this.shouldRenderAxisScaler()) {
+      return null
+    }
+
+    return (
+      <AxisScaler
+        toggleChartScale={this.props.toggleChartScale}
+        labelBBox={this.labelBBox}
+        childProps={{
+          ref: (r) => (this.axisScaler = r),
+        }}
+      />
+    )
+  }
+
+  render = () => {
+    return (
+      <g
+        data-test='axis'
+        ref={(r) => (this.ref = r)}
+        transform={`translate(${this.props.translateX}, ${this.props.translateY})`}
+      >
+        <g className={`axis axis-${this.props.orient}`} ref={(el) => (this.axisElement = el)} />
+        {this.renderAxisTitle()}
+        {this.renderLoadMoreDropdown()}
+        {this.renderAxisScaler()}
       </g>
     )
   }

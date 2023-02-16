@@ -1,14 +1,22 @@
 import React, { Component } from 'react'
-import _get from 'lodash.get'
+import { getThemeValue } from '../../../theme/configureTheme'
+import { createSVGPath } from './lineFns'
 import { chartElementDefaultProps, chartElementPropTypes, getKey, getTooltipContent } from '../helpers'
+import { getDayJSObj } from '../../../js/Util'
 
 export default class Line extends Component {
+  constructor(props) {
+    super(props)
+
+    this.PATH_SMOOTHING = 0.2
+
+    this.state = {
+      activeKey: this.props.activeChartElementKey,
+    }
+  }
+
   static propTypes = chartElementPropTypes
   static defaultProps = chartElementDefaultProps
-
-  state = {
-    activeKey: this.props.activeChartElementKey,
-  }
 
   onDotClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)
@@ -25,67 +33,17 @@ export default class Line extends Component {
     this.setState({ activeKey: newActiveKey })
   }
 
-  makePolyline = () => {
-    const { columns, numberColumnIndices, stringColumnIndex, yScale, xScale } = this.props
+  makeChartElements = () => {
+    const { columns, legendColumn, numberColumnIndices, stringColumnIndex, dataFormatting, yScale, xScale } = this.props
+    const backgroundColor = getThemeValue('background-color-secondary')
 
-    const polylines = []
+    const largeDataset = this.props.width / this.props.data?.length < 10
+
+    const innerCircles = []
+    const paths = []
+
     numberColumnIndices.forEach((colIndex, i) => {
       const vertices = []
-      if (!columns[colIndex].isSeriesHidden) {
-        this.props.data.forEach((d, index) => {
-          const value = d[colIndex]
-          const prevRow = this.props.data[index - 1]
-          const nextRow = this.props.data[index + 1]
-
-          // If the visual difference between vertices is not noticeable, dont even render
-          const isFirstOrLastPoint = index === 0 || index === this.props.data.length - 1
-          if (
-            !isFirstOrLastPoint &&
-            Math.abs(yScale(value) - yScale(prevRow?.[colIndex])) < 0.05 &&
-            Math.abs(yScale(prevRow?.[colIndex]) - yScale(nextRow?.[colIndex])) < 0.05
-          ) {
-            return
-          }
-
-          const xShift = xScale.bandwidth() / 2
-          const minValue = yScale.domain()[0]
-
-          const x = xScale(d[stringColumnIndex]) + xShift
-          const y = yScale(value || minValue)
-          const xy = [x, y]
-          vertices.push(xy)
-        })
-      }
-
-      const polylinePoints = vertices
-        .map((xy) => {
-          return xy.join(',')
-        })
-        .join(' ')
-
-      const polyline = (
-        <polyline
-          key={`line-${getKey(0, i)}`}
-          className='line'
-          points={polylinePoints}
-          fill='none'
-          stroke={this.props.colorScale(i)}
-          strokeWidth={1}
-          opacity={0.7}
-        />
-      )
-
-      polylines.push(polyline)
-    })
-
-    return polylines
-  }
-
-  makeDots = (numVisibleSeries) => {
-    const { columns, legendColumn, numberColumnIndices, stringColumnIndex, dataFormatting, yScale, xScale } = this.props
-
-    const allDots = []
-    numberColumnIndices.forEach((colIndex, i) => {
       if (!columns[colIndex].isSeriesHidden) {
         this.props.data.forEach((d, index) => {
           const value = d[colIndex]
@@ -93,12 +51,14 @@ export default class Line extends Component {
             return
           }
 
-          const cy = yScale(value)
-          if (cy < 0.05) {
-            return
-          }
+          // If band scale, we want to shift the vertex to the middle of the band
+          const xShift = xScale.tickSize / 2
+          const x = xScale.getValue(d[stringColumnIndex]) + xShift
 
-          const xShift = xScale.bandwidth() / 2
+          const minValue = yScale.domain()[0]
+          const y = yScale(value || minValue)
+          const xy = [x, y]
+          vertices.push(xy)
 
           const tooltip = getTooltipContent({
             row: d,
@@ -109,35 +69,81 @@ export default class Line extends Component {
             dataFormatting,
           })
 
-          allDots.push(
+          if (isNaN(y)) {
+            return
+          }
+
+          // Render a bigger transparent circle so it's easier for the user
+          // to hover over and see tooltip
+          const transparentHoverVertex = (
             <circle
-              key={getKey(colIndex, index)}
-              className={`line-dot${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
-              cy={cy}
-              cx={xScale(d[stringColumnIndex]) + xShift}
-              r={3}
-              onClick={() => this.onDotClick(d, colIndex, index)}
-              data-tip={tooltip}
-              data-for={this.props.tooltipID}
+              key={`hover-circle-${getKey(colIndex, index)}`}
+              cx={x}
+              cy={y}
+              r={6}
               style={{
+                stroke: 'transparent',
+                fill: 'transparent',
                 cursor: 'pointer',
+              }}
+            />
+          )
+          const circle = (
+            <circle
+              className='line-dot-inner-circle'
+              key={getKey(colIndex, index)}
+              cx={x}
+              cy={y}
+              r={2.5}
+              style={{
+                pointerEvents: 'none',
                 stroke: this.props.colorScale(i),
-                strokeWidth: 2,
-                strokeOpacity: 0.7,
-                fillOpacity: 1,
-                opacity: 0,
+                strokeWidth: 4,
+                paintOrder: 'stroke',
+                color: this.props.colorScale(i),
+                opacity: largeDataset ? 0 : 1,
                 fill:
                   this.state.activeKey === getKey(colIndex, index)
                     ? this.props.colorScale(i)
-                    : this.props.backgroundColor || '#fff',
+                    : backgroundColor || '#fff',
               }}
-            />,
+            />
+          )
+
+          innerCircles.push(
+            <g
+              className={`line-dot${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}${
+                largeDataset ? ' hidden-dot' : ''
+              }`}
+              key={`circle-group-${getKey(colIndex, index)}`}
+              onClick={() => this.onDotClick(d, colIndex, index)}
+              data-tip={tooltip}
+              data-for={this.props.chartTooltipID}
+            >
+              {circle}
+              {transparentHoverVertex}
+            </g>,
           )
         })
       }
+
+      const d = createSVGPath(vertices, this.PATH_SMOOTHING)
+
+      const path = (
+        <path
+          key={`line-${getKey(0, i)}`}
+          className='line'
+          d={d}
+          fill='none'
+          stroke={this.props.colorScale(i)}
+          strokeWidth={2}
+        />
+      )
+
+      paths.push(path)
     })
 
-    return allDots
+    return { paths, innerCircles }
   }
 
   render = () => {
@@ -150,10 +156,12 @@ export default class Line extends Component {
       return null
     }
 
+    const { paths, innerCircles } = this.makeChartElements()
+
     return (
       <g data-test='line'>
-        {this.makePolyline()}
-        {this.makeDots(numVisibleSeries)}
+        {paths}
+        {innerCircles}
       </g>
     )
   }

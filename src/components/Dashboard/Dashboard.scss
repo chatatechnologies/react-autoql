@@ -20,7 +20,11 @@
     &.top-hidden {
       .react-autoql-dashboard-drilldown-original,
       .layout-splitter {
-        display: none;
+        transition: opacity 0.3s ease, height 0.3s ease;
+        visibility: hidden;
+        pointer-events: none;
+        opacity: 0;
+        height: 0;
       }
     }
 

@@ -1,5 +1,3 @@
-import _get from 'lodash.get'
-
 export const isAggregation = (columns) => {
   try {
     let isAgg = false
@@ -15,13 +13,12 @@ export const isAggregation = (columns) => {
 
 export const isColumnNumberType = (col) => {
   const type = col?.type
-
   return type === 'DOLLAR_AMT' || type === 'QUANTITY' || type === 'PERCENT' || type === 'RATIO'
 }
 
 export const isColumnStringType = (col) => {
   const type = col?.type
-  return type === 'STRING' || type === 'DATE_STRING' || type === 'DATE'
+  return type === 'STRING' || type === 'DATE_STRING' || type === 'DATE' || type === 'UNKNOWN'
 }
 
 export const isColumnDateType = (col) => {
@@ -33,49 +30,82 @@ export const isColumnDateType = (col) => {
   }
 }
 
-export const getNumberColumnIndices = (columns) => {
-  const dollarAmtIndices = []
-  const quantityIndices = []
-  const ratioIndices = []
+export const getNumberColumnIndices = (columns, isPivot) => {
+  const currencyColumnIndices = []
+  const quantityColumnIndices = []
+  const ratioColumnIndices = []
 
   columns.forEach((col, index) => {
     const { type } = col
     if (col.is_visible && !col.pivot) {
       if (type === 'DOLLAR_AMT') {
-        dollarAmtIndices.push(index)
+        currencyColumnIndices.push(index)
       } else if (type === 'QUANTITY') {
-        quantityIndices.push(index)
+        quantityColumnIndices.push(index)
       } else if (type === 'PERCENT' || type === 'RATIO') {
-        ratioIndices.push(index)
+        ratioColumnIndices.push(index)
       }
     }
   })
 
+  let numberColumnIndex
+  let numberColumnIndices = []
+  let numberColumnIndex2
+  let numberColumnIndices2 = []
+  let numberColumnIndexType
+
   // Returning highest priority of non-empty arrays
-  if (dollarAmtIndices.length) {
-    return {
-      numberColumnIndices: dollarAmtIndices,
-      numberColumnIndex: dollarAmtIndices[0],
-    }
+  if (currencyColumnIndices.length) {
+    numberColumnIndex = currencyColumnIndices[0]
+    numberColumnIndices = currencyColumnIndices
+    numberColumnIndexType = 'currency'
+  } else if (quantityColumnIndices.length) {
+    numberColumnIndex = quantityColumnIndices[0]
+    numberColumnIndices = quantityColumnIndices
+    numberColumnIndexType = 'quantity'
+  } else if (ratioColumnIndices.length) {
+    numberColumnIndex = ratioColumnIndices[0]
+    numberColumnIndices = ratioColumnIndices
+    numberColumnIndexType = 'ratio'
   }
 
-  if (quantityIndices.length) {
-    return {
-      numberColumnIndices: quantityIndices,
-      numberColumnIndex: quantityIndices[0],
-    }
-  }
+  if (!isPivot) {
+    numberColumnIndices = [numberColumnIndex]
 
-  if (ratioIndices.length) {
-    return {
-      numberColumnIndices: ratioIndices,
-      numberColumnIndex: ratioIndices[0],
+    if (numberColumnIndexType === 'currency') {
+      if (quantityColumnIndices.length) {
+        numberColumnIndex2 = quantityColumnIndices[0]
+      } else if (ratioColumnIndices.length) {
+        numberColumnIndex2 = ratioColumnIndices[0]
+      } else if (currencyColumnIndices.length > 1) {
+        numberColumnIndex2 = currencyColumnIndices[1]
+      }
+    } else if (numberColumnIndexType === 'quantity') {
+      if (ratioColumnIndices.length) {
+        numberColumnIndex2 = ratioColumnIndices[0]
+      } else if (quantityColumnIndices.length > 1) {
+        numberColumnIndex2 = quantityColumnIndices[1]
+      }
+    } else if (numberColumnIndexType === 'ratio' && quantityColumnIndices.length > 1) {
+      numberColumnIndex2 = ratioColumnIndices[1]
+    }
+
+    if (!isNaN(numberColumnIndex2)) {
+      numberColumnIndices2 = [numberColumnIndex2]
     }
   }
 
   return {
-    numberColumnIndices: [],
-    numberColumnIndex: undefined,
+    numberColumnIndex,
+    numberColumnIndices,
+    numberColumnIndices2,
+    numberColumnIndex2,
+    currencyColumnIndices: currencyColumnIndices ?? [],
+    currencyColumnIndex: currencyColumnIndices[0],
+    quantityColumnIndices: quantityColumnIndices ?? [],
+    quantityColumnIndex: quantityColumnIndices[0],
+    ratioColumnIndices: ratioColumnIndices ?? [],
+    ratioColumnIndex: ratioColumnIndices[0],
   }
 }
 
@@ -105,9 +135,9 @@ export const getStringColumnIndices = (columns, supportsPivot) => {
     return undefined
   }
 
+  const stringColumnIndices = []
   const multiSeriesIndex = getMultiSeriesColumnIndex(columns)
   const dateColumnIndex = getDateColumnIndex(columns)
-  const stringColumnIndices = []
 
   columns.forEach((col, index) => {
     if ((isColumnStringType(col) || col.groupable) && index !== multiSeriesIndex && col.is_visible) {
@@ -115,13 +145,21 @@ export const getStringColumnIndices = (columns, supportsPivot) => {
     }
   })
 
+  const drilldownIndex = columns.findIndex((col) => col.isDrilldownColumn)
+  if (drilldownIndex >= 0) {
+    return {
+      stringColumnIndices,
+      stringColumnIndex: drilldownIndex,
+    }
+  }
+
   // We will usually want to take the second column because the first one
   // will most likely have all of the same value. Grab the first column only
   // if it's the only string column
   let stringColumnIndex = stringColumnIndices[0]
   if (supportsPivot) {
     // Use date column if its a groupable, otherwise use first groupable column
-    const isDateColumnGroupable = _get(columns[dateColumnIndex], 'groupable')
+    const isDateColumnGroupable = columns[dateColumnIndex]?.groupable
     stringColumnIndex = isDateColumnGroupable ? dateColumnIndex : columns.findIndex((col) => col.groupable)
   } else if (dateColumnIndex >= 0) {
     stringColumnIndex = dateColumnIndex

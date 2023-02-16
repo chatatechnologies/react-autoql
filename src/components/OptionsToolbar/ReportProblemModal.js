@@ -2,13 +2,13 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
-import { QueryOutput } from '../QueryOutput'
 import { Modal } from '../Modal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { reportProblem } from '../../js/queryService'
 import { authenticationType } from '../../props/types'
 import { authenticationDefault, getAuthentication } from '../../props/defaults'
 import { Radio } from '../Radio'
+import { deepEqual } from '../../js/Util'
 
 export default class ReportProblemModal extends React.Component {
   static propTypes = {
@@ -31,6 +31,10 @@ export default class ReportProblemModal extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
+  }
+
+  shouldComponentUpdate = (nextProps, nextState) => {
+    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
   }
 
   componentDidUpdate = (prevProps) => {
@@ -74,6 +78,20 @@ export default class ReportProblemModal extends React.Component {
       })
   }
 
+  onConfirm = () => {
+    this.reportQueryProblem()
+    this.setState({
+      reportProblemMessage: undefined,
+    })
+  }
+
+  onClose = () => {
+    this.props.onClose()
+    this.setState({
+      reportProblemMessage: undefined,
+    })
+  }
+
   render = () => {
     return (
       <ErrorBoundary>
@@ -81,18 +99,8 @@ export default class ReportProblemModal extends React.Component {
           className={this.props.className}
           contentClassName={this.props.contentClassName}
           isVisible={this.props.isVisible}
-          onClose={() => {
-            this.props.onClose()
-            this.setState({
-              reportProblemMessage: undefined,
-            })
-          }}
-          onConfirm={() => {
-            this.reportQueryProblem()
-            this.setState({
-              reportProblemMessage: undefined,
-            })
-          }}
+          onClose={this.onClose}
+          onConfirm={this.onConfirm}
           confirmLoading={this.state.isReportingProblem}
           title='Report a Problem'
           enableBodyScroll={true}

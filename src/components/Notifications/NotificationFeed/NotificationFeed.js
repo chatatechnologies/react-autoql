@@ -87,6 +87,8 @@ class NotificationFeed extends React.Component {
     this._isMounted = false
   }
 
+  closeDataAlertModal = () => this.setState({ isEditModalVisible: false })
+
   getNotifications = () => {
     fetchNotificationFeed({
       ...this.props.authentication,
@@ -270,9 +272,9 @@ class NotificationFeed extends React.Component {
     return (
       <DataAlertModal
         key={this.MODAL_COMPONENT_KEY}
-        authentication={getAuthentication(this.props.authentication)}
+        authentication={this.props.authentication}
         isVisible={this.state.isEditModalVisible}
-        onClose={() => this.setState({ isEditModalVisible: false })}
+        onClose={this.closeDataAlertModal}
         currentDataAlert={this.state.activeDataAlert}
         onSave={this.onDataAlertSave}
         onErrorCallback={this.props.onErrorCallback}
@@ -336,7 +338,7 @@ class NotificationFeed extends React.Component {
                       return (
                         <NotificationItem
                           key={`notification-item-${i}`}
-                          authentication={getAuthentication(this.props.authentication)}
+                          authentication={this.props.authentication}
                           notification={notification}
                           onClick={this.onItemClick}
                           onDismissCallback={this.onDismissClick}

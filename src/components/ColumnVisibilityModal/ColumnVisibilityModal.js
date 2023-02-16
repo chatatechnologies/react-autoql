@@ -1,9 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import _cloneDeep from 'lodash.clonedeep'
 
 import { Modal } from '../Modal'
 import { SelectableList } from '../SelectableList'
+import { deepEqual } from '../../js/Util'
 
 import './ColumnVisibilityModal.scss'
 
@@ -20,6 +20,10 @@ export default class ColumnVisibilityModal extends React.Component {
     columns: this.props.columns,
   }
 
+  shouldComponentUpdate = (nextProps, nextState) => {
+    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
+  }
+
   componentDidUpdate = (prevProps) => {
     if (this.props.isVisible && !prevProps.isVisible) {
       this.setState({
@@ -28,26 +32,29 @@ export default class ColumnVisibilityModal extends React.Component {
     }
   }
 
+  onListChange = (columns) => {
+    this.setState({ columns })
+  }
+
+  onConfirm = () => this.props.onConfirm(this.state.columns)
+
   render = () => {
     return (
       <Modal
         isVisible={this.props.isVisible}
         onClose={this.props.onClose}
-        onConfirm={() => this.props.onConfirm(this.state.columns)}
+        onConfirm={this.onConfirm}
         title='Show/Hide Columns'
         enableBodyScroll={true}
         width='600px'
         confirmText='Apply'
-        style={{ marginTop: '45px' }}
         confirmLoading={this.props.isSettingColumns}
       >
         <div data-test='column-visibility-modal' style={{ padding: '0 15px' }}>
           <SelectableList
             columns={[{ name: 'Column Name' }, { name: 'Visibility ' }]}
             items={this.state.columns}
-            onChange={(columns) => {
-              this.setState({ columns })
-            }}
+            onChange={this.onListChange}
           />
         </div>
       </Modal>

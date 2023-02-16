@@ -1,252 +1,324 @@
 import React, { Fragment } from 'react'
-import _get from 'lodash.get'
+import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
+import { v4 as uuid } from 'uuid'
 import { Popover } from 'react-tiny-popover'
 import { SelectableList } from '../../SelectableList'
 import { Button } from '../../Button'
-import { axesDefaultProps, axesPropTypes, dataStructureChanged } from '../helpers'
 import { CustomScrollbars } from '../../CustomScrollbars'
+import { Checkbox } from '../../Checkbox'
+import { AGG_TYPES, NUMBER_COLUMN_TYPES, NUMBER_COLUMN_TYPE_DISPLAY_NAMES } from '../../../js/Constants'
+import { Select } from '../../Select'
+
+const aggHTMLCodes = {
+  sum: <>&Sigma;</>,
+  avg: <>&mu;</>,
+  count: <>#</>,
+}
 
 export default class NumberAxisSelector extends React.Component {
   constructor(props) {
     super(props)
 
-    this.currencySelectRef
-    this.quantitySelectRef
-    this.ratioSelectRef
+    this.COMPONENT_KEY = uuid()
+    this.listRefs = {}
+
+    const checkedColumns = this.getCheckedFromNumberColumnIndices(props)
 
     this.state = {
-      ...this.getSelectorState(props),
-      isOpen: false,
+      aggType: undefined,
+      selectedColumns: [],
+      checkedColumns,
+      columns: props.columns,
     }
   }
 
-  static propTypes = axesPropTypes
-  static defaultProps = axesDefaultProps
+  static propTypes = {
+    rebuildTooltips: PropTypes.func,
+    changeNumberColumnIndices: PropTypes.func,
+  }
 
-  componentDidUpdate = (prevProps) => {
-    if (dataStructureChanged(this.props, prevProps)) {
+  static defaultProps = {
+    rebuildTooltips: () => {},
+    changeNumberColumnIndices: () => {},
+  }
+
+  componentDidMount = () => {
+    this.props.rebuildTooltips()
+  }
+
+  componentDidUpdate = (prevProps, prevState) => {
+    if (!prevState.isOpen && this.state.isOpen) {
       this.setState({
-        ...this.getSelectorState(this.props),
+        selectedColumns: [],
+        checkedColumns: this.getCheckedFromNumberColumnIndices(this.props),
+        columns: this.props.columns,
       })
     }
   }
 
-  openSelector = () => {
-    this.setState({ isOpen: true })
-  }
-
-  closeSelector = () => {
-    this.setState({ isOpen: false })
-  }
-
-  getSelectorState = (props) => {
-    const { columns, numberColumnIndices } = props
-
-    if (!columns || !numberColumnIndices) {
-      return
+  getCheckedFromNumberColumnIndices = (props) => {
+    if (props.isSecondAxis) {
+      return props.numberColumnIndices2 ?? []
+    } else {
+      return props.numberColumnIndices ?? []
     }
+  }
 
-    const currencyItems = []
-    const quantityItems = []
-    const ratioItems = []
+  onAggTypeSelect = (aggType, column) => {
+    const { columns } = this.state
+    const newColumns = columns.map((col) => {
+      if (col.field === column.field) {
+        return {
+          ...col,
+          aggType,
+        }
+      }
+      return col
+    })
+
+    this.setState({ columns: newColumns })
+  }
+
+  getColumnsOfType = (type) => {
+    const columns = this.state.columns?.filter((col) => col.type === type)
+    return columns
+  }
+
+  getSelectableListItems = (type) => {
+    const { columns } = this.state
+    const items = []
+
+    const otherAxisColumns = this.getOtherAxisColumns()
 
     columns.forEach((col, i) => {
-      if (!col.is_visible || col.pivot) {
+      if (col.type !== type || !col.is_visible || col.pivot) {
         return
       }
 
+      const checked = this.state.checkedColumns.includes(i)
+      const disabled = otherAxisColumns.includes(i)
+
+      const aggTypeObj = AGG_TYPES.find((agg) => agg.value === col.aggType)
+
       const item = {
-        content: col.title,
-        checked: numberColumnIndices.includes(i),
+        key: `selectable-list-item-${this.COMPONENT_KEY}-${type}-${i}`,
+        content: (
+          <div key={`column-agg-type-symbol-${this.COMPONENT_KEY}`}>
+            {!this.props.isAggregation && col.aggType && (
+              <Select
+                className='agg-type-symbol'
+                popupClassname='agg-type-symbol-select'
+                popoverParentElement={this.popoverContentRef}
+                popoverBoundaryElement={this.props.popoverParentElement}
+                rebuildTooltips={this.props.rebuildTooltips}
+                tooltipID={this.props.tooltipID}
+                tooltip={aggTypeObj.tooltip}
+                value={col.aggType}
+                align='start'
+                size='small'
+                options={AGG_TYPES.map((agg) => {
+                  return {
+                    value: agg.value,
+                    label: aggHTMLCodes[agg.value],
+                    listLabel: (
+                      <span>
+                        <span className='agg-select-list-symbol'>{aggHTMLCodes[agg.value]}</span>
+                        {agg.displayName}
+                      </span>
+                    ),
+                    tooltip: agg.tooltip,
+                  }
+                })}
+                onChange={(value) => {
+                  this.onAggTypeSelect(value, col)
+                }}
+              />
+            )}
+            {col.title}
+          </div>
+        ),
+        disabled,
+        checked,
         columnIndex: i,
       }
 
-      if (col.type === 'DOLLAR_AMT') {
-        currencyItems.push(item)
-      } else if (col.type === 'QUANTITY') {
-        quantityItems.push(item)
-      } else if (col.type === 'RATIO' || col.type === 'PERCENT') {
-        ratioItems.push(item)
+      items.push(item)
+    })
+
+    return items
+  }
+
+  getOtherAxisColumns = () => {
+    if (!this.props.hasSecondAxis) {
+      return []
+    }
+
+    return this.props.isSecondAxis ? this.props.numberColumnIndices ?? [] : this.props.numberColumnIndices2 ?? []
+  }
+
+  areAllDisabled = (type) => {
+    const otherAxisColumnsOfType = this.getOtherAxisColumns()?.filter(
+      (colIndex) => this.state.columns[colIndex].type === type,
+    )
+    const allColumnsOfType = this.getColumnsOfType(type)
+
+    return otherAxisColumnsOfType?.length === allColumnsOfType?.length
+  }
+
+  getAllChecked = (type) => {
+    const otherAxisColumns = this.getOtherAxisColumns()
+    const areAllDisabled = this.areAllDisabled(type)
+    return (
+      !areAllDisabled &&
+      this.state.columns.every(
+        (col, i) => type !== col.type || this.state.checkedColumns.includes(i) || otherAxisColumns.includes(i),
+      )
+    )
+  }
+
+  onColumnSelection = (selected, selectedColumns) => {
+    const selectedColumnIndices = selectedColumns.map((col) => col.columnIndex)
+    this.setState({ selectedColumns: selectedColumnIndices })
+  }
+
+  onColumnCheck = (columns) => {
+    const { checkedColumns } = this.state
+
+    const newCheckedColumns = [...checkedColumns]
+    columns.forEach((col) => {
+      const indexOfCheckedColumns = newCheckedColumns.indexOf(col.columnIndex)
+      if (col.checked && indexOfCheckedColumns === -1) {
+        newCheckedColumns.push(col.columnIndex)
+      } else if (!col.checked && indexOfCheckedColumns > -1) {
+        newCheckedColumns.splice(indexOfCheckedColumns, 1)
       }
     })
 
-    return {
-      activeNumberType: _get(columns, `[${numberColumnIndices[0]}].type`),
-      currencySelectorState: currencyItems,
-      quantitySelectorState: quantityItems,
-      ratioSelectorState: ratioItems,
-    }
+    this.setState({
+      checkedColumns: newCheckedColumns,
+    })
   }
 
-  renderSelectorContent = (selectedColumn) => {
-    const { currencySelectorState, quantitySelectorState, ratioSelectorState } = this.state
-
-    let maxHeight = 300
-    const minHeight = 75
-    const padding = 100
-
-    const chartHeight = this.props.chartContainerRef?.clientHeight
-    if (chartHeight && chartHeight > minHeight + padding) {
-      maxHeight = chartHeight - padding
-    } else if (chartHeight && chartHeight < minHeight + padding) {
-      maxHeight = minHeight
+  renderSelectorContent = () => {
+    if (this.props.hidden) {
+      return null
     }
 
     return (
-      <div
-        id='chata-chart-popover'
-        onClick={(e) => {
-          e.stopPropagation()
-        }}
-      >
-        <CustomScrollbars autoHide={false} autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
-          <div className='axis-selector-container'>
-            {!!currencySelectorState.length && (
-              <Fragment>
-                <div className='number-selector-header'>
-                  {this.props.columns && this.props.legendColumn !== undefined
-                    ? this.props.legendColumn.display_name
-                    : 'Currency'}
-                </div>
-                <SelectableList
-                  ref={(r) => (this.currencySelectRef = r)}
-                  items={currencySelectorState}
-                  onSelect={() => {
-                    this.quantitySelectRef && this.quantitySelectRef.unselectAll()
-                    this.ratioSelectRef && this.ratioSelectRef.unselectAll()
-                  }}
-                  onChange={(currencySelectorState) => {
-                    const newQuantitySelectorState = quantitySelectorState.map((item) => {
-                      return { ...item, checked: false }
-                    })
-                    const newRatioSelectorState = ratioSelectorState.map((item) => {
-                      return { ...item, checked: false }
-                    })
-
-                    this.setState({
-                      activeNumberType: 'DOLLAR_AMT',
-                      currencySelectorState,
-                      quantitySelectorState: newQuantitySelectorState,
-                      ratioSelectorState: newRatioSelectorState,
-                    })
-                  }}
-                />
-              </Fragment>
-            )}
-
-            {!!quantitySelectorState.length && (
-              <Fragment>
-                <div className='number-selector-header'>
-                  {' '}
-                  {this.props.columns && this.props.legendColumn !== undefined
-                    ? this.props.legendColumn.display_name
-                    : 'Quantity'}
-                </div>
-                <SelectableList
-                  ref={(r) => (this.quantitySelectRef = r)}
-                  items={quantitySelectorState}
-                  onSelect={() => {
-                    this.currencySelectRef && this.currencySelectRef.unselectAll()
-                    this.ratioSelectRef && this.ratioSelectRef.unselectAll()
-                  }}
-                  onChange={(quantitySelectorState) => {
-                    const newCurrencySelectorState = currencySelectorState.map((item) => {
-                      return { ...item, checked: false }
-                    })
-                    const newRatioSelectorState = ratioSelectorState.map((item) => {
-                      return { ...item, checked: false }
-                    })
-                    this.setState({
-                      activeNumberType: 'QUANTITY',
-                      quantitySelectorState,
-                      currencySelectorState: newCurrencySelectorState,
-                      ratioSelectorState: newRatioSelectorState,
-                    })
-                  }}
-                />
-              </Fragment>
-            )}
-
-            {!!ratioSelectorState.length && (
-              <Fragment>
-                <div className='number-selector-header'>
-                  {' '}
-                  {this.props.columns && this.props.legendColumn !== undefined
-                    ? this.props.legendColumn.display_name
-                    : 'Ratio'}
-                </div>
-                <SelectableList
-                  ref={(r) => (this.ratioSelectRef = r)}
-                  items={ratioSelectorState}
-                  onSelect={() => {
-                    this.currencySelectRef && this.currencySelectRef.unselectAll()
-                    this.quantitySelectRef && this.quantitySelectRef.unselectAll()
-                  }}
-                  onChange={(ratioSelectorState) => {
-                    const newCurrencySelectorState = currencySelectorState.map((item) => {
-                      return { ...item, checked: false }
-                    })
-                    const newQuantitySelectorState = quantitySelectorState.map((item) => {
-                      return { ...item, checked: false }
-                    })
-
-                    this.setState({
-                      activeNumberType: 'RATIO',
-                      ratioSelectorState,
-                      currencySelectorState: newCurrencySelectorState,
-                      quantitySelectorState: newQuantitySelectorState,
-                    })
-                  }}
-                />
-              </Fragment>
-            )}
-          </div>
-        </CustomScrollbars>
-
-        <div className='axis-selector-apply-btn'>
-          <Button
-            style={{ width: 'calc(100% - 10px)' }}
-            type='primary'
-            disabled={
-              this.state.ratioSelectorState.every((item) => !item.checked) &&
-              this.state.currencySelectorState.every((item) => !item.checked) &&
-              this.state.quantitySelectorState.every((item) => !item.checked)
-            }
-            onClick={() => {
-              let activeNumberTypeColumns = []
-              if (this.state.activeNumberType === 'DOLLAR_AMT') {
-                activeNumberTypeColumns = this.state.currencySelectorState
-              } else if (this.state.activeNumberType === 'QUANTITY') {
-                activeNumberTypeColumns = this.state.quantitySelectorState
-              } else if (this.state.activeNumberType === 'RATIO') {
-                activeNumberTypeColumns = this.state.ratioSelectorState
-              }
-
-              if (activeNumberTypeColumns.length) {
-                this.closeSelector()
-                const activeNumberTypeIndices = activeNumberTypeColumns
-                  .filter((item) => item.checked)
-                  .map((item) => item.columnIndex)
-
-                this.props.changeNumberColumnIndices(activeNumberTypeIndices)
-              }
-            }}
-          >
-            Apply
-          </Button>
+      <div ref={(r) => (this.popoverContentRef = r)} className='number-axis-selector-popover'>
+        <div className='number-axis-selector-popover-content'>
+          {this.renderSeriesSelectors()}
+          {this.renderApplyButton()}
         </div>
       </div>
     )
   }
 
+  renderSeriesSelector = (type) => {
+    const columnsOfType = this.getColumnsOfType(type)
+    if (!columnsOfType?.length) {
+      return null
+    }
+
+    const maxHeight = 300
+    const minHeight = 100
+
+    const title = NUMBER_COLUMN_TYPE_DISPLAY_NAMES[type]
+    const listItems = this.getSelectableListItems(type)
+    const allChecked = this.getAllChecked(type)
+    const allDisabled = this.areAllDisabled(type)
+
+    return (
+      <div className='number-selector-field-group' key={`series-selector-group-${type}-${this.COMPONENT_KEY}`}>
+        <div className='number-selector-header'>
+          <div className='number-selector-header-title'>
+            {this.state.columns && this.props.legendColumn !== undefined ? (
+              <span>{this.props.legendColumn.display_name}</span>
+            ) : (
+              <span>{title} Fields</span>
+            )}
+          </div>
+          <div>
+            <Checkbox
+              checked={allChecked}
+              disabled={allDisabled}
+              className='number-selector-list-checkbox'
+              onChange={() => {
+                if (allChecked) {
+                  this.listRefs[type]?.unCheckAll()
+                } else {
+                  this.listRefs[type]?.checkAll()
+                }
+              }}
+            />
+          </div>
+        </div>
+        <CustomScrollbars autoHide={false} autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
+          <SelectableList
+            ref={(r) => (this.listRefs[type] = r)}
+            items={listItems}
+            onSelect={this.onColumnSelection}
+            onChange={this.onColumnCheck}
+          />
+        </CustomScrollbars>
+      </div>
+    )
+  }
+
+  renderSeriesSelectors = () => {
+    return (
+      <div className='axis-series-selector'>
+        <div className='number-selector-field-group-container'>
+          {Object.keys(NUMBER_COLUMN_TYPES).map((key) => {
+            return this.renderSeriesSelector(NUMBER_COLUMN_TYPES[key])
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  renderApplyButton = () => {
+    return (
+      <div className='axis-selector-apply-btn-container'>
+        <Button
+          className='axis-selector-apply-btn'
+          type='primary'
+          disabled={!this.state.checkedColumns?.length}
+          onClick={() => {
+            const indices = this.state.checkedColumns
+
+            if (this.props.isSecondAxis) {
+              this.props.changeNumberColumnIndices(this.props.numberColumnIndices, indices, this.state.columns)
+            } else {
+              this.props.changeNumberColumnIndices(indices, this.props.numberColumnIndices2, this.state.columns)
+            }
+
+            this.props.closeSelector()
+          }}
+        >
+          Apply
+        </Button>
+      </div>
+    )
+  }
+
   render = () => {
+    if (!this.props.children) {
+      return null
+    }
+
     return (
       <Popover
-        isOpen={this.state.isOpen}
-        ref={(r) => (this.popoverRef = r)}
-        content={this.renderSelectorContent}
-        onClickOutside={this.closeSelector}
+        id={`number-axis-selector-${this.COMPONENT_KEY}`}
+        isOpen={this.props.isOpen}
+        content={this.renderSelectorContent()}
+        ref={this.props.axisSelectorRef}
+        onClickOutside={(e) => {
+          e.stopPropagation()
+          e.preventDefault()
+          this.props.closeSelector()
+        }}
         parentElement={this.props.popoverParentElement}
         boundaryElement={this.props.popoverParentElement}
         positions={this.props.positions}
@@ -254,16 +326,7 @@ export default class NumberAxisSelector extends React.Component {
         reposition={true}
         padding={10}
       >
-        <rect
-          {...this.props.childProps}
-          className='axis-label-border'
-          data-test='axis-label-border'
-          onClick={this.openSelector}
-          fill='transparent'
-          stroke='transparent'
-          strokeWidth='1px'
-          rx='4'
-        />
+        {this.props.children}
       </Popover>
     )
   }

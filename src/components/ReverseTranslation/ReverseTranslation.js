@@ -16,6 +16,7 @@ import { fetchVLAutocomplete } from '../../js/queryService'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './ReverseTranslation.scss'
+import { deepEqual } from '../../js/Util'
 
 export default class ReverseTranslation extends React.Component {
   constructor(props) {
@@ -52,7 +53,7 @@ export default class ReverseTranslation extends React.Component {
     }
   }
 
-  shouldComponentUpdate = (nextProps) => {
+  shouldComponentUpdate = (nextProps, nextState) => {
     if (nextProps.reverseTranslation?.length && !this.props.reverseTranslation?.length) {
       return true
     }
@@ -61,7 +62,7 @@ export default class ReverseTranslation extends React.Component {
       return false
     }
 
-    return true
+    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
   }
 
   componentDidUpdate = (prevProps, prevState) => {

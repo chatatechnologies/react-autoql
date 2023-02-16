@@ -1,6 +1,5 @@
 g.legendOrdinal,
 g.legendOrdinal tspan {
-  stroke-width: 10px;
   stroke: transparent;
   letter-spacing: 0; // not clickable if larger than 0
   cursor: pointer;
@@ -8,12 +7,19 @@ g.legendOrdinal tspan {
 
 .axis-label-border,
 .legend-title-border {
-  cursor: pointer;
-  stroke: transparent;
-  opacity: 0.5;
+  &.hidden {
+    stroke: transparent;
+    opacity: 0;
+  }
 
-  &:hover {
-    stroke: var(--react-autoql-accent-color) !important;
+  &:not(.hidden) {
+    cursor: pointer;
+    stroke: transparent;
+    opacity: 0.5;
+
+    &:hover {
+      stroke: var(--react-autoql-accent-color) !important;
+    }
   }
 }
 .axis-scaler-border {
@@ -28,6 +34,192 @@ g.legendOrdinal tspan {
 
 .react-autoql-axis-selector-arrow {
   opacity: 1 !important;
+}
+
+.number-axis-selector-popover {
+  .number-axis-selector-popover-content {
+    display: flex;
+    flex-direction: column;
+    background: var(--react-autoql-background-color-secondary);
+    color: var(--react-autoql-text-color-primary);
+    padding: 10px;
+    z-index: 9999;
+
+    h4 {
+      margin: 0;
+      margin-top: 5px;
+      margin-bottom: 15px;
+    }
+
+    .number-selector-list-checkbox {
+      margin-left: 10px;
+    }
+
+    .number-selector-field-group-container {
+      white-space: nowrap;
+
+      .number-selector-field-group {
+        display: inline-block;
+        vertical-align: top;
+
+        &:not(:last-of-type) {
+          padding-right: 8px;
+        }
+      }
+    }
+
+    .axis-agg-type-selector {
+      width: 175px;
+      border-left: 1px solid var(--react-autoql-border-color);
+      padding: 10px 20px;
+
+      .agg-type-selector-fields {
+        font-size: 12px;
+        font-style: italic;
+      }
+
+      .react-autoql-radio-btn-container-list {
+        p {
+          font-size: 12px;
+          margin: 4px 0px;
+
+          [type='radio']:checked + label,
+          [type='radio']:not(:checked) + label {
+            padding-left: 22px;
+            line-height: 17px;
+
+            &:before {
+              width: 15px;
+              height: 15px;
+            }
+
+            &:after {
+              width: 9px;
+              height: 9px;
+            }
+          }
+        }
+      }
+    }
+
+    .axis-select-option.active {
+      background: var(--react-autoql-hover-color);
+      outline: none !important;
+    }
+    .react-autoql-list-item .react-autoql-checkbox {
+      margin-left: 20px;
+    }
+    .react-autoql-checkbox-tick {
+      left: 2px;
+    }
+    .react-autoql-checkbox__input {
+      width: 16px;
+      height: 16px;
+    }
+    .react-autoql-list-item {
+      padding: 0;
+      padding-right: 10px;
+      font-size: 12px;
+      line-height: 25px;
+      cursor: default;
+
+      &.checked .agg-type-symbol {
+        color: var(--react-autoql-accent-color);
+      }
+    }
+
+    .number-selector-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+      padding: 10px;
+      font-size: 12px;
+      border-bottom: 1px solid var(--react-autoql-border-color);
+      background: var(--react-autoql-background-color-primary);
+
+      .number-selector-header-title {
+        font-weight: 600;
+        svg {
+          stroke-width: 0.5px;
+        }
+      }
+    }
+
+    .axis-series-selector {
+      .react-autoql-selectable-list {
+        margin-bottom: 10px;
+      }
+    }
+
+    .react-autoql-select.agg-type-symbol {
+      display: inline-block;
+      font-weight: 600;
+      font-size: 12px;
+      line-height: 22px;
+      height: 22px;
+      margin: 3px 10px;
+      padding: 0 8px;
+    }
+  }
+
+  .axis-selector-apply-btn-container {
+    .axis-selector-apply-btn {
+      margin: 0;
+      width: 100%;
+    }
+  }
+}
+
+.agg-type-symbol-select {
+  .react-autoql-select-popup li {
+    font-size: 12px;
+    line-height: 28px;
+    height: 28px;
+
+    .agg-select-list-symbol {
+      font-weight: 600;
+      margin-right: 10px;
+    }
+  }
+}
+
+.axis-selector-content {
+  list-style-type: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+
+  li {
+    color: var(--react-autoql-text-color-primary);
+    width: 100%;
+    height: 30px;
+    line-height: 30px;
+    padding: 0 15px;
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+  }
+}
+
+.string-axis-selector-popover-content {
+  display: flex;
+  flex-direction: column;
+  background: var(--react-autoql-background-color-secondary);
+  color: var(--react-autoql-text-color-primary);
+  padding: 5px;
+  z-index: 9999;
+
+  .string-select-list-item {
+    font-size: 12px;
+    line-height: 28px;
+
+    &.active {
+      background: var(--react-autoql-accent-color);
+      color: var(--react-autoql-text-color-accent);
+    }
+  }
 }
 
 g.legendOrdinal .legendTitle tspan {

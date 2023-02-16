@@ -83,6 +83,7 @@ import {
   splitViewIcon,
   singleViewIcon,
   gradCapIcon,
+  columnLineIcon,
 } from '../../svgIcons.js'
 
 import './Icon.scss'
@@ -205,6 +206,10 @@ export default class Icon extends React.Component {
       }
       case 'column-chart': {
         icon = columnChartIcon
+        break
+      }
+      case 'column-line-chart': {
+        icon = columnLineIcon
         break
       }
       case 'stacked-column-chart': {
