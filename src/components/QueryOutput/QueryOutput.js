@@ -1446,7 +1446,7 @@ export class QueryOutput extends React.Component {
       // Allow proper chronological sorting for date strings
       newCol.sorter = this.setSorterFunction(newCol)
       newCol.headerSort = !!this.props.enableTableSorting
-      // newCol.headerSortStartingDir = this.getColumnSortingDirection(newCol)
+      newCol.headerSortStartingDir = 'desc'
 
       // Show drilldown filter value in column title so user knows they can't filter on this column
       const drilldownGroupby = this.queryResponse?.data?.data?.fe_req?.columns?.find(

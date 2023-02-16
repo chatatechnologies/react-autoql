@@ -12,6 +12,11 @@
     position: relative;
     height: calc(100% - 30px);
     max-height: calc(100% - 30px);
+
+    .tabulator-cell,
+    .tabulator-col {
+      color: var(--react-autoql-text-color-primary);
+    }
   }
 
   &.hidden {
@@ -234,13 +239,12 @@
 
       .tabulator-col-title {
         padding-left: 10px !important;
-        padding-right: 10px !important;
+        padding-right: 15px !important;
       }
       .tabulator-col-content {
         padding: 8px 5px;
 
         .tabulator-arrow {
-          opacity: 0;
           border-left: 4px solid transparent !important;
           border-right: 4px solid transparent !important;
           right: 4px;
@@ -252,13 +256,19 @@
         background-color: var(--react-autoql-hover-color) !important;
       }
 
-      &.tabulator-sortable[aria-sort='desc'] .tabulator-col-content .tabulator-arrow {
-        border-top: 4px solid rgba(0, 0, 0, 0.2) !important;
+      &.tabulator-sortable[aria-sort='descending'] .tabulator-col-content .tabulator-arrow {
+        border-top: 4px solid var(--react-autoql-text-color-primary) !important;
+        opacity: 0.5;
       }
 
-      &.tabulator-sortable[aria-sort='asc'] .tabulator-col-content .tabulator-arrow,
+      &.tabulator-sortable[aria-sort='ascending'] .tabulator-col-content .tabulator-arrow {
+        border-bottom: 4px solid var(--react-autoql-text-color-primary) !important;
+        opacity: 0.5;
+      }
+
       &.tabulator-sortable[aria-sort='none'] .tabulator-col-content .tabulator-arrow {
-        border-bottom: 4px solid rgba(0, 0, 0, 0.2) !important;
+        border-bottom: 4px solid var(--react-autoql-text-color-primary) !important;
+        opacity: 0;
       }
 
       &:hover {
