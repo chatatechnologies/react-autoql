@@ -1379,10 +1379,10 @@ export class QueryOutput extends React.Component {
       // There is some bug in tabulator where its not sorting
       // certain columns. This explicitly sets the sorter so
       // it works every time
-      return 'string'
+      return 'alphanum'
     }
 
-    return undefined
+    return 'alphanum'
   }
 
   setHeaderFilterPlaceholder = (col) => {
@@ -1449,6 +1449,11 @@ export class QueryOutput extends React.Component {
       newCol.sorter = this.setSorterFunction(newCol)
       newCol.headerSort = !!this.props.enableTableSorting
       newCol.headerSortStartingDir = 'desc'
+      newCol.headerClick = () => {
+        // To allow tabulator to sort, we must first restore redrawing,
+        // then the component will disable it again afterwards automatically
+        this.tableRef?.ref?.restoreRedraw()
+      }
 
       // Show drilldown filter value in column title so user knows they can't filter on this column
       const drilldownGroupby = this.queryResponse?.data?.data?.fe_req?.columns?.find(

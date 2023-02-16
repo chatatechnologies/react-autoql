@@ -490,14 +490,21 @@ export default class ChataTable extends React.Component {
     }
 
     columns.forEach((col) => {
-      if (col.type === 'DATE' && !col.pivot) {
-        const inputElement = document.querySelector(
-          `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"] .tabulator-col-content input`,
-        )
+      const inputElement = document.querySelector(
+        `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"] .tabulator-col-content input`,
+      )
 
-        if (inputElement) {
+      if (inputElement) {
+        inputElement.addEventListener('keydown', (e) => {
+          this.ref?.restoreRedraw()
+        })
+        inputElement.addEventListener('search', (e) => {
+          // When "x" button is clicked in the input box
+          this.ref?.restoreRedraw()
+        })
+
+        if (col.type === 'DATE' && !col.pivot) {
           inputElement.addEventListener('search', (e) => {
-            // When "x" button is clicked in the input box
             this.currentDateRangeSelections = {}
             this.debounceSetState({
               datePickerColumn: undefined,
