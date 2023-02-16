@@ -1,6 +1,7 @@
 .react-autoql-drawer {
   font-family: var(--react-autoql-font-family), sans-serif;
   line-height: 22px;
+  outline: none !important;
 }
 
 .react-autoql-drawer.disable-selection {
