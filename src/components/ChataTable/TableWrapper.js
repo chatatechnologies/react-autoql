@@ -16,9 +16,7 @@ export default class TableWrapper extends React.Component {
   COMPONENT_KEY = uuid()
 
   defaultOptions = {
-    // height: '90%',
-    // maxHeight: '100%',
-    // renderVerticalBuffer: 10,
+    // renderVerticalBuffer: 10, // Change this to help with performance if needed in the future
     height: '100%',
     autoResize: false,
     rowHeight: 25,

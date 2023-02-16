@@ -39,25 +39,10 @@
         }
         line.swatch,
         path.swatch {
-          // fill-opacity: 0.1 !important;
-          // stroke-opacity: 0.1 !important;
-          // fill: var(--react-autoql-text-color-primary) !important;
-          // stroke: var(--react-autoql-text-color-primary) !important;
-
           fill: var(--react-autoql-background-color-disabled) !important;
           stroke: var(--react-autoql-background-color-disabled) !important;
         }
       }
-      // &.visible {
-      //   text {
-      //     opacity: 1;
-      //   }
-      //   line.swatch,
-      //   path.swatch {
-      //     fill-opacity: 1 !important;
-      //     stroke-opacity: 1 !important;
-      //   }
-      // }
 
       &:hover path.swatch {
         stroke-width: 2px;

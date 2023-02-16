@@ -151,16 +151,15 @@ export default class ChataTable extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState, snapshot) => {
-    // this.saveCurrentTableHeight()
-    // if (!this.state.isFiltering && prevState.isFiltering) {
-    //   try {
-    //     // this.setFilterTags()
-    //     this.setDateFilterClickListeners()
-    //   } catch (error) {
-    //     console.error(error)
-    //     this.props.onErrorCallback(error)
-    //   }
-    // }
+    if (!this.state.isFiltering && prevState.isFiltering) {
+      try {
+        this.setFilterTags()
+        this.setDateFilterClickListeners()
+      } catch (error) {
+        console.error(error)
+        this.props.onErrorCallback(error)
+      }
+    }
   }
 
   componentWillUnmount = () => {
@@ -170,7 +169,7 @@ export default class ChataTable extends React.Component {
       clearTimeout(this.setDimensionsTimeout)
       clearTimeout(this.setStateTimeout)
       this.cancelCurrentRequest()
-      // this.resetFilterTags()
+      this.resetFilterTags()
       this.existingFilterTag = undefined
       this.filterTagElements = undefined
     } catch (error) {
@@ -237,9 +236,7 @@ export default class ChataTable extends React.Component {
   setLoading = (loading) => {
     // Don't update state unnecessarily
     if (loading !== this.state.loading) {
-      // setTimeout(() => {
       this.setState({ loading })
-      // }, 0)
     }
   }
 
@@ -254,12 +251,9 @@ export default class ChataTable extends React.Component {
     ) {
       const height = Math.floor(getComputedStyle(this.tableContainer)?.height)
       const width = Math.floor(getComputedStyle(this.tableContainer)?.width)
-      // this.tableContainer.style.flexBasis = height
-      // this.tableContainer.style.height = height
 
       if (height !== this.tableHeight) {
         this.tableHeight = height
-        // this.ref?.tabulator?.setHeight(height)
       }
 
       if (width !== this.tableWidth) {
@@ -272,7 +266,7 @@ export default class ChataTable extends React.Component {
     clearTimeout(this.setDimensionsTimeout)
     this.setDimensionsTimeout = setTimeout(() => {
       if (this.tabulatorMounted && !this.props.isResizing && !this.props.isAnimating && !this.isLoading()) {
-        const tableStyle = this.tableContainer?.getBoundingClientRect() // getComputedStyle(this.tableContainer)
+        const tableStyle = this.tableContainer?.getBoundingClientRect()
         const tableHeight = Math.floor(tableStyle?.height)
         const tableWidth = Math.floor(tableStyle?.width)
 
@@ -283,12 +277,6 @@ export default class ChataTable extends React.Component {
         if (!isNaN(tableWidth) && tableWidth !== this.tableWidth) {
           this.tableWidth = tableWidth
         }
-
-        // if (!isNaN(tableHeight)) {
-        //   this.tableHeight = Math.floor(tableHeight) - 50
-        //   this.tableWidth = Math.floor(tableWidth)
-        //   this.props.onSetTableHeight(tableHeight)
-        // }
       }
     }, 500)
   }
@@ -483,7 +471,6 @@ export default class ChataTable extends React.Component {
   }
 
   setDateFilterClickListeners = () => {
-    // const columns = this.ref?.tabulator?.getColumnDefinitions()
     const columns = this.props.columns
     if (!columns) {
       return
@@ -558,7 +545,7 @@ export default class ChataTable extends React.Component {
   }
 
   setFilterTags = () => {
-    // this.resetFilterTags()
+    this.resetFilterTags()
 
     const filterValues = this.tableParams?.filter
 
@@ -680,9 +667,6 @@ export default class ChataTable extends React.Component {
   }
 
   getTableHeight = () => {
-    // if (!this.tabulatorMounted || this.props.isAnimating) {
-    //   return '100vh'
-    // } else
     if (this.tableHeight) {
       return this.tableHeight
     } else if (this.props.height) {
@@ -767,9 +751,6 @@ export default class ChataTable extends React.Component {
       return this.props.columns.map((col) => {
         const newCol = {}
         Object.keys(col).forEach((option) => {
-          // if (option === 'headerFilter' && !this.state.isFiltering) {
-          //   newCol.headerFilter = false
-          // } else
           if (columnOptionsList.includes(option)) {
             newCol[option] = col[option]
           }
@@ -791,7 +772,7 @@ export default class ChataTable extends React.Component {
     }
 
     return (
-      <div className='query-output-table-row-count'>
+      <div className='table-row-count'>
         <span>{`Scrolled ${currentRowCount} / ${totalRowCount} rows`}</span>
       </div>
     )

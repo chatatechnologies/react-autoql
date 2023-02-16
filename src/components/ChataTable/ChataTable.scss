@@ -1,4 +1,6 @@
 .react-autoql-table-container {
+  display: flex;
+  flex-direction: column;
   width: 100% !important;
   max-width: 100%;
   max-height: 100%;
@@ -8,10 +10,20 @@
   box-sizing: border-box;
   flex: 1;
 
+  .table-row-count {
+    flex: 0;
+    width: 100%;
+    font-size: 13px;
+    opacity: 0.6;
+    text-align: center;
+    padding-top: 3px;
+  }
+
   .react-autoql-tablulator-container {
     position: relative;
     height: calc(100% - 30px);
     max-height: calc(100% - 30px);
+    min-height: 100px;
 
     .tabulator-cell,
     .tabulator-col {
@@ -85,9 +97,9 @@
     }
 
     .react-autoql-tablulator-container .tabulator-tableholder {
-      min-height: calc(100% - 35px) !important;
-      height: calc(100% - 35px) !important;
-      max-height: calc(100% - 35px) !important;
+      min-height: calc(100% - 37px) !important;
+      height: calc(100% - 37px) !important;
+      max-height: calc(100% - 37px) !important;
     }
   }
 
@@ -308,25 +320,3 @@
 .tabulator-alert {
   display: none !important;
 }
-
-// Scrollbars - disable custom css for scrollbars. Behaviour is inconsistent
-// .react-autoql-table .tabulator-tableholder::-webkit-scrollbar {
-//   display: unset;
-//   opacity: 0;
-//   background-color: transparent;
-//   width: 7px;
-//   height: 7px;
-// }
-// .react-autoql-table .tabulator-tableholder:hover::-webkit-scrollbar-corner {
-//   background-color: transparent;
-// }
-// .react-autoql-table .tabulator-tableholder:hover::-webkit-scrollbar-track,
-// .react-autoql-table .tabulator-tableholder:hover::-webkit-scrollbar-track-piece,
-// .react-autoql-table .tabulator-tableholder::-webkit-scrollbar-corner {
-//   background-color: transparent;
-// }
-// .react-autoql-table .tabulator-tableholder:hover::-webkit-scrollbar-thumb {
-//   background-color: rgba(0, 0, 0, 0.2);
-//   border-radius: 7px;
-//   border: 0px;
-// }

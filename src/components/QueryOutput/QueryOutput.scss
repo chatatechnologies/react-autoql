@@ -144,16 +144,6 @@
     justify-content: space-between;
   }
 }
-
-.query-output-table-row-count {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  padding-top: 3px;
-  font-size: 13px;
-  opacity: 0.6;
-  text-align: center;
-}
 .dashboard-data-limit-warning-icon {
   color: var(--react-autoql-warning-color) !important;
   margin-left: 10px;

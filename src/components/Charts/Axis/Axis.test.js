@@ -74,7 +74,6 @@ describe('after mount', () => {
           orient: 'Left',
         })
 
-        // const xLabel = findByTestAttr(wrapper, 'x-axis-label')
         const labelText = findByTestAttr(wrapper, 'axis-label')
         expect(labelText.text()).toEqual(pivotSampleProps.columns[pivotSampleProps.stringColumnIndex].display_name)
       })

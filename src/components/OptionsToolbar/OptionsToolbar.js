@@ -639,11 +639,6 @@ export class OptionsToolbar extends React.Component {
   }
 
   render = () => {
-    // const displayType = this.props.responseRef?.state?.displayType
-    // if (displayType === 'help' || displayType === 'suggestion') {
-    //   return null
-    // }
-
     const shouldShowButton = this.getShouldShowButtonObj(this.props)
 
     // If there is nothing to put in the toolbar, don't render it

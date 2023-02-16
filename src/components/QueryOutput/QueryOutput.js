@@ -585,7 +585,7 @@ export class QueryOutput extends React.Component {
       this.tableData = newTableData
     } else {
       const columns = cols || this.getColumns()
-      // this.tableID = uuid()
+
       if (!this.isDataLimited()) {
         this.tableData = sortDataByDate(this.queryResponse?.data?.data?.rows, columns, 'desc', 'isTable')
       } else {
@@ -1257,8 +1257,6 @@ export class QueryOutput extends React.Component {
       response: this.queryResponse,
       columns: this.queryResponse?.data?.data?.columns?.map((col) => ({
         ...col,
-        // is_visible: true,
-        // visible: true,
       })),
     })
   }
@@ -1855,7 +1853,6 @@ export class QueryOutput extends React.Component {
       <ErrorBoundary>
         {pivotTableAvailable && (
           <ChataTable
-            // key={this.pivotTableID}
             ref={(ref) => (this.pivotTableRef = ref)}
             columns={this.pivotTableColumns}
             data={this.pivotTableData}
@@ -1871,7 +1868,6 @@ export class QueryOutput extends React.Component {
         <ChataTable
           authentication={this.props.authentication}
           dataFormatting={this.props.dataFormatting}
-          // key={this.tableID}
           ref={(ref) => (this.tableRef = ref)}
           columns={this.state.columns}
           data={this.tableData}
@@ -1897,10 +1893,6 @@ export class QueryOutput extends React.Component {
           popoverParentElement={this.props.popoverParentElement}
           hidden={this.state.displayType !== 'table'}
           totalRows={this.queryResponse?.data?.data?.count_rows}
-          // onSetTableHeight={(height) => {
-          //   this.tableHeight = height
-          // }}
-          // height={this.tableHeight}
           supportsDrilldowns={
             isAggregation(this.state.columns) && getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
           }

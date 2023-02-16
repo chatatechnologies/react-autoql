@@ -337,7 +337,9 @@ export default class Legend extends Component {
               className='legendOrdinal right-legend'
               transform={`translate(${this.LEFT_PADDING}, 8)`}
             >
-              {/* {this.props.legendColumn && (
+              {/* 
+              Keep this around in case we want the ability to switch axis with legend in the future
+              {this.props.legendColumn && (
               <LegendSelector
                 {...this.props}
                 column={this.props.legendColumn}

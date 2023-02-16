@@ -161,7 +161,6 @@ export default class RowNumberSelector extends React.Component {
         padding={10}
       >
         <rect
-          // {...this.props.childProps}
           className='axis-label-border'
           data-test='axis-label-border'
           onClick={this.openSelector}

@@ -216,7 +216,6 @@ g.legendOrdinal tspan {
     line-height: 28px;
 
     &.active {
-      // background: rgba(0, 0, 0, 0.04);
       background: var(--react-autoql-accent-color);
       color: var(--react-autoql-text-color-accent);
     }

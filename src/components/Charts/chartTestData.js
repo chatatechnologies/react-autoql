@@ -190,12 +190,6 @@ export default {
         domain: listData.map((row) => row[listProps.stringColumnIndex]),
         ...params,
       })
-      // const scale = scaleBand()
-      // scale
-      //   .domain(listData.map((d) => d[0]))
-      //   .range([0, 500])
-      //   .paddingInner(1)
-      //   .paddingOuter(0)
 
       if (scale && params && Object.keys(params)?.length) {
         Object.keys(params).forEach((key) => {
@@ -212,8 +206,7 @@ export default {
         isScaled: false,
         ...params,
       })?.scale
-      // const scale = scaleLinear()
-      // scale.domain([5000000, 20000000]).range([0, 500]).nice()
+
       if (scale && params && Object.keys(params)?.length) {
         Object.keys(params).forEach((key) => {
           scale[key] = params[key]
@@ -227,18 +220,13 @@ export default {
   pivot: {
     ...pivotProps,
     stringScale: (params = {}) => {
-      // const scale = scaleBand()
-      // scale
-      //   .domain(pivotData.map((d) => d[0]))
-      //   .range([0, 500])
-      //   .paddingInner(1)
-      //   .paddingOuter(0)
       const scale = getBandScale({
         props: pivotProps,
         columnIndex: pivotProps.stringColumnIndex,
         domain: pivotData.map((row) => row[pivotProps.stringColumnIndex]),
         ...params,
       })
+
       if (scale && params && Object.keys(params)?.length) {
         Object.keys(params).forEach((key) => {
           scale[key] = params[key]
@@ -247,14 +235,13 @@ export default {
       return scale
     },
     numberScale: (params = {}) => {
-      // const scale = scaleLinear()
-      // scale.domain([5000000, 20000000]).range([0, 500]).nice()
       const scale = getLinearScales({
         props: pivotProps,
         columnIndices1: pivotProps.numberColumnIndices,
         isScaled: false,
         ...params,
       })?.scale
+
       if (params && Object.keys(params)?.length) {
         Object.keys(params).forEach((key) => {
           scale[key] = params[key]
@@ -318,18 +305,13 @@ export default {
   datePivot: {
     ...datePivotProps,
     stringScale: (params = {}) => {
-      // const scale = scaleBand()
-      // scale
-      //   .domain(datePivotData.map((d) => d[0]))
-      //   .range([0, 500])
-      //   .paddingInner(1)
-      //   .paddingOuter(0)
       const scale = getBandScale({
         props: datePivotProps,
         columnIndex: datePivotProps.stringColumnIndex,
         domain: datePivotData.map((row) => row[datePivotProps.stringColumnIndex]),
         ...params,
       })
+
       if (scale && params && Object.keys(params)?.length) {
         Object.keys(params).forEach((key) => {
           scale[key] = params[key]
@@ -338,8 +320,6 @@ export default {
       return scale
     },
     numberScale: (params = {}) => {
-      // const scale = scaleLinear()
-      // scale.domain([0, 1000]).range([0, 500]).nice()
       const scale = getLinearScales({
         props: datePivotProps,
         columnIndices1: datePivotProps.numberColumnIndices,

@@ -126,14 +126,6 @@ export class DashboardTile extends React.Component {
     if (_get(this.props, 'tile.title') !== _get(prevProps, 'tile.title')) {
       this.setState({ title: _get(this.props, 'tile.title') })
     }
-
-    // if (this.secondOptionsToolbarRef?._isMounted) {
-    //   this.secondOptionsToolbarRef.forceUpdate()
-    // }
-
-    // if (this.optionsToolbarRef?._isMounted) {
-    //   this.optionsToolbarRef.forceUpdate()
-    // }
   }
 
   componentWillUnmount = () => {
@@ -203,7 +195,6 @@ export class DashboardTile extends React.Component {
     if (response?.data?.message !== responseErrors.CANCELLED) {
       // Update component key after getting new response
       // so QueryOutput completely resets
-      // this.FIRST_QUERY_RESPONSE_KEY = uuid()
       this.debouncedSetParamsForTile(
         {
           queryResponse: response,
@@ -225,7 +216,6 @@ export class DashboardTile extends React.Component {
 
   endBottomQuery = ({ response }) => {
     if (response?.data?.message !== responseErrors.CANCELLED) {
-      // this.SECOND_QUERY_RESPONSE_KEY = uuid()
       this.debouncedSetParamsForTile(
         {
           secondQueryResponse: response,
@@ -566,7 +556,6 @@ export class DashboardTile extends React.Component {
             className={`dashboard-tile-input-container
             ${this.state.isQueryInputFocused ? 'query-focused' : ''}
             ${this.state.isTitleInputFocused ? 'title-focused' : ''}`}
-            // onMouseDown={(e) => e.stopPropagation()}
           >
             <div className='dashboard-tile-left-input-container'>
               <Icon className='query-input-icon' type='react-autoql-bubbles-outlined' />
@@ -655,17 +644,10 @@ export class DashboardTile extends React.Component {
               />
             </div>
           </div>
-          <div
-            // onMouseDown={(e) => e.stopPropagation()}
-            className={`dashboard-tile-play-button${!this.isQueryValid(this.state.query) ? ' disabled' : ''}`}
-          >
+          <div className={`dashboard-tile-play-button${!this.isQueryValid(this.state.query) ? ' disabled' : ''}`}>
             <Icon type='play' onClick={() => this.processTile()} data-tip='Run tile' data-place='left' />
           </div>
-          <div
-            className='dashboard-tile-delete-button'
-            // onMouseDown={(e) => e.stopPropagation()}
-            onClick={() => this.props.deleteTile(this.props.tile.i)}
-          >
+          <div className='dashboard-tile-delete-button' onClick={() => this.props.deleteTile(this.props.tile.i)}>
             <Icon style={{ fontSize: '18px' }} type='close' />
           </div>
         </div>
@@ -1132,10 +1114,7 @@ export class DashboardTile extends React.Component {
       ${this.props.isEditing ? ' editing' : ''}
       ${this.props.tile.h < 4 ? ' small' : ''}`}
       >
-        <div
-          // onMouseDown={(e) => e.stopPropagation()}
-          className='dashboard-tile-response-container'
-        >
+        <div className='dashboard-tile-response-container'>
           {this.getIsSplitView() ? this.renderSplitResponse() : this.renderTopResponse()}
         </div>
       </div>

@@ -127,13 +127,9 @@
   }
 
   .react-autoql-table,
-  .query-output-table-row-count {
+  .table-row-count {
     color: var(--react-autoql-text-color-primary);
     font-size: 11px;
-  }
-
-  .query-output-table-row-count {
-    padding: 0;
   }
 
   .dashboard-tile-response-wrapper {

@@ -441,11 +441,7 @@ export default class App extends Component {
       const loginFormData = new FormData()
       loginFormData.append('username', this.state.email)
       loginFormData.append('password', this.state.password)
-      const loginResponse = await axios.post(`${baseUrl}/api/v1/login`, loginFormData, {
-        headers: {
-          // 'Access-Control-Allow-Origin': '*'
-        },
-      })
+      const loginResponse = await axios.post(`${baseUrl}/api/v1/login`, loginFormData)
 
       // Put login token in local storage
       const loginToken = loginResponse.data
@@ -527,9 +523,9 @@ export default class App extends Component {
   }
 
   onError = (error) => {
-    // if (error && error.message && this.state.isAuthenticated) {
-    //   message.error(`${error.message}`)
-    // }
+    if (error && error.message && this.state.isAuthenticated) {
+      message.error(`${error.message}`)
+    }
   }
 
   onSuccess = (alertText) => {
@@ -1220,13 +1216,8 @@ export default class App extends Component {
         {this.state.response && (
           <div
             style={{
-              // height: 'auto',
-              // minHeight: '100px',
               height: 'calc(100vh - 140px)',
               overflow: 'hidden',
-              // padding: '20px',
-              // paddingTop: '0',
-              // paddingBottom: '0',
               fontFamily: 'Helvetica, Arial, Sans-Serif', // Text, tables, and charts will inherit font
               color: '#565656', // Text, tables, and charts will inherit text color
             }}
@@ -1526,7 +1517,6 @@ export default class App extends Component {
       isFetchingNotificationContent: true,
     })
 
-    // this.executeQuery(notification.query)
     this.fetchNotificationData(notification.id)
       .then((response) => {
         this.setState({
@@ -1542,12 +1532,6 @@ export default class App extends Component {
           isFetchingNotificationContent: false,
         })
       })
-    // .finally(response => {
-    //   this.setState({
-    //     activeNotificationContent: response,
-    //     isFetchingNotificationContent: false
-    //   })
-    // })
   }
 
   renderNotificationContent = (notification) => {
