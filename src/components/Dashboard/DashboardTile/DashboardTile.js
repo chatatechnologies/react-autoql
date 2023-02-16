@@ -142,6 +142,7 @@ export class DashboardTile extends React.Component {
 
       clearTimeout(this.autoCompleteTimer)
       clearTimeout(this.dragEndTimeout)
+      clearTimeout(this.setParamsForTileTimeout)
 
       this.cancelAllQueries()
     } catch (error) {
@@ -169,8 +170,8 @@ export class DashboardTile extends React.Component {
       this.callbackArray = [...this.callbackArray, callback]
     }
 
-    clearTimeout(this.setParamsForTileTimout)
-    this.setParamsForTileTimout = setTimeout(() => {
+    clearTimeout(this.setParamsForTileTimeout)
+    this.setParamsForTileTimeout = setTimeout(() => {
       this.props.setParamsForTile(this.paramsToSet, this.props.tile.i, _cloneDeep(this.callbackArray))
       this.paramsToSet = {}
       this.callbackArray = []
@@ -970,6 +971,8 @@ export class DashboardTile extends React.Component {
         reverseTranslationPlacement='top'
         tooltipID={this.props.tooltipID}
         chartTooltipID={this.props.chartTooltipID}
+        height='100%'
+        width='100%'
         {...queryOutputProps}
       />
     )

@@ -12,8 +12,6 @@ import {
   autoQLConfigDefault,
   dataFormattingDefault,
   getAuthentication,
-  getDataFormatting,
-  getAutoQLConfig,
 } from '../../props/defaults'
 
 import { QueryOutput } from '../QueryOutput'
@@ -195,12 +193,6 @@ export default class ChatMessage extends React.Component {
     return false
   }
 
-  onDisplayTypeChange = (displayType) => {
-    this.setState({ displayType }, () => {
-      this.scrollIntoView()
-    })
-  }
-
   scrollIntoView = ({ block = 'end', inline = 'nearest', behavior = 'smooth' } = {}) => {
     setTimeout(() => {
       if (this.messageContainerRef && !this.isScrolledIntoView(this.messageContainerRef)) {
@@ -252,7 +244,7 @@ export default class ChatMessage extends React.Component {
     } else if (this.props.response) {
       return (
         <QueryOutput
-          ref={(ref) => ref && ref !== this.state.responseRef && this.setState({ responseRef: ref })}
+          ref={(ref) => (this.responseRef = ref)}
           optionsToolbarRef={this.optionsToolbarRef}
           vizToolbarRef={this.vizToolbarRef}
           authentication={this.props.authentication}
@@ -285,7 +277,7 @@ export default class ChatMessage extends React.Component {
           rebuildTooltips={this.props.rebuildTooltips}
           source={this.props.source}
           onRowChange={this.scrollIntoView}
-          onDisplayTypeChange={this.onDisplayTypeChange}
+          // onDisplayTypeChange={this.onDisplayTypeChange}
           mutable={false}
           showSuggestionPrefix={false}
           dataPageSize={this.props.dataPageSize}
@@ -316,10 +308,10 @@ export default class ChatMessage extends React.Component {
   renderRightToolbar = () => {
     return (
       <div className='chat-message-toolbar right'>
-        {this.props.isResponse && this.state.displayType !== 'help' && this.state.displayType !== 'suggestion' ? (
+        {this.props.isResponse ? (
           <OptionsToolbar
             ref={(r) => (this.optionsToolbarRef = r)}
-            responseRef={this.state.responseRef}
+            responseRef={this.responseRef}
             className={'chat-message-toolbar right'}
             shouldRender={!this.props.isResizing}
             authentication={this.props.authentication}
@@ -346,7 +338,7 @@ export default class ChatMessage extends React.Component {
         {this.props.isResponse && this.props.type !== 'text' ? (
           <VizToolbar
             ref={(r) => (this.vizToolbarRef = r)}
-            responseRef={this.state.responseRef}
+            responseRef={this.responseRef}
             className='chat-message-toolbar left'
             shouldRender={!this.props.isResizing}
           />
@@ -356,8 +348,9 @@ export default class ChatMessage extends React.Component {
   }
 
   render = () => {
-    const isChart = this.state.displayType && isChartType(this.state.displayType)
-    const hasRT = !!this.state.responseRef?.queryResponse?.data?.data?.parsed_interpretation
+    const displayType = this.responseRef?.state.displayType
+    const isChart = displayType && isChartType(displayType)
+    const hasRT = !!this.responseRef?.queryResponse?.data?.data?.parsed_interpretation
 
     return (
       <ErrorBoundary>
@@ -373,9 +366,8 @@ export default class ChatMessage extends React.Component {
           <div
             ref={(r) => (this.ref = r)}
             className={`chat-message-bubble
-              ${isChart ? ' full-width' : ''}
               ${this.props.type === 'text' ? ' text' : ''}
-              ${this.state.displayType}
+              ${displayType}
               ${this.props.isActive ? ' active' : ''}`}
           >
             {this.renderContent()}
@@ -392,7 +384,7 @@ export default class ChatMessage extends React.Component {
               onValueLabelClick={this.props.onRTValueLabelClick}
               appliedFilters={this.props.appliedFilters}
               isResizing={this.props.isResizing}
-              reverseTranslation={this.state.responseRef.queryResponse.data.data.parsed_interpretation}
+              reverseTranslation={this.responseRef.queryResponse.data.data.parsed_interpretation}
             />
           </div>
         ) : null}

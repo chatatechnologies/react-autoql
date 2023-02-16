@@ -36,6 +36,12 @@
   height: 100%;
   width: 100%;
 }
+.react-autoql-response-content-container.chart {
+  width: 100vw;
+  max-width: 100%;
+  overflow: hidden;
+}
+
 .react-autoql-response-content-container.table::-webkit-scrollbar {
   // width: 0;
   // height: 0;

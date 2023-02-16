@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 import { v4 as uuid } from 'uuid'
+import _isEqual from 'lodash.isequal'
 
 import { Icon } from '../Icon'
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
@@ -40,8 +41,10 @@ class VizToolbar extends React.Component {
     return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
   }
 
-  componentDidUpdate = () => {
-    this.rebuildTooltips()
+  componentDidUpdate = (prevProps) => {
+    if (!_isEqual(this.getCurrentSupportedDisplayTypes(this.props), this.getCurrentSupportedDisplayTypes(prevProps))) {
+      this.rebuildTooltips()
+    }
   }
 
   componentWillUnmount = () => {
@@ -61,7 +64,7 @@ class VizToolbar extends React.Component {
       return false
     }
 
-    const supportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
+    const supportedDisplayTypes = this.getCurrentSupportedDisplayTypes(this.props)
     return supportedDisplayTypes && supportedDisplayTypes.includes(displayType)
   }
 
@@ -75,8 +78,8 @@ class VizToolbar extends React.Component {
     return this.props.responseRef?.state?.displayType
   }
 
-  getCurrentSupportedDisplayTypes = () => {
-    return this.props.responseRef?.state?.supportedDisplayTypes
+  getCurrentSupportedDisplayTypes = (props) => {
+    return props.responseRef?.state?.supportedDisplayTypes
   }
 
   createVisButton = (displayType, name, icon) => {
@@ -101,7 +104,7 @@ class VizToolbar extends React.Component {
 
   render = () => {
     const displayType = this.getCurrentDisplayType()
-    const supportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
+    const supportedDisplayTypes = this.getCurrentSupportedDisplayTypes(this.props)
 
     if (
       !supportedDisplayTypes ||

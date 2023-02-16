@@ -122,7 +122,9 @@ export class QueryOutput extends React.Component {
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
 
     const displayType = this.getDisplayTypeFromInitial(props)
-    props.onDisplayTypeChange(displayType)
+    if (props.onDisplayTypeChange) {
+      props.onDisplayTypeChange(displayType)
+    }
 
     // Set initial table params to be any filters or sorters that
     // are already present in the current query
@@ -215,7 +217,6 @@ export class QueryOutput extends React.Component {
     onErrorCallback: () => {},
     onDrilldownStart: () => {},
     onDrilldownEnd: () => {},
-    onDisplayTypeChange: () => {},
     onColumnChange: () => {},
   }
 
@@ -355,7 +356,10 @@ export class QueryOutput extends React.Component {
   }
 
   changeDisplayType = (displayType) => {
-    this.props.onDisplayTypeChange(displayType)
+    if (this.props.onDisplayTypeChange) {
+      this.props.onDisplayTypeChange(displayType)
+    }
+
     this.setState({ displayType })
   }
 
@@ -2243,7 +2247,8 @@ export class QueryOutput extends React.Component {
           id={`react-autoql-response-content-container-${this.COMPONENT_KEY}`}
           data-test='query-response-wrapper'
           className={`react-autoql-response-content-container
-          ${isTableType(this.state.displayType) ? 'table' : ''}`}
+          ${isTableType(this.state.displayType) ? 'table' : ''}
+          ${isChartType(this.state.displayType) ? 'chart' : ''}`}
         >
           {this.props.reverseTranslationPlacement === 'top' && this.renderFooter()}
           {this.renderResponse()}

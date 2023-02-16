@@ -44,6 +44,7 @@ export default class ChataChart extends Component {
     this.FONT_SIZE = 12
 
     this.firstRender = true
+    this.justResized = false
 
     this.state = {
       chartID: uuid(),
@@ -71,18 +72,19 @@ export default class ChataChart extends Component {
   static defaultProps = chartContainerDefaultProps
 
   componentDidMount = () => {
-    // The first render is to determine the chart size based on its parent container
-    this.firstRender = false
-    if (!this.props.isResizing) {
+    if (!this.props.isResizing && !this.props.hidden) {
+      // The first render is to determine the chart size based on its parent container
+      this.firstRender = false
       this.forceUpdate()
-    }
-
-    if (!this.props.isResizing) {
-      this.rebuildTooltips()
     }
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
+    if (this.props.isResizing && !nextProps.isResizing) {
+      this.justResized = true
+      return true
+    }
+
     if ((nextProps.isResizing && this.props.isResizing) || (nextProps.hidden && this.props.hidden)) {
       return false
     }
@@ -94,6 +96,7 @@ export default class ChataChart extends Component {
   }
 
   componentDidUpdate = (prevProps) => {
+    this.justResized = false
     if (this.firstRender === true && !this.props.hidden) {
       this.firstRender = false
     }
@@ -138,14 +141,11 @@ export default class ChataChart extends Component {
       (prevProps.type && this.props.type !== prevProps.type)
     ) {
       this.setState({ chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
-      this.rebuildTooltips()
     }
 
     if (dataStructureChanged(this.props, prevProps)) {
       const data = this.getData(this.props)
-      this.setState({ data, chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true }, () => {
-        this.rebuildTooltips()
-      })
+      this.setState({ data, chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
       return true
     }
   }
@@ -251,8 +251,11 @@ export default class ChataChart extends Component {
   getInnerDimensions = () => {
     const { chartWidth, chartHeight } = this.getRenderedChartDimensions()
 
-    const containerWidth = this.props.width ?? this.chartContainerRef?.clientWidth ?? 0
-    const containerHeight = this.props.height ?? this.chartContainerRef?.clientHeight ?? 0
+    const propsWidth = typeof this.props.width === 'number' ? this.props.width : undefined
+    const propsHeight = typeof this.props.height === 'number' ? this.props.height : undefined
+
+    const containerWidth = propsWidth ?? this.chartContainerRef?.clientWidth ?? 0
+    const containerHeight = propsHeight ?? this.chartContainerRef?.clientHeight ?? 0
 
     let innerWidth = containerWidth - 2 * this.PADDING
     if (this.innerChartRef?.xScale && chartWidth) {
@@ -283,30 +286,41 @@ export default class ChataChart extends Component {
   }
 
   getOuterDimensions = () => {
-    const containerWidth = this.props.width ?? this.chartContainerRef?.clientWidth ?? 0
-    const containerHeight = this.props.height ?? this.chartContainerRef?.clientHeight ?? 0
-
-    const outerWidth = Math.ceil(containerWidth)
-    const outerHeight = Math.ceil(containerHeight)
-
-    return { outerHeight, outerWidth }
-  }
-
-  getChartDimensions = () => {
-    const containerWidth = this.props.width ?? this.chartContainerRef?.clientWidth ?? 0
-    const containerHeight = this.props.height ?? this.chartContainerRef?.clientHeight ?? 0
-
-    const { innerHeight, innerWidth } = this.getInnerDimensions()
-
-    const outerWidth = Math.ceil(containerWidth)
-    const outerHeight = Math.ceil(containerHeight)
-
-    return {
-      outerHeight,
-      outerWidth,
-      innerHeight: innerHeight ?? outerHeight,
-      innerWidth: innerWidth ?? outerWidth,
+    const defaultDimensions = {
+      outerHeight: this.outerHeight,
+      outerWidth: this.outerWidth,
+      outerX: this.outerX,
+      outerY: this.outerY,
     }
+
+    if (this.props.hidden) {
+      return defaultDimensions
+    }
+
+    if (!this.outerWidth || !this.outerHeight || this.justResized) {
+      this.justResized = false
+
+      const containerBBox = this.chartContainerRef?.getBoundingClientRect()
+
+      const containerWidth = containerBBox?.width ?? 0
+      const containerHeight = containerBBox?.height ?? 0
+      const containerX = containerBBox?.x ?? 0
+      const containerY = containerBBox?.y ?? 0
+
+      const outerWidth = Math.ceil(containerWidth)
+      const outerHeight = Math.ceil(containerHeight)
+      const outerX = Math.ceil(containerX)
+      const outerY = Math.ceil(containerY)
+
+      this.outerWidth = outerWidth
+      this.outerHeight = outerHeight
+      this.outerX = outerX
+      this.outerY = outerY
+
+      return { outerHeight, outerWidth, outerX, outerY }
+    }
+
+    return defaultDimensions
   }
 
   getLegendLabels = () => {
@@ -383,7 +397,8 @@ export default class ChataChart extends Component {
       (colIndex) => columns?.[colIndex] && !columns[colIndex].isSeriesHidden,
     )
 
-    const { innerHeight, innerWidth, outerHeight, outerWidth } = this.getInnerDimensions()
+    const { innerHeight, innerWidth } = this.getInnerDimensions()
+    const { outerHeight, outerWidth, outerX, outerY } = this.getOuterDimensions()
     const { colorScale, colorScale2 } = this.getColorScales()
 
     return {
@@ -511,8 +526,8 @@ export default class ChataChart extends Component {
               <svg
                 ref={(r) => (this.chartRef = r)}
                 xmlns='http://www.w3.org/2000/svg'
-                width={outerWidth}
-                height={outerHeight}
+                width={typeof this.props.width === 'number' ? this.props.width : outerWidth}
+                height={typeof this.props.height === 'number' ? this.props.height : outerHeight}
                 style={{
                   fontFamily: chartFontFamily,
                   color: chartTextColor,

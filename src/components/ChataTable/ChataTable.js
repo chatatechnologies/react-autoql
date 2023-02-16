@@ -117,16 +117,20 @@ export default class ChataTable extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
+    if (this.props.isResizing && !nextProps.isResizing) {
+      this.justResized = true
+    }
+
     if (!!this.state.datePickerColumn && !nextState.datePickerColumn) {
       return true
     }
 
     if (
+      (this.props.hidden && nextProps.hidden) ||
       (this.state.scrollLoading && nextState.scrollLoading) ||
       (this.state.pageLoading && nextState.pageLoading) ||
       (this.props.isResizing && nextProps.isResizing) ||
-      (this.props.isAnimating && nextProps.isAnimating) ||
-      (this.props.hidden && nextProps.hidden)
+      (this.props.isAnimating && nextProps.isAnimating)
     ) {
       return false
     }
@@ -147,8 +151,7 @@ export default class ChataTable extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState, snapshot) => {
-    this.saveCurrentTableHeight()
-
+    // this.saveCurrentTableHeight()
     // if (!this.state.isFiltering && prevState.isFiltering) {
     //   try {
     //     // this.setFilterTags()

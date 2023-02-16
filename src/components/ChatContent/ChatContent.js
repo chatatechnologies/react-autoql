@@ -94,13 +94,6 @@ export default class ChatContent extends React.Component {
     }
   }
 
-  escFunction = (event) => {
-    if (this.state.isVisible && event.keyCode === 27) {
-      // todo: add this functionality back
-      // cancelQuery()
-    }
-  }
-
   scrollToBottom = () => {
     this.messengerScrollComponent?.ref?.scrollToBottom()
   }
@@ -373,7 +366,6 @@ export default class ChatContent extends React.Component {
                   queryId={message.queryId}
                   queryText={message.query}
                   originalQueryID={message.originalQueryID}
-                  scrollRef={this.messengerScrollComponent?.ref}
                   isDataMessengerOpen={this.props.isDataMessengerOpen}
                   isActive={this.state.activeMessageId === message.id}
                   addMessageToDM={this.addResponseMessage}

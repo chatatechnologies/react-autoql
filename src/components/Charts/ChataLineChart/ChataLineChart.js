@@ -3,6 +3,7 @@ import { Axes } from '../Axes'
 import { Line } from '../Line'
 
 import { chartDefaultProps, chartPropTypes, getBandScale, getLinearScales, getTimeScale } from '../helpers.js'
+import { deepEqual } from '../../../js/Util'
 
 export default class ChataLineChart extends Component {
   constructor(props) {
@@ -16,6 +17,13 @@ export default class ChataLineChart extends Component {
 
   state = {
     isChartScaled: true,
+  }
+
+  shouldComponentUpdate = (nextProps, nextState) => {
+    const propsEqual = deepEqual(this.props, nextProps)
+    const stateEqual = deepEqual(this.state, nextState)
+
+    return !propsEqual || !stateEqual
   }
 
   setChartData = (props) => {

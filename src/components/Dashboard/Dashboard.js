@@ -591,6 +591,8 @@ class DashboardWithoutTheme extends React.Component {
             reverseTranslationPlacement='top'
             tooltipID={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
             chartTooltipID={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
+            height='100%'
+            width='100%'
           />
         )}
       </div>
@@ -707,6 +709,8 @@ class DashboardWithoutTheme extends React.Component {
                           }}
                           showQueryInterpretation={this.props.isEditing}
                           reverseTranslationPlacement='top'
+                          height='100%'
+                          width='100%'
                         />
                       )}
                       {this.renderChartCollapseBtn('bottom')}

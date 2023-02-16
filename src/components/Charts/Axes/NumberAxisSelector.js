@@ -47,14 +47,7 @@ export default class NumberAxisSelector extends React.Component {
     this.props.rebuildTooltips()
   }
 
-  // shouldComponentUpdate = (nextProps, nextState) => {
-  //   return true
-  //   // return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
-  // }
-
   componentDidUpdate = (prevProps, prevState) => {
-    this.props.rebuildTooltips()
-
     if (!prevState.isOpen && this.state.isOpen) {
       this.setState({
         selectedColumns: [],

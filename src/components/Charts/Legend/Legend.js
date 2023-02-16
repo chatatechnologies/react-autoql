@@ -257,7 +257,7 @@ export default class Legend extends Component {
             legendWidth = this.MAX_LEGEND_WIDTH
           }
 
-          const maxLegendHeight = this.props.outerHeight ?? this.props.height + 10
+          const maxLegendHeight = this.props.height + 10
           select(this.legendClippingContainer)
             .attr('height', maxLegendHeight + this.BOTTOM_PADDING)
             .attr('width', legendWidth + this.LEFT_PADDING)
@@ -367,7 +367,7 @@ export default class Legend extends Component {
         <rect
           ref={(el) => (this.legendClippingContainer = el)}
           width={0}
-          height={this.props.outerHeight}
+          height={this.props.height}
           transform='translate(0,-15)'
           style={{ stroke: 'transparent', fill: 'transparent', pointerEvents: 'none' }}
         />

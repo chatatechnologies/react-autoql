@@ -5,10 +5,6 @@ export default class AxisScaler extends React.Component {
     super(props)
   }
 
-  shouldComponentUpdate = () => {
-    return true
-  }
-
   render = () => {
     return (
       <rect

@@ -3,12 +3,13 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { select } from 'd3-selection'
 import { axisLeft, axisBottom, axisTop, axisRight } from 'd3-axis'
+import _isEqual from 'lodash.isequal'
 
 import AxisScaler from './AxisScaler'
 import AxisSelector from '../Axes/AxisSelector'
 import LoadMoreDropdown from './LoadMoreDropdown'
 
-import { formatChartLabel, getBBoxFromRef } from '../../../js/Util.js'
+import { deepEqual, formatChartLabel, getBBoxFromRef } from '../../../js/Util.js'
 import { axesDefaultProps, axesPropTypes, mergeBboxes, labelsShouldRotate } from '../helpers.js'
 
 import './Axis.scss'
@@ -474,6 +475,10 @@ export default class Axis extends Component {
   }
 
   adjustAxisSelectorBorder = () => {
+    if (!this.titleRef) {
+      return
+    }
+
     const titleBBox = getBBoxFromRef(this.titleRef)
     const titleHeight = titleBBox?.height ?? 0
     const titleWidth = titleBBox?.width ?? 0
@@ -487,6 +492,10 @@ export default class Axis extends Component {
   }
 
   adjustAxisScalerBorder = () => {
+    if (!this.axisScaler) {
+      return
+    }
+
     select(this.axisScaler)
       .attr('x', Math.round((this.labelBBox?.x ?? 0) - this.BUTTON_PADDING))
       .attr('y', Math.round((this.labelBBox?.y ?? 0) - this.BUTTON_PADDING))
@@ -495,6 +504,10 @@ export default class Axis extends Component {
   }
 
   adjustTitleToFit = () => {
+    if (!this.titleRef) {
+      return
+    }
+
     if (this.props.orient === 'Bottom') {
       const labelBBoxBottom = (this.labelBBox?.y ?? 0) + (this.labelBBox?.height ?? 0)
       const xLabelX = this.props.innerWidth / 2
@@ -578,16 +591,18 @@ export default class Axis extends Component {
   }
 
   renderAxisScaler = () => {
+    if (!this.shouldRenderAxisScaler()) {
+      return null
+    }
+
     return (
-      this.shouldRenderAxisScaler() && (
-        <AxisScaler
-          toggleChartScale={this.props.toggleChartScale}
-          labelBBox={this.labelBBox}
-          childProps={{
-            ref: (r) => (this.axisScaler = r),
-          }}
-        />
-      )
+      <AxisScaler
+        toggleChartScale={this.props.toggleChartScale}
+        labelBBox={this.labelBBox}
+        childProps={{
+          ref: (r) => (this.axisScaler = r),
+        }}
+      />
     )
   }
 

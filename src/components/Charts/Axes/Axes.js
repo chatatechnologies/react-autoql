@@ -188,7 +188,11 @@ export default class Axes extends React.Component {
   }
 
   renderRightLegend = () => {
-    const translateX = getBBoxFromRef(this.rightAxisWithoutLegend?.ref)?.width ?? 0
+    let translateX = 0
+    if (this.rightAxisWithoutLegend?.ref) {
+      translateX = getBBoxFromRef(this.rightAxisWithoutLegend?.ref)?.width ?? 0
+    }
+
     const translateY = this.shouldRenderTopAxis() ? 10 : 0
 
     return (

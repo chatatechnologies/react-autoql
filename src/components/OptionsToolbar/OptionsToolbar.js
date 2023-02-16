@@ -86,10 +86,11 @@ export class OptionsToolbar extends React.Component {
     if (prevState.activeMenu === 'sql' && this.state.activeMenu !== 'sql') {
       this.setState({ sqlCopySuccess: false })
     }
+
     if (prevProps.displayType !== this.props.displayType) {
       this.setState({ activeMenu: undefined })
+      this.rebuildTooltips()
     }
-    this.rebuildTooltips()
   }
 
   componentWillUnmount = () => {
@@ -438,9 +439,9 @@ export class OptionsToolbar extends React.Component {
     )
   }
 
-  isDrilldownResponse = () => {
+  isDrilldownResponse = (props) => {
     try {
-      const queryText = this.props.responseRef?.queryResponse?.data?.data?.text
+      const queryText = props.responseRef?.queryResponse?.data?.data?.text
 
       if (queryText.split(' ')[0] === 'Drilldown:') {
         return true
@@ -588,23 +589,23 @@ export class OptionsToolbar extends React.Component {
     )
   }
 
-  getShouldShowButtonObj = () => {
+  getShouldShowButtonObj = (props) => {
     let shouldShowButton = {}
     try {
-      const displayType = this.props.responseRef?.state?.displayType
-      const columns = this.props.responseRef?.getColumns()
+      const displayType = props.responseRef?.state?.displayType
+      const columns = props.responseRef?.getColumns()
       const isTable = isTableType(displayType)
       const isChart = isChartType(displayType)
       const isPivotTable = displayType === 'pivot_table'
-      const response = this.props.responseRef?.queryResponse
+      const response = props.responseRef?.queryResponse
       const isDataResponse = response?.data?.data?.display_type === 'data'
       const allColumnsHidden = areAllColumnsHidden(columns)
       const someColumnsHidden = areSomeColumnsHidden(columns)
       const numRows = response?.data?.data?.rows?.length
       const hasData = numRows > 0
-      const isFiltered = !!this.props.responseRef?.tableParams?.filters?.length
+      const isFiltered = !!props.responseRef?.tableParams?.filters?.length
       const hasMoreThanOneRow = (numRows > 1 && !isFiltered) || !!isFiltered
-      const autoQLConfig = getAutoQLConfig(this.props.autoQLConfig)
+      const autoQLConfig = getAutoQLConfig(props.autoQLConfig)
 
       shouldShowButton = {
         showFilterButton: isTable && !isPivotTable && !allColumnsHidden && hasMoreThanOneRow,
@@ -617,9 +618,10 @@ export class OptionsToolbar extends React.Component {
         showHiddenColsBadge: someColumnsHidden,
         showSQLButton: isDataResponse && autoQLConfig.debug,
         showSaveAsCSVButton: isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
-        showDeleteButton: this.props.enableDeleteBtn,
+        showDeleteButton: props.enableDeleteBtn,
         showReportProblemButton: autoQLConfig.enableReportProblem && !!response?.data?.data?.query_id,
-        showCreateNotificationIcon: isDataResponse && autoQLConfig.enableNotifications && !this.isDrilldownResponse(),
+        showCreateNotificationIcon:
+          isDataResponse && autoQLConfig.enableNotifications && !this.isDrilldownResponse(props),
         showRefreshDataButton: false,
       }
 
@@ -637,7 +639,12 @@ export class OptionsToolbar extends React.Component {
   }
 
   render = () => {
-    const shouldShowButton = this.getShouldShowButtonObj()
+    // const displayType = this.props.responseRef?.state?.displayType
+    // if (displayType === 'help' || displayType === 'suggestion') {
+    //   return null
+    // }
+
+    const shouldShowButton = this.getShouldShowButtonObj(this.props)
 
     // If there is nothing to put in the toolbar, don't render it
     if (!Object.values(shouldShowButton).find((showButton) => showButton === true)) {
