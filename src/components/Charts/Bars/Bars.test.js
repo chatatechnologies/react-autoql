@@ -4,24 +4,22 @@ import { findByTestAttr } from '../../../../test/testUtils'
 import Bars from './Bars'
 import sampleProps from '../chartTestData'
 
-const scales = {
-  xScale: sampleProps.pivot.numberScale(),
-  yScale: sampleProps.pivot.stringScale(),
-}
-
 const pivotSampleProps = {
   ...sampleProps.pivot,
-  ...scales,
+  xScale: sampleProps.pivot.numberScale({ axis: 'x' }),
+  yScale: sampleProps.pivot.stringScale({ axis: 'y' }),
 }
 
 const datePivotSampleProps = {
   ...sampleProps.datePivot,
-  ...scales,
+  xScale: sampleProps.datePivot.numberScale({ axis: 'x' }),
+  yScale: sampleProps.datePivot.stringScale({ axis: 'y' }),
 }
 
 const listSampleProps = {
   ...sampleProps.list,
-  ...scales,
+  xScale: sampleProps.list.numberScale({ axis: 'x' }),
+  yScale: sampleProps.list.stringScale({ axis: 'y' }),
 }
 
 const defaultProps = Bars.defaultProps
