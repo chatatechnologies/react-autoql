@@ -49,7 +49,6 @@ export default class ChataStackedLineChart extends Component {
         ref={(r) => (this.chartRef = r)}
         className='react-autoql-axes-chart'
         data-test='react-autoql-stacked-line-chart'
-        transform={`translate(${this.props.deltaX}, ${this.props.deltaY})`}
       >
         {this.props.marginAdjustmentFinished && (
           <StackedLines {...this.props} xScale={this.xScale} yScale={this.yScale} />

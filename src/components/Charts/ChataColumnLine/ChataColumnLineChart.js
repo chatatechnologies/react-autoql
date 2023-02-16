@@ -78,7 +78,6 @@ export default class ChataColumnLineChart extends Component {
         ref={(r) => (this.chartRef = r)}
         className='react-autoql-axes-chart'
         data-test='react-autoql-column-line-chart'
-        transform={`translate(${this.props.deltaX}, ${this.props.deltaY})`}
       >
         <Axes
           {...this.props}

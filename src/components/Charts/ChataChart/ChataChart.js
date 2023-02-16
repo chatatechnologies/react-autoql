@@ -214,6 +214,10 @@ export default class ChataChart extends Component {
   }
 
   getDeltas = () => {
+    if (this.props.type === 'pie') {
+      return { deltaX: 0, deltaY: 0 }
+    }
+
     const axesBBox = getBBoxFromRef(this.innerChartRef?.chartRef)
 
     // Get distance in px to shift to the right
@@ -269,9 +273,6 @@ export default class ChataChart extends Component {
       const rangeInPx = this.innerChartRef.yScale.range()[0] - this.innerChartRef.yScale.range()[1]
       const totalVerticalMargins = chartHeight - rangeInPx
       innerHeight = containerHeight - totalVerticalMargins - 2 * this.PADDING
-      if (this.props.type === 'bar' || this.props.type === 'stacked_bar') {
-        innerHeight -= this.FONT_SIZE
-      }
     }
 
     if (innerWidth < 1) {
@@ -534,7 +535,12 @@ export default class ChataChart extends Component {
                   background: chartBackgroundColor,
                 }}
               >
-                <g className='react-autoql-chart-content-container'>{this.renderChart()}</g>
+                <g
+                  transform={`translate(${this.state.deltaX}, ${this.state.deltaY})`}
+                  className='react-autoql-chart-content-container'
+                >
+                  {this.renderChart()}
+                </g>
               </svg>
             </Fragment>
           )}

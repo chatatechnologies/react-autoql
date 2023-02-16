@@ -50,7 +50,6 @@ export default class ChataStackedBarChart extends Component {
         ref={(r) => (this.chartRef = r)}
         className='react-autoql-axes-chart'
         data-test='react-autoql-stacked-bar-chart'
-        transform={`translate(${this.props.deltaX}, ${this.props.deltaY})`}
       >
         {this.props.marginAdjustmentFinished && (
           <StackedBars {...this.props} xScale={this.xScale} yScale={this.yScale} />
