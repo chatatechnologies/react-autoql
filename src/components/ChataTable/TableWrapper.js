@@ -4,8 +4,9 @@ import { v4 as uuid } from 'uuid'
 import { TabulatorFull as Tabulator } from 'tabulator-tables' //import Tabulator library
 import { deepEqual } from '../../js/Util'
 
-import 'react-tabulator/lib/styles.css' // default theme
-import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
+// use Theme(s)
+import 'tabulator-tables/dist/css/tabulator.min.css'
+import 'tabulator-tables/dist/css/tabulator_bootstrap3.min.css'
 
 export default class TableWrapper extends React.Component {
   tableRef = React.createRef()
