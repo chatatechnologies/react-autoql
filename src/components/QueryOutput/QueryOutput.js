@@ -58,14 +58,12 @@ import {
 } from './columnHelpers.js'
 
 import { sendSuggestion, runDrilldown, runQueryOnly } from '../../js/queryService'
-import { MONTH_NAMES } from '../../js/Constants'
+import { MONTH_NAMES, DEFAULT_DATA_PAGE_SIZE } from '../../js/Constants'
 import { ReverseTranslation } from '../ReverseTranslation'
-import { getChartColorVars } from '../../theme/configureTheme'
 import { getColumnDateRanges, getFilterPrecision, getPrecisionForDayJS } from '../../js/dateUtils'
 import { withTheme } from '../../theme'
 
 import './QueryOutput.scss'
-import { getUnitsForColumn } from '../Charts/helpers'
 
 String.prototype.isUpperCase = function () {
   return this.valueOf().toUpperCase() === this.valueOf()
@@ -180,6 +178,7 @@ export class QueryOutput extends React.Component {
     onDisplayTypeChange: PropTypes.func,
     onColumnChange: PropTypes.func,
     shouldRender: PropTypes.bool,
+    dataPageSize: PropTypes.number,
   }
 
   static defaultProps = {
@@ -211,6 +210,7 @@ export class QueryOutput extends React.Component {
     mutable: true,
     showSuggestionPrefix: true,
     shouldRender: true,
+    dataPageSize: undefined,
     onRowChange: () => {},
     onTableConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
@@ -821,10 +821,9 @@ export class QueryOutput extends React.Component {
             const response = await runDrilldown({
               ...getAuthentication(this.props.authentication),
               ...getAutoQLConfig(this.props.autoQLConfig),
-              pageSize: this.props.dataPageSize,
               queryID: this.queryID,
               groupBys,
-              pageSize: 50,
+              pageSize: this.getQueryPageSize(),
             })
             this.props.onDrilldownEnd({
               response,
@@ -1035,14 +1034,18 @@ export class QueryOutput extends React.Component {
     this.formattedTableParams = formattedTableParams
   }
 
-  onNewData = (response) => {
+  onNewData = (response, pageSize) => {
     this.isOriginalData = false
     this.queryResponse = response
     this.tableData = response?.data?.data?.rows || []
+
     this.setState({
       visibleRows: response.data.data.rows,
       visibleRowChangeCount: this.state.visibleRowChangeCount + 1,
     })
+
+    const dataPageSize = pageSize ?? response?.data?.data?.fe_req?.page_size
+    this.props.onPageSizeChange(dataPageSize)
   }
 
   onTableFilter = async (filters, rows) => {
@@ -1838,6 +1841,10 @@ export class QueryOutput extends React.Component {
     )
   }
 
+  getQueryPageSize = () => {
+    return this.props.dataPageSize ?? this.queryResponse?.data?.data?.fe_req?.page_size ?? DEFAULT_DATA_PAGE_SIZE
+  }
+
   renderTables = () => {
     if (areAllColumnsHidden(this.getColumns())) {
       return this.renderAllColumnsHiddenMessage()
@@ -1882,7 +1889,7 @@ export class QueryOutput extends React.Component {
           onNewData={this.onNewData}
           isAnimating={this.props.isAnimating}
           isResizing={this.props.isResizing}
-          pageSize={_get(this.queryResponse, 'data.data.row_limit')}
+          pageSize={this.getQueryPageSize()}
           useInfiniteScroll={this.props.enableAjaxTableData && this.isDataLimited()}
           enableAjaxTableData={this.props.enableAjaxTableData}
           queryRequestData={this.queryResponse?.data?.data?.fe_req}

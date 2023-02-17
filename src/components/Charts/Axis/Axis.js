@@ -541,7 +541,6 @@ export default class Axis extends Component {
         const yTitleBBoxAfterTextLength = this.titleRef.getBoundingClientRect()
         const yTitleTop = yTitleBBoxAfterTextLength.top - this.AXIS_TITLE_BORDER_PADDING_LEFT
         if (yTitleTop < chartContainerTop) {
-          console.log('SHIFTING AXIS TITLE DOWN')
           const overflow = chartContainerTop - yTitleTop
           select(this.titleRef).attr('transform', `rotate(-90) translate(${-overflow}, 0)`)
         }

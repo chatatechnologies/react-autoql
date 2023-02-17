@@ -99,7 +99,7 @@ export default class ChataTable extends React.Component {
     data: undefined,
     columns: undefined,
     isResizing: false,
-    pageSize: 0,
+    pageSize: undefined,
     useInfiniteScroll: true,
     source: [],
     shouldRender: true,

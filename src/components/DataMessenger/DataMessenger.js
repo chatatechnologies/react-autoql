@@ -26,6 +26,7 @@ import { DataAlertModal } from '../Notifications/DataAlertModal'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
 import { FilterLockPopover } from '../FilterLockPopover'
+import { DEFAULT_DATA_PAGE_SIZE } from '../../js/Constants'
 
 // Styles
 import 'rc-drawer/assets/index.css'
@@ -41,7 +42,6 @@ export class DataMessenger extends React.Component {
     this.COMPONENT_KEY = uuid()
     this.HEADER_THICKNESS = 70
     this.TAB_THICKNESS = 45
-    this.DEFAULT_AJAX_PAGE_SIZE = 50
 
     this.dataMessengerIntroMessages = [
       props.introMessage ? (
@@ -709,11 +709,6 @@ export class DataMessenger extends React.Component {
   }
 
   renderDataMessengerContent = () => {
-    let dataPageSize = this.props.dataPageSize
-    if (this.props.enableAjaxTableData && !dataPageSize) {
-      dataPageSize = this.DEFAULT_AJAX_PAGE_SIZE
-    }
-
     const valueLabelClickFn = getAutoQLConfig(this.props.autoQLConfig).enableFilterLocking
       ? this.onRTValueLabelClick
       : undefined
@@ -738,7 +733,7 @@ export class DataMessenger extends React.Component {
           enableAjaxTableData={this.props.enableAjaxTableData}
           autoChartAggregations={this.props.autoChartAggregations}
           popoverParentElement={this.messengerDrawerRef}
-          dataPageSize={dataPageSize}
+          dataPageSize={this.props.dataPageSize}
           createDataAlertCallback={this.closeDataMessenger}
         />
       </ErrorBoundary>

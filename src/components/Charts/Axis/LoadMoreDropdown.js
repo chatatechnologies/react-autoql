@@ -72,8 +72,6 @@ export default class LoadMoreDropdown extends Component {
         data-test='x-axis-label'
         dominantBaseline='hanging'
         textAnchor='middle'
-        // y={0}
-        // x={0}
         style={{
           fontSize: this.fontSize,
           fontFamily: 'inherit',
@@ -123,15 +121,6 @@ export default class LoadMoreDropdown extends Component {
       return null
     }
 
-    // const allTextBBox = getBBoxFromRef(this.allText)
-    // const allTextWidth = allTextBBox?.width ?? 0
-    // const warningIconX = allTextBBox?.x + allTextWidth + 5
-    // const warningIconY = allTextBBox?.y - 3
-
-    // if (isNaN(warningIconX) || isNaN(warningIconY)) {
-    //   return null
-    // }
-
     return (
       <svg
         ref={(r) => (this.warningIcon = r)}
@@ -142,8 +131,6 @@ export default class LoadMoreDropdown extends Component {
         height='1.4em'
         width='1.4em'
         xmlns='http://www.w3.org/2000/svg'
-        // x={warningIconX}
-        // y={warningIconY}
         data-tip='Row limit (5000) reached. Try applying a filter or narrowing your search to return full results.'
         data-for={this.props.chartTooltipID}
       >

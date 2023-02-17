@@ -2,6 +2,7 @@ import axios from 'axios'
 import _get from 'lodash.get'
 import { responseErrors } from './errorMessages'
 import DEConstants from '../components/DataExplorer/constants'
+import { DEFAULT_DATA_PAGE_SIZE } from './Constants'
 
 const formatErrorResponse = (error) => {
   if (error?.message === responseErrors.CANCELLED) {
@@ -154,7 +155,7 @@ export const runQueryOnly = (params = {}) => {
     filters,
     orders,
     tableFilters,
-    pageSize,
+    pageSize = DEFAULT_DATA_PAGE_SIZE,
     cancelToken,
   } = params
   const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
@@ -315,7 +316,7 @@ export const runDrilldown = ({
   orders,
   tableFilters,
   cancelToken,
-  pageSize,
+  pageSize = DEFAULT_DATA_PAGE_SIZE,
 } = {}) => {
   if (!queryID) {
     console.error('No query ID supplied to drilldown function')

@@ -62,7 +62,6 @@ class DashboardWithoutTheme extends React.Component {
     this.debounceTime = 50
     this.onChangeTiles = null
     this.callbackSubsciptions = []
-    this.DEFAULT_AJAX_PAGE_SIZE = 50
 
     this.state = {
       isDragging: false,
@@ -148,6 +147,12 @@ class DashboardWithoutTheme extends React.Component {
     ) {
       this.setState({
         justPerformedUndo: false,
+      })
+    }
+
+    if (this.props.isEditing !== prevProps.isEditing) {
+      this.setState({ isDragging: true }, () => {
+        this.setState({ isDragging: false })
       })
     }
   }
@@ -844,7 +849,6 @@ class DashboardWithoutTheme extends React.Component {
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
             enableAjaxTableData={this.props.enableAjaxTableData}
             rebuildTooltips={this.rebuildTooltips}
-            dataPageSize={dataPageSize}
             tooltipID={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
             chartTooltipID={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
           />

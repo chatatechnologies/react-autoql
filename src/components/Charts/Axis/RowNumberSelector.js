@@ -1,14 +1,13 @@
 import React from 'react'
-import _get from 'lodash.get'
-import _isEqual from 'lodash.isequal'
 import axios from 'axios'
-import { v4 as uuid } from 'uuid'
 import { Popover } from 'react-tiny-popover'
 import { axesDefaultProps, axesPropTypes } from '../helpers'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { getAuthentication } from '../../../props/defaults'
 import { runQueryOnly, runDrilldown } from '../../../js/queryService'
 import { responseErrors } from '../../../js/errorMessages'
+import { MAX_DATA_PAGE_SIZE } from '../../../js/Constants'
+
 export default class RowNumberSelector extends React.Component {
   constructor(props) {
     super(props)
@@ -65,13 +64,16 @@ export default class RowNumberSelector extends React.Component {
       })
     }
   }
-  loadMoreChartData = async (pageSize) => {
+  loadMoreChartData = async (pageSize, isMax) => {
     try {
       let response
+      // Fetch data with max page size, but dont display this
+      // number in the dropdown, use exact row count instead
+      const pageSizeForRequest = isMax ? MAX_DATA_PAGE_SIZE : pageSize
       this.props.setCurrentRowNumber(pageSize)
-      response = await this.getNewChartData(pageSize)
+      response = await this.getNewChartData(pageSizeForRequest)
       this.props.setIsLoadingMoreRows(false)
-      this.props.onNewData(response)
+      this.props.onNewData(response, pageSizeForRequest)
     } catch (error) {
       if (error?.data?.message === responseErrors.CANCELLED) {
         return Promise.resolve()
@@ -86,12 +88,12 @@ export default class RowNumberSelector extends React.Component {
     let initialRowNumber = 50
     let currentRowNumber = initialRowNumber
     let rowNumberList = []
-    while (currentRowNumber < totalRows && currentRowNumber < 5000) {
+    while (currentRowNumber < totalRows && currentRowNumber < MAX_DATA_PAGE_SIZE) {
       rowNumberList.push(currentRowNumber)
       currentRowNumber = currentRowNumber * 10
     }
-    if (totalRows > 5000) {
-      rowNumberList.push(5000)
+    if (totalRows > MAX_DATA_PAGE_SIZE) {
+      rowNumberList.push(MAX_DATA_PAGE_SIZE)
     } else {
       rowNumberList.push(totalRows)
     }
@@ -110,6 +112,8 @@ export default class RowNumberSelector extends React.Component {
       maxHeight = minHeight
     }
 
+    const rowNumberList = this.rowNumberListConstructor(this.props.totalRowCount)
+
     return (
       <CustomScrollbars autoHide={false} autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
         <div
@@ -120,20 +124,22 @@ export default class RowNumberSelector extends React.Component {
           }}
         >
           <ul className='axis-selector-content'>
-            {this.rowNumberListConstructor(this.props.totalRowCount).map((rowNumber, i) => {
+            {rowNumberList.map((rowNumber, i) => {
               let rowNumberString = rowNumber
-              if (rowNumber === 5000) {
-                rowNumberString = '5000 (Maximum)'
+              if (rowNumber === MAX_DATA_PAGE_SIZE) {
+                rowNumberString = `${MAX_DATA_PAGE_SIZE} (Maximum)`
               } else if (rowNumber !== 50 && rowNumber !== 500) {
                 rowNumberString = `${rowNumber} (All)`
               }
+
+              const isMax = i === rowNumberList.length - 1
               return (
                 <li
                   className={`string-select-list-item ${rowNumber === this.props.currentRowNumber ? 'active' : ''}`}
                   key={`string-column-select-${i}`}
                   onClick={() => {
                     this.closeSelector()
-                    this.loadMoreChartData(rowNumber)
+                    this.loadMoreChartData(rowNumber, isMax)
                   }}
                 >
                   {rowNumberString}
