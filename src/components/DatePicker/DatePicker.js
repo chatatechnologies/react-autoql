@@ -39,10 +39,7 @@ export default class DatePicker extends React.Component {
 
   handleSelect = (ranges) => {
     this.setState({ selectedRange: ranges.selection }, () => {
-      const focusedRange = this.datePicker?.state?.focusedRange
-      if (focusedRange.every((index) => index === 0)) {
-        this.props.onSelection(ranges.selection)
-      }
+      this.props.onSelection(ranges.selection)
     })
   }
 

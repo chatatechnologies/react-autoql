@@ -108,6 +108,14 @@ export default class YearRangePicker extends React.Component {
 
   onYearStartSelection = (timestamp) => {
     this.setState({ selectedStart: timestamp.startOf('year'), selectedEnd: undefined, focusedDateDisplay: 'end' })
+    const selectedStart = timestamp.startOf('year')
+    const rangeSelection = [selectedStart, timestamp]
+    const selectedStartMonthStart = rangeSelection[0].startOf('year')
+    const selectedEndMonthEnd = rangeSelection[1].endOf('year')
+    this.props.onRangeSelection({
+      startDate: selectedStartMonthStart.toDate(),
+      endDate: selectedEndMonthEnd.toDate(),
+    })
   }
 
   onYearEndSelection = (timestamp) => {
