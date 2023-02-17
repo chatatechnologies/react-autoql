@@ -58,7 +58,7 @@ import {
 } from './columnHelpers.js'
 
 import { sendSuggestion, runDrilldown, runQueryOnly } from '../../js/queryService'
-import { MONTH_NAMES, DEFAULT_DATA_PAGE_SIZE } from '../../js/Constants'
+import { MONTH_NAMES, DEFAULT_DATA_PAGE_SIZE, CHART_TYPES } from '../../js/Constants'
 import { ReverseTranslation } from '../ReverseTranslation'
 import { getColumnDateRanges, getFilterPrecision, getPrecisionForDayJS } from '../../js/dateUtils'
 import { withTheme } from '../../theme'
@@ -1007,11 +1007,11 @@ export class QueryOutput extends React.Component {
 
   toggleTableFilter = () => {
     if (this.state.displayType === 'table') {
-      this.tableRef?._isMounted && this.tableRef.toggleIsFiltering()
+      return this.tableRef?._isMounted && this.tableRef.toggleIsFiltering()
     }
 
     if (this.state.displayType === 'pivot_table') {
-      this.pivotTableRef?._isMounted && this.pivotTableRef.toggleIsFiltering()
+      return this.pivotTableRef?._isMounted && this.pivotTableRef.toggleIsFiltering()
     }
   }
 
@@ -1847,33 +1847,17 @@ export class QueryOutput extends React.Component {
     return this.props.dataPageSize ?? this.queryResponse?.data?.data?.fe_req?.page_size ?? DEFAULT_DATA_PAGE_SIZE
   }
 
-  renderTables = () => {
+  renderTable = () => {
     if (areAllColumnsHidden(this.getColumns())) {
       return this.renderAllColumnsHiddenMessage()
     }
 
-    if (!this.tableData || (this.state.displayType === 'pivot_table' && !this.pivotTableData)) {
+    if (!this.tableData) {
       return this.renderMessage('Error: There was no data supplied for this table')
     }
 
-    const pivotTableAvailable = this.getCurrentSupportedDisplayTypes().includes('pivot_table')
-
     return (
       <ErrorBoundary>
-        {pivotTableAvailable && (
-          <ChataTable
-            ref={(ref) => (this.pivotTableRef = ref)}
-            columns={this.pivotTableColumns}
-            data={this.pivotTableData}
-            onCellClick={this.onTableCellClick}
-            isAnimating={this.props.isAnimating}
-            isResizing={this.props.isResizing}
-            hidden={this.state.displayType !== 'pivot_table'}
-            useInfiniteScroll={false}
-            supportsDrilldowns={true}
-            pivot
-          />
-        )}
         <ChataTable
           authentication={this.props.authentication}
           dataFormatting={this.props.dataFormatting}
@@ -1906,6 +1890,33 @@ export class QueryOutput extends React.Component {
             isAggregation(this.state.columns) && getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
           }
           queryFn={this.queryFn}
+        />
+      </ErrorBoundary>
+    )
+  }
+
+  renderPivotTable = () => {
+    if (areAllColumnsHidden(this.getColumns())) {
+      return this.renderAllColumnsHiddenMessage()
+    }
+
+    if (this.state.displayType === 'pivot_table' && !this.pivotTableData) {
+      return this.renderMessage('Error: There was no data supplied for this table')
+    }
+
+    return (
+      <ErrorBoundary>
+        <ChataTable
+          ref={(ref) => (this.pivotTableRef = ref)}
+          columns={this.pivotTableColumns}
+          data={this.pivotTableData}
+          onCellClick={this.onTableCellClick}
+          isAnimating={this.props.isAnimating}
+          isResizing={this.props.isResizing}
+          hidden={this.state.displayType !== 'pivot_table'}
+          useInfiniteScroll={false}
+          supportsDrilldowns={true}
+          pivot
         />
       </ErrorBoundary>
     )
@@ -2172,21 +2183,24 @@ export class QueryOutput extends React.Component {
         return this.renderTextResponse()
       } else if (displayType === 'single-value') {
         return this.renderSingleValueResponse()
-      } else if (isTableType(displayType) || isChartType(displayType)) {
-        return (
-          <>
-            {this.renderChart()}
-            {this.renderTables()}
-          </>
-        )
+      } else if (!isTableType(displayType) && !isChartType(displayType)) {
+        console.warn(`display type not recognized: ${this.state.displayType} - rendering as plain text`)
+        return this.renderMessage(`display type not recognized: ${this.state.displayType}`)
       }
-
-      console.warn(`display type not recognized: ${this.state.displayType} - rendering as plain text`)
-
-      return this.renderMessage(`display type not recognized: ${this.state.displayType}`)
     }
 
-    return null
+    const supportsPivotTable = this.getCurrentSupportedDisplayTypes().includes('pivot_table')
+
+    const chartDisplayTypes = this.getPotentialDisplayTypes().filter((displayType) => CHART_TYPES.includes(displayType))
+    const supportsChart = !!chartDisplayTypes?.length
+
+    return (
+      <>
+        {this.renderTable()}
+        {supportsChart && this.renderChart()}
+        {supportsPivotTable && this.renderPivotTable()}
+      </>
+    )
   }
 
   shouldRenderReverseTranslation = () => {

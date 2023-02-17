@@ -21,8 +21,8 @@
 
   .react-autoql-tablulator-container {
     position: relative;
-    height: calc(100% - 30px);
-    max-height: calc(100% - 30px);
+    // height: calc(100% - 30px);
+    // max-height: calc(100% - 30px);
     min-height: 100px;
 
     .tabulator-cell,
@@ -212,6 +212,7 @@
         margin-right: 5px;
         vertical-align: top;
         line-height: 21px;
+        margin-left: -11px;
       }
     }
 
@@ -250,7 +251,7 @@
       background-color: var(--react-autoql-background-color-secondary);
 
       .tabulator-col-title {
-        padding-left: 10px !important;
+        padding-left: 12px !important;
         padding-right: 15px !important;
       }
       .tabulator-col-content {

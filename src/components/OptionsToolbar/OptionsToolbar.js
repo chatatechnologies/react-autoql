@@ -353,8 +353,8 @@ export class OptionsToolbar extends React.Component {
     return
   }
 
-  getMenuItemClass = (shouldShowButton) => {
-    return 'react-autoql-toolbar-btn'
+  getMenuItemClass = (className) => {
+    return `react-autoql-toolbar-btn ${className ?? ''}`
   }
 
   renderMoreOptionsMenu = (props, shouldShowButton) => {
@@ -495,6 +495,8 @@ export class OptionsToolbar extends React.Component {
   }
 
   renderToolbar = (shouldShowButton) => {
+    const isFiltered = !!this.props.responseRef?.tableParams?.filters?.length
+
     return (
       <ErrorBoundary>
         <div
@@ -505,13 +507,16 @@ export class OptionsToolbar extends React.Component {
         >
           {shouldShowButton.showFilterButton && (
             <button
-              onClick={this.props.responseRef?.toggleTableFilter}
-              className={this.getMenuItemClass(shouldShowButton.showFilterButton)}
+              onClick={() => {
+                const isFiltering = this.props.responseRef?.toggleTableFilter()
+                this.setState({ isFiltering })
+              }}
+              className={this.getMenuItemClass('filter-btn')}
               data-tip='Filter table'
               data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
               data-test='react-autoql-filter-button'
             >
-              <Icon type='filter' />
+              <Icon type={this.state.isFiltering ? 'filter-off' : 'filter'} showBadge={isFiltered} />
             </button>
           )}
           {shouldShowButton.showHideColumnsButton && (
