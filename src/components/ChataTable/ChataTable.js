@@ -39,6 +39,7 @@ export default class ChataTable extends React.Component {
     this.supportsInfiniteScroll = props.useInfiniteScroll && !!props.pageSize
     this.isFiltering = false
     this.isSorting = false
+    this.firstRender = true
 
     this.tableParams = _cloneDeep(props.initialParams) ?? {
       filter: [],
@@ -143,20 +144,19 @@ export default class ChataTable extends React.Component {
   }
 
   getSnapshotBeforeUpdate = (prevProps, prevState) => {
-    if (
-      this.tabulatorContainer &&
-      ((!this.props.isResizing && prevProps.isResizing) || (!this.props.isAnimating && prevProps.isAnimating))
-    ) {
-      const newTableHeight = this.tabulatorContainer.clientHeight
-      if (newTableHeight !== this.lockedTableHeight) {
-        this.lockedTableHeight = newTableHeight
-        this.ref?.tabulator?.setHeight(newTableHeight)
+    if (this.tabulatorContainer && this.tabulatorMounted && !this.props.hidden) {
+      if ((!this.props.isResizing && prevProps.isResizing) || (!this.props.isAnimating && prevProps.isAnimating)) {
+        const newTableHeight = this.tabulatorContainer.clientHeight
+        if (newTableHeight !== this.lockedTableHeight) {
+          this.lockedTableHeight = newTableHeight
+          this.ref?.tabulator?.setHeight(newTableHeight)
+        }
       }
-    }
 
-    if (this.props.isResizing && !prevProps.isResizing && this.tabulatorContainer) {
-      this.lockedTableHeight = '100%'
-      this.ref?.tabulator?.setHeight(this.lockedTableHeight)
+      if (this.props.isResizing && !prevProps.isResizing) {
+        this.lockedTableHeight = '100%'
+        this.ref?.tabulator?.setHeight(this.lockedTableHeight)
+      }
     }
 
     return null
@@ -277,7 +277,13 @@ export default class ChataTable extends React.Component {
     // The table height after initial render should height for the session
     // Doing this avoids the scroll jump when filtering or sorting the data
     // It is also makes tabulator more efficient
-    if (this.tabulatorContainer && !this.props.isAnimating && !this.props.hidden && !this.props.isResizing) {
+    if (
+      this.tabulatorMounted &&
+      this.tabulatorContainer &&
+      !this.props.isAnimating &&
+      !this.props.isResizing &&
+      !this.props.hidden
+    ) {
       this.lockedTableHeight = this.tabulatorContainer.clientHeight
       this.ref?.tabulator?.setHeight(this.lockedTableHeight)
     }
@@ -759,7 +765,7 @@ export default class ChataTable extends React.Component {
             ${this.props.hidden ? 'hidden' : ''}`}
         >
           {!!this.props.data && !!this.props.columns && (
-            <div ref={(r) => (this.tabulatorContainer = r)} className='react-autoql-tablulator-container'>
+            <div ref={(r) => (this.tabulatorContainer = r)} className='react-autoql-tabulator-container'>
               <TableWrapper
                 ref={(r) => (this.ref = r)}
                 tableKey={`react-autoql-table-${this.TABLE_ID}`}
