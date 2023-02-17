@@ -179,6 +179,7 @@ export class QueryOutput extends React.Component {
     onColumnChange: PropTypes.func,
     shouldRender: PropTypes.bool,
     dataPageSize: PropTypes.number,
+    onPageSizeChange: PropTypes.func,
   }
 
   static defaultProps = {
@@ -218,6 +219,7 @@ export class QueryOutput extends React.Component {
     onDrilldownStart: () => {},
     onDrilldownEnd: () => {},
     onColumnChange: () => {},
+    onPageSizeChange: () => {},
   }
 
   componentDidMount = () => {

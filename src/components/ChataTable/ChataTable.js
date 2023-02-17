@@ -154,7 +154,6 @@ export default class ChataTable extends React.Component {
     if (!this.state.isFiltering && prevState.isFiltering) {
       try {
         this.setFilterTags()
-        this.setDateFilterClickListeners()
       } catch (error) {
         console.error(error)
         this.props.onErrorCallback(error)
@@ -302,7 +301,7 @@ export default class ChataTable extends React.Component {
     this.setFilters()
     this.setFilterTags()
     this.saveCurrentTableHeight()
-    this.setDateFilterClickListeners()
+    this.setHeaderInputClickListeners()
 
     this.hasSetInitialParams = true
   }
@@ -470,7 +469,7 @@ export default class ChataTable extends React.Component {
     }, 50)
   }
 
-  setDateFilterClickListeners = () => {
+  setHeaderInputClickListeners = () => {
     const columns = this.props.columns
     if (!columns) {
       return
@@ -483,11 +482,15 @@ export default class ChataTable extends React.Component {
 
       if (inputElement) {
         inputElement.addEventListener('keydown', (e) => {
-          this.ref?.restoreRedraw()
+          if (!this.supportsInfiniteScroll) {
+            this.ref?.restoreRedraw()
+          }
         })
         inputElement.addEventListener('search', (e) => {
           // When "x" button is clicked in the input box
-          this.ref?.restoreRedraw()
+          if (!this.supportsInfiniteScroll) {
+            this.ref?.restoreRedraw()
+          }
         })
 
         if (col.type === 'DATE' && !col.pivot) {
