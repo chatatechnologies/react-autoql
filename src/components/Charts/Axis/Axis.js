@@ -524,13 +524,13 @@ export default class Axis extends Component {
     } else if (this.props.orient === 'Left' || this.props.orient === 'Right') {
       if (this.props.chartRef) {
         // Get original container height and top before adding axis title
-        const chartContainerBBox = this.props.chartRef?.getBoundingClientRect()
-        const chartContainerHeight = chartContainerBBox?.height
-        const chartContainerTop = chartContainerBBox?.y
+        const chartContainerHeight = this.props.outerHeight - 2 * this.props.chartPadding
+        const chartContainerTop = this.props.outerY
+
         select(this.titleRef).attr('textLength', null)
-        const yLabelBBox = this.titleRef.getBoundingClientRect()
-        const yLabelHeight = (yLabelBBox.height ?? 0) + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
-        if (yLabelHeight > chartContainerHeight) {
+        const yTitleBBox = this.titleRef.getBoundingClientRect()
+        const yTitleHeight = (yTitleBBox.height ?? 0) + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
+        if (yTitleHeight > chartContainerHeight) {
           // Squeeze text to fit in full height
           let textLength = Math.floor(chartContainerHeight) - 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
           if (textLength < 0) {
@@ -538,9 +538,10 @@ export default class Axis extends Component {
           }
           select(this.titleRef).attr('textLength', textLength)
         }
-        const yLabelBBoxAfterTextLength = this.titleRef.getBoundingClientRect()
-        const yTitleTop = yLabelBBoxAfterTextLength.top - this.AXIS_TITLE_BORDER_PADDING_LEFT
+        const yTitleBBoxAfterTextLength = this.titleRef.getBoundingClientRect()
+        const yTitleTop = yTitleBBoxAfterTextLength.top - this.AXIS_TITLE_BORDER_PADDING_LEFT
         if (yTitleTop < chartContainerTop) {
+          console.log('SHIFTING AXIS TITLE DOWN')
           const overflow = chartContainerTop - yTitleTop
           select(this.titleRef).attr('transform', `rotate(-90) translate(${-overflow}, 0)`)
         }

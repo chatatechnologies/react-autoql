@@ -664,7 +664,7 @@ class DashboardWithoutTheme extends React.Component {
         queryResponse.data.data.columns = this.activeDrilldownRef.state.columns
       }
 
-      const renderTopHalf = this.state.isDrilldownChartHidden || !this.shouldShowOriginalQuery()
+      const renderTopHalf = !this.state.isDrilldownChartHidden && this.shouldShowOriginalQuery()
 
       return (
         <Modal
@@ -687,7 +687,7 @@ class DashboardWithoutTheme extends React.Component {
                 vertical={true}
                 percentage={true}
                 secondaryInitialSize={50}
-                primaryMinSize={renderTopHalf ? 0 : 35}
+                primaryMinSize={renderTopHalf ? 35 : 0}
                 onDragStart={() => {
                   this.setState({ isResizingDrilldown: true })
                 }}
