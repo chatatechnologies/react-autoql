@@ -910,10 +910,8 @@ export class DashboardTile extends React.Component {
     })
 
   renderToolbars = ({ queryOutputProps, vizToolbarProps, optionsToolbarProps, isSecondHalf }) => {
-    const dataLimitWarningIcon = null // document.querySelector(`#${queryOutputProps.key} .dashboard-data-limit-warning-icon`)
-
     return (
-      <div className={`dashboard-tile-toolbars-container ${dataLimitWarningIcon ? 'left-padding' : ''}`}>
+      <div className='dashboard-tile-toolbars-container'>
         <div className='dashboard-tile-toolbars-left-container'>
           {this.props.isEditing && (isSecondHalf || !this.getIsSplitView()) && this.renderSplitViewBtn()}
           {this.props.isEditing && (

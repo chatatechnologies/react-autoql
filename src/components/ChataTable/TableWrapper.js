@@ -113,7 +113,6 @@ export default class TableWrapper extends React.Component {
         this.tabulator.setData(this.props.data).then(() => {
           this.isInitialized = true
           this.props.onTableBuilt()
-          console.log('table built', this.tabulator)
         })
       } else {
         this.isInitialized = true

@@ -267,8 +267,6 @@ export default class ChataTable extends React.Component {
   onTableBuilt = async () => {
     this.tabulatorMounted = true
 
-    // this.setSorters()
-    // this.setFilters()
     this.setFilterTags()
     this.setHeaderInputClickListeners()
     this.setTableHeight()
@@ -311,7 +309,6 @@ export default class ChataTable extends React.Component {
       const nextTableParamsFormatted = formatTableParams(params, this.ref?.tabulator, props.columns)
 
       if (_isEqual(tableParamsFormatted, nextTableParamsFormatted)) {
-        console.log('SHOULD NEVER REACH THIS FUNCTION 2')
         return
       }
 
@@ -408,13 +405,6 @@ export default class ChataTable extends React.Component {
       modResponse.last_page = this.lastPage
       return modResponse
     }
-    // else if (!this.hasSetInitialData) {
-    //   this.hasSetInitialData = true
-    //   return {
-    //     data: props.data,
-    //     last_page: this.lastPage,
-    //   }
-    // }
 
     return {
       data: [],
