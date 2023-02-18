@@ -11,7 +11,6 @@ import DEConstants from './constants'
 import { QuerySuggestionList } from '../ExploreQueries'
 import { authenticationType, dataFormattingType } from '../../props/types'
 import { CustomScrollbars } from '../CustomScrollbars'
-import { TopicName } from './TopicName'
 import { Icon } from '../Icon'
 import { Card } from '../Card'
 

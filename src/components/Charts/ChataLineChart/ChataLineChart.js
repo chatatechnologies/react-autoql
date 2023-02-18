@@ -32,6 +32,7 @@ export default class ChataLineChart extends Component {
       numberColumnIndices = props.visibleSeriesIndices
     }
 
+    // Keep this for using linear scale for time series
     // if (!this.props.disableTimeScale) {
     //   this.xScale = getTimeScale({
     //     props,
@@ -67,12 +68,7 @@ export default class ChataLineChart extends Component {
     const yCol = this.props.columns[this.props.numberColumnIndex]
 
     return (
-      <g
-        ref={(r) => (this.chartRef = r)}
-        className='react-autoql-axes-chart'
-        data-test='react-autoql-line-chart'
-        transform={`translate(${this.props.deltaX}, ${this.props.deltaY})`}
-      >
+      <g ref={(r) => (this.chartRef = r)} className='react-autoql-axes-chart' data-test='react-autoql-line-chart'>
         {this.props.marginAdjustmentFinished && <Line {...this.props} xScale={this.xScale} yScale={this.yScale} />}
         <Axes
           {...this.props}

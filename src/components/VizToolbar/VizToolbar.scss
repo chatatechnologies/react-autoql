@@ -25,6 +25,10 @@
   cursor: pointer;
   outline: none !important;
 
+  &.filter-btn {
+    line-height: 24px;
+  }
+
   &.selected {
     color: var(--react-autoql-accent-color);
   }

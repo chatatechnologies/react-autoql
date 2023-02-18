@@ -58,14 +58,12 @@ import {
 } from './columnHelpers.js'
 
 import { sendSuggestion, runDrilldown, runQueryOnly } from '../../js/queryService'
-import { MONTH_NAMES } from '../../js/Constants'
+import { MONTH_NAMES, DEFAULT_DATA_PAGE_SIZE, CHART_TYPES } from '../../js/Constants'
 import { ReverseTranslation } from '../ReverseTranslation'
-import { getChartColorVars } from '../../theme/configureTheme'
 import { getColumnDateRanges, getFilterPrecision, getPrecisionForDayJS } from '../../js/dateUtils'
 import { withTheme } from '../../theme'
 
 import './QueryOutput.scss'
-import { getUnitsForColumn } from '../Charts/helpers'
 
 String.prototype.isUpperCase = function () {
   return this.valueOf().toUpperCase() === this.valueOf()
@@ -180,6 +178,8 @@ export class QueryOutput extends React.Component {
     onDisplayTypeChange: PropTypes.func,
     onColumnChange: PropTypes.func,
     shouldRender: PropTypes.bool,
+    dataPageSize: PropTypes.number,
+    onPageSizeChange: PropTypes.func,
   }
 
   static defaultProps = {
@@ -211,6 +211,7 @@ export class QueryOutput extends React.Component {
     mutable: true,
     showSuggestionPrefix: true,
     shouldRender: true,
+    dataPageSize: undefined,
     onRowChange: () => {},
     onTableConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
@@ -218,6 +219,7 @@ export class QueryOutput extends React.Component {
     onDrilldownStart: () => {},
     onDrilldownEnd: () => {},
     onColumnChange: () => {},
+    onPageSizeChange: () => {},
   }
 
   componentDidMount = () => {
@@ -821,10 +823,9 @@ export class QueryOutput extends React.Component {
             const response = await runDrilldown({
               ...getAuthentication(this.props.authentication),
               ...getAutoQLConfig(this.props.autoQLConfig),
-              pageSize: this.props.dataPageSize,
               queryID: this.queryID,
               groupBys,
-              pageSize: 50,
+              pageSize: this.getQueryPageSize(),
             })
             this.props.onDrilldownEnd({
               response,
@@ -1006,11 +1007,11 @@ export class QueryOutput extends React.Component {
 
   toggleTableFilter = () => {
     if (this.state.displayType === 'table') {
-      this.tableRef?._isMounted && this.tableRef.toggleIsFiltering()
+      return this.tableRef?._isMounted && this.tableRef.toggleIsFiltering()
     }
 
     if (this.state.displayType === 'pivot_table') {
-      this.pivotTableRef?._isMounted && this.pivotTableRef.toggleIsFiltering()
+      return this.pivotTableRef?._isMounted && this.pivotTableRef.toggleIsFiltering()
     }
   }
 
@@ -1035,14 +1036,18 @@ export class QueryOutput extends React.Component {
     this.formattedTableParams = formattedTableParams
   }
 
-  onNewData = (response) => {
+  onNewData = (response, pageSize) => {
     this.isOriginalData = false
     this.queryResponse = response
     this.tableData = response?.data?.data?.rows || []
+
     this.setState({
       visibleRows: response.data.data.rows,
       visibleRowChangeCount: this.state.visibleRowChangeCount + 1,
     })
+
+    const dataPageSize = pageSize ?? response?.data?.data?.fe_req?.page_size
+    this.props.onPageSizeChange(dataPageSize)
   }
 
   onTableFilter = async (filters, rows) => {
@@ -1838,38 +1843,27 @@ export class QueryOutput extends React.Component {
     )
   }
 
-  renderTables = () => {
+  getQueryPageSize = () => {
+    return this.props.dataPageSize ?? this.queryResponse?.data?.data?.fe_req?.page_size ?? DEFAULT_DATA_PAGE_SIZE
+  }
+
+  renderTable = () => {
     if (areAllColumnsHidden(this.getColumns())) {
       return this.renderAllColumnsHiddenMessage()
     }
 
-    if (!this.tableData || (this.state.displayType === 'pivot_table' && !this.pivotTableData)) {
+    if (!this.tableData) {
       return this.renderMessage('Error: There was no data supplied for this table')
     }
 
-    const pivotTableAvailable = this.getCurrentSupportedDisplayTypes().includes('pivot_table')
-
     return (
       <ErrorBoundary>
-        {pivotTableAvailable && (
-          <ChataTable
-            ref={(ref) => (this.pivotTableRef = ref)}
-            columns={this.pivotTableColumns}
-            data={this.pivotTableData}
-            onCellClick={this.onTableCellClick}
-            isAnimating={this.props.isAnimating}
-            isResizing={this.props.isResizing}
-            hidden={this.state.displayType !== 'pivot_table'}
-            useInfiniteScroll={false}
-            supportsDrilldowns={true}
-            pivot
-          />
-        )}
         <ChataTable
           authentication={this.props.authentication}
           dataFormatting={this.props.dataFormatting}
           ref={(ref) => (this.tableRef = ref)}
           columns={this.state.columns}
+          response={this.queryResponse}
           data={this.tableData}
           columnDateRanges={this.columnDateRanges}
           onCellClick={this.onTableCellClick}
@@ -1882,7 +1876,7 @@ export class QueryOutput extends React.Component {
           onNewData={this.onNewData}
           isAnimating={this.props.isAnimating}
           isResizing={this.props.isResizing}
-          pageSize={_get(this.queryResponse, 'data.data.row_limit')}
+          pageSize={this.getQueryPageSize()}
           useInfiniteScroll={this.props.enableAjaxTableData && this.isDataLimited()}
           enableAjaxTableData={this.props.enableAjaxTableData}
           queryRequestData={this.queryResponse?.data?.data?.fe_req}
@@ -1897,6 +1891,33 @@ export class QueryOutput extends React.Component {
             isAggregation(this.state.columns) && getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
           }
           queryFn={this.queryFn}
+        />
+      </ErrorBoundary>
+    )
+  }
+
+  renderPivotTable = () => {
+    if (areAllColumnsHidden(this.getColumns())) {
+      return this.renderAllColumnsHiddenMessage()
+    }
+
+    if (this.state.displayType === 'pivot_table' && !this.pivotTableData) {
+      return this.renderMessage('Error: There was no data supplied for this table')
+    }
+
+    return (
+      <ErrorBoundary>
+        <ChataTable
+          ref={(ref) => (this.pivotTableRef = ref)}
+          columns={this.pivotTableColumns}
+          data={this.pivotTableData}
+          onCellClick={this.onTableCellClick}
+          isAnimating={this.props.isAnimating}
+          isResizing={this.props.isResizing}
+          hidden={this.state.displayType !== 'pivot_table'}
+          useInfiniteScroll={false}
+          supportsDrilldowns={true}
+          pivot
         />
       </ErrorBoundary>
     )
@@ -2163,21 +2184,24 @@ export class QueryOutput extends React.Component {
         return this.renderTextResponse()
       } else if (displayType === 'single-value') {
         return this.renderSingleValueResponse()
-      } else if (isTableType(displayType) || isChartType(displayType)) {
-        return (
-          <>
-            {this.renderChart()}
-            {this.renderTables()}
-          </>
-        )
+      } else if (!isTableType(displayType) && !isChartType(displayType)) {
+        console.warn(`display type not recognized: ${this.state.displayType} - rendering as plain text`)
+        return this.renderMessage(`display type not recognized: ${this.state.displayType}`)
       }
-
-      console.warn(`display type not recognized: ${this.state.displayType} - rendering as plain text`)
-
-      return this.renderMessage(`display type not recognized: ${this.state.displayType}`)
     }
 
-    return null
+    const supportsPivotTable = this.getCurrentSupportedDisplayTypes().includes('pivot_table')
+
+    const chartDisplayTypes = this.getPotentialDisplayTypes().filter((displayType) => CHART_TYPES.includes(displayType))
+    const supportsChart = !!chartDisplayTypes?.length
+
+    return (
+      <>
+        {this.renderTable()}
+        {supportsChart && this.renderChart()}
+        {supportsPivotTable && this.renderPivotTable()}
+      </>
+    )
   }
 
   shouldRenderReverseTranslation = () => {

@@ -38,7 +38,6 @@ export default class ChataHeatmapChart extends Component {
         ref={(r) => (this.chartRef = r)}
         className='react-autoql-axes-chart react-autoql-heatmap-chart'
         data-test='react-autoql-heatmap-chart'
-        transform={`translate(${this.props.deltaX}, ${this.props.deltaY})`}
       >
         {this.props.marginAdjustmentFinished && <Squares {...this.props} xScale={this.xScale} yScale={this.yScale} />}
         <Axes

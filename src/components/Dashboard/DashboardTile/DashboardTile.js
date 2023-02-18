@@ -15,7 +15,7 @@ import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import LoadingDots from '../../LoadingDots/LoadingDots.js'
 import { Icon } from '../../Icon'
 import { responseErrors } from '../../../js/errorMessages'
-import { deepEqual } from '../../../js/Util'
+import { deepEqual, isChartType } from '../../../js/Util'
 
 import { runQuery, fetchAutocomplete } from '../../../js/queryService'
 
@@ -41,6 +41,7 @@ export class DashboardTile extends React.Component {
     this.COMPONENT_KEY = uuid()
     this.FIRST_QUERY_RESPONSE_KEY = uuid()
     this.SECOND_QUERY_RESPONSE_KEY = uuid()
+    this.DEFAULT_AJAX_PAGE_SIZE = 50
     this.autoCompleteTimer = undefined
     this.debounceTime = 50
     this.paramsToSet = {}
@@ -235,18 +236,25 @@ export class DashboardTile extends React.Component {
         finalSource.push('user')
       }
 
+      let pageSize
+      if (isSecondHalf && isChartType(this.props.tile.secondDisplayType)) {
+        pageSize = this.props.tile.secondPageSize ?? this.props.dataPageSize
+      } else if (isChartType(this.props.tile.displayType)) {
+        pageSize = this.props.tile.pageSize ?? this.props.dataPageSize
+      }
+
       const requestData = {
-        query,
-        userSelection,
         ...getAuthentication(this.props.authentication),
         ...getAutoQLConfig(this.props.autoQLConfig),
         enableQueryValidation: !this.props.isEditing
           ? false
           : getAutoQLConfig(this.props.autoQLConfig).enableQueryValidation,
-        source: finalSource,
-        pageSize: this.props.dataPageSize,
-        skipQueryValidation: skipQueryValidation,
         cancelToken: isSecondHalf ? this.secondAxiosSource.token : this.axiosSource.token,
+        skipQueryValidation: skipQueryValidation,
+        source: finalSource,
+        userSelection,
+        pageSize,
+        query,
       }
 
       return runQuery(requestData)
@@ -518,6 +526,14 @@ export class DashboardTile extends React.Component {
     }
 
     this.debouncedSetParamsForTile(newParams)
+  }
+
+  onPageSizeChange = (pageSize) => {
+    this.debouncedSetParamsForTile({ pageSize })
+  }
+
+  onSecondPageSizeChange = (secondPageSize) => {
+    this.debouncedSetParamsForTile({ secondPageSize })
   }
 
   onDisplayTypeChange = (displayType) => {
@@ -894,10 +910,8 @@ export class DashboardTile extends React.Component {
     })
 
   renderToolbars = ({ queryOutputProps, vizToolbarProps, optionsToolbarProps, isSecondHalf }) => {
-    const dataLimitWarningIcon = document.querySelector(`#${queryOutputProps.key} .dashboard-data-limit-warning-icon`)
-
     return (
-      <div className={`dashboard-tile-toolbars-container ${dataLimitWarningIcon ? 'left-padding' : ''}`}>
+      <div className='dashboard-tile-toolbars-container'>
         <div className='dashboard-tile-toolbars-left-container'>
           {this.props.isEditing && (isSecondHalf || !this.getIsSplitView()) && this.renderSplitViewBtn()}
           {this.props.isEditing && (
@@ -1021,6 +1035,8 @@ export class DashboardTile extends React.Component {
         onDisplayTypeChange: this.onDisplayTypeChange,
         initialColumns: this.props.tile.columns,
         onColumnChange: this.onColumnChange,
+        pageSize: this.props.tile.pageSize,
+        onPageSizeChange: this.onPageSizeChange,
       },
       vizToolbarProps: {
         ref: (r) => (this.vizToolbarRef = r),
@@ -1094,6 +1110,8 @@ export class DashboardTile extends React.Component {
         onDisplayTypeChange: this.onSecondDisplayTypeChange,
         initialColumns: initialColumns,
         onColumnChange: this.onSecondColumnChange,
+        pageSize: this.props.tile.secondPageSize,
+        onPageSizeChange: this.onSecondPageSizeChange,
       },
       vizToolbarProps: {
         ref: (r) => (this.secondVizToolbarRef = r),

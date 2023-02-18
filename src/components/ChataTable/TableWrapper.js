@@ -96,7 +96,9 @@ export default class TableWrapper extends React.Component {
       // Block redraw after every update for performance
       // Restore redraw manually before updating table data
       if (this.isInitialized) {
-        this.blockRedraw()
+        setTimeout(() => {
+          this.blockRedraw()
+        }, 500)
       }
     })
     this.tabulator.on('dataLoadError', this.props.onDataLoadError)
@@ -106,13 +108,14 @@ export default class TableWrapper extends React.Component {
     this.tabulator.on('dataFiltering', this.props.onDataFiltering)
     this.tabulator.on('dataFiltered', this.props.onDataFiltered)
     this.tabulator.on('tableBuilt', () => {
-      this.isInitialized = true
       if (!this.props.options?.ajaxRequestFunc) {
         this.tabulator.restoreRedraw()
         this.tabulator.setData(this.props.data).then(() => {
+          this.isInitialized = true
           this.props.onTableBuilt()
         })
       } else {
+        this.isInitialized = true
         this.props.onTableBuilt()
       }
     })

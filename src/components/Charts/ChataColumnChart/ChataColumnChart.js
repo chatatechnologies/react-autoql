@@ -59,12 +59,7 @@ export default class ChataColumnChart extends Component {
     const yCol = this.props.columns[this.props.numberColumnIndex]
 
     return (
-      <g
-        ref={(r) => (this.chartRef = r)}
-        className='react-autoql-axes-chart'
-        data-test='react-autoql-column-chart'
-        transform={`translate(${this.props.deltaX}, ${this.props.deltaY})`}
-      >
+      <g ref={(r) => (this.chartRef = r)} className='react-autoql-axes-chart' data-test='react-autoql-column-chart'>
         <Axes
           {...this.props}
           ref={(r) => (this.axesRef = r)}
