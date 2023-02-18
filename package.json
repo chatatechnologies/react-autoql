@@ -91,7 +91,7 @@
     "moment-timezone": "^0.5.32",
     "parse-num": "^1.0.0",
     "prop-types": "^15.7.2",
-    "rc-drawer": "^4.4.3",
+    "rc-drawer": "4.4.3",
     "react-autosuggest": "^10.1.0",
     "react-collapse": "^5.1.1",
     "react-collapsible": "^2.10.0",
