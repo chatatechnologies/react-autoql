@@ -65,8 +65,12 @@ export default class ChataTable extends React.Component {
     if (this.supportsInfiniteScroll) {
       this.tableOptions.sortMode = 'remote' // v4: ajaxSorting = true
       this.tableOptions.filterMode = 'remote' // v4: ajaxFiltering = true
+      this.tableOptions.paginationMode = 'remote'
       this.tableOptions.progressiveLoad = 'scroll' // v4: ajaxProgressiveLoad
       this.tableOptions.ajaxURL = 'https://required-placeholder-url.com'
+      this.tableOptions.paginationSize = props.pageSize
+      this.tableOptions.paginationInitialPage = 1
+      this.tableOptions.ajaxRequesting = (url, params) => this.ajaxRequesting(props, params)
       this.tableOptions.ajaxRequestFunc = (url, config, params) => this.ajaxRequestFunc(props, params)
       this.tableOptions.ajaxResponse = (url, params, response) => this.ajaxResponseFunc(props, response)
     }
@@ -148,8 +152,7 @@ export default class ChataTable extends React.Component {
       if ((!this.props.isResizing && prevProps.isResizing) || (!this.props.isAnimating && prevProps.isAnimating)) {
         const newTableHeight = this.tabulatorContainer.clientHeight
         if (newTableHeight !== this.lockedTableHeight) {
-          this.lockedTableHeight = newTableHeight
-          this.ref?.tabulator?.setHeight(newTableHeight)
+          this.setTableHeight()
         }
       }
 
@@ -264,11 +267,11 @@ export default class ChataTable extends React.Component {
   onTableBuilt = async () => {
     this.tabulatorMounted = true
 
-    this.setTableHeight()
-    this.setSorters()
-    this.setFilters()
+    // this.setSorters()
+    // this.setFilters()
     this.setFilterTags()
     this.setHeaderInputClickListeners()
+    this.setTableHeight()
 
     this.hasSetInitialParams = true
   }
@@ -293,16 +296,22 @@ export default class ChataTable extends React.Component {
     this.axiosSource?.cancel(responseErrors.CANCELLED)
   }
 
+  ajaxRequesting = (props, params) => {
+    // Use this fn to abort a request
+  }
+
   ajaxRequestFunc = async (props, params) => {
     try {
-      if (this.settingFilterInputs || !this.hasSetInitialData) {
-        return
+      if (!this.hasSetInitialData) {
+        this.hasSetInitialData = true
+        return { ..._get(this.props.response, 'data.data', {}), page: 1 }
       }
 
       const tableParamsFormatted = formatTableParams(this.tableParams, this.ref?.tabulator, props.columns)
       const nextTableParamsFormatted = formatTableParams(params, this.ref?.tabulator, props.columns)
 
       if (_isEqual(tableParamsFormatted, nextTableParamsFormatted)) {
+        console.log('SHOULD NEVER REACH THIS FUNCTION 2')
         return
       }
 
@@ -398,15 +407,19 @@ export default class ChataTable extends React.Component {
       modResponse.data = response.rows
       modResponse.last_page = this.lastPage
       return modResponse
-    } else if (!this.hasSetInitialData) {
-      this.hasSetInitialData = true
-      return {
-        data: props.data,
-        last_page: this.lastPage,
-      }
     }
+    // else if (!this.hasSetInitialData) {
+    //   this.hasSetInitialData = true
+    //   return {
+    //     data: props.data,
+    //     last_page: this.lastPage,
+    //   }
+    // }
 
-    return false
+    return {
+      data: [],
+      last_page: this.lastPage,
+    }
   }
 
   cellClick = (e, cell) => {
@@ -778,7 +791,6 @@ export default class ChataTable extends React.Component {
                 hidden={this.props.hidden}
                 data-custom-attr='test-custom-attribute'
                 className='react-autoql-table'
-                onDataLoadError={(error) => console.error(error)}
                 onTableBuilt={this.onTableBuilt}
                 onCellClick={this.cellClick}
                 onDataSorting={this.onDataSorting}

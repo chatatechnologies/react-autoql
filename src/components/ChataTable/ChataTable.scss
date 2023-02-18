@@ -38,10 +38,6 @@
     opacity: 0;
   }
 
-  &.infinite:not(.last-page) .tabulator-row:last-child {
-    margin-bottom: 40px;
-  }
-
   &.resizing {
     width: 100vw;
 
@@ -232,6 +228,7 @@
 
       &:last-child {
         border-bottom: none;
+        margin-bottom: 15px;
       }
 
       .tabulator-cell {

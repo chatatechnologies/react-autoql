@@ -910,7 +910,7 @@ export class DashboardTile extends React.Component {
     })
 
   renderToolbars = ({ queryOutputProps, vizToolbarProps, optionsToolbarProps, isSecondHalf }) => {
-    const dataLimitWarningIcon = document.querySelector(`#${queryOutputProps.key} .dashboard-data-limit-warning-icon`)
+    const dataLimitWarningIcon = null // document.querySelector(`#${queryOutputProps.key} .dashboard-data-limit-warning-icon`)
 
     return (
       <div className={`dashboard-tile-toolbars-container ${dataLimitWarningIcon ? 'left-padding' : ''}`}>

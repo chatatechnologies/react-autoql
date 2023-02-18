@@ -1863,6 +1863,7 @@ export class QueryOutput extends React.Component {
           dataFormatting={this.props.dataFormatting}
           ref={(ref) => (this.tableRef = ref)}
           columns={this.state.columns}
+          response={this.queryResponse}
           data={this.tableData}
           columnDateRanges={this.columnDateRanges}
           onCellClick={this.onTableCellClick}
