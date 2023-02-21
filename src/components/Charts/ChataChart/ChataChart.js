@@ -294,7 +294,7 @@ export default class ChataChart extends Component {
       outerY: this.outerY,
     }
 
-    if (this.props.hidden) {
+    if (this.props.hidden || this.props.isAnimating) {
       return defaultDimensions
     }
 
@@ -442,8 +442,10 @@ export default class ChataChart extends Component {
 
   renderChartLoader = () => {
     return (
-      <div className='chart-loader chart-page-loader'>
-        <Spinner />
+      <div className='table-loader table-page-loader'>
+        <div className='page-loader-spinner'>
+          <Spinner />
+        </div>
       </div>
     )
   }
@@ -498,7 +500,7 @@ export default class ChataChart extends Component {
   }
 
   render = () => {
-    const { outerHeight, outerWidth } = this.getOuterDimensions()
+    const { outerHeight } = this.getOuterDimensions()
 
     // We need to set these inline in order for them to be applied in the exported PNG
     const chartFontFamily = getThemeValue('font-family')
@@ -525,12 +527,11 @@ export default class ChataChart extends Component {
         >
           {!this.firstRender && !this.props.isResizing && !this.props.isAnimating && (
             <Fragment>
-              {this.state.isLoadingMoreRows && this.renderChartLoader()}
               <svg
                 ref={(r) => (this.chartRef = r)}
                 xmlns='http://www.w3.org/2000/svg'
-                width={typeof this.props.width === 'number' ? this.props.width : outerWidth}
-                height={typeof this.props.height === 'number' ? this.props.height : outerHeight}
+                width='100%'
+                height='100%'
                 style={{
                   fontFamily: chartFontFamily,
                   color: chartTextColor,
@@ -546,6 +547,7 @@ export default class ChataChart extends Component {
               </svg>
             </Fragment>
           )}
+          {this.state.isLoadingMoreRows && this.renderChartLoader()}
         </div>
       </ErrorBoundary>
     )

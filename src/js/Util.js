@@ -11,6 +11,7 @@ import {
   SEASON_NAMES,
   PRECISION_TYPES,
   WEEKDAY_NAMES_SUN,
+  MAX_CHART_LABEL_SIZE,
 } from './Constants'
 import { dataFormattingDefault, getDataFormatting } from '../props/defaults'
 
@@ -21,6 +22,7 @@ import {
   getDateColumnIndex,
   isColumnDateType,
 } from '../components/QueryOutput/columnHelpers'
+import { getMaxLabelWidth } from '../components/Charts/helpers'
 
 export const rotateArray = (array, n) => {
   const rotated = [...array]
@@ -371,12 +373,11 @@ export const formatStringDate = (value, config) => {
   return value
 }
 
-export const formatChartLabel = ({ d, scale, column, dataFormatting }) => {
+export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWidth = MAX_CHART_LABEL_SIZE }) => {
   if (d === null) {
     return {
       fullWidthLabel: 'Untitled Category',
       formattedLabel: 'Untitled Category',
-      isTruncated: false,
     }
   }
 
@@ -386,7 +387,6 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting }) => {
     return {
       fullWidthLabel: d,
       formattedLabel: d,
-      isTruncated: false,
     }
   }
 
@@ -458,13 +458,11 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting }) => {
   }
 
   const fullWidthLabel = formattedLabel
-  let isTruncated = false
-  if (typeof formattedLabel === 'string' && formattedLabel.length > 20) {
-    formattedLabel = `${formattedLabel.substring(0, 20)}...`
-    isTruncated = true
+  if (typeof formattedLabel === 'string' && formattedLabel.length > maxLabelWidth) {
+    formattedLabel = `${formattedLabel.substring(0, maxLabelWidth)}...`
   }
 
-  return { fullWidthLabel, formattedLabel, isTruncated }
+  return { fullWidthLabel, formattedLabel }
 }
 
 export const isNumber = (str) => {

@@ -21,7 +21,7 @@ import { ReverseTranslation } from '../ReverseTranslation'
 import { Spinner } from '../Spinner'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { isChartType, deepEqual } from '../../js/Util'
+import { deepEqual } from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
 
 import './ChatMessage.scss'
@@ -120,6 +120,21 @@ export default class ChatMessage extends React.Component {
     }
 
     return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
+  }
+
+  getSnapshotBeforeUpdate = (prevProps, prevState) => {
+    if (this.ref) {
+      if (this.props.isResizing && !prevProps.isResizing) {
+        const messageWidth = this.ref.clientWidth
+        this.ref.style.width = messageWidth
+      }
+
+      if (!this.props.isResizing && prevProps.isResizing) {
+        this.ref.style.width = ''
+      }
+    }
+
+    return null
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -277,6 +292,7 @@ export default class ChatMessage extends React.Component {
           rebuildTooltips={this.props.rebuildTooltips}
           source={this.props.source}
           onRowChange={this.scrollIntoView}
+          onDisplayTypeChange={this.scrollIntoView}
           mutable={false}
           showSuggestionPrefix={false}
           dataPageSize={this.props.dataPageSize}
@@ -347,8 +363,6 @@ export default class ChatMessage extends React.Component {
   }
 
   render = () => {
-    const displayType = this.responseRef?.state.displayType
-    const isChart = displayType && isChartType(displayType)
     const hasRT = !!this.responseRef?.queryResponse?.data?.data?.parsed_interpretation
 
     return (
@@ -366,7 +380,6 @@ export default class ChatMessage extends React.Component {
             ref={(r) => (this.ref = r)}
             className={`chat-message-bubble
               ${this.props.type === 'text' ? ' text' : ''}
-              ${displayType}
               ${this.props.isActive ? ' active' : ''}`}
           >
             {this.renderContent()}

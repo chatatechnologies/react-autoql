@@ -66,14 +66,12 @@ export default class TableWrapper extends React.Component {
   }
 
   componentDidMount = async () => {
-    if (!this.props.hidden) {
-      this.instantiateTabulator()
-    }
+    this.instantiateTabulator()
   }
 
   componentDidUpdate = (prevProps) => {
     if (!this.props.hidden && prevProps.hidden && !this.hasInstantiated) {
-      this.instantiateTabulator()
+      this.restoreRedraw()
     }
 
     if (!deepEqual(this.props.columns, prevProps.columns)) {
@@ -95,11 +93,9 @@ export default class TableWrapper extends React.Component {
     this.tabulator.on('renderComplete', () => {
       // Block redraw after every update for performance
       // Restore redraw manually before updating table data
-      if (this.isInitialized) {
-        setTimeout(() => {
-          this.blockRedraw()
-        }, 500)
-      }
+      setTimeout(() => {
+        this.blockRedraw()
+      }, 500)
     })
     this.tabulator.on('dataLoadError', this.props.onDataLoadError)
     this.tabulator.on('cellClick', this.props.onCellClick)
@@ -108,14 +104,13 @@ export default class TableWrapper extends React.Component {
     this.tabulator.on('dataFiltering', this.props.onDataFiltering)
     this.tabulator.on('dataFiltered', this.props.onDataFiltered)
     this.tabulator.on('tableBuilt', () => {
+      this.isInitialized = true
       if (!this.props.options?.ajaxRequestFunc) {
         this.tabulator.restoreRedraw()
         this.tabulator.setData(this.props.data).then(() => {
-          this.isInitialized = true
           this.props.onTableBuilt()
         })
       } else {
-        this.isInitialized = true
         this.props.onTableBuilt()
       }
     })
@@ -123,14 +118,12 @@ export default class TableWrapper extends React.Component {
 
   blockRedraw = () => {
     if (this.tabulator) {
-      this.redrawBlocked = true
       this.tabulator.blockRedraw()
     }
   }
 
   restoreRedraw = () => {
     if (this.tabulator) {
-      this.redrawBlocked = false
       this.tabulator.restoreRedraw()
     }
   }

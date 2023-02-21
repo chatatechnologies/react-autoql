@@ -5,10 +5,10 @@ import dayjs from '../../js/dayjsWithPlugins'
 import { scaleLinear, scaleBand, scaleTime } from 'd3-scale'
 import { select } from 'd3-selection'
 
-import { deepEqual, formatElement, getDayJSObj } from '../../js/Util'
+import { deepEqual, formatChartLabel, formatElement, getDayJSObj } from '../../js/Util'
 import { dataFormattingType } from '../../props/types'
 import { dataFormattingDefault } from '../../props/defaults'
-import { AGG_TYPES, DAYJS_PRECISION_FORMATS, NUMBER_COLUMN_TYPES } from '../../js/Constants'
+import { AGG_TYPES, DAYJS_PRECISION_FORMATS, MAX_CHART_LABEL_SIZE, NUMBER_COLUMN_TYPES } from '../../js/Constants'
 
 const DEFAULT_INNER_PADDING = 0.2
 const DEFAULT_OUTER_PADDING = 0.5
@@ -511,6 +511,14 @@ export const getTimeScale = ({ props, columnIndex, axis, domain }) => {
   return scale
 }
 
+export const getFormattedTickLabels = ({ tickValues, scale, maxLabelWidth }) => {
+  const formattedTickValues = tickValues.map((tickLabel) => {
+    return formatChartLabel({ d: tickLabel, scale, maxLabelWidth })
+  })
+
+  return formattedTickValues
+}
+
 export const getBandScale = ({
   props,
   columnIndex,
@@ -532,10 +540,11 @@ export const getBandScale = ({
   scale.fields = axisColumns
   scale.tickSize = scale.bandwidth()
   scale.hasDropdown = props.enableAxisDropdown && props.stringColumnIndices?.length > 1
-  scale.tickLabels = getTickValues({ scale, props, initialTicks: scaleDomain, innerPadding, outerPadding })
   scale.getValue = (value) => {
     return scale(value)
   }
+
+  scale.tickLabels = getTickValues({ scale, props, initialTicks: scaleDomain, innerPadding, outerPadding })
 
   return scale
 }
@@ -624,6 +633,28 @@ export const getNumberAxisUnits = (numberColumns) => {
   return 'none'
 }
 
+export const getMaxLabelWidth = (fullWidth) => {
+  const maxWidth = MAX_CHART_LABEL_SIZE
+  const minWidth = 6
+  const avgCharSize = 10
+
+  if (!fullWidth) {
+    return maxWidth
+  }
+
+  let maxLabelWidth = maxWidth
+
+  // Labels should not exceed half of the full height
+  const calculatedMax = Math.floor((0.5 * fullWidth) / avgCharSize)
+  if (calculatedMax < minWidth) {
+    maxLabelWidth = minWidth
+  } else if (calculatedMax < maxWidth) {
+    maxLabelWidth = calculatedMax
+  }
+
+  return maxLabelWidth
+}
+
 export const getLinearScale = ({
   props,
   minValue,
@@ -668,6 +699,11 @@ export const getLinearScale = ({
   scale.type = 'LINEAR'
   scale.units = units
   scale.title = title
+  scale.tickSize = 0
+  scale.isScaled = isScaled
+  scale.getValue = (value) => {
+    return scale(value)
+  }
 
   scale.tickLabels =
     tickValues ??
@@ -677,13 +713,6 @@ export const getLinearScale = ({
       numTicks,
       isScaled,
     })
-
-  scale.tickSize = 0
-  scale.isScaled = isScaled
-
-  scale.getValue = (value) => {
-    return scale(value)
-  }
 
   return scale
 }

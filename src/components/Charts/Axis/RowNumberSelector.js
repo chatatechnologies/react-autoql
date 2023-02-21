@@ -6,7 +6,7 @@ import { CustomScrollbars } from '../../CustomScrollbars'
 import { getAuthentication } from '../../../props/defaults'
 import { runQueryOnly, runDrilldown } from '../../../js/queryService'
 import { responseErrors } from '../../../js/errorMessages'
-import { MAX_DATA_PAGE_SIZE } from '../../../js/Constants'
+import { DEFAULT_DATA_PAGE_SIZE, MAX_DATA_PAGE_SIZE } from '../../../js/Constants'
 
 export default class RowNumberSelector extends React.Component {
   constructor(props) {
@@ -85,7 +85,7 @@ export default class RowNumberSelector extends React.Component {
     }
   }
   rowNumberListConstructor = (totalRows) => {
-    let initialRowNumber = 50
+    let initialRowNumber = DEFAULT_DATA_PAGE_SIZE
     let currentRowNumber = initialRowNumber
     let rowNumberList = []
     while (currentRowNumber < totalRows && currentRowNumber < MAX_DATA_PAGE_SIZE) {
@@ -128,7 +128,7 @@ export default class RowNumberSelector extends React.Component {
               let rowNumberString = rowNumber
               if (rowNumber === MAX_DATA_PAGE_SIZE) {
                 rowNumberString = `${MAX_DATA_PAGE_SIZE} (Maximum)`
-              } else if (rowNumber !== 50 && rowNumber !== 500) {
+              } else if (rowNumber !== DEFAULT_DATA_PAGE_SIZE && rowNumber !== 500) {
                 rowNumberString = `${rowNumber} (All)`
               }
 
