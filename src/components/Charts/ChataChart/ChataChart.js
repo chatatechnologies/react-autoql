@@ -294,7 +294,7 @@ export default class ChataChart extends Component {
       outerY: this.outerY,
     }
 
-    if (this.props.hidden) {
+    if (this.props.hidden || this.props.isAnimating) {
       return defaultDimensions
     }
 
