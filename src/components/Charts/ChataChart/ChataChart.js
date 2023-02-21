@@ -500,7 +500,7 @@ export default class ChataChart extends Component {
   }
 
   render = () => {
-    const { outerHeight, outerWidth } = this.getOuterDimensions()
+    const { outerHeight } = this.getOuterDimensions()
 
     // We need to set these inline in order for them to be applied in the exported PNG
     const chartFontFamily = getThemeValue('font-family')
@@ -530,8 +530,6 @@ export default class ChataChart extends Component {
               <svg
                 ref={(r) => (this.chartRef = r)}
                 xmlns='http://www.w3.org/2000/svg'
-                // width={typeof this.props.width === 'number' ? this.props.width : outerWidth}
-                // height={typeof this.props.height === 'number' ? this.props.height : outerHeight}
                 width='100%'
                 height='100%'
                 style={{
