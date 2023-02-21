@@ -26,6 +26,7 @@ export default class ChatContent extends React.Component {
 
     this.messageRefs = {}
     this.csvProgressLog = {}
+    this.keepLoading = false
 
     this.state = {
       messages: [],
@@ -120,13 +121,13 @@ export default class ChatContent extends React.Component {
 
   onNoneOfTheseClick = () => {
     this.addRequestMessage('None of these')
-    this.setState({ isChataThinking: true })
+    this.setState({ isQueryRunning: true })
 
     clearTimeout(this.feedbackTimeout)
     this.feedbackTimeout = setTimeout(() => {
       if (this._isMounted) {
         clearTimeout(this.responseDelayTimeout)
-        this.setState({ isChataThinking: false, isInputDisabled: false })
+        this.setState({ isQueryRunning: false, isInputDisabled: false })
         this.addResponseMessage({
           content: (
             <div className='feedback-message'>
@@ -141,20 +142,29 @@ export default class ChatContent extends React.Component {
   }
 
   onDrilldownStart = () => {
-    this.setState({ isChataThinking: true })
+    if (this.state.isDrilldownRunning) {
+      // Drilldown is already running. Tell onDrilldownEnd to not remove the loading dots
+      this.keepLoading = true
+    }
+
+    this.setState({ isDrilldownRunning: true, isInputDisabled: true })
   }
 
   onDrilldownEnd = ({ response, error, originalQueryID } = {}) => {
     if (this._isMounted) {
-      clearTimeout(this.responseDelayTimeout)
-      this.setState({ isChataThinking: false, isInputDisabled: false })
+      if (this.keepLoading) {
+        this.keepLoading = false
+      } else {
+        clearTimeout(this.responseDelayTimeout)
+        this.setState({ isDrilldownRunning: false, isInputDisabled: false })
 
-      if (response) {
-        this.addResponseMessage({ response, originalQueryID })
-      } else if (error) {
-        this.addResponseMessage({
-          content: error,
-        })
+        if (response) {
+          this.addResponseMessage({ response, originalQueryID })
+        } else if (error) {
+          this.addResponseMessage({
+            content: error,
+          })
+        }
       }
     }
   }
@@ -255,7 +265,7 @@ export default class ChatContent extends React.Component {
     this.addRequestMessage(query)
     this.setState({ isInputDisabled: true })
     this.responseDelayTimeout = setTimeout(() => {
-      this.setState({ isChataThinking: true })
+      this.setState({ isQueryRunning: true })
     }, 600)
   }
 
@@ -284,7 +294,8 @@ export default class ChatContent extends React.Component {
       }
 
       clearTimeout(this.responseDelayTimeout)
-      this.setState({ isChataThinking: false, isInputDisabled: false })
+      this.setState({ isQueryRunning: false, isInputDisabled: false })
+
       this.focusInput()
     }
   }
@@ -335,6 +346,10 @@ export default class ChatContent extends React.Component {
     }
   }
 
+  isChataThinking = () => {
+    return this.state.isQueryRunning || this.state.isDrilldownRunning
+  }
+
   render = () => {
     let visibility
     let opacity
@@ -372,7 +387,7 @@ export default class ChatContent extends React.Component {
                   onDrilldownStart={this.onDrilldownStart}
                   onDrilldownEnd={this.onDrilldownEnd}
                   isResponse={message.isResponse}
-                  isChataThinking={this.state.isChataThinking}
+                  isChataThinking={this.isChataThinking()}
                   onSuggestionClick={this.animateInputTextAndSubmit}
                   content={message.content}
                   scrollToBottom={this.scrollToBottom}
@@ -402,7 +417,7 @@ export default class ChatContent extends React.Component {
               )
             })}
           </CustomScrollbars>
-          {this.state.isChataThinking && (
+          {this.isChataThinking() && (
             <div className='response-loading-container'>
               <LoadingDots />
             </div>
