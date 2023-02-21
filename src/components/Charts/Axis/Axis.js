@@ -3,16 +3,23 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { select } from 'd3-selection'
 import { axisLeft, axisBottom, axisTop, axisRight } from 'd3-axis'
-import _isEqual from 'lodash.isequal'
 
 import AxisScaler from './AxisScaler'
 import AxisSelector from '../Axes/AxisSelector'
 import LoadMoreDropdown from './LoadMoreDropdown'
 
-import { deepEqual, formatChartLabel, getBBoxFromRef } from '../../../js/Util.js'
-import { axesDefaultProps, axesPropTypes, mergeBboxes, labelsShouldRotate } from '../helpers.js'
+import { formatChartLabel, getBBoxFromRef } from '../../../js/Util.js'
+import {
+  axesDefaultProps,
+  axesPropTypes,
+  mergeBboxes,
+  labelsShouldRotate,
+  getFormattedTickLabels,
+  getMaxLabelWidth,
+} from '../helpers.js'
 
 import './Axis.scss'
+import { MAX_CHART_LABEL_SIZE } from '../../../js/Constants'
 
 export default class Axis extends Component {
   constructor(props) {
@@ -24,9 +31,11 @@ export default class Axis extends Component {
     this.AXIS_TITLE_PADDING = 20
     this.AXIS_TITLE_BORDER_PADDING_LEFT = 10
     this.AXIS_TITLE_BORDER_PADDING_TOP = 5
+
     this.swatchElements = []
     this.maxRows = 5000
     this.initialRowNumber = 50
+    this.prevMaxLabelWidth = MAX_CHART_LABEL_SIZE
     this.labelInlineStyles = {
       fontSize: 12,
       fontFamily: 'inherit',
@@ -78,36 +87,50 @@ export default class Axis extends Component {
     this._isMounted = false
   }
 
-  setScale = (axis) => {
-    axis.scale(this.props.scale)
+  setScale = () => {
+    this.axis.scale(this.props.scale)
   }
 
-  setTickValues = (axis) => {
+  getMaxTickLabelWidth = () => {
+    const { orient, outerHeight, outerWidth } = this.props
+    const containerSize = orient === 'Left' || orient === 'Right' ? outerWidth : outerHeight
+    const maxLabelWidth = getMaxLabelWidth(containerSize)
+    return maxLabelWidth
+  }
+
+  setTickValues = () => {
     const { scale } = this.props
-    axis.tickFormat(function (d) {
-      return formatChartLabel({ d, scale })?.formattedLabel
+    const maxLabelWidth = this.maxLabelWidth
+    this.axis.tickFormat(function (d) {
+      const label = formatChartLabel({ d, scale, maxLabelWidth })
+      if (label?.formattedLabel) {
+        return label.formattedLabel
+      }
+      return d
+      return formatChartLabel({ d, scale, maxLabelWidth })?.formattedLabel
     })
 
-    const tickValues = this.props.scale?.tickLabels
-    if (tickValues?.length) {
-      axis.tickValues(tickValues)
+    if (this.props.scale?.tickLabels?.length) {
+      this.axis.tickValues(this.props.scale.tickLabels)
     }
+
+    this.setTickSize()
   }
 
-  setTickSize = (axis) => {
-    axis.tickSizeOuter(0)
+  setTickSize = () => {
+    this.axis.tickSizeOuter(0)
     if (this.props.orient === 'Left' && this.props.innerWidth) {
-      axis.tickSizeInner(-this.props.innerWidth)
+      this.axis.tickSizeInner(-this.props.innerWidth)
     } else if (this.props.orient === 'Bottom' && this.props.innerHeight) {
-      axis.tickSizeInner(this.props.innerHeight)
+      this.axis.tickSizeInner(this.props.innerHeight)
     } else {
-      axis.tickSizeInner(0)
+      this.axis.tickSizeInner(0)
     }
   }
 
-  applyAxis = (axis) => {
+  applyAxis = () => {
     if (this.axisElement) {
-      select(this.axisElement).call(axis)
+      select(this.axisElement).call(this.axis)
     }
   }
 
@@ -151,37 +174,44 @@ export default class Axis extends Component {
 
   addTooltipsToLabels = () => {
     const { scale } = this.props
+    const maxLabelWidth = this.maxLabelWidth
 
     select(this.axisElement)
-      .selectAll('.axis text')
+      .selectAll('.axis .tick text')
       .style('fill', 'currentColor')
       .style('fill-opacity', '1')
       .style('font-family', 'inherit')
       .attr('data-for', this.props.chartTooltipID)
-      .attr('data-tip', function (d) {
-        const { fullWidthLabel, isTruncated } = formatChartLabel({ d, scale })
-        return isTruncated ? fullWidthLabel : null
-      })
       .attr('data-effect', 'float')
+      .attr('data-tip', function (d) {
+        if (select(this).text()?.slice(-3) === '...') {
+          const { fullWidthLabel } = formatChartLabel({ d, scale, maxLabelWidth })
+          if (fullWidthLabel) {
+            return fullWidthLabel
+          }
+        }
+        return null
+      })
+
+    this.prevMaxLabelWidth = this.maxLabelWidth
   }
 
   renderAxis = (renderComplete) => {
-    let axis
     switch (this.props.orient) {
       case 'Bottom': {
-        axis = axisBottom()
+        this.axis = axisBottom()
         break
       }
       case 'Left': {
-        axis = axisLeft()
+        this.axis = axisLeft()
         break
       }
       case 'Right': {
-        axis = axisRight()
+        this.axis = axisRight()
         break
       }
       case 'Top': {
-        axis = axisTop()
+        this.axis = axisTop()
         break
       }
       default: {
@@ -189,10 +219,13 @@ export default class Axis extends Component {
       }
     }
 
-    this.setScale(axis)
-    this.setTickValues(axis)
-    this.setTickSize(axis)
-    this.applyAxis(axis)
+    this.maxLabelWidth = this.getMaxTickLabelWidth()
+
+    this.setScale()
+    this.setTickValues()
+
+    this.applyAxis()
+
     this.styleAxisLabels()
     this.rotateLabelsIfNeeded()
     this.addTooltipsToLabels()
@@ -260,7 +293,10 @@ export default class Axis extends Component {
 
     if (renderComplete) {
       this.props.onAxisRenderComplete(this.props.orient)
-    } else if (this.state.axisRenderComplete && this.prevLabelsShouldRotate !== this.labelsShouldRotate) {
+    } else if (
+      this.state.axisRenderComplete &&
+      (this.prevLabelsShouldRotate !== this.labelsShouldRotate || this.prevMaxLabelWidth !== this.maxLabelWidth)
+    ) {
       this.props.onLabelRotation()
     }
   }

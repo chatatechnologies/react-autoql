@@ -275,7 +275,7 @@ export default class ChataTable extends React.Component {
   }
 
   setTableHeight = () => {
-    // The table height after initial render should height for the session
+    // The table height and width after initial render should height for the session
     // Doing this avoids the scroll jump when filtering or sorting the data
     // It is also makes tabulator more efficient
     if (
