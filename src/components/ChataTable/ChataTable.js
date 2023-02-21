@@ -122,8 +122,8 @@ export default class ChataTable extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
-    if (this.props.isResizing && !nextProps.isResizing) {
-      this.justResized = true
+    if (this.props.isAnimating && !nextProps.isAnimating) {
+      return true
     }
 
     if (!!this.state.datePickerColumn && !nextState.datePickerColumn) {
@@ -140,26 +140,20 @@ export default class ChataTable extends React.Component {
       return false
     }
 
-    if (!nextProps.shouldRender) {
-      return false
-    }
-
     return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
   }
 
   getSnapshotBeforeUpdate = (prevProps, prevState) => {
-    if (this.tabulatorContainer && this.tabulatorMounted && !this.props.hidden) {
-      if ((!this.props.isResizing && prevProps.isResizing) || (!this.props.isAnimating && prevProps.isAnimating)) {
-        const newTableHeight = this.tabulatorContainer.clientHeight
-        if (newTableHeight !== this.lockedTableHeight) {
-          this.setTableHeight()
-        }
+    if ((!this.props.isResizing && prevProps.isResizing) || (!this.props.isAnimating && prevProps.isAnimating)) {
+      const newTableHeight = this.tabulatorContainer.clientHeight
+      if (newTableHeight !== this.lockedTableHeight) {
+        this.setTableHeight()
       }
+    }
 
-      if (this.props.isResizing && !prevProps.isResizing) {
-        this.lockedTableHeight = '100%'
-        this.ref?.tabulator?.setHeight(this.lockedTableHeight)
-      }
+    if (this.props.isResizing && !prevProps.isResizing) {
+      this.lockedTableHeight = '100%'
+      this.ref?.tabulator?.setHeight(this.lockedTableHeight)
     }
 
     return null
@@ -283,10 +277,11 @@ export default class ChataTable extends React.Component {
       this.tabulatorContainer &&
       !this.props.isAnimating &&
       !this.props.isResizing &&
-      !this.props.hidden
+      (!this.props.hidden || !this.hasSetTableHeight)
     ) {
       this.lockedTableHeight = this.tabulatorContainer.clientHeight
       this.ref?.tabulator?.setHeight(this.lockedTableHeight)
+      this.hasSetTableHeight = true
     }
   }
 

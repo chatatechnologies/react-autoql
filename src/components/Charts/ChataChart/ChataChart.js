@@ -442,8 +442,10 @@ export default class ChataChart extends Component {
 
   renderChartLoader = () => {
     return (
-      <div className='chart-loader chart-page-loader'>
-        <Spinner />
+      <div className='table-loader table-page-loader'>
+        <div className='page-loader-spinner'>
+          <Spinner />
+        </div>
       </div>
     )
   }
@@ -525,7 +527,6 @@ export default class ChataChart extends Component {
         >
           {!this.firstRender && !this.props.isResizing && !this.props.isAnimating && (
             <Fragment>
-              {this.state.isLoadingMoreRows && this.renderChartLoader()}
               <svg
                 ref={(r) => (this.chartRef = r)}
                 xmlns='http://www.w3.org/2000/svg'
@@ -548,6 +549,7 @@ export default class ChataChart extends Component {
               </svg>
             </Fragment>
           )}
+          {this.state.isLoadingMoreRows && this.renderChartLoader()}
         </div>
       </ErrorBoundary>
     )

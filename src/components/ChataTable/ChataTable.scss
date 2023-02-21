@@ -21,10 +21,13 @@
 
   .react-autoql-tabulator-container {
     position: relative;
-    height: 100%;
+    flex: 1;
     width: 100%;
     max-height: 100%;
     min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 
     .tabulator-cell,
     .tabulator-col {
@@ -114,48 +117,6 @@
       &:focus {
         border: 1px solid var(--react-autoql-accent-color);
       }
-    }
-  }
-
-  .table-loader {
-    position: absolute;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    pointer-events: none;
-    background-color: transparent;
-    background-color: inherit;
-    color: var(--react-autoql-accent-color);
-
-    &.table-page-loader {
-      top: 0;
-      bottom: 0;
-      right: 0;
-      left: 0;
-
-      .page-loader-spinner {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 40px;
-        height: 40px;
-        background-color: var(--react-autoql-background-color-secondary);
-        border: 1px solid var(--react-autoql-border-color);
-        box-shadow: var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15)) 0px 8px 24px;
-        border-radius: 4px;
-
-        .spinner-loader {
-          margin: 0;
-          height: 17px;
-          width: 17px;
-        }
-      }
-    }
-
-    &.table-scroll-loader {
-      bottom: 20px;
-      width: 100%;
-      z-index: 0;
     }
   }
 
@@ -318,4 +279,45 @@
 
 .tabulator-alert {
   display: none !important;
+}
+
+.table-loader {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  background-color: transparent;
+  color: var(--react-autoql-accent-color);
+
+  &.table-page-loader {
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: 0;
+
+    .page-loader-spinner {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 40px;
+      height: 40px;
+      background-color: var(--react-autoql-background-color-secondary);
+      border: 1px solid var(--react-autoql-border-color);
+      box-shadow: var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15)) 0px 8px 24px;
+      border-radius: 4px;
+
+      .spinner-loader {
+        margin: 0;
+        height: 17px;
+        width: 17px;
+      }
+    }
+  }
+
+  &.table-scroll-loader {
+    bottom: 20px;
+    width: 100%;
+    z-index: 0;
+  }
 }
