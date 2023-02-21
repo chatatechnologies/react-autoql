@@ -817,6 +817,9 @@ export class QueryOutput extends React.Component {
   processDrilldown = async ({ groupBys, supportedByAPI, row, activeKey, stringColumnIndex }) => {
     if (getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns) {
       try {
+        // This will be a new query so we want to reset the page size back to default
+        const pageSize = this.getDefaultQueryPageSize()
+
         if (supportedByAPI) {
           this.props.onDrilldownStart(activeKey)
           try {
@@ -825,7 +828,7 @@ export class QueryOutput extends React.Component {
               ...getAutoQLConfig(this.props.autoQLConfig),
               queryID: this.queryID,
               groupBys,
-              pageSize: this.getQueryPageSize(),
+              pageSize,
             })
             this.props.onDrilldownEnd({
               response,
@@ -854,7 +857,7 @@ export class QueryOutput extends React.Component {
             const allFilters = this.getCombinedFilters(clickedFilter)
             let response
             try {
-              response = await this.queryFn({ tableFilters: allFilters, pageSize: 50 })
+              response = await this.queryFn({ tableFilters: allFilters, pageSize })
             } catch (error) {
               response = error
             }
@@ -1841,6 +1844,10 @@ export class QueryOutput extends React.Component {
         </div>
       </div>
     )
+  }
+
+  getDefaultQueryPageSize = () => {
+    return this.props.dataPageSize ?? DEFAULT_DATA_PAGE_SIZE
   }
 
   getQueryPageSize = () => {
