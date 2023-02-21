@@ -63,6 +63,7 @@ export default class ChataTable extends React.Component {
     }
 
     if (this.supportsInfiniteScroll) {
+      console.log('66')
       this.tableOptions.sortMode = 'remote' // v4: ajaxSorting = true
       this.tableOptions.filterMode = 'remote' // v4: ajaxFiltering = true
       this.tableOptions.paginationMode = 'remote'
@@ -621,6 +622,7 @@ export default class ChataTable extends React.Component {
       }
 
       inputElement.focus()
+      this.ref?.tabulator.restoreRedraw()
       inputElement.value = filterInputText
       inputElement.title = filterInputText
       inputElement.blur()
