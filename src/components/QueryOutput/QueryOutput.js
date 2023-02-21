@@ -53,8 +53,8 @@ import {
   getNumberColumnIndices,
   getDateColumnIndex,
   getStringColumnIndices,
-  isColumnDateType,
   isAggregation,
+  isColumnDateType,
 } from './columnHelpers.js'
 
 import { sendSuggestion, runDrilldown, runQueryOnly } from '../../js/queryService'
