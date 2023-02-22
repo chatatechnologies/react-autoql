@@ -44,7 +44,7 @@ export default class ChataChart extends Component {
     this.FONT_SIZE = 12
 
     this.firstRender = true
-    this.justResized = false
+    this.shouldRecalculateDimensions = false
 
     this.state = {
       chartID: uuid(),
@@ -81,7 +81,7 @@ export default class ChataChart extends Component {
 
   shouldComponentUpdate = (nextProps, nextState) => {
     if (this.props.isResizing && !nextProps.isResizing) {
-      this.justResized = true
+      this.shouldRecalculateDimensions = true
       return true
     }
 
@@ -96,7 +96,6 @@ export default class ChataChart extends Component {
   }
 
   componentDidUpdate = (prevProps) => {
-    this.justResized = false
     if (this.firstRender === true && !this.props.hidden) {
       this.firstRender = false
     }
@@ -290,35 +289,26 @@ export default class ChataChart extends Component {
     const defaultDimensions = {
       outerHeight: this.outerHeight,
       outerWidth: this.outerWidth,
-      outerX: this.outerX,
-      outerY: this.outerY,
     }
 
-    if (this.props.hidden || this.props.isAnimating) {
+    if (this.props.hidden || this.props.isAnimating || this.firstRender) {
       return defaultDimensions
     }
 
-    if (!this.outerWidth || !this.outerHeight || this.justResized) {
-      this.justResized = false
+    if (!this.outerWidth || !this.outerHeight || this.shouldRecalculateDimensions) {
+      this.shouldRecalculateDimensions = false
 
       const containerBBox = this.chartContainerRef?.getBoundingClientRect()
-
       const containerWidth = containerBBox?.width ?? 0
       const containerHeight = containerBBox?.height ?? 0
-      const containerX = containerBBox?.x ?? 0
-      const containerY = containerBBox?.y ?? 0
 
       const outerWidth = Math.ceil(containerWidth)
       const outerHeight = Math.ceil(containerHeight)
-      const outerX = Math.ceil(containerX)
-      const outerY = Math.ceil(containerY)
 
       this.outerWidth = outerWidth
       this.outerHeight = outerHeight
-      this.outerX = outerX
-      this.outerY = outerY
 
-      return { outerHeight, outerWidth, outerX, outerY }
+      return { outerHeight, outerWidth }
     }
 
     return defaultDimensions
@@ -399,7 +389,7 @@ export default class ChataChart extends Component {
     )
 
     const { innerHeight, innerWidth } = this.getInnerDimensions()
-    const { outerHeight, outerWidth, outerX, outerY } = this.getOuterDimensions()
+    const { outerHeight, outerWidth } = this.getOuterDimensions()
     const { colorScale, colorScale2 } = this.getColorScales()
 
     return {
@@ -412,8 +402,6 @@ export default class ChataChart extends Component {
       disableTimeScale: this.disableTimeScale,
       colorScale,
       colorScale2,
-      outerX,
-      outerY,
       height: innerHeight,
       width: innerWidth,
       outerHeight,
@@ -431,7 +419,7 @@ export default class ChataChart extends Component {
       tooltipID: this.props.tooltipID,
       chartTooltipID: this.props.chartTooltipID,
       chartContainerRef: this.chartContainerRef,
-      popoverParentElement: this.props.popoverParentElement || this.chartContainerRef,
+      popoverParentElement: this.props.popoverParentElement,
       totalRowCount: this.props.totalRowCount,
       chartID: this.state.chartID,
       changeNumberColumnIndices: this.changeNumberColumnIndices,
@@ -500,17 +488,16 @@ export default class ChataChart extends Component {
   }
 
   render = () => {
-    const { outerHeight } = this.getOuterDimensions()
-
+    // const { outerHeight } = this.getOuterDimensions()
     // We need to set these inline in order for them to be applied in the exported PNG
     const chartFontFamily = getThemeValue('font-family')
     const chartTextColor = getThemeValue('text-color-primary')
     const chartBackgroundColor = getThemeValue('background-color-secondary')
 
     const style = {}
-    if (!this.props.hidden) {
-      style.flexBasis = outerHeight ? `${outerHeight}px` : '100vh'
-    }
+    // if (!this.props.hidden) {
+    //   style.flexBasis = outerHeight ? `${outerHeight}px` : '100vh'
+    // }
 
     return (
       <ErrorBoundary>

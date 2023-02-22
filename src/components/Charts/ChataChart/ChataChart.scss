@@ -5,6 +5,7 @@
   max-height: 100%;
   flex-grow: 1;
   flex-shrink: 1;
+  flex-basis: '100vh';
   overflow: hidden;
   color: var(--react-autoql-text-color-primary);
   background: var(--react-autoql-background-color-secondary);
