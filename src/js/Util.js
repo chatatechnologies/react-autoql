@@ -1106,7 +1106,7 @@ export const getGroupBysFromTable = (cell, tableColumns) => {
   const groupByArray = []
   groupableColumns.forEach((colIndex) => {
     const groupByName = tableColumns[colIndex].name
-    const groupByValue = rowData[colIndex] === null ? '' : `${rowData[colIndex]}`
+    const groupByValue = `${rowData[colIndex]}`
 
     groupByArray.push(nameValueObject(groupByName, groupByValue))
   })
