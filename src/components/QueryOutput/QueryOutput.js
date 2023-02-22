@@ -267,7 +267,7 @@ export class QueryOutput extends React.Component {
       }
 
       if (prevState.displayType !== this.state.displayType) {
-        ReactTooltip.hide()
+        this.rebuildTooltips()
       }
 
       if (
