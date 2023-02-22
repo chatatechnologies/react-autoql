@@ -72,7 +72,8 @@ export default class Legend extends Component {
   }
 
   componentWillUnmount = () => {
-    removeFromDOM(this.legendElement)
+    removeFromDOM(this.rightLegendElement)
+    removeFromDOM(this.rightLegendElement2)
   }
 
   renderAllLegends = () => {
@@ -98,6 +99,8 @@ export default class Legend extends Component {
     const legendBottom = (legendContainerBBox?.y ?? 0) + (legendContainerBBox?.height ?? 0)
 
     let hasRemovedElement = false
+    let removedElementY = undefined
+    let removedElementTransform = undefined
 
     select(legendElement)
       .selectAll('.cell')
@@ -108,6 +111,8 @@ export default class Legend extends Component {
           const cellBBox = this.getBoundingClientRect()
           const cellBottom = (cellBBox?.y ?? 0) + (cellBBox?.height ?? 0)
           if (cellBottom > legendBottom) {
+            removedElementY = select(this).attr('y')
+            removedElementTransform = select(this).attr('transform')
             select(this).remove()
 
             // Setting this to true lets loop skip bounding rect calculation
@@ -116,6 +121,24 @@ export default class Legend extends Component {
           }
         }
       })
+
+    if (hasRemovedElement && removedElementTransform) {
+      // Add '...' to bottom of legend to show not all labels are visible
+      const tooltipID = this.props.chartTooltipID
+      select(legendElement).select('.legend-ellipsis').remove()
+      select(legendElement)
+        .append('text')
+        .text('...')
+        .attr('class', 'legend-ellipsis')
+        .attr('y', removedElementY + 10)
+        .attr('transform', removedElementTransform)
+        .attr('data-tip', 'Some legend fields are hidden. Please expand the chart size to view them.')
+        .attr('data-for', tooltipID)
+        .style('font-size', '15px')
+        .style('color', 'red')
+        .style('font-weight', 'bold')
+        .style('cursor', 'default')
+    }
   }
 
   styleLegendTitleNoBorder = (legendElement) => {
@@ -247,23 +270,21 @@ export default class Legend extends Component {
           legendWidth = this.MAX_LEGEND_WIDTH
         }
 
-        if (!this.props.hasSecondAxis || isSecondLegend) {
-          const legendBBox1 = this.rightLegendElement?.getBoundingClientRect()
-          const legendBBox2 = this.rightLegendElement2?.getBoundingClientRect()
-          const mergedBBox = mergeBboxes([legendBBox1, legendBBox2])
+        const legendBBox1 = this.rightLegendElement?.getBoundingClientRect()
+        const legendBBox2 = this.rightLegendElement2?.getBoundingClientRect()
+        const mergedBBox = mergeBboxes([legendBBox1, legendBBox2])
 
-          let legendWidth = !isNaN(mergedBBox?.width) ? mergedBBox?.width : 0
-          if (legendWidth > this.MAX_LEGEND_WIDTH) {
-            legendWidth = this.MAX_LEGEND_WIDTH
-          }
-
-          const maxLegendHeight = this.props.height + 10
-          select(this.legendClippingContainer)
-            .attr('height', maxLegendHeight + this.BOTTOM_PADDING)
-            .attr('width', legendWidth + this.LEFT_PADDING)
-
-          this.removeHiddenLegendLabels(legendElement)
+        let combinedLegendWidth = !isNaN(mergedBBox?.width) ? mergedBBox?.width : 0
+        if (combinedLegendWidth > this.MAX_LEGEND_WIDTH) {
+          combinedLegendWidth = this.MAX_LEGEND_WIDTH
         }
+
+        const maxLegendHeight = this.props.height + 10
+        select(this.legendClippingContainer)
+          .attr('height', maxLegendHeight + this.BOTTOM_PADDING)
+          .attr('width', combinedLegendWidth + this.LEFT_PADDING)
+
+        this.removeHiddenLegendLabels(legendElement)
       } else if (this.props.placement === 'bottom') {
         select(this.bottomLegendElement)
           .attr('class', 'legendOrdinal')
