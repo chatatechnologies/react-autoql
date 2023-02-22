@@ -128,7 +128,7 @@ export default class Legend extends Component {
       select(legendElement).select('.legend-hidden-field-arrow').remove()
       select(legendElement)
         .append('text')
-        .html('... &#9660')
+        .html('&#9660 ...')
         .attr('class', 'legend-hidden-field-arrow')
         .attr('y', removedElementY + 20)
         .attr('transform', removedElementTransform)
