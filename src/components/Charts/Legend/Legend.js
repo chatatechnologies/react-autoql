@@ -123,18 +123,18 @@ export default class Legend extends Component {
       })
 
     if (hasRemovedElement && removedElementTransform) {
-      // Add '...' to bottom of legend to show not all labels are visible
+      // Add red arrow to bottom of legend to show not all labels are visible
       const tooltipID = this.props.chartTooltipID
-      select(legendElement).select('.legend-ellipsis').remove()
+      select(legendElement).select('.legend-hidden-field-arrow').remove()
       select(legendElement)
         .append('text')
-        .text('...')
-        .attr('class', 'legend-ellipsis')
-        .attr('y', removedElementY + 10)
+        .html('... &#9660')
+        .attr('class', 'legend-hidden-field-arrow')
+        .attr('y', removedElementY + 20)
         .attr('transform', removedElementTransform)
         .attr('data-tip', 'Some legend fields are hidden. Please expand the chart size to view them.')
         .attr('data-for', tooltipID)
-        .style('font-size', '15px')
+        .style('font-size', '12px')
         .style('color', 'red')
         .style('font-weight', 'bold')
         .style('cursor', 'default')
