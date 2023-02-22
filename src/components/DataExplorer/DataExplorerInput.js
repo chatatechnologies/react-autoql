@@ -239,10 +239,9 @@ export default class DataExplorerInput extends React.Component {
     this.axiosSource?.cancel(responseErrors.CANCELLED)
   }
 
-  requestSuggestions = () => {
+  requestSuggestions = (value) => {
+    // const value = this.userTypedValue
     this.setState({ loadingAutocomplete: true, loadingAutocompleteText: value })
-
-    const value = this.userTypedValue
 
     clearTimeout(this.autoCompleteTimer)
     this.cancelCurrentRequest()

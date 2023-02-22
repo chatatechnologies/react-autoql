@@ -38,8 +38,8 @@
 }
 .react-autoql-response-content-container.chart {
   width: 100vw;
-  height: 100vh;
   max-width: 100%;
+  flex: 1 1 100vh;
   overflow: hidden;
 }
 
