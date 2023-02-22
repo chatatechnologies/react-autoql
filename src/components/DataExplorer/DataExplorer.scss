@@ -56,11 +56,11 @@
 
   .data-explorer-result-container {
     color: var(--react-autoql-text-color-primary);
-    flex: 1;
     width: 100%;
     overflow: auto;
     padding-left: 5px;
     min-height: 0;
+    height: calc(100% - 130px);
 
     .data-explorer-sections-container {
       position: relative;
