@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
+import _isEqual from 'lodash.isequal'
 import { select } from 'd3-selection'
 import { axisLeft, axisBottom, axisTop, axisRight } from 'd3-axis'
 
@@ -8,7 +9,7 @@ import AxisScaler from './AxisScaler'
 import AxisSelector from '../Axes/AxisSelector'
 import LoadMoreDropdown from './LoadMoreDropdown'
 
-import { formatChartLabel, getBBoxFromRef } from '../../../js/Util.js'
+import { deepEqual, formatChartLabel, getBBoxFromRef } from '../../../js/Util.js'
 import {
   axesDefaultProps,
   axesPropTypes,
@@ -78,9 +79,22 @@ export default class Axis extends Component {
     this.setState({ axisRenderComplete: true })
   }
 
+  shouldComponentUpdate = (nextProps, nextState) => {
+    if (this.state.isAxisSelectorOpen && nextState.isAxisSelectorOpen) {
+      return false
+    }
+
+    const propsEqual = _isEqual(this.props, nextProps)
+    const stateEqual = _isEqual(this.state, nextState)
+
+    return !propsEqual || !stateEqual
+  }
+
   componentDidUpdate = (prevProps, prevState) => {
     const renderJustCompleted = this.state.axisRenderComplete && !prevState.axisRenderComplete
-    this.renderAxis(renderJustCompleted)
+    if (!this.state.isAxisSelectorOpen) {
+      this.renderAxis(renderJustCompleted)
+    }
   }
 
   componentWillUnmount = () => {
@@ -561,11 +575,13 @@ export default class Axis extends Component {
       if (this.props.chartRef) {
         // Get original container height and top before adding axis title
         const chartContainerHeight = this.props.outerHeight - 2 * this.props.chartPadding
-        const chartContainerTop = this.props.outerY
-
         select(this.titleRef).attr('textLength', null)
-        const yTitleBBox = this.titleRef.getBoundingClientRect()
-        const yTitleHeight = (yTitleBBox.height ?? 0) + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
+
+        // BBox x/width and y/height will be switched due to the rotation
+        const yTitleBBox = this.titleRef.getBBox()
+
+        // ---------------------- Chart height is too small to fit the whole title --------------------
+        const yTitleHeight = (yTitleBBox.width ?? 0) + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
         if (yTitleHeight > chartContainerHeight) {
           // Squeeze text to fit in full height
           let textLength = Math.floor(chartContainerHeight) - 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
@@ -574,12 +590,20 @@ export default class Axis extends Component {
           }
           select(this.titleRef).attr('textLength', textLength)
         }
-        const yTitleBBoxAfterTextLength = this.titleRef.getBoundingClientRect()
-        const yTitleTop = yTitleBBoxAfterTextLength.top - this.AXIS_TITLE_BORDER_PADDING_LEFT
-        if (yTitleTop < chartContainerTop) {
-          const overflow = chartContainerTop - yTitleTop
+        // --------------------------------------------------------------------------------------------
+
+        // ------------------------- Title will fit, but needs to be shifted down ---------------------
+        const yTitleBBoxAfterTextLength = this.titleRef.getBBox()
+        const yTitleTop =
+          -1 * (yTitleBBoxAfterTextLength.x + yTitleBBoxAfterTextLength.width) +
+          this.props.deltaY -
+          this.AXIS_TITLE_BORDER_PADDING_LEFT
+
+        if (yTitleTop < 0) {
+          const overflow = -yTitleTop
           select(this.titleRef).attr('transform', `rotate(-90) translate(${-overflow}, 0)`)
         }
+        // --------------------------------------------------------------------------------------------
       }
     }
   }
