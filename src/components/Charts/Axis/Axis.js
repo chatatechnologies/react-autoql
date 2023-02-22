@@ -38,7 +38,7 @@ export default class Axis extends Component {
     this.initialRowNumber = 50
     this.prevMaxLabelWidth = MAX_CHART_LABEL_SIZE
     this.labelInlineStyles = {
-      fontSize: 12,
+      fontSize: '12px',
       fontFamily: 'inherit',
       fill: 'currentColor',
       fillOpacity: 0.9,
@@ -637,7 +637,7 @@ export default class Axis extends Component {
 
     return (
       <g ref={(r) => (this.loadMoreDropdown = r)}>
-        <LoadMoreDropdown {...this.props} />
+        <LoadMoreDropdown {...this.props} style={this.labelInlineStyles} />
       </g>
     )
   }
@@ -672,6 +672,7 @@ export default class Axis extends Component {
         data-test='axis'
         ref={(r) => (this.ref = r)}
         transform={`translate(${this.props.translateX}, ${this.props.translateY})`}
+        style={this.labelInlineStyles}
       >
         <g className={`axis axis-${this.props.orient}`} ref={(el) => (this.axisElement = el)} />
         {this.renderAxisTitle()}

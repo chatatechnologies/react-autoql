@@ -11,8 +11,6 @@ import 'tabulator-tables/dist/css/tabulator_bootstrap3.min.css'
 export default class TableWrapper extends React.Component {
   tableRef = React.createRef()
   tabulator = null //variable to hold your table
-  redrawBlocked = false
-  hasInstantiated = false
   COMPONENT_KEY = uuid()
 
   defaultOptions = {
@@ -70,18 +68,16 @@ export default class TableWrapper extends React.Component {
   }
 
   componentDidUpdate = (prevProps) => {
-    if (!this.props.hidden && prevProps.hidden && !this.hasInstantiated) {
+    if (!this.props.hidden && prevProps.hidden) {
       this.restoreRedraw()
     }
 
-    if (!deepEqual(this.props.columns, prevProps.columns)) {
+    if (this.props.columns && !deepEqual(this.props.columns, prevProps.columns)) {
       this.tabulator?.setColumns(this.props.columns)
     }
   }
 
   instantiateTabulator = () => {
-    this.hasInstantiated = true
-
     // Instantiate Tabulator when element is mounted
     this.tabulator = new Tabulator(this.tableRef, {
       // reactiveData: true, // Enable data reactivity
@@ -106,7 +102,7 @@ export default class TableWrapper extends React.Component {
     this.tabulator.on('tableBuilt', () => {
       this.isInitialized = true
       if (!this.props.options?.ajaxRequestFunc) {
-        this.tabulator.restoreRedraw()
+        this.restoreRedraw()
         this.tabulator.setData(this.props.data).then(() => {
           this.props.onTableBuilt()
         })
