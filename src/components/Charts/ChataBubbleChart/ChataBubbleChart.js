@@ -20,6 +20,7 @@ export default class ChataBubbleChart extends Component {
       columnIndex: props.stringColumnIndex,
       axis: 'x',
       innerPadding: 0.01,
+      outerPadding: 0.1,
     })
 
     this.yScale = getBandScale({
@@ -27,6 +28,7 @@ export default class ChataBubbleChart extends Component {
       domain: props.legendLabels.map((d) => d.label),
       axis: 'y',
       innerPadding: 0.01,
+      outerPadding: 0.1,
     })
   }
 
