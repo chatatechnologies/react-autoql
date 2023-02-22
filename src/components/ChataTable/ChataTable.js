@@ -609,11 +609,11 @@ export default class ChataTable extends React.Component {
 
       const startDateStr = dayjs(start).format(dayJSFormatStr)
       const startDateUTC = dayjs.utc(startDateStr).toISOString()
-      const formattedStartDate = dayjs(startDateUTC).format(dayJSFormatStr)
+      const formattedStartDate = dayjs(startDateUTC).utc().format(dayJSFormatStr)
 
       const endDateStr = dayjs(end).format(dayJSFormatStr)
       const endDateUTC = dayjs.utc(endDateStr).toISOString()
-      const formattedEndDate = dayjs(endDateUTC).format(dayJSFormatStr)
+      const formattedEndDate = dayjs(endDateUTC).utc().format(dayJSFormatStr)
 
       let filterInputText = `${formattedStartDate} to ${formattedEndDate}`
       if (formattedStartDate === formattedEndDate) {
