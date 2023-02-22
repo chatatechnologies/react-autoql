@@ -421,7 +421,7 @@ export default class Axis extends Component {
           {this.renderAxisTitleText()}
         </text>
         {this.renderAxisSelector({
-          positions: ['top', 'bottom', 'left', 'right'],
+          positions: ['top', 'bottom', 'right', 'left'],
         })}
       </g>
     )

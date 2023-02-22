@@ -44,6 +44,7 @@ g.legendOrdinal tspan {
     color: var(--react-autoql-text-color-primary);
     padding: 10px;
     z-index: 9999;
+    flex: 1;
 
     h4 {
       margin: 0;
