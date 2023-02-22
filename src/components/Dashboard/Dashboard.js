@@ -597,6 +597,7 @@ class DashboardWithoutTheme extends React.Component {
             reverseTranslationPlacement='top'
             tooltipID={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
             chartTooltipID={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
+            allowDisplayTypeChange={false}
             height='100%'
             width='100%'
           />
@@ -664,15 +665,19 @@ class DashboardWithoutTheme extends React.Component {
 
   renderDrilldownModal = () => {
     try {
-      const queryResponse = _cloneDeep(this.activeDrilldownRef?.queryResponse)
-      if (queryResponse) {
-        queryResponse.data.data.columns = this.activeDrilldownRef.state.columns
+      let queryResponse
+      if (this.state.isDrilldownModalVisible) {
+        queryResponse = _cloneDeep(this.activeDrilldownRef?.queryResponse)
+        if (queryResponse) {
+          queryResponse.data.data.columns = this.activeDrilldownRef.state.columns
+        }
       }
 
       const renderTopHalf = !this.state.isDrilldownChartHidden && this.shouldShowOriginalQuery()
 
       return (
         <Modal
+          ref={(r) => (this.drilldownModalRef = r)}
           className='dashboard-drilldown-modal'
           contentClassName={`dashboard-drilldown-modal-content
             ${this.state.isDrilldownChartHidden ? 'chart-hidden' : ''}
@@ -703,7 +708,7 @@ class DashboardWithoutTheme extends React.Component {
                 <div className='react-autoql-dashboard-drilldown-original'>
                   {this.shouldShowOriginalQuery() && (
                     <>
-                      {this.activeDrilldownRef && (
+                      {this.activeDrilldownRef && this.drilldownModalRef?.modalContent && (
                         <QueryOutput
                           {...this.activeDrilldownRef.props}
                           queryResponse={queryResponse}
@@ -716,9 +721,11 @@ class DashboardWithoutTheme extends React.Component {
                             pivotTableConfig: this.activeDrilldownRef.pivotTableConfig,
                           }}
                           isAnimating={this.state.isAnimatingModal}
-                          isResizing={this.state.isResizingDrilldown}
+                          isResizing={this.state.isResizingDrilldown || !this.state.isDrilldownModalVisible}
                           showQueryInterpretation={this.props.isEditing}
+                          popoverParentElement={this.drilldownModalRef?.modalContent}
                           reverseTranslationPlacement='top'
+                          allowDisplayTypeChange={false}
                           height='100%'
                           width='100%'
                         />

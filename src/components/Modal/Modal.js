@@ -97,6 +97,7 @@ export default class Modal extends React.Component {
     return (
       <ErrorBoundary>
         <ReactModal
+          ref={(r) => (this.ref = r)}
           isOpen={this.props.isVisible}
           bodyOpenClassName={`react-autoql-modal-container${this.props.className ? ` ${this.props.className}` : ''}`}
           className={this.props.contentClassName}
@@ -114,19 +115,21 @@ export default class Modal extends React.Component {
             overlay: { ...this.props.overlayStyle },
           }}
         >
-          <div className='react-autoql-modal-header'>
-            {this.props.titleIcon} {this.props.title}
-            <Icon type='close' className='react-autoql-modal-close-btn' onClick={this.onClose} />
+          <div className='react-autoql-modal-content' ref={(r) => (this.modalContent = r)}>
+            <div className='react-autoql-modal-header'>
+              {this.props.titleIcon} {this.props.title}
+              <Icon type='close' className='react-autoql-modal-close-btn' onClick={this.onClose} />
+            </div>
+            <div
+              className='react-autoql-modal-body'
+              style={{
+                overflow: this.props.enableBodyScroll ? 'auto' : 'hidden',
+              }}
+            >
+              {this.props.children}
+            </div>
+            {this.props.showFooter && <div className='react-autoql-modal-footer'>{this.renderFooter()}</div>}
           </div>
-          <div
-            className='react-autoql-modal-body'
-            style={{
-              overflow: this.props.enableBodyScroll ? 'auto' : 'hidden',
-            }}
-          >
-            {this.props.children}
-          </div>
-          {this.props.showFooter && <div className='react-autoql-modal-footer'>{this.renderFooter()}</div>}
         </ReactModal>
         {!!this.props.confirmOnClose && (
           <ConfirmModal

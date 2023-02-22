@@ -34,6 +34,10 @@
     pointer-events: none;
   }
 
+  .legend-hidden-field-arrow {
+    outline: none !important;
+  }
+
   .legendCells {
     .cell {
       &.hidden {
@@ -85,6 +89,10 @@
   .stacked-bar,
   .stacked-column {
     cursor: pointer;
+
+    // Setting a transparen stroke allows a larger hover area
+    stroke: transparent;
+    stroke-width: 10px;
   }
 
   .bar,

@@ -488,16 +488,10 @@ export default class ChataChart extends Component {
   }
 
   render = () => {
-    // const { outerHeight } = this.getOuterDimensions()
     // We need to set these inline in order for them to be applied in the exported PNG
     const chartFontFamily = getThemeValue('font-family')
     const chartTextColor = getThemeValue('text-color-primary')
     const chartBackgroundColor = getThemeValue('background-color-secondary')
-
-    const style = {}
-    // if (!this.props.hidden) {
-    //   style.flexBasis = outerHeight ? `${outerHeight}px` : '100vh'
-    // }
 
     return (
       <ErrorBoundary>
@@ -510,7 +504,6 @@ export default class ChataChart extends Component {
             ${this.state.isLoading || this.props.isResizing ? 'loading' : ''}
             ${this.state.isLoadingMoreRows ? 'loading-rows' : ''}
             ${this.props.hidden ? 'hidden' : ''}`}
-          style={style}
         >
           {!this.firstRender && !this.props.isResizing && !this.props.isAnimating && (
             <Fragment>
@@ -520,6 +513,7 @@ export default class ChataChart extends Component {
                 width='100%'
                 height='100%'
                 style={{
+                  fontSize: '12px',
                   fontFamily: chartFontFamily,
                   color: chartTextColor,
                   background: chartBackgroundColor,

@@ -616,7 +616,7 @@ export default class ChataTable extends React.Component {
       }
 
       inputElement.focus()
-      this.ref?.tabulator.restoreRedraw()
+      this.ref?.restoreRedraw()
       inputElement.value = filterInputText
       inputElement.title = filterInputText
       inputElement.blur()

@@ -180,6 +180,7 @@ export class QueryOutput extends React.Component {
     shouldRender: PropTypes.bool,
     dataPageSize: PropTypes.number,
     onPageSizeChange: PropTypes.func,
+    allowDisplayTypeChange: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -212,6 +213,7 @@ export class QueryOutput extends React.Component {
     showSuggestionPrefix: true,
     shouldRender: true,
     dataPageSize: undefined,
+    allowDisplayTypeChange: true,
     onRowChange: () => {},
     onTableConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
@@ -2197,16 +2199,24 @@ export class QueryOutput extends React.Component {
       }
     }
 
-    const supportsPivotTable = this.getCurrentSupportedDisplayTypes().includes('pivot_table')
+    const displayTypeIsChart = isChartType(this.state.displayType)
+    const displayTypeIsTable = isTableType(this.state.displayType)
+    const displayTypeIsPivotTable = this.state.displayType === 'pivot_table'
+    const allowsDisplayTypeChange = this.props.allowDisplayTypeChange
 
     const chartDisplayTypes = this.getPotentialDisplayTypes().filter((displayType) => CHART_TYPES.includes(displayType))
     const supportsChart = !!chartDisplayTypes?.length
+    const supportsPivotTable = this.getCurrentSupportedDisplayTypes().includes('pivot_table')
+
+    const shouldRenderChart = (allowsDisplayTypeChange || displayTypeIsChart) && supportsChart
+    const shouldRenderTable = allowsDisplayTypeChange || displayTypeIsTable
+    const shouldRenderPivotTable = (allowsDisplayTypeChange || displayTypeIsPivotTable) && supportsPivotTable
 
     return (
       <>
-        {this.renderTable()}
-        {supportsChart && this.renderChart()}
-        {supportsPivotTable && this.renderPivotTable()}
+        {shouldRenderTable && this.renderTable()}
+        {shouldRenderChart && this.renderChart()}
+        {shouldRenderPivotTable && this.renderPivotTable()}
       </>
     )
   }

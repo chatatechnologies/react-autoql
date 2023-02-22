@@ -72,13 +72,7 @@ export default class LoadMoreDropdown extends Component {
         data-test='x-axis-label'
         dominantBaseline='hanging'
         textAnchor='middle'
-        style={{
-          fontSize: this.fontSize,
-          fontFamily: 'inherit',
-          fill: 'currentColor',
-          fillOpacity: 0.9,
-          cursor: 'default',
-        }}
+        style={this.props.style}
       >
         <tspan
           ref={(r) => (this.allText = r)}
