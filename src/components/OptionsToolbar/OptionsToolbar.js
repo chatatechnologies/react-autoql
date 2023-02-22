@@ -516,7 +516,13 @@ export class OptionsToolbar extends React.Component {
               data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
               data-test='react-autoql-filter-button'
             >
-              <Icon type={this.state.isFiltering ? 'filter-off' : 'filter'} showBadge={isFiltered} />
+              <Icon
+                // Add these back in the future when we want this feature
+                // type={this.state.isFiltering ? 'filter-off' : 'filter'}
+                // showBadge={isFiltered}
+                type='filter'
+                showBadge={false}
+              />
             </button>
           )}
           {shouldShowButton.showHideColumnsButton && (

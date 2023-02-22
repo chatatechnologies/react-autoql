@@ -200,7 +200,7 @@ export default class NumberAxisSelector extends React.Component {
     })
   }
 
-  renderSelectorContent = () => {
+  renderSelectorContent = ({ position, nudgedLeft, nudgedTop }) => {
     if (this.props.hidden) {
       return null
     }
@@ -221,7 +221,7 @@ export default class NumberAxisSelector extends React.Component {
       return null
     }
 
-    const maxHeight = 300
+    const maxHeight = 250
     const minHeight = 100
 
     const title = NUMBER_COLUMN_TYPE_DISPLAY_NAMES[type]
@@ -312,7 +312,7 @@ export default class NumberAxisSelector extends React.Component {
       <Popover
         id={`number-axis-selector-${this.COMPONENT_KEY}`}
         isOpen={this.props.isOpen}
-        content={this.renderSelectorContent()}
+        content={this.renderSelectorContent}
         ref={this.props.axisSelectorRef}
         onClickOutside={(e) => {
           e.stopPropagation()

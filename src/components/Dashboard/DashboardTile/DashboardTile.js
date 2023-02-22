@@ -962,7 +962,6 @@ export class DashboardTile extends React.Component {
         backgroundColor={document.documentElement.style.getPropertyValue('--react-autoql-background-color-secondary')}
         enableAjaxTableData={this.props.enableAjaxTableData}
         rebuildTooltips={this.props.rebuildTooltips}
-        popoverParentElement={this.props.dashboardRef}
         showQueryInterpretation={this.props.isEditing}
         reverseTranslationPlacement='top'
         tooltipID={this.props.tooltipID}

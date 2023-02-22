@@ -677,7 +677,6 @@ class DashboardWithoutTheme extends React.Component {
 
       return (
         <Modal
-          ref={(r) => (this.drilldownModalRef = r)}
           className='dashboard-drilldown-modal'
           contentClassName={`dashboard-drilldown-modal-content
             ${this.state.isDrilldownChartHidden ? 'chart-hidden' : ''}
@@ -708,7 +707,7 @@ class DashboardWithoutTheme extends React.Component {
                 <div className='react-autoql-dashboard-drilldown-original'>
                   {this.shouldShowOriginalQuery() && (
                     <>
-                      {this.activeDrilldownRef && this.drilldownModalRef?.modalContent && (
+                      {this.activeDrilldownRef && (
                         <QueryOutput
                           {...this.activeDrilldownRef.props}
                           queryResponse={queryResponse}
@@ -723,7 +722,6 @@ class DashboardWithoutTheme extends React.Component {
                           isAnimating={this.state.isAnimatingModal}
                           isResizing={this.state.isResizingDrilldown || !this.state.isDrilldownModalVisible}
                           showQueryInterpretation={this.props.isEditing}
-                          popoverParentElement={this.drilldownModalRef?.modalContent}
                           reverseTranslationPlacement='top'
                           allowDisplayTypeChange={false}
                           height='100%'
