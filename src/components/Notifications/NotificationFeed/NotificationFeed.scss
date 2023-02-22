@@ -30,8 +30,8 @@
 .react-autoql-notification-list-container {
   display: flex;
   flex-direction: column;
-  height: calc(100% - 60px);
   background: var(--react-autoql-background-color-primary);
+  height: 100%;
 
   .notification-feed-list {
     padding: 0 20px;
