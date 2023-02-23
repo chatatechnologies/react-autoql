@@ -581,7 +581,7 @@ export class QueryOutput extends React.Component {
   }
 
   shouldGenerateTableData = () => {
-    return _get(this.queryResponse, 'data.data.rows.length')
+    return !!this.queryResponse?.data?.data?.rows
   }
 
   generateTableData = (cols, newTableData) => {
@@ -1870,6 +1870,7 @@ export class QueryOutput extends React.Component {
         <ChataTable
           authentication={this.props.authentication}
           dataFormatting={this.props.dataFormatting}
+          rowChangeCount={this.state.visibleRowChangeCount}
           ref={(ref) => (this.tableRef = ref)}
           columns={this.state.columns}
           response={this.queryResponse}
@@ -1919,6 +1920,7 @@ export class QueryOutput extends React.Component {
         <ChataTable
           ref={(ref) => (this.pivotTableRef = ref)}
           columns={this.pivotTableColumns}
+          rowChangeCount={this.state.visibleRowChangeCount}
           data={this.pivotTableData}
           onCellClick={this.onTableCellClick}
           isAnimating={this.props.isAnimating}
@@ -2182,9 +2184,10 @@ export class QueryOutput extends React.Component {
     }
 
     // This is not technically an error. There is just no data in the DB
-    if (this.noDataFound()) {
-      return this.replaceErrorTextWithLinks(this.queryResponse.data.message)
-    }
+    // Keep this in case we want to revert back to this error message
+    // if (this.noDataFound()) {
+    //   return this.replaceErrorTextWithLinks(this.queryResponse.data.message)
+    // }
 
     if (displayType && !!_get(this.queryResponse, 'data.data.rows')) {
       if (displayType === 'help') {
