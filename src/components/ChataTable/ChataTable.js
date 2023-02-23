@@ -122,6 +122,10 @@ export default class ChataTable extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
+    if (this.props.rowChangeCount !== nextProps.rowChangeCount) {
+      return true
+    }
+
     if (this.props.isAnimating && !nextProps.isAnimating) {
       return true
     }
@@ -235,7 +239,9 @@ export default class ChataTable extends React.Component {
         this.props.onFilterCallback(headerFilters, rows)
       }
 
-      this.setLoading(false)
+      setTimeout(() => {
+        this.setState({ loading: false })
+      }, 0)
     }
   }
 
@@ -653,6 +659,14 @@ export default class ChataTable extends React.Component {
     return isFiltering
   }
 
+  renderEmptyPlaceholderText = () => {
+    return (
+      <div className='table-loader table-page-loader table-placeholder'>
+        <div>No results</div>
+      </div>
+    )
+  }
+
   renderPageLoader = () => {
     return (
       <div className='table-loader table-page-loader'>
@@ -730,12 +744,18 @@ export default class ChataTable extends React.Component {
   }
 
   renderTableRowCount = () => {
-    const currentRowCount = this.props.data?.length
-    const totalRowCount = this.props.totalRows
+    let currentRowCount = this.props.data?.length
+    let totalRowCount = this.props.totalRows
     const shouldRenderTRC = this.props.enableAjaxTableData && totalRowCount && currentRowCount
 
     if (!shouldRenderTRC) {
       return null
+    }
+
+    if (!this.props.useInfiniteScroll) {
+      const rowCount = this.ref?.tabulator?.getDataCount('active')
+      currentRowCount = rowCount
+      totalRowCount = rowCount
     }
 
     return (
@@ -746,6 +766,7 @@ export default class ChataTable extends React.Component {
   }
 
   render = () => {
+    const isEmpty = this.ref?.tabulator?.getDataCount('active') === 0
     return (
       <ErrorBoundary>
         <div
@@ -761,7 +782,8 @@ export default class ChataTable extends React.Component {
             ${this.supportsInfiniteScroll ? 'infinite' : 'limited'}
             ${this.supportsInfiniteScroll && this.state.isLastPage ? 'last-page' : ''}
             ${this.props.pivot ? 'pivot' : ''}
-            ${this.props.hidden ? 'hidden' : ''}`}
+            ${this.props.hidden ? 'hidden' : ''}
+            ${isEmpty ? 'empty' : ''}`}
         >
           {!!this.props.data && !!this.props.columns && (
             <div ref={(r) => (this.tabulatorContainer = r)} className='react-autoql-tabulator-container'>
@@ -790,6 +812,7 @@ export default class ChataTable extends React.Component {
           )}
           {this.renderDatePickerPopover()}
           {this.renderTableRowCount()}
+          {isEmpty && this.renderEmptyPlaceholderText()}
         </div>
       </ErrorBoundary>
     )

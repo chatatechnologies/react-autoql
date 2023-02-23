@@ -42,6 +42,34 @@
     opacity: 0;
   }
 
+  // This css is to fix tabulator bug and allow scrolling columns on an empty table
+  &.empty {
+    &:not(.filtering) {
+      .tabulator-headers {
+        height: 37px !important;
+      }
+    }
+    .react-autoql-table.tabulator {
+      overflow: auto;
+      .tabulator-tableholder {
+        overflow: hidden;
+      }
+      .tabulator-header {
+        border: none !important;
+        overflow: visible;
+        .tabulator-header-contents {
+          overflow: visible;
+          .tabulator-headers {
+            border-bottom: 2px solid var(--react-autoql-border-color);
+            .tabulator-col {
+              background: transparent;
+            }
+          }
+        }
+      }
+    }
+  }
+
   &.resizing {
     width: 100vw;
 
@@ -83,6 +111,15 @@
 
     .filter-tag {
       display: none;
+    }
+
+    &.empty {
+      .react-autoql-table.tabulator .tabulator-header {
+        border: none;
+        .tabulator-headers {
+          border-bottom: 2px solid var(--react-autoql-border-color);
+        }
+      }
     }
   }
 
@@ -289,6 +326,13 @@
   pointer-events: none;
   background-color: transparent;
   color: var(--react-autoql-accent-color);
+
+  &.table-placeholder {
+    color: var(--react-autoql-text-color-primary);
+    font-size: 12px;
+    opacity: 0.5;
+    top: 20px;
+  }
 
   &.table-page-loader {
     top: 0;

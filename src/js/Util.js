@@ -840,8 +840,12 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
     const allColumns = columns || response?.data?.data?.columns
     const visibleColumns = getVisibleColumns(allColumns)
 
-    if (!visibleColumns?.length || !rows?.length) {
+    if (!visibleColumns?.length) {
       return ['text']
+    }
+
+    if (!rows?.length) {
+      return ['table']
     }
 
     if (isSingleValueResponse(response)) {
