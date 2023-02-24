@@ -130,7 +130,7 @@ export default class Select extends React.Component {
           id={`select-popover-${this.ID}`}
           key={`select-popover-${this.ID}`}
           isOpen={this.state.isOpen}
-          positions={this.props.positions ?? ['bottom']}
+          positions={this.props.positions ?? ['bottom', 'top', 'left', 'right']}
           align={this.props.align}
           padding={0}
           parentElement={this.props.popoverParentElement}
