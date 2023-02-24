@@ -825,6 +825,8 @@ export class QueryOutput extends React.Component {
       try {
         // This will be a new query so we want to reset the page size back to default
         const pageSize = this.getDefaultQueryPageSize()
+        const columns = this.getColumns()
+        const column = columns[stringColumnIndex]
 
         if (supportedByAPI) {
           this.props.onDrilldownStart(activeKey)
@@ -846,7 +848,7 @@ export class QueryOutput extends React.Component {
         } else if (!isNaN(stringColumnIndex) && !!row?.length) {
           this.props.onDrilldownStart(activeKey)
 
-          if (!this.isDataLimited()) {
+          if (!this.isDataLimited() && !isColumnDateType(column)) {
             // ------------ 1. Use FE for filter drilldown -----------
             const response = this.getFilterDrilldown({ stringColumnIndex, row })
             setTimeout(() => {
@@ -2010,7 +2012,13 @@ export class QueryOutput extends React.Component {
     const data = usePivotData
       ? this.state.visiblePivotRows || this.pivotTableData
       : this.state.visibleRows || this.tableData
-    const totalRows = this.state.visibleRows?.length ?? this.queryResponse?.data?.data?.count_rows
+
+    const originalTotalRows = this.queryResponse?.data?.data?.count_rows
+    let totalRows = originalTotalRows
+    if (!this.isDataLimited() && this.state.visibleRows && this.state.visibleRows?.length < MAX_DATA_PAGE_SIZE) {
+      // This allows total row count to reflect FE filters in the table view
+      totalRows = this.state.visibleRows?.length
+    }
 
     return (
       <ErrorBoundary>

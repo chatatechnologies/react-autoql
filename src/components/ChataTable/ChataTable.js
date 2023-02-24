@@ -164,11 +164,6 @@ export default class ChataTable extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState, snapshot) => {
-    if (!this.props.hidden && prevProps.hidden && this.state.subscribedData) {
-      this.ref?.tabulator?.setData(this.state.subscribedData)
-      this.setState({ subscribedData: undefined })
-    }
-
     if (!this.state.isFiltering && prevState.isFiltering) {
       try {
         this.setFilterTags()
@@ -195,13 +190,7 @@ export default class ChataTable extends React.Component {
   }
 
   updateData = (data) => {
-    if (this.props.hidden) {
-      this.setState({
-        subscribedData: data,
-      })
-    } else {
-      this.ref?.tabulator?.setData(data)
-    }
+    this.ref?.updateData(data)
   }
 
   onDataSorting = (sorters) => {
@@ -769,8 +758,10 @@ export default class ChataTable extends React.Component {
 
     if (!this.props.useInfiniteScroll) {
       const rowCount = this.ref?.tabulator?.getDataCount('active')
-      currentRowCount = rowCount
-      totalRowCount = rowCount
+      if (rowCount !== undefined) {
+        currentRowCount = rowCount
+        totalRowCount = rowCount
+      }
     }
 
     return (

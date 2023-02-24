@@ -9,22 +9,30 @@ import 'tabulator-tables/dist/css/tabulator.min.css'
 import 'tabulator-tables/dist/css/tabulator_bootstrap3.min.css'
 
 export default class TableWrapper extends React.Component {
-  tableRef = React.createRef()
-  tabulator = null //variable to hold your table
-  COMPONENT_KEY = uuid()
+  constructor(props) {
+    super(props)
 
-  defaultOptions = {
-    // renderVerticalBuffer: 10, // Change this to help with performance if needed in the future
-    height: '100%',
-    autoResize: false,
-    rowHeight: 25,
-    layout: 'fitDataFill',
-    clipboard: true,
-    downloadConfig: {
-      columnGroups: false,
-      rowGroups: false,
-      columnCalcs: false,
-    },
+    this.COMPONENT_KEY = uuid()
+
+    this.tableRef = React.createRef()
+    this.tabulator = null //variable to hold your table
+    this.defaultOptions = {
+      // renderVerticalBuffer: 10, // Change this to help with performance if needed in the future
+      height: '100%',
+      autoResize: false,
+      rowHeight: 25,
+      layout: 'fitDataFill',
+      clipboard: true,
+      downloadConfig: {
+        columnGroups: false,
+        rowGroups: false,
+        columnCalcs: false,
+      },
+    }
+
+    this.state = {
+      subscribedData: undefined,
+    }
   }
 
   static propTypes = {
@@ -69,7 +77,12 @@ export default class TableWrapper extends React.Component {
 
   componentDidUpdate = (prevProps) => {
     if (!this.props.hidden && prevProps.hidden) {
-      this.restoreRedraw()
+      if (this.state.subscribedData) {
+        this.ref?.tabulator?.setData(this.state.subscribedData)
+        this.setState({ subscribedData: undefined })
+      } else {
+        this.restoreRedraw()
+      }
     }
 
     if (this.props.columns && !deepEqual(this.props.columns, prevProps.columns)) {
@@ -121,6 +134,18 @@ export default class TableWrapper extends React.Component {
   restoreRedraw = () => {
     if (this.tabulator) {
       this.tabulator.restoreRedraw()
+    }
+  }
+
+  updateData = (data) => {
+    if (this.props.hidden) {
+      // This allows current tasks to finish first
+      // Makes it seems much more responsive
+      setTimeout(() => {
+        this.ref?.tabulator?.setData(data)
+      }, 0)
+    } else {
+      this.ref?.tabulator?.setData(data)
     }
   }
 
