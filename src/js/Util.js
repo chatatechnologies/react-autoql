@@ -1035,35 +1035,43 @@ export const getDefaultDisplayType = (
   return 'text'
 }
 
-export const getGroupBysFromPivotTable = (cell) => {
+export const getKeyByValue = (object, value) => {
+  return Object.keys(object).find((key) => object[key] === value)
+}
+
+export const getGroupBysFromPivotTable = ({
+  cell,
+  rowHeaders,
+  columnHeaders,
+  rowHeaderDefinition,
+  columnHeaderDefinition,
+}) => {
   try {
-    const groupBys = []
+    const columnName = columnHeaderDefinition.name
+    const columnField = Number(cell.getField()) - 1
+    const columnValue = getKeyByValue(columnHeaders, columnField)
 
-    const pivotColumn = cell?.getColumn()?.getDefinition()
-    const pivotCategory = cell.getData()[0]
+    const rowName = rowHeaderDefinition.name
+    const rowIndex = cell?.getRow()?.getPosition() - 1
+    const rowValue = getKeyByValue(rowHeaders, rowIndex)
 
-    const pivotCategoryName = pivotColumn.origValues?.[pivotCategory].name
-    const pivotCategoryValue = pivotColumn.origValues?.[pivotCategory].value
-    groupBys.push({
-      name: pivotCategoryName,
-      value: `${pivotCategoryValue}`,
-    })
-
-    if (pivotColumn?.origPivotColumn) {
-      // Not a date pivot
-      const pivotColumnName = pivotColumn.name
-      const origColumnName = pivotColumn.origPivotColumn?.name
-      groupBys.push({
-        name: origColumnName,
-        value: `${pivotColumnName}`,
-      })
+    if (columnName && rowName && columnValue !== undefined && rowValue !== undefined) {
+      return [
+        {
+          name: columnName,
+          value: `${columnValue}`,
+        },
+        {
+          name: rowName,
+          value: `${rowValue}`,
+        },
+      ]
     }
-
-    return groupBys
   } catch (error) {
     console.error(error)
-    return undefined
   }
+
+  return undefined
 }
 
 export const nameValueObject = (name, value) => {

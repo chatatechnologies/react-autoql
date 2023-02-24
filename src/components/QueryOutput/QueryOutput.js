@@ -620,6 +620,8 @@ export class QueryOutput extends React.Component {
       this.props.onErrorCallback(error)
       this.pivotTableData = undefined
     }
+
+    this.pivotTableRef?.updateData(this.pivotTableData)
   }
 
   renderSuggestionMessage = (suggestions, queryId) => {
@@ -938,11 +940,41 @@ export class QueryOutput extends React.Component {
       return
     }
 
+    const columns = this.getColumns()
+    if (!columns) {
+      return
+    }
+
     let groupBys = {}
     if (this.pivotTableColumns && this.state.displayType === 'pivot_table') {
-      groupBys = getGroupBysFromPivotTable(cell)
+      if (this.supportsDatePivot()) {
+        // Date pivot table
+        const dateColumnIndex = getDateColumnIndex(columns)
+        const year = cell.getColumn()?.getDefinition()?.title
+        const month = cell.getData()?.[0]
+        const value = this.pivotOriginalColumnData?.[year]?.[month]
+
+        groupBys = [
+          {
+            name: columns[dateColumnIndex]?.name,
+            value,
+          },
+        ]
+      } else {
+        // Regular pivot table
+        const columnHeaderDefinition = columns[this.tableConfig.legendColumnIndex]
+        const rowHeaderDefinition = columns[this.tableConfig.stringColumnIndex]
+        groupBys = getGroupBysFromPivotTable({
+          cell,
+          rowHeaders: this.pivotRowHeaders,
+          columnHeaders: this.pivotColumnHeaders,
+          rowHeaderDefinition,
+          columnHeaderDefinition,
+        })
+      }
     } else {
-      groupBys = getGroupBysFromTable(cell, this.state.columns)
+      // Regular table
+      groupBys = getGroupBysFromTable(cell, columns)
     }
 
     this.processDrilldown({ groupBys, supportedByAPI: !!groupBys })
@@ -1030,6 +1062,7 @@ export class QueryOutput extends React.Component {
 
       this.setState({
         visibleRowChangeCount: this.state.visibleRowChangeCount + 1,
+        visibleRows: this.tableData,
       })
     } catch (error) {
       console.error(error)
@@ -1685,6 +1718,8 @@ export class QueryOutput extends React.Component {
         uniqueValues1 = _cloneDeep(tempValues)
       }
 
+      this.pivotColumnHeaders = uniqueValues1
+      this.pivotRowHeaders = uniqueValues0
       this.tableConfig.legendColumnIndex = newLegendColumnIndex
       this.tableConfig.stringColumnIndex = newStringColumnIndex
 

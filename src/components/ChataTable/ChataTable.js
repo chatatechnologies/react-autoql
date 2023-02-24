@@ -164,6 +164,11 @@ export default class ChataTable extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState, snapshot) => {
+    if (!this.props.hidden && prevProps.hidden && this.subscribeToUpdateData) {
+      this.ref?.tabulator?.setData(this.subscribeToUpdateData)
+      this.subscribeToUpdateData = undefined
+    }
+
     if (!this.state.isFiltering && prevState.isFiltering) {
       try {
         this.setFilterTags()
@@ -186,6 +191,14 @@ export default class ChataTable extends React.Component {
       this.filterTagElements = undefined
     } catch (error) {
       console.error(error)
+    }
+  }
+
+  updateData = (data) => {
+    if (this.props.hidden) {
+      this.subscribeToUpdateData = data
+    } else {
+      this.ref?.tabulator?.setData(data)
     }
   }
 
@@ -785,6 +798,7 @@ export default class ChataTable extends React.Component {
             ${this.props.hidden ? 'hidden' : ''}
             ${isEmpty ? 'empty' : ''}`}
         >
+          {isEmpty && this.renderEmptyPlaceholderText()}
           {!!this.props.data && !!this.props.columns && (
             <div ref={(r) => (this.tabulatorContainer = r)} className='react-autoql-tabulator-container'>
               <TableWrapper
@@ -805,6 +819,7 @@ export default class ChataTable extends React.Component {
                 onDataSorted={this.onDataSorted}
                 onDataFiltering={this.onDataFiltering}
                 onDataFiltered={this.onDataFiltered}
+                pivot={this.props.pivot}
               />
               {this.state.pageLoading && this.renderPageLoader()}
               {this.state.scrollLoading && this.renderScrollLoader()}
@@ -812,7 +827,6 @@ export default class ChataTable extends React.Component {
           )}
           {this.renderDatePickerPopover()}
           {this.renderTableRowCount()}
-          {isEmpty && this.renderEmptyPlaceholderText()}
         </div>
       </ErrorBoundary>
     )
