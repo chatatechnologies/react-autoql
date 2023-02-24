@@ -707,7 +707,7 @@ export default class ChataTable extends React.Component {
       <Popover
         isOpen={!!this.state.datePickerColumn}
         align='start'
-        positions={['bottom', 'right']}
+        positions={['bottom', 'right', 'left', 'top']}
         onClickOutside={(e) => {
           e.stopPropagation()
           this.setState({

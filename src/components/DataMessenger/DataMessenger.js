@@ -535,7 +535,7 @@ export class DataMessenger extends React.Component {
           }}
           parentElement={this.messengerDrawerRef}
           boundaryElement={this.messengerDrawerRef}
-          positions={['bottom']}
+          positions={['bottom', 'left', 'top', 'right']}
           content={
             <div>
               <div className='clear-messages-confirm-popover'>
@@ -646,7 +646,7 @@ export class DataMessenger extends React.Component {
         rebuildTooltips={this.rebuildTooltips}
         parentElement={this.messengerDrawerRef}
         boundaryElement={this.messengerDrawerRef}
-        positions={['bottom']}
+        positions={['bottom', 'left', 'top', 'right']}
         align='center'
       >
         <button
