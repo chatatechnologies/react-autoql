@@ -191,16 +191,16 @@ class DataAlerts extends React.Component {
   }
 
   renderNotificationlist = (type, list) => {
-    if (type === 'project' && !_get(list, 'length')) {
+    if (type === 'project' && !list?.length) {
       return null
     }
 
     return (
       <div className='data-alerts-list-container'>
-        {type === 'custom' && _get(list, 'length')
+        {type === 'custom' && list?.length
           ? this.renderNotificationGroupTitle('Custom Data Alerts', 'View and manage your custom Data Alerts')
           : null}
-        {type === 'custom' && !_get(list, 'length') && this.renderEmptyListMessage()}
+        {type === 'custom' && !list?.length && this.renderEmptyListMessage()}
         {type === 'project' &&
           this.renderNotificationGroupTitle(
             'Subscribe to a Data Alert',
