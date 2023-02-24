@@ -648,6 +648,7 @@ export class DashboardTile extends React.Component {
                 placeholder='Add descriptive title (optional)'
                 data-tip='Title'
                 data-for='react-autoql-dashboard-toolbar-btn-tooltip'
+                data-place='bottom'
                 value={this.state.title}
                 onChange={(e) => this.setState({ title: e.target.value })}
                 onFocus={() => {

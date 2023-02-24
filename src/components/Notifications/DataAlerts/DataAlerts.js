@@ -5,7 +5,7 @@ import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import { v4 as uuid } from 'uuid'
-
+import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
 import { Icon } from '../../Icon'
 import { Button } from '../../Button'
 import { Checkbox } from '../../Checkbox'
@@ -27,13 +27,12 @@ class DataAlerts extends React.Component {
   static propTypes = {
     authentication: authenticationType,
     onErrorCallback: PropTypes.func,
-    showCreateAlertBtn: PropTypes.bool,
+
     onSuccessAlert: PropTypes.func,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
-    showCreateAlertBtn: false,
     onErrorCallback: () => {},
     onAlertInitializationCallback: () => {},
     onSuccessAlert: () => {},
@@ -85,13 +84,6 @@ class DataAlerts extends React.Component {
     this.setState({
       isEditModalVisible: true,
       activeDataAlert: notification,
-    })
-  }
-
-  onAddClick = () => {
-    this.setState({
-      isEditModalVisible: true,
-      activeDataAlert: undefined,
     })
   }
 
@@ -160,22 +152,12 @@ class DataAlerts extends React.Component {
     )
   }
 
-  renderNotificationGroupTitle = (title, description, includeAddBtn) => (
+  renderNotificationGroupTitle = (title, description) => (
     <div className='react-autoql-notification-title-container'>
       <div style={{ paddingLeft: '10px' }}>
         <div style={{ fontSize: '17px' }}>{title}</div>
         <div style={{ fontSize: '11px', opacity: 0.6 }}>{description}</div>
       </div>
-      {includeAddBtn && this.props.showCreateAlertBtn && (
-        <div
-          className='react-autoql-notification-add-btn'
-          onClick={this.onAddClick}
-          data-tip='Create Data Alert'
-          data-for='react-autoql-notification-settings-tooltip'
-        >
-          <Icon type='plus' className='react-autoql-notification-add-icon' />
-        </div>
-      )}
     </div>
   )
 
@@ -209,15 +191,16 @@ class DataAlerts extends React.Component {
   }
 
   renderNotificationlist = (type, list) => {
-    if (type === 'project' && !_get(list, 'length')) {
+    if (type === 'project' && !list?.length) {
       return null
     }
 
     return (
       <div className='data-alerts-list-container'>
-        {type === 'custom' &&
-          this.renderNotificationGroupTitle('Custom Data Alerts', 'View and manage your custom Data Alerts', true)}
-        {type === 'custom' && !_get(list, 'length') && this.renderEmptyListMessage()}
+        {type === 'custom' && list?.length
+          ? this.renderNotificationGroupTitle('Custom Data Alerts', 'View and manage your custom Data Alerts')
+          : null}
+        {type === 'custom' && !list?.length && this.renderEmptyListMessage()}
         {type === 'project' &&
           this.renderNotificationGroupTitle(
             'Subscribe to a Data Alert',
@@ -337,13 +320,15 @@ class DataAlerts extends React.Component {
 
   renderEmptyListMessage = () => (
     <div style={{ textAlign: 'center', marginTop: '100px' }}>
+      <div className='empty-list-message'>
+        <img className='empty-list-img' src={emptyStateImg} />
+      </div>
       <span style={{ opacity: 0.6 }}>No Alerts are set up yet.</span>
       <br />
-      {this.props.showCreateAlertBtn && (
-        <Button type='primary' onClick={this.onAddClick} style={{ marginTop: '10px' }}>
-          Create Data Alert
-        </Button>
-      )}
+      <span style={{ opacity: 0.6, width: '350px', display: 'inline-block' }}>
+        To create one, select the “Create a Data Alert” option from a data response in Data Messenger.
+      </span>
+      <br />
     </div>
   )
 
