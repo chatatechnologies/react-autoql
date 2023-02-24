@@ -621,7 +621,9 @@ export class QueryOutput extends React.Component {
       this.pivotTableData = undefined
     }
 
-    this.pivotTableRef?.updateData(this.pivotTableData)
+    if (this.props.allowDisplayTypeChange) {
+      this.pivotTableRef?.updateData(this.pivotTableData)
+    }
   }
 
   renderSuggestionMessage = (suggestions, queryId) => {
@@ -1080,7 +1082,7 @@ export class QueryOutput extends React.Component {
     const responseData = response?.data?.data
     this.tableData = responseData?.rows || []
 
-    if (this.state.displayType !== 'table') {
+    if (this.state.displayType !== 'table' && this.props.allowDisplayTypeChange) {
       if (this.tableData.length >= responseData?.count_rows) {
         // The rows were changed from a chart - If it is the maximum page size, we dont want
         // infinite scroll anymore - mount a new table with the new data
@@ -2005,6 +2007,11 @@ export class QueryOutput extends React.Component {
       isChartDataAggregated = true
     }
 
+    const data = usePivotData
+      ? this.state.visiblePivotRows || this.pivotTableData
+      : this.state.visibleRows || this.tableData
+    const totalRows = this.state.visibleRows?.length ?? this.queryResponse?.data?.data?.count_rows
+
     return (
       <ErrorBoundary>
         <ChataChart
@@ -2013,15 +2020,13 @@ export class QueryOutput extends React.Component {
           authentication={this.props.authentication}
           queryRequestData={this.queryResponse?.data?.data?.fe_req}
           pageSize={_get(this.queryResponse, 'data.data.row_limit')}
-          dataLength={this.tableData.length}
           ref={(ref) => (this.chartRef = ref)}
           type={this.state.displayType}
           isDataAggregated={isChartDataAggregated}
           popoverParentElement={this.props.popoverParentElement}
           {...tableConfig}
-          data={
-            usePivotData ? this.state.visiblePivotRows || this.pivotTableData : this.state.visibleRows || this.tableData
-          }
+          data={data}
+          dataChangeCount={usePivotData ? this.state.visiblePivotRowChangeCount : this.state.visibleRowChangeCount}
           columns={usePivotData ? this.pivotTableColumns : this.state.columns}
           isPivot={usePivotData}
           dataFormatting={this.props.dataFormatting}
@@ -2044,7 +2049,7 @@ export class QueryOutput extends React.Component {
           width={this.props.width}
           onNewData={this.onNewData}
           isDrilldown={this.isDrilldown()}
-          totalRowCount={this.queryResponse?.data?.data?.count_rows}
+          totalRowCount={totalRows}
           updateColumns={this.updateColumns}
           columnChangeCount={this.state.columnChangeCount}
         />

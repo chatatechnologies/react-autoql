@@ -85,6 +85,10 @@ export default class ChataChart extends Component {
       return true
     }
 
+    if (this.props.dataChangeCount !== nextProps.dataChangeCount) {
+      return true
+    }
+
     if ((nextProps.isResizing && this.props.isResizing) || (nextProps.hidden && this.props.hidden)) {
       return false
     }
@@ -402,6 +406,7 @@ export default class ChataChart extends Component {
       disableTimeScale: this.disableTimeScale,
       colorScale,
       colorScale2,
+      dataLength: this.props.data?.length,
       height: innerHeight,
       width: innerWidth,
       outerHeight,
