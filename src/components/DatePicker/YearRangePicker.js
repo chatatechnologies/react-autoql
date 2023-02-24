@@ -202,7 +202,10 @@ export default class YearRangePicker extends React.Component {
         <select
           className='year-picker'
           value={`${this.state.visibleDecade[0]} - ${this.state.visibleDecade[1]}`}
-          onChange={(e) => this.setState({ visibleDecade: Number(e.target.value) })}
+          onChange={(e) => {
+            const decadeArray = e.target.value.split(' - ').map((year) => Number(year))
+            this.setState({ visibleDecade: decadeArray })
+          }}
         >
           {new Array(numDecades).fill(lowerDecadeLimit).map((decade, i) => {
             const decadeText = `${decade[0] + i * 10} - ${decade[1] + i * 10}`

@@ -99,7 +99,7 @@ export default class LoadMoreDropdown extends Component {
         {...this.props}
         ref={(r) => (this.rowNumberSelector = r)}
         column={this.props.xCol}
-        positions={['top', 'bottom']}
+        positions={['top', 'bottom', 'right', 'left']}
         align='center'
         totalRowCount={this.props.totalRowCount}
         currentRowNumber={this.state.currentRowNumber}

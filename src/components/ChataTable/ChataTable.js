@@ -164,6 +164,11 @@ export default class ChataTable extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState, snapshot) => {
+    if (!this.props.hidden && prevProps.hidden && this.state.subscribedData) {
+      this.ref?.tabulator?.setData(this.state.subscribedData)
+      this.setState({ subscribedData: undefined })
+    }
+
     if (!this.state.isFiltering && prevState.isFiltering) {
       try {
         this.setFilterTags()
@@ -186,6 +191,16 @@ export default class ChataTable extends React.Component {
       this.filterTagElements = undefined
     } catch (error) {
       console.error(error)
+    }
+  }
+
+  updateData = (data) => {
+    if (this.props.hidden) {
+      this.setState({
+        subscribedData: data,
+      })
+    } else {
+      this.ref?.tabulator?.setData(data)
     }
   }
 
@@ -694,7 +709,7 @@ export default class ChataTable extends React.Component {
       <Popover
         isOpen={!!this.state.datePickerColumn}
         align='start'
-        positions={['bottom', 'right']}
+        positions={['bottom', 'right', 'left', 'top']}
         onClickOutside={(e) => {
           e.stopPropagation()
           this.setState({
@@ -785,6 +800,7 @@ export default class ChataTable extends React.Component {
             ${this.props.hidden ? 'hidden' : ''}
             ${isEmpty ? 'empty' : ''}`}
         >
+          {isEmpty && this.renderEmptyPlaceholderText()}
           {!!this.props.data && !!this.props.columns && (
             <div ref={(r) => (this.tabulatorContainer = r)} className='react-autoql-tabulator-container'>
               <TableWrapper
@@ -805,6 +821,7 @@ export default class ChataTable extends React.Component {
                 onDataSorted={this.onDataSorted}
                 onDataFiltering={this.onDataFiltering}
                 onDataFiltered={this.onDataFiltered}
+                pivot={this.props.pivot}
               />
               {this.state.pageLoading && this.renderPageLoader()}
               {this.state.scrollLoading && this.renderScrollLoader()}

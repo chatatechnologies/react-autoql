@@ -572,7 +572,7 @@ export class OptionsToolbar extends React.Component {
             <Popover
               key={`more-options-button-${this.COMPONENT_KEY}`}
               isOpen={this.state.activeMenu === 'more-options'}
-              positions={['bottom', 'top']}
+              positions={['bottom', 'top', 'left', 'right']}
               padding={8}
               onClickOutside={() => {
                 this.setState({ activeMenu: undefined })
