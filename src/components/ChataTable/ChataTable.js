@@ -164,9 +164,9 @@ export default class ChataTable extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState, snapshot) => {
-    if (!this.props.hidden && prevProps.hidden && this.subscribeToUpdateData) {
-      this.ref?.tabulator?.setData(this.subscribeToUpdateData)
-      this.subscribeToUpdateData = undefined
+    if (!this.props.hidden && prevProps.hidden && this.state.subscribedData) {
+      this.ref?.tabulator?.setData(this.state.subscribedData)
+      this.setState({ subscribedData: undefined })
     }
 
     if (!this.state.isFiltering && prevState.isFiltering) {
@@ -196,7 +196,9 @@ export default class ChataTable extends React.Component {
 
   updateData = (data) => {
     if (this.props.hidden) {
-      this.subscribeToUpdateData = data
+      this.setState({
+        subscribedData: data,
+      })
     } else {
       this.ref?.tabulator?.setData(data)
     }

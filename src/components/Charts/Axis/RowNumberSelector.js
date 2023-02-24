@@ -128,7 +128,7 @@ export default class RowNumberSelector extends React.Component {
               let rowNumberString = rowNumber
               if (rowNumber === MAX_DATA_PAGE_SIZE) {
                 rowNumberString = `${MAX_DATA_PAGE_SIZE} (Maximum)`
-              } else if (rowNumber !== DEFAULT_DATA_PAGE_SIZE && rowNumber !== 500) {
+              } else if (rowNumber !== DEFAULT_DATA_PAGE_SIZE && rowNumber !== DEFAULT_DATA_PAGE_SIZE * 10) {
                 rowNumberString = `${rowNumber} (All)`
               }
 

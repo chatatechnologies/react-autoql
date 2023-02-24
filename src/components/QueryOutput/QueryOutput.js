@@ -58,7 +58,7 @@ import {
 } from './columnHelpers.js'
 
 import { sendSuggestion, runDrilldown, runQueryOnly } from '../../js/queryService'
-import { MONTH_NAMES, DEFAULT_DATA_PAGE_SIZE, CHART_TYPES } from '../../js/Constants'
+import { MONTH_NAMES, DEFAULT_DATA_PAGE_SIZE, CHART_TYPES, MAX_DATA_PAGE_SIZE } from '../../js/Constants'
 import { ReverseTranslation } from '../ReverseTranslation'
 import { getColumnDateRanges, getFilterPrecision, getPrecisionForDayJS } from '../../js/dateUtils'
 import { withTheme } from '../../theme'
@@ -1077,7 +1077,18 @@ export class QueryOutput extends React.Component {
   onNewData = (response, pageSize) => {
     this.isOriginalData = false
     this.queryResponse = response
-    this.tableData = response?.data?.data?.rows || []
+    const responseData = response?.data?.data
+    this.tableData = responseData?.rows || []
+
+    if (this.state.displayType !== 'table') {
+      if (this.tableData.length >= responseData?.count_rows) {
+        // The rows were changed from a chart - If it is the maximum page size, we dont want
+        // infinite scroll anymore - mount a new table with the new data
+        this.tableID = uuid()
+      } else {
+        this.tableRef?.updateData(this.tableData)
+      }
+    }
 
     this.setState({
       visibleRows: response.data.data.rows,
@@ -1903,6 +1914,7 @@ export class QueryOutput extends React.Component {
     return (
       <ErrorBoundary>
         <ChataTable
+          key={this.tableID}
           authentication={this.props.authentication}
           dataFormatting={this.props.dataFormatting}
           rowChangeCount={this.state.visibleRowChangeCount}
