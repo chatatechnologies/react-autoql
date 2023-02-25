@@ -1606,7 +1606,6 @@ export default class App extends Component {
         <DataAlerts
           authentication={this.getAuthProp()}
           onErrorCallback={this.onError}
-          showCreateAlertBtn
           onSuccessAlert={this.onSuccess}
         />
       </div>
