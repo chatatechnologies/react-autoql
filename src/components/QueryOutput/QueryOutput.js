@@ -1919,6 +1919,7 @@ export class QueryOutput extends React.Component {
       <ErrorBoundary>
         <ChataTable
           key={this.tableID}
+          autoHeight={this.props.autoHeight}
           authentication={this.props.authentication}
           dataFormatting={this.props.dataFormatting}
           rowChangeCount={this.state.visibleRowChangeCount}
@@ -1979,6 +1980,7 @@ export class QueryOutput extends React.Component {
           hidden={this.state.displayType !== 'pivot_table'}
           useInfiniteScroll={false}
           supportsDrilldowns={true}
+          autoHeight={this.props.autoHeight}
           pivot
         />
       </ErrorBoundary>

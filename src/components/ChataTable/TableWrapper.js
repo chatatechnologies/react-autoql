@@ -16,9 +16,10 @@ export default class TableWrapper extends React.Component {
 
     this.tableRef = React.createRef()
     this.tabulator = null //variable to hold your table
+    this.redrawRestored = true
     this.defaultOptions = {
       // renderVerticalBuffer: 10, // Change this to help with performance if needed in the future
-      height: '100%',
+      height: this.props.height || '100%',
       autoResize: false,
       rowHeight: 25,
       layout: 'fitDataFill',
@@ -28,10 +29,6 @@ export default class TableWrapper extends React.Component {
         rowGroups: false,
         columnCalcs: false,
       },
-    }
-
-    this.state = {
-      subscribedData: undefined,
     }
   }
 
@@ -59,15 +56,8 @@ export default class TableWrapper extends React.Component {
     onDataFiltered: () => {},
   }
 
-  shouldComponentUpdate = (nextProps) => {
-    if (!this.props.hidden && !deepEqual(this.props.columns, nextProps.columns)) {
-      return true
-    }
-
-    if (this.props.hidden && !nextProps.hidden) {
-      return true
-    }
-
+  shouldComponentUpdate = () => {
+    // This component should never update, or else it causes an enormous amount of redraws
     return false
   }
 
@@ -75,25 +65,10 @@ export default class TableWrapper extends React.Component {
     this.instantiateTabulator()
   }
 
-  componentDidUpdate = (prevProps) => {
-    if (!this.props.hidden && prevProps.hidden) {
-      if (this.state.subscribedData) {
-        this.ref?.tabulator?.setData(this.state.subscribedData)
-        this.setState({ subscribedData: undefined })
-      } else {
-        this.restoreRedraw()
-      }
-    }
-
-    if (this.props.columns && !deepEqual(this.props.columns, prevProps.columns)) {
-      this.tabulator?.setColumns(this.props.columns)
-    }
-  }
-
   instantiateTabulator = () => {
     // Instantiate Tabulator when element is mounted
     this.tabulator = new Tabulator(this.tableRef, {
-      // reactiveData: true, // Enable data reactivity
+      reactiveData: false, // Enable data reactivity
       columns: this.props.columns, // Define table columns
       ...this.defaultOptions,
       ...this.props.options,
@@ -125,14 +100,16 @@ export default class TableWrapper extends React.Component {
     })
   }
 
-  blockRedraw = () => {
-    if (this.tabulator) {
+  blockRedraw = (log) => {
+    if (this.tabulator && this.redrawRestored) {
+      this.redrawRestored = false
       this.tabulator.blockRedraw()
     }
   }
 
-  restoreRedraw = () => {
-    if (this.tabulator) {
+  restoreRedraw = (log) => {
+    if (this.tabulator && this.isInitialized && !this.redrawRestored) {
+      this.redrawRestored = true
       this.tabulator.restoreRedraw()
     }
   }
