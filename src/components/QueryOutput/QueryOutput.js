@@ -88,17 +88,6 @@ export class QueryOutput extends React.Component {
       columns = props.initialColumns
     }
 
-    // Set initial config if needed
-    // If this config causes errors, it will be reset when the error occurs
-    if (
-      props.initialTableConfigs?.tableConfig &&
-      this.isTableConfigValid(props.initialTableConfigs?.tableConfig, columns)
-    ) {
-      const { tableConfig, pivotTableConfig } = props.initialTableConfigs
-      this.tableConfig = _cloneDeep(tableConfig)
-      this.pivotTableConfig = _cloneDeep(pivotTableConfig)
-    }
-
     // --------- generate data before mount --------
     this.generateAllData()
     // -------------------------------------------
@@ -109,6 +98,17 @@ export class QueryOutput extends React.Component {
     const displayType = this.getDisplayTypeFromInitial(props)
     if (props.onDisplayTypeChange) {
       props.onDisplayTypeChange(displayType)
+    }
+
+    // Set initial config if needed
+    // If this config causes errors, it will be reset when the error occurs
+    if (
+      props.initialTableConfigs?.tableConfig &&
+      this.isTableConfigValid(props.initialTableConfigs?.tableConfig, columns, displayType)
+    ) {
+      const { tableConfig, pivotTableConfig } = props.initialTableConfigs
+      this.tableConfig = _cloneDeep(tableConfig)
+      this.pivotTableConfig = _cloneDeep(pivotTableConfig)
     }
 
     // Set initial table params to be any filters or sorters that
@@ -463,7 +463,7 @@ export class QueryOutput extends React.Component {
     )
   }
 
-  isTableConfigValid = (tableConfig, columns) => {
+  isTableConfigValid = (tableConfig, columns, displayType) => {
     try {
       if (
         !tableConfig ||
@@ -486,22 +486,24 @@ export class QueryOutput extends React.Component {
         return false
       }
 
-      if (
-        !isNaN(tableConfig.numberColumnIndex) &&
-        !isNaN(tableConfig.numberColumnIndex2) &&
-        tableConfig.numberColumnIndex === tableConfig.numberColumnIndex2
-      ) {
-        console.debug('Both axes reference the same number column index')
-        return false
-      }
+      if (displayType === 'column_line') {
+        if (
+          !isNaN(tableConfig.numberColumnIndex) &&
+          !isNaN(tableConfig.numberColumnIndex2) &&
+          tableConfig.numberColumnIndex === tableConfig.numberColumnIndex2
+        ) {
+          console.debug('Both axes reference the same number column index')
+          return false
+        }
 
-      if (
-        tableConfig.numberColumnIndices.length &&
-        tableConfig.numberColumnIndices2.length &&
-        tableConfig.numberColumnIndices.filter((index) => tableConfig.numberColumnIndices2.includes(index)).length
-      ) {
-        console.debug('Both axes reference one or more of the same number column index')
-        return false
+        if (
+          tableConfig.numberColumnIndices.length &&
+          tableConfig.numberColumnIndices2.length &&
+          tableConfig.numberColumnIndices.filter((index) => tableConfig.numberColumnIndices2.includes(index)).length
+        ) {
+          console.debug('Both axes reference one or more of the same number column index')
+          return false
+        }
       }
 
       const areNumberColumnsValid = tableConfig.numberColumnIndices.every((index) => {
