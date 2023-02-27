@@ -18,7 +18,7 @@ export default class TableWrapper extends React.Component {
     this.redrawRestored = true
     this.defaultOptions = {
       // renderVerticalBuffer: 10, // Change this to help with performance if needed in the future
-      height: '100%',
+      height: this.props.height || '100%',
       reactiveData: false,
       autoResize: false,
       rowHeight: 25,
@@ -87,9 +87,9 @@ export default class TableWrapper extends React.Component {
     this.tabulator.on('renderComplete', () => {
       // Block redraw after every update for performance
       // Restore redraw manually before updating table data
-      setTimeout(() => {
+      if (this.isInitialized) {
         this.blockRedraw()
-      }, 100)
+      }
     })
     this.tabulator.on('dataLoadError', this.props.onDataLoadError)
     this.tabulator.on('cellClick', this.props.onCellClick)
@@ -97,17 +97,13 @@ export default class TableWrapper extends React.Component {
     this.tabulator.on('dataSorted', this.props.onDataSorted)
     this.tabulator.on('dataFiltering', this.props.onDataFiltering)
     this.tabulator.on('dataFiltered', this.props.onDataFiltered)
-    this.tabulator.on('tableBuilt', () => {
+    this.tabulator.on('tableBuilt', async () => {
       this.isInitialized = true
       if (this.props.options?.ajaxRequestFunc) {
-        this.tabulator.setData().then(() => {
-          if (this._isMounted) {
-            this.props.onTableBuilt()
-          }
-        })
-      } else if (this._isMounted) {
-        this.props.onTableBuilt()
+        await this.tabulator.setData()
       }
+
+      this.props.onTableBuilt()
     })
   }
 
