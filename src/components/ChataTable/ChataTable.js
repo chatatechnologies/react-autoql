@@ -165,7 +165,11 @@ export default class ChataTable extends React.Component {
   }
 
   getSnapshotBeforeUpdate = (prevProps, prevState) => {
-    if ((!this.props.isResizing && prevProps.isResizing) || (!this.props.isAnimating && prevProps.isAnimating)) {
+    if (
+      (!this.props.isResizing && prevProps.isResizing) ||
+      (!this.props.isAnimating && prevProps.isAnimating) ||
+      (!this.state.firstRender && prevState.firstRender)
+    ) {
       this.setTableHeight()
     }
 
@@ -323,8 +327,8 @@ export default class ChataTable extends React.Component {
     ) {
       // this.ref?.blockRedraw('BEFORE SETTING HEIGHT')
       const tableHeight = this.tabulatorContainer.clientHeight
-      if (tableHeight !== this.lockedTableHeight) {
-        this.ref?.tabulator?.setHeight(this.lockedTableHeight)
+      if (tableHeight && tableHeight !== this.lockedTableHeight) {
+        this.ref?.tabulator?.setHeight(tableHeight)
         this.hasSetTableHeight = true
         this.lockedTableHeight = tableHeight
       }
