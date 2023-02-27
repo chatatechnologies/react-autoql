@@ -664,9 +664,6 @@ export class DashboardTile extends React.Component {
           <div className={`dashboard-tile-play-button${!this.isQueryValid(this.state.query) ? ' disabled' : ''}`}>
             <Icon type='play' onClick={() => this.processTile()} data-tip='Run tile' data-place='left' />
           </div>
-          <div className='dashboard-tile-delete-button' onClick={() => this.props.deleteTile(this.props.tile.i)}>
-            <Icon style={{ fontSize: '18px' }} type='close' />
-          </div>
         </div>
       )
     }
@@ -1174,6 +1171,14 @@ export class DashboardTile extends React.Component {
     )
   }
 
+  renderDeleteBtn = () => {
+    return (
+      <div className='dashboard-tile-delete-button' onClick={() => this.props.deleteTile(this.props.tile.i)}>
+        <Icon style={{ fontSize: '18px' }} type='close' />
+      </div>
+    )
+  }
+
   render = () => {
     const style = {}
     if (this.props.isDragging) {
@@ -1203,6 +1208,7 @@ export class DashboardTile extends React.Component {
             </Fragment>
           </div>
           {this.props.isEditing && this.renderDragHandles()}
+          {this.props.isEditing && this.renderDeleteBtn()}
         </div>
       </ErrorBoundary>
     )
