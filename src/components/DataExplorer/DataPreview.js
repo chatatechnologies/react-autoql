@@ -74,6 +74,10 @@ export default class DataExplorer extends React.Component {
   }
 
   rebuildTooltips = () => {
+    if (!this.props.shouldRender) {
+      return
+    }
+
     if (this.props.rebuildTooltips) {
       this.props.rebuildTooltips()
     } else {

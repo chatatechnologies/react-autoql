@@ -69,7 +69,10 @@ export default class TableWrapper extends React.Component {
   componentWillUnmount = () => {
     this._isMounted = false
     this.isInitialized = false
-    this.tabulator.destroy()
+    setTimeout(() => {
+      // We must destroy the table to remove it from memory
+      this.tabulator.destroy()
+    }, 1000)
   }
 
   instantiateTabulator = () => {
@@ -86,7 +89,7 @@ export default class TableWrapper extends React.Component {
       // Restore redraw manually before updating table data
       setTimeout(() => {
         this.blockRedraw()
-      }, 500)
+      }, 100)
     })
     this.tabulator.on('dataLoadError', this.props.onDataLoadError)
     this.tabulator.on('cellClick', this.props.onCellClick)

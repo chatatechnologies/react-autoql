@@ -412,6 +412,7 @@ export default class ChatContent extends React.Component {
                   popoverParentElement={this.chatContentRef}
                   isVisibleInDOM={this.props.shouldRender}
                   dataPageSize={this.props.dataPageSize}
+                  shouldRender={this.props.shouldRender}
                   source={this.props.source}
                 />
               )

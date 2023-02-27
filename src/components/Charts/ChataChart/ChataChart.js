@@ -327,6 +327,10 @@ export default class ChataChart extends Component {
   }
 
   rebuildTooltips = (delay = 500) => {
+    if (this.props.hidden) {
+      return
+    }
+
     if (this.props.rebuildTooltips) {
       this.props.rebuildTooltips(delay)
     } else {

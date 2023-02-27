@@ -265,6 +265,10 @@ export class DataMessenger extends React.Component {
   onClose = () => this.setState({ isDataAlertModalVisible: false })
 
   rebuildTooltips = (delay = 500) => {
+    if (!this.state.isVisible) {
+      return
+    }
+
     clearTimeout(this.rebuildTooltipsTimer)
     this.rebuildTooltipsTimer = setTimeout(() => {
       ReactTooltip.rebuild()

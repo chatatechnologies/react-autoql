@@ -107,6 +107,10 @@ export default class FilterLockPopover extends React.Component {
   }
 
   rebuildTooltips = (delay = 500) => {
+    if (!this.props.isOpen) {
+      return
+    }
+
     if (this.props.rebuildTooltips) {
       this.props.rebuildTooltips(delay)
     } else {

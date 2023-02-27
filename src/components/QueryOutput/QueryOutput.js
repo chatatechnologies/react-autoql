@@ -65,19 +65,6 @@ import { withTheme } from '../../theme'
 
 import './QueryOutput.scss'
 
-String.prototype.isUpperCase = function () {
-  return this.valueOf().toUpperCase() === this.valueOf()
-}
-
-String.prototype.toProperCase = function () {
-  return this.replace(/\w\S*/g, (txt) => {
-    if (txt.isUpperCase()) {
-      return txt
-    }
-    return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
-  })
-}
-
 export class QueryOutput extends React.Component {
   constructor(props) {
     super(props)
@@ -235,7 +222,7 @@ export class QueryOutput extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
-    if (!nextProps.shouldRender) {
+    if (!this.props.shouldRender && !nextProps.shouldRender) {
       return false
     }
 
@@ -341,6 +328,10 @@ export class QueryOutput extends React.Component {
   }
 
   rebuildTooltips = (delay = 500) => {
+    if (!this.props.shouldRender) {
+      return
+    }
+
     if (this.props.rebuildTooltips) {
       this.props.rebuildTooltips(delay)
     } else {

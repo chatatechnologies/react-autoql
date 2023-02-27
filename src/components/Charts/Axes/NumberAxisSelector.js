@@ -44,7 +44,9 @@ export default class NumberAxisSelector extends React.Component {
   }
 
   componentDidMount = () => {
-    this.props.rebuildTooltips()
+    if (!this.props.hidden) {
+      this.props.rebuildTooltips()
+    }
   }
 
   componentDidUpdate = (prevProps, prevState) => {
