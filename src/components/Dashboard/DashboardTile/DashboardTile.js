@@ -964,6 +964,7 @@ export class DashboardTile extends React.Component {
         reverseTranslationPlacement='top'
         tooltipID={this.props.tooltipID}
         chartTooltipID={this.props.chartTooltipID}
+        shouldRender={!this.props.isDragging}
         autoHeight={false}
         height='100%'
         width='100%'

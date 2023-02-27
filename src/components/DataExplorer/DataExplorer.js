@@ -68,6 +68,7 @@ export default class DataExplorer extends React.Component {
       this.setState({
         selectedSubject: listItem,
         selectedKeywords: null,
+        selectedVL: null,
         activeTopicType: listItem?.type,
         skipQueryValidation: true,
       })
