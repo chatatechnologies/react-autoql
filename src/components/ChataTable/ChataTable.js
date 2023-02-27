@@ -171,7 +171,6 @@ export default class ChataTable extends React.Component {
 
     if (this.props.isResizing && !prevProps.isResizing) {
       this.lockedTableHeight = '100%'
-      // this.ref?.blockRedraw('BEFORE SETTING HEIGHT TO 100%')
       this.ref?.tabulator?.setHeight(this.lockedTableHeight)
     }
 
@@ -825,6 +824,7 @@ export default class ChataTable extends React.Component {
 
   render = () => {
     const isEmpty = this.isTableEmpty()
+
     return (
       <ErrorBoundary>
         <div
@@ -844,7 +844,7 @@ export default class ChataTable extends React.Component {
             ${isEmpty ? 'empty' : ''}`}
         >
           <div ref={(r) => (this.tabulatorContainer = r)} className='react-autoql-tabulator-container'>
-            {!!this.props.data && !!this.props.columns && !this.state.firstRender && (
+            {!!this.props.data && !!this.props.columns && (this.props.autoHeight || !this.state.firstRender) && (
               <>
                 <TableWrapper
                   ref={(r) => (this.ref = r)}
