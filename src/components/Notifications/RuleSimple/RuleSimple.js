@@ -24,6 +24,7 @@ const getInitialStateData = (initialData) => {
       input1Value: initialData[0].term_value,
       conditionSelectValue: 'EXISTS',
       isComplete: !!_get(initialData[0].term_value, 'length'),
+      userSelection: initialData[0].user_selection,
     }
   } else if (initialData && initialData.length > 1) {
     const input1Value = `${_get(initialData, '[0].term_value', '')}`
@@ -35,6 +36,7 @@ const getInitialStateData = (initialData) => {
       conditionSelectValue: initialData[0].condition,
       secondTermType: initialData[1].term_type,
       isComplete: !!_get(input1Value, 'length') && !!_get(input2Value, 'length'),
+      userSelection: initialData[0].user_selection,
     }
   }
 
@@ -132,6 +134,7 @@ export default class RuleSimple extends React.Component {
           term_type: 'query',
           condition: this.state.conditionSelectValue,
           term_value: this.state.input1Value,
+          user_selection: this.state.userSelection,
         },
       ]
     }
@@ -143,12 +146,14 @@ export default class RuleSimple extends React.Component {
         term_type: 'query',
         condition: this.state.conditionSelectValue,
         term_value: this.state.input1Value,
+        user_selection: this.state.userSelection,
       },
       {
         id: this.TERM_ID_2,
         term_type: this.isNumerical(input2Value) ? 'constant' : 'query',
         condition: 'TERMINATOR',
         term_value: this.isNumerical(input2Value) ? parseNum(input2Value) : input2Value,
+        user_selection: this.state.userSelection,
       },
     ]
   }
