@@ -131,6 +131,10 @@ export default class ChataTable extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
+    if (!this.state.tabulatorMounted && nextState.tabulatorMounted) {
+      return true
+    }
+
     if (this.props.rowChangeCount !== nextProps.rowChangeCount) {
       return true
     }
