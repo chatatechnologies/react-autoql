@@ -2,7 +2,6 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import Drawer from 'rc-drawer'
-import ReactTooltip from 'react-tooltip'
 import { Popover } from 'react-tiny-popover'
 import _get from 'lodash.get'
 import _has from 'lodash.has'
@@ -10,6 +9,7 @@ import _isEmpty from 'lodash.isempty'
 import _isEqual from 'lodash.isequal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { ChatContent } from '../ChatContent'
+import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
 import { withTheme } from '../../theme'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
@@ -275,7 +275,7 @@ export class DataMessenger extends React.Component {
 
     clearTimeout(this.rebuildTooltipsTimer)
     this.rebuildTooltipsTimer = setTimeout(() => {
-      ReactTooltip.rebuild()
+      rebuildTooltips()
     }, delay)
   }
 
@@ -337,7 +337,8 @@ export class DataMessenger extends React.Component {
         this.setState({ isResizing: false })
       },
     )
-    ReactTooltip.hide()
+
+    hideTooltips()
   }
 
   getHandleProp = () => {
@@ -979,7 +980,7 @@ export class DataMessenger extends React.Component {
   renderTooltips = () => {
     return (
       <Fragment>
-        <ReactTooltip
+        <Tooltip
           className='react-autoql-tooltip'
           id={this.TOOLTIP_ID}
           effect='solid'
@@ -987,7 +988,7 @@ export class DataMessenger extends React.Component {
           place='top'
           html
         />
-        <ReactTooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} effect='solid' html />
+        <Tooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} effect='solid' html />
       </Fragment>
     )
   }

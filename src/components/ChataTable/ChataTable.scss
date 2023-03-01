@@ -36,6 +36,10 @@
     }
   }
 
+  &.loading {
+    pointer-events: none;
+  }
+
   &.hidden {
     visibility: hidden;
     position: absolute;
@@ -77,6 +81,7 @@
     .react-autoql-table {
       visibility: hidden;
       opacity: 0;
+      pointer-events: none;
     }
   }
 
@@ -84,6 +89,7 @@
   .tabulator-col.DRILLDOWN .tabulator-header-filter {
     visibility: hidden;
     opacity: 0;
+    pointer-events: none;
   }
 
   &.limited .tabulator-col .tabulator-header-filter,
@@ -132,6 +138,7 @@
     .tabulator-header-filter input {
       opacity: 0;
       visibility: hidden;
+      pointer-events: none;
     }
 
     .react-autoql-tabulator-container .tabulator-tableholder {
@@ -179,6 +186,8 @@
       // This cant be display: none because tabulator needs
       // to reference the dom element for its initial render
       visibility: hidden;
+      pointer-events: none;
+      opacity: 0;
     }
   }
 
@@ -340,6 +349,7 @@
     bottom: 0;
     right: 0;
     left: 0;
+    pointer-events: none;
 
     .page-loader-spinner {
       display: flex;

@@ -97,6 +97,7 @@ export default class TableWrapper extends React.Component {
     this.tabulator.on('dataSorted', this.props.onDataSorted)
     this.tabulator.on('dataFiltering', this.props.onDataFiltering)
     this.tabulator.on('dataFiltered', this.props.onDataFiltered)
+
     this.tabulator.on('tableBuilt', async () => {
       this.isInitialized = true
       if (this.props.options?.ajaxRequestFunc) {

@@ -5,7 +5,6 @@ import axios from 'axios'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import Autosuggest from 'react-autosuggest'
-import ReactTooltip from 'react-tooltip'
 import SplitterLayout from 'react-splitter-layout'
 
 import { QueryOutput } from '../../QueryOutput'
@@ -16,6 +15,7 @@ import LoadingDots from '../../LoadingDots/LoadingDots.js'
 import { Icon } from '../../Icon'
 import { responseErrors } from '../../../js/errorMessages'
 import { deepEqual, isChartType } from '../../../js/Util'
+import { hideTooltips } from '../../Tooltip'
 
 import { runQuery, fetchAutocomplete } from '../../../js/queryService'
 
@@ -804,7 +804,7 @@ export class DashboardTile extends React.Component {
               <button
                 onClick={() => {
                   this.toggleSecondQueryInput()
-                  ReactTooltip.hide()
+                  hideTooltips()
                 }}
                 className='react-autoql-toolbar-btn'
                 data-tip='Query'
@@ -862,7 +862,7 @@ export class DashboardTile extends React.Component {
       secondQuery,
     })
 
-    ReactTooltip.hide()
+    hideTooltips()
   }
 
   renderSplitViewBtn = () => {

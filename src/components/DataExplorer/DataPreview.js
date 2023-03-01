@@ -17,7 +17,6 @@ import { formatElement } from '../../js/Util.js'
 import { responseErrors } from '../../js/errorMessages'
 
 import './DataPreview.scss'
-import ReactTooltip from 'react-tooltip'
 
 export default class DataExplorer extends React.Component {
   constructor(props) {
@@ -49,6 +48,7 @@ export default class DataExplorer extends React.Component {
     rebuildTooltips: undefined,
     isCollapsed: undefined,
     onIsCollapsedChange: () => {},
+    rebuildTooltips: () => {},
     defaultCollapsed: false,
   }
 
@@ -65,24 +65,12 @@ export default class DataExplorer extends React.Component {
     }
 
     if (this.state.dataPreview && !_isEqual(this.state.dataPreview, prevState.dataPreview)) {
-      this.rebuildTooltips()
+      this.props.rebuildTooltips()
     }
   }
 
   componentWillUnmount = () => {
     this._isMounted = false
-  }
-
-  rebuildTooltips = () => {
-    if (!this.props.shouldRender) {
-      return
-    }
-
-    if (this.props.rebuildTooltips) {
-      this.props.rebuildTooltips()
-    } else {
-      ReactTooltip.rebuild()
-    }
   }
 
   cancelCurrentRequest = () => {

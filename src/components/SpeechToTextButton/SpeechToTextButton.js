@@ -1,10 +1,10 @@
 import React from 'react'
-import ReactTooltip from 'react-tooltip'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEqual from 'lodash.isequal'
 import RecordRTC, { StereoAudioRecorder } from 'recordrtc'
 import axios from 'axios'
 import { Icon } from '../Icon'
+import { hideTooltips, Tooltip } from '../Tooltip'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import PropTypes from 'prop-types'
 import { authenticationDefault } from '../../props/defaults'
@@ -111,7 +111,7 @@ export default class SpeechToTextBtn extends React.Component {
   }
 
   onMouseDown = () => {
-    ReactTooltip.hide()
+    hideTooltips()
     this.startRecording()
   }
 
@@ -182,7 +182,7 @@ export default class SpeechToTextBtn extends React.Component {
             <Icon type='microphone' />
           </button>
         </Popover>
-        <ReactTooltip
+        <Tooltip
           className='react-autoql-tooltip'
           id='react-autoql-speech-to-text-tooltip'
           effect='solid'

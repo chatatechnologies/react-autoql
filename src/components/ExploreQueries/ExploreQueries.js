@@ -1,7 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import ReactTooltip from 'react-tooltip'
 
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { fetchExploreQueries } from '../../js/queryService'
@@ -9,6 +8,7 @@ import { InfiniteScrollAutoQL } from '../InfiniteScroll'
 import { animateInputText } from '../../js/Util'
 import { LoadingDots } from '../LoadingDots'
 import { withTheme } from '../../theme'
+import { Tooltip } from '../Tooltip'
 import { Spinner } from '../Spinner'
 import { Icon } from '../Icon'
 
@@ -296,7 +296,7 @@ export class ExploreQueries extends React.Component {
           <div className='query-tips-result-container'>{this.renderQueryList()}</div>
         </div>
         {!this.props.tooltipID && (
-          <ReactTooltip className='react-autoql-tooltip' id='explore-queries-tooltips' delayShow={800} effect='solid' />
+          <Tooltip className='react-autoql-tooltip' id='explore-queries-tooltips' delayShow={800} effect='solid' />
         )}
       </ErrorBoundary>
     )

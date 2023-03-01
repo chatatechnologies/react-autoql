@@ -1,7 +1,6 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import advancedFormat from 'dayjs/plugin/advancedFormat'
-import ReactTooltip from 'react-tooltip'
 import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEmpty from 'lodash.isempty'
@@ -27,6 +26,7 @@ import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
 import './NotificationItem.scss'
+import { hideTooltips } from '../../Tooltip'
 
 dayjs.extend(advancedFormat)
 
@@ -201,7 +201,7 @@ export default class NotificationItem extends React.Component {
               data-for='react-autoql-notification-tooltip'
               onClick={(e) => {
                 this.onDismissClick(e, notification)
-                ReactTooltip.hide()
+                hideTooltips()
               }}
             />
           </div>
@@ -214,7 +214,7 @@ export default class NotificationItem extends React.Component {
               data-for='react-autoql-notification-tooltip'
               onClick={(e) => {
                 this.onDeleteClick(e, notification)
-                ReactTooltip.hide()
+                hideTooltips()
               }}
             />
           </div>

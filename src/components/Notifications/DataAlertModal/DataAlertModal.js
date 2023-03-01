@@ -4,7 +4,6 @@ import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEmpty from 'lodash.isempty'
 import { v4 as uuid } from 'uuid'
-import ReactTooltip from 'react-tooltip'
 
 import { Modal } from '../../Modal'
 import { ConfirmModal } from '../../ConfirmModal'
@@ -12,6 +11,7 @@ import { Steps } from '../../Steps'
 import { Input } from '../../Input'
 import { Button } from '../../Button'
 import { Icon } from '../../Icon'
+import { Tooltip } from '../../Tooltip'
 import { ExpressionBuilderSimple } from '../ExpressionBuilderSimple'
 import { ScheduleBuilder } from '../ScheduleBuilder'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
@@ -646,7 +646,7 @@ class DataAlertModal extends React.Component {
           }
         >
           {!this.props.tooltipID && (
-            <ReactTooltip
+            <Tooltip
               className='react-autoql-tooltip'
               id='react-autoql-data-alert-query-name-tooltip'
               effect='solid'

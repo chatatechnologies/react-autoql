@@ -4,14 +4,13 @@ import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.filter'
 import { v4 as uuid } from 'uuid'
-import ReactTooltip from 'react-tooltip'
 
+import { Tooltip } from '../Tooltip'
 import { Icon } from '../Icon'
 
 import { authenticationType } from '../../props/types'
 import { authenticationDefault, getAuthentication } from '../../props/defaults'
 import { constructRTArray } from '../../js/reverseTranslationHelpers'
-
 import { fetchVLAutocomplete } from '../../js/queryService'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
@@ -170,7 +169,7 @@ export default class ReverseTranslation extends React.Component {
           </div>
         </div>
         {!this.props.tooltipID && (
-          <ReactTooltip
+          <Tooltip
             className='react-autoql-reverse-translation-tooltip'
             id={`react-autoql-reverse-translation-tooltip-${this.COMPONENT_KEY}`}
             effect='solid'

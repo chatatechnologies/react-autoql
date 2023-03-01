@@ -2,7 +2,6 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import RGL, { WidthProvider } from 'react-grid-layout'
-import ReactTooltip from 'react-tooltip'
 import _isEqual from 'lodash.isequal'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
@@ -13,6 +12,7 @@ import { Icon } from '../Icon'
 import { DashboardTile } from './DashboardTile'
 import { QueryOutput } from '../QueryOutput'
 import { LoadingDots } from '../LoadingDots'
+import { rebuildTooltips, Tooltip } from '../Tooltip'
 import ReportProblemModal from '../OptionsToolbar/ReportProblemModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { CHART_TYPES } from '../../js/Constants'
@@ -183,7 +183,7 @@ class DashboardWithoutTheme extends React.Component {
   rebuildTooltips = () => {
     clearTimeout(this.rebuildTooltipsTimer)
     this.rebuildTooltipsTimer = setTimeout(() => {
-      ReactTooltip.rebuild()
+      rebuildTooltips()
     }, 500)
     return
   }
@@ -878,14 +878,8 @@ class DashboardWithoutTheme extends React.Component {
           </div>
           {this.renderDrilldownModal()}
           {this.renderReportProblemModal()}
-          <ReactTooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' delayShow={500} html />
-          <ReactTooltip
-            className='react-autoql-chart-tooltip'
-            id={this.CHART_TOOLTIP_ID}
-            effect='solid'
-            place='top'
-            html
-          />
+          <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' delayShow={500} html />
+          <Tooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} effect='solid' place='top' html />
         </Fragment>
       </ErrorBoundary>
     )

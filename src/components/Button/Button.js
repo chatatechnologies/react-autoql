@@ -1,9 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import ReactTooltip from 'react-tooltip'
 import { v4 as uuid } from 'uuid'
 
 import { Spinner } from '../Spinner'
+import { Tooltip } from '../Tooltip'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Button.scss'
@@ -84,7 +84,7 @@ export default class Button extends React.Component {
           {this.props.children}
         </button>
         {!this.props.tooltipID && (
-          <ReactTooltip
+          <Tooltip
             className='react-autoql-tooltip'
             id={this.COMPONENT_KEY}
             effect='solid'

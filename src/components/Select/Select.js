@@ -3,7 +3,8 @@ import PropTypes from 'prop-types'
 import { Popover } from 'react-tiny-popover'
 import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
-import ReactTooltip from 'react-tooltip'
+
+import { hideTooltips, Tooltip } from '../Tooltip'
 
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
@@ -43,7 +44,7 @@ export default class Select extends React.Component {
 
   componentDidUpdate = (nextProps, nextState) => {
     if (this.state.isOpen !== nextState.isOpen) {
-      ReactTooltip.hide()
+      hideTooltips()
       this.props.rebuildTooltips()
     }
 
@@ -89,12 +90,7 @@ export default class Select extends React.Component {
         style={{ width: this.props.style.width }}
       >
         {!this.props.tooltipID && (
-          <ReactTooltip
-            id={`select-tooltip-${this.ID}`}
-            className='react-autoql-tooltip'
-            effect='solid'
-            delayShow={500}
-          />
+          <Tooltip id={`select-tooltip-${this.ID}`} className='react-autoql-tooltip' effect='solid' delayShow={500} />
         )}
         <ul className='react-autoql-select-popup'>
           {this.props.options.map((option) => {

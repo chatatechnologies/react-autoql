@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import ReactTooltip from 'react-tooltip'
+import { Tooltip } from '../Tooltip'
 import { v4 as uuid } from 'uuid'
 
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -409,7 +409,7 @@ export default class DataExplorer extends React.Component {
           />
           {this.renderDataExplorerContent()}
           {!this.props.tooltipID && (
-            <ReactTooltip
+            <Tooltip
               className='data-preview-tooltip'
               id='data-preview-tooltip'
               place='right'

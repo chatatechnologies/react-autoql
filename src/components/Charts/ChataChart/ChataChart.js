@@ -1,6 +1,5 @@
 import React, { Component, Fragment } from 'react'
 import PropTypes from 'prop-types'
-import ReactTooltip from 'react-tooltip'
 import { v4 as uuid } from 'uuid'
 import { scaleOrdinal } from 'd3-scale'
 
@@ -154,7 +153,6 @@ export default class ChataChart extends Component {
   }
 
   componentWillUnmount = () => {
-    clearTimeout(this.rebuildTooltipsTimer)
     clearTimeout(this.adjustVerticalPositionTimeout)
   }
 
@@ -326,21 +324,6 @@ export default class ChataChart extends Component {
     )
   }
 
-  rebuildTooltips = (delay = 500) => {
-    if (this.props.hidden) {
-      return
-    }
-
-    if (this.props.rebuildTooltips) {
-      this.props.rebuildTooltips(delay)
-    } else {
-      clearTimeout(this.rebuildTooltipsTimer)
-      this.rebuildTooltipsTimer = setTimeout(() => {
-        ReactTooltip.rebuild()
-      }, delay)
-    }
-  }
-
   getBase64Data = () => {
     const svgElement = this.chartRef
     if (!svgElement) {
@@ -427,7 +410,7 @@ export default class ChataChart extends Component {
       popoverParentElement: this.props.popoverParentElement,
       totalRowCount: this.props.totalRowCount,
       chartID: this.state.chartID,
-      rebuildTooltips: this.rebuildTooltips,
+      rebuildTooltips: this.props.rebuildTooltips,
       onAxesRenderComplete: this.adjustChartPosition,
     }
   }

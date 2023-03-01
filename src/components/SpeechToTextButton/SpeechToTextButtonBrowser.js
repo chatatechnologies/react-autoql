@@ -1,7 +1,7 @@
 import React from 'react'
 
 import PropTypes from 'prop-types'
-import ReactTooltip from 'react-tooltip'
+import { hideTooltips, Tooltip } from '../Tooltip'
 import SpeechRecognition from 'react-speech-recognition'
 
 import { Icon } from '../Icon'
@@ -46,7 +46,7 @@ class Dictaphone extends React.Component {
   }
 
   onMouseDown = () => {
-    ReactTooltip.hide()
+    hideTooltips()
     this.props.onTranscriptStart()
     this.props.startListening()
   }
@@ -82,7 +82,7 @@ class Dictaphone extends React.Component {
           <Icon type='microphone' />
         </button>
         {!this.props.tooltipID && (
-          <ReactTooltip
+          <Tooltip
             className='react-autoql-tooltip'
             id='react-autoql-speech-to-text-tooltip'
             effect='solid'

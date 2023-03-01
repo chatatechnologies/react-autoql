@@ -1,7 +1,6 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
-import ReactTooltip from 'react-tooltip'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _isEmpty from 'lodash.isempty'
@@ -24,6 +23,7 @@ import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../Charts/ChataChart'
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { Icon } from '../Icon'
+import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
 
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import errorMessages, { responseErrors } from '../../js/errorMessages'
@@ -316,7 +316,7 @@ export class QueryOutput extends React.Component {
   componentWillUnmount = () => {
     try {
       this._isMounted = false
-      ReactTooltip.hide()
+      hideTooltips()
       clearTimeout(this.rebuildTooltipsTimer)
     } catch (error) {
       console.error(error)
@@ -339,7 +339,7 @@ export class QueryOutput extends React.Component {
     } else {
       clearTimeout(this.rebuildTooltipsTimer)
       this.rebuildTooltipsTimer = setTimeout(() => {
-        ReactTooltip.rebuild()
+        rebuildTooltips()
       }, delay)
     }
     return
@@ -2356,10 +2356,10 @@ export class QueryOutput extends React.Component {
           {this.props.reverseTranslationPlacement !== 'top' && this.renderFooter()}
         </div>
         {!this.props.tooltipID && (
-          <ReactTooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' place='top' html />
+          <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' place='top' html />
         )}
         {!this.props.chartTooltipID && (
-          <ReactTooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} effect='solid' html />
+          <Tooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} effect='solid' html />
         )}
       </ErrorBoundary>
     )

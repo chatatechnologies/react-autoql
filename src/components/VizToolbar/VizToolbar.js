@@ -1,10 +1,11 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import ReactTooltip from 'react-tooltip'
 import { v4 as uuid } from 'uuid'
 import _isEqual from 'lodash.isequal'
 
 import { Icon } from '../Icon'
+import { rebuildTooltips, Tooltip } from '../Tooltip'
+
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { deepEqual } from '../../js/Util'
@@ -59,7 +60,7 @@ class VizToolbar extends React.Component {
     if (this.props.rebuildTooltips) {
       this.props.rebuildTooltips()
     } else {
-      ReactTooltip.rebuild()
+      rebuildTooltips()
     }
   }
 
@@ -141,7 +142,7 @@ class VizToolbar extends React.Component {
             {this.createVisButton('column_line', 'Column Line Combo Chart', <Icon type='column-line-chart' />)}
           </div>
           {!this.props.tooltipID && (
-            <ReactTooltip
+            <Tooltip
               className='react-autoql-tooltip'
               id={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
               effect='solid'

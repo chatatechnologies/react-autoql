@@ -169,23 +169,28 @@ export default class ChataTable extends React.Component {
   }
 
   getSnapshotBeforeUpdate = (prevProps, prevState) => {
+    let newTableHeight
+    let shouldSetTableHeight
     if (
       (!this.props.isResizing && prevProps.isResizing) ||
       (!this.props.isAnimating && prevProps.isAnimating) ||
       (!this.state.firstRender && prevState.firstRender)
     ) {
-      this.setTableHeight()
+      shouldSetTableHeight = true
     }
 
     if (this.props.isResizing && !prevProps.isResizing) {
-      this.lockedTableHeight = '100%'
-      this.ref?.tabulator?.setHeight(this.lockedTableHeight)
+      shouldSetTableHeight = true
+      newTableHeight = '100%'
     }
 
-    return null
+    return { shouldSetTableHeight, newTableHeight }
   }
 
-  componentDidUpdate = (prevProps, prevState, snapshot) => {
+  componentDidUpdate = (prevProps, prevState, { shouldSetTableHeight, newTableHeight }) => {
+    if (shouldSetTableHeight) {
+      this.setTableHeight(newTableHeight)
+    }
     if (!this.props.hidden && prevProps.hidden) {
       if (this.state.subscribedData) {
         this.ref?.updateData(this.state.subscribedData)
@@ -319,7 +324,7 @@ export default class ChataTable extends React.Component {
     })
   }
 
-  setTableHeight = () => {
+  setTableHeight = (height) => {
     // The table height and width after initial render should height for the session
     // Doing this avoids the scroll jump when filtering or sorting the data
     // It is also makes tabulator more efficient
@@ -330,12 +335,13 @@ export default class ChataTable extends React.Component {
       !this.props.isResizing &&
       (!this.props.hidden || !this.hasSetTableHeight)
     ) {
-      // this.ref?.blockRedraw('BEFORE SETTING HEIGHT')
-      const tableHeight = this.tabulatorContainer.clientHeight
+      const tableHeight = height ?? this.tabulatorContainer.clientHeight
       if (tableHeight && tableHeight !== this.lockedTableHeight) {
         this.ref?.tabulator?.setHeight(tableHeight)
-        this.hasSetTableHeight = true
         this.lockedTableHeight = tableHeight
+        if (height !== '100%') {
+          this.hasSetTableHeight = true
+        }
       }
     }
   }
@@ -793,16 +799,26 @@ export default class ChataTable extends React.Component {
   }
 
   getFilteredTabulatorColumnDefinitions = () => {
-    if (this.props.columns?.length) {
-      return this.props.columns.map((col) => {
-        const newCol = {}
-        Object.keys(col).forEach((option) => {
-          if (columnOptionsList.includes(option)) {
-            newCol[option] = col[option]
+    try {
+      if (this.props.columns?.length) {
+        const filteredColumns = this.props.columns.map((col) => {
+          return {
+            title: col.title,
+            field: col.field,
           }
+          const newCol = {}
+          Object.keys(col).forEach((option) => {
+            if (columnOptionsList.includes(option)) {
+              newCol[option] = col[option]
+            }
+          })
+          return newCol
         })
-        return newCol
-      })
+
+        return filteredColumns
+      }
+    } catch (error) {
+      console.error(error)
     }
 
     return []
@@ -858,6 +874,7 @@ export default class ChataTable extends React.Component {
           data-test='react-autoql-table'
           style={this.props.style}
           className={`react-autoql-table-container 
+           ${this.state.pageLoading || !this.state.tabulatorMounted ? 'loading' : ''}
             ${this.props.supportsDrilldowns ? 'supports-drilldown' : ''}
             ${this.state.isFiltering ? 'filtering' : ''}
             ${this.props.isResizing ? 'resizing' : ''}

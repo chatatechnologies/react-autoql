@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEqual from 'lodash.isequal'
-import ReactTooltip from 'react-tooltip'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
