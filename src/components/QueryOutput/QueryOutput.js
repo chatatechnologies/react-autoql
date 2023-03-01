@@ -71,6 +71,8 @@ export class QueryOutput extends React.Component {
 
     this.COMPONENT_KEY = uuid()
     this.QUERY_VALIDATION_KEY = uuid()
+    this.TOOLTIP_ID = `react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`
+    this.CHART_TOOLTIP_ID = `react-autoql-chart-tooltip-${this.COMPONENT_KEY}`
 
     this.queryResponse = _cloneDeep(props.queryResponse)
     this.columnDateRanges = getColumnDateRanges(props.queryResponse)
@@ -2045,8 +2047,8 @@ export class QueryOutput extends React.Component {
           isDrilldownChartHidden={this.props.isDrilldownChartHidden}
           enableDynamicCharting={this.props.enableDynamicCharting}
           enableAjaxTableData={this.props.enableAjaxTableData}
-          tooltipID={this.props.tooltipID ?? `react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
-          chartTooltipID={this.props.chartTooltipID ?? `react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
+          tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+          chartTooltipID={this.props.chartTooltipID ?? this.CHART_TOOLTIP_ID}
           rebuildTooltips={this.rebuildTooltips}
           height={this.props.height}
           width={this.props.width}
@@ -2130,7 +2132,7 @@ export class QueryOutput extends React.Component {
               Query cancelled{' '}
               <Icon
                 data-tip='Pressing the ESC key will cancel the current query request. If you wish to re-run your last query, simply press the UP arrow in the input bar then hit ENTER.'
-                data-for={this.props.tooltipID ?? `react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
+                data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
                 type='question'
               />
             </span>
@@ -2315,7 +2317,7 @@ export class QueryOutput extends React.Component {
         <Icon
           type='warning'
           data-tip={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached. Try querying a smaller time-frame to ensure all your data is displayed.`}
-          data-for={this.props.tooltipID ?? `react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
+          data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
           data-place={isReverseTranslationRendered ? 'left' : 'right'}
         />
       </div>
@@ -2354,21 +2356,10 @@ export class QueryOutput extends React.Component {
           {this.props.reverseTranslationPlacement !== 'top' && this.renderFooter()}
         </div>
         {!this.props.tooltipID && (
-          <ReactTooltip
-            className='react-autoql-tooltip'
-            id={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
-            effect='solid'
-            place='top'
-            html
-          />
+          <ReactTooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' place='top' html />
         )}
         {!this.props.chartTooltipID && (
-          <ReactTooltip
-            className='react-autoql-chart-tooltip'
-            id={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
-            effect='solid'
-            html
-          />
+          <ReactTooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} effect='solid' html />
         )}
       </ErrorBoundary>
     )

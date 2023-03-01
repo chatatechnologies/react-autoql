@@ -42,8 +42,8 @@ export class DataMessenger extends React.Component {
     this.COMPONENT_KEY = uuid()
     this.HEADER_THICKNESS = 70
     this.TAB_THICKNESS = 45
-    this.TOOLTIP_ID = `react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`
-    this.CHART_TOOLTIP_ID = `react-autoql-chart-tooltip-${this.COMPONENT_KEY}`
+    this.TOOLTIP_ID = `react-autoql-data-messenger-tooltip-${this.COMPONENT_KEY}`
+    this.CHART_TOOLTIP_ID = `react-autoql-dm-chart-tooltip-${this.COMPONENT_KEY}`
 
     this.dataMessengerIntroMessages = [
       props.introMessage ? (
@@ -462,7 +462,7 @@ export class DataMessenger extends React.Component {
               className={`tab${page === 'data-messenger' ? ' active' : ''}`}
               onClick={() => this.setState({ activePage: 'data-messenger' })}
               data-tip='Home'
-              data-for={`react-autoql-data-messenger-tooltip-${this.COMPONENT_KEY}`}
+              data-for={this.TOOLTIP_ID}
             >
               <Icon type='react-autoql-bubbles-outlined' />
             </div>
@@ -471,7 +471,7 @@ export class DataMessenger extends React.Component {
                 className={`tab${page === 'explore-queries' ? ' active' : ''} react-autoql-explore-queries`}
                 onClick={() => this.setState({ activePage: 'explore-queries' })}
                 data-tip={lang.exploreQueries}
-                data-for={`react-autoql-data-messenger-tooltip-${this.COMPONENT_KEY}`}
+                data-for={this.TOOLTIP_ID}
               >
                 <Icon type='light-bulb' size={22} />
               </div>
@@ -481,7 +481,7 @@ export class DataMessenger extends React.Component {
                 className={`tab${page === 'data-explorer' ? ' active' : ''} react-autoql-data-explorer`}
                 onClick={() => this.setState({ activePage: 'data-explorer' })}
                 data-tip={lang.dataExplorer}
-                data-for={`react-autoql-data-messenger-tooltip-${this.COMPONENT_KEY}`}
+                data-for={this.TOOLTIP_ID}
               >
                 <Icon type='data-search' size={22} />
               </div>
@@ -496,7 +496,7 @@ export class DataMessenger extends React.Component {
                   this.setState({ activePage: 'notifications' })
                 }}
                 data-tip='Notifications'
-                data-for={`react-autoql-data-messenger-tooltip-${this.COMPONENT_KEY}`}
+                data-for={this.TOOLTIP_ID}
               >
                 <div className='data-messenger-notification-btn'>
                   <NotificationIcon
@@ -521,7 +521,7 @@ export class DataMessenger extends React.Component {
                 className={`tab${page === 'dpr' ? ' active' : ''} react-autoql-dpr`}
                 onClick={() => this.setState({ activePage: 'dpr' })}
                 data-tip='Education'
-                data-for={`react-autoql-data-messenger-tooltip-${this.COMPONENT_KEY}`}
+                data-for={this.TOOLTIP_ID}
               >
                 <Icon type='grad-cap' size={22} />
               </div>
@@ -577,7 +577,7 @@ export class DataMessenger extends React.Component {
               this.state.activePage === 'data-messenger' || this.state.activePage === 'dpr' ? 'visible' : 'hidden'
             }`}
             data-tip={lang.clearDataResponses}
-            data-for={`react-autoql-data-messenger-tooltip-${this.COMPONENT_KEY}`}
+            data-for={this.TOOLTIP_ID}
           >
             <Icon type='trash' />
           </button>
@@ -662,7 +662,7 @@ export class DataMessenger extends React.Component {
             this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
           }`}
           data-tip={lang.openFilterLocking}
-          data-for={`react-autoql-data-messenger-tooltip-${this.COMPONENT_KEY}`}
+          data-for={this.TOOLTIP_ID}
           onClick={this.state.isFilterLockMenuOpen ? this.closeFilterLockMenu : this.openFilterLockMenu}
         >
           <span className='react-autoql-filter-lock-icon-container'>
@@ -684,7 +684,7 @@ export class DataMessenger extends React.Component {
             onClick={this.closeDataMessenger}
             className='react-autoql-drawer-header-btn close'
             data-tip={lang.closeDataMessenger}
-            data-for={`react-autoql-data-messenger-tooltip-${this.COMPONENT_KEY}`}
+            data-for={this.TOOLTIP_ID}
           >
             <Icon type='close' />
           </button>
@@ -693,7 +693,7 @@ export class DataMessenger extends React.Component {
             onClick={() => this.toggleFullScreen(isFullScreen, maxWidth, maxHeight)}
             className='react-autoql-drawer-header-btn screen-mode'
             data-tip={isFullScreen ? lang.minimizeDataMessenger : lang.maximizeDataMessenger}
-            data-for={`react-autoql-data-messenger-tooltip-${this.COMPONENT_KEY}`}
+            data-for={this.TOOLTIP_ID}
           >
             <Icon type={isFullScreen ? 'minimize' : 'maximize'} />
           </button>
@@ -981,7 +981,7 @@ export class DataMessenger extends React.Component {
       <Fragment>
         <ReactTooltip
           className='react-autoql-tooltip'
-          id={`react-autoql-data-messenger-tooltip-${this.COMPONENT_KEY}`}
+          id={this.TOOLTIP_ID}
           effect='solid'
           delayShow={800}
           place='top'

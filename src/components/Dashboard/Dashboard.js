@@ -856,8 +856,8 @@ class DashboardWithoutTheme extends React.Component {
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
             enableAjaxTableData={this.props.enableAjaxTableData}
             rebuildTooltips={this.rebuildTooltips}
-            tooltipID={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
-            chartTooltipID={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
+            tooltipID={this.TOOLTIP_ID}
+            chartTooltipID={this.CHART_TOOLTIP_ID}
           />
         ))}
       </ReactGridLayout>
@@ -878,13 +878,7 @@ class DashboardWithoutTheme extends React.Component {
           </div>
           {this.renderDrilldownModal()}
           {this.renderReportProblemModal()}
-          <ReactTooltip
-            className='react-autoql-dashboard-tooltip'
-            id={this.TOOLTIP_ID}
-            effect='solid'
-            delayShow={500}
-            html
-          />
+          <ReactTooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' delayShow={500} html />
           <ReactTooltip
             className='react-autoql-chart-tooltip'
             id={this.CHART_TOOLTIP_ID}
