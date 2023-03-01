@@ -227,7 +227,7 @@
   line-height: 22px;
   font-size: 13px;
   padding: 7px 15px;
-  transition: all 0.2s ease !important;
+  transition: left 0.2s ease, top 0.2s ease !important;
   text-align: left !important;
   opacity: 1 !important;
   z-index: 999999 !important; /* necessary to show up on top of rc drawer */

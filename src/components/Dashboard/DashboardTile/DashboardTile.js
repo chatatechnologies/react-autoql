@@ -917,6 +917,7 @@ export class DashboardTile extends React.Component {
               {...vizToolbarProps}
               shouldRender={!this.props.isDragging}
               rebuildTooltips={this.props.rebuildTooltips}
+              tooltipID={this.props.tooltipID}
             />
           )}
         </div>
@@ -931,6 +932,7 @@ export class DashboardTile extends React.Component {
             onCSVDownloadFinish={this.onCSVDownloadFinish}
             rebuildTooltips={this.props.rebuildTooltips}
             shouldRender={!this.props.isDragging}
+            tooltipID={this.props.tooltipID}
             {...optionsToolbarProps}
           />
         </div>

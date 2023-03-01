@@ -2295,6 +2295,7 @@ export class QueryOutput extends React.Component {
         appliedFilters={this.props.appliedFilters}
         isResizing={this.props.isResizing}
         reverseTranslation={_get(this.queryResponse, 'data.data.parsed_interpretation')}
+        tooltipID={this.props.tooltipID}
       />
     )
   }

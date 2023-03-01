@@ -58,6 +58,8 @@ class DashboardWithoutTheme extends React.Component {
     super(props)
 
     this.COMPONENT_KEY = uuid()
+    this.TOOLTIP_ID = `react-autoql-dashboard-toolbar-btn-tooltip-${this.COMPONENT_KEY}`
+    this.CHART_TOOLTIP_ID = `react-autoql-chart-tooltip-${this.COMPONENT_KEY}`
     this.tileRefs = {}
     this.debounceTime = 50
     this.onChangeTiles = null
@@ -595,8 +597,8 @@ class DashboardWithoutTheme extends React.Component {
             rebuildTooltips={this.rebuildTooltips}
             showQueryInterpretation={this.props.isEditing}
             reverseTranslationPlacement='top'
-            tooltipID={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
-            chartTooltipID={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
+            tooltipID={this.TOOLTIP_ID}
+            chartTooltipID={this.CHART_TOOLTIP_ID}
             allowDisplayTypeChange={false}
             height='100%'
             width='100%'
@@ -878,36 +880,16 @@ class DashboardWithoutTheme extends React.Component {
           {this.renderReportProblemModal()}
           <ReactTooltip
             className='react-autoql-dashboard-tooltip'
-            id='react-autoql-dashboard-toolbar-btn-tooltip'
+            id={this.TOOLTIP_ID}
             effect='solid'
             delayShow={500}
             html
           />
           <ReactTooltip
-            place='left'
             className='react-autoql-chart-tooltip'
-            id='dashboard-data-limit-warning-tooltip'
-            effect='solid'
-            html
-          />
-          <ReactTooltip
-            className='react-autoql-dashboard-tooltip'
-            id='react-autoql-dashboard-tile-title-tooltip'
-            effect='solid'
-            delayShow={500}
-            html
-          />
-          <ReactTooltip
-            className='react-autoql-tooltip'
-            id={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
+            id={this.CHART_TOOLTIP_ID}
             effect='solid'
             place='top'
-            html
-          />
-          <ReactTooltip
-            className='react-autoql-chart-tooltip'
-            id={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
-            effect='solid'
             html
           />
         </Fragment>

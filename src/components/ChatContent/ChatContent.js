@@ -414,6 +414,8 @@ export default class ChatContent extends React.Component {
                   dataPageSize={this.props.dataPageSize}
                   shouldRender={this.props.shouldRender}
                   source={this.props.source}
+                  tooltipID={this.props.tooltipID}
+                  chartTooltipID={this.props.chartTooltipID}
                 />
               )
             })}
@@ -453,6 +455,7 @@ export default class ChatContent extends React.Component {
             dataPageSize={this.props.dataPageSize}
             isResizing={this.props.isResizing}
             shouldRender={this.props.shouldRender}
+            tooltipID={this.props.tooltipID}
           />
         </div>
       </ErrorBoundary>

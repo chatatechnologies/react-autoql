@@ -78,18 +78,20 @@ export default class Button extends React.Component {
           style={{ ...this.props.style }}
           onClick={this.props.onClick}
           data-tip={this.props.tooltip}
-          data-for={this.COMPONENT_KEY}
+          data-for={this.props.tooltipID ?? this.COMPONENT_KEY}
         >
           {this.props.loading && <Spinner data-test='react-autoql-btn-loading' />}
           {this.props.children}
         </button>
-        <ReactTooltip
-          className='react-autoql-tooltip'
-          id={this.COMPONENT_KEY}
-          effect='solid'
-          delayShow={500}
-          place='top'
-        />
+        {!this.props.tooltipID && (
+          <ReactTooltip
+            className='react-autoql-tooltip'
+            id={this.COMPONENT_KEY}
+            effect='solid'
+            delayShow={500}
+            place='top'
+          />
+        )}
       </ErrorBoundary>
     )
   }

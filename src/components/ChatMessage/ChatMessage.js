@@ -294,6 +294,8 @@ export default class ChatMessage extends React.Component {
           onRowChange={this.scrollIntoView}
           onDisplayTypeChange={this.scrollIntoView}
           mutable={false}
+          tooltipID={this.props.tooltipID}
+          chartTooltipID={this.props.chartTooltipID}
           showSuggestionPrefix={false}
           dataPageSize={this.props.dataPageSize}
           popoverParentElement={this.props.popoverParentElement}
@@ -340,6 +342,7 @@ export default class ChatMessage extends React.Component {
             rebuildTooltips={this.props.rebuildTooltips}
             popoverParentElement={this.props.popoverParentElement}
             deleteMessageCallback={this.onDeleteMessage}
+            tooltipID={this.props.tooltipID}
             createDataAlertCallback={this.props.createDataAlertCallback}
           />
         ) : null}
@@ -355,6 +358,7 @@ export default class ChatMessage extends React.Component {
             ref={(r) => (this.vizToolbarRef = r)}
             responseRef={this.responseRef}
             className='chat-message-toolbar left'
+            tooltipID={this.props.tooltipID}
             shouldRender={!this.props.isResizing && this.props.shouldRender}
           />
         ) : null}
@@ -397,6 +401,7 @@ export default class ChatMessage extends React.Component {
               appliedFilters={this.props.appliedFilters}
               isResizing={this.props.isResizing}
               reverseTranslation={this.responseRef.queryResponse.data.data.parsed_interpretation}
+              tooltipID={this.props.tooltipID}
             />
           </div>
         ) : null}

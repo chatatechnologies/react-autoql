@@ -95,7 +95,7 @@ class VizToolbar extends React.Component {
           onClick={() => this.onDisplayTypeChange(displayType)}
           className={`react-autoql-toolbar-btn ${displayType === selectedDisplayType ? 'selected' : ''}`}
           data-tip={name}
-          data-for={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
+          data-for={this.props.tooltipID ?? `react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
           data-test='viz-toolbar-button'
         >
           {icon}
@@ -140,12 +140,14 @@ class VizToolbar extends React.Component {
             {this.createVisButton('stacked_line', 'Stacked Area Chart', <Icon type='stacked-line-chart' />)}
             {this.createVisButton('column_line', 'Column Line Combo Chart', <Icon type='column-line-chart' />)}
           </div>
-          <ReactTooltip
-            className='react-autoql-tooltip'
-            id={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
-            effect='solid'
-            delayShow={800}
-          />
+          {!this.props.tooltipID && (
+            <ReactTooltip
+              className='react-autoql-tooltip'
+              id={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
+              effect='solid'
+              delayShow={800}
+            />
+          )}
         </ErrorBoundary>
       )
     }

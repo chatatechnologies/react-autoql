@@ -88,7 +88,7 @@ export default class Select extends React.Component {
         className={`react-autoql-select-popup-container ${this.props.popupClassname || ''}`}
         style={{ width: this.props.style.width }}
       >
-        {!!this.props.tooltipID && (
+        {!this.props.tooltipID && (
           <ReactTooltip
             id={`select-tooltip-${this.ID}`}
             className='react-autoql-tooltip'

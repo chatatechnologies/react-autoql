@@ -444,6 +444,7 @@ class QueryInput extends React.Component {
               onTranscriptChange={this.onTranscriptChange}
               onFinalTranscript={this.onFinalTranscript}
               authentication={this.props.authentication}
+              tooltipID={this.props.tooltipID}
             />
           )}
         </div>

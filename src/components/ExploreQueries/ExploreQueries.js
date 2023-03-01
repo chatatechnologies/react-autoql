@@ -287,7 +287,7 @@ export class ExploreQueries extends React.Component {
             </div>
             <div
               className={`chat-bar-clear-btn ${this.state.queryList?.length || this.state.inputValue ? 'visible' : ''}`}
-              data-for='explore-queries-tooltips'
+              data-for={this.props.tooltipID ?? 'explore-queries-tooltips'}
               data-tip='Clear Search'
             >
               <Icon type='close' onClick={this.clearExploreQueries} />
@@ -295,7 +295,9 @@ export class ExploreQueries extends React.Component {
           </div>
           <div className='query-tips-result-container'>{this.renderQueryList()}</div>
         </div>
-        <ReactTooltip className='react-autoql-tooltip' id='explore-queries-tooltips' delayShow={800} effect='solid' />
+        {!this.props.tooltipID && (
+          <ReactTooltip className='react-autoql-tooltip' id='explore-queries-tooltips' delayShow={800} effect='solid' />
+        )}
       </ErrorBoundary>
     )
   }

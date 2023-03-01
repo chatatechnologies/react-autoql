@@ -23,7 +23,19 @@ import { autoQLConfigDefault, authenticationDefault, getAuthentication, getAutoQ
 import './OptionsToolbar.scss'
 
 export class OptionsToolbar extends React.Component {
-  COMPONENT_KEY = uuid()
+  constructor(props) {
+    super(props)
+
+    this.COMPONENT_KEY = uuid()
+    this.TOOLTIP_ID = `react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`
+
+    this.state = {
+      isHideColumnsModalVisible: false,
+      isSettingColumnVisibility: false,
+      reportProblemMessage: undefined,
+      isCSVDownloading: false,
+    }
+  }
 
   static propTypes = {
     authentication: authenticationType,
@@ -57,13 +69,6 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadStart: () => {},
     onCSVDownloadFinish: () => {},
     onCSVDownloadProgress: () => {},
-  }
-
-  state = {
-    isHideColumnsModalVisible: false,
-    isSettingColumnVisibility: false,
-    reportProblemMessage: undefined,
-    isCSVDownloading: false,
   }
 
   componentDidMount = () => {
@@ -319,6 +324,7 @@ export class OptionsToolbar extends React.Component {
           onClose={this.closeDataAlertModal}
           onErrorCallback={this.props.onErrorCallback}
           onSave={this.onDataAlertSave}
+          tooltipID={this.props.tooltipID}
         />
       </ErrorBoundary>
     )
@@ -523,7 +529,7 @@ export class OptionsToolbar extends React.Component {
               }}
               className={this.getMenuItemClass('filter-btn')}
               data-tip='Filter table'
-              data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
+              data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
               data-test='react-autoql-filter-button'
             >
               <Icon
@@ -540,7 +546,7 @@ export class OptionsToolbar extends React.Component {
               onClick={this.showHideColumnsModal}
               className={this.getMenuItemClass(shouldShowButton.showHideColumnsButton)}
               data-tip='Show/hide columns'
-              data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
+              data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
               data-test='options-toolbar-col-vis'
             >
               <Icon type='eye' showBadge={shouldShowButton.showHiddenColsBadge} />
@@ -551,7 +557,7 @@ export class OptionsToolbar extends React.Component {
               onClick={this.openReportProblemModal}
               className={this.getMenuItemClass(shouldShowButton.showReportProblemButton)}
               data-tip='Report a problem'
-              data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
+              data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
             >
               <Icon type='warning-triangle' />
             </button>
@@ -561,7 +567,7 @@ export class OptionsToolbar extends React.Component {
               onClick={this.refreshData}
               className={this.getMenuItemClass(shouldShowButton.showRefreshDataButton)}
               data-tip='Re-run query'
-              data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
+              data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
               data-test='options-toolbar-trash-btn'
             >
               <Icon type='refresh' />
@@ -572,7 +578,7 @@ export class OptionsToolbar extends React.Component {
               onClick={this.deleteMessage}
               className={this.getMenuItemClass(shouldShowButton.showDeleteButton)}
               data-tip='Delete data response'
-              data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
+              data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
               data-test='options-toolbar-trash-btn'
             >
               <Icon type='trash' />
@@ -598,7 +604,7 @@ export class OptionsToolbar extends React.Component {
                 }}
                 className={this.getMenuItemClass(shouldShowButton.showMoreOptionsButton)}
                 data-tip='More options'
-                data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
+                data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
                 data-test='react-autoql-toolbar-more-options-btn'
               >
                 <Icon type='more-vertical' />
@@ -674,12 +680,9 @@ export class OptionsToolbar extends React.Component {
         {shouldShowButton.showReportProblemButton && this.renderReportProblemModal()}
         {shouldShowButton.showCreateNotificationIcon && this.renderDataAlertModal()}
         {shouldShowButton.showSQLButton && this.renderSQLModal()}
-        <ReactTooltip
-          className='react-autoql-tooltip'
-          id={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
-          effect='solid'
-          delayShow={800}
-        />
+        {!this.props.tooltipID && (
+          <ReactTooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' delayShow={800} />
+        )}
       </ErrorBoundary>
     )
   }
