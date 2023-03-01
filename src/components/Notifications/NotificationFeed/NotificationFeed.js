@@ -310,13 +310,15 @@ class NotificationFeed extends React.Component {
     return (
       <ErrorBoundary>
         <div className='react-autoql-notification-list-container' data-test='notification-list'>
-          <Tooltip
-            className='react-autoql-tooltip'
-            id='react-autoql-notification-tooltip'
-            effect='solid'
-            delayShow={500}
-            html
-          />
+          {!this.props.tooltipID && (
+            <Tooltip
+              className='react-autoql-tooltip'
+              id='react-autoql-notification-tooltip'
+              effect='solid'
+              delayShow={500}
+              html
+            />
+          )}
           {_get(this.state.notificationList, 'length') ? (
             <Fragment>
               {this.renderDismissAllButton()}

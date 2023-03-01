@@ -557,10 +557,15 @@ export class DataMessenger extends React.Component {
                   id='clear-queries-dropdown'
                   style={{ display: 'none' }}
                 >
-                  <Button type='default' size='small' onClick={() => this.setState({ isOptionsDropdownOpen: false })}>
+                  <Button
+                    type='default'
+                    size='small'
+                    onClick={() => this.setState({ isOptionsDropdownOpen: false })}
+                    tooltipID={this.TOOLTIP_ID}
+                  >
                     Cancel
                   </Button>
-                  <Button type='primary' size='small' onClick={() => this.clearMessages()}>
+                  <Button type='primary' size='small' onClick={() => this.clearMessages()} tooltipID={this.TOOLTIP_ID}>
                     Clear
                   </Button>
                 </div>

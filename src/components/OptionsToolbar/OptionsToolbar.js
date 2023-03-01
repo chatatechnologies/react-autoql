@@ -485,7 +485,11 @@ export class OptionsToolbar extends React.Component {
           isVisible={this.state.activeMenu === 'sql'}
           footer={
             <div>
-              <Button type='primary' onClick={() => this.setState({ activeMenu: undefined })}>
+              <Button
+                type='primary'
+                onClick={() => this.setState({ activeMenu: undefined })}
+                tooltipID={this.props.tooltipID}
+              >
                 Ok
               </Button>
             </div>
@@ -501,6 +505,7 @@ export class OptionsToolbar extends React.Component {
               className={`copy-sql-btn ${this.state.sqlCopySuccess ? 'sql-copied' : ''}`}
               onClick={this.copySQL}
               tooltip='Copy to Clipboard'
+              tooltipID={this.props.tooltipID}
             >
               <Icon type='copy' />
               {this.state.sqlCopySuccess && <Icon type='check' className='sql-copied' />}

@@ -289,6 +289,7 @@ export default class NumberAxisSelector extends React.Component {
           className='axis-selector-apply-btn'
           type='primary'
           disabled={!this.state.checkedColumns?.length}
+          tooltipID={this.props.tooltipID}
           onClick={() => {
             const indices = this.state.checkedColumns
 

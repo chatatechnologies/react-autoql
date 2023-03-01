@@ -198,7 +198,7 @@ export default class NotificationItem extends React.Component {
               type='notification-off'
               className='react-autoql-notification-dismiss-icon'
               data-tip='Dismiss'
-              data-for='react-autoql-notification-tooltip'
+              data-for={this.props.tooltipID ?? 'react-autoql-notification-tooltip'}
               onClick={(e) => {
                 this.onDismissClick(e, notification)
                 hideTooltips()
@@ -211,7 +211,7 @@ export default class NotificationItem extends React.Component {
               type='close'
               className='react-autoql-notification-delete-icon'
               data-tip='Delete'
-              data-for='react-autoql-notification-tooltip'
+              data-for={this.props.tooltipID ?? 'react-autoql-notification-tooltip'}
               onClick={(e) => {
                 this.onDeleteClick(e, notification)
                 hideTooltips()

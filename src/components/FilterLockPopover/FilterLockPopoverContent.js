@@ -531,6 +531,7 @@ export default class FilterLockPopover extends React.Component {
           className='filter-locking-close-btn'
           data-tip={lang.closeFilterLocking}
           data-for='filter-locking-tooltip'
+          tooltipID={this.props.tooltipID}
           size='small'
         >
           <Icon type='close' />

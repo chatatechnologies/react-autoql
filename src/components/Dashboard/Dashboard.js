@@ -618,6 +618,7 @@ class DashboardWithoutTheme extends React.Component {
             })
           }}
           tooltip={this.state.isDrilldownChartHidden ? 'Show Chart' : 'Hide Chart'}
+          tooltipID={this.TOOLTIP_ID}
         >
           <Icon type='chart' />
           <Icon type={this.state.isDrilldownChartHidden ? 'expand' : 'collapse'} />

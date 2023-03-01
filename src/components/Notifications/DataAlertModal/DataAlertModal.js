@@ -373,6 +373,7 @@ class DataAlertModal extends React.Component {
         <Button
           onClick={this.validateExpression}
           loading={this.state.isValidating}
+          tooltipID={this.props.tooltipID}
           type='primary'
           disabled={
             !this.state.titleInput || !_get(this.expressionRef, 'state.expression[0].term_value') // only checking for empty state of the first input value
@@ -403,6 +404,7 @@ class DataAlertModal extends React.Component {
         }}
         disabled={disabled}
         type='primary'
+        tooltipID={this.props.tooltipID}
       >
         {text || 'Continue'}
       </Button>
@@ -413,6 +415,7 @@ class DataAlertModal extends React.Component {
     return (
       <Button
         className={className}
+        tooltipID={this.props.tooltipID}
         onClick={() => {
           if (this.stepsRef) {
             this.stepsRef.prevStep()
@@ -617,6 +620,7 @@ class DataAlertModal extends React.Component {
                       this.setState({ isConfirmDeleteModalVisible: true })
                     }}
                     loading={this.state.isDeletingDataAlert}
+                    tooltipID={this.props.tooltipID}
                   >
                     Delete Data Alert
                   </Button>
@@ -624,6 +628,7 @@ class DataAlertModal extends React.Component {
               </div>
               <div>
                 <Button
+                  tooltipID={this.props.tooltipID}
                   onClick={(e) => {
                     e.stopPropagation()
                     if (this.modalRef) {
@@ -638,6 +643,7 @@ class DataAlertModal extends React.Component {
                   loading={this.state.isSavingDataAlert}
                   onClick={this.onDataAlertSave}
                   disabled={this.isSaveButtonDisabled(steps)}
+                  tooltipID={this.props.tooltipID}
                 >
                   {'Finish & Save'}
                 </Button>

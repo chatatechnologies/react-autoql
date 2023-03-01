@@ -781,7 +781,7 @@ export default class ChataTable extends React.Component {
               validRange={this.state.datePickerColumn.dateRange}
               type={this.state.datePickerColumn.precision}
             />
-            <Button type='primary' onClick={this.onDateRangeSelectionApplied}>
+            <Button type='primary' onClick={this.onDateRangeSelectionApplied} tooltipID={this.props.tooltipID}>
               Apply
             </Button>
           </div>
@@ -802,10 +802,6 @@ export default class ChataTable extends React.Component {
     try {
       if (this.props.columns?.length) {
         const filteredColumns = this.props.columns.map((col) => {
-          return {
-            title: col.title,
-            field: col.field,
-          }
           const newCol = {}
           Object.keys(col).forEach((option) => {
             if (columnOptionsList.includes(option)) {

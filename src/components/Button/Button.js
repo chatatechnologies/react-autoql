@@ -83,15 +83,6 @@ export default class Button extends React.Component {
           {this.props.loading && <Spinner data-test='react-autoql-btn-loading' />}
           {this.props.children}
         </button>
-        {!this.props.tooltipID && (
-          <Tooltip
-            className='react-autoql-tooltip'
-            id={this.COMPONENT_KEY}
-            effect='solid'
-            delayShow={500}
-            place='top'
-          />
-        )}
       </ErrorBoundary>
     )
   }
