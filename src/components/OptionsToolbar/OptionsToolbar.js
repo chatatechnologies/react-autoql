@@ -72,7 +72,11 @@ export class OptionsToolbar extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
-    if (!nextProps.shouldRender) {
+    if (this.state.activeMenu !== nextState.activeMenu) {
+      return true
+    }
+
+    if (!this.props.shouldRender && !nextProps.shouldRender) {
       return false
     }
 
@@ -227,7 +231,9 @@ export class OptionsToolbar extends React.Component {
 
   showHideColumnsModal = () => this.setState({ isHideColumnsModalVisible: true })
   closeColumnVisibilityModal = () => this.setState({ isHideColumnsModalVisible: false })
-  closeDataAlertModal = () => this.setState({ activeMenu: undefined })
+  closeDataAlertModal = () => {
+    this.setState({ activeMenu: undefined })
+  }
 
   onColumnVisibilitySave = (columns) => {
     const { authentication } = this.props

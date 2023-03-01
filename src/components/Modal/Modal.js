@@ -134,13 +134,11 @@ export default class Modal extends React.Component {
         {!!this.props.confirmOnClose && (
           <ConfirmModal
             isVisible={this.state.isConfirmCloseModalVisible}
-            onClose={() => {
-              this.setState({ isConfirmCloseModalVisible: false })
-            }}
+            onClose={() => this.setState({ isConfirmCloseModalVisible: false })}
             confirmText='Discard Changes'
             onConfirm={() => {
-              this.setState({ isConfirmCloseModalVisible: false })
               this.props.onClose()
+              this.setState({ isConfirmCloseModalVisible: false })
             }}
           >
             <h3>Are you sure you want to leave this page?</h3>

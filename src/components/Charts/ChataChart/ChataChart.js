@@ -341,10 +341,6 @@ export default class ChataChart extends Component {
     }
   }
 
-  changeNumberColumnIndices = (indices, indices2, newColumns) => {
-    this.props.changeNumberColumnIndices(indices, indices2, newColumns)
-  }
-
   getBase64Data = () => {
     const svgElement = this.chartRef
     if (!svgElement) {
@@ -431,7 +427,6 @@ export default class ChataChart extends Component {
       popoverParentElement: this.props.popoverParentElement,
       totalRowCount: this.props.totalRowCount,
       chartID: this.state.chartID,
-      changeNumberColumnIndices: this.changeNumberColumnIndices,
       rebuildTooltips: this.rebuildTooltips,
       onAxesRenderComplete: this.adjustChartPosition,
     }

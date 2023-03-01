@@ -262,7 +262,9 @@ export class DataMessenger extends React.Component {
     this.setState({ isDataAlertModalVisible: false })
   }
 
-  onClose = () => this.setState({ isDataAlertModalVisible: false })
+  onClose = () => {
+    this.setState({ isDataAlertModalVisible: false })
+  }
 
   rebuildTooltips = (delay = 500) => {
     if (!this.state.isVisible) {
