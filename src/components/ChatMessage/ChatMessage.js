@@ -121,23 +121,28 @@ export default class ChatMessage extends React.Component {
     return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
   }
 
-  getSnapshotBeforeUpdate = (prevProps, prevState) => {
+  getSnapshotBeforeUpdate = (nextProps, nextState) => {
+    let messageWidth
+    let shouldUpdateWidth = false
     if (this.ref) {
-      if (this.props.isResizing && !prevProps.isResizing) {
-        const messageWidth = this.ref.clientWidth
-        this.ref.style.width = messageWidth
+      if (!this.props.isResizing && nextProps.isResizing) {
+        shouldUpdateWidth = true
+        messageWidth = this.ref.clientWidth
       }
 
-      if (!this.props.isResizing && prevProps.isResizing) {
-        this.ref.style.width = ''
+      if (this.props.isResizing && !nextProps.isResizing) {
+        shouldUpdateWidth = true
+        messageWidth = ''
       }
     }
 
-    return null
+    return { messageWidth, shouldUpdateWidth }
   }
 
-  componentDidUpdate = (prevProps, prevState) => {
-    ReactTooltip.hide()
+  componentDidUpdate = (prevProps, prevState, { messageWidth, shouldUpdateWidth }) => {
+    if (shouldUpdateWidth && this.ref?.style) {
+      this.ref.style.width = messageWidth
+    }
   }
 
   componentWillUnmount = () => {
