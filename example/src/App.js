@@ -111,7 +111,7 @@ export default class App extends Component {
     enableAutocomplete: true,
     enableQueryInterpretation: true,
     enableFilterLocking: true,
-    enableQueryValidation: false,
+    enableQueryValidation: true,
     enableQuerySuggestions: true,
     enableDrilldowns: true,
     enableExploreQueriesTab: false,
