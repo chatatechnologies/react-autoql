@@ -315,13 +315,14 @@ export class OptionsToolbar extends React.Component {
 
   renderDataAlertModal = () => {
     const initialQuery = this.props.responseRef?.queryResponse?.data?.data?.text
-
+    const userSelection = this.props.responseRef?.queryResponse?.data?.data?.fe_req?.disambiguation
     return (
       <ErrorBoundary>
         <DataAlertModal
           authentication={this.props.authentication}
           isVisible={this.state.activeMenu === 'notification'}
           initialQuery={initialQuery}
+          userSelection={userSelection}
           onClose={this.closeDataAlertModal}
           onErrorCallback={this.props.onErrorCallback}
           onSave={this.onDataAlertSave}

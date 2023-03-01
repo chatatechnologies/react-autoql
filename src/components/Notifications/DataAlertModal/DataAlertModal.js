@@ -48,6 +48,7 @@ class DataAlertModal extends React.Component {
     onErrorCallback: PropTypes.func,
     onSave: PropTypes.func,
     initialQuery: PropTypes.string,
+    userSelection: PropTypes.array,
     currentDataAlert: PropTypes.shape({}),
     isVisible: PropTypes.bool,
     allowDelete: PropTypes.bool,
@@ -66,6 +67,7 @@ class DataAlertModal extends React.Component {
     onSave: () => {},
     onErrorCallback: () => {},
     initialQuery: undefined,
+    userSelection: undefined,
     currentDataAlert: undefined,
     isVisible: false,
     allowDelete: true,
@@ -93,7 +95,7 @@ class DataAlertModal extends React.Component {
 
     if (this.props.initialQuery && this.props.initialQuery !== prevProps.initialQuery) {
       this.resetFields()
-      const expressionJSON = this.createExpressionJSONFromQuery(this.props.initialQuery)
+      const expressionJSON = this.createExpressionJSONFromQuery(this.props.initialQuery, this.props.userSelection)
       this.setState({
         isExpressionSectionComplete: true,
         expressionJSON,
@@ -136,7 +138,7 @@ class DataAlertModal extends React.Component {
         expressionJSON: _get(this.props.currentDataAlert, 'expression'),
       })
     } else if (this.props.initialQuery && typeof this.props.initialQuery === 'string') {
-      const expressionJSON = this.createExpressionJSONFromQuery(this.props.initialQuery)
+      const expressionJSON = this.createExpressionJSONFromQuery(this.props.initialQuery, this.props.userSelection)
       this.setState({
         isExpressionSectionComplete: true,
         expressionJSON,
@@ -144,7 +146,7 @@ class DataAlertModal extends React.Component {
     }
   }
 
-  createExpressionJSONFromQuery = (query) => {
+  createExpressionJSONFromQuery = (query, userSelection) => {
     return [
       {
         condition: 'TERMINATOR',
@@ -161,6 +163,7 @@ class DataAlertModal extends React.Component {
                 condition: 'EXISTS',
                 term_type: 'query',
                 term_value: query,
+                user_selection: userSelection,
               },
             ],
           },
