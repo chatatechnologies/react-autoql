@@ -196,7 +196,8 @@ export default class ChataTable extends React.Component {
     }
 
     if (this.props.columns && !deepEqual(this.props.columns, prevProps.columns)) {
-      this.ref?.tabulator?.setColumns(this.props.columns)
+      this.ref?.tabulator?.setColumns(this.getFilteredTabulatorColumnDefinitions())
+      this.setHeaderInputClickListeners()
     }
 
     if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
@@ -436,7 +437,7 @@ export default class ChataTable extends React.Component {
   }
 
   ajaxResponseFunc = (props, response) => {
-    this.ref?.restoreRedraw(1)
+    this.ref?.restoreRedraw()
 
     if (response) {
       this.currentPage = response.page
@@ -504,6 +505,45 @@ export default class ChataTable extends React.Component {
     }, 50)
   }
 
+  inputKeydownListener = () => {
+    if (!this.supportsInfiniteScroll) {
+      this.ref?.restoreRedraw()
+    }
+  }
+
+  inputSearchListener = () => {
+    // When "x" button is clicked in the input box
+    if (!this.supportsInfiniteScroll) {
+      this.ref?.restoreRedraw()
+    }
+  }
+
+  inputDateSearchListener = () => {
+    this.currentDateRangeSelections = {}
+    this.debounceSetState({
+      datePickerColumn: undefined,
+    })
+  }
+
+  inputDateClickListener = (e, col) => {
+    const coords = e.target.getBoundingClientRect()
+    const tableCoords = this.tableContainer.getBoundingClientRect()
+    if (coords?.top && coords?.left) {
+      this.debounceSetState({
+        datePickerLocation: {
+          top: coords.top - tableCoords.top + coords.height + 5,
+          left: coords.left - tableCoords.left,
+        },
+        datePickerColumn: col,
+      })
+    }
+  }
+
+  inputDateKeypressListener = (e) => {
+    e.stopPropagation()
+    e.preventDefault()
+  }
+
   setHeaderInputClickListeners = () => {
     const columns = this.props.columns
     if (!columns) {
@@ -516,48 +556,25 @@ export default class ChataTable extends React.Component {
       )
 
       if (inputElement) {
-        inputElement.addEventListener('keydown', (e) => {
-          if (!this.supportsInfiniteScroll) {
-            this.ref?.restoreRedraw(2)
-          }
-        })
-        inputElement.addEventListener('search', (e) => {
-          // When "x" button is clicked in the input box
-          if (!this.supportsInfiniteScroll) {
-            this.ref?.restoreRedraw(3)
-          }
-        })
+        inputElement.removeEventListener('keydown', this.inputKeydownListener)
+        inputElement.addEventListener('keydown', this.inputKeydownListener)
+
+        inputElement.removeEventListener('search', this.inputSearchListener)
+        inputElement.addEventListener('search', this.inputSearchListener)
 
         if (col.type === 'DATE' && !col.pivot) {
-          inputElement.addEventListener('search', (e) => {
-            this.currentDateRangeSelections = {}
-            this.debounceSetState({
-              datePickerColumn: undefined,
-            })
-          })
+          inputElement.removeEventListener('search', this.inputDateSearchListener)
+          inputElement.addEventListener('search', this.inputDateSearchListener)
 
           // Open Calendar Picker when user clicks on this field
-          inputElement.addEventListener('click', (e) => {
-            const coords = e.target.getBoundingClientRect()
-            const tableCoords = this.tableContainer.getBoundingClientRect()
-            if (coords?.top && coords?.left) {
-              this.debounceSetState({
-                datePickerLocation: {
-                  top: coords.top - tableCoords.top + coords.height + 5,
-                  left: coords.left - tableCoords.left,
-                },
-                datePickerColumn: col,
-              })
-            }
-          })
+          inputElement.removeEventListener('click', (e) => this.inputDateClickListener(e, col))
+          inputElement.addEventListener('click', (e) => this.inputDateClickListener(e, col))
 
           // Do not allow user to type in this field
           const keyboardEvents = ['keypress', 'keydown', 'keyup']
           keyboardEvents.forEach((evt) => {
-            inputElement.addEventListener(evt, (e) => {
-              e.stopPropagation()
-              e.preventDefault()
-            })
+            inputElement.removeEventListener(evt, this.inputDateKeypressListener)
+            inputElement.addEventListener(evt, this.inputDateKeypressListener)
           })
         }
       }
@@ -670,7 +687,7 @@ export default class ChataTable extends React.Component {
       }
 
       inputElement.focus()
-      this.ref?.restoreRedraw(4)
+      this.ref?.restoreRedraw()
       inputElement.value = filterInputText
       inputElement.title = filterInputText
       inputElement.blur()
