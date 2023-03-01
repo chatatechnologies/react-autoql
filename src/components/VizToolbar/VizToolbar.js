@@ -1,10 +1,11 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import ReactTooltip from 'react-tooltip'
 import { v4 as uuid } from 'uuid'
 import _isEqual from 'lodash.isequal'
 
 import { Icon } from '../Icon'
+import { rebuildTooltips, Tooltip } from '../Tooltip'
+
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { deepEqual } from '../../js/Util'
@@ -52,10 +53,14 @@ class VizToolbar extends React.Component {
   }
 
   rebuildTooltips = () => {
+    if (!this.props.shouldRender) {
+      return
+    }
+
     if (this.props.rebuildTooltips) {
       this.props.rebuildTooltips()
     } else {
-      ReactTooltip.rebuild()
+      rebuildTooltips()
     }
   }
 
@@ -91,7 +96,7 @@ class VizToolbar extends React.Component {
           onClick={() => this.onDisplayTypeChange(displayType)}
           className={`react-autoql-toolbar-btn ${displayType === selectedDisplayType ? 'selected' : ''}`}
           data-tip={name}
-          data-for={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
+          data-for={this.props.tooltipID ?? `react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
           data-test='viz-toolbar-button'
         >
           {icon}
@@ -136,12 +141,14 @@ class VizToolbar extends React.Component {
             {this.createVisButton('stacked_line', 'Stacked Area Chart', <Icon type='stacked-line-chart' />)}
             {this.createVisButton('column_line', 'Column Line Combo Chart', <Icon type='column-line-chart' />)}
           </div>
-          <ReactTooltip
-            className='react-autoql-tooltip'
-            id={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
-            effect='solid'
-            delayShow={800}
-          />
+          {!this.props.tooltipID && (
+            <Tooltip
+              className='react-autoql-tooltip'
+              id={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
+              effect='solid'
+              delayShow={800}
+            />
+          )}
         </ErrorBoundary>
       )
     }

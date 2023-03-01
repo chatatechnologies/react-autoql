@@ -3,13 +3,14 @@ import PropTypes from 'prop-types'
 import { Popover } from 'react-tiny-popover'
 import { v4 as uuid } from 'uuid'
 import _isEqual from 'lodash.isequal'
-import ReactTooltip from 'react-tooltip'
+
 import { format } from 'sql-formatter'
 import { Icon } from '../Icon'
 import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import { DataAlertModal } from '../Notifications'
 import { Modal } from '../Modal'
 import { Button } from '../Button'
+import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
 import ReportProblemModal from './ReportProblemModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
@@ -23,7 +24,19 @@ import { autoQLConfigDefault, authenticationDefault, getAuthentication, getAutoQ
 import './OptionsToolbar.scss'
 
 export class OptionsToolbar extends React.Component {
-  COMPONENT_KEY = uuid()
+  constructor(props) {
+    super(props)
+
+    this.COMPONENT_KEY = uuid()
+    this.TOOLTIP_ID = `react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`
+
+    this.state = {
+      isHideColumnsModalVisible: false,
+      isSettingColumnVisibility: false,
+      reportProblemMessage: undefined,
+      isCSVDownloading: false,
+    }
+  }
 
   static propTypes = {
     authentication: authenticationType,
@@ -59,20 +72,17 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadProgress: () => {},
   }
 
-  state = {
-    isHideColumnsModalVisible: false,
-    isSettingColumnVisibility: false,
-    reportProblemMessage: undefined,
-    isCSVDownloading: false,
-  }
-
   componentDidMount = () => {
     this._isMounted = true
     this.rebuildTooltips()
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
-    if (!nextProps.shouldRender) {
+    if (this.state.activeMenu !== nextState.activeMenu) {
+      return true
+    }
+
+    if (!this.props.shouldRender && !nextProps.shouldRender) {
       return false
     }
 
@@ -100,10 +110,14 @@ export class OptionsToolbar extends React.Component {
   }
 
   rebuildTooltips = () => {
+    if (!this.props.shouldRender) {
+      return
+    }
+
     if (this.props.rebuildTooltips) {
       this.props.rebuildTooltips()
     } else {
-      ReactTooltip.rebuild()
+      rebuildTooltips()
     }
   }
 
@@ -129,7 +143,7 @@ export class OptionsToolbar extends React.Component {
       this.props.responseRef?.copyTableToClipboard()
       this.props.onSuccessAlert('Successfully copied table to clipboard!')
       this.setTemporaryState('copiedTable', true, 1000)
-      ReactTooltip.hide()
+      hideTooltips()
     } else {
       this.setTemporaryState('copiedTable', false, 1000)
     }
@@ -203,7 +217,7 @@ export class OptionsToolbar extends React.Component {
   }
 
   deleteMessage = () => {
-    ReactTooltip.hide()
+    hideTooltips()
     this.props.deleteMessageCallback()
   }
 
@@ -218,12 +232,14 @@ export class OptionsToolbar extends React.Component {
     this.props.onSuccessAlert('Successfully copied generated query to clipboard!')
 
     this.setState({ sqlCopySuccess: true })
-    ReactTooltip.hide()
+    hideTooltips()
   }
 
   showHideColumnsModal = () => this.setState({ isHideColumnsModalVisible: true })
   closeColumnVisibilityModal = () => this.setState({ isHideColumnsModalVisible: false })
-  closeDataAlertModal = () => this.setState({ activeMenu: undefined })
+  closeDataAlertModal = () => {
+    this.setState({ activeMenu: undefined })
+  }
 
   onColumnVisibilitySave = (columns) => {
     const { authentication } = this.props
@@ -310,6 +326,7 @@ export class OptionsToolbar extends React.Component {
           onClose={this.closeDataAlertModal}
           onErrorCallback={this.props.onErrorCallback}
           onSave={this.onDataAlertSave}
+          tooltipID={this.props.tooltipID}
         />
       </ErrorBoundary>
     )
@@ -469,7 +486,11 @@ export class OptionsToolbar extends React.Component {
           isVisible={this.state.activeMenu === 'sql'}
           footer={
             <div>
-              <Button type='primary' onClick={() => this.setState({ activeMenu: undefined })}>
+              <Button
+                type='primary'
+                onClick={() => this.setState({ activeMenu: undefined })}
+                tooltipID={this.props.tooltipID}
+              >
                 Ok
               </Button>
             </div>
@@ -485,6 +506,7 @@ export class OptionsToolbar extends React.Component {
               className={`copy-sql-btn ${this.state.sqlCopySuccess ? 'sql-copied' : ''}`}
               onClick={this.copySQL}
               tooltip='Copy to Clipboard'
+              tooltipID={this.props.tooltipID}
             >
               <Icon type='copy' />
               {this.state.sqlCopySuccess && <Icon type='check' className='sql-copied' />}
@@ -514,7 +536,7 @@ export class OptionsToolbar extends React.Component {
               }}
               className={this.getMenuItemClass('filter-btn')}
               data-tip='Filter table'
-              data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
+              data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
               data-test='react-autoql-filter-button'
             >
               <Icon
@@ -531,7 +553,7 @@ export class OptionsToolbar extends React.Component {
               onClick={this.showHideColumnsModal}
               className={this.getMenuItemClass(shouldShowButton.showHideColumnsButton)}
               data-tip='Show/hide columns'
-              data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
+              data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
               data-test='options-toolbar-col-vis'
             >
               <Icon type='eye' showBadge={shouldShowButton.showHiddenColsBadge} />
@@ -542,7 +564,7 @@ export class OptionsToolbar extends React.Component {
               onClick={this.openReportProblemModal}
               className={this.getMenuItemClass(shouldShowButton.showReportProblemButton)}
               data-tip='Report a problem'
-              data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
+              data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
             >
               <Icon type='warning-triangle' />
             </button>
@@ -552,7 +574,7 @@ export class OptionsToolbar extends React.Component {
               onClick={this.refreshData}
               className={this.getMenuItemClass(shouldShowButton.showRefreshDataButton)}
               data-tip='Re-run query'
-              data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
+              data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
               data-test='options-toolbar-trash-btn'
             >
               <Icon type='refresh' />
@@ -563,7 +585,7 @@ export class OptionsToolbar extends React.Component {
               onClick={this.deleteMessage}
               className={this.getMenuItemClass(shouldShowButton.showDeleteButton)}
               data-tip='Delete data response'
-              data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
+              data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
               data-test='options-toolbar-trash-btn'
             >
               <Icon type='trash' />
@@ -584,12 +606,12 @@ export class OptionsToolbar extends React.Component {
             >
               <button
                 onClick={() => {
-                  ReactTooltip.hide()
+                  hideTooltips()
                   this.setState({ activeMenu: 'more-options' })
                 }}
                 className={this.getMenuItemClass(shouldShowButton.showMoreOptionsButton)}
                 data-tip='More options'
-                data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
+                data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
                 data-test='react-autoql-toolbar-more-options-btn'
               >
                 <Icon type='more-vertical' />
@@ -665,12 +687,9 @@ export class OptionsToolbar extends React.Component {
         {shouldShowButton.showReportProblemButton && this.renderReportProblemModal()}
         {shouldShowButton.showCreateNotificationIcon && this.renderDataAlertModal()}
         {shouldShowButton.showSQLButton && this.renderSQLModal()}
-        <ReactTooltip
-          className='react-autoql-tooltip'
-          id={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
-          effect='solid'
-          delayShow={800}
-        />
+        {!this.props.tooltipID && (
+          <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' delayShow={800} />
+        )}
       </ErrorBoundary>
     )
   }

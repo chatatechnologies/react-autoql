@@ -42,10 +42,15 @@ export default class ConfirmModal extends React.Component {
 
     return (
       <div>
-        <Button type='default' onClick={this.props.onClose}>
+        <Button type='default' onClick={this.props.onClose} tooltipID={this.props.tooltipID}>
           Back
         </Button>
-        <Button type='danger' onClick={this.props.onConfirm} loading={this.props.confirmLoading}>
+        <Button
+          type='danger'
+          onClick={this.props.onConfirm}
+          loading={this.props.confirmLoading}
+          tooltipID={this.props.tooltipID}
+        >
           {this.props.confirmText || 'Continue'}
         </Button>
       </div>

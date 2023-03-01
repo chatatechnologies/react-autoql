@@ -2,7 +2,6 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { TabulatorFull as Tabulator } from 'tabulator-tables' //import Tabulator library
-import { deepEqual } from '../../js/Util'
 
 // use Theme(s)
 import 'tabulator-tables/dist/css/tabulator.min.css'
@@ -20,6 +19,8 @@ export default class TableWrapper extends React.Component {
     this.defaultOptions = {
       // renderVerticalBuffer: 10, // Change this to help with performance if needed in the future
       height: this.props.height || '100%',
+      renderHorizontal: 'virtual',
+      reactiveData: false,
       autoResize: false,
       rowHeight: 25,
       layout: 'fitDataFill',
@@ -56,20 +57,30 @@ export default class TableWrapper extends React.Component {
     onDataFiltered: () => {},
   }
 
+  componentDidMount = async () => {
+    this._isMounted = true
+    this.instantiateTabulator()
+  }
+
   shouldComponentUpdate = () => {
     // This component should never update, or else it causes an enormous amount of redraws
     return false
   }
 
-  componentDidMount = async () => {
-    this.instantiateTabulator()
+  componentWillUnmount = () => {
+    this._isMounted = false
+    this.isInitialized = false
+    setTimeout(() => {
+      // We must destroy the table to remove it from memory
+      this.tabulator.destroy()
+    }, 1000)
   }
 
   instantiateTabulator = () => {
     // Instantiate Tabulator when element is mounted
     this.tabulator = new Tabulator(this.tableRef, {
-      reactiveData: false, // Enable data reactivity
-      columns: this.props.columns, // Define table columns
+      columns: this.props.columns,
+      data: !this.props.options?.ajaxRequestFunc ? this.props.data : [],
       ...this.defaultOptions,
       ...this.props.options,
     })
@@ -79,7 +90,7 @@ export default class TableWrapper extends React.Component {
       // Restore redraw manually before updating table data
       setTimeout(() => {
         this.blockRedraw()
-      }, 500)
+      }, 1000)
     })
     this.tabulator.on('dataLoadError', this.props.onDataLoadError)
     this.tabulator.on('cellClick', this.props.onCellClick)
@@ -87,28 +98,26 @@ export default class TableWrapper extends React.Component {
     this.tabulator.on('dataSorted', this.props.onDataSorted)
     this.tabulator.on('dataFiltering', this.props.onDataFiltering)
     this.tabulator.on('dataFiltered', this.props.onDataFiltered)
-    this.tabulator.on('tableBuilt', () => {
+
+    this.tabulator.on('tableBuilt', async () => {
       this.isInitialized = true
-      if (!this.props.options?.ajaxRequestFunc) {
-        this.restoreRedraw()
-        this.tabulator.setData(this.props.data).then(() => {
-          this.props.onTableBuilt()
-        })
-      } else {
-        this.props.onTableBuilt()
+      if (this.props.options?.ajaxRequestFunc) {
+        await this.tabulator.setData()
       }
+
+      this.props.onTableBuilt()
     })
   }
 
   blockRedraw = (log) => {
-    if (this.tabulator && this.redrawRestored) {
+    if (this.isInitialized) {
       this.redrawRestored = false
-      this.tabulator.blockRedraw()
+      this.tabulator?.blockRedraw()
     }
   }
 
   restoreRedraw = (log) => {
-    if (this.tabulator && this.isInitialized && !this.redrawRestored) {
+    if (this.tabulator && this.isInitialized && !this.redrawRestored && this._isMounted) {
       this.redrawRestored = true
       this.tabulator.restoreRedraw()
     }

@@ -4,7 +4,6 @@ import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEmpty from 'lodash.isempty'
 import { v4 as uuid } from 'uuid'
-import ReactTooltip from 'react-tooltip'
 
 import { Modal } from '../../Modal'
 import { ConfirmModal } from '../../ConfirmModal'
@@ -12,6 +11,7 @@ import { Steps } from '../../Steps'
 import { Input } from '../../Input'
 import { Button } from '../../Button'
 import { Icon } from '../../Icon'
+import { Tooltip } from '../../Tooltip'
 import { ExpressionBuilderSimple } from '../ExpressionBuilderSimple'
 import { ScheduleBuilder } from '../ScheduleBuilder'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
@@ -376,6 +376,7 @@ class DataAlertModal extends React.Component {
         <Button
           onClick={this.validateExpression}
           loading={this.state.isValidating}
+          tooltipID={this.props.tooltipID}
           type='primary'
           disabled={
             !this.state.titleInput || !_get(this.expressionRef, 'state.expression[0].term_value') // only checking for empty state of the first input value
@@ -406,6 +407,7 @@ class DataAlertModal extends React.Component {
         }}
         disabled={disabled}
         type='primary'
+        tooltipID={this.props.tooltipID}
       >
         {text || 'Continue'}
       </Button>
@@ -416,6 +418,7 @@ class DataAlertModal extends React.Component {
     return (
       <Button
         className={className}
+        tooltipID={this.props.tooltipID}
         onClick={() => {
           if (this.stepsRef) {
             this.stepsRef.prevStep()
@@ -449,16 +452,9 @@ class DataAlertModal extends React.Component {
             />
           </div>
           <div style={{ width: '20%', marginLeft: 10, marginTop: 35 }}>
-            <ReactTooltip
-              className='react-autoql-tooltip'
-              id='react-autoql-data-alert-query-name-tooltip'
-              effect='solid'
-              delayShow={500}
-              place='top'
-            />
             <Icon
               className='react-autoql-data-alert-query-name-tooltip-icon'
-              data-for='react-autoql-data-alert-query-name-tooltip'
+              data-for={this.props.tooltipID ?? 'react-autoql-data-alert-query-name-tooltip'}
               data-tip='This will be visible to anyone who gets notified when this Alert is triggered.'
               type='info'
               size={24}
@@ -478,16 +474,9 @@ class DataAlertModal extends React.Component {
             />
           </div>
           <div style={{ width: '20%', marginLeft: 10, marginTop: 35 }}>
-            <ReactTooltip
-              className='react-autoql-tooltip'
-              id='react-autoql-data-alert-query-name-tooltip'
-              effect='solid'
-              delayShow={500}
-              place='top'
-            />
             <Icon
               className='react-autoql-data-alert-query-name-tooltip-icon'
-              data-for='react-autoql-data-alert-query-name-tooltip'
+              data-for={this.props.tooltipID ?? 'react-autoql-data-alert-query-name-tooltip'}
               data-tip='Your query should describe the result you wish to be alerted about.'
               type='info'
               size={24}
@@ -609,13 +598,6 @@ class DataAlertModal extends React.Component {
 
     return (
       <ErrorBoundary>
-        <ReactTooltip
-          className='react-autoql-tooltip'
-          id='react-autoql-data-alert-modal-tooltip'
-          effect='solid'
-          delayShow={500}
-          html
-        />
         <Modal
           overlayStyle={{ zIndex: '9998' }}
           title={this.props.title}
@@ -641,6 +623,7 @@ class DataAlertModal extends React.Component {
                       this.setState({ isConfirmDeleteModalVisible: true })
                     }}
                     loading={this.state.isDeletingDataAlert}
+                    tooltipID={this.props.tooltipID}
                   >
                     Delete Data Alert
                   </Button>
@@ -648,6 +631,7 @@ class DataAlertModal extends React.Component {
               </div>
               <div>
                 <Button
+                  tooltipID={this.props.tooltipID}
                   onClick={(e) => {
                     e.stopPropagation()
                     if (this.modalRef) {
@@ -662,6 +646,7 @@ class DataAlertModal extends React.Component {
                   loading={this.state.isSavingDataAlert}
                   onClick={this.onDataAlertSave}
                   disabled={this.isSaveButtonDisabled(steps)}
+                  tooltipID={this.props.tooltipID}
                 >
                   {'Finish & Save'}
                 </Button>
@@ -669,6 +654,15 @@ class DataAlertModal extends React.Component {
             </div>
           }
         >
+          {!this.props.tooltipID && (
+            <Tooltip
+              className='react-autoql-tooltip'
+              id='react-autoql-data-alert-query-name-tooltip'
+              effect='solid'
+              delayShow={500}
+              place='top'
+            />
+          )}
           {this.props.isVisible && (
             <div className='notification-modal-content'>
               <Steps ref={(r) => (this.stepsRef = r)} steps={steps} isEditMode={!!this.props?.currentDataAlert?.id} />

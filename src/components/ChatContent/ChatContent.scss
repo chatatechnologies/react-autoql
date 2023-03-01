@@ -2,21 +2,26 @@
   position: absolute;
   height: 100%;
   width: 100%;
-  padding-bottom: 155px;
+  padding-bottom: 158px;
 }
 
 .react-autoql-drawer .response-loading-container {
   position: absolute;
   bottom: 102px;
   left: 20px;
+  z-index: 1;
 }
 
 .react-autoql-drawer .chat-bar-container {
   position: absolute;
   bottom: 0;
   padding: 10px;
-  height: 102px;
+  padding-top: 0;
+  height: 92px;
   width: 100%;
+  background: var(--react-autoql-background-color-primary);
+  clip-path: inset(-200px 0px 0px 0px);
+  box-shadow: 0 0px 3px 10px var(--react-autoql-background-color-primary);
 }
 
 .react-autoql-drawer .watermark {

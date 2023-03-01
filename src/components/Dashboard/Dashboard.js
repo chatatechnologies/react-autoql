@@ -2,7 +2,6 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import RGL, { WidthProvider } from 'react-grid-layout'
-import ReactTooltip from 'react-tooltip'
 import _isEqual from 'lodash.isequal'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
@@ -13,6 +12,7 @@ import { Icon } from '../Icon'
 import { DashboardTile } from './DashboardTile'
 import { QueryOutput } from '../QueryOutput'
 import { LoadingDots } from '../LoadingDots'
+import { rebuildTooltips, Tooltip } from '../Tooltip'
 import ReportProblemModal from '../OptionsToolbar/ReportProblemModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { CHART_TYPES } from '../../js/Constants'
@@ -58,6 +58,8 @@ class DashboardWithoutTheme extends React.Component {
     super(props)
 
     this.COMPONENT_KEY = uuid()
+    this.TOOLTIP_ID = `react-autoql-dashboard-toolbar-btn-tooltip-${this.COMPONENT_KEY}`
+    this.CHART_TOOLTIP_ID = `react-autoql-chart-tooltip-${this.COMPONENT_KEY}`
     this.tileRefs = {}
     this.debounceTime = 50
     this.onChangeTiles = null
@@ -181,7 +183,7 @@ class DashboardWithoutTheme extends React.Component {
   rebuildTooltips = () => {
     clearTimeout(this.rebuildTooltipsTimer)
     this.rebuildTooltipsTimer = setTimeout(() => {
-      ReactTooltip.rebuild()
+      rebuildTooltips()
     }, 500)
     return
   }
@@ -595,8 +597,8 @@ class DashboardWithoutTheme extends React.Component {
             rebuildTooltips={this.rebuildTooltips}
             showQueryInterpretation={this.props.isEditing}
             reverseTranslationPlacement='top'
-            tooltipID={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
-            chartTooltipID={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
+            tooltipID={this.TOOLTIP_ID}
+            chartTooltipID={this.CHART_TOOLTIP_ID}
             allowDisplayTypeChange={false}
             height='100%'
             width='100%'
@@ -616,6 +618,7 @@ class DashboardWithoutTheme extends React.Component {
             })
           }}
           tooltip={this.state.isDrilldownChartHidden ? 'Show Chart' : 'Hide Chart'}
+          tooltipID={this.TOOLTIP_ID}
         >
           <Icon type='chart' />
           <Icon type={this.state.isDrilldownChartHidden ? 'expand' : 'collapse'} />
@@ -854,8 +857,8 @@ class DashboardWithoutTheme extends React.Component {
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
             enableAjaxTableData={this.props.enableAjaxTableData}
             rebuildTooltips={this.rebuildTooltips}
-            tooltipID={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
-            chartTooltipID={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
+            tooltipID={this.TOOLTIP_ID}
+            chartTooltipID={this.CHART_TOOLTIP_ID}
           />
         ))}
       </ReactGridLayout>
@@ -876,40 +879,8 @@ class DashboardWithoutTheme extends React.Component {
           </div>
           {this.renderDrilldownModal()}
           {this.renderReportProblemModal()}
-          <ReactTooltip
-            className='react-autoql-dashboard-tooltip'
-            id='react-autoql-dashboard-toolbar-btn-tooltip'
-            effect='solid'
-            delayShow={500}
-            html
-          />
-          <ReactTooltip
-            place='left'
-            className='react-autoql-chart-tooltip'
-            id='dashboard-data-limit-warning-tooltip'
-            effect='solid'
-            html
-          />
-          <ReactTooltip
-            className='react-autoql-dashboard-tooltip'
-            id='react-autoql-dashboard-tile-title-tooltip'
-            effect='solid'
-            delayShow={500}
-            html
-          />
-          <ReactTooltip
-            className='react-autoql-tooltip'
-            id={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
-            effect='solid'
-            place='top'
-            html
-          />
-          <ReactTooltip
-            className='react-autoql-chart-tooltip'
-            id={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
-            effect='solid'
-            html
-          />
+          <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' delayShow={500} html />
+          <Tooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} effect='solid' place='top' html />
         </Fragment>
       </ErrorBoundary>
     )

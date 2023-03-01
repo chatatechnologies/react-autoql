@@ -1,6 +1,5 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import ReactTooltip from 'react-tooltip'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
@@ -10,6 +9,7 @@ import { Icon } from '../../Icon'
 import { Button } from '../../Button'
 import { Checkbox } from '../../Checkbox'
 import { DataAlertModal } from '../DataAlertModal'
+import { hideTooltips, Tooltip } from '../../Tooltip'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import LoadingDots from '../../LoadingDots/LoadingDots'
 import { fetchDataAlerts, updateDataAlertStatus } from '../../../js/notificationService'
@@ -304,7 +304,7 @@ class DataAlerts extends React.Component {
                           data-for='react-autoql-notification-settings-tooltip'
                           onChange={(e) => {
                             this.onEnableSwitchChange(e, notification)
-                            ReactTooltip.hide()
+                            hideTooltips()
                           }}
                         />
                       )}
@@ -350,7 +350,7 @@ class DataAlerts extends React.Component {
           {this.renderNotificationlist('project', projectAlertsList)}
           {this.renderNotificationlist('custom', customAlertsList)}
           {this.renderNotificationEditModal()}
-          <ReactTooltip
+          <Tooltip
             className='react-autoql-tooltip'
             id='react-autoql-notification-settings-tooltip'
             effect='solid'

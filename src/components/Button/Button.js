@@ -1,9 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import ReactTooltip from 'react-tooltip'
 import { v4 as uuid } from 'uuid'
 
 import { Spinner } from '../Spinner'
+import { Tooltip } from '../Tooltip'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Button.scss'
@@ -78,18 +78,11 @@ export default class Button extends React.Component {
           style={{ ...this.props.style }}
           onClick={this.props.onClick}
           data-tip={this.props.tooltip}
-          data-for={this.COMPONENT_KEY}
+          data-for={this.props.tooltipID ?? this.COMPONENT_KEY}
         >
           {this.props.loading && <Spinner data-test='react-autoql-btn-loading' />}
           {this.props.children}
         </button>
-        <ReactTooltip
-          className='react-autoql-tooltip'
-          id={this.COMPONENT_KEY}
-          effect='solid'
-          delayShow={500}
-          place='top'
-        />
       </ErrorBoundary>
     )
   }

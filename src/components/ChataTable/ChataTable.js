@@ -131,6 +131,10 @@ export default class ChataTable extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
+    if (!this.state.tabulatorMounted && nextState.tabulatorMounted) {
+      return true
+    }
+
     if (this.props.rowChangeCount !== nextProps.rowChangeCount) {
       return true
     }
@@ -165,20 +169,28 @@ export default class ChataTable extends React.Component {
   }
 
   getSnapshotBeforeUpdate = (prevProps, prevState) => {
-    if ((!this.props.isResizing && prevProps.isResizing) || (!this.props.isAnimating && prevProps.isAnimating)) {
-      this.setTableHeight()
+    let newTableHeight
+    let shouldSetTableHeight
+    if (
+      (!this.props.isResizing && prevProps.isResizing) ||
+      (!this.props.isAnimating && prevProps.isAnimating) ||
+      (!this.state.firstRender && prevState.firstRender)
+    ) {
+      shouldSetTableHeight = true
     }
 
     if (this.props.isResizing && !prevProps.isResizing) {
-      this.lockedTableHeight = '100%'
-      // this.ref?.blockRedraw('BEFORE SETTING HEIGHT TO 100%')
-      this.ref?.tabulator?.setHeight(this.lockedTableHeight)
+      shouldSetTableHeight = true
+      newTableHeight = '100%'
     }
 
-    return null
+    return { shouldSetTableHeight, newTableHeight }
   }
 
-  componentDidUpdate = (prevProps, prevState, snapshot) => {
+  componentDidUpdate = (prevProps, prevState, { shouldSetTableHeight, newTableHeight }) => {
+    if (shouldSetTableHeight) {
+      this.setTableHeight(newTableHeight)
+    }
     if (!this.props.hidden && prevProps.hidden) {
       if (this.state.subscribedData) {
         this.ref?.updateData(this.state.subscribedData)
@@ -189,7 +201,8 @@ export default class ChataTable extends React.Component {
     }
 
     if (this.props.columns && !deepEqual(this.props.columns, prevProps.columns)) {
-      this.ref?.tabulator?.setColumns(this.props.columns)
+      this.ref?.tabulator?.setColumns(this.getFilteredTabulatorColumnDefinitions())
+      this.setHeaderInputClickListeners()
     }
 
     if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
@@ -311,7 +324,7 @@ export default class ChataTable extends React.Component {
     })
   }
 
-  setTableHeight = () => {
+  setTableHeight = (height) => {
     // The table height and width after initial render should height for the session
     // Doing this avoids the scroll jump when filtering or sorting the data
     // It is also makes tabulator more efficient
@@ -322,12 +335,13 @@ export default class ChataTable extends React.Component {
       !this.props.isResizing &&
       (!this.props.hidden || !this.hasSetTableHeight)
     ) {
-      // this.ref?.blockRedraw('BEFORE SETTING HEIGHT')
-      const tableHeight = this.tabulatorContainer.clientHeight
-      if (tableHeight !== this.lockedTableHeight) {
-        this.ref?.tabulator?.setHeight(this.lockedTableHeight)
-        this.hasSetTableHeight = true
+      const tableHeight = height ?? this.tabulatorContainer.clientHeight
+      if (tableHeight && tableHeight !== this.lockedTableHeight) {
+        this.ref?.tabulator?.setHeight(tableHeight)
         this.lockedTableHeight = tableHeight
+        if (height !== '100%') {
+          this.hasSetTableHeight = true
+        }
       }
     }
   }
@@ -429,7 +443,7 @@ export default class ChataTable extends React.Component {
   }
 
   ajaxResponseFunc = (props, response) => {
-    this.ref?.restoreRedraw(1)
+    this.ref?.restoreRedraw()
 
     if (response) {
       this.currentPage = response.page
@@ -497,6 +511,45 @@ export default class ChataTable extends React.Component {
     }, 50)
   }
 
+  inputKeydownListener = () => {
+    if (!this.supportsInfiniteScroll) {
+      this.ref?.restoreRedraw()
+    }
+  }
+
+  inputSearchListener = () => {
+    // When "x" button is clicked in the input box
+    if (!this.supportsInfiniteScroll) {
+      this.ref?.restoreRedraw()
+    }
+  }
+
+  inputDateSearchListener = () => {
+    this.currentDateRangeSelections = {}
+    this.debounceSetState({
+      datePickerColumn: undefined,
+    })
+  }
+
+  inputDateClickListener = (e, col) => {
+    const coords = e.target.getBoundingClientRect()
+    const tableCoords = this.tableContainer.getBoundingClientRect()
+    if (coords?.top && coords?.left) {
+      this.debounceSetState({
+        datePickerLocation: {
+          top: coords.top - tableCoords.top + coords.height + 5,
+          left: coords.left - tableCoords.left,
+        },
+        datePickerColumn: col,
+      })
+    }
+  }
+
+  inputDateKeypressListener = (e) => {
+    e.stopPropagation()
+    e.preventDefault()
+  }
+
   setHeaderInputClickListeners = () => {
     const columns = this.props.columns
     if (!columns) {
@@ -509,48 +562,25 @@ export default class ChataTable extends React.Component {
       )
 
       if (inputElement) {
-        inputElement.addEventListener('keydown', (e) => {
-          if (!this.supportsInfiniteScroll) {
-            this.ref?.restoreRedraw(2)
-          }
-        })
-        inputElement.addEventListener('search', (e) => {
-          // When "x" button is clicked in the input box
-          if (!this.supportsInfiniteScroll) {
-            this.ref?.restoreRedraw(3)
-          }
-        })
+        inputElement.removeEventListener('keydown', this.inputKeydownListener)
+        inputElement.addEventListener('keydown', this.inputKeydownListener)
+
+        inputElement.removeEventListener('search', this.inputSearchListener)
+        inputElement.addEventListener('search', this.inputSearchListener)
 
         if (col.type === 'DATE' && !col.pivot) {
-          inputElement.addEventListener('search', (e) => {
-            this.currentDateRangeSelections = {}
-            this.debounceSetState({
-              datePickerColumn: undefined,
-            })
-          })
+          inputElement.removeEventListener('search', this.inputDateSearchListener)
+          inputElement.addEventListener('search', this.inputDateSearchListener)
 
           // Open Calendar Picker when user clicks on this field
-          inputElement.addEventListener('click', (e) => {
-            const coords = e.target.getBoundingClientRect()
-            const tableCoords = this.tableContainer.getBoundingClientRect()
-            if (coords?.top && coords?.left) {
-              this.debounceSetState({
-                datePickerLocation: {
-                  top: coords.top - tableCoords.top + coords.height + 5,
-                  left: coords.left - tableCoords.left,
-                },
-                datePickerColumn: col,
-              })
-            }
-          })
+          inputElement.removeEventListener('click', (e) => this.inputDateClickListener(e, col))
+          inputElement.addEventListener('click', (e) => this.inputDateClickListener(e, col))
 
           // Do not allow user to type in this field
           const keyboardEvents = ['keypress', 'keydown', 'keyup']
           keyboardEvents.forEach((evt) => {
-            inputElement.addEventListener(evt, (e) => {
-              e.stopPropagation()
-              e.preventDefault()
-            })
+            inputElement.removeEventListener(evt, this.inputDateKeypressListener)
+            inputElement.addEventListener(evt, this.inputDateKeypressListener)
           })
         }
       }
@@ -663,7 +693,7 @@ export default class ChataTable extends React.Component {
       }
 
       inputElement.focus()
-      this.ref?.restoreRedraw(4)
+      this.ref?.restoreRedraw()
       inputElement.value = filterInputText
       inputElement.title = filterInputText
       inputElement.blur()
@@ -751,7 +781,7 @@ export default class ChataTable extends React.Component {
               validRange={this.state.datePickerColumn.dateRange}
               type={this.state.datePickerColumn.precision}
             />
-            <Button type='primary' onClick={this.onDateRangeSelectionApplied}>
+            <Button type='primary' onClick={this.onDateRangeSelectionApplied} tooltipID={this.props.tooltipID}>
               Apply
             </Button>
           </div>
@@ -769,16 +799,22 @@ export default class ChataTable extends React.Component {
   }
 
   getFilteredTabulatorColumnDefinitions = () => {
-    if (this.props.columns?.length) {
-      return this.props.columns.map((col) => {
-        const newCol = {}
-        Object.keys(col).forEach((option) => {
-          if (columnOptionsList.includes(option)) {
-            newCol[option] = col[option]
-          }
+    try {
+      if (this.props.columns?.length) {
+        const filteredColumns = this.props.columns.map((col) => {
+          const newCol = {}
+          Object.keys(col).forEach((option) => {
+            if (columnOptionsList.includes(option)) {
+              newCol[option] = col[option]
+            }
+          })
+          return newCol
         })
-        return newCol
-      })
+
+        return filteredColumns
+      }
+    } catch (error) {
+      console.error(error)
     }
 
     return []
@@ -825,6 +861,7 @@ export default class ChataTable extends React.Component {
 
   render = () => {
     const isEmpty = this.isTableEmpty()
+
     return (
       <ErrorBoundary>
         <div
@@ -833,6 +870,7 @@ export default class ChataTable extends React.Component {
           data-test='react-autoql-table'
           style={this.props.style}
           className={`react-autoql-table-container 
+           ${this.state.pageLoading || !this.state.tabulatorMounted ? 'loading' : ''}
             ${this.props.supportsDrilldowns ? 'supports-drilldown' : ''}
             ${this.state.isFiltering ? 'filtering' : ''}
             ${this.props.isResizing ? 'resizing' : ''}
@@ -844,7 +882,7 @@ export default class ChataTable extends React.Component {
             ${isEmpty ? 'empty' : ''}`}
         >
           <div ref={(r) => (this.tabulatorContainer = r)} className='react-autoql-tabulator-container'>
-            {!!this.props.data && !!this.props.columns && !this.state.firstRender && (
+            {!!this.props.data && !!this.props.columns && (this.props.autoHeight || !this.state.firstRender) && (
               <>
                 <TableWrapper
                   ref={(r) => (this.ref = r)}

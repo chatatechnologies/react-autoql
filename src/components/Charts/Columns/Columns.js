@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, scaleZero, getKey } from '../helpers'
-import { getDayJSObj } from '../../../js/Util'
+import { rebuildTooltips } from '../../Tooltip'
 
 export default class Columns extends Component {
   static propTypes = chartElementPropTypes
@@ -8,6 +8,10 @@ export default class Columns extends Component {
 
   state = {
     activeKey: this.props.activeChartElementKey,
+  }
+
+  componentDidMount = () => {
+    rebuildTooltips()
   }
 
   onColumnClick = (row, colIndex, rowIndex) => {

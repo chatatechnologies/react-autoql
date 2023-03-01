@@ -5,7 +5,6 @@ import axios from 'axios'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import Autosuggest from 'react-autosuggest'
-import ReactTooltip from 'react-tooltip'
 import SplitterLayout from 'react-splitter-layout'
 
 import { QueryOutput } from '../../QueryOutput'
@@ -16,6 +15,7 @@ import LoadingDots from '../../LoadingDots/LoadingDots.js'
 import { Icon } from '../../Icon'
 import { responseErrors } from '../../../js/errorMessages'
 import { deepEqual, isChartType } from '../../../js/Util'
+import { hideTooltips } from '../../Tooltip'
 
 import { runQuery, fetchAutocomplete } from '../../../js/queryService'
 
@@ -664,9 +664,6 @@ export class DashboardTile extends React.Component {
           <div className={`dashboard-tile-play-button${!this.isQueryValid(this.state.query) ? ' disabled' : ''}`}>
             <Icon type='play' onClick={() => this.processTile()} data-tip='Run tile' data-place='left' />
           </div>
-          <div className='dashboard-tile-delete-button' onClick={() => this.props.deleteTile(this.props.tile.i)}>
-            <Icon style={{ fontSize: '18px' }} type='close' />
-          </div>
         </div>
       )
     }
@@ -807,7 +804,7 @@ export class DashboardTile extends React.Component {
               <button
                 onClick={() => {
                   this.toggleSecondQueryInput()
-                  ReactTooltip.hide()
+                  hideTooltips()
                 }}
                 className='react-autoql-toolbar-btn'
                 data-tip='Query'
@@ -865,7 +862,7 @@ export class DashboardTile extends React.Component {
       secondQuery,
     })
 
-    ReactTooltip.hide()
+    hideTooltips()
   }
 
   renderSplitViewBtn = () => {
@@ -920,6 +917,7 @@ export class DashboardTile extends React.Component {
               {...vizToolbarProps}
               shouldRender={!this.props.isDragging}
               rebuildTooltips={this.props.rebuildTooltips}
+              tooltipID={this.props.tooltipID}
             />
           )}
         </div>
@@ -934,6 +932,7 @@ export class DashboardTile extends React.Component {
             onCSVDownloadFinish={this.onCSVDownloadFinish}
             rebuildTooltips={this.props.rebuildTooltips}
             shouldRender={!this.props.isDragging}
+            tooltipID={this.props.tooltipID}
             {...optionsToolbarProps}
           />
         </div>
@@ -967,6 +966,7 @@ export class DashboardTile extends React.Component {
         reverseTranslationPlacement='top'
         tooltipID={this.props.tooltipID}
         chartTooltipID={this.props.chartTooltipID}
+        shouldRender={!this.props.isDragging}
         autoHeight={false}
         height='100%'
         width='100%'
@@ -1174,6 +1174,14 @@ export class DashboardTile extends React.Component {
     )
   }
 
+  renderDeleteBtn = () => {
+    return (
+      <div className='dashboard-tile-delete-button' onClick={() => this.props.deleteTile(this.props.tile.i)}>
+        <Icon style={{ fontSize: '18px' }} type='close' />
+      </div>
+    )
+  }
+
   render = () => {
     const style = {}
     if (this.props.isDragging) {
@@ -1203,6 +1211,7 @@ export class DashboardTile extends React.Component {
             </Fragment>
           </div>
           {this.props.isEditing && this.renderDragHandles()}
+          {this.props.isEditing && this.renderDeleteBtn()}
         </div>
       </ErrorBoundary>
     )

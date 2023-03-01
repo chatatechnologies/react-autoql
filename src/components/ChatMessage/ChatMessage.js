@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEqual from 'lodash.isequal'
-import ReactTooltip from 'react-tooltip'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
@@ -122,23 +121,28 @@ export default class ChatMessage extends React.Component {
     return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
   }
 
-  getSnapshotBeforeUpdate = (prevProps, prevState) => {
+  getSnapshotBeforeUpdate = (nextProps, nextState) => {
+    let messageWidth
+    let shouldUpdateWidth = false
     if (this.ref) {
-      if (this.props.isResizing && !prevProps.isResizing) {
-        const messageWidth = this.ref.clientWidth
-        this.ref.style.width = messageWidth
+      if (!this.props.isResizing && nextProps.isResizing) {
+        shouldUpdateWidth = true
+        messageWidth = this.ref.clientWidth
       }
 
-      if (!this.props.isResizing && prevProps.isResizing) {
-        this.ref.style.width = ''
+      if (this.props.isResizing && !nextProps.isResizing) {
+        shouldUpdateWidth = true
+        messageWidth = ''
       }
     }
 
-    return null
+    return { messageWidth, shouldUpdateWidth }
   }
 
-  componentDidUpdate = (prevProps, prevState) => {
-    ReactTooltip.hide()
+  componentDidUpdate = (prevProps, prevState, { messageWidth, shouldUpdateWidth }) => {
+    if (shouldUpdateWidth && this.ref?.style) {
+      this.ref.style.width = messageWidth
+    }
   }
 
   componentWillUnmount = () => {
@@ -294,6 +298,8 @@ export default class ChatMessage extends React.Component {
           onRowChange={this.scrollIntoView}
           onDisplayTypeChange={this.scrollIntoView}
           mutable={false}
+          tooltipID={this.props.tooltipID}
+          chartTooltipID={this.props.chartTooltipID}
           showSuggestionPrefix={false}
           dataPageSize={this.props.dataPageSize}
           popoverParentElement={this.props.popoverParentElement}
@@ -328,7 +334,7 @@ export default class ChatMessage extends React.Component {
             ref={(r) => (this.optionsToolbarRef = r)}
             responseRef={this.responseRef}
             className={'chat-message-toolbar right'}
-            shouldRender={!this.props.isResizing}
+            shouldRender={!this.props.isResizing && this.props.shouldRender}
             authentication={this.props.authentication}
             autoQLConfig={this.props.autoQLConfig}
             onCSVDownloadStart={this.onCSVDownloadStart}
@@ -340,6 +346,7 @@ export default class ChatMessage extends React.Component {
             rebuildTooltips={this.props.rebuildTooltips}
             popoverParentElement={this.props.popoverParentElement}
             deleteMessageCallback={this.onDeleteMessage}
+            tooltipID={this.props.tooltipID}
             createDataAlertCallback={this.props.createDataAlertCallback}
           />
         ) : null}
@@ -355,7 +362,8 @@ export default class ChatMessage extends React.Component {
             ref={(r) => (this.vizToolbarRef = r)}
             responseRef={this.responseRef}
             className='chat-message-toolbar left'
-            shouldRender={!this.props.isResizing}
+            tooltipID={this.props.tooltipID}
+            shouldRender={!this.props.isResizing && this.props.shouldRender}
           />
         ) : null}
       </div>
@@ -397,6 +405,7 @@ export default class ChatMessage extends React.Component {
               appliedFilters={this.props.appliedFilters}
               isResizing={this.props.isResizing}
               reverseTranslation={this.responseRef.queryResponse.data.data.parsed_interpretation}
+              tooltipID={this.props.tooltipID}
             />
           </div>
         ) : null}

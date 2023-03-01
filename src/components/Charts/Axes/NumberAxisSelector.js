@@ -44,7 +44,9 @@ export default class NumberAxisSelector extends React.Component {
   }
 
   componentDidMount = () => {
-    this.props.rebuildTooltips()
+    if (!this.props.hidden) {
+      this.props.rebuildTooltips()
+    }
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -254,14 +256,16 @@ export default class NumberAxisSelector extends React.Component {
             />
           </div>
         </div>
-        <CustomScrollbars autoHide={false} autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
-          <SelectableList
-            ref={(r) => (this.listRefs[type] = r)}
-            items={listItems}
-            onSelect={this.onColumnSelection}
-            onChange={this.onColumnCheck}
-          />
-        </CustomScrollbars>
+        <div className='react-autoql-custom-scrollbars'>
+          <CustomScrollbars autoHide={false} autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
+            <SelectableList
+              ref={(r) => (this.listRefs[type] = r)}
+              items={listItems}
+              onSelect={this.onColumnSelection}
+              onChange={this.onColumnCheck}
+            />
+          </CustomScrollbars>
+        </div>
       </div>
     )
   }
@@ -285,6 +289,7 @@ export default class NumberAxisSelector extends React.Component {
           className='axis-selector-apply-btn'
           type='primary'
           disabled={!this.state.checkedColumns?.length}
+          tooltipID={this.props.tooltipID}
           onClick={() => {
             const indices = this.state.checkedColumns
 

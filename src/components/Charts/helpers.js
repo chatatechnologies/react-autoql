@@ -41,6 +41,7 @@ export const chartContainerDefaultProps = {
   onXAxisClick: () => {},
   onYAxisClick: () => {},
   onLabelChange: () => {},
+  rebuildTooltips: () => {},
 }
 
 export const chartPropTypes = {

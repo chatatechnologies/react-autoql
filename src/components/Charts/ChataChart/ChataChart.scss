@@ -16,6 +16,7 @@
     flex: 0 0 0;
     opacity: 0;
     flex-basis: 0 !important;
+    pointer-events: none;
   }
 
   svg {
@@ -213,6 +214,7 @@
   background-color: var(--react-autoql-background-color-primary);
   color: var(--react-autoql-accent-color);
   border-radius: 10%;
+  pointer-events: none;
 
   &.chart-page-loader {
     top: 25%;

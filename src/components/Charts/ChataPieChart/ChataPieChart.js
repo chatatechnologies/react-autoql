@@ -2,7 +2,6 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
-import ReactTooltip from 'react-tooltip'
 import { v4 as uuid } from 'uuid'
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
@@ -242,7 +241,7 @@ export default class ChataPieChart extends Component {
       const newLegendLabels = _cloneDeep(this.state.legendLabels)
       newLegendLabels[index].hidden = !this.state.legendLabels[index].hidden
       this.setState({ legendLabels: newLegendLabels }, () => {
-        ReactTooltip.rebuild()
+        this.props.rebuildTooltips()
       })
     }
   }

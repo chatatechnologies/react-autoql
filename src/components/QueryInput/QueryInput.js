@@ -5,7 +5,7 @@ import axios from 'axios'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import errorMessages, { responseErrors } from '../../js/errorMessages'
-import ReactTooltip from 'react-tooltip'
+import { hideTooltips, Tooltip } from '../Tooltip'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import {
@@ -258,7 +258,7 @@ class QueryInput extends React.Component {
   onFinalTranscript = (transcript) => {
     this.setState({ inputValue: transcript, listeningForTranscript: false }, () => {
       this.focus()
-      ReactTooltip.hide()
+      hideTooltips()
     })
   }
 
@@ -444,6 +444,7 @@ class QueryInput extends React.Component {
               onTranscriptChange={this.onTranscriptChange}
               onFinalTranscript={this.onFinalTranscript}
               authentication={this.props.authentication}
+              tooltipID={this.props.tooltipID}
             />
           )}
         </div>
