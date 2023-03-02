@@ -174,7 +174,8 @@ export default class ChataTable extends React.Component {
     if (
       (!this.props.isResizing && prevProps.isResizing) ||
       (!this.props.isAnimating && prevProps.isAnimating) ||
-      (!this.state.firstRender && prevState.firstRender)
+      (!this.state.firstRender && prevState.firstRender) ||
+      (!this.props.hidden && prevProps.hidden && !this.hasSetTableHeight)
     ) {
       shouldSetTableHeight = true
     }
@@ -208,7 +209,9 @@ export default class ChataTable extends React.Component {
     if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
       this.setFilterTags()
       this.setHeaderInputClickListeners()
-      this.setTableHeight()
+      if (!this.props.hidden) {
+        this.setTableHeight()
+      }
 
       this.hasSetInitialParams = true
     }
@@ -333,7 +336,7 @@ export default class ChataTable extends React.Component {
       this.tabulatorContainer &&
       !this.props.isAnimating &&
       !this.props.isResizing &&
-      (!this.props.hidden || !this.hasSetTableHeight)
+      !this.props.hidden
     ) {
       const tableHeight = height ?? this.tabulatorContainer.clientHeight
       if (tableHeight && tableHeight !== this.lockedTableHeight) {
