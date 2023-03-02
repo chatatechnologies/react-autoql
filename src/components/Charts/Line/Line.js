@@ -2,7 +2,6 @@ import React, { Component } from 'react'
 import { getThemeValue } from '../../../theme/configureTheme'
 import { createSVGPath } from './lineFns'
 import { chartElementDefaultProps, chartElementPropTypes, getKey, getTooltipContent } from '../helpers'
-import { getDayJSObj } from '../../../js/Util'
 
 export default class Line extends Component {
   constructor(props) {
@@ -44,6 +43,7 @@ export default class Line extends Component {
 
     numberColumnIndices.forEach((colIndex, i) => {
       const vertices = []
+      const color = this.props.colorScale(colIndex)
       if (!columns[colIndex].isSeriesHidden) {
         this.props.data.forEach((d, index) => {
           const value = d[colIndex]
@@ -73,11 +73,13 @@ export default class Line extends Component {
             return
           }
 
+          const key = getKey(colIndex, index)
+
           // Render a bigger transparent circle so it's easier for the user
           // to hover over and see tooltip
           const transparentHoverVertex = (
             <circle
-              key={`hover-circle-${getKey(colIndex, index)}`}
+              key={`hover-circle-${key}`}
               cx={x}
               cy={y}
               r={6}
@@ -91,31 +93,26 @@ export default class Line extends Component {
           const circle = (
             <circle
               className='line-dot-inner-circle'
-              key={getKey(colIndex, index)}
+              key={key}
               cx={x}
               cy={y}
               r={2.5}
               style={{
                 pointerEvents: 'none',
-                stroke: this.props.colorScale(i),
+                stroke: color,
                 strokeWidth: 4,
                 paintOrder: 'stroke',
-                color: this.props.colorScale(i),
+                color: color,
                 opacity: largeDataset ? 0 : 1,
-                fill:
-                  this.state.activeKey === getKey(colIndex, index)
-                    ? this.props.colorScale(i)
-                    : backgroundColor || '#fff',
+                fill: this.state.activeKey === key ? color : backgroundColor || '#fff',
               }}
             />
           )
 
           innerCircles.push(
             <g
-              className={`line-dot${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}${
-                largeDataset ? ' hidden-dot' : ''
-              }`}
-              key={`circle-group-${getKey(colIndex, index)}`}
+              className={`line-dot${this.state.activeKey === key ? ' active' : ''}${largeDataset ? ' hidden-dot' : ''}`}
+              key={`circle-group-${key}`}
               onClick={() => this.onDotClick(d, colIndex, index)}
               data-tip={tooltip}
               data-for={this.props.chartTooltipID}
@@ -130,14 +127,7 @@ export default class Line extends Component {
       const d = createSVGPath(vertices, this.PATH_SMOOTHING)
 
       const path = (
-        <path
-          key={`line-${getKey(0, i)}`}
-          className='line'
-          d={d}
-          fill='none'
-          stroke={this.props.colorScale(i)}
-          strokeWidth={2}
-        />
+        <path key={`line-${getKey(0, i)}`} className='line' d={d} fill='none' stroke={color} strokeWidth={2} />
       )
 
       paths.push(path)

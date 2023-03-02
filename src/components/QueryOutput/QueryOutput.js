@@ -278,7 +278,7 @@ export class QueryOutput extends React.Component {
       if (columnsChanged || rowsChanged) {
         if (columnsChanged) {
           // check if column config is still valid...
-          const isValid = this.isTableConfigValid()
+          const isValid = this.isTableConfigValid(this.tableConfig, this.getColumns(), this.state.displayType)
           if (!isValid) {
             this.tableConfig = undefined
             this.pivotTableConfig = undefined
@@ -499,6 +499,14 @@ export class QueryOutput extends React.Component {
         return false
       }
 
+      if (
+        tableConfig.numberColumnIndices.find((i) => !columns[i].is_visible) ||
+        tableConfig.stringColumnIndices.find((i) => !columns[i].is_visible)
+      ) {
+        console.debug('Some of the table config indices were hidden columns')
+        return false
+      }
+
       if (displayType === 'column_line') {
         if (
           !isNaN(tableConfig.numberColumnIndex) &&
@@ -515,6 +523,11 @@ export class QueryOutput extends React.Component {
           tableConfig.numberColumnIndices.filter((index) => tableConfig.numberColumnIndices2.includes(index)).length
         ) {
           console.debug('Both axes reference one or more of the same number column index')
+          return false
+        }
+
+        if (tableConfig.numberColumnIndices2.find((i) => !columns[i].is_visible)) {
+          console.debug('Second axis indices had hidden columns')
           return false
         }
       }

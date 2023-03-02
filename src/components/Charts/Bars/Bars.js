@@ -46,6 +46,7 @@ export default class Bars extends Component {
     let visibleIndex = 0
     numberColumnIndices.forEach((colIndex, i) => {
       if (!columns[colIndex].isSeriesHidden) {
+        const color = this.props.colorScale(colIndex)
         allBars.push(
           this.props.data.map((d, index) => {
             const value = d[colIndex]
@@ -87,7 +88,7 @@ export default class Bars extends Component {
                 onClick={() => this.onBarClick(d, colIndex, index)}
                 data-tip={tooltip}
                 data-for={this.props.chartTooltipID}
-                style={{ fill: this.props.colorScale(i), fillOpacity: 0.7 }}
+                style={{ fill: color, fillOpacity: 0.7 }}
               />
             )
           }),

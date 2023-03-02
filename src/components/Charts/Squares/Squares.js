@@ -4,6 +4,7 @@ import { max, min } from 'd3-array'
 import _get from 'lodash.get'
 
 import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, getKey } from '../helpers'
+import { getChartColorVars } from '../../../theme/configureTheme'
 
 export default class Squares extends Component {
   constructor(props) {
@@ -45,7 +46,6 @@ export default class Squares extends Component {
       stringColumnIndex,
       dataFormatting,
       legendLabels,
-      colorScale,
       yScale,
       xScale,
     } = this.props
@@ -65,8 +65,12 @@ export default class Squares extends Component {
         const xLabel = row[stringColumnIndex]
         const yLabel = legendLabels[i].label
 
-        const fillColor = value >= 0 ? colorScale(0) : 'rgba(221, 106, 106)'
-        const activeFillColor = colorScale(1)
+        const { chartColors } = getChartColorVars()
+        const color0 = chartColors[0]
+        const color1 = chartColors[1]
+
+        const fillColor = value >= 0 ? color0 : 'rgb(221, 106, 106)'
+        const activeFillColor = color1
 
         const tooltip = getTooltipContent({
           row,

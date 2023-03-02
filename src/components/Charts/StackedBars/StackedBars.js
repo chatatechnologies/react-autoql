@@ -44,6 +44,7 @@ export default class StackedBars extends Component {
           const rawValue = d[colIndex]
           const valueNumber = Number(rawValue)
           const value = !isNaN(valueNumber) ? valueNumber : 0
+          const color = this.props.colorScale(colIndex)
 
           if (!value) {
             return null
@@ -88,7 +89,7 @@ export default class StackedBars extends Component {
               data-tip={tooltip}
               data-for={this.props.chartTooltipID}
               style={{
-                fill: this.props.colorScale(i),
+                fill: color,
                 fillOpacity: 0.7,
               }}
             />

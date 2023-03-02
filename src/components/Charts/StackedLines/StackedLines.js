@@ -25,7 +25,7 @@ export default class StackedLines extends Component {
     this.setState({ activeKey: newActiveKey })
   }
 
-  createPolygonVertexDot = (d, i, x, y, colIndex, index) => {
+  createPolygonVertexDot = (d, i, x, y, colIndex, index, color) => {
     const tooltip = getTooltipContent({
       row: d,
       columns: this.props.columns,
@@ -48,7 +48,7 @@ export default class StackedLines extends Component {
         style={{
           opacity: this.state.activeKey === getKey(colIndex, index) ? 1 : 0,
           cursor: 'pointer',
-          stroke: this.props.colorScale(i),
+          stroke: color,
           strokeWidth: 3,
           strokeOpacity: 0.7,
           fillOpacity: 1,
@@ -58,7 +58,7 @@ export default class StackedLines extends Component {
     )
   }
 
-  createPolygon = (i, polygonVertices) => {
+  createPolygon = (i, polygonVertices, color) => {
     const { stringColumnIndex } = this.props
     const polygonPoints = polygonVertices
       .map((xy) => {
@@ -79,7 +79,7 @@ export default class StackedLines extends Component {
         data-for={this.props.chartTooltipID}
         data-effect='float'
         style={{
-          fill: this.props.colorScale(i),
+          fill: color,
           fillOpacity: 0.7,
         }}
       />
@@ -116,6 +116,7 @@ export default class StackedLines extends Component {
       const currentValues = []
       const currentPolygonVertices = []
       if (!columns[colIndex].isSeriesHidden) {
+        const color = this.props.colorScale(colIndex)
         this.props.data.forEach((d, index) => {
           const rawValue = d[colIndex]
           const valueNumber = Number(rawValue)
@@ -130,7 +131,7 @@ export default class StackedLines extends Component {
           currentPolygonVertices.push([x, y])
 
           if (value !== 0) {
-            const polygonVertexDot = this.createPolygonVertexDot(d, i, x, y, colIndex, index)
+            const polygonVertexDot = this.createPolygonVertexDot(d, i, x, y, colIndex, index, color)
             polygonVertexDots.push(polygonVertexDot)
           }
         })
@@ -138,7 +139,7 @@ export default class StackedLines extends Component {
         // Add polygon to list
         const reversedPrevVertices = prevPolygonVertices.reverse()
         const polygon = reversedPrevVertices.concat(currentPolygonVertices)
-        polygons.push(this.createPolygon(i, polygon))
+        polygons.push(this.createPolygon(i, polygon, color))
 
         prevValues = currentValues
         prevPolygonVertices = currentPolygonVertices

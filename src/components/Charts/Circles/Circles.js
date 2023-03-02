@@ -4,6 +4,7 @@ import { max, min } from 'd3-array'
 import _get from 'lodash.get'
 
 import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, getKey } from '../helpers'
+import { getChartColorVars } from '../../../theme/configureTheme'
 
 export default class Circles extends Component {
   constructor(props) {
@@ -51,7 +52,6 @@ export default class Circles extends Component {
       stringColumnIndex,
       dataFormatting,
       legendLabels,
-      colorScale,
       yScale,
       xScale,
     } = this.props
@@ -69,8 +69,9 @@ export default class Circles extends Component {
     const yBandwidth = yScale.bandwidth() || 0
     const xBandwidth = xScale.bandwidth() || 0
 
-    const color0 = colorScale(0)
-    const color1 = colorScale(1)
+    const { chartColors } = getChartColorVars()
+    const color0 = chartColors[0]
+    const color1 = chartColors[1]
 
     this.props.data.forEach((row, index) => {
       numberColumnIndices.forEach((colIndex, i) => {

@@ -240,9 +240,10 @@ export const getLegendLabelsForMultiSeries = (columns, colorScale, numberColumnI
           label = `${label} (${aggTypeDisplayName})`
         }
       }
+
       return {
         label,
-        color: colorScale(i),
+        color: colorScale(columnIndex),
         hidden: column.isSeriesHidden,
         columnIndex,
         column,
