@@ -79,6 +79,7 @@ export class QueryOutput extends React.Component {
     this.queryID = _get(this.queryResponse, 'data.data.query_id')
     this.interpretation = _get(this.queryResponse, 'data.data.parsed_interpretation')
     this.tableParams = {}
+    this.chartID = uuid()
     this.tableID = uuid()
     this.pivotTableID = uuid()
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
@@ -276,7 +277,17 @@ export class QueryOutput extends React.Component {
       const rowsChanged = this.state.visibleRowChangeCount !== prevState.visibleRowChangeCount
       if (columnsChanged || rowsChanged) {
         if (columnsChanged) {
-          this.setTableConfig()
+          // check if column config is still valid...
+          const isValid = this.isTableConfigValid()
+          if (!isValid) {
+            this.tableConfig = undefined
+            this.pivotTableConfig = undefined
+            this.setTableConfig()
+            this.setPivotTableConfig()
+            this.chartID = uuid()
+            shouldForceUpdate = true
+          }
+
           this.props.onColumnChange(this.state.columns)
         }
 
@@ -2020,6 +2031,7 @@ export class QueryOutput extends React.Component {
     return (
       <ErrorBoundary>
         <ChataChart
+          key={this.chartID}
           hidden={!isChartType(this.state.displayType)}
           formattedTableParams={formattedTableParams}
           authentication={this.props.authentication}
@@ -2056,7 +2068,6 @@ export class QueryOutput extends React.Component {
           isDrilldown={this.isDrilldown()}
           totalRowCount={totalRows}
           updateColumns={this.updateColumns}
-          columnChangeCount={this.state.columnChangeCount}
         />
       </ErrorBoundary>
     )

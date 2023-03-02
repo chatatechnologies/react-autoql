@@ -145,7 +145,7 @@ export default class ChataChart extends Component {
       this.setState({ chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
     }
 
-    if (dataStructureChanged(this.props, prevProps)) {
+    if (dataStructureChanged(this.props, prevProps) || this.props.dataChangeCount !== prevProps.dataChangeCount) {
       const data = this.getData(this.props)
       this.setState({ data, chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
       return true
