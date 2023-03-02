@@ -199,10 +199,7 @@ export class DataMessenger extends React.Component {
     }
 
     if (this.props.defaultOpen && !this.isOpen()) {
-      const handle = document.getElementById(`${this.COMPONENT_KEY}-drawer-handle`)
-      if (handle) {
-        handle.click()
-      }
+      this.openDataMessenger()
     }
 
     setTimeout(this.rebuildTooltips, 1000)
@@ -302,6 +299,13 @@ export class DataMessenger extends React.Component {
         isWindowResizing: false,
       })
     }, 300)
+  }
+
+  openDataMessenger = () => {
+    const handle = document.getElementById(`${this.COMPONENT_KEY}-drawer-handle`)
+    if (handle) {
+      handle.click()
+    }
   }
 
   closeDataMessenger = () => {
@@ -850,6 +854,18 @@ export class DataMessenger extends React.Component {
     )
   }
 
+  onDataAlertModalOpen = () => {
+    this.closeDataMessenger()
+    this.shouldOpenDataMessengerFromDA = true
+  }
+
+  onDataAlertModalClose = () => {
+    if (this.shouldOpenDataMessengerFromDA) {
+      this.shouldOpenDataMessengerFromDA = false
+      this.openDataMessenger()
+    }
+  }
+
   renderNotificationsContent = () => {
     if (!this.props.enableNotificationsTab) {
       return null
@@ -865,6 +881,8 @@ export class DataMessenger extends React.Component {
           activeNotificationData={this.props.activeNotificationData}
           onErrorCallback={this.props.onErrorCallback}
           onSuccessCallback={this.props.onSuccessCallback}
+          onDataAlertModalOpen={this.onDataAlertModalOpen}
+          onDataAlertModalClose={this.onDataAlertModalClose}
           showNotificationDetails={false}
           shouldRender={this.isOpen() && this.state.activePage === 'notifications'}
         />

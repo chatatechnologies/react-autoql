@@ -62,6 +62,10 @@
 }
 .react-autoql-notification-message-input {
   width: 100%;
+
+  textarea {
+    width: 100% !important;
+  }
 }
 
 // Set delay per List Item

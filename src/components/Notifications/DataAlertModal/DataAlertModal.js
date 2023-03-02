@@ -60,6 +60,8 @@ class DataAlertModal extends React.Component {
     titleIcon: PropTypes.oneOfType([PropTypes.element, PropTypes.instanceOf(Icon)]),
     enableQueryValidation: PropTypes.bool,
     onValidate: PropTypes.func,
+    onClosed: PropTypes.func,
+    onOpened: PropTypes.func,
   }
 
   static defaultProps = {
@@ -75,6 +77,8 @@ class DataAlertModal extends React.Component {
     isManagement: false,
     onManagementCreateDataAlert: () => {},
     onManagementDeleteDataAlert: () => {},
+    onClosed: () => {},
+    onOpened: () => {},
     title: 'Create Data Alert',
     titleIcon: undefined,
     enableQueryValidation: true,
@@ -88,9 +92,11 @@ class DataAlertModal extends React.Component {
   componentDidUpdate = (prevProps, prevState) => {
     if (!this.props.isVisible && prevProps.isVisible) {
       setTimeout(this.resetFields, 500)
+      this.props.onClosed()
     }
     if (this.props.isVisible && !prevProps.isVisible) {
       this.initializeFields()
+      this.props.onOpened()
     }
 
     if (this.props.initialQuery && this.props.initialQuery !== prevProps.initialQuery) {
