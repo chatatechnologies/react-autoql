@@ -1,0 +1,72 @@
+.react-autoql-notification-rule-container {
+  display: flex;
+
+  .react-autoql-rule-input {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+  }
+
+  .react-autoql-rule-first-input-container {
+    display: flex;
+    flex: 1;
+  }
+
+  .react-autoql-rule-second-input-container {
+    display: flex;
+    padding: 2px 0;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    flex: 1;
+
+    .react-autoql-rule-condition-select {
+      flex: 0;
+      flex-basis: 33px;
+    }
+    .react-autoql-rule-input {
+      flex: 1;
+      margin-left: 4px;
+    }
+    .react-autoql-delete-compare-btn {
+      cursor: pointer;
+      opacity: 0.6;
+      padding: 6px;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+
+    &.hidden {
+      display: none;
+    }
+
+    .react-autoql-input-container {
+      margin: 0;
+    }
+    .react-autoql-input-container:hover + .react-autoql-rule-term-type-selector,
+    .react-autoql-input-container.focus
+      + .react-autoql-rule-term-type-selector {
+      color: var(--react-autoql-accent-color, #26a7df);
+      border-color: var(--react-autoql-accent-color, #26a7df);
+    }
+  }
+}
+
+.read-only-rule-term {
+  display: inline-block;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(0, 0, 0, 0.02);
+  padding: 3px 7px;
+  line-height: 1.5em;
+  margin-right: 5px;
+  margin-bottom: 2px;
+  margin-top: 2px;
+  border-radius: 4px;
+}
+
+.expression-term-validation-error {
+  padding: 0 10px;
+  color: var(--react-autoql-warning-color);
+}

@@ -1,0 +1,165 @@
+.chat-single-message-container {
+  transition: background-color 0.2s ease;
+  padding-top: 6px;
+
+  a {
+    text-decoration: none;
+    font-weight: 600;
+    color: var(--react-autoql-accent-color);
+  }
+
+  &:not(.no-max-height) {
+    max-height: 81%;
+  }
+
+  &:first-of-type {
+    margin-top: 10px;
+  }
+
+  .query-more-btn {
+    transition: all 0.3s ease;
+    font-size: 22px;
+    padding: 13px;
+    margin-bottom: 6px;
+    height: 42px;
+    opacity: 0;
+    visibility: hidden;
+    cursor: pointer;
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  .react-autoql-response-content-container {
+    .query-output-error-message,
+    .no-columns-error-message,
+    .feedback-message {
+      margin: 0;
+      text-align: left;
+    }
+  }
+
+  .spinner-loader:after {
+    border: 1px solid var(--react-autoql-accent-color);
+    border-color: var(--react-autoql-accent-color) transparent var(--react-autoql-accent-color) transparent;
+  }
+
+  &.response {
+    display: flex;
+    min-height: 0;
+    justify-content: flex-start;
+    padding-left: 20px;
+    animation: scale-up-bl 0.5s ease;
+
+    .chat-message-bubble {
+      background: var(--react-autoql-background-color-secondary);
+      color: var(--react-autoql-text-color-primary);
+      box-shadow: 0 1px 3px 0 var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
+    }
+
+    .chat-message-bubble:not(.text) {
+      min-width: 125px;
+    }
+  }
+
+  &.request {
+    display: flex;
+    justify-content: flex-end;
+    padding-right: 20px;
+    animation: scale-up-br 0.5s ease;
+
+    .chat-message-bubble {
+      background: var(--react-autoql-accent-color);
+      color: var(--react-autoql-text-color-accent);
+      box-shadow: 0 1px 3px 0 var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
+    }
+  }
+
+  .chat-message-bubble {
+    position: relative;
+    padding: 13px;
+    border-radius: 10px;
+    max-width: calc(100% - 20px);
+    word-wrap: break-word;
+    font-family: inherit;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    box-sizing: border-box;
+    /* make small margin on bottom because sometimes react
+    custom scrollbar cuts off a pixel or 2 at the bottom */
+    margin-bottom: 6px;
+
+    &.text {
+      max-width: 85%;
+    }
+
+    &.active {
+      border: 1px solid #c3c3c3;
+    }
+
+    .chat-message-toolbars-container {
+      display: flex;
+      position: absolute;
+      align-items: flex-start;
+      justify-content: space-between;
+      transition: opacity 0.3s ease, color 0.3s ease;
+      width: 100%;
+      top: -31px;
+      right: 0;
+      z-index: 3;
+
+      .chat-message-toolbar.left {
+        margin-left: -5px;
+      }
+      .chat-message-toolbar.right {
+        margin-right: -5px;
+      }
+    }
+    .react-autoql-toolbar {
+      white-space: nowrap;
+      &:not(.active) {
+        pointer-events: none;
+        visibility: hidden;
+        opacity: 0;
+      }
+    }
+
+    &:hover .react-autoql-toolbar,
+    .react-autoql-toolbar.active {
+      pointer-events: auto;
+      visibility: visible;
+      opacity: 1;
+    }
+  }
+}
+
+.chat-message-rt-container {
+  padding: 0 20px 15px 20px;
+  animation: scale-up-bl 0.5s ease;
+  .react-autoql-reverse-translation {
+    padding-top: 0;
+  }
+}
+
+/* animations */
+@keyframes scale-up-br {
+  0% {
+    transform: scale(0.5);
+    transform-origin: 100% 100%;
+  }
+  100% {
+    transform: scale(1);
+    transform-origin: 100% 100%;
+  }
+}
+
+@keyframes scale-up-bl {
+  0% {
+    transform: scale(0.5);
+    transform-origin: 0% 100%;
+  }
+  100% {
+    transform: scale(1);
+    transform-origin: 0% 100%;
+  }
+}

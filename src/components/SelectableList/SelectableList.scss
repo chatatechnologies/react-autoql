@@ -1,0 +1,35 @@
+.react-autoql-list-item {
+  padding: 0 20px;
+  display: flex;
+  justify-content: space-between;
+  line-height: 36px;
+  user-select: none;
+  cursor: default;
+
+  &:hover {
+    background: var(--react-autoql-hover-color);
+  }
+
+  &.selected {
+    background: var(--react-autoql-hover-color);
+  }
+
+  &.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+}
+
+.col-visibility-header {
+  // padding: 0 20px;
+  padding-left: 20px;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.react-autoql-list-item:not(:last-child) {
+  border-bottom: 1px solid #d3d3d34a;
+}

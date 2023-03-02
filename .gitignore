@@ -1,0 +1,9 @@
+node_modules
+
+dist
+
+coverage
+
+.DS_Store
+example/.DS_Store
+stats.html

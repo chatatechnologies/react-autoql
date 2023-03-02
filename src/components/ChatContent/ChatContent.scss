@@ -1,0 +1,41 @@
+.chat-content-scroll-container {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  padding-bottom: 158px;
+}
+
+.react-autoql-drawer .response-loading-container {
+  position: absolute;
+  bottom: 102px;
+  left: 20px;
+  z-index: 1;
+}
+
+.react-autoql-drawer .chat-bar-container {
+  position: absolute;
+  bottom: 0;
+  padding: 10px;
+  padding-top: 0;
+  height: 92px;
+  width: 100%;
+  background: var(--react-autoql-background-color-primary);
+  clip-path: inset(-200px 0px 0px 0px);
+  box-shadow: 0 0px 3px 10px var(--react-autoql-background-color-primary);
+}
+
+.react-autoql-drawer .watermark {
+  color: var(--react-autoql-text-color-placeholder);
+  text-align: center;
+  opacity: 0.7;
+  top: 6px;
+  width: calc(100% - 10px);
+  font-size: 13px;
+}
+
+.react-autoql-drawer .chat-drawer-chat-bar {
+  flex-shrink: 0;
+  flex-grow: 0;
+  height: 60px;
+  animation: fadeIn 0.3s;
+}

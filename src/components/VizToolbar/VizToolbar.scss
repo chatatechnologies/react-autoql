@@ -1,0 +1,86 @@
+.viz-toolbar {
+  display: inline-block;
+  background: inherit;
+  padding: 5px;
+  border-radius: 6px;
+  line-height: 28px;
+  background: var(--react-autoql-background-color-secondary);
+  border: 1px solid var(--react-autoql-border-color);
+  box-shadow: 0px 2px 3px -2px var(--react-autoql-box-shadow-color);
+
+  &.vertical .react-autoql-toolbar-btn {
+    display: block;
+  }
+}
+
+.react-autoql-toolbar-btn {
+  height: 28px;
+  width: 28px;
+  background: none;
+  border: none;
+  font-size: 16px;
+  line-height: 28px;
+  vertical-align: top;
+  color: var(--react-autoql-text-color-primary);
+  cursor: pointer;
+  outline: none !important;
+
+  &.filter-btn {
+    line-height: 24px;
+  }
+
+  &.selected {
+    color: var(--react-autoql-accent-color);
+  }
+}
+.react-autoql-toolbar-btn.green {
+  color: #2ecc40;
+}
+.react-autoql-toolbar-btn.red {
+  color: #e80000;
+}
+.react-autoql-toolbar-btn:hover {
+  opacity: 0.7;
+}
+
+/* Chart icon styles */
+.chart-icon-svg-0,
+.react-autoql-icon-svg-0 {
+  fill: currentColor;
+}
+.react-autoql-icon-outlined {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-miterlimit: 10;
+}
+.hm0 {
+  opacity: 0.5;
+  fill: currentColor;
+  enable-background: new;
+}
+.hm1 {
+  fill: currentColor;
+}
+.hm2 {
+  opacity: 0.15;
+  fill: currentColor;
+  enable-background: new;
+}
+.hm3 {
+  opacity: 0.6;
+  fill: currentColor;
+  enable-background: new;
+}
+.hm4 {
+  opacity: 0.65;
+  fill: currentColor;
+  enable-background: new;
+}
+.hm5 {
+  fill: currentColor;
+}
+.hm6 {
+  fill: currentColor;
+}

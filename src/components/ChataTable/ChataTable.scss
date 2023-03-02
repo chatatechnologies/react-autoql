@@ -1,0 +1,379 @@
+.react-autoql-table-container {
+  -webkit-transform: translate3d(0, 0, 0);
+  display: flex;
+  flex-direction: column;
+  width: 100% !important;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  background-color: inherit;
+  position: relative;
+  box-sizing: border-box;
+  flex: 1;
+
+  .table-row-count {
+    flex: 0;
+    width: 100%;
+    font-size: 13px;
+    opacity: 0.6;
+    text-align: center;
+    padding-top: 3px;
+  }
+
+  .react-autoql-tabulator-container {
+    position: relative;
+    flex: 1;
+    width: 100%;
+    max-height: 100%;
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    .tabulator-cell,
+    .tabulator-col {
+      color: var(--react-autoql-text-color-primary);
+    }
+  }
+
+  &.loading {
+    pointer-events: none;
+  }
+
+  &.hidden {
+    visibility: hidden;
+    position: absolute;
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  // This css is to fix tabulator bug and allow scrolling columns on an empty table
+  &.empty {
+    &:not(.filtering) {
+      .tabulator-headers {
+        height: 37px !important;
+      }
+    }
+    .react-autoql-table.tabulator {
+      overflow: auto;
+      .tabulator-tableholder {
+        overflow: hidden;
+      }
+      .tabulator-header {
+        border: none !important;
+        overflow: visible;
+        .tabulator-header-contents {
+          overflow: visible;
+          .tabulator-headers {
+            border-bottom: 2px solid var(--react-autoql-border-color);
+            .tabulator-col {
+              background: transparent;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  &.resizing {
+    width: 100vw;
+
+    .react-autoql-table {
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+    }
+  }
+
+  &.infinite .tabulator-col.DATE_STRING .tabulator-header-filter,
+  .tabulator-col.DRILLDOWN .tabulator-header-filter {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &.limited .tabulator-col .tabulator-header-filter,
+  &.infinite .tabulator-col:not(.DATE_STRING) .tabulator-header-filter {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  &.filtering {
+    min-height: 125px;
+    .tabulator-header-contents {
+      height: 60px;
+
+      .tabulator-col,
+      .tabulator-headers,
+      .tabulator-col-resize-handle {
+        height: 100% !important;
+      }
+    }
+
+    .react-autoql-tabulator-container .tabulator-tableholder {
+      min-height: calc(100% - 60px) !important;
+      height: calc(100% - 60px) !important;
+      max-height: calc(100% - 60px) !important;
+    }
+
+    .filter-tag {
+      display: none;
+    }
+
+    &.empty {
+      .react-autoql-table.tabulator .tabulator-header {
+        border: none;
+        .tabulator-headers {
+          border-bottom: 2px solid var(--react-autoql-border-color);
+        }
+      }
+    }
+  }
+
+  &:not(.filtering) {
+    .tabulator-header-contents {
+      height: 35px;
+    }
+
+    .tabulator-header-filter input {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .react-autoql-tabulator-container .tabulator-tableholder {
+      min-height: calc(100% - 37px) !important;
+      height: calc(100% - 37px) !important;
+      max-height: calc(100% - 37px) !important;
+    }
+  }
+
+  .tabulator-header-filter {
+    input {
+      border: 1px solid var(--react-autoql-border-color);
+      border-radius: 4px;
+      background: transparent;
+      padding: 4px 9px !important;
+      outline: none !important;
+      text-overflow: ellipsis;
+      visibility: visible;
+      opacity: 1;
+
+      &:focus {
+        border: 1px solid var(--react-autoql-accent-color);
+      }
+    }
+  }
+
+  &.supports-drilldown {
+    .tabulator-row .tabulator-cell:not(.pivot-category) {
+      transition: color 0.1s ease;
+      cursor: pointer;
+    }
+
+    &.pivot .react-autoql-table.tabulator .tabulator-row .tabulator-cell:not(.pivot-category):hover,
+    &:not(.pivot) .react-autoql-table.tabulator .tabulator-row:hover .tabulator-cell {
+      color: var(--react-autoql-accent-color);
+    }
+  }
+
+  &:not(.supports-drilldown) .react-autoql-table.tabulator .tabulator-row .tabulator-cell {
+    cursor: text;
+  }
+
+  &.animating {
+    .react-autoql-table {
+      // This cant be display: none because tabulator needs
+      // to reference the dom element for its initial render
+      visibility: hidden;
+      pointer-events: none;
+      opacity: 0;
+    }
+  }
+
+  .react-autoql-table.tabulator {
+    background-color: inherit;
+    border-color: transparent;
+    margin-bottom: 0 !important;
+    font-size: 11px;
+
+    .comparison-value-positive {
+      color: #2ecc40;
+    }
+    .comparison-value-negative {
+      color: #e80000;
+    }
+
+    .tabulator-header {
+      border-bottom: 2px solid var(--react-autoql-border-color);
+
+      .filter-tag {
+        color: #2ecc40;
+        border: 1px solid;
+        padding: 2px 4px;
+        border-radius: 4px;
+        font-weight: 400;
+        font-size: 10px;
+        margin-right: 5px;
+        vertical-align: top;
+        line-height: 21px;
+        margin-left: -11px;
+      }
+    }
+
+    .tabulator-row,
+    .tabulator-header,
+    .tabulator-headers,
+    .tabulator-header .tabulator-col,
+    .tabulator-tableholder .tabulator-table {
+      background-color: inherit;
+    }
+
+    .tabulator-row {
+      /* user-select: none; This breaks copy/paste */
+      border-bottom: 1px solid var(--react-autoql-border-color);
+      background-color: var(--react-autoql-background-color-secondary);
+      z-index: 1;
+
+      &:last-child {
+        border-bottom: none;
+        margin-bottom: 15px;
+      }
+
+      .tabulator-cell {
+        &:not(:first-child) {
+          border-left: 1px solid !important;
+          border-color: rgba(0, 0, 0, 0.06) !important;
+        }
+        &.pivot-category {
+          font-weight: 600;
+        }
+      }
+    }
+
+    .tabulator-header .tabulator-col {
+      text-align: center !important;
+      border-color: transparent;
+      background-color: var(--react-autoql-background-color-secondary);
+      min-height: 35px;
+
+      .tabulator-col-title {
+        padding-left: 12px !important;
+        padding-right: 15px !important;
+      }
+      .tabulator-col-content {
+        padding: 8px 5px;
+
+        .tabulator-arrow {
+          border-left: 4px solid transparent !important;
+          border-right: 4px solid transparent !important;
+          right: 4px;
+          top: calc(50% - 3px);
+        }
+      }
+
+      &.tabulator-sortable:hover {
+        background-color: var(--react-autoql-hover-color) !important;
+      }
+
+      &.tabulator-sortable[aria-sort='descending'] .tabulator-col-content .tabulator-arrow {
+        border-top: 4px solid var(--react-autoql-text-color-primary) !important;
+        opacity: 0.5;
+      }
+
+      &.tabulator-sortable[aria-sort='ascending'] .tabulator-col-content .tabulator-arrow {
+        border-bottom: 4px solid var(--react-autoql-text-color-primary) !important;
+        opacity: 0.5;
+      }
+
+      &.tabulator-sortable[aria-sort='none'] .tabulator-col-content .tabulator-arrow {
+        border-bottom: 4px solid var(--react-autoql-text-color-primary) !important;
+        opacity: 0;
+      }
+
+      &:hover {
+        .tabulator-col-content .tabulator-arrow {
+          opacity: 1 !important;
+        }
+      }
+    }
+
+    .tabulator-cell {
+      border-color: var(--react-autoql-border-color);
+      background-color: var(--react-autoql-background-color-secondary);
+    }
+
+    .tabulator-tableholder {
+      background-color: inherit;
+    }
+  }
+}
+
+.react-autoql-table-date-picker {
+  background: var(--react-autoql-background-color-secondary);
+  color: var(--react-autoql-text-color-primary);
+  padding: 15px;
+  padding-bottom: 5px;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  flex-direction: column;
+
+  h3 {
+    margin-top: 0;
+    margin-left: 5px;
+  }
+}
+
+.tabulator-alert {
+  display: none !important;
+}
+
+.table-loader {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  background-color: transparent;
+  color: var(--react-autoql-accent-color);
+
+  &.table-placeholder {
+    color: var(--react-autoql-text-color-primary);
+    font-size: 12px;
+    opacity: 0.5;
+    top: 20px;
+  }
+
+  &.table-page-loader {
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    pointer-events: none;
+
+    .page-loader-spinner {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 40px;
+      height: 40px;
+      background-color: var(--react-autoql-background-color-secondary);
+      border: 1px solid var(--react-autoql-border-color);
+      box-shadow: var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15)) 0px 8px 24px;
+      border-radius: 4px;
+
+      .spinner-loader {
+        margin: 0;
+        height: 17px;
+        width: 17px;
+      }
+    }
+  }
+
+  &.table-scroll-loader {
+    bottom: 20px;
+    width: 100%;
+    z-index: 0;
+  }
+}
