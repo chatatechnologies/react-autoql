@@ -160,8 +160,8 @@ export default class ChataChart extends Component {
     const { numberColumnIndices, numberColumnIndices2 } = this.props
     const { chartColors, chartColorsDark } = getChartColorVars()
 
-    const chartColors2 = rotateArray(chartColorsDark, -1 * numSeries)
     const numSeries = numberColumnIndices?.length ?? 1
+    const chartColors2 = rotateArray(chartColorsDark, -1 * numSeries)
 
     const colorScale = scaleOrdinal().range(chartColors).domain(numberColumnIndices)
     const colorScale2 = scaleOrdinal().range(chartColors2).domain(numberColumnIndices2)

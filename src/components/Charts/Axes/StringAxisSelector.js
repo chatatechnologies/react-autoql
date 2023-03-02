@@ -2,13 +2,23 @@ import React from 'react'
 import { Popover } from 'react-tiny-popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { v4 as uuid } from 'uuid'
-import { isColumnDateType } from '../../QueryOutput/columnHelpers'
+import { isColumnDateType, isColumnStringType } from '../../QueryOutput/columnHelpers'
 
 export default class StringAxisSelector extends React.Component {
   constructor(props) {
     super(props)
 
     this.COMPONENT_KEY = uuid()
+  }
+
+  getAllStringColumnIndices = () => {
+    const columnIndices = []
+    this.props.columns.forEach((col, i) => {
+      if (isColumnStringType(col) && col.is_visible) {
+        columnIndices.push(i)
+      }
+    })
+    return columnIndices
   }
 
   getDateColumnIndices = () => {
@@ -41,9 +51,11 @@ export default class StringAxisSelector extends React.Component {
       maxHeight = Window.innerHeight
     }
 
-    let columnIndices = this.props.stringColumnIndices
+    let columnIndices = []
     if (this.props.dateColumnsOnly) {
       columnIndices = this.getDateColumnIndices()
+    } else {
+      columnIndices = this.getAllStringColumnIndices()
     }
 
     return (

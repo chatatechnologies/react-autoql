@@ -277,17 +277,6 @@ export class QueryOutput extends React.Component {
       const rowsChanged = this.state.visibleRowChangeCount !== prevState.visibleRowChangeCount
       if (columnsChanged || rowsChanged) {
         if (columnsChanged) {
-          // check if column config is still valid...
-          const isValid = this.isTableConfigValid(this.tableConfig, this.getColumns(), this.state.displayType)
-          if (!isValid) {
-            this.tableConfig = undefined
-            this.pivotTableConfig = undefined
-            this.setTableConfig()
-            this.setPivotTableConfig()
-            this.chartID = uuid()
-            shouldForceUpdate = true
-          }
-
           this.props.onColumnChange(this.state.columns)
         }
 
@@ -500,8 +489,10 @@ export class QueryOutput extends React.Component {
       }
 
       if (
-        tableConfig.numberColumnIndices.find((i) => !columns[i].is_visible) ||
-        tableConfig.stringColumnIndices.find((i) => !columns[i].is_visible)
+        !columns[tableConfig.stringColumnIndex].is_visible ||
+        !columns[tableConfig.numberColumnIndex].is_visible ||
+        tableConfig.numberColumnIndices.find((i) => !columns[i].is_visible) !== undefined ||
+        tableConfig.stringColumnIndices.find((i) => !columns[i].is_visible) !== undefined
       ) {
         console.debug('Some of the table config indices were hidden columns')
         return false
@@ -573,8 +564,19 @@ export class QueryOutput extends React.Component {
       // An alternative would be to manually set the new columns in tabulator:
       // this.tableRef.ref.table.setColumns(columns)
       // this.tableID = uuid()
+
+      const newColumns = this.formatColumnsForTable(columns)
+
+      // check if table config is still valid for new columns...
+      const isValid = this.isTableConfigValid(this.tableConfig, newColumns, this.state.displayType)
+      if (!isValid) {
+        this.tableConfig = undefined
+        this.setTableConfig(newColumns)
+        this.chartID = uuid()
+      }
+
       this.setState({
-        columns: this.formatColumnsForTable(columns),
+        columns: newColumns,
         columnChangeCount: this.state.columnChangeCount + 1,
       })
     }
@@ -1279,8 +1281,8 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  setTableConfig = () => {
-    const columns = this.getColumns()
+  setTableConfig = (newColumns) => {
+    const columns = newColumns ?? this.getColumns()
     if (!columns) {
       return
     }
