@@ -2,17 +2,20 @@
   background-color: var(--react-autoql-background-color-primary);
   color: var(--react-autoql-text-color-primary);
   padding-top: 20px;
+  padding-bottom: 100px;
   height: 100%;
+
   .empty-list-message {
-	color: var(--react-autoql-text-color-primary);
-	text-align: center;
-	margin-top: 75px;
-  
-	.empty-list-img {
-	  width: 250px;
-	  height: 250px;
-	}
+    color: var(--react-autoql-text-color-primary);
+    text-align: center;
+    margin-top: 75px;
+
+    .empty-list-img {
+      width: 250px;
+      height: 250px;
+    }
   }
+
   .react-autoql-notification-settings-container {
     margin: 20px;
     margin-top: 10px;
@@ -86,7 +89,6 @@
       opacity: 0.5;
       pointer-events: none;
     }
-
   }
 
   .react-autoql-notification-title-container {

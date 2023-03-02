@@ -21,8 +21,10 @@ import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
 import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
-import './NotificationFeed.scss'
 import { withTheme } from '../../../theme'
+import { deepEqual } from '../../../js/Util'
+
+import './NotificationFeed.scss'
 
 class NotificationFeed extends React.Component {
   MODAL_COMPONENT_KEY = uuid()
@@ -46,6 +48,7 @@ class NotificationFeed extends React.Component {
     autoChartAggregations: PropTypes.bool,
     showCreateAlertBtn: PropTypes.bool,
     enableAjaxTableData: PropTypes.bool,
+    onDataAlertModalOpen: PropTypes.func,
     shouldRender: PropTypes.bool,
   }
 
@@ -63,6 +66,7 @@ class NotificationFeed extends React.Component {
     onSuccessCallback: () => {},
     onDismissCallback: () => {},
     onDeleteCallback: () => {},
+    onDataAlertModalOpen: () => {},
     onChange: () => {},
   }
 
@@ -83,11 +87,9 @@ class NotificationFeed extends React.Component {
     this._isMounted = false
   }
 
-  componentWillUnmount = () => {
-    this._isMounted = false
+  closeDataAlertModal = () => {
+    this.setState({ isEditModalVisible: false })
   }
-
-  closeDataAlertModal = () => this.setState({ isEditModalVisible: false })
 
   getNotifications = () => {
     fetchNotificationFeed({
@@ -275,6 +277,8 @@ class NotificationFeed extends React.Component {
         authentication={this.props.authentication}
         isVisible={this.state.isEditModalVisible}
         onClose={this.closeDataAlertModal}
+        onOpened={this.props.onDataAlertModalOpen}
+        onClosed={this.props.onDataAlertModalClose}
         currentDataAlert={this.state.activeDataAlert}
         onSave={this.onDataAlertSave}
         onErrorCallback={this.props.onErrorCallback}
@@ -286,19 +290,21 @@ class NotificationFeed extends React.Component {
   }
 
   render = () => {
+    let style = {}
     if (!this.props.shouldRender) {
-      return null
+      style.visibility = 'hidden'
+      style.opacity = '0'
     }
 
     if (this.state.isFetchingFirstNotifications) {
       return (
-        <div className='notification-list-loading-container' data-test='notification-list'>
+        <div style={style} className='notification-list-loading-container' data-test='notification-list'>
           Loading...
         </div>
       )
     } else if (this.state.fetchNotificationsError) {
       return (
-        <div className='notification-list-loading-container' data-test='notification-list'>
+        <div style={style} className='notification-list-loading-container' data-test='notification-list'>
           Oh no! Something went wrong while accessing your notifications.
           <div style={{ textAlign: 'center', marginTop: '10px' }}>
             <Button onClick={this.getInitialNotifications}>Try Again</Button>
@@ -309,7 +315,7 @@ class NotificationFeed extends React.Component {
 
     return (
       <ErrorBoundary>
-        <div className='react-autoql-notification-list-container' data-test='notification-list'>
+        <div style={style} className='react-autoql-notification-list-container' data-test='notification-list'>
           {!this.props.tooltipID && (
             <Tooltip
               className='react-autoql-tooltip'
