@@ -484,6 +484,9 @@
 }
 
 /* Individual Tabs */
+.react-autoql-notifications.tab.active .react-autoql-notifications-badge-dot {
+  border: 1px solid var(--react-autoql-background-color-primary);
+}
 .page-switcher-container .tab {
   display: flex;
   justify-content: center;
