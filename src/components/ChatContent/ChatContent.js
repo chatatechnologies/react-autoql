@@ -26,6 +26,7 @@ export default class ChatContent extends React.Component {
 
     this.messageRefs = {}
     this.csvProgressLog = {}
+    this.keepLoading = false
 
     this.state = {
       messages: [],
@@ -53,6 +54,7 @@ export default class ChatContent extends React.Component {
     sessionId: PropTypes.string,
     isResizing: PropTypes.bool,
     source: PropTypes.arrayOf(PropTypes.string),
+    shouldRender: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -62,6 +64,7 @@ export default class ChatContent extends React.Component {
     dataPageSize: undefined,
     source: [],
     onRTValueLabelClick: undefined,
+    shouldRender: true,
   }
 
   componentDidMount = () => {
@@ -92,13 +95,6 @@ export default class ChatContent extends React.Component {
     }
   }
 
-  escFunction = (event) => {
-    if (this.state.isVisible && event.keyCode === 27) {
-      // todo: add this functionality back
-      // cancelQuery()
-    }
-  }
-
   scrollToBottom = () => {
     this.messengerScrollComponent?.ref?.scrollToBottom()
   }
@@ -125,13 +121,13 @@ export default class ChatContent extends React.Component {
 
   onNoneOfTheseClick = () => {
     this.addRequestMessage('None of these')
-    this.setState({ isChataThinking: true })
+    this.setState({ isQueryRunning: true })
 
     clearTimeout(this.feedbackTimeout)
     this.feedbackTimeout = setTimeout(() => {
       if (this._isMounted) {
         clearTimeout(this.responseDelayTimeout)
-        this.setState({ isChataThinking: false, isInputDisabled: false })
+        this.setState({ isQueryRunning: false, isInputDisabled: false })
         this.addResponseMessage({
           content: (
             <div className='feedback-message'>
@@ -146,20 +142,29 @@ export default class ChatContent extends React.Component {
   }
 
   onDrilldownStart = () => {
-    this.setState({ isChataThinking: true })
+    if (this.state.isDrilldownRunning) {
+      // Drilldown is already running. Tell onDrilldownEnd to not remove the loading dots
+      this.keepLoading = true
+    }
+
+    this.setState({ isDrilldownRunning: true, isInputDisabled: true })
   }
 
   onDrilldownEnd = ({ response, error, originalQueryID } = {}) => {
     if (this._isMounted) {
-      clearTimeout(this.responseDelayTimeout)
-      this.setState({ isChataThinking: false, isInputDisabled: false })
+      if (this.keepLoading) {
+        this.keepLoading = false
+      } else {
+        clearTimeout(this.responseDelayTimeout)
+        this.setState({ isDrilldownRunning: false, isInputDisabled: false })
 
-      if (response) {
-        this.addResponseMessage({ response, originalQueryID })
-      } else if (error) {
-        this.addResponseMessage({
-          content: error,
-        })
+        if (response) {
+          this.addResponseMessage({ response, originalQueryID })
+        } else if (error) {
+          this.addResponseMessage({
+            content: error,
+          })
+        }
       }
     }
   }
@@ -260,7 +265,7 @@ export default class ChatContent extends React.Component {
     this.addRequestMessage(query)
     this.setState({ isInputDisabled: true })
     this.responseDelayTimeout = setTimeout(() => {
-      this.setState({ isChataThinking: true })
+      this.setState({ isQueryRunning: true })
     }, 600)
   }
 
@@ -284,12 +289,13 @@ export default class ChatContent extends React.Component {
             </span>
           ),
         })
-      } else if (response?.data?.message !== responseErrors.CANCELLED) {
+      } else {
         this.addResponseMessage({ response, query })
       }
 
       clearTimeout(this.responseDelayTimeout)
-      this.setState({ isChataThinking: false, isInputDisabled: false })
+      this.setState({ isQueryRunning: false, isInputDisabled: false })
+
       this.focusInput()
     }
   }
@@ -340,18 +346,24 @@ export default class ChatContent extends React.Component {
     }
   }
 
+  isChataThinking = () => {
+    return this.state.isQueryRunning || this.state.isDrilldownRunning
+  }
+
   render = () => {
-    let display
+    let visibility
+    let opacity
     if (!this.props.shouldRender) {
-      display = 'none'
+      visibility = 'hidden'
+      opacity = '0'
     }
 
     return (
       <ErrorBoundary>
         <div
-          ref={(r) => !this.state.chatContentRef && this.setState({ chatContentRef: r })}
-          className='chat-content-scroll-container'
-          style={{ display }}
+          ref={(r) => (this.chatContentRef = r)}
+          className={`chat-content-scroll-container ${this.props.shouldRender ? '' : 'react-autoql-content-hidden'}`}
+          style={{ visibility, opacity }}
         >
           <CustomScrollbars ref={(r) => (this.messengerScrollComponent = r)}>
             {this.state.messages.map((message) => {
@@ -369,14 +381,13 @@ export default class ChatContent extends React.Component {
                   queryId={message.queryId}
                   queryText={message.query}
                   originalQueryID={message.originalQueryID}
-                  scrollRef={this.messengerScrollComponent?.ref}
                   isDataMessengerOpen={this.props.isDataMessengerOpen}
                   isActive={this.state.activeMessageId === message.id}
                   addMessageToDM={this.addResponseMessage}
                   onDrilldownStart={this.onDrilldownStart}
                   onDrilldownEnd={this.onDrilldownEnd}
                   isResponse={message.isResponse}
-                  isChataThinking={this.state.isChataThinking}
+                  isChataThinking={this.isChataThinking()}
                   onSuggestionClick={this.animateInputTextAndSubmit}
                   content={message.content}
                   scrollToBottom={this.scrollToBottom}
@@ -398,21 +409,27 @@ export default class ChatContent extends React.Component {
                   enableAjaxTableData={this.props.enableAjaxTableData}
                   rebuildTooltips={this.props.rebuildTooltips}
                   queryRequestData={message.queryRequestData}
-                  popoverParentElement={this.state.chatContentRef}
+                  popoverParentElement={this.chatContentRef}
                   isVisibleInDOM={this.props.shouldRender}
                   dataPageSize={this.props.dataPageSize}
+                  shouldRender={this.props.shouldRender}
                   source={this.props.source}
+                  tooltipID={this.props.tooltipID}
+                  chartTooltipID={this.props.chartTooltipID}
                 />
               )
             })}
           </CustomScrollbars>
-          {this.state.isChataThinking && (
+          {this.isChataThinking() && (
             <div className='response-loading-container'>
               <LoadingDots />
             </div>
           )}
         </div>
-        <div style={{ display }} className='chat-bar-container'>
+        <div
+          style={{ visibility, opacity }}
+          className={`chat-bar-container ${this.props.shouldRender ? '' : 'react-autoql-content-hidden'}`}
+        >
           <div className='watermark'>
             <Icon type='react-autoql-bubbles-outlined' />
             {lang.run}
@@ -438,6 +455,7 @@ export default class ChatContent extends React.Component {
             dataPageSize={this.props.dataPageSize}
             isResizing={this.props.isResizing}
             shouldRender={this.props.shouldRender}
+            tooltipID={this.props.tooltipID}
           />
         </div>
       </ErrorBoundary>

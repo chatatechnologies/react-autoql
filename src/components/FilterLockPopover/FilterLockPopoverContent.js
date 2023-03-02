@@ -2,7 +2,6 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import Autosuggest from 'react-autosuggest'
 import axios from 'axios'
-import ReactTooltip from 'react-tooltip'
 import { v4 as uuid } from 'uuid'
 import { ToastContainer, toast } from 'react-toastify'
 import { Slide } from 'react-toastify'
@@ -14,6 +13,7 @@ import { Icon } from '../Icon'
 import { Button } from '../Button'
 import { LoadingDots } from '../LoadingDots'
 import { Checkbox } from '../Checkbox'
+import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
 import { CustomScrollbars } from '../CustomScrollbars'
 import { responseErrors } from '../../js/errorMessages'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -107,12 +107,16 @@ export default class FilterLockPopover extends React.Component {
   }
 
   rebuildTooltips = (delay = 500) => {
+    if (!this.props.isOpen) {
+      return
+    }
+
     if (this.props.rebuildTooltips) {
       this.props.rebuildTooltips(delay)
     } else {
       clearTimeout(this.rebuildTooltipsTimer)
       this.rebuildTooltipsTimer = setTimeout(() => {
-        ReactTooltip.rebuild()
+        rebuildTooltips()
       }, delay)
     }
   }
@@ -454,7 +458,7 @@ export default class FilterLockPopover extends React.Component {
       this.setState({ filters: oldFilters })
     }
 
-    ReactTooltip.hide()
+    hideTooltips()
   }
 
   onInputChange = (e, { newValue, method }) => {
@@ -527,6 +531,7 @@ export default class FilterLockPopover extends React.Component {
           className='filter-locking-close-btn'
           data-tip={lang.closeFilterLocking}
           data-for='filter-locking-tooltip'
+          tooltipID={this.props.tooltipID}
           size='small'
         >
           <Icon type='close' />
@@ -536,8 +541,6 @@ export default class FilterLockPopover extends React.Component {
   }
 
   renderSuggestion = ({ name }) => {
-    this.rebuildTooltips()
-
     if (!name.keyword) {
       return null
     }
@@ -789,7 +792,7 @@ export default class FilterLockPopover extends React.Component {
           limit={1}
           // theme={getTheme()}
         />
-        <ReactTooltip
+        <Tooltip
           afterShow={(e) => handleTooltipBoundaryCollision(e, this)}
           ref={(r) => (this.reactTooltipRef = r)}
           className='react-autoql-tooltip'

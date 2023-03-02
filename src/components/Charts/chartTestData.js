@@ -1,4 +1,5 @@
 import { scaleLinear, scaleBand, scaleOrdinal } from 'd3-scale'
+import { getBandScale, getLinearScales } from './helpers'
 
 const listColumns = [
   {
@@ -108,12 +109,14 @@ const datePivotColumns = [
     groupable: true,
     active: false,
     name: 'sale__transaction_date__month',
+    is_visible: true,
   },
   {
     active: false,
     groupable: false,
     name: 'sale__line_item___sum',
     type: 'DOLLAR_AMT',
+    is_visible: true,
   },
 ]
 
@@ -141,40 +144,111 @@ const datePivotData = [
   [1496188800, 14642.19],
 ]
 
+const listProps = {
+  columns: listColumns,
+  data: listData,
+  numberColumnIndex: 7,
+  numberColumnIndices: [6, 7, 8],
+  visibleSeriesIndices: [6, 7],
+  stringColumnIndex: 0,
+  stringColumnIndices: [0, 1, 2, 3, 4, 5],
+  height: 500,
+  width: 500,
+}
+
+const pivotProps = {
+  columns: pivotColumns,
+  data: pivotData,
+  numberColumnIndex: 1,
+  numberColumnIndices: [1, 2],
+  visibleSeriesIndices: [1, 2],
+  stringColumnIndex: 0,
+  stringColumnIndices: [0],
+  height: 500,
+  width: 500,
+}
+
+const datePivotProps = {
+  columns: datePivotColumns,
+  data: datePivotData,
+  numberColumnIndex: 1,
+  numberColumnIndices: [1],
+  visibleSeriesIndices: [1],
+  stringColumnIndex: 0,
+  stringColumnIndices: [0],
+  height: 500,
+  width: 500,
+}
+
 export default {
   list: {
-    columns: listColumns,
-    data: listData,
-    numberColumnIndex: 7,
-    numberColumnIndices: [6, 7, 8],
-    visibleSeriesIndices: [6, 7],
-    stringColumnIndex: 0,
-    stringColumnIndices: [0, 1, 2, 3, 4, 5],
-    height: 500,
-    width: 500,
-    stringScale: scaleBand()
-      .domain(listData.map((d) => d[0]))
-      .range([0, 500])
-      .paddingInner(1)
-      .paddingOuter(0),
-    numberScale: scaleLinear().domain([5000000, 20000000]).range([0, 500]).nice(),
+    ...listProps,
+    stringScale: (params = {}) => {
+      const scale = getBandScale({
+        props: listProps,
+        columnIndex: listProps.stringColumnIndex,
+        domain: listData.map((row) => row[listProps.stringColumnIndex]),
+        ...params,
+      })
+
+      if (scale && params && Object.keys(params)?.length) {
+        Object.keys(params).forEach((key) => {
+          scale[key] = params[key]
+        })
+      }
+
+      return scale
+    },
+    numberScale: (params = {}) => {
+      const scale = getLinearScales({
+        props: listProps,
+        columnIndices1: listProps.numberColumnIndices,
+        isScaled: false,
+        ...params,
+      })?.scale
+
+      if (scale && params && Object.keys(params)?.length) {
+        Object.keys(params).forEach((key) => {
+          scale[key] = params[key]
+        })
+      }
+      return scale
+    },
     colorScale: scaleOrdinal().range(['red', 'blue']),
     onLabelChange: () => {},
   },
   pivot: {
-    columns: pivotColumns,
-    data: pivotData,
-    numberColumnIndex: 1,
-    numberColumnIndices: [1, 2],
-    visibleSeriesIndices: [1, 2],
-    stringColumnIndex: 0,
-    stringColumnIndices: [0],
-    stringScale: scaleBand()
-      .domain(pivotData.map((d) => d[0]))
-      .range([0, 500])
-      .paddingInner(1)
-      .paddingOuter(0),
-    numberScale: scaleLinear().domain([5000000, 20000000]).range([0, 500]).nice(),
+    ...pivotProps,
+    stringScale: (params = {}) => {
+      const scale = getBandScale({
+        props: pivotProps,
+        columnIndex: pivotProps.stringColumnIndex,
+        domain: pivotData.map((row) => row[pivotProps.stringColumnIndex]),
+        ...params,
+      })
+
+      if (scale && params && Object.keys(params)?.length) {
+        Object.keys(params).forEach((key) => {
+          scale[key] = params[key]
+        })
+      }
+      return scale
+    },
+    numberScale: (params = {}) => {
+      const scale = getLinearScales({
+        props: pivotProps,
+        columnIndices1: pivotProps.numberColumnIndices,
+        isScaled: false,
+        ...params,
+      })?.scale
+
+      if (params && Object.keys(params)?.length) {
+        Object.keys(params).forEach((key) => {
+          scale[key] = params[key]
+        })
+      }
+      return scale
+    },
     legendLabels: [
       {
         color: '#26A7E9',
@@ -225,26 +299,41 @@ export default {
       },
     ],
     colorScale: scaleOrdinal().range(['red', 'blue']),
-    height: 500,
-    width: 500,
+
     onLabelChange: () => {},
   },
   datePivot: {
-    columns: datePivotColumns,
-    data: datePivotData,
-    numberColumnIndex: 1,
-    numberColumnIndices: [1],
-    visibleSeriesIndices: [1],
-    stringColumnIndex: 0,
-    stringColumnIndices: [0],
-    height: 500,
-    width: 500,
-    stringScale: scaleBand()
-      .domain(datePivotData.map((d) => d[0]))
-      .range([0, 500])
-      .paddingInner(1)
-      .paddingOuter(0),
-    numberScale: scaleLinear().domain([0, 1000]).range([0, 500]).nice(),
+    ...datePivotProps,
+    stringScale: (params = {}) => {
+      const scale = getBandScale({
+        props: datePivotProps,
+        columnIndex: datePivotProps.stringColumnIndex,
+        domain: datePivotData.map((row) => row[datePivotProps.stringColumnIndex]),
+        ...params,
+      })
+
+      if (scale && params && Object.keys(params)?.length) {
+        Object.keys(params).forEach((key) => {
+          scale[key] = params[key]
+        })
+      }
+      return scale
+    },
+    numberScale: (params = {}) => {
+      const scale = getLinearScales({
+        props: datePivotProps,
+        columnIndices1: datePivotProps.numberColumnIndices,
+        isScaled: false,
+        ...params,
+      })?.scale
+
+      if (params && Object.keys(params)?.length) {
+        Object.keys(params).forEach((key) => {
+          scale[key] = params[key]
+        })
+      }
+      return scale
+    },
     colorScale: scaleOrdinal().range(['red', 'blue']),
     onLabelChange: () => {},
   },

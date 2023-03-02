@@ -96,6 +96,14 @@ export default class MonthRangePicker extends React.Component {
 
   onMonthStartSelection = (timestamp) => {
     this.setState({ selectedStart: timestamp.startOf('month'), selectedEnd: undefined, focusedDateDisplay: 'end' })
+    const selectedStart = timestamp.startOf('month')
+    const rangeSelection = [selectedStart, timestamp]
+    const selectedStartMonthStart = rangeSelection[0].startOf('month')
+    const selectedEndMonthEnd = rangeSelection[1].endOf('month')
+    this.props.onRangeSelection({
+      startDate: selectedStartMonthStart.toDate(),
+      endDate: selectedEndMonthEnd.toDate(),
+    })
   }
 
   onMonthEndSelection = (timestamp) => {

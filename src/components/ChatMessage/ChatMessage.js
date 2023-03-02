@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEqual from 'lodash.isequal'
-import ReactTooltip from 'react-tooltip'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
@@ -12,8 +11,6 @@ import {
   autoQLConfigDefault,
   dataFormattingDefault,
   getAuthentication,
-  getDataFormatting,
-  getAutoQLConfig,
 } from '../../props/defaults'
 
 import { QueryOutput } from '../QueryOutput'
@@ -23,7 +20,7 @@ import { ReverseTranslation } from '../ReverseTranslation'
 import { Spinner } from '../Spinner'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { isChartType } from '../../js/Util'
+import { deepEqual } from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
 
 import './ChatMessage.scss'
@@ -107,6 +104,7 @@ export default class ChatMessage extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
+    this.props.scrollToBottom()
     this.scrollToBottomTimeout = setTimeout(() => {
       this.props.scrollToBottom()
     }, 100)
@@ -115,19 +113,36 @@ export default class ChatMessage extends React.Component {
     this.setIsAnimating()
   }
 
-  shouldComponentUpdate = (nextProps) => {
+  shouldComponentUpdate = (nextProps, nextState) => {
     if (this.props.isResizing && nextProps.isResizing) {
       return false
     }
 
-    return true
+    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
   }
 
-  componentDidUpdate = (prevProps, prevState) => {
-    if (this.props.isVisibleInDOM && !prevProps.isVisibleInDOM) {
-      this.setIsAnimating()
+  getSnapshotBeforeUpdate = (nextProps, nextState) => {
+    let messageWidth
+    let shouldUpdateWidth = false
+    if (this.ref) {
+      if (!this.props.isResizing && nextProps.isResizing) {
+        shouldUpdateWidth = true
+        messageWidth = this.ref.clientWidth
+      }
+
+      if (this.props.isResizing && !nextProps.isResizing) {
+        shouldUpdateWidth = true
+        messageWidth = ''
+      }
     }
-    ReactTooltip.hide()
+
+    return { messageWidth, shouldUpdateWidth }
+  }
+
+  componentDidUpdate = (prevProps, prevState, { messageWidth, shouldUpdateWidth }) => {
+    if (shouldUpdateWidth && this.ref?.style) {
+      this.ref.style.width = messageWidth
+    }
   }
 
   componentWillUnmount = () => {
@@ -146,6 +161,7 @@ export default class ChatMessage extends React.Component {
   }
 
   clearIsAnimatingIn500ms = () => {
+    clearTimeout(this.animationTimeout)
     this.animationTimeout = setTimeout(() => {
       this.setState({ isAnimatingMessageBubble: false })
       this.props.scrollToBottom()
@@ -194,12 +210,6 @@ export default class ChatMessage extends React.Component {
     }
 
     return false
-  }
-
-  onDisplayTypeChange = (displayType) => {
-    this.setState({ displayType }, () => {
-      this.scrollIntoView()
-    })
   }
 
   scrollIntoView = ({ block = 'end', inline = 'nearest', behavior = 'smooth' } = {}) => {
@@ -253,17 +263,17 @@ export default class ChatMessage extends React.Component {
     } else if (this.props.response) {
       return (
         <QueryOutput
-          ref={(ref) => ref && ref !== this.state.responseRef && this.setState({ responseRef: ref })}
+          ref={(ref) => (this.responseRef = ref)}
           optionsToolbarRef={this.optionsToolbarRef}
           vizToolbarRef={this.vizToolbarRef}
-          authentication={getAuthentication(this.props.authentication)}
-          autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+          authentication={this.props.authentication}
+          autoQLConfig={this.props.autoQLConfig}
           queryResponse={this.props.response}
           onSuggestionClick={this.props.onSuggestionClick}
           isQueryRunning={this.props.isChataThinking}
           copyToClipboard={this.copyToClipboard}
           tableOptions={this.props.tableOptions}
-          dataFormatting={getDataFormatting(this.props.dataFormatting)}
+          dataFormatting={this.props.dataFormatting}
           appliedFilters={this.props.appliedFilters}
           onDrilldownStart={this.props.onDrilldownStart}
           onDrilldownEnd={this.props.onDrilldownEnd}
@@ -273,7 +283,8 @@ export default class ChatMessage extends React.Component {
           backgroundColor={document.documentElement.style.getPropertyValue('--react-autoql-background-color-secondary')}
           onErrorCallback={this.props.onErrorCallback}
           enableColumnHeaderContextMenu={true}
-          isResizing={this.props.isResizing || this.state.isAnimatingMessageBubble}
+          isAnimating={this.state.isAnimatingMessageBubble}
+          isResizing={this.props.isResizing}
           enableDynamicCharting={this.props.enableDynamicCharting}
           initialTableConfigs={this.state.dataConfig}
           onTableConfigChange={this.updateDataConfig}
@@ -285,8 +296,10 @@ export default class ChatMessage extends React.Component {
           rebuildTooltips={this.props.rebuildTooltips}
           source={this.props.source}
           onRowChange={this.scrollIntoView}
-          onDisplayTypeChange={this.onDisplayTypeChange}
+          onDisplayTypeChange={this.scrollIntoView}
           mutable={false}
+          tooltipID={this.props.tooltipID}
+          chartTooltipID={this.props.chartTooltipID}
           showSuggestionPrefix={false}
           dataPageSize={this.props.dataPageSize}
           popoverParentElement={this.props.popoverParentElement}
@@ -311,15 +324,17 @@ export default class ChatMessage extends React.Component {
     })
   }
 
+  onDeleteMessage = () => this.props.deleteMessageCallback(this.props.id)
+
   renderRightToolbar = () => {
     return (
       <div className='chat-message-toolbar right'>
-        {this.props.isResponse && this.state.displayType !== 'help' && this.state.displayType !== 'suggestion' ? (
+        {this.props.isResponse ? (
           <OptionsToolbar
             ref={(r) => (this.optionsToolbarRef = r)}
-            responseRef={this.state.responseRef}
+            responseRef={this.responseRef}
             className={'chat-message-toolbar right'}
-            shouldRender={!this.props.isResizing}
+            shouldRender={!this.props.isResizing && this.props.shouldRender}
             authentication={this.props.authentication}
             autoQLConfig={this.props.autoQLConfig}
             onCSVDownloadStart={this.onCSVDownloadStart}
@@ -330,7 +345,8 @@ export default class ChatMessage extends React.Component {
             enableDeleteBtn={!this.props.isIntroMessage}
             rebuildTooltips={this.props.rebuildTooltips}
             popoverParentElement={this.props.popoverParentElement}
-            deleteMessageCallback={() => this.props.deleteMessageCallback(this.props.id)}
+            deleteMessageCallback={this.onDeleteMessage}
+            tooltipID={this.props.tooltipID}
             createDataAlertCallback={this.props.createDataAlertCallback}
           />
         ) : null}
@@ -344,9 +360,10 @@ export default class ChatMessage extends React.Component {
         {this.props.isResponse && this.props.type !== 'text' ? (
           <VizToolbar
             ref={(r) => (this.vizToolbarRef = r)}
-            responseRef={this.state.responseRef}
+            responseRef={this.responseRef}
             className='chat-message-toolbar left'
-            shouldRender={!this.props.isResizing}
+            tooltipID={this.props.tooltipID}
+            shouldRender={!this.props.isResizing && this.props.shouldRender}
           />
         ) : null}
       </div>
@@ -354,8 +371,7 @@ export default class ChatMessage extends React.Component {
   }
 
   render = () => {
-    const isChart = this.state.displayType && isChartType(this.state.displayType)
-    const hasRT = !!this.state.responseRef?.queryResponse?.data?.data?.parsed_interpretation
+    const hasRT = !!this.responseRef?.queryResponse?.data?.data?.parsed_interpretation
 
     return (
       <ErrorBoundary>
@@ -371,9 +387,7 @@ export default class ChatMessage extends React.Component {
           <div
             ref={(r) => (this.ref = r)}
             className={`chat-message-bubble
-              ${isChart ? ' full-width' : ''}
               ${this.props.type === 'text' ? ' text' : ''}
-              ${this.state.displayType}
               ${this.props.isActive ? ' active' : ''}`}
           >
             {this.renderContent()}
@@ -390,7 +404,8 @@ export default class ChatMessage extends React.Component {
               onValueLabelClick={this.props.onRTValueLabelClick}
               appliedFilters={this.props.appliedFilters}
               isResizing={this.props.isResizing}
-              reverseTranslation={this.state.responseRef.queryResponse.data.data.parsed_interpretation}
+              reverseTranslation={this.responseRef.queryResponse.data.data.parsed_interpretation}
+              tooltipID={this.props.tooltipID}
             />
           </div>
         ) : null}

@@ -10,6 +10,10 @@ export default class Bars extends Component {
     activeKey: this.props.activeChartElementKey,
   }
 
+  shouldComponentUpdate = () => {
+    return true
+  }
+
   onBarClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)
 
@@ -37,11 +41,12 @@ export default class Bars extends Component {
     }
 
     const allBars = []
-    const barHeight = yScale.bandwidth() / visibleSeries.length
+    const barHeight = yScale.tickSize / visibleSeries.length
 
     let visibleIndex = 0
     numberColumnIndices.forEach((colIndex, i) => {
       if (!columns[colIndex].isSeriesHidden) {
+        const color = this.props.colorScale(colIndex)
         allBars.push(
           this.props.data.map((d, index) => {
             const value = d[colIndex]
@@ -82,8 +87,8 @@ export default class Bars extends Component {
                 height={barHeight}
                 onClick={() => this.onBarClick(d, colIndex, index)}
                 data-tip={tooltip}
-                data-for={this.props.tooltipID}
-                style={{ fill: this.props.colorScale(i), fillOpacity: 0.7 }}
+                data-for={this.props.chartTooltipID}
+                style={{ fill: color, fillOpacity: 0.7 }}
               />
             )
           }),

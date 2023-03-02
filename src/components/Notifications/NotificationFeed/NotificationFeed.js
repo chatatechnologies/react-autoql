@@ -1,5 +1,4 @@
 import React, { Fragment } from 'react'
-import ReactTooltip from 'react-tooltip'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
@@ -13,6 +12,7 @@ import { DataAlertModal } from '../DataAlertModal'
 import { Button } from '../../Button'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { Spinner } from '../../Spinner'
+import { Tooltip } from '../../Tooltip'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import { fetchNotificationFeed, dismissAllNotifications } from '../../../js/notificationService'
@@ -86,6 +86,8 @@ class NotificationFeed extends React.Component {
   componentWillUnmount = () => {
     this._isMounted = false
   }
+
+  closeDataAlertModal = () => this.setState({ isEditModalVisible: false })
 
   getNotifications = () => {
     fetchNotificationFeed({
@@ -270,9 +272,9 @@ class NotificationFeed extends React.Component {
     return (
       <DataAlertModal
         key={this.MODAL_COMPONENT_KEY}
-        authentication={getAuthentication(this.props.authentication)}
+        authentication={this.props.authentication}
         isVisible={this.state.isEditModalVisible}
-        onClose={() => this.setState({ isEditModalVisible: false })}
+        onClose={this.closeDataAlertModal}
         currentDataAlert={this.state.activeDataAlert}
         onSave={this.onDataAlertSave}
         onErrorCallback={this.props.onErrorCallback}
@@ -308,13 +310,15 @@ class NotificationFeed extends React.Component {
     return (
       <ErrorBoundary>
         <div className='react-autoql-notification-list-container' data-test='notification-list'>
-          <ReactTooltip
-            className='react-autoql-tooltip'
-            id='react-autoql-notification-tooltip'
-            effect='solid'
-            delayShow={500}
-            html
-          />
+          {!this.props.tooltipID && (
+            <Tooltip
+              className='react-autoql-tooltip'
+              id='react-autoql-notification-tooltip'
+              effect='solid'
+              delayShow={500}
+              html
+            />
+          )}
           {_get(this.state.notificationList, 'length') ? (
             <Fragment>
               {this.renderDismissAllButton()}
@@ -336,7 +340,7 @@ class NotificationFeed extends React.Component {
                       return (
                         <NotificationItem
                           key={`notification-item-${i}`}
-                          authentication={getAuthentication(this.props.authentication)}
+                          authentication={this.props.authentication}
                           notification={notification}
                           onClick={this.onItemClick}
                           onDismissCallback={this.onDismissClick}

@@ -1,12 +1,12 @@
 .data-explorer-page-container {
+  position: absolute;
   height: 100%;
+  width: 100%;
   padding: 0;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   flex-wrap: nowrap;
-  flex: 1 1;
-  min-height: 0;
   color: var(--react-autoql-text-color-primary);
 
   .data-explorer-section,
@@ -56,11 +56,11 @@
 
   .data-explorer-result-container {
     color: var(--react-autoql-text-color-primary);
-    flex: 1;
     width: 100%;
     overflow: auto;
     padding-left: 5px;
     min-height: 0;
+    height: calc(100% - 130px);
 
     .data-explorer-sections-container {
       position: relative;

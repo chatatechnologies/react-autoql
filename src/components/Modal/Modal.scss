@@ -12,6 +12,7 @@
 .ReactModal__Content {
   display: flex;
   flex-direction: column;
+  overflow: hidden !important;
 
   transform: scale(0);
   transition: all 0.2s ease-in-out;
@@ -45,6 +46,13 @@
   transform: scale(0);
 }
 
+.react-autoql-modal-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
 .react-autoql-modal-header {
   position: relative;
   text-align: center;
@@ -67,9 +75,8 @@
   display: flex;
   flex-direction: column;
 
-  padding: 25px;
+  padding: 20px 10px;
   flex: 1;
-  overflow: hidden;
 }
 .react-autoql-modal-close-btn {
   position: absolute !important;

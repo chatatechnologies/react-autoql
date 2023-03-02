@@ -11,7 +11,9 @@ const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
   const wrapper = mount(
     <svg width='300px' height='300px'>
-      <NumberAxisSelector {...setupProps} />
+      <NumberAxisSelector {...setupProps}>
+        <div data-test='number-axis-selector'>test</div>
+      </NumberAxisSelector>
     </svg>,
   )
   return wrapper
@@ -20,7 +22,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders number axis selector if number column provided', () => {
     const wrapper = setup(pivotSampleProps)
-    const numberSelector = findByTestAttr(wrapper, 'axis-label-border')
+    const numberSelector = findByTestAttr(wrapper, 'number-axis-selector')
     expect(numberSelector.exists()).toBe(true)
   })
 })

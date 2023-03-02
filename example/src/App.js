@@ -13,6 +13,7 @@ import {
   DataAlerts,
   Icon as ChataIcon,
   configureTheme,
+  VizToolbar,
 } from 'react-autoql'
 
 import { v4 as uuid } from 'uuid'
@@ -102,7 +103,7 @@ export default class App extends Component {
     placement: 'right',
     showHandle: true,
     theme: 'light',
-    response: null,
+    response: undefined,
     showMask: true,
     shiftScreen: false,
     userDisplayName: 'Nikki',
@@ -113,7 +114,7 @@ export default class App extends Component {
     enableQueryValidation: true,
     enableQuerySuggestions: true,
     enableDrilldowns: true,
-    enableExploreQueriesTab: true,
+    enableExploreQueriesTab: false,
     enableDataExplorerTab: true,
     enableNotificationsTab: true,
     enableNotifications: true,
@@ -158,6 +159,7 @@ export default class App extends Component {
   }
 
   componentDidMount = () => {
+    this.setTheme()
     this.testAuthentication()
       .then(() => {
         this.fetchDashboards()
@@ -236,11 +238,15 @@ export default class App extends Component {
       accentColor: this.state.theme === 'light' ? lightAccentColor : darkAccentColor,
       accentTextColor: accentTextColor,
       fontFamily: this.state.fontFamily,
-      chartColors: chartColors,
+      chartColors,
       dashboardTitleColor,
     }
 
     configureTheme(theme)
+
+    if (!this.state.hasSetTheme) {
+      this.setState({ hasSetTheme: true })
+    }
   }
 
   fetchNotificationData = (notificationId) => {
@@ -282,7 +288,7 @@ export default class App extends Component {
   }
 
   testAuthentication = () => {
-    const url = `${this.state.domain}/autoql/api/v1/query/related-queries?key=${this.state.apiKey}&search=a&scope=narrow`
+    const url = `${this.state.domain}/autoql/api/v1/query/validate?text=sales&key=${this.state.apiKey}`
     const token = getStoredProp('jwtToken')
 
     const config = {}
@@ -435,11 +441,7 @@ export default class App extends Component {
       const loginFormData = new FormData()
       loginFormData.append('username', this.state.email)
       loginFormData.append('password', this.state.password)
-      const loginResponse = await axios.post(`${baseUrl}/api/v1/login`, loginFormData, {
-        headers: {
-          // 'Access-Control-Allow-Origin': '*'
-        },
-      })
+      const loginResponse = await axios.post(`${baseUrl}/api/v1/login`, loginFormData)
 
       // Put login token in local storage
       const loginToken = loginResponse.data
@@ -1173,10 +1175,18 @@ export default class App extends Component {
   }
 
   renderDataMessengerPage = () => {
+    if (!this.state.hasSetTheme) {
+      return null
+    }
+
     return <div className='test-page-container'>{this.renderPropOptions()}</div>
   }
 
   renderQueryInputPage = () => {
+    if (!this.state.hasSetTheme) {
+      return null
+    }
+
     return (
       <div>
         <QueryInput
@@ -1193,23 +1203,37 @@ export default class App extends Component {
           showChataIcon
           showLoadingDots
         />
+        <Button
+          onClick={() => {
+            if (this.queryOutputRef?.refreshLayout) {
+              this.queryOutputRef.refreshLayout()
+            }
+          }}
+        >
+          Resize Chart
+        </Button>
+        <VizToolbar ref={(r) => (this.vizToolbarRef = r)} responseRef={this.queryOutputRef} />
         {this.state.response && (
           <div
             style={{
-              // height: 'auto',
-              // minHeight: '100px',
-              height: 'calc(100vh - 120px)',
+              height: 'calc(100vh - 140px)',
               overflow: 'hidden',
-              padding: '20px',
-              paddingTop: '0',
               fontFamily: 'Helvetica, Arial, Sans-Serif', // Text, tables, and charts will inherit font
               color: '#565656', // Text, tables, and charts will inherit text color
             }}
           >
             <QueryOutput
+              ref={(r) => (this.queryOutputRef = r)}
+              vizToolbarRef={this.vizToolbarRef}
               authentication={this.getAuthProp()}
+              autoQLConfig={this.getAutoQLConfigProp()}
+              dataFormatting={this.getDataFormattingProp()}
               queryInputRef={this.queryInputRef}
               queryResponse={this.state.response}
+              initialDisplayType='table'
+              enableAjaxTableData={true}
+              autoChartAggregations={true}
+              enableDynamicCharting={true}
             />
           </div>
         )}
@@ -1230,6 +1254,10 @@ export default class App extends Component {
     }
   }
 
+  handleTileChange = (newTiles) => {
+    this.setState({ dashboardTiles: newTiles })
+  }
+
   renderConfirmDeleteDashboardModal = () => {
     return Modal.confirm({
       icon: <ExclamationCircleOutlined />,
@@ -1242,8 +1270,14 @@ export default class App extends Component {
     })
   }
 
+  setIsEditing = () => {
+    this.setState({ isEditing: true })
+  }
+
+  openNewDashboardModal = () => this.setState({ isNewDashboardModalOpen: true })
+
   renderDashboardPage = () => {
-    if (this.state.isFetchingDashboard) {
+    if (this.state.isFetchingDashboard || !this.state.hasSetTheme) {
       return <Spin />
     }
 
@@ -1367,7 +1401,7 @@ export default class App extends Component {
               autoQLConfig={this.getAutoQLConfigProp()}
               dataFormatting={this.getDataFormattingProp()}
               isEditing={this.state.isEditing}
-              startEditingCallback={() => this.setState({ isEditing: true })}
+              startEditingCallback={this.setIsEditing}
               executeOnMount={this.state.runDashboardAutomatically}
               executeOnStopEditing={this.state.runDashboardAutomatically}
               enableDynamicCharting={this.state.enableDynamicCharting}
@@ -1377,14 +1411,12 @@ export default class App extends Component {
               onSuccessCallback={this.onSuccess}
               autoChartAggregations={this.state.autoChartAggregations}
               enableAjaxTableData={this.state.pagination}
-              onChange={(newTiles) => {
-                this.setState({ dashboardTiles: newTiles })
-              }}
+              onChange={this.handleTileChange}
             />
           </Fragment>
         ) : (
           <div style={{ marginTop: '100px', textAlign: 'center' }}>
-            <Button type='primary' onClick={() => this.setState({ isNewDashboardModalOpen: true })}>
+            <Button type='primary' onClick={this.openNewDashboardModal}>
               Create a new Dashboard
             </Button>
           </div>
@@ -1461,7 +1493,7 @@ export default class App extends Component {
   renderNewDashboardModal = () => {
     return (
       <Modal
-        visible={this.state.isNewDashboardModalOpen}
+        open={this.state.isNewDashboardModalOpen}
         confirmLoading={this.state.isSavingDashboard}
         onOk={this.createDashboard}
         okText='Create Dashboard'
@@ -1485,7 +1517,6 @@ export default class App extends Component {
       isFetchingNotificationContent: true,
     })
 
-    // this.executeQuery(notification.query)
     this.fetchNotificationData(notification.id)
       .then((response) => {
         this.setState({
@@ -1501,12 +1532,6 @@ export default class App extends Component {
           isFetchingNotificationContent: false,
         })
       })
-    // .finally(response => {
-    //   this.setState({
-    //     activeNotificationContent: response,
-    //     isFetchingNotificationContent: false
-    //   })
-    // })
   }
 
   renderNotificationContent = (notification) => {
@@ -1540,6 +1565,10 @@ export default class App extends Component {
   }
 
   renderNotificationsPage = () => {
+    if (!this.state.hasSetTheme) {
+      return null
+    }
+
     return (
       <div
         style={{
@@ -1577,7 +1606,6 @@ export default class App extends Component {
         <DataAlerts
           authentication={this.getAuthProp()}
           onErrorCallback={this.onError}
-          showCreateAlertBtn
           onSuccessAlert={this.onSuccess}
         />
       </div>
@@ -1669,7 +1697,7 @@ export default class App extends Component {
       <div>
         {this.renderUIOverlay()}
         {this.renderNavMenu()}
-        {this.state.isAuthenticated && this.renderDataMessenger()}
+        {this.state.isAuthenticated && this.state.currentPage !== 'chatbar' && this.renderDataMessenger()}
         {pageToRender}
       </div>
     )

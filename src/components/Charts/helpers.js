@@ -1,11 +1,17 @@
 import PropTypes from 'prop-types'
 import { max, min } from 'd3-array'
-import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
+import dayjs from '../../js/dayjsWithPlugins'
+import { scaleLinear, scaleBand, scaleTime } from 'd3-scale'
+import { select } from 'd3-selection'
 
-import { formatElement } from '../../js/Util'
+import { deepEqual, formatChartLabel, formatElement, getDayJSObj } from '../../js/Util'
 import { dataFormattingType } from '../../props/types'
 import { dataFormattingDefault } from '../../props/defaults'
+import { AGG_TYPES, DAYJS_PRECISION_FORMATS, MAX_CHART_LABEL_SIZE, NUMBER_COLUMN_TYPES } from '../../js/Constants'
+
+const DEFAULT_INNER_PADDING = 0.2
+const DEFAULT_OUTER_PADDING = 0.5
 
 export const chartContainerPropTypes = {
   dataFormatting: dataFormattingType,
@@ -35,6 +41,7 @@ export const chartContainerDefaultProps = {
   onXAxisClick: () => {},
   onYAxisClick: () => {},
   onLabelChange: () => {},
+  rebuildTooltips: () => {},
 }
 
 export const chartPropTypes = {
@@ -42,56 +49,34 @@ export const chartPropTypes = {
   visibleSeriesIndices: PropTypes.arrayOf(PropTypes.number).isRequired,
   height: PropTypes.number.isRequired,
   width: PropTypes.number.isRequired,
-  innerHeight: PropTypes.number.isRequired,
-  innerWidth: PropTypes.number.isRequired,
-  leftMargin: PropTypes.number,
-  rightMargin: PropTypes.number,
-  topMargin: PropTypes.number,
-  bottomMargin: PropTypes.number,
+  deltaX: PropTypes.number,
+  deltaY: PropTypes.number,
 }
 
 export const chartDefaultProps = {
   ...chartContainerDefaultProps,
-  leftMargin: 0,
-  rightMargin: 0,
-  topMargin: 0,
-  bottomMargin: 0,
+  deltaX: 0,
+  deltaY: 0,
 }
 
 export const axesPropTypes = {
   ...chartPropTypes,
   xScale: PropTypes.func.isRequired,
   yScale: PropTypes.func.isRequired,
-  xCol: PropTypes.shape({}).isRequired,
-  yCol: PropTypes.shape({}).isRequired,
-  xTicks: PropTypes.array,
-  yTicks: PropTypes.array,
-  xGridLines: PropTypes.bool,
-  yGridLines: PropTypes.bool,
-  rotateLabels: PropTypes.bool,
   hasRightLegend: PropTypes.bool,
   hasBottomLegend: PropTypes.bool,
-  hasXDropdown: PropTypes.bool,
-  hasYDropdown: PropTypes.bool,
-  xAxisTitle: PropTypes.string,
-  yAxisTitle: PropTypes.string,
-  legendTitle: PropTypes.string,
+  innerHeight: PropTypes.number,
+  innerWidth: PropTypes.number,
+  onLabelRotation: PropTypes.func,
 }
 
 export const axesDefaultProps = {
   ...chartDefaultProps,
-  xTicks: undefined,
-  yTicks: undefined,
-  xGridLines: false,
-  yGridLines: false,
-  rotateLabels: false,
   hasRightLegend: false,
   hasBottomLegend: false,
-  hasXDropdown: false,
-  hasYDropdown: false,
-  xAxisTitle: undefined,
-  yAxisTitle: undefined,
-  legendTitle: undefined,
+  innerHeight: 0,
+  innerWidth: 0,
+  onLabelRotation: () => {},
 }
 
 export const chartElementPropTypes = {
@@ -118,6 +103,27 @@ export const dataStructureChanged = (props, prevProps) => {
   )
 }
 
+export const onlySeriesVisibilityChanged = (props, prevProps) => {
+  if (_isEqual(props.columns, prevProps.columns)) {
+    return false
+  }
+
+  const columnsFiltered = props.columns.map((col) => {
+    return {
+      ...col,
+      isSeriesHidden: undefined,
+    }
+  })
+  const prevColumnsFiltered = prevProps.columns.map((col) => {
+    return {
+      ...col,
+      isSeriesHidden: undefined,
+    }
+  })
+
+  return deepEqual(columnsFiltered, prevColumnsFiltered)
+}
+
 export const scaleZero = (scale) => {
   const domain = scale?.domain()
   const domainLength = domain?.length
@@ -141,14 +147,26 @@ export const getKey = (rowIndex, cellIndex) => {
   return `${rowIndex}-${cellIndex}`
 }
 
-export const shouldRecalculateLongestLabel = (prevProps, props) => {
-  return (
-    props.marginAdjustmentFinished &&
-    (prevProps?.data?.length !== props.data?.length ||
-      !_isEqual(prevProps.numberColumnIndices, props.numberColumnIndices) ||
-      !_isEqual(prevProps.legendLabels, props.legendLabels) ||
-      prevProps.stringColumnIndex !== props.stringColumnIndex)
-  )
+export const labelsShouldRotate = (axisElement) => {
+  let prevBBox
+  let didOverlap = false
+  const padding = 10
+  select(axisElement)
+    .selectAll('g.tick text')
+    .each(function () {
+      if (!didOverlap) {
+        const textBoundingRect = select(this).node().getBoundingClientRect()
+        if (prevBBox) {
+          if (textBoundingRect.x < prevBBox.x + prevBBox.width + padding) {
+            didOverlap = true
+          }
+        }
+
+        prevBBox = textBoundingRect
+      }
+    })
+
+  return didOverlap
 }
 
 export const getTooltipContent = ({ row, columns, colIndex, stringColumnIndex, legendColumn, dataFormatting }) => {
@@ -157,24 +175,37 @@ export const getTooltipContent = ({ row, columns, colIndex, stringColumnIndex, l
     const stringColumn = columns[stringColumnIndex]
     const numberColumn = columns[colIndex]
 
-    const stringTitle = stringColumn.title
-    const numberTitle = numberColumn.origColumn ? numberColumn.origColumn.title : numberColumn.title
+    const stringTitle = stringColumn.tooltipTitle ?? stringColumn.title
+    let numberTitle = numberColumn.origColumn
+      ? numberColumn.origColumn.tooltipTitle ?? numberColumn.origColumn.title
+      : numberColumn.tooltipTitle ?? numberColumn.title
+
+    const aggTypeDisplayName = AGG_TYPES.find((agg) => agg.value === numberColumn.aggType)?.displayName
+    if (aggTypeDisplayName) {
+      numberTitle = `${numberTitle} (${aggTypeDisplayName})`
+    }
 
     const stringValue = formatElement({
       element: row[stringColumnIndex],
       column: stringColumn,
       config: dataFormatting,
+      isChart: true,
     })
 
     const numberValue = formatElement({
       element: row[colIndex] || 0,
       column: columns[colIndex],
       config: dataFormatting,
+      isChart: true,
     })
 
     const column = columns[colIndex]
     const tooltipLine1 =
-      !!legendColumn && !!column?.origColumn ? `<div><strong>${legendColumn.title}:</strong> ${column.title}</div>` : ''
+      !!legendColumn && !!column?.origColumn
+        ? `<div><strong>${legendColumn.tooltipTitle ?? legendColumn.title}:</strong> ${
+            column.tooltipTitle ?? column.title
+          }</div>`
+        : ''
     const tooltipLine2 = `<div><strong>${stringTitle}:</strong> ${stringValue}</div>`
     const tooltipLine3 = `<div><strong>${numberTitle}:</strong> ${numberValue}</div>`
 
@@ -197,11 +228,22 @@ export const getLegendLabelsForMultiSeries = (columns, colorScale, numberColumnI
       return []
     }
 
+    const numberColumns = numberColumnIndices.map((index) => columns[index])
+    const allAggTypesSame = numberColumns.every((col) => col.aggType === numberColumns[0].aggType)
+
     const legendLabels = numberColumnIndices.map((columnIndex, i) => {
       const column = columns[columnIndex]
+      let label = column.title
+      if (!allAggTypesSame) {
+        const aggTypeDisplayName = AGG_TYPES.find((agg) => agg.value === column?.aggType)?.displayName
+        if (aggTypeDisplayName) {
+          label = `${label} (${aggTypeDisplayName})`
+        }
+      }
+
       return {
-        label: column.title,
-        color: colorScale(i),
+        label,
+        color: colorScale(columnIndex),
         hidden: column.isSeriesHidden,
         columnIndex,
         column,
@@ -232,11 +274,12 @@ export const convertToNumber = (value) => {
     }
     return number
   } catch (error) {
+    console.error(error)
     return 0
   }
 }
 
-export const calculateMinAndMaxSums = (data, stringColumnIndex, numberColumnIndices) => {
+export const calculateMinAndMaxSums = (data, stringColumnIndex, numberColumnIndices, isScaled) => {
   const positiveSumsObject = {}
   const negativeSumsObject = {}
 
@@ -270,8 +313,18 @@ export const calculateMinAndMaxSums = (data, stringColumnIndex, numberColumnIndi
   })
 
   // Get max and min sums from those sum objects
-  const maxValue = getMaxValueFromKeyValueObj(positiveSumsObject)
-  const minValue = getMinValueFromKeyValueObj(negativeSumsObject)
+  let maxValue = getMaxValueFromKeyValueObj(positiveSumsObject)
+  let minValue = getMinValueFromKeyValueObj(negativeSumsObject)
+
+  const scaleRatio = maxValue / minValue
+  const disableChartScale = !isScaled || (maxValue > 0 && minValue < 0) || scaleRatio > 1000
+  if (disableChartScale) {
+    if (maxValue > 0 && minValue > 0) {
+      minValue = 0
+    } else if (maxValue < 0 && minValue < 0) {
+      maxValue = 0
+    }
+  }
 
   return {
     maxValue,
@@ -317,7 +370,11 @@ export const getMinValueFromKeyValueObj = (obj) => {
   return minValue
 }
 
-export const getMinAndMaxValues = (data, numberColumnIndices, isChartScaled) => {
+export const getMinAndMaxValues = (data, numberColumnIndices, isScaled, sum, stringColumnIndex) => {
+  if (sum) {
+    return calculateMinAndMaxSums(data, stringColumnIndex, numberColumnIndices, isScaled)
+  }
+
   try {
     const maxValuesFromArrays = []
     const minValuesFromArrays = []
@@ -341,9 +398,9 @@ export const getMinAndMaxValues = (data, numberColumnIndices, isChartScaled) => 
     // Always show 0 on the y axis
     // Keep this for future use
     const scaleRatio = maxValue / minValue
-    const isDisableChartScale = !isChartScaled || (maxValue > 0 && minValue < 0) || scaleRatio > 1000
+    const disableChartScale = !isScaled || (maxValue > 0 && minValue < 0) || scaleRatio > 1000
 
-    if (isDisableChartScale) {
+    if (disableChartScale) {
       if (maxValue > 0 && minValue > 0) {
         minValue = 0
       } else if (maxValue < 0 && minValue < 0) {
@@ -362,6 +419,10 @@ export const getMinAndMaxValues = (data, numberColumnIndices, isChartScaled) => 
 }
 
 export const getLegendLocation = (seriesArray, displayType) => {
+  if (displayType === 'column_line') {
+    return 'right'
+  }
+
   if (seriesArray?.length < 2) {
     return undefined
   }
@@ -370,15 +431,382 @@ export const getLegendLocation = (seriesArray, displayType) => {
     return undefined
   } else if (displayType === 'stacked_column' || displayType === 'stacked_bar' || displayType === 'stacked_line') {
     return 'right'
-  } else if (_get(seriesArray, 'length') > 2) {
+  } else if (seriesArray?.length > 2) {
     return 'right'
-  } else if (_get(seriesArray, 'length') > 1) {
+  } else if (seriesArray?.length > 1) {
     return 'right'
     // Todo: the margins are not working correctly, disable this for now
     // return 'bottom'
   }
 
   return undefined
+}
+
+export const getRangeForAxis = (props, axis) => {
+  let rangeStart
+  let rangeEnd
+  if (axis === 'x') {
+    rangeStart = 0
+    const innerWidth = props.width
+    rangeEnd = rangeStart + innerWidth
+    if (rangeEnd < rangeStart) {
+      rangeEnd = rangeStart
+    }
+  } else if (axis === 'y') {
+    const innerHeight = props.height
+    rangeEnd = 0 // props.deltaY
+    rangeStart = innerHeight // + rangeEnd
+
+    if (rangeStart < rangeEnd) {
+      rangeStart = rangeEnd
+    }
+  }
+
+  return [rangeStart, rangeEnd]
+}
+
+export const getTimeScale = ({ props, columnIndex, axis, domain }) => {
+  let error = false
+  const dateArray = props.data.map((d) => {
+    const dayjsObj = getDayJSObj({
+      value: d[columnIndex],
+      column: props.columns[columnIndex],
+      config: props.dataFormatting,
+    })
+
+    if (dayjsObj?.isValid()) {
+      return DateUTC(dayjsObj.valueOf())
+    }
+
+    error = true
+    return
+  })
+
+  if (error) {
+    // There was an error converting all values to dates - use band scale instead
+    return getBandScale({ props, columnIndex, axis, domain })
+  }
+
+  const range = getRangeForAxis(props, axis)
+  const minDate = min(dateArray)
+  const maxDate = max(dateArray)
+  const scaleDomain = domain ?? [minDate, maxDate]
+  const axisColumns = props.stringColumnIndices?.map((index) => props.columns[index])
+
+  const scale = scaleTime().domain(scaleDomain).range(range)
+
+  scale.type = 'TIME'
+  scale.minValue = minDate
+  scale.maxValue = maxDate
+  scale.dataFormatting = props.dataFormatting
+  scale.column = props.columns[columnIndex]
+  scale.title = scale.column?.display_name
+  scale.fields = axisColumns
+  scale.hasDropdown = props.enableAxisDropdown && props.stringColumnIndices?.length > 1
+  scale.tickLabels = getTickValues({ scale, props })
+
+  scale.tickSize = 0
+  scale.getValue = (value) => {
+    return scale(getDayJSObj({ value, column: scale.column }).toDate())
+  }
+
+  return scale
+}
+
+export const getFormattedTickLabels = ({ tickValues, scale, maxLabelWidth }) => {
+  const formattedTickValues = tickValues.map((tickLabel) => {
+    return formatChartLabel({ d: tickLabel, scale, maxLabelWidth })
+  })
+
+  return formattedTickValues
+}
+
+export const getBandScale = ({
+  props,
+  columnIndex,
+  axis,
+  outerPadding = DEFAULT_OUTER_PADDING,
+  innerPadding = DEFAULT_INNER_PADDING,
+  domain,
+}) => {
+  const range = getRangeForAxis(props, axis)
+  const scaleDomain = domain ?? props.data.map((d) => d[columnIndex])
+  const axisColumns = props.stringColumnIndices?.map((index) => props.columns[index])
+
+  const scale = scaleBand().domain(scaleDomain).range(range).paddingInner(innerPadding).paddingOuter(outerPadding)
+
+  scale.type = 'BAND'
+  scale.dataFormatting = props.dataFormatting
+  scale.column = props.columns[columnIndex]
+  scale.title = scale.column?.display_name
+  scale.fields = axisColumns
+  scale.tickSize = scale.bandwidth()
+  scale.hasDropdown = props.enableAxisDropdown && props.stringColumnIndices?.length > 1
+  scale.getValue = (value) => {
+    return scale(value)
+  }
+
+  scale.tickLabels = getTickValues({ scale, props, initialTicks: scaleDomain, innerPadding, outerPadding })
+
+  return scale
+}
+
+export const getUnitsForColumn = (column) => {
+  let aggUnit
+  if (column.aggType) {
+    aggUnit = AGG_TYPES.find((aggType) => aggType.value === column.aggType)?.unit
+  }
+
+  switch (aggUnit) {
+    case 'none': {
+      return 'none'
+    }
+    case 'inherit':
+    default: {
+      break
+    }
+  }
+
+  if (column.type === NUMBER_COLUMN_TYPES.CURRENCY) {
+    return 'currency'
+  } else if (column.type === NUMBER_COLUMN_TYPES.QUANTITY) {
+    return 'none'
+  } else if (column.type === NUMBER_COLUMN_TYPES.RATIO) {
+    return 'none'
+  } else if (column.type === NUMBER_COLUMN_TYPES.PERCENT) {
+    return 'percent'
+  }
+}
+
+export const getLinearAxisTitle = ({ numberColumns, dataFormatting }) => {
+  try {
+    if (!numberColumns?.length) {
+      return undefined
+    }
+
+    let title = 'Amount'
+
+    // If there are different titles for any of the columns, return a generic label based on the type
+    const allTitlesEqual = !numberColumns.find((col) => {
+      return col.display_name !== numberColumns[0].display_name
+    })
+
+    if (allTitlesEqual) {
+      title = numberColumns[0].display_name
+    }
+
+    const aggTypeArray = numberColumns.map((col) => col.aggType)
+    const allAggTypesEqual = !aggTypeArray.find((agg) => agg !== aggTypeArray[0])
+    if (allAggTypesEqual) {
+      const aggName = AGG_TYPES.find((agg) => agg.value === aggTypeArray[0])?.displayName
+      if (aggName) {
+        title = `${title} (${aggName})`
+      }
+    }
+
+    // Remove this for simplicity, we may want to add the units to the title later
+    // const units = getNumberAxisUnits(numberColumns)
+    // if (units === 'currency') {
+    //   const currencySymbol = getCurrencySymbol(dataFormatting)
+    //   if (currencySymbol) {
+    //     title = `${title} (${currencySymbol})`
+    //   }
+    // } else if (units === 'percent') {
+    //   title = `${title} (%)`
+    // }
+
+    return title
+  } catch (error) {
+    console.error(error)
+    return title
+  }
+}
+
+export const getNumberAxisUnits = (numberColumns) => {
+  const unitsArray = numberColumns.map((col) => {
+    return getUnitsForColumn(col)
+  })
+
+  const allUnitsEqual = !unitsArray.find((unit) => unit !== unitsArray[0])
+  if (allUnitsEqual) {
+    return unitsArray[0]
+  }
+
+  return 'none'
+}
+
+export const getMaxLabelWidth = (fullWidth) => {
+  const maxWidth = MAX_CHART_LABEL_SIZE
+  const minWidth = 6
+  const avgCharSize = 10
+
+  if (!fullWidth) {
+    return maxWidth
+  }
+
+  let maxLabelWidth = maxWidth
+
+  // Labels should not exceed half of the full height
+  const calculatedMax = Math.floor((0.5 * fullWidth) / avgCharSize)
+  if (calculatedMax < minWidth) {
+    maxLabelWidth = minWidth
+  } else if (calculatedMax < maxWidth) {
+    maxLabelWidth = calculatedMax
+  }
+
+  return maxLabelWidth
+}
+
+export const getLinearScale = ({
+  props,
+  minValue,
+  maxValue,
+  axis,
+  range,
+  tickValues,
+  numTicks,
+  stacked,
+  isScaled,
+  columnIndex,
+  columnIndices,
+}) => {
+  let min = minValue ?? tickValues?.[0]
+  let max = maxValue ?? tickValues?.[tickValues?.length - 1]
+
+  if (isNaN(min)) {
+    min = 0
+  }
+
+  if (isNaN(max)) {
+    max = min
+  }
+
+  const domain = [min, max]
+  const scaleRange = range ?? getRangeForAxis(props, axis)
+  const axisColumns = columnIndices?.map((index) => props.columns[index]) ?? []
+  const units = getNumberAxisUnits(axisColumns)
+  const title = getLinearAxisTitle({
+    numberColumns: axisColumns,
+    dataFormatting: props.dataFormatting,
+  })
+
+  const scale = scaleLinear().domain(domain).range(scaleRange)
+  scale.minValue = min
+  scale.maxValue = max
+  scale.column = props.columns[columnIndex]
+  scale.fields = axisColumns
+  scale.dataFormatting = props.dataFormatting
+  scale.hasDropdown = props.enableAxisDropdown
+  scale.stacked = !!stacked
+  scale.type = 'LINEAR'
+  scale.units = units
+  scale.title = title
+  scale.tickSize = 0
+  scale.isScaled = isScaled
+  scale.getValue = (value) => {
+    return scale(value)
+  }
+
+  scale.tickLabels =
+    tickValues ??
+    getTickValues({
+      props,
+      scale,
+      numTicks,
+      isScaled,
+    })
+
+  return scale
+}
+
+export const getLinearScales = ({ props, columnIndices1 = [], columnIndices2 = [], axis, stacked, isScaled }) => {
+  const minMax = getMinAndMaxValues(props.data, columnIndices1, isScaled, stacked, props.stringColumnIndex)
+  const minValue = minMax.minValue
+  const maxValue = minMax.maxValue
+  const tempScale1 = getLinearScale({
+    props,
+    minValue,
+    maxValue,
+    axis,
+    stacked,
+    isScaled,
+    columnIndex: columnIndices1[0],
+    columnIndices: columnIndices1,
+  })
+
+  if (!columnIndices2?.length) {
+    return {
+      scale: tempScale1,
+    }
+  }
+
+  // If there are 2 y axes, we need to line up the number of ticks and their values
+  const minMax2 = getMinAndMaxValues(props.data, columnIndices2, isScaled, stacked, props.stringColumnIndex)
+  const minValue2 = minMax2.minValue
+  const maxValue2 = minMax2.maxValue
+
+  const tempScale2 = getLinearScale({
+    props,
+    minValue: minValue2,
+    maxValue: maxValue2,
+    range: tempScale1.range(),
+    numTicks: tempScale1.tickLabels?.length ?? undefined,
+    stacked,
+    isScaled,
+    columnIndex: columnIndices2[0],
+    columnIndices: columnIndices2,
+  })
+
+  const tickValues1 = tempScale1.tickLabels || []
+  const tickValues2 = tempScale2.tickLabels || []
+
+  const numTickValues1 = tickValues1.length
+  const numTickValues2 = tickValues2.length
+
+  const newTickValues1 = [...tickValues1]
+  const newTickValues2 = [...tickValues2]
+  if (numTickValues1 === numTickValues2) {
+    // do nothing, ticks line up already
+  } else if (numTickValues2 < numTickValues1) {
+    const difference = numTickValues1 - numTickValues2
+    const interval = tickValues2[1] - tickValues2[0]
+    const maxTickValue = tickValues2[numTickValues2 - 1]
+
+    for (let i = 0; i < difference; i++) {
+      const nextTickValue = maxTickValue + i * interval
+      newTickValues2.push(nextTickValue)
+    }
+  } else if (numTickValues2 > numTickValues1) {
+    const difference = numTickValues2 - numTickValues1
+    const interval = tickValues1[1] - tickValues1[0]
+    const maxTickValue = tickValues1[numTickValues1 - 1]
+
+    for (let i = 1; i <= difference; i++) {
+      const nextTickValue = maxTickValue + i * interval
+      newTickValues1.push(nextTickValue)
+    }
+  }
+
+  const scale = getLinearScale({
+    props,
+    axis,
+    tickValues: newTickValues1,
+    stacked,
+    isScaled,
+    columnIndex: columnIndices1[0],
+    columnIndices: columnIndices1,
+  })
+  const scale2 = getLinearScale({
+    props,
+    range: scale.range(),
+    tickValues: newTickValues2,
+    stacked,
+    isScaled,
+    columnIndex: columnIndices2[0],
+    columnIndices: columnIndices2,
+  })
+
+  return { scale, scale2 }
 }
 
 export const doesElementOverflowContainer = (element, container) => {
@@ -408,8 +836,79 @@ export const doesElementOverflowContainer = (element, container) => {
   return false
 }
 
+const getEpochFromDate = (date, precision, precisionFrame) => {
+  if (date?.getTime) {
+    if (precision && precisionFrame === 'start') {
+      return dayjs(date).utc().startOf(precision).valueOf()
+    } else if (precision && precisionFrame === 'end') {
+      return dayjs(date).utc().endOf(precision).valueOf()
+    }
+    return date.getTime()
+  }
+
+  return
+}
+
+export const DateUTC = (d) => {
+  const date = new Date(d)
+  date.setTime(date.getTime() + date.getTimezoneOffset() * 60 * 1000)
+  return date
+}
+
+export const getNiceDateTickValues = ({ tickValues, scale }) => {
+  try {
+    if (tickValues?.length < 2) {
+      // Can not make nice labels with only 1 tick
+      return tickValues
+    }
+
+    const { minValue, maxValue } = scale
+
+    if (minValue === undefined || maxValue === undefined) {
+      throw new Error('Tried to make nice labels but max/min values were not provided')
+    }
+
+    const minSeconds = getEpochFromDate(minValue)
+    const maxSeconds = getEpochFromDate(maxValue)
+
+    if (!minSeconds || !maxSeconds) {
+      throw new Error('Tried to make nice labels but could not convert min and max dates to epoch')
+    }
+
+    const newTickValues = [...tickValues]
+    const tickRange = getEpochFromDate(tickValues[1]) - getEpochFromDate(tickValues[0])
+
+    const dayjsPrecision = DAYJS_PRECISION_FORMATS[scale?.column?.precision]
+    const minTickValue = getEpochFromDate(tickValues[0], dayjsPrecision, 'start')
+    const maxTickValue = getEpochFromDate(tickValues[tickValues.length - 1], dayjsPrecision, 'end')
+
+    if (!tickRange || isNaN(minTickValue) || isNaN(maxTickValue)) {
+      throw new Error('Tried to make nice labels but could not convert tick values to epoch')
+    }
+
+    let newMinTickValue = minTickValue
+    let newMaxTickValue = maxTickValue
+    if (minSeconds < minTickValue) {
+      newMinTickValue = minTickValue - tickRange
+      newTickValues.unshift(DateUTC(newMinTickValue))
+    }
+
+    if (maxSeconds > maxTickValue) {
+      newMaxTickValue = maxTickValue + tickRange
+      newTickValues.push(DateUTC(newMaxTickValue))
+    }
+
+    scale.domain([DateUTC(newTickValues[0]), DateUTC(newTickValues[newTickValues.length - 1])])
+    return newTickValues
+  } catch (error) {
+    console.error(error)
+    return tickValues
+  }
+}
+
 export const getNiceTickValues = ({ tickValues, scale }) => {
   const { minValue, maxValue } = scale
+
   if (minValue === undefined || maxValue === undefined) {
     console.warn('Tried to make nice labels but max/min values were not provided')
     return tickValues
@@ -418,76 +917,141 @@ export const getNiceTickValues = ({ tickValues, scale }) => {
     return tickValues
   }
 
+  const newTickValues = [...tickValues]
+
   try {
     const minTickValue = tickValues[0]
     const maxTickValue = tickValues[tickValues.length - 1]
-    const tickSize = Math.abs(tickValues[1] - tickValues[0])
-    const newTickValues = [...tickValues]
+    const tickRange = Math.abs(tickValues[1] - tickValues[0])
 
     let newMinTickValue = minTickValue
     let newMaxTickValue = maxTickValue
 
     if (minValue < minTickValue) {
-      newMinTickValue = minTickValue - tickSize
+      newMinTickValue = minTickValue - tickRange
       newTickValues.unshift(newMinTickValue)
     }
 
     if (maxValue > maxTickValue) {
-      newMaxTickValue = maxTickValue + tickSize
+      newMaxTickValue = maxTickValue + tickRange
       newTickValues.push(newMaxTickValue)
     }
 
-    scale.domain([newMinTickValue, newMaxTickValue])
-    return newTickValues
+    scale.domain([newTickValues[0], newTickValues[newTickValues.length - 1]])
   } catch (error) {
-    return tickValues
+    console.error(error)
   }
+
+  return newTickValues
 }
 
-export const getTickValues = ({ tickHeight, fullHeight, labelArray, scale }) => {
-  try {
-    const minTextHeightInPx = 16
-    const interval = Math.ceil((labelArray.length * minTextHeightInPx) / fullHeight)
+export const getTickSizeFromNumTicks = ({
+  scale,
+  numTicks,
+  innerPadding = DEFAULT_INNER_PADDING,
+  outerPadding = DEFAULT_OUTER_PADDING,
+}) => {
+  const fontSize = 12
+  const rangeStart = scale?.range()?.[1] ?? 0
+  const rangeEnd = scale?.range()?.[0] ?? 0
+  const fullSize = Math.abs(rangeEnd - rangeStart) + fontSize
 
-    let tickValues = labelArray
-    if (tickHeight < minTextHeightInPx) {
-      tickValues = []
+  if (scale.type !== 'BAND') {
+    const tickSize = fullSize / numTicks
+    return tickSize
+  }
+
+  const tickSizeWithoutPadding = fullSize / (2 * outerPadding + numTicks + (numTicks + 1) * innerPadding)
+  const tickSizeWithInnerPadding = tickSizeWithoutPadding + innerPadding * tickSizeWithoutPadding
+
+  return tickSizeWithInnerPadding
+}
+
+export const getTickValues = ({ scale, initialTicks, props, numTicks, innerPadding, outerPadding }) => {
+  try {
+    let tickValues = scale.tickLabels
+    if (initialTicks) {
+      tickValues = [...initialTicks]
+    } else if (typeof scale?.ticks === 'function') {
+      tickValues = scale.ticks(numTicks)
+    }
+
+    const tickSize = getTickSizeFromNumTicks({ scale, numTicks: tickValues?.length, innerPadding, outerPadding })
+
+    if (!tickValues) {
+      console.error('Unable to set tick labels for scale. tickValues is undefined')
+      return
+    }
+
+    const fontSize = 12
+    const minimumTickSize = 20
+    const fullSize = (Math.abs(scale?.range()?.[1] - scale?.range()?.[0]) ?? 1) + fontSize
+    const interval = Math.ceil((tickValues.length * minimumTickSize) / fullSize)
+
+    let newTickValues = [...tickValues]
+
+    if (tickSize < minimumTickSize) {
+      // We only want to do this if we dont already want a specific number
+      // of ticks (numTicks) since it will change the number of ticks
+      newTickValues = []
 
       // We want to do this in the reverse direction so the highest value is always included
-      labelArray.forEach((label, index) => {
+      tickValues.forEach((label, index) => {
         if (index % interval === 0) {
-          tickValues.push(label)
+          newTickValues.push(label)
         }
       })
     }
 
     if (scale?.type === 'LINEAR') {
-      tickValues = getNiceTickValues({
-        tickValues,
+      return getNiceTickValues({
+        tickValues: newTickValues,
         scale,
+        props,
+      })
+    } else if (scale?.type === 'TIME') {
+      return getNiceDateTickValues({
+        tickValues: newTickValues,
+        scale,
+        props,
       })
     }
 
-    return tickValues
+    return newTickValues
   } catch (error) {
     console.error(error)
   }
 
-  return labelArray
+  return initialTicks || []
 }
 
 export const mergeBboxes = (boundingBoxes) => {
-  let minLeft
-  let maxBottom
-  let maxRight
-  let minTop
+  const filteredBBoxes = boundingBoxes.filter((bbox) => !!bbox)
 
-  boundingBoxes.forEach(({ left, bottom, right, top }) => {
-    if (minLeft === undefined || left < minLeft) minLeft = left
-    if (maxBottom === undefined || bottom > maxBottom) maxBottom = bottom
-    if (maxRight === undefined || right > maxRight) maxRight = right
-    if (minTop === undefined || top < minTop) minTop = top
-  })
+  if (!filteredBBoxes?.length) {
+    return undefined
+  }
 
-  return { x: minLeft, y: minTop, height: Math.abs(maxBottom - minTop), width: Math.abs(maxRight - minLeft) }
+  try {
+    let minLeft
+    let maxBottom
+    let maxRight
+    let minTop
+
+    filteredBBoxes.forEach(({ left, bottom, right, top } = {}) => {
+      if (isNaN(left) || isNaN(bottom) || isNaN(right) || isNaN(top)) {
+        return
+      }
+
+      if (minLeft === undefined || left < minLeft) minLeft = left
+      if (maxBottom === undefined || bottom > maxBottom) maxBottom = bottom
+      if (maxRight === undefined || right > maxRight) maxRight = right
+      if (minTop === undefined || top < minTop) minTop = top
+    })
+
+    return { x: minLeft, y: minTop, height: Math.abs(maxBottom - minTop), width: Math.abs(maxRight - minLeft) }
+  } catch (error) {
+    console.error(error)
+    return undefined
+  }
 }

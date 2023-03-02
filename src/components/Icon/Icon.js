@@ -37,7 +37,8 @@ import { FiCheck } from '@react-icons/all-files/fi/FiCheck'
 import { FiDatabase } from '@react-icons/all-files/fi/FiDatabase'
 import { FiDownload } from '@react-icons/all-files/fi/FiDownload'
 import { FiEye } from '@react-icons/all-files/fi/FiEye'
-import { FiFilter } from '@react-icons/all-files/fi/FiFilter'
+import { RiFilterLine } from '@react-icons/all-files/ri/RiFilterLine'
+import { RiFilterOffLine } from '@react-icons/all-files/ri/RiFilterOffLine'
 import { FiMoreHorizontal } from '@react-icons/all-files/fi/FiMoreHorizontal'
 import { FiMoreVertical } from '@react-icons/all-files/fi/FiMoreVertical'
 import { FiPauseCircle } from '@react-icons/all-files/fi/FiPauseCircle'
@@ -83,6 +84,7 @@ import {
   splitViewIcon,
   singleViewIcon,
   gradCapIcon,
+  columnLineIcon,
 } from '../../svgIcons.js'
 
 import './Icon.scss'
@@ -207,6 +209,10 @@ export default class Icon extends React.Component {
         icon = columnChartIcon
         break
       }
+      case 'column-line-chart': {
+        icon = columnLineIcon
+        break
+      }
       case 'stacked-column-chart': {
         icon = stackedColumnIcon
         break
@@ -244,7 +250,11 @@ export default class Icon extends React.Component {
         break
       }
       case 'filter': {
-        icon = <FiFilter />
+        icon = <RiFilterLine />
+        break
+      }
+      case 'filter-off': {
+        icon = <RiFilterOffLine />
         break
       }
       case 'grad-cap': {

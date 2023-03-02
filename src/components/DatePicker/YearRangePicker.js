@@ -108,6 +108,14 @@ export default class YearRangePicker extends React.Component {
 
   onYearStartSelection = (timestamp) => {
     this.setState({ selectedStart: timestamp.startOf('year'), selectedEnd: undefined, focusedDateDisplay: 'end' })
+    const selectedStart = timestamp.startOf('year')
+    const rangeSelection = [selectedStart, timestamp]
+    const selectedStartMonthStart = rangeSelection[0].startOf('year')
+    const selectedEndMonthEnd = rangeSelection[1].endOf('year')
+    this.props.onRangeSelection({
+      startDate: selectedStartMonthStart.toDate(),
+      endDate: selectedEndMonthEnd.toDate(),
+    })
   }
 
   onYearEndSelection = (timestamp) => {
@@ -194,7 +202,10 @@ export default class YearRangePicker extends React.Component {
         <select
           className='year-picker'
           value={`${this.state.visibleDecade[0]} - ${this.state.visibleDecade[1]}`}
-          onChange={(e) => this.setState({ visibleDecade: Number(e.target.value) })}
+          onChange={(e) => {
+            const decadeArray = e.target.value.split(' - ').map((year) => Number(year))
+            this.setState({ visibleDecade: decadeArray })
+          }}
         >
           {new Array(numDecades).fill(lowerDecadeLimit).map((decade, i) => {
             const decadeText = `${decade[0] + i * 10} - ${decade[1] + i * 10}`

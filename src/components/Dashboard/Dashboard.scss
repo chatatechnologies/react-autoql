@@ -3,6 +3,7 @@
   height: 100%;
   width: 100%;
   overflow: hidden;
+  padding-top: 3px;
 }
 .react-autoql-dashboard-container.edit-mode {
   padding-bottom: 200px;
@@ -20,7 +21,11 @@
     &.top-hidden {
       .react-autoql-dashboard-drilldown-original,
       .layout-splitter {
-        display: none;
+        transition: opacity 0.3s ease, height 0.3s ease;
+        visibility: hidden;
+        pointer-events: none;
+        opacity: 0;
+        height: 0;
       }
     }
 

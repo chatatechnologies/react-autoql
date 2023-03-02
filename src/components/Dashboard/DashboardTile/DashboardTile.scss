@@ -1,3 +1,15 @@
+.react-autoql-dashboard,
+.react-autoql-dashboard-container,
+.react-autoql-dashboard-tile,
+.dashboard-tile-title-container,
+.react-autoql-dashboard-tile-inner-div,
+.dashboard-tile-toolbars-container,
+.dashboard-tile-response-wrapper,
+.dashboard-tile-response-container {
+  -webkit-transform: translate3d(0, 0, 0) !important;
+  transform: translateZ(0) !important;
+}
+
 .react-autoql-dashboard .react-autoql-dashboard-tile {
   background: var(--react-autoql-background-color-secondary, #fff);
   color: var(--react-autoql-text-color-primary, rgb(64, 64, 64));
@@ -119,20 +131,24 @@
     opacity: 0.9;
   }
 
+  .tabulator-header-contents {
+    height: 32px !important;
+  }
+  .react-autoql-table-container.filtering .tabulator-header-contents {
+    height: 55px !important;
+  }
+
   .react-autoql-table,
-  .query-output-table-row-count {
+  .table-row-count {
     color: var(--react-autoql-text-color-primary);
     font-size: 11px;
   }
 
-  .query-output-table-row-count {
-    padding: 0;
-  }
-
   .dashboard-tile-response-wrapper {
-    height: calc(100% - 47px);
+    flex: 1;
     width: 100%;
     padding-top: 0;
+    overflow: hidden;
     background: inherit;
 
     .layout-splitter {
@@ -197,6 +213,7 @@
   cursor: default;
 
   .react-autoql-response-content-container {
+    position: relative;
     padding: 8px 15px 20px 15px;
     align-items: center;
   }
@@ -204,7 +221,8 @@
 
 .dashboard-tile-response-wrapper.editing .dashboard-tile-response-container {
   .react-autoql-response-content-container {
-    padding: 7px 12px 32px 18px;
+    box-sizing: content-box;
+    width: calc(100% - 40px);
     align-items: center;
   }
 }
@@ -475,6 +493,7 @@
 
 /* React Grid Layout overrides */
 .react-grid-item .react-resizable-handle {
+  -webkit-transform: translate3d(0, 0, 0);
   z-index: 1;
   position: absolute;
   width: 11px;

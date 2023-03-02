@@ -1,12 +1,14 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import _isEqual from 'lodash.isequal'
-import ReactTooltip from 'react-tooltip'
 import { v4 as uuid } from 'uuid'
+import _isEqual from 'lodash.isequal'
 
 import { Icon } from '../Icon'
+import { rebuildTooltips, Tooltip } from '../Tooltip'
+
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { deepEqual } from '../../js/Util'
 
 import './VizToolbar.scss'
 
@@ -32,8 +34,18 @@ class VizToolbar extends React.Component {
     this.rebuildTooltips()
   }
 
-  componentDidUpdate = () => {
-    this.rebuildTooltips()
+  shouldComponentUpdate = (nextProps, nextState) => {
+    if (!nextProps.shouldRender) {
+      return false
+    }
+
+    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (!_isEqual(this.getCurrentSupportedDisplayTypes(this.props), this.getCurrentSupportedDisplayTypes(prevProps))) {
+      this.rebuildTooltips()
+    }
   }
 
   componentWillUnmount = () => {
@@ -41,10 +53,14 @@ class VizToolbar extends React.Component {
   }
 
   rebuildTooltips = () => {
+    if (!this.props.shouldRender) {
+      return
+    }
+
     if (this.props.rebuildTooltips) {
       this.props.rebuildTooltips()
     } else {
-      ReactTooltip.rebuild()
+      rebuildTooltips()
     }
   }
 
@@ -53,7 +69,7 @@ class VizToolbar extends React.Component {
       return false
     }
 
-    const supportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
+    const supportedDisplayTypes = this.getCurrentSupportedDisplayTypes(this.props)
     return supportedDisplayTypes && supportedDisplayTypes.includes(displayType)
   }
 
@@ -67,8 +83,8 @@ class VizToolbar extends React.Component {
     return this.props.responseRef?.state?.displayType
   }
 
-  getCurrentSupportedDisplayTypes = () => {
-    return this.props.responseRef?.state?.supportedDisplayTypes
+  getCurrentSupportedDisplayTypes = (props) => {
+    return props.responseRef?.state?.supportedDisplayTypes
   }
 
   createVisButton = (displayType, name, icon) => {
@@ -80,7 +96,7 @@ class VizToolbar extends React.Component {
           onClick={() => this.onDisplayTypeChange(displayType)}
           className={`react-autoql-toolbar-btn ${displayType === selectedDisplayType ? 'selected' : ''}`}
           data-tip={name}
-          data-for={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
+          data-for={this.props.tooltipID ?? `react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
           data-test='viz-toolbar-button'
         >
           {icon}
@@ -93,10 +109,9 @@ class VizToolbar extends React.Component {
 
   render = () => {
     const displayType = this.getCurrentDisplayType()
-    const supportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
+    const supportedDisplayTypes = this.getCurrentSupportedDisplayTypes(this.props)
 
     if (
-      !this.props.shouldRender ||
       !supportedDisplayTypes ||
       supportedDisplayTypes.length <= 1 ||
       (!supportedDisplayTypes.includes('pivot_table') && this.props.disableCharts)
@@ -124,13 +139,16 @@ class VizToolbar extends React.Component {
             {this.createVisButton('stacked_bar', 'Stacked Bar Chart', <Icon type='stacked-bar-chart' />)}
             {this.createVisButton('stacked_column', 'Stacked Column Chart', <Icon type='stacked-column-chart' />)}
             {this.createVisButton('stacked_line', 'Stacked Area Chart', <Icon type='stacked-line-chart' />)}
+            {this.createVisButton('column_line', 'Column Line Combo Chart', <Icon type='column-line-chart' />)}
           </div>
-          <ReactTooltip
-            className='react-autoql-tooltip'
-            id={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
-            effect='solid'
-            delayShow={800}
-          />
+          {!this.props.tooltipID && (
+            <Tooltip
+              className='react-autoql-tooltip'
+              id={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
+              effect='solid'
+              delayShow={800}
+            />
+          )}
         </ErrorBoundary>
       )
     }

@@ -93,12 +93,6 @@
       max-width: 85%;
     }
 
-    &.full-width {
-      width: calc(100% - 20px) !important;
-      min-width: calc(100% - 20px) !important;
-      max-width: calc(100% - 20px) !important;
-    }
-
     &.active {
       border: 1px solid #c3c3c3;
     }

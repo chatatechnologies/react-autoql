@@ -239,10 +239,9 @@ export default class DataExplorerInput extends React.Component {
     this.axiosSource?.cancel(responseErrors.CANCELLED)
   }
 
-  requestSuggestions = () => {
+  requestSuggestions = (value) => {
+    // const value = this.userTypedValue
     this.setState({ loadingAutocomplete: true, loadingAutocompleteText: value })
-
-    const value = this.userTypedValue
 
     clearTimeout(this.autoCompleteTimer)
     this.cancelCurrentRequest()
@@ -386,7 +385,7 @@ export default class DataExplorerInput extends React.Component {
     return (
       <div
         className={`chat-bar-clear-btn ${this.state.inputValue ? 'visible' : ''}`}
-        data-for='explore-queries-tooltips'
+        data-for={this.props.tooltipID ?? 'explore-queries-tooltips'}
         data-tip='Clear Search'
       >
         <Icon type='close' onClick={this.clearInput} />

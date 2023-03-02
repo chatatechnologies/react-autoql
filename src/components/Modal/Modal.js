@@ -1,11 +1,11 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import ReactModal from 'react-modal'
-import _isEqual from 'lodash.isequal'
 
 import { Button } from '../Button'
 import { Icon } from '../Icon'
 import { ConfirmModal } from '../ConfirmModal'
+import { deepEqual, difference } from '../../js/Util'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Modal.scss'
@@ -27,6 +27,7 @@ export default class Modal extends React.Component {
     confirmDisabled: PropTypes.bool,
     footer: PropTypes.element,
     confirmOnClose: PropTypes.bool,
+    shouldRender: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -43,12 +44,21 @@ export default class Modal extends React.Component {
     footer: undefined,
     confirmDisabled: false,
     confirmOnClose: false,
+    shouldRender: true,
     onClose: () => {},
     onConfirm: () => {},
   }
 
   state = {
     isConfirmCloseModalVisible: false,
+  }
+
+  shouldComponentUpdate = (nextProps, nextState) => {
+    if (!nextProps.shouldRender && !this.props.shouldRender) {
+      return false
+    }
+
+    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
   }
 
   onClose = (deleteFromPortal = true) => {
@@ -87,6 +97,7 @@ export default class Modal extends React.Component {
     return (
       <ErrorBoundary>
         <ReactModal
+          ref={(r) => (this.ref = r)}
           isOpen={this.props.isVisible}
           bodyOpenClassName={`react-autoql-modal-container${this.props.className ? ` ${this.props.className}` : ''}`}
           className={this.props.contentClassName}
@@ -104,34 +115,36 @@ export default class Modal extends React.Component {
             overlay: { ...this.props.overlayStyle },
           }}
         >
-          <div className='react-autoql-modal-header'>
-            {this.props.titleIcon} {this.props.title}
-            <Icon type='close' className='react-autoql-modal-close-btn' onClick={this.onClose} />
+          <div className='react-autoql-modal-content' ref={(r) => (this.modalContent = r)}>
+            <div className='react-autoql-modal-header'>
+              {this.props.titleIcon} {this.props.title}
+              <Icon type='close' className='react-autoql-modal-close-btn' onClick={this.onClose} />
+            </div>
+            <div
+              className='react-autoql-modal-body'
+              style={{
+                overflow: this.props.enableBodyScroll ? 'auto' : 'hidden',
+              }}
+            >
+              {this.props.children}
+            </div>
+            {this.props.showFooter && <div className='react-autoql-modal-footer'>{this.renderFooter()}</div>}
           </div>
-          <div
-            className='react-autoql-modal-body'
-            style={{
-              overflow: this.props.enableBodyScroll ? 'auto' : 'hidden',
+        </ReactModal>
+        {!!this.props.confirmOnClose && (
+          <ConfirmModal
+            isVisible={this.state.isConfirmCloseModalVisible}
+            onClose={() => this.setState({ isConfirmCloseModalVisible: false })}
+            confirmText='Discard Changes'
+            onConfirm={() => {
+              this.props.onClose()
+              this.setState({ isConfirmCloseModalVisible: false })
             }}
           >
-            {this.props.children}
-          </div>
-          {this.props.showFooter && <div className='react-autoql-modal-footer'>{this.renderFooter()}</div>}
-        </ReactModal>
-        <ConfirmModal
-          isVisible={this.state.isConfirmCloseModalVisible}
-          onClose={() => {
-            this.setState({ isConfirmCloseModalVisible: false })
-          }}
-          confirmText='Discard Changes'
-          onConfirm={() => {
-            this.setState({ isConfirmCloseModalVisible: false })
-            this.props.onClose()
-          }}
-        >
-          <h3>Are you sure you want to leave this page?</h3>
-          <p>All unsaved changes will be lost.</p>
-        </ConfirmModal>
+            <h3>Are you sure you want to leave this page?</h3>
+            <p>All unsaved changes will be lost.</p>
+          </ConfirmModal>
+        )}
       </ErrorBoundary>
     )
   }

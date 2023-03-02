@@ -3,11 +3,11 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import _isEqual from 'lodash.isequal'
 import _get from 'lodash.get'
-import ReactTooltip from 'react-tooltip'
 
 import { Group } from '../Group'
 import { Radio } from '../../Radio'
 import { Icon } from '../../Icon'
+import { Tooltip } from '../../Tooltip'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType } from '../../../props/types'
@@ -235,7 +235,7 @@ export default class ExpressionBuilder extends React.Component {
             this.state.groups.map((group, i) => {
               return (
                 <Group
-                  authentication={getAuthentication(this.props.authentication)}
+                  authentication={this.props.authentication}
                   ref={(r) => (this.groupRefs[i] = r)}
                   key={`group-${group.id}-${i}`}
                   groupId={group.id}
@@ -270,13 +270,15 @@ export default class ExpressionBuilder extends React.Component {
     return (
       <ErrorBoundary>
         {this.props.readOnly ? this.renderReadOnlyRules() : this.renderRules()}
-        <ReactTooltip
-          className='react-autoql-tooltip'
-          id='notification-expression-tooltip'
-          effect='solid'
-          delayShow={500}
-          html
-        />
+        {!this.props.tooltipID && (
+          <Tooltip
+            className='react-autoql-tooltip'
+            id='notification-expression-tooltip'
+            effect='solid'
+            delayShow={500}
+            html
+          />
+        )}
       </ErrorBoundary>
     )
   }

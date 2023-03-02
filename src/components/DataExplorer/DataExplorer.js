@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import ReactTooltip from 'react-tooltip'
+import { Tooltip } from '../Tooltip'
 import { v4 as uuid } from 'uuid'
 
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -11,7 +11,6 @@ import DEConstants from './constants'
 import { QuerySuggestionList } from '../ExploreQueries'
 import { authenticationType, dataFormattingType } from '../../props/types'
 import { CustomScrollbars } from '../CustomScrollbars'
-import { TopicName } from './TopicName'
 import { Icon } from '../Icon'
 import { Card } from '../Card'
 
@@ -69,6 +68,7 @@ export default class DataExplorer extends React.Component {
       this.setState({
         selectedSubject: listItem,
         selectedKeywords: null,
+        selectedVL: null,
         activeTopicType: listItem?.type,
         skipQueryValidation: true,
       })
@@ -151,6 +151,7 @@ export default class DataExplorer extends React.Component {
           rebuildTooltips={this.props.rebuildTooltips}
           dataExplorerRef={this.dataExplorerPage}
           isCollapsed={this.props.isSmallScreen ? this.state.isDataPreviewCollapsed : undefined}
+          tooltipID={this.props.tooltipID}
           onIsCollapsedChange={(isCollapsed) => {
             this.setState({
               isDataPreviewCollapsed: isCollapsed,
@@ -404,18 +405,21 @@ export default class DataExplorer extends React.Component {
             onSelection={this.onInputSelection}
             dataExplorerRef={this.dataExplorerPage}
             onClearInputClick={this.clearContent}
+            tooltipID={this.props.tooltipID}
           />
           {this.renderDataExplorerContent()}
-          <ReactTooltip
-            className='data-preview-tooltip'
-            id='data-preview-tooltip'
-            place='right'
-            delayHide={200}
-            delayUpdate={200}
-            effect='solid'
-            getContent={this.renderHeaderTooltipContent}
-            clickable
-          />
+          {!this.props.tooltipID && (
+            <Tooltip
+              className='data-preview-tooltip'
+              id='data-preview-tooltip'
+              place='right'
+              delayHide={200}
+              delayUpdate={200}
+              effect='solid'
+              getContent={this.renderHeaderTooltipContent}
+              clickable
+            />
+          )}
         </ErrorBoundary>
       </div>
     )

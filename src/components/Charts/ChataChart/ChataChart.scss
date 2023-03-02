@@ -1,15 +1,28 @@
 .react-autoql-chart-container {
   position: relative;
   width: 100%;
+  height: 100%;
+  max-height: 100%;
   flex-grow: 1;
   flex-shrink: 1;
+  flex-basis: 100vh;
   overflow: hidden;
   color: var(--react-autoql-text-color-primary);
   background: var(--react-autoql-background-color-secondary);
 
+  &.hidden {
+    position: absolute;
+    visibility: hidden;
+    flex: 0 0 0;
+    opacity: 0;
+    flex-basis: 0 !important;
+    pointer-events: none;
+  }
+
   svg {
     // set transparent in css but keep background in inline style for exporting to png
     background: transparent !important;
+    color: var(--react-autoql-text-color-primary) !important;
   }
 
   transition: opacity 0.2s ease;
@@ -18,24 +31,117 @@
     transition: none;
   }
 
+  &.loading-rows {
+    pointer-events: none;
+  }
+
+  .legend-hidden-field-arrow {
+    outline: none !important;
+  }
+
+  .legendCells {
+    .cell {
+      &.hidden {
+        text {
+          color: var(--react-autoql-background-disabled);
+          opacity: 0.4 !important;
+        }
+        line.swatch,
+        path.swatch {
+          fill: var(--react-autoql-background-color-disabled) !important;
+          stroke: var(--react-autoql-background-color-disabled) !important;
+        }
+      }
+
+      &:hover path.swatch {
+        stroke-width: 2px;
+      }
+      &:hover line.swatch {
+        stroke-width: 3px;
+      }
+
+      text:hover {
+        font-weight: 600;
+      }
+    }
+  }
+
+  path.swatch {
+    outline: none !important;
+    fill-opacity: 1;
+    &:hover,
+    &.active {
+      fill-opacity: 0.7;
+    }
+  }
+  line.swatch {
+    stroke-width: 2px;
+    outline: none !important;
+    &:hover,
+    &.active {
+      stroke-width: 3px;
+    }
+  }
+
   /* These are not inline styles since they do not apply to saved PNG charts */
+  .bar,
+  .column,
+  .slice,
+  .stacked-bar,
+  .stacked-column {
+    cursor: pointer;
+
+    // Setting a transparen stroke allows a larger hover area
+    stroke: transparent;
+    stroke-width: 10px;
+  }
+
   .bar,
   .column,
   .line,
   .slice,
   .stacked-area,
   .stacked-bar,
-  .stacked-column,
-  .swatch {
+  .stacked-column {
     transition: fill-opacity 0.3s ease;
     fill-opacity: 1 !important;
     outline: none !important;
+
     &:hover,
     &.active {
       fill-opacity: 0.7 !important;
     }
   }
-  .line-dot,
+  .line-dot {
+    outline: none !important;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+
+    &.hidden-dot {
+      .line-dot-inner-circle {
+        transition: opacity 0.2s ease;
+        fill: currentColor !important;
+      }
+    }
+
+    &:not(.hidden-dot) {
+      .line-dot-inner-circle {
+        fill: var(--react-autoql-background-color-secondary) !important;
+      }
+
+      .line-dot-outer-circle,
+      .line-dot-inner-circle {
+        transition: fill 0.3s ease, stroke 0.3s ease;
+      }
+    }
+
+    &:hover .line-dot-inner-circle,
+    &.active .line-dot-inner-circle {
+      fill: currentColor !important;
+      opacity: 1 !important;
+    }
+  }
+
   .vertex-dot {
     transition: opacity 0.3s ease;
     opacity: 0 !important;
@@ -68,11 +174,23 @@
   }
 
   g.tick {
-    transition: opacity 0.3s ease;
+    text {
+      cursor: default;
+    }
+
+    line {
+      pointer-events: none;
+    }
+  }
+
+  .line,
+  .line-outer {
+    pointer-events: none;
   }
 
   .react-autoql-heatmap-chart g.tick line,
   .react-autoql-bubble-chart g.tick line {
+    pointer-events: none;
     opacity: 0 !important; // we need to render the tick lines so the bounding box calcs are correct. But we dont want to see them
   }
 
@@ -86,75 +204,6 @@
   }
 }
 
-.axis-selector-container {
-  background: var(--react-autoql-background-color-secondary);
-  color: var(--react-autoql-text-color-primary);
-  z-index: 9999;
-  padding: 5px 0;
-  min-width: 150px;
-
-  .axis-select-option.active {
-    background: var(--react-autoql-hover-color);
-    outline: none !important;
-  }
-  .react-autoql-checkbox {
-    margin-left: 20px;
-
-    .react-autoql-checkbox__input {
-      width: 18px;
-      height: 18px;
-    }
-  }
-  .react-autoql-list-item {
-    padding-left: 25px;
-    padding-right: 15px;
-    font-size: 12px;
-    line-height: 28px;
-  }
-
-  .string-select-list-item {
-    font-size: 12px;
-    line-height: 28px;
-
-    &.active {
-      background: rgba(0, 0, 0, 0.04);
-    }
-  }
-
-  .number-selector-header {
-    margin-top: 10px;
-    padding: 0px 18px;
-    font-size: 12px;
-    padding-bottom: 7px;
-    font-weight: 500;
-    opacity: 0.6;
-  }
-
-  .axis-selector-content {
-    list-style-type: none;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    li {
-      color: var(--react-autoql-text-color-primary);
-      width: 100%;
-      height: 30px;
-      line-height: 30px;
-      padding: 0 15px;
-      cursor: pointer;
-
-      &:hover {
-        background: rgba(0, 0, 0, 0.05);
-      }
-    }
-  }
-}
-
-.axis-selector-apply-btn {
-  background: var(--react-autoql-background-color-secondary);
-  padding: 5px;
-}
-
 .chart-loader {
   position: absolute;
   display: flex;
@@ -165,6 +214,7 @@
   background-color: var(--react-autoql-background-color-primary);
   color: var(--react-autoql-accent-color);
   border-radius: 10%;
+  pointer-events: none;
 
   &.chart-page-loader {
     top: 25%;

@@ -23,7 +23,9 @@ export default class StringAxisSelector extends React.Component {
   }
 
   closeSelector = () => {
-    this.setState({ isOpen: false })
+    if (this.state.isOpen) {
+      this.setState({ isOpen: false })
+    }
   }
 
   renderSelectorContent = () => {
@@ -35,24 +37,24 @@ export default class StringAxisSelector extends React.Component {
           e.stopPropagation()
         }}
       >
-        {/* <CustomScrollbars autoHide={false}> */}
-        <ul className='axis-selector-content'>
-          {this.props.stringColumnIndices.map((legendItem, i) => {
-            return (
-              <li
-                className={'string-select-list-item'}
-                key={uuid()}
-                onClick={() => {
-                  this.props.onChangeLegendColumnIndex(i)
-                  this.closeSelector()
-                }}
-              >
-                {legendItem.label}
-              </li>
-            )
-          })}
-        </ul>
-        {/* </CustomScrollbars> */}
+        <CustomScrollbars autoHide={false}>
+          <ul className='axis-selector-content'>
+            {this.props.stringColumnIndices.map((legendItem, i) => {
+              return (
+                <li
+                  className={'string-select-list-item'}
+                  key={uuid()}
+                  onClick={() => {
+                    this.props.onChangeLegendColumnIndex(i)
+                    this.closeSelector()
+                  }}
+                >
+                  {legendItem.label}
+                </li>
+              )
+            })}
+          </ul>
+        </CustomScrollbars>
       </div>
     )
   }

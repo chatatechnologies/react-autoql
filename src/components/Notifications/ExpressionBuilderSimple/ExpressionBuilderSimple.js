@@ -4,14 +4,14 @@ import _isEqual from 'lodash.isequal'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import { v4 as uuid } from 'uuid'
-import ReactTooltip from 'react-tooltip'
 
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import { RuleSimple } from '../RuleSimple'
+import { Tooltip } from '../../Tooltip'
 import { Icon } from '../../Icon'
 
 import { authenticationType } from '../../../props/types'
-import { authenticationDefault, getAuthentication } from '../../../props/defaults'
+import { authenticationDefault } from '../../../props/defaults'
 
 import './ExpressionBuilderSimple.scss'
 
@@ -176,7 +176,7 @@ export default class ExpressionBuilderSimple extends React.Component {
             this.renderExpressionErrorMessage()
           ) : (
             <RuleSimple
-              authentication={getAuthentication(this.props.authentication)}
+              authentication={this.props.authentication}
               ref={(r) => (this.ruleRef = r)}
               ruleId={_get(this.state.expression, 'id', uuid())}
               onUpdate={this.onRuleUpdate}
@@ -192,7 +192,7 @@ export default class ExpressionBuilderSimple extends React.Component {
     return (
       <ErrorBoundary>
         {this.props.readOnly ? this.renderReadOnlyRule() : this.renderRule()}
-        <ReactTooltip
+        <Tooltip
           className='react-autoql-tooltip'
           id='notification-expression-tooltip'
           effect='solid'

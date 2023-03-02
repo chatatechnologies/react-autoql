@@ -1,21 +1,28 @@
 import React from 'react'
-import _get from 'lodash.get'
-import _isEqual from 'lodash.isequal'
+import { v4 as uuid } from 'uuid'
 import NumberAxisSelector from './NumberAxisSelector'
 import StringAxisSelector from './StringAxisSelector'
 
-import { isColumnNumberType, isColumnStringType } from '../../QueryOutput/columnHelpers'
-import { axesDefaultProps, axesPropTypes } from '../helpers'
-
 export default class AxisSelector extends React.Component {
-  static propTypes = axesPropTypes
-  static defaultProps = axesDefaultProps
+  constructor(props) {
+    super(props)
+
+    this.KEY = uuid()
+  }
 
   render = () => {
-    if (isColumnNumberType(this.props.column)) {
-      return <NumberAxisSelector data-test='number-axis-selector' {...this.props} />
-    } else if (isColumnStringType(this.props.column)) {
-      return <StringAxisSelector data-test='string-axis-selector' {...this.props} />
+    if (this.props.scale?.type === 'LINEAR') {
+      return (
+        <NumberAxisSelector {...this.props} key={this.KEY} data-test='number-axis-selector' ref={(r) => (this.ref = r)}>
+          {this.props.children}
+        </NumberAxisSelector>
+      )
+    } else if (this.props.scale?.type === 'BAND' || this.props.scale?.type === 'TIME') {
+      return (
+        <StringAxisSelector {...this.props} key={this.KEY} data-test='string-axis-selector' ref={(r) => (this.ref = r)}>
+          {this.props.children}
+        </StringAxisSelector>
+      )
     }
 
     return null

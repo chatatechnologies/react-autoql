@@ -44,6 +44,7 @@ export default class StackedColumns extends Component {
           const rawValue = d[colIndex]
           const valueNumber = Number(rawValue)
           const value = !isNaN(valueNumber) ? valueNumber : 0
+          const color = this.props.colorScale(colIndex)
 
           if (!value) {
             return null
@@ -87,8 +88,8 @@ export default class StackedColumns extends Component {
               height={Math.abs(height)}
               onClick={() => this.onColumnClick(d, colIndex, index)}
               data-tip={tooltip}
-              data-for={this.props.tooltipID}
-              style={{ fill: this.props.colorScale(i), fillOpacity: 0.7 }}
+              data-for={this.props.chartTooltipID}
+              style={{ fill: color, fillOpacity: 0.7 }}
             />
           )
         }
