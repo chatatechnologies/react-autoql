@@ -742,13 +742,11 @@ export class DashboardTile extends React.Component {
     return !!_get(response, 'data.data.items')
   }
 
-  onDataConfigChange = (config) => {
-    this.debouncedSetParamsForTile({ dataConfig: config })
-  }
+  onDataConfigChange = (config) => this.debouncedSetParamsForTile({ dataConfig: config })
+  onAggConfigChange = (config) => this.debouncedSetParamsForTile({ aggConfig: config })
 
-  onSecondDataConfigChange = (config) => {
-    this.debouncedSetParamsForTile({ secondDataConfig: config })
-  }
+  onSecondDataConfigChange = (config) => this.debouncedSetParamsForTile({ secondDataConfig: config })
+  onSecondAggConfigChange = (config) => this.debouncedSetParamsForTile({ secondAggConfig: config })
 
   reportProblemCallback = () => {
     if (this.optionsToolbarRef?._isMounted) {
@@ -1023,7 +1021,9 @@ export class DashboardTile extends React.Component {
         initialDisplayType,
         queryResponse: this.props.queryResponse,
         initialTableConfigs: this.props.tile.dataConfig,
+        initialAggConfig: this.props.tile.aggConfig,
         onTableConfigChange: this.onDataConfigChange,
+        onAggConfigChange: this.onAggConfigChange,
         queryValidationSelections: this.props.tile.queryValidationSelections,
         onSuggestionClick: this.onSuggestionClick,
         defaultSelectedSuggestion: _get(this.props.tile, 'defaultSelectedSuggestion'),
@@ -1091,7 +1091,9 @@ export class DashboardTile extends React.Component {
         initialDisplayType,
         queryResponse: this.props.secondQueryResponse || this.props.queryResponse,
         initialTableConfigs: this.props.tile.secondDataConfig,
+        initialAggConfig: this.props.tile.secondAggConfig,
         onTableConfigChange: this.onSecondDataConfigChange,
+        onAggConfigChange: this.onSecondAggConfigChange,
         queryValidationSelections: this.props.tile.secondqueryValidationSelections,
         onSuggestionClick: this.onSecondSuggestionClick,
         defaultSelectedSuggestion: _get(this.props.tile, 'secondDefaultSelectedSuggestion'),
