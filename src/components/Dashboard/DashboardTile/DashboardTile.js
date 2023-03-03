@@ -508,45 +508,7 @@ export class DashboardTile extends React.Component {
     this.debouncedSetParamsForTile({ secondSkipQueryValidation: false })
   }
 
-  onColumnChange = (columns) => {
-    const newParams = { columns }
-    if (this.areTopAndBottomSameQuery()) {
-      this.SECOND_QUERY_RESPONSE_KEY = uuid()
-      newParams.secondColumns = columns
-    }
-
-    this.debouncedSetParamsForTile(newParams)
-  }
-
-  onSecondColumnChange = (secondColumns) => {
-    const newParams = { secondColumns }
-    if (this.areTopAndBottomSameQuery()) {
-      this.FIRST_QUERY_RESPONSE_KEY = uuid()
-      newParams.columns = secondColumns
-    }
-
-    this.debouncedSetParamsForTile(newParams)
-  }
-
-  onPageSizeChange = (pageSize) => {
-    this.debouncedSetParamsForTile({ pageSize })
-  }
-
-  onSecondPageSizeChange = (secondPageSize) => {
-    this.debouncedSetParamsForTile({ secondPageSize })
-  }
-
-  onDisplayTypeChange = (displayType) => {
-    this.debouncedSetParamsForTile({ displayType })
-  }
-
-  onSecondDisplayTypeChange = (secondDisplayType) => {
-    this.debouncedSetParamsForTile({ secondDisplayType })
-  }
-
-  getIsSplitView = () => {
-    return _get(this.props.tile, 'splitView')
-  }
+  getIsSplitView = () => this.props.tile?.splitView
 
   toggleSecondQueryInput = () => {
     this.setState({
@@ -562,6 +524,144 @@ export class DashboardTile extends React.Component {
       return elemWidth > parentWidth
     }
     return false
+  }
+
+  onQueryValidationSelectOption = (queryText, suggestionList) => {
+    this.setState({ query: queryText })
+    this.debouncedSetParamsForTile({
+      query: queryText,
+      queryValidationSelections: suggestionList,
+    })
+  }
+
+  onSecondQueryValidationSelectOption = (queryText, suggestionList) => {
+    this.setState({ secondQuery: queryText })
+    this.debouncedSetParamsForTile({
+      secondQuery: queryText,
+      secondqueryValidationSelections: suggestionList,
+    })
+  }
+
+  onPageSizeChange = (pageSize) => this.debouncedSetParamsForTile({ pageSize })
+  onAggConfigChange = (config) => this.debouncedSetParamsForTile({ aggConfig: config })
+  onDataConfigChange = (config) => this.debouncedSetParamsForTile({ dataConfig: config })
+  onDisplayTypeChange = (displayType) => this.debouncedSetParamsForTile({ displayType })
+
+  onSecondPageSizeChange = (secondPageSize) => this.debouncedSetParamsForTile({ secondPageSize })
+  onSecondAggConfigChange = (config) => this.debouncedSetParamsForTile({ secondAggConfig: config })
+  onSecondDataConfigChange = (config) => this.debouncedSetParamsForTile({ secondDataConfig: config })
+  onSecondDisplayTypeChange = (secondDisplayType) => this.debouncedSetParamsForTile({ secondDisplayType })
+
+  reportProblemCallback = () => {
+    if (this.optionsToolbarRef?._isMounted) {
+      this.optionsToolbarRef?.openReportProblemModal()
+    }
+  }
+
+  secondReportProblemCallback = () => {
+    if (this.secondOptionsToolbarRef?._isMounted) {
+      this.secondOptionsToolbarRef.openReportProblemModal()
+    }
+  }
+
+  onSplitViewClick = () => {
+    const splitView = !this.props.tile?.splitView
+    let secondQuery = this.props.tile?.secondQuery
+
+    if (splitView && !secondQuery) {
+      secondQuery = this.props.tile?.query
+    }
+
+    this.debouncedSetParamsForTile({ splitView, secondQuery })
+
+    hideTooltips()
+  }
+
+  renderSplitResponse = () => {
+    const secondQueryInputWidth = _get(this.tileInnerDiv, 'clientWidth')
+      ? `${this.tileInnerDiv.clientWidth - 70}px`
+      : '0px'
+
+    return (
+      <SplitterLayout
+        key={`dashboard-tile-splitter-layout-${this.COMPONENT_KEY}`}
+        vertical={true}
+        percentage={true}
+        primaryMinSize={30}
+        secondaryMinSize={30}
+        secondaryInitialSize={this.props.secondDisplayPercentage || 50}
+        onDragStart={() => {
+          this.setState({ isDraggingSplitter: true })
+        }}
+        onDragEnd={() => {
+          this.dragEndTimeout = setTimeout(() => {
+            const percentString = _get(this.tileInnerDiv, 'style.height', '')
+            const percentNumber = Number(percentString.substring(0, percentString.length - 1))
+
+            if (!isNaN(percentNumber)) {
+              this.debouncedSetParamsForTile({
+                secondDisplayPercentage: percentNumber,
+              })
+            }
+
+            this.setState({ isDraggingSplitter: false })
+          }, 1000)
+        }}
+      >
+        <div className='dashboard-tile-split-pane-container'>{this.renderTopResponse()}</div>
+        <div className='dashboard-tile-split-pane-container'>
+          {this.renderBottomResponse()}
+          {this.props.isEditing && (
+            <div
+              className='react-autoql-toolbar viz-toolbar split-view-btn split-view-query-btn'
+              data-test='split-view-query-btn'
+            >
+              <button
+                onClick={() => {
+                  this.toggleSecondQueryInput()
+                  hideTooltips()
+                }}
+                className='react-autoql-toolbar-btn'
+                data-tip='Query'
+                data-for='react-autoql-dashboard-toolbar-btn-tooltip'
+                style={{ paddingLeft: '3px', marginRight: '10px' }}
+              >
+                <Icon type='react-autoql-bubbles-outlined' />
+                <Icon
+                  type={this.state.isSecondQueryInputOpen ? 'caret-left' : 'caret-right'}
+                  style={{
+                    position: 'absolute',
+                    top: '5px',
+                    left: '31px',
+                    fontSize: '10px',
+                  }}
+                />
+              </button>
+              <input
+                className={`dashboard-tile-input query second ${this.state.isSecondQueryInputOpen ? 'open' : ''}`}
+                value={this.state.secondQuery}
+                spellCheck={false}
+                onChange={this.onSecondQueryInputChange}
+                onKeyDown={this.onSecondQueryTextKeyDown}
+                onBlur={(e) => {
+                  if (_get(this.props, 'tile.secondQuery') !== e.target.value) {
+                    this.debouncedSetParamsForTile({
+                      secondQuery: e.target.value,
+                      secondDataConfig: undefined,
+                      secondQueryValidationSelections: undefined,
+                    })
+                  }
+                }}
+                placeholder={this.props.tile.query || 'Type a query in your own words'}
+                style={{
+                  width: this.state.isSecondQueryInputOpen ? secondQueryInputWidth : '0px',
+                }}
+              />
+            </div>
+          )}
+        </div>
+      </SplitterLayout>
+    )
   }
 
   renderHeader = () => {
@@ -720,147 +820,6 @@ export class DashboardTile extends React.Component {
     }
 
     return <div className='loading-container-centered'>{content}</div>
-  }
-
-  onQueryValidationSelectOption = (queryText, suggestionList) => {
-    this.setState({ query: queryText })
-    this.debouncedSetParamsForTile({
-      query: queryText,
-      queryValidationSelections: suggestionList,
-    })
-  }
-
-  onSecondQueryValidationSelectOption = (queryText, suggestionList) => {
-    this.setState({ secondQuery: queryText })
-    this.debouncedSetParamsForTile({
-      secondQuery: queryText,
-      secondqueryValidationSelections: suggestionList,
-    })
-  }
-
-  getIsSuggestionResponse = (response) => {
-    return !!_get(response, 'data.data.items')
-  }
-
-  onDataConfigChange = (config) => this.debouncedSetParamsForTile({ dataConfig: config })
-  onAggConfigChange = (config) => this.debouncedSetParamsForTile({ aggConfig: config })
-
-  onSecondDataConfigChange = (config) => this.debouncedSetParamsForTile({ secondDataConfig: config })
-  onSecondAggConfigChange = (config) => this.debouncedSetParamsForTile({ secondAggConfig: config })
-
-  reportProblemCallback = () => {
-    if (this.optionsToolbarRef?._isMounted) {
-      this.optionsToolbarRef.openReportProblemModal()
-    }
-  }
-
-  secondReportProblemCallback = () => {
-    if (this.secondOptionsToolbarRef?._isMounted) {
-      this.secondOptionsToolbarRef.openReportProblemModal()
-    }
-  }
-
-  renderSplitResponse = () => {
-    const secondQueryInputWidth = _get(this.tileInnerDiv, 'clientWidth')
-      ? `${this.tileInnerDiv.clientWidth - 70}px`
-      : '0px'
-
-    return (
-      <SplitterLayout
-        key={`dashboard-tile-splitter-layout-${this.COMPONENT_KEY}`}
-        vertical={true}
-        percentage={true}
-        primaryMinSize={30}
-        secondaryMinSize={30}
-        secondaryInitialSize={this.props.secondDisplayPercentage || 50}
-        onDragStart={() => {
-          this.setState({ isDraggingSplitter: true })
-        }}
-        onDragEnd={() => {
-          this.dragEndTimeout = setTimeout(() => {
-            const percentString = _get(this.tileInnerDiv, 'style.height', '')
-            const percentNumber = Number(percentString.substring(0, percentString.length - 1))
-
-            if (!isNaN(percentNumber)) {
-              this.debouncedSetParamsForTile({
-                secondDisplayPercentage: percentNumber,
-              })
-            }
-
-            this.setState({ isDraggingSplitter: false })
-          }, 1000)
-        }}
-      >
-        <div className='dashboard-tile-split-pane-container'>{this.renderTopResponse()}</div>
-        <div className='dashboard-tile-split-pane-container'>
-          {this.renderBottomResponse()}
-          {this.props.isEditing && (
-            <div
-              className='react-autoql-toolbar viz-toolbar split-view-btn split-view-query-btn'
-              data-test='split-view-query-btn'
-            >
-              <button
-                onClick={() => {
-                  this.toggleSecondQueryInput()
-                  hideTooltips()
-                }}
-                className='react-autoql-toolbar-btn'
-                data-tip='Query'
-                data-for='react-autoql-dashboard-toolbar-btn-tooltip'
-                style={{ paddingLeft: '3px', marginRight: '10px' }}
-              >
-                <Icon type='react-autoql-bubbles-outlined' />
-                <Icon
-                  type={this.state.isSecondQueryInputOpen ? 'caret-left' : 'caret-right'}
-                  style={{
-                    position: 'absolute',
-                    top: '5px',
-                    left: '31px',
-                    fontSize: '10px',
-                  }}
-                />
-              </button>
-              <input
-                className={`dashboard-tile-input query second ${this.state.isSecondQueryInputOpen ? 'open' : ''}`}
-                value={this.state.secondQuery}
-                spellCheck={false}
-                onChange={this.onSecondQueryInputChange}
-                onKeyDown={this.onSecondQueryTextKeyDown}
-                onBlur={(e) => {
-                  if (_get(this.props, 'tile.secondQuery') !== e.target.value) {
-                    this.debouncedSetParamsForTile({
-                      secondQuery: e.target.value,
-                      secondDataConfig: undefined,
-                      secondQueryValidationSelections: undefined,
-                    })
-                  }
-                }}
-                placeholder={this.props.tile.query || 'Type a query in your own words'}
-                style={{
-                  width: this.state.isSecondQueryInputOpen ? secondQueryInputWidth : '0px',
-                }}
-              />
-            </div>
-          )}
-        </div>
-      </SplitterLayout>
-    )
-  }
-
-  onSplitViewClick = () => {
-    const splitView = !this.props.tile?.splitView
-    let secondQuery = this.props.tile?.secondQuery
-
-    if (splitView && !secondQuery) {
-      secondQuery = this.props.tile?.query
-    }
-
-    this.debouncedSetParamsForTile({
-      splitView,
-      secondQuery,
-    })
-
-    hideTooltips()
   }
 
   renderSplitViewBtn = () => {
@@ -1034,8 +993,6 @@ export class DashboardTile extends React.Component {
         reportProblemCallback: this.reportProblemCallback,
         queryRequestData: this.topRequestData,
         onDisplayTypeChange: this.onDisplayTypeChange,
-        initialColumns: this.props.tile.columns,
-        onColumnChange: this.onColumnChange,
         pageSize: this.props.tile.pageSize,
         onPageSizeChange: this.onPageSizeChange,
       },
@@ -1077,7 +1034,6 @@ export class DashboardTile extends React.Component {
       !isExecuted
 
     const initialDisplayType = this.props?.secondDisplayType
-    const initialColumns = isQuerySameAsTop ? this.props.tile?.columns : this.props.tile.secondColumns
 
     return this.renderResponse({
       renderPlaceholder,
@@ -1111,8 +1067,6 @@ export class DashboardTile extends React.Component {
         onQueryValidationSelectOption: this.onSecondQueryValidationSelectOption,
         queryRequestData,
         onDisplayTypeChange: this.onSecondDisplayTypeChange,
-        initialColumns: initialColumns,
-        onColumnChange: this.onSecondColumnChange,
         pageSize: this.props.tile.secondPageSize,
         onPageSizeChange: this.onSecondPageSizeChange,
       },

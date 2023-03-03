@@ -155,6 +155,7 @@ export class QueryOutput extends React.Component {
     isResizing: PropTypes.bool,
     enableDynamicCharting: PropTypes.bool,
     onTableConfigChange: PropTypes.func,
+    onAggConfigChange: PropTypes.func,
     onNoneOfTheseClick: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     onRTValueLabelClick: PropTypes.func,
@@ -209,6 +210,7 @@ export class QueryOutput extends React.Component {
     allowDisplayTypeChange: true,
     onRowChange: () => {},
     onTableConfigChange: () => {},
+    onAggConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
     onErrorCallback: () => {},
     onDrilldownStart: () => {},
@@ -428,9 +430,7 @@ export class QueryOutput extends React.Component {
       if (referenceIdNumber >= 200 && referenceIdNumber < 300) {
         return false
       }
-    } catch (error) {
-      console.warn('Invalid reference ID provided for error')
-    }
+    } catch (error) {}
     return true
   }
 
@@ -442,18 +442,31 @@ export class QueryOutput extends React.Component {
     return this.formatColumnsForTable(this.queryResponse?.data?.data?.columns)
   }
 
-  supportsPivot = () => {
+  currentlySupportsCharts = () => {
+    const chartDisplayTypes = this.getCurrentSupportedDisplayTypes().filter((displayType) =>
+      CHART_TYPES.includes(displayType),
+    )
+    const supportsCharts = !!chartDisplayTypes?.length
+    return supportsCharts
+  }
+
+  currentlySupportsPivot = () => {
+    const currentDisplayTypes = this.getCurrentSupportedDisplayTypes()
+    return currentDisplayTypes?.includes('pivot_table')
+  }
+
+  potentiallySupportsPivot = () => {
     const potentialDisplayTypes = this.getPotentialDisplayTypes()
     return potentialDisplayTypes?.includes('pivot_table')
   }
 
-  supportsDatePivot = () => {
+  potentiallySupportsDatePivot = () => {
     const columns = this.getColumns()
-    return this.supportsPivot() && columns?.length === 2
+    return this.potentiallySupportsPivot() && columns?.length === 2
   }
 
   usePivotDataForChart = () => {
-    return this.supportsPivot() && !this.supportsDatePivot()
+    return this.potentiallySupportsPivot() && !this.potentiallySupportsDatePivot()
   }
 
   areColumnsValid = (columns) => {
@@ -606,7 +619,7 @@ export class QueryOutput extends React.Component {
   }
 
   shouldGeneratePivotData = () => {
-    return (this.state?.visibleRows || this.tableData) && this.supportsPivot()
+    return (this.state?.visibleRows || this.tableData) && this.potentiallySupportsPivot()
   }
 
   shouldGenerateTableData = () => {
@@ -980,7 +993,7 @@ export class QueryOutput extends React.Component {
 
     let groupBys = {}
     if (this.pivotTableColumns && this.state.displayType === 'pivot_table') {
-      if (this.supportsDatePivot()) {
+      if (this.potentiallySupportsDatePivot()) {
         // Date pivot table
         const dateColumnIndex = getDateColumnIndex(columns)
         const year = cell.getColumn()?.getDefinition()?.title
@@ -2315,11 +2328,14 @@ export class QueryOutput extends React.Component {
     const displayTypeIsPivotTable = this.state.displayType === 'pivot_table'
     const allowsDisplayTypeChange = this.props.allowDisplayTypeChange
 
-    const chartDisplayTypes = this.getPotentialDisplayTypes().filter((displayType) => CHART_TYPES.includes(displayType))
-    const supportsChart = !!chartDisplayTypes?.length
-    const supportsPivotTable = this.getCurrentSupportedDisplayTypes().includes('pivot_table')
+    const supportsCharts = this.currentlySupportsCharts()
+    const supportsPivotTable = this.currentlySupportsPivot()
 
-    const shouldRenderChart = (allowsDisplayTypeChange || displayTypeIsChart) && supportsChart
+    const tableConfig = supportsPivotTable ? this.pivotTableConfig : this.tableConfig
+    const columns = supportsPivotTable ? this.pivotTableColumns : this.getColumns()
+    const tableConfigIsValid = this.isTableConfigValid(tableConfig, columns, this.state.displayType)
+
+    const shouldRenderChart = (allowsDisplayTypeChange || displayTypeIsChart) && supportsCharts && tableConfigIsValid
     const shouldRenderTable = allowsDisplayTypeChange || displayTypeIsTable
     const shouldRenderPivotTable = (allowsDisplayTypeChange || displayTypeIsPivotTable) && supportsPivotTable
 
