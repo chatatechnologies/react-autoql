@@ -70,7 +70,7 @@ export const getNumberColumnIndices = (columns, isPivot) => {
   }
 
   if (!isPivot) {
-    numberColumnIndices = [numberColumnIndex]
+    numberColumnIndices = numberColumnIndex >= 0 ? [numberColumnIndex] : []
 
     if (numberColumnIndexType === 'currency') {
       if (quantityColumnIndices.length) {
@@ -91,7 +91,7 @@ export const getNumberColumnIndices = (columns, isPivot) => {
     }
 
     if (!isNaN(numberColumnIndex2)) {
-      numberColumnIndices2 = [numberColumnIndex2]
+      numberColumnIndices2 = numberColumnIndex2 >= 0 ? [numberColumnIndex2] : []
     }
   }
 
