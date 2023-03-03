@@ -9,6 +9,7 @@ import { CustomScrollbars } from '../../CustomScrollbars'
 import { Checkbox } from '../../Checkbox'
 import { AGG_TYPES, NUMBER_COLUMN_TYPES, NUMBER_COLUMN_TYPE_DISPLAY_NAMES } from '../../../js/Constants'
 import { Select } from '../../Select'
+import { rebuildTooltips } from '../../Tooltip'
 
 const aggHTMLCodes = {
   sum: <>&Sigma;</>,
@@ -34,18 +35,16 @@ export default class NumberAxisSelector extends React.Component {
   }
 
   static propTypes = {
-    rebuildTooltips: PropTypes.func,
     changeNumberColumnIndices: PropTypes.func,
   }
 
   static defaultProps = {
-    rebuildTooltips: () => {},
     changeNumberColumnIndices: () => {},
   }
 
   componentDidMount = () => {
     if (!this.props.hidden) {
-      this.props.rebuildTooltips()
+      rebuildTooltips()
     }
   }
 
@@ -113,7 +112,6 @@ export default class NumberAxisSelector extends React.Component {
                 popupClassname='agg-type-symbol-select'
                 popoverParentElement={this.popoverContentRef}
                 popoverBoundaryElement={this.popoverContentRef}
-                rebuildTooltips={this.props.rebuildTooltips}
                 tooltipID={this.props.tooltipID}
                 tooltip={aggTypeObj.tooltip}
                 value={col.aggType}

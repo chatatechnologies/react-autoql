@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import _get from 'lodash.get'
 import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, scaleZero, getKey } from '../helpers'
+import { rebuildTooltips } from '../../Tooltip'
 
 export default class Bars extends Component {
   static propTypes = chartElementPropTypes
@@ -8,6 +9,10 @@ export default class Bars extends Component {
 
   state = {
     activeKey: this.props.activeChartElementKey,
+  }
+
+  componentDidMount = () => {
+    rebuildTooltips()
   }
 
   shouldComponentUpdate = () => {

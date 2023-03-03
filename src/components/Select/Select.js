@@ -4,7 +4,7 @@ import { Popover } from 'react-tiny-popover'
 import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 
-import { hideTooltips, Tooltip } from '../Tooltip'
+import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
 
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
@@ -20,7 +20,6 @@ export default class Select extends React.Component {
     value: PropTypes.string,
     label: PropTypes.string,
     size: PropTypes.string,
-    rebuildTooltips: PropTypes.func,
   }
 
   static defaultProps = {
@@ -31,7 +30,6 @@ export default class Select extends React.Component {
     label: null,
     size: 'large',
     style: {},
-    rebuildTooltips: () => {},
   }
 
   state = {
@@ -39,17 +37,17 @@ export default class Select extends React.Component {
   }
 
   componentDidMount = () => {
-    this.props.rebuildTooltips()
+    rebuildTooltips()
   }
 
   componentDidUpdate = (nextProps, nextState) => {
     if (this.state.isOpen !== nextState.isOpen) {
       hideTooltips()
-      this.props.rebuildTooltips()
+      rebuildTooltips()
     }
 
     if (this.props.value !== nextProps.value) {
-      this.props.rebuildTooltips()
+      rebuildTooltips()
     }
   }
 

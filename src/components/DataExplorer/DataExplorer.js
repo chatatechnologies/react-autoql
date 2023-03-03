@@ -39,7 +39,7 @@ export default class DataExplorer extends React.Component {
     shouldRender: PropTypes.bool,
     inputPlaceholder: PropTypes.string,
     introMessage: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
-    rebuildTooltips: PropTypes.func,
+
     executeQuery: PropTypes.func,
     isSmallScreen: PropTypes.bool,
   }
@@ -148,7 +148,6 @@ export default class DataExplorer extends React.Component {
           dataFormatting={this.props.dataFormatting}
           subject={this.state.selectedSubject}
           shouldRender={this.props.shouldRender}
-          rebuildTooltips={this.props.rebuildTooltips}
           dataExplorerRef={this.dataExplorerPage}
           isCollapsed={this.props.isSmallScreen ? this.state.isDataPreviewCollapsed : undefined}
           tooltipID={this.props.tooltipID}
