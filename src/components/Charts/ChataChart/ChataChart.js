@@ -176,11 +176,15 @@ export default class ChataChart extends Component {
     if (props.isDataAggregated) {
       return sortDataByDate(props.data, props.columns, 'asc')
     } else {
+      const indices1 = props.numberColumnIndices ?? []
+      const indices2 = props.numberColumnIndices2 ?? []
+      const numberIndices = [...indices1, ...indices2]
+
       return aggregateData({
         data: props.data,
-        aggIndex: props.stringColumnIndex,
+        aggColIndex: props.stringColumnIndex,
         columns: props.columns,
-        numberIndices: props.numberColumnIndices,
+        numberIndices,
         dataFormatting: props.dataFormatting,
       })
     }
