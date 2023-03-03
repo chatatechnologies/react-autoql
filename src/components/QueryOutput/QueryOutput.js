@@ -86,7 +86,7 @@ export class QueryOutput extends React.Component {
     this.isOriginalData = true
 
     // Set initial columns if needed
-    let columns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns)
+    let columns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, props.initialAggConfig)
     if (props.initialColumns && this.areColumnsValid(props.initialColumns)) {
       columns = props.initialColumns
     }
@@ -123,6 +123,7 @@ export class QueryOutput extends React.Component {
 
     this.state = {
       displayType,
+      aggConfig: props.initialAggConfig,
       supportedDisplayTypes: this.initialSupportedDisplayTypes,
       columns,
       selectedSuggestion: props.defaultSelectedSuggestion,
@@ -138,6 +139,7 @@ export class QueryOutput extends React.Component {
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
     initialTableConfigs: PropTypes.shape({}),
+    initialAggConfig: PropTypes.shape({}),
 
     queryResponse: PropTypes.shape({}),
     onSuggestionClick: PropTypes.func,
@@ -178,6 +180,7 @@ export class QueryOutput extends React.Component {
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
     initialTableConfigs: undefined,
+    initialAggConfig: undefined,
 
     queryResponse: undefined,
     initialDisplayType: null,
@@ -254,6 +257,10 @@ export class QueryOutput extends React.Component {
         this.props.onTableConfigChange
       ) {
         this.onTableConfigChange()
+      }
+
+      if (!_isEqual(this.state.aggConfig, prevState.aggConfig)) {
+        this.props.onAggConfigChange(this.state.aggConfig)
       }
 
       if (prevState.displayType !== this.state.displayType) {
@@ -577,6 +584,7 @@ export class QueryOutput extends React.Component {
 
       this.setState({
         columns: newColumns,
+        aggConfig: this.getAggConfig(columns),
         columnChangeCount: this.state.columnChangeCount + 1,
       })
     }
@@ -1470,7 +1478,20 @@ export class QueryOutput extends React.Component {
     return 'Filter'
   }
 
-  formatColumnsForTable = (columns) => {
+  getAggConfig = (columns) => {
+    if (!columns) {
+      return null
+    }
+
+    const aggConfig = {}
+    columns.forEach((col) => {
+      aggConfig[col.name] = col.aggType
+    })
+
+    return aggConfig
+  }
+
+  formatColumnsForTable = (columns, aggConfig) => {
     // todo: do this inside of chatatable
     if (!columns) {
       return null
@@ -1543,8 +1564,12 @@ export class QueryOutput extends React.Component {
       }
 
       // Set aggregate type is data is list query
+      let aggType = col.aggType
+      if (aggConfig) {
+        aggType = aggConfig[col.name]
+      }
       if (isListQuery && isColumnNumberType(col)) {
-        newCol.aggType = col.aggType || 'sum'
+        newCol.aggType = aggType || 'sum'
       }
 
       // Check if a date range is available
