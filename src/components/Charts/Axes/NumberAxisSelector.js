@@ -112,7 +112,7 @@ export default class NumberAxisSelector extends React.Component {
                 className='agg-type-symbol'
                 popupClassname='agg-type-symbol-select'
                 popoverParentElement={this.popoverContentRef}
-                popoverBoundaryElement={this.props.popoverParentElement}
+                popoverBoundaryElement={this.popoverContentRef}
                 rebuildTooltips={this.props.rebuildTooltips}
                 tooltipID={this.props.tooltipID}
                 tooltip={aggTypeObj.tooltip}
