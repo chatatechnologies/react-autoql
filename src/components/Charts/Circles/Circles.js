@@ -5,6 +5,7 @@ import _get from 'lodash.get'
 
 import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, getKey } from '../helpers'
 import { getChartColorVars } from '../../../theme/configureTheme'
+import { rebuildTooltips } from '../../Tooltip'
 
 export default class Circles extends Component {
   constructor(props) {
@@ -27,6 +28,10 @@ export default class Circles extends Component {
 
   state = {
     activeKey: this.props.activeChartElementKey,
+  }
+
+  componentDidMount = () => {
+    rebuildTooltips()
   }
 
   onCircleClick = (row, colIndex, rowIndex) => {

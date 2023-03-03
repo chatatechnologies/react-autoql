@@ -50,7 +50,6 @@ export default class FilterLockPopover extends React.Component {
     onClose: PropTypes.func,
     onChange: PropTypes.func,
     insertedFilter: PropTypes.string,
-    rebuildTooltips: PropTypes.func,
   }
 
   static defaultProps = {
@@ -82,7 +81,7 @@ export default class FilterLockPopover extends React.Component {
 
     if (!_isEqual(this.state.filters, prevState.filters)) {
       this.props.onChange(this.state.filters)
-      this.rebuildTooltips()
+      rebuildTooltips()
     }
 
     if (!this.props.isOpen && prevProps.isOpen) {
@@ -104,21 +103,6 @@ export default class FilterLockPopover extends React.Component {
     clearTimeout(this.highlightFilterStartTimeout)
     clearTimeout(this.savingIndicatorTimeout)
     clearTimeout(this.autocompleteTimer)
-  }
-
-  rebuildTooltips = (delay = 500) => {
-    if (!this.props.isOpen) {
-      return
-    }
-
-    if (this.props.rebuildTooltips) {
-      this.props.rebuildTooltips(delay)
-    } else {
-      clearTimeout(this.rebuildTooltipsTimer)
-      this.rebuildTooltipsTimer = setTimeout(() => {
-        rebuildTooltips()
-      }, delay)
-    }
   }
 
   showSavingIndicator = () => {

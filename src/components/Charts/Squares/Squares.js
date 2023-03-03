@@ -5,6 +5,7 @@ import _get from 'lodash.get'
 
 import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, getKey } from '../helpers'
 import { getChartColorVars } from '../../../theme/configureTheme'
+import { rebuildTooltips } from '../../Tooltip'
 
 export default class Squares extends Component {
   constructor(props) {
@@ -22,6 +23,10 @@ export default class Squares extends Component {
 
   static propTypes = chartElementPropTypes
   static defaultProps = chartElementDefaultProps
+
+  componentDidMount = () => {
+    rebuildTooltips()
+  }
 
   onSquareClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)

@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
-import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, scaleZero, getKey } from '../helpers'
 import { rebuildTooltips } from '../../Tooltip'
+import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, scaleZero, getKey } from '../helpers'
 
 export default class Columns extends Component {
   static propTypes = chartElementPropTypes

@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import { getThemeValue } from '../../../theme/configureTheme'
 import { createSVGPath } from './lineFns'
 import { chartElementDefaultProps, chartElementPropTypes, getKey, getTooltipContent } from '../helpers'
+import { rebuildTooltips } from '../../Tooltip'
 
 export default class Line extends Component {
   constructor(props) {
@@ -16,6 +17,10 @@ export default class Line extends Component {
 
   static propTypes = chartElementPropTypes
   static defaultProps = chartElementDefaultProps
+
+  componentDidMount = () => {
+    rebuildTooltips()
+  }
 
   onDotClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)

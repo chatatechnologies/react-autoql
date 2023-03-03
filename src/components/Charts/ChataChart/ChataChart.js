@@ -64,7 +64,7 @@ export default class ChataChart extends Component {
 
   static propTypes = {
     ...chartContainerPropTypes,
-    rebuildTooltips: PropTypes.func,
+
     type: PropTypes.string.isRequired,
   }
 
@@ -430,7 +430,6 @@ export default class ChataChart extends Component {
       popoverParentElement: this.props.popoverParentElement,
       totalRowCount: this.props.totalRowCount,
       chartID: this.state.chartID,
-      rebuildTooltips: this.props.rebuildTooltips,
       onAxesRenderComplete: this.adjustChartPosition,
     }
   }

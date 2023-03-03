@@ -164,7 +164,7 @@ export class QueryOutput extends React.Component {
     onDrilldownEnd: PropTypes.func,
     enableAjaxTableData: PropTypes.bool,
     enableTableSorting: PropTypes.bool,
-    rebuildTooltips: PropTypes.func,
+
     onRowChange: PropTypes.func,
     mutable: PropTypes.bool,
     showSuggestionPrefix: PropTypes.bool,
@@ -266,7 +266,7 @@ export class QueryOutput extends React.Component {
       }
 
       if (prevState.displayType !== this.state.displayType) {
-        this.rebuildTooltips()
+        rebuildTooltips()
       }
 
       if (
@@ -326,7 +326,6 @@ export class QueryOutput extends React.Component {
     try {
       this._isMounted = false
       hideTooltips()
-      clearTimeout(this.rebuildTooltipsTimer)
     } catch (error) {
       console.error(error)
     }
@@ -336,22 +335,6 @@ export class QueryOutput extends React.Component {
     if (this.chartRef) {
       this.chartRef?.adjustChartPosition()
     }
-  }
-
-  rebuildTooltips = (delay = 500) => {
-    if (!this.props.shouldRender) {
-      return
-    }
-
-    if (this.props.rebuildTooltips) {
-      this.props.rebuildTooltips(delay)
-    } else {
-      clearTimeout(this.rebuildTooltipsTimer)
-      this.rebuildTooltipsTimer = setTimeout(() => {
-        rebuildTooltips()
-      }, delay)
-    }
-    return
   }
 
   onTableConfigChange = () => {
@@ -2114,7 +2097,6 @@ export class QueryOutput extends React.Component {
           enableAjaxTableData={this.props.enableAjaxTableData}
           tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
           chartTooltipID={this.props.chartTooltipID ?? this.CHART_TOOLTIP_ID}
-          rebuildTooltips={this.rebuildTooltips}
           height={this.props.height}
           width={this.props.width}
           onNewData={this.onNewData}

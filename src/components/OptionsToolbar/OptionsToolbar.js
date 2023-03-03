@@ -52,7 +52,6 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadStart: PropTypes.func,
     onCSVDownloadFinish: PropTypes.func,
     onCSVDownloadProgress: PropTypes.func,
-    rebuildTooltips: PropTypes.func,
   }
 
   static defaultProps = {
@@ -74,7 +73,7 @@ export class OptionsToolbar extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
-    this.rebuildTooltips()
+    rebuildTooltips()
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -99,7 +98,7 @@ export class OptionsToolbar extends React.Component {
 
     if (prevProps.displayType !== this.props.displayType) {
       this.setState({ activeMenu: undefined })
-      this.rebuildTooltips()
+      rebuildTooltips()
     }
   }
 
@@ -107,18 +106,6 @@ export class OptionsToolbar extends React.Component {
     this._isMounted = false
     clearTimeout(this.temporaryStateTimeout)
     clearTimeout(this.pivotTableCSVDownloadTimeout)
-  }
-
-  rebuildTooltips = () => {
-    if (!this.props.shouldRender) {
-      return
-    }
-
-    if (this.props.rebuildTooltips) {
-      this.props.rebuildTooltips()
-    } else {
-      rebuildTooltips()
-    }
   }
 
   onTableFilter = (newTableData) => {
