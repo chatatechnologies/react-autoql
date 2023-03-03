@@ -407,7 +407,6 @@ export default class ChatContent extends React.Component {
                   appliedFilters={message.appliedFilters}
                   disableMaxHeight={this.props.disableMaxMessageHeight}
                   enableAjaxTableData={this.props.enableAjaxTableData}
-                  rebuildTooltips={this.props.rebuildTooltips}
                   queryRequestData={message.queryRequestData}
                   popoverParentElement={this.chatContentRef}
                   isVisibleInDOM={this.props.shouldRender}

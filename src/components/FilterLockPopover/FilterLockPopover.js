@@ -20,7 +20,6 @@ export class FilterLockPopover extends React.Component {
     align: PropTypes.string,
     onClose: PropTypes.func,
     onChange: PropTypes.func,
-    rebuildTooltips: PropTypes.func,
   }
 
   static defaultProps = {
@@ -95,7 +94,6 @@ export class FilterLockPopover extends React.Component {
           isOpen={this.props.isOpen}
           onClose={this.props.onClose}
           onChange={this.onChange}
-          rebuildTooltips={this.props.rebuildTooltips}
           containerRef={this.containerRef}
           insertedFilter={this.state.insertedFilter}
           initialFilters={this.state.initialFilters}

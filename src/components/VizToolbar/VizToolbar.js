@@ -31,7 +31,7 @@ class VizToolbar extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
-    this.rebuildTooltips()
+    rebuildTooltips()
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -44,24 +44,12 @@ class VizToolbar extends React.Component {
 
   componentDidUpdate = (prevProps) => {
     if (!_isEqual(this.getCurrentSupportedDisplayTypes(this.props), this.getCurrentSupportedDisplayTypes(prevProps))) {
-      this.rebuildTooltips()
+      rebuildTooltips()
     }
   }
 
   componentWillUnmount = () => {
     this._isMounted = false
-  }
-
-  rebuildTooltips = () => {
-    if (!this.props.shouldRender) {
-      return
-    }
-
-    if (this.props.rebuildTooltips) {
-      this.props.rebuildTooltips()
-    } else {
-      rebuildTooltips()
-    }
   }
 
   showDisplayTypeButton = (displayType) => {

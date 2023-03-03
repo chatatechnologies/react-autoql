@@ -14,6 +14,7 @@ import { chartDefaultProps, chartPropTypes, getTooltipContent } from '../helpers
 import { getChartColorVars } from '../../../theme/configureTheme'
 
 import 'd3-transition'
+import { rebuildTooltips } from '../../Tooltip'
 
 export default class ChataPieChart extends Component {
   constructor(props) {
@@ -77,6 +78,7 @@ export default class ChataPieChart extends Component {
 
   componentDidMount = () => {
     this.renderPie()
+    rebuildTooltips()
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -241,7 +243,7 @@ export default class ChataPieChart extends Component {
       const newLegendLabels = _cloneDeep(this.state.legendLabels)
       newLegendLabels[index].hidden = !this.state.legendLabels[index].hidden
       this.setState({ legendLabels: newLegendLabels }, () => {
-        this.props.rebuildTooltips()
+        rebuildTooltips()
       })
     }
   }

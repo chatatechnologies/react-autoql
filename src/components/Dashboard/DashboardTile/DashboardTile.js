@@ -870,12 +870,7 @@ export class DashboardTile extends React.Component {
         <div className='dashboard-tile-toolbars-left-container'>
           {this.props.isEditing && (isSecondHalf || !this.getIsSplitView()) && this.renderSplitViewBtn()}
           {this.props.isEditing && (
-            <VizToolbar
-              {...vizToolbarProps}
-              shouldRender={!this.props.isDragging}
-              rebuildTooltips={this.props.rebuildTooltips}
-              tooltipID={this.props.tooltipID}
-            />
+            <VizToolbar {...vizToolbarProps} shouldRender={!this.props.isDragging} tooltipID={this.props.tooltipID} />
           )}
         </div>
         <div className='dashboard-tile-toolbars-right-container'>
@@ -887,7 +882,6 @@ export class DashboardTile extends React.Component {
             onCSVDownloadStart={this.onCSVDownloadStart}
             onCSVDownloadProgress={this.onCSVDownloadProgress}
             onCSVDownloadFinish={this.onCSVDownloadFinish}
-            rebuildTooltips={this.props.rebuildTooltips}
             shouldRender={!this.props.isDragging}
             tooltipID={this.props.tooltipID}
             {...optionsToolbarProps}
@@ -918,7 +912,6 @@ export class DashboardTile extends React.Component {
         enableDynamicCharting={this.props.enableDynamicCharting}
         backgroundColor={document.documentElement.style.getPropertyValue('--react-autoql-background-color-secondary')}
         enableAjaxTableData={this.props.enableAjaxTableData}
-        rebuildTooltips={this.props.rebuildTooltips}
         showQueryInterpretation={this.props.isEditing}
         reverseTranslationPlacement='top'
         tooltipID={this.props.tooltipID}

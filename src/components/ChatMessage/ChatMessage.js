@@ -293,7 +293,6 @@ export default class ChatMessage extends React.Component {
           showQueryInterpretation={false}
           enableFilterLocking={this.props.enableFilterLocking}
           onRTValueLabelClick={this.props.onRTValueLabelClick}
-          rebuildTooltips={this.props.rebuildTooltips}
           source={this.props.source}
           onRowChange={this.scrollIntoView}
           onDisplayTypeChange={this.scrollIntoView}
@@ -343,7 +342,6 @@ export default class ChatMessage extends React.Component {
             onSuccessAlert={this.props.onSuccessAlert}
             onErrorCallback={this.props.onErrorCallback}
             enableDeleteBtn={!this.props.isIntroMessage}
-            rebuildTooltips={this.props.rebuildTooltips}
             popoverParentElement={this.props.popoverParentElement}
             deleteMessageCallback={this.onDeleteMessage}
             tooltipID={this.props.tooltipID}

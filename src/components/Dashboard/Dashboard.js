@@ -164,7 +164,7 @@ class DashboardWithoutTheme extends React.Component {
       this._isMounted = false
       window.removeEventListener('resize', this.onWindowResize)
       clearTimeout(this.scrollToNewTileTimeout)
-      clearTimeout(this.rebuildTooltipsTimer)
+
       clearTimeout(this.stopDraggingTimeout)
       clearTimeout(this.drillingDownTimeout)
       clearTimeout(this.animationTimeout)
@@ -178,14 +178,6 @@ class DashboardWithoutTheme extends React.Component {
       return this.onChangeTiles
     }
     return this.props.tiles
-  }
-
-  rebuildTooltips = () => {
-    clearTimeout(this.rebuildTooltipsTimer)
-    this.rebuildTooltipsTimer = setTimeout(() => {
-      rebuildTooltips()
-    }, 500)
-    return
   }
 
   subscribeToCallback = (callbackArray) => {
@@ -594,7 +586,6 @@ class DashboardWithoutTheme extends React.Component {
             renderTooltips={false}
             reportProblemCallback={this.reportProblemCallback}
             enableAjaxTableData={this.props.enableAjaxTableData}
-            rebuildTooltips={this.rebuildTooltips}
             showQueryInterpretation={this.props.isEditing}
             reverseTranslationPlacement='top'
             tooltipID={this.TOOLTIP_ID}
@@ -856,7 +847,6 @@ class DashboardWithoutTheme extends React.Component {
             onCSVDownloadProgress={this.props.onCSVDownloadProgress}
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
             enableAjaxTableData={this.props.enableAjaxTableData}
-            rebuildTooltips={this.rebuildTooltips}
             tooltipID={this.TOOLTIP_ID}
             chartTooltipID={this.CHART_TOOLTIP_ID}
           />
