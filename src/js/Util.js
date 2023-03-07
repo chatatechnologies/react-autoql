@@ -690,6 +690,10 @@ export const getNumberOfGroupables = (columns) => {
   return numberOfGroupables
 }
 
+export const isListQuery = (columns) => {
+  return getNumberOfGroupables(columns) === 0
+}
+
 export const getGroupableColumns = (columns) => {
   const groupableColumns = []
   if (columns) {

@@ -31,6 +31,7 @@ import { DEFAULT_DATA_PAGE_SIZE } from '../../js/Constants'
 // Styles
 import 'rc-drawer/assets/index.css'
 import './DataMessenger.scss'
+import { DataAlertModalV2 } from '../Notifications/DataAlertModalV2'
 
 export class DataMessenger extends React.Component {
   constructor(props) {
@@ -885,6 +886,7 @@ export class DataMessenger extends React.Component {
           onDataAlertModalClose={this.onDataAlertModalClose}
           showNotificationDetails={false}
           shouldRender={this.isOpen() && this.state.activePage === 'notifications'}
+          tooltipID={this.TOOLTIP_ID}
         />
       </ErrorBoundary>
     )
@@ -1016,20 +1018,6 @@ export class DataMessenger extends React.Component {
     )
   }
 
-  renderDataAlertModal = () => {
-    return (
-      <DataAlertModal
-        authentication={this.props.authentication}
-        isVisible={this.state.isDataAlertModalVisible}
-        onClose={this.onClose}
-        onSave={this.onSave}
-        onErrorCallback={this.onError}
-        initialQuery={this.state.activeQuery}
-        tooltipID={this.TOOLTIP_ID}
-      />
-    )
-  }
-
   render = () => {
     if (this.state.hasError) {
       return null
@@ -1062,7 +1050,6 @@ export class DataMessenger extends React.Component {
             {this.renderBodyContent()}
           </div>
         </Drawer>
-        {this.renderDataAlertModal()}
         {this.renderTooltips()}
       </ErrorBoundary>
     )

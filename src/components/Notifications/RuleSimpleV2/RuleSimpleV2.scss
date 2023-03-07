@@ -1,0 +1,92 @@
+.react-autoql-notification-rule-container {
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 14px;
+
+  .react-autoql-input-container,
+  .react-autoql-rule-condition-select {
+    margin: 0;
+  }
+  .react-autoql-input-container:hover + .react-autoql-rule-term-type-selector,
+  .react-autoql-input-container.focus + .react-autoql-rule-term-type-selector {
+    color: var(--react-autoql-accent-color);
+    border-color: var(--react-autoql-accent-color);
+  }
+
+  .react-autoql-rule-input-label {
+    margin: 0 3px;
+    padding-bottom: 5px;
+    font-size: 0.875em;
+    color: var(--react-autoql-text-color-placeholder);
+    font-weight: 600;
+  }
+
+  .react-autoql-rule-input {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .react-autoql-rule-first-input-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .react-autoql-rule-condition-select-input-container {
+    display: flex;
+    flex-direction: column;
+    padding: 2px 0;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    flex: 0 0 auto;
+    margin-right: 10px;
+  }
+
+  .react-autoql-rule-second-input-container {
+    display: flex;
+    flex-direction: column;
+    padding: 2px 0;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    flex: 1;
+
+    .react-autoql-rule-condition-select {
+      flex: 0;
+      flex-basis: 33px;
+    }
+    .react-autoql-rule-input {
+      flex: 1;
+    }
+    .react-autoql-delete-compare-btn {
+      cursor: pointer;
+      opacity: 0.6;
+      padding: 6px;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+
+    &.hidden {
+      display: none;
+    }
+  }
+}
+
+.read-only-rule-term {
+  display: inline-block;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(0, 0, 0, 0.02);
+  padding: 3px 7px;
+  line-height: 1.5em;
+  margin-right: 5px;
+  margin-bottom: 2px;
+  margin-top: 2px;
+  border-radius: 4px;
+}
+
+.expression-term-validation-error {
+  padding: 0 10px;
+  color: var(--react-autoql-warning-color);
+}

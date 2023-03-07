@@ -4,22 +4,23 @@ import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import { v4 as uuid } from 'uuid'
-import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
+
 import { Icon } from '../../Icon'
 import { Button } from '../../Button'
 import { Checkbox } from '../../Checkbox'
-import { DataAlertModal } from '../DataAlertModal'
 import { hideTooltips, Tooltip } from '../../Tooltip'
-import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
-import LoadingDots from '../../LoadingDots/LoadingDots'
+import { LoadingDots } from '../../LoadingDots'
+import { DataAlertModalV2 } from '../DataAlertModalV2'
+import { ErrorBoundary } from '../../../containers/ErrorHOC'
+
+import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
 import { fetchDataAlerts, updateDataAlertStatus } from '../../../js/notificationService'
 import { formatResetDate } from '../helpers'
-
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
+import { withTheme } from '../../../theme'
 
 import './DataAlerts.scss'
-import { withTheme } from '../../../theme'
 
 class DataAlerts extends React.Component {
   COMPONENT_KEY = uuid()
@@ -135,7 +136,7 @@ class DataAlerts extends React.Component {
   }
   renderNotificationEditModal = () => {
     return (
-      <DataAlertModal
+      <DataAlertModalV2
         ref={(r) => (this.editModalRef = r)}
         key={this.COMPONENT_KEY}
         authentication={this.props.authentication}

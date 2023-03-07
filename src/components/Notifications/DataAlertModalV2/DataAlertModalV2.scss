@@ -1,0 +1,59 @@
+.notification-modal-content {
+  height: 400px;
+  max-height: 90vh;
+
+  .react-autoql-data-alert-next-btn {
+  }
+
+  .react-autoql-step-content p {
+    margin-bottom: 0.5em;
+    margin-top: 0.5em;
+    padding-left: 8px;
+  }
+
+  .step-btn-container {
+    text-align: right;
+    display: flex;
+    min-height: 30px;
+  }
+
+  .data-alert-chunked-rt {
+    &.PREFIX,
+    &.TEXT,
+    &.GROUPBY {
+      color: yellow;
+    }
+
+    &.VL_PREFIX,
+    &.VALUE_LABEL {
+      color: red;
+    }
+
+    &.DATE {
+      color: green;
+    }
+  }
+}
+
+.expression-valid-checkmark.react-autoql-icon svg {
+  color: var(--react-autoql-success-color);
+}
+
+.expression-invalid-message-container {
+  max-width: 75%;
+  float: left;
+  text-align: left !important;
+  display: flex;
+  flex-direction: row;
+  align-items: left;
+  justify-content: left;
+}
+
+.expression-invalid-message {
+  color: var(--react-autoql-danger-color);
+  display: 'inline-block';
+}
+
+.react-autoql-data-alert-query-name-tooltip-icon {
+  color: var(--react-autoql-info-color) !important;
+}

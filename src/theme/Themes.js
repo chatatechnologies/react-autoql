@@ -33,7 +33,7 @@ export const DARK_THEME = {
   'hover-color': '#4a4f56',
   'text-color-primary': '#ececec',
   'text-color-accent': '#ffffff',
-  'text-color-placeholder': '#ffffff9c',
+  'text-color-placeholder': '#ffffff6e',
   'dashboard-title-color': '#193a48',
   'font-family': 'sans-serif',
   'highlight-color': '#ffffff',
@@ -42,5 +42,5 @@ export const DARK_THEME = {
   'success-color': '#2aca4d',
   'info-color': '#28a8e0',
   'box-shadow-color': '#00000066',
-  'mask-color': '#0000000f',
+  'mask-color': '#00000021',
 }

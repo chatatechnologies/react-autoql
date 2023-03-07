@@ -25,6 +25,34 @@ export const DATE_ONLY_CHART_TYPES = ['line', 'stacked_line']
 
 export const DOUBLE_AXIS_CHART_TYPES = ['column_line']
 
+export const DATA_ALERT_OPERATORS = {
+  GREATER_THAN: {
+    displayName: 'Is greater than',
+    symbol: '>',
+  },
+  LESS_THAN: {
+    displayName: 'Is less than',
+    symbol: '<',
+  },
+  EQUAL_TO: {
+    displayName: 'Is equal to',
+    symbol: '=',
+  },
+  EXISTS: {
+    displayName: 'Exists',
+    symbol: '',
+  },
+}
+
+export const DATA_ALERT_CONDITION_TYPES = {
+  COMPARE: {
+    displayName: 'When a specific condition is met',
+  },
+  EXISTS: {
+    displayName: 'If new data is detected',
+  },
+}
+
 export const MONTH_NAMES = [
   'January',
   'February',

@@ -2,10 +2,6 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { AiFillCaretDown } from '@react-icons/all-files/ai/AiFillCaretDown'
-import { AiFillCaretLeft } from '@react-icons/all-files/ai/AiFillCaretLeft'
-import { AiFillCaretRight } from '@react-icons/all-files/ai/AiFillCaretRight'
-import { AiFillCaretUp } from '@react-icons/all-files/ai/AiFillCaretUp'
 import { AiOutlineBook } from '@react-icons/all-files/ai/AiOutlineBook'
 import { AiOutlineBulb } from '@react-icons/all-files/ai/AiOutlineBulb'
 import { AiOutlineDashboard } from '@react-icons/all-files/ai/AiOutlineDashboard'
@@ -56,6 +52,10 @@ import { IoIosCloseCircleOutline } from '@react-icons/all-files/io/IoIosCloseCir
 import { IoIosGlobe } from '@react-icons/all-files/io/IoIosGlobe'
 import { IoIosHourglass } from '@react-icons/all-files/io/IoIosHourglass'
 import { IoIosSearch } from '@react-icons/all-files/io/IoIosSearch'
+import { IoIosArrowDown } from '@react-icons/all-files/io/IoIosArrowDown'
+import { IoIosArrowUp } from '@react-icons/all-files/io/IoIosArrowUp'
+import { IoIosArrowBack } from '@react-icons/all-files/io/IoIosArrowBack'
+import { IoIosArrowForward } from '@react-icons/all-files/io/IoIosArrowForward'
 
 import { MdClose } from '@react-icons/all-files/md/MdClose'
 import { MdContentCopy } from '@react-icons/all-files/md/MdContentCopy'
@@ -146,19 +146,19 @@ export default class Icon extends React.Component {
         break
       }
       case 'caret-right': {
-        icon = <AiFillCaretRight />
+        icon = <IoIosArrowForward />
         break
       }
       case 'caret-left': {
-        icon = <AiFillCaretLeft />
+        icon = <IoIosArrowBack />
         break
       }
       case 'caret-down': {
-        icon = <AiFillCaretDown />
+        icon = <IoIosArrowDown />
         break
       }
       case 'caret-up': {
-        icon = <AiFillCaretUp />
+        icon = <IoIosArrowUp />
         break
       }
       case 'react-autoql-bubbles-outlined': {

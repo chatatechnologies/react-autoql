@@ -25,6 +25,7 @@ import { withTheme } from '../../../theme'
 import { deepEqual } from '../../../js/Util'
 
 import './NotificationFeed.scss'
+import { DataAlertModalV2 } from '../DataAlertModalV2'
 
 class NotificationFeed extends React.Component {
   MODAL_COMPONENT_KEY = uuid()
@@ -272,7 +273,7 @@ class NotificationFeed extends React.Component {
 
   renderEditDataAlertModal = () => {
     return (
-      <DataAlertModal
+      <DataAlertModalV2
         key={this.MODAL_COMPONENT_KEY}
         authentication={this.props.authentication}
         isVisible={this.state.isEditModalVisible}
@@ -282,9 +283,10 @@ class NotificationFeed extends React.Component {
         currentDataAlert={this.state.activeDataAlert}
         onSave={this.onDataAlertSave}
         onErrorCallback={this.props.onErrorCallback}
-        allowDelete={false}
+        allowDelete={this.state.activeDataAlert?.type === 'CUSTOM'}
         title={this.state.activeDataAlert ? 'Edit Data Alert' : 'Create Data Alert'}
         titleIcon={this.state.activeDataAlert ? <Icon type='edit' /> : <span />}
+        tooltipID={this.props.tooltipID}
       />
     )
   }

@@ -2,9 +2,9 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Popover } from 'react-tiny-popover'
 import { v4 as uuid } from 'uuid'
-import _get from 'lodash.get'
 
 import { hideTooltips, Tooltip } from '../Tooltip'
+import { Icon } from '../Icon'
 
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
@@ -21,6 +21,7 @@ export default class Select extends React.Component {
     label: PropTypes.string,
     size: PropTypes.string,
     rebuildTooltips: PropTypes.func,
+    showArrow: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -32,6 +33,7 @@ export default class Select extends React.Component {
     size: 'large',
     style: {},
     rebuildTooltips: () => {},
+    showArrow: true,
   }
 
   state = {
@@ -54,31 +56,30 @@ export default class Select extends React.Component {
   }
 
   renderSelect = () => {
+    const selectedOption = this.props.options.find((option) => option.value === this.props.value)
     return (
       <div
         className={`react-autoql-select ${this.props.className}`}
         data-test='react-autoql-select'
-        onClick={(e) => {
-          // e.stopPropagation()
-          this.setState({ isOpen: !this.state.isOpen })
-        }}
+        onClick={() => this.setState({ isOpen: !this.state.isOpen })}
         style={this.props.style}
         data-tip={this.props.tooltip}
         data-for={this.props.tooltipID}
         data-offset={10}
         data-delay-show={500}
       >
-        {_get(
-          this.props.options.find((option) => option.value === this.props.value),
-          'label',
-        ) ||
-          _get(
-            this.props.options.find((option) => option.value === this.props.value),
-            'value',
-            <span style={{ color: 'rgba(0,0,0,0.4)', fontStyle: 'italic' }}>
+        <span className='react-autoql-select-text'>
+          {selectedOption?.label ?? selectedOption?.value ?? (
+            <span className='react-autoql-select-text-placeholder'>
               {this.props.selectionPlaceholder || 'Select an item'}
-            </span>,
+            </span>
           )}
+        </span>
+        {this.props.showArrow && (
+          <span className='react-autoql-select-arrow'>
+            <Icon type='caret-down' />
+          </span>
+        )}
       </div>
     )
   }
@@ -106,7 +107,7 @@ export default class Select extends React.Component {
                 data-for={this.props.tooltipID ?? `select-tooltip-${this.ID}`}
                 data-offset={10}
               >
-                {option.listLabel || option.label}
+                {option.listLabel ?? option.label ?? option.value}
               </li>
             )
           })}

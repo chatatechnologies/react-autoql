@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import momentTZ from 'moment-timezone'
 
-import { SelectWithArrow } from '../SelectWithArrow'
+import { Select } from '../Select'
 
 const defaultTimeZone = momentTZ.tz.guess()
 const options = momentTZ.tz.names().map((tz) => {
@@ -39,15 +39,18 @@ export default class DataAlertModal extends React.Component {
 
   render = () => {
     const selectedOption = this.getSelectedOption()
+    console.log({ selectedOption })
 
     return (
-      <SelectWithArrow
+      <Select
         className='react-autoql-timezone-select'
         options={options}
-        selectedOption={selectedOption}
+        value={selectedOption}
         onChange={this.props.onChange}
         menuPlacement='top'
         maxMenuHeight={180}
+        popoverParentElement={this.props.popoverParentElement}
+        popoverBoundaryElement={this.props.popoverBoundaryElement}
         isSearchable
       />
     )

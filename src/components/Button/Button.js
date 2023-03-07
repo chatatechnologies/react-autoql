@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 
 import { Spinner } from '../Spinner'
-import { Tooltip } from '../Tooltip'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Button.scss'
@@ -21,6 +20,8 @@ export default class Button extends React.Component {
     loading: PropTypes.bool,
     disabled: PropTypes.bool,
     multiline: PropTypes.bool,
+    filled: PropTypes.bool,
+    border: PropTypes.bool,
     tooltip: PropTypes.string,
   }
 
@@ -31,6 +32,8 @@ export default class Button extends React.Component {
     disabled: false,
     multiline: false,
     tooltip: undefined,
+    filled: false,
+    border: true,
     onClick: () => {},
   }
 
@@ -72,7 +75,9 @@ export default class Button extends React.Component {
           ${this.props.className || ''}
           ${type}
           ${size}
-          ${isDisabled ? ' disabled' : ''}`}
+          ${isDisabled ? ' disabled' : ''}
+          ${this.props.border ? '' : 'btn-no-border'}
+          ${this.props.filled ? 'btn-filled' : ''}`}
           data-test='react-autoql-btn'
           data-multiline={this.props.multiline}
           style={{ ...this.props.style }}

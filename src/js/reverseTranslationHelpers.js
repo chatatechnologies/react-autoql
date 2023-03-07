@@ -1,5 +1,4 @@
 import dayjs from './dayjsWithPlugins'
-import _get from 'lodash.get'
 
 const isIsoDate = (str) => {
   if (!str) {
@@ -18,28 +17,41 @@ const isIsoDate = (str) => {
 }
 
 const formatChunkWithDates = (chunk) => {
+  let isDate = false
+  let text = chunk.eng
+  let dateArray = []
+
   try {
     const textArray = chunk.eng.split(' ')
-    const textWithDatesArray = textArray.map((text) => {
-      if (isIsoDate(text)) {
-        const formattedDate = dayjs(text).utc().format('ll')
+    const textWithDatesArray = textArray.map((str) => {
+      if (isIsoDate(str)) {
+        const dateDayJS = dayjs(str).utc()
+        const formattedDate = dateDayJS.format('ll')
         if (formattedDate !== 'Invalid Date') {
+          isDate = true
+          dateArray.push(dateDayJS)
           return formattedDate
         }
       }
-      return text
+      return str
     })
 
-    const textWithDates = textWithDatesArray.join(' ')
+    text = textWithDatesArray.join(' ')
+  } catch (error) {
+    isDate = false
+  }
+
+  if (isDate) {
     return {
       c_type: 'DATE',
-      eng: textWithDates,
+      eng: text,
+      dateArray,
     }
-  } catch (error) {
-    return {
-      c_type: 'TEXT',
-      eng: chunk.eng,
-    }
+  }
+
+  return {
+    c_type: 'TEXT',
+    eng: text,
   }
 }
 
@@ -56,7 +68,7 @@ const splitStrByReplacements = (str, replacements, type) => {
     if (replacement.index > prevIndex) {
       const textBefore = str.substring(prevIndex, replacement.index)
       chunkedFilter.push({
-        c_type: 'TEXT',
+        c_type: 'VL_PREFIX',
         eng: textBefore,
       })
     }
@@ -75,7 +87,7 @@ const splitStrByReplacements = (str, replacements, type) => {
     if (i === replacements.length - 1 && endIndex < str.length) {
       const textAfter = str.substring(endIndex, str.length)
       chunkedFilter.push({
-        c_type: 'TEXT',
+        c_type: 'VL_SUFFIX',
         eng: textAfter,
       })
     }
@@ -124,7 +136,7 @@ export const constructRTArray = (interpretation) => {
 
     const reverseTranslationArray = []
 
-    if (_get(interpretation, 'length')) {
+    if (interpretation?.length) {
       interpretation.forEach((chunk) => {
         if (chunk.c_type === 'FILTER' || chunk.c_type === 'SEED') {
           const chunkedFilterArray = parseFilterChunk(chunk)

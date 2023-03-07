@@ -22,6 +22,7 @@ import { autoQLConfigType, authenticationType } from '../../props/types'
 import { autoQLConfigDefault, authenticationDefault, getAuthentication, getAutoQLConfig } from '../../props/defaults'
 
 import './OptionsToolbar.scss'
+import { DataAlertModalV2 } from '../Notifications/DataAlertModalV2'
 
 export class OptionsToolbar extends React.Component {
   constructor(props) {
@@ -318,15 +319,15 @@ export class OptionsToolbar extends React.Component {
     const userSelection = this.props.responseRef?.queryResponse?.data?.data?.fe_req?.disambiguation
     return (
       <ErrorBoundary>
-        <DataAlertModal
+        <DataAlertModalV2
           authentication={this.props.authentication}
           isVisible={this.state.activeMenu === 'notification'}
-          initialQuery={initialQuery}
           userSelection={userSelection}
           onClose={this.closeDataAlertModal}
           onErrorCallback={this.props.onErrorCallback}
           onSave={this.onDataAlertSave}
           tooltipID={this.props.tooltipID}
+          queryResponse={this.props.responseRef?.queryResponse}
         />
       </ErrorBoundary>
     )
