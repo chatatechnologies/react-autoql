@@ -11,7 +11,6 @@ import {
   SEASON_NAMES,
   PRECISION_TYPES,
   WEEKDAY_NAMES_SUN,
-  MAX_CHART_LABEL_SIZE,
 } from './Constants'
 import { dataFormattingDefault, getDataFormatting } from '../props/defaults'
 
@@ -22,7 +21,6 @@ import {
   getDateColumnIndex,
   isColumnDateType,
 } from '../components/QueryOutput/columnHelpers'
-import { getMaxLabelWidth } from '../components/Charts/helpers'
 
 export const rotateArray = (array, n) => {
   const rotated = [...array]
@@ -373,7 +371,7 @@ export const formatStringDate = (value, config) => {
   return value
 }
 
-export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWidth = MAX_CHART_LABEL_SIZE }) => {
+export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWidth }) => {
   if (d === null) {
     return {
       fullWidthLabel: 'Untitled Category',
@@ -458,7 +456,7 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWid
   }
 
   const fullWidthLabel = formattedLabel
-  if (typeof formattedLabel === 'string' && formattedLabel.length > maxLabelWidth) {
+  if (typeof formattedLabel === 'string' && maxLabelWidth && formattedLabel.length > maxLabelWidth) {
     formattedLabel = `${formattedLabel.substring(0, maxLabelWidth)}...`
   }
 
