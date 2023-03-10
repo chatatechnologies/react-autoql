@@ -823,7 +823,19 @@ export const isSingleValueResponse = (response) => {
     return false
   }
 
-  return _get(response, 'data.data.rows.length') === 1 && _get(response, 'data.data.rows[0].length') === 1
+  const rows = response?.data?.data?.rows
+  const columns = response?.data?.data?.columns
+  const referenceID = response?.data?.reference_id
+
+  if (rows?.length === 0 && columns?.length === 1 && referenceID === '1.1.211') {
+    return true
+  }
+
+  if (rows?.length === 1 && rows[0]?.length === 1) {
+    return true
+  }
+
+  return false
 }
 
 export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotDataLength, isDataLimited } = {}) => {
@@ -846,12 +858,12 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
       return ['text']
     }
 
-    if (!rows?.length) {
-      return ['table']
-    }
-
     if (isSingleValueResponse(response)) {
       return ['single-value']
+    }
+
+    if (!rows?.length) {
+      return ['table']
     }
 
     const maxRowsForPieChart = 10

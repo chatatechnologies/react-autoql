@@ -740,7 +740,7 @@ export class QueryOutput extends React.Component {
             }}
           >
             {formatElement({
-              element: _get(this.queryResponse, 'data.data.rows[0][0]'),
+              element: this.queryResponse?.data?.data?.rows?.[0]?.[0] ?? 0,
               column: this.state.columns?.[0],
               config: getDataFormatting(this.props.dataFormatting),
             })}
