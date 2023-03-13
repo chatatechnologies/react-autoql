@@ -7,42 +7,17 @@ import parseNum from 'parse-num'
 import { Input } from '../../Input'
 import { Select } from '../../Select'
 import { Icon } from '../../Icon'
-import { Button } from '../../Button'
+import { Chip } from '../../Chip'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 import { fetchAutocomplete } from '../../../js/queryService'
-import { capitalizeFirstChar, isListQuery, isSingleValueResponse } from '../../../js/Util'
+import { capitalizeFirstChar, isSingleValueResponse } from '../../../js/Util'
 import { DATA_ALERT_OPERATORS } from '../../../js/Constants'
+import { constructRTArray, getTimeFrameTextFromChunk, getTimeRangeFromRT } from '../../../js/reverseTranslationHelpers'
 
 import './RuleSimpleV2.scss'
-import { isAggregation } from '../../QueryOutput/columnHelpers'
-
-const getInitialStateData = (initialData) => {
-  if (initialData && initialData.length === 1) {
-    return {
-      input1Value: initialData[0].term_value,
-      selectedOperator: this.supportedOperators[0],
-      isComplete: !!initialData?.[0]?.term_value?.length,
-      userSelection: initialData[0].user_selection,
-    }
-  } else if (initialData && initialData.length > 1) {
-    const input1Value = initialData?.[0]?.term_value ?? ''
-    const input2Value = initialData?.[1]?.term_value ?? ''
-
-    return {
-      input1Value,
-      input2Value,
-      selectedOperator: initialData[0].condition,
-      secondTermType: initialData[1].term_type,
-      isComplete: !!input1Value?.length && !!input2Value?.length,
-      userSelection: initialData[0].user_selection,
-    }
-  }
-
-  return {}
-}
 
 export default class RuleSimpleV2 extends React.Component {
   autoCompleteTimer = undefined
@@ -54,10 +29,10 @@ export default class RuleSimpleV2 extends React.Component {
     this.TERM_ID_1 = uuid()
     this.TERM_ID_2 = uuid()
 
-    const { initialData } = props
+    const { initialData, queryResponse } = props
 
     this.supportedOperators = Object.keys(DATA_ALERT_OPERATORS)
-    this.supportedSecondTermTypes = this.getSupportedSecondTermTypes(props.queryResponse)
+    this.supportedSecondTermTypes = this.getSupportedSecondTermTypes(queryResponse)
 
     if (initialData && initialData.length === 1) {
       this.TERM_ID_1 = initialData[0].id
@@ -68,13 +43,15 @@ export default class RuleSimpleV2 extends React.Component {
     }
 
     this.state = {
-      input1Value: props.queryResponse?.data?.data?.text ?? '',
-      input2Value: '',
+      input1Value: initialData?.[0]?.term_value ?? queryResponse?.data?.data?.text ?? '',
+      input2Value: initialData?.[1]?.term_value ?? '',
+      isEditingQuery: false,
       selectedOperator: this.supportedOperators?.[0],
       secondTermType: this.supportedSecondTermTypes?.[0],
       isFirstTermValid: true,
       isSecondTermValid: true,
-      ...getInitialStateData(props.initialData),
+      secondInputType: 'number',
+      userSelection: initialData?.[0].user_selection,
     }
   }
 
@@ -85,6 +62,7 @@ export default class RuleSimpleV2 extends React.Component {
     initialData: PropTypes.arrayOf(PropTypes.shape({})),
     readOnly: PropTypes.bool,
     queryResponse: PropTypes.shape({}),
+    onLastInputEnterPress: PropTypes.func,
   }
 
   static defaultProps = {
@@ -94,6 +72,7 @@ export default class RuleSimpleV2 extends React.Component {
     initialData: undefined,
     queryResponse: undefined,
     readOnly: false,
+    onLastInputEnterPress: () => {},
   }
 
   componentDidMount = () => {
@@ -265,6 +244,15 @@ export default class RuleSimpleV2 extends React.Component {
     }
   }
 
+  switchSecondInputType = () => {
+    let secondInputType = 'number'
+    if (this.state.secondInputType === 'number') {
+      secondInputType = 'query'
+    }
+
+    this.setState({ secondInputType, input2Value: '' })
+  }
+
   renderReadOnlyRule = () => {
     const operator = this.state.selectedOperator
     return (
@@ -293,7 +281,11 @@ export default class RuleSimpleV2 extends React.Component {
       const symbol = operatorObj.symbol ? `(${operatorObj.symbol})` : ''
       return {
         value: operator,
-        listLabel: `${operatorObj.displayName} ${symbol}`,
+        listLabel: (
+          <span>
+            {operatorObj.displayName} {symbol}
+          </span>
+        ),
         label: operatorObj.displayName,
       }
     })
@@ -310,41 +302,273 @@ export default class RuleSimpleV2 extends React.Component {
     )
   }
 
+  renderRTChunk = (text, type, key) => {
+    return (
+      <span key={`data-alert-chunked-rt-${this.COMPONENT_KEY}-${key}`} className={`data-alert-chunked-rt ${type}`}>
+        {text}{' '}
+      </span>
+    )
+  }
+
+  getChunkedInterpretationText = () => {
+    const parsedRT = this.props.queryResponse?.data?.data?.parsed_interpretation
+    const rtArray = constructRTArray(parsedRT)
+
+    if (!parsedRT?.length) {
+      return this.props.queryResponse?.data?.data?.text
+    }
+
+    let queryText = ''
+    let numValueLabels = 0
+    rtArray.forEach((chunk, i) => {
+      let text = chunk.eng?.trim()
+      const type = chunk.c_type
+
+      if (!text || !type || type === 'VL_SUFFIX' || type === 'DELIM') {
+        return
+      }
+
+      let prefix = ''
+      if (type === 'VALUE_LABEL') {
+        if (!numValueLabels) {
+          prefix = 'for '
+        }
+
+        numValueLabels += 1
+      }
+
+      if (type === 'DATE') {
+        const timeFrame = getTimeFrameTextFromChunk(chunk)
+        if (timeFrame) {
+          text = timeFrame
+        } else {
+          return
+        }
+      }
+
+      queryText = `${queryText} ${prefix}${text}`
+    })
+
+    return queryText?.trim()
+  }
+
+  renderChunkedInterpretation = () => {
+    const parsedRT = this.props.queryResponse?.data?.data?.parsed_interpretation
+    const rtArray = constructRTArray(parsedRT)
+
+    console.log({ rtArray })
+
+    if (!parsedRT?.length) {
+      return this.props.queryResponse?.data?.data?.text
+    }
+
+    let numValueLabels = 0
+    return rtArray.map((chunk, i) => {
+      let text = chunk.eng
+      const type = chunk.c_type
+
+      if (!text || !type) {
+        return null
+      }
+
+      if (i === 0) {
+        text = text[0].toUpperCase() + text.substring(1)
+      }
+
+      if (type === 'VL_SUFFIX' || type === 'DELIM') {
+        return null
+      }
+
+      if (type === 'DATE') {
+        const timeFrame = getTimeFrameTextFromChunk(chunk)
+        console.log({ timeFrame })
+        if (timeFrame) {
+          text = timeFrame
+        } else {
+          return null
+        }
+      }
+
+      let prefix = ''
+      if (type === 'VALUE_LABEL') {
+        if (!numValueLabels) {
+          prefix = 'for'
+        }
+
+        numValueLabels += 1
+
+        // return (
+        //   <>
+        //     {prefix}
+        //     <Chip
+        //       onClick={() => {}}
+        //       onDelete={() => {
+        //         console.log('DELETED VALUE LABEL')
+        //       }}
+        //     >
+        //       {text}
+        //     </Chip>
+        //   </>
+        // )
+      }
+
+      return (
+        <>
+          {!!prefix && this.renderRTChunk(prefix, 'VL_PREFIX', `${i}-${i}`)}
+          {this.renderRTChunk(text, type, i)}
+        </>
+      )
+    })
+  }
+
+  renderFormattedQuery = () => {
+    let queryText = this.props.queryResponse?.data?.data?.text
+    queryText = queryText[0].toUpperCase() + queryText.substring(1)
+    return (
+      <div className='data-alert-rule-formatted-query'>
+        <span>{queryText}</span>
+        {/* <span>{this.renderChunkedInterpretation()} </span> */}
+        <Icon
+          type='info'
+          className='data-alert-rule-tooltip-icon'
+          data-for={this.props.tooltipID}
+          data-tip='This query will be used to evaluate the conditions below. If the result meets the specified conditons, an alert will be triggered.'
+          // data-tip={`This is how AutoQL interpreted the query "${this.props.queryResponse?.data?.data?.text}".<br /><br />If there was a date or time frame in the original query, you will be able to configure that in the next step.`}
+          data-place='right'
+        />
+        {/* 
+        Do we want the ability to edit this?
+        <Icon type='edit' onClick={() => this.setState({ isEditingQuery: true })} /> 
+        */}
+      </div>
+    )
+  }
+
+  renderQueryDisplay = () => {
+    const query = this.props.queryResponse?.data?.data?.text
+    return (
+      <div className='react-autoql-rule-input'>
+        {this.state.isEditingQuery ? (
+          <Input
+            placeholder='Type a query'
+            value={this.state.input1Value}
+            onChange={(e) => this.setState({ input1Value: e.target.value })}
+            spellCheck={false}
+            icon='react-autoql-bubbles-outlined'
+          />
+        ) : (
+          this.renderFormattedQuery()
+        )}
+
+        {!this.state.isFirstTermValid && this.renderValidationError()}
+      </div>
+    )
+  }
+
+  getSecondInputPlaceholder = () => {
+    const { secondInputType } = this.state
+    const { queryResponse } = this.props
+
+    if (secondInputType === 'number') {
+      return 'Type a number'
+      // let numberPlaceholder = 'Type a number'
+
+      // if (isSingleValueResponse(queryResponse)) {
+      //   const value = queryResponse?.data?.data?.rows?.[0]?.[0]
+      //   if (value) numberPlaceholder = `ie. "${value}"`
+      // }
+
+      // return numberPlaceholder
+    } else if (secondInputType === 'query') {
+      return 'Type a query'
+      // let queryPlaceholder = 'Type a query'
+      // let query = this.getChunkedInterpretationText()
+
+      // if (query) {
+      //   const timeFrame = getTimeRangeFromRT(queryResponse)
+      //   if (timeFrame) {
+      //     if (timeFrame === 'DAY') query = `${query} yesterday`
+      //     if (timeFrame === 'WEEK') query = `${query} last week`
+      //     if (timeFrame === 'MONTH') query = `${query} last month`
+      //     if (timeFrame === 'YEAR') query = `${query} last year`
+      //   }
+
+      //   queryPlaceholder = `ie. "${query.toLowerCase()}"`
+      // }
+
+      // return queryPlaceholder
+    }
+  }
+
   renderRule = () => {
     return (
       <ErrorBoundary>
         <div className='react-autoql-notification-rule-container' data-test='rule'>
           <div className='react-autoql-rule-first-input-container'>
-            <div className='react-autoql-rule-input-label'>Query</div>
-            <div className='react-autoql-rule-input'>
-              <Input
-                placeholder='Type a query'
-                value={this.state.input1Value}
-                onChange={(e) => this.setState({ input1Value: e.target.value })}
-              />
-              {!this.state.isFirstTermValid && this.renderValidationError()}
-            </div>
+            <div className='react-autoql-input-label'>Trigger Alert when</div>
+            {this.renderQueryDisplay()}
           </div>
         </div>
         <div className='react-autoql-notification-rule-container' data-test='rule'>
           {this.state.selectedOperator !== 'EXISTS' && (
             <>
               <div className='react-autoql-rule-condition-select-input-container'>
-                <div className='react-autoql-rule-input-label'>Condition</div>
+                <div className='react-autoql-input-label'>Meets this condition</div>
                 {this.renderOperatorSelector()}
               </div>
               <div className='react-autoql-rule-second-input-container'>
-                <div className='react-autoql-rule-input-label'>Threshold</div>
                 <div className='react-autoql-rule-input'>
                   <Input
                     ref={(r) => (this.secondInput = r)}
-                    placeholder='Type a query or number'
+                    spellCheck={false}
+                    placeholder={this.getSecondInputPlaceholder()}
                     value={this.state.input2Value}
+                    type={this.state.secondInputType === 'number' ? 'number' : undefined}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        this.props.onLastInputEnterPress()
+                      }
+                    }}
+                    selectOptions={[
+                      {
+                        value: 'number',
+                        label: (
+                          <span>
+                            this <strong>number:</strong>
+                          </span>
+                        ),
+                        // listLabel: (
+                        //   <span>
+                        //     <Icon type='number' />
+                        //     &nbsp;&nbsp;this number
+                        //   </span>
+                        // ),
+                      },
+                      {
+                        value: 'query',
+                        label: (
+                          <span>
+                            the result of this <strong>query:</strong>
+                          </span>
+                        ),
+                        // listLabel: (
+                        //   <span>
+                        //     <Icon type='react-autoql-bubbles-outlined' />
+                        //     &nbsp;&nbsp;the result of this query
+                        //   </span>
+                        // ),
+                      },
+                    ]}
+                    onSelectChange={this.switchSecondInputType}
+                    selectValue={this.state.secondInputType}
                     onChange={(e) => this.setState({ input2Value: e.target.value })}
                   />
                   {!this.state.isSecondTermValid && this.renderValidationError()}
                 </div>
               </div>
+              {/* <div className='rule-second-input-type-select' onClick={this.switchSecondInputType}>
+                <span>Use {secondInputOtherType} instead</span>
+              </div> */}
             </>
           )}
         </div>

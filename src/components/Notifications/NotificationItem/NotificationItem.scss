@@ -7,7 +7,7 @@
   overflow: hidden;
   background: var(--react-autoql-background-color-secondary, #fff);
   border-radius: 4px;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
+  box-shadow: var(--react-autoql-box-shadow-color) 0px 1px 2px 0px;
 
   margin-bottom: 8px;
 
@@ -41,8 +41,7 @@
   }
 
   &.expanded .react-autoql-notification-list-item-header {
-    border-bottom: 1px solid
-      var(--react-autoql-border-color, rgba(0, 0, 0, 0.04));
+    border-bottom: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.04));
   }
 
   .react-autoql-notification-details {
@@ -126,8 +125,7 @@
     color: currentcolor;
     opacity: 0.9;
     font-weight: 600;
-    border-bottom: 1px solid
-      var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+    border-bottom: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
     text-align: center;
     margin: 0 10px;
     padding-top: 20px;
@@ -146,8 +144,7 @@
       padding: 20px;
       padding-top: 0;
       opacity: 0.9;
-      border-left: 1px solid
-        var(--react-autoql-border-color, rgba(0, 0, 0, 0.05));
+      border-left: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.05));
     }
   }
 
@@ -183,11 +180,6 @@
     color: var(--react-autoql-text-color-primary);
     opacity: 0.5;
     padding: 8px 20px;
-
-    span.react-autoql-icon svg {
-      margin-top: -3px;
-      vertical-align: middle;
-    }
   }
 
   .react-autoql-notification-dismiss-icon {
@@ -294,10 +286,6 @@
     .react-autoql-notification-timestamp {
       font-size: 12px;
       opacity: 0.5;
-
-      span.react-autoql-icon svg {
-        margin-bottom: -1px;
-      }
     }
   }
 }

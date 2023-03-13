@@ -1,4 +1,5 @@
 import dayjs from './dayjsWithPlugins'
+import { formatElement } from './Util'
 
 const isIsoDate = (str) => {
   if (!str) {
@@ -50,7 +51,7 @@ const formatChunkWithDates = (chunk) => {
   }
 
   return {
-    c_type: 'TEXT',
+    c_type: chunk.type === 'FILTER' ? 'FILTER' : 'TEXT',
     eng: text,
   }
 }
@@ -118,6 +119,7 @@ const parseFilterChunk = (chunk) => {
 
     return splitFilterArray
   } catch (error) {
+    console.error(error)
     // If error, just render as plain text
     return [
       {
@@ -153,5 +155,115 @@ export const constructRTArray = (interpretation) => {
   } catch (error) {
     console.error(error)
     return undefined
+  }
+}
+
+export const getDatesFromRT = (queryResponse) => {
+  const parsedRT = queryResponse?.data?.data?.parsed_interpretation
+  const rtArray = constructRTArray(parsedRT)
+  const timeFrameChunk = rtArray.findLast((chunk) => chunk.c_type === 'DATE')
+  return timeFrameChunk?.dateArray
+}
+
+export const getTimeRangeFromDateArray = (dates) => {
+  if (!dates?.length) {
+    return
+  }
+
+  if (dates.length === 1) {
+    // Return daily
+    return 'DAY'
+  } else if (dates.length === 2) {
+    // Range of dates. Determine what the interval is
+    const range = dayjs(dates[1]).diff(dayjs(dates[0]), 'day')
+    if (range < 7) {
+      return 'DAY'
+    } else if (range === 7) {
+      return 'WEEK'
+    } else if (range <= 31) {
+      return 'MONTH'
+    } else if (range <= 366) {
+      return 'YEAR'
+    }
+  }
+
+  // Default frequency
+  return 'DAY'
+}
+
+export const getTimeRangeFromRT = (queryResponse) => {
+  const dates = getDatesFromRT(queryResponse)
+  const timeRange = getTimeRangeFromDateArray(dates)
+  return timeRange
+}
+
+export const getTimeFrameTextFromChunk = (chunk) => {
+  const dates = chunk?.dateArray
+  const timeRange = getTimeRangeFromDateArray(dates)
+  console.log({ chunk })
+  console.log({ timeRange })
+  if (!timeRange) {
+    return
+  }
+
+  console.log({ dates })
+
+  if (!dates || !dates.length) {
+    return
+  }
+
+  const dayjsPrecision = timeRange.toLowerCase()
+  const startDate = dayjs.utc(dates[0]).utc().startOf(dayjsPrecision)
+  const endDate = dayjs.utc(dates[1]).utc().endOf(dayjsPrecision)
+  const nextStartDate = dayjs.utc(dates[0]).utc().add(1, dayjsPrecision)
+  const nextEndDate = dayjs.utc(dates[1]).utc().add(1, dayjsPrecision)
+  const today = dayjs().utc()
+
+  const isCurrentTimeFrame = today.isBetween(startDate, endDate)
+  const isPreviousTimeFrame = today.isBetween(nextStartDate, nextEndDate)
+
+  const defaultTimeFrame = `between ${startDate.format('ll')} and ${endDate.format('ll')}`
+  if (isCurrentTimeFrame) {
+    switch (timeRange) {
+      case 'DAY':
+        return 'today'
+      case 'MONTH':
+        return 'this month'
+      case 'WEEK':
+        return 'this week'
+      case 'YEAR':
+        return 'this year'
+      default:
+        return defaultTimeFrame
+    }
+  } else if (isPreviousTimeFrame) {
+    switch (timeRange) {
+      case 'DAY':
+        return 'yesterday'
+      case 'MONTH':
+        return 'last month'
+      case 'WEEK':
+        return 'last week'
+      case 'YEAR':
+        return 'last year'
+      default:
+        return defaultTimeFrame
+    }
+  }
+
+  const isoDate = startDate.toISOString()
+  const formattedDate = formatElement({ element: isoDate, column: { type: 'DATE', precision: timeRange } })
+
+  switch (timeRange) {
+    case 'DAY':
+      return `on ${formattedDate}`
+    case 'MONTH':
+      return `in ${formattedDate}`
+    case 'WEEK':
+      return `on week ${formattedDate}`
+    case 'YEAR':
+      return `in ${formattedDate}`
+    default:
+      return defaultTimeFrame
   }
 }

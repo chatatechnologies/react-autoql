@@ -1,15 +1,9 @@
-.react-autoql-step-container {
-  a {
-    color: var(--react-autoql-accent-color, #26a7df);
-  }
-}
-
-.frequency-date-select-container {
-  margin-top: 10px;
-}
-
 .notification-frequency-step {
-  display: flex;
+  .schedule-builder-at-connector {
+    padding-bottom: 8px;
+    padding-right: 8px;
+    padding-left: 3px;
+  }
 
   .frequency-category-select {
     position: relative;
@@ -26,15 +20,34 @@
     line-height: 32px;
     vertical-align: top;
   }
-  .frequency-settings-container {
-    flex: 0 1 400px;
+
+  .frequency-type-container {
+    margin-bottom: 20px;
+
+    .react-autoql-select {
+      padding-left: 6px;
+    }
   }
-}
+  .frequency-settings-container {
+    font-size: inherit;
 
-.schedule-builder-timezone-section {
-  margin: 10px 5px;
+    .react-autoql-select {
+      width: 50%;
+      min-width: fit-content;
+    }
+  }
 
-  .react-autoql-timezone-select {
-    width: 300px;
+  .react-autoql-select {
+    margin: 0;
+    margin-right: 5px;
+  }
+
+  .frequency-date-select-container {
+    margin-top: 10px;
+  }
+
+  .react-autoql-data-alert-frequency-options-container {
+    display: flex;
+    align-items: flex-end;
   }
 }

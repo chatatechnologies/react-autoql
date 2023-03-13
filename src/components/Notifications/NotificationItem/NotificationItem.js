@@ -189,7 +189,9 @@ export default class NotificationItem extends React.Component {
           <div className='react-autoql-notification-display-name'>{notification.title}</div>
           <div className='react-autoql-notification-description'>{notification.message}</div>
           <div className='react-autoql-notification-timestamp'>
-            <Icon type='calendar' /> {this.formatTimestamp(notification.created_at)}
+            <span>
+              <Icon type='calendar' /> {this.formatTimestamp(notification.created_at)}
+            </span>
           </div>
         </div>
         {this.getIsTriggered(notification.state) ? (

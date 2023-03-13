@@ -1,21 +1,15 @@
 .react-autoql-dashboard-container {
-  background: var(--react-autoql-background-color-primary);
-  height: 100%;
+  background: transparent;
   width: 100%;
   overflow: hidden;
   padding-top: 3px;
 }
+
 .react-autoql-dashboard-container.edit-mode {
   padding-bottom: 200px;
 }
 
 .dashboard-drilldown-modal {
-  .ReactModal__Content {
-    top: unset !important;
-    margin-top: 20px !important;
-    max-height: 93vh !important;
-  }
-
   .dashboard-drilldown-modal-content {
     &.chart-hidden,
     &.top-hidden {

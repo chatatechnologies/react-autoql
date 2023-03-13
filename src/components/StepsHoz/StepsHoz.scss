@@ -55,20 +55,23 @@
       }
     }
 
+    // &.active {
+    //   color: var(--react-autoql-accent-color);
+
+    //   .react-autoql-step-hoz-dot,
+    //   .react-autoql-step-connector {
+    //     border-color: var(--react-autoql-accent-color);
+    //     background: var(--react-autoql-accent-color);
+    //     color: var(--react-autoql-text-color-accent);
+    //   }
+    // }
+
+    &.complete,
     &.active {
       color: var(--react-autoql-accent-color);
 
       .react-autoql-step-hoz-dot,
       .react-autoql-step-connector {
-        border-color: var(--react-autoql-accent-color);
-        color: var(--react-autoql-accent-color);
-      }
-    }
-
-    &.complete {
-      color: var(--react-autoql-accent-color);
-
-      .react-autoql-step-hoz-dot {
         border-color: var(--react-autoql-accent-color);
         background: var(--react-autoql-accent-color);
         color: var(--react-autoql-text-color-accent);

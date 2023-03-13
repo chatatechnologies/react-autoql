@@ -348,6 +348,7 @@ export default class ChatMessage extends React.Component {
             deleteMessageCallback={this.onDeleteMessage}
             tooltipID={this.props.tooltipID}
             createDataAlertCallback={this.props.createDataAlertCallback}
+            popoverAlign='end'
           />
         ) : null}
       </div>

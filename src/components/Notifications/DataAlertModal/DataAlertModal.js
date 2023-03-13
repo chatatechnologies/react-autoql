@@ -531,7 +531,7 @@ class DataAlertModal extends React.Component {
         <Input
           className='react-autoql-notification-message-input'
           placeholder='This message will be visible when a notification is sent.'
-          type='multi'
+          area
           maxLength='200'
           value={this.state.messageInput}
           onChange={(e) => this.setState({ messageInput: e.target.value })}
@@ -670,7 +670,7 @@ class DataAlertModal extends React.Component {
             />
           )}
           {this.props.isVisible && (
-            <div className='notification-modal-content'>
+            <div className='react-autoql-data-alert-modal-content'>
               <Steps ref={(r) => (this.stepsRef = r)} steps={steps} isEditMode={!!this.props?.currentDataAlert?.id} />
             </div>
           )}

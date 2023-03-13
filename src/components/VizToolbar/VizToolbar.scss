@@ -16,14 +16,16 @@
 .react-autoql-toolbar-btn {
   height: 28px;
   width: 28px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
   background: none;
   border: none;
+  outline: none !important;
   font-size: 16px;
-  line-height: 28px;
-  vertical-align: top;
   color: var(--react-autoql-text-color-primary);
   cursor: pointer;
-  outline: none !important;
 
   &.filter-btn {
     line-height: 24px;

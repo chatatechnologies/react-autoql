@@ -10,7 +10,7 @@ export const hideTooltips = () => {
 }
 
 export function Tooltip(props) {
-  return <ReactTooltip {...props} />
+  return <ReactTooltip {...props} html />
 }
 
 export default Tooltip

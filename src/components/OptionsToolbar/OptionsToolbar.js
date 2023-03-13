@@ -315,7 +315,6 @@ export class OptionsToolbar extends React.Component {
   }
 
   renderDataAlertModal = () => {
-    const initialQuery = this.props.responseRef?.queryResponse?.data?.data?.text
     const userSelection = this.props.responseRef?.queryResponse?.data?.data?.fe_req?.disambiguation
     return (
       <ErrorBoundary>
@@ -519,7 +518,8 @@ export class OptionsToolbar extends React.Component {
   }
 
   renderToolbar = (shouldShowButton) => {
-    const isFiltered = !!this.props.responseRef?.tableParams?.filters?.length
+    // Use this to show filter badge in the future
+    // const isFiltered = !!this.props.responseRef?.tableParams?.filters?.length
 
     return (
       <ErrorBoundary>
@@ -596,7 +596,6 @@ export class OptionsToolbar extends React.Component {
             <Popover
               key={`more-options-button-${this.COMPONENT_KEY}`}
               isOpen={this.state.activeMenu === 'more-options'}
-              positions={['bottom', 'top', 'left', 'right']}
               padding={8}
               onClickOutside={() => {
                 this.setState({ activeMenu: undefined })
@@ -604,6 +603,8 @@ export class OptionsToolbar extends React.Component {
               content={(props) => this.renderMoreOptionsMenu(props, shouldShowButton)}
               parentElement={this.props.popoverParentElement}
               boundaryElement={this.props.popoverParentElement}
+              positions={this.props.popoverPositions ?? ['bottom', 'top', 'left', 'right']}
+              align={this.props.popoverAlign}
             >
               <button
                 onClick={() => {

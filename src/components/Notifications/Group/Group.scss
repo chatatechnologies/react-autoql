@@ -41,8 +41,7 @@
     position: absolute;
     color: rgba(0, 0, 0, 0.4);
     left: -35px;
-    border-left: 1px dashed
-      var(--react-autoql-border-color, rgba(0, 0, 0, 0.15));
+    border-left: 1px dashed var(--react-autoql-border-color, rgba(0, 0, 0, 0.15));
   }
 
   .notification-and-or-text {
@@ -79,11 +78,6 @@
       color: var(--react-autoql-text-color-placeholder, rgba(0, 0, 0, 0.2));
       transition: all 0.3s ease;
       cursor: pointer;
-
-      span.react-autoql-icon svg {
-        width: 15px;
-        height: 15px;
-      }
 
       &:hover {
         color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.6));

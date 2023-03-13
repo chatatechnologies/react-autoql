@@ -53,6 +53,7 @@ export default class ExpressionBuilderSimpleV2 extends React.Component {
     expression: PropTypes.oneOfType([PropTypes.shape({}), PropTypes.array]), // This is the expression of the existing notification if you are editing one. I should change the name of this at some point
     readOnly: PropTypes.bool, // Set this to true if you want a summary of the expression without needing to interact with it
     onChange: PropTypes.func, // this returns 2 params (isSectionComplete, expressionJSON)
+    onLastInputEnterPress: PropTypes.func,
   }
 
   static defaultProps = {
@@ -60,6 +61,7 @@ export default class ExpressionBuilderSimpleV2 extends React.Component {
     expression: undefined,
     readOnly: false,
     onChange: () => {},
+    onLastInputEnterPress: () => {},
   }
 
   state = {
@@ -67,6 +69,7 @@ export default class ExpressionBuilderSimpleV2 extends React.Component {
   }
 
   componentDidMount = () => {
+    this._isMounted = true
     this.props.onChange(this.isComplete(), this.isValid(), this.getJSON())
   }
 
@@ -78,6 +81,10 @@ export default class ExpressionBuilderSimpleV2 extends React.Component {
     if (!_isEqual(prevState, this.state)) {
       this.props.onChange(this.isComplete(), this.isValid(), this.getJSON())
     }
+  }
+
+  componentWillUnmount = () => {
+    this._isMounted = false
   }
 
   isComplete = () => {
@@ -162,6 +169,7 @@ export default class ExpressionBuilderSimpleV2 extends React.Component {
             onUpdate={this.onRuleUpdate}
             initialData={this.state.expression}
             queryResponse={this.props.queryResponse}
+            tooltipID={this.props.tooltipID}
             readOnly={true}
           />
         )}
@@ -182,7 +190,9 @@ export default class ExpressionBuilderSimpleV2 extends React.Component {
               ruleId={_get(this.state.expression, 'id', uuid())}
               onUpdate={this.onRuleUpdate}
               initialData={this.state.expression}
+              tooltipID={this.props.tooltipID}
               queryResponse={this.props.queryResponse}
+              onLastInputEnterPress={this.props.onLastInputEnterPress}
             />
           )}
         </div>

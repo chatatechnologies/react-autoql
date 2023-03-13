@@ -55,19 +55,6 @@
   }
 }
 
-// Edit Modal
-.react-autoql-notification-display-name-input {
-  width: 100%;
-  // max-width: 400px;
-}
-.react-autoql-notification-message-input {
-  width: 100%;
-
-  textarea {
-    width: 100% !important;
-  }
-}
-
 // Set delay per List Item
 @for $i from 1 through 10 {
   .react-autoql-notification-list-item:nth-of-type(#{$i}) {

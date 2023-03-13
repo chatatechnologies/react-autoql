@@ -200,9 +200,9 @@
     fill: var(--react-autoql-accent-color);
   }
 }
-.react-autoql-query-validation-select {
+.react-autoql-select.react-autoql-query-validation-select {
   position: relative;
-  display: inline-block;
+  // display: inline-block;
   height: 2em;
   background: none;
   outline: none !important;
@@ -236,6 +236,9 @@
 
 .single-value-response-flex-container {
   flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 
   .single-value-response-container {
     width: 100%;

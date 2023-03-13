@@ -3,6 +3,12 @@
   height: 100%;
   width: 100%;
   padding-bottom: 158px;
+  background-color: var(--react-autoql-background-color-primary);
+  background-image: linear-gradient(
+    0deg,
+    var(--react-autoql-background-color-tertiary) 0%,
+    var(--react-autoql-background-color-primary) 100%
+  );
 }
 
 .react-autoql-drawer .response-loading-container {
@@ -19,9 +25,11 @@
   padding-top: 0;
   height: 92px;
   width: 100%;
-  background: var(--react-autoql-background-color-primary);
-  clip-path: inset(-200px 0px 0px 0px);
-  box-shadow: 0 0px 3px 10px var(--react-autoql-background-color-primary);
+
+  background: transparent;
+  // clip-path: inset(-200px 0px 0px 0px);
+  // box-shadow: 0 0px 3px 10px var(--react-autoql-background-color-primary);
+  // background: var(--react-autoql-background-color-primary);
 }
 
 .react-autoql-drawer .watermark {

@@ -104,7 +104,7 @@ export default class DataExplorer extends React.Component {
       <div
         className='data-preview-col-header'
         data-for={this.props.tooltipID ?? 'data-preview-tooltip'}
-        data-tip={JSON.stringify(column)}
+        // data-tip={JSON.stringify(column)}
       >
         {column?.display_name}
       </div>

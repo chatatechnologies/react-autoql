@@ -51,6 +51,7 @@
   &.empty {
     &:not(.filtering) {
       .tabulator-headers {
+        overflow: hidden;
         height: 37px !important;
       }
     }

@@ -108,7 +108,6 @@ export default class Modal extends React.Component {
           style={{
             content: {
               ...this.props.style,
-              bottom: 'auto',
               width: this.props.width,
               height: this.props.height,
             },

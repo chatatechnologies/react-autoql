@@ -34,12 +34,11 @@ export default class DataAlertModal extends React.Component {
 
     return options.find((option) => {
       return option.label === defaultValue
-    })
+    })?.value
   }
 
   render = () => {
     const selectedOption = this.getSelectedOption()
-    console.log({ selectedOption })
 
     return (
       <Select

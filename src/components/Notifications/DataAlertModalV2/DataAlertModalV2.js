@@ -22,7 +22,6 @@ import { isAggregation } from '../../QueryOutput/columnHelpers'
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 import { withTheme } from '../../../theme'
-import { constructRTArray } from '../../../js/reverseTranslationHelpers'
 import { DATA_ALERT_CONDITION_TYPES } from '../../../js/Constants'
 
 import './DataAlertModalV2.scss'
@@ -33,23 +32,31 @@ class DataAlertModalV2 extends React.Component {
 
     this.COMPONENT_KEY = uuid()
     this.NEW_NOTIFICATION_MODAL_ID = uuid()
+    this.TOOLTIP_ID = `react-autoql-data-alert-modal-tooltip-${this.COMPONENT_KEY}`
+    this.CONDITIONS_STEP = 'CONDITIONS'
+    this.FREQUENCY_STEP = 'FREQUENCY'
+    this.MESSAGE_STEP = 'MESSAGE'
+    this.COMPARE_TYPE = 'COMPARE'
+    this.EXISTS_TYPE = 'EXISTS'
 
-    this.supportedConditionTypes = this.getSupportedConditionTypes(props.queryResponse)
+    this.SUPPORTED_CONDITION_TYPES = this.getSupportedConditionTypes(props.queryResponse)
 
     this.steps = [
-      { title: 'Set Up Your Alert' },
-      { title: 'Set Notification Preferences' },
-      { title: 'Compose Notification Message' },
+      { title: 'Configure Timing', value: this.FREQUENCY_STEP },
+      { title: 'Compose Message', value: this.MESSAGE_STEP },
     ]
+
+    if (this.SUPPORTED_CONDITION_TYPES?.includes(this.COMPARE_TYPE)) {
+      this.steps.unshift({ title: 'Set Up Conditions', value: this.CONDITIONS_STEP })
+    }
 
     this.state = {
       titleInput: '',
       messageInput: '',
       expressionJSON: [],
-      isScheduleSectionComplete: false,
       isDataReturnDirty: false,
       isConfirmDeleteModalVisible: false,
-      selectedConditionType: this.supportedConditionTypes?.[0],
+      selectedConditionType: this.SUPPORTED_CONDITION_TYPES?.[0],
       activeStep: 0,
       completedSections: [],
     }
@@ -113,31 +120,41 @@ class DataAlertModalV2 extends React.Component {
       this.props.onOpened()
     }
 
-    if (this.props.initialQuery && this.props.initialQuery !== prevProps.initialQuery) {
+    if (this.state.activeStep !== prevState.activeStep) {
+      if (this.state.activeStep === this.getStepNumber(this.MESSAGE_STEP)) {
+        this.alertTitleInput?.focus()
+      }
+    }
+
+    if (!this.state.isFrequencySectionReady && prevState.isFrequencySectionReady) {
+      // If condition step changed and it affected the frequency step
+      // Then set frequency section back to incomplete
+      const frequencyStepNumber = this.getStepNumber(this.FREQUENCY_STEP)
+      const newCompletedSections = [...this.state.completedSections]
+      newCompletedSections[frequencyStepNumber] = false
+      this.setState({ completedSections: newCompletedSections })
+    }
+
+    if (
+      this.props.initialQuery !== prevProps.initialQuery ||
+      this.props.queryResponse?.data?.data?.text !== prevProps.queryResponse?.data?.data?.text
+    ) {
       this.resetFields()
       const expressionJSON = this.createExpressionJSONFromQuery(this.props.initialQuery, this.props.userSelection)
       this.setState({
         expressionJSON,
       })
     }
-
-    if (this.state.frequencyCategorySelectValue !== prevState.frequencyCategorySelectValue) {
-      // Reset checkbox and frequency select values
-      this.setState({
-        everyCheckboxValue: false,
-        frequencySelectValue: 'MONTH',
-        weekSelectValue: [2],
-        monthSelectValue: [1],
-        yearSelectValue: [1],
-      })
-    }
   }
 
   resetFields = () => {
+    this.conditionSectionReady = false
+    this.messageSectionReady = false
+
     this.setState({
-      isScheduleSectionComplete: false,
+      activeStep: 0,
+      isFrequencySectionReady: false,
       expressionJSON: [],
-      isDataReturnDirty: false,
       titleInput: '',
       messageInput: '',
     })
@@ -177,7 +194,7 @@ class DataAlertModalV2 extends React.Component {
             term_value: [
               {
                 id: uuid(),
-                condition: 'EXISTS',
+                condition: this.EXISTS_TYPE,
                 term_type: 'query',
                 term_value: query,
                 user_selection: userSelection,
@@ -190,13 +207,19 @@ class DataAlertModalV2 extends React.Component {
   }
 
   getSupportedConditionTypes = (queryResponse) => {
-    // 1. when new data is detected
-    // 2. when a certain condition is met
-    if (isSingleValueResponse(queryResponse) || isAggregation(queryResponse?.data?.data?.columns)) {
-      return ['COMPARE']
-    }
+    try {
+      // 1. EXISTS - When new data is detected for the query
+      // 2. COMPARE - When a certain condition is met
 
-    return ['EXISTS']
+      if (isSingleValueResponse(queryResponse) || isAggregation(queryResponse?.data?.data?.columns)) {
+        return [this.COMPARE_TYPE]
+      }
+
+      return [this.EXISTS_TYPE]
+    } catch (error) {
+      console.error(error)
+      return []
+    }
   }
 
   getDataAlertData = () => {
@@ -239,12 +262,11 @@ class DataAlertModalV2 extends React.Component {
   }
 
   isConditionSectionReady = () => {
-    // console.log('is rule complete?', this.expressionRef?.isComplete())
-    if (this.state.activeStep === 0) {
-      this.conditionSectionReady = this.expressionRef?.isComplete()
+    if (this.SUPPORTED_CONDITION_TYPES?.includes(this.COMPARE_TYPE) && this.expressionRef?._isMounted) {
+      return this.expressionRef?.isComplete()
     }
 
-    return this.conditionSectionReady
+    return true
   }
 
   onDataAlertSave = () => {
@@ -306,6 +328,10 @@ class DataAlertModalV2 extends React.Component {
   }
 
   nextStep = () => {
+    if (!this.isStepReady()) {
+      return
+    }
+
     const completedSections = [...this.state.completedSections]
     completedSections[this.state.activeStep] = true
 
@@ -334,13 +360,28 @@ class DataAlertModalV2 extends React.Component {
   }
 
   renderNextBtn = () => {
+    const isLastStep = this.state.activeStep === this.steps.length - 1
+    if (isLastStep) {
+      return (
+        <Button
+          type='primary'
+          loading={this.state.isSavingDataAlert}
+          onClick={this.onDataAlertSave}
+          disabled={!!this.steps.find((s, i) => !this.state.completedSections[i])}
+          tooltipID={this.TOOLTIP_ID}
+        >
+          {'Finish & Save'}
+        </Button>
+      )
+    }
+
     return (
       <Button
         className='react-autoql-data-alert-next-btn'
         onClick={this.nextStep}
-        disabled={!this.isStepReady(this.state.activeStep)}
+        disabled={!this.isStepReady()}
         type='primary'
-        tooltipID={this.props.tooltipID}
+        tooltipID={this.TOOLTIP_ID}
       >
         Continue
       </Button>
@@ -348,94 +389,109 @@ class DataAlertModalV2 extends React.Component {
   }
 
   renderBackBtn = (className) => {
+    if (this.state.activeStep === 0) {
+      return null
+    }
+
     return (
-      <Button className={className} tooltipID={this.props.tooltipID} onClick={this.previousStep}>
+      <Button className={className} tooltipID={this.TOOLTIP_ID} onClick={this.previousStep}>
         Back
       </Button>
     )
   }
 
+  renderCancelBtn = () => {
+    return (
+      <Button
+        tooltipID={this.TOOLTIP_ID}
+        border={false}
+        onClick={(e) => {
+          e.stopPropagation()
+          if (this.modalRef) {
+            this.modalRef.onClose()
+          }
+        }}
+      >
+        Cancel
+      </Button>
+    )
+  }
+
+  renderDeleteBtn = () => {
+    return (
+      <Button
+        type='danger'
+        onClick={() => {
+          this.setState({ isConfirmDeleteModalVisible: true })
+        }}
+        loading={this.state.isDeletingDataAlert}
+        tooltipID={this.TOOLTIP_ID}
+      >
+        Delete Data Alert
+      </Button>
+    )
+  }
+
+  renderFooter = () => {
+    return (
+      <div ref={(r) => (this.footerElement = r)} className='react-autoql-data-alert-modal-footer'>
+        <div>{this.props.currentDataAlert && this.props.allowDelete && this.renderDeleteBtn()}</div>
+        <div>
+          {this.renderCancelBtn()}
+          {this.renderBackBtn()}
+          {this.renderNextBtn()}
+        </div>
+      </div>
+    )
+  }
+
   renderDataAlertNameInput = () => {
     return (
-      <div style={{ display: 'flex' }}>
-        <div style={{ width: '80%' }}>
-          <p>Name your Data Alert:</p>
-          <Input
-            className='react-autoql-notification-display-name-input'
-            placeholder='Add an Alert Name'
-            icon='title'
-            maxLength='50'
-            value={this.state.titleInput}
-            onChange={(e) => {
-              this.setState({ titleInput: e.target.value })
-            }}
-          />
+      <div className='data-alert-name-input-section'>
+        <div className='react-autoql-input-label'>
+          <span>
+            Notification title{' '}
+            <Icon
+              className='react-autoql-data-alert-modal-tooltip-icon'
+              data-for={this.TOOLTIP_ID}
+              data-tip='This will be visible to anyone who gets notified when this Alert is triggered.'
+              type='info'
+            />
+          </span>
         </div>
-        <div style={{ width: '20%', marginLeft: 10, marginTop: 35 }}>
-          <Icon
-            className='react-autoql-data-alert-query-name-tooltip-icon'
-            data-for={this.props.tooltipID ?? 'react-autoql-data-alert-query-name-tooltip'}
-            data-tip='This will be visible to anyone who gets notified when this Alert is triggered.'
-            type='info'
-            size={24}
-          />
-        </div>
+        <Input
+          ref={(r) => (this.alertTitleInput = r)}
+          className='react-autoql-notification-display-name-input'
+          placeholder='Add an Alert Title'
+          icon='title'
+          maxLength='50'
+          value={this.state.titleInput}
+          onChange={(e) => {
+            this.setState({ titleInput: e.target.value })
+          }}
+        />
       </div>
     )
   }
 
   renderDataAlertMessageInput = () => {
     return (
-      <p>
-        Optional:
+      <>
+        <div className='react-autoql-input-label'>Notification message (optional)</div>
         <Input
           className='react-autoql-notification-message-input'
           placeholder='This message will be visible when a notification is sent.'
-          type='multi'
+          area
           maxLength='200'
           value={this.state.messageInput}
           onChange={(e) => this.setState({ messageInput: e.target.value })}
         />
-      </p>
+      </>
     )
   }
 
-  renderChunkedInterpretation = () => {
-    const parsedRT = this.props.queryResponse?.data?.data?.parsed_interpretation
-    const rtArray = constructRTArray(parsedRT)
-
-    console.log({ rtArray })
-
-    if (!parsedRT?.length) {
-      return this.props.queryResponse?.data?.data?.text
-    }
-
-    return rtArray.map((chunk, i) => {
-      let text = chunk.eng
-      const type = chunk.c_type
-
-      if (!text || !type) {
-        return null
-      }
-
-      if (i === 0) {
-        text = text[0].toUpperCase() + text.substring(1)
-      }
-
-      if (type === 'VL_SUFFIX' || type === 'DELIM') {
-        return null
-      }
-
-      return (
-        <span key={`data-alert-chunked-rt-${this.COMPONENT_KEY}-${i}`} className={`data-alert-chunked-rt ${type}`}>
-          {text}{' '}
-        </span>
-      )
-    })
-  }
-
   renderConditionTypeSelector = () => {
-    const options = this.supportedConditionTypes?.map((type) => {
+    const options = this.SUPPORTED_CONDITION_TYPES?.map((type) => {
       const conditionObj = DATA_ALERT_CONDITION_TYPES[type]
       return {
         value: type,
@@ -457,84 +513,81 @@ class DataAlertModalV2 extends React.Component {
   }
 
   renderConditionTypeDescription = () => {
-    if (this.state.selectedConditionType === 'EXISTS') {
-      return 'Desciption: Notification will be triggered when new data is detected'
+    if (this.state.selectedConditionType === this.EXISTS_TYPE) {
+      return 'Description: Notification will be triggered when new data is detected'
     }
 
     return null
   }
 
-  renderSetUpDataAlertStep = () => {
+  renderConditionsStep = (active) => {
     return (
-      <div>
-        <div>
-          <p>
-            Query:
-            <br />
-            {this.renderChunkedInterpretation()}
-            {/* <strong>{this.props.queryResponse?.data?.data?.text}</strong> */}
-          </p>
-        </div>
-        <div>
-          {this.supportedConditionTypes?.length > 1
-            ? this.renderConditionTypeSelector()
-            : this.renderConditionTypeDescription()}
-        </div>
+      <div className={`react-autoql-data-alert-modal-step ${active ? '' : 'hidden'}`}>
         <div style={{ display: 'flex' }}>
           <div style={{ flex: 1 }}>
-            <p>Notify me when:</p>
-            <ExpressionBuilderSimpleV2
-              authentication={this.props.authentication}
-              ref={(r) => (this.expressionRef = r)}
-              key={`expression-${this.NEW_NOTIFICATION_MODAL_ID}`}
-              onChange={this.onExpressionChange}
-              expression={this.props.currentDataAlert?.expression ?? this.state.expressionJSON}
-              queryResponse={this.props.queryResponse}
-            />
+            {/* <p className='data-alert-modal-condition-title'>
+              Trigger the Data Alert when the following conditions are met:
+            </p> */}
+            {this.SUPPORTED_CONDITION_TYPES?.includes(this.COMPARE_TYPE) && (
+              <ExpressionBuilderSimpleV2
+                authentication={this.props.authentication}
+                ref={(r) => (this.expressionRef = r)}
+                key={`expression-${this.NEW_NOTIFICATION_MODAL_ID}`}
+                onChange={this.onExpressionChange}
+                expression={this.props.currentDataAlert?.expression ?? this.state.expressionJSON}
+                queryResponse={this.props.queryResponse}
+                tooltipID={this.TOOLTIP_ID}
+                onLastInputEnterPress={this.nextStep}
+              />
+            )}
           </div>
           {/* <div style={{ width: '20%', marginLeft: 10, marginTop: 35, flex: 0 }}>
             <Icon
-              className='react-autoql-data-alert-query-name-tooltip-icon'
-              data-for={this.props.tooltipID ?? 'react-autoql-data-alert-query-name-tooltip'}
+              className='react-autoql-data-alert-modal-tooltip-icon'
+              data-for={this.props.tooltipID ?? 'react-autoql-data-alert-modal-tooltip'}
               data-tip='Your query should describe the result you wish to be alerted about.'
               type='info'
               size={24}
             />
           </div> */}
         </div>
+        <div>
+          {this.SUPPORTED_CONDITION_TYPES?.length > 1
+            ? this.renderConditionTypeSelector()
+            : this.renderConditionTypeDescription()}
+        </div>
       </div>
     )
   }
 
-  renderFrequencyStep = () => {
+  renderFrequencyStep = (active) => {
     return (
-      <div>
+      <div className={`react-autoql-data-alert-modal-step ${active ? '' : 'hidden'}`}>
         <ScheduleBuilderV2
           ref={(r) => (this.scheduleBuilderRef = r)}
           key={`schedule-${this.NEW_NOTIFICATION_MODAL_ID}`}
           dataAlert={this.props.currentDataAlert}
-          onCompletedChange={(isComplete) => {
-            this.setState({ isScheduleSectionComplete: isComplete })
-          }}
+          onCompletedChange={(isComplete) => this.setState({ isFrequencySectionReady: isComplete })}
           onErrorCallback={this.props.onErrorCallback}
+          conditionType={this.state.selectedConditionType}
+          queryResponse={this.props.queryResponse}
         />
-        {/* <div className='step-btn-container'> */}
-        {/* {this.renderBackBtn('second-step-back-btn')} */}
-        {/* {this.renderNextBtn('second-step-next-btn', !this.state.isScheduleSectionComplete, () =>
-            this.setState({ isThirdSectionDirty: true }),
-          )} */}
-        {/* </div> */}
       </div>
     )
   }
 
-  renderAlertPreferencesStep = () => {
+  renderComposeMessageStep = (active) => {
     return (
-      <div>
+      <div className={`react-autoql-data-alert-modal-step ${active ? '' : 'hidden'}`}>
         {this.renderDataAlertNameInput()}
         {this.renderDataAlertMessageInput()}
       </div>
     )
+  }
+
+  getStepNumber = (stepValue) => {
+    const stepNumber = this.steps.findIndex((step) => step.value && stepValue && step.value === stepValue)
+    return stepNumber
   }
 
   onDataAlertDelete = () => {
@@ -564,121 +617,64 @@ class DataAlertModalV2 extends React.Component {
 
   renderContent = () => {
     const { activeStep } = this.state
-    switch (activeStep) {
-      case 0: {
-        return this.renderSetUpDataAlertStep()
-      }
-      case 1: {
-        return this.renderFrequencyStep()
-      }
-      case 2: {
-        return this.renderAlertPreferencesStep()
-      }
-      default: {
-        return null
-      }
-    }
+
+    return (
+      <>
+        {this.renderConditionsStep(activeStep === this.getStepNumber(this.CONDITIONS_STEP))}
+        {this.renderFrequencyStep(activeStep === this.getStepNumber(this.FREQUENCY_STEP))}
+        {this.renderComposeMessageStep(activeStep === this.getStepNumber(this.MESSAGE_STEP))}
+      </>
+    )
   }
 
-  isStepReady = (step) => {
-    switch (step) {
-      case 0: {
+  isStepReady = () => {
+    const { activeStep } = this.state
+    const stepName = this.steps?.[activeStep]?.value
+
+    switch (stepName) {
+      case this.CONDITIONS_STEP: {
         return this.isConditionSectionReady()
+      }
+      case this.FREQUENCY_STEP: {
+        return this.state.isFrequencySectionReady
+      }
+      case this.MESSAGE_STEP: {
+        return !!this.state.titleInput
       }
       default: {
         return false
       }
-      // case 1: {
-      //   return this.state.isScheduleSectionComplete
-      // }
-      // case 2: {
-      //   return this.state.isThirdSectionDirty || !!this.props.currentDataAlert
-      // }
     }
   }
 
-  isSaveButtonDisabled = () => {
-    return !!this.steps.find((step, i) => !this.state.completedSections[i])
+  getTitleIcon = () => {
+    if (!_isEmpty(this.props.currentDataAlert)) {
+      return <Icon key={`title-icon-${this.COMPONENT_KEY}`} type='edit' />
+    }
+
+    return <span key={`title-icon-${this.COMPONENT_KEY}`} />
   }
 
   render = () => {
-    console.log('is first step ready:', this.isConditionSectionReady())
-
     return (
       <ErrorBoundary>
         <Modal
+          contentClassName='react-autoql-data-alert-creation-modal'
           overlayStyle={{ zIndex: '9998' }}
           title={this.props.title}
-          titleIcon={
-            !_isEmpty(this.props.currentDataAlert) ? (
-              <Icon key={`title-icon-${this.COMPONENT_KEY}`} type='edit' />
-            ) : (
-              <span key={`title-icon-${this.COMPONENT_KEY}`} />
-            )
-          }
+          titleIcon={this.getTitleIcon()}
           ref={(r) => (this.modalRef = r)}
           isVisible={this.props.isVisible}
           onClose={this.props.onClose}
           confirmOnClose={true}
           enableBodyScroll
-          footer={
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <div>
-                {this.props.currentDataAlert && this.props.allowDelete && (
-                  <Button
-                    type='danger'
-                    onClick={() => {
-                      this.setState({ isConfirmDeleteModalVisible: true })
-                    }}
-                    loading={this.state.isDeletingDataAlert}
-                    tooltipID={this.props.tooltipID}
-                  >
-                    Delete Data Alert
-                  </Button>
-                )}
-              </div>
-              <div>
-                <Button
-                  tooltipID={this.props.tooltipID}
-                  border={false}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (this.modalRef) {
-                      this.modalRef.onClose()
-                    }
-                  }}
-                >
-                  Cancel
-                </Button>
-                {this.state.activeStep !== 0 && this.renderBackBtn()}
-                {this.state.activeStep === this.steps.length - 1 ? (
-                  <Button
-                    type='primary'
-                    loading={this.state.isSavingDataAlert}
-                    onClick={this.onDataAlertSave}
-                    disabled={this.isSaveButtonDisabled()}
-                    tooltipID={this.props.tooltipID}
-                  >
-                    {'Finish & Save'}
-                  </Button>
-                ) : (
-                  this.renderNextBtn()
-                )}
-              </div>
-            </div>
-          }
+          width='850px'
+          footer={this.renderFooter()}
         >
-          {!this.props.tooltipID && (
-            <Tooltip
-              className='react-autoql-tooltip'
-              id='react-autoql-data-alert-query-name-tooltip'
-              effect='solid'
-              delayShow={500}
-              place='top'
-            />
-          )}
+          {/* We must render a new <Tooltip/> inside of modals */}
+          <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' delayShow={500} place='top' />
           {this.props.isVisible && (
-            <div className='notification-modal-content'>
+            <div className='react-autoql-data-alert-modal-content'>
               <StepsHoz
                 activeStep={this.state.activeStep}
                 onStepChange={this.setStep}

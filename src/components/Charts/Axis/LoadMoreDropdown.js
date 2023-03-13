@@ -11,7 +11,6 @@ export default class LoadMoreDropdown extends Component {
 
     this.maxRows = 5000
     this.initialRowNumber = 50
-    this.fontSize = 12
     this.BUTTON_PADDING_TOP = 2
     this.BUTTON_PADDING_LEFT = 4
 

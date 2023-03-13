@@ -1,8 +1,50 @@
-.notification-modal-content {
+.react-autoql-data-alert-modal-content {
   height: 400px;
   max-height: 90vh;
+  padding: 0 40px;
 
-  .react-autoql-data-alert-next-btn {
+  .react-autoql-data-alert-modal-footer {
+    display: 'flex';
+    justify-content: 'space-between';
+  }
+
+  .react-autoql-data-alert-modal-step {
+    font-weight: 400;
+    font-size: 15px;
+    padding-top: 20px;
+
+    .data-alert-modal-condition-title {
+      margin-top: 20px;
+      margin-bottom: 5px;
+    }
+
+    .data-alert-name-input-section {
+      margin-bottom: 20px;
+
+      .react-autoql-data-alert-modal-tooltip-icon {
+        flex: 0 0 auto;
+        font-size: 1.1em;
+        vertical-align: text-top;
+      }
+
+      .react-autoql-notification-display-name-input {
+        width: 100%;
+      }
+    }
+
+    .react-autoql-input-container {
+      width: 100%;
+      margin: 0;
+
+      textarea {
+        width: 100% !important;
+        height: 5em;
+      }
+    }
+
+    &.hidden {
+      display: none;
+    }
   }
 
   .react-autoql-step-content p {
@@ -18,42 +60,13 @@
   }
 
   .data-alert-chunked-rt {
-    &.PREFIX,
-    &.TEXT,
-    &.GROUPBY {
-      color: yellow;
-    }
-
-    &.VL_PREFIX,
-    &.VALUE_LABEL {
-      color: red;
-    }
-
-    &.DATE {
-      color: green;
-    }
+    // These are the RT chunk types if we want to use them to style
+    // &.PREFIX,
+    // &.TEXT,
+    // &.GROUPBY,
+    // &.VL_PREFIX,
+    // &.VALUE_LABEL,
+    // &.DATE
+    color: var(--react-autoql-text-color-primary);
   }
-}
-
-.expression-valid-checkmark.react-autoql-icon svg {
-  color: var(--react-autoql-success-color);
-}
-
-.expression-invalid-message-container {
-  max-width: 75%;
-  float: left;
-  text-align: left !important;
-  display: flex;
-  flex-direction: row;
-  align-items: left;
-  justify-content: left;
-}
-
-.expression-invalid-message {
-  color: var(--react-autoql-danger-color);
-  display: 'inline-block';
-}
-
-.react-autoql-data-alert-query-name-tooltip-icon {
-  color: var(--react-autoql-info-color) !important;
 }

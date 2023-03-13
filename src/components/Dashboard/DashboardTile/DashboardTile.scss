@@ -17,8 +17,8 @@
   height: 100%;
   overflow: hidden;
 
-  border-radius: 4px;
-  box-shadow: 0 1px 3px 0 var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
+  border-radius: 6px;
+  box-shadow: var(--react-autoql-box-shadow-color) 0px 1px 2px 0px;
 }
 
 .react-autoql-dashboard-tile-inner-div {
@@ -244,8 +244,8 @@
 }
 
 .dashboard-tile-title-container .dashboard-tile-title {
-  font-weight: bold;
-  font-size: 14px;
+  font-weight: 600;
+  font-size: 15px;
 }
 
 .dashboard-tile-edit-wrapper {
@@ -354,15 +354,11 @@
     z-index: 1;
   }
 
-  .query-input-icon {
-    font-size: 18px;
-    top: 4px;
-    left: 10px;
-  }
-  .title-input-icon {
-    font-size: 16px;
-    top: 7px;
-    left: 11px;
+  .react-autoql-icon {
+    display: flex;
+    height: 100%;
+    font-size: 17px;
+    margin-left: 10px;
   }
 }
 
@@ -446,7 +442,6 @@
   padding-bottom: 5px;
   display: block;
   height: unset;
-  border-radius: 15px;
   font-family: inherit;
   font-size: 15px;
   font-weight: normal;

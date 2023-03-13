@@ -18,3 +18,11 @@
 .react-autosuggest__suggestions-container--open::-webkit-scrollbar {
   visibility: visible !important;
 }
+
+.react-autoql-input-label {
+  margin: 0;
+  padding-bottom: 5px;
+  font-size: 0.875em;
+  color: var(--react-autoql-text-color-placeholder);
+  // font-weight: 600;
+}

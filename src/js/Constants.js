@@ -1,3 +1,5 @@
+import React from 'react'
+
 export const TABLE_TYPES = [
   'pivot_table',
   'pivot_column',
@@ -27,20 +29,28 @@ export const DOUBLE_AXIS_CHART_TYPES = ['column_line']
 
 export const DATA_ALERT_OPERATORS = {
   GREATER_THAN: {
-    displayName: 'Is greater than',
+    displayName: (
+      <span>
+        Is <strong>greater</strong> than
+      </span>
+    ),
     symbol: '>',
   },
   LESS_THAN: {
-    displayName: 'Is less than',
+    displayName: (
+      <span>
+        Is <strong>less</strong> than
+      </span>
+    ),
     symbol: '<',
   },
   EQUAL_TO: {
-    displayName: 'Is equal to',
+    displayName: (
+      <span>
+        Is <strong>equal</strong> to
+      </span>
+    ),
     symbol: '=',
-  },
-  EXISTS: {
-    displayName: 'Exists',
-    symbol: '',
   },
 }
 

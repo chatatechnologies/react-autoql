@@ -933,6 +933,8 @@ export class DashboardTile extends React.Component {
             rebuildTooltips={this.props.rebuildTooltips}
             shouldRender={!this.props.isDragging}
             tooltipID={this.props.tooltipID}
+            popoverPositions={['top', 'left', 'bottom', 'right']}
+            popoverAlign='end'
             {...optionsToolbarProps}
           />
         </div>

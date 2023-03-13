@@ -45,6 +45,7 @@ export default class Chip extends React.Component {
           style={{ ...this.props.style }}
           onClick={this.props.onClick}
         >
+          <div className='react-autoql-chip-background' />
           {this.props.children}
           {this.renderDeleteButton()}
         </div>

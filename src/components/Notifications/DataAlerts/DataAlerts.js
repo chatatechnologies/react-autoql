@@ -149,6 +149,7 @@ class DataAlerts extends React.Component {
         title={this.state.activeDataAlert ? 'Edit Data Alert' : 'Create Data Alert'}
         titleIcon={this.state.activeDataAlert ? <Icon type='edit' /> : <span />}
         selectedDemoProjectId={this.props.selectedDemoProjectId}
+        tooltipID={this.props.tooltipID}
       />
     )
   }

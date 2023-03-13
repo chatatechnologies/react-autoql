@@ -96,7 +96,7 @@ export class FilterLockPopover extends React.Component {
           onClose={this.props.onClose}
           onChange={this.onChange}
           rebuildTooltips={this.props.rebuildTooltips}
-          containerRef={this.containerRef}
+          // containerRef={this.containerRef}
           insertedFilter={this.state.insertedFilter}
           initialFilters={this.state.initialFilters}
           isFetchingFilters={this.state.isFetchingFilters}
@@ -113,7 +113,7 @@ export class FilterLockPopover extends React.Component {
         positions={this.props.positions}
         isOpen={this.props.isOpen}
         align={this.props.align}
-        ref={(r) => (this.containerRef = r)}
+        // ref={(r) => (this.containerRef = r)}
         parentElement={this.props.parentElement}
         boundaryElement={this.props.boundaryElement}
         content={this.renderContent}

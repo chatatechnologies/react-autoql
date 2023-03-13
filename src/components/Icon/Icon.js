@@ -11,6 +11,7 @@ import { AiOutlineMenu } from '@react-icons/all-files/ai/AiOutlineMenu'
 import { AiOutlineQuestionCircle } from '@react-icons/all-files/ai/AiOutlineQuestionCircle'
 import { AiOutlineTag } from '@react-icons/all-files/ai/AiOutlineTag'
 import { AiOutlineFileSearch } from '@react-icons/all-files/ai/AiOutlineFileSearch'
+import { AiOutlineNumber } from '@react-icons/all-files/ai/AiOutlineNumber'
 
 import { BiLineChart } from '@react-icons/all-files/bi/BiLineChart'
 import { BiSearchAlt } from '@react-icons/all-files/bi/BiSearchAlt'
@@ -323,6 +324,10 @@ export default class Icon extends React.Component {
       }
       case 'notification-pause': {
         icon = <FiPauseCircle />
+        break
+      }
+      case 'number': {
+        icon = <AiOutlineNumber />
         break
       }
       case 'abacus': {
