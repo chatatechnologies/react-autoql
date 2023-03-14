@@ -22,8 +22,9 @@ import { BiBookmark } from '@react-icons/all-files/bi/BiBookmark'
 import { BiBook } from '@react-icons/all-files/bi/BiBook'
 import { BiNote } from '@react-icons/all-files/bi/BiNote'
 import { BiAbacus } from '@react-icons/all-files/bi/BiAbacus'
-
+import { BsChevronDown } from '@react-icons/all-files/bs/BsChevronDown'
 import { BsArrowBarDown } from '@react-icons/all-files/bs/BsArrowBarDown'
+
 import { BsArrowBarUp } from '@react-icons/all-files/bs/BsArrowBarUp'
 
 import { FaMicrophoneAlt } from '@react-icons/all-files/fa/FaMicrophoneAlt'
@@ -243,6 +244,10 @@ export default class Icon extends React.Component {
       }
       case 'expand': {
         icon = <BsArrowBarDown />
+        break
+      }
+      case 'dropdown': {
+        icon = <BsChevronDown />
         break
       }
       case 'eye': {
