@@ -72,13 +72,13 @@ const aggregateRow = (row, datasetsToAggregate, columns) => {
   return newRow
 }
 
-export const aggregateData = ({ data, aggIndex, columns, numberIndices, dataFormatting }) => {
-  if (!(data?.length > 1)) {
+export const aggregateData = ({ data, aggColIndex, columns, numberIndices, dataFormatting }) => {
+  if (!data?.length) {
     return data
   }
 
   const aggregatedData = []
-  const sortedData = _sortBy(data, (row) => row?.[aggIndex])
+  const sortedData = _sortBy(data, (row) => row?.[aggColIndex])
 
   let prevRow
   let datasetsToAggregate = {}
@@ -86,8 +86,8 @@ export const aggregateData = ({ data, aggIndex, columns, numberIndices, dataForm
     const currentRow = _cloneDeep(row)
     const isLastRow = i === sortedData.length - 1
 
-    const currentLabel = getLabelFromRow({ row: currentRow, index: aggIndex, columns, dataFormatting })
-    const prevLabel = getLabelFromRow({ row: prevRow, index: aggIndex, columns, dataFormatting })
+    const currentLabel = getLabelFromRow({ row: currentRow, index: aggColIndex, columns, dataFormatting })
+    const prevLabel = getLabelFromRow({ row: prevRow, index: aggColIndex, columns, dataFormatting })
     const labelChanged = currentLabel && prevLabel && currentLabel !== prevLabel
 
     if (labelChanged) {

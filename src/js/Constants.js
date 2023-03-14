@@ -1,5 +1,7 @@
 import React from 'react'
 
+export const TOOLTIP_TIMER_KEY = 'react-autoql-tooltip-rebuild-timer'
+
 export const TABLE_TYPES = [
   'pivot_table',
   'pivot_column',

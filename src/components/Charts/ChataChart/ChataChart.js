@@ -64,7 +64,7 @@ export default class ChataChart extends Component {
 
   static propTypes = {
     ...chartContainerPropTypes,
-    rebuildTooltips: PropTypes.func,
+
     type: PropTypes.string.isRequired,
   }
 
@@ -173,14 +173,26 @@ export default class ChataChart extends Component {
   }
 
   getData = (props) => {
+    if (!props.data?.length || !props.columns?.length) {
+      return
+    }
+
     if (props.isDataAggregated) {
       return sortDataByDate(props.data, props.columns, 'asc')
     } else {
+      const indices1 = props.numberColumnIndices ?? []
+      const indices2 = props.numberColumnIndices2 ?? []
+      const numberIndices = [...indices1, ...indices2]
+
+      if (!numberIndices.length) {
+        return
+      }
+
       return aggregateData({
         data: props.data,
-        aggIndex: props.stringColumnIndex,
+        aggColIndex: props.stringColumnIndex,
         columns: props.columns,
-        numberIndices: props.numberColumnIndices,
+        numberIndices,
         dataFormatting: props.dataFormatting,
       })
     }
@@ -418,7 +430,6 @@ export default class ChataChart extends Component {
       popoverParentElement: this.props.popoverParentElement,
       totalRowCount: this.props.totalRowCount,
       chartID: this.state.chartID,
-      rebuildTooltips: this.props.rebuildTooltips,
       onAxesRenderComplete: this.adjustChartPosition,
     }
   }
@@ -483,6 +494,10 @@ export default class ChataChart extends Component {
   }
 
   render = () => {
+    if (!this.state.data?.length) {
+      return null
+    }
+
     // We need to set these inline in order for them to be applied in the exported PNG
     const chartFontFamily = getThemeValue('font-family')
     const chartTextColor = getThemeValue('text-color-primary')

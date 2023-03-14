@@ -356,7 +356,6 @@ export default class Axis extends Component {
         changeStringColumnIndex={this.props.changeStringColumnIndex}
         legendColumn={this.props.legendColumn}
         popoverParentElement={this.props.popoverParentElement}
-        rebuildTooltips={this.props.rebuildTooltips}
         numberColumnIndices={this.props.numberColumnIndices}
         numberColumnIndices2={this.props.numberColumnIndices2}
         stringColumnIndices={this.props.stringColumnIndices}

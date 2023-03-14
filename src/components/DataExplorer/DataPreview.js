@@ -17,6 +17,7 @@ import { formatElement } from '../../js/Util.js'
 import { responseErrors } from '../../js/errorMessages'
 
 import './DataPreview.scss'
+import { rebuildTooltips } from '../Tooltip'
 
 export default class DataExplorer extends React.Component {
   constructor(props) {
@@ -34,7 +35,7 @@ export default class DataExplorer extends React.Component {
     authentication: authenticationType,
     shouldRender: PropTypes.bool,
     subject: PropTypes.shape({}),
-    rebuildTooltips: PropTypes.func,
+
     isCollapsed: PropTypes.bool,
     onIsCollapsedChange: PropTypes.func,
     defaultCollapsed: PropTypes.bool,
@@ -48,7 +49,7 @@ export default class DataExplorer extends React.Component {
     rebuildTooltips: undefined,
     isCollapsed: undefined,
     onIsCollapsedChange: () => {},
-    rebuildTooltips: () => {},
+
     defaultCollapsed: false,
   }
 
@@ -65,7 +66,7 @@ export default class DataExplorer extends React.Component {
     }
 
     if (this.state.dataPreview && !_isEqual(this.state.dataPreview, prevState.dataPreview)) {
-      this.props.rebuildTooltips()
+      rebuildTooltips()
     }
   }
 

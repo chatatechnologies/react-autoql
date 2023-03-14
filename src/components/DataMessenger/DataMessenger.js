@@ -203,7 +203,7 @@ export class DataMessenger extends React.Component {
       this.openDataMessenger()
     }
 
-    setTimeout(this.rebuildTooltips, 1000)
+    setTimeout(rebuildTooltips, 1000)
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -251,7 +251,6 @@ export class DataMessenger extends React.Component {
 
       clearTimeout(this.windowResizeTimer)
       clearTimeout(this.executeQueryTimeout)
-      clearTimeout(this.rebuildTooltipsTimer)
     } catch (error) {}
   }
 
@@ -264,17 +263,6 @@ export class DataMessenger extends React.Component {
 
   onClose = () => {
     this.setState({ isDataAlertModalVisible: false })
-  }
-
-  rebuildTooltips = (delay = 500) => {
-    if (!this.state.isVisible) {
-      return
-    }
-
-    clearTimeout(this.rebuildTooltipsTimer)
-    this.rebuildTooltipsTimer = setTimeout(() => {
-      rebuildTooltips()
-    }, delay)
   }
 
   refreshNotifications = () => {
@@ -662,7 +650,6 @@ export class DataMessenger extends React.Component {
         isOpen={this.state.isFilterLockMenuOpen}
         onChange={this.onFilterChange}
         onClose={this.closeFilterLockMenu}
-        rebuildTooltips={this.rebuildTooltips}
         parentElement={this.messengerDrawerRef}
         boundaryElement={this.messengerDrawerRef}
         positions={['bottom', 'left', 'top', 'right']}
@@ -744,7 +731,6 @@ export class DataMessenger extends React.Component {
           autoQLConfig={this.props.autoQLConfig}
           isResizing={this.state.isResizing || this.state.isWindowResizing}
           source={['data_messenger']}
-          rebuildTooltips={this.rebuildTooltips}
           onRTValueLabelClick={valueLabelClickFn}
           queryFilters={this.state.sessionFilters}
           introMessages={this.dataMessengerIntroMessages}
@@ -779,7 +765,6 @@ export class DataMessenger extends React.Component {
           }}
           isResizing={this.state.isResizing || this.state.isWindowResizing}
           source={['data_messenger']}
-          rebuildTooltips={this.rebuildTooltips}
           introMessages={this.dprMessengerIntroMessages}
           disableMaxMessageHeight={true}
           inputPlaceholder='Type your questions here'
@@ -811,7 +796,6 @@ export class DataMessenger extends React.Component {
           ref={(r) => (this.dataExplorerRef = r)}
           authentication={this.props.authentication}
           dataFormatting={this.props.dataFormatting}
-          rebuildTooltips={this.rebuildTooltips}
           shouldRender={this.shouldRenderPage('data-explorer')}
           tooltipID={this.TOOLTIP_ID}
           executeQuery={(query) => {

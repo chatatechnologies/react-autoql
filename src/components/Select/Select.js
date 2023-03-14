@@ -3,10 +3,9 @@ import PropTypes from 'prop-types'
 import { Popover } from 'react-tiny-popover'
 import { v4 as uuid } from 'uuid'
 
-import { hideTooltips, Tooltip } from '../Tooltip'
+import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
 import { Icon } from '../Icon'
-
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { ErrorBoundary } from '../../containers/ErrorHOC'
 
 import './Select.scss'
 
@@ -20,7 +19,6 @@ export default class Select extends React.Component {
     value: PropTypes.string,
     label: PropTypes.string,
     size: PropTypes.string,
-    rebuildTooltips: PropTypes.func,
     showArrow: PropTypes.bool,
     outlined: PropTypes.bool,
   }
@@ -33,7 +31,6 @@ export default class Select extends React.Component {
     label: null,
     size: 'large',
     style: {},
-    rebuildTooltips: () => {},
     showArrow: true,
     outlined: true,
   }
@@ -43,17 +40,17 @@ export default class Select extends React.Component {
   }
 
   componentDidMount = () => {
-    this.props.rebuildTooltips()
+    rebuildTooltips()
   }
 
   componentDidUpdate = (nextProps, nextState) => {
     if (this.state.isOpen !== nextState.isOpen) {
       hideTooltips()
-      this.props.rebuildTooltips()
+      rebuildTooltips()
     }
 
     if (this.props.value !== nextProps.value) {
-      this.props.rebuildTooltips()
+      rebuildTooltips()
     }
   }
 
