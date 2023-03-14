@@ -13,10 +13,12 @@ import './ScheduleBuilderV2.scss'
 
 const DATA_ALERT_FREQUENCY_TYPE_OPTIONS = {
   PERIODIC: {
-    displayName: 'at the following regular intervals:', // DEFAULT
+    label: 'at the following regular intervals:',
+    listLabel: 'at the following regular intervals',
   },
   CONTINUOUS: {
-    displayName: 'as soon as it happens.',
+    label: 'as soon as it happens.',
+    listLabel: 'as soon as it happens',
   },
 }
 
@@ -92,9 +94,12 @@ export default class ScheduleBuilderV2 extends React.Component {
 
     this.COMPONENT_KEY = uuid()
 
+    const defaultResetPeriod = this.getResetPeriodSelectValue()
+
     this.state = {
-      frequencySelectValue: this.getFrequencySelectValue(),
-      frequencyType: Object.keys(DATA_ALERT_FREQUENCY_TYPE_OPTIONS)[0],
+      resetPeriodSelectValue: props.dataAlert?.reset_period ?? defaultResetPeriod,
+      checkFrequencySelectValue: props.dataAlert?.check_frequency ?? defaultResetPeriod,
+      frequencyType: props.dataAlert?.notification_type ?? Object.keys(DATA_ALERT_FREQUENCY_TYPE_OPTIONS)[0],
       timezone: props.dataAlert?.time_zone,
       monthDaySelectValue: 'LAST',
       intervalTimeHour: '12',
@@ -132,7 +137,7 @@ export default class ScheduleBuilderV2 extends React.Component {
     const state = prevState ?? this.state
 
     if (state.frequencyType === 'PERIODIC') {
-      return !!state.frequencySelectValue
+      return !!state.resetPeriodSelectValue
     } else if (state.frequencyType === 'CONTINUOUS') {
       return true
     }
@@ -141,11 +146,11 @@ export default class ScheduleBuilderV2 extends React.Component {
   }
 
   getData = () => {
-    const { frequencySelectValue, timezone } = this.state
+    const { resetPeriodSelectValue, timezone } = this.state
 
     let resetPeriod = null
-    if (frequencySelectValue !== 'NONE') {
-      resetPeriod = frequencySelectValue
+    if (resetPeriodSelectValue !== 'NONE') {
+      resetPeriod = resetPeriodSelectValue
     }
 
     return {
@@ -155,7 +160,8 @@ export default class ScheduleBuilderV2 extends React.Component {
     }
   }
 
-  getFrequencySelectValue = () => {
+  // Reset period is only relevant for "continuous" type data alerts, not scheduled alerts
+  getResetPeriodSelectValue = () => {
     const { dataAlert, queryResponse } = this.props
     if (!dataAlert) {
       return getTimeRangeFromRT(queryResponse)
@@ -168,14 +174,14 @@ export default class ScheduleBuilderV2 extends React.Component {
     return RESET_PERIOD_OPTIONS[dataAlert.reset_period]
   }
 
-  getResetPeriod = (frequencySelectValue) => {
-    if (frequencySelectValue === 'Only once per day') {
+  getResetPeriod = (resetPeriodSelectValue) => {
+    if (resetPeriodSelectValue === 'Only once per day') {
       return 'DAY'
-    } else if (frequencySelectValue === 'Only once per month') {
+    } else if (resetPeriodSelectValue === 'Only once per month') {
       return 'MONTH'
-    } else if (frequencySelectValue === 'Only once per week') {
+    } else if (resetPeriodSelectValue === 'Only once per week') {
       return 'WEEK'
-    } else if (frequencySelectValue === 'Every time this happens') {
+    } else if (resetPeriodSelectValue === 'Every time this happens') {
       return 'CONTINUOUS'
     }
 
@@ -196,11 +202,11 @@ export default class ScheduleBuilderV2 extends React.Component {
                     label: SCHEDULE_INTERVAL_OPTIONS[value].displayName,
                   }
                 })}
-                value={this.state.frequencySelectValue ?? Object.keys(SCHEDULE_INTERVAL_OPTIONS)[0]}
-                onChange={(option) => this.setState({ frequencySelectValue: option })}
+                value={this.state.resetPeriodSelectValue ?? Object.keys(SCHEDULE_INTERVAL_OPTIONS)[0]}
+                onChange={(option) => this.setState({ resetPeriodSelectValue: option })}
               />
             </div>
-            {this.state.frequencySelectValue === 'MONTH' && (
+            {this.state.resetPeriodSelectValue === 'MONTH' && (
               <div>
                 <Select
                   value={this.state.monthDaySelectValue}
@@ -214,7 +220,7 @@ export default class ScheduleBuilderV2 extends React.Component {
                 />
               </div>
             )}
-            {this.state.frequencySelectValue === 'WEEK' && (
+            {this.state.resetPeriodSelectValue === 'WEEK' && (
               <div>
                 <Select
                   value={this.state.weekDaySelectValue}
@@ -236,8 +242,7 @@ export default class ScheduleBuilderV2 extends React.Component {
               <span>at</span>
             </div>
             <div>
-              {/* <div className='react-autoql-input-label'>When</div> */}
-              <div className='react-autoql-input-label'>Time</div>
+              {/* <div className='react-autoql-input-label'>Time</div> */}
               <Select
                 options={[{ value: '12', label: '12:00am' }]}
                 value={this.state.intervalTimeHour}
@@ -259,8 +264,8 @@ export default class ScheduleBuilderV2 extends React.Component {
                 label: RESET_PERIOD_OPTIONS[value].displayName,
               }
             })}
-            value={this.state.frequencySelectValue ?? Object.keys(RESET_PERIOD_OPTIONS)[0]}
-            onChange={(option) => this.setState({ frequencySelectValue: option })}
+            value={this.state.resetPeriodSelectValue ?? Object.keys(RESET_PERIOD_OPTIONS)[0]}
+            onChange={(option) => this.setState({ resetPeriodSelectValue: option })}
           />
         </>
       )
@@ -286,9 +291,12 @@ export default class ScheduleBuilderV2 extends React.Component {
   }
 
   renderFrequencyTypeSelector = () => {
-    let helperText = "If the data for this query changes, you'll be notified of the changes"
+    const query = this.props.queryResponse?.data?.data?.text
+    const queryText = query ? <span className='schedule-builder-query-text'>"{query}"</span> : 'this query'
+
+    let helperText = <span>If new data is detected for {queryText}, you'll be notified</span>
     if (this.props.conditionType === 'COMPARE') {
-      helperText = "If the condition for this Data Alert is met, you'll be notified"
+      helperText = <span>If the condition for this Data Alert is met, you'll be notified</span>
     }
 
     return (
@@ -299,7 +307,8 @@ export default class ScheduleBuilderV2 extends React.Component {
             options={Object.keys(DATA_ALERT_FREQUENCY_TYPE_OPTIONS).map((key) => {
               return {
                 value: key,
-                label: DATA_ALERT_FREQUENCY_TYPE_OPTIONS[key]?.displayName,
+                label: DATA_ALERT_FREQUENCY_TYPE_OPTIONS[key]?.label,
+                listLabel: DATA_ALERT_FREQUENCY_TYPE_OPTIONS[key]?.listLabel,
               }
             })}
             value={this.state.frequencyType ?? Object.keys(DATA_ALERT_FREQUENCY_TYPE_OPTIONS)[0]}
@@ -311,10 +320,41 @@ export default class ScheduleBuilderV2 extends React.Component {
     )
   }
 
+  renderQuery = () => {
+    let queryText = this.props.queryResponse?.data?.data?.text
+    queryText = queryText[0].toUpperCase() + queryText.substring(1)
+    // return (
+    //   <div className='data-alert-rule-formatted-query'>
+    //     <span>{queryText}</span>
+    //     {/* <span>{this.renderChunkedInterpretation()} </span> */}
+    //     <Icon
+    //       type='info'
+    //       className='data-alert-rule-tooltip-icon'
+    //       data-for={this.props.tooltipID}
+    //       data-tip='This query will be used to evaluate the conditions below. If the query result meets the specified conditons, an alert will be triggered.'
+    //       // data-tip={`This is how AutoQL interpreted the query "${this.props.queryResponse?.data?.data?.text}".<br /><br />If there was a date or time frame in the original query, you will be able to configure that in the next step.`}
+    //       data-place='right'
+    //     />
+    //     {/*
+    //     Do we want the ability to edit this?
+    //     <Icon type='edit' onClick={() => this.setState({ isEditingQuery: true })} />
+    //     */}
+    //   </div>
+    // )
+
+    {
+      /* <div className='react-autoql-input-label'>Query</div>
+        <div className='data-alert-rule-formatted-query'>{queryText}</div> */
+    }
+
+    return <div>Query: {queryText}</div>
+  }
+
   render = () => {
     return (
       <ErrorBoundary>
         <div className='notification-frequency-step' data-test='schedule-builder'>
+          {/* <div className='schedule-builder-query-container'>{this.renderQuery()}</div> */}
           <div className='frequency-type-container'>{this.renderFrequencyTypeSelector()}</div>
           <div className='frequency-settings-container'>{this.renderFrequencyOptions()}</div>
         </div>

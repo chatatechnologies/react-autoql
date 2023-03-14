@@ -283,9 +283,19 @@
       font-size: 18px;
       color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.7));
     }
-    .react-autoql-notification-timestamp {
+    .react-autoql-notification-timestamp-container {
       font-size: 12px;
       opacity: 0.5;
+
+      .react-autoql-notification-timestamp {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+
+        .react-autoql-icon {
+          margin-right: 3px;
+        }
+      }
     }
   }
 }

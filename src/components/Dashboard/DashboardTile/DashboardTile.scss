@@ -89,6 +89,7 @@
 
   .dashboard-tile-toolbars-right-container,
   .dashboard-tile-toolbars-left-container {
+    display: flex;
     pointer-events: auto;
   }
 

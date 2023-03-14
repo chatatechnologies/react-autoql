@@ -8,28 +8,6 @@
     }
   }
 
-  .data-alert-rule-formatted-query {
-    display: flex;
-    align-items: center;
-    font-size: 17px;
-    margin-top: 5px;
-    font-weight: 600;
-
-    .data-alert-rule-tooltip-icon {
-      margin-left: 10px;
-      color: var(--react-autoql-text-color-placeholder);
-      opacity: 0.6;
-    }
-
-    .react-autoql-icon.react-autoql-bubbles-outlined {
-      margin-right: 5px;
-    }
-
-    .react-autoql-chip {
-      margin: 0;
-    }
-  }
-
   .rule-second-input-type-select {
     text-decoration: underline;
     cursor: pointer;
@@ -70,6 +48,7 @@
     transition: all 0.3s ease;
     flex: 0 0 auto;
     margin-right: 12px;
+    margin-bottom: 50px;
   }
 
   .react-autoql-rule-second-input-container {
@@ -103,6 +82,27 @@
   }
 }
 
+.data-alert-rule-formatted-query {
+  display: flex;
+  align-items: center;
+  margin-top: 3px;
+  font-weight: 600;
+
+  .data-alert-rule-tooltip-icon {
+    margin-left: 10px;
+    color: var(--react-autoql-text-color-placeholder);
+    opacity: 0.6;
+  }
+
+  .react-autoql-icon.react-autoql-bubbles-outlined {
+    margin-right: 5px;
+  }
+
+  .react-autoql-chip {
+    margin: 0;
+  }
+}
+
 .read-only-rule-term {
   display: inline-block;
   border: 1px solid rgba(0, 0, 0, 0.06);
@@ -115,7 +115,34 @@
   border-radius: 4px;
 }
 
-.expression-term-validation-error {
-  padding: 0 10px;
-  color: var(--react-autoql-warning-color);
+.rule-simple-validation-container {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 5px;
+  height: 50px;
+
+  .expression-term-validation {
+    display: inline-flex;
+    justify-content: flex-end;
+    align-items: center;
+    height: 20px;
+
+    .react-autoql-icon {
+      margin-right: 5px;
+      vertical-align: text-bottom;
+      margin-bottom: 1px;
+    }
+  }
+
+  .expression-term-validation-loading {
+    color: var(--react-autoql-text-color-placeholder);
+  }
+
+  .expression-term-validation-error {
+    color: var(--react-autoql-warning-color);
+  }
+
+  .expression-term-validation-valid {
+    color: var(--react-autoql-success-color);
+  }
 }

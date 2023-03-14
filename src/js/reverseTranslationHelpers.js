@@ -176,9 +176,9 @@ export const getTimeRangeFromDateArray = (dates) => {
   } else if (dates.length === 2) {
     // Range of dates. Determine what the interval is
     const range = dayjs(dates[1]).diff(dayjs(dates[0]), 'day')
-    if (range < 7) {
+    if (range <= 1) {
       return 'DAY'
-    } else if (range === 7) {
+    } else if (range <= 7) {
       return 'WEEK'
     } else if (range <= 31) {
       return 'MONTH'

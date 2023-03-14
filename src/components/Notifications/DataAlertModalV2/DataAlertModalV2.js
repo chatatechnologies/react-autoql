@@ -25,6 +25,7 @@ import { withTheme } from '../../../theme'
 import { DATA_ALERT_CONDITION_TYPES } from '../../../js/Constants'
 
 import './DataAlertModalV2.scss'
+import NotificationItem from '../NotificationItem/NotificationItem'
 
 class DataAlertModalV2 extends React.Component {
   constructor(props) {
@@ -32,6 +33,7 @@ class DataAlertModalV2 extends React.Component {
 
     this.COMPONENT_KEY = uuid()
     this.NEW_NOTIFICATION_MODAL_ID = uuid()
+    this.SAMPLE_CREATED_AT = new Date()
     this.TOOLTIP_ID = `react-autoql-data-alert-modal-tooltip-${this.COMPONENT_KEY}`
     this.CONDITIONS_STEP = 'CONDITIONS'
     this.FREQUENCY_STEP = 'FREQUENCY'
@@ -41,12 +43,14 @@ class DataAlertModalV2 extends React.Component {
 
     this.SUPPORTED_CONDITION_TYPES = this.getSupportedConditionTypes(props.queryResponse)
 
+    const needsConditions = this.SUPPORTED_CONDITION_TYPES?.includes(this.COMPARE_TYPE)
+
     this.steps = [
       { title: 'Configure Timing', value: this.FREQUENCY_STEP },
       { title: 'Compose Message', value: this.MESSAGE_STEP },
     ]
 
-    if (this.SUPPORTED_CONDITION_TYPES?.includes(this.COMPARE_TYPE)) {
+    if (needsConditions) {
       this.steps.unshift({ title: 'Set Up Conditions', value: this.CONDITIONS_STEP })
     }
 
@@ -359,6 +363,20 @@ class DataAlertModalV2 extends React.Component {
     this.setState(state)
   }
 
+  isFinishBtnDisabled = () => {
+    const lastStep = this.steps.length - 1
+    const hasUnfinishedStep = !!this.steps.find((s, i) => {
+      if (i === lastStep) {
+        return false
+      }
+      return !this.state.completedSections[i]
+    })
+
+    const isLastStepReady = this.isStepReady(lastStep)
+
+    return hasUnfinishedStep || !isLastStepReady
+  }
+
   renderNextBtn = () => {
     const isLastStep = this.state.activeStep === this.steps.length - 1
     if (isLastStep) {
@@ -367,7 +385,7 @@ class DataAlertModalV2 extends React.Component {
           type='primary'
           loading={this.state.isSavingDataAlert}
           onClick={this.onDataAlertSave}
-          disabled={!!this.steps.find((s, i) => !this.state.completedSections[i])}
+          disabled={this.isFinishBtnDisabled()}
           tooltipID={this.TOOLTIP_ID}
         >
           {'Finish & Save'}
@@ -462,7 +480,7 @@ class DataAlertModalV2 extends React.Component {
         <Input
           ref={(r) => (this.alertTitleInput = r)}
           className='react-autoql-notification-display-name-input'
-          placeholder='Add an Alert Title'
+          placeholder='eg. "Budget alert!"'
           icon='title'
           maxLength='50'
           value={this.state.titleInput}
@@ -480,7 +498,7 @@ class DataAlertModalV2 extends React.Component {
         <div className='react-autoql-input-label'>Notification message (optional)</div>
         <Input
           className='react-autoql-notification-message-input'
-          placeholder='This message will be visible when a notification is sent.'
+          placeholder='eg. "You have spent 80% of your budget for the month."'
           area
           maxLength='200'
           value={this.state.messageInput}
@@ -576,11 +594,44 @@ class DataAlertModalV2 extends React.Component {
     )
   }
 
+  renderDataAlertPreview = () => {
+    return (
+      <div className='data-alert-preview'>
+        <NotificationItem
+          authentication={this.props.authentication}
+          notification={{
+            id: `preview-${this.COMPONENT_KEY}`,
+            title: this.state.titleInput || (
+              <span>
+                <em>{'[Notification Title]'}</em>
+              </span>
+            ),
+            message: this.state.messageInput,
+            created_at: this.SAMPLE_CREATED_AT.toISOString(),
+            state: 'UNACKNOWLEDGED',
+            data_return_query: this.props.queryResponse?.data?.data?.text,
+            expanded: false, // this.state.isPreviewExpanded,
+          }}
+          // onExpandCallback={() => this.setState({ isPreviewExpanded: true })}
+          // onCollapseCallback={() => this.setState({ isPreviewExpanded: false })}
+          // activeNotificationData={this.props.queryResponse?.data}
+          // showNotificationDetails={true}
+        />
+      </div>
+    )
+  }
+
   renderComposeMessageStep = (active) => {
     return (
-      <div className={`react-autoql-data-alert-modal-step ${active ? '' : 'hidden'}`}>
-        {this.renderDataAlertNameInput()}
-        {this.renderDataAlertMessageInput()}
+      <div className={`react-autoql-data-alert-modal-step compose-message ${active ? '' : 'hidden'}`}>
+        <div className='form-section'>
+          {this.renderDataAlertNameInput()}
+          {this.renderDataAlertMessageInput()}
+        </div>
+        <div className='preview-section'>
+          <div className='react-autoql-input-label'>Preview</div>
+          {this.renderDataAlertPreview()}
+        </div>
       </div>
     )
   }
@@ -668,7 +719,7 @@ class DataAlertModalV2 extends React.Component {
           onClose={this.props.onClose}
           confirmOnClose={true}
           enableBodyScroll
-          width='850px'
+          width='1000px'
           footer={this.renderFooter()}
         >
           {/* We must render a new <Tooltip/> inside of modals */}

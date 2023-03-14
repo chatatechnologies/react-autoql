@@ -2,6 +2,8 @@
   height: 400px;
   max-height: 90vh;
   padding: 0 40px;
+  display: flex;
+  flex-direction: column;
 
   .react-autoql-data-alert-modal-footer {
     display: 'flex';
@@ -11,7 +13,36 @@
   .react-autoql-data-alert-modal-step {
     font-weight: 400;
     font-size: 15px;
-    padding-top: 20px;
+    padding-top: 15px;
+
+    &.compose-message {
+      display: flex;
+
+      .form-section,
+      .preview-section {
+        flex: 1;
+      }
+
+      .preview-section {
+        display: flex;
+        flex-direction: column;
+        margin-left: 20px;
+
+        .data-alert-preview {
+          flex: 1;
+          padding: 20px;
+          border: 1px solid var(--react-autoql-border-color);
+          border-radius: 2px;
+          background: var(--react-autoql-background-color-primary);
+          overflow: auto;
+          pointer-events: none !important;
+
+          .react-autoql-notification-extra-content {
+            display: none !important;
+          }
+        }
+      }
+    }
 
     .data-alert-modal-condition-title {
       margin-top: 20px;
@@ -43,6 +74,7 @@
     }
 
     &.hidden {
+      position: absolute;
       display: none;
     }
   }

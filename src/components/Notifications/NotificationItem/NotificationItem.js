@@ -1,6 +1,5 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
-import advancedFormat from 'dayjs/plugin/advancedFormat'
 import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEmpty from 'lodash.isempty'
@@ -11,7 +10,8 @@ import { QueryOutput } from '../../QueryOutput'
 import { Button } from '../../Button'
 import { ExpressionBuilderSimple } from '../ExpressionBuilderSimple'
 import { VizToolbar } from '../../VizToolbar'
-import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
+import { hideTooltips } from '../../Tooltip'
+import { ErrorBoundary } from '../../../containers/ErrorHOC'
 
 import {
   dismissNotification,
@@ -20,15 +20,11 @@ import {
   fetchRule,
 } from '../../../js/notificationService'
 import dayjs from '../../../js/dayjsWithPlugins'
-import { capitalizeFirstChar } from '../../../js/Util'
-
+import { capitalizeFirstChar, isNumber } from '../../../js/Util'
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
 import './NotificationItem.scss'
-import { hideTooltips } from '../../Tooltip'
-
-dayjs.extend(advancedFormat)
 
 export default class NotificationItem extends React.Component {
   COMPONENT_KEY = uuid()
@@ -46,7 +42,8 @@ export default class NotificationItem extends React.Component {
     onDismissSuccessCallback: PropTypes.func,
     onErrorCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
-    enableAjaxTableData: PropTypes.bool.isRequired,
+    enableAjaxTableData: PropTypes.bool,
+    onClick: PropTypes.func,
   }
 
   static defaultProps = {
@@ -61,6 +58,7 @@ export default class NotificationItem extends React.Component {
     onDeleteSuccessCallback: () => {},
     onDismissSuccessCallback: () => {},
     onErrorCallback: () => {},
+    onClick: () => {},
   }
 
   state = {
@@ -160,8 +158,16 @@ export default class NotificationItem extends React.Component {
   }
 
   formatTimestamp = (timestamp) => {
-    const time = dayjs.unix(timestamp).format('h:mma')
-    const day = dayjs.unix(timestamp).format('MM-DD-YY')
+    let dateDayJS
+    if (isNumber(timestamp)) {
+      dateDayJS = dayjs.unix(timestamp)
+    } else {
+      dateDayJS = dayjs(timestamp)
+    }
+
+    const time = dateDayJS.format('h:mma')
+    const day = dateDayJS.format('MM-DD-YY')
+
     const today = dayjs().format('MM-DD-YY')
     const yesterday = dayjs().subtract(1, 'd').format('MM-DD-YY')
 
@@ -169,10 +175,10 @@ export default class NotificationItem extends React.Component {
       return `Today at ${time}`
     } else if (day === yesterday) {
       return `Yesterday at ${time}`
-    } else if (dayjs().isSame(timestamp, 'year')) {
-      return `${dayjs.unix(timestamp).format('MMMM Do')} at ${time}`
+    } else if (dayjs().isSame(dateDayJS, 'year')) {
+      return `${dateDayJS.format('MMMM Do')} at ${time}`
     }
-    return `${dayjs.unix(timestamp).format('MMMM Do, YYYY')} at ${time}`
+    return `${dateDayJS.format('MMMM Do, YYYY')} at ${time}`
   }
 
   renderAlertColorStrip = () => <div className='react-autoql-notification-alert-strip' />
@@ -188,8 +194,8 @@ export default class NotificationItem extends React.Component {
         <div className='react-autoql-notification-display-name-container'>
           <div className='react-autoql-notification-display-name'>{notification.title}</div>
           <div className='react-autoql-notification-description'>{notification.message}</div>
-          <div className='react-autoql-notification-timestamp'>
-            <span>
+          <div className='react-autoql-notification-timestamp-container'>
+            <span className='react-autoql-notification-timestamp'>
               <Icon type='calendar' /> {this.formatTimestamp(notification.created_at)}
             </span>
           </div>
@@ -334,6 +340,8 @@ export default class NotificationItem extends React.Component {
 
   render = () => {
     const { notification } = this.props
+
+    console.log({ activeNotificationData: this.props.activeNotificationData, notification })
 
     return (
       <ErrorBoundary>

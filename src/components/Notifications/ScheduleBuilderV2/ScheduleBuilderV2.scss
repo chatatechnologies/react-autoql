@@ -1,4 +1,9 @@
 .notification-frequency-step {
+  .schedule-builder-query-text {
+    font-style: italic;
+    color: var(--react-autoql-accent-color);
+  }
+
   .schedule-builder-at-connector {
     padding-bottom: 8px;
     padding-right: 8px;

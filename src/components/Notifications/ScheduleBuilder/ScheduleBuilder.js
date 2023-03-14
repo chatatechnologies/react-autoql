@@ -114,7 +114,7 @@ export default class ScheduleBuilder extends React.Component {
   renderTimezoneComponent = () => {
     return (
       <div>
-        <span>Time zone: </span>
+        {/* <span>Time zone: </span> */}
         <TimezoneSelector onChange={this.onTimezoneChange} defaultSelection={this.state.timezone} />
       </div>
     )

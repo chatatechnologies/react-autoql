@@ -21,8 +21,8 @@
 
 .react-autoql-input-label {
   margin: 0;
-  padding-bottom: 5px;
+  padding-bottom: 3px;
   font-size: 0.875em;
-  color: var(--react-autoql-text-color-placeholder);
-  // font-weight: 600;
+  color: var(--react-autoql-text-color-primary);
+  opacity: 0.8;
 }

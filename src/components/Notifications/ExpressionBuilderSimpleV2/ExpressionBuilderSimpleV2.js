@@ -165,6 +165,8 @@ export default class ExpressionBuilderSimpleV2 extends React.Component {
         ) : (
           <RuleSimpleV2
             ref={(r) => (this.ruleRef = r)}
+            authentication={this.props.authentication}
+            autoQLConfig={this.props.autoQLConfig}
             ruleId={_get(this.state.expression, 'id', uuid())}
             onUpdate={this.onRuleUpdate}
             initialData={this.state.expression}
@@ -186,6 +188,7 @@ export default class ExpressionBuilderSimpleV2 extends React.Component {
           ) : (
             <RuleSimpleV2
               authentication={this.props.authentication}
+              autoQLConfig={this.props.autoQLConfig}
               ref={(r) => (this.ruleRef = r)}
               ruleId={_get(this.state.expression, 'id', uuid())}
               onUpdate={this.onRuleUpdate}
