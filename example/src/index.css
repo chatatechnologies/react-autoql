@@ -66,7 +66,13 @@ body {
   text-align: center;
   height: auto;
 }
-
+@media (max-width: 479px) {
+	.test-page-container {
+		padding: 20px;
+		text-align: center;
+		height: auto;
+	  }
+}
 .ui-overlay {
   width: 100%;
   height: 100vh;
