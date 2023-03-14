@@ -3,12 +3,13 @@ import PropTypes from 'prop-types'
 import { Popover } from 'react-tiny-popover'
 import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
-
+import { Icon } from '../Icon'
 import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
 
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Select.scss'
+import { isMobile } from 'react-device-detect'
 
 export default class Select extends React.Component {
   ID = uuid()
@@ -20,6 +21,7 @@ export default class Select extends React.Component {
     value: PropTypes.string,
     label: PropTypes.string,
     size: PropTypes.string,
+    isDataMessenger: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -30,6 +32,7 @@ export default class Select extends React.Component {
     label: null,
     size: 'large',
     style: {},
+    isDataMessenger: false,
   }
 
   state = {
@@ -66,17 +69,25 @@ export default class Select extends React.Component {
         data-offset={10}
         data-delay-show={500}
       >
-        {_get(
-          this.props.options.find((option) => option.value === this.props.value),
-          'label',
-        ) ||
+        {isMobile ? (
+          <span style={this.props.selectPlaceholderStyle || { color: 'rgba(0,0,0,0.4)', fontStyle: 'italic' }}>
+            {this.props.selectionPlaceholder || 'Select an item'}
+          </span>
+        ) : (
+          _get(
+            this.props.options.find((option) => option.value === this.props.value),
+            'label',
+          ) ||
           _get(
             this.props.options.find((option) => option.value === this.props.value),
             'value',
-            <span style={{ color: 'rgba(0,0,0,0.4)', fontStyle: 'italic' }}>
+            <span style={this.props.selectPlaceholderStyle || { color: 'rgba(0,0,0,0.4)', fontStyle: 'italic' }}>
               {this.props.selectionPlaceholder || 'Select an item'}
             </span>,
-          )}
+          )
+        )}
+
+        {this.props.isDataMessenger ? <Icon type='dropdown'></Icon> : null}
       </div>
     )
   }
@@ -85,7 +96,7 @@ export default class Select extends React.Component {
     return (
       <div
         className={`react-autoql-select-popup-container ${this.props.popupClassname || ''}`}
-        style={{ width: this.props.style.width }}
+        style={{ width: this.props.isDataMessenger ? '100vw' : this.props.style.width }}
       >
         {!this.props.tooltipID && (
           <Tooltip id={`select-tooltip-${this.ID}`} className='react-autoql-tooltip' effect='solid' delayShow={500} />
