@@ -4,106 +4,48 @@ import { v4 as uuid } from 'uuid'
 
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { Select } from '../../Select'
+import { Icon } from '../../Icon'
 import { TimezoneSelector } from '../../TimezoneSelector'
 import { getTimeRangeFromRT } from '../../../js/reverseTranslationHelpers'
 
 import { WEEKDAY_NAMES_MON } from '../../../js/Constants'
+import {
+  PERIODIC_FREQUENCY,
+  CONTINUOUS_FREQUENCY,
+  DATA_ALERT_FREQUENCY_TYPE_OPTIONS,
+  SCHEDULE_INTERVAL_OPTIONS,
+  RESET_PERIOD_OPTIONS,
+  CHECK_FREQUENCY_OPTIONS,
+  MONTH_DAY_SELECT_OPTIONS,
+  COMPARE_TYPE,
+  EXISTS_TYPE,
+} from '../DataAlertConstants'
 
 import './ScheduleBuilderV2.scss'
-
-const DATA_ALERT_FREQUENCY_TYPE_OPTIONS = {
-  PERIODIC: {
-    label: 'at the following regular intervals:',
-    listLabel: 'at the following regular intervals',
-  },
-  CONTINUOUS: {
-    label: 'as soon as it happens.',
-    listLabel: 'as soon as it happens',
-  },
-}
-
-const SCHEDULE_INTERVAL_OPTIONS = {
-  DAY: {
-    displayName: <span>Daily</span>,
-  },
-  WEEK: {
-    displayName: <span>Weekly</span>,
-  },
-  MONTH: {
-    displayName: <span>Monthly</span>,
-  },
-  YEAR: {
-    displayName: <span>Yearly</span>,
-  },
-}
-
-const RESET_PERIOD_OPTIONS = {
-  DAY: {
-    displayName: (
-      <span>
-        At most once <strong>every 24 hours</strong>
-      </span>
-    ),
-  },
-  WEEK: {
-    displayName: (
-      <span>
-        At most <strong>once a week</strong>
-      </span>
-    ),
-  },
-  MONTH: {
-    displayName: (
-      <span>
-        At most <strong>once a month</strong>
-      </span>
-    ),
-  },
-  YEAR: {
-    displayName: (
-      <span>
-        At most <strong>once a year</strong>
-      </span>
-    ),
-  },
-  NONE: {
-    displayName: (
-      <span>
-        <strong>Every time</strong> it happens
-      </span>
-    ),
-  },
-}
-
-const MONTH_DAY_SELECT_OPTIONS = {
-  FIRST: (
-    <span>
-      on the <strong>first day</strong>
-    </span>
-  ),
-  LAST: (
-    <span>
-      on the <strong>last day</strong>
-    </span>
-  ),
-}
+import { TimePicker } from '../../TimePicker'
 
 export default class ScheduleBuilderV2 extends React.Component {
   constructor(props) {
     super(props)
 
     this.COMPONENT_KEY = uuid()
+    this.DEFAULT_CHECK_FREQUENCY_INDEX = 3 // index 3 -> "5 mins"
+    this.DEFAULT_RESET_PERIOD_SELECT_VALUE = 'MONTH'
+    this.DEFAULT_WEEKDAY_SELECT_VALUE = 'Friday'
+    this.DEFAULT_MONTH_DAY_SELECT_VALUE = 'LAST'
+    this.DEFAULT_TIME_SELECT_VALUE = '5:00pm'
 
-    const defaultResetPeriod = this.getResetPeriodSelectValue()
+    const timeRange = getTimeRangeFromRT(props.queryResponse)
 
     this.state = {
-      resetPeriodSelectValue: props.dataAlert?.reset_period ?? defaultResetPeriod,
-      checkFrequencySelectValue: props.dataAlert?.check_frequency ?? defaultResetPeriod,
-      frequencyType: props.dataAlert?.notification_type ?? Object.keys(DATA_ALERT_FREQUENCY_TYPE_OPTIONS)[0],
+      timeRange: props.dataAlert?.reset_period ?? timeRange,
+      resetPeriodSelectValue: props.dataAlert?.reset_period ?? timeRange ?? this.DEFAULT_RESET_PERIOD_SELECT_VALUE,
+      checkFrequencySelectValue: props.dataAlert?.check_frequency ?? this.DEFAULT_CHECK_FREQUENCY_INDEX,
+      frequencyType: props.dataAlert?.notification_type ?? PERIODIC_FREQUENCY,
       timezone: props.dataAlert?.time_zone,
-      monthDaySelectValue: 'LAST',
-      intervalTimeHour: '12',
-      weekDaySelectValue: 'Friday',
+      monthDaySelectValue: this.DEFAULT_MONTH_DAY_SELECT_VALUE,
+      intervalTimeSelectValue: this.DEFAULT_TIME_SELECT_VALUE,
+      weekDaySelectValue: this.DEFAULT_WEEKDAY_SELECT_VALUE,
     }
   }
 
@@ -116,7 +58,7 @@ export default class ScheduleBuilderV2 extends React.Component {
   }
 
   static defaultProps = {
-    conditionType: 'EXISTS',
+    conditionType: EXISTS_TYPE,
     dataAlert: undefined,
     onChange: () => {},
     onCompletedChange: () => {},
@@ -131,18 +73,29 @@ export default class ScheduleBuilderV2 extends React.Component {
     if (this.isComplete() !== this.isComplete(prevState)) {
       this.props.onCompletedChange(this.isComplete())
     }
+
+    if (this.props.queryResponse?.data?.data?.text !== prevProps.queryResponse?.data?.data?.text) {
+      this.setState({
+        timeRange: getTimeRangeFromRT(props.queryResponse),
+      })
+    }
+  }
+
+  shouldRenderResetPeriodSelector = (prevState) => {
+    const state = prevState ?? this.state
+    return this.props.conditionType === COMPARE_TYPE && !state.timeRange
   }
 
   isComplete = (prevState) => {
     const state = prevState ?? this.state
 
-    if (state.frequencyType === 'PERIODIC') {
-      return !!state.resetPeriodSelectValue
-    } else if (state.frequencyType === 'CONTINUOUS') {
-      return true
+    if (this.shouldRenderResetPeriodSelector(prevState) && !state.resetPeriodSelectValue) {
+      return false
+    } else if (this.shouldRenderCheckFrequencySelector(prevState) && !state.checkFrequencySelectValue) {
+      return false
     }
 
-    return false
+    return true
   }
 
   getData = () => {
@@ -160,163 +113,19 @@ export default class ScheduleBuilderV2 extends React.Component {
     }
   }
 
-  // Reset period is only relevant for "continuous" type data alerts, not scheduled alerts
-  getResetPeriodSelectValue = () => {
-    const { dataAlert, queryResponse } = this.props
-    if (!dataAlert) {
-      return getTimeRangeFromRT(queryResponse)
-    }
-
-    if (dataAlert.notification_type === 'CONTINUOUS') {
-      return undefined
-    }
-
-    return RESET_PERIOD_OPTIONS[dataAlert.reset_period]
-  }
-
-  getResetPeriod = (resetPeriodSelectValue) => {
-    if (resetPeriodSelectValue === 'Only once per day') {
-      return 'DAY'
-    } else if (resetPeriodSelectValue === 'Only once per month') {
-      return 'MONTH'
-    } else if (resetPeriodSelectValue === 'Only once per week') {
-      return 'WEEK'
-    } else if (resetPeriodSelectValue === 'Every time this happens') {
-      return 'CONTINUOUS'
-    }
-
-    return undefined
-  }
-
-  renderFrequencyOptions = () => {
-    if (this.state.frequencyType === 'PERIODIC') {
-      return (
+  timezoneSelector = () => {
+    return (
+      <div className='react-autoql-data-alert-frequency-option schedule-builder-timezone-section'>
         <div>
-          <div className='react-autoql-data-alert-frequency-options-container'>
-            <div>
-              <div className='react-autoql-input-label'>How often</div>
-              <Select
-                options={Object.keys(SCHEDULE_INTERVAL_OPTIONS).map((value) => {
-                  return {
-                    value,
-                    label: SCHEDULE_INTERVAL_OPTIONS[value].displayName,
-                  }
-                })}
-                value={this.state.resetPeriodSelectValue ?? Object.keys(SCHEDULE_INTERVAL_OPTIONS)[0]}
-                onChange={(option) => this.setState({ resetPeriodSelectValue: option })}
-              />
-            </div>
-            {this.state.resetPeriodSelectValue === 'MONTH' && (
-              <div>
-                <Select
-                  value={this.state.monthDaySelectValue}
-                  onChange={(monthDaySelectValue) => this.setState({ monthDaySelectValue })}
-                  options={Object.keys(MONTH_DAY_SELECT_OPTIONS).map((value) => {
-                    return {
-                      value,
-                      label: MONTH_DAY_SELECT_OPTIONS[value],
-                    }
-                  })}
-                />
-              </div>
-            )}
-            {this.state.resetPeriodSelectValue === 'WEEK' && (
-              <div>
-                <Select
-                  value={this.state.weekDaySelectValue}
-                  onChange={(weekDaySelectValue) => this.setState({ weekDaySelectValue })}
-                  options={WEEKDAY_NAMES_MON.map((value) => {
-                    return {
-                      value,
-                      label: (
-                        <span>
-                          on <strong>{value}</strong>
-                        </span>
-                      ),
-                    }
-                  })}
-                />
-              </div>
-            )}
-            <div className='schedule-builder-at-connector'>
-              <span>at</span>
-            </div>
-            <div>
-              {/* <div className='react-autoql-input-label'>Time</div> */}
-              <Select
-                options={[{ value: '12', label: '12:00am' }]}
-                value={this.state.intervalTimeHour}
-                onChange={(intervalTimeHour) => this.setState({ intervalTimeHour })}
-              />
-            </div>
-            <div className='schedule-builder-timezone-section'>{this.renderTimezoneComponent()}</div>
-          </div>
+          <div className='react-autoql-input-label'>Time zone</div>
+          <TimezoneSelector
+            onChange={(timezone) => this.setState({ timezone: timezone.value })}
+            defaultSelection={this.state.timezone}
+            popoverParentElement={this.props.popoverParentElement}
+            popoverBoundaryElement={this.props.popoverBoundaryElement}
+          />
         </div>
-      )
-    } else if (this.state.frequencyType === 'CONTINUOUS') {
-      return (
-        <>
-          <div className='react-autoql-input-label'>How often</div>
-          <Select
-            options={Object.keys(RESET_PERIOD_OPTIONS).map((value) => {
-              return {
-                value,
-                label: RESET_PERIOD_OPTIONS[value].displayName,
-              }
-            })}
-            value={this.state.resetPeriodSelectValue ?? Object.keys(RESET_PERIOD_OPTIONS)[0]}
-            onChange={(option) => this.setState({ resetPeriodSelectValue: option })}
-          />
-        </>
-      )
-    }
-  }
-
-  onTimezoneChange = (timezone) => {
-    this.setState({ timezone: timezone.value })
-  }
-
-  renderTimezoneComponent = () => {
-    return (
-      <div>
-        <div className='react-autoql-input-label'>Time zone</div>
-        <TimezoneSelector
-          onChange={this.onTimezoneChange}
-          defaultSelection={this.state.timezone}
-          popoverParentElement={this.props.popoverParentElement}
-          popoverBoundaryElement={this.props.popoverBoundaryElement}
-        />
       </div>
-    )
-  }
-
-  renderFrequencyTypeSelector = () => {
-    const query = this.props.queryResponse?.data?.data?.text
-    const queryText = query ? <span className='schedule-builder-query-text'>"{query}"</span> : 'this query'
-
-    let helperText = <span>If new data is detected for {queryText}, you'll be notified</span>
-    if (this.props.conditionType === 'COMPARE') {
-      helperText = <span>If the condition for this Data Alert is met, you'll be notified</span>
-    }
-
-    return (
-      <>
-        <span>
-          {helperText}
-          <Select
-            options={Object.keys(DATA_ALERT_FREQUENCY_TYPE_OPTIONS).map((key) => {
-              return {
-                value: key,
-                label: DATA_ALERT_FREQUENCY_TYPE_OPTIONS[key]?.label,
-                listLabel: DATA_ALERT_FREQUENCY_TYPE_OPTIONS[key]?.listLabel,
-              }
-            })}
-            value={this.state.frequencyType ?? Object.keys(DATA_ALERT_FREQUENCY_TYPE_OPTIONS)[0]}
-            onChange={(type) => this.setState({ frequencyType: type })}
-            outlined={false}
-          />
-        </span>
-      </>
     )
   }
 
@@ -350,13 +159,233 @@ export default class ScheduleBuilderV2 extends React.Component {
     return <div>Query: {queryText}</div>
   }
 
+  // Reset period selector is only visible for "continuous" type data alerts, not scheduled alerts
+  // For scheduled alerts, the reset period will be the same as the check frequency
+  // getResetPeriodSelectValue = () => {
+  //   const { dataAlert } = this.props
+  //   if (!dataAlert) {
+  //     return this.state.timeRange
+  //   }
+
+  //   if (dataAlert.notification_type === PERIODIC_FREQUENCY) {
+  //     return undefined
+  //   }
+
+  //   return RESET_PERIOD_OPTIONS[dataAlert.reset_period]
+  // }
+
+  scheduleIntervalSelector = () => {
+    return (
+      <div className='react-autoql-data-alert-frequency-option flex-1'>
+        <div className='react-autoql-input-label'>Send a notification</div>
+        <Select
+          options={Object.keys(SCHEDULE_INTERVAL_OPTIONS).map((value) => ({
+            value,
+            label: SCHEDULE_INTERVAL_OPTIONS[value].displayName,
+          }))}
+          value={this.state.resetPeriodSelectValue}
+          onChange={(option) => this.setState({ resetPeriodSelectValue: option })}
+        />
+      </div>
+    )
+  }
+
+  dayOfWeekSelector = () => {
+    return (
+      <div className='react-autoql-data-alert-frequency-option'>
+        <Select
+          value={this.state.weekDaySelectValue}
+          onChange={(weekDaySelectValue) => this.setState({ weekDaySelectValue })}
+          options={WEEKDAY_NAMES_MON.map((value) => ({
+            value,
+            label: (
+              <span>
+                on <strong>{value}</strong>
+              </span>
+            ),
+          }))}
+        />
+      </div>
+    )
+  }
+
+  dayOfMonthSelector = () => {
+    return (
+      <div className='react-autoql-data-alert-frequency-option'>
+        <Select
+          value={this.state.monthDaySelectValue}
+          onChange={(monthDaySelectValue) => this.setState({ monthDaySelectValue })}
+          options={Object.keys(MONTH_DAY_SELECT_OPTIONS).map((value) => ({
+            value,
+            label: MONTH_DAY_SELECT_OPTIONS[value],
+          }))}
+        />
+      </div>
+    )
+  }
+
+  dayOfWeekOrMonthSelector = () => {
+    switch (this.state.resetPeriodSelectValue) {
+      case 'MONTH': {
+        return this.dayOfMonthSelector()
+      }
+      case 'WEEK': {
+        return this.dayOfWeekSelector()
+      }
+    }
+
+    return null
+  }
+
+  hourMinSelector = () => {
+    return (
+      <>
+        <div className='react-autoql-data-alert-frequency-option schedule-builder-at-connector'>
+          <span>at</span>
+        </div>
+        <div className='react-autoql-data-alert-frequency-option'>
+          {/* <div className='react-autoql-input-label'>Time</div> */}
+          <TimePicker
+            value={this.state.intervalTimeSelectValue}
+            onChange={(timeObj) => this.setState({ intervalTimeSelectValue: timeObj.value })}
+          />
+        </div>
+      </>
+    )
+  }
+
+  shouldRenderCheckFrequencySelector = (prevState) => {
+    const state = prevState ?? this.state
+    return state.frequencyType === CONTINUOUS_FREQUENCY
+  }
+
+  checkFrequencySelector = () => {
+    if (this.shouldRenderCheckFrequencySelector()) {
+      let tooltip = 'How often should we run the query to check for new data?'
+      if (this.props.conditionType === COMPARE_TYPE) {
+        tooltip = `How often should we run the query to check if the conditions are met?`
+      }
+
+      return (
+        <div className='react-autoql-data-alert-frequency-option check-frequency'>
+          <div className='react-autoql-input-label'>
+            Check conditions every <Icon type='info' data-for={this.props.tooltipID} data-tip={tooltip} />
+          </div>
+          <Select
+            options={CHECK_FREQUENCY_OPTIONS.map((mins, i) => ({
+              value: i,
+              label: (
+                <span>
+                  {CHECK_FREQUENCY_OPTIONS[i]} min{mins > 1 ? 's' : ''}
+                </span>
+              ),
+            }))}
+            value={this.state.checkFrequencySelectValue}
+            onChange={(value) => this.setState({ checkFrequencySelectValue: value })}
+          />
+        </div>
+      )
+    }
+
+    return null
+  }
+
+  resetPeriodSelector = () => {
+    if (this.shouldRenderResetPeriodSelector()) {
+      return (
+        <div className='react-autoql-data-alert-frequency-option flex-2'>
+          <div className='react-autoql-input-label'>Send a notification </div>
+          <Select
+            options={Object.keys(RESET_PERIOD_OPTIONS).map((value) => ({
+              value,
+              label: RESET_PERIOD_OPTIONS[value].displayName,
+            }))}
+            value={this.state.resetPeriodSelectValue}
+            onChange={(option) => this.setState({ resetPeriodSelectValue: option })}
+          />
+        </div>
+      )
+    }
+
+    return null
+  }
+
+  periodicFrequencyOptions = () => {
+    return (
+      <div>
+        <div className='react-autoql-data-alert-frequency-options-container'>
+          {this.scheduleIntervalSelector()}
+          {this.dayOfWeekOrMonthSelector()}
+          {this.hourMinSelector()}
+          {this.timezoneSelector()}
+        </div>
+      </div>
+    )
+  }
+
+  continuousFrequencyOptions = () => {
+    return (
+      <div className='react-autoql-data-alert-frequency-options-container continuous-alert'>
+        {this.checkFrequencySelector()}
+        {this.resetPeriodSelector()}
+      </div>
+    )
+  }
+
+  getConditionStatement = () => {
+    const { expressionRef } = this.props
+    if (expressionRef) {
+      return expressionRef.getConditionStatement()
+    }
+
+    return 'the Data Alert is triggered'
+  }
+
+  frequencyTypeSection = () => {
+    const query = this.props.queryResponse?.data?.data?.text
+    const queryText = query ? <em>"{query}"</em> : 'this query'
+
+    return (
+      <span>
+        {this.props.conditionType === EXISTS_TYPE ? (
+          <span>If new data is detected for {queryText},&nbsp;&nbsp;you'll be notified</span>
+        ) : (
+          <span>If {this.getConditionStatement()},&nbsp;&nbsp;you'll be notified</span>
+        )}
+        <Select
+          options={Object.keys(DATA_ALERT_FREQUENCY_TYPE_OPTIONS).map((key) => ({
+            value: key,
+            label: DATA_ALERT_FREQUENCY_TYPE_OPTIONS[key]?.label,
+            listLabel: DATA_ALERT_FREQUENCY_TYPE_OPTIONS[key]?.listLabel,
+          }))}
+          value={this.state.frequencyType}
+          onChange={(type) => this.setState({ frequencyType: type })}
+          outlined={false}
+        />
+      </span>
+    )
+  }
+
+  frequencyOptionsSection = () => {
+    switch (this.state.frequencyType) {
+      case PERIODIC_FREQUENCY: {
+        return this.periodicFrequencyOptions()
+      }
+      case CONTINUOUS_FREQUENCY: {
+        return this.continuousFrequencyOptions()
+      }
+    }
+
+    return null
+  }
+
   render = () => {
     return (
       <ErrorBoundary>
-        <div className='notification-frequency-step' data-test='schedule-builder'>
+        <div className='data-alert-schedule-builder-step' data-test='schedule-builder'>
+          <div className='frequency-type-container'>{this.frequencyTypeSection()}</div>
+          <div className='frequency-settings-container'>{this.frequencyOptionsSection()}</div>
           {/* <div className='schedule-builder-query-container'>{this.renderQuery()}</div> */}
-          <div className='frequency-type-container'>{this.renderFrequencyTypeSelector()}</div>
-          <div className='frequency-settings-container'>{this.renderFrequencyOptions()}</div>
         </div>
       </ErrorBoundary>
     )

@@ -341,8 +341,6 @@ export default class NotificationItem extends React.Component {
   render = () => {
     const { notification } = this.props
 
-    console.log({ activeNotificationData: this.props.activeNotificationData, notification })
-
     return (
       <ErrorBoundary>
         <div

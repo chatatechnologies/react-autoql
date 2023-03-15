@@ -122,6 +122,14 @@ export default class ExpressionBuilderSimpleV2 extends React.Component {
     this.props.onChange(this.isComplete(), this.isValid(), this.getJSON())
   }
 
+  getConditionStatement = () => {
+    if (this.ruleRef) {
+      return this.ruleRef?.getConditionStatement()
+    }
+
+    return
+  }
+
   getFirstQuery = (providedTerm) => {
     let term
 

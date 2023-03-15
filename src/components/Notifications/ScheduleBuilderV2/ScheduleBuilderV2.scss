@@ -1,13 +1,15 @@
-.notification-frequency-step {
-  .schedule-builder-query-text {
+.data-alert-schedule-builder-step {
+  .data-alert-condition-statement {
     font-style: italic;
-    color: var(--react-autoql-accent-color);
   }
+
+  // .schedule-builder-query-text {
+  //   font-style: italic;
+  //   color: var(--react-autoql-accent-color);
+  // }
 
   .schedule-builder-at-connector {
     padding-bottom: 8px;
-    padding-right: 8px;
-    padding-left: 3px;
   }
 
   .frequency-category-select {
@@ -36,9 +38,31 @@
   .frequency-settings-container {
     font-size: inherit;
 
+    &.continuous-alert .react-autoql-data-alert-frequency-option {
+      margin-bottom: 20px;
+      margin-right: 20px;
+    }
+
     .react-autoql-select {
-      width: 50%;
+      width: 100%;
       min-width: fit-content;
+    }
+
+    .react-autoql-data-alert-frequency-option {
+      margin-right: 10px;
+
+      &.check-frequency {
+        width: 300px;
+        max-width: 100%;
+      }
+
+      &.flex-1 {
+        flex: 1;
+      }
+
+      &.flex-2 {
+        flex: 2;
+      }
     }
   }
 
@@ -54,5 +78,6 @@
   .react-autoql-data-alert-frequency-options-container {
     display: flex;
     align-items: flex-end;
+    flex-wrap: wrap;
   }
 }

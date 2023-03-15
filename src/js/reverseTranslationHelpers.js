@@ -200,13 +200,10 @@ export const getTimeRangeFromRT = (queryResponse) => {
 export const getTimeFrameTextFromChunk = (chunk) => {
   const dates = chunk?.dateArray
   const timeRange = getTimeRangeFromDateArray(dates)
-  console.log({ chunk })
-  console.log({ timeRange })
+
   if (!timeRange) {
     return
   }
-
-  console.log({ dates })
 
   if (!dates || !dates.length) {
     return

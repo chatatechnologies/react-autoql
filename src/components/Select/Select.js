@@ -41,16 +41,30 @@ export default class Select extends React.Component {
 
   componentDidMount = () => {
     rebuildTooltips()
+    this.scrollToValue()
   }
 
   componentDidUpdate = (nextProps, nextState) => {
     if (this.state.isOpen !== nextState.isOpen) {
       hideTooltips()
       rebuildTooltips()
+
+      if (this.state.isOpen) {
+        this.scrollToValue()
+      }
     }
 
     if (this.props.value !== nextProps.value) {
       rebuildTooltips()
+    }
+  }
+
+  scrollToValue = () => {
+    const index = this.props.options?.findIndex((option) => this.props.value === option.value)
+    const element = document.querySelector(`#select-option-${this.ID}-${index}`)
+    console.log({ element, index, value: this.props.value, options: this.props.options })
+    if (element) {
+      element.scrollIntoView()
     }
   }
 
@@ -95,10 +109,11 @@ export default class Select extends React.Component {
           <Tooltip id={`select-tooltip-${this.ID}`} className='react-autoql-tooltip' effect='solid' delayShow={500} />
         )}
         <ul className='react-autoql-select-popup'>
-          {this.props.options.map((option) => {
+          {this.props.options.map((option, i) => {
             return (
               <li
-                key={`select-option-${this.ID}-${option.value}`}
+                id={`select-option-${this.ID}-${i}`}
+                key={`select-option-${this.ID}-${i}`}
                 className={`react-autoql-select-option${option.value === this.props.value ? ' active' : ''}`}
                 onClick={() => {
                   this.setState({ isOpen: false })

@@ -14,8 +14,8 @@ import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication, getAutoQLConfig } from '../../../props/defaults'
 import { fetchAutocomplete, runQueryOnly } from '../../../js/queryService'
-import { capitalizeFirstChar, isSingleValueResponse } from '../../../js/Util'
-import { DATA_ALERT_OPERATORS } from '../../../js/Constants'
+import { isNumber, isSingleValueResponse } from '../../../js/Util'
+import { DATA_ALERT_OPERATORS, EXISTS_TYPE, NUMBER_TERM_TYPE, QUERY_TERM_TYPE } from '../DataAlertConstants'
 import { constructRTArray, getTimeFrameTextFromChunk } from '../../../js/reverseTranslationHelpers'
 import { responseErrors } from '../../../js/errorMessages'
 
@@ -49,8 +49,7 @@ export default class RuleSimpleV2 extends React.Component {
       userSelection: initialData?.[0].user_selection,
       inputValue: initialData?.[0]?.term_value ?? queryResponse?.data?.data?.text ?? '',
       secondInputValue: initialData?.[1]?.term_value ?? '',
-      secondInputType: 'number',
-      secondTermType: this.supportedSecondTermTypes?.[0],
+      secondTermType: NUMBER_TERM_TYPE,
       secondQueryValidating: false,
       secondQueryValidated: false,
       secondQueryInvalid: false,
@@ -102,34 +101,31 @@ export default class RuleSimpleV2 extends React.Component {
     }
   }
 
-  parseJSON = (initialData) => {
-    // if (initialData.length === 1) {
-    //   console.log('initialData exists.. setting condition to EXISTS')
-    //   this.TERM_ID_1 = initialData[0].id
-    //   this.TERM_ID_2 = uuid()
-    //   this.setState({
-    //     inputValue: initialData[0].term_value,
-    //     selectedOperator: 'EXISTS',
-    //   })
-    // } else
-    if (initialData.length > 1) {
-      this.TERM_ID_1 = initialData[0].id
-      this.TERM_ID_2 = initialData[1].id
-      this.setState({
-        inputValue: initialData[0].term_value,
-        secondInputValue: `${initialData[1].term_value}`,
-        selectedOperator: initialData[0].condition,
-        secondTermType: initialData[1].term_type,
-      })
+  getConditionStatement = () => {
+    const queryText = this.getFormattedQueryText()?.toLowerCase()
+    const operatorText = DATA_ALERT_OPERATORS[this.state.selectedOperator]?.conditionText
+    let secondTermText = this.state.secondInputValue
+    if (this.state.secondTermType === QUERY_TERM_TYPE) {
+      secondTermText = `"${secondTermText}"`
     }
+
+    if (queryText && operatorText && secondTermText) {
+      return (
+        <span className='data-alert-condition-statement'>
+          "{queryText}" {operatorText} {secondTermText}
+        </span>
+      )
+    }
+
+    return
   }
 
   getJSON = () => {
-    // if (this.state.selectedOperator === 'EXISTS') {
+    // if (this.state.selectedOperator === EXISTS_TYPE) {
     //   return [
     //     {
     //       id: this.TERM_ID_1,
-    //       term_type: 'query',
+    //       term_type: QUERY_TERM_TYPE,
     //       condition: this.state.selectedOperator,
     //       term_value: this.state.inputValue,
     //       user_selection: this.state.userSelection,
@@ -141,14 +137,14 @@ export default class RuleSimpleV2 extends React.Component {
     return [
       {
         id: this.TERM_ID_1,
-        term_type: 'query',
+        term_type: QUERY_TERM_TYPE,
         condition: this.state.selectedOperator,
         term_value: this.state.inputValue,
         user_selection: this.state.userSelection,
       },
       {
         id: this.TERM_ID_2,
-        term_type: this.isNumerical(secondInputValue) ? 'constant' : 'query',
+        term_type: this.isNumerical(secondInputValue) ? NUMBER_TERM_TYPE : QUERY_TERM_TYPE,
         condition: 'TERMINATOR',
         term_value: this.isNumerical(secondInputValue) ? parseNum(secondInputValue) : secondInputValue,
         user_selection: this.state.userSelection,
@@ -158,7 +154,7 @@ export default class RuleSimpleV2 extends React.Component {
 
   isNumerical = (num) => {
     try {
-      if (typeof num === 'number') {
+      if (typeof num === NUMBER_TERM_TYPE) {
         return true
       }
 
@@ -182,7 +178,7 @@ export default class RuleSimpleV2 extends React.Component {
 
   isComplete = () => {
     if (
-      this.state.secondInputType === 'query' &&
+      this.state.secondInputType === QUERY_TERM_TYPE &&
       (this.state.secondQueryInvalid || this.state.secondQueryValidating || !this.state.secondQueryValidated)
     ) {
       return false
@@ -255,40 +251,26 @@ export default class RuleSimpleV2 extends React.Component {
 
   getSupportedSecondTermTypes = (queryResponse) => {
     if (isSingleValueResponse(queryResponse)) {
-      return ['constant']
+      return [NUMBER_TERM_TYPE]
     }
   }
 
-  switchSecondInputType = () => {
-    let secondInputType = 'number'
-    if (this.state.secondInputType === 'number') {
-      secondInputType = 'query'
+  switchSecondTermType = () => {
+    let secondTermType = NUMBER_TERM_TYPE
+    if (this.state.secondTermType === NUMBER_TERM_TYPE) {
+      secondTermType = QUERY_TERM_TYPE
     }
 
     this.cancelSecondValidation()
 
     this.setState({
-      secondInputType,
+      secondTermType,
       secondInputValue: '',
       secondQueryValidating: false,
       secondQueryValidated: false,
       secondQueryInvalid: false,
       secondQueryError: '',
     })
-  }
-
-  renderReadOnlyRule = () => {
-    const operator = this.state.selectedOperator
-    return (
-      <ErrorBoundary>
-        <div>
-          <span className='read-only-rule-term'>{`${capitalizeFirstChar(this.state.inputValue)}`}</span>
-          <span className='read-only-rule-term'>{DATA_ALERT_OPERATORS[operator].displayName}</span>
-          <span className='read-only-rule-term'>{capitalizeFirstChar(this.state.secondInputValue)}</span>
-          {this.props.andOrValue && <span className='read-only-rule-term'>{this.props.andOrValue}</span>}
-        </div>
-      </ErrorBoundary>
-    )
   }
 
   renderValidationError = () => {
@@ -387,10 +369,7 @@ export default class RuleSimpleV2 extends React.Component {
         this.onValidationResponse(response)
       })
       .catch((error) => {
-        console.log({ errorResponse: error?.response, errorMessage: error?.message })
-        if (error?.response?.data?.message === responseErrors.CANCELLED) {
-          console.log('CANCELLED... CONTINUE VALIDATING')
-        } else {
+        if (error?.response?.data?.message !== responseErrors.CANCELLED) {
           this.setState({ secondQueryValidating: false, secondQueryInvalid: true })
         }
       })
@@ -410,7 +389,6 @@ export default class RuleSimpleV2 extends React.Component {
   }
 
   onSecondQueryChange = (e) => {
-    console.log('ON SECND QUERY CHANGE', e.target.value)
     this.setState({ secondInputValue: e.target.value })
   }
 
@@ -460,8 +438,6 @@ export default class RuleSimpleV2 extends React.Component {
     const parsedRT = this.props.queryResponse?.data?.data?.parsed_interpretation
     const rtArray = constructRTArray(parsedRT)
 
-    console.log({ rtArray })
-
     if (!parsedRT?.length) {
       return this.props.queryResponse?.data?.data?.text
     }
@@ -485,7 +461,6 @@ export default class RuleSimpleV2 extends React.Component {
 
       if (type === 'DATE') {
         const timeFrame = getTimeFrameTextFromChunk(chunk)
-        console.log({ timeFrame })
         if (timeFrame) {
           text = timeFrame
         } else {
@@ -507,7 +482,6 @@ export default class RuleSimpleV2 extends React.Component {
         //     <Chip
         //       onClick={() => {}}
         //       onDelete={() => {
-        //         console.log('DELETED VALUE LABEL')
         //       }}
         //     >
         //       {text}
@@ -525,12 +499,16 @@ export default class RuleSimpleV2 extends React.Component {
     })
   }
 
-  renderFormattedQuery = () => {
+  getFormattedQueryText = () => {
     let queryText = this.props.queryResponse?.data?.data?.text
     queryText = queryText[0].toUpperCase() + queryText.substring(1)
+    return queryText
+  }
+
+  renderFormattedQuery = () => {
     return (
       <div className='data-alert-rule-formatted-query'>
-        <span>{queryText}</span>
+        <span>{this.getFormattedQueryText()}</span>
         {/* <span>{this.renderChunkedInterpretation()} </span> */}
         <Icon
           type='info'
@@ -567,11 +545,17 @@ export default class RuleSimpleV2 extends React.Component {
   }
 
   getSecondInputPlaceholder = () => {
-    const { secondInputType } = this.state
+    const { secondTermType } = this.state
     const { queryResponse } = this.props
 
-    if (secondInputType === 'number') {
-      return 'Type a number'
+    if (secondTermType === NUMBER_TERM_TYPE) {
+      let placeholder = 'Type a number'
+      const queryResponseValue = queryResponse?.data?.data?.rows?.[0]?.[0]
+      console.log({ rows: queryResponse?.data?.data?.rows })
+      if (isNumber(queryResponseValue)) {
+        return `${placeholder} (eg. "${queryResponseValue}")`
+      }
+      return placeholder
       // let numberPlaceholder = 'Type a number'
 
       // if (isSingleValueResponse(queryResponse)) {
@@ -580,7 +564,7 @@ export default class RuleSimpleV2 extends React.Component {
       // }
 
       // return numberPlaceholder
-    } else if (secondInputType === 'query') {
+    } else if (secondTermType === QUERY_TERM_TYPE) {
       return 'Type a query'
       // let queryPlaceholder = 'Type a query'
       // let query = this.getChunkedInterpretationText()
@@ -604,12 +588,50 @@ export default class RuleSimpleV2 extends React.Component {
   renderTermValidationSection = () => {
     return (
       <div className='rule-simple-validation-container'>
-        {this.state.secondInputType === 'query' ? this.renderValidationError() : null}
+        {this.state.secondTermType === QUERY_TERM_TYPE ? this.renderValidationError() : null}
       </div>
     )
   }
 
-  renderRule = () => {
+  renderSecondTermInput = () => {
+    return (
+      <Input
+        ref={(r) => (this.secondInput = r)}
+        spellCheck={false}
+        placeholder={this.getSecondInputPlaceholder()}
+        value={this.state.secondInputValue}
+        type={this.state.secondTermType === NUMBER_TERM_TYPE ? NUMBER_TERM_TYPE : undefined}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            this.props.onLastInputEnterPress()
+          }
+        }}
+        selectOptions={[
+          {
+            value: NUMBER_TERM_TYPE,
+            label: (
+              <span>
+                this <strong>number:</strong>
+              </span>
+            ),
+          },
+          {
+            value: QUERY_TERM_TYPE,
+            label: (
+              <span>
+                the result of this <strong>query:</strong>
+              </span>
+            ),
+          },
+        ]}
+        onSelectChange={this.switchSecondTermType}
+        selectValue={this.state.secondTermType}
+        onChange={this.onSecondQueryChange}
+      />
+    )
+  }
+
+  render = () => {
     return (
       <ErrorBoundary>
         <div className='react-autoql-notification-rule-container' data-test='rule'>
@@ -619,60 +641,14 @@ export default class RuleSimpleV2 extends React.Component {
           </div>
         </div>
         <div className='react-autoql-notification-rule-container' data-test='rule'>
-          {this.state.selectedOperator !== 'EXISTS' && (
+          {this.state.selectedOperator !== EXISTS_TYPE && (
             <>
               <div className='react-autoql-rule-condition-select-input-container'>
                 <div className='react-autoql-input-label'>Meets this condition</div>
                 {this.renderOperatorSelector()}
               </div>
               <div className='react-autoql-rule-second-input-container'>
-                <div className='react-autoql-rule-input'>
-                  <Input
-                    ref={(r) => (this.secondInput = r)}
-                    spellCheck={false}
-                    placeholder={this.getSecondInputPlaceholder()}
-                    value={this.state.secondInputValue}
-                    type={this.state.secondInputType === 'number' ? 'number' : undefined}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        this.props.onLastInputEnterPress()
-                      }
-                    }}
-                    selectOptions={[
-                      {
-                        value: 'number',
-                        label: (
-                          <span>
-                            this <strong>number:</strong>
-                          </span>
-                        ),
-                        // listLabel: (
-                        //   <span>
-                        //     <Icon type='number' />
-                        //     &nbsp;&nbsp;this number
-                        //   </span>
-                        // ),
-                      },
-                      {
-                        value: 'query',
-                        label: (
-                          <span>
-                            the result of this <strong>query:</strong>
-                          </span>
-                        ),
-                        // listLabel: (
-                        //   <span>
-                        //     <Icon type='react-autoql-bubbles-outlined' />
-                        //     &nbsp;&nbsp;the result of this query
-                        //   </span>
-                        // ),
-                      },
-                    ]}
-                    onSelectChange={this.switchSecondInputType}
-                    selectValue={this.state.secondInputType}
-                    onChange={this.onSecondQueryChange}
-                  />
-                </div>
+                <div className='react-autoql-rule-input'>{this.renderSecondTermInput()}</div>
                 {this.renderTermValidationSection()}
               </div>
             </>
@@ -680,13 +656,5 @@ export default class RuleSimpleV2 extends React.Component {
         </div>
       </ErrorBoundary>
     )
-  }
-
-  render = () => {
-    if (this.props.readOnly) {
-      return this.renderReadOnlyRule()
-    }
-
-    return this.renderRule()
   }
 }

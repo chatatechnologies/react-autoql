@@ -29,42 +29,6 @@ export const DATE_ONLY_CHART_TYPES = ['line', 'stacked_line']
 
 export const DOUBLE_AXIS_CHART_TYPES = ['column_line']
 
-export const DATA_ALERT_OPERATORS = {
-  GREATER_THAN: {
-    displayName: (
-      <span>
-        Is <strong>greater</strong> than
-      </span>
-    ),
-    symbol: '>',
-  },
-  LESS_THAN: {
-    displayName: (
-      <span>
-        Is <strong>less</strong> than
-      </span>
-    ),
-    symbol: '<',
-  },
-  EQUAL_TO: {
-    displayName: (
-      <span>
-        Is <strong>equal</strong> to
-      </span>
-    ),
-    symbol: '=',
-  },
-}
-
-export const DATA_ALERT_CONDITION_TYPES = {
-  COMPARE: {
-    displayName: 'When a specific condition is met',
-  },
-  EXISTS: {
-    displayName: 'If new data is detected',
-  },
-}
-
 export const MONTH_NAMES = [
   'January',
   'February',

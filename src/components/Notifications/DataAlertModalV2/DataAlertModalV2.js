@@ -15,17 +15,16 @@ import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { StepsHoz } from '../../StepsHoz'
 import { ExpressionBuilderSimpleV2 } from '../ExpressionBuilderSimpleV2'
 import { Select } from '../../Select'
+import NotificationItem from '../NotificationItem/NotificationItem'
 
 import { createDataAlert, updateDataAlert, deleteDataAlert } from '../../../js/notificationService'
 import { isSingleValueResponse } from '../../../js/Util'
-import { isAggregation } from '../../QueryOutput/columnHelpers'
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 import { withTheme } from '../../../theme'
-import { DATA_ALERT_CONDITION_TYPES } from '../../../js/Constants'
+import { DATA_ALERT_CONDITION_TYPES, COMPARE_TYPE, EXISTS_TYPE } from '../DataAlertConstants'
 
 import './DataAlertModalV2.scss'
-import NotificationItem from '../NotificationItem/NotificationItem'
 
 class DataAlertModalV2 extends React.Component {
   constructor(props) {
@@ -38,12 +37,10 @@ class DataAlertModalV2 extends React.Component {
     this.CONDITIONS_STEP = 'CONDITIONS'
     this.FREQUENCY_STEP = 'FREQUENCY'
     this.MESSAGE_STEP = 'MESSAGE'
-    this.COMPARE_TYPE = 'COMPARE'
-    this.EXISTS_TYPE = 'EXISTS'
 
     this.SUPPORTED_CONDITION_TYPES = this.getSupportedConditionTypes(props.queryResponse)
 
-    const needsConditions = this.SUPPORTED_CONDITION_TYPES?.includes(this.COMPARE_TYPE)
+    const needsConditions = this.SUPPORTED_CONDITION_TYPES?.includes(COMPARE_TYPE)
 
     this.steps = [
       { title: 'Configure Timing', value: this.FREQUENCY_STEP },
@@ -198,7 +195,7 @@ class DataAlertModalV2 extends React.Component {
             term_value: [
               {
                 id: uuid(),
-                condition: this.EXISTS_TYPE,
+                condition: EXISTS_TYPE,
                 term_type: 'query',
                 term_value: query,
                 user_selection: userSelection,
@@ -215,11 +212,13 @@ class DataAlertModalV2 extends React.Component {
       // 1. EXISTS - When new data is detected for the query
       // 2. COMPARE - When a certain condition is met
 
-      if (isSingleValueResponse(queryResponse) || isAggregation(queryResponse?.data?.data?.columns)) {
-        return [this.COMPARE_TYPE]
+      // Currently single value response queries are the only
+      // queries that support custom conditions
+      if (isSingleValueResponse(queryResponse)) {
+        return [COMPARE_TYPE]
       }
 
-      return [this.EXISTS_TYPE]
+      return [EXISTS_TYPE]
     } catch (error) {
       console.error(error)
       return []
@@ -266,7 +265,7 @@ class DataAlertModalV2 extends React.Component {
   }
 
   isConditionSectionReady = () => {
-    if (this.SUPPORTED_CONDITION_TYPES?.includes(this.COMPARE_TYPE) && this.expressionRef?._isMounted) {
+    if (this.SUPPORTED_CONDITION_TYPES?.includes(COMPARE_TYPE) && this.expressionRef?._isMounted) {
       return this.expressionRef?.isComplete()
     }
 
@@ -531,7 +530,7 @@ class DataAlertModalV2 extends React.Component {
   }
 
   renderConditionTypeDescription = () => {
-    if (this.state.selectedConditionType === this.EXISTS_TYPE) {
+    if (this.state.selectedConditionType === EXISTS_TYPE) {
       return 'Description: Notification will be triggered when new data is detected'
     }
 
@@ -546,7 +545,7 @@ class DataAlertModalV2 extends React.Component {
             {/* <p className='data-alert-modal-condition-title'>
               Trigger the Data Alert when the following conditions are met:
             </p> */}
-            {this.SUPPORTED_CONDITION_TYPES?.includes(this.COMPARE_TYPE) && (
+            {this.SUPPORTED_CONDITION_TYPES?.includes(COMPARE_TYPE) && (
               <ExpressionBuilderSimpleV2
                 authentication={this.props.authentication}
                 ref={(r) => (this.expressionRef = r)}
@@ -589,6 +588,8 @@ class DataAlertModalV2 extends React.Component {
           onErrorCallback={this.props.onErrorCallback}
           conditionType={this.state.selectedConditionType}
           queryResponse={this.props.queryResponse}
+          expressionRef={this.expressionRef}
+          tooltipID={this.TOOLTIP_ID}
         />
       </div>
     )
