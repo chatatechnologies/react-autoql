@@ -33,12 +33,19 @@
 }
 
 .react-autoql-drawer .watermark {
-  color: var(--react-autoql-text-color-placeholder);
+  display: flex;
+  justify-content: center;
+  align-items: center;
   text-align: center;
+  color: var(--react-autoql-text-color-placeholder);
   opacity: 0.7;
   top: 6px;
   width: calc(100% - 10px);
   font-size: 13px;
+
+  .react-autoql-icon {
+    margin-right: 5px;
+  }
 }
 
 .react-autoql-drawer .chat-drawer-chat-bar {

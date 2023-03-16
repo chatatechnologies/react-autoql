@@ -47,44 +47,7 @@ export class DataMessenger extends React.Component {
     this.TAB_THICKNESS = 45
     this.TOOLTIP_ID = `react-autoql-data-messenger-tooltip-${this.COMPONENT_KEY}`
     this.CHART_TOOLTIP_ID = `react-autoql-dm-chart-tooltip-${this.COMPONENT_KEY}`
-    this.selectStyle = {
-      backgroundColor: 'var(--react-autoql-accent-color)',
-      color: 'var(--react-autoql-background-color-primary)',
-      borderRadius: '2px',
-      cursor: 'pointer',
-      fontWeight: 'bold',
-      boxShadow: 'none',
-      touchAction: 'manipulation',
-      WebkitTapHighlightColor: 'transparent',
-      marginTop: '15px',
-      marginBottom: '10px',
-      marginLeft: 'auto',
-      marginRight: 'auto',
-      display: 'flex',
-      justifyContent: 'space-evenly',
-      width: '60vw',
-      borderWidth: '1px',
-      borderStyle: 'solid',
-      borderColor: 'rgb(225 224 224)',
-      height: '40px',
-      alignItems: 'center',
-      lineJeight: '30px',
-      overflow: 'hidden',
-      whiteSpace: 'nowrap',
-      textOverflow: 'ellipsis',
-    }
-    this.selectPlaceholderStyle = {
-      display: 'flex',
-      justifyContent: 'space-evenly',
-      color: 'var(--react-autoql-background-color-primary)',
-      fontSize: '20px',
-      position: 'relative',
-      letterSpacing: '0.05em',
-      fontWeight: 600,
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
-    }
+
     this.dataMessengerIntroMessages = [
       props.introMessage ? (
         `${props.introMessage}`
@@ -649,68 +612,68 @@ export class DataMessenger extends React.Component {
       }
     }
 
-    if (isBrowser) {
-      return <div className='header-title'>{title}</div>
-    } else {
-      let options = [
-        {
-          value: 'data-messenger',
-          label: (
-            <span>
-              <Icon type='react-autoql-bubbles-outlined' /> Data Messenger
-            </span>
-          ),
-        },
-        {
-          value: 'data-explorer',
-          label: (
-            <span>
-              <Icon type='data-search' /> Data Explorer
-            </span>
-          ),
-        },
-        {
-          value: 'notifications',
-          label: (
-            <span>
-              <NotificationIcon
-                ref={(r) => (this.notificationBadgeRef = r)}
-                authentication={this.props.authentication}
-                clearCountOnClick={false}
-                style={{ fontSize: '19px' }}
-                overflowCount={9}
-                count={this.props.notificationCount}
-                useDot
-                onCount={this.props.onNotificationCount}
-                onErrorCallback={this.props.onErrorCallback}
-                onNewNotification={(count) => {
-                  this.props.onNewNotification(count)
-                }}
-              />
-              {` Notifications`}
-            </span>
-          ),
-        },
-      ]
+    // if (isBrowser) {
+    //   return <div className='header-title'>{title}</div>
+    // } else {
+    let options = [
+      {
+        value: 'data-messenger',
+        label: (
+          <span>
+            <Icon type='react-autoql-bubbles-outlined' /> Data Messenger
+          </span>
+        ),
+      },
+      {
+        value: 'data-explorer',
+        label: (
+          <span>
+            <Icon type='data-search' /> Data Explorer
+          </span>
+        ),
+      },
+      {
+        value: 'notifications',
+        label: (
+          <span>
+            <NotificationIcon
+              ref={(r) => (this.notificationBadgeRef = r)}
+              authentication={this.props.authentication}
+              clearCountOnClick={false}
+              style={{ fontSize: '19px' }}
+              overflowCount={9}
+              count={this.props.notificationCount}
+              useDot
+              onCount={this.props.onNotificationCount}
+              onErrorCallback={this.props.onErrorCallback}
+              onNewNotification={(count) => {
+                this.props.onNewNotification(count)
+              }}
+            />
+            {` Notifications`}
+          </span>
+        ),
+      },
+    ]
 
-      return (
-        <div className='header-title'>
-          <Select
-            isDataMessenger={true}
-            options={options}
-            key={uuid()}
-            value={this.state.activePage}
-            style={this.selectStyle}
-            selectionPlaceholder={title}
-            selectPlaceholderStyle={this.selectPlaceholderStyle}
-            popupClassname='validation-select'
-            onChange={(value) => {
-              this.setState({ activePage: value })
-            }}
-          />
-        </div>
-      )
-    }
+    return (
+      <div className='header-title'>
+        <Select
+          className='data-messenger-header-select'
+          showArrow
+          options={options}
+          key={uuid()}
+          value={this.state.activePage}
+          style={this.selectStyle}
+          placeholder={title}
+          popupClassname='data-messenger-header-select-popover'
+          onChange={(value) => {
+            this.setState({ activePage: value })
+          }}
+        />
+      </div>
+    )
+    // }
   }
 
   openFilterLockMenu = () => {
