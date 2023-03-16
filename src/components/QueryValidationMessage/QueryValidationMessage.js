@@ -260,6 +260,8 @@ export default class QueryValidationMessage extends React.Component {
           value={suggestion.id}
           className='react-autoql-query-validation-select'
           popupClassname='query-validation-select'
+          outlined={false}
+          showArrow={false}
           onChange={(value) => this.onChangeQueryValidationSelectOption(value, suggestionDropdownIndex)}
         />
       </div>

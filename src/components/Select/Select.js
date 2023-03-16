@@ -85,9 +85,9 @@ export default class Select extends React.Component {
         data-delay-show={500}
       >
         <span className='react-autoql-select-text'>
-          <span className='react-autoql-select-text-placeholder'>
-            {selectedOption?.label ?? selectedOption?.value ?? this.props.placeholder}
-          </span>
+          {selectedOption?.label ?? selectedOption?.value ?? (
+            <span className='react-autoql-select-text-placeholder'>{this.props.placeholder}</span>
+          )}
         </span>
         {this.props.showArrow && (
           <span className='react-autoql-select-arrow'>

@@ -8,9 +8,9 @@
   }
 
   .data-messenger-header-select {
-    background-color: var(--react-autoql-accent-color);
-    color: var(--react-autoql-text-color-accent);
-    border-color: var(--react-autoql-border-color);
+    background-color: var(--react-autoql-accent-color) !important;
+    color: var(--react-autoql-text-color-accent) !important;
+    border-color: var(--react-autoql-border-color) !important;
     border-radius: 2px;
     border-width: 1px;
     border-style: solid;
@@ -20,19 +20,14 @@
     -webkit-tap-highlight-color: transparent;
     width: 100%;
     margin: 0;
-    // justify-content: space-between;
     height: 40px;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
     cursor: pointer;
 
-    .react-autoql-select-popup-container {
-      width: 100vw !important;
-    }
-
     .react-autoql-select-arrow {
-      color: var(--react-autoql-background-color-primary);
+      color: var(--react-autoql-text-color-accent);
     }
 
     .react-autoql-select-text {
@@ -42,15 +37,15 @@
       align-items: center;
 
       .react-autoql-icon {
-        margin-right: 10px;
+        display: none;
       }
     }
 
-    .react-autoql-select-text-placeholder span {
+    .react-autoql-select-text-placeholder {
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--react-autoql-background-color-primary);
+      color: var(--react-autoql-text-color-accent);
       font-size: 20px;
       position: relative;
       letter-spacing: 0.05em;
@@ -61,7 +56,7 @@
       white-space: nowrap;
 
       .react-autoql-icon {
-        margin-right: 10px;
+        display: none;
       }
     }
   }
@@ -102,16 +97,26 @@
     justify-content: center;
     align-items: center;
     position: relative;
+    font-weight: 600;
   }
 }
 
 .data-messenger-header-select-popover {
   width: 100vw;
 
+  .react-autoql-notifications-button-container {
+    display: flex;
+    margin-right: 10px;
+  }
+
   .react-autoql-select-popup li {
     display: flex;
     justify-content: center;
     height: unset;
+
+    .react-autoql-icon {
+      margin-right: 10px;
+    }
 
     & > span > span {
       display: flex;
@@ -119,10 +124,6 @@
       align-items: center;
       font-size: 20px;
       min-height: 60px;
-
-      .react-autoql-icon {
-        margin-right: 10px;
-      }
     }
   }
 }

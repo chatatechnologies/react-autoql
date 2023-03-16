@@ -247,10 +247,6 @@ export default class Icon extends React.Component {
         icon = <BsArrowBarDown />
         break
       }
-      case 'dropdown': {
-        icon = <BsChevronDown />
-        break
-      }
       case 'eye': {
         icon = <FiEye />
         break
