@@ -6,87 +6,150 @@
   .react-autoql-notification-list-container {
     height: calc(100% - 60px);
   }
+
+  .data-messenger-header-select {
+    background-color: var(--react-autoql-accent-color) !important;
+    color: var(--react-autoql-text-color-accent) !important;
+    border-color: var(--react-autoql-border-color) !important;
+    border-radius: 2px;
+    border-width: 1px;
+    border-style: solid;
+    font-weight: bold;
+    box-shadow: none;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    width: 100%;
+    margin: 0;
+    height: 40px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    cursor: pointer;
+
+    .react-autoql-select-arrow {
+      color: var(--react-autoql-text-color-accent);
+    }
+
+    .react-autoql-select-text {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      .react-autoql-icon {
+        display: none;
+      }
+    }
+
+    .react-autoql-select-text-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--react-autoql-text-color-accent);
+      font-size: 20px;
+      position: relative;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+      font-style: normal;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      .react-autoql-icon {
+        display: none;
+      }
+    }
+  }
+
+  .react-autoql-drawer-content-container {
+    width: 100%;
+    height: 100%;
+    background: var(--react-autoql-background-color-primary);
+    overflow: hidden;
+    border-radius: 4px;
+  }
+
+  .chat-header-container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    height: 60px;
+    background: var(--react-autoql-accent-color);
+    color: var(--react-autoql-text-color-accent);
+    box-shadow: 0 0 12px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
+    flex: 0 0 auto;
+    z-index: 1;
+  }
+  .react-autoql-header-left-container {
+    display: flex;
+    justify-content: left;
+    width: 100px;
+    margin-left: 10px;
+  }
+  .react-autoql-header-right-container {
+    display: flex;
+    justify-content: right;
+    width: 100px;
+    margin-right: 10px;
+  }
+  .react-autoql-header-center-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    font-weight: 600;
+  }
+}
+
+.data-messenger-header-select-popover {
+  width: 100vw;
+
+  .react-autoql-notifications-button-container {
+    display: flex;
+    margin-right: 10px;
+  }
+
+  .react-autoql-select-popup li {
+    display: flex;
+    justify-content: center;
+    height: unset;
+
+    .react-autoql-icon {
+      margin-right: 10px;
+    }
+
+    & > span > span {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 20px;
+      min-height: 60px;
+    }
+  }
 }
 
 .react-autoql-drawer.disable-selection {
   user-select: none;
 }
 
-.react-autoql-drawer .react-autoql-drawer-content-container {
-  width: 100%;
-  height: 100%;
-  background: var(--react-autoql-background-color-primary);
-  overflow: hidden;
-  border-radius: 4px;
-}
-
-.react-autoql-drawer .chat-header-container {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  height: 60px;
-  background: var(--react-autoql-accent-color);
-  color: var(--react-autoql-text-color-accent);
-  box-shadow: 0 0 12px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
-  flex: 0 0 auto;
-  z-index: 1;
-}
-.react-autoql-drawer .react-autoql-header-left-container {
-  display: flex;
-  justify-content: left;
-  width: 100px;
-  margin-left: 10px;
-}
-.react-autoql-drawer .react-autoql-header-right-container {
-  display: flex;
-  justify-content: right;
-  width: 100px;
-  margin-right: 10px;
-}
 @media (max-width: 479px) {
-	.react-autoql-drawer .react-autoql-header-center-container {
-		width:100vw;
-		position: relative;
-		color: var(--react-autoql-text-color-accent);
-		line-height: 55px;
-		font-size: 18px;
-		letter-spacing: 0.05em;
-		font-weight: 600;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		display: flex;
-		align-items: center;
-	  }
-	  .react-autoql-select-popup-container .react-autoql-select-popup li{
-		display: flex;
-		font-size: 20px;
-		justify-content:center;
-		min-height: 60px;
-		align-items: center;
-	  }
-}
-.react-autoql-select-popup-container .react-autoql-select-popup li{
-	display: flex;
-	justify-content:center;
-	align-items: center;
+  .react-autoql-drawer .react-autoql-header-center-container {
+    font-size: 18px;
+    letter-spacing: 0.05em;
   }
+}
 @media (min-width: 480px) {
-	.react-autoql-drawer .react-autoql-header-center-container {
-		position: relative;
-		color: var(--react-autoql-text-color-accent);
-		line-height: 60px;
-		font-size: 18px;
-		letter-spacing: 0.05em;
-		font-weight: 600;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	  }
+  .react-autoql-drawer .react-autoql-header-center-container {
+    font-size: 18px;
+    letter-spacing: 0.05em;
+    justify-content: center;
+  }
 }
 
 .react-autoql-drawer .header-title {
+  width: 100%;
   animation: fadeIn 0.3s;
+  text-align: center;
 }
 
 .react-autoql-drawer .react-autoql-drawer-header-btn {
@@ -240,16 +303,16 @@
   background: transparent;
 }
 @media (min-width: 1281px) {
-.react-autoql-drawer.drawer-right .drawer-content-wrapper,
-.react-autoql-drawer.drawer-left .drawer-content-wrapper {
-  max-width: calc(100vw - 45px) !important;
-  min-width: 400px !important;
-}
-.react-autoql-drawer.drawer-top .drawer-content-wrapper,
-.react-autoql-drawer.drawer-bottom .drawer-content-wrapper {
-  max-height: calc(100vh - 45px) !important;
-  min-height: 400px !important;
-}
+  .react-autoql-drawer.drawer-right .drawer-content-wrapper,
+  .react-autoql-drawer.drawer-left .drawer-content-wrapper {
+    max-width: calc(100vw - 45px) !important;
+    min-width: 400px !important;
+  }
+  .react-autoql-drawer.drawer-top .drawer-content-wrapper,
+  .react-autoql-drawer.drawer-bottom .drawer-content-wrapper {
+    max-height: calc(100vh - 45px) !important;
+    min-height: 400px !important;
+  }
 }
 .react-autoql-drawer-resize-handle {
   position: absolute;
