@@ -33,7 +33,6 @@ import { FilterLockPopover } from '../FilterLockPopover'
 // Styles
 import 'rc-drawer/assets/index.css'
 import './DataMessenger.scss'
-import { DataAlertModalV2 } from '../Notifications/DataAlertModalV2'
 
 export class DataMessenger extends React.Component {
   constructor(props) {
@@ -1063,6 +1062,20 @@ export class DataMessenger extends React.Component {
         />
         <Tooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} effect='solid' html />
       </Fragment>
+    )
+  }
+
+  renderDataAlertModal = () => {
+    return (
+      <DataAlertModal
+        authentication={this.props.authentication}
+        isVisible={this.state.isDataAlertModalVisible}
+        onClose={this.onClose}
+        onSave={this.onSave}
+        onErrorCallback={this.onError}
+        initialQuery={this.state.activeQuery}
+        tooltipID={this.TOOLTIP_ID}
+      />
     )
   }
 
