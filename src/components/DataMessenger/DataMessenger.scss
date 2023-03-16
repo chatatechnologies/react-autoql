@@ -43,17 +43,48 @@
   width: 100px;
   margin-right: 10px;
 }
-.react-autoql-drawer .react-autoql-header-center-container {
-  position: relative;
-  color: var(--react-autoql-text-color-accent);
-  line-height: 60px;
-  font-size: 18px;
-  letter-spacing: 0.05em;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+@media (max-width: 479px) {
+	.react-autoql-drawer .react-autoql-header-center-container {
+		width:100vw;
+		position: relative;
+		color: var(--react-autoql-text-color-accent);
+		line-height: 55px;
+		font-size: 18px;
+		letter-spacing: 0.05em;
+		font-weight: 600;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		display: flex;
+		align-items: center;
+	  }
+	  .react-autoql-select-popup-container .react-autoql-select-popup li{
+		display: flex;
+		font-size: 20px;
+		justify-content:center;
+		min-height: 60px;
+		align-items: center;
+	  }
 }
+.react-autoql-select-popup-container .react-autoql-select-popup li{
+	display: flex;
+	justify-content:center;
+	align-items: center;
+  }
+@media (min-width: 480px) {
+	.react-autoql-drawer .react-autoql-header-center-container {
+		position: relative;
+		color: var(--react-autoql-text-color-accent);
+		line-height: 60px;
+		font-size: 18px;
+		letter-spacing: 0.05em;
+		font-weight: 600;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	  }
+}
+
 .react-autoql-drawer .header-title {
   animation: fadeIn 0.3s;
 }
@@ -208,6 +239,7 @@
 .react-autoql-drawer .drawer-content-wrapper {
   background: transparent;
 }
+@media (min-width: 1281px) {
 .react-autoql-drawer.drawer-right .drawer-content-wrapper,
 .react-autoql-drawer.drawer-left .drawer-content-wrapper {
   max-width: calc(100vw - 45px) !important;
@@ -217,6 +249,7 @@
 .react-autoql-drawer.drawer-bottom .drawer-content-wrapper {
   max-height: calc(100vh - 45px) !important;
   min-height: 400px !important;
+}
 }
 .react-autoql-drawer-resize-handle {
   position: absolute;

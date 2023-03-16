@@ -11,6 +11,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { ChatContent } from '../ChatContent'
 import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
 import { withTheme } from '../../theme'
+import { isBrowser } from 'react-device-detect'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import { autoQLConfigDefault, dataFormattingDefault, getAutoQLConfig } from '../../props/defaults'
@@ -20,13 +21,14 @@ import { lang, setLanguage } from '../../js/Localization'
 // Components
 import { Icon } from '../Icon'
 import { Button } from '../Button'
+import { Select } from '../Select'
+
 import { ExploreQueries } from '../ExploreQueries'
 import { DataExplorer } from '../DataExplorer'
 import { DataAlertModal } from '../Notifications/DataAlertModal'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
 import { FilterLockPopover } from '../FilterLockPopover'
-import { DEFAULT_DATA_PAGE_SIZE } from '../../js/Constants'
 
 // Styles
 import 'rc-drawer/assets/index.css'
@@ -45,7 +47,44 @@ export class DataMessenger extends React.Component {
     this.TAB_THICKNESS = 45
     this.TOOLTIP_ID = `react-autoql-data-messenger-tooltip-${this.COMPONENT_KEY}`
     this.CHART_TOOLTIP_ID = `react-autoql-dm-chart-tooltip-${this.COMPONENT_KEY}`
-
+    this.selectStyle = {
+      backgroundColor: 'var(--react-autoql-accent-color)',
+      color: 'var(--react-autoql-background-color-primary)',
+      borderRadius: '2px',
+      cursor: 'pointer',
+      fontWeight: 'bold',
+      boxShadow: 'none',
+      touchAction: 'manipulation',
+      WebkitTapHighlightColor: 'transparent',
+      marginTop: '15px',
+      marginBottom: '10px',
+      marginLeft: 'auto',
+      marginRight: 'auto',
+      display: 'flex',
+      justifyContent: 'space-evenly',
+      width: '60vw',
+      borderWidth: '1px',
+      borderStyle: 'solid',
+      borderColor: 'rgb(225 224 224)',
+      height: '40px',
+      alignItems: 'center',
+      lineJeight: '30px',
+      overflow: 'hidden',
+      whiteSpace: 'nowrap',
+      textOverflow: 'ellipsis',
+    }
+    this.selectPlaceholderStyle = {
+      display: 'flex',
+      justifyContent: 'space-evenly',
+      color: 'var(--react-autoql-background-color-primary)',
+      fontSize: '20px',
+      position: 'relative',
+      letterSpacing: '0.05em',
+      fontWeight: 600,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    }
     this.dataMessengerIntroMessages = [
       props.introMessage ? (
         `${props.introMessage}`
@@ -83,8 +122,8 @@ export class DataMessenger extends React.Component {
       dataMessengerId: uuid(),
       hasError: false,
       activePage: props.defaultTab,
-      width: props.width,
-      height: props.height,
+      width: isBrowser ? props.width : '100vw',
+      height: isBrowser ? props.height : '100vh',
       isResizing: false,
       isWindowResizing: false,
       placement: this.getPlacementProp(props.placement),
@@ -610,7 +649,68 @@ export class DataMessenger extends React.Component {
       }
     }
 
-    return <div className='header-title'>{title}</div>
+    if (isBrowser) {
+      return <div className='header-title'>{title}</div>
+    } else {
+      let options = [
+        {
+          value: 'data-messenger',
+          label: (
+            <span>
+              <Icon type='react-autoql-bubbles-outlined' /> Data Messenger
+            </span>
+          ),
+        },
+        {
+          value: 'data-explorer',
+          label: (
+            <span>
+              <Icon type='data-search' /> Data Explorer
+            </span>
+          ),
+        },
+        {
+          value: 'notifications',
+          label: (
+            <span>
+              <NotificationIcon
+                ref={(r) => (this.notificationBadgeRef = r)}
+                authentication={this.props.authentication}
+                clearCountOnClick={false}
+                style={{ fontSize: '19px' }}
+                overflowCount={9}
+                count={this.props.notificationCount}
+                useDot
+                onCount={this.props.onNotificationCount}
+                onErrorCallback={this.props.onErrorCallback}
+                onNewNotification={(count) => {
+                  this.props.onNewNotification(count)
+                }}
+              />
+              {` Notifications`}
+            </span>
+          ),
+        },
+      ]
+
+      return (
+        <div className='header-title'>
+          <Select
+            isDataMessenger={true}
+            options={options}
+            key={uuid()}
+            value={this.state.activePage}
+            style={this.selectStyle}
+            selectionPlaceholder={title}
+            selectPlaceholderStyle={this.selectPlaceholderStyle}
+            popupClassname='validation-select'
+            onChange={(value) => {
+              this.setState({ activePage: value })
+            }}
+          />
+        </div>
+      )
+    }
   }
 
   openFilterLockMenu = () => {
@@ -686,15 +786,16 @@ export class DataMessenger extends React.Component {
           >
             <Icon type='close' />
           </button>
-
-          <button
-            onClick={() => this.toggleFullScreen(isFullScreen, maxWidth, maxHeight)}
-            className='react-autoql-drawer-header-btn screen-mode'
-            data-tip={isFullScreen ? lang.minimizeDataMessenger : lang.maximizeDataMessenger}
-            data-for={this.TOOLTIP_ID}
-          >
-            <Icon type={isFullScreen ? 'minimize' : 'maximize'} />
-          </button>
+          {isBrowser ? (
+            <button
+              onClick={() => this.toggleFullScreen(isFullScreen, maxWidth, maxHeight)}
+              className='react-autoql-drawer-header-btn screen-mode'
+              data-tip={isFullScreen ? lang.minimizeDataMessenger : lang.maximizeDataMessenger}
+              data-for={this.TOOLTIP_ID}
+            >
+              <Icon type={isFullScreen ? 'minimize' : 'maximize'} />
+            </button>
+          ) : null}
         </div>
         <div className='react-autoql-header-center-container'>{this.renderHeaderTitle()}</div>
         <div className='react-autoql-header-right-container'>{this.renderRightHeaderContent()}</div>
@@ -1027,8 +1128,8 @@ export class DataMessenger extends React.Component {
           level={this.props.shiftScreen ? 'all' : null}
           keyboard={false}
         >
-          {this.props.resizable && this.renderResizeHandle()}
-          {this.renderTabs()}
+          {this.props.resizable && isBrowser && this.renderResizeHandle()}
+          {isBrowser ? this.renderTabs() : null}
           <div ref={(r) => (this.messengerDrawerRef = r)} className='react-autoql-drawer-content-container'>
             <div className='chat-header-container'>{this.renderHeaderContent()}</div>
             {this.renderBodyContent()}

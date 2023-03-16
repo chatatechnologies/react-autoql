@@ -2,9 +2,9 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Popover } from 'react-tiny-popover'
 import { v4 as uuid } from 'uuid'
-
-import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
+import _get from 'lodash.get'
 import { Icon } from '../Icon'
+import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 
 import './Select.scss'
@@ -21,6 +21,7 @@ export default class Select extends React.Component {
     size: PropTypes.string,
     showArrow: PropTypes.bool,
     outlined: PropTypes.bool,
+    placeholder: PropTypes.string,
   }
 
   static defaultProps = {
@@ -33,6 +34,7 @@ export default class Select extends React.Component {
     style: {},
     showArrow: true,
     outlined: true,
+    placeholder: 'Select an item',
   }
 
   state = {
@@ -83,11 +85,9 @@ export default class Select extends React.Component {
         data-delay-show={500}
       >
         <span className='react-autoql-select-text'>
-          {selectedOption?.label ?? selectedOption?.value ?? (
-            <span className='react-autoql-select-text-placeholder'>
-              {this.props.selectionPlaceholder || 'Select an item'}
-            </span>
-          )}
+          <span className='react-autoql-select-text-placeholder'>
+            {selectedOption?.label ?? selectedOption?.value ?? this.props.placeholder}
+          </span>
         </span>
         {this.props.showArrow && (
           <span className='react-autoql-select-arrow'>
