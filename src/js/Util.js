@@ -1377,7 +1377,7 @@ export const sortDataByDate = (data, tableColumns, sortDirection = 'desc', isTab
 }
 
 export const handleTooltipBoundaryCollision = (e, self) => {
-  const { tooltipRef } = self.reactTooltipRef
+  const tooltipRef = self?.reactTooltipRef?.tooltipRef
 
   if (!tooltipRef) {
     return
