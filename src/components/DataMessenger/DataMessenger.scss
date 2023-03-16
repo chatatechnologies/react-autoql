@@ -46,7 +46,7 @@
       }
     }
 
-    .react-autoql-select-text-placeholder span {
+    .react-autoql-select-text-placeholder {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -112,6 +112,10 @@
     display: flex;
     justify-content: center;
     height: unset;
+
+    .react-autoql-icon {
+      margin-right: 10px;
+    }
 
     & > span > span {
       display: flex;

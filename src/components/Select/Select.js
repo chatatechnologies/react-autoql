@@ -5,7 +5,7 @@ import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import { Icon } from '../Icon'
 import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
-import { ErrorBoundary } from '../../containers/ErrorHOC'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Select.scss'
 
