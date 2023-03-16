@@ -612,68 +612,68 @@ export class DataMessenger extends React.Component {
       }
     }
 
-    // if (isBrowser) {
-    //   return <div className='header-title'>{title}</div>
-    // } else {
-    let options = [
-      {
-        value: 'data-messenger',
-        label: (
-          <span>
-            <Icon type='react-autoql-bubbles-outlined' /> Data Messenger
-          </span>
-        ),
-      },
-      {
-        value: 'data-explorer',
-        label: (
-          <span>
-            <Icon type='data-search' /> Data Explorer
-          </span>
-        ),
-      },
-      {
-        value: 'notifications',
-        label: (
-          <span>
-            <NotificationIcon
-              ref={(r) => (this.notificationBadgeRef = r)}
-              authentication={this.props.authentication}
-              clearCountOnClick={false}
-              style={{ fontSize: '19px' }}
-              overflowCount={9}
-              count={this.props.notificationCount}
-              useDot
-              onCount={this.props.onNotificationCount}
-              onErrorCallback={this.props.onErrorCallback}
-              onNewNotification={(count) => {
-                this.props.onNewNotification(count)
-              }}
-            />
-            {` Notifications`}
-          </span>
-        ),
-      },
-    ]
+    if (isBrowser) {
+      return <div className='header-title'>{title}</div>
+    } else {
+      let options = [
+        {
+          value: 'data-messenger',
+          label: (
+            <span>
+              <Icon type='react-autoql-bubbles-outlined' /> Data Messenger
+            </span>
+          ),
+        },
+        {
+          value: 'data-explorer',
+          label: (
+            <span>
+              <Icon type='data-search' /> Data Explorer
+            </span>
+          ),
+        },
+        {
+          value: 'notifications',
+          label: (
+            <span>
+              <NotificationIcon
+                ref={(r) => (this.notificationBadgeRef = r)}
+                authentication={this.props.authentication}
+                clearCountOnClick={false}
+                style={{ fontSize: '19px' }}
+                overflowCount={9}
+                count={this.props.notificationCount}
+                useDot
+                onCount={this.props.onNotificationCount}
+                onErrorCallback={this.props.onErrorCallback}
+                onNewNotification={(count) => {
+                  this.props.onNewNotification(count)
+                }}
+              />
+              {` Notifications`}
+            </span>
+          ),
+        },
+      ]
 
-    return (
-      <div className='header-title'>
-        <Select
-          className='data-messenger-header-select'
-          showArrow
-          options={options}
-          key={uuid()}
-          value={this.state.activePage}
-          style={this.selectStyle}
-          placeholder={title}
-          popupClassname='data-messenger-header-select-popover'
-          onChange={(value) => {
-            this.setState({ activePage: value })
-          }}
-        />
-      </div>
-    )
-    // }
+      return (
+        <div className='header-title'>
+          <Select
+            className='data-messenger-header-select'
+            showArrow
+            options={options}
+            key={uuid()}
+            value={this.state.activePage}
+            style={this.selectStyle}
+            placeholder={title}
+            popupClassname='data-messenger-header-select-popover'
+            onChange={(value) => {
+              this.setState({ activePage: value })
+            }}
+          />
+        </div>
+      )
+    }
   }
 
   openFilterLockMenu = () => {
