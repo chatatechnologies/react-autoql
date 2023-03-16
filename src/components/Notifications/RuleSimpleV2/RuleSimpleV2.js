@@ -551,37 +551,12 @@ export default class RuleSimpleV2 extends React.Component {
     if (secondTermType === NUMBER_TERM_TYPE) {
       let placeholder = 'Type a number'
       const queryResponseValue = queryResponse?.data?.data?.rows?.[0]?.[0]
-      console.log({ rows: queryResponse?.data?.data?.rows })
       if (isNumber(queryResponseValue)) {
         return `${placeholder} (eg. "${queryResponseValue}")`
       }
       return placeholder
-      // let numberPlaceholder = 'Type a number'
-
-      // if (isSingleValueResponse(queryResponse)) {
-      //   const value = queryResponse?.data?.data?.rows?.[0]?.[0]
-      //   if (value) numberPlaceholder = `ie. "${value}"`
-      // }
-
-      // return numberPlaceholder
     } else if (secondTermType === QUERY_TERM_TYPE) {
       return 'Type a query'
-      // let queryPlaceholder = 'Type a query'
-      // let query = this.getChunkedInterpretationText()
-
-      // if (query) {
-      //   const timeFrame = getTimeRangeFromRT(queryResponse)
-      //   if (timeFrame) {
-      //     if (timeFrame === 'DAY') query = `${query} yesterday`
-      //     if (timeFrame === 'WEEK') query = `${query} last week`
-      //     if (timeFrame === 'MONTH') query = `${query} last month`
-      //     if (timeFrame === 'YEAR') query = `${query} last year`
-      //   }
-
-      //   queryPlaceholder = `ie. "${query.toLowerCase()}"`
-      // }
-
-      // return queryPlaceholder
     }
   }
 

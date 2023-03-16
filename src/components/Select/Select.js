@@ -62,7 +62,6 @@ export default class Select extends React.Component {
   scrollToValue = () => {
     const index = this.props.options?.findIndex((option) => this.props.value === option.value)
     const element = document.querySelector(`#select-option-${this.ID}-${index}`)
-    console.log({ element, index, value: this.props.value, options: this.props.options })
     if (element) {
       element.scrollIntoView()
     }

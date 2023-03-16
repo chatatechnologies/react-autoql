@@ -176,7 +176,7 @@ export default class ScheduleBuilderV2 extends React.Component {
 
   scheduleIntervalSelector = () => {
     return (
-      <div className='react-autoql-data-alert-frequency-option flex-1'>
+      <div className='react-autoql-data-alert-frequency-option'>
         <div className='react-autoql-input-label'>Send a notification</div>
         <Select
           options={Object.keys(SCHEDULE_INTERVAL_OPTIONS).map((value) => ({
@@ -266,20 +266,26 @@ export default class ScheduleBuilderV2 extends React.Component {
         tooltip = `How often should we run the query to check if the conditions are met?`
       }
 
+      const options = CHECK_FREQUENCY_OPTIONS.map((mins, i) => {
+        let label = `${CHECK_FREQUENCY_OPTIONS[i]} min${mins > 1 ? 's' : ''}`
+        let listLabel = label
+        if (mins === 5) {
+          listLabel = `${label} (Recommended)`
+        }
+        return {
+          value: i,
+          label: <span>{label}</span>,
+          listLabel: <span>{listLabel}</span>,
+        }
+      })
+
       return (
         <div className='react-autoql-data-alert-frequency-option check-frequency'>
           <div className='react-autoql-input-label'>
             Check conditions every <Icon type='info' data-for={this.props.tooltipID} data-tip={tooltip} />
           </div>
           <Select
-            options={CHECK_FREQUENCY_OPTIONS.map((mins, i) => ({
-              value: i,
-              label: (
-                <span>
-                  {CHECK_FREQUENCY_OPTIONS[i]} min{mins > 1 ? 's' : ''}
-                </span>
-              ),
-            }))}
+            options={options}
             value={this.state.checkFrequencySelectValue}
             onChange={(value) => this.setState({ checkFrequencySelectValue: value })}
           />
@@ -293,7 +299,7 @@ export default class ScheduleBuilderV2 extends React.Component {
   resetPeriodSelector = () => {
     if (this.shouldRenderResetPeriodSelector()) {
       return (
-        <div className='react-autoql-data-alert-frequency-option flex-2'>
+        <div className='react-autoql-data-alert-frequency-option'>
           <div className='react-autoql-input-label'>Send a notification </div>
           <Select
             options={Object.keys(RESET_PERIOD_OPTIONS).map((value) => ({

@@ -44,7 +44,7 @@ class DataAlertModalV2 extends React.Component {
 
     this.steps = [
       { title: 'Configure Timing', value: this.FREQUENCY_STEP },
-      { title: 'Compose Message', value: this.MESSAGE_STEP },
+      { title: 'Customize Appearance', value: this.MESSAGE_STEP },
     ]
 
     if (needsConditions) {
@@ -465,17 +465,7 @@ class DataAlertModalV2 extends React.Component {
   renderDataAlertNameInput = () => {
     return (
       <div className='data-alert-name-input-section'>
-        <div className='react-autoql-input-label'>
-          <span>
-            Notification title{' '}
-            <Icon
-              className='react-autoql-data-alert-modal-tooltip-icon'
-              data-for={this.TOOLTIP_ID}
-              data-tip='This will be visible to anyone who gets notified when this Alert is triggered.'
-              type='info'
-            />
-          </span>
-        </div>
+        <div className='react-autoql-input-label'>Title</div>
         <Input
           ref={(r) => (this.alertTitleInput = r)}
           className='react-autoql-notification-display-name-input'
@@ -494,7 +484,7 @@ class DataAlertModalV2 extends React.Component {
   renderDataAlertMessageInput = () => {
     return (
       <>
-        <div className='react-autoql-input-label'>Notification message (optional)</div>
+        <div className='react-autoql-input-label'>Message (optional)</div>
         <Input
           className='react-autoql-notification-message-input'
           placeholder='eg. "You have spent 80% of your budget for the month."'
@@ -622,17 +612,49 @@ class DataAlertModalV2 extends React.Component {
     )
   }
 
+  getConditionStatement = () => {
+    let conditions = this.expressionRef?.getConditionStatement()
+    if (!conditions) {
+      conditions = `new data is detected for "${this.props.queryResponse?.data?.data?.text}"`
+    }
+
+    return conditions
+  }
+
   renderComposeMessageStep = (active) => {
+    const conditionStatement = this.getConditionStatement()
+
     return (
-      <div className={`react-autoql-data-alert-modal-step compose-message ${active ? '' : 'hidden'}`}>
-        <div className='form-section'>
-          {this.renderDataAlertNameInput()}
-          {this.renderDataAlertMessageInput()}
+      <div className={`react-autoql-data-alert-modal-step ${active ? '' : 'hidden'}`}>
+        {conditionStatement ? (
+          <span>
+            If <em>{conditionStatement}</em>, you'll receive a notification with this{' '}
+            <strong>title and message:</strong>
+            {/* Please provide the <strong>title and message</strong> you wish to include in the notification. */}
+          </span>
+        ) : null}
+        <div className='compose-message-section'>
+          <div className='form-section'>
+            {this.renderDataAlertNameInput()}
+            {this.renderDataAlertMessageInput()}
+          </div>
+          <div className='preview-section'>
+            <div className='react-autoql-input-label'>Preview</div>
+            {this.renderDataAlertPreview()}
+          </div>
         </div>
-        <div className='preview-section'>
-          <div className='react-autoql-input-label'>Preview</div>
-          {this.renderDataAlertPreview()}
-        </div>
+        {/* <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <span
+            style={{
+              background: 'var(--react-autoql-background-color-primary)',
+              display: 'block',
+              padding: '5px 15px',
+              borderRadius: '2px',
+            }}
+          >
+            If <em>{conditionStatement}</em>, you'll receive a notification.
+          </span>
+        </div> */}
       </div>
     )
   }
