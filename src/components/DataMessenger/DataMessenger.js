@@ -33,6 +33,7 @@ import { FilterLockPopover } from '../FilterLockPopover'
 // Styles
 import 'rc-drawer/assets/index.css'
 import './DataMessenger.scss'
+import { DataAlertModalV2 } from '../Notifications/DataAlertModalV2'
 
 export class DataMessenger extends React.Component {
   constructor(props) {
@@ -46,44 +47,7 @@ export class DataMessenger extends React.Component {
     this.TAB_THICKNESS = 45
     this.TOOLTIP_ID = `react-autoql-data-messenger-tooltip-${this.COMPONENT_KEY}`
     this.CHART_TOOLTIP_ID = `react-autoql-dm-chart-tooltip-${this.COMPONENT_KEY}`
-    this.selectStyle = {
-      backgroundColor: 'var(--react-autoql-accent-color)',
-      color: 'var(--react-autoql-background-color-primary)',
-      borderRadius: '2px',
-      cursor: 'pointer',
-      fontWeight: 'bold',
-      boxShadow: 'none',
-      touchAction: 'manipulation',
-      WebkitTapHighlightColor: 'transparent',
-      marginTop: '15px',
-      marginBottom: '10px',
-      marginLeft: 'auto',
-      marginRight: 'auto',
-      display: 'flex',
-      justifyContent: 'space-evenly',
-      width: '60vw',
-      borderWidth: '1px',
-      borderStyle: 'solid',
-      borderColor: 'rgb(225 224 224)',
-      height: '40px',
-      alignItems: 'center',
-      lineJeight: '30px',
-      overflow: 'hidden',
-      whiteSpace: 'nowrap',
-      textOverflow: 'ellipsis',
-    }
-    this.selectPlaceholderStyle = {
-      display: 'flex',
-      justifyContent: 'space-evenly',
-      color: 'var(--react-autoql-background-color-primary)',
-      fontSize: '20px',
-      position: 'relative',
-      letterSpacing: '0.05em',
-      fontWeight: 600,
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
-    }
+
     this.dataMessengerIntroMessages = [
       props.introMessage ? (
         `${props.introMessage}`
@@ -695,14 +659,14 @@ export class DataMessenger extends React.Component {
       return (
         <div className='header-title'>
           <Select
-            isDataMessenger={true}
+            className='data-messenger-header-select'
+            showArrow
             options={options}
             key={uuid()}
             value={this.state.activePage}
             style={this.selectStyle}
-            selectionPlaceholder={title}
-            selectPlaceholderStyle={this.selectPlaceholderStyle}
-            popupClassname='validation-select'
+            placeholder={title}
+            popupClassname='data-messenger-header-select-popover'
             onChange={(value) => {
               this.setState({ activePage: value })
             }}
@@ -970,6 +934,7 @@ export class DataMessenger extends React.Component {
           onDataAlertModalClose={this.onDataAlertModalClose}
           showNotificationDetails={false}
           shouldRender={this.isOpen() && this.state.activePage === 'notifications'}
+          tooltipID={this.TOOLTIP_ID}
         />
       </ErrorBoundary>
     )
@@ -1101,20 +1066,6 @@ export class DataMessenger extends React.Component {
     )
   }
 
-  renderDataAlertModal = () => {
-    return (
-      <DataAlertModal
-        authentication={this.props.authentication}
-        isVisible={this.state.isDataAlertModalVisible}
-        onClose={this.onClose}
-        onSave={this.onSave}
-        onErrorCallback={this.onError}
-        initialQuery={this.state.activeQuery}
-        tooltipID={this.TOOLTIP_ID}
-      />
-    )
-  }
-
   render = () => {
     if (this.state.hasError) {
       return null
@@ -1147,7 +1098,6 @@ export class DataMessenger extends React.Component {
             {this.renderBodyContent()}
           </div>
         </Drawer>
-        {this.renderDataAlertModal()}
         {this.renderTooltips()}
       </ErrorBoundary>
     )
