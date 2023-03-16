@@ -933,7 +933,6 @@ export class DataMessenger extends React.Component {
           onDataAlertModalClose={this.onDataAlertModalClose}
           showNotificationDetails={false}
           shouldRender={this.isOpen() && this.state.activePage === 'notifications'}
-          tooltipID={this.TOOLTIP_ID}
         />
       </ErrorBoundary>
     )
@@ -1111,6 +1110,7 @@ export class DataMessenger extends React.Component {
             {this.renderBodyContent()}
           </div>
         </Drawer>
+        {this.renderDataAlertModal()}
         {this.renderTooltips()}
       </ErrorBoundary>
     )
