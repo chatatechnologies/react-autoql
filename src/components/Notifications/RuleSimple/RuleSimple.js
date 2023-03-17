@@ -2,46 +2,24 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
-import _get from 'lodash.get'
 import parseNum from 'parse-num'
+import axios from 'axios'
 
 import { Input } from '../../Input'
 import { Select } from '../../Select'
 import { Icon } from '../../Icon'
-import { Button } from '../../Button'
-import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
+import { Chip } from '../../Chip'
+import { ErrorBoundary } from '../../../containers/ErrorHOC'
 
 import { authenticationType } from '../../../props/types'
-import { authenticationDefault, getAuthentication } from '../../../props/defaults'
-import { fetchAutocomplete } from '../../../js/queryService'
-import { capitalizeFirstChar } from '../../../js/Util'
+import { authenticationDefault, getAuthentication, getAutoQLConfig } from '../../../props/defaults'
+import { fetchAutocomplete, runQueryOnly } from '../../../js/queryService'
+import { isNumber, isSingleValueResponse } from '../../../js/Util'
+import { DATA_ALERT_OPERATORS, EXISTS_TYPE, NUMBER_TERM_TYPE, QUERY_TERM_TYPE } from '../DataAlertConstants'
+import { constructRTArray, getTimeFrameTextFromChunk } from '../../../js/reverseTranslationHelpers'
+import { responseErrors } from '../../../js/errorMessages'
 
 import './RuleSimple.scss'
-
-const getInitialStateData = (initialData) => {
-  if (initialData && initialData.length === 1) {
-    return {
-      input1Value: initialData[0].term_value,
-      conditionSelectValue: 'EXISTS',
-      isComplete: !!_get(initialData[0].term_value, 'length'),
-      userSelection: initialData[0].user_selection,
-    }
-  } else if (initialData && initialData.length > 1) {
-    const input1Value = `${_get(initialData, '[0].term_value', '')}`
-    const input2Value = `${_get(initialData, '[1].term_value', '')}`
-
-    return {
-      input1Value,
-      input2Value,
-      conditionSelectValue: initialData[0].condition,
-      secondTermType: initialData[1].term_type,
-      isComplete: !!_get(input1Value, 'length') && !!_get(input2Value, 'length'),
-      userSelection: initialData[0].user_selection,
-    }
-  }
-
-  return {}
-}
 
 export default class RuleSimple extends React.Component {
   autoCompleteTimer = undefined
@@ -49,19 +27,39 @@ export default class RuleSimple extends React.Component {
   constructor(props) {
     super(props)
 
-    this.initialData = {}
+    const { initialData, queryResponse } = props
+
+    this.SUPPORTED_OPERATORS = Object.keys(DATA_ALERT_OPERATORS)
     this.TERM_ID_1 = uuid()
     this.TERM_ID_2 = uuid()
 
-    const { initialData } = props
-
-    if (initialData && initialData.length === 1) {
-      this.TERM_ID_1 = initialData[0].id
-      this.TERM_ID_2 = uuid()
-    } else if (initialData && initialData.length > 1) {
-      this.TERM_ID_1 = initialData[0].id
-      this.TERM_ID_2 = initialData[1].id
+    const state = {
+      selectedOperator: this.SUPPORTED_OPERATORS[0],
+      inputValue: queryResponse?.data?.data?.text ?? '',
+      secondInputValue: '',
+      secondTermType: NUMBER_TERM_TYPE,
+      secondQueryValidating: false,
+      secondQueryValidated: false,
+      secondQueryInvalid: false,
+      secondQueryError: '',
+      isEditingQuery: false,
     }
+
+    if (initialData) {
+      this.TERM_ID_1 = initialData[0].id
+      this.TERM_ID_2 = initialData.length > 1 ? initialData[1].id : uuid()
+
+      console.log({ initialData })
+
+      state.selectedOperator = initialData[0]?.condition ?? this.SUPPORTED_OPERATORS[0]
+      state.inputValue = initialData[0]?.term_value ?? ''
+      state.secondInputValue = initialData[1]?.term_value ?? ''
+      state.secondTermType = initialData[1]?.term_type ?? NUMBER_TERM_TYPE
+      state.secondQueryValidated = true
+      console.log({ state })
+    }
+
+    this.state = state
   }
 
   static propTypes = {
@@ -70,6 +68,8 @@ export default class RuleSimple extends React.Component {
     onUpdate: PropTypes.func,
     initialData: PropTypes.arrayOf(PropTypes.shape({})),
     readOnly: PropTypes.bool,
+    queryResponse: PropTypes.shape({}),
+    onLastInputEnterPress: PropTypes.func,
   }
 
   static defaultProps = {
@@ -77,26 +77,25 @@ export default class RuleSimple extends React.Component {
     ruleId: undefined,
     onUpdate: () => {},
     initialData: undefined,
+    queryResponse: undefined,
     readOnly: false,
-  }
-
-  state = {
-    input1Value: '',
-    input2Value: '',
-    conditionSelectValue: 'EXISTS',
-    secondTermType: 'query',
-    isFirstTermValid: true,
-    isSecondTermValid: true,
-    ...getInitialStateData(this.props.initialData),
+    onLastInputEnterPress: () => {},
   }
 
   componentDidMount = () => {
     this.props.onUpdate(this.props.ruleId, this.isComplete(), this.isValid())
+
+    // Focus on second input if it exists. The first input will already be filled in
+    this.secondInput?.focus()
   }
 
   componentDidUpdate = (prevProps, prevState) => {
     if (!_isEqual(this.state, prevState)) {
       this.props.onUpdate(this.props.ruleId, this.isComplete(), this.isValid())
+    }
+
+    if (this.state.secondInputValue && this.state.secondInputValue !== prevState.secondInputValue) {
+      this.validateSecondQuery()
     }
   }
 
@@ -106,80 +105,105 @@ export default class RuleSimple extends React.Component {
     }
   }
 
-  parseJSON = (initialData) => {
-    if (initialData.length === 1) {
-      this.TERM_ID_1 = initialData[0].id
-      this.TERM_ID_2 = uuid()
-      this.setState({
-        input1Value: initialData[0].term_value,
-        conditionSelectValue: 'EXISTS',
-      })
-    } else if (initialData.length > 1) {
-      this.TERM_ID_1 = initialData[0].id
-      this.TERM_ID_2 = initialData[1].id
-      this.setState({
-        input1Value: initialData[0].term_value,
-        input2Value: `${initialData[1].term_value}`,
-        conditionSelectValue: initialData[0].condition,
-        secondTermType: initialData[1].term_type,
-      })
+  getConditionStatement = () => {
+    const queryText = this.getFormattedQueryText()?.toLowerCase()
+    const operatorText = DATA_ALERT_OPERATORS[this.state.selectedOperator]?.conditionText
+    let secondTermText = this.state.secondInputValue
+    if (this.state.secondTermType === QUERY_TERM_TYPE) {
+      secondTermText = `"${secondTermText}"`
     }
+
+    if (queryText && operatorText && secondTermText) {
+      return (
+        <span className='data-alert-condition-statement'>
+          "{queryText}" {operatorText} {secondTermText}
+        </span>
+      )
+    }
+
+    return
   }
 
   getJSON = () => {
-    if (this.state.conditionSelectValue === 'EXISTS') {
-      return [
-        {
-          id: this.TERM_ID_1,
-          term_type: 'query',
-          condition: this.state.conditionSelectValue,
-          term_value: this.state.input1Value,
-          user_selection: this.state.userSelection,
-        },
-      ]
-    }
+    // if (this.state.selectedOperator === EXISTS_TYPE) {
+    //   return [
+    //     {
+    //       id: this.TERM_ID_1,
+    //       term_type: QUERY_TERM_TYPE,
+    //       condition: this.state.selectedOperator,
+    //       term_value: this.state.inputValue,
+    //     },
+    //   ]
+    // }
 
-    const { input2Value } = this.state
+    const { secondInputValue } = this.state
+    const userSelection = this.props.queryResponse?.data?.data?.fe_req?.disambiguation
     return [
       {
         id: this.TERM_ID_1,
-        term_type: 'query',
-        condition: this.state.conditionSelectValue,
-        term_value: this.state.input1Value,
-        user_selection: this.state.userSelection,
+        term_type: QUERY_TERM_TYPE,
+        condition: this.state.selectedOperator,
+        term_value: this.state.inputValue,
+        user_selection: userSelection,
       },
       {
         id: this.TERM_ID_2,
-        term_type: this.isNumerical(input2Value) ? 'constant' : 'query',
+        term_type: this.isNumerical(secondInputValue) ? NUMBER_TERM_TYPE : QUERY_TERM_TYPE,
         condition: 'TERMINATOR',
-        term_value: this.isNumerical(input2Value) ? parseNum(input2Value) : input2Value,
-        user_selection: this.state.userSelection,
+        term_value: this.isNumerical(secondInputValue) ? parseNum(secondInputValue) : secondInputValue,
       },
     ]
   }
 
   isNumerical = (num) => {
-    if (!num) {
+    try {
+      if (typeof num === NUMBER_TERM_TYPE) {
+        return true
+      }
+
+      if (!num) {
+        return false
+      }
+
+      // Check for multiple words. If so, do not attempt parse
+      const words = num.split(' ')
+      if (words && words.length > 1) {
+        return false
+      }
+
+      // If just one word, strip everything but numbers
+      const strippedSymbolsStr = parseNum(num)
+      return !isNaN(Number(strippedSymbolsStr))
+    } catch (error) {
       return false
     }
-
-    // Check for multiple words. If so, do not attempt parse
-    const words = num.split(' ')
-    if (words && words.length > 1) {
-      return false
-    }
-
-    // If just one word, strip everything but numbers
-    const strippedSymbolsStr = parseNum(num)
-    return !isNaN(Number(strippedSymbolsStr))
   }
 
   isComplete = () => {
-    if (this.state.conditionSelectValue === 'EXISTS') {
-      return !!this.state.input1Value
-    } else {
-      return !!_get(this.state.input1Value, 'length') && !!_get(this.state.input2Value, 'length')
+    if (
+      this.state.secondInputType === QUERY_TERM_TYPE &&
+      (this.state.secondQueryInvalid || this.state.secondQueryValidating || !this.state.secondQueryValidated)
+    ) {
+      console.log(
+        'RULE IS INCOMPLETE if some of these are false',
+        this.state.secondQueryInvalid,
+        this.state.secondQueryValidating,
+        !this.state.secondQueryValidated,
+      )
+      return false
     }
+
+    const firstTermComplete = !!this.state.inputValue?.length
+    const secondTermComplete = isNumber(this.state.secondInputValue) || !!this.state.secondInputValue?.length
+
+    if (!firstTermComplete || !secondTermComplete) {
+      console.log('rule is incomplete 2, both of these must be true', firstTermComplete, secondTermComplete, {
+        inputValue: this.state.inputValue,
+        secondInputValue: this.state.secondInputValue,
+      })
+    }
+
+    return firstTermComplete && secondTermComplete
   }
 
   isValid = () => {
@@ -244,130 +268,406 @@ export default class RuleSimple extends React.Component {
     })
   }
 
-  renderConditionOperator = (text) => {
-    switch (text) {
-      case 'GREATER_THAN': {
-        return '>'
-      }
-      case 'LESS_THAN': {
-        return '<'
-      }
-      case 'EQUAL_TO': {
-        return '='
-      }
-      case 'EXISTS': {
-        return 'Exists'
-      }
-    }
-  }
+  // getSupportedSecondTermTypes = (props) => {
+  //   const { initialData, queryResponse } = props
 
-  renderReadOnlyRule = () => {
-    return (
-      <ErrorBoundary>
-        <div>
-          <span className='read-only-rule-term'>{`${capitalizeFirstChar(this.state.input1Value)}`}</span>
-          <span className='read-only-rule-term'>{`${this.renderConditionOperator(
-            this.state.conditionSelectValue,
-          )}`}</span>
-          {this.state.conditionSelectValue !== 'EXISTS' && (
-            <span className='read-only-rule-term'>{capitalizeFirstChar(this.state.input2Value)}</span>
-          )}
-          {this.props.andOrValue && <span className='read-only-rule-term'>{this.props.andOrValue}</span>}
-        </div>
-      </ErrorBoundary>
-    )
+  //   if (initialData) {
+  //   }
+
+  //   if (isSingleValueResponse(queryResponse)) {
+  //     return [NUMBER_TERM_TYPE]
+  //   }
+  // }
+
+  switchSecondTermType = () => {
+    let secondTermType = NUMBER_TERM_TYPE
+    if (this.state.secondTermType === NUMBER_TERM_TYPE) {
+      secondTermType = QUERY_TERM_TYPE
+    }
+
+    this.cancelSecondValidation()
+
+    this.setState({
+      secondTermType,
+      secondInputValue: '',
+      secondQueryValidating: false,
+      secondQueryValidated: false,
+      secondQueryInvalid: false,
+      secondQueryError: '',
+    })
   }
 
   renderValidationError = () => {
-    return (
-      <div className='expression-term-validation-error'>
-        <Icon type='warning-triangle' /> That query is invalid. Try entering a different query.
-      </div>
-    )
-  }
-
-  renderCompareBtn = () => {
-    if (this.state.conditionSelectValue === 'EXISTS') {
+    if (this.state.secondQueryValidating) {
+      return <span className='expression-term-validation expression-term-validation-loading'>Validating...</span>
+    } else if (this.state.secondQueryInvalid) {
       return (
-        <Button
-          onClick={() => {
-            this.setState({ conditionSelectValue: 'GREATER_THAN' })
-          }}
-        >
-          Compare
-        </Button>
+        <span className='expression-term-validation expression-term-validation-error'>
+          <Icon type='warning-triangle' />{' '}
+          {this.state.secondQueryError ? (
+            <span>{this.state.secondQueryError}</span>
+          ) : (
+            <span>That query is invalid. Try entering a different query.</span>
+          )}
+        </span>
+      )
+    } else if (this.state.secondQueryValidated) {
+      return (
+        <span className='expression-term-validation expression-term-validation-valid'>
+          <Icon type='check' /> <span>Valid</span>
+        </span>
       )
     }
     return null
   }
 
-  renderConditionSelector = () => {
+  renderOperatorSelector = () => {
+    const options = this.SUPPORTED_OPERATORS?.map((operator) => {
+      const operatorObj = DATA_ALERT_OPERATORS[operator]
+      const symbol = operatorObj.symbol ? `(${operatorObj.symbol})` : ''
+      return {
+        value: operator,
+        listLabel: (
+          <span>
+            {operatorObj.displayName} {symbol}
+          </span>
+        ),
+        label: operatorObj.displayName,
+      }
+    })
+
     return (
       <Select
-        options={[
-          { value: 'GREATER_THAN', label: '>', tooltip: 'Greater Than' },
-          { value: 'LESS_THAN', label: '<', tooltip: 'Less Than' },
-          { value: 'EQUAL_TO', label: '=', tooltip: 'EQUAL_TO' },
-          {
-            value: 'EXISTS',
-            label: 'Exists',
-            tooltip: 'No Comparison',
-          },
-        ]}
-        value={this.state.conditionSelectValue}
+        options={options}
+        value={this.state.selectedOperator}
         className='react-autoql-rule-condition-select'
         onChange={(value) => {
-          this.setState({ conditionSelectValue: value })
+          this.setState({ selectedOperator: value })
         }}
       />
     )
-    return null
   }
 
-  renderRule = () => {
+  renderRTChunk = (text, type, key) => {
     return (
-      <ErrorBoundary>
-        <div className='react-autoql-notification-rule-container' data-test='rule'>
-          <div className='react-autoql-rule-first-input-container'>
-            <div className='react-autoql-rule-input'>
-              <Input
-                placeholder='Type a query'
-                value={this.state.input1Value}
-                onChange={(e) => this.setState({ input1Value: e.target.value })}
-              />
-              {!this.state.isFirstTermValid && this.renderValidationError()}
-            </div>
-            {this.renderCompareBtn()}
-          </div>
-          <div
-            className={`react-autoql-rule-second-input-container${
-              this.state.conditionSelectValue === 'EXISTS' ? ' hidden' : ''
-            }`}
-          >
-            {this.renderConditionSelector()}
-            <div className='react-autoql-rule-input'>
-              <Input
-                placeholder='Type a query or number'
-                value={this.state.input2Value}
-                onChange={(e) => this.setState({ input2Value: e.target.value })}
-              />
-              {!this.state.isSecondTermValid && this.renderValidationError()}
-            </div>
-            <Icon
-              className='react-autoql-delete-compare-btn'
-              type='close'
-              onClick={() => this.setState({ conditionSelectValue: 'EXISTS' })}
-            />
-          </div>
-        </div>
-      </ErrorBoundary>
+      <span key={`data-alert-chunked-rt-${this.COMPONENT_KEY}-${key}`} className={`data-alert-chunked-rt ${type}`}>
+        {text}{' '}
+      </span>
+    )
+  }
+
+  onValidationResponse = (response) => {
+    let error
+    let isInvalid = false
+    if (isSingleValueResponse(this.props.queryResponse) && !isSingleValueResponse(response)) {
+      isInvalid = true
+      error = <span>The result of this query must be a single value</span>
+    }
+
+    this.setState({
+      secondQueryValidating: false,
+      secondQueryInvalid: isInvalid,
+      secondQueryValidated: true,
+      secondQueryError: error,
+    })
+  }
+
+  cancelSecondValidation = () => {
+    this.axiosSource?.cancel(responseErrors.CANCELLED)
+  }
+
+  runSecondValidation = () => {
+    this.axiosSource = axios.CancelToken?.source()
+
+    runQueryOnly({
+      query: this.state.secondInputValue,
+      ...getAuthentication(this.props.authentication),
+      ...getAutoQLConfig(this.props.autoQLConfig),
+      // source: newSource, // TODO
+      // filters: this.props.queryFilters, // TODO
+      pageSize: 2, // No need to fetch more than 2 rows to determine validity
+      cancelToken: this.axiosSource.token,
+    })
+      .then((response) => {
+        this.onValidationResponse(response)
+      })
+      .catch((error) => {
+        if (error?.response?.data?.message !== responseErrors.CANCELLED) {
+          this.setState({ secondQueryValidating: false, secondQueryInvalid: true })
+        }
+      })
+  }
+
+  validateSecondQuery = () => {
+    this.cancelSecondValidation()
+
+    if (!this.state.secondQueryValidating) {
+      this.setState({ secondQueryValidating: true })
+    }
+
+    clearTimeout(this.secondValidationTimeout)
+    this.secondValidationTimeout = setTimeout(() => {
+      this.runSecondValidation()
+    }, 1000)
+  }
+
+  onSecondQueryChange = (e) => {
+    this.setState({ secondInputValue: e.target.value })
+  }
+
+  getChunkedInterpretationText = () => {
+    const parsedRT = this.props.queryResponse?.data?.data?.parsed_interpretation
+    const rtArray = constructRTArray(parsedRT)
+
+    if (!parsedRT?.length) {
+      return this.props.queryResponse?.data?.data?.text
+    }
+
+    let queryText = ''
+    let numValueLabels = 0
+    rtArray.forEach((chunk, i) => {
+      let text = chunk.eng?.trim()
+      const type = chunk.c_type
+
+      if (!text || !type || type === 'VL_SUFFIX' || type === 'DELIM') {
+        return
+      }
+
+      let prefix = ''
+      if (type === 'VALUE_LABEL') {
+        if (!numValueLabels) {
+          prefix = 'for '
+        }
+
+        numValueLabels += 1
+      }
+
+      if (type === 'DATE') {
+        const timeFrame = getTimeFrameTextFromChunk(chunk)
+        if (timeFrame) {
+          text = timeFrame
+        } else {
+          return
+        }
+      }
+
+      queryText = `${queryText} ${prefix}${text}`
+    })
+
+    return queryText?.trim()
+  }
+
+  renderChunkedInterpretation = () => {
+    const parsedRT = this.props.queryResponse?.data?.data?.parsed_interpretation
+    const rtArray = constructRTArray(parsedRT)
+
+    if (!parsedRT?.length) {
+      return this.props.queryResponse?.data?.data?.text
+    }
+
+    let numValueLabels = 0
+    return rtArray.map((chunk, i) => {
+      let text = chunk.eng
+      const type = chunk.c_type
+
+      if (!text || !type) {
+        return null
+      }
+
+      if (i === 0) {
+        text = text[0].toUpperCase() + text.substring(1)
+      }
+
+      if (type === 'VL_SUFFIX' || type === 'DELIM') {
+        return null
+      }
+
+      if (type === 'DATE') {
+        const timeFrame = getTimeFrameTextFromChunk(chunk)
+        if (timeFrame) {
+          text = timeFrame
+        } else {
+          return null
+        }
+      }
+
+      let prefix = ''
+      if (type === 'VALUE_LABEL') {
+        if (!numValueLabels) {
+          prefix = 'for'
+        }
+
+        numValueLabels += 1
+
+        // return (
+        //   <>
+        //     {prefix}
+        //     <Chip
+        //       onClick={() => {}}
+        //       onDelete={() => {
+        //       }}
+        //     >
+        //       {text}
+        //     </Chip>
+        //   </>
+        // )
+      }
+
+      return (
+        <>
+          {!!prefix && this.renderRTChunk(prefix, 'VL_PREFIX', `${i}-${i}`)}
+          {this.renderRTChunk(text, type, i)}
+        </>
+      )
+    })
+  }
+
+  getFormattedQueryText = () => {
+    try {
+      let queryText = this.state.inputValue
+      if (this.props.queryResponse) {
+        queryText = this.props.queryResponse?.data?.data?.text
+      }
+
+      if (!queryText) {
+        return ''
+      }
+
+      queryText = queryText[0].toUpperCase() + queryText.substring(1)
+      return queryText
+    } catch (error) {
+      console.error(error)
+      return ''
+    }
+  }
+
+  renderFormattedQuery = () => {
+    return (
+      <div className='data-alert-rule-formatted-query'>
+        <span>{this.getFormattedQueryText()}</span>
+        {/* <span>{this.renderChunkedInterpretation()} </span> */}
+        <Icon
+          type='info'
+          className='data-alert-rule-tooltip-icon'
+          data-for={this.props.tooltipID}
+          data-tip='This query will be used to evaluate the conditions below. If the query result meets the specified conditons, an alert will be triggered.'
+          // data-tip={`This is how AutoQL interpreted the query "${this.props.queryResponse?.data?.data?.text}".<br /><br />If there was a date or time frame in the original query, you will be able to configure that in the next step.`}
+          data-place='right'
+        />
+        {/* 
+        Do we want the ability to edit this?
+        <Icon type='edit' onClick={() => this.setState({ isEditingQuery: true })} /> 
+        */}
+      </div>
+    )
+  }
+
+  renderQueryDisplay = () => {
+    return (
+      <div className='react-autoql-rule-input'>
+        {this.state.isEditingQuery ? (
+          <Input
+            placeholder='Type a query'
+            value={this.state.inputValue}
+            onChange={(e) => this.setState({ inputValue: e.target.value })}
+            spellCheck={false}
+            icon='react-autoql-bubbles-outlined'
+          />
+        ) : (
+          this.renderFormattedQuery()
+        )}
+      </div>
+    )
+  }
+
+  getSecondInputPlaceholder = () => {
+    const { secondTermType } = this.state
+    const { queryResponse } = this.props
+
+    if (secondTermType === NUMBER_TERM_TYPE) {
+      let placeholder = 'Type a number'
+      const queryResponseValue = queryResponse?.data?.data?.rows?.[0]?.[0]
+      if (isNumber(queryResponseValue)) {
+        return `${placeholder} (eg. "${queryResponseValue}")`
+      }
+      return placeholder
+    } else if (secondTermType === QUERY_TERM_TYPE) {
+      return 'Type a query'
+    }
+  }
+
+  renderTermValidationSection = () => {
+    return (
+      <div className='rule-simple-validation-container'>
+        {this.state.secondTermType === QUERY_TERM_TYPE ? this.renderValidationError() : null}
+      </div>
+    )
+  }
+
+  renderSecondTermInput = () => {
+    return (
+      <Input
+        ref={(r) => (this.secondInput = r)}
+        spellCheck={false}
+        placeholder={this.getSecondInputPlaceholder()}
+        value={this.state.secondInputValue}
+        type={this.state.secondTermType === NUMBER_TERM_TYPE ? NUMBER_TERM_TYPE : undefined}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            this.props.onLastInputEnterPress()
+          }
+        }}
+        selectOptions={[
+          {
+            value: NUMBER_TERM_TYPE,
+            label: (
+              <span>
+                this <strong>number:</strong>
+              </span>
+            ),
+          },
+          {
+            value: QUERY_TERM_TYPE,
+            label: (
+              <span>
+                the result of this <strong>query:</strong>
+              </span>
+            ),
+          },
+        ]}
+        onSelectChange={this.switchSecondTermType}
+        selectValue={this.state.secondTermType}
+        onChange={this.onSecondQueryChange}
+      />
     )
   }
 
   render = () => {
-    if (this.props.readOnly) {
-      return this.renderReadOnlyRule()
-    }
-    return this.renderRule()
+    return (
+      <ErrorBoundary>
+        <div style={this.props.style}>
+          <div className='react-autoql-notification-rule-container' data-test='rule'>
+            <div className='react-autoql-rule-first-input-container'>
+              <div className='react-autoql-input-label'>Trigger Alert when</div>
+              {this.renderQueryDisplay()}
+            </div>
+          </div>
+          <div className='react-autoql-notification-rule-container' data-test='rule'>
+            {this.state.selectedOperator !== EXISTS_TYPE && (
+              <>
+                <div className='react-autoql-rule-condition-select-input-container'>
+                  <div className='react-autoql-input-label'>Meets this condition</div>
+                  {this.renderOperatorSelector()}
+                </div>
+                <div className='react-autoql-rule-second-input-container'>
+                  <div className='react-autoql-rule-input'>{this.renderSecondTermInput()}</div>
+                  {this.renderTermValidationSection()}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </ErrorBoundary>
+    )
   }
 }

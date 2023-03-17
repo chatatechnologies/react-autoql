@@ -10,7 +10,7 @@ import { Button } from '../../Button'
 import { Checkbox } from '../../Checkbox'
 import { hideTooltips, Tooltip } from '../../Tooltip'
 import { LoadingDots } from '../../LoadingDots'
-import { DataAlertModalV2 } from '../DataAlertModalV2'
+import { DataAlertModal } from '../DataAlertModal'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 
 import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
@@ -136,7 +136,7 @@ class DataAlerts extends React.Component {
   }
   renderNotificationEditModal = () => {
     return (
-      <DataAlertModalV2
+      <DataAlertModal
         ref={(r) => (this.editModalRef = r)}
         key={this.COMPONENT_KEY}
         authentication={this.props.authentication}

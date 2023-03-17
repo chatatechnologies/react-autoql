@@ -75,7 +75,7 @@ export default class Modal extends React.Component {
     }
 
     return (
-      <div>
+      <div className='modal-footer-button-container right'>
         {this.props.showCancelButton && (
           <Button type='default' onClick={this.onClose}>
             Cancel
@@ -116,7 +116,9 @@ export default class Modal extends React.Component {
         >
           <div className='react-autoql-modal-content' ref={(r) => (this.modalContent = r)}>
             <div className='react-autoql-modal-header'>
-              {this.props.titleIcon} {this.props.title}
+              <div className='react-autoql-modal-header-title'>
+                {this.props.titleIcon} {this.props.title}
+              </div>
               <Icon type='close' className='react-autoql-modal-close-btn' onClick={this.onClose} />
             </div>
             <div

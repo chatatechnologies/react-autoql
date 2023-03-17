@@ -43,7 +43,7 @@ export default class ConfirmModal extends React.Component {
     }
 
     return (
-      <div>
+      <div className='modal-footer-button-container right'>
         <Button type='default' onClick={this.props.onClose} tooltipID={this.props.tooltipID}>
           {this.props.backText}
         </Button>

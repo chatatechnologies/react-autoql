@@ -8,7 +8,7 @@ import { v4 as uuid } from 'uuid'
 
 import { Icon } from '../../Icon'
 import { NotificationItem } from '../NotificationItem'
-import { DataAlertModalV2 } from '../DataAlertModalV2'
+import { DataAlertModal } from '../DataAlertModal'
 import { Button } from '../../Button'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { Spinner } from '../../Spinner'
@@ -270,13 +270,13 @@ class NotificationFeed extends React.Component {
     </div>
   )
 
-  showEditDataAlertModal = (id) => {
-    this.setState({ isEditModalVisible: true, expandedNotificationID: id })
+  showEditDataAlertModal = (alertData) => {
+    this.setState({ isEditModalVisible: true, activeDataAlert: alertData })
   }
 
   renderEditDataAlertModal = () => {
     return (
-      <DataAlertModalV2
+      <DataAlertModal
         key={this.MODAL_COMPONENT_KEY}
         authentication={this.props.authentication}
         isVisible={this.state.isEditModalVisible}
@@ -382,8 +382,7 @@ class NotificationFeed extends React.Component {
                           autoChartAggregations={this.props.autoChartAggregations}
                           onErrorCallback={this.props.onErrorCallback}
                           onEditClick={(dataAlert) => {
-                            this.setState({ activeDataAlert: dataAlert })
-                            this.showEditDataAlertModal()
+                            this.showEditDataAlertModal(dataAlert)
                           }}
                           enableAjaxTableData={this.props.enableAjaxTableData}
                         />

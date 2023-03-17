@@ -1,36 +1,119 @@
-// .react-autoql-data-alert-modal-content {
-//   .react-autoql-step-content p {
-//     margin-bottom: 0.5em;
-//     margin-top: 0.5em;
-//     padding-left: 8px;
-//   }
+.react-autoql-data-alert-modal-content {
+  height: 400px;
+  max-height: 90vh;
+  padding: 0 40px;
+  display: flex;
+  flex-direction: column;
 
-//   .step-btn-container {
-//     text-align: right;
-//     display: flex;
-//     min-height: 30px;
-//   }
-// }
+  .react-autoql-data-alert-modal-step {
+    font-weight: 400;
+    font-size: 15px;
+    padding-top: 15px;
 
-// .expression-valid-checkmark.react-autoql-icon svg {
-//   color: var(--react-autoql-success-color);
-// }
+    .compose-message-section {
+      display: flex;
+      margin-top: 20px;
 
-// .expression-invalid-message-container {
-//   max-width: 75%;
-//   float: left;
-//   text-align: left !important;
-//   display: flex;
-//   flex-direction: row;
-//   align-items: left;
-//   justify-content: left;
-// }
+      .form-section,
+      .preview-section {
+        flex: 1;
+      }
 
-// .expression-invalid-message {
-//   color: var(--react-autoql-danger-color);
-//   display: 'inline-block';
-// }
+      .preview-section {
+        display: flex;
+        flex-direction: column;
+        margin-left: 20px;
 
-// .react-autoql-data-alert-query-name-tooltip-icon {
-//   color: var(--react-autoql-info-color) !important;
-// }
+        .data-alert-preview {
+          flex: 1;
+          padding: 20px;
+          border: 1px solid var(--react-autoql-border-color);
+          border-radius: 2px;
+          background: var(--react-autoql-background-color-primary);
+          overflow: auto;
+          pointer-events: none !important;
+
+          .react-autoql-notification-extra-content {
+            display: none !important;
+          }
+        }
+      }
+    }
+
+    .data-alert-modal-condition-title {
+      margin-top: 20px;
+      margin-bottom: 5px;
+    }
+
+    .data-alert-name-input-section {
+      margin-bottom: 20px;
+
+      .react-autoql-data-alert-modal-tooltip-icon {
+        flex: 0 0 auto;
+        font-size: 1.1em;
+        vertical-align: text-top;
+      }
+
+      .react-autoql-notification-display-name-input {
+        width: 100%;
+      }
+    }
+
+    .react-autoql-input-container {
+      width: 100%;
+      margin: 0;
+
+      textarea {
+        width: 100% !important;
+        height: 5em;
+      }
+    }
+
+    &.hidden {
+      position: absolute;
+      display: none;
+    }
+  }
+
+  .react-autoql-step-content p {
+    margin-bottom: 0.5em;
+    margin-top: 0.5em;
+    padding-left: 8px;
+  }
+
+  .step-btn-container {
+    text-align: right;
+    display: flex;
+    min-height: 30px;
+  }
+
+  .data-alert-chunked-rt {
+    // These are the RT chunk types if we want to use them to style
+    // &.PREFIX,
+    // &.TEXT,
+    // &.GROUPBY,
+    // &.VL_PREFIX,
+    // &.VALUE_LABEL,
+    // &.DATE
+    color: var(--react-autoql-text-color-primary);
+  }
+}
+
+.react-autoql-data-alert-modal-footer {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+
+.modal-footer-button-container {
+  display: flex;
+  flex-direction: row;
+
+  &.left {
+    justify-content: flex-start;
+  }
+
+  &.right {
+    justify-content: flex-end;
+  }
+}

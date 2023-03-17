@@ -34,7 +34,7 @@
     }
   }
 
-  .react-autoql-notification-details-title {
+  .react-autoql-notification-query-title {
     font-weight: 600;
     padding-top: 20px;
     padding-bottom: 5px;
@@ -44,11 +44,15 @@
     border-bottom: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.04));
   }
 
-  .react-autoql-notification-details {
+  .react-autoql-notification-condition-statement {
+    background: var(--react-autoql-background-color-primary);
+    text-overflow: ellipsis;
     overflow: hidden;
-  }
-  &.animation-complete .react-autoql-notification-details {
-    overflow: auto;
+    padding: 0 15px;
+
+    .condition-builder-statement {
+      font-style: italic;
+    }
   }
 
   &:hover {
@@ -89,7 +93,7 @@
     overflow: hidden;
 
     &.loading {
-      .react-autoql-notification-details-container,
+      .react-autoql-notification-content-container,
       .react-autoql-notification-extra-content {
         opacity: 0;
       }
@@ -170,34 +174,24 @@
     padding-top: 20px;
     padding-bottom: 7px;
   }
-  .react-autoql-notification-details-container {
+  .react-autoql-notification-content-container {
     display: flex;
+    flex-direction: column;
     overflow: hidden;
     width: 100%;
-
-    .react-autoql-notification-details {
-      flex: 1 1;
-      padding: 20px;
-      padding-top: 0;
-      opacity: 0.9;
-      border-left: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.05));
-    }
   }
 
   .react-autoql-notification-data-container {
     display: flex;
-    flex-direction: row;
-    justify-content: stretch;
+    flex-direction: column;
     flex: 3 3 0px;
     overflow: hidden;
 
     .react-autoql-notificaton-chart-container {
       flex: 1;
-      height: 100%;
-      width: 0;
       display: flex;
       flex-direction: column;
-      padding: 0px 20px 10px 20px;
+      padding: 20px;
     }
 
     .react-autoql-table-container {

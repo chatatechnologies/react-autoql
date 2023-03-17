@@ -25,7 +25,6 @@ import { Select } from '../Select'
 
 import { ExploreQueries } from '../ExploreQueries'
 import { DataExplorer } from '../DataExplorer'
-import { DataAlertModal } from '../Notifications/DataAlertModal'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
 import { FilterLockPopover } from '../FilterLockPopover'
@@ -33,7 +32,6 @@ import { FilterLockPopover } from '../FilterLockPopover'
 // Styles
 import 'rc-drawer/assets/index.css'
 import './DataMessenger.scss'
-import { DataAlertModalV2 } from '../Notifications/DataAlertModalV2'
 
 export class DataMessenger extends React.Component {
   constructor(props) {

@@ -68,6 +68,16 @@
   border-bottom: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.05));
   padding: 14px 60px;
   font-size: 16px;
+
+  .react-autoql-modal-header-title {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .react-autoql-icon {
+      margin-right: 5px;
+    }
+  }
 }
 .react-autoql-modal-footer {
   position: relative;

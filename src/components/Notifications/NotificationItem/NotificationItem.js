@@ -2,16 +2,15 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import _isEmpty from 'lodash.isempty'
-import _isEqual from 'lodash.isequal'
 
 import { Icon } from '../../Icon'
 import { LoadingDots } from '../../LoadingDots'
 import { QueryOutput } from '../../QueryOutput'
 import { Button } from '../../Button'
-import { ExpressionBuilderSimple } from '../ExpressionBuilderSimple'
 import { VizToolbar } from '../../VizToolbar'
 import { hideTooltips } from '../../Tooltip'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
+import { ConditionBuilder } from '../ConditionBuilder'
 
 import {
   dismissNotification,
@@ -21,7 +20,7 @@ import {
   fetchNotificationData,
 } from '../../../js/notificationService'
 import dayjs from '../../../js/dayjsWithPlugins'
-import { capitalizeFirstChar, isNumber } from '../../../js/Util'
+import { isNumber } from '../../../js/Util'
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
@@ -99,8 +98,8 @@ export default class NotificationItem extends React.Component {
     clearTimeout(this.initialCollapseTimer)
   }
 
-  getIsTriggered = (state) => {
-    return ['ACKNOWLEDGED', 'UNACKNOWLEDGED'].includes(state)
+  getIsTriggered = () => {
+    return ['ACKNOWLEDGED', 'UNACKNOWLEDGED'].includes(this.props.notification?.state)
   }
 
   fetchQueryResponse = () => {
@@ -227,13 +226,9 @@ export default class NotificationItem extends React.Component {
 
   renderNotificationHeader = () => {
     const { notification } = this.props
+
     return (
-      <div
-        className='react-autoql-notification-list-item-header'
-        onClick={() => {
-          this.onClick(notification)
-        }}
-      >
+      <div className='react-autoql-notification-list-item-header' onClick={() => this.onClick(notification)}>
         <div className='react-autoql-notification-display-name-container'>
           <div className='react-autoql-notification-display-name'>{notification.title}</div>
           <div className='react-autoql-notification-description'>{notification.message}</div>
@@ -243,7 +238,7 @@ export default class NotificationItem extends React.Component {
             </span>
           </div>
         </div>
-        {this.getIsTriggered(notification.state) ? (
+        {this.getIsTriggered() ? (
           <div className='react-autoql-notification-dismiss-btn'>
             <Icon
               type='notification-off'
@@ -321,14 +316,26 @@ export default class NotificationItem extends React.Component {
     )
   }
 
-  renderNotificationData = () => {
+  renderVizToolbar = () => {
+    if (this.OUTPUT_REF?.supportedDisplayTypes?.length > 1) {
+      return (
+        <div className='react-autoql-notification-viz-switcher'>
+          <VizToolbar ref={(r) => (this.vizToolbarRef = r)} responseRef={this.OUTPUT_REF} vertical />
+        </div>
+      )
+    }
+
+    return null
+  }
+
+  renderQueryResponse = () => {
     const { queryResponse } = this.state
-    const queryTitle = this.props.notification?.data_return_query
-    const queryTitleCapitalized = capitalizeFirstChar(queryTitle)
+    // const queryTitle = this.props.notification?.data_return_query
+    // const queryTitleCapitalized = capitalizeFirstChar(queryTitle)
 
     return (
-      <>
-        <div className='react-autoql-notification-query-title'>{queryTitleCapitalized}</div>
+      <div className='react-autoql-notificaton-chart-container'>
+        {/* <div className='react-autoql-notification-query-title'>{queryTitleCapitalized}</div> */}
         <div ref={(r) => (this.dataContainer = r)} className='react-autoql-notification-query-data-container'>
           {queryResponse ? (
             <QueryOutput
@@ -347,7 +354,7 @@ export default class NotificationItem extends React.Component {
             </div>
           )}
         </div>
-      </>
+      </div>
     )
   }
 
@@ -371,24 +378,19 @@ export default class NotificationItem extends React.Component {
       >
         <>
           {!this.state.queryResponse && this.renderLoader()}
-          <div className='react-autoql-notification-details-container'>
+          <div className='react-autoql-notification-content-container'>
             <div className='react-autoql-notification-data-container' onClick={(e) => e.stopPropagation()}>
-              <div className='react-autoql-notificaton-chart-container'>{this.renderNotificationData()}</div>
-              {this.OUTPUT_REF?.supportedDisplayTypes?.length > 1 && (
-                <div className='react-autoql-notification-viz-switcher'>
-                  <VizToolbar ref={(r) => (this.vizToolbarRef = r)} responseRef={this.OUTPUT_REF} vertical />
-                </div>
-              )}
+              {this.renderQueryResponse()}
+              {this.renderVizToolbar()}
             </div>
-            {/* <div className='react-autoql-notification-details'>
-              <div className='react-autoql-notification-details-title'>Conditions:</div>
-              <ExpressionBuilderSimple
-                authentication={this.props.authentication}
+            <div className='react-autoql-notification-condition-statement'>
+              {/* <div className='react-autoql-notification-query-title'>Conditions:</div> */}
+              <ConditionBuilder
                 key={`expression-builder-${this.COMPONENT_KEY}`}
                 expression={notification?.expression}
-                readOnly
+                conditionStatementOnly
               />
-            </div> */}
+            </div>
           </div>
           {this.renderNotificationFooter(notification)}
         </>
@@ -404,7 +406,7 @@ export default class NotificationItem extends React.Component {
           key={`react-autoql-notification-item-${this.COMPONENT_KEY}`}
           className={`react-autoql-notification-list-item
           ${this.state.expanded ? 'expanded' : 'collapsed'}
-          ${this.getIsTriggered(this.props.notification?.state) ? ' triggered' : ''}`}
+          ${this.getIsTriggered() ? ' triggered' : ''}`}
         >
           {this.renderNotificationHeader()}
           {this.renderNotificationContent()}

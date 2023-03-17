@@ -159,10 +159,19 @@ export const constructRTArray = (interpretation) => {
 }
 
 export const getDatesFromRT = (queryResponse) => {
-  const parsedRT = queryResponse?.data?.data?.parsed_interpretation
-  const rtArray = constructRTArray(parsedRT)
-  const timeFrameChunk = rtArray.findLast((chunk) => chunk.c_type === 'DATE')
-  return timeFrameChunk?.dateArray
+  try {
+    const parsedRT = queryResponse?.data?.data?.parsed_interpretation
+    if (!parsedRT) {
+      return
+    }
+
+    const rtArray = constructRTArray(parsedRT)
+    const timeFrameChunk = rtArray.findLast((chunk) => chunk.c_type === 'DATE')
+    return timeFrameChunk?.dateArray
+  } catch (error) {
+    console.error(error)
+    return
+  }
 }
 
 export const getTimeRangeFromDateArray = (dates) => {

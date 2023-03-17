@@ -1,4 +1,7 @@
 .notification-list-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
   padding-top: 100px;
   color: var(--react-autoql-text-color-primary);

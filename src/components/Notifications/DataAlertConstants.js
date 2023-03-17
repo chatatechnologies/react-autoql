@@ -4,8 +4,9 @@ export const PERIODIC_FREQUENCY = 'PERIODIC'
 export const CONTINUOUS_FREQUENCY = 'CONTINUOUS'
 export const COMPARE_TYPE = 'COMPARE'
 export const EXISTS_TYPE = 'EXISTS'
-export const NUMBER_TERM_TYPE = 'CONSTANT'
-export const QUERY_TERM_TYPE = 'QUERY'
+export const NUMBER_TERM_TYPE = 'constant'
+export const QUERY_TERM_TYPE = 'query'
+export const GROUP_TERM_TYPE = 'group'
 
 export const DATA_ALERT_OPERATORS = {
   GREATER_THAN: {
