@@ -8,32 +8,43 @@ import { v4 as uuid } from 'uuid'
 
 import { Icon } from '../../Icon'
 import { NotificationItem } from '../NotificationItem'
-import { DataAlertModal } from '../DataAlertModal'
+import { DataAlertModalV2 } from '../DataAlertModalV2'
 import { Button } from '../../Button'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { Spinner } from '../../Spinner'
 import { Tooltip } from '../../Tooltip'
-import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
+import { ErrorBoundary } from '../../../containers/ErrorHOC'
 
 import { fetchNotificationFeed, dismissAllNotifications } from '../../../js/notificationService'
-
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
+import { withTheme } from '../../../theme'
 
 import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
-import { withTheme } from '../../../theme'
-import { deepEqual } from '../../../js/Util'
 
 import './NotificationFeed.scss'
-import { DataAlertModalV2 } from '../DataAlertModalV2'
 
 class NotificationFeed extends React.Component {
-  MODAL_COMPONENT_KEY = uuid()
-  NOTIFICATION_FETCH_LIMIT = 10
-  // Open event source http connection here to receive SSE
-  // notificationEventSource = new EventSource(
-  //   'https://backend.chata.io/notifications'
-  // )
+  constructor(props) {
+    super(props)
+
+    this.MODAL_COMPONENT_KEY = uuid()
+    this.NOTIFICATION_FETCH_LIMIT = 10
+    // Open event source http connection here to receive SSE
+    // notificationEventSource = new EventSource(
+    //   'https://backend.chata.io/notifications'
+    // )
+
+    this.notificationRefs = {}
+
+    this.state = {
+      isFetchingFirstNotifications: true,
+      notificationList: [],
+      pagination: {},
+      nextOffset: 0,
+      hasMore: true,
+    }
+  }
 
   static propTypes = {
     authentication: authenticationType,
@@ -69,14 +80,6 @@ class NotificationFeed extends React.Component {
     onDeleteCallback: () => {},
     onDataAlertModalOpen: () => {},
     onChange: () => {},
-  }
-
-  state = {
-    isFetchingFirstNotifications: true,
-    notificationList: [],
-    pagination: {},
-    nextOffset: 0,
-    hasMore: true,
   }
 
   componentDidMount = () => {
@@ -183,11 +186,11 @@ class NotificationFeed extends React.Component {
 
   onItemClick = (notification) => {
     // fetch data stored in integrators DB and display
-    let activeNotificationId = undefined
+    let expandedNotificationID = undefined
     const newList = this.state.notificationList.map((n) => {
       if (notification.id === n.id) {
         if (!n.expanded) {
-          activeNotificationId = notification.id
+          expandedNotificationID = notification.id
         }
         return {
           ...n,
@@ -199,7 +202,7 @@ class NotificationFeed extends React.Component {
         expanded: false,
       }
     })
-    this.setState({ notificationList: newList, activeNotificationId })
+    this.setState({ notificationList: newList, expandedNotificationID })
   }
 
   onDismissAllClick = () => {
@@ -268,7 +271,7 @@ class NotificationFeed extends React.Component {
   )
 
   showEditDataAlertModal = (id) => {
-    this.setState({ isEditModalVisible: true, activeNotificationId: id })
+    this.setState({ isEditModalVisible: true, expandedNotificationID: id })
   }
 
   renderEditDataAlertModal = () => {
@@ -289,6 +292,17 @@ class NotificationFeed extends React.Component {
         tooltipID={this.props.tooltipID}
       />
     )
+  }
+
+  onNotificationExpand = (notification) => {
+    const expandedID = this.state.expandedNotificationID
+    if (expandedID && expandedID !== notification.id) {
+      this.notificationRefs[expandedID]?.collapse()
+    }
+
+    this.setState({
+      expandedNotificationID: notification.id,
+    })
   }
 
   render = () => {
@@ -347,9 +361,11 @@ class NotificationFeed extends React.Component {
                     {this.state.notificationList.map((notification, i) => {
                       return (
                         <NotificationItem
+                          ref={(ref) => (this.notificationRefs[notification.id] = ref)}
                           key={`notification-item-${i}`}
                           authentication={this.props.authentication}
                           notification={notification}
+                          expanded={!!notification.expanded}
                           onClick={this.onItemClick}
                           onDismissCallback={this.onDismissClick}
                           onDismissSuccessCallback={() => {
@@ -360,16 +376,10 @@ class NotificationFeed extends React.Component {
                             this.props.onChange(this.state.notificationList)
                             this.getNotifications()
                           }}
-                          onExpandCallback={(notification) => {
-                            this.props.onExpandCallback(notification)
-                            this.setState({
-                              activeNotificationId: notification.id,
-                            })
-                          }}
-                          onCollapseCallback={this.props.onCollapseCallback}
+                          onExpandCallback={this.onNotificationExpand}
+                          // onCollapseCallback={this.props.onCollapseCallback}
                           activeNotificationData={this.props.activeNotificationData}
                           autoChartAggregations={this.props.autoChartAggregations}
-                          showNotificationDetails={this.props.showNotificationDetails}
                           onErrorCallback={this.props.onErrorCallback}
                           onEditClick={(dataAlert) => {
                             this.setState({ activeDataAlert: dataAlert })

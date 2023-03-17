@@ -3,7 +3,8 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 
 import { Spinner } from '../Spinner'
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { Icon } from '../Icon'
+import { ErrorBoundary } from '../../containers/ErrorHOC'
 
 import './Button.scss'
 
@@ -23,6 +24,7 @@ export default class Button extends React.Component {
     filled: PropTypes.bool,
     border: PropTypes.bool,
     tooltip: PropTypes.string,
+    icon: PropTypes.string,
   }
 
   static defaultProps = {
@@ -34,6 +36,7 @@ export default class Button extends React.Component {
     tooltip: undefined,
     filled: false,
     border: true,
+    icon: undefined,
     onClick: () => {},
   }
 
@@ -63,6 +66,14 @@ export default class Button extends React.Component {
     return 'large'
   }
 
+  renderIcon = () => {
+    if (!this.props.icon) {
+      return null
+    }
+
+    return <Icon className='react-autoql-button-icon' type={this.props.icon} />
+  }
+
   render = () => {
     const type = this.getType()
     const size = this.getSize()
@@ -85,8 +96,8 @@ export default class Button extends React.Component {
           data-tip={this.props.tooltip}
           data-for={this.props.tooltipID ?? this.COMPONENT_KEY}
         >
-          {this.props.loading && <Spinner data-test='react-autoql-btn-loading' />}
-          {this.props.children}
+          {this.props.loading ? <Spinner data-test='react-autoql-btn-loading' /> : this.renderIcon()}
+          <div>{this.props.children}</div>
         </button>
       </ErrorBoundary>
     )

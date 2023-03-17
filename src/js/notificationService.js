@@ -2,9 +2,38 @@ import axios from 'axios'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 
-const generalErrorMessage = 'Something went wrong. Please try again.'
+const generalErrorMessage =
+  "Uh oh, Our system is experiencing an unexpected error. We're aware of this issue and are working to fix it as soon as possible."
 
 // ----------------- GET --------------------
+export const fetchNotificationData = ({ id, domain, apiKey, token }) => {
+  if (!token || !apiKey || !domain) {
+    return Promise.reject(new Error('UNAUTHORIZED'))
+  }
+
+  const axiosInstance = axios.create({
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  const url = `${domain}/autoql/api/v1/data-alerts/notifications/${id}?key=${apiKey}`
+
+  return axiosInstance
+    .get(url)
+    .then((response) => {
+      const queryResult = response?.data?.data?.query_result
+      if (queryResult) {
+        return Promise.resolve({ data: queryResult })
+      }
+
+      return Promise.reject({ response: { data: { message: generalErrorMessage } } })
+    })
+    .catch((error) => {
+      return Promise.reject({ data: error?.response?.data })
+    })
+}
+
 export const isExpressionQueryValid = ({ query, domain, apiKey, token }) => {
   const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
 

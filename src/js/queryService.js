@@ -524,7 +524,7 @@ export const setFilters = ({ apiKey, token, domain, filters } = {}) => {
   return axios
     .put(url, data, config)
     .then((response) => Promise.resolve(response))
-    .catch((error) => Promise.reject(_get(error, 'response.data')))
+    .catch((error) => Promise.reject(error?.response?.data))
 }
 
 export const unsetFilterFromAPI = ({ apiKey, token, domain, filter } = {}) => {

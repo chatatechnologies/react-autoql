@@ -1,8 +1,8 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
-import _get from 'lodash.get'
 import _isEmpty from 'lodash.isempty'
+import _isEqual from 'lodash.isequal'
 
 import { Icon } from '../../Icon'
 import { LoadingDots } from '../../LoadingDots'
@@ -18,6 +18,7 @@ import {
   deleteNotification,
   updateDataAlertStatus,
   fetchRule,
+  fetchNotificationData,
 } from '../../../js/notificationService'
 import dayjs from '../../../js/dayjsWithPlugins'
 import { capitalizeFirstChar, isNumber } from '../../../js/Util'
@@ -33,7 +34,6 @@ export default class NotificationItem extends React.Component {
     authentication: authenticationType,
     notification: PropTypes.shape({}).isRequired,
     activeNotificationData: PropTypes.shape({}),
-    showNotificationDetails: PropTypes.bool,
     onRuleFetchCallback: PropTypes.func,
     onExpandCallback: PropTypes.func,
     onDismissCallback: PropTypes.func,
@@ -49,7 +49,6 @@ export default class NotificationItem extends React.Component {
   static defaultProps = {
     authentication: authenticationDefault,
     activeNotificationData: undefined,
-    showNotificationDetails: true,
     autoChartAggregations: false,
     onRuleFetchCallback: () => {},
     onExpandCallback: () => {},
@@ -62,17 +61,61 @@ export default class NotificationItem extends React.Component {
   }
 
   state = {
+    expanded: false,
     ruleStatus: undefined,
     ruleDetails: undefined,
-    fullyExpanded: false,
+    queryResponse: undefined,
+    // loading: true,
+  }
+
+  componentDidMount = () => {
+    // Wait for animation to finish, then set card height
+    // this.initialCollapseTimer = setTimeout(() => {
+    //   this.saveCurrentExpandedHeight()
+    // }, 400)
+  }
+
+  // shouldComponentUpdate = (prevProps, prevState) => {
+  //   if (!this.state.expanded && !prevState.expanded) {
+  //     return false
+  //   }
+
+  //   return true
+  // }
+
+  componentDidUpdate = (prevProps, prevState) => {
+    if (this.state.expanded && !prevState.expanded) {
+      if (!this.state.queryResponse) {
+        this.fetchQueryResponse()
+      }
+
+      if (!this.state.ruleDetails) {
+        this.fetchRuleDetails()
+      }
+    }
+  }
+
+  componentWillUnmount = () => {
+    clearTimeout(this.initialCollapseTimer)
   }
 
   getIsTriggered = (state) => {
     return ['ACKNOWLEDGED', 'UNACKNOWLEDGED'].includes(state)
   }
 
-  fetchRuleDetails = (notification) => {
-    this.setState({ ruleDetails: undefined, dataAlertStatus: undefined })
+  fetchQueryResponse = () => {
+    const { notification } = this.props
+    fetchNotificationData({ id: notification.id, ...getAuthentication(this.props.authentication) })
+      .then((response) => {
+        this.setState({ queryResponse: response })
+      })
+      .catch((error) => {
+        this.setState({ queryResponse: error })
+      })
+  }
+
+  fetchRuleDetails = () => {
+    const { notification } = this.props
     fetchRule({
       dataAlertId: notification.data_alert_id,
       ...getAuthentication(this.props.authentication),
@@ -81,30 +124,29 @@ export default class NotificationItem extends React.Component {
         this.props.onRuleFetchCallback(response)
         this.setState({
           ruleDetails: response,
-          ruleStatus: _get(response, 'status'),
+          ruleStatus: response?.status,
         })
       })
       .catch((error) => {
-        this.setState({
-          ruleDetails: {},
-        })
+        console.error(error)
       })
   }
 
-  onClick = (notification) => {
-    if (notification.expanded) {
-      this.setState({ fullyExpanded: false })
-      this.props.onCollapseCallback(notification)
-    } else {
-      this.fetchRuleDetails(notification)
-      this.props.onExpandCallback(notification)
-      // wait for animation to complete before showing any scrollbars
-      setTimeout(() => {
-        this.setState({ fullyExpanded: true })
-      }, 500)
-    }
+  expand = () => {
+    this.setState({ expanded: true })
+  }
 
-    this.props.onClick(notification)
+  collapse = () => {
+    this.setState({ expanded: false })
+  }
+
+  onClick = (notification) => {
+    if (this.state.expanded) {
+      this.collapse()
+    } else {
+      this.expand()
+      this.props.onExpandCallback(notification)
+    }
   }
 
   onDismissClick = (e, notification) => {
@@ -183,7 +225,8 @@ export default class NotificationItem extends React.Component {
 
   renderAlertColorStrip = () => <div className='react-autoql-notification-alert-strip' />
 
-  renderNotificationHeader = (notification) => {
+  renderNotificationHeader = () => {
+    const { notification } = this.props
     return (
       <div
         className='react-autoql-notification-list-item-header'
@@ -246,8 +289,8 @@ export default class NotificationItem extends React.Component {
     }
 
     return (
-      <Button onClick={() => this.changeRuleStatus(notification, 'ACTIVE')} type='default'>
-        <Icon type='notification' /> Turn Data Alert On
+      <Button onClick={() => this.changeRuleStatus(notification, 'ACTIVE')} type='default' icon='notification'>
+        Turn Data Alert On
       </Button>
     )
   }
@@ -260,8 +303,8 @@ export default class NotificationItem extends React.Component {
     }
 
     return (
-      <Button onClick={() => this.props.onEditClick(this.state.ruleDetails)} type='default'>
-        <Icon type='edit' /> Edit Data Alert
+      <Button onClick={() => this.props.onEditClick(this.state.ruleDetails)} type='default' icon='edit'>
+        Edit Data Alert
       </Button>
     )
   }
@@ -278,81 +321,93 @@ export default class NotificationItem extends React.Component {
     )
   }
 
-  renderNotificationContent = (notification) => {
-    const queryTitle = notification.data_return_query
+  renderNotificationData = () => {
+    const { queryResponse } = this.state
+    const queryTitle = this.props.notification?.data_return_query
     const queryTitleCapitalized = capitalizeFirstChar(queryTitle)
-    let queryResponse
-    if (_get(this.props.activeNotificationData, 'error')) {
-      queryResponse = this.props.activeNotificationData.error
-    } else {
-      queryResponse = {
-        data: this.props.activeNotificationData,
-      }
-    }
 
     return (
-      <div className={`react-autoql-notification-expanded-content ${notification.expanded ? ' visible' : ''}`}>
-        <div className='react-autoql-notification-details-container'>
-          <div className='react-autoql-notification-data-container' onClick={(e) => e.stopPropagation()}>
-            <div className='react-autoql-notificaton-chart-container'>
-              {this.props.activeNotificationData && notification.expanded ? (
-                <Fragment>
-                  <div className='react-autoql-notification-query-title'>{queryTitleCapitalized}</div>
-                  <QueryOutput
-                    style={{ flex: '1' }}
-                    authentication={this.props.authentication}
-                    ref={(r) => (this.OUTPUT_REF = r)}
-                    key={queryResponse?.data?.data?.query_id}
-                    queryResponse={queryResponse}
-                    autoQLConfig={{ enableDrilldowns: false }}
-                    autoChartAggregations={this.props.autoChartAggregations}
-                    enableAjaxTableData={this.props.enableAjaxTableData}
-                  />
-                </Fragment>
-              ) : (
-                <div className='loading-container-centered'>
-                  <LoadingDots />
+      <>
+        <div className='react-autoql-notification-query-title'>{queryTitleCapitalized}</div>
+        <div ref={(r) => (this.dataContainer = r)} className='react-autoql-notification-query-data-container'>
+          {queryResponse ? (
+            <QueryOutput
+              authentication={this.props.authentication}
+              ref={(r) => (this.OUTPUT_REF = r)}
+              key={queryResponse?.data?.data?.query_id}
+              queryResponse={queryResponse}
+              autoQLConfig={{ enableDrilldowns: false }}
+              autoChartAggregations={this.props.autoChartAggregations}
+              enableAjaxTableData={this.props.enableAjaxTableData}
+              isResizing={!this.state.expanded}
+            />
+          ) : (
+            <div style={{ position: 'absolute', top: 0 }} className='loading-container-centered'>
+              <LoadingDots />
+            </div>
+          )}
+        </div>
+      </>
+    )
+  }
+
+  renderLoader = () => {
+    return (
+      <div style={{ position: 'absolute', top: 0 }} className='loading-container-centered'>
+        <LoadingDots />
+      </div>
+    )
+  }
+
+  renderNotificationContent = () => {
+    const { notification } = this.props
+
+    return (
+      <div
+        ref={(r) => (this.contentRef = r)}
+        className={`react-autoql-notification-expanded-content
+        ${this.state.expanded ? 'expanded' : 'collapsed'}
+        ${!this.state.queryResponse ? 'loading' : ''}`}
+      >
+        <>
+          {!this.state.queryResponse && this.renderLoader()}
+          <div className='react-autoql-notification-details-container'>
+            <div className='react-autoql-notification-data-container' onClick={(e) => e.stopPropagation()}>
+              <div className='react-autoql-notificaton-chart-container'>{this.renderNotificationData()}</div>
+              {this.OUTPUT_REF?.supportedDisplayTypes?.length > 1 && (
+                <div className='react-autoql-notification-viz-switcher'>
+                  <VizToolbar ref={(r) => (this.vizToolbarRef = r)} responseRef={this.OUTPUT_REF} vertical />
                 </div>
               )}
             </div>
-            {this.OUTPUT_REF?.supportedDisplayTypes?.length > 1 && (
-              <div className='react-autoql-notification-viz-switcher'>
-                <VizToolbar ref={(r) => (this.vizToolbarRef = r)} responseRef={this.OUTPUT_REF} vertical />
-              </div>
-            )}
-          </div>
-          {this.props.showNotificationDetails && notification.expanded && (
-            <div className='react-autoql-notification-details'>
+            {/* <div className='react-autoql-notification-details'>
               <div className='react-autoql-notification-details-title'>Conditions:</div>
               <ExpressionBuilderSimple
                 authentication={this.props.authentication}
                 key={`expression-builder-${this.COMPONENT_KEY}`}
-                expression={_get(notification, 'expression')}
+                expression={notification?.expression}
                 readOnly
               />
-            </div>
-          )}
-        </div>
-        {this.renderNotificationFooter(notification)}
+            </div> */}
+          </div>
+          {this.renderNotificationFooter(notification)}
+        </>
       </div>
     )
   }
 
   render = () => {
-    const { notification } = this.props
-
     return (
       <ErrorBoundary>
         <div
           id={`react-autoql-notification-item-${this.COMPONENT_KEY}`}
           key={`react-autoql-notification-item-${this.COMPONENT_KEY}`}
           className={`react-autoql-notification-list-item
-          ${this.getIsTriggered(notification.state) ? ' triggered' : ''}
-          ${notification.expanded ? ' expanded' : ''}
-          ${this.state.fullyExpanded ? ' animation-complete' : ''}`}
+          ${this.state.expanded ? 'expanded' : 'collapsed'}
+          ${this.getIsTriggered(this.props.notification?.state) ? ' triggered' : ''}`}
         >
-          {this.renderNotificationHeader(notification)}
-          {this.renderNotificationContent(notification)}
+          {this.renderNotificationHeader()}
+          {this.renderNotificationContent()}
           {this.renderAlertColorStrip()}
         </div>
       </ErrorBoundary>

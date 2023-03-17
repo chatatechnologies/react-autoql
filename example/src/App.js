@@ -249,44 +249,6 @@ export default class App extends Component {
     }
   }
 
-  fetchNotificationData = (notificationId) => {
-    const url = `${getBaseUrl()}/api/v1/rule-notifications/${notificationId}?key=${this.state.apiKey}`
-    const token = getStoredProp('jwtToken')
-
-    const config = {}
-    if (token) {
-      config.headers = {
-        Authorization: `Bearer ${token}`,
-        'Integrator-Domain': this.state.domain,
-      }
-    }
-
-    if (!this.state.apiKey || !this.state.domain) {
-      return Promise.reject({ error: 'Unauthenticated' })
-    }
-
-    return axios
-      .get(url, config)
-      .then((response) => {
-        if (response.data && typeof response.data === 'string') {
-          return Promise.reject({ error: 'Parse error' })
-        }
-        if (
-          !response ||
-          !response.data ||
-          !response.data.query_result ||
-          !response.data.query_result.data ||
-          response.data.query_result.data.display_type !== 'data'
-        ) {
-          return Promise.reject()
-        }
-        return Promise.resolve(response.data.query_result)
-      })
-      .catch((error) => {
-        return Promise.reject(error)
-      })
-  }
-
   testAuthentication = () => {
     const url = `${this.state.domain}/autoql/api/v1/query/validate?text=sales&key=${this.state.apiKey}`
     const token = getStoredProp('jwtToken')
@@ -1162,11 +1124,6 @@ export default class App extends Component {
         inputStyles
         handleStyles={{ right: '25px' }}
         enableDynamicCharting={this.state.enableDynamicCharting}
-        onNotificationExpandCallback={this.fetchNotificationContent}
-        onNotificationCollapseCallback={() => {
-          this.setState({ currentNotificationContent: null })
-        }}
-        activeNotificationData={this.state.activeNotificationContent}
         defaultTab={this.state.defaultTab}
         autoChartAggregations={this.state.autoChartAggregations}
         enableQueryQuickStartTopics={true}
@@ -1511,59 +1468,6 @@ export default class App extends Component {
     )
   }
 
-  fetchNotificationContent = (notification) => {
-    this.setState({
-      activeNotificationContent: null,
-      isFetchingNotificationContent: true,
-    })
-
-    this.fetchNotificationData(notification.id)
-      .then((response) => {
-        this.setState({
-          activeNotificationContent: response,
-          isFetchingNotificationContent: false,
-        })
-      })
-      .catch((error) => {
-        this.setState({
-          activeNotificationContent: {
-            error: 'Unable to find data.',
-          },
-          isFetchingNotificationContent: false,
-        })
-      })
-  }
-
-  renderNotificationContent = (notification) => {
-    if (this.state.isFetchingNotificationContent) {
-      return (
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            width: '100%',
-            height: '100%',
-            justifyContent: 'center',
-          }}
-        >
-          <Spin />
-        </div>
-      )
-    } else if (!this.state.activeNotificationContent) {
-      return 'No data available'
-    } else if (this.state.activeNotificationContent.error) {
-      return this.state.activeNotificationContent.error
-    }
-
-    return (
-      <QueryOutput
-        authentication={this.getAuthProp()}
-        queryResponse={this.state.activeNotificationContent}
-        initialDisplayType='table'
-      />
-    )
-  }
-
   renderNotificationsPage = () => {
     if (!this.state.hasSetTheme) {
       return null
@@ -1580,13 +1484,8 @@ export default class App extends Component {
         <NotificationFeed
           ref={(ref) => (this.notificationListRef = ref)}
           authentication={this.getAuthProp()}
-          onExpandCallback={this.fetchNotificationContent}
           autoChartAggregations={this.state.autoChartAggregations}
           showCreateAlertBtn={true}
-          onCollapseCallback={() => {
-            this.setState({ currentNotificationContent: null })
-          }}
-          activeNotificationData={this.state.activeNotificationContent}
           onErrorCallback={this.onError}
           onSuccessCallback={this.onSuccess}
         />

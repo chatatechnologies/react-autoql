@@ -4,7 +4,7 @@ export const LIGHT_THEME = {
   'background-color-primary': '#F1F3F5',
   'background-color-secondary': '#ffffff',
   'background-color-tertiary': '#e8e8e8',
-  'background-color-checkbox': '#cccccc',
+  'background-color-switch-input': '#d2d2d2',
   'background-color-disabled': '#ededed',
   'background-color-disabled-dark': '#857d83',
   'background-color-checkbox': '#ffffff',

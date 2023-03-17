@@ -532,9 +532,6 @@ class DataAlertModalV2 extends React.Component {
       <div className={`react-autoql-data-alert-modal-step ${active ? '' : 'hidden'}`}>
         <div style={{ display: 'flex' }}>
           <div style={{ flex: 1 }}>
-            {/* <p className='data-alert-modal-condition-title'>
-              Trigger the Data Alert when the following conditions are met:
-            </p> */}
             {this.SUPPORTED_CONDITION_TYPES?.includes(COMPARE_TYPE) && (
               <ExpressionBuilderSimpleV2
                 authentication={this.props.authentication}
@@ -548,15 +545,6 @@ class DataAlertModalV2 extends React.Component {
               />
             )}
           </div>
-          {/* <div style={{ width: '20%', marginLeft: 10, marginTop: 35, flex: 0 }}>
-            <Icon
-              className='react-autoql-data-alert-modal-tooltip-icon'
-              data-for={this.props.tooltipID ?? 'react-autoql-data-alert-modal-tooltip'}
-              data-tip='Your query should describe the result you wish to be alerted about.'
-              type='info'
-              size={24}
-            />
-          </div> */}
         </div>
         <div>
           {this.SUPPORTED_CONDITION_TYPES?.length > 1
@@ -603,10 +591,6 @@ class DataAlertModalV2 extends React.Component {
             data_return_query: this.props.queryResponse?.data?.data?.text,
             expanded: false, // this.state.isPreviewExpanded,
           }}
-          // onExpandCallback={() => this.setState({ isPreviewExpanded: true })}
-          // onCollapseCallback={() => this.setState({ isPreviewExpanded: false })}
-          // activeNotificationData={this.props.queryResponse?.data}
-          // showNotificationDetails={true}
         />
       </div>
     )

@@ -45,6 +45,7 @@ import {
   getDayJSObj,
   getNumberOfGroupables,
   deepEqual,
+  isSingleValueResponse,
 } from '../../js/Util.js'
 
 import {
@@ -84,6 +85,7 @@ export class QueryOutput extends React.Component {
     this.pivotTableID = uuid()
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
     this.isOriginalData = true
+    this.renderComplete = false
 
     // Set initial columns if needed
     let columns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, props.initialAggConfig)
@@ -174,6 +176,7 @@ export class QueryOutput extends React.Component {
     dataPageSize: PropTypes.number,
     onPageSizeChange: PropTypes.func,
     allowDisplayTypeChange: PropTypes.bool,
+    onRenderComplete: PropTypes.func,
   }
 
   static defaultProps = {
@@ -217,10 +220,12 @@ export class QueryOutput extends React.Component {
     onDrilldownEnd: () => {},
     onColumnChange: () => {},
     onPageSizeChange: () => {},
+    onRenderComplete: () => {},
   }
 
   componentDidMount = () => {
     try {
+      this.onRenderComplete()
       this._isMounted = true
       this.updateToolbars()
     } catch (error) {
@@ -249,6 +254,10 @@ export class QueryOutput extends React.Component {
     try {
       const newState = {}
       let shouldForceUpdate = false
+
+      if (this.props.queryResponse && !prevProps.queryResponse) {
+        this.onRenderComplete()
+      }
 
       // If data config was changed here, tell the parent
       if (
@@ -328,6 +337,37 @@ export class QueryOutput extends React.Component {
       hideTooltips()
     } catch (error) {
       console.error(error)
+    }
+  }
+
+  onChartRenderComplete = () => {
+    if (isChartType(this.state.displayType)) {
+      this.props.onRenderComplete()
+    }
+  }
+
+  onTableRenderComplete = () => {
+    if (this.state.displayType === 'table') {
+      this.props.onRenderComplete()
+    }
+  }
+
+  onPivotTableRenderComplete = () => {
+    if (this.state.displayType === 'pivot_table') {
+      this.props.onRenderComplete()
+    }
+  }
+
+  onRenderComplete = () => {
+    if (this.props.queryResponse) {
+      if (
+        !this._isMounted &&
+        ((!isChartType(this.state.displayType) && !isTableType(this.state.displayType)) ||
+          isSingleValueResponse(this.queryResponse))
+      ) {
+        this.renderComplete = true
+        this.props.onRenderComplete()
+      }
     }
   }
 
@@ -1997,6 +2037,7 @@ export class QueryOutput extends React.Component {
             isAggregation(this.state.columns) && getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
           }
           queryFn={this.queryFn}
+          onRenderComplete={this.onTableRenderComplete}
         />
       </ErrorBoundary>
     )
@@ -2025,6 +2066,7 @@ export class QueryOutput extends React.Component {
           useInfiniteScroll={false}
           supportsDrilldowns={true}
           autoHeight={this.props.autoHeight}
+          onRenderComplete={this.onPivotTableRenderComplete}
           pivot
         />
       </ErrorBoundary>
@@ -2105,6 +2147,7 @@ export class QueryOutput extends React.Component {
           isDrilldown={this.isDrilldown()}
           totalRowCount={totalRows}
           updateColumns={this.updateColumns}
+          onRenderComplete={this.onChartRenderComplete}
         />
       </ErrorBoundary>
     )

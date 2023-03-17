@@ -1,16 +1,25 @@
 .react-autoql-btn {
+  display: flex;
+  flex-wrap: nowrap;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+
+  width: auto;
   border-radius: 4px;
-  cursor: pointer;
   outline: none !important;
   transition: all 0.2s ease;
-  width: auto;
-  display: inline-block;
+  cursor: pointer;
 
   &.btn-no-border {
     border: none !important;
     &:hover {
       opacity: 0.8;
     }
+  }
+
+  .react-autoql-button-icon {
+    margin-right: 6px;
   }
 }
 

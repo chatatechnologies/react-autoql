@@ -932,7 +932,6 @@ export class DataMessenger extends React.Component {
           onSuccessCallback={this.props.onSuccessCallback}
           onDataAlertModalOpen={this.onDataAlertModalOpen}
           onDataAlertModalClose={this.onDataAlertModalClose}
-          showNotificationDetails={false}
           shouldRender={this.isOpen() && this.state.activePage === 'notifications'}
           tooltipID={this.TOOLTIP_ID}
         />

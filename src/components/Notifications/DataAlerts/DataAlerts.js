@@ -211,6 +211,7 @@ class DataAlerts extends React.Component {
         <div className='react-autoql-notification-settings-container'>
           {list &&
             list.map((notification, i) => {
+              const isEnabled = notification.status === 'ACTIVE' || notification.status === 'WAITING'
               return (
                 <div
                   key={`react-autoql-notification-setting-item-${i}`}
@@ -299,10 +300,10 @@ class DataAlerts extends React.Component {
                       ) : (
                         <Checkbox
                           type='switch'
-                          checked={notification.status === 'ACTIVE' || notification.status === 'WAITING'}
+                          checked={isEnabled}
                           className='react-autoql-notification-enable-checkbox'
                           onClick={(e) => e.stopPropagation()}
-                          data-tip={notification.status === 'ACTIVE' || notification.status === 'WAITING'}
+                          data-tip={isEnabled ? 'Active' : 'Inactive'}
                           data-for='react-autoql-notification-settings-tooltip'
                           onChange={(e) => {
                             this.onEnableSwitchChange(e, notification)

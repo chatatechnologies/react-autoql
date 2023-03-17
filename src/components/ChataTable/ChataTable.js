@@ -98,6 +98,7 @@ export default class ChataTable extends React.Component {
     pageSize: PropTypes.number,
     useInfiniteScroll: PropTypes.bool,
     onSetTableHeight: PropTypes.func,
+    onRenderComplete: PropTypes.func,
   }
 
   static defaultProps = {
@@ -116,6 +117,7 @@ export default class ChataTable extends React.Component {
     onCellClick: () => {},
     onErrorCallback: () => {},
     onSetTableHeight: () => {},
+    onRenderComplete: () => {},
   }
 
   componentDidMount = () => {
@@ -325,6 +327,8 @@ export default class ChataTable extends React.Component {
       tabulatorMounted: true,
       pageLoading: false,
     })
+
+    this.props.onRenderComplete()
   }
 
   setTableHeight = (height) => {
