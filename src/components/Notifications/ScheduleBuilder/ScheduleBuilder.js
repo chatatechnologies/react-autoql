@@ -7,8 +7,9 @@ import { Select } from '../../Select'
 import { Icon } from '../../Icon'
 import { TimezoneSelector } from '../../TimezoneSelector'
 import { getTimeRangeFromRT } from '../../../js/reverseTranslationHelpers'
+import { TimePicker } from '../../TimePicker'
 
-import { WEEKDAY_NAMES_MON } from '../../../js/Constants'
+import { MONTH_NAMES, WEEKDAY_NAMES_MON } from '../../../js/Constants'
 import {
   PERIODIC_FREQUENCY,
   CONTINUOUS_FREQUENCY,
@@ -22,7 +23,6 @@ import {
 } from '../DataAlertConstants'
 
 import './ScheduleBuilder.scss'
-import { TimePicker } from '../../TimePicker'
 
 export default class ScheduleBuilder extends React.Component {
   constructor(props) {
@@ -34,6 +34,8 @@ export default class ScheduleBuilder extends React.Component {
     this.DEFAULT_WEEKDAY_SELECT_VALUE = 'Friday'
     this.DEFAULT_MONTH_DAY_SELECT_VALUE = 'LAST'
     this.DEFAULT_TIME_SELECT_VALUE = '5:00pm'
+    this.DEFAULT_MONTH_OF_YEAR_SELECT_VALUE = 'December'
+    this.DEFAULT_FREQUENCY_TYPE = PERIODIC_FREQUENCY
 
     const timeRange = getTimeRangeFromRT(props.queryResponse)
 
@@ -43,11 +45,12 @@ export default class ScheduleBuilder extends React.Component {
       timeRange: props.dataAlert?.reset_period ?? timeRange,
       resetPeriodSelectValue: props.dataAlert?.reset_period ?? timeRange ?? this.DEFAULT_RESET_PERIOD_SELECT_VALUE,
       checkFrequencySelectValue: props.dataAlert?.check_frequency ?? this.DEFAULT_CHECK_FREQUENCY_INDEX,
-      frequencyType: props.dataAlert?.notification_type ?? PERIODIC_FREQUENCY,
+      frequencyType: props.dataAlert?.notification_type ?? this.DEFAULT_FREQUENCY_TYPE,
       timezone: props.dataAlert?.time_zone,
       monthDaySelectValue: this.DEFAULT_MONTH_DAY_SELECT_VALUE,
       intervalTimeSelectValue: this.DEFAULT_TIME_SELECT_VALUE,
       weekDaySelectValue: this.DEFAULT_WEEKDAY_SELECT_VALUE,
+      monthOfYearSelectValue: this.DEFAULT_MONTH_OF_YEAR_SELECT_VALUE,
     }
   }
 
@@ -229,8 +232,31 @@ export default class ScheduleBuilder extends React.Component {
     )
   }
 
-  dayOfWeekOrMonthSelector = () => {
+  dayOfYearSelector = () => {
+    return (
+      <span className='schedule-builder-day-of-year-selector'>
+        <div className='react-autoql-data-alert-frequency-option schedule-builder-at-connector'>
+          <span>in</span>
+        </div>
+        <Select
+          options={MONTH_NAMES.map((month) => {
+            return {
+              value: month,
+            }
+          })}
+          value={this.state.monthOfYearSelectValue}
+          onChange={(monthOfYearSelectValue) => this.setState({ monthOfYearSelectValue })}
+        />
+        {this.dayOfMonthSelector()}
+      </span>
+    )
+  }
+
+  dayOfSelector = () => {
     switch (this.state.resetPeriodSelectValue) {
+      case 'YEAR': {
+        return this.dayOfYearSelector()
+      }
       case 'MONTH': {
         return this.dayOfMonthSelector()
       }
@@ -326,7 +352,7 @@ export default class ScheduleBuilder extends React.Component {
       <div>
         <div className='react-autoql-data-alert-frequency-options-container'>
           {this.scheduleIntervalSelector()}
-          {this.dayOfWeekOrMonthSelector()}
+          {this.dayOfSelector()}
           {this.hourMinSelector()}
           {this.timezoneSelector()}
         </div>

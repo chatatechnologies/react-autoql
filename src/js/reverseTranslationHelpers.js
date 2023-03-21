@@ -191,13 +191,15 @@ export const getTimeRangeFromDateArray = (dates) => {
       return 'WEEK'
     } else if (range <= 31) {
       return 'MONTH'
-    } else if (range <= 366) {
-      return 'YEAR'
     }
+    // Not supporting for now
+    // else if (range <= 366) {
+    //   return 'YEAR'
+    // }
   }
 
   // Default frequency
-  return 'DAY'
+  return 'MONTH'
 }
 
 export const getTimeRangeFromRT = (queryResponse) => {

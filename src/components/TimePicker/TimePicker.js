@@ -8,7 +8,7 @@ import './TimePicker.scss'
 const DEFAULT_INTERVAL = 30
 const HOUR_ARRAY = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 
-export default class DatePicker extends React.Component {
+export default class DateRangePicker extends React.Component {
   constructor(props) {
     super(props)
 

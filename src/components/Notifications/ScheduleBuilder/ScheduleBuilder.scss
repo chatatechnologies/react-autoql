@@ -1,4 +1,9 @@
 .data-alert-schedule-builder-step {
+  .schedule-builder-day-of-year-selector {
+    display: inline-flex;
+    align-items: flex-end;
+  }
+
   .data-alert-condition-statement {
     font-style: italic;
   }

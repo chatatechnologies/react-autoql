@@ -15,7 +15,7 @@ import { getAuthentication, getDataFormatting } from '../../props/defaults'
 import { formatTableParams } from './tableHelpers'
 import { Spinner } from '../Spinner'
 import { runQueryNewPage } from '../../js/queryService'
-import { DatePicker } from '../DatePicker'
+import { DateRangePicker } from '../DateRangePicker'
 import { getFilterPrecision } from '../../js/dateUtils'
 import { DAYJS_PRECISION_FORMATS } from '../../js/Constants'
 import { currentEventLoopEnd, deepEqual, difference } from '../../js/Util'
@@ -763,7 +763,7 @@ export default class ChataTable extends React.Component {
     )
   }
 
-  renderDatePickerPopover = () => {
+  renderDateRangePickerPopover = () => {
     if (!this.state.datePickerColumn) {
       return null
     }
@@ -780,9 +780,9 @@ export default class ChataTable extends React.Component {
           })
         }}
         content={
-          <div className='react-autoql-table-date-picker'>
+          <div className='react-autoql-popover-date-picker'>
             <h3>{this.state.datePickerColumn.display_name}</h3>
-            <DatePicker
+            <DateRangePicker
               initialRange={this.currentDateRangeSelections?.[this.state.datePickerColumn.field]}
               onSelection={this.onDateRangeSelection}
               validRange={this.state.datePickerColumn.dateRange}
@@ -918,7 +918,7 @@ export default class ChataTable extends React.Component {
               </>
             )}
           </div>
-          {this.renderDatePickerPopover()}
+          {this.renderDateRangePickerPopover()}
           {!isEmpty && this.renderTableRowCount()}
         </div>
       </ErrorBoundary>

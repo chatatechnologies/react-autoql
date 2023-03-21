@@ -80,13 +80,14 @@ export const SCHEDULE_INTERVAL_OPTIONS = {
       </span>
     ),
   },
-  YEAR: {
-    displayName: (
-      <span>
-        Every <strong>year</strong>
-      </span>
-    ),
-  },
+  // Not supporting for now
+  // YEAR: {
+  //   displayName: (
+  //     <span>
+  //       Every <strong>year</strong>
+  //     </span>
+  //   ),
+  // },
 }
 
 export const RESET_PERIOD_OPTIONS = {
@@ -111,13 +112,14 @@ export const RESET_PERIOD_OPTIONS = {
       </span>
     ),
   },
-  YEAR: {
-    displayName: (
-      <span>
-        At most <strong>once a year</strong>
-      </span>
-    ),
-  },
+  // Not supporting for now
+  // YEAR: {
+  //   displayName: (
+  //     <span>
+  //       At most <strong>once a year</strong>
+  //     </span>
+  //   ),
+  // },
   NONE: {
     displayName: (
       <span>
