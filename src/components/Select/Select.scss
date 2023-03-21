@@ -1,31 +1,78 @@
 .react-autoql-select {
-  border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
-  border-radius: 4px;
-  background: var(--react-autoql-background-color-secondary, white);
-  display: inline-block;
-  font-size: 13px;
-  line-height: 32px;
-  height: 34px;
-  margin: 0 3px;
-  padding: 0 11px;
-  color: var(--react-autoql-accent-color, #26a7df);
-  transition: all 0.2s ease;
+  display: inline-flex;
+  justify-content: space-between;
+  line-height: 36px;
+  height: 38px;
+  transition: color 0.2s ease, border-color 0.2s ease;
+  white-space: nowrap;
+  font-size: inherit;
   cursor: pointer;
 
   &:hover {
-    border-color: var(--react-autoql-accent-color, #26a7df);
+    color: var(--react-autoql-accent-color, #26a7df);
+    .react-autoql-select-arrow {
+      color: var(--react-autoql-accent-color, #26a7df);
+    }
+  }
+
+  &:not(.outlined) {
+    font-weight: 600;
+    padding: 0 10px;
+    margin: 0;
+  }
+
+  &.outlined {
+    margin: 0 3px;
+    padding: 0px 16px;
+    color: var(--react-autoql-text-color-primary);
+    border: 1px solid var(--react-autoql-border-color);
+    border-radius: 4px;
+    background: var(--react-autoql-background-color-secondary, white);
+
+    &:hover {
+      color: var(--react-autoql-accent-color);
+      border-color: var(--react-autoql-accent-color);
+    }
+  }
+
+  .react-autoql-select-text {
+    display: block;
+    height: 100%;
+
+    .react-autoql-select-text-placeholder {
+      color: var(--react-autoql-text-color-placeholder);
+      font-style: italic;
+    }
+  }
+
+  .react-autoql-select-arrow {
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+    font-size: 0.875em;
+    color: var(--react-autoql-text-color-placeholder);
   }
 }
 
 .react-autoql-select-popup-container {
-  background: var(--react-autoql-background-color-secondary, white);
+  background: var(--react-autoql-background-color-secondary);
   padding: 10px 0;
   max-height: 300px;
   overflow-y: auto;
 
-  .react-autoql-select-option.active {
-    background: var(--react-autoql-hover-color, rgba(0, 0, 0, 0.04));
+  .react-autoql-select-option {
+    & > span {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    &.active {
+      background: var(--react-autoql-hover-color);
+    }
   }
+
   .react-autoql-select-popup {
     list-style-type: none;
     width: 100%;
@@ -41,7 +88,7 @@
       cursor: pointer;
 
       &:hover {
-        background: var(--react-autoql-hover-color, rgba(0, 0, 0, 0.04));
+        background: var(--react-autoql-hover-color);
       }
     }
   }
