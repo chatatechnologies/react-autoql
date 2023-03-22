@@ -932,6 +932,7 @@ export class DataMessenger extends React.Component {
           onDataAlertModalClose={this.onDataAlertModalClose}
           shouldRender={this.isOpen() && this.state.activePage === 'notifications'}
           tooltipID={this.TOOLTIP_ID}
+          isResizing={this.state.isResizing || this.state.isWindowResizing}
         />
       </ErrorBoundary>
     )

@@ -317,15 +317,11 @@ export default class NotificationItem extends React.Component {
   }
 
   renderVizToolbar = () => {
-    if (this.OUTPUT_REF?.supportedDisplayTypes?.length > 1) {
-      return (
-        <div className='react-autoql-notification-viz-switcher'>
-          <VizToolbar ref={(r) => (this.vizToolbarRef = r)} responseRef={this.OUTPUT_REF} vertical />
-        </div>
-      )
-    }
-
-    return null
+    return (
+      <div className='react-autoql-notification-viz-switcher'>
+        <VizToolbar ref={(r) => (this.vizToolbarRef = r)} responseRef={this.OUTPUT_REF} vertical />
+      </div>
+    )
   }
 
   renderQueryResponse = () => {
@@ -339,14 +335,15 @@ export default class NotificationItem extends React.Component {
         <div ref={(r) => (this.dataContainer = r)} className='react-autoql-notification-query-data-container'>
           {queryResponse ? (
             <QueryOutput
-              authentication={this.props.authentication}
-              ref={(r) => (this.OUTPUT_REF = r)}
               key={queryResponse?.data?.data?.query_id}
+              ref={(r) => (this.OUTPUT_REF = r)}
+              vizToolbarRef={this.vizToolbarRef}
+              authentication={this.props.authentication}
               queryResponse={queryResponse}
               autoQLConfig={{ enableDrilldowns: false }}
               autoChartAggregations={this.props.autoChartAggregations}
               enableAjaxTableData={this.props.enableAjaxTableData}
-              isResizing={!this.state.expanded}
+              isResizing={this.props.isResizing || !this.state.expanded}
             />
           ) : (
             <div style={{ position: 'absolute', top: 0 }} className='loading-container-centered'>
@@ -379,17 +376,18 @@ export default class NotificationItem extends React.Component {
         <>
           {!this.state.queryResponse && this.renderLoader()}
           <div className='react-autoql-notification-content-container'>
-            <div className='react-autoql-notification-data-container' onClick={(e) => e.stopPropagation()}>
-              {this.renderQueryResponse()}
-              {this.renderVizToolbar()}
-            </div>
             <div className='react-autoql-notification-condition-statement'>
               {/* <div className='react-autoql-notification-query-title'>Conditions:</div> */}
               <ConditionBuilder
                 key={`expression-builder-${this.COMPONENT_KEY}`}
                 expression={notification?.expression}
                 conditionStatementOnly
+                conditionTense='past'
               />
+            </div>
+            <div className='react-autoql-notification-data-container' onClick={(e) => e.stopPropagation()}>
+              {this.renderQueryResponse()}
+              {this.renderVizToolbar()}
             </div>
           </div>
           {this.renderNotificationFooter(notification)}

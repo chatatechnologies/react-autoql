@@ -101,15 +101,14 @@ export default class RuleSimple extends React.Component {
     }
   }
 
-  getConditionStatement = () => {
+  getConditionStatement = (tense) => {
     const queryText = this.getFormattedQueryText()?.toLowerCase()
-    const operatorText = DATA_ALERT_OPERATORS[this.state.selectedOperator]?.conditionText
+    const operator = DATA_ALERT_OPERATORS[this.state.selectedOperator]
+    const operatorText = tense === 'past' ? operator?.conditionTextPast : operator?.conditionText
     let secondTermText = this.state.secondInputValue
     if (this.state.secondTermType === QUERY_TERM_TYPE) {
       secondTermText = `"${secondTermText}"`
     }
-
-    console.log('getting condition statement', { queryText, operatorText, secondTermText })
 
     if (queryText && operatorText && secondTermText) {
       return (
@@ -118,7 +117,7 @@ export default class RuleSimple extends React.Component {
         </span>
       )
     } else if (queryText) {
-      return <span className='data-alert-condition-statement'>New data is detected for "{queryText}"</span>
+      return <span className='data-alert-condition-statement'>New data detected for "{queryText}"</span>
     }
 
     return
@@ -350,8 +349,7 @@ export default class RuleSimple extends React.Component {
       query: this.state.secondInputValue,
       ...getAuthentication(this.props.authentication),
       ...getAutoQLConfig(this.props.autoQLConfig),
-      // source: newSource, // TODO
-      // filters: this.props.queryFilters, // TODO
+      source: 'data_alert_validation',
       pageSize: 2, // No need to fetch more than 2 rows to determine validity
       cancelToken: this.axiosSource.token,
     })

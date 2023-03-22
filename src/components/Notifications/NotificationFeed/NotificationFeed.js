@@ -385,6 +385,7 @@ class NotificationFeed extends React.Component {
                             this.showEditDataAlertModal(dataAlert)
                           }}
                           enableAjaxTableData={this.props.enableAjaxTableData}
+                          isResizing={this.props.isResizing}
                         />
                       )
                     })}

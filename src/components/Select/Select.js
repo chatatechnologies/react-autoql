@@ -16,7 +16,7 @@ export default class Select extends React.Component {
     onChange: PropTypes.func,
     options: PropTypes.arrayOf(PropTypes.shape({})),
     popupClassname: PropTypes.string,
-    value: PropTypes.string,
+    value: PropTypes.oneOf([PropTypes.string, PropTypes.number]),
     label: PropTypes.string,
     size: PropTypes.string,
     showArrow: PropTypes.bool,

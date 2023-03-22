@@ -187,11 +187,16 @@
     flex: 3 3 0px;
     overflow: hidden;
 
+    .single-value-response-flex-container {
+      padding: 10px;
+    }
+
     .react-autoql-notificaton-chart-container {
       flex: 1;
       display: flex;
       flex-direction: column;
-      padding: 20px;
+      padding: 10px 15px 5px 15px;
+      opacity: 0.8;
     }
 
     .react-autoql-table-container {
@@ -281,9 +286,11 @@
   }
 
   .react-autoql-notification-viz-switcher {
-    flex: 0 0 50px;
-    padding: 10px;
-    border-left: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.05));
+    flex: 0 0 auto;
+
+    .react-autoql-toolbar.viz-toolbar {
+      padding: 0px 20px 5px 20px;
+    }
   }
 
   .react-autoql-notification-img-container {

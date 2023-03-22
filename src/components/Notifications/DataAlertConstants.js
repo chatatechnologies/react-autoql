@@ -17,6 +17,7 @@ export const DATA_ALERT_OPERATORS = {
     ),
     symbol: '>',
     conditionText: 'exceeds',
+    conditionTextPast: 'exceeded',
   },
   LESS_THAN: {
     displayName: (
@@ -26,6 +27,7 @@ export const DATA_ALERT_OPERATORS = {
     ),
     symbol: '<',
     conditionText: 'falls below',
+    conditionTextPast: 'fell below',
   },
   EQUAL_TO: {
     displayName: (
@@ -35,6 +37,7 @@ export const DATA_ALERT_OPERATORS = {
     ),
     symbol: '=',
     conditionText: 'equals',
+    conditionTextPast: 'was equal to',
   },
 }
 

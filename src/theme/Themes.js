@@ -30,6 +30,7 @@ export const DARK_THEME = {
   'background-color-primary': '#20252A',
   'background-color-secondary': '#3B3F46',
   'background-color-tertiary': '#292929',
+  'background-color-switch-input': '#1e1e1e',
   'background-color-checkbox': '#292929',
   'background-color-disabled': '#5d6167',
   'background-color-disabled-dark': '#857d83',

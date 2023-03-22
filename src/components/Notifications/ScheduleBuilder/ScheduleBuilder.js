@@ -365,10 +365,10 @@ export default class ScheduleBuilder extends React.Component {
     )
   }
 
-  getConditionStatement = () => {
+  getConditionStatement = (tense) => {
     const { expressionRef } = this.props
     if (expressionRef) {
-      return expressionRef.getConditionStatement()
+      return expressionRef.getConditionStatement(tense)
     }
 
     return 'the Data Alert is triggered'

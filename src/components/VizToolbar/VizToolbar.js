@@ -72,7 +72,7 @@ class VizToolbar extends React.Component {
   }
 
   getCurrentSupportedDisplayTypes = (props) => {
-    return props.responseRef?.state?.supportedDisplayTypes
+    return props.responseRef?.getCurrentSupportedDisplayTypes()
   }
 
   createVisButton = (displayType, name, icon) => {
