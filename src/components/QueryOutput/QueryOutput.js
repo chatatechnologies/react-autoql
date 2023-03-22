@@ -129,7 +129,7 @@ export class QueryOutput extends React.Component {
       supportedDisplayTypes: this.initialSupportedDisplayTypes,
       columns,
       selectedSuggestion: props.defaultSelectedSuggestion,
-      visiblerows: this.queryResponse?.data?.data?.rows,
+      visibleRows: this.queryResponse?.data?.data?.rows,
       visibleRowChangeCount: 0,
       visiblePivotRowChangeCount: 0,
       columnChangeCount: 0,
@@ -836,7 +836,7 @@ export class QueryOutput extends React.Component {
       return runDrilldown({
         ...getAuthentication(this.props.authentication),
         ...getAutoQLConfig(this.props.autoQLConfig),
-        source: queryRequestData?.source,
+        source: this.props.source,
         debug: queryRequestData?.translation === 'include',
         filters: queryRequestData?.session_filter_locks,
         pageSize: queryRequestData?.page_size,
@@ -853,7 +853,6 @@ export class QueryOutput extends React.Component {
       ...getAuthentication(this.props.authentication),
       ...getAutoQLConfig(this.props.autoQLConfig),
       query: queryRequestData?.text,
-      source: queryRequestData?.source,
       debug: queryRequestData?.translation === 'include',
       userSelection: queryRequestData?.disambiguation,
       filters: queryRequestData?.session_filter_locks,
@@ -861,6 +860,7 @@ export class QueryOutput extends React.Component {
       pageSize: queryRequestData?.page_size,
       orders: this.formattedTableParams?.sorters,
       tableFilters: allFilters,
+      source: this.props.source,
       cancelToken: this.axiosSource.token,
       ...args,
     })
@@ -900,6 +900,7 @@ export class QueryOutput extends React.Component {
               ...getAuthentication(this.props.authentication),
               ...getAutoQLConfig(this.props.autoQLConfig),
               queryID: this.queryID,
+              source: this.props.source,
               groupBys,
               pageSize,
             })
@@ -2038,6 +2039,7 @@ export class QueryOutput extends React.Component {
           }
           queryFn={this.queryFn}
           onRenderComplete={this.onTableRenderComplete}
+          source={this.props.source}
         />
       </ErrorBoundary>
     )
@@ -2067,6 +2069,7 @@ export class QueryOutput extends React.Component {
           supportsDrilldowns={true}
           autoHeight={this.props.autoHeight}
           onRenderComplete={this.onPivotTableRenderComplete}
+          source={this.props.source}
           pivot
         />
       </ErrorBoundary>
@@ -2103,6 +2106,7 @@ export class QueryOutput extends React.Component {
 
     const originalTotalRows = this.queryResponse?.data?.data?.count_rows
     let totalRows = originalTotalRows
+
     if (!this.isDataLimited() && this.state.visibleRows && this.state.visibleRows?.length < MAX_DATA_PAGE_SIZE) {
       // This allows total row count to reflect FE filters in the table view
       totalRows = this.state.visibleRows?.length
@@ -2146,8 +2150,10 @@ export class QueryOutput extends React.Component {
           onNewData={this.onNewData}
           isDrilldown={this.isDrilldown()}
           totalRowCount={totalRows}
+          currentRowCount={this.state.visibleRows?.length}
           updateColumns={this.updateColumns}
           onRenderComplete={this.onChartRenderComplete}
+          source={this.props.source}
         />
       </ErrorBoundary>
     )

@@ -14,7 +14,7 @@ import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import LoadingDots from '../../LoadingDots/LoadingDots.js'
 import { Icon } from '../../Icon'
 import { responseErrors } from '../../../js/errorMessages'
-import { deepEqual, isChartType } from '../../../js/Util'
+import { deepEqual, isChartType, mergeSources } from '../../../js/Util'
 import { hideTooltips } from '../../Tooltip'
 
 import { runQuery, fetchAutocomplete } from '../../../js/queryService'
@@ -229,13 +229,6 @@ export class DashboardTile extends React.Component {
 
   processQuery = ({ query, userSelection, skipQueryValidation, source, isSecondHalf }) => {
     if (this.isQueryValid(query)) {
-      let finalSource = ['dashboards']
-      if (source?.length) {
-        finalSource = [...finalSource, ...source]
-      } else {
-        finalSource.push('user')
-      }
-
       let pageSize
       if (isSecondHalf && isChartType(this.props.tile.secondDisplayType)) {
         pageSize = this.props.tile.secondPageSize ?? this.props.dataPageSize
@@ -251,7 +244,7 @@ export class DashboardTile extends React.Component {
           : getAutoQLConfig(this.props.autoQLConfig).enableQueryValidation,
         cancelToken: isSecondHalf ? this.secondAxiosSource.token : this.axiosSource.token,
         skipQueryValidation: skipQueryValidation,
-        source: finalSource,
+        source: mergeSources(this.props.source, source),
         userSelection,
         pageSize,
         query,
@@ -919,6 +912,7 @@ export class DashboardTile extends React.Component {
         tooltipID={this.props.tooltipID}
         chartTooltipID={this.props.chartTooltipID}
         shouldRender={!this.props.isDragging}
+        source={this.props.source}
         autoHeight={false}
         height='100%'
         width='100%'

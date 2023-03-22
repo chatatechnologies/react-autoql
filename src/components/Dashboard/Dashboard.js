@@ -16,7 +16,7 @@ import { rebuildTooltips, Tooltip } from '../Tooltip'
 import ReportProblemModal from '../OptionsToolbar/ReportProblemModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { CHART_TYPES } from '../../js/Constants'
-import { deepEqual } from '../../js/Util'
+import { deepEqual, mergeSources } from '../../js/Util'
 import { withTheme } from '../../theme'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import {
@@ -58,6 +58,7 @@ class DashboardWithoutTheme extends React.Component {
     super(props)
 
     this.COMPONENT_KEY = uuid()
+    this.SOURCE = mergeSources(props.source, 'dashboards')
     this.TOOLTIP_ID = `react-autoql-dashboard-toolbar-btn-tooltip-${this.COMPONENT_KEY}`
     this.CHART_TOOLTIP_ID = `react-autoql-chart-tooltip-${this.COMPONENT_KEY}`
     this.tileRefs = {}
@@ -591,6 +592,7 @@ class DashboardWithoutTheme extends React.Component {
             tooltipID={this.TOOLTIP_ID}
             chartTooltipID={this.CHART_TOOLTIP_ID}
             allowDisplayTypeChange={false}
+            source={this.SOURCE}
             height='100%'
             width='100%'
           />
@@ -718,6 +720,7 @@ class DashboardWithoutTheme extends React.Component {
                           showQueryInterpretation={this.props.isEditing}
                           reverseTranslationPlacement='top'
                           allowDisplayTypeChange={false}
+                          source={this.SOURCE}
                           height='100%'
                           width='100%'
                         />
@@ -849,6 +852,7 @@ class DashboardWithoutTheme extends React.Component {
             enableAjaxTableData={this.props.enableAjaxTableData}
             tooltipID={this.TOOLTIP_ID}
             chartTooltipID={this.CHART_TOOLTIP_ID}
+            source={this.SOURCE}
           />
         ))}
       </ReactGridLayout>

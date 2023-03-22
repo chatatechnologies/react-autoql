@@ -40,7 +40,7 @@ export default class Axis extends Component {
     this.prevShouldLabelsRotate = false
 
     this.state = {
-      currentRowNumber: this.props.dataLength,
+      isAxisSelectorOpen: false,
     }
   }
 
