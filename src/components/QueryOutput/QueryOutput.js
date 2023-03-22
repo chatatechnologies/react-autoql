@@ -2063,9 +2063,7 @@ export class QueryOutput extends React.Component {
 
     const originalTotalRows = this.queryResponse?.data?.data?.count_rows
     let totalRows = originalTotalRows
-    // if (usePivotData) {
-    //   totalRows = this.pivotTableData?.length
-    // } else
+
     if (!this.isDataLimited() && this.state.visibleRows && this.state.visibleRows?.length < MAX_DATA_PAGE_SIZE) {
       // This allows total row count to reflect FE filters in the table view
       totalRows = this.state.visibleRows?.length
