@@ -6,6 +6,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './StepsHoz.scss'
 import { Icon } from '../Icon'
+import { deepEqual } from '../../js/Util'
 
 export default class Steps extends React.Component {
   constructor(props) {
@@ -24,6 +25,12 @@ export default class Steps extends React.Component {
   componentDidMount = () => {
     if (!this.props.steps || !this.props.steps.length) {
       console.warn('No steps were provided to StepsHoz component')
+    }
+  }
+
+  componentDidUpdate = (prevProps, prevState) => {
+    if (!deepEqual(this.state, prevState) || !deepEqual(this.props, prevProps)) {
+      return true
     }
   }
 

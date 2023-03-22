@@ -10,9 +10,9 @@ import { Icon } from '../../Icon'
 
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault } from '../../../props/defaults'
+import { GROUP_TERM_TYPE, QUERY_TERM_TYPE } from '../DataAlertConstants'
 
 import './ConditionBuilder.scss'
-import { GROUP_TERM_TYPE, QUERY_TERM_TYPE } from '../DataAlertConstants'
 
 export default class ConditionBuilder extends React.Component {
   constructor(props) {

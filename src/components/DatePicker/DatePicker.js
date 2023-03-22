@@ -24,7 +24,6 @@ export default class DatePicker extends React.Component {
   }
 
   handleSelect = (date) => {
-    console.log({ date })
     this.setState({ date }, () => {
       this.props.onSelection(date)
     })

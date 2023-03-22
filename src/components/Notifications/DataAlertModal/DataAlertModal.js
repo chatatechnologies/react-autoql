@@ -22,7 +22,7 @@ import { isSingleValueResponse } from '../../../js/Util'
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 import { withTheme } from '../../../theme'
-import { DATA_ALERT_CONDITION_TYPES, COMPARE_TYPE, EXISTS_TYPE } from '../DataAlertConstants'
+import { DATA_ALERT_CONDITION_TYPES, COMPARE_TYPE, EXISTS_TYPE, QUERY_TERM_TYPE } from '../DataAlertConstants'
 
 import './DataAlertModal.scss'
 
@@ -146,7 +146,7 @@ class DataAlertModal extends React.Component {
       state.messageInput = currentDataAlert.message ?? ''
       state.selectedConditionType = currentDataAlert.expression?.[0]?.condition ?? this.SUPPORTED_CONDITION_TYPES?.[0]
       state.activeStep = 0
-      state.completedSections = this.steps.map((s, i) => i)
+      state.completedSections = this.steps.map(() => true)
       state.expressionJSON = currentDataAlert?.expression
     }
 
@@ -187,13 +187,30 @@ class DataAlertModal extends React.Component {
 
   getDataAlertData = () => {
     try {
+      const { currentDataAlert, queryResponse } = this.props
       const { titleInput, messageInput } = this.state
 
       let dataReturnQuery
       let expressionJSON = _cloneDeep(this.state.expressionJSON)
+
       if (this.expressionRef) {
-        expressionJSON = this.expressionRef.getJSON()
         dataReturnQuery = this.expressionRef.getFirstQuery()
+        expressionJSON = this.expressionRef.getJSON()
+      } else if (currentDataAlert) {
+        dataReturnQuery = currentDataAlert.data_return_query
+        expressionJSON = currentDataAlert.expression
+      } else {
+        const query = queryResponse?.data?.data?.text
+        dataReturnQuery = query
+        expressionJSON = [
+          {
+            id: uuid(),
+            term_type: QUERY_TERM_TYPE,
+            condition: EXISTS_TYPE,
+            term_value: query,
+            user_selection: queryResponse?.data?.data?.fe_req?.disambiguation,
+          },
+        ]
       }
 
       let scheduleData = {}
@@ -202,7 +219,7 @@ class DataAlertModal extends React.Component {
       }
 
       const newDataAlert = {
-        id: this.props.currentDataAlert?.id,
+        id: currentDataAlert?.id,
         title: titleInput,
         data_return_query: dataReturnQuery,
         message: messageInput,
@@ -237,67 +254,55 @@ class DataAlertModal extends React.Component {
       isSavingDataAlert: true,
     })
 
-    const newDataAlert = {
-      ...this.getDataAlertData(),
-      project_id: this.props.selectedDemoProjectId,
+    const newDataAlert = this.getDataAlertData()
+
+    const requestParams = {
+      dataAlert: newDataAlert,
+      ...getAuthentication(this.props.authentication),
     }
 
-    console.log({ newDataAlert, currentDataAlert: this.props.currentDataAlert })
+    if (this.props.isManagement) {
+      this.props.onManagementCreateDataAlert(newDataAlert)
+      this.setState({
+        isSavingDataAlert: false,
+      })
+    } else if (newDataAlert.id) {
+      updateDataAlert({
+        ...requestParams,
+      })
+        .then((dataAlertResponse) => {
+          this.props.onSave(dataAlertResponse)
 
-    // const requestParams = {
-    //   dataAlert: newDataAlert,
-    //   ...getAuthentication(this.props.authentication),
-    // }
-
-    // if (this.props.isManagement) {
-    //   this.props.onManagementCreateDataAlert(newDataAlert)
-    //   this.setState({
-    //     isSavingDataAlert: false,
-    //   })
-    // } else if (newDataAlert.id) {
-    //   updateDataAlert({
-    //     ...requestParams,
-    //   })
-    //     .then((dataAlertResponse) => {
-    //       this.props.onSave(dataAlertResponse)
-
-    //       this.setState({
-    //         isSavingDataAlert: false,
-    //       })
-    //     })
-    //     .catch((error) => {
-    //       console.error(error)
-    //       this.props.onErrorCallback(error)
-    //       this.setState({
-    //         isSavingDataAlert: false,
-    //       })
-    //     })
-    // } else {
-    //   createDataAlert({
-    //     ...requestParams,
-    //   })
-    //     .then((dataAlertResponse) => {
-    //       this.props.onSave(dataAlertResponse)
-    //       this.setState({
-    //         isSavingDataAlert: false,
-    //       })
-    //     })
-    //     .catch((error) => {
-    //       console.error(error)
-    //       this.props.onErrorCallback(error)
-    //       this.setState({
-    //         isSavingDataAlert: false,
-    //       })
-    //     })
-    // }
+          this.setState({
+            isSavingDataAlert: false,
+          })
+        })
+        .catch((error) => {
+          console.error(error)
+          this.props.onErrorCallback(error)
+          this.setState({
+            isSavingDataAlert: false,
+          })
+        })
+    } else {
+      createDataAlert({
+        ...requestParams,
+      })
+        .then((dataAlertResponse) => {
+          this.props.onSave(dataAlertResponse)
+          this.setState({
+            isSavingDataAlert: false,
+          })
+        })
+        .catch((error) => {
+          console.error(error)
+          this.props.onErrorCallback(error)
+          this.setState({
+            isSavingDataAlert: false,
+          })
+        })
+    }
   }
-
-  // setCompletedSections = () => {
-  //   const completedSections = []
-  //   this.steps.forEach((step, i) => {
-  //     if (this.isStepReady())
-  //   })
-  // }
 
   nextStep = () => {
     if (!this.isStepReady()) {
@@ -322,13 +327,7 @@ class DataAlertModal extends React.Component {
   }
 
   setStep = (step) => {
-    const state = { activeStep: step }
-
-    if (step === 2) {
-      state.isThirdSectionDirty = true
-    }
-
-    this.setState(state)
+    this.setState({ activeStep: step })
   }
 
   isFinishBtnDisabled = () => {
@@ -585,7 +584,6 @@ class DataAlertModal extends React.Component {
           <span>
             If <em>{conditionStatement}</em>, you'll receive a notification with this{' '}
             <strong>title and message:</strong>
-            {/* Please provide the <strong>title and message</strong> you wish to include in the notification. */}
           </span>
         ) : null}
         <div className='compose-message-section'>
@@ -598,18 +596,6 @@ class DataAlertModal extends React.Component {
             {this.renderDataAlertPreview()}
           </div>
         </div>
-        {/* <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <span
-            style={{
-              background: 'var(--react-autoql-background-color-primary)',
-              display: 'block',
-              padding: '5px 15px',
-              borderRadius: '2px',
-            }}
-          >
-            If <em>{conditionStatement}</em>, you'll receive a notification.
-          </span>
-        </div> */}
       </div>
     )
   }

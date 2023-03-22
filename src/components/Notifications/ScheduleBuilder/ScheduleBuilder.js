@@ -39,8 +39,6 @@ export default class ScheduleBuilder extends React.Component {
 
     const timeRange = getTimeRangeFromRT(props.queryResponse)
 
-    console.log('SETTING TIMEZONE TO ', props.dataAlert?.time_zone)
-
     this.state = {
       timeRange: props.dataAlert?.reset_period ?? timeRange,
       resetPeriodSelectValue: props.dataAlert?.reset_period ?? timeRange ?? this.DEFAULT_RESET_PERIOD_SELECT_VALUE,
@@ -125,7 +123,6 @@ export default class ScheduleBuilder extends React.Component {
           <div className='react-autoql-input-label'>Time zone</div>
           <TimezoneSelector
             onChange={(timezone) => {
-              console.log('time zone changed:', timezone)
               this.setState({ timezone: timezone.value })
             }}
             defaultSelection={this.state.timezone}
@@ -275,7 +272,6 @@ export default class ScheduleBuilder extends React.Component {
           <span>at</span>
         </div>
         <div className='react-autoql-data-alert-frequency-option'>
-          {/* <div className='react-autoql-input-label'>Time</div> */}
           <TimePicker
             value={this.state.intervalTimeSelectValue}
             onChange={(timeObj) => this.setState({ intervalTimeSelectValue: timeObj.value })}
@@ -379,7 +375,10 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   frequencyTypeSection = () => {
-    const query = this.props.queryResponse?.data?.data?.text
+    const query =
+      this.props.expressionRef?.getFirstQuery() ??
+      this.props.queryResponse?.data?.data?.text ??
+      this.props.dataAlert?.expression?.[0]?.term_value
     const queryText = query ? <em>"{query}"</em> : 'this query'
 
     return (

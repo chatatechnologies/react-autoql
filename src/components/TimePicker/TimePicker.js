@@ -77,6 +77,7 @@ export default class DateRangePicker extends React.Component {
           hour,
           minute,
           value: `${hour}:${minute}${ampm}`,
+          value24hr: `${hr}:${minute}`,
         })
       }
     }

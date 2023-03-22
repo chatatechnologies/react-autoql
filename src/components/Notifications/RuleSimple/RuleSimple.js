@@ -8,7 +8,6 @@ import axios from 'axios'
 import { Input } from '../../Input'
 import { Select } from '../../Select'
 import { Icon } from '../../Icon'
-import { Chip } from '../../Chip'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 
 import { authenticationType } from '../../../props/types'
@@ -49,14 +48,11 @@ export default class RuleSimple extends React.Component {
       this.TERM_ID_1 = initialData[0].id
       this.TERM_ID_2 = initialData.length > 1 ? initialData[1].id : uuid()
 
-      console.log({ initialData })
-
       state.selectedOperator = initialData[0]?.condition ?? this.SUPPORTED_OPERATORS[0]
       state.inputValue = initialData[0]?.term_value ?? ''
       state.secondInputValue = initialData[1]?.term_value ?? ''
       state.secondTermType = initialData[1]?.term_type ?? NUMBER_TERM_TYPE
       state.secondQueryValidated = true
-      console.log({ state })
     }
 
     this.state = state
@@ -113,32 +109,25 @@ export default class RuleSimple extends React.Component {
       secondTermText = `"${secondTermText}"`
     }
 
+    console.log('getting condition statement', { queryText, operatorText, secondTermText })
+
     if (queryText && operatorText && secondTermText) {
       return (
         <span className='data-alert-condition-statement'>
           "{queryText}" {operatorText} {secondTermText}
         </span>
       )
+    } else if (queryText) {
+      return <span className='data-alert-condition-statement'>New data is detected for "{queryText}"</span>
     }
 
     return
   }
 
   getJSON = () => {
-    // if (this.state.selectedOperator === EXISTS_TYPE) {
-    //   return [
-    //     {
-    //       id: this.TERM_ID_1,
-    //       term_type: QUERY_TERM_TYPE,
-    //       condition: this.state.selectedOperator,
-    //       term_value: this.state.inputValue,
-    //     },
-    //   ]
-    // }
-
     const { secondInputValue } = this.state
     const userSelection = this.props.queryResponse?.data?.data?.fe_req?.disambiguation
-    return [
+    const expression = [
       {
         id: this.TERM_ID_1,
         term_type: QUERY_TERM_TYPE,
@@ -153,6 +142,8 @@ export default class RuleSimple extends React.Component {
         term_value: this.isNumerical(secondInputValue) ? parseNum(secondInputValue) : secondInputValue,
       },
     ]
+
+    return expression
   }
 
   isNumerical = (num) => {
@@ -184,24 +175,11 @@ export default class RuleSimple extends React.Component {
       this.state.secondInputType === QUERY_TERM_TYPE &&
       (this.state.secondQueryInvalid || this.state.secondQueryValidating || !this.state.secondQueryValidated)
     ) {
-      console.log(
-        'RULE IS INCOMPLETE if some of these are false',
-        this.state.secondQueryInvalid,
-        this.state.secondQueryValidating,
-        !this.state.secondQueryValidated,
-      )
       return false
     }
 
     const firstTermComplete = !!this.state.inputValue?.length
     const secondTermComplete = isNumber(this.state.secondInputValue) || !!this.state.secondInputValue?.length
-
-    if (!firstTermComplete || !secondTermComplete) {
-      console.log('rule is incomplete 2, both of these must be true', firstTermComplete, secondTermComplete, {
-        inputValue: this.state.inputValue,
-        secondInputValue: this.state.secondInputValue,
-      })
-    }
 
     return firstTermComplete && secondTermComplete
   }
@@ -267,17 +245,6 @@ export default class RuleSimple extends React.Component {
       suggestions: [],
     })
   }
-
-  // getSupportedSecondTermTypes = (props) => {
-  //   const { initialData, queryResponse } = props
-
-  //   if (initialData) {
-  //   }
-
-  //   if (isSingleValueResponse(queryResponse)) {
-  //     return [NUMBER_TERM_TYPE]
-  //   }
-  // }
 
   switchSecondTermType = () => {
     let secondTermType = NUMBER_TERM_TYPE
@@ -499,6 +466,7 @@ export default class RuleSimple extends React.Component {
 
         numValueLabels += 1
 
+        // We might want to use this later for VLs or other query filters
         // return (
         //   <>
         //     {prefix}
@@ -545,13 +513,11 @@ export default class RuleSimple extends React.Component {
     return (
       <div className='data-alert-rule-formatted-query'>
         <span>{this.getFormattedQueryText()}</span>
-        {/* <span>{this.renderChunkedInterpretation()} </span> */}
         <Icon
           type='info'
           className='data-alert-rule-tooltip-icon'
           data-for={this.props.tooltipID}
           data-tip='This query will be used to evaluate the conditions below. If the query result meets the specified conditons, an alert will be triggered.'
-          // data-tip={`This is how AutoQL interpreted the query "${this.props.queryResponse?.data?.data?.text}".<br /><br />If there was a date or time frame in the original query, you will be able to configure that in the next step.`}
           data-place='right'
         />
         {/* 
