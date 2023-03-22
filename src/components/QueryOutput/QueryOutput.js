@@ -177,6 +177,7 @@ export class QueryOutput extends React.Component {
     onPageSizeChange: PropTypes.func,
     allowDisplayTypeChange: PropTypes.bool,
     onRenderComplete: PropTypes.func,
+    onMount: PropTypes.func,
   }
 
   static defaultProps = {
@@ -221,6 +222,7 @@ export class QueryOutput extends React.Component {
     onColumnChange: () => {},
     onPageSizeChange: () => {},
     onRenderComplete: () => {},
+    onMount: () => {},
   }
 
   componentDidMount = () => {
@@ -228,6 +230,7 @@ export class QueryOutput extends React.Component {
       this.onRenderComplete()
       this._isMounted = true
       this.updateToolbars()
+      this.props.onMount()
     } catch (error) {
       console.error(error)
       this.props.onErrorCallback(error)
@@ -1102,7 +1105,7 @@ export class QueryOutput extends React.Component {
 
   updateVizToolbar = () => {
     if (this.props.vizToolbarRef?._isMounted) {
-      this.props.vizToolbarRef.forceUpdate()
+      this.props.vizToolbarRef.updateDisplayTypes(this.getCurrentSupportedDisplayTypes(), this.state.displayType)
     }
   }
 

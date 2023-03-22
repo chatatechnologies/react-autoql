@@ -25,9 +25,22 @@ import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
 import './NotificationItem.scss'
+import { Popover } from 'react-tiny-popover'
 
 export default class NotificationItem extends React.Component {
-  COMPONENT_KEY = uuid()
+  constructor(props) {
+    super(props)
+
+    this.COMPONENT_KEY = uuid()
+
+    this.state = {
+      expanded: false,
+      ruleStatus: undefined,
+      ruleDetails: undefined,
+      queryResponse: undefined,
+      isMoreOptionsMenuOpen: false,
+    }
+  }
 
   static propTypes = {
     authentication: authenticationType,
@@ -57,14 +70,6 @@ export default class NotificationItem extends React.Component {
     onDismissSuccessCallback: () => {},
     onErrorCallback: () => {},
     onClick: () => {},
-  }
-
-  state = {
-    expanded: false,
-    ruleStatus: undefined,
-    ruleDetails: undefined,
-    queryResponse: undefined,
-    // loading: true,
   }
 
   componentDidMount = () => {
@@ -136,7 +141,7 @@ export default class NotificationItem extends React.Component {
   }
 
   collapse = () => {
-    this.setState({ expanded: false })
+    this.setState({ expanded: false, isMoreOptionsMenuOpen: false })
   }
 
   onClick = (notification) => {
@@ -316,10 +321,28 @@ export default class NotificationItem extends React.Component {
     )
   }
 
-  renderVizToolbar = () => {
+  renderToolbar = () => {
+    if (!this.state.expanded) {
+      return null
+    }
+
     return (
-      <div className='react-autoql-notification-viz-switcher'>
+      <div className='react-autoql-notification-toolbar-container'>
         <VizToolbar ref={(r) => (this.vizToolbarRef = r)} responseRef={this.OUTPUT_REF} vertical />
+        <Popover
+          align='end'
+          positions={['top', 'left', 'bottom', 'right']}
+          content={<div>content</div>}
+          isOpen={this.state.isMoreOptionsMenuOpen}
+          onClickOutside={() => this.setState({ isMoreOptionsMenuOpen: false })}
+        >
+          <div
+            className='react-autoql-notification-toolbar-more-options'
+            onClick={() => this.setState({ isMoreOptionsMenuOpen: !this.state.isMoreOptionsMenuOpen })}
+          >
+            <Icon className='notification-toolbar-more-options-btn' type='more-vertical' />
+          </div>
+        </Popover>
       </div>
     )
   }
@@ -335,7 +358,7 @@ export default class NotificationItem extends React.Component {
         <div ref={(r) => (this.dataContainer = r)} className='react-autoql-notification-query-data-container'>
           {queryResponse ? (
             <QueryOutput
-              key={queryResponse?.data?.data?.query_id}
+              // key={queryResponse?.data?.data?.query_id}
               ref={(r) => (this.OUTPUT_REF = r)}
               vizToolbarRef={this.vizToolbarRef}
               authentication={this.props.authentication}
@@ -387,7 +410,7 @@ export default class NotificationItem extends React.Component {
             </div>
             <div className='react-autoql-notification-data-container' onClick={(e) => e.stopPropagation()}>
               {this.renderQueryResponse()}
-              {this.renderVizToolbar()}
+              {this.renderToolbar()}
             </div>
           </div>
           {this.renderNotificationFooter(notification)}
