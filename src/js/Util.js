@@ -1487,3 +1487,36 @@ export const deepEqual = (objA, objB) => {
 
   return true
 }
+
+export const getStringFromSource = (source) => {
+  if (typeof source === 'string' || typeof source === 'number') {
+    return source
+  }
+
+  if (Array.isArray(source) && !!source.length) {
+    return source.join('.')
+  }
+
+  return null
+}
+
+export const mergeSources = (source, newSource) => {
+  let finalSource = null
+
+  try {
+    const sourceString = getStringFromSource(source)
+    const newSourceString = getStringFromSource(newSource)
+
+    if (sourceString && newSourceString) {
+      finalSource = [sourceString, newSourceString].join('.')
+    } else if (sourceString) {
+      finalSource = sourceString
+    } else if (newSourceString) {
+      finalSource = newSourceString
+    }
+  } catch (error) {
+    console.error(error)
+  }
+
+  return finalSource
+}

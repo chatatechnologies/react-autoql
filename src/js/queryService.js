@@ -4,6 +4,8 @@ import { responseErrors } from './errorMessages'
 import DEConstants from '../components/DataExplorer/constants'
 import { DEFAULT_DATA_PAGE_SIZE } from './Constants'
 
+const DEFAULT_SOURCE = 'widgets'
+
 const formatErrorResponse = (error) => {
   if (error?.message === responseErrors.CANCELLED) {
     return Promise.reject({
@@ -12,15 +14,6 @@ const formatErrorResponse = (error) => {
   }
 
   return Promise.reject(_get(error, 'response'))
-}
-
-const formatSourceString = (sourceArray) => {
-  try {
-    const sourceString = sourceArray.join('.')
-    return sourceString
-  } catch (error) {
-    return undefined
-  }
 }
 
 const transformUserSelection = (userSelection) => {
@@ -151,7 +144,7 @@ export const runQueryOnly = (params = {}) => {
     domain,
     apiKey,
     token,
-    source,
+    source = DEFAULT_SOURCE,
     filters,
     orders,
     tableFilters,
@@ -161,9 +154,11 @@ export const runQueryOnly = (params = {}) => {
   const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
   const finalUserSelection = userSelectionFinal || transformUserSelection(userSelection)
 
+  console.log('SOURCE FROM QUERY REQUEST:', { source })
+
   const data = {
     text: query,
-    source: formatSourceString(source),
+    source: source,
     translation: debug ? 'include' : 'exclude',
     user_selection: finalUserSelection,
     test,
@@ -314,6 +309,7 @@ export const runDrilldown = ({
   apiKey,
   token,
   orders,
+  source = DEFAULT_SOURCE,
   tableFilters,
   cancelToken,
   pageSize = DEFAULT_DATA_PAGE_SIZE,
@@ -332,6 +328,7 @@ export const runDrilldown = ({
     translation: debug ? 'include' : 'exclude',
     columns: groupBys,
     filters: tableFilters,
+    source,
     orders,
     test,
     page_size: pageSize,
@@ -759,7 +756,7 @@ export const fetchDataPreview = ({
   domain,
   apiKey,
   token,
-  source = 'data_explorer.user',
+  source = DEFAULT_SOURCE,
   numRows = 10,
   cancelToken,
 } = {}) => {
