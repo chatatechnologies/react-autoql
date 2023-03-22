@@ -9,18 +9,11 @@ import AxisScaler from './AxisScaler'
 import AxisSelector from '../Axes/AxisSelector'
 import LoadMoreDropdown from './LoadMoreDropdown'
 
-import { deepEqual, formatChartLabel, getBBoxFromRef } from '../../../js/Util.js'
-import {
-  axesDefaultProps,
-  axesPropTypes,
-  mergeBboxes,
-  labelsShouldRotate,
-  getFormattedTickLabels,
-  getMaxLabelWidth,
-} from '../helpers.js'
+import { formatChartLabel, getBBoxFromRef } from '../../../js/Util.js'
+import { axesDefaultProps, axesPropTypes, mergeBboxes, labelsShouldRotate, getMaxLabelWidth } from '../helpers.js'
+import { MAX_CHART_LABEL_SIZE } from '../../../js/Constants'
 
 import './Axis.scss'
-import { MAX_CHART_LABEL_SIZE } from '../../../js/Constants'
 
 export default class Axis extends Component {
   constructor(props) {
@@ -37,6 +30,8 @@ export default class Axis extends Component {
     this.maxRows = 5000
     this.initialRowNumber = 50
     this.prevMaxLabelWidth = MAX_CHART_LABEL_SIZE
+    this.labelsShouldRotate = false
+    this.prevLabelsShouldRotate = false
     this.labelInlineStyles = {
       fontSize: '12px',
       fontFamily: 'inherit',
@@ -45,11 +40,8 @@ export default class Axis extends Component {
       cursor: 'default',
     }
 
-    this.labelsShouldRotate = false
-    this.prevLabelsShouldRotate = false
-
     this.state = {
-      currentRowNumber: this.props.dataLength,
+      isAxisSelectorOpen: false,
     }
   }
 
@@ -121,7 +113,6 @@ export default class Axis extends Component {
         return label.formattedLabel
       }
       return d
-      return formatChartLabel({ d, scale, maxLabelWidth })?.formattedLabel
     })
 
     if (this.props.scale?.tickLabels?.length) {
