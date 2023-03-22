@@ -53,7 +53,7 @@ export default class ChatContent extends React.Component {
     dataPageSize: PropTypes.number,
     sessionId: PropTypes.string,
     isResizing: PropTypes.bool,
-    source: PropTypes.arrayOf(PropTypes.string),
+    source: PropTypes.oneOf([PropTypes.arrayOf(PropTypes.string), PropTypes.string]),
     shouldRender: PropTypes.bool,
   }
 
@@ -62,7 +62,7 @@ export default class ChatContent extends React.Component {
     enableAjaxTableData: false,
     isResizing: false,
     dataPageSize: undefined,
-    source: [],
+    source: null,
     onRTValueLabelClick: undefined,
     shouldRender: true,
   }

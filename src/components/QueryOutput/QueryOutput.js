@@ -45,6 +45,7 @@ import {
   getDayJSObj,
   getNumberOfGroupables,
   deepEqual,
+  mergeSources,
 } from '../../js/Util.js'
 
 import {
@@ -786,6 +787,7 @@ export class QueryOutput extends React.Component {
   }
 
   queryFn = (args = {}) => {
+    console.log('QUERY FN...', { args, source: args?.source, propsSource: this.props.source })
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
     const allFilters = this.getCombinedFilters()
 
@@ -796,7 +798,7 @@ export class QueryOutput extends React.Component {
       return runDrilldown({
         ...getAuthentication(this.props.authentication),
         ...getAutoQLConfig(this.props.autoQLConfig),
-        source: queryRequestData?.source,
+        source: this.props.source,
         debug: queryRequestData?.translation === 'include',
         filters: queryRequestData?.session_filter_locks,
         pageSize: queryRequestData?.page_size,
@@ -813,7 +815,6 @@ export class QueryOutput extends React.Component {
       ...getAuthentication(this.props.authentication),
       ...getAutoQLConfig(this.props.autoQLConfig),
       query: queryRequestData?.text,
-      source: queryRequestData?.source,
       debug: queryRequestData?.translation === 'include',
       userSelection: queryRequestData?.disambiguation,
       filters: queryRequestData?.session_filter_locks,
@@ -821,6 +822,7 @@ export class QueryOutput extends React.Component {
       pageSize: queryRequestData?.page_size,
       orders: this.formattedTableParams?.sorters,
       tableFilters: allFilters,
+      source: this.props.source,
       cancelToken: this.axiosSource.token,
       ...args,
     })
@@ -860,6 +862,7 @@ export class QueryOutput extends React.Component {
               ...getAuthentication(this.props.authentication),
               ...getAutoQLConfig(this.props.autoQLConfig),
               queryID: this.queryID,
+              source: this.props.source,
               groupBys,
               pageSize,
             })
@@ -1995,6 +1998,7 @@ export class QueryOutput extends React.Component {
             isAggregation(this.state.columns) && getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
           }
           queryFn={this.queryFn}
+          source={this.props.source}
         />
       </ErrorBoundary>
     )
@@ -2023,6 +2027,7 @@ export class QueryOutput extends React.Component {
           useInfiniteScroll={false}
           supportsDrilldowns={true}
           autoHeight={this.props.autoHeight}
+          source={this.props.source}
           pivot
         />
       </ErrorBoundary>
@@ -2103,6 +2108,7 @@ export class QueryOutput extends React.Component {
           isDrilldown={this.isDrilldown()}
           totalRowCount={totalRows}
           updateColumns={this.updateColumns}
+          source={this.props.source}
         />
       </ErrorBoundary>
     )
