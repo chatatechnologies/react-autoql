@@ -154,8 +154,6 @@ export const runQueryOnly = (params = {}) => {
   const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
   const finalUserSelection = userSelectionFinal || transformUserSelection(userSelection)
 
-  console.log('SOURCE FROM QUERY REQUEST:', { source })
-
   const data = {
     text: query,
     source: source,

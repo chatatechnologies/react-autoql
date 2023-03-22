@@ -10,13 +10,12 @@ export default class LoadMoreDropdown extends Component {
     super(props)
 
     this.maxRows = 5000
-    this.initialRowNumber = 50
     this.fontSize = 12
     this.BUTTON_PADDING_TOP = 2
     this.BUTTON_PADDING_LEFT = 4
 
     this.state = {
-      currentRowNumber: this.props.dataLength,
+      currentRowNumber: props.currentRowCount,
     }
   }
 
@@ -61,7 +60,7 @@ export default class LoadMoreDropdown extends Component {
 
   renderRowCountText = () => {
     const style = {}
-    if (this.props.totalRowCount > this.initialRowNumber) {
+    if (this.props.totalRowCount > this.props.pageSize) {
       style.textDecoration = 'underline'
     }
 
@@ -90,7 +89,7 @@ export default class LoadMoreDropdown extends Component {
   }
 
   renderRowDropdownButton = () => {
-    if (!(this.props.totalRowCount > this.initialRowNumber)) {
+    if (!(this.props.totalRowCount > this.props.pageSize)) {
       return null
     }
 

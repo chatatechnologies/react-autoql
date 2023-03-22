@@ -861,7 +861,6 @@ class DashboardWithoutTheme extends React.Component {
 
   render = () => {
     const tiles = this.getMostRecentTiles()
-    console.log('PROPS SOURCE:', this.props.source, 'THIS source', this.SOURCE)
     return (
       <ErrorBoundary>
         <Fragment>
