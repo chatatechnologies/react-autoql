@@ -23,9 +23,9 @@ import dayjs from '../../../js/dayjsWithPlugins'
 import { isNumber } from '../../../js/Util'
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
+import { Popover } from 'react-tiny-popover'
 
 import './NotificationItem.scss'
-import { Popover } from 'react-tiny-popover'
 
 export default class NotificationItem extends React.Component {
   constructor(props) {
