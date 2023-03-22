@@ -7,6 +7,7 @@ import { getAuthentication } from '../../../props/defaults'
 import { runQueryOnly, runDrilldown } from '../../../js/queryService'
 import { responseErrors } from '../../../js/errorMessages'
 import { DEFAULT_DATA_PAGE_SIZE, MAX_DATA_PAGE_SIZE } from '../../../js/Constants'
+import { mergeSources } from '../../../js/Util'
 
 export default class RowNumberSelector extends React.Component {
   constructor(props) {
@@ -36,7 +37,7 @@ export default class RowNumberSelector extends React.Component {
     if (this.props.isDrilldown) {
       return runDrilldown({
         ...getAuthentication(this.props.authentication),
-        source: this.props.queryRequestData?.source,
+        source: this.props.source,
         debug: this.props.queryRequestData?.translation === 'include',
         formattedUserSelection: this.props.queryRequestData?.user_selection,
         filters: this.props.queryRequestData?.session_filter_locks,

@@ -22,7 +22,7 @@ import Autosuggest from 'react-autosuggest'
 import SpeechToTextButtonBrowser from '../SpeechToTextButton/SpeechToTextButtonBrowser'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { animateInputText, deepEqual } from '../../js/Util'
+import { animateInputText, deepEqual, mergeSources } from '../../js/Util'
 import { dprQuery } from '../../js/dprService'
 import { withTheme } from '../../theme'
 
@@ -78,7 +78,7 @@ class QueryInput extends React.Component {
     showChataIcon: true,
     isBackButtonClicked: false,
     inputValue: undefined,
-    source: [],
+    source: null,
     queryFilters: undefined,
     clearQueryOnSubmit: true,
     placeholder: 'Type your queries here',
@@ -197,13 +197,6 @@ class QueryInput extends React.Component {
       this.setState(newState)
     }
 
-    let newSource = this.props.source
-    if (source?.length) {
-      newSource = [...this.props.source, ...source]
-    } else if (source) {
-      newSource.push('user')
-    }
-
     this.axiosSource = axios.CancelToken?.source()
 
     const requestData = {
@@ -211,7 +204,7 @@ class QueryInput extends React.Component {
       userSelection,
       ...getAuthentication(this.props.authentication),
       ...getAutoQLConfig(this.props.autoQLConfig),
-      source: newSource,
+      source: mergeSources(this.props.source, source ?? 'user'),
       AutoAEId: this.props.AutoAEId,
       filters: this.props.queryFilters,
       pageSize: this.props.dataPageSize,

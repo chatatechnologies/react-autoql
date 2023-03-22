@@ -33,6 +33,7 @@ import { FilterLockPopover } from '../FilterLockPopover'
 // Styles
 import 'rc-drawer/assets/index.css'
 import './DataMessenger.scss'
+import { mergeSources } from '../../js/Util'
 
 export class DataMessenger extends React.Component {
   constructor(props) {
@@ -44,6 +45,7 @@ export class DataMessenger extends React.Component {
     this.COMPONENT_KEY = uuid()
     this.HEADER_THICKNESS = 70
     this.TAB_THICKNESS = 45
+    this.SOURCE = mergeSources(props.source, 'data_messenger')
     this.TOOLTIP_ID = `react-autoql-data-messenger-tooltip-${this.COMPONENT_KEY}`
     this.CHART_TOOLTIP_ID = `react-autoql-dm-chart-tooltip-${this.COMPONENT_KEY}`
 
@@ -793,7 +795,7 @@ export class DataMessenger extends React.Component {
           authentication={this.props.authentication}
           autoQLConfig={this.props.autoQLConfig}
           isResizing={this.state.isResizing || this.state.isWindowResizing}
-          source={['data_messenger']}
+          source={this.SOURCE}
           onRTValueLabelClick={valueLabelClickFn}
           queryFilters={this.state.sessionFilters}
           introMessages={this.dataMessengerIntroMessages}
@@ -827,7 +829,7 @@ export class DataMessenger extends React.Component {
             dprDomain: this.props.authentication?.dprDomain,
           }}
           isResizing={this.state.isResizing || this.state.isWindowResizing}
-          source={['data_messenger']}
+          source={this.SOURCE}
           introMessages={this.dprMessengerIntroMessages}
           disableMaxMessageHeight={true}
           inputPlaceholder='Type your questions here'
