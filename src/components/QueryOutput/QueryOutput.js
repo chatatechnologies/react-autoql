@@ -128,7 +128,7 @@ export class QueryOutput extends React.Component {
       supportedDisplayTypes: this.initialSupportedDisplayTypes,
       columns,
       selectedSuggestion: props.defaultSelectedSuggestion,
-      visiblerows: this.queryResponse?.data?.data?.rows,
+      visibleRows: this.queryResponse?.data?.data?.rows,
       visibleRowChangeCount: 0,
       visiblePivotRowChangeCount: 0,
       columnChangeCount: 0,
@@ -787,7 +787,6 @@ export class QueryOutput extends React.Component {
   }
 
   queryFn = (args = {}) => {
-    console.log('QUERY FN...', { args, source: args?.source, propsSource: this.props.source })
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
     const allFilters = this.getCombinedFilters()
 
@@ -2064,6 +2063,7 @@ export class QueryOutput extends React.Component {
 
     const originalTotalRows = this.queryResponse?.data?.data?.count_rows
     let totalRows = originalTotalRows
+
     if (!this.isDataLimited() && this.state.visibleRows && this.state.visibleRows?.length < MAX_DATA_PAGE_SIZE) {
       // This allows total row count to reflect FE filters in the table view
       totalRows = this.state.visibleRows?.length
@@ -2107,6 +2107,7 @@ export class QueryOutput extends React.Component {
           onNewData={this.onNewData}
           isDrilldown={this.isDrilldown()}
           totalRowCount={totalRows}
+          currentRowCount={this.state.visibleRows?.length}
           updateColumns={this.updateColumns}
           source={this.props.source}
         />

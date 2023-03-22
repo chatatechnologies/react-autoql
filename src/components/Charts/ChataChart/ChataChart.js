@@ -409,7 +409,6 @@ export default class ChataChart extends Component {
       disableTimeScale: this.disableTimeScale,
       colorScale,
       colorScale2,
-      dataLength: this.props.data?.length,
       height: innerHeight,
       width: innerWidth,
       outerHeight,
