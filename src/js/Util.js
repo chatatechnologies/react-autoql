@@ -21,6 +21,8 @@ import {
   isAggregation,
   getDateColumnIndex,
   isColumnDateType,
+  isColumnNumberType,
+  isColumnStringType,
 } from '../components/QueryOutput/columnHelpers'
 import { getMaxLabelWidth } from '../components/Charts/helpers'
 
@@ -768,6 +770,16 @@ export const supportsRegularPivotTable = (columns, dataLength, data) => {
   }
 
   return true
+}
+
+export const hasNumberColumn = (columns) => {
+  const hasNumberColumn = !!columns.filter((col) => isColumnNumberType(col))?.length
+  return hasNumberColumn
+}
+
+export const hasStringColumn = (columns) => {
+  const hasStringColumn = !!columns.filter((col) => isColumnStringType(col))?.length
+  return hasStringColumn
 }
 
 export const hasDateColumn = (columns) => {
