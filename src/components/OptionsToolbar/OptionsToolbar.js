@@ -98,8 +98,9 @@ export class OptionsToolbar extends React.Component {
 
     if (prevProps.displayType !== this.props.displayType) {
       this.setState({ activeMenu: undefined })
-      rebuildTooltips()
     }
+
+    rebuildTooltips()
   }
 
   componentWillUnmount = () => {
