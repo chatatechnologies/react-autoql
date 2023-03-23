@@ -319,6 +319,7 @@ export default class RuleSimple extends React.Component {
         onChange={(value) => {
           this.setState({ conditionSelectValue: value })
         }}
+        showArrow={false}
       />
     )
     return null
