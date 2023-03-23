@@ -45,7 +45,9 @@ import {
   getDayJSObj,
   getNumberOfGroupables,
   deepEqual,
-  mergeSources,
+  isNumber,
+  hasNumberColumn,
+  hasStringColumn,
 } from '../../js/Util.js'
 
 import {
@@ -470,15 +472,26 @@ export class QueryOutput extends React.Component {
   }
 
   isTableConfigValid = (tableConfig, columns, displayType) => {
+    if (!columns) {
+      return false
+    }
+
     try {
       if (
         !tableConfig ||
         !tableConfig.numberColumnIndices ||
         !tableConfig.stringColumnIndices ||
-        isNaN(Number(tableConfig.numberColumnIndex)) ||
-        isNaN(Number(tableConfig.stringColumnIndex))
+        (hasNumberColumn(columns) && !isNumber(tableConfig.numberColumnIndex)) ||
+        (hasStringColumn(columns) && !isNumber(tableConfig.stringColumnIndex))
       ) {
-        console.debug('Table config provided was incomplete')
+        console.debug(
+          'Table config provided was incomplete',
+          !tableConfig,
+          !tableConfig.numberColumnIndices,
+          !tableConfig.stringColumnIndices,
+          hasNumberColumn(columns) && !isNumber(tableConfig.numberColumnIndex),
+          hasStringColumn(columns) && !isNumber(tableConfig.stringColumnIndex),
+        )
         return false
       }
 
@@ -493,12 +506,20 @@ export class QueryOutput extends React.Component {
       }
 
       if (
-        !columns[tableConfig.stringColumnIndex].is_visible ||
-        !columns[tableConfig.numberColumnIndex].is_visible ||
-        tableConfig.numberColumnIndices.find((i) => !columns[i].is_visible) !== undefined ||
-        tableConfig.stringColumnIndices.find((i) => !columns[i].is_visible) !== undefined
+        isNumber(tableConfig.stringColumnIndex) &&
+        (!columns[tableConfig.stringColumnIndex].is_visible ||
+          tableConfig.stringColumnIndices.find((i) => !columns[i].is_visible) !== undefined)
       ) {
-        console.debug('Some of the table config indices were hidden columns')
+        console.debug('Table config invalid: Some of the number columns were hidden.')
+        return false
+      }
+
+      if (
+        isNumber(tableConfig.numberColumnIndex) &&
+        (!columns[tableConfig.numberColumnIndex].is_visible ||
+          tableConfig.numberColumnIndices.find((i) => !columns[i].is_visible) !== undefined)
+      ) {
+        console.debug('Table config invalid: Some of the string columns were hidden.')
         return false
       }
 
