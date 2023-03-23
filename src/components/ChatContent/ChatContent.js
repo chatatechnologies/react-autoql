@@ -53,7 +53,7 @@ export default class ChatContent extends React.Component {
     dataPageSize: PropTypes.number,
     sessionId: PropTypes.string,
     isResizing: PropTypes.bool,
-    source: PropTypes.oneOf([PropTypes.arrayOf(PropTypes.string), PropTypes.string]),
+    source: PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.string), PropTypes.string]),
     shouldRender: PropTypes.bool,
   }
 

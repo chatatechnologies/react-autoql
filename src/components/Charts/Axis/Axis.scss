@@ -124,8 +124,11 @@ g.legendOrdinal tspan {
       line-height: 25px;
       cursor: default;
 
-      &.checked .agg-type-symbol {
-        color: var(--react-autoql-accent-color);
+      &.checked {
+        .agg-type-symbol,
+        .agg-select-text {
+          color: var(--react-autoql-accent-color);
+        }
       }
     }
 
@@ -153,11 +156,10 @@ g.legendOrdinal tspan {
     }
 
     .react-autoql-select.agg-type-symbol {
-      display: inline-block;
       font-weight: 600;
       font-size: 12px;
-      line-height: 22px;
-      height: 22px;
+      height: 26px;
+      line-height: 25px;
       margin: 3px 10px;
       padding: 0 8px;
     }
