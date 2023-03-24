@@ -13,10 +13,18 @@ import { deepEqual } from '../../js/Util'
 import './VizToolbar.scss'
 
 class VizToolbar extends React.Component {
-  COMPONENT_KEY = uuid()
+  constructor(props) {
+    super(props)
+
+    this.COMPONENT_KEY = uuid()
+
+    this.state = {
+      displayType: props.responseRef?.state?.displayType,
+      supportedDisplayTypes: props.responseRef?._isMounted ? props.responseRef?.getCurrentSupportedDisplayTypes() : [],
+    }
+  }
 
   static propTypes = {
-    onDisplayTypeChange: PropTypes.func,
     shouldRender: PropTypes.bool,
     disableCharts: PropTypes.bool,
     vertical: PropTypes.bool,
@@ -35,15 +43,15 @@ class VizToolbar extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
-    if (!nextProps.shouldRender) {
+    if (!this.props.shouldRender && !nextProps.shouldRender) {
       return false
     }
 
     return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
   }
 
-  componentDidUpdate = (prevProps) => {
-    if (!_isEqual(this.getCurrentSupportedDisplayTypes(this.props), this.getCurrentSupportedDisplayTypes(prevProps))) {
+  componentDidUpdate = (prevProps, prevState) => {
+    if (!_isEqual(this.state.supportedDisplayTypes, prevState.supportedDisplayTypes)) {
       rebuildTooltips()
     }
   }
@@ -52,12 +60,16 @@ class VizToolbar extends React.Component {
     this._isMounted = false
   }
 
+  updateDisplayTypes = (supportedDisplayTypes, displayType) => {
+    this.setState({ supportedDisplayTypes, displayType })
+  }
+
   showDisplayTypeButton = (displayType) => {
     if (this.props.disableCharts && CHART_TYPES.includes(displayType)) {
       return false
     }
 
-    const supportedDisplayTypes = this.getCurrentSupportedDisplayTypes(this.props)
+    const supportedDisplayTypes = this.state.supportedDisplayTypes
     return supportedDisplayTypes && supportedDisplayTypes.includes(displayType)
   }
 
@@ -67,17 +79,9 @@ class VizToolbar extends React.Component {
     }
   }
 
-  getCurrentDisplayType = () => {
-    return this.props.responseRef?.state?.displayType
-  }
-
-  getCurrentSupportedDisplayTypes = (props) => {
-    return props.responseRef?.state?.supportedDisplayTypes
-  }
-
   createVisButton = (displayType, name, icon) => {
     if (this.showDisplayTypeButton(displayType)) {
-      const selectedDisplayType = this.getCurrentDisplayType()
+      const selectedDisplayType = this.state.displayType
 
       return (
         <button
@@ -96,8 +100,12 @@ class VizToolbar extends React.Component {
   }
 
   render = () => {
-    const displayType = this.getCurrentDisplayType()
-    const supportedDisplayTypes = this.getCurrentSupportedDisplayTypes(this.props)
+    if (!this.props.responseRef?._isMounted) {
+      return null
+    }
+
+    const displayType = this.state.displayType
+    const supportedDisplayTypes = this.state.supportedDisplayTypes
 
     if (
       !supportedDisplayTypes ||
