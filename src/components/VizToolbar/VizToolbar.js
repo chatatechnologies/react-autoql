@@ -20,7 +20,7 @@ class VizToolbar extends React.Component {
 
     this.state = {
       displayType: props.responseRef?.state?.displayType,
-      supportedDisplayTypes: props.responseRef?.getCurrentSupportedDisplayTypes(),
+      supportedDisplayTypes: props.responseRef?._isMounted ? props.responseRef?.getCurrentSupportedDisplayTypes() : [],
     }
   }
 
@@ -101,6 +101,10 @@ class VizToolbar extends React.Component {
   }
 
   render = () => {
+    if (!this.props.responseRef?._isMounted) {
+      return null
+    }
+
     const displayType = this.state.displayType
     const supportedDisplayTypes = this.state.supportedDisplayTypes
 

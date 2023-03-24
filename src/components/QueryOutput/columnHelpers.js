@@ -140,7 +140,7 @@ export const getStringColumnIndices = (columns, supportsPivot) => {
   const dateColumnIndex = getDateColumnIndex(columns)
 
   columns.forEach((col, index) => {
-    if ((isColumnStringType(col) || col.groupable) && index !== multiSeriesIndex && col.is_visible) {
+    if (isColumnStringType(col) && index !== multiSeriesIndex && col.is_visible) {
       stringColumnIndices.push(index)
     }
   })
@@ -160,7 +160,9 @@ export const getStringColumnIndices = (columns, supportsPivot) => {
   if (supportsPivot) {
     // Use date column if its a groupable, otherwise use first groupable column
     const isDateColumnGroupable = columns[dateColumnIndex]?.groupable
-    stringColumnIndex = isDateColumnGroupable ? dateColumnIndex : columns.findIndex((col) => col.groupable)
+    stringColumnIndex = isDateColumnGroupable
+      ? dateColumnIndex
+      : stringColumnIndices.findIndex((index) => columns[index].groupable) ?? stringColumnIndices[1]
   } else if (dateColumnIndex >= 0) {
     stringColumnIndex = dateColumnIndex
   } else if (stringColumnIndices[1] >= 0) {

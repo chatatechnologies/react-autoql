@@ -20,6 +20,8 @@ export default class TableWrapper extends React.Component {
       // renderVerticalBuffer: 10, // Change this to help with performance if needed in the future
       // renderHorizontal: 'virtual', // Todo: test this to see if it helps with performance
       height: this.props.height || '100%',
+      headerFilterLiveFilterDelay: 100,
+      minHeight: 100,
       reactiveData: false,
       autoResize: false,
       rowHeight: 25,

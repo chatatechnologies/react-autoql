@@ -115,6 +115,7 @@ export default class NumberAxisSelector extends React.Component {
                 tooltipID={this.props.tooltipID}
                 tooltip={aggTypeObj.tooltip}
                 value={col.aggType}
+                showArrow={false}
                 align='start'
                 size='small'
                 showArrow={false}
@@ -136,7 +137,7 @@ export default class NumberAxisSelector extends React.Component {
                 }}
               />
             )}
-            {col.title}
+            <span className='agg-select-text'>{col.title}</span>
           </div>
         ),
         disabled,

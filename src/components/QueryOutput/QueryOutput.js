@@ -46,6 +46,9 @@ import {
   getNumberOfGroupables,
   deepEqual,
   isSingleValueResponse,
+  isNumber,
+  hasNumberColumn,
+  hasStringColumn,
 } from '../../js/Util.js'
 
 import {
@@ -387,10 +390,31 @@ export class QueryOutput extends React.Component {
     })
   }
 
+  checkAndUpdateTableConfigs = (displayType) => {
+    // Check if table configs are still valid for new display type
+    const isTableConfigValid = this.isTableConfigValid(this.tableConfig, this.state.columns, displayType)
+    if (!isTableConfigValid) {
+      this.setTableConfig()
+    }
+
+    if (this.currentlySupportsPivot()) {
+      const isPivotTableConfigValid = this.isTableConfigValid(
+        this.pivotTableConfig,
+        this.pivotTableColumns,
+        displayType,
+      )
+      if (!isPivotTableConfigValid) {
+        this.resetPivotTableConfig()
+      }
+    }
+  }
+
   changeDisplayType = (displayType) => {
     if (this.props.onDisplayTypeChange) {
       this.props.onDisplayTypeChange(displayType)
     }
+
+    this.checkAndUpdateTableConfigs(displayType)
 
     this.setState({ displayType })
   }
@@ -512,15 +536,26 @@ export class QueryOutput extends React.Component {
   }
 
   isTableConfigValid = (tableConfig, columns, displayType) => {
+    if (!columns) {
+      return false
+    }
+
     try {
       if (
         !tableConfig ||
         !tableConfig.numberColumnIndices ||
         !tableConfig.stringColumnIndices ||
-        isNaN(Number(tableConfig.numberColumnIndex)) ||
-        isNaN(Number(tableConfig.stringColumnIndex))
+        (hasNumberColumn(columns) && !isNumber(tableConfig.numberColumnIndex)) ||
+        (hasStringColumn(columns) && !isNumber(tableConfig.stringColumnIndex))
       ) {
-        console.debug('Table config provided was incomplete')
+        console.debug(
+          'Table config provided was incomplete',
+          !tableConfig,
+          !tableConfig.numberColumnIndices,
+          !tableConfig.stringColumnIndices,
+          hasNumberColumn(columns) && !isNumber(tableConfig.numberColumnIndex),
+          hasStringColumn(columns) && !isNumber(tableConfig.stringColumnIndex),
+        )
         return false
       }
 
@@ -535,12 +570,20 @@ export class QueryOutput extends React.Component {
       }
 
       if (
-        !columns[tableConfig.stringColumnIndex].is_visible ||
-        !columns[tableConfig.numberColumnIndex].is_visible ||
-        tableConfig.numberColumnIndices.find((i) => !columns[i].is_visible) !== undefined ||
-        tableConfig.stringColumnIndices.find((i) => !columns[i].is_visible) !== undefined
+        isNumber(tableConfig.stringColumnIndex) &&
+        (!columns[tableConfig.stringColumnIndex].is_visible ||
+          tableConfig.stringColumnIndices.find((i) => !columns[i].is_visible) !== undefined)
       ) {
-        console.debug('Some of the table config indices were hidden columns')
+        console.debug('Table config invalid: Some of the number columns were hidden.')
+        return false
+      }
+
+      if (
+        isNumber(tableConfig.numberColumnIndex) &&
+        (!columns[tableConfig.numberColumnIndex].is_visible ||
+          tableConfig.numberColumnIndices.find((i) => !columns[i].is_visible) !== undefined)
+      ) {
+        console.debug('Table config invalid: Some of the string columns were hidden.')
         return false
       }
 
@@ -1279,6 +1322,11 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  resetPivotTableConfig = () => {
+    this.pivotTableConfig = undefined
+    this.setPivotTableConfig()
+  }
+
   setPivotTableConfig = (isFirstGeneration) => {
     const columns = this.pivotTableColumns
 
@@ -1329,6 +1377,11 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  resetTableConfig = () => {
+    this.tableConfig = undefined
+    this.setTableConfig()
+  }
+
   setTableConfig = (newColumns) => {
     const columns = newColumns ?? this.getColumns()
     if (!columns) {
@@ -1366,12 +1419,30 @@ export class QueryOutput extends React.Component {
       this.tableConfig.currencyColumnIndices = currencyColumnIndices
       this.tableConfig.quantityColumnIndices = quantityColumnIndices
       this.tableConfig.ratioColumnIndices = ratioColumnIndices
+    } else if (
+      this.tableConfig.numberColumnIndices.filter((index) => this.tableConfig.numberColumnIndices2.includes(index))
+        .length
+    ) {
+      // Second axis config overlaps with first axis. Remove the overlapping values from the first axis
+      const newNumberIndices = this.tableConfig.numberColumnIndices.filter(
+        (index) => !this.tableConfig.numberColumnIndices2.includes(index),
+      )
+      if (newNumberIndices.length) {
+        this.tableConfig.numberColumnIndices = newNumberIndices
+      }
+
+      if (!this.tableConfig.numberColumnIndices.includes(this.tableConfig.numberColumnIndex)) {
+        this.tableConfig.numberColumnIndex = this.tableConfig.numberColumnIndices[0]
+      }
     }
 
     // Set legend index if there should be one
-    const legendColumnIndex = columns.findIndex((col, i) => col.groupable && i !== this.tableConfig.stringColumnIndex)
-    if (legendColumnIndex >= 0) {
-      this.tableConfig.legendColumnIndex = legendColumnIndex
+    // Only set legend column if charts use pivot data
+    if (this.usePivotDataForChart()) {
+      const legendColumnIndex = columns.findIndex((col, i) => col.groupable && i !== this.tableConfig.stringColumnIndex)
+      if (legendColumnIndex >= 0) {
+        this.tableConfig.legendColumnIndex = legendColumnIndex
+      }
     }
 
     if (!_isEqual(prevTableConfig, this.tableConfig)) {
@@ -2132,7 +2203,7 @@ export class QueryOutput extends React.Component {
           data={data}
           dataChangeCount={usePivotData ? this.state.visiblePivotRowChangeCount : this.state.visibleRowChangeCount}
           columns={usePivotData ? this.pivotTableColumns : this.state.columns}
-          isPivot={usePivotData}
+          isAggregated={usePivotData}
           dataFormatting={this.props.dataFormatting}
           activeChartElementKey={this.props.activeChartElementKey}
           onLegendClick={this.onLegendClick}
@@ -2367,8 +2438,8 @@ export class QueryOutput extends React.Component {
     const supportsCharts = this.currentlySupportsCharts()
     const supportsPivotTable = this.currentlySupportsPivot()
 
-    const tableConfig = supportsPivotTable ? this.pivotTableConfig : this.tableConfig
     const columns = supportsPivotTable ? this.pivotTableColumns : this.getColumns()
+    const tableConfig = supportsPivotTable ? this.pivotTableConfig : this.tableConfig
     const tableConfigIsValid = this.isTableConfigValid(tableConfig, columns, this.state.displayType)
 
     const shouldRenderChart = (allowsDisplayTypeChange || displayTypeIsChart) && supportsCharts && tableConfigIsValid

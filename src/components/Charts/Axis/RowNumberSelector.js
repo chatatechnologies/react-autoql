@@ -1,5 +1,6 @@
 import React from 'react'
 import axios from 'axios'
+import PropTypes from 'prop-types'
 import { Popover } from 'react-tiny-popover'
 import { axesDefaultProps, axesPropTypes } from '../helpers'
 import { CustomScrollbars } from '../../CustomScrollbars'
@@ -7,7 +8,6 @@ import { getAuthentication } from '../../../props/defaults'
 import { runQueryOnly, runDrilldown } from '../../../js/queryService'
 import { responseErrors } from '../../../js/errorMessages'
 import { DEFAULT_DATA_PAGE_SIZE, MAX_DATA_PAGE_SIZE } from '../../../js/Constants'
-import { mergeSources } from '../../../js/Util'
 
 export default class RowNumberSelector extends React.Component {
   constructor(props) {
@@ -17,8 +17,15 @@ export default class RowNumberSelector extends React.Component {
     }
   }
 
-  static propTypes = axesPropTypes
-  static defaultProps = axesDefaultProps
+  static propTypes = {
+    ...axesPropTypes,
+    onErrorCallback: PropTypes.func,
+  }
+
+  static defaultProps = {
+    ...axesDefaultProps,
+    onErrorCallback: () => {},
+  }
 
   openSelector = () => {
     this.setState({ isOpen: true })
@@ -65,7 +72,10 @@ export default class RowNumberSelector extends React.Component {
       })
     }
   }
+
   loadMoreChartData = async (pageSize, isMax) => {
+    const previousRowNumber = this.props.currentRowNumber
+
     try {
       let response
       // Fetch data with max page size, but dont display this
@@ -73,18 +83,20 @@ export default class RowNumberSelector extends React.Component {
       const pageSizeForRequest = isMax ? MAX_DATA_PAGE_SIZE : pageSize
       this.props.setCurrentRowNumber(pageSize)
       response = await this.getNewChartData(pageSizeForRequest)
-      this.props.setIsLoadingMoreRows(false)
       this.props.onNewData(response, pageSizeForRequest)
+      this.props.setIsLoadingMoreRows(false)
     } catch (error) {
-      if (error?.data?.message === responseErrors.CANCELLED) {
-        return Promise.resolve()
+      if (error?.data?.message !== responseErrors.CANCELLED) {
+        console.error(error)
+        this.props.onErrorCallback(error)
       }
-      console.error(error)
 
-      // Send empty promise so data doesn't change
-      return Promise.resolve()
+      // Rows weren't loaded, so reset back to previous row number and stop loading
+      this.props.setCurrentRowNumber(previousRowNumber)
+      this.props.setIsLoadingMoreRows(false)
     }
   }
+
   rowNumberListConstructor = (totalRows) => {
     let initialRowNumber = DEFAULT_DATA_PAGE_SIZE
     let currentRowNumber = initialRowNumber

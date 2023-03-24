@@ -2,7 +2,6 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Popover } from 'react-tiny-popover'
 import { v4 as uuid } from 'uuid'
-import _isEqual from 'lodash.isequal'
 
 import { format } from 'sql-formatter'
 import { Icon } from '../Icon'
@@ -15,9 +14,7 @@ import ReportProblemModal from './ReportProblemModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { setColumnVisibility, exportCSV } from '../../js/queryService'
-
 import { isTableType, areAllColumnsHidden, areSomeColumnsHidden, isChartType, deepEqual } from '../../js/Util'
-
 import { autoQLConfigType, authenticationType } from '../../props/types'
 import { autoQLConfigDefault, authenticationDefault, getAuthentication, getAutoQLConfig } from '../../props/defaults'
 
@@ -98,8 +95,9 @@ export class OptionsToolbar extends React.Component {
 
     if (prevProps.displayType !== this.props.displayType) {
       this.setState({ activeMenu: undefined })
-      rebuildTooltips()
     }
+
+    rebuildTooltips()
   }
 
   componentWillUnmount = () => {
@@ -269,7 +267,7 @@ export class OptionsToolbar extends React.Component {
   }
 
   renderHideColumnsModal = () => {
-    const cols = this.props.responseRef?.getColumns()
+    const cols = this.props.responseRef?._isMounted && this.props.responseRef?.getColumns()
     if (!cols || !cols.length) {
       return null
     }
@@ -661,6 +659,10 @@ export class OptionsToolbar extends React.Component {
   }
 
   render = () => {
+    if (!this.props.responseRef?._isMounted) {
+      return null
+    }
+
     const shouldShowButton = this.getShouldShowButtonObj(this.props)
 
     // If there is nothing to put in the toolbar, don't render it

@@ -194,9 +194,10 @@ export default class ChataTable extends React.Component {
     if (shouldSetTableHeight) {
       this.setTableHeight(newTableHeight)
     }
+
     if (!this.props.hidden && prevProps.hidden) {
       if (this.state.subscribedData) {
-        this.ref?.updateData(this.state.subscribedData)
+        this.updateData(this.state.subscribedData)
         this.setState({ subscribedData: undefined })
       } else {
         this.ref?.restoreRedraw()
@@ -362,24 +363,32 @@ export default class ChataTable extends React.Component {
   }
 
   ajaxRequestFunc = async (props, params) => {
+    const previousResponseData = this.props.response?.data?.data ?? {}
+    const previousData = { ...previousResponseData, page: 1, isPreviousData: true }
+
     try {
+      const requestedNewPageWhileLoadingFilter = params?.page > 1 && this.state.pageLoading
       if (!this.hasSetInitialData) {
         this.hasSetInitialData = true
-        return { ..._get(this.props.response, 'data.data', {}), page: 1 }
+        return previousData
+      }
+
+      if (requestedNewPageWhileLoadingFilter) {
+        return previousData
       }
 
       const tableParamsFormatted = formatTableParams(this.tableParams, this.ref?.tabulator, props.columns)
       const nextTableParamsFormatted = formatTableParams(params, this.ref?.tabulator, props.columns)
 
       if (_isEqual(tableParamsFormatted, nextTableParamsFormatted)) {
-        return
+        return previousData
       }
 
       this.tableParams = params
 
       if (!props.queryRequestData) {
         console.warn('Original request data was not provided to ChataTable, unable to filter or sort table')
-        return
+        return previousData
       }
 
       this.cancelCurrentRequest()
@@ -395,6 +404,7 @@ export default class ChataTable extends React.Component {
         const responseWrapper = await props.queryFn({
           tableFilters: nextTableParamsFormatted?.filters,
           orders: nextTableParamsFormatted?.sorters,
+          cancelToken: this.axiosSource.token,
         })
         this.queryID = responseWrapper?.data?.data?.query_id
         response = { ..._get(responseWrapper, 'data.data', {}), page: 1 }
@@ -411,13 +421,13 @@ export default class ChataTable extends React.Component {
       return response
     } catch (error) {
       if (error?.data?.message === responseErrors.CANCELLED) {
-        return
+        return previousData
       }
 
       console.error(error)
       this.clearLoadingIndicators()
       // Send empty promise so data doesn't change
-      return
+      return previousData
     }
   }
 
@@ -450,9 +460,11 @@ export default class ChataTable extends React.Component {
   }
 
   ajaxResponseFunc = (props, response) => {
-    this.ref?.restoreRedraw()
-
     if (response) {
+      if (!response.isPreviousData) {
+        this.ref?.restoreRedraw()
+      }
+
       this.currentPage = response.page
       const isLastPage = _get(response, 'rows.length', 0) < props.pageSize
       this.lastPage = isLastPage ? this.currentPage : this.currentPage + 1
@@ -466,6 +478,7 @@ export default class ChataTable extends React.Component {
       const modResponse = {}
       modResponse.data = response.rows
       modResponse.last_page = this.lastPage
+
       return modResponse
     }
 

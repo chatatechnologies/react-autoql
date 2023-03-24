@@ -12,7 +12,7 @@ import { Icon } from '../Icon'
 import { DashboardTile } from './DashboardTile'
 import { QueryOutput } from '../QueryOutput'
 import { LoadingDots } from '../LoadingDots'
-import { rebuildTooltips, Tooltip } from '../Tooltip'
+import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
 import ReportProblemModal from '../OptionsToolbar/ReportProblemModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { CHART_TYPES } from '../../js/Constants'
@@ -30,6 +30,9 @@ import {
 import 'react-grid-layout/css/styles.css'
 import 'react-splitter-layout/lib/index.css'
 import './Dashboard.scss'
+import { VizToolbar } from '../VizToolbar'
+import { OptionsToolbar } from '../OptionsToolbar'
+import DrilldownTable from './DrilldownTable'
 
 const ReactGridLayout = WidthProvider(RGL)
 
@@ -157,6 +160,10 @@ class DashboardWithoutTheme extends React.Component {
       this.setState({ isDragging: true }, () => {
         this.setState({ isDragging: false })
       })
+    }
+
+    if (this.state.isDrilldownModalVisible !== prevState.isDrilldownModalVisible) {
+      hideTooltips()
     }
   }
 
@@ -569,35 +576,31 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   renderDrilldownTable = () => {
-    return (
-      <div className='react-autoql-dashboard-drilldown-table'>
-        {this.state.isDrilldownRunning ? (
+    if (this.state.isDrilldownRunning) {
+      return (
+        <div className='react-autoql-dashboard-drilldown-table'>
           <div className='dashboard-tile-loading-container'>
             <LoadingDots />
           </div>
-        ) : (
-          <QueryOutput
-            ref={(r) => (this.drilldownTableRef = r)}
-            initialDisplayType='table'
-            isResizing={this.state.isAnimatingModal}
-            authentication={this.props.authentication}
-            autoQLConfig={this.props.autoQLConfig}
-            dataFormatting={this.props.dataFormatting}
-            queryResponse={this.state.activeDrilldownResponse}
-            renderTooltips={false}
-            reportProblemCallback={this.reportProblemCallback}
-            enableAjaxTableData={this.props.enableAjaxTableData}
-            showQueryInterpretation={this.props.isEditing}
-            reverseTranslationPlacement='top'
-            tooltipID={this.TOOLTIP_ID}
-            chartTooltipID={this.CHART_TOOLTIP_ID}
-            allowDisplayTypeChange={false}
-            source={this.SOURCE}
-            height='100%'
-            width='100%'
-          />
-        )}
-      </div>
+        </div>
+      )
+    }
+
+    const queryResponse = _cloneDeep(this.state.activeDrilldownResponse)
+    return (
+      <DrilldownTable
+        authentication={this.props.authentication}
+        autoQLConfig={this.props.autoQLConfig}
+        dataFormatting={this.props.dataFormatting}
+        isResizing={this.state.isAnimatingModal || this.state.isResizingDrilldown}
+        isLoading={this.state.isDrilldownRunning}
+        queryResponse={queryResponse}
+        tooltipID={this.TOOLTIP_ID}
+        chartTooltipID={this.CHART_TOOLTIP_ID}
+        reportProblemCallback={this.reportProblemCallback}
+        enableAjaxTableData={this.props.enableAjaxTableData}
+        showQueryInterpretation={this.props.isEditing}
+      />
     )
   }
 
@@ -660,6 +663,7 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   renderDrilldownModal = () => {
+    // Todo: put in its own component
     try {
       let queryResponse
       if (this.state.isDrilldownModalVisible) {
@@ -691,14 +695,11 @@ class DashboardWithoutTheme extends React.Component {
               <SplitterLayout
                 vertical={true}
                 percentage={true}
-                secondaryInitialSize={50}
                 primaryMinSize={renderTopHalf ? 35 : 0}
-                onDragStart={() => {
-                  this.setState({ isResizingDrilldown: true })
-                }}
-                onDragEnd={() => {
-                  this.setState({ isResizingDrilldown: false })
-                }}
+                secondaryMinSize={25}
+                secondaryInitialSize={50}
+                onDragStart={() => this.setState({ isResizingDrilldown: true })}
+                onDragEnd={() => this.setState({ isResizingDrilldown: false })}
               >
                 <div className='react-autoql-dashboard-drilldown-original'>
                   {this.shouldShowOriginalQuery() && (
@@ -706,6 +707,7 @@ class DashboardWithoutTheme extends React.Component {
                       {this.activeDrilldownRef && (
                         <QueryOutput
                           {...this.activeDrilldownRef.props}
+                          ref={(r) => (this.drilldownTopRef = r)}
                           queryResponse={queryResponse}
                           isDrilldownChartHidden={this.state.isDrilldownChartHidden}
                           key={`dashboard-drilldown-chart-${this.state.activeDrilldownTile}`}
