@@ -347,10 +347,31 @@ export class QueryOutput extends React.Component {
     })
   }
 
+  checkAndUpdateTableConfigs = (displayType) => {
+    // Check if table configs are still valid for new display type
+    const isTableConfigValid = this.isTableConfigValid(this.tableConfig, this.state.columns, displayType)
+    if (!isTableConfigValid) {
+      this.setTableConfig()
+    }
+
+    if (this.currentlySupportsPivot()) {
+      const isPivotTableConfigValid = this.isTableConfigValid(
+        this.pivotTableConfig,
+        this.pivotTableColumns,
+        displayType,
+      )
+      if (!isPivotTableConfigValid) {
+        this.resetPivotTableConfig()
+      }
+    }
+  }
+
   changeDisplayType = (displayType) => {
     if (this.props.onDisplayTypeChange) {
       this.props.onDisplayTypeChange(displayType)
     }
+
+    this.checkAndUpdateTableConfigs(displayType)
 
     this.setState({ displayType })
   }
@@ -1258,6 +1279,11 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  resetPivotTableConfig = () => {
+    this.pivotTableConfig = undefined
+    this.setPivotTableConfig()
+  }
+
   setPivotTableConfig = (isFirstGeneration) => {
     const columns = this.pivotTableColumns
 
@@ -1308,6 +1334,11 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  resetTableConfig = () => {
+    this.tableConfig = undefined
+    this.setTableConfig()
+  }
+
   setTableConfig = (newColumns) => {
     const columns = newColumns ?? this.getColumns()
     if (!columns) {
@@ -1345,12 +1376,30 @@ export class QueryOutput extends React.Component {
       this.tableConfig.currencyColumnIndices = currencyColumnIndices
       this.tableConfig.quantityColumnIndices = quantityColumnIndices
       this.tableConfig.ratioColumnIndices = ratioColumnIndices
+    } else if (
+      this.tableConfig.numberColumnIndices.filter((index) => this.tableConfig.numberColumnIndices2.includes(index))
+        .length
+    ) {
+      // Second axis config overlaps with first axis. Remove the overlapping values from the first axis
+      const newNumberIndices = this.tableConfig.numberColumnIndices.filter(
+        (index) => !this.tableConfig.numberColumnIndices2.includes(index),
+      )
+      if (newNumberIndices.length) {
+        this.tableConfig.numberColumnIndices = newNumberIndices
+      }
+
+      if (!this.tableConfig.numberColumnIndices.includes(this.tableConfig.numberColumnIndex)) {
+        this.tableConfig.numberColumnIndex = this.tableConfig.numberColumnIndices[0]
+      }
     }
 
     // Set legend index if there should be one
-    const legendColumnIndex = columns.findIndex((col, i) => col.groupable && i !== this.tableConfig.stringColumnIndex)
-    if (legendColumnIndex >= 0) {
-      this.tableConfig.legendColumnIndex = legendColumnIndex
+    // Only set legend column if charts use pivot data
+    if (this.usePivotDataForChart()) {
+      const legendColumnIndex = columns.findIndex((col, i) => col.groupable && i !== this.tableConfig.stringColumnIndex)
+      if (legendColumnIndex >= 0) {
+        this.tableConfig.legendColumnIndex = legendColumnIndex
+      }
     }
 
     if (!_isEqual(prevTableConfig, this.tableConfig)) {
@@ -2107,7 +2156,7 @@ export class QueryOutput extends React.Component {
           data={data}
           dataChangeCount={usePivotData ? this.state.visiblePivotRowChangeCount : this.state.visibleRowChangeCount}
           columns={usePivotData ? this.pivotTableColumns : this.state.columns}
-          isPivot={usePivotData}
+          isAggregated={usePivotData}
           dataFormatting={this.props.dataFormatting}
           activeChartElementKey={this.props.activeChartElementKey}
           onLegendClick={this.onLegendClick}
@@ -2341,8 +2390,8 @@ export class QueryOutput extends React.Component {
     const supportsCharts = this.currentlySupportsCharts()
     const supportsPivotTable = this.currentlySupportsPivot()
 
-    const tableConfig = supportsPivotTable ? this.pivotTableConfig : this.tableConfig
     const columns = supportsPivotTable ? this.pivotTableColumns : this.getColumns()
+    const tableConfig = supportsPivotTable ? this.pivotTableConfig : this.tableConfig
     const tableConfigIsValid = this.isTableConfigValid(tableConfig, columns, this.state.displayType)
 
     const shouldRenderChart = (allowsDisplayTypeChange || displayTypeIsChart) && supportsCharts && tableConfigIsValid

@@ -12,7 +12,7 @@ import { Icon } from '../Icon'
 import { DashboardTile } from './DashboardTile'
 import { QueryOutput } from '../QueryOutput'
 import { LoadingDots } from '../LoadingDots'
-import { rebuildTooltips, Tooltip } from '../Tooltip'
+import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
 import ReportProblemModal from '../OptionsToolbar/ReportProblemModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { CHART_TYPES } from '../../js/Constants'
@@ -157,6 +157,10 @@ class DashboardWithoutTheme extends React.Component {
       this.setState({ isDragging: true }, () => {
         this.setState({ isDragging: false })
       })
+    }
+
+    if (this.state.isDrilldownModalVisible !== prevState.isDrilldownModalVisible) {
+      hideTooltips()
     }
   }
 

@@ -11,7 +11,6 @@ import legendColor from '../D3Legend/D3Legend'
 import { deepEqual, removeFromDOM } from '../../../js/Util.js'
 import { getLegendLabelsForMultiSeries, mergeBboxes } from '../helpers'
 import { AGG_TYPES, NUMBER_COLUMN_TYPE_DISPLAY_NAMES } from '../../../js/Constants'
-import { isAggregation } from '../../QueryOutput/columnHelpers'
 
 export default class Legend extends Component {
   constructor(props) {
@@ -183,7 +182,7 @@ export default class Legend extends Component {
   }
 
   getLegendTitleFromColumns = (columnIndices) => {
-    if (isAggregation(this.props.columns)) {
+    if (this.props.isAggregated) {
       return this.props.legendColumn?.display_name ?? 'Legend'
     }
 
