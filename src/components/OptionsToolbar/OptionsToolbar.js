@@ -267,7 +267,7 @@ export class OptionsToolbar extends React.Component {
   }
 
   renderHideColumnsModal = () => {
-    const cols = this.props.responseRef?.getColumns()
+    const cols = this.props.responseRef?._isMounted && this.props.responseRef?.getColumns()
     if (!cols || !cols.length) {
       return null
     }
@@ -658,6 +658,10 @@ export class OptionsToolbar extends React.Component {
   }
 
   render = () => {
+    if (!this.props.responseRef?._isMounted) {
+      return null
+    }
+
     const shouldShowButton = this.getShouldShowButtonObj(this.props)
 
     // If there is nothing to put in the toolbar, don't render it

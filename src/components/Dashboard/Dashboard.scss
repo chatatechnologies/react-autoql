@@ -49,6 +49,20 @@
       height: calc(100% - 55px);
     }
 
+    .dashboard-drilldown-table-and-toolbars-container {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+
+      .drilldown-modal-toolbars {
+        flex: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+    }
+
     .react-autoql-dashboard-drilldown-original {
       padding: 20px;
       padding-bottom: 10px;
@@ -73,6 +87,7 @@
   }
 
   .react-autoql-dashboard-drilldown-table {
+    flex: 1;
     padding: 20px;
     padding-top: 10px;
     overflow: hidden;
