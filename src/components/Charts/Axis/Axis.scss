@@ -28,7 +28,7 @@ g.legendOrdinal tspan {
   opacity: 0.5;
 
   &:hover {
-    stroke: transparent !important;
+    stroke: var(--react-autoql-accent-color);
   }
 }
 

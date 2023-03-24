@@ -416,7 +416,7 @@ export default class ChataChart extends Component {
       deltaX,
       deltaY,
       chartPadding: this.PADDING,
-      enableAxisDropdown: enableDynamicCharting && !this.props.isPivot,
+      enableAxisDropdown: enableDynamicCharting && !this.props.isAggregated,
       marginAdjustmentFinished: true,
       legendLocation: getLegendLocation(numberColumnIndices, this.props.type),
       legendLabels: this.getLegendLabels(),
