@@ -5,7 +5,6 @@ import { Line } from '../Line'
 
 import { chartDefaultProps, chartPropTypes, getBandScale, getTimeScale, getLinearScales } from '../helpers.js'
 import { deepEqual } from '../../../js/Util'
-import { isColumnDateType } from '../../QueryOutput/columnHelpers'
 
 export default class ChataColumnLineChart extends Component {
   constructor(props) {
