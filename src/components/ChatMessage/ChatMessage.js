@@ -70,7 +70,7 @@ export default class ChatMessage extends React.Component {
     csvDownloadProgress: PropTypes.number,
     onRTValueLabelClick: PropTypes.func,
     enableAjaxTableData: PropTypes.bool,
-    source: PropTypes.oneOf([PropTypes.array, PropTypes.string]),
+    source: PropTypes.oneOfType([PropTypes.array, PropTypes.string]),
     isVisibleInDOM: PropTypes.bool,
   }
 

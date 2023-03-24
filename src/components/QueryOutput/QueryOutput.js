@@ -1105,7 +1105,7 @@ export class QueryOutput extends React.Component {
 
   updateVizToolbar = () => {
     if (this.props.vizToolbarRef?._isMounted) {
-      this.props.vizToolbarRef.forceUpdate()
+      this.props.vizToolbarRef.updateDisplayTypes(this.getCurrentSupportedDisplayTypes(), this.state.displayType)
     }
   }
 
