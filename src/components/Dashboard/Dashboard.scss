@@ -17,7 +17,6 @@
   }
 
   .dashboard-drilldown-modal-content {
-    &.chart-hidden,
     &.top-hidden {
       .react-autoql-dashboard-drilldown-original,
       .layout-splitter {
@@ -35,6 +34,9 @@
 
     &.top-hidden .layout-pane:not(.layout-pane-primary) {
       height: 100% !important;
+    }
+    &.top-hidden .layout-pane.layout-pane-primary {
+      flex: 0;
     }
 
     .react-autoql-modal-body {
