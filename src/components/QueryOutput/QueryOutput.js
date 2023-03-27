@@ -2114,6 +2114,8 @@ export class QueryOutput extends React.Component {
       return this.renderMessage('Error: There was no data supplied for this chart')
     }
 
+    const isDataLimited = this.isDataLimited()
+
     const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
     const combinedFilters = this.getCombinedFilters()
     const formattedTableParams = {
@@ -2134,7 +2136,7 @@ export class QueryOutput extends React.Component {
     const originalTotalRows = this.queryResponse?.data?.data?.count_rows
     let totalRows = originalTotalRows
 
-    if (!this.isDataLimited() && this.state.visibleRows && this.state.visibleRows?.length < MAX_DATA_PAGE_SIZE) {
+    if (!isDataLimited && this.state.visibleRows && this.state.visibleRows?.length < MAX_DATA_PAGE_SIZE) {
       // This allows total row count to reflect FE filters in the table view
       totalRows = this.state.visibleRows?.length
     }
@@ -2180,6 +2182,7 @@ export class QueryOutput extends React.Component {
           currentRowCount={this.state.visibleRows?.length}
           updateColumns={this.updateColumns}
           source={this.props.source}
+          isRowCountSelectable={!this.isOriginalData || isDataLimited}
         />
       </ErrorBoundary>
     )

@@ -60,7 +60,7 @@ export default class LoadMoreDropdown extends Component {
 
   renderRowCountText = () => {
     const style = {}
-    if (this.props.totalRowCount > this.props.pageSize) {
+    if (this.props.isRowCountSelectable) {
       style.textDecoration = 'underline'
     }
 
@@ -89,7 +89,7 @@ export default class LoadMoreDropdown extends Component {
   }
 
   renderRowDropdownButton = () => {
-    if (!(this.props.totalRowCount > this.props.pageSize)) {
+    if (!this.props.isRowCountSelectable) {
       return null
     }
 
