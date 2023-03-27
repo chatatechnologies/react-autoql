@@ -683,7 +683,7 @@ class DashboardWithoutTheme extends React.Component {
           className='dashboard-drilldown-modal'
           contentClassName={`dashboard-drilldown-modal-content
             ${this.state.isDrilldownChartHidden ? 'chart-hidden' : ''}
-            ${!this.shouldShowOriginalQuery() ? 'top-hidden' : ''}`}
+            ${!this.shouldShowOriginalQuery() ? 'table-only' : ''}`}
           title={this.activeDrilldownRef?.queryResponse?.data?.data?.text}
           isVisible={this.state.isDrilldownModalVisible}
           width='90vw'
