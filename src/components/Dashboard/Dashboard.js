@@ -3,20 +3,17 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import RGL, { WidthProvider } from 'react-grid-layout'
 import _isEqual from 'lodash.isequal'
-import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import SplitterLayout from 'react-splitter-layout'
 import { Modal } from '../Modal'
-import { Button } from '../Button'
-import { Icon } from '../Icon'
 import { DashboardTile } from './DashboardTile'
 import { QueryOutput } from '../QueryOutput'
 import { LoadingDots } from '../LoadingDots'
-import { hideTooltips, Tooltip } from '../Tooltip'
+import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
 import ReportProblemModal from '../OptionsToolbar/ReportProblemModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { CHART_TYPES } from '../../js/Constants'
-import { deepEqual, mergeSources } from '../../js/Util'
+import { deepEqual, mergeSources, removeFromDOM } from '../../js/Util'
 import { withTheme } from '../../theme'
 import DrilldownTable from './DrilldownTable'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
@@ -26,6 +23,7 @@ import {
   dataFormattingDefault,
   getAutoQLConfig,
 } from '../../props/defaults'
+
 import 'react-grid-layout/css/styles.css'
 import 'react-splitter-layout/lib/index.css'
 import './Dashboard.scss'
@@ -137,6 +135,10 @@ class DashboardWithoutTheme extends React.Component {
       this.renderSplitterCollapseBtn()
     }
 
+    if (prevState.isDrilldownChartHidden !== this.state.isDrilldownChartHidden) {
+      rebuildTooltips()
+    }
+
     // Re-run dashboard once exiting edit mode (if prop is set to true)
     if (prevProps.isEditing && !this.props.isEditing && this.props.executeOnStopEditing) {
       this.executeDashboard()
@@ -149,7 +151,7 @@ class DashboardWithoutTheme extends React.Component {
     // If tile structure changed, set previous tile state for undo feature
     if (
       this.getChangeDetection(this.props.tiles, prevProps.tiles) &&
-      _get(prevProps, `tiles[${prevProps.tiles.length} - 1].y`) !== Number.MAX_VALUE
+      prevProps.tiles?.[prevProps.tiles?.length - 1]?.y !== Number.MAX_VALUE
     ) {
       this.setState({
         justPerformedUndo: false,
@@ -182,13 +184,17 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   renderSplitterCollapseBtn = () => {
-    if (!document.querySelector(`#splitter-btn-${this.COMPONENT_KEY}`)) {
+    const splitterBtn = document.querySelector(`#splitter-btn-${this.COMPONENT_KEY}`)
+    if (splitterBtn) {
+      splitterBtn.setAttribute('data-tip', this.state.isDrilldownChartHidden ? 'Show chart' : 'Hide chart')
+    } else {
       const btn = document.createElement('div')
       btn.innerHTML = '&#94;'
       btn.className = 'splitter-collapse-btn'
       btn.id = `splitter-btn-${this.COMPONENT_KEY}`
+      btn.setAttribute('data-for', this.TOOLTIP_ID)
+
       btn.addEventListener('click', () => {
-        console.log('on collapse click')
         this.setState(
           {
             isDrilldownChartHidden: !this.state.isDrilldownChartHidden,
