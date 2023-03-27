@@ -79,6 +79,8 @@ export default class DrilldownTable extends React.Component {
                 ref={(r) => (this.optionsToolbarRef = r)}
                 responseRef={this.responseRef}
                 tooltipID={this.props.tooltipID}
+                onErrorCallback={this.props.onErrorCallback}
+                onSuccessAlert={this.props.onSuccessCallback}
               />
             </div>
           </div>
