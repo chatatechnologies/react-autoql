@@ -1173,11 +1173,11 @@ export class QueryOutput extends React.Component {
   }
 
   onTableFilter = async (filters, rows) => {
-    if (!filters || _isEqual(filters, this.tableParams?.filters)) {
+    if (!filters || _isEqual(filters, this.tableParams?.filter)) {
       return
     }
 
-    this.tableParams.filters = _cloneDeep(filters)
+    this.tableParams.filter = _cloneDeep(filters)
 
     const newTableData = []
     rows.forEach((row) => {
@@ -1191,7 +1191,7 @@ export class QueryOutput extends React.Component {
   }
 
   onTableSort = (sorters) => {
-    this.tableParams.sorters = _cloneDeep(sorters)
+    this.tableParams.sort = _cloneDeep(sorters)
   }
 
   onLegendClick = (d) => {
