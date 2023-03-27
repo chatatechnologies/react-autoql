@@ -503,8 +503,6 @@ export class OptionsToolbar extends React.Component {
   }
 
   renderToolbar = (shouldShowButton) => {
-    const isFiltered = !!this.props.responseRef?.tableParams?.filters?.length
-
     return (
       <ErrorBoundary>
         <div
@@ -527,7 +525,7 @@ export class OptionsToolbar extends React.Component {
               <Icon
                 // Add these back in the future when we want this feature
                 // type={this.state.isFiltering ? 'filter-off' : 'filter'}
-                // showBadge={isFiltered}
+                // showBadge={!!this.props.responseRef?.tableParams?.filter?.length}
                 type='filter'
                 showBadge={false}
               />
@@ -622,7 +620,7 @@ export class OptionsToolbar extends React.Component {
       const someColumnsHidden = areSomeColumnsHidden(columns)
       const numRows = response?.data?.data?.rows?.length
       const hasData = numRows > 0
-      const isFiltered = !!props.responseRef?.tableParams?.filters?.length
+      const isFiltered = !!props.responseRef?.formattedTableParams?.filters?.length
       const hasMoreThanOneRow = (numRows > 1 && !isFiltered) || !!isFiltered
       const autoQLConfig = getAutoQLConfig(props.autoQLConfig)
 
