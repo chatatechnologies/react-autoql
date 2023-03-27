@@ -12,16 +12,10 @@
 
 .dashboard-drilldown-modal {
   .dashboard-drilldown-modal-content {
-    &.chart-hidden,
-    &.top-hidden {
-      .react-autoql-dashboard-drilldown-original,
-      .layout-splitter {
-        transition: opacity 0.3s ease, height 0.3s ease;
-        // visibility: hidden;
-        // pointer-events: none;
-        // opacity: 0;
-        // height: 0;
-      }
+    .layout-splitter {
+      margin-top: 8px;
+      background: var(--react-autoql-text-color-primary);
+      opacity: 0.6;
     }
 
     .splitter-collapse-btn {
@@ -31,12 +25,12 @@
       width: 20px;
       height: 20px;
       border-radius: 10px;
-      margin-left: 50%;
+      margin-left: 90%;
       transform: translate(-11px, -11px);
-      border: 1px solid #ccc;
-      cursor: pointer;
       background: var(--react-autoql-background-color-secondary);
+      border: 1px solid var(--react-autoql-text-color-primary);
       transition: border-color 0.2s ease, color 0.2s ease;
+      cursor: pointer;
 
       &:hover {
         border-color: var(--react-autoql-accent-color);
@@ -44,16 +38,51 @@
       }
     }
 
-    &.chart-hidden .splitter-collapse-btn {
-      transform: translate(-11px, -11px) rotate(180deg);
+    &.chart-hidden,
+    &.table-only {
+      .layout-pane:not(.layout-pane-primary) {
+        flex: 1;
+      }
     }
 
-    &.chart-hidden .layout-pane:not(.layout-pane-primary) {
-      height: calc(100% - 50px) !important;
+    &.chart-hidden {
+      .react-autoql-dashboard-drilldown-original {
+        transition: opacity 0.3s ease, height 0.3s ease;
+        visibility: hidden;
+        pointer-events: none;
+        height: 0;
+      }
+
+      .layout-splitter {
+        margin-top: 14px;
+      }
+
+      .splitter-collapse-btn {
+        transform: translate(-11px, -11px) rotate(180deg);
+      }
+
+      .layout-pane.layout-pane-primary {
+        flex: 0;
+        overflow: hidden;
+      }
     }
 
-    &.top-hidden .layout-pane:not(.layout-pane-primary) {
-      height: 100% !important;
+    &.table-only {
+      .react-autoql-dashboard-drilldown-original,
+      .layout-pane.layout-pane-primary,
+      .splitter-collapse-btn,
+      .layout-splitter {
+        visibility: hidden;
+        pointer-events: none;
+        padding: 0;
+        margin: 0;
+        height: 0;
+        flex: 0;
+      }
+
+      .react-autoql-dashboard-drilldown-table {
+        padding-top: 10px;
+      }
     }
 
     .react-autoql-modal-body {
@@ -83,8 +112,7 @@
     }
 
     .react-autoql-dashboard-drilldown-original {
-      padding: 20px;
-      padding-bottom: 10px;
+      padding-top: 10px;
     }
     .drilldown-hide-chart-btn {
       text-align: right;
@@ -107,8 +135,8 @@
 
   .react-autoql-dashboard-drilldown-table {
     flex: 1;
-    padding: 20px;
-    padding-top: 10px;
+    padding: 10px 20px;
+    padding-top: 0;
     overflow: hidden;
     height: 100%;
     width: 100%;
