@@ -622,6 +622,8 @@ class DashboardWithoutTheme extends React.Component {
         reportProblemCallback={this.reportProblemCallback}
         enableAjaxTableData={this.props.enableAjaxTableData}
         showQueryInterpretation={this.props.isEditing}
+        onErrorCallback={this.props.onErrorCallback}
+        onSuccessCallback={this.props.onSuccessCallback}
       />
     )
   }
