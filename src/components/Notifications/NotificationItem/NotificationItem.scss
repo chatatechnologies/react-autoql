@@ -37,14 +37,16 @@
   }
 
   .react-autoql-notification-condition-statement {
-    background: var(--react-autoql-background-color-primary);
+    background: var(--react-autoql-hover-color);
+    border-top: 1px solid var(--react-autoql-border-color);
     text-overflow: ellipsis;
     overflow: hidden;
-    padding: 0 15px;
-    opacity: 0.8;
+    padding: 10px 20px;
+    font-size: 0.875rem;
 
-    .condition-builder-statement {
-      font-style: italic;
+    .data-alerts-container,
+    .notification-rule-outer-container {
+      display: inline;
     }
   }
 
@@ -197,7 +199,7 @@
     }
     .react-autoql-table {
       color: currentColor;
-      font-size: 11px;
+      font-size: 12px;
     }
   }
 
@@ -299,6 +301,10 @@
     .react-autoql-notification-toolbar-more-options {
       padding: 15px 10px;
       font-size: 18px;
+      width: 48px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       cursor: pointer;
 
       &:hover {

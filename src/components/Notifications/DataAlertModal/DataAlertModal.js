@@ -368,7 +368,7 @@ class DataAlertModal extends React.Component {
         type='primary'
         tooltipID={this.TOOLTIP_ID}
       >
-        Continue
+        Next
       </Button>
     )
   }

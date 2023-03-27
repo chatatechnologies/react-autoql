@@ -274,49 +274,44 @@ export default class NotificationItem extends React.Component {
     )
   }
 
-  renderTurnOnNotificationIcon = (notification) => {
+  dataAlertToggleListItem = () => {
     const status = this.state.ruleStatus
+
     if (!status) {
-      return <div />
+      return null
     }
 
-    if (status === 'ACTIVE' || status === 'WAITING') {
-      return (
-        <Button onClick={() => this.changeRuleStatus(notification, 'INACTIVE')} type='default'>
-          <Icon type='notification-off' /> Turn Data Alert Off
-        </Button>
-      )
-    }
+    const isActive = status === 'ACTIVE' || status === 'WAITING'
 
     return (
-      <Button onClick={() => this.changeRuleStatus(notification, 'ACTIVE')} type='default' icon='notification'>
-        Turn Data Alert On
-      </Button>
-    )
-  }
-
-  renderEditNotificationIcon = () => {
-    if (!this.state.ruleDetails || this.state.ruleDetails.type === 'PROJECT') {
-      return <div />
-    } else if (_isEmpty(this.state.ruleDetails)) {
-      return <div className='notification-deleted-text'>This Data Alert no longer exists.</div>
-    }
-
-    return (
-      <Button onClick={() => this.props.onEditClick(this.state.ruleDetails)} type='default' icon='edit'>
-        Edit Data Alert
-      </Button>
-    )
-  }
-
-  renderNotificationFooter = (notification) => {
-    return (
-      <div
-        className='react-autoql-notification-extra-content'
-        style={{ display: 'flex', justifyContent: 'space-between' }}
+      <li
+        onClick={() => {
+          this.setState({ isMoreOptionsMenuOpen: false })
+          const newStatus = isActive ? 'INACTIVE' : 'ACTIVE'
+          this.changeRuleStatus(notification, newStatus)
+        }}
       >
-        {this.renderTurnOnNotificationIcon(notification)}
-        {this.renderEditNotificationIcon()}
+        <Icon type={isActive ? 'notification-off' : 'notification'} />{' '}
+        <span>Turn Data Alert {isActive ? 'Off' : 'On'}</span>
+      </li>
+    )
+  }
+
+  moreOptionsMenu = () => {
+    return (
+      <div className='more-options-menu' data-test='react-autoql-toolbar-more-options-notification'>
+        <ul className='context-menu-list'>
+          <li
+            onClick={() => {
+              this.setState({ isMoreOptionsMenuOpen: false })
+              this.props.onEditClick(this.state.ruleDetails)
+            }}
+          >
+            <Icon type='edit' />
+            <span>Edit Data Alert</span>
+          </li>
+          {this.dataAlertToggleListItem()}
+        </ul>
       </div>
     )
   }
@@ -328,11 +323,13 @@ export default class NotificationItem extends React.Component {
 
     return (
       <div className='react-autoql-notification-toolbar-container'>
-        <VizToolbar ref={(r) => (this.vizToolbarRef = r)} responseRef={this.OUTPUT_REF} vertical />
+        <div>
+          <VizToolbar ref={(r) => (this.vizToolbarRef = r)} responseRef={this.OUTPUT_REF} vertical />
+        </div>
         <Popover
           align='end'
           positions={['top', 'left', 'bottom', 'right']}
-          content={<div>content</div>}
+          content={this.moreOptionsMenu()}
           isOpen={this.state.isMoreOptionsMenuOpen}
           onClickOutside={() => this.setState({ isMoreOptionsMenuOpen: false })}
         >
@@ -347,7 +344,7 @@ export default class NotificationItem extends React.Component {
     )
   }
 
-  renderQueryResponse = () => {
+  renderVisualization = () => {
     const { queryResponse } = this.state
     // const queryTitle = this.props.notification?.data_return_query
     // const queryTitleCapitalized = capitalizeFirstChar(queryTitle)
@@ -386,9 +383,36 @@ export default class NotificationItem extends React.Component {
     )
   }
 
-  renderNotificationContent = () => {
+  renderQueryResponse = () => {
+    return (
+      <div className='react-autoql-notification-data-container' onClick={(e) => e.stopPropagation()}>
+        {this.renderVisualization()}
+        {this.renderToolbar()}
+      </div>
+    )
+  }
+
+  renderSummarySection = () => {
     const { notification } = this.props
 
+    return (
+      <div className='react-autoql-notification-condition-statement'>
+        {/* <div className='react-autoql-notification-query-title'>Conditions:</div> */}
+        <span>
+          <strong>Summary: </strong>
+        </span>
+        <ConditionBuilder
+          key={`expression-builder-${this.COMPONENT_KEY}`}
+          expression={notification?.expression}
+          conditionStatementOnly
+          conditionTense='past'
+        />
+        <span> on {this.formatTimestamp(notification.created_at)}</span>
+      </div>
+    )
+  }
+
+  renderNotificationContent = () => {
     return (
       <div
         ref={(r) => (this.contentRef = r)}
@@ -399,21 +423,9 @@ export default class NotificationItem extends React.Component {
         <>
           {!this.state.queryResponse && this.renderLoader()}
           <div className='react-autoql-notification-content-container'>
-            <div className='react-autoql-notification-condition-statement'>
-              {/* <div className='react-autoql-notification-query-title'>Conditions:</div> */}
-              <ConditionBuilder
-                key={`expression-builder-${this.COMPONENT_KEY}`}
-                expression={notification?.expression}
-                conditionStatementOnly
-                conditionTense='past'
-              />
-            </div>
-            <div className='react-autoql-notification-data-container' onClick={(e) => e.stopPropagation()}>
-              {this.renderQueryResponse()}
-              {this.renderToolbar()}
-            </div>
+            {this.renderQueryResponse()}
+            {this.renderSummarySection()}
           </div>
-          {this.renderNotificationFooter(notification)}
         </>
       </div>
     )

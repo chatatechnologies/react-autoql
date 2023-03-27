@@ -117,7 +117,7 @@ export default class RuleSimple extends React.Component {
         </span>
       )
     } else if (queryText) {
-      return <span className='data-alert-condition-statement'>New data detected for "{queryText}"</span>
+      return <span className='data-alert-condition-statement'>New data detected for the query "{queryText}"</span>
     }
 
     return
