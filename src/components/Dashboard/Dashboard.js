@@ -12,27 +12,23 @@ import { Icon } from '../Icon'
 import { DashboardTile } from './DashboardTile'
 import { QueryOutput } from '../QueryOutput'
 import { LoadingDots } from '../LoadingDots'
-import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
+import { hideTooltips, Tooltip } from '../Tooltip'
 import ReportProblemModal from '../OptionsToolbar/ReportProblemModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { CHART_TYPES } from '../../js/Constants'
 import { deepEqual, mergeSources } from '../../js/Util'
 import { withTheme } from '../../theme'
+import DrilldownTable from './DrilldownTable'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import {
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
-  getAuthentication,
-  getDataFormatting,
   getAutoQLConfig,
 } from '../../props/defaults'
 import 'react-grid-layout/css/styles.css'
 import 'react-splitter-layout/lib/index.css'
 import './Dashboard.scss'
-import { VizToolbar } from '../VizToolbar'
-import { OptionsToolbar } from '../OptionsToolbar'
-import DrilldownTable from './DrilldownTable'
 
 const ReactGridLayout = WidthProvider(RGL)
 
@@ -137,6 +133,10 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    if (this.splitterLayoutRef?.splitter) {
+      this.renderSplitterCollapseBtn()
+    }
+
     // Re-run dashboard once exiting edit mode (if prop is set to true)
     if (prevProps.isEditing && !this.props.isEditing && this.props.executeOnStopEditing) {
       this.executeDashboard()
@@ -178,6 +178,28 @@ class DashboardWithoutTheme extends React.Component {
       clearTimeout(this.animationTimeout)
     } catch (error) {
       console.error(error)
+    }
+  }
+
+  renderSplitterCollapseBtn = () => {
+    if (!document.querySelector(`#splitter-btn-${this.COMPONENT_KEY}`)) {
+      const btn = document.createElement('div')
+      btn.innerHTML = '&#94;'
+      btn.className = 'splitter-collapse-btn'
+      btn.id = `splitter-btn-${this.COMPONENT_KEY}`
+      btn.addEventListener('click', () => {
+        console.log('on collapse click')
+        this.setState(
+          {
+            isDrilldownChartHidden: !this.state.isDrilldownChartHidden,
+            isResizingDrilldown: true,
+          },
+          () => {
+            this.setState({ isResizingDrilldown: false })
+          },
+        )
+      })
+      this.splitterLayoutRef.splitter.parentNode.insertBefore(btn, this.splitterLayoutRef.splitter.nextSibling)
     }
   }
 
@@ -604,25 +626,6 @@ class DashboardWithoutTheme extends React.Component {
     )
   }
 
-  renderChartCollapseBtn = (placement) => {
-    return (
-      <div className={`drilldown-hide-chart-btn ${placement}`}>
-        <Button
-          onClick={() => {
-            this.setState({
-              isDrilldownChartHidden: !this.state.isDrilldownChartHidden,
-            })
-          }}
-          tooltip={this.state.isDrilldownChartHidden ? 'Show Chart' : 'Hide Chart'}
-          tooltipID={this.TOOLTIP_ID}
-        >
-          <Icon type='chart' />
-          <Icon type={this.state.isDrilldownChartHidden ? 'expand' : 'collapse'} />
-        </Button>
-      </div>
-    )
-  }
-
   renderReportProblemModal = () => {
     return (
       <ReportProblemModal
@@ -693,6 +696,7 @@ class DashboardWithoutTheme extends React.Component {
           <Fragment>
             {this.activeDrilldownRef && (
               <SplitterLayout
+                ref={(r) => (this.splitterLayoutRef = r)}
                 vertical={true}
                 percentage={true}
                 primaryMinSize={renderTopHalf ? 35 : 0}
@@ -727,14 +731,12 @@ class DashboardWithoutTheme extends React.Component {
                           width='100%'
                         />
                       )}
-                      {this.renderChartCollapseBtn('bottom')}
                     </>
                   )}
                 </div>
                 {this.renderDrilldownTable()}
               </SplitterLayout>
             )}
-            {this.shouldShowOriginalQuery() && this.state.isDrilldownChartHidden && this.renderChartCollapseBtn('top')}
           </Fragment>
         </Modal>
       )
