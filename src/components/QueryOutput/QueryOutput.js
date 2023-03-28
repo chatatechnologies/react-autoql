@@ -1216,11 +1216,11 @@ export class QueryOutput extends React.Component {
   }
 
   onTableFilter = async (filters, rows) => {
-    if (!filters || _isEqual(filters, this.tableParams?.filters)) {
+    if (!filters || _isEqual(filters, this.tableParams?.filter)) {
       return
     }
 
-    this.tableParams.filters = _cloneDeep(filters)
+    this.tableParams.filter = _cloneDeep(filters)
 
     const newTableData = []
     rows.forEach((row) => {
@@ -1234,7 +1234,7 @@ export class QueryOutput extends React.Component {
   }
 
   onTableSort = (sorters) => {
-    this.tableParams.sorters = _cloneDeep(sorters)
+    this.tableParams.sort = _cloneDeep(sorters)
   }
 
   onLegendClick = (d) => {
@@ -2112,7 +2112,6 @@ export class QueryOutput extends React.Component {
             isAggregation(this.state.columns) && getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
           }
           queryFn={this.queryFn}
-          onRenderComplete={this.onTableRenderComplete}
           source={this.props.source}
         />
       </ErrorBoundary>
@@ -2142,7 +2141,6 @@ export class QueryOutput extends React.Component {
           useInfiniteScroll={false}
           supportsDrilldowns={true}
           autoHeight={this.props.autoHeight}
-          onRenderComplete={this.onPivotTableRenderComplete}
           source={this.props.source}
           pivot
         />
@@ -2160,6 +2158,8 @@ export class QueryOutput extends React.Component {
     if (usePivotData && (!this.pivotTableData || !this.pivotTableColumns || !this.pivotTableConfig)) {
       return this.renderMessage('Error: There was no data supplied for this chart')
     }
+
+    const isDataLimited = this.isDataLimited()
 
     const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
     const combinedFilters = this.getCombinedFilters()
@@ -2181,7 +2181,7 @@ export class QueryOutput extends React.Component {
     const originalTotalRows = this.queryResponse?.data?.data?.count_rows
     let totalRows = originalTotalRows
 
-    if (!this.isDataLimited() && this.state.visibleRows && this.state.visibleRows?.length < MAX_DATA_PAGE_SIZE) {
+    if (!isDataLimited && this.state.visibleRows && this.state.visibleRows?.length < MAX_DATA_PAGE_SIZE) {
       // This allows total row count to reflect FE filters in the table view
       totalRows = this.state.visibleRows?.length
     }
@@ -2226,8 +2226,8 @@ export class QueryOutput extends React.Component {
           totalRowCount={totalRows}
           currentRowCount={this.state.visibleRows?.length}
           updateColumns={this.updateColumns}
-          onRenderComplete={this.onChartRenderComplete}
           source={this.props.source}
+          isRowCountSelectable={!this.isOriginalData || isDataLimited}
         />
       </ErrorBoundary>
     )

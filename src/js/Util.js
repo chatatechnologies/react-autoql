@@ -241,7 +241,7 @@ const formatDOW = (value, col) => {
     }
     case 'ALPHA_MON':
     case 'ALPHA_SUN': {
-      const weekday = WEEKDAY_NAMES_MON.find((weekday) => weekday.toLowerCase().includes(value.toLowerCase()))
+      const weekday = WEEKDAY_NAMES_MON.find((weekday) => weekday.toLowerCase().includes(value.trim().toLowerCase()))
       if (weekday) {
         formattedValue = weekday
       } else {
@@ -1309,38 +1309,43 @@ const dateStringSortFnWithoutPrecision = (a, b) => {
 }
 
 export const dateStringSortFn = (a, b, col = {}) => {
+  if (typeof a !== 'string' || typeof b !== 'string') {
+    return a - b
+  }
+
+  const aTrimmed = a.trim()
+  const bTrimmed = b.trim()
+
   switch (col.precision) {
     case 'DOW': {
       const dowStyle = col.dow_style ?? 'ALPHA_MON'
-      let aIndex = WEEKDAY_NAMES_MON.findIndex((dow) => dow.toLowerCase().includes(a.toLowerCase()))
-      let bIndex = WEEKDAY_NAMES_MON.findIndex((dow) => dow.toLowerCase().includes(b.toLowerCase()))
+      let aIndex = WEEKDAY_NAMES_MON.findIndex((dow) => dow.toLowerCase().includes(aTrimmed.toLowerCase()))
+      let bIndex = WEEKDAY_NAMES_MON.findIndex((dow) => dow.toLowerCase().includes(bTrimmed.toLowerCase()))
       if (dowStyle === 'ALPHA_SUN') {
-        aIndex = WEEKDAY_NAMES_SUN.findIndex((dow) => dow.toLowerCase().includes(a.toLowerCase()))
-        bIndex = WEEKDAY_NAMES_SUN.findIndex((dow) => dow.toLowerCase().includes(b.toLowerCase()))
+        aIndex = WEEKDAY_NAMES_SUN.findIndex((dow) => dow.toLowerCase().includes(aTrimmed.toLowerCase()))
+        bIndex = WEEKDAY_NAMES_SUN.findIndex((dow) => dow.toLowerCase().includes(bTrimmed.toLowerCase()))
       }
 
       return aIndex - bIndex
     }
     case 'HOUR':
     case 'MINUTE': {
-      const aDayjsTime = dayjs.utc(a, 'THH:mm:ss.SSSZ').utc()
-      const bDayjsTime = dayjs.utc(b, 'THH:mm:ss.SSSZ').utc()
+      const aDayjsTime = dayjs.utc(aTrimmed, 'THH:mm:ss.SSSZ').utc()
+      const bDayjsTime = dayjs.utc(bTrimmed, 'THH:mm:ss.SSSZ').utc()
       return aDayjsTime.unix() - bDayjsTime.unix()
     }
     case 'MONTH': {
       MONTH_NAMES
-      const aMonthIndex = MONTH_NAMES.findIndex((m) => m.toLowerCase() === a.trim().toLowerCase())
-      const bMonthIndex = MONTH_NAMES.findIndex((m) => m.toLowerCase() === b.trim().toLowerCase())
+      const aMonthIndex = MONTH_NAMES.findIndex((m) => m.toLowerCase() === aTrimmed.toLowerCase())
+      const bMonthIndex = MONTH_NAMES.findIndex((m) => m.toLowerCase() === bTrimmed.toLowerCase())
       return aMonthIndex - bMonthIndex
     }
     default: {
       // If precision is unknown or not specified, default
       // to the way we use to sort this type of data:
-      return dateStringSortFnWithoutPrecision(a, b)
+      return dateStringSortFnWithoutPrecision(aTrimmed, bTrimmed)
     }
   }
-
-  return a - b
 }
 
 export const dateSortFn = (a, b, col = {}, isTable) => {
@@ -1371,6 +1376,7 @@ export const dateSortFn = (a, b, col = {}, isTable) => {
     if (isTable && col.precision === 'DOW') {
       sortValue = -1 * sortValue
     }
+
     return sortValue
   } catch (error) {
     console.error(error)
