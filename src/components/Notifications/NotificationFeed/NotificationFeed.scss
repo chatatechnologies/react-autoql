@@ -42,16 +42,29 @@
   }
 }
 
-.react-autoql-notification-dismiss-all {
+.notification-feed-top-options-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 5px 22px;
+  margin-top: 5px;
   flex: 0;
-  text-align: right;
-  margin: 12px;
-  color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.4));
-  transition: color 0.1s ease;
 
-  span {
+  .react-autoql-notification-delete-all,
+  .react-autoql-notification-dismiss-all {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.4));
+    transition: color 0.1s ease;
     opacity: 0.8;
     cursor: pointer;
+
+    .react-autoql-icon {
+      margin-right: 6px;
+    }
+
     &:hover {
       opacity: 1;
     }

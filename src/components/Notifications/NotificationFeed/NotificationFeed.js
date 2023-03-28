@@ -17,7 +17,7 @@ import { ErrorBoundary } from '../../../containers/ErrorHOC'
 
 import { fetchNotificationFeed, dismissAllNotifications } from '../../../js/notificationService'
 import { authenticationType } from '../../../props/types'
-import { authenticationDefault, getAuthentication } from '../../../props/defaults'
+import { authenticationDefault, getAuthentication, getAutoQLConfig } from '../../../props/defaults'
 import { withTheme } from '../../../theme'
 
 import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
@@ -79,6 +79,7 @@ class NotificationFeed extends React.Component {
     onDismissCallback: () => {},
     onDeleteCallback: () => {},
     onDataAlertModalOpen: () => {},
+    onUnreadCallback: () => {},
     onChange: () => {},
   }
 
@@ -205,6 +206,8 @@ class NotificationFeed extends React.Component {
     this.setState({ notificationList: newList, expandedNotificationID })
   }
 
+  onDeleteAllClick = () => {}
+
   onDismissAllClick = () => {
     const newList = this.state.notificationList.map((n) => {
       return {
@@ -226,6 +229,21 @@ class NotificationFeed extends React.Component {
         console.error(error)
         this.props.onErrorCallback(error)
       })
+  }
+
+  onUnreadClick = (notification) => {
+    const newList = this.state.notificationList.map((n) => {
+      if (notification.id === n.id) {
+        return {
+          ...n,
+          state: 'ACKNOWLEDGED',
+        }
+      }
+      return n
+    })
+    this.setState({ notificationList: newList }, () => {
+      this.props.onUnreadCallback(newList)
+    })
   }
 
   onDismissClick = (notification) => {
@@ -262,11 +280,28 @@ class NotificationFeed extends React.Component {
     this.props.onSuccessCallback('Notification successfully updated.')
   }
 
+  renderTopOptions = () => {
+    return (
+      <div className='notification-feed-top-options-container'>
+        {this.renderDeleteAllButton()}
+        {this.renderDismissAllButton()}
+      </div>
+    )
+  }
+
+  renderDeleteAllButton = () => {
+    return <div />
+    // Enable this once the batch delete endpoint is ready
+    return (
+      <div onClick={this.onDeleteAllClick} className='react-autoql-notification-delete-all'>
+        <Icon type='trash' style={{ verticalAlign: 'middle' }} /> <span>Delete all</span>
+      </div>
+    )
+  }
+
   renderDismissAllButton = () => (
-    <div key='dismiss-all-btn' className='react-autoql-notification-dismiss-all'>
-      <span onClick={this.onDismissAllClick}>
-        <Icon type='notification-off' style={{ verticalAlign: 'middle' }} /> Dismiss All
-      </span>
+    <div onClick={this.onDismissAllClick} className='react-autoql-notification-dismiss-all'>
+      <Icon type='mark-read' style={{ verticalAlign: 'middle' }} /> <span>Mark all as read</span>
     </div>
   )
 
@@ -343,7 +378,7 @@ class NotificationFeed extends React.Component {
           )}
           {_get(this.state.notificationList, 'length') ? (
             <Fragment>
-              {this.renderDismissAllButton()}
+              {this.renderTopOptions()}
               <CustomScrollbars>
                 <InfiniteScroll
                   initialLoad={false}
@@ -364,10 +399,19 @@ class NotificationFeed extends React.Component {
                           ref={(ref) => (this.notificationRefs[notification.id] = ref)}
                           key={`notification-item-${i}`}
                           authentication={this.props.authentication}
+                          autoQLConfig={{
+                            ...getAutoQLConfig(this.props.autoQLConfig),
+                            enableColumnVisibilityManager: false,
+                            enableNotifications: false,
+                            enableCSVDownload: true,
+                            enableDrilldowns: false,
+                            enableReportProblem: false,
+                          }}
                           notification={notification}
                           expanded={!!notification.expanded}
                           onClick={this.onItemClick}
                           onDismissCallback={this.onDismissClick}
+                          onUnreadCallback={this.onUnreadClick}
                           onDismissSuccessCallback={() => {
                             this.props.onChange(this.state.notificationList)
                           }}

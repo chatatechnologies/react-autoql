@@ -19,10 +19,11 @@ import { BiBookmark } from '@react-icons/all-files/bi/BiBookmark'
 import { BiBook } from '@react-icons/all-files/bi/BiBook'
 import { BiNote } from '@react-icons/all-files/bi/BiNote'
 import { BiAbacus } from '@react-icons/all-files/bi/BiAbacus'
-import { BsChevronDown } from '@react-icons/all-files/bs/BsChevronDown'
-import { BsArrowBarDown } from '@react-icons/all-files/bs/BsArrowBarDown'
+import { BiEnvelope } from '@react-icons/all-files/bi/BiEnvelope'
+import { BiEnvelopeOpen } from '@react-icons/all-files/bi/BiEnvelopeOpen'
 
 import { BsArrowBarUp } from '@react-icons/all-files/bs/BsArrowBarUp'
+import { BsArrowBarDown } from '@react-icons/all-files/bs/BsArrowBarDown'
 
 import { FaMicrophoneAlt } from '@react-icons/all-files/fa/FaMicrophoneAlt'
 
@@ -185,6 +186,14 @@ export default class Icon extends React.Component {
       }
       case 'close': {
         icon = <MdClose />
+        break
+      }
+      case 'mark-read': {
+        icon = <BiEnvelopeOpen />
+        break
+      }
+      case 'mark-unread': {
+        icon = <BiEnvelope />
         break
       }
       case 'maximize': {

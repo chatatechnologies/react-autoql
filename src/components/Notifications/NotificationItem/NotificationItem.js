@@ -2,15 +2,17 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import _isEmpty from 'lodash.isempty'
+import { Popover } from 'react-tiny-popover'
+import dayjs from '../../../js/dayjsWithPlugins'
 
 import { Icon } from '../../Icon'
 import { LoadingDots } from '../../LoadingDots'
 import { QueryOutput } from '../../QueryOutput'
-import { Button } from '../../Button'
 import { VizToolbar } from '../../VizToolbar'
 import { hideTooltips } from '../../Tooltip'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { ConditionBuilder } from '../ConditionBuilder'
+import { OptionsToolbar } from '../../OptionsToolbar'
 
 import {
   dismissNotification,
@@ -18,12 +20,16 @@ import {
   updateDataAlertStatus,
   fetchRule,
   fetchNotificationData,
+  markNotificationAsUnread,
 } from '../../../js/notificationService'
-import dayjs from '../../../js/dayjsWithPlugins'
 import { isNumber } from '../../../js/Util'
-import { authenticationType } from '../../../props/types'
-import { authenticationDefault, getAuthentication } from '../../../props/defaults'
-import { Popover } from 'react-tiny-popover'
+import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
+import {
+  authenticationDefault,
+  autoQLConfigDefault,
+  dataFormattingDefault,
+  getAuthentication,
+} from '../../../props/defaults'
 
 import './NotificationItem.scss'
 
@@ -44,6 +50,8 @@ export default class NotificationItem extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
+    autoQLConfig: autoQLConfigType,
+    dataFormatting: dataFormattingType,
     notification: PropTypes.shape({}).isRequired,
     activeNotificationData: PropTypes.shape({}),
     onRuleFetchCallback: PropTypes.func,
@@ -60,6 +68,8 @@ export default class NotificationItem extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
+    autoQLConfig: autoQLConfigDefault,
+    dataFormatting: dataFormattingDefault,
     activeNotificationData: undefined,
     autoChartAggregations: false,
     onRuleFetchCallback: () => {},
@@ -68,6 +78,7 @@ export default class NotificationItem extends React.Component {
     onDeleteCallback: () => {},
     onDeleteSuccessCallback: () => {},
     onDismissSuccessCallback: () => {},
+    onUnreadCallback: () => {},
     onErrorCallback: () => {},
     onClick: () => {},
   }
@@ -103,7 +114,7 @@ export default class NotificationItem extends React.Component {
     clearTimeout(this.initialCollapseTimer)
   }
 
-  getIsTriggered = () => {
+  getIsUnread = () => {
     return ['ACKNOWLEDGED', 'UNACKNOWLEDGED'].includes(this.props.notification?.state)
   }
 
@@ -138,6 +149,10 @@ export default class NotificationItem extends React.Component {
 
   expand = () => {
     this.setState({ expanded: true })
+
+    if (this.getIsUnread()) {
+      this.markAsRead()
+    }
   }
 
   collapse = () => {
@@ -153,30 +168,40 @@ export default class NotificationItem extends React.Component {
     }
   }
 
-  onDismissClick = (e, notification) => {
-    e.stopPropagation()
-    this.props.onDismissCallback(notification)
+  markAsUnread = () => {
+    this.props.onUnreadCallback(this.props.notification)
 
-    dismissNotification({
+    markNotificationAsUnread({
       ...getAuthentication(this.props.authentication),
-      notificationId: notification.id,
+      notificationId: this.props.notification.id,
     })
-      .then(() => {
-        this.props.onDismissSuccessCallback()
-      })
+      .then(this.props.onDismissSuccessCallback)
       .catch((error) => {
         console.error(error)
         this.props.onErrorCallback(error)
       })
   }
 
-  onDeleteClick = (e, notification) => {
-    e.stopPropagation()
-    this.props.onDeleteCallback(notification)
+  markAsRead = () => {
+    this.props.onDismissCallback(this.props.notification)
+
+    dismissNotification({
+      ...getAuthentication(this.props.authentication),
+      notificationId: this.props.notification.id,
+    })
+      .then(this.props.onDismissSuccessCallback)
+      .catch((error) => {
+        console.error(error)
+        this.props.onErrorCallback(error)
+      })
+  }
+
+  delete = () => {
+    this.props.onDeleteCallback(this.props.notification)
 
     deleteNotification({
       ...getAuthentication(this.props.authentication),
-      notificationId: notification.id,
+      notificationId: this.props.notification.id,
     })
       .then(() => {
         this.props.onDeleteSuccessCallback()
@@ -187,10 +212,10 @@ export default class NotificationItem extends React.Component {
       })
   }
 
-  changeRuleStatus = (notification, status) => {
+  changeRuleStatus = (status) => {
     updateDataAlertStatus({
-      dataAlertId: notification.data_alert_id,
-      type: notification.data_alert_type,
+      dataAlertId: this.props.notification.data_alert_id,
+      type: this.props.notification.data_alert_type,
       status,
       ...getAuthentication(this.props.authentication),
     })
@@ -230,46 +255,18 @@ export default class NotificationItem extends React.Component {
   renderAlertColorStrip = () => <div className='react-autoql-notification-alert-strip' />
 
   renderNotificationHeader = () => {
-    const { notification } = this.props
-
     return (
-      <div className='react-autoql-notification-list-item-header' onClick={() => this.onClick(notification)}>
+      <div className='react-autoql-notification-list-item-header' onClick={() => this.onClick(this.props.notification)}>
         <div className='react-autoql-notification-display-name-container'>
-          <div className='react-autoql-notification-display-name'>{notification.title}</div>
-          <div className='react-autoql-notification-description'>{notification.message}</div>
+          <div className='react-autoql-notification-display-name'>{this.props.notification.title}</div>
+          <div className='react-autoql-notification-description'>{this.props.notification.message}</div>
           <div className='react-autoql-notification-timestamp-container'>
             <span className='react-autoql-notification-timestamp'>
-              <Icon type='calendar' /> {this.formatTimestamp(notification.created_at)}
+              <Icon type='calendar' /> {this.formatTimestamp(this.props.notification.created_at)}
             </span>
           </div>
         </div>
-        {this.getIsTriggered() ? (
-          <div className='react-autoql-notification-dismiss-btn'>
-            <Icon
-              type='notification-off'
-              className='react-autoql-notification-dismiss-icon'
-              data-tip='Dismiss'
-              data-for={this.props.tooltipID ?? 'react-autoql-notification-tooltip'}
-              onClick={(e) => {
-                this.onDismissClick(e, notification)
-                hideTooltips()
-              }}
-            />
-          </div>
-        ) : (
-          <div className='react-autoql-notification-dismiss-btn'>
-            <Icon
-              type='close'
-              className='react-autoql-notification-delete-icon'
-              data-tip='Delete'
-              data-for={this.props.tooltipID ?? 'react-autoql-notification-tooltip'}
-              onClick={(e) => {
-                this.onDeleteClick(e, notification)
-                hideTooltips()
-              }}
-            />
-          </div>
-        )}
+        {this.moreOptionsButton()}
       </div>
     )
   }
@@ -285,32 +282,83 @@ export default class NotificationItem extends React.Component {
 
     return (
       <li
-        onClick={() => {
-          this.setState({ isMoreOptionsMenuOpen: false })
-          const newStatus = isActive ? 'INACTIVE' : 'ACTIVE'
-          this.changeRuleStatus(notification, newStatus)
-        }}
+        onClick={(e) =>
+          this.onOptionClick(e, () => {
+            const newStatus = isActive ? 'INACTIVE' : 'ACTIVE'
+            this.changeRuleStatus(newStatus)
+          })
+        }
       >
-        <Icon type={isActive ? 'notification-off' : 'notification'} />{' '}
-        <span>Turn Data Alert {isActive ? 'Off' : 'On'}</span>
+        <Icon type={isActive ? 'notification-off' : 'notification'} /> <span>Turn {isActive ? 'off' : 'on'}</span>
       </li>
     )
   }
 
-  moreOptionsMenu = () => {
+  moreOptionsButton = () => {
     return (
-      <div className='more-options-menu' data-test='react-autoql-toolbar-more-options-notification'>
+      <div
+        className='react-autoql-notification-options-btn-container'
+        onClick={() => this.setState({ isMoreOptionsMenuOpen: !this.state.isMoreOptionsMenuOpen })}
+      >
+        <Popover
+          align='start'
+          positions={['left', 'bottom', 'top', 'right']}
+          content={this.moreOptionsMenu()}
+          isOpen={this.state.isMoreOptionsMenuOpen}
+          onClickOutside={() => this.setState({ isMoreOptionsMenuOpen: false })}
+        >
+          <div>
+            <Icon
+              type='more-vertical'
+              className='react-autoql-notification-options-btn'
+              data-tip='Options'
+              data-for={this.props.tooltipID ?? 'react-autoql-notification-tooltip'}
+              onClick={(e) => {
+                e.stopPropagation()
+                this.setState({ isMoreOptionsMenuOpen: true })
+              }}
+            />
+          </div>
+        </Popover>
+      </div>
+    )
+  }
+
+  onOptionClick = (e, callback = () => {}) => {
+    e.stopPropagation()
+    hideTooltips()
+    this.setState({ isMoreOptionsMenuOpen: false })
+    callback()
+  }
+
+  moreOptionsMenu = () => {
+    const isUnread = this.getIsUnread()
+    return (
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className='more-options-menu'
+        data-test='react-autoql-toolbar-more-options-notification'
+      >
         <ul className='context-menu-list'>
           <li
-            onClick={() => {
-              this.setState({ isMoreOptionsMenuOpen: false })
-              this.props.onEditClick(this.state.ruleDetails)
-            }}
+            onClick={(e) =>
+              this.onOptionClick(e, () => {
+                this.props.onEditClick(this.state.ruleDetails)
+              })
+            }
           >
-            <Icon type='edit' />
-            <span>Edit Data Alert</span>
+            <Icon type='settings' />
+            <span>Data Alert settings</span>
           </li>
           {this.dataAlertToggleListItem()}
+          <li onClick={(e) => this.onOptionClick(e, isUnread ? this.markAsRead : this.markAsUnread)}>
+            <Icon type={isUnread ? 'mark-read' : 'mark-unread'} />
+            <span>Mark as {isUnread ? 'read' : 'unread'}</span>
+          </li>
+          <li onClick={(e) => this.onOptionClick(e, this.delete)}>
+            <Icon type='trash' />
+            <span>Delete</span>
+          </li>
         </ul>
       </div>
     )
@@ -324,43 +372,40 @@ export default class NotificationItem extends React.Component {
     return (
       <div className='react-autoql-notification-toolbar-container'>
         <div>
-          <VizToolbar ref={(r) => (this.vizToolbarRef = r)} responseRef={this.OUTPUT_REF} vertical />
+          <VizToolbar
+            autoQLConfig={this.props.autoQLConfig}
+            ref={(r) => (this.vizToolbarRef = r)}
+            responseRef={this.OUTPUT_REF}
+          />
         </div>
-        <Popover
-          align='end'
-          positions={['top', 'left', 'bottom', 'right']}
-          content={this.moreOptionsMenu()}
-          isOpen={this.state.isMoreOptionsMenuOpen}
-          onClickOutside={() => this.setState({ isMoreOptionsMenuOpen: false })}
-        >
-          <div
-            className='react-autoql-notification-toolbar-more-options'
-            onClick={() => this.setState({ isMoreOptionsMenuOpen: !this.state.isMoreOptionsMenuOpen })}
-          >
-            <Icon className='notification-toolbar-more-options-btn' type='more-vertical' />
-          </div>
-        </Popover>
+        <div>
+          <OptionsToolbar
+            authentication={this.props.authentication}
+            autoQLConfig={this.props.autoQLConfig}
+            ref={(r) => (this.optionsToolbarRef = r)}
+            responseRef={this.OUTPUT_REF}
+          />
+        </div>
       </div>
     )
   }
 
   renderVisualization = () => {
     const { queryResponse } = this.state
-    // const queryTitle = this.props.notification?.data_return_query
-    // const queryTitleCapitalized = capitalizeFirstChar(queryTitle)
 
     return (
       <div className='react-autoql-notificaton-chart-container'>
-        {/* <div className='react-autoql-notification-query-title'>{queryTitleCapitalized}</div> */}
         <div ref={(r) => (this.dataContainer = r)} className='react-autoql-notification-query-data-container'>
           {queryResponse ? (
             <QueryOutput
               // key={queryResponse?.data?.data?.query_id}
               ref={(r) => (this.OUTPUT_REF = r)}
               vizToolbarRef={this.vizToolbarRef}
+              optionsToolbarRef={this.optionsToolbarRef}
               authentication={this.props.authentication}
+              autoQLConfig={this.props.autoQLConfig}
+              dataFormatting={this.props.dataFormatting}
               queryResponse={queryResponse}
-              autoQLConfig={{ enableDrilldowns: false }}
               autoChartAggregations={this.props.autoChartAggregations}
               enableAjaxTableData={this.props.enableAjaxTableData}
               isResizing={this.props.isResizing || !this.state.expanded}
@@ -397,17 +442,12 @@ export default class NotificationItem extends React.Component {
 
     return (
       <div className='react-autoql-notification-condition-statement'>
-        {/* <div className='react-autoql-notification-query-title'>Conditions:</div> */}
-        <span>
-          <strong>Summary: </strong>
-        </span>
         <ConditionBuilder
           key={`expression-builder-${this.COMPONENT_KEY}`}
           expression={notification?.expression}
           conditionStatementOnly
           conditionTense='past'
         />
-        <span> on {this.formatTimestamp(notification.created_at)}</span>
       </div>
     )
   }
@@ -423,8 +463,8 @@ export default class NotificationItem extends React.Component {
         <>
           {!this.state.queryResponse && this.renderLoader()}
           <div className='react-autoql-notification-content-container'>
-            {this.renderQueryResponse()}
             {this.renderSummarySection()}
+            {this.renderQueryResponse()}
           </div>
         </>
       </div>
@@ -439,7 +479,8 @@ export default class NotificationItem extends React.Component {
           key={`react-autoql-notification-item-${this.COMPONENT_KEY}`}
           className={`react-autoql-notification-list-item
           ${this.state.expanded ? 'expanded' : 'collapsed'}
-          ${this.getIsTriggered() ? ' triggered' : ''}`}
+          ${this.getIsUnread() ? 'unread' : ''}
+          ${this.state.isMoreOptionsMenuOpen ? 'menu-open' : ''}`}
         >
           {this.renderNotificationHeader()}
           {this.renderNotificationContent()}

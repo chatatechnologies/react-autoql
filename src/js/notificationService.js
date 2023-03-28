@@ -270,6 +270,37 @@ export const dismissAllNotifications = ({ domain, apiKey, token }) => {
     })
 }
 
+export const markNotificationAsUnread = ({ notificationId, domain, apiKey, token }) => {
+  if (!token || !apiKey || !domain) {
+    return Promise.reject(new Error('UNAUTHORIZED'))
+  }
+
+  if (!notificationId) {
+    return Promise.reject(new Error('No ID provided'))
+  }
+
+  const axiosInstance = axios.create({
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  const data = {
+    state: 'ACKNOWLEDGED',
+  }
+
+  const url = `${domain}/autoql/api/v1/data-alerts/notifications/${notificationId}?key=${apiKey}`
+
+  return axiosInstance
+    .put(url, data)
+    .then((response) => {
+      return Promise.resolve(response)
+    })
+    .catch((error) => {
+      return Promise.reject(_get(error, 'response.data'))
+    })
+}
+
 export const dismissNotification = ({ notificationId, domain, apiKey, token }) => {
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
