@@ -11,7 +11,7 @@ import { DashboardTile } from './DashboardTile'
 import { QueryOutput } from '../QueryOutput'
 import { LoadingDots } from '../LoadingDots'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
-import { hideTooltips, Tooltip } from '../Tooltip'
+import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
 import ReportProblemModal from '../OptionsToolbar/ReportProblemModal'
 import DrilldownTable from './DrilldownTable'
 
