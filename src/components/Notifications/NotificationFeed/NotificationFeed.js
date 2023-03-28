@@ -92,6 +92,12 @@ class NotificationFeed extends React.Component {
     this.getNotifications()
   }
 
+  componentDidUpdate = (prevProps) => {
+    if (!this.props.shouldRender && prevProps.shouldRender) {
+      this.collapseActive()
+    }
+  }
+
   componentWillUnmount = () => {
     this._isMounted = false
   }
@@ -379,6 +385,12 @@ class NotificationFeed extends React.Component {
         tooltipID={this.props.tooltipID}
       />
     )
+  }
+
+  collapseActive = () => {
+    const expandedID = this.state.expandedNotificationID
+    this.notificationRefs[expandedID]?.collapse()
+    this.setState({ expandedNotificationID: undefined })
   }
 
   onNotificationExpand = (notification) => {
