@@ -89,7 +89,6 @@ class DataAlertModal extends React.Component {
 
     if (this.props.isVisible && !prevProps.isVisible) {
       this.initializeFields()
-      this.props.onOpened()
     } else if (this.props.isVisible) {
       if (this.state.activeStep !== prevState.activeStep) {
         if (this.state.activeStep === this.getStepNumber(this.MESSAGE_STEP)) {
@@ -685,6 +684,8 @@ class DataAlertModal extends React.Component {
           enableBodyScroll
           width='1000px'
           footer={this.renderFooter()}
+          onOpened={this.props.onOpened}
+          onClosed={this.props.onClosed}
         >
           {/* We must render a new <Tooltip/> inside of modals */}
           <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' delayShow={500} place='top' />

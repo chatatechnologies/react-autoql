@@ -23,6 +23,8 @@ import { withTheme } from '../../../theme'
 import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
 
 import './NotificationFeed.scss'
+import { Modal } from '../../Modal'
+import { DataAlerts } from '../DataAlerts'
 
 class NotificationFeed extends React.Component {
   constructor(props) {
@@ -39,6 +41,7 @@ class NotificationFeed extends React.Component {
 
     this.state = {
       isFetchingFirstNotifications: true,
+      isDataAlertsManagerOpen: false,
       notificationList: [],
       pagination: {},
       nextOffset: 0,
@@ -60,13 +63,14 @@ class NotificationFeed extends React.Component {
     autoChartAggregations: PropTypes.bool,
     showCreateAlertBtn: PropTypes.bool,
     enableAjaxTableData: PropTypes.bool,
-    onDataAlertModalOpen: PropTypes.func,
+    onModalOpen: PropTypes.func,
     shouldRender: PropTypes.bool,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
     activeNotificationData: undefined,
+    showDataAlertsManager: true,
     showNotificationDetails: true,
     autoChartAggregations: false,
     showCreateAlertBtn: false,
@@ -78,7 +82,7 @@ class NotificationFeed extends React.Component {
     onSuccessCallback: () => {},
     onDismissCallback: () => {},
     onDeleteCallback: () => {},
-    onDataAlertModalOpen: () => {},
+    onModalOpen: () => {},
     onUnreadCallback: () => {},
     onChange: () => {},
   }
@@ -284,29 +288,77 @@ class NotificationFeed extends React.Component {
     return (
       <div className='notification-feed-top-options-container'>
         {this.renderDeleteAllButton()}
+        {this.renderDataAlertsManagerButton()}
         {this.renderDismissAllButton()}
       </div>
     )
   }
 
+  renderDataAlertsManagerButton = () => {
+    if (!this.props.showDataAlertsManager) {
+      return <div />
+    }
+
+    return (
+      <div
+        onClick={() => {
+          this.setState({ isDataAlertsManagerOpen: true })
+        }}
+        className='react-autoql-notification-dismiss-all'
+      >
+        <Icon type='list-settings' /> <span>Data Alerts</span>
+      </div>
+    )
+  }
+
   renderDeleteAllButton = () => {
-    return <div />
+    return null
     // Enable this once the batch delete endpoint is ready
     return (
       <div onClick={this.onDeleteAllClick} className='react-autoql-notification-delete-all'>
-        <Icon type='trash' style={{ verticalAlign: 'middle' }} /> <span>Delete all</span>
+        <Icon type='trash' /> <span>Delete all</span>
       </div>
     )
   }
 
   renderDismissAllButton = () => (
     <div onClick={this.onDismissAllClick} className='react-autoql-notification-dismiss-all'>
-      <Icon type='mark-read' style={{ verticalAlign: 'middle' }} /> <span>Mark all as read</span>
+      <Icon type='mark-read' /> <span>Mark all as read</span>
     </div>
   )
 
   showEditDataAlertModal = (alertData) => {
     this.setState({ isEditModalVisible: true, activeDataAlert: alertData })
+  }
+
+  renderDataAlertsManagerModal = () => {
+    if (!this.props.showDataAlertsManager) {
+      return null
+    }
+
+    return (
+      <Modal
+        contentClassName='react-autoql-data-alert-manager-modal'
+        overlayStyle={{ zIndex: '9998' }}
+        title='Data Alerts'
+        titleIcon={<Icon type='list-settings' />}
+        isVisible={this.state.isDataAlertsManagerOpen}
+        onOpened={this.props.onModalOpen}
+        onClosed={this.props.onModalClose}
+        onClose={() => {
+          this.setState({ isDataAlertsManagerOpen: false })
+        }}
+        enableBodyScroll
+        showFooter={false}
+      >
+        <DataAlerts
+          authentication={this.props.authentication}
+          // onAlertInitializationCallback={handleInitialize}
+          onErrorCallback={this.props.onErrorCallback}
+          onSuccessAlert={this.props.onSuccessCallback}
+        />
+      </Modal>
+    )
   }
 
   renderEditDataAlertModal = () => {
@@ -316,8 +368,8 @@ class NotificationFeed extends React.Component {
         authentication={this.props.authentication}
         isVisible={this.state.isEditModalVisible}
         onClose={this.closeDataAlertModal}
-        onOpened={this.props.onDataAlertModalOpen}
-        onClosed={this.props.onDataAlertModalClose}
+        onOpened={this.props.onModalOpen}
+        onClosed={this.props.onModalClose}
         currentDataAlert={this.state.activeDataAlert}
         onSave={this.onDataAlertSave}
         onErrorCallback={this.props.onErrorCallback}
@@ -451,6 +503,7 @@ class NotificationFeed extends React.Component {
             </div>
           )}
           {this.renderEditDataAlertModal()}
+          {this.renderDataAlertsManagerModal()}
         </div>
       </ErrorBoundary>
     )

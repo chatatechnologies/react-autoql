@@ -36,8 +36,6 @@ import { FiCheck } from '@react-icons/all-files/fi/FiCheck'
 import { FiDatabase } from '@react-icons/all-files/fi/FiDatabase'
 import { FiDownload } from '@react-icons/all-files/fi/FiDownload'
 import { FiEye } from '@react-icons/all-files/fi/FiEye'
-import { RiFilterLine } from '@react-icons/all-files/ri/RiFilterLine'
-import { RiFilterOffLine } from '@react-icons/all-files/ri/RiFilterOffLine'
 import { FiMoreHorizontal } from '@react-icons/all-files/fi/FiMoreHorizontal'
 import { FiMoreVertical } from '@react-icons/all-files/fi/FiMoreVertical'
 import { FiPauseCircle } from '@react-icons/all-files/fi/FiPauseCircle'
@@ -48,6 +46,10 @@ import { FiTrash2 } from '@react-icons/all-files/fi/FiTrash2'
 import { FiMaximize } from '@react-icons/all-files/fi/FiMaximize'
 import { FiMinimize } from '@react-icons/all-files/fi/FiMinimize'
 import { FiRefreshCw } from '@react-icons/all-files/fi/FiRefreshCw'
+
+import { RiFilterLine } from '@react-icons/all-files/ri/RiFilterLine'
+import { RiFilterOffLine } from '@react-icons/all-files/ri/RiFilterOffLine'
+import { RiListSettingsLine } from '@react-icons/all-files/ri/RiListSettingsLine'
 
 import { GoReport } from '@react-icons/all-files/go/GoReport'
 
@@ -294,6 +296,10 @@ export default class Icon extends React.Component {
       }
       case 'line-chart': {
         icon = lineChartIcon
+        break
+      }
+      case 'list-settings': {
+        icon = <RiListSettingsLine />
         break
       }
       case 'lock': {

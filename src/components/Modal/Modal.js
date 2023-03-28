@@ -28,6 +28,8 @@ export default class Modal extends React.Component {
     footer: PropTypes.element,
     confirmOnClose: PropTypes.bool,
     shouldRender: PropTypes.bool,
+    onOpened: PropTypes.func,
+    onClosed: PropTypes.func,
   }
 
   static defaultProps = {
@@ -47,6 +49,8 @@ export default class Modal extends React.Component {
     shouldRender: true,
     onClose: () => {},
     onConfirm: () => {},
+    onOpened: () => {},
+    onClosed: () => {},
   }
 
   state = {
@@ -59,6 +63,16 @@ export default class Modal extends React.Component {
     }
 
     return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (this.props.isVisible && !prevProps.isVisible) {
+      this.props.onOpened()
+    }
+
+    if (!this.props.isVisible && prevProps.isVisible) {
+      this.props.onClosed()
+    }
   }
 
   onClose = (deleteFromPortal = true) => {

@@ -930,8 +930,8 @@ export class DataMessenger extends React.Component {
           activeNotificationData={this.props.activeNotificationData}
           onErrorCallback={this.props.onErrorCallback}
           onSuccessCallback={this.props.onSuccessCallback}
-          onDataAlertModalOpen={this.onDataAlertModalOpen}
-          onDataAlertModalClose={this.onDataAlertModalClose}
+          onModalOpen={this.onDataAlertModalOpen}
+          onModalClose={this.onDataAlertModalClose}
           shouldRender={this.isOpen() && this.state.activePage === 'notifications'}
           tooltipID={this.TOOLTIP_ID}
           isResizing={this.state.isResizing || this.state.isWindowResizing}
