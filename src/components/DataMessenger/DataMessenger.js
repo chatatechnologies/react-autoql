@@ -11,7 +11,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { ChatContent } from '../ChatContent'
 import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
 import { withTheme } from '../../theme'
-import { isBrowser } from 'react-device-detect'
+import { isBrowser, isMobile } from 'react-device-detect'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import { autoQLConfigDefault, dataFormattingDefault, getAutoQLConfig } from '../../props/defaults'
@@ -87,7 +87,7 @@ export class DataMessenger extends React.Component {
       hasError: false,
       activePage: props.defaultTab,
       width: isBrowser ? props.width : '100vw',
-      height: isBrowser ? props.height : '100vh',
+      height: props.height,
       isResizing: false,
       isWindowResizing: false,
       placement: this.getPlacementProp(props.placement),
@@ -362,7 +362,7 @@ export class DataMessenger extends React.Component {
   }
 
   getDrawerHeight = () => {
-    if (this.state.placement === 'right' || this.state.placement === 'left') {
+    if (isBrowser && (this.state.placement === 'right' || this.state.placement === 'left')) {
       return null
     }
     return this.state.height
@@ -532,7 +532,9 @@ export class DataMessenger extends React.Component {
   renderRightHeaderContent = () => {
     return (
       <>
-        {getAutoQLConfig(this.props.autoQLConfig).enableFilterLocking && this.renderFilterLockPopover()}
+        {isBrowser
+          ? getAutoQLConfig(this.props.autoQLConfig).enableFilterLocking && this.renderFilterLockPopover()
+          : null}
         <Popover
           isOpen={this.state.isOptionsDropdownOpen}
           onClickOutside={() => {
@@ -590,91 +592,34 @@ export class DataMessenger extends React.Component {
 
   renderHeaderTitle = () => {
     let title = ''
-    switch (this.state.activePage) {
-      case 'data-messenger': {
-        title = this.props.title
-        break
-      }
-      case 'explore-queries': {
-        title = lang.exploreQueries
-        break
-      }
-      case 'data-explorer': {
-        title = lang.dataExplorer
-        break
-      }
-      case 'notifications': {
-        title = lang.notifications
-        break
-      }
-      case 'dpr': {
-        title = lang.education
-        break
-      }
-    }
-
-    if (isBrowser) {
-      return <div className='header-title'>{title}</div>
+    if (isMobile) {
+      title = this.props.title
     } else {
-      let options = [
-        {
-          value: 'data-messenger',
-          label: (
-            <span>
-              <Icon type='react-autoql-bubbles-outlined' /> Data Messenger
-            </span>
-          ),
-        },
-        {
-          value: 'data-explorer',
-          label: (
-            <span>
-              <Icon type='data-search' /> Data Explorer
-            </span>
-          ),
-        },
-        {
-          value: 'notifications',
-          label: (
-            <span>
-              <NotificationIcon
-                ref={(r) => (this.notificationBadgeRef = r)}
-                authentication={this.props.authentication}
-                clearCountOnClick={false}
-                style={{ fontSize: '19px' }}
-                overflowCount={9}
-                count={this.props.notificationCount}
-                useDot
-                onCount={this.props.onNotificationCount}
-                onErrorCallback={this.props.onErrorCallback}
-                onNewNotification={(count) => {
-                  this.props.onNewNotification(count)
-                }}
-              />
-              {` Notifications`}
-            </span>
-          ),
-        },
-      ]
-
-      return (
-        <div className='header-title'>
-          <Select
-            className='data-messenger-header-select'
-            showArrow
-            options={options}
-            key={uuid()}
-            value={this.state.activePage}
-            style={this.selectStyle}
-            placeholder={title}
-            popupClassname='data-messenger-header-select-popover'
-            onChange={(value) => {
-              this.setState({ activePage: value })
-            }}
-          />
-        </div>
-      )
+      switch (this.state.activePage) {
+        case 'data-messenger': {
+          title = this.props.title
+          break
+        }
+        case 'explore-queries': {
+          title = lang.exploreQueries
+          break
+        }
+        case 'data-explorer': {
+          title = lang.dataExplorer
+          break
+        }
+        case 'notifications': {
+          title = lang.notifications
+          break
+        }
+        case 'dpr': {
+          title = lang.education
+          break
+        }
+      }
     }
+
+    return <div className='header-title'>{title}</div>
   }
 
   openFilterLockMenu = () => {
@@ -742,24 +687,28 @@ export class DataMessenger extends React.Component {
     return (
       <Fragment>
         <div className='react-autoql-header-left-container'>
-          <button
-            onClick={this.closeDataMessenger}
-            className='react-autoql-drawer-header-btn close'
-            data-tip={lang.closeDataMessenger}
-            data-for={this.TOOLTIP_ID}
-          >
-            <Icon type='close' />
-          </button>
           {isBrowser ? (
-            <button
-              onClick={() => this.toggleFullScreen(isFullScreen, maxWidth, maxHeight)}
-              className='react-autoql-drawer-header-btn screen-mode'
-              data-tip={isFullScreen ? lang.minimizeDataMessenger : lang.maximizeDataMessenger}
-              data-for={this.TOOLTIP_ID}
-            >
-              <Icon type={isFullScreen ? 'minimize' : 'maximize'} />
-            </button>
-          ) : null}
+            <>
+              <button
+                onClick={this.closeDataMessenger}
+                className='react-autoql-drawer-header-btn close'
+                data-tip={lang.closeDataMessenger}
+                data-for={this.TOOLTIP_ID}
+              >
+                <Icon type='close' />
+              </button>
+              <button
+                onClick={() => this.toggleFullScreen(isFullScreen, maxWidth, maxHeight)}
+                className='react-autoql-drawer-header-btn screen-mode'
+                data-tip={isFullScreen ? lang.minimizeDataMessenger : lang.maximizeDataMessenger}
+                data-for={this.TOOLTIP_ID}
+              >
+                <Icon type={isFullScreen ? 'minimize' : 'maximize'} />
+              </button>
+            </>
+          ) : (
+            getAutoQLConfig(this.props.autoQLConfig).enableFilterLocking && this.renderFilterLockPopover()
+          )}
         </div>
         <div className='react-autoql-header-center-container'>{this.renderHeaderTitle()}</div>
         <div className='react-autoql-header-right-container'>{this.renderRightHeaderContent()}</div>
