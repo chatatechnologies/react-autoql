@@ -5,6 +5,10 @@
   padding-bottom: 100px;
   height: 100%;
 
+  .react-autoql-notification-setting-actions {
+    white-space: nowrap;
+  }
+
   .empty-list-message {
     color: var(--react-autoql-text-color-primary);
     text-align: center;
