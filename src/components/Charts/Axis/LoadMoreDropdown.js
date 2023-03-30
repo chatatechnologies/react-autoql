@@ -109,17 +109,28 @@ export default class LoadMoreDropdown extends Component {
     )
   }
 
-  renderMaxRowWarningIcon = () => {
-    if (!(this.props.totalRowCount > this.maxRows)) {
-      return null
-    }
-
+  renderDrilldownInfoIcon = () => {
     return (
       <svg
         ref={(r) => (this.warningIcon = r)}
-        stroke='currentColor'
-        fill='#ffcc00'
-        strokeWidth='0'
+        className='drilldown-info-icon'
+        viewBox='0 0 24 24'
+        height='1.4em'
+        width='1.4em'
+        xmlns='http://www.w3.org/2000/svg'
+        data-tip='This visualization is showing a subset of the data. <em>Drilldowns</em> will be executed on the <strong>full</strong> dataset.'
+        data-for={this.props.chartTooltipID}
+      >
+        <path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z'></path>
+      </svg>
+    )
+  }
+
+  renderMaxRowWarningIcon = () => {
+    return (
+      <svg
+        ref={(r) => (this.warningIcon = r)}
+        className='max-rows-info-icon'
         viewBox='0 0 24 24'
         height='1.4em'
         width='1.4em'
@@ -132,12 +143,24 @@ export default class LoadMoreDropdown extends Component {
     )
   }
 
+  renderInfoIcon = () => {
+    if (this.props.totalRowCount > this.maxRows) {
+      return this.renderMaxRowWarningIcon()
+    }
+
+    if (this.state.currentRowNumber < this.props.totalRowCount) {
+      return this.renderDrilldownInfoIcon()
+    }
+
+    return null
+  }
+
   render = () => {
     return (
       <g ref={(r) => (this.LoadMoreDropdownRef = r)}>
         {this.renderRowCountText()}
         {this.renderRowDropdownButton()}
-        {this.renderMaxRowWarningIcon()}
+        {this.renderInfoIcon()}
       </g>
     )
   }
