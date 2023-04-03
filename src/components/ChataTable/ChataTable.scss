@@ -361,7 +361,7 @@
       height: 40px;
       background-color: var(--react-autoql-background-color-secondary);
       border: 1px solid var(--react-autoql-border-color);
-      box-shadow: var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15)) 0px 8px 24px;
+      box-shadow: var(--react-autoql-box-shadow-1);
       border-radius: 4px;
 
       .spinner-loader {

@@ -24,7 +24,7 @@
     margin: 20px;
     margin-top: 10px;
     border-radius: 4px;
-    box-shadow: 0 1px 3px 0 var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
+    box-shadow: var(--react-autoql-box-shadow-1);
     background-color: var(--react-autoql-background-color-secondary);
     overflow: hidden;
 

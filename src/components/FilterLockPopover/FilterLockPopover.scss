@@ -299,7 +299,7 @@
       font-size: 15px;
       font-weight: normal;
       z-index: 2;
-      box-shadow: 0 1px 3px 0 var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
+      box-shadow: var(--react-autoql-box-shadow-1);
       text-align: left;
       border-radius: 4px;
       width: 100%;

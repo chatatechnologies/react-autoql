@@ -23,6 +23,7 @@ export const LIGHT_THEME = {
   'info-color': '#28a8e0',
   'box-shadow-color': '#00000026',
   'mask-color': '#0000000f',
+  'box-shadow-1': '0 1px 3px 0 var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15))',
 }
 
 export const DARK_THEME = {
@@ -50,4 +51,5 @@ export const DARK_THEME = {
   'info-color': '#28a8e0',
   'box-shadow-color': '#00000066',
   'mask-color': '#00000021',
+  'box-shadow-1': '0 1px 3px 0 var(--react-autoql-box-shadow-color,rgba(0,0,0,.15))',
 }
