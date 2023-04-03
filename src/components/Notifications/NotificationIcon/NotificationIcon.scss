@@ -32,11 +32,11 @@
     position: absolute;
     display: inline-block;
     border: 1px solid currentColor;
-    background: #f5222d;
+    background: var(--react-autoql-badge-color);
     border-radius: 50%;
     height: 0.6em;
     width: 0.6em;
     left: 0.5em;
-    top: -2px;
+    top: -0.2em;
   }
 }
