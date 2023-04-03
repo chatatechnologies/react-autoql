@@ -882,6 +882,8 @@ export class QueryOutput extends React.Component {
     this.cancelCurrentRequest()
     this.axiosSource = axios.CancelToken?.source()
 
+    this.setState({ isLoadingData: true })
+
     if (this.isDrilldown()) {
       return runDrilldown({
         ...getAuthentication(this.props.authentication),
@@ -897,6 +899,8 @@ export class QueryOutput extends React.Component {
         tableFilters: allFilters,
         cancelToken: this.axiosSource.token,
         ...args,
+      }).finally(() => {
+        this.setState({ isLoadingData: false })
       })
     }
     return runQueryOnly({
@@ -913,6 +917,8 @@ export class QueryOutput extends React.Component {
       source: this.props.source,
       cancelToken: this.axiosSource.token,
       ...args,
+    }).finally(() => {
+      this.setState({ isLoadingData: false })
     })
   }
 
@@ -1201,13 +1207,9 @@ export class QueryOutput extends React.Component {
     this.tableData = responseData?.rows || []
 
     if (this.state.displayType !== 'table' && this.props.allowDisplayTypeChange) {
-      if (this.tableData.length >= responseData?.count_rows) {
-        // The rows were changed from a chart - If it is the maximum page size, we dont want
-        // infinite scroll anymore - mount a new table with the new data
-        this.tableID = uuid()
-      } else {
-        this.tableRef?.updateData(this.tableData)
-      }
+      // The rows were changed from a chart, update data manually. ChataTable will handle
+      // toggling infinite scroll on or off
+      this.tableRef?.updateData(this.tableData, this.isDataLimited())
     }
 
     this.setState({
@@ -2232,6 +2234,7 @@ export class QueryOutput extends React.Component {
           updateColumns={this.updateColumns}
           source={this.props.source}
           isRowCountSelectable={!this.isOriginalData || isDataLimited}
+          queryFn={this.queryFn}
         />
       </ErrorBoundary>
     )

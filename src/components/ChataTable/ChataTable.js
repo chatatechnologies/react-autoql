@@ -36,7 +36,6 @@ export default class ChataTable extends React.Component {
     this.lastPage = props.data?.length < props.pageSize ? 1 : 2
     this.filterTagElements = []
     this.queryID = props.queryID
-    this.supportsInfiniteScroll = props.useInfiniteScroll && !!props.pageSize
 
     this.isFiltering = false
     this.isSorting = false
@@ -46,10 +45,12 @@ export default class ChataTable extends React.Component {
       sort: [],
     }
 
+    const supportsInfiniteScroll = this.supportsInfiniteScroll(props)
+
     this.tableOptions = {
       selectableCheck: () => false,
-      initialSort: !this.supportsInfiniteScroll ? this.tableParams?.sort : undefined,
-      initialFilter: !this.supportsInfiniteScroll ? this.tableParams?.filter : undefined,
+      initialSort: !supportsInfiniteScroll ? this.tableParams?.sort : undefined,
+      initialFilter: !supportsInfiniteScroll ? this.tableParams?.filter : undefined,
       progressiveLoadScrollMargin: 100, // Trigger next ajax load when scroll bar is 800px or less from the bottom of the table.
       // renderHorizontal: 'virtual', // v4: virtualDomHoz = false
       downloadEncoder: function (fileContents, mimeType) {
@@ -62,7 +63,7 @@ export default class ChataTable extends React.Component {
       },
     }
 
-    if (this.supportsInfiniteScroll) {
+    if (supportsInfiniteScroll) {
       this.tableOptions.sortMode = 'remote' // v4: ajaxSorting = true
       this.tableOptions.filterMode = 'remote' // v4: ajaxFiltering = true
       this.tableOptions.paginationMode = 'remote'
@@ -147,6 +148,10 @@ export default class ChataTable extends React.Component {
     }
 
     if (!!this.state.datePickerColumn && !nextState.datePickerColumn) {
+      return true
+    }
+
+    if (this.supportsInfiniteScroll(this.props) !== this.supportsInfiniteScroll(nextProps)) {
       return true
     }
 
@@ -245,7 +250,33 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  updateData = (data) => {
+  supportsInfiniteScroll = (props = this.props) => {
+    return props.useInfiniteScroll && !!props.pageSize
+  }
+
+  setInfiniteScroll = (useInfiniteScroll) => {
+    if (!this.ref?.tabulator?.options) {
+      return
+    }
+
+    if (useInfiniteScroll) {
+      this.ref.tabulator.options.sortMode = 'remote'
+      this.ref.tabulator.options.filterMode = 'remote'
+      this.ref.tabulator.options.paginationMode = 'remote'
+    } else {
+      this.ref.tabulator.options.sortMode = 'local'
+      this.ref.tabulator.options.filterMode = 'local'
+      this.ref.tabulator.options.paginationMode = 'local'
+    }
+  }
+
+  updateData = (data, useInfiniteScroll) => {
+    if (data?.length === this.props.totalRows) {
+      this.setInfiniteScroll(false)
+    } else if (useInfiniteScroll) {
+      this.setInfiniteScroll(true)
+    }
+
     this.ref?.updateData(data)
   }
 
@@ -268,7 +299,7 @@ export default class ChataTable extends React.Component {
   onDataSorted = (sorters, rows) => {
     if (this.isSorting) {
       this.isSorting = false
-      if (!this.supportsInfiniteScroll && this.ref) {
+      if (!this.supportsInfiniteScroll() && this.ref) {
         this.props.onSorterCallback(sorters)
       }
       this.setLoading(false)
@@ -294,7 +325,7 @@ export default class ChataTable extends React.Component {
       // We only use header filters so we have to use the function below
       const headerFilters = this.ref?.tabulator?.getHeaderFilters()
 
-      if (!this.supportsInfiniteScroll) {
+      if (!this.supportsInfiniteScroll()) {
         this.tableParams.filter = _cloneDeep(headerFilters)
         this.props.onFilterCallback(headerFilters, rows)
       }
@@ -537,14 +568,14 @@ export default class ChataTable extends React.Component {
   }
 
   inputKeydownListener = () => {
-    if (!this.supportsInfiniteScroll) {
+    if (!this.supportsInfiniteScroll()) {
       this.ref?.restoreRedraw()
     }
   }
 
   inputSearchListener = () => {
     // When "x" button is clicked in the input box
-    if (!this.supportsInfiniteScroll) {
+    if (!this.supportsInfiniteScroll()) {
       this.ref?.restoreRedraw()
     }
   }
@@ -664,7 +695,7 @@ export default class ChataTable extends React.Component {
       filterValues.forEach((filter, i) => {
         try {
           this.ref?.tabulator?.setHeaderFilterValue(filter.field, filter.value)
-          if (!this.supportsInfiniteScroll) {
+          if (!this.supportsInfiniteScroll()) {
             this.ref?.tabulator?.setFilter(filter.field, filter.type, filter.value)
           }
         } catch (error) {
@@ -855,7 +886,8 @@ export default class ChataTable extends React.Component {
     }
 
     const tabulatorRowCount = this.getTabulatorRowCount()
-    if (!this.props.useInfiniteScroll && tabulatorRowCount !== undefined) {
+
+    if (!this.supportsInfiniteScroll() && tabulatorRowCount !== undefined) {
       currentRowCount = tabulatorRowCount
       totalRowCount = tabulatorRowCount
     }
@@ -877,6 +909,7 @@ export default class ChataTable extends React.Component {
     }
 
     const tabulatorRowCount = this.getTabulatorRowCount()
+
     if (this.props.rowChangeCount > 0 && this.state.tabulatorMounted && tabulatorRowCount === 0) {
       return true
     }
@@ -900,8 +933,8 @@ export default class ChataTable extends React.Component {
             ${this.state.isFiltering ? 'filtering' : ''}
             ${this.props.isResizing ? 'resizing' : ''}
             ${this.props.isAnimating ? 'animating' : ''}
-            ${this.supportsInfiniteScroll ? 'infinite' : 'limited'}
-            ${this.supportsInfiniteScroll && this.state.isLastPage ? 'last-page' : ''}
+            ${this.supportsInfiniteScroll() ? 'infinite' : 'limited'}
+            ${this.supportsInfiniteScroll() && this.state.isLastPage ? 'last-page' : ''}
             ${this.props.pivot ? 'pivot' : ''}
             ${this.props.hidden ? 'hidden' : ''}
             ${isEmpty ? 'empty' : ''}`}

@@ -130,10 +130,12 @@ export default class TableWrapper extends React.Component {
       // This allows current tasks to finish first
       // Makes it seems much more responsive
       setTimeout(() => {
-        this.ref?.tabulator?.setData(data)
+        this.restoreRedraw()
+        this.tabulator?.setData(data)
       }, 0)
     } else {
-      this.ref?.tabulator?.setData(data)
+      this.restoreRedraw()
+      this.tabulator?.setData(data)
     }
   }
 
