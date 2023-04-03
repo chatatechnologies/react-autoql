@@ -153,36 +153,12 @@
 }
 
 .react-autoql-drawer .react-autoql-drawer-header-btn {
-  line-height: 1em;
-  font-weight: normal;
-  float: none;
-  opacity: 1;
-
   &.hidden {
     display: none;
   }
 
-  &.close span.react-autoql-icon svg {
-    width: 27px;
-    height: 27px;
-  }
-  &.screen-mode span.react-autoql-icon svg {
-    width: 22px;
-    height: 22px;
-  }
-
-  &.clear-all span.react-autoql-icon svg {
-    width: 22px;
-    height: 22px;
-  }
-
-  &.filter-locking span.react-autoql-icon svg {
-    width: 22px;
-    height: 22px;
-  }
-
   .react-autoql-filter-lock-icon-container {
-    display: inline-block;
+    display: inline-flex;
     position: relative;
 
     .react-autoql-filter-lock-icon-badge {
@@ -204,23 +180,22 @@
 }
 
 .react-autoql-drawer .chat-header-container button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   position: relative;
   background: transparent;
   border: none;
   color: var(--react-autoql-text-color-accent);
   margin: 10px 0px 10px 0px;
   margin-right: 0;
-  font-size: 20px;
+  font-size: 24px;
   cursor: pointer;
   outline: none !important;
 }
 
 .react-autoql-drawer .chat-header-container button:hover {
   opacity: 0.7;
-}
-.react-autoql-drawer .chat-header-container button svg {
-  width: 35px;
-  height: 35px;
 }
 
 .topics-container {

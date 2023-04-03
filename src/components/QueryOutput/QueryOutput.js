@@ -90,15 +90,11 @@ export class QueryOutput extends React.Component {
     this.isOriginalData = true
     this.renderComplete = false
 
-    // Set initial columns if needed
-    let columns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, props.initialAggConfig)
-    if (props.initialColumns && this.areColumnsValid(props.initialColumns)) {
-      columns = props.initialColumns
-    }
-
     // --------- generate data before mount --------
     this.generateAllData()
     // -------------------------------------------
+
+    const columns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, props.initialAggConfig)
 
     // Supported display types may have changed after initial data generation
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
@@ -114,8 +110,15 @@ export class QueryOutput extends React.Component {
       props.initialTableConfigs?.tableConfig &&
       this.isTableConfigValid(props.initialTableConfigs?.tableConfig, columns, displayType)
     ) {
-      const { tableConfig, pivotTableConfig } = props.initialTableConfigs
+      const { tableConfig } = props.initialTableConfigs
       this.tableConfig = _cloneDeep(tableConfig)
+    }
+
+    if (
+      props.initialTableConfigs?.pivotTableConfig &&
+      this.isTableConfigValid(props.initialTableConfigs?.pivotTableConfig, this.pivotTableColumns, displayType)
+    ) {
+      const { pivotTableConfig } = props.initialTableConfigs
       this.pivotTableConfig = _cloneDeep(pivotTableConfig)
     }
 
@@ -393,6 +396,7 @@ export class QueryOutput extends React.Component {
   checkAndUpdateTableConfigs = (displayType) => {
     // Check if table configs are still valid for new display type
     const isTableConfigValid = this.isTableConfigValid(this.tableConfig, this.state.columns, displayType)
+
     if (!isTableConfigValid) {
       this.setTableConfig()
     }
@@ -2438,8 +2442,8 @@ export class QueryOutput extends React.Component {
     const supportsCharts = this.currentlySupportsCharts()
     const supportsPivotTable = this.currentlySupportsPivot()
 
-    const columns = supportsPivotTable ? this.pivotTableColumns : this.getColumns()
-    const tableConfig = supportsPivotTable ? this.pivotTableConfig : this.tableConfig
+    const columns = this.usePivotDataForChart() ? this.pivotTableColumns : this.getColumns()
+    const tableConfig = this.usePivotDataForChart() ? this.pivotTableConfig : this.tableConfig
     const tableConfigIsValid = this.isTableConfigValid(tableConfig, columns, this.state.displayType)
 
     const shouldRenderChart = (allowsDisplayTypeChange || displayTypeIsChart) && supportsCharts && tableConfigIsValid

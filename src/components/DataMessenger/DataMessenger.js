@@ -743,7 +743,7 @@ export class DataMessenger extends React.Component {
         <div className='react-autoql-header-left-container'>
           <button
             onClick={this.closeDataMessenger}
-            className='react-autoql-drawer-header-btn close'
+            className='react-autoql-drawer-header-btn'
             data-tip={lang.closeDataMessenger}
             data-for={this.TOOLTIP_ID}
           >

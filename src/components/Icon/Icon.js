@@ -446,9 +446,9 @@ export default class Icon extends React.Component {
           data-test='react-autoql-icon'
           className={`react-autoql-icon
             ${this.props.className || ''}
-            ${this.props.type}
-            ${this.props.warning ? ' warning' : ''}
-            ${this.props.danger ? ' danger' : ''}`}
+            react-autoql-icon-${this.props.type}
+            ${this.props.warning ? 'warning' : ''}
+            ${this.props.danger ? 'danger' : ''}`}
           style={{
             color: this.props.color,
             fontSize: `${this.props.size}px`,

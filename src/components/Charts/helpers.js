@@ -142,8 +142,8 @@ export const scaleZero = (scale) => {
   return scale(0)
 }
 
-export const getKey = (rowIndex, cellIndex) => {
-  return `${rowIndex}-${cellIndex}`
+export const getKey = (rowIndex, cellIndex, extraIndex = 0) => {
+  return `${rowIndex}-${cellIndex}-${extraIndex}`
 }
 
 export const shouldLabelsRotate = (axisElement) => {
@@ -223,11 +223,16 @@ export const getTooltipContent = ({ row, columns, colIndex, stringColumnIndex, l
 
 export const getLegendLabelsForMultiSeries = (columns, colorScale, numberColumnIndices = []) => {
   try {
-    if (numberColumnIndices.length < 1) {
+    if (!numberColumnIndices?.length) {
       return []
     }
 
     const numberColumns = numberColumnIndices.map((index) => columns[index])
+
+    if (!numberColumns?.length) {
+      return []
+    }
+
     const allAggTypesSame = numberColumns.every((col) => col.aggType === numberColumns[0].aggType)
 
     const legendLabels = numberColumnIndices.map((columnIndex, i) => {

@@ -37,6 +37,7 @@ export default class ChataTable extends React.Component {
     this.filterTagElements = []
     this.queryID = props.queryID
     this.supportsInfiniteScroll = props.useInfiniteScroll && !!props.pageSize
+
     this.isFiltering = false
     this.isSorting = false
 
@@ -367,6 +368,10 @@ export default class ChataTable extends React.Component {
     const previousData = { ...previousResponseData, page: 1, isPreviousData: true }
 
     try {
+      if (this.props.hidden) {
+        return previousData
+      }
+
       const requestedNewPageWhileLoadingFilter = params?.page > 1 && this.state.pageLoading
       if (!this.hasSetInitialData) {
         this.hasSetInitialData = true

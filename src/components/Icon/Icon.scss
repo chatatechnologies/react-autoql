@@ -9,32 +9,11 @@
   height: 1em;
   width: 1em;
 
-  &.warning {
+  &.react-autoql-icon-warning {
     color: var(--react-autoql-warning-color) !important;
   }
-  &.danger {
+  &.react-autoql-icon-danger {
     color: var(--react-autoql-danger-color) !important;
-  }
-}
-
-span.react-autoql-icon {
-  // vertical-align: unset;
-  // text-align: left;
-  // margin: 0;
-  // padding: 0;
-  // float: none !important;
-  // color: inherit;
-
-  svg {
-    // float: none !important;
-    // color: inherit;
-    // vertical-align: unset;
-    // text-align: left;
-    // margin: 0;
-    // padding: 0;
-    // opacity: 1;
-    // height: 1em;
-    // width: 1em;
   }
 }
 
