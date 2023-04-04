@@ -64,6 +64,8 @@ class DashboardWithoutTheme extends React.Component {
     this.debounceTime = 50
     this.onChangeTiles = null
     this.callbackSubsciptions = []
+    this.tileLog = []
+    this.currentLogIndex = 0
 
     this.state = {
       isDragging: false,
@@ -150,17 +152,8 @@ class DashboardWithoutTheme extends React.Component {
       this.refreshTileLayouts()
     }
 
-    // If tile structure changed, set previous tile state for undo feature
-    if (
-      this.getChangeDetection(this.props.tiles, prevProps.tiles) &&
-      prevProps.tiles?.[prevProps.tiles?.length - 1]?.y !== Number.MAX_VALUE
-    ) {
-      this.setState({
-        justPerformedUndo: false,
-      })
-    }
-
     if (this.props.isEditing !== prevProps.isEditing) {
+      this.resetTileStateLog()
       this.setState({ isDragging: true }, () => {
         this.setState({ isDragging: false })
       })
@@ -211,6 +204,11 @@ class DashboardWithoutTheme extends React.Component {
     }
   }
 
+  resetTileStateLog = () => {
+    this.tileLog = [this.tileLog[0]]
+    this.currentLogIndex = 0
+  }
+
   getMostRecentTiles = () => {
     if (this.onChangeTiles) {
       return this.onChangeTiles
@@ -223,10 +221,6 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   debouncedOnChange = (tiles, saveInLog = true, callbackArray = []) => {
-    if (saveInLog) {
-      this.previousTileState = _cloneDeep(this.getMostRecentTiles())
-    }
-
     this.onChangeTiles = _cloneDeep(tiles)
     const debouncedPromise = new Promise((resolve, reject) => {
       try {
@@ -241,6 +235,11 @@ class DashboardWithoutTheme extends React.Component {
 
         this.onChangeTimer = setTimeout(() => {
           if (this.onChangeTiles) {
+            if (saveInLog) {
+              console.log('adding to tile state log', { log: this.tileLog })
+              this.tileLog.unshift(this.onChangeTiles)
+            }
+
             this.props.onChange(this.onChangeTiles)
             this.onChangeTiles = null
             if (this.callbackSubsciptions?.length) {
@@ -437,7 +436,7 @@ class DashboardWithoutTheme extends React.Component {
       // Only update if layout actually changed
       const tiles = this.getMostRecentTiles()
       if (this.getChangeDetection(tiles, layout, true)) {
-        this.previousTileState = tiles
+        this.tileLog.unshift(_cloneDeep(tiles))
       }
 
       // Delaying this makes the snap back animation much smoother
@@ -499,15 +498,24 @@ class DashboardWithoutTheme extends React.Component {
     }
   }
 
-  undo = () => {
+  changeCurrentTileState = (logIndex) => {
     try {
-      this.debouncedOnChange(this.previousTileState, false)
-      this.setState({
-        justPerformedUndo: true,
-      })
+      const newTileState = this.tileLog[logIndex]
+      if (newTileState) {
+        this.currentLogIndex = logIndex
+        this.debouncedOnChange(newTileState, false)
+      }
     } catch (error) {
       console.error(error)
     }
+  }
+
+  undo = () => {
+    this.changeCurrentTileState(this.currentLogIndex + 1)
+  }
+
+  redo = () => {
+    this.changeCurrentTileState(this.currentLogIndex - 1)
   }
 
   deleteTile = (id) => {
@@ -543,7 +551,7 @@ class DashboardWithoutTheme extends React.Component {
         tiles[tileIndex].secondskipQueryValidation = false
       }
 
-      this.debouncedOnChange(tiles, undefined, callbackArray)
+      this.debouncedOnChange(tiles, true, callbackArray)
     } catch (error) {
       console.error(error)
     }
@@ -845,8 +853,8 @@ class DashboardWithoutTheme extends React.Component {
             displayType={tile.displayType}
             secondDisplayType={tile.secondDisplayType}
             secondDisplayPercentage={tile.secondDisplayPercentage}
-            queryResponse={tile.queryResponse}
-            secondQueryResponse={tile.secondQueryResponse}
+            // queryResponse={tile.queryResponse}
+            // secondQueryResponse={tile.secondQueryResponse}
             isEditing={this.props.isEditing}
             isDragging={this.state.isDragging || this.state.isWindowResizing}
             isWindowResizing={this.state.isWindowResizing}
