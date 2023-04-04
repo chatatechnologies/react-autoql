@@ -789,7 +789,7 @@ export default class ChataTable extends React.Component {
   renderEmptyPlaceholderText = () => {
     return (
       <div className='table-loader table-page-loader table-placeholder'>
-        <div>No results</div>
+        <div>No data matching your query</div>
       </div>
     )
   }
