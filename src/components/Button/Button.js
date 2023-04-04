@@ -71,7 +71,7 @@ export default class Button extends React.Component {
       return null
     }
 
-    return <Icon className='react-autoql-button-icon' type={this.props.icon} />
+    return <Icon className='react-autoql-btn-icon' type={this.props.icon} />
   }
 
   render = () => {
@@ -84,8 +84,8 @@ export default class Button extends React.Component {
         <button
           className={`react-autoql-btn
           ${this.props.className || ''}
-          ${type}
-          ${size}
+          react-autoql-btn-${type}
+          react-autoql-btn-${size}
           ${isDisabled ? ' disabled' : ''}
           ${this.props.border ? '' : 'btn-no-border'}
           ${this.props.filled ? 'btn-filled' : ''}`}
