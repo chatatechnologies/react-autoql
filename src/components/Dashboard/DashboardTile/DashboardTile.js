@@ -142,7 +142,6 @@ export class DashboardTile extends React.Component {
       this.props.tile.displayType !== prevProps.tile?.displayType &&
       this.props.tile.displayType !== this.responseRef.state.displayType
     ) {
-      console.log('CHANGE DISPLAY TYPE FROM UNDO')
       this.responseRef.changeDisplayType(this.props.tile.displayType)
     }
   }
@@ -174,7 +173,6 @@ export class DashboardTile extends React.Component {
   }
 
   debouncedSetParamsForTile = (params, callback) => {
-    console.log('setting params:', params)
     this.paramsToSet = {
       ...this.paramsToSet,
       ...params,
@@ -519,7 +517,6 @@ export class DashboardTile extends React.Component {
   onQueryInputChange = (e) => {
     // If input change we want to start validating the new queries again
     if (this.props.tile.skipQueryValidation) {
-      console.log('setting skipQueryValidation')
       this.debouncedSetParamsForTile({ skipQueryValidation: false })
     }
 

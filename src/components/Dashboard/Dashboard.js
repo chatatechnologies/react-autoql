@@ -236,7 +236,6 @@ class DashboardWithoutTheme extends React.Component {
         this.onChangeTimer = setTimeout(() => {
           if (this.onChangeTiles) {
             if (saveInLog) {
-              console.log('adding to tile state log', { log: this.tileLog })
               this.tileLog.unshift(this.onChangeTiles)
             }
 
