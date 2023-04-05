@@ -89,6 +89,7 @@ export class QueryOutput extends React.Component {
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
     this.isOriginalData = true
     this.renderComplete = false
+    this.hasCalledInitialTableConfigChange = false
 
     // --------- generate data before mount --------
     this.generateAllData()
@@ -274,8 +275,10 @@ export class QueryOutput extends React.Component {
           tableConfig: this.tableConfig,
           pivotTableConfig: this.pivotTableConfig,
         }) &&
-        this.props.onTableConfigChange
+        this.props.onTableConfigChange &&
+        !this.hasCalledInitialTableConfigChange
       ) {
+        this.hasCalledInitialTableConfigChange = true
         this.onTableConfigChange()
       }
 

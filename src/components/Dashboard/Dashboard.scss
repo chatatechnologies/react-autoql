@@ -17,11 +17,12 @@
       padding: 2px;
       height: 2px;
       background: transparent;
-      border-bottom: 2px solid var(--react-autoql-border-color);
+      border-bottom: 1px solid var(--react-autoql-border-color);
       border-color: var(--react-autoql-border-color);
       transition: border-color 0.2s ease;
 
       &:hover {
+        border-width: 2px;
         border-color: var(--react-autoql-accent-color);
 
         & + .splitter-collapse-btn {

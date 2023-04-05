@@ -4,13 +4,13 @@
   align-items: center;
   text-align: center;
   padding-top: 100px;
-  color: var(--react-autoql-text-color-primary);
+  color: inherit;
   height: 100%;
   background: var(--react-autoql-background-color-primary);
 }
 
 .empty-notifications-message {
-  color: var(--react-autoql-text-color-primary);
+  color: inherit;
   text-align: center;
   margin-top: 75px;
 
@@ -33,8 +33,8 @@
 .react-autoql-notification-list-container {
   display: flex;
   flex-direction: column;
-  background: var(--react-autoql-background-color-primary);
   height: 100%;
+  background: var(--react-autoql-background-color-primary);
 
   .notification-feed-list {
     padding: 0 20px;
@@ -47,8 +47,7 @@
   flex-direction: row;
   justify-content: space-between;
   align-items: flex-end;
-  padding: 5px 22px;
-  margin-top: 5px;
+  padding: 15px 22px 8px 22px;
   flex: 0;
 
   .react-autoql-notification-delete-all,
@@ -56,35 +55,18 @@
     flex: 0 0 auto;
     display: flex;
     align-items: center;
-    color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.4));
+    color: inherit;
     transition: color 0.1s ease;
     opacity: 0.8;
     cursor: pointer;
 
     .react-autoql-icon {
       margin-right: 6px;
+      margin-bottom: 3px;
     }
 
     &:hover {
       opacity: 1;
     }
-  }
-}
-
-// Set delay per List Item
-@for $i from 1 through 10 {
-  .react-autoql-notification-list-item:nth-of-type(#{$i}) {
-    animation-delay: 0.1s * ($i - 1);
-  }
-}
-
-@-webkit-keyframes slideIn {
-  0% {
-    opacity: 0;
-    top: 500px;
-  }
-  100% {
-    opacity: 1;
-    top: 0;
   }
 }

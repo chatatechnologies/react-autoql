@@ -7,7 +7,7 @@
   overflow: hidden;
   background: var(--react-autoql-background-color-secondary, #fff);
   border-radius: 4px;
-  box-shadow: var(--react-autoql-box-shadow-color) 0px 1px 2px 0px;
+  box-shadow: var(--react-autoql-box-shadow-1);
 
   margin-bottom: 8px;
 
@@ -18,7 +18,33 @@
   transition: height 0.3s cubic-bezier(0.26, 0.26, 0, 1);
   animation: slideIn 0.5s cubic-bezier(0.26, 0.26, 0, 1);
   animation-fill-mode: both;
-  animation-delay: 0s;
+
+  .react-autoql-notification-item-expand-arrow {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    width: 100%;
+    bottom: 10px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    color: var(--react-autoql-text-color-primary);
+
+    .react-autoql-icon {
+      transform: scalex(1.75);
+    }
+  }
+
+  .react-autoql-notification-item-hover-overlay {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    background-color: var(--react-autoql-accent-color);
+    opacity: 0;
+    pointer-events: none;
+  }
 
   .single-value-response {
     font-size: 32px;
@@ -32,17 +58,14 @@
     padding-bottom: 5px;
   }
 
-  &.expanded .react-autoql-notification-list-item-header {
-    border-bottom: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.04));
-  }
-
   .react-autoql-notification-condition-statement {
-    background: var(--react-autoql-hover-color);
-    border-top: 1px solid var(--react-autoql-border-color);
     text-overflow: ellipsis;
     overflow: hidden;
+    font-style: italic;
     padding: 10px 20px;
     font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--react-autoql-accent-color);
 
     .data-alerts-container,
     .notification-rule-outer-container {
@@ -50,14 +73,18 @@
     }
   }
 
+  &:hover:not(.expanded) {
+    .react-autoql-notification-item-expand-arrow {
+      opacity: 0.5;
+    }
+  }
+
   &:hover,
   &.menu-open {
     &:not(.expanded) {
-      background-color: var(--react-autoql-hover-color, rgba(0, 0, 0, 0.01));
-    }
-
-    .react-autoql-notification-options-btn-container .react-autoql-notification-options-btn {
-      opacity: 1;
+      .react-autoql-notification-item-hover-overlay {
+        opacity: 0.05;
+      }
     }
   }
 
@@ -177,12 +204,13 @@
     flex-direction: column;
     flex: 3 3 0px;
     overflow: hidden;
+    border-top: 1px solid var(--react-autoql-background-color-primary);
 
     .single-value-response-flex-container {
       padding: 10px;
     }
 
-    .react-autoql-notificaton-chart-container {
+    .react-autoql-notification-chart-container {
       flex: 1;
       display: flex;
       flex-direction: column;
@@ -217,7 +245,7 @@
 
     .react-autoql-notification-options-btn {
       display: flex;
-      opacity: 0;
+      opacity: 0.8;
       width: 40px;
       height: 40px;
       padding: 9px;
@@ -229,6 +257,7 @@
       cursor: pointer;
 
       &:hover {
+        opacity: 1;
         background-color: var(--react-autoql-background-color-primary, #ececec);
       }
     }
@@ -251,7 +280,7 @@
     position: absolute;
     left: 0px;
     top: 0;
-    width: 4px;
+    width: 5px;
 
     background: var(--react-autoql-accent-color, #26a7df);
     color: var(--react-autoql-text-color-accent);
@@ -339,5 +368,23 @@
         }
       }
     }
+  }
+}
+
+// Set delay per List Item
+@for $i from 1 through 10 {
+  .react-autoql-notification-list-item:nth-of-type(#{$i}) {
+    animation-delay: 0.1s * ($i - 1);
+  }
+}
+
+@keyframes slideIn {
+  0% {
+    opacity: 0;
+    top: 500px;
+  }
+  100% {
+    opacity: 1;
+    top: 0;
   }
 }

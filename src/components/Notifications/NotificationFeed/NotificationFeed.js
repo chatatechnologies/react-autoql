@@ -25,6 +25,7 @@ import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
 import './NotificationFeed.scss'
 import { Modal } from '../../Modal'
 import { DataAlerts } from '../DataAlerts'
+import { LoadingDots } from '../../LoadingDots'
 
 class NotificationFeed extends React.Component {
   constructor(props) {
@@ -70,7 +71,7 @@ class NotificationFeed extends React.Component {
   static defaultProps = {
     authentication: authenticationDefault,
     activeNotificationData: undefined,
-    showDataAlertsManager: true,
+    showDataAlertsManager: false,
     showNotificationDetails: true,
     autoChartAggregations: false,
     showCreateAlertBtn: false,
@@ -89,12 +90,18 @@ class NotificationFeed extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
-    this.getNotifications()
+    if (this.props.shouldRender) {
+      this.hasFetchedNotifications = true
+      this.getNotifications()
+    }
   }
 
   componentDidUpdate = (prevProps) => {
     if (!this.props.shouldRender && prevProps.shouldRender) {
       this.collapseActive()
+    } else if (this.props.shouldRender && !prevProps.shouldRender && !this.hasFetchedNotifications) {
+      this.hasFetchedNotifications = true
+      this.getNotifications()
     }
   }
 
@@ -414,7 +421,7 @@ class NotificationFeed extends React.Component {
     if (this.state.isFetchingFirstNotifications) {
       return (
         <div style={style} className='notification-list-loading-container' data-test='notification-list'>
-          Loading...
+          <LoadingDots />
         </div>
       )
     } else if (this.state.fetchNotificationsError) {

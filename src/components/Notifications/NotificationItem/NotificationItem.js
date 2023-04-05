@@ -384,6 +384,8 @@ export default class NotificationItem extends React.Component {
             autoQLConfig={this.props.autoQLConfig}
             ref={(r) => (this.optionsToolbarRef = r)}
             responseRef={this.OUTPUT_REF}
+            popoverPositions={['top', 'left', 'bottom', 'right']}
+            popoverAlign='end'
           />
         </div>
       </div>
@@ -394,7 +396,7 @@ export default class NotificationItem extends React.Component {
     const { queryResponse } = this.state
 
     return (
-      <div className='react-autoql-notificaton-chart-container'>
+      <div className='react-autoql-notification-chart-container'>
         <div ref={(r) => (this.dataContainer = r)} className='react-autoql-notification-query-data-container'>
           {queryResponse ? (
             <QueryOutput
@@ -485,6 +487,10 @@ export default class NotificationItem extends React.Component {
           {this.renderNotificationHeader()}
           {this.renderNotificationContent()}
           {this.renderAlertColorStrip()}
+          <div className='react-autoql-notification-item-expand-arrow'>
+            <Icon type='caret-down' />
+          </div>
+          <div className='react-autoql-notification-item-hover-overlay' />
         </div>
       </ErrorBoundary>
     )
