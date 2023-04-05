@@ -58,7 +58,7 @@ export const NUMBER_COLUMN_TYPE_DISPLAY_NAMES = {
   PERCENT: 'Percent',
 }
 
-export const DEFAULT_DATA_PAGE_SIZE = 100
+export const DEFAULT_DATA_PAGE_SIZE = 500
 export const MAX_DATA_PAGE_SIZE = 5000
 
 export const WEEKDAY_NAMES_MON = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
