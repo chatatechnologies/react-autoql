@@ -173,6 +173,7 @@ export class QueryOutput extends React.Component {
     onDrilldownEnd: PropTypes.func,
     enableAjaxTableData: PropTypes.bool,
     enableTableSorting: PropTypes.bool,
+    showSingleValueResponseTitle: PropTypes.bool,
 
     onRowChange: PropTypes.func,
     mutable: PropTypes.bool,
@@ -219,6 +220,7 @@ export class QueryOutput extends React.Component {
     shouldRender: true,
     dataPageSize: undefined,
     allowDisplayTypeChange: true,
+    showSingleValueResponseTitle: false,
     onRowChange: () => {},
     onTableConfigChange: () => {},
     onAggConfigChange: () => {},
@@ -836,6 +838,11 @@ export class QueryOutput extends React.Component {
               this.processDrilldown({ groupBys: [], supportedByAPI: true })
             }}
           >
+            {this.props.showSingleValueResponseTitle && (
+              <span>
+                <strong>{this.state.columns?.[0]?.display_name}: </strong>
+              </span>
+            )}
             {formatElement({
               element: this.queryResponse?.data?.data?.rows?.[0]?.[0] ?? 0,
               column: this.state.columns?.[0],

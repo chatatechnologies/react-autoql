@@ -1,18 +1,15 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
-import _isEmpty from 'lodash.isempty'
 import { Popover } from 'react-tiny-popover'
 import dayjs from '../../../js/dayjsWithPlugins'
 
 import { Icon } from '../../Icon'
 import { LoadingDots } from '../../LoadingDots'
-import { QueryOutput } from '../../QueryOutput'
-import { VizToolbar } from '../../VizToolbar'
 import { hideTooltips } from '../../Tooltip'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { ConditionBuilder } from '../ConditionBuilder'
-import { OptionsToolbar } from '../../OptionsToolbar'
+import NotificationQueryResponse from './NotificationQueryResponse'
 
 import {
   dismissNotification,
@@ -82,21 +79,6 @@ export default class NotificationItem extends React.Component {
     onErrorCallback: () => {},
     onClick: () => {},
   }
-
-  componentDidMount = () => {
-    // Wait for animation to finish, then set card height
-    // this.initialCollapseTimer = setTimeout(() => {
-    //   this.saveCurrentExpandedHeight()
-    // }, 400)
-  }
-
-  // shouldComponentUpdate = (prevProps, prevState) => {
-  //   if (!this.state.expanded && !prevState.expanded) {
-  //     return false
-  //   }
-
-  //   return true
-  // }
 
   componentDidUpdate = (prevProps, prevState) => {
     if (this.state.expanded && !prevState.expanded) {
@@ -364,77 +346,10 @@ export default class NotificationItem extends React.Component {
     )
   }
 
-  renderToolbar = () => {
-    if (!this.state.expanded) {
-      return null
-    }
-
-    return (
-      <div className='react-autoql-notification-toolbar-container'>
-        <div>
-          <VizToolbar
-            autoQLConfig={this.props.autoQLConfig}
-            ref={(r) => (this.vizToolbarRef = r)}
-            responseRef={this.OUTPUT_REF}
-          />
-        </div>
-        <div>
-          <OptionsToolbar
-            authentication={this.props.authentication}
-            autoQLConfig={this.props.autoQLConfig}
-            ref={(r) => (this.optionsToolbarRef = r)}
-            responseRef={this.OUTPUT_REF}
-            popoverPositions={['top', 'left', 'bottom', 'right']}
-            popoverAlign='end'
-          />
-        </div>
-      </div>
-    )
-  }
-
-  renderVisualization = () => {
-    const { queryResponse } = this.state
-
-    return (
-      <div className='react-autoql-notification-chart-container'>
-        <div ref={(r) => (this.dataContainer = r)} className='react-autoql-notification-query-data-container'>
-          {queryResponse ? (
-            <QueryOutput
-              // key={queryResponse?.data?.data?.query_id}
-              ref={(r) => (this.OUTPUT_REF = r)}
-              vizToolbarRef={this.vizToolbarRef}
-              optionsToolbarRef={this.optionsToolbarRef}
-              authentication={this.props.authentication}
-              autoQLConfig={this.props.autoQLConfig}
-              dataFormatting={this.props.dataFormatting}
-              queryResponse={queryResponse}
-              autoChartAggregations={this.props.autoChartAggregations}
-              enableAjaxTableData={this.props.enableAjaxTableData}
-              isResizing={this.props.isResizing || !this.state.expanded}
-            />
-          ) : (
-            <div style={{ position: 'absolute', top: 0 }} className='loading-container-centered'>
-              <LoadingDots />
-            </div>
-          )}
-        </div>
-      </div>
-    )
-  }
-
   renderLoader = () => {
     return (
       <div style={{ position: 'absolute', top: 0 }} className='loading-container-centered'>
         <LoadingDots />
-      </div>
-    )
-  }
-
-  renderQueryResponse = () => {
-    return (
-      <div className='react-autoql-notification-data-container' onClick={(e) => e.stopPropagation()}>
-        {this.renderVisualization()}
-        {this.renderToolbar()}
       </div>
     )
   }
@@ -466,7 +381,17 @@ export default class NotificationItem extends React.Component {
           {!this.state.queryResponse && this.renderLoader()}
           <div className='react-autoql-notification-content-container'>
             {this.renderSummarySection()}
-            {this.renderQueryResponse()}
+            <NotificationQueryResponse
+              key={this.state.queryResponse?.data?.data?.query_id}
+              authentication={this.props.authentication}
+              autoQLConfig={this.props.autoQLConfig}
+              dataFormatting={this.props.dataFormatting}
+              queryResponse={this.state.queryResponse}
+              autoChartAggregations={this.props.autoChartAggregations}
+              enableAjaxTableData={this.props.enableAjaxTableData}
+              isResizing={this.props.isResizing}
+              shouldRender={this.state.expanded}
+            />
           </div>
         </>
       </div>

@@ -197,7 +197,7 @@ export default class DataAlertListItem extends React.Component {
       return (
         <div className={`data-alert-state data-alert-triggered ${status}`}>
           <span
-            data-tip={`This Alert has been triggered for this cycle. You will not receive notifications until the start of the next cycle (${resetDateFormatted}).<br/>You can edit this in the <em>Data Alert Settings</em>`}
+            data-tip={`This Alert has been triggered for this cycle. You will not receive notifications until the start of the next cycle, ${resetDateFormatted}.<br/>You can edit this in the <em>Data Alert Settings</em>`}
             data-for={this.props.tooltipID}
           >
             <Icon type='lightning' />
