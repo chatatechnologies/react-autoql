@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { Popover, ArrowContainer } from 'react-tiny-popover'
-
+import { isMobile } from 'react-device-detect'
 import { fetchFilters } from '../../js/queryService'
 import { authenticationType } from '../../props/types'
 import { authenticationDefault, getAuthentication } from '../../props/defaults'
@@ -106,7 +106,7 @@ export class FilterLockPopover extends React.Component {
   render = () => {
     return (
       <Popover
-        containerClassName='filter-lock-menu'
+        containerClassName={isMobile ? 'mobile-filter-lock-menu' : 'filter-lock-menu'}
         onClickOutside={this.props.onClose}
         positions={this.props.positions}
         isOpen={this.props.isOpen}

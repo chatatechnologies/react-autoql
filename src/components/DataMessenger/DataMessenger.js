@@ -21,7 +21,6 @@ import { lang, setLanguage } from '../../js/Localization'
 // Components
 import { Icon } from '../Icon'
 import { Button } from '../Button'
-import { Select } from '../Select'
 
 import { ExploreQueries } from '../ExploreQueries'
 import { DataExplorer } from '../DataExplorer'
@@ -143,6 +142,7 @@ export class DataMessenger extends React.Component {
     onVisibleChange: PropTypes.func,
     onErrorCallback: PropTypes.func,
     onSuccessAlert: PropTypes.func,
+    setMobileActivePage: PropTypes.func,
   }
 
   static defaultProps = {
@@ -183,7 +183,8 @@ export class DataMessenger extends React.Component {
     enableQueryQuickStartTopics: true,
     enableAjaxTableData: false,
     enableDPRTab: false,
-
+    mobileActivePage: 'data-messenger',
+    setMobileActivePage: () => {},
     // Callbacks
     onNotificationExpandCallback: () => {},
     onNewNotification: () => {},
@@ -294,8 +295,17 @@ export class DataMessenger extends React.Component {
   }
 
   openDataMessenger = () => {
+    if (isMobile) {
+      if (this.state.isVisible) {
+        this.setState({ activePage: 'data-messenger' })
+        return
+      }
+    }
     const handle = document.getElementById(`${this.COMPONENT_KEY}-drawer-handle`)
     if (handle) {
+      if (isMobile && this.props.mobileActivePage === 'data-messenger') {
+        this.setState({ activePage: 'data-messenger' })
+      }
       handle.click()
     }
   }
@@ -314,11 +324,23 @@ export class DataMessenger extends React.Component {
   }
 
   openDataExplorer = (topic) => {
+    if (isMobile) {
+      this.props.setMobileActivePage('data-explorer')
+    }
     this.setState({ activePage: 'data-explorer' }, () => {
       if (topic && this.dataExplorerRef?.animateDETextAndSubmit) {
         this.dataExplorerRef?.animateDETextAndSubmit(topic)
       }
     })
+  }
+  openNotificationFeed = () => {
+    if (isMobile) {
+      this.props.setMobileActivePage('notification-feed')
+    }
+    if (this.notificationBadgeRef) {
+      this.notificationBadgeRef.resetCount()
+    }
+    this.setState({ activePage: 'notifications' })
   }
 
   toggleFullScreen = (isFullScreen, maxWidth, maxHeight) => {
@@ -592,30 +614,27 @@ export class DataMessenger extends React.Component {
 
   renderHeaderTitle = () => {
     let title = ''
-    if (isMobile) {
-      title = this.props.title
-    } else {
-      switch (this.state.activePage) {
-        case 'data-messenger': {
-          title = this.props.title
-          break
-        }
-        case 'explore-queries': {
-          title = lang.exploreQueries
-          break
-        }
-        case 'data-explorer': {
-          title = lang.dataExplorer
-          break
-        }
-        case 'notifications': {
-          title = lang.notifications
-          break
-        }
-        case 'dpr': {
-          title = lang.education
-          break
-        }
+
+    switch (this.state.activePage) {
+      case 'data-messenger': {
+        title = this.props.title
+        break
+      }
+      case 'explore-queries': {
+        title = lang.exploreQueries
+        break
+      }
+      case 'data-explorer': {
+        title = lang.dataExplorer
+        break
+      }
+      case 'notifications': {
+        title = lang.notifications
+        break
+      }
+      case 'dpr': {
+        title = lang.education
+        break
       }
     }
 
@@ -813,6 +832,9 @@ export class DataMessenger extends React.Component {
           shouldRender={this.shouldRenderPage('data-explorer')}
           tooltipID={this.TOOLTIP_ID}
           executeQuery={(query) => {
+            if (isMobile) {
+              this.props.setMobileActivePage('data-messenger')
+            }
             this.setState({ activePage: 'data-messenger' })
             clearTimeout(this.executeQueryTimeout)
             this.executeQueryTimeout = setTimeout(() => {
@@ -1056,7 +1078,12 @@ export class DataMessenger extends React.Component {
         >
           {this.props.resizable && isBrowser && this.renderResizeHandle()}
           {isBrowser ? this.renderTabs() : null}
-          <div ref={(r) => (this.messengerDrawerRef = r)} className='react-autoql-drawer-content-container'>
+          <div
+            ref={(r) => (this.messengerDrawerRef = r)}
+            className={
+              isMobile ? 'react-autoql-mobile-drawer-content-container' : 'react-autoql-drawer-content-container'
+            }
+          >
             <div className='chat-header-container'>{this.renderHeaderContent()}</div>
             {this.renderBodyContent()}
           </div>
