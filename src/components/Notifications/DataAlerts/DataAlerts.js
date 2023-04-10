@@ -61,6 +61,10 @@ class DataAlerts extends React.Component {
     this._isMounted = false
   }
 
+  refresh = () => {
+    this.getDataAlerts()
+  }
+
   getDataAlerts = (type) => {
     fetchDataAlerts({
       ...getAuthentication(this.props.authentication),

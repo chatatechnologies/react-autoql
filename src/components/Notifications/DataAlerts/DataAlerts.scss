@@ -24,24 +24,16 @@
       padding: 0 12px;
     }
 
-    &:first-child,
-    &:last-child {
-      justify-content: flex-start;
-    }
-
     &:first-child {
       flex: 3;
       padding-left: 12px;
+      justify-content: flex-start;
     }
 
     &:last-child {
       flex: 0;
       padding-right: 12px;
-    }
-
-    &.notification-status {
-      min-width: 115px;
-      justify-content: center;
+      justify-content: flex-end;
     }
   }
 
@@ -133,7 +125,7 @@
           }
 
           &.data-alert-error {
-            color: var(--react-autoql-danger-color);
+            color: var(--react-autoql-warning-color);
           }
         }
 
@@ -142,12 +134,7 @@
             color: var(--react-autoql-success-color);
 
             .react-autoql-icon {
-              border-radius: 20px;
               background-color: var(--react-autoql-success-color);
-              color: #fff;
-              padding: 3px;
-              font-size: 1.1em;
-              box-sizing: content-box;
             }
           }
 
@@ -156,21 +143,45 @@
           }
 
           &.data-alert-triggered {
-            color: var(--react-autoql-warning-color);
+            color: var(--react-autoql-info-color);
+
+            .react-autoql-icon-filled {
+              background-color: var(--react-autoql-info-color);
+            }
           }
 
           &.data-alert-error {
             cursor: pointer;
-            color: var(--react-autoql-danger-color);
+            color: var(--react-autoql-warning-color);
           }
+        }
+
+        .react-autoql-icon-filled {
+          border-radius: 20px;
+          color: #fff;
+          padding: 3px;
+          font-size: 1.1em;
+          box-sizing: content-box;
         }
       }
 
-      .react-autoql-notification-action-btn:not(.react-autoql-notification-action-hidden) {
+      .react-autoql-notification-state-action-btn {
+        display: flex;
+        transition: all 0.2s ease;
+        margin-left: 10px;
+        color: var(--react-autoql-text-color-primary);
+        cursor: pointer;
+
+        &:hover {
+          color: currentColor;
+        }
+      }
+
+      .react-autoql-notification-action-btn {
         display: flex;
         font-size: 18px;
         transition: all 0.2s ease;
-        padding: 0 16px;
+        padding: 0 10px;
         color: var(--react-autoql-text-color-primary);
         cursor: pointer;
 

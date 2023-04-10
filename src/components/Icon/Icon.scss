@@ -15,6 +15,13 @@
   &.react-autoql-icon-danger {
     color: var(--react-autoql-danger-color) !important;
   }
+  &.react-autoql-icon-spinning {
+    animation: spin 1.2s linear infinite;
+  }
+  &.react-autoql-icon-disabled {
+    pointer-events: none;
+    opacity: 0.5;
+  }
 }
 
 .react-autoql-badge {
@@ -27,4 +34,13 @@
   right: -0.25em;
   border-radius: 50%;
   box-sizing: content-box;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }

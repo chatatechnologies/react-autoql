@@ -105,6 +105,8 @@ export default class Icon extends React.Component {
     color: PropTypes.string,
     warning: PropTypes.bool,
     danger: PropTypes.bool,
+    spinning: PropTypes.bool,
+    disabled: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -113,6 +115,8 @@ export default class Icon extends React.Component {
     color: undefined,
     warning: false,
     danger: false,
+    spinning: false,
+    disabled: false,
   }
 
   render = () => {
@@ -463,7 +467,9 @@ export default class Icon extends React.Component {
             ${this.props.className || ''}
             react-autoql-icon-${this.props.type}
             ${this.props.warning ? 'react-autoql-icon-warning' : ''}
-            ${this.props.danger ? 'react-autoql-icon-danger' : ''}`}
+            ${this.props.danger ? 'react-autoql-icon-danger' : ''}
+            ${this.props.spinning ? 'react-autoql-icon-spinning' : ''}
+            ${this.props.disabled ? 'react-autoql-icon-disabled' : ''}`}
           style={{
             color: this.props.color,
             fontSize: `${this.props.size}px`,
