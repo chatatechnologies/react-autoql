@@ -1,0 +1,82 @@
+.react-autoql-switch-container {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+
+  .toggle-switch-text-ruler {
+    opacity: 0;
+    display: block;
+    visibility: hidden;
+    padding: 0px 22px;
+    height: 26px;
+    line-height: 26px;
+    min-width: 42px;
+    font-size: 12px;
+  }
+
+  .react-autoql-toggle-switch {
+    position: absolute;
+    height: 26px;
+    width: 100%;
+    cursor: pointer;
+
+    input {
+      display: none;
+    }
+
+    .toggle-switch-slider {
+      background-color: var(--react-autoql-background-color-switch-input);
+      border-radius: 34px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      transition: 0.4s;
+
+      .toggle-switch-text {
+        position: absolute;
+        display: flex;
+        align-items: center;
+        height: 100%;
+        font-size: 12px;
+        font-weight: bold;
+        color: #ffffff;
+        right: 15px;
+      }
+
+      &:before {
+        position: absolute;
+        content: '';
+        height: 18px;
+        width: 18px;
+        bottom: 4px;
+        background-color: #ffffff;
+        border-radius: 50%;
+        transition: 0.4s;
+        left: 4px;
+      }
+    }
+
+    input:checked + .toggle-switch-slider {
+      background-color: var(--react-autoql-accent-color);
+      &:before {
+        left: calc(100% - 22px);
+      }
+
+      .toggle-switch-text {
+        left: 15px;
+        color: var(--react-autoql-text-color-accent);
+      }
+    }
+
+    input:focus + .toggle-switch-slider {
+      box-shadow: 0 0 1px var(--react-autoql-accent-color);
+    }
+  }
+}

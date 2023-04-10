@@ -24,6 +24,7 @@ import { BiEnvelopeOpen } from '@react-icons/all-files/bi/BiEnvelopeOpen'
 
 import { BsArrowBarUp } from '@react-icons/all-files/bs/BsArrowBarUp'
 import { BsArrowBarDown } from '@react-icons/all-files/bs/BsArrowBarDown'
+import { BsLightning } from '@react-icons/all-files/bs/BsLightning'
 
 import { FaMicrophoneAlt } from '@react-icons/all-files/fa/FaMicrophoneAlt'
 
@@ -46,10 +47,12 @@ import { FiTrash2 } from '@react-icons/all-files/fi/FiTrash2'
 import { FiMaximize } from '@react-icons/all-files/fi/FiMaximize'
 import { FiMinimize } from '@react-icons/all-files/fi/FiMinimize'
 import { FiRefreshCw } from '@react-icons/all-files/fi/FiRefreshCw'
+import { FiTool } from '@react-icons/all-files/fi/FiTool'
 
 import { RiFilterLine } from '@react-icons/all-files/ri/RiFilterLine'
 import { RiFilterOffLine } from '@react-icons/all-files/ri/RiFilterOffLine'
 import { RiListSettingsLine } from '@react-icons/all-files/ri/RiListSettingsLine'
+import { RiBroadcastFill } from '@react-icons/all-files/ri/RiBroadcastFill'
 
 import { GoReport } from '@react-icons/all-files/go/GoReport'
 
@@ -294,12 +297,20 @@ export default class Icon extends React.Component {
         icon = <AiOutlineBulb />
         break
       }
+      case 'lightning': {
+        icon = <BsLightning />
+        break
+      }
       case 'line-chart': {
         icon = lineChartIcon
         break
       }
       case 'list-settings': {
         icon = <RiListSettingsLine />
+        break
+      }
+      case 'live': {
+        icon = <RiBroadcastFill />
         break
       }
       case 'lock': {
@@ -416,6 +427,10 @@ export default class Icon extends React.Component {
       }
       case 'title': {
         icon = <AiOutlineBook />
+        break
+      }
+      case 'tool': {
+        icon = <FiTool />
         break
       }
       case 'trash': {

@@ -17,19 +17,21 @@ import { authenticationDefault, getAuthentication } from '../../../props/default
 import { withTheme } from '../../../theme'
 
 import './DataAlerts.scss'
+import { DataAlertDeleteDialog } from '../DataAlertDeleteDialog'
 
 class DataAlerts extends React.Component {
   COMPONENT_KEY = uuid()
 
   static propTypes = {
     authentication: authenticationType,
+    tooltipID: PropTypes.string,
     onErrorCallback: PropTypes.func,
-
     onSuccessAlert: PropTypes.func,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
+    tooltipID: 'react-autoql-notification-settings-tooltip',
     onErrorCallback: () => {},
     onAlertInitializationCallback: () => {},
     onSuccessAlert: () => {},
@@ -92,11 +94,17 @@ class DataAlerts extends React.Component {
     })
   }
 
+  onDataAlertDeleteClick = (dataAlertDeleteId) => {
+    this.setState({ isDeleteDialogOpen: true, dataAlertDeleteId })
+  }
+
   onDataAlertDelete = (dataAlertId) => {
     const newList = this.state.customAlertsList.filter((dataAlert) => dataAlert.id !== dataAlertId)
     this.setState({
       customAlertsList: newList,
       isEditModalVisible: false,
+      isDeleteDialogOpen: false,
+      dataAlertDeleteId: undefined,
     })
   }
 
@@ -130,6 +138,21 @@ class DataAlerts extends React.Component {
       this.getDataAlerts()
     })
   }
+
+  renderDeleteDialog = () => {
+    return (
+      <DataAlertDeleteDialog
+        authentication={this.props.authentication}
+        dataAlertId={this.state.dataAlertDeleteId}
+        isVisible={this.state.isDeleteDialogOpen}
+        onDelete={this.onDataAlertDelete}
+        onErrorCallback={this.props.onErrorCallback}
+        onSuccessAlert={this.props.onSuccessAlert}
+        onClose={() => this.setState({ isDeleteDialogOpen: false })}
+      />
+    )
+  }
+
   renderNotificationEditModal = () => {
     return (
       <DataAlertModal
@@ -141,6 +164,7 @@ class DataAlerts extends React.Component {
         currentDataAlert={this.state.activeDataAlert}
         onSave={this.onDataAlertSave}
         onErrorCallback={this.props.onErrorCallback}
+        onSuccessAlert={this.props.onSuccessAlert}
         onDelete={this.onDataAlertDelete}
         title={this.state.activeDataAlert ? 'Edit Data Alert' : 'Create Data Alert'}
         titleIcon={this.state.activeDataAlert ? <Icon type='edit' /> : <span />}
@@ -150,11 +174,11 @@ class DataAlerts extends React.Component {
     )
   }
 
-  renderNotificationGroupTitle = (title, description) => (
-    <div className='react-autoql-notification-title-container'>
+  renderDataAlertGroupTitle = (title, description) => (
+    <div className='react-autoql-data-alert-section-title-container'>
       <div style={{ paddingLeft: '10px' }}>
-        <div style={{ fontSize: '17px' }}>{title}</div>
-        <div style={{ fontSize: '11px', opacity: 0.6 }}>{description}</div>
+        <div className='react-autoql-data-alert-section-title'>{title}</div>
+        <div className='react-autoql-data-alert-section-subtitle'>{description}</div>
       </div>
     </div>
   )
@@ -172,14 +196,6 @@ class DataAlerts extends React.Component {
     }
   }
 
-  onInitializeClick = (dataAlert) => {
-    this.props.onAlertInitializationCallback(
-      dataAlert,
-      this.props.selectedDemoProjectId,
-      getAuthentication(this.props.authentication),
-    )
-  }
-
   renderNotificationlist = (type, list) => {
     if (type === 'project' && !list?.length) {
       return null
@@ -188,12 +204,12 @@ class DataAlerts extends React.Component {
     return (
       <div className='data-alerts-list-container'>
         {type === 'custom' && list?.length
-          ? this.renderNotificationGroupTitle('Custom Data Alerts', 'View and manage your custom Data Alerts')
+          ? this.renderDataAlertGroupTitle('Custom Data Alerts', 'View and manage your custom Data Alerts')
           : null}
         {type === 'custom' && !list?.length && this.renderEmptyListMessage()}
         {type === 'project' &&
-          this.renderNotificationGroupTitle(
-            'Subscribe to a Data Alert',
+          this.renderDataAlertGroupTitle(
+            'Project Data Alerts',
             'Choose from a range of ready-to-use Alerts that have been set up for you',
           )}
         <div className='react-autoql-notification-settings-container'>
@@ -207,7 +223,10 @@ class DataAlerts extends React.Component {
                   onSuccessCallback={this.props.onSuccessAlert}
                   onErrorCallback={this.props.onErrorCallback}
                   openEditModal={this.openEditModal}
-                  onInitializeClick={this.onInitializeClick}
+                  onDeleteClick={this.onDataAlertDeleteClick}
+                  tooltipID='react-autoql-notification-settings-tooltip'
+                  onInitialize={this.getDataAlerts}
+                  showHeader={i === 0}
                 />
               )
             })}
@@ -248,6 +267,8 @@ class DataAlerts extends React.Component {
           {this.renderNotificationlist('project', projectAlertsList)}
           {this.renderNotificationlist('custom', customAlertsList)}
           {this.renderNotificationEditModal()}
+          {this.renderDeleteDialog()}
+          {/* {!this.props.tooltipID && ( */}
           <Tooltip
             className='react-autoql-tooltip'
             id='react-autoql-notification-settings-tooltip'
@@ -255,6 +276,7 @@ class DataAlerts extends React.Component {
             delayShow={500}
             html
           />
+          {/* )} */}
         </div>
       </ErrorBoundary>
     )

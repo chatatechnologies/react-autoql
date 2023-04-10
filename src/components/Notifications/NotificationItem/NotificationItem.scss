@@ -29,6 +29,7 @@
     opacity: 0;
     transition: opacity 0.2s ease;
     color: var(--react-autoql-text-color-primary);
+    pointer-events: none;
 
     .react-autoql-icon {
       transform: scalex(1.75);

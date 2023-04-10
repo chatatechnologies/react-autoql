@@ -25,6 +25,7 @@ import { withTheme } from '../../../theme'
 import { DATA_ALERT_CONDITION_TYPES, COMPARE_TYPE, EXISTS_TYPE, QUERY_TERM_TYPE } from '../DataAlertConstants'
 
 import './DataAlertModal.scss'
+import { DataAlertDeleteDialog } from '../DataAlertDeleteDialog'
 
 class DataAlertModal extends React.Component {
   constructor(props) {
@@ -408,7 +409,6 @@ class DataAlertModal extends React.Component {
         onClick={() => {
           this.setState({ isConfirmDeleteModalVisible: true })
         }}
-        loading={this.state.isDeletingDataAlert}
         tooltipID={this.TOOLTIP_ID}
       >
         Delete Data Alert
@@ -607,25 +607,8 @@ class DataAlertModal extends React.Component {
   onDataAlertDelete = () => {
     const dataAlertId = this.props.currentDataAlert?.id
     if (dataAlertId) {
-      this.setState({
-        isDeletingDataAlert: true,
-      })
-      deleteDataAlert(dataAlertId, getAuthentication(this.props.authentication))
-        .then(() => {
-          this.setState({
-            isDeletingDataAlert: false,
-            isConfirmDeleteModalVisible: false,
-          })
-          this.props.onDelete(dataAlertId)
-          this.props.onClose(false)
-        })
-        .catch((error) => {
-          console.error(error)
-          this.props.onErrorCallback(error)
-          this.setState({
-            isDeletingDataAlert: false,
-          })
-        })
+      this.setState({ isConfirmDeleteModalVisible: false })
+      this.props.onDelete(dataAlertId)
     }
   }
 
@@ -705,20 +688,15 @@ class DataAlertModal extends React.Component {
             </div>
           )}
         </Modal>
-        <ConfirmModal
+        <DataAlertDeleteDialog
+          authentication={this.props.authentication}
+          dataAlertId={this.props.currentDataAlert?.id}
           isVisible={this.state.isConfirmDeleteModalVisible}
-          onConfirm={this.onDataAlertDelete}
-          confirmLoading={this.state.isDeletingDataAlert}
-          onClose={() => {
-            this.setState({ isConfirmDeleteModalVisible: false })
-          }}
-          backText='Go back'
-          confirmText='Delete'
-          width='450px'
-        >
-          <h3>Are you sure you want to delete this Data Alert?</h3>
-          <p>You will no longer be notified about these changes in your data.</p>
-        </ConfirmModal>
+          onDelete={this.onDataAlertDelete}
+          onClose={() => this.setState({ isConfirmDeleteModalVisible: false })}
+          onErrorCallback={this.props.onErrorCallback}
+          onSuccessAlert={this.props.onSuccessAlert}
+        />
       </ErrorBoundary>
     )
   }

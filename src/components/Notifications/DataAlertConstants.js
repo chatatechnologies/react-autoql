@@ -1,7 +1,10 @@
 import React from 'react'
 
+export const CUSTOM_TYPE = 'CUSTOM'
+export const PROJECT_TYPE = 'PROJECT'
 export const PERIODIC_FREQUENCY = 'PERIODIC'
 export const CONTINUOUS_FREQUENCY = 'CONTINUOUS'
+export const SCHEDULE_FREQUENCY = 'SCHEDULE'
 export const COMPARE_TYPE = 'COMPARE'
 export const EXISTS_TYPE = 'EXISTS'
 export const NUMBER_TERM_TYPE = 'constant'

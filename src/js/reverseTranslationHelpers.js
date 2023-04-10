@@ -180,7 +180,6 @@ export const getTimeRangeFromDateArray = (dates) => {
   }
 
   if (dates.length === 1) {
-    // Return daily
     return 'DAY'
   } else if (dates.length === 2) {
     // Range of dates. Determine what the interval is
