@@ -15,7 +15,6 @@ import {
   dismissNotification,
   deleteNotification,
   updateDataAlertStatus,
-  fetchRule,
   fetchNotificationData,
   markNotificationAsUnread,
 } from '../../../js/notificationService'
@@ -38,8 +37,7 @@ export default class NotificationItem extends React.Component {
 
     this.state = {
       expanded: false,
-      ruleStatus: undefined,
-      ruleDetails: undefined,
+      dataAlertStatus: undefined,
       queryResponse: undefined,
       isMoreOptionsMenuOpen: false,
     }
@@ -50,7 +48,6 @@ export default class NotificationItem extends React.Component {
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
     notification: PropTypes.shape({}).isRequired,
-    activeNotificationData: PropTypes.shape({}),
     onRuleFetchCallback: PropTypes.func,
     onExpandCallback: PropTypes.func,
     onDismissCallback: PropTypes.func,
@@ -61,13 +58,13 @@ export default class NotificationItem extends React.Component {
     autoChartAggregations: PropTypes.bool,
     enableAjaxTableData: PropTypes.bool,
     onClick: PropTypes.func,
+    onDataAlertChange: PropTypes.func,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
-    activeNotificationData: undefined,
     autoChartAggregations: false,
     onRuleFetchCallback: () => {},
     onExpandCallback: () => {},
@@ -78,16 +75,13 @@ export default class NotificationItem extends React.Component {
     onUnreadCallback: () => {},
     onErrorCallback: () => {},
     onClick: () => {},
+    onDataAlertChange: () => {},
   }
 
   componentDidUpdate = (prevProps, prevState) => {
     if (this.state.expanded && !prevState.expanded) {
       if (!this.state.queryResponse) {
         this.fetchQueryResponse()
-      }
-
-      if (!this.state.ruleDetails) {
-        this.fetchRuleDetails()
       }
     }
   }
@@ -108,24 +102,6 @@ export default class NotificationItem extends React.Component {
       })
       .catch((error) => {
         this.setState({ queryResponse: error })
-      })
-  }
-
-  fetchRuleDetails = () => {
-    const { notification } = this.props
-    fetchRule({
-      dataAlertId: notification.data_alert_id,
-      ...getAuthentication(this.props.authentication),
-    })
-      .then((response) => {
-        this.props.onRuleFetchCallback(response)
-        this.setState({
-          ruleDetails: response,
-          ruleStatus: response?.status,
-        })
-      })
-      .catch((error) => {
-        console.error(error)
       })
   }
 
@@ -194,7 +170,7 @@ export default class NotificationItem extends React.Component {
       })
   }
 
-  changeRuleStatus = (status) => {
+  changeDataAlertStatus = (status) => {
     updateDataAlertStatus({
       dataAlertId: this.props.notification.data_alert_id,
       type: this.props.notification.data_alert_type,
@@ -202,7 +178,8 @@ export default class NotificationItem extends React.Component {
       ...getAuthentication(this.props.authentication),
     })
       .then(() => {
-        this.setState({ ruleStatus: status })
+        this.setState({ dataAlertStatus: status })
+        this.props.onDataAlertChange()
       })
       .catch((error) => {
         console.error(error)
@@ -249,12 +226,13 @@ export default class NotificationItem extends React.Component {
           </div>
         </div>
         {this.moreOptionsButton()}
+        {this.renderExpandArrow()}
       </div>
     )
   }
 
   dataAlertToggleListItem = () => {
-    const status = this.state.ruleStatus
+    const status = this.state.dataAlertStatus ?? this.props.dataAlert?.status
 
     if (!status) {
       return null
@@ -267,12 +245,20 @@ export default class NotificationItem extends React.Component {
         onClick={(e) =>
           this.onOptionClick(e, () => {
             const newStatus = isActive ? 'INACTIVE' : 'ACTIVE'
-            this.changeRuleStatus(newStatus)
+            this.changeDataAlertStatus(newStatus)
           })
         }
       >
         <Icon type={isActive ? 'notification-off' : 'notification'} /> <span>Turn {isActive ? 'off' : 'on'}</span>
       </li>
+    )
+  }
+
+  renderExpandArrow = () => {
+    return (
+      <div className='react-autoql-notification-item-expand-arrow'>
+        <Icon type='caret-down' />
+      </div>
     )
   }
 
@@ -325,7 +311,7 @@ export default class NotificationItem extends React.Component {
           <li
             onClick={(e) =>
               this.onOptionClick(e, () => {
-                this.props.onEditClick(this.state.ruleDetails)
+                this.props.onEditClick(this.props.dataAlert)
               })
             }
           >
@@ -412,9 +398,6 @@ export default class NotificationItem extends React.Component {
           {this.renderNotificationHeader()}
           {this.renderNotificationContent()}
           {this.renderAlertColorStrip()}
-          <div className='react-autoql-notification-item-expand-arrow'>
-            <Icon type='caret-down' />
-          </div>
           <div className='react-autoql-notification-item-hover-overlay' />
         </div>
       </ErrorBoundary>

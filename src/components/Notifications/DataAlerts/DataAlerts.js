@@ -7,17 +7,17 @@ import { Icon } from '../../Icon'
 import { Tooltip } from '../../Tooltip'
 import { LoadingDots } from '../../LoadingDots'
 import { DataAlertModal } from '../DataAlertModal'
+import { DataAlertDeleteDialog } from '../DataAlertDeleteDialog'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 
 import DataAlertListItem from './DataAlertListItem'
 import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
-import { fetchDataAlerts, updateDataAlertStatus } from '../../../js/notificationService'
+import { fetchDataAlerts } from '../../../js/notificationService'
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 import { withTheme } from '../../../theme'
 
 import './DataAlerts.scss'
-import { DataAlertDeleteDialog } from '../DataAlertDeleteDialog'
 
 class DataAlerts extends React.Component {
   COMPONENT_KEY = uuid()
@@ -27,13 +27,14 @@ class DataAlerts extends React.Component {
     tooltipID: PropTypes.string,
     onErrorCallback: PropTypes.func,
     onSuccessAlert: PropTypes.func,
+    onDataAlertStatusChange: PropTypes.func,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
     tooltipID: 'react-autoql-notification-settings-tooltip',
     onErrorCallback: () => {},
-    onAlertInitializationCallback: () => {},
+    onDataAlertStatusChange: () => {},
     onSuccessAlert: () => {},
   }
 
@@ -48,7 +49,7 @@ class DataAlerts extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
-    this._isMounted && this.getDataAlerts()
+    this.getDataAlerts()
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -71,6 +72,11 @@ class DataAlerts extends React.Component {
       type,
     })
       .then((response) => {
+        if (!this._isMounted) {
+          console.log('NOT MOUNTED SO NOT UPDATING LIST!!')
+        } else {
+          console.log(response)
+        }
         this._isMounted &&
           this.setState({
             customAlertsList: response?.data?.custom_alerts,
@@ -80,14 +86,6 @@ class DataAlerts extends React.Component {
       .catch((error) => {
         console.error(error)
       })
-  }
-
-  onEditClick = (e, notification) => {
-    e.stopPropagation()
-    this.setState({
-      isEditModalVisible: true,
-      activeDataAlert: notification,
-    })
   }
 
   onDataAlertSave = () => {
@@ -109,37 +107,6 @@ class DataAlerts extends React.Component {
       isEditModalVisible: false,
       isDeleteDialogOpen: false,
       dataAlertDeleteId: undefined,
-    })
-  }
-
-  onEnableSwitchChange = (e, dataAlert) => {
-    const newStatus = e.target.checked ? 'ACTIVE' : 'INACTIVE'
-
-    const listType = dataAlert.type === 'CUSTOM' ? 'customAlertsList' : 'projectAlertsList'
-
-    const newList = this.state[listType].map((n) => {
-      if (dataAlert.id === n.id) {
-        return {
-          ...n,
-          status: newStatus,
-        }
-      }
-      return n
-    })
-
-    this.setState({ [`${listType}`]: newList })
-
-    updateDataAlertStatus({
-      dataAlertId: dataAlert.id,
-      type: dataAlert.type,
-      status: newStatus,
-      ...getAuthentication(this.props.authentication),
-    }).catch((error) => {
-      console.error(error)
-      this.props.onErrorCallback(new Error('Something went wrong. Please try again.'))
-
-      // Get original state
-      this.getDataAlerts()
     })
   }
 
@@ -230,6 +197,7 @@ class DataAlerts extends React.Component {
                   onDeleteClick={this.onDataAlertDeleteClick}
                   tooltipID='react-autoql-notification-settings-tooltip'
                   onInitialize={this.getDataAlerts}
+                  onDataAlertStatusChange={this.props.onDataAlertStatusChange}
                   showHeader={i === 0}
                 />
               )

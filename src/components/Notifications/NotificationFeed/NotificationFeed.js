@@ -1,6 +1,5 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
-import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import InfiniteScroll from 'react-infinite-scroller'
@@ -13,9 +12,12 @@ import { Button } from '../../Button'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { Spinner } from '../../Spinner'
 import { Tooltip } from '../../Tooltip'
+import { Modal } from '../../Modal'
+import { DataAlerts } from '../DataAlerts'
+import { LoadingDots } from '../../LoadingDots'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 
-import { fetchNotificationFeed, dismissAllNotifications } from '../../../js/notificationService'
+import { fetchNotificationFeed, dismissAllNotifications, fetchDataAlerts } from '../../../js/notificationService'
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication, getAutoQLConfig } from '../../../props/defaults'
 import { withTheme } from '../../../theme'
@@ -23,9 +25,6 @@ import { withTheme } from '../../../theme'
 import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
 
 import './NotificationFeed.scss'
-import { Modal } from '../../Modal'
-import { DataAlerts } from '../DataAlerts'
-import { LoadingDots } from '../../LoadingDots'
 
 class NotificationFeed extends React.Component {
   constructor(props) {
@@ -54,7 +53,6 @@ class NotificationFeed extends React.Component {
     authentication: authenticationType,
     onCollapseCallback: PropTypes.func,
     onExpandCallback: PropTypes.func,
-    activeNotificationData: PropTypes.shape({}),
     showNotificationDetails: PropTypes.bool,
     onErrorCallback: PropTypes.func,
     onSuccessCallback: PropTypes.func,
@@ -66,11 +64,11 @@ class NotificationFeed extends React.Component {
     enableAjaxTableData: PropTypes.bool,
     onModalOpen: PropTypes.func,
     shouldRender: PropTypes.bool,
+    onDataAlertChange: PropTypes.func,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
-    activeNotificationData: undefined,
     showDataAlertsManager: false,
     showNotificationDetails: true,
     autoChartAggregations: false,
@@ -85,6 +83,7 @@ class NotificationFeed extends React.Component {
     onDeleteCallback: () => {},
     onModalOpen: () => {},
     onUnreadCallback: () => {},
+    onDataAlertChange: () => {},
     onChange: () => {},
   }
 
@@ -93,6 +92,7 @@ class NotificationFeed extends React.Component {
     if (this.props.shouldRender) {
       this.hasFetchedNotifications = true
       this.getNotifications()
+      this.getDataAlerts()
     }
   }
 
@@ -102,6 +102,7 @@ class NotificationFeed extends React.Component {
     } else if (this.props.shouldRender && !prevProps.shouldRender && !this.hasFetchedNotifications) {
       this.hasFetchedNotifications = true
       this.getNotifications()
+      this.getDataAlerts()
     }
   }
 
@@ -113,9 +114,18 @@ class NotificationFeed extends React.Component {
     this.setState({ isEditModalVisible: false })
   }
 
+  getDataAlerts = () => {
+    fetchDataAlerts({ ...getAuthentication(this.props.authentication) }).then((response) => {
+      const customAlerts = response?.data?.custom_alerts ?? []
+      const projectAlerts = response?.data?.project_alerts ?? []
+      const dataAlerts = [...customAlerts, ...projectAlerts]
+      this.setState({ dataAlerts })
+    })
+  }
+
   getNotifications = () => {
     fetchNotificationFeed({
-      ...this.props.authentication,
+      ...getAuthentication(this.props.authentication),
       offset: this.state.nextOffset,
       limit: this.NOTIFICATION_FETCH_LIMIT,
     })
@@ -124,7 +134,7 @@ class NotificationFeed extends React.Component {
         let nextOffset = this.state.nextOffset
         let pagination = this.state.pagination
 
-        if (_get(data, 'items.length')) {
+        if (data?.items?.length) {
           notificationList = [...notificationList, ...data.items]
           nextOffset = this.state.nextOffset + this.NOTIFICATION_FETCH_LIMIT
           pagination = data.pagination
@@ -156,6 +166,8 @@ class NotificationFeed extends React.Component {
   }
 
   refreshNotifications = () => {
+    this.getDataAlerts()
+
     // Regardless of how many notifications are loaded, we only want to add the new ones to the top
     fetchNotificationFeed({
       ...getAuthentication(this.props.authentication),
@@ -447,7 +459,7 @@ class NotificationFeed extends React.Component {
               html
             />
           )}
-          {_get(this.state.notificationList, 'length') ? (
+          {this.state.notificationList?.length ? (
             <Fragment>
               {this.renderTopOptions()}
               <CustomScrollbars>
@@ -465,6 +477,7 @@ class NotificationFeed extends React.Component {
                 >
                   <div className='notification-feed-list'>
                     {this.state.notificationList.map((notification, i) => {
+                      const dataAlert = this.state.dataAlerts?.find((alert) => alert.id === notification.data_alert_id)
                       return (
                         <NotificationItem
                           ref={(ref) => (this.notificationRefs[notification.id] = ref)}
@@ -479,6 +492,7 @@ class NotificationFeed extends React.Component {
                             enableReportProblem: false,
                           }}
                           notification={notification}
+                          dataAlert={dataAlert}
                           expanded={!!notification.expanded}
                           onClick={this.onItemClick}
                           onDismissCallback={this.onDismissClick}
@@ -492,10 +506,9 @@ class NotificationFeed extends React.Component {
                             this.getNotifications()
                           }}
                           onExpandCallback={this.onNotificationExpand}
-                          // onCollapseCallback={this.props.onCollapseCallback}
-                          activeNotificationData={this.props.activeNotificationData}
                           autoChartAggregations={this.props.autoChartAggregations}
                           onErrorCallback={this.props.onErrorCallback}
+                          onDataAlertChange={this.props.onDataAlertChange}
                           onEditClick={(dataAlert) => {
                             this.showEditDataAlertModal(dataAlert)
                           }}

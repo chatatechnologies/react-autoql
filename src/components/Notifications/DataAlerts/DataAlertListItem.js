@@ -5,7 +5,7 @@ import { Icon } from '../../Icon'
 import { Switch } from '../../Switch'
 import { hideTooltips } from '../../Tooltip'
 
-import { CONTINUOUS_FREQUENCY, CUSTOM_TYPE, PERIODIC_FREQUENCY, SCHEDULE_FREQUENCY } from '../DataAlertConstants'
+import { CUSTOM_TYPE, PERIODIC_FREQUENCY, SCHEDULE_FREQUENCY } from '../DataAlertConstants'
 
 import { initializeAlert, updateDataAlertStatus } from '../../../js/notificationService'
 import { formatResetDate } from '../helpers'
@@ -13,7 +13,6 @@ import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
 import './DataAlerts.scss'
-import { Button } from '../../Button'
 
 export default class DataAlertListItem extends React.Component {
   constructor(props) {
@@ -35,6 +34,7 @@ export default class DataAlertListItem extends React.Component {
     onErrorCallback: PropTypes.func,
     onSuccessAlert: PropTypes.func,
     onDeleteClick: PropTypes.func,
+    onDataAlertStatusChange: PropTypes.func,
   }
 
   static defaultProps = {
@@ -43,6 +43,13 @@ export default class DataAlertListItem extends React.Component {
     onAlertInitializationCallback: () => {},
     onSuccessAlert: () => {},
     onDeleteClick: () => {},
+    onDataAlertStatusChange: () => {},
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (this.props.dataAlert?.status && this.props.dataAlert.status !== prevProps.dataAlert?.status) {
+      this.setState({ status: this.props.dataAlert.status })
+    }
   }
 
   getDataAlertObj = () => {
@@ -107,11 +114,15 @@ export default class DataAlertListItem extends React.Component {
       dataAlertId: this.props.dataAlert.id,
       type: this.props.dataAlert.type,
       status: newStatus,
-    }).catch((error) => {
-      console.error(error)
-      this.props.onErrorCallback(new Error('Something went wrong. Please try again.'))
-      this.setState({ status: previousStatus })
     })
+      .then(() => {
+        this.props.onDataAlertStatusChange()
+      })
+      .catch((error) => {
+        console.error(error)
+        this.props.onErrorCallback(new Error('Something went wrong. Please try again.'))
+        this.setState({ status: previousStatus })
+      })
   }
 
   getCycleFromResetPeriod = (resetPeriod) => {

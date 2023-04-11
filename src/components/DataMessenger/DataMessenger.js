@@ -927,7 +927,6 @@ export class DataMessenger extends React.Component {
           authentication={this.props.authentication}
           onExpandCallback={this.props.onNotificationExpandCallback}
           onCollapseCallback={this.props.onNotificationCollapseCallback}
-          activeNotificationData={this.props.activeNotificationData}
           onErrorCallback={this.props.onErrorCallback}
           onSuccessCallback={this.props.onSuccessCallback}
           onModalOpen={this.onDataAlertModalOpen}
