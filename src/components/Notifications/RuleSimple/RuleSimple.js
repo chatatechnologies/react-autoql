@@ -126,6 +126,7 @@ export default class RuleSimple extends React.Component {
   getJSON = () => {
     const { secondInputValue } = this.state
     const userSelection = this.props.queryResponse?.data?.data?.fe_req?.disambiguation
+
     const expression = [
       {
         id: this.TERM_ID_1,

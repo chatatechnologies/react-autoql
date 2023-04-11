@@ -5,7 +5,7 @@ import { Icon } from '../../Icon'
 import { Switch } from '../../Switch'
 import { hideTooltips } from '../../Tooltip'
 
-import { CUSTOM_TYPE, PERIODIC_FREQUENCY, SCHEDULE_FREQUENCY } from '../DataAlertConstants'
+import { CONTINUOUS_TYPE, CUSTOM_TYPE, PERIODIC_TYPE, SCHEDULED_TYPE } from '../DataAlertConstants'
 
 import { initializeAlert, updateDataAlertStatus } from '../../../js/notificationService'
 import { formatResetDate } from '../helpers'
@@ -148,8 +148,12 @@ export default class DataAlertListItem extends React.Component {
   renderDataAlertCycle = () => {
     const frequencyType = this.props.dataAlert?.notification_type
 
-    if (frequencyType === PERIODIC_FREQUENCY || frequencyType === SCHEDULE_FREQUENCY) {
-      return this.getCycleFromResetPeriod(this.props.dataAlert?.reset_period)
+    if (frequencyType === CONTINUOUS_TYPE) {
+      return '-'
+    }
+
+    if (this.props.dataAlert?.reset_period && (frequencyType === PERIODIC_TYPE || frequencyType === SCHEDULED_TYPE)) {
+      return this.getCycleFromResetPeriod(this.props.dataAlert.reset_period)
     }
 
     return '-'
@@ -233,7 +237,7 @@ export default class DataAlertListItem extends React.Component {
       )
     }
 
-    if (dataAlert.status === 'ACTIVE' && dataAlert.notification_type === SCHEDULE_FREQUENCY) {
+    if (dataAlert.status === 'ACTIVE' && dataAlert.notification_type === SCHEDULED_TYPE) {
       return (
         <div
           className={`data-alert-state data-alert-scheduled ${status}`}
@@ -246,7 +250,7 @@ export default class DataAlertListItem extends React.Component {
       )
     }
 
-    // if (dataAlert.notification_type === SCHEDULE_FREQUENCY) {
+    // if (dataAlert.notification_type === SCHEDULED_TYPE) {
     //   return (
     //     <div
     //       className={`data-alert-state data-alert-paused ${status}`}
@@ -311,7 +315,7 @@ export default class DataAlertListItem extends React.Component {
             <div className='data-alert-header-item'>
               <span>Cycle</span>
             </div>
-            <div className='data-alert-section-content'>{this.renderDataAlertCycle()}</div>
+            <div className='data-alert-section-content data-alert-section-cycle'>{this.renderDataAlertCycle()}</div>
           </div>
           <div className='react-autoql-data-alert-list-item-section'>
             <div className='data-alert-header-item'>
@@ -319,11 +323,11 @@ export default class DataAlertListItem extends React.Component {
             </div>
             <div className='data-alert-section-content'>{this.renderDataAlertState()}</div>
           </div>
-          <div className='react-autoql-data-alert-list-item-section notification-status'>
+          <div className='react-autoql-data-alert-list-item-section'>
             <div className='data-alert-header-item'>
               <span>Notification Status</span>
             </div>
-            <div className='data-alert-section-content'>
+            <div className='data-alert-section-content notification-status'>
               <Switch
                 checked={isEnabled}
                 className='react-autoql-notification-enable-checkbox'

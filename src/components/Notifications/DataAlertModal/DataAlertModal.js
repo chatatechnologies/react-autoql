@@ -5,7 +5,6 @@ import _isEmpty from 'lodash.isempty'
 import { v4 as uuid } from 'uuid'
 
 import { Modal } from '../../Modal'
-import { ConfirmModal } from '../../ConfirmModal'
 import { Input } from '../../Input'
 import { Button } from '../../Button'
 import { Icon } from '../../Icon'
@@ -15,9 +14,10 @@ import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { StepsHoz } from '../../StepsHoz'
 import { ConditionBuilder } from '../ConditionBuilder'
 import { Select } from '../../Select'
+import { DataAlertDeleteDialog } from '../DataAlertDeleteDialog'
 import NotificationItem from '../NotificationItem/NotificationItem'
 
-import { createDataAlert, updateDataAlert, deleteDataAlert } from '../../../js/notificationService'
+import { createDataAlert, updateDataAlert } from '../../../js/notificationService'
 import { isSingleValueResponse } from '../../../js/Util'
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
@@ -25,7 +25,6 @@ import { withTheme } from '../../../theme'
 import { DATA_ALERT_CONDITION_TYPES, COMPARE_TYPE, EXISTS_TYPE, QUERY_TERM_TYPE } from '../DataAlertConstants'
 
 import './DataAlertModal.scss'
-import { DataAlertDeleteDialog } from '../DataAlertDeleteDialog'
 
 class DataAlertModal extends React.Component {
   constructor(props) {
@@ -61,6 +60,7 @@ class DataAlertModal extends React.Component {
     onValidate: PropTypes.func,
     onClosed: PropTypes.func,
     onOpened: PropTypes.func,
+    editView: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -76,10 +76,10 @@ class DataAlertModal extends React.Component {
     onManagementDeleteDataAlert: () => {},
     onClosed: () => {},
     onOpened: () => {},
-    title: 'Create Data Alert',
     titleIcon: undefined,
     enableQueryValidation: true,
     onValidate: undefined,
+    editView: false,
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -201,6 +201,7 @@ class DataAlertModal extends React.Component {
         expressionJSON = currentDataAlert.expression
       } else {
         const query = queryResponse?.data?.data?.text
+
         dataReturnQuery = query
         expressionJSON = [
           {
@@ -218,6 +219,11 @@ class DataAlertModal extends React.Component {
         scheduleData = this.scheduleBuilderRef.getData()
       }
 
+      const filters = currentDataAlert?.filters ?? [
+        ...(queryResponse?.data?.data?.persistent_locked_conditions ?? []),
+        ...(queryResponse?.data?.data?.session_locked_conditions ?? []),
+      ]
+
       const newDataAlert = {
         id: currentDataAlert?.id,
         title: titleInput,
@@ -227,6 +233,7 @@ class DataAlertModal extends React.Component {
         notification_type: scheduleData.notificationType,
         reset_period: scheduleData.resetPeriod,
         time_zone: scheduleData.timezone,
+        filters,
       }
 
       return newDataAlert
@@ -551,7 +558,7 @@ class DataAlertModal extends React.Component {
             id: `preview-${this.COMPONENT_KEY}`,
             title: this.state.titleInput || (
               <span>
-                <em>{'[Notification Title]'}</em>
+                <em>{'[Title]'}</em>
               </span>
             ),
             message: this.state.messageInput,
@@ -653,13 +660,15 @@ class DataAlertModal extends React.Component {
   }
 
   render = () => {
+    const query = this.props.queryResponse?.data?.data?.text
     return (
       <ErrorBoundary>
         <Modal
           contentClassName='react-autoql-data-alert-creation-modal'
           overlayStyle={{ zIndex: '9998' }}
-          title={this.props.title}
+          title={this.props.editView ? 'Data Alert Settings' : 'Create Data Alert'}
           titleIcon={this.getTitleIcon()}
+          subtitle={query ? `"${query}"` : undefined}
           ref={(r) => (this.modalRef = r)}
           isVisible={this.props.isVisible}
           onClose={this.props.onClose}

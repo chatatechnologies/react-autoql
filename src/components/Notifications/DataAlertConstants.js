@@ -2,9 +2,9 @@ import React from 'react'
 
 export const CUSTOM_TYPE = 'CUSTOM'
 export const PROJECT_TYPE = 'PROJECT'
-export const PERIODIC_FREQUENCY = 'PERIODIC'
-export const CONTINUOUS_FREQUENCY = 'CONTINUOUS'
-export const SCHEDULE_FREQUENCY = 'SCHEDULE'
+export const PERIODIC_TYPE = 'PERIODIC'
+export const CONTINUOUS_TYPE = 'CONTINUOUS'
+export const SCHEDULED_TYPE = 'SCHEDULED'
 export const COMPARE_TYPE = 'COMPARE'
 export const EXISTS_TYPE = 'EXISTS'
 export const NUMBER_TERM_TYPE = 'constant'
@@ -45,20 +45,20 @@ export const DATA_ALERT_OPERATORS = {
 }
 
 export const DATA_ALERT_CONDITION_TYPES = {
-  COMPARE: {
+  [COMPARE_TYPE]: {
     displayName: 'When a specific condition is met',
   },
-  EXISTS: {
+  [EXISTS_TYPE]: {
     displayName: 'If new data is detected',
   },
 }
 
 export const DATA_ALERT_FREQUENCY_TYPE_OPTIONS = {
-  PERIODIC: {
+  [SCHEDULED_TYPE]: {
     label: 'at the following times:',
     listLabel: 'at the following times',
   },
-  CONTINUOUS: {
+  [CONTINUOUS_TYPE]: {
     label: 'right away.',
     listLabel: 'right away',
   },

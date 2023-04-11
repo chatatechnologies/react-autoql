@@ -11,8 +11,7 @@ import { TimePicker } from '../../TimePicker'
 
 import { MONTH_NAMES, WEEKDAY_NAMES_MON } from '../../../js/Constants'
 import {
-  PERIODIC_FREQUENCY,
-  CONTINUOUS_FREQUENCY,
+  CONTINUOUS_TYPE,
   DATA_ALERT_FREQUENCY_TYPE_OPTIONS,
   SCHEDULE_INTERVAL_OPTIONS,
   RESET_PERIOD_OPTIONS,
@@ -20,6 +19,8 @@ import {
   MONTH_DAY_SELECT_OPTIONS,
   COMPARE_TYPE,
   EXISTS_TYPE,
+  SCHEDULED_TYPE,
+  PERIODIC_TYPE,
 } from '../DataAlertConstants'
 
 import './ScheduleBuilder.scss'
@@ -35,9 +36,14 @@ export default class ScheduleBuilder extends React.Component {
     this.DEFAULT_MONTH_DAY_SELECT_VALUE = 'LAST'
     this.DEFAULT_TIME_SELECT_VALUE = '5:00pm'
     this.DEFAULT_MONTH_OF_YEAR_SELECT_VALUE = 'December'
-    this.DEFAULT_FREQUENCY_TYPE = PERIODIC_FREQUENCY
+    this.DEFAULT_FREQUENCY_TYPE = SCHEDULED_TYPE
 
     const timeRange = getTimeRangeFromRT(props.queryResponse)
+
+    // let frequencyType = props.dataAlert?.notification_type
+    // if (frequencyType === PERIODIC_TYPE) {
+    //   frequencyType = CONTINUOUS_TYPE
+    // }
 
     this.state = {
       timeRange: props.dataAlert?.reset_period ?? timeRange,
@@ -102,15 +108,21 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   getData = () => {
-    const { resetPeriodSelectValue, timezone } = this.state
+    const { resetPeriodSelectValue, frequencyType, timezone } = this.state
 
     let resetPeriod = null
+    let notificationType = frequencyType
+
     if (resetPeriodSelectValue !== 'NONE') {
       resetPeriod = resetPeriodSelectValue
+
+      if (frequencyType === CONTINUOUS_TYPE) {
+        notificationType = PERIODIC_TYPE
+      }
     }
 
     return {
-      notificationType: this.state.frequencyType,
+      notificationType,
       resetPeriod,
       timezone,
     }
@@ -172,7 +184,7 @@ export default class ScheduleBuilder extends React.Component {
   //     return this.state.timeRange
   //   }
 
-  //   if (dataAlert.notification_type === PERIODIC_FREQUENCY) {
+  //   if (dataAlert.notification_type === PERIODIC_TYPE) {
   //     return undefined
   //   }
 
@@ -283,7 +295,7 @@ export default class ScheduleBuilder extends React.Component {
 
   shouldRenderCheckFrequencySelector = (prevState) => {
     const state = prevState ?? this.state
-    return state.frequencyType === CONTINUOUS_FREQUENCY
+    return state.frequencyType === CONTINUOUS_TYPE
   }
 
   checkFrequencySelector = () => {
@@ -343,7 +355,7 @@ export default class ScheduleBuilder extends React.Component {
     return null
   }
 
-  periodicFrequencyOptions = () => {
+  scheduleFrequencyOptions = () => {
     return (
       <div>
         <div className='react-autoql-data-alert-frequency-options-container'>
@@ -381,6 +393,13 @@ export default class ScheduleBuilder extends React.Component {
       this.props.dataAlert?.expression?.[0]?.term_value
     const queryText = query ? <em>"{query}"</em> : 'this query'
 
+    let value = this.state.frequencyType
+    if (value === PERIODIC_TYPE) {
+      value = CONTINUOUS_TYPE
+    }
+
+    console.log({ DATA_ALERT_FREQUENCY_TYPE_OPTIONS, value, stateValue: this.state.frequencyType })
+
     return (
       <span>
         {this.props.conditionType === EXISTS_TYPE ? (
@@ -394,7 +413,7 @@ export default class ScheduleBuilder extends React.Component {
             label: DATA_ALERT_FREQUENCY_TYPE_OPTIONS[key]?.label,
             listLabel: DATA_ALERT_FREQUENCY_TYPE_OPTIONS[key]?.listLabel,
           }))}
-          value={this.state.frequencyType}
+          value={value}
           onChange={(type) => this.setState({ frequencyType: type })}
           outlined={false}
         />
@@ -404,10 +423,11 @@ export default class ScheduleBuilder extends React.Component {
 
   frequencyOptionsSection = () => {
     switch (this.state.frequencyType) {
-      case PERIODIC_FREQUENCY: {
-        return this.periodicFrequencyOptions()
+      case SCHEDULED_TYPE: {
+        return this.scheduleFrequencyOptions()
       }
-      case CONTINUOUS_FREQUENCY: {
+      case CONTINUOUS_TYPE:
+      case PERIODIC_TYPE: {
         return this.continuousFrequencyOptions()
       }
     }

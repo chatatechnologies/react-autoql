@@ -33,6 +33,11 @@
           overflow: auto;
           pointer-events: none !important;
 
+          .react-autoql-notification-list-item {
+            transition: none;
+            animation: none;
+          }
+
           .react-autoql-notification-extra-content {
             display: none !important;
           }

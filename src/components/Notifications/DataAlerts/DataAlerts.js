@@ -132,10 +132,10 @@ class DataAlerts extends React.Component {
         onErrorCallback={this.props.onErrorCallback}
         onSuccessAlert={this.props.onSuccessAlert}
         onDelete={this.onDataAlertDelete}
-        title={this.state.activeDataAlert ? 'Edit Data Alert' : 'Create Data Alert'}
         titleIcon={this.state.activeDataAlert ? <Icon type='edit' /> : <span />}
         selectedDemoProjectId={this.props.selectedDemoProjectId}
         tooltipID={this.props.tooltipID}
+        editView
       />
     )
   }
@@ -184,7 +184,7 @@ class DataAlerts extends React.Component {
               return (
                 <DataAlertListItem
                   authentication={this.props.authentication}
-                  key={`react-autoql-notification-setting-item-${i}`}
+                  key={dataAlert.id}
                   dataAlert={dataAlert}
                   onSuccessCallback={this.props.onSuccessAlert}
                   onErrorCallback={this.props.onErrorCallback}

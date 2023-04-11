@@ -21,6 +21,8 @@
     .data-alert-section-content,
     .data-alert-header-item {
       display: flex;
+      justify-content: center;
+      align-items: center;
       padding: 0 12px;
     }
 
@@ -98,13 +100,23 @@
         opacity: 0;
       }
 
+      .data-alert-section-cycle {
+        min-width: 70px;
+      }
+
+      .notification-status {
+        min-width: 120px;
+      }
+
       .data-alert-state {
         display: flex;
         opacity: 1;
         align-items: center;
+        justify-content: center;
         font-size: 13px;
         padding: 2px 5px;
         border-radius: 6px;
+        min-width: 112px;
         cursor: default;
 
         .react-autoql-icon {

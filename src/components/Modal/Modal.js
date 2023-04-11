@@ -14,6 +14,7 @@ export default class Modal extends React.Component {
   static propTypes = {
     title: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
     titleIcon: PropTypes.oneOfType([PropTypes.element, PropTypes.instanceOf(Icon)]),
+    subtitle: PropTypes.string,
     isVisible: PropTypes.bool,
     onClose: PropTypes.func,
     onConfirm: PropTypes.func,
@@ -35,6 +36,7 @@ export default class Modal extends React.Component {
   static defaultProps = {
     title: '',
     titleIcon: undefined,
+    subtitle: '',
     isVisible: false,
     width: '80vw',
     height: undefined,
@@ -130,8 +132,11 @@ export default class Modal extends React.Component {
         >
           <div className='react-autoql-modal-content' ref={(r) => (this.modalContent = r)}>
             <div className='react-autoql-modal-header'>
-              <div className='react-autoql-modal-header-title'>
-                {this.props.titleIcon} {this.props.title}
+              <div className='react-autoql-modal-header-title-container'>
+                <div className='react-autoql-modal-header-title'>
+                  {this.props.titleIcon} {this.props.title}
+                </div>
+                <div className='react-autoql-modal-header-subtitle'>{this.props.subtitle}</div>
               </div>
               <Icon type='close' className='react-autoql-modal-close-btn' onClick={this.onClose} />
             </div>

@@ -62,21 +62,28 @@
   overflow: hidden;
 }
 .react-autoql-modal-header {
+  display: flex;
+  align-items: flex-start;
   position: relative;
-  text-align: center;
-  flex: 0 0 52px;
   border-bottom: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.05));
-  padding: 14px 60px;
-  font-size: 16px;
+
+  .react-autoql-modal-header-title-container {
+    flex: 1;
+    text-align: center;
+    padding: 14px 0px 14px 60px;
+  }
 
   .react-autoql-modal-header-title {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    font-size: 17px;
+    margin: 3px;
 
     .react-autoql-icon {
       margin-right: 5px;
     }
+  }
+
+  .react-autoql-modal-header-subtitle {
+    font-size: 14px;
   }
 }
 .react-autoql-modal-footer {
@@ -97,14 +104,13 @@
   flex: 1;
 }
 .react-autoql-modal-close-btn {
-  position: absolute !important;
-  top: 0;
-  right: 0;
-  height: 100%;
+  flex: 0;
   font-size: 22px;
-  margin-right: 14px;
+  margin: 16px;
+  padding-left: 15px;
   opacity: 0.6 !important;
   cursor: pointer;
+  box-sizing: content-box;
 }
 .react-autoql-modal-close-btn:hover {
   opacity: 1 !important;
