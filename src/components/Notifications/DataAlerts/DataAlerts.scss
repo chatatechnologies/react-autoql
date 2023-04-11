@@ -173,7 +173,7 @@
         cursor: pointer;
 
         &:hover {
-          color: currentColor;
+          color: var(--react-autoql-info-color);
         }
       }
 

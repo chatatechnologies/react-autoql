@@ -72,11 +72,6 @@ class DataAlerts extends React.Component {
       type,
     })
       .then((response) => {
-        if (!this._isMounted) {
-          console.log('NOT MOUNTED SO NOT UPDATING LIST!!')
-        } else {
-          console.log(response)
-        }
         this._isMounted &&
           this.setState({
             customAlertsList: response?.data?.custom_alerts,
