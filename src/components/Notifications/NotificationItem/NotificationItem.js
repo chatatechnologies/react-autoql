@@ -59,6 +59,7 @@ export default class NotificationItem extends React.Component {
     enableAjaxTableData: PropTypes.bool,
     onClick: PropTypes.func,
     onDataAlertChange: PropTypes.func,
+    onSuccessCallback: PropTypes.func,
   }
 
   static defaultProps = {
@@ -76,6 +77,7 @@ export default class NotificationItem extends React.Component {
     onErrorCallback: () => {},
     onClick: () => {},
     onDataAlertChange: () => {},
+    onSuccessCallback: () => {},
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -179,6 +181,11 @@ export default class NotificationItem extends React.Component {
     })
       .then(() => {
         this.setState({ dataAlertStatus: status })
+        const successText =
+          status === 'ACTIVE'
+            ? 'Data Alert reactivated! You will start receiving notifications for this Data Alert again.'
+            : 'You will no longer receive notifications like this.'
+        this.props.onSuccessCallback(successText)
         this.props.onDataAlertChange()
       })
       .catch((error) => {
@@ -249,7 +256,8 @@ export default class NotificationItem extends React.Component {
           })
         }
       >
-        <Icon type={isActive ? 'notification-off' : 'notification'} /> <span>Turn {isActive ? 'off' : 'on'}</span>
+        <Icon type={isActive ? 'notification-off' : 'notification'} />{' '}
+        <span>Turn these {isActive ? 'off' : 'back on'}</span>
       </li>
     )
   }

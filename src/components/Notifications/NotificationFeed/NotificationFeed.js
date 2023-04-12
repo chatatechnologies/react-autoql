@@ -91,7 +91,6 @@ class NotificationFeed extends React.Component {
   componentDidMount = () => {
     this._isMounted = true
     if (this.props.shouldRender) {
-      this.hasFetchedNotifications = true
       this.getNotifications()
       this.getDataAlerts()
     }
@@ -101,7 +100,6 @@ class NotificationFeed extends React.Component {
     if (!this.props.shouldRender && prevProps.shouldRender) {
       this.collapseActive()
     } else if (this.props.shouldRender && !prevProps.shouldRender && !this.hasFetchedNotifications) {
-      this.hasFetchedNotifications = true
       this.getNotifications()
       this.getDataAlerts()
     }
@@ -125,7 +123,12 @@ class NotificationFeed extends React.Component {
   }
 
   getNotifications = () => {
-    fetchNotificationFeed({
+    if (!this.props.shouldRender) {
+      return
+    }
+
+    this.hasFetchedNotifications = true
+    return fetchNotificationFeed({
       ...getAuthentication(this.props.authentication),
       offset: this.state.nextOffset,
       limit: this.NOTIFICATION_FETCH_LIMIT,
@@ -169,8 +172,12 @@ class NotificationFeed extends React.Component {
   refreshNotifications = () => {
     this.getDataAlerts()
 
+    if (!this.hasFetchedNotifications) {
+      return this.getNotifications()
+    }
+
     // Regardless of how many notifications are loaded, we only want to add the new ones to the top
-    fetchNotificationFeed({
+    return fetchNotificationFeed({
       ...getAuthentication(this.props.authentication),
       offset: 0,
       limit: 10, // Likely wont have more than 10 notifications. If so, we will just reset the whole list
@@ -520,11 +527,12 @@ class NotificationFeed extends React.Component {
                           onDeleteCallback={this.onDeleteClick}
                           onDeleteSuccessCallback={() => {
                             this.props.onChange(this.state.notificationList)
-                            this.getNotifications()
+                            this.refreshNotifications()
                           }}
                           onExpandCallback={this.onNotificationExpand}
                           autoChartAggregations={this.props.autoChartAggregations}
                           onErrorCallback={this.props.onErrorCallback}
+                          onSuccessCallback={this.props.onSuccessCallback}
                           onDataAlertChange={this.props.onDataAlertChange}
                           onEditClick={(dataAlert) => {
                             this.showEditDataAlertModal(dataAlert)

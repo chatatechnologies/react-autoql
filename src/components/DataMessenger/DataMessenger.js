@@ -894,7 +894,7 @@ export class DataMessenger extends React.Component {
           onExpandCallback={this.props.onNotificationExpandCallback}
           onCollapseCallback={this.props.onNotificationCollapseCallback}
           onErrorCallback={this.props.onErrorCallback}
-          onSuccessCallback={this.props.onSuccessCallback}
+          onSuccessCallback={this.props.onSuccessAlert}
           onModalOpen={this.onDataAlertModalOpen}
           onModalClose={this.onDataAlertModalClose}
           shouldRender={this.isOpen() && this.state.activePage === 'notifications'}
