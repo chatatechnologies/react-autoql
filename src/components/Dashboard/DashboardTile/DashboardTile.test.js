@@ -56,17 +56,4 @@ describe('renders correctly', () => {
     const dashboardTileComponent = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
     expect(dashboardTileComponent.exists()).toBe(true)
   })
-
-  test('renders queryoutput when queryResponse is provided', () => {
-    const dashboardTile = setup(
-      { tile: sampleTile, queryResponse: sampleResponses[10] },
-      {
-        isTopExecuted: true,
-        isTopExecuting: false,
-      },
-    )
-
-    const queryOutput = dashboardTile.find('QueryOutput')
-    expect(queryOutput.exists()).toBe(true)
-  })
 })

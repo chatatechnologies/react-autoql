@@ -27,26 +27,26 @@ describe('renders type correctly', () => {
   test('renders danger type correctly', () => {
     const wrapper = setup({ type: 'danger' })
     const buttonComponent = findByTestAttr(wrapper, 'react-autoql-btn')
-    expect(buttonComponent.hasClass('danger')).toBe(true)
+    expect(buttonComponent.hasClass('react-autoql-btn-danger')).toBe(true)
   })
 
   test('renders primary type correctly', () => {
     const wrapper = setup({ type: 'primary' })
     const buttonComponent = findByTestAttr(wrapper, 'react-autoql-btn')
-    expect(buttonComponent.hasClass('primary')).toBe(true)
+    expect(buttonComponent.hasClass('react-autoql-btn-primary')).toBe(true)
   })
 
   test('renders default type correctly', () => {
     const wrapper = setup({ type: 'default' })
     const buttonComponent = findByTestAttr(wrapper, 'react-autoql-btn')
-    expect(buttonComponent.hasClass('default')).toBe(true)
+    expect(buttonComponent.hasClass('react-autoql-btn-default')).toBe(true)
   })
 
   test('renders default button when type prop is not a string', () => {
     ignoreConsoleErrors(() => {
       const wrapper = setup({ type: { type: 'primary' } })
       const buttonComponent = findByTestAttr(wrapper, 'react-autoql-btn')
-      expect(buttonComponent.hasClass('default')).toBe(true)
+      expect(buttonComponent.hasClass('react-autoql-btn-default')).toBe(true)
     })
   })
 
@@ -54,7 +54,7 @@ describe('renders type correctly', () => {
     ignoreConsoleErrors(() => {
       const wrapper = setup({ type: 'awesome' })
       const buttonComponent = findByTestAttr(wrapper, 'react-autoql-btn')
-      expect(buttonComponent.hasClass('default')).toBe(true)
+      expect(buttonComponent.hasClass('react-autoql-btn-default')).toBe(true)
     })
   })
 })
@@ -64,7 +64,7 @@ describe('renders size correctly', () => {
     ignoreConsoleErrors(() => {
       const wrapper = setup({ size: { size: 'small' } })
       const buttonComponent = findByTestAttr(wrapper, 'react-autoql-btn')
-      expect(buttonComponent.hasClass('large')).toBe(true)
+      expect(buttonComponent.hasClass('react-autoql-btn-large')).toBe(true)
     })
   })
 
@@ -72,7 +72,7 @@ describe('renders size correctly', () => {
     ignoreConsoleErrors(() => {
       const wrapper = setup({ size: 'gigantic' })
       const buttonComponent = findByTestAttr(wrapper, 'react-autoql-btn')
-      expect(buttonComponent.hasClass('large')).toBe(true)
+      expect(buttonComponent.hasClass('react-autoql-btn-large')).toBe(true)
     })
   })
 
@@ -80,7 +80,7 @@ describe('renders size correctly', () => {
     ignoreConsoleErrors(() => {
       const wrapper = setup({ size: 'SmALl' })
       const buttonComponent = findByTestAttr(wrapper, 'react-autoql-btn')
-      expect(buttonComponent.hasClass('small')).toBe(true)
+      expect(buttonComponent.hasClass('react-autoql-btn-small')).toBe(true)
     })
   })
 })
@@ -89,7 +89,7 @@ describe('renders state correctly', () => {
   test('does not disable button by default', () => {
     const wrapper = setup()
     const buttonComponent = findByTestAttr(wrapper, 'react-autoql-btn')
-    expect(buttonComponent.hasClass('disabled')).toBe(false)
+    expect(buttonComponent.hasClass('react-autoql-btn-disabled')).toBe(false)
   })
 
   test('renders disabled state correctly', () => {
