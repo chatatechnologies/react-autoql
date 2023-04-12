@@ -1,13 +1,21 @@
 import dayjs from '../../js/dayjsWithPlugins'
 import { WEEKDAY_NAMES_SUN } from '../../js/Constants'
 
+export const resetDateIsFuture = (dataAlert) => {
+  if (!dataAlert.reset_date) {
+    return false
+  }
+
+  return dayjs(dataAlert.reset_date).valueOf() > dayjs().valueOf()
+}
+
 export const formatResetDate = (dataAlert) => {
   if (!dataAlert.reset_date) {
     return ''
   }
 
-  const date = dayjs(dataAlert.reset_date)
-  return `${date.format('MMMM DD, YYYY')} at ${date.format('h:mma')}`
+  const date = dayjs(dataAlert.reset_date).tz(dataAlert.time_zone)
+  return `${date.format('MMMM DD, YYYY')} at ${date.format('h:mma')} (${dataAlert.time_zone})`
 }
 
 export const formatResetDateShort = (dataAlert) => {
@@ -15,8 +23,8 @@ export const formatResetDateShort = (dataAlert) => {
     return ''
   }
 
-  const date = dayjs(dataAlert.reset_date)
-  return date.format('MMM DD, YYYY h:mma')
+  const date = dayjs(dataAlert.reset_date).tz(dataAlert.time_zone)
+  return `${date.format('MMM DD, YYYY h:mma')} (${dataAlert.time_zone})`
 }
 
 export const getDayLocalStartDate = ({ timeObj, timezone }) => {

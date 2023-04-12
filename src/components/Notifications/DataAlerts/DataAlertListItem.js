@@ -8,7 +8,7 @@ import { hideTooltips } from '../../Tooltip'
 import { CONTINUOUS_TYPE, CUSTOM_TYPE, PERIODIC_TYPE, SCHEDULED_TYPE } from '../DataAlertConstants'
 
 import { initializeAlert, updateDataAlertStatus } from '../../../js/notificationService'
-import { formatResetDate, formatResetDateShort } from '../helpers'
+import { formatResetDate, formatResetDateShort, resetDateIsFuture } from '../helpers'
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
@@ -148,15 +148,15 @@ export default class DataAlertListItem extends React.Component {
   renderDataAlertCycle = () => {
     const frequencyType = this.props.dataAlert?.notification_type
 
-    if (frequencyType === CONTINUOUS_TYPE) {
-      return '-'
+    let cycle = '-'
+
+    if (frequencyType === SCHEDULED_TYPE) {
+      cycle = this.getCycleFromResetPeriod(this.props.dataAlert?.schedules?.[0]?.notification_period)
+    } else if (frequencyType === PERIODIC_TYPE && this.props.dataAlert?.reset_period) {
+      cycle = this.getCycleFromResetPeriod(this.props.dataAlert.reset_period)
     }
 
-    if (this.props.dataAlert?.reset_period && (frequencyType === PERIODIC_TYPE || frequencyType === SCHEDULED_TYPE)) {
-      return this.getCycleFromResetPeriod(this.props.dataAlert.reset_period)
-    }
-
-    return '-'
+    return cycle
   }
 
   renderDataAlertState = () => {
@@ -166,7 +166,7 @@ export default class DataAlertListItem extends React.Component {
     const isCustom = dataAlert.type === CUSTOM_TYPE
     const status = isEnabled ? 'data-alert-on' : 'data-alert-off'
     const isTriggered = !!dataAlert.reset_date
-    const resetDateFormatted = `${formatResetDate(dataAlert)} (${dataAlert.time_zone})`
+    const resetDateFormatted = formatResetDate(dataAlert)
 
     // Check error status first. We always want to show the user if the Data Alert is in an error state
     if (hasError) {
@@ -208,7 +208,7 @@ export default class DataAlertListItem extends React.Component {
       )
     }
 
-    if (dataAlert.reset_date) {
+    if (dataAlert.reset_date && resetDateIsFuture(dataAlert)) {
       return (
         <div className={`data-alert-state data-alert-triggered ${status}`}>
           <span
@@ -290,15 +290,11 @@ export default class DataAlertListItem extends React.Component {
 
   renderDataAlertCycleStart = () => {
     const { dataAlert } = this.props
-    if (!dataAlert?.reset_date) {
-      return null
+    if (!dataAlert?.reset_date || !resetDateIsFuture(dataAlert)) {
+      return '-'
     }
 
-    return (
-      <span>
-        {formatResetDateShort(dataAlert)} ({dataAlert.time_zone})
-      </span>
-    )
+    return <span>{formatResetDateShort(dataAlert)}</span>
   }
 
   render = () => {

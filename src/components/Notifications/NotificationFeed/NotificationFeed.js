@@ -477,12 +477,12 @@ class NotificationFeed extends React.Component {
                   useWindow={false}
                 >
                   <div className='notification-feed-list'>
-                    {this.state.notificationList.map((notification, i) => {
+                    {this.state.notificationList.map((notification) => {
                       const dataAlert = this.state.dataAlerts?.find((alert) => alert.id === notification.data_alert_id)
                       return (
                         <NotificationItem
                           ref={(ref) => (this.notificationRefs[notification.id] = ref)}
-                          key={`notification-item-${i}`}
+                          key={notification.id}
                           authentication={this.props.authentication}
                           autoQLConfig={{
                             ...getAutoQLConfig(this.props.autoQLConfig),
