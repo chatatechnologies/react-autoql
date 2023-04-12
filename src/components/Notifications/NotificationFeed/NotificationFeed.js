@@ -16,6 +16,7 @@ import { Modal } from '../../Modal'
 import { DataAlerts } from '../DataAlerts'
 import { LoadingDots } from '../../LoadingDots'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
+import { ConfirmPopover } from '../../ConfirmPopover'
 
 import { fetchNotificationFeed, dismissAllNotifications, fetchDataAlerts } from '../../../js/notificationService'
 import { authenticationType } from '../../../props/types'
@@ -237,7 +238,7 @@ class NotificationFeed extends React.Component {
 
   onDeleteAllClick = () => {}
 
-  onDismissAllClick = () => {
+  onMarkAllAsReadClick = () => {
     const newList = this.state.notificationList.map((n) => {
       return {
         ...n,
@@ -247,7 +248,7 @@ class NotificationFeed extends React.Component {
 
     this.setState({ notificationList: newList })
 
-    dismissAllNotifications({
+    return dismissAllNotifications({
       ...getAuthentication(this.props.authentication),
     })
       .then(() => {
@@ -314,7 +315,7 @@ class NotificationFeed extends React.Component {
       <div className='notification-feed-top-options-container'>
         {this.renderDeleteAllButton()}
         {this.renderDataAlertsManagerButton()}
-        {this.renderDismissAllButton()}
+        {this.renderMarkAllAsReadButton()}
       </div>
     )
   }
@@ -329,7 +330,7 @@ class NotificationFeed extends React.Component {
         onClick={() => {
           this.setState({ isDataAlertsManagerOpen: true })
         }}
-        className='react-autoql-notification-dismiss-all'
+        className='react-autoql-notification-mark-all'
       >
         <Icon type='list-settings' /> <span>Data Alerts</span>
       </div>
@@ -346,10 +347,20 @@ class NotificationFeed extends React.Component {
     )
   }
 
-  renderDismissAllButton = () => (
-    <div onClick={this.onDismissAllClick} className='react-autoql-notification-dismiss-all'>
-      <Icon type='mark-read' /> <span>Mark all as read</span>
-    </div>
+  renderMarkAllAsReadButton = () => (
+    <ConfirmPopover
+      onConfirm={this.onMarkAllAsReadClick}
+      title='Mark all as read?'
+      confirmText='Yes'
+      backText='Cancel'
+      popoverParentElement={this.feedContainer}
+      positions={['bottom', 'left', 'right', 'top']}
+      align='end'
+    >
+      <div className='react-autoql-notification-mark-all'>
+        <Icon type='mark-read' /> <span>Mark all as read</span>
+      </div>
+    </ConfirmPopover>
   )
 
   showEditDataAlertModal = (alertData) => {
@@ -450,7 +461,12 @@ class NotificationFeed extends React.Component {
 
     return (
       <ErrorBoundary>
-        <div style={style} className='react-autoql-notification-list-container' data-test='notification-list'>
+        <div
+          ref={(r) => (this.feedContainer = r)}
+          style={style}
+          className='react-autoql-notification-list-container'
+          data-test='notification-list'
+        >
           {!this.props.tooltipID && (
             <Tooltip
               className='react-autoql-tooltip'

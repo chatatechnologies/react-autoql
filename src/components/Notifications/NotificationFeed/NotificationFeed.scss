@@ -35,6 +35,8 @@
   flex-direction: column;
   height: 100%;
   background: var(--react-autoql-background-color-primary);
+  font-family: var(--react-autoql-font-family), sans-serif;
+  color: var(--react-autoql-text-color-primary);
 
   .notification-feed-list {
     padding: 0 20px;
@@ -51,7 +53,7 @@
   flex: 0;
 
   .react-autoql-notification-delete-all,
-  .react-autoql-notification-dismiss-all {
+  .react-autoql-notification-mark-all {
     flex: 0 0 auto;
     display: flex;
     align-items: center;

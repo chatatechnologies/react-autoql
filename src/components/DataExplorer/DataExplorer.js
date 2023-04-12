@@ -178,7 +178,7 @@ export default class DataExplorer extends React.Component {
 
   renderQuerySuggestionCardTitle = (selectedTopic) => {
     return (
-      <div>
+      <div className='react-autoql-card-title-text'>
         <Icon style={{ fontSize: '20px' }} type='react-autoql-bubbles-outlined' /> Query Suggestions for "
         {selectedTopic?.display_name}"
       </div>

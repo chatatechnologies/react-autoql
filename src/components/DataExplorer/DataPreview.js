@@ -196,7 +196,7 @@ export default class DataExplorer extends React.Component {
 
   renderDataPreviewTitle = () => {
     return (
-      <div>
+      <div className='react-autoql-card-title-text'>
         <Icon style={{ fontSize: '20px' }} type='table' /> Data Preview - "{this.props.subject?.query}"
       </div>
     )

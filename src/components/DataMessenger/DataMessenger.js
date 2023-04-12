@@ -33,6 +33,7 @@ import { FilterLockPopover } from '../FilterLockPopover'
 import 'rc-drawer/assets/index.css'
 import './DataMessenger.scss'
 import { mergeSources } from '../../js/Util'
+import { ConfirmPopover } from '../ConfirmPopover'
 
 export class DataMessenger extends React.Component {
   constructor(props) {
@@ -58,7 +59,7 @@ export class DataMessenger extends React.Component {
           <br />
           <span>Get started by asking a query below, or use </span>
           <span className='intro-qi-link' onClick={this.openDataExplorer}>
-            <Icon type='data-search' style={{ marginRight: '-3px' }} /> {lang.dataExplorer}
+            <Icon type='data-search' /> {lang.dataExplorer}
           </span>
           <span> to discover what data is available to you!</span>
         </>
@@ -532,57 +533,22 @@ export class DataMessenger extends React.Component {
     return (
       <>
         {getAutoQLConfig(this.props.autoQLConfig).enableFilterLocking && this.renderFilterLockPopover()}
-        <Popover
-          isOpen={this.state.isOptionsDropdownOpen}
-          onClickOutside={() => {
-            this.setState({ isOptionsDropdownOpen: false })
-          }}
-          parentElement={this.messengerDrawerRef}
-          boundaryElement={this.messengerDrawerRef}
+        <ConfirmPopover
+          className={`react-autoql-drawer-header-btn clear-all ${
+            this.state.activePage === 'data-messenger' || this.state.activePage === 'dpr' ? 'visible' : 'hidden'
+          }`}
+          popoverParentElement={this.messengerDrawerRef}
+          title={lang.clearDataResponses}
+          onConfirm={this.clearMessages}
+          confirmText='Clear'
+          backText='Cancel'
           positions={['bottom', 'left', 'top', 'right']}
-          content={
-            <div>
-              <div className='clear-messages-confirm-popover'>
-                <div className='react-autoql-menu-text' onClick={this.handleClearQueriesDropdown}>
-                  <Icon type='trash' />
-                  <span style={{ marginLeft: 5 }}>{lang.clearDataResponses}</span>
-                </div>
-                <div
-                  ref={(r) => (this.clearQueriesDropdown = r)}
-                  id='clear-queries-dropdown'
-                  style={{ display: 'none' }}
-                >
-                  <Button
-                    type='default'
-                    size='small'
-                    onClick={() => this.setState({ isOptionsDropdownOpen: false })}
-                    tooltipID={this.TOOLTIP_ID}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type='primary' size='small' onClick={() => this.clearMessages()} tooltipID={this.TOOLTIP_ID}>
-                    Clear
-                  </Button>
-                </div>
-              </div>
-            </div>
-          }
+          align='end'
         >
-          <button
-            onClick={() =>
-              this.setState({
-                isOptionsDropdownOpen: !this.state.isOptionsDropdownOpen,
-              })
-            }
-            className={`react-autoql-drawer-header-btn clear-all ${
-              this.state.activePage === 'data-messenger' || this.state.activePage === 'dpr' ? 'visible' : 'hidden'
-            }`}
-            data-tip={lang.clearDataResponses}
-            data-for={this.TOOLTIP_ID}
-          >
+          <button data-tip={lang.clearQueriesTooltip} data-for={this.TOOLTIP_ID}>
             <Icon type='trash' />
           </button>
-        </Popover>
+        </ConfirmPopover>
       </>
     )
   }

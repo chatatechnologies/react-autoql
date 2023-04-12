@@ -9,7 +9,7 @@ import { ErrorBoundary } from '../../containers/ErrorHOC'
 import './Button.scss'
 
 const validTypes = ['default', 'primary', 'danger']
-const validSizes = ['small', 'large']
+const validSizes = ['small', 'medium', 'large']
 
 export default class Button extends React.Component {
   COMPONENT_KEY = `react-autoql-btn-${uuid()}`
