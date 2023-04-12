@@ -233,6 +233,7 @@ class DataAlertModal extends React.Component {
         notification_type: scheduleData.notificationType,
         reset_period: scheduleData.resetPeriod,
         time_zone: scheduleData.timezone,
+        schedules: scheduleData.schedules,
         filters,
       }
 

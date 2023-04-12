@@ -34,9 +34,15 @@ export default class ScheduleBuilder extends React.Component {
     this.DEFAULT_RESET_PERIOD_SELECT_VALUE = 'MONTH'
     this.DEFAULT_WEEKDAY_SELECT_VALUE = 'Friday'
     this.DEFAULT_MONTH_DAY_SELECT_VALUE = 'LAST'
-    this.DEFAULT_TIME_SELECT_VALUE = '5:00pm'
     this.DEFAULT_MONTH_OF_YEAR_SELECT_VALUE = 'December'
     this.DEFAULT_FREQUENCY_TYPE = SCHEDULED_TYPE
+    this.DEFAULT_TIME_SELECT_VALUE = {
+      ampm: 'pm',
+      hour: 5,
+      minute: 0,
+      value24hr: '17:00',
+      value: '5:00pm',
+    }
 
     const timeRange = getTimeRangeFromRT(props.queryResponse)
 
@@ -90,11 +96,6 @@ export default class ScheduleBuilder extends React.Component {
     }
   }
 
-  shouldRenderResetPeriodSelector = (prevState) => {
-    const state = prevState ?? this.state
-    return this.props.conditionType === COMPARE_TYPE && !state.timeRange
-  }
-
   isComplete = (prevState) => {
     const state = prevState ?? this.state
 
@@ -108,42 +109,64 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   getData = () => {
-    const { resetPeriodSelectValue, frequencyType, timezone } = this.state
-
-    let resetPeriod = null
-    let notificationType = frequencyType
-
-    if (resetPeriodSelectValue !== 'NONE') {
-      resetPeriod = resetPeriodSelectValue
-
-      if (frequencyType === CONTINUOUS_TYPE) {
-        notificationType = PERIODIC_TYPE
-      }
-    }
-
     return {
-      notificationType,
-      resetPeriod,
-      timezone,
+      notificationType: this.getNotificationType(),
+      resetPeriod: this.getResetPeriod(),
+      schedules: this.getSchedules(),
+      timezone: this.state.timezone,
     }
   }
 
-  timezoneSelector = () => {
-    return (
-      <div className='react-autoql-data-alert-frequency-option schedule-builder-timezone-section'>
-        <div>
-          <div className='react-autoql-input-label'>Time zone</div>
-          <TimezoneSelector
-            onChange={(timezone) => {
-              this.setState({ timezone: timezone.value })
-            }}
-            defaultSelection={this.state.timezone}
-            popoverParentElement={this.props.popoverParentElement}
-            popoverBoundaryElement={this.props.popoverBoundaryElement}
-          />
-        </div>
-      </div>
-    )
+  getNotificationPeriod = () => {
+    if (this.state.resetPeriodSelectValue === 'MONTH' && this.state.monthDaySelectValue === 'LAST') {
+      return 'MONTH_LAST'
+    }
+
+    return this.state.resetPeriodSelectValue
+  }
+
+  getLocalStartDate = () => {
+    return SCHEDULE_INTERVAL_OPTIONS[this.state.resetPeriodSelectValue]?.getLocalStartDate({
+      timeObj: this.state.intervalTimeSelectValue,
+      timezone: this.state.timezone,
+      monthDay: this.state.monthDaySelectValue,
+      weekDay: this.state.weekDaySelectValue,
+    })
+  }
+
+  getSchedules = () => {
+    if (this.state.frequencyType !== SCHEDULED_TYPE) {
+      return
+    }
+
+    return [
+      {
+        notification_period: this.getNotificationPeriod(),
+        local_start_date: this.getLocalStartDate(),
+        time_zone: this.state.timezone,
+      },
+    ]
+  }
+
+  getResetPeriod = () => {
+    if (this.state.resetPeriodSelectValue === 'NONE') {
+      return null
+    }
+
+    return this.state.resetPeriodSelectValue
+  }
+
+  getNotificationType = () => {
+    if (this.state.frequencyType === CONTINUOUS_TYPE && this.state.resetPeriodSelectValue !== 'NONE') {
+      return PERIODIC_TYPE
+    }
+
+    return this.state.frequencyType
+  }
+
+  shouldRenderResetPeriodSelector = (prevState) => {
+    const state = prevState ?? this.state
+    return this.props.conditionType === COMPARE_TYPE && !state.timeRange
   }
 
   renderQuery = () => {
@@ -285,17 +308,33 @@ export default class ScheduleBuilder extends React.Component {
         </div>
         <div className='react-autoql-data-alert-frequency-option'>
           <TimePicker
-            value={this.state.intervalTimeSelectValue}
-            onChange={(timeObj) => this.setState({ intervalTimeSelectValue: timeObj.value })}
+            value={this.state.intervalTimeSelectValue?.value}
+            onChange={(timeObj) => this.setState({ intervalTimeSelectValue: timeObj })}
           />
         </div>
       </>
     )
   }
 
+  timezoneSelector = () => {
+    return (
+      <div className='react-autoql-data-alert-frequency-option schedule-builder-timezone-section'>
+        <div>
+          <div className='react-autoql-input-label'>Time zone</div>
+          <TimezoneSelector
+            value={this.state.timezone}
+            onChange={(timezone) => this.setState({ timezone })}
+            popoverParentElement={this.props.popoverParentElement}
+            popoverBoundaryElement={this.props.popoverBoundaryElement}
+          />
+        </div>
+      </div>
+    )
+  }
+
   shouldRenderCheckFrequencySelector = (prevState) => {
     const state = prevState ?? this.state
-    return state.frequencyType === CONTINUOUS_TYPE
+    return state.frequencyType === CONTINUOUS_TYPE || state.frequencyType === PERIODIC_TYPE
   }
 
   checkFrequencySelector = () => {
@@ -398,8 +437,6 @@ export default class ScheduleBuilder extends React.Component {
       value = CONTINUOUS_TYPE
     }
 
-    console.log({ DATA_ALERT_FREQUENCY_TYPE_OPTIONS, value, stateValue: this.state.frequencyType })
-
     return (
       <span>
         {this.props.conditionType === EXISTS_TYPE ? (
@@ -426,7 +463,9 @@ export default class ScheduleBuilder extends React.Component {
       case SCHEDULED_TYPE: {
         return this.scheduleFrequencyOptions()
       }
-      case CONTINUOUS_TYPE:
+      case CONTINUOUS_TYPE: {
+        return this.continuousFrequencyOptions()
+      }
       case PERIODIC_TYPE: {
         return this.continuousFrequencyOptions()
       }
@@ -436,6 +475,8 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   render = () => {
+    this.getLocalStartDate()
+
     return (
       <ErrorBoundary>
         <div className='data-alert-schedule-builder-step' data-test='schedule-builder'>

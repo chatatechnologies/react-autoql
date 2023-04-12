@@ -1,11 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import _get from 'lodash.get'
 import momentTZ from 'moment-timezone'
 
 import { Select } from '../Select'
 
-const defaultTimeZone = momentTZ.tz.guess()
 const options = momentTZ.tz.names().map((tz) => {
   return {
     value: tz,
@@ -13,15 +11,21 @@ const options = momentTZ.tz.names().map((tz) => {
   }
 })
 
-export default class DataAlertModal extends React.Component {
+export default class TimezoneSelector extends React.Component {
+  constructor(props) {
+    super(props)
+
+    this.defaultTimeZone = momentTZ.tz.guess()
+  }
+
   static propTypes = {
     onChange: PropTypes.func,
-    defaultSelection: PropTypes.string,
+    value: PropTypes.string,
   }
 
   static defaultProps = {
     onChange: () => {},
-    defaultSelection: undefined,
+    value: undefined,
   }
 
   componentDidMount = () => {
@@ -30,7 +34,7 @@ export default class DataAlertModal extends React.Component {
   }
 
   getSelectedOption = () => {
-    const defaultValue = this.props.defaultSelection || defaultTimeZone
+    const defaultValue = this.props.value || this.defaultTimeZone
 
     return options.find((option) => {
       return option.label === defaultValue

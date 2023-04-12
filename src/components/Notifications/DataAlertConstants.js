@@ -1,4 +1,5 @@
 import React from 'react'
+import { getDayLocalStartDate, getMonthLocalStartDate, getWeekLocalStartDate } from './helpers'
 
 export const CUSTOM_TYPE = 'CUSTOM'
 export const PROJECT_TYPE = 'PROJECT'
@@ -71,6 +72,7 @@ export const SCHEDULE_INTERVAL_OPTIONS = {
         Every <strong>day</strong>
       </span>
     ),
+    getLocalStartDate: getDayLocalStartDate,
   },
   WEEK: {
     displayName: (
@@ -78,6 +80,7 @@ export const SCHEDULE_INTERVAL_OPTIONS = {
         Every <strong>week</strong>
       </span>
     ),
+    getLocalStartDate: getWeekLocalStartDate,
   },
   MONTH: {
     displayName: (
@@ -85,6 +88,7 @@ export const SCHEDULE_INTERVAL_OPTIONS = {
         Every <strong>month</strong>
       </span>
     ),
+    getLocalStartDate: getMonthLocalStartDate,
   },
   // Not supporting for now
   // YEAR: {

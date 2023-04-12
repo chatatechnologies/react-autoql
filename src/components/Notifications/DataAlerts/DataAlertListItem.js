@@ -8,7 +8,7 @@ import { hideTooltips } from '../../Tooltip'
 import { CONTINUOUS_TYPE, CUSTOM_TYPE, PERIODIC_TYPE, SCHEDULED_TYPE } from '../DataAlertConstants'
 
 import { initializeAlert, updateDataAlertStatus } from '../../../js/notificationService'
-import { formatResetDate } from '../helpers'
+import { formatResetDate, formatResetDateShort } from '../helpers'
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
@@ -288,6 +288,19 @@ export default class DataAlertListItem extends React.Component {
     )
   }
 
+  renderDataAlertCycleStart = () => {
+    const { dataAlert } = this.props
+    if (!dataAlert?.reset_date) {
+      return null
+    }
+
+    return (
+      <span>
+        {formatResetDateShort(dataAlert)} ({dataAlert.time_zone})
+      </span>
+    )
+  }
+
   render = () => {
     const { dataAlert } = this.props
 
@@ -322,6 +335,14 @@ export default class DataAlertListItem extends React.Component {
               <span>State</span>
             </div>
             <div className='data-alert-section-content'>{this.renderDataAlertState()}</div>
+          </div>
+          <div className='react-autoql-data-alert-list-item-section'>
+            <div className='data-alert-header-item'>
+              <span>Next Cycle Start</span>
+            </div>
+            <div className='data-alert-section-content data-alert-section-cycle-start'>
+              {this.renderDataAlertCycleStart()}
+            </div>
           </div>
           <div className='react-autoql-data-alert-list-item-section'>
             <div className='data-alert-header-item'>
