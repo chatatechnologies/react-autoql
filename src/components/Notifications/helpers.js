@@ -1,5 +1,10 @@
 import dayjs from '../../js/dayjsWithPlugins'
 import { WEEKDAY_NAMES_SUN } from '../../js/Constants'
+import { CONTINUOUS_TYPE, PERIODIC_TYPE } from './DataAlertConstants'
+
+export const showCheckFrequencySetting = (notificationType) => {
+  return notificationType === CONTINUOUS_TYPE || notificationType === PERIODIC_TYPE
+}
 
 export const resetDateIsFuture = (dataAlert) => {
   if (!dataAlert.reset_date) {

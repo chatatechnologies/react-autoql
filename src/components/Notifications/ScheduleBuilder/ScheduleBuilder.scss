@@ -29,10 +29,11 @@
   }
 
   .frequency-type-container {
+    padding: 3px 5px;
     margin-bottom: 20px;
 
     .react-autoql-select {
-      padding-left: 6px;
+      padding-left: 4px;
     }
   }
   .frequency-settings-container {
@@ -49,8 +50,6 @@
     }
 
     .react-autoql-data-alert-frequency-option {
-      margin-right: 10px;
-
       &.check-frequency {
         width: 300px;
         max-width: 100%;

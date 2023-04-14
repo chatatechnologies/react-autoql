@@ -63,7 +63,6 @@ export default class RuleSimple extends React.Component {
     ruleId: PropTypes.string,
     onUpdate: PropTypes.func,
     initialData: PropTypes.arrayOf(PropTypes.shape({})),
-    readOnly: PropTypes.bool,
     queryResponse: PropTypes.shape({}),
     onLastInputEnterPress: PropTypes.func,
   }
@@ -74,7 +73,6 @@ export default class RuleSimple extends React.Component {
     onUpdate: () => {},
     initialData: undefined,
     queryResponse: undefined,
-    readOnly: false,
     onLastInputEnterPress: () => {},
   }
 
@@ -308,6 +306,7 @@ export default class RuleSimple extends React.Component {
         options={options}
         value={this.state.selectedOperator}
         className='react-autoql-rule-condition-select'
+        label='Meets this condition'
         onChange={(value) => {
           this.setState({ selectedOperator: value })
         }}
@@ -510,15 +509,37 @@ export default class RuleSimple extends React.Component {
 
   renderFormattedQuery = () => {
     return (
-      <div className='data-alert-rule-formatted-query'>
-        <span>{this.getFormattedQueryText()}</span>
-        <Icon
-          type='info'
-          className='data-alert-rule-tooltip-icon'
-          data-for={this.props.tooltipID}
-          data-tip='This query will be used to evaluate the conditions below. If the query result meets the specified conditons, an alert will be triggered.'
-          data-place='right'
-        />
+      <div>
+        {this.allowOperators() && this.props.queryResponse ? (
+          <div className='data-alert-rule-formatted-query'>
+            <div>{this.getFormattedQueryText()} </div>
+            <Icon
+              type='info'
+              className='data-alert-rule-tooltip-icon'
+              data-for={this.props.tooltipID}
+              data-tip='This query will be used to evaluate the conditions below. If the query result meets the specified conditons, an alert will be triggered.'
+              data-place='right'
+            />
+          </div>
+        ) : (
+          <span
+            className='data-alert-rule-query-readonly-container'
+            data-for={this.props.tooltipID}
+            data-tip='Editing this query is not permitted. To use a different query, simply create a new Data Alert via Data Messenger or a Dashboard.'
+          >
+            <Input
+              label={
+                this.allowOperators()
+                  ? 'Tigger Alert when this query'
+                  : 'Trigger Alert when there is new data detected for this query'
+              }
+              value={this.getFormattedQueryText()}
+              fullWidth
+              readOnly
+              disabled
+            />
+          </span>
+        )}
         {/* 
         Do we want the ability to edit this?
         <Icon type='edit' onClick={() => this.setState({ isEditingQuery: true })} /> 
@@ -536,6 +557,7 @@ export default class RuleSimple extends React.Component {
             value={this.state.inputValue}
             onChange={(e) => this.setState({ inputValue: e.target.value })}
             spellCheck={false}
+            label='Trigger Alert when'
             icon='react-autoql-bubbles-outlined'
           />
         ) : (
@@ -561,12 +583,16 @@ export default class RuleSimple extends React.Component {
     }
   }
 
+  shouldRenderValidationSection = () => {
+    return this.state.selectedOperator !== EXISTS_TYPE && this.state.secondTermType === QUERY_TERM_TYPE
+  }
+
   renderTermValidationSection = () => {
-    return (
-      <div className='rule-simple-validation-container'>
-        {this.state.secondTermType === QUERY_TERM_TYPE ? this.renderValidationError() : null}
-      </div>
-    )
+    if (!this.shouldRenderValidationSection()) {
+      return null
+    }
+
+    return <div className='rule-simple-validation-container'>{this.renderValidationError()}</div>
   }
 
   renderSecondTermInput = () => {
@@ -607,21 +633,25 @@ export default class RuleSimple extends React.Component {
     )
   }
 
+  allowOperators = () => {
+    return this.state.selectedOperator !== EXISTS_TYPE
+  }
+
   render = () => {
     return (
       <ErrorBoundary>
-        <div style={this.props.style}>
-          <div className='react-autoql-notification-rule-container' data-test='rule'>
-            <div className='react-autoql-rule-first-input-container'>
-              <div className='react-autoql-input-label'>Trigger Alert when</div>
-              {this.renderQueryDisplay()}
-            </div>
+        <div
+          className={`react-autoql-rule-simple
+        ${this.shouldRenderValidationSection() ? 'with-query-validation' : ''}`}
+          style={this.props.style}
+        >
+          <div className='react-autoql-rule-simple-first-query' data-test='rule'>
+            <div className='react-autoql-rule-first-input-container'>{this.renderQueryDisplay()}</div>
           </div>
           <div className='react-autoql-notification-rule-container' data-test='rule'>
-            {this.state.selectedOperator !== EXISTS_TYPE && (
+            {this.allowOperators() && (
               <>
                 <div className='react-autoql-rule-condition-select-input-container'>
-                  <div className='react-autoql-input-label'>Meets this condition</div>
                   {this.renderOperatorSelector()}
                 </div>
                 <div className='react-autoql-rule-second-input-container'>

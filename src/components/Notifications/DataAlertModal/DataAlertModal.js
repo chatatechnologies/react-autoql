@@ -25,14 +25,14 @@ import { withTheme } from '../../../theme'
 import { DATA_ALERT_CONDITION_TYPES, COMPARE_TYPE, EXISTS_TYPE, QUERY_TERM_TYPE } from '../DataAlertConstants'
 
 import './DataAlertModal.scss'
+import DataAlertSettings from './DataAlertSettings'
+import AppearanceSection from './AppearanceSection'
 
 class DataAlertModal extends React.Component {
   constructor(props) {
     super(props)
 
     this.COMPONENT_KEY = uuid()
-    this.COMPONENT_KEY = uuid()
-    this.SAMPLE_CREATED_AT = new Date()
     this.TOOLTIP_ID = `react-autoql-data-alert-modal-tooltip-${this.COMPONENT_KEY}`
     this.CONDITIONS_STEP = 'CONDITIONS'
     this.FREQUENCY_STEP = 'FREQUENCY'
@@ -57,7 +57,6 @@ class DataAlertModal extends React.Component {
     title: PropTypes.string,
     titleIcon: PropTypes.oneOfType([PropTypes.element, PropTypes.instanceOf(Icon)]),
     enableQueryValidation: PropTypes.bool,
-    onValidate: PropTypes.func,
     onClosed: PropTypes.func,
     onOpened: PropTypes.func,
     editView: PropTypes.bool,
@@ -78,7 +77,6 @@ class DataAlertModal extends React.Component {
     onOpened: () => {},
     titleIcon: undefined,
     enableQueryValidation: true,
-    onValidate: undefined,
     editView: false,
   }
 
@@ -93,7 +91,7 @@ class DataAlertModal extends React.Component {
     } else if (this.props.isVisible) {
       if (this.state.activeStep !== prevState.activeStep) {
         if (this.state.activeStep === this.getStepNumber(this.MESSAGE_STEP)) {
-          this.alertTitleInput?.focus()
+          this.appearanceSectionRef?.focusTitleInput()
         }
       }
 
@@ -111,14 +109,13 @@ class DataAlertModal extends React.Component {
   getSteps = (initialProps) => {
     const props = initialProps ?? this.props
     this.SUPPORTED_CONDITION_TYPES = this.getSupportedConditionTypes(props)
-    const needsConditions = this.SUPPORTED_CONDITION_TYPES?.includes(COMPARE_TYPE)
 
     let steps = [
       { title: 'Configure Timing', value: this.FREQUENCY_STEP },
       { title: 'Customize Appearance', value: this.MESSAGE_STEP },
     ]
 
-    if (needsConditions) {
+    if (this.conditionsEditable()) {
       steps.unshift({ title: 'Set Up Conditions', value: this.CONDITIONS_STEP })
     }
 
@@ -250,7 +247,7 @@ class DataAlertModal extends React.Component {
   }
 
   isConditionSectionReady = () => {
-    if (this.SUPPORTED_CONDITION_TYPES?.includes(COMPARE_TYPE) && this.expressionRef?._isMounted) {
+    if (this.conditionsEditable() && this.expressionRef?._isMounted) {
       return this.expressionRef?.isComplete()
     }
 
@@ -439,41 +436,6 @@ class DataAlertModal extends React.Component {
     )
   }
 
-  renderDataAlertNameInput = () => {
-    return (
-      <div className='data-alert-name-input-section'>
-        <div className='react-autoql-input-label'>Title</div>
-        <Input
-          ref={(r) => (this.alertTitleInput = r)}
-          className='react-autoql-notification-display-name-input'
-          placeholder='eg. "Budget alert!"'
-          icon='title'
-          maxLength='50'
-          value={this.state.titleInput}
-          onChange={(e) => {
-            this.setState({ titleInput: e.target.value })
-          }}
-        />
-      </div>
-    )
-  }
-
-  renderDataAlertMessageInput = () => {
-    return (
-      <>
-        <div className='react-autoql-input-label'>Message (optional)</div>
-        <Input
-          className='react-autoql-notification-message-input'
-          placeholder='eg. "You have spent 80% of your budget for the month."'
-          area
-          maxLength='200'
-          value={this.state.messageInput}
-          onChange={(e) => this.setState({ messageInput: e.target.value })}
-        />
-      </>
-    )
-  }
-
   renderConditionTypeSelector = () => {
     const options = this.SUPPORTED_CONDITION_TYPES?.map((type) => {
       const conditionObj = DATA_ALERT_CONDITION_TYPES[type]
@@ -509,7 +471,7 @@ class DataAlertModal extends React.Component {
       <div className={`react-autoql-data-alert-modal-step ${active ? '' : 'hidden'}`}>
         <div style={{ display: 'flex' }}>
           <div style={{ flex: 1 }}>
-            {this.SUPPORTED_CONDITION_TYPES?.includes(COMPARE_TYPE) && (
+            {this.conditionsEditable() && (
               <ConditionBuilder
                 authentication={this.props.authentication}
                 ref={(r) => (this.expressionRef = r)}
@@ -550,59 +512,19 @@ class DataAlertModal extends React.Component {
     )
   }
 
-  renderDataAlertPreview = () => {
-    return (
-      <div className='data-alert-preview'>
-        <NotificationItem
-          authentication={this.props.authentication}
-          notification={{
-            id: `preview-${this.COMPONENT_KEY}`,
-            title: this.state.titleInput || (
-              <span>
-                <em>{'[Title]'}</em>
-              </span>
-            ),
-            message: this.state.messageInput,
-            created_at: this.SAMPLE_CREATED_AT.toISOString(),
-            state: 'UNACKNOWLEDGED',
-            data_return_query: this.props.queryResponse?.data?.data?.text,
-            expanded: false, // this.state.isPreviewExpanded,
-          }}
-        />
-      </div>
-    )
-  }
-
-  getConditionStatement = () => {
-    let conditions = this.expressionRef?.getConditionStatement()
-    if (!conditions) {
-      conditions = `new data is detected for "${this.props.queryResponse?.data?.data?.text}"`
-    }
-
-    return conditions
-  }
-
   renderComposeMessageStep = (active) => {
-    const conditionStatement = this.getConditionStatement()
-
     return (
       <div className={`react-autoql-data-alert-modal-step ${active ? '' : 'hidden'}`}>
-        {conditionStatement ? (
-          <span>
-            If <em>{conditionStatement}</em>, you'll receive a notification with this{' '}
-            <strong>title and message:</strong>
-          </span>
-        ) : null}
-        <div className='compose-message-section'>
-          <div className='form-section'>
-            {this.renderDataAlertNameInput()}
-            {this.renderDataAlertMessageInput()}
-          </div>
-          <div className='preview-section'>
-            <div className='react-autoql-input-label'>Preview</div>
-            {this.renderDataAlertPreview()}
-          </div>
-        </div>
+        <AppearanceSection
+          ref={(r) => (this.appearanceSectionRef = r)}
+          titleInput={this.state.titleInput}
+          messageInput={this.state.messageInput}
+          onTitleInputChange={(e) => this.setState({ titleInput: e.target.value })}
+          onMessageInputChange={(e) => this.setState({ messageInput: e.target.value })}
+          queryText={this.getQueryText()}
+          conditionStatement={this.expressionRef?.getConditionStatement()}
+          showConditionStatement
+        />
       </div>
     )
   }
@@ -620,7 +542,7 @@ class DataAlertModal extends React.Component {
     }
   }
 
-  renderContent = () => {
+  renderStepContent = () => {
     const { activeStep } = this.state
 
     return (
@@ -628,6 +550,42 @@ class DataAlertModal extends React.Component {
         {this.renderConditionsStep(activeStep === this.getStepNumber(this.CONDITIONS_STEP))}
         {this.renderFrequencyStep(activeStep === this.getStepNumber(this.FREQUENCY_STEP))}
         {this.renderComposeMessageStep(activeStep === this.getStepNumber(this.MESSAGE_STEP))}
+      </>
+    )
+  }
+
+  conditionsEditable = () => {
+    return this.SUPPORTED_CONDITION_TYPES?.includes(COMPARE_TYPE)
+  }
+
+  renderContent = () => {
+    if (this.props.editView) {
+      return (
+        <DataAlertSettings
+          authentication={this.props.authentication}
+          currentDataAlert={this.props.currentDataAlert}
+          enableQueryValidation={this.props.enableQueryValidation}
+          supportedConditionTypes={this.SUPPORTED_CONDITION_TYPES}
+          onErrorCallback={this.props.onErrorCallback}
+          conditionsEditable={this.conditionsEditable()}
+          tooltipID={this.TOOLTIP_ID}
+        />
+      )
+    }
+
+    return (
+      <>
+        <StepsHoz
+          activeStep={this.state.activeStep}
+          onStepChange={this.setStep}
+          steps={this.steps.map((step, i) => {
+            return {
+              title: step.title,
+              complete: this.state.completedSections[i],
+            }
+          })}
+        />
+        {this.renderStepContent()}
       </>
     )
   }
@@ -660,12 +618,18 @@ class DataAlertModal extends React.Component {
     return <span key={`title-icon-${this.COMPONENT_KEY}`} />
   }
 
+  getQueryText = () => {
+    return this.props.queryResponse?.data?.data?.text ?? this.props.currentDataAlert?.data_return_query
+  }
+
   render = () => {
-    const query = this.props.queryResponse?.data?.data?.text
+    const query = this.getQueryText()
+
     return (
       <ErrorBoundary>
         <Modal
           contentClassName='react-autoql-data-alert-creation-modal'
+          bodyClassName='react-autoql-data-alert-modal-body'
           overlayStyle={{ zIndex: '9998' }}
           title={this.props.editView ? 'Data Alert Settings' : 'Create Data Alert'}
           titleIcon={this.getTitleIcon()}
@@ -675,28 +639,20 @@ class DataAlertModal extends React.Component {
           onClose={this.props.onClose}
           confirmOnClose={true}
           enableBodyScroll
-          width='1000px'
+          width='1200px'
           footer={this.renderFooter()}
           onOpened={this.props.onOpened}
           onClosed={this.props.onClosed}
         >
           {/* We must render a new <Tooltip/> inside of modals */}
           <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' delayShow={500} place='top' />
-          {this.props.isVisible && (
-            <div className='react-autoql-data-alert-modal-content'>
-              <StepsHoz
-                activeStep={this.state.activeStep}
-                onStepChange={this.setStep}
-                steps={this.steps.map((step, i) => {
-                  return {
-                    title: step.title,
-                    complete: this.state.completedSections[i],
-                  }
-                })}
-              />
-              {this.renderContent()}
-            </div>
-          )}
+          <div
+            key={`data-alert-modal-content-${this.COMPONENT_KEY}`}
+            ref={(r) => (this.contentRef = r)}
+            className='react-autoql-data-alert-modal-content'
+          >
+            {this.renderContent()}
+          </div>
         </Modal>
         <DataAlertDeleteDialog
           authentication={this.props.authentication}

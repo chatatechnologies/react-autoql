@@ -1,7 +1,11 @@
+.react-autoql-data-alert-modal-body {
+  padding: 20px;
+}
+
 .react-autoql-data-alert-modal-content {
   height: 400px;
   max-height: 90vh;
-  padding: 0 40px;
+  padding: 0px 10%;
   display: flex;
   flex-direction: column;
 
@@ -10,39 +14,8 @@
     font-size: 15px;
     padding-top: 15px;
 
-    .compose-message-section {
-      display: flex;
-      margin-top: 20px;
-
-      .form-section,
-      .preview-section {
-        flex: 1;
-      }
-
-      .preview-section {
-        display: flex;
-        flex-direction: column;
-        margin-left: 20px;
-
-        .data-alert-preview {
-          flex: 1;
-          padding: 20px;
-          border: 1px solid var(--react-autoql-border-color);
-          border-radius: 2px;
-          background: var(--react-autoql-background-color-primary);
-          overflow: auto;
-          pointer-events: none !important;
-
-          .react-autoql-notification-list-item {
-            transition: none;
-            animation: none;
-          }
-
-          .react-autoql-notification-extra-content {
-            display: none !important;
-          }
-        }
-      }
+    .react-autoql-data-alert-frequency-option {
+      margin-right: 10px;
     }
 
     .data-alert-modal-condition-title {
@@ -50,33 +23,82 @@
       margin-bottom: 5px;
     }
 
-    .data-alert-name-input-section {
-      margin-bottom: 20px;
-
-      .react-autoql-data-alert-modal-tooltip-icon {
-        flex: 0 0 auto;
-        font-size: 1.1em;
-        vertical-align: text-top;
-      }
-
-      .react-autoql-notification-display-name-input {
-        width: 100%;
-      }
-    }
-
-    .react-autoql-input-container {
-      width: 100%;
-      margin: 0;
-
-      textarea {
-        width: 100% !important;
-        height: 5em;
-      }
-    }
-
     &.hidden {
       position: absolute;
       display: none;
+    }
+  }
+
+  .data-alert-name-input-section {
+    margin-bottom: 20px;
+
+    .react-autoql-data-alert-modal-tooltip-icon {
+      flex: 0 0 auto;
+      font-size: 1.1em;
+      vertical-align: text-top;
+    }
+
+    .react-autoql-notification-display-name-input {
+      width: 100%;
+    }
+  }
+
+  .react-autoql-input-container {
+    flex: 1;
+
+    textarea {
+      resize: none;
+      flex: 1;
+    }
+  }
+
+  .compose-message-section-condition-statement {
+    padding: 3px 5px;
+    margin-bottom: 20px;
+  }
+
+  .compose-message-section {
+    display: flex;
+
+    .form-section,
+    .preview-section {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .react-autoql-notification-message-input {
+      flex: 1;
+      margin-top: 10px;
+
+      .react-autoql-input {
+        flex: 1 0 70px;
+      }
+    }
+
+    .preview-section {
+      display: flex;
+      flex-direction: column;
+      margin-left: 14px;
+
+      .data-alert-preview {
+        flex: 1;
+        padding: 20px;
+        border: 1px solid var(--react-autoql-border-color);
+        border-radius: 2px;
+        background: var(--react-autoql-background-color-primary);
+        overflow: auto;
+        pointer-events: none !important;
+
+        .react-autoql-notification-list-item {
+          transition: none;
+          animation: none;
+        }
+
+        .react-autoql-notification-extra-content {
+          display: none !important;
+        }
+      }
     }
   }
 

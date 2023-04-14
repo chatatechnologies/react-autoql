@@ -322,7 +322,7 @@ export default class DataAlertListItem extends React.Component {
           </div>
           <div className='react-autoql-data-alert-list-item-section'>
             <div className='data-alert-header-item'>
-              <span>Cycle</span>
+              <span>Frequency</span>
             </div>
             <div className='data-alert-section-content data-alert-section-cycle'>{this.renderDataAlertCycle()}</div>
           </div>
@@ -334,7 +334,7 @@ export default class DataAlertListItem extends React.Component {
           </div>
           <div className='react-autoql-data-alert-list-item-section'>
             <div className='data-alert-header-item'>
-              <span>Next Cycle Start</span>
+              <span>Next Cycle</span>
             </div>
             <div className='data-alert-section-content data-alert-section-cycle-start'>
               {this.renderDataAlertCycleStart()}

@@ -11,11 +11,17 @@ export default class Input extends React.Component {
   static propTypes = {
     icon: PropTypes.string,
     type: PropTypes.string,
+    size: PropTypes.oneOf(['small', 'large']),
+    label: PropTypes.oneOfType(PropTypes.element || PropTypes.string),
+    fullWidth: PropTypes.bool,
   }
 
   static defaultProps = {
     icon: undefined,
     type: 'single',
+    size: 'large',
+    label: '',
+    fullWidth: false,
   }
 
   state = {
@@ -46,7 +52,7 @@ export default class Input extends React.Component {
   }
 
   render = () => {
-    const { icon, area, selectOptions, selectValue, onSelectChange, ...nativeProps } = this.props
+    const { icon, area, size, selectOptions, style, selectValue, onSelectChange, ...nativeProps } = this.props
     const { className } = nativeProps
 
     const hasSelect = !!this.props.selectOptions?.length
@@ -54,42 +60,52 @@ export default class Input extends React.Component {
     return (
       <ErrorBoundary>
         <div
-          className={`react-autoql-input-container
-            ${className}
-            ${this.state.focused ? 'focus' : ''}
-            ${hasSelect ? 'with-select' : ''}`}
-          data-test='react-autoql-input'
+          className={`react-autoql-input-and-label-container
+        ${className ?? ''}
+        ${this.props.fullWidth ? 'react-autoql-input-full-width' : ''}`}
+          style={style}
         >
-          {hasSelect && (
-            <Select
-              className='react-autoql-text-input-selector'
-              options={selectOptions}
-              value={selectValue}
-              onChange={this.onSelectChange}
-            />
-          )}
-          {!!this.props.area ? (
-            <textarea
-              {...nativeProps}
-              ref={(r) => (this.inputRef = r)}
-              className='react-autoql-input area'
-              onFocus={this.onFocus}
-              onBlur={this.onBlur}
-            />
-          ) : (
-            <div className='react-autoql-input-and-icon'>
-              <input
+          {!!this.props.label && <div className='react-autoql-input-label'>{this.props.label}</div>}
+          <div
+            className={`react-autoql-input-container
+            ${this.state.focused ? 'focus' : ''}
+            ${hasSelect ? 'with-select' : ''}
+            ${this.props.size === 'small' ? 'react-autoql-input-small' : 'react-autoql-input-large'}`}
+            data-test='react-autoql-input'
+          >
+            {hasSelect && (
+              <Select
+                className='react-autoql-text-input-selector'
+                options={selectOptions}
+                value={selectValue}
+                onChange={this.onSelectChange}
+              />
+            )}
+            {!!this.props.area ? (
+              <textarea
                 {...nativeProps}
                 ref={(r) => (this.inputRef = r)}
-                className={`react-autoql-input
-                ${icon ? 'with-icon' : ''}
-                ${hasSelect ? 'with-select' : ''}`}
+                className='react-autoql-input area'
                 onFocus={this.onFocus}
                 onBlur={this.onBlur}
               />
-              {icon && <Icon className={`react-autoql-input-icon ${this.state.focused ? ' focus' : ''}`} type={icon} />}
-            </div>
-          )}
+            ) : (
+              <div className='react-autoql-input-and-icon'>
+                <input
+                  {...nativeProps}
+                  ref={(r) => (this.inputRef = r)}
+                  className={`react-autoql-input
+                ${icon ? 'with-icon' : ''}
+                ${hasSelect ? 'with-select' : ''}`}
+                  onFocus={this.onFocus}
+                  onBlur={this.onBlur}
+                />
+                {icon && (
+                  <Icon className={`react-autoql-input-icon ${this.state.focused ? ' focus' : ''}`} type={icon} />
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </ErrorBoundary>
     )

@@ -141,7 +141,7 @@ export default class Modal extends React.Component {
               <Icon type='close' className='react-autoql-modal-close-btn' onClick={this.onClose} />
             </div>
             <div
-              className='react-autoql-modal-body'
+              className={`react-autoql-modal-body ${this.props.bodyClassName ?? ''}`}
               style={{
                 overflow: this.props.enableBodyScroll ? 'auto' : 'hidden',
               }}

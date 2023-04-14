@@ -21,11 +21,13 @@ export default class TimezoneSelector extends React.Component {
   static propTypes = {
     onChange: PropTypes.func,
     value: PropTypes.string,
+    label: PropTypes.string,
   }
 
   static defaultProps = {
     onChange: () => {},
     value: undefined,
+    label: '',
   }
 
   componentDidMount = () => {
@@ -54,6 +56,7 @@ export default class TimezoneSelector extends React.Component {
         maxMenuHeight={180}
         popoverParentElement={this.props.popoverParentElement}
         popoverBoundaryElement={this.props.popoverBoundaryElement}
+        label={this.props.label}
         isSearchable
       />
     )
