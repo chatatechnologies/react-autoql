@@ -165,7 +165,6 @@ export default class DataAlertSettings extends React.Component {
         onChange={(notificationType) => this.setState({ notificationType })}
         className='react-autoql-alert-type-setting-select'
         label='Alert Type'
-        size='small'
         fullWidth
         options={[
           {
@@ -215,17 +214,16 @@ export default class DataAlertSettings extends React.Component {
       <ErrorBoundary>
         <Settings>
           <SettingSection title='Conditions'>{this.ConditionsSettings()}</SettingSection>
-          {/* <Divider horizontal /> */}
+          <Divider horizontal />
           <SettingSection title='Timing'>
             <SettingGroup flex>
               <Setting flexSize={1}>{this.AlertTypeSetting()}</Setting>
-              <Divider vertical />
               <SettingGroup flexSize={2}>
                 <Setting>{this.ScheduleSettings()}</Setting>
               </SettingGroup>
             </SettingGroup>
           </SettingSection>
-          {/* <Divider horizontal /> */}
+          <Divider horizontal />
           <SettingSection title='Appearance'>{this.AppearanceSettings()}</SettingSection>
         </Settings>
       </ErrorBoundary>

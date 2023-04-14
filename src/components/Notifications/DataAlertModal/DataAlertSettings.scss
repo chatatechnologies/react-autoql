@@ -5,16 +5,16 @@
 
 .react-autoql-settings-vertical-divider {
   flex: 0 0 0;
-  opacity: 0.5;
+  opacity: 0.3;
 
   &.react-autoql-settings-vertical-divider-horizontal {
-    margin: 15px 5px;
+    margin: 5px;
     padding: 0 10px;
     border-top: 1px solid var(--react-autoql-border-color);
   }
 
   &.react-autoql-settings-vertical-divider-vertical {
-    margin: 5px 15px;
+    margin: 5px;
     padding: 10px 0;
     border-left: 1px solid var(--react-autoql-border-color);
   }
@@ -36,7 +36,7 @@
     padding: 10px 0;
 
     .react-autoql-data-alert-setting-section-title {
-      margin: 3px 5px;
+      margin: 5px;
       font-size: 16px;
       font-weight: 600;
     }

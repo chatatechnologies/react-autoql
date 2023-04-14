@@ -5,7 +5,7 @@
 .react-autoql-data-alert-modal-content {
   height: 400px;
   max-height: 90vh;
-  padding: 0px 10%;
+  padding: 0px 80px;
   display: flex;
   flex-direction: column;
 
@@ -59,6 +59,7 @@
 
   .compose-message-section {
     display: flex;
+    flex-wrap: wrap;
 
     .form-section,
     .preview-section {

@@ -531,7 +531,7 @@ export default class RuleSimple extends React.Component {
               label={
                 this.allowOperators()
                   ? 'Tigger Alert when this query'
-                  : 'Trigger Alert when there is new data detected for this query'
+                  : 'Trigger Alert when new data detected is detected for this query'
               }
               value={this.getFormattedQueryText()}
               fullWidth
