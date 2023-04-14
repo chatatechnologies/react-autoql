@@ -9,12 +9,14 @@
 
   &.react-autoql-settings-vertical-divider-horizontal {
     margin: 5px;
+    margin-top: 0;
     padding: 0 10px;
     border-top: 1px solid var(--react-autoql-border-color);
   }
 
   &.react-autoql-settings-vertical-divider-vertical {
     margin: 5px;
+    margin-left: 0;
     padding: 10px 0;
     border-left: 1px solid var(--react-autoql-border-color);
   }
@@ -37,6 +39,7 @@
 
     .react-autoql-data-alert-setting-section-title {
       margin: 5px;
+      margin-bottom: 10px;
       font-size: 16px;
       font-weight: 600;
     }

@@ -417,8 +417,6 @@ class NotificationFeed extends React.Component {
         onSave={this.onDataAlertSave}
         onErrorCallback={this.props.onErrorCallback}
         allowDelete={this.state.activeDataAlert?.type === 'CUSTOM'}
-        title={this.state.activeDataAlert ? 'Edit Data Alert' : 'Create Data Alert'}
-        titleIcon={this.state.activeDataAlert ? <Icon type='edit' /> : <span />}
         tooltipID={this.props.tooltipID}
         editView
       />

@@ -12,7 +12,7 @@ export default class Input extends React.Component {
     icon: PropTypes.string,
     type: PropTypes.string,
     size: PropTypes.oneOf(['small', 'large']),
-    label: PropTypes.oneOfType(PropTypes.element || PropTypes.string),
+    label: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
     fullWidth: PropTypes.bool,
   }
 

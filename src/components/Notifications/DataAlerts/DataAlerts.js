@@ -132,7 +132,6 @@ class DataAlerts extends React.Component {
         onErrorCallback={this.props.onErrorCallback}
         onSuccessAlert={this.props.onSuccessAlert}
         onDelete={this.onDataAlertDelete}
-        titleIcon={this.state.activeDataAlert ? <Icon type='edit' /> : <span />}
         selectedDemoProjectId={this.props.selectedDemoProjectId}
         tooltipID={this.props.tooltipID}
         editView

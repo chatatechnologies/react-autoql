@@ -54,8 +54,6 @@ class DataAlertModal extends React.Component {
     isManagement: PropTypes.bool,
     onManagementCreateDataAlert: PropTypes.func,
     onManagementDeleteDataAlert: PropTypes.func,
-    title: PropTypes.string,
-    titleIcon: PropTypes.oneOfType([PropTypes.element, PropTypes.instanceOf(Icon)]),
     enableQueryValidation: PropTypes.bool,
     onClosed: PropTypes.func,
     onOpened: PropTypes.func,
@@ -75,7 +73,6 @@ class DataAlertModal extends React.Component {
     onManagementDeleteDataAlert: () => {},
     onClosed: () => {},
     onOpened: () => {},
-    titleIcon: undefined,
     enableQueryValidation: true,
     editView: false,
   }
@@ -612,7 +609,7 @@ class DataAlertModal extends React.Component {
 
   getTitleIcon = () => {
     if (!_isEmpty(this.props.currentDataAlert)) {
-      return <Icon key={`title-icon-${this.COMPONENT_KEY}`} type='edit' />
+      return <Icon key={`title-icon-${this.COMPONENT_KEY}`} type='settings' />
     }
 
     return <span key={`title-icon-${this.COMPONENT_KEY}`} />

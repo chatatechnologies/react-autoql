@@ -17,7 +17,7 @@ export default class Select extends React.Component {
     options: PropTypes.arrayOf(PropTypes.shape({})),
     popupClassname: PropTypes.string,
     value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    label: PropTypes.oneOfType(PropTypes.element || PropTypes.string),
+    label: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
     size: PropTypes.string,
     showArrow: PropTypes.bool,
     outlined: PropTypes.bool,
