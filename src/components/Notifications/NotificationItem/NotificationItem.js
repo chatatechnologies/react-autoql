@@ -10,6 +10,7 @@ import { hideTooltips } from '../../Tooltip'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { ConditionBuilder } from '../ConditionBuilder'
 import NotificationQueryResponse from './NotificationQueryResponse'
+import { Menu, MenuItem } from '../../Menu'
 
 import {
   dismissNotification,
@@ -238,30 +239,6 @@ export default class NotificationItem extends React.Component {
     )
   }
 
-  dataAlertToggleListItem = () => {
-    const status = this.state.dataAlertStatus ?? this.props.dataAlert?.status
-
-    if (!status) {
-      return null
-    }
-
-    const isActive = status === 'ACTIVE' || status === 'WAITING'
-
-    return (
-      <li
-        onClick={(e) =>
-          this.onOptionClick(e, () => {
-            const newStatus = isActive ? 'INACTIVE' : 'ACTIVE'
-            this.changeDataAlertStatus(newStatus)
-          })
-        }
-      >
-        <Icon type={isActive ? 'notification-off' : 'notification'} />{' '}
-        <span>Turn these {isActive ? 'off' : 'back on'}</span>
-      </li>
-    )
-  }
-
   renderExpandArrow = () => {
     return (
       <div className='react-autoql-notification-item-expand-arrow'>
@@ -300,8 +277,7 @@ export default class NotificationItem extends React.Component {
     )
   }
 
-  onOptionClick = (e, callback = () => {}) => {
-    e.stopPropagation()
+  onOptionClick = (callback = () => {}) => {
     hideTooltips()
     this.setState({ isMoreOptionsMenuOpen: false })
     callback()
@@ -309,34 +285,37 @@ export default class NotificationItem extends React.Component {
 
   moreOptionsMenu = () => {
     const isUnread = this.getIsUnread()
+    const status = this.state.dataAlertStatus ?? this.props.dataAlert?.status
+    const isActive = status === 'ACTIVE' || status === 'WAITING'
+
     return (
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className='more-options-menu'
-        data-test='react-autoql-toolbar-more-options-notification'
-      >
-        <ul className='context-menu-list'>
-          <li
-            onClick={(e) =>
-              this.onOptionClick(e, () => {
-                this.props.onEditClick(this.props.dataAlert)
-              })
+      <Menu>
+        <MenuItem
+          data-test='react-autoql-toolbar-more-options-notification'
+          title='Settings'
+          subtitle='View and edit this Data Alert'
+          icon='settings'
+          onClick={(e) => this.onOptionClick(() => this.props.onEditClick(this.props.dataAlert))}
+        />
+        {!!status && (
+          <MenuItem
+            onClick={() => this.onOptionClick(() => this.changeDataAlertStatus(isActive ? 'INACTIVE' : 'ACTIVE'))}
+            icon={isActive ? 'notification-off' : 'notification'}
+            title={`Turn ${isActive ? 'off' : 'on'}`}
+            subtitle={
+              isActive
+                ? 'Stop receiving notifications for this Data Alert'
+                : 'Start receiving notifications for this Data Alert again'
             }
-          >
-            <Icon type='settings' />
-            <span>Data Alert settings</span>
-          </li>
-          {this.dataAlertToggleListItem()}
-          <li onClick={(e) => this.onOptionClick(e, isUnread ? this.markAsRead : this.markAsUnread)}>
-            <Icon type={isUnread ? 'mark-read' : 'mark-unread'} />
-            <span>Mark as {isUnread ? 'read' : 'unread'}</span>
-          </li>
-          <li onClick={(e) => this.onOptionClick(e, this.delete)}>
-            <Icon type='trash' />
-            <span>Delete</span>
-          </li>
-        </ul>
-      </div>
+          />
+        )}
+        <MenuItem
+          onClick={() => this.onOptionClick(isUnread ? this.markAsRead : this.markAsUnread)}
+          icon={isUnread ? 'mark-read' : 'mark-unread'}
+          title={`Mark as ${isUnread ? 'read' : 'unread'}`}
+        />
+        <MenuItem onClick={() => this.onOptionClick(this.delete)} icon='trash' title='Delete' />
+      </Menu>
     )
   }
 

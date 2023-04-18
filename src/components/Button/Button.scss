@@ -6,6 +6,7 @@
   justify-content: center;
 
   width: auto;
+  height: auto;
   border-radius: 4px;
   outline: none !important;
   transition: all 0.2s ease;
@@ -16,6 +17,10 @@
     &:hover {
       opacity: 0.8;
     }
+  }
+
+  .react-autoql-icon {
+    display: flex;
   }
 
   .react-autoql-btn-icon {

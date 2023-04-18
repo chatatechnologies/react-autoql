@@ -9,6 +9,14 @@
     padding-bottom: 20px;
   }
 
+  .react-autoql-notification-setting-item.data-alert-disabled {
+    .data-alert-section-cycle,
+    .data-alert-state,
+    .data-alert-section-cycle-start {
+      opacity: 0.7;
+    }
+  }
+
   .react-autoql-data-alert-list-item-section {
     flex: 1 0 50px;
     display: flex;
@@ -117,7 +125,6 @@
 
       .data-alert-state {
         display: flex;
-        opacity: 1;
         align-items: center;
         justify-content: center;
         font-size: 13px;
@@ -145,6 +152,7 @@
 
           &.data-alert-error {
             color: var(--react-autoql-warning-color);
+            opacity: 1;
           }
         }
 
@@ -243,7 +251,7 @@
 
     .react-autoql-data-alert-section-title {
       font-size: 19px;
-      font-weight: 600;
+      font-weight: 500;
     }
 
     .react-autoql-data-alert-section-subtitle {

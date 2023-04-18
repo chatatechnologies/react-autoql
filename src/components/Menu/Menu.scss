@@ -1,0 +1,45 @@
+.react-autoql-menu {
+  list-style-type: none;
+  width: 100%;
+  padding: 10px 0;
+  margin: 0;
+
+  .react-autoql-menu-item {
+    color: var(--react-autoql-text-color-primary);
+    padding: 10px 20px;
+    cursor: pointer;
+
+    &:hover,
+    &.active {
+      background: var(--react-autoql-hover-color);
+    }
+
+    .react-autoql-menu-item-title {
+      font-weight: 500;
+    }
+
+    .react-autoql-menu-item-title {
+      display: flex;
+      align-items: center;
+    }
+
+    .select-option-span {
+      display: flex;
+      align-items: center;
+
+      .react-autoql-menu-icon {
+        font-size: 1.1em;
+      }
+
+      .select-option-value-container {
+        display: flex;
+        flex-direction: column;
+
+        .select-option-value-subtitle {
+          font-size: 0.875em;
+          opacity: 0.8;
+        }
+      }
+    }
+  }
+}

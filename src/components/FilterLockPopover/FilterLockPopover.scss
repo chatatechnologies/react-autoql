@@ -60,7 +60,7 @@
   .include-exclude-toggle-group {
     height: 23px;
     font-size: 12px;
-    font-weight: 200;
+    font-weight: 400;
 
     .react-autoql-radio-btn.active {
       background-color: var(--react-autoql-border-color);
@@ -97,16 +97,14 @@
     opacity: 0;
   }
 
-  h3 {
-    margin-top: 0px;
-    margin-bottom: 0px;
+  h3,
+  h4 {
+    margin: 0px;
     color: var(--react-autoql-text-color-primary);
   }
 
   h4 {
-    margin-top: 3px;
-    margin-bottom: 5px;
-    color: var(--react-autoql-text-color-primary);
+    font-weight: 500;
   }
 
   .react-autoql-filter-lock-list-loading-container,
@@ -125,6 +123,18 @@
     flex: 1;
   }
 
+  .react-autoql-filter-locking-title h3,
+  .persist-toggle-column,
+  .filter-name-column {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    justify-content: flex-start;
+    .react-autoql-icon {
+      margin: 0 5px;
+    }
+  }
+
   .filter-lock-menu-header {
     flex: 0;
     width: 100%;
@@ -136,21 +146,34 @@
     box-sizing: border-box;
     padding-right: 15px;
 
-    .filter-locking-close-btn {
-      border: none;
-      margin: 0;
-      padding: 0;
-      font-size: 20px;
-    }
+    .filter-locking-close-and-saving-container {
+      display: flex;
+      justify-content: flex-end;
 
-    .filter-locking-saving-indicator {
-      display: inline-block;
-      font-weight: 400;
-      font-size: 14px;
-      padding-right: 20px;
-      color: var(--react-autoql-accent-color);
+      .filter-locking-close-btn {
+        border-radius: 20px;
+        margin: 0;
+        padding: 3px;
+        font-size: 20px;
+        color: var(--react-autoql-text-color-primary);
+      }
+
+      .filter-locking-saving-indicator {
+        display: inline-block;
+        font-weight: 400;
+        font-size: 14px;
+        padding-right: 20px;
+        color: var(--react-autoql-accent-color);
+        transition: opacity 0.2s ease;
+
+        &.hidden {
+          opacity: 0;
+          visibility: hidden;
+        }
+      }
     }
   }
+
   .filter-lock-menu-footer {
     width: 100%;
     display: flex;
@@ -165,9 +188,8 @@
     .react-autoql-filter-list-title {
       width: 100%;
       display: flex;
-      flex-wrap: nowrap;
       flex-direction: row;
-      align-items: flex-start;
+      flex-wrap: nowrap;
       justify-content: space-between;
       margin-bottom: 4px;
 
@@ -179,11 +201,7 @@
       }
 
       .filter-name-column {
-        display: flex;
         flex-wrap: wrap;
-        flex-direction: row;
-        align-items: center;
-        justify-content: flex-start;
         max-width: calc(100% - 100px);
         flex: 1;
       }
@@ -196,10 +214,6 @@
         justify-content: flex-end;
         flex: 0 0 auto;
         margin-right: 40px;
-
-        .react-autoql-icon {
-          margin-left: 3px;
-        }
       }
     }
 

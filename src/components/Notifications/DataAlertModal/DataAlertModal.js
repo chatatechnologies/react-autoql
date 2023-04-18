@@ -333,6 +333,11 @@ class DataAlertModal extends React.Component {
   }
 
   isFinishBtnDisabled = () => {
+    if (this.props.editView) {
+      // To do: add more error handling here
+      return false
+    }
+
     const lastStep = this.steps.length - 1
     const hasUnfinishedStep = !!this.steps.find((s, i) => {
       if (i === lastStep) {
@@ -347,6 +352,20 @@ class DataAlertModal extends React.Component {
   }
 
   renderNextBtn = () => {
+    if (this.props.editView) {
+      return (
+        <Button
+          type='primary'
+          loading={this.state.isSavingDataAlert}
+          onClick={this.onDataAlertSave}
+          disabled={this.isFinishBtnDisabled()}
+          tooltipID={this.TOOLTIP_ID}
+        >
+          Save Changes
+        </Button>
+      )
+    }
+
     const isLastStep = this.state.activeStep === this.steps.length - 1
     if (isLastStep) {
       return (
@@ -357,7 +376,7 @@ class DataAlertModal extends React.Component {
           disabled={this.isFinishBtnDisabled()}
           tooltipID={this.TOOLTIP_ID}
         >
-          {'Finish & Save'}
+          Finish & Save
         </Button>
       )
     }

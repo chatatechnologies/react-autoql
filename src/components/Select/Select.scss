@@ -80,47 +80,6 @@
 
 .react-autoql-select-popup-container {
   background: var(--react-autoql-background-color-secondary);
-  padding: 10px 0;
   max-height: 300px;
   overflow-y: auto;
-
-  .react-autoql-select-option {
-    .select-option-span {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: flex-start;
-
-      .select-option-value-container {
-        display: flex;
-        flex-direction: column;
-
-        .select-option-value-subtitle {
-          font-size: 0.875em;
-          opacity: 0.8;
-        }
-      }
-    }
-
-    &.active {
-      background: var(--react-autoql-hover-color);
-    }
-  }
-
-  .react-autoql-select-popup {
-    list-style-type: none;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-
-    li {
-      color: var(--react-autoql-text-color-primary);
-      padding: 10px 20px;
-      cursor: pointer;
-
-      &:hover {
-        background: var(--react-autoql-hover-color);
-      }
-    }
-  }
 }

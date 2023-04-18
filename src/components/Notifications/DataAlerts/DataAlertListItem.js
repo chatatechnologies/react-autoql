@@ -307,6 +307,7 @@ export default class DataAlertListItem extends React.Component {
       <div
         className={`react-autoql-notification-setting-item
           ${this.props.showHeader ? 'react-autoql-dataalert-show-header' : ''}
+          ${isEnabled ? 'data-alert-enabled' : 'data-alert-disabled'}
           ${dataAlert.type}`}
       >
         <div className='react-autoql-notification-setting-item-header'>

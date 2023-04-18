@@ -35,6 +35,7 @@ export default class FilterLockPopover extends React.Component {
     this.contentKey = uuid()
     this.autoCompleteArray = []
     this.autocompleteDelay = 100
+    this.TOOLTIP_ID = 'filter-locking-tooltip'
 
     this.state = {
       filters: this.props.initialFilters || [],
@@ -71,6 +72,8 @@ export default class FilterLockPopover extends React.Component {
     if (this.props.isOpen && this.props.insertedFilter) {
       this.insertFilter(this.props.insertedFilter)
     }
+
+    rebuildTooltips()
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -470,26 +473,25 @@ export default class FilterLockPopover extends React.Component {
   }
 
   renderSavingIndicator = () => {
-    if (this.state.isSaving) {
-      return (
-        <div className='filter-locking-saving-indicator' data-test='filter-locking-saving-indicator'>
-          Saving...
-        </div>
-      )
-    }
-
-    return null
+    return (
+      <div
+        className={`filter-locking-saving-indicator ${this.state.isSaving ? 'visible' : 'hidden'}`}
+        data-test='filter-locking-saving-indicator'
+      >
+        Saving...
+      </div>
+    )
   }
 
   renderTitle = () => {
     return (
       <div className='react-autoql-filter-locking-title'>
         <h3>
-          {lang.filterLockingTitle}{' '}
+          <span>{lang.filterLockingTitle}</span>
           <Icon
             type='info'
             data-place='right'
-            data-for='filter-locking-tooltip'
+            data-for={this.TOOLTIP_ID}
             data-tip='Filters can be applied to narrow down your query results. Locking a filter ensures that only the specific data you wish to see is returned.'
           />
         </h3>
@@ -508,14 +510,15 @@ export default class FilterLockPopover extends React.Component {
 
   renderCloseBtn = () => {
     return (
-      <div>
+      <div className='filter-locking-close-and-saving-container'>
         {this.renderSavingIndicator()}
         <Button
           onClick={this.props.onClose}
           className='filter-locking-close-btn'
           data-tip={lang.closeFilterLocking}
-          data-for='filter-locking-tooltip'
+          data-for={this.TOOLTIP_ID}
           tooltipID={this.props.tooltipID}
+          border={false}
           size='small'
         >
           <Icon type='close' />
@@ -532,7 +535,7 @@ export default class FilterLockPopover extends React.Component {
     return (
       <ul
         className='filter-lock-suggestion-item'
-        data-for='filter-locking-tooltip'
+        data-for={this.TOOLTIP_ID}
         data-delay-show={800}
         data-tip={`${name.keyword} <em>(${name.show_message})</em>`}
       >
@@ -650,7 +653,7 @@ export default class FilterLockPopover extends React.Component {
         <div className='filter-name-column'>
           <h4
             className='filter-lock-category-title'
-            data-for='filter-locking-tooltip'
+            data-for={this.TOOLTIP_ID}
             data-delay-show={800}
             data-tip={category}
           >
@@ -664,7 +667,7 @@ export default class FilterLockPopover extends React.Component {
               'Only show results <strong>with</strong> these values',
               'Show results <strong>without</strong> these values',
             ]}
-            tooltipId='filter-locking-tooltip'
+            tooltipId={this.TOOLTIP_ID}
             value={toggleButtonValue}
             type='button'
             onChange={(value) => this.handleExcludeToggle(category, value)}
@@ -672,14 +675,11 @@ export default class FilterLockPopover extends React.Component {
         </div>
         {i === 0 ? (
           <div className='persist-toggle-column'>
-            <h4>
-              <span>Persist </span>
-            </h4>
-
+            <h4>Persist</h4>
             <Icon
               type='info'
               data-place='left'
-              data-for='filter-locking-tooltip'
+              data-for={this.TOOLTIP_ID}
               data-tip='
                 Persistent filters remain locked at all<br />
                 times, unless the filter is removed. If<br />
@@ -716,7 +716,7 @@ export default class FilterLockPopover extends React.Component {
             className='react-autoql-remove-filter-icon'
             data-test='react-autoql-remove-filter-icon'
             data-tip='Remove filter'
-            data-for='filter-locking-tooltip'
+            data-for={this.TOOLTIP_ID}
             data-delay-show={500}
             type='trash'
             onClick={() => this.removeFilter(filter)}
@@ -757,10 +757,6 @@ export default class FilterLockPopover extends React.Component {
   }
 
   render = () => {
-    if (!this.props.isOpen) {
-      return null
-    }
-
     return (
       <ErrorBoundary>
         <ToastContainer
@@ -776,16 +772,15 @@ export default class FilterLockPopover extends React.Component {
           limit={1}
           // theme={getTheme()}
         />
-        <Tooltip
-          afterShow={(e) => handleTooltipBoundaryCollision(e, this)}
-          ref={(r) => (this.reactTooltipRef = r)}
-          className='react-autoql-tooltip'
-          id='filter-locking-tooltip'
-          effect='solid'
-          place='top'
-          html
-        />
         <div className='filter-lock-menu-content' onClick={(e) => e.stopPropagation()}>
+          <Tooltip
+            afterShow={(e) => handleTooltipBoundaryCollision(e, this)}
+            className='react-autoql-tooltip'
+            id={this.TOOLTIP_ID}
+            effect='solid'
+            place='top'
+            html
+          />
           {this.renderHeader()}
           {this.renderVLInput()}
           {this.renderFilterList()}

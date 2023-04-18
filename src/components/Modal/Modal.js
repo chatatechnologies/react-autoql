@@ -5,7 +5,7 @@ import ReactModal from 'react-modal'
 import { Button } from '../Button'
 import { Icon } from '../Icon'
 import { ConfirmModal } from '../ConfirmModal'
-import { deepEqual, difference } from '../../js/Util'
+import { deepEqual } from '../../js/Util'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Modal.scss'

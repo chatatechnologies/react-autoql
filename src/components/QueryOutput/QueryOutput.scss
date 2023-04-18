@@ -156,13 +156,13 @@
   letter-spacing: 0.03em;
   font-family: var(--react-autoql-font-family), sans-serif;
 
-  .react-autoql-select-option {
+  .react-autoql-menu-item {
     height: unset;
     font-size: 14px;
     line-height: 24px;
     padding: 0 15px;
   }
-  .react-autoql-select-option:last-of-type {
+  .react-autoql-menu-item:last-of-type {
     color: #d84830;
   }
 }

@@ -2,15 +2,23 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Popover } from 'react-tiny-popover'
 import { v4 as uuid } from 'uuid'
-import _get from 'lodash.get'
 import { Icon } from '../Icon'
 import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
+import { Menu, MenuItem } from '../Menu'
 
 import './Select.scss'
 
 export default class Select extends React.Component {
-  ID = uuid()
+  constructor(props) {
+    super(props)
+
+    this.ID = uuid()
+
+    this.state = {
+      isOpen: false,
+    }
+  }
 
   static propTypes = {
     onChange: PropTypes.func,
@@ -37,10 +45,6 @@ export default class Select extends React.Component {
     outlined: true,
     placeholder: 'Select an item',
     fullWidth: false,
-  }
-
-  state = {
-    isOpen: false,
   }
 
   componentDidMount = () => {
@@ -94,7 +98,7 @@ export default class Select extends React.Component {
         >
           <span className='react-autoql-select-text'>
             {selectedOption?.label || selectedOption?.value ? (
-              <span className='react-autoql-select-option-value-label'>
+              <span className='react-autoql-menu-item-value-title'>
                 {!!selectedOption.icon && (
                   <span>
                     <Icon type={selectedOption.icon} />
@@ -127,39 +131,24 @@ export default class Select extends React.Component {
         {!this.props.tooltipID && (
           <Tooltip id={`select-tooltip-${this.ID}`} className='react-autoql-tooltip' effect='solid' delayShow={500} />
         )}
-        <ul className='react-autoql-select-popup'>
-          {this.props.options.map((option, i) => {
+        <Menu options={this.props.options}>
+          {this.props.options?.map((option) => {
             return (
-              <li
-                id={`select-option-${this.ID}-${i}`}
-                key={`select-option-${this.ID}-${i}`}
-                className={`react-autoql-select-option${option.value === this.props.value ? ' active' : ''}`}
+              <MenuItem
+                title={option.listLabel ?? option.label ?? option.value}
+                subtitle={option.subtitle}
+                tooltip={option.tooltip}
+                tooltipID={this.props.tooltipID ?? `select-tooltip-${this.ID}`}
+                active={option.value === this.props.value}
+                icon={option.icon}
                 onClick={() => {
                   this.setState({ isOpen: false })
                   this.props.onChange(option.value)
                 }}
-                data-tip={option.tooltip || null}
-                data-for={this.props.tooltipID ?? `select-tooltip-${this.ID}`}
-                data-offset={10}
-              >
-                <span className='select-option-span'>
-                  <span className='select-option-value-container'>
-                    <span className='react-autoql-select-option-value-label'>
-                      {!!option.icon && (
-                        <span>
-                          <Icon type={option.icon} />
-                          &nbsp;&nbsp;
-                        </span>
-                      )}
-                      <span>{option.listLabel ?? option.label ?? option.value}</span>
-                    </span>
-                    {!!option.subtitle && <span className='select-option-value-subtitle'>{option.subtitle}</span>}
-                  </span>
-                </span>
-              </li>
+              />
             )
           })}
-        </ul>
+        </Menu>
       </div>
     )
   }
