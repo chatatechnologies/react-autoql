@@ -2,12 +2,12 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Popover, ArrowContainer } from 'react-tiny-popover'
 
+import FilterLockPopoverContent from './FilterLockPopoverContent'
 import { fetchFilters } from '../../js/queryService'
 import { authenticationType } from '../../props/types'
 import { authenticationDefault, getAuthentication } from '../../props/defaults'
 import { withTheme } from '../../theme'
-
-import FilterLockPopoverContent from './FilterLockPopoverContent'
+import { rebuildTooltips } from '../Tooltip'
 
 import './FilterLockPopover.scss'
 
@@ -45,6 +45,8 @@ export class FilterLockPopover extends React.Component {
     if (!this.props.isOpen && prevProps.isOpen) {
       // Clear inserted filter when popover is closed
       this.setState({ insertedFilter: null })
+    } else if (this.props.isOpen && !prevProps.isOpen) {
+      rebuildTooltips()
     }
   }
 
@@ -98,6 +100,7 @@ export class FilterLockPopover extends React.Component {
           insertedFilter={this.state.insertedFilter}
           initialFilters={this.state.initialFilters}
           isFetchingFilters={this.state.isFetchingFilters}
+          tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
         />
       </ArrowContainer>
     )

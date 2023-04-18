@@ -681,6 +681,7 @@ export class DataMessenger extends React.Component {
         onClose={this.closeFilterLockMenu}
         parentElement={this.messengerDrawerRef}
         boundaryElement={this.messengerDrawerRef}
+        tooltipID={this.TOOLTIP_ID}
         positions={['bottom', 'left', 'top', 'right']}
         align='center'
       >
