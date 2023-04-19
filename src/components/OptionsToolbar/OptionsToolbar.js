@@ -657,10 +657,6 @@ export class OptionsToolbar extends React.Component {
   }
 
   render = () => {
-    if (!this.props.responseRef?._isMounted) {
-      return null
-    }
-
     const shouldShowButton = this.getShouldShowButtonObj(this.props)
 
     // If there is nothing to put in the toolbar, don't render it
