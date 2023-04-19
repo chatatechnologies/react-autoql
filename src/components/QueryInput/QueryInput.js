@@ -140,22 +140,22 @@ class QueryInput extends React.Component {
     })
   }
 
-  submitDprQuery = (query) => {
+  submitDprQuery = (query, id) => {
     dprQuery({
       dprKey: this.props.authentication?.dprKey,
       dprDomain: this.props.authentication?.dprDomain,
       query,
       sessionId: this.props.sessionId,
     })
-      .then((response) => this.onResponse(response, query))
+      .then((response) => this.onResponse(response, query, id))
       .catch((error) => {
         console.error(error)
-        this.onResponse(error, query)
+        this.onResponse(error, query, id)
       })
   }
 
-  onResponse = (response, query) => {
-    this.props.onResponseCallback(response, query)
+  onResponse = (response, query, id) => {
+    this.props.onResponseCallback(response, query, id)
 
     const newState = {
       isQueryRunning: false,
@@ -212,29 +212,31 @@ class QueryInput extends React.Component {
     }
 
     if (query.trim()) {
-      this.props.onSubmit(query)
+      const id = uuid()
+
+      this.props.onSubmit(query, id)
       localStorage.setItem('inputValue', query)
       if (!this.props.authentication?.token && !!this.props.authentication?.dprKey) {
-        this.submitDprQuery(query)
+        this.submitDprQuery(query, id)
       } else if (skipQueryValidation) {
         runQueryOnly(requestData)
-          .then((response) => this.onResponse(response, query))
+          .then((response) => this.onResponse(response, query, id))
           .catch((error) => {
             const finalError = error || {
               error: errorMessages.GENERAL_QUERY,
             }
-            this.onResponse(finalError, query)
+            this.onResponse(finalError, query, id)
           })
       } else {
         runQuery(requestData)
-          .then((response) => this.onResponse(response, query))
+          .then((response) => this.onResponse(response, query, id))
           .catch((error) => {
             // If there is no error it did not make it past options
             // and this is usually due to an authentication error
             const finalError = error || {
               error: errorMessages.GENERAL_QUERY,
             }
-            this.onResponse(finalError, query)
+            this.onResponse(finalError, query, id)
           })
       }
     }
