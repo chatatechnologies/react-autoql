@@ -1583,6 +1583,8 @@ export class QueryOutput extends React.Component {
         newCol.minWidth = '125px'
       }
 
+      newCol.maxWidth = '300px'
+
       // Cell alignment
       if (newCol.type === 'DOLLAR_AMT' || newCol.type === 'RATIO' || newCol.type === 'NUMBER') {
         newCol.hozAlign = 'right'
