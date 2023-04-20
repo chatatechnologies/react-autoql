@@ -1341,10 +1341,6 @@ export default class App extends Component {
               >
                 Un-Execute
               </Button>
-              <Button onClick={() => console.log(this.state.dashboardTiles)} style={{ marginLeft: '10px' }}>
-                Log Current Tile State
-              </Button>
-
               <br />
               {this.state.isEditing && (
                 <Button
