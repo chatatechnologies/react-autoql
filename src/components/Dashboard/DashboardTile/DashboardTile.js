@@ -1042,7 +1042,7 @@ export class DashboardTile extends React.Component {
     const isExecuting = this.state.isTopExecuting
     const isExecuted = this.state.isTopExecuted
 
-    const renderPlaceholder = !this.props.queryResponse || isExecuting || !isExecuted
+    const renderPlaceholder = !this.props.tile?.queryResponse || isExecuting || !isExecuted
 
     const initialDisplayType = this.props?.displayType
 
@@ -1056,7 +1056,7 @@ export class DashboardTile extends React.Component {
         vizToolbarRef: this.vizToolbarRef,
         key: `dashboard-tile-query-top-${this.FIRST_QUERY_RESPONSE_KEY}`,
         initialDisplayType,
-        queryResponse: this.props.queryResponse,
+        queryResponse: this.props.tile?.queryResponse,
         initialTableConfigs: this.props.tile.dataConfig,
         initialAggConfig: this.props.tile.aggConfig,
         onTableConfigChange: this.onDataConfigChange,
@@ -1106,8 +1106,8 @@ export class DashboardTile extends React.Component {
     }
 
     const renderPlaceholder =
-      (!isQuerySameAsTop && !this.props.secondQueryResponse) ||
-      (isQuerySameAsTop && !this.props.queryResponse) ||
+      (!isQuerySameAsTop && !this.props.tile?.secondQueryResponse) ||
+      (isQuerySameAsTop && !this.props.tile?.queryResponse) ||
       isExecuting ||
       !isExecuted
 
@@ -1123,7 +1123,7 @@ export class DashboardTile extends React.Component {
         optionsToolbarRef: this.secondOptionsToolbarRef,
         vizToolbarRef: this.secondVizToolbarRef,
         initialDisplayType,
-        queryResponse: this.props.secondQueryResponse || this.props.queryResponse,
+        queryResponse: this.props.tile?.secondQueryResponse || this.props.tile?.queryResponse,
         initialTableConfigs: this.props.tile.secondDataConfig,
         initialAggConfig: this.props.tile.secondAggConfig,
         onTableConfigChange: this.onSecondDataConfigChange,

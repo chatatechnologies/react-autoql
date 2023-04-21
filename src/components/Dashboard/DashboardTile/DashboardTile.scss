@@ -260,14 +260,15 @@
 
 .dashboard-tile-play-button {
   cursor: default;
-  flex-grow: 0;
-  flex-shrink: 0;
+  flex: 0 0 auto;
+  font-size: 25px;
+  margin-left: 6px;
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
 }
 .dashboard-tile-play-button span.react-autoql-icon svg {
   cursor: pointer;
-  width: 25px;
-  height: 33px;
-  margin-left: 10px;
   color: var(--react-autoql-accent-color);
 }
 .dashboard-tile-play-button.disabled svg {
