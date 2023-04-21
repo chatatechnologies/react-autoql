@@ -123,11 +123,7 @@ export default class Select extends React.Component {
 
   renderPopoverContent = () => {
     return (
-      <div
-        className={`react-autoql-select-popup-container
-        ${this.props.popupClassname || ''}`}
-        style={{ width: this.props.style.width }}
-      >
+      <div className='react-autoql-select-popup-container' style={{ width: this.props.style.width }}>
         {!this.props.tooltipID && (
           <Tooltip id={`select-tooltip-${this.ID}`} className='react-autoql-tooltip' effect='solid' delayShow={500} />
         )}
@@ -163,7 +159,9 @@ export default class Select extends React.Component {
         <Popover
           id={`select-popover-${this.ID}`}
           key={`select-popover-${this.ID}`}
-          containerClassName='react-tiny-popover-container react-autoql-select-popover-container'
+          containerClassName={`react-tiny-popover-container react-autoql-select-popover-container ${
+            this.props.popupClassname ?? ''
+          }`}
           isOpen={this.state.isOpen}
           positions={this.props.positions ?? ['bottom', 'top', 'left', 'right']}
           align={this.props.align ?? 'start'}
