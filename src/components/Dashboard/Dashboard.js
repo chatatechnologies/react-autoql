@@ -16,6 +16,9 @@ import ReportProblemModal from '../OptionsToolbar/ReportProblemModal'
 import DrilldownTable from './DrilldownTable'
 
 import { deepEqual, mergeSources } from '../../js/Util'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { CHART_TYPES } from '../../js/Constants'
+import { deepEqual, mergeSources } from '../../js/Util'
 import { withTheme } from '../../theme'
 import { CHART_TYPES } from '../../js/Constants'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
@@ -31,26 +34,6 @@ import 'react-splitter-layout/lib/index.css'
 import './Dashboard.scss'
 
 const ReactGridLayout = WidthProvider(RGL)
-
-const executeDashboard = (ref) => {
-  if (ref) {
-    try {
-      ref.executeDashboard()
-    } catch (error) {
-      console.error(error)
-    }
-  }
-}
-
-const unExecuteDashboard = (ref) => {
-  if (ref) {
-    try {
-      ref.unExecuteDashboard()
-    } catch (error) {
-      console.error(error)
-    }
-  }
-}
 
 class DashboardWithoutTheme extends React.Component {
   constructor(props) {
@@ -96,6 +79,7 @@ class DashboardWithoutTheme extends React.Component {
     onCSVDownloadProgress: PropTypes.func,
     onCSVDownloadFinish: PropTypes.func,
     enableAjaxTableData: PropTypes.bool,
+    cancelQueriesOnUnmount: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -114,6 +98,7 @@ class DashboardWithoutTheme extends React.Component {
     enableDynamicCharting: true,
     autoChartAggregations: true,
     enableAjaxTableData: false,
+    cancelQueriesOnUnmount: false,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
     onChange: () => {},
@@ -307,13 +292,19 @@ class DashboardWithoutTheme extends React.Component {
 
   executeDashboard = () => {
     try {
+      const promises = []
       for (var dashboardTile in this.tileRefs) {
         if (this.tileRefs[dashboardTile]) {
-          this.tileRefs[dashboardTile].processTile()
+          promises.push(this.tileRefs[dashboardTile].processTile())
         }
       }
+
+      return Promise.all(promises).catch(() => {
+        return Promise.reject(new Error('There was an error processing this dashboard. Please try again.'))
+      })
     } catch (error) {
       console.error(error)
+      return undefined
     }
   }
 
@@ -847,6 +838,7 @@ class DashboardWithoutTheme extends React.Component {
             key={tile.key}
             dashboardRef={this.ref}
             authentication={this.props.authentication}
+            cancelQueriesOnUnmount={this.props.cancelQueriesOnUnmount}
             autoQLConfig={this.props.autoQLConfig}
             tile={{ ...tile, i: tile.key, maxH: 12, minH: 2, minW: 3 }}
             displayType={tile.displayType}
@@ -903,4 +895,4 @@ class DashboardWithoutTheme extends React.Component {
 }
 
 const Dashboard = withTheme(DashboardWithoutTheme)
-export { Dashboard, executeDashboard, unExecuteDashboard }
+export { Dashboard }

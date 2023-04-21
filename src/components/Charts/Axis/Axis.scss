@@ -36,6 +36,20 @@ g.legendOrdinal tspan {
   opacity: 1 !important;
 }
 
+.drilldown-info-icon,
+.max-rows-info-icon {
+  stroke: currentColor;
+  stroke-width: 0;
+}
+
+.drilldown-info-icon {
+  fill: var(--react-autoql-info-color);
+}
+
+.max-rows-info-icon {
+  fill: var(--react-autoql-warning-color);
+}
+
 .number-axis-selector-popover {
   .number-axis-selector-popover-content {
     display: flex;

@@ -68,6 +68,12 @@
     overflow: hidden;
     border-radius: 4px;
   }
+  .react-autoql-mobile-drawer-content-container {
+    width: 100%;
+    height: 100%;
+    background: var(--react-autoql-background-color-primary);
+    overflow: hidden;
+  }
 
   .chat-header-container {
     display: flex;

@@ -123,7 +123,7 @@ export default class App extends Component {
     enableCSVDownload: true,
     dashboardTitleColor: 'rgb(72, 105, 142)',
     clearOnClose: false,
-    height: 500,
+    height: '100vh',
     width: 550,
     title: 'Data Messenger',
     accentTextColor: '#ffffff',
@@ -1298,7 +1298,6 @@ export default class App extends Component {
               >
                 Un-Execute
               </Button>
-
               <br />
               {this.state.isEditing && (
                 <Button
