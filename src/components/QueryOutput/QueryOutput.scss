@@ -152,10 +152,12 @@
   position: relative;
 }
 
-.react-autoql-select-popup-container.query-validation-select {
+.react-autoql-select-popover-container.query-validation-select {
   letter-spacing: 0.03em;
   margin: 0;
+}
 
+.query-validation-select .react-autoql-select-popup-container {
   .react-autoql-menu-item {
     padding: 5px 15px;
   }
