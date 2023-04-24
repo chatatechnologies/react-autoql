@@ -131,6 +131,7 @@ export default class Select extends React.Component {
           {this.props.options?.map((option) => {
             return (
               <MenuItem
+                key={option.value}
                 title={option.listLabel ?? option.label ?? option.value}
                 subtitle={option.subtitle}
                 tooltip={option.tooltip}
