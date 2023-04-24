@@ -1,23 +1,20 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
-import RGL, { WidthProvider } from 'react-grid-layout'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import SplitterLayout from 'react-splitter-layout'
 
 import { Modal } from '../Modal'
-import { DashboardTile } from './DashboardTile'
 import { QueryOutput } from '../QueryOutput'
 import { LoadingDots } from '../LoadingDots'
-import { ErrorBoundary } from '../../containers/ErrorHOC'
-import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { rebuildTooltips } from '../Tooltip'
 import ReportProblemModal from '../OptionsToolbar/ReportProblemModal'
 import DrilldownTable from './DrilldownTable'
 
-import { deepEqual, mergeSources } from '../../js/Util'
+import { mergeSources } from '../../js/Util'
 import { CHART_TYPES } from '../../js/Constants'
-import { withTheme } from '../../theme'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import {
   authenticationDefault,
