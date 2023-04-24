@@ -589,7 +589,7 @@ export const formatElement = ({ element, column, config = {}, htmlElement, isCha
   }
 }
 
-export const getPNGBase64 = (svgElement) => {
+export const getSVGBase64 = (svgElement) => {
   try {
     const domUrl = window.URL || window.webkitURL || window
     if (!domUrl) {
@@ -600,12 +600,11 @@ export const getPNGBase64 = (svgElement) => {
 
     // get svg data
     var xml = new XMLSerializer().serializeToString(svgElement)
+
     // make it base64
     var svg64 = btoa(unescape(encodeURIComponent(xml))) // we added non-Latin1 chars for the axis selector
-    var b64Start = 'data:image/svg+xml;base64,'
-    // prepend a "header"
-    var image64 = b64Start + svg64
-    return image64
+    const imgSrc = `data:image/svg+xml;base64,${svg64}`
+    return imgSrc
   } catch (error) {
     return undefined
   }
@@ -626,52 +625,41 @@ export const getBBoxFromRef = (ref) => {
  * @param {string} [fill] optionally backgrund canvas fill
  * @return {Promise} a promise to the bas64 png image
  */
-export const svgToPng = (svgElement, margin = 0, fill) => {
+export const svgToPng = (svgElement, scale = 3) => {
   return new Promise(function (resolve, reject) {
     try {
-      const image64 = getPNGBase64(svgElement)
-
       const bbox = svgElement.getBoundingClientRect()
-      const width = bbox.width * 2
-      const height = bbox.height * 2
+      const originalWidth = bbox.width
+      const originalHeight = bbox.height
 
-      // create a canvas element to pass through
-      var canvas = document.createElement('canvas')
-      canvas.width = width + margin
-      canvas.height = height + margin
+      const scaledWidth = originalWidth * scale
+      const scaledHeight = originalHeight * scale
 
-      var ctx = canvas.getContext('2d')
-      // ctx.imageSmoothingEnabled = true
+      const clonedSvg = svgElement.cloneNode(true)
+      clonedSvg.setAttribute('transform-origin', 'top left')
+      clonedSvg.setAttribute('transform', `scale(${scale})`)
 
-      // create a new image to hold it the converted type
-      var img = new Image()
+      const image64 = getSVGBase64(clonedSvg)
 
-      // when the image is loaded we can get it as base64 url
+      const canvas = document.createElement('canvas')
+      canvas.style.width = originalWidth + 'px'
+      canvas.style.height = originalHeight + 'px'
+      canvas.width = scaledWidth
+      canvas.height = scaledHeight
+
+      const ctx = canvas.getContext('2d')
+
+      const img = new Image()
       img.onload = function () {
         // draw it to the canvas
-        ctx.drawImage(this, margin, margin, width, height)
-
-        // if it needs some styling, we need a new canvas
-        if (fill) {
-          var styled = document.createElement('canvas')
-          styled.width = canvas.width
-          styled.height = canvas.height
-          var styledCtx = styled.getContext('2d')
-          styledCtx.save()
-          styledCtx.fillStyle = fill
-          styledCtx.fillRect(0, 0, canvas.width, canvas.height)
-          styledCtx.strokeRect(0, 0, canvas.width, canvas.height)
-          styledCtx.restore()
-          styledCtx.drawImage(canvas, 0, 0)
-          canvas = styled
-        }
+        ctx.drawImage(this, 0, 0, scaledWidth, scaledHeight)
         resolve(canvas.toDataURL('image/png', 1))
       }
+
       img.onerror = function () {
         reject('failed to load image')
       }
 
-      // load image
       img.src = image64
     } catch (error) {
       console.error(error)
