@@ -985,6 +985,7 @@ export class DashboardTile extends React.Component {
 
     return (
       <QueryOutput
+        key={`${this.props.tile?.key}${this.props.isEditing ? '-editing' : '-notediting'}`}
         authentication={this.props.authentication}
         autoQLConfig={this.props.autoQLConfig}
         dataFormatting={this.props.dataFormatting}
@@ -1051,7 +1052,7 @@ export class DashboardTile extends React.Component {
       isExecuting,
       isExecuted,
       queryOutputProps: {
-        ref: (ref) => ref && ref !== this.state.responseRef && this.setState({ responseRef: ref }),
+        ref: (ref) => ref && ref !== this.state.responseRef && this._isMounted && this.setState({ responseRef: ref }),
         optionsToolbarRef: this.optionsToolbarRef,
         vizToolbarRef: this.vizToolbarRef,
         key: `dashboard-tile-query-top-${this.FIRST_QUERY_RESPONSE_KEY}`,
@@ -1119,7 +1120,8 @@ export class DashboardTile extends React.Component {
       isExecuted,
       queryOutputProps: {
         key: `dashboard-tile-query-bottom-${this.SECOND_QUERY_RESPONSE_KEY}`,
-        ref: (ref) => ref && ref !== this.state.secondResponseRef && this.setState({ secondResponseRef: ref }),
+        ref: (ref) =>
+          ref && ref !== this.state.secondResponseRef && this._isMounted && this.setState({ secondResponseRef: ref }),
         optionsToolbarRef: this.secondOptionsToolbarRef,
         vizToolbarRef: this.secondVizToolbarRef,
         initialDisplayType,

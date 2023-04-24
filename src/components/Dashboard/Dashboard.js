@@ -6,7 +6,7 @@ import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import { DashboardTile } from './DashboardTile'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
-import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
+import { hideTooltips, Tooltip } from '../Tooltip'
 import DrilldownModal from './DrilldownModal'
 
 import { deepEqual, mergeSources } from '../../js/Util'
@@ -70,6 +70,7 @@ class DashboardWithoutTheme extends React.Component {
     onCSVDownloadFinish: PropTypes.func,
     enableAjaxTableData: PropTypes.bool,
     cancelQueriesOnUnmount: PropTypes.bool,
+    startEditingCallback: PropTypes.func,
   }
 
   static defaultProps = {
@@ -95,6 +96,7 @@ class DashboardWithoutTheme extends React.Component {
     onCSVDownloadStart: () => {},
     onCSVDownloadProgress: () => {},
     onCSVDownloadFinish: () => {},
+    startEditingCallback: () => {},
   }
 
   componentDidMount = () => {
@@ -344,7 +346,6 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   onMoveStart = (layout, oldItem, newItem, placeholder, e, element) => {
-    // e.stopPropagation()
     this.setIsDragging(true)
     return
   }
@@ -471,12 +472,12 @@ class DashboardWithoutTheme extends React.Component {
         ...params,
       }
 
-      if (Object.keys(params).includes('query') && params.query !== originalTiles[tileIndex].query) {
+      if (Object.keys(params).includes('query') && params.query !== originalTiles[tileIndex]?.query) {
         tiles[tileIndex].dataConfig = undefined
         tiles[tileIndex].skipQueryValidation = false
       } else if (
         Object.keys(params).includes('secondQuery') &&
-        params.secondQuery !== originalTiles[tileIndex].secondQuery
+        params.secondQuery !== originalTiles[tileIndex]?.secondQuery
       ) {
         tiles[tileIndex].secondDataConfig = undefined
         tiles[tileIndex].secondskipQueryValidation = false
@@ -543,12 +544,7 @@ class DashboardWithoutTheme extends React.Component {
       return (
         <div className='empty-dashboard-message-container'>
           Start building a{' '}
-          <span
-            className='empty-dashboard-new-tile-btn'
-            onClick={() => {
-              this.props.startEditingCallback()
-            }}
-          >
+          <span className='empty-dashboard-new-tile-btn' onClick={this.props.startEditingCallback}>
             New Dashboard
           </span>
         </div>
@@ -557,12 +553,7 @@ class DashboardWithoutTheme extends React.Component {
       return (
         <div className='empty-dashboard-message-container'>
           Add a{' '}
-          <span
-            className='empty-dashboard-new-tile-btn'
-            onClick={() => {
-              this.addTile()
-            }}
-          >
+          <span className='empty-dashboard-new-tile-btn' onClick={this.addTile}>
             New Tile
           </span>{' '}
           to get started
@@ -628,8 +619,6 @@ class DashboardWithoutTheme extends React.Component {
             displayType={tile.displayType}
             secondDisplayType={tile.secondDisplayType}
             secondDisplayPercentage={tile.secondDisplayPercentage}
-            // queryResponse={tile.queryResponse}
-            // secondQueryResponse={tile.secondQueryResponse}
             isEditing={this.props.isEditing}
             isDragging={this.state.isDragging || this.state.isWindowResizing}
             isWindowResizing={this.state.isWindowResizing}

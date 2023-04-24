@@ -331,14 +331,16 @@ export default class ChataTable extends React.Component {
       }
 
       setTimeout(() => {
-        this.setState({ loading: false })
+        if (this._isMounted) {
+          this.setState({ loading: false })
+        }
       }, 0)
     }
   }
 
   setLoading = (loading) => {
     // Don't update state unnecessarily
-    if (loading !== this.state.loading) {
+    if (loading !== this.state.loading && this._isMounted) {
       this.setState({ loading })
     }
   }
@@ -356,12 +358,12 @@ export default class ChataTable extends React.Component {
   }
 
   onTableBuilt = async () => {
-    this.setState({
-      tabulatorMounted: true,
-      pageLoading: false,
-    })
-
-    this.props.onRenderComplete()
+    if (this._isMounted) {
+      this.setState({
+        tabulatorMounted: true,
+        pageLoading: false,
+      })
+    }
   }
 
   setTableHeight = (height) => {
@@ -432,11 +434,17 @@ export default class ChataTable extends React.Component {
 
       let response
       if (params?.page > 1) {
-        this.setState({ scrollLoading: true })
+        if (this._isMounted) {
+          this.setState({ scrollLoading: true })
+        }
+
         response = await this.getNewPage(props, nextTableParamsFormatted)
         this.props.onNewPage(response?.rows)
       } else {
-        this.setState({ pageLoading: true })
+        if (this._isMounted) {
+          this.setState({ pageLoading: true })
+        }
+
         const responseWrapper = await props.queryFn({
           tableFilters: nextTableParamsFormatted?.filters,
           orders: nextTableParamsFormatted?.sorters,
@@ -505,10 +513,12 @@ export default class ChataTable extends React.Component {
       const isLastPage = _get(response, 'rows.length', 0) < props.pageSize
       this.lastPage = isLastPage ? this.currentPage : this.currentPage + 1
 
-      if (isLastPage && !this.state.isLastPage) {
-        this.setState({ isLastPage: true })
-      } else if (!isLastPage && this.state.isLastPage) {
-        this.setState({ isLastPage: false })
+      if (this._isMounted) {
+        if (isLastPage && !this.state.isLastPage) {
+          this.setState({ isLastPage: true })
+        } else if (!isLastPage && this.state.isLastPage) {
+          this.setState({ isLastPage: false })
+        }
       }
 
       const modResponse = {}
@@ -782,7 +792,11 @@ export default class ChataTable extends React.Component {
 
   toggleIsFiltering = () => {
     const isFiltering = !this.state.isFiltering
-    this.setState({ isFiltering })
+
+    if (this._isMounted) {
+      this.setState({ isFiltering })
+    }
+
     return isFiltering
   }
 
@@ -824,9 +838,11 @@ export default class ChataTable extends React.Component {
         positions={['bottom', 'right', 'left', 'top']}
         onClickOutside={(e) => {
           e.stopPropagation()
-          this.setState({
-            datePickerColumn: undefined,
-          })
+          if (this._isMounted) {
+            this.setState({
+              datePickerColumn: undefined,
+            })
+          }
         }}
         content={
           <div className='react-autoql-popover-date-picker'>
