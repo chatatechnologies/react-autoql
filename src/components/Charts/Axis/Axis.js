@@ -32,8 +32,10 @@ export default class Axis extends Component {
       fontSize: '13px',
       fontFamily: 'inherit',
       fill: 'currentColor',
-      fillOpacity: 0.9,
+      fillOpacity: 1,
       cursor: 'default',
+      fontFamily: 'var(--react-autoql-font-family)',
+      letterSpacing: 'normal',
     }
 
     this.shouldLabelsRotate = false

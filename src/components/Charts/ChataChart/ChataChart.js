@@ -71,6 +71,7 @@ export default class ChataChart extends Component {
   static defaultProps = chartContainerDefaultProps
 
   componentDidMount = () => {
+    this._isMounted = true
     if (!this.props.isResizing && !this.props.hidden) {
       // The first render is to determine the chart size based on its parent container
       this.firstRender = false
@@ -99,6 +100,10 @@ export default class ChataChart extends Component {
   }
 
   componentDidUpdate = (prevProps) => {
+    if (!this._isMounted) {
+      return
+    }
+
     if (this.firstRender === true && !this.props.hidden) {
       this.firstRender = false
     }
@@ -114,6 +119,7 @@ export default class ChataChart extends Component {
       if (this.chartContainerRef) {
         this.chartContainerRef.style.flexBasis = '100vh'
       }
+
       this.setState({ chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
     }
 
@@ -139,8 +145,9 @@ export default class ChataChart extends Component {
     }
 
     if (
-      (!this.props.isDrilldownChartHidden && prevProps.isDrilldownChartHidden) ||
-      (prevProps.type && this.props.type !== prevProps.type)
+      this._isMounted &&
+      ((!this.props.isDrilldownChartHidden && prevProps.isDrilldownChartHidden) ||
+        (prevProps.type && this.props.type !== prevProps.type))
     ) {
       this.setState({ chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
     }
@@ -148,11 +155,11 @@ export default class ChataChart extends Component {
     if (dataStructureChanged(this.props, prevProps) || this.props.dataChangeCount !== prevProps.dataChangeCount) {
       const data = this.getData(this.props)
       this.setState({ data, chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
-      return true
     }
   }
 
   componentWillUnmount = () => {
+    this._isMounted = false
     clearTimeout(this.adjustVerticalPositionTimeout)
   }
 
@@ -201,7 +208,9 @@ export default class ChataChart extends Component {
   setFinishedLoading = () => {
     clearTimeout(this.loadingTimeout)
     this.loadingTimeout = setTimeout(() => {
-      this.setState({ isLoading: false })
+      if (this._isMounted) {
+        this.setState({ isLoading: false })
+      }
     }, 0)
   }
 
@@ -212,11 +221,13 @@ export default class ChataChart extends Component {
     if (!this.props.hidden) {
       clearTimeout(this.adjustVerticalPositionTimeout)
       this.adjustVerticalPositionTimeout = setTimeout(() => {
-        const { deltaY } = this.getDeltas()
-        const { innerHeight } = this.getInnerDimensions()
-        this.setState({ deltaY, innerHeight }, () => {
-          this.setFinishedLoading()
-        })
+        if (this._isMounted) {
+          const { deltaY } = this.getDeltas()
+          const { innerHeight } = this.getInnerDimensions()
+          this.setState({ deltaY, innerHeight }, () => {
+            this.setFinishedLoading()
+          })
+        }
       }, 0)
     }
   }
@@ -225,11 +236,13 @@ export default class ChataChart extends Component {
     if (!this.props.hidden) {
       clearTimeout(this.adjustPositionTimeout)
       this.adjustPositionTimeout = setTimeout(() => {
-        const { deltaX, deltaY } = this.getDeltas()
-        const { innerHeight, innerWidth } = this.getInnerDimensions()
-        this.setState({ deltaX, deltaY, innerHeight, innerWidth }, () => {
-          this.adjustVerticalPosition()
-        })
+        if (this._isMounted) {
+          const { deltaX, deltaY } = this.getDeltas()
+          const { innerHeight, innerWidth } = this.getInnerDimensions()
+          this.setState({ deltaX, deltaY, innerHeight, innerWidth }, () => {
+            this.adjustVerticalPosition()
+          })
+        }
       }, 0)
     }
   }
@@ -349,6 +362,7 @@ export default class ChataChart extends Component {
     if (!svgElement) {
       return Promise.reject()
     }
+
     return svgToPng(svgElement, 20)
       .then((data) => Promise.resolve(data))
       .catch(() => Promise.reject())
@@ -383,6 +397,12 @@ export default class ChataChart extends Component {
       })
   }
 
+  setIsLoadingMoreRows = (isLoading) => {
+    if (this._isMounted) {
+      this.setState({ isLoadingMoreRows: isLoading })
+    }
+  }
+
   getCommonChartProps = () => {
     const { deltaX, deltaY } = this.state
     const { numberColumnIndices, numberColumnIndices2, columns, enableDynamicCharting } = this.props
@@ -401,7 +421,7 @@ export default class ChataChart extends Component {
 
     return {
       ...this.props,
-      setIsLoadingMoreRows: (isLoading) => this.setState({ isLoadingMoreRows: isLoading }),
+      setIsLoadingMoreRows: this.setIsLoadingMoreRows,
       ref: (r) => (this.innerChartRef = r),
       innerChartRef: this.innerChartRef?.chartRef,
       key: undefined,
