@@ -256,7 +256,7 @@ export class DashboardTile extends React.Component {
           secondQueryResponse: response,
           secondDefaultSelectedSuggestion: undefined,
         },
-        this.setTopExecuted,
+        this.setBottomExecuted,
       )
       return response
     } else {
