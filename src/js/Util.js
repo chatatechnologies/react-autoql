@@ -587,7 +587,7 @@ export const formatElement = ({ element, column, config = {}, htmlElement, isCha
   }
 }
 
-export const getPNGBase64 = (svgElement) => {
+export const getSVGBase64 = (svgElement) => {
   try {
     const domUrl = window.URL || window.webkitURL || window
     if (!domUrl) {
@@ -598,12 +598,11 @@ export const getPNGBase64 = (svgElement) => {
 
     // get svg data
     var xml = new XMLSerializer().serializeToString(svgElement)
+
     // make it base64
     var svg64 = btoa(unescape(encodeURIComponent(xml))) // we added non-Latin1 chars for the axis selector
-    var b64Start = 'data:image/svg+xml;base64,'
-    // prepend a "header"
-    var image64 = b64Start + svg64
-    return image64
+    const imgSrc = `data:image/svg+xml;base64,${svg64}`
+    return imgSrc
   } catch (error) {
     return undefined
   }
@@ -627,16 +626,35 @@ export const getBBoxFromRef = (ref) => {
 export const svgToPng = (svgElement, margin = 0, fill) => {
   return new Promise(function (resolve, reject) {
     try {
-      const image64 = getPNGBase64(svgElement)
-
       const bbox = svgElement.getBoundingClientRect()
-      const width = bbox.width * 2
-      const height = bbox.height * 2
+      const originalWidth = bbox.width
+      const originalHeight = bbox.height
+
+      const resolutionScale = 2
+      const clonedSvg = svgElement.cloneNode(true)
+
+      clonedSvg.setAttribute(
+        'transform',
+        `scale(${resolutionScale}) translate(${(originalWidth / 2) * resolutionScale},${
+          (originalHeight / 2) * resolutionScale
+        })`,
+      )
+
+      const image64 = getSVGBase64(clonedSvg)
+
+      const canvasWidth = originalWidth * resolutionScale
+      const canvasHeight = originalHeight * resolutionScale
+      console.log({ canvasWidth, canvasHeight, originalWidth, originalHeight })
 
       // create a canvas element to pass through
       var canvas = document.createElement('canvas')
-      canvas.width = width + margin
-      canvas.height = height + margin
+      const width = canvasWidth // + margin * 2
+      const height = canvasHeight // + margin * 2
+
+      canvas.style.width = width / resolutionScale + 'px'
+      canvas.style.height = height / resolutionScale + 'px'
+      canvas.width = width
+      canvas.height = height
 
       var ctx = canvas.getContext('2d')
       // ctx.imageSmoothingEnabled = true
@@ -647,22 +665,22 @@ export const svgToPng = (svgElement, margin = 0, fill) => {
       // when the image is loaded we can get it as base64 url
       img.onload = function () {
         // draw it to the canvas
-        ctx.drawImage(this, margin, margin, width, height)
+        ctx.drawImage(this, 0, 0, width, height) // margin, margin, width, height)
 
         // if it needs some styling, we need a new canvas
-        if (fill) {
-          var styled = document.createElement('canvas')
-          styled.width = canvas.width
-          styled.height = canvas.height
-          var styledCtx = styled.getContext('2d')
-          styledCtx.save()
-          styledCtx.fillStyle = fill
-          styledCtx.fillRect(0, 0, canvas.width, canvas.height)
-          styledCtx.strokeRect(0, 0, canvas.width, canvas.height)
-          styledCtx.restore()
-          styledCtx.drawImage(canvas, 0, 0)
-          canvas = styled
-        }
+        // if (fill) {
+        //   var styled = document.createElement('canvas')
+        //   styled.width = canvas.width
+        //   styled.height = canvas.height
+        //   var styledCtx = styled.getContext('2d')
+        //   styledCtx.save()
+        //   styledCtx.fillStyle = fill
+        //   styledCtx.fillRect(0, 0, canvas.width, canvas.height)
+        //   styledCtx.strokeRect(0, 0, canvas.width, canvas.height)
+        //   styledCtx.restore()
+        //   styledCtx.drawImage(canvas, 0, 0)
+        //   canvas = styled
+        // }
         resolve(canvas.toDataURL('image/png', 1))
       }
       img.onerror = function () {
