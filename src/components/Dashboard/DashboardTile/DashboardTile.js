@@ -130,9 +130,24 @@ export class DashboardTile extends React.Component {
     if (prevProps.tile !== this.props.tile) {
       this.setState({ isTitleOverFlow: this.isTitleOverFlow() })
     }
+
     // If query or title change from props (due to undo for example), update state
-    if (_get(this.props, 'tile.title') !== _get(prevProps, 'tile.title')) {
-      this.setState({ title: _get(this.props, 'tile.title') })
+    if (this.props.tile?.title !== prevProps.tile?.title) {
+      this.setState({ title: this.props.tile?.title })
+    }
+    if (this.props.tile?.query !== prevProps.tile?.query) {
+      this.setState({ query: this.props.tile?.query })
+    }
+    if (this.props.tile?.secondQuery !== prevProps.tile?.secondQuery) {
+      this.setState({ secondQuery: this.props.tile?.secondQuery })
+    }
+    if (
+      this.responseRef?._isMounted &&
+      this.props.tile?.displayType &&
+      this.props.tile.displayType !== prevProps.tile?.displayType &&
+      this.props.tile.displayType !== this.responseRef.state.displayType
+    ) {
+      this.responseRef.changeDisplayType(this.props.tile.displayType)
     }
   }
 
@@ -143,6 +158,8 @@ export class DashboardTile extends React.Component {
       clearTimeout(this.autoCompleteTimer)
       clearTimeout(this.dragEndTimeout)
       clearTimeout(this.setParamsForTileTimeout)
+      clearTimeout(this.queryInputTimer)
+      clearTimeout(this.secondQueryInputTimer)
 
       if (this.props.cancelQueriesOnUnmount) {
         this.cancelAllQueries()
@@ -239,7 +256,7 @@ export class DashboardTile extends React.Component {
           secondQueryResponse: response,
           secondDefaultSelectedSuggestion: undefined,
         },
-        this.setBottomExecuted,
+        this.setTopExecuted,
       )
       return response
     } else {
@@ -285,7 +302,7 @@ export class DashboardTile extends React.Component {
   }
 
   processTileTop = ({ query, userSelection, skipQueryValidation, source, pageSize }) => {
-    this.setState({ isTopExecuting: true })
+    this.setState({ isTopExecuting: true, queryResponse: null })
     const queryChanged = this.props.tile.query !== query
     const skipValidation = skipQueryValidation || (this.props.tile.skipQueryValidation && !queryChanged)
 
@@ -297,7 +314,6 @@ export class DashboardTile extends React.Component {
       query,
       dataConfig: queryChanged ? undefined : this.props.tile.dataConfig,
       skipQueryValidation: skipValidation,
-      queryResponse: null,
       columns: queryChanged ? undefined : this.props.tile.columns,
       defaultSelectedSuggestion: undefined,
       queryValidationSelections,
@@ -327,6 +343,7 @@ export class DashboardTile extends React.Component {
     this.setState({
       isBottomExecuting: true,
       isSecondQueryInputOpen: false,
+      secondQueryResponse: null,
     })
 
     const queryChanged = this.props.tile.secondQuery !== query
@@ -340,7 +357,6 @@ export class DashboardTile extends React.Component {
       secondQuery: query,
       secondDataConfig: queryChanged ? undefined : this.props.tile.secondDataConfig,
       secondskipQueryValidation: skipValidation,
-      secondQueryResponse: null,
       secondColumns: queryChanged ? undefined : this.props.tile.secondColumns,
       secondDefaultSelectedSuggestion: undefined,
       secondQueryValidationSelections: queryValidationSelections,
@@ -413,6 +429,33 @@ export class DashboardTile extends React.Component {
       .catch(() => {
         return Promise.reject()
       })
+  }
+
+  debounceQueryInputChange = (query) => {
+    this.setState({ query })
+
+    clearTimeout(this.queryInputTimer)
+    this.queryInputTimer = setTimeout(() => {
+      this.debouncedSetParamsForTile({ query })
+    }, 600)
+  }
+
+  debounceSecondQueryInputChange = (secondQuery) => {
+    this.setState({ secondQuery })
+
+    clearTimeout(this.secondQueryInputTimer)
+    this.secondQueryInputTimer = setTimeout(() => {
+      this.debouncedSetParamsForTile({ secondQuery })
+    }, 600)
+  }
+
+  debounceTitleInputChange = (title) => {
+    this.setState({ title })
+
+    clearTimeout(this.titleInputTimer)
+    this.titleInputTimer = setTimeout(() => {
+      this.debouncedSetParamsForTile({ title })
+    }, 600)
   }
 
   onQueryTextKeyDown = (e) => {
@@ -526,14 +569,17 @@ export class DashboardTile extends React.Component {
 
   onQueryInputChange = (e) => {
     // If input change we want to start validating the new queries again
-    this.debouncedSetParamsForTile({ skipQueryValidation: false })
+    if (this.props.tile.skipQueryValidation) {
+      this.debouncedSetParamsForTile({ skipQueryValidation: false })
+    }
+
     if (this.userSelectedSuggestion && (e.keyCode === 38 || e.keyCode === 40)) {
       // keyup or keydown
       return // return to let the component handle it...
     }
 
     if (e?.target?.value || e?.target?.value === '') {
-      this.setState({ query: e.target.value })
+      this.debounceQueryInputChange(e.target.value)
     } else {
       // User clicked on autosuggest item
       this.processTile({ query: this.userSelectedValue })
@@ -606,7 +652,7 @@ export class DashboardTile extends React.Component {
     let secondQuery = this.props.tile?.secondQuery
 
     if (splitView && !secondQuery) {
-      secondQuery = this.props.tile?.query
+      secondQuery = this.state.query
     }
 
     this.debouncedSetParamsForTile({ splitView, secondQuery })
@@ -787,7 +833,7 @@ export class DashboardTile extends React.Component {
                 data-for='react-autoql-dashboard-toolbar-btn-tooltip'
                 data-place='bottom'
                 value={this.state.title}
-                onChange={(e) => this.setState({ title: e.target.value })}
+                onChange={(e) => this.debounceTitleInputChange(e.target.value)}
                 onFocus={() => {
                   this.setState({ isTitleInputFocused: true })
                 }}
@@ -829,29 +875,28 @@ export class DashboardTile extends React.Component {
     } else if (!this.props.isEditing && isExecuted) {
       content = (
         <div className='dashboard-tile-placeholder-text'>
-          <em>No query was supplied for this tile.</em>
+          <span>No query was supplied for this tile.</span>
         </div>
       )
-    } else if (this.props.isEditing && !_get(this.state.query, 'trim()')) {
+    } else if (this.props.isEditing && !this.state.query?.trim()) {
       content = (
         <div className='dashboard-tile-placeholder-text'>
-          <em>
-            To get started, enter a query and click <Icon className='play-icon' type='play' />
-          </em>
+          <span>To get started, enter a query and click</span>
+          <Icon className='play-icon' type='play' />
         </div>
       )
     } else {
       content = (
         <div className='dashboard-tile-placeholder-text'>
-          <em>
-            {this.props.isEditing ? (
-              <span>
-                Hit <Icon className='edit-mode-placeholder-icon' type='play' /> to run this tile
-              </span>
-            ) : (
-              <span>{this.props.notExecutedText}</span>
-            )}
-          </em>
+          {this.props.isEditing ? (
+            <>
+              <span>Hit</span>
+              <Icon className='edit-mode-placeholder-icon' type='play' />
+              <span>to run this tile</span>
+            </>
+          ) : (
+            <span>{this.props.notExecutedText}</span>
+          )}
         </div>
       )
     }
@@ -921,6 +966,8 @@ export class DashboardTile extends React.Component {
             onCSVDownloadFinish={this.onCSVDownloadFinish}
             shouldRender={!this.props.isDragging}
             tooltipID={this.props.tooltipID}
+            popoverPositions={['top', 'left', 'bottom', 'right']}
+            popoverAlign='end'
             {...optionsToolbarProps}
           />
         </div>
@@ -938,6 +985,7 @@ export class DashboardTile extends React.Component {
 
     return (
       <QueryOutput
+        key={`${this.props.tile?.key}${this.props.isEditing ? '-editing' : '-notediting'}`}
         authentication={this.props.authentication}
         autoQLConfig={this.props.autoQLConfig}
         dataFormatting={this.props.dataFormatting}
@@ -995,7 +1043,7 @@ export class DashboardTile extends React.Component {
     const isExecuting = this.state.isTopExecuting
     const isExecuted = this.state.isTopExecuted
 
-    const renderPlaceholder = !this.props.queryResponse || isExecuting || !isExecuted
+    const renderPlaceholder = !this.props.tile?.queryResponse || isExecuting || !isExecuted
 
     const initialDisplayType = this.props?.displayType
 
@@ -1004,12 +1052,12 @@ export class DashboardTile extends React.Component {
       isExecuting,
       isExecuted,
       queryOutputProps: {
-        ref: (ref) => ref && ref !== this.state.responseRef && this.setState({ responseRef: ref }),
+        ref: (ref) => ref && ref !== this.state.responseRef && this._isMounted && this.setState({ responseRef: ref }),
         optionsToolbarRef: this.optionsToolbarRef,
         vizToolbarRef: this.vizToolbarRef,
         key: `dashboard-tile-query-top-${this.FIRST_QUERY_RESPONSE_KEY}`,
         initialDisplayType,
-        queryResponse: this.props.queryResponse,
+        queryResponse: this.props.tile?.queryResponse,
         initialTableConfigs: this.props.tile.dataConfig,
         initialAggConfig: this.props.tile.aggConfig,
         onTableConfigChange: this.onDataConfigChange,
@@ -1059,8 +1107,8 @@ export class DashboardTile extends React.Component {
     }
 
     const renderPlaceholder =
-      (!isQuerySameAsTop && !this.props.secondQueryResponse) ||
-      (isQuerySameAsTop && !this.props.queryResponse) ||
+      (!isQuerySameAsTop && !this.props.tile?.secondQueryResponse) ||
+      (isQuerySameAsTop && !this.props.tile?.queryResponse) ||
       isExecuting ||
       !isExecuted
 
@@ -1072,11 +1120,12 @@ export class DashboardTile extends React.Component {
       isExecuted,
       queryOutputProps: {
         key: `dashboard-tile-query-bottom-${this.SECOND_QUERY_RESPONSE_KEY}`,
-        ref: (ref) => ref && ref !== this.state.secondResponseRef && this.setState({ secondResponseRef: ref }),
+        ref: (ref) =>
+          ref && ref !== this.state.secondResponseRef && this._isMounted && this.setState({ secondResponseRef: ref }),
         optionsToolbarRef: this.secondOptionsToolbarRef,
         vizToolbarRef: this.secondVizToolbarRef,
         initialDisplayType,
-        queryResponse: this.props.secondQueryResponse || this.props.queryResponse,
+        queryResponse: this.props.tile?.secondQueryResponse || this.props.tile?.queryResponse,
         initialTableConfigs: this.props.tile.secondDataConfig,
         initialAggConfig: this.props.tile.secondAggConfig,
         onTableConfigChange: this.onSecondDataConfigChange,
