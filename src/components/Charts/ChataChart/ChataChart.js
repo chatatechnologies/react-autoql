@@ -357,44 +357,26 @@ export default class ChataChart extends Component {
     )
   }
 
-  getBase64Data = () => {
-    const svgElement = this.chartRef
-    if (!svgElement) {
+  getBase64Data = (scale) => {
+    if (!this.chartRef) {
       return Promise.reject()
     }
 
-    return svgToPng(svgElement, 20)
-      .then((data) => Promise.resolve(data))
-      .catch(() => Promise.reject())
+    return svgToPng(this.chartRef, scale)
   }
 
-  saveAsPNG = () => {
-    const svgElement = this.chartRef
-    if (!svgElement) {
+  saveAsPNG = (scale) => {
+    try {
+      this.getBase64Data(scale).then((data) => {
+        const a = document.createElement('a')
+        a.download = 'Chart.png'
+        a.href = data
+        a.click()
+      })
+    } catch (error) {
+      console.error(error)
       return
     }
-
-    svgToPng(svgElement, 20)
-      .then((data) => {
-        let dt = data // << this fails in IE/Edge...
-        dt = dt.replace(/^data:image\/[^;]*/, 'data:application/octet-stream')
-        dt = dt.replace(
-          /^data:application\/octet-stream/,
-          'data:application/octet-stream;headers=Content-Disposition%3A%20attachment%3B%20filename=Canvas.png',
-        )
-
-        // Create link and simulate click for download
-        const link = document.createElement('a')
-        link.setAttribute('href', dt)
-        link.setAttribute('download', 'Chart.png')
-        link.setAttribute('target', '_blank')
-        link.style.display = 'none'
-        document.body.appendChild(link)
-        link.click()
-      })
-      .catch((error) => {
-        console.error(error)
-      })
   }
 
   setIsLoadingMoreRows = (isLoading) => {

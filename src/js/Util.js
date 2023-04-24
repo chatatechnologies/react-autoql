@@ -623,71 +623,41 @@ export const getBBoxFromRef = (ref) => {
  * @param {string} [fill] optionally backgrund canvas fill
  * @return {Promise} a promise to the bas64 png image
  */
-export const svgToPng = (svgElement, margin = 0, fill) => {
+export const svgToPng = (svgElement, scale = 3) => {
   return new Promise(function (resolve, reject) {
     try {
       const bbox = svgElement.getBoundingClientRect()
       const originalWidth = bbox.width
       const originalHeight = bbox.height
 
-      const resolutionScale = 2
-      const clonedSvg = svgElement.cloneNode(true)
+      const scaledWidth = originalWidth * scale
+      const scaledHeight = originalHeight * scale
 
-      clonedSvg.setAttribute(
-        'transform',
-        `scale(${resolutionScale}) translate(${(originalWidth / 2) * resolutionScale},${
-          (originalHeight / 2) * resolutionScale
-        })`,
-      )
+      const clonedSvg = svgElement.cloneNode(true)
+      clonedSvg.setAttribute('transform-origin', 'top left')
+      clonedSvg.setAttribute('transform', `scale(${scale})`)
 
       const image64 = getSVGBase64(clonedSvg)
 
-      const canvasWidth = originalWidth * resolutionScale
-      const canvasHeight = originalHeight * resolutionScale
-      console.log({ canvasWidth, canvasHeight, originalWidth, originalHeight })
+      const canvas = document.createElement('canvas')
+      canvas.style.width = originalWidth + 'px'
+      canvas.style.height = originalHeight + 'px'
+      canvas.width = scaledWidth
+      canvas.height = scaledHeight
 
-      // create a canvas element to pass through
-      var canvas = document.createElement('canvas')
-      const width = canvasWidth // + margin * 2
-      const height = canvasHeight // + margin * 2
+      const ctx = canvas.getContext('2d')
 
-      canvas.style.width = width / resolutionScale + 'px'
-      canvas.style.height = height / resolutionScale + 'px'
-      canvas.width = width
-      canvas.height = height
-
-      var ctx = canvas.getContext('2d')
-      // ctx.imageSmoothingEnabled = true
-
-      // create a new image to hold it the converted type
-      var img = new Image()
-
-      // when the image is loaded we can get it as base64 url
+      const img = new Image()
       img.onload = function () {
         // draw it to the canvas
-        ctx.drawImage(this, 0, 0, width, height) // margin, margin, width, height)
-
-        // if it needs some styling, we need a new canvas
-        // if (fill) {
-        //   var styled = document.createElement('canvas')
-        //   styled.width = canvas.width
-        //   styled.height = canvas.height
-        //   var styledCtx = styled.getContext('2d')
-        //   styledCtx.save()
-        //   styledCtx.fillStyle = fill
-        //   styledCtx.fillRect(0, 0, canvas.width, canvas.height)
-        //   styledCtx.strokeRect(0, 0, canvas.width, canvas.height)
-        //   styledCtx.restore()
-        //   styledCtx.drawImage(canvas, 0, 0)
-        //   canvas = styled
-        // }
+        ctx.drawImage(this, 0, 0, scaledWidth, scaledHeight)
         resolve(canvas.toDataURL('image/png', 1))
       }
+
       img.onerror = function () {
         reject('failed to load image')
       }
 
-      // load image
       img.src = image64
     } catch (error) {
       console.error(error)
