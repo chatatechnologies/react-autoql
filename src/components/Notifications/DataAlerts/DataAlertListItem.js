@@ -5,10 +5,16 @@ import { Icon } from '../../Icon'
 import { Switch } from '../../Switch'
 import { hideTooltips } from '../../Tooltip'
 
-import { CONTINUOUS_TYPE, CUSTOM_TYPE, PERIODIC_TYPE, SCHEDULED_TYPE } from '../DataAlertConstants'
+import {
+  CONTINUOUS_TYPE,
+  CUSTOM_TYPE,
+  DEFAULT_CHECK_FREQUENCY,
+  PERIODIC_TYPE,
+  SCHEDULED_TYPE,
+} from '../DataAlertConstants'
 
 import { initializeAlert, updateDataAlertStatus } from '../../../js/notificationService'
-import { formatResetDate, formatResetDateShort, resetDateIsFuture } from '../helpers'
+import { formatNextScheduleDateShort, formatResetDate, formatResetDateShort, resetDateIsFuture } from '../helpers'
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
@@ -290,8 +296,26 @@ export default class DataAlertListItem extends React.Component {
 
   renderDataAlertCycleStart = () => {
     const { dataAlert } = this.props
-    if (!dataAlert?.reset_date || !resetDateIsFuture(dataAlert)) {
+
+    if (!dataAlert) {
       return '-'
+    }
+
+    if (dataAlert.type === SCHEDULED_TYPE) {
+      const nextScheduledDate = formatNextScheduleDateShort(dataAlert.schedules)
+      if (!nextScheduledDate) {
+        return '-'
+      }
+      return <span>{nextScheduledDate}</span>
+    }
+
+    if (!dataAlert.reset_date || !resetDateIsFuture(dataAlert)) {
+      if (!this.isEnabled()) {
+        return '-'
+      }
+
+      const checkFrequency = dataAlert.check_frequency ?? DEFAULT_CHECK_FREQUENCY
+      return `< ${checkFrequency}m`
     }
 
     return <span>{formatResetDateShort(dataAlert)}</span>
@@ -335,7 +359,7 @@ export default class DataAlertListItem extends React.Component {
           </div>
           <div className='react-autoql-data-alert-list-item-section'>
             <div className='data-alert-header-item'>
-              <span>Next Cycle</span>
+              <span>Next Check</span>
             </div>
             <div className='data-alert-section-content data-alert-section-cycle-start'>
               {this.renderDataAlertCycleStart()}

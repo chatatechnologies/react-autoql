@@ -23,13 +23,25 @@ export const formatResetDate = (dataAlert) => {
   return `${date.format('MMMM DD, YYYY')} at ${date.format('h:mma')} (${dataAlert.time_zone})`
 }
 
+export const formatDateShort = (date, tz) => {
+  const dateDayJS = dayjs(date).tz(tz)
+  return `${dateDayJS.format('MMM DD, YYYY h:mma')}` // (${dataAlert.time_zone})`
+}
+
+export const formatNextScheduleDateShort = (schedules) => {
+  if (!schedules) {
+    return ''
+  }
+
+  return formatDateShort(schedules?.[0]?.next_evaluation, schedules?.[0]?.time_zone)
+}
+
 export const formatResetDateShort = (dataAlert) => {
   if (!dataAlert.reset_date) {
     return ''
   }
 
-  const date = dayjs(dataAlert.reset_date).tz(dataAlert.time_zone)
-  return `${date.format('MMM DD, YYYY h:mma')} (${dataAlert.time_zone})`
+  return formatDateShort(dataAlert.reset_date, dataAlert.time_zone)
 }
 
 export const getDayLocalStartDate = ({ timeObj, timezone }) => {
