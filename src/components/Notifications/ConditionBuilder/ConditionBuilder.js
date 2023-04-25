@@ -122,9 +122,9 @@ export default class ConditionBuilder extends React.Component {
     this.props.onChange(this.isComplete(), this.isValid(), this.getJSON())
   }
 
-  getConditionStatement = (tense) => {
+  getConditionStatement = (tense, useRT) => {
     if (this.ruleRef) {
-      return this.ruleRef?.getConditionStatement(tense)
+      return this.ruleRef?.getConditionStatement(tense, useRT)
     }
 
     return
@@ -197,7 +197,7 @@ export default class ConditionBuilder extends React.Component {
                 />
                 {this.props.conditionStatementOnly && (
                   <span className='condition-builder-statement'>
-                    {this.getConditionStatement(this.props.conditionTense)}
+                    {this.getConditionStatement(this.props.conditionTense, this.props.useRT)}
                   </span>
                 )}
               </>

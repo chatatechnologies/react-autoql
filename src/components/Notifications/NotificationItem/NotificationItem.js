@@ -329,14 +329,17 @@ export default class NotificationItem extends React.Component {
 
   renderSummarySection = () => {
     const { notification } = this.props
+    const queryResponse = { data: notification?.query_result }
 
     return (
       <div className='react-autoql-notification-condition-statement'>
         <ConditionBuilder
           key={`expression-builder-${this.COMPONENT_KEY}`}
           expression={notification?.expression}
+          queryResponse={queryResponse}
           conditionStatementOnly
           conditionTense='past'
+          useRT
         />
       </div>
     )

@@ -62,11 +62,18 @@
   .react-autoql-notification-condition-statement {
     text-overflow: ellipsis;
     overflow: hidden;
-    font-style: italic;
     padding: 10px 20px;
-    font-size: 0.875rem;
-    font-weight: 600;
+    font-weight: 500;
     color: var(--react-autoql-accent-color);
+
+    .data-alert-condition-statement-query1,
+    .data-alert-condition-statement-query2 {
+      font-style: italic;
+    }
+
+    .data-alert-condition-statement-operator {
+      text-decoration: underline;
+    }
 
     .data-alerts-container,
     .notification-rule-outer-container {
@@ -357,6 +364,7 @@
 
     .react-autoql-notification-display-name {
       font-size: 18px;
+      font-weight: 500;
       color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.7));
     }
     .react-autoql-notification-timestamp-container {

@@ -19,6 +19,7 @@ import { constructRTArray, getTimeFrameTextFromChunk } from '../../../js/reverse
 import { responseErrors } from '../../../js/errorMessages'
 
 import './RuleSimple.scss'
+import { ReverseTranslation } from '../../ReverseTranslation'
 
 export default class RuleSimple extends React.Component {
   autoCompleteTimer = undefined
@@ -99,8 +100,14 @@ export default class RuleSimple extends React.Component {
     }
   }
 
-  getConditionStatement = (tense) => {
-    const queryText = this.getFormattedQueryText()?.toLowerCase()
+  getConditionStatement = (tense, useRT) => {
+    let queryText = this.getFormattedQueryText()?.toLowerCase()
+    if (useRT) {
+      queryText = (
+        <ReverseTranslation reverseTranslation={this.props.queryResponse?.data?.data?.parsed_interpretation} textOnly />
+      )
+    }
+
     const operator = DATA_ALERT_OPERATORS[this.state.selectedOperator]
     const operatorText = tense === 'past' ? operator?.conditionTextPast : operator?.conditionText
     let secondTermText = this.state.secondInputValue
@@ -108,14 +115,23 @@ export default class RuleSimple extends React.Component {
       secondTermText = `"${secondTermText}"`
     }
 
-    if (queryText && operatorText && secondTermText) {
+    if (queryText && operatorText && secondTermText !== undefined) {
       return (
         <span className='data-alert-condition-statement'>
-          "{queryText}" {operatorText} {secondTermText}
+          <span>Summary: </span>
+          <span className='data-alert-condition-statement-query1'>"{queryText}"</span>{' '}
+          <span className='data-alert-condition-statement-operator'>{operatorText}</span>{' '}
+          <span className='data-alert-condition-statement-query2'>{secondTermText}</span>
         </span>
       )
     } else if (queryText) {
-      return <span className='data-alert-condition-statement'>New data detected for the query "{queryText}"</span>
+      return (
+        <span className='data-alert-condition-statement'>
+          <span>Summary: </span>
+          <span className='data-alert-condition-statement-operator'>New data detected for the query</span>{' '}
+          <span className='data-alert-condition-statement-query1'>"{queryText}"</span>
+        </span>
+      )
     }
 
     return
@@ -638,6 +654,10 @@ export default class RuleSimple extends React.Component {
   }
 
   render = () => {
+    if (this.props.conditionStatementOnly) {
+      return null
+    }
+
     return (
       <ErrorBoundary>
         <div
