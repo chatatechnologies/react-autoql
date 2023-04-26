@@ -61,12 +61,12 @@ export default class DateRangePicker extends React.Component {
     for (let hr = 0; hr < hours; hr++) {
       for (let min = 0; min < optionsPerHour; min++) {
         let ampm = 'am'
-        if (hr > 12) {
+        if (hr >= 12) {
           ampm = 'pm'
         }
 
         let hour = hr % 12
-        if (hr === 0) {
+        if (hour === 0) {
           hour = 12
         }
 
@@ -75,7 +75,8 @@ export default class DateRangePicker extends React.Component {
         options.push({
           ampm,
           minute,
-          hour: hr,
+          hour,
+          hour24: hr,
           value: `${hour}:${minute}${ampm}`,
           value24hr: `${hr}:${minute}`,
         })

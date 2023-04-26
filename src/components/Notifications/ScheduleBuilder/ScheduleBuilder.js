@@ -39,10 +39,11 @@ export default class ScheduleBuilder extends React.Component {
     this.DEFAULT_FREQUENCY_TYPE = SCHEDULED_TYPE
     this.DEFAULT_TIME_SELECT_VALUE = {
       ampm: 'pm',
-      hour: 5,
       minute: 0,
-      value24hr: '17:00',
+      hour: 5,
+      hour24: 17,
       value: '5:00pm',
+      value24hr: '17:00',
     }
 
     const timeRange = getTimeRangeFromRT(props.queryResponse)
@@ -112,28 +113,34 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   getData = () => {
+    const notificationType = this.getNotificationType()
+    const resetPeriod = this.state.frequencyType !== SCHEDULED_TYPE ? this.getResetPeriod() : undefined
+    const schedules = this.getSchedules()
+    const timezone = this.state.timezone
+
     return {
-      notificationType: this.getNotificationType(),
-      resetPeriod: this.getResetPeriod(),
-      schedules: this.getSchedules(),
-      timezone: this.state.timezone,
+      notificationType,
+      resetPeriod,
+      schedules,
+      timezone,
     }
   }
 
   getNotificationPeriod = () => {
     if (this.state.resetPeriodSelectValue === 'MONTH' && this.state.monthDaySelectValue === 'LAST') {
-      return 'MONTH_LAST'
+      return 'MONTH_LAST_DAY'
     }
 
     return this.state.resetPeriodSelectValue
   }
 
-  getLocalStartDate = () => {
+  getLocalStartDate = ({ daysToAdd } = {}) => {
     return SCHEDULE_INTERVAL_OPTIONS[this.state.resetPeriodSelectValue]?.getLocalStartDate({
       timeObj: this.state.intervalTimeSelectValue,
       timezone: this.state.timezone,
       monthDay: this.state.monthDaySelectValue,
       weekDay: this.state.weekDaySelectValue,
+      daysToAdd,
     })
   }
 
@@ -142,10 +149,23 @@ export default class ScheduleBuilder extends React.Component {
       return
     }
 
+    if (this.state.resetPeriodSelectValue === 'DAY') {
+      const schedules = []
+      WEEKDAY_NAMES_MON.forEach((weekday, i) => {
+        schedules.push({
+          notification_period: 'WEEK',
+          start_date: this.getLocalStartDate({ daysToAdd: i }),
+          time_zone: this.state.timezone,
+        })
+      })
+
+      return schedules
+    }
+
     return [
       {
         notification_period: this.getNotificationPeriod(),
-        local_start_date: this.getLocalStartDate(),
+        start_date: this.getLocalStartDate(),
         time_zone: this.state.timezone,
       },
     ]
@@ -492,8 +512,6 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   render = () => {
-    this.getLocalStartDate()
-
     return (
       <ErrorBoundary>
         <div className='data-alert-schedule-builder-step' data-test='schedule-builder'>

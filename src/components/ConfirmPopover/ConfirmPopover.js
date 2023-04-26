@@ -88,17 +88,17 @@ export default class ConfirmPopover extends React.Component {
           isOpen={this.state.isOpen}
           content={this.renderContent}
           className='react-autoql-confirm-popover'
+          parentElement={this.props.popoverParentElement}
+          boundaryElement={this.props.popoverParentElement}
+          positions={this.props.positions}
+          padding={this.props.padding}
+          align={this.props.align}
+          reposition={true}
           onClickOutside={(e) => {
             e.stopPropagation()
             e.preventDefault()
             this.close()
           }}
-          parentElement={this.props.popoverParentElement}
-          boundaryElement={this.props.popoverParentElement}
-          positions={this.props.positions}
-          align={this.props.align}
-          reposition={true}
-          padding={this.props.padding}
         >
           <div
             className={`react-autoql-confirm-popover-click-wrapper ${this.props.className ?? ''}`}

@@ -36,10 +36,11 @@ export class MenuItem extends React.Component {
   render = () => {
     return (
       <li
-        id={`react-autoql-menu-item-${this.ID}`}
+        id={this.props.id ?? `react-autoql-menu-item-${this.ID}`}
         key={`react-autoql-menu-item-${this.ID}`}
         className={`react-autoql-menu-item
           ${this.props.className ?? ''}
+          ${this.props.subtitle ? 'has-subtitles' : ''}
           ${this.props.active ? 'active' : ''}`}
         data-tip={this.props.tooltip}
         data-for={this.props.tooltipID}

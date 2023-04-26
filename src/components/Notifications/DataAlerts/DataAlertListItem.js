@@ -297,7 +297,7 @@ export default class DataAlertListItem extends React.Component {
   renderDataAlertCycleStart = () => {
     const { dataAlert } = this.props
 
-    if (!dataAlert) {
+    if (!dataAlert || this.hasError()) {
       return '-'
     }
 

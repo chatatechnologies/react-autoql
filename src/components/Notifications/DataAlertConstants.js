@@ -8,9 +8,9 @@ export const CONTINUOUS_TYPE = 'CONTINUOUS'
 export const SCHEDULED_TYPE = 'SCHEDULED'
 export const COMPARE_TYPE = 'COMPARE'
 export const EXISTS_TYPE = 'EXISTS'
-export const NUMBER_TERM_TYPE = 'constant'
-export const QUERY_TERM_TYPE = 'query'
-export const GROUP_TERM_TYPE = 'group'
+export const NUMBER_TERM_TYPE = 'CONSTANT'
+export const QUERY_TERM_TYPE = 'QUERY'
+export const GROUP_TERM_TYPE = 'GROUP'
 export const DEFAULT_CHECK_FREQUENCY = 5
 
 export const DATA_ALERT_OPERATORS = {
@@ -24,6 +24,16 @@ export const DATA_ALERT_OPERATORS = {
     conditionText: 'exceeds',
     conditionTextPast: 'exceeded',
   },
+  GREATER_THAN_EQUAL_TO: {
+    displayName: (
+      <span>
+        Is <strong>greater</strong> than <strong>or equal</strong> to
+      </span>
+    ),
+    symbol: '>=',
+    conditionText: 'is equal to or exceeds',
+    conditionTextPast: 'was equal to or exceeded',
+  },
   LESS_THAN: {
     displayName: (
       <span>
@@ -33,6 +43,16 @@ export const DATA_ALERT_OPERATORS = {
     symbol: '<',
     conditionText: 'falls below',
     conditionTextPast: 'fell below',
+  },
+  LESS_THAN_EQUAL_TO: {
+    displayName: (
+      <span>
+        Is <strong>less</strong> than <strong>or equal</strong> to
+      </span>
+    ),
+    symbol: '<=',
+    conditionText: 'is equal to or falls below',
+    conditionTextPast: 'was equal to or fell below',
   },
   EQUAL_TO: {
     displayName: (
@@ -44,6 +64,12 @@ export const DATA_ALERT_OPERATORS = {
     conditionText: 'equals',
     conditionTextPast: 'was equal to',
   },
+  // Keep these for reference
+  // NOT_EQUAL_TO: {},
+  // NOT_EXISTS: {},
+  // AND: {},
+  // OR: {},
+  // TERMINATOR: {}
 }
 
 export const DATA_ALERT_CONDITION_TYPES = {

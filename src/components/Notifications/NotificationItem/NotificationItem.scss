@@ -98,6 +98,7 @@
 
   &.unread {
     .react-autoql-notification-display-name {
+      font-weight: 500;
       color: var(--react-autoql-accent-color, #26a7df) !important;
     }
 
@@ -364,7 +365,6 @@
 
     .react-autoql-notification-display-name {
       font-size: 18px;
-      font-weight: 500;
       color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.7));
     }
     .react-autoql-notification-timestamp-container {

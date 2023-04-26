@@ -72,6 +72,7 @@ export const formatFiltersForAPI = (params, table, columns) => {
         if (column) {
           const filterObj = {
             name: column.name,
+            displayName: column.title,
             value: filter.value,
             operator: 'like',
           }

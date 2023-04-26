@@ -71,7 +71,11 @@ export default class Select extends React.Component {
     const index = this.props.options?.findIndex((option) => this.props.value === option.value)
     const element = document.querySelector(`#select-option-${this.ID}-${index}`)
     if (element) {
-      element.scrollIntoView()
+      element.scrollIntoView({
+        behavior: 'auto',
+        block: 'center',
+        inline: 'center',
+      })
     }
   }
 
@@ -128,9 +132,10 @@ export default class Select extends React.Component {
           <Tooltip id={`select-tooltip-${this.ID}`} className='react-autoql-tooltip' effect='solid' delayShow={500} />
         )}
         <Menu options={this.props.options}>
-          {this.props.options?.map((option) => {
+          {this.props.options?.map((option, i) => {
             return (
               <MenuItem
+                id={`select-option-${this.ID}-${i}`}
                 key={option.value}
                 title={option.listLabel ?? option.label ?? option.value}
                 subtitle={option.subtitle}

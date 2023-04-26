@@ -27,6 +27,7 @@ import { DATA_ALERT_CONDITION_TYPES, COMPARE_TYPE, EXISTS_TYPE, QUERY_TERM_TYPE 
 import './DataAlertModal.scss'
 import DataAlertSettings from './DataAlertSettings'
 import AppearanceSection from './AppearanceSection'
+import { getSupportedConditionTypes } from '../helpers'
 
 class DataAlertModal extends React.Component {
   constructor(props) {
@@ -103,16 +104,20 @@ class DataAlertModal extends React.Component {
     }
   }
 
+  showConditionsStep = () => {
+    return this.conditionsEditable() || this.queryHasFilters()
+  }
+
   getSteps = (initialProps) => {
     const props = initialProps ?? this.props
-    this.SUPPORTED_CONDITION_TYPES = this.getSupportedConditionTypes(props)
+    this.SUPPORTED_CONDITION_TYPES = getSupportedConditionTypes(props.currentDataAlert?.expression, props.queryResponse)
 
     let steps = [
       { title: 'Configure Timing', value: this.FREQUENCY_STEP },
       { title: 'Customize Appearance', value: this.MESSAGE_STEP },
     ]
 
-    if (this.conditionsEditable()) {
+    if (this.showConditionsStep()) {
       steps.unshift({ title: 'Set Up Conditions', value: this.CONDITIONS_STEP })
     }
 
@@ -152,33 +157,6 @@ class DataAlertModal extends React.Component {
     this.setState(this.getInitialState(props))
   }
 
-  getSupportedConditionTypes = (props) => {
-    try {
-      // 1. EXISTS - When new data is detected for the query
-      // 2. COMPARE - When a certain condition is met
-
-      if (props.currentDataAlert) {
-        const firstCondition = props.currentDataAlert?.expression?.[0]?.condition
-        if (firstCondition && firstCondition === EXISTS_TYPE) {
-          return [EXISTS_TYPE]
-        }
-
-        return [COMPARE_TYPE]
-      }
-
-      // Currently single value response queries are the only
-      // queries that support custom conditions
-      if (isSingleValueResponse(props.queryResponse)) {
-        return [COMPARE_TYPE]
-      }
-
-      return [EXISTS_TYPE]
-    } catch (error) {
-      console.error(error)
-      return []
-    }
-  }
-
   getDataAlertData = () => {
     try {
       const { currentDataAlert, queryResponse } = this.props
@@ -213,10 +191,10 @@ class DataAlertModal extends React.Component {
         scheduleData = this.scheduleBuilderRef.getData()
       }
 
-      const filters = currentDataAlert?.filters ?? [
-        ...(queryResponse?.data?.data?.persistent_locked_conditions ?? []),
-        ...(queryResponse?.data?.data?.session_locked_conditions ?? []),
-      ]
+      // const filters = currentDataAlert?.filters ?? [
+      //   ...(queryResponse?.data?.data?.persistent_locked_conditions ?? []),
+      //   ...(queryResponse?.data?.data?.session_locked_conditions ?? []),
+      // ]
 
       const newDataAlert = {
         id: currentDataAlert?.id,
@@ -228,7 +206,7 @@ class DataAlertModal extends React.Component {
         reset_period: scheduleData.resetPeriod,
         time_zone: scheduleData.timezone,
         schedules: scheduleData.schedules,
-        filters,
+        // filters,
       }
 
       return newDataAlert
@@ -483,29 +461,33 @@ class DataAlertModal extends React.Component {
   }
 
   renderConditionsStep = (active) => {
+    if (!this.showConditionsStep()) {
+      return null
+    }
+
     return (
       <div className={`react-autoql-data-alert-modal-step ${active ? '' : 'hidden'}`}>
         <div style={{ display: 'flex' }}>
           <div style={{ flex: 1 }}>
-            {this.conditionsEditable() && (
-              <ConditionBuilder
-                authentication={this.props.authentication}
-                ref={(r) => (this.expressionRef = r)}
-                key={`expression-${this.state.expressionKey}`}
-                onChange={this.onExpressionChange}
-                expression={this.props.currentDataAlert?.expression ?? this.state.expressionJSON}
-                queryResponse={this.props.queryResponse}
-                tooltipID={this.TOOLTIP_ID}
-                onLastInputEnterPress={this.nextStep}
-              />
-            )}
+            <ConditionBuilder
+              authentication={this.props.authentication}
+              ref={(r) => (this.expressionRef = r)}
+              key={`expression-${this.state.expressionKey}`}
+              onChange={this.onExpressionChange}
+              expression={this.props.currentDataAlert?.expression ?? this.state.expressionJSON}
+              queryResponse={this.props.queryResponse}
+              tooltipID={this.TOOLTIP_ID}
+              onLastInputEnterPress={this.nextStep}
+              filters={this.props.filters}
+            />
           </div>
         </div>
-        <div>
+        {/* Keep this in case we want to use later */}
+        {/* <div>
           {this.SUPPORTED_CONDITION_TYPES?.length > 1
             ? this.renderConditionTypeSelector()
             : this.renderConditionTypeDescription()}
-        </div>
+        </div> */}
       </div>
     )
   }
@@ -567,6 +549,14 @@ class DataAlertModal extends React.Component {
         {this.renderFrequencyStep(activeStep === this.getStepNumber(this.FREQUENCY_STEP))}
         {this.renderComposeMessageStep(activeStep === this.getStepNumber(this.MESSAGE_STEP))}
       </>
+    )
+  }
+
+  queryHasFilters = () => {
+    return (
+      !!this.props.filters?.length ||
+      !!this.props.currentDataAlert?.expression?.[0]?.filters?.length ||
+      !!this.props.currentDataAlert?.expression?.[0]?.session_filter_locks?.length
     )
   }
 
