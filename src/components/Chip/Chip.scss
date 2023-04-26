@@ -1,3 +1,6 @@
+.react-autoql-chip-delete-confirm-popover {
+}
+
 .react-autoql-chip {
   position: relative;
   display: inline-flex;
@@ -14,6 +17,13 @@
   padding: 5px 12px;
   overflow: hidden;
 
+  .react-autoql-chip-content {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+  }
+
   .react-autoql-chip-background {
     position: absolute;
     top: 0;
@@ -24,17 +34,9 @@
     background: var(--react-autoql-accent-color);
   }
 
-  // &:hover {
-  //   border-color: var(--react-autoql-accent-color);
-  // }
-
   &.selected {
     background-color: var(--react-autoql-accent-color);
     color: var(--react-autoql-text-color-accent);
-  }
-
-  .react-autoql-chip-content {
-    font-weight: 600;
   }
 
   .react-autoql-chip-delete-btn {

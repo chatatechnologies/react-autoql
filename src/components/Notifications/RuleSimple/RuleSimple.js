@@ -14,12 +14,14 @@ import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication, getAutoQLConfig } from '../../../props/defaults'
 import { fetchAutocomplete, runQueryOnly } from '../../../js/queryService'
 import { isNumber, isSingleValueResponse } from '../../../js/Util'
-import { DATA_ALERT_OPERATORS, EXISTS_TYPE, NUMBER_TERM_TYPE, QUERY_TERM_TYPE } from '../DataAlertConstants'
+import { COMPARE_TYPE, DATA_ALERT_OPERATORS, NUMBER_TERM_TYPE, QUERY_TERM_TYPE } from '../DataAlertConstants'
 import { constructRTArray, getTimeFrameTextFromChunk } from '../../../js/reverseTranslationHelpers'
+import { ReverseTranslation } from '../../ReverseTranslation'
+import { getSupportedConditionTypes } from '../helpers'
 import { responseErrors } from '../../../js/errorMessages'
+import { Chip } from '../../Chip'
 
 import './RuleSimple.scss'
-import { ReverseTranslation } from '../../ReverseTranslation'
 
 export default class RuleSimple extends React.Component {
   autoCompleteTimer = undefined
@@ -29,7 +31,12 @@ export default class RuleSimple extends React.Component {
 
     const { initialData, queryResponse } = props
 
-    this.SUPPORTED_OPERATORS = Object.keys(DATA_ALERT_OPERATORS)
+    this.SUPPORTED_CONDITION_TYPES = getSupportedConditionTypes(initialData, queryResponse)
+    this.SUPPORTED_OPERATORS = []
+    if (this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE)) {
+      this.SUPPORTED_OPERATORS = Object.keys(DATA_ALERT_OPERATORS)
+    }
+
     this.TERM_ID_1 = uuid()
     this.TERM_ID_2 = uuid()
 
@@ -43,6 +50,7 @@ export default class RuleSimple extends React.Component {
       secondQueryInvalid: false,
       secondQueryError: '',
       isEditingQuery: false,
+      queryFilters: this.getFilters(props),
     }
 
     if (initialData) {
@@ -148,6 +156,8 @@ export default class RuleSimple extends React.Component {
         condition: this.state.selectedOperator,
         term_value: this.state.inputValue,
         user_selection: userSelection,
+        filters: this.state.queryFilters?.filter((f) => f.type === 'table'),
+        session_filter_locks: this.state.queryFilters?.filter((f) => f.type === 'locked'),
       },
       {
         id: this.TERM_ID_2,
@@ -524,9 +534,110 @@ export default class RuleSimple extends React.Component {
   }
 
   renderFormattedQuery = () => {
+    return
+  }
+
+  getFilters = (props) => {
+    const columnFilters = props.filters ?? []
+    const persistentFilters = props.queryResponse?.data?.data?.persistent_locked_conditions ?? []
+    const sessionFilters = props.queryResponse?.data?.data?.session_locked_conditions ?? []
+    const vlFilters = [...persistentFilters, ...sessionFilters] ?? []
+
+    const columnFiltersFormatted =
+      columnFilters.map((filter) => ({
+        columnName: filter?.columnName,
+        operator: filter?.operator,
+        value: filter?.displayValue ?? filter?.value,
+        name: filter?.name,
+        type: 'table',
+      })) ?? []
+
+    const vlFiltersFormatted = [] // vlFilters.map((filter) => ({ column: filter?.show_message, value: filter.value, type: 'locked' })) ?? []
+    const allFilters = [...columnFiltersFormatted, ...vlFiltersFormatted]
+
+    return allFilters
+  }
+
+  removeFilter = (filter) => {
+    const newFilterList = this.state.queryFilters?.filter((f) => f.name !== filter.name)
+    this.setState({ queryFilters: newFilterList })
+  }
+
+  renderFilterChips = () => {
+    const filters = this.state.queryFilters
+
+    if (filters?.length) {
+      return (
+        <div className='react-autoql-data-alert-filters-container'>
+          {/* <div className='react-autoql-input-label'>
+            Applied Filters{' '}
+            <Icon
+              type='info'
+              data-tip='These are the filters currently applied to your query data. They will also be applied to your Data Alert unless you remove them by hitting "x".'
+              data-for={this.props.tooltipID}
+            />
+          </div> */}
+          {filters.map((filter) => {
+            if (filter) {
+              let chipContent = null
+              if (filter.type === 'table') {
+                let operatorDisplay = ' ' + filter.operator ?? 'like'
+
+                if (filter.operator === 'between' && !filter.value.includes(' and ')) {
+                  operatorDisplay = ':'
+                }
+
+                let value = filter.value
+                if (filter.operator === 'like') {
+                  value = `"${filter.value}"`
+                }
+
+                chipContent = (
+                  <span>
+                    <strong>
+                      <Icon type='table' /> {filter.columnName}
+                    </strong>
+                    {operatorDisplay} <em>{value}</em>
+                  </span>
+                )
+              } else if (filter.type === 'locked') {
+                chipContent = (
+                  <span>
+                    <strong>{filter.columnName}:</strong> {filter.value}
+                  </span>
+                )
+              }
+
+              if (chipContent) {
+                return (
+                  <Chip
+                    onDelete={() => this.removeFilter(filter)}
+                    confirmDelete
+                    confirmText='Remove this filter?'
+                    tooltip={`This ${filter.type} filter is currently applied to your query data. It will also be applied to your Data Alert unless you remove it by hitting "x".`}
+                    tooltipID={this.props.tooltipID}
+                    popoverPadding={10}
+                  >
+                    {chipContent}
+                  </Chip>
+                )
+              }
+            }
+
+            return null
+          })}
+        </div>
+      )
+    }
+    return null
+  }
+
+  renderBaseQuery = () => {
     return (
-      <div>
-        {this.allowOperators() && this.props.queryResponse ? (
+      <div className='react-autoql-rule-input'>
+        <div>
+          {/* Keep this text without the input in case we want to use later */}
+          {/* {this.allowOperators() && !!this.props.queryResponse ? (
           <div className='data-alert-rule-formatted-query'>
             <div>{this.getFormattedQueryText()} </div>
             <Icon
@@ -537,7 +648,7 @@ export default class RuleSimple extends React.Component {
               data-place='right'
             />
           </div>
-        ) : (
+        ) : ( */}
           <span
             className='data-alert-rule-query-readonly-container'
             data-for={this.props.tooltipID}
@@ -546,39 +657,21 @@ export default class RuleSimple extends React.Component {
             <Input
               label={
                 this.allowOperators()
-                  ? 'Tigger Alert when this query'
+                  ? 'Trigger Alert when this query'
                   : 'Trigger Alert when new data detected is detected for this query'
               }
               value={this.getFormattedQueryText()}
-              fullWidth
               readOnly
               disabled
+              fullWidth
             />
+            {/* 
+            Do we want the ability to edit this?
+            <Icon type='edit' onClick={() => this.setState({ isEditingQuery: true })} /> 
+          */}
           </span>
-        )}
-        {/* 
-        Do we want the ability to edit this?
-        <Icon type='edit' onClick={() => this.setState({ isEditingQuery: true })} /> 
-        */}
-      </div>
-    )
-  }
-
-  renderQueryDisplay = () => {
-    return (
-      <div className='react-autoql-rule-input'>
-        {this.state.isEditingQuery ? (
-          <Input
-            placeholder='Type a query'
-            value={this.state.inputValue}
-            onChange={(e) => this.setState({ inputValue: e.target.value })}
-            spellCheck={false}
-            label='Trigger Alert when'
-            icon='react-autoql-bubbles-outlined'
-          />
-        ) : (
-          this.renderFormattedQuery()
-        )}
+          {this.renderFilterChips()}
+        </div>
       </div>
     )
   }
@@ -600,7 +693,7 @@ export default class RuleSimple extends React.Component {
   }
 
   shouldRenderValidationSection = () => {
-    return this.state.selectedOperator !== EXISTS_TYPE && this.state.secondTermType === QUERY_TERM_TYPE
+    return this.allowOperators() && this.state.secondTermType === QUERY_TERM_TYPE
   }
 
   renderTermValidationSection = () => {
@@ -650,7 +743,7 @@ export default class RuleSimple extends React.Component {
   }
 
   allowOperators = () => {
-    return this.state.selectedOperator !== EXISTS_TYPE
+    return this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE)
   }
 
   render = () => {
@@ -666,7 +759,7 @@ export default class RuleSimple extends React.Component {
           style={this.props.style}
         >
           <div className='react-autoql-rule-simple-first-query' data-test='rule'>
-            <div className='react-autoql-rule-first-input-container'>{this.renderQueryDisplay()}</div>
+            <div className='react-autoql-rule-first-input-container'>{this.renderBaseQuery()}</div>
           </div>
           <div className='react-autoql-notification-rule-container' data-test='rule'>
             {this.allowOperators() && (

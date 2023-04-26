@@ -194,6 +194,7 @@ export default class ConditionBuilder extends React.Component {
                   tooltipID={this.props.tooltipID}
                   queryResponse={this.props.queryResponse}
                   onLastInputEnterPress={this.props.onLastInputEnterPress}
+                  filters={this.props.filters}
                 />
                 {this.props.conditionStatementOnly && (
                   <span className='condition-builder-statement'>

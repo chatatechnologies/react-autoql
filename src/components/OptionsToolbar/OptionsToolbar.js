@@ -300,6 +300,8 @@ export class OptionsToolbar extends React.Component {
 
   renderDataAlertModal = () => {
     const userSelection = this.props.responseRef?.queryResponse?.data?.data?.fe_req?.disambiguation
+    const filters = this.props.responseRef?.getCombinedFilters()
+
     return (
       <ErrorBoundary>
         <DataAlertModal
@@ -311,6 +313,7 @@ export class OptionsToolbar extends React.Component {
           onSave={this.onDataAlertSave}
           tooltipID={this.props.tooltipID}
           queryResponse={this.props.responseRef?.queryResponse}
+          filters={filters}
         />
       </ErrorBoundary>
     )

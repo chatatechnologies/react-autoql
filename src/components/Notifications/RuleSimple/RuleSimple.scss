@@ -1,4 +1,9 @@
 .react-autoql-rule-simple {
+  .react-autoql-data-alert-filters-container {
+    padding: 5px;
+    margin-bottom: 20px;
+  }
+
   &.with-query-validation .react-autoql-rule-condition-select-input-container {
     margin-bottom: 30px;
   }
@@ -108,10 +113,6 @@
 
   .react-autoql-icon.react-autoql-bubbles-outlined {
     margin-right: 5px;
-  }
-
-  .react-autoql-chip {
-    margin: 0;
   }
 }
 

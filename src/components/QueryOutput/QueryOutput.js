@@ -1047,8 +1047,17 @@ export class QueryOutput extends React.Component {
     const allFilters = []
 
     tableFilters.forEach((tableFilter) => {
+      let filter = tableFilter
+
       const foundQueryFilter = queryFilters.find((filter) => filter.name === tableFilter.name)
-      allFilters.push(foundQueryFilter ?? tableFilter)
+      if (foundQueryFilter) {
+        filter = {
+          ...tableFilter,
+          ...foundQueryFilter,
+        }
+      }
+
+      allFilters.push(filter)
     })
 
     queryFilters.forEach((queryFilter) => {
@@ -1068,7 +1077,13 @@ export class QueryOutput extends React.Component {
       }
     }
 
-    return allFilters
+    return allFilters.map((filter) => {
+      const foundColumn = this.getColumns()?.find((column) => column.name === filter.name)
+      return {
+        ...filter,
+        columnName: foundColumn?.title,
+      }
+    })
   }
 
   onTableCellClick = (cell) => {

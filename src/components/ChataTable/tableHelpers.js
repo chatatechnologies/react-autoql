@@ -1,6 +1,7 @@
 import { isColumnNumberType } from '../QueryOutput/columnHelpers'
-import { getPrecisionForDayJS } from '../../js/dateUtils'
+import { getFilterPrecision, getPrecisionForDayJS } from '../../js/dateUtils'
 import dayjs from '../../js/dayjsWithPlugins'
+import { DAYJS_PRECISION_FORMATS } from '../../js/Constants'
 
 export const formatTableParams = (params, table, columns) => {
   const formattedSorters = formatSortersForAPI(params, table, columns)
@@ -72,7 +73,7 @@ export const formatFiltersForAPI = (params, table, columns) => {
         if (column) {
           const filterObj = {
             name: column.name,
-            displayName: column.title,
+            columnName: column.title,
             value: filter.value,
             operator: 'like',
           }
@@ -91,6 +92,7 @@ export const formatFiltersForAPI = (params, table, columns) => {
               .toISOString()
             filterObj.value = `${startDate},${endDate}`
             filterObj.operator = 'between'
+            filterObj.displayValue = filter.value.replaceAll(' to ', ' and ')
           }
 
           filters.push(filterObj)
