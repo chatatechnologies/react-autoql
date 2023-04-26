@@ -210,7 +210,6 @@ export default class DataAlertSettings extends React.Component {
   }
 
   render = () => {
-    console.log('inside data alert settings inside modal', { dataAlertMessage: this.props.currentDataAlert?.message })
     return (
       <ErrorBoundary>
         <Settings>

@@ -68,6 +68,7 @@ import { getColumnDateRanges, getFilterPrecision, getPrecisionForDayJS } from '.
 import { withTheme } from '../../theme'
 
 import './QueryOutput.scss'
+import { formatTableParams } from '../ChataTable/tableHelpers'
 
 export class QueryOutput extends React.Component {
   constructor(props) {
@@ -1252,6 +1253,7 @@ export class QueryOutput extends React.Component {
     }
 
     this.tableParams.filter = _cloneDeep(filters)
+    this.formattedTableParams = formatTableParams(this.tableParams, this.getColumns())
 
     const newTableData = []
     rows.forEach((row) => {

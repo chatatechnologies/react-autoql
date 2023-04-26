@@ -82,7 +82,7 @@ export const getDayLocalStartDate = ({ timeObj, timezone, daysToAdd = 0 }) => {
 
     // const tomorrow = today.add(1 + daysToAdd, 'day').startOf('minute')
     // const tomorrowWithTime = nextCycle.set('hour', timeObj.hour24).set('minute', timeObj.minute)
-    const nextCycleISO = nextCycle.add(daysToAdd, 'days').format('YYYY-MM-DD[T]hh:mm:00Z')
+    const nextCycleISO = nextCycle.add(daysToAdd, 'days').format('YYYY-MM-DD[T]hh:mm:00')
     return nextCycleISO
   } catch (error) {
     console.error(error)
@@ -98,10 +98,10 @@ export const getWeekLocalStartDate = ({ weekDay, timeObj, timezone }) => {
     const nextWeekdayWithTime = nextWeekday.hour(timeObj.hour24).minute(timeObj.minute)
 
     if (nextWeekdayWithTime.valueOf() < now.valueOf()) {
-      return nextWeekdayWithTime.add(1, 'week').format('YYYY-MM-DD[T]hh:mm:00Z')
+      return nextWeekdayWithTime.add(1, 'week').format('YYYY-MM-DD[T]hh:mm:00')
     }
 
-    return nextWeekdayWithTime.format('YYYY-MM-DD[T]hh:mm:00Z')
+    return nextWeekdayWithTime.format('YYYY-MM-DD[T]hh:mm:00')
   } catch (error) {
     console.error(error)
     return
@@ -122,7 +122,7 @@ export const getMonthLocalStartDate = ({ monthDay, timeObj, timezone }) => {
     const nextMonth = dayjs.tz(nextMonthStr, timezone)
     const nextMonthWithTime = nextMonth.hour(timeObj.hour24).minute(timeObj.minute)
 
-    return nextMonthWithTime.format('YYYY-MM-DD[T]hh:mm:00Z')
+    return nextMonthWithTime.format('YYYY-MM-DD[T]hh:mm:00')
   } catch (error) {
     console.error(error)
     return

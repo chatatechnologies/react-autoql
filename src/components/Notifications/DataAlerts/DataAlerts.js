@@ -216,7 +216,6 @@ class DataAlerts extends React.Component {
   )
 
   render = () => {
-    console.log('active alert message:', this.state.activeDataAlert?.message)
     if (!this.state.customAlertsList) {
       return (
         <div data-test='notification-settings' style={{ textAlign: 'center', marginTop: '100px' }}>

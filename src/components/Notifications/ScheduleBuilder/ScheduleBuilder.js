@@ -189,7 +189,7 @@ export default class ScheduleBuilder extends React.Component {
 
   shouldRenderResetPeriodSelector = (prevState) => {
     const state = prevState ?? this.state
-    return this.props.conditionType === COMPARE_TYPE // && !state.timeRange // Keep this in case we want to revert
+    return this.props.conditionType === COMPARE_TYPE && !state.timeRange // Keep this in case we want to revert
   }
 
   renderQuery = () => {
@@ -368,7 +368,11 @@ export default class ScheduleBuilder extends React.Component {
         let label = `${CHECK_FREQUENCY_OPTIONS[i]} min${mins > 1 ? 's' : ''}`
         let listLabel = label
         if (mins === 5) {
-          listLabel = `${label} (Recommended)`
+          listLabel = (
+            <span>
+              {label} <em>(Recommended)</em>
+            </span>
+          )
         }
         return {
           value: i,
@@ -397,14 +401,27 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   resetPeriodSelector = () => {
-    if (this.shouldRenderResetPeriodSelector()) {
+    if (this.props.conditionType === COMPARE_TYPE && this.state.frequencyType !== SCHEDULED_TYPE) {
       return (
         <div className='react-autoql-data-alert-frequency-option'>
           <Select
-            options={Object.keys(RESET_PERIOD_OPTIONS).map((value) => ({
-              value,
-              label: RESET_PERIOD_OPTIONS[value].displayName,
-            }))}
+            options={Object.keys(RESET_PERIOD_OPTIONS).map((value) => {
+              const label = RESET_PERIOD_OPTIONS[value].displayName
+              let listLabel = label
+              if (value === 'NONE') {
+                listLabel = (
+                  <span>
+                    {label} <em>(Not recommended)</em>
+                  </span>
+                )
+              }
+
+              return {
+                value,
+                label,
+                listLabel,
+              }
+            })}
             label='Send a notification'
             value={this.state.resetPeriodSelectValue}
             onChange={(option) => this.setState({ resetPeriodSelectValue: option })}

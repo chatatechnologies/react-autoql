@@ -5,7 +5,6 @@ import _isEmpty from 'lodash.isempty'
 import { v4 as uuid } from 'uuid'
 
 import { Modal } from '../../Modal'
-import { Input } from '../../Input'
 import { Button } from '../../Button'
 import { Icon } from '../../Icon'
 import { Tooltip } from '../../Tooltip'
@@ -15,19 +14,17 @@ import { StepsHoz } from '../../StepsHoz'
 import { ConditionBuilder } from '../ConditionBuilder'
 import { Select } from '../../Select'
 import { DataAlertDeleteDialog } from '../DataAlertDeleteDialog'
-import NotificationItem from '../NotificationItem/NotificationItem'
+import DataAlertSettings from './DataAlertSettings'
+import AppearanceSection from './AppearanceSection'
 
 import { createDataAlert, updateDataAlert } from '../../../js/notificationService'
-import { isSingleValueResponse } from '../../../js/Util'
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 import { withTheme } from '../../../theme'
 import { DATA_ALERT_CONDITION_TYPES, COMPARE_TYPE, EXISTS_TYPE, QUERY_TERM_TYPE } from '../DataAlertConstants'
+import { getSupportedConditionTypes } from '../helpers'
 
 import './DataAlertModal.scss'
-import DataAlertSettings from './DataAlertSettings'
-import AppearanceSection from './AppearanceSection'
-import { getSupportedConditionTypes } from '../helpers'
 
 class DataAlertModal extends React.Component {
   constructor(props) {
@@ -630,7 +627,6 @@ class DataAlertModal extends React.Component {
 
   render = () => {
     const query = this.getQueryText()
-    console.log('inside modal', { dataAlertMessage: this.props.currentDataAlert?.message })
 
     return (
       <ErrorBoundary>

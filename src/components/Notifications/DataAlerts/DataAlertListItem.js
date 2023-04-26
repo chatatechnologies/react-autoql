@@ -301,7 +301,7 @@ export default class DataAlertListItem extends React.Component {
       return '-'
     }
 
-    if (dataAlert.type === SCHEDULED_TYPE) {
+    if (dataAlert.notification_type === SCHEDULED_TYPE) {
       const nextScheduledDate = formatNextScheduleDateShort(dataAlert.schedules)
       if (!nextScheduledDate) {
         return '-'
