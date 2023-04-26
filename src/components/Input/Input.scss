@@ -63,7 +63,7 @@
       transition: all 0.2s ease;
       transition-property: border-color, color, opacity;
       padding: 10px;
-      line-height: 1em;
+      line-height: inherit;
 
       &:disabled {
         background: var(--react-autoql-hover-color);
@@ -85,7 +85,7 @@
       }
 
       &.with-icon {
-        padding-left: 38px;
+        padding-left: 35px;
       }
 
       &::placeholder {

@@ -52,7 +52,8 @@ export default class Input extends React.Component {
   }
 
   render = () => {
-    const { icon, area, size, selectOptions, style, selectValue, onSelectChange, ...nativeProps } = this.props
+    const { icon, area, size, selectOptions, style, selectValue, onSelectChange, fullWidth, ...nativeProps } =
+      this.props
     const { className } = nativeProps
 
     const hasSelect = !!this.props.selectOptions?.length

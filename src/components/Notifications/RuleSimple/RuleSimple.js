@@ -126,7 +126,6 @@ export default class RuleSimple extends React.Component {
     if (queryText && operatorText && secondTermText !== undefined) {
       return (
         <span className='data-alert-condition-statement'>
-          <span>Summary: </span>
           <span className='data-alert-condition-statement-query1'>"{queryText}"</span>{' '}
           <span className='data-alert-condition-statement-operator'>{operatorText}</span>{' '}
           <span className='data-alert-condition-statement-query2'>{secondTermText}</span>
@@ -135,7 +134,6 @@ export default class RuleSimple extends React.Component {
     } else if (queryText) {
       return (
         <span className='data-alert-condition-statement'>
-          <span>Summary: </span>
           <span className='data-alert-condition-statement-operator'>New data detected for the query</span>{' '}
           <span className='data-alert-condition-statement-query1'>"{queryText}"</span>
         </span>

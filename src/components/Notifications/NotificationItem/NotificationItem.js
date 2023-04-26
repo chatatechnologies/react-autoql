@@ -333,6 +333,7 @@ export default class NotificationItem extends React.Component {
 
     return (
       <div className='react-autoql-notification-condition-statement'>
+        <span>Summary: </span>
         <ConditionBuilder
           key={`expression-builder-${this.COMPONENT_KEY}`}
           expression={notification?.expression}

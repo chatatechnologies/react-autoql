@@ -630,6 +630,7 @@ class DataAlertModal extends React.Component {
 
   render = () => {
     const query = this.getQueryText()
+    console.log('inside modal', { dataAlertMessage: this.props.currentDataAlert?.message })
 
     return (
       <ErrorBoundary>

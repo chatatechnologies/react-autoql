@@ -189,7 +189,7 @@ export default class ScheduleBuilder extends React.Component {
 
   shouldRenderResetPeriodSelector = (prevState) => {
     const state = prevState ?? this.state
-    return this.props.conditionType === COMPARE_TYPE && !state.timeRange
+    return this.props.conditionType === COMPARE_TYPE // && !state.timeRange // Keep this in case we want to revert
   }
 
   renderQuery = () => {

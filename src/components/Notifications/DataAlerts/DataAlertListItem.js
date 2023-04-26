@@ -29,7 +29,7 @@ export default class DataAlertListItem extends React.Component {
     this.state = {
       status: props.dataAlert?.status,
       title: props.dataAlert?.title,
-      message: props.dataAlert?.title,
+      message: props.dataAlert?.message,
       isDeleteDialogOpen: false,
       isInitializing: false,
     }
