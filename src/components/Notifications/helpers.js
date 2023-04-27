@@ -72,10 +72,38 @@ export const formatResetDateShort = (dataAlert) => {
   return formatDateShort(dataAlert.reset_date, dataAlert.time_zone)
 }
 
+export const getTimeObjFromTimeStamp = (timestamp, timezone) => {
+  const dateDayJS = dayjs(timestamp).tz(timezone)
+
+  const hour24 = dateDayJS.hour()
+  let hour = hour24 % 12
+  if (hour === 0) {
+    hour = 12
+  }
+
+  const timeObj = {
+    ampm: dateDayJS.format('a'),
+    value: dateDayJS.format('h:ma'),
+    value24hr: dateDayJS.format('H:m'),
+    minute: dateDayJS.minute(),
+    hour24,
+    hour,
+  }
+
+  return timeObj
+}
+
+export const getWeekdayFromTimeStamp = (timestamp, timezone) => {
+  const dateDayJS = dayjs(timestamp).tz(timezone)
+  const dayNumber = dateDayJS.day()
+  return WEEKDAY_NAMES_SUN[dayNumber]
+}
+
 export const getDayLocalStartDate = ({ timeObj, timezone, daysToAdd = 0 }) => {
   try {
     const now = dayjs().tz(timezone)
     let nextCycle = now.startOf('minute').set('hour', timeObj.hour24).set('minute', timeObj.minute)
+    console.log({ nextCycle })
     if (nextCycle.valueOf() < now.valueOf()) {
       nextCycle = now.add(1, 'day').startOf('minute')
     }
@@ -83,6 +111,7 @@ export const getDayLocalStartDate = ({ timeObj, timezone, daysToAdd = 0 }) => {
     // const tomorrow = today.add(1 + daysToAdd, 'day').startOf('minute')
     // const tomorrowWithTime = nextCycle.set('hour', timeObj.hour24).set('minute', timeObj.minute)
     const nextCycleISO = nextCycle.add(daysToAdd, 'days').format('YYYY-MM-DD[T]hh:mm:00')
+    console.log({ nextCycleISO })
     return nextCycleISO
   } catch (error) {
     console.error(error)

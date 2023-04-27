@@ -159,54 +159,58 @@ class DataAlertModal extends React.Component {
       const { currentDataAlert, queryResponse } = this.props
       const { titleInput, messageInput } = this.state
 
-      let dataReturnQuery
-      let expressionJSON = _cloneDeep(this.state.expressionJSON)
-
-      if (this.expressionRef) {
-        dataReturnQuery = this.expressionRef.getFirstQuery()
-        expressionJSON = this.expressionRef.getJSON()
-      } else if (currentDataAlert) {
-        dataReturnQuery = currentDataAlert.data_return_query
-        expressionJSON = currentDataAlert.expression
+      if (!!this.props.currentDataAlert?.id) {
+        return this.settingsViewRef?.getData()
       } else {
-        const query = queryResponse?.data?.data?.text
+        let dataReturnQuery
+        let expressionJSON = _cloneDeep(this.state.expressionJSON)
 
-        dataReturnQuery = query
-        expressionJSON = [
-          {
-            id: uuid(),
-            term_type: QUERY_TERM_TYPE,
-            condition: EXISTS_TYPE,
-            term_value: query,
-            user_selection: queryResponse?.data?.data?.fe_req?.disambiguation,
-          },
-        ]
+        if (this.expressionRef) {
+          dataReturnQuery = this.expressionRef.getFirstQuery()
+          expressionJSON = this.expressionRef.getJSON()
+        } else if (currentDataAlert) {
+          dataReturnQuery = currentDataAlert.data_return_query
+          expressionJSON = currentDataAlert.expression
+        } else {
+          const query = queryResponse?.data?.data?.text
+
+          dataReturnQuery = query
+          expressionJSON = [
+            {
+              id: uuid(),
+              term_type: QUERY_TERM_TYPE,
+              condition: EXISTS_TYPE,
+              term_value: query,
+              user_selection: queryResponse?.data?.data?.fe_req?.disambiguation,
+            },
+          ]
+        }
+
+        let scheduleData = {}
+        if (this.scheduleBuilderRef) {
+          scheduleData = this.scheduleBuilderRef.getData()
+        }
+
+        // const filters = currentDataAlert?.filters ?? [
+        //   ...(queryResponse?.data?.data?.persistent_locked_conditions ?? []),
+        //   ...(queryResponse?.data?.data?.session_locked_conditions ?? []),
+        // ]
+
+        const newDataAlert = {
+          title: titleInput,
+          data_return_query: dataReturnQuery,
+          message: messageInput,
+          expression: expressionJSON,
+          notification_type: scheduleData.notificationType,
+          reset_period: scheduleData.resetPeriod,
+          time_zone: scheduleData.timezone,
+          schedules: scheduleData.schedules,
+          check_frequency: scheduleData.checkFrequency,
+          // filters: ,
+        }
+
+        return newDataAlert
       }
-
-      let scheduleData = {}
-      if (this.scheduleBuilderRef) {
-        scheduleData = this.scheduleBuilderRef.getData()
-      }
-
-      // const filters = currentDataAlert?.filters ?? [
-      //   ...(queryResponse?.data?.data?.persistent_locked_conditions ?? []),
-      //   ...(queryResponse?.data?.data?.session_locked_conditions ?? []),
-      // ]
-
-      const newDataAlert = {
-        id: currentDataAlert?.id,
-        title: titleInput,
-        data_return_query: dataReturnQuery,
-        message: messageInput,
-        expression: expressionJSON,
-        notification_type: scheduleData.notificationType,
-        reset_period: scheduleData.resetPeriod,
-        time_zone: scheduleData.timezone,
-        schedules: scheduleData.schedules,
-        // filters,
-      }
-
-      return newDataAlert
     } catch (error) {
       console.error(error)
     }
@@ -231,7 +235,7 @@ class DataAlertModal extends React.Component {
       isSavingDataAlert: true,
     })
 
-    const newDataAlert = this.getDataAlertData()
+    const newDataAlert = !!this.props.currentDataAlert?.id ? this.settingsViewRef?.getData() : this.getDataAlertData()
 
     const requestParams = {
       dataAlert: newDataAlert,
@@ -308,7 +312,7 @@ class DataAlertModal extends React.Component {
   }
 
   isFinishBtnDisabled = () => {
-    if (this.props.editView) {
+    if (!!this.props.currentDataAlert?.id) {
       // To do: add more error handling here
       return false
     }
@@ -327,7 +331,7 @@ class DataAlertModal extends React.Component {
   }
 
   renderNextBtn = () => {
-    if (this.props.editView) {
+    if (!!this.props.currentDataAlert?.id) {
       return (
         <Button
           type='primary'
@@ -562,9 +566,10 @@ class DataAlertModal extends React.Component {
   }
 
   renderContent = () => {
-    if (this.props.editView) {
+    if (!!this.props.currentDataAlert?.id) {
       return (
         <DataAlertSettings
+          ref={(r) => (this.settingsViewRef = r)}
           authentication={this.props.authentication}
           currentDataAlert={this.props.currentDataAlert}
           enableQueryValidation={this.props.enableQueryValidation}
@@ -634,7 +639,7 @@ class DataAlertModal extends React.Component {
           contentClassName='react-autoql-data-alert-creation-modal'
           bodyClassName='react-autoql-data-alert-modal-body'
           overlayStyle={{ zIndex: '9998' }}
-          title={this.props.editView ? 'Data Alert Settings' : 'Create Data Alert'}
+          title={!!this.props.currentDataAlert?.id ? 'Data Alert Settings' : 'Create Data Alert'}
           titleIcon={this.getTitleIcon()}
           subtitle={query ? `"${query}"` : undefined}
           ref={(r) => (this.modalRef = r)}

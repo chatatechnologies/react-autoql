@@ -159,7 +159,7 @@ export default class RuleSimple extends React.Component {
       },
       {
         id: this.TERM_ID_2,
-        term_type: this.isNumerical(secondInputValue) ? NUMBER_TERM_TYPE : QUERY_TERM_TYPE,
+        term_type: this.state.secondTermType,
         condition: 'TERMINATOR',
         term_value: this.isNumerical(secondInputValue) ? parseNum(secondInputValue) : secondInputValue,
       },
@@ -268,10 +268,9 @@ export default class RuleSimple extends React.Component {
     })
   }
 
-  switchSecondTermType = () => {
-    let secondTermType = NUMBER_TERM_TYPE
-    if (this.state.secondTermType === NUMBER_TERM_TYPE) {
-      secondTermType = QUERY_TERM_TYPE
+  onSecondTermTypeChange = (secondTermType) => {
+    if (secondTermType === this.state.secondTermType) {
+      return
     }
 
     this.cancelSecondValidation()
@@ -733,7 +732,7 @@ export default class RuleSimple extends React.Component {
             ),
           },
         ]}
-        onSelectChange={this.switchSecondTermType}
+        onSelectChange={this.onSecondTermTypeChange}
         selectValue={this.state.secondTermType}
         onChange={this.onSecondQueryChange}
       />

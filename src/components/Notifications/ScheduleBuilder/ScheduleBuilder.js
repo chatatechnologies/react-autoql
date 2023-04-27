@@ -9,6 +9,7 @@ import { TimezoneSelector } from '../../TimezoneSelector'
 import { getTimeRangeFromRT } from '../../../js/reverseTranslationHelpers'
 import { TimePicker } from '../../TimePicker'
 
+import { getTimeObjFromTimeStamp, getWeekdayFromTimeStamp, showCheckFrequencySetting } from '../helpers'
 import { MONTH_NAMES, WEEKDAY_NAMES_MON } from '../../../js/Constants'
 import {
   CONTINUOUS_TYPE,
@@ -24,7 +25,6 @@ import {
 } from '../DataAlertConstants'
 
 import './ScheduleBuilder.scss'
-import { showCheckFrequencySetting } from '../helpers'
 
 export default class ScheduleBuilder extends React.Component {
   constructor(props) {
@@ -48,22 +48,23 @@ export default class ScheduleBuilder extends React.Component {
 
     const timeRange = getTimeRangeFromRT(props.queryResponse)
 
-    // let frequencyType = props.dataAlert?.notification_type
-    // if (frequencyType === PERIODIC_TYPE) {
-    //   frequencyType = CONTINUOUS_TYPE
-    // }
-
-    this.state = {
-      timeRange: props.dataAlert?.reset_period ?? timeRange,
-      resetPeriodSelectValue: props.dataAlert?.reset_period ?? timeRange ?? this.DEFAULT_RESET_PERIOD_SELECT_VALUE,
-      checkFrequencySelectValue: props.dataAlert?.check_frequency ?? this.DEFAULT_CHECK_FREQUENCY_INDEX,
-      frequencyType: props.dataAlert?.notification_type ?? this.DEFAULT_FREQUENCY_TYPE,
-      timezone: props.dataAlert?.time_zone,
-      monthDaySelectValue: this.DEFAULT_MONTH_DAY_SELECT_VALUE,
+    const state = {
+      checkFrequencySelectValue: this.DEFAULT_CHECK_FREQUENCY_INDEX,
+      frequencyType: this.DEFAULT_FREQUENCY_TYPE,
       intervalTimeSelectValue: this.DEFAULT_TIME_SELECT_VALUE,
       weekDaySelectValue: this.DEFAULT_WEEKDAY_SELECT_VALUE,
       monthOfYearSelectValue: this.DEFAULT_MONTH_OF_YEAR_SELECT_VALUE,
+      resetPeriodSelectValue: this.DEFAULT_RESET_PERIOD_SELECT_VALUE,
+      monthDaySelectValue: this.DEFAULT_MONTH_DAY_SELECT_VALUE,
+      timeRange: timeRange,
+      timezone: undefined,
     }
+
+    if (props.dataAlert) {
+      this.getInitialStateFromDataAlert(props.dataAlert, state)
+    }
+
+    this.state = state
   }
 
   static propTypes = {
@@ -112,14 +113,60 @@ export default class ScheduleBuilder extends React.Component {
     return true
   }
 
+  getInitialStateFromDataAlert = (dataAlert, state) => {
+    try {
+      let resetPeriodSelectValue = dataAlert?.reset_period ?? this.DEFAULT_RESET_PERIOD_SELECT_VALUE
+      let intervalTimeSelectValue = this.DEFAULT_TIME_SELECT_VALUE
+      let weekDaySelectValue = this.DEFAULT_WEEKDAY_SELECT_VALUE
+      let monthDaySelectValue = this.DEFAULT_MONTH_DAY_SELECT_VALUE
+      let frequencyType = props.dataAlert?.notification_type
+      if (frequencyType === PERIODIC_TYPE) {
+        frequencyType = CONTINUOUS_TYPE
+      }
+
+      if (dataAlert?.notification_type === SCHEDULED_TYPE) {
+        intervalTimeSelectValue = getTimeObjFromTimeStamp(schedules[0]?.start_date, dataAlert?.time_zone)
+
+        const schedules = dataAlert?.schedules
+        const schedulePeriod = schedules?.[0]?.notification_period
+
+        resetPeriodSelectValue = schedulePeriod
+        if (schedulePeriod === 'MONTH_LAST_DAY') {
+          resetPeriodSelectValue = 'MONTH'
+          monthDaySelectValue = 'LAST'
+        } else if (schedulePeriod === 'MONTH') {
+          monthDaySelectValue = 'FIRST' // For now. Later we want to add month day numbers
+        } else if (schedulePeriod === 'WEEK' && dataAlert.schedules.length === 7) {
+          resetPeriodSelectValue = 'DAY'
+        } else if (schedulePeriod === 'WEEK') {
+          weekDaySelectValue = getWeekdayFromTimeStamp(schedules[0]?.start_date, dataAlert?.time_zone)
+        }
+      }
+
+      state.intervalTimeSelectValue = intervalTimeSelectValue ?? state.intervalTimeSelectValue
+      state.checkFrequencySelectValue = dataAlert?.check_frequency ?? this.DEFAULT_CHECK_FREQUENCY_INDEX
+      state.frequencyType = frequencyType ?? state.frequencyType
+      state.timezone = dataAlert?.time_zone
+      state.intervalTimeSelectValue = intervalTimeSelectValue ?? state.intervalTimeSelectValue
+      state.weekDaySelectValue = weekDaySelectValue ?? state.weekDaySelectValue
+      state.resetPeriodSelectValue = resetPeriodSelectValue ?? state.resetPeriodSelectValue
+      state.monthDaySelectValue = monthDaySelectValue ?? state.monthDaySelectValue
+      state.timeRange = dataAlert?.reset_period ?? state.timeRange
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   getData = () => {
     const notificationType = this.getNotificationType()
     const resetPeriod = this.state.frequencyType !== SCHEDULED_TYPE ? this.getResetPeriod() : undefined
     const schedules = this.getSchedules()
     const timezone = this.state.timezone
+    const checkFrequency = this.state.checkFrequencySelectValue
 
     return {
       notificationType,
+      checkFrequency,
       resetPeriod,
       schedules,
       timezone,

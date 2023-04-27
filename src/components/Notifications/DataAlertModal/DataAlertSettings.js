@@ -10,7 +10,7 @@ import AppearanceSection from './AppearanceSection'
 
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault } from '../../../props/defaults'
-import { CONTINUOUS_TYPE, PERIODIC_TYPE, SCHEDULED_TYPE } from '../DataAlertConstants'
+import { CONTINUOUS_TYPE, EXISTS_TYPE, PERIODIC_TYPE, SCHEDULED_TYPE } from '../DataAlertConstants'
 
 import './DataAlertSettings.scss'
 
@@ -115,20 +115,31 @@ export default class DataAlertSettings extends React.Component {
       checkFrequencySelectValue: currentDataAlert?.reset_period,
       expressionJSON: currentDataAlert?.expression ?? [],
       isConfirmDeleteModalVisible: false,
-      selectedConditionType: currentDataAlert.expression?.[0]?.condition ?? this.props.supportedConditionTypes?.[0],
       expressionKey: uuid(),
+      filters: currentDataAlert?.filters,
     }
 
     return state
   }
 
   getData = () => {
+    let scheduleData = {}
+    if (this.scheduleBuilderRef) {
+      scheduleData = this.scheduleBuilderRef.getData()
+    }
+
     return {
-      ...this.props.currentDataAlert,
+      id: this.props.currentDataAlert?.id,
+      data_return_query: this.props.currentDataAlert?.data_return_query,
       title: this.state.titleInput,
       message: this.state.messageInput,
+      expression: this.state.expressionJSON,
       notification_type: this.state.notificationType,
       reset_period: this.state.resetPeriodSelectValue,
+      time_zone: scheduleData.timezone,
+      schedules: scheduleData.schedules,
+      check_frequency: scheduleData.checkFrequency,
+      // filters: ,
     }
   }
 
@@ -187,11 +198,13 @@ export default class DataAlertSettings extends React.Component {
   ScheduleSettings = () => {
     return (
       <ScheduleBuilder
-        key={`dta-alert-settings-schedule-builder-${this.state.notificationType}`}
-        conditionType={this.state.notificationType}
+        ref={(r) => (this.scheduleBuilderRef = r)}
+        key={`data-alert-settings-schedule-builder-${this.state.notificationType}`}
+        conditionType={this.props.supportedConditionTypes?.[0] ?? EXISTS_TYPE}
         tooltipID={this.props.tooltipID}
-        dataAlert={this.getData()}
+        dataAlert={this.props.currentDataAlert}
         showTypeSelector={false}
+        onErrorCallback={this.props.onErrorCallback}
       />
     )
   }

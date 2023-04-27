@@ -63,7 +63,7 @@
       transition: all 0.2s ease;
       transition-property: border-color, color, opacity;
       padding: 10px;
-      line-height: inherit;
+      line-height: 1em;
 
       &:disabled {
         background: var(--react-autoql-hover-color);
@@ -74,6 +74,10 @@
       &:hover,
       &:focus {
         border-color: var(--react-autoql-accent-color);
+      }
+
+      &.area {
+        line-height: inherit;
       }
 
       &:not(textarea) {
