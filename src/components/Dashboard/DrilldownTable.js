@@ -77,7 +77,10 @@ export default class DrilldownTable extends React.Component {
             <div className='drilldown-modal-options-toolbar'>
               <OptionsToolbar
                 authentication={this.props.authentication}
-                autoQLConfig={this.props.autoQLConfig}
+                autoQLConfig={{
+                  ...getAutoQLConfig(this.props.autoQLConfig),
+                  enableNotifications: false,
+                }}
                 ref={(r) => (this.optionsToolbarRef = r)}
                 responseRef={this.responseRef}
                 tooltipID={this.props.tooltipID}
