@@ -381,13 +381,28 @@ export class DashboardTile extends React.Component {
       })
   }
 
-  clearQueryResponses = () => {
+  clearTopQueryResponse = (newState = {}) => {
     this.setState({
       isTopExecuting: false,
       isTopExecuted: false,
+      userSelection: undefined,
+      ...newState,
     })
+
     this.debouncedSetParamsForTile({
       queryResponse: undefined,
+    })
+  }
+
+  clearBottomQueryResponse = (newState = {}) => {
+    this.setState({
+      isBottomExecuted: false,
+      isBottomExecuting: false,
+      secondUserSelection: undefined,
+      ...newState,
+    })
+
+    this.debouncedSetParamsForTile({
       secondQueryResponse: undefined,
     })
   }
@@ -432,7 +447,12 @@ export class DashboardTile extends React.Component {
   }
 
   debounceQueryInputChange = (query) => {
-    this.setState({ query })
+    if (query === this.state.query) {
+      return
+    }
+
+    const newState = { query }
+    this.clearTopQueryResponse(newState)
 
     clearTimeout(this.queryInputTimer)
     this.queryInputTimer = setTimeout(() => {
@@ -441,7 +461,12 @@ export class DashboardTile extends React.Component {
   }
 
   debounceSecondQueryInputChange = (secondQuery) => {
-    this.setState({ secondQuery })
+    if (secondQuery === this.state.secondQuery) {
+      return
+    }
+
+    const newState = { secondQuery }
+    this.clearBottomQueryResponse(newState)
 
     clearTimeout(this.secondQueryInputTimer)
     this.secondQueryInputTimer = setTimeout(() => {
@@ -868,40 +893,44 @@ export class DashboardTile extends React.Component {
   }
 
   renderContentPlaceholder = ({ isExecuting, isExecuted } = {}) => {
-    let content = null
     if (isExecuting) {
       // This should always take priority over the other conditions below
-      content = <LoadingDots />
-    } else if (!this.props.isEditing && isExecuted) {
-      content = (
-        <div className='dashboard-tile-placeholder-text'>
-          <span>No query was supplied for this tile.</span>
-        </div>
-      )
-    } else if (this.props.isEditing && !this.state.query?.trim()) {
-      content = (
-        <div className='dashboard-tile-placeholder-text'>
-          <span>To get started, enter a query and click</span>
-          <Icon className='play-icon' type='play' />
-        </div>
-      )
-    } else {
-      content = (
-        <div className='dashboard-tile-placeholder-text'>
-          {this.props.isEditing ? (
-            <>
-              <span>Hit</span>
-              <Icon className='edit-mode-placeholder-icon' type='play' />
-              <span>to run this tile</span>
-            </>
-          ) : (
-            <span>{this.props.notExecutedText}</span>
-          )}
+      return (
+        <div className='loading-container-centered'>
+          <LoadingDots />
         </div>
       )
     }
 
-    return <div className='loading-container-centered'>{content}</div>
+    if (!this.state.query?.trim()) {
+      return (
+        <div className='loading-container-centered'>
+          <div className='dashboard-tile-placeholder-text'>
+            {this.props.isEditing ? (
+              <span>
+                To get started, enter a query and click <Icon className='play-icon' type='play' />
+              </span>
+            ) : (
+              <span>No query was supplied for this tile.</span>
+            )}
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div className='loading-container-centered'>
+        <div className='dashboard-tile-placeholder-text'>
+          {this.props.isEditing ? (
+            <span>
+              Hit <Icon className='edit-mode-placeholder-icon' type='play' /> to run this tile
+            </span>
+          ) : (
+            <span>{this.props.notExecutedText}</span>
+          )}
+        </div>
+      </div>
+    )
   }
 
   renderSplitViewBtn = () => {

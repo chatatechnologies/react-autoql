@@ -126,10 +126,14 @@
 }
 
 .react-autoql-dashboard-tile-inner-div {
-  .single-value-response {
-    font-size: 32px !important;
-    margin-top: -6px;
-    opacity: 0.9;
+  .single-value-response-flex-container {
+    display: flex;
+    align-items: center;
+
+    .single-value-response {
+      font-size: 32px;
+      opacity: 0.9;
+    }
   }
 
   .tabulator-header-contents {
@@ -478,7 +482,9 @@
   font-size: 15px;
   font-style: italic;
   color: var(--react-autoql-text-color-placeholder, rgba(0, 0, 0, 0.3));
-  padding: 0 10px;
+  padding: 0 20px;
+  margin-bottom: 30px;
+  font-style: italic;
 
   .react-autoql-icon {
     margin: 0px 5px;
