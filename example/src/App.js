@@ -6,8 +6,6 @@ import {
   QueryOutput,
   QueryInput,
   Dashboard,
-  executeDashboard,
-  unExecuteDashboard,
   NotificationIcon,
   NotificationFeed,
   DataAlerts,
@@ -1328,14 +1326,14 @@ export default class App extends Component {
                 {this.state.isEditing ? 'Cancel' : 'Edit'}
               </Button>
               <Button
-                onClick={() => executeDashboard(this.dashboardRef)}
+                onClick={() => this.dashboardRef?.executeDashboard()}
                 icon={<PlayCircleOutlined />}
                 style={{ marginLeft: '10px' }}
               >
                 Execute
               </Button>
               <Button
-                onClick={() => unExecuteDashboard(this.dashboardRef)}
+                onClick={() => this.dashboardRef?.unExecuteDashboard()}
                 icon={<PlayCircleOutlined />}
                 style={{ marginLeft: '10px' }}
               >
