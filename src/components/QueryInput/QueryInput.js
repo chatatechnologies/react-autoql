@@ -125,7 +125,7 @@ class QueryInput extends React.Component {
     }
   }
 
-  animateInputTextAndSubmit = ({ query, userSelection, source, skipQueryValidation }) => {
+  animateInputTextAndSubmit = ({ query, userSelection, source, skipQueryValidation, scope }) => {
     animateInputText({
       text: query,
       inputRef: this.inputRef,
@@ -135,6 +135,7 @@ class QueryInput extends React.Component {
           userSelection,
           skipQueryValidation: skipQueryValidation ?? true,
           source,
+          scope,
         })
       },
     })

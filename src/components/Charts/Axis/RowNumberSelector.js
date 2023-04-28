@@ -45,6 +45,7 @@ export default class RowNumberSelector extends React.Component {
       return runDrilldown({
         ...getAuthentication(this.props.authentication),
         source: this.props.source,
+        scope: this.props.scope,
         debug: this.props.queryRequestData?.translation === 'include',
         formattedUserSelection: this.props.queryRequestData?.user_selection,
         filters: this.props.queryRequestData?.session_filter_locks,

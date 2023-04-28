@@ -320,6 +320,7 @@ export default class QueryValidationMessage extends React.Component {
               this.props.onSuggestionClick({
                 query: this.getQueryValidationQueryText(this.state.selectedSuggestions),
                 userSelection: this.state.selectedSuggestions,
+                scope: this.props.scope,
               })
             }}
           >

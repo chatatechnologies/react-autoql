@@ -71,6 +71,7 @@ export default class ChatMessage extends React.Component {
     onRTValueLabelClick: PropTypes.func,
     enableAjaxTableData: PropTypes.bool,
     source: PropTypes.oneOfType([PropTypes.array, PropTypes.string]),
+    scope: PropTypes.string,
     isVisibleInDOM: PropTypes.bool,
   }
 
@@ -82,6 +83,7 @@ export default class ChatMessage extends React.Component {
     enableAjaxTableData: false,
     isIntroMessage: false,
     source: null,
+    scope: undefined,
     response: undefined,
     content: undefined,
     isActive: false,

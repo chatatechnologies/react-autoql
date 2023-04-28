@@ -832,6 +832,7 @@ export class DataMessenger extends React.Component {
           dataFormatting={this.props.dataFormatting}
           shouldRender={this.shouldRenderPage('data-explorer')}
           tooltipID={this.TOOLTIP_ID}
+          scope={this.props.scope}
           executeQuery={(query) => {
             if (isMobile) {
               this.props.setMobileActivePage('data-messenger')
