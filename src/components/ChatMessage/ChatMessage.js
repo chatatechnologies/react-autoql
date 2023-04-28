@@ -294,6 +294,7 @@ export default class ChatMessage extends React.Component {
           enableFilterLocking={this.props.enableFilterLocking}
           onRTValueLabelClick={this.props.onRTValueLabelClick}
           source={this.props.source}
+          scope={this.props.scope}
           onRowChange={this.scrollIntoView}
           onDisplayTypeChange={this.scrollIntoView}
           mutable={false}

@@ -775,6 +775,7 @@ export class DataMessenger extends React.Component {
           createDataAlertCallback={this.closeDataMessenger}
           tooltipID={this.TOOLTIP_ID}
           chartTooltipID={this.CHART_TOOLTIP_ID}
+          scope={this.props.scope}
         />
       </ErrorBoundary>
     )

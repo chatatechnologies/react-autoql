@@ -205,6 +205,7 @@ class QueryInput extends React.Component {
       ...getAuthentication(this.props.authentication),
       ...getAutoQLConfig(this.props.autoQLConfig),
       source: mergeSources(this.props.source, source ?? 'user'),
+      scope: this.props.scope,
       AutoAEId: this.props.AutoAEId,
       filters: this.props.queryFilters,
       pageSize: this.props.dataPageSize,

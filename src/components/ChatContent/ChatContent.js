@@ -398,6 +398,7 @@ export default class ChatContent extends React.Component {
                   dataPageSize={this.props.dataPageSize}
                   shouldRender={this.props.shouldRender}
                   source={this.props.source}
+                  scope={this.props.scope}
                   tooltipID={this.props.tooltipID}
                   chartTooltipID={this.props.chartTooltipID}
                 />
@@ -434,6 +435,7 @@ export default class ChatContent extends React.Component {
             onErrorCallback={this.props.onErrorCallback}
             hideInput={this.props.hideInput}
             source={this.props.source}
+            scope={this.props.scope}
             queryFilters={this.props.queryFilters}
             sessionId={this.props.sessionId}
             dataPageSize={this.props.dataPageSize}

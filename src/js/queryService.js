@@ -150,13 +150,14 @@ export const runQueryOnly = (params = {}) => {
     tableFilters,
     pageSize = DEFAULT_DATA_PAGE_SIZE,
     cancelToken,
+    scope,
   } = params
   const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
   const finalUserSelection = userSelectionFinal || transformUserSelection(userSelection)
 
   const data = {
     text: query,
-    source: source,
+    source,
     translation: debug ? 'include' : 'exclude',
     user_selection: finalUserSelection,
     test,
@@ -165,6 +166,7 @@ export const runQueryOnly = (params = {}) => {
     filters: tableFilters,
     page_size: pageSize,
     date_format: 'ISO8601',
+    scope,
   }
 
   if (!query || !query.trim()) {

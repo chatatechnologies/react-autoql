@@ -61,6 +61,7 @@ export default class RowNumberSelector extends React.Component {
         ...getAuthentication(this.props.authentication),
         query: this.props.queryRequestData?.text,
         source: this.props.queryRequestData?.source,
+        scope: this.props.queryRequestData?.scope,
         debug: this.props.queryRequestData?.translation === 'include',
         formattedUserSelection: this.props.queryRequestData?.user_selection,
         filters: this.props.queryRequestData?.session_filter_locks,

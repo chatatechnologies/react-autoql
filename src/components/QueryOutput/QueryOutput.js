@@ -865,6 +865,7 @@ export class QueryOutput extends React.Component {
       orders: this.formattedTableParams?.sorters,
       tableFilters: allFilters,
       source: this.props.source,
+      scope: this.props.scope,
       cancelToken: this.axiosSource.token,
       ...args,
     })
@@ -2071,6 +2072,7 @@ export class QueryOutput extends React.Component {
           }
           queryFn={this.queryFn}
           source={this.props.source}
+          scope={this.props.scope}
         />
       </ErrorBoundary>
     )
@@ -2100,6 +2102,7 @@ export class QueryOutput extends React.Component {
           supportsDrilldowns={true}
           autoHeight={this.props.autoHeight}
           source={this.props.source}
+          scope={this.props.scope}
           pivot
         />
       </ErrorBoundary>
@@ -2185,6 +2188,7 @@ export class QueryOutput extends React.Component {
           currentRowCount={this.state.visibleRows?.length}
           updateColumns={this.updateColumns}
           source={this.props.source}
+          scope={this.props.scope}
           isRowCountSelectable={!this.isOriginalData || isDataLimited}
         />
       </ErrorBoundary>
