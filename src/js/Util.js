@@ -821,7 +821,11 @@ export const isSingleValueResponse = (response) => {
     return false
   }
 
-  return _get(response, 'data.data.rows.length') === 1 && _get(response, 'data.data.rows[0].length') === 1
+  const hasOneColumn = response?.data?.data?.columns?.length === 1
+  const isNoData = response?.data?.data?.rows && !response?.data?.data?.rows?.length
+  const oneRowAndColumn = response?.data?.data?.rows?.length === 1 && response.data.data.rows[0]?.length === 1
+
+  return oneRowAndColumn || (isNoData && hasOneColumn)
 }
 
 export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotDataLength, isDataLimited } = {}) => {
