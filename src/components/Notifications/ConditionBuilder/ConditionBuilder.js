@@ -188,9 +188,9 @@ export default class ConditionBuilder extends React.Component {
                   authentication={this.props.authentication}
                   autoQLConfig={this.props.autoQLConfig}
                   ref={(r) => (this.ruleRef = r)}
-                  ruleId={this.state.expression?.id ?? uuid()}
+                  ruleId={this.props.expression?.id ?? uuid()}
                   onUpdate={this.onRuleUpdate}
-                  initialData={this.state.expression}
+                  initialData={this.props.expression}
                   tooltipID={this.props.tooltipID}
                   queryResponse={this.props.queryResponse}
                   onLastInputEnterPress={this.props.onLastInputEnterPress}

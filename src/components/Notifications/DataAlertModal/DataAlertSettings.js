@@ -1,5 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import _cloneDeep from 'lodash.clonedeep'
 import { v4 as uuid } from 'uuid'
 
 import { ScheduleBuilder } from '../ScheduleBuilder'
@@ -82,6 +83,8 @@ export default class DataAlertSettings extends React.Component {
     enableQueryValidation: PropTypes.bool,
     supportedConditionTypes: PropTypes.arrayOf(PropTypes.string),
     onErrorCallback: PropTypes.func,
+    onExpressionChange: PropTypes.func,
+    expression: PropTypes.oneOfType([PropTypes.shape({}), PropTypes.array]), // This is the expression of the existing notification if you are editing one. I should change the name of this at some point
   }
 
   static defaultProps = {
@@ -90,6 +93,8 @@ export default class DataAlertSettings extends React.Component {
     enableQueryValidation: true,
     supportedConditionTypes: [],
     onErrorCallback: () => {},
+    onExpressionChange: () => {},
+    expression: undefined,
   }
 
   componentDidUpdate = (prevProps, prevState) => {}
@@ -113,7 +118,6 @@ export default class DataAlertSettings extends React.Component {
       notificationType,
       resetPeriodSelectValue: currentDataAlert?.reset_period,
       checkFrequencySelectValue: currentDataAlert?.reset_period,
-      expressionJSON: currentDataAlert?.expression ?? [],
       isConfirmDeleteModalVisible: false,
       expressionKey: uuid(),
       filters: currentDataAlert?.filters,
@@ -128,29 +132,24 @@ export default class DataAlertSettings extends React.Component {
       scheduleData = this.scheduleBuilderRef.getData()
     }
 
+    const expression = _cloneDeep(this.props.expression)
+
     return {
       id: this.props.currentDataAlert?.id,
       data_return_query: this.props.currentDataAlert?.data_return_query,
       title: this.state.titleInput,
       message: this.state.messageInput,
-      expression: this.state.expressionJSON,
+      expression,
       notification_type: this.state.notificationType,
       reset_period: this.state.resetPeriodSelectValue,
       time_zone: scheduleData.timezone,
       schedules: scheduleData.schedules,
       check_frequency: scheduleData.checkFrequency,
-      // filters: ,
     }
   }
 
   initializeFields = (props) => {
     this.setState(this.getInitialState(props))
-  }
-
-  onExpressionChange = (isComplete, isValid, expressionJSON) => {
-    this.setState({
-      expressionJSON,
-    })
   }
 
   AppearanceSettings = () => {
@@ -215,8 +214,8 @@ export default class DataAlertSettings extends React.Component {
         authentication={this.props.authentication}
         ref={(r) => (this.expressionRef = r)}
         key={`expression-${this.state.expressionKey}`}
-        onChange={this.onExpressionChange}
-        expression={this.state.expressionJSON}
+        onChange={this.props.onExpressionChange}
+        expression={this.props.expression}
         tooltipID={this.props.tooltipID}
       />
     )

@@ -14,7 +14,13 @@ import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication, getAutoQLConfig } from '../../../props/defaults'
 import { fetchAutocomplete, runQueryOnly } from '../../../js/queryService'
 import { isNumber, isSingleValueResponse } from '../../../js/Util'
-import { COMPARE_TYPE, DATA_ALERT_OPERATORS, NUMBER_TERM_TYPE, QUERY_TERM_TYPE } from '../DataAlertConstants'
+import {
+  COMPARE_TYPE,
+  DATA_ALERT_OPERATORS,
+  EXISTS_TYPE,
+  NUMBER_TERM_TYPE,
+  QUERY_TERM_TYPE,
+} from '../DataAlertConstants'
 import { constructRTArray, getTimeFrameTextFromChunk } from '../../../js/reverseTranslationHelpers'
 import { ReverseTranslation } from '../../ReverseTranslation'
 import { getSupportedConditionTypes } from '../helpers'
@@ -32,16 +38,24 @@ export default class RuleSimple extends React.Component {
     const { initialData, queryResponse } = props
 
     this.SUPPORTED_CONDITION_TYPES = getSupportedConditionTypes(initialData, queryResponse)
+
     this.SUPPORTED_OPERATORS = []
-    if (this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE)) {
+    if (
+      this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE) ||
+      Object.keys(DATA_ALERT_OPERATORS).includes(initialData?.[0]?.condition)
+    ) {
       this.SUPPORTED_OPERATORS = Object.keys(DATA_ALERT_OPERATORS)
     }
 
     this.TERM_ID_1 = uuid()
     this.TERM_ID_2 = uuid()
 
+    const selectedOperator = this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE)
+      ? this.SUPPORTED_OPERATORS[0]
+      : EXISTS_TYPE
+
     const state = {
-      selectedOperator: this.SUPPORTED_OPERATORS[0],
+      selectedOperator: initialData?.[0]?.condition ?? selectedOperator,
       inputValue: queryResponse?.data?.data?.text ?? '',
       secondInputValue: '',
       secondTermType: NUMBER_TERM_TYPE,
@@ -53,14 +67,14 @@ export default class RuleSimple extends React.Component {
       queryFilters: this.getFilters(props),
     }
 
-    if (initialData) {
+    if (!props.queryResponse && props.initialData) {
       this.TERM_ID_1 = initialData[0].id
       this.TERM_ID_2 = initialData.length > 1 ? initialData[1].id : uuid()
 
       state.selectedOperator = initialData[0]?.condition ?? this.SUPPORTED_OPERATORS[0]
       state.inputValue = initialData[0]?.term_value ?? ''
       state.secondInputValue = initialData[1]?.term_value ?? ''
-      state.secondTermType = initialData[1]?.term_type ?? NUMBER_TERM_TYPE
+      state.secondTermType = initialData[1]?.term_type?.toUpperCase() ?? NUMBER_TERM_TYPE
       state.secondQueryValidated = true
     }
 
@@ -145,7 +159,10 @@ export default class RuleSimple extends React.Component {
 
   getJSON = () => {
     const { secondInputValue } = this.state
+
     const userSelection = this.props.queryResponse?.data?.data?.fe_req?.disambiguation
+    const tableFilters = this.state.queryFilters?.filter((f) => f.type === 'table')
+    const lockedFilters = this.state.queryFilters?.filter((f) => f.type === 'locked')
 
     const expression = [
       {
@@ -153,17 +170,27 @@ export default class RuleSimple extends React.Component {
         term_type: QUERY_TERM_TYPE,
         condition: this.state.selectedOperator,
         term_value: this.state.inputValue,
-        user_selection: userSelection,
-        filters: this.state.queryFilters?.filter((f) => f.type === 'table'),
-        session_filter_locks: this.state.queryFilters?.filter((f) => f.type === 'locked'),
+        user_selection: this.props.initialData?.[0]?.user_selection ?? userSelection,
+        filters: tableFilters,
+        session_filter_locks: lockedFilters,
       },
-      {
+    ]
+
+    if (this.allowOperators()) {
+      const secondTerm = {
         id: this.TERM_ID_2,
         term_type: this.state.secondTermType,
         condition: 'TERMINATOR',
-        term_value: this.isNumerical(secondInputValue) ? parseNum(secondInputValue) : secondInputValue,
-      },
-    ]
+        term_value: secondInputValue,
+      }
+
+      if (this.state.secondTermType === QUERY_TERM_TYPE) {
+        secondTerm.session_filter_locks = lockedFilters
+        secondTerm.user_selection = this.props.initialData?.[1]?.user_selection ?? userSelection
+      }
+
+      expression.push(secondTerm)
+    }
 
     return expression
   }
@@ -194,7 +221,7 @@ export default class RuleSimple extends React.Component {
 
   isComplete = () => {
     if (
-      this.state.secondInputType === QUERY_TERM_TYPE &&
+      this.state.secondTermType === QUERY_TERM_TYPE &&
       (this.state.secondQueryInvalid || this.state.secondQueryValidating || !this.state.secondQueryValidated)
     ) {
       return false
@@ -486,20 +513,6 @@ export default class RuleSimple extends React.Component {
         }
 
         numValueLabels += 1
-
-        // We might want to use this later for VLs or other query filters
-        // return (
-        //   <>
-        //     {prefix}
-        //     <Chip
-        //       onClick={() => {}}
-        //       onDelete={() => {
-        //       }}
-        //     >
-        //       {text}
-        //     </Chip>
-        //   </>
-        // )
       }
 
       return (
@@ -535,22 +548,32 @@ export default class RuleSimple extends React.Component {
   }
 
   getFilters = (props) => {
-    const columnFilters = props.filters ?? []
-    const persistentFilters = props.queryResponse?.data?.data?.persistent_locked_conditions ?? []
-    const sessionFilters = props.queryResponse?.data?.data?.session_locked_conditions ?? []
-    const vlFilters = [...persistentFilters, ...sessionFilters] ?? []
+    let lockedFilters = []
+    let tableFilters = []
 
-    const columnFiltersFormatted =
-      columnFilters.map((filter) => ({
-        columnName: filter?.columnName,
-        operator: filter?.operator,
+    if (!props.queryResponse) {
+      lockedFilters = props.initialData[0]?.session_filter_locks ?? []
+      tableFilters = props.initialData[0]?.filters ?? []
+    } else {
+      const persistentFilters = props.queryResponse?.data?.data?.fe_req?.persistent_filter_locks ?? []
+      const sessionFilters = props.queryResponse?.data?.data?.fe_req?.session_filter_locks ?? []
+      lockedFilters = [...persistentFilters, ...sessionFilters] ?? []
+      tableFilters = props.filters ?? []
+    }
+
+    const tableFiltersFormatted =
+      tableFilters.map((filter) => ({
+        ...filter,
         value: filter?.displayValue ?? filter?.value,
-        name: filter?.name,
         type: 'table',
       })) ?? []
 
-    const vlFiltersFormatted = [] // vlFilters.map((filter) => ({ column: filter?.show_message, value: filter.value, type: 'locked' })) ?? []
-    const allFilters = [...columnFiltersFormatted, ...vlFiltersFormatted]
+    const lockedFiltersFormatted = lockedFilters.map((filter) => ({
+      ...filter,
+      type: 'locked',
+    }))
+
+    const allFilters = [...tableFiltersFormatted, ...lockedFiltersFormatted]
 
     return allFilters
   }
@@ -566,15 +589,7 @@ export default class RuleSimple extends React.Component {
     if (filters?.length) {
       return (
         <div className='react-autoql-data-alert-filters-container'>
-          {/* <div className='react-autoql-input-label'>
-            Applied Filters{' '}
-            <Icon
-              type='info'
-              data-tip='These are the filters currently applied to your query data. They will also be applied to your Data Alert unless you remove them by hitting "x".'
-              data-for={this.props.tooltipID}
-            />
-          </div> */}
-          {filters.map((filter) => {
+          {filters.map((filter, i) => {
             if (filter) {
               let chipContent = null
               if (filter.type === 'table') {
@@ -600,7 +615,10 @@ export default class RuleSimple extends React.Component {
               } else if (filter.type === 'locked') {
                 chipContent = (
                   <span>
-                    <strong>{filter.columnName}:</strong> {filter.value}
+                    <strong>
+                      <Icon type='lock' /> {filter.show_message ?? 'Value'}:
+                    </strong>{' '}
+                    {filter.value}
                   </span>
                 )
               }
@@ -608,6 +626,7 @@ export default class RuleSimple extends React.Component {
               if (chipContent) {
                 return (
                   <Chip
+                    key={`filter-chip-${i}`}
                     onDelete={() => this.removeFilter(filter)}
                     confirmDelete
                     confirmText='Remove this filter?'
@@ -708,7 +727,7 @@ export default class RuleSimple extends React.Component {
         spellCheck={false}
         placeholder={this.getSecondInputPlaceholder()}
         value={this.state.secondInputValue}
-        type={this.state.secondTermType === NUMBER_TERM_TYPE ? NUMBER_TERM_TYPE : undefined}
+        type={this.state.secondTermType === NUMBER_TERM_TYPE ? 'number' : undefined}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             this.props.onLastInputEnterPress()

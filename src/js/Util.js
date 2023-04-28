@@ -827,15 +827,18 @@ export const isSingleValueResponse = (response) => {
   const columns = response?.data?.data?.columns
   const referenceID = response?.data?.reference_id
   const hasNoData = rows && !rows?.length
+  const hasOneColumn = columns?.length === 1
 
-  if (hasNoData && columns?.length === 1 && referenceID === '1.1.211') {
+  if (hasNoData && hasOneColumn && referenceID === '1.1.211') {
     return true
   }
 
-  const hasOneColumn = columns?.length === 1
   const oneRowAndColumn = rows?.length === 1 && rows[0]?.length === 1
+  if (oneRowAndColumn) {
+    return true
+  }
 
-  return oneRowAndColumn || (hasNoData && hasOneColumn)
+  return false
 }
 
 export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotDataLength, isDataLimited } = {}) => {

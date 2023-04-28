@@ -8,7 +8,7 @@ export const getSupportedConditionTypes = (expression, queryResponse) => {
     // 1. EXISTS - When new data is detected for the query
     // 2. COMPARE - When a certain condition is met
 
-    if (expression) {
+    if (expression?.[0]) {
       const firstCondition = expression?.[0]?.condition
       if (firstCondition && firstCondition === EXISTS_TYPE) {
         return [EXISTS_TYPE]
@@ -103,7 +103,6 @@ export const getDayLocalStartDate = ({ timeObj, timezone, daysToAdd = 0 }) => {
   try {
     const now = dayjs().tz(timezone)
     let nextCycle = now.startOf('minute').set('hour', timeObj.hour24).set('minute', timeObj.minute)
-    console.log({ nextCycle })
     if (nextCycle.valueOf() < now.valueOf()) {
       nextCycle = now.add(1, 'day').startOf('minute')
     }
@@ -111,7 +110,6 @@ export const getDayLocalStartDate = ({ timeObj, timezone, daysToAdd = 0 }) => {
     // const tomorrow = today.add(1 + daysToAdd, 'day').startOf('minute')
     // const tomorrowWithTime = nextCycle.set('hour', timeObj.hour24).set('minute', timeObj.minute)
     const nextCycleISO = nextCycle.add(daysToAdd, 'days').format('YYYY-MM-DD[T]hh:mm:00')
-    console.log({ nextCycleISO })
     return nextCycleISO
   } catch (error) {
     console.error(error)

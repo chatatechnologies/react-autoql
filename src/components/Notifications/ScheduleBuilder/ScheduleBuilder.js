@@ -119,10 +119,7 @@ export default class ScheduleBuilder extends React.Component {
       let intervalTimeSelectValue = this.DEFAULT_TIME_SELECT_VALUE
       let weekDaySelectValue = this.DEFAULT_WEEKDAY_SELECT_VALUE
       let monthDaySelectValue = this.DEFAULT_MONTH_DAY_SELECT_VALUE
-      let frequencyType = props.dataAlert?.notification_type
-      if (frequencyType === PERIODIC_TYPE) {
-        frequencyType = CONTINUOUS_TYPE
-      }
+      let frequencyType = dataAlert?.notification_type
 
       if (dataAlert?.notification_type === SCHEDULED_TYPE) {
         intervalTimeSelectValue = getTimeObjFromTimeStamp(schedules[0]?.start_date, dataAlert?.time_zone)

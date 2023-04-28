@@ -1,5 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import _cloneDeep from 'lodash.clonedeep'
 import { Popover } from 'react-tiny-popover'
 import { v4 as uuid } from 'uuid'
 
@@ -299,7 +300,7 @@ export class OptionsToolbar extends React.Component {
   }
 
   renderDataAlertModal = () => {
-    const userSelection = this.props.responseRef?.queryResponse?.data?.data?.fe_req?.disambiguation
+    const queryResponse = _cloneDeep(this.props.responseRef?.queryResponse)
     const filters = this.props.responseRef?.getCombinedFilters()
 
     return (
@@ -307,12 +308,11 @@ export class OptionsToolbar extends React.Component {
         <DataAlertModal
           authentication={this.props.authentication}
           isVisible={this.state.activeMenu === 'notification'}
-          userSelection={userSelection}
           onClose={this.closeDataAlertModal}
           onErrorCallback={this.props.onErrorCallback}
           onSave={this.onDataAlertSave}
           tooltipID={this.props.tooltipID}
-          queryResponse={this.props.responseRef?.queryResponse}
+          queryResponse={queryResponse}
           filters={filters}
         />
       </ErrorBoundary>

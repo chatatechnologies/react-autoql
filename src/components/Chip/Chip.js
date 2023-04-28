@@ -46,7 +46,9 @@ export default class Chip extends React.Component {
           className='react-autoql-chip-delete-confirm-popover'
           popoverParentElement={this.props.popoverParentElement}
           title={this.props.confirmText}
-          onConfirm={this.props.onDelete}
+          onConfirm={() => {
+            this.setState({ isConfirmPopoverVisible: false }, this.props.onDelete)
+          }}
           confirmText='Remove'
           backText='Cancel'
           positions={['top', 'bottom', 'right', 'left']}

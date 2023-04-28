@@ -49,7 +49,6 @@ import {
   isNumber,
   hasNumberColumn,
   hasStringColumn,
-  isSingleValueResponse,
 } from '../../js/Util.js'
 
 import {

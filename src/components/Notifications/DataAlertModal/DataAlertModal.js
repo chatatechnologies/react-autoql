@@ -102,7 +102,7 @@ class DataAlertModal extends React.Component {
   }
 
   showConditionsStep = () => {
-    return this.conditionsEditable() || this.queryHasFilters()
+    return this.conditionsEditable() || this.hasFilters()
   }
 
   getSteps = (initialProps) => {
@@ -206,7 +206,6 @@ class DataAlertModal extends React.Component {
           time_zone: scheduleData.timezone,
           schedules: scheduleData.schedules,
           check_frequency: scheduleData.checkFrequency,
-          // filters: ,
         }
 
         return newDataAlert
@@ -217,9 +216,7 @@ class DataAlertModal extends React.Component {
   }
 
   onExpressionChange = (isComplete, isValid, expressionJSON) => {
-    this.setState({
-      expressionJSON,
-    })
+    this.setState({ expressionJSON })
   }
 
   isConditionSectionReady = () => {
@@ -475,7 +472,7 @@ class DataAlertModal extends React.Component {
               ref={(r) => (this.expressionRef = r)}
               key={`expression-${this.state.expressionKey}`}
               onChange={this.onExpressionChange}
-              expression={this.props.currentDataAlert?.expression ?? this.state.expressionJSON}
+              expression={this.state.expressionJSON}
               queryResponse={this.props.queryResponse}
               tooltipID={this.TOOLTIP_ID}
               onLastInputEnterPress={this.nextStep}
@@ -553,11 +550,13 @@ class DataAlertModal extends React.Component {
     )
   }
 
-  queryHasFilters = () => {
+  hasFilters = () => {
     return (
       !!this.props.filters?.length ||
-      !!this.props.currentDataAlert?.expression?.[0]?.filters?.length ||
-      !!this.props.currentDataAlert?.expression?.[0]?.session_filter_locks?.length
+      !!this.props.queryResponse?.data?.data?.fe_req?.session_filter_locks ||
+      !!this.props.queryResponse?.data?.data?.fe_req?.persistent_filter_locks ||
+      !!this.props.currentDataAlert?.expression?.[0]?.session_filter_locks?.length ||
+      !!this.props.currentDataAlert?.expression?.[0]?.filters?.length
     )
   }
 
@@ -566,6 +565,10 @@ class DataAlertModal extends React.Component {
   }
 
   renderContent = () => {
+    if (!this.props.isVisible) {
+      return null
+    }
+
     if (!!this.props.currentDataAlert?.id) {
       return (
         <DataAlertSettings
@@ -576,6 +579,8 @@ class DataAlertModal extends React.Component {
           supportedConditionTypes={this.SUPPORTED_CONDITION_TYPES}
           onErrorCallback={this.props.onErrorCallback}
           conditionsEditable={this.conditionsEditable()}
+          onExpressionChange={this.onExpressionChange}
+          expression={this.state.expressionJSON}
           tooltipID={this.TOOLTIP_ID}
         />
       )
