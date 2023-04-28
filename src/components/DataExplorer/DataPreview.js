@@ -88,6 +88,7 @@ export default class DataExplorer extends React.Component {
       subject: this.props.subject?.name,
       numRows: this.DATA_PREVIEW_ROWS,
       source: 'data_explorer.data_preview',
+      scope: 'data_explorer',
       cancelToken: this.axiosSource.token,
     })
       .then((response) => {

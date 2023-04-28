@@ -826,16 +826,16 @@ export const isSingleValueResponse = (response) => {
   const rows = response?.data?.data?.rows
   const columns = response?.data?.data?.columns
   const referenceID = response?.data?.reference_id
+  const hasNoData = rows && !rows?.length
 
-  if (rows?.length === 0 && columns?.length === 1 && referenceID === '1.1.211') {
+  if (hasNoData && columns?.length === 1 && referenceID === '1.1.211') {
     return true
   }
 
-  if (rows?.length === 1 && rows[0]?.length === 1) {
-    return true
-  }
+  const hasOneColumn = columns?.length === 1
+  const oneRowAndColumn = rows?.length === 1 && rows[0]?.length === 1
 
-  return false
+  return oneRowAndColumn || (hasNoData && hasOneColumn)
 }
 
 export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotDataLength, isDataLimited } = {}) => {

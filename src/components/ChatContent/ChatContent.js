@@ -54,6 +54,7 @@ export default class ChatContent extends React.Component {
     sessionId: PropTypes.string,
     isResizing: PropTypes.bool,
     source: PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.string), PropTypes.string]),
+    scope: PropTypes.string,
     shouldRender: PropTypes.bool,
   }
 
@@ -63,6 +64,7 @@ export default class ChatContent extends React.Component {
     isResizing: false,
     dataPageSize: undefined,
     source: null,
+    scope: undefined,
     onRTValueLabelClick: undefined,
     shouldRender: true,
   }
@@ -398,6 +400,7 @@ export default class ChatContent extends React.Component {
                   dataPageSize={this.props.dataPageSize}
                   shouldRender={this.props.shouldRender}
                   source={this.props.source}
+                  scope={this.props.scope}
                   tooltipID={this.props.tooltipID}
                   chartTooltipID={this.props.chartTooltipID}
                 />
@@ -434,6 +437,7 @@ export default class ChatContent extends React.Component {
             onErrorCallback={this.props.onErrorCallback}
             hideInput={this.props.hideInput}
             source={this.props.source}
+            scope={this.props.scope}
             queryFilters={this.props.queryFilters}
             sessionId={this.props.sessionId}
             dataPageSize={this.props.dataPageSize}

@@ -75,7 +75,7 @@ export class DashboardTile extends React.Component {
     deleteTile: PropTypes.func,
     dataPageSize: PropTypes.number,
     queryResponse: PropTypes.shape({}),
-    notExecutedText: PropTypes.string,
+    notExecutedText: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
     onErrorCallback: PropTypes.func,
     onSuccessCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
@@ -282,6 +282,7 @@ export class DashboardTile extends React.Component {
         cancelToken: isSecondHalf ? this.secondAxiosSource.token : this.axiosSource.token,
         skipQueryValidation: skipQueryValidation,
         source: mergeSources(this.props.source, source),
+        scope: 'dashboards', // Hardcode this for now until we change the filter lock blacklist to a whitelist
         userSelection,
         pageSize,
         query,
@@ -1032,6 +1033,7 @@ export class DashboardTile extends React.Component {
         chartTooltipID={this.props.chartTooltipID}
         shouldRender={!this.props.isDragging}
         source={this.props.source}
+        scope={this.props.scope}
         autoHeight={false}
         height='100%'
         width='100%'

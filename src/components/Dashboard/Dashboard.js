@@ -37,7 +37,7 @@ class DashboardWithoutTheme extends React.Component {
     this.debounceTime = 50
     this.onChangeTiles = null
     this.callbackSubsciptions = []
-    this.tileLog = []
+    this.tileLog = [props.tiles]
     this.currentLogIndex = 0
 
     this.state = {
@@ -59,7 +59,7 @@ class DashboardWithoutTheme extends React.Component {
     executeOnStopEditing: PropTypes.bool,
     isEditing: PropTypes.bool,
     isEditable: PropTypes.bool,
-    notExecutedText: PropTypes.string,
+    notExecutedText: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
     onChange: PropTypes.func,
     enableDynamicCharting: PropTypes.bool,
     onErrorCallback: PropTypes.func,
@@ -146,7 +146,12 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   resetTileStateLog = () => {
-    this.tileLog = [this.tileLog[0]]
+    if (this.tileLog?.[0]) {
+      this.tileLog = [this.tileLog[0]]
+    } else {
+      this.tileLog = [this.getMostRecentTiles()]
+    }
+
     this.currentLogIndex = 0
   }
 
@@ -170,16 +175,16 @@ class DashboardWithoutTheme extends React.Component {
           this.subscribeToCallback(callbackArray)
         }
 
+        if (saveInLog) {
+          this.addTileStateToLog(this.onChangeTiles)
+        }
+
         if (this.onChangeTimer) {
           clearTimeout(this.onChangeTimer)
         }
 
         this.onChangeTimer = setTimeout(() => {
           if (this.onChangeTiles) {
-            if (saveInLog) {
-              this.tileLog.unshift(this.onChangeTiles)
-            }
-
             this.props.onChange(this.onChangeTiles)
             this.onChangeTiles = null
             if (this.callbackSubsciptions?.length) {
@@ -362,13 +367,25 @@ class DashboardWithoutTheme extends React.Component {
     return
   }
 
+  addTileStateToLog = (tiles) => {
+    if (!this.props.isEditing || !tiles) {
+      return
+    }
+
+    if (!this.getChangeDetection(tiles, this.tileLog[this.currentLogIndex], true)) {
+      return
+    }
+
+    this.tileLog.unshift(_cloneDeep(tiles))
+  }
+
   onMoveEnd = (layout, oldItem, newItem, placeholder, e, element) => {
     try {
       // Update previousTileState here instead of in updateTileLayout
       // Only update if layout actually changed
       const tiles = this.getMostRecentTiles()
       if (this.getChangeDetection(tiles, layout, true)) {
-        this.tileLog.unshift(_cloneDeep(tiles))
+        this.addTileStateToLog(tiles)
       }
 
       // Delaying this makes the snap back animation much smoother
@@ -432,7 +449,8 @@ class DashboardWithoutTheme extends React.Component {
 
   changeCurrentTileState = (logIndex) => {
     try {
-      const newTileState = this.tileLog[logIndex]
+      const newTileState = _cloneDeep(this.tileLog[logIndex])
+
       if (newTileState) {
         this.currentLogIndex = logIndex
         this.debouncedOnChange(newTileState, false)
@@ -443,10 +461,24 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   undo = () => {
+    if (!this.props.isEditing) {
+      console.warn(
+        'Unable perform "undo" action outside of edit mode. Set the isEditing prop to true to enable edit mode.',
+      )
+      return
+    }
+
     this.changeCurrentTileState(this.currentLogIndex + 1)
   }
 
   redo = () => {
+    if (!this.props.isEditing) {
+      console.warn(
+        'Unable perform "redo" action outside of edit mode. Set the isEditing prop to true to enable edit mode.',
+      )
+      return
+    }
+
     this.changeCurrentTileState(this.currentLogIndex - 1)
   }
 
@@ -639,6 +671,7 @@ class DashboardWithoutTheme extends React.Component {
             tooltipID={this.TOOLTIP_ID}
             chartTooltipID={this.CHART_TOOLTIP_ID}
             source={this.SOURCE}
+            scope={this.props.scope}
           />
         ))}
       </ReactGridLayout>
@@ -647,6 +680,7 @@ class DashboardWithoutTheme extends React.Component {
 
   render = () => {
     const tiles = this.getMostRecentTiles()
+
     return (
       <ErrorBoundary>
         <Fragment>

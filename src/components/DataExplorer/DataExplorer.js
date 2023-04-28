@@ -221,6 +221,7 @@ export default class DataExplorer extends React.Component {
               onSuggestionListResponse={() =>
                 this.setState({ querySuggestionContentKey: uuid(), skipQueryValidation: false })
               }
+              scope={this.props.scope}
             />
           </div>
         </Card>
