@@ -150,13 +150,20 @@ export const runQueryOnly = (params = {}) => {
     tableFilters,
     pageSize = DEFAULT_DATA_PAGE_SIZE,
     cancelToken,
+    scope = 'null',
   } = params
   const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
   const finalUserSelection = userSelectionFinal || transformUserSelection(userSelection)
 
+  let finalScope = scope
+  // This is a failsafe for data messenger filter locking. Keep it around for a while until we migrate to using scope only for filter locks
+  if (!!source?.includes && source.includes('data_messenger')) {
+    finalScope = 'data_messenger'
+  }
+
   const data = {
     text: query,
-    source: source,
+    source,
     translation: debug ? 'include' : 'exclude',
     user_selection: finalUserSelection,
     test,
@@ -165,6 +172,7 @@ export const runQueryOnly = (params = {}) => {
     filters: tableFilters,
     page_size: pageSize,
     date_format: 'ISO8601',
+    scope: finalScope,
   }
 
   if (!query || !query.trim()) {

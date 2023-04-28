@@ -742,6 +742,7 @@ export class QueryOutput extends React.Component {
                           isButtonClick: true,
                           source: ['suggestion'],
                           queryId,
+                          scope: this.props.scope,
                         })
                       }
                       className='react-autoql-suggestion-btn'
@@ -841,6 +842,7 @@ export class QueryOutput extends React.Component {
         ...getAuthentication(this.props.authentication),
         ...getAutoQLConfig(this.props.autoQLConfig),
         source: this.props.source,
+        scope: this.props.scope,
         debug: queryRequestData?.translation === 'include',
         filters: queryRequestData?.session_filter_locks,
         pageSize: queryRequestData?.page_size,
@@ -865,6 +867,7 @@ export class QueryOutput extends React.Component {
       orders: this.formattedTableParams?.sorters,
       tableFilters: allFilters,
       source: this.props.source,
+      scope: this.props.scope,
       cancelToken: this.axiosSource.token,
       ...args,
     })
@@ -1955,6 +1958,7 @@ export class QueryOutput extends React.Component {
           isButtonClick,
           skipQueryValidation,
           source,
+          scope: this.props.scope,
         })
       }
       if (this.props.queryInputRef?._isMounted) {
@@ -1963,6 +1967,7 @@ export class QueryOutput extends React.Component {
           userSelection,
           skipQueryValidation: true,
           source,
+          scope: this.props.scope,
         })
       }
     }
@@ -2071,6 +2076,7 @@ export class QueryOutput extends React.Component {
           }
           queryFn={this.queryFn}
           source={this.props.source}
+          scope={this.props.scope}
         />
       </ErrorBoundary>
     )
@@ -2100,6 +2106,7 @@ export class QueryOutput extends React.Component {
           supportsDrilldowns={true}
           autoHeight={this.props.autoHeight}
           source={this.props.source}
+          scope={this.props.scope}
           pivot
         />
       </ErrorBoundary>
@@ -2185,6 +2192,7 @@ export class QueryOutput extends React.Component {
           currentRowCount={this.state.visibleRows?.length}
           updateColumns={this.updateColumns}
           source={this.props.source}
+          scope={this.props.scope}
           isRowCountSelectable={!this.isOriginalData || isDataLimited}
         />
       </ErrorBoundary>
@@ -2360,11 +2368,13 @@ export class QueryOutput extends React.Component {
               isButtonClick: true,
               skipQueryValidation: true,
               source: ['validation'],
+              scope: this.props.scope,
             })
           }
           onQueryValidationSelectOption={this.props.onQueryValidationSelectOption}
           initialSelections={this.props.queryValidationSelections}
           autoSelectSuggestion={this.props.autoSelectQueryValidationSuggestion}
+          scope={this.props.scope}
         />
       )
     }

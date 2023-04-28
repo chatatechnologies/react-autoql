@@ -671,6 +671,7 @@ class DashboardWithoutTheme extends React.Component {
             tooltipID={this.TOOLTIP_ID}
             chartTooltipID={this.CHART_TOOLTIP_ID}
             source={this.SOURCE}
+            scope={this.props.scope}
           />
         ))}
       </ReactGridLayout>
