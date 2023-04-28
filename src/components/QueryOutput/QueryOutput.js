@@ -48,6 +48,7 @@ import {
   isNumber,
   hasNumberColumn,
   hasStringColumn,
+  isSingleValueResponse,
 } from '../../js/Util.js'
 
 import {
@@ -787,7 +788,7 @@ export class QueryOutput extends React.Component {
             }}
           >
             {formatElement({
-              element: _get(this.queryResponse, 'data.data.rows[0][0]'),
+              element: this.queryResponse.data.data.rows[0]?.[0] ?? 0,
               column: this.state.columns?.[0],
               config: getDataFormatting(this.props.dataFormatting),
             })}
@@ -2379,7 +2380,7 @@ export class QueryOutput extends React.Component {
         return this.renderHelpResponse()
       } else if (displayType === 'text') {
         return this.renderTextResponse()
-      } else if (displayType === 'single-value') {
+      } else if (isSingleValueResponse(this.queryResponse)) {
         return this.renderSingleValueResponse()
       } else if (!isTableType(displayType) && !isChartType(displayType)) {
         console.warn(`display type not recognized: ${this.state.displayType} - rendering as plain text`)

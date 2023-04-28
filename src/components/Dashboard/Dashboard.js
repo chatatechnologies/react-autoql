@@ -59,7 +59,7 @@ class DashboardWithoutTheme extends React.Component {
     executeOnStopEditing: PropTypes.bool,
     isEditing: PropTypes.bool,
     isEditable: PropTypes.bool,
-    notExecutedText: PropTypes.string,
+    notExecutedText: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
     onChange: PropTypes.func,
     enableDynamicCharting: PropTypes.bool,
     onErrorCallback: PropTypes.func,
