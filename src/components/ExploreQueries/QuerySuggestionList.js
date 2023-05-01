@@ -151,6 +151,7 @@ export default class QuerySuggestionList extends React.Component {
             autoSelectSuggestion={true}
             submitText='Search'
             submitIcon='search'
+            scope={this.props.scope}
           />
         </div>
       )

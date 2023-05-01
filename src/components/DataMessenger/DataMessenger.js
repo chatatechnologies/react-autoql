@@ -775,6 +775,7 @@ export class DataMessenger extends React.Component {
           createDataAlertCallback={this.closeDataMessenger}
           tooltipID={this.TOOLTIP_ID}
           chartTooltipID={this.CHART_TOOLTIP_ID}
+          scope={this.props.scope}
         />
       </ErrorBoundary>
     )
@@ -831,6 +832,7 @@ export class DataMessenger extends React.Component {
           dataFormatting={this.props.dataFormatting}
           shouldRender={this.shouldRenderPage('data-explorer')}
           tooltipID={this.TOOLTIP_ID}
+          scope={this.props.scope}
           executeQuery={(query) => {
             if (isMobile) {
               this.props.setMobileActivePage('data-messenger')
