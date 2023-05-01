@@ -506,14 +506,7 @@ export class QueryOutput extends React.Component {
         (hasNumberColumn(columns) && !isNumber(tableConfig.numberColumnIndex)) ||
         (hasStringColumn(columns) && !isNumber(tableConfig.stringColumnIndex))
       ) {
-        console.debug(
-          'Table config provided was incomplete',
-          !tableConfig,
-          !tableConfig.numberColumnIndices,
-          !tableConfig.stringColumnIndices,
-          hasNumberColumn(columns) && !isNumber(tableConfig.numberColumnIndex),
-          hasStringColumn(columns) && !isNumber(tableConfig.stringColumnIndex),
-        )
+        console.debug('Table config provided was incomplete', { tableConfig })
         return false
       }
 
