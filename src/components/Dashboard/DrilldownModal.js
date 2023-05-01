@@ -1,45 +1,27 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
-import _isEqual from 'lodash.isequal'
-import _cloneDeep from 'lodash.clonedeep'
 import SplitterLayout from 'react-splitter-layout'
 
 import { Modal } from '../Modal'
 import { QueryOutput } from '../QueryOutput'
 import { LoadingDots } from '../LoadingDots'
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { rebuildTooltips } from '../Tooltip'
 import ReportProblemModal from '../OptionsToolbar/ReportProblemModal'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import DrilldownTable from './DrilldownTable'
 
-import { mergeSources } from '../../js/Util'
 import { CHART_TYPES } from '../../js/Constants'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
-import {
-  authenticationDefault,
-  autoQLConfigDefault,
-  dataFormattingDefault,
-  getAutoQLConfig,
-} from '../../props/defaults'
+import { authenticationDefault, autoQLConfigDefault, dataFormattingDefault } from '../../props/defaults'
 
 export default class DrilldownModal extends React.Component {
   constructor(props) {
     super(props)
 
     this.COMPONENT_KEY = uuid()
-    this.SOURCE = mergeSources(props.source, 'dashboards')
-    this.TOOLTIP_ID = `react-autoql-dashboard-toolbar-btn-tooltip-${this.COMPONENT_KEY}`
-    this.CHART_TOOLTIP_ID = `react-autoql-chart-tooltip-${this.COMPONENT_KEY}`
-    this.tileRefs = {}
-    this.debounceTime = 50
-    this.onChangeTiles = null
-    this.callbackSubsciptions = []
-    this.tileLog = []
-    this.currentLogIndex = 0
 
     this.state = {
-      isDragging: false,
       isReportProblemOpen: false,
       isResizingDrilldown: false,
     }
@@ -114,7 +96,7 @@ export default class DrilldownModal extends React.Component {
       btn.innerHTML = '&#94;'
       btn.className = 'splitter-collapse-btn'
       btn.id = `splitter-btn-${this.COMPONENT_KEY}`
-      btn.setAttribute('data-for', this.TOOLTIP_ID)
+      btn.setAttribute('data-for', this.props.tooltipID)
 
       btn.addEventListener('click', () => {
         this.setState(
@@ -128,49 +110,6 @@ export default class DrilldownModal extends React.Component {
         )
       })
       this.splitterLayoutRef.splitter.parentNode.insertBefore(btn, this.splitterLayoutRef.splitter.nextSibling)
-    }
-  }
-
-  onDrilldownStart = ({ tileId, activeKey, isSecondHalf, queryOutputRef }) => {
-    if (getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns) {
-      this.props.activeDrilldownRef = queryOutputRef
-      this.setState({
-        isDrilldownRunning: true,
-        isDrilldownChartHidden: false,
-        isDrilldownModalVisible: true,
-        isDrilldownSecondHalf: isSecondHalf,
-        activeDrilldownTile: tileId || this.state.activeDrilldownTile,
-        activeDrilldownResponse: null,
-        activeDrilldownChartElementKey: activeKey,
-        isAnimatingModal: !this.state.isDrilldownModalVisible,
-      })
-
-      this.animationTimeout = setTimeout(() => {
-        if (this._isMounted) {
-          this.setState({
-            isAnimatingModal: false,
-          })
-        }
-      }, 500)
-    }
-  }
-
-  onDrilldownEnd = ({ response, error }) => {
-    if (response) {
-      if (this._isMounted) {
-        this.setState({
-          activeDrilldownResponse: response,
-          isDrilldownRunning: false,
-        })
-      }
-    } else if (error) {
-      console.error(error)
-      if (this._isMounted) {
-        this.setState({
-          isDrilldownRunning: false,
-          activeDrilldownResponse: undefined,
-        })
-      }
     }
   }
 
@@ -198,7 +137,6 @@ export default class DrilldownModal extends React.Component {
       )
     }
 
-    const queryResponse = this.props.activeDrilldownRef?.queryResponse
     return (
       <DrilldownTable
         authentication={this.props.authentication}
@@ -206,7 +144,7 @@ export default class DrilldownModal extends React.Component {
         dataFormatting={this.props.dataFormatting}
         isResizing={this.props.isAnimating || this.state.isResizingDrilldown}
         isLoading={this.props.isDrilldownRunning}
-        queryResponse={queryResponse}
+        queryResponse={this.props.drilldownResponse}
         tooltipID={this.props.tooltipID}
         chartTooltipID={this.props.chartTooltipID}
         reportProblemCallback={this.reportProblemCallback}
@@ -277,7 +215,7 @@ export default class DrilldownModal extends React.Component {
           shouldRender={this.props.shouldRender}
           onClose={this.props.onClose}
         >
-          <Fragment>
+          <>
             {!!this.props.activeDrilldownRef?.queryResponse && (
               <SplitterLayout
                 ref={(r) => (this.splitterLayoutRef = r)}
@@ -310,7 +248,7 @@ export default class DrilldownModal extends React.Component {
                           showQueryInterpretation={this.props.showQueryInterpretation}
                           reverseTranslationPlacement='top'
                           allowDisplayTypeChange={false}
-                          source={this.SOURCE}
+                          source={this.props.source}
                           height='100%'
                           width='100%'
                         />
@@ -321,7 +259,7 @@ export default class DrilldownModal extends React.Component {
                 {this.renderDrilldownTable()}
               </SplitterLayout>
             )}
-          </Fragment>
+          </>
         </Modal>
         {this.renderReportProblemModal()}
       </ErrorBoundary>
