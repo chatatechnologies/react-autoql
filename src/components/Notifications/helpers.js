@@ -42,34 +42,34 @@ export const resetDateIsFuture = (dataAlert) => {
   return dayjs(dataAlert.reset_date).valueOf() > dayjs().valueOf()
 }
 
-export const formatResetDate = (dataAlert) => {
+export const formatResetDate = (dataAlert, short) => {
   if (!dataAlert.reset_date) {
     return ''
   }
 
-  const date = dayjs(dataAlert.reset_date).tz(dataAlert.time_zone)
-  return `${date.format('MMMM DD, YYYY')} at ${date.format('h:mma')} (${dataAlert.time_zone})`
+  const dateDayJS = dayjs(dataAlert.reset_date).tz(dataAlert.time_zone)
+
+  if (short) {
+    return `${dateDayJS.format('MMM DD, YYYY h:mma')}`
+  }
+
+  return `${dateDayJS.format('MMMM DD, YYYY [at] h:mma')} (${dataAlert.time_zone})`
 }
 
-export const formatDateShort = (date, tz) => {
-  const dateDayJS = dayjs(date).tz(tz)
-  return `${dateDayJS.format('MMM DD, YYYY h:mma')}` // (${dataAlert.time_zone})`
-}
-
-export const formatNextScheduleDateShort = (schedules) => {
-  if (!schedules) {
+export const formatNextScheduleDate = (schedules, short) => {
+  if (!schedules?.length) {
     return ''
   }
 
-  return formatDateShort(schedules?.[0]?.next_evaluation, schedules?.[0]?.time_zone)
-}
+  const date = schedules[0]?.next_evaluation
+  const timezone = schedules[0]?.time_zone
+  const dateDayJS = dayjs(date).tz(timezone)
 
-export const formatResetDateShort = (dataAlert) => {
-  if (!dataAlert.reset_date) {
-    return ''
+  if (short) {
+    return `${dateDayJS.format('MMM DD, YYYY h:mma')}`
   }
 
-  return formatDateShort(dataAlert.reset_date, dataAlert.time_zone)
+  return `${dateDayJS.format('MMM DD, YYYY [at] h:mma')} (${timezone})`
 }
 
 export const getTimeObjFromTimeStamp = (timestamp, timezone) => {

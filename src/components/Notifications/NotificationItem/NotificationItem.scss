@@ -19,6 +19,15 @@
   animation: slideIn 0.5s cubic-bezier(0.26, 0.26, 0, 1);
   animation-fill-mode: both;
 
+  &.is-error {
+    .react-autoql-notification-alert-strip {
+      background: var(--react-autoql-warning-color);
+    }
+    &.unread .react-autoql-notification-display-name-container .react-autoql-notification-display-name {
+      color: var(--react-autoql-warning-color);
+    }
+  }
+
   .react-autoql-notification-item-expand-arrow {
     display: flex;
     justify-content: center;
@@ -51,6 +60,28 @@
     font-size: 32px;
     margin-top: -6px;
     opacity: 0.9;
+  }
+
+  .notification-error-message-container {
+    text-align: center;
+    padding: 30px;
+    border-top: 1px solid var(--react-autoql-background-color-primary);
+  }
+
+  .notification-error-reinitialize-btn {
+    margin: 20px;
+    &.restart-success {
+      background-color: var(--react-autoql-success-color);
+      border-color: var(--react-autoql-success-color);
+      color: #ffffff;
+      pointer-events: none;
+      cursor: default;
+    }
+  }
+
+  .notification-error-reinitialize-btn,
+  .notification-delete-confirm-popover {
+    display: inline-flex;
   }
 
   .react-autoql-notification-query-title {
@@ -97,9 +128,13 @@
   }
 
   &.unread {
-    .react-autoql-notification-display-name {
+    .react-autoql-notification-display-name-container .react-autoql-notification-display-name {
       font-weight: 500;
-      color: var(--react-autoql-accent-color, #26a7df) !important;
+      color: var(--react-autoql-accent-color);
+
+      .react-autoql-icon svg {
+        stroke-width: 2.5px;
+      }
     }
 
     .react-autoql-notification-alert-strip {
@@ -293,7 +328,7 @@
     position: absolute;
     left: 0px;
     top: 0;
-    width: 5px;
+    width: 4px;
 
     background: var(--react-autoql-accent-color, #26a7df);
     color: var(--react-autoql-text-color-accent);
@@ -366,6 +401,9 @@
     .react-autoql-notification-display-name {
       font-size: 18px;
       color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.7));
+      .react-autoql-icon {
+        font-size: 0.875em;
+      }
     }
     .react-autoql-notification-timestamp-container {
       font-size: 12px;

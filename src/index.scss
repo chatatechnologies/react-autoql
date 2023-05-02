@@ -14,3 +14,9 @@ span .react-autoql-icon {
   vertical-align: middle;
   padding-bottom: 3px;
 }
+
+a {
+  font-weight: 600;
+  color: var(--react-autoql-accent-color);
+  cursor: pointer;
+}

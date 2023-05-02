@@ -43,10 +43,9 @@ class NotificationFeed extends React.Component {
     this.state = {
       isFetchingFirstNotifications: true,
       isDataAlertsManagerOpen: false,
+      unFetchedNotifications: 0,
       notificationList: [],
       pagination: {},
-      nextOffset: 0,
-      hasMore: true,
     }
   }
 
@@ -96,12 +95,16 @@ class NotificationFeed extends React.Component {
     }
   }
 
-  componentDidUpdate = (prevProps) => {
+  componentDidUpdate = (prevProps, prevState) => {
     if (!this.props.shouldRender && prevProps.shouldRender) {
       this.collapseActive()
     } else if (this.props.shouldRender && !prevProps.shouldRender && !this.hasFetchedNotifications) {
       this.getNotifications()
       this.getDataAlerts()
+    }
+
+    if (this.props.shouldRender && this.state.unFetchedNotifications && !prevState.unFetchedNotifications) {
+      this.refreshNotifications()
     }
   }
 
@@ -123,39 +126,51 @@ class NotificationFeed extends React.Component {
   }
 
   getNotifications = () => {
-    if (!this.props.shouldRender) {
+    if (!this.props.shouldRender || this.state.isLoading || this.state.unFetchedNotifications) {
       return
     }
 
     this.hasFetchedNotifications = true
+    const offset = this.state.notificationList?.length ?? 0
+
+    if (this.state.pagination && this.state.pagination.total_items <= offset) {
+      return
+    }
+
+    this.setState({ isLoading: true })
     return fetchNotificationFeed({
       ...getAuthentication(this.props.authentication),
-      offset: this.state.nextOffset,
       limit: this.NOTIFICATION_FETCH_LIMIT,
+      offset,
     })
       .then((data) => {
-        let notificationList = _cloneDeep(this.state.notificationList)
-        let nextOffset = this.state.nextOffset
-        let pagination = this.state.pagination
-
-        if (data?.items?.length) {
-          notificationList = [...notificationList, ...data.items]
-          nextOffset = this.state.nextOffset + this.NOTIFICATION_FETCH_LIMIT
-          pagination = data.pagination
+        if (!data?.items?.length) {
+          return
         }
 
-        const hasMore = !data?.items?.length || notificationList?.length === data?.pagination?.total_items
+        // If there are duplicate notifications, that means a new one was triggered since the last fetch
+        // Ignore these, then do a refresh to add the new notifications to the beginning of the list
+        const newList =
+          data.items.filter((notification) => !this.state.notificationList.find((n) => n.id === notification.id)) ?? []
 
-        if (this._isMounted) {
-          this.setState({
-            notificationList,
-            pagination,
-            nextOffset,
-            hasMore,
-            isFetchingFirstNotifications: false,
-            fetchNotificationsError: null,
-          })
+        let unFetchedNotifications = 0
+        if (newList.length !== data.items.length) {
+          unFetchedNotifications = data.items.length - newList.length
         }
+
+        const newState = {
+          isFetchingFirstNotifications: false,
+          fetchNotificationsError: null,
+          unFetchedNotifications,
+          isLoading: false,
+        }
+
+        if (newList?.length && this._isMounted) {
+          newState.notificationList = [...this.state.notificationList, ...newList]
+          newState.pagination = data.pagination
+        }
+
+        this.setState(newState)
       })
       .catch((error) => {
         console.error(error)
@@ -164,9 +179,40 @@ class NotificationFeed extends React.Component {
           this.setState({
             isFetchingFirstNotifications: false,
             fetchNotificationsError: error,
+            isLoading: false,
           })
         }
       })
+  }
+
+  getNewNotifications = () => {
+    const limit =
+      (this.state.notificationList?.length ?? this.NOTIFICATION_FETCH_LIMIT) + (this.state.unFetchedNotifications ?? 0)
+
+    fetchNotificationFeed({
+      ...getAuthentication(this.props.authentication),
+      offset: 0,
+      limit,
+    }).then((response) => {
+      const items = response?.items
+      const notificationList = this.state.notificationList
+      const lastIndex = response.items?.length - 1
+
+      if (
+        items?.[0]?.id === notificationList?.[0]?.id &&
+        items?.[lastIndex]?.id === notificationList?.[lastIndex]?.id
+      ) {
+        // There are no new notifications if the first (newest) is the same as what is already there
+        this.setState({ unFetchedNotifications: 0 })
+        return
+      }
+
+      this.setState({
+        notificationList: response.items,
+        pagination: response.pagination,
+        unFetchedNotifications: 0,
+      })
+    })
   }
 
   refreshNotifications = () => {
@@ -176,41 +222,12 @@ class NotificationFeed extends React.Component {
       return this.getNotifications()
     }
 
-    // Regardless of how many notifications are loaded, we only want to add the new ones to the top
-    return fetchNotificationFeed({
-      ...getAuthentication(this.props.authentication),
-      offset: 0,
-      limit: 10, // Likely wont have more than 10 notifications. If so, we will just reset the whole list
-    }).then((response) => {
-      const newNotifications = this.detectNewNotifications(response.items)
-
-      if (_isEqual(response.items, this.state.notificationList)) {
-        return
-      }
-
-      if (!newNotifications?.length || newNotifications?.length === 10) {
-        // Reset list and pagination to new list
-        this.setState({
-          notificationList: response.items,
-          pagination: response.pagination,
-        })
-      } else {
-        const newList = [...newNotifications, ...this.state.notificationList]
-
-        this.setState({
-          notificationList: newList,
-          pagination: {
-            ...response.pagination,
-          },
-          nextOffset: newList.length - 1,
-        })
-      }
-    })
+    return this.getNewNotifications()
   }
 
-  detectNewNotifications = (notificationList) => {
+  getNewNotificationsFromResponse = (items) => {
     const newNotifications = []
-    notificationList.every((notification) => {
+    items.every((notification) => {
       // If we have reached a notification that is already loaded, stop looping
       if (this.state.notificationList.find((n) => n.id === notification.id)) {
         return false
@@ -220,27 +237,6 @@ class NotificationFeed extends React.Component {
       return true
     })
     return newNotifications
-  }
-
-  onItemClick = (notification) => {
-    // fetch data stored in integrators DB and display
-    let expandedNotificationID = undefined
-    const newList = this.state.notificationList.map((n) => {
-      if (notification.id === n.id) {
-        if (!n.expanded) {
-          expandedNotificationID = notification.id
-        }
-        return {
-          ...n,
-          expanded: !n.expanded,
-        }
-      }
-      return {
-        ...n,
-        expanded: false,
-      }
-    })
-    this.setState({ notificationList: newList, expandedNotificationID })
   }
 
   onDeleteAllClick = () => {}
@@ -300,15 +296,22 @@ class NotificationFeed extends React.Component {
 
   onDeleteClick = (notification) => {
     const newList = this.state.notificationList.filter((n) => n.id !== notification.id)
-    this.setState(
-      {
-        notificationList: newList,
-        nextOffset: this.state.nextOffset > 0 ? this.state.nextOffset - 1 : 0,
-      },
-      () => {
-        this.props.onDeleteCallback(newList)
-      },
-    )
+    let pagination = this.state.pagination
+    if (pagination) {
+      pagination = {
+        ...this.state.pagination,
+        total_items: pagination.total_items > 0 ? pagination.total_items - 1 : 0,
+      }
+    }
+
+    this.setState({
+      notificationList: newList, // pagination,
+      isLoading: true,
+    })
+  }
+
+  onDeleteEnd = () => {
+    this.setState({ isLoading: false })
   }
 
   onDataAlertSave = () => {
@@ -486,19 +489,21 @@ class NotificationFeed extends React.Component {
               {this.renderTopOptions()}
               <CustomScrollbars>
                 <InfiniteScroll
-                  initialLoad={false}
                   pageStart={0}
+                  useWindow={false}
+                  initialLoad={false}
                   loadMore={this.getNotifications}
-                  hasMore={this.state.pagination.total_items > this.state.notificationList.length}
+                  hasMore={
+                    !this.state.isLoading && this.state.pagination.total_items > this.state.notificationList.length
+                  }
                   loader={
                     <div className='react-autoql-spinner-centered' key={0}>
                       <Spinner />
                     </div>
                   }
-                  useWindow={false}
                 >
                   <div className='notification-feed-list'>
-                    {this.state.notificationList.map((notification) => {
+                    {this.state.notificationList.map((notification, i) => {
                       const dataAlert = this.state.dataAlerts?.find((alert) => alert.id === notification.data_alert_id)
                       return (
                         <NotificationItem
@@ -516,16 +521,16 @@ class NotificationFeed extends React.Component {
                           notification={notification}
                           dataAlert={dataAlert}
                           expanded={!!notification.expanded}
-                          onClick={this.onItemClick}
                           onDismissCallback={this.onDismissClick}
                           onUnreadCallback={this.onUnreadClick}
+                          onQueryClick={this.props.onQueryClick}
                           onDismissSuccessCallback={() => {
                             this.props.onChange(this.state.notificationList)
                           }}
-                          onDeleteCallback={this.onDeleteClick}
+                          onDeleteClick={this.onDeleteClick}
+                          onDeleteEnd={this.onDeleteEnd}
                           onDeleteSuccessCallback={() => {
                             this.props.onChange(this.state.notificationList)
-                            this.refreshNotifications()
                           }}
                           onExpandCallback={this.onNotificationExpand}
                           autoChartAggregations={this.props.autoChartAggregations}

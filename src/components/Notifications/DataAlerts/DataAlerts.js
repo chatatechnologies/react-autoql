@@ -188,7 +188,7 @@ class DataAlerts extends React.Component {
                   onSuccessCallback={this.props.onSuccessAlert}
                   onErrorCallback={this.props.onErrorCallback}
                   openEditModal={this.openEditModal}
-                  onDeleteClick={this.onDataAlertDeleteClick}
+                  onDeleteClick={() => this.onDataAlertDeleteClick(dataAlert?.id)}
                   tooltipID='react-autoql-notification-settings-tooltip'
                   onInitialize={this.getDataAlerts}
                   onDataAlertStatusChange={this.props.onDataAlertStatusChange}

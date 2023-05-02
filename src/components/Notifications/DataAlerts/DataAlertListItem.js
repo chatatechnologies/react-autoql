@@ -5,16 +5,10 @@ import { Icon } from '../../Icon'
 import { Switch } from '../../Switch'
 import { hideTooltips } from '../../Tooltip'
 
-import {
-  CONTINUOUS_TYPE,
-  CUSTOM_TYPE,
-  DEFAULT_CHECK_FREQUENCY,
-  PERIODIC_TYPE,
-  SCHEDULED_TYPE,
-} from '../DataAlertConstants'
+import { CUSTOM_TYPE, DEFAULT_CHECK_FREQUENCY, PERIODIC_TYPE, SCHEDULED_TYPE } from '../DataAlertConstants'
 
 import { initializeAlert, updateDataAlertStatus } from '../../../js/notificationService'
-import { formatNextScheduleDateShort, formatResetDate, formatResetDateShort, resetDateIsFuture } from '../helpers'
+import { formatNextScheduleDate, formatResetDate, resetDateIsFuture } from '../helpers'
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
@@ -30,7 +24,6 @@ export default class DataAlertListItem extends React.Component {
       status: props.dataAlert?.status,
       title: props.dataAlert?.title,
       message: props.dataAlert?.message,
-      isDeleteDialogOpen: false,
       isInitializing: false,
     }
   }
@@ -46,7 +39,6 @@ export default class DataAlertListItem extends React.Component {
   static defaultProps = {
     authentication: authenticationDefault,
     onErrorCallback: () => {},
-    onAlertInitializationCallback: () => {},
     onSuccessAlert: () => {},
     onDeleteClick: () => {},
     onDataAlertStatusChange: () => {},
@@ -89,9 +81,9 @@ export default class DataAlertListItem extends React.Component {
     })
   }
 
-  onDeleteClick = (e, step) => {
+  onDeleteClick = (e) => {
     e.stopPropagation()
-    this.props.onDeleteClick(this.props.dataAlert?.id)
+    this.props.onDeleteClick()
   }
 
   onEditClick = (e, step) => {
@@ -173,6 +165,7 @@ export default class DataAlertListItem extends React.Component {
     const status = isEnabled ? 'data-alert-on' : 'data-alert-off'
     const isTriggered = !!dataAlert.reset_date
     const resetDateFormatted = formatResetDate(dataAlert)
+    const nextScheduledDate = formatNextScheduleDate(dataAlert.schedules)
 
     // Check error status first. We always want to show the user if the Data Alert is in an error state
     if (hasError) {
@@ -231,7 +224,7 @@ export default class DataAlertListItem extends React.Component {
               data-for={this.props.tooltipID}
               data-tip={
                 isTriggered
-                  ? 'Restart Alert cycle (This will allow your Alert to be triggered again in the current cycle)'
+                  ? 'Restart Alert cycle (This will allow your Alert to be triggered again in the current frequency cycle)'
                   : ''
               }
               onClick={this.onInitializeClick}
@@ -244,10 +237,15 @@ export default class DataAlertListItem extends React.Component {
     }
 
     if (dataAlert.status === 'ACTIVE' && dataAlert.notification_type === SCHEDULED_TYPE) {
+      let tooltip = 'This Alert runs on a schedule'
+      if (nextScheduledDate) {
+        tooltip = `${tooltip} - a notification is scheduled for ${nextScheduledDate}. If your data hasn't changed by then, you will not receive a notification.`
+      }
+
       return (
         <div
           className={`data-alert-state data-alert-scheduled ${status}`}
-          data-tip={`This Alert runs on a schedule - a notification is scheduled for ${resetDateFormatted}. If your data hasn't changed by then, you will not receive a notification.`}
+          data-tip={tooltip}
           data-for={this.props.tooltipID}
         >
           <Icon type='calendar' />
@@ -302,7 +300,7 @@ export default class DataAlertListItem extends React.Component {
     }
 
     if (dataAlert.notification_type === SCHEDULED_TYPE) {
-      const nextScheduledDate = formatNextScheduleDateShort(dataAlert.schedules)
+      const nextScheduledDate = formatNextScheduleDate(dataAlert.schedules, true)
       if (!nextScheduledDate) {
         return '-'
       }
@@ -318,7 +316,7 @@ export default class DataAlertListItem extends React.Component {
       return `< ${checkFrequency}m`
     }
 
-    return <span>{formatResetDateShort(dataAlert)}</span>
+    return <span>{formatResetDate(dataAlert, true)}</span>
   }
 
   render = () => {

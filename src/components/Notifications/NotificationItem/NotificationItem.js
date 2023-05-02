@@ -18,6 +18,7 @@ import {
   updateDataAlertStatus,
   fetchNotificationData,
   markNotificationAsUnread,
+  initializeAlert,
 } from '../../../js/notificationService'
 import { isNumber } from '../../../js/Util'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
@@ -29,6 +30,8 @@ import {
 } from '../../../props/defaults'
 
 import './NotificationItem.scss'
+import { Button } from '../../Button'
+import { ConfirmPopover } from '../../ConfirmPopover'
 
 export default class NotificationItem extends React.Component {
   constructor(props) {
@@ -52,7 +55,8 @@ export default class NotificationItem extends React.Component {
     onRuleFetchCallback: PropTypes.func,
     onExpandCallback: PropTypes.func,
     onDismissCallback: PropTypes.func,
-    onDeleteCallback: PropTypes.func,
+    onDeleteClick: PropTypes.func,
+    onDeleteEnd: PropTypes.func,
     onDeleteSuccessCallback: PropTypes.func,
     onDismissSuccessCallback: PropTypes.func,
     onErrorCallback: PropTypes.func,
@@ -61,6 +65,7 @@ export default class NotificationItem extends React.Component {
     onClick: PropTypes.func,
     onDataAlertChange: PropTypes.func,
     onSuccessCallback: PropTypes.func,
+    onQueryClick: PropTypes.func,
   }
 
   static defaultProps = {
@@ -68,10 +73,12 @@ export default class NotificationItem extends React.Component {
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
     autoChartAggregations: false,
+    onQueryClick: undefined,
     onRuleFetchCallback: () => {},
     onExpandCallback: () => {},
     onDismissCallback: () => {},
-    onDeleteCallback: () => {},
+    onDeleteClick: () => {},
+    onDeleteEnd: () => {},
     onDeleteSuccessCallback: () => {},
     onDismissSuccessCallback: () => {},
     onUnreadCallback: () => {},
@@ -84,7 +91,7 @@ export default class NotificationItem extends React.Component {
   componentDidUpdate = (prevProps, prevState) => {
     if (this.state.expanded && !prevState.expanded) {
       if (!this.state.queryResponse) {
-        this.fetchQueryResponse()
+        this.fetchNotification()
       }
     }
   }
@@ -93,11 +100,15 @@ export default class NotificationItem extends React.Component {
     clearTimeout(this.initialCollapseTimer)
   }
 
-  getIsUnread = () => {
+  isError = () => {
+    return this.props.notification?.outcome === 'ERROR'
+  }
+
+  isUnread = () => {
     return ['ACKNOWLEDGED', 'UNACKNOWLEDGED'].includes(this.props.notification?.state)
   }
 
-  fetchQueryResponse = () => {
+  fetchNotification = () => {
     const { notification } = this.props
     fetchNotificationData({ id: notification.id, ...getAuthentication(this.props.authentication) })
       .then((response) => {
@@ -111,7 +122,7 @@ export default class NotificationItem extends React.Component {
   expand = () => {
     this.setState({ expanded: true })
 
-    if (this.getIsUnread()) {
+    if (this.isUnread()) {
       this.markAsRead()
     }
   }
@@ -158,19 +169,15 @@ export default class NotificationItem extends React.Component {
   }
 
   delete = () => {
-    this.props.onDeleteCallback(this.props.notification)
+    this.props.onDeleteClick(this.props.notification)
 
     deleteNotification({
       ...getAuthentication(this.props.authentication),
       notificationId: this.props.notification.id,
     })
-      .then(() => {
-        this.props.onDeleteSuccessCallback()
-      })
-      .catch((error) => {
-        console.error(error)
-        this.props.onErrorCallback(error)
-      })
+      .then(this.props.onDeleteSuccessCallback)
+      .catch(this.props.onErrorCallback)
+      .finally(this.props.onDeleteEnd)
   }
 
   changeDataAlertStatus = (status) => {
@@ -195,7 +202,9 @@ export default class NotificationItem extends React.Component {
       })
   }
 
-  formatTimestamp = (timestamp) => {
+  getFormattedTimestamp = () => {
+    const timestamp = this.props.notification.created_at
+
     let dateDayJS
     if (isNumber(timestamp)) {
       dateDayJS = dayjs.unix(timestamp)
@@ -221,15 +230,44 @@ export default class NotificationItem extends React.Component {
 
   renderAlertColorStrip = () => <div className='react-autoql-notification-alert-strip' />
 
+  isDataAlertInErrorState = () => {
+    const { dataAlert } = this.props
+    return (
+      dataAlert?.status === 'GENERAL_ERROR' ||
+      dataAlert?.status === 'EVALUATION_ERROR' ||
+      dataAlert?.status === 'DATA_RETURN_ERROR'
+    )
+  }
+
+  renderNotificationTitle = () => {
+    if (this.isError()) {
+      return (
+        <span>
+          <Icon type='warning-triangle' /> Data Alert Error
+        </span>
+      )
+    }
+
+    return <span>{this.props.notification.title}</span>
+  }
+
+  renderNotificationMessage = () => {
+    if (this.isError()) {
+      return `Your Data Alert "${this.props.notification.title}" encountered a problem. Click for more information.`
+    }
+
+    return this.props.notification.message
+  }
+
   renderNotificationHeader = () => {
     return (
       <div className='react-autoql-notification-list-item-header' onClick={() => this.onClick(this.props.notification)}>
         <div className='react-autoql-notification-display-name-container'>
-          <div className='react-autoql-notification-display-name'>{this.props.notification.title}</div>
-          <div className='react-autoql-notification-description'>{this.props.notification.message}</div>
+          <div className='react-autoql-notification-display-name'>{this.renderNotificationTitle()}</div>
+          <div className='react-autoql-notification-description'>{this.renderNotificationMessage()}</div>
           <div className='react-autoql-notification-timestamp-container'>
             <span className='react-autoql-notification-timestamp'>
-              <Icon type='calendar' /> {this.formatTimestamp(this.props.notification.created_at)}
+              <Icon type='calendar' /> {this.getFormattedTimestamp()}
             </span>
           </div>
         </div>
@@ -284,7 +322,7 @@ export default class NotificationItem extends React.Component {
   }
 
   moreOptionsMenu = () => {
-    const isUnread = this.getIsUnread()
+    const isUnread = this.isUnread()
     const status = this.state.dataAlertStatus ?? this.props.dataAlert?.status
     const isActive = status === 'ACTIVE' || status === 'WAITING'
 
@@ -346,6 +384,100 @@ export default class NotificationItem extends React.Component {
     )
   }
 
+  restartAlert = () => {
+    this.setState({ isInitializing: true })
+    initializeAlert({
+      id: this.props.dataAlert?.id,
+      ...getAuthentication(this.props.authentication),
+    })
+      .then(() => {
+        this.setState({ initializeSuccess: true })
+        this.props.onSuccessCallback('Restart successful! Your Data Alert is now active.')
+      })
+      .catch((error) => {
+        console.error(error)
+        this.setState({ initializeError: true })
+        this.props.onErrorCallback('Data Alert restart unsuccessful. Please try again in a few minutes.')
+      })
+      .finally(() => {
+        this.setState({ isInitializing: false })
+        this.props.onDataAlertChange()
+      })
+  }
+
+  renderErrorDetails = () => {
+    if (!this.isDataAlertInErrorState()) {
+      const query = this.props.notification?.data_return_query
+      return (
+        <>
+          <br />
+          <span>To resolve this issue, try restarting the Alert by clicking the button below.</span>
+          <br />
+          <Button
+            type='primary'
+            icon={this.state.initializeSuccess ? 'check' : 'refresh'}
+            loading={this.state.isInitializing}
+            className={`notification-error-reinitialize-btn ${this.state.initializeSuccess ? 'restart-success' : ''}`}
+            onClick={this.restartAlert}
+          >
+            {this.state.initializeSuccess ? 'Restarted' : 'Restart Alert'}
+          </Button>
+          <br />
+          <span>
+            If the problem persists, you may need to create a new Data Alert from the query{' '}
+            {!!this.props.onQueryClick ? (
+              <a
+                onClick={() => this.props.onQueryClick(query)}
+                data-tip='Click to run this query in Data Messenger'
+                data-for={this.props.tooltipID}
+              >
+                "{query}"
+              </a>
+            ) : (
+              <span>
+                <em>"{query}"</em>
+              </span>
+            )}
+          </span>
+        </>
+      )
+    }
+
+    return (
+      <span>
+        It has since been restarted and is no longer in an error state. Feel free to{' '}
+        <ConfirmPopover
+          className='notification-delete-confirm-popover'
+          popoverParentElement={this.notificationItemRef}
+          title='Delete this Notification?'
+          onConfirm={this.delete}
+          confirmText='Delete'
+          backText='Cancel'
+          positions={['top', 'bottom', 'left', 'right']}
+          align='end'
+        >
+          <a>delete</a>
+        </ConfirmPopover>{' '}
+        this notification.
+      </span>
+    )
+  }
+
+  renderErrorMessage = () => {
+    let timestamp = this.getFormattedTimestamp()
+    if (!timestamp.includes('today')) {
+      timestamp = `on ${timestamp}`
+    }
+
+    return (
+      <div className='notification-error-message-container'>
+        <div>
+          This Data Alert encountered an error {timestamp}. {this.renderErrorDetails()}
+        </div>
+      </div>
+    )
+  }
+
   renderNotificationContent = () => {
     return (
       <div
@@ -357,18 +489,24 @@ export default class NotificationItem extends React.Component {
         <>
           {!this.state.queryResponse && this.renderLoader()}
           <div className='react-autoql-notification-content-container'>
-            {this.renderSummarySection()}
-            <NotificationQueryResponse
-              key={this.state.queryResponse?.data?.data?.query_id}
-              authentication={this.props.authentication}
-              autoQLConfig={this.props.autoQLConfig}
-              dataFormatting={this.props.dataFormatting}
-              queryResponse={this.state.queryResponse}
-              autoChartAggregations={this.props.autoChartAggregations}
-              enableAjaxTableData={this.props.enableAjaxTableData}
-              isResizing={this.props.isResizing}
-              shouldRender={this.state.expanded}
-            />
+            {this.isError() ? (
+              this.renderErrorMessage()
+            ) : (
+              <>
+                {this.renderSummarySection()}
+                <NotificationQueryResponse
+                  key={this.state.queryResponse?.data?.data?.query_id}
+                  authentication={this.props.authentication}
+                  autoQLConfig={this.props.autoQLConfig}
+                  dataFormatting={this.props.dataFormatting}
+                  queryResponse={this.state.queryResponse}
+                  autoChartAggregations={this.props.autoChartAggregations}
+                  enableAjaxTableData={this.props.enableAjaxTableData}
+                  isResizing={this.props.isResizing}
+                  shouldRender={this.state.expanded}
+                />
+              </>
+            )}
           </div>
         </>
       </div>
@@ -381,9 +519,11 @@ export default class NotificationItem extends React.Component {
         <div
           id={`react-autoql-notification-item-${this.COMPONENT_KEY}`}
           key={`react-autoql-notification-item-${this.COMPONENT_KEY}`}
+          ref={(r) => (this.notificationItemRef = r)}
           className={`react-autoql-notification-list-item
           ${this.state.expanded ? 'expanded' : 'collapsed'}
-          ${this.getIsUnread() ? 'unread' : ''}
+          ${this.isUnread() ? 'unread' : ''}
+          ${this.isError() ? 'is-error' : ''}
           ${this.state.isMoreOptionsMenuOpen ? 'menu-open' : ''}`}
         >
           {this.renderNotificationHeader()}
