@@ -61,7 +61,7 @@ export default class ScheduleBuilder extends React.Component {
     }
 
     if (props.dataAlert) {
-      this.getInitialStateFromDataAlert(props.dataAlert, state)
+      this.getInitialStateFromDataAlert(props, state)
     }
 
     this.state = state
@@ -99,6 +99,12 @@ export default class ScheduleBuilder extends React.Component {
         timeRange: getTimeRangeFromRT(props.queryResponse),
       })
     }
+
+    if (this.props.frequencyType !== prevProps.frequencyType) {
+      const newState = {}
+      this.getInitialStateFromDataAlert(this.props, state)
+      this.setState(newState)
+    }
   }
 
   isComplete = (prevState) => {
@@ -113,19 +119,21 @@ export default class ScheduleBuilder extends React.Component {
     return true
   }
 
-  getInitialStateFromDataAlert = (dataAlert, state) => {
+  getInitialStateFromDataAlert = (props, state) => {
+    const { dataAlert } = props
     try {
       let resetPeriodSelectValue = dataAlert?.reset_period ?? this.DEFAULT_RESET_PERIOD_SELECT_VALUE
       let intervalTimeSelectValue = this.DEFAULT_TIME_SELECT_VALUE
       let weekDaySelectValue = this.DEFAULT_WEEKDAY_SELECT_VALUE
       let monthDaySelectValue = this.DEFAULT_MONTH_DAY_SELECT_VALUE
-      let frequencyType = dataAlert?.notification_type
+      let frequencyType = props.frequencyType ?? dataAlert?.notification_type
 
-      if (dataAlert?.notification_type === SCHEDULED_TYPE) {
-        intervalTimeSelectValue = getTimeObjFromTimeStamp(schedules[0]?.start_date, dataAlert?.time_zone)
+      if (frequencyType === SCHEDULED_TYPE) {
+        intervalTimeSelectValue =
+          getTimeObjFromTimeStamp(schedules?.[0]?.start_date, dataAlert?.time_zone) ?? this.DEFAULT_TIME_SELECT_VALUE
 
         const schedules = dataAlert?.schedules
-        const schedulePeriod = schedules?.[0]?.notification_period
+        const schedulePeriod = schedules?.[0]?.notification_period ?? this.DEFAULT_RESET_PERIOD_SELECT_VALUE
 
         resetPeriodSelectValue = schedulePeriod
         if (schedulePeriod === 'MONTH_LAST_DAY') {

@@ -204,6 +204,7 @@ export default class DataAlertSettings extends React.Component {
         dataAlert={this.props.currentDataAlert}
         showTypeSelector={false}
         onErrorCallback={this.props.onErrorCallback}
+        frequencyType={this.state.notificationType}
       />
     )
   }

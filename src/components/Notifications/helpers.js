@@ -73,6 +73,10 @@ export const formatNextScheduleDate = (schedules, short) => {
 }
 
 export const getTimeObjFromTimeStamp = (timestamp, timezone) => {
+  if (!timestamp || !timezone) {
+    return
+  }
+
   const dateDayJS = dayjs(timestamp).tz(timezone)
 
   const hour24 = dateDayJS.hour()
