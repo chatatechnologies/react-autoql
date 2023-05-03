@@ -117,7 +117,7 @@ export default class DataAlertSettings extends React.Component {
       messageInput: currentDataAlert.message ?? '',
       notificationType,
       resetPeriodSelectValue: currentDataAlert?.reset_period,
-      checkFrequencySelectValue: currentDataAlert?.reset_period,
+      evaluationFrequencySelectValue: currentDataAlert?.reset_period,
       isConfirmDeleteModalVisible: false,
       expressionKey: uuid(),
       filters: currentDataAlert?.filters,
@@ -144,7 +144,7 @@ export default class DataAlertSettings extends React.Component {
       reset_period: this.state.resetPeriodSelectValue,
       time_zone: scheduleData.timezone,
       schedules: scheduleData.schedules,
-      check_frequency: scheduleData.checkFrequency,
+      evaluation_frequency: scheduleData.evaluationFrequency,
     }
   }
 

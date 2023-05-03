@@ -5,7 +5,7 @@ import { Icon } from '../../Icon'
 import { Switch } from '../../Switch'
 import { hideTooltips } from '../../Tooltip'
 
-import { CUSTOM_TYPE, DEFAULT_CHECK_FREQUENCY, PERIODIC_TYPE, SCHEDULED_TYPE } from '../DataAlertConstants'
+import { CUSTOM_TYPE, DEFAULT_EVALUATION_FREQUENCY, PERIODIC_TYPE, SCHEDULED_TYPE } from '../DataAlertConstants'
 
 import { initializeAlert, updateDataAlertStatus } from '../../../js/notificationService'
 import { formatNextScheduleDate, formatResetDate, resetDateIsFuture } from '../helpers'
@@ -316,8 +316,8 @@ export default class DataAlertListItem extends React.Component {
         return '-'
       }
 
-      const checkFrequency = dataAlert.check_frequency ?? DEFAULT_CHECK_FREQUENCY
-      return `< ${checkFrequency}m`
+      const evaluationFrequency = dataAlert.evaluation_frequency ?? DEFAULT_EVALUATION_FREQUENCY
+      return `< ${evaluationFrequency}m`
     }
 
     return <span>{formatResetDate(dataAlert, true)}</span>

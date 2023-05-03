@@ -11,7 +11,7 @@ export const EXISTS_TYPE = 'EXISTS'
 export const NUMBER_TERM_TYPE = 'CONSTANT'
 export const QUERY_TERM_TYPE = 'QUERY'
 export const GROUP_TERM_TYPE = 'GROUP'
-export const DEFAULT_CHECK_FREQUENCY = 5
+export const DEFAULT_EVALUATION_FREQUENCY = 5
 
 export const DATA_ALERT_OPERATORS = {
   GREATER_THAN: {
@@ -179,4 +179,4 @@ export const MONTH_DAY_SELECT_OPTIONS = {
   ),
 }
 
-export const CHECK_FREQUENCY_OPTIONS = [1, 2, 3, 5, 10, 30, 60]
+export const EVALUATION_FREQUENCY_OPTIONS = [1, 2, 3, 5, 10, 30, 60]

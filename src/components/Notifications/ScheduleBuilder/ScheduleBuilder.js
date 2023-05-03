@@ -9,14 +9,14 @@ import { TimezoneSelector } from '../../TimezoneSelector'
 import { getTimeRangeFromRT } from '../../../js/reverseTranslationHelpers'
 import { TimePicker } from '../../TimePicker'
 
-import { getTimeObjFromTimeStamp, getWeekdayFromTimeStamp, showCheckFrequencySetting } from '../helpers'
+import { getTimeObjFromTimeStamp, getWeekdayFromTimeStamp, showEvaluationFrequencySetting } from '../helpers'
 import { MONTH_NAMES, WEEKDAY_NAMES_MON } from '../../../js/Constants'
 import {
   CONTINUOUS_TYPE,
   DATA_ALERT_FREQUENCY_TYPE_OPTIONS,
   SCHEDULE_INTERVAL_OPTIONS,
   RESET_PERIOD_OPTIONS,
-  CHECK_FREQUENCY_OPTIONS,
+  EVALUATION_FREQUENCY_OPTIONS,
   MONTH_DAY_SELECT_OPTIONS,
   COMPARE_TYPE,
   EXISTS_TYPE,
@@ -31,7 +31,7 @@ export default class ScheduleBuilder extends React.Component {
     super(props)
 
     this.COMPONENT_KEY = uuid()
-    this.DEFAULT_CHECK_FREQUENCY_INDEX = 3 // index 3 -> "5 mins"
+    this.DEFAULT_EVALUATION_FREQUENCY_INDEX = 3 // index 3 -> "5 mins"
     this.DEFAULT_RESET_PERIOD_SELECT_VALUE = 'MONTH'
     this.DEFAULT_WEEKDAY_SELECT_VALUE = 'Friday'
     this.DEFAULT_MONTH_DAY_SELECT_VALUE = 'LAST'
@@ -49,7 +49,7 @@ export default class ScheduleBuilder extends React.Component {
     const timeRange = getTimeRangeFromRT(props.queryResponse)
 
     const state = {
-      checkFrequencySelectValue: this.DEFAULT_CHECK_FREQUENCY_INDEX,
+      evaluationFrequencySelectValue: this.DEFAULT_EVALUATION_FREQUENCY_INDEX,
       frequencyType: this.DEFAULT_FREQUENCY_TYPE,
       intervalTimeSelectValue: this.DEFAULT_TIME_SELECT_VALUE,
       weekDaySelectValue: this.DEFAULT_WEEKDAY_SELECT_VALUE,
@@ -112,7 +112,7 @@ export default class ScheduleBuilder extends React.Component {
 
     if (this.shouldRenderResetPeriodSelector(prevState) && !state.resetPeriodSelectValue) {
       return false
-    } else if (this.shouldRenderCheckFrequencySelector(prevState) && !state.checkFrequencySelectValue) {
+    } else if (this.shouldRenderEvaluationFrequencySelector(prevState) && !state.evaluationFrequencySelectValue) {
       return false
     }
 
@@ -125,7 +125,7 @@ export default class ScheduleBuilder extends React.Component {
     try {
       state.resetPeriodSelectValue = dataAlert?.reset_period ?? this.DEFAULT_RESET_PERIOD_SELECT_VALUE
       state.frequencyType = props.frequencyType ?? dataAlert?.notification_type ?? this.DEFAULT_FREQUENCY_TYPE
-      state.checkFrequencySelectValue = dataAlert?.check_frequency ?? this.DEFAULT_CHECK_FREQUENCY_INDEX
+      state.evaluationFrequencySelectValue = dataAlert?.evaluation_frequency ?? this.DEFAULT_EVALUATION_FREQUENCY_INDEX
       state.timezone = dataAlert?.time_zone
       state.timeRange = dataAlert?.reset_period ?? state.timeRange
 
@@ -158,11 +158,11 @@ export default class ScheduleBuilder extends React.Component {
     const resetPeriod = this.state.frequencyType !== SCHEDULED_TYPE ? this.getResetPeriod() : undefined
     const schedules = this.getSchedules()
     const timezone = this.state.timezone
-    const checkFrequency = this.state.checkFrequencySelectValue
+    const evaluationFrequency = this.state.evaluationFrequencySelectValue
 
     return {
       notificationType,
-      checkFrequency,
+      evaluationFrequency,
       resetPeriod,
       schedules,
       timezone,
@@ -394,21 +394,21 @@ export default class ScheduleBuilder extends React.Component {
     )
   }
 
-  shouldRenderCheckFrequencySelector = (prevState) => {
+  shouldRenderEvaluationFrequencySelector = (prevState) => {
     const state = prevState ?? this.state
-    return showCheckFrequencySetting(state?.frequencyType)
+    return showEvaluationFrequencySetting(state?.frequencyType)
   }
 
-  checkFrequencySelector = () => {
-    if (this.shouldRenderCheckFrequencySelector()) {
+  evaluationFrequencySelector = () => {
+    if (this.shouldRenderEvaluationFrequencySelector()) {
       let tooltip =
         'How often should we run the query to check for new data? (You will only be notified if there is new data)'
       if (this.props.conditionType === COMPARE_TYPE) {
         tooltip = `How often should we run the query to check if the conditions are met?`
       }
 
-      const options = CHECK_FREQUENCY_OPTIONS.map((mins, i) => {
-        let label = `${CHECK_FREQUENCY_OPTIONS[i]} min${mins > 1 ? 's' : ''}`
+      const options = EVALUATION_FREQUENCY_OPTIONS.map((mins, i) => {
+        let label = `${EVALUATION_FREQUENCY_OPTIONS[i]} min${mins > 1 ? 's' : ''}`
         let listLabel = label
         if (mins === 5) {
           listLabel = (
@@ -428,13 +428,13 @@ export default class ScheduleBuilder extends React.Component {
         <div className='react-autoql-data-alert-frequency-option check-frequency'>
           <Select
             options={options}
-            value={this.state.checkFrequencySelectValue}
+            value={this.state.evaluationFrequencySelectValue}
             label={
               <span>
                 Check conditions every <Icon type='info' data-for={this.props.tooltipID} data-tip={tooltip} />
               </span>
             }
-            onChange={(value) => this.setState({ checkFrequencySelectValue: value })}
+            onChange={(value) => this.setState({ evaluationFrequencySelectValue: value })}
           />
         </div>
       )
@@ -492,7 +492,7 @@ export default class ScheduleBuilder extends React.Component {
   continuousFrequencyOptions = () => {
     return (
       <div className='react-autoql-data-alert-frequency-options-container continuous-alert'>
-        {this.checkFrequencySelector()}
+        {this.evaluationFrequencySelector()}
         {this.resetPeriodSelector()}
       </div>
     )

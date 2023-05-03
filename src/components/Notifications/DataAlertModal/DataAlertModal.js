@@ -205,7 +205,7 @@ class DataAlertModal extends React.Component {
           reset_period: scheduleData.resetPeriod,
           time_zone: scheduleData.timezone,
           schedules: scheduleData.schedules,
-          check_frequency: scheduleData.checkFrequency,
+          evaluation_frequency: scheduleData.evaluationFrequency,
         }
 
         return newDataAlert

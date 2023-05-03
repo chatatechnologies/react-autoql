@@ -30,7 +30,7 @@ export const getSupportedConditionTypes = (expression, queryResponse) => {
   }
 }
 
-export const showCheckFrequencySetting = (notificationType) => {
+export const showEvaluationFrequencySetting = (notificationType) => {
   return notificationType === CONTINUOUS_TYPE || notificationType === PERIODIC_TYPE
 }
 
