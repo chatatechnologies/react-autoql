@@ -578,7 +578,8 @@ export class OptionsToolbar extends React.Component {
             <Popover
               key={`more-options-button-${this.COMPONENT_KEY}`}
               isOpen={this.state.activeMenu === 'more-options'}
-              positions={['bottom', 'top', 'left', 'right']}
+              positions={this.props.popoverPositions ?? ['bottom', 'top', 'left', 'right']}
+              align={this.props.popoverAlign}
               padding={8}
               onClickOutside={() => {
                 this.setState({ activeMenu: undefined })
@@ -656,10 +657,6 @@ export class OptionsToolbar extends React.Component {
   }
 
   render = () => {
-    if (!this.props.responseRef?._isMounted) {
-      return null
-    }
-
     const shouldShowButton = this.getShouldShowButtonObj(this.props)
 
     // If there is nothing to put in the toolbar, don't render it

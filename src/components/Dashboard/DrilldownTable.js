@@ -69,6 +69,7 @@ export default class DrilldownTable extends React.Component {
             <div className='drilldown-modal-viz-toolbar'>
               <VizToolbar
                 ref={(r) => (this.vizToolbarRef = r)}
+                autoQLConfig={this.props.autoQLConfig}
                 responseRef={this.responseRef}
                 tooltipID={this.props.tooltipID}
               />
@@ -76,11 +77,17 @@ export default class DrilldownTable extends React.Component {
             <div className='drilldown-modal-options-toolbar'>
               <OptionsToolbar
                 authentication={this.props.authentication}
+                autoQLConfig={{
+                  ...getAutoQLConfig(this.props.autoQLConfig),
+                  enableNotifications: false,
+                }}
                 ref={(r) => (this.optionsToolbarRef = r)}
                 responseRef={this.responseRef}
                 tooltipID={this.props.tooltipID}
                 onErrorCallback={this.props.onErrorCallback}
                 onSuccessAlert={this.props.onSuccessCallback}
+                popoverPositions={['top', 'left', 'right', 'bottom']}
+                popoverAlign='end'
               />
             </div>
           </div>

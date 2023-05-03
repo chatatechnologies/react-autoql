@@ -14,27 +14,44 @@
   .dashboard-drilldown-modal-content {
     .layout-splitter {
       margin-top: 8px;
-      background: var(--react-autoql-text-color-primary);
-      opacity: 0.6;
+      padding: 2px;
+      height: 2px;
+      background: transparent;
+      border-bottom: 1px solid var(--react-autoql-border-color);
+      border-color: var(--react-autoql-border-color);
+      transition: border-color 0.2s ease;
+
+      &:hover {
+        border-width: 2px;
+        border-color: var(--react-autoql-accent-color);
+
+        & + .splitter-collapse-btn {
+          border-color: var(--react-autoql-accent-color);
+          color: var(--react-autoql-accent-color);
+          font-weight: 600;
+        }
+      }
     }
 
     .splitter-collapse-btn {
       display: flex;
       justify-content: center;
-      line-height: 22px;
+      line-height: 24px;
       width: 20px;
       height: 20px;
       border-radius: 10px;
       margin-left: 90%;
-      transform: translate(-11px, -11px);
+      transform: translate(0px, -10px);
       background: var(--react-autoql-background-color-secondary);
-      border: 1px solid var(--react-autoql-text-color-primary);
-      transition: border-color 0.2s ease, color 0.2s ease;
+      border: 1px solid var(--react-autoql-border-color);
+      border-color: var(--react-autoql-border-color);
+      transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
       cursor: pointer;
 
       &:hover {
+        background-color: var(--react-autoql-accent-color);
         border-color: var(--react-autoql-accent-color);
-        color: var(--react-autoql-accent-color);
+        color: var(--react-autoql-text-color-accent);
       }
     }
 

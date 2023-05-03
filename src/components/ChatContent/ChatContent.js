@@ -54,6 +54,7 @@ export default class ChatContent extends React.Component {
     sessionId: PropTypes.string,
     isResizing: PropTypes.bool,
     source: PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.string), PropTypes.string]),
+    scope: PropTypes.string,
     shouldRender: PropTypes.bool,
   }
 
@@ -63,6 +64,7 @@ export default class ChatContent extends React.Component {
     isResizing: false,
     dataPageSize: undefined,
     source: null,
+    scope: undefined,
     onRTValueLabelClick: undefined,
     shouldRender: true,
   }
@@ -174,24 +176,19 @@ export default class ChatContent extends React.Component {
   }
 
   deleteMessage = (id) => {
-    const messagesToDelete = [id]
     const messageIndex = this.state.messages.findIndex((message) => id === message.id)
+    const message = this.state.messages[messageIndex]
 
-    // If there is a query message right above it (not a drilldown), delete the query message also
-    const messageAbove = this.state.messages[messageIndex - 1]
-
-    // If the messageAbove is not undefined
-    if (messageAbove) {
-      if (!messageAbove.isResponse) {
-        messagesToDelete.push(messageAbove.id)
-      }
+    let messagesToDelete = [id]
+    if (message?.queryMessageID) {
+      messagesToDelete = this.state.messages
+        ?.filter((m) => m.queryMessageID === message.queryMessageID)
+        .map((m) => m.id)
     }
 
     const newMessages = this.state.messages.filter((message) => !messagesToDelete.includes(message.id))
 
-    this.setState({
-      messages: newMessages,
-    })
+    this.setState({ messages: newMessages })
   }
 
   getIntroMessages = (contentList) => {
@@ -202,10 +199,6 @@ export default class ChatContent extends React.Component {
         isIntroMessage: true,
       }),
     )
-  }
-
-  addIntroMessage = (message) => {
-    this.addIntroMessages([message])
   }
 
   addIntroMessages = (contentList) => {
@@ -229,11 +222,12 @@ export default class ChatContent extends React.Component {
     })
   }
 
-  addRequestMessage = (text) => {
+  addRequestMessage = (text, queryMessageID) => {
     this.addMessage(
       this.createMessage({
         content: text,
         isResponse: false,
+        queryMessageID,
       }),
     )
   }
@@ -261,19 +255,20 @@ export default class ChatContent extends React.Component {
     }
   }
 
-  onInputSubmit = (query) => {
-    this.addRequestMessage(query)
+  onInputSubmit = (query, id) => {
+    this.addRequestMessage(query, id)
     this.setState({ isInputDisabled: true })
     this.responseDelayTimeout = setTimeout(() => {
       this.setState({ isQueryRunning: true })
     }, 600)
   }
 
-  onResponse = (response, query) => {
+  onResponse = (response, query, queryMessageID) => {
     if (this._isMounted) {
       if (this.getIsSuggestionResponse(response)) {
         this.addResponseMessage({
           content: 'I want to make sure I understood your query. Did you mean:',
+          queryMessageID,
         })
       }
 
@@ -288,25 +283,16 @@ export default class ChatContent extends React.Component {
               </a>
             </span>
           ),
+          queryMessageID,
         })
       } else {
-        this.addResponseMessage({ response, query })
+        this.addResponseMessage({ response, query, queryMessageID })
       }
 
       clearTimeout(this.responseDelayTimeout)
       this.setState({ isQueryRunning: false, isInputDisabled: false })
 
       this.focusInput()
-    }
-  }
-
-  createIntroMessage = ({ type, content }) => {
-    return {
-      id: uuid(),
-      isResponse: true,
-      type: type || 'text',
-      content: content || '',
-      isIntroMessage: true,
     }
   }
 
@@ -320,11 +306,12 @@ export default class ChatContent extends React.Component {
     }
   }
 
-  createErrorMessage = (content) => {
+  createErrorMessage = (content, queryMessageID) => {
     return this.createMessage({
       content: content || errorMessages.GENERAL_QUERY,
       isResponse: true,
       type: 'error',
+      queryMessageID,
     })
   }
 
@@ -413,6 +400,7 @@ export default class ChatContent extends React.Component {
                   dataPageSize={this.props.dataPageSize}
                   shouldRender={this.props.shouldRender}
                   source={this.props.source}
+                  scope={this.props.scope}
                   tooltipID={this.props.tooltipID}
                   chartTooltipID={this.props.chartTooltipID}
                 />
@@ -449,6 +437,7 @@ export default class ChatContent extends React.Component {
             onErrorCallback={this.props.onErrorCallback}
             hideInput={this.props.hideInput}
             source={this.props.source}
+            scope={this.props.scope}
             queryFilters={this.props.queryFilters}
             sessionId={this.props.sessionId}
             dataPageSize={this.props.dataPageSize}

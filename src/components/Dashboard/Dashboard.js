@@ -4,18 +4,13 @@ import { v4 as uuid } from 'uuid'
 import RGL, { WidthProvider } from 'react-grid-layout'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
-import SplitterLayout from 'react-splitter-layout'
-import { Modal } from '../Modal'
 import { DashboardTile } from './DashboardTile'
-import { QueryOutput } from '../QueryOutput'
-import { LoadingDots } from '../LoadingDots'
-import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
-import ReportProblemModal from '../OptionsToolbar/ReportProblemModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { CHART_TYPES } from '../../js/Constants'
-import { deepEqual, mergeSources, removeFromDOM } from '../../js/Util'
+import { hideTooltips, Tooltip } from '../Tooltip'
+import DrilldownModal from './DrilldownModal'
+
+import { deepEqual, mergeSources } from '../../js/Util'
 import { withTheme } from '../../theme'
-import DrilldownTable from './DrilldownTable'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import {
   authenticationDefault,
@@ -30,26 +25,6 @@ import './Dashboard.scss'
 
 const ReactGridLayout = WidthProvider(RGL)
 
-const executeDashboard = (ref) => {
-  if (ref) {
-    try {
-      ref.executeDashboard()
-    } catch (error) {
-      console.error(error)
-    }
-  }
-}
-
-const unExecuteDashboard = (ref) => {
-  if (ref) {
-    try {
-      ref.unExecuteDashboard()
-    } catch (error) {
-      console.error(error)
-    }
-  }
-}
-
 class DashboardWithoutTheme extends React.Component {
   constructor(props) {
     super(props)
@@ -62,6 +37,8 @@ class DashboardWithoutTheme extends React.Component {
     this.debounceTime = 50
     this.onChangeTiles = null
     this.callbackSubsciptions = []
+    this.tileLog = [props.tiles]
+    this.currentLogIndex = 0
 
     this.state = {
       isDragging: false,
@@ -82,7 +59,7 @@ class DashboardWithoutTheme extends React.Component {
     executeOnStopEditing: PropTypes.bool,
     isEditing: PropTypes.bool,
     isEditable: PropTypes.bool,
-    notExecutedText: PropTypes.string,
+    notExecutedText: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
     onChange: PropTypes.func,
     enableDynamicCharting: PropTypes.bool,
     onErrorCallback: PropTypes.func,
@@ -92,6 +69,8 @@ class DashboardWithoutTheme extends React.Component {
     onCSVDownloadProgress: PropTypes.func,
     onCSVDownloadFinish: PropTypes.func,
     enableAjaxTableData: PropTypes.bool,
+    cancelQueriesOnUnmount: PropTypes.bool,
+    startEditingCallback: PropTypes.func,
   }
 
   static defaultProps = {
@@ -110,12 +89,14 @@ class DashboardWithoutTheme extends React.Component {
     enableDynamicCharting: true,
     autoChartAggregations: true,
     enableAjaxTableData: false,
+    cancelQueriesOnUnmount: false,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
     onChange: () => {},
     onCSVDownloadStart: () => {},
     onCSVDownloadProgress: () => {},
     onCSVDownloadFinish: () => {},
+    startEditingCallback: () => {},
   }
 
   componentDidMount = () => {
@@ -131,14 +112,6 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (this.splitterLayoutRef?.splitter) {
-      this.renderSplitterCollapseBtn()
-    }
-
-    if (prevState.isDrilldownChartHidden !== this.state.isDrilldownChartHidden) {
-      rebuildTooltips()
-    }
-
     // Re-run dashboard once exiting edit mode (if prop is set to true)
     if (prevProps.isEditing && !this.props.isEditing && this.props.executeOnStopEditing) {
       this.executeDashboard()
@@ -148,17 +121,8 @@ class DashboardWithoutTheme extends React.Component {
       this.refreshTileLayouts()
     }
 
-    // If tile structure changed, set previous tile state for undo feature
-    if (
-      this.getChangeDetection(this.props.tiles, prevProps.tiles) &&
-      prevProps.tiles?.[prevProps.tiles?.length - 1]?.y !== Number.MAX_VALUE
-    ) {
-      this.setState({
-        justPerformedUndo: false,
-      })
-    }
-
     if (this.props.isEditing !== prevProps.isEditing) {
+      this.resetTileStateLog()
       this.setState({ isDragging: true }, () => {
         this.setState({ isDragging: false })
       })
@@ -174,39 +138,21 @@ class DashboardWithoutTheme extends React.Component {
       this._isMounted = false
       window.removeEventListener('resize', this.onWindowResize)
       clearTimeout(this.scrollToNewTileTimeout)
-
       clearTimeout(this.stopDraggingTimeout)
-      clearTimeout(this.drillingDownTimeout)
       clearTimeout(this.animationTimeout)
     } catch (error) {
       console.error(error)
     }
   }
 
-  renderSplitterCollapseBtn = () => {
-    const splitterBtn = document.querySelector(`#splitter-btn-${this.COMPONENT_KEY}`)
-    if (splitterBtn) {
-      splitterBtn.setAttribute('data-tip', this.state.isDrilldownChartHidden ? 'Show chart' : 'Hide chart')
+  resetTileStateLog = () => {
+    if (this.tileLog?.[0]) {
+      this.tileLog = [this.tileLog[0]]
     } else {
-      const btn = document.createElement('div')
-      btn.innerHTML = '&#94;'
-      btn.className = 'splitter-collapse-btn'
-      btn.id = `splitter-btn-${this.COMPONENT_KEY}`
-      btn.setAttribute('data-for', this.TOOLTIP_ID)
-
-      btn.addEventListener('click', () => {
-        this.setState(
-          {
-            isDrilldownChartHidden: !this.state.isDrilldownChartHidden,
-            isResizingDrilldown: true,
-          },
-          () => {
-            this.setState({ isResizingDrilldown: false })
-          },
-        )
-      })
-      this.splitterLayoutRef.splitter.parentNode.insertBefore(btn, this.splitterLayoutRef.splitter.nextSibling)
+      this.tileLog = [this.getMostRecentTiles()]
     }
+
+    this.currentLogIndex = 0
   }
 
   getMostRecentTiles = () => {
@@ -221,16 +167,16 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   debouncedOnChange = (tiles, saveInLog = true, callbackArray = []) => {
-    if (saveInLog) {
-      this.previousTileState = _cloneDeep(this.getMostRecentTiles())
-    }
-
     this.onChangeTiles = _cloneDeep(tiles)
     const debouncedPromise = new Promise((resolve, reject) => {
       try {
         this.subscribeToCallback([resolve])
         if (callbackArray?.length) {
           this.subscribeToCallback(callbackArray)
+        }
+
+        if (saveInLog) {
+          this.addTileStateToLog(this.onChangeTiles)
         }
 
         if (this.onChangeTimer) {
@@ -307,13 +253,19 @@ class DashboardWithoutTheme extends React.Component {
 
   executeDashboard = () => {
     try {
+      const promises = []
       for (var dashboardTile in this.tileRefs) {
         if (this.tileRefs[dashboardTile]) {
-          this.tileRefs[dashboardTile].processTile()
+          promises.push(this.tileRefs[dashboardTile].processTile())
         }
       }
+
+      return Promise.all(promises).catch(() => {
+        return Promise.reject(new Error('There was an error processing this dashboard. Please try again.'))
+      })
     } catch (error) {
       console.error(error)
+      return undefined
     }
   }
 
@@ -398,21 +350,7 @@ class DashboardWithoutTheme extends React.Component {
     })
   }
 
-  debounceSetState = (state) => {
-    this.stateToSet = {
-      ...this.stateToSet,
-      ...state,
-    }
-
-    clearTimeout(this.setStateTimeout)
-    this.setStateTimeout = setTimeout(() => {
-      this.setState(this.stateToSet)
-      this.stateToSet = {}
-    }, 50)
-  }
-
   onMoveStart = (layout, oldItem, newItem, placeholder, e, element) => {
-    // e.stopPropagation()
     this.setIsDragging(true)
     return
   }
@@ -429,13 +367,25 @@ class DashboardWithoutTheme extends React.Component {
     return
   }
 
+  addTileStateToLog = (tiles) => {
+    if (!this.props.isEditing || !tiles) {
+      return
+    }
+
+    if (!this.getChangeDetection(tiles, this.tileLog[this.currentLogIndex], true)) {
+      return
+    }
+
+    this.tileLog.unshift(_cloneDeep(tiles))
+  }
+
   onMoveEnd = (layout, oldItem, newItem, placeholder, e, element) => {
     try {
       // Update previousTileState here instead of in updateTileLayout
       // Only update if layout actually changed
       const tiles = this.getMostRecentTiles()
       if (this.getChangeDetection(tiles, layout, true)) {
-        this.previousTileState = tiles
+        this.addTileStateToLog(tiles)
       }
 
       // Delaying this makes the snap back animation much smoother
@@ -497,15 +447,39 @@ class DashboardWithoutTheme extends React.Component {
     }
   }
 
-  undo = () => {
+  changeCurrentTileState = (logIndex) => {
     try {
-      this.debouncedOnChange(this.previousTileState, false)
-      this.setState({
-        justPerformedUndo: true,
-      })
+      const newTileState = _cloneDeep(this.tileLog[logIndex])
+
+      if (newTileState) {
+        this.currentLogIndex = logIndex
+        this.debouncedOnChange(newTileState, false)
+      }
     } catch (error) {
       console.error(error)
     }
+  }
+
+  undo = () => {
+    if (!this.props.isEditing) {
+      console.warn(
+        'Unable perform "undo" action outside of edit mode. Set the isEditing prop to true to enable edit mode.',
+      )
+      return
+    }
+
+    this.changeCurrentTileState(this.currentLogIndex + 1)
+  }
+
+  redo = () => {
+    if (!this.props.isEditing) {
+      console.warn(
+        'Unable perform "redo" action outside of edit mode. Set the isEditing prop to true to enable edit mode.',
+      )
+      return
+    }
+
+    this.changeCurrentTileState(this.currentLogIndex - 1)
   }
 
   deleteTile = (id) => {
@@ -530,18 +504,18 @@ class DashboardWithoutTheme extends React.Component {
         ...params,
       }
 
-      if (Object.keys(params).includes('query') && params.query !== originalTiles[tileIndex].query) {
+      if (Object.keys(params).includes('query') && params.query !== originalTiles[tileIndex]?.query) {
         tiles[tileIndex].dataConfig = undefined
         tiles[tileIndex].skipQueryValidation = false
       } else if (
         Object.keys(params).includes('secondQuery') &&
-        params.secondQuery !== originalTiles[tileIndex].secondQuery
+        params.secondQuery !== originalTiles[tileIndex]?.secondQuery
       ) {
         tiles[tileIndex].secondDataConfig = undefined
         tiles[tileIndex].secondskipQueryValidation = false
       }
 
-      this.debouncedOnChange(tiles, undefined, callbackArray)
+      this.debouncedOnChange(tiles, true, callbackArray)
     } catch (error) {
       console.error(error)
     }
@@ -590,63 +564,6 @@ class DashboardWithoutTheme extends React.Component {
     }
   }
 
-  shouldShowOriginalQuery = () => {
-    const displayType = this.activeDrilldownRef?.state?.displayType
-    if (!displayType) {
-      return false
-    }
-
-    return CHART_TYPES.includes(displayType)
-  }
-
-  reportProblemCallback = () => {
-    this.setState({ isReportProblemOpen: true })
-  }
-
-  renderDrilldownTable = () => {
-    if (this.state.isDrilldownRunning) {
-      return (
-        <div className='react-autoql-dashboard-drilldown-table'>
-          <div className='dashboard-tile-loading-container'>
-            <LoadingDots />
-          </div>
-        </div>
-      )
-    }
-
-    const queryResponse = _cloneDeep(this.state.activeDrilldownResponse)
-    return (
-      <DrilldownTable
-        authentication={this.props.authentication}
-        autoQLConfig={this.props.autoQLConfig}
-        dataFormatting={this.props.dataFormatting}
-        isResizing={this.state.isAnimatingModal || this.state.isResizingDrilldown}
-        isLoading={this.state.isDrilldownRunning}
-        queryResponse={queryResponse}
-        tooltipID={this.TOOLTIP_ID}
-        chartTooltipID={this.CHART_TOOLTIP_ID}
-        reportProblemCallback={this.reportProblemCallback}
-        enableAjaxTableData={this.props.enableAjaxTableData}
-        showQueryInterpretation={this.props.isEditing}
-        onErrorCallback={this.props.onErrorCallback}
-        onSuccessCallback={this.props.onSuccessCallback}
-      />
-    )
-  }
-
-  renderReportProblemModal = () => {
-    return (
-      <ReportProblemModal
-        authentication={this.props.authentication}
-        contentClassName='dashboard-drilldown-report-problem-modal'
-        onClose={this.closeReportProblemModal}
-        onReportProblem={this.onReportProblem}
-        responseRef={this.drilldownTableRef}
-        isVisible={this.state.isReportProblemOpen}
-      />
-    )
-  }
-
   closeDrilldownModal = () => {
     this.setState({
       isDrilldownModalVisible: false,
@@ -654,117 +571,12 @@ class DashboardWithoutTheme extends React.Component {
     })
   }
 
-  closeReportProblemModal = () => {
-    this.setState({
-      isReportProblemOpen: false,
-    })
-  }
-
-  onReportProblem = ({ successMessage, error }) => {
-    if (successMessage) {
-      this.props.onSuccessCallback(successMessage)
-      if (this._isMounted) {
-        this.setState({
-          isReportProblemOpen: false,
-        })
-      }
-    } else if (error) {
-      this.props.onErrorCallback(error)
-    }
-  }
-
-  renderDrilldownModal = () => {
-    // Todo: put in its own component
-    try {
-      let queryResponse
-      if (this.state.isDrilldownModalVisible) {
-        queryResponse = _cloneDeep(this.activeDrilldownRef?.queryResponse)
-        if (queryResponse) {
-          queryResponse.data.data.columns = this.activeDrilldownRef.state.columns
-        }
-      }
-
-      const renderTopHalf = !this.state.isDrilldownChartHidden && this.shouldShowOriginalQuery()
-
-      return (
-        <Modal
-          className='dashboard-drilldown-modal'
-          contentClassName={`dashboard-drilldown-modal-content
-            ${this.state.isDrilldownChartHidden ? 'chart-hidden' : ''}
-            ${!this.shouldShowOriginalQuery() ? 'table-only' : ''}`}
-          title={this.activeDrilldownRef?.queryResponse?.data?.data?.text}
-          isVisible={this.state.isDrilldownModalVisible}
-          width='90vw'
-          height='100vh'
-          confirmText='Done'
-          showFooter={false}
-          shouldRender={this.state.isDrilldownModalVisible && !this.state.isDragging && !this.state.isWindowResizing}
-          onClose={this.closeDrilldownModal}
-        >
-          <Fragment>
-            {this.activeDrilldownRef && (
-              <SplitterLayout
-                ref={(r) => (this.splitterLayoutRef = r)}
-                vertical={true}
-                percentage={true}
-                primaryMinSize={renderTopHalf ? 35 : 0}
-                secondaryMinSize={25}
-                secondaryInitialSize={50}
-                onDragStart={() => this.setState({ isResizingDrilldown: true })}
-                onDragEnd={() => this.setState({ isResizingDrilldown: false })}
-              >
-                <div className='react-autoql-dashboard-drilldown-original'>
-                  {this.shouldShowOriginalQuery() && (
-                    <>
-                      {this.activeDrilldownRef && (
-                        <QueryOutput
-                          {...this.activeDrilldownRef.props}
-                          ref={(r) => (this.drilldownTopRef = r)}
-                          queryResponse={queryResponse}
-                          isDrilldownChartHidden={this.state.isDrilldownChartHidden}
-                          key={`dashboard-drilldown-chart-${this.state.activeDrilldownTile}`}
-                          activeChartElementKey={this.state.activeDrilldownChartElementKey}
-                          initialDisplayType={this.activeDrilldownRef.state.displayType}
-                          initialTableConfigs={{
-                            tableConfig: this.activeDrilldownRef.tableConfig,
-                            pivotTableConfig: this.activeDrilldownRef.pivotTableConfig,
-                          }}
-                          isAnimating={this.state.isAnimatingModal}
-                          isResizing={this.state.isResizingDrilldown || !this.state.isDrilldownModalVisible}
-                          showQueryInterpretation={this.props.isEditing}
-                          reverseTranslationPlacement='top'
-                          allowDisplayTypeChange={false}
-                          source={this.SOURCE}
-                          height='100%'
-                          width='100%'
-                        />
-                      )}
-                    </>
-                  )}
-                </div>
-                {this.renderDrilldownTable()}
-              </SplitterLayout>
-            )}
-          </Fragment>
-        </Modal>
-      )
-    } catch (error) {
-      console.error(error)
-      this.props.onErrorCallback(error)
-    }
-  }
-
   renderEmptyDashboardMessage = () => {
     if (this.props.isEditable && !this.props.isEditing) {
       return (
         <div className='empty-dashboard-message-container'>
           Start building a{' '}
-          <span
-            className='empty-dashboard-new-tile-btn'
-            onClick={() => {
-              this.props.startEditingCallback()
-            }}
-          >
+          <span className='empty-dashboard-new-tile-btn' onClick={this.props.startEditingCallback}>
             New Dashboard
           </span>
         </div>
@@ -773,12 +585,7 @@ class DashboardWithoutTheme extends React.Component {
       return (
         <div className='empty-dashboard-message-container'>
           Add a{' '}
-          <span
-            className='empty-dashboard-new-tile-btn'
-            onClick={() => {
-              this.addTile()
-            }}
-          >
+          <span className='empty-dashboard-new-tile-btn' onClick={this.addTile}>
             New Tile
           </span>{' '}
           to get started
@@ -838,13 +645,12 @@ class DashboardWithoutTheme extends React.Component {
             key={tile.key}
             dashboardRef={this.ref}
             authentication={this.props.authentication}
+            cancelQueriesOnUnmount={this.props.cancelQueriesOnUnmount}
             autoQLConfig={this.props.autoQLConfig}
             tile={{ ...tile, i: tile.key, maxH: 12, minH: 2, minW: 3 }}
             displayType={tile.displayType}
             secondDisplayType={tile.secondDisplayType}
             secondDisplayPercentage={tile.secondDisplayPercentage}
-            queryResponse={tile.queryResponse}
-            secondQueryResponse={tile.secondQueryResponse}
             isEditing={this.props.isEditing}
             isDragging={this.state.isDragging || this.state.isWindowResizing}
             isWindowResizing={this.state.isWindowResizing}
@@ -865,6 +671,7 @@ class DashboardWithoutTheme extends React.Component {
             tooltipID={this.TOOLTIP_ID}
             chartTooltipID={this.CHART_TOOLTIP_ID}
             source={this.SOURCE}
+            scope={this.props.scope}
           />
         ))}
       </ReactGridLayout>
@@ -873,6 +680,7 @@ class DashboardWithoutTheme extends React.Component {
 
   render = () => {
     const tiles = this.getMostRecentTiles()
+
     return (
       <ErrorBoundary>
         <Fragment>
@@ -883,8 +691,26 @@ class DashboardWithoutTheme extends React.Component {
           >
             {tiles.length ? this.renderTiles() : this.renderEmptyDashboardMessage()}
           </div>
-          {this.renderDrilldownModal()}
-          {this.renderReportProblemModal()}
+          <DrilldownModal
+            authentication={this.props.authentication}
+            autoQLConfig={this.props.autoQLConfig}
+            dataFormatting={this.props.dataFormatting}
+            isOpen={this.state.isDrilldownModalVisible}
+            onClose={this.closeDrilldownModal}
+            drilldownResponse={this.state.activeDrilldownResponse}
+            shouldRender={this.state.isDrilldownModalVisible && !this.state.isDragging && !this.state.isWindowResizing}
+            activeDrilldownChartElementKey={this.state.activeDrilldownChartElementKey}
+            isAnimating={this.state.isAnimatingModal}
+            tooltipID={this.TOOLTIP_ID}
+            chartTooltipID={this.CHART_TOOLTIP_ID}
+            showQueryInterpretation={this.props.isEditing}
+            isDrilldownRunning={this.state.isDrilldownRunning}
+            enableAjaxTableData={this.props.enableAjaxTableData}
+            onErrorCallback={this.props.onErrorCallback}
+            onSuccessCallback={this.props.onSuccessCallback}
+            activeDrilldownRef={this.activeDrilldownRef}
+            source={this.SOURCE}
+          />
           <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' delayShow={500} html />
           <Tooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} effect='solid' place='top' html />
         </Fragment>
@@ -894,4 +720,4 @@ class DashboardWithoutTheme extends React.Component {
 }
 
 const Dashboard = withTheme(DashboardWithoutTheme)
-export { Dashboard, executeDashboard, unExecuteDashboard }
+export { Dashboard }

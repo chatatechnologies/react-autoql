@@ -6,8 +6,6 @@ import {
   QueryOutput,
   QueryInput,
   Dashboard,
-  executeDashboard,
-  unExecuteDashboard,
   NotificationIcon,
   NotificationFeed,
   DataAlerts,
@@ -123,7 +121,7 @@ export default class App extends Component {
     enableCSVDownload: true,
     dashboardTitleColor: 'rgb(72, 105, 142)',
     clearOnClose: false,
-    height: 500,
+    height: '100vh',
     width: 550,
     title: 'Data Messenger',
     accentTextColor: '#ffffff',
@@ -1328,23 +1326,19 @@ export default class App extends Component {
                 {this.state.isEditing ? 'Cancel' : 'Edit'}
               </Button>
               <Button
-                onClick={() => executeDashboard(this.dashboardRef)}
+                onClick={() => this.dashboardRef?.executeDashboard()}
                 icon={<PlayCircleOutlined />}
                 style={{ marginLeft: '10px' }}
               >
                 Execute
               </Button>
               <Button
-                onClick={() => unExecuteDashboard(this.dashboardRef)}
+                onClick={() => this.dashboardRef?.unExecuteDashboard()}
                 icon={<PlayCircleOutlined />}
                 style={{ marginLeft: '10px' }}
               >
                 Un-Execute
               </Button>
-              <Button onClick={() => console.log(this.state.dashboardTiles)} style={{ marginLeft: '10px' }}>
-                Log Current Tile State
-              </Button>
-
               <br />
               {this.state.isEditing && (
                 <Button
