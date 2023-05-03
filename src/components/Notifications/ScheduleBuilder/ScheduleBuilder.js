@@ -121,42 +121,33 @@ export default class ScheduleBuilder extends React.Component {
 
   getInitialStateFromDataAlert = (props, state) => {
     const { dataAlert } = props
+
     try {
-      let resetPeriodSelectValue = dataAlert?.reset_period ?? this.DEFAULT_RESET_PERIOD_SELECT_VALUE
-      let intervalTimeSelectValue = this.DEFAULT_TIME_SELECT_VALUE
-      let weekDaySelectValue = this.DEFAULT_WEEKDAY_SELECT_VALUE
-      let monthDaySelectValue = this.DEFAULT_MONTH_DAY_SELECT_VALUE
-      let frequencyType = props.frequencyType ?? dataAlert?.notification_type
+      state.resetPeriodSelectValue = dataAlert?.reset_period ?? this.DEFAULT_RESET_PERIOD_SELECT_VALUE
+      state.frequencyType = props.frequencyType ?? dataAlert?.notification_type ?? this.DEFAULT_FREQUENCY_TYPE
+      state.checkFrequencySelectValue = dataAlert?.check_frequency ?? this.DEFAULT_CHECK_FREQUENCY_INDEX
+      state.timezone = dataAlert?.time_zone
+      state.timeRange = dataAlert?.reset_period ?? state.timeRange
 
-      if (frequencyType === SCHEDULED_TYPE) {
-        intervalTimeSelectValue =
-          getTimeObjFromTimeStamp(schedules?.[0]?.start_date, dataAlert?.time_zone) ?? this.DEFAULT_TIME_SELECT_VALUE
-
+      if (state.frequencyType === SCHEDULED_TYPE) {
         const schedules = dataAlert?.schedules
         const schedulePeriod = schedules?.[0]?.notification_period ?? this.DEFAULT_RESET_PERIOD_SELECT_VALUE
 
-        resetPeriodSelectValue = schedulePeriod
+        state.resetPeriodSelectValue = schedulePeriod
+        state.intervalTimeSelectValue =
+          getTimeObjFromTimeStamp(schedules?.[0]?.start_date, dataAlert?.time_zone) ?? this.DEFAULT_TIME_SELECT_VALUE
+
         if (schedulePeriod === 'MONTH_LAST_DAY') {
-          resetPeriodSelectValue = 'MONTH'
-          monthDaySelectValue = 'LAST'
+          state.resetPeriodSelectValue = 'MONTH'
+          state.monthDaySelectValue = 'LAST'
         } else if (schedulePeriod === 'MONTH') {
-          monthDaySelectValue = 'FIRST' // For now. Later we want to add month day numbers
+          state.monthDaySelectValue = 'FIRST' // For now. Later we want to add month day numbers
         } else if (schedulePeriod === 'WEEK' && dataAlert.schedules.length === 7) {
-          resetPeriodSelectValue = 'DAY'
+          state.resetPeriodSelectValue = 'DAY'
         } else if (schedulePeriod === 'WEEK') {
-          weekDaySelectValue = getWeekdayFromTimeStamp(schedules[0]?.start_date, dataAlert?.time_zone)
+          state.weekDaySelectValue = getWeekdayFromTimeStamp(schedules[0]?.start_date, dataAlert?.time_zone)
         }
       }
-
-      state.intervalTimeSelectValue = intervalTimeSelectValue ?? state.intervalTimeSelectValue
-      state.checkFrequencySelectValue = dataAlert?.check_frequency ?? this.DEFAULT_CHECK_FREQUENCY_INDEX
-      state.frequencyType = frequencyType ?? state.frequencyType
-      state.timezone = dataAlert?.time_zone
-      state.intervalTimeSelectValue = intervalTimeSelectValue ?? state.intervalTimeSelectValue
-      state.weekDaySelectValue = weekDaySelectValue ?? state.weekDaySelectValue
-      state.resetPeriodSelectValue = resetPeriodSelectValue ?? state.resetPeriodSelectValue
-      state.monthDaySelectValue = monthDaySelectValue ?? state.monthDaySelectValue
-      state.timeRange = dataAlert?.reset_period ?? state.timeRange
     } catch (error) {
       console.error(error)
     }

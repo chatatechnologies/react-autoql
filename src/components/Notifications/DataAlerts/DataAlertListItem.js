@@ -149,7 +149,11 @@ export default class DataAlertListItem extends React.Component {
     let cycle = '-'
 
     if (frequencyType === SCHEDULED_TYPE) {
-      cycle = this.getCycleFromResetPeriod(this.props.dataAlert?.schedules?.[0]?.notification_period)
+      if (this.props.dataAlert?.schedules?.length === 7) {
+        cycle = 'Daily'
+      } else {
+        cycle = this.getCycleFromResetPeriod(this.props.dataAlert?.schedules?.[0]?.notification_period)
+      }
     } else if (frequencyType === PERIODIC_TYPE && this.props.dataAlert?.reset_period) {
       cycle = this.getCycleFromResetPeriod(this.props.dataAlert.reset_period)
     }
