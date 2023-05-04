@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Popover } from 'react-tiny-popover'
 import { v4 as uuid } from 'uuid'
-
+import { isMobile } from 'react-device-detect'
 import { format } from 'sql-formatter'
 import { Icon } from '../Icon'
 import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
@@ -506,7 +506,7 @@ export class OptionsToolbar extends React.Component {
     return (
       <ErrorBoundary>
         <div
-          className={`react-autoql-toolbar options-toolbar
+          className={`${isMobile ? 'react-autoql-toolbar-mobile' : 'react-autoql-toolbar'} options-toolbar
         ${this.state.activeMenu ? 'active' : ''}
         ${this.props.className || ''}`}
           data-test='autoql-options-toolbar'
@@ -638,8 +638,9 @@ export class OptionsToolbar extends React.Component {
         showSaveAsCSVButton: isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
         showDeleteButton: props.enableDeleteBtn,
         showReportProblemButton: autoQLConfig.enableReportProblem && !!response?.data?.data?.query_id,
-        showCreateNotificationIcon:
-          isDataResponse && autoQLConfig.enableNotifications && !this.isDrilldownResponse(props),
+        showCreateNotificationIcon: isMobile
+          ? false
+          : isDataResponse && autoQLConfig.enableNotifications && !this.isDrilldownResponse(props),
         showRefreshDataButton: false,
       }
 
