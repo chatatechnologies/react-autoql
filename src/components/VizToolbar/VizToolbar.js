@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import _isEqual from 'lodash.isequal'
-
+import { isMobile } from 'react-device-detect'
 import { Icon } from '../Icon'
 import { rebuildTooltips, Tooltip } from '../Tooltip'
 
@@ -119,9 +119,9 @@ class VizToolbar extends React.Component {
       return (
         <ErrorBoundary>
           <div
-            className={`${this.props.className || ''} react-autoql-toolbar viz-toolbar ${
-              this.props.vertical ? 'vertical' : ''
-            }`}
+            className={`${this.props.className || ''} ${
+              isMobile ? 'react-autoql-toolbar-mobile' : 'react-autoql-toolbar'
+            } viz-toolbar ${this.props.vertical ? 'vertical' : ''}`}
             data-test='viz-toolbar'
           >
             {this.createVisButton('table', 'Table', <Icon type='table' />)}
