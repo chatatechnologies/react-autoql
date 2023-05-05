@@ -224,17 +224,28 @@ export default class RuleSimple extends React.Component {
   }
 
   isComplete = () => {
-    if (
-      this.state.secondTermType === QUERY_TERM_TYPE &&
-      (this.state.secondQueryInvalid || this.state.secondQueryValidating || !this.state.secondQueryValidated)
-    ) {
+    const firstTermComplete = !!this.state.inputValue?.length
+    if (!firstTermComplete) {
       return false
     }
 
-    const firstTermComplete = !!this.state.inputValue?.length
-    const secondTermComplete = isNumber(this.state.secondInputValue) || !!this.state.secondInputValue?.length
+    if (!this.allowOperators()) {
+      return true
+    }
 
-    return firstTermComplete && secondTermComplete
+    const isQueryInvalidOrLoading =
+      this.state.secondTermType === QUERY_TERM_TYPE &&
+      (this.state.secondQueryInvalid || this.state.secondQueryValidating || !this.state.secondQueryValidated)
+    if (isQueryInvalidOrLoading) {
+      return false
+    }
+
+    const secondTermComplete = isNumber(this.state.secondInputValue) || !!this.state.secondInputValue?.length
+    if (!secondTermComplete) {
+      return false
+    }
+
+    return true
   }
 
   isValid = () => {

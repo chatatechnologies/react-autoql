@@ -179,4 +179,38 @@ export const MONTH_DAY_SELECT_OPTIONS = {
   ),
 }
 
-export const EVALUATION_FREQUENCY_OPTIONS = [1, 2, 3, 5, 10, 30, 60]
+export const EVALUATION_FREQUENCY_OPTIONS = {
+  1: {
+    value: 1,
+    label: '1 min',
+  },
+  2: {
+    value: 2,
+    label: '2 mins',
+  },
+  3: {
+    value: 3,
+    label: '3 mins',
+  },
+  5: {
+    value: 5,
+    label: '5 mins',
+    listLabel: (
+      <span>
+        5 mins <em>(Recommended)</em>
+      </span>
+    ),
+  },
+  10: {
+    value: 10,
+    label: '10 mins',
+  },
+  30: {
+    value: 30,
+    label: '30 mins',
+  },
+  60: {
+    value: 60,
+    label: '60 mins',
+  },
+}

@@ -38,7 +38,7 @@ export default class ScheduleBuilder extends React.Component {
     this.COMPONENT_KEY = uuid()
     this.SUPPORTED_CONDITION_TYPE =
       getSupportedConditionTypes(props.dataAlert?.expression, props.queryResponse)?.[0] ?? EXISTS_TYPE
-    this.DEFAULT_EVALUATION_FREQUENCY_INDEX = 3 // index 3 -> "5 mins"
+    this.DEFAULT_EVALUATION_FREQUENCY = 5
     this.DEFAULT_RESET_PERIOD_SELECT_VALUE = 'MONTH'
     this.DEFAULT_WEEKDAY_SELECT_VALUE = 'Friday'
     this.DEFAULT_MONTH_DAY_SELECT_VALUE = 'LAST'
@@ -56,7 +56,7 @@ export default class ScheduleBuilder extends React.Component {
     const timeRange = getTimeRangeFromRT(props.queryResponse)
 
     const state = {
-      evaluationFrequencySelectValue: this.DEFAULT_EVALUATION_FREQUENCY_INDEX,
+      evaluationFrequencySelectValue: this.DEFAULT_EVALUATION_FREQUENCY,
       frequencyType: this.DEFAULT_FREQUENCY_TYPE,
       intervalTimeSelectValue: this.DEFAULT_TIME_SELECT_VALUE,
       weekDaySelectValue: this.DEFAULT_WEEKDAY_SELECT_VALUE,
@@ -153,7 +153,7 @@ export default class ScheduleBuilder extends React.Component {
     try {
       state.resetPeriodSelectValue = dataAlert?.reset_period ?? this.DEFAULT_RESET_PERIOD_SELECT_VALUE
       state.frequencyType = props.frequencyType ?? dataAlert?.notification_type ?? this.DEFAULT_FREQUENCY_TYPE
-      state.evaluationFrequencySelectValue = dataAlert?.evaluation_frequency ?? this.DEFAULT_EVALUATION_FREQUENCY_INDEX
+      state.evaluationFrequencySelectValue = dataAlert?.evaluation_frequency
       state.timezone = dataAlert?.time_zone
       state.timeRange = dataAlert?.reset_period ?? state.timeRange
 
@@ -436,20 +436,12 @@ export default class ScheduleBuilder extends React.Component {
         tooltip = `How often should we run the query to check if the conditions are met?`
       }
 
-      const options = EVALUATION_FREQUENCY_OPTIONS.map((mins, i) => {
-        let label = `${EVALUATION_FREQUENCY_OPTIONS[i]} min${mins > 1 ? 's' : ''}`
-        let listLabel = label
-        if (mins === 5) {
-          listLabel = (
-            <span>
-              {label} <em>(Recommended)</em>
-            </span>
-          )
-        }
+      const options = Object.keys(EVALUATION_FREQUENCY_OPTIONS).map((value) => {
+        const freqObj = EVALUATION_FREQUENCY_OPTIONS[value]
         return {
-          value: i,
-          label: <span>{label}</span>,
-          listLabel: <span>{listLabel}</span>,
+          value: freqObj?.value,
+          label: freqObj?.label,
+          listLabel: freqObj?.listLabel,
         }
       })
 
