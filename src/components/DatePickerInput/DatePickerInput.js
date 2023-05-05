@@ -27,7 +27,7 @@ export default class DatePickerInput extends React.Component {
 
   onDateSelection = (date) => {
     this.setState({ date, isPopoverOpen: false }, () => {
-      const formatted = dayjs(date).format('MMM DD, YYYY')
+      const formatted = dayjs(date).format('MMM D, YYYY')
       const dateUTC = dayjs.utc(formatted).utc()
       this.props.onChange({ dateLocal: date, dateUTC, formatted })
     })

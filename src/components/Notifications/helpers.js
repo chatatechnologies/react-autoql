@@ -50,10 +50,10 @@ export const formatResetDate = (dataAlert, short) => {
   const dateDayJS = dayjs(dataAlert.reset_date).tz(dataAlert.time_zone)
 
   if (short) {
-    return `${dateDayJS.format('MMM DD, YYYY h:mma')}`
+    return `${dateDayJS.format('ll h:mma')}`
   }
 
-  return `${dateDayJS.format('MMMM DD, YYYY [at] h:mma')} (${dataAlert.time_zone})`
+  return `${dateDayJS.format('ll [at] h:mma')} (${dataAlert.time_zone})`
 }
 
 export const formatNextScheduleDate = (schedules, short) => {
@@ -66,10 +66,20 @@ export const formatNextScheduleDate = (schedules, short) => {
   const dateDayJS = dayjs(date).tz(timezone)
 
   if (short) {
-    return `${dateDayJS.format('MMM DD, YYYY h:mma')}`
+    const today = dayjs().tz(timezone).startOf('day')
+    const daysAway = dateDayJS.startOf('day').diff(today, 'day')
+
+    let dayFormatted = `${dateDayJS.format('ll')}`
+    if (daysAway === 0) {
+      dayFormatted = 'Today at'
+    } else if (daysAway === 1) {
+      dayFormatted = 'Tomorrow at'
+    }
+
+    return `${dayFormatted} ${dateDayJS.format('h:mma')}`
   }
 
-  return `${dateDayJS.format('MMM DD, YYYY [at] h:mma')} (${timezone})`
+  return `${dateDayJS.format('ll [at] h:mma')} (${timezone})`
 }
 
 export const getTimeObjFromTimeStamp = (timestamp, timezone) => {
@@ -107,14 +117,19 @@ export const getDayLocalStartDate = ({ timeObj, timezone, daysToAdd = 0 }) => {
   try {
     const now = dayjs().tz(timezone)
     let nextCycle = now.startOf('minute').set('hour', timeObj.hour24).set('minute', timeObj.minute)
+
     if (nextCycle.valueOf() < now.valueOf()) {
-      nextCycle = now.add(1, 'day').startOf('minute')
+      nextCycle = nextCycle.add(1, 'day')
     }
+
+    console.log('setting next cycle as', { nextCycle })
 
     // const tomorrow = today.add(1 + daysToAdd, 'day').startOf('minute')
     // const tomorrowWithTime = nextCycle.set('hour', timeObj.hour24).set('minute', timeObj.minute)
-    const nextCycleISO = nextCycle.add(daysToAdd, 'days').format('YYYY-MM-DD[T]HH:mm:00')
-    return nextCycleISO
+    console.log(`adding ${daysToAdd} days to nextCycle`)
+    const nextCycleFormatted = nextCycle.add(daysToAdd, 'days').format('YYYY-MM-DD[T]HH:mm:00')
+    console.log({ nextCycleFormatted })
+    return nextCycleFormatted
   } catch (error) {
     console.error(error)
     return
