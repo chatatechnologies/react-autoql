@@ -553,8 +553,8 @@ class DataAlertModal extends React.Component {
   hasFilters = () => {
     return (
       !!this.props.filters?.length ||
-      !!this.props.queryResponse?.data?.data?.fe_req?.session_filter_locks ||
-      !!this.props.queryResponse?.data?.data?.fe_req?.persistent_filter_locks ||
+      !!this.props.queryResponse?.data?.data?.fe_req?.session_filter_locks?.length ||
+      !!this.props.queryResponse?.data?.data?.fe_req?.persistent_filter_locks?.length ||
       !!this.props.currentDataAlert?.expression?.[0]?.session_filter_locks?.length ||
       !!this.props.currentDataAlert?.expression?.[0]?.filters?.length
     )
