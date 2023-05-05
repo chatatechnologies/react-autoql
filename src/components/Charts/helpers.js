@@ -4,7 +4,7 @@ import _isEqual from 'lodash.isequal'
 import dayjs from '../../js/dayjsWithPlugins'
 import { scaleLinear, scaleBand, scaleTime } from 'd3-scale'
 import { select } from 'd3-selection'
-
+import { isMobile } from 'react-device-detect'
 import { deepEqual, formatChartLabel, formatElement, getDayJSObj } from '../../js/Util'
 import { dataFormattingType } from '../../props/types'
 import { dataFormattingDefault } from '../../props/defaults'
@@ -423,6 +423,9 @@ export const getMinAndMaxValues = (data, numberColumnIndices, isScaled, sum, str
 }
 
 export const getLegendLocation = (seriesArray, displayType) => {
+  if (isMobile) {
+    return 'bottom'
+  }
   if (displayType === 'column_line') {
     return 'right'
   }

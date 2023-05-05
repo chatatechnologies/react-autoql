@@ -146,16 +146,20 @@ export default class QueryValidationMessage extends React.Component {
 
   initializeQueryValidationOptions = (responseBody) => {
     const { replacements, query } = responseBody.data
-    if (!replacements || !query) {
+    const sortedReplacements = replacements.sort((a, b) => {
+      return a.start - b.start
+    })
+
+    if (!sortedReplacements || !query) {
       return []
     }
 
     // Gets list of suggestions with value labels for each "dropdown"
     // and also includes the original query at the end of this list
-    this.suggestionLists = this.getSuggestionLists(query, replacements)
+    this.suggestionLists = this.getSuggestionLists(query, sortedReplacements)
 
     // Gets list of text from the query that are not part of the suggestions
-    this.plainTextList = this.getPlainTextList(query, replacements)
+    this.plainTextList = this.getPlainTextList(query, sortedReplacements)
 
     // Set initial validation selection values based on props
     this.setInitialSelections()
