@@ -255,7 +255,7 @@ export const runQueryValidation = ({ text, domain, apiKey, token } = {}) => {
 }
 
 export const runQuery = (params) => {
-  if (params?.enableQueryValidation && !params?.skipQueryValidation) {
+  if (params?.enableQueryValidation && !params.userSelection?.length && !params?.skipQueryValidation) {
     return runQueryValidation({
       text: params?.query,
       domain: params?.domain,
