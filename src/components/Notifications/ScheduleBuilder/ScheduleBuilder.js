@@ -54,6 +54,7 @@ export default class ScheduleBuilder extends React.Component {
     }
 
     this.timeRange = getTimeRangeFromRT(props.queryResponse)
+
     if (props.dataAlert?.reset_period !== undefined) {
       this.timeRange = props.dataAlert.reset_period
     }
@@ -64,7 +65,7 @@ export default class ScheduleBuilder extends React.Component {
       intervalTimeSelectValue: this.DEFAULT_TIME_SELECT_VALUE,
       weekDaySelectValue: this.DEFAULT_WEEKDAY_SELECT_VALUE,
       monthOfYearSelectValue: this.DEFAULT_MONTH_OF_YEAR_SELECT_VALUE,
-      resetPeriodSelectValue: this.DEFAULT_RESET_PERIOD_SELECT_VALUE,
+      resetPeriodSelectValue: this.timeRange ?? this.DEFAULT_RESET_PERIOD_SELECT_VALUE,
       monthDaySelectValue: this.DEFAULT_MONTH_DAY_SELECT_VALUE,
       timezone: undefined,
     }
