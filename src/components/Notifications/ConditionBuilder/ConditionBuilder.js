@@ -118,7 +118,7 @@ export default class ConditionBuilder extends React.Component {
     })
   }
 
-  onRuleUpdate = (id, isComplete) => {
+  onRuleUpdate = (id, isComplete, isValid) => {
     this.props.onChange(this.isComplete(), this.isValid(), this.getJSON())
   }
 

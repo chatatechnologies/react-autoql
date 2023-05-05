@@ -134,6 +134,7 @@ class DataAlertModal extends React.Component {
       completedSections: [],
       expressionKey: uuid(),
       isMounted: false,
+      isSettingsFormComplete: true,
     }
 
     if (props.currentDataAlert) {
@@ -310,8 +311,7 @@ class DataAlertModal extends React.Component {
 
   isFinishBtnDisabled = () => {
     if (!!this.props.currentDataAlert?.id) {
-      // To do: add more error handling here
-      return false
+      return !this.state.isSettingsFormComplete
     }
 
     const lastStep = this.steps.length - 1
@@ -497,7 +497,7 @@ class DataAlertModal extends React.Component {
           ref={(r) => (this.scheduleBuilderRef = r)}
           key={`schedule-${this.COMPONENT_KEY}`}
           dataAlert={this.props.currentDataAlert}
-          onCompletedChange={(isComplete) => this.setState({ isFrequencySectionReady: isComplete })}
+          onCompleteChange={(isComplete) => this.setState({ isFrequencySectionReady: isComplete })}
           onErrorCallback={this.props.onErrorCallback}
           conditionType={this.state.selectedConditionType}
           queryResponse={this.props.queryResponse}
@@ -564,6 +564,10 @@ class DataAlertModal extends React.Component {
     return this.SUPPORTED_CONDITION_TYPES?.includes(COMPARE_TYPE)
   }
 
+  onSettingsCompleteChange = (isSettingsFormComplete) => {
+    this.setState({ isSettingsFormComplete })
+  }
+
   renderContent = () => {
     if (!this.props.isVisible) {
       return null
@@ -578,9 +582,7 @@ class DataAlertModal extends React.Component {
           enableQueryValidation={this.props.enableQueryValidation}
           supportedConditionTypes={this.SUPPORTED_CONDITION_TYPES}
           onErrorCallback={this.props.onErrorCallback}
-          conditionsEditable={this.conditionsEditable()}
-          onExpressionChange={this.onExpressionChange}
-          expression={this.state.expressionJSON}
+          onCompleteChange={this.onSettingsCompleteChange}
           tooltipID={this.TOOLTIP_ID}
         />
       )

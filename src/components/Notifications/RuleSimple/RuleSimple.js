@@ -111,7 +111,11 @@ export default class RuleSimple extends React.Component {
       this.props.onUpdate(this.props.ruleId, this.isComplete(), this.isValid())
     }
 
-    if (this.state.secondInputValue && this.state.secondInputValue !== prevState.secondInputValue) {
+    if (
+      this.state.secondTermType === QUERY_TERM_TYPE &&
+      this.state.secondInputValue &&
+      this.state.secondInputValue !== prevState.secondInputValue
+    ) {
       this.validateSecondQuery()
     }
   }
@@ -393,6 +397,10 @@ export default class RuleSimple extends React.Component {
   }
 
   runSecondValidation = () => {
+    if (!this.state.secondInputValue) {
+      return
+    }
+
     this.axiosSource = axios.CancelToken?.source()
 
     runQueryOnly({
@@ -402,6 +410,7 @@ export default class RuleSimple extends React.Component {
       source: 'data_alert_validation',
       pageSize: 2, // No need to fetch more than 2 rows to determine validity
       cancelToken: this.axiosSource.token,
+      allowSuggestions: false,
     })
       .then((response) => {
         this.onValidationResponse(response)

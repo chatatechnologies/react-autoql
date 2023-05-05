@@ -9,7 +9,12 @@ import { TimezoneSelector } from '../../TimezoneSelector'
 import { getTimeRangeFromRT } from '../../../js/reverseTranslationHelpers'
 import { TimePicker } from '../../TimePicker'
 
-import { getTimeObjFromTimeStamp, getWeekdayFromTimeStamp, showEvaluationFrequencySetting } from '../helpers'
+import {
+  getSupportedConditionTypes,
+  getTimeObjFromTimeStamp,
+  getWeekdayFromTimeStamp,
+  showEvaluationFrequencySetting,
+} from '../helpers'
 import { MONTH_NAMES, WEEKDAY_NAMES_MON } from '../../../js/Constants'
 import {
   CONTINUOUS_TYPE,
@@ -31,6 +36,8 @@ export default class ScheduleBuilder extends React.Component {
     super(props)
 
     this.COMPONENT_KEY = uuid()
+    this.SUPPORTED_CONDITION_TYPE =
+      getSupportedConditionTypes(props.dataAlert?.expression, props.queryResponse)?.[0] ?? EXISTS_TYPE
     this.DEFAULT_EVALUATION_FREQUENCY_INDEX = 3 // index 3 -> "5 mins"
     this.DEFAULT_RESET_PERIOD_SELECT_VALUE = 'MONTH'
     this.DEFAULT_WEEKDAY_SELECT_VALUE = 'Friday'
@@ -72,7 +79,7 @@ export default class ScheduleBuilder extends React.Component {
     showTypeSelector: PropTypes.bool,
     dataAlert: PropTypes.shape({}),
     onChange: PropTypes.func,
-    onCompletedChange: PropTypes.func,
+    onCompleteChange: PropTypes.func,
     onErrorCallback: PropTypes.func,
   }
 
@@ -81,17 +88,20 @@ export default class ScheduleBuilder extends React.Component {
     showTypeSelector: true,
     dataAlert: undefined,
     onChange: () => {},
-    onCompletedChange: () => {},
+    onCompleteChange: () => {},
     onErrorCallback: () => {},
   }
 
   componentDidMount = () => {
-    this.props.onCompletedChange(this.isComplete())
+    this._isMounted = true
+    if (this.isCompleteChanged()) {
+      this.props.onCompleteChange(this.isFormComplete)
+    }
   }
 
-  componentDidUpdate = (prevProps, prevState) => {
-    if (this.isComplete() !== this.isComplete(prevState)) {
-      this.props.onCompletedChange(this.isComplete())
+  componentDidUpdate = (prevProps) => {
+    if (this.isCompleteChanged()) {
+      this.props.onCompleteChange(this.isFormComplete)
     }
 
     if (this.props.queryResponse?.data?.data?.text !== prevProps.queryResponse?.data?.data?.text) {
@@ -107,16 +117,34 @@ export default class ScheduleBuilder extends React.Component {
     }
   }
 
-  isComplete = (prevState) => {
-    const state = prevState ?? this.state
+  componentWillUnmount = () => {
+    this._isMounted = false
+  }
 
-    if (this.shouldRenderResetPeriodSelector(prevState) && !state.resetPeriodSelectValue) {
+  isComplete = () => {
+    if (!this._isMounted) {
       return false
-    } else if (this.shouldRenderEvaluationFrequencySelector(prevState) && !state.evaluationFrequencySelectValue) {
+    }
+
+    if (this.shouldRenderResetPeriodSelector() && !this.state.resetPeriodSelectValue) {
+      return false
+    } else if (this.shouldRenderEvaluationFrequencySelector() && !this.state.evaluationFrequencySelectValue) {
+      return false
+    } else if (this.timePickerRef?._isMounted && !this.timePickerRef.isValid()) {
       return false
     }
 
     return true
+  }
+
+  isCompleteChanged = () => {
+    const isFormComplete = this.isComplete()
+    if (isFormComplete !== this.isFormComplete) {
+      this.isFormComplete = isFormComplete
+      return true
+    }
+
+    return false
   }
 
   getInitialStateFromDataAlert = (props, state) => {
@@ -230,9 +258,8 @@ export default class ScheduleBuilder extends React.Component {
     return this.state.frequencyType
   }
 
-  shouldRenderResetPeriodSelector = (prevState) => {
-    const state = prevState ?? this.state
-    return this.props.conditionType === COMPARE_TYPE && !state.timeRange // Keep this in case we want to revert
+  shouldRenderResetPeriodSelector = (p) => {
+    return this.SUPPORTED_CONDITION_TYPE === COMPARE_TYPE && !this.state.timeRange // Keep this in case we want to revert
   }
 
   renderQuery = () => {
@@ -370,8 +397,11 @@ export default class ScheduleBuilder extends React.Component {
         </div>
         <div className='react-autoql-data-alert-frequency-option'>
           <TimePicker
+            ref={(r) => (this.timePickerRef = r)}
             value={this.state.intervalTimeSelectValue?.value}
-            onChange={(timeObj) => this.setState({ intervalTimeSelectValue: timeObj })}
+            onChange={(timeObj) => {
+              this.setState({ intervalTimeSelectValue: timeObj })
+            }}
           />
         </div>
       </>
@@ -394,16 +424,15 @@ export default class ScheduleBuilder extends React.Component {
     )
   }
 
-  shouldRenderEvaluationFrequencySelector = (prevState) => {
-    const state = prevState ?? this.state
-    return showEvaluationFrequencySetting(state?.frequencyType)
+  shouldRenderEvaluationFrequencySelector = () => {
+    return showEvaluationFrequencySetting(this.state?.frequencyType)
   }
 
   evaluationFrequencySelector = () => {
     if (this.shouldRenderEvaluationFrequencySelector()) {
       let tooltip =
         'How often should we run the query to check for new data? (You will only be notified if there is new data)'
-      if (this.props.conditionType === COMPARE_TYPE) {
+      if (this.SUPPORTED_CONDITION_TYPE === COMPARE_TYPE) {
         tooltip = `How often should we run the query to check if the conditions are met?`
       }
 
@@ -444,7 +473,7 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   resetPeriodSelector = () => {
-    if (this.props.conditionType === COMPARE_TYPE && this.state.frequencyType !== SCHEDULED_TYPE) {
+    if (this.SUPPORTED_CONDITION_TYPE === COMPARE_TYPE && this.state.frequencyType !== SCHEDULED_TYPE) {
       return (
         <div className='react-autoql-data-alert-frequency-option'>
           <Select
@@ -526,7 +555,7 @@ export default class ScheduleBuilder extends React.Component {
     return (
       <div className='frequency-type-container'>
         <span>
-          {this.props.conditionType === EXISTS_TYPE ? (
+          {this.SUPPORTED_CONDITION_TYPE === EXISTS_TYPE ? (
             <span>If new data is detected for {queryText},&nbsp;&nbsp;you'll be notified</span>
           ) : (
             <span>If {this.getConditionStatement()},&nbsp;&nbsp;you'll be notified</span>

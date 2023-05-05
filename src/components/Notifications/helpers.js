@@ -122,13 +122,7 @@ export const getDayLocalStartDate = ({ timeObj, timezone, daysToAdd = 0 }) => {
       nextCycle = nextCycle.add(1, 'day')
     }
 
-    console.log('setting next cycle as', { nextCycle })
-
-    // const tomorrow = today.add(1 + daysToAdd, 'day').startOf('minute')
-    // const tomorrowWithTime = nextCycle.set('hour', timeObj.hour24).set('minute', timeObj.minute)
-    console.log(`adding ${daysToAdd} days to nextCycle`)
     const nextCycleFormatted = nextCycle.add(daysToAdd, 'days').format('YYYY-MM-DD[T]HH:mm:00')
-    console.log({ nextCycleFormatted })
     return nextCycleFormatted
   } catch (error) {
     console.error(error)

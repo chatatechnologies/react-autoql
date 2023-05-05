@@ -73,6 +73,7 @@ export default class DataAlertSettings extends React.Component {
     super(props)
 
     this.COMPONENT_KEY = uuid()
+    this.isFormComplete = true
 
     this.state = this.getInitialState(props)
   }
@@ -80,24 +81,24 @@ export default class DataAlertSettings extends React.Component {
   static propTypes = {
     authentication: authenticationType,
     currentDataAlert: PropTypes.shape({}),
-    enableQueryValidation: PropTypes.bool,
-    supportedConditionTypes: PropTypes.arrayOf(PropTypes.string),
     onErrorCallback: PropTypes.func,
     onExpressionChange: PropTypes.func,
-    expression: PropTypes.oneOfType([PropTypes.shape({}), PropTypes.array]), // This is the expression of the existing notification if you are editing one. I should change the name of this at some point
+    onCompleteChange: PropTypes.func,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
     currentDataAlert: undefined,
-    enableQueryValidation: true,
-    supportedConditionTypes: [],
     onErrorCallback: () => {},
     onExpressionChange: () => {},
-    expression: undefined,
+    onCompleteChange: () => {},
   }
 
-  componentDidUpdate = (prevProps, prevState) => {}
+  componentDidUpdate = (prevProps, prevState) => {
+    if (this.isCompleteChanged()) {
+      this.props.onCompleteChange(this.isFormComplete)
+    }
+  }
 
   getInitialState = (initialProps) => {
     const props = initialProps ?? this.props
@@ -116,30 +117,36 @@ export default class DataAlertSettings extends React.Component {
       titleInput: currentDataAlert.title ?? '',
       messageInput: currentDataAlert.message ?? '',
       notificationType,
-      resetPeriodSelectValue: currentDataAlert?.reset_period,
-      evaluationFrequencySelectValue: currentDataAlert?.reset_period,
+      resetPeriodSelectValue: currentDataAlert.reset_period,
+      evaluationFrequencySelectValue: currentDataAlert.reset_period,
       isConfirmDeleteModalVisible: false,
       expressionKey: uuid(),
-      filters: currentDataAlert?.filters,
+      filters: currentDataAlert.filters,
+      expression: currentDataAlert.expression,
     }
 
     return state
   }
 
-  getData = () => {
-    let scheduleData = {}
-    if (this.scheduleBuilderRef) {
-      scheduleData = this.scheduleBuilderRef.getData()
+  isCompleteChanged = () => {
+    const isFormComplete = this.isComplete()
+    if (isFormComplete !== this.isFormComplete) {
+      this.isFormComplete = isFormComplete
+      return true
     }
 
-    const expression = _cloneDeep(this.props.expression)
+    return false
+  }
+
+  getData = () => {
+    const scheduleData = this.scheduleBuilderRef?.getData() ?? {}
 
     return {
       id: this.props.currentDataAlert?.id,
       data_return_query: this.props.currentDataAlert?.data_return_query,
       title: this.state.titleInput,
       message: this.state.messageInput,
-      expression,
+      expression: _cloneDeep(this.state.expression),
       notification_type: this.state.notificationType,
       reset_period: this.state.resetPeriodSelectValue,
       time_zone: scheduleData.timezone,
@@ -150,6 +157,14 @@ export default class DataAlertSettings extends React.Component {
 
   initializeFields = (props) => {
     this.setState(this.getInitialState(props))
+  }
+
+  isComplete = () => {
+    return this.state.isConditionSectionComplete && this.state.isScheduleSectionComplete && !!this.state.titleInput
+  }
+
+  onExpressionChange = (isConditionSectionComplete, isValid, expression) => {
+    this.setState({ expression, isConditionSectionComplete })
   }
 
   AppearanceSettings = () => {
@@ -199,12 +214,12 @@ export default class DataAlertSettings extends React.Component {
       <ScheduleBuilder
         ref={(r) => (this.scheduleBuilderRef = r)}
         key={`data-alert-settings-schedule-builder-${this.state.notificationType}`}
-        conditionType={this.props.supportedConditionTypes?.[0] ?? EXISTS_TYPE}
         tooltipID={this.props.tooltipID}
         dataAlert={this.props.currentDataAlert}
         showTypeSelector={false}
         onErrorCallback={this.props.onErrorCallback}
         frequencyType={this.state.notificationType}
+        onCompleteChange={(isScheduleSectionComplete) => this.setState({ isScheduleSectionComplete })}
       />
     )
   }
@@ -215,14 +230,18 @@ export default class DataAlertSettings extends React.Component {
         authentication={this.props.authentication}
         ref={(r) => (this.expressionRef = r)}
         key={`expression-${this.state.expressionKey}`}
-        onChange={this.props.onExpressionChange}
-        expression={this.props.expression}
+        onChange={this.onExpressionChange}
+        expression={this.state.expression}
         tooltipID={this.props.tooltipID}
       />
     )
   }
 
   render = () => {
+    if (!this.props.currentDataAlert) {
+      return null
+    }
+
     return (
       <ErrorBoundary>
         <Settings>

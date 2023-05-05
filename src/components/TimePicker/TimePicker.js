@@ -35,15 +35,29 @@ export default class DateRangePicker extends React.Component {
     interval: DEFAULT_INTERVAL,
   }
 
+  componentDidMount = () => {
+    this._isMounted = true
+  }
+
   componentDidUpdate = (prevProps) => {
     if (this.props.interval !== prevProps.interval) {
       this.setState({ optionArray: this.getOptionArray() })
     }
   }
 
+  componentWillUnmount = () => {
+    this._isMounted = false
+  }
+
   onChange = (value) => {
     const timeObject = this.state.optionArray.find((option) => option.value === value)
     this.props.onChange(timeObject)
+  }
+
+  isValid = () => {
+    const valueExists = !!this.props.value
+    const valueExistsInOptionsArray = !!this.state.optionArray.find((option) => option.value === this.props.value)
+    return valueExists && valueExistsInOptionsArray
   }
 
   getOptionArray = () => {

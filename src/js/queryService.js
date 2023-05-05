@@ -149,6 +149,7 @@ export const runQueryOnly = (params = {}) => {
     orders,
     tableFilters,
     pageSize = DEFAULT_DATA_PAGE_SIZE,
+    allowSuggestions = true,
     cancelToken,
     scope = 'null',
   } = params
@@ -204,31 +205,28 @@ export const runQueryOnly = (params = {}) => {
     })
     .catch((error) => {
       if (error?.message === responseErrors.CANCELLED) {
-        return Promise.reject({
-          data: { message: responseErrors.CANCELLED },
-        })
+        return Promise.reject({ data: { message: responseErrors.CANCELLED } })
       }
 
       console.error(error)
+
       if (error?.message === 'Parse error') {
         return Promise.reject({ error: 'Parse error' })
       }
+
       if (error?.response === 401 || !error?.response?.data) {
         return Promise.reject({ error: 'Unauthenticated' })
       }
+
       const referenceId = error?.response?.data?.reference_id
       const isSubquery = tableFilters?.length || orders?.length
-      if (!isSubquery && (referenceId === '1.1.430' || referenceId === '1.1.431' || isError500Type(referenceId))) {
+      const needsSuggestions = referenceId === '1.1.430' || referenceId === '1.1.431' || isError500Type(referenceId)
+
+      if (needsSuggestions && allowSuggestions && !isSubquery) {
         const queryId = error?.response?.data?.data?.query_id
-        return fetchSuggestions({
-          query,
-          queryId,
-          domain,
-          apiKey,
-          token,
-          cancelToken,
-        })
+        return fetchSuggestions({ query, queryId, domain, apiKey, token, cancelToken })
       }
+
       return Promise.reject(_get(error, 'response'))
     })
 }
