@@ -160,7 +160,7 @@ export const RESET_PERIOD_OPTIONS = {
   NONE: {
     displayName: (
       <span>
-        <strong>Every time</strong> the conditions are met
+        <strong>Every time</strong> new data is detected
       </span>
     ),
   },

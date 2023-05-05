@@ -117,7 +117,6 @@ export default class DataAlertSettings extends React.Component {
       titleInput: currentDataAlert.title ?? '',
       messageInput: currentDataAlert.message ?? '',
       notificationType,
-      resetPeriodSelectValue: currentDataAlert.reset_period,
       evaluationFrequencySelectValue: currentDataAlert.reset_period,
       isConfirmDeleteModalVisible: false,
       expressionKey: uuid(),
@@ -141,14 +140,19 @@ export default class DataAlertSettings extends React.Component {
   getData = () => {
     const scheduleData = this.scheduleBuilderRef?.getData() ?? {}
 
+    let notificationType = this.state.notificationType
+    if (scheduleData?.resetPeriod && notificationType === CONTINUOUS_TYPE) {
+      notificationType = PERIODIC_TYPE
+    }
+
     return {
       id: this.props.currentDataAlert?.id,
       data_return_query: this.props.currentDataAlert?.data_return_query,
       title: this.state.titleInput,
       message: this.state.messageInput,
       expression: _cloneDeep(this.state.expression),
-      notification_type: this.state.notificationType,
-      reset_period: this.state.resetPeriodSelectValue,
+      notification_type: notificationType,
+      reset_period: scheduleData.resetPeriod,
       time_zone: scheduleData.timezone,
       schedules: scheduleData.schedules,
       evaluation_frequency: scheduleData.evaluationFrequency,
