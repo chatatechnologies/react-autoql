@@ -128,6 +128,10 @@ export default class RuleSimple extends React.Component {
 
   getConditionStatement = (tense, useRT, sentenceCase = false) => {
     let queryText = this.getFormattedQueryText()?.toLowerCase()
+
+    // Todo: add list of filters to query text similar to RT
+    console.log('filters:', this.getFilters())
+
     if (useRT) {
       queryText = (
         <ReverseTranslation reverseTranslation={this.props.queryResponse?.data?.data?.parsed_interpretation} textOnly />
