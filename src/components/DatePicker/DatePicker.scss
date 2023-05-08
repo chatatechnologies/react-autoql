@@ -1,100 +1,18 @@
-.react-autoql-date-picker {
-  .rdrCalendarWrapper,
-  .rdrDateRangeWrapper,
-  .react-autoql-month-range-picker {
-    background: var(--react-autoql-background-color-secondary);
-    color: var(--react-autoql-text-color-primary);
+.react-autoql-date-picker.react-autoql-date-picker-single {
+  display: flex;
 
-    .rdrDateDisplayWrapper {
-      background: var(--react-autoql-background-color-primary);
-
-      .rdrDateDisplay {
-        color: var(--react-autoql-accent-color) !important;
-
-        .rdrDateDisplayItem {
-          background: var(--react-autoql-background-color-secondary);
-          input {
-            color: var(--react-autoql-text-color-primary);
-          }
-        }
-      }
-    }
-
-    .rdrMonthAndYearWrapper {
-      select {
-        color: var(--react-autoql-text-color-primary);
-        &:hover {
-          background-color: var(--react-autoql-border-color);
-        }
-      }
-    }
-
-    .rdrDayDisabled {
-      background-color: var(--react-autoql-hover-color);
-      pointer-events: none;
-      cursor: not-allowed;
-      opacity: 0.3;
-    }
-
-    .rdrMonths {
-      .rdrWeekDay {
-        color: var(--react-autoql-text-color-placeholder);
-      }
-
-      .rdrDay:not(.rdrDayPassive):not(.rdrDayDisabled) .rdrInRange ~ .rdrDayNumber span,
-      .rdrDay:not(.rdrDayPassive):not(.rdrDayDisabled) .rdrStartEdge ~ .rdrDayNumber span,
-      .rdrDay:not(.rdrDayPassive):not(.rdrDayDisabled) .rdrEndEdge ~ .rdrDayNumber span,
-      .rdrDay:not(.rdrDayPassive):not(.rdrDayDisabled) .rdrSelected ~ .rdrDayNumber span {
-        color: var(--react-autoql-text-color-accent);
-      }
-
-      .rdrDayPassive .rdrDayNumber span {
-        color: var(--react-autoql-text-color-placeholder);
-        opacity: 0.6;
-      }
-
-      .rdrDayNumber span {
-        color: var(--react-autoql-text-color-primary);
-      }
-
-      .rdrDayToday .rdrDayNumber span:after {
-        background: var(--react-autoql-accent-color);
-      }
-      .rdrDayToday:not(.rdrDayPassive) .rdrInRange ~ .rdrDayNumber span:after,
-      .rdrDayToday:not(.rdrDayPassive) .rdrStartEdge ~ .rdrDayNumber span:after,
-      .rdrDayToday:not(.rdrDayPassive) .rdrEndEdge ~ .rdrDayNumber span:after,
-      .rdrDayToday:not(.rdrDayPassive) .rdrSelected ~ .rdrDayNumber span:after {
-        background: var(--react-autoql-text-color-accent);
-      }
-
-      .rdrSelected,
-      .rdrInRange,
-      .rdrStartEdge,
-      .rdrEndEdge {
-        background: var(--react-autoql-accent-color);
-      }
-    }
+  .rdrMonth {
+    padding: 0 0.833em 1em 0.833em;
   }
 
-  .rdrNextPrevButton {
-    background-color: var(--react-autoql-border-color);
-    color: var(--react-autoql-text-color-primary);
-    opacity: 0.8;
+  .rdrMonthAndYearWrapper {
+    padding-top: 0;
+  }
 
-    &:hover {
-      opacity: 0.5;
-    }
-
-    &:disabled {
-      opacity: 0.5 !important;
-      cursor: not-allowed;
-    }
-
-    &.rdrPprevButton i {
-      border-color: transparent var(--react-autoql-text-color-primary) transparent transparent;
-    }
-    &.rdrNextButton i {
-      border-color: transparent transparent transparent var(--react-autoql-text-color-primary);
-    }
+  .rdrMonthAndYearPickers select {
+    // @{width}
+    // --arrow-color: '%230E242F';
+    // background: url('data:image/svg+xml;utf8,<svg width=%279px%27 height=%276px%27 viewBox=%270 0 9 6%27 version=%271.1%27 xmlns=%27http://www.w3.org/2000/svg%27 xmlns:xlink=%27http://www.w3.org/1999/xlink%27><g id=%27Artboard%27 stroke=%27none%27 stroke-width=%271%27 fill=%27none%27 fill-rule=%27evenodd%27 transform=%27translate%28-636.000000, -171.000000%29%27 fill-opacity=%270.368716033%27><g id=%27input%27 transform=%27translate%28172.000000, 37.000000%29%27 fill=%27%27 fill-rule=%27nonzero%27><g id=%27Group-9%27 transform=%27translate%28323.000000, 127.000000%29%27><path d=%27M142.280245,7.23952813 C141.987305,6.92353472 141.512432,6.92361662 141.219585,7.23971106 C140.926739,7.5558055 140.926815,8.06821394 141.219755,8.38420735 L145.498801,13 L149.780245,8.38162071 C150.073185,8.0656273 150.073261,7.55321886 149.780415,7.23712442 C149.487568,6.92102998 149.012695,6.92094808 148.719755,7.23694149 L145.498801,10.7113732 L142.280245,7.23952813 Z%27 id=%27arrow%27></path></g></g></g></svg>')
+    //   no-repeat;
   }
 }

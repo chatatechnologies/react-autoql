@@ -1,11 +1,8 @@
 import React from 'react'
-import axios from 'axios'
 import PropTypes from 'prop-types'
 import { Popover } from 'react-tiny-popover'
 import { axesDefaultProps, axesPropTypes } from '../helpers'
 import { CustomScrollbars } from '../../CustomScrollbars'
-import { getAuthentication } from '../../../props/defaults'
-import { runQueryOnly, runDrilldown } from '../../../js/queryService'
 import { responseErrors } from '../../../js/errorMessages'
 import { DEFAULT_DATA_PAGE_SIZE, MAX_DATA_PAGE_SIZE } from '../../../js/Constants'
 
@@ -37,54 +34,16 @@ export default class RowNumberSelector extends React.Component {
     }
   }
 
-  axiosSource = axios.CancelToken.source()
-
-  getNewChartData = (pageSize) => {
-    this.props.setIsLoadingMoreRows(true)
-    if (this.props.isDrilldown) {
-      return runDrilldown({
-        ...getAuthentication(this.props.authentication),
-        source: this.props.source,
-        scope: this.props.scope,
-        debug: this.props.queryRequestData?.translation === 'include',
-        formattedUserSelection: this.props.queryRequestData?.user_selection,
-        filters: this.props.queryRequestData?.session_filter_locks,
-        test: this.props.queryRequestData?.test,
-        groupBys: this.props.queryRequestData?.columns,
-        queryID: this.props.queryRequestData?.original_query_id, // todo: get original query ID from drillown response
-        orders: this.props.formattedTableParams?.sorters,
-        tableFilters: this.props.formattedTableParams?.filters,
-        cancelToken: this.axiosSource.token,
-        pageSize: pageSize,
-      })
-    } else {
-      return runQueryOnly({
-        ...getAuthentication(this.props.authentication),
-        query: this.props.queryRequestData?.text,
-        source: this.props.queryRequestData?.source,
-        scope: this.props.queryRequestData?.scope,
-        debug: this.props.queryRequestData?.translation === 'include',
-        formattedUserSelection: this.props.queryRequestData?.user_selection,
-        filters: this.props.queryRequestData?.session_filter_locks,
-        test: this.props.queryRequestData?.test,
-        pageSize: pageSize,
-        orders: this.props.formattedTableParams?.sorters,
-        tableFilters: this.props.formattedTableParams?.filters,
-        cancelToken: this.axiosSource.token,
-      })
-    }
-  }
-
   loadMoreChartData = async (pageSize, isMax) => {
     const previousRowNumber = this.props.currentRowNumber
 
     try {
-      let response
       // Fetch data with max page size, but dont display this
       // number in the dropdown, use exact row count instead
       const pageSizeForRequest = isMax ? MAX_DATA_PAGE_SIZE : pageSize
       this.props.setCurrentRowNumber(pageSize)
-      response = await this.getNewChartData(pageSizeForRequest)
+      this.props.setIsLoadingMoreRows(true)
+      const response = await this.props.queryFn({ pageSize: pageSizeForRequest })
       this.props.onNewData(response, pageSizeForRequest)
       this.props.setIsLoadingMoreRows(false)
     } catch (error) {

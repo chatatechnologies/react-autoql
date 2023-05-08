@@ -26,8 +26,8 @@ export const hideTooltips = () => {
   ReactTooltip.hide()
 }
 
-export const Tooltip = (props) => {
-  return <ReactTooltip {...props} />
+export function Tooltip(props) {
+  return <ReactTooltip {...props} html />
 }
 
 export default Tooltip

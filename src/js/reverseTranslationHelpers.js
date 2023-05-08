@@ -1,5 +1,5 @@
 import dayjs from './dayjsWithPlugins'
-import _get from 'lodash.get'
+import { formatElement } from './Util'
 
 const isIsoDate = (str) => {
   if (!str) {
@@ -18,28 +18,41 @@ const isIsoDate = (str) => {
 }
 
 const formatChunkWithDates = (chunk) => {
+  let isDate = false
+  let text = chunk.eng
+  let dateArray = []
+
   try {
     const textArray = chunk.eng.split(' ')
-    const textWithDatesArray = textArray.map((text) => {
-      if (isIsoDate(text)) {
-        const formattedDate = dayjs(text).utc().format('ll')
+    const textWithDatesArray = textArray.map((str) => {
+      if (isIsoDate(str)) {
+        const dateDayJS = dayjs(str).utc()
+        const formattedDate = dateDayJS.format('ll')
         if (formattedDate !== 'Invalid Date') {
+          isDate = true
+          dateArray.push(dateDayJS)
           return formattedDate
         }
       }
-      return text
+      return str
     })
 
-    const textWithDates = textWithDatesArray.join(' ')
+    text = textWithDatesArray.join(' ')
+  } catch (error) {
+    isDate = false
+  }
+
+  if (isDate) {
     return {
       c_type: 'DATE',
-      eng: textWithDates,
+      eng: text,
+      dateArray,
     }
-  } catch (error) {
-    return {
-      c_type: 'TEXT',
-      eng: chunk.eng,
-    }
+  }
+
+  return {
+    c_type: chunk.type === 'FILTER' ? 'FILTER' : 'TEXT',
+    eng: text,
   }
 }
 
@@ -56,7 +69,7 @@ const splitStrByReplacements = (str, replacements, type) => {
     if (replacement.index > prevIndex) {
       const textBefore = str.substring(prevIndex, replacement.index)
       chunkedFilter.push({
-        c_type: 'TEXT',
+        c_type: 'VL_PREFIX',
         eng: textBefore,
       })
     }
@@ -75,7 +88,7 @@ const splitStrByReplacements = (str, replacements, type) => {
     if (i === replacements.length - 1 && endIndex < str.length) {
       const textAfter = str.substring(endIndex, str.length)
       chunkedFilter.push({
-        c_type: 'TEXT',
+        c_type: 'VL_SUFFIX',
         eng: textAfter,
       })
     }
@@ -106,6 +119,7 @@ const parseFilterChunk = (chunk) => {
 
     return splitFilterArray
   } catch (error) {
+    console.error(error)
     // If error, just render as plain text
     return [
       {
@@ -124,7 +138,7 @@ export const constructRTArray = (interpretation) => {
 
     const reverseTranslationArray = []
 
-    if (_get(interpretation, 'length')) {
+    if (interpretation?.length) {
       interpretation.forEach((chunk) => {
         if (chunk.c_type === 'FILTER' || chunk.c_type === 'SEED') {
           const chunkedFilterArray = parseFilterChunk(chunk)
@@ -141,5 +155,122 @@ export const constructRTArray = (interpretation) => {
   } catch (error) {
     console.error(error)
     return undefined
+  }
+}
+
+export const getDatesFromRT = (queryResponse) => {
+  try {
+    const parsedRT = queryResponse?.data?.data?.parsed_interpretation
+    if (!parsedRT) {
+      return
+    }
+
+    const rtArray = constructRTArray(parsedRT)
+    const timeFrameChunk = rtArray.findLast((chunk) => chunk.c_type === 'DATE')
+    return timeFrameChunk?.dateArray
+  } catch (error) {
+    console.error(error)
+    return
+  }
+}
+
+export const getTimeRangeFromDateArray = (dates) => {
+  if (!dates?.length) {
+    return
+  }
+
+  if (dates.length === 1) {
+    return 'DAY'
+  } else if (dates.length === 2) {
+    // Range of dates. Determine what the interval is
+    const range = dayjs(dates[1]).diff(dayjs(dates[0]), 'day')
+    if (range <= 1) {
+      return 'DAY'
+    } else if (range <= 7) {
+      return 'WEEK'
+    } else if (range <= 31) {
+      return 'MONTH'
+    }
+    // Not supporting for now
+    // else if (range <= 366) {
+    //   return 'YEAR'
+    // }
+  }
+
+  // Default frequency
+  return 'MONTH'
+}
+
+export const getTimeRangeFromRT = (queryResponse) => {
+  const dates = getDatesFromRT(queryResponse)
+  const timeRange = getTimeRangeFromDateArray(dates)
+  return timeRange
+}
+
+export const getTimeFrameTextFromChunk = (chunk) => {
+  const dates = chunk?.dateArray
+  const timeRange = getTimeRangeFromDateArray(dates)
+
+  if (!timeRange) {
+    return
+  }
+
+  if (!dates || !dates.length) {
+    return
+  }
+
+  const dayjsPrecision = timeRange.toLowerCase()
+  const startDate = dayjs.utc(dates[0]).utc().startOf(dayjsPrecision)
+  const endDate = dayjs.utc(dates[1]).utc().endOf(dayjsPrecision)
+  const nextStartDate = dayjs.utc(dates[0]).utc().add(1, dayjsPrecision)
+  const nextEndDate = dayjs.utc(dates[1]).utc().add(1, dayjsPrecision)
+  const today = dayjs().utc()
+
+  const isCurrentTimeFrame = today.isBetween(startDate, endDate)
+  const isPreviousTimeFrame = today.isBetween(nextStartDate, nextEndDate)
+
+  const defaultTimeFrame = `between ${startDate.format('ll')} and ${endDate.format('ll')}`
+  if (isCurrentTimeFrame) {
+    switch (timeRange) {
+      case 'DAY':
+        return 'today'
+      case 'MONTH':
+        return 'this month'
+      case 'WEEK':
+        return 'this week'
+      case 'YEAR':
+        return 'this year'
+      default:
+        return defaultTimeFrame
+    }
+  } else if (isPreviousTimeFrame) {
+    switch (timeRange) {
+      case 'DAY':
+        return 'yesterday'
+      case 'MONTH':
+        return 'last month'
+      case 'WEEK':
+        return 'last week'
+      case 'YEAR':
+        return 'last year'
+      default:
+        return defaultTimeFrame
+    }
+  }
+
+  const isoDate = startDate.toISOString()
+  const formattedDate = formatElement({ element: isoDate, column: { type: 'DATE', precision: timeRange } })
+
+  switch (timeRange) {
+    case 'DAY':
+      return `on ${formattedDate}`
+    case 'MONTH':
+      return `in ${formattedDate}`
+    case 'WEEK':
+      return `on week ${formattedDate}`
+    case 'YEAR':
+      return `in ${formattedDate}`
+    default:
+      return defaultTimeFrame
   }
 }

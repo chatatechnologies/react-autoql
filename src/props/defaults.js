@@ -29,7 +29,7 @@ export const autoQLConfigDefault = {
   enableColumnVisibilityManager: true,
   enableDrilldowns: true,
   enableNotifications: false,
-  enableCSVDownload: false,
+  enableCSVDownload: true,
   enableReportProblem: true,
 }
 

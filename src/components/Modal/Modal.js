@@ -5,7 +5,7 @@ import ReactModal from 'react-modal'
 import { Button } from '../Button'
 import { Icon } from '../Icon'
 import { ConfirmModal } from '../ConfirmModal'
-import { deepEqual, difference } from '../../js/Util'
+import { deepEqual } from '../../js/Util'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Modal.scss'
@@ -14,6 +14,7 @@ export default class Modal extends React.Component {
   static propTypes = {
     title: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
     titleIcon: PropTypes.oneOfType([PropTypes.element, PropTypes.instanceOf(Icon)]),
+    subtitle: PropTypes.string,
     isVisible: PropTypes.bool,
     onClose: PropTypes.func,
     onConfirm: PropTypes.func,
@@ -28,11 +29,14 @@ export default class Modal extends React.Component {
     footer: PropTypes.element,
     confirmOnClose: PropTypes.bool,
     shouldRender: PropTypes.bool,
+    onOpened: PropTypes.func,
+    onClosed: PropTypes.func,
   }
 
   static defaultProps = {
     title: '',
     titleIcon: undefined,
+    subtitle: '',
     isVisible: false,
     width: '80vw',
     height: undefined,
@@ -47,6 +51,8 @@ export default class Modal extends React.Component {
     shouldRender: true,
     onClose: () => {},
     onConfirm: () => {},
+    onOpened: () => {},
+    onClosed: () => {},
   }
 
   state = {
@@ -59,6 +65,16 @@ export default class Modal extends React.Component {
     }
 
     return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (this.props.isVisible && !prevProps.isVisible) {
+      this.props.onOpened()
+    }
+
+    if (!this.props.isVisible && prevProps.isVisible) {
+      this.props.onClosed()
+    }
   }
 
   onClose = (deleteFromPortal = true) => {
@@ -75,7 +91,7 @@ export default class Modal extends React.Component {
     }
 
     return (
-      <div>
+      <div className='modal-footer-button-container right'>
         {this.props.showCancelButton && (
           <Button type='default' onClick={this.onClose}>
             Cancel
@@ -108,7 +124,6 @@ export default class Modal extends React.Component {
           style={{
             content: {
               ...this.props.style,
-              bottom: 'auto',
               width: this.props.width,
               height: this.props.height,
             },
@@ -117,11 +132,16 @@ export default class Modal extends React.Component {
         >
           <div className='react-autoql-modal-content' ref={(r) => (this.modalContent = r)}>
             <div className='react-autoql-modal-header'>
-              {this.props.titleIcon} {this.props.title}
+              <div className='react-autoql-modal-header-title-container'>
+                <div className='react-autoql-modal-header-title'>
+                  {this.props.titleIcon} {this.props.title}
+                </div>
+                <div className='react-autoql-modal-header-subtitle'>{this.props.subtitle}</div>
+              </div>
               <Icon type='close' className='react-autoql-modal-close-btn' onClick={this.onClose} />
             </div>
             <div
-              className='react-autoql-modal-body'
+              className={`react-autoql-modal-body ${this.props.bodyClassName ?? ''}`}
               style={{
                 overflow: this.props.enableBodyScroll ? 'auto' : 'hidden',
               }}

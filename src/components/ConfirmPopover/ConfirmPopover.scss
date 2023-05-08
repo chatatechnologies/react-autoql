@@ -1,0 +1,27 @@
+.react-autoql-confirm-popover-click-wrapper {
+  display: flex;
+}
+
+.react-autoql-confirm-popover-content {
+  padding: 10px;
+
+  .react-autoql-confirm-popover-title {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    margin-bottom: 8px;
+    font-size: 15px;
+    min-width: 200px;
+
+    .react-autoql-icon {
+      margin-right: 6px;
+    }
+  }
+
+  .react-autoql-confirm-popover-button-container {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    align-items: center;
+  }
+}

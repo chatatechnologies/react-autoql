@@ -107,7 +107,7 @@ export default class DataExplorer extends React.Component {
       <div
         className='data-preview-col-header'
         data-for={this.props.tooltipID ?? 'data-preview-tooltip'}
-        data-tip={JSON.stringify(column)}
+        // data-tip={JSON.stringify(column)}
       >
         {column?.display_name}
       </div>
@@ -197,7 +197,7 @@ export default class DataExplorer extends React.Component {
 
   renderDataPreviewTitle = () => {
     return (
-      <div>
+      <div className='react-autoql-card-title-text'>
         <Icon style={{ fontSize: '20px' }} type='table' /> Data Preview - "{this.props.subject?.query}"
       </div>
     )

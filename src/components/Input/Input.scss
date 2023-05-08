@@ -1,51 +1,151 @@
-.react-autoql-input-container {
+.react-autoql-input-and-label-container {
   position: relative;
-  margin: 2px 5px;
-  display: inline-block;
+  padding: 2px 5px;
+  display: inline-flex;
+  flex-direction: column;
 
-  .react-autoql-input {
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
-    line-height: 32px;
-    min-height: 34px;
-    padding: 0 10px;
-    width: 100%;
-    outline: none !important;
-    transition: all 0.2s ease;
-    transition-property: border-color, color, opacity;
-
-    &.with-icon {
-      padding-left: 38px;
-    }
-
-    &::placeholder {
-      /* Chrome, Firefox, Opera, Safari 10.1+ */
-      color: rgba(0, 0, 0, 0.2);
-      opacity: 1; /* Firefox */
-      font-style: italic;
-    }
+  &.react-autoql-input-full-width {
+    display: flex;
   }
 
-  .react-autoql-input-icon {
-    position: absolute;
-    left: 12px;
-    top: 8px;
-    opacity: 0.4;
-    transition: all 0.2s ease;
+  .react-autoql-input-container {
+    position: relative;
+    display: inline-flex;
+    flex-direction: row;
 
-    span.react-autoql-icon svg {
-      height: 17px;
-      width: 17px;
+    &.react-autoql-input-small {
+      .react-autoql-input {
+        min-height: 34px;
+      }
+    }
+
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      /* display: none; <- Crashes Chrome on hover */
+      -webkit-appearance: none;
+      margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+    }
+
+    input[type='number'] {
+      -moz-appearance: textfield; /* Firefox */
+    }
+
+    .react-autoql-input-and-icon {
+      flex: 1;
+    }
+
+    &.with-select {
+      .react-autoql-input {
+        border-radius: 0px 4px 4px 0px;
+      }
+    }
+
+    .react-autoql-text-input-selector {
+      flex: 0;
+      margin: 0;
+      padding: 0;
+
+      .react-autoql-select {
+        border-radius: 4px 0px 0px 4px;
+        border-right: none;
+        margin: 0;
+      }
+    }
+
+    .react-autoql-input {
+      border: 1px solid var(--react-autoql-border-color);
+      border-radius: 4px;
+      min-height: 38px;
+      width: 100%;
+      font-size: inherit;
+      font-family: inherit;
+      outline: none !important;
+      transition: all 0.2s ease;
+      transition-property: border-color, color, opacity;
+      padding: 10px;
+      line-height: 1em;
+
+      &:disabled {
+        background: var(--react-autoql-hover-color);
+        border-color: var(--react-autoql-border-color) !important;
+        cursor: default;
+      }
+
+      &:hover,
+      &:focus {
+        border-color: var(--react-autoql-accent-color);
+      }
+
+      &.area {
+        line-height: inherit;
+      }
+
+      &:not(textarea) {
+        padding: 0 10px;
+      }
+
+      &.with-select {
+        padding-left: 14px;
+      }
+
+      &.with-icon {
+        padding-left: 35px;
+      }
+
+      &::placeholder {
+        /* Chrome, Firefox, Opera, Safari 10.1+ */
+        color: var(--react-autoql-text-color-placeholder);
+        opacity: 1; /* Firefox */
+        font-style: italic;
+      }
+    }
+
+    .react-autoql-input-icon {
+      position: absolute;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: color 0.2s ease, opacity 0.2s ease;
+      color: var(--react-autoql-text-color-placeholder);
+      height: 100%;
+      line-height: 100%;
+      left: 12px;
+      top: 0;
+
+      span.react-autoql-icon svg {
+        height: 17px;
+        width: 17px;
+      }
+    }
+
+    .react-autoql-text-input-selector .react-autoql-select:hover {
+      border-color: var(--react-autoql-accent-color);
+    }
+
+    &:hover {
+      .react-autoql-input {
+        border-left-color: var(--react-autoql-accent-color);
+      }
+
+      .react-autoql-input-icon {
+        color: var(--react-autoql-accent-color);
+      }
     }
   }
+}
 
-  &:hover .react-autoql-input,
-  .react-autoql-input:focus {
-    border-color: var(--react-autoql-accent-color, #26a7df);
-  }
-  &:hover .react-autoql-input-icon,
-  .react-autoql-input-icon.focus {
-    opacity: 1;
-    color: var(--react-autoql-accent-color, #26a7df);
+.react-autoql-input-label {
+  display: flex;
+  align-items: center;
+  padding-bottom: 3px;
+  margin: 0;
+  font-size: 0.9em;
+  color: var(--react-autoql-text-color-primary);
+  opacity: 0.8;
+  white-space: nowrap;
+
+  .react-autoql-icon {
+    margin: 0 3px;
+    opacity: 0.6;
   }
 }

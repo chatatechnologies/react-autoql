@@ -16,7 +16,7 @@ export {
   NotificationFeed,
   NotificationItem,
   DataAlerts,
-  ExpressionBuilderSimple,
+  ConditionBuilder,
   ExpressionBuilder,
   ScheduleBuilder,
   DataAlertModal,

@@ -68,7 +68,7 @@ const days = [
   },
 ]
 
-export default class MonthSelect extends React.Component {
+export default class MonthPicker extends React.Component {
   COMPONENT_KEY = uuid()
 
   static propTypes = {

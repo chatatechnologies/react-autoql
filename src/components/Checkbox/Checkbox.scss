@@ -64,9 +64,14 @@
 .react-autoql-checkbox-tick {
   position: absolute;
   color: var(--react-autoql-text-color-accent);
-  left: 3px;
-  line-height: 20px;
   pointer-events: none;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .react-autoql-checkbox--switch__input::before {
@@ -111,8 +116,8 @@
   width: 36px;
   height: 20px;
   border-radius: 16px;
-  background: var(--react-autoql-background-color-tertiary);
-  border: 1px solid var(--react-autoql-background-color-tertiary);
+  background: var(--react-autoql-background-color-switch-input);
+  border: 1px solid var(--react-autoql-background-color-switch-input);
 }
 .react-autoql-checkbox--switch__input::before {
   top: 2px;

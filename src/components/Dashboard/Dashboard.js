@@ -5,7 +5,7 @@ import RGL, { WidthProvider } from 'react-grid-layout'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import { DashboardTile } from './DashboardTile'
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { hideTooltips, Tooltip } from '../Tooltip'
 import DrilldownModal from './DrilldownModal'
 

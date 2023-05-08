@@ -44,6 +44,10 @@
     border-color: var(--react-autoql-accent-color) transparent var(--react-autoql-accent-color) transparent;
   }
 
+  .chat-message-bubble {
+    box-shadow: var(--react-autoql-box-shadow-1);
+  }
+
   &.response {
     display: flex;
     min-height: 0;
@@ -54,7 +58,6 @@
     .chat-message-bubble {
       background: var(--react-autoql-background-color-secondary);
       color: var(--react-autoql-text-color-primary);
-      box-shadow: 0 1px 3px 0 var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
     }
 
     .chat-message-bubble:not(.text) {
@@ -71,14 +74,13 @@
     .chat-message-bubble {
       background: var(--react-autoql-accent-color);
       color: var(--react-autoql-text-color-accent);
-      box-shadow: 0 1px 3px 0 var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
     }
   }
 
   .chat-message-bubble {
     position: relative;
     padding: 13px;
-    border-radius: 10px;
+    border-radius: 6px;
     max-width: calc(100% - 20px);
     word-wrap: break-word;
     font-family: inherit;
@@ -116,7 +118,10 @@
       }
     }
     .react-autoql-toolbar {
-      white-space: nowrap;
+      display: flex;
+      flex-wrap: nowrap;
+      flex-direction: row;
+
       &:not(.active) {
         pointer-events: none;
         visibility: hidden;
@@ -143,6 +148,7 @@
   animation: scale-up-bl 0.5s ease;
   .react-autoql-reverse-translation {
     padding-top: 0;
+    background: transparent;
   }
 }
 

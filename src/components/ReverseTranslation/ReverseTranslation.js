@@ -35,6 +35,7 @@ export default class ReverseTranslation extends React.Component {
     onValueLabelClick: PropTypes.func,
     appliedFilters: PropTypes.array,
     reverseTranslation: PropTypes.array,
+    textOnly: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -43,6 +44,7 @@ export default class ReverseTranslation extends React.Component {
     appliedFilters: [],
     reverseTranslation: [],
     onValueLabelClick: undefined,
+    textOnly: false,
   }
 
   componentDidMount = () => {
@@ -122,11 +124,11 @@ export default class ReverseTranslation extends React.Component {
     )
   }
 
-  renderInterpretationChunk = (chunk) => {
+  renderInterpretationChunk = (chunk, textOnly) => {
     switch (chunk.c_type) {
       case 'VALIDATED_VALUE_LABEL': {
         // If no callback is provided, do not display as link
-        if (this.props.onValueLabelClick) {
+        if (this.props.onValueLabelClick && !this.props.textOnly) {
           return this.renderFilterLockLink(chunk.eng)
         }
         return ` ${chunk.eng}`
@@ -144,6 +146,15 @@ export default class ReverseTranslation extends React.Component {
     }
   }
 
+  getText = () => {
+    let rtString = ''
+    this.state.reverseTranslationArray.map((chunk, i) => {
+      rtString = `${rtString}${this.renderInterpretationChunk(chunk, true)}`
+    })
+
+    return rtString.trim()
+  }
+
   render = () => {
     if (!_get(this.state.reverseTranslationArray, 'length')) {
       return null
@@ -151,31 +162,39 @@ export default class ReverseTranslation extends React.Component {
 
     return (
       <ErrorBoundary>
-        <div
-          id={this.COMPONENT_KEY}
-          className='react-autoql-reverse-translation-container'
-          data-test='react-autoql-reverse-translation-container'
-        >
-          <div className='react-autoql-reverse-translation'>
-            <Icon
-              type='info'
-              data-tip={'This statement reflects how your query was interpreted in order to return this data response.'}
-              data-for={this.props.tooltipID ?? `react-autoql-reverse-translation-tooltip-${this.COMPONENT_KEY}`}
-            />
-            <strong> Interpreted as: </strong>
-            {this.state.reverseTranslationArray.map((chunk, i) => {
-              return <span key={`rt-item-${this.COMPONENT_KEY}-${i}`}>{this.renderInterpretationChunk(chunk)}</span>
-            })}
-          </div>
-        </div>
-        {!this.props.tooltipID && (
-          <Tooltip
-            className='react-autoql-reverse-translation-tooltip'
-            id={`react-autoql-reverse-translation-tooltip-${this.COMPONENT_KEY}`}
-            effect='solid'
-            place='right'
-            html
-          />
+        {this.props.textOnly ? (
+          <span>{this.getText()}</span>
+        ) : (
+          <>
+            <div
+              id={this.COMPONENT_KEY}
+              className='react-autoql-reverse-translation-container'
+              data-test='react-autoql-reverse-translation-container'
+            >
+              <div className='react-autoql-reverse-translation'>
+                <Icon
+                  type='info'
+                  data-tip={
+                    'This statement reflects how your query was interpreted in order to return this data response.'
+                  }
+                  data-for={this.props.tooltipID ?? `react-autoql-reverse-translation-tooltip-${this.COMPONENT_KEY}`}
+                />
+                <strong> Interpreted as: </strong>
+                {this.state.reverseTranslationArray.map((chunk, i) => {
+                  return <span key={`rt-item-${this.COMPONENT_KEY}-${i}`}>{this.renderInterpretationChunk(chunk)}</span>
+                })}
+              </div>
+            </div>
+            {!this.props.tooltipID && (
+              <Tooltip
+                className='react-autoql-reverse-translation-tooltip'
+                id={`react-autoql-reverse-translation-tooltip-${this.COMPONENT_KEY}`}
+                effect='solid'
+                place='right'
+                html
+              />
+            )}
+          </>
         )}
       </ErrorBoundary>
     )

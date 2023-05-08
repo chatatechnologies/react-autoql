@@ -1,4 +1,7 @@
 .ReactModal__Overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   background-color: transparent !important;
   transition: background-color 0.2s ease-in-out;
   z-index: 9999;
@@ -10,6 +13,7 @@
   background-color: transparent !important;
 }
 .ReactModal__Content {
+  position: initial !important;
   display: flex;
   flex-direction: column;
   overflow: hidden !important;
@@ -18,13 +22,16 @@
   transition: all 0.2s ease-in-out;
 
   color: var(--react-autoql-text-color-primary);
-  border: 1px solid var(--react-autoql-border-color) !important;
   background: var(--react-autoql-background-color-secondary) !important;
   box-shadow: 0 0 14px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
+  border: 1px solid var(--react-autoql-border-color) !important;
+  border-radius: 4px !important;
+  outline: none !important;
+
   padding: 0 !important;
 
-  margin: auto auto;
-  margin-top: 5vh;
+  margin-top: 20px;
+  margin-bottom: 30px;
   max-width: 90vw;
   max-height: calc(100vh - 90px);
 
@@ -55,12 +62,32 @@
   overflow: hidden;
 }
 .react-autoql-modal-header {
+  display: flex;
+  align-items: flex-start;
   position: relative;
-  text-align: center;
-  flex: 0 0 52px;
   border-bottom: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.05));
-  padding: 14px 60px;
-  font-size: 16px;
+
+  .react-autoql-modal-header-title-container {
+    flex: 1;
+    text-align: center;
+    padding: 14px 0px 14px 60px;
+  }
+
+  .react-autoql-modal-header-title {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 17px;
+    margin: 3px;
+
+    .react-autoql-icon {
+      margin-right: 5px;
+    }
+  }
+
+  .react-autoql-modal-header-subtitle {
+    font-size: 14px;
+  }
 }
 .react-autoql-modal-footer {
   position: relative;
@@ -76,16 +103,17 @@
   display: flex;
   flex-direction: column;
 
-  padding: 10px 20px;
+  padding: 20px 30px;
   flex: 1;
 }
 .react-autoql-modal-close-btn {
-  position: absolute !important;
-  top: 10px;
-  right: 18px;
+  flex: 0;
   font-size: 22px;
+  margin: 16px;
+  padding-left: 15px;
   opacity: 0.6 !important;
   cursor: pointer;
+  box-sizing: content-box;
 }
 .react-autoql-modal-close-btn:hover {
   opacity: 1 !important;

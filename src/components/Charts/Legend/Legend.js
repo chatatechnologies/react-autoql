@@ -229,7 +229,7 @@ export default class Legend extends Component {
           .style('fill', 'currentColor')
           .style('fill-opacity', '1')
           .style('font-family', 'inherit')
-          .style('font-size', '10px')
+          .style('font-size', '12px')
 
         var legendOrdinal = legendColor()
           .orient('vertical')
@@ -256,7 +256,7 @@ export default class Legend extends Component {
         if (isSecondLegend) {
           const legendBBox1 = this.rightLegendElement?.getBoundingClientRect()
           const topLegendBottomY = legendBBox1?.height ?? 0
-          select(legendElement).attr('transform', `translate(${this.LEFT_PADDING}, ${topLegendBottomY + 30})`)
+          select(legendElement).attr('transform', `translate(${this.LEFT_PADDING}, ${topLegendBottomY + 35})`)
         }
 
         if (title) {

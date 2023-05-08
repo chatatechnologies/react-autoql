@@ -162,37 +162,15 @@
 }
 
 .react-autoql-drawer .react-autoql-drawer-header-btn {
-  line-height: 1em;
-  font-weight: normal;
-  float: none;
-  opacity: 1;
-
   &.hidden {
     display: none;
   }
 
-  &.close span.react-autoql-icon svg {
-    width: 27px;
-    height: 27px;
-  }
-  &.screen-mode span.react-autoql-icon svg {
-    width: 22px;
-    height: 22px;
-  }
-
-  &.clear-all span.react-autoql-icon svg {
-    width: 22px;
-    height: 22px;
-  }
-
-  &.filter-locking span.react-autoql-icon svg {
-    width: 22px;
-    height: 22px;
-  }
-
   .react-autoql-filter-lock-icon-container {
-    display: inline-block;
+    display: inline-flex;
     position: relative;
+    margin-right: 4px;
+    margin-top: 3px;
 
     .react-autoql-filter-lock-icon-badge {
       position: absolute;
@@ -212,24 +190,35 @@
   outline: none;
 }
 
+.react-autoql-drawer .chat-header-container .react-autoql-drawer-header-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  margin: 10px 0px 10px 0px;
+  margin-right: 0;
+
+  .react-autoql-icon-close {
+    font-size: 1.2em;
+  }
+}
+
 .react-autoql-drawer .chat-header-container button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   position: relative;
   background: transparent;
   border: none;
   color: var(--react-autoql-text-color-accent);
-  margin: 10px 0px 10px 0px;
-  margin-right: 0;
-  font-size: 20px;
+  margin: 0;
+  font-size: 24px;
   cursor: pointer;
   outline: none !important;
 }
 
 .react-autoql-drawer .chat-header-container button:hover {
   opacity: 0.7;
-}
-.react-autoql-drawer .chat-header-container button svg {
-  width: 35px;
-  height: 35px;
 }
 
 .topics-container {
@@ -238,6 +227,12 @@
 .intro-qi-link {
   cursor: pointer;
   color: var(--react-autoql-accent-color);
+
+  .react-autoql-icon {
+    margin-right: -3px;
+    vertical-align: middle;
+    padding-bottom: 2px;
+  }
 }
 
 /* rc-drawer */
