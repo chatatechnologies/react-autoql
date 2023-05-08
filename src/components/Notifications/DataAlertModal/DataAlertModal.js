@@ -646,7 +646,7 @@ class DataAlertModal extends React.Component {
           contentClassName='react-autoql-data-alert-creation-modal'
           bodyClassName='react-autoql-data-alert-modal-body'
           overlayStyle={{ zIndex: '9998' }}
-          title={!!this.props.currentDataAlert?.id ? 'Data Alert Settings' : 'Create Data Alert'}
+          title={!!this.props.currentDataAlert?.id ? 'Edit Data Alert Settings' : 'Create Data Alert'}
           titleIcon={this.getTitleIcon()}
           subtitle={query ? `"${query}"` : undefined}
           ref={(r) => (this.modalRef = r)}
