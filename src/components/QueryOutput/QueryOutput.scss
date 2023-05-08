@@ -108,19 +108,21 @@
   font-size: inherit;
 }
 .no-columns-error-message {
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   padding: 20px;
   font-size: 13px;
 
   .warning-icon {
     font-size: 22px;
     display: block;
-    margin-bottom: -13px;
-    text-align: center;
+    margin-bottom: 10px;
+    color: var(--react-autoql-warning-color);
   }
   .eye-icon {
-    vertical-align: bottom;
-    line-height: 18px;
+    vertical-align: middle;
   }
 }
 .query-output-footer {

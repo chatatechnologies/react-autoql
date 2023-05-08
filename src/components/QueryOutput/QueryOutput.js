@@ -2086,10 +2086,10 @@ export class QueryOutput extends React.Component {
   renderAllColumnsHiddenMessage = () => {
     return (
       <div className='no-columns-error-message' data-test='columns-hidden-message'>
+        <Icon className='warning-icon' type='warning-triangle' />
         <div>
-          <Icon className='warning-icon' type='warning-triangle' />
-          <br /> All columns in this table are currently hidden. You can adjust your column visibility preferences using
-          the Column Visibility Manager (<Icon className='eye-icon' type='eye' />) in the Options Toolbar.
+          All columns in this table are currently hidden. You can adjust your column visibility preferences using the
+          Column Visibility Manager (<Icon className='eye-icon' type='eye' />) in the Options Toolbar.
         </div>
       </div>
     )

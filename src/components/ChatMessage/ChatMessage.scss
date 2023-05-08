@@ -32,7 +32,6 @@
 
   .react-autoql-response-content-container {
     .query-output-error-message,
-    .no-columns-error-message,
     .feedback-message {
       margin: 0;
       text-align: left;
@@ -135,11 +134,11 @@
       visibility: visible;
       opacity: 1;
     }
-	.react-autoql-toolbar-mobile {
-	  pointer-events: auto;
-	  visibility: visible;
-	  opacity: 1;
-	}
+    .react-autoql-toolbar-mobile {
+      pointer-events: auto;
+      visibility: visible;
+      opacity: 1;
+    }
   }
 }
 
