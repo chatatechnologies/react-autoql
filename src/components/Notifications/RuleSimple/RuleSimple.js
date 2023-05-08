@@ -126,7 +126,7 @@ export default class RuleSimple extends React.Component {
     }
   }
 
-  getConditionStatement = (tense, useRT) => {
+  getConditionStatement = (tense, useRT, sentenceCase = false) => {
     let queryText = this.getFormattedQueryText()?.toLowerCase()
     if (useRT) {
       queryText = (
@@ -152,7 +152,9 @@ export default class RuleSimple extends React.Component {
     } else if (queryText) {
       return (
         <span className='data-alert-condition-statement'>
-          <span className='data-alert-condition-statement-operator'>New data detected for the query</span>{' '}
+          <span className='data-alert-condition-statement-operator'>
+            {sentenceCase ? 'N' : 'n'}ew data {tense === 'past' ? 'was' : 'is'} detected for the query
+          </span>{' '}
           <span className='data-alert-condition-statement-query1'>"{queryText}"</span>
         </span>
       )
@@ -567,7 +569,7 @@ export default class RuleSimple extends React.Component {
     return
   }
 
-  getFilters = (props) => {
+  getFilters = (props = this.props) => {
     let lockedFilters = []
     let tableFilters = []
 
@@ -694,7 +696,7 @@ export default class RuleSimple extends React.Component {
               label={
                 this.allowOperators()
                   ? 'Trigger Alert when this query'
-                  : 'Trigger Alert when new data detected is detected for this query'
+                  : 'Trigger Alert when new data is detected for this query'
               }
               value={this.getFormattedQueryText()}
               readOnly

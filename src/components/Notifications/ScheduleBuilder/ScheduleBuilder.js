@@ -466,7 +466,13 @@ export default class ScheduleBuilder extends React.Component {
             value={this.state.evaluationFrequencySelectValue}
             label={
               <span>
-                Check conditions every <Icon type='info' data-for={this.props.tooltipID} data-tip={tooltip} />
+                Check conditions every{' '}
+                <Icon
+                  className='react-autoql-info-tooltip'
+                  type='info'
+                  data-for={this.props.tooltipID}
+                  data-tip={tooltip}
+                />
               </span>
             }
             onChange={(value) => this.setState({ evaluationFrequencySelectValue: value })}
@@ -550,11 +556,7 @@ export default class ScheduleBuilder extends React.Component {
     return (
       <div className='frequency-type-container'>
         <span>
-          {this.SUPPORTED_CONDITION_TYPE === EXISTS_TYPE ? (
-            <span>If new data is detected for {queryText},&nbsp;&nbsp;you'll be notified</span>
-          ) : (
-            <span>If {this.getConditionStatement()},&nbsp;&nbsp;you'll be notified</span>
-          )}
+          <span>If {this.getConditionStatement()},&nbsp;&nbsp;you'll be notified</span>
           <Select
             options={Object.keys(DATA_ALERT_FREQUENCY_TYPE_OPTIONS).map((key) => ({
               value: key,

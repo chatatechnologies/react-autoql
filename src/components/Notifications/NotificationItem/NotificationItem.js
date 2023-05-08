@@ -378,6 +378,7 @@ export default class NotificationItem extends React.Component {
           queryResponse={queryResponse}
           conditionStatementOnly
           conditionTense='past'
+          sentenceCase
           useRT
         />
       </div>
@@ -502,6 +503,8 @@ export default class NotificationItem extends React.Component {
                   queryResponse={this.state.queryResponse}
                   autoChartAggregations={this.props.autoChartAggregations}
                   enableAjaxTableData={this.props.enableAjaxTableData}
+                  onSuccessCallback={this.props.onSuccessCallback}
+                  onErrorCallback={this.props.onErrorCallback}
                   isResizing={this.props.isResizing}
                   shouldRender={this.state.expanded}
                 />

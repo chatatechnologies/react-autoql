@@ -17,6 +17,8 @@ export default class NotificationQueryResponse extends React.Component {
     tooltipID: PropTypes.string,
     chartTooltipID: PropTypes.string,
     reportProblemCallback: PropTypes.func,
+    onSuccessCallback: PropTypes.func,
+    onErrorCallback: PropTypes.func,
   }
 
   static defaultProps = {
@@ -26,6 +28,8 @@ export default class NotificationQueryResponse extends React.Component {
     tooltipID: null,
     chartTooltipID: null,
     reportProblemCallback: () => {},
+    onSuccessCallback: () => {},
+    onErrorCallback: () => {},
   }
 
   componentDidMount = () => {
@@ -84,6 +88,8 @@ export default class NotificationQueryResponse extends React.Component {
             autoQLConfig={this.props.autoQLConfig}
             ref={(r) => (this.optionsToolbarRef = r)}
             responseRef={this.OUTPUT_REF}
+            onSuccessAlert={this.props.onSuccessCallback}
+            onErrorCallback={this.props.onErrorCallback}
             popoverPositions={['top', 'left', 'bottom', 'right']}
             popoverAlign='end'
           />

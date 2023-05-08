@@ -49,6 +49,11 @@
       min-width: fit-content;
     }
 
+    .react-autoql-info-tooltip {
+      color: var(--react-autoql-accent-color);
+      opacity: 1;
+    }
+
     .react-autoql-data-alert-frequency-option {
       &.check-frequency {
         display: flex;
