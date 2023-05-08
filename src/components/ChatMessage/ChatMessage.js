@@ -404,9 +404,8 @@ export default class ChatMessage extends React.Component {
             <ReverseTranslation
               authentication={this.props.authentication}
               onValueLabelClick={this.props.onRTValueLabelClick}
-              appliedFilters={this.props.appliedFilters}
+              queryResponse={this.responseRef.queryResponse}
               isResizing={this.props.isResizing}
-              reverseTranslation={this.responseRef.queryResponse.data.data.parsed_interpretation}
               tooltipID={this.props.tooltipID}
             />
           </div>

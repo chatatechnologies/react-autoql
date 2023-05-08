@@ -56,68 +56,59 @@ const formatChunkWithDates = (chunk) => {
   }
 }
 
-const removeEscape = (input) => {
-  return input.substring(1, input.length - 1).replace("''", "'")
-}
+const removeSingleQuotes = (str) => {
+  let text = str.trim()
+  if (text.slice(-1) === "'" && Array.from(text)[0] === "'") {
+    text = text.substring(1, text.length - 1)
+  }
 
-const splitStrByReplacements = (str, replacements, type) => {
-  let prevIndex = 0
-  const chunkedFilter = []
-
-  replacements.forEach((replacement, i) => {
-    // Text before value label
-    if (replacement.index > prevIndex) {
-      const textBefore = str.substring(prevIndex, replacement.index)
-      chunkedFilter.push({
-        c_type: 'VL_PREFIX',
-        eng: textBefore,
-      })
-    }
-
-    // Value label
-    const endIndex = replacement[0].length + replacement.index
-    const valueLabelText = str.substring(replacement.index, endIndex)
-    const nonEscapedText = removeEscape(valueLabelText)
-    prevIndex = endIndex
-    chunkedFilter.push({
-      c_type: type,
-      eng: nonEscapedText,
-    })
-
-    // Text after last value label
-    if (i === replacements.length - 1 && endIndex < str.length) {
-      const textAfter = str.substring(endIndex, str.length)
-      chunkedFilter.push({
-        c_type: 'VL_SUFFIX',
-        eng: textAfter,
-      })
-    }
-  })
-
-  return chunkedFilter
+  return text
 }
 
 const parseFilterChunk = (chunk) => {
   try {
-    // regex to select all text inside single quotes ignoring escaped apostrophes
-    const reg = /'(''|[^'])*'/g
+    // This regex is to select all text inside single quotes ignoring escaped apostrophes
+    // Keep in case we need for the future
+    // const reg = /'(''|[^'])*'/g
+
+    // Regex to select text in brackets (including the brackets)
+    const reg = /\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g
     const input = chunk.eng
 
+    const textOutsideBrackets = input.split(reg)
+
     let match
-    const replacements = []
+    const bracketTextMatches = []
     while ((match = reg.exec(input)) !== null) {
-      replacements.push(match)
+      bracketTextMatches.push(match)
     }
 
-    // If there are no replacements, it is probably a date filter
-    if (!replacements.length) {
+    // Check if filter is a date
+    if (!bracketTextMatches.length || bracketTextMatches[0]?.[0] === '(Date)') {
       const formattedChunk = formatChunkWithDates(chunk)
       return [formattedChunk]
     }
 
-    const splitFilterArray = splitStrByReplacements(input, replacements, 'VALUE_LABEL')
+    const mergedArray = new Array()
+    textOutsideBrackets.forEach((str, i) => {
+      const type = !!bracketTextMatches[i] ? 'VALUE_LABEL' : 'TEXT'
+      if (textOutsideBrackets[i]) {
+        const text = removeSingleQuotes(str)
+        mergedArray.push({
+          c_type: type,
+          eng: text,
+        })
+      }
 
-    return splitFilterArray
+      if (bracketTextMatches[i]) {
+        mergedArray.push({
+          c_type: 'VL_SUFFIX',
+          eng: bracketTextMatches[i][0]?.trim(),
+        })
+      }
+    })
+
+    return mergedArray
   } catch (error) {
     console.error(error)
     // If error, just render as plain text

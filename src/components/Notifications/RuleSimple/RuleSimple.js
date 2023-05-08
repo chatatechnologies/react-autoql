@@ -133,9 +133,7 @@ export default class RuleSimple extends React.Component {
     console.log('filters:', this.getFilters())
 
     if (useRT) {
-      queryText = (
-        <ReverseTranslation reverseTranslation={this.props.queryResponse?.data?.data?.parsed_interpretation} textOnly />
-      )
+      queryText = <ReverseTranslation reverseTranslation={this.props.queryResponse} textOnly />
     }
 
     const operator = DATA_ALERT_OPERATORS[this.state.selectedOperator]

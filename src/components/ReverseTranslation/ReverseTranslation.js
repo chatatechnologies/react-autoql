@@ -1,7 +1,5 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import _get from 'lodash.get'
-import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.filter'
 import { v4 as uuid } from 'uuid'
 
@@ -25,25 +23,23 @@ export default class ReverseTranslation extends React.Component {
 
     this.state = {
       isValidated: false,
-      reverseTranslationArray: constructRTArray(props.reverseTranslation),
+      reverseTranslationArray: constructRTArray(props.queryResponse?.data?.data?.parsed_interpretation),
     }
   }
 
   static propTypes = {
     authentication: authenticationType,
-    interpretation: PropTypes.array,
     onValueLabelClick: PropTypes.func,
-    appliedFilters: PropTypes.array,
-    reverseTranslation: PropTypes.array,
+    queryResponse: PropTypes.shape({}),
+    tooltipID: PropTypes.string,
     textOnly: PropTypes.bool,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
-    interpretation: [],
-    appliedFilters: [],
-    reverseTranslation: [],
     onValueLabelClick: undefined,
+    queryResponse: undefined,
+    tooltipID: undefined,
     textOnly: false,
   }
 
@@ -90,16 +86,18 @@ export default class ReverseTranslation extends React.Component {
             fetchVLAutocomplete({
               suggestion: chunk.eng,
               ...getAuthentication(this.props.authentication),
-            }).then((response) => {
-              if (_get(response, 'data.data.matches.length')) {
-                validatedInterpretationArray[i].c_type = 'VALIDATED_VALUE_LABEL'
-              }
-            }),
+            })
+              .then((response) => {
+                if (response?.data?.data?.matches?.length) {
+                  validatedInterpretationArray[i].c_type = 'VALIDATED_VALUE_LABEL'
+                }
+              })
+              .catch((error) => console.error(error)),
           )
         }
       })
 
-      Promise.all(valueLabelValidationPromises).then(() => {
+      Promise.all(valueLabelValidationPromises).finally(() => {
         if (this._isMounted) {
           this.setState({ isValidated: true, reverseTranslationArray: validatedInterpretationArray })
         }
@@ -108,6 +106,13 @@ export default class ReverseTranslation extends React.Component {
   }
 
   renderFilterLockLink = (text) => {
+    const sessionFilters = this.props.queryResponse?.data?.data?.fe_req?.persistent_filter_locks ?? []
+    const persistentFilters = this.props.queryResponse?.data?.data?.fe_req?.session_filter_locks ?? []
+    const lockedFilters = [...persistentFilters, ...sessionFilters] ?? []
+    const isLockedFilter = !!lockedFilters.find(
+      (filter) => filter?.value?.toLowerCase()?.trim() === text.toLowerCase().trim(),
+    )
+
     return (
       <a
         id='react-autoql-interpreted-value-label'
@@ -119,12 +124,12 @@ export default class ReverseTranslation extends React.Component {
         }}
       >
         {' '}
-        {this.props.appliedFilters.includes(text) && <Icon type='lock' />} {<span>{text}</span>}
+        {isLockedFilter && <Icon type='lock' />} {<span>{text}</span>}
       </a>
     )
   }
 
-  renderInterpretationChunk = (chunk, textOnly) => {
+  renderInterpretationChunk = (chunk) => {
     switch (chunk.c_type) {
       case 'VALIDATED_VALUE_LABEL': {
         // If no callback is provided, do not display as link
@@ -149,14 +154,14 @@ export default class ReverseTranslation extends React.Component {
   getText = () => {
     let rtString = ''
     this.state.reverseTranslationArray.map((chunk, i) => {
-      rtString = `${rtString}${this.renderInterpretationChunk(chunk, true)}`
+      rtString = `${rtString}${this.renderInterpretationChunk(chunk)}`
     })
 
     return rtString.trim()
   }
 
   render = () => {
-    if (!_get(this.state.reverseTranslationArray, 'length')) {
+    if (!this.state.reverseTranslationArray?.length) {
       return null
     }
 

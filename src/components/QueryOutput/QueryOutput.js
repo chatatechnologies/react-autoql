@@ -546,7 +546,7 @@ export class QueryOutput extends React.Component {
   }
 
   isTableConfigValid = (tableConfig, columns, displayType) => {
-    if (!columns) {
+    if (!columns || !this.queryResponse?.data?.data?.rows?.length) {
       return false
     }
 
@@ -2507,14 +2507,22 @@ export class QueryOutput extends React.Component {
     )
   }
 
+  getFilters = () => {
+    const persistentFilters = this.queryResponse?.data?.data?.fe_req?.persistent_filter_locks ?? []
+    const sessionFilters = this.queryResponse?.data?.data?.fe_req?.session_filter_locks ?? []
+    const lockedFilters = [...persistentFilters, ...sessionFilters] ?? []
+    return lockedFilters
+  }
+
   renderReverseTranslation = () => {
     return (
       <ReverseTranslation
         authentication={this.props.authentication}
         onValueLabelClick={this.props.onRTValueLabelClick}
-        appliedFilters={this.props.appliedFilters}
+        appliedFilters={this.getFilters()}
         isResizing={this.props.isResizing}
-        reverseTranslation={_get(this.queryResponse, 'data.data.parsed_interpretation')}
+        queryResponse={this.queryResponse}
+        reverseTranslation={this.queryResponse?.data?.data?.parsed_interpretation}
         tooltipID={this.props.tooltipID}
       />
     )
