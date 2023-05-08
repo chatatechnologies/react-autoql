@@ -59,10 +59,6 @@
   .react-autosuggest__input--focused {
     outline: none;
   }
-  .react-autosuggest__input::-ms-clear,
-  .react-autosuggest__suggestions-container {
-    display: none;
-  }
   .react-autosuggest__suggestion {
     cursor: pointer;
     padding: 2px;
