@@ -145,6 +145,11 @@ class NotificationFeed extends React.Component {
     })
       .then((data) => {
         if (!data?.items?.length) {
+          this.setState({
+            isFetchingFirstNotifications: false,
+            fetchNotificationsError: null,
+            isLoading: false,
+          })
           return
         }
 
