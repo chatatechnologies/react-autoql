@@ -1,6 +1,22 @@
 import dayjs from './dayjsWithPlugins'
 import { formatElement } from './Util'
 
+const getRegexMatchArray = (str, reg) => {
+  if (!str) {
+    return []
+  }
+
+  let match
+  const matches = []
+  while ((match = reg.exec(str)) !== null) {
+    if (!!match) {
+      matches.push(match)
+    }
+  }
+
+  return matches
+}
+
 const isIsoDate = (str) => {
   if (!str) {
     return false
@@ -15,6 +31,10 @@ const isIsoDate = (str) => {
   } catch (error) {
     return false
   }
+}
+
+const removeSingleQuoteEscape = (input) => {
+  return input.substring(1, input.length - 1).replace("''", "'")
 }
 
 const formatChunkWithDates = (chunk) => {
@@ -56,54 +76,93 @@ const formatChunkWithDates = (chunk) => {
   }
 }
 
-const removeSingleQuotes = (str) => {
-  let text = str.trim()
-  if (text.slice(-1) === "'" && Array.from(text)[0] === "'") {
-    text = text.substring(1, text.length - 1)
+const chunkStrByMatches = (str, matches) => {
+  if (!str) {
+    return []
   }
 
-  return text
+  if (!matches?.length) {
+    return [{ type: 'TEXT', eng: str }]
+  }
+
+  let prevIndex = 0
+  let chunkedFilter = []
+
+  matches.forEach((match, i) => {
+    // Text before value label
+    if (match.index > prevIndex) {
+      const textBefore = str.substring(prevIndex, match.index)
+      if (textBefore) {
+        chunkedFilter.push({ c_type: 'VL_PREFIX', eng: textBefore })
+      }
+    }
+
+    // Value label
+    const endIndex = match[0].length + match.index
+    const valueLabelText = str.substring(match.index, endIndex)
+    const nonEscapedText = removeSingleQuoteEscape(valueLabelText)
+    prevIndex = endIndex
+    chunkedFilter.push({ c_type: 'VALUE_LABEL', eng: nonEscapedText })
+
+    // Text after last value label
+    if (i === matches.length - 1 && endIndex < str.length) {
+      const textAfter = str.substring(endIndex, str.length)
+      if (textAfter) {
+        chunkedFilter.push({ c_type: 'TEXT', eng: textAfter })
+      }
+    }
+  })
+
+  return chunkedFilter
 }
 
 const parseFilterChunk = (chunk) => {
   try {
-    // This regex is to select all text inside single quotes ignoring escaped apostrophes
-    // Keep in case we need for the future
-    // const reg = /'(''|[^'])*'/g
-
     // Regex to select text in brackets (including the brackets)
-    const reg = /\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g
+    const bracketsRegex = /\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g
+    const singleQuoteRegex = /'(''|[^'])*'/g
     const input = chunk.eng
 
-    const textOutsideBrackets = input.split(reg)
+    const textOutsideBrackets = input.split(bracketsRegex)
 
     let match
     const bracketTextMatches = []
-    while ((match = reg.exec(input)) !== null) {
+    while ((match = bracketsRegex.exec(input)) !== null) {
       bracketTextMatches.push(match)
     }
 
     // Check if filter is a date
-    if (!bracketTextMatches.length || bracketTextMatches[0]?.[0] === '(Date)') {
+    if (
+      !bracketTextMatches.length ||
+      !textOutsideBrackets.length ||
+      bracketTextMatches[0]?.[0] === '(Date)' ||
+      textOutsideBrackets[0]?.split(' ')?.find((word) => isIsoDate(word))
+    ) {
       const formattedChunk = formatChunkWithDates(chunk)
       return [formattedChunk]
     }
 
-    const mergedArray = new Array()
+    let mergedArray = []
     textOutsideBrackets.forEach((str, i) => {
-      const type = !!bracketTextMatches[i] ? 'VALUE_LABEL' : 'TEXT'
-      if (textOutsideBrackets[i]) {
-        const text = removeSingleQuotes(str)
+      const isNullVL = str.trim().toLowerCase() === 'null'
+      if (isNullVL) {
         mergedArray.push({
-          c_type: type,
-          eng: text,
+          c_type: 'VALUE_LABEL',
+          eng: str,
         })
+      } else {
+        // Isolate text in single quotes (the value labels)
+        const textInQuotesMatches = getRegexMatchArray(str, singleQuoteRegex)
+        const strChunked = chunkStrByMatches(str, textInQuotesMatches) ?? []
+
+        mergedArray = [...mergedArray, ...strChunked]
       }
 
-      if (bracketTextMatches[i]) {
+      const vlSuffixMatch = bracketTextMatches[i]
+      if (vlSuffixMatch) {
         mergedArray.push({
           c_type: 'VL_SUFFIX',
-          eng: bracketTextMatches[i][0]?.trim(),
+          eng: vlSuffixMatch[0]?.trim(),
         })
       }
     })
@@ -111,13 +170,9 @@ const parseFilterChunk = (chunk) => {
     return mergedArray
   } catch (error) {
     console.error(error)
+
     // If error, just render as plain text
-    return [
-      {
-        c_type: 'TEXT',
-        eng: chunk.eng,
-      },
-    ]
+    return [{ c_type: 'TEXT', eng: chunk.eng }]
   }
 }
 

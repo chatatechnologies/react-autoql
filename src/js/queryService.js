@@ -453,15 +453,17 @@ export const fetchDataExplorerAutocomplete = ({ suggestion, domain, token, apiKe
 }
 
 export const fetchVLAutocomplete = ({ suggestion, domain, token, apiKey, cancelToken } = {}) => {
-  if (!suggestion || !suggestion.trim()) {
-    return Promise.reject(new Error('No query supplied'))
-  }
-
   if (!domain || !apiKey || !token) {
     return Promise.reject(new Error('Unauthenticated'))
   }
 
-  const url = `${domain}/autoql/api/v1/query/vlautocomplete?text=${encodeURIComponent(suggestion)}&key=${apiKey}`
+  const text = suggestion?.trim()
+
+  if (!text) {
+    return Promise.reject(new Error('No text supplied'))
+  }
+
+  const url = `${domain}/autoql/api/v1/query/vlautocomplete?text=${encodeURIComponent(text)}&key=${apiKey}`
 
   const config = {
     headers: {
