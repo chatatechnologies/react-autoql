@@ -130,7 +130,11 @@ export default class Modal extends React.Component {
             overlay: { ...this.props.overlayStyle },
           }}
         >
-          <div className='react-autoql-modal-content' ref={(r) => (this.modalContent = r)}>
+          <div
+            className='react-autoql-modal-content'
+            ref={(r) => (this.modalContent = r)}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className='react-autoql-modal-header'>
               <div className='react-autoql-modal-header-title-container'>
                 <div className='react-autoql-modal-header-title'>
