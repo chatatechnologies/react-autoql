@@ -415,8 +415,8 @@ export default class ChataTable extends React.Component {
         return previousData
       }
 
-      const tableParamsFormatted = formatTableParams(this.tableParams, this.ref?.tabulator, props.columns)
-      const nextTableParamsFormatted = formatTableParams(params, this.ref?.tabulator, props.columns)
+      const tableParamsFormatted = formatTableParams(this.tableParams, props.columns)
+      const nextTableParamsFormatted = formatTableParams(params, props.columns)
 
       if (_isEqual(tableParamsFormatted, nextTableParamsFormatted)) {
         return previousData
