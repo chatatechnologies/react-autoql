@@ -104,11 +104,7 @@ export default class DataExplorer extends React.Component {
 
   formatColumnHeader = (column) => {
     return (
-      <div
-        className='data-preview-col-header'
-        data-for={this.props.tooltipID ?? 'data-preview-tooltip'}
-        // data-tip={JSON.stringify(column)}
-      >
+      <div className='data-preview-col-header' data-for={this.props.tooltipID ?? 'data-preview-tooltip'}>
         {column?.display_name}
       </div>
     )

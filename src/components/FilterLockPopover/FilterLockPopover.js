@@ -115,7 +115,6 @@ export class FilterLockPopover extends React.Component {
         positions={this.props.positions}
         isOpen={this.props.isOpen}
         align={this.props.align}
-        // ref={(r) => (this.containerRef = r)}
         parentElement={this.props.parentElement}
         boundaryElement={this.props.boundaryElement}
         content={this.renderContent}

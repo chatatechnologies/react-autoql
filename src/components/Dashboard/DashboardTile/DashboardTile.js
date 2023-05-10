@@ -756,15 +756,6 @@ export class DashboardTile extends React.Component {
                 spellCheck={false}
                 onChange={this.onSecondQueryInputChange}
                 onKeyDown={this.onSecondQueryTextKeyDown}
-                // onBlur={(e) => {
-                //   if (_get(this.props, 'tile.secondQuery') !== e.target.value) {
-                //     this.debouncedSetParamsForTile({
-                //       secondQuery: e.target.value,
-                //       secondDataConfig: undefined,
-                //       secondQueryValidationSelections: undefined,
-                //     })
-                //   }
-                // }}
                 placeholder={this.props.tile.query || 'Type a query'}
                 style={{
                   width: this.state.isSecondQueryInputOpen ? secondQueryInputWidth : '0px',
@@ -813,17 +804,7 @@ export class DashboardTile extends React.Component {
                     },
                     onChange: this.onQueryInputChange,
                     onKeyDown: this.onQueryTextKeyDown,
-                    onBlur: (e) => {
-                      // e.stopPropagation()
-                      // if (_get(this.props, 'tile.query') !== e.target.value) {
-                      //   this.debouncedSetParamsForTile({
-                      //     query: e.target.value,
-                      //     dataConfig: undefined,
-                      //     queryValidationSelections: undefined,
-                      //   })
-                      // }
-                      this.setState({ isQueryInputFocused: false })
-                    },
+                    onBlur: () => this.setState({ isQueryInputFocused: false }),
                   }}
                 />
               ) : (
@@ -838,16 +819,7 @@ export class DashboardTile extends React.Component {
                   onChange={this.onQueryInputChange}
                   onKeyDown={this.onQueryTextKeyDown}
                   onFocus={() => this.setState({ isQueryInputFocused: true })}
-                  onBlur={() => {
-                    // if (_get(this.props, 'tile.query') !== e.target.value) {
-                    //   this.debouncedSetParamsForTile({
-                    //     query: e.target.value,
-                    //     dataConfig: undefined,
-                    //     queryValidationSelections: undefined,
-                    //   })
-                    // }
-                    this.setState({ isQueryInputFocused: false })
-                  }}
+                  onBlur={() => this.setState({ isQueryInputFocused: false })}
                 />
               )}
             </div>
