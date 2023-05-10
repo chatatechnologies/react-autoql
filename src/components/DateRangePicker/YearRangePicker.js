@@ -3,8 +3,6 @@ import PropTypes from 'prop-types'
 import dayjs from '../../js/dayjsWithPlugins'
 import { v4 as uuid } from 'uuid'
 
-import './YearRangePicker.scss'
-
 export default class YearRangePicker extends React.Component {
   constructor(props) {
     super(props)
