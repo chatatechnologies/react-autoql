@@ -603,7 +603,7 @@ export default class RuleSimple extends React.Component {
   }
 
   removeFilter = (filter) => {
-    const newFilterList = this.state.queryFilters?.filter((f) => f.name !== filter.name)
+    const newFilterList = this.state.queryFilters?.filter((f) => !_isEqual(f, filter))
     this.setState({ queryFilters: newFilterList })
   }
 
