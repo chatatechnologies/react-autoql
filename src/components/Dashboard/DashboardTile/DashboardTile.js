@@ -281,8 +281,10 @@ export class DashboardTile extends React.Component {
           : getAutoQLConfig(this.props.autoQLConfig).enableQueryValidation,
         cancelToken: isSecondHalf ? this.secondAxiosSource.token : this.axiosSource.token,
         skipQueryValidation: skipQueryValidation,
-        source: mergeSources(this.props.source, source),
-        scope: 'dashboards', // Hardcode this for now until we change the filter lock blacklist to a whitelist
+        // Hardcode this for now until we change the filter lock blacklist to a whitelist
+        // mergeSources(this.props.source, source),
+        source: 'dashboards.user',
+        scope: 'dashboards',
         userSelection,
         pageSize,
         query,
@@ -452,12 +454,18 @@ export class DashboardTile extends React.Component {
       return
     }
 
-    const newState = { query, queryValidationSelections: undefined }
+    const newState = { query }
     this.clearTopQueryResponse(newState)
 
     clearTimeout(this.queryInputTimer)
     this.queryInputTimer = setTimeout(() => {
-      this.debouncedSetParamsForTile({ query, dataConfig: undefined, queryValidationSelections: undefined })
+      this.debouncedSetParamsForTile({
+        query,
+        pageSize: undefined,
+        aggConfig: undefined,
+        dataConfig: undefined,
+        queryValidationSelections: undefined,
+      })
     }, 600)
   }
 
@@ -473,6 +481,8 @@ export class DashboardTile extends React.Component {
     this.secondQueryInputTimer = setTimeout(() => {
       this.debouncedSetParamsForTile({
         secondQuery,
+        secondPageSize: undefined,
+        secondAggConfig: undefined,
         secondDataConfig: undefined,
         secondQueryValidationSelections: undefined,
       })
@@ -1001,8 +1011,8 @@ export class DashboardTile extends React.Component {
         tooltipID={this.props.tooltipID}
         chartTooltipID={this.props.chartTooltipID}
         shouldRender={!this.props.isDragging}
-        source={this.props.source}
-        scope={this.props.scope}
+        source='dashboards.user'
+        scope='dashboards'
         autoHeight={false}
         height='100%'
         width='100%'
@@ -1072,7 +1082,7 @@ export class DashboardTile extends React.Component {
         reportProblemCallback: this.reportProblemCallback,
         queryRequestData: this.topRequestData,
         onDisplayTypeChange: this.onDisplayTypeChange,
-        pageSize: this.props.tile.pageSize,
+        dataPageSize: this.props.tile.pageSize,
         onPageSizeChange: this.onPageSizeChange,
       },
       vizToolbarProps: {
@@ -1147,7 +1157,7 @@ export class DashboardTile extends React.Component {
         onQueryValidationSelectOption: this.onSecondQueryValidationSelectOption,
         queryRequestData,
         onDisplayTypeChange: this.onSecondDisplayTypeChange,
-        pageSize: this.props.tile.secondPageSize,
+        dataPageSize: this.props.tile.secondPageSize,
         onPageSizeChange: this.onSecondPageSizeChange,
       },
       vizToolbarProps: {

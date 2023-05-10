@@ -2230,17 +2230,15 @@ export class QueryOutput extends React.Component {
       <ErrorBoundary>
         <ChataChart
           key={this.chartID}
+          {...tableConfig}
+          data={data}
           hidden={!isChartType(this.state.displayType)}
           formattedTableParams={formattedTableParams}
           authentication={this.props.authentication}
-          queryRequestData={this.queryResponse?.data?.data?.fe_req}
-          pageSize={_get(this.queryResponse, 'data.data.row_limit')}
           ref={(ref) => (this.chartRef = ref)}
           type={this.state.displayType}
           isDataAggregated={isChartDataAggregated}
           popoverParentElement={this.props.popoverParentElement}
-          {...tableConfig}
-          data={data}
           dataChangeCount={usePivotData ? this.state.visiblePivotRowChangeCount : this.state.visibleRowChangeCount}
           columns={usePivotData ? this.pivotTableColumns : this.state.columns}
           isAggregated={usePivotData}
