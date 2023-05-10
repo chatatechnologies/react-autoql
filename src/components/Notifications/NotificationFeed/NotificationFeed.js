@@ -406,7 +406,6 @@ class NotificationFeed extends React.Component {
       >
         <DataAlerts
           authentication={this.props.authentication}
-          // onAlertInitializationCallback={handleInitialize}
           onErrorCallback={this.props.onErrorCallback}
           onSuccessAlert={this.props.onSuccessCallback}
         />
