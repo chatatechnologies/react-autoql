@@ -31,6 +31,7 @@ class NotificationFeed extends React.Component {
   constructor(props) {
     super(props)
 
+    this.COMPONENT_KEY = uuid()
     this.MODAL_COMPONENT_KEY = uuid()
     this.NOTIFICATION_FETCH_LIMIT = 10
     // Open event source http connection here to receive SSE
@@ -45,6 +46,7 @@ class NotificationFeed extends React.Component {
       isDataAlertsManagerOpen: false,
       unFetchedNotifications: 0,
       notificationList: [],
+      isLoading: false,
       pagination: {},
     }
   }
@@ -448,6 +450,10 @@ class NotificationFeed extends React.Component {
     })
   }
 
+  hasMoreNotifications = () => {
+    return !this.state.isLoading && this.state.pagination?.total_items > this.state.notificationList?.length
+  }
+
   render = () => {
     let style = {}
     if (!this.props.shouldRender) {
@@ -492,20 +498,14 @@ class NotificationFeed extends React.Component {
           {this.state.notificationList?.length ? (
             <Fragment>
               {this.renderTopOptions()}
-              <CustomScrollbars>
+              <CustomScrollbars ref={(r) => (this.scrollRef = r)}>
                 <InfiniteScroll
                   pageStart={0}
                   useWindow={false}
                   initialLoad={false}
                   loadMore={this.getNotifications}
-                  hasMore={
-                    !this.state.isLoading && this.state.pagination.total_items > this.state.notificationList.length
-                  }
-                  loader={
-                    <div className='react-autoql-spinner-centered' key={0}>
-                      <Spinner />
-                    </div>
-                  }
+                  hasMore={this.hasMoreNotifications()}
+                  getScrollParent={() => this.scrollRef?.container}
                 >
                   <div className='notification-feed-list'>
                     {this.state.notificationList.map((notification, i) => {
@@ -550,6 +550,11 @@ class NotificationFeed extends React.Component {
                         />
                       )
                     })}
+                    {this.state.isLoading && (
+                      <div className='react-autoql-spinner-centered'>
+                        <Spinner />
+                      </div>
+                    )}
                   </div>
                 </InfiniteScroll>
               </CustomScrollbars>
