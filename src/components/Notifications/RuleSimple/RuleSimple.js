@@ -67,12 +67,12 @@ export default class RuleSimple extends React.Component {
       queryFilters: this.getFilters(props),
     }
 
-    if (!props.queryResponse && props.initialData) {
+    if (initialData?.length) {
       this.TERM_ID_1 = initialData[0].id
       this.TERM_ID_2 = initialData.length > 1 ? initialData[1].id : uuid()
 
-      state.selectedOperator = initialData[0]?.condition ?? this.SUPPORTED_OPERATORS[0]
-      state.inputValue = initialData[0]?.term_value ?? ''
+      state.selectedOperator = initialData[0].condition ?? this.SUPPORTED_OPERATORS[0]
+      state.inputValue = initialData[0].term_value ?? ''
       state.secondInputValue = initialData[1]?.term_value ?? ''
       state.secondTermType = initialData[1]?.term_type?.toUpperCase() ?? NUMBER_TERM_TYPE
       state.secondQueryValidated = true
@@ -100,6 +100,7 @@ export default class RuleSimple extends React.Component {
   }
 
   componentDidMount = () => {
+    this._isMounted = true
     this.props.onUpdate(this.props.ruleId, this.isComplete(), this.isValid())
 
     // Focus on second input if it exists. The first input will already be filled in
@@ -121,19 +122,17 @@ export default class RuleSimple extends React.Component {
   }
 
   componentWillUnmount = () => {
+    this._isMounted = false
     if (this.autoCompleteTimer) {
       clearTimeout(this.autoCompleteTimer)
     }
   }
 
-  getConditionStatement = (tense, useRT, sentenceCase = false) => {
-    let queryText = this.getFormattedQueryText()?.toLowerCase()
-
-    // Todo: add list of filters to query text similar to RT
-    console.log('filters:', this.getFilters())
+  getConditionStatement = ({ tense, useRT, sentenceCase = false, withFilters = false } = {}) => {
+    let queryText = this.getFormattedQueryText({ sentenceCase, withFilters })
 
     if (useRT) {
-      queryText = <ReverseTranslation reverseTranslation={this.props.queryResponse} textOnly />
+      queryText = <ReverseTranslation queryResponse={this.props.queryResponse} textOnly />
     }
 
     const operator = DATA_ALERT_OPERATORS[this.state.selectedOperator]
@@ -548,18 +547,61 @@ export default class RuleSimple extends React.Component {
     })
   }
 
-  getFormattedQueryText = () => {
+  getQueryFiltersText = () => {
+    const rtArray = constructRTArray(this.props.queryResponse?.data?.data?.parsed_interpretation)
+    const filters = this.getFilters()
+
+    let filterText = ''
+    let filterTextStrings = []
+    filters.forEach((filter) => {
+      const filterValue = filter.value?.trim().toLowerCase()
+      const rtChunks = rtArray.filter((chunk) => {
+        return chunk.for?.trim()?.toLowerCase() === filterValue
+      })
+
+      let filterTextStr = ''
+      if (rtChunks?.length) {
+        rtChunks.forEach((chunk) => {
+          filterTextStr = filterTextStr + chunk.eng
+        })
+      }
+
+      if (filterTextStr) {
+        filterTextStrings.push(filterTextStr)
+      }
+    })
+
+    if (filterTextStrings.length) {
+      filterTextStrings.forEach((str, i) => {
+        const delim = i !== filterTextStrings.length - 1 ? ', ' : ''
+        filterText = `${filterText}${str}${delim}`
+      })
+    }
+
+    return filterText
+  }
+
+  getFormattedQueryText = ({ sentenceCase = true, withFilters } = {}) => {
     try {
+      let queryFiltersText = ''
       let queryText = this.state.inputValue
       if (this.props.queryResponse) {
         queryText = this.props.queryResponse?.data?.data?.text
+        queryFiltersText = this.getQueryFiltersText()
       }
 
       if (!queryText) {
         return ''
       }
 
-      queryText = queryText[0].toUpperCase() + queryText.substring(1)
+      if (sentenceCase) {
+        queryText = queryText[0].toUpperCase() + queryText.substring(1)
+      }
+
+      if (withFilters) {
+        queryText = `${queryText} ${queryFiltersText}`
+      }
+
       return queryText
     } catch (error) {
       console.error(error)
@@ -640,8 +682,16 @@ export default class RuleSimple extends React.Component {
                 chipContent = (
                   <span>
                     <strong>
-                      <Icon type='lock' /> {filter.show_message ?? 'Value'}:
-                    </strong>{' '}
+                      <Icon type='lock' /> {filter.show_message ?? 'Value'}
+                    </strong>
+                    {filter.filter_type?.toLowerCase() === 'exclude' ? (
+                      <span>
+                        {' '}
+                        <u>not</u>{' '}
+                      </span>
+                    ) : (
+                      ': '
+                    )}
                     {filter.value}
                   </span>
                 )
@@ -676,19 +726,6 @@ export default class RuleSimple extends React.Component {
     return (
       <div className='react-autoql-rule-input'>
         <div>
-          {/* Keep this text without the input in case we want to use later */}
-          {/* {this.allowOperators() && !!this.props.queryResponse ? (
-          <div className='data-alert-rule-formatted-query'>
-            <div>{this.getFormattedQueryText()} </div>
-            <Icon
-              type='info'
-              className='data-alert-rule-tooltip-icon'
-              data-for={this.props.tooltipID}
-              data-tip='This query will be used to evaluate the conditions below. If the query result meets the specified conditons, an alert will be triggered.'
-              data-place='right'
-            />
-          </div>
-        ) : ( */}
           <span
             className='data-alert-rule-query-readonly-container'
             data-for={this.props.tooltipID}

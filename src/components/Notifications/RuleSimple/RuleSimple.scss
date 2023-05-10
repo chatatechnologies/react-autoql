@@ -159,3 +159,10 @@
     color: var(--react-autoql-success-color);
   }
 }
+
+.data-alert-condition-statement {
+  .data-alert-condition-statement-query1,
+  .data-alert-condition-statement-query2 {
+    font-style: italic;
+  }
+}

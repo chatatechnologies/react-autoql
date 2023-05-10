@@ -528,10 +528,10 @@ export default class ScheduleBuilder extends React.Component {
     )
   }
 
-  getConditionStatement = (tense) => {
+  getConditionStatement = ({ tense, useRT, sentenceCase, withFilters } = {}) => {
     const { expressionRef } = this.props
     if (expressionRef) {
-      return expressionRef.getConditionStatement(tense)
+      return expressionRef.getConditionStatement({ tense, useRT, sentenceCase, withFilters })
     }
 
     return 'the Data Alert is triggered'
@@ -556,7 +556,10 @@ export default class ScheduleBuilder extends React.Component {
     return (
       <div className='frequency-type-container'>
         <span>
-          <span>If {this.getConditionStatement()},&nbsp;&nbsp;you'll be notified</span>
+          <span>
+            If {this.props.conditionStatement ?? this.getConditionStatement({ tense: 'present', sentenceCase: false })},
+            you'll be notified
+          </span>
           <Select
             options={Object.keys(DATA_ALERT_FREQUENCY_TYPE_OPTIONS).map((key) => ({
               value: key,

@@ -26,7 +26,7 @@
           display: block;
           margin-top: 16px;
           text-align: center;
-          font-weight: 500;
+          color: var(--react-autoql-accent-color);
           cursor: pointer;
         }
       }
@@ -45,8 +45,8 @@
       border-radius: 50%;
       justify-content: center;
       background: var(--react-autoql-background-color-secondary);
-      border: 1px solid var(--react-autoql-text-color-primary);
-      color: var(--react-autoql-text-color-primary);
+      border: 1px solid var(--react-autoql-accent-color);
+      color: var(--react-autoql-accent-color);
       transition: opacity 0.2s ease;
 
       span {
@@ -55,20 +55,13 @@
       }
     }
 
-    // &.active {
-    //   color: var(--react-autoql-accent-color);
-
-    //   .react-autoql-step-hoz-dot,
-    //   .react-autoql-step-connector {
-    //     border-color: var(--react-autoql-accent-color);
-    //     background: var(--react-autoql-accent-color);
-    //     color: var(--react-autoql-text-color-accent);
-    //   }
-    // }
-
     &.complete,
     &.active {
       color: var(--react-autoql-accent-color);
+
+      .react-autoql-step-hoz-title {
+        font-weight: 500;
+      }
 
       .react-autoql-step-hoz-dot,
       .react-autoql-step-connector {
@@ -88,7 +81,7 @@
 
     &.disabled {
       .react-autoql-step-hoz-dot,
-      .react-autoql-step-hoz-title,
+      .react-autoql-step-hoz-title-container .react-autoql-step-hoz-title,
       .react-autoql-step-connector {
         cursor: default !important;
         color: var(--react-autoql-text-color-placeholder);
@@ -105,7 +98,7 @@
 
     .react-autoql-step-connector {
       display: block;
-      border-color: var(--react-autoql-text-color-primary);
+      border-color: var(--react-autoql-accent-color);
       border-top-style: solid;
       border-top-width: 1px;
     }

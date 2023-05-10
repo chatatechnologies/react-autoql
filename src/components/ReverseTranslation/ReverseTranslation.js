@@ -6,14 +6,14 @@ import { v4 as uuid } from 'uuid'
 import { Tooltip } from '../Tooltip'
 import { Icon } from '../Icon'
 
-import { authenticationType } from '../../props/types'
 import { authenticationDefault, getAuthentication } from '../../props/defaults'
-import { constructRTArray } from '../../js/reverseTranslationHelpers'
 import { fetchVLAutocomplete } from '../../js/queryService'
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { authenticationType } from '../../props/types'
+import { constructRTArray } from '../../js/reverseTranslationHelpers'
+import { ErrorBoundary } from '../../containers/ErrorHOC'
+import { deepEqual } from '../../js/Util'
 
 import './ReverseTranslation.scss'
-import { deepEqual } from '../../js/Util'
 
 export default class ReverseTranslation extends React.Component {
   constructor(props) {
@@ -21,9 +21,10 @@ export default class ReverseTranslation extends React.Component {
 
     this.COMPONENT_KEY = uuid()
 
+    const reverseTranslationArray = constructRTArray(props.queryResponse?.data?.data?.parsed_interpretation)
+
     this.state = {
-      isValidated: false,
-      reverseTranslationArray: constructRTArray(props.queryResponse?.data?.data?.parsed_interpretation),
+      reverseTranslationArray,
     }
   }
 
@@ -50,25 +51,27 @@ export default class ReverseTranslation extends React.Component {
     }
   }
 
-  shouldComponentUpdate = (nextProps, nextState) => {
-    if (nextProps.reverseTranslation?.length && !this.props.reverseTranslation?.length) {
-      return true
-    }
-
+  shouldComponentUpdate = (nextProps) => {
     if (nextProps.isResizing && this.props.isResizing) {
       return false
     }
 
-    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
+    return true
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (!prevProps.reverseTranslation?.length && this.props.reverseTranslation?.length) {
-      this.setState({ reverseTranslationArray: constructRTArray(this.props.reverseTranslation) })
-    }
-
-    if (!prevState.reverseTranslationArray?.length && this.state.reverseTranslationArray?.length) {
-      this.validateAndUpdateValueLabels()
+    if (
+      !deepEqual(
+        prevProps.queryResponse?.data?.data?.parsed_interpretation,
+        this.props.queryResponse?.data?.data?.parsed_interpretation,
+      )
+    ) {
+      this.setState(
+        { reverseTranslationArray: constructRTArray(this.props.queryResponse?.data?.data?.parsed_interpretation) },
+        () => {
+          this.validateAndUpdateValueLabels()
+        },
+      )
     }
   }
 
@@ -77,6 +80,10 @@ export default class ReverseTranslation extends React.Component {
   }
 
   validateAndUpdateValueLabels = () => {
+    const sessionFilters = this.props.queryResponse?.data?.data?.fe_req?.persistent_filter_locks ?? []
+    const persistentFilters = this.props.queryResponse?.data?.data?.fe_req?.session_filter_locks ?? []
+    const lockedFilters = [...persistentFilters, ...sessionFilters] ?? []
+
     if (this.state.reverseTranslationArray.length) {
       const valueLabelValidationPromises = []
       const validatedInterpretationArray = _cloneDeep(this.state.reverseTranslationArray)
@@ -90,6 +97,15 @@ export default class ReverseTranslation extends React.Component {
               .then((response) => {
                 if (response?.data?.data?.matches?.length) {
                   validatedInterpretationArray[i].c_type = 'VALIDATED_VALUE_LABEL'
+
+                  const isLockedFilter = !!lockedFilters.find(
+                    (filter) =>
+                      filter?.value?.toLowerCase()?.trim() === validatedInterpretationArray[i].eng.toLowerCase().trim(),
+                  )
+
+                  if (isLockedFilter) {
+                    validatedInterpretationArray[i].isLocked = true
+                  }
                 }
               })
               .catch((error) => console.error(error)),
@@ -99,20 +115,13 @@ export default class ReverseTranslation extends React.Component {
 
       Promise.all(valueLabelValidationPromises).finally(() => {
         if (this._isMounted) {
-          this.setState({ isValidated: true, reverseTranslationArray: validatedInterpretationArray })
+          this.setState({ reverseTranslationArray: validatedInterpretationArray })
         }
       })
     }
   }
 
-  renderFilterLockLink = (text) => {
-    const sessionFilters = this.props.queryResponse?.data?.data?.fe_req?.persistent_filter_locks ?? []
-    const persistentFilters = this.props.queryResponse?.data?.data?.fe_req?.session_filter_locks ?? []
-    const lockedFilters = [...persistentFilters, ...sessionFilters] ?? []
-    const isLockedFilter = !!lockedFilters.find(
-      (filter) => filter?.value?.toLowerCase()?.trim() === text.toLowerCase().trim(),
-    )
-
+  renderValueLabelLink = (chunk) => {
     return (
       <a
         id='react-autoql-interpreted-value-label'
@@ -120,11 +129,11 @@ export default class ReverseTranslation extends React.Component {
         data-test='react-autoql-condition-link'
         onClick={(e) => {
           e.stopPropagation()
-          this.props.onValueLabelClick(text)
+          this.props.onValueLabelClick(chunk.eng)
         }}
       >
         {' '}
-        {isLockedFilter && <Icon type='lock' />} {<span>{text}</span>}
+        {chunk.isLocked && <Icon type='lock' />} {<span>{chunk.eng}</span>}
       </a>
     )
   }
@@ -134,7 +143,7 @@ export default class ReverseTranslation extends React.Component {
       case 'VALIDATED_VALUE_LABEL': {
         // If no callback is provided, do not display as link
         if (this.props.onValueLabelClick && !this.props.textOnly) {
-          return this.renderFilterLockLink(chunk.eng)
+          return this.renderValueLabelLink(chunk)
         }
         return ` ${chunk.eng}`
       }

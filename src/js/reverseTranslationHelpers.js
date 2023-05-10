@@ -89,31 +89,63 @@ const chunkStrByMatches = (str, matches) => {
   let chunkedFilter = []
 
   matches.forEach((match, i) => {
+    const endIndex = match[0].length + match.index
+    const valueLabelText = str.substring(match.index, endIndex)
+    const nonEscapedText = removeSingleQuoteEscape(valueLabelText)
+
     // Text before value label
     if (match.index > prevIndex) {
       const textBefore = str.substring(prevIndex, match.index)
       if (textBefore) {
-        chunkedFilter.push({ c_type: 'VL_PREFIX', eng: textBefore })
+        chunkedFilter.push({ c_type: 'VL_PREFIX', eng: textBefore, for: nonEscapedText })
       }
     }
 
     // Value label
-    const endIndex = match[0].length + match.index
-    const valueLabelText = str.substring(match.index, endIndex)
-    const nonEscapedText = removeSingleQuoteEscape(valueLabelText)
-    prevIndex = endIndex
-    chunkedFilter.push({ c_type: 'VALUE_LABEL', eng: nonEscapedText })
+    chunkedFilter.push({ c_type: 'VALUE_LABEL', eng: nonEscapedText, for: nonEscapedText })
 
     // Text after last value label
     if (i === matches.length - 1 && endIndex < str.length) {
       const textAfter = str.substring(endIndex, str.length)
       if (textAfter) {
-        chunkedFilter.push({ c_type: 'TEXT', eng: textAfter })
+        chunkedFilter.push({ c_type: 'VL_PREFIX', eng: textAfter, for: nonEscapedText })
       }
     }
+
+    prevIndex = endIndex
   })
 
   return chunkedFilter
+}
+
+const chunkNullVLString = (str) => {
+  let strArray = []
+  const splitStr = str.split('null')
+
+  if (splitStr[0]) {
+    strArray.push({
+      c_type: 'VL_PREFIX',
+      eng: splitStr[0],
+      for: 'null',
+    })
+  }
+
+  strArray.push({
+    c_type: 'VALUE_LABEL',
+    eng: 'null',
+    for: 'null',
+    operator: splitStr[0].trim() ?? undefined,
+  })
+
+  if (splitStr[1]) {
+    strArray.push({
+      c_type: 'VL_PREFIX',
+      eng: splitStr[1],
+      for: 'null',
+    })
+  }
+
+  return strArray
 }
 
 const parseFilterChunk = (chunk) => {
@@ -144,25 +176,26 @@ const parseFilterChunk = (chunk) => {
 
     let mergedArray = []
     textOutsideBrackets.forEach((str, i) => {
-      const isNullVL = str.trim().toLowerCase() === 'null'
+      let strChunked = []
+
+      const isNullVL = str.trim() === 'null' || str.includes(' null ')
+
       if (isNullVL) {
-        mergedArray.push({
-          c_type: 'VALUE_LABEL',
-          eng: str,
-        })
+        strChunked = chunkNullVLString(str)
       } else {
         // Isolate text in single quotes (the value labels)
         const textInQuotesMatches = getRegexMatchArray(str, singleQuoteRegex)
-        const strChunked = chunkStrByMatches(str, textInQuotesMatches) ?? []
-
-        mergedArray = [...mergedArray, ...strChunked]
+        strChunked = chunkStrByMatches(str, textInQuotesMatches) ?? []
       }
+
+      mergedArray = [...mergedArray, ...strChunked]
 
       const vlSuffixMatch = bracketTextMatches[i]
       if (vlSuffixMatch) {
         mergedArray.push({
           c_type: 'VL_SUFFIX',
           eng: vlSuffixMatch[0]?.trim(),
+          for: strChunked.find((ch) => ch.c_type === 'VALUE_LABEL')?.for,
         })
       }
     })

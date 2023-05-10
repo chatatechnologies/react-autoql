@@ -192,11 +192,6 @@ class DataAlertModal extends React.Component {
           scheduleData = this.scheduleBuilderRef.getData()
         }
 
-        // const filters = currentDataAlert?.filters ?? [
-        //   ...(queryResponse?.data?.data?.persistent_locked_conditions ?? []),
-        //   ...(queryResponse?.data?.data?.session_locked_conditions ?? []),
-        // ]
-
         const newDataAlert = {
           title: titleInput,
           data_return_query: dataReturnQuery,
@@ -415,14 +410,17 @@ class DataAlertModal extends React.Component {
 
   renderFooter = () => {
     return (
-      <div ref={(r) => (this.footerElement = r)} className='react-autoql-data-alert-modal-footer'>
-        <div className='modal-footer-button-container'>
-          {this.props.currentDataAlert && this.props.allowDelete && this.renderDeleteBtn()}
-        </div>
-        <div className='modal-footer-button-container'>
-          {this.renderCancelBtn()}
-          {this.renderBackBtn()}
-          {this.renderNextBtn()}
+      <div className='data-alert-modal-footer-container'>
+        {this.renderQuerySummary()}
+        <div ref={(r) => (this.footerElement = r)} className='react-autoql-data-alert-modal-footer'>
+          <div className='modal-footer-button-container'>
+            {this.props.currentDataAlert && this.props.allowDelete && this.renderDeleteBtn()}
+          </div>
+          <div className='modal-footer-button-container'>
+            {this.renderCancelBtn()}
+            {this.renderBackBtn()}
+            {this.renderNextBtn()}
+          </div>
         </div>
       </div>
     )
@@ -450,14 +448,6 @@ class DataAlertModal extends React.Component {
     )
   }
 
-  renderConditionTypeDescription = () => {
-    if (this.state.selectedConditionType === EXISTS_TYPE) {
-      return 'Description: Notification will be triggered when new data is detected'
-    }
-
-    return null
-  }
-
   renderConditionsStep = (active) => {
     if (!this.showConditionsStep()) {
       return null
@@ -480,12 +470,6 @@ class DataAlertModal extends React.Component {
             />
           </div>
         </div>
-        {/* Keep this in case we want to use later */}
-        {/* <div>
-          {this.SUPPORTED_CONDITION_TYPES?.length > 1
-            ? this.renderConditionTypeSelector()
-            : this.renderConditionTypeDescription()}
-        </div> */}
       </div>
     )
   }
@@ -500,6 +484,9 @@ class DataAlertModal extends React.Component {
           onCompleteChange={(isComplete) => this.setState({ isFrequencySectionReady: isComplete })}
           onErrorCallback={this.props.onErrorCallback}
           conditionType={this.state.selectedConditionType}
+          conditionStatement={
+            this.conditionsEditable() ? 'the Alert conditions are met' : 'new data is detected for your query'
+          }
           queryResponse={this.props.queryResponse}
           expressionRef={this.expressionRef}
           tooltipID={this.TOOLTIP_ID}
@@ -518,8 +505,15 @@ class DataAlertModal extends React.Component {
           onTitleInputChange={(e) => this.setState({ titleInput: e.target.value })}
           onMessageInputChange={(e) => this.setState({ messageInput: e.target.value })}
           queryText={this.getQueryText()}
-          conditionStatement={this.expressionRef?.getConditionStatement()}
           showConditionStatement
+          conditionStatement={
+            this.conditionsEditable() ? 'the Alert conditions are met' : 'new data is detected for your query'
+          }
+          // conditionStatement={this.expressionRef?.getConditionStatement({
+          //   tense: 'present',
+          //   sentenceCase: false,
+          //   withFilters: true,
+          // })}
         />
       </div>
     )
@@ -568,6 +562,26 @@ class DataAlertModal extends React.Component {
     this.setState({ isSettingsFormComplete })
   }
 
+  renderQuerySummary = () => {
+    if (this.state.activeStep === this.getStepNumber(this.CONDITIONS_STEP)) {
+      return null
+    }
+
+    return (
+      <div className='data-alert-modal-query-summary-container'>
+        <div className='data-alert-modal-query-summary-background' />
+        <div className='data-alert-modal-query-summary'>
+          <strong>Your query:</strong> "
+          {this.expressionRef?.getFormattedQueryText({
+            sentenceCase: false,
+            withFilters: true,
+          })}
+          "
+        </div>
+      </div>
+    )
+  }
+
   renderContent = () => {
     if (!this.props.isVisible) {
       return null
@@ -600,7 +614,7 @@ class DataAlertModal extends React.Component {
             }
           })}
         />
-        {this.renderStepContent()}
+        <div className='data-alert-modal-step-content-container'>{this.renderStepContent()}</div>
       </>
     )
   }
@@ -648,7 +662,6 @@ class DataAlertModal extends React.Component {
           overlayStyle={{ zIndex: '9998' }}
           title={!!this.props.currentDataAlert?.id ? 'Edit Data Alert Settings' : 'Create Data Alert'}
           titleIcon={this.getTitleIcon()}
-          subtitle={query ? `"${query}"` : undefined}
           ref={(r) => (this.modalRef = r)}
           isVisible={this.props.isVisible}
           onClose={this.props.onClose}

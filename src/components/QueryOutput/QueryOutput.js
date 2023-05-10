@@ -2522,7 +2522,6 @@ export class QueryOutput extends React.Component {
         appliedFilters={this.getFilters()}
         isResizing={this.props.isResizing}
         queryResponse={this.queryResponse}
-        reverseTranslation={this.queryResponse?.data?.data?.parsed_interpretation}
         tooltipID={this.props.tooltipID}
       />
     )

@@ -367,6 +367,11 @@ export default class NotificationItem extends React.Component {
 
   renderSummarySection = () => {
     const { notification } = this.props
+
+    if (!notification?.expression) {
+      return null
+    }
+
     const queryResponse = { data: notification?.query_result }
 
     return (

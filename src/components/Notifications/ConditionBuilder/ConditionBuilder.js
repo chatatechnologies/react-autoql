@@ -35,6 +35,10 @@ export default class ConditionBuilder extends React.Component {
     authentication: authenticationDefault,
     expression: undefined,
     conditionStatementOnly: false,
+    conditionTense: 'present',
+    useRT: false,
+    sentenceCase: true,
+    withFilters: false,
     onChange: () => {},
     onLastInputEnterPress: () => {},
   }
@@ -122,12 +126,25 @@ export default class ConditionBuilder extends React.Component {
     this.props.onChange(this.isComplete(), this.isValid(), this.getJSON())
   }
 
-  getConditionStatement = (tense, useRT, sentenceCase) => {
+  getFormattedQueryText = ({ sentenceCase, withFilters } = {}) => {
     if (this.ruleRef) {
-      return this.ruleRef?.getConditionStatement(tense, useRT, sentenceCase)
+      return this.ruleRef.getFormattedQueryText({ sentenceCase, withFilters })
     }
 
-    return
+    return null
+  }
+
+  getConditionStatement = ({
+    tense = this.props.conditionTense,
+    useRT = this.props.useRT,
+    sentenceCase = this.props.sentenceCase,
+    withFilters = this.props.withFilters,
+  } = {}) => {
+    if (this.ruleRef) {
+      return this.ruleRef.getConditionStatement({ tense, useRT, sentenceCase, withFilters })
+    }
+
+    return null
   }
 
   getFirstQuery = (providedTerm) => {

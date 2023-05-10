@@ -1,18 +1,58 @@
 .react-autoql-data-alert-modal-body {
-  padding: 20px;
+  padding: 0;
+}
+
+.react-autoql-data-alert-creation-modal {
+  height: calc(100vh - 90px);
+  .react-autoql-modal-footer {
+    padding: 0;
+
+    .data-alert-modal-query-summary-container {
+      position: relative;
+
+      .data-alert-modal-query-summary-background {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        opacity: 0.2;
+        background: var(--react-autoql-accent-color);
+      }
+      .data-alert-modal-query-summary {
+        position: relative;
+        padding: 10px 20px;
+        text-align: center;
+        color: var(--react-autoql-text-color-primary);
+      }
+    }
+
+    .react-autoql-data-alert-modal-footer {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 10px;
+    }
+  }
 }
 
 .react-autoql-data-alert-modal-content {
   height: 400px;
   max-height: 90vh;
-  padding: 0px 80px;
   display: flex;
   flex-direction: column;
+
+  .react-autoql-steps-hoz-container {
+    padding: 40px 100px;
+    padding-bottom: 20px;
+  }
 
   .react-autoql-data-alert-modal-step {
     font-weight: 400;
     font-size: 15px;
+    padding: 100px;
     padding-top: 15px;
+    padding-bottom: 20px;
 
     .react-autoql-data-alert-frequency-option {
       margin-right: 5px;
@@ -103,6 +143,15 @@
     }
   }
 
+  .data-alert-modal-step-content-container {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    width: 100%;
+    height: 100%;
+  }
+
   .react-autoql-step-content p {
     margin-bottom: 0.5em;
     margin-top: 0.5em;
@@ -125,12 +174,6 @@
     // &.DATE
     color: var(--react-autoql-text-color-primary);
   }
-}
-
-.react-autoql-data-alert-modal-footer {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
 }
 
 .modal-footer-button-container {
