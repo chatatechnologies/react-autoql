@@ -1241,13 +1241,16 @@ export class QueryOutput extends React.Component {
       this.tableRef?.updateData(this.tableData, this.isDataLimited())
     }
 
-    this.setState({
-      visibleRows: response.data.data.rows,
-      visibleRowChangeCount: this.state.visibleRowChangeCount + 1,
-    })
-
-    const dataPageSize = pageSize ?? response?.data?.data?.fe_req?.page_size
-    this.props.onPageSizeChange(dataPageSize)
+    this.setState(
+      {
+        visibleRows: response.data.data.rows,
+        visibleRowChangeCount: this.state.visibleRowChangeCount + 1,
+      },
+      () => {
+        const dataPageSize = pageSize ?? response?.data?.data?.fe_req?.page_size
+        this.props.onPageSizeChange(dataPageSize, this.state.visibleRows)
+      },
+    )
   }
 
   onTableFilter = async (filters, rows) => {
