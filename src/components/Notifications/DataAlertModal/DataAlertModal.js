@@ -449,10 +449,6 @@ class DataAlertModal extends React.Component {
   }
 
   renderConditionsStep = (active) => {
-    if (!this.showConditionsStep()) {
-      return null
-    }
-
     return (
       <div className={`react-autoql-data-alert-modal-step ${active ? '' : 'hidden'}`}>
         <div style={{ display: 'flex' }}>
@@ -474,6 +470,10 @@ class DataAlertModal extends React.Component {
     )
   }
 
+  getConditionStatement = () => {
+    return this.conditionsEditable() ? 'the Data Alert conditions are met' : 'new data is detected for your query'
+  }
+
   renderFrequencyStep = (active) => {
     return (
       <div className={`react-autoql-data-alert-modal-step ${active ? '' : 'hidden'}`}>
@@ -484,9 +484,7 @@ class DataAlertModal extends React.Component {
           onCompleteChange={(isComplete) => this.setState({ isFrequencySectionReady: isComplete })}
           onErrorCallback={this.props.onErrorCallback}
           conditionType={this.state.selectedConditionType}
-          conditionStatement={
-            this.conditionsEditable() ? 'the Alert conditions are met' : 'new data is detected for your query'
-          }
+          conditionStatement={this.getConditionStatement()}
           queryResponse={this.props.queryResponse}
           expressionRef={this.expressionRef}
           tooltipID={this.TOOLTIP_ID}
@@ -506,14 +504,7 @@ class DataAlertModal extends React.Component {
           onMessageInputChange={(e) => this.setState({ messageInput: e.target.value })}
           queryText={this.getQueryText()}
           showConditionStatement
-          conditionStatement={
-            this.conditionsEditable() ? 'the Alert conditions are met' : 'new data is detected for your query'
-          }
-          // conditionStatement={this.expressionRef?.getConditionStatement({
-          //   tense: 'present',
-          //   sentenceCase: false,
-          //   withFilters: true,
-          // })}
+          conditionStatement={this.getConditionStatement()}
         />
       </div>
     )
