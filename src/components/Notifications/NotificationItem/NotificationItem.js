@@ -328,13 +328,15 @@ export default class NotificationItem extends React.Component {
 
     return (
       <Menu>
-        <MenuItem
-          data-test='react-autoql-toolbar-more-options-notification'
-          title='Settings'
-          subtitle='View and edit this Data Alert'
-          icon='settings'
-          onClick={(e) => this.onOptionClick(() => this.props.onEditClick(this.props.dataAlert))}
-        />
+        {!!this.props.dataAlert && (
+          <MenuItem
+            data-test='react-autoql-toolbar-more-options-notification'
+            title='Settings'
+            subtitle='View and edit this Data Alert'
+            icon='settings'
+            onClick={(e) => this.onOptionClick(() => this.props.onEditClick(this.props.dataAlert))}
+          />
+        )}
         {!!status && (
           <MenuItem
             onClick={() => this.onOptionClick(() => this.changeDataAlertStatus(isActive ? 'INACTIVE' : 'ACTIVE'))}
@@ -412,7 +414,7 @@ export default class NotificationItem extends React.Component {
   }
 
   renderErrorDetails = () => {
-    if (!this.isDataAlertInErrorState()) {
+    if (this.props.dataAlert?.id && !this.isDataAlertInErrorState()) {
       const query = this.props.notification?.data_return_query
       return (
         <>
@@ -451,7 +453,11 @@ export default class NotificationItem extends React.Component {
 
     return (
       <span>
-        It has since been restarted and is no longer in an error state. Feel free to{' '}
+        It has since been{' '}
+        {this.props.dataAlert?.id
+          ? 'restarted and is no longer in an error state. '
+          : 'deleted and no longer triggering notifications.'}{' '}
+        Feel free to{' '}
         <ConfirmPopover
           className='notification-delete-confirm-popover'
           popoverParentElement={this.notificationItemRef}
