@@ -80,8 +80,8 @@
 
 .react-autoql-btn.react-autoql-btn-danger {
   &:not(.btn-filled) {
-    color: var(--react-autoql-danger-color, #ca0b00);
-    border: 1px solid var(--react-autoql-danger-color, #ca0b00);
+    color: var(--react-autoql-danger-color, var(--react-autoql-danger-color-default));
+    border: 1px solid var(--react-autoql-danger-color, var(--react-autoql-danger-color-default));
     background: inherit;
 
     &:hover {
@@ -91,8 +91,8 @@
 
   &.btn-filled {
     color: var(--react-autoql-text-color-accent);
-    background: var(--react-autoql-danger-color, #ca0b00);
-    border: 1px solid var(--react-autoql-danger-color, #ca0b00);
+    background: var(--react-autoql-danger-color, var(--react-autoql-danger-color-default));
+    border: 1px solid var(--react-autoql-danger-color, var(--react-autoql-danger-color-default));
 
     &:hover {
       opacity: 0.8;
