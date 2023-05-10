@@ -15,7 +15,7 @@ import { CONTINUOUS_TYPE, EXISTS_TYPE, PERIODIC_TYPE, SCHEDULED_TYPE } from '../
 
 import './DataAlertSettings.scss'
 
-const SettingSection = ({ title, children }) => {
+const SettingSection = ({ title, children } = {}) => {
   return (
     <div className='react-autoql-data-alert-setting-section'>
       {title ? <div className='react-autoql-data-alert-setting-section-title'>{title}</div> : null}
@@ -24,9 +24,9 @@ const SettingSection = ({ title, children }) => {
   )
 }
 
-const Settings = ({ children }) => {
+const Settings = ({ children, className } = {}) => {
   return (
-    <div className='react-autoql-flex-table-container' role='table'>
+    <div className={`react-autoql-flex-table-container ${className ?? ''}`} role='table'>
       {children ?? null}
     </div>
   )
@@ -248,7 +248,7 @@ export default class DataAlertSettings extends React.Component {
 
     return (
       <ErrorBoundary>
-        <Settings>
+        <Settings className='data-alert-settings-modal-content'>
           <SettingSection title='Conditions'>{this.ConditionsSettings()}</SettingSection>
           <Divider horizontal />
           <SettingSection title='Timing'>
