@@ -1,10 +1,33 @@
 .react-autoql-btn {
+  display: flex;
+  flex-wrap: nowrap;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+
+  width: auto;
+  height: auto;
   border-radius: 4px;
-  cursor: pointer;
   outline: none !important;
   transition: all 0.2s ease;
-  width: auto;
-  display: inline-block;
+  cursor: pointer;
+
+  &.btn-no-border {
+    border: none !important;
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+
+  .react-autoql-icon {
+    display: flex;
+  }
+
+  .react-autoql-btn-icon {
+    margin-right: 6px;
+    margin-left: -3px;
+    font-size: 1.1em;
+  }
 }
 
 // State
@@ -15,26 +38,38 @@
 }
 
 // Size
-.react-autoql-btn.small {
+.react-autoql-btn.react-autoql-btn-small {
   padding: 2px 8px;
   margin: 2px 3px;
 }
-.react-autoql-btn.large {
+.react-autoql-btn.react-autoql-btn-medium {
+  padding: 6px 12px;
+  margin: 3px 3px;
+}
+.react-autoql-btn.react-autoql-btn-large {
   padding: 10px 16px;
   margin: 2px 5px;
 }
 
 // Type
-.react-autoql-btn.default {
-  color: inherit;
-  border: 1px solid var(--react-autoql-border-color);
+.react-autoql-btn.btn-no-border {
+  color: var(--react-autoql-accent-color);
   background: inherit;
   &:hover {
-    border-color: var(--react-autoql-accent-color);
-    color: var(--react-autoql-accent-color);
+    background: var(--react-autoql-mask-color);
   }
 }
-.react-autoql-btn.primary {
+
+.react-autoql-btn.react-autoql-btn-default {
+  border: 1px solid var(--react-autoql-accent-color);
+  color: var(--react-autoql-accent-color);
+  background: inherit;
+  &:not(.btn-no-border):hover {
+    background: var(--react-autoql-mask-color);
+  }
+}
+
+.react-autoql-btn.react-autoql-btn-primary {
   background: var(--react-autoql-accent-color);
   border: 1px solid var(--react-autoql-accent-color);
   color: var(--react-autoql-text-color-accent);
@@ -42,13 +77,25 @@
     opacity: 0.8;
   }
 }
-.react-autoql-btn.danger {
-  color: var(--react-autoql-danger-color, #ca0b00);
-  border: 1px solid var(--react-autoql-danger-color, #ca0b00);
-  background: inherit;
 
-  &:hover {
-    background-color: var(--react-autoql-danger-color, #ca0b00);
+.react-autoql-btn.react-autoql-btn-danger {
+  &:not(.btn-filled) {
+    color: var(--react-autoql-danger-color, var(--react-autoql-danger-color-default));
+    border: 1px solid var(--react-autoql-danger-color, var(--react-autoql-danger-color-default));
+    background: inherit;
+
+    &:hover {
+      background: var(--react-autoql-mask-color);
+    }
+  }
+
+  &.btn-filled {
     color: var(--react-autoql-text-color-accent);
+    background: var(--react-autoql-danger-color, var(--react-autoql-danger-color-default));
+    border: 1px solid var(--react-autoql-danger-color, var(--react-autoql-danger-color-default));
+
+    &:hover {
+      opacity: 0.8;
+    }
   }
 }

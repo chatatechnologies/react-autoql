@@ -2,9 +2,9 @@ import { isColumnNumberType } from '../QueryOutput/columnHelpers'
 import { getPrecisionForDayJS } from '../../js/dateUtils'
 import dayjs from '../../js/dayjsWithPlugins'
 
-export const formatTableParams = (params, table, columns) => {
-  const formattedSorters = formatSortersForAPI(params, table, columns)
-  const formattedFilters = formatFiltersForAPI(params, table, columns)
+export const formatTableParams = (params, columns) => {
+  const formattedSorters = formatSortersForAPI(params, columns)
+  const formattedFilters = formatFiltersForAPI(params, columns)
 
   const configState = {
     sorters: formattedSorters,
@@ -15,9 +15,9 @@ export const formatTableParams = (params, table, columns) => {
   return configState
 }
 
-export const formatSortersForAPI = (params, table, columns) => {
+export const formatSortersForAPI = (params, columns) => {
   const sorters = []
-  if (params?.sort?.length > 0 && table) {
+  if (params?.sort?.length > 0) {
     params.sort.forEach((sorter) => {
       try {
         const column = columns?.[Number(sorter.field)]
@@ -59,19 +59,20 @@ export const formatNumberFilterValue = (headerValue = '') => {
   return { value: strNumber, operator }
 }
 
-export const formatFiltersForAPI = (params, table, columns) => {
+export const formatFiltersForAPI = (params, columns) => {
   // for Number type column =,<,>,<=  >=
   // for String the operator is = or like
   const filters = []
 
   // test to see if there is an error, if it continues for loop
-  if (params?.filter?.length > 0 && table) {
+  if (params?.filter?.length > 0) {
     params.filter.forEach((filter) => {
       try {
         const column = columns?.[Number(filter.field)]
         if (column) {
           const filterObj = {
             name: column.name,
+            columnName: column.title,
             value: filter.value,
             operator: 'like',
           }
@@ -90,6 +91,7 @@ export const formatFiltersForAPI = (params, table, columns) => {
               .toISOString()
             filterObj.value = `${startDate},${endDate}`
             filterObj.operator = 'between'
+            filterObj.displayValue = filter.value.replaceAll(' to ', ' and ')
           }
 
           filters.push(filterObj)

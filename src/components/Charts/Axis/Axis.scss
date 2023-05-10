@@ -124,9 +124,6 @@ g.legendOrdinal tspan {
     .react-autoql-list-item .react-autoql-checkbox {
       margin-left: 20px;
     }
-    .react-autoql-checkbox-tick {
-      left: 2px;
-    }
     .react-autoql-checkbox__input {
       width: 16px;
       height: 16px;
@@ -170,7 +167,7 @@ g.legendOrdinal tspan {
       }
     }
 
-    .react-autoql-select.agg-type-symbol {
+    .agg-type-symbol .react-autoql-select {
       font-weight: 600;
       font-size: 12px;
       height: 26px;

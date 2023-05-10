@@ -568,7 +568,7 @@ export default class QueryValidationMessage extends React.Component {
                     return (
                       <li
                         key={`select-option-${this.ID}-${option.value}`}
-                        className={`react-autoql-select-option${option.value === this.props.value ? ' active' : ''}`}
+                        className={`react-autoql-menu-item${option.value === this.props.value ? ' active' : ''}`}
                         onClick={() => {
                           this.setState({ isValidationSelectorOpen: false })
                           this.onChangeQueryValidationSelectOption(option.value)

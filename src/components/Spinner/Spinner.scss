@@ -1,14 +1,14 @@
 .spinner-loader {
   display: inline-block;
-  width: 14px;
-  height: 14px;
+  width: 1em;
+  height: 1em;
   margin-right: 6px;
 }
 .spinner-loader:after {
   content: ' ';
   display: block;
-  width: 16px;
-  height: 16px;
+  width: 1em;
+  height: 1em;
   margin: 0px;
   border-radius: 50%;
   border: 1px solid currentColor;

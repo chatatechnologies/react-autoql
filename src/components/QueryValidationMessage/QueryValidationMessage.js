@@ -7,6 +7,7 @@ import _cloneDeep from 'lodash.clonedeep'
 import { Icon } from '../Icon'
 import { Select } from '../Select'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { Button } from '../Button'
 
 export default class QueryValidationMessage extends React.Component {
   originalReplaceWords = []
@@ -318,19 +319,21 @@ export default class QueryValidationMessage extends React.Component {
         </div>
         <div>
           {this.renderQueryValidationQuery()}
-          <button
-            className='react-autoql-query-validation-execute-btn'
-            onClick={() => {
-              this.props.onSuggestionClick({
-                query: this.getQueryValidationQueryText(this.state.selectedSuggestions),
-                userSelection: this.state.selectedSuggestions,
-                scope: this.props.scope,
-              })
-            }}
-          >
-            <Icon type={this.props.submitIcon || 'play'} className='react-autoql-execute-query-icon' />
-            {this.props.submitText || 'Run Query'}
-          </button>
+          <div className='react-autoql-query-validation-execute-btn-container'>
+            <Button
+              className='react-autoql-query-validation-execute-btn'
+              onClick={() => {
+                this.props.onSuggestionClick({
+                  query: this.getQueryValidationQueryText(this.state.selectedSuggestions),
+                  userSelection: this.state.selectedSuggestions,
+                  scope: this.props.scope,
+                })
+              }}
+              icon={this.props.submitIcon || 'play'}
+            >
+              {this.props.submitText || 'Run Query'}
+            </Button>
+          </div>
         </div>
       </div>
     )

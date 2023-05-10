@@ -1,7 +1,7 @@
 .react-autoql-card {
   background: var(--react-autoql-background-color-secondary);
   border-radius: 6px;
-  box-shadow: 0 1px 3px 0 var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
+  box-shadow: var(--react-autoql-box-shadow-1);
   padding: 15px;
   margin: 10px;
   overflow: hidden;

@@ -1,11 +1,13 @@
 .chat-voice-record-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   width: 40px;
   height: 40px;
   border-radius: 24px;
   margin: 10px;
   margin-left: 0;
   font-size: 18px;
-  line-height: 24px;
   outline: none !important;
   position: relative;
   cursor: pointer;

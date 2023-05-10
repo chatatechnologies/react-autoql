@@ -2,10 +2,6 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { AiFillCaretDown } from '@react-icons/all-files/ai/AiFillCaretDown'
-import { AiFillCaretLeft } from '@react-icons/all-files/ai/AiFillCaretLeft'
-import { AiFillCaretRight } from '@react-icons/all-files/ai/AiFillCaretRight'
-import { AiFillCaretUp } from '@react-icons/all-files/ai/AiFillCaretUp'
 import { AiOutlineBook } from '@react-icons/all-files/ai/AiOutlineBook'
 import { AiOutlineBulb } from '@react-icons/all-files/ai/AiOutlineBulb'
 import { AiOutlineDashboard } from '@react-icons/all-files/ai/AiOutlineDashboard'
@@ -15,6 +11,7 @@ import { AiOutlineMenu } from '@react-icons/all-files/ai/AiOutlineMenu'
 import { AiOutlineQuestionCircle } from '@react-icons/all-files/ai/AiOutlineQuestionCircle'
 import { AiOutlineTag } from '@react-icons/all-files/ai/AiOutlineTag'
 import { AiOutlineFileSearch } from '@react-icons/all-files/ai/AiOutlineFileSearch'
+import { AiOutlineNumber } from '@react-icons/all-files/ai/AiOutlineNumber'
 
 import { BiLineChart } from '@react-icons/all-files/bi/BiLineChart'
 import { BiSearchAlt } from '@react-icons/all-files/bi/BiSearchAlt'
@@ -22,10 +19,12 @@ import { BiBookmark } from '@react-icons/all-files/bi/BiBookmark'
 import { BiBook } from '@react-icons/all-files/bi/BiBook'
 import { BiNote } from '@react-icons/all-files/bi/BiNote'
 import { BiAbacus } from '@react-icons/all-files/bi/BiAbacus'
-import { BsChevronDown } from '@react-icons/all-files/bs/BsChevronDown'
-import { BsArrowBarDown } from '@react-icons/all-files/bs/BsArrowBarDown'
+import { BiEnvelope } from '@react-icons/all-files/bi/BiEnvelope'
+import { BiEnvelopeOpen } from '@react-icons/all-files/bi/BiEnvelopeOpen'
 
 import { BsArrowBarUp } from '@react-icons/all-files/bs/BsArrowBarUp'
+import { BsArrowBarDown } from '@react-icons/all-files/bs/BsArrowBarDown'
+import { BsLightning } from '@react-icons/all-files/bs/BsLightning'
 
 import { FaMicrophoneAlt } from '@react-icons/all-files/fa/FaMicrophoneAlt'
 
@@ -38,8 +37,6 @@ import { FiCheck } from '@react-icons/all-files/fi/FiCheck'
 import { FiDatabase } from '@react-icons/all-files/fi/FiDatabase'
 import { FiDownload } from '@react-icons/all-files/fi/FiDownload'
 import { FiEye } from '@react-icons/all-files/fi/FiEye'
-import { RiFilterLine } from '@react-icons/all-files/ri/RiFilterLine'
-import { RiFilterOffLine } from '@react-icons/all-files/ri/RiFilterOffLine'
 import { FiMoreHorizontal } from '@react-icons/all-files/fi/FiMoreHorizontal'
 import { FiMoreVertical } from '@react-icons/all-files/fi/FiMoreVertical'
 import { FiPauseCircle } from '@react-icons/all-files/fi/FiPauseCircle'
@@ -50,6 +47,12 @@ import { FiTrash2 } from '@react-icons/all-files/fi/FiTrash2'
 import { FiMaximize } from '@react-icons/all-files/fi/FiMaximize'
 import { FiMinimize } from '@react-icons/all-files/fi/FiMinimize'
 import { FiRefreshCw } from '@react-icons/all-files/fi/FiRefreshCw'
+import { FiTool } from '@react-icons/all-files/fi/FiTool'
+
+import { RiFilterLine } from '@react-icons/all-files/ri/RiFilterLine'
+import { RiFilterOffLine } from '@react-icons/all-files/ri/RiFilterOffLine'
+import { RiListSettingsLine } from '@react-icons/all-files/ri/RiListSettingsLine'
+import { RiBroadcastFill } from '@react-icons/all-files/ri/RiBroadcastFill'
 
 import { GoReport } from '@react-icons/all-files/go/GoReport'
 
@@ -57,6 +60,10 @@ import { IoIosCloseCircleOutline } from '@react-icons/all-files/io/IoIosCloseCir
 import { IoIosGlobe } from '@react-icons/all-files/io/IoIosGlobe'
 import { IoIosHourglass } from '@react-icons/all-files/io/IoIosHourglass'
 import { IoIosSearch } from '@react-icons/all-files/io/IoIosSearch'
+import { IoIosArrowDown } from '@react-icons/all-files/io/IoIosArrowDown'
+import { IoIosArrowUp } from '@react-icons/all-files/io/IoIosArrowUp'
+import { IoIosArrowBack } from '@react-icons/all-files/io/IoIosArrowBack'
+import { IoIosArrowForward } from '@react-icons/all-files/io/IoIosArrowForward'
 
 import { MdClose } from '@react-icons/all-files/md/MdClose'
 import { MdContentCopy } from '@react-icons/all-files/md/MdContentCopy'
@@ -98,6 +105,8 @@ export default class Icon extends React.Component {
     color: PropTypes.string,
     warning: PropTypes.bool,
     danger: PropTypes.bool,
+    spinning: PropTypes.bool,
+    disabled: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -106,10 +115,12 @@ export default class Icon extends React.Component {
     color: undefined,
     warning: false,
     danger: false,
+    spinning: false,
+    disabled: false,
   }
 
   render = () => {
-    const { type, size, showBadge, warning, danger, ...nativeProps } = this.props
+    const { type, size, showBadge, warning, danger, spinning, disabled, ...nativeProps } = this.props
 
     let icon = null
 
@@ -147,19 +158,19 @@ export default class Icon extends React.Component {
         break
       }
       case 'caret-right': {
-        icon = <AiFillCaretRight />
+        icon = <IoIosArrowForward />
         break
       }
       case 'caret-left': {
-        icon = <AiFillCaretLeft />
+        icon = <IoIosArrowBack />
         break
       }
       case 'caret-down': {
-        icon = <AiFillCaretDown />
+        icon = <IoIosArrowDown />
         break
       }
       case 'caret-up': {
-        icon = <AiFillCaretUp />
+        icon = <IoIosArrowUp />
         break
       }
       case 'react-autoql-bubbles-outlined': {
@@ -184,6 +195,14 @@ export default class Icon extends React.Component {
       }
       case 'close': {
         icon = <MdClose />
+        break
+      }
+      case 'mark-read': {
+        icon = <BiEnvelopeOpen />
+        break
+      }
+      case 'mark-unread': {
+        icon = <BiEnvelope />
         break
       }
       case 'maximize': {
@@ -282,8 +301,20 @@ export default class Icon extends React.Component {
         icon = <AiOutlineBulb />
         break
       }
+      case 'lightning': {
+        icon = <BsLightning />
+        break
+      }
       case 'line-chart': {
         icon = lineChartIcon
+        break
+      }
+      case 'list-settings': {
+        icon = <RiListSettingsLine />
+        break
+      }
+      case 'live': {
+        icon = <RiBroadcastFill />
         break
       }
       case 'lock': {
@@ -324,6 +355,10 @@ export default class Icon extends React.Component {
       }
       case 'notification-pause': {
         icon = <FiPauseCircle />
+        break
+      }
+      case 'number': {
+        icon = <AiOutlineNumber />
         break
       }
       case 'abacus': {
@@ -398,6 +433,10 @@ export default class Icon extends React.Component {
         icon = <AiOutlineBook />
         break
       }
+      case 'tool': {
+        icon = <FiTool />
+        break
+      }
       case 'trash': {
         icon = <FiTrash2 />
         break
@@ -426,9 +465,11 @@ export default class Icon extends React.Component {
           data-test='react-autoql-icon'
           className={`react-autoql-icon
             ${this.props.className || ''}
-            ${this.props.type}
-            ${this.props.warning ? ' warning' : ''}
-            ${this.props.danger ? ' danger' : ''}`}
+            react-autoql-icon-${this.props.type}
+            ${this.props.warning ? 'react-autoql-icon-warning' : ''}
+            ${this.props.danger ? 'react-autoql-icon-danger' : ''}
+            ${this.props.spinning ? 'react-autoql-icon-spinning' : ''}
+            ${this.props.disabled ? 'react-autoql-icon-disabled' : ''}`}
           style={{
             color: this.props.color,
             fontSize: `${this.props.size}px`,

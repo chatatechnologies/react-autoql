@@ -31,15 +31,6 @@
     overflow: auto;
   }
 
-  .custom-scrollbar-view:hover::-webkit-scrollbar-corner {
-    // background-color: transparent;
-  }
-  .custom-scrollbar-view:hover::-webkit-scrollbar-track,
-  .custom-scrollbar-view:hover::-webkit-scrollbar-track-piece,
-  .custom-scrollbar-view::-webkit-scrollbar-corner {
-    // background-color: transparent;
-  }
-
   .data-explorer-data-preview {
     flex: 0 0 auto;
     overflow: hidden;
@@ -124,7 +115,7 @@
   background: var(--bg-color);
   border: 2px solid var(--border-color);
   color: var(--react-autoql-text-color);
-  box-shadow: var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15)) 0px 8px 24px;
+  box-shadow: var(--react-autoql-box-shadow-1);
 
   &.place-bottom::after,
   &.place-top::after,

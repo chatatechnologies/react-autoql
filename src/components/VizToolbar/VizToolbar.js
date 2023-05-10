@@ -31,7 +31,6 @@ class VizToolbar extends React.Component {
   }
 
   static defaultProps = {
-    onDisplayTypeChange: () => {},
     shouldRender: true,
     disableCharts: false,
     vertical: false,
@@ -46,6 +45,8 @@ class VizToolbar extends React.Component {
     if (!this.props.shouldRender && !nextProps.shouldRender) {
       return false
     }
+
+    return true
 
     return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
   }
@@ -90,6 +91,7 @@ class VizToolbar extends React.Component {
           data-tip={name}
           data-for={this.props.tooltipID ?? `react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
           data-test='viz-toolbar-button'
+          disabled={this.props.responseRef?.state?.isLoadingData}
         >
           {icon}
         </button>

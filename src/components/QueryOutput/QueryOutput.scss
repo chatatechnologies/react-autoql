@@ -108,19 +108,21 @@
   font-size: inherit;
 }
 .no-columns-error-message {
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   padding: 20px;
   font-size: 13px;
 
   .warning-icon {
     font-size: 22px;
     display: block;
-    margin-bottom: -13px;
-    text-align: center;
+    margin-bottom: 10px;
+    color: var(--react-autoql-warning-color);
   }
   .eye-icon {
-    vertical-align: bottom;
-    line-height: 18px;
+    vertical-align: middle;
   }
 }
 .query-output-footer {
@@ -151,41 +153,35 @@
   display: inline-block;
   position: relative;
 }
-.react-autoql-select-popup-container.query-validation-select {
-  padding: 5px 0;
-  letter-spacing: 0.03em;
-  font-family: var(--react-autoql-font-family), sans-serif;
 
-  .react-autoql-select-option {
-    height: unset;
-    font-size: 14px;
-    line-height: 24px;
-    padding: 0 15px;
+.react-autoql-select-popover-container.query-validation-select {
+  letter-spacing: 0.03em;
+  margin: 0;
+}
+
+.query-validation-select .react-autoql-select-popup-container {
+  .react-autoql-menu-item {
+    padding: 5px 15px;
   }
-  .react-autoql-select-option:last-of-type {
+
+  .react-autoql-menu-item:last-of-type {
     color: #d84830;
   }
 }
 .react-autoql-query-validation-query {
   text-align: center;
 }
-.react-autoql-query-validation-execute-btn {
-  background: var(--react-autoql-background-color-secondary);
-  border: 1px solid var(--react-autoql-border-color);
-  border-radius: 4px;
-  height: 38px;
-  width: calc(100% - 15px);
-  margin: 5px;
-  margin-top: 24px;
-  color: inherit;
-  cursor: pointer;
-  outline: none !important;
-  transition: all 0.2s ease;
-  box-shadow: var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15)) 0px 1px 0px;
+
+.react-autoql-query-validation-execute-btn-container {
+  display: flex;
+  width: 100%;
+
+  .react-autoql-btn.react-autoql-query-validation-execute-btn {
+    margin-top: 24px;
+    flex: 1;
+  }
 }
-.react-autoql-query-validation-execute-btn:hover {
-  border-color: #28a8e0;
-}
+
 .react-autoql-execute-query-icon {
   font-size: 16px;
   vertical-align: middle !important;
@@ -200,21 +196,24 @@
     fill: var(--react-autoql-accent-color);
   }
 }
-.react-autoql-query-validation-select {
-  position: relative;
-  display: inline-block;
-  height: 2em;
-  background: none;
-  outline: none !important;
-  border: none;
-  letter-spacing: 0.05em;
-  font-family: inherit;
-  font-size: inherit;
-  margin: 0;
-  padding: 0;
-  border-radius: 0;
-  border-bottom: 1px dashed;
-  color: var(--react-autoql-accent-color);
+.react-autoql-query-validation-select.react-autoql-select-and-label {
+  padding: 0 !important;
+
+  .react-autoql-select {
+    position: relative;
+    height: 2em !important;
+    background: none;
+    outline: none !important;
+    border: none;
+    letter-spacing: 0.05em;
+    font-family: inherit;
+    font-size: inherit;
+    margin: 0;
+    padding: 0 !important;
+    border-radius: 0;
+    border-bottom: 1px dashed;
+    color: var(--react-autoql-accent-color);
+  }
 }
 .react-autoql-query-validation-delete-button {
   position: relative;
@@ -236,6 +235,9 @@
 
 .single-value-response-flex-container {
   flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 
   .single-value-response-container {
     width: 100%;
@@ -245,6 +247,8 @@
       color: inherit;
       cursor: unset;
       font-size: 20px;
+      font-weight: 400;
+
       &:hover {
         color: inherit;
       }

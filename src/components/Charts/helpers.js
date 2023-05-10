@@ -8,7 +8,7 @@ import { isMobile } from 'react-device-detect'
 import { deepEqual, formatChartLabel, formatElement, getDayJSObj } from '../../js/Util'
 import { dataFormattingType } from '../../props/types'
 import { dataFormattingDefault } from '../../props/defaults'
-import { AGG_TYPES, DAYJS_PRECISION_FORMATS, MAX_CHART_LABEL_SIZE, NUMBER_COLUMN_TYPES } from '../../js/Constants'
+import { AGG_TYPES, DAYJS_PRECISION_FORMATS, NUMBER_COLUMN_TYPES } from '../../js/Constants'
 
 const DEFAULT_INNER_PADDING = 0.2
 const DEFAULT_OUTER_PADDING = 0.5
@@ -142,11 +142,11 @@ export const scaleZero = (scale) => {
   return scale(0)
 }
 
-export const getKey = (rowIndex, cellIndex) => {
-  return `${rowIndex}-${cellIndex}`
+export const getKey = (rowIndex, cellIndex, extraIndex = 0) => {
+  return `${rowIndex}-${cellIndex}-${extraIndex}`
 }
 
-export const labelsShouldRotate = (axisElement) => {
+export const shouldLabelsRotate = (axisElement) => {
   let prevBBox
   let didOverlap = false
   const padding = 10
@@ -223,11 +223,16 @@ export const getTooltipContent = ({ row, columns, colIndex, stringColumnIndex, l
 
 export const getLegendLabelsForMultiSeries = (columns, colorScale, numberColumnIndices = []) => {
   try {
-    if (numberColumnIndices.length < 1) {
+    if (!numberColumnIndices?.length) {
       return []
     }
 
     const numberColumns = numberColumnIndices.map((index) => columns[index])
+
+    if (!numberColumns?.length) {
+      return []
+    }
+
     const allAggTypesSame = numberColumns.every((col) => col.aggType === numberColumns[0].aggType)
 
     const legendLabels = numberColumnIndices.map((columnIndex, i) => {
@@ -635,28 +640,6 @@ export const getNumberAxisUnits = (numberColumns) => {
   }
 
   return 'none'
-}
-
-export const getMaxLabelWidth = (fullWidth) => {
-  const maxWidth = MAX_CHART_LABEL_SIZE
-  const minWidth = 6
-  const avgCharSize = 10
-
-  if (!fullWidth) {
-    return maxWidth
-  }
-
-  let maxLabelWidth = maxWidth
-
-  // Labels should not exceed half of the full height
-  const calculatedMax = Math.floor((0.5 * fullWidth) / avgCharSize)
-  if (calculatedMax < minWidth) {
-    maxLabelWidth = minWidth
-  } else if (calculatedMax < maxWidth) {
-    maxLabelWidth = calculatedMax
-  }
-
-  return maxLabelWidth
 }
 
 export const getLinearScale = ({

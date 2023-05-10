@@ -7,7 +7,11 @@ import ReverseTranslation from './ReverseTranslation'
 const defaultProps = ReverseTranslation.defaultProps || {}
 
 const setup = (props = {}, state = null) => {
-  const setupProps = { ...defaultProps, ...props }
+  const setupProps = {
+    ...defaultProps,
+    ...props,
+    queryResponse: { data: { data: { parsed_interpretation: props.reverseTranslation } } },
+  }
   const wrapper = shallow(<ReverseTranslation {...setupProps} />)
   if (state) {
     wrapper.setState(state)
@@ -35,6 +39,7 @@ describe('renders correctly', () => {
       reverseTranslation: [{ c_type: 'VALIDATED_VALUE_LABEL', eng: 'This is a test' }],
       onValueLabelClick: () => {},
     })
+
     const reverseTranslationLink = findByTestAttr(wrapper, 'react-autoql-condition-link')
     expect(reverseTranslationLink.exists()).toBe(true)
   })

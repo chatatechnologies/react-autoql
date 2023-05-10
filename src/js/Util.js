@@ -11,7 +11,6 @@ import {
   SEASON_NAMES,
   PRECISION_TYPES,
   WEEKDAY_NAMES_SUN,
-  MAX_CHART_LABEL_SIZE,
 } from './Constants'
 import { dataFormattingDefault, getDataFormatting } from '../props/defaults'
 
@@ -24,7 +23,6 @@ import {
   isColumnNumberType,
   isColumnStringType,
 } from '../components/QueryOutput/columnHelpers'
-import { getMaxLabelWidth } from '../components/Charts/helpers'
 
 export const rotateArray = (array, n) => {
   const rotated = [...array]
@@ -375,7 +373,7 @@ export const formatStringDate = (value, config) => {
   return value
 }
 
-export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWidth = MAX_CHART_LABEL_SIZE }) => {
+export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWidth }) => {
   if (d === null) {
     return {
       fullWidthLabel: 'Untitled Category',
@@ -460,7 +458,7 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWid
   }
 
   const fullWidthLabel = formattedLabel
-  if (typeof formattedLabel === 'string' && formattedLabel.length > maxLabelWidth) {
+  if (typeof formattedLabel === 'string' && maxLabelWidth && formattedLabel.length > maxLabelWidth) {
     formattedLabel = `${formattedLabel.substring(0, maxLabelWidth)}...`
   }
 
@@ -680,6 +678,10 @@ export const getNumberOfGroupables = (columns) => {
   return numberOfGroupables
 }
 
+export const isListQuery = (columns) => {
+  return getNumberOfGroupables(columns) === 0
+}
+
 export const getGroupableColumns = (columns) => {
   const groupableColumns = []
   if (columns) {
@@ -821,11 +823,22 @@ export const isSingleValueResponse = (response) => {
     return false
   }
 
-  const hasOneColumn = response?.data?.data?.columns?.length === 1
-  const isNoData = response?.data?.data?.rows && !response?.data?.data?.rows?.length
-  const oneRowAndColumn = response?.data?.data?.rows?.length === 1 && response.data.data.rows[0]?.length === 1
+  const rows = response?.data?.data?.rows
+  const columns = response?.data?.data?.columns
+  const referenceID = response?.data?.reference_id
+  const hasNoData = rows && !rows?.length
+  const hasOneColumn = columns?.length === 1
 
-  return oneRowAndColumn || (isNoData && hasOneColumn)
+  if (hasNoData && hasOneColumn && referenceID === '1.1.211') {
+    return true
+  }
+
+  const oneRowAndColumn = rows?.length === 1 && rows[0]?.length === 1
+  if (oneRowAndColumn) {
+    return true
+  }
+
+  return false
 }
 
 export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotDataLength, isDataLimited } = {}) => {
@@ -848,12 +861,12 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
       return ['text']
     }
 
-    if (!rows?.length) {
-      return ['table']
-    }
-
     if (isSingleValueResponse(response)) {
       return ['single-value']
+    }
+
+    if (!rows?.length) {
+      return ['table']
     }
 
     const maxRowsForPieChart = 10

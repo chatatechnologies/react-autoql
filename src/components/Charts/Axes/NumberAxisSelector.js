@@ -118,6 +118,7 @@ export default class NumberAxisSelector extends React.Component {
                 showArrow={false}
                 align='start'
                 size='small'
+                showArrow={false}
                 options={AGG_TYPES.map((agg) => {
                   return {
                     value: agg.value,
