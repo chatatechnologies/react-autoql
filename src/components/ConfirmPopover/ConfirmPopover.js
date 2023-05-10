@@ -50,7 +50,13 @@ export default class ConfirmPopover extends React.Component {
 
   onConfirmClick = async () => {
     this.setState({ loading: true })
-    await this.props.onConfirm()
+
+    try {
+      await this.props.onConfirm()
+    } catch (error) {
+      console.error(error)
+    }
+
     this.setState({ isOpen: false, loading: false })
   }
 

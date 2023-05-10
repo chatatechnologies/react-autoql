@@ -169,21 +169,12 @@
 
         .react-autoql-response-content-container {
           max-height: 300px !important;
-          // height: 300px !important;
         }
-
-        // &.loading {
-        //   visibility: hidden;
-        //   position: absolute;
-        //   pointer-events: none;
-        //   opacity: 0;
-        // }
       }
     }
 
     &.collapsed {
       visibility: hidden;
-      // position: absolute;
       pointer-events: none;
       opacity: 0;
     }

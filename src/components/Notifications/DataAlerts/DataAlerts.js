@@ -234,7 +234,6 @@ class DataAlerts extends React.Component {
           {this.renderNotificationlist('custom', customAlertsList)}
           {this.renderNotificationEditModal()}
           {this.renderDeleteDialog()}
-          {/* {!this.props.tooltipID && ( */}
           <Tooltip
             className='react-autoql-tooltip'
             id='react-autoql-notification-settings-tooltip'
