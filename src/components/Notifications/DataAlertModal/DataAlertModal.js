@@ -246,6 +246,7 @@ class DataAlertModal extends React.Component {
       })
         .then((dataAlertResponse) => {
           this.props.onSave(dataAlertResponse)
+          this.props.onSuccessAlert('Data Alert updated!')
 
           this.setState({
             isSavingDataAlert: false,
@@ -264,6 +265,8 @@ class DataAlertModal extends React.Component {
       })
         .then((dataAlertResponse) => {
           this.props.onSave(dataAlertResponse)
+          this.props.onSuccessAlert('Data Alert created!')
+
           this.setState({
             isSavingDataAlert: false,
           })

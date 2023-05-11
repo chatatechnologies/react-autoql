@@ -322,9 +322,7 @@ class NotificationFeed extends React.Component {
   }
 
   onDataAlertSave = () => {
-    // todo: show success alert
     this.setState({ isEditModalVisible: false })
-    this.props.onSuccessCallback('Notification successfully updated.')
   }
 
   renderTopOptions = () => {
