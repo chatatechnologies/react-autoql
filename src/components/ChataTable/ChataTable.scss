@@ -41,10 +41,10 @@
   }
 
   &.hidden {
-    visibility: hidden;
-    position: absolute;
-    pointer-events: none;
-    opacity: 0;
+    visibility: hidden !important;
+    position: absolute !important;
+    pointer-events: none !important;
+    opacity: 0 !important;
   }
 
   // This css is to fix tabulator bug and allow scrolling columns on an empty table

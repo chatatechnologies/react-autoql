@@ -85,10 +85,7 @@ class DataAlerts extends React.Component {
 
   onDataAlertSave = () => {
     this.getDataAlerts()
-    this.props.onSuccessAlert('Notification created!')
-    this.setState({
-      isEditModalVisible: false,
-    })
+    this.setState({ isEditModalVisible: false })
   }
 
   onDataAlertDeleteClick = (dataAlertDeleteId) => {

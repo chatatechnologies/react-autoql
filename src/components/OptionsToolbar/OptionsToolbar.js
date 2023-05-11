@@ -223,9 +223,7 @@ export class OptionsToolbar extends React.Component {
 
   showHideColumnsModal = () => this.setState({ isHideColumnsModalVisible: true })
   closeColumnVisibilityModal = () => this.setState({ isHideColumnsModalVisible: false })
-  closeDataAlertModal = () => {
-    this.setState({ activeMenu: undefined })
-  }
+  closeDataAlertModal = () => this.setState({ activeMenu: undefined })
 
   onColumnVisibilitySave = (columns) => {
     const { authentication } = this.props
@@ -295,7 +293,6 @@ export class OptionsToolbar extends React.Component {
   }
 
   onDataAlertSave = () => {
-    this.props.onSuccessAlert('Successfully created a notification')
     this.setState({ activeMenu: undefined })
   }
 
@@ -310,6 +307,7 @@ export class OptionsToolbar extends React.Component {
           isVisible={this.state.activeMenu === 'notification'}
           onClose={this.closeDataAlertModal}
           onErrorCallback={this.props.onErrorCallback}
+          onSuccessAlert={this.props.onSuccessAlert}
           onSave={this.onDataAlertSave}
           tooltipID={this.props.tooltipID}
           queryResponse={queryResponse}
