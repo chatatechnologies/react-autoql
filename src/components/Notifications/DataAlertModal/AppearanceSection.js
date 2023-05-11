@@ -33,15 +33,6 @@ export default class AppearanceSection extends React.Component {
     this.titleInputRef?.focus()
   }
 
-  getConditionStatement = () => {
-    if (this.props.conditionStatement) {
-      return this.props.conditionStatement
-    }
-
-    const query = this.props.queryText ? `"${this.props.queryText}"` : 'this query'
-    return `new data is detected for ${query}`
-  }
-
   renderDataAlertNameInput = () => {
     return (
       <Input
@@ -93,7 +84,7 @@ export default class AppearanceSection extends React.Component {
   }
 
   render = () => {
-    const conditionStatement = this.props.showConditionStatement ? this.getConditionStatement() : null
+    const conditionStatement = this.props.conditionStatement ?? 'the Data Alert is triggered'
 
     return (
       <div>
