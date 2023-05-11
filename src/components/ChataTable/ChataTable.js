@@ -151,6 +151,10 @@ export default class ChataTable extends React.Component {
       return true
     }
 
+    if (this.supportsInfiniteScroll(this.props) !== this.supportsInfiniteScroll(nextProps)) {
+      return true
+    }
+
     if (
       (this.props.hidden && !nextProps.hidden) ||
       (!this.props.hidden && !deepEqual(this.props.columns, nextProps.columns))

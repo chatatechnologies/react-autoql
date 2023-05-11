@@ -454,7 +454,7 @@ export class DashboardTile extends React.Component {
       return
     }
 
-    const newState = { query }
+    const newState = { query, queryValidationSelections: undefined }
     this.clearTopQueryResponse(newState)
 
     clearTimeout(this.queryInputTimer)
