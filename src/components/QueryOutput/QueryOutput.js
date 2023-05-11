@@ -316,7 +316,7 @@ export class QueryOutput extends React.Component {
         if (this.shouldGeneratePivotData()) {
           this.generatePivotData({
             isFirstGeneration: true,
-            newTableData: this.state.visibleRows,
+            dataChanged: true,
           })
           shouldForceUpdate = true
         }
@@ -724,7 +724,7 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  generatePivotData = ({ isFirstGeneration } = {}) => {
+  generatePivotData = ({ isFirstGeneration, dataChanged } = {}) => {
     try {
       this.pivotTableID = uuid()
       const tableData = this.state?.visibleRows || this.tableData
@@ -744,6 +744,10 @@ export class QueryOutput extends React.Component {
 
     if (this.props.allowDisplayTypeChange) {
       this.pivotTableRef?.updateData(this.pivotTableData)
+    }
+
+    if (dataChanged && this._isMounted) {
+      this.setState({ visiblePivotRowChangeCount: this.state.visiblePivotRowChangeCount + 1 })
     }
   }
 
@@ -1241,13 +1245,16 @@ export class QueryOutput extends React.Component {
       this.tableRef?.updateData(this.tableData, this.isDataLimited())
     }
 
-    this.setState({
-      visibleRows: response.data.data.rows,
-      visibleRowChangeCount: this.state.visibleRowChangeCount + 1,
-    })
-
-    const dataPageSize = pageSize ?? response?.data?.data?.fe_req?.page_size
-    this.props.onPageSizeChange(dataPageSize)
+    this.setState(
+      {
+        visibleRows: response.data.data.rows,
+        visibleRowChangeCount: this.state.visibleRowChangeCount + 1,
+      },
+      () => {
+        const dataPageSize = pageSize ?? response?.data?.data?.fe_req?.page_size
+        this.props.onPageSizeChange(dataPageSize, this.state.visibleRows)
+      },
+    )
   }
 
   onTableFilter = async (filters, rows) => {
@@ -2136,7 +2143,7 @@ export class QueryOutput extends React.Component {
           isAnimating={this.props.isAnimating}
           isResizing={this.props.isResizing}
           pageSize={this.getQueryPageSize()}
-          useInfiniteScroll={this.props.enableAjaxTableData && this.isDataLimited()}
+          useInfiniteScroll={!this.isOriginalData || (this.props.enableAjaxTableData && this.isDataLimited())}
           enableAjaxTableData={this.props.enableAjaxTableData}
           queryRequestData={this.queryResponse?.data?.data?.fe_req}
           queryText={this.queryResponse?.data?.data?.text}
@@ -2230,17 +2237,15 @@ export class QueryOutput extends React.Component {
       <ErrorBoundary>
         <ChataChart
           key={this.chartID}
+          {...tableConfig}
+          data={data}
           hidden={!isChartType(this.state.displayType)}
           formattedTableParams={formattedTableParams}
           authentication={this.props.authentication}
-          queryRequestData={this.queryResponse?.data?.data?.fe_req}
-          pageSize={_get(this.queryResponse, 'data.data.row_limit')}
           ref={(ref) => (this.chartRef = ref)}
           type={this.state.displayType}
           isDataAggregated={isChartDataAggregated}
           popoverParentElement={this.props.popoverParentElement}
-          {...tableConfig}
-          data={data}
           dataChangeCount={usePivotData ? this.state.visiblePivotRowChangeCount : this.state.visibleRowChangeCount}
           columns={usePivotData ? this.pivotTableColumns : this.state.columns}
           isAggregated={usePivotData}

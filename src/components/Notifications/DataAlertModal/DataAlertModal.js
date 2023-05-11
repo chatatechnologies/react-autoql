@@ -554,7 +554,7 @@ class DataAlertModal extends React.Component {
   }
 
   renderQuerySummary = () => {
-    if (this.state.activeStep === this.getStepNumber(this.CONDITIONS_STEP)) {
+    if (this.state.activeStep === this.getStepNumber(this.CONDITIONS_STEP) || !!this.props.currentDataAlert?.id) {
       return null
     }
 
