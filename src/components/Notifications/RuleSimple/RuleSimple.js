@@ -114,8 +114,8 @@ export default class RuleSimple extends React.Component {
 
     if (
       this.state.secondTermType === QUERY_TERM_TYPE &&
-      this.state.secondInputValue &&
-      this.state.secondInputValue !== prevState.secondInputValue
+      this.state.secondInputValue !== prevState.secondInputValue &&
+      this.state.secondInputValue?.length
     ) {
       this.validateSecondQuery()
     }
@@ -450,7 +450,14 @@ export default class RuleSimple extends React.Component {
   }
 
   onSecondQueryChange = (e) => {
-    this.setState({ secondInputValue: e.target.value })
+    const secondInputValue = e.target.value
+    const newState = { secondInputValue }
+
+    if (!secondInputValue?.length) {
+      newState.secondQueryValidating = false
+    }
+
+    this.setState(newState)
   }
 
   getChunkedInterpretationText = () => {
