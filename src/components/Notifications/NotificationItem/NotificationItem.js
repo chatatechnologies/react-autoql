@@ -432,19 +432,27 @@ export default class NotificationItem extends React.Component {
           </Button>
           <br />
           <span>
-            If the problem persists, you may need to create a new Data Alert from the query{' '}
-            {!!this.props.onQueryClick ? (
-              <a
-                onClick={() => this.props.onQueryClick(query)}
-                data-tip='Click to run this query in Data Messenger'
-                data-for={this.props.tooltipID}
-              >
-                "{query}"
-              </a>
-            ) : (
+            If the problem persists, you may need to create a new Data Alert
+            {query ? (
               <span>
-                <em>"{query}"</em>
+                {' '}
+                from the query{' '}
+                {!!this.props.onQueryClick ? (
+                  <a
+                    onClick={() => this.props.onQueryClick(query)}
+                    data-tip='Click to run this query in Data Messenger'
+                    data-for={this.props.tooltipID}
+                  >
+                    "{query}"
+                  </a>
+                ) : (
+                  <span>
+                    <em>"{query}"</em>
+                  </span>
+                )}
               </span>
+            ) : (
+              <span>.</span>
             )}
           </span>
         </>
