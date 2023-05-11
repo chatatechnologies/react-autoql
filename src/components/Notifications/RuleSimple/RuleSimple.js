@@ -549,7 +549,7 @@ export default class RuleSimple extends React.Component {
 
   getQueryFiltersText = () => {
     const rtArray = constructRTArray(this.props.queryResponse?.data?.data?.parsed_interpretation)
-    const filters = this.getFilters()
+    const filters = this.state.queryFilters
 
     let filterText = ''
     let filterTextStrings = []
