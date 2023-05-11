@@ -316,7 +316,7 @@ export class QueryOutput extends React.Component {
         if (this.shouldGeneratePivotData()) {
           this.generatePivotData({
             isFirstGeneration: true,
-            newTableData: this.state.visibleRows,
+            dataChanged: true,
           })
           shouldForceUpdate = true
         }
@@ -724,7 +724,7 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  generatePivotData = ({ isFirstGeneration } = {}) => {
+  generatePivotData = ({ isFirstGeneration, dataChanged } = {}) => {
     try {
       this.pivotTableID = uuid()
       const tableData = this.state?.visibleRows || this.tableData
@@ -744,6 +744,10 @@ export class QueryOutput extends React.Component {
 
     if (this.props.allowDisplayTypeChange) {
       this.pivotTableRef?.updateData(this.pivotTableData)
+    }
+
+    if (dataChanged && this._isMounted) {
+      this.setState({ visiblePivotRowChangeCount: this.state.visiblePivotRowChangeCount + 1 })
     }
   }
 
@@ -2139,7 +2143,7 @@ export class QueryOutput extends React.Component {
           isAnimating={this.props.isAnimating}
           isResizing={this.props.isResizing}
           pageSize={this.getQueryPageSize()}
-          useInfiniteScroll={this.props.enableAjaxTableData && this.isDataLimited()}
+          useInfiniteScroll={!this.isOriginalData || (this.props.enableAjaxTableData && this.isDataLimited())}
           enableAjaxTableData={this.props.enableAjaxTableData}
           queryRequestData={this.queryResponse?.data?.data?.fe_req}
           queryText={this.queryResponse?.data?.data?.text}
