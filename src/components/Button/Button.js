@@ -11,9 +11,7 @@ import './Button.scss'
 const validTypes = ['default', 'primary', 'danger']
 const validSizes = ['small', 'medium', 'large']
 
-export default class Button extends React.Component {
-  COMPONENT_KEY = `react-autoql-btn-${uuid()}`
-
+class Button extends React.Component {
   static propTypes = {
     type: PropTypes.oneOf(validTypes),
     size: PropTypes.oneOf(validSizes),
@@ -82,19 +80,20 @@ export default class Button extends React.Component {
     return (
       <ErrorBoundary>
         <button
+          ref={this.props.innerRef}
           className={`react-autoql-btn
-          ${this.props.className || ''}
-          react-autoql-btn-${type}
-          react-autoql-btn-${size}
-          ${isDisabled ? ' disabled' : ''}
-          ${this.props.border ? '' : 'btn-no-border'}
-          ${this.props.filled ? 'btn-filled' : ''}`}
+            ${this.props.className || ''}
+            react-autoql-btn-${type}
+            react-autoql-btn-${size}
+            ${isDisabled ? ' disabled' : ''}
+            ${this.props.border ? '' : 'btn-no-border'}
+            ${this.props.filled ? 'btn-filled' : ''}`}
           data-test='react-autoql-btn'
           data-multiline={this.props.multiline}
           style={{ ...this.props.style }}
           onClick={this.props.onClick}
           data-tip={this.props.tooltip}
-          data-for={this.props.tooltipID ?? this.COMPONENT_KEY}
+          data-for={this.props.tooltipID}
         >
           {this.props.loading ? <Spinner data-test='react-autoql-btn-loading' /> : this.renderIcon()}
           <div>{this.props.children}</div>
@@ -103,3 +102,5 @@ export default class Button extends React.Component {
     )
   }
 }
+
+export default React.forwardRef((props, ref) => <Button innerRef={ref} {...props} />)

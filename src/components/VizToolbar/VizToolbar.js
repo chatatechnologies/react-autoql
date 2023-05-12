@@ -5,10 +5,9 @@ import _isEqual from 'lodash.isequal'
 import { isMobile } from 'react-device-detect'
 import { Icon } from '../Icon'
 import { rebuildTooltips, Tooltip } from '../Tooltip'
-
+import { Button } from '../Button'
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { deepEqual } from '../../js/Util'
 
 import './VizToolbar.scss'
 
@@ -41,14 +40,12 @@ class VizToolbar extends React.Component {
     rebuildTooltips()
   }
 
-  shouldComponentUpdate = (nextProps, nextState) => {
+  shouldComponentUpdate = (nextProps) => {
     if (!this.props.shouldRender && !nextProps.shouldRender) {
       return false
     }
 
     return true
-
-    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -85,7 +82,7 @@ class VizToolbar extends React.Component {
       const selectedDisplayType = this.state.displayType
 
       return (
-        <button
+        <Button
           onClick={() => this.onDisplayTypeChange(displayType)}
           className={`react-autoql-toolbar-btn ${displayType === selectedDisplayType ? 'selected' : ''}`}
           data-tip={name}
@@ -94,7 +91,7 @@ class VizToolbar extends React.Component {
           disabled={this.props.responseRef?.state?.isLoadingData}
         >
           {icon}
-        </button>
+        </Button>
       )
     }
 

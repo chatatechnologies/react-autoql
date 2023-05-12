@@ -14,15 +14,19 @@
   }
 }
 
-.react-autoql-toolbar-btn {
+.react-autoql-btn.react-autoql-toolbar-btn {
   height: 28px;
   width: 28px;
   display: flex;
+  position: relative;
   justify-content: center;
   align-items: center;
 
-  background: none;
-  border: none;
+  padding: 0;
+  margin: 0;
+
+  background: none !important;
+  border: none !important;
   outline: none !important;
   font-size: 16px;
   color: var(--react-autoql-text-color-primary);
