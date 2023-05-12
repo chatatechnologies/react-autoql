@@ -1,9 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import InfiniteScroll from 'react-infinite-scroller'
-import { Scrollbars } from 'rc-scrollbars'
 import _isEqual from 'lodash.isequal'
 
+import { CustomScrollbars } from '../CustomScrollbars'
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { fetchDataExplorerSuggestions } from '../../js/queryService'
 import { LoadingDots } from '../LoadingDots'
@@ -172,15 +172,7 @@ export default class QuerySuggestionList extends React.Component {
     }
 
     return (
-      <Scrollbars
-        autoHeight
-        autoHeightMin={0}
-        autoHeightMax={800}
-        className='query-suggestion-list-scroll-component'
-        renderView={(props) => (
-          <div {...props} ref={(r) => (this.scrollbarRef = r)} className='data-preview-scroll-container' />
-        )}
-      >
+      <CustomScrollbars className='data-preview-scroll-container' ref={(r) => (this.scrollbarRef = r)}>
         <InfiniteScroll
           pageStart={1}
           loadMore={this.loadMore}
@@ -210,7 +202,7 @@ export default class QuerySuggestionList extends React.Component {
             })}
           </div>
         </InfiniteScroll>
-      </Scrollbars>
+      </CustomScrollbars>
     )
   }
 }

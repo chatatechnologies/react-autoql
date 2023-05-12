@@ -1,72 +1,62 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Scrollbars } from 'rc-scrollbars'
-import { isMobile } from 'react-device-detect'
+import PerfectScrollbar from 'react-perfect-scrollbar'
 
 import './CustomScrollbars.scss'
+import 'react-perfect-scrollbar/dist/css/styles.css'
 
 export default class CustomScrollbars extends React.Component {
-  constructor(props) {
-    super(props)
-    this.viewRef = React.createRef()
-  }
-
   static propTypes = {
-    autoHeight: PropTypes.bool,
-    autoHide: PropTypes.bool,
     style: PropTypes.shape({}),
+    autoHide: PropTypes.bool,
   }
 
   static defaultProps = {
-    autoHeight: true,
-    autoHide: isMobile,
-    autoHeightMin: '100%',
-    autoHeightMax: '100%',
     style: {},
+    autoHide: false,
   }
 
-  componentDidMount = () => {
-    this._isMounted = true
+  getContainer = () => {
+    return this.ref?._container
   }
 
-  componentWillUnmount = () => {
-    this._isMounted = false
+  getScrollTop = () => {
+    return this.ref?._container?.scrollTop
   }
 
-  getView = () => {
-    return this.ref?.view
+  getClientHeight = () => {
+    return this.ref?._container?.clientHeight
   }
 
-  getClassName = () => `react-autoql-custom-scrollbars ${this.props.className || ''}`
+  scrollToTop = () => {
+    if (this.ref?._container) {
+      this.ref._container.scrollTop = 0
+    }
+  }
 
-  renderThumbHorizontal = (props) => <div {...props} className='thumb-horizontal' />
-
-  renderThumbVertical = (props) => <div {...props} className='thumb-vertical' />
-
-  renderView = (props) => <div {...props} className='custom-scrollbar-view' />
+  scrollToBottom = () => {
+    const container = this.ref?._container
+    if (container) {
+      container.scrollBottom = 0
+      container.scrollTop = container.scrollHeight - container.clientHeight
+    }
+  }
 
   render = () => {
-    return (
-      <Scrollbars
-        ref={(r) => (this.ref = r)}
-        className={this.getClassName()}
-        style={{
-          ...this.props.style,
-          height: '100%',
-          width: '100%',
-        }}
-        renderView={this.renderView}
-        autoHide={this.props.autoHide}
-        autoHeight={this.props.autoHeight}
-        autoHeightMin={this.props.autoHeightMin}
-        autoHeightMax={this.props.autoHeightMax}
-        renderThumbVertical={this.renderThumbVertical}
-        renderThumbHorizontal={this.renderThumbHorizontal}
-        thumbMinSize={30}
-        // universal={true}
-      >
-        {this.props.children}
-      </Scrollbars>
-    )
+    if (this.props.children) {
+      return (
+        <PerfectScrollbar
+          className={`react-autoql-custom-scrollbars 
+            ${this.props.className ?? ''}
+            ${this.props.autoHide ? 'autohide' : ''}`}
+          ref={(r) => (this.ref = r)}
+          style={this.props.style}
+        >
+          {this.props.children}
+        </PerfectScrollbar>
+      )
+    }
+
+    return null
   }
 }

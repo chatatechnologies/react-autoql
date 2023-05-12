@@ -98,7 +98,8 @@ export default class ChatContent extends React.Component {
   }
 
   scrollToBottom = () => {
-    this.messengerScrollComponent?.ref?.scrollToBottom()
+    console.log(this.messengerScrollComponent)
+    this.messengerScrollComponent?.scrollToBottom()
   }
 
   onCSVDownloadProgress = ({ id, progress }) => {
@@ -352,7 +353,10 @@ export default class ChatContent extends React.Component {
           className={`chat-content-scroll-container ${this.props.shouldRender ? '' : 'react-autoql-content-hidden'}`}
           style={{ visibility, opacity }}
         >
-          <CustomScrollbars ref={(r) => (this.messengerScrollComponent = r)}>
+          <CustomScrollbars
+            ref={(r) => (this.messengerScrollComponent = r)}
+            className='chat-content-scrollbars-container'
+          >
             {this.state.messages.map((message) => {
               return (
                 <ChatMessage
@@ -385,7 +389,7 @@ export default class ChatContent extends React.Component {
                   onSuccessAlert={this.props.onSuccessAlert}
                   deleteMessageCallback={this.deleteMessage}
                   createDataAlertCallback={this.props.createDataAlertCallback}
-                  scrollContainerRef={this.messengerScrollComponent?.ref}
+                  scrollContainerRef={this.messengerScrollComponent}
                   isResizing={this.props.isResizing}
                   enableDynamicCharting={this.props.enableDynamicCharting}
                   onNoneOfTheseClick={this.onNoneOfTheseClick}

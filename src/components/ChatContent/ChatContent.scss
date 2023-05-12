@@ -4,11 +4,10 @@
   width: 100%;
   padding-bottom: 158px;
   background-color: var(--react-autoql-background-color-primary);
-  background-image: linear-gradient(
-    0deg,
-    var(--react-autoql-background-color-tertiary) 0%,
-    var(--react-autoql-background-color-primary) 100%
-  );
+
+  .chat-content-scrollbars-container {
+    padding-top: 10px;
+  }
 }
 
 .react-autoql-drawer .response-loading-container {
