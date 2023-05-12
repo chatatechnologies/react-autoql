@@ -357,7 +357,7 @@ export class OptionsToolbar extends React.Component {
   }
 
   getMenuItemClass = (className) => {
-    return `react-autoql-toolbar-btn ${className ?? ''}`
+    return `react-autoql-toolbar-btn react-autoql-btn ${className || ''}`
   }
 
   renderMoreOptionsMenu = (props, shouldShowButton) => {
@@ -471,11 +471,7 @@ export class OptionsToolbar extends React.Component {
           isVisible={this.state.activeMenu === 'sql'}
           footer={
             <div>
-              <Button
-                type='primary'
-                onClick={() => this.setState({ activeMenu: undefined })}
-                tooltipID={this.props.tooltipID}
-              >
+              <Button type='primary' onClick={() => this.setState({ activeMenu: undefined })}>
                 Ok
               </Button>
             </div>
@@ -510,19 +506,19 @@ export class OptionsToolbar extends React.Component {
       <ErrorBoundary>
         <div
           className={`${isMobile ? 'react-autoql-toolbar-mobile' : 'react-autoql-toolbar'} options-toolbar
-        ${this.state.activeMenu ? 'active' : ''}
-        ${this.props.className || ''}`}
+            ${this.state.activeMenu ? 'active' : ''}
+            ${this.props.className || ''}`}
           data-test='autoql-options-toolbar'
         >
           {shouldShowButton.showFilterButton && (
-            <button
+            <Button
               onClick={() => {
                 const isFiltering = this.props.responseRef?.toggleTableFilter()
                 this.setState({ isFiltering })
               }}
               className={this.getMenuItemClass('filter-btn')}
-              data-tip='Filter table'
-              data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
+              tooltip='Filter table'
+              tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
               data-test='react-autoql-filter-button'
             >
               <Icon
@@ -532,50 +528,50 @@ export class OptionsToolbar extends React.Component {
                 type='filter'
                 showBadge={false}
               />
-            </button>
+            </Button>
           )}
           {shouldShowButton.showHideColumnsButton && (
-            <button
+            <Button
               onClick={this.showHideColumnsModal}
-              className={this.getMenuItemClass(shouldShowButton.showHideColumnsButton)}
-              data-tip='Show/hide columns'
-              data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
+              className={this.getMenuItemClass()}
+              tooltip='Show/hide columns'
+              tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
               data-test='options-toolbar-col-vis'
             >
               <Icon type='eye' showBadge={shouldShowButton.showHiddenColsBadge} />
-            </button>
+            </Button>
           )}
           {shouldShowButton.showReportProblemButton && (
-            <button
+            <Button
               onClick={this.openReportProblemModal}
-              className={this.getMenuItemClass(shouldShowButton.showReportProblemButton)}
-              data-tip='Report a problem'
-              data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
+              className={this.getMenuItemClass()}
+              tooltip='Report a problem'
+              tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
             >
               <Icon type='warning-triangle' />
-            </button>
+            </Button>
           )}
           {shouldShowButton.showRefreshDataButton && (
-            <button
+            <Button
               onClick={this.refreshData}
-              className={this.getMenuItemClass(shouldShowButton.showRefreshDataButton)}
-              data-tip='Re-run query'
-              data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
+              className={this.getMenuItemClass()}
+              tooltip='Re-run query'
+              tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
               data-test='options-toolbar-trash-btn'
             >
               <Icon type='refresh' />
-            </button>
+            </Button>
           )}
           {shouldShowButton.showDeleteButton && (
-            <button
+            <Button
               onClick={this.deleteMessage}
-              className={this.getMenuItemClass(shouldShowButton.showDeleteButton)}
-              data-tip='Delete data response'
-              data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
+              className={this.getMenuItemClass()}
+              tooltip='Delete data response'
+              tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
               data-test='options-toolbar-trash-btn'
             >
               <Icon type='trash' />
-            </button>
+            </Button>
           )}
           {shouldShowButton.showMoreOptionsButton && (
             <Popover
@@ -591,18 +587,18 @@ export class OptionsToolbar extends React.Component {
               positions={this.props.popoverPositions ?? ['bottom', 'top', 'left', 'right']}
               align={this.props.popoverAlign}
             >
-              <button
+              <Button
                 onClick={() => {
                   hideTooltips()
                   this.setState({ activeMenu: 'more-options' })
                 }}
-                className={this.getMenuItemClass(shouldShowButton.showMoreOptionsButton)}
-                data-tip='More options'
-                data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
+                className={this.getMenuItemClass('more-options')}
+                tooltip='More options'
+                tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
                 data-test='react-autoql-toolbar-more-options-btn'
               >
                 <Icon type='more-vertical' />
-              </button>
+              </Button>
             </Popover>
           )}
         </div>
