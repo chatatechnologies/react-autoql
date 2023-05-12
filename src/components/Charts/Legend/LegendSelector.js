@@ -37,7 +37,7 @@ export default class StringAxisSelector extends React.Component {
           e.stopPropagation()
         }}
       >
-        <CustomScrollbars autoHide={false}>
+        <CustomScrollbars>
           <ul className='axis-selector-content'>
             {this.props.stringColumnIndices.map((legendItem, i) => {
               return (

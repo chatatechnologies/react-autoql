@@ -260,7 +260,7 @@ export default class DataExplorer extends React.Component {
 
     return (
       <div className='data-explorer-result-container'>
-        <CustomScrollbars autoHide={false}>
+        <CustomScrollbars>
           <div
             key={`data-explorer-sections-container-${this.state.selectedSubject?.name}`}
             className='data-explorer-sections-container'

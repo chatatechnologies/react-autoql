@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import InfiniteScroll from 'react-infinite-scroller'
-import { Scrollbars } from 'react-custom-scrollbars-2'
+import { Scrollbars } from 'rc-scrollbars'
 import _isEqual from 'lodash.isequal'
 
 import { QueryValidationMessage } from '../QueryValidationMessage'
