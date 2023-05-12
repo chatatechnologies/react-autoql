@@ -25,6 +25,7 @@ import { DATA_ALERT_CONDITION_TYPES, COMPARE_TYPE, EXISTS_TYPE, QUERY_TERM_TYPE 
 import { getSupportedConditionTypes } from '../helpers'
 
 import './DataAlertModal.scss'
+import { CustomScrollbars } from '../../CustomScrollbars'
 
 class DataAlertModal extends React.Component {
   constructor(props) {
@@ -670,13 +671,15 @@ class DataAlertModal extends React.Component {
         >
           {/* We must render a new <Tooltip/> inside of modals */}
           <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' delayShow={500} place='top' />
-          <div
-            key={`data-alert-modal-content-${this.COMPONENT_KEY}`}
-            ref={(r) => (this.contentRef = r)}
-            className='react-autoql-data-alert-modal-content'
-          >
-            {this.renderContent()}
-          </div>
+          <CustomScrollbars className='data-alert-modal-content-scroll-container'>
+            <div
+              key={`data-alert-modal-content-${this.COMPONENT_KEY}`}
+              ref={(r) => (this.contentRef = r)}
+              className='react-autoql-data-alert-modal-content'
+            >
+              {this.renderContent()}
+            </div>
+          </CustomScrollbars>
         </Modal>
         <DataAlertDeleteDialog
           authentication={this.props.authentication}

@@ -358,7 +358,7 @@ export default class DataExplorerInput extends React.Component {
     return (
       <div {...containerProps}>
         <div className='react-autoql-data-explorer-suggestion-container'>
-          <CustomScrollbars autoHeight autoHeightMin={0} autoHeightMax={maxHeight} autoHide={false}>
+          <CustomScrollbars autoHeight autoHeightMin={0} autoHeightMax={maxHeight}>
             {children}
           </CustomScrollbars>
         </div>

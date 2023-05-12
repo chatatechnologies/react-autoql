@@ -257,7 +257,7 @@ export default class NumberAxisSelector extends React.Component {
           </div>
         </div>
         <div className='react-autoql-custom-scrollbars'>
-          <CustomScrollbars autoHide={false} autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
+          <CustomScrollbars autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
             <SelectableList
               ref={(r) => (this.listRefs[type] = r)}
               items={listItems}

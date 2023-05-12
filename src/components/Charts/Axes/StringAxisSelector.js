@@ -60,7 +60,7 @@ export default class StringAxisSelector extends React.Component {
 
     return (
       <div className='string-axis-selector-popover-content'>
-        <CustomScrollbars autoHide={false} autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
+        <CustomScrollbars autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
           <div
             className='axis-selector-container'
             id='string-column-selector-content'

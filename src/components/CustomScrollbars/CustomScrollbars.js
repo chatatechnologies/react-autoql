@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Scrollbars } from 'react-custom-scrollbars-2'
+import { Scrollbars } from 'rc-scrollbars'
+import { isMobile } from 'react-device-detect'
 
 import './CustomScrollbars.scss'
 
@@ -17,8 +18,10 @@ export default class CustomScrollbars extends React.Component {
   }
 
   static defaultProps = {
-    autoHeight: false,
-    autoHide: true,
+    autoHeight: true,
+    autoHide: isMobile,
+    autoHeightMin: '100%',
+    autoHeightMax: '100%',
     style: {},
   }
 
@@ -47,14 +50,20 @@ export default class CustomScrollbars extends React.Component {
       <Scrollbars
         ref={(r) => (this.ref = r)}
         className={this.getClassName()}
-        style={this.props.style}
+        style={{
+          ...this.props.style,
+          height: '100%',
+          width: '100%',
+        }}
         renderView={this.renderView}
         autoHide={this.props.autoHide}
         autoHeight={this.props.autoHeight}
-        autoHeightMin={this.props.autoHeightMin ?? 100}
-        autoHeightMax={this.props.autoHeightMax ?? '100%'}
+        autoHeightMin={this.props.autoHeightMin}
+        autoHeightMax={this.props.autoHeightMax}
         renderThumbVertical={this.renderThumbVertical}
         renderThumbHorizontal={this.renderThumbHorizontal}
+        thumbMinSize={30}
+        // universal={true}
       >
         {this.props.children}
       </Scrollbars>

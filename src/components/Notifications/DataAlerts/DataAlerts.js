@@ -18,6 +18,7 @@ import { authenticationDefault, getAuthentication } from '../../../props/default
 import { withTheme } from '../../../theme'
 
 import './DataAlerts.scss'
+import { CustomScrollbars } from '../../CustomScrollbars'
 
 class DataAlerts extends React.Component {
   COMPONENT_KEY = uuid()
@@ -226,20 +227,21 @@ class DataAlerts extends React.Component {
 
     return (
       <ErrorBoundary>
-        <div className='react-autoql-notification-settings' data-test='notification-settings'>
-          {this.renderNotificationlist('project', projectAlertsList)}
-          {this.renderNotificationlist('custom', customAlertsList)}
-          {this.renderNotificationEditModal()}
-          {this.renderDeleteDialog()}
-          <Tooltip
-            className='react-autoql-tooltip'
-            id='react-autoql-notification-settings-tooltip'
-            effect='solid'
-            delayShow={500}
-            html
-          />
-          {/* )} */}
-        </div>
+        <CustomScrollbars>
+          <div className='react-autoql-notification-settings' data-test='notification-settings'>
+            {this.renderNotificationlist('project', projectAlertsList)}
+            {this.renderNotificationlist('custom', customAlertsList)}
+            {this.renderNotificationEditModal()}
+            {this.renderDeleteDialog()}
+            <Tooltip
+              className='react-autoql-tooltip'
+              id='react-autoql-notification-settings-tooltip'
+              effect='solid'
+              delayShow={500}
+              html
+            />
+          </div>
+        </CustomScrollbars>
       </ErrorBoundary>
     )
   }

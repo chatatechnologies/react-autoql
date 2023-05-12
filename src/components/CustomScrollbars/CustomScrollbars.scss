@@ -1,12 +1,19 @@
-.scrollbar-content-container {
-  position: absolute;
-  height: 100%;
-  width: 100%;
+.react-autoql-custom-scrollbars {
+  .custom-scrollbar-view {
+    height: calc(100% + 6px);
+    width: calc(100% + 6px);
+  }
 }
 
-.thumb-vertical,
-.thumb-horizontal {
-  border-radius: 3px;
-  background-color: var(--react-autoql-highlight-color);
-  opacity: 0.2;
+::-webkit-scrollbar {
+  -webkit-appearance: none;
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb,
+.rc-scrollbars-container .rc-scrollbars-track .thumb-vertical,
+.rc-scrollbars-container .rc-scrollbars-track .thumb-horizontal {
+  border-radius: 3px !important;
+  background-color: var(--react-autoql-scrollbar-color) !important;
 }

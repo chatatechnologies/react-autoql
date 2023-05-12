@@ -144,7 +144,7 @@ export default class DataExplorer extends React.Component {
 
     return (
       <div className='data-preview'>
-        <CustomScrollbars autoHide={false} style={{ height: '165px' }}>
+        <CustomScrollbars style={{ height: '165px' }}>
           {!!this.state.error ? (
             <div className='data-preview-error-message'>
               <div>{this.state.error.message}</div>
