@@ -11,14 +11,14 @@ import dayjs from '../../js/dayjsWithPlugins'
 import TableWrapper from './TableWrapper'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { responseErrors } from '../../js/errorMessages'
-import { getAuthentication, getDataFormatting } from '../../props/defaults'
+import { getAuthentication } from '../../props/defaults'
 import { formatTableParams } from './tableHelpers'
 import { Spinner } from '../Spinner'
 import { runQueryNewPage } from '../../js/queryService'
 import { DateRangePicker } from '../DateRangePicker'
 import { getFilterPrecision } from '../../js/dateUtils'
 import { DAYJS_PRECISION_FORMATS } from '../../js/Constants'
-import { currentEventLoopEnd, deepEqual, difference } from '../../js/Util'
+import { currentEventLoopEnd, deepEqual } from '../../js/Util'
 import { columnOptionsList } from './tabulatorConstants'
 import { Button } from '../Button'
 
@@ -152,7 +152,7 @@ export default class ChataTable extends React.Component {
     }
 
     if (
-      (this.props.hidden && !nextProps.hidden) ||
+      this.props.hidden !== nextProps.hidden ||
       (!this.props.hidden && !deepEqual(this.props.columns, nextProps.columns))
     ) {
       return true
@@ -212,12 +212,12 @@ export default class ChataTable extends React.Component {
 
     if (this.props.columns && !deepEqual(this.props.columns, prevProps.columns)) {
       this.ref?.tabulator?.setColumns(this.getFilteredTabulatorColumnDefinitions())
-      this.setHeaderInputClickListeners()
+      this.setHeaderInputEventListeners()
     }
 
     if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
       this.setFilterTags()
-      this.setHeaderInputClickListeners()
+      this.setHeaderInputEventListeners()
       if (!this.props.hidden) {
         this.setTableHeight()
       }
@@ -612,7 +612,7 @@ export default class ChataTable extends React.Component {
     e.preventDefault()
   }
 
-  setHeaderInputClickListeners = () => {
+  setHeaderInputEventListeners = () => {
     const columns = this.props.columns
     if (!columns) {
       return

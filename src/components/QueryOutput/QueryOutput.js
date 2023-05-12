@@ -272,6 +272,10 @@ export class QueryOutput extends React.Component {
         this.onRenderComplete()
       }
 
+      if (this.props.onDisplayTypeChange && this.state.displayType !== prevState.displayType) {
+        this.props.onDisplayTypeChange(this.state.displayType)
+      }
+
       // If data config was changed here, tell the parent
       if (
         !_isEqual(this.props.initialTableConfigs, {
@@ -420,12 +424,7 @@ export class QueryOutput extends React.Component {
   }
 
   changeDisplayType = (displayType) => {
-    if (this.props.onDisplayTypeChange) {
-      this.props.onDisplayTypeChange(displayType)
-    }
-
     this.checkAndUpdateTableConfigs(displayType)
-
     this.setState({ displayType })
   }
 
