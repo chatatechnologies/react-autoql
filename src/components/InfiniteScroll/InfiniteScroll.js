@@ -25,7 +25,7 @@ export default class InfiniteScrollAutoQL extends React.Component {
             <InfiniteScroll
               {...props}
               className={`react-autoql-infinite-scroll ${className || ''}`}
-              getScrollParent={() => this.scrollComponent?.current?.getView()}
+              getScrollParent={() => this.scrollComponent?.current}
             >
               {this.props.children}
             </InfiniteScroll>

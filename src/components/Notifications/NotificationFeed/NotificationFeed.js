@@ -502,7 +502,7 @@ class NotificationFeed extends React.Component {
                   initialLoad={false}
                   loadMore={this.getNotifications}
                   hasMore={this.hasMoreNotifications()}
-                  getScrollParent={() => this.scrollRef?.container}
+                  getScrollParent={() => this.scrollRef?.getContainer()}
                 >
                   <div className='notification-feed-list'>
                     {this.state.notificationList.map((notification, i) => {
