@@ -144,7 +144,7 @@
     letter-spacing: 0.05em;
   }
   .react-autoql-drawer .drawer-content-wrapper{
-	transform: unset !important;
+	transition: unset !important;
   }
 }
 @media (min-width: 480px) {
