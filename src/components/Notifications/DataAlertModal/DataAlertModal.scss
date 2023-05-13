@@ -37,14 +37,12 @@
 }
 
 .react-autoql-data-alert-modal-content {
-  height: 400px;
-  max-height: 90vh;
   display: flex;
   flex-direction: column;
 
   .react-autoql-steps-hoz-container {
     padding: 40px 100px;
-    padding-bottom: 20px;
+    padding-bottom: 35px;
   }
 
   .react-autoql-data-alert-modal-step {

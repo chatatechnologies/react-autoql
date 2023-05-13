@@ -88,7 +88,7 @@ export default class AppearanceSection extends React.Component {
 
     return (
       <div>
-        {conditionStatement ? (
+        {this.props.showConditionStatement ? (
           <div className='compose-message-section-condition-statement'>
             <span>
               If {conditionStatement}, you'll receive a notification with this <strong>title and message:</strong>

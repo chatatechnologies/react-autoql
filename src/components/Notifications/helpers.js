@@ -1,7 +1,34 @@
 import dayjs from '../../js/dayjsWithPlugins'
 import { WEEKDAY_NAMES_SUN } from '../../js/Constants'
-import { CONTINUOUS_TYPE, PERIODIC_TYPE, EXISTS_TYPE, COMPARE_TYPE } from './DataAlertConstants'
+import {
+  CONTINUOUS_TYPE,
+  PERIODIC_TYPE,
+  EXISTS_TYPE,
+  COMPARE_TYPE,
+  SCHEDULE_FREQUENCY_OPTIONS,
+  RESET_PERIOD_OPTIONS,
+  SCHEDULED_TYPE,
+} from './DataAlertConstants'
 import { isSingleValueResponse } from '../../js/Util'
+
+export const getScheduleFrequencyObject = (dataAlert) => {
+  if (!dataAlert) {
+    return
+  }
+
+  if (dataAlert.notification_type === SCHEDULED_TYPE) {
+    const schedulePeriod = dataAlert.schedules?.[0]?.notification_period
+    let scheduleFrequency = schedulePeriod
+
+    if (schedulePeriod === 'WEEK' && dataAlert.schedules.length === 7) {
+      scheduleFrequency = 'DAY'
+    }
+
+    return SCHEDULE_FREQUENCY_OPTIONS[scheduleFrequency]
+  }
+
+  return RESET_PERIOD_OPTIONS[dataAlert.reset_period]
+}
 
 export const getSupportedConditionTypes = (expression, queryResponse) => {
   try {

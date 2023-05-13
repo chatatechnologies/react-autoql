@@ -13,6 +13,16 @@ export const QUERY_TERM_TYPE = 'QUERY'
 export const GROUP_TERM_TYPE = 'GROUP'
 export const DEFAULT_EVALUATION_FREQUENCY = 5
 
+export const DATA_ALERT_STATUSES = {
+  ACTIVE: '', // currently running
+  RETRY: '', // currently being retried because of an error, no action required yet
+  WAITING: '', // active but triggered already and waiting for the reset period to end
+  INACTIVE: '', // either not running OR it is a prototype (can not be run)
+  EVALUATION_ERROR: '', // expression evaluation resulted in an error
+  DATA_RETURN_ERROR: '', // expression evaluation was successful, but data return query failed
+  GENERAL_ERROR: '', // every thing else that doesnt fall into a category above
+}
+
 export const DATA_ALERT_OPERATORS = {
   GREATER_THAN: {
     displayName: (
@@ -64,12 +74,25 @@ export const DATA_ALERT_OPERATORS = {
     conditionText: 'equals',
     conditionTextPast: 'was equal to',
   },
-  // Keep these for reference
-  // NOT_EQUAL_TO: {},
-  // NOT_EXISTS: {},
-  // AND: {},
-  // OR: {},
-  // TERMINATOR: {}
+  /* Not using this for now. Uncomment to enable later if desired
+  NOT_EQUAL_TO: {
+    displayName: (
+      <span>
+        Is <strong>not equal</strong> to
+      </span>
+    ),
+    symbol: '!=',
+    conditionText: 'does not equal',
+    conditionTextPast: 'was not equal to',
+  }, */
+
+  /* These are additions term condition values
+     They can be used to create more complex condition groups
+  EXISTS: {},
+  NOT_EXISTS: {},
+  AND: {},
+  OR: {},
+  TERMINATOR: {} */
 }
 
 export const DATA_ALERT_CONDITION_TYPES = {
@@ -124,16 +147,36 @@ export const SCHEDULE_INTERVAL_OPTIONS = {
   //       Every <strong>year</strong>
   //     </span>
   //   ),
+  //   displayText: 'Scheduled yearly',
   // },
+}
+
+export const SCHEDULE_FREQUENCY_OPTIONS = {
+  DAY: {
+    displayText: 'Scheduled daily',
+  },
+  WEEK: {
+    displayText: 'Scheduled weekly',
+  },
+  MONTH: {
+    displayText: 'Scheduled for the 1st of every month',
+  },
+  MONTH_LAST_DAY: {
+    displayText: 'Scheduled for the end of every month',
+  },
+  YEAR: {
+    displayText: 'Scheduled yearly',
+  },
 }
 
 export const RESET_PERIOD_OPTIONS = {
   DAY: {
     displayName: (
       <span>
-        At most once <strong>every 24 hours</strong>
+        At most <strong>once a day</strong>
       </span>
     ),
+    displayText: 'At most once a day',
   },
   WEEK: {
     displayName: (
@@ -141,6 +184,7 @@ export const RESET_PERIOD_OPTIONS = {
         At most <strong>once a week</strong>
       </span>
     ),
+    displayText: 'At most once a week',
   },
   MONTH: {
     displayName: (
@@ -148,6 +192,7 @@ export const RESET_PERIOD_OPTIONS = {
         At most <strong>once a month</strong>
       </span>
     ),
+    displayText: 'At most once a month',
   },
   // Not supporting for now
   // YEAR: {
@@ -156,6 +201,7 @@ export const RESET_PERIOD_OPTIONS = {
   //       At most <strong>once a year</strong>
   //     </span>
   //   ),
+  //  displayText: 'At most once a year'
   // },
   NONE: {
     displayName: (
@@ -163,6 +209,7 @@ export const RESET_PERIOD_OPTIONS = {
         <strong>Every time</strong> new data is detected
       </span>
     ),
+    displayText: 'Continuous',
   },
 }
 
