@@ -27,6 +27,7 @@ import {
   EXISTS_TYPE,
   SCHEDULED_TYPE,
   PERIODIC_TYPE,
+  SCHEDULE_FREQUENCY_OPTIONS,
 } from '../DataAlertConstants'
 
 import './ScheduleBuilder.scss'
@@ -193,6 +194,12 @@ export default class ScheduleBuilder extends React.Component {
     } catch (error) {
       console.error(error)
     }
+  }
+
+  getSummary = () => {
+    return `${this.state.resetPeriodSelectValue} ${this.getDayOfSelection(this.state.resetPeriodSelectValue)} ${
+      this.state.intervalTimeSelectValue?.value
+    } ${this.state.timezone}`
   }
 
   getData = () => {
@@ -387,6 +394,21 @@ export default class ScheduleBuilder extends React.Component {
     )
   }
 
+  getDayOfSelection = (resetPeriod) => {
+    switch (resetPeriod) {
+      case 'YEAR': {
+        return this.state.monthOfYearSelectValue
+      }
+      case 'MONTH': {
+        return this.state.monthDaySelectValue
+      }
+      case 'WEEK': {
+        return this.state.weekDaySelectValue
+      }
+    }
+    return null
+  }
+
   dayOfSelector = () => {
     switch (this.state.resetPeriodSelectValue) {
       case 'YEAR': {
@@ -561,6 +583,7 @@ export default class ScheduleBuilder extends React.Component {
             you'll be notified
           </span>
           <Select
+            className='data-alert-schedule-step-type-selector'
             options={Object.keys(DATA_ALERT_FREQUENCY_TYPE_OPTIONS).map((key) => ({
               value: key,
               label: DATA_ALERT_FREQUENCY_TYPE_OPTIONS[key]?.label,
@@ -601,6 +624,7 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   render = () => {
+    console.log(this.getSummary())
     return (
       <ErrorBoundary>
         <div className='data-alert-schedule-builder-step' data-test='schedule-builder'>

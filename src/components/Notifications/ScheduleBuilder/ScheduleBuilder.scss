@@ -4,6 +4,22 @@
     align-items: flex-end;
   }
 
+  .data-alert-schedule-step-type-selector {
+    border-bottom: 1px solid var(--react-autoql-accent-color);
+    height: 1.5em;
+    margin: 0 5px;
+    padding: 0;
+
+    .react-autoql-select-arrow {
+      padding-bottom: 3px;
+    }
+
+    .react-autoql-select-text {
+      line-height: 1em;
+      height: 1em;
+    }
+  }
+
   .schedule-builder-at-connector {
     padding-bottom: 8px;
   }
@@ -26,7 +42,7 @@
 
   .frequency-type-container {
     padding: 3px 5px;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 
     .react-autoql-select {
       padding-left: 2px;

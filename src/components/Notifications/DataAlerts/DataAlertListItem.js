@@ -5,10 +5,18 @@ import { Icon } from '../../Icon'
 import { Switch } from '../../Switch'
 import { hideTooltips } from '../../Tooltip'
 
-import { CUSTOM_TYPE, DEFAULT_EVALUATION_FREQUENCY, PERIODIC_TYPE, SCHEDULED_TYPE } from '../DataAlertConstants'
+import {
+  CONTINUOUS_TYPE,
+  CUSTOM_TYPE,
+  DEFAULT_EVALUATION_FREQUENCY,
+  PERIODIC_TYPE,
+  RESET_PERIOD_OPTIONS,
+  SCHEDULED_TYPE,
+  SCHEDULE_FREQUENCY_OPTIONS,
+} from '../DataAlertConstants'
 
 import { initializeAlert, updateDataAlertStatus } from '../../../js/notificationService'
-import { formatNextScheduleDate, formatResetDate, resetDateIsFuture } from '../helpers'
+import { formatNextScheduleDate, formatResetDate, getScheduleFrequencyObject, resetDateIsFuture } from '../helpers'
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
@@ -124,23 +132,16 @@ export default class DataAlertListItem extends React.Component {
   }
 
   getCycleFromResetPeriod = (resetPeriod) => {
-    switch (resetPeriod) {
-      case 'DAY': {
-        return 'Daily'
-      }
-      case 'WEEK': {
-        return 'Weekly'
-      }
-      case 'MONTH': {
-        return 'Monthly'
-      }
-      case 'YEAR': {
-        return 'Yearly'
-      }
-      default: {
-        return '-'
-      }
+    if (!resetPeriod) {
+      return 'Continuous'
     }
+
+    return RESET_PERIOD_OPTIONS[resetPeriod]?.displayText ?? '-'
+  }
+
+  getFrequencyTooltip = () => {
+    return null
+    return getScheduleFrequencyObject(this.props.dataAlert)?.displayText
   }
 
   renderDataAlertCycle = () => {
@@ -149,12 +150,13 @@ export default class DataAlertListItem extends React.Component {
     let cycle = '-'
 
     if (frequencyType === SCHEDULED_TYPE) {
-      if (this.props.dataAlert?.schedules?.length === 7) {
-        cycle = 'Daily'
+      const schedules = this.props.dataAlert?.schedules
+      if (schedules?.length === 7) {
+        cycle = SCHEDULE_FREQUENCY_OPTIONS['DAY']?.displayText
       } else {
-        cycle = this.getCycleFromResetPeriod(this.props.dataAlert?.schedules?.[0]?.notification_period)
+        cycle = SCHEDULE_FREQUENCY_OPTIONS[schedules?.[0]?.notification_period]?.displayText ?? '-'
       }
-    } else if (frequencyType === PERIODIC_TYPE && this.props.dataAlert?.reset_period) {
+    } else if (frequencyType === CONTINUOUS_TYPE || frequencyType === PERIODIC_TYPE) {
       cycle = this.getCycleFromResetPeriod(this.props.dataAlert.reset_period)
     }
 
@@ -195,18 +197,6 @@ export default class DataAlertListItem extends React.Component {
               disabled={this.state.isInitializing}
             />
           )}
-          {/* {isCustom && (
-            <Button
-              type='default'
-              className='react-autoql-re-initialize-btn'
-              icon='tool'
-              onClick={this.onInitializeClick}
-              size='small'
-              loading={this.state.isInitializing}
-            >
-              Repair
-            </Button>
-          )} */}
         </div>
       )
     }
@@ -240,7 +230,7 @@ export default class DataAlertListItem extends React.Component {
       )
     }
 
-    if (dataAlert.status === 'ACTIVE' && dataAlert.notification_type === SCHEDULED_TYPE) {
+    if (this.state.status === 'ACTIVE' && dataAlert.notification_type === SCHEDULED_TYPE) {
       let tooltip = 'This Alert runs on a schedule'
       if (nextScheduledDate) {
         tooltip = `${tooltip} - a notification is scheduled for ${nextScheduledDate}. If your data hasn't changed by then, you will not receive a notification.`
@@ -257,19 +247,6 @@ export default class DataAlertListItem extends React.Component {
         </div>
       )
     }
-
-    // if (dataAlert.notification_type === SCHEDULED_TYPE) {
-    //   return (
-    //     <div
-    //       className={`data-alert-state data-alert-paused ${status}`}
-    //       data-tip={`This Data Alert is not scheduled to run right now. To resume the schedule, please set the Data Alert status to <em>Active</em>.`}
-    //       data-for={this.props.tooltipID}
-    //     >
-    //       <Icon type='paused' />
-    //       <span>Paused</span>
-    //     </div>
-    //   )
-    // }
 
     if (isEnabled) {
       return (
@@ -312,10 +289,6 @@ export default class DataAlertListItem extends React.Component {
     }
 
     if (!dataAlert.reset_date || !resetDateIsFuture(dataAlert)) {
-      if (!this.isEnabled()) {
-        return '-'
-      }
-
       const evaluationFrequency = dataAlert.evaluation_frequency ?? DEFAULT_EVALUATION_FREQUENCY
       return `< ${evaluationFrequency}m`
     }
@@ -349,9 +322,15 @@ export default class DataAlertListItem extends React.Component {
           </div>
           <div className='react-autoql-data-alert-list-item-section'>
             <div className='data-alert-header-item'>
-              <span>Frequency</span>
+              <span>Notification Frequency</span>
             </div>
-            <div className='data-alert-section-content data-alert-section-cycle'>{this.renderDataAlertCycle()}</div>
+            <div
+              className='data-alert-section-content data-alert-section-cycle'
+              data-for={this.props.tooltipID}
+              data-tip={this.getFrequencyTooltip()}
+            >
+              {this.renderDataAlertCycle()}
+            </div>
           </div>
           <div className='react-autoql-data-alert-list-item-section'>
             <div className='data-alert-header-item'>
@@ -369,7 +348,7 @@ export default class DataAlertListItem extends React.Component {
           </div>
           <div className='react-autoql-data-alert-list-item-section'>
             <div className='data-alert-header-item'>
-              <span>Notification Status</span>
+              <span>Status</span>
             </div>
             <div className='data-alert-section-content notification-status'>
               <Switch
