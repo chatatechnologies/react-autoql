@@ -98,7 +98,6 @@ export default class ChatContent extends React.Component {
   }
 
   scrollToBottom = () => {
-    console.log(this.messengerScrollComponent)
     this.messengerScrollComponent?.scrollToBottom()
   }
 

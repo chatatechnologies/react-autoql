@@ -624,7 +624,6 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   render = () => {
-    console.log(this.getSummary())
     return (
       <ErrorBoundary>
         <div className='data-alert-schedule-builder-step' data-test='schedule-builder'>
