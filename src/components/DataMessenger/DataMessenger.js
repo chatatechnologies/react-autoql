@@ -294,19 +294,22 @@ export class DataMessenger extends React.Component {
     }, 300)
   }
 
-  openDataMessenger = () => {
+  openDataMessenger = (tab) => {
     if (isMobile) {
       if (this.state.isVisible) {
-        this.setState({ activePage: 'data-messenger' })
+        this.setState({ activePage: tab })
         return
       }
     }
-    const handle = document.getElementById(`${this.COMPONENT_KEY}-drawer-handle`)
-    if (handle) {
-      if (isMobile && this.props.mobileActivePage === 'data-messenger') {
-        this.setState({ activePage: 'data-messenger' })
-      }
-      handle.click()
+
+    if (tab) {
+      this.setState({ activePage: tab })
+    } else if (isMobile && this.props.mobileActivePage === 'data-messenger') {
+      this.setState({ activePage: 'data-messenger' })
+    }
+
+    if (!this.isOpen()) {
+      this.dmRef.setState({ open: true })
     }
   }
 
@@ -365,7 +368,7 @@ export class DataMessenger extends React.Component {
     } else if (this.props.showHandle) {
       return (
         <div
-          id={`${this.COMPONENT_KEY}-drawer-handle`}
+          ref={(r) => (this.drawerHandle = r)}
           className={`drawer-handle
             ${this.state.isVisible ? ' hide' : ''}
             ${this.props.handleImage ? '' : ' default-logo'}`}
