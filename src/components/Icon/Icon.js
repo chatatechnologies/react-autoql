@@ -27,6 +27,7 @@ import { BsArrowBarDown } from '@react-icons/all-files/bs/BsArrowBarDown'
 import { BsLightning } from '@react-icons/all-files/bs/BsLightning'
 
 import { FaMicrophoneAlt } from '@react-icons/all-files/fa/FaMicrophoneAlt'
+import { FaRegChartBar } from '@react-icons/all-files/fa/FaRegChartBar'
 
 import { FiAlertTriangle } from '@react-icons/all-files/fi/FiAlertTriangle'
 import { FiArrowLeft } from '@react-icons/all-files/fi/FiArrowLeft'
@@ -287,6 +288,10 @@ export default class Icon extends React.Component {
       }
       case 'heatmap': {
         icon = heatmapIcon
+        break
+      }
+      case 'histogram-chart': {
+        icon = <FaRegChartBar />
         break
       }
       case 'hour-glass': {

@@ -23,6 +23,7 @@ export const CHART_TYPES = [
   'stacked_column',
   'stacked_line',
   'column_line',
+  'histogram',
 ]
 
 export const DATE_ONLY_CHART_TYPES = ['line', 'stacked_line']

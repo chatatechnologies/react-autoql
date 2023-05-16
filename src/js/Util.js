@@ -919,6 +919,7 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
       const { amountOfNumberColumns } = getColumnTypeAmounts(visibleColumns)
       if (amountOfNumberColumns > 1) {
         supportedDisplayTypes.push('column_line')
+        supportedDisplayTypes.push('histogram')
       }
 
       // Check if date pivot should be supported

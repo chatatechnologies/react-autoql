@@ -13,6 +13,7 @@ import { ChataStackedBarChart } from '../ChataStackedBarChart'
 import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 import { ChataStackedLineChart } from '../ChataStackedLineChart'
 import { ChataColumnLineChart } from '../ChataColumnLine'
+import { ChataHistogram } from '../ChataHistogram'
 import { Spinner } from '../../Spinner'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
@@ -403,6 +404,7 @@ export default class ChataChart extends Component {
 
     return {
       ...this.props,
+      columns,
       setIsLoadingMoreRows: this.setIsLoadingMoreRows,
       ref: (r) => (this.innerChartRef = r),
       innerChartRef: this.innerChartRef?.chartRef,
@@ -455,6 +457,7 @@ export default class ChataChart extends Component {
   renderStackedBarChart = () => <ChataStackedBarChart {...this.getCommonChartProps()} />
   renderStackedLineChart = () => <ChataStackedLineChart {...this.getCommonChartProps()} />
   renderColumnLineChart = () => <ChataColumnLineChart {...this.getCommonChartProps()} />
+  renderHistogramChart = () => <ChataHistogram {...this.getCommonChartProps()} data={this.props.data} />
 
   renderChart = () => {
     switch (this.props.type) {
@@ -487,6 +490,9 @@ export default class ChataChart extends Component {
       }
       case 'column_line': {
         return this.renderColumnLineChart()
+      }
+      case 'histogram': {
+        return this.renderHistogramChart()
       }
       default: {
         return 'Unknown Display Type'

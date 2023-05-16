@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types'
-import { max, min } from 'd3-array'
+import { max, min, bin } from 'd3-array'
 import _isEqual from 'lodash.isequal'
 import dayjs from '../../js/dayjsWithPlugins'
 import { scaleLinear, scaleBand, scaleTime } from 'd3-scale'
@@ -585,7 +585,7 @@ export const getUnitsForColumn = (column) => {
   }
 }
 
-export const getLinearAxisTitle = ({ numberColumns, dataFormatting }) => {
+export const getLinearAxisTitle = ({ numberColumns }) => {
   try {
     if (!numberColumns?.length) {
       return undefined
@@ -642,43 +642,122 @@ export const getNumberAxisUnits = (numberColumns) => {
   return 'none'
 }
 
+export const getBinLinearScale = ({ props, columnIndex, axis }) => {
+  const minValue = min(props.data, (d) => convertToNumber(d[columnIndex]))
+  const maxValue = max(props.data, (d) => convertToNumber(d[columnIndex]))
+  const domain = [minValue, maxValue]
+  const range = getRangeForAxis(props, axis)
+
+  const scale = scaleLinear().domain(domain).range(range)
+
+  const binFn = bin()
+    .value((d) => d[columnIndex])
+    .domain(domain)
+    .thresholds(20) // Todo: make this configurable???
+
+  const buckets = binFn(props.data)
+
+  scale.type = 'BIN'
+  scale.buckets = buckets
+  scale.minValue = domain[0]
+  scale.maxValue = domain[1]
+  scale.column = props.columns[columnIndex]
+  scale.fields = [columnIndex]
+  scale.dataFormatting = props.dataFormatting
+  scale.hasDropdown = false // props.enableAxisDropdown  // todo: allow user to switch column here
+  scale.stacked = false
+  scale.units = getUnitsForColumn(props.columns[columnIndex])
+  scale.title = props.columns[columnIndex]?.display_name
+  scale.tickSize = (axis === 'x' ? props.innerWidth : props.innerHeight) / buckets.length
+  scale.isScaled = false
+  scale.getValue = (value) => {
+    return scale(value)
+  }
+
+  scale.tickLabels = getTickValues({
+    props,
+    scale,
+    numTicks: buckets.length,
+    isScaled: false,
+  })
+
+  return scale
+}
+
+export const getHistogramScale = ({ props, axis, buckets, columns, columnIndex }) => {
+  const maxBins = max(buckets, (d) => d.length)
+  const range = getRangeForAxis(props, axis)
+
+  const scale = scaleLinear().domain([0, maxBins]).nice().range(range)
+  scale.type = 'LINEAR'
+
+  scale.units = 'none'
+  scale.column = columns[columnIndex]
+  scale.fields = [columnIndex]
+  scale.dataFormatting = props.dataFormatting
+  scale.hasDropdown = false
+  scale.stacked = false
+  scale.title = 'Count'
+  scale.tickSize = 0
+  scale.isScaled = false
+  scale.getValue = (value) => {
+    return scale(value)
+  }
+
+  scale.tickLabels = getTickValues({
+    props,
+    scale,
+    isScaled: false,
+  })
+
+  return scale
+}
+
 export const getLinearScale = ({
   props,
   minValue,
   maxValue,
   axis,
   range,
+  domain,
   tickValues,
   numTicks,
   stacked,
   isScaled,
+  columns,
   columnIndex,
   columnIndices,
 }) => {
-  let min = minValue ?? tickValues?.[0]
-  let max = maxValue ?? tickValues?.[tickValues?.length - 1]
+  let domainFinal = domain
+  if (!domain) {
+    let min = minValue ?? tickValues?.[0]
+    let max = maxValue ?? tickValues?.[tickValues?.length - 1]
 
-  if (isNaN(min)) {
-    min = 0
+    if (isNaN(min)) {
+      min = 0
+    }
+
+    if (isNaN(max)) {
+      max = min
+    }
+
+    domainFinal = [min, max]
   }
 
-  if (isNaN(max)) {
-    max = min
-  }
+  const cols = columns ?? props.columns
 
-  const domain = [min, max]
   const scaleRange = range ?? getRangeForAxis(props, axis)
-  const axisColumns = columnIndices?.map((index) => props.columns[index]) ?? []
+  const axisColumns = columnIndices?.map((index) => cols[index]) ?? []
   const units = getNumberAxisUnits(axisColumns)
   const title = getLinearAxisTitle({
     numberColumns: axisColumns,
     dataFormatting: props.dataFormatting,
   })
 
-  const scale = scaleLinear().domain(domain).range(scaleRange)
-  scale.minValue = min
-  scale.maxValue = max
-  scale.column = props.columns[columnIndex]
+  const scale = scaleLinear().domain(domainFinal).range(scaleRange)
+  scale.minValue = domainFinal[0]
+  scale.maxValue = domainFinal[1]
+  scale.column = cols[columnIndex]
   scale.fields = axisColumns
   scale.dataFormatting = props.dataFormatting
   scale.hasDropdown = props.enableAxisDropdown
@@ -988,7 +1067,7 @@ export const getTickValues = ({ scale, initialTicks, props, numTicks, innerPaddi
       })
     }
 
-    if (scale?.type === 'LINEAR') {
+    if (scale?.type === 'LINEAR' || scale?.type === 'BIN') {
       return getNiceTickValues({
         tickValues: newTickValues,
         scale,
