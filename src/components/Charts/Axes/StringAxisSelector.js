@@ -3,6 +3,7 @@ import { Popover } from 'react-tiny-popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { v4 as uuid } from 'uuid'
 import { isColumnDateType, isColumnStringType } from '../../QueryOutput/columnHelpers'
+import { isMobile } from 'react-device-detect'
 
 export default class StringAxisSelector extends React.Component {
   constructor(props) {
@@ -59,7 +60,9 @@ export default class StringAxisSelector extends React.Component {
     }
 
     return (
-      <div className='string-axis-selector-popover-content'>
+      <div
+        className={isMobile ? 'mobile-string-axis-selector-popover-content' : 'string-axis-selector-popover-content'}
+      >
         <CustomScrollbars autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
           <div
             className='axis-selector-container'

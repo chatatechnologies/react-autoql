@@ -217,7 +217,24 @@ g.legendOrdinal tspan {
     }
   }
 }
-
+.mobile-string-axis-selector-popover-content{
+	display: flex;
+	flex-direction: column;
+	background: var(--react-autoql-background-color-secondary);
+	color: var(--react-autoql-text-color-primary);
+	padding: 5px;
+	z-index: 9999;
+	min-width: 40vw;
+	.string-select-list-item {
+	  font-size: 12px;
+	  line-height: 28px;
+  
+	  &.active {
+		background: var(--react-autoql-accent-color);
+		color: var(--react-autoql-text-color-accent);
+	  }
+	}
+}
 .string-axis-selector-popover-content {
   display: flex;
   flex-direction: column;
