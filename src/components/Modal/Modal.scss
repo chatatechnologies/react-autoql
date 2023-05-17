@@ -13,40 +13,78 @@
   background-color: transparent !important;
 }
 .ReactModal__Content {
-  position: initial !important;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden !important;
-
-  transform: scale(0);
-  transition: all 0.2s ease-in-out;
-
-  color: var(--react-autoql-text-color-primary);
-  background: var(--react-autoql-background-color-secondary) !important;
-  box-shadow: 0 0 14px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
-  border: 1px solid var(--react-autoql-border-color) !important;
-  border-radius: 4px !important;
-  outline: none !important;
-
-  padding: 0 !important;
-
-  margin-top: 20px;
-  margin-bottom: 30px;
-  max-width: calc(100vw - 160px);
-  max-height: calc(100vh - 90px);
-
-  input.react-autoql-input,
-  textarea.react-autoql-input,
-  textarea {
-    border-color: var(--react-autoql-border-color);
-    color: var(--react-autoql-text-color-primary);
-    background: var(--react-autoql-background-color-secondary, white);
-
-    &::placeholder {
-      color: var(--react-autoql-text-color-placeholder);
-    }
+	position: initial !important;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden !important;
+  
+	transform: scale(0);
+	transition: all 0.2s ease-in-out;
+  
+	color: var(--react-autoql-text-color-primary);
+	background: var(--react-autoql-background-color-secondary) !important;
+	box-shadow: 0 0 14px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
+	border: 1px solid var(--react-autoql-border-color) !important;
+	border-radius: 4px !important;
+	outline: none !important;
+  
+	padding: 0 !important;
+  
+	margin-top: 20px;
+	margin-bottom: 30px;
+	max-width: calc(100vw - 160px);
+	max-height: calc(100vh - 90px);
+  
+	input.react-autoql-input,
+	textarea.react-autoql-input,
+	textarea {
+	  border-color: var(--react-autoql-border-color);
+	  color: var(--react-autoql-text-color-primary);
+	  background: var(--react-autoql-background-color-secondary, white);
+  
+	  &::placeholder {
+		color: var(--react-autoql-text-color-placeholder);
+	  }
+	}
   }
-}
+@media (max-width: 479px) {
+	.ReactModal__Content {
+		position: initial !important;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden !important;
+	  
+		transform: scale(0);
+		transition: all 0.2s ease-in-out;
+	  
+		color: var(--react-autoql-text-color-primary);
+		background: var(--react-autoql-background-color-secondary) !important;
+		box-shadow: 0 0 14px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
+		border: 1px solid var(--react-autoql-border-color) !important;
+		border-radius: 4px !important;
+		outline: none !important;
+	  
+		padding: 0 !important;
+	  
+		margin-top: 20px;
+		margin-bottom: 30px;
+		max-width: calc(100vw - 30px);
+		max-height: calc(100vh - 90px);
+	  
+		input.react-autoql-input,
+		textarea.react-autoql-input,
+		textarea {
+		  border-color: var(--react-autoql-border-color);
+		  color: var(--react-autoql-text-color-primary);
+		  background: var(--react-autoql-background-color-secondary, white);
+	  
+		  &::placeholder {
+			color: var(--react-autoql-text-color-placeholder);
+		  }
+		}
+	  }
+  }
+
 .ReactModal__Overlay--after-open .ReactModal__Content {
   transform: scale(1);
 }

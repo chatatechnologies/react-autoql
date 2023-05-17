@@ -644,11 +644,12 @@ export class OptionsToolbar extends React.Component {
       }
 
       shouldShowButton.showMoreOptionsButton =
-        shouldShowButton.showCopyButton ||
-        shouldShowButton.showSQLButton ||
-        shouldShowButton.showCreateNotificationIcon ||
-        shouldShowButton.showSaveAsCSVButton ||
-        shouldShowButton.showSaveAsPNGButton
+        (shouldShowButton.showCopyButton ||
+          shouldShowButton.showSQLButton ||
+          shouldShowButton.showCreateNotificationIcon ||
+          shouldShowButton.showSaveAsCSVButton ||
+          shouldShowButton.showSaveAsPNGButton) &&
+        !isMobile
     } catch (error) {
       console.error(error)
     }
