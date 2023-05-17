@@ -11,7 +11,7 @@ import './Button.scss'
 const validTypes = ['default', 'primary', 'danger']
 const validSizes = ['small', 'medium', 'large']
 
-class Button extends React.Component {
+export class ButtonWithoutRef extends React.Component {
   static propTypes = {
     type: PropTypes.oneOf(validTypes),
     size: PropTypes.oneOf(validSizes),
@@ -103,4 +103,4 @@ class Button extends React.Component {
   }
 }
 
-export default React.forwardRef((props, ref) => <Button innerRef={ref} {...props} />)
+export default React.forwardRef((props, ref) => <ButtonWithoutRef innerRef={ref} {...props} />)

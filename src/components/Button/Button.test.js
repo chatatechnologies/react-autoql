@@ -2,13 +2,13 @@ import React from 'react'
 import { shallow } from 'enzyme'
 
 import { findByTestAttr, ignoreConsoleErrors } from '../../../test/testUtils'
-import Button from './Button'
+import { ButtonWithoutRef } from './Button'
 
 const defaultProps = {}
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
-  const wrapper = shallow(<Button {...setupProps} />)
+  const wrapper = shallow(<ButtonWithoutRef {...setupProps} />)
   if (state) {
     wrapper.setState(state)
   }
