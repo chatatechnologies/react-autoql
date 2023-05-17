@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
 
-import { Icon } from '../../Icon'
 import { Tooltip } from '../../Tooltip'
 import { LoadingDots } from '../../LoadingDots'
 import { DataAlertModal } from '../DataAlertModal'
@@ -16,9 +15,9 @@ import { fetchDataAlerts } from '../../../js/notificationService'
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 import { withTheme } from '../../../theme'
+import { CustomScrollbars } from '../../CustomScrollbars'
 
 import './DataAlerts.scss'
-import { CustomScrollbars } from '../../CustomScrollbars'
 
 class DataAlerts extends React.Component {
   COMPONENT_KEY = uuid()
@@ -28,6 +27,7 @@ class DataAlerts extends React.Component {
     tooltipID: PropTypes.string,
     onErrorCallback: PropTypes.func,
     onSuccessAlert: PropTypes.func,
+    onDMLinkClick: PropTypes.func,
     onDataAlertStatusChange: PropTypes.func,
   }
 
@@ -36,6 +36,7 @@ class DataAlerts extends React.Component {
     tooltipID: 'react-autoql-notification-settings-tooltip',
     onErrorCallback: () => {},
     onDataAlertStatusChange: () => {},
+    onDMLinkClick: () => {},
     onSuccessAlert: () => {},
   }
 
@@ -166,14 +167,21 @@ class DataAlerts extends React.Component {
 
     return (
       <div className='data-alerts-list-container'>
-        {type === 'custom' && list?.length
-          ? this.renderDataAlertGroupTitle('Custom Data Alerts', 'View and manage your custom Data Alerts')
+        {type === 'custom' && !!list
+          ? this.renderDataAlertGroupTitle(
+              'Custom Data Alerts',
+              <span>
+                View and manage your Custom Alerts here. To create a new Custom Alert, simply click on the "Create Data
+                Alert" option from a query result in <a onClick={this.props.onDMLinkClick}>Data Messenger</a> or a
+                Dashboard.
+              </span>,
+            )
           : null}
         {type === 'custom' && !list?.length && this.renderEmptyListMessage()}
         {type === 'project' &&
           this.renderDataAlertGroupTitle(
             'Project Data Alerts',
-            'Choose from a range of ready-to-use Alerts that have been set up for you',
+            'Choose from a range of ready-to-use Alerts that have been set up for you.',
           )}
         <div className='react-autoql-notification-settings-container'>
           {list &&
@@ -200,16 +208,9 @@ class DataAlerts extends React.Component {
   }
 
   renderEmptyListMessage = () => (
-    <div style={{ textAlign: 'center', marginTop: '100px' }}>
-      <div className='empty-list-message'>
-        <img className='empty-list-img' src={emptyStateImg} />
-      </div>
-      <span style={{ opacity: 0.6 }}>No Alerts are set up yet.</span>
-      <br />
-      <span style={{ opacity: 0.6, width: '350px', display: 'inline-block' }}>
-        To create one, select the “Create a Data Alert” option from a data response in Data Messenger.
-      </span>
-      <br />
+    <div className='empty-list-message'>
+      <img className='empty-list-img' src={emptyStateImg} />
+      <span>No Custom Alerts are set up yet.</span>
     </div>
   )
 

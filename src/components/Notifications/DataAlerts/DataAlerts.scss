@@ -63,13 +63,21 @@
   }
 
   .empty-list-message {
-    color: var(--react-autoql-text-color-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
-    margin-top: 75px;
+    margin-top: 20px;
+
+    span,
+    div {
+      opacity: 0.6;
+      color: var(--react-autoql-text-color-primary);
+    }
 
     .empty-list-img {
-      width: 250px;
-      height: 250px;
+      width: 150px;
+      height: 150px;
     }
   }
 
@@ -247,7 +255,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 5px 20px;
-    padding-bottom: 0;
+    padding-bottom: 10px;
     color: var(--react-autoql-text-color-primary);
 
     .react-autoql-data-alert-section-title {
@@ -258,7 +266,7 @@
     .react-autoql-data-alert-section-subtitle {
       padding-top: 3px;
       padding-bottom: 5px;
-      font-size: 13px;
+      font-size: 14px;
     }
   }
 
