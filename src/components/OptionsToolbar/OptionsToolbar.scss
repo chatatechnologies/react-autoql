@@ -51,6 +51,7 @@
   }
 
   .report-problem-text-area {
+	font-family: var(--react-autoql-font-family);
     width: 100% !important;
     max-width: 100% !important;
     min-height: 80px;
