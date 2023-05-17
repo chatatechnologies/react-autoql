@@ -32,14 +32,14 @@ export default class HistogramColumns extends Component {
   }
 
   getBars = () => {
-    const { xScale, yScale, columns, numberColumnIndex, dataFormatting } = this.props
-    if (!xScale || !yScale) {
+    const { xScale, yScale, columns, numberColumnIndex, dataFormatting, buckets } = this.props
+    if (!xScale || !yScale || !buckets?.length) {
       return null
     }
 
     const color = getChartColorVars()?.chartColors?.[0]
 
-    return this.props.xScale.buckets.map((d, index) => {
+    return this.props.buckets.map((d, index) => {
       if (!d) {
         return null
       }

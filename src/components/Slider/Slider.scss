@@ -1,0 +1,23 @@
+.react-autoql-slider-container {
+  width: 100%;
+  margin: 4px;
+  height: 20px;
+
+  .react-autoql-slider-track {
+    height: 6px;
+    margin: 8px 0;
+    background: var(--react-autoql-background-color-tertiary);
+    border-radius: 10px;
+  }
+
+  .react-autoql-slider-thumb {
+    width: 18px;
+    height: 18px;
+    margin: 2px;
+    border-radius: 30px;
+    background: var(--react-autoql-background-color-checkbox);
+    box-shadow: rgba(0, 0, 0, 0.18) 0px 1px 4px 0px, rgba(0, 0, 0, 0.06) 0px 1px 10px 0px;
+    outline: none;
+    cursor: pointer;
+  }
+}

@@ -643,7 +643,7 @@ export const getNumberAxisUnits = (numberColumns) => {
   return 'none'
 }
 
-export const getBinLinearScale = ({ props, columnIndex, axis, thresholds = 20 }) => {
+export const getBinLinearScale = ({ props, columnIndex, axis, buckets }) => {
   const { amountOfNumberColumns } = getColumnTypeAmounts(props.columns)
   const minValue = min(props.data, (d) => convertToNumber(d[columnIndex]))
   const maxValue = max(props.data, (d) => convertToNumber(d[columnIndex]))
@@ -652,15 +652,7 @@ export const getBinLinearScale = ({ props, columnIndex, axis, thresholds = 20 })
 
   const scale = scaleLinear().domain(domain).range(range)
 
-  const binFn = bin()
-    .value((d) => d[columnIndex])
-    .domain(domain)
-    .thresholds(thresholds)
-
-  const buckets = binFn(props.data)
-
   scale.type = 'BIN'
-  scale.buckets = buckets
   scale.minValue = domain[0]
   scale.maxValue = domain[1]
   scale.column = props.columns[columnIndex]
@@ -686,7 +678,7 @@ export const getBinLinearScale = ({ props, columnIndex, axis, thresholds = 20 })
   return scale
 }
 
-export const getHistogramScale = ({ props, axis, buckets, columns, columnIndex }) => {
+export const getHistogramScale = ({ props, axis, buckets, columns, columnIndex, numTicks }) => {
   const maxBins = max(buckets, (d) => d.length)
   const range = getRangeForAxis(props, axis)
 
@@ -710,6 +702,7 @@ export const getHistogramScale = ({ props, axis, buckets, columns, columnIndex }
     props,
     scale,
     isScaled: false,
+    numTicks,
   })
 
   return scale

@@ -15,9 +15,10 @@ import { ChataStackedLineChart } from '../ChataStackedLineChart'
 import { ChataColumnLineChart } from '../ChataColumnLine'
 import { ChataHistogram } from '../ChataHistogram'
 import { Spinner } from '../../Spinner'
+import { Slider } from '../../Slider'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import { svgToPng, getBBoxFromRef, sortDataByDate, deepEqual, rotateArray } from '../../../js/Util.js'
+import { svgToPng, getBBoxFromRef, sortDataByDate, deepEqual, rotateArray, onlyUnique } from '../../../js/Util.js'
 
 import {
   chartContainerDefaultProps,
@@ -53,6 +54,7 @@ export default class ChataChart extends Component {
       deltaY: 0,
       isLoading: true,
       isLoadingMoreRows: false,
+      thresholds: 20,
     }
   }
 
@@ -433,6 +435,8 @@ export default class ChataChart extends Component {
       popoverParentElement: this.props.popoverParentElement,
       totalRowCount: this.props.totalRowCount,
       chartID: this.state.chartID,
+      thresholds: this.state.thresholds,
+      onThresholdChange: (thresholds) => this.setState({ thresholds }),
       onAxesRenderComplete: this.adjustChartPosition,
     }
   }
@@ -524,6 +528,16 @@ export default class ChataChart extends Component {
         >
           {!this.firstRender && !this.props.isResizing && !this.props.isAnimating && (
             <Fragment>
+              {this.props.type === 'histogram' && (
+                <Slider
+                  className='react-autoql-histogram-slider'
+                  value={this.state.thresholds}
+                  min={1}
+                  max={this.innerChartRef?.maxBuckets ?? 50}
+                  onChange={this.innerChartRef?.onThresholdChange}
+                />
+              )}
+
               <svg
                 ref={(r) => (this.chartRef = r)}
                 xmlns='http://www.w3.org/2000/svg'

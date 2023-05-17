@@ -1,21 +1,20 @@
 import React, { Component } from 'react'
-import { v4 as uuid } from 'uuid'
 import { Axes } from '../Axes'
 import { HistogramColumns } from '../HistogramColumns'
 
-import { chartDefaultProps, chartPropTypes, getBinLinearScale, getHistogramScale } from '../helpers.js'
-import { deepEqual } from '../../../js/Util'
+import { chartDefaultProps, chartPropTypes, convertToNumber, getBinLinearScale, getHistogramScale } from '../helpers.js'
+import { deepEqual, onlyUnique } from '../../../js/Util'
 import { HistogramDistributions } from '../HistogramDistributions'
+import { bin, max, min } from 'd3-array'
 
 export default class ChataHistogram extends Component {
   constructor(props) {
     super(props)
 
     this.DEFAULT_THRESHOLDS = 20
+    this.maxBuckets = 50
 
-    this.state = {
-      thresholds: this.DEFAULT_THRESHOLDS,
-    }
+    this.state = {}
   }
 
   static propTypes = chartPropTypes
@@ -28,20 +27,49 @@ export default class ChataHistogram extends Component {
     return !propsEqual || !stateEqual
   }
 
-  setChartData = (props, thresholds) => {
+  getMaxBuckets = () => {
+    this.uniqueNumberValues < this.MAX_HISTOGRAM_COLUMNS ? this.uniqueNumberValues : this.MAX_HISTOGRAM_COLUMNS
+  }
+
+  onThresholdChange = (value, index) => {
+    const newBuckets = this.getBuckets(value)
+    if (newBuckets?.length !== this.buckets?.length) {
+      this.props.onThresholdChange(value)
+    }
+  }
+
+  getBuckets = (thresholds) => {
+    const minValue = min(this.props.data, (d) => convertToNumber(d[this.props.numberColumnIndex]))
+    const maxValue = max(this.props.data, (d) => convertToNumber(d[this.props.numberColumnIndex]))
+    const domain = [minValue, maxValue]
+
+    const binFn = bin()
+      .value((d) => d[this.props.numberColumnIndex])
+      .domain(domain)
+      .thresholds(thresholds)
+
+    return binFn(this.props.data)
+  }
+
+  setChartData = (props) => {
+    const uniqueNumberValues = props.data.map((d) => d[props.numberColumnIndex]).filter(onlyUnique).length
+    this.maxBuckets = uniqueNumberValues < this.maxBuckets ? uniqueNumberValues : this.maxBuckets
+    this.buckets = this.getBuckets(this.props.thresholds)
+
     this.xScale = getBinLinearScale({
       props,
       columnIndex: props.numberColumnIndex,
       axis: 'x',
-      thresholds: thresholds ?? this.state?.thresholds,
+      buckets: this.buckets,
     })
 
     this.yScale = getHistogramScale({
       props,
       axis: 'y',
-      buckets: this.xScale.buckets,
+      buckets: this.buckets,
       columnIndex: props.numberColumnIndex,
       columns: props.columns,
+      numTicks: this.yScale?.tickLabels,
     })
   }
 
@@ -61,8 +89,13 @@ export default class ChataHistogram extends Component {
         >
           {this.props.marginAdjustmentFinished && (
             <>
-              <HistogramColumns {...this.props} xScale={this.xScale} yScale={this.yScale} />
-              <HistogramDistributions {...this.props} xScale={this.xScale} yScale={this.yScale} />
+              <HistogramColumns {...this.props} xScale={this.xScale} yScale={this.yScale} buckets={this.buckets} />
+              <HistogramDistributions
+                {...this.props}
+                xScale={this.xScale}
+                yScale={this.yScale}
+                buckets={this.buckets}
+              />
             </>
           )}
         </Axes>

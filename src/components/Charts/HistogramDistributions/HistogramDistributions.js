@@ -51,7 +51,7 @@ export default class HistogramDistributions extends Component {
     })
 
     const yScaleRange = this.props.yScale.range()
-    const maxBucketSize = max(this.props.xScale.buckets.map((b) => b.length))
+    const maxBucketSize = max(this.props.buckets.map((b) => b.length))
     const maxBucketY = this.props.yScale.getValue(maxBucketSize)
 
     const probabilityScale = scaleLinear()
