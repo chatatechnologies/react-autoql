@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { Popover } from 'react-tiny-popover'
 import dayjs from '../../../js/dayjsWithPlugins'
-
+import { isMobile } from 'react-device-detect'
 import { Icon } from '../../Icon'
 import { LoadingDots } from '../../LoadingDots'
 import { hideTooltips } from '../../Tooltip'
@@ -328,7 +328,7 @@ export default class NotificationItem extends React.Component {
 
     return (
       <Menu>
-        {!!this.props.dataAlert && (
+        {!!this.props.dataAlert && !isMobile && (
           <MenuItem
             data-test='react-autoql-toolbar-more-options-notification'
             title='Settings'
