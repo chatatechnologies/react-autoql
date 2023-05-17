@@ -16,6 +16,12 @@ export default class HistogramColumns extends Component {
     rebuildTooltips()
   }
 
+  componentDidUpdate = (prevProps) => {
+    if (prevProps.buckets?.length !== this.props.buckets?.length) {
+      rebuildTooltips()
+    }
+  }
+
   onColumnClick = (x0, x1, rowIndex) => {
     const newActiveKey = getKey(rowIndex)
 

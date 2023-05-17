@@ -532,7 +532,7 @@ export default class ChataChart extends Component {
               {this.props.type === 'histogram' && (
                 <Slider
                   className='react-autoql-histogram-slider'
-                  value={this.state.thresholds}
+                  initialValue={this.DEFAULT_HISTOGRAM_THRESHOLDS}
                   min={1}
                   max={this.innerChartRef?.maxBuckets ?? 50}
                   onChange={this.innerChartRef?.onThresholdChange}

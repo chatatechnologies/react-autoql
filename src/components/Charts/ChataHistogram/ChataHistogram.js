@@ -6,6 +6,7 @@ import { chartDefaultProps, chartPropTypes, convertToNumber, getBinLinearScale, 
 import { deepEqual, onlyUnique } from '../../../js/Util'
 import { HistogramDistributions } from '../HistogramDistributions'
 import { bin, max, min } from 'd3-array'
+import { rebuildTooltips } from '../../Tooltip'
 
 export default class ChataHistogram extends Component {
   constructor(props) {
@@ -32,12 +33,15 @@ export default class ChataHistogram extends Component {
 
   onThresholdChange = (value, index) => {
     const newBuckets = this.getBuckets(value)
-    if (newBuckets?.length !== this.buckets?.length) {
+    const bucketsChanged = newBuckets?.length !== this.buckets?.length
+
+    if (bucketsChanged) {
       this.props.onThresholdChange(value)
     }
   }
 
   getBuckets = (thresholds) => {
+    // TODO: make own function to get buckets based on bucket size instead of number of buckets
     const minValue = min(this.props.data, (d) => convertToNumber(d[this.props.numberColumnIndex]))
     const maxValue = max(this.props.data, (d) => convertToNumber(d[this.props.numberColumnIndex]))
     const domain = [minValue, maxValue]

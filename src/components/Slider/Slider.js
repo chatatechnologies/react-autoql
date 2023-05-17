@@ -6,12 +6,24 @@ import ReactSlider from 'react-slider'
 import './Slider.scss'
 
 export default class Slider extends React.Component {
+  constructor(props) {
+    super(props)
+
+    this.state = {
+      value: this.props.intialValue,
+    }
+  }
+
   static propTypes = {
     renderThumbNumber: PropTypes.bool,
+    initialValue: PropTypes.number,
+    onChange: PropTypes.func,
   }
 
   static defaultProps = {
     renderThumbNumber: false,
+    initialValue: undefined,
+    onChange: () => {},
   }
 
   renderThumb = (props, state) => {
@@ -27,6 +39,11 @@ export default class Slider extends React.Component {
           thumbClassName='react-autoql-slider-thumb'
           trackClassName='react-autoql-slider-track'
           renderThumb={this.props.renderThumbNumber ? this.renderThumb : undefined}
+          value={this.state.value}
+          onChange={(value, index) => {
+            this.props.onChange(value, index)
+            this.setState({ value })
+          }}
         />
       </ErrorBoundary>
     )
