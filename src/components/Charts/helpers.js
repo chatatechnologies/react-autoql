@@ -671,7 +671,6 @@ export const getBinLinearScale = ({ props, columnIndex, axis, buckets }) => {
   scale.tickLabels = getTickValues({
     props,
     scale,
-    numTicks: buckets.length,
     isScaled: false,
   })
 

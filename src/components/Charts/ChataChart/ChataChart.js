@@ -43,6 +43,7 @@ export default class ChataChart extends Component {
 
     this.PADDING = 10
     this.FONT_SIZE = 12
+    this.DEFAULT_HISTOGRAM_THRESHOLDS = 20
 
     this.firstRender = true
     this.shouldRecalculateDimensions = false
@@ -54,7 +55,7 @@ export default class ChataChart extends Component {
       deltaY: 0,
       isLoading: true,
       isLoadingMoreRows: false,
-      thresholds: 20,
+      thresholds: this.DEFAULT_HISTOGRAM_THRESHOLDS,
     }
   }
 

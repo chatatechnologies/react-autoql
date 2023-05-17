@@ -11,8 +11,7 @@ export default class ChataHistogram extends Component {
   constructor(props) {
     super(props)
 
-    this.DEFAULT_THRESHOLDS = 20
-    this.maxBuckets = 50
+    this.maxBuckets = 100
 
     this.state = {}
   }
