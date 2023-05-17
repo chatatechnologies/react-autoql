@@ -45,48 +45,9 @@ export default class HistogramDistributions extends Component {
   }
 
   getDistributionLine = (distribution, mean, stdDev, median, values, index) => {
-    const pdfPoints = []
-    values.forEach((value, i) => {
-      if (!value) {
-        return
-      }
-
-      if (i === 0) {
-        const size = value.x1 - value.x0
-        const firstPoint = {
-          x0: value.x0 - size / 2,
-          x1: value.x0 + size / 2,
-        }
-        pdfPoints.push({
-          probability: distribution.fn({
-            value: firstPoint,
-            mean,
-            stdDev,
-            median,
-          }),
-          value: firstPoint,
-        })
-      }
-
+    const pdfPoints = values.map((value, i) => {
       const probability = distribution.fn({ value, mean, stdDev, median })
-      pdfPoints.push({ probability, value })
-
-      if (i === values.length - 1) {
-        const size = value.x1 - value.x0
-        const lastPoint = {
-          x0: value.x1 - size / 2,
-          x1: value.x1 + size / 2,
-        }
-        pdfPoints.push({
-          probability: distribution.fn({
-            value: lastPoint,
-            mean,
-            stdDev,
-            median,
-          }),
-          value: lastPoint,
-        })
-      }
+      return { probability, value }
     })
 
     const yScaleRange = this.props.yScale.range()
@@ -97,13 +58,10 @@ export default class HistogramDistributions extends Component {
       .domain([0, max(pdfPoints.map((p) => p.probability))])
       .range([max(yScaleRange), maxBucketY])
 
-    console.log({ pdfPoints })
-
-    const points = []
-    pdfPoints.forEach((point) => {
-      const x = this.props.xScale.getValue((point.value.x0 + point.value.x1) / 2)
+    const points = pdfPoints.map((point) => {
+      const x = this.props.xScale.getValue(point.value)
       const y = probabilityScale(point.probability)
-      points.push([x, y])
+      return [x, y]
     })
 
     const d = createSVGPath(points, this.PATH_SMOOTHING)
@@ -148,14 +106,11 @@ export default class HistogramDistributions extends Component {
     const stdDev = deviation(histogramData)
     const medianValue = median(histogramData)
 
-    // const domain = xScale.domain()
-    // const values = this.createEquallySpacedPoints(domain, 30)
-    // const buckets = xScale.buckets
-    // const values = buckets.map((d) => d.x0)
-    // values.push(buckets[buckets.length].x1)
+    const domain = xScale.domain()
+    const values = this.createEquallySpacedPoints(domain, 30)
 
     const paths = this.DISTRIBUTION_TYPES.map((distribution, i) => {
-      return this.getDistributionLine(distribution, meanValue, stdDev, medianValue, xScale.buckets, i)
+      return this.getDistributionLine(distribution, meanValue, stdDev, medianValue, values, i)
     })
 
     return <g data-test='distribution-lines'>{paths}</g>

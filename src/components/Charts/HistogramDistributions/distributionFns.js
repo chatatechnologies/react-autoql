@@ -33,28 +33,13 @@ export const exponentialPDF = ({ value, mean }) => {
 // const normalPDFFn = (x) => jstat.normal.pdf(x, mean, stdDev)
 
 export const normalPDF = ({ value, mean, stdDev }) => {
-  const start = value.x0
-  const end = value.x1
-
   // Area under the curve of the bucket range is the probability
-  const integral = numericalIntegration((x) => jstat.normal.pdf(x, mean, stdDev), start, end, 100)
+  // const start = value.x0
+  // const end = value.x1
+  // const integral = numericalIntegration((x) => jstat.normal.pdf(x, mean, stdDev), start, end, 100)
+  // return integral
 
-  return integral
-
-  // // Calculate the probability density at the range boundaries
-  // const rangeStart = value.x0
-  // const rangeEnd = value.x1
-
-  // const pdfStart = jstat.normal.pdf(rangeStart, mean, stdDev)
-  // const pdfEnd = jstat.normal.pdf(rangeEnd, mean, stdDev)
-
-  // // Calculate the probability density as the difference in PDF values
-  // const probabilityDensity = pdfEnd - pdfStart
-
-  // return probabilityDensity
-
-  // const probability = jstat.normal.pdf(value, mean, stdDev)
-  // return probability
+  return jstat.normal.pdf(value, mean, stdDev)
 }
 
 export const lognormalPDF = ({ value, mean, stdDev }) => {

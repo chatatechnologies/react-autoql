@@ -49,13 +49,6 @@ export default class HistogramColumns extends Component {
       const width = Math.max(0, xScale.getValue(d.x1) - xScale.getValue(d.x0) - 1)
       const height = yScale(0) - yScale(d.length)
 
-      if (index === 0) {
-        console.log('width of first column', width)
-      }
-      if (index === 1) {
-        console.log('width of second column', width)
-      }
-
       const x0Formatted = formatElement({
         element: d.x0,
         column: xScale.column,
