@@ -9,8 +9,6 @@ export default class ChataColumnChart extends Component {
   constructor(props) {
     super(props)
 
-    this.setChartData(props)
-
     this.state = {
       isChartScaled: true,
     }

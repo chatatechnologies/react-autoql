@@ -143,8 +143,8 @@
     font-size: 18px;
     letter-spacing: 0.05em;
   }
-  .react-autoql-drawer .drawer-content-wrapper{
-	transition: unset !important;
+  .react-autoql-drawer .drawer-content-wrapper {
+    transition: unset !important;
   }
 }
 @media (min-width: 480px) {
@@ -414,6 +414,10 @@
   opacity: 1 !important;
   overflow: hidden !important;
   background-color: var(--react-autoql-background-color-secondary);
+
+  & > div {
+    position: relative;
+  }
 }
 
 .clear-messages-confirm-popover {

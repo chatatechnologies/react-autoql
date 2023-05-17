@@ -1,6 +1,7 @@
 import React from 'react'
 import { v4 as uuid } from 'uuid'
 import NumberAxisSelector from './NumberAxisSelector'
+import SingleNumberAxisSelector from './SingleNumberAxisSelector'
 import StringAxisSelector from './StringAxisSelector'
 
 export default class AxisSelector extends React.Component {
@@ -11,7 +12,18 @@ export default class AxisSelector extends React.Component {
   }
 
   render = () => {
-    if (this.props.scale?.type === 'LINEAR') {
+    if (this.props.scale?.type === 'BIN') {
+      return (
+        <SingleNumberAxisSelector
+          {...this.props}
+          key={this.KEY}
+          data-test='single-number-axis-selector'
+          ref={(r) => (this.ref = r)}
+        >
+          {this.props.children}
+        </SingleNumberAxisSelector>
+      )
+    } else if (this.props.scale?.type === 'LINEAR') {
       return (
         <NumberAxisSelector {...this.props} key={this.KEY} data-test='number-axis-selector' ref={(r) => (this.ref = r)}>
           {this.props.children}

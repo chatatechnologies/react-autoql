@@ -96,6 +96,11 @@
     stroke-width: 10px;
   }
 
+  .distribution-hover-line {
+    outline: none !important;
+    pointer-events: stroke;
+  }
+
   .bar,
   .column,
   .line,

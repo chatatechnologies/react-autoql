@@ -1,15 +1,21 @@
 import React, { Component } from 'react'
+import { v4 as uuid } from 'uuid'
 import { Axes } from '../Axes'
 import { HistogramColumns } from '../HistogramColumns'
 
 import { chartDefaultProps, chartPropTypes, getBinLinearScale, getHistogramScale } from '../helpers.js'
 import { deepEqual } from '../../../js/Util'
+import { HistogramDistributions } from '../HistogramDistributions'
 
 export default class ChataHistogram extends Component {
   constructor(props) {
     super(props)
 
-    this.setChartData(props)
+    this.DEFAULT_THRESHOLDS = 20
+
+    this.state = {
+      thresholds: this.DEFAULT_THRESHOLDS,
+    }
   }
 
   static propTypes = chartPropTypes
@@ -22,11 +28,12 @@ export default class ChataHistogram extends Component {
     return !propsEqual || !stateEqual
   }
 
-  setChartData = (props) => {
+  setChartData = (props, thresholds) => {
     this.xScale = getBinLinearScale({
       props,
       columnIndex: props.numberColumnIndex,
       axis: 'x',
+      thresholds: thresholds ?? this.state?.thresholds,
     })
 
     this.yScale = getHistogramScale({
@@ -50,11 +57,13 @@ export default class ChataHistogram extends Component {
           xScale={this.xScale}
           yScale={this.yScale}
           linearAxis='y'
-          allowAggSelection={false}
           yGridLines
         >
           {this.props.marginAdjustmentFinished && (
-            <HistogramColumns {...this.props} xScale={this.xScale} yScale={this.yScale} />
+            <>
+              <HistogramColumns {...this.props} xScale={this.xScale} yScale={this.yScale} />
+              <HistogramDistributions {...this.props} xScale={this.xScale} yScale={this.yScale} />
+            </>
           )}
         </Axes>
       </g>

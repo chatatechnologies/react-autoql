@@ -36,12 +36,10 @@ export default class NumberAxisSelector extends React.Component {
 
   static propTypes = {
     changeNumberColumnIndices: PropTypes.func,
-    allowAggSelection: PropTypes.bool,
   }
 
   static defaultProps = {
     changeNumberColumnIndices: () => {},
-    allowAggSelection: true,
   }
 
   componentDidMount = () => {
@@ -108,7 +106,7 @@ export default class NumberAxisSelector extends React.Component {
         key: `selectable-list-item-${this.COMPONENT_KEY}-${type}-${i}`,
         content: (
           <div key={`column-agg-type-symbol-${this.COMPONENT_KEY}`}>
-            {!this.props.isAggregation && col.aggType && this.props.allowAggSelection && (
+            {!this.props.isAggregation && col.aggType && (
               <Select
                 className='agg-type-symbol'
                 popupClassname='agg-type-symbol-select'

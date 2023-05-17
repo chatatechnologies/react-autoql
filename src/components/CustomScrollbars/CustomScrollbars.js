@@ -3,17 +3,20 @@ import PropTypes from 'prop-types'
 import PerfectScrollbar from 'react-perfect-scrollbar'
 
 import './CustomScrollbars.scss'
-import 'react-perfect-scrollbar/dist/css/styles.css'
 
 export default class CustomScrollbars extends React.Component {
   static propTypes = {
     style: PropTypes.shape({}),
     autoHide: PropTypes.bool,
+    autoHeightMax: PropTypes.number,
+    autoHeightMin: PropTypes.number,
   }
 
   static defaultProps = {
     style: {},
     autoHide: false,
+    autoHeightMin: undefined,
+    autoHeightMax: undefined,
   }
 
   getContainer = () => {
@@ -43,6 +46,12 @@ export default class CustomScrollbars extends React.Component {
   }
 
   render = () => {
+    const style = {
+      maxHeight: this.props.autoHeightMax,
+      minHeight: this.props.autoHeightMin,
+      // ...this.props.style,
+    }
+
     if (this.props.children) {
       return (
         <PerfectScrollbar
@@ -50,7 +59,7 @@ export default class CustomScrollbars extends React.Component {
             ${this.props.className ?? ''}
             ${this.props.autoHide ? 'autohide' : ''}`}
           ref={(r) => (this.ref = r)}
-          style={this.props.style}
+          style={style}
         >
           {this.props.children}
         </PerfectScrollbar>

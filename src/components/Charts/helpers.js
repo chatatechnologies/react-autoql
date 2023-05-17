@@ -6,6 +6,7 @@ import { scaleLinear, scaleBand, scaleTime } from 'd3-scale'
 import { select } from 'd3-selection'
 import { isMobile } from 'react-device-detect'
 import { deepEqual, formatChartLabel, formatElement, getDayJSObj } from '../../js/Util'
+import { getColumnTypeAmounts } from '../QueryOutput/columnHelpers'
 import { dataFormattingType } from '../../props/types'
 import { dataFormattingDefault } from '../../props/defaults'
 import { AGG_TYPES, DAYJS_PRECISION_FORMATS, NUMBER_COLUMN_TYPES } from '../../js/Constants'
@@ -642,7 +643,8 @@ export const getNumberAxisUnits = (numberColumns) => {
   return 'none'
 }
 
-export const getBinLinearScale = ({ props, columnIndex, axis }) => {
+export const getBinLinearScale = ({ props, columnIndex, axis, thresholds = 20 }) => {
+  const { amountOfNumberColumns } = getColumnTypeAmounts(props.columns)
   const minValue = min(props.data, (d) => convertToNumber(d[columnIndex]))
   const maxValue = max(props.data, (d) => convertToNumber(d[columnIndex]))
   const domain = [minValue, maxValue]
@@ -653,7 +655,7 @@ export const getBinLinearScale = ({ props, columnIndex, axis }) => {
   const binFn = bin()
     .value((d) => d[columnIndex])
     .domain(domain)
-    .thresholds(20) // Todo: make this configurable???
+    .thresholds(thresholds)
 
   const buckets = binFn(props.data)
 
@@ -664,7 +666,7 @@ export const getBinLinearScale = ({ props, columnIndex, axis }) => {
   scale.column = props.columns[columnIndex]
   scale.fields = [columnIndex]
   scale.dataFormatting = props.dataFormatting
-  scale.hasDropdown = false // props.enableAxisDropdown  // todo: allow user to switch column here
+  scale.hasDropdown = props.enableAxisDropdown && amountOfNumberColumns > 1 // todo: allow user to switch column here
   scale.stacked = false
   scale.units = getUnitsForColumn(props.columns[columnIndex])
   scale.title = props.columns[columnIndex]?.display_name

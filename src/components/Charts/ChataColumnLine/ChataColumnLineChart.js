@@ -10,8 +10,6 @@ export default class ChataColumnLineChart extends Component {
   constructor(props) {
     super(props)
 
-    this.setChartData(props)
-
     this.state = {
       isChartScaled: true,
     }

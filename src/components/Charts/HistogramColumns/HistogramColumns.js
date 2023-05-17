@@ -49,6 +49,13 @@ export default class HistogramColumns extends Component {
       const width = Math.max(0, xScale.getValue(d.x1) - xScale.getValue(d.x0) - 1)
       const height = yScale(0) - yScale(d.length)
 
+      if (index === 0) {
+        console.log('width of first column', width)
+      }
+      if (index === 1) {
+        console.log('width of second column', width)
+      }
+
       const x0Formatted = formatElement({
         element: d.x0,
         column: xScale.column,
@@ -61,7 +68,7 @@ export default class HistogramColumns extends Component {
         config: xScale.dataFormatting,
       })
 
-      const tooltip = `<div><strong>${xScale.title}:</strong> ${x0Formatted} - ${x1Formatted}</div>
+      const tooltip = `<div><strong>${xScale.title} (Range):</strong> ${x0Formatted} - ${x1Formatted}</div>
       <div><strong>Count:</strong> ${d.length}</div>`
 
       const key = getKey(index)

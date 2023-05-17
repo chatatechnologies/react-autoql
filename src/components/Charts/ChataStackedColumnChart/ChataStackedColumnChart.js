@@ -7,8 +7,6 @@ import { chartDefaultProps, chartPropTypes, getBandScale, getLinearScales } from
 export default class ChataStackedColumnChart extends Component {
   constructor(props) {
     super(props)
-
-    this.setChartData(props)
   }
 
   static propTypes = chartPropTypes
