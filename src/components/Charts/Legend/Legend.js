@@ -17,10 +17,10 @@ export default class Legend extends Component {
     super(props)
 
     this.MAX_LEGEND_WIDTH = 200
+    this.MAX_LEGEND_HEIGHT = 200
     this.LEGEND_ID = `axis-${uuid()}`
-    this.BUTTON_PADDING = 5
-    this.LEFT_PADDING = 20
-    this.BOTTOM_PADDING = 10
+    this.HORIZONTAL_LEGEND_SPACING = 20
+    this.VERTICAL_LEGEND_SPACING = 15
     this.justMounted = true
   }
 
@@ -43,6 +43,8 @@ export default class Legend extends Component {
 
   static defaultProps = {
     title: undefined,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
     onLabelChange: () => {},
     onLegendClick: () => {},
     onRenderComplete: () => {},
@@ -72,20 +74,15 @@ export default class Legend extends Component {
   }
 
   componentWillUnmount = () => {
-    removeFromDOM(this.rightLegendElement)
-    removeFromDOM(this.rightLegendElement2)
+    removeFromDOM(this.legendElement)
+    removeFromDOM(this.legendElement2)
   }
 
   renderAllLegends = () => {
-    this.renderLegend(this.rightLegendElement, this.props.legendColumnIndices, this.props.colorScale)
+    this.renderLegend(this.legendElement, this.props.legendColumnIndices, this.props.colorScale)
     if (this.props.hasSecondAxis) {
       const isSecondLegend = true
-      this.renderLegend(
-        this.rightLegendElement2,
-        this.props.numberColumnIndices2,
-        this.props.colorScale2,
-        isSecondLegend,
-      )
+      this.renderLegend(this.legendElement2, this.props.numberColumnIndices2, this.props.colorScale2, isSecondLegend)
     }
 
     if (this.justMounted) {
@@ -147,7 +144,6 @@ export default class Legend extends Component {
       .style('font-weight', 'bold')
       .attr('data-test', 'legend-title')
       .attr('fill-opacity', 0.9)
-      .attr('transform', 'translate(0,-3)')
   }
 
   styleLegendTitleWithBorder = (legendElement) => {
@@ -223,15 +219,18 @@ export default class Legend extends Component {
       const title = this.getLegendTitleFromColumns(columnIndices)
       const legendScale = this.getLegendScale(legendLabels)
 
-      if (this.props.placement === 'right') {
-        select(legendElement)
-          .attr('class', 'legendOrdinal')
-          .style('fill', 'currentColor')
-          .style('fill-opacity', '1')
-          .style('font-family', 'inherit')
-          .style('font-size', '12px')
+      select(legendElement)
+        .attr('class', 'legendOrdinal')
+        .attr('transform', `translate(0,${this.props.paddingVertical})`)
+        .style('fill', 'currentColor')
+        .style('fill-opacity', '1')
+        .style('font-family', 'inherit')
+        .style('font-size', '12px')
 
-        var legendOrdinal = legendColor()
+      var legendOrdinal
+
+      if (this.props.placement === 'right') {
+        legendOrdinal = legendColor()
           .orient('vertical')
           .path(symbol().type(symbolSquare).size(100)())
           .shapePadding(8)
@@ -241,75 +240,86 @@ export default class Legend extends Component {
           .on('cellclick', function (d) {
             self.onClick(d, legendLabels)
           })
-        if (isSecondLegend) {
-          legendOrdinal.shape('line')
-        } else if (this.props.shape) {
-          legendOrdinal.shape(this.props.shape)
-        }
-
-        if (title) {
-          legendOrdinal.title(title).titleWidth(this.MAX_LEGEND_WIDTH)
-        }
-
-        select(legendElement).call(legendOrdinal).style('font-family', 'inherit')
-
-        if (isSecondLegend) {
-          const legendBBox1 = this.rightLegendElement?.getBoundingClientRect()
-          const topLegendBottomY = legendBBox1?.height ?? 0
-          select(legendElement).attr('transform', `translate(${this.LEFT_PADDING}, ${topLegendBottomY + 35})`)
-        }
-
-        if (title) {
-          if (this.props.onLegendTitleClick) {
-            this.styleLegendTitleWithBorder(legendElement)
-          } else {
-            this.styleLegendTitleNoBorder(legendElement)
-          }
-        }
-
-        // adjust container width to exact width of legend, to a maximum
-        // this is so the updateMargins function works properly
-        let legendWidth = select(legendElement).node()?.getBBox()?.width || 0
-        if (legendWidth > this.MAX_LEGEND_WIDTH) {
-          legendWidth = this.MAX_LEGEND_WIDTH
-        }
-
-        const legendBBox1 = this.rightLegendElement?.getBoundingClientRect()
-        const legendBBox2 = this.rightLegendElement2?.getBoundingClientRect()
-        const mergedBBox = mergeBboxes([legendBBox1, legendBBox2])
-
-        let combinedLegendWidth = !isNaN(mergedBBox?.width) ? mergedBBox?.width : 0
-        if (combinedLegendWidth > this.MAX_LEGEND_WIDTH) {
-          combinedLegendWidth = this.MAX_LEGEND_WIDTH
-        }
-
-        const maxLegendHeight = this.props.height + 10
-        select(this.legendClippingContainer)
-          .attr('height', maxLegendHeight + this.BOTTOM_PADDING)
-          .attr('width', combinedLegendWidth + this.LEFT_PADDING)
-
-        this.removeHiddenLegendLabels(legendElement)
       } else if (this.props.placement === 'bottom') {
-        select(this.bottomLegendElement)
-          .attr('class', 'legendOrdinal')
-          .style('fill', 'currentColor')
-          .style('fill-opacity', '1')
-          .style('font-family', 'inherit')
-          .style('font-size', '10px')
-
-        var legendOrdinal = legendColor()
-          .orient('horizontal')
-          .shapePadding(self.LEGEND_WIDTH)
+        legendOrdinal = legendColor()
+          .orient('vertical')
+          .path(symbol().type(symbolSquare).size(100)())
+          .shapePadding(this.MAX_LEGEND_WIDTH)
           .labelWrap(this.MAX_LEGEND_WIDTH)
           .labelAlign('left')
+          .labelOffset(10)
           .scale(legendScale)
           .on('cellclick', function (d) {
             self.onClick(d, legendLabels)
           })
-
-        select(this.bottomLegendElement).call(legendOrdinal).style('font-family', 'inherit')
       }
 
+      if (isSecondLegend) {
+        legendOrdinal.shape('line')
+      } else if (this.props.shape) {
+        legendOrdinal.shape(this.props.shape)
+      }
+
+      if (title) {
+        legendOrdinal.title(title).titleWidth(this.MAX_LEGEND_WIDTH)
+      }
+
+      select(legendElement).call(legendOrdinal).style('font-family', 'inherit')
+
+      if (isSecondLegend) {
+        const legendBBox1 = this.legendElement?.getBoundingClientRect()
+        if (this.props.placement === 'right') {
+          const topLegendBottomY = legendBBox1?.height ?? 0
+          select(legendElement).attr(
+            'transform',
+            `translate(0, ${topLegendBottomY + this.props.paddingVertical * 2 + this.VERTICAL_LEGEND_SPACING})`,
+          )
+        } else if (this.props.placement === 'bottom') {
+          const legendRightX = legendBBox1?.width ?? 0
+          select(legendElement).attr(
+            'transform',
+            `translate(${legendRightX + this.props.paddingHorizontal * 2 + this.HORIZONTAL_LEGEND_SPACING}, ${
+              this.props.paddingVertical
+            })`,
+          )
+        }
+      }
+
+      if (title) {
+        if (this.props.onLegendTitleClick) {
+          this.styleLegendTitleWithBorder(legendElement)
+        } else {
+          this.styleLegendTitleNoBorder(legendElement)
+        }
+      }
+
+      const legendBBox1 = this.legendElement?.getBoundingClientRect()
+      const legendBBox2 = this.legendElement2?.getBoundingClientRect()
+      const mergedBBox = mergeBboxes([legendBBox1, legendBBox2])
+
+      let combinedLegendWidth = !isNaN(mergedBBox?.width) ? mergedBBox?.width : 0
+      let combinedLegendHeight = !isNaN(mergedBBox?.height) ? mergedBBox?.height : 0
+      if (this.props.placement === 'right') {
+        if (combinedLegendWidth > this.MAX_LEGEND_WIDTH - this.props.paddingHorizontal * 2) {
+          combinedLegendWidth = this.MAX_LEGEND_WIDTH - this.props.paddingHorizontal * 2
+        }
+
+        const maxLegendHeight = this.props.height
+        select(this.legendClippingContainer)
+          .attr('height', maxLegendHeight)
+          .attr('width', combinedLegendWidth + this.props.paddingHorizontal * 2)
+      } else if (this.props.placement === 'bottom') {
+        if (combinedLegendHeight > this.MAX_LEGEND_HEIGHT - this.props.paddingVertical * 2) {
+          combinedLegendHeight = this.MAX_LEGEND_HEIGHT - this.props.paddingVertical * 2
+        }
+
+        const maxLegendWidth = this.props.width
+        select(this.legendClippingContainer)
+          .attr('height', combinedLegendHeight + this.props.paddingVertical * 2)
+          .attr('width', maxLegendWidth)
+      }
+
+      this.removeHiddenLegendLabels(legendElement)
       this.applyStylesForHiddenSeries(legendElement, legendLabels)
     } catch (error) {
       console.error(error)
@@ -352,60 +362,32 @@ export default class Legend extends Component {
 
   render = () => {
     return (
-      <g data-test='legend'>
-        {this.props.placement === 'right' && (
-          <>
-            <g
-              ref={(el) => (this.rightLegendElement = el)}
-              id={this.LEGEND_ID}
-              data-test='right-legend'
-              className='legendOrdinal right-legend'
-              transform={`translate(${this.LEFT_PADDING}, 8)`}
-            >
-              {/* 
-              Keep this around in case we want the ability to switch axis with legend in the future
-              {this.props.legendColumn && (
-              <LegendSelector
-                {...this.props}
-                column={this.props.legendColumn}
-                positions={['bottom']}
-                align='end'
-                childProps={{
-                  ref: (r) => (this.legendBorder = r),
-                  x: (this.titleBBox?.x ?? 0),
-                  y: (this.titleBBox?.y ?? 0),
-                  width: (this.titleBBox?.width ?? 0) + this.BUTTON_PADDING * 2,
-                  height: (this.titleBBox?.height ?? 0) + this.BUTTON_PADDING * 2,
-                  transform: this.props.translate,
-                }}
-              />
-            )} */}
-            </g>
-            {this.props.hasSecondAxis && (
-              <g
-                ref={(el) => (this.rightLegendElement2 = el)}
-                id={this.LEGEND_ID}
-                data-test='right-legend-2'
-                className='legendOrdinal right-legend-2'
-              />
-            )}
-          </>
+      <g data-test='legend' transform={`translate(${this.props.paddingHorizontal}, ${this.props.paddingVertical})`}>
+        <g
+          ref={(el) => (this.legendElement = el)}
+          id={this.LEGEND_ID}
+          data-test='react-autoql-legend'
+          className='legendOrdinal react-autoql-legend'
+        />
+        {this.props.hasSecondAxis && (
+          <g
+            ref={(el) => (this.legendElement2 = el)}
+            id={this.LEGEND_ID}
+            data-test='react-autoql-legend-2'
+            className='legendOrdinal react-autoql-legend-2'
+          />
         )}
         <rect
           ref={(el) => (this.legendClippingContainer = el)}
           width={0}
-          height={this.props.height}
-          transform='translate(0,-15)'
-          style={{ stroke: 'transparent', fill: 'transparent', pointerEvents: 'none' }}
+          height={0}
+          transform={`translate(${-this.props.paddingHorizontal},${-this.props.paddingVertical})`}
+          style={{
+            stroke: 'transparent',
+            fill: 'transparent',
+            pointerEvents: 'none',
+          }}
         />
-        {this.props.placement === 'bottom' && (
-          <g
-            ref={(el) => (this.bottomLegendElement = el)}
-            data-test='bottom-legend'
-            id={this.LEGEND_ID}
-            className='legendOrdinal'
-          />
-        )}
       </g>
     )
   }

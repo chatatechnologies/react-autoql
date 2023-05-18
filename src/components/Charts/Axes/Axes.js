@@ -2,10 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { Axis } from '../Axis'
-import { Legend } from '../Legend'
-import { getBBoxFromRef } from '../../../js/Util'
 import { axesDefaultProps, axesPropTypes } from '../helpers'
-import { select } from 'd3-selection'
 
 export default class Axes extends React.Component {
   constructor(props) {
@@ -45,10 +42,6 @@ export default class Axes extends React.Component {
         this.topAxisComplete = true
         break
       }
-      case 'Legend': {
-        this.legendComplete = true
-        break
-      }
       default: {
         break
       }
@@ -62,38 +55,29 @@ export default class Axes extends React.Component {
       this.topAxisComplete = true
     }
 
-    if (!this.shouldRenderLegend() && !this.legendComplete) {
-      this.legendComplete = true
-    }
-
-    if (
-      this.topAxisComplete &&
-      this.bottomAxisComplete &&
-      this.leftAxisComplete &&
-      this.rightAxisComplete &&
-      this.legendComplete
-    ) {
-      this.forceUpdate(() => {
-        this.props.onAxesRenderComplete()
-      })
+    if (this.topAxisComplete && this.bottomAxisComplete && this.leftAxisComplete && this.rightAxisComplete) {
+      this.props.onAxesRenderComplete()
     }
   }
 
   renderBottomAxis = (innerWidth, innerHeight) => {
     return (
-      <Axis
-        {...this.props}
-        ref={(r) => (this.bottomAxis = r)}
-        key={this.BOTTOM_AXIS_KEY}
-        orient='Bottom'
-        scale={this.props.xScale}
-        translateY={0}
-        translateX={0}
-        innerWidth={innerWidth}
-        innerHeight={innerHeight}
-        onAxisRenderComplete={this.onAxisRenderComplete}
-        hasSecondAxis={this.hasSecondAxis()}
-      />
+      <g ref={(r) => (this.bottomAxis = r)}>
+        <Axis
+          {...this.props}
+          ref={(r) => (this.bottomAxisWithoutLegend = r)}
+          key={this.BOTTOM_AXIS_KEY}
+          orient='Bottom'
+          scale={this.props.xScale}
+          translateY={0}
+          translateX={0}
+          hasLegend={this.shouldRenderBottomLegend()}
+          innerWidth={innerWidth}
+          innerHeight={innerHeight}
+          onAxisRenderComplete={this.onAxisRenderComplete}
+          hasSecondAxis={this.hasSecondAxis()}
+        />
+      </g>
     )
   }
 
@@ -148,15 +132,19 @@ export default class Axes extends React.Component {
     return shouldRenderAxis
   }
 
-  shouldRenderLegend = () => {
-    return !!this.props.legendLocation
+  shouldRenderRightLegend = () => {
+    return this.props.legendLocation === 'right'
+  }
+
+  shouldRenderBottomLegend = () => {
+    return this.props.legendLocation === 'bottom'
   }
 
   renderRightAxis = (innerWidth, innerHeight) => {
     const shouldRenderAxis = this.shouldRenderRightAxis()
-    const shouldRenderLegend = this.shouldRenderLegend()
+    const shouldRenderRightLegend = this.shouldRenderRightLegend()
 
-    if (!shouldRenderAxis && !shouldRenderLegend) {
+    if (!shouldRenderAxis && !shouldRenderRightLegend) {
       return null
     }
 
@@ -170,45 +158,19 @@ export default class Axes extends React.Component {
             orient='Right'
             scale={this.props.yScale2}
             showGridLines={false}
-            hasRightLegend={false}
-            hasBottomLegend={false}
+            hasLegend={shouldRenderRightLegend}
             innerWidth={innerWidth}
             innerHeight={innerHeight}
             onAxisRenderComplete={this.onAxisRenderComplete}
             hasSecondAxis={this.hasSecondAxis()}
           />
         )}
-        {shouldRenderLegend && this.renderRightLegend()}
       </g>
     )
   }
 
   hasSecondAxis = () => {
     return this.shouldRenderRightAxis() || this.shouldRenderTopAxis()
-  }
-
-  renderRightLegend = () => {
-    let translateX = 0
-    if (this.rightAxisWithoutLegend?.ref) {
-      translateX = getBBoxFromRef(this.rightAxisWithoutLegend?.ref)?.width ?? 0
-    }
-
-    const translateY = this.shouldRenderTopAxis() ? 10 : 0
-
-    return (
-      <g transform={`translate(${translateX},${translateY})`}>
-        <Legend
-          {...this.props}
-          ref={(r) => (this.legendRef = r)}
-          legendColumnIndices={this.props.numberColumnIndices}
-          legendColumnIndices2={this.props.numberColumnIndices2}
-          placement={this.props.legendLocation}
-          onRenderComplete={() => this.onAxisRenderComplete('Legend')}
-          hasSecondAxis={this.hasSecondAxis()}
-          shape={this.props.legendShape}
-        />
-      </g>
-    )
   }
 
   render = () => {

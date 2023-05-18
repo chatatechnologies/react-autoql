@@ -267,9 +267,9 @@ export default class ChataChart extends Component {
 
   getRenderedChartDimensions = () => {
     const leftAxisBBox = this.innerChartRef?.axesRef?.leftAxis?.ref?.getBoundingClientRect()
-    const bottomAxisBBox = this.innerChartRef?.axesRef?.bottomAxis?.ref?.getBoundingClientRect()
-    const rightAxisBBox = this.innerChartRef?.axesRef?.rightAxis?.ref?.getBoundingClientRect()
     const topAxisBBox = this.innerChartRef?.axesRef?.topAxis?.ref?.getBoundingClientRect()
+    const bottomAxisBBox = this.innerChartRef?.axesRef?.bottomAxis?.getBoundingClientRect()
+    const rightAxisBBox = this.innerChartRef?.axesRef?.rightAxis?.getBoundingClientRect()
     const clippedLegendBBox = this.innerChartRef?.axesRef?.legendRef?.legendClippingContainer?.getBoundingClientRect()
     const axesBBox = mergeBboxes([leftAxisBBox, bottomAxisBBox, rightAxisBBox, topAxisBBox, clippedLegendBBox])
 

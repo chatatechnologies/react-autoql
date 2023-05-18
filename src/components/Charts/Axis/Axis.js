@@ -13,6 +13,7 @@ import { formatChartLabel, getBBoxFromRef } from '../../../js/Util.js'
 import { axesDefaultProps, axesPropTypes, mergeBboxes, shouldLabelsRotate } from '../helpers.js'
 
 import './Axis.scss'
+import { Legend } from '../Legend'
 
 export default class Axis extends Component {
   constructor(props) {
@@ -94,8 +95,38 @@ export default class Axis extends Component {
     this._isMounted = false
   }
 
+  onAxisRenderComplete = (orient) => {
+    if (orient === 'Legend') {
+      this.legendComplete = true
+    } else {
+      this.axisComplete = true
+    }
+
+    if (!this.props.hasLegend && !this.legendComplete) {
+      this.legendComplete = true
+    }
+
+    if (this.axisComplete && this.legendComplete) {
+      this.props.onAxisRenderComplete(this.props.orient)
+    }
+  }
+
   setScale = () => {
     this.axis.scale(this.props.scale)
+  }
+
+  adjustLegendLocation = () => {
+    let translateX = 0
+    let translateY = 0
+
+    if (this.props.legendLocation === 'right') {
+      translateX = getBBoxFromRef(this.ref)?.width ?? 0
+    } else if (this.props.legendLocation === 'bottom') {
+      const paddingTop = 10
+      translateY = getBBoxFromRef(this.ref)?.height ?? 0
+    }
+
+    select(this.legendContainer).attr('transform', `translate (${translateX},${translateY})`)
   }
 
   getMaxTickLabelWidth = () => {
@@ -329,12 +360,37 @@ export default class Axis extends Component {
     this.adjustTitleToFit()
     this.adjustAxisSelectorBorder()
     this.adjustAxisScalerBorder()
+    this.adjustLegendLocation()
 
     if (renderComplete) {
-      this.props.onAxisRenderComplete(this.props.orient)
+      this.onAxisRenderComplete(this.props.orient)
     } else if (this.state.axisRenderComplete && this.prevShouldLabelsRotate !== this.shouldLabelsRotate) {
       this.props.onLabelRotation()
     }
+  }
+
+  renderLegend = () => {
+    const { legendLocation } = this.props
+
+    const paddingVertical = legendLocation === 'right' ? 5 : 10
+    const paddingHorizontal = legendLocation === 'right' ? 15 : 0
+
+    return (
+      <g ref={(r) => (this.legendContainer = r)}>
+        <Legend
+          {...this.props}
+          ref={(r) => (this.legendRef = r)}
+          legendColumnIndices={this.props.numberColumnIndices}
+          legendColumnIndices2={this.props.numberColumnIndices2}
+          placement={this.props.legendLocation}
+          onRenderComplete={() => this.onAxisRenderComplete('Legend')}
+          paddingVertical={paddingVertical}
+          paddingHorizontal={paddingHorizontal}
+          hasSecondAxis={this.props.hasSecondAxis}
+          shape={this.props.legendShape}
+        />
+      </g>
+    )
   }
 
   getTitleTextHeight = () => {
@@ -379,6 +435,7 @@ export default class Axis extends Component {
         isSecondAxis={isSecondAxis}
       >
         <rect
+          ref={(r) => (this.axisSelector = r)}
           className={`axis-label-border ${this.shouldRenderAxisSelector() ? '' : 'hidden'}`}
           data-test='axis-label-border'
           onClick={this.openSelector}
@@ -689,17 +746,20 @@ export default class Axis extends Component {
 
   render = () => {
     return (
-      <g
-        data-test='axis'
-        ref={(r) => (this.ref = r)}
-        transform={`translate(${this.props.translateX}, ${this.props.translateY})`}
-        style={this.labelInlineStyles}
-      >
-        <g className={`axis axis-${this.props.orient}`} ref={(el) => (this.axisElement = el)} />
-        {this.renderAxisTitle()}
-        {this.renderLoadMoreDropdown()}
-        {this.renderAxisScaler()}
-      </g>
+      <>
+        <g
+          data-test='axis'
+          ref={(r) => (this.ref = r)}
+          transform={`translate(${this.props.translateX}, ${this.props.translateY})`}
+          style={this.labelInlineStyles}
+        >
+          <g className={`axis axis-${this.props.orient}`} ref={(el) => (this.axisElement = el)} />
+          {this.renderAxisTitle()}
+          {this.renderLoadMoreDropdown()}
+          {this.renderAxisScaler()}
+        </g>
+        {this.props.hasLegend && this.renderLegend()}
+      </>
     )
   }
 }
