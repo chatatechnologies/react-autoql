@@ -210,49 +210,28 @@ export default class Legend extends Component {
   renderLegend = (legendElement, columnIndices, colorScale, isSecondLegend) => {
     try {
       const self = this
-
       const legendLabels = getLegendLabelsForMultiSeries(this.props.columns, colorScale, columnIndices)
-      if (!legendLabels) {
+
+      if (!legendLabels?.length) {
         return
       }
 
       const title = this.getLegendTitleFromColumns(columnIndices)
       const legendScale = this.getLegendScale(legendLabels)
+      const maxWidth = this.MAX_LEGEND_WIDTH - this.props.paddingHorizontal * 2
 
-      select(legendElement)
-        .attr('class', 'legendOrdinal')
-        .attr('transform', `translate(0,${this.props.paddingVertical})`)
-        .style('fill', 'currentColor')
-        .style('fill-opacity', '1')
-        .style('font-family', 'inherit')
-        .style('font-size', '12px')
-
-      var legendOrdinal
-
-      if (this.props.placement === 'right') {
-        legendOrdinal = legendColor()
-          .orient('vertical')
-          .path(symbol().type(symbolSquare).size(100)())
-          .shapePadding(8)
-          .labelWrap(100)
-          .labelOffset(10)
-          .scale(legendScale)
-          .on('cellclick', function (d) {
-            self.onClick(d, legendLabels)
-          })
-      } else if (this.props.placement === 'bottom') {
-        legendOrdinal = legendColor()
-          .orient('vertical')
-          .path(symbol().type(symbolSquare).size(100)())
-          .shapePadding(this.MAX_LEGEND_WIDTH)
-          .labelWrap(this.MAX_LEGEND_WIDTH)
-          .labelAlign('left')
-          .labelOffset(10)
-          .scale(legendScale)
-          .on('cellclick', function (d) {
-            self.onClick(d, legendLabels)
-          })
-      }
+      var legendOrdinal = legendColor()
+        .orient('vertical')
+        .path(symbol().type(symbolSquare).size(100)())
+        .shapePadding(8)
+        .labelWrap(maxWidth)
+        .labelOffset(10)
+        .scale(legendScale)
+        .title(title)
+        .titleWidth(maxWidth)
+        .on('cellclick', function (d) {
+          self.onClick(d, legendLabels)
+        })
 
       if (isSecondLegend) {
         legendOrdinal.shape('line')
@@ -260,11 +239,14 @@ export default class Legend extends Component {
         legendOrdinal.shape(this.props.shape)
       }
 
-      if (title) {
-        legendOrdinal.title(title).titleWidth(this.MAX_LEGEND_WIDTH)
-      }
-
-      select(legendElement).call(legendOrdinal).style('font-family', 'inherit')
+      select(legendElement)
+        .call(legendOrdinal)
+        .attr('class', 'legendOrdinal')
+        .attr('transform', `translate(0,${this.props.paddingVertical})`)
+        .style('fill', 'currentColor')
+        .style('fill-opacity', '1')
+        .style('font-family', 'inherit')
+        .style('font-size', '12px')
 
       if (isSecondLegend) {
         const legendBBox1 = this.legendElement?.getBoundingClientRect()
