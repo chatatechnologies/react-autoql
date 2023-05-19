@@ -372,7 +372,7 @@ export default class Axis extends Component {
   renderLegend = () => {
     const { legendLocation } = this.props
 
-    const paddingVertical = legendLocation === 'right' ? 5 : 15
+    const paddingTop = legendLocation === 'right' ? 5 : 15
     const paddingHorizontal = legendLocation === 'right' ? 15 : 0
 
     return (
@@ -384,8 +384,10 @@ export default class Axis extends Component {
           legendColumnIndices2={this.props.numberColumnIndices2}
           placement={this.props.legendLocation}
           onRenderComplete={() => this.onAxisRenderComplete('Legend')}
-          paddingVertical={paddingVertical}
-          paddingHorizontal={paddingHorizontal}
+          paddingTop={paddingTop}
+          paddingBottom={0}
+          paddingLeft={paddingHorizontal}
+          paddingRight={paddingHorizontal}
           hasSecondAxis={this.props.hasSecondAxis}
           shape={this.props.legendShape}
           centerX={this.xLabelX}
