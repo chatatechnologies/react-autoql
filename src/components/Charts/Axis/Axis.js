@@ -5,6 +5,7 @@ import _isEqual from 'lodash.isequal'
 import { select } from 'd3-selection'
 import { axisLeft, axisBottom, axisTop, axisRight } from 'd3-axis'
 
+import { Legend } from '../Legend'
 import AxisScaler from './AxisScaler'
 import AxisSelector from '../Axes/AxisSelector'
 import LoadMoreDropdown from './LoadMoreDropdown'
@@ -13,7 +14,6 @@ import { formatChartLabel, getBBoxFromRef } from '../../../js/Util.js'
 import { axesDefaultProps, axesPropTypes, mergeBboxes, shouldLabelsRotate } from '../helpers.js'
 
 import './Axis.scss'
-import { Legend } from '../Legend'
 
 export default class Axis extends Component {
   constructor(props) {
@@ -116,14 +116,30 @@ export default class Axis extends Component {
   }
 
   adjustLegendLocation = () => {
+    if (!this.legendContainer) {
+      return
+    }
+
     let translateX = 0
     let translateY = 0
 
+    const axisBBox = getBBoxFromRef(this.ref)
+
     if (this.props.legendLocation === 'right') {
-      translateX = getBBoxFromRef(this.ref)?.width ?? 0
+      translateX = axisBBox?.width ?? 0
     } else if (this.props.legendLocation === 'bottom') {
-      const paddingTop = 10
-      translateY = getBBoxFromRef(this.ref)?.height ?? 0
+      const centerX = this.props.innerWidth / 2
+      const legendBBox = this.legendContainer?.getBBox()
+      const legendCenterX = legendBBox.x + legendBBox.width / 2
+      const legendRightX = legendBBox.x + legendBBox.width
+      const chartRightX = this.props.outerWidth - 2 * this.props.chartPadding
+
+      translateX = centerX - legendCenterX
+      if (legendRightX + translateX > chartRightX) {
+        translateX = chartRightX - legendRightX
+      }
+
+      translateY = axisBBox?.height ?? 0
     }
 
     select(this.legendContainer).attr('transform', `translate (${translateX},${translateY})`)
@@ -385,7 +401,7 @@ export default class Axis extends Component {
           placement={this.props.legendLocation}
           onRenderComplete={() => this.onAxisRenderComplete('Legend')}
           paddingTop={paddingTop}
-          paddingBottom={0}
+          paddingBottom={5}
           paddingLeft={paddingHorizontal}
           paddingRight={paddingHorizontal}
           hasSecondAxis={this.props.hasSecondAxis}
