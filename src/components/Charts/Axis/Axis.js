@@ -372,7 +372,7 @@ export default class Axis extends Component {
   renderLegend = () => {
     const { legendLocation } = this.props
 
-    const paddingVertical = legendLocation === 'right' ? 5 : 10
+    const paddingVertical = legendLocation === 'right' ? 5 : 15
     const paddingHorizontal = legendLocation === 'right' ? 15 : 0
 
     return (
@@ -388,6 +388,7 @@ export default class Axis extends Component {
           paddingHorizontal={paddingHorizontal}
           hasSecondAxis={this.props.hasSecondAxis}
           shape={this.props.legendShape}
+          centerX={this.xLabelX}
         />
       </g>
     )
@@ -480,8 +481,8 @@ export default class Axis extends Component {
 
   renderBottomAxisTitle = () => {
     const labelBBoxBottom = (this.labelBBox?.y ?? 0) + (this.labelBBox?.height ?? 0)
-    const xLabelX = this.props.innerWidth / 2
-    const xLabelY = labelBBoxBottom + this.AXIS_TITLE_PADDING
+    this.xLabelX = this.props.innerWidth / 2
+    this.xLabelY = labelBBoxBottom + this.AXIS_TITLE_PADDING
 
     return (
       <g>
@@ -492,8 +493,8 @@ export default class Axis extends Component {
           dominantBaseline='middle'
           textAnchor='middle'
           fontWeight='bold'
-          x={xLabelX}
-          y={xLabelY}
+          x={this.xLabelX}
+          y={this.xLabelY}
           style={this.labelInlineStyles}
         >
           {this.renderAxisTitleText()}
