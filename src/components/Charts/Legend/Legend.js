@@ -24,9 +24,10 @@ export default class Legend extends Component {
     this.MAX_LEGEND_WIDTH = 150
     this.MAX_LEGEND_HEIGHT = 300
     this.LEGEND_ID = `axis-${uuid()}`
-    this.BORDER_PADDING = 10
+    this.BORDER_PADDING = 15
     this.HORIZONTAL_LEGEND_SPACING = 20
-    this.VERTICAL_LEGEND_SPACING = 15
+    this.VERTICAL_LEGEND_SPACING = 25
+    this.TOP_ADJUSTMENT = 10
     this.justMounted = true
   }
 
@@ -106,9 +107,7 @@ export default class Legend extends Component {
 
     this.legendLabelSections = this.getlegendLabelSections(this.legendLabels1, this.legendLabels2)
     this.legendLabelSections?.forEach((legendLabels, i) => {
-      if (legendLabels[0]?.legendNumber === 1) {
-        this.renderLegend(legendLabels, i)
-      }
+      this.renderLegend(legendLabels, i)
     })
 
     if (this.justMounted) {
@@ -122,13 +121,15 @@ export default class Legend extends Component {
     const list2 = _cloneDeep(list2Orig)
     const totalSize = (list1?.length ?? 0) + (list2?.length ?? 0)
     const columns = []
+
+    let list1Started = false
+    let list2Started = false
     let currentListIndex = 0
 
     for (let i = 0; i < numColumns; i++) {
       columns.push([])
     }
 
-    let isFirstItem = true
     for (let i = 0; i < totalSize; i++) {
       const column = columns[i % numColumns]
       if (!column) return
@@ -138,14 +139,17 @@ export default class Legend extends Component {
         const labelObj = currentList.shift()
         labelObj.legendNumber = currentListIndex + 1
         labelObj.legendSectionIndex = i
-        if (isFirstItem) {
-          labelObj.firstItem = true
+
+        if (currentListIndex === 0 && !list1Started) {
+          list1Started = true
+          labelObj.isFirst = true
+        } else if (currentListIndex === 1 && !list2Started) {
+          list2Started = true
+          labelObj.isFirst = true
         }
 
         column.push(labelObj)
-        isFirstItem = false
       } else {
-        isFirstItem = true
         currentListIndex = 1 - currentListIndex // Switch to the other list
         i-- // Repeat the current index to ensure even distribution
       }
@@ -166,12 +170,19 @@ export default class Legend extends Component {
       totalColumns = totalLabels
     }
 
+    if (this.props.placement === 'right') {
+      return [
+        [...legendLabels1.map((l) => ({ ...l, legendNumber: 1, legendSectionIndex: 0 }))],
+        [...legendLabels2.map((l) => ({ ...l, legendNumber: 2, legendSectionIndex: 1 }))],
+      ]
+    }
+
     return this.distributeListsEvenly(legendLabels1, legendLabels2, totalColumns)
   }
 
   removeHiddenLegendLabels = (legendElement) => {
     const legendContainerBBox = this.legendClippingContainer?.getBoundingClientRect()
-    const legendBottom = (legendContainerBBox?.y ?? 0) + (legendContainerBBox?.height ?? 0)
+    const legendBottom = (legendContainerBBox?.y ?? 0) + (legendContainerBBox?.height ?? 0) - this.props.paddingBottom
 
     let hasRemovedElement = false
     let removedElementY = undefined
@@ -205,7 +216,7 @@ export default class Legend extends Component {
         .append('text')
         .html('&#9660 ...')
         .attr('class', 'legend-hidden-field-arrow')
-        .attr('y', removedElementY + 20)
+        .attr('y', removedElementY + 12)
         .attr('transform', removedElementTransform)
         .attr('data-tip', 'Some legend fields are hidden. Please expand the chart size to view them.')
         .attr('data-for', tooltipID)
@@ -216,7 +227,7 @@ export default class Legend extends Component {
     }
   }
 
-  styleLegendTitleNoBorder = (legendElement) => {
+  styleLegendTitleNoBorder = (legendElement, isFirstSection) => {
     select(legendElement)
       .select('.legendTitle')
       .style('font-weight', 'bold')
@@ -300,13 +311,13 @@ export default class Legend extends Component {
 
       const legendNumber = legendLabels[0]?.legendNumber
       const columnIndices = legendNumber === 2 ? this.props.numberColumnIndices2 : this.props.legendColumnIndices
-      const isFirstSection = !!legendLabels[0]?.firstItem
+      const isFirstSection = !!legendLabels[0]?.isFirst
       const legendElement = this.legendElements[sectionIndex]
       const isSecondLegend = legendNumber === 2
       const allLabels = legendNumber === 2 ? this.legendLabels2 : this.legendLabels1
       const title = this.getLegendTitleFromColumns(columnIndices)
       const legendScale = this.getLegendScale(legendLabels)
-      const maxWidth = this.MAX_LEGEND_WIDTH - this.props.paddingLeft + this.props.paddingRight
+      const maxWidth = this.MAX_LEGEND_WIDTH
 
       var legendOrdinal = legendColor()
         .orient('vertical')
@@ -330,7 +341,6 @@ export default class Legend extends Component {
       select(legendElement)
         .call(legendOrdinal)
         .attr('class', 'legendOrdinal')
-        .attr('transform', `translate(0,${this.props.paddingTop})`)
         .style('fill', 'currentColor')
         .style('fill-opacity', '1')
         .style('font-family', 'inherit')
@@ -343,10 +353,10 @@ export default class Legend extends Component {
 
         if (this.props.placement === 'right') {
           const sectionShift = (previousLegendSectionsBBox?.height ?? 0) + this.VERTICAL_LEGEND_SPACING
-          select(legendElement).attr('transform', `translate(0, ${sectionShift})`)
+          select(legendElement).attr('transform', `translate(0,${sectionShift})`)
         } else if (this.props.placement === 'bottom') {
           const sectionShift = (previousLegendSectionsBBox?.width ?? 0) + this.HORIZONTAL_LEGEND_SPACING
-          select(legendElement).attr('transform', `translate(${sectionShift}, ${this.props.paddingTop})`)
+          select(legendElement).attr('transform', `translate(${sectionShift},0)`)
         }
       }
 
@@ -356,30 +366,37 @@ export default class Legend extends Component {
       this.combinedLegendWidth = !isNaN(mergedBBox?.width) ? mergedBBox?.width : 0
       this.combinedLegendHeight = !isNaN(mergedBBox?.height) ? mergedBBox?.height : 0
 
-      select(this.legendBorder)
-        .attr('height', this.combinedLegendHeight - this.props.paddingBottom + 2 * this.BORDER_PADDING)
-        .attr('width', this.combinedLegendWidth - this.props.paddingRight + 2 * this.BORDER_PADDING)
+      const totalHorizontalPadding = this.props.paddingLeft + this.props.paddingRight + 2 * this.BORDER_PADDING
+      const totalVerticalPadding = this.props.paddingLeft + this.props.paddingRight + 2 * this.BORDER_PADDING
 
+      let height
+      let width
       if (this.props.placement === 'right') {
-        if (this.combinedLegendWidth > this.MAX_LEGEND_WIDTH - this.props.paddingLeft + this.props.paddingRight) {
-          this.combinedLegendWidth = this.MAX_LEGEND_WIDTH - this.props.paddingLeft + this.props.paddingRight
+        if (this.combinedLegendWidth > this.MAX_LEGEND_WIDTH) {
+          this.combinedLegendWidth = this.MAX_LEGEND_WIDTH
         }
 
-        const maxLegendHeight = this.props.height
-        select(this.legendClippingContainer)
-          .attr('height', maxLegendHeight)
-          .attr('width', this.combinedLegendWidth + this.props.paddingLeft + this.props.paddingRight)
+        height = this.combinedLegendHeight
+        if (height > this.props.height) height = this.props.height
+        width = this.combinedLegendWidth
       } else if (this.props.placement === 'bottom') {
-        if (this.combinedLegendHeight > this.MAX_LEGEND_HEIGHT - this.props.paddingTop + this.props.paddingBottom) {
-          this.combinedLegendHeight = this.MAX_LEGEND_HEIGHT - this.props.paddingTop + this.props.paddingBottom
+        if (this.combinedLegendHeight > this.MAX_LEGEND_HEIGHT) {
+          this.combinedLegendHeight = this.MAX_LEGEND_HEIGHT
         }
 
-        const maxLegendWidth = this.props.outerWidth - 2 * this.props.chartPadding
-        const clippingWidth = maxLegendWidth < this.combinedLegendWidth ? maxLegendWidth : this.combinedLegendWidth
-        select(this.legendClippingContainer)
-          .attr('height', this.combinedLegendHeight + this.props.paddingTop + this.props.paddingBottom)
-          .attr('width', clippingWidth)
+        const maxLegendWidth = this.props.outerWidth - 2 * this.props.chartPadding - totalHorizontalPadding
+        width = this.combinedLegendWidth > maxLegendWidth ? maxLegendWidth : this.combinedLegendWidth
+        height = this.combinedLegendHeight
+        if (height > this.MAX_LEGEND_HEIGHT) height = this.MAX_LEGEND_HEIGHT - totalVerticalPadding
       }
+
+      select(this.legendClippingContainer)
+        .attr('height', height + totalVerticalPadding)
+        .attr('width', width + totalHorizontalPadding)
+
+      select(this.legendBorder)
+        .attr('height', height + 2 * this.BORDER_PADDING)
+        .attr('width', width + 2 * this.BORDER_PADDING)
 
       this.removeHiddenLegendLabels(legendElement)
       this.applyStylesForHiddenSeries(legendElement, legendLabels)
@@ -391,7 +408,7 @@ export default class Legend extends Component {
   applyTitleStyles = (title, isFirstSection, legendElement) => {
     if (title) {
       if (this.props.onLegendTitleClick) {
-        this.styleLegendTitleWithBorder(legendElement)
+        this.styleLegendTitleWithBorder(legendElement, isFirstSection)
       } else {
         this.styleLegendTitleNoBorder(legendElement)
       }
@@ -439,7 +456,11 @@ export default class Legend extends Component {
   renderLegendSections = () => {
     this.totalPossibleColumns =
       Math.floor(
-        (this.props.outerWidth - 2 * this.props.chartPadding) /
+        (this.props.outerWidth -
+          2 * this.props.chartPadding -
+          2 * this.BORDER_PADDING -
+          this.props.paddingLeft -
+          this.props.paddingRight) /
           (this.MAX_LEGEND_WIDTH + this.HORIZONTAL_LEGEND_SPACING),
       ) ?? 1
 
@@ -465,13 +486,12 @@ export default class Legend extends Component {
         width={0}
         height={0}
         rx={2}
-        transform={`translate(${this.props.paddingRight - this.BORDER_PADDING},${
-          this.props.paddingBottom - this.BORDER_PADDING
-        })`}
+        transform={`translate(${-this.BORDER_PADDING},${-this.BORDER_PADDING - this.TOP_ADJUSTMENT})`}
         style={{
           stroke: 'var(--react-autoql-border-color)',
           fill: 'transparent',
           pointerEvents: 'none',
+          strokeOpacity: 0.6,
         }}
       />
     )
@@ -484,7 +504,9 @@ export default class Legend extends Component {
         width={0}
         height={0}
         rx={4}
-        transform={`translate(${-this.props.paddingLeft},${-this.props.paddingTop})`}
+        transform={`translate(${-this.props.paddingLeft - this.BORDER_PADDING},${
+          -this.props.paddingTop - this.BORDER_PADDING - this.TOP_ADJUSTMENT
+        })`}
         style={{
           stroke: 'transparent',
           fill: 'transparent',
@@ -496,17 +518,16 @@ export default class Legend extends Component {
 
   render = () => {
     return (
-      <>
-        <g
-          ref={(r) => (this.legendContainer = r)}
-          data-test='legend'
-          transform={`translate(${this.props.paddingLeft}, ${this.props.paddingTop})`}
-        >
-          {this.renderLegendSections()}
-          {this.renderLegendClippingContainer()}
-          {this.renderLegendBorder()}
-        </g>
-      </>
+      <g
+        data-test='legend'
+        transform={`translate(${this.props.paddingLeft + this.BORDER_PADDING}, ${
+          this.props.paddingTop + this.BORDER_PADDING + this.TOP_ADJUSTMENT
+        })`}
+      >
+        {this.renderLegendSections()}
+        {this.renderLegendClippingContainer()}
+        {this.renderLegendBorder()}
+      </g>
     )
   }
 }

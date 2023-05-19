@@ -167,7 +167,7 @@ export class DataMessenger extends React.Component {
     title: 'Data Messenger',
     maxMessages: 20,
     introMessage: '',
-    enableExploreQueriesTab: true,
+    enableExploreQueriesTab: false,
     enableNotificationsTab: false,
     resizable: true,
     inputPlaceholder: 'Type your queries here',
