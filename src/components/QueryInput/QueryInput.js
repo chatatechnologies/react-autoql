@@ -6,7 +6,7 @@ import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import errorMessages, { responseErrors } from '../../js/errorMessages'
 import { hideTooltips, Tooltip } from '../Tooltip'
-
+import { isMobile } from 'react-device-detect'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import {
   authenticationDefault,
@@ -435,7 +435,7 @@ class QueryInput extends React.Component {
               <LoadingDots />
             </div>
           )}
-          {this.props.enableVoiceRecord && (
+          {!isMobile && this.props.enableVoiceRecord && (
             <SpeechToTextButtonBrowser
               onTranscriptStart={this.onTranscriptStart}
               onTranscriptChange={this.onTranscriptChange}
