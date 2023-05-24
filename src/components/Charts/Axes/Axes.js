@@ -26,19 +26,19 @@ export default class Axes extends React.Component {
 
   onAxisRenderComplete = (orient) => {
     switch (orient) {
-      case 'Right': {
+      case 'right': {
         this.rightAxisComplete = true
         break
       }
-      case 'Left': {
+      case 'left': {
         this.leftAxisComplete = true
         break
       }
-      case 'Bottom': {
+      case 'bottom': {
         this.bottomAxisComplete = true
         break
       }
-      case 'Top': {
+      case 'top': {
         this.topAxisComplete = true
         break
       }
@@ -67,7 +67,7 @@ export default class Axes extends React.Component {
           {...this.props}
           ref={(r) => (this.bottomAxisWithoutLegend = r)}
           key={this.BOTTOM_AXIS_KEY}
-          orient='Bottom'
+          orient='bottom'
           scale={this.props.xScale}
           translateY={0}
           translateX={0}
@@ -87,7 +87,7 @@ export default class Axes extends React.Component {
         {...this.props}
         key={this.LEFT_AXIS_KEY}
         ref={(r) => (this.leftAxis = r)}
-        orient='Left'
+        orient='left'
         scale={this.props.yScale}
         showGridLines={this.props.yGridLines}
         innerWidth={innerWidth}
@@ -114,7 +114,7 @@ export default class Axes extends React.Component {
         {...this.props}
         key={this.TOP_AXIS_KEY}
         ref={(r) => (this.topAxis = r)}
-        orient='Top'
+        orient='top'
         scale={this.props.xScale2}
         showGridLines={false}
         innerWidth={innerWidth}
@@ -150,21 +150,19 @@ export default class Axes extends React.Component {
 
     return (
       <g ref={(r) => (this.rightAxis = r)} transform={`translate(${innerWidth}, 0)`}>
-        {shouldRenderAxis && (
-          <Axis
-            {...this.props}
-            ref={(r) => (this.rightAxisWithoutLegend = r)}
-            key={this.RIGHT_AXIS_KEY}
-            orient='Right'
-            scale={this.props.yScale2}
-            showGridLines={false}
-            hasLegend={shouldRenderRightLegend}
-            innerWidth={innerWidth}
-            innerHeight={innerHeight}
-            onAxisRenderComplete={this.onAxisRenderComplete}
-            hasSecondAxis={this.hasSecondAxis()}
-          />
-        )}
+        <Axis
+          {...this.props}
+          ref={(r) => (this.rightAxisWithoutLegend = r)}
+          key={this.RIGHT_AXIS_KEY}
+          orient='right'
+          scale={this.props.yScale2}
+          showGridLines={false}
+          hasLegend={shouldRenderRightLegend}
+          innerWidth={innerWidth}
+          innerHeight={innerHeight}
+          onAxisRenderComplete={this.onAxisRenderComplete}
+          hasSecondAxis={this.hasSecondAxis()}
+        />
       </g>
     )
   }

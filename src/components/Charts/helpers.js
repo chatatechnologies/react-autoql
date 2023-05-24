@@ -24,6 +24,7 @@ export const chartContainerPropTypes = {
   numberColumnIndex: PropTypes.number.isRequired,
   legendColumnIndex: PropTypes.number,
   enableDynamicCharting: PropTypes.bool,
+  legendLocation: PropTypes.string,
   isResizing: PropTypes.bool,
   onLegendClick: PropTypes.func,
   onLabelChange: PropTypes.func,
@@ -418,8 +419,8 @@ export const getMinAndMaxValues = (data, numberColumnIndices, isScaled, sum, str
   }
 }
 
-export const getLegendLocation = (seriesArray, displayType) => {
-  const legendLocation = isMobile ? 'bottom' : 'right'
+export const getLegendLocation = (seriesArray, displayType, preferredLocation) => {
+  const legendLocation = isMobile ? 'bottom' : preferredLocation
 
   if (displayType === 'column_line') {
     return legendLocation

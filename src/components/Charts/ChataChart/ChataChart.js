@@ -420,7 +420,7 @@ export default class ChataChart extends Component {
       chartPadding: this.PADDING,
       enableAxisDropdown: enableDynamicCharting && !this.props.isAggregated,
       marginAdjustmentFinished: true,
-      legendLocation: getLegendLocation(numberColumnIndices, this.props.type),
+      legendLocation: getLegendLocation(numberColumnIndices, this.props.type, this.props.legendLocation),
       legendLabels: this.getLegendLabels(),
       onLabelRotation: this.adjustVerticalPosition,
       visibleSeriesIndices,

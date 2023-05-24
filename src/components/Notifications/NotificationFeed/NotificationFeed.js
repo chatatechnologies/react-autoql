@@ -516,7 +516,7 @@ class NotificationFeed extends React.Component {
                             ...getAutoQLConfig(this.props.autoQLConfig),
                             enableColumnVisibilityManager: false,
                             enableNotifications: false,
-                            enableCSVDownload: true,
+                            enableCSVDownload: false,
                             enableDrilldowns: false,
                             enableReportProblem: false,
                           }}

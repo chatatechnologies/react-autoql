@@ -387,17 +387,19 @@ export class DataMessenger extends React.Component {
   }
 
   getDrawerHeight = () => {
-    if (isBrowser && (this.state.placement === 'right' || this.state.placement === 'left')) {
-      return null
+    if (this.state.placement === 'right' || this.state.placement === 'left') {
+      return isMobile ? 'calc(100vh - 45px)' : '100vh'
     }
+
     return this.state.height
   }
 
   getDrawerWidth = () => {
-    if (this.state.placement === 'right' || this.state.placement === 'left') {
-      return this.state.width
+    if (this.state.placement === 'top' || this.state.placement === 'bottom') {
+      return '100vw'
     }
-    return null
+
+    return this.state.width
   }
 
   getPlacementProp = () => {
@@ -1022,7 +1024,8 @@ export class DataMessenger extends React.Component {
           data-test='react-autoql-drawer-test'
           className={`react-autoql-drawer
               ${this.state.isResizing ? ' disable-selection' : ''}
-              ${this.state.isVisible ? ' open' : ' closed'}`}
+              ${this.state.isVisible ? ' open' : ' closed'}
+              ${`drawer-${this.state.placement}`}`}
           showMask={this.props.showMask}
           placement={this.getPlacementProp()}
           width={this.getDrawerWidth()}
