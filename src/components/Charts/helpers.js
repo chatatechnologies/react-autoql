@@ -419,11 +419,13 @@ export const getMinAndMaxValues = (data, numberColumnIndices, isScaled, sum, str
   }
 }
 
-export const getLegendLocation = (seriesArray, displayType, preferredLocation) => {
-  const legendLocation = isMobile ? 'bottom' : preferredLocation
+export const getLegendLocation = (seriesArray, displayType, preferredLocation = 'right') => {
+  const bottom = 'bottom'
+
+  const legendLocation = isMobile ? bottom : preferredLocation
 
   if (displayType === 'column_line') {
-    return legendLocation
+    return bottom
   }
 
   if (seriesArray?.length < 2) {
@@ -438,8 +440,6 @@ export const getLegendLocation = (seriesArray, displayType, preferredLocation) =
     return legendLocation
   } else if (seriesArray?.length > 1) {
     return legendLocation
-    // Todo: the margins are not working correctly, disable this for now
-    // return 'bottom'
   }
 
   return undefined

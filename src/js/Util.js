@@ -412,6 +412,7 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWid
             currency: `${currency}`,
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
+            notation: 'compact',
           }).format(d)
         } catch (error) {
           console.error(error)
@@ -420,6 +421,7 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWid
             currency: 'USD',
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
+            notation: 'compact',
           }).format(d)
         }
       }
@@ -427,7 +429,11 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWid
     }
     case 'QUANTITY': {
       if (!isNaN(parseFloat(d))) {
-        formattedLabel = new Intl.NumberFormat(languageCode).format(d)
+        formattedLabel = new Intl.NumberFormat(languageCode, {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+          notation: 'compact',
+        }).format(d)
       }
       break
     }

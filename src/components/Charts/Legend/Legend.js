@@ -157,6 +157,7 @@ export default class Legend extends Component {
       : []
 
     this.legendLabelSections = this.getlegendLabelSections(this.legendLabels1, this.legendLabels2)
+
     this.legendLabelSections?.forEach((legendLabels, i) => {
       this.renderLegend(legendLabels, i)
     })
@@ -487,9 +488,13 @@ export default class Legend extends Component {
       const totalPossibleWidth = this.props.outerWidth - totalHorizontalPadding
       const widthPerSection = maxSectionWidth + this.HORIZONTAL_LEGEND_SPACING
 
-      this.totalPossibleSections = Math.floor(totalPossibleWidth / widthPerSection) ?? 1
-    } else {
-      this.totalPossibleSections = this.props.hasSecondAxis ? 2 : 1
+      this.totalPossibleSections = Math.floor(totalPossibleWidth / widthPerSection) ?? 0
+    }
+
+    if (!this.totalPossibleSections && this.props.hasSecondAxis) {
+      this.totalPossibleSections = 2
+    } else if (!this.totalPossibleSections) {
+      this.totalPossibleSections = 1
     }
 
     const sections = [...new Array(this.totalPossibleSections)].map((row, i) => {

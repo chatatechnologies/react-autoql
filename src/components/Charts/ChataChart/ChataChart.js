@@ -2,6 +2,7 @@ import React, { Component, Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { scaleOrdinal } from 'd3-scale'
+import { isMobile } from 'react-device-detect'
 
 import { ChataColumnChart } from '../ChataColumnChart'
 import { ChataBarChart } from '../ChataBarChart'
@@ -39,7 +40,7 @@ export default class ChataChart extends Component {
     super(props)
     const data = this.getData(props)
 
-    this.PADDING = 10
+    this.PADDING = 0
     this.FONT_SIZE = 12
 
     this.firstRender = true
