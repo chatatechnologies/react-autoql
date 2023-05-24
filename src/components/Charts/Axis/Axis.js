@@ -96,6 +96,9 @@ export default class Axis extends Component {
   }
 
   onAxisRenderComplete = (orient) => {
+    // console.log('remove line below before commiting')
+    // this.legendComplete = true
+
     if (orient === 'Legend') {
       this.legendComplete = true
     } else {
@@ -131,24 +134,31 @@ export default class Axis extends Component {
       const centerX = this.props.innerWidth / 2
 
       const legendBBox = this.legendContainer?.getBBox()
-      const legendRightX = legendBBox.x + legendBBox.width
       const legendCenterX = legendBBox.x + legendBBox.width / 2
+      const deltaCenter = centerX - legendCenterX
 
-      translateX = centerX - legendCenterX
+      translateX = deltaCenter
+      translateY = axisBBox?.height ?? 0
 
-      const axisBBox = this.ref.getBBox()
-      const axisRightX = axisBBox.x + this.props.outerWidth
-      const chartRightX = (axisBBox.width = this.props.deltaX)
+      // TESTS -------------------------------------------------------
+      // if legend left x + legend width + transform X is greater than the chart width (minus the delta) period. Then add that difference to the translateX
 
-      const newLegendRightX = legendRightX + translateX
-      const rightXDifference = axisRightX - newLegendRightX
-
-      // TODO: check logic here for right X difference
-      if (rightXDifference < 0) {
-        translateX += rightXDifference
+      // how do I get the real chart Left X? I know the bbox of the axis
+      const legendRightX = legendBBox.x + legendBBox.width + translateX
+      const chartRightX = this.props.outerWidth - this.props.deltaX - this.props.chartPadding
+      const rightXDiff = chartRightX - legendRightX
+      if (rightXDiff < 0) {
+        console.log('OUTSIDE RIGHT BORDER...')
+        translateX += rightXDiff
       }
 
-      translateY = axisBBox?.height ?? 0
+      console.log({
+        rightXDiff,
+        chartRightX,
+        legendRightX,
+      })
+
+      // TESTS -------------------------------------------------------
     }
 
     select(this.legendContainer).attr('transform', `translate (${translateX},${translateY})`)
@@ -682,58 +692,70 @@ export default class Axis extends Component {
       .attr('height', Math.round((this.labelBBox?.height ?? 0) + this.BUTTON_PADDING * 2))
   }
 
+  adjustBottomTitleToFit = () => {
+    const labelBBoxBottom = (this.labelBBox?.y ?? 0) + (this.labelBBox?.height ?? 0)
+    const xLabelX = this.props.innerWidth / 2
+    const xLabelY = labelBBoxBottom + this.AXIS_TITLE_PADDING
+
+    select(this.titleRef).attr('x', xLabelX).attr('y', xLabelY)
+    select(this.loadMoreDropdown).attr('transform', `translate(${xLabelX}, ${xLabelY + 15})`)
+  }
+
+  adjustTopTitleToFit = () => {
+    const labelBBoxTop = this.labelBBox?.y ?? 0
+    const xLabelX = this.props.innerWidth / 2
+    const xLabelY = labelBBoxTop - this.AXIS_TITLE_PADDING
+
+    select(this.titleRef).attr('x', xLabelX).attr('y', xLabelY)
+  }
+
+  adjustVerticalTitleToFit = () => {
+    if (this.props.chartRef) {
+      // Get original container height and top before adding axis title
+      const chartContainerHeight = this.props.outerHeight - 2 * this.props.chartPadding
+      select(this.titleRef).attr('textLength', null)
+
+      // BBox x/width and y/height will be switched due to the rotation
+      const yTitleBBox = this.titleRef.getBBox()
+
+      // ---------------------- Chart height is too small to fit the whole title --------------------
+      const yTitleHeight = (yTitleBBox.width ?? 0) + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
+      if (yTitleHeight > chartContainerHeight) {
+        // Squeeze text to fit in full height
+        let textLength = Math.floor(chartContainerHeight) - 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
+        if (textLength < 0) {
+          textLength = 10
+        }
+        select(this.titleRef).attr('textLength', textLength)
+      }
+      // --------------------------------------------------------------------------------------------
+
+      // ------------------------- Title will fit, but needs to be shifted down ---------------------
+      const yTitleBBoxAfterTextLength = this.titleRef.getBBox()
+      const yTitleTop =
+        -1 * (yTitleBBoxAfterTextLength.x + yTitleBBoxAfterTextLength.width) +
+        this.props.deltaY -
+        this.AXIS_TITLE_BORDER_PADDING_LEFT
+
+      if (yTitleTop < 0) {
+        const overflow = -yTitleTop
+        select(this.titleRef).attr('transform', `rotate(-90) translate(${-overflow}, 0)`)
+      }
+      // --------------------------------------------------------------------------------------------
+    }
+  }
+
   adjustTitleToFit = () => {
     if (!this.titleRef) {
       return
     }
 
     if (this.props.orient === 'bottom') {
-      const labelBBoxBottom = (this.labelBBox?.y ?? 0) + (this.labelBBox?.height ?? 0)
-      const xLabelX = this.props.innerWidth / 2
-      const xLabelY = labelBBoxBottom + this.AXIS_TITLE_PADDING
-
-      select(this.titleRef).attr('x', xLabelX).attr('y', xLabelY)
-      select(this.loadMoreDropdown).attr('transform', `translate(${xLabelX}, ${xLabelY + 15})`)
+      this.adjustBottomTitleToFit()
     } else if (this.props.orient === 'top') {
-      const labelBBoxTop = this.labelBBox?.y ?? 0
-      const xLabelX = this.props.innerWidth / 2
-      const xLabelY = labelBBoxTop - this.AXIS_TITLE_PADDING
-
-      select(this.titleRef).attr('x', xLabelX).attr('y', xLabelY)
+      this.adjustTopTitleToFit()
     } else if (this.props.orient === 'left' || this.props.orient === 'right') {
-      if (this.props.chartRef) {
-        // Get original container height and top before adding axis title
-        const chartContainerHeight = this.props.outerHeight - 2 * this.props.chartPadding
-        select(this.titleRef).attr('textLength', null)
-
-        // BBox x/width and y/height will be switched due to the rotation
-        const yTitleBBox = this.titleRef.getBBox()
-
-        // ---------------------- Chart height is too small to fit the whole title --------------------
-        const yTitleHeight = (yTitleBBox.width ?? 0) + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
-        if (yTitleHeight > chartContainerHeight) {
-          // Squeeze text to fit in full height
-          let textLength = Math.floor(chartContainerHeight) - 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
-          if (textLength < 0) {
-            textLength = 10
-          }
-          select(this.titleRef).attr('textLength', textLength)
-        }
-        // --------------------------------------------------------------------------------------------
-
-        // ------------------------- Title will fit, but needs to be shifted down ---------------------
-        const yTitleBBoxAfterTextLength = this.titleRef.getBBox()
-        const yTitleTop =
-          -1 * (yTitleBBoxAfterTextLength.x + yTitleBBoxAfterTextLength.width) +
-          this.props.deltaY -
-          this.AXIS_TITLE_BORDER_PADDING_LEFT
-
-        if (yTitleTop < 0) {
-          const overflow = -yTitleTop
-          select(this.titleRef).attr('transform', `rotate(-90) translate(${-overflow}, 0)`)
-        }
-        // --------------------------------------------------------------------------------------------
-      }
+      this.adjustVerticalTitleToFit()
     }
   }
 
@@ -807,10 +829,14 @@ export default class Axis extends Component {
           >
             <g className={`axis axis-${this.props.orient}`} ref={(el) => (this.axisElement = el)} />
             {this.renderAxisTitle()}
+            {/* 
+            console.log('uncomment line below before committing') */}
             {this.renderLoadMoreDropdown()}
             {this.renderAxisScaler()}
           </g>
         )}
+        {/* 
+        console.log('uncomment line below before committing') */}
         {this.props.hasLegend && this.renderLegend()}
       </>
     )
