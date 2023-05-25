@@ -200,6 +200,8 @@ export default class DataExplorer extends React.Component {
           defaultCollapsed={this.props.isSmallScreen ? isDefaultCollapsed : undefined}
           isCollapsed={this.props.isSmallScreen ? this.state.isQuerySuggestionCollapsed : undefined}
           onIsCollapsedChange={(isCollapsed) => {
+            setTimeout(this.querySuggestionList?.scrollbarRef?.update, 400)
+
             this.setState({
               isQuerySuggestionCollapsed: isCollapsed,
               isDataPreviewCollapsed: isCollapsed ? this.state.isDataPreviewCollapsed : true,
@@ -208,6 +210,7 @@ export default class DataExplorer extends React.Component {
         >
           <div className='data-explorer-query-suggestion-list'>
             <QuerySuggestionList
+              ref={(r) => (this.querySuggestionList = r)}
               key={this.querySuggestionsKey}
               authentication={this.props.authentication}
               context={this.state.selectedSubject?.name}

@@ -89,7 +89,7 @@ export default class RowNumberSelector extends React.Component {
     const rowNumberList = this.rowNumberListConstructor(this.props.totalRowCount)
 
     return (
-      <CustomScrollbars autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
+      <CustomScrollbars autoHeight autoHeightMin={minHeight} maxHeight={maxHeight}>
         <div
           className='axis-selector-container'
           id='string-column-selector-content'

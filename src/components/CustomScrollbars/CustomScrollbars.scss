@@ -1,4 +1,10 @@
 .react-autoql-custom-scrollbars.scrollbar-container {
+  // Possible bug in PerfectScrollbars putting scrollbar on the left side
+  .ps__rail-y {
+    right: 0px !important;
+    left: unset !important;
+  }
+
   .ps__rail-y,
   .ps__rail-x {
     background-color: transparent;
