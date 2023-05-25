@@ -28,6 +28,7 @@ class DataAlerts extends React.Component {
     onErrorCallback: PropTypes.func,
     onSuccessAlert: PropTypes.func,
     onDMLinkClick: PropTypes.func,
+    onDashboardLinkClick: PropTypes.func,
     onDataAlertStatusChange: PropTypes.func,
   }
 
@@ -37,6 +38,7 @@ class DataAlerts extends React.Component {
     onErrorCallback: () => {},
     onDataAlertStatusChange: () => {},
     onDMLinkClick: () => {},
+    onDashboardLinkClick: () => {},
     onSuccessAlert: () => {},
   }
 
@@ -172,8 +174,8 @@ class DataAlerts extends React.Component {
               'Custom Data Alerts',
               <span>
                 View and manage your Custom Alerts here. To create a new Custom Alert, simply click on the "Create Data
-                Alert" option from a query result in <a onClick={this.props.onDMLinkClick}>Data Messenger</a> or a
-                Dashboard.
+                Alert" option from a query result in <a onClick={this.props.onDMLinkClick}>Data Messenger</a> or a{' '}
+                <a onClick={this.props.onDashboardLinkClick}>Dashboard</a>.
               </span>,
             )
           : null}
