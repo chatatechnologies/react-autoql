@@ -16,6 +16,8 @@ export default class CustomScrollbars extends React.Component {
     autoHide: false,
   }
 
+  update = () => this.forceUpdate()
+
   getContainer = () => {
     return this.ref?._container
   }
@@ -42,21 +44,34 @@ export default class CustomScrollbars extends React.Component {
     }
   }
 
-  render = () => {
-    if (this.props.children) {
-      return (
-        <PerfectScrollbar
-          className={`react-autoql-custom-scrollbars 
-            ${this.props.className ?? ''}
-            ${this.props.autoHide ? 'autohide' : ''}`}
-          ref={(r) => (this.ref = r)}
-          style={this.props.style}
-        >
-          {this.props.children}
-        </PerfectScrollbar>
-      )
+  getStyleProp = () => {
+    let style = {}
+
+    if (this.props.style) {
+      style = { ...this.props.style }
     }
 
-    return null
+    style.maxHeight = this.props.maxHeight
+    style.minHeight = this.props.minHeight
+
+    return style
+  }
+
+  render = () => {
+    if (!this.props.children) {
+      return null
+    }
+
+    return (
+      <PerfectScrollbar
+        className={`react-autoql-custom-scrollbars 
+            ${this.props.className ?? ''}
+            ${this.props.autoHide ? 'autohide' : ''}`}
+        ref={(r) => (this.ref = r)}
+        style={this.getStyleProp()}
+      >
+        {this.props.children}
+      </PerfectScrollbar>
+    )
   }
 }

@@ -251,7 +251,6 @@ export class DashboardTile extends React.Component {
   }
 
   endBottomQuery = ({ response }) => {
-    console.log('ENDING BOTTOM QUERY')
     if (response?.data?.message !== responseErrors.CANCELLED) {
       this.debouncedSetParamsForTile(
         {
