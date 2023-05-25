@@ -251,13 +251,14 @@ export class DashboardTile extends React.Component {
   }
 
   endBottomQuery = ({ response }) => {
+    console.log('ENDING BOTTOM QUERY')
     if (response?.data?.message !== responseErrors.CANCELLED) {
       this.debouncedSetParamsForTile(
         {
           secondQueryResponse: response,
           secondDefaultSelectedSuggestion: undefined,
         },
-        this.setTopExecuted,
+        this.setBottomExecuted,
       )
       return response
     } else {
@@ -274,19 +275,22 @@ export class DashboardTile extends React.Component {
         pageSize = this.props.tile.pageSize ?? this.props.dataPageSize
       }
 
+      const useSecondAxiosSource = isSecondHalf && !this.areTopAndBottomSameQuery()
+      const cancelToken = useSecondAxiosSource ? this.secondAxiosSource?.token : this.axiosSource?.token
+
       const requestData = {
         ...getAuthentication(this.props.authentication),
         ...getAutoQLConfig(this.props.autoQLConfig),
         enableQueryValidation: !this.props.isEditing
           ? false
           : getAutoQLConfig(this.props.autoQLConfig).enableQueryValidation,
-        cancelToken: isSecondHalf ? this.secondAxiosSource.token : this.axiosSource.token,
         skipQueryValidation: skipQueryValidation,
         // Hardcode this for now until we change the filter lock blacklist to a whitelist
         // mergeSources(this.props.source, source),
         source: 'dashboards.user',
         scope: 'dashboards',
         userSelection,
+        cancelToken,
         pageSize,
         query,
       }
@@ -373,9 +377,7 @@ export class DashboardTile extends React.Component {
       source,
       isSecondHalf: true,
     })
-      .then((response) => {
-        return this.endBottomQuery({ response })
-      })
+      .then((response) => this.endBottomQuery({ response }))
       .catch((response) => {
         if (response?.data?.message === responseErrors.CANCELLED) {
           return undefined
@@ -413,8 +415,8 @@ export class DashboardTile extends React.Component {
 
   processTile = ({ query, secondQuery, skipQueryValidation, secondskipQueryValidation, source } = {}) => {
     // If tile is already processing, cancel current process
-    this.secondAxiosSource?.cancel(responseErrors.CANCELLED)
     this.axiosSource?.cancel(responseErrors.CANCELLED)
+    this.secondAxiosSource?.cancel(responseErrors.CANCELLED)
 
     // Create new cancel tokens for each query
     this.axiosSource = axios.CancelToken?.source()
