@@ -388,7 +388,7 @@ export class DataMessenger extends React.Component {
 
   getDrawerHeight = () => {
     if (this.state.placement === 'right' || this.state.placement === 'left') {
-      return isMobile ? 'calc(100vh - 45px)' : '100vh'
+      return isMobile ? 'calc(100vh - 80px)' : '100vh'
     }
 
     return this.state.height
