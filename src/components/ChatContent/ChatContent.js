@@ -19,6 +19,7 @@ import { LoadingDots } from '../LoadingDots'
 
 // Styles
 import './ChatContent.scss'
+import { isMobile } from 'react-device-detect'
 
 export default class ChatContent extends React.Component {
   constructor(props) {
@@ -74,13 +75,16 @@ export default class ChatContent extends React.Component {
     if (this.props.introMessages?.length) {
       this.addIntroMessages(this.props.introMessages)
     }
-    if (this.props.shouldRender) {
+
+    //disable input focus for mobile, as ios keyboard has bug
+    if (this.props.shouldRender && !isMobile) {
       this.focusInput()
     }
   }
 
   componentDidUpdate = (prevProps) => {
-    if (this.props.shouldRender && !prevProps.shouldRender) {
+    //disable input focus for mobile, as ios keyboard has bug
+    if (this.props.shouldRender && !prevProps.shouldRender && !isMobile) {
       this.focusInput()
     }
   }
@@ -291,8 +295,8 @@ export default class ChatContent extends React.Component {
 
       clearTimeout(this.responseDelayTimeout)
       this.setState({ isQueryRunning: false, isInputDisabled: false })
-
-      this.focusInput()
+      //disable input focus for mobile, as ios keyboard has bug
+      !isMobile && this.focusInput()
     }
   }
 
