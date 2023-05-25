@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
-import { Popover } from 'react-tiny-popover'
+import { Popover } from '../../Popover'
 import dayjs from '../../../js/dayjsWithPlugins'
 import { isMobile } from 'react-device-detect'
 import { Icon } from '../../Icon'

@@ -1,7 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.clonedeep'
-import { Popover } from 'react-tiny-popover'
 import { v4 as uuid } from 'uuid'
 import { isMobile } from 'react-device-detect'
 import { format } from 'sql-formatter'
@@ -10,6 +9,7 @@ import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import { DataAlertModal } from '../Notifications'
 import { Modal } from '../Modal'
 import { Button } from '../Button'
+import { Popover } from '../Popover'
 import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
 import ReportProblemModal from './ReportProblemModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -578,9 +578,7 @@ export class OptionsToolbar extends React.Component {
               key={`more-options-button-${this.COMPONENT_KEY}`}
               isOpen={this.state.activeMenu === 'more-options'}
               padding={8}
-              onClickOutside={() => {
-                this.setState({ activeMenu: undefined })
-              }}
+              onClickOutside={() => this.setState({ activeMenu: undefined })}
               content={(props) => this.renderMoreOptionsMenu(props, shouldShowButton)}
               parentElement={this.props.popoverParentElement}
               boundaryElement={this.props.popoverParentElement}

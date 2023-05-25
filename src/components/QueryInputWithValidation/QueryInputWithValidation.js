@@ -3,18 +3,17 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import ContentEditable from 'react-contenteditable'
 import sanitizeHtml from 'sanitize-html'
-import { Popover } from 'react-tiny-popover'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEqual from 'lodash.isequal'
 import { debounce } from 'throttle-debounce'
 
+import { Popover } from '../Popover'
 import { Select } from '../Select'
 
 import { setCaretPosition } from '../../js/Util'
 import { authenticationDefault, getAuthentication } from '../../props/defaults'
 import { authenticationType } from '../../props/types'
-
 import { runQueryValidation } from '../../js/queryService'
 
 import './QueryInputWithValidation.scss'
