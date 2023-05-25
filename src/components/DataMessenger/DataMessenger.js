@@ -1,38 +1,32 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
-import { v4 as uuid } from 'uuid'
 import Drawer from 'rc-drawer'
-import { Popover } from 'react-tiny-popover'
-import _get from 'lodash.get'
-import _has from 'lodash.has'
 import _isEmpty from 'lodash.isempty'
-import _isEqual from 'lodash.isequal'
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { ChatContent } from '../ChatContent'
-import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
-import { withTheme } from '../../theme'
-import { isBrowser, isMobile } from 'react-device-detect'
-
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
-import { autoQLConfigDefault, dataFormattingDefault, getAutoQLConfig } from '../../props/defaults'
-
-import { lang, setLanguage } from '../../js/Localization'
+import { v4 as uuid } from 'uuid'
 
 // Components
 import { Icon } from '../Icon'
-import { Button } from '../Button'
-
 import { ExploreQueries } from '../ExploreQueries'
 import { DataExplorer } from '../DataExplorer'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
 import { FilterLockPopover } from '../FilterLockPopover'
+import { ConfirmPopover } from '../ConfirmPopover'
+import { ChatContent } from '../ChatContent'
+import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+
+// Utils
+import { withTheme } from '../../theme'
+import { isBrowser, isMobile } from 'react-device-detect'
+import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
+import { autoQLConfigDefault, dataFormattingDefault, getAutoQLConfig } from '../../props/defaults'
+import { lang, setLanguage } from '../../js/Localization'
+import { mergeSources } from '../../js/Util'
 
 // Styles
 import 'rc-drawer/assets/index.css'
 import './DataMessenger.scss'
-import { mergeSources } from '../../js/Util'
-import { ConfirmPopover } from '../ConfirmPopover'
 
 export class DataMessenger extends React.Component {
   constructor(props) {

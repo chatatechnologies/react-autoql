@@ -1,8 +1,5 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
-import _get from 'lodash.get'
-import _cloneDeep from 'lodash.clonedeep'
-import _isEqual from 'lodash.isequal'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
@@ -260,7 +257,7 @@ export default class ChatMessage extends React.Component {
       return this.renderCSVProgressMessage()
     } else if (this.props.content) {
       return this.props.content
-    } else if (_get(this.props.response, 'status') === 401) {
+    } else if (this.props.response?.status === 401) {
       return errorMessages.UNAUTHENTICATED
     } else if (this.props.response) {
       return (

@@ -297,3 +297,7 @@ g.legendOrdinal .legendTitle tspan {
   font-size: 12px;
   cursor: default;
 }
+
+.react-autoql-popover-mobile .number-selector-field-group-container {
+  flex-direction: column !important;
+}

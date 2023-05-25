@@ -1,5 +1,5 @@
 import React from 'react'
-import { Popover } from 'react-tiny-popover'
+import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { v4 as uuid } from 'uuid'
 import { isColumnDateType, isColumnStringType } from '../../QueryOutput/columnHelpers'
@@ -101,7 +101,7 @@ export default class StringAxisSelector extends React.Component {
     return (
       <Popover
         id={`string-axis-selector-${this.COMPONENT_KEY}`}
-        ref={this.props.axisSelectorRef}
+        innerRef={this.props.axisSelectorRef}
         isOpen={this.props.isOpen}
         content={this.renderSelectorContent}
         onClickOutside={this.props.closeSelector}
@@ -109,8 +109,6 @@ export default class StringAxisSelector extends React.Component {
         boundaryElement={this.props.popoverParentElement}
         positions={this.props.positions}
         align={this.props.align}
-        reposition={true}
-        padding={10}
       >
         {this.props.children}
       </Popover>

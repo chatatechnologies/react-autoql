@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
-import { Popover } from 'react-tiny-popover'
+import { Popover } from '../../Popover'
 import { SelectableList } from '../../SelectableList'
 import { Button } from '../../Button'
 import { CustomScrollbars } from '../../CustomScrollbars'
@@ -323,18 +323,12 @@ export default class NumberAxisSelector extends React.Component {
         containerClassName={`react-tiny-popover-container react-autoql-popover${isMobile ? '-mobile' : ''}`}
         isOpen={this.props.isOpen}
         content={this.renderSelectorContent}
-        ref={this.props.axisSelectorRef}
-        onClickOutside={(e) => {
-          e.stopPropagation()
-          e.preventDefault()
-          this.props.closeSelector()
-        }}
+        innerRef={this.props.axisSelectorRef}
+        onClickOutside={this.props.closeSelector}
         parentElement={this.props.popoverParentElement}
         boundaryElement={this.props.popoverParentElement}
         positions={this.props.positions}
         align={this.props.align}
-        reposition={true}
-        padding={10}
       >
         {this.props.children}
       </Popover>

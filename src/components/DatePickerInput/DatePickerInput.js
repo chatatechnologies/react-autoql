@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import dayjs from '../../js/dayjsWithPlugins'
 
 import { DatePicker } from '../DatePicker'
-import { Popover } from 'react-tiny-popover'
+import { Popover } from '../../Popover'
 import { Input } from '../Input'
 
 import './DatePickerInput.scss'

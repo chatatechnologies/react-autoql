@@ -5,7 +5,6 @@ import axios from 'axios'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
-import { Popover } from 'react-tiny-popover'
 import dayjs from '../../js/dayjsWithPlugins'
 
 import TableWrapper from './TableWrapper'
@@ -20,6 +19,7 @@ import { getFilterPrecision } from '../../js/dateUtils'
 import { DAYJS_PRECISION_FORMATS } from '../../js/Constants'
 import { currentEventLoopEnd, deepEqual } from '../../js/Util'
 import { columnOptionsList } from './tabulatorConstants'
+import { Popover } from '../Popover'
 import { Button } from '../Button'
 
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
