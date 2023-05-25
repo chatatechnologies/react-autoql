@@ -108,21 +108,70 @@
 }
 
 .react-autoql-dashboard-tile:hover .dashboard-tile-toolbars-container,
-.react-autoql-dashboard-tile:hover .split-view-query-btn {
+.react-autoql-dashboard-tile:hover .split-view-query-btn-container {
   visibility: visible;
   opacity: 1;
 }
 
-.split-view-query-btn {
-  transition: opacity 0.3s ease, color 0.3s ease;
-  color: var(--react-autoql-accent-color);
-  position: absolute;
-  top: 7px;
-  left: 13px;
-  bottom: unset;
-  z-index: 1;
+.split-view-query-btn-container {
+  pointer-events: none;
   visibility: hidden;
+  position: absolute;
+  display: flex;
+  width: 100%;
+  padding: 0 15px;
+  bottom: unset;
+  top: 7px;
+  z-index: 1;
   opacity: 0;
+
+  &.open .split-view-query-btn {
+    flex-grow: 1;
+
+    .dashboard-tile-input.second.query {
+      display: block;
+    }
+  }
+
+  .split-view-query-btn {
+    display: flex;
+    flex-shrink: 0;
+    flex-grow: 0;
+    flex-basis: auto;
+    overflow: hidden;
+    pointer-events: all;
+    color: var(--react-autoql-accent-color);
+    transition: opacity 0.3s ease, color 0.3s ease, flex-grow 0.3s ease;
+
+    .react-autoql-btn {
+      flex: 0 0 auto;
+      margin: 0 10px;
+
+      .split-view-query-btn-icon-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        .react-autoql-icon-caret-left,
+        .react-autoql-icon-caret-right {
+          font-size: 10px;
+          padding-left: 5px;
+        }
+      }
+    }
+
+    .dashboard-tile-input.second.query {
+      border: 1px solid var(--react-autoql-border-color);
+      color: var(--react-autoql-text-color-primary, #356f90);
+      background: var(--react-autoql-background-color-secondary);
+      outline: none !important;
+      margin: 0px;
+      height: 100%;
+      flex: 1;
+
+      display: none;
+    }
+  }
 }
 
 .react-autoql-dashboard-tile-inner-div {
@@ -364,27 +413,6 @@
     height: 100%;
     font-size: 17px;
     margin-left: 10px;
-  }
-}
-
-.dashboard-tile-input.second.query {
-  transition: all 0.3s ease;
-  border: 1px solid transparent;
-  outline: none !important;
-  color: var(--react-autoql-text-color-primary, #356f90);
-  background: var(--react-autoql-background-color-secondary);
-  margin: 0px;
-  padding: 0px;
-  width: 0px;
-  height: 28px;
-  pointer-events: none;
-
-  &.open {
-    width: 200px;
-    padding: 12px;
-    margin-left: 5px;
-    border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
-    pointer-events: unset;
   }
 }
 
