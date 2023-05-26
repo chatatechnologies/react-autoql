@@ -1,6 +1,5 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import _get from 'lodash.get'
 import { v4 as uuid } from 'uuid'
 
 import '../DateSelect.scss'

@@ -1,1 +1,1 @@
-export { default as InfiniteScrollAutoQL } from './InfiniteScroll'
+export { default as InfiniteScroll } from './InfiniteScroll'

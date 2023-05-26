@@ -1,6 +1,7 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import Drawer from 'rc-drawer'
+import _get from 'lodash.get'
 import _isEmpty from 'lodash.isempty'
 import { v4 as uuid } from 'uuid'
 
