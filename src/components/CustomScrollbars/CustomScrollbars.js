@@ -6,14 +6,59 @@ import './CustomScrollbars.scss'
 import 'react-perfect-scrollbar/dist/css/styles.css'
 
 export default class CustomScrollbars extends React.Component {
+  MAX_UPDATE_DURATION = 5000
+
   static propTypes = {
     style: PropTypes.shape({}),
     autoHide: PropTypes.bool,
+    contentHidden: PropTypes.bool,
   }
 
   static defaultProps = {
     style: {},
     autoHide: false,
+    contentHidden: false,
+  }
+
+  componentDidMount = () => {
+    this._isMounted = true
+    this.update()
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (prevProps.contentHidden && !this.props.contentHidden) {
+      this.update()
+    }
+  }
+
+  componentWillUnmount = () => {
+    this._isMounted = false
+    clearInterval(this.intervalID)
+    clearTimeout(this.timeoutID)
+  }
+
+  update = (duration) => {
+    if (!this._isMounted) {
+      return
+    }
+
+    if (typeof duration !== 'number' || duration > this.MAX_UPDATE_DURATION) {
+      this.ref?._ps?.update()
+    } else {
+      clearInterval(this.intervalID)
+
+      const intervalFrequency = 50
+      const numUpdates = Math.ceil(duration / intervalFrequency)
+
+      this.x = 0
+      this.intervalID = setInterval(() => {
+        this.ref?._ps?.update()
+
+        if (++this.x === numUpdates) {
+          clearInterval(this.intervalID)
+        }
+      }, intervalFrequency)
+    }
   }
 
   getContainer = () => {
@@ -42,21 +87,34 @@ export default class CustomScrollbars extends React.Component {
     }
   }
 
-  render = () => {
-    if (this.props.children) {
-      return (
-        <PerfectScrollbar
-          className={`react-autoql-custom-scrollbars 
-            ${this.props.className ?? ''}
-            ${this.props.autoHide ? 'autohide' : ''}`}
-          ref={(r) => (this.ref = r)}
-          style={this.props.style}
-        >
-          {this.props.children}
-        </PerfectScrollbar>
-      )
+  getStyleProp = () => {
+    let style = {}
+
+    if (this.props.style) {
+      style = { ...this.props.style }
     }
 
-    return null
+    style.maxHeight = this.props.maxHeight
+    style.minHeight = this.props.minHeight
+
+    return style
+  }
+
+  render = () => {
+    if (!this.props.children) {
+      return null
+    }
+
+    return (
+      <PerfectScrollbar
+        className={`react-autoql-custom-scrollbars 
+            ${this.props.className ?? ''}
+            ${this.props.autoHide ? 'autohide' : ''}`}
+        ref={(r) => (this.ref = r)}
+        style={this.getStyleProp()}
+      >
+        {this.props.children}
+      </PerfectScrollbar>
+    )
   }
 }

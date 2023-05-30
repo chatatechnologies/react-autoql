@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Popover } from 'react-tiny-popover'
+import { Popover } from '../../Popover'
 import { axesDefaultProps, axesPropTypes } from '../helpers'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { responseErrors } from '../../../js/errorMessages'
@@ -89,7 +89,7 @@ export default class RowNumberSelector extends React.Component {
     const rowNumberList = this.rowNumberListConstructor(this.props.totalRowCount)
 
     return (
-      <CustomScrollbars autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
+      <CustomScrollbars autoHeight autoHeightMin={minHeight} maxHeight={maxHeight}>
         <div
           className='axis-selector-container'
           id='string-column-selector-content'
@@ -130,15 +130,13 @@ export default class RowNumberSelector extends React.Component {
     return (
       <Popover
         isOpen={this.state.isOpen}
-        ref={(r) => (this.popoverRef = r)}
+        innerRef={(r) => (this.popoverRef = r)}
         content={this.renderSelectorContent}
         onClickOutside={this.closeSelector}
         parentElement={this.props.popoverParentElement}
         boundaryElement={this.props.popoverParentElement}
         positions={this.props.positions}
         align={this.props.align}
-        reposition={true}
-        padding={10}
       >
         <rect
           className='axis-label-border'

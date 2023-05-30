@@ -1,11 +1,11 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Popover } from 'react-tiny-popover'
+import { Popover } from '../Popover'
 import { Button } from '../Button'
+import { Icon } from '../Icon'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './ConfirmPopover.scss'
-import { Icon } from '../Icon'
 
 export default class ConfirmPopover extends React.Component {
   constructor(props) {
@@ -99,12 +99,7 @@ export default class ConfirmPopover extends React.Component {
           positions={this.props.positions}
           padding={this.props.padding}
           align={this.props.align}
-          reposition={true}
-          onClickOutside={(e) => {
-            e.stopPropagation()
-            e.preventDefault()
-            this.close()
-          }}
+          onClickOutside={this.close}
         >
           <div
             className={`react-autoql-confirm-popover-click-wrapper ${this.props.className ?? ''}`}

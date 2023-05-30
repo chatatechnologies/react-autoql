@@ -551,7 +551,7 @@ export default class FilterLockPopover extends React.Component {
     return (
       <div {...containerProps}>
         <div className='react-autoql-filter-suggestion-container'>
-          <CustomScrollbars autoHeight autoHeightMin={0} autoHeightMax={maxHeight}>
+          <CustomScrollbars autoHeight autoHeightMin={0} maxHeight={maxHeight}>
             {children}
           </CustomScrollbars>
         </div>

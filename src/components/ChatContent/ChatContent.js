@@ -107,7 +107,7 @@ export default class ChatContent extends React.Component {
 
   onCSVDownloadProgress = ({ id, progress }) => {
     this.csvProgressLog[id] = progress
-    if (this.messageRefs[id]) {
+    if (this.messageRefs[id] && this.messageRefs[id]?._isMounted) {
       this.messageRefs[id].setState({
         csvDownloadProgress: progress,
       })
@@ -116,7 +116,9 @@ export default class ChatContent extends React.Component {
 
   clearMessages = () => {
     this.queryInputRef?.cancelQuery()
-    this.setState({ messages: this.getIntroMessages(this.props.introMessages) })
+    if (this._isMounted) {
+      this.setState({ messages: this.getIntroMessages(this.props.introMessages) })
+    }
   }
 
   animateInputTextAndSubmit = (...params) => {
@@ -221,9 +223,11 @@ export default class ChatContent extends React.Component {
       newMessages = newMessages.slice(-this.props.maxMessages)
     }
 
-    this.setState({
-      messages: newMessages,
-    })
+    if (this._isMounted) {
+      this.setState({
+        messages: newMessages,
+      })
+    }
   }
 
   addRequestMessage = (text, queryMessageID) => {
@@ -294,7 +298,11 @@ export default class ChatContent extends React.Component {
       }
 
       clearTimeout(this.responseDelayTimeout)
-      this.setState({ isQueryRunning: false, isInputDisabled: false })
+
+      if (this._isMounted) {
+        this.setState({ isQueryRunning: false, isInputDisabled: false })
+      }
+
       //disable input focus for mobile, as ios keyboard has bug
       !isMobile && this.focusInput()
     }

@@ -1,40 +1,13 @@
-.filter-lock-menu {
-  z-index: 99999 !important;
-  top: -4px !important;
-  min-width: 450px;
-  max-width: 95vw;
-  min-height: 0px;
-  max-height: 95vh;
-  height: 350px;
-  padding: 10px;
-
-  .filter-lock-menu-content-container {
-    background: var(--react-autoql-background-color-secondary);
-    color: var(--react-autoql-text-color-primary);
-    box-shadow: 0px 0 8px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
-    transition: opacity 0.1s ease 0s !important;
-    border: 1px solid #ababab52;
-    padding: 0 !important;
-    border-radius: 4px;
-    height: 100%;
-    width: 100%;
-    opacity: 1;
+.filter-lock-popover {
+  &:not(.filter-lock-popover-mobile) {
+    top: -15px !important;
+    left: -2px !important;
+    width: 450px;
+    height: 350px;
   }
 
-  .filter-lock-menu-popover-arrow {
-    border-bottom: 10px solid var(--react-autoql-border-color) !important;
-    top: 1px !important;
-    opacity: 1;
-
-    &::after {
-      content: '';
-      position: absolute;
-      border-left: 9px solid transparent;
-      border-right: 9px solid transparent;
-      border-bottom: 9px solid var(--react-autoql-background-color-secondary);
-      top: 1px;
-      left: -9px;
-    }
+  &.filter-lock-popover-mobile {
+    height: calc(100vh - 200px);
   }
 
   .filter-lock-toast-container {
@@ -83,99 +56,9 @@
     }
   }
 }
-.mobile-filter-lock-menu {
-	z-index: 99999 !important;
-	top: -4px !important;
-	min-width: 95vw;
-	max-width: 95vw;
-	min-height: 0px;
-	max-height: 95vh;
-	height: 350px;
-	padding: 10px;
-  
-	.filter-lock-menu-content-container {
-	  background: var(--react-autoql-background-color-secondary);
-	  color: var(--react-autoql-text-color-primary);
-	  box-shadow: 0px 0 8px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
-	  transition: opacity 0.1s ease 0s !important;
-	  border: 1px solid #ababab52;
-	  padding: 0 !important;
-	  border-radius: 4px;
-	  height: 100%;
-	  width: 100%;
-	  opacity: 1;
-	}
-  
-	.filter-lock-menu-popover-arrow {
-	  border-bottom: 10px solid var(--react-autoql-border-color) !important;
-	  top: 1px !important;
-	  opacity: 1;
-  
-	  &::after {
-		content: '';
-		position: absolute;
-		border-left: 9px solid transparent;
-		border-right: 9px solid transparent;
-		border-bottom: 9px solid var(--react-autoql-background-color-secondary);
-		top: 1px;
-		left: -9px;
-	  }
-	}
-  
-	.filter-lock-toast-container {
-	  top: 0;
-	  position: absolute;
-	  max-width: calc(100% - 36px);
-	  padding: 10px;
-	  font-size: 14px;
-  
-	  .Toastify__toast {
-		min-height: 48px;
-	  }
-  
-	  .Toastify__toast-body {
-		justify-content: center;
-	  }
-  
-	  .Toastify__toast-body > div:last-child {
-		flex: unset;
-	  }
-	}
-  
-	.include-exclude-toggle-group {
-	  height: 23px;
-	  font-size: 12px;
-	  font-weight: 200;
-  
-	  .react-autoql-radio-btn.active {
-		background-color: var(--react-autoql-border-color);
-	  }
-  
-	  :first-child.react-autoql-radio-btn {
-		&:hover,
-		&.active {
-		  color: var(--react-autoql-accent-color);
-		  border-color: var(--react-autoql-accent-color);
-		}
-	  }
-  
-	  :nth-child(2).react-autoql-radio-btn {
-		&:hover,
-		&.active {
-		  color: var(--react-autoql-danger-color);
-		  border-color: var(--react-autoql-danger-color);
-		}
-	  }
-	}
-  }
+
 .filter-lock-menu-content {
-  padding: 15px 0 0px 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: stretch;
-  height: 100%;
-  width: 100%;
-  box-sizing: border-box;
+  padding: 5px 10px;
 
   &.closed {
     opacity: 0;
@@ -228,7 +111,6 @@
     justify-content: space-between;
     padding-bottom: 15px;
     box-sizing: border-box;
-    padding-right: 15px;
 
     .filter-locking-close-and-saving-container {
       display: flex;
@@ -236,8 +118,8 @@
 
       .filter-locking-close-btn {
         border-radius: 20px;
-        margin: 0;
-        padding: 3px;
+        margin: 0px;
+        padding: 0px;
         font-size: 20px;
         color: var(--react-autoql-text-color-primary);
       }
@@ -275,6 +157,7 @@
       flex-direction: row;
       flex-wrap: nowrap;
       justify-content: space-between;
+      align-items: flex-start;
       margin-bottom: 4px;
 
       .filter-lock-category-title {
@@ -297,7 +180,7 @@
         align-items: center;
         justify-content: flex-end;
         flex: 0 0 auto;
-        margin-right: 40px;
+        margin-right: 20px;
       }
     }
 
@@ -311,13 +194,10 @@
         justify-content: space-between;
         flex-wrap: nowrap;
 
-        padding-right: 10px;
-        margin-bottom: 1px;
-        margin-top: 1px;
+        margin: 1px 0px;
         padding-top: 1px;
         padding-bottom: 1px;
         padding-left: 5px;
-        margin-right: 10px;
 
         .react-autoql-filter-list-item-filter {
           overflow: hidden;
@@ -380,9 +260,6 @@
   }
 
   // ------------------- Autocomplete styles -------------------
-  .react-autosuggest__container {
-    margin-right: 20px;
-  }
   .react-autosuggest__container--open {
     position: relative;
 

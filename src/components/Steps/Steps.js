@@ -1,7 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
-import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -71,7 +70,6 @@ export default class Steps extends React.Component {
 
   onStepTitleClick = (i, step) => {
     try {
-
       let newActiveStep = i
       // if current current step is not complete then block user from proceeding to the next step.
       if (!this.props.isEditMode && newActiveStep > 0 && !this.props.steps?.[newActiveStep - 1]?.complete) {
@@ -137,11 +135,7 @@ export default class Steps extends React.Component {
   }
 
   getIsStepTitleDisabled = (i, step) => {
-    if (i !== 0 &&
-      i !== this.state?.activeStep &&
-      !step?.complete &&
-      !this.props.steps?.[i - 1]?.complete
-    ) {
+    if (i !== 0 && i !== this.state?.activeStep && !step?.complete && !this.props.steps?.[i - 1]?.complete) {
       return ' disabled'
     }
     return ''
@@ -173,9 +167,7 @@ export default class Steps extends React.Component {
                     data-test={`react-autoql-step-title-${i}`}
                     onClick={() => this.onStepTitleClick(i, step)}
                   >
-                    <div className={`react-autoql-step-title${this.getIsStepTitleDisabled(i, step)}`}>
-                      {step.title}
-                    </div>
+                    <div className={`react-autoql-step-title${this.getIsStepTitleDisabled(i, step)}`}>{step.title}</div>
                   </div>
                   <div
                     id={`react-autoql-step-content-${this.COMPONENT_KEY}-${i}`}

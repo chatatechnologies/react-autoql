@@ -14,7 +14,7 @@
   color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.6));
   font-family: var(--react-autoql-font-family), sans-serif;
 
-  transition: all 1s ease;
+  // transition: all 1s ease;
   transition: height 0.3s cubic-bezier(0.26, 0.26, 0, 1);
   animation: slideIn 0.5s cubic-bezier(0.26, 0.26, 0, 1);
   animation-fill-mode: both;
