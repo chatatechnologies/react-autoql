@@ -320,7 +320,6 @@ export default class NumberAxisSelector extends React.Component {
     return (
       <Popover
         id={`number-axis-selector-${this.COMPONENT_KEY}`}
-        containerClassName={`react-tiny-popover-container react-autoql-popover${isMobile ? '-mobile' : ''}`}
         isOpen={this.props.isOpen}
         content={this.renderSelectorContent}
         innerRef={this.props.axisSelectorRef}

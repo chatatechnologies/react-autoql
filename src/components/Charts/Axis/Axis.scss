@@ -53,6 +53,7 @@ g.legendOrdinal tspan {
 .number-axis-selector-popover {
   display: flex;
   overflow: hidden;
+  flex: 1;
 
   .number-axis-selector-popover-content {
     display: flex;
@@ -257,6 +258,7 @@ g.legendOrdinal tspan {
 }
 .mobile-string-axis-selector-popover-content {
   display: flex;
+  flex: 1;
   flex-direction: column;
   background: var(--react-autoql-background-color-secondary);
   color: var(--react-autoql-text-color-primary);
