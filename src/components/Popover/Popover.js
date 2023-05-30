@@ -22,7 +22,8 @@ class PopoverWithoutRef extends React.Component {
     return (
       <Popover
         id={this.props.id}
-        containerClassName={`react-tiny-popover-container react-autoql-popover${isMobile ? '-mobile' : ''}`}
+        containerClassName={`react-tiny-popover-container react-autoql-popover${isMobile ? '-mobile' : ''}
+          ${this.props.containerClassName ?? ''}`}
         isOpen={this.props.isOpen}
         content={this.props.content}
         ref={this.props.innerRef}
