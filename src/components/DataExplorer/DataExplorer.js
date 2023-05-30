@@ -136,6 +136,10 @@ export default class DataExplorer extends React.Component {
     this.setState({ userSelection })
   }
 
+  reloadScrollbars = () => {
+    this.querySuggestionList?.updateScrollbars()
+  }
+
   renderDataPreview = () => {
     if (!this.state.selectedSubject || this.state.activeTopicType !== DEConstants.SUBJECT_TYPE) {
       return null
@@ -191,20 +195,21 @@ export default class DataExplorer extends React.Component {
       return null
     }
 
+    const isCollapsed = this.props.isSmallScreen ? this.state.isQuerySuggestionCollapsed : undefined
     const isDefaultCollapsed =
       !this.state.selectedSubject || this.state.activeTopicType !== DEConstants.SUBJECT_TYPE ? false : true
+
     return (
       <div className='data-explorer-section query-suggestions'>
         <Card
           title={this.renderQuerySuggestionCardTitle(selectedTopic)}
           defaultCollapsed={this.props.isSmallScreen ? isDefaultCollapsed : undefined}
-          isCollapsed={this.props.isSmallScreen ? this.state.isQuerySuggestionCollapsed : undefined}
-          onIsCollapsedChange={(isCollapsed) => {
-            setTimeout(this.querySuggestionList?.scrollbarRef?.update, 400)
-
+          isCollapsed={isCollapsed}
+          onIsCollapsedChange={(collapsed) => {
+            this.reloadScrollbars()
             this.setState({
-              isQuerySuggestionCollapsed: isCollapsed,
-              isDataPreviewCollapsed: isCollapsed ? this.state.isDataPreviewCollapsed : true,
+              isQuerySuggestionCollapsed: collapsed,
+              isDataPreviewCollapsed: !collapsed || this.state.isDataPreviewCollapsed,
             })
           }}
         >
@@ -221,9 +226,11 @@ export default class DataExplorer extends React.Component {
               skipQueryValidation={this.state.skipQueryValidation}
               userSelection={this.state.userSelection}
               onValidationSuggestionClick={this.onValidationSuggestionClick}
-              onSuggestionListResponse={() =>
-                this.setState({ querySuggestionContentKey: uuid(), skipQueryValidation: false })
-              }
+              onSuggestionListResponse={() => {
+                this.reloadScrollbars()
+                this.setState({ skipQueryValidation: false })
+              }}
+              hidden={isCollapsed === true}
               scope={this.props.scope}
             />
           </div>

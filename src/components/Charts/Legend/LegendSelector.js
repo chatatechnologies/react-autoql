@@ -1,5 +1,4 @@
 import React from 'react'
-import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
 import { Popover } from '../../Popover'

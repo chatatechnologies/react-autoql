@@ -54,6 +54,7 @@ export default class NotificationItem extends React.Component {
     notification: PropTypes.shape({}).isRequired,
     onRuleFetchCallback: PropTypes.func,
     onExpandCallback: PropTypes.func,
+    onCollapseCallback: PropTypes.func,
     onDismissCallback: PropTypes.func,
     onDeleteClick: PropTypes.func,
     onDeleteEnd: PropTypes.func,
@@ -75,7 +76,9 @@ export default class NotificationItem extends React.Component {
     autoChartAggregations: false,
     onQueryClick: undefined,
     onRuleFetchCallback: () => {},
+    updateScrollbars: () => {},
     onExpandCallback: () => {},
+    onCollapseCallback: () => {},
     onDismissCallback: () => {},
     onDeleteClick: () => {},
     onDeleteEnd: () => {},
@@ -90,6 +93,7 @@ export default class NotificationItem extends React.Component {
 
   componentDidUpdate = (prevProps, prevState) => {
     if (this.state.expanded && !prevState.expanded) {
+      this.props.updateScrollbars(500)
       if (!this.state.queryResponse) {
         this.fetchNotification()
       }
@@ -134,6 +138,7 @@ export default class NotificationItem extends React.Component {
   onClick = (notification) => {
     if (this.state.expanded) {
       this.collapse()
+      this.props.onCollapseCallback(notification)
     } else {
       this.expand()
       this.props.onExpandCallback(notification)

@@ -38,6 +38,7 @@ export default class Cascader extends React.Component {
     // Wait for animation to finish, then set card height
     this.initialCollapseTimer = setTimeout(() => {
       this.saveCurrentCardHeight()
+      this.props.onIsCollapsedChange(this.props.isCollapsed)
     }, 400)
   }
 

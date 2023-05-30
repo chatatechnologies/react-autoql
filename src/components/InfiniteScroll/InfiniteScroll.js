@@ -1,4 +1,5 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import InfiniteScroll from 'react-infinite-scroller'
 import { v4 as uuid } from 'uuid'
@@ -15,19 +16,33 @@ export default class InfiniteScrollAutoQL extends React.Component {
     this.scrollComponent = React.createRef()
   }
 
+  static propTypes = {
+    getScrollParent: PropTypes.func,
+    contentHidden: PropTypes.bool,
+  }
+
+  static defaultProps = {
+    getScrollParent: undefined,
+    contentHidden: false,
+  }
+
+  updateScrollbars = (duration) => {
+    this.scrollComponent?.current?.update(duration)
+  }
+
   render = () => {
-    const { scrollbarProps = {}, className, ...props } = this.props
+    const { scrollbarProps = {}, className, contentHidden, children, ...props } = this.props
 
     return (
       <ErrorBoundary>
         <div className='react-autoql-infinite-scroll-container'>
-          <CustomScrollbars {...scrollbarProps} ref={this.scrollComponent}>
+          <CustomScrollbars {...scrollbarProps} ref={this.scrollComponent} contentHidden={contentHidden}>
             <InfiniteScroll
               {...props}
               className={`react-autoql-infinite-scroll ${className || ''}`}
-              getScrollParent={() => this.scrollComponent?.current}
+              getScrollParent={() => this.scrollComponent?.current?.getContainer()}
             >
-              {this.props.children}
+              {children}
             </InfiniteScroll>
           </CustomScrollbars>
         </div>

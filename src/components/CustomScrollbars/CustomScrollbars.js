@@ -6,17 +6,60 @@ import './CustomScrollbars.scss'
 import 'react-perfect-scrollbar/dist/css/styles.css'
 
 export default class CustomScrollbars extends React.Component {
+  MAX_UPDATE_DURATION = 5000
+
   static propTypes = {
     style: PropTypes.shape({}),
     autoHide: PropTypes.bool,
+    contentHidden: PropTypes.bool,
   }
 
   static defaultProps = {
     style: {},
     autoHide: false,
+    contentHidden: false,
   }
 
-  update = () => this.forceUpdate()
+  componentDidMount = () => {
+    this._isMounted = true
+    this.update()
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (prevProps.contentHidden && !this.props.contentHidden) {
+      this.update()
+    }
+  }
+
+  componentWillUnmount = () => {
+    this._isMounted = false
+    clearInterval(this.intervalID)
+    clearTimeout(this.timeoutID)
+  }
+
+  update = (duration) => {
+    if (!this._isMounted) {
+      return
+    }
+
+    if (typeof duration !== 'number' || duration > this.MAX_UPDATE_DURATION) {
+      this.ref?._ps?.update()
+    } else {
+      clearInterval(this.intervalID)
+
+      const intervalFrequency = 50
+      const numUpdates = Math.ceil(duration / intervalFrequency)
+
+      this.x = 0
+      this.intervalID = setInterval(() => {
+        this.ref?._ps?.update()
+
+        if (++this.x === numUpdates) {
+          clearInterval(this.intervalID)
+        }
+      }, intervalFrequency)
+    }
+  }
 
   getContainer = () => {
     return this.ref?._container

@@ -1,7 +1,6 @@
 import React, { Component } from 'react'
 import { scaleLinear } from 'd3-scale'
 import { max, min } from 'd3-array'
-import _get from 'lodash.get'
 
 import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, getKey } from '../helpers'
 import { getChartColorVars } from '../../../theme/configureTheme'
