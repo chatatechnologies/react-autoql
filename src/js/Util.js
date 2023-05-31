@@ -484,7 +484,7 @@ export const getDayJSObj = ({ value, column, config }) => {
 export const formatElement = ({ element, column, config = {}, htmlElement, isChart }) => {
   try {
     let formattedElement = element
-    const { currencyCode, languageCode, currencyDecimals, quantityDecimals } = config
+    const { currencyCode, languageCode, currencyDecimals, quantityDecimals, ratioDecimals } = config
 
     let type = column?.type
     if (isChart && ['count', 'deviation', 'variance'].includes(column?.aggType)) {
@@ -523,7 +523,7 @@ export const formatElement = ({ element, column, config = {}, htmlElement, isCha
           break
         }
         case 'QUANTITY': {
-          const validatedQuantityDecimals = quantityDecimals || quantityDecimals === 0 ? quantityDecimals : 1
+          const validatedQuantityDecimals = isNaN(quantityDecimals) ? quantityDecimals : 2
 
           if (!isNaN(parseFloat(element))) {
             const numDecimals = parseFloat(element) % 1 !== 0 ? validatedQuantityDecimals : 0
@@ -545,10 +545,12 @@ export const formatElement = ({ element, column, config = {}, htmlElement, isCha
           break
         }
         case 'RATIO': {
+          const numDecimals = isNaN(ratioDecimals) ? ratioDecimals : 2
+
           if (!isNaN(parseFloat(element))) {
             formattedElement = new Intl.NumberFormat(languageCode, {
-              minimumFractionDigits: 4,
-              maximumFractionDigits: 4,
+              minimumFractionDigits: numDecimals,
+              maximumFractionDigits: numDecimals,
             }).format(element)
           }
           break
