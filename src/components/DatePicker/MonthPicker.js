@@ -1,6 +1,5 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
-import _get from 'lodash.get'
 import { v4 as uuid } from 'uuid'
 
 import './MonthPicker.scss'
@@ -68,7 +67,7 @@ const days = [
   },
 ]
 
-export default class MonthSelect extends React.Component {
+export default class MonthPicker extends React.Component {
   COMPONENT_KEY = uuid()
 
   static propTypes = {

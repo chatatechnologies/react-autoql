@@ -35,7 +35,9 @@ export default class Radio extends React.Component {
     return (
       <ErrorBoundary>
         <div
-          className={`react-autoql-radio-btn-container react-autoql-radio-btn-container-buttons ${this.props.className}`}
+          className={`react-autoql-radio-btn-container
+            react-autoql-radio-btn-container-buttons
+            ${this.props.className ?? ''}`}
           data-test='react-autoql-radio'
         >
           {this.props.options.map((option, i) => {

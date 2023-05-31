@@ -1,95 +1,90 @@
-.react-autoql-select {
-  display: inline-flex;
-  justify-content: space-between;
-  line-height: 36px;
-  height: 38px;
-  transition: color 0.2s ease, border-color 0.2s ease;
-  white-space: nowrap;
-  font-size: inherit;
-  cursor: pointer;
+.react-autoql-select-popover-container {
+  margin: 0 6px;
 
-  &:hover {
-    color: var(--react-autoql-accent-color, #26a7df);
-    .react-autoql-select-arrow {
-      color: var(--react-autoql-accent-color, #26a7df);
-    }
-  }
-
-  &:not(.outlined) {
-    font-weight: 600;
+  .popover-container-content {
     padding: 0;
-    margin: 0;
+  }
+}
+
+.react-autoql-select-and-label {
+  display: inline-flex;
+  flex-direction: column;
+  padding: 2px 5px;
+
+  &.react-autoql-select-full-width {
+    display: flex;
   }
 
-  &.outlined {
-    margin: 0 3px;
-    padding: 0px 16px;
-    color: var(--react-autoql-text-color-primary);
-    border: 1px solid var(--react-autoql-border-color);
-    border-radius: 4px;
-    background: var(--react-autoql-background-color-secondary, white);
+  .react-autoql-select {
+    display: inline-flex;
+    justify-content: space-between;
+    transition: color 0.2s ease, border-color 0.2s ease;
+    white-space: nowrap;
+    font-size: inherit;
+    cursor: pointer;
+
+    &.react-autoql-select-large {
+      line-height: 36px;
+      height: 38px;
+    }
+
+    &.react-autoql-select-small {
+      line-height: 32px;
+      height: 34px;
+    }
 
     &:hover {
-      color: var(--react-autoql-accent-color);
-      border-color: var(--react-autoql-accent-color);
+      color: var(--react-autoql-accent-color, #26a7df);
+      .react-autoql-select-arrow {
+        color: var(--react-autoql-accent-color, #26a7df);
+      }
     }
-  }
 
-  .react-autoql-select-text {
-    display: block;
-    height: 100%;
+    &:not(.outlined) {
+      font-weight: 600;
+      padding: 0;
+      margin: 0;
+    }
 
-    .react-autoql-select-text-placeholder {
+    &.outlined {
+      padding: 0px 16px;
+      color: var(--react-autoql-text-color-primary);
+      border: 1px solid var(--react-autoql-border-color);
+      border-radius: 4px;
+      background: var(--react-autoql-background-color-secondary, white);
+
+      &.react-autoql-select-small {
+        padding: 0px 14px;
+      }
+
+      &:hover {
+        color: var(--react-autoql-accent-color);
+        border-color: var(--react-autoql-accent-color);
+      }
+    }
+
+    .react-autoql-select-text {
+      display: block;
+      height: 100%;
+
+      .react-autoql-select-text-placeholder {
+        color: var(--react-autoql-text-color-placeholder);
+        font-style: italic;
+      }
+    }
+
+    .react-autoql-select-arrow {
+      display: flex;
+      align-items: center;
+      padding-left: 8px;
+      font-size: 0.875em;
       color: var(--react-autoql-text-color-placeholder);
-      font-style: italic;
     }
-  }
-
-  .react-autoql-select-arrow {
-    display: flex;
-    align-items: center;
-    padding-left: 8px;
-    font-size: 0.875em;
-    color: var(--react-autoql-text-color-placeholder);
   }
 }
 
 .react-autoql-select-popup-container {
   background: var(--react-autoql-background-color-secondary);
-  padding: 10px 0;
   max-height: 300px;
   overflow-y: auto;
-
-  .react-autoql-select-option {
-    & > span {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: flex-start;
-    }
-
-    &.active {
-      background: var(--react-autoql-hover-color);
-    }
-  }
-
-  .react-autoql-select-popup {
-    list-style-type: none;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-
-    li {
-      color: var(--react-autoql-text-color-primary);
-      width: 100%;
-      height: 35px;
-      line-height: 35px;
-      padding: 0 20px;
-      cursor: pointer;
-
-      &:hover {
-        background: var(--react-autoql-hover-color);
-      }
-    }
-  }
 }

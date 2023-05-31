@@ -1,12 +1,23 @@
-.scrollbar-content-container {
-  position: absolute;
-  height: 100%;
-  width: 100%;
-}
+.react-autoql-custom-scrollbars.scrollbar-container {
+  // Possible bug in PerfectScrollbars putting scrollbar on the left side
+  .ps__rail-y {
+    right: 0px !important;
+    left: unset !important;
+  }
 
-.thumb-vertical,
-.thumb-horizontal {
-  border-radius: 3px;
-  background-color: var(--react-autoql-highlight-color);
-  opacity: 0.2;
+  .ps__rail-y,
+  .ps__rail-x {
+    background-color: transparent;
+
+    &:hover,
+    &.ps--clicking {
+      background-color: transparent;
+    }
+
+    .ps__thumb-y,
+    .ps__thumb-x {
+      background-color: var(--react-autoql-highlight-color);
+      opacity: 0.5;
+    }
+  }
 }

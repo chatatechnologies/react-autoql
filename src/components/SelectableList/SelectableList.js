@@ -137,13 +137,7 @@ export default class SelectableList extends React.Component {
 
     return (
       <ErrorBoundary>
-        <div
-          className='react-autoql-selectable-list'
-          data-test='selectable-list'
-          // onClick={(e) => {
-          //   e.stopPropagation()
-          // }}
-        >
+        <div className='react-autoql-selectable-list' data-test='selectable-list'>
           {!!this.props.columns?.length && (
             <div className='col-visibility-header'>
               {this.props.columns.map((col, index) => {
@@ -192,7 +186,7 @@ export default class SelectableList extends React.Component {
                     }
                   }}
                 >
-                  <div>{item.content}</div>
+                  <div className='react-autoql-selectable-list-item-content-container'>{item.content}</div>
                   <div>
                     <Checkbox
                       checked={item.checked}

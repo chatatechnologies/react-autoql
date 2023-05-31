@@ -1,63 +1,120 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Scrollbars } from 'react-custom-scrollbars-2'
+import PerfectScrollbar from 'react-perfect-scrollbar'
 
 import './CustomScrollbars.scss'
+import 'react-perfect-scrollbar/dist/css/styles.css'
 
 export default class CustomScrollbars extends React.Component {
-  constructor(props) {
-    super(props)
-    this.viewRef = React.createRef()
-  }
+  MAX_UPDATE_DURATION = 5000
 
   static propTypes = {
-    autoHeight: PropTypes.bool,
-    autoHide: PropTypes.bool,
     style: PropTypes.shape({}),
+    autoHide: PropTypes.bool,
+    contentHidden: PropTypes.bool,
   }
 
   static defaultProps = {
-    autoHeight: false,
-    autoHide: true,
     style: {},
+    autoHide: false,
+    contentHidden: false,
   }
 
   componentDidMount = () => {
     this._isMounted = true
+    this.update()
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (prevProps.contentHidden && !this.props.contentHidden) {
+      this.update()
+    }
   }
 
   componentWillUnmount = () => {
     this._isMounted = false
+    clearInterval(this.intervalID)
+    clearTimeout(this.timeoutID)
   }
 
-  getView = () => {
-    return this.ref?.view
+  update = (duration) => {
+    if (!this._isMounted) {
+      return
+    }
+
+    if (typeof duration !== 'number' || duration > this.MAX_UPDATE_DURATION) {
+      this.ref?._ps?.update()
+    } else {
+      clearInterval(this.intervalID)
+
+      const intervalFrequency = 50
+      const numUpdates = Math.ceil(duration / intervalFrequency)
+
+      this.x = 0
+      this.intervalID = setInterval(() => {
+        this.ref?._ps?.update()
+
+        if (++this.x === numUpdates) {
+          clearInterval(this.intervalID)
+        }
+      }, intervalFrequency)
+    }
   }
 
-  getClassName = () => `react-autoql-custom-scrollbars ${this.props.className || ''}`
+  getContainer = () => {
+    return this.ref?._container
+  }
 
-  renderThumbHorizontal = (props) => <div {...props} className='thumb-horizontal' />
+  getScrollTop = () => {
+    return this.ref?._container?.scrollTop
+  }
 
-  renderThumbVertical = (props) => <div {...props} className='thumb-vertical' />
+  getClientHeight = () => {
+    return this.ref?._container?.clientHeight
+  }
 
-  renderView = (props) => <div {...props} className='custom-scrollbar-view' />
+  scrollToTop = () => {
+    if (this.ref?._container) {
+      this.ref._container.scrollTop = 0
+    }
+  }
+
+  scrollToBottom = () => {
+    const container = this.ref?._container
+    if (container) {
+      container.scrollBottom = 0
+      container.scrollTop = container.scrollHeight - container.clientHeight
+    }
+  }
+
+  getStyleProp = () => {
+    let style = {}
+
+    if (this.props.style) {
+      style = { ...this.props.style }
+    }
+
+    style.maxHeight = this.props.maxHeight
+    style.minHeight = this.props.minHeight
+
+    return style
+  }
 
   render = () => {
+    if (!this.props.children) {
+      return null
+    }
+
     return (
-      <Scrollbars
+      <PerfectScrollbar
+        className={`react-autoql-custom-scrollbars 
+            ${this.props.className ?? ''}
+            ${this.props.autoHide ? 'autohide' : ''}`}
         ref={(r) => (this.ref = r)}
-        className={this.getClassName()}
-        style={this.props.style}
-        renderView={this.renderView}
-        autoHide={this.props.autoHide}
-        autoHeight={this.props.autoHeight}
-        autoHeightMin={this.props.autoHeightMin ?? 100}
-        autoHeightMax={this.props.autoHeightMax ?? '100%'}
-        renderThumbVertical={this.renderThumbVertical}
-        renderThumbHorizontal={this.renderThumbHorizontal}
+        style={this.getStyleProp()}
       >
         {this.props.children}
-      </Scrollbars>
+      </PerfectScrollbar>
     )
   }
 }

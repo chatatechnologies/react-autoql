@@ -47,12 +47,31 @@ export default class Line extends Component {
     const paths = []
 
     numberColumnIndices.forEach((colIndex, i) => {
-      const vertices = []
+      let vertices = []
+      let pathIndex = 0
       const color = this.props.colorScale(colIndex)
       if (!columns[colIndex].isSeriesHidden) {
         this.props.data.forEach((d, index) => {
           const value = d[colIndex]
-          if (!value) {
+
+          if (!value && value !== 0) {
+            // Keep for future use: If value is missing (gap in data), end the
+            // current line and start a new one after the data gap
+            // const prevPath = createSVGPath(vertices, this.PATH_SMOOTHING)
+            // const path = (
+            //   <path
+            //     key={`line-${getKey(0, i, pathIndex)}`}
+            //     className='line'
+            //     d={prevPath}
+            //     fill='none'
+            //     stroke={color}
+            //     strokeWidth={2}
+            //   />
+            // )
+            // paths.push(path)
+            // vertices = []
+            // pathIndex += 1
+
             return
           }
 
@@ -62,6 +81,7 @@ export default class Line extends Component {
 
           const minValue = yScale.domain()[0]
           const y = yScale(value || minValue)
+
           const xy = [x, y]
           vertices.push(xy)
 
@@ -132,7 +152,14 @@ export default class Line extends Component {
       const d = createSVGPath(vertices, this.PATH_SMOOTHING)
 
       const path = (
-        <path key={`line-${getKey(0, i)}`} className='line' d={d} fill='none' stroke={color} strokeWidth={2} />
+        <path
+          key={`line-${getKey(0, i, pathIndex)}`}
+          className='line'
+          d={d}
+          fill='none'
+          stroke={color}
+          strokeWidth={2}
+        />
       )
 
       paths.push(path)
@@ -143,10 +170,10 @@ export default class Line extends Component {
 
   render = () => {
     const visibleSeries = this.props.numberColumnIndices.filter((colIndex) => {
-      return !this.props.columns[colIndex].isSeriesHidden
+      return !this.props.columns[colIndex]?.isSeriesHidden
     })
 
-    const numVisibleSeries = visibleSeries.length
+    const numVisibleSeries = visibleSeries?.length
     if (!numVisibleSeries) {
       return null
     }

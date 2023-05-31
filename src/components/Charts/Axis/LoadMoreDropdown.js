@@ -10,7 +10,6 @@ export default class LoadMoreDropdown extends Component {
     super(props)
 
     this.maxRows = 5000
-    this.fontSize = 12
     this.BUTTON_PADDING_TOP = 2
     this.BUTTON_PADDING_LEFT = 4
 

@@ -1,40 +1,44 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
-import _cloneDeep from 'lodash.clonedeep'
 import { v4 as uuid } from 'uuid'
-import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
-import { Icon } from '../../Icon'
-import { Button } from '../../Button'
-import { Checkbox } from '../../Checkbox'
-import { DataAlertModal } from '../DataAlertModal'
-import { hideTooltips, Tooltip } from '../../Tooltip'
-import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
-import LoadingDots from '../../LoadingDots/LoadingDots'
-import { fetchDataAlerts, updateDataAlertStatus } from '../../../js/notificationService'
-import { formatResetDate } from '../helpers'
 
+import { Tooltip } from '../../Tooltip'
+import { LoadingDots } from '../../LoadingDots'
+import { DataAlertModal } from '../DataAlertModal'
+import { DataAlertDeleteDialog } from '../DataAlertDeleteDialog'
+import { ErrorBoundary } from '../../../containers/ErrorHOC'
+
+import DataAlertListItem from './DataAlertListItem'
+import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
+import { fetchDataAlerts } from '../../../js/notificationService'
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
+import { withTheme } from '../../../theme'
+import { CustomScrollbars } from '../../CustomScrollbars'
 
 import './DataAlerts.scss'
-import { withTheme } from '../../../theme'
 
 class DataAlerts extends React.Component {
   COMPONENT_KEY = uuid()
 
   static propTypes = {
     authentication: authenticationType,
+    tooltipID: PropTypes.string,
     onErrorCallback: PropTypes.func,
-
     onSuccessAlert: PropTypes.func,
+    onDMLinkClick: PropTypes.func,
+    onDashboardLinkClick: PropTypes.func,
+    onDataAlertStatusChange: PropTypes.func,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
+    tooltipID: 'react-autoql-notification-settings-tooltip',
     onErrorCallback: () => {},
-    onAlertInitializationCallback: () => {},
+    onDataAlertStatusChange: () => {},
+    onDMLinkClick: () => {},
+    onDashboardLinkClick: () => {},
     onSuccessAlert: () => {},
   }
 
@@ -49,7 +53,7 @@ class DataAlerts extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
-    this._isMounted && this.getDataAlerts()
+    this.getDataAlerts()
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -62,6 +66,10 @@ class DataAlerts extends React.Component {
     this._isMounted = false
   }
 
+  refresh = () => {
+    this.getDataAlerts()
+  }
+
   getDataAlerts = (type) => {
     fetchDataAlerts({
       ...getAuthentication(this.props.authentication),
@@ -70,8 +78,8 @@ class DataAlerts extends React.Component {
       .then((response) => {
         this._isMounted &&
           this.setState({
-            customAlertsList: _get(response, 'data.custom_alerts'),
-            projectAlertsList: _get(response, 'data.project_alerts'),
+            customAlertsList: response?.data?.custom_alerts,
+            projectAlertsList: response?.data?.project_alerts,
           })
       })
       .catch((error) => {
@@ -79,20 +87,13 @@ class DataAlerts extends React.Component {
       })
   }
 
-  onEditClick = (e, notification) => {
-    e.stopPropagation()
-    this.setState({
-      isEditModalVisible: true,
-      activeDataAlert: notification,
-    })
-  }
-
   onDataAlertSave = () => {
     this.getDataAlerts()
-    this.props.onSuccessAlert('Notification created!')
-    this.setState({
-      isEditModalVisible: false,
-    })
+    this.setState({ isEditModalVisible: false })
+  }
+
+  onDataAlertDeleteClick = (dataAlertDeleteId) => {
+    this.setState({ isDeleteDialogOpen: true, dataAlertDeleteId })
   }
 
   onDataAlertDelete = (dataAlertId) => {
@@ -100,39 +101,25 @@ class DataAlerts extends React.Component {
     this.setState({
       customAlertsList: newList,
       isEditModalVisible: false,
+      isDeleteDialogOpen: false,
+      dataAlertDeleteId: undefined,
     })
   }
 
-  onEnableSwitchChange = (e, dataAlert) => {
-    const newStatus = e.target.checked ? 'ACTIVE' : 'INACTIVE'
-
-    const listType = dataAlert.type === 'CUSTOM' ? 'customAlertsList' : 'projectAlertsList'
-
-    const newList = this.state[listType].map((n) => {
-      if (dataAlert.id === n.id) {
-        return {
-          ...n,
-          status: newStatus,
-        }
-      }
-      return n
-    })
-
-    this.setState({ [`${listType}`]: newList })
-
-    updateDataAlertStatus({
-      dataAlertId: dataAlert.id,
-      type: dataAlert.type,
-      status: newStatus,
-      ...getAuthentication(this.props.authentication),
-    }).catch((error) => {
-      console.error(error)
-      this.props.onErrorCallback(new Error('Something went wrong. Please try again.'))
-
-      // Get original state
-      this.getDataAlerts()
-    })
+  renderDeleteDialog = () => {
+    return (
+      <DataAlertDeleteDialog
+        authentication={this.props.authentication}
+        dataAlertId={this.state.dataAlertDeleteId}
+        isVisible={this.state.isDeleteDialogOpen}
+        onDelete={this.onDataAlertDelete}
+        onErrorCallback={this.props.onErrorCallback}
+        onSuccessAlert={this.props.onSuccessAlert}
+        onClose={() => this.setState({ isDeleteDialogOpen: false })}
+      />
+    )
   }
+
   renderNotificationEditModal = () => {
     return (
       <DataAlertModal
@@ -144,50 +131,35 @@ class DataAlerts extends React.Component {
         currentDataAlert={this.state.activeDataAlert}
         onSave={this.onDataAlertSave}
         onErrorCallback={this.props.onErrorCallback}
+        onSuccessAlert={this.props.onSuccessAlert}
         onDelete={this.onDataAlertDelete}
-        title={this.state.activeDataAlert ? 'Edit Data Alert' : 'Create Data Alert'}
-        titleIcon={this.state.activeDataAlert ? <Icon type='edit' /> : <span />}
         selectedDemoProjectId={this.props.selectedDemoProjectId}
+        tooltipID={this.props.tooltipID}
+        editView
       />
     )
   }
 
-  renderNotificationGroupTitle = (title, description) => (
-    <div className='react-autoql-notification-title-container'>
+  renderDataAlertGroupTitle = (title, description) => (
+    <div className='react-autoql-data-alert-section-title-container'>
       <div style={{ paddingLeft: '10px' }}>
-        <div style={{ fontSize: '17px' }}>{title}</div>
-        <div style={{ fontSize: '11px', opacity: 0.6 }}>{description}</div>
+        <div className='react-autoql-data-alert-section-title'>{title}</div>
+        <div className='react-autoql-data-alert-section-subtitle'>{description}</div>
       </div>
     </div>
   )
 
-  goToScheduleStep = (notification) => {
-    this.setState({ isEditModalVisible: true, activeDataAlert: notification })
-    setTimeout(() => {
-      if (this.editModalRef) {
-        this.editModalRef.setStep(1)
-      }
-    }, 0)
-  }
-
-  goToErrorFeedback = (notification) => {
+  openEditModal = (activeDataAlert, step) => {
     this.setState({
-      activeDataAlert: notification,
+      activeDataAlert,
       isEditModalVisible: true,
     })
-  }
 
-  /**
-   * This function needs to be updated
-   * @param {*} dataAlert
-   * @returns
-   */
-  hasError = (dataAlert) => {
-    return (
-      dataAlert.status === 'GENERAL_ERROR' ||
-      dataAlert.status === 'EVALUATION_ERROR' ||
-      dataAlert.status === 'DATA_RETURN_ERROR'
-    )
+    if (step === 'schedule') {
+      setTimeout(() => {
+        this.editModalRef?.setStep(this.editModalRef?.FREQUENCY_STEP)
+      }, 0)
+    }
   }
 
   renderNotificationlist = (type, list) => {
@@ -197,120 +169,39 @@ class DataAlerts extends React.Component {
 
     return (
       <div className='data-alerts-list-container'>
-        {type === 'custom' && list?.length
-          ? this.renderNotificationGroupTitle('Custom Data Alerts', 'View and manage your custom Data Alerts')
+        {type === 'custom' && !!list
+          ? this.renderDataAlertGroupTitle(
+              'Custom Data Alerts',
+              <span>
+                View and manage your Custom Alerts here. To create a new Custom Alert, simply click on the "Create Data
+                Alert" option from a query result in <a onClick={this.props.onDMLinkClick}>Data Messenger</a> or a{' '}
+                <a onClick={this.props.onDashboardLinkClick}>Dashboard</a>.
+              </span>,
+            )
           : null}
         {type === 'custom' && !list?.length && this.renderEmptyListMessage()}
         {type === 'project' &&
-          this.renderNotificationGroupTitle(
-            'Subscribe to a Data Alert',
-            'Choose from a range of ready-to-use Alerts that have been set up for you',
+          this.renderDataAlertGroupTitle(
+            'Project Data Alerts',
+            'Choose from a range of ready-to-use Alerts that have been set up for you.',
           )}
         <div className='react-autoql-notification-settings-container'>
           {list &&
-            list.map((notification, i) => {
+            list.map((dataAlert, i) => {
               return (
-                <div
-                  key={`react-autoql-notification-setting-item-${i}`}
-                  className={`react-autoql-notification-setting-item ${notification.type}`}
-                >
-                  <div className='react-autoql-notification-setting-item-header'>
-                    <div className='react-autoql-notification-setting-display-name'>
-                      <span className='react-autoql-notification-setting-display-name-title'>
-                        <span>
-                          {this.hasError(notification) &&
-                            (notification.type === 'CUSTOM' ? (
-                              <Icon
-                                type='warning-triangle'
-                                className='react-autoql-notification-error-status-icon'
-                                onClick={() => this.goToErrorFeedback(notification)}
-                                data-for='react-autoql-notification-settings-tooltip'
-                                data-tip='There was a problem with this Data Alert. Click for more information.'
-                                warning
-                              />
-                            ) : (
-                              <Icon
-                                type='warning-triangle'
-                                id='react-autoql-notification-error-status-icon-PROJECT'
-                                data-for='react-autoql-notification-settings-tooltip'
-                                data-tip='There was a problem with this Data Alert. For more information, please contact your system administrator.'
-                                warning
-                              />
-                            ))}
-                          {notification.title}
-                        </span>
-                      </span>
-                      <span className='react-autoql-notification-setting-display-name-message'>
-                        {notification.message && <span> - {notification.message}</span>}
-                      </span>
-                    </div>
-                    <div className='react-autoql-notification-setting-actions'>
-                      {notification.type === 'CUSTOM' && (
-                        <Icon
-                          className='react-autoql-notification-action-btn'
-                          type='edit'
-                          data-for='react-autoql-notification-settings-tooltip'
-                          data-tip='Edit Data Alert'
-                          onClick={(e) => {
-                            if (notification.type === 'CUSTOM') {
-                              this.onEditClick(e, notification)
-                            }
-                          }}
-                        />
-                      )}
-                      {notification.reset_date && (
-                        <Icon
-                          className='reset-period-info-icon'
-                          data-tip={`This Alert has been triggered. Scanning will resume on ${formatResetDate(
-                            notification,
-                          )} (${notification.time_zone})`}
-                          data-for='react-autoql-notification-settings-tooltip'
-                          onClick={() => this.goToScheduleStep(notification)}
-                          type='hour-glass'
-                        />
-                      )}
-                      {this.hasError(notification) ? (
-                        <React.Fragment>
-                          {notification.type === 'CUSTOM' && (
-                            <Button
-                              type='primary'
-                              tooltip='This Alert is no longer active. <br /> Click to re-initialze it.'
-                              multiline
-                              className='react-autoql-re-initialize-btn'
-                              onClick={() => {
-                                this.props.onAlertInitializationCallback(
-                                  notification,
-                                  this.props.selectedDemoProjectId,
-                                  this.props.authentication,
-                                )
-                                this.getDataAlerts()
-                              }}
-                            >
-                              <span className='react-autoql-re-initialize-btn-text'>
-                                <Icon type='warning-triangle' /> Resend
-                              </span>
-                            </Button>
-                          )}
-
-                          <Checkbox type='switch' className='react-autoql-notification-disable-checkbox' />
-                        </React.Fragment>
-                      ) : (
-                        <Checkbox
-                          type='switch'
-                          checked={notification.status === 'ACTIVE' || notification.status === 'WAITING'}
-                          className='react-autoql-notification-enable-checkbox'
-                          onClick={(e) => e.stopPropagation()}
-                          data-tip={notification.status === 'ACTIVE' || notification.status === 'WAITING'}
-                          data-for='react-autoql-notification-settings-tooltip'
-                          onChange={(e) => {
-                            this.onEnableSwitchChange(e, notification)
-                            hideTooltips()
-                          }}
-                        />
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <DataAlertListItem
+                  authentication={this.props.authentication}
+                  key={dataAlert.id}
+                  dataAlert={dataAlert}
+                  onSuccessCallback={this.props.onSuccessAlert}
+                  onErrorCallback={this.props.onErrorCallback}
+                  openEditModal={this.openEditModal}
+                  onDeleteClick={() => this.onDataAlertDeleteClick(dataAlert?.id)}
+                  tooltipID='react-autoql-notification-settings-tooltip'
+                  onInitialize={this.getDataAlerts}
+                  onDataAlertStatusChange={this.props.onDataAlertStatusChange}
+                  showHeader={i === 0}
+                />
               )
             })}
         </div>
@@ -319,16 +210,9 @@ class DataAlerts extends React.Component {
   }
 
   renderEmptyListMessage = () => (
-    <div style={{ textAlign: 'center', marginTop: '100px' }}>
-      <div className='empty-list-message'>
-        <img className='empty-list-img' src={emptyStateImg} />
-      </div>
-      <span style={{ opacity: 0.6 }}>No Alerts are set up yet.</span>
-      <br />
-      <span style={{ opacity: 0.6, width: '350px', display: 'inline-block' }}>
-        To create one, select the “Create a Data Alert” option from a data response in Data Messenger.
-      </span>
-      <br />
+    <div className='empty-list-message'>
+      <img className='empty-list-img' src={emptyStateImg} />
+      <span>No Custom Alerts are set up yet.</span>
     </div>
   )
 
@@ -341,23 +225,26 @@ class DataAlerts extends React.Component {
       )
     }
 
-    const projectAlertsList = _get(this.state, 'projectAlertsList', [])
-    const customAlertsList = _get(this.state, 'customAlertsList', [])
+    const projectAlertsList = this.state?.projectAlertsList ?? []
+    const customAlertsList = this.state?.customAlertsList ?? []
 
     return (
       <ErrorBoundary>
-        <div className='react-autoql-notification-settings' data-test='notification-settings'>
-          {this.renderNotificationlist('project', projectAlertsList)}
-          {this.renderNotificationlist('custom', customAlertsList)}
-          {this.renderNotificationEditModal()}
-          <Tooltip
-            className='react-autoql-tooltip'
-            id='react-autoql-notification-settings-tooltip'
-            effect='solid'
-            delayShow={500}
-            html
-          />
-        </div>
+        <CustomScrollbars>
+          <div className='react-autoql-notification-settings' data-test='notification-settings'>
+            {this.renderNotificationlist('project', projectAlertsList)}
+            {this.renderNotificationlist('custom', customAlertsList)}
+            {this.renderNotificationEditModal()}
+            {this.renderDeleteDialog()}
+            <Tooltip
+              className='react-autoql-tooltip'
+              id='react-autoql-notification-settings-tooltip'
+              effect='solid'
+              delayShow={500}
+              html
+            />
+          </div>
+        </CustomScrollbars>
       </ErrorBoundary>
     )
   }

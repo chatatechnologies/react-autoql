@@ -41,16 +41,17 @@
   }
 
   &.hidden {
-    visibility: hidden;
-    position: absolute;
-    pointer-events: none;
-    opacity: 0;
+    visibility: hidden !important;
+    position: absolute !important;
+    pointer-events: none !important;
+    opacity: 0 !important;
   }
 
   // This css is to fix tabulator bug and allow scrolling columns on an empty table
   &.empty {
     &:not(.filtering) {
       .tabulator-headers {
+        overflow: hidden;
         height: 37px !important;
       }
     }
@@ -139,6 +140,7 @@
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
+      line-height: 14px;
     }
 
     .react-autoql-tabulator-container .tabulator-tableholder {
@@ -231,7 +233,7 @@
 
     .tabulator-row {
       /* user-select: none; This breaks copy/paste */
-      border-bottom: 1px solid var(--react-autoql-border-color);
+      border-bottom: 1px solid var(--react-autoql-table-border-color);
       background-color: var(--react-autoql-background-color-secondary);
       z-index: 1;
 
@@ -243,7 +245,7 @@
       .tabulator-cell {
         &:not(:first-child) {
           border-left: 1px solid !important;
-          border-color: rgba(0, 0, 0, 0.06) !important;
+          border-color: var(--react-autoql-table-border-color) !important;
         }
         &.pivot-category {
           font-weight: 600;
@@ -299,7 +301,7 @@
     }
 
     .tabulator-cell {
-      border-color: var(--react-autoql-border-color);
+      border-color: var(--react-autoql-table-border-color);
       background-color: var(--react-autoql-background-color-secondary);
     }
 
@@ -309,7 +311,7 @@
   }
 }
 
-.react-autoql-table-date-picker {
+.react-autoql-popover-date-picker {
   background: var(--react-autoql-background-color-secondary);
   color: var(--react-autoql-text-color-primary);
   padding: 15px;
@@ -360,7 +362,7 @@
       height: 40px;
       background-color: var(--react-autoql-background-color-secondary);
       border: 1px solid var(--react-autoql-border-color);
-      box-shadow: var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15)) 0px 8px 24px;
+      box-shadow: var(--react-autoql-box-shadow-1);
       border-radius: 4px;
 
       .spinner-loader {

@@ -10,8 +10,7 @@ import AxisSelector from '../Axes/AxisSelector'
 import LoadMoreDropdown from './LoadMoreDropdown'
 
 import { formatChartLabel, getBBoxFromRef } from '../../../js/Util.js'
-import { axesDefaultProps, axesPropTypes, mergeBboxes, labelsShouldRotate, getMaxLabelWidth } from '../helpers.js'
-import { MAX_CHART_LABEL_SIZE } from '../../../js/Constants'
+import { axesDefaultProps, axesPropTypes, mergeBboxes, shouldLabelsRotate } from '../helpers.js'
 
 import './Axis.scss'
 
@@ -29,16 +28,18 @@ export default class Axis extends Component {
     this.swatchElements = []
     this.maxRows = 5000
     this.initialRowNumber = 50
-    this.prevMaxLabelWidth = MAX_CHART_LABEL_SIZE
-    this.labelsShouldRotate = false
-    this.prevLabelsShouldRotate = false
     this.labelInlineStyles = {
-      fontSize: '12px',
+      fontSize: '13px',
       fontFamily: 'inherit',
       fill: 'currentColor',
-      fillOpacity: 0.9,
+      fillOpacity: 1,
       cursor: 'default',
+      fontFamily: 'var(--react-autoql-font-family)',
+      letterSpacing: 'normal',
     }
+
+    this.shouldLabelsRotate = false
+    this.prevShouldLabelsRotate = false
 
     this.state = {
       isAxisSelectorOpen: false,
@@ -98,10 +99,37 @@ export default class Axis extends Component {
   }
 
   getMaxTickLabelWidth = () => {
+    const absoluteMin = 6
+    const absoluteMax = 100
+    const avgCharSize = 6
+
     const { orient, outerHeight, outerWidth } = this.props
-    const containerSize = orient === 'Left' || orient === 'Right' ? outerWidth : outerHeight
-    const maxLabelWidth = getMaxLabelWidth(containerSize)
-    return maxLabelWidth
+    const isTopOrBottom = orient === 'Top' || orient === 'Bottom'
+    const isLeftOrRight = orient === 'Left' || orient === 'Right'
+
+    if (isTopOrBottom && !this.shouldLabelsRotate) {
+      // It has been checked and the labels indeed do not need to rotate
+      return absoluteMax
+    }
+
+    let calculatedMax
+    if (isTopOrBottom) {
+      // Is top or bottom and labels ARE rotated
+      // Max width should be 30% of container height
+      calculatedMax = Math.floor((0.5 * outerHeight) / avgCharSize)
+    } else if (isLeftOrRight) {
+      // Left or right should be 30% of inner width
+      calculatedMax = Math.floor((0.3 * outerWidth) / avgCharSize)
+    }
+
+    let maxLabelWidth = this.maxLabelWidth // Use previous value as baseline
+    if (calculatedMax < absoluteMin) {
+      maxLabelWidth = absoluteMin
+    } else if (calculatedMax < absoluteMax) {
+      maxLabelWidth = calculatedMax
+    }
+
+    return maxLabelWidth ?? absoluteMax
   }
 
   setTickValues = () => {
@@ -154,7 +182,7 @@ export default class Axis extends Component {
   rotateLabelsIfNeeded = () => {
     if (this.props.orient === 'Bottom' || this.props.orient === 'Top') {
       // check if labels need to be rotated...
-      const labelsOverlap = labelsShouldRotate(this.axisElement)
+      const labelsOverlap = this.shouldLabelsRotate || shouldLabelsRotate(this.axisElement)
 
       if (labelsOverlap) {
         if (this.props.orient === 'Bottom') {
@@ -172,8 +200,7 @@ export default class Axis extends Component {
         }
       }
 
-      this.prevLabelsShouldRotate = this.labelsShouldRotate
-      this.labelsShouldRotate = labelsOverlap
+      this.shouldLabelsRotate = labelsOverlap
     }
   }
 
@@ -197,11 +224,19 @@ export default class Axis extends Component {
         }
         return null
       })
+  }
 
-    this.prevMaxLabelWidth = this.maxLabelWidth
+  drawAxisAndLabels = () => {
+    this.maxLabelWidth = this.getMaxTickLabelWidth()
+    this.setTickValues()
+    this.applyAxis()
+    this.styleAxisLabels()
+    this.rotateLabelsIfNeeded()
   }
 
   renderAxis = (renderComplete) => {
+    this.prevShouldLabelsRotate = this.shouldLabelsRotate
+
     switch (this.props.orient) {
       case 'Bottom': {
         this.axis = axisBottom()
@@ -224,15 +259,14 @@ export default class Axis extends Component {
       }
     }
 
-    this.maxLabelWidth = this.getMaxTickLabelWidth()
-
     this.setScale()
-    this.setTickValues()
 
-    this.applyAxis()
+    this.drawAxisAndLabels()
+    if (this.shouldLabelsRotate && !this.prevShouldLabelsRotate) {
+      // Labels needed to rotate, recalculate max label length and redraw
+      this.drawAxisAndLabels()
+    }
 
-    this.styleAxisLabels()
-    this.rotateLabelsIfNeeded()
     this.addTooltipsToLabels()
 
     select(this.axisElement).selectAll('.axis path').style('display', 'none')
@@ -298,16 +332,13 @@ export default class Axis extends Component {
 
     if (renderComplete) {
       this.props.onAxisRenderComplete(this.props.orient)
-    } else if (
-      this.state.axisRenderComplete &&
-      (this.prevLabelsShouldRotate !== this.labelsShouldRotate || this.prevMaxLabelWidth !== this.maxLabelWidth)
-    ) {
+    } else if (this.state.axisRenderComplete && this.prevShouldLabelsRotate !== this.shouldLabelsRotate) {
       this.props.onLabelRotation()
     }
   }
 
   getTitleTextHeight = () => {
-    const fontSize = parseInt(this.titleRef?.style?.fontSize, 10)
+    const fontSize = parseInt(this.titleRef?.style?.fontSize, this.labelInlineStyles.fontSize)
     return isNaN(fontSize) ? 12 : fontSize
   }
 
@@ -627,7 +658,7 @@ export default class Axis extends Component {
 
     return (
       <g ref={(r) => (this.loadMoreDropdown = r)}>
-        <LoadMoreDropdown {...this.props} style={this.labelInlineStyles} />
+        <LoadMoreDropdown {...this.props} style={{ ...this.labelInlineStyles, fontSize: '13px' }} />
       </g>
     )
   }

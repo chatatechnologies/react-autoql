@@ -1,6 +1,8 @@
 .react-autoql-notifications-button-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
-  display: inline-block;
   font-size: inherit;
   line-height: 1em;
   width: 1em;
@@ -8,8 +10,10 @@
 
   .react-autoql-notifications-button {
     font-size: 1em;
-    line-height: 0;
-    vertical-align: bottom;
+    height: 1em;
+    width: 1em;
+    padding: 0;
+    margin: 0;
   }
 
   .react-autoql-notifications-badge {
@@ -30,7 +34,7 @@
     position: absolute;
     display: inline-block;
     border: 1px solid currentColor;
-    background: #f5222d;
+    background: var(--react-autoql-badge-color);
     border-radius: 50%;
     height: 0.6em;
     width: 0.6em;

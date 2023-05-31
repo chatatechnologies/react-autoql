@@ -1,0 +1,106 @@
+.react-autoql-steps-hoz-container {
+  display: flex;
+  padding: 20px;
+  align-items: flex-start;
+  font-family: inherit;
+  flex-direction: row;
+
+  .react-autoql-step-hoz-container {
+    flex: 1;
+    position: relative;
+    padding-left: 8px;
+    padding-right: 8px;
+
+    .react-autoql-step-hoz {
+      display: flex;
+      align-items: center;
+      flex-direction: column;
+
+      .react-autoql-step-hoz-title-container {
+        width: 100%;
+        font-size: 0.875rem;
+        font-weight: 400;
+        line-height: 1.4;
+
+        .react-autoql-step-hoz-title {
+          display: block;
+          margin-top: 16px;
+          text-align: center;
+          color: var(--react-autoql-accent-color);
+          cursor: pointer;
+        }
+      }
+    }
+
+    .react-autoql-step-hoz-dot {
+      width: 2em;
+      border: none;
+      cursor: pointer;
+      height: 2em;
+      margin: 0px;
+      display: flex;
+      padding: 0px;
+      font-size: 1em;
+      align-items: center;
+      border-radius: 50%;
+      justify-content: center;
+      background: var(--react-autoql-background-color-secondary);
+      border: 1px solid var(--react-autoql-accent-color);
+      color: var(--react-autoql-accent-color);
+      transition: opacity 0.2s ease;
+
+      span {
+        font-size: 1rem;
+        font-variant-numeric: tabular-nums;
+      }
+    }
+
+    &.complete,
+    &.active {
+      color: var(--react-autoql-accent-color);
+
+      .react-autoql-step-hoz-title {
+        font-weight: 500;
+      }
+
+      .react-autoql-step-hoz-dot,
+      .react-autoql-step-connector {
+        border-color: var(--react-autoql-accent-color);
+        background: var(--react-autoql-accent-color);
+        color: var(--react-autoql-text-color-accent);
+      }
+    }
+
+    &.error {
+      .react-autoql-step-hoz-dot {
+        border-color: var(--react-autoql-warning-color);
+        background: var(--react-autoql-warning-color);
+        color: var(--react-autoql-text-color-accent);
+      }
+    }
+
+    &.disabled {
+      .react-autoql-step-hoz-dot,
+      .react-autoql-step-hoz-title-container .react-autoql-step-hoz-title,
+      .react-autoql-step-connector {
+        cursor: default !important;
+        color: var(--react-autoql-text-color-placeholder);
+        border-color: var(--react-autoql-text-color-placeholder);
+      }
+    }
+  }
+
+  .react-autoql-step-connector-container {
+    top: calc((2em - 1px) / 2);
+    left: calc((-50% + 2em) - 8px);
+    right: calc((50% + 2em) - 8px);
+    position: absolute;
+
+    .react-autoql-step-connector {
+      display: block;
+      border-color: var(--react-autoql-accent-color);
+      border-top-style: solid;
+      border-top-width: 1px;
+    }
+  }
+}

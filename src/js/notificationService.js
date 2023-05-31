@@ -1,18 +1,37 @@
 import axios from 'axios'
-import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 
-const generalErrorMessage = 'Something went wrong. Please try again.'
+const generalErrorMessage =
+  "Uh oh, Our system is experiencing an unexpected error. We're aware of this issue and are working to fix it as soon as possible."
 
 // ----------------- GET --------------------
-export const isExpressionQueryValid = ({ query, domain, apiKey, token }) => {
-  const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
-
-  const data = {
-    text: query,
-    translation: 'exclude',
+export const fetchNotificationData = ({ id, domain, apiKey, token }) => {
+  if (!token || !apiKey || !domain) {
+    return Promise.reject(new Error('UNAUTHORIZED'))
   }
 
+  const axiosInstance = axios.create({
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  const url = `${domain}/autoql/api/v1/data-alerts/notifications/${id}?key=${apiKey}`
+
+  return axiosInstance
+    .get(url)
+    .then((response) => {
+      const queryResult = response?.data?.data?.query_result
+      if (queryResult) {
+        return Promise.resolve({ data: queryResult })
+      }
+
+      return Promise.reject({ response: { data: { message: generalErrorMessage } } })
+    })
+    .catch((error) => Promise.reject({ data: error?.response?.data }))
+}
+
+export const isExpressionQueryValid = ({ query, domain, apiKey, token }) => {
   if (!query || !query.trim()) {
     return Promise.reject({ error: 'No query supplied' })
   }
@@ -21,13 +40,18 @@ export const isExpressionQueryValid = ({ query, domain, apiKey, token }) => {
     return Promise.reject({ error: 'Unauthenticated' })
   }
 
-  const config = {
-    headers: {
-      Authorization: `Bearer ${token}`,
+  return axios.post(
+    `${domain}/autoql/api/v1/query?key=${apiKey}`,
+    {
+      text: query,
+      translation: 'exclude',
     },
-  }
-
-  return axios.post(url, data, config)
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  )
 }
 
 export const fetchNotificationCount = ({ domain, apiKey, token, unacknowledged = 0 }) => {
@@ -47,14 +71,7 @@ export const fetchNotificationCount = ({ domain, apiKey, token, unacknowledged =
     timeout: 180000,
   }
 
-  return axiosInstance
-    .get(url, config)
-    .then((response) => {
-      return Promise.resolve(response)
-    })
-    .catch((error) => {
-      return Promise.reject(error)
-    })
+  return axiosInstance.get(url, config)
 }
 
 export const fetchNotificationFeed = ({ domain, apiKey, token, offset, limit }) => {
@@ -73,12 +90,8 @@ export const fetchNotificationFeed = ({ domain, apiKey, token, offset, limit }) 
 
   return axiosInstance
     .get(url)
-    .then((response) => {
-      return Promise.resolve(_get(response, 'data.data'))
-    })
-    .catch((error) => {
-      return Promise.reject(_get(error, 'response.data'))
-    })
+    .then((response) => Promise.resolve(response?.data?.data))
+    .catch((error) => Promise.reject(error?.response?.data))
 }
 
 export const fetchNotificationChannels = ({ domain, apiKey, token, channelType }) => {
@@ -95,15 +108,13 @@ export const fetchNotificationChannels = ({ domain, apiKey, token, channelType }
   const url = `${domain}/autoql/api/v1/notifications/channels?key=${apiKey}&type=${channelType}`
   return axiosInstance
     .get(url)
-    .then((response) => {
-      return Promise.resolve(_get(response, 'data'))
-    })
+    .then((response) => Promise.resolve(response?.data))
     .catch((error) => {
-      if (_get(error, 'response.status') === 404) {
+      if (error?.response?.status === 404) {
         return Promise.resolve({ data: [] })
       }
 
-      return Promise.reject(_get(error, 'response.data'))
+      return Promise.reject(error?.response?.data)
     })
 }
 
@@ -123,12 +134,8 @@ export const fetchDataAlerts = ({ domain, apiKey, token }) => {
 
   return axiosInstance
     .get(url)
-    .then((response) => {
-      return Promise.resolve(_get(response, 'data'))
-    })
-    .catch((error) => {
-      return Promise.reject(_get(error, 'response.data'))
-    })
+    .then((response) => Promise.resolve(response?.data))
+    .catch((error) => Promise.reject(error?.response.data))
 }
 
 export const fetchRule = ({ domain, apiKey, token, dataAlertId }) => {
@@ -146,12 +153,8 @@ export const fetchRule = ({ domain, apiKey, token, dataAlertId }) => {
 
   return axiosInstance
     .get(url)
-    .then((response) => {
-      return Promise.resolve(_get(response, 'data.data'))
-    })
-    .catch((error) => {
-      return Promise.reject(_get(error, 'response.data'))
-    })
+    .then((response) => Promise.resolve(response?.data?.data))
+    .catch((error) => Promise.reject(error?.response?.data))
 }
 
 // ----------------- PUT --------------------
@@ -176,12 +179,31 @@ export const resetNotificationCount = ({ domain, apiKey, token }) => {
 
   return axiosInstance
     .put(url, data)
-    .then((response) => {
-      return Promise.resolve(_get(response, 'data.data'))
-    })
-    .catch((error) => {
-      return Promise.reject(_get(error, 'response.data'))
-    })
+    .then((response) => Promise.resolve(response?.data?.data))
+    .catch((error) => Promise.reject(error?.response?.data))
+}
+
+export const initializeAlert = ({ id, domain, apiKey, token }) => {
+  if (!token || !apiKey || !domain) {
+    return Promise.reject(new Error('UNAUTHORIZED'))
+  }
+
+  if (!id) {
+    return Promise.reject(new Error('No ID provided'))
+  }
+
+  const axiosInstance = axios.create({
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  const url = `${domain}/autoql/api/v1/data-alerts/${id}/initialize?key=${apiKey}`
+
+  return axiosInstance
+    .put(url)
+    .then((response) => Promise.resolve(response?.data?.data))
+    .catch((error) => Promise.reject(error?.response?.data))
 }
 
 export const deleteNotification = ({ notificationId, domain, apiKey, token }) => {
@@ -203,14 +225,9 @@ export const deleteNotification = ({ notificationId, domain, apiKey, token }) =>
 
   const url = `${domain}/autoql/api/v1/data-alerts/notifications/${notificationId}?key=${apiKey}`
 
-  return axiosInstance
-    .delete(url)
-    .then((response) => {
-      return Promise.resolve(response)
-    })
-    .catch((error) => {
-      return Promise.reject(_get(error, 'response.data'))
-    })
+  return axiosInstance.delete(url).catch((error) => {
+    return Promise.reject(error?.response?.data)
+  })
 }
 
 export const dismissAllNotifications = ({ domain, apiKey, token }) => {
@@ -231,14 +248,35 @@ export const dismissAllNotifications = ({ domain, apiKey, token }) => {
 
   const url = `${domain}/autoql/api/v1/data-alerts/notifications?key=${apiKey}`
 
-  return axiosInstance
-    .put(url, data)
-    .then((response) => {
-      return Promise.resolve(response)
-    })
-    .catch((error) => {
-      return Promise.reject(_get(error, 'response.data'))
-    })
+  return axiosInstance.put(url, data).catch((error) => {
+    return Promise.reject(error?.response?.data)
+  })
+}
+
+export const markNotificationAsUnread = ({ notificationId, domain, apiKey, token }) => {
+  if (!token || !apiKey || !domain) {
+    return Promise.reject(new Error('UNAUTHORIZED'))
+  }
+
+  if (!notificationId) {
+    return Promise.reject(new Error('No ID provided'))
+  }
+
+  const axiosInstance = axios.create({
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  const data = {
+    state: 'ACKNOWLEDGED',
+  }
+
+  const url = `${domain}/autoql/api/v1/data-alerts/notifications/${notificationId}?key=${apiKey}`
+
+  return axiosInstance.put(url, data).catch((error) => {
+    return Promise.reject(error?.response?.data)
+  })
 }
 
 export const dismissNotification = ({ notificationId, domain, apiKey, token }) => {
@@ -264,14 +302,9 @@ export const dismissNotification = ({ notificationId, domain, apiKey, token }) =
 
   const url = `${domain}/autoql/api/v1/data-alerts/notifications/${notificationId}?key=${apiKey}`
 
-  return axiosInstance
-    .put(url, data)
-    .then((response) => {
-      return Promise.resolve(response)
-    })
-    .catch((error) => {
-      return Promise.reject(_get(error, 'response.data'))
-    })
+  return axiosInstance.put(url, data).catch((error) => {
+    return Promise.reject(error?.response?.data)
+  })
 }
 
 export const removeUserFromProjectRule = ({ dataAlertId, token, domain, apiKey }) => {
@@ -283,12 +316,9 @@ export const removeUserFromProjectRule = ({ dataAlertId, token, domain, apiKey }
 
   const url = `${domain}/autoql/api/v1/data-alerts/${dataAlertId}/user?key=${apiKey}`
 
-  return axios
-    .delete(url, config)
-    .then((response) => Promise.resolve(response))
-    .catch((error) => {
-      return Promise.reject(_get(error, 'response.data'), new Error(generalErrorMessage))
-    })
+  return axios.delete(url, config).catch((error) => {
+    return Promise.reject(error?.response?.data)
+  })
 }
 
 export const addUserToProjectRule = ({ dataAlertId, token, domain, apiKey }) => {
@@ -300,12 +330,9 @@ export const addUserToProjectRule = ({ dataAlertId, token, domain, apiKey }) => 
 
   const url = `${domain}/autoql/api/v1/data-alerts/${dataAlertId}/user?key=${apiKey}`
 
-  return axios
-    .post(url, {}, config)
-    .then((response) => Promise.resolve(response))
-    .catch((error) => {
-      return Promise.reject(_get(error, 'response.data'), new Error(generalErrorMessage))
-    })
+  return axios.post(url, {}, config).catch((error) => {
+    return Promise.reject(error?.response?.data)
+  })
 }
 
 export const toggleProjectDataAlertStatus = ({ dataAlertId, status, token, domain, apiKey }) => {
@@ -339,12 +366,9 @@ export const toggleCustomDataAlertStatus = ({ dataAlertId, status, token, domain
 
   const url = `${domain}/autoql/api/v1/data-alerts/${dataAlertId}?key=${apiKey}`
 
-  return axios
-    .put(url, data, config)
-    .then((response) => Promise.resolve(response))
-    .catch((error) => {
-      return Promise.reject(_get(error, 'response.data'))
-    })
+  return axios.put(url, data, config).catch((error) => {
+    return Promise.reject(error?.response?.data)
+  })
 }
 
 export const updateDataAlertStatus = ({ dataAlertId, status, type, domain, apiKey, token }) => {
@@ -408,12 +432,7 @@ export const createNotificationChannel = ({
 
   const url = `${domain}/autoql/api/v1/notifications/channels?key=${apiKey}`
 
-  return axios
-    .post(url, data, config)
-    .then((response) => Promise.resolve(response))
-    .catch((error) => {
-      return Promise.reject(_get(error, 'response.data'))
-    })
+  return axios.post(url, data, config).catch((error) => Promise.reject(error?.response?.data))
 }
 
 export const sendDataToChannel = ({ token, domain, apiKey, channelId, fileName, base64Data }) => {
@@ -435,12 +454,7 @@ export const sendDataToChannel = ({ token, domain, apiKey, channelId, fileName, 
 
   const url = `${domain}/autoql/api/v1/notifications/channels/${channelId}/send?key=${apiKey}`
 
-  return axios
-    .post(url, data, config)
-    .then((response) => Promise.resolve(response))
-    .catch((error) => {
-      return Promise.reject(_get(error, 'response.data'))
-    })
+  return axios.post(url, data, config).catch((error) => Promise.reject(error?.response?.data))
 }
 
 export const updateDataAlert = ({ dataAlert, domain, apiKey, token }) => {
@@ -462,12 +476,7 @@ export const updateDataAlert = ({ dataAlert, domain, apiKey, token }) => {
 
   const url = `${domain}/autoql/api/v1/data-alerts/${dataAlert.id}?key=${apiKey}`
 
-  return axiosInstance
-    .put(url, dataAlert)
-    .then((response) => Promise.resolve(response))
-    .catch((error) => {
-      return Promise.reject(_get(error, 'response.data'))
-    })
+  return axiosInstance.put(url, dataAlert).catch((error) => Promise.reject(error?.response?.data))
 }
 
 // ----------------- POST --------------------
@@ -488,15 +497,9 @@ export const createDataAlert = ({ dataAlert, domain, apiKey, token }) => {
 
   const url = `${domain}/autoql/api/v1/data-alerts?key=${apiKey}`
 
-  return axiosInstance
-    .post(url, data)
-    .then((response) => {
-      return Promise.resolve(response)
-    })
-    .catch((error) => {
-      return Promise.reject(_get(error, 'response.data'))
-    })
+  return axiosInstance.post(url, data).catch((error) => Promise.reject(error?.response?.data))
 }
+
 export const validateExpression = ({ expression, domain, apiKey, token }) => {
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
@@ -512,14 +515,7 @@ export const validateExpression = ({ expression, domain, apiKey, token }) => {
 
   const url = `${domain}/autoql/api/v1/data-alerts/validate?key=${apiKey}`
 
-  return axiosInstance
-    .post(url, data)
-    .then((response) => {
-      return Promise.resolve(response)
-    })
-    .catch((error) => {
-      return Promise.reject(_get(error, 'response.data'))
-    })
+  return axiosInstance.post(url, data).catch((error) => Promise.reject(error?.response?.data))
 }
 
 // DELETE
@@ -538,14 +534,7 @@ export const deleteDataAlert = (dataAlertId, authObject) => {
 
   const url = `${domain}/autoql/api/v1/data-alerts/${dataAlertId}?key=${apiKey}`
 
-  return axiosInstance
-    .delete(url)
-    .then((response) => {
-      return Promise.resolve(response)
-    })
-    .catch((error) => {
-      return Promise.reject(_get(error, 'response.data'))
-    })
+  return axiosInstance.delete(url).catch((error) => Promise.reject(error?.response?.data))
 }
 
 export const removeNotificationChannel = ({ channelId, domain, apiKey, token }) => {
@@ -562,12 +551,5 @@ export const removeNotificationChannel = ({ channelId, domain, apiKey, token }) 
 
   const url = `${domain}/autoql/api/v1/notifications/channels/${channelId}?key=${apiKey}`
 
-  return axiosInstance
-    .delete(url)
-    .then(() => {
-      return Promise.resolve()
-    })
-    .catch((error) => {
-      return Promise.reject(_get(error, 'response.data'))
-    })
+  return axiosInstance.delete(url).catch((error) => Promise.reject(error?.response?.data))
 }

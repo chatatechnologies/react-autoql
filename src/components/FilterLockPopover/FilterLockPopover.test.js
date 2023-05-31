@@ -160,7 +160,7 @@ describe('saving indicator renders when', () => {
 
       excludeBtn.simulate('click')
       const savingIndicator = findByTestAttr(wrapper, 'filter-locking-saving-indicator')
-      expect(savingIndicator.exists()).toBe(false)
+      expect(savingIndicator.hasClass('hidden')).toBe(true)
     })
     test('show saving indicator when exclude toggled', () => {
       const includeExcludeToggle = findByTestAttr(wrapper, 'include-exclude-toggle-group').first()

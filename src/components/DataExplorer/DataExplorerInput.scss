@@ -59,16 +59,21 @@
   .react-autosuggest__input--focused {
     outline: none;
   }
-  .react-autosuggest__input::-ms-clear,
-  .react-autosuggest__suggestions-container {
-    display: none;
-  }
   .react-autosuggest__suggestion {
     cursor: pointer;
     padding: 2px;
     padding-left: 18px;
     letter-spacing: 0.05em;
     line-height: 22.5px;
+
+    & > span {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      .react-autoql-icon {
+        margin-right: 5px;
+      }
+    }
   }
   .react-autosuggest__suggestion--highlighted {
     background-color: rgba(0, 0, 0, 0.1) !important;

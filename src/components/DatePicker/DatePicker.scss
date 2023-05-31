@@ -1,100 +1,11 @@
-.react-autoql-date-picker {
-  .rdrCalendarWrapper,
-  .rdrDateRangeWrapper,
-  .react-autoql-month-range-picker {
-    background: var(--react-autoql-background-color-secondary);
-    color: var(--react-autoql-text-color-primary);
+.react-autoql-date-picker.react-autoql-date-picker-single {
+  display: flex;
 
-    .rdrDateDisplayWrapper {
-      background: var(--react-autoql-background-color-primary);
-
-      .rdrDateDisplay {
-        color: var(--react-autoql-accent-color) !important;
-
-        .rdrDateDisplayItem {
-          background: var(--react-autoql-background-color-secondary);
-          input {
-            color: var(--react-autoql-text-color-primary);
-          }
-        }
-      }
-    }
-
-    .rdrMonthAndYearWrapper {
-      select {
-        color: var(--react-autoql-text-color-primary);
-        &:hover {
-          background-color: var(--react-autoql-border-color);
-        }
-      }
-    }
-
-    .rdrDayDisabled {
-      background-color: var(--react-autoql-hover-color);
-      pointer-events: none;
-      cursor: not-allowed;
-      opacity: 0.3;
-    }
-
-    .rdrMonths {
-      .rdrWeekDay {
-        color: var(--react-autoql-text-color-placeholder);
-      }
-
-      .rdrDay:not(.rdrDayPassive):not(.rdrDayDisabled) .rdrInRange ~ .rdrDayNumber span,
-      .rdrDay:not(.rdrDayPassive):not(.rdrDayDisabled) .rdrStartEdge ~ .rdrDayNumber span,
-      .rdrDay:not(.rdrDayPassive):not(.rdrDayDisabled) .rdrEndEdge ~ .rdrDayNumber span,
-      .rdrDay:not(.rdrDayPassive):not(.rdrDayDisabled) .rdrSelected ~ .rdrDayNumber span {
-        color: var(--react-autoql-text-color-accent);
-      }
-
-      .rdrDayPassive .rdrDayNumber span {
-        color: var(--react-autoql-text-color-placeholder);
-        opacity: 0.6;
-      }
-
-      .rdrDayNumber span {
-        color: var(--react-autoql-text-color-primary);
-      }
-
-      .rdrDayToday .rdrDayNumber span:after {
-        background: var(--react-autoql-accent-color);
-      }
-      .rdrDayToday:not(.rdrDayPassive) .rdrInRange ~ .rdrDayNumber span:after,
-      .rdrDayToday:not(.rdrDayPassive) .rdrStartEdge ~ .rdrDayNumber span:after,
-      .rdrDayToday:not(.rdrDayPassive) .rdrEndEdge ~ .rdrDayNumber span:after,
-      .rdrDayToday:not(.rdrDayPassive) .rdrSelected ~ .rdrDayNumber span:after {
-        background: var(--react-autoql-text-color-accent);
-      }
-
-      .rdrSelected,
-      .rdrInRange,
-      .rdrStartEdge,
-      .rdrEndEdge {
-        background: var(--react-autoql-accent-color);
-      }
-    }
+  .rdrMonth {
+    padding: 0 0.833em 1em 0.833em;
   }
 
-  .rdrNextPrevButton {
-    background-color: var(--react-autoql-border-color);
-    color: var(--react-autoql-text-color-primary);
-    opacity: 0.8;
-
-    &:hover {
-      opacity: 0.5;
-    }
-
-    &:disabled {
-      opacity: 0.5 !important;
-      cursor: not-allowed;
-    }
-
-    &.rdrPprevButton i {
-      border-color: transparent var(--react-autoql-text-color-primary) transparent transparent;
-    }
-    &.rdrNextButton i {
-      border-color: transparent transparent transparent var(--react-autoql-text-color-primary);
-    }
+  .rdrMonthAndYearWrapper {
+    padding-top: 0;
   }
 }

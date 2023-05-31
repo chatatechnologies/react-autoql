@@ -1,5 +1,4 @@
 import React, { Component } from 'react'
-import _get from 'lodash.get'
 import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, scaleZero, getKey } from '../helpers'
 import { rebuildTooltips } from '../../Tooltip'
 
@@ -93,7 +92,7 @@ export default class Bars extends Component {
                 onClick={() => this.onBarClick(d, colIndex, index)}
                 data-tip={tooltip}
                 data-for={this.props.chartTooltipID}
-                style={{ fill: color, fillOpacity: 0.7 }}
+                style={{ fill: color, fillOpacity: 1 }}
               />
             )
           }),

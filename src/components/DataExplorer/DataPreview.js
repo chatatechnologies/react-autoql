@@ -104,11 +104,7 @@ export default class DataExplorer extends React.Component {
 
   formatColumnHeader = (column) => {
     return (
-      <div
-        className='data-preview-col-header'
-        data-for={this.props.tooltipID ?? 'data-preview-tooltip'}
-        data-tip={JSON.stringify(column)}
-      >
+      <div className='data-preview-col-header' data-for={this.props.tooltipID ?? 'data-preview-tooltip'}>
         {column?.display_name}
       </div>
     )
@@ -148,7 +144,7 @@ export default class DataExplorer extends React.Component {
 
     return (
       <div className='data-preview'>
-        <CustomScrollbars autoHide={false} style={{ height: '165px' }}>
+        <CustomScrollbars style={{ height: '165px' }}>
           {!!this.state.error ? (
             <div className='data-preview-error-message'>
               <div>{this.state.error.message}</div>
@@ -197,7 +193,7 @@ export default class DataExplorer extends React.Component {
 
   renderDataPreviewTitle = () => {
     return (
-      <div>
+      <div className='react-autoql-card-title-text'>
         <Icon style={{ fontSize: '20px' }} type='table' /> Data Preview - "{this.props.subject?.query}"
       </div>
     )

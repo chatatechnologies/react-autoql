@@ -136,6 +136,10 @@ export default class DataExplorer extends React.Component {
     this.setState({ userSelection })
   }
 
+  reloadScrollbars = () => {
+    this.querySuggestionList?.updateScrollbars()
+  }
+
   renderDataPreview = () => {
     if (!this.state.selectedSubject || this.state.activeTopicType !== DEConstants.SUBJECT_TYPE) {
       return null
@@ -178,7 +182,7 @@ export default class DataExplorer extends React.Component {
 
   renderQuerySuggestionCardTitle = (selectedTopic) => {
     return (
-      <div>
+      <div className='react-autoql-card-title-text'>
         <Icon style={{ fontSize: '20px' }} type='react-autoql-bubbles-outlined' /> Query Suggestions for "
         {selectedTopic?.display_name}"
       </div>
@@ -191,23 +195,27 @@ export default class DataExplorer extends React.Component {
       return null
     }
 
+    const isCollapsed = this.props.isSmallScreen ? this.state.isQuerySuggestionCollapsed : undefined
     const isDefaultCollapsed =
       !this.state.selectedSubject || this.state.activeTopicType !== DEConstants.SUBJECT_TYPE ? false : true
+
     return (
       <div className='data-explorer-section query-suggestions'>
         <Card
           title={this.renderQuerySuggestionCardTitle(selectedTopic)}
           defaultCollapsed={this.props.isSmallScreen ? isDefaultCollapsed : undefined}
-          isCollapsed={this.props.isSmallScreen ? this.state.isQuerySuggestionCollapsed : undefined}
-          onIsCollapsedChange={(isCollapsed) => {
+          isCollapsed={isCollapsed}
+          onIsCollapsedChange={(collapsed) => {
+            this.reloadScrollbars()
             this.setState({
-              isQuerySuggestionCollapsed: isCollapsed,
-              isDataPreviewCollapsed: isCollapsed ? this.state.isDataPreviewCollapsed : true,
+              isQuerySuggestionCollapsed: collapsed,
+              isDataPreviewCollapsed: !collapsed || this.state.isDataPreviewCollapsed,
             })
           }}
         >
           <div className='data-explorer-query-suggestion-list'>
             <QuerySuggestionList
+              ref={(r) => (this.querySuggestionList = r)}
               key={this.querySuggestionsKey}
               authentication={this.props.authentication}
               context={this.state.selectedSubject?.name}
@@ -218,9 +226,11 @@ export default class DataExplorer extends React.Component {
               skipQueryValidation={this.state.skipQueryValidation}
               userSelection={this.state.userSelection}
               onValidationSuggestionClick={this.onValidationSuggestionClick}
-              onSuggestionListResponse={() =>
-                this.setState({ querySuggestionContentKey: uuid(), skipQueryValidation: false })
-              }
+              onSuggestionListResponse={() => {
+                this.reloadScrollbars()
+                this.setState({ skipQueryValidation: false })
+              }}
+              hidden={isCollapsed === true}
               scope={this.props.scope}
             />
           </div>
@@ -260,7 +270,7 @@ export default class DataExplorer extends React.Component {
 
     return (
       <div className='data-explorer-result-container'>
-        <CustomScrollbars autoHide={false}>
+        <CustomScrollbars>
           <div
             key={`data-explorer-sections-container-${this.state.selectedSubject?.name}`}
             className='data-explorer-sections-container'

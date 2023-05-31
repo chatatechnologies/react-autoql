@@ -51,6 +51,10 @@ g.legendOrdinal tspan {
 }
 
 .number-axis-selector-popover {
+  display: flex;
+  overflow: hidden;
+  flex: 1;
+
   .number-axis-selector-popover-content {
     display: flex;
     flex-direction: column;
@@ -76,10 +80,7 @@ g.legendOrdinal tspan {
       .number-selector-field-group {
         display: inline-block;
         vertical-align: top;
-
-        &:not(:last-of-type) {
-          padding-right: 8px;
-        }
+        padding: 4px;
       }
     }
 
@@ -124,9 +125,6 @@ g.legendOrdinal tspan {
     .react-autoql-list-item .react-autoql-checkbox {
       margin-left: 20px;
     }
-    .react-autoql-checkbox-tick {
-      left: 2px;
-    }
     .react-autoql-checkbox__input {
       width: 16px;
       height: 16px;
@@ -143,6 +141,30 @@ g.legendOrdinal tspan {
         .agg-select-text {
           color: var(--react-autoql-accent-color);
           font-weight: 600;
+        }
+      }
+
+      .agg-selector-column-item {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: flex-start;
+        overflow: hidden;
+        flex: 1;
+
+        padding: 4px 8px;
+        padding-right: 0;
+
+        .agg-select-text {
+          flex: 1;
+
+          span {
+            white-space: normal;
+          }
+        }
+
+        .agg-type-symbol {
+          flex: 0 0 auto;
+          padding: 0;
         }
       }
     }
@@ -165,22 +187,37 @@ g.legendOrdinal tspan {
     }
 
     .axis-series-selector {
+      flex: 1;
+      overflow: auto;
+
+      .number-selector-field-group-container {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+
+        .number-selector-field-group {
+          flex: 1;
+        }
+      }
+
       .react-autoql-selectable-list {
         margin-bottom: 10px;
       }
     }
 
-    .react-autoql-select.agg-type-symbol {
+    .agg-type-symbol .react-autoql-select {
       font-weight: 600;
       font-size: 12px;
       height: 26px;
       line-height: 25px;
-      margin: 3px 10px;
       padding: 0 8px;
+      margin-right: 10px;
     }
   }
 
   .axis-selector-apply-btn-container {
+    flex: 0 0 auto;
+
     .axis-selector-apply-btn {
       margin: 0;
       width: 100%;
@@ -189,10 +226,9 @@ g.legendOrdinal tspan {
 }
 
 .agg-type-symbol-select {
-  .react-autoql-select-popup li {
+  .react-autoql-select-popup-container li {
     font-size: 12px;
-    line-height: 28px;
-    height: 28px;
+    padding: 5px 15px;
 
     .agg-select-list-symbol {
       font-weight: 600;
@@ -220,7 +256,25 @@ g.legendOrdinal tspan {
     }
   }
 }
+.mobile-string-axis-selector-popover-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  background: var(--react-autoql-background-color-secondary);
+  color: var(--react-autoql-text-color-primary);
+  padding: 5px;
+  z-index: 9999;
+  min-width: 45vw;
+  .string-select-list-item {
+    font-size: 12px;
+    line-height: 28px;
 
+    &.active {
+      background: var(--react-autoql-accent-color);
+      color: var(--react-autoql-text-color-accent);
+    }
+  }
+}
 .string-axis-selector-popover-content {
   display: flex;
   flex-direction: column;
@@ -244,4 +298,8 @@ g.legendOrdinal .legendTitle tspan {
   letter-spacing: 0.04em !important;
   font-size: 12px;
   cursor: default;
+}
+
+.react-autoql-popover-mobile .number-selector-field-group-container {
+  flex-direction: column !important;
 }

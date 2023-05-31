@@ -9,7 +9,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import PropTypes from 'prop-types'
 import { authenticationDefault } from '../../props/defaults'
 import { authenticationType } from '../../props/types'
-import { Popover } from 'react-tiny-popover'
+import { Popover } from '../Popover'
 import './SpeechToTextButton.scss'
 
 export default class SpeechToTextBtn extends React.Component {

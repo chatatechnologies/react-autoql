@@ -1,9 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import InfiniteScroll from 'react-infinite-scroller'
-import { Scrollbars } from 'react-custom-scrollbars-2'
 import _isEqual from 'lodash.isequal'
 
+import { InfiniteScroll } from '../InfiniteScroll'
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { fetchDataExplorerSuggestions } from '../../js/queryService'
 import { LoadingDots } from '../LoadingDots'
@@ -60,7 +59,11 @@ export default class QuerySuggestionList extends React.Component {
   }
 
   loadMore = (page) => {
-    if (this.state.loading || (!this.props.searchText && !this.props.context && !this.props.valueLabel)) {
+    if (
+      this.state.loading ||
+      this.props.hidden ||
+      (!this.props.searchText && !this.props.context && !this.props.valueLabel)
+    ) {
       return
     }
 
@@ -80,7 +83,8 @@ export default class QuerySuggestionList extends React.Component {
     }
 
     this.setState(newState)
-    fetchDataExplorerSuggestions({
+
+    return fetchDataExplorerSuggestions({
       ...this.props.authentication,
       pageSize: this.pageSize,
       pageNumber: page,
@@ -113,17 +117,24 @@ export default class QuerySuggestionList extends React.Component {
           }
           finishedState.keywords = searchText
         }
+
         this.setState(finishedState)
+        return
       })
       .catch((error) => {
+        console.error(error)
         this.props.onSuggestionListResponse({ error })
         this.setState({ loading: false, initialLoading: false })
-        console.error(error)
+        return
       })
   }
 
   onValidationSuggestionClick = (queryValidationObj) => {
     this.props.onValidationSuggestionClick(queryValidationObj)
+  }
+
+  updateScrollbars = () => {
+    setTimeout(this.infiniteScroll?.updateScrollbars, 400)
   }
 
   clearQueryList = () => {
@@ -172,45 +183,38 @@ export default class QuerySuggestionList extends React.Component {
     }
 
     return (
-      <Scrollbars
-        autoHeight
-        autoHeightMin={0}
-        autoHeightMax={800}
-        className='query-suggestion-list-scroll-component'
-        renderView={(props) => (
-          <div {...props} ref={(r) => (this.scrollbarRef = r)} className='data-preview-scroll-container' />
-        )}
-      >
-        <InfiniteScroll
-          pageStart={1}
-          loadMore={this.loadMore}
-          hasMore={this.state.hasMore}
-          useWindow={false}
-          initialLoad={false}
-          threshold={100}
-          loader={
-            <div className='react-autoql-spinner-centered' key={0}>
-              <Spinner style={{ width: '19px', height: '20px', color: '#999' }} />
-            </div>
-          }
-        >
-          <div className='query-suggestion-list'>
-            {this.state.queryList.map((query, i) => {
-              return (
-                <div
-                  className='query-tip-item animated-item'
-                  onClick={() => this.props.executeQuery(query)}
-                  key={`query-tip-${i}`}
-                >
-                  <div className='query-suggestion-text'>
-                    <Icon type='react-autoql-bubbles-outlined' /> {query}
-                  </div>
-                </div>
-              )
-            })}
+      <InfiniteScroll
+        ref={(r) => (this.infiniteScroll = r)}
+        pageStart={1}
+        loadMore={this.loadMore}
+        hasMore={this.state.hasMore}
+        className='data-preview-scroll-container'
+        useWindow={false}
+        initialLoad={false}
+        threshold={100}
+        contentHidden={this.props.hidden}
+        loader={
+          <div className='react-autoql-spinner-centered' key={0}>
+            <Spinner style={{ width: '19px', height: '20px', color: '#999' }} />
           </div>
-        </InfiniteScroll>
-      </Scrollbars>
+        }
+      >
+        <div className='query-suggestion-list'>
+          {this.state.queryList.map((query, i) => {
+            return (
+              <div
+                className='query-tip-item animated-item'
+                onClick={() => this.props.executeQuery(query)}
+                key={`query-tip-${i}`}
+              >
+                <div className='query-suggestion-text'>
+                  <Icon type='react-autoql-bubbles-outlined' /> {query}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </InfiniteScroll>
     )
   }
 }

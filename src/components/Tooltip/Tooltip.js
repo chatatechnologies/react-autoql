@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactTooltip from 'react-tooltip'
 import { TOOLTIP_TIMER_KEY } from '../../js/Constants'
-
+import { isMobile } from 'react-device-detect'
 export const rebuildTooltips = (delay = 500) => {
   const timerID = sessionStorage.getItem(TOOLTIP_TIMER_KEY)
 
@@ -26,8 +26,11 @@ export const hideTooltips = () => {
   ReactTooltip.hide()
 }
 
-export const Tooltip = (props) => {
-  return <ReactTooltip {...props} />
+export function Tooltip(props) {
+  if (isMobile) {
+    return null
+  }
+  return <ReactTooltip {...props} html />
 }
 
 export default Tooltip

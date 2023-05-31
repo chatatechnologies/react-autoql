@@ -1,18 +1,16 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import _get from 'lodash.get'
 import { v4 as uuid } from 'uuid'
 
 import { Icon } from '../../Icon'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import { fetchNotificationCount, resetNotificationCount } from '../../../js/notificationService'
-
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
+import { withTheme } from '../../../theme'
 
 import './NotificationIcon.scss'
-import { withTheme } from '../../../theme'
 
 class NotificationIcon extends React.Component {
   constructor(props) {
@@ -88,7 +86,7 @@ class NotificationIcon extends React.Component {
       unacknowledged: count,
     })
       .then((response) => {
-        const newCount = _get(response, 'data.data.unacknowledged')
+        const newCount = response?.data?.data?.unacknowledged
         if (newCount && newCount !== this.state.count) {
           this.setState({ count: newCount })
           if (this.HAS_FETCHED_COUNT) {
@@ -144,7 +142,7 @@ class NotificationIcon extends React.Component {
 
               clearInterval(this.pollInterval)
               return
-            } else if (_get(error, 'response.status') == 504) {
+            } else if (error?.response?.status == 504) {
               // Timed out because there were no changes
               // Let's connect again
               this.subscribeToNotificationCount()

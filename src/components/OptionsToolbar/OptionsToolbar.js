@@ -1,14 +1,15 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Popover } from 'react-tiny-popover'
+import _cloneDeep from 'lodash.clonedeep'
 import { v4 as uuid } from 'uuid'
-
+import { isMobile } from 'react-device-detect'
 import { format } from 'sql-formatter'
 import { Icon } from '../Icon'
 import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import { DataAlertModal } from '../Notifications'
 import { Modal } from '../Modal'
 import { Button } from '../Button'
+import { Popover } from '../Popover'
 import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
 import ReportProblemModal from './ReportProblemModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -222,9 +223,7 @@ export class OptionsToolbar extends React.Component {
 
   showHideColumnsModal = () => this.setState({ isHideColumnsModalVisible: true })
   closeColumnVisibilityModal = () => this.setState({ isHideColumnsModalVisible: false })
-  closeDataAlertModal = () => {
-    this.setState({ activeMenu: undefined })
-  }
+  closeDataAlertModal = () => this.setState({ activeMenu: undefined })
 
   onColumnVisibilitySave = (columns) => {
     const { authentication } = this.props
@@ -294,24 +293,25 @@ export class OptionsToolbar extends React.Component {
   }
 
   onDataAlertSave = () => {
-    this.props.onSuccessAlert('Successfully created a notification')
     this.setState({ activeMenu: undefined })
   }
 
   renderDataAlertModal = () => {
-    const initialQuery = this.props.responseRef?.queryResponse?.data?.data?.text
-    const userSelection = this.props.responseRef?.queryResponse?.data?.data?.fe_req?.disambiguation
+    const queryResponse = _cloneDeep(this.props.responseRef?.queryResponse)
+    const filters = this.props.responseRef?.getCombinedFilters()
+
     return (
       <ErrorBoundary>
         <DataAlertModal
           authentication={this.props.authentication}
           isVisible={this.state.activeMenu === 'notification'}
-          initialQuery={initialQuery}
-          userSelection={userSelection}
           onClose={this.closeDataAlertModal}
           onErrorCallback={this.props.onErrorCallback}
+          onSuccessAlert={this.props.onSuccessAlert}
           onSave={this.onDataAlertSave}
           tooltipID={this.props.tooltipID}
+          queryResponse={queryResponse}
+          filters={filters}
         />
       </ErrorBoundary>
     )
@@ -357,7 +357,7 @@ export class OptionsToolbar extends React.Component {
   }
 
   getMenuItemClass = (className) => {
-    return `react-autoql-toolbar-btn ${className ?? ''}`
+    return `react-autoql-toolbar-btn react-autoql-btn ${className || ''}`
   }
 
   renderMoreOptionsMenu = (props, shouldShowButton) => {
@@ -471,11 +471,7 @@ export class OptionsToolbar extends React.Component {
           isVisible={this.state.activeMenu === 'sql'}
           footer={
             <div>
-              <Button
-                type='primary'
-                onClick={() => this.setState({ activeMenu: undefined })}
-                tooltipID={this.props.tooltipID}
-              >
+              <Button type='primary' onClick={() => this.setState({ activeMenu: undefined })}>
                 Ok
               </Button>
             </div>
@@ -503,23 +499,26 @@ export class OptionsToolbar extends React.Component {
   }
 
   renderToolbar = (shouldShowButton) => {
+    // Use this to show filter badge in the future
+    // const isFiltered = !!this.props.responseRef?.tableParams?.filters?.length
+
     return (
       <ErrorBoundary>
         <div
-          className={`react-autoql-toolbar options-toolbar
-        ${this.state.activeMenu ? 'active' : ''}
-        ${this.props.className || ''}`}
+          className={`${isMobile ? 'react-autoql-toolbar-mobile' : 'react-autoql-toolbar'} options-toolbar
+            ${this.state.activeMenu ? 'active' : ''}
+            ${this.props.className || ''}`}
           data-test='autoql-options-toolbar'
         >
           {shouldShowButton.showFilterButton && (
-            <button
+            <Button
               onClick={() => {
                 const isFiltering = this.props.responseRef?.toggleTableFilter()
                 this.setState({ isFiltering })
               }}
               className={this.getMenuItemClass('filter-btn')}
-              data-tip='Filter table'
-              data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
+              tooltip='Filter table'
+              tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
               data-test='react-autoql-filter-button'
             >
               <Icon
@@ -529,77 +528,75 @@ export class OptionsToolbar extends React.Component {
                 type='filter'
                 showBadge={false}
               />
-            </button>
+            </Button>
           )}
           {shouldShowButton.showHideColumnsButton && (
-            <button
+            <Button
               onClick={this.showHideColumnsModal}
-              className={this.getMenuItemClass(shouldShowButton.showHideColumnsButton)}
-              data-tip='Show/hide columns'
-              data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
+              className={this.getMenuItemClass()}
+              tooltip='Show/hide columns'
+              tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
               data-test='options-toolbar-col-vis'
             >
               <Icon type='eye' showBadge={shouldShowButton.showHiddenColsBadge} />
-            </button>
+            </Button>
           )}
           {shouldShowButton.showReportProblemButton && (
-            <button
+            <Button
               onClick={this.openReportProblemModal}
-              className={this.getMenuItemClass(shouldShowButton.showReportProblemButton)}
-              data-tip='Report a problem'
-              data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
+              className={this.getMenuItemClass()}
+              tooltip='Report a problem'
+              tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
             >
               <Icon type='warning-triangle' />
-            </button>
+            </Button>
           )}
           {shouldShowButton.showRefreshDataButton && (
-            <button
+            <Button
               onClick={this.refreshData}
-              className={this.getMenuItemClass(shouldShowButton.showRefreshDataButton)}
-              data-tip='Re-run query'
-              data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
+              className={this.getMenuItemClass()}
+              tooltip='Re-run query'
+              tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
               data-test='options-toolbar-trash-btn'
             >
               <Icon type='refresh' />
-            </button>
+            </Button>
           )}
           {shouldShowButton.showDeleteButton && (
-            <button
+            <Button
               onClick={this.deleteMessage}
-              className={this.getMenuItemClass(shouldShowButton.showDeleteButton)}
-              data-tip='Delete data response'
-              data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
+              className={this.getMenuItemClass()}
+              tooltip='Delete data response'
+              tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
               data-test='options-toolbar-trash-btn'
             >
               <Icon type='trash' />
-            </button>
+            </Button>
           )}
           {shouldShowButton.showMoreOptionsButton && (
             <Popover
               key={`more-options-button-${this.COMPONENT_KEY}`}
               isOpen={this.state.activeMenu === 'more-options'}
-              positions={this.props.popoverPositions ?? ['bottom', 'top', 'left', 'right']}
-              align={this.props.popoverAlign}
               padding={8}
-              onClickOutside={() => {
-                this.setState({ activeMenu: undefined })
-              }}
+              onClickOutside={() => this.setState({ activeMenu: undefined })}
               content={(props) => this.renderMoreOptionsMenu(props, shouldShowButton)}
               parentElement={this.props.popoverParentElement}
               boundaryElement={this.props.popoverParentElement}
+              positions={this.props.popoverPositions ?? ['bottom', 'top', 'left', 'right']}
+              align={this.props.popoverAlign}
             >
-              <button
+              <Button
                 onClick={() => {
                   hideTooltips()
                   this.setState({ activeMenu: 'more-options' })
                 }}
-                className={this.getMenuItemClass(shouldShowButton.showMoreOptionsButton)}
-                data-tip='More options'
-                data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
+                className={this.getMenuItemClass('more-options')}
+                tooltip='More options'
+                tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
                 data-test='react-autoql-toolbar-more-options-btn'
               >
                 <Icon type='more-vertical' />
-              </button>
+              </Button>
             </Popover>
           )}
         </div>
@@ -638,17 +635,19 @@ export class OptionsToolbar extends React.Component {
         showSaveAsCSVButton: isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
         showDeleteButton: props.enableDeleteBtn,
         showReportProblemButton: autoQLConfig.enableReportProblem && !!response?.data?.data?.query_id,
-        showCreateNotificationIcon:
-          isDataResponse && autoQLConfig.enableNotifications && !this.isDrilldownResponse(props),
+        showCreateNotificationIcon: isMobile
+          ? false
+          : isDataResponse && autoQLConfig.enableNotifications && !this.isDrilldownResponse(props),
         showRefreshDataButton: false,
       }
 
       shouldShowButton.showMoreOptionsButton =
-        shouldShowButton.showCopyButton ||
-        shouldShowButton.showSQLButton ||
-        shouldShowButton.showCreateNotificationIcon ||
-        shouldShowButton.showSaveAsCSVButton ||
-        shouldShowButton.showSaveAsPNGButton
+        (shouldShowButton.showCopyButton ||
+          shouldShowButton.showSQLButton ||
+          shouldShowButton.showCreateNotificationIcon ||
+          shouldShowButton.showSaveAsCSVButton ||
+          shouldShowButton.showSaveAsPNGButton) &&
+        !isMobile
     } catch (error) {
       console.error(error)
     }

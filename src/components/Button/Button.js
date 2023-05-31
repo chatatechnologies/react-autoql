@@ -3,17 +3,15 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 
 import { Spinner } from '../Spinner'
-import { Tooltip } from '../Tooltip'
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { Icon } from '../Icon'
+import { ErrorBoundary } from '../../containers/ErrorHOC'
 
 import './Button.scss'
 
 const validTypes = ['default', 'primary', 'danger']
-const validSizes = ['small', 'large']
+const validSizes = ['small', 'medium', 'large']
 
-export default class Button extends React.Component {
-  COMPONENT_KEY = `react-autoql-btn-${uuid()}`
-
+export class ButtonWithoutRef extends React.Component {
   static propTypes = {
     type: PropTypes.oneOf(validTypes),
     size: PropTypes.oneOf(validSizes),
@@ -21,7 +19,10 @@ export default class Button extends React.Component {
     loading: PropTypes.bool,
     disabled: PropTypes.bool,
     multiline: PropTypes.bool,
+    filled: PropTypes.bool,
+    border: PropTypes.bool,
     tooltip: PropTypes.string,
+    icon: PropTypes.string,
   }
 
   static defaultProps = {
@@ -31,6 +32,9 @@ export default class Button extends React.Component {
     disabled: false,
     multiline: false,
     tooltip: undefined,
+    filled: false,
+    border: true,
+    icon: undefined,
     onClick: () => {},
   }
 
@@ -60,6 +64,14 @@ export default class Button extends React.Component {
     return 'large'
   }
 
+  renderIcon = () => {
+    if (!this.props.icon) {
+      return null
+    }
+
+    return <Icon className='react-autoql-btn-icon' type={this.props.icon} />
+  }
+
   render = () => {
     const type = this.getType()
     const size = this.getSize()
@@ -68,22 +80,27 @@ export default class Button extends React.Component {
     return (
       <ErrorBoundary>
         <button
+          ref={this.props.innerRef}
           className={`react-autoql-btn
-          ${this.props.className || ''}
-          ${type}
-          ${size}
-          ${isDisabled ? ' disabled' : ''}`}
+            ${this.props.className || ''}
+            react-autoql-btn-${type}
+            react-autoql-btn-${size}
+            ${isDisabled ? ' disabled' : ''}
+            ${this.props.border ? '' : 'btn-no-border'}
+            ${this.props.filled ? 'btn-filled' : ''}`}
           data-test='react-autoql-btn'
           data-multiline={this.props.multiline}
           style={{ ...this.props.style }}
           onClick={this.props.onClick}
           data-tip={this.props.tooltip}
-          data-for={this.props.tooltipID ?? this.COMPONENT_KEY}
+          data-for={this.props.tooltipID}
         >
-          {this.props.loading && <Spinner data-test='react-autoql-btn-loading' />}
-          {this.props.children}
+          {this.props.loading ? <Spinner data-test='react-autoql-btn-loading' /> : this.renderIcon()}
+          <div>{this.props.children}</div>
         </button>
       </ErrorBoundary>
     )
   }
 }
+
+export default React.forwardRef((props, ref) => <ButtonWithoutRef innerRef={ref} {...props} />)

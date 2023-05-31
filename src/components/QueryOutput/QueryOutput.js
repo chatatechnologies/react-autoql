@@ -45,10 +45,10 @@ import {
   getDayJSObj,
   getNumberOfGroupables,
   deepEqual,
+  isSingleValueResponse,
   isNumber,
   hasNumberColumn,
   hasStringColumn,
-  isSingleValueResponse,
 } from '../../js/Util.js'
 
 import {
@@ -68,6 +68,7 @@ import { getColumnDateRanges, getFilterPrecision, getPrecisionForDayJS } from '.
 import { withTheme } from '../../theme'
 
 import './QueryOutput.scss'
+import { formatTableParams } from '../ChataTable/tableHelpers'
 
 export class QueryOutput extends React.Component {
   constructor(props) {
@@ -88,16 +89,14 @@ export class QueryOutput extends React.Component {
     this.pivotTableID = uuid()
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
     this.isOriginalData = true
-
-    // Set initial columns if needed
-    let columns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, props.initialAggConfig)
-    if (props.initialColumns && this.areColumnsValid(props.initialColumns)) {
-      columns = props.initialColumns
-    }
+    this.renderComplete = false
+    this.hasCalledInitialTableConfigChange = false
 
     // --------- generate data before mount --------
     this.generateAllData()
     // -------------------------------------------
+
+    const columns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, props.initialAggConfig)
 
     // Supported display types may have changed after initial data generation
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
@@ -113,8 +112,15 @@ export class QueryOutput extends React.Component {
       props.initialTableConfigs?.tableConfig &&
       this.isTableConfigValid(props.initialTableConfigs?.tableConfig, columns, displayType)
     ) {
-      const { tableConfig, pivotTableConfig } = props.initialTableConfigs
+      const { tableConfig } = props.initialTableConfigs
       this.tableConfig = _cloneDeep(tableConfig)
+    }
+
+    if (
+      props.initialTableConfigs?.pivotTableConfig &&
+      this.isTableConfigValid(props.initialTableConfigs?.pivotTableConfig, this.pivotTableColumns, displayType)
+    ) {
+      const { pivotTableConfig } = props.initialTableConfigs
       this.pivotTableConfig = _cloneDeep(pivotTableConfig)
     }
 
@@ -168,6 +174,7 @@ export class QueryOutput extends React.Component {
     onDrilldownEnd: PropTypes.func,
     enableAjaxTableData: PropTypes.bool,
     enableTableSorting: PropTypes.bool,
+    showSingleValueResponseTitle: PropTypes.bool,
 
     onRowChange: PropTypes.func,
     mutable: PropTypes.bool,
@@ -178,6 +185,8 @@ export class QueryOutput extends React.Component {
     dataPageSize: PropTypes.number,
     onPageSizeChange: PropTypes.func,
     allowDisplayTypeChange: PropTypes.bool,
+    onRenderComplete: PropTypes.func,
+    onMount: PropTypes.func,
   }
 
   static defaultProps = {
@@ -212,6 +221,7 @@ export class QueryOutput extends React.Component {
     shouldRender: true,
     dataPageSize: undefined,
     allowDisplayTypeChange: true,
+    showSingleValueResponseTitle: false,
     onRowChange: () => {},
     onTableConfigChange: () => {},
     onAggConfigChange: () => {},
@@ -221,12 +231,16 @@ export class QueryOutput extends React.Component {
     onDrilldownEnd: () => {},
     onColumnChange: () => {},
     onPageSizeChange: () => {},
+    onRenderComplete: () => {},
+    onMount: () => {},
   }
 
   componentDidMount = () => {
     try {
+      this.onRenderComplete()
       this._isMounted = true
       this.updateToolbars()
+      this.props.onMount()
     } catch (error) {
       console.error(error)
       this.props.onErrorCallback(error)
@@ -254,14 +268,24 @@ export class QueryOutput extends React.Component {
       const newState = {}
       let shouldForceUpdate = false
 
+      if (this.props.queryResponse && !prevProps.queryResponse) {
+        this.onRenderComplete()
+      }
+
+      if (this.props.onDisplayTypeChange && this.state.displayType !== prevState.displayType) {
+        this.props.onDisplayTypeChange(this.state.displayType)
+      }
+
       // If data config was changed here, tell the parent
       if (
         !_isEqual(this.props.initialTableConfigs, {
           tableConfig: this.tableConfig,
           pivotTableConfig: this.pivotTableConfig,
         }) &&
-        this.props.onTableConfigChange
+        this.props.onTableConfigChange &&
+        !this.hasCalledInitialTableConfigChange
       ) {
+        this.hasCalledInitialTableConfigChange = true
         this.onTableConfigChange()
       }
 
@@ -296,7 +320,7 @@ export class QueryOutput extends React.Component {
         if (this.shouldGeneratePivotData()) {
           this.generatePivotData({
             isFirstGeneration: true,
-            newTableData: this.state.visibleRows,
+            dataChanged: true,
           })
           shouldForceUpdate = true
         }
@@ -335,6 +359,37 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  onChartRenderComplete = () => {
+    if (isChartType(this.state.displayType)) {
+      this.props.onRenderComplete()
+    }
+  }
+
+  onTableRenderComplete = () => {
+    if (this.state.displayType === 'table') {
+      this.props.onRenderComplete()
+    }
+  }
+
+  onPivotTableRenderComplete = () => {
+    if (this.state.displayType === 'pivot_table') {
+      this.props.onRenderComplete()
+    }
+  }
+
+  onRenderComplete = () => {
+    if (this.props.queryResponse) {
+      if (
+        !this._isMounted &&
+        ((!isChartType(this.state.displayType) && !isTableType(this.state.displayType)) ||
+          isSingleValueResponse(this.queryResponse))
+      ) {
+        this.renderComplete = true
+        this.props.onRenderComplete()
+      }
+    }
+  }
+
   refreshLayout = () => {
     if (this.chartRef) {
       this.chartRef?.adjustChartPosition()
@@ -351,6 +406,7 @@ export class QueryOutput extends React.Component {
   checkAndUpdateTableConfigs = (displayType) => {
     // Check if table configs are still valid for new display type
     const isTableConfigValid = this.isTableConfigValid(this.tableConfig, this.state.columns, displayType)
+
     if (!isTableConfigValid) {
       this.setTableConfig()
     }
@@ -368,12 +424,7 @@ export class QueryOutput extends React.Component {
   }
 
   changeDisplayType = (displayType) => {
-    if (this.props.onDisplayTypeChange) {
-      this.props.onDisplayTypeChange(displayType)
-    }
-
     this.checkAndUpdateTableConfigs(displayType)
-
     this.setState({ displayType })
   }
 
@@ -494,7 +545,7 @@ export class QueryOutput extends React.Component {
   }
 
   isTableConfigValid = (tableConfig, columns, displayType) => {
-    if (!columns) {
+    if (!columns || !this.queryResponse?.data?.data?.rows?.length) {
       return false
     }
 
@@ -672,7 +723,7 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  generatePivotData = ({ isFirstGeneration } = {}) => {
+  generatePivotData = ({ isFirstGeneration, dataChanged } = {}) => {
     try {
       this.pivotTableID = uuid()
       const tableData = this.state?.visibleRows || this.tableData
@@ -692,6 +743,10 @@ export class QueryOutput extends React.Component {
 
     if (this.props.allowDisplayTypeChange) {
       this.pivotTableRef?.updateData(this.pivotTableData)
+    }
+
+    if (dataChanged && this._isMounted) {
+      this.setState({ visiblePivotRowChangeCount: this.state.visiblePivotRowChangeCount + 1 })
     }
   }
 
@@ -788,6 +843,11 @@ export class QueryOutput extends React.Component {
               this.processDrilldown({ groupBys: [], supportedByAPI: true })
             }}
           >
+            {this.props.showSingleValueResponseTitle && (
+              <span>
+                <strong>{this.state.columns?.[0]?.display_name}: </strong>
+              </span>
+            )}
             {formatElement({
               element: this.queryResponse.data.data.rows[0]?.[0] ?? 0,
               column: this.state.columns?.[0],
@@ -837,6 +897,8 @@ export class QueryOutput extends React.Component {
     this.cancelCurrentRequest()
     this.axiosSource = axios.CancelToken?.source()
 
+    this.setState({ isLoadingData: true })
+
     if (this.isDrilldown()) {
       return runDrilldown({
         ...getAuthentication(this.props.authentication),
@@ -853,6 +915,8 @@ export class QueryOutput extends React.Component {
         tableFilters: allFilters,
         cancelToken: this.axiosSource.token,
         ...args,
+      }).finally(() => {
+        this.setState({ isLoadingData: false })
       })
     }
     return runQueryOnly({
@@ -870,6 +934,8 @@ export class QueryOutput extends React.Component {
       scope: this.props.scope,
       cancelToken: this.axiosSource.token,
       ...args,
+    }).finally(() => {
+      this.setState({ isLoadingData: false })
     })
   }
 
@@ -988,8 +1054,17 @@ export class QueryOutput extends React.Component {
     const allFilters = []
 
     tableFilters.forEach((tableFilter) => {
+      let filter = tableFilter
+
       const foundQueryFilter = queryFilters.find((filter) => filter.name === tableFilter.name)
-      allFilters.push(foundQueryFilter ?? tableFilter)
+      if (foundQueryFilter) {
+        filter = {
+          ...tableFilter,
+          ...foundQueryFilter,
+        }
+      }
+
+      allFilters.push(filter)
     })
 
     queryFilters.forEach((queryFilter) => {
@@ -1009,7 +1084,13 @@ export class QueryOutput extends React.Component {
       }
     }
 
-    return allFilters
+    return allFilters.map((filter) => {
+      const foundColumn = this.getColumns()?.find((column) => column.name === filter.name)
+      return {
+        ...filter,
+        columnName: foundColumn?.title,
+      }
+    })
   }
 
   onTableCellClick = (cell) => {
@@ -1158,22 +1239,21 @@ export class QueryOutput extends React.Component {
     this.tableData = responseData?.rows || []
 
     if (this.state.displayType !== 'table' && this.props.allowDisplayTypeChange) {
-      if (this.tableData.length >= responseData?.count_rows) {
-        // The rows were changed from a chart - If it is the maximum page size, we dont want
-        // infinite scroll anymore - mount a new table with the new data
-        this.tableID = uuid()
-      } else {
-        this.tableRef?.updateData(this.tableData)
-      }
+      // The rows were changed from a chart, update data manually. ChataTable will handle
+      // toggling infinite scroll on or off
+      this.tableRef?.updateData(this.tableData, this.isDataLimited())
     }
 
-    this.setState({
-      visibleRows: response.data.data.rows,
-      visibleRowChangeCount: this.state.visibleRowChangeCount + 1,
-    })
-
-    const dataPageSize = pageSize ?? response?.data?.data?.fe_req?.page_size
-    this.props.onPageSizeChange(dataPageSize)
+    this.setState(
+      {
+        visibleRows: response.data.data.rows,
+        visibleRowChangeCount: this.state.visibleRowChangeCount + 1,
+      },
+      () => {
+        const dataPageSize = pageSize ?? response?.data?.data?.fe_req?.page_size
+        this.props.onPageSizeChange(dataPageSize, this.state.visibleRows)
+      },
+    )
   }
 
   onTableFilter = async (filters, rows) => {
@@ -1182,6 +1262,7 @@ export class QueryOutput extends React.Component {
     }
 
     this.tableParams.filter = _cloneDeep(filters)
+    this.formattedTableParams = formatTableParams(this.tableParams, this.getColumns())
 
     const newTableData = []
     rows.forEach((row) => {
@@ -2011,10 +2092,10 @@ export class QueryOutput extends React.Component {
   renderAllColumnsHiddenMessage = () => {
     return (
       <div className='no-columns-error-message' data-test='columns-hidden-message'>
+        <Icon className='warning-icon' type='warning-triangle' />
         <div>
-          <Icon className='warning-icon' type='warning-triangle' />
-          <br /> All columns in this table are currently hidden. You can adjust your column visibility preferences using
-          the Column Visibility Manager (<Icon className='eye-icon' type='eye' />) in the Options Toolbar.
+          All columns in this table are currently hidden. You can adjust your column visibility preferences using the
+          Column Visibility Manager (<Icon className='eye-icon' type='eye' />) in the Options Toolbar.
         </div>
       </div>
     )
@@ -2061,7 +2142,7 @@ export class QueryOutput extends React.Component {
           isAnimating={this.props.isAnimating}
           isResizing={this.props.isResizing}
           pageSize={this.getQueryPageSize()}
-          useInfiniteScroll={this.props.enableAjaxTableData && this.isDataLimited()}
+          useInfiniteScroll={!this.isOriginalData || (this.props.enableAjaxTableData && this.isDataLimited())}
           enableAjaxTableData={this.props.enableAjaxTableData}
           queryRequestData={this.queryResponse?.data?.data?.fe_req}
           queryText={this.queryResponse?.data?.data?.text}
@@ -2155,17 +2236,15 @@ export class QueryOutput extends React.Component {
       <ErrorBoundary>
         <ChataChart
           key={this.chartID}
+          {...tableConfig}
+          data={data}
           hidden={!isChartType(this.state.displayType)}
           formattedTableParams={formattedTableParams}
           authentication={this.props.authentication}
-          queryRequestData={this.queryResponse?.data?.data?.fe_req}
-          pageSize={_get(this.queryResponse, 'data.data.row_limit')}
           ref={(ref) => (this.chartRef = ref)}
           type={this.state.displayType}
           isDataAggregated={isChartDataAggregated}
           popoverParentElement={this.props.popoverParentElement}
-          {...tableConfig}
-          data={data}
           dataChangeCount={usePivotData ? this.state.visiblePivotRowChangeCount : this.state.visibleRowChangeCount}
           columns={usePivotData ? this.pivotTableColumns : this.state.columns}
           isAggregated={usePivotData}
@@ -2194,6 +2273,7 @@ export class QueryOutput extends React.Component {
           source={this.props.source}
           scope={this.props.scope}
           isRowCountSelectable={!this.isOriginalData || isDataLimited}
+          queryFn={this.queryFn}
         />
       </ErrorBoundary>
     )
@@ -2406,8 +2486,8 @@ export class QueryOutput extends React.Component {
     const supportsCharts = this.currentlySupportsCharts()
     const supportsPivotTable = this.currentlySupportsPivot()
 
-    const columns = supportsPivotTable ? this.pivotTableColumns : this.getColumns()
-    const tableConfig = supportsPivotTable ? this.pivotTableConfig : this.tableConfig
+    const columns = this.usePivotDataForChart() ? this.pivotTableColumns : this.getColumns()
+    const tableConfig = this.usePivotDataForChart() ? this.pivotTableConfig : this.tableConfig
     const tableConfigIsValid = this.isTableConfigValid(tableConfig, columns, this.state.displayType)
 
     const shouldRenderChart = (allowsDisplayTypeChange || displayTypeIsChart) && supportsCharts && tableConfigIsValid
@@ -2431,14 +2511,21 @@ export class QueryOutput extends React.Component {
     )
   }
 
+  getFilters = () => {
+    const persistentFilters = this.queryResponse?.data?.data?.fe_req?.persistent_filter_locks ?? []
+    const sessionFilters = this.queryResponse?.data?.data?.fe_req?.session_filter_locks ?? []
+    const lockedFilters = [...persistentFilters, ...sessionFilters] ?? []
+    return lockedFilters
+  }
+
   renderReverseTranslation = () => {
     return (
       <ReverseTranslation
         authentication={this.props.authentication}
         onValueLabelClick={this.props.onRTValueLabelClick}
-        appliedFilters={this.props.appliedFilters}
+        appliedFilters={this.getFilters()}
         isResizing={this.props.isResizing}
-        reverseTranslation={_get(this.queryResponse, 'data.data.parsed_interpretation')}
+        queryResponse={this.queryResponse}
         tooltipID={this.props.tooltipID}
       />
     )

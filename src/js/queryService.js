@@ -149,6 +149,7 @@ export const runQueryOnly = (params = {}) => {
     orders,
     tableFilters,
     pageSize = DEFAULT_DATA_PAGE_SIZE,
+    allowSuggestions = true,
     cancelToken,
     scope = 'null',
   } = params
@@ -204,31 +205,28 @@ export const runQueryOnly = (params = {}) => {
     })
     .catch((error) => {
       if (error?.message === responseErrors.CANCELLED) {
-        return Promise.reject({
-          data: { message: responseErrors.CANCELLED },
-        })
+        return Promise.reject({ data: { message: responseErrors.CANCELLED } })
       }
 
       console.error(error)
+
       if (error?.message === 'Parse error') {
         return Promise.reject({ error: 'Parse error' })
       }
+
       if (error?.response === 401 || !error?.response?.data) {
         return Promise.reject({ error: 'Unauthenticated' })
       }
+
       const referenceId = error?.response?.data?.reference_id
       const isSubquery = tableFilters?.length || orders?.length
-      if (!isSubquery && (referenceId === '1.1.430' || referenceId === '1.1.431' || isError500Type(referenceId))) {
+      const needsSuggestions = referenceId === '1.1.430' || referenceId === '1.1.431' || isError500Type(referenceId)
+
+      if (needsSuggestions && allowSuggestions && !isSubquery) {
         const queryId = error?.response?.data?.data?.query_id
-        return fetchSuggestions({
-          query,
-          queryId,
-          domain,
-          apiKey,
-          token,
-          cancelToken,
-        })
+        return fetchSuggestions({ query, queryId, domain, apiKey, token, cancelToken })
       }
+
       return Promise.reject(_get(error, 'response'))
     })
 }
@@ -257,7 +255,7 @@ export const runQueryValidation = ({ text, domain, apiKey, token } = {}) => {
 }
 
 export const runQuery = (params) => {
-  if (params?.enableQueryValidation && !params?.skipQueryValidation) {
+  if (params?.enableQueryValidation && !params.userSelection?.length && !params?.skipQueryValidation) {
     return runQueryValidation({
       text: params?.query,
       domain: params?.domain,
@@ -455,15 +453,17 @@ export const fetchDataExplorerAutocomplete = ({ suggestion, domain, token, apiKe
 }
 
 export const fetchVLAutocomplete = ({ suggestion, domain, token, apiKey, cancelToken } = {}) => {
-  if (!suggestion || !suggestion.trim()) {
-    return Promise.reject(new Error('No query supplied'))
-  }
-
   if (!domain || !apiKey || !token) {
     return Promise.reject(new Error('Unauthenticated'))
   }
 
-  const url = `${domain}/autoql/api/v1/query/vlautocomplete?text=${encodeURIComponent(suggestion)}&key=${apiKey}`
+  const text = suggestion?.trim()
+
+  if (!text) {
+    return Promise.reject(new Error('No text supplied'))
+  }
+
+  const url = `${domain}/autoql/api/v1/query/vlautocomplete?text=${encodeURIComponent(text)}&key=${apiKey}`
 
   const config = {
     headers: {
@@ -527,7 +527,7 @@ export const setFilters = ({ apiKey, token, domain, filters } = {}) => {
   return axios
     .put(url, data, config)
     .then((response) => Promise.resolve(response))
-    .catch((error) => Promise.reject(_get(error, 'response.data')))
+    .catch((error) => Promise.reject(error?.response?.data))
 }
 
 export const unsetFilterFromAPI = ({ apiKey, token, domain, filter } = {}) => {

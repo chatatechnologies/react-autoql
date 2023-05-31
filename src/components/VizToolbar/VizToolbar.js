@@ -2,13 +2,12 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import _isEqual from 'lodash.isequal'
-
+import { isMobile } from 'react-device-detect'
 import { Icon } from '../Icon'
 import { rebuildTooltips, Tooltip } from '../Tooltip'
-
+import { Button } from '../Button'
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { deepEqual } from '../../js/Util'
 
 import './VizToolbar.scss'
 
@@ -31,7 +30,6 @@ class VizToolbar extends React.Component {
   }
 
   static defaultProps = {
-    onDisplayTypeChange: () => {},
     shouldRender: true,
     disableCharts: false,
     vertical: false,
@@ -42,12 +40,12 @@ class VizToolbar extends React.Component {
     rebuildTooltips()
   }
 
-  shouldComponentUpdate = (nextProps, nextState) => {
+  shouldComponentUpdate = (nextProps) => {
     if (!this.props.shouldRender && !nextProps.shouldRender) {
       return false
     }
 
-    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
+    return true
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -84,15 +82,16 @@ class VizToolbar extends React.Component {
       const selectedDisplayType = this.state.displayType
 
       return (
-        <button
+        <Button
           onClick={() => this.onDisplayTypeChange(displayType)}
           className={`react-autoql-toolbar-btn ${displayType === selectedDisplayType ? 'selected' : ''}`}
-          data-tip={name}
-          data-for={this.props.tooltipID ?? `react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
+          tooltip={name}
+          tooltipID={this.props.tooltipID ?? `react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
           data-test='viz-toolbar-button'
+          disabled={this.props.responseRef?.state?.isLoadingData}
         >
           {icon}
-        </button>
+        </Button>
       )
     }
 
@@ -119,9 +118,9 @@ class VizToolbar extends React.Component {
       return (
         <ErrorBoundary>
           <div
-            className={`${this.props.className || ''} react-autoql-toolbar viz-toolbar ${
-              this.props.vertical ? 'vertical' : ''
-            }`}
+            className={`${this.props.className || ''} ${
+              isMobile ? 'react-autoql-toolbar-mobile' : 'react-autoql-toolbar'
+            } viz-toolbar ${this.props.vertical ? 'vertical' : ''}`}
             data-test='viz-toolbar'
           >
             {this.createVisButton('table', 'Table', <Icon type='table' />)}

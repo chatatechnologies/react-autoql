@@ -19,6 +19,7 @@ import { LoadingDots } from '../LoadingDots'
 
 // Styles
 import './ChatContent.scss'
+import { isMobile } from 'react-device-detect'
 
 export default class ChatContent extends React.Component {
   constructor(props) {
@@ -74,13 +75,16 @@ export default class ChatContent extends React.Component {
     if (this.props.introMessages?.length) {
       this.addIntroMessages(this.props.introMessages)
     }
-    if (this.props.shouldRender) {
+
+    //disable input focus for mobile, as ios keyboard has bug
+    if (this.props.shouldRender && !isMobile) {
       this.focusInput()
     }
   }
 
   componentDidUpdate = (prevProps) => {
-    if (this.props.shouldRender && !prevProps.shouldRender) {
+    //disable input focus for mobile, as ios keyboard has bug
+    if (this.props.shouldRender && !prevProps.shouldRender && !isMobile) {
       this.focusInput()
     }
   }
@@ -98,12 +102,12 @@ export default class ChatContent extends React.Component {
   }
 
   scrollToBottom = () => {
-    this.messengerScrollComponent?.ref?.scrollToBottom()
+    this.messengerScrollComponent?.scrollToBottom()
   }
 
   onCSVDownloadProgress = ({ id, progress }) => {
     this.csvProgressLog[id] = progress
-    if (this.messageRefs[id]) {
+    if (this.messageRefs[id] && this.messageRefs[id]?._isMounted) {
       this.messageRefs[id].setState({
         csvDownloadProgress: progress,
       })
@@ -112,7 +116,9 @@ export default class ChatContent extends React.Component {
 
   clearMessages = () => {
     this.queryInputRef?.cancelQuery()
-    this.setState({ messages: this.getIntroMessages(this.props.introMessages) })
+    if (this._isMounted) {
+      this.setState({ messages: this.getIntroMessages(this.props.introMessages) })
+    }
   }
 
   animateInputTextAndSubmit = (...params) => {
@@ -217,9 +223,11 @@ export default class ChatContent extends React.Component {
       newMessages = newMessages.slice(-this.props.maxMessages)
     }
 
-    this.setState({
-      messages: newMessages,
-    })
+    if (this._isMounted) {
+      this.setState({
+        messages: newMessages,
+      })
+    }
   }
 
   addRequestMessage = (text, queryMessageID) => {
@@ -290,9 +298,13 @@ export default class ChatContent extends React.Component {
       }
 
       clearTimeout(this.responseDelayTimeout)
-      this.setState({ isQueryRunning: false, isInputDisabled: false })
 
-      this.focusInput()
+      if (this._isMounted) {
+        this.setState({ isQueryRunning: false, isInputDisabled: false })
+      }
+
+      //disable input focus for mobile, as ios keyboard has bug
+      !isMobile && this.focusInput()
     }
   }
 
@@ -352,7 +364,10 @@ export default class ChatContent extends React.Component {
           className={`chat-content-scroll-container ${this.props.shouldRender ? '' : 'react-autoql-content-hidden'}`}
           style={{ visibility, opacity }}
         >
-          <CustomScrollbars ref={(r) => (this.messengerScrollComponent = r)}>
+          <CustomScrollbars
+            ref={(r) => (this.messengerScrollComponent = r)}
+            className='chat-content-scrollbars-container'
+          >
             {this.state.messages.map((message) => {
               return (
                 <ChatMessage
@@ -385,7 +400,7 @@ export default class ChatContent extends React.Component {
                   onSuccessAlert={this.props.onSuccessAlert}
                   deleteMessageCallback={this.deleteMessage}
                   createDataAlertCallback={this.props.createDataAlertCallback}
-                  scrollContainerRef={this.messengerScrollComponent?.ref}
+                  scrollContainerRef={this.messengerScrollComponent}
                   isResizing={this.props.isResizing}
                   enableDynamicCharting={this.props.enableDynamicCharting}
                   onNoneOfTheseClick={this.onNoneOfTheseClick}

@@ -1,38 +1,33 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
-import { v4 as uuid } from 'uuid'
 import Drawer from 'rc-drawer'
-import { Popover } from 'react-tiny-popover'
 import _get from 'lodash.get'
-import _has from 'lodash.has'
 import _isEmpty from 'lodash.isempty'
-import _isEqual from 'lodash.isequal'
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { ChatContent } from '../ChatContent'
-import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
-import { withTheme } from '../../theme'
-import { isBrowser, isMobile } from 'react-device-detect'
-
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
-import { autoQLConfigDefault, dataFormattingDefault, getAutoQLConfig } from '../../props/defaults'
-
-import { lang, setLanguage } from '../../js/Localization'
+import { v4 as uuid } from 'uuid'
 
 // Components
 import { Icon } from '../Icon'
-import { Button } from '../Button'
-
 import { ExploreQueries } from '../ExploreQueries'
 import { DataExplorer } from '../DataExplorer'
-import { DataAlertModal } from '../Notifications/DataAlertModal'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
 import { FilterLockPopover } from '../FilterLockPopover'
+import { ConfirmPopover } from '../ConfirmPopover'
+import { ChatContent } from '../ChatContent'
+import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+
+// Utils
+import { withTheme } from '../../theme'
+import { isBrowser, isMobile } from 'react-device-detect'
+import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
+import { autoQLConfigDefault, dataFormattingDefault, getAutoQLConfig } from '../../props/defaults'
+import { lang, setLanguage } from '../../js/Localization'
+import { mergeSources } from '../../js/Util'
 
 // Styles
 import 'rc-drawer/assets/index.css'
 import './DataMessenger.scss'
-import { mergeSources } from '../../js/Util'
 
 export class DataMessenger extends React.Component {
   constructor(props) {
@@ -58,7 +53,7 @@ export class DataMessenger extends React.Component {
           <br />
           <span>Get started by asking a query below, or use </span>
           <span className='intro-qi-link' onClick={this.openDataExplorer}>
-            <Icon type='data-search' style={{ marginRight: '-3px' }} /> {lang.dataExplorer}
+            <Icon type='data-search' /> {lang.dataExplorer}
           </span>
           <span> to discover what data is available to you!</span>
         </>
@@ -167,7 +162,7 @@ export class DataMessenger extends React.Component {
     title: 'Data Messenger',
     maxMessages: 20,
     introMessage: '',
-    enableExploreQueriesTab: true,
+    enableExploreQueriesTab: false,
     enableNotificationsTab: false,
     resizable: true,
     inputPlaceholder: 'Type your queries here',
@@ -294,19 +289,22 @@ export class DataMessenger extends React.Component {
     }, 300)
   }
 
-  openDataMessenger = () => {
+  openDataMessenger = (tab) => {
     if (isMobile) {
       if (this.state.isVisible) {
-        this.setState({ activePage: 'data-messenger' })
+        this.setState({ activePage: tab })
         return
       }
     }
-    const handle = document.getElementById(`${this.COMPONENT_KEY}-drawer-handle`)
-    if (handle) {
-      if (isMobile && this.props.mobileActivePage === 'data-messenger') {
-        this.setState({ activePage: 'data-messenger' })
-      }
-      handle.click()
+
+    if (tab) {
+      this.setState({ activePage: tab })
+    } else if (isMobile && this.props.mobileActivePage === 'data-messenger') {
+      this.setState({ activePage: 'data-messenger' })
+    }
+
+    if (!this.isOpen()) {
+      this.dmRef.setState({ open: true })
     }
   }
 
@@ -365,7 +363,7 @@ export class DataMessenger extends React.Component {
     } else if (this.props.showHandle) {
       return (
         <div
-          id={`${this.COMPONENT_KEY}-drawer-handle`}
+          ref={(r) => (this.drawerHandle = r)}
           className={`drawer-handle
             ${this.state.isVisible ? ' hide' : ''}
             ${this.props.handleImage ? '' : ' default-logo'}`}
@@ -557,57 +555,22 @@ export class DataMessenger extends React.Component {
         {isBrowser
           ? getAutoQLConfig(this.props.autoQLConfig).enableFilterLocking && this.renderFilterLockPopover()
           : null}
-        <Popover
-          isOpen={this.state.isOptionsDropdownOpen}
-          onClickOutside={() => {
-            this.setState({ isOptionsDropdownOpen: false })
-          }}
-          parentElement={this.messengerDrawerRef}
-          boundaryElement={this.messengerDrawerRef}
+        <ConfirmPopover
+          className={`react-autoql-drawer-header-btn clear-all ${
+            this.state.activePage === 'data-messenger' || this.state.activePage === 'dpr' ? 'visible' : 'hidden'
+          }`}
+          popoverParentElement={this.messengerDrawerRef}
+          title={lang.clearDataResponses}
+          onConfirm={this.clearMessages}
+          confirmText='Clear'
+          backText='Cancel'
           positions={['bottom', 'left', 'top', 'right']}
-          content={
-            <div>
-              <div className='clear-messages-confirm-popover'>
-                <div className='react-autoql-menu-text' onClick={this.handleClearQueriesDropdown}>
-                  <Icon type='trash' />
-                  <span style={{ marginLeft: 5 }}>{lang.clearDataResponses}</span>
-                </div>
-                <div
-                  ref={(r) => (this.clearQueriesDropdown = r)}
-                  id='clear-queries-dropdown'
-                  style={{ display: 'none' }}
-                >
-                  <Button
-                    type='default'
-                    size='small'
-                    onClick={() => this.setState({ isOptionsDropdownOpen: false })}
-                    tooltipID={this.TOOLTIP_ID}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type='primary' size='small' onClick={() => this.clearMessages()} tooltipID={this.TOOLTIP_ID}>
-                    Clear
-                  </Button>
-                </div>
-              </div>
-            </div>
-          }
+          align='end'
         >
-          <button
-            onClick={() =>
-              this.setState({
-                isOptionsDropdownOpen: !this.state.isOptionsDropdownOpen,
-              })
-            }
-            className={`react-autoql-drawer-header-btn clear-all ${
-              this.state.activePage === 'data-messenger' || this.state.activePage === 'dpr' ? 'visible' : 'hidden'
-            }`}
-            data-tip={lang.clearDataResponses}
-            data-for={this.TOOLTIP_ID}
-          >
+          <button data-tip={lang.clearQueriesTooltip} data-for={this.TOOLTIP_ID}>
             <Icon type='trash' />
           </button>
-        </Popover>
+        </ConfirmPopover>
       </>
     )
   }
@@ -680,6 +643,7 @@ export class DataMessenger extends React.Component {
         onClose={this.closeFilterLockMenu}
         parentElement={this.messengerDrawerRef}
         boundaryElement={this.messengerDrawerRef}
+        tooltipID={this.TOOLTIP_ID}
         positions={['bottom', 'left', 'top', 'right']}
         align='center'
       >
@@ -710,7 +674,7 @@ export class DataMessenger extends React.Component {
             <>
               <button
                 onClick={this.closeDataMessenger}
-                className='react-autoql-drawer-header-btn close'
+                className='react-autoql-drawer-header-btn'
                 data-tip={lang.closeDataMessenger}
                 data-for={this.TOOLTIP_ID}
               >
@@ -901,13 +865,13 @@ export class DataMessenger extends React.Component {
           authentication={this.props.authentication}
           onExpandCallback={this.props.onNotificationExpandCallback}
           onCollapseCallback={this.props.onNotificationCollapseCallback}
-          activeNotificationData={this.props.activeNotificationData}
           onErrorCallback={this.props.onErrorCallback}
-          onSuccessCallback={this.props.onSuccessCallback}
-          onDataAlertModalOpen={this.onDataAlertModalOpen}
-          onDataAlertModalClose={this.onDataAlertModalClose}
-          showNotificationDetails={false}
+          onSuccessCallback={this.props.onSuccessAlert}
+          onModalOpen={this.onDataAlertModalOpen}
+          onModalClose={this.onDataAlertModalClose}
           shouldRender={this.isOpen() && this.state.activePage === 'notifications'}
+          tooltipID={this.TOOLTIP_ID}
+          isResizing={this.state.isResizing || this.state.isWindowResizing}
         />
       </ErrorBoundary>
     )
@@ -1039,20 +1003,6 @@ export class DataMessenger extends React.Component {
     )
   }
 
-  renderDataAlertModal = () => {
-    return (
-      <DataAlertModal
-        authentication={this.props.authentication}
-        isVisible={this.state.isDataAlertModalVisible}
-        onClose={this.onClose}
-        onSave={this.onSave}
-        onErrorCallback={this.onError}
-        initialQuery={this.state.activeQuery}
-        tooltipID={this.TOOLTIP_ID}
-      />
-    )
-  }
-
   render = () => {
     if (this.state.hasError) {
       return null
@@ -1090,7 +1040,6 @@ export class DataMessenger extends React.Component {
             {this.renderBodyContent()}
           </div>
         </Drawer>
-        {this.renderDataAlertModal()}
         {this.renderTooltips()}
       </ErrorBoundary>
     )
