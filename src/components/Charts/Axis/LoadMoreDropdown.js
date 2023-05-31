@@ -118,7 +118,7 @@ export default class LoadMoreDropdown extends Component {
           <tspan ref={(r) => (this.currentRowNumber = r)} style={style} id={`row-number-span-${this.COMPONENT_ID}`}>
             {this.state.currentRowNumber}
           </tspan>
-          {` / ${this.props.totalRowCount} rows`}
+          <tspan>{` / ${this.props.totalRowCount} rows`}</tspan>
         </tspan>
       </text>
     )

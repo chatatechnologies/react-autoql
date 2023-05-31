@@ -1024,6 +1024,13 @@ export const mergeBboxes = (boundingBoxes) => {
         return
       }
 
+      const width = right - left
+      const height = bottom - top
+
+      if (width <= 0 && height <= 0) {
+        return
+      }
+
       if (minLeft === undefined || left < minLeft) minLeft = left
       if (maxBottom === undefined || bottom > maxBottom) maxBottom = bottom
       if (maxRight === undefined || right > maxRight) maxRight = right

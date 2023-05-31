@@ -14,6 +14,7 @@ import { formatChartLabel, getBBoxFromRef } from '../../../js/Util.js'
 import { axesDefaultProps, axesPropTypes, mergeBboxes, shouldLabelsRotate } from '../helpers.js'
 
 import './Axis.scss'
+import { isMobile } from 'react-device-detect'
 
 export default class Axis extends Component {
   constructor(props) {
@@ -32,7 +33,7 @@ export default class Axis extends Component {
     this.swatchElements = []
     this.maxRows = 5000
     this.initialRowNumber = 50
-    this.fontSize = 13
+    this.fontSize = isMobile ? 10 : 13
     this.labelInlineStyles = {
       fontSize: `${this.fontSize}px`,
       fontFamily: 'inherit',
@@ -437,6 +438,7 @@ export default class Axis extends Component {
           hasSecondAxis={this.props.hasSecondAxis}
           shape={this.props.legendShape}
           orientation={legendOrientation}
+          fontSize={this.fontSize}
         />
       </g>
     )

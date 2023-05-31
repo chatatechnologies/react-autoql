@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.clonedeep'
 import { v4 as uuid } from 'uuid'
+import { isMobile } from 'react-device-detect'
 
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
@@ -21,12 +22,14 @@ export default class Legend extends Component {
     this.legendLabels1 = []
     this.legendLabels2 = []
 
-    this.MAX_LEGEND_HEIGHT = 300
     this.LEGEND_ID = `axis-${uuid()}`
-    this.BORDER_PADDING = 15
-    this.HORIZONTAL_LEGEND_SPACING = 20
-    this.VERTICAL_LEGEND_SPACING = 25
-    this.TOP_ADJUSTMENT = 15
+    this.BORDER_PADDING = isMobile ? 10 : 15
+    this.BORDER_THICKNESS = 1
+    this.HORIZONTAL_LEGEND_SPACING = isMobile ? 15 : 20
+    this.VERTICAL_LEGEND_SPACING = isMobile ? 15 : 25
+    this.SHAPE_SIZE = isMobile ? 50 : 100
+    this.TOP_ADJUSTMENT = isMobile ? 12 : 15
+    this.DEFAULT_MAX_WIDTH = isMobile ? 100 : 140
 
     this.justMounted = true
   }
@@ -58,6 +61,7 @@ export default class Legend extends Component {
     paddingRight: 10,
     paddingTop: 10,
     paddingBottom: 10,
+    fontSize: 12,
     onLabelChange: () => {},
     onLegendClick: () => {},
     onRenderComplete: () => {},
@@ -91,11 +95,11 @@ export default class Legend extends Component {
   }
 
   getTotalLeftPadding = () => {
-    return this.props.paddingLeft + this.BORDER_PADDING
+    return this.props.paddingLeft + this.BORDER_PADDING + this.BORDER_THICKNESS
   }
 
   getTotalRightPadding = () => {
-    return this.props.paddingRight + this.BORDER_PADDING
+    return this.props.paddingRight + this.BORDER_PADDING + this.BORDER_THICKNESS
   }
 
   getTotalHorizontalPadding = () => {
@@ -103,11 +107,11 @@ export default class Legend extends Component {
   }
 
   getTotalBottomPadding = () => {
-    return this.props.paddingBottom + this.BORDER_PADDING
+    return this.props.paddingBottom + this.BORDER_PADDING + this.BORDER_THICKNESS
   }
 
   getTotalTopPadding = () => {
-    return this.props.paddingTop + this.BORDER_PADDING
+    return this.props.paddingTop + this.BORDER_PADDING + this.BORDER_THICKNESS
   }
 
   getTotalVerticalPadding = () => {
@@ -119,15 +123,13 @@ export default class Legend extends Component {
       return this.props.height - this.getTotalVerticalPadding()
     }
 
-    return Math.floor(0.5 * this.props.outerHeight)
+    return Math.floor(0.5 * this.props.outerHeight) - Math.ceil(2 * this.BORDER_PADDING)
   }
 
   getMaxSectionWidth = () => {
-    const defaultMaxWidth = 140
-
-    let maxWidth = defaultMaxWidth
+    let maxWidth = this.DEFAULT_MAX_WIDTH
     if (this.props.orientation === 'horizontal') {
-      const minSections = this.props.hasSecondAxis ? 2 : 1
+      const minSections = 2
       const totalHorizontalPadding = this.getTotalHorizontalPadding()
       const spacingBetweenSections = (minSections - 1) * this.HORIZONTAL_LEGEND_SPACING
       const totalChartPadding = this.props.chartPadding * 2
@@ -135,7 +137,9 @@ export default class Legend extends Component {
         this.props.outerWidth - totalHorizontalPadding - spacingBetweenSections - totalChartPadding
       const minWidth = Math.floor(totalAvailableWidth / minSections)
 
-      if (minWidth < defaultMaxWidth) maxWidth = minWidth
+      if (minWidth < this.DEFAULT_MAX_WIDTH) {
+        maxWidth = minWidth
+      }
     }
 
     return maxWidth
@@ -262,7 +266,7 @@ export default class Legend extends Component {
         .attr('transform', removedElementTransform)
         .attr('data-tip', 'Some legend fields are hidden. Please expand the chart size to view them.')
         .attr('data-for', tooltipID)
-        .style('font-size', '12px')
+        .style('font-size', `${this.props.fontSize - 5}px`)
         .style('color', 'red')
         .style('font-weight', 'bold')
         .style('cursor', 'default')
@@ -364,7 +368,7 @@ export default class Legend extends Component {
 
       var legendOrdinal = legendColor()
         .orient('vertical')
-        .path(symbol().type(symbolSquare).size(100)())
+        .path(symbol().type(symbolSquare).size(this.SHAPE_SIZE)())
         .shapePadding(8)
         .labelWrap(maxSectionWidth - 20)
         .labelOffset(10)
@@ -387,7 +391,7 @@ export default class Legend extends Component {
         .style('fill', 'currentColor')
         .style('fill-opacity', '1')
         .style('font-family', 'inherit')
-        .style('font-size', '12px')
+        .style('font-size', `${this.props.fontSize}px`)
 
       if (sectionIndex > 0) {
         const previousLegendSectionsBBox = mergeBboxes(
@@ -406,6 +410,7 @@ export default class Legend extends Component {
       this.applyTitleStyles(title, isFirstSection, legendElement)
 
       const mergedBBox = mergeBboxes(this.legendElements.map((el) => el?.getBoundingClientRect()))
+
       this.combinedLegendWidth = !isNaN(mergedBBox?.width) ? mergedBBox?.width : 0
       this.combinedLegendHeight = !isNaN(mergedBBox?.height) ? mergedBBox?.height : 0
 
@@ -486,14 +491,18 @@ export default class Legend extends Component {
       const maxSectionWidth = this.getMaxSectionWidth()
       const totalHorizontalPadding = this.getTotalHorizontalPadding()
       const totalPossibleWidth = this.props.outerWidth - totalHorizontalPadding
-      const widthPerSection = maxSectionWidth + this.HORIZONTAL_LEGEND_SPACING
 
-      this.totalPossibleSections = Math.floor(totalPossibleWidth / widthPerSection) ?? 0
+      const availableWidth =
+        totalPossibleWidth - this.HORIZONTAL_LEGEND_SPACING * (Math.ceil(totalPossibleWidth / maxSectionWidth) - 1)
+
+      const totalPossibleSections = Math.floor(availableWidth / maxSectionWidth)
+
+      this.totalPossibleSections = totalPossibleSections >= 2 ? totalPossibleSections : 2
+    } else if (this.props.hasSecondAxis) {
+      this.totalPossibleSections = 2
     }
 
-    if (!this.totalPossibleSections && this.props.hasSecondAxis) {
-      this.totalPossibleSections = 2
-    } else if (!this.totalPossibleSections) {
+    if (!this.totalPossibleSections) {
       this.totalPossibleSections = 1
     }
 
@@ -518,7 +527,9 @@ export default class Legend extends Component {
         width={0}
         height={0}
         rx={2}
-        transform={`translate(${-this.BORDER_PADDING},${-this.BORDER_PADDING - this.TOP_ADJUSTMENT})`}
+        transform={`translate(${-this.BORDER_PADDING - this.BORDER_THICKNESS},${
+          -this.BORDER_PADDING - this.TOP_ADJUSTMENT - this.BORDER_THICKNESS
+        })`}
         style={{
           stroke: 'var(--react-autoql-border-color)',
           fill: 'transparent',
