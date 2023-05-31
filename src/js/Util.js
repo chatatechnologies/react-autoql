@@ -523,7 +523,7 @@ export const formatElement = ({ element, column, config = {}, htmlElement, isCha
           break
         }
         case 'QUANTITY': {
-          const validatedQuantityDecimals = isNaN(quantityDecimals) ? quantityDecimals : 2
+          const validatedQuantityDecimals = !isNaN(quantityDecimals) ? quantityDecimals : 2
 
           if (!isNaN(parseFloat(element))) {
             const numDecimals = parseFloat(element) % 1 !== 0 ? validatedQuantityDecimals : 0
@@ -545,7 +545,7 @@ export const formatElement = ({ element, column, config = {}, htmlElement, isCha
           break
         }
         case 'RATIO': {
-          const numDecimals = isNaN(ratioDecimals) ? ratioDecimals : 2
+          const numDecimals = !isNaN(ratioDecimals) ? ratioDecimals : 4
 
           if (!isNaN(parseFloat(element))) {
             formattedElement = new Intl.NumberFormat(languageCode, {
