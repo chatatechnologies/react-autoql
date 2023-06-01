@@ -31,6 +31,7 @@ class NotificationFeed extends React.Component {
     this.COMPONENT_KEY = uuid()
     this.MODAL_COMPONENT_KEY = uuid()
     this.NOTIFICATION_FETCH_LIMIT = 10
+    this.TOOLTIP_ID = 'react-autoql-notification-tooltip'
     // Open event source http connection here to receive SSE
     // notificationEventSource = new EventSource(
     //   'https://backend.chata.io/notifications'
@@ -64,6 +65,7 @@ class NotificationFeed extends React.Component {
     onModalOpen: PropTypes.func,
     shouldRender: PropTypes.bool,
     onDataAlertChange: PropTypes.func,
+    tooltipID: PropTypes.string,
   }
 
   static defaultProps = {
@@ -74,6 +76,7 @@ class NotificationFeed extends React.Component {
     showCreateAlertBtn: false,
     enableAjaxTableData: false,
     shouldRender: true,
+    tooltipID: this.TOOLTIP_ID,
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
     onErrorCallback: () => {},
@@ -488,14 +491,8 @@ class NotificationFeed extends React.Component {
           className='react-autoql-notification-list-container'
           data-test='notification-list'
         >
-          {!this.props.tooltipID && (
-            <Tooltip
-              className='react-autoql-tooltip'
-              id='react-autoql-notification-tooltip'
-              effect='solid'
-              delayShow={500}
-              html
-            />
+          {this.props.tooltipID !== this.TOOLTIP_ID && (
+            <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' delayShow={500} html />
           )}
           {this.state.notificationList?.length ? (
             <Fragment>
@@ -550,6 +547,7 @@ class NotificationFeed extends React.Component {
                         enableAjaxTableData={this.props.enableAjaxTableData}
                         isResizing={this.props.isResizing}
                         updateScrollbars={this.updateScrollbars}
+                        tooltipID={this.props.tooltipID}
                       />
                     )
                   })}
