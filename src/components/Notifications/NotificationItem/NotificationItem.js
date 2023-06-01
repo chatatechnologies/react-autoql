@@ -299,6 +299,7 @@ export default class NotificationItem extends React.Component {
         <Popover
           align='start'
           positions={['left', 'bottom', 'top', 'right']}
+          containerClassName='react-autoql-notification-options-popover'
           content={this.moreOptionsMenu()}
           isOpen={this.state.isMoreOptionsMenuOpen}
           onClickOutside={() => this.setState({ isMoreOptionsMenuOpen: false })}
