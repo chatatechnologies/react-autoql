@@ -5,7 +5,9 @@
 .react-autoql-select-with-arrow > div {
   border-color: var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
   background: var(--react-autoql-background-color-secondary, white);
-  transition: all 0.2s ease;
+  transition-property: color, border-color, background-color, opacity;
+  transition-duration: 0.3s;
+  transition-timing-function: ease;
   cursor: pointer !important;
 
   &:hover {

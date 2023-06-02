@@ -97,7 +97,9 @@
     }
 
     .query-more-btn {
-      transition: all 0.3s ease;
+      transition-property: color, border-color, background-color, opacity;
+      transition-duration: 0.3s;
+      transition-timing-function: ease;
       font-size: 22px;
       padding: 13px;
       margin-bottom: 6px;

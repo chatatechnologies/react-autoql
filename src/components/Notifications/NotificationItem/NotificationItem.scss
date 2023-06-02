@@ -408,6 +408,10 @@
   }
 }
 
+.react-autoql-notification-options-popover .popover-container-content {
+  padding: 0;
+}
+
 // Set delay per List Item
 @for $i from 1 through 10 {
   .react-autoql-notification-list-item:nth-of-type(#{$i}) {
