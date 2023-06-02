@@ -1280,6 +1280,11 @@ export class QueryOutput extends React.Component {
   }
 
   onLegendClick = (d) => {
+    if (!d) {
+      console.debug('no legend item was provided on click event')
+      return
+    }
+
     const columnIndex = d?.columnIndex
     const usePivotData = this.usePivotDataForChart()
     const newColumns = usePivotData ? _cloneDeep(this.pivotTableColumns) : _cloneDeep(this.state.columns)

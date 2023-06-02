@@ -24,6 +24,7 @@ export const chartContainerPropTypes = {
   numberColumnIndex: PropTypes.number.isRequired,
   legendColumnIndex: PropTypes.number,
   enableDynamicCharting: PropTypes.bool,
+  legendLocation: PropTypes.string,
   isResizing: PropTypes.bool,
   onLegendClick: PropTypes.func,
   onLabelChange: PropTypes.func,
@@ -62,8 +63,6 @@ export const axesPropTypes = {
   ...chartPropTypes,
   xScale: PropTypes.func.isRequired,
   yScale: PropTypes.func.isRequired,
-  hasRightLegend: PropTypes.bool,
-  hasBottomLegend: PropTypes.bool,
   innerHeight: PropTypes.number,
   innerWidth: PropTypes.number,
   onLabelRotation: PropTypes.func,
@@ -71,8 +70,6 @@ export const axesPropTypes = {
 
 export const axesDefaultProps = {
   ...chartDefaultProps,
-  hasRightLegend: false,
-  hasBottomLegend: false,
   innerHeight: 0,
   innerWidth: 0,
   onLabelRotation: () => {},
@@ -422,12 +419,13 @@ export const getMinAndMaxValues = (data, numberColumnIndices, isScaled, sum, str
   }
 }
 
-export const getLegendLocation = (seriesArray, displayType) => {
-  if (isMobile) {
-    return 'bottom'
-  }
+export const getLegendLocation = (seriesArray, displayType, preferredLocation = 'right') => {
+  const bottom = 'bottom'
+
+  const legendLocation = isMobile ? bottom : preferredLocation
+
   if (displayType === 'column_line') {
-    return 'right'
+    return bottom
   }
 
   if (seriesArray?.length < 2) {
@@ -437,13 +435,11 @@ export const getLegendLocation = (seriesArray, displayType) => {
   if (displayType === 'pie' || displayType === 'heatmap' || displayType === 'bubble') {
     return undefined
   } else if (displayType === 'stacked_column' || displayType === 'stacked_bar' || displayType === 'stacked_line') {
-    return 'right'
+    return legendLocation
   } else if (seriesArray?.length > 2) {
-    return 'right'
+    return legendLocation
   } else if (seriesArray?.length > 1) {
-    return 'right'
-    // Todo: the margins are not working correctly, disable this for now
-    // return 'bottom'
+    return legendLocation
   }
 
   return undefined
@@ -1025,6 +1021,13 @@ export const mergeBboxes = (boundingBoxes) => {
 
     filteredBBoxes.forEach(({ left, bottom, right, top } = {}) => {
       if (isNaN(left) || isNaN(bottom) || isNaN(right) || isNaN(top)) {
+        return
+      }
+
+      const width = right - left
+      const height = bottom - top
+
+      if (width <= 0 && height <= 0) {
         return
       }
 

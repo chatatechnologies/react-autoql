@@ -65,8 +65,6 @@ export default class ChataStackedBarChart extends Component {
           xCol2={xCol2}
           yCol={this.props.columns[this.props.stringColumnIndex]}
           linearAxis='x'
-          hasRightLegend={this.props.legendLocation === 'right'}
-          hasBottomLegend={this.props.legendLocation === 'bottom'}
         />
       </g>
     )
