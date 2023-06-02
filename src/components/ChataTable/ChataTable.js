@@ -213,6 +213,7 @@ export default class ChataTable extends React.Component {
     if (this.props.columns && !deepEqual(this.props.columns, prevProps.columns)) {
       this.ref?.tabulator?.setColumns(this.getFilteredTabulatorColumnDefinitions())
       this.setHeaderInputEventListeners()
+      this.setFilters()
     }
 
     if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
