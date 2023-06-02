@@ -204,7 +204,7 @@ class NotificationFeed extends React.Component {
 
   getNewNotifications = () => {
     const limit =
-      (this.state.notificationList?.length ?? this.NOTIFICATION_FETCH_LIMIT) + (this.state.unFetchedNotifications ?? 0)
+      (this.state.notificationList?.length || this.NOTIFICATION_FETCH_LIMIT) + (this.state.unFetchedNotifications ?? 0)
 
     fetchNotificationFeed({
       ...getAuthentication(this.props.authentication),
