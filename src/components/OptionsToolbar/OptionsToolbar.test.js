@@ -124,20 +124,10 @@ describe('filter button', () => {
   })
   test('does not render for pivot table', async () => {
     const { wrapper, queryOutputComponent } = setup(undefined, {
-      initialDisplayType: 'pivot-table',
+      initialDisplayType: 'pivot_table',
       queryResponse: responseTestCases[7],
     })
 
-    const filterBtn = findByTestAttr(wrapper, 'react-autoql-filter-button')
-    expect(filterBtn.exists()).toBe(false)
-    queryOutputComponent.unmount()
-  })
-  test('does not render for chart', () => {
-    const { wrapper, queryOutputComponent } = setup(undefined, {
-      initialDisplayType: 'column',
-      queryResponse: responseTestCases[7],
-    })
-    queryOutputComponent.update()
     const filterBtn = findByTestAttr(wrapper, 'react-autoql-filter-button')
     expect(filterBtn.exists()).toBe(false)
     queryOutputComponent.unmount()

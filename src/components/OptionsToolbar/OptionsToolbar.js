@@ -635,7 +635,6 @@ export class OptionsToolbar extends React.Component {
       const columns = props.responseRef?.getColumns()
       const isTable = isTableType(displayType)
       const isChart = isChartType(displayType)
-      const isPivotTable = displayType === 'pivot_table'
       const response = props.responseRef?.queryResponse
       const isDataResponse = response?.data?.data?.display_type === 'data'
       const allColumnsHidden = areAllColumnsHidden(columns)
@@ -647,7 +646,8 @@ export class OptionsToolbar extends React.Component {
       const autoQLConfig = getAutoQLConfig(props.autoQLConfig)
 
       shouldShowButton = {
-        showFilterButton: !isPivotTable && !allColumnsHidden && hasMoreThanOneRow, // isTable &&
+        showFilterButton:
+          (displayType === 'table' || isChartType(displayType)) && !allColumnsHidden && hasMoreThanOneRow,
         showCopyButton: isTable && !allColumnsHidden,
         showSaveAsPNGButton: isChart,
         showHideColumnsButton:
