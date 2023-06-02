@@ -44,7 +44,8 @@ class NotificationFeed extends React.Component {
       isDataAlertsManagerOpen: false,
       unFetchedNotifications: 0,
       notificationList: [],
-      isLoading: false,
+      isFetching: false,
+      isDeleting: false,
       pagination: {},
     }
   }
@@ -110,7 +111,7 @@ class NotificationFeed extends React.Component {
     }
 
     if (prevState.notificationList?.length !== this.state.notificationList?.length) {
-      this.infiniteScroll?.updateScrollbars(1000)
+      this.updateScrollbars(1000)
     }
   }
 
@@ -132,7 +133,12 @@ class NotificationFeed extends React.Component {
   }
 
   getNotifications = () => {
-    if (!this.props.shouldRender || this.state.isLoading || this.state.unFetchedNotifications) {
+    if (
+      !this.props.shouldRender ||
+      this.state.isFetching ||
+      this.state.isDeleting ||
+      this.state.unFetchedNotifications
+    ) {
       return
     }
 
@@ -143,7 +149,7 @@ class NotificationFeed extends React.Component {
       return
     }
 
-    this.setState({ isLoading: true })
+    this.setState({ isFetching: true })
     return fetchNotificationFeed({
       ...getAuthentication(this.props.authentication),
       limit: this.NOTIFICATION_FETCH_LIMIT,
@@ -154,7 +160,7 @@ class NotificationFeed extends React.Component {
           this.setState({
             isFetchingFirstNotifications: false,
             fetchNotificationsError: null,
-            isLoading: false,
+            isFetching: false,
           })
           return
         }
@@ -173,7 +179,7 @@ class NotificationFeed extends React.Component {
           isFetchingFirstNotifications: false,
           fetchNotificationsError: null,
           unFetchedNotifications,
-          isLoading: false,
+          isFetching: false,
         }
 
         if (newList?.length && this._isMounted) {
@@ -190,7 +196,7 @@ class NotificationFeed extends React.Component {
           this.setState({
             isFetchingFirstNotifications: false,
             fetchNotificationsError: error,
-            isLoading: false,
+            isFetching: false,
           })
         }
       })
@@ -307,22 +313,27 @@ class NotificationFeed extends React.Component {
 
   onDeleteClick = (notification) => {
     const newList = this.state.notificationList.filter((n) => n.id !== notification.id)
-    let pagination = this.state.pagination
+    let pagination = this.state.pagination ?? {}
     if (pagination) {
       pagination = {
-        ...this.state.pagination,
+        ...pagination,
         total_items: pagination.total_items > 0 ? pagination.total_items - 1 : 0,
       }
     }
 
     this.setState({
-      notificationList: newList, // pagination,
-      isLoading: true,
+      notificationList: newList,
+      pagination,
+      isDeleting: true,
     })
   }
 
   onDeleteEnd = () => {
-    this.setState({ isLoading: false })
+    this.setState({ isDeleting: false }, () => {
+      if (this.hasMoreNotifications() && this.state.notificationList?.length < this.NOTIFICATION_FETCH_LIMIT) {
+        this.getNotifications()
+      }
+    })
   }
 
   onDataAlertSave = () => {
@@ -451,12 +462,12 @@ class NotificationFeed extends React.Component {
     })
   }
 
-  updateScrollbars = (duration) => {
-    this.infiniteScroll?.updateScrollbars(duration)
+  updateScrollbars = (delay = 0) => {
+    setTimeout(this.infiniteScroll?.updateScrollbars, delay)
   }
 
   hasMoreNotifications = () => {
-    return !this.state.isLoading && this.state.pagination?.total_items > this.state.notificationList?.length
+    return !this.state.isFetching && this.state.pagination?.total_items > this.state.notificationList?.length
   }
 
   render = () => {
@@ -551,7 +562,7 @@ class NotificationFeed extends React.Component {
                       />
                     )
                   })}
-                  {this.state.isLoading && (
+                  {this.state.isFetching && (
                     <div className='react-autoql-spinner-centered'>
                       <Spinner />
                     </div>
