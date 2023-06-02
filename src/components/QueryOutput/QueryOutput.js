@@ -1105,6 +1105,10 @@ export class QueryOutput extends React.Component {
 
     let groupBys = {}
     if (this.pivotTableColumns && this.state.displayType === 'pivot_table') {
+      if (!cell?.getValue?.()) {
+        return
+      }
+
       if (this.potentiallySupportsDatePivot()) {
         // Date pivot table
         const dateColumnIndex = getDateColumnIndex(columns)
@@ -1682,7 +1686,10 @@ export class QueryOutput extends React.Component {
         newCol.hozAlign = 'center'
       }
 
-      newCol.cssClass = `${newCol.type} ${drilldownGroupby ? 'DRILLDOWN' : null}`
+      newCol.cssClass = `${newCol.type}`
+      if (drilldownGroupby) {
+        newCol.cssClass = `${newCol.cssClass} DRILLDOWN`
+      }
 
       // Cell formattingg
       newCol.formatter = (cell, formatterParams, onRendered) => {
