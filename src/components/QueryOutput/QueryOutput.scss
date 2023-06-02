@@ -336,8 +336,12 @@
     color: var(--react-autoql-text-color-primary);
     background-color: var(--react-autoql-background-color-primary);
     border-radius: 5px;
-    padding: 5px 13px 5px 13px;
     height: 100%;
+
+    .react-autoql-icon-info {
+      vertical-align: text-bottom;
+      padding-bottom: 1.5px;
+    }
   }
 }
 

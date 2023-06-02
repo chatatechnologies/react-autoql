@@ -160,6 +160,7 @@
       text-overflow: ellipsis;
       visibility: visible;
       opacity: 1;
+      height: 25px;
 
       &:focus {
         border: 1px solid var(--react-autoql-accent-color);
@@ -243,6 +244,8 @@
       }
 
       .tabulator-cell {
+        line-height: 1.5em;
+
         &:not(:first-child) {
           border-left: 1px solid !important;
           border-color: var(--react-autoql-table-border-color) !important;
