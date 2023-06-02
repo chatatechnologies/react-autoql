@@ -221,7 +221,9 @@
       .react-autoql-notification-action-btn {
         display: flex;
         font-size: 18px;
-        transition: all 0.2s ease;
+        transition-property: color, border-color, background-color, opacity;
+        transition-duration: 0.3s;
+        transition-timing-function: ease;
         padding: 0 10px;
         color: var(--react-autoql-text-color-primary);
         cursor: pointer;
