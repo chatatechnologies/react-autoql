@@ -217,22 +217,12 @@ export default class ChataTable extends React.Component {
     }
 
     if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
-      this.setFilterTags()
       this.setHeaderInputEventListeners()
       if (!this.props.hidden) {
         this.setTableHeight()
       }
 
       this.hasSetInitialParams = true
-    }
-
-    if (!this.state.isFiltering && prevState.isFiltering) {
-      try {
-        this.setFilterTags()
-      } catch (error) {
-        console.error(error)
-        this.props.onErrorCallback(error)
-      }
     }
   }
 
@@ -243,7 +233,6 @@ export default class ChataTable extends React.Component {
       clearTimeout(this.setDimensionsTimeout)
       clearTimeout(this.setStateTimeout)
       this.cancelCurrentRequest()
-      this.resetFilterTags()
       this.existingFilterTag = undefined
       this.filterTagElements = undefined
     } catch (error) {
@@ -315,6 +304,8 @@ export default class ChataTable extends React.Component {
   }
 
   onDataFiltered = (filters, rows) => {
+    this.setFilterBadgeClasses()
+
     if (this.isFiltering && this.state.tabulatorMounted) {
       this.isFiltering = false
 
@@ -650,48 +641,19 @@ export default class ChataTable extends React.Component {
     })
   }
 
-  resetFilterTags = () => {
-    const filterTagElements = this.tableContainer?.querySelectorAll(
-      `#react-autoql-table-container-${this.TABLE_ID} .filter-tag`,
-    )
+  setFilterBadgeClasses = () => {
+    if (this._isMounted && this.state.tabulatorMounted) {
+      this.ref?.tabulator?.getColumns()?.forEach((column) => {
+        const isFiltering = !!this.tableParams?.filter?.find((filter) => filter.field === column.getField())
+        const columnElement = column?.getElement()
 
-    if (filterTagElements?.length) {
-      filterTagElements.forEach((filterTag) => {
-        try {
-          if (filterTag.parentNode && this._isMounted) {
-            filterTag.parentNode.removeChild(filterTag)
-          }
-        } catch (error) {}
-      })
-    }
-
-    return
-  }
-
-  setFilterTags = () => {
-    this.resetFilterTags()
-
-    const filterValues = this.tableParams?.filter
-
-    if (filterValues) {
-      filterValues.forEach((filter, i) => {
-        try {
-          const filterTagEl = document.createElement('span')
-          filterTagEl.innerText = 'F'
-          filterTagEl.setAttribute('class', 'filter-tag')
-
-          const columnTitleEl = document.querySelector(
-            `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-title`,
-          )
-          columnTitleEl.insertBefore(filterTagEl, columnTitleEl.firstChild)
-        } catch (error) {
-          console.error(error)
-          this.props.onErrorCallback(error)
+        if (isFiltering) {
+          columnElement?.classList.add('is-filtered')
+        } else {
+          columnElement?.classList.remove('is-filtered')
         }
       })
     }
-
-    return
   }
 
   setFilters = () => {
@@ -787,8 +749,11 @@ export default class ChataTable extends React.Component {
     this.settingSorters = false
   }
 
-  toggleIsFiltering = () => {
-    const isFiltering = !this.state.isFiltering
+  toggleIsFiltering = (filterOn) => {
+    let isFiltering = !this.state.isFiltering
+    if (typeof filterOn === 'boolean') {
+      isFiltering = filterOn
+    }
 
     if (this._isMounted) {
       this.setState({ isFiltering })

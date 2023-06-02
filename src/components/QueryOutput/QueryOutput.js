@@ -423,9 +423,13 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  changeDisplayType = (displayType) => {
+  changeDisplayType = (displayType, callback) => {
     this.checkAndUpdateTableConfigs(displayType)
-    this.setState({ displayType })
+    this.setState({ displayType }, () => {
+      if (typeof callback === 'function') {
+        callback()
+      }
+    })
   }
 
   displayTypeInvalidWarning = (displayType) => {
@@ -1204,13 +1208,17 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  toggleTableFilter = () => {
+  isFilteringTable = () => {
+    return this.tableRef?._isMounted && this.tableRef.state.isFiltering
+  }
+
+  toggleTableFilter = (filterOn) => {
     if (this.state.displayType === 'table') {
-      return this.tableRef?._isMounted && this.tableRef.toggleIsFiltering()
+      return this.tableRef?._isMounted && this.tableRef.toggleIsFiltering(filterOn)
     }
 
     if (this.state.displayType === 'pivot_table') {
-      return this.pivotTableRef?._isMounted && this.pivotTableRef.toggleIsFiltering()
+      return this.pivotTableRef?._isMounted && this.pivotTableRef.toggleIsFiltering(filterOn)
     }
   }
 

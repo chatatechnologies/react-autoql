@@ -117,10 +117,6 @@
       max-height: calc(100% - 60px) !important;
     }
 
-    .filter-tag {
-      display: none;
-    }
-
     &.empty {
       .react-autoql-table.tabulator .tabulator-header {
         border: none;
@@ -210,17 +206,26 @@
     .tabulator-header {
       border-bottom: 2px solid var(--react-autoql-border-color);
 
-      .filter-tag {
-        color: #2ecc40;
-        border: 1px solid;
-        padding: 2px 4px;
-        border-radius: 4px;
-        font-weight: 400;
-        font-size: 10px;
+      .tabulator-col.is-filtered .tabulator-col-title:before {
+        opacity: 1;
+      }
+
+      .tabulator-col-title:before {
+        content: '';
+        display: inline-block;
+        vertical-align: middle;
+        opacity: 0;
+
+        height: 8px;
+        width: 8px;
+
         margin-right: 5px;
-        vertical-align: top;
-        line-height: 21px;
-        margin-left: -11px;
+        margin-left: -12px;
+        margin-bottom: 2px;
+
+        border-radius: 10px;
+        background: var(--react-autoql-warning-color);
+        transition: opacity 0.3s ease;
       }
     }
 
