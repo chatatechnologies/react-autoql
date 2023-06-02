@@ -54,7 +54,9 @@
     top: 4px;
     left: 4px;
     border-radius: 100%;
-    transition: all 0.2s ease;
+    transition-property: color, border-color, background-color, opacity;
+    transition-duration: 0.3s;
+    transition-timing-function: ease;
   }
   [type='radio']:not(:checked) + label:after {
     opacity: 0;
@@ -71,7 +73,9 @@
     padding: 3px 12px;
     border: 1px solid var(--react-autoql-border-color, #dcdcdc);
     margin-left: -1px;
-    transition: all 0.2s ease;
+    transition-property: color, border-color, background-color, opacity;
+    transition-duration: 0.3s;
+    transition-timing-function: ease;
     cursor: pointer;
 
     &:not(:first-child) {

@@ -7,7 +7,9 @@
   border: 1px solid transparent;
   background-color: var(--react-autoql-background-color-secondary);
   color: var(--react-autoql-text-color-primary);
-  transition: all 0.2s ease;
+  transition-property: color, border-color, background-color, opacity;
+  transition-duration: 0.2s;
+  transition-timing-function: ease;
   margin-right: 5px;
   font-size: 0.875em;
   border-radius: 50px;
