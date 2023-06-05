@@ -231,7 +231,7 @@ export default class Legend extends Component {
     const legendBottom = (legendContainerBBox?.y ?? 0) + (legendContainerBBox?.height ?? 0) - this.BORDER_PADDING
 
     let hasRemovedElement = false
-    let removedElementY = undefined
+    let removedElementYBottom = undefined
     let removedElementTransform = undefined
 
     select(legendElement)
@@ -241,9 +241,10 @@ export default class Legend extends Component {
           select(this).remove()
         } else {
           const cellBBox = this.getBoundingClientRect()
-          const cellBottom = (cellBBox?.y ?? 0) + (cellBBox?.height ?? 0)
+          const cellHeight = cellBBox?.height ?? 0
+          const cellBottom = (cellBBox?.y ?? 0) + cellHeight
           if (cellBottom > legendBottom) {
-            removedElementY = select(this).attr('y')
+            removedElementYBottom = (select(this).attr('y') ?? 0) + cellHeight
             removedElementTransform = select(this).attr('transform')
             select(this).remove()
 
@@ -262,7 +263,7 @@ export default class Legend extends Component {
         .append('text')
         .html('&#9660 ...')
         .attr('class', 'legend-hidden-field-arrow')
-        .attr('y', removedElementY + 12)
+        .attr('y', removedElementYBottom)
         .attr('transform', removedElementTransform)
         .attr('data-tip', 'Some legend fields are hidden. Please expand the chart size to view them.')
         .attr('data-for', tooltipID)
