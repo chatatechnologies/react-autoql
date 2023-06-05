@@ -423,9 +423,13 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  changeDisplayType = (displayType) => {
+  changeDisplayType = (displayType, callback) => {
     this.checkAndUpdateTableConfigs(displayType)
-    this.setState({ displayType })
+    this.setState({ displayType }, () => {
+      if (typeof callback === 'function') {
+        callback()
+      }
+    })
   }
 
   displayTypeInvalidWarning = (displayType) => {
@@ -1105,6 +1109,10 @@ export class QueryOutput extends React.Component {
 
     let groupBys = {}
     if (this.pivotTableColumns && this.state.displayType === 'pivot_table') {
+      if (!cell?.getValue?.()) {
+        return
+      }
+
       if (this.potentiallySupportsDatePivot()) {
         // Date pivot table
         const dateColumnIndex = getDateColumnIndex(columns)
@@ -1200,13 +1208,19 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  toggleTableFilter = () => {
+  isFilteringTable = () => {
+    return this.tableRef?._isMounted && this.tableRef.state.isFiltering
+  }
+
+  toggleTableFilter = (filterOn, scrollToFirstFilteredColumn) => {
     if (this.state.displayType === 'table') {
-      return this.tableRef?._isMounted && this.tableRef.toggleIsFiltering()
+      return this.tableRef?._isMounted && this.tableRef.toggleIsFiltering(filterOn, scrollToFirstFilteredColumn)
     }
 
     if (this.state.displayType === 'pivot_table') {
-      return this.pivotTableRef?._isMounted && this.pivotTableRef.toggleIsFiltering()
+      return (
+        this.pivotTableRef?._isMounted && this.pivotTableRef.toggleIsFiltering(filterOn, scrollToFirstFilteredColumn)
+      )
     }
   }
 
@@ -1280,6 +1294,11 @@ export class QueryOutput extends React.Component {
   }
 
   onLegendClick = (d) => {
+    if (!d) {
+      console.debug('no legend item was provided on click event')
+      return
+    }
+
     const columnIndex = d?.columnIndex
     const usePivotData = this.usePivotDataForChart()
     const newColumns = usePivotData ? _cloneDeep(this.pivotTableColumns) : _cloneDeep(this.state.columns)
@@ -1677,7 +1696,10 @@ export class QueryOutput extends React.Component {
         newCol.hozAlign = 'center'
       }
 
-      newCol.cssClass = `${newCol.type} ${drilldownGroupby ? 'DRILLDOWN' : null}`
+      newCol.cssClass = `${newCol.type}`
+      if (drilldownGroupby) {
+        newCol.cssClass = `${newCol.cssClass} DRILLDOWN`
+      }
 
       // Cell formattingg
       newCol.formatter = (cell, formatterParams, onRendered) => {

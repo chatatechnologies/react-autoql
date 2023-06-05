@@ -110,6 +110,8 @@ export class DashboardTile extends React.Component {
     onCSVDownloadStart: () => {},
     onCSVDownloadProgress: () => {},
     onCSVDownloadFinish: () => {},
+    onTouchStart: () => {},
+    onTouchEnd: () => {},
   }
 
   componentDidMount = () => {

@@ -23,6 +23,7 @@ import { withTheme } from '../../../theme'
 import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
 
 import './NotificationFeed.scss'
+import { isMobile } from 'react-device-detect'
 
 class NotificationFeed extends React.Component {
   constructor(props) {
@@ -499,7 +500,9 @@ class NotificationFeed extends React.Component {
         <div
           ref={(r) => (this.feedContainer = r)}
           style={style}
-          className='react-autoql-notification-list-container'
+          className={`react-autoql-notification-list-container ${
+            isMobile ? 'react-autoql-notification-list-container-mobile' : ''
+          }`}
           data-test='notification-list'
         >
           {this.props.tooltipID !== this.TOOLTIP_ID && (

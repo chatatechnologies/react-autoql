@@ -412,6 +412,7 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWid
             currency: `${currency}`,
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
+            notation: 'compact',
           }).format(d)
         } catch (error) {
           console.error(error)
@@ -420,6 +421,7 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWid
             currency: 'USD',
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
+            notation: 'compact',
           }).format(d)
         }
       }
@@ -427,7 +429,11 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWid
     }
     case 'QUANTITY': {
       if (!isNaN(parseFloat(d))) {
-        formattedLabel = new Intl.NumberFormat(languageCode).format(d)
+        formattedLabel = new Intl.NumberFormat(languageCode, {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+          notation: 'compact',
+        }).format(d)
       }
       break
     }
@@ -1544,4 +1550,20 @@ export const mergeSources = (source, newSource) => {
   }
 
   return finalSource
+}
+
+export const invertArray = (array) => {
+  const numRows = array.length
+  const numColumns = array[0].length
+
+  const invertedArray = []
+
+  for (let i = 0; i < numColumns; i++) {
+    invertedArray[i] = []
+    for (let j = 0; j < numRows; j++) {
+      if (array[j][i]) invertedArray[i][j] = array[j][i]
+    }
+  }
+
+  return invertedArray
 }

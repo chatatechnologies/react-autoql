@@ -7,6 +7,7 @@
 
   .ps__rail-y,
   .ps__rail-x {
+    z-index: 1;
     background-color: transparent;
 
     &:hover,

@@ -257,7 +257,7 @@ class DataAlertModal extends React.Component {
         })
         .catch((error) => {
           console.error(error)
-          this.props.onErrorCallback(error)
+          this.props.onErrorCallback(error?.message)
           this.setState({
             isSavingDataAlert: false,
           })

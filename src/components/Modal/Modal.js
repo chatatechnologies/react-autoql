@@ -9,6 +9,7 @@ import { deepEqual } from '../../js/Util'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Modal.scss'
+import { isMobile } from 'react-device-detect'
 
 export default class Modal extends React.Component {
   static propTypes = {
@@ -115,8 +116,10 @@ export default class Modal extends React.Component {
         <ReactModal
           ref={(r) => (this.ref = r)}
           isOpen={this.props.isVisible}
+          className={`${isMobile ? 'react-autoql-modal-mobile' : 'react-autoql-modal'}${
+            this.props.contentClassName ? ` ${this.props.contentClassName}` : ''
+          }`}
           bodyOpenClassName={`react-autoql-modal-container${this.props.className ? ` ${this.props.className}` : ''}`}
-          className={this.props.contentClassName}
           ariaHideApp={false}
           contentLocation={{ top: 0, left: 0 }}
           closeTimeoutMS={200}
@@ -131,7 +134,7 @@ export default class Modal extends React.Component {
           }}
         >
           <div
-            className='react-autoql-modal-content'
+            className={`react-autoql-modal-content${isMobile ? ' react-autoql-modal-content-mobile' : ''}`}
             ref={(r) => (this.modalContent = r)}
             onClick={(e) => e.stopPropagation()}
           >
