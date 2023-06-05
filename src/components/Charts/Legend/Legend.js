@@ -241,10 +241,10 @@ export default class Legend extends Component {
           select(this).remove()
         } else {
           const cellBBox = this.getBoundingClientRect()
-          const cellHeight = cellBBox?.height ?? 0
-          const cellBottom = (cellBBox?.y ?? 0) + cellHeight
+          const cellBottom = (cellBBox?.y ?? 0) + (cellBBox?.height ?? 0)
           if (cellBottom > legendBottom) {
-            removedElementYBottom = (select(this).attr('y') ?? 0) + cellHeight
+            const bbox = this.getBBox()
+            removedElementYBottom = (bbox?.y ?? 0) + (bbox?.height ?? 0)
             removedElementTransform = select(this).attr('transform')
             select(this).remove()
 

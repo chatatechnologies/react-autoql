@@ -326,19 +326,6 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  onScrollHorizontal = (left) => {
-    // Temporary fix to scrollbars resetting after filtering or sorting
-    // It isnt perfect since it still causes the scrollbar to jump left then right again
-    // Watching tabulator for a fix:
-    // https://github.com/olifolkerd/tabulator/issues/3450
-    if (left === 0 && this.scrollBack && this.scrollLeft !== undefined) {
-      this.scrollBack = false
-      setTimeout(() => {
-        this.ref.tabulator.rowManager.element.scrollLeft = this.scrollLeft
-      }, 0)
-    }
-  }
-
   setLoading = (loading) => {
     // Don't update state unnecessarily
     if (loading !== this.state.loading && this._isMounted) {
@@ -432,7 +419,6 @@ export default class ChataTable extends React.Component {
 
       this.cancelCurrentRequest()
       this.axiosSource = axios.CancelToken?.source()
-      this.scrollLeft = this.ref?.tabulator?.rowManager?.element?.scrollLeft // this.ref?.tabulator?.columnManager?.scrollLeft
 
       let response
       if (params?.page > 1) {
@@ -454,6 +440,8 @@ export default class ChataTable extends React.Component {
         })
         this.queryID = responseWrapper?.data?.data?.query_id
         response = { ..._get(responseWrapper, 'data.data', {}), page: 1 }
+
+        this.scrollLeft = this.ref?.tabulator?.rowManager?.element?.scrollLeft
 
         /* wait for current event loop to end so table is updated
         before callbacks are invoked */
@@ -478,9 +466,6 @@ export default class ChataTable extends React.Component {
   }
 
   clearLoadingIndicators = async () => {
-    // Needed to set scroll position back to where it was before the data changed
-    this.scrollBack = true
-
     /* The height of the table temporarily goes to 0 when new rows
     are added, which causes the scrollbar to jump up in DM.
 
@@ -489,6 +474,15 @@ export default class ChataTable extends React.Component {
     current event loop finishes so the table doesn't jump after
     the new rows are added */
     await currentEventLoopEnd()
+
+    // Temporary fix to scrollbars resetting after filtering or sorting
+    // It isnt perfect since it still causes the scrollbar to jump left then right again
+    // Watching tabulator for a fix:
+    // https://github.com/olifolkerd/tabulator/issues/3450
+    if (this.scrollLeft !== undefined) {
+      this.scrollLeft = undefined
+      this.ref.tabulator.rowManager.element.scrollLeft = this.scrollLeft
+    }
 
     if (this._isMounted) {
       this.setState({
@@ -964,7 +958,6 @@ export default class ChataTable extends React.Component {
                   onDataSorted={this.onDataSorted}
                   onDataFiltering={this.onDataFiltering}
                   onDataFiltered={this.onDataFiltered}
-                  onScrollHorizontal={this.onScrollHorizontal}
                   pivot={this.props.pivot}
                 />
                 {isEmpty && this.renderEmptyPlaceholderText()}
