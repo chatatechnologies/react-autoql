@@ -7,7 +7,15 @@
   }
 
   &.filter-lock-popover-mobile {
-    height: calc(100vh - 200px);
+    border: none;
+    transform: unset !important;
+    height: calc(100vh - 80px);
+    max-height: calc(100vh - 80px);
+    top: 0px !important;
+
+    .popover-container-content {
+      animation: scale-down-tl 0.2s ease;
+    }
   }
 
   .filter-lock-toast-container {
@@ -348,5 +356,16 @@
     background-color: var(--react-autoql-background-color-secondary);
     color: var(--react-autoql-text-color-primary);
     opacity: 1;
+  }
+}
+
+@keyframes scale-down-tl {
+  0% {
+    transform: scale(0.5);
+    transform-origin: 0% 0%;
+  }
+  100% {
+    transform: scale(1);
+    transform-origin: 0% 0%;
   }
 }

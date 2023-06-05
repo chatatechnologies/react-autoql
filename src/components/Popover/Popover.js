@@ -66,8 +66,8 @@ class PopoverWithoutRef extends React.Component {
           e.preventDefault()
           this.props.onClickOutside()
         }}
-        parentElement={this.props.parentElement}
-        boundaryElement={this.props.boundaryElement}
+        parentElement={isMobile ? undefined : this.props.parentElement}
+        boundaryElement={isMobile ? undefined : this.props.boundaryElement}
         positions={this.props.positions}
         align={this.props.align}
         reposition={true}
