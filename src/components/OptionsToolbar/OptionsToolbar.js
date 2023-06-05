@@ -33,6 +33,7 @@ export class OptionsToolbar extends React.Component {
       isSettingColumnVisibility: false,
       reportProblemMessage: undefined,
       isCSVDownloading: false,
+      isFiltering: !!props.responseRef?.isFilteringTable(),
     }
   }
 
@@ -96,6 +97,10 @@ export class OptionsToolbar extends React.Component {
 
     if (prevProps.displayType !== this.props.displayType) {
       this.setState({ activeMenu: undefined })
+    }
+
+    if (prevState.isFiltering !== this.state.isFiltering) {
+      hideTooltips()
     }
 
     rebuildTooltips()
@@ -499,12 +504,11 @@ export class OptionsToolbar extends React.Component {
   }
 
   renderFilterBtn = () => {
-    const isFiltering = this.props.responseRef?.isFilteringTable()
     const isFiltered = !!this.props.responseRef?.formattedTableParams?.filters?.length
     const displayType = this.props.responseRef?.state?.displayType
     const isTable = displayType === 'table'
 
-    let tooltip = isFiltering ? 'Hide filters' : 'Filter table'
+    let tooltip = this.state.isFiltering ? 'Hide filters' : 'Filter table'
     if (!isTable) {
       tooltip = isFiltered ? 'Edit table filters' : 'Filter data from table'
     }
@@ -520,8 +524,7 @@ export class OptionsToolbar extends React.Component {
             this.props.responseRef?.toggleTableFilter(toggleFiltersOn)
           } else {
             this.props.responseRef?.changeDisplayType('table', () => {
-              this.props.responseRef?.toggleTableFilter(true)
-              // TODO: set scroll position to first column that has a filter and focus the input
+              this.props.responseRef?.toggleTableFilter(true, true)
             })
           }
         }}

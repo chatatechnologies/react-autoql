@@ -1212,13 +1212,15 @@ export class QueryOutput extends React.Component {
     return this.tableRef?._isMounted && this.tableRef.state.isFiltering
   }
 
-  toggleTableFilter = (filterOn) => {
+  toggleTableFilter = (filterOn, scrollToFirstFilteredColumn) => {
     if (this.state.displayType === 'table') {
-      return this.tableRef?._isMounted && this.tableRef.toggleIsFiltering(filterOn)
+      return this.tableRef?._isMounted && this.tableRef.toggleIsFiltering(filterOn, scrollToFirstFilteredColumn)
     }
 
     if (this.state.displayType === 'pivot_table') {
-      return this.pivotTableRef?._isMounted && this.pivotTableRef.toggleIsFiltering(filterOn)
+      return (
+        this.pivotTableRef?._isMounted && this.pivotTableRef.toggleIsFiltering(filterOn, scrollToFirstFilteredColumn)
+      )
     }
   }
 
