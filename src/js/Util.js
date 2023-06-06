@@ -412,6 +412,7 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWid
             currency: `${currency}`,
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
+            notation: 'compact',
           }).format(d)
         } catch (error) {
           console.error(error)
@@ -420,6 +421,7 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWid
             currency: 'USD',
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
+            notation: 'compact',
           }).format(d)
         }
       }
@@ -427,7 +429,11 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWid
     }
     case 'QUANTITY': {
       if (!isNaN(parseFloat(d))) {
-        formattedLabel = new Intl.NumberFormat(languageCode).format(d)
+        formattedLabel = new Intl.NumberFormat(languageCode, {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+          notation: 'compact',
+        }).format(d)
       }
       break
     }
@@ -484,7 +490,7 @@ export const getDayJSObj = ({ value, column, config }) => {
 export const formatElement = ({ element, column, config = {}, htmlElement, isChart }) => {
   try {
     let formattedElement = element
-    const { currencyCode, languageCode, currencyDecimals, quantityDecimals } = config
+    const { currencyCode, languageCode, currencyDecimals, quantityDecimals, ratioDecimals } = config
 
     let type = column?.type
     if (isChart && ['count', 'deviation', 'variance'].includes(column?.aggType)) {
@@ -523,7 +529,7 @@ export const formatElement = ({ element, column, config = {}, htmlElement, isCha
           break
         }
         case 'QUANTITY': {
-          const validatedQuantityDecimals = quantityDecimals || quantityDecimals === 0 ? quantityDecimals : 1
+          const validatedQuantityDecimals = !isNaN(quantityDecimals) ? quantityDecimals : 2
 
           if (!isNaN(parseFloat(element))) {
             const numDecimals = parseFloat(element) % 1 !== 0 ? validatedQuantityDecimals : 0
@@ -545,10 +551,12 @@ export const formatElement = ({ element, column, config = {}, htmlElement, isCha
           break
         }
         case 'RATIO': {
+          const numDecimals = !isNaN(ratioDecimals) ? ratioDecimals : 4
+
           if (!isNaN(parseFloat(element))) {
             formattedElement = new Intl.NumberFormat(languageCode, {
-              minimumFractionDigits: 4,
-              maximumFractionDigits: 4,
+              minimumFractionDigits: numDecimals,
+              maximumFractionDigits: numDecimals,
             }).format(element)
           }
           break
@@ -1543,4 +1551,20 @@ export const mergeSources = (source, newSource) => {
   }
 
   return finalSource
+}
+
+export const invertArray = (array) => {
+  const numRows = array.length
+  const numColumns = array[0].length
+
+  const invertedArray = []
+
+  for (let i = 0; i < numColumns; i++) {
+    invertedArray[i] = []
+    for (let j = 0; j < numRows; j++) {
+      if (array[j][i]) invertedArray[i][j] = array[j][i]
+    }
+  }
+
+  return invertedArray
 }

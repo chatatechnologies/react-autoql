@@ -1,9 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
-import { Popover } from 'react-tiny-popover'
+import { Popover } from '../../Popover'
 import dayjs from '../../../js/dayjsWithPlugins'
-
+import { isMobile } from 'react-device-detect'
 import { Icon } from '../../Icon'
 import { LoadingDots } from '../../LoadingDots'
 import { hideTooltips } from '../../Tooltip'
@@ -54,6 +54,7 @@ export default class NotificationItem extends React.Component {
     notification: PropTypes.shape({}).isRequired,
     onRuleFetchCallback: PropTypes.func,
     onExpandCallback: PropTypes.func,
+    onCollapseCallback: PropTypes.func,
     onDismissCallback: PropTypes.func,
     onDeleteClick: PropTypes.func,
     onDeleteEnd: PropTypes.func,
@@ -75,7 +76,9 @@ export default class NotificationItem extends React.Component {
     autoChartAggregations: false,
     onQueryClick: undefined,
     onRuleFetchCallback: () => {},
+    updateScrollbars: () => {},
     onExpandCallback: () => {},
+    onCollapseCallback: () => {},
     onDismissCallback: () => {},
     onDeleteClick: () => {},
     onDeleteEnd: () => {},
@@ -90,6 +93,7 @@ export default class NotificationItem extends React.Component {
 
   componentDidUpdate = (prevProps, prevState) => {
     if (this.state.expanded && !prevState.expanded) {
+      this.props.updateScrollbars(500)
       if (!this.state.queryResponse) {
         this.fetchNotification()
       }
@@ -134,6 +138,7 @@ export default class NotificationItem extends React.Component {
   onClick = (notification) => {
     if (this.state.expanded) {
       this.collapse()
+      this.props.onCollapseCallback(notification)
     } else {
       this.expand()
       this.props.onExpandCallback(notification)
@@ -294,6 +299,7 @@ export default class NotificationItem extends React.Component {
         <Popover
           align='start'
           positions={['left', 'bottom', 'top', 'right']}
+          containerClassName='react-autoql-notification-options-popover'
           content={this.moreOptionsMenu()}
           isOpen={this.state.isMoreOptionsMenuOpen}
           onClickOutside={() => this.setState({ isMoreOptionsMenuOpen: false })}
@@ -328,7 +334,7 @@ export default class NotificationItem extends React.Component {
 
     return (
       <Menu>
-        {!!this.props.dataAlert && (
+        {!!this.props.dataAlert && !isMobile && (
           <MenuItem
             data-test='react-autoql-toolbar-more-options-notification'
             title='Settings'

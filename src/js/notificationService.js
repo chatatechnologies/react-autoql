@@ -135,7 +135,7 @@ export const fetchDataAlerts = ({ domain, apiKey, token }) => {
   return axiosInstance
     .get(url)
     .then((response) => Promise.resolve(response?.data))
-    .catch((error) => Promise.reject(error?.response.data))
+    .catch((error) => Promise.reject(error?.response?.data))
 }
 
 export const fetchRule = ({ domain, apiKey, token, dataAlertId }) => {

@@ -8,7 +8,9 @@
   margin-left: 12px;
   padding-left: 20px;
   padding-bottom: 5px;
-  transition: all 0.5s ease;
+  transition-property: color, border-color, background-color, opacity;
+  transition-duration: 0.5s;
+  transition-timing-function: ease;
 
   &.complete {
     border-color: var(--react-autoql-accent-color, #26a7df);
@@ -47,7 +49,9 @@
   border-radius: 15px;
   background: var(--react-autoql-background-color-secondary, #fff);
   border: 1px solid var(--react-autoql-text-color-placeholder, lightgray);
-  transition: all 0.5s ease;
+  transition-property: color, border-color, background-color, opacity;
+  transition-duration: 0.5s;
+  transition-timing-function: ease;
 
   font-size: 10.5px;
   color: var(--react-autoql-text-color-placeholder, lightgray);

@@ -1,15 +1,12 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
-import _isEqual from 'lodash.isequal'
-import _cloneDeep from 'lodash.clonedeep'
-import InfiniteScroll from 'react-infinite-scroller'
 import { v4 as uuid } from 'uuid'
 
 import { Icon } from '../../Icon'
 import { NotificationItem } from '../NotificationItem'
 import { DataAlertModal } from '../DataAlertModal'
 import { Button } from '../../Button'
-import { CustomScrollbars } from '../../CustomScrollbars'
+import { InfiniteScroll } from '../../InfiniteScroll'
 import { Spinner } from '../../Spinner'
 import { Tooltip } from '../../Tooltip'
 import { Modal } from '../../Modal'
@@ -26,6 +23,7 @@ import { withTheme } from '../../../theme'
 import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
 
 import './NotificationFeed.scss'
+import { isMobile } from 'react-device-detect'
 
 class NotificationFeed extends React.Component {
   constructor(props) {
@@ -34,6 +32,7 @@ class NotificationFeed extends React.Component {
     this.COMPONENT_KEY = uuid()
     this.MODAL_COMPONENT_KEY = uuid()
     this.NOTIFICATION_FETCH_LIMIT = 10
+    this.TOOLTIP_ID = 'react-autoql-notification-tooltip'
     // Open event source http connection here to receive SSE
     // notificationEventSource = new EventSource(
     //   'https://backend.chata.io/notifications'
@@ -46,7 +45,8 @@ class NotificationFeed extends React.Component {
       isDataAlertsManagerOpen: false,
       unFetchedNotifications: 0,
       notificationList: [],
-      isLoading: false,
+      isFetching: false,
+      isDeleting: false,
       pagination: {},
     }
   }
@@ -67,6 +67,7 @@ class NotificationFeed extends React.Component {
     onModalOpen: PropTypes.func,
     shouldRender: PropTypes.bool,
     onDataAlertChange: PropTypes.func,
+    tooltipID: PropTypes.string,
   }
 
   static defaultProps = {
@@ -77,6 +78,7 @@ class NotificationFeed extends React.Component {
     showCreateAlertBtn: false,
     enableAjaxTableData: false,
     shouldRender: true,
+    tooltipID: this.TOOLTIP_ID,
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
     onErrorCallback: () => {},
@@ -108,6 +110,10 @@ class NotificationFeed extends React.Component {
     if (this.props.shouldRender && this.state.unFetchedNotifications && !prevState.unFetchedNotifications) {
       this.refreshNotifications()
     }
+
+    if (prevState.notificationList?.length !== this.state.notificationList?.length) {
+      this.updateScrollbars(1000)
+    }
   }
 
   componentWillUnmount = () => {
@@ -128,7 +134,12 @@ class NotificationFeed extends React.Component {
   }
 
   getNotifications = () => {
-    if (!this.props.shouldRender || this.state.isLoading || this.state.unFetchedNotifications) {
+    if (
+      !this.props.shouldRender ||
+      this.state.isFetching ||
+      this.state.isDeleting ||
+      this.state.unFetchedNotifications
+    ) {
       return
     }
 
@@ -139,7 +150,7 @@ class NotificationFeed extends React.Component {
       return
     }
 
-    this.setState({ isLoading: true })
+    this.setState({ isFetching: true })
     return fetchNotificationFeed({
       ...getAuthentication(this.props.authentication),
       limit: this.NOTIFICATION_FETCH_LIMIT,
@@ -150,7 +161,7 @@ class NotificationFeed extends React.Component {
           this.setState({
             isFetchingFirstNotifications: false,
             fetchNotificationsError: null,
-            isLoading: false,
+            isFetching: false,
           })
           return
         }
@@ -169,7 +180,7 @@ class NotificationFeed extends React.Component {
           isFetchingFirstNotifications: false,
           fetchNotificationsError: null,
           unFetchedNotifications,
-          isLoading: false,
+          isFetching: false,
         }
 
         if (newList?.length && this._isMounted) {
@@ -186,7 +197,7 @@ class NotificationFeed extends React.Component {
           this.setState({
             isFetchingFirstNotifications: false,
             fetchNotificationsError: error,
-            isLoading: false,
+            isFetching: false,
           })
         }
       })
@@ -194,7 +205,7 @@ class NotificationFeed extends React.Component {
 
   getNewNotifications = () => {
     const limit =
-      (this.state.notificationList?.length ?? this.NOTIFICATION_FETCH_LIMIT) + (this.state.unFetchedNotifications ?? 0)
+      (this.state.notificationList?.length || this.NOTIFICATION_FETCH_LIMIT) + (this.state.unFetchedNotifications ?? 0)
 
     fetchNotificationFeed({
       ...getAuthentication(this.props.authentication),
@@ -303,22 +314,27 @@ class NotificationFeed extends React.Component {
 
   onDeleteClick = (notification) => {
     const newList = this.state.notificationList.filter((n) => n.id !== notification.id)
-    let pagination = this.state.pagination
+    let pagination = this.state.pagination ?? {}
     if (pagination) {
       pagination = {
-        ...this.state.pagination,
+        ...pagination,
         total_items: pagination.total_items > 0 ? pagination.total_items - 1 : 0,
       }
     }
 
     this.setState({
-      notificationList: newList, // pagination,
-      isLoading: true,
+      notificationList: newList,
+      pagination,
+      isDeleting: true,
     })
   }
 
   onDeleteEnd = () => {
-    this.setState({ isLoading: false })
+    this.setState({ isDeleting: false }, () => {
+      if (this.hasMoreNotifications() && this.state.notificationList?.length < this.NOTIFICATION_FETCH_LIMIT) {
+        this.getNotifications()
+      }
+    })
   }
 
   onDataAlertSave = () => {
@@ -447,8 +463,12 @@ class NotificationFeed extends React.Component {
     })
   }
 
+  updateScrollbars = (delay = 0) => {
+    setTimeout(this.infiniteScroll?.updateScrollbars, delay)
+  }
+
   hasMoreNotifications = () => {
-    return !this.state.isLoading && this.state.pagination?.total_items > this.state.notificationList?.length
+    return !this.state.isFetching && this.state.pagination?.total_items > this.state.notificationList?.length
   }
 
   render = () => {
@@ -480,81 +500,78 @@ class NotificationFeed extends React.Component {
         <div
           ref={(r) => (this.feedContainer = r)}
           style={style}
-          className='react-autoql-notification-list-container'
+          className={`react-autoql-notification-list-container ${
+            isMobile ? 'react-autoql-notification-list-container-mobile' : ''
+          }`}
           data-test='notification-list'
         >
-          {!this.props.tooltipID && (
-            <Tooltip
-              className='react-autoql-tooltip'
-              id='react-autoql-notification-tooltip'
-              effect='solid'
-              delayShow={500}
-              html
-            />
+          {this.props.tooltipID !== this.TOOLTIP_ID && (
+            <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' delayShow={500} html />
           )}
           {this.state.notificationList?.length ? (
             <Fragment>
               {this.renderTopOptions()}
-              <CustomScrollbars ref={(r) => (this.scrollRef = r)}>
-                <InfiniteScroll
-                  pageStart={0}
-                  useWindow={false}
-                  initialLoad={false}
-                  loadMore={this.getNotifications}
-                  hasMore={this.hasMoreNotifications()}
-                  getScrollParent={() => this.scrollRef?.getContainer()}
-                >
-                  <div className='notification-feed-list'>
-                    {this.state.notificationList.map((notification, i) => {
-                      const dataAlert = this.state.dataAlerts?.find((alert) => alert.id === notification.data_alert_id)
-                      return (
-                        <NotificationItem
-                          ref={(ref) => (this.notificationRefs[notification.id] = ref)}
-                          key={notification.id}
-                          authentication={this.props.authentication}
-                          autoQLConfig={{
-                            ...getAutoQLConfig(this.props.autoQLConfig),
-                            enableColumnVisibilityManager: false,
-                            enableNotifications: false,
-                            enableCSVDownload: true,
-                            enableDrilldowns: false,
-                            enableReportProblem: false,
-                          }}
-                          notification={notification}
-                          dataAlert={dataAlert}
-                          expanded={!!notification.expanded}
-                          onDismissCallback={this.onDismissClick}
-                          onUnreadCallback={this.onUnreadClick}
-                          onQueryClick={this.props.onQueryClick}
-                          onDismissSuccessCallback={() => {
-                            this.props.onChange(this.state.notificationList)
-                          }}
-                          onDeleteClick={this.onDeleteClick}
-                          onDeleteEnd={this.onDeleteEnd}
-                          onDeleteSuccessCallback={() => {
-                            this.props.onChange(this.state.notificationList)
-                          }}
-                          onExpandCallback={this.onNotificationExpand}
-                          autoChartAggregations={this.props.autoChartAggregations}
-                          onErrorCallback={this.props.onErrorCallback}
-                          onSuccessCallback={this.props.onSuccessCallback}
-                          onDataAlertChange={this.props.onDataAlertChange}
-                          onEditClick={(dataAlert) => {
-                            this.showEditDataAlertModal(dataAlert)
-                          }}
-                          enableAjaxTableData={this.props.enableAjaxTableData}
-                          isResizing={this.props.isResizing}
-                        />
-                      )
-                    })}
-                    {this.state.isLoading && (
-                      <div className='react-autoql-spinner-centered'>
-                        <Spinner />
-                      </div>
-                    )}
-                  </div>
-                </InfiniteScroll>
-              </CustomScrollbars>
+              <InfiniteScroll
+                ref={(r) => (this.infiniteScroll = r)}
+                pageStart={0}
+                useWindow={false}
+                initialLoad={false}
+                loadMore={this.getNotifications}
+                hasMore={this.hasMoreNotifications()}
+              >
+                <div className='notification-feed-list'>
+                  {this.state.notificationList.map((notification, i) => {
+                    const dataAlert = this.state.dataAlerts?.find((alert) => alert.id === notification.data_alert_id)
+                    return (
+                      <NotificationItem
+                        ref={(ref) => (this.notificationRefs[notification.id] = ref)}
+                        key={notification.id}
+                        authentication={this.props.authentication}
+                        autoQLConfig={{
+                          ...getAutoQLConfig(this.props.autoQLConfig),
+                          enableColumnVisibilityManager: false,
+                          enableNotifications: false,
+                          enableCSVDownload: false,
+                          enableDrilldowns: false,
+                          enableReportProblem: false,
+                        }}
+                        notification={notification}
+                        dataAlert={dataAlert}
+                        expanded={!!notification.expanded}
+                        onDismissCallback={this.onDismissClick}
+                        onUnreadCallback={this.onUnreadClick}
+                        onQueryClick={this.props.onQueryClick}
+                        onDismissSuccessCallback={() => {
+                          this.props.onChange(this.state.notificationList)
+                        }}
+                        onDeleteClick={this.onDeleteClick}
+                        onDeleteEnd={this.onDeleteEnd}
+                        onDeleteSuccessCallback={() => {
+                          this.props.onChange(this.state.notificationList)
+                        }}
+                        onExpandCallback={this.onNotificationExpand}
+                        onCollapseCallback={this.onNotificationCollapse}
+                        autoChartAggregations={this.props.autoChartAggregations}
+                        onErrorCallback={this.props.onErrorCallback}
+                        onSuccessCallback={this.props.onSuccessCallback}
+                        onDataAlertChange={this.props.onDataAlertChange}
+                        onEditClick={(dataAlert) => {
+                          this.showEditDataAlertModal(dataAlert)
+                        }}
+                        enableAjaxTableData={this.props.enableAjaxTableData}
+                        isResizing={this.props.isResizing}
+                        updateScrollbars={this.updateScrollbars}
+                        tooltipID={this.props.tooltipID}
+                      />
+                    )
+                  })}
+                  {this.state.isFetching && (
+                    <div className='react-autoql-spinner-centered'>
+                      <Spinner />
+                    </div>
+                  )}
+                </div>
+              </InfiniteScroll>
             </Fragment>
           ) : (
             <div className='empty-notifications-message'>

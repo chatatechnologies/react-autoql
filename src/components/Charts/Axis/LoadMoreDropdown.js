@@ -12,6 +12,7 @@ export default class LoadMoreDropdown extends Component {
     this.maxRows = 5000
     this.BUTTON_PADDING_TOP = 2
     this.BUTTON_PADDING_LEFT = 4
+    this.VISUALIZING_TEXT = 'Visualizing '
 
     this.state = {
       currentRowNumber: props.currentRowCount,
@@ -38,7 +39,7 @@ export default class LoadMoreDropdown extends Component {
     this.applyStyles()
   }
 
-  applyStyles = () => {
+  applyRowNumberSelectorStyles = () => {
     const currentRowNumberBBox = getBBoxFromRef(this.currentRowNumber)
     const rowNumWidth = currentRowNumberBBox?.width ?? 0
     const rowNumHeight = currentRowNumberBBox?.height ?? 0
@@ -48,13 +49,41 @@ export default class LoadMoreDropdown extends Component {
       .attr('y', currentRowNumberBBox?.y - this.BUTTON_PADDING_TOP)
       .attr('width', rowNumWidth + 2 * this.BUTTON_PADDING_LEFT)
       .attr('height', rowNumHeight + 2 * this.BUTTON_PADDING_TOP)
+  }
 
-    const allTextBBox = getBBoxFromRef(this.allText)
+  applyWarningIconStyles = () => {
+    const allTextBBox = getBBoxFromRef(this.ref)
     const allTextWidth = allTextBBox?.width ?? 0
     const warningIconX = allTextBBox?.x + allTextWidth + 5
     const warningIconY = -5
 
     select(this.warningIcon).attr('x', warningIconX).attr('y', warningIconY)
+  }
+
+  applyStyles = () => {
+    this.applyWarningIconStyles()
+    this.applyRowNumberSelectorStyles()
+  }
+
+  initializeWidth = () => {
+    select(this.visualizingSpan).text(this.VISUALIZING_TEXT)
+    select(this.ref).attr('textLength', null)
+    this.applyStyles()
+  }
+
+  adjustWidth = (availableWidth) => {
+    select(this.visualizingSpan).text('')
+
+    this.applyStyles()
+
+    const newWidth = getBBoxFromRef(this.LoadMoreDropdownRef)?.width
+
+    if (newWidth > availableWidth) {
+      const warningIconWidth = this.warningIcon ? 25 : 0
+      const newTextLength = availableWidth - warningIconWidth
+      select(this.ref).attr('textLength', newTextLength)
+      this.applyStyles()
+    }
   }
 
   renderRowCountText = () => {
@@ -71,17 +100,25 @@ export default class LoadMoreDropdown extends Component {
         dominantBaseline='hanging'
         textAnchor='middle'
         style={this.props.style}
+        textLength={10}
+        lengthAdjust='spacingAndGlyphs'
       >
         <tspan
           ref={(r) => (this.allText = r)}
           className='load-more-drop-down-span'
           id={`load-more-drop-down-span-${this.COMPONENT_ID}`}
         >
-          <tspan id={`visualizing-span-${this.COMPONENT_ID}`}>{`Visualizing `}</tspan>
+          <tspan
+            ref={(r) => (this.visualizingSpan = r)}
+            id={`visualizing-span-${this.COMPONENT_ID}`}
+            className='visualizing-span'
+          >
+            {this.VISUALIZING_TEXT}
+          </tspan>
           <tspan ref={(r) => (this.currentRowNumber = r)} style={style} id={`row-number-span-${this.COMPONENT_ID}`}>
             {this.state.currentRowNumber}
           </tspan>
-          {` / ${this.props.totalRowCount} rows`}
+          <tspan>{` / ${this.props.totalRowCount} rows`}</tspan>
         </tspan>
       </text>
     )

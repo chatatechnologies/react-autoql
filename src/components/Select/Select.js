@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Popover } from 'react-tiny-popover'
+import { Popover } from '../Popover'
 import { v4 as uuid } from 'uuid'
 import { Icon } from '../Icon'
 import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'

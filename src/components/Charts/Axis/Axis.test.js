@@ -29,7 +29,7 @@ describe('renders correctly', () => {
         title: listSampleProps.columns[listSampleProps.stringColumnIndex].display_name,
         column: listSampleProps.columns[listSampleProps.stringColumnIndex],
       }),
-      orient: 'Left',
+      orient: 'left',
     })
     const axisComponent = findByTestAttr(wrapper, 'axis')
     expect(axisComponent.exists()).toBe(true)
@@ -42,7 +42,7 @@ describe('renders correctly', () => {
       scale: pivotSampleProps.numberScale({
         title: pivotSampleProps.columns[pivotSampleProps.numberColumnIndex].display_name,
       }),
-      orient: 'Bottom',
+      orient: 'bottom',
     })
     const axisComponent = findByTestAttr(wrapper, 'axis')
     expect(axisComponent.exists()).toBe(true)
@@ -54,7 +54,7 @@ describe('renders correctly', () => {
       scale: datePivotSampleProps.stringScale({
         column: datePivotSampleProps.columns[datePivotSampleProps.stringColumnIndex],
       }),
-      orient: 'Left',
+      orient: 'left',
     })
     const axisComponent = findByTestAttr(wrapper, 'axis')
     expect(axisComponent.exists()).toBe(true)
@@ -71,7 +71,7 @@ describe('after mount', () => {
           scale: pivotSampleProps.stringScale({
             title: pivotSampleProps.columns[pivotSampleProps.stringColumnIndex].display_name,
           }),
-          orient: 'Left',
+          orient: 'left',
         })
 
         const labelText = findByTestAttr(wrapper, 'axis-label')
@@ -85,7 +85,7 @@ describe('after mount', () => {
           scale: pivotSampleProps.numberScale({
             title: pivotSampleProps.columns[pivotSampleProps.numberColumnIndex].display_name,
           }),
-          orient: 'Bottom',
+          orient: 'bottom',
         })
 
         test('renders number axis label', () => {
@@ -106,7 +106,7 @@ describe('after mount', () => {
               title: pivotSampleProps.columns[pivotSampleProps.numberColumnIndex].display_name,
               hasDropdown: true,
             }),
-            orient: 'Bottom',
+            orient: 'bottom',
           })
 
           const labelArrow = findByTestAttr(wrapper2, 'dropdown-arrow')
@@ -119,7 +119,7 @@ describe('after mount', () => {
       const wrapper = setup({
         ...datePivotSampleProps,
         col: pivotSampleProps.columns[pivotSampleProps.numberColumnIndex],
-        orient: 'Bottom',
+        orient: 'bottom',
         scale: pivotSampleProps.numberScale({
           title: 'x title test loooong title to test a very very very very very very very long title',
         }),

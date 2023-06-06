@@ -4,7 +4,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { fetchExploreQueries } from '../../js/queryService'
-import { InfiniteScrollAutoQL } from '../InfiniteScroll'
+import { InfiniteScroll } from '../InfiniteScroll'
 import { animateInputText } from '../../js/Util'
 import { LoadingDots } from '../LoadingDots'
 import { withTheme } from '../../theme'
@@ -222,7 +222,7 @@ export class ExploreQueries extends React.Component {
     }
 
     return (
-      <InfiniteScrollAutoQL
+      <InfiniteScroll
         pageStart={1}
         loadMore={this.loadMore}
         hasMore={this.state.hasMore}
@@ -247,7 +247,7 @@ export class ExploreQueries extends React.Component {
             </div>
           )
         })}
-      </InfiniteScrollAutoQL>
+      </InfiniteScroll>
     )
   }
 

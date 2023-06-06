@@ -2,6 +2,7 @@ import React, { Component, Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { scaleOrdinal } from 'd3-scale'
+import { isMobile } from 'react-device-detect'
 
 import { ChataColumnChart } from '../ChataColumnChart'
 import { ChataBarChart } from '../ChataBarChart'
@@ -41,7 +42,7 @@ export default class ChataChart extends Component {
     super(props)
     const data = this.getData(props)
 
-    this.PADDING = 10
+    this.PADDING = 0
     this.FONT_SIZE = 12
     this.DEFAULT_HISTOGRAM_THRESHOLDS = 20
 
@@ -271,9 +272,9 @@ export default class ChataChart extends Component {
 
   getRenderedChartDimensions = () => {
     const leftAxisBBox = this.innerChartRef?.axesRef?.leftAxis?.ref?.getBoundingClientRect()
-    const bottomAxisBBox = this.innerChartRef?.axesRef?.bottomAxis?.ref?.getBoundingClientRect()
-    const rightAxisBBox = this.innerChartRef?.axesRef?.rightAxis?.ref?.getBoundingClientRect()
     const topAxisBBox = this.innerChartRef?.axesRef?.topAxis?.ref?.getBoundingClientRect()
+    const bottomAxisBBox = this.innerChartRef?.axesRef?.bottomAxis?.getBoundingClientRect()
+    const rightAxisBBox = this.innerChartRef?.axesRef?.rightAxis?.getBoundingClientRect()
     const clippedLegendBBox = this.innerChartRef?.axesRef?.legendRef?.legendClippingContainer?.getBoundingClientRect()
     const axesBBox = mergeBboxes([leftAxisBBox, bottomAxisBBox, rightAxisBBox, topAxisBBox, clippedLegendBBox])
 
@@ -425,7 +426,7 @@ export default class ChataChart extends Component {
       chartPadding: this.PADDING,
       enableAxisDropdown: enableDynamicCharting && !this.props.isAggregated,
       marginAdjustmentFinished: true,
-      legendLocation: getLegendLocation(numberColumnIndices, this.props.type),
+      legendLocation: getLegendLocation(numberColumnIndices, this.props.type, this.props.legendLocation),
       legendLabels: this.getLegendLabels(),
       onLabelRotation: this.adjustVerticalPosition,
       visibleSeriesIndices,

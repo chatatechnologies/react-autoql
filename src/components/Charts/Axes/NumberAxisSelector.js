@@ -1,8 +1,8 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
-import { Popover } from 'react-tiny-popover'
+import { Popover } from '../../Popover'
 import { SelectableList } from '../../SelectableList'
 import { Button } from '../../Button'
 import { CustomScrollbars } from '../../CustomScrollbars'
@@ -10,6 +10,7 @@ import { Checkbox } from '../../Checkbox'
 import { AGG_TYPES, NUMBER_COLUMN_TYPES, NUMBER_COLUMN_TYPE_DISPLAY_NAMES } from '../../../js/Constants'
 import { Select } from '../../Select'
 import { rebuildTooltips } from '../../Tooltip'
+import { isMobile } from 'react-device-detect'
 
 const aggHTMLCodes = {
   sum: <>&Sigma;</>,
@@ -36,10 +37,12 @@ export default class NumberAxisSelector extends React.Component {
 
   static propTypes = {
     changeNumberColumnIndices: PropTypes.func,
+    positions: PropTypes.arrayOf(PropTypes.string),
   }
 
   static defaultProps = {
     changeNumberColumnIndices: () => {},
+    positions: ['right', 'bottom', 'top', 'left'],
   }
 
   componentDidMount = () => {
@@ -105,7 +108,7 @@ export default class NumberAxisSelector extends React.Component {
       const item = {
         key: `selectable-list-item-${this.COMPONENT_KEY}-${type}-${i}`,
         content: (
-          <div key={`column-agg-type-symbol-${this.COMPONENT_KEY}`}>
+          <div className='agg-selector-column-item' key={`column-agg-type-symbol-${this.COMPONENT_KEY}`}>
             {!this.props.isAggregation && col.aggType && (
               <Select
                 className='agg-type-symbol'
@@ -136,7 +139,9 @@ export default class NumberAxisSelector extends React.Component {
                 }}
               />
             )}
-            <span className='agg-select-text'>{col.title}</span>
+            <div className='agg-select-text'>
+              <span>{col.title}</span>
+            </div>
           </div>
         ),
         disabled,
@@ -256,7 +261,7 @@ export default class NumberAxisSelector extends React.Component {
           </div>
         </div>
         <div className='react-autoql-custom-scrollbars'>
-          <CustomScrollbars autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
+          <CustomScrollbars autoHeight autoHeightMin={minHeight} maxHeight={isMobile ? undefined : maxHeight}>
             <SelectableList
               ref={(r) => (this.listRefs[type] = r)}
               items={listItems}
@@ -317,18 +322,12 @@ export default class NumberAxisSelector extends React.Component {
         id={`number-axis-selector-${this.COMPONENT_KEY}`}
         isOpen={this.props.isOpen}
         content={this.renderSelectorContent}
-        ref={this.props.axisSelectorRef}
-        onClickOutside={(e) => {
-          e.stopPropagation()
-          e.preventDefault()
-          this.props.closeSelector()
-        }}
+        innerRef={this.props.axisSelectorRef}
+        onClickOutside={this.props.closeSelector}
         parentElement={this.props.popoverParentElement}
         boundaryElement={this.props.popoverParentElement}
         positions={this.props.positions}
         align={this.props.align}
-        reposition={true}
-        padding={10}
       >
         {this.props.children}
       </Popover>

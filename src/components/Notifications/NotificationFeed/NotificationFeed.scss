@@ -41,6 +41,13 @@
   .notification-feed-list {
     padding: 0 20px;
     padding-bottom: 10px;
+    overflow: hidden;
+  }
+}
+
+.react-autoql-notification-list-container-mobile {
+  .notification-feed-list {
+    padding: 0 10px;
   }
 }
 

@@ -1,6 +1,5 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Popover, ArrowContainer } from 'react-tiny-popover'
 
 import FilterLockPopoverContent from './FilterLockPopoverContent'
 import { isMobile } from 'react-device-detect'
@@ -9,6 +8,7 @@ import { authenticationType } from '../../props/types'
 import { authenticationDefault, getAuthentication } from '../../props/defaults'
 import { withTheme } from '../../theme'
 import { rebuildTooltips } from '../Tooltip'
+import { Popover } from '../Popover'
 
 import './FilterLockPopover.scss'
 
@@ -82,43 +82,36 @@ export class FilterLockPopover extends React.Component {
     this.setState({ insertedFilter: text })
   }
 
-  renderContent = ({ position, childRect, popoverRect }) => {
+  renderContent = () => {
     return (
-      <ArrowContainer
-        className='filter-lock-menu-content-container'
-        arrowClassName='filter-lock-menu-popover-arrow'
-        position={position}
-        childRect={childRect}
-        popoverRect={popoverRect}
-        arrowSize={10}
-      >
-        <FilterLockPopoverContent
-          authentication={this.props.authentication}
-          isOpen={this.props.isOpen}
-          onClose={this.props.onClose}
-          onChange={this.onChange}
-          containerRef={this.containerRef}
-          insertedFilter={this.state.insertedFilter}
-          initialFilters={this.state.initialFilters}
-          isFetchingFilters={this.state.isFetchingFilters}
-          tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
-        />
-      </ArrowContainer>
+      <FilterLockPopoverContent
+        authentication={this.props.authentication}
+        isOpen={this.props.isOpen}
+        onClose={this.props.onClose}
+        onChange={this.onChange}
+        containerRef={this.containerRef}
+        insertedFilter={this.state.insertedFilter}
+        initialFilters={this.state.initialFilters}
+        isFetchingFilters={this.state.isFetchingFilters}
+        tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+      />
     )
   }
 
   render = () => {
     return (
       <Popover
-        containerClassName={isMobile ? 'mobile-filter-lock-menu' : 'filter-lock-menu'}
+        containerClassName={`filter-lock-popover${isMobile ? ' filter-lock-popover-mobile' : ''}`}
+        // contentClassName={`filter-lock-menu${isMobile ? ' filter-lock-menu-mobile' : ''}`}
         onClickOutside={this.props.onClose}
         positions={this.props.positions}
         isOpen={this.props.isOpen}
         align={this.props.align}
         parentElement={this.props.parentElement}
         boundaryElement={this.props.boundaryElement}
-        content={this.renderContent}
+        content={this.renderContent()}
         boundaryInset={10}
+        showArrow
       >
         {this.props.children || <div style={{ display: 'none' }} />}
       </Popover>

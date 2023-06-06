@@ -54,15 +54,15 @@ describe('props', () => {
     })
   })
   describe('width', () => {
-    test('nullify width if placement is top', () => {
+    test('100vw width if placement is top', () => {
       const wrapper = setup({ placement: 'top', width: '200px' })
       const drawerProps = wrapper.find('.react-autoql-drawer').props()
-      expect(drawerProps.width).toBe(null)
+      expect(drawerProps.width).toBe('100vw')
     })
-    test('nullify width if placement is bottom', () => {
+    test('100vw width if placement is bottom', () => {
       const wrapper = setup({ placement: 'bottom', width: 600 })
       const drawerProps = wrapper.find('.react-autoql-drawer').props()
-      expect(drawerProps.width).toBe(null)
+      expect(drawerProps.width).toBe('100vw')
     })
     test('width is applied if placement is right', () => {
       const wrapper = setup({ placement: 'right', width: '500px' })
@@ -76,15 +76,15 @@ describe('props', () => {
     })
   })
   describe('height', () => {
-    test('nullify height if placement is left', () => {
+    test('100vh height if placement is left', () => {
       const wrapper = setup({ placement: 'left', height: '200px' })
       const drawerProps = wrapper.find('.react-autoql-drawer').props()
-      expect(drawerProps.height).toBe(null)
+      expect(drawerProps.height).toBe('100vh')
     })
-    test('nullify height if placement is right', () => {
+    test('100vh height if placement is right', () => {
       const wrapper = setup({ placement: 'right', height: 600 })
       const drawerProps = wrapper.find('.react-autoql-drawer').props()
-      expect(drawerProps.height).toBe(null)
+      expect(drawerProps.height).toBe('100vh')
     })
     test('height is applied if placement is top', () => {
       const wrapper = setup({ placement: 'top', height: '500px' })

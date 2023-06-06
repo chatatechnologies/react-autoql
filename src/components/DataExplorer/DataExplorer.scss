@@ -30,6 +30,7 @@
     margin: 50px auto;
     padding: 0 40px;
     font-size: 15px;
+    min-height: 0;
     flex: 1;
 
     h2 {
@@ -86,6 +87,7 @@
       flex-direction: column;
       justify-content: flex-start;
       overflow: hidden;
+      min-height: 0;
     }
 
     .data-explorer-section:last-of-type {
@@ -104,12 +106,10 @@
       flex: 0 1 100vh;
       height: 100%;
       padding-left: 8px;
+      min-height: 0;
     }
   }
 
-  .data-preview-scroll-component {
-    flex: 1;
-  }
   .react-autoql-card-title-text {
     display: flex;
     flex-wrap: nowrap;
@@ -133,6 +133,7 @@
   }
   .data-preview-scroll-container {
     color: var(--react-autoql-text-color-primary);
+    min-height: 0;
     flex: 1;
 
     .query-tip-item {
@@ -153,11 +154,14 @@
 
       .query-suggestion-text {
         display: flex;
-        align-items: center;
         flex-wrap: nowrap;
+        align-items: flex-start;
+        white-space: normal;
 
         .react-autoql-icon {
           margin-right: 5px;
+          margin-top: 4px;
+
           svg {
             stroke-width: 1px;
             stroke: currentColor;

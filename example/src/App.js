@@ -1479,7 +1479,6 @@ export default class App extends Component {
           ref={(ref) => (this.notificationListRef = ref)}
           authentication={this.getAuthProp()}
           autoChartAggregations={this.state.autoChartAggregations}
-          showCreateAlertBtn={true}
           onErrorCallback={this.onError}
           onSuccessCallback={this.onSuccess}
         />

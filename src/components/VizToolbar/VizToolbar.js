@@ -84,9 +84,10 @@ class VizToolbar extends React.Component {
       return (
         <Button
           onClick={() => this.onDisplayTypeChange(displayType)}
-          className={`react-autoql-toolbar-btn ${displayType === selectedDisplayType ? 'selected' : ''}`}
-          data-tip={name}
-          data-for={this.props.tooltipID ?? `react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
+          className={`react-autoql-toolbar-btn
+            ${displayType === selectedDisplayType ? 'react-autoql-toolbar-btn-selected' : ''}`}
+          tooltip={name}
+          tooltipID={this.props.tooltipID ?? `react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
           data-test='viz-toolbar-button'
           disabled={this.props.responseRef?.state?.isLoadingData}
         >

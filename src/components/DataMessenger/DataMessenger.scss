@@ -163,7 +163,7 @@
 
 .react-autoql-drawer .react-autoql-drawer-header-btn {
   &.hidden {
-    display: none;
+    display: none !important;
   }
 
   .react-autoql-filter-lock-icon-container {
@@ -404,20 +404,6 @@
   opacity: 1 !important;
   transition: none;
   z-index: 99999 !important; /* necessary to show up on top of rc drawer */
-}
-
-.react-tiny-popover-container {
-  z-index: 99999;
-  border: 1px solid #ababab52;
-  border-radius: 4px;
-  box-shadow: 0px 0 8px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
-  opacity: 1 !important;
-  overflow: hidden !important;
-  background-color: var(--react-autoql-background-color-secondary);
-
-  & > div {
-    position: relative;
-  }
 }
 
 .clear-messages-confirm-popover {

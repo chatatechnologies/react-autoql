@@ -1,38 +1,33 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
-import { v4 as uuid } from 'uuid'
 import Drawer from 'rc-drawer'
-import { Popover } from 'react-tiny-popover'
 import _get from 'lodash.get'
-import _has from 'lodash.has'
 import _isEmpty from 'lodash.isempty'
-import _isEqual from 'lodash.isequal'
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { ChatContent } from '../ChatContent'
-import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
-import { withTheme } from '../../theme'
-import { isBrowser, isMobile } from 'react-device-detect'
-
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
-import { autoQLConfigDefault, dataFormattingDefault, getAutoQLConfig } from '../../props/defaults'
-
-import { lang, setLanguage } from '../../js/Localization'
+import { v4 as uuid } from 'uuid'
 
 // Components
 import { Icon } from '../Icon'
-import { Button } from '../Button'
-
 import { ExploreQueries } from '../ExploreQueries'
 import { DataExplorer } from '../DataExplorer'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
 import { FilterLockPopover } from '../FilterLockPopover'
+import { ConfirmPopover } from '../ConfirmPopover'
+import { ChatContent } from '../ChatContent'
+import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+
+// Utils
+import { withTheme } from '../../theme'
+import { isBrowser, isMobile } from 'react-device-detect'
+import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
+import { autoQLConfigDefault, dataFormattingDefault, getAutoQLConfig } from '../../props/defaults'
+import { lang, setLanguage } from '../../js/Localization'
+import { mergeSources } from '../../js/Util'
 
 // Styles
 import 'rc-drawer/assets/index.css'
 import './DataMessenger.scss'
-import { mergeSources } from '../../js/Util'
-import { ConfirmPopover } from '../ConfirmPopover'
 
 export class DataMessenger extends React.Component {
   constructor(props) {
@@ -167,7 +162,7 @@ export class DataMessenger extends React.Component {
     title: 'Data Messenger',
     maxMessages: 20,
     introMessage: '',
-    enableExploreQueriesTab: true,
+    enableExploreQueriesTab: false,
     enableNotificationsTab: false,
     resizable: true,
     inputPlaceholder: 'Type your queries here',
@@ -387,17 +382,19 @@ export class DataMessenger extends React.Component {
   }
 
   getDrawerHeight = () => {
-    if (isBrowser && (this.state.placement === 'right' || this.state.placement === 'left')) {
-      return null
+    if (this.state.placement === 'right' || this.state.placement === 'left') {
+      return isMobile ? 'calc(100vh - 80px)' : '100vh'
     }
+
     return this.state.height
   }
 
   getDrawerWidth = () => {
-    if (this.state.placement === 'right' || this.state.placement === 'left') {
-      return this.state.width
+    if (this.state.placement === 'top' || this.state.placement === 'bottom') {
+      return '100vw'
     }
-    return null
+
+    return this.state.width
   }
 
   getPlacementProp = () => {
@@ -1022,7 +1019,8 @@ export class DataMessenger extends React.Component {
           data-test='react-autoql-drawer-test'
           className={`react-autoql-drawer
               ${this.state.isResizing ? ' disable-selection' : ''}
-              ${this.state.isVisible ? ' open' : ' closed'}`}
+              ${this.state.isVisible ? ' open' : ' closed'}
+              ${`drawer-${this.state.placement}`}`}
           showMask={this.props.showMask}
           placement={this.getPlacementProp()}
           width={this.getDrawerWidth()}

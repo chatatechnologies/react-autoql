@@ -1,8 +1,5 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
-import _get from 'lodash.get'
-import _cloneDeep from 'lodash.clonedeep'
-import _isEqual from 'lodash.isequal'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
@@ -214,26 +211,12 @@ export default class ChatMessage extends React.Component {
     return false
   }
 
-  scrollIntoView = ({ block = 'end', inline = 'nearest', behavior = 'smooth' } = {}) => {
+  scrollIntoView = ({ delay = 0, block = 'end', inline = 'nearest', behavior = 'smooth' } = {}) => {
     setTimeout(() => {
-      if (this.messageContainerRef && !this.isScrolledIntoView(this.messageContainerRef)) {
-        this.messageContainerRef.scrollIntoView({
-          block,
-          inline,
-          behavior,
-        })
+      if (this.messageAndRTContainerRef && !this.isScrolledIntoView(this.messageAndRTContainerRef)) {
+        this.messageAndRTContainerRef.scrollIntoView({ block, inline })
       }
-    }, 0)
-
-    setTimeout(() => {
-      if (this.messageContainerRef && !this.isScrolledIntoView(this.messageContainerRef)) {
-        this.messageContainerRef.scrollIntoView({
-          block,
-          inline,
-          behavior,
-        })
-      }
-    }, 100)
+    }, delay)
   }
 
   updateDataConfig = (config) => {
@@ -260,7 +243,7 @@ export default class ChatMessage extends React.Component {
       return this.renderCSVProgressMessage()
     } else if (this.props.content) {
       return this.props.content
-    } else if (_get(this.props.response, 'status') === 401) {
+    } else if (this.props.response?.status === 401) {
       return errorMessages.UNAUTHENTICATED
     } else if (this.props.response) {
       return (
@@ -378,38 +361,39 @@ export default class ChatMessage extends React.Component {
     return (
       <ErrorBoundary>
         <div
-          id={`message-${this.props.id}`}
-          ref={(r) => (this.messageContainerRef = r)}
-          data-test='chat-message'
-          className={`chat-single-message-container
-            ${this.props.isResponse ? ' response' : ' request'}
-            ${this.props.disableMaxHeight || this.props.isIntroMessage ? ' no-max-height' : ''}
-          `}
+          className={`chat-message-and-rt-container
+            ${this.props.isResponse ? 'response' : 'request'}
+            ${this.props.type === 'text' ? 'text' : ''}
+            ${this.props.isActive ? 'active' : ''}
+            ${this.props.disableMaxHeight || this.props.isIntroMessage ? ' no-max-height' : ''}`}
+          ref={(r) => (this.messageAndRTContainerRef = r)}
         >
+          <div className='chat-message-toolbars-container'>
+            {this.renderLeftToolbar()}
+            {this.renderRightToolbar()}
+          </div>
           <div
-            ref={(r) => (this.ref = r)}
-            className={`chat-message-bubble
-              ${this.props.type === 'text' ? ' text' : ''}
-              ${this.props.isActive ? ' active' : ''}`}
+            id={`message-${this.props.id}`}
+            ref={(r) => (this.messageContainerRef = r)}
+            data-test='chat-message'
+            className='chat-single-message-container'
           >
-            {this.renderContent()}
-            <div className='chat-message-toolbars-container'>
-              {this.renderLeftToolbar()}
-              {this.renderRightToolbar()}
+            <div ref={(r) => (this.ref = r)} className='chat-message-bubble'>
+              {this.renderContent()}
             </div>
           </div>
+          {hasRT ? (
+            <div className='chat-message-rt-container'>
+              <ReverseTranslation
+                authentication={this.props.authentication}
+                onValueLabelClick={this.props.onRTValueLabelClick}
+                queryResponse={this.responseRef.queryResponse}
+                isResizing={this.props.isResizing}
+                tooltipID={this.props.tooltipID}
+              />
+            </div>
+          ) : null}
         </div>
-        {hasRT ? (
-          <div className='chat-message-rt-container'>
-            <ReverseTranslation
-              authentication={this.props.authentication}
-              onValueLabelClick={this.props.onRTValueLabelClick}
-              queryResponse={this.responseRef.queryResponse}
-              isResizing={this.props.isResizing}
-              tooltipID={this.props.tooltipID}
-            />
-          </div>
-        ) : null}
       </ErrorBoundary>
     )
   }

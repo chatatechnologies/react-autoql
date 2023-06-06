@@ -363,7 +363,7 @@ describe('formatElement', () => {
     test('renders 1 decimal orig has decimals', () => {
       const element = (22 / 7) * 5000
       const column = { type: 'QUANTITY' }
-      expect(formatElement({ element, column })).toEqual('15,714.3')
+      expect(formatElement({ element, column })).toEqual('15,714.29')
     })
 
     test('renders no decimals if config is 0', () => {})
