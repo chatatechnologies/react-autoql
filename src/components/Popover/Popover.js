@@ -64,7 +64,7 @@ class PopoverWithoutRef extends React.Component {
         onClickOutside={(e) => {
           e.stopPropagation()
           e.preventDefault()
-          this.props.onClickOutside()
+          this.props.onClickOutside(e)
         }}
         parentElement={isMobile ? undefined : this.props.parentElement}
         boundaryElement={isMobile ? undefined : this.props.boundaryElement}
