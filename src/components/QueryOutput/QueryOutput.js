@@ -1352,13 +1352,12 @@ export class QueryOutput extends React.Component {
   }
 
   onChangeNumberColumnIndices = (indices, indices2, newColumns) => {
-    if (!indices) {
-      return
-    }
-
     if (this.usePivotDataForChart()) {
-      this.pivotTableConfig.numberColumnIndices = indices
-      this.pivotTableConfig.numberColumnIndex = indices[0]
+      if (indices) {
+        this.pivotTableConfig.numberColumnIndices = indices
+        this.pivotTableConfig.numberColumnIndex = indices[0]
+      }
+
       if (indices2) {
         this.pivotTableConfig.numberColumnIndices2 = indices2
         this.pivotTableConfig.numberColumnIndex2 = indices2[0]
@@ -1371,8 +1370,11 @@ export class QueryOutput extends React.Component {
 
       this.forceUpdate()
     } else {
-      this.tableConfig.numberColumnIndices = indices
-      this.tableConfig.numberColumnIndex = indices[0]
+      if (indices) {
+        this.tableConfig.numberColumnIndices = indices
+        this.tableConfig.numberColumnIndex = indices[0]
+      }
+
       if (indices2) {
         this.tableConfig.numberColumnIndices2 = indices2
         this.tableConfig.numberColumnIndex2 = indices2[0]

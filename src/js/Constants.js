@@ -24,6 +24,7 @@ export const CHART_TYPES = [
   'stacked_line',
   'column_line',
   'histogram',
+  'scatterplot',
 ]
 
 export const DATE_ONLY_CHART_TYPES = ['line', 'stacked_line']

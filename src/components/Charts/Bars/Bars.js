@@ -75,7 +75,7 @@ export default class Bars extends Component {
               row: d,
               columns,
               colIndex,
-              stringColumnIndex,
+              colIndex2: stringColumnIndex,
               legendColumn,
               dataFormatting,
             })

@@ -12,7 +12,8 @@ export default class SingleNumberAxisSelector extends React.Component {
   }
 
   renderSelectorContent = ({ position, childRect, popoverRect }) => {
-    if (this.props.hidden) {
+    const { hidden, scale, columns } = this.props
+    if (hidden || !scale || !columns) {
       return null
     }
 
@@ -31,6 +32,11 @@ export default class SingleNumberAxisSelector extends React.Component {
       maxHeight = Window.innerHeight
     }
 
+    const existingNumberScale = scale.secondScale
+    const filteredColumns = columns.filter(
+      (col) => !existingNumberScale?.fields?.find((field) => field.name === col.name),
+    )
+
     return (
       <div className='string-axis-selector-popover-content'>
         <CustomScrollbars autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
@@ -42,21 +48,24 @@ export default class SingleNumberAxisSelector extends React.Component {
             }}
           >
             <ul className='axis-selector-content'>
-              {this.props.columns.map((col, colIndex) => {
+              {filteredColumns.map((col) => {
                 if (!isColumnNumberType(col)) {
                   return null
                 }
 
+                const colIndex = columns.findIndex((origColumn) => origColumn.name === col.name)
+
                 return (
                   <li
-                    className={`string-select-list-item ${colIndex === this.props.numberColumnIndex ? 'active' : ''}`}
+                    className={`string-select-list-item ${colIndex === scale.columnIndex ? 'active' : ''}`}
                     key={`string-column-select-${colIndex}`}
                     onClick={() => {
                       this.props.closeSelector()
-                      this.props.changeNumberColumnIndices([colIndex])
+                      scale.changeColumnIndices([colIndex])
+                      // this.props.changeNumberColumnIndices([colIndex])
                     }}
                   >
-                    {this.props.columns?.[colIndex]?.display_name}
+                    {col.display_name}
                   </li>
                 )
               })}

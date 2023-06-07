@@ -91,9 +91,23 @@
   .stacked-column {
     cursor: pointer;
 
-    // Setting a transparen stroke allows a larger hover area
+    // Setting a transparent stroke allows a larger hover area
     stroke: transparent;
     stroke-width: 10px;
+  }
+
+  .point {
+    cursor: pointer;
+    outline: none !important;
+    transition: stroke 0.3s ease, fill-opacity 0.3s ease;
+    stroke-width: 8px;
+
+    &:hover,
+    &.active {
+      stroke: currentColor !important;
+      fill: currentColor !important;
+      fill-opacity: 1 !important;
+    }
   }
 
   .distribution-hover-line {

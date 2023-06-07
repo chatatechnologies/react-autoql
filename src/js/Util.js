@@ -373,7 +373,7 @@ export const formatStringDate = (value, config) => {
   return value
 }
 
-export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWidth }) => {
+export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWidth, useNiceLabels = true }) => {
   if (d === null) {
     return {
       fullWidthLabel: 'Untitled Category',
@@ -399,67 +399,77 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWid
   }
 
   let formattedLabel = d
-  switch (type) {
-    case 'STRING': {
-      break
-    }
-    case 'DOLLAR_AMT': {
-      if (Number(d) || Number(d) === 0) {
-        const currency = currencyCode || 'USD'
-        try {
+
+  if (scale?.showLabelDecimals) {
+    formattedLabel = formatElement({
+      element: d,
+      column: column ?? scale?.column,
+      config: dataFormatting,
+      isChart: true,
+    })
+  } else {
+    switch (type) {
+      case 'STRING': {
+        break
+      }
+      case 'DOLLAR_AMT': {
+        if (Number(d) || Number(d) === 0) {
+          const currency = currencyCode || 'USD'
+          try {
+            formattedLabel = new Intl.NumberFormat(languageCode, {
+              style: 'currency',
+              currency: `${currency}`,
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0,
+              notation: 'compact',
+            }).format(d)
+          } catch (error) {
+            console.error(error)
+            formattedLabel = new Intl.NumberFormat(languageCode, {
+              style: 'currency',
+              currency: 'USD',
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0,
+              notation: 'compact',
+            }).format(d)
+          }
+        }
+        break
+      }
+      case 'QUANTITY': {
+        if (!isNaN(parseFloat(d))) {
           formattedLabel = new Intl.NumberFormat(languageCode, {
-            style: 'currency',
-            currency: `${currency}`,
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-            notation: 'compact',
-          }).format(d)
-        } catch (error) {
-          console.error(error)
-          formattedLabel = new Intl.NumberFormat(languageCode, {
-            style: 'currency',
-            currency: 'USD',
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
             notation: 'compact',
           }).format(d)
         }
+        break
       }
-      break
-    }
-    case 'QUANTITY': {
-      if (!isNaN(parseFloat(d))) {
-        formattedLabel = new Intl.NumberFormat(languageCode, {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
-          notation: 'compact',
-        }).format(d)
-      }
-      break
-    }
-    case 'DATE': {
-      const isDateObj = scale?.type === 'TIME'
-      formattedLabel = formatDateType(d, col, config, isDateObj)
+      case 'DATE': {
+        const isDateObj = scale?.type === 'TIME'
+        formattedLabel = formatDateType(d, col, config, isDateObj)
 
-      break
-    }
-    case 'DATE_STRING': {
-      formattedLabel = formatDateStringType(d, col, config, scale)
-      break
-    }
-    case 'PERCENT': {
-      if (Number(d)) {
-        const p = Number(d) / 100
-        formattedLabel = new Intl.NumberFormat(languageCode, {
-          style: 'percent',
-          minimumFractionDigits: 1,
-          maximumFractionDigits: 1,
-        }).format(p)
+        break
       }
-      break
-    }
-    default: {
-      break
+      case 'DATE_STRING': {
+        formattedLabel = formatDateStringType(d, col, config, scale)
+        break
+      }
+      case 'PERCENT': {
+        if (Number(d)) {
+          const p = Number(d) / 100
+          formattedLabel = new Intl.NumberFormat(languageCode, {
+            style: 'percent',
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1,
+          }).format(p)
+        }
+        break
+      }
+      default: {
+        break
+      }
     }
   }
 
@@ -914,7 +924,7 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
     } else if (supports2DCharts(visibleColumns, numRows)) {
       // If there is at least one string column and one number
       // column, we should be able to chart anything
-      const supportedDisplayTypes = ['table', 'column', 'bar']
+      const supportedDisplayTypes = ['table', 'column', 'bar', 'histogram']
 
       if (hasDateColumn(visibleColumns)) {
         supportedDisplayTypes.push('line')
@@ -927,7 +937,8 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
       const { amountOfNumberColumns } = getColumnTypeAmounts(visibleColumns)
       if (amountOfNumberColumns > 1) {
         supportedDisplayTypes.push('column_line')
-        supportedDisplayTypes.push('histogram')
+        supportedDisplayTypes.push('scatterplot')
+        // supportedDisplayTypes.push('histogram')
       }
 
       // Check if date pivot should be supported

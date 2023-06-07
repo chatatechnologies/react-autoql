@@ -91,7 +91,7 @@ export default class Circles extends Component {
             row,
             columns,
             colIndex,
-            stringColumnIndex,
+            colIndex2: stringColumnIndex,
             legendColumn,
             dataFormatting,
           })

@@ -195,6 +195,7 @@ export default class Axis extends Component {
       if (label?.formattedLabel) {
         return label.formattedLabel
       }
+      console.log({ label })
       return d
     })
 
@@ -475,6 +476,7 @@ export default class Axis extends Component {
         hidden={!this.shouldRenderAxisSelector()}
         columns={this.props.columns}
         scale={this.props.scale}
+        secondScale={this.props.scale?.secondScale}
         align='center'
         position='right'
         positions={positions}

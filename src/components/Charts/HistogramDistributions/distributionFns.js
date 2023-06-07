@@ -1,6 +1,6 @@
 import jstat from 'jstat'
 // import { integral } from 'mathjs'
-const numericalIntegration = (func, start, end, numSegments) => {
+export const numericalIntegration = (func, start, end, numSegments = 100) => {
   const segmentWidth = (end - start) / numSegments
   let integral = 0
 
@@ -22,24 +22,13 @@ export const exponentialPDF = ({ value, mean }) => {
   return probability
 }
 
-// export const integrateRange = ({ value, fn, ...params }) => {
-//   const start = value.x0
-//   const end = value.x1
-
-//   return integral(() => fn(...params), start, end)
-// }
-
-// export const normalPDF = ()
-// const normalPDFFn = (x) => jstat.normal.pdf(x, mean, stdDev)
-
 export const normalPDF = ({ value, mean, stdDev }) => {
-  // Area under the curve of the bucket range is the probability
-  // const start = value.x0
-  // const end = value.x1
-  // const integral = numericalIntegration((x) => jstat.normal.pdf(x, mean, stdDev), start, end, 100)
-  // return integral
-
   return jstat.normal.pdf(value, mean, stdDev)
+}
+
+export const normalPDFRange = ({ start, end, mean, stdDev }) => {
+  // Area under the curve of the bucket range is the probability
+  return numericalIntegration((value) => normalPDF({ value, mean, stdDev }), start, end)
 }
 
 export const lognormalPDF = ({ value, mean, stdDev }) => {

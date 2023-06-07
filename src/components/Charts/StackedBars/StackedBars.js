@@ -76,7 +76,7 @@ export default class StackedBars extends Component {
             row: d,
             columns,
             colIndex,
-            stringColumnIndex,
+            colIndex2: stringColumnIndex,
             legendColumn,
             dataFormatting,
           })

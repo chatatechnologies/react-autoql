@@ -36,6 +36,7 @@ import { aggregateData } from './aggregate'
 import { DATE_ONLY_CHART_TYPES, DOUBLE_AXIS_CHART_TYPES } from '../../../js/Constants'
 
 import './ChataChart.scss'
+import { ChataScatterplotChart } from '../ChataScatterplotChart'
 
 export default class ChataChart extends Component {
   constructor(props) {
@@ -390,7 +391,7 @@ export default class ChataChart extends Component {
     }
   }
 
-  getCommonChartProps = () => {
+  getCommonChartProps = ({ aggregated = true } = {}) => {
     const { deltaX, deltaY } = this.state
     const { numberColumnIndices, numberColumnIndices2, columns, enableDynamicCharting } = this.props
 
@@ -406,6 +407,8 @@ export default class ChataChart extends Component {
     const { outerHeight, outerWidth } = this.getOuterDimensions()
     const { colorScale, colorScale2 } = this.getColorScales()
 
+    const data = (aggregated ? this.state.data : null) || this.props.data
+
     return {
       ...this.props,
       columns,
@@ -413,7 +416,8 @@ export default class ChataChart extends Component {
       ref: (r) => (this.innerChartRef = r),
       innerChartRef: this.innerChartRef?.chartRef,
       key: undefined,
-      data: this.state.data || this.props.data,
+      data,
+      aggregated,
       disableTimeScale: this.disableTimeScale,
       colorScale,
       colorScale2,
@@ -463,7 +467,8 @@ export default class ChataChart extends Component {
   renderStackedBarChart = () => <ChataStackedBarChart {...this.getCommonChartProps()} />
   renderStackedLineChart = () => <ChataStackedLineChart {...this.getCommonChartProps()} />
   renderColumnLineChart = () => <ChataColumnLineChart {...this.getCommonChartProps()} />
-  renderHistogramChart = () => <ChataHistogram {...this.getCommonChartProps()} data={this.props.data} />
+  renderHistogramChart = () => <ChataHistogram {...this.getCommonChartProps({ aggregated: false })} />
+  renderScatterplotChart = () => <ChataScatterplotChart {...this.getCommonChartProps({ aggregated: false })} />
 
   renderChart = () => {
     switch (this.props.type) {
@@ -499,6 +504,9 @@ export default class ChataChart extends Component {
       }
       case 'histogram': {
         return this.renderHistogramChart()
+      }
+      case 'scatterplot': {
+        return this.renderScatterplotChart()
       }
       default: {
         return 'Unknown Display Type'
