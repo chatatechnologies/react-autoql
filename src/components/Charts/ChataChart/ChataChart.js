@@ -17,6 +17,7 @@ import { ChataColumnLineChart } from '../ChataColumnLine'
 import { ChataHistogram } from '../ChataHistogram'
 import { Spinner } from '../../Spinner'
 import { Slider } from '../../Slider'
+import { Input } from '../../Input'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import { svgToPng, getBBoxFromRef, sortDataByDate, deepEqual, rotateArray, onlyUnique } from '../../../js/Util.js'
@@ -45,7 +46,6 @@ export default class ChataChart extends Component {
 
     this.PADDING = 0
     this.FONT_SIZE = 12
-    this.DEFAULT_HISTOGRAM_THRESHOLDS = 20
 
     this.firstRender = true
     this.shouldRecalculateDimensions = false
@@ -57,7 +57,7 @@ export default class ChataChart extends Component {
       deltaY: 0,
       isLoading: true,
       isLoadingMoreRows: false,
-      thresholds: this.DEFAULT_HISTOGRAM_THRESHOLDS,
+      bucketSize: 0,
     }
   }
 
@@ -391,6 +391,38 @@ export default class ChataChart extends Component {
     }
   }
 
+  changeNumberColumnIndices = (...params) => {
+    this.setState({ bucketSize: undefined })
+    this.props.changeNumberColumnIndices(...params)
+  }
+
+  renderChartHeader = () => {
+    if (this.props.type === 'histogram') {
+      return this.renderHistogramSlider()
+    }
+
+    return null
+  }
+
+  renderHistogramSlider = () => {
+    if (!this.innerChartRef?.bucketSize) {
+      return null
+    }
+
+    return (
+      <div className='react-autoql-histogram-toolbar-container'>
+        <Slider
+          className='react-autoql-histogram-slider'
+          initialValue={this.innerChartRef?.bucketSize}
+          min={this.innerChartRef?.minBucketSize}
+          max={this.innerChartRef?.maxBucketSize}
+          onChange={(bucketSize) => this.setState({ bucketSize })}
+          showInput
+        />
+      </div>
+    )
+  }
+
   getCommonChartProps = ({ aggregated = true } = {}) => {
     const { deltaX, deltaY } = this.state
     const { numberColumnIndices, numberColumnIndices2, columns, enableDynamicCharting } = this.props
@@ -441,8 +473,8 @@ export default class ChataChart extends Component {
       popoverParentElement: this.props.popoverParentElement,
       totalRowCount: this.props.totalRowCount,
       chartID: this.state.chartID,
-      thresholds: this.state.thresholds,
-      onThresholdChange: (thresholds) => this.setState({ thresholds }),
+      bucketSize: this.state.bucketSize,
+      changeNumberColumnIndices: this.changeNumberColumnIndices,
       onAxesRenderComplete: this.adjustChartPosition,
     }
   }
@@ -524,35 +556,31 @@ export default class ChataChart extends Component {
     const chartTextColor = getThemeValue('text-color-primary')
     const chartBackgroundColor = getThemeValue('background-color-secondary')
 
+    let headerHeight = 0
+    if (this.props.type === 'histogram') {
+      headerHeight = 40
+    }
+
     return (
       <ErrorBoundary>
-        <div
-          id={`react-autoql-chart-${this.state.chartID}`}
-          key={`react-autoql-chart-${this.state.chartID}`}
-          ref={(r) => (this.chartContainerRef = r)}
-          data-test='react-autoql-chart'
-          className={`react-autoql-chart-container
+        <>
+          {this.renderChartHeader()}
+          <div
+            id={`react-autoql-chart-${this.state.chartID}`}
+            key={`react-autoql-chart-${this.state.chartID}`}
+            ref={(r) => (this.chartContainerRef = r)}
+            data-test='react-autoql-chart'
+            className={`react-autoql-chart-container
             ${this.state.isLoading || this.props.isResizing ? 'loading' : ''}
             ${this.state.isLoadingMoreRows ? 'loading-rows' : ''}
             ${this.props.hidden ? 'hidden' : ''}`}
-        >
-          {!this.firstRender && !this.props.isResizing && !this.props.isAnimating && (
-            <Fragment>
-              {this.props.type === 'histogram' && (
-                <Slider
-                  className='react-autoql-histogram-slider'
-                  initialValue={this.DEFAULT_HISTOGRAM_THRESHOLDS}
-                  min={1}
-                  max={this.innerChartRef?.maxBuckets ?? 50}
-                  onChange={this.innerChartRef?.onThresholdChange}
-                />
-              )}
-
+          >
+            {!this.firstRender && !this.props.isResizing && !this.props.isAnimating && (
               <svg
                 ref={(r) => (this.chartRef = r)}
                 xmlns='http://www.w3.org/2000/svg'
                 width='100%'
-                height='100%'
+                height={`calc(100% - ${headerHeight})`}
                 style={{
                   fontSize: '12px',
                   fontFamily: chartFontFamily,
@@ -567,10 +595,10 @@ export default class ChataChart extends Component {
                   {this.renderChart()}
                 </g>
               </svg>
-            </Fragment>
-          )}
-          {this.state.isLoadingMoreRows && this.renderChartLoader()}
-        </div>
+            )}
+            {this.state.isLoadingMoreRows && this.renderChartLoader()}
+          </div>
+        </>
       </ErrorBoundary>
     )
   }

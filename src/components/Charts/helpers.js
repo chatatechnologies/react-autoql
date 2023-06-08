@@ -645,8 +645,10 @@ export const getNumberAxisUnits = (numberColumns) => {
   return 'none'
 }
 
-export const getBinLinearScale = ({ props, columnIndex, axis, domain, buckets, bins, changeColumnIndices } = {}) => {
+export const getBinLinearScale = ({ props, columnIndex, axis, buckets, bins, changeColumnIndices } = {}) => {
   const { amountOfNumberColumns } = getColumnTypeAmounts(props.columns)
+
+  const domain = [bins.at(0), bins.at(-1)]
 
   const range = getRangeForAxis(props, axis)
   const scale = scaleLinear().domain(domain).range(range)

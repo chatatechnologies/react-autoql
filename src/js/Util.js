@@ -373,7 +373,7 @@ export const formatStringDate = (value, config) => {
   return value
 }
 
-export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWidth, useNiceLabels = true }) => {
+export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWidth }) => {
   if (d === null) {
     return {
       fullWidthLabel: 'Untitled Category',
@@ -414,23 +414,34 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWid
       }
       case 'DOLLAR_AMT': {
         if (Number(d) || Number(d) === 0) {
+          const style = 'currency'
           const currency = currencyCode || 'USD'
+          const notation = 'compact'
+          let minimumFractionDigits = 0
+          let maximumFractionDigits = 0
+
+          const domain = scale?.domain()
+          if (domain && domain[1] - domain[0] < 10) {
+            minimumFractionDigits = 2
+            maximumFractionDigits = 2
+          }
+
           try {
             formattedLabel = new Intl.NumberFormat(languageCode, {
-              style: 'currency',
-              currency: `${currency}`,
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
-              notation: 'compact',
+              style,
+              currency,
+              minimumFractionDigits,
+              maximumFractionDigits,
+              notation,
             }).format(d)
           } catch (error) {
             console.error(error)
             formattedLabel = new Intl.NumberFormat(languageCode, {
-              style: 'currency',
+              style,
               currency: 'USD',
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
-              notation: 'compact',
+              minimumFractionDigits,
+              maximumFractionDigits,
+              notation,
             }).format(d)
           }
         }
@@ -438,6 +449,15 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWid
       }
       case 'QUANTITY': {
         if (!isNaN(parseFloat(d))) {
+          let minimumFractionDigits = 0
+          let maximumFractionDigits = 0
+
+          const domain = scale?.domain()
+          if (domain && domain[1] - domain[0] < 10) {
+            minimumFractionDigits = 2
+            maximumFractionDigits = 2
+          }
+
           formattedLabel = new Intl.NumberFormat(languageCode, {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,

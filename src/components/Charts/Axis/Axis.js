@@ -195,7 +195,6 @@ export default class Axis extends Component {
       if (label?.formattedLabel) {
         return label.formattedLabel
       }
-      console.log({ label })
       return d
     })
 

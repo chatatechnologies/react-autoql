@@ -11,7 +11,8 @@ export default class ChataHistogram extends Component {
   constructor(props) {
     super(props)
 
-    this.maxBuckets = 100
+    this.minNumBuckets = 1
+    this.maxNumBuckets = 100
 
     this.state = {}
   }
@@ -30,64 +31,62 @@ export default class ChataHistogram extends Component {
     this.uniqueNumberValues < this.MAX_HISTOGRAM_COLUMNS ? this.uniqueNumberValues : this.MAX_HISTOGRAM_COLUMNS
   }
 
-  getDomain = () => {
+  getInitialNumberOfBuckets = () => {
+    // Using Sturge's rule https://www.statisticshowto.com/choose-bin-sizes-statistics/
+    const numBuckets = Math.round(1 + 3.322 * Math.log(this.props.data?.length))
+    return numBuckets
+  }
+
+  roundUpToNearestMultiple = (value, multiple = 1) => {
+    return Math.ceil(value / multiple) * multiple
+  }
+
+  roundDownToNearestMultiple = (value, multiple) => {
+    return Math.floor(value / multiple) * multiple
+  }
+
+  getBinData = (newBucketSize) => {
     const minValue = min(this.props.data, (d) => convertToNumber(d[this.props.numberColumnIndex]))
     const maxValue = max(this.props.data, (d) => convertToNumber(d[this.props.numberColumnIndex]))
 
-    if (minValue === maxValue) {
-      return [minValue * 0.5, maxValue * 1.5]
+    this.bucketSize = newBucketSize
+    this.maxBucketSize = Math.floor((maxValue - minValue) / this.minNumBuckets)
+    this.minBucketSize = Math.ceil((maxValue - minValue) / this.maxNumBuckets)
+
+    if (!this.bucketSize) {
+      const initialNumBuckets = this.getInitialNumberOfBuckets()
+      this.bucketSize = Math.ceil((maxValue - minValue) / initialNumBuckets)
     }
 
-    return [minValue, maxValue]
-  }
-
-  onThresholdChange = (value, index) => {
-    const newBuckets = this.getBinData(value, this.domain)?.buckets
-    const bucketsChanged = newBuckets?.length !== this.buckets?.length
-
-    if (bucketsChanged) {
-      this.thresholdChanged = true
-      this.props.onThresholdChange(value)
-    }
-  }
-
-  getBinData = (thresholds, domain) => {
-    // TODO: make own function to get buckets based on bucket size instead of number of buckets
-
-    const binSize = (domain[1] - domain[0]) / thresholds
-    const bins = []
-    for (let i = 0; i < thresholds; i++) {
-      bins.push(domain[0] + i * binSize)
+    let bucketValue = this.roundDownToNearestMultiple(minValue, this.bucketSize)
+    const bins = [bucketValue]
+    while (bucketValue < maxValue) {
+      bucketValue += this.bucketSize
+      bins.push(bucketValue)
     }
 
     const binFn = bin()
       .value((d) => d[this.props.numberColumnIndex])
-      .domain(domain)
-      .thresholds(thresholds)
-    // .thresholds(bins)
+      .domain([bins.at(0), bins.at(-1)])
+      .thresholds(bins)
 
     return { buckets: binFn(this.props.data), bins }
   }
 
   setChartData = (props) => {
-    this.domain = this.getDomain()
     const uniqueNumberValues = props.data.map((d) => d[props.numberColumnIndex]).filter(onlyUnique).length
-    this.maxBuckets = uniqueNumberValues < this.maxBuckets ? uniqueNumberValues : this.maxBuckets
-    const { buckets, bins } = this.getBinData(this.props.thresholds, this.domain)
+    this.maxNumBuckets = uniqueNumberValues < this.maxBucketSize ? uniqueNumberValues : this.maxBucketSize
+    const { buckets, bins } = this.getBinData(this.props.bucketSize)
     this.buckets = buckets
+    this.bins = bins
 
     this.xScale = getBinLinearScale({
       props,
       columnIndex: props.numberColumnIndex,
       axis: 'x',
       buckets: this.buckets,
-      domain: this.domain,
       bins,
     })
-
-    // if (this.thresholdChanged) {
-    //   this.xScale.showLabelDecimals = true
-    // }
 
     this.yScale = getHistogramScale({
       props,
@@ -113,7 +112,13 @@ export default class ChataHistogram extends Component {
         >
           {this.props.marginAdjustmentFinished && (
             <>
-              <HistogramColumns {...this.props} xScale={this.xScale} yScale={this.yScale} buckets={this.buckets} />
+              <HistogramColumns
+                {...this.props}
+                xScale={this.xScale}
+                yScale={this.yScale}
+                buckets={this.buckets}
+                bins={this.bins}
+              />
               <HistogramDistributions
                 {...this.props}
                 xScale={this.xScale}
