@@ -25,7 +25,9 @@
 
   &.request {
     animation: scale-up-br 0.5s ease;
-
+	&.pwa{
+		margin-bottom: 30px;
+	}
     .chat-single-message-container {
       justify-content: flex-end;
 
@@ -38,7 +40,12 @@
 
   &.response {
     animation: scale-up-bl 0.5s ease;
-
+	&.pwa{
+		margin-bottom: 15px;
+		&.text{
+			margin-bottom: 0px;
+		}
+	}
     .chat-single-message-container {
       justify-content: flex-start;
 

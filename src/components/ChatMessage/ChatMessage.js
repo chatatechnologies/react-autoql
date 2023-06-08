@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-
+import { isMobile } from 'react-device-detect'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
 import {
@@ -363,6 +363,7 @@ export default class ChatMessage extends React.Component {
         <div
           className={`chat-message-and-rt-container
             ${this.props.isResponse ? 'response' : 'request'}
+			${isMobile ? 'pwa' : ''}
             ${this.props.type === 'text' ? 'text' : ''}
             ${this.props.isActive ? 'active' : ''}
             ${this.props.disableMaxHeight || this.props.isIntroMessage ? ' no-max-height' : ''}`}
