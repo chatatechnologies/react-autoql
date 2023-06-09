@@ -373,6 +373,32 @@ export const formatStringDate = (value, config) => {
   return value
 }
 
+export const getNumberFormatConfig = (d, scale) => {
+  let minimumFractionDigits = 0
+  let maximumFractionDigits = 0
+  let notation
+
+  const domainRange = scale?.domain()?.[1] - scale?.domain()?.[0]
+  const smallDomain = domainRange && domainRange < 10
+  const absValue = Math.abs(d)
+
+  if (smallDomain) {
+    minimumFractionDigits = 2
+    maximumFractionDigits = 2
+  } else if (absValue >= 1e3) {
+    notation = 'compact'
+    if (absValue > 1e9) {
+      maximumFractionDigits = 3
+    } else if (absValue > 1e6) {
+      maximumFractionDigits = 2
+    } else if (absValue > 1e3) {
+      maximumFractionDigits = 1
+    }
+  }
+
+  return { minimumFractionDigits, maximumFractionDigits, notation }
+}
+
 export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWidth }) => {
   if (d === null) {
     return {
@@ -398,6 +424,8 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWid
     type = 'QUANTITY'
   }
 
+  const { minimumFractionDigits, maximumFractionDigits, notation } = getNumberFormatConfig(d, scale)
+
   let formattedLabel = d
 
   if (scale?.showLabelDecimals) {
@@ -416,32 +444,24 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWid
         if (Number(d) || Number(d) === 0) {
           const style = 'currency'
           const currency = currencyCode || 'USD'
-          const notation = 'compact'
-          let minimumFractionDigits = 0
-          let maximumFractionDigits = 0
 
-          const domain = scale?.domain()
-          if (domain && domain[1] - domain[0] < 10) {
-            minimumFractionDigits = 2
-            maximumFractionDigits = 2
+          const currencyConfig = {
+            style,
+            minimumFractionDigits,
+            maximumFractionDigits,
+            notation,
           }
 
           try {
             formattedLabel = new Intl.NumberFormat(languageCode, {
-              style,
+              ...currencyConfig,
               currency,
-              minimumFractionDigits,
-              maximumFractionDigits,
-              notation,
             }).format(d)
           } catch (error) {
             console.error(error)
             formattedLabel = new Intl.NumberFormat(languageCode, {
-              style,
+              ...currencyConfig,
               currency: 'USD',
-              minimumFractionDigits,
-              maximumFractionDigits,
-              notation,
             }).format(d)
           }
         }
@@ -449,19 +469,10 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWid
       }
       case 'QUANTITY': {
         if (!isNaN(parseFloat(d))) {
-          let minimumFractionDigits = 0
-          let maximumFractionDigits = 0
-
-          const domain = scale?.domain()
-          if (domain && domain[1] - domain[0] < 10) {
-            minimumFractionDigits = 2
-            maximumFractionDigits = 2
-          }
-
           formattedLabel = new Intl.NumberFormat(languageCode, {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-            notation: 'compact',
+            minimumFractionDigits,
+            maximumFractionDigits,
+            notation,
           }).format(d)
         }
         break
