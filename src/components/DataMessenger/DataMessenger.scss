@@ -143,6 +143,16 @@
     font-size: 18px;
     letter-spacing: 0.05em;
   }
+  .react-autoql-drawer .react-autoql-header-left-container {
+	&.hidden {
+		width:0px;
+	  }
+  }
+  .react-autoql-drawer .react-autoql-header-right-container {
+	&.hidden {
+		width:0px;
+	  }
+  }
   .react-autoql-drawer .drawer-content-wrapper {
     transition: unset !important;
   }

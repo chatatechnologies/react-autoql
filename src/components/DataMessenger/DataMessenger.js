@@ -671,7 +671,11 @@ export class DataMessenger extends React.Component {
     const isFullScreen = this.state.width === maxWidth
     return (
       <Fragment>
-        <div className='react-autoql-header-left-container'>
+        <div
+          className={`react-autoql-header-left-container ${
+            this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
+          }`}
+        >
           {isBrowser ? (
             <>
               <button
@@ -696,7 +700,13 @@ export class DataMessenger extends React.Component {
           )}
         </div>
         <div className='react-autoql-header-center-container'>{this.renderHeaderTitle()}</div>
-        <div className='react-autoql-header-right-container'>{this.renderRightHeaderContent()}</div>
+        <div
+          className={`react-autoql-header-right-container ${
+            this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
+          }`}
+        >
+          {this.renderRightHeaderContent()}
+        </div>
       </Fragment>
     )
   }
