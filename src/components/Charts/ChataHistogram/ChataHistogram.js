@@ -11,8 +11,16 @@ export default class ChataHistogram extends Component {
   constructor(props) {
     super(props)
 
-    this.minNumBuckets = 1
-    this.maxNumBuckets = 100
+    this.minNumBuckets = 5
+    this.maxNumBuckets = 20
+
+    if (props.data.length < this.minNumBuckets) {
+      this.minNumBuckets = 2
+    }
+
+    if (props.data.length < this.maxNumBuckets) {
+      this.maxNumBuckets = props.data.length
+    }
 
     this.state = {}
   }

@@ -5,7 +5,7 @@ import dayjs from '../../js/dayjsWithPlugins'
 import { scaleLinear, scaleBand, scaleTime } from 'd3-scale'
 import { select } from 'd3-selection'
 import { isMobile } from 'react-device-detect'
-import { deepEqual, formatElement, getDayJSObj } from '../../js/Util'
+import { deepEqual, formatElement, getCurrencySymbol, getDayJSObj } from '../../js/Util'
 import { getColumnTypeAmounts } from '../QueryOutput/columnHelpers'
 import { dataFormattingType } from '../../props/types'
 import { dataFormattingDefault } from '../../props/defaults'
@@ -555,9 +555,9 @@ export const getBandScale = ({
   return scale
 }
 
-export const getUnitsForColumn = (column) => {
+export const getUnitsForColumn = (column, useAgg = true) => {
   let aggUnit
-  if (column.aggType) {
+  if (useAgg && column.aggType) {
     aggUnit = AGG_TYPES.find((aggType) => aggType.value === column.aggType)?.unit
   }
 
@@ -580,6 +580,21 @@ export const getUnitsForColumn = (column) => {
   } else if (column.type === NUMBER_COLUMN_TYPES.PERCENT) {
     return 'percent'
   }
+}
+
+export const getUnitSymbol = ({ column, dataFormatting }) => {
+  const units = getUnitsForColumn(column, false)
+  let unitSymbol = ''
+  if (units === 'currency') {
+    const currencySymbol = getCurrencySymbol(dataFormatting)
+    if (currencySymbol) {
+      unitSymbol = currencySymbol
+    }
+  } else if (units === 'percent') {
+    unitSymbol = '%'
+  }
+
+  return unitSymbol
 }
 
 export const getLinearAxisTitle = ({ numberColumns, aggregated }) => {
@@ -691,6 +706,7 @@ export const getHistogramScale = ({ props, axis, buckets, columnIndex }) => {
   const units = 'none'
   const allowMultipleSeries = false
   const hasDropdown = false
+  const disableAutoScale = true
   const title = 'Count'
 
   return getLinearScale({
@@ -703,6 +719,7 @@ export const getHistogramScale = ({ props, axis, buckets, columnIndex }) => {
     hasDropdown,
     axis,
     title,
+    disableAutoScale,
   })
 }
 
@@ -725,6 +742,7 @@ export const getLinearScale = ({
   hasDropdown,
   allowMultipleSeries = true,
   changeColumnIndices,
+  disableAutoScale = false,
 }) => {
   let domainFinal = domain
   if (!domain) {
@@ -756,6 +774,7 @@ export const getLinearScale = ({
     })
 
   const scale = scaleLinear().domain(domainFinal).range(scaleRange)
+  scale.disableAutoScale = disableAutoScale
   scale.minValue = domainFinal[0]
   scale.maxValue = domainFinal[1]
   scale.columnIndex = columnIndex

@@ -1,9 +1,10 @@
-import React, { Component, Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { scaleOrdinal } from 'd3-scale'
 import { isMobile } from 'react-device-detect'
 
+import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { ChataColumnChart } from '../ChataColumnChart'
 import { ChataBarChart } from '../ChataBarChart'
 import { ChataLineChart } from '../ChataLineChart'
@@ -13,14 +14,13 @@ import { ChataBubbleChart } from '../ChataBubbleChart'
 import { ChataStackedBarChart } from '../ChataStackedBarChart'
 import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 import { ChataStackedLineChart } from '../ChataStackedLineChart'
+import { ChataScatterplotChart } from '../ChataScatterplotChart'
 import { ChataColumnLineChart } from '../ChataColumnLine'
 import { ChataHistogram } from '../ChataHistogram'
 import { Spinner } from '../../Spinner'
 import { Slider } from '../../Slider'
-import { Input } from '../../Input'
-import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import { svgToPng, getBBoxFromRef, sortDataByDate, deepEqual, rotateArray, onlyUnique } from '../../../js/Util.js'
+import { svgToPng, getBBoxFromRef, sortDataByDate, deepEqual, rotateArray, formatChartLabel } from '../../../js/Util.js'
 
 import {
   chartContainerDefaultProps,
@@ -37,9 +37,8 @@ import { aggregateData } from './aggregate'
 import { DATE_ONLY_CHART_TYPES, DOUBLE_AXIS_CHART_TYPES } from '../../../js/Constants'
 
 import './ChataChart.scss'
-import { ChataScatterplotChart } from '../ChataScatterplotChart'
 
-export default class ChataChart extends Component {
+export default class ChataChart extends React.Component {
   constructor(props) {
     super(props)
     const data = this.getData(props)
@@ -398,28 +397,60 @@ export default class ChataChart extends Component {
 
   renderChartHeader = () => {
     if (this.props.type === 'histogram') {
-      return this.renderHistogramSlider()
+      return (
+        <div
+          className={`react-autoql-chart-header-container ${
+            this.state.isLoading || this.props.isResizing ? 'loading' : ''
+          }`}
+        >
+          {this.renderHistogramSlider()}
+        </div>
+      )
     }
+  }
 
-    return null
+  formatSliderLabel = (value) => {
+    return formatChartLabel({
+      d: value,
+      column: this.props.columns[this.props.numberColumnIndex],
+      dataFormatting: this.props.dataFormatting,
+      scale: this.innerChartRef?.xScale,
+    })?.fullWidthLabel
   }
 
   renderHistogramSlider = () => {
-    if (!this.innerChartRef?.bucketSize) {
+    if (
+      isNaN(this.innerChartRef?.bucketSize) ||
+      isNaN(this.innerChartRef?.minBucketSize) ||
+      isNaN(this.innerChartRef?.maxBucketSize)
+    ) {
       return null
     }
 
+    const initialValue = this.innerChartRef.bucketSize
+    const min = this.innerChartRef.minBucketSize
+    const max = this.innerChartRef.maxBucketSize
+
+    let paddingLeft = this.state.deltaX - 10
+    if (isMobile || paddingLeft < 0 || this.outerWidth < 300) {
+      paddingLeft = 25
+    }
+
     return (
-      <div className='react-autoql-histogram-toolbar-container'>
-        <Slider
-          className='react-autoql-histogram-slider'
-          initialValue={this.innerChartRef?.bucketSize}
-          min={this.innerChartRef?.minBucketSize}
-          max={this.innerChartRef?.maxBucketSize}
-          onChange={(bucketSize) => this.setState({ bucketSize })}
-          showInput
-        />
-      </div>
+      <Slider
+        className='react-autoql-histogram-slider'
+        initialValue={initialValue}
+        style={{ paddingLeft }}
+        min={min}
+        max={max}
+        minLabel={this.formatSliderLabel(min)}
+        maxLabel={this.formatSliderLabel(max)}
+        onChange={(bucketSize) => this.setState({ bucketSize })}
+        valueFormatter={this.formatSliderLabel}
+        label='Interval size'
+        showInput
+        marks
+      />
     )
   }
 
@@ -556,11 +587,6 @@ export default class ChataChart extends Component {
     const chartTextColor = getThemeValue('text-color-primary')
     const chartBackgroundColor = getThemeValue('background-color-secondary')
 
-    let headerHeight = 0
-    if (this.props.type === 'histogram') {
-      headerHeight = 40
-    }
-
     return (
       <ErrorBoundary>
         <>
@@ -580,7 +606,7 @@ export default class ChataChart extends Component {
                 ref={(r) => (this.chartRef = r)}
                 xmlns='http://www.w3.org/2000/svg'
                 width='100%'
-                height={`calc(100% - ${headerHeight})`}
+                height='100%'
                 style={{
                   fontSize: '12px',
                   fontFamily: chartFontFamily,

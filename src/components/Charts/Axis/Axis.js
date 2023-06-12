@@ -865,7 +865,12 @@ export default class Axis extends Component {
   }
 
   shouldRenderAxisScaler = () => {
-    return !!this.labelsBBox && this.props.scale?.type === 'LINEAR' && this.props.scale?.domain().length !== 1
+    return (
+      !!this.labelsBBox &&
+      this.props.scale?.type === 'LINEAR' &&
+      this.props.scale?.domain().length !== 1 &&
+      !this.props.scale?.disableAutoScale
+    )
   }
 
   renderAxisScaler = () => {
