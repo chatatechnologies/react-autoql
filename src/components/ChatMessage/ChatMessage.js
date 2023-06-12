@@ -369,10 +369,6 @@ export default class ChatMessage extends React.Component {
             ${this.props.disableMaxHeight || this.props.isIntroMessage ? ' no-max-height' : ''}`}
           ref={(r) => (this.messageAndRTContainerRef = r)}
         >
-          <div className='chat-message-toolbars-container'>
-            {this.renderLeftToolbar()}
-            {this.renderRightToolbar()}
-          </div>
           <div
             id={`message-${this.props.id}`}
             ref={(r) => (this.messageContainerRef = r)}
@@ -380,6 +376,10 @@ export default class ChatMessage extends React.Component {
             className='chat-single-message-container'
           >
             <div ref={(r) => (this.ref = r)} className='chat-message-bubble'>
+              <div className='chat-message-toolbars-container'>
+                {this.renderLeftToolbar()}
+                {this.renderRightToolbar()}
+              </div>
               {this.renderContent()}
             </div>
           </div>
