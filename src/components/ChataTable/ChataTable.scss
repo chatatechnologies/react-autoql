@@ -179,16 +179,17 @@
       width: 12px;
       right: 0;
       top: 50%;
-      padding: 4px;
-      font-size: 11px;
       transform: translate(-50%, -50%);
-      line-height: 1px;
-      letter-spacing: 0px;
-      font-family: sans-serif;
-
       color: var(--react-autoql-background-color-secondary);
       background: var(--react-autoql-text-color-placeholder);
       border-radius: 6px;
+
+      span {
+        font-family: sans-serif;
+        height: 12px;
+        font-size: 11px;
+        line-height: 100%;
+      }
     }
   }
 
