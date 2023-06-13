@@ -2177,6 +2177,7 @@ export class QueryOutput extends React.Component {
           supportsDrilldowns={
             isAggregation(this.state.columns) && getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
           }
+          tooltipID={this.props.tooltipID}
           queryFn={this.queryFn}
           source={this.props.source}
           scope={this.props.scope}
@@ -2210,6 +2211,7 @@ export class QueryOutput extends React.Component {
           autoHeight={this.props.autoHeight}
           source={this.props.source}
           scope={this.props.scope}
+          tooltipID={this.props.tooltipID}
           pivot
         />
       </ErrorBoundary>

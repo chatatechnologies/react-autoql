@@ -151,16 +151,44 @@
       border: 1px solid var(--react-autoql-border-color);
       border-radius: 4px;
       background: transparent;
-      padding: 4px 9px !important;
+      padding: 4px 16px 4px 8px !important;
       outline: none !important;
       text-overflow: ellipsis;
       visibility: visible;
       opacity: 1;
       height: 25px;
 
+      &::-webkit-search-decoration,
+      &::-webkit-search-cancel-button,
+      &::-webkit-search-results-button,
+      &::-webkit-search-results-decoration {
+        -webkit-appearance: none;
+      }
+
       &:focus {
         border: 1px solid var(--react-autoql-accent-color);
       }
+    }
+
+    .react-autoql-input-clear-btn {
+      position: absolute;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 12px;
+      width: 12px;
+      right: 0;
+      top: 50%;
+      padding: 4px;
+      font-size: 11px;
+      transform: translate(-50%, -50%);
+      line-height: 1px;
+      letter-spacing: 0px;
+      font-family: sans-serif;
+
+      color: var(--react-autoql-background-color-secondary);
+      background: var(--react-autoql-text-color-placeholder);
+      border-radius: 6px;
     }
   }
 
@@ -205,6 +233,10 @@
 
     .tabulator-header {
       border-bottom: 2px solid var(--react-autoql-border-color);
+
+      input:placeholder-shown + .react-autoql-input-clear-btn {
+        visibility: hidden;
+      }
 
       .tabulator-col.is-filtered .tabulator-col-title:before {
         opacity: 1;
