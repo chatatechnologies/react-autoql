@@ -25,7 +25,9 @@
 
   &.request {
     animation: scale-up-br 0.5s ease;
-
+    &.pwa {
+      margin-bottom: 30px;
+    }
     .chat-single-message-container {
       justify-content: flex-end;
 
@@ -38,7 +40,12 @@
 
   &.response {
     animation: scale-up-bl 0.5s ease;
-
+    &.pwa {
+      margin-bottom: 15px;
+      &.text {
+        margin-bottom: 0px;
+      }
+    }
     .chat-single-message-container {
       justify-content: flex-start;
 
@@ -59,11 +66,11 @@
     align-items: flex-start;
     justify-content: space-between;
     transition: opacity 0.3s ease, color 0.3s ease;
-    width: 100%;
-    top: -20px;
-    right: 0;
+    left: -10px;
+    right: -10px;
+    margin-bottom: -10px;
+    bottom: 100%;
     z-index: 3;
-    padding: 0 10px;
   }
 
   .react-autoql-toolbar {

@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-
+import { isMobile } from 'react-device-detect'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
 import {
@@ -363,15 +363,12 @@ export default class ChatMessage extends React.Component {
         <div
           className={`chat-message-and-rt-container
             ${this.props.isResponse ? 'response' : 'request'}
+			${isMobile ? 'pwa' : ''}
             ${this.props.type === 'text' ? 'text' : ''}
             ${this.props.isActive ? 'active' : ''}
             ${this.props.disableMaxHeight || this.props.isIntroMessage ? ' no-max-height' : ''}`}
           ref={(r) => (this.messageAndRTContainerRef = r)}
         >
-          <div className='chat-message-toolbars-container'>
-            {this.renderLeftToolbar()}
-            {this.renderRightToolbar()}
-          </div>
           <div
             id={`message-${this.props.id}`}
             ref={(r) => (this.messageContainerRef = r)}
@@ -379,6 +376,10 @@ export default class ChatMessage extends React.Component {
             className='chat-single-message-container'
           >
             <div ref={(r) => (this.ref = r)} className='chat-message-bubble'>
+              <div className='chat-message-toolbars-container'>
+                {this.renderLeftToolbar()}
+                {this.renderRightToolbar()}
+              </div>
               {this.renderContent()}
             </div>
           </div>
