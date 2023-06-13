@@ -493,6 +493,11 @@ export default class ChataTable extends React.Component {
     }
   }
 
+  // Todo: implement "clear all filters" button in options toolbar
+  clearHeaderFilters = () => {
+    this.ref?.tabulator?.clearHeaderFilter()
+  }
+
   getNewPage = (props, tableParams) => {
     return runQueryNewPage({
       ...getAuthentication(props.authentication),
@@ -571,8 +576,10 @@ export default class ChataTable extends React.Component {
 
     clearTimeout(this.setStateTimeout)
     this.setStateTimeout = setTimeout(() => {
-      this.setState(this.stateToSet)
-      this.stateToSet = {}
+      if (this._isMounted) {
+        this.setState(this.stateToSet)
+        this.stateToSet = {}
+      }
     }, 50)
   }
 
@@ -615,6 +622,32 @@ export default class ChataTable extends React.Component {
     e.preventDefault()
   }
 
+  renderHeaderInputClearBtn = (inputElement, column) => {
+    const clearBtnText = document.createElement('span')
+    clearBtnText.innerHTML = '&#x00d7;'
+
+    const clearBtn = document.createElement('div')
+    clearBtn.className = 'react-autoql-input-clear-btn'
+    clearBtn.id = `react-autoql-clear-btn-${this.TABLE_ID}-${column.field}`
+    clearBtn.setAttribute('data-for', this.props.tooltipID)
+    clearBtn.setAttribute('data-tip', 'Clear filter')
+    clearBtn.appendChild(clearBtnText)
+
+    clearBtn.addEventListener('click', (e) => {
+      e.stopPropagation()
+      this.setHeaderInputValue(inputElement, '')
+
+      if (column.type === 'DATE' && !column.pivot) {
+        this.currentDateRangeSelections = {}
+        this.debounceSetState({
+          datePickerColumn: undefined,
+        })
+      }
+    })
+
+    inputElement.parentNode.appendChild(clearBtn)
+  }
+
   setHeaderInputEventListeners = () => {
     const columns = this.props.columns
     if (!columns) {
@@ -630,13 +663,12 @@ export default class ChataTable extends React.Component {
         inputElement.removeEventListener('keydown', this.inputKeydownListener)
         inputElement.addEventListener('keydown', this.inputKeydownListener)
 
-        inputElement.removeEventListener('search', this.inputSearchListener)
-        inputElement.addEventListener('search', this.inputSearchListener)
+        const clearBtn = document.querySelector(`#react-autoql-clear-btn-${this.TABLE_ID}-${col.field}`)
+        if (!clearBtn) {
+          this.renderHeaderInputClearBtn(inputElement, col)
+        }
 
         if (col.type === 'DATE' && !col.pivot) {
-          inputElement.removeEventListener('search', this.inputDateSearchListener)
-          inputElement.addEventListener('search', this.inputDateSearchListener)
-
           // Open Calendar Picker when user clicks on this field
           inputElement.removeEventListener('click', (e) => this.inputDateClickListener(e, col))
           inputElement.addEventListener('click', (e) => this.inputDateClickListener(e, col))
@@ -728,11 +760,7 @@ export default class ChataTable extends React.Component {
         filterInputText = formattedStartDate
       }
 
-      inputElement.focus()
-      this.ref?.restoreRedraw()
-      inputElement.value = filterInputText
-      inputElement.title = filterInputText
-      inputElement.blur()
+      this.setHeaderInputValue(inputElement, filterInputText)
       this.currentDateRangeSelections = {
         [column.field]: this.state.dateRangeSelection,
       }
@@ -779,6 +807,18 @@ export default class ChataTable extends React.Component {
     }
 
     return isFiltering
+  }
+
+  setHeaderInputValue = (inputElement, value) => {
+    if (!inputElement) {
+      return
+    }
+
+    inputElement.focus()
+    this.ref?.restoreRedraw()
+    inputElement.value = value
+    inputElement.title = value
+    inputElement.blur()
   }
 
   renderEmptyPlaceholderText = () => {
@@ -834,7 +874,7 @@ export default class ChataTable extends React.Component {
               validRange={this.state.datePickerColumn.dateRange}
               type={this.state.datePickerColumn.precision}
             />
-            <Button type='primary' onClick={this.onDateRangeSelectionApplied} tooltipID={this.props.tooltipID}>
+            <Button type='primary' onClick={this.onDateRangeSelectionApplied}>
               Apply
             </Button>
           </div>
