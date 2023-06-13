@@ -85,8 +85,8 @@ export default class Slider extends React.Component {
   }
 
   onInputChange = (e) => {
-    const inputValue = e.target.value ? Number(e.target.value) : null
-    const value = this.isValueValidForSlider(inputValue) ? inputValue : this.state.value
+    const inputValue = e.target.value
+    const value = this.isValueValidForSlider(inputValue) ? Number(inputValue) : this.state.value
 
     this.setState({ inputValue, value })
   }
@@ -98,10 +98,12 @@ export default class Slider extends React.Component {
   }
 
   isValueValidForSlider = (value) => {
-    return !isNaN(value) && value > this.props.min && value < this.props.max
+    const numberValue = Number(value)
+    return !isNaN(value) && numberValue > this.props.min && numberValue < this.props.max
   }
 
   onSliderChange = (value) => {
+    console.log('on slider change')
     this.setState({ value, inputValue: value })
   }
 
@@ -164,7 +166,7 @@ export default class Slider extends React.Component {
             <div className='react-autoql-slider-input-wrapper'>
               <Input
                 type='number'
-                value={this.state.inputValue}
+                value={`${this.state.inputValue}`}
                 onChange={this.onInputChange}
                 onBlur={this.onInputBlur}
                 min={min}
