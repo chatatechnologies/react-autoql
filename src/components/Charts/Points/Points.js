@@ -28,13 +28,16 @@ export default class Points extends Component {
   }
 
   onPointClick = (row, colIndex, key) => {
-    this.props.onChartClick({
-      row,
-      columnIndex: colIndex,
-      columns: this.props.columns,
-      stringColumnIndex: this.props.numberColumnIndex2,
-      activeKey: key,
-    })
+    // Drilldowns not possible yet since it is only 1 data point
+    // There may be a use case for this in the future if we can
+    // get additional data for a single row
+    // this.props.onChartClick({
+    //   row,
+    //   columnIndex: colIndex,
+    //   columns: this.props.columns,
+    //   stringColumnIndex: this.props.numberColumnIndex2,
+    //   activeKey: key,
+    // })
 
     this.setState({ activeKey: key })
   }
