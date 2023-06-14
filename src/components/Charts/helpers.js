@@ -556,6 +556,10 @@ export const getBandScale = ({
 }
 
 export const getUnitsForColumn = (column, useAgg = true) => {
+  if (!column) {
+    return
+  }
+
   let aggUnit
   if (useAgg && column.aggType) {
     aggUnit = AGG_TYPES.find((aggType) => aggType.value === column.aggType)?.unit
@@ -598,6 +602,7 @@ export const getUnitSymbol = ({ column, dataFormatting }) => {
 }
 
 export const getLinearAxisTitle = ({ numberColumns, aggregated }) => {
+  let title = 'Amount'
   try {
     if (!numberColumns?.length) {
       return undefined
@@ -606,8 +611,6 @@ export const getLinearAxisTitle = ({ numberColumns, aggregated }) => {
     if (numberColumns.length === 1) {
       return numberColumns[0].display_name
     }
-
-    let title = 'Amount'
 
     // If there are different titles for any of the columns, return a generic label based on the type
     const allTitlesEqual = !numberColumns.find((col) => {
@@ -663,7 +666,7 @@ export const getNumberAxisUnits = (numberColumns) => {
 export const getBinLinearScale = ({ props, columnIndex, axis, buckets, bins, changeColumnIndices } = {}) => {
   const { amountOfNumberColumns } = getColumnTypeAmounts(props.columns)
 
-  const domain = [bins.at(0), bins.at(-1)]
+  const domain = [bins[0], bins[bins.length - 1]]
 
   const range = getRangeForAxis(props, axis)
   const scale = scaleLinear().domain(domain).range(range)
@@ -679,7 +682,7 @@ export const getBinLinearScale = ({ props, columnIndex, axis, buckets, bins, cha
   }
   scale.hasDropdown = props.enableAxisDropdown && amountOfNumberColumns > 1 // todo: allow user to switch column here
   scale.stacked = false
-  scale.units = getUnitsForColumn(props.columns[columnIndex])
+  scale.units = getUnitsForColumn(props.columns[columnIndex], false)
   scale.title = props.columns[columnIndex]?.display_name
   scale.tickSize = (axis === 'x' ? props.innerWidth : props.innerHeight) / buckets.length
   scale.isScaled = false

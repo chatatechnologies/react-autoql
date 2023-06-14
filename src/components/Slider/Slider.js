@@ -122,6 +122,11 @@ export default class Slider extends React.Component {
   render = () => {
     let min = this.props.min
     let max = this.props.max
+    let step = this.props.step
+
+    if (step !== undefined) {
+      step = `${step}`
+    }
 
     if (isNaN(min)) {
       min = 0
@@ -154,6 +159,7 @@ export default class Slider extends React.Component {
                 thumbActiveClassName='react-autoql-slider-thumb-active'
                 min={min}
                 max={max}
+                // step={step}
                 marks={marks}
                 value={this.state.value}
                 onChange={this.onSliderChange}

@@ -40,9 +40,11 @@ export default class Points extends Component {
   }
 
   render = () => {
+    console.log('rendering POINTS')
     const { columns, numberColumnIndex, numberColumnIndex2, dataFormatting, yScale, xScale } = this.props
 
     if (!numberColumnIndex || !numberColumnIndex2) {
+      console.log('returning null', { numberColumnIndex, numberColumnIndex2 })
       return null
     }
 

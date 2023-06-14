@@ -4,8 +4,8 @@ import { findByTestAttr } from '../../../../test/testUtils'
 import ChataHistogram from './ChataHistogram'
 import sampleProps from '../chartTestData'
 
-const pivotSampleProps = sampleProps.pivot
-const defaultProps = ChataHeatmapChart.defaultProps
+const listSampleProps = sampleProps.list
+const defaultProps = ChataHistogram.defaultProps
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
@@ -18,7 +18,7 @@ const setup = (props = {}, state = null) => {
 
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
-    const wrapper = setup(pivotSampleProps)
+    const wrapper = setup(listSampleProps)
     const histogramChartComponent = findByTestAttr(wrapper, 'react-autoql-histogram-chart')
     expect(histogramChartComponent.exists()).toBe(true)
   })

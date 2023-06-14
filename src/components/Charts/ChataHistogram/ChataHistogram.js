@@ -1,10 +1,11 @@
 import React, { Component } from 'react'
 import { Axes } from '../Axes'
-import { HistogramColumns } from '../HistogramColumns'
+
+import { HistogramColumns } from './HistogramColumns'
+import { HistogramDistributions } from './HistogramDistributions'
 
 import { chartDefaultProps, chartPropTypes, convertToNumber, getBinLinearScale, getHistogramScale } from '../helpers.js'
 import { deepEqual, onlyUnique } from '../../../js/Util'
-import { HistogramDistributions } from '../HistogramDistributions'
 import { bin, max, min } from 'd3-array'
 
 export default class ChataHistogram extends Component {
@@ -74,7 +75,9 @@ export default class ChataHistogram extends Component {
     }
 
     let bucketValue = this.roundDownToNearestMultiple(minValue, this.bucketSize)
+
     const bins = [bucketValue]
+
     while (bucketValue < maxValue) {
       bucketValue += this.bucketSize
       bins.push(bucketValue)
@@ -82,7 +85,7 @@ export default class ChataHistogram extends Component {
 
     const binFn = bin()
       .value((d) => d[this.props.numberColumnIndex])
-      .domain([bins.at(0), bins.at(-1)])
+      .domain([bins[0], bins[bins.length - 1]])
       .thresholds(bins)
 
     return { buckets: binFn(this.props.data), bins }

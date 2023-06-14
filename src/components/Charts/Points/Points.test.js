@@ -4,7 +4,7 @@ import { findByTestAttr } from '../../../../test/testUtils'
 import Points from './Points'
 import sampleProps from '../chartTestData'
 
-const pivotSampleProps = sampleProps.pivot
+const listSampleProps = sampleProps.list
 const defaultProps = Points.defaultProps
 
 const setup = (props = {}, state = null) => {
@@ -17,11 +17,11 @@ const setup = (props = {}, state = null) => {
 }
 
 describe('renders correctly', () => {
-  test('renders regular pivot chart data correctly', () => {
+  test('renders list chart data correctly', () => {
     const wrapper = setup({
-      ...pivotSampleProps,
-      xScale: pivotSampleProps.stringScale(),
-      yScale: pivotSampleProps.stringScale(),
+      ...listSampleProps,
+      xScale: listSampleProps.stringScale(),
+      yScale: listSampleProps.stringScale(),
     })
     const pointsComponent = findByTestAttr(wrapper, 'points')
     expect(pointsComponent.exists()).toBe(true)

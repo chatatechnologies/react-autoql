@@ -611,7 +611,7 @@ describe('getSupportedDisplayTypes', () => {
       },
     }
 
-    expect(getSupportedDisplayTypes({ response })).toEqual(['table', 'column', 'bar', 'line', 'pie'])
+    expect(getSupportedDisplayTypes({ response })).toEqual(['table', 'column', 'bar', 'histogram', 'line', 'pie'])
   })
 
   test('supports 3d charts', () => {

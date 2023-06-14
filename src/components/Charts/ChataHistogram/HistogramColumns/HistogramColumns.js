@@ -1,8 +1,8 @@
 import React, { Component } from 'react'
-import { formatElement } from '../../../js/Util'
-import { getChartColorVars } from '../../../theme/configureTheme'
-import { rebuildTooltips } from '../../Tooltip'
-import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, scaleZero, getKey } from '../helpers'
+import { formatElement } from '../../../../js/Util'
+import { getChartColorVars } from '../../../../theme/configureTheme'
+import { rebuildTooltips } from '../../../Tooltip'
+import { chartElementDefaultProps, chartElementPropTypes, getKey } from '../../helpers'
 
 export default class HistogramColumns extends Component {
   static propTypes = chartElementPropTypes

@@ -1,23 +1,11 @@
 import React, { Component } from 'react'
-import _cloneDeep from 'lodash.clonedeep'
-import { deviation, max, min, mean, median as median } from 'd3-array'
-import { scaleLinear } from 'd3-scale'
+import { deviation, mean, median as median } from 'd3-array'
 import { v4 as uuid } from 'uuid'
-import { rebuildTooltips } from '../../Tooltip'
-import { chartElementDefaultProps, chartElementPropTypes } from '../helpers'
-import { createSVGPath } from '../Line/lineFns'
-import {
-  normalPDF,
-  exponentialPDF,
-  chiSquarePDF,
-  lognormalPDF,
-  gammaPDF,
-  cauchyPDF,
-  weibullPDF,
-  numericalIntegration,
-  normalPDFRange,
-} from './distributionFns'
-import { formatElement } from '../../../js/Util'
+import { rebuildTooltips } from '../../../Tooltip'
+import { chartElementDefaultProps, chartElementPropTypes } from '../../helpers'
+import { createSVGPath } from '../../Line/lineFns'
+import { normalPDF, exponentialPDF } from '../distributionFns'
+import { formatElement } from '../../../../js/Util'
 
 export default class HistogramDistributions extends Component {
   constructor(props) {
@@ -44,7 +32,7 @@ export default class HistogramDistributions extends Component {
         fn: exponentialPDF,
         tooltip: ({ mean }) => `Exponential Distribution<br/>Lambda: ${lambdaFormat.format(1 / mean)}`,
       },
-      { type: 'lognormal', fn: lognormalPDF, tooltip: () => 'Lognormal Distribution' },
+      // { type: 'lognormal', fn: lognormalPDF, tooltip: () => 'Lognormal Distribution' },
       // { type: 'gamma', fn: gammaPDF, tooltip: () => 'Gamma Distribution' },
       // { type: 'cauchy', fn: cauchyPDF, tooltip: () => 'Cauchy Distribution (Estimated)' },
       // { type: 'weibull', fn: weibullPDF, tooltip: () => 'Weibull Distribution (Estimated)' },
@@ -54,7 +42,7 @@ export default class HistogramDistributions extends Component {
     this.TYPES_WITH_STD_DEV = ['normal']
 
     this.state = {
-      activeDistribution: undefined, // Set this default to 'normal' if we want a distribution fn dropdown
+      activeDistribution: 'normal', // undefined, // Set this default to 'normal' if we want a distribution fn dropdown
     }
   }
 
@@ -83,7 +71,7 @@ export default class HistogramDistributions extends Component {
 
   createPathWithHoverStroke = ({ d, key, className, strokeWidth = 1, stroke, fill = 'none', tooltip, ...rest }) => {
     return (
-      <>
+      <g key={`${key}-group`}>
         <path
           d={d}
           key={key}
@@ -105,7 +93,7 @@ export default class HistogramDistributions extends Component {
           strokeWidth={strokeWidth + 5}
           fill='none'
         />
-      </>
+      </g>
     )
   }
 
@@ -121,7 +109,7 @@ export default class HistogramDistributions extends Component {
     return probability * this.scaleFactor
   }
 
-  getDistributionLines = (distribution, i) => {
+  getDistributionLines = (distribution, i = 0) => {
     const { xScale, yScale, colorScale } = this.props
     const distributionLineColor = colorScale(i + 1)
 
@@ -177,7 +165,7 @@ export default class HistogramDistributions extends Component {
       const meanPoints = [meanBottom, meanTop]
       const meanLine = this.createPathWithHoverStroke({
         d: createSVGPath(meanPoints, 0),
-        key: `distribution-mean-line-${this.COMPONENT_KEY}`,
+        key: `distribution-mean-line-${this.COMPONENT_KEY}-${i}`,
         className: 'distribution-mean-line',
         tooltip: `Mean: ${this.formatValue(this.mean)}`,
         stroke: distributionLineColor,
@@ -203,7 +191,7 @@ export default class HistogramDistributions extends Component {
         const stdDevLeftPoints = [stdDevLeftBottom, stdDevLeftTop]
         const stdDevLeftLine = this.createPathWithHoverStroke({
           d: createSVGPath(stdDevLeftPoints, 0),
-          key: `distribution-stddev-line-left-${this.COMPONENT_KEY}`,
+          key: `distribution-stddev-line-left-${this.COMPONENT_KEY}-${i}`,
           className: 'distribution-mean-line',
           tooltip: `Standard Deviation: ±${this.formatValue(this.stdDev)}`,
           stroke: distributionLineColor,
@@ -229,7 +217,7 @@ export default class HistogramDistributions extends Component {
 
         const stdDevRightLine = this.createPathWithHoverStroke({
           d: createSVGPath(stdDevRightPoints, 0),
-          key: `distribution-stddev-line-right-${this.COMPONENT_KEY}`,
+          key: `distribution-stddev-line-right-${this.COMPONENT_KEY}-${i}`,
           className: 'distribution-mean-line',
           tooltip: `Standard Deviation: ±${this.formatValue(this.stdDev)}`,
           stroke: distributionLineColor,
@@ -248,6 +236,11 @@ export default class HistogramDistributions extends Component {
       return null
     }
 
+    const distribution = this.DISTRIBUTION_TYPES.find((dist) => dist.type === this.state.activeDistribution)
+    if (!distribution) {
+      return null
+    }
+
     const { xScale, yScale, numberColumnIndex, data, buckets } = this.props
     if (!xScale || !yScale || !data?.length || !numberColumnIndex || !buckets?.length) {
       return null
@@ -262,8 +255,7 @@ export default class HistogramDistributions extends Component {
     this.bucketSize = bucketSample.x1 - bucketSample.x0
     this.scaleFactor = this.bucketSize * this.props.data?.length
 
-    const distribution = this.DISTRIBUTION_TYPES.find((dist) => dist.type === this.state.activeDistribution)
-    const path = this.getDistributionLines(distribution, 0)
+    const path = this.getDistributionLines(distribution)
 
     // Use this if we want to display them all at once
     // const paths = this.DISTRIBUTION_TYPES.map((distribution, i) => this.getDistributionLines(distribution, i))
