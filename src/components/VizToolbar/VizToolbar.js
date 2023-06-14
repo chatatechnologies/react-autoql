@@ -137,7 +137,7 @@ class VizToolbar extends React.Component {
             {this.createVisButton('stacked_line', 'Stacked Area Chart', <Icon type='stacked-line-chart' />)}
             {this.createVisButton('column_line', 'Column Line Combo Chart', <Icon type='column-line-chart' />)}
             {this.createVisButton('histogram', 'Histogram', <Icon type='histogram-chart' />)}
-            {this.createVisButton('scatterplot', 'Scatterplot', <Icon type='bubble-chart' />)}
+            {this.createVisButton('scatterplot', 'Scatterplot', <Icon type='scatterplot' />)}
           </div>
           {!this.props.tooltipID && (
             <Tooltip

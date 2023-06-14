@@ -27,7 +27,6 @@ import { BsArrowBarDown } from '@react-icons/all-files/bs/BsArrowBarDown'
 import { BsLightning } from '@react-icons/all-files/bs/BsLightning'
 
 import { FaMicrophoneAlt } from '@react-icons/all-files/fa/FaMicrophoneAlt'
-import { FaRegChartBar } from '@react-icons/all-files/fa/FaRegChartBar'
 
 import { FiAlertTriangle } from '@react-icons/all-files/fi/FiAlertTriangle'
 import { FiArrowLeft } from '@react-icons/all-files/fi/FiArrowLeft'
@@ -82,6 +81,8 @@ import {
   tableIcon,
   pivotTableIcon,
   columnChartIcon,
+  histogramIcon,
+  scatterplotIcon,
   barChartIcon,
   stackedBarIcon,
   stackedColumnIcon,
@@ -144,6 +145,10 @@ export default class Icon extends React.Component {
       }
       case 'bookmark': {
         icon = <BiBookmark />
+        break
+      }
+      case 'scatterplot': {
+        icon = scatterplotIcon
         break
       }
       case 'stacked-bar-chart': {
@@ -291,7 +296,7 @@ export default class Icon extends React.Component {
         break
       }
       case 'histogram-chart': {
-        icon = <FaRegChartBar />
+        icon = histogramIcon
         break
       }
       case 'hour-glass': {

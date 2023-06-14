@@ -331,3 +331,27 @@ export const singleViewIcon = (
     <rect className='chart-icon-svg-0' y='7.2' width='1.6' height='1.6' />
   </svg>
 )
+
+export const histogramIcon = (
+  <svg x='0px' y='0px' width='16px' height='16px' viewBox='0 0 16 16'>
+    <rect x='0.482' y='9.788' class='chart-icon-svg-0' width='2.016' height='6.212' />
+    <rect x='3.755' y='3.923' class='chart-icon-svg-0' width='2.016' height='12.077' />
+    <rect x='7.027' class='chart-icon-svg-0' width='2.016' height='16' />
+    <rect x='10.3' y='5.406' class='chart-icon-svg-0' width='2.016' height='10.594' />
+    <rect x='13.571' y='11.542' class='chart-icon-svg-0' width='2.016' height='4.458' />
+  </svg>
+)
+
+export const scatterplotIcon = (
+  <svg x='0px' y='0px' width='16px' height='16px' viewBox='0 0 16 16'>
+    <circle class='chart-icon-svg-0' cx='9.399' cy='10.008' r='1.404' />
+    <circle class='chart-icon-svg-0' cx='9.219' cy='6.29' r='1.404' />
+    <circle class='chart-icon-svg-0' cx='11.082' cy='1.73' r='1.404' />
+    <circle class='chart-icon-svg-0' cx='14.596' cy='2.341' r='1.404' />
+    <circle class='chart-icon-svg-0' cx='5.863' cy='13.68' r='1.404' />
+    <circle class='chart-icon-svg-0' cx='3.45' cy='7.892' r='1.404' />
+    <circle class='chart-icon-svg-0' cx='1.504' cy='13.9' r='1.404' />
+    <circle class='chart-icon-svg-0' cx='6.116' cy='10.008' r='1.404' />
+    <circle class='chart-icon-svg-0' cx='13.559' cy='6.895' r='1.404' />
+  </svg>
+)

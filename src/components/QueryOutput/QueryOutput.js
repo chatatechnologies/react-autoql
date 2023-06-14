@@ -1156,7 +1156,6 @@ export class QueryOutput extends React.Component {
   }
 
   onChartClick = ({ row, columnIndex, columns, stringColumnIndex, legendColumn, activeKey, filter }) => {
-    console.log('ON CHART CLICK', { filter })
     if (filter) {
       return this.processDrilldown({
         supportedByAPI: false,

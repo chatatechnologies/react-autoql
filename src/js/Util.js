@@ -12,6 +12,7 @@ import {
   PRECISION_TYPES,
   WEEKDAY_NAMES_SUN,
   MAX_LEGEND_LABELS,
+  MIN_HISTOGRAM_SAMPLE,
 } from './Constants'
 import { dataFormattingDefault, getDataFormatting } from '../props/defaults'
 
@@ -944,7 +945,9 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
       // column, we should be able to chart anything
       const supportedDisplayTypes = ['table', 'column', 'bar']
 
-      supportedDisplayTypes.push('histogram')
+      if (numRows > MIN_HISTOGRAM_SAMPLE) {
+        supportedDisplayTypes.push('histogram')
+      }
 
       if (hasDateColumn(visibleColumns)) {
         supportedDisplayTypes.push('line')
