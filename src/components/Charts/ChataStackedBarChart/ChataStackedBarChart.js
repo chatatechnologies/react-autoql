@@ -7,8 +7,6 @@ import { getBandScale, chartPropTypes, chartDefaultProps, getLinearScales } from
 export default class ChataStackedBarChart extends Component {
   constructor(props) {
     super(props)
-
-    this.setChartData(props)
   }
 
   static propTypes = chartPropTypes

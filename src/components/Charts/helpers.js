@@ -1,11 +1,12 @@
 import PropTypes from 'prop-types'
-import { max, min } from 'd3-array'
+import { max, min, bin } from 'd3-array'
 import _isEqual from 'lodash.isequal'
 import dayjs from '../../js/dayjsWithPlugins'
 import { scaleLinear, scaleBand, scaleTime } from 'd3-scale'
 import { select } from 'd3-selection'
 import { isMobile } from 'react-device-detect'
-import { deepEqual, formatChartLabel, formatElement, getDayJSObj } from '../../js/Util'
+import { deepEqual, formatElement, getCurrencySymbol, getDayJSObj } from '../../js/Util'
+import { getColumnTypeAmounts } from '../QueryOutput/columnHelpers'
 import { dataFormattingType } from '../../props/types'
 import { dataFormattingDefault } from '../../props/defaults'
 import { AGG_TYPES, DAYJS_PRECISION_FORMATS, NUMBER_COLUMN_TYPES } from '../../js/Constants'
@@ -165,45 +166,54 @@ export const shouldLabelsRotate = (axisElement) => {
   return didOverlap
 }
 
-export const getTooltipContent = ({ row, columns, colIndex, stringColumnIndex, legendColumn, dataFormatting }) => {
+export const getTooltipContent = ({ row, columns, colIndex, colIndex2, legendColumn, dataFormatting }) => {
   let tooltipElement = null
+
   try {
-    const stringColumn = columns[stringColumnIndex]
-    const numberColumn = columns[colIndex]
+    let tooltipLine1 = ''
+    let tooltipLine2 = ''
+    let tooltipLine3 = ''
 
-    const stringTitle = stringColumn.tooltipTitle ?? stringColumn.title
-    let numberTitle = numberColumn.origColumn
-      ? numberColumn.origColumn.tooltipTitle ?? numberColumn.origColumn.title
-      : numberColumn.tooltipTitle ?? numberColumn.title
+    const column1 = columns[colIndex]
+    const column2 = columns[colIndex2]
 
-    const aggTypeDisplayName = AGG_TYPES.find((agg) => agg.value === numberColumn.aggType)?.displayName
-    if (aggTypeDisplayName) {
-      numberTitle = `${numberTitle} (${aggTypeDisplayName})`
+    if (!!legendColumn && !!column1?.origColumn) {
+      tooltipLine1 = `<div><strong>${legendColumn.tooltipTitle ?? legendColumn.title}:</strong> ${
+        column1.tooltipTitle ?? column1.title
+      }</div>`
     }
 
-    const stringValue = formatElement({
-      element: row[stringColumnIndex],
-      column: stringColumn,
-      config: dataFormatting,
-      isChart: true,
-    })
+    if (column1) {
+      let column1Title = column1.origColumn
+        ? column1.origColumn.tooltipTitle ?? column1.origColumn.title
+        : column1.tooltipTitle ?? column1.title
 
-    const numberValue = formatElement({
-      element: row[colIndex] || 0,
-      column: columns[colIndex],
-      config: dataFormatting,
-      isChart: true,
-    })
+      const aggTypeDisplayName = AGG_TYPES.find((agg) => agg.value === column1.aggType)?.displayName
+      if (aggTypeDisplayName) {
+        column1Title = `${column1Title} (${aggTypeDisplayName})`
+      }
 
-    const column = columns[colIndex]
-    const tooltipLine1 =
-      !!legendColumn && !!column?.origColumn
-        ? `<div><strong>${legendColumn.tooltipTitle ?? legendColumn.title}:</strong> ${
-            column.tooltipTitle ?? column.title
-          }</div>`
-        : ''
-    const tooltipLine2 = `<div><strong>${stringTitle}:</strong> ${stringValue}</div>`
-    const tooltipLine3 = `<div><strong>${numberTitle}:</strong> ${numberValue}</div>`
+      const column1Value = formatElement({
+        element: row[colIndex] || 0,
+        column: columns[colIndex],
+        config: dataFormatting,
+        isChart: true,
+      })
+
+      tooltipLine2 = `<div><strong>${column1Title}:</strong> ${column1Value}</div>`
+    }
+
+    if (column2) {
+      const stringTitle = column2.tooltipTitle ?? column2.title
+      const stringValue = formatElement({
+        element: row[colIndex2],
+        column: column2,
+        config: dataFormatting,
+        isChart: true,
+      })
+
+      tooltipLine3 = `<div><strong>${stringTitle}:</strong> ${stringValue}</div>`
+    }
 
     tooltipElement = `<div>
         ${tooltipLine1}
@@ -421,18 +431,16 @@ export const getMinAndMaxValues = (data, numberColumnIndices, isScaled, sum, str
 
 export const getLegendLocation = (seriesArray, displayType, preferredLocation = 'right') => {
   const bottom = 'bottom'
-
   const legendLocation = isMobile ? bottom : preferredLocation
 
+  // Always show legend for column line combo charts
   if (displayType === 'column_line') {
     return bottom
   }
 
-  if (seriesArray?.length < 2) {
-    return undefined
-  }
+  const displayTypesWithoutLegends = ['pie', 'heatmap', 'bubble', 'scatterplot']
 
-  if (displayType === 'pie' || displayType === 'heatmap' || displayType === 'bubble') {
+  if (seriesArray?.length < 2 || displayTypesWithoutLegends.includes(displayType)) {
     return undefined
   } else if (displayType === 'stacked_column' || displayType === 'stacked_bar' || displayType === 'stacked_line') {
     return legendLocation
@@ -450,15 +458,14 @@ export const getRangeForAxis = (props, axis) => {
   let rangeEnd
   if (axis === 'x') {
     rangeStart = 0
-    const innerWidth = props.width
-    rangeEnd = rangeStart + innerWidth
+    rangeEnd = rangeStart + props.width
+
     if (rangeEnd < rangeStart) {
       rangeEnd = rangeStart
     }
   } else if (axis === 'y') {
-    const innerHeight = props.height
     rangeEnd = 0 // props.deltaY
-    rangeStart = innerHeight // + rangeEnd
+    rangeStart = props.height // + rangeEnd
 
     if (rangeStart < rangeEnd) {
       rangeStart = rangeEnd
@@ -516,14 +523,6 @@ export const getTimeScale = ({ props, columnIndex, axis, domain }) => {
   return scale
 }
 
-export const getFormattedTickLabels = ({ tickValues, scale, maxLabelWidth }) => {
-  const formattedTickValues = tickValues.map((tickLabel) => {
-    return formatChartLabel({ d: tickLabel, scale, maxLabelWidth })
-  })
-
-  return formattedTickValues
-}
-
 export const getBandScale = ({
   props,
   columnIndex,
@@ -531,6 +530,7 @@ export const getBandScale = ({
   outerPadding = DEFAULT_OUTER_PADDING,
   innerPadding = DEFAULT_INNER_PADDING,
   domain,
+  changeColumnIndices,
 }) => {
   const range = getRangeForAxis(props, axis)
   const scaleDomain = domain ?? props.data.map((d) => d[columnIndex])
@@ -549,14 +549,19 @@ export const getBandScale = ({
     return scale(value)
   }
 
+  scale.changeColumnIndices = changeColumnIndices ?? props.changeStringColumnIndex
   scale.tickLabels = getTickValues({ scale, props, initialTicks: scaleDomain, innerPadding, outerPadding })
 
   return scale
 }
 
-export const getUnitsForColumn = (column) => {
+export const getUnitsForColumn = (column, useAgg = true) => {
+  if (!column) {
+    return
+  }
+
   let aggUnit
-  if (column.aggType) {
+  if (useAgg && column.aggType) {
     aggUnit = AGG_TYPES.find((aggType) => aggType.value === column.aggType)?.unit
   }
 
@@ -581,13 +586,31 @@ export const getUnitsForColumn = (column) => {
   }
 }
 
-export const getLinearAxisTitle = ({ numberColumns, dataFormatting }) => {
+export const getUnitSymbol = ({ column, dataFormatting }) => {
+  const units = getUnitsForColumn(column, false)
+  let unitSymbol = ''
+  if (units === 'currency') {
+    const currencySymbol = getCurrencySymbol(dataFormatting)
+    if (currencySymbol) {
+      unitSymbol = currencySymbol
+    }
+  } else if (units === 'percent') {
+    unitSymbol = '%'
+  }
+
+  return unitSymbol
+}
+
+export const getLinearAxisTitle = ({ numberColumns, aggregated }) => {
+  let title = 'Amount'
   try {
     if (!numberColumns?.length) {
       return undefined
     }
 
-    let title = 'Amount'
+    if (numberColumns.length === 1) {
+      return numberColumns[0].display_name
+    }
 
     // If there are different titles for any of the columns, return a generic label based on the type
     const allTitlesEqual = !numberColumns.find((col) => {
@@ -598,12 +621,14 @@ export const getLinearAxisTitle = ({ numberColumns, dataFormatting }) => {
       title = numberColumns[0].display_name
     }
 
-    const aggTypeArray = numberColumns.map((col) => col.aggType)
-    const allAggTypesEqual = !aggTypeArray.find((agg) => agg !== aggTypeArray[0])
-    if (allAggTypesEqual) {
-      const aggName = AGG_TYPES.find((agg) => agg.value === aggTypeArray[0])?.displayName
-      if (aggName) {
-        title = `${title} (${aggName})`
+    if (aggregated) {
+      const aggTypeArray = numberColumns.map((col) => col.aggType)
+      const allAggTypesEqual = !aggTypeArray.find((agg) => agg !== aggTypeArray[0])
+      if (allAggTypesEqual) {
+        const aggName = AGG_TYPES.find((agg) => agg.value === aggTypeArray[0])?.displayName
+        if (aggName) {
+          title = `${title} (${aggName})`
+        }
       }
     }
 
@@ -638,52 +663,137 @@ export const getNumberAxisUnits = (numberColumns) => {
   return 'none'
 }
 
+export const getBinLinearScale = ({ props, columnIndex, axis, buckets, bins, changeColumnIndices } = {}) => {
+  const { amountOfNumberColumns } = getColumnTypeAmounts(props.columns)
+
+  const domain = [bins[0], bins[bins.length - 1]]
+
+  const range = getRangeForAxis(props, axis)
+  const scale = scaleLinear().domain(domain).range(range)
+
+  scale.type = 'BIN'
+  scale.minValue = domain[0]
+  scale.maxValue = domain[1]
+  scale.column = props.columns[columnIndex]
+  scale.fields = [columnIndex]
+  scale.dataFormatting = {
+    ...props.dataFormatting,
+    isBinScale: true,
+  }
+  scale.hasDropdown = props.enableAxisDropdown && amountOfNumberColumns > 1 // todo: allow user to switch column here
+  scale.stacked = false
+  scale.units = getUnitsForColumn(props.columns[columnIndex], false)
+  scale.title = props.columns[columnIndex]?.display_name
+  scale.tickSize = (axis === 'x' ? props.innerWidth : props.innerHeight) / buckets.length
+  scale.isScaled = false
+  scale.aggregated = false
+  scale.changeColumnIndices = changeColumnIndices ?? props.changeNumberColumnIndices
+  scale.getValue = (value) => {
+    return scale(value)
+  }
+
+  scale.tickLabels = getTickValues({
+    initialTicks: bins,
+    props,
+    scale,
+    isScaled: false,
+  })
+
+  return scale
+}
+
+export const getHistogramScale = ({ props, axis, buckets, columnIndex }) => {
+  const maxBins = max(buckets, (d) => d.length)
+  const range = getRangeForAxis(props, axis)
+  const domain = [0, maxBins]
+  const units = 'none'
+  const allowMultipleSeries = false
+  const hasDropdown = false
+  const disableAutoScale = true
+  const title = 'Count'
+
+  return getLinearScale({
+    props,
+    units,
+    domain,
+    range,
+    columnIndex,
+    allowMultipleSeries,
+    hasDropdown,
+    axis,
+    title,
+    disableAutoScale,
+  })
+}
+
 export const getLinearScale = ({
   props,
   minValue,
   maxValue,
   axis,
   range,
+  domain,
   tickValues,
   numTicks,
   stacked,
   isScaled,
+  columns,
+  units,
+  title,
   columnIndex,
   columnIndices,
+  hasDropdown,
+  allowMultipleSeries = true,
+  changeColumnIndices,
+  disableAutoScale = false,
 }) => {
-  let min = minValue ?? tickValues?.[0]
-  let max = maxValue ?? tickValues?.[tickValues?.length - 1]
+  let domainFinal = domain
+  if (!domain) {
+    let min = minValue ?? tickValues?.[0]
+    let max = maxValue ?? tickValues?.[tickValues?.length - 1]
 
-  if (isNaN(min)) {
-    min = 0
+    if (isNaN(min)) {
+      min = 0
+    }
+
+    if (isNaN(max)) {
+      max = min
+    }
+
+    domainFinal = [min, max]
   }
 
-  if (isNaN(max)) {
-    max = min
-  }
+  const cols = columns ?? props.columns
+  const colIndices = columnIndices ?? [columnIndex]
 
-  const domain = [min, max]
   const scaleRange = range ?? getRangeForAxis(props, axis)
-  const axisColumns = columnIndices?.map((index) => props.columns[index]) ?? []
-  const units = getNumberAxisUnits(axisColumns)
-  const title = getLinearAxisTitle({
-    numberColumns: axisColumns,
-    dataFormatting: props.dataFormatting,
-  })
+  const axisColumns = colIndices?.map((index) => cols[index]) ?? []
+  const axisTitle =
+    title ??
+    getLinearAxisTitle({
+      numberColumns: axisColumns,
+      dataFormatting: props.dataFormatting,
+      aggregated: props.aggregated,
+    })
 
-  const scale = scaleLinear().domain(domain).range(scaleRange)
-  scale.minValue = min
-  scale.maxValue = max
-  scale.column = props.columns[columnIndex]
+  const scale = scaleLinear().domain(domainFinal).range(scaleRange)
+  scale.disableAutoScale = disableAutoScale
+  scale.minValue = domainFinal[0]
+  scale.maxValue = domainFinal[1]
+  scale.columnIndex = columnIndex
+  scale.column = cols[columnIndex]
   scale.fields = axisColumns
   scale.dataFormatting = props.dataFormatting
-  scale.hasDropdown = props.enableAxisDropdown
+  scale.hasDropdown = hasDropdown ?? props.enableAxisDropdown
   scale.stacked = !!stacked
   scale.type = 'LINEAR'
-  scale.units = units
-  scale.title = title
+  scale.units = units ?? getNumberAxisUnits(axisColumns)
+  scale.title = axisTitle
   scale.tickSize = 0
   scale.isScaled = isScaled
+  scale.aggregated = props.aggregated
+  scale.allowMultipleSeries = allowMultipleSeries
+  scale.changeColumnIndices = changeColumnIndices ?? props.changeNumberColumnIndices
   scale.getValue = (value) => {
     return scale(value)
   }
@@ -777,6 +887,7 @@ export const getLinearScales = ({ props, columnIndices1 = [], columnIndices2 = [
     columnIndex: columnIndices1[0],
     columnIndices: columnIndices1,
   })
+
   const scale2 = getLinearScale({
     props,
     range: scale.range(),
@@ -786,6 +897,9 @@ export const getLinearScales = ({ props, columnIndices1 = [], columnIndices2 = [
     columnIndex: columnIndices2[0],
     columnIndices: columnIndices2,
   })
+
+  scale.secondScale = scale2
+  scale2.secondScale = scale
 
   return { scale, scale2 }
 }
@@ -893,7 +1007,7 @@ export const getNiceTickValues = ({ tickValues, scale }) => {
   if (minValue === undefined || maxValue === undefined) {
     console.warn('Tried to make nice labels but max/min values were not provided')
     return tickValues
-  } else if (tickValues?.length < 2) {
+  } else if (tickValues?.length === 1) {
     // Could not make nice labels because there was only 1 tick
     return tickValues
   }
@@ -984,7 +1098,7 @@ export const getTickValues = ({ scale, initialTicks, props, numTicks, innerPaddi
       })
     }
 
-    if (scale?.type === 'LINEAR') {
+    if (scale?.type === 'LINEAR' || scale?.type === 'BIN') {
       return getNiceTickValues({
         tickValues: newTickValues,
         scale,

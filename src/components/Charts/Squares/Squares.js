@@ -80,7 +80,7 @@ export default class Squares extends Component {
           row,
           columns,
           colIndex,
-          stringColumnIndex,
+          colIndex2: stringColumnIndex,
           legendColumn,
           dataFormatting,
         })

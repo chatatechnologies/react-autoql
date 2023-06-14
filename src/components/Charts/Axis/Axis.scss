@@ -283,6 +283,7 @@ g.legendOrdinal tspan {
   color: var(--react-autoql-text-color-primary);
   padding: 5px;
   z-index: 9999;
+  max-height: 300px;
 
   .string-select-list-item {
     font-size: 12px;

@@ -1,5 +1,6 @@
-import { scaleLinear, scaleBand, scaleOrdinal } from 'd3-scale'
+import { scaleOrdinal } from 'd3-scale'
 import { getBandScale, getLinearScales } from './helpers'
+import { getNumberColumnIndices, getStringColumnIndices } from '../QueryOutput/columnHelpers'
 
 const listColumns = [
   {
@@ -147,11 +148,9 @@ const datePivotData = [
 const listProps = {
   columns: listColumns,
   data: listData,
-  numberColumnIndex: 7,
-  numberColumnIndices: [6, 7, 8],
+  ...getNumberColumnIndices(listColumns),
+  ...getStringColumnIndices(listColumns),
   visibleSeriesIndices: [6, 7],
-  stringColumnIndex: 0,
-  stringColumnIndices: [0, 1, 2, 3, 4, 5],
   height: 500,
   width: 500,
 }
@@ -159,11 +158,9 @@ const listProps = {
 const pivotProps = {
   columns: pivotColumns,
   data: pivotData,
-  numberColumnIndex: 1,
-  numberColumnIndices: [1, 2],
+  ...getNumberColumnIndices(pivotColumns, true),
+  ...getStringColumnIndices(pivotColumns, true),
   visibleSeriesIndices: [1, 2],
-  stringColumnIndex: 0,
-  stringColumnIndices: [0],
   height: 500,
   width: 500,
 }
@@ -171,11 +168,9 @@ const pivotProps = {
 const datePivotProps = {
   columns: datePivotColumns,
   data: datePivotData,
-  numberColumnIndex: 1,
-  numberColumnIndices: [1],
+  ...getNumberColumnIndices(datePivotColumns),
+  ...getStringColumnIndices(datePivotColumns),
   visibleSeriesIndices: [1],
-  stringColumnIndex: 0,
-  stringColumnIndices: [0],
   height: 500,
   width: 500,
 }

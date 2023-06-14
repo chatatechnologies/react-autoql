@@ -7,8 +7,6 @@ import { chartDefaultProps, chartPropTypes, getBandScale } from '../helpers.js'
 export default class ChataBubbleChart extends Component {
   constructor(props) {
     super(props)
-
-    this.setChartData(props)
   }
 
   static propTypes = chartPropTypes

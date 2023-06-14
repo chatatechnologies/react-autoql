@@ -1,6 +1,7 @@
 import React from 'react'
 import { v4 as uuid } from 'uuid'
 import NumberAxisSelector from './NumberAxisSelector'
+import SingleNumberAxisSelector from './SingleNumberAxisSelector'
 import StringAxisSelector from './StringAxisSelector'
 
 export default class AxisSelector extends React.Component {
@@ -10,19 +11,33 @@ export default class AxisSelector extends React.Component {
     this.KEY = uuid()
   }
 
+  renderSingleNumberAxisSelector = (props) => {
+    return <SingleNumberAxisSelector data-test='single-number-axis-selector' {...props} />
+  }
+
+  renderNumberAxisSelector = (props) => <NumberAxisSelector {...props} data-test='number-axis-selector' />
+
+  renderSingleStringAxisSelector = (props) => <StringAxisSelector {...props} data-test='string-axis-selector' />
+
   render = () => {
-    if (this.props.scale?.type === 'LINEAR') {
-      return (
-        <NumberAxisSelector {...this.props} key={this.KEY} data-test='number-axis-selector' ref={(r) => (this.ref = r)}>
-          {this.props.children}
-        </NumberAxisSelector>
-      )
-    } else if (this.props.scale?.type === 'BAND' || this.props.scale?.type === 'TIME') {
-      return (
-        <StringAxisSelector {...this.props} key={this.KEY} data-test='string-axis-selector' ref={(r) => (this.ref = r)}>
-          {this.props.children}
-        </StringAxisSelector>
-      )
+    const { scale } = this.props
+
+    if (!scale) return null
+
+    const props = {
+      ...this.props,
+      key: this.KEY,
+      ref: (r) => (this.ref = r),
+    }
+
+    if (scale.type === 'BIN') {
+      return this.renderSingleNumberAxisSelector(props)
+    } else if (scale.type === 'LINEAR') {
+      return scale.allowMultipleSeries
+        ? this.renderNumberAxisSelector(props)
+        : this.renderSingleNumberAxisSelector(props)
+    } else if (scale?.type === 'BAND' || scale?.type === 'TIME') {
+      return this.renderSingleStringAxisSelector(props)
     }
 
     return null

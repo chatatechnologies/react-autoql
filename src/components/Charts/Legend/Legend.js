@@ -27,7 +27,7 @@ export default class Legend extends Component {
     this.BORDER_THICKNESS = 1
     this.HORIZONTAL_LEGEND_SPACING = isMobile ? 15 : 20
     this.VERTICAL_LEGEND_SPACING = isMobile ? 15 : 25
-    this.SHAPE_SIZE = isMobile ? 50 : 100
+    this.SHAPE_SIZE = isMobile ? 50 : 75
     this.TOP_ADJUSTMENT = isMobile ? 12 : 15
     this.DEFAULT_MAX_WIDTH = isMobile ? 100 : 140
 
@@ -61,7 +61,7 @@ export default class Legend extends Component {
     paddingRight: 10,
     paddingTop: 10,
     paddingBottom: 10,
-    fontSize: 12,
+    fontSize: 11,
     onLabelChange: () => {},
     onLegendClick: () => {},
     onRenderComplete: () => {},
@@ -267,7 +267,7 @@ export default class Legend extends Component {
         .attr('transform', removedElementTransform)
         .attr('data-tip', 'Some legend fields are hidden. Please expand the chart size to view them.')
         .attr('data-for', tooltipID)
-        .style('font-size', `${this.props.fontSize - 5}px`)
+        .style('font-size', `${this.props.fontSize - 3}px`)
         .style('color', 'red')
         .style('font-weight', 'bold')
         .style('cursor', 'default')
@@ -319,6 +319,14 @@ export default class Legend extends Component {
     }
   }
 
+  getLegendTitleCase = (title) => {
+    if (title?.length < 2) {
+      return title
+    }
+
+    return title[0].toUpperCase() + title.substring(1)
+  }
+
   getLegendTitleFromColumns = (columnIndices) => {
     if (this.props.isAggregated) {
       return this.props.legendColumn?.display_name ?? 'Legend'
@@ -363,7 +371,7 @@ export default class Legend extends Component {
       const legendElement = this.legendElements[sectionIndex]
       const isSecondLegend = legendNumber === 2
       const allLabels = legendNumber === 2 ? this.legendLabels2 : this.legendLabels1
-      const title = this.getLegendTitleFromColumns(columnIndices)
+      const title = this.getLegendTitleCase(this.getLegendTitleFromColumns(columnIndices))
       const legendScale = this.getLegendScale(legendLabels)
       const maxSectionWidth = this.getMaxSectionWidth()
 
@@ -393,6 +401,10 @@ export default class Legend extends Component {
         .style('fill-opacity', '1')
         .style('font-family', 'inherit')
         .style('font-size', `${this.props.fontSize}px`)
+
+      select(legendElement)
+        .selectAll('.cell')
+        .style('font-size', `${this.props.fontSize - 2}px`)
 
       if (sectionIndex > 0) {
         const previousLegendSectionsBBox = mergeBboxes(

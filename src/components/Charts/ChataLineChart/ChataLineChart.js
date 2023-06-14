@@ -8,8 +8,6 @@ import { deepEqual } from '../../../js/Util'
 export default class ChataLineChart extends Component {
   constructor(props) {
     super(props)
-
-    this.setChartData(props)
   }
 
   static propTypes = chartPropTypes

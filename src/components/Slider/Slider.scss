@@ -1,0 +1,145 @@
+.react-autoql-slider-wrapper {
+  min-width: 150px;
+  display: flex;
+  flex-direction: row;
+  padding-left: 10px;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+
+  .react-autoql-slider-and-label-container {
+    position: relative;
+    flex: 1;
+    height: 100%;
+    min-width: min-content;
+    text-align: left;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: nowrap;
+    display: flex;
+    overflow: visible;
+
+    .react-autoql-slider-label {
+      padding: 0;
+      min-height: 5px;
+      font-weight: 500;
+      white-space: nowrap;
+      line-height: 10px;
+    }
+
+    .react-autoql-slider-min-max-labels {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      flex-wrap: nowrap;
+      align-items: flex-end;
+      margin: 0px 5px;
+    }
+
+    .react-autoql-slider-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      margin: 5px;
+      margin-bottom: 0;
+
+      .react-autoql-slider {
+        flex: 0 0 24px;
+      }
+
+      .react-autoql-slider-track {
+        height: 6px;
+        margin: 10px 5px;
+        background: var(--react-autoql-background-color-tertiary);
+        border-radius: 10px;
+        cursor: pointer;
+      }
+
+      .react-autoql-slider-thumb {
+        width: 16px;
+        height: 16px;
+        margin: 4px 1px;
+        border-radius: 8px;
+        background: var(--react-autoql-background-color-checkbox);
+        box-shadow: rgba(0, 0, 0, 0.18) 0px 1px 4px 0px, rgba(0, 0, 0, 0.06) 0px 1px 10px 0px;
+        outline: none;
+        cursor: pointer;
+
+        .react-autoql-slider-value-bubble {
+          position: absolute;
+          pointer-events: none;
+          opacity: 0;
+          bottom: 100%;
+          background: #000;
+          color: #fff;
+          left: 50%;
+          transform: translate(-50%, 0);
+          border-radius: 20px;
+          margin-bottom: 2px;
+          padding: 2px 8px;
+          line-height: 15px;
+          font-size: 10px;
+          transition: opacity 0.2s ease;
+        }
+
+        &:hover,
+        &:active {
+          .react-autoql-slider-value-bubble {
+            opacity: 1;
+          }
+        }
+      }
+
+      .react-autoql-slider-mark {
+        background: var(--react-autoql-border-color);
+        height: 5px;
+        width: 1px;
+        margin-left: 8px;
+        top: 1px;
+      }
+
+      .react-autoql-slider-mark-label {
+        font-size: 10px;
+        line-height: 12px;
+        color: var(--react-autoql-placeholder-color);
+        white-space: nowrap;
+      }
+    }
+  }
+
+  .react-autoql-slider-input-wrapper {
+    flex: 1;
+    min-width: 75px;
+    max-width: 100px;
+    display: flex;
+    height: 28px;
+    padding-left: 5px;
+
+    .react-autoql-slider-input {
+      display: flex;
+      flex-direction: row;
+      width: 100px;
+      height: 33px;
+      max-height: 100%;
+      padding: 0;
+    }
+
+    .react-autoql-input-and-label-container {
+      width: 100%;
+      padding: 0;
+      box-sizing: border-box;
+
+      .react-autoql-input-container {
+        flex: 1;
+      }
+      .react-autoql-input {
+        min-height: unset;
+        max-height: 100%;
+        font-size: inherit;
+      }
+    }
+  }
+}

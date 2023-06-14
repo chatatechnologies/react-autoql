@@ -62,7 +62,13 @@ import {
 } from './columnHelpers.js'
 
 import { sendSuggestion, runDrilldown, runQueryOnly } from '../../js/queryService'
-import { MONTH_NAMES, DEFAULT_DATA_PAGE_SIZE, CHART_TYPES, MAX_DATA_PAGE_SIZE } from '../../js/Constants'
+import {
+  MONTH_NAMES,
+  DEFAULT_DATA_PAGE_SIZE,
+  CHART_TYPES,
+  MAX_DATA_PAGE_SIZE,
+  MAX_LEGEND_LABELS,
+} from '../../js/Constants'
 import { ReverseTranslation } from '../ReverseTranslation'
 import { getColumnDateRanges, getFilterPrecision, getPrecisionForDayJS } from '../../js/dateUtils'
 import { withTheme } from '../../theme'
@@ -962,7 +968,7 @@ export class QueryOutput extends React.Component {
     this.axiosSource?.cancel(responseErrors.CANCELLED)
   }
 
-  processDrilldown = async ({ groupBys, supportedByAPI, row, activeKey, stringColumnIndex }) => {
+  processDrilldown = async ({ groupBys, supportedByAPI, row, activeKey, stringColumnIndex, filter }) => {
     if (getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns) {
       try {
         // This will be a new query so we want to reset the page size back to default
@@ -988,10 +994,10 @@ export class QueryOutput extends React.Component {
           } catch (error) {
             this.props.onDrilldownEnd({ response: error })
           }
-        } else if (!isNaN(stringColumnIndex) && !!row?.length) {
+        } else if ((!isNaN(stringColumnIndex) && !!row?.length) || filter) {
           this.props.onDrilldownStart(activeKey)
 
-          if (!this.isDataLimited() && !isColumnDateType(column)) {
+          if (!this.isDataLimited() && !isColumnDateType(column) && !filter) {
             // ------------ 1. Use FE for filter drilldown -----------
             const response = this.getFilterDrilldown({ stringColumnIndex, row })
             setTimeout(() => {
@@ -1000,10 +1006,13 @@ export class QueryOutput extends React.Component {
             // -------------------------------------------------------
           } else {
             // --------- 2. Use subquery for filter drilldown --------
-            const clickedFilter = this.constructFilter({
-              column: this.state.columns[stringColumnIndex],
-              value: row[stringColumnIndex],
-            })
+            let clickedFilter = filter
+            if (!filter) {
+              clickedFilter = this.constructFilter({
+                column: this.state.columns[stringColumnIndex],
+                value: row[stringColumnIndex],
+              })
+            }
 
             const allFilters = this.getCombinedFilters(clickedFilter)
             let response
@@ -1146,7 +1155,15 @@ export class QueryOutput extends React.Component {
     this.processDrilldown({ groupBys, supportedByAPI: !!groupBys })
   }
 
-  onChartClick = ({ row, columnIndex, columns, stringColumnIndex, legendColumn, activeKey }) => {
+  onChartClick = ({ row, columnIndex, columns, stringColumnIndex, legendColumn, activeKey, filter }) => {
+    if (filter) {
+      return this.processDrilldown({
+        supportedByAPI: false,
+        activeKey,
+        filter,
+      })
+    }
+
     // todo: do we need to provide all those params or can we grab them from this component?
     const drilldownData = {}
     const groupBys = []
@@ -1352,13 +1369,12 @@ export class QueryOutput extends React.Component {
   }
 
   onChangeNumberColumnIndices = (indices, indices2, newColumns) => {
-    if (!indices) {
-      return
-    }
-
     if (this.usePivotDataForChart()) {
-      this.pivotTableConfig.numberColumnIndices = indices
-      this.pivotTableConfig.numberColumnIndex = indices[0]
+      if (indices) {
+        this.pivotTableConfig.numberColumnIndices = indices
+        this.pivotTableConfig.numberColumnIndex = indices[0]
+      }
+
       if (indices2) {
         this.pivotTableConfig.numberColumnIndices2 = indices2
         this.pivotTableConfig.numberColumnIndex2 = indices2[0]
@@ -1371,8 +1387,11 @@ export class QueryOutput extends React.Component {
 
       this.forceUpdate()
     } else {
-      this.tableConfig.numberColumnIndices = indices
-      this.tableConfig.numberColumnIndex = indices[0]
+      if (indices) {
+        this.tableConfig.numberColumnIndices = indices
+        this.tableConfig.numberColumnIndex = indices[0]
+      }
+
       if (indices2) {
         this.tableConfig.numberColumnIndices2 = indices2
         this.tableConfig.numberColumnIndex2 = indices2[0]
@@ -1946,7 +1965,7 @@ export class QueryOutput extends React.Component {
       if (
         isFirstGeneration &&
         Object.keys(uniqueValues1).length > Object.keys(uniqueValues0).length &&
-        !isColumnDateType(columns[stringColumnIndex])
+        (!isColumnDateType(columns[stringColumnIndex]) || Object.keys(uniqueValues1).length > MAX_LEGEND_LABELS)
       ) {
         newStringColumnIndex = legendColumnIndex
         newLegendColumnIndex = stringColumnIndex

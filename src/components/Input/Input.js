@@ -8,9 +8,18 @@ import './Input.scss'
 import { Select } from '../Select'
 
 export default class Input extends React.Component {
+  constructor(props) {
+    super(props)
+
+    this.state = {
+      focused: false,
+    }
+  }
+
   static propTypes = {
     icon: PropTypes.string,
     type: PropTypes.string,
+    step: PropTypes.string,
     size: PropTypes.oneOf(['small', 'large']),
     label: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
     fullWidth: PropTypes.bool,
@@ -18,14 +27,11 @@ export default class Input extends React.Component {
 
   static defaultProps = {
     icon: undefined,
-    type: 'single',
+    type: 'text',
+    step: '1',
     size: 'large',
     label: '',
     fullWidth: false,
-  }
-
-  state = {
-    focused: false,
   }
 
   onFocus = () => {
@@ -51,38 +57,70 @@ export default class Input extends React.Component {
     this.focus()
   }
 
+  simulateOnChange = () => {
+    this.inputRef?.dispatchEvent(new Event('change', { bubbles: true }))
+  }
+
+  incrementNumber = () => {
+    this.inputRef?.stepUp()
+    this.simulateOnChange()
+  }
+
+  decrementNumber = () => {
+    this.inputRef?.stepDown()
+    this.simulateOnChange()
+  }
+
+  renderSpinWheel = () => {
+    return (
+      <div className='react-autoql-input-number-spin-button-container'>
+        <button className='react-autoql-input-number-spin-button' onClick={this.incrementNumber}>
+          <Icon type='caret-up' />
+        </button>
+        <button className='react-autoql-input-number-spin-button' onClick={this.decrementNumber}>
+          <Icon type='caret-down' />
+        </button>
+      </div>
+    )
+  }
+
+  renderSelectDropdown = () => {
+    return (
+      <Select
+        className='react-autoql-text-input-selector'
+        options={this.props.selectOptions}
+        value={this.props.selectValue}
+        onChange={this.onSelectChange}
+      />
+    )
+  }
+
   render = () => {
     const { icon, area, size, selectOptions, style, selectValue, onSelectChange, fullWidth, ...nativeProps } =
       this.props
-    const { className } = nativeProps
+    const { className, type, label } = nativeProps
 
-    const hasSelect = !!this.props.selectOptions?.length
+    const hasSelect = !!selectOptions?.length
 
     return (
       <ErrorBoundary>
         <div
           className={`react-autoql-input-and-label-container
         ${className ?? ''}
-        ${this.props.fullWidth ? 'react-autoql-input-full-width' : ''}`}
+        ${fullWidth ? 'react-autoql-input-full-width' : ''}`}
           style={style}
         >
-          {!!this.props.label && <div className='react-autoql-input-label'>{this.props.label}</div>}
+          {!!label && <div className='react-autoql-input-label'>{label}</div>}
           <div
             className={`react-autoql-input-container
             ${this.state.focused ? 'focus' : ''}
             ${hasSelect ? 'with-select' : ''}
-            ${this.props.size === 'small' ? 'react-autoql-input-small' : 'react-autoql-input-large'}`}
+            ${size === 'small' ? 'react-autoql-input-small' : 'react-autoql-input-large'}
+            ${type === 'number' ? 'react-autoql-input-number' : ''}`}
             data-test='react-autoql-input'
           >
-            {hasSelect && (
-              <Select
-                className='react-autoql-text-input-selector'
-                options={selectOptions}
-                value={selectValue}
-                onChange={this.onSelectChange}
-              />
-            )}
-            {!!this.props.area ? (
+            {hasSelect && this.renderSelectDropdown()}
+            {!!area ? (
               <textarea
                 {...nativeProps}
                 ref={(r) => (this.inputRef = r)}
@@ -106,6 +144,7 @@ export default class Input extends React.Component {
                 )}
               </div>
             )}
+            {type === 'number' && this.renderSpinWheel()}
           </div>
         </div>
       </ErrorBoundary>

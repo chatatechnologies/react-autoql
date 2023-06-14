@@ -11,6 +11,8 @@ import {
   SEASON_NAMES,
   PRECISION_TYPES,
   WEEKDAY_NAMES_SUN,
+  MAX_LEGEND_LABELS,
+  MIN_HISTOGRAM_SAMPLE,
 } from './Constants'
 import { dataFormattingDefault, getDataFormatting } from '../props/defaults'
 
@@ -23,6 +25,7 @@ import {
   isColumnNumberType,
   isColumnStringType,
 } from '../components/QueryOutput/columnHelpers'
+import { range } from 'd3-array'
 
 export const rotateArray = (array, n) => {
   const rotated = [...array]
@@ -373,6 +376,32 @@ export const formatStringDate = (value, config) => {
   return value
 }
 
+export const getNumberFormatConfig = (d, scale) => {
+  let minimumFractionDigits = 0
+  let maximumFractionDigits = 0
+  let notation
+
+  const domainRange = scale?.domain()?.[1] - scale?.domain()?.[0]
+  const smallDomain = domainRange && domainRange < 10
+  const absValue = Math.abs(d)
+
+  if (smallDomain) {
+    minimumFractionDigits = 2
+    maximumFractionDigits = 2
+  } else if (absValue >= 1e3) {
+    notation = 'compact'
+    if (absValue > 1e9) {
+      maximumFractionDigits = 3
+    } else if (absValue > 1e6) {
+      maximumFractionDigits = 2
+    } else if (absValue > 1e3) {
+      maximumFractionDigits = 1
+    }
+  }
+
+  return { minimumFractionDigits, maximumFractionDigits, notation }
+}
+
 export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWidth }) => {
   if (d === null) {
     return {
@@ -398,68 +427,83 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWid
     type = 'QUANTITY'
   }
 
+  const { minimumFractionDigits, maximumFractionDigits, notation } = getNumberFormatConfig(d, scale)
+
   let formattedLabel = d
-  switch (type) {
-    case 'STRING': {
-      break
-    }
-    case 'DOLLAR_AMT': {
-      if (Number(d) || Number(d) === 0) {
-        const currency = currencyCode || 'USD'
-        try {
+
+  if (scale?.showLabelDecimals) {
+    formattedLabel = formatElement({
+      element: d,
+      column: column ?? scale?.column,
+      config: dataFormatting,
+      isChart: true,
+    })
+  } else {
+    switch (type) {
+      case 'STRING': {
+        break
+      }
+      case 'DOLLAR_AMT': {
+        if (Number(d) || Number(d) === 0) {
+          const style = 'currency'
+          const currency = currencyCode || 'USD'
+
+          const currencyConfig = {
+            style,
+            minimumFractionDigits,
+            maximumFractionDigits,
+            notation,
+          }
+
+          try {
+            formattedLabel = new Intl.NumberFormat(languageCode, {
+              ...currencyConfig,
+              currency,
+            }).format(d)
+          } catch (error) {
+            console.error(error)
+            formattedLabel = new Intl.NumberFormat(languageCode, {
+              ...currencyConfig,
+              currency: 'USD',
+            }).format(d)
+          }
+        }
+        break
+      }
+      case 'QUANTITY': {
+        if (!isNaN(parseFloat(d))) {
           formattedLabel = new Intl.NumberFormat(languageCode, {
-            style: 'currency',
-            currency: `${currency}`,
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-            notation: 'compact',
-          }).format(d)
-        } catch (error) {
-          console.error(error)
-          formattedLabel = new Intl.NumberFormat(languageCode, {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-            notation: 'compact',
+            minimumFractionDigits,
+            maximumFractionDigits,
+            notation,
           }).format(d)
         }
+        break
       }
-      break
-    }
-    case 'QUANTITY': {
-      if (!isNaN(parseFloat(d))) {
-        formattedLabel = new Intl.NumberFormat(languageCode, {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
-          notation: 'compact',
-        }).format(d)
-      }
-      break
-    }
-    case 'DATE': {
-      const isDateObj = scale?.type === 'TIME'
-      formattedLabel = formatDateType(d, col, config, isDateObj)
+      case 'DATE': {
+        const isDateObj = scale?.type === 'TIME'
+        formattedLabel = formatDateType(d, col, config, isDateObj)
 
-      break
-    }
-    case 'DATE_STRING': {
-      formattedLabel = formatDateStringType(d, col, config, scale)
-      break
-    }
-    case 'PERCENT': {
-      if (Number(d)) {
-        const p = Number(d) / 100
-        formattedLabel = new Intl.NumberFormat(languageCode, {
-          style: 'percent',
-          minimumFractionDigits: 1,
-          maximumFractionDigits: 1,
-        }).format(p)
+        break
       }
-      break
-    }
-    default: {
-      break
+      case 'DATE_STRING': {
+        formattedLabel = formatDateStringType(d, col, config, scale)
+        break
+      }
+      case 'PERCENT': {
+        if (Number(d) || Number(d) === 0) {
+          const p = Number(d) / 100
+          formattedLabel = new Intl.NumberFormat(languageCode, {
+            style: 'percent',
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1,
+          }).format(p)
+        }
+        break
+      }
+      default: {
+        break
+      }
     }
   }
 
@@ -742,27 +786,12 @@ export const supportsRegularPivotTable = (columns, dataLength, data) => {
       return row[groupbyColumns[1]]
     }) ?? []
 
-  const maxLegendLabels = 20
   const uniqueData1Length = column1Data?.filter(onlyUnique)?.length ?? 0
   const uniqueData2Length = column2Data?.filter(onlyUnique)?.length ?? 0
 
-  if (uniqueData1Length > maxLegendLabels && uniqueData2Length > maxLegendLabels) {
+  if (uniqueData1Length > MAX_LEGEND_LABELS && uniqueData2Length > MAX_LEGEND_LABELS) {
     console.debug(
       `Info: Pivot table will not be supported since there are too many unique fields. The calculated dimensions would be: ${uniqueData1Length} x ${uniqueData2Length}`,
-    )
-    return false
-  }
-
-  if (isColumnDateType(groupbyColumn1) && uniqueData2Length > maxLegendLabels) {
-    console.debug(
-      `Info: Pivot table will not be supported since there are too many unique fields. The legend would have ${uniqueData2Length} fields`,
-    )
-    return false
-  }
-
-  if (isColumnDateType(groupbyColumn2) && uniqueData1Length > maxLegendLabels) {
-    console.debug(
-      `Info: Pivot table will not be supported since there are too many unique fields. The legend would have ${uniqueData1Length} fields`,
     )
     return false
   }
@@ -916,6 +945,10 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
       // column, we should be able to chart anything
       const supportedDisplayTypes = ['table', 'column', 'bar']
 
+      if (numRows > MIN_HISTOGRAM_SAMPLE) {
+        supportedDisplayTypes.push('histogram')
+      }
+
       if (hasDateColumn(visibleColumns)) {
         supportedDisplayTypes.push('line')
       }
@@ -927,6 +960,8 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
       const { amountOfNumberColumns } = getColumnTypeAmounts(visibleColumns)
       if (amountOfNumberColumns > 1) {
         supportedDisplayTypes.push('column_line')
+        supportedDisplayTypes.push('scatterplot')
+        // supportedDisplayTypes.push('histogram')
       }
 
       // Check if date pivot should be supported

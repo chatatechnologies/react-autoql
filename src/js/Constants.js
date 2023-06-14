@@ -23,6 +23,8 @@ export const CHART_TYPES = [
   'stacked_column',
   'stacked_line',
   'column_line',
+  'histogram',
+  'scatterplot',
 ]
 
 export const DATE_ONLY_CHART_TYPES = ['line', 'stacked_line']
@@ -149,3 +151,6 @@ export const AGG_TYPES = [
   //   unit: 'none',
   // },
 ]
+
+export const MAX_LEGEND_LABELS = 22
+export const MIN_HISTOGRAM_SAMPLE = 20
