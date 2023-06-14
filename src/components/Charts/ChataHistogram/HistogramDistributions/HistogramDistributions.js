@@ -42,7 +42,7 @@ export default class HistogramDistributions extends Component {
     this.TYPES_WITH_STD_DEV = ['normal']
 
     this.state = {
-      activeDistribution: 'normal', // undefined, // Set this default to 'normal' if we want a distribution fn dropdown
+      activeDistribution: undefined, // Set this default to 'normal' if we want a distribution fn dropdown
     }
   }
 
@@ -145,7 +145,7 @@ export default class HistogramDistributions extends Component {
       svgElements.push(
         this.createPathWithHoverStroke({
           d: createSVGPath(points, this.PATH_SMOOTHING),
-          key: `distribution-line-${distribution.type}-${this.COMPONENT_KEY}`,
+          key: `distribution-line-${distribution.type}-${this.COMPONENT_KEY}-${i}`,
           tooltip: distribution.tooltip({ mean: this.mean, stdDev: this.stdDev }),
           className: 'distribution-line',
           stroke: this.props.colorScale(i + 1),
