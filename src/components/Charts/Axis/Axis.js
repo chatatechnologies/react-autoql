@@ -33,7 +33,7 @@ export default class Axis extends Component {
     this.swatchElements = []
     this.maxRows = 5000
     this.initialRowNumber = 50
-    this.fontSize = isMobile ? 10 : 13
+    this.fontSize = isMobile ? 10 : 12
     this.labelInlineStyles = {
       fontSize: `${this.fontSize}px`,
       fontFamily: 'inherit',

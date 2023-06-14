@@ -13,6 +13,7 @@ export default class ChataHistogram extends Component {
 
     this.minNumBuckets = 5
     this.maxNumBuckets = 20
+    this.bucketStepSize = 1
 
     if (props.data.length < this.minNumBuckets) {
       this.minNumBuckets = 2
@@ -58,8 +59,14 @@ export default class ChataHistogram extends Component {
     const maxValue = max(this.props.data, (d) => convertToNumber(d[this.props.numberColumnIndex]))
 
     this.bucketSize = newBucketSize
-    this.maxBucketSize = Math.floor((maxValue - minValue) / this.minNumBuckets)
-    this.minBucketSize = Math.ceil((maxValue - minValue) / this.maxNumBuckets)
+    this.maxBucketSize = Math.ceil((maxValue - minValue) / (this.minNumBuckets ?? 1))
+    this.minBucketSize = Math.floor((maxValue - minValue) / (this.maxNumBuckets ?? 1))
+
+    if (this.maxBucketSize - this.minBucketSize < 3) {
+      this.bucketStepSize = 0.1
+    } else if (this.maxBucketSize - this.minBucketSize < 6) {
+      this.bucketStepSize = 0.5
+    }
 
     if (!this.bucketSize) {
       const initialNumBuckets = this.getInitialNumberOfBuckets()

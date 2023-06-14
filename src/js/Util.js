@@ -24,6 +24,7 @@ import {
   isColumnNumberType,
   isColumnStringType,
 } from '../components/QueryOutput/columnHelpers'
+import { range } from 'd3-array'
 
 export const rotateArray = (array, n) => {
   const rotated = [...array]
@@ -489,7 +490,7 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWid
         break
       }
       case 'PERCENT': {
-        if (Number(d)) {
+        if (Number(d) || Number(d) === 0) {
           const p = Number(d) / 100
           formattedLabel = new Intl.NumberFormat(languageCode, {
             style: 'percent',
@@ -941,7 +942,9 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
     } else if (supports2DCharts(visibleColumns, numRows)) {
       // If there is at least one string column and one number
       // column, we should be able to chart anything
-      const supportedDisplayTypes = ['table', 'column', 'bar', 'histogram']
+      const supportedDisplayTypes = ['table', 'column', 'bar']
+
+      supportedDisplayTypes.push('histogram')
 
       if (hasDateColumn(visibleColumns)) {
         supportedDisplayTypes.push('line')

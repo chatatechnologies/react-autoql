@@ -430,6 +430,7 @@ export default class ChataChart extends React.Component {
     const initialValue = this.innerChartRef.bucketSize
     const min = this.innerChartRef.minBucketSize
     const max = this.innerChartRef.maxBucketSize
+    const step = this.innerChartRef.bucketStepSize
 
     let paddingLeft = this.state.deltaX - 10
     if (isMobile || paddingLeft < 0 || this.outerWidth < 300) {
@@ -443,6 +444,7 @@ export default class ChataChart extends React.Component {
         style={{ paddingLeft }}
         min={min}
         max={max}
+        step={step}
         minLabel={this.formatSliderLabel(min)}
         maxLabel={this.formatSliderLabel(max)}
         onChange={(bucketSize) => this.setState({ bucketSize })}

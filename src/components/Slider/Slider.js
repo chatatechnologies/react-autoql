@@ -103,7 +103,6 @@ export default class Slider extends React.Component {
   }
 
   onSliderChange = (value) => {
-    console.log('on slider change')
     this.setState({ value, inputValue: value })
   }
 
@@ -171,6 +170,7 @@ export default class Slider extends React.Component {
                 onBlur={this.onInputBlur}
                 min={min}
                 max={max}
+                step={this.props.step}
               />
             </div>
           )}
