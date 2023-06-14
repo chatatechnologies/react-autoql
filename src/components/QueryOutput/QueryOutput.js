@@ -968,7 +968,7 @@ export class QueryOutput extends React.Component {
     this.axiosSource?.cancel(responseErrors.CANCELLED)
   }
 
-  processDrilldown = async ({ groupBys, supportedByAPI, row, activeKey, stringColumnIndex }) => {
+  processDrilldown = async ({ groupBys, supportedByAPI, row, activeKey, stringColumnIndex, filter }) => {
     if (getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns) {
       try {
         // This will be a new query so we want to reset the page size back to default
@@ -994,10 +994,10 @@ export class QueryOutput extends React.Component {
           } catch (error) {
             this.props.onDrilldownEnd({ response: error })
           }
-        } else if (!isNaN(stringColumnIndex) && !!row?.length) {
+        } else if ((!isNaN(stringColumnIndex) && !!row?.length) || filter) {
           this.props.onDrilldownStart(activeKey)
 
-          if (!this.isDataLimited() && !isColumnDateType(column)) {
+          if (!this.isDataLimited() && !isColumnDateType(column) && !filter) {
             // ------------ 1. Use FE for filter drilldown -----------
             const response = this.getFilterDrilldown({ stringColumnIndex, row })
             setTimeout(() => {
@@ -1006,10 +1006,13 @@ export class QueryOutput extends React.Component {
             // -------------------------------------------------------
           } else {
             // --------- 2. Use subquery for filter drilldown --------
-            const clickedFilter = this.constructFilter({
-              column: this.state.columns[stringColumnIndex],
-              value: row[stringColumnIndex],
-            })
+            let clickedFilter = filter
+            if (!filter) {
+              clickedFilter = this.constructFilter({
+                column: this.state.columns[stringColumnIndex],
+                value: row[stringColumnIndex],
+              })
+            }
 
             const allFilters = this.getCombinedFilters(clickedFilter)
             let response
@@ -1152,7 +1155,16 @@ export class QueryOutput extends React.Component {
     this.processDrilldown({ groupBys, supportedByAPI: !!groupBys })
   }
 
-  onChartClick = ({ row, columnIndex, columns, stringColumnIndex, legendColumn, activeKey }) => {
+  onChartClick = ({ row, columnIndex, columns, stringColumnIndex, legendColumn, activeKey, filter }) => {
+    console.log('ON CHART CLICK', { filter })
+    if (filter) {
+      return this.processDrilldown({
+        supportedByAPI: false,
+        activeKey,
+        filter,
+      })
+    }
+
     // todo: do we need to provide all those params or can we grab them from this component?
     const drilldownData = {}
     const groupBys = []

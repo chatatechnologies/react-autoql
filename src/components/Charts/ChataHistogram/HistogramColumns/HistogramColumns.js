@@ -26,13 +26,14 @@ export default class HistogramColumns extends Component {
     const newActiveKey = getKey(rowIndex)
 
     // TODO: create drilldown fn for bucket range
-    // this.props.onChartClick({
-    //   row,
-    //   columnIndex: this.props.numberColumnIndex,
-    //   columns: this.props.columns,
-    //   legendColumn: this.props.legendColumn,
-    //   activeKey: newActiveKey,
-    // })
+    this.props.onChartClick({
+      activeKey: newActiveKey,
+      filter: {
+        name: this.props.columns[this.props.numberColumnIndex]?.name,
+        value: `${x0},${x1}`,
+        operator: 'between',
+      },
+    })
 
     this.setState({ activeKey: newActiveKey })
   }
