@@ -151,3 +151,5 @@ export const AGG_TYPES = [
   //   unit: 'none',
   // },
 ]
+
+export const MAX_LEGEND_LABELS = 22

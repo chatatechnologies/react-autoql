@@ -62,7 +62,13 @@ import {
 } from './columnHelpers.js'
 
 import { sendSuggestion, runDrilldown, runQueryOnly } from '../../js/queryService'
-import { MONTH_NAMES, DEFAULT_DATA_PAGE_SIZE, CHART_TYPES, MAX_DATA_PAGE_SIZE } from '../../js/Constants'
+import {
+  MONTH_NAMES,
+  DEFAULT_DATA_PAGE_SIZE,
+  CHART_TYPES,
+  MAX_DATA_PAGE_SIZE,
+  MAX_LEGEND_LABELS,
+} from '../../js/Constants'
 import { ReverseTranslation } from '../ReverseTranslation'
 import { getColumnDateRanges, getFilterPrecision, getPrecisionForDayJS } from '../../js/dateUtils'
 import { withTheme } from '../../theme'
@@ -1948,7 +1954,7 @@ export class QueryOutput extends React.Component {
       if (
         isFirstGeneration &&
         Object.keys(uniqueValues1).length > Object.keys(uniqueValues0).length &&
-        !isColumnDateType(columns[stringColumnIndex])
+        (!isColumnDateType(columns[stringColumnIndex]) || Object.keys(uniqueValues1).length > MAX_LEGEND_LABELS)
       ) {
         newStringColumnIndex = legendColumnIndex
         newLegendColumnIndex = stringColumnIndex

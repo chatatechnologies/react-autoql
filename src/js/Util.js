@@ -11,6 +11,7 @@ import {
   SEASON_NAMES,
   PRECISION_TYPES,
   WEEKDAY_NAMES_SUN,
+  MAX_LEGEND_LABELS,
 } from './Constants'
 import { dataFormattingDefault, getDataFormatting } from '../props/defaults'
 
@@ -783,27 +784,12 @@ export const supportsRegularPivotTable = (columns, dataLength, data) => {
       return row[groupbyColumns[1]]
     }) ?? []
 
-  const maxLegendLabels = 20
   const uniqueData1Length = column1Data?.filter(onlyUnique)?.length ?? 0
   const uniqueData2Length = column2Data?.filter(onlyUnique)?.length ?? 0
 
-  if (uniqueData1Length > maxLegendLabels && uniqueData2Length > maxLegendLabels) {
+  if (uniqueData1Length > MAX_LEGEND_LABELS && uniqueData2Length > MAX_LEGEND_LABELS) {
     console.debug(
       `Info: Pivot table will not be supported since there are too many unique fields. The calculated dimensions would be: ${uniqueData1Length} x ${uniqueData2Length}`,
-    )
-    return false
-  }
-
-  if (isColumnDateType(groupbyColumn1) && uniqueData2Length > maxLegendLabels) {
-    console.debug(
-      `Info: Pivot table will not be supported since there are too many unique fields. The legend would have ${uniqueData2Length} fields`,
-    )
-    return false
-  }
-
-  if (isColumnDateType(groupbyColumn2) && uniqueData1Length > maxLegendLabels) {
-    console.debug(
-      `Info: Pivot table will not be supported since there are too many unique fields. The legend would have ${uniqueData1Length} fields`,
     )
     return false
   }
