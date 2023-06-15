@@ -474,7 +474,7 @@ export default class NotificationItem extends React.Component {
         Feel free to{' '}
         <ConfirmPopover
           className='notification-delete-confirm-popover'
-          popoverParentElement={this.notificationItemRef}
+          popoverParentElement={this.props.popoverParentElement ?? this.notificationItemRef}
           title='Delete this Notification?'
           onConfirm={this.delete}
           confirmText='Delete'
@@ -530,6 +530,7 @@ export default class NotificationItem extends React.Component {
                   enableAjaxTableData={this.props.enableAjaxTableData}
                   onSuccessCallback={this.props.onSuccessCallback}
                   onErrorCallback={this.props.onErrorCallback}
+                  popoverParentElement={this.props.popoverParentElement ?? this.notificationItemRef}
                   isResizing={this.props.isResizing}
                   shouldRender={this.state.expanded}
                 />
