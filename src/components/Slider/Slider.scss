@@ -51,19 +51,19 @@
       }
 
       .react-autoql-slider-track {
-        height: 6px;
+        height: 4px;
         margin: 10px 5px;
-        background: var(--react-autoql-background-color-tertiary);
+        background: var(--react-autoql-border-color);
         border-radius: 10px;
         cursor: pointer;
       }
 
       .react-autoql-slider-thumb {
-        width: 16px;
-        height: 16px;
-        margin: 4px 1px;
+        width: 14px;
+        height: 14px;
+        margin: 5px 1px;
         border-radius: 8px;
-        background: var(--react-autoql-background-color-checkbox);
+        background: #ffffff;
         box-shadow: rgba(0, 0, 0, 0.18) 0px 1px 4px 0px, rgba(0, 0, 0, 0.06) 0px 1px 10px 0px;
         outline: none;
         cursor: pointer;
@@ -73,8 +73,8 @@
           pointer-events: none;
           opacity: 0;
           bottom: 100%;
-          background: #000;
-          color: #fff;
+          background: #000000;
+          color: #ffffff;
           left: 50%;
           transform: translate(-50%, 0);
           border-radius: 20px;
