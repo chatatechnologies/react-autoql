@@ -43,6 +43,10 @@ export default class Squares extends Component {
   }
 
   render = () => {
+    if (this.props.isLoading) {
+      return null
+    }
+
     const {
       columns,
       legendColumn,

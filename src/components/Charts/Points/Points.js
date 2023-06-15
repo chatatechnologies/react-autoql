@@ -5,6 +5,7 @@ import { max, min } from 'd3-array'
 import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, getKey } from '../helpers'
 import { getChartColorVars } from '../../../theme/configureTheme'
 import { rebuildTooltips } from '../../Tooltip'
+import { deepEqual } from '../../../js/Util'
 
 export default class Points extends Component {
   constructor(props) {
@@ -27,6 +28,13 @@ export default class Points extends Component {
     rebuildTooltips()
   }
 
+  shouldComponentUpdate = (nextProps, nextState) => {
+    const propsEqual = deepEqual(this.props, nextProps)
+    const stateEqual = deepEqual(this.state, nextState)
+
+    return !propsEqual || !stateEqual
+  }
+
   onPointClick = (row, colIndex, key) => {
     // Drilldowns not possible yet since it is only 1 data point
     // There may be a use case for this in the future if we can
@@ -43,6 +51,10 @@ export default class Points extends Component {
   }
 
   render = () => {
+    if (this.props.isLoading) {
+      return null
+    }
+
     const { columns, numberColumnIndex, numberColumnIndex2, dataFormatting, yScale, xScale } = this.props
 
     if (!numberColumnIndex || !numberColumnIndex2) {
@@ -69,6 +81,7 @@ export default class Points extends Component {
         colIndex: numberColumnIndex,
         colIndex2: numberColumnIndex2,
         dataFormatting,
+        aggregated: this.props.aggregated,
       })
 
       const key = getKey(numberColumnIndex, index)

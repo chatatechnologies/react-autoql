@@ -46,7 +46,7 @@
         height: 100%;
         font-size: 12px;
         font-weight: bold;
-        color: #ffffff;
+        color: var(--react-autoql-background-color-switch-thumb);
         right: 15px;
       }
 
@@ -56,7 +56,7 @@
         height: 18px;
         width: 18px;
         bottom: 4px;
-        background-color: #ffffff;
+        background-color: var(--react-autoql-background-color-switch-thumb);
         border-radius: 50%;
         transition: 0.4s;
         left: 4px;

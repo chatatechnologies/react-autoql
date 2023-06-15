@@ -91,6 +91,10 @@ export default class StackedLines extends Component {
   }
 
   render = () => {
+    if (this.props.isLoading) {
+      return null
+    }
+
     const { columns, numberColumnIndices, stringColumnIndex, yScale, xScale } = this.props
 
     const visibleSeries = numberColumnIndices.filter((colIndex) => {

@@ -67,7 +67,7 @@ export default class ChataLineChart extends Component {
 
     return (
       <g ref={(r) => (this.chartRef = r)} className='react-autoql-axes-chart' data-test='react-autoql-line-chart'>
-        {this.props.marginAdjustmentFinished && <Line {...this.props} xScale={this.xScale} yScale={this.yScale} />}
+        <Line {...this.props} xScale={this.xScale} yScale={this.yScale} />
         <Axes
           {...this.props}
           ref={(r) => (this.axesRef = r)}

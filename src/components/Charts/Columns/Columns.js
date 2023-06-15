@@ -99,6 +99,10 @@ export default class Columns extends Component {
   }
 
   render = () => {
+    if (this.props.isLoading) {
+      return null
+    }
+
     const { columns, numberColumnIndices, numberColumnIndices2, xScale, yScale, yScale2 } = this.props
 
     const visibleSeries = numberColumnIndices.filter((colIndex) => {

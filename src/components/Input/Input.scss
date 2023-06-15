@@ -131,6 +131,7 @@
     .react-autoql-input {
       border: 1px solid var(--react-autoql-border-color);
       border-radius: 4px;
+      background: inherit;
       width: 100%;
       font-size: inherit;
       font-family: inherit;
@@ -158,6 +159,7 @@
 
       &:not(textarea) {
         padding: 0 10px;
+        height: 32px;
       }
 
       &.with-select {

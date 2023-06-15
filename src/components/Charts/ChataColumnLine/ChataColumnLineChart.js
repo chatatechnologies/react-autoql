@@ -90,19 +90,15 @@ export default class ChataColumnLineChart extends Component {
           toggleChartScale={this.toggleChartScale}
           yGridLines
         >
-          {this.props.marginAdjustmentFinished && (
-            <>
-              <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />
-              {!!this.yScale2 && (
-                <Line
-                  {...this.props}
-                  numberColumnIndices={this.props.numberColumnIndices2}
-                  xScale={this.xScale}
-                  yScale={this.yScale2}
-                  colorScale={this.props.colorScale2}
-                />
-              )}
-            </>
+          <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />
+          {!!this.yScale2 && (
+            <Line
+              {...this.props}
+              numberColumnIndices={this.props.numberColumnIndices2}
+              xScale={this.xScale}
+              yScale={this.yScale2}
+              colorScale={this.props.colorScale2}
+            />
           )}
         </Axes>
       </g>

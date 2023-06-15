@@ -28,6 +28,7 @@ export default class Slider extends React.Component {
     debounceDelay: PropTypes.number,
     showInput: PropTypes.bool,
     label: PropTypes.string,
+    step: PropTypes.number,
     onChange: PropTypes.func,
   }
 
@@ -45,6 +46,7 @@ export default class Slider extends React.Component {
     throttleDelay: 20,
     showInput: false,
     label: undefined,
+    step: 1,
     onChange: () => {},
   }
 

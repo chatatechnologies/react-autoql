@@ -169,6 +169,10 @@ export default class Line extends Component {
   }
 
   render = () => {
+    if (this.props.isLoading) {
+      return null
+    }
+
     const visibleSeries = this.props.numberColumnIndices.filter((colIndex) => {
       return !this.props.columns[colIndex]?.isSeriesHidden
     })

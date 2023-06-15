@@ -92,6 +92,10 @@ export default class HistogramColumns extends Component {
   }
 
   render = () => {
+    if (this.props.isLoading) {
+      return null
+    }
+
     const bars = this.getBars()
 
     return <g data-test='columns'>{bars}</g>

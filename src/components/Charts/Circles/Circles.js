@@ -49,6 +49,10 @@ export default class Circles extends Component {
   }
 
   render = () => {
+    if (this.props.isLoading) {
+      return null
+    }
+
     const {
       columns,
       legendColumn,

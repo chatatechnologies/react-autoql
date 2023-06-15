@@ -232,7 +232,7 @@ export default class HistogramDistributions extends Component {
   }
 
   render = () => {
-    if (!this.state.activeDistribution) {
+    if (!this.state.activeDistribution || this.props.isLoading) {
       return null
     }
 

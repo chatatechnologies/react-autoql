@@ -93,7 +93,10 @@ export default class ChataHistogram extends Component {
 
   setChartData = (props) => {
     const uniqueNumberValues = props.data.map((d) => d[props.numberColumnIndex]).filter(onlyUnique).length
-    this.maxNumBuckets = uniqueNumberValues < this.maxBucketSize ? uniqueNumberValues : this.maxBucketSize
+    if (uniqueNumberValues < this.maxBucketSize) {
+      this.maxNumBuckets = uniqueNumberValues
+    }
+
     const { buckets, bins } = this.getBinData(this.props.bucketSize)
     this.buckets = buckets
     this.bins = bins
@@ -128,23 +131,14 @@ export default class ChataHistogram extends Component {
           linearAxis='y'
           yGridLines
         >
-          {this.props.marginAdjustmentFinished && (
-            <>
-              <HistogramColumns
-                {...this.props}
-                xScale={this.xScale}
-                yScale={this.yScale}
-                buckets={this.buckets}
-                bins={this.bins}
-              />
-              <HistogramDistributions
-                {...this.props}
-                xScale={this.xScale}
-                yScale={this.yScale}
-                buckets={this.buckets}
-              />
-            </>
-          )}
+          <HistogramColumns
+            {...this.props}
+            xScale={this.xScale}
+            yScale={this.yScale}
+            buckets={this.buckets}
+            bins={this.bins}
+          />
+          <HistogramDistributions {...this.props} xScale={this.xScale} yScale={this.yScale} buckets={this.buckets} />
         </Axes>
       </g>
     )
