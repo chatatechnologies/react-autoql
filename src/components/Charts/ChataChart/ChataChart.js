@@ -202,8 +202,6 @@ export default class ChataChart extends React.Component {
         return
       }
 
-      console.log('AGGREGATING DATA!')
-
       return aggregateData({
         data: props.data,
         aggColIndex: props.stringColumnIndex,

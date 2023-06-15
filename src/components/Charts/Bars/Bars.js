@@ -14,10 +14,6 @@ export default class Bars extends Component {
     rebuildTooltips()
   }
 
-  shouldComponentUpdate = () => {
-    return true
-  }
-
   onBarClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)
 
