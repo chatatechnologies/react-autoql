@@ -884,6 +884,7 @@ export class DataMessenger extends React.Component {
           shouldRender={this.isOpen() && this.state.activePage === 'notifications'}
           tooltipID={this.TOOLTIP_ID}
           isResizing={this.state.isResizing || this.state.isWindowResizing}
+          popoverParentElement={this.props.popoverParentElement}
         />
       </ErrorBoundary>
     )
