@@ -166,7 +166,15 @@ export const shouldLabelsRotate = (axisElement) => {
   return didOverlap
 }
 
-export const getTooltipContent = ({ row, columns, colIndex, colIndex2, legendColumn, dataFormatting }) => {
+export const getTooltipContent = ({
+  row,
+  columns,
+  colIndex,
+  colIndex2,
+  legendColumn,
+  dataFormatting,
+  aggregated = true,
+}) => {
   let tooltipElement = null
 
   try {
@@ -188,9 +196,11 @@ export const getTooltipContent = ({ row, columns, colIndex, colIndex2, legendCol
         ? column1.origColumn.tooltipTitle ?? column1.origColumn.title
         : column1.tooltipTitle ?? column1.title
 
-      const aggTypeDisplayName = AGG_TYPES.find((agg) => agg.value === column1.aggType)?.displayName
-      if (aggTypeDisplayName) {
-        column1Title = `${column1Title} (${aggTypeDisplayName})`
+      if (aggregated) {
+        const aggTypeDisplayName = AGG_TYPES.find((agg) => agg.value === column1.aggType)?.displayName
+        if (aggTypeDisplayName) {
+          column1Title = `${column1Title} (${aggTypeDisplayName})`
+        }
       }
 
       const column1Value = formatElement({

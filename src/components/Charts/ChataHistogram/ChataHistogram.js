@@ -131,23 +131,14 @@ export default class ChataHistogram extends Component {
           linearAxis='y'
           yGridLines
         >
-          {this.props.marginAdjustmentFinished && (
-            <>
-              <HistogramColumns
-                {...this.props}
-                xScale={this.xScale}
-                yScale={this.yScale}
-                buckets={this.buckets}
-                bins={this.bins}
-              />
-              <HistogramDistributions
-                {...this.props}
-                xScale={this.xScale}
-                yScale={this.yScale}
-                buckets={this.buckets}
-              />
-            </>
-          )}
+          <HistogramColumns
+            {...this.props}
+            xScale={this.xScale}
+            yScale={this.yScale}
+            buckets={this.buckets}
+            bins={this.bins}
+          />
+          <HistogramDistributions {...this.props} xScale={this.xScale} yScale={this.yScale} buckets={this.buckets} />
         </Axes>
       </g>
     )

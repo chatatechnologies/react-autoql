@@ -606,13 +606,15 @@ export class QueryOutput extends React.Component {
         return false
       }
 
-      if (displayType === 'column_line') {
+      if (displayType === 'column_line' || displayType === 'scatterplot') {
         if (
           !isNaN(tableConfig.numberColumnIndex) &&
           !isNaN(tableConfig.numberColumnIndex2) &&
           tableConfig.numberColumnIndex === tableConfig.numberColumnIndex2
         ) {
-          console.debug('Both axes reference the same number column index')
+          console.debug(
+            `Two unique number column indices were not found. This is required for display type: ${displayType}`,
+          )
           return false
         }
 
@@ -2282,7 +2284,6 @@ export class QueryOutput extends React.Component {
           {...tableConfig}
           data={data}
           hidden={!isChartType(this.state.displayType)}
-          formattedTableParams={formattedTableParams}
           authentication={this.props.authentication}
           ref={(ref) => (this.chartRef = ref)}
           type={this.state.displayType}
