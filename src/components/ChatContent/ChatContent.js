@@ -17,6 +17,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 // Styles
 import './ChatContent.scss'
+import { responseErrors } from '../../js/errorMessages'
 
 export default class ChatContent extends React.Component {
   constructor(props) {
@@ -79,7 +80,7 @@ export default class ChatContent extends React.Component {
     }
   }
 
-  componentDidUpdate = (prevProps) => {
+  componentDidUpdate = (prevProps, prevState) => {
     //disable input focus for mobile, as ios keyboard has bug
     if (this.props.shouldRender && !prevProps.shouldRender && !isMobile) {
       this.focusInput()
@@ -116,7 +117,10 @@ export default class ChatContent extends React.Component {
   clearMessages = () => {
     this.queryInputRef?.cancelQuery()
     if (this._isMounted) {
-      this.setState({ messages: this.getIntroMessages(this.props.introMessages) })
+      this.setState({
+        messages: this.getIntroMessages(this.props.introMessages),
+        isClearingAllMessages: true,
+      })
     }
   }
 
@@ -272,6 +276,18 @@ export default class ChatContent extends React.Component {
 
   onResponse = (response, query, queryMessageID) => {
     if (this._isMounted) {
+      this.setState({ isQueryRunning: false, isInputDisabled: false })
+
+      if (response?.data?.message === responseErrors.CANCELLED && this.state.isClearingAllMessages) {
+        this.setState({
+          isClearingAllMessages: false,
+          isQueryRunning: false,
+          isDrilldownRunning: false,
+          isInputDisabled: false,
+        })
+        return
+      }
+
       if (this.getIsSuggestionResponse(response)) {
         this.addResponseMessage({
           content: 'I want to make sure I understood your query. Did you mean:',
@@ -297,10 +313,6 @@ export default class ChatContent extends React.Component {
       }
 
       clearTimeout(this.responseDelayTimeout)
-
-      if (this._isMounted) {
-        this.setState({ isQueryRunning: false, isInputDisabled: false })
-      }
 
       //disable input focus for mobile, as ios keyboard has bug
       !isMobile && this.focusInput()
