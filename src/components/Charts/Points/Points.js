@@ -57,7 +57,7 @@ export default class Points extends Component {
 
     const { columns, numberColumnIndex, numberColumnIndex2, dataFormatting, yScale, xScale } = this.props
 
-    if (!numberColumnIndex || !numberColumnIndex2) {
+    if (isNaN(numberColumnIndex) || isNaN(numberColumnIndex2)) {
       return null
     }
 

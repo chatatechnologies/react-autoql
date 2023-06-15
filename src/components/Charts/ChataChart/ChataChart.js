@@ -494,7 +494,6 @@ export default class ChataChart extends React.Component {
       chartPadding: this.PADDING,
       enableAxisDropdown: enableDynamicCharting && !this.props.isAggregated,
       legendLocation: getLegendLocation(numberColumnIndices, this.props.type, this.props.legendLocation),
-      legendLabels: this.getLegendLabels(),
       onLabelRotation: this.adjustVerticalPosition,
       visibleSeriesIndices,
       tooltipID: this.props.tooltipID,
@@ -524,16 +523,16 @@ export default class ChataChart extends React.Component {
 
     switch (this.props.type) {
       case 'column': {
-        return <ChataColumnChart {...commonChartProps} />
+        return <ChataColumnChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
       case 'bar': {
-        return <ChataBarChart {...commonChartProps} />
+        return <ChataBarChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
       case 'line': {
-        return <ChataLineChart {...commonChartProps} />
+        return <ChataLineChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
       case 'pie': {
-        return <ChataPieChart {...commonChartProps} />
+        return <ChataPieChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
       case 'bubble': {
         return <ChataBubbleChart {...commonChartProps} />
@@ -542,26 +541,32 @@ export default class ChataChart extends React.Component {
         return <ChataHeatmapChart {...commonChartProps} />
       }
       case 'stacked_column': {
-        return <ChataStackedColumnChart {...commonChartProps} />
+        return <ChataStackedColumnChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
       case 'stacked_bar': {
-        return <ChataStackedBarChart {...commonChartProps} />
+        return <ChataStackedBarChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
       case 'stacked_line': {
-        return <ChataStackedLineChart {...commonChartProps} />
+        return <ChataStackedLineChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
       case 'column_line': {
         const visibleSeriesIndices2 = this.props.numberColumnIndices2?.filter(
           (i) => this.props.columns?.[i] && !this.props.columns[i].isSeriesHidden,
         )
 
-        return <ChataColumnLineChart {...commonChartProps} visibleSeriesIndices2={visibleSeriesIndices2} />
+        return (
+          <ChataColumnLineChart
+            {...commonChartProps}
+            visibleSeriesIndices2={visibleSeriesIndices2}
+            legendLabels={this.getLegendLabels()}
+          />
+        )
       }
       case 'histogram': {
         return <ChataHistogram {...commonChartProps} bucketSize={this.state.bucketSize} />
       }
       case 'scatterplot': {
-        return <ChataScatterplotChart {...commonChartProps} legendLabels={undefined} visibleSeriesIndices={undefined} />
+        return <ChataScatterplotChart {...commonChartProps} />
       }
       default: {
         return 'Unknown Display Type'

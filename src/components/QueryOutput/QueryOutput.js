@@ -59,6 +59,7 @@ import {
   getStringColumnIndices,
   isAggregation,
   isColumnDateType,
+  getColumnTypeAmounts,
 } from './columnHelpers.js'
 
 import { sendSuggestion, runDrilldown, runQueryOnly } from '../../js/queryService'
@@ -71,10 +72,10 @@ import {
 } from '../../js/Constants'
 import { ReverseTranslation } from '../ReverseTranslation'
 import { getColumnDateRanges, getFilterPrecision, getPrecisionForDayJS } from '../../js/dateUtils'
+import { formatTableParams } from '../ChataTable/tableHelpers'
 import { withTheme } from '../../theme'
 
 import './QueryOutput.scss'
-import { formatTableParams } from '../ChataTable/tableHelpers'
 
 export class QueryOutput extends React.Component {
   constructor(props) {
@@ -608,8 +609,8 @@ export class QueryOutput extends React.Component {
 
       if (displayType === 'column_line' || displayType === 'scatterplot') {
         if (
-          !isNaN(tableConfig.numberColumnIndex) &&
-          !isNaN(tableConfig.numberColumnIndex2) &&
+          isNaN(tableConfig.numberColumnIndex) ||
+          isNaN(tableConfig.numberColumnIndex2) ||
           tableConfig.numberColumnIndex === tableConfig.numberColumnIndex2
         ) {
           console.debug(
@@ -1516,6 +1517,16 @@ export class QueryOutput extends React.Component {
       if (!this.tableConfig.numberColumnIndices.includes(this.tableConfig.numberColumnIndex)) {
         this.tableConfig.numberColumnIndex = this.tableConfig.numberColumnIndices[0]
       }
+    } else if (
+      !isNaN(this.tableConfig.numberColumnIndex) &&
+      getColumnTypeAmounts(columns)?.amountOfNumberColumns > 1 &&
+      (!this.tableConfig.numberColumnIndices2?.length || isNaN(this.tableConfig.numberColumnIndex))
+    ) {
+      // There are enough number column indices to have a second, but the second doesn't exist
+      this.tableConfig.numberColumnIndex2 = columns.findIndex(
+        (col, index) => index !== this.tableConfig.numberColumnIndex && isColumnNumberType(col),
+      )
+      this.tableConfig.numberColumnIndices2 = [this.tableConfig.numberColumnIndex2]
     }
 
     // Set legend index if there should be one

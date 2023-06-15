@@ -4,6 +4,7 @@ import { v4 as uuid } from 'uuid'
 import _isEqual from 'lodash.isequal'
 import { select } from 'd3-selection'
 import { axisLeft, axisBottom, axisTop, axisRight } from 'd3-axis'
+import { isMobile } from 'react-device-detect'
 
 import { Legend } from '../Legend'
 import AxisScaler from './AxisScaler'
@@ -14,7 +15,6 @@ import { formatChartLabel, getBBoxFromRef } from '../../../js/Util.js'
 import { axesDefaultProps, axesPropTypes, mergeBboxes, shouldLabelsRotate } from '../helpers.js'
 
 import './Axis.scss'
-import { isMobile } from 'react-device-detect'
 
 export default class Axis extends Component {
   constructor(props) {

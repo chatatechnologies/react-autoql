@@ -25,37 +25,28 @@ export default class ChataScatterplotChart extends Component {
     return !propsEqual || !stateEqual
   }
 
-  getNumberColumnIndices = (props) => {
-    let numberColumnIndex = props.numberColumnIndex
-    let numberColumnIndex2 = props.numberColumnIndex2
-    let numberColumnIndices = props.numberColumnIndices
-    let numberColumnIndices2 = props.numberColumnIndices2
+  setNumberColumnIndices = (props) => {
+    this.numberColumnIndex = props.numberColumnIndex
+    this.numberColumnIndex2 = props.numberColumnIndex2
+    this.numberColumnIndices = props.numberColumnIndices
+    this.numberColumnIndices2 = props.numberColumnIndices2
 
-    if (isNaN(numberColumnIndex) || isNaN(numberColumnIndex2)) {
-      if (isNaN(this.numberColumnIndex)) {
-        const numberColIndexData = getNumberColumnIndices(this.props.columns)
-        this.numberColumnIndex = numberColIndexData.numberColumnIndex
-        this.numberColumnIndex2 = numberColIndexData.numberColumnIndex2
-        this.numberColumnIndices = numberColIndexData.numberColumnIndices
-        this.numberColumnIndices2 = numberColIndexData.numberColumnIndices2
-      }
-
-      numberColumnIndex = this.numberColumnIndex
-      numberColumnIndex2 = this.numberColumnIndex2
-      numberColumnIndices = this.numberColumnIndices
-      numberColumnIndices2 = this.numberColumnIndices2
+    if (isNaN(this.numberColumnIndex) || isNaN(this.numberColumnIndex2)) {
+      const { numberColumnIndex, numberColumnIndex2, numberColumnIndices, numberColumnIndices2 } =
+        getNumberColumnIndices(this.props.columns)
+      this.numberColumnIndex = numberColumnIndex
+      this.numberColumnIndex2 = numberColumnIndex2
+      this.numberColumnIndices = numberColumnIndices
+      this.numberColumnIndices2 = numberColumnIndices2
     }
-
-    return { numberColumnIndex, numberColumnIndex2, numberColumnIndices, numberColumnIndices2 }
   }
 
   setChartData = (props) => {
     const { isXScaled, isYScaled } = this.state
 
-    const { numberColumnIndex, numberColumnIndex2, numberColumnIndices, numberColumnIndices2 } =
-      this.getNumberColumnIndices(props)
+    this.setNumberColumnIndices(props)
 
-    const xMinMax = getMinAndMaxValues(props.data, numberColumnIndices, isXScaled)
+    const xMinMax = getMinAndMaxValues(props.data, this.numberColumnIndices, isXScaled)
     const xMaxValue = xMinMax.maxValue
     const xMinValue = xMinMax.minValue
 
@@ -65,12 +56,12 @@ export default class ChataScatterplotChart extends Component {
       maxValue: xMaxValue,
       axis: 'x',
       isScaled: isXScaled,
-      columnIndex: numberColumnIndex,
+      columnIndex: this.numberColumnIndex,
       changeColumnIndices: (indices) => props.changeNumberColumnIndices(indices),
       allowMultipleSeries: false,
     })
 
-    const yMinMax = getMinAndMaxValues(props.data, numberColumnIndices2, isYScaled)
+    const yMinMax = getMinAndMaxValues(props.data, this.numberColumnIndices2, isYScaled)
     const yMaxValue = yMinMax.maxValue
     const yMinValue = yMinMax.minValue
 
@@ -80,8 +71,8 @@ export default class ChataScatterplotChart extends Component {
       maxValue: yMaxValue,
       axis: 'y',
       isScaled: isYScaled,
-      columnIndex: numberColumnIndex2,
-      changeColumnIndices: (indices) => props.changeNumberColumnIndices(numberColumnIndices, indices),
+      columnIndex: this.numberColumnIndex2,
+      changeColumnIndices: (indices) => props.changeNumberColumnIndices(this.numberColumnIndices, indices),
       allowMultipleSeries: false,
     })
 
@@ -92,21 +83,29 @@ export default class ChataScatterplotChart extends Component {
   render = () => {
     this.setChartData(this.props)
 
+    const columnIndexProps = {
+      numberColumnIndex: this.numberColumnIndex,
+      numberColumnIndex2: this.numberColumnIndex2,
+      numberColumnIndices: this.numberColumnIndices,
+      numberColumnIndices2: this.numberColumnIndices2,
+    }
+
     return (
       <g
         ref={(r) => (this.chartRef = r)}
         className='react-autoql-axes-chart react-autoql-scatterplot-chart'
         data-test='react-autoql-scatterplot-chart'
       >
-        <Points {...this.props} xScale={this.xScale} yScale={this.yScale} />
+        <Points {...this.props} xScale={this.xScale} yScale={this.yScale} {...columnIndexProps} />
         <Axes
           {...this.props}
           ref={(r) => (this.axesRef = r)}
           chartRef={this.chartRef}
           xScale={this.xScale}
           yScale={this.yScale}
-          xCol={this.props.columns[this.props.numberColumnIndex]}
-          yCol={this.props.columns[this.props.numberColumnIndex2]}
+          xCol={this.props.columns[this.numberColumnIndex]}
+          yCol={this.props.columns[this.numberColumnIndex2]}
+          {...columnIndexProps}
         />
       </g>
     )

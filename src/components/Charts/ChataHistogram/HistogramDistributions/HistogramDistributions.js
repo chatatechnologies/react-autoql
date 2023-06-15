@@ -242,7 +242,7 @@ export default class HistogramDistributions extends Component {
     }
 
     const { xScale, yScale, numberColumnIndex, data, buckets } = this.props
-    if (!xScale || !yScale || !data?.length || !numberColumnIndex || !buckets?.length) {
+    if (!xScale || !yScale || !data?.length || isNaN(numberColumnIndex) || !buckets?.length) {
       return null
     }
 
