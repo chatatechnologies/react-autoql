@@ -709,6 +709,9 @@ class DashboardWithoutTheme extends React.Component {
             onErrorCallback={this.props.onErrorCallback}
             onSuccessCallback={this.props.onSuccessCallback}
             activeDrilldownRef={this.activeDrilldownRef}
+            onCSVDownloadStart={this.props.onCSVDownloadStart}
+            onCSVDownloadProgress={this.props.onCSVDownloadProgress}
+            onCSVDownloadFinish={this.props.onCSVDownloadFinish}
             source={this.SOURCE}
           />
           <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' delayShow={500} html />

@@ -152,6 +152,9 @@ export default class DrilldownModal extends React.Component {
         showQueryInterpretation={this.props.showQueryInterpretation}
         onErrorCallback={this.props.onErrorCallback}
         onSuccessCallback={this.props.onSuccessCallback}
+        onCSVDownloadStart={this.props.onCSVDownloadStart}
+        onCSVDownloadProgress={this.props.onCSVDownloadProgress}
+        onCSVDownloadFinish={this.props.onCSVDownloadFinish}
       />
     )
   }
