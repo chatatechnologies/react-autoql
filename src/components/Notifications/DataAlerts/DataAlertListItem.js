@@ -320,7 +320,7 @@ export default class DataAlertListItem extends React.Component {
               </span>
             </div>
           </div>
-          <div className='react-autoql-data-alert-list-item-section'>
+          <div className='react-autoql-data-alert-list-item-section react-autoql-data-alert-list-item-section-frequency'>
             <div className='data-alert-header-item'>
               <span>Notification Frequency</span>
             </div>
@@ -332,13 +332,13 @@ export default class DataAlertListItem extends React.Component {
               {this.renderDataAlertCycle()}
             </div>
           </div>
-          <div className='react-autoql-data-alert-list-item-section'>
+          <div className='react-autoql-data-alert-list-item-section react-autoql-data-alert-list-item-section-state'>
             <div className='data-alert-header-item'>
               <span>State</span>
             </div>
             <div className='data-alert-section-content'>{this.renderDataAlertState()}</div>
           </div>
-          <div className='react-autoql-data-alert-list-item-section'>
+          <div className='react-autoql-data-alert-list-item-section react-autoql-data-alert-list-item-section-next-check'>
             <div className='data-alert-header-item'>
               <span>Next Check</span>
             </div>
@@ -346,7 +346,7 @@ export default class DataAlertListItem extends React.Component {
               {this.renderDataAlertCycleStart()}
             </div>
           </div>
-          <div className='react-autoql-data-alert-list-item-section'>
+          <div className='react-autoql-data-alert-list-item-section react-autoql-data-alert-list-item-section-status'>
             <div className='data-alert-header-item'>
               <span>Status</span>
             </div>
@@ -366,7 +366,7 @@ export default class DataAlertListItem extends React.Component {
 
           {/* Actions */}
           {isCustom && (
-            <div className='react-autoql-data-alert-list-item-section'>
+            <div className='react-autoql-data-alert-list-item-section react-autoql-data-alert-list-item-section-actions'>
               <div className='data-alert-header-item'>
                 <span>Actions</span>
               </div>

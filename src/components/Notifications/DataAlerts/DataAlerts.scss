@@ -27,6 +27,11 @@
     text-align: center;
     overflow: hidden;
 
+    &.react-autoql-data-alert-list-item-section-frequency,
+    &.react-autoql-data-alert-list-item-section-next-check {
+      flex: 1.5 0 50px;
+    }
+
     .react-autoql-notification-setting-display-name-title {
       width: 100%;
       text-overflow: ellipsis;
@@ -141,7 +146,7 @@
         white-space: nowrap;
         cursor: default;
 
-        .react-autoql-icon {
+        .react-autoql-icon:not(:last-child) {
           margin-right: 5px;
         }
 
@@ -212,6 +217,10 @@
         color: var(--react-autoql-info-color);
         border: 1px solid var(--react-autoql-info-color);
         cursor: pointer;
+
+        &.react-autoql-notification-state-action-btn-hidden {
+          visibility: hidden;
+        }
 
         &:hover {
           background-color: var(--react-autoql-hover-color);
