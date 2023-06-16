@@ -631,7 +631,6 @@ export const fetchExploreQueries = ({
       domain,
       apiKey,
       token,
-      cancelToken,
     })
       .then((queryValidationResponse) => {
         if (_get(queryValidationResponse, 'data.data.replacements.length') > 0) {
