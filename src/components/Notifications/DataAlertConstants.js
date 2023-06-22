@@ -14,14 +14,20 @@ export const GROUP_TERM_TYPE = 'GROUP'
 export const DEFAULT_EVALUATION_FREQUENCY = 5
 
 export const DATA_ALERT_STATUSES = {
-  ACTIVE: '', // currently running
-  RETRY: '', // currently being retried because of an error, no action required yet
-  WAITING: '', // active but triggered already and waiting for the reset period to end
-  INACTIVE: '', // either not running OR it is a prototype (can not be run)
-  EVALUATION_ERROR: '', // expression evaluation resulted in an error
-  DATA_RETURN_ERROR: '', // expression evaluation was successful, but data return query failed
-  GENERAL_ERROR: '', // every thing else that doesnt fall into a category above
+  ACTIVE: 'ACTIVE', // currently running
+  RETRY: 'RETRY', // currently being retried because of an error, no action required yet
+  WAITING: 'WAITING', // active but triggered already and waiting for the reset period to end
+  INACTIVE: 'INACTIVE', // either not running OR it is a prototype (can not be run)
+  EVALUATION_ERROR: 'EVALUATION_ERROR', // expression evaluation resulted in an error
+  DATA_RETURN_ERROR: 'DATA_RETURN_ERROR', // expression evaluation was successful, but data return query failed
+  GENERAL_ERROR: 'GENERAL_ERROR', // every thing else that doesnt fall into a category above
 }
+
+export const DATA_ALERT_ENABLED_STATUSES = [
+  DATA_ALERT_STATUSES.ACTIVE,
+  DATA_ALERT_STATUSES.RETRY,
+  DATA_ALERT_STATUSES.WAITING
+]
 
 export const DATA_ALERT_OPERATORS = {
   GREATER_THAN: {

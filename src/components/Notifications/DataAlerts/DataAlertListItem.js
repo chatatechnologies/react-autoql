@@ -13,6 +13,7 @@ import {
   RESET_PERIOD_OPTIONS,
   SCHEDULED_TYPE,
   SCHEDULE_FREQUENCY_OPTIONS,
+  DATA_ALERT_ENABLED_STATUSES
 } from '../DataAlertConstants'
 
 import { initializeAlert, updateDataAlertStatus } from '../../../js/notificationService'
@@ -75,9 +76,7 @@ export default class DataAlertListItem extends React.Component {
     )
   }
 
-  isEnabled = () => {
-    return this.state.status === 'ACTIVE' || this.state.status === 'WAITING'
-  }
+  isEnabled = () => DATA_ALERT_ENABLED_STATUSES.includes(this.state.status)
 
   onInitializeClick = (e) => {
     e.stopPropagation()
