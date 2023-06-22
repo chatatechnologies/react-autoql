@@ -609,12 +609,13 @@ export class QueryOutput extends React.Component {
 
       if (displayType === 'column_line' || displayType === 'scatterplot') {
         if (
-          isNaN(tableConfig.numberColumnIndex) ||
-          isNaN(tableConfig.numberColumnIndex2) ||
+          !this.isColumnIndexValid(tableConfig.numberColumnIndex, columns) ||
+          !this.isColumnIndexValid(tableConfig.numberColumnIndex2, columns) ||
           tableConfig.numberColumnIndex === tableConfig.numberColumnIndex2
         ) {
           console.debug(
             `Two unique number column indices were not found. This is required for display type: ${displayType}`,
+            tableConfig,
           )
           return false
         }
@@ -664,7 +665,7 @@ export class QueryOutput extends React.Component {
 
       return true
     } catch (error) {
-      console.debug('Saved table config was not valid for dashboard tile response:', error?.message)
+      console.debug('Saved table config was not valid for response:', error?.message)
       return false
     }
   }
@@ -1465,6 +1466,22 @@ export class QueryOutput extends React.Component {
     this.setTableConfig()
   }
 
+  isColumnIndexValid = (index, columns) => {
+    if (!columns?.length) {
+      return false
+    }
+
+    return !!columns[index]
+  }
+
+  isColumnIndicesValid = (indices, columns) => {
+    if (!indices?.length || !columns?.length) {
+      return false
+    }
+
+    return indices.every((index) => this.isColumnIndexValid(index, columns))
+  }
+
   setTableConfig = (newColumns) => {
     const columns = newColumns ?? this.getColumns()
     if (!columns) {
@@ -1478,11 +1495,16 @@ export class QueryOutput extends React.Component {
     }
 
     // Set string type columns (ordinal axis)
-    if (!this.tableConfig.stringColumnIndices || !(this.tableConfig.stringColumnIndex >= 0)) {
+    if (
+      !this.tableConfig.stringColumnIndices ||
+      !this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns)
+    ) {
       const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(columns)
       this.tableConfig.stringColumnIndices = stringColumnIndices
       this.tableConfig.stringColumnIndex = stringColumnIndex
     }
+
+    const { amountOfNumberColumns } = getColumnTypeAmounts(columns) ?? {}
 
     // Set number type columns and number series columns (linear axis)
     if (!this.tableConfig.numberColumnIndices || !(this.tableConfig.numberColumnIndex >= 0)) {
@@ -1503,30 +1525,39 @@ export class QueryOutput extends React.Component {
       this.tableConfig.quantityColumnIndices = quantityColumnIndices
       this.tableConfig.ratioColumnIndices = ratioColumnIndices
     } else if (
-      this.tableConfig.numberColumnIndices.filter((index) => this.tableConfig.numberColumnIndices2.includes(index))
-        .length
-    ) {
-      // Second axis config overlaps with first axis. Remove the overlapping values from the first axis
-      const newNumberIndices = this.tableConfig.numberColumnIndices.filter(
-        (index) => !this.tableConfig.numberColumnIndices2.includes(index),
-      )
-      if (newNumberIndices.length) {
-        this.tableConfig.numberColumnIndices = newNumberIndices
-      }
-
-      if (!this.tableConfig.numberColumnIndices.includes(this.tableConfig.numberColumnIndex)) {
-        this.tableConfig.numberColumnIndex = this.tableConfig.numberColumnIndices[0]
-      }
-    } else if (
-      !isNaN(this.tableConfig.numberColumnIndex) &&
-      getColumnTypeAmounts(columns)?.amountOfNumberColumns > 1 &&
-      (!this.tableConfig.numberColumnIndices2?.length || isNaN(this.tableConfig.numberColumnIndex))
+      amountOfNumberColumns > 1 &&
+      this.isColumnIndexValid(this.tableConfig.numberColumnIndex, columns) &&
+      (!this.isColumnIndicesValid(this.tableConfig.numberColumnIndices2, columns) ||
+        !this.isColumnIndexValid(this.tableConfig.numberColumnIndex, columns))
     ) {
       // There are enough number column indices to have a second, but the second doesn't exist
       this.tableConfig.numberColumnIndex2 = columns.findIndex(
         (col, index) => index !== this.tableConfig.numberColumnIndex && isColumnNumberType(col),
       )
       this.tableConfig.numberColumnIndices2 = [this.tableConfig.numberColumnIndex2]
+    } else if (
+      amountOfNumberColumns > 1 &&
+      this.tableConfig.numberColumnIndices.filter((index) => this.tableConfig.numberColumnIndices2.includes(index))
+        .length
+    ) {
+      // Second axis config overlaps with first axis. Remove the overlapping values from the first axis
+      if (this.tableConfig.numberColumnIndex === this.tableConfig.numberColumnIndex2) {
+        this.tableConfig.numberColumnIndex2 = columns.findIndex(
+          (col, i) => isColumnNumberType(col) && i !== this.tableConfig.numberColumnIndex,
+        )
+        // If the new columnIndex2 is not already in the indices array, add it
+        if (this.tableConfig.numberColumnIndices2.indexOf(this.tableConfig.numberColumnIndex2) === -1) {
+          this.tableConfig.numberColumnIndices2.push(this.tableConfig.numberColumnIndex2)
+        }
+      }
+
+      // Filter out duplicate column indices
+      this.tableConfig.numberColumnIndices2 = this.tableConfig.numberColumnIndices2.filter(
+        (i) => i !== this.tableConfig.numberColumnIndex,
+      )
+      this.tableConfig.numberColumnIndices = this.tableConfig.numberColumnIndices.filter(
+        (i) => i !== this.tableConfig.numberColumnIndex2,
+      )
     }
 
     // Set legend index if there should be one
