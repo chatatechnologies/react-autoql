@@ -448,7 +448,7 @@ export const getLegendLocation = (seriesArray, displayType, preferredLocation = 
     return bottom
   }
 
-  const displayTypesWithoutLegends = ['pie', 'heatmap', 'bubble', 'scatterplot']
+  const displayTypesWithoutLegends = ['pie', 'heatmap', 'bubble', 'scatterplot', 'histogram']
 
   if (seriesArray?.length < 2 || displayTypesWithoutLegends.includes(displayType)) {
     return undefined
