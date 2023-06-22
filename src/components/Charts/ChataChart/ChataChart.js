@@ -47,6 +47,7 @@ export default class ChataChart extends React.Component {
 
     this.PADDING = 0
     this.FONT_SIZE = 12
+    this.HISTOGRAM_SLIDER_KEY = uuid()
 
     this.firstRender = true
     this.shouldRecalculateDimensions = false
@@ -393,7 +394,11 @@ export default class ChataChart extends React.Component {
   }
 
   changeNumberColumnIndices = (...params) => {
-    this.setState({ bucketSize: undefined })
+    if (this.props.type === 'histogram') {
+      this.HISTOGRAM_SLIDER_KEY = uuid()
+      this.setState({ bucketSize: params?.bucketSize })
+    }
+
     this.props.changeNumberColumnIndices(...params)
   }
 
@@ -441,6 +446,7 @@ export default class ChataChart extends React.Component {
 
     return (
       <Slider
+        key={`${this.HISTOGRAM_SLIDER_KEY}`}
         className='react-autoql-histogram-slider'
         initialValue={initialValue}
         style={{ paddingLeft }}

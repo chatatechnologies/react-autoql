@@ -686,6 +686,7 @@ export const getBinLinearScale = ({ props, columnIndex, axis, buckets, bins, cha
   scale.maxValue = domain[1]
   scale.column = props.columns[columnIndex]
   scale.fields = [columnIndex]
+  scale.columnIndex = columnIndex
   scale.dataFormatting = {
     ...props.dataFormatting,
     isBinScale: true,

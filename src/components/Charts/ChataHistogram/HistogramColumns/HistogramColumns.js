@@ -39,7 +39,7 @@ export default class HistogramColumns extends Component {
   }
 
   getBars = () => {
-    const { xScale, yScale, columns, numberColumnIndex, dataFormatting, buckets } = this.props
+    const { xScale, yScale, buckets } = this.props
     if (!xScale || !yScale || !buckets?.length) {
       return null
     }

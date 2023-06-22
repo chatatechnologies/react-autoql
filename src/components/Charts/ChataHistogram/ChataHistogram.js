@@ -55,9 +55,19 @@ export default class ChataHistogram extends Component {
     return Math.floor(value / multiple) * multiple
   }
 
+  setInitialBucketSize = (minValue, maxValue) => {
+    const initialNumBuckets = this.getInitialNumberOfBuckets()
+    this.bucketSize = Math.ceil((maxValue - minValue) / initialNumBuckets)
+  }
+
   getBinData = (newBucketSize) => {
-    const minValue = min(this.props.data, (d) => convertToNumber(d[this.props.numberColumnIndex]))
-    const maxValue = max(this.props.data, (d) => convertToNumber(d[this.props.numberColumnIndex]))
+    let minValue = min(this.props.data, (d) => convertToNumber(d[this.props.numberColumnIndex]))
+    let maxValue = max(this.props.data, (d) => convertToNumber(d[this.props.numberColumnIndex]))
+
+    if (minValue === maxValue) {
+      minValue = minValue - 1
+      maxValue = maxValue + 1
+    }
 
     this.bucketSize = newBucketSize
     this.maxBucketSize = Math.ceil((maxValue - minValue) / (this.minNumBuckets ?? 1))
@@ -69,9 +79,8 @@ export default class ChataHistogram extends Component {
       this.bucketStepSize = 0.5
     }
 
-    if (!this.bucketSize) {
-      const initialNumBuckets = this.getInitialNumberOfBuckets()
-      this.bucketSize = Math.ceil((maxValue - minValue) / initialNumBuckets)
+    if (!this.bucketSize || this.props.numberColumnIndex !== this.xScale?.columnIndex) {
+      this.setInitialBucketSize(minValue, maxValue)
     }
 
     let bucketValue = this.roundDownToNearestMultiple(minValue, this.bucketSize)
@@ -89,6 +98,13 @@ export default class ChataHistogram extends Component {
       .thresholds(bins)
 
     return { buckets: binFn(this.props.data), bins }
+  }
+
+  changeNumberColumnIndices = (indices, indices2, newColumns) => {
+    const minValue = min(this.props.data, (d) => convertToNumber(d[indices[0]]))
+    const maxValue = max(this.props.data, (d) => convertToNumber(d[indices[0]]))
+    this.setInitialBucketSize(minValue, maxValue)
+    this.props.changeNumberColumnIndices(indices, indices2, newColumns, bucketSize)
   }
 
   setChartData = (props) => {
@@ -128,6 +144,7 @@ export default class ChataHistogram extends Component {
           chartRef={this.chartRef}
           xScale={this.xScale}
           yScale={this.yScale}
+          changeNumberColumnIndices={this.changeNumberColumnIndices}
           linearAxis='y'
           yGridLines
         >
