@@ -5,6 +5,7 @@ import { Axes } from '../Axes'
 import { Bars } from '../Bars'
 
 import { getBandScale, chartPropTypes, chartDefaultProps, getLinearScales } from '../helpers.js'
+import { rebuildTooltips } from '../../Tooltip'
 
 export default class ChataBarChart extends Component {
   constructor(props) {
@@ -23,6 +24,12 @@ export default class ChataBarChart extends Component {
     const stateEqual = deepEqual(this.state, nextState)
 
     return !propsEqual || !stateEqual
+  }
+
+  componentDidUpdate = (prevProps, prevState) => {
+    if (this.state.isChartScaled !== prevState.isChartScaled) {
+      rebuildTooltips()
+    }
   }
 
   setChartData = (props) => {

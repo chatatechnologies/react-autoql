@@ -4,6 +4,7 @@ import { Line } from '../Line'
 
 import { chartDefaultProps, chartPropTypes, getBandScale, getLinearScales, getTimeScale } from '../helpers.js'
 import { deepEqual } from '../../../js/Util'
+import { rebuildTooltips } from '../../Tooltip'
 
 export default class ChataLineChart extends Component {
   constructor(props) {
@@ -22,6 +23,12 @@ export default class ChataLineChart extends Component {
     const stateEqual = deepEqual(this.state, nextState)
 
     return !propsEqual || !stateEqual
+  }
+
+  componentDidUpdate = (prevProps, prevState) => {
+    if (this.state.isChartScaled !== prevState.isChartScaled) {
+      rebuildTooltips()
+    }
   }
 
   setChartData = (props) => {
