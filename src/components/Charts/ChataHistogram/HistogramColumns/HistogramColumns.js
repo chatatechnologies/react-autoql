@@ -25,15 +25,15 @@ export default class HistogramColumns extends Component {
   onColumnClick = (x0, x1, rowIndex) => {
     const newActiveKey = getKey(rowIndex)
 
-    // TODO: create drilldown fn for bucket range
-    this.props.onChartClick({
-      activeKey: newActiveKey,
-      filter: {
-        name: this.props.columns[this.props.numberColumnIndex]?.name,
-        value: `${x0},${x1}`,
-        operator: 'between',
-      },
-    })
+    // TODO: enable this once the BE can support number range filters
+    // this.props.onChartClick({
+    //   activeKey: newActiveKey,
+    //   filter: {
+    //     name: this.props.columns[this.props.numberColumnIndex]?.name,
+    //     value: `${x0},${x1}`,
+    //     operator: 'between',
+    //   },
+    // })
 
     this.setState({ activeKey: newActiveKey })
   }
@@ -85,7 +85,7 @@ export default class HistogramColumns extends Component {
           onClick={() => this.onColumnClick(d.x0, d.x1, index)}
           data-tip={tooltip}
           data-for={this.props.chartTooltipID}
-          style={{ fill: color, fillOpacity: 0.7 }}
+          style={{ fill: color, fillOpacity: 1, cursor: 'default' }}
         />
       )
     })
