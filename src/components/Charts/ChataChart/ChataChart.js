@@ -541,10 +541,10 @@ export default class ChataChart extends React.Component {
         return <ChataPieChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
       case 'bubble': {
-        return <ChataBubbleChart {...commonChartProps} />
+        return <ChataBubbleChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
       case 'heatmap': {
-        return <ChataHeatmapChart {...commonChartProps} />
+        return <ChataHeatmapChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
       case 'stacked_column': {
         return <ChataStackedColumnChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
