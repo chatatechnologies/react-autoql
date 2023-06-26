@@ -1233,6 +1233,10 @@ export class QueryOutput extends React.Component {
     return this.tableRef?._isMounted && this.tableRef.state.isFiltering
   }
 
+  getTabulatorHeaderFilters = () => {
+    return this.tableRef?._isMounted && this.tableRef.getTabulatorHeaderFilters()
+  }
+
   toggleTableFilter = (filterOn, scrollToFirstFilteredColumn) => {
     if (this.state.displayType === 'table') {
       return this.tableRef?._isMounted && this.tableRef.toggleIsFiltering(filterOn, scrollToFirstFilteredColumn)

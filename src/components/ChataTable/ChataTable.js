@@ -940,6 +940,10 @@ export default class ChataTable extends React.Component {
     return this.ref?.tabulator?.getDataCount('active')
   }
 
+  getTabulatorHeaderFilters = () => {
+    return this.ref?.tabulator?.getHeaderFilters()
+  }
+
   isTableEmpty = () => {
     if (this.props.data?.length === 0) {
       return true
