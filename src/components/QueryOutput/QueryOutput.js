@@ -1506,6 +1506,9 @@ export class QueryOutput extends React.Component {
       this.tableConfig.numberColumnIndices.filter((index) => this.tableConfig.numberColumnIndices2.includes(index))
         .length
     ) {
+      const { numberColumnIndices, numberColumnIndices2 } = getNumberColumnIndices(columns, this.usePivotDataForChart())
+      this.tableConfig.numberColumnIndices = numberColumnIndices
+      this.tableConfig.numberColumnIndices2 = numberColumnIndices2
       // Second axis config overlaps with first axis. Remove the overlapping values from the first axis
       const newNumberIndices = this.tableConfig.numberColumnIndices.filter(
         (index) => !this.tableConfig.numberColumnIndices2.includes(index),
