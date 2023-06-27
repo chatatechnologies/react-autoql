@@ -680,10 +680,12 @@ export class DashboardTile extends React.Component {
   }
 
   onSecondPageSizeChange = (secondPageSize, newRows = []) => {
-    const secondQueryResponse = this.props.tile?.secondQueryResponse?.data?.data?.rows
+    let secondQueryResponse = this.props.tile?.secondQueryResponse?.data?.data?.rows
       ? _cloneDeep(this.props.tile.secondQueryResponse)
-      : _cloneDeep(this.props.tile.queryResponse)
-
+      : undefined
+    if (this.props.tile?.secondQueryResponse === undefined) {
+      secondQueryResponse = this.props.tile.queryResponse
+    }
     secondQueryResponse.data.data.rows = newRows
 
     this.debouncedSetParamsForTile({ secondPageSize, secondQueryResponse })
