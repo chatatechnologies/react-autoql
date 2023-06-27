@@ -941,7 +941,9 @@ export default class ChataTable extends React.Component {
   }
 
   getTabulatorHeaderFilters = () => {
-    return this.ref?.tabulator?.getHeaderFilters()
+    if (this._isMounted && this.state.tabulatorMounted) {
+      return this.ref?.tabulator?.getHeaderFilters()
+    }
   }
 
   isTableEmpty = () => {
