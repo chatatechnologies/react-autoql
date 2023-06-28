@@ -5,6 +5,7 @@ import { v4 as uuid } from 'uuid'
 import parseNum from 'parse-num'
 import axios from 'axios'
 import dayjs from '../../../js/dayjsWithPlugins'
+import { isISODate } from '../../../js/dateUtils'
 import { Input } from '../../Input'
 import { Select } from '../../Select'
 import { Icon } from '../../Icon'
@@ -200,21 +201,6 @@ export default class RuleSimple extends React.Component {
     }
 
     return expression
-  }
-  isIsoDate = (str) => {
-    if (!str) {
-      return false
-    }
-
-    try {
-      if (!/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(str)) {
-        return false
-      }
-      var d = new Date(str)
-      return d.toISOString() === str
-    } catch (error) {
-      return false
-    }
   }
   isNumerical = (num) => {
     try {
@@ -608,7 +594,7 @@ export default class RuleSimple extends React.Component {
     try {
       const textArray = filter.value.split(',')
       const textWithDatesArray = textArray.map((str) => {
-        if (this.isIsoDate(str)) {
+        if (isISODate(str)) {
           const dateDayJS = dayjs(str).utc()
           const formattedDate = dateDayJS.format('ll')
           if (formattedDate !== 'Invalid Date') {
@@ -622,6 +608,9 @@ export default class RuleSimple extends React.Component {
       const startDate = textWithDatesArray[0]
       const endDate = textWithDatesArray[1]
       dateText = `Between ${startDate} and ${endDate}`
+      if (startDate === endDate) {
+        dateText = `${startDate}`
+      }
     } catch (error) {
       console.error(error)
       isDate = false
