@@ -4,7 +4,7 @@ import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
 import parseNum from 'parse-num'
 import axios from 'axios'
-
+import dayjs from '../../../js/dayjsWithPlugins'
 import { Input } from '../../Input'
 import { Select } from '../../Select'
 import { Icon } from '../../Icon'
@@ -201,7 +201,21 @@ export default class RuleSimple extends React.Component {
 
     return expression
   }
+  isIsoDate = (str) => {
+    if (!str) {
+      return false
+    }
 
+    try {
+      if (!/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(str)) {
+        return false
+      }
+      var d = new Date(str)
+      return d.toISOString() === str
+    } catch (error) {
+      return false
+    }
+  }
   isNumerical = (num) => {
     try {
       if (typeof num === NUMBER_TERM_TYPE) {
@@ -587,7 +601,36 @@ export default class RuleSimple extends React.Component {
 
     return filterText
   }
-
+  getFormattedDate = (filter) => {
+    let isDate = false
+    let dateText
+    let dateArray = []
+    try {
+      const textArray = filter.value.split(',')
+      const textWithDatesArray = textArray.map((str) => {
+        if (this.isIsoDate(str)) {
+          const dateDayJS = dayjs(str).utc()
+          const formattedDate = dateDayJS.format('ll')
+          if (formattedDate !== 'Invalid Date') {
+            isDate = true
+            dateArray.push(dateDayJS)
+            return formattedDate
+          }
+        }
+        return str
+      })
+      const startDate = textWithDatesArray[0]
+      const endDate = textWithDatesArray[1]
+      dateText = `Between ${startDate} and ${endDate}`
+    } catch (error) {
+      console.error(error)
+      isDate = false
+    }
+    if (isDate) {
+      return dateText
+    }
+    return undefined
+  }
   getFormattedQueryText = ({ sentenceCase = true, withFilters } = {}) => {
     try {
       let queryFiltersText = ''
@@ -671,10 +714,13 @@ export default class RuleSimple extends React.Component {
                 if (filter.operator === 'between' && !filter.value.includes(' and ')) {
                   operatorDisplay = ':'
                 }
-
+                const dateText = this.getFormattedDate(filter)
                 let value = filter.value
                 if (filter.operator === 'like') {
                   value = `"${filter.value}"`
+                }
+                if (dateText) {
+                  value = dateText
                 }
 
                 chipContent = (
