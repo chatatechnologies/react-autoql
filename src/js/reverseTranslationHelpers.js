@@ -1,6 +1,6 @@
 import dayjs from './dayjsWithPlugins'
 import { formatElement } from './Util'
-
+import { isISODate } from './dateUtils'
 const getRegexMatchArray = (str, reg) => {
   if (!str) {
     return []
@@ -17,22 +17,6 @@ const getRegexMatchArray = (str, reg) => {
   return matches
 }
 
-const isIsoDate = (str) => {
-  if (!str) {
-    return false
-  }
-
-  try {
-    if (!/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(str)) {
-      return false
-    }
-    var d = new Date(str)
-    return d.toISOString() === str
-  } catch (error) {
-    return false
-  }
-}
-
 const removeSingleQuoteEscape = (input) => {
   return input.substring(1, input.length - 1).replace("''", "'")
 }
@@ -45,7 +29,7 @@ const formatChunkWithDates = (chunk) => {
   try {
     const textArray = chunk.eng.split(' ')
     const textWithDatesArray = textArray.map((str) => {
-      if (isIsoDate(str)) {
+      if (isISODate(str)) {
         const dateDayJS = dayjs(str).utc()
         const formattedDate = dateDayJS.format('ll')
         if (formattedDate !== 'Invalid Date') {
@@ -168,7 +152,7 @@ const parseFilterChunk = (chunk) => {
       !bracketTextMatches.length ||
       !textOutsideBrackets.length ||
       bracketTextMatches[0]?.[0] === '(Date)' ||
-      textOutsideBrackets[0]?.split(' ')?.find((word) => isIsoDate(word))
+      textOutsideBrackets[0]?.split(' ')?.find((word) => isISODate(word))
     ) {
       const formattedChunk = formatChunkWithDates(chunk)
       return [formattedChunk]

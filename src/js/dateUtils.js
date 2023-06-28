@@ -1,10 +1,20 @@
 import { PRECISION_TYPES } from './Constants'
 import dayjs from './dayjsWithPlugins'
 
-const isISODate = (str) => {
-  if (!/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(str)) return false
-  const d = new Date(str)
-  return d instanceof Date && !isNaN(d) && d.toISOString() === str
+export const isISODate = (str) => {
+  if (!str) {
+    return false
+  }
+
+  try {
+    if (!/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(str)) {
+      return false
+    }
+    var d = new Date(str)
+    return d.toISOString() === str
+  } catch (error) {
+    return false
+  }
 }
 
 const getDateRangeIntersection = (aRange, bRange) => {
