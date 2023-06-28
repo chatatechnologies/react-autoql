@@ -688,6 +688,8 @@ export const svgToPng = (svgElement, scale = 3) => {
       const clonedSvg = svgElement.cloneNode(true)
       clonedSvg.setAttribute('transform-origin', 'top left')
       clonedSvg.setAttribute('transform', `scale(${scale})`)
+      clonedSvg.setAttribute('width', scaledWidth + 'px')
+      clonedSvg.setAttribute('height', scaledHeight + 'px')
 
       const image64 = getSVGBase64(clonedSvg)
 

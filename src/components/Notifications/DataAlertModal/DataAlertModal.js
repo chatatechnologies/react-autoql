@@ -586,16 +586,18 @@ class DataAlertModal extends React.Component {
 
     if (!!this.props.currentDataAlert?.id) {
       return (
-        <DataAlertSettings
-          ref={(r) => (this.settingsViewRef = r)}
-          authentication={this.props.authentication}
-          currentDataAlert={this.props.currentDataAlert}
-          enableQueryValidation={this.props.enableQueryValidation}
-          supportedConditionTypes={this.SUPPORTED_CONDITION_TYPES}
-          onErrorCallback={this.props.onErrorCallback}
-          onCompleteChange={this.onSettingsCompleteChange}
-          tooltipID={this.TOOLTIP_ID}
-        />
+        <CustomScrollbars className='data-alert-modal-settings-scroll-container'>
+          <DataAlertSettings
+            ref={(r) => (this.settingsViewRef = r)}
+            authentication={this.props.authentication}
+            currentDataAlert={this.props.currentDataAlert}
+            enableQueryValidation={this.props.enableQueryValidation}
+            supportedConditionTypes={this.SUPPORTED_CONDITION_TYPES}
+            onErrorCallback={this.props.onErrorCallback}
+            onCompleteChange={this.onSettingsCompleteChange}
+            tooltipID={this.TOOLTIP_ID}
+          />
+        </CustomScrollbars>
       )
     }
 
@@ -671,15 +673,13 @@ class DataAlertModal extends React.Component {
         >
           {/* We must render a new <Tooltip/> inside of modals */}
           <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' delayShow={500} place='top' />
-          <CustomScrollbars className='data-alert-modal-content-scroll-container'>
-            <div
-              key={`data-alert-modal-content-${this.COMPONENT_KEY}`}
-              ref={(r) => (this.contentRef = r)}
-              className='react-autoql-data-alert-modal-content'
-            >
-              {this.renderContent()}
-            </div>
-          </CustomScrollbars>
+          <div
+            key={`data-alert-modal-content-${this.COMPONENT_KEY}`}
+            ref={(r) => (this.contentRef = r)}
+            className='react-autoql-data-alert-modal-content'
+          >
+            {this.renderContent()}
+          </div>
         </Modal>
         <DataAlertDeleteDialog
           authentication={this.props.authentication}
