@@ -308,7 +308,7 @@ export default class FilterLockPopover extends React.Component {
       return
     }
 
-    const auth = getAuthentication(this.props.authentication)
+    const auth = this.props.authentication ?? {}
 
     this.showSavingIndicator()
     return setFilters({ ...auth, filters: [newFilter] })

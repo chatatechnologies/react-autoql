@@ -1,14 +1,15 @@
-import React, { Component } from 'react'
-import { Axes } from '../Axes'
-
-import { HistogramColumns } from './HistogramColumns'
-import { HistogramDistributions } from './HistogramDistributions'
-
-import { chartDefaultProps, chartPropTypes, convertToNumber, getBinLinearScale, getHistogramScale } from '../helpers.js'
-import { deepEqual, onlyUnique } from '../../../js/Util'
+import React from 'react'
+import { createPortal } from 'react-dom'
 import { bin, max, min } from 'd3-array'
 
-export default class ChataHistogram extends Component {
+import { Axes } from '../Axes'
+import { Slider } from '../../Slider'
+import { HistogramColumns } from './HistogramColumns'
+import { HistogramDistributions } from './HistogramDistributions'
+import { deepEqual, formatChartLabel, onlyUnique } from '../../../js/Util'
+import { chartDefaultProps, chartPropTypes, convertToNumber, getBinLinearScale, getHistogramScale } from '../helpers.js'
+
+export default class ChataHistogram extends React.Component {
   constructor(props) {
     super(props)
 
@@ -23,6 +24,8 @@ export default class ChataHistogram extends Component {
     if (props.data.length < this.maxNumBuckets) {
       this.maxNumBuckets = props.data.length
     }
+
+    this.setChartData(this.props, this.bucketSize)
 
     this.state = {}
   }
@@ -58,6 +61,9 @@ export default class ChataHistogram extends Component {
   setInitialBucketSize = (minValue, maxValue) => {
     const initialNumBuckets = this.getInitialNumberOfBuckets()
     this.bucketSize = Math.ceil((maxValue - minValue) / initialNumBuckets)
+    if (this.bucketSize < this.minBucketSize) {
+      this.bucketSize = this.minBucketSize
+    }
   }
 
   getBinData = (newBucketSize) => {
@@ -107,13 +113,13 @@ export default class ChataHistogram extends Component {
     this.props.changeNumberColumnIndices(indices, indices2, newColumns, bucketSize)
   }
 
-  setChartData = (props) => {
+  setChartData = (props, bucketSize) => {
     const uniqueNumberValues = props.data.map((d) => d[props.numberColumnIndex]).filter(onlyUnique).length
     if (uniqueNumberValues < this.maxBucketSize) {
       this.maxNumBuckets = uniqueNumberValues
     }
 
-    const { buckets, bins } = this.getBinData(this.props.bucketSize)
+    const { buckets, bins } = this.getBinData(bucketSize)
     this.buckets = buckets
     this.bins = bins
 
@@ -133,31 +139,74 @@ export default class ChataHistogram extends Component {
     })
   }
 
-  render = () => {
-    this.setChartData(this.props)
+  formatSliderLabel = (value) => {
+    return formatChartLabel({
+      d: value,
+      column: this.props.columns[this.props.numberColumnIndex],
+      dataFormatting: this.props.dataFormatting,
+      scale: this.innerChartRef?.xScale,
+    })?.fullWidthLabel
+  }
+
+  renderHistogramSlider = () => {
+    if (isNaN(this.bucketSize) || isNaN(this.minBucketSize) || isNaN(this.maxBucketSize)) {
+      return null
+    }
+
+    const min = this.minBucketSize
+    const max = this.maxBucketSize
 
     return (
-      <g ref={(r) => (this.chartRef = r)} className='react-autoql-axes-chart' data-test='react-autoql-histogram-chart'>
-        <Axes
-          {...this.props}
-          ref={(r) => (this.axesRef = r)}
-          chartRef={this.chartRef}
-          xScale={this.xScale}
-          yScale={this.yScale}
-          changeNumberColumnIndices={this.changeNumberColumnIndices}
-          linearAxis='y'
-          yGridLines
+      <Slider
+        key={`${this.HISTOGRAM_SLIDER_KEY}`}
+        className='react-autoql-histogram-slider'
+        initialValue={this.bucketSize}
+        min={min}
+        max={max}
+        step={this.bucketStepSize}
+        minLabel={this.formatSliderLabel(min)}
+        maxLabel={this.formatSliderLabel(max)}
+        onChange={(bucketSize) => this.setState({ bucketSize })}
+        valueFormatter={this.formatSliderLabel}
+        label='Interval size'
+        showInput
+        marks
+      />
+    )
+  }
+
+  render = () => {
+    this.setChartData(this.props, this.state.bucketSize)
+
+    return (
+      <>
+        {this.props.portalRef && createPortal(this.renderHistogramSlider(), this.props.portalRef)}
+        <g
+          ref={(r) => (this.chartRef = r)}
+          className='react-autoql-axes-chart'
+          data-test='react-autoql-histogram-chart'
         >
-          <HistogramColumns
+          <Axes
             {...this.props}
+            ref={(r) => (this.axesRef = r)}
+            chartRef={this.chartRef}
             xScale={this.xScale}
             yScale={this.yScale}
-            buckets={this.buckets}
-            bins={this.bins}
-          />
-          <HistogramDistributions {...this.props} xScale={this.xScale} yScale={this.yScale} buckets={this.buckets} />
-        </Axes>
-      </g>
+            changeNumberColumnIndices={this.changeNumberColumnIndices}
+            linearAxis='y'
+            yGridLines
+          >
+            <HistogramColumns
+              {...this.props}
+              xScale={this.xScale}
+              yScale={this.yScale}
+              buckets={this.buckets}
+              bins={this.bins}
+            />
+            <HistogramDistributions {...this.props} xScale={this.xScale} yScale={this.yScale} buckets={this.buckets} />
+          </Axes>
+        </g>
+      </>
     )
   }
 }

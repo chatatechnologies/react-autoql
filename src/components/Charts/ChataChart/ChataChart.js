@@ -18,9 +18,8 @@ import { ChataScatterplotChart } from '../ChataScatterplotChart'
 import { ChataColumnLineChart } from '../ChataColumnLine'
 import { ChataHistogram } from '../ChataHistogram'
 import { Spinner } from '../../Spinner'
-import { Slider } from '../../Slider'
 
-import { svgToPng, getBBoxFromRef, sortDataByDate, deepEqual, rotateArray, formatChartLabel } from '../../../js/Util.js'
+import { svgToPng, getBBoxFromRef, sortDataByDate, deepEqual, rotateArray } from '../../../js/Util.js'
 
 import {
   chartContainerDefaultProps,
@@ -31,14 +30,12 @@ import {
   mergeBboxes,
 } from '../helpers.js'
 
-import { getDateColumnIndex, isColumnDateType } from '../../QueryOutput/columnHelpers'
-import { getChartColorVars, getThemeValue } from '../../../theme/configureTheme'
 import { aggregateData } from './aggregate'
-import { DATE_ONLY_CHART_TYPES, DOUBLE_AXIS_CHART_TYPES } from '../../../js/Constants'
+import { getChartColorVars, getThemeValue } from '../../../theme/configureTheme'
+import { getDateColumnIndex, isColumnDateType } from '../../QueryOutput/columnHelpers'
+import { DATE_ONLY_CHART_TYPES, DOUBLE_AXIS_CHART_TYPES, CHARTS_WITHOUT_AGGREGATED_DATA } from '../../../js/Constants'
 
 import './ChataChart.scss'
-
-const CHARTS_WITHOUT_AGGREGATED_DATA = ['histogram', 'scatterplot']
 
 export default class ChataChart extends React.Component {
   constructor(props) {
@@ -393,80 +390,26 @@ export default class ChataChart extends React.Component {
     }
   }
 
-  changeNumberColumnIndices = (...params) => {
-    if (this.props.type === 'histogram') {
-      this.HISTOGRAM_SLIDER_KEY = uuid()
-      this.setState({ bucketSize: params?.bucketSize })
-    }
-
-    this.props.changeNumberColumnIndices(...params)
-  }
-
   renderChartHeader = () => {
-    if (this.props.type === 'histogram') {
-      return (
-        <div
-          className={`react-autoql-chart-header-container ${
-            this.state.isLoading || this.props.isResizing ? 'loading' : ''
-          }`}
-        >
-          {this.renderHistogramSlider()}
-        </div>
-      )
-    }
-  }
-
-  formatSliderLabel = (value) => {
-    return formatChartLabel({
-      d: value,
-      column: this.props.columns[this.props.numberColumnIndex],
-      dataFormatting: this.props.dataFormatting,
-      scale: this.innerChartRef?.xScale,
-    })?.fullWidthLabel
-  }
-
-  renderHistogramSlider = () => {
-    if (
-      isNaN(this.innerChartRef?.bucketSize) ||
-      isNaN(this.innerChartRef?.minBucketSize) ||
-      isNaN(this.innerChartRef?.maxBucketSize)
-    ) {
-      return null
-    }
-
-    const initialValue = this.innerChartRef.bucketSize
-    const min = this.innerChartRef.minBucketSize
-    const max = this.innerChartRef.maxBucketSize
-    const step = this.innerChartRef.bucketStepSize
-
     let paddingLeft = this.state.deltaX - 10
     if (isMobile || paddingLeft < 0 || this.outerWidth < 300) {
       paddingLeft = 25
     }
 
     return (
-      <Slider
-        key={`${this.HISTOGRAM_SLIDER_KEY}`}
-        className='react-autoql-histogram-slider'
-        initialValue={initialValue}
+      <div
+        ref={(r) => (this.sliderRef = r)}
         style={{ paddingLeft }}
-        min={min}
-        max={max}
-        step={step}
-        minLabel={this.formatSliderLabel(min)}
-        maxLabel={this.formatSliderLabel(max)}
-        onChange={(bucketSize) => this.setState({ bucketSize })}
-        valueFormatter={this.formatSliderLabel}
-        label='Interval size'
-        showInput
-        marks
+        className={`react-autoql-chart-header-container ${
+          this.state.isLoading || this.props.isResizing ? 'loading' : ''
+        }`}
       />
     )
   }
 
   getCommonChartProps = () => {
     const { deltaX, deltaY } = this.state
-    const { numberColumnIndices, numberColumnIndices2, columns, enableDynamicCharting } = this.props
+    const { numberColumnIndices, columns, enableDynamicCharting } = this.props
 
     const visibleSeriesIndices = numberColumnIndices.filter(
       (colIndex) => columns?.[colIndex] && !columns[colIndex].isSeriesHidden,
@@ -509,7 +452,7 @@ export default class ChataChart extends React.Component {
       totalRowCount: this.props.totalRowCount,
       chartID: this.state.chartID,
       isLoading: this.state.isLoading,
-      changeNumberColumnIndices: this.changeNumberColumnIndices,
+      changeNumberColumnIndices: this.props.changeNumberColumnIndices,
       onAxesRenderComplete: this.adjustChartPosition,
     }
   }
@@ -569,7 +512,7 @@ export default class ChataChart extends React.Component {
         )
       }
       case 'histogram': {
-        return <ChataHistogram {...commonChartProps} bucketSize={this.state.bucketSize} />
+        return <ChataHistogram {...commonChartProps} bucketSize={this.state.bucketSize} portalRef={this.sliderRef} />
       }
       case 'scatterplot': {
         return <ChataScatterplotChart {...commonChartProps} />

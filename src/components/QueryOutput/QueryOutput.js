@@ -1730,6 +1730,10 @@ export class QueryOutput extends React.Component {
     return aggConfig
   }
 
+  getDrilldownGroupby = (queryResponse, newCol) => {
+    return queryResponse?.data?.data?.fe_req?.columns?.find((column) => newCol.name === column.name)
+  }
+
   formatColumnsForTable = (columns, aggConfig) => {
     // todo: do this inside of chatatable
     if (!columns) {
@@ -1762,6 +1766,8 @@ export class QueryOutput extends React.Component {
       } else {
         newCol.hozAlign = 'center'
       }
+
+      const drilldownGroupby = this.getDrilldownGroupby(this.queryResponse, newCol)
 
       newCol.cssClass = `${newCol.type}`
       if (drilldownGroupby) {
@@ -1798,9 +1804,6 @@ export class QueryOutput extends React.Component {
       }
 
       // Show drilldown filter value in column title so user knows they can't filter on this column
-      const drilldownGroupby = this.queryResponse?.data?.data?.fe_req?.columns?.find(
-        (column) => newCol.name === column.name,
-      )
       if (drilldownGroupby) {
         newCol.isDrilldownColumn = true
         newCol.tooltipTitle = newCol.title

@@ -65,12 +65,6 @@ export default class Slider extends React.Component {
         this.props.onChange(this.state.value)
       }
     }
-
-    if (this.props.initialValue !== prevProps.initialValue) {
-      if (this.isValueValidForSlider(this.props.initialValue)) {
-        this.setState({ value: this.props.initialValue, inputValue: this.props.initialValue })
-      }
-    }
   }
 
   debouncedOnChange = (value) => {
