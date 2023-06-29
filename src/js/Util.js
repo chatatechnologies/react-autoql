@@ -1604,3 +1604,14 @@ export const invertArray = (array) => {
 
   return invertedArray
 }
+export const roundToNearestMultiple = (value, multiple = 1) => {
+  return Math.round(value / multiple) * multiple
+}
+
+export const roundDownToNearestMultiple = (value, multiple = 1) => {
+  return Math.floor(value / multiple) * multiple
+}
+
+export const roundUpToNearestMultiple = (value, multiple = 1) => {
+  return Math.ceil(value / multiple) * multiple
+}

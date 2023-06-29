@@ -6,7 +6,7 @@ import { Axes } from '../Axes'
 import { Slider } from '../../Slider'
 import { HistogramColumns } from './HistogramColumns'
 import { HistogramDistributions } from './HistogramDistributions'
-import { deepEqual, formatChartLabel, onlyUnique } from '../../../js/Util'
+import { deepEqual, formatChartLabel, onlyUnique, roundUpToNearestMultiple } from '../../../js/Util'
 import { chartDefaultProps, chartPropTypes, convertToNumber, getBinLinearScale, getHistogramScale } from '../helpers.js'
 
 export default class ChataHistogram extends React.Component {
@@ -50,19 +50,14 @@ export default class ChataHistogram extends React.Component {
     return numBuckets
   }
 
-  roundUpToNearestMultiple = (value, multiple = 1) => {
-    return Math.ceil(value / multiple) * multiple
-  }
-
-  roundDownToNearestMultiple = (value, multiple) => {
-    return Math.floor(value / multiple) * multiple
-  }
-
   setInitialBucketSize = (minValue, maxValue) => {
     const initialNumBuckets = this.getInitialNumberOfBuckets()
-    this.bucketSize = Math.ceil((maxValue - minValue) / initialNumBuckets)
+    const bucketSizeRaw = (maxValue - minValue) / initialNumBuckets
+    this.bucketSize = roundUpToNearestMultiple(bucketSizeRaw, this.bucketStepSize)
     if (this.bucketSize < this.minBucketSize) {
       this.bucketSize = this.minBucketSize
+    } else if (this.bucketSize > this.maxBucketSize) {
+      this.bucketSize = this.maxBucketSize
     }
   }
 
@@ -85,11 +80,15 @@ export default class ChataHistogram extends React.Component {
       this.bucketStepSize = 0.5
     }
 
+    if (this.minBucketSize <= 0) {
+      this.minBucketSize = this.bucketStepSize
+    }
+
     if (!this.bucketSize || this.props.numberColumnIndex !== this.xScale?.columnIndex) {
       this.setInitialBucketSize(minValue, maxValue)
     }
 
-    let bucketValue = this.roundDownToNearestMultiple(minValue, this.bucketSize)
+    let bucketValue = roundUpToNearestMultiple(minValue, this.bucketSize)
 
     const bins = [bucketValue]
 
@@ -144,7 +143,7 @@ export default class ChataHistogram extends React.Component {
       d: value,
       column: this.props.columns[this.props.numberColumnIndex],
       dataFormatting: this.props.dataFormatting,
-      scale: this.innerChartRef?.xScale,
+      scale: this.xScale,
     })?.fullWidthLabel
   }
 
