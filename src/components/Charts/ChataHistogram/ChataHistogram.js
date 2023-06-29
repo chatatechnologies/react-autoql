@@ -6,7 +6,13 @@ import { Axes } from '../Axes'
 import { Slider } from '../../Slider'
 import { HistogramColumns } from './HistogramColumns'
 import { HistogramDistributions } from './HistogramDistributions'
-import { deepEqual, formatChartLabel, onlyUnique, roundUpToNearestMultiple } from '../../../js/Util'
+import {
+  deepEqual,
+  formatChartLabel,
+  onlyUnique,
+  roundDownToNearestMultiple,
+  roundUpToNearestMultiple,
+} from '../../../js/Util'
 import { chartDefaultProps, chartPropTypes, convertToNumber, getBinLinearScale, getHistogramScale } from '../helpers.js'
 
 export default class ChataHistogram extends React.Component {
@@ -61,6 +67,11 @@ export default class ChataHistogram extends React.Component {
     }
   }
 
+  roundToNearestLog10 = (number) => {
+    const nearestLog10 = 10 ** Math.ceil(Math.log10(number))
+    return nearestLog10.toPrecision(1)
+  }
+
   getBinData = (newBucketSize) => {
     let minValue = min(this.props.data, (d) => convertToNumber(d[this.props.numberColumnIndex]))
     let maxValue = max(this.props.data, (d) => convertToNumber(d[this.props.numberColumnIndex]))
@@ -71,17 +82,29 @@ export default class ChataHistogram extends React.Component {
     }
 
     this.bucketSize = newBucketSize
-    this.maxBucketSize = Math.ceil((maxValue - minValue) / (this.minNumBuckets ?? 1))
-    this.minBucketSize = Math.floor((maxValue - minValue) / (this.maxNumBuckets ?? 1))
+    const maxBucketSizeRaw = (maxValue - minValue) / (this.minNumBuckets ?? 1)
+    const minBucketSizeRaw = (maxValue - minValue) / (this.maxNumBuckets ?? 1)
 
-    if (this.maxBucketSize - this.minBucketSize < 3) {
-      this.bucketStepSize = 0.1
-    } else if (this.maxBucketSize - this.minBucketSize < 6) {
-      this.bucketStepSize = 0.5
+    const bucketSizeRange = maxBucketSizeRaw - minBucketSizeRaw
+    if (bucketSizeRange > 0 && bucketSizeRange <= 10) {
+      const avgNumSteps = 200
+      this.bucketStepSize = this.roundToNearestLog10(bucketSizeRange / avgNumSteps)
     }
+
+    this.maxBucketSize = roundDownToNearestMultiple(
+      (maxValue - minValue) / (this.minNumBuckets ?? 1),
+      this.bucketStepSize,
+    )
+    this.minBucketSize = roundUpToNearestMultiple(
+      (maxValue - minValue) / (this.maxNumBuckets ?? 1),
+      this.bucketStepSize,
+    )
 
     if (this.minBucketSize <= 0) {
       this.minBucketSize = this.bucketStepSize
+    }
+    if (this.maxBucketSize === this.minBucketSize) {
+      this.maxBucketSize = this.minBucketSize + this.bucketStepSize
     }
 
     if (!this.bucketSize || this.props.numberColumnIndex !== this.xScale?.columnIndex) {
