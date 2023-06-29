@@ -555,6 +555,14 @@ export class QueryOutput extends React.Component {
     )
   }
 
+  numberIndicesArraysOverlap = (tableConfig) => {
+    return (
+      tableConfig.numberColumnIndices.length &&
+      tableConfig.numberColumnIndices2.length &&
+      tableConfig.numberColumnIndices.filter((index) => tableConfig.numberColumnIndices2.includes(index)).length
+    )
+  }
+
   isTableConfigValid = (tableConfig, columns, displayType) => {
     if (!columns || !this.queryResponse?.data?.data?.rows?.length) {
       return false
@@ -620,11 +628,7 @@ export class QueryOutput extends React.Component {
           return false
         }
 
-        if (
-          tableConfig.numberColumnIndices.length &&
-          tableConfig.numberColumnIndices2.length &&
-          tableConfig.numberColumnIndices.filter((index) => tableConfig.numberColumnIndices2.includes(index)).length
-        ) {
+        if (this.numberIndicesArraysOverlap(tableConfig)) {
           console.debug('Both axes reference one or more of the same number column index')
           return false
         }
@@ -1486,6 +1490,10 @@ export class QueryOutput extends React.Component {
     return indices.every((index) => this.isColumnIndexValid(index, columns))
   }
 
+  hasIndex = (indices, index) => {
+    return indices?.findIndex((i) => index === i) !== -1
+  }
+
   setTableConfig = (newColumns) => {
     const columns = newColumns ?? this.getColumns()
     if (!columns) {
@@ -1539,11 +1547,7 @@ export class QueryOutput extends React.Component {
         (col, index) => index !== this.tableConfig.numberColumnIndex && isColumnNumberType(col),
       )
       this.tableConfig.numberColumnIndices2 = [this.tableConfig.numberColumnIndex2]
-    } else if (
-      amountOfNumberColumns > 1 &&
-      this.tableConfig.numberColumnIndices.filter((index) => this.tableConfig.numberColumnIndices2.includes(index))
-        .length
-    ) {
+    } else if (amountOfNumberColumns > 1 && this.numberIndicesArraysOverlap(this.tableConfig)) {
       // Second axis config overlaps with first axis. Remove the overlapping values from the first axis
       if (this.tableConfig.numberColumnIndex === this.tableConfig.numberColumnIndex2) {
         this.tableConfig.numberColumnIndex2 = columns.findIndex(
@@ -1557,10 +1561,10 @@ export class QueryOutput extends React.Component {
 
       // Filter out duplicate column indices
       this.tableConfig.numberColumnIndices2 = this.tableConfig.numberColumnIndices2.filter(
-        (i) => i !== this.tableConfig.numberColumnIndex,
+        (i) => i !== this.tableConfig.numberColumnIndex && !this.hasIndex(this.tableConfig.numberColumnIndices, i),
       )
       this.tableConfig.numberColumnIndices = this.tableConfig.numberColumnIndices.filter(
-        (i) => i !== this.tableConfig.numberColumnIndex2,
+        (i) => i !== this.tableConfig.numberColumnIndex2 && !this.hasIndex(this.tableConfig.numberColumnIndices2, i),
       )
     }
 
