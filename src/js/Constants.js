@@ -154,3 +154,5 @@ export const AGG_TYPES = [
 
 export const MAX_LEGEND_LABELS = 22
 export const MIN_HISTOGRAM_SAMPLE = 20
+
+export const CHARTS_WITHOUT_AGGREGATED_DATA = ['histogram', 'scatterplot']
