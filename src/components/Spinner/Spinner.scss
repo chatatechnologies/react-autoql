@@ -4,6 +4,7 @@
   height: 1em;
   margin-right: 6px;
 }
+
 .spinner-loader:after {
   content: ' ';
   display: block;
@@ -14,6 +15,12 @@
   border: 1px solid currentColor;
   border-color: currentColor transparent currentColor transparent;
   animation: spinner-loader 1.2s linear infinite;
+}
+
+.react-autoql-spinner-centered {
+  width: 100%;
+  text-align: center;
+  padding-top: 10px;
 }
 
 @keyframes spinner-loader {
