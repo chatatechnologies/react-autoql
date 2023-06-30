@@ -1640,3 +1640,7 @@ export const roundToNearestLog10 = (number) => {
   const nearestLog10 = 10 ** Math.ceil(Math.log10(number))
   return parseFloat(nearestLog10.toPrecision(1))
 }
+
+export const removeElementAtIndex = (array, index) => {
+  return array.slice(0, index).concat(array.slice(index + 1))
+}

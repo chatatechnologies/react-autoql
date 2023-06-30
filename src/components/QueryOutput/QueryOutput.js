@@ -49,6 +49,7 @@ import {
   isNumber,
   hasNumberColumn,
   hasStringColumn,
+  removeElementAtIndex,
 } from '../../js/Util.js'
 
 import {
@@ -559,7 +560,8 @@ export class QueryOutput extends React.Component {
     return (
       tableConfig.numberColumnIndices.length &&
       tableConfig.numberColumnIndices2.length &&
-      tableConfig.numberColumnIndices.filter((index) => tableConfig.numberColumnIndices2.includes(index)).length
+      (tableConfig.numberColumnIndices.filter((index) => tableConfig.numberColumnIndices2.includes(index)).length ||
+        tableConfig.numberColumnIndices2.filter((index) => tableConfig.numberColumnIndices.includes(index)).length)
     )
   }
 
@@ -1519,7 +1521,11 @@ export class QueryOutput extends React.Component {
     const { amountOfNumberColumns } = getColumnTypeAmounts(columns) ?? {}
 
     // Set number type columns and number series columns (linear axis)
-    if (!this.tableConfig.numberColumnIndices || !(this.tableConfig.numberColumnIndex >= 0)) {
+    if (
+      !this.tableConfig.numberColumnIndices?.length ||
+      !(this.tableConfig.numberColumnIndex >= 0) ||
+      !this.tableConfig.numberColumnIndices.includes(this.tableConfig.numberColumnIndex)
+    ) {
       const {
         numberColumnIndex,
         numberColumnIndices,
@@ -1548,7 +1554,30 @@ export class QueryOutput extends React.Component {
       )
       this.tableConfig.numberColumnIndices2 = [this.tableConfig.numberColumnIndex2]
     } else if (amountOfNumberColumns > 1 && this.numberIndicesArraysOverlap(this.tableConfig)) {
-      // Second axis config overlaps with first axis. Remove the overlapping values from the first axis
+      // If either array contains all of the number columns, remove one of them
+      if (this.tableConfig.numberColumnIndices.length === amountOfNumberColumns) {
+        const indexToRemove = this.tableConfig.numberColumnIndices.findIndex(
+          (i) => i !== this.tableConfig.numberColumnIndex,
+        )
+        if (indexToRemove !== -1) {
+          this.tableConfig.numberColumnIndices = removeElementAtIndex(
+            this.tableConfig.numberColumnIndices,
+            indexToRemove,
+          )
+        }
+      } else if (this.tableConfig.numberColumnIndices2.length === amountOfNumberColumns) {
+        const indexToRemove = this.tableConfig.numberColumnIndices2.findIndex(
+          (i) => i !== this.tableConfig.numberColumnIndex2,
+        )
+        if (indexToRemove !== -1) {
+          this.tableConfig.numberColumnIndices2 = removeElementAtIndex(
+            this.tableConfig.numberColumnIndices2,
+            indexToRemove,
+          )
+        }
+      }
+
+      // Selected index is the same for both axes. Remove the overlapping values from the first axis
       if (this.tableConfig.numberColumnIndex === this.tableConfig.numberColumnIndex2) {
         this.tableConfig.numberColumnIndex2 = columns.findIndex(
           (col, i) => isColumnNumberType(col) && i !== this.tableConfig.numberColumnIndex,
@@ -1559,13 +1588,19 @@ export class QueryOutput extends React.Component {
         }
       }
 
-      // Filter out duplicate column indices
-      this.tableConfig.numberColumnIndices2 = this.tableConfig.numberColumnIndices2.filter(
-        (i) => i !== this.tableConfig.numberColumnIndex && !this.hasIndex(this.tableConfig.numberColumnIndices, i),
-      )
-      this.tableConfig.numberColumnIndices = this.tableConfig.numberColumnIndices.filter(
+      // Filter out any remaining duplicate column indices
+      const filteredIndices = this.tableConfig.numberColumnIndices.filter(
         (i) => i !== this.tableConfig.numberColumnIndex2 && !this.hasIndex(this.tableConfig.numberColumnIndices2, i),
       )
+      if (filteredIndices.length) {
+        this.tableConfig.numberColumnIndices = filteredIndices
+      }
+      const filteredIndices2 = this.tableConfig.numberColumnIndices2.filter(
+        (i) => i !== this.tableConfig.numberColumnIndex && !this.hasIndex(this.tableConfig.numberColumnIndices, i),
+      )
+      if (filteredIndices2.length) {
+        this.tableConfig.numberColumnIndices2 = filteredIndices2
+      }
     }
 
     // Set legend index if there should be one
