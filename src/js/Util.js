@@ -376,6 +376,14 @@ export const formatStringDate = (value, config) => {
   return value
 }
 
+export const countDecimals = (number) => {
+  if (Number.isInteger(number)) {
+    return 0
+  } else {
+    return number.toString().split('.')[1].length
+  }
+}
+
 export const getNumberFormatConfig = (d, scale) => {
   let minimumFractionDigits = 0
   let maximumFractionDigits = 0
@@ -383,6 +391,7 @@ export const getNumberFormatConfig = (d, scale) => {
 
   const domainRange = scale?.domain()?.[1] - scale?.domain()?.[0]
   const smallDomain = domainRange && domainRange < 10
+
   const absValue = Math.abs(d)
 
   if (smallDomain) {
@@ -402,7 +411,7 @@ export const getNumberFormatConfig = (d, scale) => {
   return { minimumFractionDigits, maximumFractionDigits, notation }
 }
 
-export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWidth }) => {
+export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWidth, sigDigits }) => {
   if (d === null) {
     return {
       fullWidthLabel: 'Untitled Category',
@@ -427,7 +436,18 @@ export const formatChartLabel = ({ d, scale, column, dataFormatting, maxLabelWid
     type = 'QUANTITY'
   }
 
-  const { minimumFractionDigits, maximumFractionDigits, notation } = getNumberFormatConfig(d, scale)
+  let notation
+  let minimumFractionDigits
+  let maximumFractionDigits
+  if (sigDigits) {
+    minimumFractionDigits = sigDigits
+    maximumFractionDigits = sigDigits
+  } else {
+    const numberFormatConfig = getNumberFormatConfig(d, scale)
+    minimumFractionDigits = numberFormatConfig.minimumFractionDigits
+    maximumFractionDigits = numberFormatConfig.maximumFractionDigits
+    notation = numberFormatConfig.notation
+  }
 
   let formattedLabel = d
 
@@ -1614,4 +1634,9 @@ export const roundDownToNearestMultiple = (value, multiple = 1) => {
 
 export const roundUpToNearestMultiple = (value, multiple = 1) => {
   return Math.ceil(value / multiple) * multiple
+}
+
+export const roundToNearestLog10 = (number) => {
+  const nearestLog10 = 10 ** Math.ceil(Math.log10(number))
+  return parseFloat(nearestLog10.toPrecision(1))
 }

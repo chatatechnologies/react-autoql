@@ -12,6 +12,7 @@ import {
   onlyUnique,
   roundDownToNearestMultiple,
   roundUpToNearestMultiple,
+  roundToNearestLog10,
 } from '../../../js/Util'
 import { chartDefaultProps, chartPropTypes, convertToNumber, getBinLinearScale, getHistogramScale } from '../helpers.js'
 
@@ -67,11 +68,6 @@ export default class ChataHistogram extends React.Component {
     }
   }
 
-  roundToNearestLog10 = (number) => {
-    const nearestLog10 = 10 ** Math.ceil(Math.log10(number))
-    return nearestLog10.toPrecision(1)
-  }
-
   getBinData = (newBucketSize) => {
     let minValue = min(this.props.data, (d) => convertToNumber(d[this.props.numberColumnIndex]))
     let maxValue = max(this.props.data, (d) => convertToNumber(d[this.props.numberColumnIndex]))
@@ -86,9 +82,9 @@ export default class ChataHistogram extends React.Component {
     const minBucketSizeRaw = (maxValue - minValue) / (this.maxNumBuckets ?? 1)
 
     const bucketSizeRange = maxBucketSizeRaw - minBucketSizeRaw
-    if (bucketSizeRange > 0 && bucketSizeRange <= 10) {
-      const avgNumSteps = 200
-      this.bucketStepSize = this.roundToNearestLog10(bucketSizeRange / avgNumSteps)
+    if (bucketSizeRange <= 10) {
+      const avgNumSteps = 100
+      this.bucketStepSize = roundToNearestLog10(bucketSizeRange / avgNumSteps)
     }
 
     this.maxBucketSize = roundDownToNearestMultiple(
@@ -162,11 +158,13 @@ export default class ChataHistogram extends React.Component {
   }
 
   formatSliderLabel = (value) => {
+    const sigDigits = this.bucketStepSize < 1 ? this.bucketStepSize.toString().split('.')[1].length : undefined
     return formatChartLabel({
       d: value,
       column: this.props.columns[this.props.numberColumnIndex],
       dataFormatting: this.props.dataFormatting,
       scale: this.xScale,
+      sigDigits,
     })?.fullWidthLabel
   }
 
