@@ -613,19 +613,18 @@ export const getUnitSymbol = ({ column, dataFormatting }) => {
 
 export const getLinearAxisTitle = ({ numberColumns, aggregated }) => {
   let title = 'Amount'
+
   try {
     if (!numberColumns?.length) {
       return undefined
     }
 
-    if (numberColumns.length === 1) {
-      return numberColumns[0].display_name
-    }
-
     // If there are different titles for any of the columns, return a generic label based on the type
-    const allTitlesEqual = !numberColumns.find((col) => {
-      return col.display_name !== numberColumns[0].display_name
-    })
+    const allTitlesEqual =
+      numberColumns.length === 1 ||
+      !numberColumns.find((col) => {
+        return col.display_name !== numberColumns[0].display_name
+      })
 
     if (allTitlesEqual) {
       title = numberColumns[0].display_name
@@ -779,13 +778,13 @@ export const getLinearScale = ({
 
   const scaleRange = range ?? getRangeForAxis(props, axis)
   const axisColumns = colIndices?.map((index) => cols[index]) ?? []
-  const axisTitle =
-    title ??
-    getLinearAxisTitle({
-      numberColumns: axisColumns,
-      dataFormatting: props.dataFormatting,
-      aggregated: props.aggregated,
-    })
+  const axisTitleWithAggType = getLinearAxisTitle({
+    numberColumns: axisColumns,
+    dataFormatting: props.dataFormatting,
+    aggregated: props.aggregated,
+  })
+
+  const axisTitle = title ?? axisTitleWithAggType
 
   const scale = scaleLinear().domain(domainFinal).range(scaleRange)
   scale.disableAutoScale = disableAutoScale
