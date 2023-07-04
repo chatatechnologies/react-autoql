@@ -139,6 +139,7 @@
         min-height: unset;
         max-height: 100%;
         font-size: inherit;
+		-moz-appearance: textfield;/*For FireFox*/
       }
     }
   }
