@@ -1586,6 +1586,9 @@ export class QueryOutput extends React.Component {
         if (this.tableConfig.numberColumnIndices2.indexOf(this.tableConfig.numberColumnIndex2) === -1) {
           this.tableConfig.numberColumnIndices2.push(this.tableConfig.numberColumnIndex2)
         }
+        if (_isEqual(this.tableConfig.numberColumnIndices2, this.tableConfig.numberColumnIndices)) {
+          this.tableConfig.numberColumnIndices2.shift()
+        }
       }
 
       // Filter out any remaining duplicate column indices
