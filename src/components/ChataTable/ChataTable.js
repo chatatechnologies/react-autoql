@@ -304,8 +304,6 @@ export default class ChataTable extends React.Component {
   }
 
   onDataFiltered = (filters, rows) => {
-    this.setFilterBadgeClasses()
-
     if (this.isFiltering && this.state.tabulatorMounted) {
       this.isFiltering = false
 
@@ -324,6 +322,7 @@ export default class ChataTable extends React.Component {
         }
       }, 0)
     }
+    this.setFilterBadgeClasses()
   }
 
   setLoading = (loading) => {
