@@ -1607,14 +1607,13 @@ export class QueryOutput extends React.Component {
     }
     //Second axis indices had hidden columns
     if (this.tableConfig.numberColumnIndices2.find((i) => !columns[i].is_visible)) {
-      this.tableConfig.numberColumnIndices2 = [
-        columns.findIndex(
-          (col, i) =>
-            isColumnNumberType(col) &&
-            i !== this.tableConfig.numberColumnIndex &&
-            i !== this.tableConfig.numberColumnIndex2,
-        ),
-      ]
+      this.tableConfig.numberColumnIndex2 = columns.findIndex(
+        (col, i) =>
+          isColumnNumberType(col) &&
+          i !== this.tableConfig.numberColumnIndex &&
+          i !== this.tableConfig.numberColumnIndex2,
+      )
+      this.tableConfig.numberColumnIndices2 = [this.tableConfig.numberColumnIndex2]
     }
     // Set legend index if there should be one
     // Only set legend column if charts use pivot data
