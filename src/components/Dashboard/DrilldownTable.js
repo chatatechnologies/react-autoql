@@ -84,6 +84,9 @@ export default class DrilldownTable extends React.Component {
                 onErrorCallback={this.props.onErrorCallback}
                 onSuccessAlert={this.props.onSuccessCallback}
                 popoverPositions={['top', 'left', 'right', 'bottom']}
+                onCSVDownloadStart={this.props.onCSVDownloadStart}
+                onCSVDownloadProgress={this.props.onCSVDownloadProgress}
+                onCSVDownloadFinish={this.props.onCSVDownloadFinish}
                 popoverAlign='end'
               />
             </div>

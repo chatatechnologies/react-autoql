@@ -56,6 +56,7 @@ export default class NotificationQueryResponse extends React.Component {
               autoChartAggregations={this.props.autoChartAggregations}
               enableAjaxTableData={this.props.enableAjaxTableData}
               isResizing={this.props.isResizing || !this.props.shouldRender}
+              popoverParentElement={this.props.popoverParentElement}
               showSingleValueResponseTitle={true}
             />
           ) : (

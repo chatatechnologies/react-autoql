@@ -81,6 +81,8 @@ import {
   tableIcon,
   pivotTableIcon,
   columnChartIcon,
+  histogramIcon,
+  scatterplotIcon,
   barChartIcon,
   stackedBarIcon,
   stackedColumnIcon,
@@ -143,6 +145,10 @@ export default class Icon extends React.Component {
       }
       case 'bookmark': {
         icon = <BiBookmark />
+        break
+      }
+      case 'scatterplot': {
+        icon = scatterplotIcon
         break
       }
       case 'stacked-bar-chart': {
@@ -287,6 +293,10 @@ export default class Icon extends React.Component {
       }
       case 'heatmap': {
         icon = heatmapIcon
+        break
+      }
+      case 'histogram-chart': {
+        icon = histogramIcon
         break
       }
       case 'hour-glass': {

@@ -1,155 +1,167 @@
-.chat-single-message-container {
+.chat-message-and-rt-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  width: 100%;
+  padding: 10px 20px 5px 20px;
   transition: background-color 0.2s ease;
-  padding-top: 6px;
+  position: relative;
 
-  a {
-    text-decoration: none;
-    font-weight: 600;
-    color: var(--react-autoql-accent-color);
+  &:first-child {
+    padding-top: 20px;
   }
 
-  &:not(.no-max-height) {
-    max-height: 81%;
+  &.text .chat-single-message-container .chat-message-bubble {
+    max-width: 85%;
   }
 
-  &:first-of-type {
-    margin-top: 10px;
-  }
-
-  .query-more-btn {
-    transition-property: color, border-color, background-color, opacity;
-    transition-duration: 0.3s;
-    transition-timing-function: ease;
-    font-size: 22px;
-    padding: 13px;
-    margin-bottom: 6px;
-    height: 42px;
-    opacity: 0;
-    visibility: hidden;
-    cursor: pointer;
-    &:hover {
-      opacity: 1;
-    }
-  }
-
-  .react-autoql-response-content-container {
-    .query-output-error-message,
-    .feedback-message {
-      margin: 0;
-      text-align: left;
-    }
-  }
-
-  .spinner-loader:after {
-    border: 1px solid var(--react-autoql-accent-color);
-    border-color: var(--react-autoql-accent-color) transparent var(--react-autoql-accent-color) transparent;
-  }
-
-  .chat-message-bubble {
-    box-shadow: var(--react-autoql-box-shadow-1);
-  }
-
-  &.response {
+  .chat-single-message-container {
     display: flex;
+    width: 100%;
     min-height: 0;
-    justify-content: flex-start;
-    padding-left: 20px;
-    animation: scale-up-bl 0.5s ease;
-
-    .chat-message-bubble {
-      background: var(--react-autoql-background-color-secondary);
-      color: var(--react-autoql-text-color-primary);
-    }
-
-    .chat-message-bubble:not(.text) {
-      min-width: 125px;
-    }
+    flex: 1;
   }
 
   &.request {
-    display: flex;
-    justify-content: flex-end;
-    padding-right: 20px;
     animation: scale-up-br 0.5s ease;
+    &.pwa {
+      margin-bottom: 30px;
+    }
+    .chat-single-message-container {
+      justify-content: flex-end;
+
+      .chat-message-bubble {
+        background: var(--react-autoql-accent-color);
+        color: var(--react-autoql-text-color-accent);
+      }
+    }
+  }
+
+  &.response {
+    animation: scale-up-bl 0.5s ease;
+    &.pwa {
+      margin-bottom: 15px;
+      &.text {
+        margin-bottom: 0px;
+      }
+    }
+    .chat-single-message-container {
+      justify-content: flex-start;
+
+      .chat-message-bubble {
+        background: var(--react-autoql-background-color-secondary);
+        color: var(--react-autoql-text-color-primary);
+      }
+
+      .chat-message-bubble:not(.text) {
+        min-width: 125px;
+      }
+    }
+  }
+
+  .chat-message-toolbars-container {
+    display: flex;
+    position: absolute;
+    align-items: flex-start;
+    justify-content: space-between;
+    transition: opacity 0.3s ease, color 0.3s ease;
+    left: -10px;
+    right: -10px;
+    margin-bottom: -10px;
+    bottom: 100%;
+    z-index: 3;
+  }
+
+  .react-autoql-toolbar {
+    display: flex;
+    flex-wrap: nowrap;
+    flex-direction: row;
+
+    &:not(.active) {
+      pointer-events: none;
+      visibility: hidden;
+      opacity: 0;
+    }
+  }
+
+  &:hover .react-autoql-toolbar,
+  .react-autoql-toolbar.active {
+    pointer-events: auto;
+    visibility: visible;
+    opacity: 1;
+  }
+  .react-autoql-toolbar-mobile {
+    pointer-events: auto;
+    visibility: visible;
+    opacity: 1;
+  }
+
+  .chat-single-message-container {
+    max-width: 100%;
+
+    a {
+      text-decoration: none;
+      font-weight: 600;
+      color: var(--react-autoql-accent-color);
+    }
+
+    .query-more-btn {
+      transition-property: color, border-color, background-color, opacity;
+      transition-duration: 0.3s;
+      transition-timing-function: ease;
+      font-size: 22px;
+      padding: 13px;
+      margin-bottom: 6px;
+      height: 42px;
+      opacity: 0;
+      visibility: hidden;
+      cursor: pointer;
+      &:hover {
+        opacity: 1;
+      }
+    }
+
+    .react-autoql-response-content-container {
+      .query-output-error-message,
+      .feedback-message {
+        margin: 0;
+        text-align: left;
+      }
+    }
+
+    .spinner-loader:after {
+      border: 1px solid var(--react-autoql-accent-color);
+      border-color: var(--react-autoql-accent-color) transparent var(--react-autoql-accent-color) transparent;
+    }
 
     .chat-message-bubble {
-      background: var(--react-autoql-accent-color);
-      color: var(--react-autoql-text-color-accent);
+      position: relative;
+      padding: 13px;
+      border-radius: 6px;
+      max-width: 100%;
+      word-wrap: break-word;
+      font-family: inherit;
+      font-size: 14px;
+      letter-spacing: 0.04em;
+      box-sizing: border-box;
+      box-shadow: var(--react-autoql-box-shadow-1);
+      max-height: 400px;
+
+      &.active {
+        border: 1px solid #c3c3c3;
+      }
     }
   }
 
-  .chat-message-bubble {
-    position: relative;
-    padding: 13px;
-    border-radius: 6px;
-    max-width: calc(100% - 20px);
-    word-wrap: break-word;
-    font-family: inherit;
-    font-size: 14px;
-    letter-spacing: 0.04em;
-    box-sizing: border-box;
-    /* make small margin on bottom because sometimes react
-    custom scrollbar cuts off a pixel or 2 at the bottom */
-    margin-bottom: 6px;
+  .chat-message-rt-container {
+    flex: 0 0 auto;
+    padding-top: 5px;
+    padding-left: 5px;
 
-    &.text {
-      max-width: 85%;
+    .react-autoql-reverse-translation {
+      background: transparent;
     }
-
-    &.active {
-      border: 1px solid #c3c3c3;
-    }
-
-    .chat-message-toolbars-container {
-      display: flex;
-      position: absolute;
-      align-items: flex-start;
-      justify-content: space-between;
-      transition: opacity 0.3s ease, color 0.3s ease;
-      width: 100%;
-      top: -31px;
-      right: 0;
-      z-index: 3;
-
-      .chat-message-toolbar.left {
-        margin-left: -5px;
-      }
-      .chat-message-toolbar.right {
-        margin-right: -5px;
-      }
-    }
-    .react-autoql-toolbar {
-      display: flex;
-      flex-wrap: nowrap;
-      flex-direction: row;
-
-      &:not(.active) {
-        pointer-events: none;
-        visibility: hidden;
-        opacity: 0;
-      }
-    }
-
-    &:hover .react-autoql-toolbar,
-    .react-autoql-toolbar.active {
-      pointer-events: auto;
-      visibility: visible;
-      opacity: 1;
-    }
-    .react-autoql-toolbar-mobile {
-      pointer-events: auto;
-      visibility: visible;
-      opacity: 1;
-    }
-  }
-}
-
-.chat-message-rt-container {
-  padding: 0 20px 15px 20px;
-  animation: scale-up-bl 0.5s ease;
-  .react-autoql-reverse-translation {
-    padding-top: 0;
-    background: transparent;
   }
 }
 

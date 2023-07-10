@@ -4,12 +4,11 @@ import { Line } from '../Line'
 
 import { chartDefaultProps, chartPropTypes, getBandScale, getLinearScales, getTimeScale } from '../helpers.js'
 import { deepEqual } from '../../../js/Util'
+import { rebuildTooltips } from '../../Tooltip'
 
 export default class ChataLineChart extends Component {
   constructor(props) {
     super(props)
-
-    this.setChartData(props)
   }
 
   static propTypes = chartPropTypes
@@ -24,6 +23,12 @@ export default class ChataLineChart extends Component {
     const stateEqual = deepEqual(this.state, nextState)
 
     return !propsEqual || !stateEqual
+  }
+
+  componentDidUpdate = (prevProps, prevState) => {
+    if (this.state.isChartScaled !== prevState.isChartScaled) {
+      rebuildTooltips()
+    }
   }
 
   setChartData = (props) => {
@@ -69,7 +74,7 @@ export default class ChataLineChart extends Component {
 
     return (
       <g ref={(r) => (this.chartRef = r)} className='react-autoql-axes-chart' data-test='react-autoql-line-chart'>
-        {this.props.marginAdjustmentFinished && <Line {...this.props} xScale={this.xScale} yScale={this.yScale} />}
+        <Line {...this.props} xScale={this.xScale} yScale={this.yScale} />
         <Axes
           {...this.props}
           ref={(r) => (this.axesRef = r)}
@@ -78,8 +83,6 @@ export default class ChataLineChart extends Component {
           yScale={this.yScale}
           xCol={this.props.columns[this.props.stringColumnIndex]}
           yCol={yCol}
-          hasRightLegend={this.props.legendLocation === 'right'}
-          hasBottomLegend={this.props.legendLocation === 'bottom'}
           toggleChartScale={this.toggleChartScale}
           legendShape='line'
           dateColumnsOnly

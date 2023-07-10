@@ -110,6 +110,8 @@ export class DashboardTile extends React.Component {
     onCSVDownloadStart: () => {},
     onCSVDownloadProgress: () => {},
     onCSVDownloadFinish: () => {},
+    onTouchStart: () => {},
+    onTouchEnd: () => {},
   }
 
   componentDidMount = () => {
@@ -678,10 +680,15 @@ export class DashboardTile extends React.Component {
   }
 
   onSecondPageSizeChange = (secondPageSize, newRows = []) => {
-    const secondQueryResponse = this.props.tile?.secondQueryResponse?.data?.data?.rows
+    let secondQueryResponse = this.props.tile?.secondQueryResponse?.data?.data?.rows
       ? _cloneDeep(this.props.tile.secondQueryResponse)
       : undefined
 
+    const q1 = this.props.tile.defaultSelectedSuggestion || this.state.query
+    const q2 = this.props.tile.secondDefaultSelectedSuggestion || this.state.secondQuery
+    if (this.getIsSplitView() && q2 && q1 === q2) {
+      secondQueryResponse = this.props.tile.queryResponse
+    }
     secondQueryResponse.data.data.rows = newRows
 
     this.debouncedSetParamsForTile({ secondPageSize, secondQueryResponse })

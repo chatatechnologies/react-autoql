@@ -7,8 +7,6 @@ import { chartDefaultProps, chartPropTypes, getBandScale } from '../helpers.js'
 export default class ChataBubbleChart extends Component {
   constructor(props) {
     super(props)
-
-    this.setChartData(props)
   }
 
   static propTypes = chartPropTypes
@@ -41,7 +39,7 @@ export default class ChataBubbleChart extends Component {
         className='react-autoql-axes-chart react-autoql-bubble-chart'
         data-test='react-autoql-bubble-chart'
       >
-        {this.props.marginAdjustmentFinished && <Circles {...this.props} xScale={this.xScale} yScale={this.yScale} />}
+        <Circles {...this.props} xScale={this.xScale} yScale={this.yScale} />
         <Axes
           {...this.props}
           ref={(r) => (this.axesRef = r)}

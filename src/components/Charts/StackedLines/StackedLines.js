@@ -34,7 +34,7 @@ export default class StackedLines extends Component {
       row: d,
       columns: this.props.columns,
       colIndex,
-      stringColumnIndex: this.props.stringColumnIndex,
+      colIndex2: this.props.stringColumnIndex,
       legendColumn: this.props.legendColumn,
       dataFormatting: this.props.dataFormatting,
     })
@@ -91,6 +91,10 @@ export default class StackedLines extends Component {
   }
 
   render = () => {
+    if (this.props.isLoading) {
+      return null
+    }
+
     const { columns, numberColumnIndices, stringColumnIndex, yScale, xScale } = this.props
 
     const visibleSeries = numberColumnIndices.filter((colIndex) => {

@@ -49,6 +49,7 @@ import {
   isNumber,
   hasNumberColumn,
   hasStringColumn,
+  removeElementAtIndex,
 } from '../../js/Util.js'
 
 import {
@@ -59,16 +60,23 @@ import {
   getStringColumnIndices,
   isAggregation,
   isColumnDateType,
+  getColumnTypeAmounts,
 } from './columnHelpers.js'
 
 import { sendSuggestion, runDrilldown, runQueryOnly } from '../../js/queryService'
-import { MONTH_NAMES, DEFAULT_DATA_PAGE_SIZE, CHART_TYPES, MAX_DATA_PAGE_SIZE } from '../../js/Constants'
+import {
+  MONTH_NAMES,
+  DEFAULT_DATA_PAGE_SIZE,
+  CHART_TYPES,
+  MAX_DATA_PAGE_SIZE,
+  MAX_LEGEND_LABELS,
+} from '../../js/Constants'
 import { ReverseTranslation } from '../ReverseTranslation'
 import { getColumnDateRanges, getFilterPrecision, getPrecisionForDayJS } from '../../js/dateUtils'
+import { formatTableParams } from '../ChataTable/tableHelpers'
 import { withTheme } from '../../theme'
 
 import './QueryOutput.scss'
-import { formatTableParams } from '../ChataTable/tableHelpers'
 
 export class QueryOutput extends React.Component {
   constructor(props) {
@@ -423,9 +431,13 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  changeDisplayType = (displayType) => {
+  changeDisplayType = (displayType, callback) => {
     this.checkAndUpdateTableConfigs(displayType)
-    this.setState({ displayType })
+    this.setState({ displayType }, () => {
+      if (typeof callback === 'function') {
+        callback()
+      }
+    })
   }
 
   displayTypeInvalidWarning = (displayType) => {
@@ -544,6 +556,15 @@ export class QueryOutput extends React.Component {
     )
   }
 
+  numberIndicesArraysOverlap = (tableConfig) => {
+    return (
+      tableConfig.numberColumnIndices.length &&
+      tableConfig.numberColumnIndices2.length &&
+      (tableConfig.numberColumnIndices.filter((index) => tableConfig.numberColumnIndices2.includes(index)).length ||
+        tableConfig.numberColumnIndices2.filter((index) => tableConfig.numberColumnIndices.includes(index)).length)
+    )
+  }
+
   isTableConfigValid = (tableConfig, columns, displayType) => {
     if (!columns || !this.queryResponse?.data?.data?.rows?.length) {
       return false
@@ -596,21 +617,20 @@ export class QueryOutput extends React.Component {
         return false
       }
 
-      if (displayType === 'column_line') {
+      if (displayType === 'column_line' || displayType === 'scatterplot') {
         if (
-          !isNaN(tableConfig.numberColumnIndex) &&
-          !isNaN(tableConfig.numberColumnIndex2) &&
+          !this.isColumnIndexValid(tableConfig.numberColumnIndex, columns) ||
+          !this.isColumnIndexValid(tableConfig.numberColumnIndex2, columns) ||
           tableConfig.numberColumnIndex === tableConfig.numberColumnIndex2
         ) {
-          console.debug('Both axes reference the same number column index')
+          console.debug(
+            `Two unique number column indices were not found. This is required for display type: ${displayType}`,
+            tableConfig,
+          )
           return false
         }
 
-        if (
-          tableConfig.numberColumnIndices.length &&
-          tableConfig.numberColumnIndices2.length &&
-          tableConfig.numberColumnIndices.filter((index) => tableConfig.numberColumnIndices2.includes(index)).length
-        ) {
+        if (this.numberIndicesArraysOverlap(tableConfig)) {
           console.debug('Both axes reference one or more of the same number column index')
           return false
         }
@@ -651,7 +671,7 @@ export class QueryOutput extends React.Component {
 
       return true
     } catch (error) {
-      console.debug('Saved table config was not valid for dashboard tile response:', error?.message)
+      console.debug('Saved table config was not valid for response:', error?.message)
       return false
     }
   }
@@ -958,7 +978,7 @@ export class QueryOutput extends React.Component {
     this.axiosSource?.cancel(responseErrors.CANCELLED)
   }
 
-  processDrilldown = async ({ groupBys, supportedByAPI, row, activeKey, stringColumnIndex }) => {
+  processDrilldown = async ({ groupBys, supportedByAPI, row, activeKey, stringColumnIndex, filter }) => {
     if (getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns) {
       try {
         // This will be a new query so we want to reset the page size back to default
@@ -984,10 +1004,10 @@ export class QueryOutput extends React.Component {
           } catch (error) {
             this.props.onDrilldownEnd({ response: error })
           }
-        } else if (!isNaN(stringColumnIndex) && !!row?.length) {
+        } else if ((!isNaN(stringColumnIndex) && !!row?.length) || filter) {
           this.props.onDrilldownStart(activeKey)
 
-          if (!this.isDataLimited() && !isColumnDateType(column)) {
+          if (!this.isDataLimited() && !isColumnDateType(column) && !filter) {
             // ------------ 1. Use FE for filter drilldown -----------
             const response = this.getFilterDrilldown({ stringColumnIndex, row })
             setTimeout(() => {
@@ -996,10 +1016,13 @@ export class QueryOutput extends React.Component {
             // -------------------------------------------------------
           } else {
             // --------- 2. Use subquery for filter drilldown --------
-            const clickedFilter = this.constructFilter({
-              column: this.state.columns[stringColumnIndex],
-              value: row[stringColumnIndex],
-            })
+            let clickedFilter = filter
+            if (!filter) {
+              clickedFilter = this.constructFilter({
+                column: this.state.columns[stringColumnIndex],
+                value: row[stringColumnIndex],
+              })
+            }
 
             const allFilters = this.getCombinedFilters(clickedFilter)
             let response
@@ -1105,6 +1128,10 @@ export class QueryOutput extends React.Component {
 
     let groupBys = {}
     if (this.pivotTableColumns && this.state.displayType === 'pivot_table') {
+      if (!cell?.getValue?.()) {
+        return
+      }
+
       if (this.potentiallySupportsDatePivot()) {
         // Date pivot table
         const dateColumnIndex = getDateColumnIndex(columns)
@@ -1138,7 +1165,15 @@ export class QueryOutput extends React.Component {
     this.processDrilldown({ groupBys, supportedByAPI: !!groupBys })
   }
 
-  onChartClick = ({ row, columnIndex, columns, stringColumnIndex, legendColumn, activeKey }) => {
+  onChartClick = ({ row, columnIndex, columns, stringColumnIndex, legendColumn, activeKey, filter }) => {
+    if (filter) {
+      return this.processDrilldown({
+        supportedByAPI: false,
+        activeKey,
+        filter,
+      })
+    }
+
     // todo: do we need to provide all those params or can we grab them from this component?
     const drilldownData = {}
     const groupBys = []
@@ -1200,13 +1235,23 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  toggleTableFilter = () => {
+  isFilteringTable = () => {
+    return this.tableRef?._isMounted && this.tableRef.state.isFiltering
+  }
+
+  getTabulatorHeaderFilters = () => {
+    return this.tableRef?._isMounted && this.tableRef.getTabulatorHeaderFilters()
+  }
+
+  toggleTableFilter = (filterOn, scrollToFirstFilteredColumn) => {
     if (this.state.displayType === 'table') {
-      return this.tableRef?._isMounted && this.tableRef.toggleIsFiltering()
+      return this.tableRef?._isMounted && this.tableRef.toggleIsFiltering(filterOn, scrollToFirstFilteredColumn)
     }
 
     if (this.state.displayType === 'pivot_table') {
-      return this.pivotTableRef?._isMounted && this.pivotTableRef.toggleIsFiltering()
+      return (
+        this.pivotTableRef?._isMounted && this.pivotTableRef.toggleIsFiltering(filterOn, scrollToFirstFilteredColumn)
+      )
     }
   }
 
@@ -1280,6 +1325,11 @@ export class QueryOutput extends React.Component {
   }
 
   onLegendClick = (d) => {
+    if (!d) {
+      console.debug('no legend item was provided on click event')
+      return
+    }
+
     const columnIndex = d?.columnIndex
     const usePivotData = this.usePivotDataForChart()
     const newColumns = usePivotData ? _cloneDeep(this.pivotTableColumns) : _cloneDeep(this.state.columns)
@@ -1333,13 +1383,12 @@ export class QueryOutput extends React.Component {
   }
 
   onChangeNumberColumnIndices = (indices, indices2, newColumns) => {
-    if (!indices) {
-      return
-    }
-
     if (this.usePivotDataForChart()) {
-      this.pivotTableConfig.numberColumnIndices = indices
-      this.pivotTableConfig.numberColumnIndex = indices[0]
+      if (indices) {
+        this.pivotTableConfig.numberColumnIndices = indices
+        this.pivotTableConfig.numberColumnIndex = indices[0]
+      }
+
       if (indices2) {
         this.pivotTableConfig.numberColumnIndices2 = indices2
         this.pivotTableConfig.numberColumnIndex2 = indices2[0]
@@ -1352,8 +1401,11 @@ export class QueryOutput extends React.Component {
 
       this.forceUpdate()
     } else {
-      this.tableConfig.numberColumnIndices = indices
-      this.tableConfig.numberColumnIndex = indices[0]
+      if (indices) {
+        this.tableConfig.numberColumnIndices = indices
+        this.tableConfig.numberColumnIndex = indices[0]
+      }
+
       if (indices2) {
         this.tableConfig.numberColumnIndices2 = indices2
         this.tableConfig.numberColumnIndex2 = indices2[0]
@@ -1424,6 +1476,26 @@ export class QueryOutput extends React.Component {
     this.setTableConfig()
   }
 
+  isColumnIndexValid = (index, columns) => {
+    if (!columns?.length) {
+      return false
+    }
+
+    return !!columns[index]
+  }
+
+  isColumnIndicesValid = (indices, columns) => {
+    if (!indices?.length || !columns?.length) {
+      return false
+    }
+
+    return indices.every((index) => this.isColumnIndexValid(index, columns))
+  }
+
+  hasIndex = (indices, index) => {
+    return indices?.findIndex((i) => index === i) !== -1
+  }
+
   setTableConfig = (newColumns) => {
     const columns = newColumns ?? this.getColumns()
     if (!columns) {
@@ -1437,14 +1509,23 @@ export class QueryOutput extends React.Component {
     }
 
     // Set string type columns (ordinal axis)
-    if (!this.tableConfig.stringColumnIndices || !(this.tableConfig.stringColumnIndex >= 0)) {
+    if (
+      !this.tableConfig.stringColumnIndices ||
+      !this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns)
+    ) {
       const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(columns)
       this.tableConfig.stringColumnIndices = stringColumnIndices
       this.tableConfig.stringColumnIndex = stringColumnIndex
     }
 
+    const { amountOfNumberColumns } = getColumnTypeAmounts(columns) ?? {}
+
     // Set number type columns and number series columns (linear axis)
-    if (!this.tableConfig.numberColumnIndices || !(this.tableConfig.numberColumnIndex >= 0)) {
+    if (
+      !this.tableConfig.numberColumnIndices?.length ||
+      !(this.tableConfig.numberColumnIndex >= 0) ||
+      !this.tableConfig.numberColumnIndices.includes(this.tableConfig.numberColumnIndex)
+    ) {
       const {
         numberColumnIndex,
         numberColumnIndices,
@@ -1462,22 +1543,78 @@ export class QueryOutput extends React.Component {
       this.tableConfig.quantityColumnIndices = quantityColumnIndices
       this.tableConfig.ratioColumnIndices = ratioColumnIndices
     } else if (
-      this.tableConfig.numberColumnIndices.filter((index) => this.tableConfig.numberColumnIndices2.includes(index))
-        .length
+      amountOfNumberColumns > 1 &&
+      this.isColumnIndexValid(this.tableConfig.numberColumnIndex, columns) &&
+      (!this.isColumnIndicesValid(this.tableConfig.numberColumnIndices2, columns) ||
+        !this.isColumnIndexValid(this.tableConfig.numberColumnIndex, columns))
     ) {
-      // Second axis config overlaps with first axis. Remove the overlapping values from the first axis
-      const newNumberIndices = this.tableConfig.numberColumnIndices.filter(
-        (index) => !this.tableConfig.numberColumnIndices2.includes(index),
+      // There are enough number column indices to have a second, but the second doesn't exist
+      this.tableConfig.numberColumnIndex2 = columns.findIndex(
+        (col, index) => index !== this.tableConfig.numberColumnIndex && isColumnNumberType(col),
       )
-      if (newNumberIndices.length) {
-        this.tableConfig.numberColumnIndices = newNumberIndices
+      this.tableConfig.numberColumnIndices2 = [this.tableConfig.numberColumnIndex2]
+    } else if (amountOfNumberColumns > 1 && this.numberIndicesArraysOverlap(this.tableConfig)) {
+      // If either array contains all of the number columns, remove one of them
+      if (this.tableConfig.numberColumnIndices.length === amountOfNumberColumns) {
+        const indexToRemove = this.tableConfig.numberColumnIndices.findIndex(
+          (i) => i !== this.tableConfig.numberColumnIndex,
+        )
+        if (indexToRemove !== -1) {
+          this.tableConfig.numberColumnIndices = removeElementAtIndex(
+            this.tableConfig.numberColumnIndices,
+            indexToRemove,
+          )
+        }
+      } else if (this.tableConfig.numberColumnIndices2.length === amountOfNumberColumns) {
+        const indexToRemove = this.tableConfig.numberColumnIndices2.findIndex(
+          (i) => i !== this.tableConfig.numberColumnIndex2,
+        )
+        if (indexToRemove !== -1) {
+          this.tableConfig.numberColumnIndices2 = removeElementAtIndex(
+            this.tableConfig.numberColumnIndices2,
+            indexToRemove,
+          )
+        }
       }
 
-      if (!this.tableConfig.numberColumnIndices.includes(this.tableConfig.numberColumnIndex)) {
-        this.tableConfig.numberColumnIndex = this.tableConfig.numberColumnIndices[0]
+      // Selected index is the same for both axes. Remove the overlapping values from the first axis
+      if (this.tableConfig.numberColumnIndex === this.tableConfig.numberColumnIndex2) {
+        this.tableConfig.numberColumnIndex2 = columns.findIndex(
+          (col, i) => isColumnNumberType(col) && i !== this.tableConfig.numberColumnIndex,
+        )
+        // If the new columnIndex2 is not already in the indices array, add it
+        if (this.tableConfig.numberColumnIndices2.indexOf(this.tableConfig.numberColumnIndex2) === -1) {
+          this.tableConfig.numberColumnIndices2.push(this.tableConfig.numberColumnIndex2)
+        }
+        if (_isEqual(this.tableConfig.numberColumnIndices2, this.tableConfig.numberColumnIndices)) {
+          this.tableConfig.numberColumnIndices2.shift()
+        }
+      }
+
+      // Filter out any remaining duplicate column indices
+      const filteredIndices = this.tableConfig.numberColumnIndices.filter(
+        (i) => i !== this.tableConfig.numberColumnIndex2 && !this.hasIndex(this.tableConfig.numberColumnIndices2, i),
+      )
+      if (filteredIndices.length) {
+        this.tableConfig.numberColumnIndices = filteredIndices
+      }
+      const filteredIndices2 = this.tableConfig.numberColumnIndices2.filter(
+        (i) => i !== this.tableConfig.numberColumnIndex && !this.hasIndex(this.tableConfig.numberColumnIndices, i),
+      )
+      if (filteredIndices2.length) {
+        this.tableConfig.numberColumnIndices2 = filteredIndices2
       }
     }
-
+    //Second axis indices had hidden columns
+    if (this.tableConfig.numberColumnIndices2.find((i) => !columns[i].is_visible)) {
+      this.tableConfig.numberColumnIndex2 = columns.findIndex(
+        (col, i) =>
+          isColumnNumberType(col) &&
+          i !== this.tableConfig.numberColumnIndex &&
+          i !== this.tableConfig.numberColumnIndex2,
+      )
+      this.tableConfig.numberColumnIndices2 = [this.tableConfig.numberColumnIndex2]
+    }
     // Set legend index if there should be one
     // Only set legend column if charts use pivot data
     if (this.usePivotDataForChart()) {
@@ -1644,6 +1781,10 @@ export class QueryOutput extends React.Component {
     return aggConfig
   }
 
+  getDrilldownGroupby = (queryResponse, newCol) => {
+    return queryResponse?.data?.data?.fe_req?.columns?.find((column) => newCol.name === column.name)
+  }
+
   formatColumnsForTable = (columns, aggConfig) => {
     // todo: do this inside of chatatable
     if (!columns) {
@@ -1677,7 +1818,12 @@ export class QueryOutput extends React.Component {
         newCol.hozAlign = 'center'
       }
 
-      newCol.cssClass = `${newCol.type} ${drilldownGroupby ? 'DRILLDOWN' : null}`
+      const drilldownGroupby = this.getDrilldownGroupby(this.queryResponse, newCol)
+
+      newCol.cssClass = `${newCol.type}`
+      if (drilldownGroupby) {
+        newCol.cssClass = `${newCol.cssClass} DRILLDOWN`
+      }
 
       // Cell formattingg
       newCol.formatter = (cell, formatterParams, onRendered) => {
@@ -1709,9 +1855,6 @@ export class QueryOutput extends React.Component {
       }
 
       // Show drilldown filter value in column title so user knows they can't filter on this column
-      const drilldownGroupby = this.queryResponse?.data?.data?.fe_req?.columns?.find(
-        (column) => newCol.name === column.name,
-      )
       if (drilldownGroupby) {
         newCol.isDrilldownColumn = true
         newCol.tooltipTitle = newCol.title
@@ -1924,7 +2067,7 @@ export class QueryOutput extends React.Component {
       if (
         isFirstGeneration &&
         Object.keys(uniqueValues1).length > Object.keys(uniqueValues0).length &&
-        !isColumnDateType(columns[stringColumnIndex])
+        (!isColumnDateType(columns[stringColumnIndex]) || Object.keys(uniqueValues1).length > MAX_LEGEND_LABELS)
       ) {
         newStringColumnIndex = legendColumnIndex
         newLegendColumnIndex = stringColumnIndex
@@ -2155,6 +2298,7 @@ export class QueryOutput extends React.Component {
           supportsDrilldowns={
             isAggregation(this.state.columns) && getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
           }
+          tooltipID={this.props.tooltipID}
           queryFn={this.queryFn}
           source={this.props.source}
           scope={this.props.scope}
@@ -2188,6 +2332,7 @@ export class QueryOutput extends React.Component {
           autoHeight={this.props.autoHeight}
           source={this.props.source}
           scope={this.props.scope}
+          tooltipID={this.props.tooltipID}
           pivot
         />
       </ErrorBoundary>
@@ -2239,7 +2384,6 @@ export class QueryOutput extends React.Component {
           {...tableConfig}
           data={data}
           hidden={!isChartType(this.state.displayType)}
-          formattedTableParams={formattedTableParams}
           authentication={this.props.authentication}
           ref={(ref) => (this.chartRef = ref)}
           type={this.state.displayType}

@@ -181,7 +181,7 @@ export default class ChataPieChart extends Component {
           row: d.data.value,
           columns: self.props.columns,
           colIndex: self.props.numberColumnIndex,
-          stringColumnIndex: self.props.stringColumnIndex,
+          colIndex2: self.props.stringColumnIndex,
           legendColumn: self.props.legendColumn,
           dataFormatting: self.props.dataFormatting,
         })

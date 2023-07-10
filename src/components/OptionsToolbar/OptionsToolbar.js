@@ -33,6 +33,7 @@ export class OptionsToolbar extends React.Component {
       isSettingColumnVisibility: false,
       reportProblemMessage: undefined,
       isCSVDownloading: false,
+      isFiltering: !!props.responseRef?.isFilteringTable(),
     }
   }
 
@@ -96,6 +97,10 @@ export class OptionsToolbar extends React.Component {
 
     if (prevProps.displayType !== this.props.displayType) {
       this.setState({ activeMenu: undefined })
+    }
+
+    if (prevState.isFiltering !== this.state.isFiltering) {
+      hideTooltips()
     }
 
     rebuildTooltips()
@@ -498,10 +503,72 @@ export class OptionsToolbar extends React.Component {
     )
   }
 
-  renderToolbar = (shouldShowButton) => {
-    // Use this to show filter badge in the future
-    // const isFiltered = !!this.props.responseRef?.tableParams?.filters?.length
+  renderFilterBtn = () => {
+    const tabulatorHeaderFilters = this.props.responseRef?.getTabulatorHeaderFilters()
+    const isFiltered =
+      !!this.props.responseRef?.formattedTableParams?.filters?.length && !!tabulatorHeaderFilters?.length
+    const displayType = this.props.responseRef?.state?.displayType
+    const isTable = displayType === 'table'
 
+    let tooltip = this.state.isFiltering ? 'Hide filters' : 'Filter table'
+    if (!isTable) {
+      tooltip = isFiltered ? 'Edit table filters' : 'Filter data from table'
+    }
+
+    return (
+      <Button
+        onClick={() => {
+          const toggleFiltersOn = isTable ? !this.props.responseRef?.isFilteringTable() : true
+
+          this.setState({ isFiltering: toggleFiltersOn })
+
+          if (this.props.responseRef?.state?.displayType === 'table') {
+            this.props.responseRef?.toggleTableFilter(toggleFiltersOn)
+          } else {
+            this.props.responseRef?.changeDisplayType('table', () => {
+              this.props.responseRef?.toggleTableFilter(true, true)
+            })
+          }
+        }}
+        className={`${this.getMenuItemClass('filter-btn')}
+          ${this.state.isFiltering && isTable ? 'react-autoql-toolbar-btn-selected' : ''}`}
+        tooltip={tooltip}
+        tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+        data-test='react-autoql-filter-button'
+      >
+        <Icon type='filter' showBadge={isFiltered} />
+      </Button>
+    )
+  }
+
+  renderColumnVizBtn = (shouldShowButton) => {
+    return (
+      <Button
+        onClick={this.showHideColumnsModal}
+        className={this.getMenuItemClass()}
+        tooltip='Show/hide columns'
+        tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+        data-test='options-toolbar-col-vis'
+      >
+        <Icon type='eye' showBadge={shouldShowButton.showHiddenColsBadge} />
+      </Button>
+    )
+  }
+
+  renderReportProblemBtn = () => {
+    return (
+      <Button
+        onClick={this.openReportProblemModal}
+        className={this.getMenuItemClass()}
+        tooltip='Report a problem'
+        tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+      >
+        <Icon type='warning-triangle' />
+      </Button>
+    )
+  }
+
+  renderToolbar = (shouldShowButton) => {
     return (
       <ErrorBoundary>
         <div
@@ -510,47 +577,9 @@ export class OptionsToolbar extends React.Component {
             ${this.props.className || ''}`}
           data-test='autoql-options-toolbar'
         >
-          {shouldShowButton.showFilterButton && (
-            <Button
-              onClick={() => {
-                const isFiltering = this.props.responseRef?.toggleTableFilter()
-                this.setState({ isFiltering })
-              }}
-              className={this.getMenuItemClass('filter-btn')}
-              tooltip='Filter table'
-              tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
-              data-test='react-autoql-filter-button'
-            >
-              <Icon
-                // Add these back in the future when we want this feature
-                // type={this.state.isFiltering ? 'filter-off' : 'filter'}
-                // showBadge={!!this.props.responseRef?.tableParams?.filter?.length}
-                type='filter'
-                showBadge={false}
-              />
-            </Button>
-          )}
-          {shouldShowButton.showHideColumnsButton && (
-            <Button
-              onClick={this.showHideColumnsModal}
-              className={this.getMenuItemClass()}
-              tooltip='Show/hide columns'
-              tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
-              data-test='options-toolbar-col-vis'
-            >
-              <Icon type='eye' showBadge={shouldShowButton.showHiddenColsBadge} />
-            </Button>
-          )}
-          {shouldShowButton.showReportProblemButton && (
-            <Button
-              onClick={this.openReportProblemModal}
-              className={this.getMenuItemClass()}
-              tooltip='Report a problem'
-              tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
-            >
-              <Icon type='warning-triangle' />
-            </Button>
-          )}
+          {shouldShowButton.showFilterButton && this.renderFilterBtn()}
+          {shouldShowButton.showHideColumnsButton && this.renderColumnVizBtn(shouldShowButton)}
+          {shouldShowButton.showReportProblemButton && this.renderReportProblemBtn()}
           {shouldShowButton.showRefreshDataButton && (
             <Button
               onClick={this.refreshData}
@@ -611,7 +640,6 @@ export class OptionsToolbar extends React.Component {
       const columns = props.responseRef?.getColumns()
       const isTable = isTableType(displayType)
       const isChart = isChartType(displayType)
-      const isPivotTable = displayType === 'pivot_table'
       const response = props.responseRef?.queryResponse
       const isDataResponse = response?.data?.data?.display_type === 'data'
       const allColumnsHidden = areAllColumnsHidden(columns)
@@ -623,7 +651,8 @@ export class OptionsToolbar extends React.Component {
       const autoQLConfig = getAutoQLConfig(props.autoQLConfig)
 
       shouldShowButton = {
-        showFilterButton: isTable && !isPivotTable && !allColumnsHidden && hasMoreThanOneRow,
+        showFilterButton:
+          (displayType === 'table' || isChartType(displayType)) && !allColumnsHidden && hasMoreThanOneRow,
         showCopyButton: isTable && !allColumnsHidden,
         showSaveAsPNGButton: isChart,
         showHideColumnsButton:

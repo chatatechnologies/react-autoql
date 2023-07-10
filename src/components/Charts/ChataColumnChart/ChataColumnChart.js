@@ -4,12 +4,11 @@ import { Columns } from '../Columns'
 
 import { chartDefaultProps, chartPropTypes, getBandScale, getLinearScales } from '../helpers.js'
 import { deepEqual } from '../../../js/Util'
+import { rebuildTooltips } from '../../Tooltip'
 
 export default class ChataColumnChart extends Component {
   constructor(props) {
     super(props)
-
-    this.setChartData(props)
 
     this.state = {
       isChartScaled: true,
@@ -24,6 +23,12 @@ export default class ChataColumnChart extends Component {
     const stateEqual = deepEqual(this.state, nextState)
 
     return !propsEqual || !stateEqual
+  }
+
+  componentDidUpdate = (prevProps, prevState) => {
+    if (this.state.isChartScaled !== prevState.isChartScaled) {
+      rebuildTooltips()
+    }
   }
 
   setChartData = (props) => {
@@ -69,12 +74,10 @@ export default class ChataColumnChart extends Component {
           xCol={this.props.columns[this.props.stringColumnIndex]}
           yCol={yCol}
           linearAxis='y'
-          hasRightLegend={this.props.legendLocation === 'right'}
-          hasBottomLegend={this.props.legendLocation === 'bottom'}
           toggleChartScale={this.toggleChartScale}
           yGridLines
         >
-          {this.props.marginAdjustmentFinished && <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />}
+          <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />
         </Axes>
       </g>
     )

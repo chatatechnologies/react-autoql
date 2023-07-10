@@ -23,6 +23,7 @@ import { withTheme } from '../../../theme'
 import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
 
 import './NotificationFeed.scss'
+import { isMobile } from 'react-device-detect'
 
 class NotificationFeed extends React.Component {
   constructor(props) {
@@ -383,7 +384,7 @@ class NotificationFeed extends React.Component {
       title='Mark all as read?'
       confirmText='Yes'
       backText='Cancel'
-      popoverParentElement={this.feedContainer}
+      popoverParentElement={this.props.popoverParentElement ?? this.feedContainer}
       positions={['bottom', 'left', 'right', 'top']}
       align='end'
     >
@@ -499,7 +500,9 @@ class NotificationFeed extends React.Component {
         <div
           ref={(r) => (this.feedContainer = r)}
           style={style}
-          className='react-autoql-notification-list-container'
+          className={`react-autoql-notification-list-container ${
+            isMobile ? 'react-autoql-notification-list-container-mobile' : ''
+          }`}
           data-test='notification-list'
         >
           {this.props.tooltipID !== this.TOOLTIP_ID && (
@@ -538,6 +541,7 @@ class NotificationFeed extends React.Component {
                         onDismissCallback={this.onDismissClick}
                         onUnreadCallback={this.onUnreadClick}
                         onQueryClick={this.props.onQueryClick}
+                        popoverParentElement={this.props.popoverParentElement}
                         onDismissSuccessCallback={() => {
                           this.props.onChange(this.state.notificationList)
                         }}

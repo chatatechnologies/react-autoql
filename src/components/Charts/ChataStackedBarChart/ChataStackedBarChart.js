@@ -7,8 +7,6 @@ import { getBandScale, chartPropTypes, chartDefaultProps, getLinearScales } from
 export default class ChataStackedBarChart extends Component {
   constructor(props) {
     super(props)
-
-    this.setChartData(props)
   }
 
   static propTypes = chartPropTypes
@@ -51,9 +49,7 @@ export default class ChataStackedBarChart extends Component {
         className='react-autoql-axes-chart'
         data-test='react-autoql-stacked-bar-chart'
       >
-        {this.props.marginAdjustmentFinished && (
-          <StackedBars {...this.props} xScale={this.xScale} yScale={this.yScale} />
-        )}
+        <StackedBars {...this.props} xScale={this.xScale} yScale={this.yScale} />
         <Axes
           {...this.props}
           ref={(r) => (this.axesRef = r)}
@@ -65,8 +61,6 @@ export default class ChataStackedBarChart extends Component {
           xCol2={xCol2}
           yCol={this.props.columns[this.props.stringColumnIndex]}
           linearAxis='x'
-          hasRightLegend={this.props.legendLocation === 'right'}
-          hasBottomLegend={this.props.legendLocation === 'bottom'}
         />
       </g>
     )

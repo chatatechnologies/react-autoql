@@ -13,12 +13,6 @@
     display: inline-flex;
     flex-direction: row;
 
-    &.react-autoql-input-small {
-      .react-autoql-input {
-        min-height: 34px;
-      }
-    }
-
     input::-webkit-outer-spin-button,
     input::-webkit-inner-spin-button {
       /* display: none; <- Crashes Chrome on hover */
@@ -26,8 +20,90 @@
       margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
     }
 
-    input[type='number'] {
-      -moz-appearance: textfield; /* Firefox */
+    .react-autoql-input[type='number'] {
+      border-radius: 4px 0px 0px 4px;
+      margin-right: 0;
+    }
+
+    &.react-autoql-input-number {
+      flex: 1;
+
+      .react-autoql-input,
+      .react-autoql-input-number-spin-button-container {
+        height: 100%;
+        max-height: 100%;
+        min-height: 100%;
+      }
+
+      &:hover {
+        .react-autoql-input,
+        .react-autoql-input-number-spin-button-container {
+          border-color: var(--react-autoql-accent-color);
+        }
+      }
+
+      .react-autoql-input-number-spin-button-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex-wrap: nowrap;
+        flex: 0 0 18px;
+        overflow: hidden;
+        border-radius: 0px 4px 4px 0px;
+        border: 1px solid var(--react-autoql-border-color);
+        border-left: none;
+        transition-property: color, border-color, background-color, opacity;
+        transition-duration: 0.2s;
+        transition-timing-function: ease;
+
+        &:hover .react-autoql-input-number-spin-button {
+          border-color: var(--react-autoql-accent-color) !important;
+        }
+
+        .react-autoql-input-number-spin-button {
+          flex: 1;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          width: 100%;
+          outline: none !important;
+          border: none;
+          padding: 0;
+          color: var(--react-autoql-text-color-primary);
+          background-color: var(--react-autoql-background-color-secondary);
+
+          &:first-child {
+            border-bottom: 1px solid var(--react-autoql-border-color);
+          }
+
+          &:last-child {
+            margin-bottom: -1px;
+          }
+
+          &:hover {
+            color: var(--react-autoql-accent-color);
+          }
+
+          &:active {
+            background-color: var(--react-autoql-accent-color);
+            color: var(--react-autoql-text-color-accent);
+          }
+
+          .react-autoql-icon {
+            flex: 1;
+            display: block;
+            font-size: 12px;
+            opacity: 0.7;
+          }
+        }
+      }
+    }
+
+    input[type='search']::-webkit-search-decoration,
+    input[type='search']::-webkit-search-cancel-button,
+    input[type='search']::-webkit-search-results-button,
+    input[type='search']::-webkit-search-results-decoration {
+      -webkit-appearance: none;
     }
 
     .react-autoql-input-and-icon {
@@ -55,7 +131,7 @@
     .react-autoql-input {
       border: 1px solid var(--react-autoql-border-color);
       border-radius: 4px;
-      min-height: 38px;
+      background: inherit;
       width: 100%;
       font-size: inherit;
       font-family: inherit;
@@ -83,6 +159,7 @@
 
       &:not(textarea) {
         padding: 0 10px;
+        height: 32px;
       }
 
       &.with-select {
@@ -144,6 +221,7 @@
   color: var(--react-autoql-text-color-primary);
   opacity: 0.8;
   white-space: nowrap;
+  text-align: left;
 
   .react-autoql-icon {
     margin: 0 3px;

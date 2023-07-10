@@ -231,7 +231,7 @@ export const runQueryOnly = (params = {}) => {
     })
 }
 
-export const runQueryValidation = ({ text, domain, apiKey, token } = {}) => {
+export const runQueryValidation = ({ text, domain, apiKey, token, cancelToken } = {}) => {
   if (!text) {
     return Promise.reject(new Error('No text supplied'))
   }
@@ -246,12 +246,19 @@ export const runQueryValidation = ({ text, domain, apiKey, token } = {}) => {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    cancelToken,
   }
 
   return axios
     .get(url, config)
     .then((response) => Promise.resolve(response))
-    .catch((error) => Promise.reject(_get(error, 'response')))
+    .catch((error) => {
+      if (error?.message === responseErrors.CANCELLED) {
+        return Promise.reject(error)
+      }
+
+      return Promise.reject(error?.response)
+    })
 }
 
 export const runQuery = (params) => {
@@ -261,6 +268,7 @@ export const runQuery = (params) => {
       domain: params?.domain,
       apiKey: params?.apiKey,
       token: params?.token,
+      cancelToken: params?.cancelToken,
     })
       .then((response) => {
         if (failedValidation(response)) {
@@ -269,9 +277,13 @@ export const runQuery = (params) => {
         return runQueryOnly(params)
       })
       .catch((error) => {
-        if (error?.data?.message !== responseErrors.CANCELLED) {
-          console.error(error)
+        if (error?.message === responseErrors.CANCELLED) {
+          return Promise.reject({
+            data: { message: responseErrors.CANCELLED },
+          })
         }
+
+        console.error(error)
         return Promise.reject(error)
       })
   }

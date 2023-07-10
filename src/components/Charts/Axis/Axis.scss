@@ -217,6 +217,7 @@ g.legendOrdinal tspan {
 
   .axis-selector-apply-btn-container {
     flex: 0 0 auto;
+    padding-top: 10px;
 
     .axis-selector-apply-btn {
       margin: 0;
@@ -282,6 +283,7 @@ g.legendOrdinal tspan {
   color: var(--react-autoql-text-color-primary);
   padding: 5px;
   z-index: 9999;
+  max-height: 300px;
 
   .string-select-list-item {
     font-size: 12px;
@@ -294,9 +296,15 @@ g.legendOrdinal tspan {
   }
 }
 
+g.legendOrdinal {
+  text,
+  tspan {
+    font-size: inherit;
+  }
+}
+
 g.legendOrdinal .legendTitle tspan {
   letter-spacing: 0.04em !important;
-  font-size: 12px;
   cursor: default;
 }
 

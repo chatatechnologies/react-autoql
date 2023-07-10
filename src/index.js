@@ -1,4 +1,5 @@
 import './index.scss'
+import 'react-perfect-scrollbar/dist/css/styles.css'
 
 export * from './components/DataMessenger'
 export * from './components/QueryInput'

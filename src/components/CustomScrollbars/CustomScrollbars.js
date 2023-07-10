@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import PerfectScrollbar from 'react-perfect-scrollbar'
 
 import './CustomScrollbars.scss'
-import 'react-perfect-scrollbar/dist/css/styles.css'
 
 export default class CustomScrollbars extends React.Component {
   MAX_UPDATE_DURATION = 5000
@@ -11,12 +10,16 @@ export default class CustomScrollbars extends React.Component {
   static propTypes = {
     style: PropTypes.shape({}),
     autoHide: PropTypes.bool,
+    autoHeightMax: PropTypes.number,
+    autoHeightMin: PropTypes.number,
     contentHidden: PropTypes.bool,
   }
 
   static defaultProps = {
     style: {},
     autoHide: false,
+    autoHeightMin: undefined,
+    autoHeightMax: undefined,
     contentHidden: false,
   }
 

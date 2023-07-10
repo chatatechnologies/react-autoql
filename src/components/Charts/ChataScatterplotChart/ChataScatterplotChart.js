@@ -1,0 +1,113 @@
+import React, { Component } from 'react'
+import { Axes } from '../Axes'
+import { Points } from '../Points'
+import { chartDefaultProps, chartPropTypes, getLinearScale, getMinAndMaxValues } from '../helpers.js'
+import { getNumberColumnIndices } from '../../QueryOutput/columnHelpers'
+import { deepEqual } from '../../../js/Util'
+
+export default class ChataScatterplotChart extends Component {
+  constructor(props) {
+    super(props)
+
+    this.state = {
+      isXScaled: false,
+      isYScaled: false,
+    }
+  }
+
+  static propTypes = chartPropTypes
+  static defaultProps = chartDefaultProps
+
+  shouldComponentUpdate = (nextProps, nextState) => {
+    const propsEqual = deepEqual(this.props, nextProps)
+    const stateEqual = deepEqual(this.state, nextState)
+
+    return !propsEqual || !stateEqual
+  }
+
+  setNumberColumnIndices = (props) => {
+    this.numberColumnIndex = props.numberColumnIndex
+    this.numberColumnIndex2 = props.numberColumnIndex2
+    this.numberColumnIndices = props.numberColumnIndices
+    this.numberColumnIndices2 = props.numberColumnIndices2
+
+    if (isNaN(this.numberColumnIndex) || isNaN(this.numberColumnIndex2)) {
+      const { numberColumnIndex, numberColumnIndex2, numberColumnIndices, numberColumnIndices2 } =
+        getNumberColumnIndices(this.props.columns)
+      this.numberColumnIndex = numberColumnIndex
+      this.numberColumnIndex2 = numberColumnIndex2
+      this.numberColumnIndices = numberColumnIndices
+      this.numberColumnIndices2 = numberColumnIndices2
+    }
+  }
+
+  setChartData = (props) => {
+    const { isXScaled, isYScaled } = this.state
+
+    this.setNumberColumnIndices(props)
+
+    const xMinMax = getMinAndMaxValues(props.data, this.numberColumnIndices, isXScaled)
+    const xMaxValue = xMinMax.maxValue
+    const xMinValue = xMinMax.minValue
+
+    this.xScale = getLinearScale({
+      props,
+      minValue: xMinValue,
+      maxValue: xMaxValue,
+      axis: 'x',
+      isScaled: isXScaled,
+      columnIndex: this.numberColumnIndex,
+      changeColumnIndices: (indices) => props.changeNumberColumnIndices(indices),
+      allowMultipleSeries: false,
+    })
+
+    const yMinMax = getMinAndMaxValues(props.data, this.numberColumnIndices2, isYScaled)
+    const yMaxValue = yMinMax.maxValue
+    const yMinValue = yMinMax.minValue
+
+    this.yScale = getLinearScale({
+      props,
+      minValue: yMinValue,
+      maxValue: yMaxValue,
+      axis: 'y',
+      isScaled: isYScaled,
+      columnIndex: this.numberColumnIndex2,
+      changeColumnIndices: (indices) => props.changeNumberColumnIndices(this.numberColumnIndices, indices),
+      allowMultipleSeries: false,
+    })
+
+    this.xScale.secondScale = this.yScale
+    this.yScale.secondScale = this.xScale
+  }
+
+  render = () => {
+    this.setChartData(this.props)
+
+    const columnIndexProps = {
+      numberColumnIndex: this.numberColumnIndex,
+      numberColumnIndex2: this.numberColumnIndex2,
+      numberColumnIndices: this.numberColumnIndices,
+      numberColumnIndices2: this.numberColumnIndices2,
+    }
+
+    return (
+      <g
+        ref={(r) => (this.chartRef = r)}
+        className='react-autoql-axes-chart react-autoql-scatterplot-chart'
+        data-test='react-autoql-scatterplot-chart'
+      >
+        <Points {...this.props} xScale={this.xScale} yScale={this.yScale} {...columnIndexProps} />
+        <Axes
+          {...this.props}
+          ref={(r) => (this.axesRef = r)}
+          chartRef={this.chartRef}
+          xScale={this.xScale}
+          yScale={this.yScale}
+          xCol={this.props.columns[this.numberColumnIndex]}
+          yCol={this.props.columns[this.numberColumnIndex2]}
+          {...columnIndexProps}
+        />
+      </g>
+    )
+  }
+}

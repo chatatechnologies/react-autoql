@@ -14,10 +14,6 @@ export default class Bars extends Component {
     rebuildTooltips()
   }
 
-  shouldComponentUpdate = () => {
-    return true
-  }
-
   onBarClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)
 
@@ -34,6 +30,10 @@ export default class Bars extends Component {
   }
 
   render = () => {
+    if (this.props.isLoading) {
+      return null
+    }
+
     const { columns, legendColumn, numberColumnIndices, stringColumnIndex, dataFormatting, yScale, xScale } = this.props
 
     const visibleSeries = numberColumnIndices.filter((colIndex) => {
@@ -75,7 +75,7 @@ export default class Bars extends Component {
               row: d,
               columns,
               colIndex,
-              stringColumnIndex,
+              colIndex2: stringColumnIndex,
               legendColumn,
               dataFormatting,
             })

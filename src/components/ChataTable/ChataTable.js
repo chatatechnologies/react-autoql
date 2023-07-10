@@ -213,25 +213,16 @@ export default class ChataTable extends React.Component {
     if (this.props.columns && !deepEqual(this.props.columns, prevProps.columns)) {
       this.ref?.tabulator?.setColumns(this.getFilteredTabulatorColumnDefinitions())
       this.setHeaderInputEventListeners()
+      this.setFilters()
     }
 
     if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
-      this.setFilterTags()
       this.setHeaderInputEventListeners()
       if (!this.props.hidden) {
         this.setTableHeight()
       }
 
       this.hasSetInitialParams = true
-    }
-
-    if (!this.state.isFiltering && prevState.isFiltering) {
-      try {
-        this.setFilterTags()
-      } catch (error) {
-        console.error(error)
-        this.props.onErrorCallback(error)
-      }
     }
   }
 
@@ -242,7 +233,6 @@ export default class ChataTable extends React.Component {
       clearTimeout(this.setDimensionsTimeout)
       clearTimeout(this.setStateTimeout)
       this.cancelCurrentRequest()
-      this.resetFilterTags()
       this.existingFilterTag = undefined
       this.filterTagElements = undefined
     } catch (error) {
@@ -332,6 +322,7 @@ export default class ChataTable extends React.Component {
         }
       }, 0)
     }
+    this.setFilterBadgeClasses()
   }
 
   setLoading = (loading) => {
@@ -449,6 +440,8 @@ export default class ChataTable extends React.Component {
         this.queryID = responseWrapper?.data?.data?.query_id
         response = { ..._get(responseWrapper, 'data.data', {}), page: 1 }
 
+        this.scrollLeft = this.ref?.tabulator?.rowManager?.element?.scrollLeft
+
         /* wait for current event loop to end so table is updated
         before callbacks are invoked */
         await currentEventLoopEnd()
@@ -481,6 +474,15 @@ export default class ChataTable extends React.Component {
     the new rows are added */
     await currentEventLoopEnd()
 
+    // Temporary fix to scrollbars resetting after filtering or sorting
+    // It isnt perfect since it still causes the scrollbar to jump left then right again
+    // Watching tabulator for a fix:
+    // https://github.com/olifolkerd/tabulator/issues/3450
+    if (this.scrollLeft !== undefined) {
+      this.scrollLeft = undefined
+      this.ref.tabulator.rowManager.element.scrollLeft = this.scrollLeft
+    }
+
     if (this._isMounted) {
       this.setState({
         loading: false,
@@ -488,6 +490,11 @@ export default class ChataTable extends React.Component {
         pageLoading: false,
       })
     }
+  }
+
+  // Todo: implement "clear all filters" button in options toolbar
+  clearHeaderFilters = () => {
+    this.ref?.tabulator?.clearHeaderFilter()
   }
 
   getNewPage = (props, tableParams) => {
@@ -568,8 +575,10 @@ export default class ChataTable extends React.Component {
 
     clearTimeout(this.setStateTimeout)
     this.setStateTimeout = setTimeout(() => {
-      this.setState(this.stateToSet)
-      this.stateToSet = {}
+      if (this._isMounted) {
+        this.setState(this.stateToSet)
+        this.stateToSet = {}
+      }
     }, 50)
   }
 
@@ -612,6 +621,32 @@ export default class ChataTable extends React.Component {
     e.preventDefault()
   }
 
+  renderHeaderInputClearBtn = (inputElement, column) => {
+    const clearBtnText = document.createElement('span')
+    clearBtnText.innerHTML = '&#x00d7;'
+
+    const clearBtn = document.createElement('div')
+    clearBtn.className = 'react-autoql-input-clear-btn'
+    clearBtn.id = `react-autoql-clear-btn-${this.TABLE_ID}-${column.field}`
+    clearBtn.setAttribute('data-for', this.props.tooltipID)
+    clearBtn.setAttribute('data-tip', 'Clear filter')
+    clearBtn.appendChild(clearBtnText)
+
+    clearBtn.addEventListener('click', (e) => {
+      e.stopPropagation()
+      this.setHeaderInputValue(inputElement, '')
+
+      if (column.type === 'DATE' && !column.pivot) {
+        this.currentDateRangeSelections = {}
+        this.debounceSetState({
+          datePickerColumn: undefined,
+        })
+      }
+    })
+
+    inputElement.parentNode.appendChild(clearBtn)
+  }
+
   setHeaderInputEventListeners = () => {
     const columns = this.props.columns
     if (!columns) {
@@ -627,13 +662,12 @@ export default class ChataTable extends React.Component {
         inputElement.removeEventListener('keydown', this.inputKeydownListener)
         inputElement.addEventListener('keydown', this.inputKeydownListener)
 
-        inputElement.removeEventListener('search', this.inputSearchListener)
-        inputElement.addEventListener('search', this.inputSearchListener)
+        const clearBtn = document.querySelector(`#react-autoql-clear-btn-${this.TABLE_ID}-${col.field}`)
+        if (!clearBtn) {
+          this.renderHeaderInputClearBtn(inputElement, col)
+        }
 
         if (col.type === 'DATE' && !col.pivot) {
-          inputElement.removeEventListener('search', this.inputDateSearchListener)
-          inputElement.addEventListener('search', this.inputDateSearchListener)
-
           // Open Calendar Picker when user clicks on this field
           inputElement.removeEventListener('click', (e) => this.inputDateClickListener(e, col))
           inputElement.addEventListener('click', (e) => this.inputDateClickListener(e, col))
@@ -649,48 +683,19 @@ export default class ChataTable extends React.Component {
     })
   }
 
-  resetFilterTags = () => {
-    const filterTagElements = this.tableContainer?.querySelectorAll(
-      `#react-autoql-table-container-${this.TABLE_ID} .filter-tag`,
-    )
+  setFilterBadgeClasses = () => {
+    if (this._isMounted && this.state.tabulatorMounted) {
+      this.ref?.tabulator?.getColumns()?.forEach((column) => {
+        const isFiltering = !!this.tableParams?.filter?.find((filter) => filter.field === column.getField())
+        const columnElement = column?.getElement()
 
-    if (filterTagElements?.length) {
-      filterTagElements.forEach((filterTag) => {
-        try {
-          if (filterTag.parentNode && this._isMounted) {
-            filterTag.parentNode.removeChild(filterTag)
-          }
-        } catch (error) {}
-      })
-    }
-
-    return
-  }
-
-  setFilterTags = () => {
-    this.resetFilterTags()
-
-    const filterValues = this.tableParams?.filter
-
-    if (filterValues) {
-      filterValues.forEach((filter, i) => {
-        try {
-          const filterTagEl = document.createElement('span')
-          filterTagEl.innerText = 'F'
-          filterTagEl.setAttribute('class', 'filter-tag')
-
-          const columnTitleEl = document.querySelector(
-            `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-title`,
-          )
-          columnTitleEl.insertBefore(filterTagEl, columnTitleEl.firstChild)
-        } catch (error) {
-          console.error(error)
-          this.props.onErrorCallback(error)
+        if (isFiltering) {
+          columnElement?.classList.add('is-filtered')
+        } else {
+          columnElement?.classList.remove('is-filtered')
         }
       })
     }
-
-    return
   }
 
   setFilters = () => {
@@ -754,11 +759,7 @@ export default class ChataTable extends React.Component {
         filterInputText = formattedStartDate
       }
 
-      inputElement.focus()
-      this.ref?.restoreRedraw()
-      inputElement.value = filterInputText
-      inputElement.title = filterInputText
-      inputElement.blur()
+      this.setHeaderInputValue(inputElement, filterInputText)
       this.currentDateRangeSelections = {
         [column.field]: this.state.dateRangeSelection,
       }
@@ -786,14 +787,37 @@ export default class ChataTable extends React.Component {
     this.settingSorters = false
   }
 
-  toggleIsFiltering = () => {
-    const isFiltering = !this.state.isFiltering
+  toggleIsFiltering = (filterOn, scrollToFirstFilteredColumn) => {
+    if (scrollToFirstFilteredColumn && this.tableParams?.filter?.length) {
+      const column = this.ref?.tabulator
+        ?.getColumns()
+        ?.find((col) => col.getField() === this.tableParams.filter[0]?.field)
+
+      column.scrollTo('middle')
+    }
+
+    let isFiltering = !this.state.isFiltering
+    if (typeof filterOn === 'boolean') {
+      isFiltering = filterOn
+    }
 
     if (this._isMounted) {
       this.setState({ isFiltering })
     }
 
     return isFiltering
+  }
+
+  setHeaderInputValue = (inputElement, value) => {
+    if (!inputElement) {
+      return
+    }
+
+    inputElement.focus()
+    this.ref?.restoreRedraw()
+    inputElement.value = value
+    inputElement.title = value
+    inputElement.blur()
   }
 
   renderEmptyPlaceholderText = () => {
@@ -849,7 +873,7 @@ export default class ChataTable extends React.Component {
               validRange={this.state.datePickerColumn.dateRange}
               type={this.state.datePickerColumn.precision}
             />
-            <Button type='primary' onClick={this.onDateRangeSelectionApplied} tooltipID={this.props.tooltipID}>
+            <Button type='primary' onClick={this.onDateRangeSelectionApplied}>
               Apply
             </Button>
           </div>
@@ -913,6 +937,12 @@ export default class ChataTable extends React.Component {
 
   getTabulatorRowCount = () => {
     return this.ref?.tabulator?.getDataCount('active')
+  }
+
+  getTabulatorHeaderFilters = () => {
+    if (this._isMounted && this.state.tabulatorMounted) {
+      return this.ref?.tabulator?.getHeaderFilters()
+    }
   }
 
   isTableEmpty = () => {

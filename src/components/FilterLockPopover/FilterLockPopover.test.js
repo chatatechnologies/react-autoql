@@ -96,24 +96,21 @@ describe('saving indicator renders when', () => {
     return persistToggle
   }
 
-  describe('filter added', () => {
+  test('filter added', async () => {
     const { wrapper, instance } = setupSavingIndicatorTest()
-
-    test('saving indicator rendered', async () => {
-      await currentEventLoopEnd()
-      wrapper.update()
-      instance.setFilter({
-        key: 'VENDOR_0_DISPLAYNAME_VALUE_LABEL',
-        value: 'Organization of Outstanding Events',
-        show_message: 'Vendor Name',
-        filter_type: 'include',
-        lock_flag: 1,
-      })
-      wrapper.update()
-      const savingIndicator = findByTestAttr(wrapper, 'filter-locking-saving-indicator')
-      expect(savingIndicator.exists()).toBe(true)
-      wrapper.unmount()
+    await currentEventLoopEnd()
+    wrapper.update()
+    instance.setFilter({
+      key: 'VENDOR_0_DISPLAYNAME_VALUE_LABEL',
+      value: 'Organization of Outstanding Events',
+      show_message: 'Vendor Name',
+      filter_type: 'include',
+      lock_flag: 1,
     })
+    wrapper.update()
+    const savingIndicator = findByTestAttr(wrapper, 'filter-locking-saving-indicator')
+    expect(savingIndicator.exists()).toBe(true)
+    wrapper.unmount()
   })
   test('filter removed', async () => {
     const { wrapper, instance } = setupSavingIndicatorTest()

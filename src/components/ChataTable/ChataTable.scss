@@ -117,10 +117,6 @@
       max-height: calc(100% - 60px) !important;
     }
 
-    .filter-tag {
-      display: none;
-    }
-
     &.empty {
       .react-autoql-table.tabulator .tabulator-header {
         border: none;
@@ -155,14 +151,44 @@
       border: 1px solid var(--react-autoql-border-color);
       border-radius: 4px;
       background: transparent;
-      padding: 4px 9px !important;
+      padding: 4px 16px 4px 8px !important;
       outline: none !important;
       text-overflow: ellipsis;
       visibility: visible;
       opacity: 1;
+      height: 25px;
+
+      &::-webkit-search-decoration,
+      &::-webkit-search-cancel-button,
+      &::-webkit-search-results-button,
+      &::-webkit-search-results-decoration {
+        -webkit-appearance: none;
+      }
 
       &:focus {
         border: 1px solid var(--react-autoql-accent-color);
+      }
+    }
+
+    .react-autoql-input-clear-btn {
+      position: absolute;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 12px;
+      width: 12px;
+      right: 0;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      color: var(--react-autoql-background-color-secondary);
+      background: var(--react-autoql-text-color-placeholder);
+      border-radius: 6px;
+
+      span {
+        font-family: sans-serif;
+        height: 12px;
+        font-size: 11px;
+        line-height: 100%;
       }
     }
   }
@@ -209,17 +235,30 @@
     .tabulator-header {
       border-bottom: 2px solid var(--react-autoql-border-color);
 
-      .filter-tag {
-        color: #2ecc40;
-        border: 1px solid;
-        padding: 2px 4px;
-        border-radius: 4px;
-        font-weight: 400;
-        font-size: 10px;
+      input:placeholder-shown + .react-autoql-input-clear-btn {
+        visibility: hidden;
+      }
+
+      .tabulator-col.is-filtered .tabulator-col-title:before {
+        opacity: 1;
+      }
+
+      .tabulator-col-title:before {
+        content: '';
+        display: inline-block;
+        vertical-align: middle;
+        opacity: 0;
+
+        height: 8px;
+        width: 8px;
+
         margin-right: 5px;
-        vertical-align: top;
-        line-height: 21px;
-        margin-left: -11px;
+        margin-left: -12px;
+        margin-bottom: 2px;
+
+        border-radius: 10px;
+        background: var(--react-autoql-warning-color);
+        transition: opacity 0.3s ease;
       }
     }
 
@@ -243,6 +282,8 @@
       }
 
       .tabulator-cell {
+        line-height: 1.5em;
+
         &:not(:first-child) {
           border-left: 1px solid !important;
           border-color: var(--react-autoql-table-border-color) !important;

@@ -10,8 +10,6 @@ export default class ChataColumnLineChart extends Component {
   constructor(props) {
     super(props)
 
-    this.setChartData(props)
-
     this.state = {
       isChartScaled: true,
     }
@@ -89,24 +87,18 @@ export default class ChataColumnLineChart extends Component {
           yCol={yCol}
           yCol2={yCol2}
           linearAxis='y'
-          hasRightLegend={this.props.legendLocation === 'right'}
-          hasBottomLegend={this.props.legendLocation === 'bottom'}
           toggleChartScale={this.toggleChartScale}
           yGridLines
         >
-          {this.props.marginAdjustmentFinished && (
-            <>
-              <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />
-              {!!this.yScale2 && (
-                <Line
-                  {...this.props}
-                  numberColumnIndices={this.props.numberColumnIndices2}
-                  xScale={this.xScale}
-                  yScale={this.yScale2}
-                  colorScale={this.props.colorScale2}
-                />
-              )}
-            </>
+          <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />
+          {!!this.yScale2 && (
+            <Line
+              {...this.props}
+              numberColumnIndices={this.props.numberColumnIndices2}
+              xScale={this.xScale}
+              yScale={this.yScale2}
+              colorScale={this.props.colorScale2}
+            />
           )}
         </Axes>
       </g>

@@ -1,8 +1,10 @@
-import React, { Component, Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { scaleOrdinal } from 'd3-scale'
+import { isMobile } from 'react-device-detect'
 
+import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { ChataColumnChart } from '../ChataColumnChart'
 import { ChataBarChart } from '../ChataBarChart'
 import { ChataLineChart } from '../ChataLineChart'
@@ -12,9 +14,10 @@ import { ChataBubbleChart } from '../ChataBubbleChart'
 import { ChataStackedBarChart } from '../ChataStackedBarChart'
 import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 import { ChataStackedLineChart } from '../ChataStackedLineChart'
+import { ChataScatterplotChart } from '../ChataScatterplotChart'
 import { ChataColumnLineChart } from '../ChataColumnLine'
+import { ChataHistogram } from '../ChataHistogram'
 import { Spinner } from '../../Spinner'
-import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import { svgToPng, getBBoxFromRef, sortDataByDate, deepEqual, rotateArray } from '../../../js/Util.js'
 
@@ -27,20 +30,21 @@ import {
   mergeBboxes,
 } from '../helpers.js'
 
-import { getDateColumnIndex, isColumnDateType } from '../../QueryOutput/columnHelpers'
-import { getChartColorVars, getThemeValue } from '../../../theme/configureTheme'
 import { aggregateData } from './aggregate'
-import { DATE_ONLY_CHART_TYPES, DOUBLE_AXIS_CHART_TYPES } from '../../../js/Constants'
+import { getChartColorVars, getThemeValue } from '../../../theme/configureTheme'
+import { getDateColumnIndex, isColumnDateType } from '../../QueryOutput/columnHelpers'
+import { DATE_ONLY_CHART_TYPES, DOUBLE_AXIS_CHART_TYPES, CHARTS_WITHOUT_AGGREGATED_DATA } from '../../../js/Constants'
 
 import './ChataChart.scss'
 
-export default class ChataChart extends Component {
+export default class ChataChart extends React.Component {
   constructor(props) {
     super(props)
     const data = this.getData(props)
 
-    this.PADDING = 10
+    this.PADDING = 0
     this.FONT_SIZE = 12
+    this.HISTOGRAM_SLIDER_KEY = uuid()
 
     this.firstRender = true
     this.shouldRecalculateDimensions = false
@@ -52,6 +56,7 @@ export default class ChataChart extends Component {
       deltaY: 0,
       isLoading: true,
       isLoadingMoreRows: false,
+      bucketSize: 0,
     }
   }
 
@@ -267,9 +272,9 @@ export default class ChataChart extends Component {
 
   getRenderedChartDimensions = () => {
     const leftAxisBBox = this.innerChartRef?.axesRef?.leftAxis?.ref?.getBoundingClientRect()
-    const bottomAxisBBox = this.innerChartRef?.axesRef?.bottomAxis?.ref?.getBoundingClientRect()
-    const rightAxisBBox = this.innerChartRef?.axesRef?.rightAxis?.ref?.getBoundingClientRect()
     const topAxisBBox = this.innerChartRef?.axesRef?.topAxis?.ref?.getBoundingClientRect()
+    const bottomAxisBBox = this.innerChartRef?.axesRef?.bottomAxis?.getBoundingClientRect()
+    const rightAxisBBox = this.innerChartRef?.axesRef?.rightAxis?.getBoundingClientRect()
     const clippedLegendBBox = this.innerChartRef?.axesRef?.legendRef?.legendClippingContainer?.getBoundingClientRect()
     const axesBBox = mergeBboxes([leftAxisBBox, bottomAxisBBox, rightAxisBBox, topAxisBBox, clippedLegendBBox])
 
@@ -385,15 +390,28 @@ export default class ChataChart extends Component {
     }
   }
 
+  renderChartHeader = () => {
+    let paddingLeft = this.state.deltaX - 10
+    if (isMobile || paddingLeft < 0 || this.outerWidth < 300) {
+      paddingLeft = 25
+    }
+
+    return (
+      <div
+        ref={(r) => (this.sliderRef = r)}
+        style={{ paddingLeft }}
+        className={`react-autoql-chart-header-container ${
+          this.state.isLoading || this.props.isResizing ? 'loading' : ''
+        }`}
+      />
+    )
+  }
+
   getCommonChartProps = () => {
     const { deltaX, deltaY } = this.state
-    const { numberColumnIndices, numberColumnIndices2, columns, enableDynamicCharting } = this.props
+    const { numberColumnIndices, columns, enableDynamicCharting } = this.props
 
     const visibleSeriesIndices = numberColumnIndices.filter(
-      (colIndex) => columns?.[colIndex] && !columns[colIndex].isSeriesHidden,
-    )
-
-    const visibleSeriesIndices2 = numberColumnIndices2?.filter(
       (colIndex) => columns?.[colIndex] && !columns[colIndex].isSeriesHidden,
     )
 
@@ -401,13 +419,18 @@ export default class ChataChart extends Component {
     const { outerHeight, outerWidth } = this.getOuterDimensions()
     const { colorScale, colorScale2 } = this.getColorScales()
 
+    const aggregated = !CHARTS_WITHOUT_AGGREGATED_DATA.includes(this.props.type)
+    const data = (aggregated ? this.state.data : null) || this.props.data
+
     return {
       ...this.props,
+      columns,
       setIsLoadingMoreRows: this.setIsLoadingMoreRows,
       ref: (r) => (this.innerChartRef = r),
       innerChartRef: this.innerChartRef?.chartRef,
       key: undefined,
-      data: this.state.data || this.props.data,
+      data,
+      aggregated,
       disableTimeScale: this.disableTimeScale,
       colorScale,
       colorScale2,
@@ -419,18 +442,17 @@ export default class ChataChart extends Component {
       deltaY,
       chartPadding: this.PADDING,
       enableAxisDropdown: enableDynamicCharting && !this.props.isAggregated,
-      marginAdjustmentFinished: true,
-      legendLocation: getLegendLocation(numberColumnIndices, this.props.type),
-      legendLabels: this.getLegendLabels(),
+      legendLocation: getLegendLocation(numberColumnIndices, this.props.type, this.props.legendLocation),
       onLabelRotation: this.adjustVerticalPosition,
       visibleSeriesIndices,
-      visibleSeriesIndices2,
       tooltipID: this.props.tooltipID,
       chartTooltipID: this.props.chartTooltipID,
       chartContainerRef: this.chartContainerRef,
       popoverParentElement: this.props.popoverParentElement,
       totalRowCount: this.props.totalRowCount,
       chartID: this.state.chartID,
+      isLoading: this.state.isLoading,
+      changeNumberColumnIndices: this.props.changeNumberColumnIndices,
       onAxesRenderComplete: this.adjustChartPosition,
     }
   }
@@ -445,48 +467,55 @@ export default class ChataChart extends Component {
     )
   }
 
-  renderColumnChart = () => <ChataColumnChart {...this.getCommonChartProps()} />
-  renderBarChart = () => <ChataBarChart {...this.getCommonChartProps()} />
-  renderLineChart = () => <ChataLineChart {...this.getCommonChartProps()} />
-  renderPieChart = () => <ChataPieChart {...this.getCommonChartProps()} />
-  renderHeatmapChart = () => <ChataHeatmapChart {...this.getCommonChartProps()} />
-  renderBubbleChart = () => <ChataBubbleChart {...this.getCommonChartProps()} />
-  renderStackedColumnChart = () => <ChataStackedColumnChart {...this.getCommonChartProps()} />
-  renderStackedBarChart = () => <ChataStackedBarChart {...this.getCommonChartProps()} />
-  renderStackedLineChart = () => <ChataStackedLineChart {...this.getCommonChartProps()} />
-  renderColumnLineChart = () => <ChataColumnLineChart {...this.getCommonChartProps()} />
-
   renderChart = () => {
+    const commonChartProps = this.getCommonChartProps()
+
     switch (this.props.type) {
       case 'column': {
-        return this.renderColumnChart()
+        return <ChataColumnChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
       case 'bar': {
-        return this.renderBarChart()
+        return <ChataBarChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
       case 'line': {
-        return this.renderLineChart()
+        return <ChataLineChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
       case 'pie': {
-        return this.renderPieChart()
+        return <ChataPieChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
       case 'bubble': {
-        return this.renderBubbleChart()
+        return <ChataBubbleChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
       case 'heatmap': {
-        return this.renderHeatmapChart()
+        return <ChataHeatmapChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
       case 'stacked_column': {
-        return this.renderStackedColumnChart()
+        return <ChataStackedColumnChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
       case 'stacked_bar': {
-        return this.renderStackedBarChart()
+        return <ChataStackedBarChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
       case 'stacked_line': {
-        return this.renderStackedLineChart()
+        return <ChataStackedLineChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
       case 'column_line': {
-        return this.renderColumnLineChart()
+        const visibleSeriesIndices2 = this.props.numberColumnIndices2?.filter(
+          (i) => this.props.columns?.[i] && !this.props.columns[i].isSeriesHidden,
+        )
+
+        return (
+          <ChataColumnLineChart
+            {...commonChartProps}
+            visibleSeriesIndices2={visibleSeriesIndices2}
+            legendLabels={this.getLegendLabels()}
+          />
+        )
+      }
+      case 'histogram': {
+        return <ChataHistogram {...commonChartProps} bucketSize={this.state.bucketSize} portalRef={this.sliderRef} />
+      }
+      case 'scatterplot': {
+        return <ChataScatterplotChart {...commonChartProps} />
       }
       default: {
         return 'Unknown Display Type'
@@ -506,18 +535,19 @@ export default class ChataChart extends Component {
 
     return (
       <ErrorBoundary>
-        <div
-          id={`react-autoql-chart-${this.state.chartID}`}
-          key={`react-autoql-chart-${this.state.chartID}`}
-          ref={(r) => (this.chartContainerRef = r)}
-          data-test='react-autoql-chart'
-          className={`react-autoql-chart-container
+        <>
+          {this.renderChartHeader()}
+          <div
+            id={`react-autoql-chart-${this.state.chartID}`}
+            key={`react-autoql-chart-${this.state.chartID}`}
+            ref={(r) => (this.chartContainerRef = r)}
+            data-test='react-autoql-chart'
+            className={`react-autoql-chart-container
             ${this.state.isLoading || this.props.isResizing ? 'loading' : ''}
             ${this.state.isLoadingMoreRows ? 'loading-rows' : ''}
             ${this.props.hidden ? 'hidden' : ''}`}
-        >
-          {!this.firstRender && !this.props.isResizing && !this.props.isAnimating && (
-            <Fragment>
+          >
+            {!this.firstRender && !this.props.isResizing && !this.props.isAnimating && (
               <svg
                 ref={(r) => (this.chartRef = r)}
                 xmlns='http://www.w3.org/2000/svg'
@@ -537,10 +567,10 @@ export default class ChataChart extends Component {
                   {this.renderChart()}
                 </g>
               </svg>
-            </Fragment>
-          )}
-          {this.state.isLoadingMoreRows && this.renderChartLoader()}
-        </div>
+            )}
+            {this.state.isLoadingMoreRows && this.renderChartLoader()}
+          </div>
+        </>
       </ErrorBoundary>
     )
   }

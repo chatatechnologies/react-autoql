@@ -7,8 +7,6 @@ import { chartDefaultProps, chartPropTypes, getBandScale } from '../helpers.js'
 export default class ChataHeatmapChart extends Component {
   constructor(props) {
     super(props)
-
-    this.setChartData(props)
   }
 
   static propTypes = chartPropTypes
@@ -41,7 +39,7 @@ export default class ChataHeatmapChart extends Component {
         className='react-autoql-axes-chart react-autoql-heatmap-chart'
         data-test='react-autoql-heatmap-chart'
       >
-        {this.props.marginAdjustmentFinished && <Squares {...this.props} xScale={this.xScale} yScale={this.yScale} />}
+        <Squares {...this.props} xScale={this.xScale} yScale={this.yScale} />
         <Axes
           {...this.props}
           ref={(r) => (this.axesRef = r)}
