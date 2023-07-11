@@ -107,7 +107,6 @@ export default class ChataHistogram extends React.Component {
       maxValue = maxValue + 1
     }
 
-    this.bucketConfig.bucketSize = newBucketSize
     const maxBucketSizeRaw = (maxValue - minValue) / (this.bucketConfig.minNumBuckets ?? 1)
     const minBucketSizeRaw = (maxValue - minValue) / (this.bucketConfig.maxNumBuckets ?? 1)
 
@@ -131,6 +130,12 @@ export default class ChataHistogram extends React.Component {
     }
     if (this.bucketConfig.maxBucketSize === this.bucketConfig.minBucketSize) {
       this.bucketConfig.maxBucketSize = this.bucketConfig.minBucketSize + this.bucketConfig.bucketStepSize
+    }
+
+    if (newBucketSize < this.bucketConfig.maxBucketSize && newBucketSize > this.bucketConfig.minBucketSize) {
+      this.bucketConfig.bucketSize = newBucketSize
+    } else {
+      this.bucketConfig.bucketSize = undefined
     }
 
     if (!this.bucketConfig.bucketSize) {
