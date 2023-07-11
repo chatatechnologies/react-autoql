@@ -1,4 +1,5 @@
 import React from 'react'
+import { PropTypes } from 'prop-types'
 import { createPortal } from 'react-dom'
 import { bin, max, min } from 'd3-array'
 
@@ -20,6 +21,7 @@ export default class ChataHistogram extends React.Component {
   constructor(props) {
     super(props)
 
+    this.bucketSize = props.initialBucketSize
     this.minNumBuckets = 5
     this.maxNumBuckets = 20
     this.bucketStepSize = 1
@@ -34,11 +36,26 @@ export default class ChataHistogram extends React.Component {
 
     this.setChartData(this.props, this.bucketSize)
 
-    this.state = {}
+    this.state = {
+      bucketSize: this.bucketSize,
+    }
   }
 
-  static propTypes = chartPropTypes
-  static defaultProps = chartDefaultProps
+  static propTypes = {
+    ...chartPropTypes,
+    initialBucketSize: PropTypes.number,
+    onBucketSizeChange: PropTypes.func,
+  }
+
+  static defaultProps = {
+    ...chartDefaultProps,
+    initialBucketSize: undefined,
+    onBucketSizeChange: () => {},
+  }
+
+  componentDidMount = () => {
+    this._isMounted = true
+  }
 
   shouldComponentUpdate = (nextProps, nextState) => {
     const propsEqual = deepEqual(this.props, nextProps)
@@ -47,25 +64,24 @@ export default class ChataHistogram extends React.Component {
     return !propsEqual || !stateEqual
   }
 
-  getMaxBuckets = () => {
-    this.uniqueNumberValues < this.MAX_HISTOGRAM_COLUMNS ? this.uniqueNumberValues : this.MAX_HISTOGRAM_COLUMNS
+  componentWillUnmount = () => {
+    this._isMounted = false
   }
 
-  getInitialNumberOfBuckets = () => {
+  getInitialBucketSize = (minValue, maxValue) => {
     // Using Sturge's rule https://www.statisticshowto.com/choose-bin-sizes-statistics/
-    const numBuckets = Math.round(1 + 3.322 * Math.log(this.props.data?.length))
-    return numBuckets
-  }
+    const initialNumBuckets = Math.round(1 + 3.322 * Math.log(this.props.data?.length))
 
-  setInitialBucketSize = (minValue, maxValue) => {
-    const initialNumBuckets = this.getInitialNumberOfBuckets()
     const bucketSizeRaw = (maxValue - minValue) / initialNumBuckets
-    this.bucketSize = roundUpToNearestMultiple(bucketSizeRaw, this.bucketStepSize)
-    if (this.bucketSize < this.minBucketSize) {
-      this.bucketSize = this.minBucketSize
-    } else if (this.bucketSize > this.maxBucketSize) {
-      this.bucketSize = this.maxBucketSize
+
+    let initialBucketSize = roundUpToNearestMultiple(bucketSizeRaw, this.bucketStepSize)
+    if (initialBucketSize < this.minBucketSize) {
+      initialBucketSize = this.minBucketSize
+    } else if (initialBucketSize > this.maxBucketSize) {
+      initialBucketSize = this.maxBucketSize
     }
+
+    return initialBucketSize
   }
 
   getBinData = (newBucketSize) => {
@@ -103,8 +119,8 @@ export default class ChataHistogram extends React.Component {
       this.maxBucketSize = this.minBucketSize + this.bucketStepSize
     }
 
-    if (!this.bucketSize || this.props.numberColumnIndex !== this.xScale?.columnIndex) {
-      this.setInitialBucketSize(minValue, maxValue)
+    if (!this.bucketSize || (this.xScale && this.props.numberColumnIndex !== this.xScale.columnIndex)) {
+      this.bucketSize = this.getInitialBucketSize(minValue, maxValue)
     }
 
     let bucketValue = roundUpToNearestMultiple(minValue, this.bucketSize)
@@ -157,6 +173,11 @@ export default class ChataHistogram extends React.Component {
     })
   }
 
+  onBucketSizeChange = (bucketSize) => {
+    this.setState({ bucketSize })
+    this.props.onBucketSizeChange(bucketSize)
+  }
+
   formatSliderLabel = (value) => {
     const sigDigits = this.bucketStepSize < 1 ? this.bucketStepSize.toString().split('.')[1].length : undefined
     return formatChartLabel({
@@ -186,7 +207,7 @@ export default class ChataHistogram extends React.Component {
         step={this.bucketStepSize}
         minLabel={this.formatSliderLabel(min)}
         maxLabel={this.formatSliderLabel(max)}
-        onChange={(bucketSize) => this.setState({ bucketSize })}
+        onChange={this.onBucketSizeChange}
         valueFormatter={this.formatSliderLabel}
         label='Interval size'
         showInput
