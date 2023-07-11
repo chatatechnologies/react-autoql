@@ -47,6 +47,7 @@ export default class ChataChart extends React.Component {
     this.HISTOGRAM_SLIDER_KEY = uuid()
 
     this.firstRender = true
+    this.bucketSize = props.bucketSize
     this.shouldRecalculateDimensions = false
 
     this.state = {
@@ -56,7 +57,6 @@ export default class ChataChart extends React.Component {
       deltaY: 0,
       isLoading: true,
       isLoadingMoreRows: false,
-      bucketSize: 0,
     }
   }
 
@@ -71,9 +71,13 @@ export default class ChataChart extends React.Component {
     ...chartContainerPropTypes,
 
     type: PropTypes.string.isRequired,
+    onBucketSizeChange: PropTypes.func,
   }
 
-  static defaultProps = chartContainerDefaultProps
+  static defaultProps = {
+    ...chartContainerDefaultProps,
+    onBucketSizeChange: () => {},
+  }
 
   componentDidMount = () => {
     this._isMounted = true
@@ -390,6 +394,11 @@ export default class ChataChart extends React.Component {
     }
   }
 
+  onBucketSizeChange = (bucketSize) => {
+    this.props.onBucketSizeChange(bucketSize)
+    this.bucketSize = bucketSize
+  }
+
   renderChartHeader = () => {
     let paddingLeft = this.state.deltaX - 10
     if (isMobile || paddingLeft < 0 || this.outerWidth < 300) {
@@ -512,7 +521,14 @@ export default class ChataChart extends React.Component {
         )
       }
       case 'histogram': {
-        return <ChataHistogram {...commonChartProps} bucketSize={this.state.bucketSize} portalRef={this.sliderRef} />
+        return (
+          <ChataHistogram
+            {...commonChartProps}
+            initialBucketSize={this.bucketSize}
+            onBucketSizeChange={this.onBucketSizeChange}
+            portalRef={this.sliderRef}
+          />
+        )
       }
       case 'scatterplot': {
         return <ChataScatterplotChart {...commonChartProps} />

@@ -694,13 +694,15 @@ export class DashboardTile extends React.Component {
     this.debouncedSetParamsForTile({ secondPageSize, secondQueryResponse })
   }
 
-  onAggConfigChange = (config) => this.debouncedSetParamsForTile({ aggConfig: config })
-  onDataConfigChange = (config) => this.debouncedSetParamsForTile({ dataConfig: config })
+  onAggConfigChange = (aggConfig) => this.debouncedSetParamsForTile({ aggConfig })
+  onDataConfigChange = (dataConfig) => this.debouncedSetParamsForTile({ dataConfig })
   onDisplayTypeChange = (displayType) => this.debouncedSetParamsForTile({ displayType })
+  onBucketSizeChange = (bucketSize) => this.debouncedSetParamsForTile({ bucketSize })
 
-  onSecondAggConfigChange = (config) => this.debouncedSetParamsForTile({ secondAggConfig: config })
-  onSecondDataConfigChange = (config) => this.debouncedSetParamsForTile({ secondDataConfig: config })
+  onSecondAggConfigChange = (secondAggConfig) => this.debouncedSetParamsForTile({ secondAggConfig })
+  onSecondDataConfigChange = (secondDataConfig) => this.debouncedSetParamsForTile({ secondDataConfig })
   onSecondDisplayTypeChange = (secondDisplayType) => this.debouncedSetParamsForTile({ secondDisplayType })
+  onSecondBucketSizeChange = (secondBucketSize) => this.debouncedSetParamsForTile({ secondBucketSize })
 
   reportProblemCallback = () => {
     if (this.optionsToolbarRef?._isMounted) {
@@ -1099,6 +1101,8 @@ export class DashboardTile extends React.Component {
         onDisplayTypeChange: this.onDisplayTypeChange,
         dataPageSize: this.props.tile.pageSize,
         onPageSizeChange: this.onPageSizeChange,
+        onBucketSizeChange: this.onBucketSizeChange,
+        bucketSize: this.props.tile.bucketSize
       },
       vizToolbarProps: {
         ref: (r) => (this.vizToolbarRef = r),
@@ -1174,6 +1178,8 @@ export class DashboardTile extends React.Component {
         onDisplayTypeChange: this.onSecondDisplayTypeChange,
         dataPageSize: this.props.tile.secondPageSize,
         onPageSizeChange: this.onSecondPageSizeChange,
+        onBucketSizeChange: this.onSecondBucketSizeChange,
+        bucketSize: this.props.tile.secondBucketSize
       },
       vizToolbarProps: {
         ref: (r) => (this.secondVizToolbarRef = r),

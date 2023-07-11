@@ -195,6 +195,8 @@ export class QueryOutput extends React.Component {
     allowDisplayTypeChange: PropTypes.bool,
     onRenderComplete: PropTypes.func,
     onMount: PropTypes.func,
+    onBucketSizeChange: PropTypes.func,
+    bucketSize: PropTypes.number
   }
 
   static defaultProps = {
@@ -230,6 +232,7 @@ export class QueryOutput extends React.Component {
     dataPageSize: undefined,
     allowDisplayTypeChange: true,
     showSingleValueResponseTitle: false,
+    bucketSize: undefined,
     onRowChange: () => {},
     onTableConfigChange: () => {},
     onAggConfigChange: () => {},
@@ -241,6 +244,7 @@ export class QueryOutput extends React.Component {
     onPageSizeChange: () => {},
     onRenderComplete: () => {},
     onMount: () => {},
+    onBucketSizeChange: () => {}
   }
 
   componentDidMount = () => {
@@ -2418,6 +2422,8 @@ export class QueryOutput extends React.Component {
           scope={this.props.scope}
           isRowCountSelectable={!this.isOriginalData || isDataLimited}
           queryFn={this.queryFn}
+          onBucketSizeChange={this.props.onBucketSizeChange}
+          bucketSize={this.props.bucketSize}
         />
       </ErrorBoundary>
     )
