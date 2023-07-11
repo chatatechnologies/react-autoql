@@ -21,24 +21,13 @@ export default class ChataHistogram extends React.Component {
   constructor(props) {
     super(props)
 
-    this.bucketSize = props.initialBucketSize
-    this.minNumBuckets = 5
-    this.maxNumBuckets = 20
-    this.bucketStepSize = 1
-
-    if (props.data.length < this.minNumBuckets) {
-      this.minNumBuckets = 2
-    }
-
-    if (props.data.length < this.maxNumBuckets) {
-      this.maxNumBuckets = props.data.length
-    }
-
-    this.setChartData(this.props, this.bucketSize)
+    this.bucketConfig = this.getDefaultBucketConfig(props, props.initialBucketSize)
 
     this.state = {
-      bucketSize: this.bucketSize,
+      bucketSize: props.initialBucketSize,
     }
+
+    this.setChartData(this.props, props.initialBucketSize)
   }
 
   static propTypes = {
@@ -68,17 +57,42 @@ export default class ChataHistogram extends React.Component {
     this._isMounted = false
   }
 
+  getDefaultBucketConfig = (props, bucketSize) => {
+    const DEFAULT_MIN_NUM_BUCKETS = 5
+    const DEFAULT_MAX_NUM_BUCKETS = 20
+    const DEFAULT_BUCKET_STEP_SIZE = 1
+
+    const defaultConfig = {
+      bucketSize,
+      minBucketSize: undefined,
+      maxBucketSize: undefined,
+      minNumBuckets: DEFAULT_MIN_NUM_BUCKETS,
+      maxNumBuckets: DEFAULT_MAX_NUM_BUCKETS,
+      bucketStepSize: DEFAULT_BUCKET_STEP_SIZE,
+    }
+
+    if (props?.data?.length < DEFAULT_MIN_NUM_BUCKETS) {
+      defaultConfig.minNumBuckets = 2
+    }
+
+    if (props?.data?.length < DEFAULT_MAX_NUM_BUCKETS) {
+      defaultConfig.maxNumBuckets = props.data.length
+    }
+
+    return defaultConfig
+  }
+
   getInitialBucketSize = (minValue, maxValue) => {
     // Using Sturge's rule https://www.statisticshowto.com/choose-bin-sizes-statistics/
-    const initialNumBuckets = Math.round(1 + 3.322 * Math.log(this.props.data?.length))
+    const initialNumBuckets =  Math.round(1 + Math.log2(this.props.data?.length));
 
     const bucketSizeRaw = (maxValue - minValue) / initialNumBuckets
 
-    let initialBucketSize = roundUpToNearestMultiple(bucketSizeRaw, this.bucketStepSize)
-    if (initialBucketSize < this.minBucketSize) {
-      initialBucketSize = this.minBucketSize
-    } else if (initialBucketSize > this.maxBucketSize) {
-      initialBucketSize = this.maxBucketSize
+    let initialBucketSize = roundUpToNearestMultiple(bucketSizeRaw, this.bucketConfig.bucketStepSize)
+    if (initialBucketSize < this.bucketConfig.minBucketSize) {
+      initialBucketSize = this.bucketConfig.minBucketSize
+    } else if (initialBucketSize > this.bucketConfig.maxBucketSize) {
+      initialBucketSize = this.bucketConfig.maxBucketSize
     }
 
     return initialBucketSize
@@ -93,42 +107,42 @@ export default class ChataHistogram extends React.Component {
       maxValue = maxValue + 1
     }
 
-    this.bucketSize = newBucketSize
-    const maxBucketSizeRaw = (maxValue - minValue) / (this.minNumBuckets ?? 1)
-    const minBucketSizeRaw = (maxValue - minValue) / (this.maxNumBuckets ?? 1)
+    this.bucketConfig.bucketSize = newBucketSize
+    const maxBucketSizeRaw = (maxValue - minValue) / (this.bucketConfig.minNumBuckets ?? 1)
+    const minBucketSizeRaw = (maxValue - minValue) / (this.bucketConfig.maxNumBuckets ?? 1)
 
     const bucketSizeRange = maxBucketSizeRaw - minBucketSizeRaw
     if (bucketSizeRange <= 10) {
       const avgNumSteps = 100
-      this.bucketStepSize = roundToNearestLog10(bucketSizeRange / avgNumSteps)
+      this.bucketConfig.bucketStepSize = roundToNearestLog10(bucketSizeRange / avgNumSteps)
     }
 
-    this.maxBucketSize = roundDownToNearestMultiple(
-      (maxValue - minValue) / (this.minNumBuckets ?? 1),
-      this.bucketStepSize,
+    this.bucketConfig.maxBucketSize = roundDownToNearestMultiple(
+      (maxValue - minValue) / (this.bucketConfig.minNumBuckets ?? 1),
+      this.bucketConfig.bucketStepSize,
     )
-    this.minBucketSize = roundUpToNearestMultiple(
-      (maxValue - minValue) / (this.maxNumBuckets ?? 1),
-      this.bucketStepSize,
+    this.bucketConfig.minBucketSize = roundUpToNearestMultiple(
+      (maxValue - minValue) / (this.bucketConfig.maxNumBuckets ?? 1),
+      this.bucketConfig.bucketStepSize,
     )
 
-    if (this.minBucketSize <= 0) {
-      this.minBucketSize = this.bucketStepSize
+    if (this.bucketConfig.minBucketSize <= 0) {
+      this.bucketConfig.minBucketSize = this.bucketConfig.bucketStepSize
     }
-    if (this.maxBucketSize === this.minBucketSize) {
-      this.maxBucketSize = this.minBucketSize + this.bucketStepSize
-    }
-
-    if (!this.bucketSize || (this.xScale && this.props.numberColumnIndex !== this.xScale.columnIndex)) {
-      this.bucketSize = this.getInitialBucketSize(minValue, maxValue)
+    if (this.bucketConfig.maxBucketSize === this.bucketConfig.minBucketSize) {
+      this.bucketConfig.maxBucketSize = this.bucketConfig.minBucketSize + this.bucketConfig.bucketStepSize
     }
 
-    let bucketValue = roundUpToNearestMultiple(minValue, this.bucketSize)
+    if (!this.bucketConfig.bucketSize) {
+      this.bucketConfig.bucketSize = this.getInitialBucketSize(minValue, maxValue)
+    }
+
+    let bucketValue = roundUpToNearestMultiple(minValue, this.bucketConfig.bucketSize)
 
     const bins = [bucketValue]
 
     while (bucketValue < maxValue) {
-      bucketValue += this.bucketSize
+      bucketValue += this.bucketConfig.bucketSize
       bins.push(bucketValue)
     }
 
@@ -148,9 +162,14 @@ export default class ChataHistogram extends React.Component {
   }
 
   setChartData = (props, bucketSize) => {
+    if (this.xScale && this.props.numberColumnIndex !== this.xScale.columnIndex) {
+      this.props.onBucketSizeChange(undefined)
+      this.bucketConfig = this.getDefaultBucketConfig(props)
+    }
+
     const uniqueNumberValues = props.data.map((d) => d[props.numberColumnIndex]).filter(onlyUnique).length
-    if (uniqueNumberValues < this.maxBucketSize) {
-      this.maxNumBuckets = uniqueNumberValues
+    if (uniqueNumberValues < this.bucketConfig.maxBucketSize) {
+      this.bucketConfig.maxNumBuckets = uniqueNumberValues
     }
 
     const { buckets, bins } = this.getBinData(bucketSize)
@@ -179,7 +198,7 @@ export default class ChataHistogram extends React.Component {
   }
 
   formatSliderLabel = (value) => {
-    const sigDigits = this.bucketStepSize < 1 ? this.bucketStepSize.toString().split('.')[1].length : undefined
+    const sigDigits = this.bucketConfig.bucketStepSize < 1 ? this.bucketConfig.bucketStepSize.toString().split('.')[1].length : undefined
     return formatChartLabel({
       d: value,
       column: this.props.columns[this.props.numberColumnIndex],
@@ -190,21 +209,21 @@ export default class ChataHistogram extends React.Component {
   }
 
   renderHistogramSlider = () => {
-    if (isNaN(this.bucketSize) || isNaN(this.minBucketSize) || isNaN(this.maxBucketSize)) {
+    if (isNaN(this.bucketConfig.bucketSize) || isNaN(this.bucketConfig.minBucketSize) || isNaN(this.bucketConfig.maxBucketSize)) {
       return null
     }
 
-    const min = this.minBucketSize
-    const max = this.maxBucketSize
+    const min = this.bucketConfig.minBucketSize
+    const max = this.bucketConfig.maxBucketSize
 
     return (
       <Slider
-        key={`${this.HISTOGRAM_SLIDER_KEY}`}
+        key={`${this.HISTOGRAM_SLIDER_KEY}-${this.props.numberColumnIndex}`}
         className='react-autoql-histogram-slider'
-        initialValue={this.bucketSize}
+        initialValue={this.bucketConfig.bucketSize}
         min={min}
         max={max}
-        step={this.bucketStepSize}
+        step={this.bucketConfig.bucketStepSize}
         minLabel={this.formatSliderLabel(min)}
         maxLabel={this.formatSliderLabel(max)}
         onChange={this.onBucketSizeChange}
