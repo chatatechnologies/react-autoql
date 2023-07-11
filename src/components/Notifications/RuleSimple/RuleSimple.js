@@ -703,7 +703,12 @@ export default class RuleSimple extends React.Component {
                 if (filter.operator === 'between' && !filter.value.includes(' and ')) {
                   operatorDisplay = ':'
                 }
-                const dateText = this.getFormattedDate(filter)
+
+                let dateText
+                if (filter.column_type !== 'AMOUNT') {
+                  dateText = this.getFormattedDate(filter)
+                }
+
                 let value = filter.value
                 if (filter.operator === 'like') {
                   value = `"${filter.value}"`

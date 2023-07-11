@@ -91,6 +91,7 @@ export const formatFiltersForAPI = (params, columns) => {
               .toISOString()
             filterObj.value = `${startDate},${endDate}`
             filterObj.operator = 'between'
+            filterObj.column_type = 'TIME'
             filterObj.displayValue = filter.value.replaceAll(' to ', ' and ')
           }
 

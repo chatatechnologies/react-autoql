@@ -26,14 +26,15 @@ export default class HistogramColumns extends Component {
     const newActiveKey = getKey(rowIndex)
 
     // TODO: enable this once the BE can support number range filters
-    // this.props.onChartClick({
-    //   activeKey: newActiveKey,
-    //   filter: {
-    //     name: this.props.columns[this.props.numberColumnIndex]?.name,
-    //     value: `${x0},${x1}`,
-    //     operator: 'between',
-    //   },
-    // })
+    this.props.onChartClick({
+      activeKey: newActiveKey,
+      filter: {
+        name: this.props.columns[this.props.numberColumnIndex]?.name,
+        value: `${x0},${x1}`,
+        operator: 'between',
+        column_type: "AMOUNT"
+      },
+    })
 
     this.setState({ activeKey: newActiveKey })
   }
