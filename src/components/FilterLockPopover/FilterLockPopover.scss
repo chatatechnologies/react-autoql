@@ -215,7 +215,9 @@
         padding-top: 1px;
         padding-bottom: 1px;
         padding-left: 5px;
-
+		&.mobile{
+			padding-right: 10px;
+		}
         .react-autoql-filter-list-item-filter {
           overflow: hidden;
           text-overflow: ellipsis;

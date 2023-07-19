@@ -25,6 +25,7 @@ import { authenticationDefault, getAuthentication } from '../../props/defaults'
 import { lang } from '../../js/Localization'
 
 import 'react-toastify/dist/ReactToastify.css'
+import { isMobile } from 'react-device-detect'
 
 export default class FilterLockPopover extends React.Component {
   constructor(props) {
@@ -694,7 +695,7 @@ export default class FilterLockPopover extends React.Component {
         data-test='react-autoql-filter-list-item'
         className={`react-autoql-filter-list-item ${
           this.state.highlightedFilter === key ? 'react-autoql-highlight-row' : ''
-        }`}
+        } ${isMobile ? 'mobile' : ''}`}
       >
         <div className='react-autoql-filter-list-item-filter'>{filter.value}</div>
         <div className='react-autoql-filter-list-item-actions'>
