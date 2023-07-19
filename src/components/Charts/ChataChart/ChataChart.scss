@@ -8,6 +8,9 @@
 
   .react-autoql-slider-wrapper {
     font-size: var(--react-autoql-chart-font-size, 12px);
+	&.mobile{
+		font-size: 9px;
+	}
   }
 }
 
