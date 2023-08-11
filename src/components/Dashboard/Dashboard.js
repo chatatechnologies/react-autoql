@@ -606,7 +606,8 @@ class DashboardWithoutTheme extends React.Component {
       return {
         ...tile,
         i: tile.key,
-        maxH: 12,
+        h: tile.h > 10 ? 10 : tile.h,
+        maxH: 10,
         minH: 2,
         minW: 3,
       }
@@ -647,7 +648,7 @@ class DashboardWithoutTheme extends React.Component {
             authentication={this.props.authentication}
             cancelQueriesOnUnmount={this.props.cancelQueriesOnUnmount}
             autoQLConfig={this.props.autoQLConfig}
-            tile={{ ...tile, i: tile.key, maxH: 12, minH: 2, minW: 3 }}
+            tile={{ ...tile, i: tile.key, maxH: 10, minH: 2, minW: 3 }}
             displayType={tile.displayType}
             secondDisplayType={tile.secondDisplayType}
             secondDisplayPercentage={tile.secondDisplayPercentage}
