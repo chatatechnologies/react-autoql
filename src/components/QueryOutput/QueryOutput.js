@@ -1051,6 +1051,7 @@ export class QueryOutput extends React.Component {
   constructFilter = ({ column, value }) => {
     let formattedValue = value
     let operator = '='
+    let column_type
 
     if (formattedValue === null) {
       formattedValue = 'NULL'
@@ -1063,12 +1064,14 @@ export class QueryOutput extends React.Component {
 
       formattedValue = `${isoDateStart},${isoDateEnd}`
       operator = 'between'
+      column_type = 'TIME'
     }
 
     return {
       name: column.name,
       operator,
       value: formattedValue,
+      column_type
     }
   }
 
