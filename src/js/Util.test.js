@@ -537,12 +537,10 @@ describe('getSupportedDisplayTypes', () => {
         data: {
           row_limit: 50,
           display_type: 'data',
-          persistent_locked_conditions: [],
           interpretation:
             'total online sales by Month between 2023-01-01T00:00:00.000Z and 2023-12-31T23:59:59.000Z (Date)',
           condition_filter: [],
           query_id: 'q_LqQ3sg__QxiYCwXPXDcIYA',
-          session_locked_conditions: [],
           chart_images: null,
           sql: [''],
           rows: [
@@ -616,12 +614,12 @@ describe('getSupportedDisplayTypes', () => {
             test: false,
             date_format: 'ISO8601',
             chart_images: 'exclude',
-            session_locked_conditions: {},
+            session_filter_locks: [],
+            persistent_filter_locks: [],
             filters: [],
             source: 'data_messenger',
             translation: 'exclude',
             disambiguation: [],
-            session_filter_conditions: [],
             text: 'total online sales this year by month',
             page_size: 50,
             orders: [],

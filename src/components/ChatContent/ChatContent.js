@@ -340,8 +340,8 @@ export default class ChatContent extends React.Component {
 
   getAppliedFilters = (response) => {
     try {
-      let persistedFilters = response?.data?.data?.persistent_locked_conditions
-      let sessionFilters = response?.data?.data?.session_locked_conditions
+      let persistedFilters = response?.data?.data?.fe_req?.persistent_filter_locks
+      let sessionFilters = response?.data?.data?.fe_req?.session_filter_locks
 
       if (!Array.isArray(persistedFilters)) {
         persistedFilters = []
