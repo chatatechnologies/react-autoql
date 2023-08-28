@@ -733,12 +733,7 @@ export class QueryOutput extends React.Component {
       this.tableData = newTableData
     } else {
       const columns = cols || this.getColumns()
-
-      if (!this.isDataLimited()) {
-        this.tableData = sortDataByDate(this.queryResponse?.data?.data?.rows, columns, 'desc', 'isTable')
-      } else {
-        this.tableData = this.queryResponse?.data?.data?.rows
-      }
+      this.tableData = this.queryResponse?.data?.data?.rows
 
       this.setTableConfig()
       if (this._isMounted) {
