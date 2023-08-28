@@ -16,7 +16,7 @@ const getLabelFromRow = ({ row, index, columns, dataFormatting }) => {
 }
 
 const addValuesToAggDataset = ({ numberIndices, columns, datasetsToAggregate, row }) => {
-  numberIndices.forEach((index) => {
+  numberIndices.filter(onlyUnique).forEach((index) => {
     const column = columns[index]
     if (column.visible) {
       const value = Number(row[index])
@@ -77,6 +77,8 @@ export const aggregateData = ({ data, aggColIndex, columns, numberIndices, dataF
     return data
   }
 
+  const validatedNumberIndices = numberIndices.filter(onlyUnique)
+
   const aggregatedData = []
   const sortedData = _sortBy(data, (row) => row?.[aggColIndex])
 
@@ -99,7 +101,7 @@ export const aggregateData = ({ data, aggColIndex, columns, numberIndices, dataF
       datasetsToAggregate = {}
     }
 
-    addValuesToAggDataset({ numberIndices, columns, datasetsToAggregate, row: currentRow })
+    addValuesToAggDataset({ numberIndices: validatedNumberIndices, columns, datasetsToAggregate, row: currentRow })
     if (isLastRow) {
       const lastRow = aggregateRow(currentRow, datasetsToAggregate, columns)
       aggregatedData.push(lastRow)

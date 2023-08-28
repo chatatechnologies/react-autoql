@@ -19,7 +19,7 @@ import { ChataColumnLineChart } from '../ChataColumnLine'
 import { ChataHistogram } from '../ChataHistogram'
 import { Spinner } from '../../Spinner'
 
-import { svgToPng, getBBoxFromRef, sortDataByDate, deepEqual, rotateArray } from '../../../js/Util.js'
+import { svgToPng, getBBoxFromRef, sortDataByDate, deepEqual, rotateArray, onlyUnique } from '../../../js/Util.js'
 
 import {
   chartContainerDefaultProps,
@@ -198,7 +198,7 @@ export default class ChataChart extends React.Component {
     } else {
       const indices1 = props.numberColumnIndices ?? []
       const indices2 = props.numberColumnIndices2 ?? []
-      const numberIndices = [...indices1, ...indices2]
+      const numberIndices = [...indices1, ...indices2].filter(onlyUnique)
 
       if (!numberIndices.length) {
         return
