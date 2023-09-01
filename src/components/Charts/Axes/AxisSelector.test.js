@@ -3,8 +3,8 @@ import { mount } from 'enzyme'
 import AxisSelector from './AxisSelector'
 import sampleProps from '../chartTestData'
 import { findByTestAttr } from '../../../../test/testUtils'
-import { getBandScale, getLinearScale } from '../helpers'
 import { getNumberColumnIndices, getStringColumnIndices } from '../../QueryOutput/columnHelpers'
+import { getBandScale, getLinearScale } from 'autoql-fe-utils'
 
 const pivotSampleProps = sampleProps.pivot
 const defaultProps = AxisSelector.defaultProps
@@ -26,7 +26,7 @@ describe('renders correctly', () => {
     const wrapper = setup({
       ...pivotSampleProps,
       scale: getLinearScale({
-        props: pivotSampleProps,
+        ...pivotSampleProps,
         columnIndices: getNumberColumnIndices(pivotSampleProps.columns)?.numberColumnIndices,
       }),
       // scale: pivotSampleProps.numberScale({
@@ -48,7 +48,7 @@ describe('renders correctly', () => {
     const wrapper = setup({
       ...pivotSampleProps,
       scale: getBandScale({
-        props: pivotSampleProps,
+        ...pivotSampleProps,
         stringColumnIndices: getStringColumnIndices(pivotSampleProps.columns)?.stringColumnIndices,
       }),
       // pivotSampleProps.stringScale({

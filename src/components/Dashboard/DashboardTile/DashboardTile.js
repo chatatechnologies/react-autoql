@@ -2,7 +2,6 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import axios from 'axios'
-import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import Autosuggest from 'react-autosuggest'
 import SplitterLayout from 'react-splitter-layout'
@@ -14,7 +13,7 @@ import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import LoadingDots from '../../LoadingDots/LoadingDots.js'
 import { Icon } from '../../Icon'
 import { responseErrors } from '../../../js/errorMessages'
-import { deepEqual, isChartType, mergeSources } from '../../../js/Util'
+import { deepEqual, isChartType } from '../../../js/Util'
 import { hideTooltips } from '../../Tooltip'
 
 import { runQuery, fetchAutocomplete } from '../../../js/queryService'
@@ -28,8 +27,9 @@ import {
   getAutoQLConfig,
 } from '../../../props/defaults'
 
-import './DashboardTile.scss'
 import { Button } from '../../Button'
+
+import './DashboardTile.scss'
 
 let autoCompleteArray = []
 
@@ -49,6 +49,28 @@ export class DashboardTile extends React.Component {
     this.callbackArray = []
 
     const tile = props.tile
+
+    // ----- Required for backwards compatibility after changing the agg types to enums ----
+    const newAggConfig = {}
+    tile?.aggConfig &&
+      Object.keys(tile.aggConfig)?.forEach((column) => {
+        newAggConfig[column] = tile.aggConfig[column].toUpperCase()
+      })
+
+    const newSecondAggConfig = {}
+    tile?.secondAggConfig &&
+      Object.keys(tile.secondAggConfig)?.forEach((column) => {
+        newSecondAggConfig[column] = tile.secondAggConfig[column].toUpperCase()
+      })
+
+    props.setParamsForTile(
+      {
+        aggConfig: newAggConfig,
+        secondAggConfig: newSecondAggConfig,
+      },
+      tile.i,
+    )
+    // -------------------------------------------------------------------------------------
 
     this.state = {
       query: tile.query,
@@ -316,7 +338,7 @@ export class DashboardTile extends React.Component {
     const skipValidation = skipQueryValidation || (this.props.tile.skipQueryValidation && !queryChanged)
 
     const queryValidationSelections =
-      userSelection || (queryChanged ? undefined : _get(this.props.tile, 'queryValidationSelections'))
+      userSelection || (queryChanged ? undefined : this.props.tile?.queryValidationSelections)
 
     // New query is running, reset temporary state fields
     this.debouncedSetParamsForTile({
@@ -359,7 +381,7 @@ export class DashboardTile extends React.Component {
     const skipValidation = skipQueryValidation || (this.props.tile.secondskipQueryValidation && !queryChanged)
 
     const queryValidationSelections =
-      userSelection || (queryChanged ? undefined : _get(this.props.tile, 'secondQueryValidationSelections'))
+      userSelection || (queryChanged ? undefined : this.props.tile?.secondQueryValidationSelections)
 
     // New query is running, reset temporary state fields
     this.debouncedSetParamsForTile({
@@ -561,7 +583,7 @@ export class DashboardTile extends React.Component {
       })
         .then((response) => {
           if (this._isMounted) {
-            const body = _get(response, 'data.data')
+            const body = response?.data?.data
 
             const sortingArray = []
             let suggestionsMatchArray = []
@@ -743,7 +765,7 @@ export class DashboardTile extends React.Component {
         }}
         onDragEnd={() => {
           this.dragEndTimeout = setTimeout(() => {
-            const percentString = _get(this.tileInnerDiv, 'style.height', '')
+            const percentString = this.tileInnerDiv?.style?.height ?? ''
             const percentNumber = Number(percentString.substring(0, percentString.length - 1))
 
             if (!isNaN(percentNumber)) {
@@ -1091,7 +1113,7 @@ export class DashboardTile extends React.Component {
         onAggConfigChange: this.onAggConfigChange,
         queryValidationSelections: this.props.tile.queryValidationSelections,
         onSuggestionClick: this.onSuggestionClick,
-        defaultSelectedSuggestion: _get(this.props.tile, 'defaultSelectedSuggestion'),
+        defaultSelectedSuggestion: this.props.tile?.defaultSelectedSuggestion,
         onNoneOfTheseClick: this.onNoneOfTheseClick,
         onDrilldownStart: this.onDrilldownStart,
         onDrilldownEnd: this.props.onDrilldownEnd,
@@ -1102,7 +1124,7 @@ export class DashboardTile extends React.Component {
         dataPageSize: this.props.tile.pageSize,
         onPageSizeChange: this.onPageSizeChange,
         onBucketSizeChange: this.onBucketSizeChange,
-        bucketSize: this.props.tile.bucketSize
+        bucketSize: this.props.tile.bucketSize,
       },
       vizToolbarProps: {
         ref: (r) => (this.vizToolbarRef = r),
@@ -1161,7 +1183,7 @@ export class DashboardTile extends React.Component {
         onAggConfigChange: this.onSecondAggConfigChange,
         queryValidationSelections: this.props.tile.secondQueryValidationSelections,
         onSuggestionClick: this.onSecondSuggestionClick,
-        defaultSelectedSuggestion: _get(this.props.tile, 'secondDefaultSelectedSuggestion'),
+        defaultSelectedSuggestion: this.props.tile?.secondDefaultSelectedSuggestion,
         reportProblemCallback: this.secondReportProblemCallback,
         onNoneOfTheseClick: this.secondOnNoneOfTheseClick,
         onDrilldownStart: (activeKey) => {
@@ -1179,7 +1201,7 @@ export class DashboardTile extends React.Component {
         dataPageSize: this.props.tile.secondPageSize,
         onPageSizeChange: this.onSecondPageSizeChange,
         onBucketSizeChange: this.onSecondBucketSizeChange,
-        bucketSize: this.props.tile.secondBucketSize
+        bucketSize: this.props.tile.secondBucketSize,
       },
       vizToolbarProps: {
         ref: (r) => (this.secondVizToolbarRef = r),

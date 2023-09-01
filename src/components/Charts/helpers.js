@@ -9,7 +9,8 @@ import { deepEqual, formatElement, getCurrencySymbol, getDayJSObj } from '../../
 import { getColumnTypeAmounts } from '../QueryOutput/columnHelpers'
 import { dataFormattingType } from '../../props/types'
 import { dataFormattingDefault } from '../../props/defaults'
-import { AGG_TYPES, DAYJS_PRECISION_FORMATS, NUMBER_COLUMN_TYPES } from '../../js/Constants'
+import { DAYJS_PRECISION_FORMATS, NUMBER_COLUMN_TYPES } from '../../js/Constants'
+import { AGG_TYPES } from 'autoql-fe-utils'
 
 const DEFAULT_INNER_PADDING = 0.2
 const DEFAULT_OUTER_PADDING = 0.5
@@ -197,7 +198,7 @@ export const getTooltipContent = ({
         : column1.tooltipTitle ?? column1.title
 
       if (aggregated) {
-        const aggTypeDisplayName = AGG_TYPES.find((agg) => agg.value === column1.aggType)?.displayName
+        const aggTypeDisplayName = AGG_TYPES[column1.aggType]?.displayName
         if (aggTypeDisplayName) {
           column1Title = `${column1Title} (${aggTypeDisplayName})`
         }
@@ -256,7 +257,7 @@ export const getLegendLabelsForMultiSeries = (columns, colorScale, numberColumnI
       const column = columns[columnIndex]
       let label = column.title
       if (!allAggTypesSame) {
-        const aggTypeDisplayName = AGG_TYPES.find((agg) => agg.value === column?.aggType)?.displayName
+        const aggTypeDisplayName = AGG_TYPES[column?.aggType]?.displayName
         if (aggTypeDisplayName) {
           label = `${label} (${aggTypeDisplayName})`
         }
@@ -572,7 +573,7 @@ export const getUnitsForColumn = (column, useAgg = true) => {
 
   let aggUnit
   if (useAgg && column.aggType) {
-    aggUnit = AGG_TYPES.find((aggType) => aggType.value === column.aggType)?.unit
+    aggUnit = AGG_TYPES[column.aggType]?.unit
   }
 
   switch (aggUnit) {
@@ -634,7 +635,7 @@ export const getLinearAxisTitle = ({ numberColumns, aggregated }) => {
       const aggTypeArray = numberColumns.map((col) => col.aggType)
       const allAggTypesEqual = !aggTypeArray.find((agg) => agg !== aggTypeArray[0])
       if (allAggTypesEqual) {
-        const aggName = AGG_TYPES.find((agg) => agg.value === aggTypeArray[0])?.displayName
+        const aggName = AGG_TYPES[aggTypeArray[0]]?.displayName
         if (aggName) {
           title = `${title} (${aggName})`
         }

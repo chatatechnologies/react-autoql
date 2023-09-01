@@ -7,16 +7,11 @@ import { SelectableList } from '../../SelectableList'
 import { Button } from '../../Button'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { Checkbox } from '../../Checkbox'
-import { AGG_TYPES, NUMBER_COLUMN_TYPES, NUMBER_COLUMN_TYPE_DISPLAY_NAMES } from '../../../js/Constants'
+import { NUMBER_COLUMN_TYPES, NUMBER_COLUMN_TYPE_DISPLAY_NAMES } from '../../../js/Constants'
 import { Select } from '../../Select'
 import { rebuildTooltips } from '../../Tooltip'
 import { isMobile } from 'react-device-detect'
-
-const aggHTMLCodes = {
-  sum: <>&Sigma;</>,
-  avg: <>&mu;</>,
-  count: <>#</>,
-}
+import { AGG_TYPES } from 'autoql-fe-utils'
 
 export default class NumberAxisSelector extends React.Component {
   constructor(props) {
@@ -103,7 +98,7 @@ export default class NumberAxisSelector extends React.Component {
       const checked = this.state.checkedColumns.includes(i)
       const disabled = otherAxisColumns.includes(i)
 
-      const aggTypeObj = AGG_TYPES.find((agg) => agg.value === col.aggType)
+      const aggTypeObj = AGG_TYPES[col.aggType]
 
       const item = {
         key: `selectable-list-item-${this.COMPONENT_KEY}-${type}-${i}`,
@@ -121,17 +116,17 @@ export default class NumberAxisSelector extends React.Component {
                 showArrow={false}
                 align='start'
                 size='small'
-                options={AGG_TYPES.map((agg) => {
+                options={Object.keys(AGG_TYPES).map((agg) => {
                   return {
-                    value: agg.value,
-                    label: aggHTMLCodes[agg.value],
+                    value: AGG_TYPES[agg].value,
+                    label: AGG_TYPES[agg].symbol,
                     listLabel: (
                       <span>
-                        <span className='agg-select-list-symbol'>{aggHTMLCodes[agg.value]}</span>
-                        {agg.displayName}
+                        <span className='agg-select-list-symbol'>{AGG_TYPES[agg].symbol}</span>
+                        {AGG_TYPES[agg].displayName}
                       </span>
                     ),
-                    tooltip: agg.tooltip,
+                    tooltip: AGG_TYPES[agg].tooltip,
                   }
                 })}
                 onChange={(value) => {

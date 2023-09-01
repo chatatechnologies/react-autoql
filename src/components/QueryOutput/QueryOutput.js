@@ -77,6 +77,7 @@ import { formatTableParams } from '../ChataTable/tableHelpers'
 import { withTheme } from '../../theme'
 
 import './QueryOutput.scss'
+import { AggTypes } from 'autoql-fe-utils'
 
 export class QueryOutput extends React.Component {
   constructor(props) {
@@ -196,7 +197,7 @@ export class QueryOutput extends React.Component {
     onRenderComplete: PropTypes.func,
     onMount: PropTypes.func,
     onBucketSizeChange: PropTypes.func,
-    bucketSize: PropTypes.number
+    bucketSize: PropTypes.number,
   }
 
   static defaultProps = {
@@ -244,7 +245,7 @@ export class QueryOutput extends React.Component {
     onPageSizeChange: () => {},
     onRenderComplete: () => {},
     onMount: () => {},
-    onBucketSizeChange: () => {}
+    onBucketSizeChange: () => {},
   }
 
   componentDidMount = () => {
@@ -1066,7 +1067,7 @@ export class QueryOutput extends React.Component {
       name: column.name,
       operator,
       value: formattedValue,
-      column_type
+      column_type,
     }
   }
 
@@ -1869,7 +1870,7 @@ export class QueryOutput extends React.Component {
         aggType = aggConfig[col.name]
       }
       if (isListQuery && isColumnNumberType(col)) {
-        newCol.aggType = aggType || 'sum'
+        newCol.aggType = aggType || AggTypes.SUM
       }
 
       // Check if a date range is available

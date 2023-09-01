@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { scaleOrdinal } from 'd3-scale'
 import { isMobile } from 'react-device-detect'
+import { aggregateData } from 'autoql-fe-utils'
 
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { ChataColumnChart } from '../ChataColumnChart'
@@ -30,7 +31,6 @@ import {
   mergeBboxes,
 } from '../helpers.js'
 
-import { aggregateData } from './aggregate'
 import { getChartColorVars, getThemeValue } from '../../../theme/configureTheme'
 import { getDateColumnIndex, isColumnDateType } from '../../QueryOutput/columnHelpers'
 import { DATE_ONLY_CHART_TYPES, DOUBLE_AXIS_CHART_TYPES, CHARTS_WITHOUT_AGGREGATED_DATA } from '../../../js/Constants'

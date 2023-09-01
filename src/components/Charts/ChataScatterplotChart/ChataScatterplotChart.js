@@ -1,17 +1,18 @@
 import React, { Component } from 'react'
 import { Axes } from '../Axes'
 import { Points } from '../Points'
-import { chartDefaultProps, chartPropTypes, getLinearScale, getMinAndMaxValues } from '../helpers.js'
+import { chartDefaultProps, chartPropTypes, getMinAndMaxValues } from '../helpers.js'
 import { getNumberColumnIndices } from '../../QueryOutput/columnHelpers'
 import { deepEqual } from '../../../js/Util'
+import { getLinearScale } from 'autoql-fe-utils'
 
 export default class ChataScatterplotChart extends Component {
   constructor(props) {
     super(props)
 
     this.state = {
-      isXScaled: false,
-      isYScaled: false,
+      isXScaled: true,
+      isYScaled: true,
     }
   }
 
@@ -51,7 +52,7 @@ export default class ChataScatterplotChart extends Component {
     const xMinValue = xMinMax.minValue
 
     this.xScale = getLinearScale({
-      props,
+      ...props,
       minValue: xMinValue,
       maxValue: xMaxValue,
       axis: 'x',
@@ -66,7 +67,7 @@ export default class ChataScatterplotChart extends Component {
     const yMinValue = yMinMax.minValue
 
     this.yScale = getLinearScale({
-      props,
+      ...props,
       minValue: yMinValue,
       maxValue: yMaxValue,
       axis: 'y',

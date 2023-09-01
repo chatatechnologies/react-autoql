@@ -1,11 +1,12 @@
 import React, { Component } from 'react'
-import { deepEqual } from '../../../js/Util'
+import { getBandScale, getLinearScales } from 'autoql-fe-utils'
 
 import { Axes } from '../Axes'
 import { Bars } from '../Bars'
-
-import { getBandScale, chartPropTypes, chartDefaultProps, getLinearScales } from '../helpers.js'
 import { rebuildTooltips } from '../../Tooltip'
+
+import { chartPropTypes, chartDefaultProps } from '../helpers.js'
+import { deepEqual } from '../../../js/Util'
 
 export default class ChataBarChart extends Component {
   constructor(props) {
@@ -39,16 +40,18 @@ export default class ChataBarChart extends Component {
     }
 
     this.yScale = getBandScale({
-      props,
+      ...props,
       columnIndex: props.stringColumnIndex,
+      config: props.dataFormatting,
       axis: 'y',
     })
 
     const xScalesAndTicks = getLinearScales({
-      props,
+      ...props,
+      config: props.dataFormatting,
       columnIndices1: numberColumnIndices,
-      axis: 'x',
       isScaled: this.state?.isChartScaled,
+      axis: 'x',
     })
 
     this.xScale = xScalesAndTicks.scale
