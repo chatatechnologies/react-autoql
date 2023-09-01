@@ -25,10 +25,9 @@ import {
   isColumnNumberType,
 } from '../components/QueryOutput/columnHelpers'
 
-import { getObjSize, getMaxValueFromKeyValueObj, getMinValueFromKeyValueObj } from '../components/Charts/helpers'
+import {getMinValueFromKeyValueObj, getMaxValueFromKeyValueObj, getObjSize} from 'autoql-fe-utils'
 
 import responseTestCases from '../../test/responseTestCases'
-import { formatChartLabel } from 'autoql-fe-utils'
 
 const sampleListResponse = {
   data: {

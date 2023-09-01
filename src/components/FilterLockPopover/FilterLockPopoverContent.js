@@ -215,7 +215,9 @@ export default class FilterLockPopover extends React.Component {
         }
 
         sortingArray.sort((a, b) => {
-          return a.keyword?.toUpperCase() < b.keyword?.toUpperCase() ? -1 : a.keyword > b.keyword ? 1 : 0
+          const aText = a.format_txt ?? a.keyword
+          const bText = b.format_txt ?? b.keyword
+          return aText.toUpperCase() < bText.toUpperCase() ? -1 : aText > bText ? 1 : 0
         })
         for (let idx = 0; idx < sortingArray.length; idx++) {
           const anObject = {

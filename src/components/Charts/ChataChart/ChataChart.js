@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { scaleOrdinal } from 'd3-scale'
 import { isMobile } from 'react-device-detect'
-import { aggregateData } from 'autoql-fe-utils'
+import { aggregateData, getLegendLabelsForMultiSeries } from 'autoql-fe-utils'
 
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { ChataColumnChart } from '../ChataColumnChart'
@@ -26,7 +26,6 @@ import {
   chartContainerDefaultProps,
   chartContainerPropTypes,
   dataStructureChanged,
-  getLegendLabelsForMultiSeries,
   getLegendLocation,
   mergeBboxes,
 } from '../helpers.js'

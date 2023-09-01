@@ -14,8 +14,8 @@ import {
   roundUpToNearestMultiple,
   roundToNearestLog10,
 } from '../../../js/Util'
-import { chartDefaultProps, chartPropTypes, convertToNumber, getBinLinearScale, getHistogramScale } from '../helpers.js'
-import { formatChartLabel } from 'autoql-fe-utils'
+import { chartDefaultProps, chartPropTypes, convertToNumber } from '../helpers.js'
+import { formatChartLabel,  getBinLinearScale, getHistogramScale } from 'autoql-fe-utils'
 
 export default class ChataHistogram extends React.Component {
   constructor(props) {
@@ -182,7 +182,7 @@ export default class ChataHistogram extends React.Component {
     this.bins = bins
 
     this.xScale = getBinLinearScale({
-      props,
+      ...props,
       columnIndex: props.numberColumnIndex,
       axis: 'x',
       buckets: this.buckets,
@@ -190,7 +190,7 @@ export default class ChataHistogram extends React.Component {
     })
 
     this.yScale = getHistogramScale({
-      props,
+      ...props,
       axis: 'y',
       buckets: this.buckets,
       columnIndex: props.numberColumnIndex,

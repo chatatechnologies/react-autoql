@@ -1,10 +1,9 @@
 import React, { Component } from 'react'
 import { Axes } from '../Axes'
 import { Points } from '../Points'
-import { chartDefaultProps, chartPropTypes, getMinAndMaxValues } from '../helpers.js'
-import { getNumberColumnIndices } from '../../QueryOutput/columnHelpers'
+import { chartDefaultProps, chartPropTypes } from '../helpers.js'
 import { deepEqual } from '../../../js/Util'
-import { getLinearScale } from 'autoql-fe-utils'
+import { getLinearScale, getMinAndMaxValues, getNumberColumnIndices } from 'autoql-fe-utils'
 
 export default class ChataScatterplotChart extends Component {
   constructor(props) {

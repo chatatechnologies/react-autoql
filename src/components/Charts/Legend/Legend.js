@@ -11,9 +11,9 @@ import { symbol, symbolSquare } from 'd3-shape'
 import legendColor from '../D3Legend/D3Legend'
 
 import { deepEqual, removeFromDOM } from '../../../js/Util.js'
-import { getLegendLabelsForMultiSeries, mergeBboxes } from '../helpers'
+import { mergeBboxes } from '../helpers'
 import { NUMBER_COLUMN_TYPE_DISPLAY_NAMES } from '../../../js/Constants'
-import { AGG_TYPES } from 'autoql-fe-utils'
+import { AGG_TYPES, getLegendLabelsForMultiSeries } from 'autoql-fe-utils'
 
 export default class Legend extends Component {
   constructor(props) {

@@ -112,13 +112,13 @@ export default class NumberAxisSelector extends React.Component {
                 popoverBoundaryElement={this.popoverContentRef}
                 tooltipID={this.props.tooltipID}
                 tooltip={aggTypeObj.tooltip}
-                value={col.aggType}
+                value={aggTypeObj.type}
                 showArrow={false}
                 align='start'
                 size='small'
                 options={Object.keys(AGG_TYPES).map((agg) => {
                   return {
-                    value: AGG_TYPES[agg].value,
+                    value: AGG_TYPES[agg].type,
                     label: AGG_TYPES[agg].symbol,
                     listLabel: (
                       <span>

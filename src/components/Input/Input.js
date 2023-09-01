@@ -131,6 +131,7 @@ export default class Input extends React.Component {
             ) : (
               <div className='react-autoql-input-and-icon'>
                 <input
+                  autoComplete={false}
                   {...nativeProps}
                   ref={(r) => (this.inputRef = r)}
                   className={`react-autoql-input
