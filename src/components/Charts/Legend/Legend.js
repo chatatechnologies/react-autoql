@@ -3,12 +3,11 @@ import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.clonedeep'
 import { v4 as uuid } from 'uuid'
 import { isMobile } from 'react-device-detect'
+import { legendColor } from 'autoql-fe-utils'
 
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
 import { symbol, symbolSquare } from 'd3-shape'
-
-import legendColor from '../D3Legend/D3Legend'
 
 import { deepEqual, removeFromDOM } from '../../../js/Util.js'
 import { mergeBboxes } from '../helpers'

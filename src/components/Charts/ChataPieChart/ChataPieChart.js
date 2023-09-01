@@ -7,14 +7,14 @@ import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
 import { pie, arc } from 'd3-shape'
 import { entries } from 'd3-collection'
-import legendColor from '../D3Legend/D3Legend'
+import { legendColor } from 'autoql-fe-utils'
 
+import { rebuildTooltips } from '../../Tooltip'
 import { deepEqual, formatElement, removeFromDOM } from '../../../js/Util'
 import { chartDefaultProps, chartPropTypes, getTooltipContent } from '../helpers'
 import { getChartColorVars } from '../../../theme/configureTheme'
 
 import 'd3-transition'
-import { rebuildTooltips } from '../../Tooltip'
 
 export default class ChataPieChart extends Component {
   constructor(props) {
