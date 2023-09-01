@@ -3,10 +3,7 @@ import { shallow, mount } from 'enzyme'
 import { findByTestAttr, checkProps } from '../../../test/testUtils'
 import { DataMessenger } from './DataMessenger'
 import responseTestCases from '../../../test/responseTestCases'
-import * as queryService from '../../js/queryService'
-import sampleTopicsResponse from '../../../test/sampleTopicsResponse.json'
 
-queryService.fetchTopics = jest.fn().mockResolvedValue(sampleTopicsResponse)
 const defaultProps = DataMessenger.defaultProps
 
 const setup = (props = {}, state = null) => {

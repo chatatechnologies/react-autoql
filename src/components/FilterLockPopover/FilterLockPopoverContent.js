@@ -7,6 +7,7 @@ import { ToastContainer, toast } from 'react-toastify'
 import { Slide } from 'react-toastify'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
+import { fetchVLAutocomplete, setFilters, unsetFilterFromAPI } from 'autoql-fe-utils'
 
 import { Radio } from '../Radio'
 import { Icon } from '../Icon'
@@ -18,7 +19,6 @@ import { CustomScrollbars } from '../CustomScrollbars'
 import { responseErrors } from '../../js/errorMessages'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { fetchVLAutocomplete, setFilters, unsetFilterFromAPI } from '../../js/queryService'
 import { authenticationType } from '../../props/types'
 import { authenticationDefault, getAuthentication } from '../../props/defaults'
 

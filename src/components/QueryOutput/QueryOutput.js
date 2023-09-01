@@ -8,6 +8,7 @@ import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
 import parse from 'html-react-parser'
 import axios from 'axios'
+import { AggTypes, sendSuggestion, runDrilldown, runQueryOnly } from 'autoql-fe-utils'
 
 import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
 import {
@@ -63,7 +64,6 @@ import {
   getColumnTypeAmounts,
 } from './columnHelpers.js'
 
-import { sendSuggestion, runDrilldown, runQueryOnly } from '../../js/queryService'
 import {
   MONTH_NAMES,
   DEFAULT_DATA_PAGE_SIZE,
@@ -77,7 +77,6 @@ import { formatTableParams } from '../ChataTable/tableHelpers'
 import { withTheme } from '../../theme'
 
 import './QueryOutput.scss'
-import { AggTypes } from 'autoql-fe-utils'
 
 export class QueryOutput extends React.Component {
   constructor(props) {

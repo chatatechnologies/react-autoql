@@ -5,6 +5,7 @@ import axios from 'axios'
 import _cloneDeep from 'lodash.clonedeep'
 import Autosuggest from 'react-autosuggest'
 import SplitterLayout from 'react-splitter-layout'
+import { runQuery, fetchAutocomplete } from 'autoql-fe-utils'
 
 import { QueryOutput } from '../../QueryOutput'
 import { VizToolbar } from '../../VizToolbar'
@@ -15,8 +16,6 @@ import { Icon } from '../../Icon'
 import { responseErrors } from '../../../js/errorMessages'
 import { deepEqual, isChartType } from '../../../js/Util'
 import { hideTooltips } from '../../Tooltip'
-
-import { runQuery, fetchAutocomplete } from '../../../js/queryService'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
 import {
