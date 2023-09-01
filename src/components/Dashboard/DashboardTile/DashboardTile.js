@@ -107,6 +107,7 @@ export class DashboardTile extends React.Component {
     onCSVDownloadFinish: PropTypes.func,
     enableAjaxTableData: PropTypes.bool,
     cancelQueriesOnUnmount: PropTypes.bool,
+    setParamsForTile: PropTypes.func,
   }
 
   static defaultProps = {
@@ -134,6 +135,7 @@ export class DashboardTile extends React.Component {
     onCSVDownloadFinish: () => {},
     onTouchStart: () => {},
     onTouchEnd: () => {},
+    setParamsForTile: () => {},
   }
 
   componentDidMount = () => {
