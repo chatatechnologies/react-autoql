@@ -267,10 +267,12 @@ export default class FilterLockPopover extends React.Component {
 
     const newFilter = {
       value: suggestion.keyword,
+      format_txt: suggestion.format_txt,
       show_message: suggestion.show_message,
       key: suggestion.canonical,
       filter_type: filterType,
     }
+
     return newFilter
   }
 
@@ -522,19 +524,21 @@ export default class FilterLockPopover extends React.Component {
   }
 
   renderSuggestion = ({ name }) => {
-    if (!name.keyword) {
+    if (!name.format_txt || !name.keyword) {
       return null
     }
+
+    const displayName = name.format_txt ?? name.keyword
 
     return (
       <ul
         className='filter-lock-suggestion-item'
         data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
         data-delay-show={800}
-        data-tip={`${name.keyword} <em>(${name.show_message})</em>`}
+        data-tip={`${displayName} <em>(${name.show_message})</em>`}
       >
         <span>
-          {name.keyword} <em>({name.show_message})</em>
+          {displayName} <em>({name.show_message})</em>
         </span>
       </ul>
     )
