@@ -25,7 +25,6 @@ import {
   isColumnNumberType,
   isColumnStringType,
 } from '../components/QueryOutput/columnHelpers'
-import { range } from 'd3-array'
 
 export const rotateArray = (array, n) => {
   const rotated = [...array]
