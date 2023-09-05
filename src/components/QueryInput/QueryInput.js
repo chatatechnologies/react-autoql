@@ -399,7 +399,7 @@ class QueryInput extends React.Component {
       onFocus: this.moveCaretAtEnd,
       spellCheck: false,
       autoFocus: true,
-      autoComplete: false,
+      autoComplete: 'false',
     }
 
     return (
