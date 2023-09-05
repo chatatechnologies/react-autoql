@@ -1,7 +1,8 @@
 import React, { Fragment } from 'react'
 import axios from 'axios'
-import { get, shuffle } from 'lodash'
-import { fetchExploreQueries } from 'autoql-fe-utils'
+// remove until we reignite this speechtotext page
+// import { get, shuffle } from 'lodash'
+// import { fetchExploreQueries } from 'autoql-fe-utils'
 import { Input, Button, Form, Table } from 'antd'
 import { PlayCircleOutlined } from '@ant-design/icons'
 import { SpeechToTextButton } from 'react-autoql'
@@ -20,18 +21,19 @@ export default class SpeechToTextPage extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
-    this._isMounted &&
-      fetchExploreQueries({
-        ...this.props.authentication,
-        keywords: '',
-        pageSize: 200,
-        pageNumber: 1,
-      }).then((response) => {
-        if (get(response, 'data.data.items.length')) {
-          const randomized = shuffle(response.data.data.items)
-          this._isMounted && this.setState({ queryList: randomized })
-        }
-      })
+    // remove until we reignite this speechtotext page
+    // this._isMounted &&
+    //   fetchExploreQueries({
+    //     ...this.props.authentication,
+    //     keywords: '',
+    //     pageSize: 200,
+    //     pageNumber: 1,
+    //   }).then((response) => {
+    //     if (get(response, 'data.data.items.length')) {
+    //       const randomized = shuffle(response.data.data.items)
+    //       this._isMounted && this.setState({ queryList: randomized })
+    //     }
+    //   })
   }
 
   componentWillUnmount = () => {
