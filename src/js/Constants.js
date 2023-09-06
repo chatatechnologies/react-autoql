@@ -93,65 +93,6 @@ export const DAYJS_PRECISION_FORMATS = {
   DATE_MINUTE: 'll h:mmA',
 }
 
-export const DEFAULT_AGG_TYPE = 'sum'
-
-export const AGG_TYPES = [
-  {
-    displayName: 'Sum',
-    value: 'sum',
-    unit: 'inherit',
-    tooltip: '<strong>Sum:</strong> Values that have the same chart axis label will be added up.',
-  },
-  {
-    displayName: 'Avg',
-    value: 'avg',
-    unit: 'inherit',
-    tooltip: '<strong>Average:</strong> Values that have the same chart axis label will be averaged.',
-  },
-  // {
-  //   displayName: 'Median',
-  //   value: 'median',
-  //   unit: 'inherit',
-  //   tooltip: 'The median (middle) value will be shown for all data points with same label.',
-  // },
-  // {
-  //   displayName: 'Minimum',
-  //   value: 'min',
-  //   unit: 'inherit',
-  //   tooltip: 'The smallest value will be shown for all data points with same label.',
-  // },
-  // {
-  //   displayName: 'Maximum',
-  //   value: 'max',
-  //   unit: 'inherit',
-  //   tooltip: 'The largest value will be shown for all data points with same label.',
-  // },
-  // {
-  //   displayName: 'Standard deviation',
-  //   value: 'deviation',
-  //   unit: 'none',
-  //   tooltip: 'The standard deviation will be shown for all data points with the same label.',
-  // },
-  // {
-  //   displayName: 'Variance',
-  //   value: 'variance',
-  //   unit: 'none',
-  //   tooltip: 'The variance will be shown for all data points with the same label.',
-  // },
-  {
-    displayName: 'Count',
-    value: 'count',
-    unit: 'none',
-    tooltip:
-      '<strong>Count:</strong> The total number of non-blank values will be shown for all data points with the same label.',
-  },
-  // {
-  //   displayName: 'Distinct Count',
-  //   value: 'count-distinct',
-  //   unit: 'none',
-  // },
-]
-
 export const MAX_LEGEND_LABELS = 22
 export const MIN_HISTOGRAM_SAMPLE = 20
 

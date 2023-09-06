@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { scaleOrdinal } from 'd3-scale'
 import { isMobile } from 'react-device-detect'
+import { aggregateData, getLegendLabelsForMultiSeries } from 'autoql-fe-utils'
 
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { ChataColumnChart } from '../ChataColumnChart'
@@ -19,18 +20,16 @@ import { ChataColumnLineChart } from '../ChataColumnLine'
 import { ChataHistogram } from '../ChataHistogram'
 import { Spinner } from '../../Spinner'
 
-import { svgToPng, getBBoxFromRef, sortDataByDate, deepEqual, rotateArray } from '../../../js/Util.js'
+import { svgToPng, getBBoxFromRef, sortDataByDate, deepEqual, rotateArray, onlyUnique } from '../../../js/Util.js'
 
 import {
   chartContainerDefaultProps,
   chartContainerPropTypes,
   dataStructureChanged,
-  getLegendLabelsForMultiSeries,
   getLegendLocation,
   mergeBboxes,
 } from '../helpers.js'
 
-import { aggregateData } from './aggregate'
 import { getChartColorVars, getThemeValue } from '../../../theme/configureTheme'
 import { getDateColumnIndex, isColumnDateType } from '../../QueryOutput/columnHelpers'
 import { DATE_ONLY_CHART_TYPES, DOUBLE_AXIS_CHART_TYPES, CHARTS_WITHOUT_AGGREGATED_DATA } from '../../../js/Constants'
@@ -198,7 +197,7 @@ export default class ChataChart extends React.Component {
     } else {
       const indices1 = props.numberColumnIndices ?? []
       const indices2 = props.numberColumnIndices2 ?? []
-      const numberIndices = [...indices1, ...indices2]
+      const numberIndices = [...indices1, ...indices2].filter(onlyUnique)
 
       if (!numberIndices.length) {
         return

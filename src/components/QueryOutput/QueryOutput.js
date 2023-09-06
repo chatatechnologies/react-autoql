@@ -8,6 +8,7 @@ import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
 import parse from 'html-react-parser'
 import axios from 'axios'
+import { AggTypes, sendSuggestion, runDrilldown, runQueryOnly } from 'autoql-fe-utils'
 
 import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
 import {
@@ -63,7 +64,6 @@ import {
   getColumnTypeAmounts,
 } from './columnHelpers.js'
 
-import { sendSuggestion, runDrilldown, runQueryOnly } from '../../js/queryService'
 import {
   MONTH_NAMES,
   DEFAULT_DATA_PAGE_SIZE,
@@ -196,7 +196,7 @@ export class QueryOutput extends React.Component {
     onRenderComplete: PropTypes.func,
     onMount: PropTypes.func,
     onBucketSizeChange: PropTypes.func,
-    bucketSize: PropTypes.number
+    bucketSize: PropTypes.number,
   }
 
   static defaultProps = {
@@ -244,7 +244,7 @@ export class QueryOutput extends React.Component {
     onPageSizeChange: () => {},
     onRenderComplete: () => {},
     onMount: () => {},
-    onBucketSizeChange: () => {}
+    onBucketSizeChange: () => {},
   }
 
   componentDidMount = () => {
@@ -733,12 +733,7 @@ export class QueryOutput extends React.Component {
       this.tableData = newTableData
     } else {
       const columns = cols || this.getColumns()
-
-      if (!this.isDataLimited()) {
-        this.tableData = sortDataByDate(this.queryResponse?.data?.data?.rows, columns, 'desc', 'isTable')
-      } else {
-        this.tableData = this.queryResponse?.data?.data?.rows
-      }
+      this.tableData = this.queryResponse?.data?.data?.rows
 
       this.setTableConfig()
       if (this._isMounted) {
@@ -1071,7 +1066,7 @@ export class QueryOutput extends React.Component {
       name: column.name,
       operator,
       value: formattedValue,
-      column_type
+      column_type,
     }
   }
 
@@ -1874,7 +1869,7 @@ export class QueryOutput extends React.Component {
         aggType = aggConfig[col.name]
       }
       if (isListQuery && isColumnNumberType(col)) {
-        newCol.aggType = aggType || 'sum'
+        newCol.aggType = aggType || AggTypes.SUM
       }
 
       // Check if a date range is available

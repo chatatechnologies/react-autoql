@@ -5,7 +5,6 @@ import {
   makeEmptyArray,
   formatEpochDate,
   formatStringDate,
-  formatChartLabel,
   formatElement,
   getNumberOfGroupables,
   getGroupableColumns,
@@ -26,7 +25,7 @@ import {
   isColumnNumberType,
 } from '../components/QueryOutput/columnHelpers'
 
-import { getObjSize, getMaxValueFromKeyValueObj, getMinValueFromKeyValueObj } from '../components/Charts/helpers'
+import {getMinValueFromKeyValueObj, getMaxValueFromKeyValueObj, getObjSize} from 'autoql-fe-utils'
 
 import responseTestCases from '../../test/responseTestCases'
 
@@ -318,13 +317,12 @@ describe('formatChartLabel', () => {
   // })
 
   describe('long labels get truncated', () => {
-    const d = 'This is a really long label that should get cut off at around 35 characters'
-    const col = { type: 'STRING' }
-    const label = formatChartLabel({ d, col })
+    // const d = 'This is a really long label that should get cut off at around 35 characters'
+    // const column = { type: 'STRING' }
+    // const label = formatChartLabel({ d, column })
     // test('isTruncated is true', () => {
     //   expect(label.isTruncated).toBeTruthy()
     // })
-
     // test('string is shortened with ellipsis', () => {
     //   expect(label.formattedLabel).toEqual('This is a really lon...')
     // })

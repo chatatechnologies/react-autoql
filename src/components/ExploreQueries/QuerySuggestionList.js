@@ -1,10 +1,10 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
+import { fetchDataExplorerSuggestions } from 'autoql-fe-utils'
 
 import { InfiniteScroll } from '../InfiniteScroll'
 import { QueryValidationMessage } from '../QueryValidationMessage'
-import { fetchDataExplorerSuggestions } from '../../js/queryService'
 import { LoadingDots } from '../LoadingDots'
 import { Spinner } from '../Spinner'
 import { Icon } from '../Icon'

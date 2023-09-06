@@ -2,7 +2,8 @@ import React, { Component } from 'react'
 import { Axes } from '../Axes'
 import { StackedColumns } from '../StackedColumns'
 
-import { chartDefaultProps, chartPropTypes, getBandScale, getLinearScales } from '../helpers.js'
+import { chartDefaultProps, chartPropTypes } from '../helpers.js'
+import { getBandScale, getLinearScales } from 'autoql-fe-utils'
 
 export default class ChataStackedColumnChart extends Component {
   constructor(props) {
@@ -19,13 +20,13 @@ export default class ChataStackedColumnChart extends Component {
     }
 
     this.xScale = getBandScale({
-      props,
+      ...props,
       columnIndex: props.stringColumnIndex,
       axis: 'x',
     })
 
     const yScales = getLinearScales({
-      props,
+      ...props,
       columnIndices1: numberColumnIndices,
       axis: 'y',
       stacked: true,

@@ -1,9 +1,11 @@
 import React, { Fragment } from 'react'
 import axios from 'axios'
-import _ from 'lodash'
+// remove until we reignite this speechtotext page
+// import { get, shuffle } from 'lodash'
+// import { fetchExploreQueries } from 'autoql-fe-utils'
 import { Input, Button, Form, Table } from 'antd'
 import { PlayCircleOutlined } from '@ant-design/icons'
-import { SpeechToTextButton, fetchExploreQueries } from 'react-autoql'
+import { SpeechToTextButton } from 'react-autoql'
 
 export default class SpeechToTextPage extends React.Component {
   state = {
@@ -19,18 +21,19 @@ export default class SpeechToTextPage extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
-    this._isMounted &&
-      fetchExploreQueries({
-        ...this.props.authentication,
-        keywords: '',
-        pageSize: 200,
-        pageNumber: 1,
-      }).then((response) => {
-        if (_.get(response, 'data.data.items.length')) {
-          const randomized = _.shuffle(response.data.data.items)
-          this._isMounted && this.setState({ queryList: randomized })
-        }
-      })
+    // remove until we reignite this speechtotext page
+    // this._isMounted &&
+    //   fetchExploreQueries({
+    //     ...this.props.authentication,
+    //     keywords: '',
+    //     pageSize: 200,
+    //     pageNumber: 1,
+    //   }).then((response) => {
+    //     if (get(response, 'data.data.items.length')) {
+    //       const randomized = shuffle(response.data.data.items)
+    //       this._isMounted && this.setState({ queryList: randomized })
+    //     }
+    //   })
   }
 
   componentWillUnmount = () => {
@@ -67,7 +70,7 @@ export default class SpeechToTextPage extends React.Component {
           this.setState({ hasPlayedBack: true })
         }
       },
-      false
+      false,
     )
   }
 
@@ -97,22 +100,16 @@ export default class SpeechToTextPage extends React.Component {
           query,
           audio: (
             <Button
-              shape="circle"
-              type="primary"
+              shape='circle'
+              type='primary'
               onClick={() => {
                 this.replayBlob(blob)
               }}
               icon={<PlayCircleOutlined />}
             ></Button>
           ),
-          librispeech:
-            response.data[
-              'translated text from checkpoint librispeech_pretrained_model.pth'
-            ],
-          ted:
-            response.data[
-              'translated text from checkpoint ted_pretrained_model.pth'
-            ],
+          librispeech: response.data['translated text from checkpoint librispeech_pretrained_model.pth'],
+          ted: response.data['translated text from checkpoint ted_pretrained_model.pth'],
         },
         ...this.state.resultHistory,
       ]
@@ -135,9 +132,7 @@ export default class SpeechToTextPage extends React.Component {
             })
           }}
         />
-        <div>
-          {this.state.queryList[this.state.currentQuery] || 'Say anything!'}
-        </div>
+        <div>{this.state.queryList[this.state.currentQuery] || 'Say anything!'}</div>
         {!!this.state.queryList.length && (
           <Button
             style={{ marginTop: '20px' }}
@@ -157,33 +152,31 @@ export default class SpeechToTextPage extends React.Component {
       <Fragment>
         <Button
           style={{ margin: '10px' }}
-          shape="circle"
-          type="primary"
+          shape='circle'
+          type='primary'
           onClick={() => {
             this.replayBlob(this.state.currentBlob, true)
           }}
-          size="large"
+          size='large'
           icon={<PlayCircleOutlined />}
         ></Button>
         <div>{this.state.queryList[this.state.currentQuery] || ''}</div>
         <Button
           style={{ marginTop: '20px' }}
-          type="primary"
+          type='primary'
           disabled={!this.state.hasPlayedBack}
           onClick={() =>
             this.sendWavFile(
               this.state.currentFile,
               this.state.currentBlob,
-              this.state.queryList[this.state.currentQuery]
+              this.state.queryList[this.state.currentQuery],
             )
           }
         >
           Approve Recording
         </Button>
         {!this.state.hasPlayedBack && (
-          <div style={{ fontSize: '12px' }}>
-            To approve this recording, you must listen to it first
-          </div>
+          <div style={{ fontSize: '12px' }}>To approve this recording, you must listen to it first</div>
         )}
         <br />
         <Button
@@ -243,31 +236,20 @@ export default class SpeechToTextPage extends React.Component {
         {this.state.isAuthenticated ? (
           <Fragment>
             <div style={{ padding: '5px', textAlign: 'center' }}>
-              {this.state.isConfirmingRecording
-                ? this.renderConfirmRecording()
-                : this.renderS2TButtonAndQuery()}
+              {this.state.isConfirmingRecording ? this.renderConfirmRecording() : this.renderS2TButtonAndQuery()}
             </div>
             {
               <div style={{ marginTop: '50px' }}>
-                <Table
-                  dataSource={this.state.resultHistory}
-                  columns={columns}
-                  pagination={false}
-                />
+                <Table dataSource={this.state.resultHistory} columns={columns} pagination={false} />
               </div>
             }
           </Fragment>
         ) : (
-          <Form
-            onFinish={this.login}
-            style={{ width: '300px', padding: '20px' }}
-          >
+          <Form onFinish={this.login} style={{ width: '300px', padding: '20px' }}>
             <Form.Item
-              label="Username"
-              name="username"
-              rules={[
-                { required: true, message: 'Please enter your username' },
-              ]}
+              label='Username'
+              name='username'
+              rules={[{ required: true, message: 'Please enter your username' }]}
             >
               <Input
                 onChange={(e) => {
@@ -277,14 +259,12 @@ export default class SpeechToTextPage extends React.Component {
               />
             </Form.Item>
             <Form.Item
-              label="Password"
-              name="password"
-              rules={[
-                { required: true, message: 'Please enter your password' },
-              ]}
+              label='Password'
+              name='password'
+              rules={[{ required: true, message: 'Please enter your password' }]}
             >
               <Input
-                type="password"
+                type='password'
                 onChange={(e) => {
                   this.setState({ password: e.target.value })
                 }}
@@ -292,11 +272,7 @@ export default class SpeechToTextPage extends React.Component {
               />
             </Form.Item>
             <Form.Item {...tailLayout}>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={this.state.isAuthenticating}
-              >
+              <Button type='primary' htmlType='submit' loading={this.state.isAuthenticating}>
                 Authenticate
               </Button>
             </Form.Item>

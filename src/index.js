@@ -24,6 +24,5 @@ export {
 } from './components/Notifications'
 export { Icon } from './components/Icon'
 export { getSupportedDisplayTypes, getDefaultDisplayType, isDisplayTypeValid } from './js/Util.js'
-export { fetchExploreQueries } from './js/queryService'
 export { LoadingDots } from './components/LoadingDots'
 export { configureTheme } from './theme'

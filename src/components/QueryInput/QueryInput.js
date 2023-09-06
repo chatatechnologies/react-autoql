@@ -4,10 +4,14 @@ import { v4 as uuid } from 'uuid'
 import axios from 'axios'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
-import errorMessages, { responseErrors } from '../../js/errorMessages'
-import { hideTooltips, Tooltip } from '../Tooltip'
 import { isMobile } from 'react-device-detect'
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
+import Autosuggest from 'react-autosuggest'
+import SpeechToTextButtonBrowser from '../SpeechToTextButton/SpeechToTextButtonBrowser'
+import { runQuery, runQueryOnly, fetchAutocomplete } from 'autoql-fe-utils'
+
+import { hideTooltips } from '../Tooltip'
+import { Icon } from '../Icon'
+
 import {
   authenticationDefault,
   autoQLConfigDefault,
@@ -15,11 +19,8 @@ import {
   getAuthentication,
   getAutoQLConfig,
 } from '../../props/defaults'
-
-import { Icon } from '../Icon'
-import { runQuery, runQueryOnly, fetchAutocomplete } from '../../js/queryService'
-import Autosuggest from 'react-autosuggest'
-import SpeechToTextButtonBrowser from '../SpeechToTextButton/SpeechToTextButtonBrowser'
+import errorMessages, { responseErrors } from '../../js/errorMessages'
+import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { animateInputText, deepEqual, mergeSources } from '../../js/Util'
@@ -398,6 +399,7 @@ class QueryInput extends React.Component {
       onFocus: this.moveCaretAtEnd,
       spellCheck: false,
       autoFocus: true,
+      autoComplete: 'false',
     }
 
     return (

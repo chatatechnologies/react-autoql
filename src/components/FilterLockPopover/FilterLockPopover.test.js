@@ -6,13 +6,12 @@ import { currentEventLoopEnd } from '../../js/Util'
 import FilterLockPopover from './FilterLockPopover'
 import FilterLockPopoverContent from './FilterLockPopoverContent'
 
-import * as queryService from '../../js/queryService'
 import filterResponse from '../../../test/sampleFiltersResponse.json'
-import sampleVLResponse from '../../../test/sampleVLAutocompleteResponse.json'
+// import sampleVLResponse from '../../../test/sampleVLAutocompleteResponse.json'
 
-queryService.fetchFilters = jest.fn().mockResolvedValue(filterResponse)
-queryService.unsetFilterFromAPI = jest.fn().mockResolvedValue(filterResponse)
-queryService.fetchVLAutocomplete = jest.fn().mockResolvedValue(sampleVLResponse)
+// queryService.fetchFilters = jest.fn().mockResolvedValue(filterResponse)
+// queryService.unsetFilterFromAPI = jest.fn().mockResolvedValue(filterResponse)
+// queryService.fetchVLAutocomplete = jest.fn().mockResolvedValue(sampleVLResponse)
 
 const defaultProps = FilterLockPopoverContent.defaultProps
 const sampleAuth = {
