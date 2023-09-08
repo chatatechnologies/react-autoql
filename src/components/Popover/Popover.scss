@@ -23,11 +23,13 @@
       height: 100%;
       width: 100%;
       display: flex;
+      overflow: hidden;
 
       .popover-arrow-container-content {
         display: flex;
         flex-direction: column;
         flex: 1;
+        overflow: hidden;
       }
     }
 

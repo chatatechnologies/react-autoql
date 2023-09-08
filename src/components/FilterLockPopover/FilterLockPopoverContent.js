@@ -526,11 +526,11 @@ export default class FilterLockPopover extends React.Component {
   }
 
   renderSuggestion = ({ name }) => {
-    if (!name.format_txt || !name.keyword) {
+    const displayName = name.format_txt ?? name.keyword
+
+    if (!displayName) {
       return null
     }
-
-    const displayName = name.format_txt ?? name.keyword
 
     return (
       <ul
@@ -703,7 +703,7 @@ export default class FilterLockPopover extends React.Component {
           this.state.highlightedFilter === key ? 'react-autoql-highlight-row' : ''
         } ${isMobile ? 'mobile' : ''}`}
       >
-        <div className='react-autoql-filter-list-item-filter'>{filter.value}</div>
+        <div className='react-autoql-filter-list-item-filter'>{filter.format_txt ?? filter.value}</div>
         <div className='react-autoql-filter-list-item-actions'>
           <Checkbox
             className='persist-toggle'
