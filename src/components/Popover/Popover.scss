@@ -17,6 +17,7 @@
     border: none;
     background-color: transparent;
     padding: 0 !important;
+    overflow: hidden;
 
     .popover-arrow-container {
       border-radius: 4px;
@@ -44,6 +45,11 @@
       padding: 10px;
       box-sizing: border-box;
       flex: 1;
+      overflow: hidden;
+
+      .scrollbar-container {
+        padding: 0 10px;
+      }
     }
 
     .popover-arrow {
