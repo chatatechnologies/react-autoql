@@ -53,13 +53,17 @@ export class DashboardTile extends React.Component {
     const newAggConfig = {}
     tile?.aggConfig &&
       Object.keys(tile.aggConfig)?.forEach((column) => {
-        newAggConfig[column] = tile.aggConfig[column].toUpperCase()
+        if (tile.aggConfig?.[column]) {
+          newAggConfig[column] = tile.aggConfig[column].toUpperCase()
+        }
       })
 
     const newSecondAggConfig = {}
     tile?.secondAggConfig &&
       Object.keys(tile.secondAggConfig)?.forEach((column) => {
-        newSecondAggConfig[column] = tile.secondAggConfig[column].toUpperCase()
+        if (tile.secondAggConfig?.[column]) {
+          newSecondAggConfig[column] = tile.secondAggConfig[column].toUpperCase()
+        }
       })
 
     props.setParamsForTile(
