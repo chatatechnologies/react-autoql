@@ -12,7 +12,6 @@ import {
   PRECISION_TYPES,
   WEEKDAY_NAMES_SUN,
   MAX_LEGEND_LABELS,
-  MIN_HISTOGRAM_SAMPLE,
 } from './Constants'
 import { dataFormattingDefault, getDataFormatting } from '../props/defaults'
 
@@ -25,6 +24,7 @@ import {
   isColumnNumberType,
   isColumnStringType,
 } from '../components/QueryOutput/columnHelpers'
+import { getSupportedDisplayTypes } from 'autoql-fe-utils'
 
 export const rotateArray = (array, n) => {
   const rotated = [...array]
@@ -899,140 +899,6 @@ export const isSingleValueResponse = (response) => {
   return false
 }
 
-export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotDataLength, isDataLimited } = {}) => {
-  try {
-    if (!response?.data?.data?.display_type) {
-      return []
-    }
-    // There should be 3 types: data, suggestion, help
-    const displayType = response.data.data.display_type
-
-    if (displayType === 'suggestion' || displayType === 'help' || displayType === 'html') {
-      return [displayType]
-    }
-
-    const rows = response?.data?.data?.rows ?? []
-    const allColumns = columns || response?.data?.data?.columns
-    const visibleColumns = getVisibleColumns(allColumns)
-
-    if (!visibleColumns?.length) {
-      return ['text']
-    }
-
-    if (isSingleValueResponse(response)) {
-      return ['single-value']
-    }
-
-    if (!rows?.length) {
-      return ['table']
-    }
-
-    const maxRowsForPieChart = 10
-    const numRows = dataLength ?? rows.length
-
-    let pivotDataHasLength = true
-    const pivotDataLengthProvided = pivotDataLength !== undefined && pivotDataLength !== null
-    if (pivotDataLengthProvided) {
-      pivotDataHasLength = !!pivotDataLength
-    }
-
-    if (supportsRegularPivotTable(visibleColumns, numRows, response?.data?.data?.rows)) {
-      // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
-      const supportedDisplayTypes = ['table']
-
-      if (!isDataLimited) {
-        supportedDisplayTypes.push('pivot_table')
-      }
-
-      if (
-        // Comment out for now so chart row count doesnt change display type
-        // numRows <= maxRowsForPivot &&
-        pivotDataHasLength
-      ) {
-        supportedDisplayTypes.push('stacked_column', 'stacked_bar', 'column', 'bar', 'bubble', 'heatmap')
-
-        if (hasDateColumn(visibleColumns)) {
-          supportedDisplayTypes.push('stacked_line', 'line')
-        }
-      }
-      // Comment out for now so chart row count doesnt change display type
-      // else if (numRows > maxRowsForPivot) {
-      //   console.warn('Supported Display Types: Rows exceeded 1000, only allowing regular table display type')
-      // }
-
-      return supportedDisplayTypes
-    } else if (supports2DCharts(visibleColumns, numRows)) {
-      // If there is at least one string column and one number
-      // column, we should be able to chart anything
-      const supportedDisplayTypes = ['table', 'column', 'bar']
-
-      if (numRows > MIN_HISTOGRAM_SAMPLE) {
-        supportedDisplayTypes.push('histogram')
-      }
-
-      if (hasDateColumn(visibleColumns)) {
-        supportedDisplayTypes.push('line')
-      }
-
-      if (numRows > 1 && numRows <= maxRowsForPieChart) {
-        supportedDisplayTypes.push('pie')
-      }
-
-      const { amountOfNumberColumns } = getColumnTypeAmounts(visibleColumns)
-      if (amountOfNumberColumns > 1) {
-        supportedDisplayTypes.push('column_line')
-        supportedDisplayTypes.push('scatterplot')
-        // supportedDisplayTypes.push('histogram')
-      }
-
-      // Check if date pivot should be supported
-      if (!isDataLimited && supportsDatePivotTable(visibleColumns, numRows)) {
-        // create pivot based on month and year
-        const dateColumnIndex = visibleColumns.findIndex((col) => col.type === 'DATE' || col.type === 'DATE_STRING')
-        const dateColumn = visibleColumns[dateColumnIndex]
-        const data = _get(response, 'data.data.rows')
-        const uniqueYears = []
-        data.forEach((row) => {
-          const year = formatElement({
-            element: row[dateColumnIndex],
-            column: dateColumn,
-            config: { monthYearFormat: 'YYYY', dayMonthYearFormat: 'YYYY' },
-          })
-
-          if (!uniqueYears.includes(year)) {
-            uniqueYears.push(year)
-          }
-        })
-
-        if (uniqueYears.length > 1) {
-          supportedDisplayTypes.push('pivot_table')
-        }
-      }
-
-      return supportedDisplayTypes
-    }
-
-    // We should always be able to display the table type by default
-    return ['table']
-  } catch (error) {
-    console.error(error)
-    return ['table']
-  }
-}
-
-export const isDisplayTypeValid = (response, displayType, dataLength, pivotDataLength, columns, isDataLimited) => {
-  const supportedDisplayTypes = getSupportedDisplayTypes({
-    response,
-    columns: columns ?? response?.data?.data?.columns,
-    dataLength,
-    pivotDataLength,
-    isDataLimited,
-  })
-  const isValid = displayType && supportedDisplayTypes.includes(displayType)
-
-  return isValid
-}
-
 export const getFirstChartDisplayType = (supportedDisplayTypes, fallback) => {
   const chartType = supportedDisplayTypes.find((displayType) => isChartType(displayType))
   if (chartType) {
@@ -1048,72 +914,6 @@ export const hasData = (response) => {
   }
 
   return _get(response, 'data.data.rows.length') && _get(response, 'data.data.rows.length')
-}
-
-export const getDefaultDisplayType = (
-  response,
-  defaultToChart,
-  columns,
-  dataLength,
-  pivotDataLength,
-  preferredDisplayType,
-  isDataLimited,
-) => {
-  const supportedDisplayTypes = getSupportedDisplayTypes({
-    response,
-    columns: columns ?? response?.data?.data?.columns,
-    dataLength,
-    pivotDataLength,
-    isDataLimited,
-  })
-
-  if (preferredDisplayType && supportedDisplayTypes.includes(preferredDisplayType)) {
-    return preferredDisplayType
-  }
-
-  const responseDisplayType = _get(response, 'data.data.display_type')
-
-  if (supportedDisplayTypes.includes(preferredDisplayType)) {
-    return preferredDisplayType
-  }
-
-  // If the display type is a recognized non-chart or non-table type
-  if (responseDisplayType === 'suggestion' || responseDisplayType === 'help' || responseDisplayType === 'html') {
-    return responseDisplayType
-  }
-
-  if (supportedDisplayTypes.length === 1) {
-    return supportedDisplayTypes[0]
-  }
-
-  // We want to default on pivot table if it is one of the supported types
-  if (supportedDisplayTypes.includes('pivot_table')) {
-    let displayType = 'pivot_table'
-
-    if (defaultToChart) {
-      displayType = isAggregation(_get(response, 'data.data.columns'))
-        ? getFirstChartDisplayType(supportedDisplayTypes, 'pivot_table')
-        : 'pivot_table'
-    }
-
-    return displayType
-  }
-
-  // If there is no display type in the response, but there is tabular data, default to regular table
-  if ((!responseDisplayType && hasData(response)) || responseDisplayType === 'data') {
-    let displayType = 'table'
-
-    if (defaultToChart) {
-      displayType = isAggregation(_get(response, 'data.data.columns'))
-        ? getFirstChartDisplayType(supportedDisplayTypes, 'table')
-        : 'table'
-    }
-
-    return displayType
-  }
-
-  // Default to plain text
-  return 'text'
 }
 
 export const getKeyByValue = (object, value) => {

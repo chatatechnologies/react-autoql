@@ -8,7 +8,16 @@ import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
 import parse from 'html-react-parser'
 import axios from 'axios'
-import { AggTypes, sendSuggestion, runDrilldown, runQueryOnly } from 'autoql-fe-utils'
+import {
+  AggTypes,
+  sendSuggestion,
+  runDrilldown,
+  runQueryOnly,
+  getSupportedDisplayTypes,
+  getNumberColumnIndices,
+  isDisplayTypeValid,
+  getDefaultDisplayType,
+} from 'autoql-fe-utils'
 
 import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
 import {
@@ -33,9 +42,6 @@ import {
   onlyUnique,
   formatElement,
   makeEmptyArray,
-  getSupportedDisplayTypes,
-  getDefaultDisplayType,
-  isDisplayTypeValid,
   getGroupBysFromPivotTable,
   getGroupBysFromTable,
   isTableType,
@@ -56,7 +62,6 @@ import {
 import {
   isColumnNumberType,
   isColumnStringType,
-  getNumberColumnIndices,
   getDateColumnIndex,
   getStringColumnIndices,
   isAggregation,

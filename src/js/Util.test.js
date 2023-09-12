@@ -12,9 +12,6 @@ import {
   isTableType,
   supportsRegularPivotTable,
   supports2DCharts,
-  getSupportedDisplayTypes,
-  isDisplayTypeValid,
-  getDefaultDisplayType,
   nameValueObject,
 } from './Util'
 
@@ -25,7 +22,14 @@ import {
   isColumnNumberType,
 } from '../components/QueryOutput/columnHelpers'
 
-import {getMinValueFromKeyValueObj, getMaxValueFromKeyValueObj, getObjSize} from 'autoql-fe-utils'
+import {
+  getMinValueFromKeyValueObj,
+  getMaxValueFromKeyValueObj,
+  getObjSize,
+  getSupportedDisplayTypes,
+  isDisplayTypeValid,
+  getDefaultDisplayType,
+} from 'autoql-fe-utils'
 
 import responseTestCases from '../../test/responseTestCases'
 
