@@ -5,6 +5,7 @@ import { findByTestAttr } from '../../../../test/testUtils'
 import sampleProps from '../chartTestData'
 import { QueryOutput } from '../../QueryOutput/QueryOutput'
 import testCases from '../../../../test/responseTestCases'
+import { currentEventLoopEnd } from 'autoql-fe-utils'
 import * as chartHelpers from '../helpers'
 
 const pivotSampleProps = sampleProps.pivot

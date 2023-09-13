@@ -3,6 +3,7 @@ import { shallow, mount } from 'enzyme'
 import { findByTestAttr } from '../../../../test/testUtils'
 import { DashboardTile } from './DashboardTile'
 import sampleResponses from '../../../../test/responseTestCases'
+import Tabulator from 'tabulator-tables'
 
 const sampleTile = {
   key: 'be54870f-57da-4a02-99a8-5d2ea9993084',

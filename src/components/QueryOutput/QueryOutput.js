@@ -2155,14 +2155,14 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  onSuggestionClick = ({ query, queryId, userSelection, isButtonClick, skipQueryValidation, source }) => {
+  onSuggestionClick = async ({ query, queryId, userSelection, isButtonClick, skipQueryValidation, source }) => {
     // Only call suggestion endpoint if clicked from suggestion list, not query validation
     if (!userSelection) {
       sendSuggestion({
         ...getAuthentication(this.props.authentication),
         queryId,
         suggestion: query,
-      })
+      }).catch(error => console.error(error))
     }
 
     if (query === 'None of these') {

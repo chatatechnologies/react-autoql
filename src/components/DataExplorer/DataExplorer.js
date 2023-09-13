@@ -13,9 +13,9 @@ import { authenticationType, dataFormattingType } from '../../props/types'
 import { CustomScrollbars } from '../CustomScrollbars'
 import { Icon } from '../Icon'
 import { Card } from '../Card'
+import { dataFormattingDefault } from '../../props/defaults'
 
 import './DataExplorer.scss'
-import { dataFormattingDefault } from '../../props/defaults'
 
 export default class DataExplorer extends React.Component {
   constructor(props) {

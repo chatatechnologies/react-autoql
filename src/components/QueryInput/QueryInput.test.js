@@ -3,7 +3,6 @@ import { shallow } from 'enzyme'
 
 import { findByTestAttr } from '../../../test/testUtils'
 import QueryInput from './QueryInput'
-import LocalStorageMock from '../../../test/localStorageMock'
 
 const defaultProps = QueryInput.defaultProps
 

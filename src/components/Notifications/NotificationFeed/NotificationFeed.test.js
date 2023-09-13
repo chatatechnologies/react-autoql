@@ -4,6 +4,7 @@ import { shallow } from 'enzyme'
 import { findByTestAttr } from '../../../../test/testUtils'
 import { testAuthentication } from '../../../../test/testData'
 import NotificationFeed from './NotificationFeed'
+import { currentEventLoopEnd } from '../../../js/Util'
 
 const defaultProps = {
   authentication: testAuthentication,
@@ -20,7 +21,7 @@ const setup = (props = {}, state = null) => {
 }
 
 describe('renders correctly', () => {
-  test('renders correctly with required props', () => {
+  test('renders correctly with required props', async () => {
     const wrapper = setup()
     const notificationListComponent = findByTestAttr(wrapper, 'notification-list')
     expect(notificationListComponent.exists()).toBe(true)

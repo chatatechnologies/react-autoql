@@ -1,6 +1,7 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
+import { isMobile } from 'react-device-detect'
 
 import { Icon } from '../../Icon'
 import { NotificationItem } from '../NotificationItem'
@@ -15,7 +16,7 @@ import { LoadingDots } from '../../LoadingDots'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { ConfirmPopover } from '../../ConfirmPopover'
 
-import { fetchNotificationFeed, dismissAllNotifications, fetchDataAlerts } from '../../../js/notificationService'
+import { fetchNotificationFeed, dismissAllNotifications, fetchDataAlerts } from 'autoql-fe-utils'
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication, getAutoQLConfig } from '../../../props/defaults'
 import { withTheme } from '../../../theme'
@@ -23,7 +24,6 @@ import { withTheme } from '../../../theme'
 import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
 
 import './NotificationFeed.scss'
-import { isMobile } from 'react-device-detect'
 
 class NotificationFeed extends React.Component {
   constructor(props) {
@@ -124,13 +124,17 @@ class NotificationFeed extends React.Component {
     this.setState({ isEditModalVisible: false })
   }
 
-  getDataAlerts = () => {
-    fetchDataAlerts({ ...getAuthentication(this.props.authentication) }).then((response) => {
-      const customAlerts = response?.data?.custom_alerts ?? []
-      const projectAlerts = response?.data?.project_alerts ?? []
-      const dataAlerts = [...customAlerts, ...projectAlerts]
-      this.setState({ dataAlerts })
-    })
+  getDataAlerts = async () => {
+    await fetchDataAlerts({ ...getAuthentication(this.props.authentication) })
+      .then((response) => {
+        const customAlerts = response?.data?.custom_alerts ?? []
+        const projectAlerts = response?.data?.project_alerts ?? []
+        const dataAlerts = [...customAlerts, ...projectAlerts]
+        this.setState({ dataAlerts })
+      })
+      .catch((error) => {
+        console.error(error)
+      })
   }
 
   getNotifications = () => {
@@ -211,26 +215,30 @@ class NotificationFeed extends React.Component {
       ...getAuthentication(this.props.authentication),
       offset: 0,
       limit,
-    }).then((response) => {
-      const items = response?.items
-      const notificationList = this.state.notificationList
-      const lastIndex = response.items?.length - 1
-
-      if (
-        items?.[0]?.id === notificationList?.[0]?.id &&
-        items?.[lastIndex]?.id === notificationList?.[lastIndex]?.id
-      ) {
-        // There are no new notifications if the first (newest) is the same as what is already there
-        this.setState({ unFetchedNotifications: 0 })
-        return
-      }
-
-      this.setState({
-        notificationList: response.items,
-        pagination: response.pagination,
-        unFetchedNotifications: 0,
-      })
     })
+      .then((response) => {
+        const items = response?.items
+        const notificationList = this.state.notificationList
+        const lastIndex = response.items?.length - 1
+
+        if (
+          items?.[0]?.id === notificationList?.[0]?.id &&
+          items?.[lastIndex]?.id === notificationList?.[lastIndex]?.id
+        ) {
+          // There are no new notifications if the first (newest) is the same as what is already there
+          this.setState({ unFetchedNotifications: 0 })
+          return
+        }
+
+        this.setState({
+          notificationList: response.items,
+          pagination: response.pagination,
+          unFetchedNotifications: 0,
+        })
+      })
+      .catch((error) => {
+        console.error(error)
+      })
   }
 
   refreshNotifications = () => {
