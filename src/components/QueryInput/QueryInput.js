@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import axios from 'axios'
 import _isEqual from 'lodash.isequal'
+import _cloneDeep from 'lodash.clonedeep'
 import { isMobile } from 'react-device-detect'
 import Autosuggest from 'react-autosuggest'
 import SpeechToTextButtonBrowser from '../SpeechToTextButton/SpeechToTextButtonBrowser'
@@ -33,13 +34,16 @@ class QueryInput extends React.Component {
     super(props)
 
     this.UNIQUE_ID = uuid()
+    this.MAX_QUERY_HISTORY = 5
+    this.queryHistoryId = `query-history-${props.authentication?.domain}`
     this.autoCompleteTimer = undefined
     this.autoCompleteArray = []
 
     this.state = {
       inputValue: '',
       lastQuery: '',
-      lastQueryIndex: -1,
+      queryHistoryIndex: -1,
+      wasInputClicked: false,
       suggestions: [],
       isQueryRunning: false,
       listeningForTranscript: false,
@@ -102,9 +106,13 @@ class QueryInput extends React.Component {
     return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
   }
 
-  componentDidUpdate = (prevProps) => {
+  componentDidUpdate = (prevProps, prevState) => {
     if (this.props.inputValue !== prevProps.inputValue) {
       this.setState({ inputValue: this.props.inputValue })
+    }
+
+    if (this.state.inputValue && !prevState.inputValue && !this.userSelectedSuggestion) {
+      this.setState({ suggestions: [] })
     }
   }
 
@@ -187,7 +195,7 @@ class QueryInput extends React.Component {
     const newState = {
       isQueryRunning: true,
       suggestions: [],
-      lastQueryIndex: -1,
+      queryHistoryIndex: -1,
       queryValidationResponse: undefined,
       queryValidationComponentId: uuid(),
     }
@@ -219,16 +227,8 @@ class QueryInput extends React.Component {
       const id = uuid()
 
       this.props.onSubmit(query, id)
-      localStorage.setItem('inputValue', query)
 
-      try {
-        const queryHistory = this.getQueryHistory()
-        const newQueryHistory = [].concat(query, queryHistory)
-
-        localStorage.setItem('queryHistory', JSON.stringify(newQueryHistory))
-      } catch (error) {
-        console.error(error)
-      }
+      this.addQueryToHistory(query)
 
       if (!this.props.authentication?.token && !!this.props.authentication?.dprKey) {
         this.submitDprQuery(query, id)
@@ -277,12 +277,17 @@ class QueryInput extends React.Component {
 
   getQueryHistory = () => {
     try {
-      const queryHistoryStr = localStorage.getItem('queryHistory')
+      const queryHistoryStr = localStorage.getItem(this.queryHistoryId)
       if (!queryHistoryStr) {
         return []
       }
 
       const queryHistory = JSON.parse(queryHistoryStr)
+
+      if ((queryHistory?.constructor !== Array) | !queryHistory?.length) {
+        return []
+      }
+
       return queryHistory
     } catch (error) {
       console.error(error)
@@ -290,26 +295,51 @@ class QueryInput extends React.Component {
     }
   }
 
+  addQueryToHistory = (query) => {
+    try {
+      let queryHistory = this.getQueryHistory().filter((q) => {
+        return q !== query
+      })
+
+      queryHistory.unshift(query)
+
+      if (queryHistory.length > this.MAX_QUERY_HISTORY) {
+        queryHistory = queryHistory.slice(0, this.MAX_QUERY_HISTORY)
+      }
+
+      localStorage.setItem(this.queryHistoryId, JSON.stringify(queryHistory))
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   onKeyDown = (e) => {
-    if (!this.state.suggestions?.length && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
-      let lastQuery = localStorage.getItem('inputValue')
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      if (this.userSelectedSuggestion || this.state.suggestions?.length) {
+        return e // return to let the component handle it...
+      }
+
+      let lastQuery = ''
       const queryHistory = this.getQueryHistory()
 
-      let queryIndex = this.state.lastQueryIndex
+      let queryIndex = this.state.queryHistoryIndex
       if (e.key === 'ArrowUp' && queryHistory[queryIndex + 1]) {
         queryIndex += 1
-      } else if (e.key === 'ArrowDown' && queryHistory[queryIndex - 1]) {
+      } else if (e.key === 'ArrowDown' && queryIndex >= 0) {
         queryIndex -= 1
       }
 
-      lastQuery = queryHistory[queryIndex]
-
-      if (lastQuery && lastQuery !== 'undefined') {
-        this.setState({ inputValue: lastQuery, lastQueryIndex: queryIndex }, this.moveCaretAtEnd)
+      if (queryIndex !== -1) {
+        lastQuery = queryHistory[queryIndex]
       }
-    } else if (this.userSelectedSuggestion && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
-      // keyup or keydown
-      return e // return to let the component handle it...
+
+      if (lastQuery !== undefined && lastQuery !== this.state.inputValue) {
+        this.setState({ inputValue: lastQuery, queryHistoryIndex: queryIndex }, this.moveCaretAtEnd)
+      } else {
+        this.moveCaretAtEnd()
+      }
+    } else {
+      this.userSelectedSuggestion = false
     }
 
     return e
@@ -328,14 +358,20 @@ class QueryInput extends React.Component {
   }
 
   userSelectedSuggestionHandler = (userSelectedValueFromSuggestionBox) => {
-    if (userSelectedValueFromSuggestionBox && userSelectedValueFromSuggestionBox.name && this._isMounted) {
-      this.userSelectedValue = userSelectedValueFromSuggestionBox.name
-      this.userSelectedSuggestion = true
-      this.setState({ inputValue: userSelectedValueFromSuggestionBox.name })
+    if (userSelectedValueFromSuggestionBox && this._isMounted) {
+      if (userSelectedValueFromSuggestionBox.name) {
+        this.userSelectedValue = userSelectedValueFromSuggestionBox.name
+        this.userSelectedSuggestion = true
+        this.setState({ inputValue: userSelectedValueFromSuggestionBox.name })
+      }
     }
   }
 
   onSuggestionsFetchRequested = ({ value }) => {
+    if (!value) {
+      return
+    }
+
     if (this.autoCompleteTimer) {
       clearTimeout(this.autoCompleteTimer)
     }
@@ -345,6 +381,10 @@ class QueryInput extends React.Component {
         ...getAuthentication(this.props.authentication),
       })
         .then((response) => {
+          if (!this.state.inputValue) {
+            return
+          }
+
           const body = response?.data?.data
 
           const sortingArray = []
@@ -383,6 +423,36 @@ class QueryInput extends React.Component {
     })
   }
 
+  renderSuggestionsContainer = ({ containerProps, children }) => {
+    return (
+      <div {...containerProps}>
+        <div className='react-autoql-data-explorer-suggestion-container'>{children}</div>
+      </div>
+    )
+  }
+
+  renderSectionTitle = (section) => {
+    return (
+      <>
+        <strong>{section.title}</strong>
+        {/* {section.emptyState ? (
+          <div className='data-explorer-no-suggestions'>
+            <em>No results</em>
+          </div>
+        ) : null} */}
+      </>
+    )
+  }
+
+  getSectionSuggestions = (section) => {
+    return section.suggestions
+  }
+
+  getSuggestions = () => {
+    const isQueryHistory = this.state.suggestions?.find((sugg) => sugg.fromHistory)
+    return [{ title: isQueryHistory ? 'Recent' : '', suggestions: this.state.suggestions }]
+  }
+
   onInputChange = (e) => {
     if (this.state.listeningForTranscript) {
       // Speech to text is processing, let it control the input
@@ -390,26 +460,55 @@ class QueryInput extends React.Component {
       return
     }
 
+    const inputValue = e?.target?.value
+
     if (!getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete) {
       // Component is using native input, just update the inputValue state
-      this.setState({ inputValue: e.target.value })
+      this.setState({ inputValue })
       return
     }
 
-    if (this.userSelectedSuggestion && (e.keyCode === 38 || e.keyCode === 40)) {
+    if (
+      (this.userSelectedSuggestion || this.state.suggestions?.length) &&
+      (e.key === 'ArrowUp' || e.key === 'ArrowDown')
+    ) {
       // keyup or keydown
       return // return to let the component handle it...
+    } else if (e.key === 'Enter') {
+      this.setState({ inputValue }, () => this.submitQuery())
+      return
     }
 
-    if (e && e.target && (e.target.value || e.target.value === '')) {
-      this.setState({ inputValue: e.target.value })
-    } else {
-      // User clicked on autosuggest item
-      this.submitQuery({ queryText: this.userSelectedValue })
-    }
+    const newState = {}
 
     if (this.props.isBackButtonClicked) {
-      this.setState({ inputValue: '' })
+      newState.inputValue = ''
+    } else if (inputValue || inputValue === '') {
+      newState.inputValue = inputValue
+    } else {
+      // User clicked on autosuggest item
+      newState.inputValue = this.userSelectedValue
+    }
+
+    if (!inputValue && (e.key === 'Backspace' || e.key === 'Delete')) {
+      newState.suggestions = this.getQueryHistory()
+    }
+
+    this.setState(newState)
+  }
+
+  showQueryHistorySuggestions = () => {
+    if (!this.state.inputValue) {
+      const suggestions = this.getQueryHistory()
+        ?.map((query) => {
+          return {
+            name: query,
+            fromHistory: true,
+          }
+        })
+        .reverse()
+
+      this.setState({ suggestions })
     }
   }
 
@@ -426,7 +525,10 @@ class QueryInput extends React.Component {
   render = () => {
     const inputProps = {
       ref: this.setInputRef,
-      className: `${this.UNIQUE_ID} react-autoql-chatbar-input${this.props.showChataIcon ? ' left-padding' : ''}`,
+      id: this.UNIQUE_ID,
+      className: `${this.UNIQUE_ID} react-autoql-query-input react-autoql-chatbar-input${
+        this.props.showChataIcon ? ' left-padding' : ''
+      }`,
       placeholder: this.props.placeholder,
       disabled: this.props.isDisabled,
       onChange: this.onInputChange,
@@ -434,9 +536,11 @@ class QueryInput extends React.Component {
       onKeyDown: this.onKeyDown,
       value: this.state.inputValue,
       onFocus: this.moveCaretAtEnd,
+      onBlur: () => this.setState({ suggestions: [] }),
+      onClick: this.showQueryHistorySuggestions,
       spellCheck: false,
       autoFocus: true,
-      autoComplete: 'false',
+      autoComplete: 'one-time-code',
     }
 
     return (
@@ -452,12 +556,15 @@ class QueryInput extends React.Component {
               <Autosuggest
                 onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
                 onSuggestionsClearRequested={this.onSuggestionsClearRequested}
+                renderSuggestionsContainer={this.renderSuggestionsContainer}
                 getSuggestionValue={this.userSelectedSuggestionHandler}
-                suggestions={this.state.suggestions}
-                ref={(ref) => {
-                  this.autoSuggest = ref
-                }}
-                renderSuggestion={(suggestion) => <Fragment>{suggestion.name}</Fragment>}
+                getSectionSuggestions={this.getSectionSuggestions}
+                renderSectionTitle={this.renderSectionTitle}
+                suggestions={this.getSuggestions()}
+                multiSection={true}
+                shouldRenderSuggestions={() => !this.props.isDisabled}
+                ref={(ref) => (this.autoSuggest = ref)}
+                renderSuggestion={(suggestion) => <Fragment>{suggestion?.name}</Fragment>}
                 inputProps={inputProps}
               />
             ) : (
