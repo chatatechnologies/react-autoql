@@ -1017,6 +1017,7 @@ export class DataMessenger extends React.Component {
   }
 
   render = () => {
+    console.log('rendering dm')
     if (this.state.hasError) {
       return null
     }
