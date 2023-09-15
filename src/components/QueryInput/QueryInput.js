@@ -2,7 +2,6 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import axios from 'axios'
-import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import { isMobile } from 'react-device-detect'
 import Autosuggest from 'react-autosuggest'
@@ -40,6 +39,7 @@ class QueryInput extends React.Component {
     this.state = {
       inputValue: '',
       lastQuery: '',
+      lastQueryIndex: -1,
       suggestions: [],
       isQueryRunning: false,
       listeningForTranscript: false,
@@ -187,6 +187,7 @@ class QueryInput extends React.Component {
     const newState = {
       isQueryRunning: true,
       suggestions: [],
+      lastQueryIndex: -1,
       queryValidationResponse: undefined,
       queryValidationComponentId: uuid(),
     }
@@ -219,6 +220,16 @@ class QueryInput extends React.Component {
 
       this.props.onSubmit(query, id)
       localStorage.setItem('inputValue', query)
+
+      try {
+        const queryHistory = this.getQueryHistory()
+        const newQueryHistory = [].concat(query, queryHistory)
+
+        localStorage.setItem('queryHistory', JSON.stringify(newQueryHistory))
+      } catch (error) {
+        console.error(error)
+      }
+
       if (!this.props.authentication?.token && !!this.props.authentication?.dprKey) {
         this.submitDprQuery(query, id)
       } else if (skipQueryValidation) {
@@ -264,11 +275,37 @@ class QueryInput extends React.Component {
     this.inputRef = ref
   }
 
+  getQueryHistory = () => {
+    try {
+      const queryHistoryStr = localStorage.getItem('queryHistory')
+      if (!queryHistoryStr) {
+        return []
+      }
+
+      const queryHistory = JSON.parse(queryHistoryStr)
+      return queryHistory
+    } catch (error) {
+      console.error(error)
+      return []
+    }
+  }
+
   onKeyDown = (e) => {
-    if (e.key === 'ArrowUp' && !_get(this.state.suggestions, 'length')) {
-      const lastQuery = localStorage.getItem('inputValue')
+    if (!this.state.suggestions?.length && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+      let lastQuery = localStorage.getItem('inputValue')
+      const queryHistory = this.getQueryHistory()
+
+      let queryIndex = this.state.lastQueryIndex
+      if (e.key === 'ArrowUp' && queryHistory[queryIndex + 1]) {
+        queryIndex += 1
+      } else if (e.key === 'ArrowDown' && queryHistory[queryIndex - 1]) {
+        queryIndex -= 1
+      }
+
+      lastQuery = queryHistory[queryIndex]
+
       if (lastQuery && lastQuery !== 'undefined') {
-        this.setState({ inputValue: lastQuery }, this.moveCaretAtEnd)
+        this.setState({ inputValue: lastQuery, lastQueryIndex: queryIndex }, this.moveCaretAtEnd)
       }
     } else if (this.userSelectedSuggestion && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
       // keyup or keydown
@@ -308,7 +345,7 @@ class QueryInput extends React.Component {
         ...getAuthentication(this.props.authentication),
       })
         .then((response) => {
-          const body = _get(response, 'data.data')
+          const body = response?.data?.data
 
           const sortingArray = []
           let suggestionsMatchArray = []
