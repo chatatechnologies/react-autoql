@@ -539,7 +539,7 @@ export default class QueryValidationMessage extends React.Component {
             // this.moveCaretAtEnd(e)
           }}
           spellCheck='false'
-          autoComplete='off'
+          autoComplete='one-time-code'
           autoCorrect='off'
           autoCapitalize='off'
           autoFocus={true}
