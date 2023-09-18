@@ -30,6 +30,7 @@
       height: 100%;
       overflow: hidden;
       border-radius: 5px;
+      border: 1px solid var(--react-autoql-table-border-color);
 
       .data-preview-table-wrapper {
         white-space: nowrap;
