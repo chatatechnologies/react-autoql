@@ -2,11 +2,11 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import _isEqual from 'lodash.isequal'
+import _cloneDeep from 'lodash.clonedeep'
 import axios from 'axios'
 import { fetchDataPreview } from 'autoql-fe-utils'
 
-import { Card } from '../Card'
-import { CustomScrollbars } from '../CustomScrollbars'
+// import { CustomScrollbars } from '../CustomScrollbars'
 import { LoadingDots } from '../LoadingDots'
 import { authenticationType } from '../../props/types'
 import { Icon } from '../Icon'
@@ -15,9 +15,10 @@ import { getDataFormatting, dataFormattingDefault } from '../../props/defaults'
 import { dataFormattingType } from '../../props/types'
 import { formatElement } from '../../js/Util.js'
 import { responseErrors } from '../../js/errorMessages'
+import { rebuildTooltips } from '../Tooltip'
+import { Checkbox } from '../Checkbox'
 
 import './DataPreview.scss'
-import { rebuildTooltips } from '../Tooltip'
 
 export default class DataExplorer extends React.Component {
   constructor(props) {
@@ -27,6 +28,7 @@ export default class DataExplorer extends React.Component {
 
     this.state = {
       dataPreview: null,
+      checkedColumns: [],
     }
   }
 
@@ -82,7 +84,7 @@ export default class DataExplorer extends React.Component {
     this.cancelCurrentRequest()
     this.axiosSource = axios.CancelToken?.source()
 
-    this.setState({ loading: true, error: undefined, dataPreview: undefined })
+    this.setState({ loading: true, error: undefined, dataPreview: undefined, checkedColumns: [] })
     fetchDataPreview({
       ...this.props.authentication,
       subject: this.props.subject?.name,
@@ -90,6 +92,7 @@ export default class DataExplorer extends React.Component {
       source: 'data_explorer.data_preview',
       scope: 'data_explorer',
       cancelToken: this.axiosSource.token,
+      numRows: 100,
     })
       .then((response) => {
         this.setState({ dataPreview: response, loading: false })
@@ -102,10 +105,11 @@ export default class DataExplorer extends React.Component {
       })
   }
 
-  formatColumnHeader = (column) => {
+  formatColumnHeader = (column, i) => {
     return (
       <div className='data-preview-col-header' data-for={this.props.tooltipID ?? 'data-preview-tooltip'}>
-        {column?.display_name}
+        <span>{column?.display_name}</span>
+        <Checkbox checked={this.state.checkedColumns?.includes(i)} onChange={() => this.onColumnHeaderClick(i)} />
       </div>
     )
   }
@@ -127,6 +131,18 @@ export default class DataExplorer extends React.Component {
     )
   }
 
+  onColumnHeaderClick = (index) => {
+    let checkedColumns = _cloneDeep(this.state.checkedColumns)
+
+    if (checkedColumns?.includes(index)) {
+      checkedColumns = checkedColumns.filter((i) => i !== index)
+    } else {
+      checkedColumns.push(index)
+    }
+
+    this.setState({ checkedColumns })
+  }
+
   renderDataPreviewGrid = () => {
     const rows = this.state.dataPreview?.data?.data?.rows
     const columns = this.state.dataPreview?.data?.data?.columns
@@ -137,14 +153,10 @@ export default class DataExplorer extends React.Component {
 
     const config = getDataFormatting(this.props.dataFormatting)
 
-    let maxHeight = this.props.dataExplorerRef?.clientHeight * 0.75
-    if (isNaN(maxHeight)) {
-      maxHeight = 500
-    }
-
     return (
       <div className='data-preview'>
-        <CustomScrollbars style={{ height: '165px' }}>
+        {/* <CustomScrollbars> */}
+        <div className='data-preview-table-wrapper'>
           {!!this.state.error ? (
             <div className='data-preview-error-message'>
               <div>{this.state.error.message}</div>
@@ -160,7 +172,18 @@ export default class DataExplorer extends React.Component {
               <thead>
                 <tr>
                   {columns.map((col, i) => {
-                    return <th key={`col-header-${i}`}>{this.formatColumnHeader(col)}</th>
+                    return (
+                      <th
+                        key={`col-header-${i}`}
+                        className={
+                          this.state.checkedColumns.includes(i) ? 'data-preview-column-selected' : 'data-preview-column'
+                        }
+                        onClick={() => this.onColumnHeaderClick(i)}
+                      >
+                        <div className='data-preview-column-header-hover-element' />
+                        {this.formatColumnHeader(col, i)}
+                      </th>
+                    )
                   })}
                 </tr>
               </thead>
@@ -170,7 +193,17 @@ export default class DataExplorer extends React.Component {
                     <tr key={`row-${i}`} className='data-preview-row'>
                       {row.map((cell, j) => {
                         const column = columns[j]
-                        return <td key={`cell-${j}`}>{this.formatCell({ cell, column, config })}</td>
+                        return (
+                          <td
+                            className={`${
+                              this.state.checkedColumns.includes(j) ? 'data-preview-cell-selected' : 'data-preview-cell'
+                            }`}
+                            key={`cell-${j}`}
+                          >
+                            <div className='data-preview-cell-hover-element' />
+                            {this.formatCell({ cell, column, config })}
+                          </td>
+                        )
                       })}
                     </tr>
                   )
@@ -178,23 +211,27 @@ export default class DataExplorer extends React.Component {
               </tbody>
             </table>
           )}
-        </CustomScrollbars>
+        </div>
+        {/* </CustomScrollbars> */}
       </div>
     )
   }
 
   renderLoadingContainer = () => {
     return (
-      <div className='data-explorer-card-placeholder data-preview'>
+      <div className='data-explorer-section-placeholder data-preview'>
         <LoadingDots />
       </div>
     )
   }
 
   renderDataPreviewTitle = () => {
+    const lowerCaseSubject = this.props.subject?.name
+    const titleCaseSubject = lowerCaseSubject[0].toUpperCase() + lowerCaseSubject.substring(1)
+
     return (
-      <div className='react-autoql-card-title-text'>
-        <Icon style={{ fontSize: '20px' }} type='table' /> Data Preview - "{this.props.subject?.query}"
+      <div className='react-autoql-data-explorer-section-title'>
+        <Icon style={{ fontSize: '20px' }} type='book' /> {titleCaseSubject}
       </div>
     )
   }
@@ -206,16 +243,9 @@ export default class DataExplorer extends React.Component {
 
     return (
       <ErrorBoundary>
-        <Card
-          className='data-explorer-data-preview'
-          data-test='data-explorer-data-preview'
-          title={this.renderDataPreviewTitle()}
-          isCollapsed={this.props.isCollapsed}
-          onIsCollapsedChange={this.props.onIsCollapsedChange}
-          defaultCollapsed={this.props.defaultCollapsed}
-        >
+        <div className='data-explorer-data-preview' data-test='data-explorer-data-preview'>
           {this.state.loading ? this.renderLoadingContainer() : this.renderDataPreviewGrid()}
-        </Card>
+        </div>
       </ErrorBoundary>
     )
   }

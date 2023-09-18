@@ -284,7 +284,7 @@ class QueryInput extends React.Component {
 
       const queryHistory = JSON.parse(queryHistoryStr)
 
-      if ((queryHistory?.constructor !== Array) | !queryHistory?.length) {
+      if (queryHistory?.constructor !== Array || !queryHistory?.length) {
         return []
       }
 

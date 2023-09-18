@@ -6,27 +6,27 @@ import { v4 as uuid } from 'uuid'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEqual from 'lodash.isequal'
 import axios from 'axios'
-import { fetchDataExplorerAutocomplete, fetchSubjectList } from 'autoql-fe-utils'
+import {
+  fetchDataExplorerAutocomplete,
+  fetchSubjectList,
+  animateInputText,
+  DataExplorerTypes,
+  REQUEST_CANCELLED_ERROR,
+} from 'autoql-fe-utils'
 
-import DEConstants from './constants'
 import { authenticationType } from '../../props/types'
 import { Icon } from '../Icon'
 import { TopicName } from './TopicName'
-import { animateInputText } from '../../js/Util'
 import { CustomScrollbars } from '../CustomScrollbars'
 
 import './DataExplorerInput.scss'
-import { responseErrors } from '../../js/errorMessages'
-
-const toSentenceCase = (str) => {
-  return str.toLowerCase().charAt(0).toUpperCase() + str.slice(1)
-}
 
 export default class DataExplorerInput extends React.Component {
   constructor(props) {
     super(props)
 
     this.componentKey = uuid()
+    this.dataExplorerRecentsId = `data-explorer-recent-${props.authentication?.domain}`
     this.userTypedValue = null
     this.userSelectedValue = null
     this.isDirty = false
@@ -34,7 +34,7 @@ export default class DataExplorerInput extends React.Component {
     this.state = {
       inputValue: '',
       loadingAutocomplete: false,
-      recentSuggestions: [],
+      recentSearches: this.getRecentSearchesFromLocalStorage(),
       suggestions: [],
       allSubjects: [],
     }
@@ -59,10 +59,38 @@ export default class DataExplorerInput extends React.Component {
     this.fetchAllSubjects()
   }
 
+  componentDidUpdate = () => {
+    this.setRecentSearchesInLocalStorage()
+  }
+
   componentWillUnmount = () => {
     this._isMounted = false
     clearTimeout(this.autoCompleteTimer)
     clearTimeout(this.inputAnimationTimeout)
+  }
+
+  getRecentSearchesFromLocalStorage = () => {
+    try {
+      const recentSearchesStr = localStorage.getItem(this.dataExplorerRecentsId)
+      const recentSearchesArray = JSON.parse(recentSearchesStr)
+
+      if (recentSearchesArray?.constructor === Array && recentSearchesArray?.length) {
+        return recentSearchesArray
+      }
+    } catch (error) {
+      console.error(error)
+    }
+
+    return []
+  }
+
+  setRecentSearchesInLocalStorage = () => {
+    try {
+      const recentSearchesStr = JSON.stringify(this.state.recentSearches)
+      localStorage.setItem(this.dataExplorerRecentsId, recentSearchesStr)
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   isAggSeed(subject) {
@@ -83,7 +111,7 @@ export default class DataExplorerInput extends React.Component {
             .map((subject) => {
               return {
                 ...subject,
-                type: DEConstants.SUBJECT_TYPE,
+                type: DataExplorerTypes.SUBJECT_TYPE,
               }
             })
             .filter((subject) => !this.isAggSeed(subject))
@@ -119,22 +147,22 @@ export default class DataExplorerInput extends React.Component {
   //   })
   // }
 
-  getNewRecentSuggestions = (subject) => {
-    const recentSuggestions = _cloneDeep(this.state.recentSuggestions)
+  getNewrecentSearches = (subject) => {
+    const recentSearches = _cloneDeep(this.state.recentSearches)
 
     // If value already exists in recent list, move it to the top
-    const index = recentSuggestions.findIndex((subj) => _isEqual(subj, subject))
+    const index = recentSearches.findIndex((subj) => _isEqual(subj, subject))
     if (index > -1) {
-      recentSuggestions.splice(index, 1)
+      recentSearches.splice(index, 1)
     }
 
     // Maximum length of list should be 5
-    if (recentSuggestions.length === 5) {
-      recentSuggestions.splice(-1)
+    if (recentSearches.length === 5) {
+      recentSearches.splice(-1)
     }
 
-    recentSuggestions.unshift(subject)
-    return recentSuggestions
+    recentSearches.unshift(subject)
+    return recentSearches
   }
 
   selectSubject = (subject) => {
@@ -142,7 +170,7 @@ export default class DataExplorerInput extends React.Component {
       this.userSelectedValue = null
       this.setState({
         inputValue: subject.display_name,
-        recentSuggestions: this.getNewRecentSuggestions(subject),
+        recentSearches: this.getNewrecentSearches(subject),
       })
       this.props.onSelection(subject)
     }
@@ -164,7 +192,7 @@ export default class DataExplorerInput extends React.Component {
 
     this.props.onSelection(subject, skipQueryValidation)
     this.setState({
-      recentSuggestions: this.getNewRecentSuggestions(subject),
+      recentSearches: this.getNewrecentSearches(subject),
       inputValue: subject.display_name,
     })
   }
@@ -236,11 +264,10 @@ export default class DataExplorerInput extends React.Component {
   }
 
   cancelCurrentRequest = () => {
-    this.axiosSource?.cancel(responseErrors.CANCELLED)
+    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
   }
 
   requestSuggestions = (value) => {
-    // const value = this.userTypedValue
     this.setState({ loadingAutocomplete: true, loadingAutocompleteText: value })
 
     clearTimeout(this.autoCompleteTimer)
@@ -259,7 +286,7 @@ export default class DataExplorerInput extends React.Component {
           })
         })
         .catch((error) => {
-          if (error?.data?.message !== responseErrors.CANCELLED) {
+          if (error?.data?.message !== REQUEST_CANCELLED_ERROR) {
             console.error(error)
             this.setState({ suggestions: [], loadingAutocomplete: false })
           }
@@ -288,7 +315,10 @@ export default class DataExplorerInput extends React.Component {
   renderSectionTitle = (section) => {
     return (
       <>
-        <strong>{section.title}</strong>
+        <div className='data-explorer-section-title-wrapper'>
+          <strong>{section.title}</strong>
+          {section?.action ?? null}
+        </div>
         {section.emptyState ? (
           <div className='data-explorer-no-suggestions'>
             <em>No results</em>
@@ -308,24 +338,29 @@ export default class DataExplorerInput extends React.Component {
 
   getSuggestions = () => {
     const sections = []
-    const hasRecentSuggestions = !!this.state.recentSuggestions?.length
+    const hasrecentSearches = !!this.state.recentSearches?.length
     const inputIsEmpty = !this.userTypedValue
     const doneLoading = !this.state.loadingAutocomplete
     const hasSuggestions = !!this.state.suggestions?.length // && doneLoading
     const noSuggestions = !this.state.suggestions?.length && doneLoading
 
     // Recently used
-    if (hasRecentSuggestions) {
+    if (hasrecentSearches) {
       sections.push({
-        title: 'Recent',
-        suggestions: this.state.recentSuggestions,
+        title: <span>Recent</span>,
+        action: (
+          <span className='data-explorer-clear-history-btn' onClick={() => this.setState({ recentSearches: [] })}>
+            Clear history
+          </span>
+        ),
+        suggestions: this.state.recentSearches,
       })
     }
 
     // Suggestion list
     if (inputIsEmpty) {
       sections.push({
-        title: 'All Topics',
+        title: 'Topics',
         suggestions: this.state.allSubjects,
       })
     } else if (hasSuggestions) {

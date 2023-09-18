@@ -1,18 +1,8 @@
 .data-explorer-section {
-  flex: 0 1 auto;
   max-height: 100%;
-  position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  margin: 0 10px;
-
-  &.collapsed,
-  &.data-preview-section,
-  &.data-preview-section .react-autoql-card-content,
-  &.data-preview-section .react-autoql-card-user-content {
-    flex: 0 0 auto !important;
-  }
 
   .data-preview-error-message {
     white-space: initial;
@@ -22,20 +12,7 @@
     margin-bottom: 10px;
   }
 
-  .data-preview-scroll-container {
-    width: 100%;
-    height: 100%;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-
-  .react-autoql-custom-scrollbars {
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-
   .data-explorer-data-preview {
-    flex: 0 0 auto;
     overflow: hidden;
     min-height: 0;
     display: flex;
@@ -61,46 +38,111 @@
     }
 
     .data-preview {
-      max-height: 100%;
-      padding: 0 5px;
-    }
+      height: 100%;
+      overflow: hidden;
+      border-radius: 5px;
 
-    table {
-      min-width: 100%;
-      table-layout: fixed;
-      border-collapse: collapse;
-    }
-    thead {
-      th {
-        top: 0;
-        padding: 0 6px;
-        height: 35px;
-        position: sticky;
-        background: var(--react-autoql-background-color-secondary);
-        box-shadow: inset 0 -2px 0 var(--react-autoql-border-color);
-        transition: color 0.2s ease;
-        color: var(--react-autoql-accent-color);
-        cursor: default;
+      .data-preview-table-wrapper {
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: auto;
+        height: 100%;
+        padding-right: 5px;
+        padding-bottom: 5px;
 
-        .data-preview-col-header {
-          height: 100%;
-          display: flex;
-          flex-direction: row;
-          align-items: center;
-          justify-content: center;
-        }
-      }
-    }
-    tbody {
-      tr {
-        height: 24px;
-        &:not(:last-child) {
-          border-bottom: 1px solid var(--react-autoql-border-color);
-        }
-        td {
-          padding: 0 10px;
-          &:not(:last-child) {
-            border-right: 1px solid var(--react-autoql-border-color);
+        table {
+          font-size: 13px;
+          min-width: 100%;
+          border-collapse: collapse;
+
+          .data-preview-cell-hover-element,
+          .data-preview-column-header-hover-element {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            transition: opacity 0.2s ease, background-color 0.2s ease;
+            opacity: 0;
+          }
+
+          .data-preview-column-header-hover-element {
+            background-color: var(--react-autoql-hover-color);
+            opacity: 0.5;
+          }
+
+          thead {
+            th {
+              top: 0;
+              padding: 0 15px;
+              height: 35px;
+              position: sticky;
+              z-index: 1;
+              background-color: var(--react-autoql-hover-color);
+              box-shadow: inset 0 -2px 0 var(--react-autoql-border-color);
+              transition: color 0.2s ease, background-color 0.2s ease;
+              color: var(--react-autoql-text-color-primary);
+              cursor: pointer;
+
+              .data-preview-col-header {
+                height: 100%;
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+
+                .react-autoql-checkbox-container {
+                  margin-left: 10px;
+
+                  .react-autoql-checkbox__input {
+                    border-color: var(--react-autoql-border-color);
+                    width: 15px;
+                    height: 15px;
+                  }
+                }
+              }
+
+              &:hover {
+                .data-preview-column-header-hover-element {
+                  background-color: var(--react-autoql-accent-color);
+                  opacity: 0.3 !important;
+                }
+                .data-preview-col-header .react-autoql-checkbox-container .react-autoql-checkbox__input {
+                  border-color: var(--react-autoql-accent-color);
+                }
+              }
+
+              &.data-preview-column-selected {
+                .data-preview-column-header-hover-element {
+                  background-color: var(--react-autoql-accent-color);
+                  opacity: 0.2;
+                }
+              }
+            }
+          }
+          tbody {
+            tr {
+              height: 24px;
+              &:not(:last-child) {
+                border-bottom: 1px solid var(--react-autoql-border-color);
+              }
+              td {
+                position: relative;
+                padding: 0 10px;
+
+                &:not(:last-child) {
+                  border-right: 1px solid var(--react-autoql-border-color);
+                }
+
+                &.data-preview-cell-selected {
+                  .data-preview-cell-hover-element {
+                    background-color: var(--react-autoql-accent-color);
+                    opacity: 0.1;
+                  }
+                }
+              }
+            }
           }
         }
       }

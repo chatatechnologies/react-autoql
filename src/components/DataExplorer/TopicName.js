@@ -1,7 +1,7 @@
 import React from 'react'
 import { Icon } from '../Icon'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import DEConstants from './constants'
+import { DataExplorerTypes } from 'autoql-fe-utils'
 
 export const TopicName = ({ topic } = {}) => {
   if (!topic) {
@@ -9,9 +9,9 @@ export const TopicName = ({ topic } = {}) => {
   }
 
   var iconType = null
-  if (topic.type === DEConstants.SUBJECT_TYPE) {
+  if (topic.type === DataExplorerTypes.SUBJECT_TYPE) {
     iconType = 'book'
-  } else if (topic.type === DEConstants.VL_TYPE) {
+  } else if (topic.type === DataExplorerTypes.VL_TYPE) {
     iconType = 'bookmark'
   }
 

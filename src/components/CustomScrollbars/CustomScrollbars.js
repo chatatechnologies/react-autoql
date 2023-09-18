@@ -13,6 +13,8 @@ export default class CustomScrollbars extends React.Component {
     autoHeightMax: PropTypes.number,
     autoHeightMin: PropTypes.number,
     contentHidden: PropTypes.bool,
+    maxHeight: PropTypes.number,
+    minHeight: PropTypes.number,
   }
 
   static defaultProps = {
@@ -20,6 +22,8 @@ export default class CustomScrollbars extends React.Component {
     autoHide: false,
     autoHeightMin: undefined,
     autoHeightMax: undefined,
+    maxHeight: undefined,
+    minHeight: undefined,
     contentHidden: false,
   }
 
@@ -100,6 +104,14 @@ export default class CustomScrollbars extends React.Component {
     style.maxHeight = this.props.maxHeight
     style.minHeight = this.props.minHeight
 
+    if (this.props.suppressScrollY) {
+      style.overflowY = 'hidden'
+    }
+
+    if (this.props.suppressScrollX) {
+      style.overflowX = 'hidden'
+    }
+
     return style
   }
 
@@ -115,6 +127,7 @@ export default class CustomScrollbars extends React.Component {
             ${this.props.autoHide ? 'autohide' : ''}`}
         ref={(r) => (this.ref = r)}
         style={this.getStyleProp()}
+        options={this.props.options}
       >
         {this.props.children}
       </PerfectScrollbar>

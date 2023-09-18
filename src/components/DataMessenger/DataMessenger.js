@@ -478,7 +478,7 @@ export class DataMessenger extends React.Component {
         <div className={`page-switcher-shadow-container  ${this.props.placement}`}>
           <div className={`page-switcher-container ${this.props.placement}`}>
             <div
-              className={`tab${page === 'data-messenger' ? ' active' : ''}`}
+              className={`react-autoql-dm-tab${page === 'data-messenger' ? ' active' : ''}`}
               onClick={() => this.setState({ activePage: 'data-messenger' })}
               data-tip='Home'
               data-for={this.TOOLTIP_ID}
@@ -487,7 +487,9 @@ export class DataMessenger extends React.Component {
             </div>
             {this.props.enableExploreQueriesTab && (
               <div
-                className={`tab${page === 'explore-queries' ? ' active' : ''} react-autoql-explore-queries`}
+                className={`react-autoql-dm-tab${
+                  page === 'explore-queries' ? ' active' : ''
+                } react-autoql-explore-queries`}
                 onClick={() => this.setState({ activePage: 'explore-queries' })}
                 data-tip={lang.exploreQueries}
                 data-for={this.TOOLTIP_ID}
@@ -497,7 +499,7 @@ export class DataMessenger extends React.Component {
             )}
             {this.props.enableDataExplorerTab && (
               <div
-                className={`tab${page === 'data-explorer' ? ' active' : ''} react-autoql-data-explorer`}
+                className={`react-autoql-dm-tab${page === 'data-explorer' ? ' active' : ''} react-autoql-data-explorer`}
                 onClick={() => this.setState({ activePage: 'data-explorer' })}
                 data-tip={lang.dataExplorer}
                 data-for={this.TOOLTIP_ID}
@@ -507,7 +509,7 @@ export class DataMessenger extends React.Component {
             )}
             {this.props.enableNotificationsTab && getAutoQLConfig(this.props.autoQLConfig).enableNotifications && (
               <div
-                className={`tab${page === 'notifications' ? ' active' : ''} react-autoql-notifications`}
+                className={`react-autoql-dm-tab${page === 'notifications' ? ' active' : ''} react-autoql-notifications`}
                 onClick={() => {
                   if (this.notificationBadgeRef) {
                     this.notificationBadgeRef.resetCount()
@@ -1046,9 +1048,10 @@ export class DataMessenger extends React.Component {
           {isBrowser ? this.renderTabs() : null}
           <div
             ref={(r) => (this.messengerDrawerRef = r)}
-            className={
-              isMobile ? 'react-autoql-mobile-drawer-content-container' : 'react-autoql-drawer-content-container'
-            }
+            className={`
+              ${isMobile ? 'react-autoql-mobile-drawer-content-container' : 'react-autoql-drawer-content-container'}
+              ${this.state.activePage}
+            `}
           >
             <div className='chat-header-container'>{this.renderHeaderContent()}</div>
             {this.renderBodyContent()}

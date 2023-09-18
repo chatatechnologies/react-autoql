@@ -67,6 +67,10 @@
     background: var(--react-autoql-background-color-primary);
     overflow: hidden;
     border-radius: 4px;
+
+    &.data-explorer {
+      background: var(--react-autoql-background-color-secondary);
+    }
   }
   .react-autoql-mobile-drawer-content-container {
     width: 100%;
@@ -144,14 +148,14 @@
     letter-spacing: 0.05em;
   }
   .react-autoql-drawer .react-autoql-header-left-container {
-	&.hidden {
-		width:0px;
-	  }
+    &.hidden {
+      width: 0px;
+    }
   }
   .react-autoql-drawer .react-autoql-header-right-container {
-	&.hidden {
-		width:0px;
-	  }
+    &.hidden {
+      width: 0px;
+    }
   }
   .react-autoql-drawer .drawer-content-wrapper {
     transition: unset !important;
@@ -499,7 +503,7 @@
   display: flex;
   pointer-events: all;
 
-  .tab {
+  .react-autoql-dm-tab {
     position: relative;
     z-index: 1;
 
@@ -535,7 +539,7 @@
     margin-bottom: 20px;
     flex-direction: column;
 
-    .tab {
+    .react-autoql-dm-tab {
       box-shadow: inset -18px 0px 8px -10px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
     }
   }
@@ -549,7 +553,7 @@
     margin-left: -5px;
     flex-direction: column;
 
-    .tab {
+    .react-autoql-dm-tab {
       box-shadow: inset 18px 0px 8px -10px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
     }
   }
@@ -563,7 +567,7 @@
     flex-direction: row;
     height: 40px;
 
-    .tab {
+    .react-autoql-dm-tab {
       box-shadow: inset 0px 12px 8px -10px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
     }
   }
@@ -577,17 +581,17 @@
     flex-direction: row;
     height: 40px;
 
-    .tab {
+    .react-autoql-dm-tab {
       box-shadow: inset 0px -17px 8px -10px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
     }
   }
 }
 
 /* Individual Tabs */
-.react-autoql-notifications.tab.active .react-autoql-notifications-badge-dot {
+.react-autoql-notifications.react-autoql-dm-tab.active .react-autoql-notifications-badge-dot {
   border: 1px solid var(--react-autoql-background-color-primary);
 }
-.page-switcher-container .tab {
+.page-switcher-container .react-autoql-dm-tab {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -598,17 +602,17 @@
   justify-content: flex-start;
   line-height: inherit;
 }
-.page-switcher-container.right .tab,
-.page-switcher-container.left .tab {
+.page-switcher-container.right .react-autoql-dm-tab,
+.page-switcher-container.left .react-autoql-dm-tab {
   height: 65px;
 }
 
-.page-switcher-container.top .tab,
-.page-switcher-container.bottom .tab {
+.page-switcher-container.top .react-autoql-dm-tab,
+.page-switcher-container.bottom .react-autoql-dm-tab {
   width: 65px;
 }
 
-.page-switcher-container.bottom .tab {
+.page-switcher-container.bottom .react-autoql-dm-tab {
   background: var(--react-autoql-background-color-primary);
   color: var(--react-autoql-text-color-primary);
 
@@ -617,7 +621,7 @@
     stroke-width: 0.3px;
   }
 }
-.page-switcher-container .tab.active {
+.page-switcher-container .react-autoql-dm-tab.active {
   background: var(--react-autoql-background-color-primary);
   color: var(--react-autoql-accent-color);
   box-shadow: -2px 0px 8px 2px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
@@ -625,12 +629,16 @@
   position: relative;
   z-index: 2;
 
+  &.react-autoql-data-explorer {
+    background-color: var(--react-autoql-background-color-secondary);
+  }
+
   .react-autoql-icon.data-search svg {
     stroke: var(--react-autoql-background-color-primary);
     stroke-width: 0.3px;
   }
 }
-.page-switcher-container.bottom .tab.active {
+.page-switcher-container.bottom .react-autoql-dm-tab.active {
   background: var(--react-autoql-accent-color);
   color: var(--react-autoql-text-color-accent);
   font-weight: bold;
