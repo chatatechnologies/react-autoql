@@ -28,9 +28,6 @@
 
     .data-preview {
       height: 100%;
-      overflow: hidden;
-      border-radius: 5px;
-      border: 1px solid var(--react-autoql-table-border-color);
 
       .data-preview-table-wrapper {
         white-space: nowrap;
@@ -39,6 +36,9 @@
         height: 100%;
         padding-right: 5px;
         padding-bottom: 5px;
+        overflow: hidden;
+        border-radius: 5px;
+        border: 1px solid var(--react-autoql-table-border-color);
 
         table {
           font-size: 13px;
