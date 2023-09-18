@@ -26,17 +26,6 @@
       align-items: center;
     }
 
-    .tabulator-col-content,
-    .tabulator-cell {
-      cursor: pointer !important;
-      transition: color 0.2s ease;
-
-      &:hover {
-        color: var(--react-autoql-accent-color);
-        font-weight: 600;
-      }
-    }
-
     .data-preview {
       height: 100%;
       overflow: hidden;
@@ -62,13 +51,9 @@
             left: 0;
             right: 0;
             bottom: 0;
-            transition: opacity 0.2s ease, background-color 0.2s ease;
+            transition: opacity 0.1s ease;
+            background-color: var(--react-autoql-accent-color);
             opacity: 0;
-          }
-
-          .data-preview-column-header-hover-element {
-            background-color: var(--react-autoql-hover-color);
-            opacity: 0.5;
           }
 
           thead {
@@ -80,7 +65,6 @@
               z-index: 1;
               background-color: var(--react-autoql-hover-color);
               box-shadow: inset 0 -2px 0 var(--react-autoql-border-color);
-              transition: color 0.2s ease, background-color 0.2s ease;
               color: var(--react-autoql-text-color-primary);
               cursor: pointer;
 
@@ -105,7 +89,6 @@
 
               &:hover {
                 .data-preview-column-header-hover-element {
-                  background-color: var(--react-autoql-accent-color);
                   opacity: 0.3 !important;
                 }
                 .data-preview-col-header .react-autoql-checkbox-container .react-autoql-checkbox__input {
@@ -115,7 +98,6 @@
 
               &.data-preview-column-selected {
                 .data-preview-column-header-hover-element {
-                  background-color: var(--react-autoql-accent-color);
                   opacity: 0.2;
                 }
               }
@@ -137,7 +119,6 @@
 
                 &.data-preview-cell-selected {
                   .data-preview-cell-hover-element {
-                    background-color: var(--react-autoql-accent-color);
                     opacity: 0.1;
                   }
                 }

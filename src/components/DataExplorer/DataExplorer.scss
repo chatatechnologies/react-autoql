@@ -8,21 +8,9 @@
   justify-content: flex-start;
   flex-wrap: nowrap;
   color: var(--react-autoql-text-color-primary);
-
-  .data-explorer-section,
-  .data-explorer-intro-message {
-    opacity: 0;
-    transform: translateY(100%);
-    animation: slideUp 0.2s cubic-bezier(0.26, 0.26, 0, 1);
-    animation-fill-mode: forwards;
-    animation-delay: 0s;
-  }
-
-  @for $i from 1 through 2 {
-    .data-explorer-section:nth-of-type(#{$i}) {
-      animation-delay: 0.2s * ($i - 1);
-    }
-  }
+  overflow: hidden;
+  animation: fadeIn 0.2s linear;
+  animation-fill-mode: both;
 
   .data-explorer-intro-message {
     color: var(--react-autoql-text-color-primary);
