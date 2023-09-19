@@ -28,17 +28,50 @@
 
     .data-preview {
       height: 100%;
+      overflow: hidden;
+      padding: 5px;
+      display: flex;
+      flex-direction: column;
+
+      .data-preview-table-header {
+        display: flex;
+        justify-content: space-between;
+        white-space: nowrap;
+        font-size: 13px;
+        color: var(--react-autoql-text-color-placeholder);
+        font-weight: 600;
+
+        .react-autoql-data-preview-selected-columns-clear-btn {
+          text-decoration: underline;
+          font-weight: 400;
+          cursor: pointer;
+
+          .react-autoql-data-preview-selected-columns-badge {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            width: 1.3em;
+            height: 1.3em;
+            color: #ffffff;
+            font-size: 0.8em;
+            margin-left: 3px;
+            background-color: var(--react-autoql-accent-color);
+          }
+
+          &:hover {
+            color: var(--react-autoql-accent-color);
+          }
+        }
+      }
 
       .data-preview-table-wrapper {
         white-space: nowrap;
         text-overflow: ellipsis;
         overflow: auto;
         height: 100%;
-        padding-right: 5px;
-        padding-bottom: 5px;
-        overflow: hidden;
-        border-radius: 5px;
-        border: 1px solid var(--react-autoql-table-border-color);
+        border-radius: 2px;
+        box-shadow: 0px 1px 2px 0px #d8d8d8ad;
 
         table {
           font-size: 13px;
@@ -57,6 +90,10 @@
             opacity: 0;
           }
 
+          .data-preview-column-header-hover-element {
+            opacity: 0.2;
+          }
+
           thead {
             th {
               top: 0;
@@ -64,9 +101,9 @@
               height: 35px;
               position: sticky;
               z-index: 1;
-              background-color: var(--react-autoql-hover-color);
+              background-color: var(--react-autoql-background-color-secondary);
               box-shadow: inset 0 -2px 0 var(--react-autoql-border-color);
-              color: var(--react-autoql-text-color-primary);
+              transition: background-color 0.1s ease, color 0.1s ease;
               cursor: pointer;
 
               .data-preview-col-header {
@@ -82,6 +119,7 @@
 
                   .react-autoql-checkbox__input {
                     border-color: var(--react-autoql-border-color);
+                    transition: border-color 0.1s ease;
                     width: 15px;
                     height: 15px;
                   }
@@ -89,6 +127,8 @@
               }
 
               &:hover {
+                background-color: var(--react-autoql-background-color-secondary);
+
                 .data-preview-column-header-hover-element {
                   opacity: 0.3 !important;
                 }
@@ -98,15 +138,16 @@
               }
 
               &.data-preview-column-selected {
-                .data-preview-column-header-hover-element {
-                  opacity: 0.2;
-                }
+                background-color: var(--react-autoql-accent-color);
+                color: var(--react-autoql-text-color-accent);
               }
             }
           }
           tbody {
             tr {
+              opacity: 0.9;
               height: 24px;
+
               &:not(:last-child) {
                 border-bottom: 1px solid var(--react-autoql-border-color);
               }

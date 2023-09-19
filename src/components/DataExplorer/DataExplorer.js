@@ -168,7 +168,7 @@ export default class DataExplorer extends React.Component {
   renderQuerySuggestionCardTitle = (selectedTopic) => {
     return (
       <div className='react-autoql-data-explorer-title-text'>
-        <span>Query Builder</span>
+        <span>Sample Queries</span>
       </div>
     )
   }
@@ -183,7 +183,7 @@ export default class DataExplorer extends React.Component {
       <div className='data-explorer-section query-suggestions'>
         {this.renderQuerySuggestionCardTitle(selectedTopic)}
         <div className='data-explorer-query-suggestion-list'>
-          <QuerySuggestionList
+          {/* <QuerySuggestionList
             ref={(r) => (this.querySuggestionList = r)}
             key={this.querySuggestionsKey}
             authentication={this.props.authentication}
@@ -200,7 +200,7 @@ export default class DataExplorer extends React.Component {
               this.setState({ skipQueryValidation: false })
             }}
             scope={this.props.scope}
-          />
+          /> */}
         </div>
       </div>
     )

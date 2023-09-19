@@ -14,7 +14,7 @@ export const LIGHT_THEME = {
   'hover-color': '#F6F7F9',
   'text-color-primary': '#343434',
   'text-color-accent': '#FFFFFF',
-  'text-color-placeholder': '#0000004D',
+  'text-color-placeholder': '#00000066',
   'dashboard-title-color': '#28A8E0',
   'font-family': "'Roboto', sans-serif",
   'font-size': '15px',

@@ -156,6 +156,22 @@ export default class DataExplorer extends React.Component {
     return (
       <div className='data-preview'>
         {/* <CustomScrollbars> */}
+        <div className='data-preview-table-header'>
+          <span className='react-autoql-data-preview-selected-columns-text'>
+            Select fields to use in Sample Queries
+          </span>
+          {!!this.state.checkedColumns?.length && (
+            <span
+              className='react-autoql-data-preview-selected-columns-clear-btn'
+              onClick={() => this.setState({ checkedColumns: [] })}
+            >
+              Clear selections{' '}
+              <span className='react-autoql-data-preview-selected-columns-badge'>
+                {this.state.checkedColumns.length}
+              </span>
+            </span>
+          )}
+        </div>
         <div className='data-preview-table-wrapper'>
           {!!this.state.error ? (
             <div className='data-preview-error-message'>
