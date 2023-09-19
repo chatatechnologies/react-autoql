@@ -1,6 +1,5 @@
 import React, { Component } from 'react'
 import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, getKey } from '../helpers'
-import { rebuildTooltips } from '../../Tooltip'
 
 export default class StackedLines extends Component {
   static propTypes = chartElementPropTypes
@@ -8,10 +7,6 @@ export default class StackedLines extends Component {
 
   state = {
     activeKey: this.props.activeChartElementKey,
-  }
-
-  componentDidMount = () => {
-    rebuildTooltips()
   }
 
   onDotClick = (row, colIndex, rowIndex) => {
@@ -47,8 +42,8 @@ export default class StackedLines extends Component {
         cx={x}
         r={4}
         onClick={() => this.onDotClick(d, colIndex, i)}
-        data-tip={tooltip}
-        data-for={this.props.chartTooltipID}
+        data-tooltip-content={tooltip}
+        data-tooltip-id={this.props.chartTooltipID}
         style={{
           opacity: this.state.activeKey === getKey(colIndex, index) ? 1 : 0,
           cursor: 'pointer',
@@ -75,12 +70,12 @@ export default class StackedLines extends Component {
         key={`polygon-${getKey(stringColumnIndex, i)}`}
         className={`stacked-area${this.state.activeKey === getKey(stringColumnIndex, i) ? ' active' : ''}`}
         points={polygonPoints}
-        data-tip={`
+        data-tooltip-content={`
             <div>
               <strong>Field</strong>: ${this.props.legendLabels[i].label}
             </div>
           `}
-        data-for={this.props.chartTooltipID}
+        data-tooltip-id={this.props.chartTooltipID}
         data-effect='float'
         style={{
           fill: color,

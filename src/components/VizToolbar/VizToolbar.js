@@ -4,7 +4,7 @@ import { v4 as uuid } from 'uuid'
 import _isEqual from 'lodash.isequal'
 import { isMobile } from 'react-device-detect'
 import { Icon } from '../Icon'
-import { rebuildTooltips, Tooltip } from '../Tooltip'
+import { Tooltip } from '../Tooltip'
 import { Button } from '../Button'
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -37,7 +37,6 @@ class VizToolbar extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
-    rebuildTooltips()
   }
 
   shouldComponentUpdate = (nextProps) => {
@@ -46,12 +45,6 @@ class VizToolbar extends React.Component {
     }
 
     return true
-  }
-
-  componentDidUpdate = (prevProps, prevState) => {
-    if (!_isEqual(this.state.supportedDisplayTypes, prevState.supportedDisplayTypes)) {
-      rebuildTooltips()
-    }
   }
 
   componentWillUnmount = () => {
@@ -143,7 +136,6 @@ class VizToolbar extends React.Component {
             <Tooltip
               className='react-autoql-tooltip'
               id={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
-              effect='solid'
               delayShow={800}
             />
           )}

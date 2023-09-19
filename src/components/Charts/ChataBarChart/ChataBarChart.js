@@ -3,7 +3,6 @@ import { getBandScale, getLinearScales } from 'autoql-fe-utils'
 
 import { Axes } from '../Axes'
 import { Bars } from '../Bars'
-import { rebuildTooltips } from '../../Tooltip'
 
 import { chartPropTypes, chartDefaultProps } from '../helpers.js'
 import { deepEqual } from '../../../js/Util'
@@ -25,12 +24,6 @@ export default class ChataBarChart extends Component {
     const stateEqual = deepEqual(this.state, nextState)
 
     return !propsEqual || !stateEqual
-  }
-
-  componentDidUpdate = (prevProps, prevState) => {
-    if (this.state.isChartScaled !== prevState.isChartScaled) {
-      rebuildTooltips()
-    }
   }
 
   setChartData = (props) => {

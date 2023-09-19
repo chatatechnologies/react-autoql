@@ -6,7 +6,7 @@ import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import { DashboardTile } from './DashboardTile'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
-import { hideTooltips, Tooltip } from '../Tooltip'
+import { Tooltip } from '../Tooltip'
 import DrilldownModal from './DrilldownModal'
 
 import { deepEqual, mergeSources } from '../../js/Util'
@@ -126,10 +126,6 @@ class DashboardWithoutTheme extends React.Component {
       this.setState({ isDragging: true }, () => {
         this.setState({ isDragging: false })
       })
-    }
-
-    if (this.state.isDrilldownModalVisible !== prevState.isDrilldownModalVisible) {
-      hideTooltips()
     }
   }
 
@@ -715,8 +711,8 @@ class DashboardWithoutTheme extends React.Component {
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
             source={this.SOURCE}
           />
-          <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' delayShow={500} html />
-          <Tooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} effect='solid' place='top' html />
+          <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} delayShow={500} />
+          <Tooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} place='top' />
         </Fragment>
       </ErrorBoundary>
     )

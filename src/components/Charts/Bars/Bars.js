@@ -1,6 +1,5 @@
 import React, { Component } from 'react'
 import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, scaleZero, getKey } from '../helpers'
-import { rebuildTooltips } from '../../Tooltip'
 
 export default class Bars extends Component {
   static propTypes = chartElementPropTypes
@@ -8,10 +7,6 @@ export default class Bars extends Component {
 
   state = {
     activeKey: this.props.activeChartElementKey,
-  }
-
-  componentDidMount = () => {
-    rebuildTooltips()
   }
 
   onBarClick = (row, colIndex, rowIndex) => {
@@ -90,8 +85,8 @@ export default class Bars extends Component {
                 width={width}
                 height={barHeight}
                 onClick={() => this.onBarClick(d, colIndex, index)}
-                data-tip={tooltip}
-                data-for={this.props.chartTooltipID}
+                data-tooltip-content={tooltip}
+                data-tooltip-id={this.props.chartTooltipID}
                 style={{ fill: color, fillOpacity: 1 }}
               />
             )

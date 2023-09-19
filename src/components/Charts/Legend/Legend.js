@@ -266,7 +266,7 @@ export default class Legend extends Component {
         .attr('y', removedElementYBottom)
         .attr('transform', removedElementTransform)
         .attr('data-tip', 'Some legend fields are hidden. Please expand the chart size to view them.')
-        .attr('data-for', tooltipID)
+        .attr('data-tooltip-id', tooltipID)
         .style('font-size', `${this.props.fontSize - 3}px`)
         .style('color', 'red')
         .style('font-weight', 'bold')

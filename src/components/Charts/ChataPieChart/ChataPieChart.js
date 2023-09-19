@@ -8,7 +8,6 @@ import { scaleOrdinal } from 'd3-scale'
 import { arc } from 'd3-shape'
 import { legendColor, getPieChartData, getChartColorVars } from 'autoql-fe-utils'
 
-import { rebuildTooltips } from '../../Tooltip'
 import { deepEqual, formatElement, removeFromDOM } from '../../../js/Util'
 import { chartDefaultProps, chartPropTypes, getTooltipContent } from '../helpers'
 
@@ -76,7 +75,6 @@ export default class ChataPieChart extends Component {
 
   componentDidMount = () => {
     this.renderPie()
-    rebuildTooltips()
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -173,7 +171,7 @@ export default class ChataPieChart extends Component {
       .attr('fill', (d) => {
         return self.colorScale(d.data.value[self.props.stringColumnIndex])
       })
-      .attr('data-for', this.props.chartTooltipID)
+      .attr('data-tooltip-id', this.props.chartTooltipID)
       .attr('data-tip', function (d) {
         return getTooltipContent({
           row: d.data.value,
@@ -240,9 +238,7 @@ export default class ChataPieChart extends Component {
     if (!onlyLabelVisible) {
       const newLegendLabels = _cloneDeep(this.state.legendLabels)
       newLegendLabels[index].hidden = !this.state.legendLabels[index].hidden
-      this.setState({ legendLabels: newLegendLabels }, () => {
-        rebuildTooltips()
-      })
+      this.setState({ legendLabels: newLegendLabels })
     }
   }
 

@@ -14,7 +14,7 @@ import { NotificationFeed } from '../Notifications/NotificationFeed'
 import { FilterLockPopover } from '../FilterLockPopover'
 import { ConfirmPopover } from '../ConfirmPopover'
 import { ChatContent } from '../ChatContent'
-import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
+import { Tooltip } from '../Tooltip'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 // Utils
@@ -201,8 +201,6 @@ export class DataMessenger extends React.Component {
     if (this.props.defaultOpen && !this.isOpen()) {
       this.openDataMessenger()
     }
-
-    setTimeout(rebuildTooltips, 1000)
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -353,8 +351,6 @@ export class DataMessenger extends React.Component {
         this.setState({ isResizing: false })
       },
     )
-
-    hideTooltips()
   }
 
   getHandleProp = () => {
@@ -480,8 +476,8 @@ export class DataMessenger extends React.Component {
             <div
               className={`react-autoql-dm-tab${page === 'data-messenger' ? ' active' : ''}`}
               onClick={() => this.setState({ activePage: 'data-messenger' })}
-              data-tip='Home'
-              data-for={this.TOOLTIP_ID}
+              data-tooltip-content='Home'
+              data-tooltip-id={this.TOOLTIP_ID}
             >
               <Icon type='react-autoql-bubbles-outlined' />
             </div>
@@ -491,8 +487,8 @@ export class DataMessenger extends React.Component {
                   page === 'explore-queries' ? ' active' : ''
                 } react-autoql-explore-queries`}
                 onClick={() => this.setState({ activePage: 'explore-queries' })}
-                data-tip={lang.exploreQueries}
-                data-for={this.TOOLTIP_ID}
+                data-tooltip-content={lang.exploreQueries}
+                data-tooltip-id={this.TOOLTIP_ID}
               >
                 <Icon type='light-bulb' size={22} />
               </div>
@@ -501,8 +497,8 @@ export class DataMessenger extends React.Component {
               <div
                 className={`react-autoql-dm-tab${page === 'data-explorer' ? ' active' : ''} react-autoql-data-explorer`}
                 onClick={() => this.setState({ activePage: 'data-explorer' })}
-                data-tip={lang.dataExplorer}
-                data-for={this.TOOLTIP_ID}
+                data-tooltip-content={lang.dataExplorer}
+                data-tooltip-id={this.TOOLTIP_ID}
               >
                 <Icon type='data-search' size={22} />
               </div>
@@ -516,8 +512,8 @@ export class DataMessenger extends React.Component {
                   }
                   this.setState({ activePage: 'notifications' })
                 }}
-                data-tip='Notifications'
-                data-for={this.TOOLTIP_ID}
+                data-tooltip-content='Notifications'
+                data-tooltip-id={this.TOOLTIP_ID}
               >
                 <div className='data-messenger-notification-btn'>
                   <NotificationIcon
@@ -541,8 +537,8 @@ export class DataMessenger extends React.Component {
               <div
                 className={`tab${page === 'dpr' ? ' active' : ''} react-autoql-dpr`}
                 onClick={() => this.setState({ activePage: 'dpr' })}
-                data-tip='Education'
-                data-for={this.TOOLTIP_ID}
+                data-tooltip-content='Education'
+                data-tooltip-id={this.TOOLTIP_ID}
               >
                 <Icon type='grad-cap' size={22} />
               </div>
@@ -571,7 +567,7 @@ export class DataMessenger extends React.Component {
           positions={['bottom', 'left', 'top', 'right']}
           align='end'
         >
-          <button data-tip={lang.clearQueriesTooltip} data-for={this.TOOLTIP_ID}>
+          <button data-tooltip-content={lang.clearQueriesTooltip} data-tooltip-id={this.TOOLTIP_ID}>
             <Icon type='trash' />
           </button>
         </ConfirmPopover>
@@ -655,8 +651,8 @@ export class DataMessenger extends React.Component {
           className={`react-autoql-drawer-header-btn filter-locking ${
             this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
           }`}
-          data-tip={lang.openFilterLocking}
-          data-for={this.TOOLTIP_ID}
+          data-tooltip-content={lang.openFilterLocking}
+          data-tooltip-id={this.TOOLTIP_ID}
           onClick={this.state.isFilterLockMenuOpen ? this.closeFilterLockMenu : this.openFilterLockMenu}
         >
           <span className='react-autoql-filter-lock-icon-container'>
@@ -683,16 +679,16 @@ export class DataMessenger extends React.Component {
               <button
                 onClick={this.closeDataMessenger}
                 className='react-autoql-drawer-header-btn'
-                data-tip={lang.closeDataMessenger}
-                data-for={this.TOOLTIP_ID}
+                data-tooltip-content={lang.closeDataMessenger}
+                data-tooltip-id={this.TOOLTIP_ID}
               >
                 <Icon type='close' />
               </button>
               <button
                 onClick={() => this.toggleFullScreen(isFullScreen, maxWidth, maxHeight)}
                 className='react-autoql-drawer-header-btn screen-mode'
-                data-tip={isFullScreen ? lang.minimizeDataMessenger : lang.maximizeDataMessenger}
-                data-for={this.TOOLTIP_ID}
+                data-tooltip-content={isFullScreen ? lang.minimizeDataMessenger : lang.maximizeDataMessenger}
+                data-tooltip-id={this.TOOLTIP_ID}
               >
                 <Icon type={isFullScreen ? 'minimize' : 'maximize'} />
               </button>
@@ -1005,15 +1001,8 @@ export class DataMessenger extends React.Component {
   renderTooltips = () => {
     return (
       <Fragment>
-        <Tooltip
-          className='react-autoql-tooltip'
-          id={this.TOOLTIP_ID}
-          effect='solid'
-          delayShow={800}
-          place='top'
-          html
-        />
-        <Tooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} effect='solid' html />
+        <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} delayShow={800} place='top' />
+        <Tooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} />
       </Fragment>
     )
   }

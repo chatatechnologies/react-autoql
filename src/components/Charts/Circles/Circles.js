@@ -4,7 +4,6 @@ import { max, min } from 'd3-array'
 import { getChartColorVars } from 'autoql-fe-utils'
 
 import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, getKey } from '../helpers'
-import { rebuildTooltips } from '../../Tooltip'
 
 export default class Circles extends Component {
   constructor(props) {
@@ -27,10 +26,6 @@ export default class Circles extends Component {
 
   state = {
     activeKey: this.props.activeChartElementKey,
-  }
-
-  componentDidMount = () => {
-    rebuildTooltips()
   }
 
   onCircleClick = (row, colIndex, rowIndex) => {
@@ -112,8 +107,8 @@ export default class Circles extends Component {
               cy={scaleY + yBandwidth / 2}
               r={value < 0 ? 0 : this.radiusScale(value) / 2}
               onClick={() => this.onCircleClick(row, colIndex, index)}
-              data-tip={tooltip}
-              data-for={this.props.chartTooltipID}
+              data-tooltip-content={tooltip}
+              data-tooltip-id={this.props.chartTooltipID}
               style={{
                 stroke: 'transparent',
                 strokeWidth: 10,

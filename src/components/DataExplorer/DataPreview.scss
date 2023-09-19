@@ -37,9 +37,10 @@
         display: flex;
         justify-content: space-between;
         white-space: nowrap;
-        font-size: 13px;
-        color: var(--react-autoql-text-color-placeholder);
-        font-weight: 600;
+        font-size: 14px;
+        color: var(--react-autoql-text-color-primary);
+        font-weight: 500;
+        padding: 0 4px;
 
         .react-autoql-data-preview-selected-columns-clear-btn {
           text-decoration: underline;
@@ -51,10 +52,10 @@
             justify-content: center;
             align-items: center;
             border-radius: 10px;
-            height: 1.3em;
-            padding: 0 5px;
+            height: 1.4em;
+            padding: 0px 6px;
             color: #ffffff;
-            font-size: 0.8em;
+            font-size: 0.9em;
             font-weight: 600;
             margin-left: 3px;
             background-color: var(--react-autoql-accent-color);
@@ -73,30 +74,60 @@
         height: 100%;
         border-radius: 2px;
         border: 1px solid var(--react-autoql-border-color);
-        margin-top: 3px;
+        margin-top: 1px;
 
         table {
           font-size: 13px;
           min-width: 100%;
-          overflow: hidden;
           border-collapse: collapse;
 
-          // ----------------------- hover styles -----------------------
-          td:hover::after,
-          th:hover::after {
-            content: '\00a0';
-            height: 100000px;
-            left: 0;
-            position: absolute;
-            top: -50000px;
-            width: 100%;
-            background-color: RGBA(
-              var(--react-autoql-accent-color-R),
-              var(--react-autoql-accent-color-G),
-              var(--react-autoql-accent-color-B),
-              0.1
-            );
+          &:hover {
+            // If hovering the table AND hovering a column, highlight header and cells in column
+            th.react-autoql-data-preview-hovered::before {
+              background-color: RGBA(
+                var(--react-autoql-accent-color-R),
+                var(--react-autoql-accent-color-G),
+                var(--react-autoql-accent-color-B),
+                0.4
+              );
+            }
+
+            td.react-autoql-data-preview-hovered {
+              &:not(.data-preview-cell-selected) {
+                background-color: RGBA(
+                  var(--react-autoql-accent-color-R),
+                  var(--react-autoql-accent-color-G),
+                  var(--react-autoql-accent-color-B),
+                  0.1
+                );
+              }
+              &.data-preview-cell-selected {
+                background-color: RGBA(
+                  var(--react-autoql-accent-color-R),
+                  var(--react-autoql-accent-color-G),
+                  var(--react-autoql-accent-color-B),
+                  0.2
+                );
+              }
+            }
           }
+
+          // ----------------------- hover styles -----------------------
+          // td:hover::after,
+          // th:hover::after {
+          //   content: '\00a0';
+          //   height: 100000px;
+          //   left: 0;
+          //   position: absolute;
+          //   top: -50000px;
+          //   width: 100%;
+          //   background-color: RGBA(
+          //     var(--react-autoql-accent-color-R),
+          //     var(--react-autoql-accent-color-G),
+          //     var(--react-autoql-accent-color-B),
+          //     0.1
+          //   );
+          // }
           // ----------------------------------------------------------
 
           thead {
@@ -106,9 +137,8 @@
               height: 35px;
               position: sticky;
               z-index: 1;
-              background: var(--react-autoql-background-color-secondary);
+              background-color: var(--react-autoql-background-color-secondary);
               border-bottom: 1px solid var(--react-autoql-table-border-color);
-              transition: background-color 0.1s ease, color 0.1s ease;
               cursor: pointer;
 
               &::before {
@@ -123,7 +153,7 @@
                   var(--react-autoql-accent-color-R),
                   var(--react-autoql-accent-color-G),
                   var(--react-autoql-accent-color-B),
-                  0.2
+                  0.3
                 );
               }
 
@@ -143,7 +173,6 @@
                   margin-left: 10px;
 
                   .react-autoql-checkbox__input {
-                    transition: border-color 0.1s ease;
                     width: 15px;
                     height: 15px;
                   }
@@ -158,8 +187,7 @@
           }
           tbody {
             tr {
-              opacity: 0.9;
-              height: 24px;
+              height: 28px;
               font-size: 12px;
 
               &:not(:last-child) {
@@ -180,7 +208,7 @@
                     var(--react-autoql-accent-color-R),
                     var(--react-autoql-accent-color-G),
                     var(--react-autoql-accent-color-B),
-                    0.1
+                    0.15
                   );
                 }
               }
@@ -197,27 +225,26 @@
   --bg-color: var(--react-autoql-background-color-secondary);
 
   opacity: 1 !important;
-  padding: 15px 25px !important;
-  font-size: 0.875rem !important;
+  padding: 12px 18px !important;
+  font-size: 13px;
   background: var(--bg-color);
-  border: 2px solid var(--border-color);
   color: var(--react-autoql-text-color);
-  box-shadow: var(--react-autoql-box-shadow-1);
-
-  &.place-bottom::after,
-  &.place-top::after,
-  &.place-left::after,
-  &.place-right::after {
-    border-right: 2px solid var(--react-autoql-border-color);
-    border-top: 2px solid var(--react-autoql-border-color);
-    background: var(--bg-color);
-  }
+  box-shadow: var(--react-autoql-box-shadow-2);
 
   p {
     margin-bottom: 0;
   }
 
   .data-explorer-tooltip-section {
+    display: flex;
+    flex-direction: row;
+    white-space: nowrap;
+    align-items: center;
+
+    .react-autoql-icon {
+      margin-right: 5px;
+    }
+
     &:not(:last-child) {
       margin-bottom: 5px;
     }

@@ -6,7 +6,6 @@ import dayjs from '../../../js/dayjsWithPlugins'
 import { isMobile } from 'react-device-detect'
 import { Icon } from '../../Icon'
 import { LoadingDots } from '../../LoadingDots'
-import { hideTooltips } from '../../Tooltip'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { ConditionBuilder } from '../ConditionBuilder'
 import NotificationQueryResponse from './NotificationQueryResponse'
@@ -308,8 +307,8 @@ export default class NotificationItem extends React.Component {
             <Icon
               type='more-vertical'
               className='react-autoql-notification-options-btn'
-              data-tip='Options'
-              data-for={this.props.tooltipID ?? 'react-autoql-notification-tooltip'}
+              data-tooltip-content='Options'
+              data-tooltip-id={this.props.tooltipID ?? 'react-autoql-notification-tooltip'}
               onClick={(e) => {
                 e.stopPropagation()
                 this.setState({ isMoreOptionsMenuOpen: true })
@@ -322,7 +321,6 @@ export default class NotificationItem extends React.Component {
   }
 
   onOptionClick = (callback = () => {}) => {
-    hideTooltips()
     this.setState({ isMoreOptionsMenuOpen: false })
     callback()
   }
@@ -446,8 +444,8 @@ export default class NotificationItem extends React.Component {
                 {!!this.props.onQueryClick ? (
                   <a
                     onClick={() => this.props.onQueryClick(query)}
-                    data-tip='Click to run this query in Data Messenger'
-                    data-for={this.props.tooltipID}
+                    data-tooltip-content='Click to run this query in Data Messenger'
+                    data-tooltip-id={this.props.tooltipID}
                   >
                     "{query}"
                   </a>

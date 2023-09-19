@@ -294,9 +294,9 @@ export default class ScheduleBuilder extends React.Component {
     //     <Icon
     //       type='info'
     //       className='data-alert-rule-tooltip-icon'
-    //       data-for={this.props.tooltipID}
-    //       data-tip='This query will be used to evaluate the conditions below. If the query result meets the specified conditons, an alert will be triggered.'
-    //       // data-tip={`This is how AutoQL interpreted the query "${this.props.queryResponse?.data?.data?.text}".<br /><br />If there was a date or time frame in the original query, you will be able to configure that in the next step.`}
+    //       data-tooltip-id={this.props.tooltipID}
+    //       data-tooltip-content='This query will be used to evaluate the conditions below. If the query result meets the specified conditons, an alert will be triggered.'
+    //       // data-tooltip-content={`This is how AutoQL interpreted the query "${this.props.queryResponse?.data?.data?.text}".<br /><br />If there was a date or time frame in the original query, you will be able to configure that in the next step.`}
     //       data-place='right'
     //     />
     //     {/*
@@ -492,8 +492,8 @@ export default class ScheduleBuilder extends React.Component {
                 <Icon
                   className='react-autoql-info-tooltip'
                   type='info'
-                  data-for={this.props.tooltipID}
-                  data-tip={tooltip}
+                  data-tooltip-id={this.props.tooltipID}
+                  data-tooltip-content={tooltip}
                 />
               </span>
             }

@@ -7,7 +7,6 @@ import { isMobile } from 'react-device-detect'
 import { authenticationType } from '../../props/types'
 import { authenticationDefault, getAuthentication } from '../../props/defaults'
 import { withTheme } from '../../theme'
-import { rebuildTooltips } from '../Tooltip'
 import { Popover } from '../Popover'
 
 import './FilterLockPopover.scss'
@@ -46,8 +45,6 @@ export class FilterLockPopover extends React.Component {
     if (!this.props.isOpen && prevProps.isOpen) {
       // Clear inserted filter when popover is closed
       this.setState({ insertedFilter: null })
-    } else if (this.props.isOpen && !prevProps.isOpen) {
-      rebuildTooltips()
     }
   }
 

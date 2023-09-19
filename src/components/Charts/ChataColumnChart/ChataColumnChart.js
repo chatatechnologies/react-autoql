@@ -4,7 +4,6 @@ import { Columns } from '../Columns'
 
 import { chartDefaultProps, chartPropTypes } from '../helpers.js'
 import { deepEqual } from '../../../js/Util'
-import { rebuildTooltips } from '../../Tooltip'
 import { getBandScale, getLinearScales } from 'autoql-fe-utils'
 
 export default class ChataColumnChart extends Component {
@@ -24,12 +23,6 @@ export default class ChataColumnChart extends Component {
     const stateEqual = deepEqual(this.state, nextState)
 
     return !propsEqual || !stateEqual
-  }
-
-  componentDidUpdate = (prevProps, prevState) => {
-    if (this.state.isChartScaled !== prevState.isChartScaled) {
-      rebuildTooltips()
-    }
   }
 
   setChartData = (props) => {

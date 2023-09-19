@@ -10,7 +10,7 @@ import { DataAlertModal } from '../Notifications'
 import { Modal } from '../Modal'
 import { Button } from '../Button'
 import { Popover } from '../Popover'
-import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
+import { Tooltip } from '../Tooltip'
 import ReportProblemModal from './ReportProblemModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { setColumnVisibility, exportCSV } from 'autoql-fe-utils'
@@ -72,7 +72,6 @@ export class OptionsToolbar extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
-    rebuildTooltips()
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -98,12 +97,6 @@ export class OptionsToolbar extends React.Component {
     if (prevProps.displayType !== this.props.displayType) {
       this.setState({ activeMenu: undefined })
     }
-
-    if (prevState.isFiltering !== this.state.isFiltering) {
-      hideTooltips()
-    }
-
-    rebuildTooltips()
   }
 
   componentWillUnmount = () => {
@@ -134,7 +127,6 @@ export class OptionsToolbar extends React.Component {
       this.props.responseRef?.copyTableToClipboard()
       this.props.onSuccessAlert('Successfully copied table to clipboard!')
       this.setTemporaryState('copiedTable', true, 1000)
-      hideTooltips()
     } else {
       this.setTemporaryState('copiedTable', false, 1000)
     }
@@ -208,7 +200,6 @@ export class OptionsToolbar extends React.Component {
   }
 
   deleteMessage = () => {
-    hideTooltips()
     this.props.deleteMessageCallback()
   }
 
@@ -223,7 +214,6 @@ export class OptionsToolbar extends React.Component {
     this.props.onSuccessAlert('Successfully copied generated query to clipboard!')
 
     this.setState({ sqlCopySuccess: true })
-    hideTooltips()
   }
 
   showHideColumnsModal = () => this.setState({ isHideColumnsModalVisible: true })
@@ -616,7 +606,6 @@ export class OptionsToolbar extends React.Component {
             >
               <Button
                 onClick={() => {
-                  hideTooltips()
                   this.setState({ activeMenu: 'more-options' })
                 }}
                 className={this.getMenuItemClass('more-options')}
@@ -699,9 +688,7 @@ export class OptionsToolbar extends React.Component {
         {shouldShowButton.showReportProblemButton && this.renderReportProblemModal()}
         {shouldShowButton.showCreateNotificationIcon && this.renderDataAlertModal()}
         {shouldShowButton.showSQLButton && this.renderSQLModal()}
-        {!this.props.tooltipID && (
-          <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' delayShow={800} />
-        )}
+        {!this.props.tooltipID && <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} delayShow={800} />}
       </ErrorBoundary>
     )
   }

@@ -2,7 +2,6 @@ import React, { Component } from 'react'
 import { getChartColorVars } from 'autoql-fe-utils'
 
 import { formatElement } from '../../../../js/Util'
-import { rebuildTooltips } from '../../../Tooltip'
 import { chartElementDefaultProps, chartElementPropTypes, getKey } from '../../helpers'
 
 export default class HistogramColumns extends Component {
@@ -11,16 +10,6 @@ export default class HistogramColumns extends Component {
 
   state = {
     activeKey: this.props.activeChartElementKey,
-  }
-
-  componentDidMount = () => {
-    rebuildTooltips()
-  }
-
-  componentDidUpdate = (prevProps) => {
-    if (prevProps.buckets?.length !== this.props.buckets?.length) {
-      rebuildTooltips()
-    }
   }
 
   onColumnClick = (x0, x1, rowIndex) => {
@@ -85,8 +74,8 @@ export default class HistogramColumns extends Component {
           height={height}
           width={width}
           onClick={() => this.onColumnClick(d.x0, d.x1, index)}
-          data-tip={tooltip}
-          data-for={this.props.chartTooltipID}
+          data-tooltip-content={tooltip}
+          data-tooltip-id={this.props.chartTooltipID}
           style={{ fill: color, fillOpacity: 1, cursor: 'default' }}
         />
       )

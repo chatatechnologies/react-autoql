@@ -9,7 +9,6 @@ import { CustomScrollbars } from '../../CustomScrollbars'
 import { Checkbox } from '../../Checkbox'
 import { NUMBER_COLUMN_TYPES, NUMBER_COLUMN_TYPE_DISPLAY_NAMES } from '../../../js/Constants'
 import { Select } from '../../Select'
-import { rebuildTooltips } from '../../Tooltip'
 import { isMobile } from 'react-device-detect'
 import { AGG_TYPES } from 'autoql-fe-utils'
 
@@ -38,12 +37,6 @@ export default class NumberAxisSelector extends React.Component {
   static defaultProps = {
     changeNumberColumnIndices: () => {},
     positions: ['right', 'bottom', 'top', 'left'],
-  }
-
-  componentDidMount = () => {
-    if (!this.props.hidden) {
-      rebuildTooltips()
-    }
   }
 
   componentDidUpdate = (prevProps, prevState) => {

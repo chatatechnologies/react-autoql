@@ -15,7 +15,6 @@ import LoadingDots from '../../LoadingDots/LoadingDots.js'
 import { Icon } from '../../Icon'
 import { responseErrors } from '../../../js/errorMessages'
 import { deepEqual, isChartType } from '../../../js/Util'
-import { hideTooltips } from '../../Tooltip'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
 import {
@@ -752,8 +751,6 @@ export class DashboardTile extends React.Component {
     }
 
     this.debouncedSetParamsForTile({ splitView, secondQuery })
-
-    hideTooltips()
   }
 
   renderSplitResponse = () => {
@@ -793,10 +790,7 @@ export class DashboardTile extends React.Component {
                 data-test='split-view-query-btn'
               >
                 <Button
-                  onClick={() => {
-                    this.toggleSecondQueryInput()
-                    hideTooltips()
-                  }}
+                  onClick={() => this.toggleSecondQueryInput()}
                   className='react-autoql-toolbar-btn'
                   tooltip='Query'
                   tooltipID={this.props.tooltipID}
@@ -850,7 +844,7 @@ export class DashboardTile extends React.Component {
                     placeholder: 'Type a query in your own words',
                     value: this.state.query,
                     'data-tip': 'Query',
-                    'data-for': this.props.tooltipID,
+                    'data-tooltip-id': this.props.tooltipID,
                     'data-place': 'bottom',
                     onFocus: (e) => {
                       e.stopPropagation()
@@ -866,8 +860,8 @@ export class DashboardTile extends React.Component {
                   className='dashboard-tile-input query'
                   placeholder='Type a query in your own words'
                   value={this.state.query}
-                  data-tip='Query'
-                  data-for={this.props.tooltipID}
+                  data-tooltip-content='Query'
+                  data-tooltip-id={this.props.tooltipID}
                   data-place='bottom'
                   spellCheck={false}
                   onChange={this.onQueryInputChange}
@@ -883,8 +877,8 @@ export class DashboardTile extends React.Component {
               <input
                 className='dashboard-tile-input title'
                 placeholder='Add descriptive title (optional)'
-                data-tip='Title'
-                data-for={this.props.tooltipID}
+                data-tooltip-content='Title'
+                data-tooltip-id={this.props.tooltipID}
                 data-place='bottom'
                 value={this.state.title}
                 onChange={(e) => this.debounceTitleInputChange(e.target.value)}
@@ -894,7 +888,7 @@ export class DashboardTile extends React.Component {
             </div>
           </div>
           <div className={`dashboard-tile-play-button${!this.isQueryValid(this.state.query) ? ' disabled' : ''}`}>
-            <Icon type='play' onClick={() => this.processTile()} data-tip='Run tile' data-place='left' />
+            <Icon type='play' onClick={() => this.processTile()} data-tooltip-content='Run tile' data-place='left' />
           </div>
         </div>
       )
@@ -906,8 +900,10 @@ export class DashboardTile extends React.Component {
           ref={(r) => (this.dashboardTileTitleRef = r)}
           className='dashboard-tile-title'
           id={`dashboard-tile-title-${this.COMPONENT_KEY}`}
-          data-tip={this.state.isTitleOverFlow ? this.props.tile.title || this.props.tile.query || 'Untitled' : null}
-          data-for='react-autoql-dashboard-tile-title-tooltip'
+          data-tooltip-content={
+            this.state.isTitleOverFlow ? this.props.tile.title || this.props.tile.query || 'Untitled' : null
+          }
+          data-tooltip-id='react-autoql-dashboard-tile-title-tooltip'
         >
           {this.props.tile.title || this.props.tile.query || 'Untitled'}
         </span>

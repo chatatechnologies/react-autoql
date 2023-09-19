@@ -2,7 +2,6 @@ import React, { Component } from 'react'
 import { getThemeValue } from 'autoql-fe-utils'
 import { createSVGPath } from './lineFns'
 import { chartElementDefaultProps, chartElementPropTypes, getKey, getTooltipContent } from '../helpers'
-import { rebuildTooltips } from '../../Tooltip'
 
 export default class Line extends Component {
   constructor(props) {
@@ -17,10 +16,6 @@ export default class Line extends Component {
 
   static propTypes = chartElementPropTypes
   static defaultProps = chartElementDefaultProps
-
-  componentDidMount = () => {
-    rebuildTooltips()
-  }
 
   onDotClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)
@@ -139,8 +134,8 @@ export default class Line extends Component {
               className={`line-dot${this.state.activeKey === key ? ' active' : ''}${largeDataset ? ' hidden-dot' : ''}`}
               key={`circle-group-${key}`}
               onClick={() => this.onDotClick(d, colIndex, index)}
-              data-tip={tooltip}
-              data-for={this.props.chartTooltipID}
+              data-tooltip-content={tooltip}
+              data-tooltip-id={this.props.chartTooltipID}
             >
               {circle}
               {transparentHoverVertex}

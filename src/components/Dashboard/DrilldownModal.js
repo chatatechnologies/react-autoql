@@ -7,7 +7,6 @@ import { Modal } from '../Modal'
 import { QueryOutput } from '../QueryOutput'
 import { LoadingDots } from '../LoadingDots'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
-import { rebuildTooltips } from '../Tooltip'
 import ReportProblemModal from '../OptionsToolbar/ReportProblemModal'
 import DrilldownTable from './DrilldownTable'
 
@@ -81,10 +80,6 @@ export default class DrilldownModal extends React.Component {
     if (this.splitterLayoutRef?.splitter) {
       this.renderSplitterCollapseBtn()
     }
-
-    if (prevState.isDrilldownChartHidden !== this.state.isDrilldownChartHidden) {
-      rebuildTooltips()
-    }
   }
 
   renderSplitterCollapseBtn = () => {
@@ -96,7 +91,7 @@ export default class DrilldownModal extends React.Component {
       btn.innerHTML = '&#94;'
       btn.className = 'splitter-collapse-btn'
       btn.id = `splitter-btn-${this.COMPONENT_KEY}`
-      btn.setAttribute('data-for', this.props.tooltipID)
+      btn.setAttribute('data-tooltip-id', this.props.tooltipID)
 
       btn.addEventListener('click', () => {
         this.setState(

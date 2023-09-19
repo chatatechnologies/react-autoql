@@ -1,7 +1,6 @@
 import React, { Component } from 'react'
 import { deviation, mean, median as median } from 'd3-array'
 import { v4 as uuid } from 'uuid'
-import { rebuildTooltips } from '../../../Tooltip'
 import { chartElementDefaultProps, chartElementPropTypes } from '../../helpers'
 import { createSVGPath } from '../../Line/lineFns'
 import { normalPDF, exponentialPDF } from '../distributionFns'
@@ -49,10 +48,6 @@ export default class HistogramDistributions extends Component {
   static propTypes = chartElementPropTypes
   static defaultProps = chartElementDefaultProps
 
-  componentDidMount = () => {
-    rebuildTooltips()
-  }
-
   createEquallySpacedPoints = (domain, length) => {
     const start = domain[0]
     const end = domain[1]
@@ -86,8 +81,8 @@ export default class HistogramDistributions extends Component {
           d={d}
           key={`${key}-hover`}
           className='path-hover-line'
-          data-tip={tooltip}
-          data-for={this.props.chartTooltipID}
+          data-tooltip-content={tooltip}
+          data-tooltip-id={this.props.chartTooltipID}
           data-effect='float'
           stroke='transparent'
           strokeWidth={strokeWidth + 5}

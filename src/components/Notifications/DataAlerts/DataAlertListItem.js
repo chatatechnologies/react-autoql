@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 
 import { Icon } from '../../Icon'
 import { Switch } from '../../Switch'
-import { hideTooltips } from '../../Tooltip'
 
 import {
   CONTINUOUS_TYPE,
@@ -13,7 +12,7 @@ import {
   RESET_PERIOD_OPTIONS,
   SCHEDULED_TYPE,
   SCHEDULE_FREQUENCY_OPTIONS,
-  DATA_ALERT_ENABLED_STATUSES
+  DATA_ALERT_ENABLED_STATUSES,
 } from '../DataAlertConstants'
 
 import { initializeAlert, updateDataAlertStatus } from '../../../js/notificationService'
@@ -107,8 +106,6 @@ export default class DataAlertListItem extends React.Component {
   }
 
   onEnableSwitchChange = (checked) => {
-    hideTooltips()
-
     const previousStatus = this.state.status
     const newStatus = checked ? 'ACTIVE' : 'INACTIVE'
 
@@ -177,8 +174,8 @@ export default class DataAlertListItem extends React.Component {
       return (
         <div
           className={`data-alert-state data-alert-error ${status}`}
-          data-for={this.props.tooltipID}
-          data-tip={
+          data-tooltip-id={this.props.tooltipID}
+          data-tooltip-content={
             isCustom
               ? 'There was a problem with this Data Alert. Try restarting the Alert by clicking the <em>refresh</em> button. If the problem persists, please contact your system administrator.'
               : 'There was a problem with this Data Alert. For more information, please contact your system administrator.'
@@ -190,7 +187,7 @@ export default class DataAlertListItem extends React.Component {
             <Icon
               type='refresh'
               className='react-autoql-notification-state-action-btn'
-              data-for={this.props.tooltipID}
+              data-tooltip-id={this.props.tooltipID}
               onClick={this.onInitializeClick}
               spinning={this.state.isInitializing}
               disabled={this.state.isInitializing}
@@ -204,8 +201,8 @@ export default class DataAlertListItem extends React.Component {
       return (
         <div className={`data-alert-state data-alert-triggered ${status}`}>
           <span
-            data-tip={`This Alert has been triggered for this cycle. You will not receive notifications until the start of the next cycle, ${resetDateFormatted}.<br/>You can edit this in the <em>Data Alert Settings</em>`}
-            data-for={this.props.tooltipID}
+            data-tooltip-content={`This Alert has been triggered for this cycle. You will not receive notifications until the start of the next cycle, ${resetDateFormatted}.<br/>You can edit this in the <em>Data Alert Settings</em>`}
+            data-tooltip-id={this.props.tooltipID}
           >
             <Icon type='lightning' />
             <span>Triggered</span>
@@ -214,8 +211,8 @@ export default class DataAlertListItem extends React.Component {
             <Icon
               type='refresh'
               className='react-autoql-notification-state-action-btn'
-              data-for={this.props.tooltipID}
-              data-tip={
+              data-tooltip-id={this.props.tooltipID}
+              data-tooltip-content={
                 isTriggered
                   ? 'Restart Alert cycle (This will allow your Alert to be triggered again in the current frequency cycle)'
                   : ''
@@ -238,8 +235,8 @@ export default class DataAlertListItem extends React.Component {
       return (
         <div
           className={`data-alert-state data-alert-scheduled ${status}`}
-          data-tip={tooltip}
-          data-for={this.props.tooltipID}
+          data-tooltip-content={tooltip}
+          data-tooltip-id={this.props.tooltipID}
         >
           <Icon type='calendar' />
           <span>Scheduled</span>
@@ -251,8 +248,8 @@ export default class DataAlertListItem extends React.Component {
       return (
         <div
           className={`data-alert-state data-alert-active ${status}`}
-          data-tip='This Alert is live - Whenever the conditions are met, you will be notified.'
-          data-for={this.props.tooltipID}
+          data-tooltip-content='This Alert is live - Whenever the conditions are met, you will be notified.'
+          data-tooltip-id={this.props.tooltipID}
         >
           <Icon className='react-autoql-icon-filled' type='live' />
           <span>Live</span>
@@ -263,8 +260,8 @@ export default class DataAlertListItem extends React.Component {
     return (
       <div
         className={`data-alert-state data-alert-ready ${status}`}
-        data-tip='This Alert is ready to go live - you will start receiving notifications once you set the Alert Status to <em>Active</em>.'
-        data-for={this.props.tooltipID}
+        data-tooltip-content='This Alert is ready to go live - you will start receiving notifications once you set the Alert Status to <em>Active</em>.'
+        data-tooltip-id={this.props.tooltipID}
       >
         <Icon type='check' />
         <span>Ready</span>
@@ -325,8 +322,8 @@ export default class DataAlertListItem extends React.Component {
             </div>
             <div
               className='data-alert-section-content data-alert-section-cycle'
-              data-for={this.props.tooltipID}
-              data-tip={this.getFrequencyTooltip()}
+              data-tooltip-id={this.props.tooltipID}
+              data-tooltip-content={this.getFrequencyTooltip()}
             >
               {this.renderDataAlertCycle()}
             </div>
@@ -354,8 +351,8 @@ export default class DataAlertListItem extends React.Component {
                 checked={isEnabled}
                 className='react-autoql-notification-enable-checkbox'
                 onClick={(e) => e.stopPropagation()}
-                data-tip={isEnabled ? 'Active' : 'Inactive'}
-                data-for={this.props.tooltipID}
+                data-tooltip-content={isEnabled ? 'Active' : 'Inactive'}
+                data-tooltip-id={this.props.tooltipID}
                 onChange={this.onEnableSwitchChange}
                 onText='Active'
                 offText='Inactive'
@@ -373,16 +370,16 @@ export default class DataAlertListItem extends React.Component {
                 <div className='react-autoql-notification-action-btn'>
                   <Icon
                     type='settings'
-                    data-for={this.props.tooltipID}
-                    data-tip='Open Data Alert settings'
+                    data-tooltip-id={this.props.tooltipID}
+                    data-tooltip-content='Open Data Alert settings'
                     onClick={this.onEditClick}
                   />
                 </div>
                 <div className='react-autoql-notification-action-btn react-autoql-notification-action-btn-delete'>
                   <Icon
                     type='trash'
-                    data-for={this.props.tooltipID}
-                    data-tip='Delete Data Alert'
+                    data-tooltip-id={this.props.tooltipID}
+                    data-tooltip-content='Delete Data Alert'
                     onClick={this.onDeleteClick}
                   />
                 </div>

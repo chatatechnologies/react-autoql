@@ -24,7 +24,7 @@ import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../Charts/ChataChart'
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { Icon } from '../Icon'
-import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
+import { Tooltip } from '../Tooltip'
 
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import errorMessages, { responseErrors } from '../../js/errorMessages'
@@ -305,10 +305,6 @@ export class QueryOutput extends React.Component {
         this.props.onAggConfigChange(this.state.aggConfig)
       }
 
-      if (prevState.displayType !== this.state.displayType) {
-        rebuildTooltips()
-      }
-
       if (
         this.state.visibleRows?.length !== prevState.visibleRows?.length ||
         (this.state.displayType === 'table' && prevState.displayType === 'text')
@@ -365,7 +361,6 @@ export class QueryOutput extends React.Component {
   componentWillUnmount = () => {
     try {
       this._isMounted = false
-      hideTooltips()
     } catch (error) {
       console.error(error)
     }
@@ -2496,8 +2491,8 @@ export class QueryOutput extends React.Component {
             <span>
               Query cancelled{' '}
               <Icon
-                data-tip='Pressing the ESC key will cancel the current query request. If you wish to re-run your last query, simply press the UP arrow in the input bar then hit ENTER.'
-                data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
+                data-tooltip-content='Pressing the ESC key will cancel the current query request. If you wish to re-run your last query, simply press the UP arrow in the input bar then hit ENTER.'
+                data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
                 type='question'
               />
             </span>
@@ -2693,8 +2688,8 @@ export class QueryOutput extends React.Component {
       <div className='dashboard-data-limit-warning-icon'>
         <Icon
           type='warning'
-          data-tip={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached. Try querying a smaller time-frame to ensure all your data is displayed.`}
-          data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
+          data-tooltip-content={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached. Try querying a smaller time-frame to ensure all your data is displayed.`}
+          data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
           data-place={isReverseTranslationRendered ? 'left' : 'right'}
         />
       </div>
@@ -2732,12 +2727,8 @@ export class QueryOutput extends React.Component {
           {this.renderResponse()}
           {this.props.reverseTranslationPlacement !== 'top' && this.renderFooter()}
         </div>
-        {!this.props.tooltipID && (
-          <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' place='top' html />
-        )}
-        {!this.props.chartTooltipID && (
-          <Tooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} effect='solid' html />
-        )}
+        {!this.props.tooltipID && <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} />}
+        {!this.props.chartTooltipID && <Tooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} />}
       </ErrorBoundary>
     )
   }

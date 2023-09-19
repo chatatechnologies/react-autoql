@@ -10,3 +10,7 @@ a {
   color: var(--react-autoql-accent-color);
   cursor: pointer;
 }
+
+.react-tooltip {
+  z-index: 999999 !important;
+}

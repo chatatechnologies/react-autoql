@@ -420,8 +420,8 @@ export default class DataExplorerInput extends React.Component {
     return (
       <div
         className={`chat-bar-clear-btn ${this.state.inputValue ? 'visible' : ''}`}
-        data-for={this.props.tooltipID ?? 'explore-queries-tooltips'}
-        data-tip='Clear Search'
+        data-tooltip-id={this.props.tooltipID ?? 'explore-queries-tooltips'}
+        data-tooltip-content='Clear Search'
       >
         <Icon type='close' onClick={this.clearInput} />
       </div>

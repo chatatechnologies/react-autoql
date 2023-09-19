@@ -1,5 +1,4 @@
 import React, { Component } from 'react'
-import { rebuildTooltips } from '../../Tooltip'
 import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, scaleZero, getKey } from '../helpers'
 
 export default class Columns extends Component {
@@ -8,10 +7,6 @@ export default class Columns extends Component {
 
   state = {
     activeKey: this.props.activeChartElementKey,
-  }
-
-  componentDidMount = () => {
-    rebuildTooltips()
   }
 
   onColumnClick = (row, colIndex, rowIndex) => {
@@ -85,8 +80,8 @@ export default class Columns extends Component {
                 height={height}
                 width={this.barWidth}
                 onClick={() => this.onColumnClick(d, colIndex, index)}
-                data-tip={tooltip}
-                data-for={this.props.chartTooltipID}
+                data-tooltip-content={tooltip}
+                data-tooltip-id={this.props.chartTooltipID}
                 style={{ fill: color, fillOpacity: 0.7 }}
               />
             )

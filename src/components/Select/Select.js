@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { Popover } from '../Popover'
 import { v4 as uuid } from 'uuid'
 import { Icon } from '../Icon'
-import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
+import { Tooltip } from '../Tooltip'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { Menu, MenuItem } from '../Menu'
 
@@ -48,22 +48,14 @@ export default class Select extends React.Component {
   }
 
   componentDidMount = () => {
-    rebuildTooltips()
     this.scrollToValue()
   }
 
   componentDidUpdate = (nextProps, nextState) => {
     if (this.state.isOpen !== nextState.isOpen) {
-      hideTooltips()
-      rebuildTooltips()
-
       if (this.state.isOpen) {
         this.scrollToValue()
       }
-    }
-
-    if (this.props.value !== nextProps.value) {
-      rebuildTooltips()
     }
   }
 
@@ -95,10 +87,10 @@ export default class Select extends React.Component {
           data-test='react-autoql-select'
           onClick={() => this.setState({ isOpen: !this.state.isOpen })}
           style={this.props.style}
-          data-tip={this.props.tooltip}
-          data-for={this.props.tooltipID}
+          data-tooltip-content={this.props.tooltip}
+          data-tooltip-id={this.props.tooltipID}
           data-offset={10}
-          data-delay-show={500}
+          data-tooltip-delay-show={500}
         >
           <span className='react-autoql-select-text'>
             {selectedOption?.label || selectedOption?.value ? (
@@ -129,7 +121,7 @@ export default class Select extends React.Component {
     return (
       <div className='react-autoql-select-popup-container' style={{ width: this.props.style.width }}>
         {!this.props.tooltipID && (
-          <Tooltip id={`select-tooltip-${this.ID}`} className='react-autoql-tooltip' effect='solid' delayShow={500} />
+          <Tooltip id={`select-tooltip-${this.ID}`} className='react-autoql-tooltip' delayShow={500} />
         )}
         <Menu options={this.props.options}>
           {this.props.options?.map((option, i) => {

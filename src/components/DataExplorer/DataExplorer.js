@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Tooltip } from '../Tooltip'
 import { v4 as uuid } from 'uuid'
-import { DataExplorerTypes } from 'autoql-fe-utils'
+import { COLUMN_TYPES, DataExplorerTypes } from 'autoql-fe-utils'
 
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import DataExplorerInput from './DataExplorerInput'
@@ -21,6 +21,7 @@ export default class DataExplorer extends React.Component {
     super(props)
 
     this.querySuggestionsKey = uuid()
+    this.ID = uuid()
 
     this.state = {
       activeTopicType: null,
@@ -49,7 +50,6 @@ export default class DataExplorer extends React.Component {
     shouldRender: true,
     inputPlaceholder: undefined,
     introMessage: undefined,
-    rebuildTooltips: undefined,
     executeQuery: () => {},
     isSmallScreen: false,
   }
@@ -152,13 +152,15 @@ export default class DataExplorer extends React.Component {
           shouldRender={this.props.shouldRender}
           dataExplorerRef={this.dataExplorerPage}
           isCollapsed={this.props.isSmallScreen ? this.state.isDataPreviewCollapsed : undefined}
+          defaultCollapsed={this.props.isSmallScreen ? false : undefined}
+          tooltipID={`data-preview-tooltip-${this.ID}`}
+          onColumnSelection={(columns) => console.log('columns selected!', columns)}
           onIsCollapsedChange={(isCollapsed) => {
             this.setState({
               isDataPreviewCollapsed: isCollapsed,
               isQuerySuggestionCollapsed: isCollapsed ? this.state.isQuerySuggestionCollapsed : true,
             })
           }}
-          defaultCollapsed={this.props.isSmallScreen ? false : undefined}
         />
       </div>
     )
@@ -229,9 +231,51 @@ export default class DataExplorer extends React.Component {
     })
   }
 
+  renderHeaderTooltipContent = ({ content }) => {
+    let column
+    try {
+      column = JSON.parse(content)
+    } catch (error) {
+      return null
+    }
+
+    if (!column) {
+      return null
+    }
+
+    const name = column.display_name
+    const type = COLUMN_TYPES[column.type]?.description
+    const icon = COLUMN_TYPES[column.type]?.icon
+
+    return (
+      <div>
+        <div className='data-explorer-tooltip-title'>{name}</div>
+        {!!type && (
+          <div className='data-explorer-tooltip-section'>
+            {!!icon && <Icon type={icon} />}
+            {type}
+          </div>
+        )}
+        {/* Disable this until we have a better way to get query suggestions for columns
+        <div className="data-explorer-tooltip-section">
+          <strong>Query suggestions:</strong>
+          <br />
+          {this.renderColumnQuerySuggestions(column)}
+        </div> */}
+      </div>
+    )
+  }
+
   renderDataExplorerContent = () => {
     if (!this.getSelectedTopic()) {
       return this.renderIntroMessage()
+    }
+
+    let formattedType = ''
+    if (this.state.selectedSubject.type === DataExplorerTypes.SUBJECT_TYPE) {
+      formattedType = 'Topic'
+    } else if (this.state.selectedSubject.type === DataExplorerTypes.VL_TYPE) {
+      formattedType = 'Data Value'
     }
 
     return (
@@ -242,7 +286,14 @@ export default class DataExplorer extends React.Component {
             className='data-explorer-sections-container'
           >
             <div className='react-autoql-data-explorer-selected-subject-title'>
-              <Icon style={{ fontSize: '20px' }} type='book' /> {this.state.selectedSubject?.display_name}
+              <Icon
+                style={{ fontSize: '20px' }}
+                type='book'
+                data-tooltip-content={formattedType}
+                data-tooltip-id={formattedType ? this.props.tooltipID : undefined}
+              />{' '}
+              {this.state.selectedSubject?.display_name}
+              {!!formattedType && ` (${formattedType})`}
             </div>
             {this.renderDataPreview()}
             {this.renderQuerySuggestions()}
@@ -365,6 +416,16 @@ export default class DataExplorer extends React.Component {
           />
           {this.renderDataExplorerContent()}
         </ErrorBoundary>
+        <Tooltip
+          className='data-preview-tooltip'
+          id={`data-preview-tooltip-${this.ID}`}
+          render={this.renderHeaderTooltipContent}
+          delayShow={500}
+          effect='solid'
+          place='top'
+          clickable
+          border
+        />
       </div>
     )
   }

@@ -9,7 +9,6 @@ import Autosuggest from 'react-autosuggest'
 import SpeechToTextButtonBrowser from '../SpeechToTextButton/SpeechToTextButtonBrowser'
 import { runQuery, runQueryOnly, fetchAutocomplete } from 'autoql-fe-utils'
 
-import { hideTooltips } from '../Tooltip'
 import { Icon } from '../Icon'
 
 import {
@@ -267,7 +266,6 @@ class QueryInput extends React.Component {
   onFinalTranscript = (transcript) => {
     this.setState({ inputValue: transcript, listeningForTranscript: false }, () => {
       this.focus()
-      hideTooltips()
     })
   }
 
