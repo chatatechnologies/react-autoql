@@ -3,8 +3,9 @@ import PropTypes from 'prop-types'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
+import { v4 as uuid } from 'uuid'
 import axios from 'axios'
-import { fetchDataPreview } from 'autoql-fe-utils'
+import { COLUMN_TYPES, fetchDataPreview } from 'autoql-fe-utils'
 
 // import { CustomScrollbars } from '../CustomScrollbars'
 import { LoadingDots } from '../LoadingDots'
@@ -15,7 +16,7 @@ import { getDataFormatting, dataFormattingDefault } from '../../props/defaults'
 import { dataFormattingType } from '../../props/types'
 import { formatElement } from '../../js/Util.js'
 import { responseErrors } from '../../js/errorMessages'
-import { rebuildTooltips } from '../Tooltip'
+import { Tooltip, rebuildTooltips } from '../Tooltip'
 import { Checkbox } from '../Checkbox'
 
 import './DataPreview.scss'
@@ -25,6 +26,7 @@ export default class DataExplorer extends React.Component {
     super(props)
 
     this.DATA_PREVIEW_ROWS = 5
+    this.ID = uuid()
 
     this.state = {
       dataPreview: null,
@@ -103,11 +105,14 @@ export default class DataExplorer extends React.Component {
           this.setState({ loading: false, error: error?.response?.data })
         }
       })
+      .finally(() => {
+        rebuildTooltips()
+      })
   }
 
   formatColumnHeader = (column, i) => {
     return (
-      <div className='data-preview-col-header' data-for={this.props.tooltipID ?? 'data-preview-tooltip'}>
+      <div className='data-preview-col-header' data-for={`data-preview-tooltip-${this.ID}`} data-tip={col.name}>
         <span>{column?.display_name}</span>
         <Checkbox checked={this.state.checkedColumns?.includes(i)} onChange={() => this.onColumnHeaderClick(i)} />
       </div>
@@ -141,6 +146,44 @@ export default class DataExplorer extends React.Component {
     }
 
     this.setState({ checkedColumns })
+  }
+
+  // getColumnHeaderTooltip = (col) => {
+  //   const name = col.display_name
+  //   const type = COLUMN_TYPES[col.type]?.description
+  //   return `<strong>Field: </strong>${name}<br/><strong>Data Type: </strong>${type}`
+  // }
+
+  renderHeaderTooltipContent = (columnName) => {
+    console.log({ columnName })
+    const columns = this.state.dataPreview?.data?.data?.columns
+    const column = columns?.find((col) => col.name === columnName)
+
+    //
+
+    console.log({ column })
+
+    if (!column) {
+      return null
+    }
+
+    const name = column.display_name
+    const type = COLUMN_TYPES[column.type]?.description
+
+    return `<strong>Field: </strong>${name}<br/><strong>Data Type: </strong>${type}`
+
+    // return (
+    //   <div>
+    //     <div className='data-explorer-tooltip-title'>{column?.display_name}</div>
+    //     {!!type && <div className='data-explorer-tooltip-section'>{type}</div>}
+    //     {/* Disable this until we have a better way to get query suggestions for columns
+    //     <div className="data-explorer-tooltip-section">
+    //       <strong>Query suggestions:</strong>
+    //       <br />
+    //       {this.renderColumnQuerySuggestions(column)}
+    //     </div> */}
+    //   </div>
+    // )
   }
 
   renderDataPreviewGrid = () => {
@@ -191,12 +234,9 @@ export default class DataExplorer extends React.Component {
                     return (
                       <th
                         key={`col-header-${i}`}
-                        className={
-                          this.state.checkedColumns.includes(i) ? 'data-preview-column-selected' : 'data-preview-column'
-                        }
+                        className={`${this.state.checkedColumns.includes(i) ? 'data-preview-column-selected' : ''}`}
                         onClick={() => this.onColumnHeaderClick(i)}
                       >
-                        <div className='data-preview-column-header-hover-element' />
                         {this.formatColumnHeader(col, i)}
                       </th>
                     )
@@ -211,12 +251,11 @@ export default class DataExplorer extends React.Component {
                         const column = columns[j]
                         return (
                           <td
-                            className={`${
-                              this.state.checkedColumns.includes(j) ? 'data-preview-cell-selected' : 'data-preview-cell'
-                            }`}
+                            className={`${this.state.checkedColumns.includes(j) ? 'data-preview-cell-selected' : ''}`}
+                            onClick={() => this.onColumnHeaderClick(j)}
+                            // onMouseOver={}
                             key={`cell-${j}`}
                           >
-                            <div className='data-preview-cell-hover-element' />
                             {this.formatCell({ cell, column, config })}
                           </td>
                         )
@@ -262,6 +301,16 @@ export default class DataExplorer extends React.Component {
         <div className='data-explorer-data-preview' data-test='data-explorer-data-preview'>
           {this.state.loading ? this.renderLoadingContainer() : this.renderDataPreviewGrid()}
         </div>
+        {/* <Tooltip
+          className='data-preview-tooltip'
+          id={`data-preview-tooltip-${this.ID}`}
+          place='right'
+          delayHide={200}
+          delayUpdate={200}
+          effect='solid'
+          content={this.renderHeaderTooltipContent}
+          clickable
+        /> */}
       </ErrorBoundary>
     )
   }

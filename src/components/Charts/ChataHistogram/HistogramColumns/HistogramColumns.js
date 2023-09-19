@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
+import { getChartColorVars } from 'autoql-fe-utils'
+
 import { formatElement } from '../../../../js/Util'
-import { getChartColorVars } from '../../../../theme/configureTheme'
 import { rebuildTooltips } from '../../../Tooltip'
 import { chartElementDefaultProps, chartElementPropTypes, getKey } from '../../helpers'
 

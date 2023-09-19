@@ -152,7 +152,6 @@ export default class DataExplorer extends React.Component {
           shouldRender={this.props.shouldRender}
           dataExplorerRef={this.dataExplorerPage}
           isCollapsed={this.props.isSmallScreen ? this.state.isDataPreviewCollapsed : undefined}
-          tooltipID={this.props.tooltipID}
           onIsCollapsedChange={(isCollapsed) => {
             this.setState({
               isDataPreviewCollapsed: isCollapsed,
@@ -341,28 +340,6 @@ export default class DataExplorer extends React.Component {
     )
   }
 
-  renderHeaderTooltipContent = (dataTip = '') => {
-    const column = JSON.parse(dataTip)
-    if (!column) {
-      return null
-    }
-
-    const formattedType = this.formatColumnType(column?.type)
-
-    return (
-      <div>
-        <div className='data-explorer-tooltip-title'>{column?.display_name}</div>
-        {!!formattedType && <div className='data-explorer-tooltip-section'>{formattedType}</div>}
-        {/* Disable this until we have a better way to get query suggestions for columns
-        <div className="data-explorer-tooltip-section">
-          <strong>Query suggestions:</strong>
-          <br />
-          {this.renderColumnQuerySuggestions(column)}
-        </div> */}
-      </div>
-    )
-  }
-
   render = () => {
     let display
     if (!this.props.shouldRender) {
@@ -387,18 +364,6 @@ export default class DataExplorer extends React.Component {
             tooltipID={this.props.tooltipID}
           />
           {this.renderDataExplorerContent()}
-          {!this.props.tooltipID && (
-            <Tooltip
-              className='data-preview-tooltip'
-              id='data-preview-tooltip'
-              place='right'
-              delayHide={200}
-              delayUpdate={200}
-              effect='solid'
-              getContent={this.renderHeaderTooltipContent}
-              clickable
-            />
-          )}
         </ErrorBoundary>
       </div>
     )

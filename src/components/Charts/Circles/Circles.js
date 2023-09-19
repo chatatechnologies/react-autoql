@@ -1,9 +1,9 @@
 import React, { Component } from 'react'
 import { scaleLinear } from 'd3-scale'
 import { max, min } from 'd3-array'
+import { getChartColorVars } from 'autoql-fe-utils'
 
 import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, getKey } from '../helpers'
-import { getChartColorVars } from '../../../theme/configureTheme'
 import { rebuildTooltips } from '../../Tooltip'
 
 export default class Circles extends Component {

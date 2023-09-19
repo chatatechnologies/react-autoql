@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { getThemeValue } from '../../../theme/configureTheme'
+import { getThemeValue } from 'autoql-fe-utils'
 import { createSVGPath } from './lineFns'
 import { chartElementDefaultProps, chartElementPropTypes, getKey, getTooltipContent } from '../helpers'
 import { rebuildTooltips } from '../../Tooltip'

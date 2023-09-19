@@ -6,12 +6,11 @@ import { v4 as uuid } from 'uuid'
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
 import { arc } from 'd3-shape'
-import { legendColor, getPieChartData } from 'autoql-fe-utils'
+import { legendColor, getPieChartData, getChartColorVars } from 'autoql-fe-utils'
 
 import { rebuildTooltips } from '../../Tooltip'
 import { deepEqual, formatElement, removeFromDOM } from '../../../js/Util'
 import { chartDefaultProps, chartPropTypes, getTooltipContent } from '../helpers'
-import { getChartColorVars } from '../../../theme/configureTheme'
 
 import 'd3-transition'
 
