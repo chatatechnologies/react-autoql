@@ -2,7 +2,6 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
-import _get from 'lodash.get'
 import { fetchAutocomplete, isExpressionQueryValid, capitalizeFirstChar } from 'autoql-fe-utils'
 
 import { Input } from '../../Input'
@@ -20,18 +19,18 @@ const getInitialStateData = (initialData) => {
     return {
       input1Value: initialData[0].term_value,
       conditionSelectValue: 'EXISTS',
-      isComplete: !!_get(initialData[0].term_value, 'length'),
+      isComplete: !!initialData?.[0]?.term_value?.length,
     }
   } else if (initialData && initialData.length > 1) {
-    const input1Value = `${_get(initialData, '[0].term_value', '')}`
-    const input2Value = `${_get(initialData, '[1].term_value', '')}`
+    const input1Value = `${initialData?.[0]?.term_value ?? ''}`
+    const input2Value = `${initialData?.[1]?.term_value ?? ''}`
 
     return {
       input1Value,
       input2Value,
       conditionSelectValue: initialData[0].condition,
       secondTermType: initialData[1].term_type,
-      isComplete: !!_get(input1Value, 'length') && !!_get(input2Value, 'length'),
+      isComplete: !!input1Value?.length && !!input2Value?.length,
     }
   }
 
@@ -164,7 +163,7 @@ export default class Rule extends React.Component {
     if (this.state.conditionSelectValue === 'EXISTS') {
       return !!this.state.input1Value
     } else {
-      return !!_get(this.state.input1Value, 'length') && !!_get(this.state.input2Value, 'length')
+      return !!this.state.input1Value?.length && !!this.state.input2Value?.length
     }
   }
 

@@ -1,7 +1,6 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
-import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _isEmpty from 'lodash.isempty'
 import _cloneDeep from 'lodash.clonedeep'
@@ -94,8 +93,8 @@ export class QueryOutput extends React.Component {
 
     this.queryResponse = _cloneDeep(props.queryResponse)
     this.columnDateRanges = getColumnDateRanges(props.queryResponse)
-    this.queryID = _get(this.queryResponse, 'data.data.query_id')
-    this.interpretation = _get(this.queryResponse, 'data.data.parsed_interpretation')
+    this.queryID = this.queryResponse?.data?.data?.query_id
+    this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
     this.tableParams = {}
     this.chartID = uuid()
     this.tableID = uuid()
@@ -1913,7 +1912,7 @@ export class QueryOutput extends React.Component {
       if (!(numberColumnIndex >= 0)) {
         numberColumnIndex = columns.findIndex((col, index) => index !== dateColumnIndex && isColumnNumberType(col))
       }
-      const tableData = newTableData || _get(this.queryResponse, 'data.data.rows')
+      const tableData = newTableData || this.queryResponse?.data?.data?.rows
 
       const allYears = tableData.map((d) => {
         if (columns[dateColumnIndex].type === 'DATE') {
@@ -2031,7 +2030,7 @@ export class QueryOutput extends React.Component {
 
   generatePivotTableData = ({ isFirstGeneration } = {}) => {
     try {
-      let tableData = this.state?.visibleRows || this.tableData || _get(this.queryResponse, 'data.data.rows')
+      let tableData = this.state?.visibleRows || this.tableData || this.queryResponse?.data?.data?.rows
       tableData = tableData.filter((row) => row[0] !== null)
 
       const columns = this.getColumns()
@@ -2134,7 +2133,7 @@ export class QueryOutput extends React.Component {
 
       this.pivotTableColumns = pivotTableColumns
       this.pivotTableData = pivotTableData
-      this.numberOfPivotTableRows = _get(this.pivotTableData, 'length', 0)
+      this.numberOfPivotTableRows = this.pivotTableData?.length ?? 0
       this.setPivotTableConfig(isFirstGeneration)
     } catch (error) {
       console.error(error)
@@ -2420,7 +2419,7 @@ export class QueryOutput extends React.Component {
   }
 
   renderHelpResponse = () => {
-    const url = _get(this.queryResponse, 'data.data.rows[0]')
+    const url = this.queryResponse?.data?.data?.rows?.[0]
     if (!url) {
       return null
     }
@@ -2453,7 +2452,7 @@ export class QueryOutput extends React.Component {
       return this.renderMessage('No response supplied')
     }
 
-    if (_get(queryResponse, 'data.message')) {
+    if (queryResponse?.data?.message) {
       // Response is not a suggestion list, but no query data object was provided
       // There is no valid query data. This is an error. Return message from UMS
       return this.renderMessage(queryResponse.data)
@@ -2570,13 +2569,13 @@ export class QueryOutput extends React.Component {
     }
 
     // If "items" are returned in response it is a list of suggestions
-    const isSuggestionList = !!_get(this.queryResponse, 'data.data.items')
+    const isSuggestionList = !!this.queryResponse?.data?.data?.items
     if (isSuggestionList) {
       return this.renderSuggestionMessage(this.queryResponse.data.data.items, this.queryResponse.data.data.query_id)
     }
 
     // Query validation was triggered, display query validation message
-    if (_get(this.queryResponse, 'data.data.replacements')) {
+    if (this.queryResponse?.data?.data?.replacements) {
       return (
         <QueryValidationMessage
           key={this.QUERY_VALIDATION_KEY}
@@ -2605,7 +2604,7 @@ export class QueryOutput extends React.Component {
     //   return this.replaceErrorTextWithLinks(this.queryResponse.data.message)
     // }
 
-    if (displayType && !!_get(this.queryResponse, 'data.data.rows')) {
+    if (displayType && !!this.queryResponse?.data?.data?.rows) {
       if (displayType === 'help') {
         return this.renderHelpResponse()
       } else if (displayType === 'text') {

@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import ContentEditable from 'react-contenteditable'
 import sanitizeHtml from 'sanitize-html'
-import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEqual from 'lodash.isequal'
 import { debounce } from 'throttle-debounce'
@@ -67,7 +66,7 @@ export default class QueryValidationMessage extends React.Component {
   }
 
   componentDidMount = () => {
-    if (_get(this.props, 'response.data')) {
+    if (this.props?.response?.data) {
       this.initializeQueryValidationOptions(this.props.response.data)
     }
   }
@@ -75,7 +74,7 @@ export default class QueryValidationMessage extends React.Component {
   componentDidUpdate = () => {
     const validationSelectElements = document.querySelectorAll(`#${this.COMPONENT_KEY} .validation-selector-element`)
 
-    if (_get(validationSelectElements, 'length')) {
+    if (validationSelectElements?.length) {
       const elements = [...validationSelectElements]
       elements.forEach((el) => {
         el.removeEventListener('click', this.onQueryValidationTriggerClick)
@@ -172,7 +171,7 @@ export default class QueryValidationMessage extends React.Component {
   }
 
   updateStartAndEndIndexes = (selectedSuggestions) => {
-    if (!_get(selectedSuggestions, 'length')) {
+    if (!selectedSuggestions?.length) {
       return
     }
 
@@ -328,7 +327,7 @@ export default class QueryValidationMessage extends React.Component {
   getQueryValidationQueryText = (newSelectedSuggestions) => {
     const selectedSuggestions = newSelectedSuggestions || this.state.selectedSuggestions
 
-    if (!_get(selectedSuggestions, 'length')) {
+    if (!selectedSuggestions?.length) {
       return this.getPlainTextFromHTML(this.state.html)
     }
 
@@ -346,7 +345,7 @@ export default class QueryValidationMessage extends React.Component {
 
   // ==================================== Input =========================================
   focus = () => {
-    if (_get(this.contentEditable, 'current')) {
+    if (this.contentEditable?.current) {
       this.contentEditable.current.focus()
     }
     // todo: Autocomplete stuff
@@ -374,12 +373,9 @@ export default class QueryValidationMessage extends React.Component {
     })
       .then((response) => {
         const currentQuery = this.getPlainTextFromHTML(this.state.html)
-        const newQuery = _get(response, 'data.data.query')
+        const newQuery = response?.data?.data?.query
 
-        if (
-          this.isNewQueryAppendedToOldQuery(newQuery, currentQuery) &&
-          _get(response, 'data.data.replacements.length')
-        ) {
+        if (this.isNewQueryAppendedToOldQuery(newQuery, currentQuery) && response?.data?.data?.replacements?.length) {
           this.initializeQueryValidationOptions(_cloneDeep(response.data))
         }
       })
@@ -428,7 +424,7 @@ export default class QueryValidationMessage extends React.Component {
 
   appendNewTextToPlainTextList = (newQuery, oldQuery) => {
     const appendedText = newQuery.substr(oldQuery.length)
-    if (_get(this.plainTextList, 'length')) {
+    if (this.plainTextList?.length) {
       this.plainTextList[this.plainTextList.length - 1] =
         this.plainTextList[this.plainTextList.length - 1].concat(appendedText)
     }
@@ -486,7 +482,7 @@ export default class QueryValidationMessage extends React.Component {
       return
     }
 
-    if (e.key === 'ArrowUp' && !_get(this.state.suggestions, 'length')) {
+    if (e.key === 'ArrowUp' && !this.state.suggestions?.length) {
       this.getPlainTextFromHTML(localStorage.getItem('inputValue'))
     }
 
@@ -498,7 +494,7 @@ export default class QueryValidationMessage extends React.Component {
 
   getHTML = () => {
     let html = this.state.html
-    if (_get(this.plainTextList, 'length') && _get(this.state.selectedSuggestions, 'length')) {
+    if (this.plainTextList?.length && this.state.selectedSuggestions?.length) {
       html = ''
       this.plainTextList.forEach((textValue, index) => {
         const textElement = `<span key="query-element-${index}">${textValue}</span>`

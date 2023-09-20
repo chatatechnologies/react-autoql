@@ -1,6 +1,5 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import { reportProblem } from 'autoql-fe-utils'
 
@@ -56,7 +55,7 @@ export default class ReportProblemModal extends React.Component {
       message = `${message} - ${this.state.reportProblemMessage}`
     }
 
-    const queryId = _get(this.props.responseRef, 'queryResponse.data.data.query_id')
+    const queryId = this.props.responseRef?.queryResponse?.data?.data?.query_id
     this.setState({ isReportingProblem: true })
     reportProblem({
       message,

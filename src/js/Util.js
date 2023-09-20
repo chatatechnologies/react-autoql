@@ -1,4 +1,3 @@
-import _get from 'lodash.get'
 import _filter from 'lodash.filter'
 import _isEqual from 'lodash.isequal'
 import dayjs from './dayjsWithPlugins'
@@ -329,50 +328,6 @@ export const formatStringDateWithPrecision = (value, col, config = {}) => {
     console.error(error)
     return value
   }
-}
-
-export const formatStringDate = (value, config) => {
-  if (!value) {
-    return undefined
-  }
-
-  if (value && typeof value === 'string') {
-    const dateArray = value.split('-')
-    const year = _get(dateArray, '[0]')
-    const day = _get(dateArray, '[2]')
-
-    let month
-    let week
-    if (_get(dateArray, '[1]', '').includes('W')) {
-      week = _get(dateArray, '[1]')
-    } else {
-      month = _get(dateArray, '[1]')
-    }
-
-    const { monthYearFormat, dayMonthYearFormat } = config
-    const monthYear = monthYearFormat || dataFormattingDefault.monthYearFormat
-    const dayMonthYear = dayMonthYearFormat || dataFormattingDefault.dayMonthYearFormat
-    const dayJSObj = dayjs.utc(value).utc()
-
-    if (!dayJSObj.isValid()) {
-      return value
-    }
-
-    let date = value
-    if (day) {
-      date = dayJSObj.format(dayMonthYear)
-    } else if (month) {
-      date = dayJSObj.format(monthYear)
-    } else if (week) {
-      // dayjs doesn't format this correctly
-    } else if (year) {
-      date = year
-    }
-    return date
-  }
-
-  // Unable to parse...
-  return value
 }
 
 export const countDecimals = (number) => {
@@ -908,14 +863,6 @@ export const getFirstChartDisplayType = (supportedDisplayTypes, fallback) => {
   return fallback
 }
 
-export const hasData = (response) => {
-  if (!response) {
-    return false
-  }
-
-  return _get(response, 'data.data.rows.length') && _get(response, 'data.data.rows.length')
-}
-
 export const getKeyByValue = (object, value) => {
   return Object.keys(object).find((key) => object[key] === value)
 }
@@ -1091,26 +1038,6 @@ export const setCaretPosition = (elem, caretPos) => {
         elem.focus()
       }
     }
-  }
-}
-
-export const removeFromDOM = (elem) => {
-  if (!elem) {
-    return
-  }
-
-  try {
-    if (typeof elem.forEach === 'function' && _get(elem, 'length')) {
-      elem.forEach((el) => {
-        if (el && typeof el.remove === 'function') {
-          el.remove()
-        }
-      })
-    } else if (typeof elem.remove === 'function') {
-      elem.remove()
-    }
-  } catch (error) {
-    console.error(error)
   }
 }
 

@@ -1,15 +1,13 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import { v4 as uuid } from 'uuid'
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
 import { arc } from 'd3-shape'
-import { legendColor, getPieChartData } from 'autoql-fe-utils'
+import { legendColor, getPieChartData, deepEqual, formatElement, removeFromDOM } from 'autoql-fe-utils'
 
 import { rebuildTooltips } from '../../Tooltip'
-import { deepEqual, formatElement, removeFromDOM } from '../../../js/Util'
 import { chartDefaultProps, chartPropTypes, getTooltipContent } from '../helpers'
 import { getChartColorVars } from '../../../theme/configureTheme'
 
@@ -45,7 +43,7 @@ export default class ChataPieChart extends Component {
         column: props.columns?.[props.stringColumnIndex],
       })}: ${formatElement({
         element: d[props.numberColumnIndex] || 0,
-        column: _get(props, `columns[${props.numberColumnIndex}]`),
+        column: props.columns?.[props.numberColumnIndex],
         config: props.columns?.[props.dataFormatting],
       })}`
       return {
@@ -221,8 +219,8 @@ export default class ChataPieChart extends Component {
       containerBBox = containerElement.getBBox()
     }
 
-    const containerWidth = _get(containerBBox, 'width', 0)
-    const currentXPosition = _get(containerBBox, 'x', 0)
+    const containerWidth = containerBBox?.width ?? 0
+    const currentXPosition = containerBBox?.x ?? 0
     const finalXPosition = (this.props.width - containerWidth) / 2
     const xDelta = finalXPosition - currentXPosition
 
@@ -287,8 +285,8 @@ export default class ChataPieChart extends Component {
       legendBBox = legendElement.getBBox()
     }
 
-    const legendHeight = _get(legendBBox, 'height', 0)
-    const legendWidth = _get(legendBBox, 'width', 0)
+    const legendHeight = legendBBox?.height ?? 0
+    const legendWidth = legendBBox?.width ?? 0
     const legendXPosition = this.props.width / 2 - legendWidth - 20
     const legendYPosition = legendHeight < height - 20 ? (height - legendHeight) / 2 : 15
 

@@ -2,7 +2,6 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import axios from 'axios'
-import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
@@ -438,7 +437,7 @@ export default class ChataTable extends React.Component {
           cancelToken: this.axiosSource.token,
         })
         this.queryID = responseWrapper?.data?.data?.query_id
-        response = { ..._get(responseWrapper, 'data.data', {}), page: 1 }
+        response = { ...(responseWrapper?.data?.data ?? {}), page: 1 }
 
         this.scrollLeft = this.ref?.tabulator?.rowManager?.element?.scrollLeft
 
@@ -513,7 +512,7 @@ export default class ChataTable extends React.Component {
       }
 
       this.currentPage = response.page
-      const isLastPage = _get(response, 'rows.length', 0) < props.pageSize
+      const isLastPage = (response?.rows?.length ?? 0) < props.pageSize
       this.lastPage = isLastPage ? this.currentPage : this.currentPage + 1
 
       if (this._isMounted) {

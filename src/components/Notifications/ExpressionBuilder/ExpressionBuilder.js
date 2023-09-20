@@ -2,7 +2,6 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import _isEqual from 'lodash.isequal'
-import _get from 'lodash.get'
 
 import { Group } from '../Group'
 import { Radio } from '../../Radio'
@@ -19,7 +18,7 @@ const getInitialStateData = (initialData) => {
   let state = {}
   const groups = []
 
-  if (!_get(initialData, 'length')) {
+  if (!initialData?.length) {
     groups.push({
       id: uuid(),
       isComplete: false,
