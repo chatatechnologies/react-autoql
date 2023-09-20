@@ -4,7 +4,7 @@ import PropTypes from 'prop-types'
 import { LoadingDots } from '../../LoadingDots'
 import { QueryOutput } from '../../QueryOutput'
 import { VizToolbar } from '../../VizToolbar'
-import { OptionsToolbar } from '../../OptionsToolbar'
+import OptionsToolbar from '../../OptionsToolbar/OptionsToolbar'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
 import { authenticationDefault, autoQLConfigDefault, dataFormattingDefault } from '../../../props/defaults'

@@ -4,18 +4,26 @@ import _cloneDeep from 'lodash.clonedeep'
 import { v4 as uuid } from 'uuid'
 import { isMobile } from 'react-device-detect'
 import { format } from 'sql-formatter'
+import {
+  setColumnVisibility,
+  exportCSV,
+  isTableType,
+  areAllColumnsHidden,
+  areSomeColumnsHidden,
+  isChartType,
+  deepEqual,
+} from 'autoql-fe-utils'
+
 import { Icon } from '../Icon'
-import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
-import { DataAlertModal } from '../Notifications'
 import { Modal } from '../Modal'
 import { Button } from '../Button'
 import { Popover } from '../Popover'
+import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
-import ReportProblemModal from './ReportProblemModal'
+import { ReportProblemModal } from '../ReportProblemModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { setColumnVisibility, exportCSV } from 'autoql-fe-utils'
+import DataAlertModal from '../Notifications/DataAlertModal/DataAlertModal'
 
-import { isTableType, areAllColumnsHidden, areSomeColumnsHidden, isChartType, deepEqual } from '../../js/Util'
 import { autoQLConfigType, authenticationType } from '../../props/types'
 import { autoQLConfigDefault, authenticationDefault, getAuthentication, getAutoQLConfig } from '../../props/defaults'
 

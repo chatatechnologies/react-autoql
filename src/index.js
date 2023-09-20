@@ -14,16 +14,14 @@ export * from './components/OptionsToolbar'
 export * from './components/VizToolbar'
 export * from './components/ExploreQueries'
 export * from './components/DataExplorer'
-export {
-  NotificationIcon,
-  NotificationFeed,
-  NotificationItem,
-  DataAlerts,
-  ConditionBuilder,
-  ExpressionBuilder,
-  ScheduleBuilder,
-  DataAlertModal,
-} from './components/Notifications'
+export { ConditionBuilder } from './components/Notifications/ConditionBuilder'
+export { NotificationIcon } from './components/Notifications/NotificationIcon'
+export { NotificationFeed } from './components/Notifications/NotificationFeed'
+export { NotificationItem } from './components/Notifications/NotificationItem'
+export { ExpressionBuilder } from './components/Notifications/ExpressionBuilder'
+export { ScheduleBuilder } from './components/Notifications/ScheduleBuilder'
+export { DataAlertModal } from './components/Notifications/DataAlertModal'
+export { DataAlerts } from './components/Notifications/DataAlerts'
 export { Icon } from './components/Icon'
 export { LoadingDots } from './components/LoadingDots'
 export { configureTheme } from './theme'

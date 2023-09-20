@@ -8,7 +8,7 @@ import { QueryOutput } from '../QueryOutput'
 import { LoadingDots } from '../LoadingDots'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { rebuildTooltips } from '../Tooltip'
-import ReportProblemModal from '../OptionsToolbar/ReportProblemModal'
+import { ReportProblemModal } from '../ReportProblemModal'
 import DrilldownTable from './DrilldownTable'
 
 import { CHART_TYPES } from '../../js/Constants'
