@@ -1,4 +1,5 @@
 import React from 'react'
+import { currentEventLoopEnd } from 'autoql-fe-utils'
 import { shallow, mount } from 'enzyme'
 import ChataChart from './ChataChart'
 import { findByTestAttr } from '../../../../test/testUtils'

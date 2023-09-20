@@ -987,8 +987,6 @@ export class QueryOutput extends React.Component {
       try {
         // This will be a new query so we want to reset the page size back to default
         const pageSize = this.getDefaultQueryPageSize()
-        const columns = this.getColumns()
-        const column = columns[stringColumnIndex]
 
         if (supportedByAPI) {
           this.props.onDrilldownStart(activeKey)
@@ -1011,34 +1009,23 @@ export class QueryOutput extends React.Component {
         } else if ((!isNaN(stringColumnIndex) && !!row?.length) || filter) {
           this.props.onDrilldownStart(activeKey)
 
-          if (!this.isDataLimited() && !isColumnDateType(column) && !filter) {
-            // ------------ 1. Use FE for filter drilldown -----------
-            const response = this.getFilterDrilldown({ stringColumnIndex, row })
-            setTimeout(() => {
-              this.props.onDrilldownEnd({ response })
-            }, 1500)
-            // -------------------------------------------------------
-          } else {
-            // --------- 2. Use subquery for filter drilldown --------
-            let clickedFilter = filter
-            if (!filter) {
-              clickedFilter = this.constructFilter({
-                column: this.state.columns[stringColumnIndex],
-                value: row[stringColumnIndex],
-              })
-            }
-
-            const allFilters = this.getCombinedFilters(clickedFilter)
-            let response
-            try {
-              response = await this.queryFn({ tableFilters: allFilters, pageSize })
-            } catch (error) {
-              response = error
-            }
-
-            this.props.onDrilldownEnd({ response, originalQueryID: this.queryID })
-            // -------------------------------------------------------
+          let clickedFilter = filter
+          if (!filter) {
+            clickedFilter = this.constructFilter({
+              column: this.state.columns[stringColumnIndex],
+              value: row[stringColumnIndex],
+            })
           }
+
+          const allFilters = this.getCombinedFilters(clickedFilter)
+          let response
+          try {
+            response = await this.queryFn({ tableFilters: allFilters, pageSize })
+          } catch (error) {
+            response = error
+          }
+
+          this.props.onDrilldownEnd({ response, originalQueryID: this.queryID })
         }
       } catch (error) {
         console.error(error)
@@ -2162,7 +2149,7 @@ export class QueryOutput extends React.Component {
         ...getAuthentication(this.props.authentication),
         queryId,
         suggestion: query,
-      }).catch(error => console.error(error))
+      }).catch((error) => console.error(error))
     }
 
     if (query === 'None of these') {
