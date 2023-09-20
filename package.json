@@ -180,6 +180,9 @@
     "react": ">=16.8.1",
     "react-dom": ">=16.8.1"
   },
+  "overrides": {
+    "simple-update-notifier": "^2.0.0"
+  },
   "engines": {
     "node": ">=14.17.3",
     "npm": ">=6.14.13"
