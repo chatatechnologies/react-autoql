@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import ReactSlider from 'react-slider'
 import { Input } from '../Input'
-
+import { isMobile } from 'react-device-detect'
 import './Slider.scss'
 
 export default class Slider extends React.Component {
@@ -142,7 +142,10 @@ export default class Slider extends React.Component {
 
     return (
       <ErrorBoundary>
-        <div className={`react-autoql-slider-wrapper ${this.props.className ?? ''}`} style={this.props.style}>
+        <div
+          className={`react-autoql-slider-wrapper ${this.props.className ?? ''} ${isMobile ? 'mobile' : ''}`}
+          style={this.props.style}
+        >
           <div className='react-autoql-slider-and-label-container'>
             <div className='react-autoql-slider-container'>
               <div className='react-autoql-slider-min-max-labels'>

@@ -1,9 +1,9 @@
 import React from 'react'
-import { Popover } from 'react-tiny-popover'
+import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { v4 as uuid } from 'uuid'
 import { isColumnNumberType } from '../../QueryOutput/columnHelpers'
-
+import { isMobile } from 'react-device-detect'
 export default class SingleNumberAxisSelector extends React.Component {
   constructor(props) {
     super(props)
@@ -38,7 +38,9 @@ export default class SingleNumberAxisSelector extends React.Component {
     )
 
     return (
-      <div className='string-axis-selector-popover-content'>
+      <div
+        className={isMobile ? 'mobile-string-axis-selector-popover-content' : 'string-axis-selector-popover-content'}
+      >
         <CustomScrollbars autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
           <div
             className='axis-selector-container'

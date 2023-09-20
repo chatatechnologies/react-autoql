@@ -186,7 +186,7 @@ export default class YearRangePicker extends React.Component {
       ? this.getDecade(dayjs(this.props.maxDate).year())
       : this.getDecade(dayjs(new Date()).add(20, 'year').year())
 
-    const numDecades = (upperDecadeLimit[0] - lowerDecadeLimit[0]) / 10
+    const numDecades = (upperDecadeLimit[0] - lowerDecadeLimit[0]) / 10 || 1
 
     return (
       <div className={`react-autoql-month-picker-year`}>

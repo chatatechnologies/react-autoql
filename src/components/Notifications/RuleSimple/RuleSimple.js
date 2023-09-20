@@ -4,6 +4,7 @@ import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
 import parseNum from 'parse-num'
 import axios from 'axios'
+import { fetchAutocomplete, runQueryOnly } from 'autoql-fe-utils'
 import dayjs from '../../../js/dayjsWithPlugins'
 import { isISODate } from '../../../js/dateUtils'
 import { Input } from '../../Input'
@@ -13,7 +14,6 @@ import { ErrorBoundary } from '../../../containers/ErrorHOC'
 
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication, getAutoQLConfig } from '../../../props/defaults'
-import { fetchAutocomplete, runQueryOnly } from '../../../js/queryService'
 import { isNumber, isSingleValueResponse } from '../../../js/Util'
 import {
   COMPARE_TYPE,
@@ -703,7 +703,12 @@ export default class RuleSimple extends React.Component {
                 if (filter.operator === 'between' && !filter.value.includes(' and ')) {
                   operatorDisplay = ':'
                 }
-                const dateText = this.getFormattedDate(filter)
+
+                let dateText
+                if (filter.column_type !== 'AMOUNT') {
+                  dateText = this.getFormattedDate(filter)
+                }
+
                 let value = filter.value
                 if (filter.operator === 'like') {
                   value = `"${filter.value}"`

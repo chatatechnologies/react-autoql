@@ -3,8 +3,9 @@ import { Axes } from '../Axes'
 import { Columns } from '../Columns'
 import { Line } from '../Line'
 
-import { chartDefaultProps, chartPropTypes, getBandScale, getTimeScale, getLinearScales } from '../helpers.js'
+import { chartDefaultProps, chartPropTypes } from '../helpers.js'
 import { deepEqual } from '../../../js/Util'
+import { getBandScale, getLinearScales } from 'autoql-fe-utils'
 
 export default class ChataColumnLineChart extends Component {
   constructor(props) {
@@ -37,13 +38,13 @@ export default class ChataColumnLineChart extends Component {
     }
 
     this.xScale = getBandScale({
-      props,
+      ...props,
       columnIndex: props.stringColumnIndex,
       axis: 'x',
     })
 
     const yScalesAndTicks = getLinearScales({
-      props,
+      ...props,
       columnIndices1: numberColumnIndices,
       columnIndices2: numberColumnIndices2,
       axis: 'y',

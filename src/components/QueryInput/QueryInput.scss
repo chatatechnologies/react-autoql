@@ -40,6 +40,12 @@
 }
 
 /* autosuggest */
+.react-autoql-chatbar-input-container {
+  .react-autosuggest__section-title {
+    padding-top: 3px !important;
+    padding-left: 15px !important;
+  }
+}
 .react-autoql-bar-container .react-autosuggest__container,
 .react-autoql-chatbar-input-container {
   position: relative;

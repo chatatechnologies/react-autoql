@@ -5,13 +5,14 @@ import _isEqual from 'lodash.isequal'
 import { select } from 'd3-selection'
 import { axisLeft, axisBottom, axisTop, axisRight } from 'd3-axis'
 import { isMobile } from 'react-device-detect'
+import { formatChartLabel } from 'autoql-fe-utils'
 
 import { Legend } from '../Legend'
 import AxisScaler from './AxisScaler'
 import AxisSelector from '../Axes/AxisSelector'
 import LoadMoreDropdown from './LoadMoreDropdown'
 
-import { formatChartLabel, getBBoxFromRef } from '../../../js/Util.js'
+import { getBBoxFromRef } from '../../../js/Util.js'
 import { axesDefaultProps, axesPropTypes, mergeBboxes, shouldLabelsRotate } from '../helpers.js'
 
 import './Axis.scss'
@@ -54,7 +55,7 @@ export default class Axis extends Component {
 
   static propTypes = {
     ...axesPropTypes,
-    scale: PropTypes.func.isRequired,
+    scale: PropTypes.func,
     orient: PropTypes.string,
     translateX: PropTypes.number,
     translateY: PropTypes.number,
@@ -90,6 +91,32 @@ export default class Axis extends Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    if (
+      (!_isEqual(prevProps.visibleSeriesIndices, this.props.visibleSeriesIndices) ||
+        prevProps.stringColumnIndex !== this.props.stringColumnIndex) &&
+      this.state.isAxisSelectorOpen !== prevState.isAxisSelectorOpen
+    ) {
+      const isStringColumn = !this.props.scale.fields[0].hasOwnProperty('aggType')
+      const requestedData = {
+        source: this.props.source,
+        chart_type: this.props.type,
+        axes: [
+          {
+            axis: this.props.scale.axis,
+            type: this.props.scale.type,
+            column: isStringColumn
+              ? { name: this.props.scale.column.name, type: this.props.scale.column.type }
+              : this.props.scale.fields.map((field) => ({
+                  name: field.name,
+                  aggType: field.hasOwnProperty('aggType') ? field.aggType : undefined,
+                  type: field.type,
+                })),
+          },
+        ],
+      }
+      // TODO---Ready to send to Backend
+    }
+
     const renderJustCompleted = this.state.axisRenderComplete && !prevState.axisRenderComplete
     if (!this.state.isAxisSelectorOpen) {
       this.renderAxis(renderJustCompleted)

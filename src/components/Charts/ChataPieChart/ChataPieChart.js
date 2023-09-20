@@ -5,16 +5,15 @@ import _cloneDeep from 'lodash.clonedeep'
 import { v4 as uuid } from 'uuid'
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
-import { pie, arc } from 'd3-shape'
-import { entries } from 'd3-collection'
-import legendColor from '../D3Legend/D3Legend'
+import { arc } from 'd3-shape'
+import { legendColor, getPieChartData } from 'autoql-fe-utils'
 
+import { rebuildTooltips } from '../../Tooltip'
 import { deepEqual, formatElement, removeFromDOM } from '../../../js/Util'
 import { chartDefaultProps, chartPropTypes, getTooltipContent } from '../helpers'
 import { getChartColorVars } from '../../../theme/configureTheme'
 
 import 'd3-transition'
-import { rebuildTooltips } from '../../Tooltip'
 
 export default class ChataPieChart extends Component {
   constructor(props) {
@@ -104,19 +103,19 @@ export default class ChataPieChart extends Component {
   renderPie = () => {
     removeFromDOM(this.pieChartContainer)
 
-    const self = this
-
     this.setPieRadius()
 
-    this.outerArc = arc()
-      .innerRadius(self.outerRadius * 1.1)
-      .outerRadius(self.outerRadius * 1.1)
+    const { chartColors } = getChartColorVars()
 
-    const pieChart = pie().value((d, i) => {
-      return d.value[self.props.numberColumnIndex]
+    const { pieChartFn, legendScale } = getPieChartData({
+      data: this.sortedData,
+      numberColumnIndex: this.props.numberColumnIndex,
+      legendLabels: this.state.legendLabels,
+      chartColors,
     })
 
-    this.dataReady = pieChart(entries(self.sortedData.filter((d, i) => !this.state.legendLabels?.[i]?.hidden)))
+    this.pieChartFn = pieChartFn
+    this.legendScale = legendScale
 
     this.renderPieContainer()
     this.renderPieSlices()
@@ -167,7 +166,7 @@ export default class ChataPieChart extends Component {
     // build the pie chart
     this.pieChartContainer
       .selectAll('.slices')
-      .data(self.dataReady)
+      .data(self.pieChartFn)
       .enter()
       .append('path')
       .attr('class', 'slice')
@@ -253,12 +252,7 @@ export default class ChataPieChart extends Component {
     const { height } = this.props
     const { chartColors } = getChartColorVars()
 
-    let legendScale
-    if (this.state.legendLabels) {
-      legendScale = scaleOrdinal()
-        .domain(this.state.legendLabels.map((obj) => JSON.stringify(obj)))
-        .range(chartColors)
-    } else {
+    if (!this.legendScale) {
       return
     }
 
@@ -282,7 +276,7 @@ export default class ChataPieChart extends Component {
       .labels(self.state.legendLabels.map((labelObj) => labelObj.label))
       .labelWrap(legendWrapLength)
       .labelOffset(10)
-      .scale(legendScale)
+      .scale(self.legendScale)
       .on('cellclick', this.onLegendClick)
 
     this.legend.select('.legendOrdinal').call(legendOrdinal)

@@ -3,12 +3,12 @@ import PropTypes from 'prop-types'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import _isEqual from 'lodash.isequal'
 import axios from 'axios'
+import { fetchDataPreview } from 'autoql-fe-utils'
 
 import { Card } from '../Card'
 import { CustomScrollbars } from '../CustomScrollbars'
 import { LoadingDots } from '../LoadingDots'
 import { authenticationType } from '../../props/types'
-import { fetchDataPreview } from '../../js/queryService'
 import { Icon } from '../Icon'
 
 import { getDataFormatting, dataFormattingDefault } from '../../props/defaults'

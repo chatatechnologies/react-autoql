@@ -40,7 +40,6 @@ jobs:
           name: Run Tests
           no_output_timeout: 60m
           command: npm run test -- --maxWorkers=4
-      - run: npx semantic-release
 
 workflows:
   build-and-test:

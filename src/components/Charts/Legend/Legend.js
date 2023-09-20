@@ -3,16 +3,16 @@ import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.clonedeep'
 import { v4 as uuid } from 'uuid'
 import { isMobile } from 'react-device-detect'
+import { legendColor } from 'autoql-fe-utils'
 
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
 import { symbol, symbolSquare } from 'd3-shape'
 
-import legendColor from '../D3Legend/D3Legend'
-
 import { deepEqual, removeFromDOM } from '../../../js/Util.js'
-import { getLegendLabelsForMultiSeries, mergeBboxes } from '../helpers'
-import { AGG_TYPES, NUMBER_COLUMN_TYPE_DISPLAY_NAMES } from '../../../js/Constants'
+import { mergeBboxes } from '../helpers'
+import { NUMBER_COLUMN_TYPE_DISPLAY_NAMES } from '../../../js/Constants'
+import { AGG_TYPES, getLegendLabelsForMultiSeries } from 'autoql-fe-utils'
 
 export default class Legend extends Component {
   constructor(props) {
@@ -348,7 +348,7 @@ export default class Legend extends Component {
     const aggTypeArray = legendColumns.map((col) => col.aggType)
     const allAggTypesEqual = !aggTypeArray.find((agg) => agg !== aggTypeArray[0])
     if (allAggTypesEqual) {
-      const aggName = AGG_TYPES.find((agg) => agg.value === aggTypeArray[0])?.displayName
+      const aggName = AGG_TYPES[aggTypeArray[0]]?.displayName
       if (aggName) {
         title = `${title} (${aggName})`
       }

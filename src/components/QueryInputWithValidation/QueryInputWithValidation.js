@@ -7,6 +7,7 @@ import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEqual from 'lodash.isequal'
 import { debounce } from 'throttle-debounce'
+import { runQueryValidation } from 'autoql-fe-utils'
 
 import { Popover } from '../Popover'
 import { Select } from '../Select'
@@ -14,7 +15,6 @@ import { Select } from '../Select'
 import { setCaretPosition } from '../../js/Util'
 import { authenticationDefault, getAuthentication } from '../../props/defaults'
 import { authenticationType } from '../../props/types'
-import { runQueryValidation } from '../../js/queryService'
 
 import './QueryInputWithValidation.scss'
 
@@ -539,7 +539,7 @@ export default class QueryValidationMessage extends React.Component {
             // this.moveCaretAtEnd(e)
           }}
           spellCheck='false'
-          autoComplete='off'
+          autoComplete='one-time-code'
           autoCorrect='off'
           autoCapitalize='off'
           autoFocus={true}

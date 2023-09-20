@@ -2,9 +2,10 @@ import React, { Component } from 'react'
 import { Axes } from '../Axes'
 import { Columns } from '../Columns'
 
-import { chartDefaultProps, chartPropTypes, getBandScale, getLinearScales } from '../helpers.js'
+import { chartDefaultProps, chartPropTypes } from '../helpers.js'
 import { deepEqual } from '../../../js/Util'
 import { rebuildTooltips } from '../../Tooltip'
+import { getBandScale, getLinearScales } from 'autoql-fe-utils'
 
 export default class ChataColumnChart extends Component {
   constructor(props) {
@@ -38,13 +39,13 @@ export default class ChataColumnChart extends Component {
     }
 
     this.xScale = getBandScale({
-      props,
+      ...props,
       columnIndex: props.stringColumnIndex,
       axis: 'x',
     })
 
     const yScalesAndTicks = getLinearScales({
-      props,
+      ...props,
       columnIndices1: numberColumnIndices,
       axis: 'y',
       isScaled: this.state?.isChartScaled,

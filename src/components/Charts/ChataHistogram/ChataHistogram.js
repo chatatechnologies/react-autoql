@@ -9,13 +9,13 @@ import { HistogramColumns } from './HistogramColumns'
 import { HistogramDistributions } from './HistogramDistributions'
 import {
   deepEqual,
-  formatChartLabel,
   onlyUnique,
   roundDownToNearestMultiple,
   roundUpToNearestMultiple,
   roundToNearestLog10,
 } from '../../../js/Util'
-import { chartDefaultProps, chartPropTypes, convertToNumber, getBinLinearScale, getHistogramScale } from '../helpers.js'
+import { chartDefaultProps, chartPropTypes, convertToNumber } from '../helpers.js'
+import { formatChartLabel,  getBinLinearScale, getHistogramScale } from 'autoql-fe-utils'
 
 export default class ChataHistogram extends React.Component {
   constructor(props) {
@@ -84,7 +84,7 @@ export default class ChataHistogram extends React.Component {
 
   getInitialBucketSize = (minValue, maxValue) => {
     // Using Sturge's rule https://www.statisticshowto.com/choose-bin-sizes-statistics/
-    const initialNumBuckets =  Math.round(1 + Math.log2(this.props.data?.length));
+    const initialNumBuckets = Math.round(1 + Math.log2(this.props.data?.length))
 
     const bucketSizeRaw = (maxValue - minValue) / initialNumBuckets
 
@@ -182,7 +182,7 @@ export default class ChataHistogram extends React.Component {
     this.bins = bins
 
     this.xScale = getBinLinearScale({
-      props,
+      ...props,
       columnIndex: props.numberColumnIndex,
       axis: 'x',
       buckets: this.buckets,
@@ -190,7 +190,7 @@ export default class ChataHistogram extends React.Component {
     })
 
     this.yScale = getHistogramScale({
-      props,
+      ...props,
       axis: 'y',
       buckets: this.buckets,
       columnIndex: props.numberColumnIndex,
@@ -203,7 +203,10 @@ export default class ChataHistogram extends React.Component {
   }
 
   formatSliderLabel = (value) => {
-    const sigDigits = this.bucketConfig.bucketStepSize < 1 ? this.bucketConfig.bucketStepSize.toString().split('.')[1].length : undefined
+    const sigDigits =
+      this.bucketConfig.bucketStepSize < 1
+        ? this.bucketConfig.bucketStepSize.toString().split('.')[1].length
+        : undefined
     return formatChartLabel({
       d: value,
       column: this.props.columns[this.props.numberColumnIndex],
@@ -214,7 +217,11 @@ export default class ChataHistogram extends React.Component {
   }
 
   renderHistogramSlider = () => {
-    if (isNaN(this.bucketConfig.bucketSize) || isNaN(this.bucketConfig.minBucketSize) || isNaN(this.bucketConfig.maxBucketSize)) {
+    if (
+      isNaN(this.bucketConfig.bucketSize) ||
+      isNaN(this.bucketConfig.minBucketSize) ||
+      isNaN(this.bucketConfig.maxBucketSize)
+    ) {
       return null
     }
 

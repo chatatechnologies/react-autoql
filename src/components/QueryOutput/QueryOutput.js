@@ -8,6 +8,7 @@ import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
 import parse from 'html-react-parser'
 import axios from 'axios'
+import { AggTypes, sendSuggestion, runDrilldown, runQueryOnly } from 'autoql-fe-utils'
 
 import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
 import {
@@ -63,7 +64,6 @@ import {
   getColumnTypeAmounts,
 } from './columnHelpers.js'
 
-import { sendSuggestion, runDrilldown, runQueryOnly } from '../../js/queryService'
 import {
   MONTH_NAMES,
   DEFAULT_DATA_PAGE_SIZE,
@@ -196,7 +196,7 @@ export class QueryOutput extends React.Component {
     onRenderComplete: PropTypes.func,
     onMount: PropTypes.func,
     onBucketSizeChange: PropTypes.func,
-    bucketSize: PropTypes.number
+    bucketSize: PropTypes.number,
   }
 
   static defaultProps = {
@@ -244,7 +244,7 @@ export class QueryOutput extends React.Component {
     onPageSizeChange: () => {},
     onRenderComplete: () => {},
     onMount: () => {},
-    onBucketSizeChange: () => {}
+    onBucketSizeChange: () => {},
   }
 
   componentDidMount = () => {
@@ -733,12 +733,7 @@ export class QueryOutput extends React.Component {
       this.tableData = newTableData
     } else {
       const columns = cols || this.getColumns()
-
-      if (!this.isDataLimited()) {
-        this.tableData = sortDataByDate(this.queryResponse?.data?.data?.rows, columns, 'desc', 'isTable')
-      } else {
-        this.tableData = this.queryResponse?.data?.data?.rows
-      }
+      this.tableData = this.queryResponse?.data?.data?.rows
 
       this.setTableConfig()
       if (this._isMounted) {
@@ -987,8 +982,6 @@ export class QueryOutput extends React.Component {
       try {
         // This will be a new query so we want to reset the page size back to default
         const pageSize = this.getDefaultQueryPageSize()
-        const columns = this.getColumns()
-        const column = columns[stringColumnIndex]
 
         if (supportedByAPI) {
           this.props.onDrilldownStart(activeKey)
@@ -1011,34 +1004,23 @@ export class QueryOutput extends React.Component {
         } else if ((!isNaN(stringColumnIndex) && !!row?.length) || filter) {
           this.props.onDrilldownStart(activeKey)
 
-          if (!this.isDataLimited() && !isColumnDateType(column) && !filter) {
-            // ------------ 1. Use FE for filter drilldown -----------
-            const response = this.getFilterDrilldown({ stringColumnIndex, row })
-            setTimeout(() => {
-              this.props.onDrilldownEnd({ response })
-            }, 1500)
-            // -------------------------------------------------------
-          } else {
-            // --------- 2. Use subquery for filter drilldown --------
-            let clickedFilter = filter
-            if (!filter) {
-              clickedFilter = this.constructFilter({
-                column: this.state.columns[stringColumnIndex],
-                value: row[stringColumnIndex],
-              })
-            }
-
-            const allFilters = this.getCombinedFilters(clickedFilter)
-            let response
-            try {
-              response = await this.queryFn({ tableFilters: allFilters, pageSize })
-            } catch (error) {
-              response = error
-            }
-
-            this.props.onDrilldownEnd({ response, originalQueryID: this.queryID })
-            // -------------------------------------------------------
+          let clickedFilter = filter
+          if (!filter) {
+            clickedFilter = this.constructFilter({
+              column: this.state.columns[stringColumnIndex],
+              value: row[stringColumnIndex],
+            })
           }
+
+          const allFilters = this.getCombinedFilters(clickedFilter)
+          let response
+          try {
+            response = await this.queryFn({ tableFilters: allFilters, pageSize })
+          } catch (error) {
+            response = error
+          }
+
+          this.props.onDrilldownEnd({ response, originalQueryID: this.queryID })
         }
       } catch (error) {
         console.error(error)
@@ -1051,6 +1033,7 @@ export class QueryOutput extends React.Component {
   constructFilter = ({ column, value }) => {
     let formattedValue = value
     let operator = '='
+    let column_type
 
     if (formattedValue === null) {
       formattedValue = 'NULL'
@@ -1063,12 +1046,14 @@ export class QueryOutput extends React.Component {
 
       formattedValue = `${isoDateStart},${isoDateEnd}`
       operator = 'between'
+      column_type = 'TIME'
     }
 
     return {
       name: column.name,
       operator,
       value: formattedValue,
+      column_type,
     }
   }
 
@@ -1871,7 +1856,7 @@ export class QueryOutput extends React.Component {
         aggType = aggConfig[col.name]
       }
       if (isListQuery && isColumnNumberType(col)) {
-        newCol.aggType = aggType || 'sum'
+        newCol.aggType = aggType || AggTypes.SUM
       }
 
       // Check if a date range is available

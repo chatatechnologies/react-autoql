@@ -208,13 +208,12 @@ export default [
           filters: [],
           orders: [],
           source: 'data_messenger',
-          session_locked_conditions: {},
-          session_filter_conditions: [],
+          persistent_filter_locks: [],
+          session_filter_locks: [],
           translation: 'exclude',
           page_size: 50,
         },
         display_type: 'data',
-        persistent_locked_conditions: ['East'],
         interpretation: "all online sales 'East' (Customer Region)",
         text: 'all online sales',
         columns: [
@@ -413,7 +412,7 @@ export default [
             'Half Price',
           ],
         ],
-        session_locked_conditions: [],
+        session_filter_locks: [],
         query_id: 'q_Bvk6t-xcSR-tmNK9wtKo1Q',
         parsed_interpretation: [
           {
@@ -442,7 +441,6 @@ export default [
         sql: [''],
         chart_images: null,
         row_limit: 500,
-        persistent_locked_conditions: [],
         columns: [
           {
             groupable: true,
@@ -593,7 +591,7 @@ export default [
         ],
         display_type: 'data',
         interpretation: 'total online sales by Region by Year',
-        session_locked_conditions: [],
+        session_filter_locks: [],
         fe_req: {
           filters: [],
           source: 'dashboards.user',
@@ -605,8 +603,7 @@ export default [
           debug: false,
           disambiguation: [],
           text: 'Total online sales by region by year',
-          session_locked_conditions: {},
-          session_filter_conditions: [],
+          session_filter_locks: [],
         },
         query_id: 'q_GRMmjoKXTX-fl8gC3Pj-yA',
         parsed_interpretation: [
@@ -708,7 +705,7 @@ export default [
             eng: 'by Customer Region',
           },
         ],
-        session_locked_conditions: [],
+        session_filter_locks: [],
         display_type: 'data',
         condition_filter: [],
         chart_images: null,
@@ -740,13 +737,11 @@ export default [
           },
         ],
         query_id: 'q_zcOWrngkQiadAnmNGAYUKw',
-        persistent_locked_conditions: [],
         row_limit: 50,
         interpretation:
           'total online sales by Customer Name by Customer Region',
         fe_req: {
-          session_locked_conditions: {},
-          session_filter_conditions: [],
+          session_filter_locks: [],
           disambiguation: [],
           filters: [],
           chart_images: 'exclude',

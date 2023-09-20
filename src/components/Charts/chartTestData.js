@@ -1,6 +1,6 @@
 import { scaleOrdinal } from 'd3-scale'
-import { getBandScale, getLinearScales } from './helpers'
 import { getNumberColumnIndices, getStringColumnIndices } from '../QueryOutput/columnHelpers'
+import { getBandScale, getLinearScales } from 'autoql-fe-utils'
 
 const listColumns = [
   {
@@ -180,7 +180,7 @@ export default {
     ...listProps,
     stringScale: (params = {}) => {
       const scale = getBandScale({
-        props: listProps,
+        ...listProps,
         columnIndex: listProps.stringColumnIndex,
         domain: listData.map((row) => row[listProps.stringColumnIndex]),
         ...params,
@@ -196,7 +196,7 @@ export default {
     },
     numberScale: (params = {}) => {
       const scale = getLinearScales({
-        props: listProps,
+        ...listProps,
         columnIndices1: listProps.numberColumnIndices,
         isScaled: false,
         ...params,
@@ -216,7 +216,7 @@ export default {
     ...pivotProps,
     stringScale: (params = {}) => {
       const scale = getBandScale({
-        props: pivotProps,
+        ...pivotProps,
         columnIndex: pivotProps.stringColumnIndex,
         domain: pivotData.map((row) => row[pivotProps.stringColumnIndex]),
         ...params,
@@ -231,7 +231,7 @@ export default {
     },
     numberScale: (params = {}) => {
       const scale = getLinearScales({
-        props: pivotProps,
+        ...pivotProps,
         columnIndices1: pivotProps.numberColumnIndices,
         isScaled: false,
         ...params,
@@ -301,7 +301,7 @@ export default {
     ...datePivotProps,
     stringScale: (params = {}) => {
       const scale = getBandScale({
-        props: datePivotProps,
+        ...datePivotProps,
         columnIndex: datePivotProps.stringColumnIndex,
         domain: datePivotData.map((row) => row[datePivotProps.stringColumnIndex]),
         ...params,
@@ -316,7 +316,7 @@ export default {
     },
     numberScale: (params = {}) => {
       const scale = getLinearScales({
-        props: datePivotProps,
+        ...datePivotProps,
         columnIndices1: datePivotProps.numberColumnIndices,
         isScaled: false,
         ...params,

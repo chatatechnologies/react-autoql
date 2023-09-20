@@ -7,6 +7,7 @@ import { ToastContainer, toast } from 'react-toastify'
 import { Slide } from 'react-toastify'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
+import { fetchVLAutocomplete, setFilters, unsetFilterFromAPI } from 'autoql-fe-utils'
 
 import { Radio } from '../Radio'
 import { Icon } from '../Icon'
@@ -18,13 +19,13 @@ import { CustomScrollbars } from '../CustomScrollbars'
 import { responseErrors } from '../../js/errorMessages'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { fetchVLAutocomplete, setFilters, unsetFilterFromAPI } from '../../js/queryService'
 import { authenticationType } from '../../props/types'
 import { authenticationDefault, getAuthentication } from '../../props/defaults'
 
 import { lang } from '../../js/Localization'
 
 import 'react-toastify/dist/ReactToastify.css'
+import { isMobile } from 'react-device-detect'
 
 export default class FilterLockPopover extends React.Component {
   constructor(props) {
@@ -214,7 +215,9 @@ export default class FilterLockPopover extends React.Component {
         }
 
         sortingArray.sort((a, b) => {
-          return a.keyword?.toUpperCase() < b.keyword?.toUpperCase() ? -1 : a.keyword > b.keyword ? 1 : 0
+          const aText = a.format_txt ?? a.keyword
+          const bText = b.format_txt ?? b.keyword
+          return aText.toUpperCase() < bText.toUpperCase() ? -1 : aText > bText ? 1 : 0
         })
         for (let idx = 0; idx < sortingArray.length; idx++) {
           const anObject = {
@@ -266,10 +269,12 @@ export default class FilterLockPopover extends React.Component {
 
     const newFilter = {
       value: suggestion.keyword,
+      format_txt: suggestion.format_txt,
       show_message: suggestion.show_message,
       key: suggestion.canonical,
       filter_type: filterType,
     }
+
     return newFilter
   }
 
@@ -521,7 +526,9 @@ export default class FilterLockPopover extends React.Component {
   }
 
   renderSuggestion = ({ name }) => {
-    if (!name.keyword) {
+    const displayName = name.format_txt ?? name.keyword
+
+    if (!displayName) {
       return null
     }
 
@@ -530,10 +537,10 @@ export default class FilterLockPopover extends React.Component {
         className='filter-lock-suggestion-item'
         data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
         data-delay-show={800}
-        data-tip={`${name.keyword} <em>(${name.show_message})</em>`}
+        data-tip={`${displayName} <em>(${name.show_message})</em>`}
       >
         <span>
-          {name.keyword} <em>({name.show_message})</em>
+          {displayName} <em>({name.show_message})</em>
         </span>
       </ul>
     )
@@ -694,9 +701,9 @@ export default class FilterLockPopover extends React.Component {
         data-test='react-autoql-filter-list-item'
         className={`react-autoql-filter-list-item ${
           this.state.highlightedFilter === key ? 'react-autoql-highlight-row' : ''
-        }`}
+        } ${isMobile ? 'mobile' : ''}`}
       >
-        <div className='react-autoql-filter-list-item-filter'>{filter.value}</div>
+        <div className='react-autoql-filter-list-item-filter'>{filter.format_txt ?? filter.value}</div>
         <div className='react-autoql-filter-list-item-actions'>
           <Checkbox
             className='persist-toggle'

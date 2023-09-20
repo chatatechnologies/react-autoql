@@ -2,7 +2,8 @@ import React, { Component } from 'react'
 import { Axes } from '../Axes'
 import { Circles } from '../Circles'
 
-import { chartDefaultProps, chartPropTypes, getBandScale } from '../helpers.js'
+import { chartDefaultProps, chartPropTypes } from '../helpers.js'
+import { getBandScale } from 'autoql-fe-utils'
 
 export default class ChataBubbleChart extends Component {
   constructor(props) {
@@ -14,7 +15,7 @@ export default class ChataBubbleChart extends Component {
 
   setChartData = (props) => {
     this.xScale = getBandScale({
-      props,
+      ...props,
       columnIndex: props.stringColumnIndex,
       axis: 'x',
       innerPadding: 0.01,
@@ -22,7 +23,7 @@ export default class ChataBubbleChart extends Component {
     })
 
     this.yScale = getBandScale({
-      props,
+      ...props,
       domain: props.legendLabels.map((d) => d.label),
       axis: 'y',
       innerPadding: 0.01,

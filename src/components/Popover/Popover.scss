@@ -17,17 +17,20 @@
     border: none;
     background-color: transparent;
     padding: 0 !important;
+    overflow: hidden;
 
     .popover-arrow-container {
       border-radius: 4px;
       height: 100%;
       width: 100%;
       display: flex;
+      overflow: hidden;
 
       .popover-arrow-container-content {
         display: flex;
         flex-direction: column;
         flex: 1;
+        overflow: hidden;
       }
     }
 
@@ -42,6 +45,11 @@
       padding: 10px;
       box-sizing: border-box;
       flex: 1;
+      overflow: hidden;
+
+      .scrollbar-container {
+        padding: 0 10px;
+      }
     }
 
     .popover-arrow {

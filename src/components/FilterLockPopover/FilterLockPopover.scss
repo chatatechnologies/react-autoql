@@ -82,7 +82,7 @@
   }
 
   h4 {
-    font-weight: 500;
+    font-weight: bold;
   }
 
   .react-autoql-empty-filter-list {
@@ -215,7 +215,9 @@
         padding-top: 1px;
         padding-bottom: 1px;
         padding-left: 5px;
-
+        &.mobile {
+          padding-right: 1rem;
+        }
         .react-autoql-filter-list-item-filter {
           overflow: hidden;
           text-overflow: ellipsis;
