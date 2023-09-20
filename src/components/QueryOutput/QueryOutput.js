@@ -2144,7 +2144,7 @@ export class QueryOutput extends React.Component {
         ...getAuthentication(this.props.authentication),
         queryId,
         suggestion: query,
-      })
+      }).catch((error) => console.error(error))
     }
 
     if (query === 'None of these') {
