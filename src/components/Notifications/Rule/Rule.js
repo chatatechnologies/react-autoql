@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
-import { fetchAutocomplete } from 'autoql-fe-utils'
+import { fetchAutocomplete, isExpressionQueryValid, capitalizeFirstChar } from 'autoql-fe-utils'
 
 import { Input } from '../../Input'
 import { Select } from '../../Select'
@@ -12,8 +12,6 @@ import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
-import { isExpressionQueryValid } from '../../../js/notificationService'
-import { capitalizeFirstChar } from '../../../js/Util'
 
 import './Rule.scss'
 

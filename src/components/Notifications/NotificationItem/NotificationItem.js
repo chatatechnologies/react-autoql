@@ -1,17 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
-import { Popover } from '../../Popover'
 import dayjs from '../../../js/dayjsWithPlugins'
 import { isMobile } from 'react-device-detect'
-import { Icon } from '../../Icon'
-import { LoadingDots } from '../../LoadingDots'
-import { hideTooltips } from '../../Tooltip'
-import { ErrorBoundary } from '../../../containers/ErrorHOC'
-import { ConditionBuilder } from '../ConditionBuilder'
-import NotificationQueryResponse from './NotificationQueryResponse'
-import { Menu, MenuItem } from '../../Menu'
-
 import {
   dismissNotification,
   deleteNotification,
@@ -19,19 +10,29 @@ import {
   fetchNotificationData,
   markNotificationAsUnread,
   initializeAlert,
-} from '../../../js/notificationService'
-import { isNumber } from '../../../js/Util'
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
+  isNumber,
+} from 'autoql-fe-utils'
+
+import { Popover } from '../../Popover'
+import { Icon } from '../../Icon'
+import { LoadingDots } from '../../LoadingDots'
+import { hideTooltips } from '../../Tooltip'
+import { ErrorBoundary } from '../../../containers/ErrorHOC'
+import { ConditionBuilder } from '../ConditionBuilder'
+import NotificationQueryResponse from './NotificationQueryResponse'
+import { Menu, MenuItem } from '../../Menu'
+import { Button } from '../../Button'
+import { ConfirmPopover } from '../../ConfirmPopover'
+
 import {
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
   getAuthentication,
 } from '../../../props/defaults'
+import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
 
 import './NotificationItem.scss'
-import { Button } from '../../Button'
-import { ConfirmPopover } from '../../ConfirmPopover'
 
 export default class NotificationItem extends React.Component {
   constructor(props) {

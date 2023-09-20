@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import { v4 as uuid } from 'uuid'
+import { GROUP_TERM_TYPE, QUERY_TERM_TYPE } from 'autoql-fe-utils'
 
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { RuleSimple } from '../RuleSimple'
@@ -10,7 +11,6 @@ import { Icon } from '../../Icon'
 
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault } from '../../../props/defaults'
-import { GROUP_TERM_TYPE, QUERY_TERM_TYPE } from '../DataAlertConstants'
 
 import './ConditionBuilder.scss'
 

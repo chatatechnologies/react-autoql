@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.clonedeep'
 import { v4 as uuid } from 'uuid'
+import { CONTINUOUS_TYPE, PERIODIC_TYPE, SCHEDULED_TYPE } from 'autoql-fe-utils'
 
 import { ScheduleBuilder } from '../ScheduleBuilder'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
@@ -11,7 +12,6 @@ import AppearanceSection from './AppearanceSection'
 
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault } from '../../../props/defaults'
-import { CONTINUOUS_TYPE, EXISTS_TYPE, PERIODIC_TYPE, SCHEDULED_TYPE } from '../DataAlertConstants'
 
 import './DataAlertSettings.scss'
 

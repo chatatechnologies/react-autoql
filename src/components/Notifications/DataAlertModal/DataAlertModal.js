@@ -3,6 +3,15 @@ import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEmpty from 'lodash.isempty'
 import { v4 as uuid } from 'uuid'
+import {
+  DATA_ALERT_CONDITION_TYPES,
+  COMPARE_TYPE,
+  EXISTS_TYPE,
+  QUERY_TERM_TYPE,
+  createDataAlert,
+  updateDataAlert,
+  getSupportedConditionTypes,
+} from 'autoql-fe-utils'
 
 import { Modal } from '../../Modal'
 import { Button } from '../../Button'
@@ -17,12 +26,9 @@ import { DataAlertDeleteDialog } from '../DataAlertDeleteDialog'
 import DataAlertSettings from './DataAlertSettings'
 import AppearanceSection from './AppearanceSection'
 
-import { createDataAlert, updateDataAlert } from '../../../js/notificationService'
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 import { withTheme } from '../../../theme'
-import { DATA_ALERT_CONDITION_TYPES, COMPARE_TYPE, EXISTS_TYPE, QUERY_TERM_TYPE } from '../DataAlertConstants'
-import { getSupportedConditionTypes } from '../helpers'
 
 import './DataAlertModal.scss'
 import { CustomScrollbars } from '../../CustomScrollbars'
