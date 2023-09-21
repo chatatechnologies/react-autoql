@@ -47,6 +47,9 @@ class PopoverWithoutRef extends React.Component {
     if (!this.props.children) {
       return null
     }
+    if (!this.renderContent()) {
+      return null
+    }
 
     return (
       <Popover
