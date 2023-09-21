@@ -384,7 +384,7 @@ export default class Legend extends Component {
         .title(title)
         .titleWidth(maxSectionWidth)
         .on('cellclick', function (d) {
-          self.onClick(d, allLabels)
+          self.onClick(select(this)?.data()?.[0], allLabels)
         })
 
       if (isSecondLegend) {

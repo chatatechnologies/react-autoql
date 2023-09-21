@@ -8,9 +8,9 @@
 
   .react-autoql-slider-wrapper {
     font-size: var(--react-autoql-chart-font-size, 12px);
-	&.mobile{
-		font-size: 0.5rem;
-	}
+    &.mobile {
+      font-size: 0.5rem;
+    }
   }
 }
 
@@ -102,14 +102,19 @@
   /* These are not inline styles since they do not apply to saved PNG charts */
   .bar,
   .column,
-  .slice,
   .stacked-bar,
   .stacked-column {
     cursor: pointer;
 
     // Setting a transparent stroke allows a larger hover area
     stroke: transparent;
-    stroke-width: 10px;
+    stroke-width: 8px;
+  }
+
+  .slice {
+    cursor: pointer;
+    stroke: transparent;
+    stroke-width: 3px;
   }
 
   .point {
