@@ -2,6 +2,7 @@ import React from 'react'
 import { PropTypes } from 'prop-types'
 import { createPortal } from 'react-dom'
 import { bin, max, min } from 'd3-array'
+import { getBinData, formatChartLabel, getBinLinearScale, getHistogramScale } from 'autoql-fe-utils'
 
 import { Axes } from '../Axes'
 import { Slider } from '../../Slider'
@@ -15,7 +16,6 @@ import {
   roundToNearestLog10,
 } from '../../../js/Util'
 import { chartDefaultProps, chartPropTypes, convertToNumber } from '../helpers.js'
-import { formatChartLabel,  getBinLinearScale, getHistogramScale } from 'autoql-fe-utils'
 
 export default class ChataHistogram extends React.Component {
   constructor(props) {
@@ -167,6 +167,7 @@ export default class ChataHistogram extends React.Component {
   }
 
   setChartData = (props, bucketSize) => {
+    const { data, numberColumnIndex } = props
     if (this.xScale && this.props.numberColumnIndex !== this.xScale.columnIndex) {
       this.props.onBucketSizeChange(undefined)
       this.bucketConfig = this.getDefaultBucketConfig(props)
@@ -177,7 +178,12 @@ export default class ChataHistogram extends React.Component {
       this.bucketConfig.maxNumBuckets = uniqueNumberValues
     }
 
-    const { buckets, bins } = this.getBinData(bucketSize)
+    const { buckets, bins } = getBinData({
+      newBucketSize: bucketSize,
+      bucketConfig: this.bucketConfig,
+      data,
+      numberColumnIndex,
+    })
     this.buckets = buckets
     this.bins = bins
 
@@ -187,6 +193,7 @@ export default class ChataHistogram extends React.Component {
       axis: 'x',
       buckets: this.buckets,
       bins,
+      isScaled: true,
     })
 
     this.yScale = getHistogramScale({
@@ -194,6 +201,7 @@ export default class ChataHistogram extends React.Component {
       axis: 'y',
       buckets: this.buckets,
       columnIndex: props.numberColumnIndex,
+      isScaled: true,
     })
   }
 
