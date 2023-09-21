@@ -27,7 +27,7 @@ export default class ChataPieChart extends Component {
     this.TOP_ADJUSTMENT = 15
     this.AXIS_TITLE_BORDER_PADDING_LEFT = 5
     this.AXIS_TITLE_BORDER_PADDING_TOP = 3
-    this.SECTION_PADDING = 40
+    this.SECTION_PADDING = 30
 
     this.sortedData = props.data
       .concat() // this copies the array so the original isn't mutated
@@ -378,9 +378,11 @@ export default class ChataPieChart extends Component {
 
     const legendHeight = legendBBox?.height ?? 0
     const legendWidth = legendBBox?.width ?? 0
-    const legendXPosition = this.props.width / 2 - legendWidth - this.SECTION_PADDING
+    const legendXPosition = this.props.width / 2 - legendWidth - this.BORDER_PADDING - this.SECTION_PADDING
     const legendYPosition =
-      legendHeight < height - this.SECTION_PADDING ? (height - legendHeight) / 2 : this.SECTION_PADDING
+      legendHeight + this.BORDER_PADDING < height
+        ? (height - legendHeight) / 2 + this.BORDER_PADDING
+        : this.SECTION_PADDING
 
     select(this.legendWrapper).attr('transform', `translate(${legendXPosition}, ${legendYPosition})`)
 
