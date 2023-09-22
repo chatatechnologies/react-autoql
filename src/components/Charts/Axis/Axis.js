@@ -5,7 +5,7 @@ import _isEqual from 'lodash.isequal'
 import { select } from 'd3-selection'
 import { axisLeft, axisBottom, axisTop, axisRight } from 'd3-axis'
 import { isMobile } from 'react-device-detect'
-import { formatChartLabel, getBBoxFromRef, mergeBboxes, shouldLabelsRotate } from 'autoql-fe-utils'
+import { formatChartLabel, getBBoxFromRef, mergeBoundingClientRects, shouldLabelsRotate } from 'autoql-fe-utils'
 
 import { Legend } from '../Legend'
 import AxisScaler from './AxisScaler'
@@ -406,7 +406,7 @@ export default class Axis extends Component {
         })
 
       if (labelBboxes) {
-        const allLabelsBbox = mergeBboxes(labelBboxes)
+        const allLabelsBbox = mergeBoundingClientRects(labelBboxes)
         this.labelsBBox = { ...allLabelsBbox }
       }
     }

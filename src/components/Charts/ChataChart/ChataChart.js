@@ -21,7 +21,7 @@ import {
   getThemeValue,
   dataStructureChanged,
   getLegendLocation,
-  mergeBboxes,
+  mergeBoundingClientRects,
 } from 'autoql-fe-utils'
 
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
@@ -286,7 +286,13 @@ export default class ChataChart extends React.Component {
     const bottomAxisBBox = this.innerChartRef?.axesRef?.bottomAxis?.getBoundingClientRect()
     const rightAxisBBox = this.innerChartRef?.axesRef?.rightAxis?.getBoundingClientRect()
     const clippedLegendBBox = this.innerChartRef?.axesRef?.legendRef?.legendClippingContainer?.getBoundingClientRect()
-    const axesBBox = mergeBboxes([leftAxisBBox, bottomAxisBBox, rightAxisBBox, topAxisBBox, clippedLegendBBox])
+    const axesBBox = mergeBoundingClientRects([
+      leftAxisBBox,
+      bottomAxisBBox,
+      rightAxisBBox,
+      topAxisBBox,
+      clippedLegendBBox,
+    ])
 
     const axesWidth = axesBBox?.width ?? 0
     const axesHeight = axesBBox?.height ?? 0
