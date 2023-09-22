@@ -12,6 +12,7 @@ import {
   roundDownToNearestMultiple,
   roundUpToNearestMultiple,
   roundToNearestLog10,
+  convertToNumber,
 } from 'autoql-fe-utils'
 
 import { Axes } from '../Axes'
@@ -19,7 +20,7 @@ import { Slider } from '../../Slider'
 import { HistogramColumns } from './HistogramColumns'
 import { HistogramDistributions } from './HistogramDistributions'
 
-import { chartDefaultProps, chartPropTypes, convertToNumber } from '../chartPropHelpers.js'
+import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers.js'
 
 export default class ChataHistogram extends React.Component {
   constructor(props) {
