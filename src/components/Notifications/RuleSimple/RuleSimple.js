@@ -20,17 +20,19 @@ import {
   getSupportedConditionTypes,
   REQUEST_CANCELLED_ERROR,
   isISODate,
+  authenticationDefault,
+  getAuthentication,
+  getAutoQLConfig,
 } from 'autoql-fe-utils'
 
-import { Input } from '../../Input'
-import { Select } from '../../Select'
 import { Icon } from '../../Icon'
 import { Chip } from '../../Chip'
-import { ReverseTranslation } from '../../ReverseTranslation'
+import { Input } from '../../Input'
+import { Select } from '../../Select'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
+import { ReverseTranslation } from '../../ReverseTranslation'
 
 import { authenticationType } from '../../../props/types'
-import { authenticationDefault, getAuthentication, getAutoQLConfig } from '../../../props/defaults'
 
 import './RuleSimple.scss'
 

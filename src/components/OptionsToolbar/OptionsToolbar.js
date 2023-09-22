@@ -1,9 +1,9 @@
 import React from 'react'
-import PropTypes from 'prop-types'
-import _cloneDeep from 'lodash.clonedeep'
 import { v4 as uuid } from 'uuid'
-import { isMobile } from 'react-device-detect'
+import PropTypes from 'prop-types'
 import { format } from 'sql-formatter'
+import _cloneDeep from 'lodash.clonedeep'
+import { isMobile } from 'react-device-detect'
 import {
   setColumnVisibility,
   exportCSV,
@@ -12,20 +12,23 @@ import {
   areSomeColumnsHidden,
   isChartType,
   deepEqual,
+  autoQLConfigDefault,
+  authenticationDefault,
+  getAuthentication,
+  getAutoQLConfig,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
 import { Modal } from '../Modal'
 import { Button } from '../Button'
 import { Popover } from '../Popover'
-import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
-import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
 import { ReportProblemModal } from '../ReportProblemModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
+import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
 import DataAlertModal from '../Notifications/DataAlertModal/DataAlertModal'
 
 import { autoQLConfigType, authenticationType } from '../../props/types'
-import { autoQLConfigDefault, authenticationDefault, getAuthentication, getAutoQLConfig } from '../../props/defaults'
 
 import './OptionsToolbar.scss'
 

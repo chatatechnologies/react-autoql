@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import SplitterLayout from 'react-splitter-layout'
-import { CHART_TYPES } from 'autoql-fe-utils'
+import { CHART_TYPES, authenticationDefault, autoQLConfigDefault, dataFormattingDefault } from 'autoql-fe-utils'
 
 import { Modal } from '../Modal'
 import { QueryOutput } from '../QueryOutput'
@@ -13,7 +13,6 @@ import { ReportProblemModal } from '../ReportProblemModal'
 import DrilldownTable from './DrilldownTable'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
-import { authenticationDefault, autoQLConfigDefault, dataFormattingDefault } from '../../props/defaults'
 
 export default class DrilldownModal extends React.Component {
   constructor(props) {

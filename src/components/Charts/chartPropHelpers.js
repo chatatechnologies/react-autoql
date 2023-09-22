@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types'
+import { dataFormattingDefault } from 'autoql-fe-utils'
 
 import { dataFormattingType } from '../../props/types'
-import { dataFormattingDefault } from '../../props/defaults'
 
 export const chartContainerPropTypes = {
   dataFormatting: dataFormattingType,

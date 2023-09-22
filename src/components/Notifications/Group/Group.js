@@ -1,14 +1,14 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
+import PropTypes from 'prop-types'
+import { authenticationDefault } from 'autoql-fe-utils'
 
-import { Radio } from '../../Radio'
-import { Icon } from '../../Icon'
 import { Rule } from '../Rule'
+import { Icon } from '../../Icon'
+import { Radio } from '../../Radio'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType } from '../../../props/types'
-import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
 import './Group.scss'
 

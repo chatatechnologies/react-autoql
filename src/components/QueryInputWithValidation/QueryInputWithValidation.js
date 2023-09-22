@@ -1,17 +1,15 @@
-import React, { Fragment } from 'react'
-import PropTypes from 'prop-types'
+import React from 'react'
 import { v4 as uuid } from 'uuid'
-import ContentEditable from 'react-contenteditable'
+import PropTypes from 'prop-types'
+import _isEqual from 'lodash.isequal'
 import sanitizeHtml from 'sanitize-html'
 import _cloneDeep from 'lodash.clonedeep'
-import _isEqual from 'lodash.isequal'
-import { debounce } from 'throttle-debounce'
-import { runQueryValidation, setCaretPosition } from 'autoql-fe-utils'
+import ContentEditable from 'react-contenteditable'
+import { runQueryValidation, setCaretPosition, authenticationDefault, getAuthentication } from 'autoql-fe-utils'
 
-import { Popover } from '../Popover'
 import { Select } from '../Select'
+import { Popover } from '../Popover'
 
-import { authenticationDefault, getAuthentication } from '../../props/defaults'
 import { authenticationType } from '../../props/types'
 
 import './QueryInputWithValidation.scss'
@@ -365,7 +363,8 @@ export default class QueryValidationMessage extends React.Component {
     return elementToGetText.innerText
   }
 
-  runQueryValidation = debounce(300, ({ text }) => {
+  // TODO - debounce
+  runQueryValidation = ({ text }) => {
     runQueryValidation({
       text,
       ...getAuthentication(this.props.authentication),
@@ -381,7 +380,7 @@ export default class QueryValidationMessage extends React.Component {
       .catch((error) => {
         console.error(error)
       })
-  })
+  }
 
   moveCaretAtEnd = (e) => {
     var temp_value = e.target.innerHTML
@@ -519,7 +518,7 @@ export default class QueryValidationMessage extends React.Component {
     const html = this.getHTML()
 
     return (
-      <Fragment>
+      <>
         <ContentEditable
           data-test='safetynet-input-bar'
           id={this.COMPONENT_KEY}
@@ -587,7 +586,7 @@ export default class QueryValidationMessage extends React.Component {
             style={{ position: 'absolute' }}
           />
         </Popover>
-      </Fragment>
+      </>
     )
   }
 }

@@ -13,6 +13,7 @@ import {
   formatTableParams,
   getFilterPrecision,
   DAYJS_PRECISION_FORMATS,
+  getAuthentication
 } from 'autoql-fe-utils'
 
 import { Button } from '../Button'
@@ -23,7 +24,6 @@ import { DateRangePicker } from '../DateRangePicker'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { columnOptionsList } from './tabulatorConstants'
-import { getAuthentication } from '../../props/defaults'
 
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
 import './ChataTable.scss'

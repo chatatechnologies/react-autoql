@@ -2,25 +2,30 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { isMobile } from 'react-device-detect'
+import {
+  fetchNotificationFeed,
+  dismissAllNotifications,
+  fetchDataAlerts,
+  authenticationDefault,
+  getAuthentication,
+  getAutoQLConfig,
+} from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
-import { NotificationItem } from '../NotificationItem'
-import { DataAlertModal } from '../DataAlertModal'
+import { Modal } from '../../Modal'
 import { Button } from '../../Button'
-import { InfiniteScroll } from '../../InfiniteScroll'
 import { Spinner } from '../../Spinner'
 import { Tooltip } from '../../Tooltip'
-import { Modal } from '../../Modal'
 import { DataAlerts } from '../DataAlerts'
 import { LoadingDots } from '../../LoadingDots'
-import { ErrorBoundary } from '../../../containers/ErrorHOC'
+import { DataAlertModal } from '../DataAlertModal'
 import { ConfirmPopover } from '../../ConfirmPopover'
+import { InfiniteScroll } from '../../InfiniteScroll'
+import { NotificationItem } from '../NotificationItem'
+import { ErrorBoundary } from '../../../containers/ErrorHOC'
 
-import { fetchNotificationFeed, dismissAllNotifications, fetchDataAlerts } from 'autoql-fe-utils'
-import { authenticationType } from '../../../props/types'
-import { authenticationDefault, getAuthentication, getAutoQLConfig } from '../../../props/defaults'
 import { withTheme } from '../../../theme'
-
+import { authenticationType } from '../../../props/types'
 import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
 
 import './NotificationFeed.scss'

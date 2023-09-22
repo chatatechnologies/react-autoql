@@ -5,7 +5,18 @@ import axios from 'axios'
 import _cloneDeep from 'lodash.clonedeep'
 import Autosuggest from 'react-autosuggest'
 import SplitterLayout from 'react-splitter-layout'
-import { runQuery, fetchAutocomplete, deepEqual, isChartType, REQUEST_CANCELLED_ERROR } from 'autoql-fe-utils'
+import {
+  runQuery,
+  fetchAutocomplete,
+  deepEqual,
+  isChartType,
+  REQUEST_CANCELLED_ERROR,
+  authenticationDefault,
+  autoQLConfigDefault,
+  dataFormattingDefault,
+  getAuthentication,
+  getAutoQLConfig,
+} from 'autoql-fe-utils'
 
 import { QueryOutput } from '../../QueryOutput'
 import { VizToolbar } from '../../VizToolbar'
@@ -17,13 +28,6 @@ import { Button } from '../../Button'
 import { hideTooltips } from '../../Tooltip'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
-import {
-  authenticationDefault,
-  autoQLConfigDefault,
-  dataFormattingDefault,
-  getAuthentication,
-  getAutoQLConfig,
-} from '../../../props/defaults'
 
 import './DashboardTile.scss'
 

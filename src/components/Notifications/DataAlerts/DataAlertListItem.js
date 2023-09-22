@@ -15,6 +15,8 @@ import {
   formatResetDate,
   getScheduleFrequencyObject,
   resetDateIsFuture,
+  authenticationDefault,
+  getAuthentication,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
@@ -22,7 +24,6 @@ import { Switch } from '../../Switch'
 import { hideTooltips } from '../../Tooltip'
 
 import { authenticationType } from '../../../props/types'
-import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
 import './DataAlerts.scss'
 

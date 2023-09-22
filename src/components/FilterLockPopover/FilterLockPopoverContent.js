@@ -14,20 +14,21 @@ import {
   unsetFilterFromAPI,
   handleTooltipBoundaryCollision,
   REQUEST_CANCELLED_ERROR,
+  authenticationDefault,
+  getAuthentication,
 } from 'autoql-fe-utils'
 
-import { Radio } from '../Radio'
 import { Icon } from '../Icon'
+import { Radio } from '../Radio'
 import { Button } from '../Button'
-import { LoadingDots } from '../LoadingDots'
 import { Checkbox } from '../Checkbox'
-import { Tooltip, hideTooltips, rebuildTooltips } from '../Tooltip'
+import { LoadingDots } from '../LoadingDots'
 import { CustomScrollbars } from '../CustomScrollbars'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { Tooltip, hideTooltips, rebuildTooltips } from '../Tooltip'
 
 import { lang } from '../../js/Localization'
 import { authenticationType } from '../../props/types'
-import { authenticationDefault, getAuthentication } from '../../props/defaults'
 
 import 'react-toastify/dist/ReactToastify.css'
 

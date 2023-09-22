@@ -11,25 +11,23 @@ import {
   markNotificationAsUnread,
   initializeAlert,
   isNumber,
-} from 'autoql-fe-utils'
-
-import { Popover } from '../../Popover'
-import { Icon } from '../../Icon'
-import { LoadingDots } from '../../LoadingDots'
-import { hideTooltips } from '../../Tooltip'
-import { ErrorBoundary } from '../../../containers/ErrorHOC'
-import { ConditionBuilder } from '../ConditionBuilder'
-import { NotificationQueryResponse } from '../NotificationQueryResponse'
-import { Menu, MenuItem } from '../../Menu'
-import { Button } from '../../Button'
-import { ConfirmPopover } from '../../ConfirmPopover'
-
-import {
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
   getAuthentication,
-} from '../../../props/defaults'
+} from 'autoql-fe-utils'
+
+import { Icon } from '../../Icon'
+import { Button } from '../../Button'
+import { Popover } from '../../Popover'
+import { Menu, MenuItem } from '../../Menu'
+import { hideTooltips } from '../../Tooltip'
+import { LoadingDots } from '../../LoadingDots'
+import { ConfirmPopover } from '../../ConfirmPopover'
+import { ConditionBuilder } from '../ConditionBuilder'
+import { ErrorBoundary } from '../../../containers/ErrorHOC'
+import { NotificationQueryResponse } from '../NotificationQueryResponse'
+
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
 
 import './NotificationItem.scss'

@@ -1,17 +1,16 @@
 import React from 'react'
+import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.clonedeep'
-import { v4 as uuid } from 'uuid'
-import { CONTINUOUS_TYPE, PERIODIC_TYPE, SCHEDULED_TYPE } from 'autoql-fe-utils'
+import { CONTINUOUS_TYPE, PERIODIC_TYPE, SCHEDULED_TYPE, authenticationDefault } from 'autoql-fe-utils'
 
-import { ScheduleBuilder } from '../ScheduleBuilder'
-import { ErrorBoundary } from '../../../containers/ErrorHOC'
-import { ConditionBuilder } from '../ConditionBuilder'
 import { Select } from '../../Select'
 import AppearanceSection from './AppearanceSection'
+import { ScheduleBuilder } from '../ScheduleBuilder'
+import { ConditionBuilder } from '../ConditionBuilder'
+import { ErrorBoundary } from '../../../containers/ErrorHOC'
 
 import { authenticationType } from '../../../props/types'
-import { authenticationDefault } from '../../../props/defaults'
 
 import './DataAlertSettings.scss'
 

@@ -1,12 +1,11 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { deleteDataAlert } from 'autoql-fe-utils'
+import { deleteDataAlert, authenticationDefault, getAuthentication } from 'autoql-fe-utils'
 
 import { ConfirmModal } from '../../ConfirmModal'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 
 import { authenticationType } from '../../../props/types'
-import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
 export default class DataAlertDeleteDialog extends React.Component {
   constructor(props) {

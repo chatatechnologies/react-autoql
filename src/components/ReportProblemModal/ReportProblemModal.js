@@ -1,14 +1,13 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
-import { reportProblem, deepEqual } from 'autoql-fe-utils'
+import { reportProblem, deepEqual, authenticationDefault, getAuthentication } from 'autoql-fe-utils'
 
 import { Radio } from '../Radio'
 import { Modal } from '../Modal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType } from '../../props/types'
-import { authenticationDefault, getAuthentication } from '../../props/defaults'
 
 export default class ReportProblemModal extends React.Component {
   static propTypes = {

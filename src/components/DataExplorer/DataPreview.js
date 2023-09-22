@@ -2,7 +2,13 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import axios from 'axios'
-import { fetchDataPreview, REQUEST_CANCELLED_ERROR, formatElement } from 'autoql-fe-utils'
+import {
+  fetchDataPreview,
+  REQUEST_CANCELLED_ERROR,
+  formatElement,
+  getDataFormatting,
+  dataFormattingDefault,
+} from 'autoql-fe-utils'
 
 import { Card } from '../Card'
 import { CustomScrollbars } from '../CustomScrollbars'
@@ -12,7 +18,6 @@ import { Icon } from '../Icon'
 import { rebuildTooltips } from '../Tooltip'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { getDataFormatting, dataFormattingDefault } from '../../props/defaults'
 import { dataFormattingType } from '../../props/types'
 
 import './DataPreview.scss'

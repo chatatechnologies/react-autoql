@@ -1,13 +1,12 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
+import PropTypes from 'prop-types'
 import dayjs from '../../../js/dayjsWithPlugins'
-import { isNumber } from 'autoql-fe-utils'
+import { isNumber, authenticationDefault, autoQLConfigDefault, dataFormattingDefault } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 
-import { authenticationDefault, autoQLConfigDefault, dataFormattingDefault } from '../../../props/defaults'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
 
 import './NotificationItem.scss'

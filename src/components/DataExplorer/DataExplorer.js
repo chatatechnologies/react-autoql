@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Tooltip } from '../Tooltip'
 import { v4 as uuid } from 'uuid'
-import { DataExplorerTypes } from 'autoql-fe-utils'
+import { DataExplorerTypes, dataFormattingDefault } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
 import { Card } from '../Card'
@@ -12,7 +12,6 @@ import { CustomScrollbars } from '../CustomScrollbars'
 import { QuerySuggestionList } from '../ExploreQueries'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { dataFormattingDefault } from '../../props/defaults'
 import { authenticationType, dataFormattingType } from '../../props/types'
 
 import './DataExplorer.scss'

@@ -1,7 +1,15 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { isMobile } from 'react-device-detect'
-import { deepEqual, UNAUTHENTICATED_ERROR, GENERAL_QUERY_ERROR } from 'autoql-fe-utils'
+import {
+  deepEqual,
+  UNAUTHENTICATED_ERROR,
+  GENERAL_QUERY_ERROR,
+  authenticationDefault,
+  autoQLConfigDefault,
+  dataFormattingDefault,
+  getAuthentication,
+} from 'autoql-fe-utils'
 
 import { QueryOutput } from '../QueryOutput'
 import { VizToolbar } from '../VizToolbar'
@@ -11,12 +19,6 @@ import { Spinner } from '../Spinner'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
-import {
-  authenticationDefault,
-  autoQLConfigDefault,
-  dataFormattingDefault,
-  getAuthentication,
-} from '../../props/defaults'
 
 import './ChatMessage.scss'
 

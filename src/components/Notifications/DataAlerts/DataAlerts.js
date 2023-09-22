@@ -1,21 +1,20 @@
 import React from 'react'
+import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
-import { v4 as uuid } from 'uuid'
-import { fetchDataAlerts } from 'autoql-fe-utils'
+import { fetchDataAlerts, authenticationDefault, getAuthentication } from 'autoql-fe-utils'
 
 import { Tooltip } from '../../Tooltip'
 import { LoadingDots } from '../../LoadingDots'
 import { DataAlertModal } from '../DataAlertModal'
-import { DataAlertDeleteDialog } from '../DataAlertDeleteDialog'
-import { ErrorBoundary } from '../../../containers/ErrorHOC'
-
 import DataAlertListItem from './DataAlertListItem'
-import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
-import { authenticationType } from '../../../props/types'
-import { authenticationDefault, getAuthentication } from '../../../props/defaults'
-import { withTheme } from '../../../theme'
 import { CustomScrollbars } from '../../CustomScrollbars'
+import { ErrorBoundary } from '../../../containers/ErrorHOC'
+import { DataAlertDeleteDialog } from '../DataAlertDeleteDialog'
+
+import { withTheme } from '../../../theme'
+import { authenticationType } from '../../../props/types'
+import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
 
 import './DataAlerts.scss'
 

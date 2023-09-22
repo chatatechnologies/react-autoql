@@ -53,24 +53,22 @@ import {
   getColumnDateRanges,
   getFilterPrecision,
   getPrecisionForDayJS,
-} from 'autoql-fe-utils'
-
-import { Icon } from '../Icon'
-import { ChataTable } from '../ChataTable'
-import { ChataChart } from '../Charts/ChataChart'
-import { ReverseTranslation } from '../ReverseTranslation'
-import { QueryValidationMessage } from '../QueryValidationMessage'
-import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-
-import {
   dataFormattingDefault,
   autoQLConfigDefault,
   authenticationDefault,
   getAuthentication,
   getDataFormatting,
   getAutoQLConfig,
-} from '../../props/defaults'
+} from 'autoql-fe-utils'
+
+import { Icon } from '../Icon'
+import { ChataTable } from '../ChataTable'
+import { ChataChart } from '../Charts/ChataChart'
+import { ReverseTranslation } from '../ReverseTranslation'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { QueryValidationMessage } from '../QueryValidationMessage'
+import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
+
 import { withTheme } from '../../theme'
 import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
 

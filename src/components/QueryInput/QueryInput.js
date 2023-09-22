@@ -16,23 +16,21 @@ import {
   mergeSources,
   REQUEST_CANCELLED_ERROR,
   GENERAL_QUERY_ERROR,
-} from 'autoql-fe-utils'
-
-import LoadingDots from '../LoadingDots/LoadingDots.js'
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { hideTooltips } from '../Tooltip'
-import { Icon } from '../Icon'
-
-import {
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
   getAuthentication,
   getAutoQLConfig,
-} from '../../props/defaults'
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
-import { dprQuery } from '../../js/dprService'
+} from 'autoql-fe-utils'
+
+import { Icon } from '../Icon'
+import { hideTooltips } from '../Tooltip'
+import LoadingDots from '../LoadingDots/LoadingDots.js'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+
 import { withTheme } from '../../theme'
+import { dprQuery } from '../../js/dprService'
+import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
 import './QueryInput.scss'
 

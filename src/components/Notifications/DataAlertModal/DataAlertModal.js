@@ -1,8 +1,9 @@
 import React from 'react'
-import PropTypes from 'prop-types'
-import _cloneDeep from 'lodash.clonedeep'
-import _isEmpty from 'lodash.isempty'
 import { v4 as uuid } from 'uuid'
+import PropTypes from 'prop-types'
+import _isEmpty from 'lodash.isempty'
+import _cloneDeep from 'lodash.clonedeep'
+
 import {
   DATA_ALERT_CONDITION_TYPES,
   COMPARE_TYPE,
@@ -11,27 +12,28 @@ import {
   createDataAlert,
   updateDataAlert,
   getSupportedConditionTypes,
+  authenticationDefault,
+  getAuthentication,
 } from 'autoql-fe-utils'
 
+import { Icon } from '../../Icon'
 import { Modal } from '../../Modal'
 import { Button } from '../../Button'
-import { Icon } from '../../Icon'
-import { Tooltip } from '../../Tooltip'
-import { ScheduleBuilder } from '../ScheduleBuilder'
-import { ErrorBoundary } from '../../../containers/ErrorHOC'
-import { StepsHoz } from '../../StepsHoz'
-import { ConditionBuilder } from '../ConditionBuilder'
 import { Select } from '../../Select'
+import { Tooltip } from '../../Tooltip'
+import { StepsHoz } from '../../StepsHoz'
+import { ScheduleBuilder } from '../ScheduleBuilder'
+import { ConditionBuilder } from '../ConditionBuilder'
+import { CustomScrollbars } from '../../CustomScrollbars'
+import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { DataAlertDeleteDialog } from '../DataAlertDeleteDialog'
-import DataAlertSettings from '../DataAlertSettings/DataAlertSettings'
 import AppearanceSection from '../DataAlertSettings/AppearanceSection'
+import DataAlertSettings from '../DataAlertSettings/DataAlertSettings'
 
-import { authenticationType } from '../../../props/types'
-import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 import { withTheme } from '../../../theme'
+import { authenticationType } from '../../../props/types'
 
 import './DataAlertModal.scss'
-import { CustomScrollbars } from '../../CustomScrollbars'
 
 class DataAlertModal extends React.Component {
   constructor(props) {

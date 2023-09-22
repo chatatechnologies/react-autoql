@@ -2,15 +2,20 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
-import { fetchAutocomplete, isExpressionQueryValid, capitalizeFirstChar } from 'autoql-fe-utils'
+import {
+  fetchAutocomplete,
+  isExpressionQueryValid,
+  capitalizeFirstChar,
+  authenticationDefault,
+  getAuthentication,
+} from 'autoql-fe-utils'
 
+import { Icon } from '../../Icon'
 import { Input } from '../../Input'
 import { Select } from '../../Select'
-import { Icon } from '../../Icon'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType } from '../../../props/types'
-import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
 import './Rule.scss'
 
