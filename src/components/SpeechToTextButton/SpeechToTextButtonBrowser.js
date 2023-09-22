@@ -76,7 +76,7 @@ class Dictaphone extends React.Component {
           onMouseLeave={this.props.listening ? stopListening : undefined}
           data-tooltip-content='Hold for voice-to-text'
           data-tooltip-id={this.props.tooltipID ?? 'react-autoql-speech-to-text-tooltip'}
-          data-tip-disable={this.props.listening}
+          data-tooltip-content-disable={this.props.listening}
         >
           <Icon type='microphone' />
         </button>

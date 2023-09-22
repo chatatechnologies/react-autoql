@@ -1,10 +1,11 @@
 import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
-import { Tooltip } from '../Tooltip'
-import { DataExplorerTypes, dataFormattingDefault } from 'autoql-fe-utils'
+
+import { COLUMN_TYPES, DataExplorerTypes, dataFormattingDefault } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
+import { Tooltip } from '../Tooltip'
 import DataPreview from './DataPreview'
 import DataExplorerInput from './DataExplorerInput'
 import { CustomScrollbars } from '../CustomScrollbars'

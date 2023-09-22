@@ -179,7 +179,7 @@ export default class SpeechToTextBtn extends React.Component {
             onMouseLeave={this.state.isRecording ? this.stopRecording : undefined}
             data-tooltip-content='Hold for voice-to-text'
             data-tooltip-id='react-autoql-speech-to-text-tooltip'
-            data-tip-disable={this.state.isRecording}
+            data-tooltip-content-disable={this.state.isRecording}
           >
             <Icon type='microphone' />
           </button>

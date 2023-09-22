@@ -84,7 +84,7 @@ export default class DrilldownModal extends React.Component {
   renderSplitterCollapseBtn = () => {
     const splitterBtn = document.querySelector(`#splitter-btn-${this.COMPONENT_KEY}`)
     if (splitterBtn) {
-      splitterBtn.setAttribute('data-tip', this.state.isDrilldownChartHidden ? 'Show chart' : 'Hide chart')
+      splitterBtn.setAttribute('data-tooltip-content', this.state.isDrilldownChartHidden ? 'Show chart' : 'Hide chart')
     } else {
       const btn = document.createElement('div')
       btn.innerHTML = '&#94;'

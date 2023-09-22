@@ -164,8 +164,8 @@ export default class NotificationItem extends React.Component {
           <Icon
             type='more-vertical'
             className='react-autoql-notification-options-btn'
-            data-tip='Options'
-            data-for={this.props.tooltipID ?? 'react-autoql-notification-tooltip'}
+            data-tooltip-content='Options'
+            data-tooltip-id={this.props.tooltipID ?? 'react-autoql-notification-tooltip'}
           />
         </div>
       </div>

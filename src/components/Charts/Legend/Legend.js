@@ -268,7 +268,7 @@ export default class Legend extends React.Component {
         .attr('class', 'legend-hidden-field-arrow')
         .attr('y', removedElementYBottom)
         .attr('transform', removedElementTransform)
-        .attr('data-tip', 'Some legend fields are hidden. Please expand the chart size to view them.')
+        .attr('data-tooltip-content', 'Some legend fields are hidden. Please expand the chart size to view them.')
         .attr('data-tooltip-id', tooltipID)
         .style('font-size', `${this.props.fontSize - 3}px`)
         .style('color', 'red')

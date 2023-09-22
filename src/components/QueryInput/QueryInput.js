@@ -25,7 +25,6 @@ import {
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
-import { hideTooltips } from '../Tooltip'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 

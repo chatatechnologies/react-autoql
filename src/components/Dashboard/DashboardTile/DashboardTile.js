@@ -845,7 +845,7 @@ export class DashboardTile extends React.Component {
                     className: 'dashboard-tile-autocomplete-input',
                     placeholder: 'Type a query in your own words',
                     value: this.state.query,
-                    'data-tip': 'Query',
+                    'data-tooltip-content': 'Query',
                     'data-tooltip-id': this.props.tooltipID,
                     'data-place': 'bottom',
                     onFocus: (e) => {

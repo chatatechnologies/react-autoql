@@ -296,7 +296,7 @@ export default class Axis extends Component {
       .style('font-family', 'inherit')
       .attr('data-tooltip-id', this.props.chartTooltipID)
       .attr('data-effect', 'float')
-      .attr('data-tip', function (d) {
+      .attr('data-tooltip-content', function (d) {
         if (select(this).text()?.slice(-3) === '...') {
           const { fullWidthLabel } = formatChartLabel({ d, scale, maxLabelWidth })
           if (fullWidthLabel) {
