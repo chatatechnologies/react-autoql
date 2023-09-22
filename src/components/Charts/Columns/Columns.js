@@ -1,6 +1,9 @@
 import React, { Component } from 'react'
+import { getKey, getTooltipContent, scaleZero } from 'autoql-fe-utils'
+
 import { rebuildTooltips } from '../../Tooltip'
-import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, scaleZero, getKey } from '../helpers'
+
+import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
 
 export default class Columns extends Component {
   static propTypes = chartElementPropTypes

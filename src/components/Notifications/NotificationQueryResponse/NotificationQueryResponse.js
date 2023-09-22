@@ -1,13 +1,13 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { authenticationDefault, autoQLConfigDefault, dataFormattingDefault } from 'autoql-fe-utils'
 
+import { VizToolbar } from '../../VizToolbar'
 import { LoadingDots } from '../../LoadingDots'
 import { QueryOutput } from '../../QueryOutput'
-import { VizToolbar } from '../../VizToolbar'
-import { OptionsToolbar } from '../../OptionsToolbar'
+import OptionsToolbar from '../../OptionsToolbar/OptionsToolbar'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
-import { authenticationDefault, autoQLConfigDefault, dataFormattingDefault } from '../../../props/defaults'
 
 export default class NotificationQueryResponse extends React.Component {
   static propTypes = {

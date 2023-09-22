@@ -1,9 +1,10 @@
 import React, { Component } from 'react'
+import { select } from 'd3-selection'
+import { getBBoxFromRef } from 'autoql-fe-utils'
+
 import RowNumberSelector from './RowNumberSelector'
 
-import { getBBoxFromRef } from '../../../js/Util.js'
-import { axesDefaultProps, axesPropTypes } from '../helpers.js'
-import { select } from 'd3-selection'
+import { axesDefaultProps, axesPropTypes } from '../chartPropHelpers.js'
 
 export default class LoadMoreDropdown extends Component {
   constructor(props) {

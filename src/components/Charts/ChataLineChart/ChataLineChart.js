@@ -1,11 +1,11 @@
 import React, { Component } from 'react'
+import { getBandScale, getLinearScales, deepEqual } from 'autoql-fe-utils'
+
 import { Axes } from '../Axes'
 import { Line } from '../Line'
-
-import { chartDefaultProps, chartPropTypes } from '../helpers.js'
-import { deepEqual } from '../../../js/Util'
 import { rebuildTooltips } from '../../Tooltip'
-import { getBandScale, getLinearScales } from 'autoql-fe-utils'
+
+import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers.js'
 
 export default class ChataLineChart extends Component {
   constructor(props) {

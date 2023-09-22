@@ -1,17 +1,22 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import { v4 as uuid } from 'uuid'
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
 import { arc } from 'd3-shape'
-import { legendColor, getPieChartData } from 'autoql-fe-utils'
+import {
+  legendColor,
+  getPieChartData,
+  deepEqual,
+  formatElement,
+  removeFromDOM,
+  getChartColorVars,
+  getTooltipContent,
+} from 'autoql-fe-utils'
 
 import { rebuildTooltips } from '../../Tooltip'
-import { deepEqual, formatElement, removeFromDOM } from '../../../js/Util'
-import { chartDefaultProps, chartPropTypes, getTooltipContent } from '../helpers'
-import { getChartColorVars } from '../../../theme/configureTheme'
+import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers'
 import StringAxisSelector from '../Axes/StringAxisSelector'
 
 import 'd3-transition'
@@ -29,6 +34,7 @@ export default class ChataPieChart extends Component {
     this.TOP_ADJUSTMENT = 15
     this.AXIS_TITLE_BORDER_PADDING_LEFT = 5
     this.AXIS_TITLE_BORDER_PADDING_TOP = 3
+    this.SECTION_PADDING = 30
 
     this.sortedData = props.data
       .concat() // this copies the array so the original isn't mutated
@@ -57,7 +63,7 @@ export default class ChataPieChart extends Component {
         column: props.columns?.[props.stringColumnIndex],
       })}: ${formatElement({
         element: d[props.numberColumnIndex] || 0,
-        column: _get(props, `columns[${props.numberColumnIndex}]`),
+        column: props.columns?.[props.numberColumnIndex],
         config: props.columns?.[props.dataFormatting],
       })}`
       return {
@@ -151,7 +157,6 @@ export default class ChataPieChart extends Component {
     this.renderPieContainer()
     this.renderPieSlices()
     this.renderLegend()
-    this.renderLegendBorder()
 
     // Finally, translate container of legend and pie chart to center of parent container
     this.centerVisualization()
@@ -270,8 +275,8 @@ export default class ChataPieChart extends Component {
       containerBBox = containerElement.getBBox()
     }
 
-    const containerWidth = _get(containerBBox, 'width', 0)
-    const currentXPosition = _get(containerBBox, 'x', 0)
+    const containerWidth = containerBBox?.width ?? 0
+    const currentXPosition = containerBBox?.x ?? 0
     const finalXPosition = (this.props.width - containerWidth) / 2
     const xDelta = finalXPosition - currentXPosition
 
@@ -312,9 +317,6 @@ export default class ChataPieChart extends Component {
         width={0}
         height={0}
         rx={2}
-        transform={`translate(${-this.BORDER_PADDING - this.BORDER_THICKNESS},${
-          -this.BORDER_PADDING - this.TOP_ADJUSTMENT - this.BORDER_THICKNESS
-        })`}
         style={{
           stroke: 'var(--react-autoql-border-color)',
           fill: 'transparent',
@@ -375,29 +377,46 @@ export default class ChataPieChart extends Component {
       .style('font-size', `${this.props.fontSize - 2}px`)
 
     this.applyTitleStyles(title, legendElement)
+    this.applyColumnSelectorStyles(legendElement)
 
-    if (legendElement) {
+    if (this.legendWrapper) {
       legendBBox = legendElement.getBBox()
     }
 
-    const legendHeight = _get(legendBBox, 'height', 0)
-    const legendWidth = _get(legendBBox, 'width', 0)
-    const legendXPosition = this.props.width / 2 - legendWidth - 20
-    const legendYPosition = legendHeight < height - 20 ? (height - legendHeight) / 2 : 15
-    this.legendXPosition = legendXPosition
-    this.legendYPosition = legendYPosition
+    const legendHeight = legendBBox?.height ?? 0
+    const legendWidth = legendBBox?.width ?? 0
+    const legendXPosition = this.props.width / 2 - legendWidth - this.BORDER_PADDING - this.SECTION_PADDING
+    const legendYPosition =
+      legendHeight + this.BORDER_PADDING < height
+        ? (height - legendHeight) / 2 + this.BORDER_PADDING
+        : this.SECTION_PADDING
 
-    this.legend.select('.legendOrdinal').attr('transform', `translate(${legendXPosition}, ${legendYPosition})`)
+    select(this.legendWrapper).attr('transform', `translate(${legendXPosition}, ${legendYPosition})`)
 
     select(this.legendBorder)
+      .attr('transform', `translate(${-this.BORDER_PADDING}, ${-this.BORDER_PADDING})`)
+      .attr('x', legendBBox?.x)
+      .attr('y', legendBBox?.y)
       .attr('height', legendHeight + 2 * this.BORDER_PADDING)
       .attr('width', legendWidth + 2 * this.BORDER_PADDING)
 
-    this.applyColumnSelectorStyles()
     this.applyStylesForHiddenSeries()
   }
 
-  applyColumnSelectorStyles = () => {
+  applyColumnSelectorStyles = (legendElement) => {
+    if (!this.shouldRenderColumnSelector()) {
+      return
+    }
+
+    // Add dropdown arrow
+    select(legendElement)
+      .select('.legendTitle')
+      .append('tspan')
+      .text('  ▼')
+      .style('font-size', '8px')
+      .style('opacity', 0)
+      .attr('class', 'react-autoql-axis-selector-arrow')
+
     // Add border that shows on hover
     this.titleBBox = {}
     try {
@@ -409,46 +428,24 @@ export default class ChataPieChart extends Component {
       this.titleBBox = titleBBox
 
       select(this.columnSelector)
-        .attr('transform', `translate(${this.legendXPosition}, ${this.legendYPosition - 5})`)
         .attr('width', Math.round(titleWidth + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT))
         .attr('height', Math.round(titleHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP))
         .attr('x', Math.round(titleBBox?.x - this.AXIS_TITLE_BORDER_PADDING_LEFT))
         .attr('y', Math.round(titleBBox?.y - this.AXIS_TITLE_BORDER_PADDING_TOP))
+        .style('transform', select(titleElement).style('transform'))
     } catch (error) {
       console.error(error)
     }
   }
 
-  styleLegendTitleNoBorder = (legendElement) => {
-    select(legendElement)
-      .select('.legendTitle')
-      .style('font-weight', 'bold')
-      .attr('data-test', 'legend-title')
-      .attr('fill-opacity', 0.9)
-      .style('transform', 'translateY(-5px)')
-  }
-
-  styleLegendTitleWithBorder = (legendElement) => {
-    select(legendElement)
-      .select('.legendTitle')
-      .style('font-weight', 'bold')
-      .attr('data-test', 'legend-title')
-      .attr('fill-opacity', 0.9)
-      .style('transform', 'translateY(-5px)')
-      .append('tspan')
-      .text('  ▼')
-      .style('font-size', '8px')
-      .style('opacity', 0)
-      .attr('class', 'react-autoql-axis-selector-arrow')
-  }
-
   applyTitleStyles = (title, legendElement) => {
     if (title) {
-      if (this.props.stringColumnIndices?.length > 1) {
-        this.styleLegendTitleWithBorder(legendElement)
-      } else {
-        this.styleLegendTitleNoBorder(legendElement)
-      }
+      select(legendElement)
+        .select('.legendTitle')
+        .style('font-weight', 'bold')
+        .attr('data-test', 'legend-title')
+        .attr('fill-opacity', 0.9)
+        .style('transform', 'translateY(-5px)')
     }
   }
 
@@ -495,38 +492,43 @@ export default class ChataPieChart extends Component {
     this.setState({ isColumnSelectorOpen: false })
   }
 
+  shouldRenderColumnSelector = () => {
+    return this.props.stringColumnIndices?.length > 1
+  }
+
   renderTitleSelector = () => {
-    return (
-      <StringAxisSelector
-        chartContainerRef={this.props.chartContainerRef}
-        changeStringColumnIndex={this.props.changeStringColumnIndex}
-        legendColumn={this.props.legendColumn}
-        popoverParentElement={this.props.popoverParentElement}
-        stringColumnIndices={this.props.stringColumnIndices}
-        stringColumnIndex={this.props.stringColumnIndex}
-        isAggregation={this.props.isAggregation}
-        tooltipID={this.props.tooltipID}
-        columns={this.props.columns}
-        scale={this.legendScale}
-        align='center'
-        position='bottom'
-        positions={['top', 'bottom', 'right', 'left']}
-        axisSelectorRef={(r) => (this.columnSelector = r)}
-        isOpen={this.state.isColumnSelectorOpen}
-        closeSelector={this.closeSelector}
-      >
-        <rect
-          ref={(r) => (this.columnSelector = r)}
-          className='axis-label-border'
-          data-test='axis-label-border'
-          onClick={this.openSelector}
-          fill='transparent'
-          stroke='transparent'
-          strokeWidth='1px'
-          rx='4'
-        />
-      </StringAxisSelector>
-    )
+    if (this.shouldRenderColumnSelector())
+      return (
+        <StringAxisSelector
+          chartContainerRef={this.props.chartContainerRef}
+          changeStringColumnIndex={this.props.changeStringColumnIndex}
+          legendColumn={this.props.legendColumn}
+          popoverParentElement={this.props.popoverParentElement}
+          stringColumnIndices={this.props.stringColumnIndices}
+          stringColumnIndex={this.props.stringColumnIndex}
+          isAggregation={this.props.isAggregation}
+          tooltipID={this.props.tooltipID}
+          columns={this.props.columns}
+          scale={this.legendScale}
+          align='center'
+          position='bottom'
+          positions={['top', 'bottom', 'right', 'left']}
+          axisSelectorRef={(r) => (this.columnSelector = r)}
+          isOpen={this.state.isColumnSelectorOpen}
+          closeSelector={this.closeSelector}
+        >
+          <rect
+            ref={(r) => (this.columnSelector = r)}
+            className='axis-label-border'
+            data-test='axis-label-border'
+            onClick={this.openSelector}
+            fill='transparent'
+            stroke='transparent'
+            strokeWidth='1px'
+            rx='4'
+          />
+        </StringAxisSelector>
+      )
   }
 
   render = () => {
@@ -540,14 +542,17 @@ export default class ChataPieChart extends Component {
           width={this.props.width}
           height={this.props.height}
         />
-        <g
-          ref={(el) => {
-            this.legendElement = el
-          }}
-          id={this.LEGEND_ID}
-          className='legendOrdinal'
-        />
-        {this.renderTitleSelector()}
+        <g ref={(r) => (this.legendWrapper = r)}>
+          <g
+            ref={(el) => {
+              this.legendElement = el
+            }}
+            id={this.LEGEND_ID}
+            className='legendOrdinal'
+          />
+          {this.renderTitleSelector()}
+          {this.renderLegendBorder()}
+        </g>
       </g>
     )
   }

@@ -2,20 +2,19 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Tooltip } from '../Tooltip'
 import { v4 as uuid } from 'uuid'
+import { DataExplorerTypes, dataFormattingDefault } from 'autoql-fe-utils'
 
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import DataExplorerInput from './DataExplorerInput'
-import DataPreview from './DataPreview'
-import DEConstants from './constants'
-
-import { QuerySuggestionList } from '../ExploreQueries'
-import { authenticationType, dataFormattingType } from '../../props/types'
-import { CustomScrollbars } from '../CustomScrollbars'
 import { Icon } from '../Icon'
 import { Card } from '../Card'
+import DataPreview from './DataPreview'
+import DataExplorerInput from './DataExplorerInput'
+import { CustomScrollbars } from '../CustomScrollbars'
+import { QuerySuggestionList } from '../ExploreQueries'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+
+import { authenticationType, dataFormattingType } from '../../props/types'
 
 import './DataExplorer.scss'
-import { dataFormattingDefault } from '../../props/defaults'
 
 export default class DataExplorer extends React.Component {
   constructor(props) {
@@ -64,7 +63,7 @@ export default class DataExplorer extends React.Component {
   }
 
   onInputSelection = (listItem, skipQueryValidation) => {
-    if (listItem?.type === DEConstants.SUBJECT_TYPE) {
+    if (listItem?.type === DataExplorerTypes.SUBJECT_TYPE) {
       this.setState({
         selectedSubject: listItem,
         selectedKeywords: null,
@@ -72,7 +71,7 @@ export default class DataExplorer extends React.Component {
         activeTopicType: listItem?.type,
         skipQueryValidation: true,
       })
-    } else if (listItem?.type === DEConstants.VL_TYPE) {
+    } else if (listItem?.type === DataExplorerTypes.VL_TYPE) {
       this.setState({
         selectedVL: listItem,
         selectedKeywords: null,
@@ -141,7 +140,7 @@ export default class DataExplorer extends React.Component {
   }
 
   renderDataPreview = () => {
-    if (!this.state.selectedSubject || this.state.activeTopicType !== DEConstants.SUBJECT_TYPE) {
+    if (!this.state.selectedSubject || this.state.activeTopicType !== DataExplorerTypes.SUBJECT_TYPE) {
       return null
     }
 
@@ -168,7 +167,7 @@ export default class DataExplorer extends React.Component {
   }
 
   renderVLSubjectList = () => {
-    if (!this.state.selectedVL || this.activeTopicType !== DEConstants.VL_TYPE) {
+    if (!this.state.selectedVL || this.activeTopicType !== DataExplorerTypes.VL_TYPE) {
       return null
     }
 
@@ -197,7 +196,7 @@ export default class DataExplorer extends React.Component {
 
     const isCollapsed = this.props.isSmallScreen ? this.state.isQuerySuggestionCollapsed : undefined
     const isDefaultCollapsed =
-      !this.state.selectedSubject || this.state.activeTopicType !== DEConstants.SUBJECT_TYPE ? false : true
+      !this.state.selectedSubject || this.state.activeTopicType !== DataExplorerTypes.SUBJECT_TYPE ? false : true
 
     return (
       <div className='data-explorer-section query-suggestions'>
@@ -241,10 +240,10 @@ export default class DataExplorer extends React.Component {
 
   getSelectedTopic = () => {
     const activeType = this.state.activeTopicType
-    if (activeType === DEConstants.SUBJECT_TYPE) {
+    if (activeType === DataExplorerTypes.SUBJECT_TYPE) {
       return this.state.selectedSubject
     }
-    if (activeType === DEConstants.VL_TYPE) {
+    if (activeType === DataExplorerTypes.VL_TYPE) {
       return this.state.selectedVL
     }
     if (activeType === 'text') {

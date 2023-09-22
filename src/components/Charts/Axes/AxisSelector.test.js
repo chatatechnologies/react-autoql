@@ -3,8 +3,7 @@ import { mount } from 'enzyme'
 import AxisSelector from './AxisSelector'
 import sampleProps from '../chartTestData'
 import { findByTestAttr } from '../../../../test/testUtils'
-import { getNumberColumnIndices, getStringColumnIndices } from '../../QueryOutput/columnHelpers'
-import { getBandScale, getLinearScale } from 'autoql-fe-utils'
+import { getBandScale, getLinearScale, getNumberColumnIndices, getStringColumnIndices } from 'autoql-fe-utils'
 
 const pivotSampleProps = sampleProps.pivot
 const defaultProps = AxisSelector.defaultProps

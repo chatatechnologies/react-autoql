@@ -2,25 +2,28 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import axios from 'axios'
-import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
-import { runQueryNewPage } from 'autoql-fe-utils'
+import {
+  runQueryNewPage,
+  currentEventLoopEnd,
+  deepEqual,
+  REQUEST_CANCELLED_ERROR,
+  formatTableParams,
+  getFilterPrecision,
+  DAYJS_PRECISION_FORMATS,
+  getAuthentication
+} from 'autoql-fe-utils'
 
-import TableWrapper from './TableWrapper'
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { responseErrors } from '../../js/errorMessages'
-import { getAuthentication } from '../../props/defaults'
-import { formatTableParams } from './tableHelpers'
-import { Spinner } from '../Spinner'
-import { DateRangePicker } from '../DateRangePicker'
-import { getFilterPrecision } from '../../js/dateUtils'
-import { DAYJS_PRECISION_FORMATS } from '../../js/Constants'
-import { currentEventLoopEnd, deepEqual } from '../../js/Util'
-import { columnOptionsList } from './tabulatorConstants'
-import { Popover } from '../Popover'
 import { Button } from '../Button'
+import { Spinner } from '../Spinner'
+import { Popover } from '../Popover'
+import TableWrapper from './TableWrapper'
+import { DateRangePicker } from '../DateRangePicker'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+
+import { columnOptionsList } from './tabulatorConstants'
 
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
 import './ChataTable.scss'
@@ -376,7 +379,7 @@ export default class ChataTable extends React.Component {
   }
 
   cancelCurrentRequest = () => {
-    this.axiosSource?.cancel(responseErrors.CANCELLED)
+    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
   }
 
   ajaxRequesting = (props, params) => {
@@ -438,7 +441,7 @@ export default class ChataTable extends React.Component {
           cancelToken: this.axiosSource.token,
         })
         this.queryID = responseWrapper?.data?.data?.query_id
-        response = { ..._get(responseWrapper, 'data.data', {}), page: 1 }
+        response = { ...(responseWrapper?.data?.data ?? {}), page: 1 }
 
         this.scrollLeft = this.ref?.tabulator?.rowManager?.element?.scrollLeft
 
@@ -453,7 +456,7 @@ export default class ChataTable extends React.Component {
       this.clearLoadingIndicators()
       return response
     } catch (error) {
-      if (error?.data?.message === responseErrors.CANCELLED) {
+      if (error?.data?.message === REQUEST_CANCELLED_ERROR) {
         return previousData
       }
 
@@ -513,7 +516,7 @@ export default class ChataTable extends React.Component {
       }
 
       this.currentPage = response.page
-      const isLastPage = _get(response, 'rows.length', 0) < props.pageSize
+      const isLastPage = (response?.rows?.length ?? 0) < props.pageSize
       this.lastPage = isLastPage ? this.currentPage : this.currentPage + 1
 
       if (this._isMounted) {

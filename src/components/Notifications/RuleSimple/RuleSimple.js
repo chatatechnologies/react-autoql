@@ -4,29 +4,35 @@ import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
 import parseNum from 'parse-num'
 import axios from 'axios'
-import { fetchAutocomplete, runQueryOnly } from 'autoql-fe-utils'
 import dayjs from '../../../js/dayjsWithPlugins'
-import { isISODate } from '../../../js/dateUtils'
-import { Input } from '../../Input'
-import { Select } from '../../Select'
-import { Icon } from '../../Icon'
-import { ErrorBoundary } from '../../../containers/ErrorHOC'
-
-import { authenticationType } from '../../../props/types'
-import { authenticationDefault, getAuthentication, getAutoQLConfig } from '../../../props/defaults'
-import { isNumber, isSingleValueResponse } from '../../../js/Util'
 import {
+  fetchAutocomplete,
+  runQueryOnly,
   COMPARE_TYPE,
   DATA_ALERT_OPERATORS,
   EXISTS_TYPE,
   NUMBER_TERM_TYPE,
   QUERY_TERM_TYPE,
-} from '../DataAlertConstants'
-import { constructRTArray, getTimeFrameTextFromChunk } from '../../../js/reverseTranslationHelpers'
-import { ReverseTranslation } from '../../ReverseTranslation'
-import { getSupportedConditionTypes } from '../helpers'
-import { responseErrors } from '../../../js/errorMessages'
+  isNumber,
+  isSingleValueResponse,
+  constructRTArray,
+  getTimeFrameTextFromChunk,
+  getSupportedConditionTypes,
+  REQUEST_CANCELLED_ERROR,
+  isISODate,
+  authenticationDefault,
+  getAuthentication,
+  getAutoQLConfig,
+} from 'autoql-fe-utils'
+
+import { Icon } from '../../Icon'
 import { Chip } from '../../Chip'
+import { Input } from '../../Input'
+import { Select } from '../../Select'
+import { ErrorBoundary } from '../../../containers/ErrorHOC'
+import { ReverseTranslation } from '../../ReverseTranslation'
+
+import { authenticationType } from '../../../props/types'
 
 import './RuleSimple.scss'
 
@@ -407,7 +413,7 @@ export default class RuleSimple extends React.Component {
   }
 
   cancelSecondValidation = () => {
-    this.axiosSource?.cancel(responseErrors.CANCELLED)
+    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
   }
 
   runSecondValidation = () => {
@@ -430,7 +436,7 @@ export default class RuleSimple extends React.Component {
         this.onValidationResponse(response)
       })
       .catch((error) => {
-        if (error?.response?.data?.message !== responseErrors.CANCELLED) {
+        if (error?.response?.data?.message !== REQUEST_CANCELLED_ERROR) {
           this.setState({ secondQueryValidating: false, secondQueryInvalid: true })
         }
       })

@@ -1,9 +1,10 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import Drawer from 'rc-drawer'
-import _get from 'lodash.get'
 import _isEmpty from 'lodash.isempty'
 import { v4 as uuid } from 'uuid'
+import { isBrowser, isMobile } from 'react-device-detect'
+import { mergeSources, autoQLConfigDefault, dataFormattingDefault, getAutoQLConfig } from 'autoql-fe-utils'
 
 // Components
 import { Icon } from '../Icon'
@@ -19,11 +20,8 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 // Utils
 import { withTheme } from '../../theme'
-import { isBrowser, isMobile } from 'react-device-detect'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
-import { autoQLConfigDefault, dataFormattingDefault, getAutoQLConfig } from '../../props/defaults'
 import { lang, setLanguage } from '../../js/Localization'
-import { mergeSources } from '../../js/Util'
 
 // Styles
 import 'rc-drawer/assets/index.css'
@@ -895,8 +893,8 @@ export class DataMessenger extends React.Component {
     const { maxWidth, maxHeight } = this.getMaxWidthAndHeightFromDocument()
 
     if (placement === 'right') {
-      const offset = _get(this.state.startingResizePosition, 'x') - e.pageX
-      let newWidth = _get(this.state.startingResizePosition, 'width') + offset
+      const offset = (this.state.startingResizePosition?.x ?? 0) - e.pageX
+      let newWidth = (this.state.startingResizePosition?.width ?? 0) + offset
       if (newWidth > maxWidth) {
         newWidth = maxWidth
       }
@@ -910,8 +908,8 @@ export class DataMessenger extends React.Component {
         })
       }
     } else if (placement === 'left') {
-      const offset = e.pageX - _get(this.state.startingResizePosition, 'x')
-      let newWidth = _get(this.state.startingResizePosition, 'width') + offset
+      const offset = e.pageX - (this.state.startingResizePosition?.x ?? 0)
+      let newWidth = (this.state.startingResizePosition?.width ?? 0) + offset
       if (newWidth > maxWidth) {
         newWidth = maxWidth
       }
@@ -925,8 +923,8 @@ export class DataMessenger extends React.Component {
         })
       }
     } else if (placement === 'bottom') {
-      const offset = _get(this.state.startingResizePosition, 'y') - e.pageY
-      let newHeight = _get(this.state.startingResizePosition, 'height') + offset
+      const offset = (this.state.startingResizePosition?.y ?? 0) - e.pageY
+      let newHeight = (this.state.startingResizePosition?.height ?? 0) + offset
       if (newHeight > maxHeight) {
         newHeight = maxHeight
       }
@@ -940,8 +938,8 @@ export class DataMessenger extends React.Component {
         })
       }
     } else if (placement === 'top') {
-      const offset = e.pageY - _get(this.state.startingResizePosition, 'y')
-      let newHeight = _get(this.state.startingResizePosition, 'height') + offset
+      const offset = e.pageY - (this.state.startingResizePosition?.y ?? 0)
+      let newHeight = (this.state.startingResizePosition?.height ?? 0) + offset
       if (newHeight > this.maxHeight) {
         newHeight = this.maxHeight
       }

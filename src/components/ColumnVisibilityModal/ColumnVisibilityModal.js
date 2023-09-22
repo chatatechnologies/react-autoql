@@ -1,9 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { deepEqual } from 'autoql-fe-utils'
 
 import { Modal } from '../Modal'
 import { SelectableList } from '../SelectableList'
-import { deepEqual } from '../../js/Util'
 
 import './ColumnVisibilityModal.scss'
 

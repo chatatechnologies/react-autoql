@@ -1,9 +1,9 @@
 import React from 'react'
-import { shallow, render, mount, html } from 'enzyme'
+import { shallow } from 'enzyme'
+import { currentEventLoopEnd } from 'autoql-fe-utils'
 
 import { findByTestAttr, ignoreConsoleErrors } from '../../../test/testUtils'
 import Steps from './Steps'
-import { currentEventLoopEnd } from '../../js/Util'
 
 const defaultProps = {
   steps: [{}, {}],
@@ -76,7 +76,12 @@ describe('renders correctly', () => {
 
   test('onStepClick prop is called when step is clicked', () => {
     const onClick = jest.fn()
-    const wrapper = setup({ steps: [{ complete: true, onClick }, { complete: true, onClick }] })
+    const wrapper = setup({
+      steps: [
+        { complete: true, onClick },
+        { complete: true, onClick },
+      ],
+    })
     const secondStepTitleElement = findByTestAttr(wrapper, 'react-autoql-step-title-1')
     secondStepTitleElement.simulate('click')
     expect(onClick).toHaveBeenCalled()

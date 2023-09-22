@@ -1,10 +1,11 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { REQUEST_CANCELLED_ERROR, DEFAULT_DATA_PAGE_SIZE, MAX_DATA_PAGE_SIZE } from 'autoql-fe-utils'
+
 import { Popover } from '../../Popover'
-import { axesDefaultProps, axesPropTypes } from '../helpers'
 import { CustomScrollbars } from '../../CustomScrollbars'
-import { responseErrors } from '../../../js/errorMessages'
-import { DEFAULT_DATA_PAGE_SIZE, MAX_DATA_PAGE_SIZE } from '../../../js/Constants'
+
+import { axesDefaultProps, axesPropTypes } from '../chartPropHelpers'
 
 export default class RowNumberSelector extends React.Component {
   constructor(props) {
@@ -47,7 +48,7 @@ export default class RowNumberSelector extends React.Component {
       this.props.onNewData(response, pageSizeForRequest)
       this.props.setIsLoadingMoreRows(false)
     } catch (error) {
-      if (error?.data?.message !== responseErrors.CANCELLED) {
+      if (error?.data?.message !== REQUEST_CANCELLED_ERROR) {
         console.error(error)
         this.props.onErrorCallback(error)
       }

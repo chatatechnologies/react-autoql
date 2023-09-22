@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { Axes } from '../Axes'
 import { StackedColumns } from '../StackedColumns'
 
-import { chartDefaultProps, chartPropTypes } from '../helpers.js'
+import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers.js'
 import { getBandScale, getLinearScales } from 'autoql-fe-utils'
 
 export default class ChataStackedColumnChart extends Component {

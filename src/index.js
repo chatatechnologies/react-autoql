@@ -1,6 +1,8 @@
 import './index.scss'
 import 'react-perfect-scrollbar/dist/css/styles.css'
 
+export { getSupportedDisplayTypes, getDefaultDisplayType, isDisplayTypeValid, configureTheme } from 'autoql-fe-utils'
+
 export * from './components/DataMessenger'
 export * from './components/QueryInput'
 export * from './components/Dashboard'
@@ -12,17 +14,13 @@ export * from './components/OptionsToolbar'
 export * from './components/VizToolbar'
 export * from './components/ExploreQueries'
 export * from './components/DataExplorer'
-export {
-  NotificationIcon,
-  NotificationFeed,
-  NotificationItem,
-  DataAlerts,
-  ConditionBuilder,
-  ExpressionBuilder,
-  ScheduleBuilder,
-  DataAlertModal,
-} from './components/Notifications'
+export { ConditionBuilder } from './components/Notifications/ConditionBuilder'
+export { NotificationIcon } from './components/Notifications/NotificationIcon'
+export { NotificationFeed } from './components/Notifications/NotificationFeed'
+export { NotificationItem } from './components/Notifications/NotificationItem'
+export { ExpressionBuilder } from './components/Notifications/ExpressionBuilder'
+export { ScheduleBuilder } from './components/Notifications/ScheduleBuilder'
+export { DataAlertModal } from './components/Notifications/DataAlertModal'
+export { DataAlerts } from './components/Notifications/DataAlerts'
 export { Icon } from './components/Icon'
-export { getSupportedDisplayTypes, getDefaultDisplayType, isDisplayTypeValid } from './js/Util.js'
 export { LoadingDots } from './components/LoadingDots'
-export { configureTheme } from './theme'

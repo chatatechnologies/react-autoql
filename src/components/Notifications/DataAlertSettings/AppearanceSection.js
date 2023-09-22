@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { Input } from '../../Input'
-import NotificationItem from '../NotificationItem/NotificationItem'
+import NotificationItemWithoutData from '../NotificationItem/NotificationItemWithoutData'
 
 export default class AppearanceSection extends React.Component {
   constructor(props) {
@@ -65,7 +65,7 @@ export default class AppearanceSection extends React.Component {
   renderDataAlertPreview = () => {
     return (
       <div className='data-alert-preview'>
-        <NotificationItem
+        <NotificationItemWithoutData
           notification={{
             id: `preview-${this.COMPONENT_KEY}`,
             title: this.props.titleInput || (
