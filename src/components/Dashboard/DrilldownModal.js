@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import SplitterLayout from 'react-splitter-layout'
+import { CHART_TYPES } from 'autoql-fe-utils'
 
 import { Modal } from '../Modal'
 import { QueryOutput } from '../QueryOutput'
@@ -11,7 +12,6 @@ import { rebuildTooltips } from '../Tooltip'
 import { ReportProblemModal } from '../ReportProblemModal'
 import DrilldownTable from './DrilldownTable'
 
-import { CHART_TYPES } from '../../js/Constants'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import { authenticationDefault, autoQLConfigDefault, dataFormattingDefault } from '../../props/defaults'
 

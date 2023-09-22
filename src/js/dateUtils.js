@@ -1,4 +1,4 @@
-import { PRECISION_TYPES } from './Constants'
+import { PRECISION_TYPES } from 'autoql-fe-utils'
 import dayjs from './dayjsWithPlugins'
 
 export const isISODate = (str) => {

@@ -3,14 +3,13 @@ import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.clonedeep'
 import { v4 as uuid } from 'uuid'
 import { isMobile } from 'react-device-detect'
-import { legendColor, deepEqual, removeFromDOM } from 'autoql-fe-utils'
+import { legendColor, deepEqual, removeFromDOM, COLUMN_TYPES } from 'autoql-fe-utils'
 
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
 import { symbol, symbolSquare } from 'd3-shape'
 
 import { mergeBboxes } from '../helpers'
-import { NUMBER_COLUMN_TYPE_DISPLAY_NAMES } from '../../../js/Constants'
 import { AGG_TYPES, getLegendLabelsForMultiSeries } from 'autoql-fe-utils'
 
 export default class Legend extends Component {
@@ -338,7 +337,7 @@ export default class Legend extends Component {
     const columnTypeArray = columnIndices.map((index) => this.props.columns[index].type)
     const allTypesEqual = !columnTypeArray.find((type) => type !== columnTypeArray[0])
     if (this.props.hasSecondAxis && allTypesEqual) {
-      const columnTypeName = NUMBER_COLUMN_TYPE_DISPLAY_NAMES[columnTypeArray[0]]
+      const columnTypeName = COLUMN_TYPES[columnTypeArray[0]]?.description
       if (columnTypeName) {
         title = `${columnTypeName} ${title}`
       }

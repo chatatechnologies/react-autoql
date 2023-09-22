@@ -1,4 +1,7 @@
-import { TIMESTAMP_FORMATS } from '../js/Constants'
+const TIMESTAMP_FORMATS = {
+  epoch: 'EPOCH',
+  iso8601: 'ISO8601',
+}
 
 export const authenticationDefault = {
   token: undefined,

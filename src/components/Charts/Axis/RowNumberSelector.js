@@ -1,10 +1,11 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { REQUEST_CANCELLED_ERROR } from 'autoql-fe-utils'
+import { REQUEST_CANCELLED_ERROR, DEFAULT_DATA_PAGE_SIZE, MAX_DATA_PAGE_SIZE } from 'autoql-fe-utils'
+
 import { Popover } from '../../Popover'
-import { axesDefaultProps, axesPropTypes } from '../helpers'
 import { CustomScrollbars } from '../../CustomScrollbars'
-import { DEFAULT_DATA_PAGE_SIZE, MAX_DATA_PAGE_SIZE } from '../../../js/Constants'
+
+import { axesDefaultProps, axesPropTypes } from '../helpers'
 
 export default class RowNumberSelector extends React.Component {
   constructor(props) {

@@ -1,17 +1,17 @@
 import React from 'react'
+import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
-import { v4 as uuid } from 'uuid'
-import { Popover } from '../../Popover'
-import { SelectableList } from '../../SelectableList'
-import { Button } from '../../Button'
-import { CustomScrollbars } from '../../CustomScrollbars'
-import { Checkbox } from '../../Checkbox'
-import { NUMBER_COLUMN_TYPES, NUMBER_COLUMN_TYPE_DISPLAY_NAMES } from '../../../js/Constants'
-import { Select } from '../../Select'
-import { rebuildTooltips } from '../../Tooltip'
 import { isMobile } from 'react-device-detect'
-import { AGG_TYPES } from 'autoql-fe-utils'
+import { AGG_TYPES, COLUMN_TYPES } from 'autoql-fe-utils'
+
+import { Button } from '../../Button'
+import { Select } from '../../Select'
+import { Popover } from '../../Popover'
+import { Checkbox } from '../../Checkbox'
+import { rebuildTooltips } from '../../Tooltip'
+import { SelectableList } from '../../SelectableList'
+import { CustomScrollbars } from '../../CustomScrollbars'
 
 export default class NumberAxisSelector extends React.Component {
   constructor(props) {
@@ -216,7 +216,8 @@ export default class NumberAxisSelector extends React.Component {
     )
   }
 
-  renderSeriesSelector = (type) => {
+  renderSeriesSelector = (typeObj) => {
+    const type = typeObj?.type
     const columnsOfType = this.getColumnsOfType(type)
     if (!columnsOfType?.length) {
       return null
@@ -225,7 +226,7 @@ export default class NumberAxisSelector extends React.Component {
     const maxHeight = 250
     const minHeight = 100
 
-    const title = NUMBER_COLUMN_TYPE_DISPLAY_NAMES[type]
+    const title = typeObj.description
     const listItems = this.getSelectableListItems(type)
     const allChecked = this.getAllChecked(type)
     const allDisabled = this.areAllDisabled(type)
@@ -273,9 +274,11 @@ export default class NumberAxisSelector extends React.Component {
     return (
       <div className='axis-series-selector'>
         <div className='number-selector-field-group-container'>
-          {Object.keys(NUMBER_COLUMN_TYPES).map((key) => {
-            return this.renderSeriesSelector(NUMBER_COLUMN_TYPES[key])
-          })}
+          {Object.keys(COLUMN_TYPES)
+            .filter((key) => COLUMN_TYPES[key].isNumber)
+            .map((key) => {
+              return this.renderSeriesSelector(COLUMN_TYPES[key])
+            })}
         </div>
       </div>
     )
