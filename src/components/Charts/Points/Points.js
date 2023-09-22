@@ -1,11 +1,11 @@
 import React, { Component } from 'react'
 import { scaleLinear } from 'd3-scale'
 import { max, min } from 'd3-array'
+import { deepEqual, getChartColorVars, getKey, getTooltipContent } from 'autoql-fe-utils'
 
-import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, getKey } from '../helpers'
-import { getChartColorVars } from '../../../theme/configureTheme'
 import { rebuildTooltips } from '../../Tooltip'
-import { deepEqual } from '../../../js/Util'
+
+import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
 
 export default class Points extends Component {
   constructor(props) {

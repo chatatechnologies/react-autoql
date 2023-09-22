@@ -1,7 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
-import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 
 import { Icon } from '../Icon'
@@ -39,7 +38,7 @@ export default class QueryValidationMessage extends React.Component {
   }
 
   componentDidMount = () => {
-    if (_get(this.props, 'response.data')) {
+    if (this.props?.response?.data) {
       this.initializeQueryValidationOptions(this.props.response.data)
     }
   }
@@ -103,7 +102,7 @@ export default class QueryValidationMessage extends React.Component {
   }
 
   updateStartAndEndIndexes = (selectedSuggestions) => {
-    if (!_get(selectedSuggestions, 'length')) {
+    if (!selectedSuggestions?.length) {
       return
     }
 

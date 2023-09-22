@@ -4,20 +4,22 @@ import { v4 as uuid } from 'uuid'
 import RGL, { WidthProvider } from 'react-grid-layout'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
-import { DashboardTile } from './DashboardTile'
-import { ErrorBoundary } from '../../containers/ErrorHOC'
-import { hideTooltips, Tooltip } from '../Tooltip'
-import DrilldownModal from './DrilldownModal'
-
-import { deepEqual, mergeSources } from '../../js/Util'
-import { withTheme } from '../../theme'
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import {
+  deepEqual,
+  mergeSources,
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
   getAutoQLConfig,
-} from '../../props/defaults'
+} from 'autoql-fe-utils'
+
+import { DashboardTile } from './DashboardTile'
+import { hideTooltips, Tooltip } from '../Tooltip'
+import DrilldownModal from './DrilldownModal'
+import { ErrorBoundary } from '../../containers/ErrorHOC'
+
+import { withTheme } from '../../theme'
+import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
 import 'react-grid-layout/css/styles.css'
 import 'react-splitter-layout/lib/index.css'

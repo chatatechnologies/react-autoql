@@ -1,11 +1,12 @@
 import React, { Component } from 'react'
 import { deviation, mean, median as median } from 'd3-array'
 import { v4 as uuid } from 'uuid'
+import { formatElement, createSVGPath } from 'autoql-fe-utils'
+
 import { rebuildTooltips } from '../../../Tooltip'
-import { chartElementDefaultProps, chartElementPropTypes } from '../../helpers'
-import { createSVGPath } from '../../Line/lineFns'
+
 import { normalPDF, exponentialPDF } from '../distributionFns'
-import { formatElement } from '../../../../js/Util'
+import { chartElementDefaultProps, chartElementPropTypes } from '../../chartPropHelpers'
 
 export default class HistogramDistributions extends Component {
   constructor(props) {

@@ -1,6 +1,5 @@
 import { scaleOrdinal } from 'd3-scale'
-import { getNumberColumnIndices, getStringColumnIndices } from '../QueryOutput/columnHelpers'
-import { getBandScale, getLinearScales } from 'autoql-fe-utils'
+import { getBandScale, getLinearScales, getNumberColumnIndices, getStringColumnIndices } from 'autoql-fe-utils'
 
 const listColumns = [
   {

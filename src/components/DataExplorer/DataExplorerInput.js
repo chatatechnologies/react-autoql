@@ -6,21 +6,20 @@ import { v4 as uuid } from 'uuid'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEqual from 'lodash.isequal'
 import axios from 'axios'
-import { fetchDataExplorerAutocomplete, fetchSubjectList } from 'autoql-fe-utils'
+import {
+  fetchDataExplorerAutocomplete,
+  fetchSubjectList,
+  REQUEST_CANCELLED_ERROR,
+  DataExplorerTypes,
+  animateInputText,
+} from 'autoql-fe-utils'
 
-import DEConstants from './constants'
 import { authenticationType } from '../../props/types'
 import { Icon } from '../Icon'
 import { TopicName } from './TopicName'
-import { animateInputText } from '../../js/Util'
 import { CustomScrollbars } from '../CustomScrollbars'
 
 import './DataExplorerInput.scss'
-import { responseErrors } from '../../js/errorMessages'
-
-const toSentenceCase = (str) => {
-  return str.toLowerCase().charAt(0).toUpperCase() + str.slice(1)
-}
 
 export default class DataExplorerInput extends React.Component {
   constructor(props) {
@@ -83,7 +82,7 @@ export default class DataExplorerInput extends React.Component {
             .map((subject) => {
               return {
                 ...subject,
-                type: DEConstants.SUBJECT_TYPE,
+                type: DataExplorerTypes.SUBJECT_TYPE,
               }
             })
             .filter((subject) => !this.isAggSeed(subject))
@@ -236,7 +235,7 @@ export default class DataExplorerInput extends React.Component {
   }
 
   cancelCurrentRequest = () => {
-    this.axiosSource?.cancel(responseErrors.CANCELLED)
+    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR.CANCELLED)
   }
 
   requestSuggestions = (value) => {
@@ -259,7 +258,7 @@ export default class DataExplorerInput extends React.Component {
           })
         })
         .catch((error) => {
-          if (error?.data?.message !== responseErrors.CANCELLED) {
+          if (error?.data?.message !== REQUEST_CANCELLED_ERROR.CANCELLED) {
             console.error(error)
             this.setState({ suggestions: [], loadingAutocomplete: false })
           }

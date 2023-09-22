@@ -1,15 +1,12 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { authenticationDefault, autoQLConfigDefault, dataFormattingDefault, getAutoQLConfig } from 'autoql-fe-utils'
+
 import { QueryOutput } from '../QueryOutput'
 import { VizToolbar } from '../VizToolbar'
 import { OptionsToolbar } from '../OptionsToolbar'
+
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
-import {
-  authenticationDefault,
-  autoQLConfigDefault,
-  dataFormattingDefault,
-  getAutoQLConfig,
-} from '../../props/defaults'
 
 export default class DrilldownTable extends React.Component {
   static propTypes = {

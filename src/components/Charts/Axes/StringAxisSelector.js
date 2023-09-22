@@ -1,9 +1,10 @@
 import React from 'react'
+import { v4 as uuid } from 'uuid'
+import { isMobile } from 'react-device-detect'
+import { isColumnDateType, isColumnStringType } from 'autoql-fe-utils'
+
 import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
-import { v4 as uuid } from 'uuid'
-import { isColumnDateType, isColumnStringType } from '../../QueryOutput/columnHelpers'
-import { isMobile } from 'react-device-detect'
 
 export default class StringAxisSelector extends React.Component {
   constructor(props) {

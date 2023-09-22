@@ -1,41 +1,24 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
-import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _isEmpty from 'lodash.isempty'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
 import parse from 'html-react-parser'
 import axios from 'axios'
-import { AggTypes, sendSuggestion, runDrilldown, runQueryOnly } from 'autoql-fe-utils'
-
-import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
 import {
-  dataFormattingDefault,
-  autoQLConfigDefault,
-  authenticationDefault,
-  getAuthentication,
-  getDataFormatting,
-  getAutoQLConfig,
-} from '../../props/defaults'
-
-import { ChataTable } from '../ChataTable'
-import { ChataChart } from '../Charts/ChataChart'
-import { QueryValidationMessage } from '../QueryValidationMessage'
-import { Icon } from '../Icon'
-import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
-
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import errorMessages, { responseErrors } from '../../js/errorMessages'
-
-import {
+  AggTypes,
+  sendSuggestion,
+  runDrilldown,
+  runQueryOnly,
+  getSupportedDisplayTypes,
+  getNumberColumnIndices,
+  isDisplayTypeValid,
+  getDefaultDisplayType,
   onlyUnique,
   formatElement,
   makeEmptyArray,
-  getSupportedDisplayTypes,
-  getDefaultDisplayType,
-  isDisplayTypeValid,
   getGroupBysFromPivotTable,
   getGroupBysFromTable,
   isTableType,
@@ -51,30 +34,43 @@ import {
   hasNumberColumn,
   hasStringColumn,
   removeElementAtIndex,
-} from '../../js/Util.js'
-
-import {
+  isListQuery,
+  GENERAL_QUERY_ERROR,
+  REQUEST_CANCELLED_ERROR,
   isColumnNumberType,
   isColumnStringType,
-  getNumberColumnIndices,
   getDateColumnIndex,
   getStringColumnIndices,
   isAggregation,
   isColumnDateType,
   getColumnTypeAmounts,
-} from './columnHelpers.js'
-
-import {
   MONTH_NAMES,
   DEFAULT_DATA_PAGE_SIZE,
   CHART_TYPES,
   MAX_DATA_PAGE_SIZE,
   MAX_LEGEND_LABELS,
-} from '../../js/Constants'
+  formatTableParams,
+  getColumnDateRanges,
+  getFilterPrecision,
+  getPrecisionForDayJS,
+  dataFormattingDefault,
+  autoQLConfigDefault,
+  authenticationDefault,
+  getAuthentication,
+  getDataFormatting,
+  getAutoQLConfig,
+} from 'autoql-fe-utils'
+
+import { Icon } from '../Icon'
+import { ChataTable } from '../ChataTable'
+import { ChataChart } from '../Charts/ChataChart'
 import { ReverseTranslation } from '../ReverseTranslation'
-import { getColumnDateRanges, getFilterPrecision, getPrecisionForDayJS } from '../../js/dateUtils'
-import { formatTableParams } from '../ChataTable/tableHelpers'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { QueryValidationMessage } from '../QueryValidationMessage'
+import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
+
 import { withTheme } from '../../theme'
+import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
 
 import './QueryOutput.scss'
 
@@ -89,8 +85,8 @@ export class QueryOutput extends React.Component {
 
     this.queryResponse = _cloneDeep(props.queryResponse)
     this.columnDateRanges = getColumnDateRanges(props.queryResponse)
-    this.queryID = _get(this.queryResponse, 'data.data.query_id')
-    this.interpretation = _get(this.queryResponse, 'data.data.parsed_interpretation')
+    this.queryID = this.queryResponse?.data?.data?.query_id
+    this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
     this.tableParams = {}
     this.chartID = uuid()
     this.tableID = uuid()
@@ -974,7 +970,7 @@ export class QueryOutput extends React.Component {
   }
 
   cancelCurrentRequest = () => {
-    this.axiosSource?.cancel(responseErrors.CANCELLED)
+    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
   }
 
   processDrilldown = async ({ groupBys, supportedByAPI, row, activeKey, stringColumnIndex, filter }) => {
@@ -1780,8 +1776,6 @@ export class QueryOutput extends React.Component {
       return null
     }
 
-    const isListQuery = getNumberOfGroupables(columns) === 0
-
     const formattedColumns = columns.map((col, i) => {
       const newCol = _cloneDeep(col)
 
@@ -1855,7 +1849,7 @@ export class QueryOutput extends React.Component {
       if (aggConfig) {
         aggType = aggConfig[col.name]
       }
-      if (isListQuery && isColumnNumberType(col)) {
+      if (isListQuery(columns) && isColumnNumberType(col)) {
         newCol.aggType = aggType || AggTypes.SUM
       }
 
@@ -1908,7 +1902,7 @@ export class QueryOutput extends React.Component {
       if (!(numberColumnIndex >= 0)) {
         numberColumnIndex = columns.findIndex((col, index) => index !== dateColumnIndex && isColumnNumberType(col))
       }
-      const tableData = newTableData || _get(this.queryResponse, 'data.data.rows')
+      const tableData = newTableData || this.queryResponse?.data?.data?.rows
 
       const allYears = tableData.map((d) => {
         if (columns[dateColumnIndex].type === 'DATE') {
@@ -2026,7 +2020,7 @@ export class QueryOutput extends React.Component {
 
   generatePivotTableData = ({ isFirstGeneration } = {}) => {
     try {
-      let tableData = this.state?.visibleRows || this.tableData || _get(this.queryResponse, 'data.data.rows')
+      let tableData = this.state?.visibleRows || this.tableData || this.queryResponse?.data?.data?.rows
       tableData = tableData.filter((row) => row[0] !== null)
 
       const columns = this.getColumns()
@@ -2129,7 +2123,7 @@ export class QueryOutput extends React.Component {
 
       this.pivotTableColumns = pivotTableColumns
       this.pivotTableData = pivotTableData
-      this.numberOfPivotTableRows = _get(this.pivotTableData, 'length', 0)
+      this.numberOfPivotTableRows = this.pivotTableData?.length ?? 0
       this.setPivotTableConfig(isFirstGeneration)
     } catch (error) {
       console.error(error)
@@ -2137,7 +2131,7 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  onSuggestionClick = ({ query, queryId, userSelection, isButtonClick, skipQueryValidation, source }) => {
+  onSuggestionClick = async ({ query, queryId, userSelection, isButtonClick, skipQueryValidation, source }) => {
     // Only call suggestion endpoint if clicked from suggestion list, not query validation
     if (!userSelection) {
       sendSuggestion({
@@ -2415,7 +2409,7 @@ export class QueryOutput extends React.Component {
   }
 
   renderHelpResponse = () => {
-    const url = _get(this.queryResponse, 'data.data.rows[0]')
+    const url = this.queryResponse?.data?.data?.rows?.[0]
     if (!url) {
       return null
     }
@@ -2448,7 +2442,7 @@ export class QueryOutput extends React.Component {
       return this.renderMessage('No response supplied')
     }
 
-    if (_get(queryResponse, 'data.message')) {
+    if (queryResponse?.data?.message) {
       // Response is not a suggestion list, but no query data object was provided
       // There is no valid query data. This is an error. Return message from UMS
       return this.renderMessage(queryResponse.data)
@@ -2476,9 +2470,9 @@ export class QueryOutput extends React.Component {
   renderMessage = (error) => {
     try {
       if (typeof error === 'object') {
-        let errorMessage = errorMessages.GENERAL_QUERY
+        let errorMessage = GENERAL_QUERY_ERROR
 
-        if (error?.message === responseErrors?.CANCELLED) {
+        if (error?.message === REQUEST_CANCELLED_ERROR) {
           errorMessage = (
             <span>
               Query cancelled{' '}
@@ -2512,11 +2506,11 @@ export class QueryOutput extends React.Component {
         )
       }
 
-      const errorMessage = error || errorMessages.GENERAL_QUERY
+      const errorMessage = error || GENERAL_QUERY_ERROR
       return <div className='query-output-error-message'>{errorMessage}</div>
     } catch (error) {
       console.warn(error)
-      return <div className='query-output-error-message'>{errorMessages.GENERAL_QUERY}</div>
+      return <div className='query-output-error-message'>{GENERAL_QUERY_ERROR}</div>
     }
   }
 
@@ -2565,13 +2559,13 @@ export class QueryOutput extends React.Component {
     }
 
     // If "items" are returned in response it is a list of suggestions
-    const isSuggestionList = !!_get(this.queryResponse, 'data.data.items')
+    const isSuggestionList = !!this.queryResponse?.data?.data?.items
     if (isSuggestionList) {
       return this.renderSuggestionMessage(this.queryResponse.data.data.items, this.queryResponse.data.data.query_id)
     }
 
     // Query validation was triggered, display query validation message
-    if (_get(this.queryResponse, 'data.data.replacements')) {
+    if (this.queryResponse?.data?.data?.replacements) {
       return (
         <QueryValidationMessage
           key={this.QUERY_VALIDATION_KEY}
@@ -2600,7 +2594,7 @@ export class QueryOutput extends React.Component {
     //   return this.replaceErrorTextWithLinks(this.queryResponse.data.message)
     // }
 
-    if (displayType && !!_get(this.queryResponse, 'data.data.rows')) {
+    if (displayType && !!this.queryResponse?.data?.data?.rows) {
       if (displayType === 'help') {
         return this.renderHelpResponse()
       } else if (displayType === 'text') {

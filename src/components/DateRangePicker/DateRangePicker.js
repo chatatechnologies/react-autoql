@@ -1,10 +1,10 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { DateRange } from 'react-date-range'
+import { PRECISION_TYPES, getThemeValue } from 'autoql-fe-utils'
+
 import MonthRange from './MonthRangePicker'
 import YearRange from './YearRangePicker'
-import { getThemeValue } from '../../theme/configureTheme'
-import { PRECISION_TYPES } from '../../js/Constants'
 
 import 'react-date-range/dist/styles.css' // main style file
 import 'react-date-range/dist/theme/default.css' // theme css file

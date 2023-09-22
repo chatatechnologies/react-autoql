@@ -3,7 +3,26 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { scaleOrdinal } from 'd3-scale'
 import { isMobile } from 'react-device-detect'
-import { aggregateData, getLegendLabelsForMultiSeries } from 'autoql-fe-utils'
+import {
+  aggregateData,
+  getLegendLabelsForMultiSeries,
+  svgToPng,
+  getBBoxFromRef,
+  sortDataByDate,
+  deepEqual,
+  rotateArray,
+  onlyUnique,
+  DATE_ONLY_CHART_TYPES,
+  DOUBLE_AXIS_CHART_TYPES,
+  CHARTS_WITHOUT_AGGREGATED_DATA,
+  getDateColumnIndex,
+  isColumnDateType,
+  getChartColorVars,
+  getThemeValue,
+  dataStructureChanged,
+  getLegendLocation,
+  mergeBoundingClientRects,
+} from 'autoql-fe-utils'
 
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { ChataColumnChart } from '../ChataColumnChart'
@@ -20,19 +39,7 @@ import { ChataColumnLineChart } from '../ChataColumnLine'
 import { ChataHistogram } from '../ChataHistogram'
 import { Spinner } from '../../Spinner'
 
-import { svgToPng, getBBoxFromRef, sortDataByDate, deepEqual, rotateArray, onlyUnique } from '../../../js/Util.js'
-
-import {
-  chartContainerDefaultProps,
-  chartContainerPropTypes,
-  dataStructureChanged,
-  getLegendLocation,
-  mergeBboxes,
-} from '../helpers.js'
-
-import { getChartColorVars, getThemeValue } from '../../../theme/configureTheme'
-import { getDateColumnIndex, isColumnDateType } from '../../QueryOutput/columnHelpers'
-import { DATE_ONLY_CHART_TYPES, DOUBLE_AXIS_CHART_TYPES, CHARTS_WITHOUT_AGGREGATED_DATA } from '../../../js/Constants'
+import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPropHelpers.js'
 
 import './ChataChart.scss'
 
@@ -279,7 +286,13 @@ export default class ChataChart extends React.Component {
     const bottomAxisBBox = this.innerChartRef?.axesRef?.bottomAxis?.getBoundingClientRect()
     const rightAxisBBox = this.innerChartRef?.axesRef?.rightAxis?.getBoundingClientRect()
     const clippedLegendBBox = this.innerChartRef?.axesRef?.legendRef?.legendClippingContainer?.getBoundingClientRect()
-    const axesBBox = mergeBboxes([leftAxisBBox, bottomAxisBBox, rightAxisBBox, topAxisBBox, clippedLegendBBox])
+    const axesBBox = mergeBoundingClientRects([
+      leftAxisBBox,
+      bottomAxisBBox,
+      rightAxisBBox,
+      topAxisBBox,
+      clippedLegendBBox,
+    ])
 
     const axesWidth = axesBBox?.width ?? 0
     const axesHeight = axesBBox?.height ?? 0

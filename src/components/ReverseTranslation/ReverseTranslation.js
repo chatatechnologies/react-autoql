@@ -1,17 +1,20 @@
 import React from 'react'
+import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.filter'
-import { v4 as uuid } from 'uuid'
-import { fetchVLAutocomplete } from 'autoql-fe-utils'
+import {
+  fetchVLAutocomplete,
+  deepEqual,
+  constructRTArray,
+  authenticationDefault,
+  getAuthentication,
+} from 'autoql-fe-utils'
 
-import { Tooltip } from '../Tooltip'
 import { Icon } from '../Icon'
+import { Tooltip } from '../Tooltip'
 
-import { authenticationDefault, getAuthentication } from '../../props/defaults'
 import { authenticationType } from '../../props/types'
-import { constructRTArray } from '../../js/reverseTranslationHelpers'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
-import { deepEqual } from '../../js/Util'
 
 import './ReverseTranslation.scss'
 

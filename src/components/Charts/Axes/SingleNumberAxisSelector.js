@@ -1,9 +1,11 @@
 import React from 'react'
+import { v4 as uuid } from 'uuid'
+import { isMobile } from 'react-device-detect'
+import { isColumnNumberType } from 'autoql-fe-utils'
+
 import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
-import { v4 as uuid } from 'uuid'
-import { isColumnNumberType } from '../../QueryOutput/columnHelpers'
-import { isMobile } from 'react-device-detect'
+
 export default class SingleNumberAxisSelector extends React.Component {
   constructor(props) {
     super(props)

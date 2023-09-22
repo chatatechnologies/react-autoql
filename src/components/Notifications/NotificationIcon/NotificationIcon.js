@@ -1,14 +1,18 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
+import PropTypes from 'prop-types'
+import {
+  fetchNotificationCount,
+  resetNotificationCount,
+  authenticationDefault,
+  getAuthentication,
+} from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import { fetchNotificationCount, resetNotificationCount } from '../../../js/notificationService'
-import { authenticationType } from '../../../props/types'
-import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 import { withTheme } from '../../../theme'
+import { authenticationType } from '../../../props/types'
 
 import './NotificationIcon.scss'
 
