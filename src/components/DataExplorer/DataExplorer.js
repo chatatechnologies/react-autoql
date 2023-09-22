@@ -1,18 +1,17 @@
 import React from 'react'
+import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import { Tooltip } from '../Tooltip'
-import { v4 as uuid } from 'uuid'
-import { COLUMN_TYPES, DataExplorerTypes } from 'autoql-fe-utils'
+import { DataExplorerTypes, dataFormattingDefault } from 'autoql-fe-utils'
 
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import DataExplorerInput from './DataExplorerInput'
-import DataPreview from './DataPreview'
-
-import { QuerySuggestionList } from '../ExploreQueries'
-import { authenticationType, dataFormattingType } from '../../props/types'
-import { CustomScrollbars } from '../CustomScrollbars'
-import { dataFormattingDefault } from '../../props/defaults'
 import { Icon } from '../Icon'
+import DataPreview from './DataPreview'
+import DataExplorerInput from './DataExplorerInput'
+import { CustomScrollbars } from '../CustomScrollbars'
+import { QuerySuggestionList } from '../ExploreQueries'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+
+import { authenticationType, dataFormattingType } from '../../props/types'
 
 import './DataExplorer.scss'
 
@@ -184,7 +183,7 @@ export default class DataExplorer extends React.Component {
       <div className='data-explorer-section query-suggestions'>
         {this.renderQuerySuggestionCardTitle(selectedTopic)}
         <div className='data-explorer-query-suggestion-list'>
-          {/* <QuerySuggestionList
+          <QuerySuggestionList
             ref={(r) => (this.querySuggestionList = r)}
             key={this.querySuggestionsKey}
             authentication={this.props.authentication}
@@ -201,7 +200,7 @@ export default class DataExplorer extends React.Component {
               this.setState({ skipQueryValidation: false })
             }}
             scope={this.props.scope}
-          /> */}
+          />
         </div>
       </div>
     )

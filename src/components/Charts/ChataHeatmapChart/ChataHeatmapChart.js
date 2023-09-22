@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { Axes } from '../Axes'
 import { Squares } from '../Squares'
 
-import { chartDefaultProps, chartPropTypes } from '../helpers.js'
+import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers.js'
 import { getBandScale } from 'autoql-fe-utils'
 
 export default class ChataHeatmapChart extends Component {

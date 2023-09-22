@@ -1,12 +1,11 @@
-import React, { Component } from 'react'
-import { scaleLinear } from 'd3-scale'
+import React from 'react'
 import { max, min } from 'd3-array'
-import { getChartColorVars } from 'autoql-fe-utils'
+import { scaleLinear } from 'd3-scale'
+import { deepEqual, getChartColorVars, getKey, getTooltipContent } from 'autoql-fe-utils'
 
-import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, getKey } from '../helpers'
-import { deepEqual } from '../../../js/Util'
+import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
 
-export default class Points extends Component {
+export default class Points extends React.Component {
   constructor(props) {
     super(props)
 

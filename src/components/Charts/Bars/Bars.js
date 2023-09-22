@@ -1,5 +1,7 @@
 import React, { Component } from 'react'
-import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, scaleZero, getKey } from '../helpers'
+import { getKey, scaleZero, getTooltipContent } from 'autoql-fe-utils'
+
+import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
 
 export default class Bars extends Component {
   static propTypes = chartElementPropTypes

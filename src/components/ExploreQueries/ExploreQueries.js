@@ -1,11 +1,10 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { fetchExploreQueries } from 'autoql-fe-utils'
+import { fetchExploreQueries, animateInputText } from 'autoql-fe-utils'
 
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { InfiniteScroll } from '../InfiniteScroll'
-import { animateInputText } from '../../js/Util'
 import { LoadingDots } from '../LoadingDots'
 import { withTheme } from '../../theme'
 import { Tooltip } from '../Tooltip'

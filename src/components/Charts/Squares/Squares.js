@@ -1,11 +1,11 @@
-import React, { Component } from 'react'
-import { scaleLinear } from 'd3-scale'
+import React from 'react'
 import { max, min } from 'd3-array'
-import { getChartColorVars } from 'autoql-fe-utils'
+import { scaleLinear } from 'd3-scale'
+import { getChartColorVars, getTooltipContent, getKey } from 'autoql-fe-utils'
 
-import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, getKey } from '../helpers'
+import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
 
-export default class Squares extends Component {
+export default class Squares extends React.Component {
   constructor(props) {
     super(props)
 

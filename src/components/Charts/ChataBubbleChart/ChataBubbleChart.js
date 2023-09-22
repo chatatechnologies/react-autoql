@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { Axes } from '../Axes'
 import { Circles } from '../Circles'
 
-import { chartDefaultProps, chartPropTypes } from '../helpers.js'
+import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers.js'
 import { getBandScale } from 'autoql-fe-utils'
 
 export default class ChataBubbleChart extends Component {

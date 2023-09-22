@@ -1,6 +1,5 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
 
@@ -100,7 +99,7 @@ export default class Radio extends React.Component {
   }
 
   render = () => {
-    if (!_get(this.props.options, 'length')) {
+    if (!this.props.options?.length) {
       return null
     }
 

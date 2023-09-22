@@ -1,9 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 
-import { Icon } from '../../Icon'
-import { Switch } from '../../Switch'
-
 import {
   CONTINUOUS_TYPE,
   CUSTOM_TYPE,
@@ -13,12 +10,20 @@ import {
   SCHEDULED_TYPE,
   SCHEDULE_FREQUENCY_OPTIONS,
   DATA_ALERT_ENABLED_STATUSES,
-} from '../DataAlertConstants'
+  initializeAlert,
+  updateDataAlertStatus,
+  formatNextScheduleDate,
+  formatResetDate,
+  getScheduleFrequencyObject,
+  resetDateIsFuture,
+  authenticationDefault,
+  getAuthentication,
+} from 'autoql-fe-utils'
 
-import { initializeAlert, updateDataAlertStatus } from '../../../js/notificationService'
-import { formatNextScheduleDate, formatResetDate, getScheduleFrequencyObject, resetDateIsFuture } from '../helpers'
+import { Icon } from '../../Icon'
+import { Switch } from '../../Switch'
+
 import { authenticationType } from '../../../props/types'
-import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
 import './DataAlerts.scss'
 

@@ -2,7 +2,7 @@ import React from 'react'
 import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
 import { Popover } from '../../Popover'
-import { axesDefaultProps, axesPropTypes } from '../helpers'
+import { axesDefaultProps, axesPropTypes } from '../chartPropHelpers'
 import { CustomScrollbars } from '../../CustomScrollbars'
 
 export default class StringAxisSelector extends React.Component {

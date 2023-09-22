@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
-import { getThemeValue } from 'autoql-fe-utils'
-import { createSVGPath } from './lineFns'
-import { chartElementDefaultProps, chartElementPropTypes, getKey, getTooltipContent } from '../helpers'
+import { getThemeValue, createSVGPath, getKey, getTooltipContent } from 'autoql-fe-utils'
+
+import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
 
 export default class Line extends Component {
   constructor(props) {

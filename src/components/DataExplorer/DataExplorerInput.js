@@ -1,23 +1,25 @@
 import React from 'react'
-import PropTypes from 'prop-types'
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import Autosuggest from 'react-autosuggest'
-import { v4 as uuid } from 'uuid'
-import _cloneDeep from 'lodash.clonedeep'
-import _isEqual from 'lodash.isequal'
 import axios from 'axios'
+import { v4 as uuid } from 'uuid'
+import PropTypes from 'prop-types'
+import _isEqual from 'lodash.isequal'
+import _cloneDeep from 'lodash.clonedeep'
+import Autosuggest from 'react-autosuggest'
+
 import {
   fetchDataExplorerAutocomplete,
   fetchSubjectList,
-  animateInputText,
-  DataExplorerTypes,
   REQUEST_CANCELLED_ERROR,
+  DataExplorerTypes,
+  animateInputText,
 } from 'autoql-fe-utils'
 
-import { authenticationType } from '../../props/types'
 import { Icon } from '../Icon'
 import { TopicName } from './TopicName'
 import { CustomScrollbars } from '../CustomScrollbars'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+
+import { authenticationType } from '../../props/types'
 
 import './DataExplorerInput.scss'
 

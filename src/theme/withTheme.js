@@ -7,7 +7,6 @@ If the theme has already been configured, it does not do anything.
 */
 
 import React, { useEffect } from 'react'
-
 import { configureTheme, getThemeValue } from 'autoql-fe-utils'
 
 export const withTheme = (Component) => {

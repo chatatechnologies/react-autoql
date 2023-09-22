@@ -1,20 +1,23 @@
-import React, { Component } from 'react'
-import PropTypes from 'prop-types'
-import _cloneDeep from 'lodash.clonedeep'
+import React from 'react'
 import { v4 as uuid } from 'uuid'
-import { isMobile } from 'react-device-detect'
-import { legendColor } from 'autoql-fe-utils'
-
+import PropTypes from 'prop-types'
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
+import _cloneDeep from 'lodash.clonedeep'
+import { isMobile } from 'react-device-detect'
 import { symbol, symbolSquare } from 'd3-shape'
 
-import { deepEqual, removeFromDOM } from '../../../js/Util.js'
-import { mergeBboxes } from '../helpers'
-import { NUMBER_COLUMN_TYPE_DISPLAY_NAMES } from '../../../js/Constants'
-import { AGG_TYPES, getLegendLabelsForMultiSeries } from 'autoql-fe-utils'
+import {
+  legendColor,
+  deepEqual,
+  removeFromDOM,
+  COLUMN_TYPES,
+  AGG_TYPES,
+  getLegendLabelsForMultiSeries,
+  mergeBoundingClientRects,
+} from 'autoql-fe-utils'
 
-export default class Legend extends Component {
+export default class Legend extends React.Component {
   constructor(props) {
     super(props)
 
@@ -339,7 +342,7 @@ export default class Legend extends Component {
     const columnTypeArray = columnIndices.map((index) => this.props.columns[index].type)
     const allTypesEqual = !columnTypeArray.find((type) => type !== columnTypeArray[0])
     if (this.props.hasSecondAxis && allTypesEqual) {
-      const columnTypeName = NUMBER_COLUMN_TYPE_DISPLAY_NAMES[columnTypeArray[0]]
+      const columnTypeName = COLUMN_TYPES[columnTypeArray[0]]?.description
       if (columnTypeName) {
         title = `${columnTypeName} ${title}`
       }
@@ -385,7 +388,7 @@ export default class Legend extends Component {
         .title(title)
         .titleWidth(maxSectionWidth)
         .on('cellclick', function (d) {
-          self.onClick(d, allLabels)
+          self.onClick(select(this)?.data()?.[0], allLabels)
         })
 
       if (isSecondLegend) {
@@ -407,7 +410,7 @@ export default class Legend extends Component {
         .style('font-size', `${this.props.fontSize - 2}px`)
 
       if (sectionIndex > 0) {
-        const previousLegendSectionsBBox = mergeBboxes(
+        const previousLegendSectionsBBox = mergeBoundingClientRects(
           this.legendElements.filter((el, i) => el && i < sectionIndex).map((el) => el.getBoundingClientRect()),
         )
 
@@ -422,7 +425,7 @@ export default class Legend extends Component {
 
       this.applyTitleStyles(title, isFirstSection, legendElement)
 
-      const mergedBBox = mergeBboxes(this.legendElements.map((el) => el?.getBoundingClientRect()))
+      const mergedBBox = mergeBoundingClientRects(this.legendElements.map((el) => el?.getBoundingClientRect()))
 
       this.combinedLegendWidth = !isNaN(mergedBBox?.width) ? mergedBBox?.width : 0
       this.combinedLegendHeight = !isNaN(mergedBBox?.height) ? mergedBBox?.height : 0

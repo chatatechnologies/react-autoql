@@ -1,6 +1,7 @@
 import React, { Component, Fragment } from 'react'
 import axios from 'axios'
 import { get, sortBy, isEqual, cloneDeep } from 'lodash'
+import { v4 as uuidv4 } from 'uuid'
 import {
   DataMessenger,
   QueryOutput,
@@ -14,7 +15,6 @@ import {
   VizToolbar,
 } from 'react-autoql'
 
-import { v4 as uuid } from 'uuid'
 import { sortable } from 'react-sortable'
 
 import { Radio, Input, InputNumber, Switch, Button, Menu, Form, message, Modal, Spin, Select } from 'antd'
@@ -97,7 +97,7 @@ export default class App extends Component {
     maintenance: false,
     currentPage: 'drawer',
     isNewDashboardModalOpen: false,
-    componentKey: uuid(),
+    componentKey: uuidv4(),
     placement: 'right',
     showHandle: true,
     theme: 'light',
@@ -262,7 +262,7 @@ export default class App extends Component {
       this.setState({
         isAuthenticated: false,
         activeIntegrator: undefined,
-        componentKey: uuid(),
+        componentKey: uuidv4(),
       })
       return Promise.reject()
     }
@@ -273,7 +273,7 @@ export default class App extends Component {
         this.setState({
           isAuthenticated: true,
           activeIntegrator: this.getActiveIntegrator(),
-          componentKey: uuid(),
+          componentKey: uuidv4(),
         })
         return Promise.resolve()
       })
@@ -281,7 +281,7 @@ export default class App extends Component {
         this.setState({
           isAuthenticated: false,
           activeIntegrator: undefined,
-          componentKey: uuid(),
+          componentKey: uuidv4(),
         })
         return Promise.reject(error)
       })
@@ -370,7 +370,7 @@ export default class App extends Component {
           this.setState({
             isAuthenticated: true,
             isAuthenticating: false,
-            componentKey: uuid(),
+            componentKey: uuidv4(),
             activeIntegrator: this.getActiveIntegrator(),
           })
 
@@ -420,7 +420,7 @@ export default class App extends Component {
         isAuthenticated: false,
         isAuthenticating: false,
         activeIntegrator: null,
-        componentKey: uuid(),
+        componentKey: uuidv4(),
       })
 
       // Dont fetch dashboard if authentication failed...
@@ -495,7 +495,7 @@ export default class App extends Component {
   }
 
   reloadDataMessenger = () => {
-    this.setState({ componentKey: uuid() })
+    this.setState({ componentKey: uuidv4() })
   }
 
   createDashboard = async () => {

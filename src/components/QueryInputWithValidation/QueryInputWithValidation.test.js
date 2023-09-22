@@ -1,9 +1,7 @@
 import React from 'react'
 import { shallow } from 'enzyme'
-// import axios from 'axios'
 import { findByTestAttr } from '../../../test/testUtils'
 import QueryInputWithValidation from './QueryInputWithValidation'
-// import LocalStorageMock from '../../../test/localStorageMock'
 
 const defaultProps = {}
 

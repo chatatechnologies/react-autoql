@@ -1,15 +1,18 @@
 import React from 'react'
-import _cloneDeep from 'lodash.clonedeep'
-import _isEqual from 'lodash.isequal'
-import RecordRTC, { StereoAudioRecorder } from 'recordrtc'
 import axios from 'axios'
+import PropTypes from 'prop-types'
+import _isEqual from 'lodash.isequal'
+import _cloneDeep from 'lodash.clonedeep'
+import { authenticationDefault } from 'autoql-fe-utils'
+import RecordRTC, { StereoAudioRecorder } from 'recordrtc'
+
 import { Icon } from '../Icon'
+import { Popover } from '../Popover'
 import { Tooltip } from '../Tooltip'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import PropTypes from 'prop-types'
-import { authenticationDefault } from '../../props/defaults'
+
 import { authenticationType } from '../../props/types'
-import { Popover } from '../Popover'
+
 import './SpeechToTextButton.scss'
 
 export default class SpeechToTextBtn extends React.Component {

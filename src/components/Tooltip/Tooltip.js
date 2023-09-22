@@ -1,6 +1,6 @@
 import React from 'react'
-import { Tooltip as ReactTooltip } from 'react-tooltip'
 import { isMobile } from 'react-device-detect'
+import { Tooltip as ReactTooltip } from 'react-tooltip'
 
 export function Tooltip(props = {}) {
   if (isMobile) {

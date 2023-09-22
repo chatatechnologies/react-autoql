@@ -3,10 +3,11 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import _isEqual from 'lodash.isequal'
 import { isMobile } from 'react-device-detect'
+import { TABLE_TYPES, CHART_TYPES } from 'autoql-fe-utils'
+
 import { Icon } from '../Icon'
-import { Tooltip } from '../Tooltip'
 import { Button } from '../Button'
-import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
+import { Tooltip } from '../Tooltip'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './VizToolbar.scss'

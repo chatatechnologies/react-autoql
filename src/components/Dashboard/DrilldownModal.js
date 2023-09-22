@@ -1,18 +1,17 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
+import PropTypes from 'prop-types'
 import SplitterLayout from 'react-splitter-layout'
+import { CHART_TYPES, authenticationDefault, autoQLConfigDefault, dataFormattingDefault } from 'autoql-fe-utils'
 
 import { Modal } from '../Modal'
 import { QueryOutput } from '../QueryOutput'
 import { LoadingDots } from '../LoadingDots'
-import { ErrorBoundary } from '../../containers/ErrorHOC'
-import ReportProblemModal from '../OptionsToolbar/ReportProblemModal'
 import DrilldownTable from './DrilldownTable'
+import { ErrorBoundary } from '../../containers/ErrorHOC'
+import { ReportProblemModal } from '../ReportProblemModal'
 
-import { CHART_TYPES } from '../../js/Constants'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
-import { authenticationDefault, autoQLConfigDefault, dataFormattingDefault } from '../../props/defaults'
 
 export default class DrilldownModal extends React.Component {
   constructor(props) {

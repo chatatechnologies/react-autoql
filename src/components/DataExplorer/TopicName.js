@@ -1,7 +1,8 @@
 import React from 'react'
+import { DataExplorerTypes } from 'autoql-fe-utils'
+
 import { Icon } from '../Icon'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { DataExplorerTypes } from 'autoql-fe-utils'
 
 export const TopicName = ({ topic } = {}) => {
   if (!topic) {

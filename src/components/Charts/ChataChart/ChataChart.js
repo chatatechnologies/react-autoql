@@ -1,37 +1,46 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
+import PropTypes from 'prop-types'
 import { scaleOrdinal } from 'd3-scale'
 import { isMobile } from 'react-device-detect'
-import { aggregateData, getLegendLabelsForMultiSeries, getChartColorVars, getThemeValue } from 'autoql-fe-utils'
-
-import { ErrorBoundary } from '../../../containers/ErrorHOC'
-import { ChataColumnChart } from '../ChataColumnChart'
-import { ChataBarChart } from '../ChataBarChart'
-import { ChataLineChart } from '../ChataLineChart'
-import { ChataPieChart } from '../ChataPieChart'
-import { ChataHeatmapChart } from '../ChataHeatmapChart'
-import { ChataBubbleChart } from '../ChataBubbleChart'
-import { ChataStackedBarChart } from '../ChataStackedBarChart'
-import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
-import { ChataStackedLineChart } from '../ChataStackedLineChart'
-import { ChataScatterplotChart } from '../ChataScatterplotChart'
-import { ChataColumnLineChart } from '../ChataColumnLine'
-import { ChataHistogram } from '../ChataHistogram'
-import { Spinner } from '../../Spinner'
-
-import { svgToPng, getBBoxFromRef, sortDataByDate, deepEqual, rotateArray, onlyUnique } from '../../../js/Util.js'
 
 import {
-  chartContainerDefaultProps,
-  chartContainerPropTypes,
+  aggregateData,
+  getLegendLabelsForMultiSeries,
+  svgToPng,
+  getBBoxFromRef,
+  sortDataByDate,
+  deepEqual,
+  rotateArray,
+  onlyUnique,
+  DATE_ONLY_CHART_TYPES,
+  DOUBLE_AXIS_CHART_TYPES,
+  CHARTS_WITHOUT_AGGREGATED_DATA,
+  getDateColumnIndex,
+  isColumnDateType,
+  getChartColorVars,
+  getThemeValue,
   dataStructureChanged,
   getLegendLocation,
-  mergeBboxes,
-} from '../helpers.js'
+  mergeBoundingClientRects,
+} from 'autoql-fe-utils'
 
-import { getDateColumnIndex, isColumnDateType } from '../../QueryOutput/columnHelpers'
-import { DATE_ONLY_CHART_TYPES, DOUBLE_AXIS_CHART_TYPES, CHARTS_WITHOUT_AGGREGATED_DATA } from '../../../js/Constants'
+import { Spinner } from '../../Spinner'
+import { ChataPieChart } from '../ChataPieChart'
+import { ChataBarChart } from '../ChataBarChart'
+import { ChataLineChart } from '../ChataLineChart'
+import { ChataHistogram } from '../ChataHistogram'
+import { ChataColumnChart } from '../ChataColumnChart'
+import { ChataBubbleChart } from '../ChataBubbleChart'
+import { ChataHeatmapChart } from '../ChataHeatmapChart'
+import { ChataColumnLineChart } from '../ChataColumnLine'
+import { ErrorBoundary } from '../../../containers/ErrorHOC'
+import { ChataStackedBarChart } from '../ChataStackedBarChart'
+import { ChataScatterplotChart } from '../ChataScatterplotChart'
+import { ChataStackedLineChart } from '../ChataStackedLineChart'
+import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
+
+import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPropHelpers.js'
 
 import './ChataChart.scss'
 
@@ -278,7 +287,13 @@ export default class ChataChart extends React.Component {
     const bottomAxisBBox = this.innerChartRef?.axesRef?.bottomAxis?.getBoundingClientRect()
     const rightAxisBBox = this.innerChartRef?.axesRef?.rightAxis?.getBoundingClientRect()
     const clippedLegendBBox = this.innerChartRef?.axesRef?.legendRef?.legendClippingContainer?.getBoundingClientRect()
-    const axesBBox = mergeBboxes([leftAxisBBox, bottomAxisBBox, rightAxisBBox, topAxisBBox, clippedLegendBBox])
+    const axesBBox = mergeBoundingClientRects([
+      leftAxisBBox,
+      bottomAxisBBox,
+      rightAxisBBox,
+      topAxisBBox,
+      clippedLegendBBox,
+    ])
 
     const axesWidth = axesBBox?.width ?? 0
     const axesHeight = axesBBox?.height ?? 0

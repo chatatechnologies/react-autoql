@@ -1,31 +1,37 @@
 import React from 'react'
-import PropTypes from 'prop-types'
-import Autosuggest from 'react-autosuggest'
 import axios from 'axios'
 import { v4 as uuid } from 'uuid'
-import { ToastContainer, toast } from 'react-toastify'
-import { Slide } from 'react-toastify'
+import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
+import { Slide } from 'react-toastify'
 import _cloneDeep from 'lodash.clonedeep'
-import { fetchVLAutocomplete, setFilters, unsetFilterFromAPI } from 'autoql-fe-utils'
+import Autosuggest from 'react-autosuggest'
+import { isMobile } from 'react-device-detect'
+import { ToastContainer, toast } from 'react-toastify'
 
-import { Radio } from '../Radio'
+import {
+  fetchVLAutocomplete,
+  setFilters,
+  unsetFilterFromAPI,
+  handleTooltipBoundaryCollision,
+  REQUEST_CANCELLED_ERROR,
+  authenticationDefault,
+  getAuthentication,
+} from 'autoql-fe-utils'
+
 import { Icon } from '../Icon'
+import { Radio } from '../Radio'
 import { Button } from '../Button'
-import { LoadingDots } from '../LoadingDots'
-import { Checkbox } from '../Checkbox'
 import { Tooltip } from '../Tooltip'
+import { Checkbox } from '../Checkbox'
+import { LoadingDots } from '../LoadingDots'
 import { CustomScrollbars } from '../CustomScrollbars'
-import { responseErrors } from '../../js/errorMessages'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { authenticationType } from '../../props/types'
-import { authenticationDefault, getAuthentication } from '../../props/defaults'
-
 import { lang } from '../../js/Localization'
+import { authenticationType } from '../../props/types'
 
 import 'react-toastify/dist/ReactToastify.css'
-import { isMobile } from 'react-device-detect'
 
 export default class FilterLockPopover extends React.Component {
   constructor(props) {
@@ -188,7 +194,7 @@ export default class FilterLockPopover extends React.Component {
   fetchSuggestions = ({ value }) => {
     // If already fetching autocomplete, cancel it
     if (this.axiosSource) {
-      this.axiosSource.cancel(responseErrors.CANCELLED)
+      this.axiosSource.cancel(REQUEST_CANCELLED_ERROR)
     }
 
     this.axiosSource = axios.CancelToken?.source()
@@ -225,7 +231,7 @@ export default class FilterLockPopover extends React.Component {
         })
       })
       .catch((error) => {
-        if (error?.data?.message !== responseErrors.CANCELLED) {
+        if (error?.data?.message !== REQUEST_CANCELLED_ERROR) {
           console.error(error)
         }
 

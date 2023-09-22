@@ -1,14 +1,15 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { isMobile } from 'react-device-detect'
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
-
 import {
+  deepEqual,
+  UNAUTHENTICATED_ERROR,
+  GENERAL_QUERY_ERROR,
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
   getAuthentication,
-} from '../../props/defaults'
+} from 'autoql-fe-utils'
 
 import { QueryOutput } from '../QueryOutput'
 import { VizToolbar } from '../VizToolbar'
@@ -17,8 +18,7 @@ import { ReverseTranslation } from '../ReverseTranslation'
 import { Spinner } from '../Spinner'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { deepEqual } from '../../js/Util'
-import errorMessages from '../../js/errorMessages'
+import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
 import './ChatMessage.scss'
 
@@ -244,7 +244,7 @@ export default class ChatMessage extends React.Component {
     } else if (this.props.content) {
       return this.props.content
     } else if (this.props.response?.status === 401) {
-      return errorMessages.UNAUTHENTICATED
+      return UNAUTHENTICATED_ERROR
     } else if (this.props.response) {
       return (
         <QueryOutput
@@ -296,7 +296,7 @@ export default class ChatMessage extends React.Component {
         />
       )
     }
-    return errorMessages.GENERAL_QUERY
+    return GENERAL_QUERY_ERROR
   }
 
   onCSVDownloadStart = ({ id, queryId, query }) => {

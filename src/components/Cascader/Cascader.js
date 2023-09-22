@@ -1,7 +1,6 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
-import _get from 'lodash.get'
 
 import { Icon } from '../Icon'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -31,16 +30,16 @@ export default class Cascader extends React.Component {
   }
 
   renderOptionsList = ({ options, active, index }) => {
-    const isLastGroup = index === _get(this.state.optionsArray, 'length', 0) - 1
+    const isLastGroup = index === (this.state.optionsArray?.length ?? 0) - 1
     const isFirstGroup = index === 0
-    const mostRecentOptionLabel = _get(this.state.mostRecentOption, 'label')
+    const mostRecentOptionLabel = this.state.mostRecentOption?.label
     const hasNoChildren = options.every((option) => !option.children)
 
     return (
       <div
         key={`options-list-${index}-${this.COMPONENT_ID}`}
         className={`options-container
-          ${isLastGroup ? 'visible' : 'hidden'}`}
+            ${isLastGroup ? 'visible' : 'hidden'}`}
         data-test={`options-list-${index}`}
       >
         {!isFirstGroup && (
@@ -68,13 +67,13 @@ export default class Cascader extends React.Component {
             <div
               key={`options-${i}-${this.COMPONENT_ID}`}
               className={`option
-                ${option.value === active ? 'active' : ''}`}
+                  ${option.value === active ? 'active' : ''}`}
               onClick={() => this.onOptionClick(option, index)}
               data-test={`options-item-${index}-${i}`}
             >
               <span data-test={`options-item-${index}-${i}-text`}>{option.label}</span>
-              {!_get(option, 'children.length') && <Icon className='option-execute-icon' type='play' />}
-              {!!_get(option, 'children.length') && <Icon className='option-arrow' type='caret-right' />}
+              {!option?.children?.length && <Icon className='option-execute-icon' type='play' />}
+              {!!option?.children?.length && <Icon className='option-arrow' type='caret-right' />}
             </div>
           )
         })}

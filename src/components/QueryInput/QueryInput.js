@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import axios from 'axios'
@@ -7,24 +7,31 @@ import _cloneDeep from 'lodash.clonedeep'
 import { isMobile } from 'react-device-detect'
 import Autosuggest from 'react-autosuggest'
 import SpeechToTextButtonBrowser from '../SpeechToTextButton/SpeechToTextButtonBrowser'
-import { runQuery, runQueryOnly, fetchAutocomplete } from 'autoql-fe-utils'
-
-import { Icon } from '../Icon'
 
 import {
+  runQuery,
+  runQueryOnly,
+  fetchAutocomplete,
+  animateInputText,
+  deepEqual,
+  mergeSources,
+  REQUEST_CANCELLED_ERROR,
+  GENERAL_QUERY_ERROR,
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
   getAuthentication,
   getAutoQLConfig,
-} from '../../props/defaults'
-import errorMessages, { responseErrors } from '../../js/errorMessages'
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
+} from 'autoql-fe-utils'
+
+import { Icon } from '../Icon'
+import { hideTooltips } from '../Tooltip'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { animateInputText, deepEqual, mergeSources } from '../../js/Util'
-import { dprQuery } from '../../js/dprService'
+
 import { withTheme } from '../../theme'
+import { dprQuery } from '../../js/dprService'
+import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
 import './QueryInput.scss'
 
@@ -177,7 +184,7 @@ class QueryInput extends React.Component {
   }
 
   cancelQuery = () => {
-    this.axiosSource?.cancel(responseErrors.CANCELLED)
+    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
   }
 
   submitQuery = ({ queryText, userSelection, skipQueryValidation, source } = {}) => {
@@ -236,7 +243,7 @@ class QueryInput extends React.Component {
           .then((response) => this.onResponse(response, query, id))
           .catch((error) => {
             const finalError = error || {
-              error: errorMessages.GENERAL_QUERY,
+              error: GENERAL_QUERY_ERROR,
             }
             this.onResponse(finalError, query, id)
           })
@@ -247,7 +254,7 @@ class QueryInput extends React.Component {
             // If there is no error it did not make it past options
             // and this is usually due to an authentication error
             const finalError = error || {
-              error: errorMessages.GENERAL_QUERY,
+              error: GENERAL_QUERY_ERROR,
             }
             this.onResponse(finalError, query, id)
           })
@@ -562,7 +569,7 @@ class QueryInput extends React.Component {
                 multiSection={true}
                 shouldRenderSuggestions={() => !this.props.isDisabled}
                 ref={(ref) => (this.autoSuggest = ref)}
-                renderSuggestion={(suggestion) => <Fragment>{suggestion?.name}</Fragment>}
+                renderSuggestion={(suggestion) => <>{suggestion?.name}</>}
                 inputProps={inputProps}
               />
             ) : (

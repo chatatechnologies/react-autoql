@@ -1,27 +1,30 @@
-import React, { Fragment } from 'react'
-import PropTypes from 'prop-types'
+import React from 'react'
 import { v4 as uuid } from 'uuid'
-import RGL, { WidthProvider } from 'react-grid-layout'
+import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
-import { DashboardTile } from './DashboardTile'
-import { ErrorBoundary } from '../../containers/ErrorHOC'
-import { Tooltip } from '../Tooltip'
-import DrilldownModal from './DrilldownModal'
+import RGL, { WidthProvider } from 'react-grid-layout'
 
-import { deepEqual, mergeSources } from '../../js/Util'
-import { withTheme } from '../../theme'
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import {
+  deepEqual,
+  mergeSources,
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
   getAutoQLConfig,
-} from '../../props/defaults'
+} from 'autoql-fe-utils'
 
+import { Tooltip } from '../Tooltip'
+import DrilldownModal from './DrilldownModal'
+import { DashboardTile } from './DashboardTile'
+import { ErrorBoundary } from '../../containers/ErrorHOC'
+
+import { withTheme } from '../../theme'
+import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
+
+import './Dashboard.scss'
 import 'react-grid-layout/css/styles.css'
 import 'react-splitter-layout/lib/index.css'
-import './Dashboard.scss'
 
 const ReactGridLayout = WidthProvider(RGL)
 
@@ -680,7 +683,7 @@ class DashboardWithoutTheme extends React.Component {
 
     return (
       <ErrorBoundary>
-        <Fragment>
+        <>
           <div
             ref={(ref) => (this.ref = ref)}
             className={`react-autoql-dashboard-container${this.props.isEditing ? ' edit-mode' : ''}`}
@@ -713,7 +716,7 @@ class DashboardWithoutTheme extends React.Component {
           />
           <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} delayShow={500} />
           <Tooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} place='top' />
-        </Fragment>
+        </>
       </ErrorBoundary>
     )
   }

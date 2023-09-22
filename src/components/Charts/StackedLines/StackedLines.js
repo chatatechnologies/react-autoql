@@ -1,7 +1,9 @@
-import React, { Component } from 'react'
-import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, getKey } from '../helpers'
+import React from 'react'
+import { getKey, getTooltipContent } from 'autoql-fe-utils'
 
-export default class StackedLines extends Component {
+import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
+
+export default class StackedLines extends React.Component {
   static propTypes = chartElementPropTypes
   static defaultProps = chartElementDefaultProps
 

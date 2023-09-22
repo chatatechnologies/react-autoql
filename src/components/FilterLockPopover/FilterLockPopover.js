@@ -1,13 +1,13 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { fetchFilters } from 'autoql-fe-utils'
-
-import FilterLockPopoverContent from './FilterLockPopoverContent'
 import { isMobile } from 'react-device-detect'
-import { authenticationType } from '../../props/types'
-import { authenticationDefault, getAuthentication } from '../../props/defaults'
-import { withTheme } from '../../theme'
+import { fetchFilters, authenticationDefault, getAuthentication } from 'autoql-fe-utils'
+
 import { Popover } from '../Popover'
+import FilterLockPopoverContent from './FilterLockPopoverContent'
+
+import { withTheme } from '../../theme'
+import { authenticationType } from '../../props/types'
 
 import './FilterLockPopover.scss'
 
