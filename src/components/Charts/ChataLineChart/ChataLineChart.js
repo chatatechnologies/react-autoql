@@ -5,7 +5,7 @@ import { Axes } from '../Axes'
 import { Line } from '../Line'
 import { rebuildTooltips } from '../../Tooltip'
 
-import { chartDefaultProps, chartPropTypes } from '../helpers.js'
+import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers.js'
 
 export default class ChataLineChart extends Component {
   constructor(props) {

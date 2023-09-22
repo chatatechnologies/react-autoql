@@ -5,11 +5,18 @@ import { v4 as uuid } from 'uuid'
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
 import { arc } from 'd3-shape'
-import { legendColor, getPieChartData, deepEqual, formatElement, removeFromDOM } from 'autoql-fe-utils'
+import {
+  legendColor,
+  getPieChartData,
+  deepEqual,
+  formatElement,
+  removeFromDOM,
+  getChartColorVars,
+  getTooltipContent,
+} from 'autoql-fe-utils'
 
 import { rebuildTooltips } from '../../Tooltip'
-import { chartDefaultProps, chartPropTypes, getTooltipContent } from '../helpers'
-import { getChartColorVars } from '../../../theme/configureTheme'
+import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers'
 import StringAxisSelector from '../Axes/StringAxisSelector'
 
 import 'd3-transition'

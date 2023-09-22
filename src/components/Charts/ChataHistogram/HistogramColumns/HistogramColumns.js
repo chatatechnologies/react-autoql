@@ -1,9 +1,9 @@
 import React, { Component } from 'react'
-import { formatElement, getChartColorVars } from 'autoql-fe-utils'
+import { formatElement, getChartColorVars, getKey } from 'autoql-fe-utils'
 
 import { rebuildTooltips } from '../../../Tooltip'
 
-import { chartElementDefaultProps, chartElementPropTypes, getKey } from '../../helpers'
+import { chartElementDefaultProps, chartElementPropTypes } from '../../chartPropHelpers'
 
 export default class HistogramColumns extends Component {
   static propTypes = chartElementPropTypes

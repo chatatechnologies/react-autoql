@@ -4,7 +4,7 @@ import { getLinearScale, getMinAndMaxValues, getNumberColumnIndices, deepEqual }
 import { Axes } from '../Axes'
 import { Points } from '../Points'
 
-import { chartDefaultProps, chartPropTypes } from '../helpers.js'
+import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers.js'
 
 export default class ChataScatterplotChart extends Component {
   constructor(props) {

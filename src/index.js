@@ -1,7 +1,7 @@
 import './index.scss'
 import 'react-perfect-scrollbar/dist/css/styles.css'
 
-export { getSupportedDisplayTypes, getDefaultDisplayType, isDisplayTypeValid } from 'autoql-fe-utils'
+export { getSupportedDisplayTypes, getDefaultDisplayType, isDisplayTypeValid, configureTheme } from 'autoql-fe-utils'
 
 export * from './components/DataMessenger'
 export * from './components/QueryInput'
@@ -24,4 +24,3 @@ export { DataAlertModal } from './components/Notifications/DataAlertModal'
 export { DataAlerts } from './components/Notifications/DataAlerts'
 export { Icon } from './components/Icon'
 export { LoadingDots } from './components/LoadingDots'
-export { configureTheme } from './theme'

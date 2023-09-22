@@ -1,12 +1,11 @@
 import React from 'react'
-import { currentEventLoopEnd } from 'autoql-fe-utils'
+import { currentEventLoopEnd, getTooltipContent } from 'autoql-fe-utils'
 import { shallow, mount } from 'enzyme'
 import ChataChart from './ChataChart'
 import { findByTestAttr } from '../../../../test/testUtils'
 import sampleProps from '../chartTestData'
 import { QueryOutput } from '../../QueryOutput/QueryOutput'
 import testCases from '../../../../test/responseTestCases'
-import * as chartHelpers from '../helpers'
 
 const pivotSampleProps = sampleProps.pivot
 const datePivotSampleProps = sampleProps.datePivot
@@ -51,7 +50,7 @@ describe('renders correctly', () => {
 
 describe('tooltip content renders correctly for pivot table data', () => {
   const testTooltipForDisplayType = async (displayType) => {
-    const tooltipContentSpy = jest.spyOn(chartHelpers, 'getTooltipContent')
+    const tooltipContentSpy = jest.spyOn({ getTooltipContent }, 'getTooltipContent')
     const wrapper = mount(
       <QueryOutput queryResponse={testCases[11]} initialDisplayType={displayType} height={100} width={100} />,
     )

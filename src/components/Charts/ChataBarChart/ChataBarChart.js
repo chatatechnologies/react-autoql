@@ -5,7 +5,7 @@ import { Axes } from '../Axes'
 import { Bars } from '../Bars'
 import { rebuildTooltips } from '../../Tooltip'
 
-import { chartPropTypes, chartDefaultProps } from '../helpers.js'
+import { chartPropTypes, chartDefaultProps } from '../chartPropHelpers.js'
 
 export default class ChataBarChart extends Component {
   constructor(props) {

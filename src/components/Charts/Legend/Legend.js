@@ -1,16 +1,20 @@
 import React, { Component } from 'react'
-import PropTypes from 'prop-types'
-import _cloneDeep from 'lodash.clonedeep'
 import { v4 as uuid } from 'uuid'
-import { isMobile } from 'react-device-detect'
-import { legendColor, deepEqual, removeFromDOM, COLUMN_TYPES } from 'autoql-fe-utils'
-
+import PropTypes from 'prop-types'
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
+import _cloneDeep from 'lodash.clonedeep'
+import { isMobile } from 'react-device-detect'
 import { symbol, symbolSquare } from 'd3-shape'
-
-import { mergeBboxes } from '../helpers'
-import { AGG_TYPES, getLegendLabelsForMultiSeries } from 'autoql-fe-utils'
+import {
+  legendColor,
+  deepEqual,
+  removeFromDOM,
+  COLUMN_TYPES,
+  mergeBboxes,
+  AGG_TYPES,
+  getLegendLabelsForMultiSeries,
+} from 'autoql-fe-utils'
 
 export default class Legend extends Component {
   constructor(props) {

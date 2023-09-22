@@ -6,7 +6,7 @@ import { formatElement, createSVGPath } from 'autoql-fe-utils'
 import { rebuildTooltips } from '../../../Tooltip'
 
 import { normalPDF, exponentialPDF } from '../distributionFns'
-import { chartElementDefaultProps, chartElementPropTypes } from '../../helpers'
+import { chartElementDefaultProps, chartElementPropTypes } from '../../chartPropHelpers'
 
 export default class HistogramDistributions extends Component {
   constructor(props) {

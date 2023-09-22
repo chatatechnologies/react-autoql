@@ -19,7 +19,7 @@ import { Slider } from '../../Slider'
 import { HistogramColumns } from './HistogramColumns'
 import { HistogramDistributions } from './HistogramDistributions'
 
-import { chartDefaultProps, chartPropTypes, convertToNumber } from '../helpers.js'
+import { chartDefaultProps, chartPropTypes, convertToNumber } from '../chartPropHelpers.js'
 
 export default class ChataHistogram extends React.Component {
   constructor(props) {

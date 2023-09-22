@@ -5,7 +5,7 @@ import { Axes } from '../Axes'
 import { Columns } from '../Columns'
 import { rebuildTooltips } from '../../Tooltip'
 
-import { chartDefaultProps, chartPropTypes } from '../helpers.js'
+import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers.js'
 
 export default class ChataColumnChart extends Component {
   constructor(props) {

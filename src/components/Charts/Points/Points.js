@@ -5,7 +5,7 @@ import { deepEqual, getChartColorVars, getKey, getTooltipContent } from 'autoql-
 
 import { rebuildTooltips } from '../../Tooltip'
 
-import { chartElementDefaultProps, chartElementPropTypes } from '../helpers'
+import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
 
 export default class Points extends Component {
   constructor(props) {

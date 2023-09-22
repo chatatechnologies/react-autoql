@@ -4,7 +4,7 @@ import { getBBoxFromRef } from 'autoql-fe-utils'
 
 import RowNumberSelector from './RowNumberSelector'
 
-import { axesDefaultProps, axesPropTypes } from '../helpers.js'
+import { axesDefaultProps, axesPropTypes } from '../chartPropHelpers.js'
 
 export default class LoadMoreDropdown extends Component {
   constructor(props) {

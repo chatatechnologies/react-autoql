@@ -39,7 +39,7 @@ import { ChataColumnLineChart } from '../ChataColumnLine'
 import { ChataHistogram } from '../ChataHistogram'
 import { Spinner } from '../../Spinner'
 
-import { chartContainerDefaultProps, chartContainerPropTypes } from '../helpers.js'
+import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPropHelpers.js'
 
 import './ChataChart.scss'
 

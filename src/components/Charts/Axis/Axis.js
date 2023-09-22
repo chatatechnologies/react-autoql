@@ -12,7 +12,7 @@ import AxisScaler from './AxisScaler'
 import AxisSelector from '../Axes/AxisSelector'
 import LoadMoreDropdown from './LoadMoreDropdown'
 
-import { axesDefaultProps, axesPropTypes } from '../helpers.js'
+import { axesDefaultProps, axesPropTypes } from '../chartPropHelpers.js'
 
 import './Axis.scss'
 

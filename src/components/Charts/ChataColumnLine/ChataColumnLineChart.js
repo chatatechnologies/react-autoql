@@ -5,7 +5,7 @@ import { Axes } from '../Axes'
 import { Columns } from '../Columns'
 import { Line } from '../Line'
 
-import { chartDefaultProps, chartPropTypes } from '../helpers.js'
+import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers.js'
 
 export default class ChataColumnLineChart extends Component {
   constructor(props) {

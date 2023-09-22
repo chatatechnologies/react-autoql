@@ -5,7 +5,7 @@ import { REQUEST_CANCELLED_ERROR, DEFAULT_DATA_PAGE_SIZE, MAX_DATA_PAGE_SIZE } f
 import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
 
-import { axesDefaultProps, axesPropTypes } from '../helpers'
+import { axesDefaultProps, axesPropTypes } from '../chartPropHelpers'
 
 export default class RowNumberSelector extends React.Component {
   constructor(props) {

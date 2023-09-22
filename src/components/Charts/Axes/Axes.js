@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { Axis } from '../Axis'
-import { axesDefaultProps, axesPropTypes } from '../helpers'
+import { axesDefaultProps, axesPropTypes } from '../chartPropHelpers'
 
 export default class Axes extends React.Component {
   constructor(props) {
