@@ -17,27 +17,11 @@ import { dataFormattingDefault, getDataFormatting } from '../props/defaults'
 import {
   getColumnTypeAmounts,
   shouldPlotMultiSeries,
-  isAggregation,
   getDateColumnIndex,
   isColumnDateType,
   isColumnNumberType,
   isColumnStringType,
 } from '../components/QueryOutput/columnHelpers'
-import { getSupportedDisplayTypes } from 'autoql-fe-utils'
-
-export const rotateArray = (array, n) => {
-  const rotated = [...array]
-  n = n % array.length
-  if (n < 0) n = array.length + n
-  for (let i = 0; i < n; i++) {
-    rotated.unshift(rotated.pop())
-  }
-  return rotated
-}
-
-export const onlyUnique = (value, index, self) => {
-  return self.indexOf(value) === index
-}
 
 export const makeEmptyArray = (w, h, value = '') => {
   var arr = []

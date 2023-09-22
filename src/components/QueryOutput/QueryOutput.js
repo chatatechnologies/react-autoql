@@ -16,6 +16,7 @@ import {
   getNumberColumnIndices,
   isDisplayTypeValid,
   getDefaultDisplayType,
+  onlyUnique,
 } from 'autoql-fe-utils'
 
 import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
@@ -38,7 +39,6 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import errorMessages, { responseErrors } from '../../js/errorMessages'
 
 import {
-  onlyUnique,
   formatElement,
   makeEmptyArray,
   getGroupBysFromPivotTable,

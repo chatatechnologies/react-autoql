@@ -11,18 +11,7 @@ import {
   isChartType,
   isTableType,
   supportsRegularPivotTable,
-  supports2DCharts,
   nameValueObject,
-} from './Util'
-
-import {
-  isAggregation,
-  getColumnTypeAmounts,
-  isColumnStringType,
-  isColumnNumberType,
-} from '../components/QueryOutput/columnHelpers'
-
-import {
   getMinValueFromKeyValueObj,
   getMaxValueFromKeyValueObj,
   getObjSize,
@@ -30,6 +19,13 @@ import {
   isDisplayTypeValid,
   getDefaultDisplayType,
 } from 'autoql-fe-utils'
+
+import {
+  isAggregation,
+  getColumnTypeAmounts,
+  isColumnStringType,
+  isColumnNumberType,
+} from '../components/QueryOutput/columnHelpers'
 
 import responseTestCases from '../../test/responseTestCases'
 
@@ -479,36 +475,15 @@ describe('isTableType', () => {
 describe('supportsRegularPivotTable', () => {
   test('true case', () => {
     const columns = [
-      { groupable: true, is_visible: true },
-      { groupable: true, is_visible: true },
-      { groupable: false, is_visible: true },
+      { groupable: true, is_visible: true, type: 'STRING' },
+      { groupable: true, is_visible: true, type: 'STRING' },
+      { groupable: false, is_visible: true, type: 'DOLLAR_AMT' },
     ]
     expect(supportsRegularPivotTable(columns)).toBeTruthy()
   })
   test('false case', () => {
     const columns = [{ groupable: true }, { groupable: true }]
     expect(supportsRegularPivotTable(columns)).toBeFalsy()
-  })
-})
-
-describe('supports2DCharts', () => {
-  test('true case', () => {
-    const columns = [
-      { type: 'QUANTITY', is_visible: true },
-      { type: 'DOLLAR_AMT', is_visible: true },
-      { type: 'STRING', is_visible: true },
-      { type: 'STRING', is_visible: true },
-    ]
-    expect(supports2DCharts(columns)).toBeTruthy()
-  })
-  test('false case', () => {
-    const columns = [
-      { type: 'QUANTITY', is_visible: true },
-      { type: 'QUANTITY', is_visible: true },
-      { type: 'QUANTITY', is_visible: true },
-      { type: 'QUANTITY', is_visible: true },
-    ]
-    expect(supports2DCharts(columns)).toBeFalsy()
   })
 })
 

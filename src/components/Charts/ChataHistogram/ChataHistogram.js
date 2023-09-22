@@ -2,19 +2,13 @@ import React from 'react'
 import { PropTypes } from 'prop-types'
 import { createPortal } from 'react-dom'
 import { bin, max, min } from 'd3-array'
-import { getBinData, formatChartLabel, getBinLinearScale, getHistogramScale } from 'autoql-fe-utils'
+import { getBinData, formatChartLabel, getBinLinearScale, getHistogramScale, onlyUnique } from 'autoql-fe-utils'
 
 import { Axes } from '../Axes'
 import { Slider } from '../../Slider'
 import { HistogramColumns } from './HistogramColumns'
 import { HistogramDistributions } from './HistogramDistributions'
-import {
-  deepEqual,
-  onlyUnique,
-  roundDownToNearestMultiple,
-  roundUpToNearestMultiple,
-  roundToNearestLog10,
-} from '../../../js/Util'
+import { deepEqual, roundDownToNearestMultiple, roundUpToNearestMultiple, roundToNearestLog10 } from '../../../js/Util'
 import { chartDefaultProps, chartPropTypes, convertToNumber } from '../helpers.js'
 
 export default class ChataHistogram extends React.Component {

@@ -3,7 +3,16 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { scaleOrdinal } from 'd3-scale'
 import { isMobile } from 'react-device-detect'
-import { aggregateData, getLegendLabelsForMultiSeries } from 'autoql-fe-utils'
+import {
+  aggregateData,
+  getLegendLabelsForMultiSeries,
+  svgToPng,
+  getBBoxFromRef,
+  sortDataByDate,
+  deepEqual,
+  rotateArray,
+  onlyUnique,
+} from 'autoql-fe-utils'
 
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { ChataColumnChart } from '../ChataColumnChart'
@@ -19,8 +28,6 @@ import { ChataScatterplotChart } from '../ChataScatterplotChart'
 import { ChataColumnLineChart } from '../ChataColumnLine'
 import { ChataHistogram } from '../ChataHistogram'
 import { Spinner } from '../../Spinner'
-
-import { svgToPng, getBBoxFromRef, sortDataByDate, deepEqual, rotateArray, onlyUnique } from '../../../js/Util.js'
 
 import {
   chartContainerDefaultProps,
