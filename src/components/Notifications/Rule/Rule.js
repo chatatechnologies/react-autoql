@@ -383,7 +383,7 @@ export default class Rule extends React.Component {
               //     this.autoSuggest = ref
               //   }}
               //   renderSuggestion={suggestion => (
-              //     <Fragment>{suggestion.name}</Fragment>
+              //     <>{suggestion.name}</>
               //   )}
               //   inputProps={{
               //     className: 'react-autoql-rule-input react-autoql-input',

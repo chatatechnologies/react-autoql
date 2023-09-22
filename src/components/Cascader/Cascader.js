@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 
@@ -43,7 +43,7 @@ export default class Cascader extends React.Component {
         data-test={`options-list-${index}`}
       >
         {!isFirstGroup && (
-          <Fragment>
+          <>
             <div
               className='cascader-back-arrow'
               data-test={`cascader-back-arrow-${index}`}
@@ -60,7 +60,7 @@ export default class Cascader extends React.Component {
             <div className='options-title' data-test='options-title'>
               {mostRecentOptionLabel}
             </div>
-          </Fragment>
+          </>
         )}
         {options.map((option, i) => {
           return (

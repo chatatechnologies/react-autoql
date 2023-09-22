@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import Drawer from 'rc-drawer'
 import _isEmpty from 'lodash.isempty'
@@ -666,7 +666,7 @@ export class DataMessenger extends React.Component {
     const { maxWidth, maxHeight } = this.getMaxWidthAndHeightFromDocument()
     const isFullScreen = this.state.width === maxWidth
     return (
-      <Fragment>
+      <>
         <div
           className={`react-autoql-header-left-container ${
             this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
@@ -703,7 +703,7 @@ export class DataMessenger extends React.Component {
         >
           {this.renderRightHeaderContent()}
         </div>
-      </Fragment>
+      </>
     )
   }
 
@@ -998,10 +998,10 @@ export class DataMessenger extends React.Component {
 
   renderTooltips = () => {
     return (
-      <Fragment>
+      <>
         <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} delayShow={800} place='top' />
         <Tooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} />
-      </Fragment>
+      </>
     )
   }
 

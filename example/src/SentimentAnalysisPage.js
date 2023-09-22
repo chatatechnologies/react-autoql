@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import axios from 'axios'
 import { Input, Button, Form, message, Collapse, Switch } from 'antd'
 import Rating from './components/Rating/Rating'
@@ -213,7 +213,7 @@ export default class SentimentAnalysisPage extends React.Component {
                       return (
                         <Fragment key={i}>
                           {str} <br />
-                        </Fragment>
+                        </>
                       )
                     })}
                   </Panel>
@@ -246,7 +246,7 @@ export default class SentimentAnalysisPage extends React.Component {
                       return (
                         <Fragment key={i}>
                           {str} <br />
-                        </Fragment>
+                        </>
                       )
                     })}
                   </Panel>

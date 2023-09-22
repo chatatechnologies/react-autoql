@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 
@@ -140,7 +140,7 @@ export default class YearSelect extends React.Component {
                 {option.label}
               </div>
               {i !== 0 && (i + 1) % 3 === 0 && <br />}
-            </Fragment>
+            </>
           )
         })}
       </div>

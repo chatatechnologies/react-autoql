@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 
@@ -119,7 +119,7 @@ export default class MonthSelect extends React.Component {
                   i !== days.length - 1 && // not the last row
                   (i + 1) % 7 === 0 && <br /> // every 7th day
               }
-            </Fragment>
+            </>
           )
         })}
         {this.renderLastDaySelector()}
