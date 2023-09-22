@@ -17,28 +17,6 @@ import {
   isDisplayTypeValid,
   getDefaultDisplayType,
   onlyUnique,
-} from 'autoql-fe-utils'
-
-import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
-import {
-  dataFormattingDefault,
-  autoQLConfigDefault,
-  authenticationDefault,
-  getAuthentication,
-  getDataFormatting,
-  getAutoQLConfig,
-} from '../../props/defaults'
-
-import { ChataTable } from '../ChataTable'
-import { ChataChart } from '../Charts/ChataChart'
-import { QueryValidationMessage } from '../QueryValidationMessage'
-import { Icon } from '../Icon'
-import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
-
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import errorMessages, { responseErrors } from '../../js/errorMessages'
-
-import {
   formatElement,
   makeEmptyArray,
   getGroupBysFromPivotTable,
@@ -56,9 +34,9 @@ import {
   hasNumberColumn,
   hasStringColumn,
   removeElementAtIndex,
-} from '../../js/Util.js'
-
-import {
+  isListQuery,
+  GENERAL_QUERY_ERROR,
+  REQUEST_CANCELLED_ERROR,
   isColumnNumberType,
   isColumnStringType,
   getDateColumnIndex,
@@ -66,19 +44,35 @@ import {
   isAggregation,
   isColumnDateType,
   getColumnTypeAmounts,
-} from './columnHelpers.js'
-
-import {
   MONTH_NAMES,
   DEFAULT_DATA_PAGE_SIZE,
   CHART_TYPES,
   MAX_DATA_PAGE_SIZE,
   MAX_LEGEND_LABELS,
-} from '../../js/Constants'
+  formatTableParams,
+  getColumnDateRanges,
+  getFilterPrecision,
+  getPrecisionForDayJS,
+} from 'autoql-fe-utils'
+
+import { Icon } from '../Icon'
+import { ChataTable } from '../ChataTable'
+import { ChataChart } from '../Charts/ChataChart'
 import { ReverseTranslation } from '../ReverseTranslation'
-import { getColumnDateRanges, getFilterPrecision, getPrecisionForDayJS } from '../../js/dateUtils'
-import { formatTableParams } from '../ChataTable/tableHelpers'
+import { QueryValidationMessage } from '../QueryValidationMessage'
+import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+
+import {
+  dataFormattingDefault,
+  autoQLConfigDefault,
+  authenticationDefault,
+  getAuthentication,
+  getDataFormatting,
+  getAutoQLConfig,
+} from '../../props/defaults'
 import { withTheme } from '../../theme'
+import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
 
 import './QueryOutput.scss'
 
@@ -978,7 +972,7 @@ export class QueryOutput extends React.Component {
   }
 
   cancelCurrentRequest = () => {
-    this.axiosSource?.cancel(responseErrors.CANCELLED)
+    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
   }
 
   processDrilldown = async ({ groupBys, supportedByAPI, row, activeKey, stringColumnIndex, filter }) => {
@@ -1784,8 +1778,6 @@ export class QueryOutput extends React.Component {
       return null
     }
 
-    const isListQuery = getNumberOfGroupables(columns) === 0
-
     const formattedColumns = columns.map((col, i) => {
       const newCol = _cloneDeep(col)
 
@@ -1859,7 +1851,7 @@ export class QueryOutput extends React.Component {
       if (aggConfig) {
         aggType = aggConfig[col.name]
       }
-      if (isListQuery && isColumnNumberType(col)) {
+      if (isListQuery(columns) && isColumnNumberType(col)) {
         newCol.aggType = aggType || AggTypes.SUM
       }
 
@@ -2480,9 +2472,9 @@ export class QueryOutput extends React.Component {
   renderMessage = (error) => {
     try {
       if (typeof error === 'object') {
-        let errorMessage = errorMessages.GENERAL_QUERY
+        let errorMessage = GENERAL_QUERY_ERROR
 
-        if (error?.message === responseErrors?.CANCELLED) {
+        if (error?.message === REQUEST_CANCELLED_ERROR) {
           errorMessage = (
             <span>
               Query cancelled{' '}
@@ -2516,11 +2508,11 @@ export class QueryOutput extends React.Component {
         )
       }
 
-      const errorMessage = error || errorMessages.GENERAL_QUERY
+      const errorMessage = error || GENERAL_QUERY_ERROR
       return <div className='query-output-error-message'>{errorMessage}</div>
     } catch (error) {
       console.warn(error)
-      return <div className='query-output-error-message'>{errorMessages.GENERAL_QUERY}</div>
+      return <div className='query-output-error-message'>{GENERAL_QUERY_ERROR}</div>
     }
   }
 

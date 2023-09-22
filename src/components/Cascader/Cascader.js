@@ -1,13 +1,14 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
-import { uuidv4 } from '../../js/Util'
+import { v4 as uuid } from 'uuid'
+
 import { Icon } from '../Icon'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Cascader.scss'
 
 export default class Cascader extends React.Component {
-  COMPONENT_ID = uuidv4()
+  COMPONENT_ID = uuid()
 
   static propTypes = {
     options: PropTypes.arrayOf(PropTypes.shape({})),

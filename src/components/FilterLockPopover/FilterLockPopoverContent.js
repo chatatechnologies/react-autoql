@@ -7,7 +7,14 @@ import { ToastContainer, toast } from 'react-toastify'
 import { Slide } from 'react-toastify'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
-import { fetchVLAutocomplete, setFilters, unsetFilterFromAPI } from 'autoql-fe-utils'
+import { isMobile } from 'react-device-detect'
+import {
+  fetchVLAutocomplete,
+  setFilters,
+  unsetFilterFromAPI,
+  handleTooltipBoundaryCollision,
+  REQUEST_CANCELLED_ERROR,
+} from 'autoql-fe-utils'
 
 import { Radio } from '../Radio'
 import { Icon } from '../Icon'
@@ -16,16 +23,13 @@ import { LoadingDots } from '../LoadingDots'
 import { Checkbox } from '../Checkbox'
 import { Tooltip, hideTooltips, rebuildTooltips } from '../Tooltip'
 import { CustomScrollbars } from '../CustomScrollbars'
-import { responseErrors } from '../../js/errorMessages'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
+import { lang } from '../../js/Localization'
 import { authenticationType } from '../../props/types'
 import { authenticationDefault, getAuthentication } from '../../props/defaults'
 
-import { lang } from '../../js/Localization'
-
 import 'react-toastify/dist/ReactToastify.css'
-import { isMobile } from 'react-device-detect'
 
 export default class FilterLockPopover extends React.Component {
   constructor(props) {
@@ -194,7 +198,7 @@ export default class FilterLockPopover extends React.Component {
   fetchSuggestions = ({ value }) => {
     // If already fetching autocomplete, cancel it
     if (this.axiosSource) {
-      this.axiosSource.cancel(responseErrors.CANCELLED)
+      this.axiosSource.cancel(REQUEST_CANCELLED_ERROR)
     }
 
     this.axiosSource = axios.CancelToken?.source()
@@ -231,7 +235,7 @@ export default class FilterLockPopover extends React.Component {
         })
       })
       .catch((error) => {
-        if (error?.data?.message !== responseErrors.CANCELLED) {
+        if (error?.data?.message !== REQUEST_CANCELLED_ERROR) {
           console.error(error)
         }
 

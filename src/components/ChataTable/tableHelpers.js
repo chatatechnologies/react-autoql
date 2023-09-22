@@ -1,6 +1,6 @@
-import { isColumnNumberType } from '../QueryOutput/columnHelpers'
-import { getPrecisionForDayJS } from '../../js/dateUtils'
 import dayjs from '../../js/dayjsWithPlugins'
+
+import { isColumnNumberType, getPrecisionForDayJS } from 'autoql-fe-utils'
 
 export const formatTableParams = (params, columns) => {
   const formattedSorters = formatSortersForAPI(params, columns)

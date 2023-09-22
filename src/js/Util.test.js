@@ -18,14 +18,11 @@ import {
   getSupportedDisplayTypes,
   isDisplayTypeValid,
   getDefaultDisplayType,
-} from 'autoql-fe-utils'
-
-import {
   isAggregation,
   getColumnTypeAmounts,
   isColumnStringType,
   isColumnNumberType,
-} from '../components/QueryOutput/columnHelpers'
+} from 'autoql-fe-utils'
 
 import responseTestCases from '../../test/responseTestCases'
 

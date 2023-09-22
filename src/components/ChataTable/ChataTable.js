@@ -5,20 +5,25 @@ import axios from 'axios'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
-import { runQueryNewPage, currentEventLoopEnd, deepEqual } from 'autoql-fe-utils'
+import {
+  runQueryNewPage,
+  currentEventLoopEnd,
+  deepEqual,
+  REQUEST_CANCELLED_ERROR,
+  formatTableParams,
+  getFilterPrecision,
+  DAYJS_PRECISION_FORMATS,
+} from 'autoql-fe-utils'
 
-import TableWrapper from './TableWrapper'
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { responseErrors } from '../../js/errorMessages'
-import { getAuthentication } from '../../props/defaults'
-import { formatTableParams } from './tableHelpers'
-import { Spinner } from '../Spinner'
-import { DateRangePicker } from '../DateRangePicker'
-import { getFilterPrecision } from '../../js/dateUtils'
-import { DAYJS_PRECISION_FORMATS } from '../../js/Constants'
-import { columnOptionsList } from './tabulatorConstants'
-import { Popover } from '../Popover'
 import { Button } from '../Button'
+import { Spinner } from '../Spinner'
+import { Popover } from '../Popover'
+import TableWrapper from './TableWrapper'
+import { DateRangePicker } from '../DateRangePicker'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+
+import { columnOptionsList } from './tabulatorConstants'
+import { getAuthentication } from '../../props/defaults'
 
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
 import './ChataTable.scss'
@@ -374,7 +379,7 @@ export default class ChataTable extends React.Component {
   }
 
   cancelCurrentRequest = () => {
-    this.axiosSource?.cancel(responseErrors.CANCELLED)
+    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
   }
 
   ajaxRequesting = (props, params) => {
@@ -451,7 +456,7 @@ export default class ChataTable extends React.Component {
       this.clearLoadingIndicators()
       return response
     } catch (error) {
-      if (error?.data?.message === responseErrors.CANCELLED) {
+      if (error?.data?.message === REQUEST_CANCELLED_ERROR) {
         return previousData
       }
 

@@ -5,15 +5,14 @@ import _isEqual from 'lodash.isequal'
 import { select } from 'd3-selection'
 import { axisLeft, axisBottom, axisTop, axisRight } from 'd3-axis'
 import { isMobile } from 'react-device-detect'
-import { formatChartLabel } from 'autoql-fe-utils'
+import { formatChartLabel, getBBoxFromRef, mergeBboxes, shouldLabelsRotate } from 'autoql-fe-utils'
 
 import { Legend } from '../Legend'
 import AxisScaler from './AxisScaler'
 import AxisSelector from '../Axes/AxisSelector'
 import LoadMoreDropdown from './LoadMoreDropdown'
 
-import { getBBoxFromRef } from '../../../js/Util.js'
-import { axesDefaultProps, axesPropTypes, mergeBboxes, shouldLabelsRotate } from '../helpers.js'
+import { axesDefaultProps, axesPropTypes } from '../helpers.js'
 
 import './Axis.scss'
 

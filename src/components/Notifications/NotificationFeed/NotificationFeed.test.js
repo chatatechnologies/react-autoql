@@ -4,7 +4,6 @@ import { shallow } from 'enzyme'
 import { findByTestAttr } from '../../../../test/testUtils'
 import { testAuthentication } from '../../../../test/testData'
 import NotificationFeed from './NotificationFeed'
-import { currentEventLoopEnd } from '../../../js/Util'
 
 const defaultProps = {
   authentication: testAuthentication,

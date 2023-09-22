@@ -3,8 +3,9 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import _has from 'lodash.has'
 import { isMobile } from 'react-device-detect'
+import { REQUEST_CANCELLED_ERROR, UNAUTHENTICATED_ERROR, GENERAL_QUERY_ERROR } from 'autoql-fe-utils'
+
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
-import errorMessages from '../../js/errorMessages'
 import { lang } from '../../js/Localization'
 
 // Components
@@ -17,7 +18,6 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 // Styles
 import './ChatContent.scss'
-import { responseErrors } from '../../js/errorMessages'
 
 export default class ChatContent extends React.Component {
   constructor(props) {
@@ -248,9 +248,9 @@ export default class ChatContent extends React.Component {
     params.isResponse = true
 
     if (params?.response?.error === 'Unauthenticated') {
-      message = this.createErrorMessage(errorMessages.UNAUTHENTICATED)
+      message = this.createErrorMessage(UNAUTHENTICATED_ERROR)
     } else if (params?.response?.error === 'Parse error') {
-      message = this.createErrorMessage(errorMessages.GENERAL_QUERY)
+      message = this.createErrorMessage(GENERAL_QUERY_ERROR)
     } else if (!params?.response && !params?.content) {
       message = this.createErrorMessage()
     } else {
@@ -278,7 +278,7 @@ export default class ChatContent extends React.Component {
     if (this._isMounted) {
       this.setState({ isQueryRunning: false, isInputDisabled: false })
 
-      if (response?.data?.message === responseErrors.CANCELLED && this.state.isClearingAllMessages) {
+      if (response?.data?.message === REQUEST_CANCELLED_ERROR && this.state.isClearingAllMessages) {
         this.setState({
           isClearingAllMessages: false,
           isQueryRunning: false,
@@ -331,7 +331,7 @@ export default class ChatContent extends React.Component {
 
   createErrorMessage = (content, queryMessageID) => {
     return this.createMessage({
-      content: content || errorMessages.GENERAL_QUERY,
+      content: content || GENERAL_QUERY_ERROR,
       isResponse: true,
       type: 'error',
       queryMessageID,

@@ -7,8 +7,19 @@ import _cloneDeep from 'lodash.clonedeep'
 import { isMobile } from 'react-device-detect'
 import Autosuggest from 'react-autosuggest'
 import SpeechToTextButtonBrowser from '../SpeechToTextButton/SpeechToTextButtonBrowser'
-import { runQuery, runQueryOnly, fetchAutocomplete } from 'autoql-fe-utils'
+import {
+  runQuery,
+  runQueryOnly,
+  fetchAutocomplete,
+  animateInputText,
+  deepEqual,
+  mergeSources,
+  REQUEST_CANCELLED_ERROR,
+  GENERAL_QUERY_ERROR,
+} from 'autoql-fe-utils'
 
+import LoadingDots from '../LoadingDots/LoadingDots.js'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { hideTooltips } from '../Tooltip'
 import { Icon } from '../Icon'
 
@@ -19,11 +30,7 @@ import {
   getAuthentication,
   getAutoQLConfig,
 } from '../../props/defaults'
-import errorMessages, { responseErrors } from '../../js/errorMessages'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
-import LoadingDots from '../LoadingDots/LoadingDots.js'
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { animateInputText, deepEqual, mergeSources } from '../../js/Util'
 import { dprQuery } from '../../js/dprService'
 import { withTheme } from '../../theme'
 
@@ -178,7 +185,7 @@ class QueryInput extends React.Component {
   }
 
   cancelQuery = () => {
-    this.axiosSource?.cancel(responseErrors.CANCELLED)
+    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
   }
 
   submitQuery = ({ queryText, userSelection, skipQueryValidation, source } = {}) => {
@@ -237,7 +244,7 @@ class QueryInput extends React.Component {
           .then((response) => this.onResponse(response, query, id))
           .catch((error) => {
             const finalError = error || {
-              error: errorMessages.GENERAL_QUERY,
+              error: GENERAL_QUERY_ERROR,
             }
             this.onResponse(finalError, query, id)
           })
@@ -248,7 +255,7 @@ class QueryInput extends React.Component {
             // If there is no error it did not make it past options
             // and this is usually due to an authentication error
             const finalError = error || {
-              error: errorMessages.GENERAL_QUERY,
+              error: GENERAL_QUERY_ERROR,
             }
             this.onResponse(finalError, query, id)
           })

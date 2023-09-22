@@ -1,15 +1,15 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import ReactModal from 'react-modal'
+import { isMobile } from 'react-device-detect'
+import { deepEqual } from 'autoql-fe-utils'
 
 import { Button } from '../Button'
 import { Icon } from '../Icon'
 import { ConfirmModal } from '../ConfirmModal'
-import { deepEqual } from '../../js/Util'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Modal.scss'
-import { isMobile } from 'react-device-detect'
 
 export default class Modal extends React.Component {
   static propTypes = {

@@ -1,23 +1,21 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import _isEqual from 'lodash.isequal'
 import axios from 'axios'
-import { fetchDataPreview } from 'autoql-fe-utils'
+import { fetchDataPreview, REQUEST_CANCELLED_ERROR, formatElement } from 'autoql-fe-utils'
 
 import { Card } from '../Card'
 import { CustomScrollbars } from '../CustomScrollbars'
 import { LoadingDots } from '../LoadingDots'
 import { authenticationType } from '../../props/types'
 import { Icon } from '../Icon'
+import { rebuildTooltips } from '../Tooltip'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { getDataFormatting, dataFormattingDefault } from '../../props/defaults'
 import { dataFormattingType } from '../../props/types'
-import { formatElement } from '../../js/Util.js'
-import { responseErrors } from '../../js/errorMessages'
 
 import './DataPreview.scss'
-import { rebuildTooltips } from '../Tooltip'
 
 export default class DataExplorer extends React.Component {
   constructor(props) {
@@ -75,7 +73,7 @@ export default class DataExplorer extends React.Component {
   }
 
   cancelCurrentRequest = () => {
-    this.axiosSource?.cancel(responseErrors.CANCELLED)
+    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
   }
 
   getDataPreview = () => {
@@ -95,7 +93,7 @@ export default class DataExplorer extends React.Component {
         this.setState({ dataPreview: response, loading: false })
       })
       .catch((error) => {
-        if (error?.message !== responseErrors.CANCELLED) {
+        if (error?.message !== REQUEST_CANCELLED_ERROR) {
           console.error(error)
           this.setState({ loading: false, error: error?.response?.data })
         }

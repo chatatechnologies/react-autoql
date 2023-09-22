@@ -6,12 +6,11 @@ import sanitizeHtml from 'sanitize-html'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEqual from 'lodash.isequal'
 import { debounce } from 'throttle-debounce'
-import { runQueryValidation } from 'autoql-fe-utils'
+import { runQueryValidation, setCaretPosition } from 'autoql-fe-utils'
 
 import { Popover } from '../Popover'
 import { Select } from '../Select'
 
-import { setCaretPosition } from '../../js/Util'
 import { authenticationDefault, getAuthentication } from '../../props/defaults'
 import { authenticationType } from '../../props/types'
 

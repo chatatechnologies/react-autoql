@@ -5,7 +5,7 @@ import axios from 'axios'
 import _cloneDeep from 'lodash.clonedeep'
 import Autosuggest from 'react-autosuggest'
 import SplitterLayout from 'react-splitter-layout'
-import { runQuery, fetchAutocomplete } from 'autoql-fe-utils'
+import { runQuery, fetchAutocomplete, deepEqual, isChartType, REQUEST_CANCELLED_ERROR } from 'autoql-fe-utils'
 
 import { QueryOutput } from '../../QueryOutput'
 import { VizToolbar } from '../../VizToolbar'
@@ -13,8 +13,7 @@ import { OptionsToolbar } from '../../OptionsToolbar'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import LoadingDots from '../../LoadingDots/LoadingDots.js'
 import { Icon } from '../../Icon'
-import { responseErrors } from '../../../js/errorMessages'
-import { deepEqual, isChartType } from '../../../js/Util'
+import { Button } from '../../Button'
 import { hideTooltips } from '../../Tooltip'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
@@ -25,8 +24,6 @@ import {
   getAuthentication,
   getAutoQLConfig,
 } from '../../../props/defaults'
-
-import { Button } from '../../Button'
 
 import './DashboardTile.scss'
 
@@ -205,8 +202,8 @@ export class DashboardTile extends React.Component {
   }
 
   cancelAllQueries = () => {
-    this.axiosSource?.cancel(responseErrors.CANCELLED)
-    this.secondAxiosSource?.cancel(responseErrors.CANCELLED)
+    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
+    this.secondAxiosSource?.cancel(REQUEST_CANCELLED_ERROR)
   }
 
   debouncedSetParamsForTile = (params, callback) => {
@@ -254,7 +251,7 @@ export class DashboardTile extends React.Component {
   }
 
   endTopQuery = ({ response }) => {
-    if (response?.data?.message !== responseErrors.CANCELLED) {
+    if (response?.data?.message !== REQUEST_CANCELLED_ERROR) {
       // Update component key after getting new response
       // so QueryOutput completely resets
       this.debouncedSetParamsForTile(
@@ -266,7 +263,7 @@ export class DashboardTile extends React.Component {
       )
       return response
     } else {
-      return Promise.reject(responseErrors.CANCELLED)
+      return Promise.reject(REQUEST_CANCELLED_ERROR)
     }
   }
 
@@ -280,7 +277,7 @@ export class DashboardTile extends React.Component {
   }
 
   endBottomQuery = ({ response }) => {
-    if (response?.data?.message !== responseErrors.CANCELLED) {
+    if (response?.data?.message !== REQUEST_CANCELLED_ERROR) {
       this.debouncedSetParamsForTile(
         {
           secondQueryResponse: response,
@@ -290,7 +287,7 @@ export class DashboardTile extends React.Component {
       )
       return response
     } else {
-      return Promise.reject(responseErrors.CANCELLED)
+      return Promise.reject(REQUEST_CANCELLED_ERROR)
     }
   }
 
@@ -367,7 +364,7 @@ export class DashboardTile extends React.Component {
         return this.endTopQuery({ response })
       })
       .catch((response) => {
-        if (response?.data?.message === responseErrors.CANCELLED) {
+        if (response?.data?.message === REQUEST_CANCELLED_ERROR) {
           return undefined
         }
 
@@ -407,7 +404,7 @@ export class DashboardTile extends React.Component {
     })
       .then((response) => this.endBottomQuery({ response }))
       .catch((response) => {
-        if (response?.data?.message === responseErrors.CANCELLED) {
+        if (response?.data?.message === REQUEST_CANCELLED_ERROR) {
           return undefined
         }
 
@@ -443,8 +440,8 @@ export class DashboardTile extends React.Component {
 
   processTile = ({ query, secondQuery, skipQueryValidation, secondskipQueryValidation, source } = {}) => {
     // If tile is already processing, cancel current process
-    this.axiosSource?.cancel(responseErrors.CANCELLED)
-    this.secondAxiosSource?.cancel(responseErrors.CANCELLED)
+    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
+    this.secondAxiosSource?.cancel(REQUEST_CANCELLED_ERROR)
 
     // Create new cancel tokens for each query
     this.axiosSource = axios.CancelToken?.source()

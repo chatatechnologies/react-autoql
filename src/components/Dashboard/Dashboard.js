@@ -4,12 +4,13 @@ import { v4 as uuid } from 'uuid'
 import RGL, { WidthProvider } from 'react-grid-layout'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
+import { deepEqual, mergeSources } from 'autoql-fe-utils'
+
 import { DashboardTile } from './DashboardTile'
-import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { hideTooltips, Tooltip } from '../Tooltip'
 import DrilldownModal from './DrilldownModal'
+import { ErrorBoundary } from '../../containers/ErrorHOC'
 
-import { deepEqual, mergeSources } from '../../js/Util'
 import { withTheme } from '../../theme'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import {

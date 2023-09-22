@@ -2,10 +2,10 @@ import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import { select } from 'd3-selection'
 import { isMobile } from 'react-device-detect'
-import { formatElement } from '../../js/Util'
+import { formatElement, AGG_TYPES } from 'autoql-fe-utils'
+
 import { dataFormattingType } from '../../props/types'
 import { dataFormattingDefault } from '../../props/defaults'
-import { AGG_TYPES } from 'autoql-fe-utils'
 
 export const chartContainerPropTypes = {
   dataFormatting: dataFormattingType,

@@ -3,6 +3,8 @@ import PropTypes from 'prop-types'
 import Drawer from 'rc-drawer'
 import _isEmpty from 'lodash.isempty'
 import { v4 as uuid } from 'uuid'
+import { isBrowser, isMobile } from 'react-device-detect'
+import { mergeSources, autoQLConfigDefault, dataFormattingDefault, getAutoQLConfig } from 'autoql-fe-utils'
 
 // Components
 import { Icon } from '../Icon'
@@ -18,11 +20,8 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 // Utils
 import { withTheme } from '../../theme'
-import { isBrowser, isMobile } from 'react-device-detect'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
-import { autoQLConfigDefault, dataFormattingDefault, getAutoQLConfig } from '../../props/defaults'
 import { lang, setLanguage } from '../../js/Localization'
-import { mergeSources } from '../../js/Util'
 
 // Styles
 import 'rc-drawer/assets/index.css'

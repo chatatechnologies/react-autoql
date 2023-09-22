@@ -12,6 +12,16 @@ import {
   deepEqual,
   rotateArray,
   onlyUnique,
+  DATE_ONLY_CHART_TYPES,
+  DOUBLE_AXIS_CHART_TYPES,
+  CHARTS_WITHOUT_AGGREGATED_DATA,
+  getDateColumnIndex,
+  isColumnDateType,
+  getChartColorVars,
+  getThemeValue,
+  dataStructureChanged,
+  getLegendLocation,
+  mergeBboxes,
 } from 'autoql-fe-utils'
 
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
@@ -29,17 +39,7 @@ import { ChataColumnLineChart } from '../ChataColumnLine'
 import { ChataHistogram } from '../ChataHistogram'
 import { Spinner } from '../../Spinner'
 
-import {
-  chartContainerDefaultProps,
-  chartContainerPropTypes,
-  dataStructureChanged,
-  getLegendLocation,
-  mergeBboxes,
-} from '../helpers.js'
-
-import { getChartColorVars, getThemeValue } from '../../../theme/configureTheme'
-import { getDateColumnIndex, isColumnDateType } from '../../QueryOutput/columnHelpers'
-import { DATE_ONLY_CHART_TYPES, DOUBLE_AXIS_CHART_TYPES, CHARTS_WITHOUT_AGGREGATED_DATA } from '../../../js/Constants'
+import { chartContainerDefaultProps, chartContainerPropTypes } from '../helpers.js'
 
 import './ChataChart.scss'
 

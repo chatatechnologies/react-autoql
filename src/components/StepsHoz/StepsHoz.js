@@ -1,12 +1,12 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
+import { deepEqual } from 'autoql-fe-utils'
 
+import { Icon } from '../Icon'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './StepsHoz.scss'
-import { Icon } from '../Icon'
-import { deepEqual } from '../../js/Util'
 
 export default class Steps extends React.Component {
   constructor(props) {

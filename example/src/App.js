@@ -1,6 +1,7 @@
 import React, { Component, Fragment } from 'react'
 import axios from 'axios'
 import { get, sortBy, isEqual, cloneDeep } from 'lodash'
+import { v4 as uuidv4 } from 'uuid'
 import {
   DataMessenger,
   QueryOutput,
@@ -12,7 +13,6 @@ import {
   Icon as ChataIcon,
   configureTheme,
   VizToolbar,
-  uuidv4
 } from 'react-autoql'
 
 import { sortable } from 'react-sortable'

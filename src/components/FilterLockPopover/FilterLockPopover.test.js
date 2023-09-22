@@ -1,8 +1,8 @@
 import React from 'react'
 import { shallow, mount } from 'enzyme'
+import {currentEventLoopEnd} from 'autoql-fe-utils'
 
 import { checkProps, findByTestAttr, ignoreConsoleErrors } from '../../../test/testUtils'
-import { currentEventLoopEnd } from '../../js/Util'
 import FilterLockPopover from './FilterLockPopover'
 import FilterLockPopoverContent from './FilterLockPopoverContent'
 
