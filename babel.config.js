@@ -15,8 +15,8 @@ module.exports = {
     '@babel/preset-react',
   ],
   plugins: [
-    '@babel/plugin-proposal-class-properties',
-    '@babel/plugin-proposal-object-rest-spread',
+    '@babel/plugin-transform-class-properties',
+    '@babel/plugin-transform-object-rest-spread',
     '@babel/plugin-syntax-object-rest-spread',
     [
       '@babel/plugin-transform-runtime',
@@ -35,8 +35,8 @@ module.exports = {
       presets: ['@babel/preset-env', '@babel/preset-react'],
       plugins: [
         '@babel/plugin-transform-modules-commonjs',
-        '@babel/plugin-proposal-class-properties',
-        '@babel/plugin-proposal-object-rest-spread',
+        '@babel/plugin-transform-class-properties',
+        '@babel/plugin-transform-object-rest-spread',
         '@babel/plugin-syntax-object-rest-spread',
         //   [
         //     "@babel/plugin-transform-runtime",
