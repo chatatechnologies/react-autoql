@@ -1,6 +1,6 @@
 import dayjs from './dayjsWithPlugins'
 import { formatElement } from './Util'
-import { isISODate } from './dateUtils'
+import { isISODate } from 'autoql-fe-utils'
 const getRegexMatchArray = (str, reg) => {
   if (!str) {
     return []
