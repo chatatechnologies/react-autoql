@@ -72,7 +72,7 @@ export default class StackedLines extends React.Component {
         key={`polygon-${getKey(stringColumnIndex, i)}`}
         className={`stacked-area${this.state.activeKey === getKey(stringColumnIndex, i) ? ' active' : ''}`}
         points={polygonPoints}
-        data-tooltip-content={`
+        data-tooltip-html={`
             <div>
               <strong>Field</strong>: ${this.props.legendLabels[i].label}
             </div>

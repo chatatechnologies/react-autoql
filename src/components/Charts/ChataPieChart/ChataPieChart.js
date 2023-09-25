@@ -221,7 +221,7 @@ export default class ChataPieChart extends React.Component {
         return self.colorScale(d.data.value[self.props.stringColumnIndex])
       })
       .attr('data-tooltip-id', this.props.chartTooltipID)
-      .attr('data-tooltip-content', function (d) {
+      .attr('data-tooltip-html', function (d) {
         return getTooltipContent({
           row: d.data.value,
           columns: self.props.columns,

@@ -206,7 +206,7 @@ export default class DataAlertListItem extends React.Component {
       return (
         <div className={`data-alert-state data-alert-triggered ${status}`}>
           <span
-            data-tooltip-content={`This Alert has been triggered for this cycle. You will not receive notifications until the start of the next cycle, ${resetDateFormatted}.<br/>You can edit this in the <em>Data Alert Settings</em>`}
+            data-tooltip-html={`This Alert has been triggered for this cycle. You will not receive notifications until the start of the next cycle, ${resetDateFormatted}.<br/>You can edit this in the <em>Data Alert Settings</em>`}
             data-tooltip-id={this.props.tooltipID}
           >
             <Icon type='lightning' />
@@ -240,7 +240,7 @@ export default class DataAlertListItem extends React.Component {
       return (
         <div
           className={`data-alert-state data-alert-scheduled ${status}`}
-          data-tooltip-content={tooltip}
+          data-tooltip-html={tooltip}
           data-tooltip-id={this.props.tooltipID}
         >
           <Icon type='calendar' />
@@ -265,7 +265,7 @@ export default class DataAlertListItem extends React.Component {
     return (
       <div
         className={`data-alert-state data-alert-ready ${status}`}
-        data-tooltip-content='This Alert is ready to go live - you will start receiving notifications once you set the Alert Status to <em>Active</em>.'
+        data-tooltip-html='This Alert is ready to go live - you will start receiving notifications once you set the Alert Status to <em>Active</em>.'
         data-tooltip-id={this.props.tooltipID}
       >
         <Icon type='check' />

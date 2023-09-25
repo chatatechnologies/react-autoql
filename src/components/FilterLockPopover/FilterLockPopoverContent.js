@@ -535,7 +535,7 @@ export default class FilterLockPopover extends React.Component {
         className='filter-lock-suggestion-item'
         data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
         data-tooltip-delay-show={800}
-        data-tooltip-content={`${displayName} <em>(${name.show_message})</em>`}
+        data-tooltip-html={`${displayName} <em>(${name.show_message})</em>`}
       >
         <span>
           {displayName} <em>({name.show_message})</em>
@@ -678,7 +678,7 @@ export default class FilterLockPopover extends React.Component {
               type='info'
               data-place='left'
               data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
-              data-tooltip-content='
+              data-tooltip-html='
                 Persistent filters remain locked at all<br />
                 times, unless the filter is removed. If<br />
                 unchecked, the filter will be locked<br />

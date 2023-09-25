@@ -87,7 +87,7 @@ export default class Bars extends Component {
                 width={width}
                 height={barHeight}
                 onClick={() => this.onBarClick(d, colIndex, index)}
-                data-tooltip-content={tooltip}
+                data-tooltip-html={tooltip}
                 data-tooltip-id={this.props.chartTooltipID}
                 style={{ fill: color, fillOpacity: 1 }}
               />

@@ -94,7 +94,7 @@ export default class Squares extends React.Component {
             width={xScale.bandwidth()}
             height={yScale.bandwidth()}
             onClick={() => this.onSquareClick(row, colIndex, index)}
-            data-tooltip-content={tooltip}
+            data-tooltip-html={tooltip}
             data-tooltip-id={this.props.chartTooltipID}
             style={{ color: activeFillColor }}
             fill={fillColor}

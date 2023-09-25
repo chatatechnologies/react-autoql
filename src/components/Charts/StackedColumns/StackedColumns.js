@@ -92,7 +92,7 @@ export default class StackedColumns extends React.Component {
               width={xScale.bandwidth()}
               height={Math.abs(height)}
               onClick={() => this.onColumnClick(d, colIndex, index)}
-              data-tooltip-content={tooltip}
+              data-tooltip-html={tooltip}
               data-tooltip-id={this.props.chartTooltipID}
               style={{ fill: color, fillOpacity: 0.7 }}
             />

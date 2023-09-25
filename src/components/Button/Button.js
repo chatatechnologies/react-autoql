@@ -92,7 +92,7 @@ export class ButtonWithoutRef extends React.Component {
           data-multiline={this.props.multiline}
           style={{ ...this.props.style }}
           onClick={this.props.onClick}
-          data-tooltip-content={this.props.tooltip}
+          data-tooltip-html={this.props.tooltip}
           data-tooltip-id={this.props.tooltipID}
         >
           {this.props.loading ? <Spinner data-test='react-autoql-btn-loading' /> : this.renderIcon()}

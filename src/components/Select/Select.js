@@ -87,7 +87,7 @@ export default class Select extends React.Component {
           data-test='react-autoql-select'
           onClick={() => this.setState({ isOpen: !this.state.isOpen })}
           style={this.props.style}
-          data-tooltip-content={this.props.tooltip}
+          data-tooltip-html={this.props.tooltip}
           data-tooltip-id={this.props.tooltipID}
           data-offset={10}
           data-tooltip-delay-show={500}

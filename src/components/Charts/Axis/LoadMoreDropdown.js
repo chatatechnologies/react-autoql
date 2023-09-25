@@ -155,7 +155,7 @@ export default class LoadMoreDropdown extends Component {
         height='1.4em'
         width='1.4em'
         xmlns='http://www.w3.org/2000/svg'
-        data-tooltip-content='This visualization is showing a subset of the data. <em>Drilldowns</em> will be executed on the <strong>full</strong> dataset.'
+        data-tooltip-html='This visualization is showing a subset of the data. <em>Drilldowns</em> will be executed on the <strong>full</strong> dataset.'
         data-tooltip-id={this.props.chartTooltipID}
       >
         <path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z'></path>

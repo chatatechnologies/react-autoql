@@ -134,7 +134,7 @@ export default class Line extends Component {
               className={`line-dot${this.state.activeKey === key ? ' active' : ''}${largeDataset ? ' hidden-dot' : ''}`}
               key={`circle-group-${key}`}
               onClick={() => this.onDotClick(d, colIndex, index)}
-              data-tooltip-content={tooltip}
+              data-tooltip-html={tooltip}
               data-tooltip-id={this.props.chartTooltipID}
             >
               {circle}

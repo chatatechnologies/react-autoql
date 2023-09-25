@@ -42,7 +42,7 @@ export class MenuItem extends React.Component {
           ${this.props.className ?? ''}
           ${this.props.subtitle ? 'has-subtitles' : ''}
           ${this.props.active ? 'active' : ''}`}
-        data-tooltip-content={this.props.tooltip}
+        data-tooltip-html={this.props.tooltip}
         data-tooltip-id={this.props.tooltipID}
         data-offset={10}
         onClick={(e) => {

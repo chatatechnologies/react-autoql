@@ -566,7 +566,7 @@ export default class QueryValidationMessage extends React.Component {
                           this.setState({ isValidationSelectorOpen: false })
                           this.onChangeQueryValidationSelectOption(option.value)
                         }}
-                        data-tooltip-content={option.tooltip || null}
+                        data-tooltip-html={option.tooltip || null}
                         data-tooltip-id={`select-tooltip-${this.ID}`}
                       >
                         {option.listLabel || option.label}

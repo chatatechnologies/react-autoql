@@ -63,7 +63,7 @@ export default class Chip extends React.Component {
             className='react-autoql-chip-delete-btn'
             type='close'
             onClick={this.onCloseClick}
-            data-tooltip-content={this.props.deleteTooltip}
+            data-tooltip-html={this.props.deleteTooltip}
             data-tooltip-id={this.props.tooltipID}
           />
         </ConfirmPopover>

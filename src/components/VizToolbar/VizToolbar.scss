@@ -22,14 +22,14 @@
   justify-content: center;
   align-items: center;
 
-  padding: 0;
-  margin: 0;
+  padding: 0 !important;
+  margin: 0 !important;
 
   background: none !important;
   border: none !important;
   outline: none !important;
   font-size: 16px;
-  color: var(--react-autoql-text-color-primary);
+  color: var(--react-autoql-text-color-primary) !important;
   cursor: pointer;
 
   &.filter-btn {
@@ -37,7 +37,7 @@
   }
 
   &.react-autoql-toolbar-btn-selected {
-    color: var(--react-autoql-accent-color);
+    color: var(--react-autoql-accent-color) !important;
   }
 }
 .react-autoql-toolbar-btn.green {

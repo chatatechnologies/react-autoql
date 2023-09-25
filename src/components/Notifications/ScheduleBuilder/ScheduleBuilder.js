@@ -490,7 +490,7 @@ export default class ScheduleBuilder extends React.Component {
                   className='react-autoql-info-tooltip'
                   type='info'
                   data-tooltip-id={this.props.tooltipID}
-                  data-tooltip-content={tooltip}
+                  data-tooltip-html={tooltip}
                 />
               </span>
             }
