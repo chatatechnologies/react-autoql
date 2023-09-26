@@ -25,8 +25,10 @@ export const SubjectName = ({ subject } = {}) => {
     <ErrorBoundary>
       <span>
         <Icon className='data-explorer-topic-icon' type={iconType} />
+        {subject.type === DataExplorerTypes.TEXT_TYPE ? '"' : null}
         {subject.displayName}
         {suffix}
+        {subject.type === DataExplorerTypes.TEXT_TYPE ? '"' : null}
       </span>
     </ErrorBoundary>
   )

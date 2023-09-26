@@ -1,0 +1,12 @@
+.query-suggestion-list {
+  color: var(--react-autoql-text-color-primary);
+  flex: 1;
+
+  .data-explorer-sample-query {
+    position: relative;
+    padding: 5px 10px;
+
+    &:hover {
+    }
+  }
+}

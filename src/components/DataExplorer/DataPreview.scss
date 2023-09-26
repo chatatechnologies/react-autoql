@@ -38,64 +38,13 @@
         justify-content: space-between;
         align-items: center;
         white-space: nowrap;
-        font-size: 14px;
+        font-size: 13px;
         color: var(--react-autoql-text-color-secondary);
         font-weight: 600;
 
         .react-autoql-data-preview-selected-columns-text {
           padding-left: 5px;
         }
-
-        .react-autoql-data-preview-selected-columns-selector {
-          font-size: 11px;
-
-          .react-autoql-select-and-label {
-            padding-right: 0px;
-
-            .react-autoql-multi-select {
-              color: inherit;
-              border-color: transparent !important;
-              padding: 0px 5px;
-              height: 25px;
-
-              &:hover {
-                color: var(--react-autoql-accent-color);
-                background-color: var(--react-autoql-hover-color);
-              }
-
-              .react-autoql-select-arrow {
-                svg {
-                  stroke: currentColor;
-                  stroke-width: 2em;
-                }
-              }
-            }
-          }
-        }
-
-        // .react-autoql-data-preview-selected-columns-clear-btn {
-        //   text-decoration: underline;
-        //   font-weight: 400;
-        //   cursor: pointer;
-
-        //   .react-autoql-data-preview-selected-columns-badge {
-        //     display: inline-flex;
-        //     justify-content: center;
-        //     align-items: center;
-        //     border-radius: 10px;
-        //     height: 1.4em;
-        //     padding: 0px 6px;
-        //     color: #ffffff;
-        //     font-size: 0.9em;
-        //     font-weight: 600;
-        //     margin-left: 3px;
-        //     background-color: var(--react-autoql-accent-color);
-        //   }
-
-        //   &:hover {
-        //     color: var(--react-autoql-accent-color);
-        //   }
-        // }
       }
 
       .data-preview-table-wrapper {
@@ -112,6 +61,7 @@
           font-size: 13px;
           min-width: 100%;
           border-collapse: collapse;
+          background-color: var(--react-autoql-hover-color);
 
           &:hover {
             // If hovering the table AND hovering a column, highlight header and cells in column
@@ -143,24 +93,6 @@
               }
             }
           }
-
-          // ----------------------- hover styles -----------------------
-          // td:hover::after,
-          // th:hover::after {
-          //   content: '\00a0';
-          //   height: 100000px;
-          //   left: 0;
-          //   position: absolute;
-          //   top: -50000px;
-          //   width: 100%;
-          //   background-color: RGBA(
-          //     var(--react-autoql-accent-color-R),
-          //     var(--react-autoql-accent-color-G),
-          //     var(--react-autoql-accent-color-B),
-          //     0.1
-          //   );
-          // }
-          // ----------------------------------------------------------
 
           thead {
             th {
@@ -229,6 +161,7 @@
             tr {
               height: 28px;
               font-size: 12px;
+              background: var(--react-autoql-background-color-secondary);
 
               &:not(:last-child) {
                 border-bottom: 1px solid var(--react-autoql-table-border-color);
@@ -256,13 +189,14 @@
           }
 
           .data-preview-end-of-preview-message {
-            position: sticky;
+            color: var(--react-autoql-text-color-secondary);
+            background-color: transparent;
             left: calc(50% - 75px);
+            height: 22px;
+            position: sticky;
             display: block;
-            border-top: 1px solid var(--react-autoql-table-border-color);
-            color: var(--react-autoql-text-color-placeholder);
             font-style: italic;
-            font-size: 13px;
+            font-size: inherit;
 
             .data-preveiew-end-of-preview-sticky-wrapper {
               justify-content: center;

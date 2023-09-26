@@ -35,7 +35,6 @@ export default class DataExplorer extends React.Component {
 
     this.state = {
       dataPreview: null,
-      checkedColumns: [],
     }
   }
 
@@ -48,6 +47,8 @@ export default class DataExplorer extends React.Component {
     isCollapsed: PropTypes.bool,
     onIsCollapsedChange: PropTypes.func,
     onColumnSelection: PropTypes.func,
+    onDataPreview: PropTypes.func,
+
     defaultCollapsed: PropTypes.bool,
   }
 
@@ -59,6 +60,7 @@ export default class DataExplorer extends React.Component {
     isCollapsed: undefined,
     onIsCollapsedChange: () => {},
     onColumnSelection: () => {},
+    onDataPreview: () => {},
 
     defaultCollapsed: false,
   }
@@ -74,12 +76,6 @@ export default class DataExplorer extends React.Component {
     if (this.props.subject && !_isEqual(this.props.subject, prevProps.subject)) {
       this.getDataPreview()
     }
-
-    if (!_isEqual(this.state.checkedColumns, prevState.checkedColumns)) {
-      const columns = this.state.dataPreview?.data?.data?.columns
-      const selectedColumns = this.state.checkedColumns?.map((i) => columns[i])
-      this.props.onColumnSelection?.(selectedColumns)
-    }
   }
 
   componentWillUnmount = () => {
@@ -94,7 +90,7 @@ export default class DataExplorer extends React.Component {
     this.cancelCurrentRequest()
     this.axiosSource = axios.CancelToken?.source()
 
-    this.setState({ loading: true, error: undefined, dataPreview: undefined, checkedColumns: [] })
+    this.setState({ loading: true, error: undefined, dataPreview: undefined })
     fetchDataPreview({
       ...this.props.authentication,
       subject: this.props.subject?.context,
@@ -106,6 +102,7 @@ export default class DataExplorer extends React.Component {
     })
       .then((response) => {
         this.setState({ dataPreview: response, loading: false })
+        this.props.onDataPreview(response)
       })
       .catch((error) => {
         if (error?.message !== REQUEST_CANCELLED_ERROR) {
@@ -123,7 +120,7 @@ export default class DataExplorer extends React.Component {
         data-tooltip-content={JSON.stringify(column)}
       >
         <span>{column?.display_name}</span>
-        <Checkbox checked={this.state.checkedColumns?.includes(i)} onChange={() => this.onColumnHeaderClick(i)} />
+        <Checkbox checked={this.props.selectedColumns?.includes(i)} onChange={() => this.onColumnHeaderClick(i)} />
       </div>
     )
   }
@@ -146,15 +143,16 @@ export default class DataExplorer extends React.Component {
   }
 
   onColumnHeaderClick = (index) => {
-    let checkedColumns = _cloneDeep(this.state.checkedColumns)
+    let selectedColumns = _cloneDeep(this.props.selectedColumns)
 
-    if (checkedColumns?.includes(index)) {
-      checkedColumns = checkedColumns.filter((i) => i !== index)
+    if (selectedColumns?.includes(index)) {
+      selectedColumns = selectedColumns.filter((i) => i !== index)
     } else {
-      checkedColumns.push(index)
+      selectedColumns.push(index)
     }
 
-    this.setState({ checkedColumns })
+    console.log('new column selection:', _cloneDeep(selectedColumns), 'old selection', this.props.selectedColumns)
+    this.props.onColumnSelection(selectedColumns)
   }
 
   onMouseOverColumn = (e, columnIndex) => {
@@ -179,44 +177,7 @@ export default class DataExplorer extends React.Component {
   renderDataPreviewHeader = (columns) => {
     return (
       <div className='data-preview-table-header'>
-        <span className='react-autoql-data-preview-selected-columns-text'>
-          {/* <Icon type='light-bulb' />  */}
-          Select fields to use in Sample Queries
-        </span>
-        <span className='react-autoql-data-preview-selected-columns-selector'>
-          <MultiSelect
-            title='SELECT FIELDS'
-            size='small'
-            align='end'
-            // outlined={false}
-            options={columns?.map((col) => {
-              return {
-                value: col.name,
-                label: col.display_name,
-              }
-            })}
-            selected={this.state.checkedColumns.map((index) => columns[index]?.name)}
-            onChange={(checkedColumnNames) => {
-              const checkedColumnIndexes = checkedColumnNames.map((name) =>
-                columns.findIndex((col) => name === col.name),
-              )
-              this.setState({
-                checkedColumns: checkedColumnIndexes,
-              })
-            }}
-          />
-        </span>
-        {/* {!!this.state.checkedColumns?.length && (
-            <span
-              className='react-autoql-data-preview-selected-columns-clear-btn'
-              onClick={() => this.setState({ checkedColumns: [] })}
-            >
-              Clear selections{' '}
-              <span className='react-autoql-data-preview-selected-columns-badge'>
-                {this.state.checkedColumns.length}
-              </span>
-            </span>
-          )} */}
+        <span className='react-autoql-data-preview-selected-columns-text'>Select fields to use in Sample Queries</span>
       </div>
     )
   }
@@ -246,7 +207,7 @@ export default class DataExplorer extends React.Component {
                       id={`col-header-${i}`}
                       key={`col-header-${i}`}
                       className={`data-preview-column ${
-                        this.state.checkedColumns.includes(i)
+                        this.props.selectedColumns.includes(i)
                           ? 'data-preview-column-selected'
                           : 'data-preview-column-unselected'
                       }`}
@@ -268,7 +229,7 @@ export default class DataExplorer extends React.Component {
                       return (
                         <td
                           className={`data-preview-cell ${
-                            this.state.checkedColumns.includes(j)
+                            this.props.selectedColumns.includes(j)
                               ? 'data-preview-cell-selected'
                               : 'data-preview-cell-unselected'
                           } cell-${j}`}

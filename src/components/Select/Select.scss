@@ -79,6 +79,10 @@
       padding-left: 8px;
       font-size: 0.875em;
       color: var(--react-autoql-text-color-placeholder);
+
+      svg {
+        stroke-width: 5em;
+      }
     }
   }
 }

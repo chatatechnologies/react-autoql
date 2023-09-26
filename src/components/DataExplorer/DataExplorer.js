@@ -1,4 +1,5 @@
 import React from 'react'
+import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 
@@ -8,8 +9,9 @@ import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
 import DataPreview from './DataPreview'
 import DataExplorerInput from './DataExplorerInput'
+import MultiSelect from '../MultiSelect/MultiSelect'
 import { CustomScrollbars } from '../CustomScrollbars'
-import { QuerySuggestionList } from '../ExploreQueries'
+import SampleQueryList from './SampleQueryList'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType, dataFormattingType } from '../../props/types'
@@ -132,7 +134,12 @@ export default class DataExplorer extends React.Component {
           isCollapsed={this.props.isSmallScreen ? this.state.isDataPreviewCollapsed : undefined}
           defaultCollapsed={this.props.isSmallScreen ? false : undefined}
           tooltipID={`data-preview-tooltip-${this.ID}`}
-          onColumnSelection={(selectedColumns) => this.querySuggestionList?.updateResults?.({ selectedColumns })}
+          onColumnSelection={(selectedColumns) => {
+            this.setState({ selectedColumns })
+          }}
+          onDataPreview={(dataPreview) => this.setState({ dataPreview })}
+          data={this.state.dataPreview}
+          selectedColumns={this.state.selectedColumns}
           onIsCollapsedChange={(isCollapsed) => {
             this.setState({
               isDataPreviewCollapsed: isCollapsed,
@@ -140,6 +147,48 @@ export default class DataExplorer extends React.Component {
             })
           }}
         />
+      </div>
+    )
+  }
+
+  renderSampleQueriesHeader = () => {
+    const columns = this.state.dataPreview?.data?.data?.columns
+
+    return (
+      <div className='react-autoql-data-explorer-title-text'>
+        <span>Sample Queries</span>
+        {columns?.length ? (
+          <span className='react-autoql-data-preview-selected-columns-selector'>
+            <MultiSelect
+              title='FIELDS'
+              size='small'
+              align='middle'
+              options={columns.map((col) => {
+                return {
+                  value: col.name,
+                  label: col.display_name,
+                }
+              })}
+              selected={this.state.selectedColumns.map((index) => columns[index]?.name)}
+              onChange={(selectedColumnNames) => {
+                const selectedColumnIndexes = selectedColumnNames.map((name) =>
+                  columns.findIndex((col) => name === col.name),
+                )
+                this.setState({
+                  selectedColumns: selectedColumnIndexes,
+                })
+              }}
+            />
+          </span>
+        ) : null}
+        {!!this.state.selectedColumns?.length && (
+          <span
+            className='react-autoql-data-preview-selected-columns-clear-btn'
+            onClick={() => this.setState({ selectedColumns: [] })}
+          >
+            CLEAR
+          </span>
+        )}
       </div>
     )
   }
@@ -152,11 +201,9 @@ export default class DataExplorer extends React.Component {
 
     return (
       <div className='data-explorer-section query-suggestions'>
-        <div className='react-autoql-data-explorer-title-text'>
-          <span>Sample Queries</span>
-        </div>
+        {this.renderSampleQueriesHeader()}
         <div className='data-explorer-query-suggestion-list'>
-          <QuerySuggestionList
+          <SampleQueryList
             ref={(r) => (this.querySuggestionList = r)}
             key={this.querySuggestionsKey}
             authentication={this.props.authentication}
