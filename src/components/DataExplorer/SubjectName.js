@@ -4,23 +4,29 @@ import { DataExplorerTypes } from 'autoql-fe-utils'
 import { Icon } from '../Icon'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-export const TopicName = ({ topic } = {}) => {
-  if (!topic) {
+export const SubjectName = ({ subject } = {}) => {
+  if (!subject) {
     return null
   }
 
   var iconType = null
-  if (topic.type === DataExplorerTypes.SUBJECT_TYPE) {
+  if (subject.type === DataExplorerTypes.SUBJECT_TYPE) {
     iconType = 'book'
-  } else if (topic.type === DataExplorerTypes.VL_TYPE) {
+  } else if (subject.type === DataExplorerTypes.VL_TYPE) {
     iconType = 'bookmark'
+  }
+
+  let suffix = ''
+  if (subject.type === DataExplorerTypes.VL_TYPE && subject.formattedType) {
+    suffix = ` (${subject.formattedType})`
   }
 
   return (
     <ErrorBoundary>
       <span>
         <Icon className='data-explorer-topic-icon' type={iconType} />
-        {topic.display_name}
+        {subject.displayName}
+        {suffix}
       </span>
     </ErrorBoundary>
   )

@@ -22,6 +22,7 @@ import {
   dataFormattingDefault,
   getAuthentication,
   getAutoQLConfig,
+  parseJwt,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -40,7 +41,6 @@ class QueryInput extends React.Component {
 
     this.UNIQUE_ID = uuid()
     this.MAX_QUERY_HISTORY = 5
-    this.queryHistoryId = `query-history-${props.authentication?.domain}`
     this.autoCompleteTimer = undefined
     this.autoCompleteArray = []
 
@@ -279,9 +279,26 @@ class QueryInput extends React.Component {
     this.inputRef = ref
   }
 
+  getQueryHistoryID = () => {
+    if (!this.props?.authentication?.token) {
+      return
+    }
+
+    try {
+      const tokenInfo = parseJwt(this.props.authentication.token)
+      const id = `query-history-${tokenInfo.user_id}-${tokenInfo.project_id}`
+      return id
+    } catch (error) {
+      console.error(error)
+      return
+    }
+  }
+
   getQueryHistory = () => {
     try {
-      const queryHistoryStr = localStorage.getItem(this.queryHistoryId)
+      const id = this.getQueryHistoryID()
+      const queryHistoryStr = localStorage.getItem(id)
+
       if (!queryHistoryStr) {
         return []
       }
@@ -301,6 +318,12 @@ class QueryInput extends React.Component {
 
   addQueryToHistory = (query) => {
     try {
+      const id = this.getQueryHistoryID()
+
+      if (!id) {
+        return
+      }
+
       let queryHistory = this.getQueryHistory().filter((q) => {
         return q !== query
       })
@@ -311,7 +334,7 @@ class QueryInput extends React.Component {
         queryHistory = queryHistory.slice(0, this.MAX_QUERY_HISTORY)
       }
 
-      localStorage.setItem(this.queryHistoryId, JSON.stringify(queryHistory))
+      localStorage.setItem(id, JSON.stringify(queryHistory))
     } catch (error) {
       console.error(error)
     }

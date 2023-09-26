@@ -189,6 +189,7 @@ export class DataMessenger extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
+
     try {
       window.addEventListener('resize', this.onWindowResize)
     } catch (error) {

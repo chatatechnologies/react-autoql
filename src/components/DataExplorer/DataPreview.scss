@@ -36,38 +36,70 @@
       .data-preview-table-header {
         display: flex;
         justify-content: space-between;
+        align-items: center;
         white-space: nowrap;
         font-size: 14px;
-        color: var(--react-autoql-text-color-primary);
-        font-weight: 500;
-        padding: 0 4px;
+        color: var(--react-autoql-text-color-secondary);
+        font-weight: 600;
 
-        .react-autoql-data-preview-selected-columns-clear-btn {
-          text-decoration: underline;
-          font-weight: 400;
-          cursor: pointer;
+        .react-autoql-data-preview-selected-columns-text {
+          padding-left: 5px;
+        }
 
-          .react-autoql-data-preview-selected-columns-badge {
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: 10px;
-            height: 1.4em;
-            padding: 0px 6px;
-            color: #ffffff;
-            font-size: 0.9em;
-            font-weight: 600;
-            margin-left: 3px;
-            background-color: var(--react-autoql-accent-color);
-          }
+        .react-autoql-data-preview-selected-columns-selector {
+          font-size: 11px;
 
-          &:hover {
-            color: var(--react-autoql-accent-color);
+          .react-autoql-select-and-label {
+            padding-right: 0px;
+
+            .react-autoql-multi-select {
+              color: inherit;
+              border-color: transparent !important;
+              padding: 0px 5px;
+              height: 25px;
+
+              &:hover {
+                color: var(--react-autoql-accent-color);
+                background-color: var(--react-autoql-hover-color);
+              }
+
+              .react-autoql-select-arrow {
+                svg {
+                  stroke: currentColor;
+                  stroke-width: 2em;
+                }
+              }
+            }
           }
         }
+
+        // .react-autoql-data-preview-selected-columns-clear-btn {
+        //   text-decoration: underline;
+        //   font-weight: 400;
+        //   cursor: pointer;
+
+        //   .react-autoql-data-preview-selected-columns-badge {
+        //     display: inline-flex;
+        //     justify-content: center;
+        //     align-items: center;
+        //     border-radius: 10px;
+        //     height: 1.4em;
+        //     padding: 0px 6px;
+        //     color: #ffffff;
+        //     font-size: 0.9em;
+        //     font-weight: 600;
+        //     margin-left: 3px;
+        //     background-color: var(--react-autoql-accent-color);
+        //   }
+
+        //   &:hover {
+        //     color: var(--react-autoql-accent-color);
+        //   }
+        // }
       }
 
       .data-preview-table-wrapper {
+        position: relative;
         white-space: nowrap;
         text-overflow: ellipsis;
         overflow: auto;
@@ -88,7 +120,7 @@
                 var(--react-autoql-accent-color-R),
                 var(--react-autoql-accent-color-G),
                 var(--react-autoql-accent-color-B),
-                0.4
+                0.3
               );
             }
 
@@ -141,7 +173,18 @@
               border-bottom: 1px solid var(--react-autoql-table-border-color);
               cursor: pointer;
 
-              &::before {
+              &.react-autoql-data-preview-hovered {
+                .react-autoql-checkbox__input {
+                  border-color: var(--react-autoql-accent-color) !important;
+                }
+              }
+
+              &.data-preview-column-selected {
+                background-color: var(--react-autoql-accent-color);
+                color: var(--react-autoql-text-color-accent);
+              }
+
+              &:not(.data-preview-column-selected)::before {
                 content: '\00a0';
                 position: absolute;
                 height: 100%;
@@ -149,12 +192,13 @@
                 left: 0px;
                 top: 0px;
 
-                background-color: RGBA(
-                  var(--react-autoql-accent-color-R),
-                  var(--react-autoql-accent-color-G),
-                  var(--react-autoql-accent-color-B),
-                  0.3
-                );
+                // background-color: RGBA(
+                //   var(--react-autoql-accent-color-R),
+                //   var(--react-autoql-accent-color-G),
+                //   var(--react-autoql-accent-color-B),
+                //   0.3
+                // );
+                background-color: var(--react-autoql-background-color-disabled);
               }
 
               &:not(:last-child) {
@@ -175,13 +219,9 @@
                   .react-autoql-checkbox__input {
                     width: 15px;
                     height: 15px;
+                    border-color: var(--react-autoql-text-color-placeholder);
                   }
                 }
-              }
-
-              &.data-preview-column-selected {
-                background-color: var(--react-autoql-accent-color);
-                color: var(--react-autoql-text-color-accent);
               }
             }
           }
@@ -212,6 +252,26 @@
                   );
                 }
               }
+            }
+          }
+
+          .data-preview-end-of-preview-message {
+            position: sticky;
+            left: calc(50% - 75px);
+            display: block;
+            border-top: 1px solid var(--react-autoql-table-border-color);
+            color: var(--react-autoql-text-color-placeholder);
+            font-style: italic;
+            font-size: 13px;
+
+            .data-preveiew-end-of-preview-sticky-wrapper {
+              justify-content: center;
+              pointer-events: none;
+              align-items: center;
+              position: absolute;
+              display: flex;
+              width: 150px;
+              height: 100%;
             }
           }
         }

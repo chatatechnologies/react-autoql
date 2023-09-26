@@ -7,7 +7,6 @@ import { InfiniteScroll } from '../InfiniteScroll'
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { LoadingDots } from '../LoadingDots'
 import { Spinner } from '../Spinner'
-import { Icon } from '../Icon'
 
 export default class QuerySuggestionList extends React.Component {
   constructor(props) {
@@ -56,6 +55,10 @@ export default class QuerySuggestionList extends React.Component {
         this.loadMore(1)
       })
     }
+  }
+
+  updateResults = ({ selectedColumns }) => {
+    console.log('UPDATING SAMPLE QUERIES', { selectedColumns })
   }
 
   loadMore = (page) => {

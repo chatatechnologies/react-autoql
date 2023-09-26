@@ -24,12 +24,10 @@ export default class DataExplorer extends React.Component {
     this.ID = uuid()
 
     this.state = {
-      activeTopicType: null,
       selectedSubject: null,
-      selectedVL: null,
-      isQuerySuggestionSectionVisible: true,
-      isQuerySuggestionCollapsed: true,
+      selectedColumns: [],
       isDataPreviewCollapsed: false,
+      isQuerySuggestionCollapsed: false,
     }
   }
 
@@ -63,30 +61,10 @@ export default class DataExplorer extends React.Component {
   }
 
   onInputSelection = (listItem, skipQueryValidation) => {
-    if (listItem?.type === DataExplorerTypes.SUBJECT_TYPE) {
-      this.setState({
-        selectedSubject: listItem,
-        selectedKeywords: null,
-        selectedVL: null,
-        activeTopicType: listItem?.type,
-        skipQueryValidation: true,
-      })
-    } else if (listItem?.type === DataExplorerTypes.VL_TYPE) {
-      this.setState({
-        selectedVL: listItem,
-        selectedKeywords: null,
-        activeTopicType: listItem?.type,
-        skipQueryValidation: true,
-      })
-    } else if (listItem?.type === 'text') {
-      this.setState({
-        selectedSubject: null,
-        selectedVL: null,
-        selectedKeywords: listItem,
-        activeTopicType: listItem?.type,
-        skipQueryValidation,
-      })
-    }
+    this.setState({
+      selectedSubject: listItem,
+      skipQueryValidation,
+    })
 
     this.inputRef?.blurInput()
   }
@@ -139,7 +117,7 @@ export default class DataExplorer extends React.Component {
   }
 
   renderDataPreview = () => {
-    if (!this.state.selectedSubject || this.state.activeTopicType !== DataExplorerTypes.SUBJECT_TYPE) {
+    if (this.state.selectedSubject?.type !== DataExplorerTypes.SUBJECT_TYPE) {
       return null
     }
 
@@ -154,7 +132,7 @@ export default class DataExplorer extends React.Component {
           isCollapsed={this.props.isSmallScreen ? this.state.isDataPreviewCollapsed : undefined}
           defaultCollapsed={this.props.isSmallScreen ? false : undefined}
           tooltipID={`data-preview-tooltip-${this.ID}`}
-          onColumnSelection={(columns) => console.log('columns selected!', columns)}
+          onColumnSelection={(selectedColumns) => this.querySuggestionList?.updateResults?.({ selectedColumns })}
           onIsCollapsedChange={(isCollapsed) => {
             this.setState({
               isDataPreviewCollapsed: isCollapsed,
@@ -166,32 +144,26 @@ export default class DataExplorer extends React.Component {
     )
   }
 
-  renderQuerySuggestionCardTitle = (selectedTopic) => {
-    return (
-      <div className='react-autoql-data-explorer-title-text'>
-        <span>Sample Queries</span>
-      </div>
-    )
-  }
-
   renderQuerySuggestions = () => {
-    const selectedTopic = this.getSelectedTopic()
-    if (!selectedTopic) {
+    const { selectedSubject } = this.state
+    if (!selectedSubject) {
       return null
     }
 
     return (
       <div className='data-explorer-section query-suggestions'>
-        {this.renderQuerySuggestionCardTitle(selectedTopic)}
+        <div className='react-autoql-data-explorer-title-text'>
+          <span>Sample Queries</span>
+        </div>
         <div className='data-explorer-query-suggestion-list'>
           <QuerySuggestionList
             ref={(r) => (this.querySuggestionList = r)}
             key={this.querySuggestionsKey}
             authentication={this.props.authentication}
-            context={this.state.selectedSubject?.name}
-            valueLabel={this.state.selectedVL}
-            searchText={this.state.selectedKeywords?.display_name}
-            selectedType={this.state.activeTopicType}
+            columns={this.state.selectedColumns}
+            context={this.state.selectedSubject?.context}
+            valueLabel={this.state.selectedSubject?.valueLabel}
+            searchText={this.state.selectedSubject?.text}
             executeQuery={this.props.executeQuery}
             skipQueryValidation={this.state.skipQueryValidation}
             userSelection={this.state.userSelection}
@@ -207,28 +179,8 @@ export default class DataExplorer extends React.Component {
     )
   }
 
-  getSelectedTopic = () => {
-    const activeType = this.state.activeTopicType
-    if (activeType === DataExplorerTypes.SUBJECT_TYPE) {
-      return this.state.selectedSubject
-    }
-    if (activeType === DataExplorerTypes.VL_TYPE) {
-      return this.state.selectedVL
-    }
-    if (activeType === 'text') {
-      return this.state.selectedKeywords
-    }
-
-    return null
-  }
-
   clearContent = () => {
-    this.setState({
-      activeTopicType: null,
-      selectedSubject: null,
-      selectedVL: null,
-      selectedKeywords: null,
-    })
+    this.setState({ selectedSubject: null })
   }
 
   renderHeaderTooltipContent = ({ content }) => {
@@ -243,7 +195,7 @@ export default class DataExplorer extends React.Component {
       return null
     }
 
-    const name = column.display_name
+    const name = column.displayName
     const type = COLUMN_TYPES[column.type]?.description
     const icon = COLUMN_TYPES[column.type]?.icon
 
@@ -256,138 +208,39 @@ export default class DataExplorer extends React.Component {
             {type}
           </div>
         )}
-        {/* Disable this until we have a better way to get query suggestions for columns
-        <div className="data-explorer-tooltip-section">
-          <strong>Query suggestions:</strong>
-          <br />
-          {this.renderColumnQuerySuggestions(column)}
-        </div> */}
       </div>
     )
   }
 
   renderDataExplorerContent = () => {
-    if (!this.getSelectedTopic()) {
-      return this.renderIntroMessage()
-    }
+    const { selectedSubject } = this.state
 
-    let formattedType = ''
-    if (this.state.selectedSubject.type === DataExplorerTypes.SUBJECT_TYPE) {
-      formattedType = 'Topic'
-    } else if (this.state.selectedSubject.type === DataExplorerTypes.VL_TYPE) {
-      formattedType = 'Data Value'
+    if (!selectedSubject) {
+      return this.renderIntroMessage()
     }
 
     return (
       <div className='data-explorer-result-container'>
         <CustomScrollbars>
           <div
-            key={`data-explorer-sections-container-${this.state.selectedSubject?.name}`}
+            key={`data-explorer-sections-container-${selectedSubject?.id}`}
             className='data-explorer-sections-container'
           >
-            <div className='react-autoql-data-explorer-selected-subject-title'>
-              <Icon
-                style={{ fontSize: '20px' }}
-                type='book'
-                data-tooltip-content={formattedType}
-                data-tooltip-id={formattedType ? this.props.tooltipID : undefined}
-              />{' '}
-              {this.state.selectedSubject?.display_name}
-              {!!formattedType && ` (${formattedType})`}
-            </div>
+            {!!selectedSubject?.displayName && (
+              <div className='react-autoql-data-explorer-selected-subject-title'>
+                <Icon
+                  type='book'
+                  data-tooltip-content={selectedSubject?.formattedType}
+                  data-tooltip-id={selectedSubject?.formattedType ? this.props.tooltipID : undefined}
+                />{' '}
+                {selectedSubject?.displayName}
+              </div>
+            )}
             {this.renderDataPreview()}
             {this.renderQuerySuggestions()}
           </div>
         </CustomScrollbars>
       </div>
-    )
-  }
-
-  formatColumnType = (type) => {
-    switch (type) {
-      case 'DATE': {
-        return (
-          <span>
-            <Icon type='calendar' /> Date
-          </span>
-        )
-      }
-      case 'DATE_STRING': {
-        return (
-          <span>
-            <Icon type='calendar' /> Date
-          </span>
-        )
-      }
-      case 'STRING': {
-        return (
-          <span>
-            <Icon type='note' /> Description
-          </span>
-        )
-      }
-      case 'DOLLAR_AMT': {
-        return (
-          <span>
-            <Icon type='money' /> Currency
-          </span>
-        )
-      }
-      case 'QUANTITY': {
-        return (
-          <span>
-            <Icon type='abacus' /> Quantity
-          </span>
-        )
-      }
-    }
-  }
-
-  renderColumnQuerySuggestions = (column) => {
-    const subject = this.state.selectedSubject?.display_name || ''
-    if (!subject) {
-      return null
-    }
-
-    const lowerCaseSubject = subject.toLowerCase()
-    const titleCaseSubject = lowerCaseSubject[0].toUpperCase() + lowerCaseSubject.substring(1)
-    const lowerCaseColumn = column?.display_name?.toLowerCase()
-    const suggestions = []
-
-    if (column.type === 'STRING') {
-      suggestions.push(`Show ${lowerCaseSubject} by ${lowerCaseColumn}`)
-      suggestions.push(`List all ${lowerCaseColumn}`)
-    }
-
-    if (column.type === 'DATE') {
-      suggestions.push(`${titleCaseSubject} by month this year`)
-      suggestions.push(`Show ${lowerCaseSubject} in the last 2 weeks`)
-    }
-
-    if (column.type === 'DATE_STRING') {
-      suggestions.push(`Show ${lowerCaseSubject} by ${lowerCaseColumn}`)
-    }
-
-    if (column.type === 'DOLLAR_AMT') {
-      suggestions.push(`Total ${lowerCaseColumn} ${lowerCaseSubject}`)
-      suggestions.push(`Highest ${lowerCaseColumn} ${lowerCaseSubject}`)
-    }
-
-    if (column.type === 'QUANTITY') {
-      suggestions.push(`Average ${lowerCaseColumn} ${lowerCaseSubject}`)
-      suggestions.push(`Lowest ${lowerCaseColumn} ${lowerCaseSubject}`)
-    }
-
-    return (
-      <>
-        {suggestions.map((query, i) => {
-          return (
-            <div key={i} onClick={() => this.props.executeQuery(query)} className='data-explorer-tooltip-query'>
-              <Icon type='react-autoql-bubbles-outlined' /> {query}
-            </div>
-          )
-        })}
-      </>
     )
   }
 

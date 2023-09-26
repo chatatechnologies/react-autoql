@@ -2,7 +2,6 @@ import React from 'react'
 import axios from 'axios'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
-import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import Autosuggest from 'react-autosuggest'
 
@@ -10,12 +9,13 @@ import {
   fetchDataExplorerAutocomplete,
   fetchSubjectList,
   REQUEST_CANCELLED_ERROR,
-  DataExplorerTypes,
   animateInputText,
+  DataExplorerTypes,
+  parseJwt,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
-import { TopicName } from './TopicName'
+import { SubjectName } from './SubjectName'
 import { CustomScrollbars } from '../CustomScrollbars'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
@@ -28,7 +28,6 @@ export default class DataExplorerInput extends React.Component {
     super(props)
 
     this.componentKey = uuid()
-    this.dataExplorerRecentsId = `data-explorer-recent-${props.authentication?.domain}`
     this.userTypedValue = null
     this.userSelectedValue = null
     this.isDirty = false
@@ -36,7 +35,7 @@ export default class DataExplorerInput extends React.Component {
     this.state = {
       inputValue: '',
       loadingAutocomplete: false,
-      recentSearches: this.getRecentSearchesFromLocalStorage(),
+      recentSearches: this.getRecentSearchesFromLocalStorage(props),
       suggestions: [],
       allSubjects: [],
     }
@@ -71,13 +70,27 @@ export default class DataExplorerInput extends React.Component {
     clearTimeout(this.inputAnimationTimeout)
   }
 
-  getRecentSearchesFromLocalStorage = () => {
+  getRecentSearchesFromLocalStorage = (props) => {
     try {
-      const recentSearchesStr = localStorage.getItem(this.dataExplorerRecentsId)
+      const id = this.getRecentSelectionID(props)
+
+      if (!id) {
+        return []
+      }
+
+      const recentSearchesStr = localStorage.getItem(id)
       const recentSearchesArray = JSON.parse(recentSearchesStr)
 
-      if (recentSearchesArray?.constructor === Array && recentSearchesArray?.length) {
-        return recentSearchesArray
+      if (recentSearchesArray?.constructor !== Array || !recentSearchesArray?.length) {
+        return []
+      }
+
+      const filteredRecentSearchesArray = recentSearchesArray.filter((subject, i, self) => {
+        return self.findIndex((subj) => subj.displayName == subject.displayName) === i
+      })
+
+      if (filteredRecentSearchesArray?.length) {
+        return filteredRecentSearchesArray
       }
     } catch (error) {
       console.error(error)
@@ -86,10 +99,30 @@ export default class DataExplorerInput extends React.Component {
     return []
   }
 
+  getRecentSelectionID = (props) => {
+    if (!props?.authentication?.token) {
+      return
+    }
+
+    try {
+      const tokenInfo = parseJwt(props.authentication.token)
+      const id = `data-explorer-recent-${tokenInfo.user_id}-${tokenInfo.project_id}`
+      return id
+    } catch (error) {
+      console.error(error)
+      return
+    }
+  }
+
   setRecentSearchesInLocalStorage = () => {
     try {
+      const id = this.getRecentSelectionID(this.props)
+      if (!id) {
+        return
+      }
+
       const recentSearchesStr = JSON.stringify(this.state.recentSearches)
-      localStorage.setItem(this.dataExplorerRecentsId, recentSearchesStr)
+      localStorage.setItem(id, recentSearchesStr)
     } catch (error) {
       console.error(error)
     }
@@ -97,33 +130,17 @@ export default class DataExplorerInput extends React.Component {
 
   isAggSeed(subject) {
     return (
-      subject.display_name.toLowerCase().endsWith('by day') ||
-      subject.display_name.toLowerCase().endsWith('by week') ||
-      subject.display_name.toLowerCase().endsWith('by month') ||
-      subject.display_name.toLowerCase().endsWith('by year')
+      subject.displayName.toLowerCase().endsWith('by day') ||
+      subject.displayName.toLowerCase().endsWith('by week') ||
+      subject.displayName.toLowerCase().endsWith('by month') ||
+      subject.displayName.toLowerCase().endsWith('by year')
     )
   }
   fetchAllSubjects = () => {
     fetchSubjectList({ ...this.props.authentication })
-      .then((response) => {
-        const subjects = response?.data?.data?.subjects || []
-        let allSubjects = []
-        if (subjects.length) {
-          allSubjects = subjects
-            .map((subject) => {
-              return {
-                ...subject,
-                type: DataExplorerTypes.SUBJECT_TYPE,
-              }
-            })
-            .filter((subject) => !this.isAggSeed(subject))
-            .sort((a, b) => a.display_name.localeCompare(b.display_name))
-        }
-
+      .then((subjects) => {
         if (this._isMounted) {
-          this.setState({
-            allSubjects,
-          })
+          this.setState({ allSubjects: subjects })
         }
       })
       .catch((error) => console.error(error))
@@ -142,7 +159,7 @@ export default class DataExplorerInput extends React.Component {
 
   //   var reg = new RegExp(`^${input.toLowerCase()}`)
   //   return this.state.allSubjects.filter((subject) => {
-  //     const term = subject.display_name.toLowerCase()
+  //     const term = subject.displayName.toLowerCase()
   //     if (term.match(reg)) {
   //       return subject
   //     }
@@ -153,7 +170,7 @@ export default class DataExplorerInput extends React.Component {
     const recentSearches = _cloneDeep(this.state.recentSearches)
 
     // If value already exists in recent list, move it to the top
-    const index = recentSearches.findIndex((subj) => _isEqual(subj, subject))
+    const index = recentSearches.findIndex((subj) => subj.displayName == subject.displayName)
     if (index > -1) {
       recentSearches.splice(index, 1)
     }
@@ -171,7 +188,7 @@ export default class DataExplorerInput extends React.Component {
     if (this._isMounted) {
       this.userSelectedValue = null
       this.setState({
-        inputValue: subject.display_name,
+        inputValue: subject.displayName,
         recentSearches: this.getNewrecentSearches(subject),
       })
       this.props.onSelection(subject)
@@ -179,23 +196,23 @@ export default class DataExplorerInput extends React.Component {
   }
 
   submitRawText = (text = '', skipQueryValidation) => {
-    let subject = this.state.allSubjects.find(
-      (subj) => subj.display_name.toLowerCase().trim() === text.toLowerCase().trim(),
-    )
+    let subject = this.state.allSubjects.find((subj) => {
+      return subj.displayName?.toLowerCase().trim() === text.toLowerCase().trim()
+    })
 
     if (subject) {
       this.selectSubject(subject)
     } else {
       subject = {
-        type: 'text',
-        display_name: text,
+        type: DataExplorerTypes.TEXT_TYPE,
+        displayName: text,
       }
     }
 
     this.props.onSelection(subject, skipQueryValidation)
     this.setState({
       recentSearches: this.getNewrecentSearches(subject),
-      inputValue: subject.display_name,
+      inputValue: subject.displayName,
     })
   }
 
@@ -260,8 +277,9 @@ export default class DataExplorerInput extends React.Component {
 
   userSelectedSuggestionHandler = (selectedItem) => {
     this.userSelectedValue = selectedItem
-    if (selectedItem?.display_name && this._isMounted) {
-      this.setState({ inputValue: selectedItem.display_name })
+    const itemName = selectedItem?.displayName
+    if (itemName && this._isMounted) {
+      this.setState({ inputValue: itemName })
     }
   }
 
@@ -373,7 +391,7 @@ export default class DataExplorerInput extends React.Component {
     } else if (noSuggestions) {
       sections.push({
         title: `Related to "${this.state.loadingAutocompleteText}"`,
-        suggestions: [{ name: '' }],
+        suggestions: [{ displayName: '' }],
         emptyState: true,
       })
     }
@@ -382,7 +400,7 @@ export default class DataExplorerInput extends React.Component {
   }
 
   renderSuggestion = (suggestion) => {
-    return <TopicName topic={suggestion} />
+    return <SubjectName subject={suggestion} />
   }
 
   renderSuggestionsContainer = ({ containerProps, children }) => {

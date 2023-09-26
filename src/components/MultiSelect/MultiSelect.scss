@@ -1,0 +1,61 @@
+.react-autoql-multi-select-item-wrapper {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+
+  color: var(--react-autoql-text-color-primary);
+  padding: 7px 20px;
+  cursor: pointer;
+
+  &:hover,
+  &.react-autoql-multi-select-selected {
+    background: var(--react-autoql-hover-color);
+  }
+
+  .react-autoql-multi-select-item-checkbox {
+    flex: 0 0 auto;
+    margin-right: 10px;
+
+    .react-autoql-checkbox__input {
+      width: 12px;
+      height: 12px;
+    }
+  }
+  .react-autoql-multi-select-menu-item {
+    flex: 1;
+  }
+}
+
+.react-autoql-multi-select {
+  align-items: center;
+
+  .react-autoql-select-arrow {
+    flex: 0 0 auto;
+    padding-top: 0.2em;
+  }
+
+  .react-autoql-multi-select-text {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding-top: 0.1em;
+  }
+
+  .react-autoql-multi-select-badge {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    margin-left: 6px;
+    padding: 0.4em 0.6em;
+    border-radius: 2em;
+    line-height: 0.9em;
+    font-size: 0.9em;
+    font-weight: 600;
+
+    color: var(--react-autoql-text-color-accent);
+    background-color: var(--react-autoql-accent-color);
+  }
+}

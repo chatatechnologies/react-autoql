@@ -23,6 +23,8 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { dataFormattingType } from '../../props/types'
 
 import './DataPreview.scss'
+import { Select } from '../Select'
+import MultiSelect from '../MultiSelect/MultiSelect'
 
 export default class DataExplorer extends React.Component {
   constructor(props) {
@@ -95,7 +97,7 @@ export default class DataExplorer extends React.Component {
     this.setState({ loading: true, error: undefined, dataPreview: undefined, checkedColumns: [] })
     fetchDataPreview({
       ...this.props.authentication,
-      subject: this.props.subject?.name,
+      subject: this.props.subject?.context,
       numRows: this.DATA_PREVIEW_ROWS,
       source: 'data_explorer.data_preview',
       scope: 'data_explorer',
@@ -174,25 +176,37 @@ export default class DataExplorer extends React.Component {
     cells?.forEach((cell) => cell.classList.add('react-autoql-data-preview-hovered'))
   }
 
-  renderDataPreviewGrid = () => {
-    const rows = this.state.dataPreview?.data?.data?.rows
-    const columns = this.state.dataPreview?.data?.data?.columns
-
-    if (!this.state.error && (!columns || !rows)) {
-      return null
-    }
-
-    const config = getDataFormatting(this.props.dataFormatting)
-
+  renderDataPreviewHeader = (columns) => {
     return (
-      <div className='data-preview'>
-        {/* <CustomScrollbars> */}
-        <div className='data-preview-table-header'>
-          <span className='react-autoql-data-preview-selected-columns-text'>
-            {/* <Icon type='light-bulb' />  */}
-            Select fields to use in Sample Queries
-          </span>
-          {!!this.state.checkedColumns?.length && (
+      <div className='data-preview-table-header'>
+        <span className='react-autoql-data-preview-selected-columns-text'>
+          {/* <Icon type='light-bulb' />  */}
+          Select fields to use in Sample Queries
+        </span>
+        <span className='react-autoql-data-preview-selected-columns-selector'>
+          <MultiSelect
+            title='SELECT FIELDS'
+            size='small'
+            align='end'
+            // outlined={false}
+            options={columns?.map((col) => {
+              return {
+                value: col.name,
+                label: col.display_name,
+              }
+            })}
+            selected={this.state.checkedColumns.map((index) => columns[index]?.name)}
+            onChange={(checkedColumnNames) => {
+              const checkedColumnIndexes = checkedColumnNames.map((name) =>
+                columns.findIndex((col) => name === col.name),
+              )
+              this.setState({
+                checkedColumns: checkedColumnIndexes,
+              })
+            }}
+          />
+        </span>
+        {/* {!!this.state.checkedColumns?.length && (
             <span
               className='react-autoql-data-preview-selected-columns-clear-btn'
               onClick={() => this.setState({ checkedColumns: [] })}
@@ -202,71 +216,97 @@ export default class DataExplorer extends React.Component {
                 {this.state.checkedColumns.length}
               </span>
             </span>
-          )}
-        </div>
-        <div className='data-preview-table-wrapper'>
-          {!!this.state.error ? (
-            <div className='data-preview-error-message'>
-              <div>{this.state.error.message}</div>
-              {this.state.error.reference_id && (
-                <>
-                  <br />
-                  <div>Error ID: {this.state.error.reference_id}</div>
-                </>
-              )}
-            </div>
-          ) : (
-            <table>
-              <thead>
-                <tr>
-                  {columns.map((col, i) => {
-                    return (
-                      <th
-                        id={`col-header-${i}`}
-                        key={`col-header-${i}`}
-                        className={`data-preview-column ${
-                          this.state.checkedColumns.includes(i)
-                            ? 'data-preview-column-selected'
-                            : 'data-preview-column-unselected'
-                        }`}
-                        onClick={() => this.onColumnHeaderClick(i)}
-                        onMouseOver={(e) => this.onMouseOverColumn(e, i)}
-                      >
-                        {this.formatColumnHeader(col, i)}
-                      </th>
-                    )
-                  })}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, i) => {
+          )} */}
+      </div>
+    )
+  }
+
+  renderDataPreviewTable = (columns, rows) => {
+    const config = getDataFormatting(this.props.dataFormatting)
+
+    return (
+      <div className='data-preview-table-wrapper'>
+        {!!this.state.error ? (
+          <div className='data-preview-error-message'>
+            <div>{this.state.error.message}</div>
+            {this.state.error.reference_id && (
+              <>
+                <br />
+                <div>Error ID: {this.state.error.reference_id}</div>
+              </>
+            )}
+          </div>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                {columns.map((col, i) => {
                   return (
-                    <tr key={`row-${i}`} className='data-preview-row'>
-                      {row.map((cell, j) => {
-                        const column = columns[j]
-                        return (
-                          <td
-                            className={`data-preview-cell ${
-                              this.state.checkedColumns.includes(j)
-                                ? 'data-preview-cell-selected'
-                                : 'data-preview-cell-unselected'
-                            } cell-${j}`}
-                            onClick={() => this.onColumnHeaderClick(j)}
-                            onMouseOver={(e) => this.onMouseOverColumn(e, j)}
-                            key={`cell-${j}`}
-                          >
-                            {this.formatCell({ cell, column, config })}
-                          </td>
-                        )
-                      })}
-                    </tr>
+                    <th
+                      id={`col-header-${i}`}
+                      key={`col-header-${i}`}
+                      className={`data-preview-column ${
+                        this.state.checkedColumns.includes(i)
+                          ? 'data-preview-column-selected'
+                          : 'data-preview-column-unselected'
+                      }`}
+                      onClick={() => this.onColumnHeaderClick(i)}
+                      onMouseOver={(e) => this.onMouseOverColumn(e, i)}
+                    >
+                      {this.formatColumnHeader(col, i)}
+                    </th>
                   )
                 })}
-              </tbody>
-            </table>
-          )}
-        </div>
-        {/* </CustomScrollbars> */}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => {
+                return (
+                  <tr key={`row-${i}`} className='data-preview-row'>
+                    {row.map((cell, j) => {
+                      const column = columns[j]
+                      return (
+                        <td
+                          className={`data-preview-cell ${
+                            this.state.checkedColumns.includes(j)
+                              ? 'data-preview-cell-selected'
+                              : 'data-preview-cell-unselected'
+                          } cell-${j}`}
+                          onClick={() => this.onColumnHeaderClick(j)}
+                          onMouseOver={(e) => this.onMouseOverColumn(e, j)}
+                          key={`cell-${j}`}
+                        >
+                          {this.formatCell({ cell, column, config })}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                )
+              })}
+              <tr className='data-preview-end-of-preview-message'>
+                <td className='data-preveiew-end-of-preview-sticky-wrapper' colspan={`${columns.length}`}>
+                  End of Preview
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        )}
+      </div>
+    )
+  }
+
+  renderDataPreviewGrid = () => {
+    const rows = this.state.dataPreview?.data?.data?.rows
+    const columns = this.state.dataPreview?.data?.data?.columns
+
+    if (!this.state.error && (!columns || !rows)) {
+      return null
+    }
+
+    return (
+      <div className='data-preview'>
+        {this.renderDataPreviewHeader(columns)}
+        {this.renderDataPreviewTable(columns, rows)}
       </div>
     )
   }
@@ -280,7 +320,7 @@ export default class DataExplorer extends React.Component {
   }
 
   renderDataPreviewTitle = () => {
-    const lowerCaseSubject = this.props.subject?.name
+    const lowerCaseSubject = this.props.subject?.displayName
     const titleCaseSubject = lowerCaseSubject[0].toUpperCase() + lowerCaseSubject.substring(1)
 
     return (
