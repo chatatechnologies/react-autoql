@@ -57,10 +57,6 @@ export default class QuerySuggestionList extends React.Component {
     }
   }
 
-  updateResults = ({ selectedColumns }) => {
-    console.log('UPDATING SAMPLE QUERIES', { selectedColumns })
-  }
-
   loadMore = (page) => {
     if (
       this.state.loading ||

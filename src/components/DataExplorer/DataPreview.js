@@ -11,6 +11,7 @@ import {
   formatElement,
   getDataFormatting,
   dataFormattingDefault,
+  getTitleCase,
 } from 'autoql-fe-utils'
 
 // import { CustomScrollbars } from '../CustomScrollbars'
@@ -151,7 +152,6 @@ export default class DataExplorer extends React.Component {
       selectedColumns.push(index)
     }
 
-    console.log('new column selection:', _cloneDeep(selectedColumns), 'old selection', this.props.selectedColumns)
     this.props.onColumnSelection(selectedColumns)
   }
 
@@ -245,7 +245,7 @@ export default class DataExplorer extends React.Component {
                 )
               })}
               <tr className='data-preview-end-of-preview-message'>
-                <td className='data-preveiew-end-of-preview-sticky-wrapper' colspan={`${columns.length}`}>
+                <td className='data-preveiew-end-of-preview-sticky-wrapper' colSpan={`${columns.length}`}>
                   End of Preview
                 </td>
               </tr>
@@ -281,8 +281,8 @@ export default class DataExplorer extends React.Component {
   }
 
   renderDataPreviewTitle = () => {
-    const lowerCaseSubject = this.props.subject?.displayName
-    const titleCaseSubject = lowerCaseSubject[0].toUpperCase() + lowerCaseSubject.substring(1)
+    const subject = this.props.subject?.displayName
+    const titleCaseSubject = getTitleCase(subject)
 
     return (
       <div className='react-autoql-data-explorer-section-title'>

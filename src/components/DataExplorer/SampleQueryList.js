@@ -1,14 +1,14 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
-import { fetchDataExplorerSuggestionsV2 } from 'autoql-fe-utils'
+import { fetchDataExplorerSuggestionsV2, getTitleCase } from 'autoql-fe-utils'
 
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { LoadingDots } from '../LoadingDots'
 
 import './SampleQueryList.scss'
 
-export default class QuerySuggestionList extends React.Component {
+export default class SampleQueryList extends React.Component {
   constructor(props) {
     super(props)
 
@@ -22,7 +22,7 @@ export default class QuerySuggestionList extends React.Component {
   static propTypes = {
     searchText: PropTypes.string,
     subject: PropTypes.shape({}),
-    columns: [],
+    columns: PropTypes.array,
     valueLabel: PropTypes.shape({}),
     skipQueryValidation: PropTypes.bool,
     onSuggestionListResponse: PropTypes.func,
@@ -62,6 +62,7 @@ export default class QuerySuggestionList extends React.Component {
     }
 
     const newState = {
+      loading: true,
       validationResponse: undefined,
     }
 
@@ -125,7 +126,7 @@ export default class QuerySuggestionList extends React.Component {
   }
 
   renderSampleQuery = (suggestion) => {
-    const queryText = suggestion.query
+    const queryText = getTitleCase(suggestion.query)
     const selectValues = suggestion.values
 
     return queryText

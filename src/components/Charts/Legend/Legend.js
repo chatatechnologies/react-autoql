@@ -15,6 +15,7 @@ import {
   AGG_TYPES,
   getLegendLabelsForMultiSeries,
   mergeBoundingClientRects,
+  getTitleCase,
 } from 'autoql-fe-utils'
 
 export default class Legend extends React.Component {
@@ -322,14 +323,6 @@ export default class Legend extends React.Component {
     }
   }
 
-  getLegendTitleCase = (title) => {
-    if (title?.length < 2) {
-      return title
-    }
-
-    return title[0].toUpperCase() + title.substring(1)
-  }
-
   getLegendTitleFromColumns = (columnIndices) => {
     if (this.props.isAggregated) {
       return this.props.legendColumn?.display_name ?? 'Legend'
@@ -374,7 +367,7 @@ export default class Legend extends React.Component {
       const legendElement = this.legendElements[sectionIndex]
       const isSecondLegend = legendNumber === 2
       const allLabels = legendNumber === 2 ? this.legendLabels2 : this.legendLabels1
-      const title = this.getLegendTitleCase(this.getLegendTitleFromColumns(columnIndices))
+      const title = getTitleCase(this.getLegendTitleFromColumns(columnIndices))
       const legendScale = this.getLegendScale(legendLabels)
       const maxSectionWidth = this.getMaxSectionWidth()
 

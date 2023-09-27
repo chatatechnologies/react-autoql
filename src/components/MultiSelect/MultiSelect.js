@@ -25,7 +25,7 @@ export default class MultiSelect extends React.Component {
     onChange: PropTypes.func,
     options: PropTypes.arrayOf(PropTypes.shape({})),
     popupClassname: PropTypes.string,
-    selected: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    selected: PropTypes.arrayOf(PropTypes.string),
     label: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
     title: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
     size: PropTypes.string,
@@ -133,6 +133,7 @@ export default class MultiSelect extends React.Component {
           {this.props.options?.map((option, i) => {
             return (
               <div
+                key={`${option.value}-${i}`}
                 className={`react-autoql-multi-select-item-wrapper${
                   this.props.selected.includes(option.value) ? ' react-autoql-multi-select-selected' : ''
                 }`}
