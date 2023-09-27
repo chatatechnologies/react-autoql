@@ -13,7 +13,7 @@ import {
   formatTableParams,
   getFilterPrecision,
   DAYJS_PRECISION_FORMATS,
-  getAuthentication
+  getAuthentication,
 } from 'autoql-fe-utils'
 
 import { Button } from '../Button'
@@ -260,9 +260,7 @@ export default class ChataTable extends React.Component {
   }
 
   updateData = (data, useInfiniteScroll) => {
-    if (data?.length === this.props.totalRows) {
-      this.setInfiniteScroll(false)
-    } else if (useInfiniteScroll) {
+    if (useInfiniteScroll) {
       this.setInfiniteScroll(true)
     }
 
