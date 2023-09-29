@@ -146,7 +146,6 @@ export default class DataAlertSettings extends React.Component {
 
     return {
       id: this.props.currentDataAlert?.id,
-      data_return_query: this.props.currentDataAlert?.data_return_query,
       title: this.state.titleInput,
       message: this.state.messageInput,
       expression: _cloneDeep(this.state.expression),
