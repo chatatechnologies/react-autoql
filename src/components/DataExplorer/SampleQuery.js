@@ -6,6 +6,7 @@ import { SampleQueryReplacementTypes, getSampleQueryText, getTitleCase } from 'a
 import { Select } from '../Select'
 import { Input } from '../Input'
 import { Icon } from '../Icon'
+import { VLAutocompleteInput } from '../VLAutocompleteInput'
 
 export default class SampleQuery extends React.Component {
   constructor(props) {
@@ -97,27 +98,46 @@ export default class SampleQuery extends React.Component {
             ]
 
             chunkContent = (
-              <Select
-                size='small'
-                showArrow={false}
-                outlined={false}
-                options={options}
+              <VLAutocompleteInput
+                authentication={this.props.authentication}
                 placeholder='Select a Data Value'
-                value={this.state.values[chunk.name]?.value ?? undefined}
-                onChange={(value) => {
-                  if (Object.keys(this.state.values).includes(chunk.name)) {
-                    const values = _cloneDeep(this.state.values)
-                    const foundOption = options.find((option) => option.value === value)
-                    if (foundOption && values?.[chunk.name]) {
-                      values[chunk.name].value = foundOption.value
-                      values[chunk.name].replacement = foundOption.replacement
-                    }
-
-                    this.setState({ values })
+                value={this.state.values[chunk.name]?.replacement ?? undefined}
+                onChange={(vl) => {
+                  const values = {
+                    ...this.state.values,
+                    [chunk.name]: {
+                      ...this.state.values[chunk.name],
+                      value: vl.format_txt,
+                      replacement: vl,
+                    },
                   }
+                  this.setState({ values })
                 }}
               />
             )
+
+            // chunkContent = (
+            //   <Select
+            //     size='small'
+            //     showArrow={false}
+            //     outlined={false}
+            //     options={options}
+            //     placeholder='Select a Data Value'
+            //     value={this.state.values[chunk.name]?.value ?? undefined}
+            //     onChange={(value) => {
+            //       if (Object.keys(this.state.values).includes(chunk.name)) {
+            //         const values = _cloneDeep(this.state.values)
+            //         const foundOption = options.find((option) => option.value === value)
+            //         if (foundOption && values?.[chunk.name]) {
+            //           values[chunk.name].value = foundOption.value
+            //           values[chunk.name].replacement = foundOption.replacement
+            //         }
+
+            //         this.setState({ values })
+            //       }
+            //     }}
+            //   />
+            // )
           } else if (chunk.type == SampleQueryReplacementTypes.SAMPLE_QUERY_AMOUNT_TYPE) {
             // chunkContent = <Input type='number' initialValue={chunk.value} />
             chunkContent = (

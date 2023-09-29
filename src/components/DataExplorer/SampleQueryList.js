@@ -175,6 +175,7 @@ export default class SampleQueryList extends React.Component {
           return (
             <SampleQuery
               key={i}
+              authentication={this.props.authentication}
               suggestion={suggestion}
               executeQuery={this.props.executeQuery}
               tooltipID={this.props.tooltipID}

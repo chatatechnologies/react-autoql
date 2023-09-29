@@ -601,30 +601,31 @@ export default class FilterLockPopover extends React.Component {
 
   renderVLInput = () => {
     return (
-      <Autosuggest
-        id='react-autoql-filter-menu-input'
-        highlightFirstSuggestion
-        suggestions={this.getSuggestions()}
-        renderSuggestion={this.renderSuggestion}
-        getSuggestionValue={this.getSuggestionValue}
-        onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
-        onSuggestionsClearRequested={this.onSuggestionsClearRequested}
-        renderSuggestionsContainer={this.renderSuggestionsContainer}
-        getSectionSuggestions={(section) => {
-          return section.suggestions
-        }}
-        renderSectionTitle={this.renderSectionTitle}
-        multiSection={true}
-        inputProps={{
-          onChange: this.onInputChange,
-          value: this.state.inputValue,
-          disabled: this.props.isFetchingFilters || this.state.isFetchingFilters,
-          placeholder: 'Search & select a filter',
-          ['data-test']: 'react-autoql-filter-locking-input',
-          className: 'react-autoql-filter-locking-input',
-          id: 'react-autoql-filter-menu-input',
-        }}
-      />
+      <span className='react-autoql-vl-autocomplete-input-wrapper'>
+        <Autosuggest
+          id='react-autoql-filter-menu-input'
+          className='react-autoql-vl-autocomplete-input'
+          highlightFirstSuggestion
+          suggestions={this.getSuggestions()}
+          renderSuggestion={this.renderSuggestion}
+          getSuggestionValue={this.getSuggestionValue}
+          onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
+          onSuggestionsClearRequested={this.onSuggestionsClearRequested}
+          renderSuggestionsContainer={this.renderSuggestionsContainer}
+          getSectionSuggestions={(section) => section.suggestions}
+          renderSectionTitle={this.renderSectionTitle}
+          multiSection={true}
+          inputProps={{
+            onChange: this.onInputChange,
+            value: this.state.inputValue,
+            disabled: this.props.isFetchingFilters || this.state.isFetchingFilters,
+            placeholder: 'Search & select a filter',
+            ['data-test']: 'react-autoql-vl-autocomplete-input',
+            className: 'react-autoql-vl-autocomplete-input',
+            id: 'react-autoql-filter-menu-input',
+          }}
+        />
+      </span>
     )
   }
 
