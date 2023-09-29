@@ -174,7 +174,11 @@ export default class DataExplorer extends React.Component {
     cells?.forEach((cell) => cell.classList.add('react-autoql-data-preview-hovered'))
   }
 
-  renderDataPreviewHeader = (columns) => {
+  renderDataPreviewCaption = (columns) => {
+    if (!columns) {
+      return null
+    }
+
     return (
       <div className='data-preview-table-header'>
         <span className='react-autoql-data-preview-selected-columns-text'>Select fields to use in Sample Queries</span>
@@ -182,92 +186,99 @@ export default class DataExplorer extends React.Component {
     )
   }
 
-  renderDataPreviewTable = (columns, rows) => {
-    const config = getDataFormatting(this.props.dataFormatting)
-
-    return (
-      <div className='data-preview-table-wrapper'>
-        {!!this.state.error ? (
-          <div className='data-preview-error-message'>
-            <div>{this.state.error.message}</div>
-            {this.state.error.reference_id && (
-              <>
-                <br />
-                <div>Error ID: {this.state.error.reference_id}</div>
-              </>
-            )}
-          </div>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                {columns.map((col, i) => {
-                  return (
-                    <th
-                      id={`col-header-${i}`}
-                      key={`col-header-${i}`}
-                      className={`data-preview-column ${
-                        this.props.selectedColumns.includes(i)
-                          ? 'data-preview-column-selected'
-                          : 'data-preview-column-unselected'
-                      }`}
-                      onClick={() => this.onColumnHeaderClick(i)}
-                      onMouseOver={(e) => this.onMouseOverColumn(e, i)}
-                    >
-                      {this.formatColumnHeader(col, i)}
-                    </th>
-                  )
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, i) => {
-                return (
-                  <tr key={`row-${i}`} className='data-preview-row'>
-                    {row.map((cell, j) => {
-                      const column = columns[j]
-                      return (
-                        <td
-                          className={`data-preview-cell ${
-                            this.props.selectedColumns.includes(j)
-                              ? 'data-preview-cell-selected'
-                              : 'data-preview-cell-unselected'
-                          } cell-${j}`}
-                          onClick={() => this.onColumnHeaderClick(j)}
-                          onMouseOver={(e) => this.onMouseOverColumn(e, j)}
-                          key={`cell-${j}`}
-                        >
-                          {this.formatCell({ cell, column, config })}
-                        </td>
-                      )
-                    })}
-                  </tr>
-                )
-              })}
-              <tr className='data-preview-end-of-preview-message'>
-                <td className='data-preveiew-end-of-preview-sticky-wrapper' colSpan={`${columns.length}`}>
-                  End of Preview
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        )}
-      </div>
-    )
-  }
+  renderDataPreviewTable = (columns, rows) => {}
 
   renderDataPreviewGrid = () => {
     const rows = this.state.dataPreview?.data?.data?.rows
     const columns = this.state.dataPreview?.data?.data?.columns
 
-    if (!this.state.error && (!columns || !rows)) {
-      return null
-    }
+    // if (this.state.error || !columns || !rows) {
+    //   return (
+    //     <div className='data-preview-error-message'>
+    //       <p>
+    //         {this.state.error?.message ?? 'Oops... Something went wrong and we were unable to fetch your Data Preview.'}
+    //       </p>
+    //       {this.state.error?.reference_id ? <p>Error ID: {this.state.error.reference_id}</p> : null}
+    //       <p>
+    //         <a onClick={this.getDataPreview}>Try again</a>
+    //       </p>
+    //     </div>
+    //   )
+    // }
+
+    const config = getDataFormatting(this.props.dataFormatting)
 
     return (
       <div className='data-preview'>
-        {this.renderDataPreviewHeader(columns)}
-        {this.renderDataPreviewTable(columns, rows)}
+        <div className='data-preview-table-wrapper'>
+          {this.state.error || !columns || !rows ? (
+            <div className='data-preview-error-message'>
+              <p>
+                {this.state.error?.message ??
+                  'Oops... Something went wrong and we were unable to fetch your Data Preview.'}
+              </p>
+              {this.state.error?.reference_id ? <p>Error ID: {this.state.error.reference_id}</p> : null}
+              <p>
+                <a onClick={this.getDataPreview}>Try again</a>
+              </p>
+            </div>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  {columns.map((col, i) => {
+                    return (
+                      <th
+                        id={`col-header-${i}`}
+                        key={`col-header-${i}`}
+                        className={`data-preview-column ${
+                          this.props.selectedColumns.includes(i)
+                            ? 'data-preview-column-selected'
+                            : 'data-preview-column-unselected'
+                        }`}
+                        onClick={() => this.onColumnHeaderClick(i)}
+                        onMouseOver={(e) => this.onMouseOverColumn(e, i)}
+                      >
+                        {this.formatColumnHeader(col, i)}
+                      </th>
+                    )
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, i) => {
+                  return (
+                    <tr key={`row-${i}`} className='data-preview-row'>
+                      {row.map((cell, j) => {
+                        const column = columns[j]
+                        return (
+                          <td
+                            className={`data-preview-cell ${
+                              this.props.selectedColumns.includes(j)
+                                ? 'data-preview-cell-selected'
+                                : 'data-preview-cell-unselected'
+                            } cell-${j}`}
+                            onClick={() => this.onColumnHeaderClick(j)}
+                            onMouseOver={(e) => this.onMouseOverColumn(e, j)}
+                            key={`cell-${j}`}
+                          >
+                            {this.formatCell({ cell, column, config })}
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  )
+                })}
+                <tr className='data-preview-end-of-preview-message'>
+                  <td className='data-preveiew-end-of-preview-sticky-wrapper' colSpan={`${columns.length}`}>
+                    End of Preview
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          )}
+        </div>
+        {this.renderDataPreviewCaption(columns)}
       </div>
     )
   }

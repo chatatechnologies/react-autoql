@@ -10,6 +10,7 @@
     font-size: 13px;
     margin-top: 20px;
     margin-bottom: 10px;
+    padding: 0 25px;
   }
 
   .data-explorer-data-preview {
@@ -61,7 +62,6 @@
           font-size: 13px;
           min-width: 100%;
           border-collapse: collapse;
-          background-color: var(--react-autoql-hover-color);
 
           &:hover {
             // If hovering the table AND hovering a column, highlight header and cells in column

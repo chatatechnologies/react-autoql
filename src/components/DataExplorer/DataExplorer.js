@@ -156,7 +156,7 @@ export default class DataExplorer extends React.Component {
 
     return (
       <div className='react-autoql-data-explorer-title-text'>
-        <span>Sample Queries</span>
+        <span className='react-autoql-data-explorer-title-text-sample-queries'>Sample Queries</span>
         {columns?.length ? (
           <span className='react-autoql-data-preview-selected-columns-selector'>
             <MultiSelect
@@ -214,6 +214,7 @@ export default class DataExplorer extends React.Component {
             executeQuery={this.props.executeQuery}
             skipQueryValidation={this.state.skipQueryValidation}
             userSelection={this.state.userSelection}
+            tooltipID={this.props.tooltipID}
             onValidationSuggestionClick={this.onValidationSuggestionClick}
             onSuggestionListResponse={() => {
               this.reloadScrollbars()

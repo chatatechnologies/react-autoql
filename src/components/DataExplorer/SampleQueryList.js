@@ -1,12 +1,15 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
-import { fetchDataExplorerSuggestionsV2, getTitleCase } from 'autoql-fe-utils'
+import { SampleQueryReplacementTypes, fetchDataExplorerSuggestionsV2, getTitleCase } from 'autoql-fe-utils'
 
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { LoadingDots } from '../LoadingDots'
+import { Select } from '../Select'
+import { Input } from '../Input'
 
 import './SampleQueryList.scss'
+import SampleQuery from './SampleQuery'
 
 export default class SampleQueryList extends React.Component {
   constructor(props) {
@@ -40,6 +43,7 @@ export default class SampleQueryList extends React.Component {
   }
 
   componentDidMount = () => {
+    this._isMounted = true
     this.getSampleQueries()
   }
 
@@ -54,6 +58,12 @@ export default class SampleQueryList extends React.Component {
         this.getSampleQueries()
       })
     }
+  }
+
+  componentWillUnmount = () => {
+    this._isMounted = false
+
+    clearTimeout(this.scrollbarTimeout)
   }
 
   getSampleQueries = () => {
@@ -82,31 +92,27 @@ export default class SampleQueryList extends React.Component {
       skipQueryValidation: this.props.skipQueryValidation,
     })
       .then((response) => {
-        this.props.onSuggestionListResponse({ response })
-        const finishedState = {
-          loading: false,
-        }
-        if (response?.data?.data?.replacements) {
-          finishedState.validationResponse = response
-        } else {
-          const newQueries = response?.data?.data?.suggestions || []
-          if (!this.state.queryList) {
-            finishedState.queryList = newQueries
-          } else {
-            const newQueryList = this.state.queryList.concat(newQueries)
-            finishedState.queryList = newQueryList
+        if (this._isMounted) {
+          this.props.onSuggestionListResponse({ response })
+          const finishedState = {
+            loading: false,
           }
-          finishedState.keywords = searchText
-        }
+          if (response?.data?.data?.replacements) {
+            finishedState.validationResponse = response
+          } else {
+            finishedState.queryList = response?.data?.data?.suggestions || []
+            finishedState.keywords = searchText
+          }
 
-        this.setState(finishedState)
-        return
+          return this.setState(finishedState)
+        }
       })
       .catch((error) => {
         console.error(error)
-        this.props.onSuggestionListResponse({ error })
-        this.setState({ loading: false })
-        return
+        if (this._isMounted) {
+          this.props.onSuggestionListResponse({ error })
+          return this.setState({ loading: false })
+        }
       })
   }
 
@@ -115,7 +121,7 @@ export default class SampleQueryList extends React.Component {
   }
 
   updateScrollbars = () => {
-    setTimeout(this.infiniteScroll?.updateScrollbars, 400)
+    this.scrollbarTimeout = setTimeout(this.infiniteScroll?.updateScrollbars, 400)
   }
 
   clearQueryList = () => {
@@ -123,13 +129,6 @@ export default class SampleQueryList extends React.Component {
       queryList: undefined,
       validationResponse: undefined,
     })
-  }
-
-  renderSampleQuery = (suggestion) => {
-    const queryText = getTitleCase(suggestion.query)
-    const selectValues = suggestion.values
-
-    return queryText
   }
 
   render = () => {
@@ -172,11 +171,14 @@ export default class SampleQueryList extends React.Component {
 
     return (
       <div className='query-suggestion-list'>
-        {this.state.queryList.map((query, i) => {
+        {this.state.queryList.map((suggestion, i) => {
           return (
-            <div className='data-explorer-sample-query' key={`sample-query-${i}`}>
-              <div className='query-suggestion-text'>{this.renderSampleQuery(query)}</div>
-            </div>
+            <SampleQuery
+              key={i}
+              suggestion={suggestion}
+              executeQuery={this.props.executeQuery}
+              tooltipID={this.props.tooltipID}
+            />
           )
         })}
       </div>

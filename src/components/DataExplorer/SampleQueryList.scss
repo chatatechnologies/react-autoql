@@ -3,10 +3,112 @@
   flex: 1;
 
   .data-explorer-sample-query {
+    display: flex;
     position: relative;
-    padding: 5px 10px;
+    flex-direction: row;
+    justify-content: space-between;
+    font-size: 14px;
+    padding: 5px;
+    letter-spacing: 0.02em;
+
+    &:not(:last-child) {
+      border-bottom: 1px solid var(--react-autoql-background-color-disabled);
+    }
 
     &:hover {
+      .query-suggestion-send-btn {
+        opacity: 1;
+      }
+    }
+
+    .query-suggestion-text {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+
+      .data-explorer-sample-chunk {
+      }
+    }
+
+    .query-suggestion-send-btn {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      position: relative;
+      display: flex;
+      font-size: 19px;
+      margin: 10px;
+      width: 30px;
+      height: 30px;
+      z-index: 1;
+      border-radius: 50%;
+      box-shadow: var(--react-autoql-box-shadow-1);
+      color: var(--react-autoql-text-color-accent);
+      background-color: var(--react-autoql-accent-color);
+      transition: background-color 0.1s, color 0.1s, font-size 0.1s;
+      cursor: pointer;
+
+      opacity: 0;
+
+      svg {
+        padding-right: 2px;
+      }
+
+      &::before,
+      &::after {
+        content: '';
+        pointer-events: none;
+        position: absolute;
+        box-sizing: content-box;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background-color: transparent;
+        transition: transform 0.1s, opacity 0.1s;
+        opacity: 0;
+      }
+
+      &::before {
+        top: -7px;
+        left: -7px;
+        padding: 5px;
+        border: 2px solid var(--react-autoql-accent-color);
+        box-shadow: var(--react-autoql-box-shadow-1);
+        transform: scale(0.6);
+      }
+
+      &::after {
+        top: -3px;
+        left: -3px;
+        padding: 0;
+        border: 3px solid var(--react-autoql-accent-color);
+        box-shadow: var(--react-autoql-box-shadow-1);
+        background-color: transparent;
+        transform: scale(0.8);
+      }
+
+      &:hover {
+        font-size: 23px;
+
+        &::before,
+        &::after {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+    }
+
+    .react-autoql-select-and-label {
+      color: var(--react-autoql-accent-color);
+      border-bottom: 1px solid var(--react-autoql-accent-color);
+      height: 1.5em;
+      margin: 0 5px;
+      margin-top: 3px;
+      padding: 2px;
+
+      .react-autoql-select-text {
+        line-height: 1em;
+      }
     }
   }
 }
