@@ -24,7 +24,6 @@ export default class AppearanceSection extends React.Component {
     titleInput: '',
     messageInput: '',
     showConditionStatement: true,
-    queryText: '',
     onTitleInputChange: () => {},
     onMessageInputChange: () => {},
   }
