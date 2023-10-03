@@ -173,6 +173,16 @@ export default class RuleSimple extends React.Component {
 
   getJSON = () => {
     const { secondInputValue } = this.state
+    let secondTermValue = secondInputValue
+    const percentageNumberRegex = /^\-?\d+(\.\d+)?%$/
+    const percentageWithMissingFractionRegex = /^\d+\.%$/
+    if (percentageNumberRegex.test(secondInputValue)) {
+      const percentage = parseFloat(secondInputValue)
+      secondTermValue = percentage / 100
+    } else if (percentageWithMissingFractionRegex.test(secondInputValue)) {
+      let numberPart = parseFloat(secondInputValue.replace('.%', ''))
+      secondTermValue = numberPart / 100
+    }
 
     const userSelection = this.props.queryResponse?.data?.data?.fe_req?.disambiguation
     const tableFilters = this.state.queryFilters?.filter((f) => f.type === 'table')
@@ -195,7 +205,7 @@ export default class RuleSimple extends React.Component {
         id: this.TERM_ID_2,
         term_type: this.state.secondTermType,
         condition: 'TERMINATOR',
-        term_value: secondInputValue,
+        term_value: secondTermValue,
       }
 
       if (this.state.secondTermType === QUERY_TERM_TYPE) {
@@ -462,8 +472,15 @@ export default class RuleSimple extends React.Component {
     if (!secondInputValue?.length) {
       newState.secondQueryValidating = false
     }
-
-    this.setState(newState)
+    if (this.state.secondTermType === NUMBER_TERM_TYPE) {
+      const numberRegex = /^-?(\d+\.\d+|\d+\.?\d*)(%?)$/
+      // This regex matches positive integers, decimals, and percentages. It allows % sign at the end rather than the beginning.
+      if (numberRegex.test(secondInputValue) || secondInputValue === '') {
+        this.setState(newState)
+      }
+    } else {
+      this.setState(newState)
+    }
   }
 
   getChunkedInterpretationText = () => {
@@ -841,7 +858,7 @@ export default class RuleSimple extends React.Component {
         spellCheck={false}
         placeholder={this.getSecondInputPlaceholder()}
         value={this.state.secondInputValue}
-        type={this.state.secondTermType === NUMBER_TERM_TYPE ? 'number' : undefined}
+        type={this.state.secondTermType === NUMBER_TERM_TYPE ? 'text' : undefined}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             this.props.onLastInputEnterPress()
