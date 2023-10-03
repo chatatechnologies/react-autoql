@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { DateRange } from 'react-date-range'
-import { PRECISION_TYPES, getThemeValue } from 'autoql-fe-utils'
+import { PrecisionTypes, getThemeValue } from 'autoql-fe-utils'
 
 import MonthRange from './MonthRangePicker'
 import YearRange from './YearRangePicker'
@@ -34,7 +34,7 @@ export default class DateRangePicker extends React.Component {
   static defaultProps = {
     initialRange: undefined,
     validRange: undefined,
-    type: PRECISION_TYPES.DAY,
+    type: PrecisionTypes.DAY,
   }
 
   handleSelect = (ranges) => {
@@ -45,7 +45,7 @@ export default class DateRangePicker extends React.Component {
 
   renderDateRangePicker = () => {
     switch (this.props.type) {
-      case PRECISION_TYPES.MONTH || PRECISION_TYPES.QUARTER: {
+      case PrecisionTypes.MONTH || PrecisionTypes.QUARTER: {
         return (
           <MonthRange
             onRangeSelection={(selection) => this.props.onSelection(selection)}
@@ -55,7 +55,7 @@ export default class DateRangePicker extends React.Component {
           />
         )
       }
-      case PRECISION_TYPES.YEAR: {
+      case PrecisionTypes.YEAR: {
         return (
           <YearRange
             onRangeSelection={(selection) => this.props.onSelection(selection)}
