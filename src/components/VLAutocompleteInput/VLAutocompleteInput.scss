@@ -49,6 +49,7 @@
 
     .react-autosuggest__suggestions-list {
       overflow: auto;
+      margin: 3px 0;
     }
 
     .react-autoql-vl-autocomplete-input-wrapper {
@@ -92,7 +93,9 @@
           }
 
           .filter-lock-suggestion-item {
-            padding-left: 10px;
+            padding: 4px 10px;
+            display: block;
+            margin: 0;
           }
 
           .filter-locking-no-suggestions-text {

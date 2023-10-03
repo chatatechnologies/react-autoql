@@ -295,16 +295,14 @@ export default class VLAutocompleteInput extends React.Component {
     }
 
     return (
-      <ul
+      <span
         className='filter-lock-suggestion-item'
         data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
         data-tooltip-delay-show={800}
         data-tooltip-html={`${displayName} <em>${displayNameType}</em>`}
       >
-        <span>
-          {displayName} <em>{displayNameType}</em>
-        </span>
-      </ul>
+        {displayName} <em>{displayNameType}</em>
+      </span>
     )
   }
 
@@ -402,7 +400,6 @@ export default class VLAutocompleteInput extends React.Component {
               className: 'react-autoql-vl-autocomplete-input',
               id: 'react-autoql-filter-menu-input',
               onFocus: this.onInputFocus,
-              //   onBlur: this.onInputBlur,
             }}
           />
         </span>

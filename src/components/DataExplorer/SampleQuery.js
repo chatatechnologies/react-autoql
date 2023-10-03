@@ -64,11 +64,15 @@ export default class SampleQuery extends React.Component {
     this.props.executeQuery(queryRequestParams)
   }
 
-  onVLSelection = (vl) => {
+  onVLSelection = (vl, chunkName) => {
+    if (!this.state.values?.[chunkName] || !vl?.format_txt) {
+      return
+    }
+
     const values = {
-      ...this.state.values,
-      [chunk.name]: {
-        ...this.state.values[chunk.name],
+      ...(this.state.values ?? {}),
+      [chunkName]: {
+        ...this.state.values[chunkName],
         value: vl.format_txt,
         replacement: vl,
       },
@@ -114,7 +118,7 @@ export default class SampleQuery extends React.Component {
                 authentication={this.props.authentication}
                 placeholder='Search values'
                 value={this.state.values[chunk.name]?.replacement ?? undefined}
-                onChange={this.onVLSelection}
+                onChange={(newValue) => this.onVLSelection(newValue, chunk.name)}
               />
             )
 
