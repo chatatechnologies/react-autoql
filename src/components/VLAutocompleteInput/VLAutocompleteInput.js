@@ -6,7 +6,14 @@ import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import Autosuggest from 'react-autosuggest'
 
-import { fetchVLAutocomplete, REQUEST_CANCELLED_ERROR, authenticationDefault, getAuthentication } from 'autoql-fe-utils'
+import {
+  fetchVLAutocomplete,
+  REQUEST_CANCELLED_ERROR,
+  authenticationDefault,
+  getAuthentication,
+  difference,
+  deepEqual,
+} from 'autoql-fe-utils'
 
 import { CustomScrollbars } from '../CustomScrollbars'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -22,29 +29,39 @@ export default class VLAutocompleteInput extends React.Component {
     this.autoCompleteArray = []
     this.autocompleteDelay = 100
     this.TOOLTIP_ID = 'filter-locking-tooltip'
+    this.MAX_SUGGESTIONS = 5
 
     this.state = {
       suggestions: [],
       inputValue: props.value?.format_txt,
+      isLoadingAutocomplete: false,
+      initialLoadComplete: false,
     }
   }
 
   static propTypes = {
     authentication: authenticationType,
+    popoverPosition: PropTypes.string,
     onChange: PropTypes.func,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
+    popoverPosition: 'bottom',
     onChange: () => {},
   }
 
   componentDidMount = () => {
     this._isMounted = true
+    this.setState({ inputValue: this.props.value?.format_txt }) // This is done here instead of the constructor so the onchange event is fired
+  }
+
+  shouldComponentUpdate = (nextProps, nextState) => {
+    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (!_isEqual(this.props.value, prevProps.value)) {
+    if (!_isEqual(this.props.value, prevProps.value) && this.props.value?.format_txt !== this.state.inputValue) {
       this.setState({ inputValue: this.props.value?.format_txt ?? '' })
     }
   }
@@ -128,6 +145,10 @@ export default class VLAutocompleteInput extends React.Component {
   }
 
   fetchSuggestions = ({ value }) => {
+    if (!value) {
+      return // this.setState({ suggestions: [] })
+    }
+
     // If already fetching autocomplete, cancel it
     if (this.axiosSource) {
       this.axiosSource.cancel(REQUEST_CANCELLED_ERROR)
@@ -145,8 +166,14 @@ export default class VLAutocompleteInput extends React.Component {
         const sortingArray = []
         let suggestionsMatchArray = []
         this.autoCompleteArray = []
-        suggestionsMatchArray = body.matches
-        for (let i = 0; i < suggestionsMatchArray.length; i++) {
+        suggestionsMatchArray = [...body.matches]
+
+        let numMatches = suggestionsMatchArray.length
+        if (numMatches > this.MAX_SUGGESTIONS) {
+          numMatches = this.MAX_SUGGESTIONS
+        }
+
+        for (let i = 0; i < numMatches; i++) {
           sortingArray.push(suggestionsMatchArray[i])
         }
 
@@ -161,9 +188,11 @@ export default class VLAutocompleteInput extends React.Component {
           }
           this.autoCompleteArray.push(anObject)
         }
+
         this.setState({
           suggestions: this.autoCompleteArray,
           isLoadingAutocomplete: false,
+          initialLoadComplete: true,
         })
       })
       .catch((error) => {
@@ -171,7 +200,7 @@ export default class VLAutocompleteInput extends React.Component {
           console.error(error)
         }
 
-        this.setState({ isLoadingAutocomplete: false })
+        this.setState({ isLoadingAutocomplete: false, initialLoadComplete: true })
       })
   }
 
@@ -191,9 +220,9 @@ export default class VLAutocompleteInput extends React.Component {
   }
 
   onSuggestionsClearRequested = () => {
-    this.setState({
-      suggestions: [],
-    })
+    // this.setState({
+    //   suggestions: [],
+    // })
   }
 
   createNewFilterFromSuggestion = (suggestion) => {
@@ -220,14 +249,12 @@ export default class VLAutocompleteInput extends React.Component {
     return selectedFilter
   }
 
-  onInputFocus = (e) => {
-    e?.target?.select?.()
+  selectAll = () => {
+    this.inputElement?.select?.()
   }
 
-  onInputBlur = (e) => {
-    if (this.state.inputValue !== this.props.value?.format_txt) {
-      this.setState({ inputValue: this.props.value?.format_txt })
-    }
+  onInputFocus = () => {
+    this.selectAll()
   }
 
   onInputChange = (e, { newValue, method }) => {
@@ -262,15 +289,20 @@ export default class VLAutocompleteInput extends React.Component {
       return null
     }
 
+    let displayNameType = ''
+    if (name.show_message && name.show_message !== name.canonical) {
+      displayNameType = `(${name.show_message})`
+    }
+
     return (
       <ul
         className='filter-lock-suggestion-item'
         data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
         data-tooltip-delay-show={800}
-        data-tooltip-html={`${displayName} <em>(${name.show_message})</em>`}
+        data-tooltip-html={`${displayName} <em>${displayNameType}</em>`}
       >
         <span>
-          {displayName} <em>({name.show_message})</em>
+          {displayName} <em>{displayNameType}</em>
         </span>
       </ul>
     )
@@ -288,9 +320,9 @@ export default class VLAutocompleteInput extends React.Component {
     return (
       <div {...containerProps}>
         <div className='react-autoql-filter-suggestion-container'>
-          <CustomScrollbars autoHeight autoHeightMin={0} maxHeight={maxHeight}>
-            {children}
-          </CustomScrollbars>
+          {/* <CustomScrollbars autoHeight autoHeightMin={0} maxHeight={maxHeight}> */}
+          {children}
+          {/* </CustomScrollbars> */}
         </div>
       </div>
     )
@@ -302,14 +334,26 @@ export default class VLAutocompleteInput extends React.Component {
     const hasSuggestions = !!this.state.suggestions?.length && doneLoading
     const noSuggestions = !this.state.suggestions?.length && doneLoading
 
-    if (hasSuggestions) {
+    const title = `Results for "${this.state.inputValue}"`
+
+    if (!this.state.initialLoadComplete) {
       sections.push({
-        title: `Related to "${this.state.inputValue}"`,
+        title: `Results for "${this.props.value?.format_txt}"`,
+        suggestions: [{ name: this.props.value }],
+      })
+    } else if (!doneLoading) {
+      sections.push({
+        title,
+        suggestions: [{ name: '' }],
+      })
+    } else if (hasSuggestions) {
+      sections.push({
+        title,
         suggestions: this.state.suggestions,
       })
     } else if (noSuggestions) {
       sections.push({
-        title: `Related to "${this.state.inputValue}"`,
+        title,
         suggestions: [{ name: '' }],
         emptyState: true,
       })
@@ -346,8 +390,10 @@ export default class VLAutocompleteInput extends React.Component {
             renderSuggestionsContainer={this.renderSuggestionsContainer}
             getSectionSuggestions={(section) => section.suggestions}
             renderSectionTitle={this.renderSectionTitle}
+            alwaysRenderSuggestions={true}
             multiSection={true}
             inputProps={{
+              ref: (r) => (this.inputElement = r),
               onChange: this.onInputChange,
               value: this.state.inputValue,
               disabled: this.props.isFetchingFilters || this.state.isFetchingFilters,
@@ -356,7 +402,7 @@ export default class VLAutocompleteInput extends React.Component {
               className: 'react-autoql-vl-autocomplete-input',
               id: 'react-autoql-filter-menu-input',
               onFocus: this.onInputFocus,
-              onBlur: this.onInputBlur,
+              //   onBlur: this.onInputBlur,
             }}
           />
         </span>

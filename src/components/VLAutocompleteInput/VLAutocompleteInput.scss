@@ -1,0 +1,106 @@
+.autcomplete-input-popover-btn {
+  border: 1px solid transparent;
+  border-bottom-color: var(--react-autoql-accent-color);
+  color: var(--react-autoql-text-color-primary);
+  padding: 2px;
+  position: relative;
+  font-weight: 600;
+  padding-bottom: 2px;
+  transition: color 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--react-autoql-accent-color);
+  }
+}
+
+.react-autoql-autocomplete-input-popover-container {
+  width: 300px;
+  max-height: 100vh;
+
+  &.react-autoql-vlautocomplete-popover-container--bottom {
+    justify-content: flex-start;
+
+    .react-autoql-autocomplete-input-popup-container
+      .react-autoql-vl-autocomplete-input-wrapper
+      .react-autosuggest__container {
+      flex-direction: column;
+    }
+  }
+
+  &.react-autoql-vlautocomplete-popover-container--top {
+    justify-content: flex-end;
+
+    .react-autoql-autocomplete-input-popup-container
+      .react-autoql-vl-autocomplete-input-wrapper
+      .react-autosuggest__container {
+      flex-direction: column-reverse;
+    }
+  }
+
+  .react-autoql-autocomplete-input-popup-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    display: flex;
+    overflow: hidden;
+    flex-direction: column;
+    padding: 0;
+
+    .react-autosuggest__suggestions-list {
+      overflow: auto;
+    }
+
+    .react-autoql-vl-autocomplete-input-wrapper {
+      .react-autosuggest__container {
+        padding: 4px;
+        display: flex;
+        max-height: 100%;
+        flex-direction: column;
+
+        .react-autoql-vl-autocomplete-input {
+          padding-left: 10px;
+          height: 40px;
+          margin: 0;
+          border-radius: 0;
+          box-shadow: none;
+          border: 1px solid transparent;
+          font-size: inherit;
+          border-color: var(--react-autoql-accent-color);
+        }
+
+        .react-autosuggest__section-container--first {
+          display: flex;
+          flex-direction: column;
+          flex-wrap: nowrap;
+          flex: 1;
+          overflow: hidden;
+        }
+
+        .react-autosuggest__suggestions-container {
+          position: relative;
+          border-radius: 0;
+          padding: 5px 0;
+          border: none;
+          box-shadow: none;
+          font-size: 12px;
+          flex: 1;
+          overflow: hidden;
+
+          .react-autosuggest__section-title {
+            padding-left: 10px;
+          }
+
+          .filter-lock-suggestion-item {
+            padding-left: 10px;
+          }
+
+          .filter-locking-no-suggestions-text {
+            padding: 5px 10px;
+            font-size: 13px;
+          }
+        }
+      }
+    }
+  }
+}

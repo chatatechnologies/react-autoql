@@ -6,7 +6,7 @@ import { SampleQueryReplacementTypes, getSampleQueryText, getTitleCase } from 'a
 import { Select } from '../Select'
 import { Input } from '../Input'
 import { Icon } from '../Icon'
-import { VLAutocompleteInput } from '../VLAutocompleteInput'
+import { VLAutocompleteInput, VLAutocompleteInputPopover } from '../VLAutocompleteInput'
 
 export default class SampleQuery extends React.Component {
   constructor(props) {
@@ -64,6 +64,18 @@ export default class SampleQuery extends React.Component {
     this.props.executeQuery(queryRequestParams)
   }
 
+  onVLSelection = (vl) => {
+    const values = {
+      ...this.state.values,
+      [chunk.name]: {
+        ...this.state.values[chunk.name],
+        value: vl.format_txt,
+        replacement: vl,
+      },
+    }
+    this.setState({ values })
+  }
+
   render = () => {
     const { suggestion } = this.props
 
@@ -98,21 +110,11 @@ export default class SampleQuery extends React.Component {
             ]
 
             chunkContent = (
-              <VLAutocompleteInput
+              <VLAutocompleteInputPopover
                 authentication={this.props.authentication}
-                placeholder='Select a Data Value'
+                placeholder='Search values'
                 value={this.state.values[chunk.name]?.replacement ?? undefined}
-                onChange={(vl) => {
-                  const values = {
-                    ...this.state.values,
-                    [chunk.name]: {
-                      ...this.state.values[chunk.name],
-                      value: vl.format_txt,
-                      replacement: vl,
-                    },
-                  }
-                  this.setState({ values })
-                }}
+                onChange={this.onVLSelection}
               />
             )
 
