@@ -418,7 +418,6 @@ export default class NotificationItem extends React.Component {
 
   renderErrorDetails = () => {
     if (this.props.dataAlert?.id && !this.isDataAlertInErrorState()) {
-      const query = this.props.notification?.data_return_query
       return (
         <>
           <br />
@@ -434,30 +433,7 @@ export default class NotificationItem extends React.Component {
             {this.state.initializeSuccess ? 'Restarted' : 'Restart Alert'}
           </Button>
           <br />
-          <span>
-            If the problem persists, you may need to create a new Data Alert
-            {query ? (
-              <span>
-                {' '}
-                from the query{' '}
-                {!!this.props.onQueryClick ? (
-                  <a
-                    onClick={() => this.props.onQueryClick(query)}
-                    data-tooltip-content='Click to run this query in Data Messenger'
-                    data-tooltip-id={this.props.tooltipID}
-                  >
-                    "{query}"
-                  </a>
-                ) : (
-                  <span>
-                    <em>"{query}"</em>
-                  </span>
-                )}
-              </span>
-            ) : (
-              <span>.</span>
-            )}
-          </span>
+          <span>If the problem persists, you may need to create a new Data Alert.</span>
         </>
       )
     }

@@ -3,7 +3,6 @@ import resolve from '@rollup/plugin-node-resolve'
 import terser from '@rollup/plugin-terser'
 import image from '@rollup/plugin-image'
 import autoprefixer from 'autoprefixer'
-// import postcss from 'rollup-plugin-postcss'
 import postcss from 'postcss'
 import svg from 'rollup-plugin-svg'
 import gzipPlugin from 'rollup-plugin-gzip'
@@ -33,12 +32,6 @@ const common = {
     resolve({
       mainFields: ['main', 'module'],
     }),
-    // postcss({
-    //   plugins: [autoprefixer],
-    //   extensions: ['.css, .scss'],
-    //   extract: 'autoql.esm.css',
-    //   minimize: false,
-    // }),
     scss({
       fileName: 'autoql.esm.css',
       processor: () => postcss([autoprefixer()]),

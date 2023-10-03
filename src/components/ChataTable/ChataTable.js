@@ -260,9 +260,7 @@ export default class ChataTable extends React.Component {
   }
 
   updateData = (data, useInfiniteScroll) => {
-    if (data?.length === this.props.totalRows) {
-      this.setInfiniteScroll(false)
-    } else if (useInfiniteScroll) {
+    if (useInfiniteScroll) {
       this.setInfiniteScroll(true)
     }
 

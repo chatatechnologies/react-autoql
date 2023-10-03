@@ -38,16 +38,6 @@ module.exports = {
         '@babel/plugin-transform-class-properties',
         '@babel/plugin-transform-object-rest-spread',
         '@babel/plugin-syntax-object-rest-spread',
-        //   [
-        //     "@babel/plugin-transform-runtime",
-        //     {
-        //       "absoluteRuntime": false,
-        //       "corejs": false,
-        //       "helpers": false,
-        //       "regenerator": true
-        //       "version": "7.0.0-beta.0"
-        //     }
-        //   ]
       ],
     },
   },

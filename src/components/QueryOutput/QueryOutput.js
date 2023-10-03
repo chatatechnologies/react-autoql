@@ -2264,7 +2264,7 @@ export class QueryOutput extends React.Component {
           isAnimating={this.props.isAnimating}
           isResizing={this.props.isResizing}
           pageSize={this.getQueryPageSize()}
-          useInfiniteScroll={!this.isOriginalData || (this.props.enableAjaxTableData && this.isDataLimited())}
+          useInfiniteScroll={this.props.enableAjaxTableData}
           enableAjaxTableData={this.props.enableAjaxTableData}
           queryRequestData={this.queryResponse?.data?.data?.fe_req}
           queryText={this.queryResponse?.data?.data?.text}

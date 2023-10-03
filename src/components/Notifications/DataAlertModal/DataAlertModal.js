@@ -174,19 +174,14 @@ class DataAlertModal extends React.Component {
       if (!!this.props.currentDataAlert?.id) {
         return this.settingsViewRef?.getData()
       } else {
-        let dataReturnQuery
         let expressionJSON = _cloneDeep(this.state.expressionJSON)
 
         if (this.expressionRef) {
-          dataReturnQuery = this.expressionRef.getFirstQuery()
           expressionJSON = this.expressionRef.getJSON()
         } else if (currentDataAlert) {
-          dataReturnQuery = currentDataAlert.data_return_query
           expressionJSON = currentDataAlert.expression
         } else {
           const query = queryResponse?.data?.data?.text
-
-          dataReturnQuery = query
           expressionJSON = [
             {
               id: uuid(),
@@ -205,7 +200,6 @@ class DataAlertModal extends React.Component {
 
         const newDataAlert = {
           title: titleInput,
-          data_return_query: dataReturnQuery,
           message: messageInput,
           expression: expressionJSON,
           notification_type: scheduleData.notificationType,
@@ -516,7 +510,6 @@ class DataAlertModal extends React.Component {
           messageInput={this.state.messageInput}
           onTitleInputChange={(e) => this.setState({ titleInput: e.target.value })}
           onMessageInputChange={(e) => this.setState({ messageInput: e.target.value })}
-          queryText={this.getQueryText()}
           showConditionStatement
           conditionStatement={this.getConditionStatement()}
         />
@@ -654,13 +647,7 @@ class DataAlertModal extends React.Component {
     return <span key={`title-icon-${this.COMPONENT_KEY}`} />
   }
 
-  getQueryText = () => {
-    return this.props.queryResponse?.data?.data?.text ?? this.props.currentDataAlert?.data_return_query
-  }
-
   render = () => {
-    const query = this.getQueryText()
-
     return (
       <ErrorBoundary>
         <Modal
