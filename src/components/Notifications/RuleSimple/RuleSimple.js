@@ -474,6 +474,7 @@ export default class RuleSimple extends React.Component {
     }
     if (this.state.secondTermType === NUMBER_TERM_TYPE) {
       const numberRegex = /^-?(\d+\.\d+|\d+\.?\d*)(%?)$/
+      // This regex matches positive integers, decimals, and percentages. It allows % sign at the end rather than the beginning.
       if (numberRegex.test(secondInputValue) || secondInputValue === '') {
         this.setState(newState)
       }
