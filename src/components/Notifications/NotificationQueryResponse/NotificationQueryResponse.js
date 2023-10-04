@@ -45,20 +45,22 @@ export default class NotificationQueryResponse extends React.Component {
       <div className='react-autoql-notification-chart-container'>
         <div ref={(r) => (this.dataContainer = r)} className='react-autoql-notification-query-data-container'>
           {queryResponse ? (
-            <QueryOutput
-              ref={(r) => (this.OUTPUT_REF = r)}
-              vizToolbarRef={this.vizToolbarRef}
-              optionsToolbarRef={this.optionsToolbarRef}
-              authentication={this.props.authentication}
-              autoQLConfig={this.props.autoQLConfig}
-              dataFormatting={this.props.dataFormatting}
-              queryResponse={queryResponse}
-              autoChartAggregations={this.props.autoChartAggregations}
-              enableAjaxTableData={this.props.enableAjaxTableData}
-              isResizing={this.props.isResizing || !this.props.shouldRender}
-              popoverParentElement={this.props.popoverParentElement}
-              showSingleValueResponseTitle={true}
-            />
+            queryResponse.data.hasQueryResult === false ? null : (
+              <QueryOutput
+                ref={(r) => (this.OUTPUT_REF = r)}
+                vizToolbarRef={this.vizToolbarRef}
+                optionsToolbarRef={this.optionsToolbarRef}
+                authentication={this.props.authentication}
+                autoQLConfig={this.props.autoQLConfig}
+                dataFormatting={this.props.dataFormatting}
+                queryResponse={queryResponse}
+                autoChartAggregations={this.props.autoChartAggregations}
+                enableAjaxTableData={this.props.enableAjaxTableData}
+                isResizing={this.props.isResizing || !this.props.shouldRender}
+                popoverParentElement={this.props.popoverParentElement}
+                showSingleValueResponseTitle={true}
+              />
+            )
           ) : (
             <div style={{ position: 'absolute', top: 0 }} className='loading-container-centered'>
               <LoadingDots />
