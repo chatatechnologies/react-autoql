@@ -160,9 +160,10 @@ export default class DataExplorer extends React.Component {
         {columns?.length ? (
           <span className='react-autoql-data-preview-selected-columns-selector'>
             <MultiSelect
-              title='FILTER'
+              title='FILTERS'
               size='small'
               align='start'
+              popupClassname='react-autoql-sample-queries-filter-dropdown'
               options={columns.map((col) => {
                 return {
                   value: col.name,

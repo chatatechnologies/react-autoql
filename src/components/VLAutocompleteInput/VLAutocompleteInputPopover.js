@@ -95,6 +95,9 @@ export default class VLAutocompleteInputPopover extends React.Component {
         key={`popover-content-${this.ID}`}
         className='react-autoql-autocomplete-input-popup-container popover-container-content'
       >
+        {this.props.popoverTitle ? (
+          <div className='react-autoql-autocomplete-popover-title'>{this.props.popoverTitle}</div>
+        ) : null}
         <VLAutocompleteInput
           authentication={this.props.authentication}
           placeholder={this.props.placeholder}
@@ -128,9 +131,6 @@ export default class VLAutocompleteInputPopover extends React.Component {
               this.state.isOpen ? 'autcomplete-input-popover-btn-active' : ''
             }`}
             onClick={() => this.setState({ isOpen: true })}
-            data-tooltip-content={this.props.value?.show_message}
-            data-tooltip-id={this.props.tooltipID}
-            data-tooltip-delay-show={800}
           >
             {this.props.value?.format_txt ?? this.props.placeholder}
           </div>

@@ -27,8 +27,13 @@ export default class VLAutocompleteInput extends React.Component {
     this.TOOLTIP_ID = 'filter-locking-tooltip'
     this.MAX_SUGGESTIONS = 10
 
+    const suggestions = []
+    if (props.value) {
+      suggestions.push({ name: props.value })
+    }
+
     this.state = {
-      suggestions: [],
+      suggestions,
       inputValue: '',
       isLoadingAutocomplete: false,
       initialLoadComplete: false,
@@ -285,7 +290,7 @@ export default class VLAutocompleteInput extends React.Component {
       <span
         className='filter-lock-suggestion-item'
         data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
-        data-tooltip-delay-show={800}
+        data-tooltip-delay-show={1000}
         data-tooltip-html={`${displayName} <em>${displayNameType}</em>`}
       >
         {displayName} <em>{displayNameType}</em>
@@ -321,7 +326,12 @@ export default class VLAutocompleteInput extends React.Component {
 
     const title = `Results for "${this.state.inputValue}"`
 
-    if (!doneLoading) {
+    if (!this.state.initialLoadComplete) {
+      sections.push({
+        title: undefined,
+        suggestions: this.state.suggestions,
+      })
+    } else if (!doneLoading) {
       sections.push({
         title,
         suggestions: [{ name: '' }],
