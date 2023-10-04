@@ -12,6 +12,10 @@
   animation: fadeIn 0.2s linear;
   animation-fill-mode: both;
 
+  .data-explorer-section.topic-dropdown-section {
+    padding-top: 10px;
+  }
+
   .data-explorer-intro-message {
     color: var(--react-autoql-text-color-primary);
     text-align: center;
@@ -160,7 +164,7 @@
     align-items: center;
     flex: 0 0 auto;
     font-weight: 600;
-    font-size: 15px;
+    font-size: 16px;
     margin: 2px 6px;
 
     .react-autoql-icon {

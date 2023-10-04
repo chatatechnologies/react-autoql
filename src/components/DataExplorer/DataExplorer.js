@@ -3,7 +3,7 @@ import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 
-import { COLUMN_TYPES, DataExplorerTypes, dataFormattingDefault } from 'autoql-fe-utils'
+import { COLUMN_TYPES, DataExplorerTypes, dataFormattingDefault, fetchSubjectList } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
@@ -17,6 +17,8 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { authenticationType, dataFormattingType } from '../../props/types'
 
 import './DataExplorer.scss'
+import { Select } from '../Select'
+import { SubjectName } from './SubjectName'
 
 export default class DataExplorer extends React.Component {
   constructor(props) {
@@ -26,6 +28,7 @@ export default class DataExplorer extends React.Component {
     this.ID = uuid()
 
     this.state = {
+      subjectList: [],
       selectedSubject: null,
       selectedColumns: [],
       isDataPreviewCollapsed: false,
@@ -56,6 +59,23 @@ export default class DataExplorer extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
+  }
+
+  componentDidUpdate = (prevProps, prevState) => {
+    if (
+      this.state.selectedSubject?.type !== prevState.selectedSubject?.type &&
+      this.state.selectedSubject?.type === DataExplorerTypes.VL_TYPE
+    ) {
+      if (this.state.selectedSubject.valueLabel.canonical) {
+        fetchSubjectList({ ...this.props.authentication, valueLabel: this.state.selectedSubject.valueLabel.canonical })
+          .then((subjectList) => {
+            if (this._isMounted) {
+              this.setState({ subjectList })
+            }
+          })
+          .catch((error) => console.error(error))
+      }
+    }
   }
 
   componentWillUnmount = () => {
@@ -116,6 +136,31 @@ export default class DataExplorer extends React.Component {
 
   reloadScrollbars = () => {
     this.querySuggestionList?.updateScrollbars()
+  }
+
+  renderTopicDropdown = () => {
+    if (this.state.selectedSubject?.type !== DataExplorerTypes.VL_TYPE) {
+      return null
+    }
+
+    const options = this.state.subjectList.map((subject) => ({
+      value: subject.context,
+      listLabel: subject.displayName,
+      label: <SubjectName subject={subject} />,
+    }))
+
+    return (
+      <div className='data-explorer-section topic-dropdown-section'>
+        <Select
+          value={this.state.selectedContext}
+          options={options}
+          placeholder='Select a Topic'
+          label='Filter by Topic'
+          onChange={(context) => this.setState({ selectedContext: context })}
+          fullWidth
+        />
+      </div>
+    )
   }
 
   renderDataPreview = () => {
@@ -278,15 +323,20 @@ export default class DataExplorer extends React.Component {
           >
             {!!selectedSubject?.displayName && (
               <div className='react-autoql-data-explorer-selected-subject-title'>
-                <Icon
-                  type='book'
-                  data-tooltip-content={selectedSubject?.formattedType}
-                  data-tooltip-id={selectedSubject?.formattedType ? this.props.tooltipID : undefined}
-                />{' '}
-                {selectedSubject?.displayName}
+                <SubjectName subject={selectedSubject} />
               </div>
+              // <div className='react-autoql-data-explorer-selected-subject-title'>
+              //   <Icon
+              //     type={icon}
+              //     data-tooltip-content={selectedSubject?.formattedType}
+              //     data-tooltip-id={selectedSubject?.formattedType ? this.props.tooltipID : undefined}
+              //   />{' '}
+              //   {selectedSubject?.displayName}{' '}
+              //   {selectedSubject?.type === DataExplorerTypes.VL_TYPE ? `(${selectedSubject.formattedType})` : null}
+              // </div>
             )}
             {this.renderDataPreview()}
+            {this.renderTopicDropdown()}
             {this.renderQuerySuggestions()}
           </div>
         </CustomScrollbars>

@@ -102,6 +102,7 @@ export default class SampleQuery extends React.Component {
                 value={this.state.values[chunk.name]?.replacement ?? undefined}
                 onChange={(newValue) => this.onValueChange(newValue, chunk.name)}
                 tooltipID={this.props.tooltipID}
+                context={this.props.context}
               />
             )
           } else if (chunk.type == SampleQueryReplacementTypes.SAMPLE_QUERY_AMOUNT_TYPE) {

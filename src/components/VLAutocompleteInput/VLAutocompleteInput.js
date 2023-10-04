@@ -155,6 +155,7 @@ export default class VLAutocompleteInput extends React.Component {
     fetchVLAutocomplete({
       ...getAuthentication(this.props.authentication),
       suggestion: value,
+      context: this.props.context,
       cancelToken: this.axiosSource.token,
     })
       .then((response) => {
