@@ -160,15 +160,16 @@ export default class DataExplorer extends React.Component {
         {columns?.length ? (
           <span className='react-autoql-data-preview-selected-columns-selector'>
             <MultiSelect
-              title='FIELDS'
+              title='FILTER'
               size='small'
-              align='middle'
+              align='start'
               options={columns.map((col) => {
                 return {
                   value: col.name,
                   label: col.display_name,
                 }
               })}
+              listTitle='Select fields of interest'
               selected={this.state.selectedColumns.map((index) => columns[index]?.name)}
               onChange={(selectedColumnNames) => {
                 const selectedColumnIndexes = selectedColumnNames.map((name) =>
@@ -243,7 +244,7 @@ export default class DataExplorer extends React.Component {
       return null
     }
 
-    const name = column.displayName
+    const name = column.display_name
     const type = COLUMN_TYPES[column.type]?.description
     const icon = COLUMN_TYPES[column.type]?.icon
 

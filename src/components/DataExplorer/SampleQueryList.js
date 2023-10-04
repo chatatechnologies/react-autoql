@@ -1,15 +1,13 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
-import { SampleQueryReplacementTypes, fetchDataExplorerSuggestionsV2, getTitleCase } from 'autoql-fe-utils'
+import { fetchDataExplorerSuggestionsV2 } from 'autoql-fe-utils'
 
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { LoadingDots } from '../LoadingDots'
-import { Select } from '../Select'
-import { Input } from '../Input'
+import SampleQuery from './SampleQuery'
 
 import './SampleQueryList.scss'
-import SampleQuery from './SampleQuery'
 
 export default class SampleQueryList extends React.Component {
   constructor(props) {
@@ -176,7 +174,7 @@ export default class SampleQueryList extends React.Component {
             <SampleQuery
               key={i}
               authentication={this.props.authentication}
-              suggestion={this.state.queryList[2]} // {suggestion}
+              suggestion={suggestion}
               executeQuery={this.props.executeQuery}
               tooltipID={this.props.tooltipID}
             />

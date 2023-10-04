@@ -2,11 +2,11 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
-import { SampleQueryReplacementTypes, getSampleQueryText, getTitleCase } from 'autoql-fe-utils'
-import { Select } from '../Select'
-import { Input } from '../Input'
+import { SampleQueryReplacementTypes, getQueryRequestParams, getTitleCase } from 'autoql-fe-utils'
+
 import { Icon } from '../Icon'
-import { VLAutocompleteInput, VLAutocompleteInputPopover } from '../VLAutocompleteInput'
+import InlineNumberEditor from './InlineNumberEditor'
+import { VLAutocompleteInputPopover } from '../VLAutocompleteInput'
 
 export default class SampleQuery extends React.Component {
   constructor(props) {
@@ -35,36 +35,32 @@ export default class SampleQuery extends React.Component {
     this._isMounted = false
   }
 
-  getQueryRequestParams = () => {
-    const { suggestion } = this.props
-    if (!suggestion) {
-      return
-    }
-
-    const sampleQueryText = getSampleQueryText(suggestion.initialQuery, this.state.values)
-
-    const userSelection = []
-    if (Object.keys(this.state.values)?.length) {
-      Object.keys(this.state.values)?.forEach((key) => {
-        const value = this.state.values[key]
-        if (value.type === SampleQueryReplacementTypes.SAMPLE_QUERY_VL_TYPE && value.replacement) {
-          userSelection.push(value.replacement)
-        }
-      })
-    }
-
-    return {
-      query: sampleQueryText,
-      user_selection: userSelection,
-    }
-  }
-
   submitQuery = () => {
-    const queryRequestParams = this.getQueryRequestParams()
+    const queryRequestParams = getQueryRequestParams(this.props.suggestion, this.state.values)
     this.props.executeQuery(queryRequestParams)
   }
 
-  onVLSelection = (vl, chunkName) => {
+  onAmountChange = (value, chunkName) => {
+    if (!this.state.values?.[chunkName] || value === undefined) {
+      return
+    }
+
+    const values = {
+      ...(this.state.values ?? {}),
+      [chunkName]: {
+        ...this.state.values[chunkName],
+        value,
+        replacement: {
+          ...this.state.values[chunkName].replacement,
+          format_txt: value,
+        },
+      },
+    }
+
+    this.setState({ values })
+  }
+
+  onValueChange = (vl, chunkName) => {
     if (!this.state.values?.[chunkName] || !vl?.format_txt) {
       return
     }
@@ -99,66 +95,29 @@ export default class SampleQuery extends React.Component {
           let chunkContent = text
 
           if (chunk.type == SampleQueryReplacementTypes.SAMPLE_QUERY_VL_TYPE) {
-            const options = [
-              { value: chunk.value, label: chunk.value, replacement: chunk.replacement },
-              {
-                value: 'test-2',
-                label: 'test 2',
-                replacement: {
-                  canonical: 'test',
-                  format_txt: 'test 2 format_txt',
-                  keyword: 'test 2 keyword',
-                  show_message: 'column name',
-                },
-              },
-            ]
-
             chunkContent = (
               <VLAutocompleteInputPopover
                 authentication={this.props.authentication}
                 placeholder='Search values'
                 value={this.state.values[chunk.name]?.replacement ?? undefined}
-                onChange={(newValue) => this.onVLSelection(newValue, chunk.name)}
+                onChange={(newValue) => this.onValueChange(newValue, chunk.name)}
+                tooltipID={this.props.tooltipID}
               />
             )
-
-            // chunkContent = (
-            //   <Select
-            //     size='small'
-            //     showArrow={false}
-            //     outlined={false}
-            //     options={options}
-            //     placeholder='Select a Data Value'
-            //     value={this.state.values[chunk.name]?.value ?? undefined}
-            //     onChange={(value) => {
-            //       if (Object.keys(this.state.values).includes(chunk.name)) {
-            //         const values = _cloneDeep(this.state.values)
-            //         const foundOption = options.find((option) => option.value === value)
-            //         if (foundOption && values?.[chunk.name]) {
-            //           values[chunk.name].value = foundOption.value
-            //           values[chunk.name].replacement = foundOption.replacement
-            //         }
-
-            //         this.setState({ values })
-            //       }
-            //     }}
-            //   />
-            // )
           } else if (chunk.type == SampleQueryReplacementTypes.SAMPLE_QUERY_AMOUNT_TYPE) {
-            // chunkContent = <Input type='number' initialValue={chunk.value} />
             chunkContent = (
-              <Select
-                size='small'
-                showArrow={false}
-                outlined={false}
-                options={[{ value: chunk.value, label: chunk.value }]}
+              <InlineNumberEditor
                 value={chunk.value}
+                onChange={(newValue) => this.onAmountChange(newValue, chunk.name)}
               />
             )
           }
 
           const chunkElement = (
-            <div key={`data-explorer-sample-query-chunk-${i}`} className={`data-explorer-sample-chunk ${chunk.type}`}>
+            <div
+              key={`data-explorer-sample-query-chunk-${i}`}
+              className={`data-explorer-sample-chunk data-explorer-sample-chunk-${chunk.type}`}
+            >
               {chunkContent}
             </div>
           )
@@ -176,6 +135,7 @@ export default class SampleQuery extends React.Component {
           onClick={this.submitQuery}
           data-tooltip-content='Submit Query'
           data-tooltip-id={this.props.tooltipID}
+          data-tooltip-delay-show={800}
         >
           <Icon type='send' />
         </div>

@@ -5,7 +5,7 @@
   align-items: center;
 
   color: var(--react-autoql-text-color-primary);
-  padding: 7px 20px;
+  padding: 6px 18px;
   cursor: pointer;
 
   &:hover,
@@ -58,5 +58,19 @@
 
     color: var(--react-autoql-text-color-accent);
     background-color: var(--react-autoql-accent-color);
+  }
+}
+
+.react-autoql-select-popup-container {
+  .react-autoql-menu {
+    padding-top: 0;
+  }
+
+  .react-autoql-multi-select-list-title {
+    font-size: 0.9em;
+    padding: 5px 10px;
+    margin-bottom: 3px;
+    color: var(--react-autoql-text-color-secondary);
+    border-bottom: 1px solid var(--react-autoql-border-color);
   }
 }

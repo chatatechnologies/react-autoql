@@ -1,22 +1,7 @@
-.autcomplete-input-popover-btn {
-  border: 1px solid transparent;
-  border-bottom-color: var(--react-autoql-accent-color);
-  color: var(--react-autoql-text-color-primary);
-  padding: 2px;
-  position: relative;
-  font-weight: 600;
-  padding-bottom: 2px;
-  transition: color 0.2s ease;
-  cursor: pointer;
-
-  &:hover {
-    color: var(--react-autoql-accent-color);
-  }
-}
-
 .react-autoql-autocomplete-input-popover-container {
   width: 300px;
-  max-height: 100vh;
+  // max-height: 100vh;
+  max-height: 175px;
 
   &.react-autoql-vlautocomplete-popover-container--bottom {
     justify-content: flex-start;
@@ -39,7 +24,6 @@
   }
 
   .react-autoql-autocomplete-input-popup-container {
-    height: 100%;
     display: flex;
     flex-direction: column;
     display: flex;
@@ -53,6 +37,9 @@
     }
 
     .react-autoql-vl-autocomplete-input-wrapper {
+      display: block;
+      height: 100%;
+
       .react-autosuggest__container {
         padding: 4px;
         display: flex;
@@ -60,6 +47,7 @@
         flex-direction: column;
 
         .react-autoql-vl-autocomplete-input {
+          flex: 0 0 auto;
           padding-left: 10px;
           height: 40px;
           margin: 0;
@@ -68,6 +56,11 @@
           border: 1px solid transparent;
           font-size: inherit;
           border-color: var(--react-autoql-accent-color);
+        }
+
+        .react-autoql-filter-suggestion-container {
+          overflow: hidden;
+          display: flex;
         }
 
         .react-autosuggest__section-container--first {
@@ -79,6 +72,8 @@
         }
 
         .react-autosuggest__suggestions-container {
+          display: flex;
+          flex-direction: column;
           position: relative;
           border-radius: 0;
           padding: 5px 0;

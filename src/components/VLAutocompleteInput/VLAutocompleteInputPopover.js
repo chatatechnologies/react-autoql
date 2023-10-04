@@ -4,10 +4,10 @@ import PropTypes from 'prop-types'
 import { Popover } from 'react-tiny-popover'
 import { isMobile } from 'react-device-detect'
 
-// import { Popover } from '../Popover'
 import VLAutocompleteInput from './VLAutocompleteInput'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
-import { difference } from 'autoql-fe-utils'
+
+import './VLAutocompleteInputPopover.scss'
 
 export default class VLAutocompleteInputPopover extends React.Component {
   constructor(props) {
@@ -51,19 +51,18 @@ export default class VLAutocompleteInputPopover extends React.Component {
     const { childRect, popoverRect, boundaryRect } = popoverState
 
     const POPOVER_MAX_HEIGHT = 150
-    const VERTICAL_PADDING = 10
 
     let position
     let top
     let left
 
-    if (childRect.top + POPOVER_MAX_HEIGHT < boundaryRect.bottom) {
+    if (childRect.bottom + POPOVER_MAX_HEIGHT < boundaryRect.bottom) {
       // Case "Bottom" (preferred)
-      top = childRect.top - VERTICAL_PADDING
+      top = childRect.bottom
       position = 'bottom'
     } else {
       // Case "Top"
-      top = childRect.bottom - popoverRect.height + VERTICAL_PADDING
+      top = childRect.top - popoverRect.height
       position = 'top'
     }
 
@@ -102,6 +101,7 @@ export default class VLAutocompleteInputPopover extends React.Component {
           value={this.props.value}
           ref={(r) => (this.autocompleteInput = r)}
           onChange={this.onVLSelection}
+          tooltipID={this.props.tooltipID}
         />
       </div>
     )
@@ -120,12 +120,18 @@ export default class VLAutocompleteInputPopover extends React.Component {
           isOpen={this.state.isOpen}
           onClickOutside={() => this.setState({ isOpen: false })}
           content={this.renderAutocomplete()}
-          // positions={['bottom', 'top']}
-          // align='start'
           reposition={false}
           contentLocation={this.getContentLocation}
         >
-          <div className='autcomplete-input-popover-btn' onClick={() => this.setState({ isOpen: true })}>
+          <div
+            className={`autcomplete-input-popover-btn ${
+              this.state.isOpen ? 'autcomplete-input-popover-btn-active' : ''
+            }`}
+            onClick={() => this.setState({ isOpen: true })}
+            data-tooltip-content={this.props.value?.show_message}
+            data-tooltip-id={this.props.tooltipID}
+            data-tooltip-delay-show={800}
+          >
             {this.props.value?.format_txt ?? this.props.placeholder}
           </div>
         </Popover>

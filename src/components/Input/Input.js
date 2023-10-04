@@ -34,22 +34,29 @@ export default class Input extends React.Component {
     fullWidth: false,
   }
 
-  onFocus = () => {
+  onFocus = (e) => {
     this.setState({ focused: true })
-    if (this.props.onFocus) {
-      this.props.onFocus()
-    }
+    this.props.onFocus?.(e)
   }
 
-  onBlur = () => {
+  onBlur = (e) => {
+    this.props.onBlur?.(e)
     this.setState({ focused: false })
-    if (this.props.onBlur) {
-      this.props.onBlur()
-    }
   }
 
   focus = () => {
     this.inputRef?.focus()
+    this.setState({ focused: true })
+  }
+
+  selectAll = () => {
+    if (this.inputRef) {
+      this.inputRef.select?.()
+
+      if (!this.inputRef.hasFocus?.()) {
+        this.focus()
+      }
+    }
   }
 
   onSelectChange = (value) => {
@@ -105,6 +112,7 @@ export default class Input extends React.Component {
     return (
       <ErrorBoundary>
         <div
+          ref={(r) => (this.wrapper = r)}
           className={`react-autoql-input-and-label-container
         ${className ?? ''}
         ${fullWidth ? 'react-autoql-input-full-width' : ''}`}
@@ -127,6 +135,7 @@ export default class Input extends React.Component {
                 className='react-autoql-input area'
                 onFocus={this.onFocus}
                 onBlur={this.onBlur}
+                style={this.props.inputStyle}
               />
             ) : (
               <div className='react-autoql-input-and-icon'>
@@ -139,6 +148,7 @@ export default class Input extends React.Component {
                 ${hasSelect ? 'with-select' : ''}`}
                   onFocus={this.onFocus}
                   onBlur={this.onBlur}
+                  style={this.props.inputStyle}
                 />
                 {icon && (
                   <Icon className={`react-autoql-input-icon ${this.state.focused ? ' focus' : ''}`} type={icon} />

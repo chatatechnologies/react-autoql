@@ -102,13 +102,17 @@ export default class DataExplorer extends React.Component {
       numRows: 100,
     })
       .then((response) => {
-        this.setState({ dataPreview: response, loading: false })
-        this.props.onDataPreview(response)
+        if (this._isMounted) {
+          this.setState({ dataPreview: response, loading: false })
+          this.props.onDataPreview(response)
+        }
       })
       .catch((error) => {
-        if (error?.message !== REQUEST_CANCELLED_ERROR) {
-          console.error(error)
-          this.setState({ loading: false, error: error?.response?.data })
+        if (this._isMounted) {
+          if (error?.message !== REQUEST_CANCELLED_ERROR) {
+            console.error(error)
+            this.setState({ loading: false, error: error?.response?.data })
+          }
         }
       })
   }
@@ -278,7 +282,7 @@ export default class DataExplorer extends React.Component {
             </table>
           )}
         </div>
-        {this.renderDataPreviewCaption(columns)}
+        {/* {this.renderDataPreviewCaption(columns)} */}
       </div>
     )
   }
