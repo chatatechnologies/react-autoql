@@ -1,11 +1,17 @@
-.chat-content-scroll-container {
-  position: absolute;
-  height: 100%;
-  width: 100%;
-  padding-bottom: 158px;
-  background-color: var(--react-autoql-background-color-primary);
+.drawer-content-wrapper {
+  .drawer-content {
+    .chat-content-scroll-container {
+      position: absolute;
+      height: 100%;
+      width: 100%;
+      padding-bottom: 158px;
+      background-color: var(--react-autoql-background-color-primary);
+      overflow-x: hidden;
 
-  .chat-content-scrollbars-container {
+      .chat-content-container {
+        overflow: hidden;
+      }
+    }
   }
 }
 
