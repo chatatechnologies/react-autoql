@@ -75,7 +75,7 @@
 
   .react-autoql-toolbar {
     display: flex;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     flex-direction: row;
 
     &:not(.active) {
@@ -91,10 +91,19 @@
     visibility: visible;
     opacity: 1;
   }
+
   .react-autoql-toolbar-mobile {
     pointer-events: auto;
     visibility: visible;
     opacity: 1;
+    flex-wrap: wrap;
+
+    .react-autoql-btn {
+      margin: 0;
+      border: none;
+      padding: 7px;
+      color: var(--react-autoql-text-color-primary);
+    }
   }
 
   .chat-single-message-container {
