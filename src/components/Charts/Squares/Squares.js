@@ -13,7 +13,14 @@ export default class Squares extends Component {
     const maxValue = max(props.data.map((row) => max(row.filter((value, i) => props.numberColumnIndices.includes(i)))))
     const minValue = min(props.data.map((row) => min(row.filter((value, i) => props.numberColumnIndices.includes(i)))))
 
-    this.opacityScale = scaleLinear().domain([minValue, maxValue]).range([0, 1])
+    if (minValue < 0 && maxValue < 0) {
+      this.opacityScaleNegative = scaleLinear().domain([minValue, maxValue]).range([1, 0])
+    } else if (minValue < 0) {
+      this.opacityScalePositive = scaleLinear().domain([0, maxValue]).range([0, 1])
+      this.opacityScaleNegative = scaleLinear().domain([minValue, 0]).range([1, 0])
+    } else {
+      this.opacityScalePositive = scaleLinear().domain([minValue, maxValue]).range([0, 1])
+    }
 
     this.state = {
       activeKey: this.props.activeChartElementKey,
@@ -77,8 +84,8 @@ export default class Squares extends Component {
         const color0 = chartColors[0]
         const color1 = chartColors[1]
 
-        const fillColor = value >= 0 ? color0 : 'rgb(221, 106, 106)'
-        const activeFillColor = color1
+        const fillColor = value >= 0 ? color0 : '#de3434'
+        const activeFillColor = value >= 0 ? color1 : '#bb0606'
 
         const tooltip = getTooltipContent({
           row,
@@ -88,6 +95,34 @@ export default class Squares extends Component {
           legendColumn,
           dataFormatting,
         })
+
+        // const square = getHeatmapRectObj({
+        //   columns,
+        //   yScale,
+        //   xScale,
+        //   activeKey: this.state.activeKey,
+        //   dataFormatting,
+        //   colIndex,
+        //   colIndex2: stringColumnIndex,
+        //   opacityScale: this.opacityScalePositive,
+        //   opacityScale2: this.opacityScaleNegative,
+        //   i,
+        //   d: row,
+        //   index,
+        //   legendColumn,
+        //   legendLabels,
+        //   chartColors,
+        //   columnIndexConfig: {
+        //     stringColumnIndex,
+        //   },
+        // })
+
+        // squares.push(square)
+
+        let opacity = this.opacityScalePositive?.(Math.abs(value))
+        if (this.opacityScaleNegative && value < 0) {
+          opacity = this.opacityScaleNegative(value)
+        }
 
         squares.push(
           <rect
@@ -103,7 +138,7 @@ export default class Squares extends Component {
             data-for={this.props.chartTooltipID}
             style={{ color: activeFillColor }}
             fill={fillColor}
-            fillOpacity={this.opacityScale(Math.abs(value))}
+            fillOpacity={opacity}
           />,
         )
       })
