@@ -88,7 +88,7 @@ export default class DataExplorer extends React.Component {
     this.setState({ loading: true, error: undefined, dataPreview: undefined })
     fetchDataPreview({
       ...this.props.authentication,
-      subject: this.props.subject?.name,
+      subject: this.props.subject?.id,
       numRows: this.DATA_PREVIEW_ROWS,
       source: 'data_explorer.data_preview',
       scope: 'data_explorer',

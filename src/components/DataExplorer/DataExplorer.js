@@ -183,7 +183,7 @@ export default class DataExplorer extends React.Component {
     return (
       <div className='react-autoql-card-title-text'>
         <Icon style={{ fontSize: '20px' }} type='react-autoql-bubbles-outlined' /> Query Suggestions for "
-        {selectedTopic?.display_name}"
+        {selectedTopic?.displayName}"
       </div>
     )
   }
@@ -217,9 +217,9 @@ export default class DataExplorer extends React.Component {
               ref={(r) => (this.querySuggestionList = r)}
               key={this.querySuggestionsKey}
               authentication={this.props.authentication}
-              context={this.state.selectedSubject?.name}
+              context={this.state.selectedSubject?.id}
               valueLabel={this.state.selectedVL}
-              searchText={this.state.selectedKeywords?.display_name}
+              searchText={this.state.selectedKeywords?.displayName}
               selectedType={this.state.activeTopicType}
               executeQuery={this.props.executeQuery}
               skipQueryValidation={this.state.skipQueryValidation}
@@ -271,7 +271,7 @@ export default class DataExplorer extends React.Component {
       <div className='data-explorer-result-container'>
         <CustomScrollbars>
           <div
-            key={`data-explorer-sections-container-${this.state.selectedSubject?.name}`}
+            key={`data-explorer-sections-container-${this.state.selectedSubject?.id}`}
             className='data-explorer-sections-container'
           >
             {this.renderDataPreview()}
@@ -324,14 +324,14 @@ export default class DataExplorer extends React.Component {
   }
 
   renderColumnQuerySuggestions = (column) => {
-    const subject = this.state.selectedSubject?.display_name || ''
+    const subject = this.state.selectedSubject?.displayName || ''
     if (!subject) {
       return null
     }
 
     const lowerCaseSubject = subject.toLowerCase()
     const titleCaseSubject = lowerCaseSubject[0].toUpperCase() + lowerCaseSubject.substring(1)
-    const lowerCaseColumn = column?.display_name?.toLowerCase()
+    const lowerCaseColumn = column?.displayName?.toLowerCase()
     const suggestions = []
 
     if (column.type === 'STRING') {
@@ -381,7 +381,7 @@ export default class DataExplorer extends React.Component {
 
     return (
       <div>
-        <div className='data-explorer-tooltip-title'>{column?.display_name}</div>
+        <div className='data-explorer-tooltip-title'>{column?.displayName}</div>
         {!!formattedType && <div className='data-explorer-tooltip-section'>{formattedType}</div>}
         {/* Disable this until we have a better way to get query suggestions for columns
         <div className="data-explorer-tooltip-section">

@@ -1,23 +1,24 @@
 import React from 'react'
-import PropTypes from 'prop-types'
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import Autosuggest from 'react-autosuggest'
-import { v4 as uuid } from 'uuid'
-import _cloneDeep from 'lodash.clonedeep'
-import _isEqual from 'lodash.isequal'
 import axios from 'axios'
+import { v4 as uuid } from 'uuid'
+import PropTypes from 'prop-types'
+import _isEqual from 'lodash.isequal'
+import _cloneDeep from 'lodash.clonedeep'
+import Autosuggest from 'react-autosuggest'
+
 import {
   fetchDataExplorerAutocomplete,
   fetchSubjectList,
   REQUEST_CANCELLED_ERROR,
-  DataExplorerTypes,
   animateInputText,
 } from 'autoql-fe-utils'
 
-import { authenticationType } from '../../props/types'
 import { Icon } from '../Icon'
 import { TopicName } from './TopicName'
 import { CustomScrollbars } from '../CustomScrollbars'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+
+import { authenticationType } from '../../props/types'
 
 import './DataExplorerInput.scss'
 
@@ -66,28 +67,22 @@ export default class DataExplorerInput extends React.Component {
 
   isAggSeed(subject) {
     return (
-      subject.display_name.toLowerCase().endsWith('by day') ||
-      subject.display_name.toLowerCase().endsWith('by week') ||
-      subject.display_name.toLowerCase().endsWith('by month') ||
-      subject.display_name.toLowerCase().endsWith('by year')
+      subject.displayName.toLowerCase().endsWith('by week') ||
+      subject.displayName.toLowerCase().endsWith('by month') ||
+      subject.displayName.toLowerCase().endsWith('by day') ||
+      subject.displayName.toLowerCase().endsWith('by year')
     )
   }
   fetchAllSubjects = () => {
     fetchSubjectList({ ...this.props.authentication })
-      .then((response) => {
-        const subjects = response?.data?.data?.subjects || []
-        let allSubjects = []
-        if (subjects.length) {
-          allSubjects = subjects
-            .map((subject) => {
-              return {
-                ...subject,
-                type: DataExplorerTypes.SUBJECT_TYPE,
-              }
-            })
-            .filter((subject) => !this.isAggSeed(subject))
-            .sort((a, b) => a.display_name.localeCompare(b.display_name))
+      .then((subjects) => {
+        if (!subjects?.length) {
+          return
         }
+
+        const allSubjects = subjects
+          .filter((subject) => !this.isAggSeed(subject))
+          .sort((a, b) => a.displayName.localeCompare(b.displayName))
 
         if (this._isMounted) {
           this.setState({
@@ -111,7 +106,7 @@ export default class DataExplorerInput extends React.Component {
 
   //   var reg = new RegExp(`^${input.toLowerCase()}`)
   //   return this.state.allSubjects.filter((subject) => {
-  //     const term = subject.display_name.toLowerCase()
+  //     const term = subject.displayName.toLowerCase()
   //     if (term.match(reg)) {
   //       return subject
   //     }
@@ -140,7 +135,7 @@ export default class DataExplorerInput extends React.Component {
     if (this._isMounted) {
       this.userSelectedValue = null
       this.setState({
-        inputValue: subject.display_name,
+        inputValue: subject.displayName,
         recentSuggestions: this.getNewRecentSuggestions(subject),
       })
       this.props.onSelection(subject)
@@ -149,7 +144,7 @@ export default class DataExplorerInput extends React.Component {
 
   submitRawText = (text = '', skipQueryValidation) => {
     let subject = this.state.allSubjects.find(
-      (subj) => subj.display_name.toLowerCase().trim() === text.toLowerCase().trim(),
+      (subj) => subj.displayName.toLowerCase().trim() === text.toLowerCase().trim(),
     )
 
     if (subject) {
@@ -157,14 +152,14 @@ export default class DataExplorerInput extends React.Component {
     } else {
       subject = {
         type: 'text',
-        display_name: text,
+        displayName: text,
       }
     }
 
     this.props.onSelection(subject, skipQueryValidation)
     this.setState({
       recentSuggestions: this.getNewRecentSuggestions(subject),
-      inputValue: subject.display_name,
+      inputValue: subject.displayName,
     })
   }
 
@@ -229,8 +224,8 @@ export default class DataExplorerInput extends React.Component {
 
   userSelectedSuggestionHandler = (selectedItem) => {
     this.userSelectedValue = selectedItem
-    if (selectedItem?.display_name && this._isMounted) {
-      this.setState({ inputValue: selectedItem.display_name })
+    if (selectedItem?.displayName && this._isMounted) {
+      this.setState({ inputValue: selectedItem.displayName })
     }
   }
 
