@@ -91,6 +91,7 @@ class VizToolbar extends React.Component {
           tooltipID={this.props.tooltipID ?? `react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
           data-test='viz-toolbar-button'
           disabled={this.props.responseRef?.state?.isLoadingData}
+          size='small'
         >
           {icon}
         </Button>
