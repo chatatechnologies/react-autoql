@@ -546,6 +546,7 @@ export class OptionsToolbar extends React.Component {
         tooltip={tooltip}
         tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
         data-test='react-autoql-filter-button'
+        size='small'
       >
         <Icon type='filter' showBadge={isFiltered} />
       </Button>
@@ -560,6 +561,7 @@ export class OptionsToolbar extends React.Component {
         tooltip='Show/hide columns'
         tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
         data-test='options-toolbar-col-vis'
+        size='small'
       >
         <Icon type='eye' showBadge={shouldShowButton.showHiddenColsBadge} />
       </Button>
@@ -573,6 +575,7 @@ export class OptionsToolbar extends React.Component {
         className={this.getMenuItemClass()}
         tooltip='Report a problem'
         tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+        size='small'
       >
         <Icon type='warning-triangle' />
       </Button>
@@ -598,6 +601,7 @@ export class OptionsToolbar extends React.Component {
               tooltip='Re-run query'
               tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
               data-test='options-toolbar-trash-btn'
+              size='small'
             >
               <Icon type='refresh' />
             </Button>
@@ -609,6 +613,7 @@ export class OptionsToolbar extends React.Component {
               tooltip='Delete data response'
               tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
               data-test='options-toolbar-trash-btn'
+              size='small'
             >
               <Icon type='trash' />
             </Button>
@@ -634,6 +639,7 @@ export class OptionsToolbar extends React.Component {
                 tooltip='More options'
                 tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
                 data-test='react-autoql-toolbar-more-options-btn'
+                size='small'
               >
                 <Icon type='more-vertical' />
               </Button>
