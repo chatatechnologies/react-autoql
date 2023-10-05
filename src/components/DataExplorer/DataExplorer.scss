@@ -281,6 +281,10 @@
 
 .react-autoql-sample-queries-filter-dropdown {
   min-width: 180px;
+
+  .popover-container-content {
+    padding: 0;
+  }
 }
 
 @keyframes slideDown {

@@ -178,6 +178,7 @@ export default class SampleQueryList extends React.Component {
               executeQuery={this.props.executeQuery}
               tooltipID={this.props.tooltipID}
               context={this.props.context}
+              shouldRender={this.props.shouldRender}
             />
           )
         })}

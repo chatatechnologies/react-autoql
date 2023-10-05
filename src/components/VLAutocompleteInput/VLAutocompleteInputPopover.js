@@ -40,6 +40,10 @@ export default class VLAutocompleteInputPopover extends React.Component {
     if (this.state.isOpen && !prevState.isOpen) {
       this.autocompleteInput?.selectAll?.()
     }
+
+    if (!this.props.shouldRender && prevProps.shouldRender && this.state.isOpen) {
+      this.setState({ isOpen: false })
+    }
   }
 
   onVLSelection = (vl) => {
@@ -49,6 +53,13 @@ export default class VLAutocompleteInputPopover extends React.Component {
 
   getContentLocation = (popoverState) => {
     const { childRect, popoverRect, boundaryRect } = popoverState
+
+    if (!childRect.height || !childRect.width) {
+      return {
+        top: -1000,
+        left: -1000,
+      }
+    }
 
     const POPOVER_MAX_HEIGHT = 150
 

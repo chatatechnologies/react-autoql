@@ -262,6 +262,7 @@ export default class DataExplorer extends React.Component {
             skipQueryValidation={this.state.skipQueryValidation}
             userSelection={this.state.userSelection}
             tooltipID={this.props.tooltipID}
+            shouldRender={this.props.shouldRender}
             onValidationSuggestionClick={this.onValidationSuggestionClick}
             onSuggestionListResponse={() => {
               this.reloadScrollbars()
