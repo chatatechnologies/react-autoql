@@ -106,8 +106,9 @@ export default class MonthSelect extends React.Component {
       <div className='react-autoql-radio-btn-container month-select' data-test='react-autoql-month-select'>
         {days.map((option, i) => {
           return (
-            <Fragment key={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}>
+            <>
               <div
+                key={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}
                 className={`react-autoql-radio-btn
                   ${this.getButtonClassNames(option, i)}`}
                 onClick={() => this.onChange(option)}

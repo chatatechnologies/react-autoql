@@ -327,7 +327,7 @@ export default class ScheduleBuilder extends React.Component {
         <Select
           options={Object.keys(SCHEDULE_INTERVAL_OPTIONS).map((value) => ({
             value,
-            label: SCHEDULE_INTERVAL_OPTIONS[value].displayName,
+            label: <span dangerouslySetInnerHTML={{ __html: SCHEDULE_INTERVAL_OPTIONS[value].displayName }} />,
           }))}
           label='Send a Notification'
           value={this.state.resetPeriodSelectValue}
@@ -364,7 +364,7 @@ export default class ScheduleBuilder extends React.Component {
           onChange={(monthDaySelectValue) => this.setState({ monthDaySelectValue })}
           options={Object.keys(MONTH_DAY_SELECT_OPTIONS).map((value) => ({
             value,
-            label: MONTH_DAY_SELECT_OPTIONS[value],
+            label: <span dangerouslySetInnerHTML={{ __html: MONTH_DAY_SELECT_OPTIONS[value] }} />,
           }))}
         />
       </div>
@@ -474,7 +474,7 @@ export default class ScheduleBuilder extends React.Component {
         return {
           value: freqObj?.value,
           label: freqObj?.label,
-          listLabel: freqObj?.listLabel,
+          listLabel: <span dangerouslySetInnerHTML={{ __html: freqObj?.listLabel }} />,
         }
       })
 
@@ -514,12 +514,13 @@ export default class ScheduleBuilder extends React.Component {
           options={Object.keys(RESET_PERIOD_OPTIONS)
             .map((value) => ({
               value,
-              label: RESET_PERIOD_OPTIONS[value].displayName,
+              label: <span dangerouslySetInnerHTML={{ __html: RESET_PERIOD_OPTIONS[value].displayName }} />,
             }))
             .filter((option) => (option?.value === 'NONE' ? this.SUPPORTED_CONDITION_TYPE === EXISTS_TYPE : true))}
           label='Send a notification'
           value={this.state.resetPeriodSelectValue}
           onChange={(option) => this.setState({ resetPeriodSelectValue: option })}
+          popoverParentElement={this.props.popoverParentElement}
         />
       </div>
     )
