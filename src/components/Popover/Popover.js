@@ -54,6 +54,7 @@ class PopoverWithoutRef extends React.Component {
     if (!this.props.children) {
       return null
     }
+
     if (!this.renderContent()) {
       return null
     }
@@ -77,8 +78,8 @@ class PopoverWithoutRef extends React.Component {
             e.preventDefault()
             this.props.onClickOutside(e)
           }}
-          parentElement={isMobile ? undefined : this.props.parentElement}
-          boundaryElement={isMobile ? undefined : this.props.boundaryElement}
+          parentElement={isMobile ? undefined : this.props.parentElement ?? undefined}
+          boundaryElement={isMobile ? undefined : this.props.boundaryElement ?? undefined}
           positions={this.props.positions}
           align={this.props.align}
           reposition={this.props.reposition}

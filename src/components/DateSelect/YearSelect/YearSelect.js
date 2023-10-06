@@ -127,8 +127,9 @@ export default class YearSelect extends React.Component {
           }
 
           return (
-            <Fragment key={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}>
+            <>
               <div
+                key={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}
                 className={`react-autoql-radio-btn
                   ${isActive ? ' active' : ''}
                   ${this.props.outlined ? ' outlined' : ''}
@@ -139,7 +140,7 @@ export default class YearSelect extends React.Component {
               >
                 {option.label}
               </div>
-              {i !== 0 && (i + 1) % 3 === 0 && <br />}
+              {i !== 0 && (i + 1) % 3 === 0 && <br key={`react-autoql-radio-br-${this.COMPONENT_KEY}-${i}`} />}
             </>
           )
         })}
