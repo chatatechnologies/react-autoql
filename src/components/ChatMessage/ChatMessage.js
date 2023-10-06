@@ -240,11 +240,11 @@ export default class ChatMessage extends React.Component {
 
   renderContent = () => {
     if (this.props.isCSVProgressMessage || typeof this.state.csvDownloadProgress !== 'undefined') {
-      return this.renderCSVProgressMessage()
+      return <div className='chat-message-bubble-content-container'>{this.renderCSVProgressMessage()}</div>
     } else if (this.props.content) {
-      return this.props.content
+      return <div className='chat-message-bubble-content-container'>{this.props.content}</div>
     } else if (this.props.response?.status === 401) {
-      return UNAUTHENTICATED_ERROR
+      return <div className='chat-message-bubble-content-container'>{UNAUTHENTICATED_ERROR}</div>
     } else if (this.props.response) {
       return (
         <QueryOutput
@@ -296,7 +296,7 @@ export default class ChatMessage extends React.Component {
         />
       )
     }
-    return GENERAL_QUERY_ERROR
+    return <div className='chat-message-bubble-content-container'>{GENERAL_QUERY_ERROR}</div>
   }
 
   onCSVDownloadStart = ({ id, queryId, query }) => {
@@ -313,12 +313,12 @@ export default class ChatMessage extends React.Component {
 
   renderRightToolbar = () => {
     return (
-      <div className='chat-message-toolbar right'>
+      <div className='chat-message-toolbar chat-message-toolbar-right'>
         {this.props.isResponse ? (
           <OptionsToolbar
             ref={(r) => (this.optionsToolbarRef = r)}
             responseRef={this.responseRef}
-            className={'chat-message-toolbar right'}
+            className='chat-message-toolbar right'
             shouldRender={!this.props.isResizing && this.props.shouldRender}
             authentication={this.props.authentication}
             autoQLConfig={this.props.autoQLConfig}
@@ -341,7 +341,7 @@ export default class ChatMessage extends React.Component {
 
   renderLeftToolbar = () => {
     return (
-      <div className='chat-message-toolbar left'>
+      <div className='chat-message-toolbar chat-message-toolbar-left'>
         {this.props.isResponse && this.props.type !== 'text' ? (
           <VizToolbar
             ref={(r) => (this.vizToolbarRef = r)}
@@ -375,11 +375,11 @@ export default class ChatMessage extends React.Component {
             data-test='chat-message'
             className='chat-single-message-container'
           >
+            <div className='chat-message-toolbars-container'>
+              {this.renderLeftToolbar()}
+              {this.renderRightToolbar()}
+            </div>
             <div ref={(r) => (this.ref = r)} className='chat-message-bubble'>
-              <div className='chat-message-toolbars-container'>
-                {this.renderLeftToolbar()}
-                {this.renderRightToolbar()}
-              </div>
               {this.renderContent()}
             </div>
           </div>
