@@ -113,6 +113,8 @@
     &.with-select {
       .react-autoql-input {
         border-radius: 0px 4px 4px 0px;
+        display: block;
+        height: 100%;
       }
     }
 
@@ -159,7 +161,7 @@
 
       &:not(textarea) {
         padding: 0 10px;
-        height: 32px;
+        height: 38px;
       }
 
       &.with-select {
