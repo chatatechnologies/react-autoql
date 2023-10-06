@@ -14,40 +14,33 @@
   }
 }
 
-.react-autoql-btn.react-autoql-toolbar-btn {
-  height: 28px;
-  width: 28px;
-  display: flex;
-  position: relative;
-  justify-content: center;
-  align-items: center;
+.react-autoql-toolbar {
+  .react-autoql-btn.react-autoql-toolbar-btn {
+    height: 28px;
+    width: 28px;
+    display: flex;
+    position: relative;
+    justify-content: center;
+    align-items: center;
 
-  padding: 0 !important;
-  margin: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
 
-  background: none !important;
-  border: none !important;
-  outline: none !important;
-  font-size: 16px;
-  color: var(--react-autoql-text-color-primary) !important;
-  cursor: pointer;
+    background: none !important;
+    border: none !important;
+    outline: none !important;
+    font-size: 16px;
+    color: var(--react-autoql-text-color-primary) !important;
+    cursor: pointer;
 
-  &.filter-btn {
-    line-height: 24px;
+    &.react-autoql-toolbar-btn-selected {
+      color: var(--react-autoql-accent-color) !important;
+    }
   }
 
-  &.react-autoql-toolbar-btn-selected {
-    color: var(--react-autoql-accent-color) !important;
+  .react-autoql-toolbar-btn:hover {
+    opacity: 0.7;
   }
-}
-.react-autoql-toolbar-btn.green {
-  color: #2ecc40;
-}
-.react-autoql-toolbar-btn.red {
-  color: #e80000;
-}
-.react-autoql-toolbar-btn:hover {
-  opacity: 0.7;
 }
 
 /* Chart icon styles */

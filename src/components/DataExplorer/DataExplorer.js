@@ -1,24 +1,24 @@
 import React from 'react'
-import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
+import _isEqual from 'lodash.isequal'
 
 import { COLUMN_TYPES, DataExplorerTypes, dataFormattingDefault, fetchSubjectList } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
+import { Select } from '../Select'
 import { Tooltip } from '../Tooltip'
 import DataPreview from './DataPreview'
+import { SubjectName } from './SubjectName'
+import SampleQueryList from './SampleQueryList'
 import DataExplorerInput from './DataExplorerInput'
 import MultiSelect from '../MultiSelect/MultiSelect'
 import { CustomScrollbars } from '../CustomScrollbars'
-import SampleQueryList from './SampleQueryList'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType, dataFormattingType } from '../../props/types'
 
 import './DataExplorer.scss'
-import { Select } from '../Select'
-import { SubjectName } from './SubjectName'
 
 export default class DataExplorer extends React.Component {
   constructor(props) {

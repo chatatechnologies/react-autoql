@@ -786,9 +786,13 @@ export class DashboardTile extends React.Component {
         <div className='dashboard-tile-split-pane-container'>
           {this.renderBottomResponse()}
           {this.props.isEditing && (
-            <div className={`split-view-query-btn-container ${this.state.isSecondQueryInputOpen ? 'open' : ''}`}>
+            <div
+              className={`split-view-query-btn-container react-autoql-toolbar ${
+                this.state.isSecondQueryInputOpen ? 'open' : ''
+              }`}
+            >
               <div
-                className='react-autoql-toolbar viz-toolbar split-view-btn split-view-query-btn'
+                className='react-autoql-toolbar viz-toolbar split-view-btn split-view-query-btn react-autoql-toolbar-btn'
                 data-test='split-view-query-btn'
               >
                 <Button
@@ -957,7 +961,7 @@ export class DashboardTile extends React.Component {
 
   renderSplitViewBtn = () => {
     return (
-      <div className='viz-toolbar split-view-btn' data-test='split-view-btn'>
+      <div className='viz-toolbar react-autoql-toolbar split-view-btn' data-test='split-view-btn'>
         <Button
           onClick={this.onSplitViewClick}
           className={`react-autoql-toolbar-btn ${this.getIsSplitView() ? 'active' : ''}`}

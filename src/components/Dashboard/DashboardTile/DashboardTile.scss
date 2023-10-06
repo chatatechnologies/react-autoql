@@ -91,6 +91,12 @@
   .dashboard-tile-toolbars-left-container {
     display: flex;
     pointer-events: auto;
+    align-items: flex-end;
+    flex-wrap: wrap;
+
+    .react-autoql-toolbar {
+      flex-wrap: wrap;
+    }
   }
 
   &.left-padding {

@@ -22,6 +22,7 @@
   },
   "scripts": {
     "watch": "npm-watch",
+    "start": "npm run watch devscript",
     "dev": "npm run watch devscript",
     "devscript": "export NODE_ENV=dev && npm run build",
     "test": "jest --silent=false",
@@ -61,7 +62,7 @@
   },
   "dependencies": {
     "@react-icons/all-files": "^4.1.0",
-    "autoql-fe-utils": "1.0.22",
+    "autoql-fe-utils": "1.0.23",
     "axios": "^1.4.0",
     "d3-array": "^2.3.3",
     "d3-axis": "^1.0.12",
