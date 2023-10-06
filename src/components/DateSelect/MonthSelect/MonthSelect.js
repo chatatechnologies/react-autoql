@@ -120,7 +120,7 @@ export default class MonthSelect extends React.Component {
                   i !== days.length - 1 && // not the last row
                   (i + 1) % 7 === 0 && <br /> // every 7th day
               }
-            </Fragment>
+            </>
           )
         })}
         {this.renderLastDaySelector()}
