@@ -14,6 +14,15 @@
 
   .data-explorer-section.topic-dropdown-section {
     padding-top: 10px;
+
+    .react-autoql-select-and-label .react-autoql-select {
+      line-height: 32px;
+      height: 34px;
+    }
+
+    .data-preview {
+      padding-top: 0;
+    }
   }
 
   .data-explorer-intro-message {

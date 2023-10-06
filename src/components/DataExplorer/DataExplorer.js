@@ -10,6 +10,7 @@ import { Select } from '../Select'
 import { Tooltip } from '../Tooltip'
 import DataPreview from './DataPreview'
 import { SubjectName } from './SubjectName'
+import { LoadingDots } from '../LoadingDots'
 import SampleQueryList from './SampleQueryList'
 import DataExplorerInput from './DataExplorerInput'
 import MultiSelect from '../MultiSelect/MultiSelect'
@@ -155,13 +156,13 @@ export default class DataExplorer extends React.Component {
     return (
       <div className='data-explorer-section topic-dropdown-section'>
         <Select
-          value={this.state.selectedContext}
           options={options}
-          placeholder='Select a Topic'
-          label='Filter by Topic'
+          value={this.state.selectedContext}
+          placeholder='Filter by Topic'
           onChange={(context) => this.setState({ selectedContext: context })}
           fullWidth
         />
+
         {subject ? (
           <DataPreview
             key={`data-preview-${dataPreviewID}`}
@@ -234,7 +235,7 @@ export default class DataExplorer extends React.Component {
         {columns?.length ? (
           <span className='react-autoql-data-preview-selected-columns-selector'>
             <MultiSelect
-              title='FILTERS'
+              title='FIELDS'
               size='small'
               align='start'
               popupClassname='react-autoql-sample-queries-filter-dropdown'

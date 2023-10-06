@@ -8,6 +8,7 @@ import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { Menu, MenuItem } from '../Menu'
 
 import './Select.scss'
+import { LoadingDots } from '../LoadingDots'
 
 export default class Select extends React.Component {
   constructor(props) {
@@ -123,26 +124,30 @@ export default class Select extends React.Component {
         {!this.props.tooltipID && (
           <Tooltip id={`select-tooltip-${this.ID}`} className='react-autoql-tooltip' delayShow={500} />
         )}
-        <Menu options={this.props.options}>
-          {this.props.options?.map((option, i) => {
-            return (
-              <MenuItem
-                id={`select-option-${this.ID}-${i}`}
-                key={`select-menu-${option.value}-${i}`}
-                title={option.listLabel ?? option.label ?? option.value}
-                subtitle={option.subtitle}
-                tooltip={option.tooltip}
-                tooltipID={this.props.tooltipID ?? `select-tooltip-${this.ID}`}
-                active={option.value === this.props.value}
-                icon={option.icon}
-                onClick={() => {
-                  this.setState({ isOpen: false })
-                  this.props.onChange(option.value)
-                }}
-              />
-            )
-          })}
-        </Menu>
+        {this.props.options?.length ? (
+          <Menu options={this.props.options}>
+            {this.props.options?.map((option, i) => {
+              return (
+                <MenuItem
+                  id={`select-option-${this.ID}-${i}`}
+                  key={`select-menu-${option.value}-${i}`}
+                  title={option.listLabel ?? option.label ?? option.value}
+                  subtitle={option.subtitle}
+                  tooltip={option.tooltip}
+                  tooltipID={this.props.tooltipID ?? `select-tooltip-${this.ID}`}
+                  active={option.value === this.props.value}
+                  icon={option.icon}
+                  onClick={() => {
+                    this.setState({ isOpen: false })
+                    this.props.onChange(option.value)
+                  }}
+                />
+              )
+            })}
+          </Menu>
+        ) : (
+          <LoadingDots />
+        )}
       </div>
     )
   }
