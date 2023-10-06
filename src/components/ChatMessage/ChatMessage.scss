@@ -4,7 +4,7 @@
   justify-content: flex-start;
   align-items: flex-start;
   width: 100%;
-  padding: 10px 20px 5px 20px;
+  padding: 15px 20px 5px 20px;
   transition: background-color 0.2s ease;
   position: relative;
 
@@ -12,24 +12,15 @@
     padding-top: 20px;
   }
 
-  &.text .chat-single-message-container .chat-message-bubble {
-    max-width: 85%;
-  }
-
-  .chat-single-message-container {
-    display: flex;
-    width: 100%;
-    min-height: 0;
-    flex: 1;
-  }
-
   &.request {
+    align-items: flex-end;
     animation: scale-up-br 0.5s ease;
+
     &.pwa {
       margin-bottom: 30px;
     }
     .chat-single-message-container {
-      justify-content: flex-end;
+      align-items: flex-end;
 
       .chat-message-bubble {
         background: var(--react-autoql-accent-color);
@@ -62,15 +53,27 @@
 
   .chat-message-toolbars-container {
     display: flex;
-    position: absolute;
-    align-items: flex-start;
+    position: relative;
+    align-items: flex-end;
     justify-content: space-between;
     transition: opacity 0.3s ease, color 0.3s ease;
-    left: -10px;
-    right: -10px;
+    top: 10px;
     margin-bottom: -10px;
-    bottom: 100%;
-    z-index: 3;
+    z-index: 999999999;
+    height: 0;
+    overflow: visible;
+    margin: 0;
+    padding: 0;
+    border: none;
+    min-width: 100%;
+
+    .chat-message-toolbar-left {
+      margin-left: -5px;
+    }
+
+    .chat-message-toolbar-right {
+      margin-right: -5px;
+    }
   }
 
   .react-autoql-toolbar {
@@ -107,7 +110,11 @@
   }
 
   .chat-single-message-container {
-    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-width: calc(100% - 20px);
+    flex: 1 1;
 
     a {
       text-decoration: none;
@@ -145,7 +152,11 @@
     }
 
     .chat-message-bubble {
+      display: flex;
+      flex-direction: column;
       position: relative;
+      flex: 1;
+      overflow: hidden;
       padding: 13px;
       border-radius: 6px;
       max-width: 100%;
