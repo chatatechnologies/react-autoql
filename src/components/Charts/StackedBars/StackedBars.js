@@ -91,7 +91,7 @@ export default class StackedBars extends Component {
               width={width}
               height={yScale.bandwidth()}
               onClick={() => this.onColumnClick(d, colIndex, index)}
-              data-tooltip-content={tooltip}
+              data-tooltip-html={tooltip}
               data-tooltip-id={this.props.chartTooltipID}
               style={{
                 fill: color,
