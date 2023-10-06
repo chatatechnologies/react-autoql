@@ -15,9 +15,7 @@ const getStoredProp = (name) => {
 }
 
 const getBaseUrl = () => {
-  return window.location.href.includes('prod')
-    ? 'https://backend.chata.io'
-    : 'https://backend-staging.chata.io'
+  return window.location.href.includes('prod') ? 'https://backend.chata.io' : 'https://backend-staging.chata.io'
 }
 
 const getReputationUrl = () => {
@@ -75,10 +73,7 @@ export default class SentimentAnalysisPage extends React.Component {
     formData.append('password', this.state.password)
 
     const baseUrl = getBaseUrl()
-    const loginResponse = await axios.post(
-      `${baseUrl}/gcp/api/v1/login`,
-      formData
-    )
+    const loginResponse = await axios.post(`${baseUrl}/gcp/api/v1/login`, formData)
 
     const loginToken = loginResponse.data
     setStoredProp('sentimentLoginToken', loginToken)
@@ -201,25 +196,23 @@ export default class SentimentAnalysisPage extends React.Component {
       return (
         <div>
           <h3>Newest Model</h3>
-          <Collapse defaultActiveKey="sentiment-responseV2-0">
-            {Object.keys(this.state.responseV2['output response']).map(
-              (title, index) => {
-                let text = `${this.state.responseV2['output response'][title]}`
-                text = text.split(' \\n')
+          <Collapse defaultActiveKey='sentiment-responseV2-0'>
+            {Object.keys(this.state.responseV2['output response']).map((title, index) => {
+              let text = `${this.state.responseV2['output response'][title]}`
+              text = text.split(' \\n')
 
-                return (
-                  <Panel header={title} key={`sentiment-responseV2-${index}`}>
-                    {text.map((str, i) => {
-                      return (
-                        <Fragment key={i}>
-                          {str} <br />
-                        </>
-                      )
-                    })}
-                  </Panel>
-                )
-              }
-            )}
+              return (
+                <Panel header={title} key={`sentiment-responseV2-${index}`}>
+                  {text.map((str, i) => {
+                    return (
+                      <span key={i}>
+                        {str} <br />
+                      </span>
+                    )
+                  })}
+                </Panel>
+              )
+            })}
           </Collapse>
         </div>
       )
@@ -234,25 +227,23 @@ export default class SentimentAnalysisPage extends React.Component {
         <div>
           <br /> <br />
           <h3>Older Model</h3>
-          <Collapse defaultActiveKey="sentiment-responseV2-1">
-            {Object.keys(this.state.responseV2_1['output response']).map(
-              (title, index) => {
-                let text = `${this.state.responseV2_1['output response'][title]}`
-                text = text.split(' \\n')
-                return (
-                  <Panel header={title} key={`sentiment-responseV2-1${index}`}>
-                    {' '}
-                    {text.map((str, i) => {
-                      return (
-                        <Fragment key={i}>
-                          {str} <br />
-                        </>
-                      )
-                    })}
-                  </Panel>
-                )
-              }
-            )}
+          <Collapse defaultActiveKey='sentiment-responseV2-1'>
+            {Object.keys(this.state.responseV2_1['output response']).map((title, index) => {
+              let text = `${this.state.responseV2_1['output response'][title]}`
+              text = text.split(' \\n')
+              return (
+                <Panel header={title} key={`sentiment-responseV2-1${index}`}>
+                  {' '}
+                  {text.map((str, i) => {
+                    return (
+                      <span key={i}>
+                        {str} <br />
+                      </span>
+                    )
+                  })}
+                </Panel>
+              )
+            })}
           </Collapse>
         </div>
       )
@@ -267,10 +258,7 @@ export default class SentimentAnalysisPage extends React.Component {
         <p>
           We are{' '}
           <strong>
-            <em>
-              {(this.state.sentiment['predicted score'][0][1] * 100).toFixed(2)}
-              %{' '}
-            </em>
+            <em>{(this.state.sentiment['predicted score'][0][1] * 100).toFixed(2)}% </em>
           </strong>
           sure this is a{' '}
           <strong>
@@ -300,17 +288,17 @@ export default class SentimentAnalysisPage extends React.Component {
 
           <span>
             <Input
-              type="text"
+              type='text'
               onChange={(e) => {
                 this.setState({ controlSignals: e.target.value })
               }}
               value={this.state.controlSignals}
-              placeholder="Please enter any control words/phrases"
+              placeholder='Please enter any control words/phrases'
               style={{ marginTop: '5px' }}
             />
           </span>
 
-          <div id="rating-selection">
+          <div id='rating-selection'>
             {
               <Rating
                 rating={this.state.rating}
@@ -322,7 +310,7 @@ export default class SentimentAnalysisPage extends React.Component {
             }
           </div>
 
-          <div id="clear-rating-button">
+          <div id='clear-rating-button'>
             <button
               onClick={() => {
                 this.setState({ rating: undefined })
@@ -333,16 +321,16 @@ export default class SentimentAnalysisPage extends React.Component {
             </button>
           </div>
           <Input
-            type="text"
+            type='text'
             onChange={(e) => {
               this.setState({ title: e.target.value })
             }}
             value={this.state.title}
-            placeholder="Review Title"
+            placeholder='Review Title'
             style={{ marginTop: '5px' }}
           />
           <TextArea
-            placeholder="Type your review here"
+            placeholder='Type your review here'
             onChange={(e) => this.setState({ reviewTextValue: e.target.value })}
             value={this.state.reviewTextValue}
             style={{ marginTop: '5px', minHeight: '130px' }}
@@ -350,10 +338,10 @@ export default class SentimentAnalysisPage extends React.Component {
 
           {/* disabling second v2 model for prod */}
           <Switch
-            id="toggle-switch"
+            id='toggle-switch'
             onChange={this.onV2Activate}
-            checkedChildren="OLD ON"
-            unCheckedChildren="OLD OFF"
+            checkedChildren='OLD ON'
+            unCheckedChildren='OLD OFF'
           />
 
           <Form
@@ -366,11 +354,11 @@ export default class SentimentAnalysisPage extends React.Component {
           >
             <div style={{ textAlign: 'right' }}>
               <Button
-                id="submit-form-button"
-                type="primary"
+                id='submit-form-button'
+                type='primary'
                 loading={this.state.isProcessing}
                 onClick={this.submitReview}
-                htmlType="submit"
+                htmlType='submit'
                 disabled={!this.state.reviewTextValue}
               >
                 {this.state.isProcessing ? 'Submitting' : 'Submit Review'}
@@ -379,31 +367,25 @@ export default class SentimentAnalysisPage extends React.Component {
           </Form>
 
           <Collapse defaultActiveKey={['1']}>
-            <Panel header="Administrative Panel" key="1">
+            <Panel header='Administrative Panel' key='1'>
               <Form.Item
-                label="API key"
-                name="sentimentApiKey"
-                rules={[
-                  { required: true, message: 'Please enter your API key' },
-                ]}
+                label='API key'
+                name='sentimentApiKey'
+                rules={[{ required: true, message: 'Please enter your API key' }]}
               >
                 <Input
-                  name="api-key"
+                  name='api-key'
                   onChange={(e) => {
                     this.setState({ apiKey: e.target.value })
                   }}
-                  onBlur={(e) =>
-                    setStoredProp('sentimentApiKey', e.target.value)
-                  }
+                  onBlur={(e) => setStoredProp('sentimentApiKey', e.target.value)}
                   value={this.state.sentimentApiKey}
                 />
               </Form.Item>
               <Form.Item
-                label="Username"
-                name="sentimentUsername"
-                rules={[
-                  { required: true, message: 'Please enter your username' },
-                ]}
+                label='Username'
+                name='sentimentUsername'
+                rules={[{ required: true, message: 'Please enter your username' }]}
               >
                 <Input
                   onChange={(e) => {
@@ -414,50 +396,48 @@ export default class SentimentAnalysisPage extends React.Component {
                 />
               </Form.Item>
               <Form.Item
-                label="Password"
-                name="sentimentPassword"
-                rules={[
-                  { required: true, message: 'Please enter your password' },
-                ]}
+                label='Password'
+                name='sentimentPassword'
+                rules={[{ required: true, message: 'Please enter your password' }]}
               >
                 <Input
-                  type="password"
+                  type='password'
                   onChange={(e) => {
                     this.setState({ password: e.target.value })
                   }}
                   value={this.state.password}
                 />
               </Form.Item>
-              <Form.Item label="Hotel Name" name="hotelName">
+              <Form.Item label='Hotel Name' name='hotelName'>
                 <Input
-                  type="text"
+                  type='text'
                   onChange={(e) => {
                     this.setState({ hotelName: e.target.value })
                   }}
                   value={this.state.hotelName}
                 />
               </Form.Item>
-              <Form.Item label="Your Name" name="name">
+              <Form.Item label='Your Name' name='name'>
                 <Input
-                  type="text"
+                  type='text'
                   onChange={(e) => {
                     this.setState({ name: e.target.value })
                   }}
                   value={this.state.name}
                 />
               </Form.Item>
-              <Form.Item label="Responder" name="responder">
+              <Form.Item label='Responder' name='responder'>
                 <Input
-                  type="text"
+                  type='text'
                   onChange={(e) => {
                     this.setState({ responder: e.target.value })
                   }}
                   value={this.state.responder}
                 />
               </Form.Item>
-              <Form.Item label="Responder Title" name="responder-title">
+              <Form.Item label='Responder Title' name='responder-title'>
                 <Input
-                  type="text"
+                  type='text'
                   onChange={(e) => {
                     this.setState({ responderTitle: e.target.value })
                   }}
@@ -465,9 +445,9 @@ export default class SentimentAnalysisPage extends React.Component {
                 />
               </Form.Item>
 
-              <Form.Item label="Rank Type" name="rank-type">
+              <Form.Item label='Rank Type' name='rank-type'>
                 <Input
-                  type="text"
+                  type='text'
                   onChange={(e) => {
                     this.setState({ rankType: e.target.value })
                   }}
