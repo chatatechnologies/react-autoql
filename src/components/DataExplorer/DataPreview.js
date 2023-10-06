@@ -295,17 +295,6 @@ export default class DataExplorer extends React.Component {
     )
   }
 
-  renderDataPreviewTitle = () => {
-    const subject = this.props.subject?.displayName
-    const titleCaseSubject = getTitleCase(subject)
-
-    return (
-      <div className='react-autoql-data-explorer-section-title'>
-        <Icon style={{ fontSize: '20px' }} type='book' /> {titleCaseSubject}
-      </div>
-    )
-  }
-
   render = () => {
     if (!this.props.shouldRender) {
       return null
@@ -318,6 +307,7 @@ export default class DataExplorer extends React.Component {
           className='data-explorer-data-preview'
           data-test='data-explorer-data-preview'
           ref={(r) => (this.dataPreviewRef = r)}
+          style={this.props.style}
         >
           {this.state.loading ? this.renderLoadingContainer() : this.renderDataPreviewGrid()}
         </div>

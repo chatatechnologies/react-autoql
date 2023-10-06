@@ -149,6 +149,9 @@ export default class DataExplorer extends React.Component {
       label: <SubjectName subject={subject} />,
     }))
 
+    const subject = this.state.subjectList?.find((subj) => subj.context === this.state.selectedContext)
+    const dataPreviewID = this.state.selectedContext?.replaceAll(' ', '-')
+
     return (
       <div className='data-explorer-section topic-dropdown-section'>
         <Select
@@ -159,6 +162,32 @@ export default class DataExplorer extends React.Component {
           onChange={(context) => this.setState({ selectedContext: context })}
           fullWidth
         />
+        {subject ? (
+          <DataPreview
+            key={`data-preview-${dataPreviewID}`}
+            authentication={this.props.authentication}
+            dataFormatting={this.props.dataFormatting}
+            subject={subject}
+            shouldRender={this.props.shouldRender}
+            dataExplorerRef={this.dataExplorerPage}
+            isCollapsed={this.props.isSmallScreen ? this.state.isDataPreviewCollapsed : undefined}
+            defaultCollapsed={this.props.isSmallScreen ? false : undefined}
+            tooltipID={`data-preview-tooltip-${this.ID}`}
+            onColumnSelection={(selectedColumns) => {
+              this.setState({ selectedColumns })
+            }}
+            style={{ height: '150px' }}
+            onDataPreview={(dataPreview) => this.setState({ dataPreview })}
+            data={this.state.dataPreview}
+            selectedColumns={this.state.selectedColumns}
+            onIsCollapsedChange={(isCollapsed) => {
+              this.setState({
+                isDataPreviewCollapsed: isCollapsed,
+                isQuerySuggestionCollapsed: isCollapsed ? this.state.isQuerySuggestionCollapsed : true,
+              })
+            }}
+          />
+        ) : null}
       </div>
     )
   }

@@ -1,6 +1,5 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import { SampleQueryReplacementTypes, getQueryRequestParams, getTitleCase } from 'autoql-fe-utils'
 
@@ -12,8 +11,19 @@ export default class SampleQuery extends React.Component {
   constructor(props) {
     super(props)
 
+    const initialValues = _cloneDeep(props.suggestion?.initialValues)
+
+    if (props.valueLabel && initialValues) {
+      Object.keys(initialValues).forEach((key) => {
+        if (initialValues[key]?.type === SampleQueryReplacementTypes.SAMPLE_QUERY_VL_TYPE) {
+          initialValues[key].replacement = props.valueLabel
+          initialValues[key].value = props.valueLabel?.format_txt
+        }
+      })
+    }
+
     this.state = {
-      values: props.suggestion?.initialValues,
+      values: initialValues,
     }
   }
 
