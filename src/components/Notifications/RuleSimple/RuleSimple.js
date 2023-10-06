@@ -378,7 +378,7 @@ export default class RuleSimple extends React.Component {
         value: operator,
         listLabel: (
           <span>
-            {operatorObj.displayName} {symbol}
+            <span dangerouslySetInnerHTML={{ __html: operatorObj.displayName }} /> {symbol}
           </span>
         ),
         label: operatorObj.displayName,
