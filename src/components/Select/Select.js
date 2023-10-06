@@ -136,7 +136,7 @@ export default class Select extends React.Component {
             return (
               <MenuItem
                 id={`select-option-${this.ID}-${i}`}
-                key={option.value}
+                key={`select-menu-${option.value}-${i}`}
                 title={option.listLabel ?? option.label ?? option.value}
                 subtitle={option.subtitle}
                 tooltip={option.tooltip}
