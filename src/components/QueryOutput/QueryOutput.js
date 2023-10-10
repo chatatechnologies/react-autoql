@@ -568,6 +568,7 @@ export class QueryOutput extends React.Component {
 
   isTableConfigValid = (tableConfig, columns, displayType) => {
     if (!columns?.length || !this.queryResponse?.data?.data?.rows?.length) {
+      console.debug('Invalid Config: either no columns or no data were provided to table config validation')
       return false
     }
 
@@ -672,10 +673,10 @@ export class QueryOutput extends React.Component {
       }
 
       const areStringColumnsValid = tableConfig.stringColumnIndices.every((index) => {
-        return columns[index] && isColumnStringType(columns[index])
+        return columns[index] && isColumnStringType(columns[index] || isColumnNumberType(columns[index]))
       })
 
-      if (!areStringColumnsValid) {
+      if (!areStringColumnsValid && !this.usePivotDataForChart()) {
         console.debug('Saved string indices are not string columns:', {
           stringColumnIndices: tableConfig.stringColumnIndices,
         })
@@ -2088,6 +2089,7 @@ export class QueryOutput extends React.Component {
       this.pivotRowHeaders = uniqueValues0
       this.tableConfig.legendColumnIndex = newLegendColumnIndex
       this.tableConfig.stringColumnIndex = newStringColumnIndex
+      this.tableConfig.stringColumnIndices = [newStringColumnIndex]
 
       // Generate new column array
       const pivotTableColumns = [
@@ -2361,6 +2363,7 @@ export class QueryOutput extends React.Component {
 
     const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
     const combinedFilters = this.getCombinedFilters()
+
     const formattedTableParams = {
       ...this.formattedTableParams,
       filters: combinedFilters,
@@ -2559,12 +2562,12 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  renderTextResponse = () => {
+  renderTextResponse = (text) => {
     if (areAllColumnsHidden(this.getColumns())) {
       return this.renderAllColumnsHiddenMessage()
     }
 
-    return null
+    return text ?? null
   }
 
   renderResponse = () => {
