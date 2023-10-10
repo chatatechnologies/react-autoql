@@ -35,9 +35,9 @@ export default class SingleNumberAxisSelector extends React.Component {
     }
 
     const existingNumberScale = scale.secondScale
-    const filteredColumns = columns.filter(
-      (col) => !existingNumberScale?.fields?.find((field) => field.name === col.name),
-    )
+    const filteredColumns = columns
+      .filter((col) => !existingNumberScale?.fields?.find((field) => field.name === col.name))
+      .filter((col) => col.is_visible)
 
     return (
       <div
