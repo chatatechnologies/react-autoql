@@ -122,8 +122,9 @@ export default class ChataPieChart extends Component {
   }
 
   aggregateOtherCategory = (props, sortedData) => {
+    const clonedSortedData = _cloneDeep(sortedData)
     const sortedDataWithOther = []
-    sortedData.forEach((row, i) => {
+    clonedSortedData.forEach((row, i) => {
       if (i === MAX_SLICES) {
         sortedDataWithOther[MAX_SLICES] = row
         sortedDataWithOther[MAX_SLICES][props.stringColumnIndex] = 'Other'
