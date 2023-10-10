@@ -455,7 +455,7 @@ class QueryInput extends React.Component {
 
   getSuggestions = () => {
     const isQueryHistory = this.state.suggestions?.find((sugg) => sugg.fromHistory)
-    return [{ title: isQueryHistory ? 'Recent' : '', suggestions: this.state.suggestions }]
+    return [{ title: isQueryHistory ? 'Recent queries' : '', suggestions: this.state.suggestions }]
   }
 
   onInputChange = (e) => {
