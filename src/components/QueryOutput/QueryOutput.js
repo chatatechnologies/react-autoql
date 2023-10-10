@@ -59,6 +59,7 @@ import {
   getAuthentication,
   getDataFormatting,
   getAutoQLConfig,
+  getVisibleColumns,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -566,36 +567,36 @@ export class QueryOutput extends React.Component {
   }
 
   isTableConfigValid = (tableConfig, columns, displayType) => {
-    if (!columns || !this.queryResponse?.data?.data?.rows?.length) {
+    if (!columns?.length || !this.queryResponse?.data?.data?.rows?.length) {
       return false
     }
 
     try {
-      if (
-        !tableConfig ||
-        !tableConfig.numberColumnIndices ||
-        !tableConfig.stringColumnIndices ||
-        (hasNumberColumn(columns) && !isNumber(tableConfig.numberColumnIndex)) ||
-        (hasStringColumn(columns) && !isNumber(tableConfig.stringColumnIndex))
-      ) {
-        console.debug(
-          'Table config provided was incomplete',
-          !tableConfig,
-          !tableConfig.numberColumnIndices,
-          !tableConfig.stringColumnIndices,
-          hasNumberColumn(columns) && !isNumber(tableConfig.numberColumnIndex),
-          hasStringColumn(columns) && !isNumber(tableConfig.stringColumnIndex),
-        )
+      if (!tableConfig || !tableConfig.numberColumnIndices || !tableConfig.stringColumnIndices) {
+        console.debug('Table config provided was incomplete: one of the index arrays are missing', { tableConfig })
+      }
+
+      const datasetHasNumberColButConfigDoesNot =
+        hasNumberColumn(getVisibleColumns(columns)) && !isNumber(tableConfig.numberColumnIndex)
+
+      const datasetHasStringColButConfigDoesNot =
+        hasStringColumn(getVisibleColumns(columns)) && !isNumber(tableConfig.stringColumnIndex)
+
+      if (datasetHasNumberColButConfigDoesNot || datasetHasStringColButConfigDoesNot) {
+        console.debug('Table config provided was incomplete:', {
+          datasetHasNumberColButConfigDoesNot,
+          datasetHasStringColButConfigDoesNot,
+        })
         return false
       }
 
       if (!Array.isArray(tableConfig.numberColumnIndices)) {
-        console.debug('Number column indices array not valid in table config')
+        console.debug('Number column indices in table config is not an array')
         return false
       }
 
       if (!Array.isArray(tableConfig.stringColumnIndices)) {
-        console.debug('String column indices array not valid in table config')
+        console.debug('String column indices in table config is not an array')
         return false
       }
 
@@ -604,7 +605,7 @@ export class QueryOutput extends React.Component {
         (!columns[tableConfig.stringColumnIndex].is_visible ||
           tableConfig.stringColumnIndices.find((i) => !columns[i].is_visible) !== undefined)
       ) {
-        console.debug('Table config invalid: Some of the number columns were hidden.')
+        console.debug('Table config invalid: Some of the number column indices were pointing to hidden columns.')
         return false
       }
 
@@ -613,7 +614,17 @@ export class QueryOutput extends React.Component {
         (!columns[tableConfig.numberColumnIndex].is_visible ||
           tableConfig.numberColumnIndices.find((i) => !columns[i].is_visible) !== undefined)
       ) {
-        console.debug('Table config invalid: Some of the string columns were hidden.')
+        console.debug('Table config invalid: Some of the string column indices were pointing to hidden columns.')
+        return false
+      }
+
+      if (
+        isNumber(tableConfig.numberColumnIndex2) &&
+        (!columns[tableConfig.numberColumnIndex2].is_visible ||
+          (tableConfig.numberColumnIndices2?.length &&
+            tableConfig.numberColumnIndices2.find((i) => !columns[i].is_visible) !== undefined))
+      ) {
+        console.debug('Table config invalid: Some of the second number column indices were pointing to hidden columns.')
         return false
       }
 
@@ -634,11 +645,6 @@ export class QueryOutput extends React.Component {
           console.debug('Both axes reference one or more of the same number column index')
           return false
         }
-
-        if (tableConfig.numberColumnIndices2.find((i) => !columns[i].is_visible)) {
-          console.debug('Second axis indices had hidden columns')
-          return false
-        }
       }
 
       const areNumberColumnsValid = tableConfig.numberColumnIndices.every((index) => {
@@ -646,15 +652,33 @@ export class QueryOutput extends React.Component {
       })
 
       if (!areNumberColumnsValid) {
-        console.debug('Saved number indices are not number columns')
+        console.debug('Saved number indices are not number columns:', {
+          numberColumnIndices: tableConfig.numberColumnIndices,
+        })
+        return false
+      }
+
+      const areSecondNumberColumnsValid =
+        !tableConfig.numberColumnIndices2?.length ||
+        tableConfig.numberColumnIndices2.every((index) => {
+          return columns[index] && isColumnNumberType(columns[index])
+        })
+
+      if (!areSecondNumberColumnsValid) {
+        console.debug('Saved second number indices are not number columns:', {
+          numberColumnsIndices2: tableConfig.numberColumnIndices2,
+        })
         return false
       }
 
       const areStringColumnsValid = tableConfig.stringColumnIndices.every((index) => {
         return columns[index] && isColumnStringType(columns[index])
       })
+
       if (!areStringColumnsValid) {
-        console.debug('Saved string indices are not string columns')
+        console.debug('Saved string indices are not string columns:', {
+          stringColumnIndices: tableConfig.stringColumnIndices,
+        })
         return false
       }
 
@@ -1535,7 +1559,7 @@ export class QueryOutput extends React.Component {
     ) {
       // There are enough number column indices to have a second, but the second doesn't exist
       this.tableConfig.numberColumnIndex2 = columns.findIndex(
-        (col, index) => index !== this.tableConfig.numberColumnIndex && isColumnNumberType(col),
+        (col, index) => index !== this.tableConfig.numberColumnIndex && isColumnNumberType(col) && col.is_visible,
       )
       this.tableConfig.numberColumnIndices2 = [this.tableConfig.numberColumnIndex2]
     } else if (amountOfNumberColumns > 1 && this.numberIndicesArraysOverlap(this.tableConfig)) {
