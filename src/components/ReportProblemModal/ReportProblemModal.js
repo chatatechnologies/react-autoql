@@ -118,7 +118,7 @@ export default class ReportProblemModal extends React.Component {
               value={this.state.problemType}
               onChange={(value) => this.setState({ problemType: value })}
             />
-            Please tell us more about the problem you are experiencing:
+            <p>Please tell us more about the problem you are experiencing:</p>
             <textarea
               className='report-problem-text-area'
               onChange={(e) =>
