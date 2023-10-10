@@ -80,7 +80,7 @@ export default class NumberAxisSelector extends React.Component {
   }
 
   getColumnsOfType = (type) => {
-    const columns = this.state.columns?.filter((col) => col.type === type)
+    const columns = this.state.columns?.filter((col) => col.type === type && col.is_visible)
     return columns
   }
 
