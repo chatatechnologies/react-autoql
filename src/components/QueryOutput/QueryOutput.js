@@ -606,7 +606,7 @@ export class QueryOutput extends React.Component {
         (!columns[tableConfig.stringColumnIndex].is_visible ||
           tableConfig.stringColumnIndices.find((i) => !columns[i].is_visible) !== undefined)
       ) {
-        console.debug('Table config invalid: Some of the number column indices were pointing to hidden columns.')
+        console.debug('Table config invalid: Some of the string column indices were pointing to hidden columns.')
         return false
       }
 
@@ -615,7 +615,7 @@ export class QueryOutput extends React.Component {
         (!columns[tableConfig.numberColumnIndex].is_visible ||
           tableConfig.numberColumnIndices.find((i) => !columns[i].is_visible) !== undefined)
       ) {
-        console.debug('Table config invalid: Some of the string column indices were pointing to hidden columns.')
+        console.debug('Table config invalid: Some of the number column indices were pointing to hidden columns.')
         return false
       }
 
