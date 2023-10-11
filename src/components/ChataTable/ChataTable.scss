@@ -26,8 +26,6 @@
     width: 100%;
     max-height: 100%;
     min-height: 100px;
-    display: flex;
-    flex-direction: column;
     overflow: hidden;
 
     .tabulator-cell,
@@ -45,6 +43,8 @@
     position: absolute !important;
     pointer-events: none !important;
     opacity: 0 !important;
+    height: 0px !important;
+    flex: 0 0 0;
   }
 
   // This css is to fix tabulator bug and allow scrolling columns on an empty table
@@ -210,12 +210,13 @@
   }
 
   &.animating {
-    .react-autoql-table {
+    .react-autoql-table.tabulator {
       // This cant be display: none because tabulator needs
       // to reference the dom element for its initial render
       visibility: hidden;
       pointer-events: none;
       opacity: 0;
+      height: 0px !important;
     }
   }
 
