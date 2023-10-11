@@ -73,7 +73,7 @@ export default class NumberAxisSelector extends React.Component {
   }
 
   getColumnsOfType = (type) => {
-    const columns = this.state.columns?.filter((col) => col.type === type)
+    const columns = this.state.columns?.filter((col) => col.type === type && col.is_visible)
     return columns
   }
 
@@ -166,7 +166,8 @@ export default class NumberAxisSelector extends React.Component {
     return (
       !areAllDisabled &&
       this.state.columns.every(
-        (col, i) => type !== col.type || this.state.checkedColumns.includes(i) || otherAxisColumns.includes(i),
+        (col, i) =>
+          type !== col.type || this.state.checkedColumns.includes(i) || otherAxisColumns.includes(i) || !col.is_visible,
       )
     )
   }
