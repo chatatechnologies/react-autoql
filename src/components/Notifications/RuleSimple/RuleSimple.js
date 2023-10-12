@@ -176,6 +176,8 @@ export default class RuleSimple extends React.Component {
     let secondTermValue = secondInputValue
     const percentageWithMissingFractionRegex = /^\d+\.%$/
     if (percentageWithMissingFractionRegex.test(secondInputValue)) {
+      // If secondInputValue ends with a dot, slice off the '%' at the end, add '0%',
+      // Example: 40.% will become 40.0%
       secondTermValue = secondInputValue.slice(0, -1) + '0%'
     }
 
