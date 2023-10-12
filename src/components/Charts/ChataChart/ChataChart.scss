@@ -39,6 +39,7 @@
     // set transparent in css but keep background in inline style for exporting to png
     background: transparent !important;
     color: var(--react-autoql-text-color-primary) !important;
+    overflow: visible;
   }
 
   transition: opacity 0.2s ease;
