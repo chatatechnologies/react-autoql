@@ -174,14 +174,9 @@ export default class RuleSimple extends React.Component {
   getJSON = () => {
     const { secondInputValue } = this.state
     let secondTermValue = secondInputValue
-    const percentageNumberRegex = /^\-?\d+(\.\d+)?%$/
     const percentageWithMissingFractionRegex = /^\d+\.%$/
-    if (percentageNumberRegex.test(secondInputValue)) {
-      const percentage = parseFloat(secondInputValue)
-      secondTermValue = percentage / 100
-    } else if (percentageWithMissingFractionRegex.test(secondInputValue)) {
-      let numberPart = parseFloat(secondInputValue.replace('.%', ''))
-      secondTermValue = numberPart / 100
+    if (percentageWithMissingFractionRegex.test(secondInputValue)) {
+      secondTermValue = secondInputValue.slice(0, -1) + '0%'
     }
 
     const userSelection = this.props.queryResponse?.data?.data?.fe_req?.disambiguation
