@@ -90,7 +90,7 @@ export default class Columns extends Component {
                 onClick={() => this.onColumnClick(d, colIndex, index)}
                 data-tip={tooltip}
                 data-for={this.props.chartTooltipID}
-                style={{ fill: color, fillOpacity: 0.7 }}
+                style={{ fill: color }}
               />
             )
           }),
