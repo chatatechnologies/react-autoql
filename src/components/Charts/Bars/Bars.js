@@ -95,7 +95,7 @@ export default class Bars extends Component {
                 onClick={() => this.onBarClick(d, colIndex, index)}
                 data-tip={tooltip}
                 data-for={this.props.chartTooltipID}
-                style={{ fill: color, fillOpacity: 1 }}
+                style={{ fill: color }}
               />
             )
           }),
