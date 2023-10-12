@@ -42,6 +42,7 @@ import { Spinner } from '../../Spinner'
 import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPropHelpers.js'
 
 import './ChataChart.scss'
+import { CSS_PREFIX } from '../../../js/Constants'
 
 export default class ChataChart extends React.Component {
   constructor(props) {
@@ -383,7 +384,7 @@ export default class ChataChart extends React.Component {
       return Promise.reject()
     }
 
-    return svgToPng(this.chartRef, scale)
+    return svgToPng(this.chartRef, scale, CSS_PREFIX)
   }
 
   saveAsPNG = (scale) => {
