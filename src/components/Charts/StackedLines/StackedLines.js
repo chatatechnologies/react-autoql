@@ -58,7 +58,6 @@ export default class StackedLines extends Component {
           stroke: color,
           strokeWidth: 3,
           strokeOpacity: 0.7,
-          fillOpacity: 1,
           fill: this.props.backgroundColor || '#fff',
         }}
       />
@@ -85,10 +84,7 @@ export default class StackedLines extends Component {
           `}
         data-for={this.props.chartTooltipID}
         data-effect='float'
-        style={{
-          fill: color,
-          fillOpacity: 0.7,
-        }}
+        style={{ fill: color }}
       />
     )
   }

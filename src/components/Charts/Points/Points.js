@@ -102,7 +102,6 @@ export default class Points extends Component {
             color: color1,
             stroke: 'transparent',
             fill: color0,
-            fillOpacity: 0.7,
           }}
         />,
       )
