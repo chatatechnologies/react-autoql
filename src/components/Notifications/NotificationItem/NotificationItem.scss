@@ -69,7 +69,8 @@
   }
 
   .notification-error-reinitialize-btn {
-    margin: 20px;
+    margin: 40px;
+
     &.restart-success {
       background-color: var(--react-autoql-success-color);
       border-color: var(--react-autoql-success-color);
