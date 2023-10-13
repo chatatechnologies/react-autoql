@@ -94,6 +94,7 @@ export default class Squares extends Component {
           colIndex2: stringColumnIndex,
           legendColumn,
           dataFormatting,
+          aggregated: this.props.isAggregated,
         })
 
         // const square = getHeatmapRectObj({

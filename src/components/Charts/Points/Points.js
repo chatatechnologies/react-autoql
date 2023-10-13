@@ -81,7 +81,7 @@ export default class Points extends Component {
         colIndex: numberColumnIndex,
         colIndex2: numberColumnIndex2,
         dataFormatting,
-        aggregated: this.props.aggregated,
+        aggregated: this.props.isAggregated,
       })
 
       const key = getKey(numberColumnIndex, index)

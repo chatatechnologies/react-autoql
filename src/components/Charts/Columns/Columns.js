@@ -74,6 +74,7 @@ export default class Columns extends Component {
               colIndex2: stringColumnIndex,
               legendColumn,
               dataFormatting,
+              aggregated: this.props.isAggregated,
             })
 
             const key = getKey(colIndex, index)
