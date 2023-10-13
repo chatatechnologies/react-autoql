@@ -12,6 +12,13 @@
   animation: fadeIn 0.2s linear;
   animation-fill-mode: both;
 
+  .react-autoql-cascader {
+    max-height: 200px;
+    overflow: auto;
+    border: 1px solid var(--react-autoql-border-color);
+    border-radius: 4px;
+  }
+
   .data-explorer-section.topic-dropdown-section {
     padding-top: 10px;
 

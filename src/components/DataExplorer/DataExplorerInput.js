@@ -140,7 +140,10 @@ export default class DataExplorerInput extends React.Component {
     fetchSubjectList({ ...this.props.authentication })
       .then((subjects) => {
         if (this._isMounted) {
-          this.setState({ allSubjects: subjects })
+          if (subjects?.length) {
+            const filteredSubjects = subjects.filter((subj) => !subj.isAggSeed())
+            this.setState({ allSubjects: filteredSubjects })
+          }
         }
       })
       .catch((error) => console.error(error))

@@ -50,7 +50,7 @@ export default class CustomScrollbars extends React.Component {
     }
 
     if (typeof duration !== 'number' || duration > this.MAX_UPDATE_DURATION) {
-      this.ref?._ps?.update()
+      setTimeout(() => this.ref?._ps?.update(), 0)
     } else {
       clearInterval(this.intervalID)
 
@@ -124,7 +124,7 @@ export default class CustomScrollbars extends React.Component {
       <PerfectScrollbar
         className={`react-autoql-custom-scrollbars 
             ${this.props.className ?? ''}
-            ${this.props.autoHide ? 'autohide' : ''}`}
+            ${this.props.autoHide ? 'autohide' : 'always-visible'}`}
         ref={(r) => (this.ref = r)}
         style={this.getStyleProp()}
         options={this.props.options}

@@ -1,5 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import _isEqual from 'lodash.isequal'
+
 import { Popover } from '../Popover'
 import { v4 as uuid } from 'uuid'
 import { Icon } from '../Icon'
@@ -9,6 +11,7 @@ import { Menu, MenuItem } from '../Menu'
 
 import './Select.scss'
 import { LoadingDots } from '../LoadingDots'
+import { CustomScrollbars } from '../CustomScrollbars'
 
 export default class Select extends React.Component {
   constructor(props) {
@@ -52,8 +55,8 @@ export default class Select extends React.Component {
     this.scrollToValue()
   }
 
-  componentDidUpdate = (nextProps, nextState) => {
-    if (this.state.isOpen !== nextState.isOpen) {
+  componentDidUpdate = (prevProps, prevState) => {
+    if (this.state.isOpen !== prevState.isOpen || !_isEqual(this.props.options, prevProps.options)) {
       if (this.state.isOpen) {
         this.scrollToValue()
       }
@@ -61,14 +64,23 @@ export default class Select extends React.Component {
   }
 
   scrollToValue = () => {
-    const index = this.props.options?.findIndex((option) => this.props.value === option.value)
+    this.scrollbars?.update()
+
+    let index = this.props.options?.findIndex((option) => this.props.value === option.value)
+    if (index === -1) {
+      index = 0
+    }
+
     const element = document.querySelector(`#select-option-${this.ID}-${index}`)
+
     if (element) {
       element.scrollIntoView({
         behavior: 'auto',
         block: 'center',
         inline: 'center',
       })
+    } else {
+      this.popoverContent?.scrollIntoView?.()
     }
   }
 
@@ -120,31 +132,37 @@ export default class Select extends React.Component {
 
   renderPopoverContent = () => {
     return (
-      <div className='react-autoql-select-popup-container' style={{ width: this.props.style.width }}>
+      <div
+        ref={(r) => (this.popoverContent = r)}
+        className='react-autoql-select-popup-container'
+        style={{ width: this.props.style.width }}
+      >
         {!this.props.tooltipID && (
           <Tooltip id={`select-tooltip-${this.ID}`} className='react-autoql-tooltip' delayShow={500} />
         )}
         {this.props.options?.length ? (
-          <Menu options={this.props.options}>
-            {this.props.options?.map((option, i) => {
-              return (
-                <MenuItem
-                  id={`select-option-${this.ID}-${i}`}
-                  key={`select-menu-${option.value}-${i}`}
-                  title={option.listLabel ?? option.label ?? option.value}
-                  subtitle={option.subtitle}
-                  tooltip={option.tooltip}
-                  tooltipID={this.props.tooltipID ?? `select-tooltip-${this.ID}`}
-                  active={option.value === this.props.value}
-                  icon={option.icon}
-                  onClick={() => {
-                    this.setState({ isOpen: false })
-                    this.props.onChange(option.value)
-                  }}
-                />
-              )
-            })}
-          </Menu>
+          <CustomScrollbars ref={(r) => (this.scrollbars = r)} autoHide={false} contentHidden={!this.state.isOpen}>
+            <Menu options={this.props.options}>
+              {this.props.options?.map((option, i) => {
+                return (
+                  <MenuItem
+                    id={`select-option-${this.ID}-${i}`}
+                    key={`select-menu-${option.value}-${i}`}
+                    title={option.listLabel ?? option.label ?? option.value}
+                    subtitle={option.subtitle}
+                    tooltip={option.tooltip}
+                    tooltipID={this.props.tooltipID ?? `select-tooltip-${this.ID}`}
+                    active={option.value === this.props.value}
+                    icon={option.icon}
+                    onClick={() => {
+                      this.setState({ isOpen: false })
+                      this.props.onChange(option.value)
+                    }}
+                  />
+                )
+              })}
+            </Menu>
+          </CustomScrollbars>
         ) : (
           <LoadingDots />
         )}

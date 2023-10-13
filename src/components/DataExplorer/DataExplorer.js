@@ -20,6 +20,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { authenticationType, dataFormattingType } from '../../props/types'
 
 import './DataExplorer.scss'
+import Cascader from '../Cascader/Cascader'
 
 export default class DataExplorer extends React.Component {
   constructor(props) {
@@ -139,6 +140,59 @@ export default class DataExplorer extends React.Component {
     this.querySuggestionList?.updateScrollbars()
   }
 
+  renderTopicsListForVL = () => {
+    if (this.state.selectedSubject?.type !== DataExplorerTypes.VL_TYPE) {
+      return null
+    }
+
+    if (!this.state.subjectList?.length) {
+      return null
+    }
+
+    const subject = this.state.subjectList?.find((subj) => subj.context === this.state.selectedContext)
+    const dataPreviewID = this.state.selectedContext?.replaceAll(' ', '-')
+
+    const options = this.state.subjectList.map((subject) => ({
+      value: subject.context,
+      label: subject.displayName,
+      action: <Icon type='caret-right' />,
+      children: [
+        {
+          value: 'data-preview',
+          disableHover: true,
+          label: (
+            <DataPreview
+              key={`data-preview-${dataPreviewID}`}
+              authentication={this.props.authentication}
+              dataFormatting={this.props.dataFormatting}
+              subject={subject}
+              shouldRender={this.props.shouldRender}
+              dataExplorerRef={this.dataExplorerPage}
+              isCollapsed={this.props.isSmallScreen ? this.state.isDataPreviewCollapsed : undefined}
+              defaultCollapsed={this.props.isSmallScreen ? false : undefined}
+              tooltipID={`data-preview-tooltip-${this.ID}`}
+              onColumnSelection={(selectedColumns) => {
+                this.setState({ selectedColumns })
+              }}
+              style={{ height: '150px' }}
+              onDataPreview={(dataPreview) => this.setState({ dataPreview })}
+              data={this.state.dataPreview}
+              selectedColumns={this.state.selectedColumns}
+              onIsCollapsedChange={(isCollapsed) => {
+                this.setState({
+                  isDataPreviewCollapsed: isCollapsed,
+                  isQuerySuggestionCollapsed: isCollapsed ? this.state.isQuerySuggestionCollapsed : true,
+                })
+              }}
+            />
+          ),
+        },
+      ],
+    }))
+
+    return <Cascader options={options} />
+  }
+
   renderTopicDropdown = () => {
     if (this.state.selectedSubject?.type !== DataExplorerTypes.VL_TYPE) {
       return null
@@ -155,15 +209,17 @@ export default class DataExplorer extends React.Component {
 
     return (
       <div className='data-explorer-section topic-dropdown-section'>
-        <Select
+        {this.renderTopicsListForVL()}
+        {/* <Select
           options={options}
           value={this.state.selectedContext}
           placeholder='Filter by Topic'
           onChange={(context) => this.setState({ selectedContext: context })}
+          label={`Topics related to "${this.state.selectedSubject.valueLabel?.format_txt}"`}
           fullWidth
-        />
+        /> */}
 
-        {subject ? (
+        {/* {subject ? (
           <DataPreview
             key={`data-preview-${dataPreviewID}`}
             authentication={this.props.authentication}
@@ -188,7 +244,7 @@ export default class DataExplorer extends React.Component {
               })
             }}
           />
-        ) : null}
+        ) : null} */}
       </div>
     )
   }

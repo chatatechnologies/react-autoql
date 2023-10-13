@@ -43,36 +43,34 @@ export default class Cascader extends React.Component {
         data-test={`options-list-${index}`}
       >
         {!isFirstGroup && (
-          <>
-            <div
-              className='cascader-back-arrow'
-              data-test={`cascader-back-arrow-${index}`}
-              onClick={() => {
-                const newArray = [...this.state.optionsArray]
-                newArray.pop()
-                this.setState({
-                  optionsArray: newArray,
-                })
-              }}
-            >
-              <Icon type='caret-left' />
-            </div>
-            <div className='options-title' data-test='options-title'>
-              {mostRecentOptionLabel}
-            </div>
-          </>
+          <div
+            className='options-title'
+            data-test='options-title'
+            onClick={() => {
+              const newArray = [...this.state.optionsArray]
+              newArray.pop()
+              this.setState({
+                optionsArray: newArray,
+              })
+            }}
+          >
+            <span data-test={`cascader-back-arrow-${index}`}>
+              <Icon className='cascader-back-arrow' type='caret-left' /> {mostRecentOptionLabel}
+            </span>
+          </div>
         )}
         {options.map((option, i) => {
           return (
             <div
               key={`options-${i}-${this.COMPONENT_ID}`}
               className={`option
-                  ${option.value === active ? 'active' : ''}`}
+                  ${option.value === active ? 'active' : ''}
+                  ${option.disableHover ? 'react-autoql-cascader-option-disable-hover' : ''}`}
               onClick={() => this.onOptionClick(option, index)}
               data-test={`options-item-${index}-${i}`}
             >
               <span data-test={`options-item-${index}-${i}-text`}>{option.label}</span>
-              {!option?.children?.length && <Icon className='option-execute-icon' type='play' />}
+              {!option?.children?.length && this.props.action ? this.props.action : null}
               {!!option?.children?.length && <Icon className='option-arrow' type='caret-right' />}
             </div>
           )
