@@ -292,9 +292,9 @@ export default class VLAutocompleteInput extends React.Component {
         className='filter-lock-suggestion-item'
         data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
         data-tooltip-delay-show={1000}
-        data-tooltip-html={`${displayName} <em>${displayNameType}</em>`}
+        data-tooltip-html={`<strong>${displayName}</strong> <em>${displayNameType}</em>`}
       >
-        {displayName} <em>{displayNameType}</em>
+        <strong>{displayName}</strong> <em>{displayNameType}</em>
       </span>
     )
   }
