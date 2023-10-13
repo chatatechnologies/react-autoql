@@ -81,6 +81,7 @@ export default class StackedColumns extends React.Component {
             colIndex2: stringColumnIndex,
             legendColumn,
             dataFormatting,
+            aggregated: this.props.isAggregated,
           })
 
           return (
@@ -94,7 +95,7 @@ export default class StackedColumns extends React.Component {
               onClick={() => this.onColumnClick(d, colIndex, index)}
               data-tooltip-html={tooltip}
               data-tooltip-id={this.props.chartTooltipID}
-              style={{ fill: color, fillOpacity: 0.7 }}
+              style={{ fill: color }}
             />
           )
         }

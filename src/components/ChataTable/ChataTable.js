@@ -46,6 +46,7 @@ export default class ChataTable extends React.Component {
     this.tableParams = _cloneDeep(props.initialParams) ?? {
       filter: [],
       sort: [],
+      page: 1,
     }
 
     this.useInfiniteScroll = props.useInfiniteScroll

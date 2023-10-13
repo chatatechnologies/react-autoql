@@ -230,6 +230,7 @@ export default class ChataPieChart extends React.Component {
           colIndex2: self.props.stringColumnIndex,
           legendColumn: self.props.legendColumn,
           dataFormatting: self.props.dataFormatting,
+          aggregated: self.props.isAggregated,
         })
       })
       .style('fill-opacity', 1)

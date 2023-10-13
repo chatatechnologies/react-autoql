@@ -34,6 +34,7 @@ export default class StackedLines extends React.Component {
       colIndex2: this.props.stringColumnIndex,
       legendColumn: this.props.legendColumn,
       dataFormatting: this.props.dataFormatting,
+      aggregated: this.props.isAggregated,
     })
 
     return (
@@ -52,7 +53,6 @@ export default class StackedLines extends React.Component {
           stroke: color,
           strokeWidth: 3,
           strokeOpacity: 0.7,
-          fillOpacity: 1,
           fill: this.props.backgroundColor || '#fff',
         }}
       />
@@ -79,10 +79,7 @@ export default class StackedLines extends React.Component {
           `}
         data-tooltip-id={this.props.chartTooltipID}
         data-effect='float'
-        style={{
-          fill: color,
-          fillOpacity: 0.7,
-        }}
+        style={{ fill: color }}
       />
     )
   }

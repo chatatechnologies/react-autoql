@@ -93,6 +93,7 @@ export default class Circles extends Component {
             colIndex2: stringColumnIndex,
             legendColumn,
             dataFormatting,
+            aggregated: this.props.isAggregated,
           })
 
           const scaleX = xScale(xLabel)

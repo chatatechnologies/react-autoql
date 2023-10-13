@@ -75,7 +75,7 @@ export default class Points extends React.Component {
         colIndex: numberColumnIndex,
         colIndex2: numberColumnIndex2,
         dataFormatting,
-        aggregated: this.props.aggregated,
+        aggregated: this.props.isAggregated,
       })
 
       const key = getKey(numberColumnIndex, index)
@@ -96,7 +96,6 @@ export default class Points extends React.Component {
             color: color1,
             stroke: 'transparent',
             fill: color0,
-            fillOpacity: 0.7,
           }}
         />,
       )

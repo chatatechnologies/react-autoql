@@ -417,22 +417,22 @@ export default class NotificationItem extends React.Component {
   }
 
   renderErrorDetails = () => {
-    if (this.props.dataAlert?.id && !this.isDataAlertInErrorState()) {
+    if (this.props.dataAlert?.id && this.isDataAlertInErrorState()) {
       return (
         <>
           <br />
           <span>To resolve this issue, try restarting the Alert by clicking the button below.</span>
-          <br />
-          <Button
-            type='primary'
-            icon={this.state.initializeSuccess ? 'check' : 'refresh'}
-            loading={this.state.isInitializing}
-            className={`notification-error-reinitialize-btn ${this.state.initializeSuccess ? 'restart-success' : ''}`}
-            onClick={this.restartAlert}
-          >
-            {this.state.initializeSuccess ? 'Restarted' : 'Restart Alert'}
-          </Button>
-          <br />
+          <p>
+            <Button
+              type='primary'
+              icon={this.state.initializeSuccess ? 'check' : 'refresh'}
+              loading={this.state.isInitializing}
+              className={`notification-error-reinitialize-btn ${this.state.initializeSuccess ? 'restart-success' : ''}`}
+              onClick={this.restartAlert}
+            >
+              {this.state.initializeSuccess ? 'Restarted' : 'Restart Alert'}
+            </Button>
+          </p>
           <span>If the problem persists, you may need to create a new Data Alert.</span>
         </>
       )

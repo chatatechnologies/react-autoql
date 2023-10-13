@@ -75,7 +75,7 @@ export default class HistogramColumns extends Component {
           onClick={() => this.onColumnClick(d.x0, d.x1, index)}
           data-tooltip-html={tooltip}
           data-tooltip-id={this.props.chartTooltipID}
-          style={{ fill: color, fillOpacity: 1 }}
+          style={{ fill: color }}
         />
       )
     })

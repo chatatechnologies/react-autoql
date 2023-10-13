@@ -38,7 +38,6 @@ export default class Axis extends Component {
       fontSize: `${this.fontSize}px`,
       fontFamily: 'inherit',
       fill: 'currentColor',
-      fillOpacity: 1,
       cursor: 'default',
       fontFamily: 'var(--react-autoql-font-family)',
       letterSpacing: 'normal',

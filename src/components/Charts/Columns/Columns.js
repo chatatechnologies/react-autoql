@@ -68,6 +68,7 @@ export default class Columns extends Component {
               colIndex2: stringColumnIndex,
               legendColumn,
               dataFormatting,
+              aggregated: this.props.isAggregated,
             })
 
             const key = getKey(colIndex, index)
@@ -84,7 +85,7 @@ export default class Columns extends Component {
                 onClick={() => this.onColumnClick(d, colIndex, index)}
                 data-tooltip-html={tooltip}
                 data-tooltip-id={this.props.chartTooltipID}
-                style={{ fill: color, fillOpacity: 0.7 }}
+                style={{ fill: color }}
               />
             )
           }),
