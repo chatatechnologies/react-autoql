@@ -1856,10 +1856,14 @@ export class QueryOutput extends React.Component {
       newCol.sorter = this.setSorterFunction(newCol)
       newCol.headerSort = !!this.props.enableTableSorting
       newCol.headerSortStartingDir = 'desc'
-      newCol.headerClick = () => {
+      newCol.headerClick = (e, col) => {
         // To allow tabulator to sort, we must first restore redrawing,
         // then the component will disable it again afterwards automatically
-        this.tableRef?.ref?.restoreRedraw()
+        if (this.state.displayType === 'table') {
+          this.tableRef?.ref?.restoreRedraw()
+        } else if (this.state.displayType === 'pivot_table') {
+          this.pivotTableRef?.ref?.restoreRedraw()
+        }
       }
 
       // Show drilldown filter value in column title so user knows they can't filter on this column
