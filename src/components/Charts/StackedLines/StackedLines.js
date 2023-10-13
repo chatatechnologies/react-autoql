@@ -40,6 +40,7 @@ export default class StackedLines extends Component {
       colIndex2: this.props.stringColumnIndex,
       legendColumn: this.props.legendColumn,
       dataFormatting: this.props.dataFormatting,
+      aggregated: this.props.isAggregated,
     })
 
     return (
