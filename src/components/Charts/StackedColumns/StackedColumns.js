@@ -86,6 +86,7 @@ export default class StackedColumns extends Component {
             colIndex2: stringColumnIndex,
             legendColumn,
             dataFormatting,
+            aggregated: this.props.isAggregated,
           })
 
           return (

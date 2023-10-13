@@ -93,6 +93,7 @@ export default class Line extends Component {
             colIndex2: stringColumnIndex,
             legendColumn,
             dataFormatting,
+            aggregated: this.props.isAggregated
           })
 
           if (isNaN(y)) {
