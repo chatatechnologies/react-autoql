@@ -209,17 +209,17 @@ export default class DataExplorer extends React.Component {
 
     return (
       <div className='data-explorer-section topic-dropdown-section'>
-        {this.renderTopicsListForVL()}
-        {/* <Select
+        {/* {this.renderTopicsListForVL()} */}
+        <Select
           options={options}
           value={this.state.selectedContext}
           placeholder='Filter by Topic'
           onChange={(context) => this.setState({ selectedContext: context })}
           label={`Topics related to "${this.state.selectedSubject.valueLabel?.format_txt}"`}
           fullWidth
-        /> */}
+        />
 
-        {/* {subject ? (
+        {subject ? (
           <DataPreview
             key={`data-preview-${dataPreviewID}`}
             authentication={this.props.authentication}
@@ -244,7 +244,7 @@ export default class DataExplorer extends React.Component {
               })
             }}
           />
-        ) : null} */}
+        ) : null}
       </div>
     )
   }
