@@ -1,12 +1,12 @@
 import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
+import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 
 import { formatElement, getDataFormatting, dataFormattingDefault } from 'autoql-fe-utils'
 
 import { Checkbox } from '../Checkbox'
-import { LoadingDots } from '../LoadingDots'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { dataFormattingType } from '../../props/types'
@@ -17,10 +17,7 @@ export default class SelectableTable extends React.Component {
   constructor(props) {
     super(props)
 
-    this.DATA_PREVIEW_ROWS = 5
     this.ID = uuid()
-
-    this.state = {}
   }
 
   static propTypes = {
@@ -29,6 +26,7 @@ export default class SelectableTable extends React.Component {
     queryResponse: PropTypes.shape({}),
     onColumnSelection: PropTypes.func,
     selectedColumns: PropTypes.arrayOf(PropTypes.number),
+    showEndOfPreviewMessage: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -37,20 +35,13 @@ export default class SelectableTable extends React.Component {
     queryResponse: null,
     onColumnSelection: () => {},
     selectedColumns: [],
-  }
-
-  componentDidMount = () => {
-    this._isMounted = true
-  }
-
-  componentWillUnmount = () => {
-    this._isMounted = false
+    showEndOfPreviewMessage: true,
   }
 
   formatColumnHeader = (column, i) => {
     return (
       <div
-        className='data-preview-col-header'
+        className='selectable-table-col-header'
         data-tooltip-id={this.props.tooltipID}
         data-tooltip-content={JSON.stringify(column)}
       >
@@ -63,7 +54,7 @@ export default class SelectableTable extends React.Component {
   formatCell = ({ cell, column, config }) => {
     return (
       <div
-        className='data-preview-cell'
+        className='selectable-table-cell'
         style={{
           textAlign: column.type === 'DOLLAR_AMT' ? 'right' : 'center',
         }}
@@ -86,77 +77,53 @@ export default class SelectableTable extends React.Component {
       selectedColumns.push(index)
     }
 
-    this.props.onColumnSelection(selectedColumns)
+    this.props.onColumnSelection?.(selectedColumns)
   }
 
   onMouseOverColumn = (e, columnIndex) => {
     // Must use vanilla styling to achieve hover styles for a whole column
-    const allColumnHeaders = this.dataPreviewRef?.querySelectorAll('.data-preview-column')
+    const allColumnHeaders = this.tableRef?.querySelectorAll('.selectable-table-column')
     allColumnHeaders?.forEach((header) => {
-      header.classList.remove('react-autoql-data-preview-hovered')
+      header.classList.remove('react-autoql-selectable-table-hovered')
     })
 
-    const columnHeader = this.dataPreviewRef?.querySelector(`#col-header-${columnIndex}`)
-    columnHeader?.classList.add('react-autoql-data-preview-hovered')
+    const columnHeader = this.tableRef?.querySelector(`#col-header-${columnIndex}`)
+    columnHeader?.classList.add('react-autoql-selectable-table-hovered')
 
-    const allCells = this.dataPreviewRef?.querySelectorAll('.data-preview-cell')
+    const allCells = this.tableRef?.querySelectorAll('.selectable-table-cell')
     allCells?.forEach((cell) => {
-      cell.classList.remove('react-autoql-data-preview-hovered')
+      cell.classList.remove('react-autoql-selectable-table-hovered')
     })
 
-    const cells = this.dataPreviewRef?.querySelectorAll(`.cell-${columnIndex}`)
-    cells?.forEach((cell) => cell.classList.add('react-autoql-data-preview-hovered'))
+    const cells = this.tableRef?.querySelectorAll(`.cell-${columnIndex}`)
+    cells?.forEach((cell) => cell.classList.add('react-autoql-selectable-table-hovered'))
   }
 
-  renderDataPreviewCaption = (columns) => {
-    if (!columns) {
+  renderTableCaption = () => {
+    if (!this.props.queryResponse?.data?.data?.columns) {
       return null
     }
 
     return (
-      <div className='data-preview-table-header'>
-        <span className='react-autoql-data-preview-selected-columns-text'>Select fields to use in Sample Queries</span>
+      <div className='react-autoql-selectable-table-header'>
+        <span className='react-autoql-selectable-table-selected-columns-text'>{this.props.caption}</span>
       </div>
     )
   }
 
-  renderDataPreviewTable = (columns, rows) => {}
+  render = () => {
+    if (!this.props.shouldRender) {
+      return null
+    }
 
-  renderDataPreviewGrid = () => {
     const rows = this.props.queryResponse?.data?.data?.rows
     const columns = this.props.queryResponse?.data?.data?.columns
-
-    // if (this.state.error || !columns || !rows) {
-    //   return (
-    //     <div className='data-preview-error-message'>
-    //       <p>
-    //         {this.state.error?.message ?? 'Oops... Something went wrong and we were unable to fetch your Data Preview.'}
-    //       </p>
-    //       {this.state.error?.reference_id ? <p>Error ID: {this.state.error.reference_id}</p> : null}
-    //       <p>
-    //         <a onClick={this.getDataPreview}>Try again</a>
-    //       </p>
-    //     </div>
-    //   )
-    // }
-
     const config = getDataFormatting(this.props.dataFormatting)
 
     return (
-      <div className='data-preview'>
-        <div className='data-preview-table-wrapper'>
-          {this.state.error || !columns || !rows ? (
-            <div className='data-preview-error-message'>
-              <p>
-                {this.state.error?.message ??
-                  'Oops... Something went wrong and we were unable to fetch your Data Preview.'}
-              </p>
-              {this.state.error?.reference_id ? <p>Error ID: {this.state.error.reference_id}</p> : null}
-              <p>
-                <a onClick={this.getDataPreview}>Try again</a>
-              </p>
-            </div>
-          ) : (
+      <ErrorBoundary>
+        <div ref={(r) => (this.tableRef = r)} className='react-autoql-selectable-table'>
+          <div className='react-autoql-selectable-table-wrapper'>
             <table>
               <thead>
                 <tr>
@@ -165,10 +132,10 @@ export default class SelectableTable extends React.Component {
                       <th
                         id={`col-header-${i}`}
                         key={`col-header-${i}`}
-                        className={`data-preview-column ${
+                        className={`selectable-table-column ${
                           this.props.selectedColumns.includes(i)
-                            ? 'data-preview-column-selected'
-                            : 'data-preview-column-unselected'
+                            ? 'selectable-table-column-selected'
+                            : 'selectable-table-column-unselected'
                         }`}
                         onClick={() => this.onColumnHeaderClick(i)}
                         onMouseOver={(e) => this.onMouseOverColumn(e, i)}
@@ -182,15 +149,15 @@ export default class SelectableTable extends React.Component {
               <tbody>
                 {rows.map((row, i) => {
                   return (
-                    <tr key={`row-${i}`} className='data-preview-row'>
+                    <tr key={`row-${i}`} className='selectable-table-row'>
                       {row.map((cell, j) => {
                         const column = columns[j]
                         return (
                           <td
-                            className={`data-preview-cell ${
+                            className={`selectable-table-cell ${
                               this.props.selectedColumns.includes(j)
-                                ? 'data-preview-cell-selected'
-                                : 'data-preview-cell-unselected'
+                                ? 'selectable-table-cell-selected'
+                                : 'selectable-table-cell-unselected'
                             } cell-${j}`}
                             onClick={() => this.onColumnHeaderClick(j)}
                             onMouseOver={(e) => this.onMouseOverColumn(e, j)}
@@ -203,43 +170,17 @@ export default class SelectableTable extends React.Component {
                     </tr>
                   )
                 })}
-                <tr className='data-preview-end-of-preview-message'>
-                  <td className='data-preveiew-end-of-preview-sticky-wrapper' colSpan={`${columns.length}`}>
-                    End of Preview
-                  </td>
-                </tr>
+                {!!this.props.showEndOfPreviewMessage && (
+                  <tr className='selectable-table-end-of-preview-message'>
+                    <td className='selectable-table-end-of-preview-sticky-wrapper' colSpan={`${columns.length}`}>
+                      End of Preview
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
-          )}
-        </div>
-        {/* {this.renderDataPreviewCaption(columns)} */}
-      </div>
-    )
-  }
-
-  renderLoadingContainer = () => {
-    return (
-      <div className='data-explorer-section-placeholder data-preview'>
-        <LoadingDots />
-      </div>
-    )
-  }
-
-  render = () => {
-    if (!this.props.shouldRender) {
-      return null
-    }
-
-    return (
-      <ErrorBoundary>
-        <div
-          id={`data-explorer-data-preview-${this.ID}`}
-          className='data-explorer-data-preview'
-          data-test='data-explorer-data-preview'
-          ref={(r) => (this.dataPreviewRef = r)}
-          style={this.props.style}
-        >
-          {this.state.loading ? this.renderLoadingContainer() : this.renderDataPreviewGrid()}
+          </div>
+          {!!this.props.caption && this.renderTableCaption()}
         </div>
       </ErrorBoundary>
     )

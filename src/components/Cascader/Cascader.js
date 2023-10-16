@@ -15,6 +15,7 @@ export default class Cascader extends React.Component {
     onFinalOptionClick: PropTypes.func,
     onSeeMoreClick: PropTypes.func,
     showSeeMoreButton: PropTypes.bool,
+    customContent: PropTypes.element || PropTypes.func,
   }
 
   static defaultProps = {
@@ -22,6 +23,7 @@ export default class Cascader extends React.Component {
     onFinalOptionClick: () => {},
     onSeeMoreClick: undefined,
     showSeeMoreButton: true,
+    customContent: null,
   }
 
   state = {
@@ -30,16 +32,20 @@ export default class Cascader extends React.Component {
   }
 
   renderOptionsList = ({ options, active, index }) => {
+    if (!options?.length) {
+      return null
+    }
+
     const isLastGroup = index === (this.state.optionsArray?.length ?? 0) - 1
     const isFirstGroup = index === 0
     const mostRecentOptionLabel = this.state.mostRecentOption?.label
-    const hasNoChildren = options.every((option) => !option.children)
+    const hasNoChildren = options?.every((option) => !option.children)
 
     return (
       <div
         key={`options-list-${index}-${this.COMPONENT_ID}`}
         className={`options-container
-            ${isLastGroup ? 'visible' : 'hidden'}`}
+            ${isLastGroup ? 'cascader-options-container-visible' : 'cascader-options-container-hidden'}`}
         data-test={`options-list-${index}`}
       >
         {!isFirstGroup && (
@@ -47,11 +53,18 @@ export default class Cascader extends React.Component {
             className='options-title'
             data-test='options-title'
             onClick={() => {
-              const newArray = [...this.state.optionsArray]
-              newArray.pop()
-              this.setState({
-                optionsArray: newArray,
+              const newArray = this.state.optionsArray.slice(0, index).map((opt, i) => {
+                if (i === index - 1) {
+                  return {
+                    ...opt,
+                    active: undefined,
+                  }
+                }
+                return opt
               })
+
+              this.setState({ optionsArray: newArray })
+              this.props.onBackClick?.()
             }}
           >
             <span data-test={`cascader-back-arrow-${index}`}>
@@ -64,14 +77,28 @@ export default class Cascader extends React.Component {
             <div
               key={`options-${i}-${this.COMPONENT_ID}`}
               className={`option
-                  ${option.value === active ? 'active' : ''}
-                  ${option.disableHover ? 'react-autoql-cascader-option-disable-hover' : ''}`}
+                  ${option.value === active ? 'react-autoql-cascader-option-active' : ''}
+                  ${option.customContent ? 'react-autoql-cascader-option-custom-content' : ''}`}
               onClick={() => this.onOptionClick(option, index)}
               data-test={`options-item-${index}-${i}`}
             >
-              <span data-test={`options-item-${index}-${i}-text`}>{option.label}</span>
-              {!option?.children?.length && this.props.action ? this.props.action : null}
-              {!!option?.children?.length && <Icon className='option-arrow' type='caret-right' />}
+              {option.customContent ? (
+                typeof option.customContent === 'function' ? (
+                  option.customContent()
+                ) : (
+                  option.customContent
+                )
+              ) : (
+                <>
+                  <span className='react-autoql-cascader-option-item' data-test={`options-item-${index}-${i}-text`}>
+                    {option.label}
+                  </span>
+                  {!option?.children?.length && this.props.action ? this.props.action : null}
+                  {!!option?.children?.length && (
+                    <Icon className='react-autoql-cascader-option-arrow' type='caret-right' />
+                  )}
+                </>
+              )}
             </div>
           )
         })}
@@ -93,6 +120,10 @@ export default class Cascader extends React.Component {
   }
 
   onOptionClick = (option, index) => {
+    if (!option.customContent) {
+      this.props.onOptionClick?.(option)
+    }
+
     if (option.children) {
       // If an earlier option is clicked, reset the options and active keys arrays
       const newOptionsArray = this.state.optionsArray.slice(0, index + 1)

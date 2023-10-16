@@ -2,54 +2,74 @@
   position: relative;
   white-space: nowrap;
   overflow: hidden;
+  display: flex;
   min-width: 300px;
 
   .options-container {
-    transition: max-width 0.3s ease;
-    display: inline-block;
-    vertical-align: top;
-    margin: 10px 0;
-    width: 100%;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 0;
+    flex-shrink: 0;
+    flex-basis: 0%;
+    transition: flex-basis 0.2s ease;
+
     white-space: pre-wrap;
     overflow: auto;
     max-height: 100%;
+    margin: 0;
 
-    &.hidden {
-      max-width: 100px;
+    &.cascader-options-container-visible {
+      flex-grow: 0;
+      flex-shrink: 0;
+      flex-basis: 100%;
+    }
+
+    &.cascader-options-container-hidden {
+      flex-grow: 0;
+      flex-shrink: 0;
+      flex-basis: 0%;
+      border: none;
 
       span {
         white-space: nowrap;
       }
 
-      // .option {
-      //   opacity: 0;
-      //   pointer-events: none;
-      // }
+      .option {
+        opacity: 0;
+        pointer-events: none;
+      }
     }
 
     .options-title {
       padding: 4px;
       padding-left: 15px;
       font-weight: 600;
+      flex: 0 0 auto;
 
       cursor: pointer;
       &:hover {
-        opacity: 0.8;
+        color: var(--react-autoql-accent-color);
       }
     }
 
     .option {
-      cursor: pointer;
-      padding: 4px 15px;
+      position: relative;
+      padding: 6px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-left: 10px;
-      transition: color 0.1s ease, background-color 0.2s ease;
+      transition: color 0.1s ease, background-color 0.1s ease;
+      cursor: pointer;
 
-      .option-arrow {
+      .react-autoql-cascader-option-item {
+        z-index: 1;
+        padding: 0 12px;
+      }
+
+      .react-autoql-cascader-option-arrow {
         opacity: 0.7;
       }
+
       .option-execute-icon {
         opacity: 0;
         color: var(--react-autoql-text-color-accent);
@@ -57,15 +77,38 @@
         vertical-align: middle;
       }
 
-      &:not(.react-autoql-cascader-option-disable-hover) {
-        &:hover,
-        &.active {
+      &::before {
+        content: '\00a0';
+        position: absolute;
+        height: 100%;
+        width: 100%;
+        left: 0px;
+        top: 0px;
+        opacity: 0;
+        background: var(--react-autoql-accent-color);
+        transition: opacity 0.1s ease;
+      }
+
+      &.react-autoql-cascader-option-custom-content {
+        margin-left: -1px;
+        padding: 0;
+        flex: 1;
+      }
+
+      &:not(.react-autoql-cascader-option-custom-content) {
+        &.react-autoql-cascader-option-active {
           background-color: var(--react-autoql-accent-color, #26a7df);
           color: var(--react-autoql-text-color-accent);
+          font-weight: 600;
 
           .option-execute-icon {
             opacity: 1;
           }
+        }
+
+        &:hover::before {
+          opacity: 0.3;
+          z-index: 0;
         }
       }
     }

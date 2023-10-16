@@ -128,14 +128,6 @@ export default class DataExplorerInput extends React.Component {
     }
   }
 
-  isAggSeed(subject) {
-    return (
-      subject.displayName.toLowerCase().endsWith('by day') ||
-      subject.displayName.toLowerCase().endsWith('by week') ||
-      subject.displayName.toLowerCase().endsWith('by month') ||
-      subject.displayName.toLowerCase().endsWith('by year')
-    )
-  }
   fetchAllSubjects = () => {
     fetchSubjectList({ ...this.props.authentication })
       .then((subjects) => {

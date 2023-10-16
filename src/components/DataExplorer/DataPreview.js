@@ -22,7 +22,8 @@ export default class DataExplorer extends React.Component {
     this.ID = uuid()
 
     this.state = {
-      dataPreview: null,
+      dataPreview: props.data,
+      error: undefined,
     }
   }
 
@@ -55,7 +56,7 @@ export default class DataExplorer extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
-    if (this.props.subject) {
+    if (this.props.subject && !this.props.data) {
       this.getDataPreview()
     }
   }
@@ -91,7 +92,7 @@ export default class DataExplorer extends React.Component {
       .then((response) => {
         if (this._isMounted) {
           this.setState({ dataPreview: response, loading: false })
-          this.props.onDataPreview(response)
+          this.props.onDataPreview?.(response)
         }
       })
       .catch((error) => {
@@ -105,6 +106,20 @@ export default class DataExplorer extends React.Component {
   }
 
   renderDataPreviewGrid = () => {
+    if (this.state.error || !this.state.dataPreview?.data?.data?.columns || !this.state.dataPreview?.data?.data?.rows) {
+      return (
+        <div className='data-preview-error-message'>
+          <p>
+            {this.state.error?.message ?? 'Oops... Something went wrong and we were unable to fetch your Data Preview.'}
+          </p>
+          {this.state.error?.reference_id ? <p>Error ID: {this.state.error.reference_id}</p> : null}
+          <p>
+            <a onClick={() => this.props.onError}>Try again</a>
+          </p>
+        </div>
+      )
+    }
+
     return (
       <SelectableTable
         dataFormatting={this.props.dataFormatting}
@@ -112,6 +127,7 @@ export default class DataExplorer extends React.Component {
         selectedColumns={this.props.selectedColumns}
         shouldRender={this.props.shouldRender}
         queryResponse={this.state.dataPreview}
+        showEndOfPreviewMessage={true}
       />
     )
   }
@@ -135,7 +151,6 @@ export default class DataExplorer extends React.Component {
           id={`data-explorer-data-preview-${this.ID}`}
           className='data-explorer-data-preview'
           data-test='data-explorer-data-preview'
-          ref={(r) => (this.dataPreviewRef = r)}
           style={this.props.style}
         >
           {this.state.loading ? this.renderLoadingContainer() : this.renderDataPreviewGrid()}

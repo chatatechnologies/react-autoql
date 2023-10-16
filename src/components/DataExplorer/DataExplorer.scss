@@ -16,18 +16,39 @@
     max-height: 200px;
     border: 1px solid var(--react-autoql-border-color);
     border-radius: 4px;
+
+    .data-explorer-data-preview {
+      height: 100% !important;
+    }
+
+    .react-autoql-cascader-option-custom-content {
+      overflow: hidden;
+    }
   }
 
   .data-explorer-section.topic-dropdown-section {
-    padding-top: 10px;
+    flex: 1;
+    margin-top: 10px;
 
     .react-autoql-select-and-label .react-autoql-select {
       line-height: 32px;
       height: 34px;
     }
 
-    .data-preview {
-      padding-top: 0;
+    .data-explorer-data-preview {
+      min-width: 100%;
+    }
+
+    .react-autoql-selectable-table {
+      padding: 0;
+      width: 100%;
+
+      .react-autoql-selectable-table-wrapper {
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+        border-radius: 0;
+      }
     }
   }
 
@@ -208,6 +229,7 @@
     font-size: 16px;
     font-weight: 600;
     margin-bottom: 12px;
+    min-height: 30px;
 
     .react-autoql-data-explorer-title-text-sample-queries {
       padding-bottom: 2px;
