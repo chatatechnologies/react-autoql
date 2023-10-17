@@ -191,15 +191,20 @@ export default class DataExplorer extends React.Component {
     }))
 
     return (
-      <Cascader
-        options={options}
-        onBackClick={() => this.setState({ selectedTopic: undefined, selectedColumns: [] })}
-        onOptionClick={(option) => {
-          if (option.subject?.context !== this.state.selectedTopic?.context) {
-            this.setState({ selectedTopic: option.subject, selectedColumns: [], dataPreview: undefined })
-          }
-        }}
-      />
+      <>
+        <div className='react-autoql-input-label'>
+          Select a Topic related to <em>"{this.state.selectedSubject?.displayName}"</em>:
+        </div>
+        <Cascader
+          options={options}
+          onBackClick={() => this.setState({ selectedTopic: undefined, selectedColumns: [] })}
+          onOptionClick={(option) => {
+            if (option.subject?.context !== this.state.selectedTopic?.context) {
+              this.setState({ selectedTopic: option.subject, selectedColumns: [], dataPreview: undefined })
+            }
+          }}
+        />
+      </>
     )
   }
 
@@ -232,11 +237,17 @@ export default class DataExplorer extends React.Component {
 
     let fieldsDropdownTitle = 'Select fields of interest'
     if (this.state.selectedSubject?.type === DataExplorerTypes.VL_TYPE) {
+      console.log(this.state.subjectList)
+
       if (!this.state.selectedTopic) {
         return null
       }
 
-      fieldsDropdownTitle = `Select fields from ${this.state.selectedTopic.displayName}`
+      fieldsDropdownTitle = (
+        <span>
+          Select fields from <SubjectName subject={this.state.selectedTopic} />
+        </span>
+      ) //{this.state.selectedTopic.displayName}
     }
 
     return (

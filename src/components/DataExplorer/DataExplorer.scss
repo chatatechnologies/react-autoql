@@ -27,8 +27,12 @@
   }
 
   .data-explorer-section.topic-dropdown-section {
-    flex: 1;
+    flex: 1.3;
     margin-top: 10px;
+
+    .react-autoql-input-label {
+      padding-left: 3px;
+    }
 
     .react-autoql-select-and-label .react-autoql-select {
       line-height: 32px;
@@ -90,13 +94,10 @@
         align-items: center;
         .react-autoql-icon {
           margin-right: 5px;
+          padding: 0;
         }
       }
     }
-  }
-
-  .data-explorer-topic-icon {
-    margin-right: 5px;
   }
 
   .data-explorer-result-container {
@@ -228,7 +229,7 @@
     align-items: center;
     font-size: 16px;
     font-weight: 600;
-    margin-bottom: 12px;
+    margin: 5px 0;
     min-height: 30px;
 
     .react-autoql-data-explorer-title-text-sample-queries {
@@ -321,6 +322,10 @@
 
   .popover-container-content {
     padding: 0;
+  }
+
+  .data-explorer-topic-icon {
+    margin-right: 0.1em;
   }
 }
 
