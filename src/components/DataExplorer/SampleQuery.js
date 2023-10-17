@@ -51,13 +51,13 @@ export default class SampleQuery extends React.Component {
   }
 
   onAmountChange = (rawValue, chunkName) => {
-    if (!this.state.values?.[chunkName] || value === undefined) {
+    if (!this.state.values?.[chunkName] || rawValue === undefined) {
       return
     }
 
     let value = rawValue
     if (value === '') {
-      value = this.state.values[chunkName]?.value
+      value = this.props.suggestion?.initialValues?.[chunkName]?.replacement?.format_txt
     }
 
     const values = {
