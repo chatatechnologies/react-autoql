@@ -143,6 +143,9 @@ export default class VLAutocompleteInputPopover extends React.Component {
               this.state.isOpen ? 'autcomplete-input-popover-btn-active' : ''
             }`}
             onClick={() => this.setState({ isOpen: true })}
+            data-tooltip-content={this.props.value?.show_message}
+            data-tooltip-id={this.props.tooltipID}
+            data-tooltip-delay-show={500}
           >
             {this.props.value?.format_txt ?? this.props.placeholder}
           </div>

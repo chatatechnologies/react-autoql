@@ -5,11 +5,14 @@ import PropTypes from 'prop-types'
 import { Input } from '../Input'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 
+import './InlineInputEditor.scss'
+
 export default class InlineInputEditor extends React.Component {
   constructor(props) {
     super(props)
 
     this.ID = uuid()
+    this.INPUT_ID = uuid()
     this.position = undefined
 
     this.state = {
@@ -22,12 +25,18 @@ export default class InlineInputEditor extends React.Component {
     value: PropTypes.string,
     type: PropTypes.string,
     onChange: PropTypes.func,
+    datePicker: PropTypes.bool,
   }
 
   static defaultProps = {
     value: '',
     type: 'text',
     onChange: () => {},
+    datePicker: false,
+  }
+
+  componentDidMount = () => {
+    this._isMounted = true
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -46,6 +55,10 @@ export default class InlineInputEditor extends React.Component {
         this.props.onChange(this.state.inputValue)
       }
     }
+  }
+
+  componentWillUnmount = () => {
+    this._isMounted = false
   }
 
   onInputChange = (e) => {
@@ -72,12 +85,21 @@ export default class InlineInputEditor extends React.Component {
     if (this.inputRef?.inputRef) {
       const input = this.inputRef.inputRef
 
-      const characterLength = this.state.inputValue?.length
+      let tempElement = document.createElement('span')
+      tempElement.innerHTML = this.state.inputValue
+      tempElement.style = window.getComputedStyle(input)
+      tempElement.style.visibility = 'none'
+      tempElement.style.position = 'absolute'
+
+      input.parentElement?.appendChild(tempElement)
+      const width = window.getComputedStyle(tempElement)?.getPropertyValue('width')
+      input.parentElement?.removeChild(tempElement)
+      tempElement = undefined
+
       const paddingLeft = window.getComputedStyle(input)?.getPropertyValue('padding-left') || '0px'
       const paddingRight = window.getComputedStyle(input)?.getPropertyValue('padding-right') || '0px'
-      const borderWidth = '2px'
 
-      const widthCSS = `calc(${characterLength}ch + ${paddingLeft} + ${paddingRight} + ${borderWidth})`
+      const widthCSS = `calc(${width} + ${paddingLeft} + ${paddingRight} )`
 
       return widthCSS
     }
@@ -90,20 +112,30 @@ export default class InlineInputEditor extends React.Component {
     }
   }
 
+  onDateRangeSelectionApplied = (dateRange, inputText) => {
+    this.setState({ inputValue: inputText, isInput: false, dateRange })
+  }
+
   render = () => {
     return (
       <ErrorBoundary>
         <div className='react-auoql-inline-number-editor-wrapper'>
           {this.state.isInput ? (
-            <Input
-              ref={(r) => (this.inputRef = r)}
-              value={this.state.inputValue}
-              onChange={this.onInputChange}
-              onFocus={this.onInputFocus}
-              onBlur={this.onInputBlur}
-              onKeyDown={this.onKeyDown}
-              type={this.props.type}
-            />
+            <>
+              <Input
+                id={this.INPUT_ID}
+                ref={(r) => (this.inputRef = r)}
+                value={this.state.inputValue}
+                onChange={this.onInputChange}
+                onFocus={this.onInputFocus}
+                onBlur={this.onInputBlur}
+                onKeyDown={this.onKeyDown}
+                type={this.props.type}
+                datePicker={this.props.datePicker}
+                onDateRangeChange={this.onDateRangeSelectionApplied}
+                initialDateRange={this.state.dateRange}
+              />
+            </>
           ) : (
             <div
               className={`inline-number-input-editor-btn ${

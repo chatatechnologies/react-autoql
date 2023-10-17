@@ -11,8 +11,13 @@
     letter-spacing: 0.02em;
     border-top: 1px solid #8b8b8b1f;
 
+    .data-explorer-sample-chunk {
+      white-space: nowrap;
+    }
+
     .react-auoql-inline-number-editor-wrapper,
     .autcomplete-input-popover-btn {
+      position: relative;
       margin-left: 3px;
     }
 
@@ -136,8 +141,8 @@
   .react-autoql-input-and-label-container {
     padding: 0;
     .react-autoql-input-container .react-autoql-input {
-      border-radius: 0;
-      height: 35px;
+      border-radius: 0 !important;
+      height: 35px !important;
     }
   }
 

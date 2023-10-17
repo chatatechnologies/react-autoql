@@ -122,6 +122,7 @@ export default class SampleQuery extends React.Component {
                 value={chunk.value}
                 type='number'
                 onChange={(newValue) => this.onAmountChange(newValue, chunk.name)}
+                tooltipID={this.props.tooltipID}
               />
             )
           } else if (chunk.type == SampleQueryReplacementTypes.SAMPLE_QUERY_TIME_TYPE) {
@@ -130,6 +131,8 @@ export default class SampleQuery extends React.Component {
                 value={chunk.value}
                 type='text'
                 onChange={(newValue) => this.onAmountChange(newValue, chunk.name)}
+                datePicker={true}
+                tooltipID={this.props.tooltipID}
               />
             )
           }
