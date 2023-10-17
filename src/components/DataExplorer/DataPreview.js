@@ -128,6 +128,7 @@ export default class DataExplorer extends React.Component {
         shouldRender={this.props.shouldRender}
         queryResponse={this.state.dataPreview}
         showEndOfPreviewMessage={true}
+        tooltipID={this.props.tooltipID}
       />
     )
   }

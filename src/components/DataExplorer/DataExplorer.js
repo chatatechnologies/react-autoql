@@ -86,6 +86,9 @@ export default class DataExplorer extends React.Component {
   onInputSelection = (listItem, skipQueryValidation) => {
     this.setState({
       selectedSubject: listItem,
+      dataPreview: undefined,
+      selectedTopic: undefined,
+      selectedColumns: [],
       skipQueryValidation,
     })
 
@@ -223,6 +226,9 @@ export default class DataExplorer extends React.Component {
 
     return (
       <div className='data-explorer-section data-preview-section'>
+        <div className='react-autoql-input-label'>
+          Select all fields of interest from <em>"{this.state.selectedSubject?.displayName}"</em>:
+        </div>
         {this.getDataPreview({ subject: this.state.selectedSubject })}
       </div>
     )
@@ -237,8 +243,6 @@ export default class DataExplorer extends React.Component {
 
     let fieldsDropdownTitle = 'Select fields of interest'
     if (this.state.selectedSubject?.type === DataExplorerTypes.VL_TYPE) {
-      console.log(this.state.subjectList)
-
       if (!this.state.selectedTopic) {
         return null
       }
@@ -247,7 +251,7 @@ export default class DataExplorer extends React.Component {
         <span>
           Select fields from <SubjectName subject={this.state.selectedTopic} />
         </span>
-      ) //{this.state.selectedTopic.displayName}
+      )
     }
 
     return (
