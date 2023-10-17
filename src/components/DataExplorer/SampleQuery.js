@@ -50,9 +50,14 @@ export default class SampleQuery extends React.Component {
     this.props.executeQuery(queryRequestParams)
   }
 
-  onAmountChange = (value, chunkName) => {
+  onAmountChange = (rawValue, chunkName) => {
     if (!this.state.values?.[chunkName] || value === undefined) {
       return
+    }
+
+    let value = rawValue
+    if (value === '') {
+      value = this.state.values[chunkName]?.value
     }
 
     const values = {

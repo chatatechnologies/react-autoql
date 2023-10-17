@@ -90,6 +90,7 @@ export default class InlineInputEditor extends React.Component {
       tempElement.style = window.getComputedStyle(input)
       tempElement.style.visibility = 'none'
       tempElement.style.position = 'absolute'
+      tempElement.style.whiteSpace = 'pre'
 
       input.parentElement?.appendChild(tempElement)
       const width = window.getComputedStyle(tempElement)?.getPropertyValue('width')
@@ -143,7 +144,7 @@ export default class InlineInputEditor extends React.Component {
               }`}
               onClick={() => this.setState({ isInput: true })}
             >
-              {this.state.inputValue}
+              {this.state.inputValue || this.props.value}
             </div>
           )}
         </div>
