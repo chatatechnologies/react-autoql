@@ -4,7 +4,7 @@ import _cloneDeep from 'lodash.clonedeep'
 import { SampleQueryReplacementTypes, getQueryRequestParams, getTitleCase } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
-import InlineNumberEditor from './InlineNumberEditor'
+import InlineInputEditor from './InlineInputEditor'
 import { VLAutocompleteInputPopover } from '../VLAutocompleteInput'
 
 export default class SampleQuery extends React.Component {
@@ -118,8 +118,17 @@ export default class SampleQuery extends React.Component {
             )
           } else if (chunk.type == SampleQueryReplacementTypes.SAMPLE_QUERY_AMOUNT_TYPE) {
             chunkContent = (
-              <InlineNumberEditor
+              <InlineInputEditor
                 value={chunk.value}
+                type='number'
+                onChange={(newValue) => this.onAmountChange(newValue, chunk.name)}
+              />
+            )
+          } else if (chunk.type == SampleQueryReplacementTypes.SAMPLE_QUERY_TIME_TYPE) {
+            chunkContent = (
+              <InlineInputEditor
+                value={chunk.value}
+                type='text'
                 onChange={(newValue) => this.onAmountChange(newValue, chunk.name)}
               />
             )

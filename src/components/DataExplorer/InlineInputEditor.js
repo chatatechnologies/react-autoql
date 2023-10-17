@@ -5,7 +5,7 @@ import PropTypes from 'prop-types'
 import { Input } from '../Input'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 
-export default class InlineNumberEditor extends React.Component {
+export default class InlineInputEditor extends React.Component {
   constructor(props) {
     super(props)
 
@@ -20,11 +20,13 @@ export default class InlineNumberEditor extends React.Component {
 
   static propTypes = {
     value: PropTypes.string,
+    type: PropTypes.string,
     onChange: PropTypes.func,
   }
 
   static defaultProps = {
     value: '',
+    type: 'text',
     onChange: () => {},
   }
 
@@ -100,7 +102,7 @@ export default class InlineNumberEditor extends React.Component {
               onFocus={this.onInputFocus}
               onBlur={this.onInputBlur}
               onKeyDown={this.onKeyDown}
-              type='number'
+              type={this.props.type}
             />
           ) : (
             <div
