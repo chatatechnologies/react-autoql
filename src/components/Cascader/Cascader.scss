@@ -5,6 +5,14 @@
   display: flex;
   min-width: 300px;
 
+  .react-autoql-cascader-scrollbar-container {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    width: 100%;
+    flex: 1 1;
+  }
+
   .options-container {
     display: flex;
     flex-direction: column;
@@ -14,7 +22,7 @@
     transition: flex-basis 0.2s ease;
 
     white-space: pre-wrap;
-    overflow: auto;
+    overflow: hidden;
     max-height: 100%;
     margin: 0;
 
@@ -92,7 +100,8 @@
       &.react-autoql-cascader-option-custom-content {
         margin-left: -1px;
         padding: 0;
-        flex: 1;
+        height: 100%;
+        width: 100%;
       }
 
       &:not(.react-autoql-cascader-option-custom-content) {

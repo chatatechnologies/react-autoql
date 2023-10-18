@@ -23,7 +23,6 @@
     position: relative;
     white-space: nowrap;
     text-overflow: ellipsis;
-    overflow: auto;
     height: 100%;
     border-radius: 2px;
     border: 1px solid var(--react-autoql-border-color);
@@ -163,7 +162,7 @@
         color: var(--react-autoql-text-color-secondary);
         background-color: transparent;
         left: calc(50% - 75px);
-        height: 22px;
+        height: 30px;
         position: sticky;
         display: block;
         font-style: italic;
@@ -177,6 +176,7 @@
           display: flex;
           width: 150px;
           height: 100%;
+          padding-bottom: 8px;
         }
       }
     }

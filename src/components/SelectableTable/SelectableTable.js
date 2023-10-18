@@ -7,6 +7,7 @@ import _cloneDeep from 'lodash.clonedeep'
 import { formatElement, getDataFormatting, dataFormattingDefault } from 'autoql-fe-utils'
 
 import { Checkbox } from '../Checkbox'
+import { CustomScrollbars } from '../CustomScrollbars'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { dataFormattingType } from '../../props/types'
@@ -36,6 +37,12 @@ export default class SelectableTable extends React.Component {
     onColumnSelection: () => {},
     selectedColumns: [],
     showEndOfPreviewMessage: true,
+  }
+
+  componentDidMount = () => {
+    setTimeout(() => {
+      this.scrollbars?.update()
+    }, 2000)
   }
 
   formatColumnHeader = (column, i) => {
@@ -124,61 +131,63 @@ export default class SelectableTable extends React.Component {
       <ErrorBoundary>
         <div ref={(r) => (this.tableRef = r)} className='react-autoql-selectable-table'>
           <div className='react-autoql-selectable-table-wrapper'>
-            <table>
-              <thead>
-                <tr>
-                  {columns.map((col, i) => {
+            <CustomScrollbars ref={(r) => (this.scrollbars = r)} table>
+              <table>
+                <thead>
+                  <tr>
+                    {columns.map((col, i) => {
+                      return (
+                        <th
+                          id={`col-header-${i}`}
+                          key={`col-header-${i}`}
+                          className={`selectable-table-column ${
+                            this.props.selectedColumns.includes(i)
+                              ? 'selectable-table-column-selected'
+                              : 'selectable-table-column-unselected'
+                          }`}
+                          onClick={() => this.onColumnHeaderClick(i)}
+                          onMouseOver={(e) => this.onMouseOverColumn(e, i)}
+                        >
+                          {this.formatColumnHeader(col, i)}
+                        </th>
+                      )
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row, i) => {
                     return (
-                      <th
-                        id={`col-header-${i}`}
-                        key={`col-header-${i}`}
-                        className={`selectable-table-column ${
-                          this.props.selectedColumns.includes(i)
-                            ? 'selectable-table-column-selected'
-                            : 'selectable-table-column-unselected'
-                        }`}
-                        onClick={() => this.onColumnHeaderClick(i)}
-                        onMouseOver={(e) => this.onMouseOverColumn(e, i)}
-                      >
-                        {this.formatColumnHeader(col, i)}
-                      </th>
+                      <tr key={`row-${i}`} className='selectable-table-row'>
+                        {row.map((cell, j) => {
+                          const column = columns[j]
+                          return (
+                            <td
+                              className={`selectable-table-cell ${
+                                this.props.selectedColumns.includes(j)
+                                  ? 'selectable-table-cell-selected'
+                                  : 'selectable-table-cell-unselected'
+                              } cell-${j}`}
+                              onClick={() => this.onColumnHeaderClick(j)}
+                              onMouseOver={(e) => this.onMouseOverColumn(e, j)}
+                              key={`cell-${j}`}
+                            >
+                              {this.formatCell({ cell, column, config })}
+                            </td>
+                          )
+                        })}
+                      </tr>
                     )
                   })}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, i) => {
-                  return (
-                    <tr key={`row-${i}`} className='selectable-table-row'>
-                      {row.map((cell, j) => {
-                        const column = columns[j]
-                        return (
-                          <td
-                            className={`selectable-table-cell ${
-                              this.props.selectedColumns.includes(j)
-                                ? 'selectable-table-cell-selected'
-                                : 'selectable-table-cell-unselected'
-                            } cell-${j}`}
-                            onClick={() => this.onColumnHeaderClick(j)}
-                            onMouseOver={(e) => this.onMouseOverColumn(e, j)}
-                            key={`cell-${j}`}
-                          >
-                            {this.formatCell({ cell, column, config })}
-                          </td>
-                        )
-                      })}
+                  {!!this.props.showEndOfPreviewMessage && (
+                    <tr className='selectable-table-end-of-preview-message'>
+                      <td className='selectable-table-end-of-preview-sticky-wrapper' colSpan={`${columns.length}`}>
+                        End of Preview
+                      </td>
                     </tr>
-                  )
-                })}
-                {!!this.props.showEndOfPreviewMessage && (
-                  <tr className='selectable-table-end-of-preview-message'>
-                    <td className='selectable-table-end-of-preview-sticky-wrapper' colSpan={`${columns.length}`}>
-                      End of Preview
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </CustomScrollbars>
           </div>
           {!!this.props.caption && this.renderTableCaption()}
         </div>

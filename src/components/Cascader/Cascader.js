@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 
 import { Icon } from '../Icon'
+import { CustomScrollbars } from '../CustomScrollbars'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Cascader.scss'
@@ -72,49 +73,53 @@ export default class Cascader extends React.Component {
             </span>
           </div>
         )}
-        {options.map((option, i) => {
-          return (
-            <div
-              key={`options-${i}-${this.COMPONENT_ID}`}
-              className={`option
+        <div className='react-autoql-cascader-scrollbar-container'>
+          <CustomScrollbars autoHide={false}>
+            {options.map((option, i) => {
+              return (
+                <div
+                  key={`options-${i}-${this.COMPONENT_ID}`}
+                  className={`option
                   ${option.value === active ? 'react-autoql-cascader-option-active' : ''}
                   ${option.customContent ? 'react-autoql-cascader-option-custom-content' : ''}`}
-              onClick={() => this.onOptionClick(option, index)}
-              data-test={`options-item-${index}-${i}`}
-            >
-              {option.customContent ? (
-                typeof option.customContent === 'function' ? (
-                  option.customContent()
-                ) : (
-                  option.customContent
-                )
-              ) : (
-                <>
-                  <span className='react-autoql-cascader-option-item' data-test={`options-item-${index}-${i}-text`}>
-                    {option.label}
-                  </span>
-                  {!option?.children?.length && this.props.action ? this.props.action : null}
-                  {!!option?.children?.length && (
-                    <Icon className='react-autoql-cascader-option-arrow' type='caret-right' />
+                  onClick={() => this.onOptionClick(option, index)}
+                  data-test={`options-item-${index}-${i}`}
+                >
+                  {option.customContent ? (
+                    typeof option.customContent === 'function' ? (
+                      option.customContent()
+                    ) : (
+                      option.customContent
+                    )
+                  ) : (
+                    <>
+                      <span className='react-autoql-cascader-option-item' data-test={`options-item-${index}-${i}-text`}>
+                        {option.label}
+                      </span>
+                      {!option?.children?.length && this.props.action ? this.props.action : null}
+                      {!!option?.children?.length && (
+                        <Icon className='react-autoql-cascader-option-arrow' type='caret-right' />
+                      )}
+                    </>
                   )}
-                </>
-              )}
-            </div>
-          )
-        })}
-        {this.props.showSeeMoreButton && hasNoChildren && mostRecentOptionLabel && this.props.onSeeMoreClick && (
-          <div
-            className='option'
-            data-test='see-more-option'
-            onClick={() => {
-              this.props.onSeeMoreClick(mostRecentOptionLabel)
-            }}
-          >
-            <span>
-              <Icon type='light-bulb' /> See more...
-            </span>
-          </div>
-        )}
+                </div>
+              )
+            })}
+            {this.props.showSeeMoreButton && hasNoChildren && mostRecentOptionLabel && this.props.onSeeMoreClick && (
+              <div
+                className='option'
+                data-test='see-more-option'
+                onClick={() => {
+                  this.props.onSeeMoreClick(mostRecentOptionLabel)
+                }}
+              >
+                <span>
+                  <Icon type='light-bulb' /> See more...
+                </span>
+              </div>
+            )}
+          </CustomScrollbars>
+        </div>
       </div>
     )
   }
