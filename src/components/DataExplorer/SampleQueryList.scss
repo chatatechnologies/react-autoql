@@ -1,0 +1,170 @@
+.query-suggestion-list {
+  color: var(--react-autoql-text-color-primary);
+  flex: 1;
+
+  .data-explorer-sample-query {
+    display: flex;
+    position: relative;
+    flex-direction: row;
+    align-items: center;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    border-top: 1px solid #8b8b8b1f;
+    min-height: 50px;
+
+    .data-explorer-sample-chunk {
+      white-space: nowrap;
+    }
+
+    .react-auoql-inline-number-editor-wrapper,
+    .autcomplete-input-popover-btn {
+      position: relative;
+      margin-left: 3px;
+    }
+
+    &::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-color: var(--react-autoql-accent-color);
+      transition: opacity 0.2s;
+
+      opacity: 0;
+    }
+
+    &:hover {
+      &::before {
+        content: '';
+        opacity: 0.05;
+      }
+
+      .query-suggestion-send-btn {
+        opacity: 0.7;
+      }
+    }
+
+    .query-suggestion-text {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      white-space: pre-wrap;
+      padding: 8px;
+    }
+
+    .query-suggestion-send-btn {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      position: relative;
+      display: flex;
+      font-size: 19px;
+      margin: 7px;
+      margin-left: 10px;
+      width: 30px;
+      height: 30px;
+      z-index: 1;
+      border-radius: 50%;
+      box-shadow: var(--react-autoql-box-shadow-1);
+      color: var(--react-autoql-text-color-accent);
+      background-color: var(--react-autoql-accent-color);
+      transition: background-color 0.2s ease, color 0.2s ease, font-size 0.2s ease, opacity 0.2s ease;
+      cursor: pointer;
+
+      opacity: 0;
+
+      svg {
+        padding-right: 2px;
+      }
+
+      &::before,
+      &::after {
+        content: '';
+        pointer-events: none;
+        position: absolute;
+        box-sizing: content-box;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background-color: transparent;
+        transition: transform 0.2s, opacity 0.2s;
+        opacity: 0;
+      }
+
+      &::before {
+        top: -7px;
+        left: -7px;
+        padding: 5px;
+        border: 2px solid var(--react-autoql-accent-color);
+        box-shadow: var(--react-autoql-box-shadow-1);
+        transform: scale(0.6);
+      }
+
+      &::after {
+        top: -3px;
+        left: -3px;
+        padding: 0;
+        border: 3px solid var(--react-autoql-accent-color);
+        box-shadow: var(--react-autoql-box-shadow-1);
+        background-color: transparent;
+        transform: scale(0.8);
+      }
+
+      &:hover {
+        font-size: 23px;
+        opacity: 1;
+
+        &::before,
+        &::after {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+    }
+
+    .react-autoql-select-and-label {
+      border-bottom: 1px solid var(--react-autoql-accent-color);
+      height: 1.5em;
+      margin: 0 5px;
+      margin-top: 4px;
+      padding: 2px;
+
+      .react-autoql-select-text {
+        line-height: 1em;
+      }
+    }
+  }
+}
+
+.autcomplete-input-popover-btn,
+.inline-number-input-editor-btn {
+  border: 1px solid transparent;
+  border-bottom-color: var(--react-autoql-accent-color);
+  color: var(--react-autoql-text-color-primary);
+  padding: 2px;
+  position: relative;
+  font-weight: 600;
+  padding-bottom: 2px;
+  transition: color 0.2s ease;
+  cursor: pointer;
+
+  &:hover,
+  &.autcomplete-input-popover-btn-active,
+  &.inline-number-input-editor-btn-active {
+    color: var(--react-autoql-accent-color);
+  }
+}
+
+.react-auoql-inline-number-editor-wrapper {
+  .react-autoql-input-and-label-container {
+    padding: 0;
+    .react-autoql-input-container .react-autoql-input {
+      border-radius: 0 !important;
+      height: 35px !important;
+    }
+  }
+
+  .react-autoql-input-number-spin-button-container {
+    display: none !important;
+  }
+}

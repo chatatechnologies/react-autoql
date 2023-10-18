@@ -1,35 +1,30 @@
 import React from 'react'
+import axios from 'axios'
+import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
-import axios from 'axios'
-import {
-  fetchDataPreview,
-  REQUEST_CANCELLED_ERROR,
-  formatElement,
-  getDataFormatting,
-  dataFormattingDefault,
-} from 'autoql-fe-utils'
 
-import { Card } from '../Card'
-import { CustomScrollbars } from '../CustomScrollbars'
+import { fetchDataPreview, REQUEST_CANCELLED_ERROR, dataFormattingDefault } from 'autoql-fe-utils'
+
 import { LoadingDots } from '../LoadingDots'
-import { authenticationType } from '../../props/types'
-import { Icon } from '../Icon'
-import { rebuildTooltips } from '../Tooltip'
+import { SelectableTable } from '../SelectableTable'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { dataFormattingType } from '../../props/types'
+import { authenticationType, dataFormattingType } from '../../props/types'
 
 import './DataPreview.scss'
+import TablePlaceholder from '../TablePlaceholder/TablePlaceholder'
 
 export default class DataExplorer extends React.Component {
   constructor(props) {
     super(props)
 
     this.DATA_PREVIEW_ROWS = 5
+    this.ID = uuid()
 
     this.state = {
-      dataPreview: null,
+      dataPreview: props.data,
+      error: undefined,
     }
   }
 
@@ -41,6 +36,9 @@ export default class DataExplorer extends React.Component {
 
     isCollapsed: PropTypes.bool,
     onIsCollapsedChange: PropTypes.func,
+    onColumnSelection: PropTypes.func,
+    onDataPreview: PropTypes.func,
+
     defaultCollapsed: PropTypes.bool,
   }
 
@@ -49,16 +47,17 @@ export default class DataExplorer extends React.Component {
     authentication: {},
     shouldRender: true,
     subject: null,
-    rebuildTooltips: undefined,
     isCollapsed: undefined,
     onIsCollapsedChange: () => {},
+    onColumnSelection: () => {},
+    onDataPreview: () => {},
 
     defaultCollapsed: false,
   }
 
   componentDidMount = () => {
     this._isMounted = true
-    if (this.props.subject) {
+    if (this.props.subject && !this.props.data) {
       this.getDataPreview()
     }
   }
@@ -66,10 +65,6 @@ export default class DataExplorer extends React.Component {
   componentDidUpdate = (prevProps, prevState) => {
     if (this.props.subject && !_isEqual(this.props.subject, prevProps.subject)) {
       this.getDataPreview()
-    }
-
-    if (this.state.dataPreview && !_isEqual(this.state.dataPreview, prevState.dataPreview)) {
-      rebuildTooltips()
     }
   }
 
@@ -88,116 +83,61 @@ export default class DataExplorer extends React.Component {
     this.setState({ loading: true, error: undefined, dataPreview: undefined })
     fetchDataPreview({
       ...this.props.authentication,
-      subject: this.props.subject?.id,
+      subject: this.props.subject?.context,
       numRows: this.DATA_PREVIEW_ROWS,
       source: 'data_explorer.data_preview',
       scope: 'data_explorer',
       cancelToken: this.axiosSource.token,
+      numRows: 100,
     })
       .then((response) => {
-        this.setState({ dataPreview: response, loading: false })
+        if (this._isMounted) {
+          this.setState({ dataPreview: response, loading: false })
+          this.props.onDataPreview?.(response)
+        }
       })
       .catch((error) => {
-        if (error?.message !== REQUEST_CANCELLED_ERROR) {
-          console.error(error)
-          this.setState({ loading: false, error: error?.response?.data })
+        if (this._isMounted) {
+          if (error?.message !== REQUEST_CANCELLED_ERROR) {
+            console.error(error)
+            this.setState({ loading: false, error: error?.response?.data })
+          }
         }
       })
   }
 
-  formatColumnHeader = (column) => {
-    return (
-      <div className='data-preview-col-header' data-for={this.props.tooltipID ?? 'data-preview-tooltip'}>
-        {column?.display_name}
-      </div>
-    )
-  }
-
-  formatCell = ({ cell, column, config }) => {
-    return (
-      <div
-        className='data-preview-cell'
-        style={{
-          textAlign: column.type === 'DOLLAR_AMT' ? 'right' : 'center',
-        }}
-      >
-        {formatElement({
-          element: cell,
-          column,
-          config,
-        })}
-      </div>
-    )
-  }
-
   renderDataPreviewGrid = () => {
-    const rows = this.state.dataPreview?.data?.data?.rows
-    const columns = this.state.dataPreview?.data?.data?.columns
-
-    if (!this.state.error && (!columns || !rows)) {
-      return null
-    }
-
-    const config = getDataFormatting(this.props.dataFormatting)
-
-    let maxHeight = this.props.dataExplorerRef?.clientHeight * 0.75
-    if (isNaN(maxHeight)) {
-      maxHeight = 500
+    if (this.state.error || !this.state.dataPreview?.data?.data?.columns || !this.state.dataPreview?.data?.data?.rows) {
+      return (
+        <div className='data-preview-error-message'>
+          <p>
+            {this.state.error?.message ?? 'Oops... Something went wrong and we were unable to fetch your Data Preview.'}
+          </p>
+          {this.state.error?.reference_id ? <p>Error ID: {this.state.error.reference_id}</p> : null}
+          <p>
+            <a onClick={() => this.props.onError}>Try again</a>
+          </p>
+        </div>
+      )
     }
 
     return (
-      <div className='data-preview'>
-        <CustomScrollbars style={{ height: '165px' }}>
-          {!!this.state.error ? (
-            <div className='data-preview-error-message'>
-              <div>{this.state.error.message}</div>
-              {this.state.error.reference_id && (
-                <>
-                  <br />
-                  <div>Error ID: {this.state.error.reference_id}</div>
-                </>
-              )}
-            </div>
-          ) : (
-            <table>
-              <thead>
-                <tr>
-                  {columns.map((col, i) => {
-                    return <th key={`col-header-${i}`}>{this.formatColumnHeader(col)}</th>
-                  })}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, i) => {
-                  return (
-                    <tr key={`row-${i}`} className='data-preview-row'>
-                      {row.map((cell, j) => {
-                        const column = columns[j]
-                        return <td key={`cell-${j}`}>{this.formatCell({ cell, column, config })}</td>
-                      })}
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          )}
-        </CustomScrollbars>
-      </div>
+      <SelectableTable
+        dataFormatting={this.props.dataFormatting}
+        onColumnSelection={this.props.onColumnSelection}
+        selectedColumns={this.props.selectedColumns}
+        shouldRender={this.props.shouldRender}
+        queryResponse={this.state.dataPreview}
+        showEndOfPreviewMessage={true}
+        tooltipID={this.props.tooltipID}
+      />
     )
   }
 
   renderLoadingContainer = () => {
     return (
-      <div className='data-explorer-card-placeholder data-preview'>
-        <LoadingDots />
-      </div>
-    )
-  }
-
-  renderDataPreviewTitle = () => {
-    return (
-      <div className='react-autoql-card-title-text'>
-        <Icon style={{ fontSize: '20px' }} type='table' /> Data Preview - "{this.props.subject?.query}"
+      <div className='data-explorer-section-placeholder data-preview'>
+        <TablePlaceholder />
       </div>
     )
   }
@@ -209,16 +149,14 @@ export default class DataExplorer extends React.Component {
 
     return (
       <ErrorBoundary>
-        <Card
+        <div
+          id={`data-explorer-data-preview-${this.ID}`}
           className='data-explorer-data-preview'
           data-test='data-explorer-data-preview'
-          title={this.renderDataPreviewTitle()}
-          isCollapsed={this.props.isCollapsed}
-          onIsCollapsedChange={this.props.onIsCollapsedChange}
-          defaultCollapsed={this.props.defaultCollapsed}
+          style={this.props.style}
         >
           {this.state.loading ? this.renderLoadingContainer() : this.renderDataPreviewGrid()}
-        </Card>
+        </div>
       </ErrorBoundary>
     )
   }

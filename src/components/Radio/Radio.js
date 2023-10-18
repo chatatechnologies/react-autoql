@@ -51,9 +51,9 @@ export default class Radio extends React.Component {
                   ${isActive ? ' active' : ''}`}
                 data-test='react-autoql-radio-btn'
                 onClick={() => this.props.onChange(option)}
-                data-tip={this.props.tooltips?.[i]}
-                data-for={this.props.tooltipID}
-                data-delay-show={500}
+                data-tooltip-html={this.props.tooltips?.[i]}
+                data-tooltip-id={this.props.tooltipID}
+                data-tooltip-delay-show={500}
               >
                 <div>{option}</div>
               </div>

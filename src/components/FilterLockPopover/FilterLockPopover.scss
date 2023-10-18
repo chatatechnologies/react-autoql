@@ -251,34 +251,35 @@
       }
     }
   }
+}
 
-  .react-autoql-filter-locking-input {
-    padding: 5px;
-    padding-left: 20px;
-    height: 32px;
-    box-sizing: border-box;
-    border-radius: 24px;
-    font-size: 12px;
-    font-family: inherit;
-    letter-spacing: 0.04em;
-    outline: none !important;
-    width: 100%;
-    font-family: inherit;
-    border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
-    background: var(--react-autoql-background-color-secondary);
-    color: var(--react-autoql-text-color-primary);
+// ------------------- Autocomplete styles -------------------
+.react-autoql-vl-autocomplete-input {
+  padding: 5px;
+  padding-left: 20px;
+  height: 32px;
+  box-sizing: border-box;
+  border-radius: 24px;
+  font-size: 12px;
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  outline: none !important;
+  width: 100%;
+  font-family: inherit;
+  border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+  background: var(--react-autoql-background-color-secondary);
+  color: var(--react-autoql-text-color-primary);
 
-    &:hover {
-      box-shadow: 0px 0px 5px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
-    }
-
-    &::placeholder {
-      color: rgba(var(--react-autoql-text-color-placeholder), 2) !important;
-      opacity: 0.5;
-    }
+  &:hover {
+    box-shadow: 0px 0px 5px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
   }
 
-  // ------------------- Autocomplete styles -------------------
+  &::placeholder {
+    color: rgba(var(--react-autoql-text-color-placeholder), 2) !important;
+    opacity: 0.5;
+  }
+}
+.react-autoql-vl-autocomplete-input-wrapper {
   .react-autosuggest__container--open {
     position: relative;
 
@@ -337,8 +338,9 @@
       }
     }
   }
-  // ------------------------------------------------------------------------
 }
+
+// ------------------------------------------------------------------------
 
 @keyframes highlightOut {
   100% {

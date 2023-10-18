@@ -1,8 +1,9 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
+import PropTypes from 'prop-types'
 import { scaleOrdinal } from 'd3-scale'
 import { isMobile } from 'react-device-detect'
+
 import {
   aggregateData,
   getLegendLabelsForMultiSeries,
@@ -24,20 +25,20 @@ import {
   mergeBoundingClientRects,
 } from 'autoql-fe-utils'
 
-import { ErrorBoundary } from '../../../containers/ErrorHOC'
-import { ChataColumnChart } from '../ChataColumnChart'
+import { Spinner } from '../../Spinner'
+import { ChataPieChart } from '../ChataPieChart'
 import { ChataBarChart } from '../ChataBarChart'
 import { ChataLineChart } from '../ChataLineChart'
-import { ChataPieChart } from '../ChataPieChart'
-import { ChataHeatmapChart } from '../ChataHeatmapChart'
-import { ChataBubbleChart } from '../ChataBubbleChart'
-import { ChataStackedBarChart } from '../ChataStackedBarChart'
-import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
-import { ChataStackedLineChart } from '../ChataStackedLineChart'
-import { ChataScatterplotChart } from '../ChataScatterplotChart'
-import { ChataColumnLineChart } from '../ChataColumnLine'
 import { ChataHistogram } from '../ChataHistogram'
-import { Spinner } from '../../Spinner'
+import { ChataColumnChart } from '../ChataColumnChart'
+import { ChataBubbleChart } from '../ChataBubbleChart'
+import { ChataHeatmapChart } from '../ChataHeatmapChart'
+import { ChataColumnLineChart } from '../ChataColumnLine'
+import { ErrorBoundary } from '../../../containers/ErrorHOC'
+import { ChataStackedBarChart } from '../ChataStackedBarChart'
+import { ChataScatterplotChart } from '../ChataScatterplotChart'
+import { ChataStackedLineChart } from '../ChataStackedLineChart'
+import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 
 import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPropHelpers.js'
 

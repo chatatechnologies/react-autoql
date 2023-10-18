@@ -1,16 +1,15 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
+import PropTypes from 'prop-types'
 import SplitterLayout from 'react-splitter-layout'
 import { CHART_TYPES, authenticationDefault, autoQLConfigDefault, dataFormattingDefault } from 'autoql-fe-utils'
 
 import { Modal } from '../Modal'
 import { QueryOutput } from '../QueryOutput'
 import { LoadingDots } from '../LoadingDots'
-import { ErrorBoundary } from '../../containers/ErrorHOC'
-import { rebuildTooltips } from '../Tooltip'
-import { ReportProblemModal } from '../ReportProblemModal'
 import DrilldownTable from './DrilldownTable'
+import { ErrorBoundary } from '../../containers/ErrorHOC'
+import { ReportProblemModal } from '../ReportProblemModal'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
@@ -80,22 +79,18 @@ export default class DrilldownModal extends React.Component {
     if (this.splitterLayoutRef?.splitter) {
       this.renderSplitterCollapseBtn()
     }
-
-    if (prevState.isDrilldownChartHidden !== this.state.isDrilldownChartHidden) {
-      rebuildTooltips()
-    }
   }
 
   renderSplitterCollapseBtn = () => {
     const splitterBtn = document.querySelector(`#splitter-btn-${this.COMPONENT_KEY}`)
     if (splitterBtn) {
-      splitterBtn.setAttribute('data-tip', this.state.isDrilldownChartHidden ? 'Show chart' : 'Hide chart')
+      splitterBtn.setAttribute('data-tooltip-content', this.state.isDrilldownChartHidden ? 'Show chart' : 'Hide chart')
     } else {
       const btn = document.createElement('div')
       btn.innerHTML = '&#94;'
       btn.className = 'splitter-collapse-btn'
       btn.id = `splitter-btn-${this.COMPONENT_KEY}`
-      btn.setAttribute('data-for', this.props.tooltipID)
+      btn.setAttribute('data-tooltip-id', this.props.tooltipID)
 
       btn.addEventListener('click', () => {
         this.setState(

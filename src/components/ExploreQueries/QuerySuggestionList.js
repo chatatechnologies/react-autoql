@@ -7,7 +7,6 @@ import { InfiniteScroll } from '../InfiniteScroll'
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { LoadingDots } from '../LoadingDots'
 import { Spinner } from '../Spinner'
-import { Icon } from '../Icon'
 
 export default class QuerySuggestionList extends React.Component {
   constructor(props) {
@@ -147,7 +146,7 @@ export default class QuerySuggestionList extends React.Component {
   render = () => {
     if (this.state.initialLoading) {
       return (
-        <div className='data-explorer-card-placeholder'>
+        <div className='data-explorer-section-placeholder'>
           <LoadingDots />
         </div>
       )
@@ -155,7 +154,7 @@ export default class QuerySuggestionList extends React.Component {
 
     if (this.state.validationResponse) {
       return (
-        <div className='data-explorer-card-placeholder'>
+        <div className='data-explorer-section-placeholder'>
           <QueryValidationMessage
             response={this.state.validationResponse}
             onSuggestionClick={this.onValidationSuggestionClick}
@@ -174,7 +173,7 @@ export default class QuerySuggestionList extends React.Component {
 
     if (this.state.queryList?.length === 0) {
       return (
-        <div className='data-explorer-card-placeholder'>
+        <div className='data-explorer-section-placeholder'>
           <p>
             Sorry, I couldn’t find any queries matching your input. Try entering a different topic or keyword instead.
           </p>
@@ -208,7 +207,8 @@ export default class QuerySuggestionList extends React.Component {
                 key={`query-tip-${i}`}
               >
                 <div className='query-suggestion-text'>
-                  <Icon type='react-autoql-bubbles-outlined' /> {query}
+                  {/* <Icon type='react-autoql-bubbles-outlined' />  */}
+                  {query}
                 </div>
               </div>
             )

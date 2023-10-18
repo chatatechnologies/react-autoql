@@ -13,6 +13,8 @@ export default class CustomScrollbars extends React.Component {
     autoHeightMax: PropTypes.number,
     autoHeightMin: PropTypes.number,
     contentHidden: PropTypes.bool,
+    maxHeight: PropTypes.number,
+    minHeight: PropTypes.number,
   }
 
   static defaultProps = {
@@ -20,6 +22,8 @@ export default class CustomScrollbars extends React.Component {
     autoHide: false,
     autoHeightMin: undefined,
     autoHeightMax: undefined,
+    maxHeight: undefined,
+    minHeight: undefined,
     contentHidden: false,
   }
 
@@ -46,7 +50,7 @@ export default class CustomScrollbars extends React.Component {
     }
 
     if (typeof duration !== 'number' || duration > this.MAX_UPDATE_DURATION) {
-      this.ref?._ps?.update()
+      setTimeout(() => this.ref?._ps?.update(), 0)
     } else {
       clearInterval(this.intervalID)
 
@@ -100,6 +104,14 @@ export default class CustomScrollbars extends React.Component {
     style.maxHeight = this.props.maxHeight
     style.minHeight = this.props.minHeight
 
+    if (this.props.suppressScrollY) {
+      style.overflowY = 'hidden'
+    }
+
+    if (this.props.suppressScrollX) {
+      style.overflowX = 'hidden'
+    }
+
     return style
   }
 
@@ -112,9 +124,10 @@ export default class CustomScrollbars extends React.Component {
       <PerfectScrollbar
         className={`react-autoql-custom-scrollbars 
             ${this.props.className ?? ''}
-            ${this.props.autoHide ? 'autohide' : ''}`}
+            ${this.props.autoHide ? 'autohide' : 'always-visible'}`}
         ref={(r) => (this.ref = r)}
         style={this.getStyleProp()}
+        options={this.props.options}
       >
         {this.props.children}
       </PerfectScrollbar>

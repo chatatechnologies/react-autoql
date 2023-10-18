@@ -2,7 +2,6 @@ import React from 'react'
 import axios from 'axios'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
-import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import Autosuggest from 'react-autosuggest'
 
@@ -11,10 +10,12 @@ import {
   fetchSubjectList,
   REQUEST_CANCELLED_ERROR,
   animateInputText,
+  DataExplorerTypes,
+  parseJwt,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
-import { TopicName } from './TopicName'
+import { SubjectName } from './SubjectName'
 import { CustomScrollbars } from '../CustomScrollbars'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
@@ -34,7 +35,7 @@ export default class DataExplorerInput extends React.Component {
     this.state = {
       inputValue: '',
       loadingAutocomplete: false,
-      recentSuggestions: [],
+      recentSearches: this.getRecentSearchesFromLocalStorage(props),
       suggestions: [],
       allSubjects: [],
     }
@@ -59,35 +60,82 @@ export default class DataExplorerInput extends React.Component {
     this.fetchAllSubjects()
   }
 
+  componentDidUpdate = () => {
+    this.setRecentSearchesInLocalStorage()
+  }
+
   componentWillUnmount = () => {
     this._isMounted = false
     clearTimeout(this.autoCompleteTimer)
     clearTimeout(this.inputAnimationTimeout)
   }
 
-  isAggSeed(subject) {
-    return (
-      subject.displayName.toLowerCase().endsWith('by week') ||
-      subject.displayName.toLowerCase().endsWith('by month') ||
-      subject.displayName.toLowerCase().endsWith('by day') ||
-      subject.displayName.toLowerCase().endsWith('by year')
-    )
+  getRecentSearchesFromLocalStorage = (props) => {
+    try {
+      const id = this.getRecentSelectionID(props)
+
+      if (!id) {
+        return []
+      }
+
+      const recentSearchesStr = localStorage.getItem(id)
+      const recentSearchesArray = JSON.parse(recentSearchesStr)
+
+      if (recentSearchesArray?.constructor !== Array || !recentSearchesArray?.length) {
+        return []
+      }
+
+      const filteredRecentSearchesArray = recentSearchesArray.filter((subject, i, self) => {
+        return self.findIndex((subj) => subj.displayName == subject.displayName) === i
+      })
+
+      if (filteredRecentSearchesArray?.length) {
+        return filteredRecentSearchesArray
+      }
+    } catch (error) {
+      console.error(error)
+    }
+
+    return []
   }
+
+  getRecentSelectionID = (props) => {
+    if (!props?.authentication?.token) {
+      return
+    }
+
+    try {
+      const tokenInfo = parseJwt(props.authentication.token)
+      const id = `data-explorer-recent-${tokenInfo.user_id}-${tokenInfo.project_id}`
+      return id
+    } catch (error) {
+      console.error(error)
+      return
+    }
+  }
+
+  setRecentSearchesInLocalStorage = () => {
+    try {
+      const id = this.getRecentSelectionID(this.props)
+      if (!id) {
+        return
+      }
+
+      const recentSearchesStr = JSON.stringify(this.state.recentSearches)
+      localStorage.setItem(id, recentSearchesStr)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   fetchAllSubjects = () => {
     fetchSubjectList({ ...this.props.authentication })
       .then((subjects) => {
-        if (!subjects?.length) {
-          return
-        }
-
-        const allSubjects = subjects
-          .filter((subject) => !this.isAggSeed(subject))
-          .sort((a, b) => a.displayName.localeCompare(b.displayName))
-
         if (this._isMounted) {
-          this.setState({
-            allSubjects,
-          })
+          if (subjects?.length) {
+            const filteredSubjects = subjects.filter((subj) => !subj.isAggSeed())
+            this.setState({ allSubjects: filteredSubjects })
+          }
         }
       })
       .catch((error) => console.error(error))
@@ -113,22 +161,22 @@ export default class DataExplorerInput extends React.Component {
   //   })
   // }
 
-  getNewRecentSuggestions = (subject) => {
-    const recentSuggestions = _cloneDeep(this.state.recentSuggestions)
+  getNewrecentSearches = (subject) => {
+    const recentSearches = _cloneDeep(this.state.recentSearches)
 
     // If value already exists in recent list, move it to the top
-    const index = recentSuggestions.findIndex((subj) => _isEqual(subj, subject))
+    const index = recentSearches.findIndex((subj) => subj.displayName == subject.displayName)
     if (index > -1) {
-      recentSuggestions.splice(index, 1)
+      recentSearches.splice(index, 1)
     }
 
     // Maximum length of list should be 5
-    if (recentSuggestions.length === 5) {
-      recentSuggestions.splice(-1)
+    if (recentSearches.length === 5) {
+      recentSearches.splice(-1)
     }
 
-    recentSuggestions.unshift(subject)
-    return recentSuggestions
+    recentSearches.unshift(subject)
+    return recentSearches
   }
 
   selectSubject = (subject) => {
@@ -136,7 +184,7 @@ export default class DataExplorerInput extends React.Component {
       this.userSelectedValue = null
       this.setState({
         inputValue: subject.displayName,
-        recentSuggestions: this.getNewRecentSuggestions(subject),
+        recentSearches: this.getNewrecentSearches(subject),
       })
       this.props.onSelection(subject)
     }
@@ -151,14 +199,14 @@ export default class DataExplorerInput extends React.Component {
       this.selectSubject(subject)
     } else {
       subject = {
-        type: 'text',
+        type: DataExplorerTypes.TEXT_TYPE,
         displayName: text,
       }
     }
 
     this.props.onSelection(subject, skipQueryValidation)
     this.setState({
-      recentSuggestions: this.getNewRecentSuggestions(subject),
+      recentSearches: this.getNewrecentSearches(subject),
       inputValue: subject.displayName,
     })
   }
@@ -224,17 +272,17 @@ export default class DataExplorerInput extends React.Component {
 
   userSelectedSuggestionHandler = (selectedItem) => {
     this.userSelectedValue = selectedItem
-    if (selectedItem?.displayName && this._isMounted) {
-      this.setState({ inputValue: selectedItem.displayName })
+    const itemName = selectedItem?.displayName
+    if (itemName && this._isMounted) {
+      this.setState({ inputValue: itemName })
     }
   }
 
   cancelCurrentRequest = () => {
-    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR.CANCELLED)
+    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
   }
 
   requestSuggestions = (value) => {
-    // const value = this.userTypedValue
     this.setState({ loadingAutocomplete: true, loadingAutocompleteText: value })
 
     clearTimeout(this.autoCompleteTimer)
@@ -253,7 +301,7 @@ export default class DataExplorerInput extends React.Component {
           })
         })
         .catch((error) => {
-          if (error?.data?.message !== REQUEST_CANCELLED_ERROR.CANCELLED) {
+          if (error?.data?.message !== REQUEST_CANCELLED_ERROR) {
             console.error(error)
             this.setState({ suggestions: [], loadingAutocomplete: false })
           }
@@ -282,7 +330,10 @@ export default class DataExplorerInput extends React.Component {
   renderSectionTitle = (section) => {
     return (
       <>
-        <strong>{section.title}</strong>
+        <div className='data-explorer-section-title-wrapper'>
+          <strong>{section.title}</strong>
+          {section?.action ?? null}
+        </div>
         {section.emptyState ? (
           <div className='data-explorer-no-suggestions'>
             <em>No results</em>
@@ -302,24 +353,29 @@ export default class DataExplorerInput extends React.Component {
 
   getSuggestions = () => {
     const sections = []
-    const hasRecentSuggestions = !!this.state.recentSuggestions?.length
+    const hasrecentSearches = !!this.state.recentSearches?.length
     const inputIsEmpty = !this.userTypedValue
     const doneLoading = !this.state.loadingAutocomplete
     const hasSuggestions = !!this.state.suggestions?.length // && doneLoading
     const noSuggestions = !this.state.suggestions?.length && doneLoading
 
     // Recently used
-    if (hasRecentSuggestions) {
+    if (hasrecentSearches) {
       sections.push({
-        title: 'Recent',
-        suggestions: this.state.recentSuggestions,
+        title: <span>Recent</span>,
+        action: (
+          <span className='data-explorer-clear-history-btn' onClick={() => this.setState({ recentSearches: [] })}>
+            Clear history
+          </span>
+        ),
+        suggestions: this.state.recentSearches,
       })
     }
 
     // Suggestion list
     if (inputIsEmpty) {
       sections.push({
-        title: 'All Topics',
+        title: 'Topics',
         suggestions: this.state.allSubjects,
       })
     } else if (hasSuggestions) {
@@ -330,7 +386,7 @@ export default class DataExplorerInput extends React.Component {
     } else if (noSuggestions) {
       sections.push({
         title: `Related to "${this.state.loadingAutocompleteText}"`,
-        suggestions: [{ name: '' }],
+        suggestions: [{ displayName: '' }],
         emptyState: true,
       })
     }
@@ -339,7 +395,7 @@ export default class DataExplorerInput extends React.Component {
   }
 
   renderSuggestion = (suggestion) => {
-    return <TopicName topic={suggestion} />
+    return <SubjectName subject={suggestion} />
   }
 
   renderSuggestionsContainer = ({ containerProps, children }) => {
@@ -379,8 +435,8 @@ export default class DataExplorerInput extends React.Component {
     return (
       <div
         className={`chat-bar-clear-btn ${this.state.inputValue ? 'visible' : ''}`}
-        data-for={this.props.tooltipID ?? 'explore-queries-tooltips'}
-        data-tip='Clear Search'
+        data-tooltip-id={this.props.tooltipID ?? 'explore-queries-tooltips'}
+        data-tooltip-content='Clear Search'
       >
         <Icon type='close' onClick={this.clearInput} />
       </div>

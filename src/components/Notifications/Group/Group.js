@@ -216,7 +216,11 @@ export default class Group extends React.Component {
         className='react-autoql-notification-group-delete-btn'
         onClick={() => this.props.onDelete(this.props.groupId)}
       >
-        <Icon type='close' data-tip='Remove Condition Group' data-for='notification-expression-tooltip' />
+        <Icon
+          type='close'
+          data-tooltip-content='Remove Condition Group'
+          data-tooltip-id='notification-expression-tooltip'
+        />
       </div>
     )
   }
@@ -232,8 +236,8 @@ export default class Group extends React.Component {
           <Icon
             type='plus'
             className='react-autoql-notification-add-icon'
-            data-tip='Add Condition'
-            data-for='notification-expression-tooltip'
+            data-tooltip-content='Add Condition'
+            data-tooltip-id='notification-expression-tooltip'
           />
         </div>
       </div>

@@ -9,7 +9,6 @@ import { Button } from '../../Button'
 import { Select } from '../../Select'
 import { Popover } from '../../Popover'
 import { Checkbox } from '../../Checkbox'
-import { rebuildTooltips } from '../../Tooltip'
 import { SelectableList } from '../../SelectableList'
 import { CustomScrollbars } from '../../CustomScrollbars'
 
@@ -38,12 +37,6 @@ export default class NumberAxisSelector extends React.Component {
   static defaultProps = {
     changeNumberColumnIndices: () => {},
     positions: ['right', 'bottom', 'top', 'left'],
-  }
-
-  componentDidMount = () => {
-    if (!this.props.hidden) {
-      rebuildTooltips()
-    }
   }
 
   componentDidUpdate = (prevProps, prevState) => {

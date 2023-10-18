@@ -630,8 +630,8 @@ export default class ChataTable extends React.Component {
     const clearBtn = document.createElement('div')
     clearBtn.className = 'react-autoql-input-clear-btn'
     clearBtn.id = `react-autoql-clear-btn-${this.TABLE_ID}-${column.field}`
-    clearBtn.setAttribute('data-for', this.props.tooltipID)
-    clearBtn.setAttribute('data-tip', 'Clear filter')
+    clearBtn.setAttribute('data-tooltip-id', this.props.tooltipID)
+    clearBtn.setAttribute('data-tooltip-content', 'Clear filter')
     clearBtn.appendChild(clearBtnText)
 
     clearBtn.addEventListener('click', (e) => {

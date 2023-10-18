@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { isMobile } from 'react-device-detect'
@@ -519,10 +519,10 @@ class NotificationFeed extends React.Component {
           data-test='notification-list'
         >
           {this.props.tooltipID !== this.TOOLTIP_ID && (
-            <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' delayShow={500} html />
+            <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} delayShow={500} />
           )}
           {this.state.notificationList?.length ? (
-            <Fragment>
+            <>
               {this.renderTopOptions()}
               <InfiniteScroll
                 ref={(r) => (this.infiniteScroll = r)}
@@ -586,7 +586,7 @@ class NotificationFeed extends React.Component {
                   )}
                 </div>
               </InfiniteScroll>
-            </Fragment>
+            </>
           ) : (
             <div className='empty-notifications-message'>
               <img className='empty-notifications-img' src={emptyStateImg} />

@@ -293,9 +293,9 @@ export default class Axis extends Component {
       .style('fill', 'currentColor')
       .style('fill-opacity', '1')
       .style('font-family', 'inherit')
-      .attr('data-for', this.props.chartTooltipID)
+      .attr('data-tooltip-id', this.props.chartTooltipID)
       .attr('data-effect', 'float')
-      .attr('data-tip', function (d) {
+      .attr('data-tooltip-content', function (d) {
         if (select(this).text()?.slice(-3) === '...') {
           const { fullWidthLabel } = formatChartLabel({ d, scale, maxLabelWidth })
           if (fullWidthLabel) {
@@ -531,7 +531,7 @@ export default class Axis extends Component {
 
     if (title.length > 35) {
       return (
-        <tspan data-tip={title} data-for={this.props.chartTooltipID} data-test='axis-label'>
+        <tspan data-tooltip-content={title} data-tooltip-id={this.props.chartTooltipID} data-test='axis-label'>
           {`${title.substring(0, 35)}...`}
         </tspan>
       )

@@ -10,3 +10,33 @@ a {
   color: var(--react-autoql-accent-color);
   cursor: pointer;
 }
+
+.react-tooltip {
+  z-index: 999999 !important;
+}
+
+.react-autoql-placeholder-loader {
+  position: relative;
+  border-radius: 2px;
+
+  animation-name: pulse;
+  animation-duration: 1.25s;
+  animation-fill-mode: forwards;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+  background: var(--react-autoql-text-color-primary);
+
+  opacity: 0;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.05;
+  }
+  50% {
+    opacity: 0.1;
+  }
+  100% {
+    opacity: 0.05;
+  }
+}

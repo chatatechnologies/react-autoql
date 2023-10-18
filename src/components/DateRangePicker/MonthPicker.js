@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 
@@ -127,8 +127,9 @@ export default class MonthSelect extends React.Component {
           }
 
           return (
-            <Fragment key={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}>
+            <>
               <div
+                key={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}
                 className={`react-autoql-radio-btn
                   ${isActive ? ' active' : ''}
                   ${this.props.outlined ? ' outlined' : ''}
@@ -139,8 +140,8 @@ export default class MonthSelect extends React.Component {
               >
                 {option.label}
               </div>
-              {i !== 0 && (i + 1) % 3 === 0 && <br />}
-            </Fragment>
+              {i !== 0 && (i + 1) % 3 === 0 && <br key={`react-autoql-radio-br-${this.COMPONENT_KEY}-${i}`} />}
+            </>
           )
         })}
       </div>

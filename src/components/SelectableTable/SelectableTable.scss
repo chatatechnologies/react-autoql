@@ -1,0 +1,184 @@
+.react-autoql-selectable-table {
+  height: 100%;
+  overflow: hidden;
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+
+  .react-autoql-selectable-table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    white-space: nowrap;
+    font-size: 13px;
+    color: var(--react-autoql-text-color-secondary);
+    font-weight: 600;
+
+    .react-autoql-selectable-table-selected-columns-text {
+      padding-left: 5px;
+    }
+  }
+
+  .react-autoql-selectable-table-wrapper {
+    position: relative;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: auto;
+    height: 100%;
+    border-radius: 2px;
+    border: 1px solid var(--react-autoql-border-color);
+    margin-top: 1px;
+
+    table {
+      font-size: 13px;
+      min-width: 100%;
+      border-collapse: collapse;
+
+      &:hover {
+        // If hovering the table AND hovering a column, highlight header and cells in column
+        th.react-autoql-selectable-table-hovered::before {
+          background-color: RGBA(
+            var(--react-autoql-accent-color-R),
+            var(--react-autoql-accent-color-G),
+            var(--react-autoql-accent-color-B),
+            0.3
+          );
+        }
+
+        td.react-autoql-selectable-table-hovered {
+          &:not(.selectable-table-cell-selected) {
+            background-color: RGBA(
+              var(--react-autoql-accent-color-R),
+              var(--react-autoql-accent-color-G),
+              var(--react-autoql-accent-color-B),
+              0.1
+            );
+          }
+          &.selectable-table-cell-selected {
+            background-color: RGBA(
+              var(--react-autoql-accent-color-R),
+              var(--react-autoql-accent-color-G),
+              var(--react-autoql-accent-color-B),
+              0.2
+            );
+          }
+        }
+      }
+
+      thead {
+        th {
+          top: 0;
+          padding: 0 15px;
+          height: 35px;
+          position: sticky;
+          z-index: 1;
+          background-color: var(--react-autoql-background-color-secondary);
+          border-bottom: 1px solid var(--react-autoql-table-border-color);
+          cursor: pointer;
+
+          &.react-autoql-selectable-table-hovered {
+            .react-autoql-checkbox__input {
+              border-color: var(--react-autoql-accent-color) !important;
+            }
+          }
+
+          &.selectable-table-column-selected {
+            background-color: var(--react-autoql-accent-color);
+            color: var(--react-autoql-text-color-accent);
+          }
+
+          &:not(.selectable-table-column-selected)::before {
+            content: '\00a0';
+            position: absolute;
+            height: 100%;
+            width: 100%;
+            left: 0px;
+            top: 0px;
+
+            // background-color: RGBA(
+            //   var(--react-autoql-accent-color-R),
+            //   var(--react-autoql-accent-color-G),
+            //   var(--react-autoql-accent-color-B),
+            //   0.3
+            // );
+            background-color: var(--react-autoql-background-color-disabled);
+          }
+
+          &:not(:last-child) {
+            border-right: 1px solid var(--react-autoql-table-border-color);
+          }
+
+          .selectable-table-col-header {
+            height: 100%;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+
+            .react-autoql-checkbox-container {
+              margin-left: 10px;
+
+              .react-autoql-checkbox__input {
+                width: 15px;
+                height: 15px;
+                border-color: var(--react-autoql-text-color-placeholder);
+              }
+            }
+          }
+        }
+      }
+      tbody {
+        tr {
+          height: 28px;
+          font-size: 12px;
+          background: var(--react-autoql-background-color-secondary);
+
+          &:not(:last-child) {
+            border-bottom: 1px solid var(--react-autoql-table-border-color);
+          }
+
+          td {
+            position: relative;
+            padding: 0 18px;
+            cursor: pointer;
+
+            &:not(:last-child) {
+              border-right: 1px solid var(--react-autoql-table-border-color);
+            }
+
+            &.selectable-table-cell-selected {
+              background-color: RGBA(
+                var(--react-autoql-accent-color-R),
+                var(--react-autoql-accent-color-G),
+                var(--react-autoql-accent-color-B),
+                0.15
+              );
+            }
+          }
+        }
+      }
+
+      .selectable-table-end-of-preview-message {
+        color: var(--react-autoql-text-color-secondary);
+        background-color: transparent;
+        left: calc(50% - 75px);
+        height: 22px;
+        position: sticky;
+        display: block;
+        font-style: italic;
+        font-size: inherit;
+
+        .selectable-table-end-of-preview-sticky-wrapper {
+          justify-content: center;
+          pointer-events: none;
+          align-items: center;
+          position: absolute;
+          display: flex;
+          width: 150px;
+          height: 100%;
+        }
+      }
+    }
+  }
+}

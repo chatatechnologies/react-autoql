@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import axios from 'axios'
 // remove until we reignite this speechtotext page
 // import { get, shuffle } from 'lodash'
@@ -121,7 +121,7 @@ export default class SpeechToTextPage extends React.Component {
 
   renderS2TButtonAndQuery = () => {
     return (
-      <Fragment>
+      <>
         <SpeechToTextButton
           onRecordStop={(file, blob) => {
             this.setState({
@@ -143,13 +143,13 @@ export default class SpeechToTextPage extends React.Component {
             Skip
           </Button>
         )}
-      </Fragment>
+      </>
     )
   }
 
   renderConfirmRecording = () => {
     return (
-      <Fragment>
+      <>
         <Button
           style={{ margin: '10px' }}
           shape='circle'
@@ -199,7 +199,7 @@ export default class SpeechToTextPage extends React.Component {
         >
           Skip
         </Button>
-      </Fragment>
+      </>
     )
   }
 
@@ -234,7 +234,7 @@ export default class SpeechToTextPage extends React.Component {
     return (
       <div style={{ padding: '20px' }}>
         {this.state.isAuthenticated ? (
-          <Fragment>
+          <>
             <div style={{ padding: '5px', textAlign: 'center' }}>
               {this.state.isConfirmingRecording ? this.renderConfirmRecording() : this.renderS2TButtonAndQuery()}
             </div>
@@ -243,7 +243,7 @@ export default class SpeechToTextPage extends React.Component {
                 <Table dataSource={this.state.resultHistory} columns={columns} pagination={false} />
               </div>
             }
-          </Fragment>
+          </>
         ) : (
           <Form onFinish={this.login} style={{ width: '300px', padding: '20px' }}>
             <Form.Item

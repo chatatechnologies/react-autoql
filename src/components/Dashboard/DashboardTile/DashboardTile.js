@@ -1,10 +1,11 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import axios from 'axios'
 import _cloneDeep from 'lodash.clonedeep'
 import Autosuggest from 'react-autosuggest'
 import SplitterLayout from 'react-splitter-layout'
+
 import {
   runQuery,
   fetchAutocomplete,
@@ -18,14 +19,13 @@ import {
   getAutoQLConfig,
 } from 'autoql-fe-utils'
 
-import { QueryOutput } from '../../QueryOutput'
-import { VizToolbar } from '../../VizToolbar'
-import { OptionsToolbar } from '../../OptionsToolbar'
-import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
-import LoadingDots from '../../LoadingDots/LoadingDots.js'
 import { Icon } from '../../Icon'
 import { Button } from '../../Button'
-import { hideTooltips } from '../../Tooltip'
+import { VizToolbar } from '../../VizToolbar'
+import { QueryOutput } from '../../QueryOutput'
+import { OptionsToolbar } from '../../OptionsToolbar'
+import LoadingDots from '../../LoadingDots/LoadingDots.js'
+import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
 
@@ -753,8 +753,6 @@ export class DashboardTile extends React.Component {
     }
 
     this.debouncedSetParamsForTile({ splitView, secondQuery })
-
-    hideTooltips()
   }
 
   renderSplitResponse = () => {
@@ -798,10 +796,7 @@ export class DashboardTile extends React.Component {
                 data-test='split-view-query-btn'
               >
                 <Button
-                  onClick={() => {
-                    this.toggleSecondQueryInput()
-                    hideTooltips()
-                  }}
+                  onClick={() => this.toggleSecondQueryInput()}
                   className='react-autoql-toolbar-btn'
                   tooltip='Query'
                   tooltipID={this.props.tooltipID}
@@ -848,14 +843,14 @@ export class DashboardTile extends React.Component {
                     this.autoSuggest = ref
                   }}
                   renderSuggestion={(suggestion) => {
-                    return <Fragment>{suggestion.name}</Fragment>
+                    return <>{suggestion.name}</>
                   }}
                   inputProps={{
                     className: 'dashboard-tile-autocomplete-input',
                     placeholder: 'Type a query in your own words',
                     value: this.state.query,
-                    'data-tip': 'Query',
-                    'data-for': this.props.tooltipID,
+                    'data-tooltip-content': 'Query',
+                    'data-tooltip-id': this.props.tooltipID,
                     'data-place': 'bottom',
                     onFocus: (e) => {
                       e.stopPropagation()
@@ -871,8 +866,8 @@ export class DashboardTile extends React.Component {
                   className='dashboard-tile-input query'
                   placeholder='Type a query in your own words'
                   value={this.state.query}
-                  data-tip='Query'
-                  data-for={this.props.tooltipID}
+                  data-tooltip-content='Query'
+                  data-tooltip-id={this.props.tooltipID}
                   data-place='bottom'
                   spellCheck={false}
                   onChange={this.onQueryInputChange}
@@ -888,8 +883,8 @@ export class DashboardTile extends React.Component {
               <input
                 className='dashboard-tile-input title'
                 placeholder='Add descriptive title (optional)'
-                data-tip='Title'
-                data-for={this.props.tooltipID}
+                data-tooltip-content='Title'
+                data-tooltip-id={this.props.tooltipID}
                 data-place='bottom'
                 value={this.state.title}
                 onChange={(e) => this.debounceTitleInputChange(e.target.value)}
@@ -899,7 +894,7 @@ export class DashboardTile extends React.Component {
             </div>
           </div>
           <div className={`dashboard-tile-play-button${!this.isQueryValid(this.state.query) ? ' disabled' : ''}`}>
-            <Icon type='play' onClick={() => this.processTile()} data-tip='Run tile' data-place='left' />
+            <Icon type='play' onClick={() => this.processTile()} data-tooltip-content='Run tile' data-place='left' />
           </div>
         </div>
       )
@@ -911,8 +906,10 @@ export class DashboardTile extends React.Component {
           ref={(r) => (this.dashboardTileTitleRef = r)}
           className='dashboard-tile-title'
           id={`dashboard-tile-title-${this.COMPONENT_KEY}`}
-          data-tip={this.state.isTitleOverFlow ? this.props.tile.title || this.props.tile.query || 'Untitled' : null}
-          data-for='react-autoql-dashboard-tile-title-tooltip'
+          data-tooltip-content={
+            this.state.isTitleOverFlow ? this.props.tile.title || this.props.tile.query || 'Untitled' : null
+          }
+          data-tooltip-id='react-autoql-dashboard-tile-title-tooltip'
         >
           {this.props.tile.title || this.props.tile.query || 'Untitled'}
         </span>
@@ -1264,12 +1261,12 @@ export class DashboardTile extends React.Component {
     }
 
     return (
-      <Fragment>
+      <>
         {this.renderDragHandle(propsToPassToDragHandle, 'top')}
         {this.renderDragHandle(propsToPassToDragHandle, 'bottom')}
         {this.renderDragHandle(propsToPassToDragHandle, 'left')}
         {this.renderDragHandle(propsToPassToDragHandle, 'right')}
-      </Fragment>
+      </>
     )
   }
 
@@ -1304,10 +1301,10 @@ export class DashboardTile extends React.Component {
               ${this.getIsSplitView() ? 'split' : ''}`}
             style={style}
           >
-            <Fragment>
+            <>
               {this.renderHeader()}
               {this.renderContent()}
-            </Fragment>
+            </>
           </div>
           {this.props.isEditing && this.renderDragHandles()}
           {this.props.isEditing && this.renderDeleteBtn()}

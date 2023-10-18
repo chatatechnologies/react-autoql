@@ -795,8 +795,8 @@ export default class RuleSimple extends React.Component {
         <div>
           <span
             className='data-alert-rule-query-readonly-container'
-            data-for={this.props.tooltipID}
-            data-tip='Editing this query is not permitted. To use a different query, simply create a new Data Alert via Data Messenger or a Dashboard.'
+            data-tooltip-id={this.props.tooltipID}
+            data-tooltip-content='Editing this query is not permitted. To use a different query, simply create a new Data Alert via Data Messenger or a Dashboard.'
           >
             <Input
               label={

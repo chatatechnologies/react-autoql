@@ -254,8 +254,8 @@ export default class ExpressionBuilder extends React.Component {
             <div
               className='notification-rule-add-group-btn'
               onClick={this.addGroup}
-              data-tip='Add Condition Group'
-              data-for='notification-expression-tooltip'
+              data-tooltip-content='Add Condition Group'
+              data-tooltip-id='notification-expression-tooltip'
             >
               <Icon type='plus' className='react-autoql-notification-add-icon' />
             </div>
@@ -270,13 +270,7 @@ export default class ExpressionBuilder extends React.Component {
       <ErrorBoundary>
         {this.props.readOnly ? this.renderReadOnlyRules() : this.renderRules()}
         {!this.props.tooltipID && (
-          <Tooltip
-            className='react-autoql-tooltip'
-            id='notification-expression-tooltip'
-            effect='solid'
-            delayShow={500}
-            html
-          />
+          <Tooltip className='react-autoql-tooltip' id='notification-expression-tooltip' delayShow={500} />
         )}
       </ErrorBoundary>
     )

@@ -1,15 +1,19 @@
 import React from 'react'
-import PropTypes from 'prop-types'
-import { Tooltip } from '../Tooltip'
 import { v4 as uuid } from 'uuid'
-import { DataExplorerTypes, dataFormattingDefault } from 'autoql-fe-utils'
+import PropTypes from 'prop-types'
+import _isEqual from 'lodash.isequal'
+
+import { COLUMN_TYPES, DataExplorerTypes, dataFormattingDefault, fetchSubjectList } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
-import { Card } from '../Card'
+import { Tooltip } from '../Tooltip'
 import DataPreview from './DataPreview'
+import { SubjectName } from './SubjectName'
+import Cascader from '../Cascader/Cascader'
+import SampleQueryList from './SampleQueryList'
 import DataExplorerInput from './DataExplorerInput'
+import MultiSelect from '../MultiSelect/MultiSelect'
 import { CustomScrollbars } from '../CustomScrollbars'
-import { QuerySuggestionList } from '../ExploreQueries'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType, dataFormattingType } from '../../props/types'
@@ -21,14 +25,14 @@ export default class DataExplorer extends React.Component {
     super(props)
 
     this.querySuggestionsKey = uuid()
+    this.ID = uuid()
 
     this.state = {
-      activeTopicType: null,
+      subjectList: [],
       selectedSubject: null,
-      selectedVL: null,
-      isQuerySuggestionSectionVisible: true,
-      isQuerySuggestionCollapsed: true,
+      selectedColumns: [],
       isDataPreviewCollapsed: false,
+      isQuerySuggestionCollapsed: false,
     }
   }
 
@@ -49,7 +53,6 @@ export default class DataExplorer extends React.Component {
     shouldRender: true,
     inputPlaceholder: undefined,
     introMessage: undefined,
-    rebuildTooltips: undefined,
     executeQuery: () => {},
     isSmallScreen: false,
   }
@@ -58,35 +61,36 @@ export default class DataExplorer extends React.Component {
     this._isMounted = true
   }
 
+  componentDidUpdate = (prevProps, prevState) => {
+    if (
+      this.state.selectedSubject?.type !== prevState.selectedSubject?.type &&
+      this.state.selectedSubject?.type === DataExplorerTypes.VL_TYPE
+    ) {
+      if (this.state.selectedSubject.valueLabel.canonical) {
+        fetchSubjectList({ ...this.props.authentication, valueLabel: this.state.selectedSubject.valueLabel.canonical })
+          .then((subjectList) => {
+            const filteredSubjects = subjectList.filter((subj) => !subj.isAggSeed())
+            if (this._isMounted) {
+              this.setState({ subjectList: filteredSubjects })
+            }
+          })
+          .catch((error) => console.error(error))
+      }
+    }
+  }
+
   componentWillUnmount = () => {
     this._isMounted = false
   }
 
   onInputSelection = (listItem, skipQueryValidation) => {
-    if (listItem?.type === DataExplorerTypes.SUBJECT_TYPE) {
-      this.setState({
-        selectedSubject: listItem,
-        selectedKeywords: null,
-        selectedVL: null,
-        activeTopicType: listItem?.type,
-        skipQueryValidation: true,
-      })
-    } else if (listItem?.type === DataExplorerTypes.VL_TYPE) {
-      this.setState({
-        selectedVL: listItem,
-        selectedKeywords: null,
-        activeTopicType: listItem?.type,
-        skipQueryValidation: true,
-      })
-    } else if (listItem?.type === 'text') {
-      this.setState({
-        selectedSubject: null,
-        selectedVL: null,
-        selectedKeywords: listItem,
-        activeTopicType: listItem?.type,
-        skipQueryValidation,
-      })
-    }
+    this.setState({
+      selectedSubject: listItem,
+      dataPreview: undefined,
+      selectedTopic: undefined,
+      selectedColumns: [],
+      skipQueryValidation,
+    })
 
     this.inputRef?.blurInput()
   }
@@ -114,7 +118,6 @@ export default class DataExplorer extends React.Component {
                 <p>
                   <Icon type='react-autoql-bubbles-outlined' /> View a variety of query suggestions
                 </p>
-                {/* <p><Icon /> Explore value label categories</p> */}
               </div>
             </div>
           </div>
@@ -139,131 +142,234 @@ export default class DataExplorer extends React.Component {
     this.querySuggestionList?.updateScrollbars()
   }
 
+  getDataPreview = (props = {}) => {
+    const context = props.subject?.context ?? this.state.selectedSubject?.context
+    const dataPreviewID = context?.replaceAll?.(' ', '-') ?? uuid()
+
+    return (
+      <DataPreview
+        key={`data-preview-${dataPreviewID}`}
+        authentication={this.props.authentication}
+        dataFormatting={this.props.dataFormatting}
+        shouldRender={this.props.shouldRender}
+        dataExplorerRef={this.dataExplorerPage}
+        isCollapsed={this.props.isSmallScreen ? this.state.isDataPreviewCollapsed : undefined}
+        defaultCollapsed={this.props.isSmallScreen ? false : undefined}
+        tooltipID={`data-preview-tooltip-${this.ID}`}
+        onColumnSelection={(columns) => this.setState({ selectedColumns: columns })}
+        onDataPreview={(dataPreview) => this.setState({ dataPreview })}
+        data={this.state.dataPreview}
+        selectedColumns={this.state.selectedColumns}
+        onIsCollapsedChange={(isCollapsed) => {
+          this.setState({
+            isDataPreviewCollapsed: isCollapsed,
+            isQuerySuggestionCollapsed: isCollapsed ? this.state.isQuerySuggestionCollapsed : true,
+          })
+        }}
+        {...props}
+      />
+    )
+  }
+
+  renderTopicsListForVL = () => {
+    if (this.state.selectedSubject?.type !== DataExplorerTypes.VL_TYPE) {
+      return null
+    }
+
+    const options = this.state.subjectList?.map((subject) => ({
+      value: subject.context,
+      label: subject.displayName,
+      action: <Icon type='caret-right' />,
+      children: [
+        {
+          value: 'data-preview',
+          customContent: () => this.getDataPreview({ subject }),
+        },
+      ],
+      subject,
+    }))
+
+    return (
+      <div className='data-explorer-section topic-dropdown-section'>
+        {options?.length ? (
+          <>
+            <div className='react-autoql-input-label'>
+              Select a Topic related to <em>"{this.state.selectedSubject?.displayName}"</em>:
+            </div>
+            <Cascader
+              options={options}
+              onBackClick={() => this.setState({ selectedTopic: undefined, selectedColumns: [] })}
+              onOptionClick={(option) => {
+                if (option.subject?.context !== this.state.selectedTopic?.context) {
+                  this.setState({ selectedTopic: option.subject, selectedColumns: [], dataPreview: undefined })
+                }
+              }}
+            />
+          </>
+        ) : null}
+      </div>
+    )
+  }
+
   renderDataPreview = () => {
-    if (!this.state.selectedSubject || this.state.activeTopicType !== DataExplorerTypes.SUBJECT_TYPE) {
+    if (this.state.selectedSubject?.type !== DataExplorerTypes.SUBJECT_TYPE) {
       return null
     }
 
     return (
       <div className='data-explorer-section data-preview-section'>
-        <DataPreview
-          authentication={this.props.authentication}
-          dataFormatting={this.props.dataFormatting}
-          subject={this.state.selectedSubject}
-          shouldRender={this.props.shouldRender}
-          dataExplorerRef={this.dataExplorerPage}
-          isCollapsed={this.props.isSmallScreen ? this.state.isDataPreviewCollapsed : undefined}
-          tooltipID={this.props.tooltipID}
-          onIsCollapsedChange={(isCollapsed) => {
-            this.setState({
-              isDataPreviewCollapsed: isCollapsed,
-              isQuerySuggestionCollapsed: isCollapsed ? this.state.isQuerySuggestionCollapsed : true,
-            })
-          }}
-          defaultCollapsed={this.props.isSmallScreen ? false : undefined}
-        />
+        <div className='react-autoql-input-label'>
+          Select all fields of interest from <em>"{this.state.selectedSubject?.displayName}"</em>:
+        </div>
+        {this.getDataPreview({ subject: this.state.selectedSubject })}
       </div>
     )
   }
 
-  renderVLSubjectList = () => {
-    if (!this.state.selectedVL || this.activeTopicType !== DataExplorerTypes.VL_TYPE) {
+  renderFieldSelector = () => {
+    const columns = this.state.dataPreview?.data?.data?.columns
+
+    if (!columns?.length) {
       return null
     }
 
+    let fieldsDropdownTitle = 'Select fields of interest'
+    if (this.state.selectedSubject?.type === DataExplorerTypes.VL_TYPE) {
+      if (!this.state.selectedTopic) {
+        return null
+      }
+
+      fieldsDropdownTitle = (
+        <span>
+          Select fields from <SubjectName subject={this.state.selectedTopic} />
+        </span>
+      )
+    }
+
     return (
-      <div>
-        <h2>List of subjects for VL</h2>
-        <p>list of subjects goes here</p>
-      </div>
+      <>
+        <span className='react-autoql-data-preview-selected-columns-selector'>
+          <MultiSelect
+            title='FIELDS'
+            size='small'
+            align='start'
+            popupClassname='react-autoql-sample-queries-filter-dropdown'
+            options={columns.map((col) => {
+              return {
+                value: col.name,
+                label: col.display_name,
+              }
+            })}
+            listTitle={fieldsDropdownTitle}
+            selected={this.state.selectedColumns.map((index) => columns[index]?.name)}
+            onChange={(selectedColumnNames) => {
+              const selectedColumnIndexes = selectedColumnNames.map((name) =>
+                columns.findIndex((col) => name === col.name),
+              )
+              this.setState({
+                selectedColumns: selectedColumnIndexes,
+              })
+            }}
+          />
+        </span>
+        {!!this.state.selectedColumns?.length && (
+          <span
+            className='react-autoql-data-preview-selected-columns-clear-btn'
+            onClick={() => this.setState({ selectedColumns: [] })}
+          >
+            CLEAR
+          </span>
+        )}
+      </>
     )
   }
 
-  renderQuerySuggestionCardTitle = (selectedTopic) => {
+  renderSampleQueriesHeader = () => {
     return (
-      <div className='react-autoql-card-title-text'>
-        <Icon style={{ fontSize: '20px' }} type='react-autoql-bubbles-outlined' /> Query Suggestions for "
-        {selectedTopic?.displayName}"
+      <div className='react-autoql-data-explorer-title-text'>
+        <span className='react-autoql-data-explorer-title-text-sample-queries'>Sample Queries</span>
+        {this.renderFieldSelector()}
       </div>
     )
   }
 
   renderQuerySuggestions = () => {
-    const selectedTopic = this.getSelectedTopic()
-    if (!selectedTopic) {
+    const { selectedSubject } = this.state
+    if (!selectedSubject) {
       return null
     }
 
-    const isCollapsed = this.props.isSmallScreen ? this.state.isQuerySuggestionCollapsed : undefined
-    const isDefaultCollapsed =
-      !this.state.selectedSubject || this.state.activeTopicType !== DataExplorerTypes.SUBJECT_TYPE ? false : true
+    const context =
+      this.state.selectedSubject?.type === DataExplorerTypes.VL_TYPE
+        ? this.state.selectedTopic
+        : this.state.selectedSubject?.context
 
     return (
       <div className='data-explorer-section query-suggestions'>
-        <Card
-          title={this.renderQuerySuggestionCardTitle(selectedTopic)}
-          defaultCollapsed={this.props.isSmallScreen ? isDefaultCollapsed : undefined}
-          isCollapsed={isCollapsed}
-          onIsCollapsedChange={(collapsed) => {
-            this.reloadScrollbars()
-            this.setState({
-              isQuerySuggestionCollapsed: collapsed,
-              isDataPreviewCollapsed: !collapsed || this.state.isDataPreviewCollapsed,
-            })
-          }}
-        >
-          <div className='data-explorer-query-suggestion-list'>
-            <QuerySuggestionList
-              ref={(r) => (this.querySuggestionList = r)}
-              key={this.querySuggestionsKey}
-              authentication={this.props.authentication}
-              context={this.state.selectedSubject?.id}
-              valueLabel={this.state.selectedVL}
-              searchText={this.state.selectedKeywords?.displayName}
-              selectedType={this.state.activeTopicType}
-              executeQuery={this.props.executeQuery}
-              skipQueryValidation={this.state.skipQueryValidation}
-              userSelection={this.state.userSelection}
-              onValidationSuggestionClick={this.onValidationSuggestionClick}
-              onSuggestionListResponse={() => {
-                this.reloadScrollbars()
-                this.setState({ skipQueryValidation: false })
-              }}
-              hidden={isCollapsed === true}
-              scope={this.props.scope}
-            />
-          </div>
-        </Card>
+        {this.renderSampleQueriesHeader()}
+        <div className='data-explorer-query-suggestion-list'>
+          <SampleQueryList
+            ref={(r) => (this.querySuggestionList = r)}
+            key={this.querySuggestionsKey}
+            authentication={this.props.authentication}
+            columns={this.state.selectedColumns}
+            context={context}
+            valueLabel={this.state.selectedSubject?.valueLabel}
+            searchText={this.state.selectedSubject?.text}
+            executeQuery={this.props.executeQuery}
+            skipQueryValidation={this.state.skipQueryValidation}
+            userSelection={this.state.userSelection}
+            tooltipID={this.props.tooltipID}
+            scope={this.props.scope}
+            shouldRender={this.props.shouldRender}
+            onValidationSuggestionClick={this.onValidationSuggestionClick}
+            onSuggestionListResponse={() => {
+              this.reloadScrollbars()
+              this.setState({ skipQueryValidation: false })
+            }}
+          />
+        </div>
       </div>
     )
   }
 
-  getSelectedTopic = () => {
-    const activeType = this.state.activeTopicType
-    if (activeType === DataExplorerTypes.SUBJECT_TYPE) {
-      return this.state.selectedSubject
-    }
-    if (activeType === DataExplorerTypes.VL_TYPE) {
-      return this.state.selectedVL
-    }
-    if (activeType === 'text') {
-      return this.state.selectedKeywords
-    }
-
-    return null
+  clearContent = () => {
+    this.setState({ selectedSubject: null })
   }
 
-  clearContent = () => {
-    this.setState({
-      activeTopicType: null,
-      selectedSubject: null,
-      selectedVL: null,
-      selectedKeywords: null,
-    })
+  renderHeaderTooltipContent = ({ content }) => {
+    let column
+    try {
+      column = JSON.parse(content)
+    } catch (error) {
+      return null
+    }
+
+    if (!column) {
+      return null
+    }
+
+    const name = column.display_name
+    const type = COLUMN_TYPES[column.type]?.description
+    const icon = COLUMN_TYPES[column.type]?.icon
+
+    return (
+      <div>
+        <div className='data-explorer-tooltip-title'>{name}</div>
+        {!!type && (
+          <div className='data-explorer-tooltip-section'>
+            {!!icon && <Icon type={icon} />}
+            {type}
+          </div>
+        )}
+      </div>
+    )
   }
 
   renderDataExplorerContent = () => {
-    if (!this.getSelectedTopic()) {
+    const { selectedSubject } = this.state
+
+    if (!selectedSubject) {
       return this.renderIntroMessage()
     }
 
@@ -271,124 +377,19 @@ export default class DataExplorer extends React.Component {
       <div className='data-explorer-result-container'>
         <CustomScrollbars>
           <div
-            key={`data-explorer-sections-container-${this.state.selectedSubject?.id}`}
+            key={`data-explorer-sections-container-${selectedSubject?.id}`}
             className='data-explorer-sections-container'
           >
+            {!!selectedSubject?.displayName && (
+              <div className='react-autoql-data-explorer-selected-subject-title'>
+                <SubjectName subject={selectedSubject} />
+              </div>
+            )}
             {this.renderDataPreview()}
-            {/* {this.renderVLSubjectList()} */}
+            {this.renderTopicsListForVL()}
             {this.renderQuerySuggestions()}
           </div>
         </CustomScrollbars>
-      </div>
-    )
-  }
-
-  formatColumnType = (type) => {
-    switch (type) {
-      case 'DATE': {
-        return (
-          <span>
-            <Icon type='calendar' /> Date
-          </span>
-        )
-      }
-      case 'DATE_STRING': {
-        return (
-          <span>
-            <Icon type='calendar' /> Date
-          </span>
-        )
-      }
-      case 'STRING': {
-        return (
-          <span>
-            <Icon type='note' /> Description
-          </span>
-        )
-      }
-      case 'DOLLAR_AMT': {
-        return (
-          <span>
-            <Icon type='money' /> Currency
-          </span>
-        )
-      }
-      case 'QUANTITY': {
-        return (
-          <span>
-            <Icon type='abacus' /> Quantity
-          </span>
-        )
-      }
-    }
-  }
-
-  renderColumnQuerySuggestions = (column) => {
-    const subject = this.state.selectedSubject?.displayName || ''
-    if (!subject) {
-      return null
-    }
-
-    const lowerCaseSubject = subject.toLowerCase()
-    const titleCaseSubject = lowerCaseSubject[0].toUpperCase() + lowerCaseSubject.substring(1)
-    const lowerCaseColumn = column?.displayName?.toLowerCase()
-    const suggestions = []
-
-    if (column.type === 'STRING') {
-      suggestions.push(`Show ${lowerCaseSubject} by ${lowerCaseColumn}`)
-      suggestions.push(`List all ${lowerCaseColumn}`)
-    }
-
-    if (column.type === 'DATE') {
-      suggestions.push(`${titleCaseSubject} by month this year`)
-      suggestions.push(`Show ${lowerCaseSubject} in the last 2 weeks`)
-    }
-
-    if (column.type === 'DATE_STRING') {
-      suggestions.push(`Show ${lowerCaseSubject} by ${lowerCaseColumn}`)
-    }
-
-    if (column.type === 'DOLLAR_AMT') {
-      suggestions.push(`Total ${lowerCaseColumn} ${lowerCaseSubject}`)
-      suggestions.push(`Highest ${lowerCaseColumn} ${lowerCaseSubject}`)
-    }
-
-    if (column.type === 'QUANTITY') {
-      suggestions.push(`Average ${lowerCaseColumn} ${lowerCaseSubject}`)
-      suggestions.push(`Lowest ${lowerCaseColumn} ${lowerCaseSubject}`)
-    }
-
-    return (
-      <>
-        {suggestions.map((query, i) => {
-          return (
-            <div key={i} onClick={() => this.props.executeQuery(query)} className='data-explorer-tooltip-query'>
-              <Icon type='react-autoql-bubbles-outlined' /> {query}
-            </div>
-          )
-        })}
-      </>
-    )
-  }
-
-  renderHeaderTooltipContent = (dataTip = '') => {
-    const column = JSON.parse(dataTip)
-    if (!column) {
-      return null
-    }
-
-    const formattedType = this.formatColumnType(column?.type)
-
-    return (
-      <div>
-        <div className='data-explorer-tooltip-title'>{column?.displayName}</div>
-        {!!formattedType && <div className='data-explorer-tooltip-section'>{formattedType}</div>}
-        {/* Disable this until we have a better way to get query suggestions for columns
-        <div className="data-explorer-tooltip-section">
-          <strong>Query suggestions:</strong>
-          <br />
-          {this.renderColumnQuerySuggestions(column)}
-        </div> */}
       </div>
     )
   }
@@ -417,19 +418,17 @@ export default class DataExplorer extends React.Component {
             tooltipID={this.props.tooltipID}
           />
           {this.renderDataExplorerContent()}
-          {!this.props.tooltipID && (
-            <Tooltip
-              className='data-preview-tooltip'
-              id='data-preview-tooltip'
-              place='right'
-              delayHide={200}
-              delayUpdate={200}
-              effect='solid'
-              getContent={this.renderHeaderTooltipContent}
-              clickable
-            />
-          )}
         </ErrorBoundary>
+        <Tooltip
+          className='data-preview-tooltip'
+          id={`data-preview-tooltip-${this.ID}`}
+          render={this.renderHeaderTooltipContent}
+          delayShow={500}
+          effect='solid'
+          place='top'
+          clickable
+          border
+        />
       </div>
     )
   }

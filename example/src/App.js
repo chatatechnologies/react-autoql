@@ -709,7 +709,7 @@ export default class App extends Component {
     }
 
     return (
-      <Fragment>
+      <>
         <Form
           {...layout}
           initialValues={{
@@ -836,7 +836,7 @@ export default class App extends Component {
             </Button>
           </Form.Item>
         </Form>
-      </Fragment>
+      </>
     )
   }
 
@@ -1249,7 +1249,7 @@ export default class App extends Component {
       >
         {this.renderNewDashboardModal()}
         {this.state.activeDashboardId ? (
-          <Fragment>
+          <>
             <div
               className='dashboard-toolbar-container'
               style={{
@@ -1364,7 +1364,7 @@ export default class App extends Component {
               enableAjaxTableData={this.state.pagination}
               onChange={this.handleTileChange}
             />
-          </Fragment>
+          </>
         ) : (
           <div style={{ marginTop: '100px', textAlign: 'center' }}>
             <Button type='primary' onClick={this.openNewDashboardModal}>

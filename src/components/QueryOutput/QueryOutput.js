@@ -1,12 +1,13 @@
-import React, { Fragment } from 'react'
-import PropTypes from 'prop-types'
+import React from 'react'
+import axios from 'axios'
 import { v4 as uuid } from 'uuid'
+import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import _isEmpty from 'lodash.isempty'
+import parse from 'html-react-parser'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
-import parse from 'html-react-parser'
-import axios from 'axios'
+
 import {
   AggTypes,
   sendSuggestion,
@@ -63,12 +64,12 @@ import {
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
+import { Tooltip } from '../Tooltip'
 import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../Charts/ChataChart'
 import { ReverseTranslation } from '../ReverseTranslation'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { QueryValidationMessage } from '../QueryValidationMessage'
-import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
 
 import { withTheme } from '../../theme'
 import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
@@ -302,10 +303,6 @@ export class QueryOutput extends React.Component {
         this.props.onAggConfigChange(this.state.aggConfig)
       }
 
-      if (prevState.displayType !== this.state.displayType) {
-        rebuildTooltips()
-      }
-
       if (
         this.state.visibleRows?.length !== prevState.visibleRows?.length ||
         (this.state.displayType === 'table' && prevState.displayType === 'text')
@@ -362,7 +359,6 @@ export class QueryOutput extends React.Component {
   componentWillUnmount = () => {
     try {
       this._isMounted = false
-      hideTooltips()
     } catch (error) {
       console.error(error)
     }
@@ -1196,13 +1192,16 @@ export class QueryOutput extends React.Component {
       const year = Number(columns?.[columnIndex]?.name)
       const month = row?.[stringColumnIndex]
       const value = `${this.pivotOriginalColumnData?.[year]?.[month]}`
+
       groupBys.push({
         name: stringColumn.name,
+        drill_down: stringColumn.drill_down,
         value,
       })
     } else if (stringColumn?.groupable) {
       groupBys.push({
         name: stringColumn.name,
+        drill_down: stringColumn.drill_down,
         value: `${row?.[stringColumnIndex]}`,
       })
     }
@@ -1212,6 +1211,7 @@ export class QueryOutput extends React.Component {
         // It is pivot data, add extra groupby
         groupBys.push({
           name: legendColumn.name,
+          drill_down: legendColumn.drill_down,
           value: `${column?.name}`,
         })
       }
@@ -2449,7 +2449,7 @@ export class QueryOutput extends React.Component {
     }
 
     return (
-      <Fragment>
+      <>
         Great news, I can help with that:
         <br />
         {
@@ -2458,7 +2458,7 @@ export class QueryOutput extends React.Component {
             {linkText}
           </button>
         }
-      </Fragment>
+      </>
     )
   }
 
@@ -2504,8 +2504,8 @@ export class QueryOutput extends React.Component {
             <span>
               Query cancelled{' '}
               <Icon
-                data-tip='Pressing the ESC key will cancel the current query request. If you wish to re-run your last query, simply press the UP arrow in the input bar then hit ENTER.'
-                data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
+                data-tooltip-content='Pressing the ESC key will cancel the current query request. If you wish to re-run your last query, simply press the UP arrow in the input bar then hit ENTER.'
+                data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
                 type='question'
               />
             </span>
@@ -2524,10 +2524,10 @@ export class QueryOutput extends React.Component {
           <div className='query-output-error-message'>
             <div>{errorMessage}</div>
             {error.reference_id && (
-              <Fragment>
+              <>
                 <br />
                 <div>Error ID: {error.reference_id}</div>
-              </Fragment>
+              </>
             )}
           </div>
         )
@@ -2701,8 +2701,8 @@ export class QueryOutput extends React.Component {
       <div className='dashboard-data-limit-warning-icon'>
         <Icon
           type='warning'
-          data-tip={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached. Try querying a smaller time-frame to ensure all your data is displayed.`}
-          data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
+          data-tooltip-content={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached. Try querying a smaller time-frame to ensure all your data is displayed.`}
+          data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
           data-place={isReverseTranslationRendered ? 'left' : 'right'}
         />
       </div>
@@ -2740,12 +2740,8 @@ export class QueryOutput extends React.Component {
           {this.renderResponse()}
           {this.props.reverseTranslationPlacement !== 'top' && this.renderFooter()}
         </div>
-        {!this.props.tooltipID && (
-          <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' place='top' html />
-        )}
-        {!this.props.chartTooltipID && (
-          <Tooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} effect='solid' html />
-        )}
+        {!this.props.tooltipID && <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} />}
+        {!this.props.chartTooltipID && <Tooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} />}
       </ErrorBoundary>
     )
   }

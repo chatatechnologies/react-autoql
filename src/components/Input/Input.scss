@@ -108,6 +108,12 @@
 
     .react-autoql-input-and-icon {
       flex: 1;
+
+      &.with-date-picker {
+        input {
+          padding-right: 30px;
+        }
+      }
     }
 
     &.with-select {
