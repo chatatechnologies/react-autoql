@@ -4,7 +4,6 @@ import _isEqual from 'lodash.isequal'
 import { fetchDataExplorerSuggestionsV2 } from 'autoql-fe-utils'
 
 import { QueryValidationMessage } from '../QueryValidationMessage'
-import { LoadingDots } from '../LoadingDots'
 import SampleQuery from './SampleQuery'
 
 import './SampleQueryList.scss'
@@ -129,13 +128,25 @@ export default class SampleQueryList extends React.Component {
     })
   }
 
+  renderSampleQueryPlaceholder = () => {
+    const placeholderHeight = '20px'
+
+    return (
+      <div className='data-explorer-section-placeholder-loading-container'>
+        <div className='react-autoql-placeholder-loader' style={{ width: '60%', height: placeholderHeight }} />
+        <br />
+        <div className='react-autoql-placeholder-loader' style={{ width: '80%', height: placeholderHeight }} />
+        <br />
+        <div className='react-autoql-placeholder-loader' style={{ width: '40%', height: placeholderHeight }} />
+        <br />
+        <div className='react-autoql-placeholder-loader' style={{ width: '50%', height: placeholderHeight }} />
+      </div>
+    )
+  }
+
   render = () => {
     if (this.state.loading) {
-      return (
-        <div className='data-explorer-section-placeholder'>
-          <LoadingDots />
-        </div>
-      )
+      return this.renderSampleQueryPlaceholder()
     }
 
     if (this.state.validationResponse) {

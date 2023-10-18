@@ -176,11 +176,7 @@ export default class DataExplorer extends React.Component {
       return null
     }
 
-    if (!this.state.subjectList?.length) {
-      return null
-    }
-
-    const options = this.state.subjectList.map((subject) => ({
+    const options = this.state.subjectList?.map((subject) => ({
       value: subject.context,
       label: subject.displayName,
       action: <Icon type='caret-right' />,
@@ -194,29 +190,25 @@ export default class DataExplorer extends React.Component {
     }))
 
     return (
-      <>
-        <div className='react-autoql-input-label'>
-          Select a Topic related to <em>"{this.state.selectedSubject?.displayName}"</em>:
-        </div>
-        <Cascader
-          options={options}
-          onBackClick={() => this.setState({ selectedTopic: undefined, selectedColumns: [] })}
-          onOptionClick={(option) => {
-            if (option.subject?.context !== this.state.selectedTopic?.context) {
-              this.setState({ selectedTopic: option.subject, selectedColumns: [], dataPreview: undefined })
-            }
-          }}
-        />
-      </>
+      <div className='data-explorer-section topic-dropdown-section'>
+        {options?.length ? (
+          <>
+            <div className='react-autoql-input-label'>
+              Select a Topic related to <em>"{this.state.selectedSubject?.displayName}"</em>:
+            </div>
+            <Cascader
+              options={options}
+              onBackClick={() => this.setState({ selectedTopic: undefined, selectedColumns: [] })}
+              onOptionClick={(option) => {
+                if (option.subject?.context !== this.state.selectedTopic?.context) {
+                  this.setState({ selectedTopic: option.subject, selectedColumns: [], dataPreview: undefined })
+                }
+              }}
+            />
+          </>
+        ) : null}
+      </div>
     )
-  }
-
-  renderTopicDropdown = () => {
-    if (this.state.selectedSubject?.type !== DataExplorerTypes.VL_TYPE) {
-      return null
-    }
-
-    return <div className='data-explorer-section topic-dropdown-section'>{this.renderTopicsListForVL()}</div>
   }
 
   renderDataPreview = () => {
@@ -394,7 +386,7 @@ export default class DataExplorer extends React.Component {
               </div>
             )}
             {this.renderDataPreview()}
-            {this.renderTopicDropdown()}
+            {this.renderTopicsListForVL()}
             {this.renderQuerySuggestions()}
           </div>
         </CustomScrollbars>

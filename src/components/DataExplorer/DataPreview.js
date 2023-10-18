@@ -13,6 +13,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { authenticationType, dataFormattingType } from '../../props/types'
 
 import './DataPreview.scss'
+import TablePlaceholder from '../TablePlaceholder/TablePlaceholder'
 
 export default class DataExplorer extends React.Component {
   constructor(props) {
@@ -136,7 +137,7 @@ export default class DataExplorer extends React.Component {
   renderLoadingContainer = () => {
     return (
       <div className='data-explorer-section-placeholder data-preview'>
-        <LoadingDots />
+        <TablePlaceholder />
       </div>
     )
   }

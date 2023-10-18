@@ -99,8 +99,9 @@ export default class InlineInputEditor extends React.Component {
 
       const paddingLeft = window.getComputedStyle(input)?.getPropertyValue('padding-left') || '0px'
       const paddingRight = window.getComputedStyle(input)?.getPropertyValue('padding-right') || '0px'
+      const borderWidth = '2px'
 
-      const widthCSS = `calc(${width} + ${paddingLeft} + ${paddingRight} )`
+      const widthCSS = `calc(${width} + ${paddingLeft} + ${paddingRight} + ${borderWidth})`
 
       return widthCSS
     }
