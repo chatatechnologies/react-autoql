@@ -11,7 +11,9 @@
     padding: 10px;
 
     &.react-autoql-table-placeholder-header {
-      background-color: var(--react-autoql-hover-color);
+      background-color: var(--react-autoql-background-color-disabled);
+      opacity: 0.7;
+      padding: 15px 10px;
     }
 
     .react-autoql-placeholder-loader {

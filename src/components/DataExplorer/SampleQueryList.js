@@ -129,17 +129,22 @@ export default class SampleQueryList extends React.Component {
   }
 
   renderSampleQueryPlaceholder = () => {
-    const placeholderHeight = '20px'
+    const placeholderHeight = '25px'
 
     return (
       <div className='data-explorer-section-placeholder-loading-container'>
-        <div className='react-autoql-placeholder-loader' style={{ width: '60%', height: placeholderHeight }} />
-        <br />
-        <div className='react-autoql-placeholder-loader' style={{ width: '80%', height: placeholderHeight }} />
-        <br />
-        <div className='react-autoql-placeholder-loader' style={{ width: '40%', height: placeholderHeight }} />
-        <br />
-        <div className='react-autoql-placeholder-loader' style={{ width: '50%', height: placeholderHeight }} />
+        <div className='data-explorer-section-placeholder-loading-item'>
+          <div className='react-autoql-placeholder-loader' style={{ width: '60%', height: placeholderHeight }} />
+        </div>
+        <div className='data-explorer-section-placeholder-loading-item'>
+          <div className='react-autoql-placeholder-loader' style={{ width: '80%', height: placeholderHeight }} />
+        </div>
+        <div className='data-explorer-section-placeholder-loading-item'>
+          <div className='react-autoql-placeholder-loader' style={{ width: '40%', height: placeholderHeight }} />
+        </div>
+        <div className='data-explorer-section-placeholder-loading-item'>
+          <div className='react-autoql-placeholder-loader' style={{ width: '50%', height: placeholderHeight }} />
+        </div>
       </div>
     )
   }
