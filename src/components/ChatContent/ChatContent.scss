@@ -8,6 +8,14 @@
       background-color: var(--react-autoql-background-color-primary);
       overflow-x: hidden;
 
+      // Possible bug in PerfectScrollbars putting scrollbar on the left side
+      .react-autoql-custom-scrollbars {
+        .ps__rail-y {
+          right: 0px !important;
+          left: unset !important;
+        }
+      }
+
       .chat-content-container {
         overflow: hidden;
       }

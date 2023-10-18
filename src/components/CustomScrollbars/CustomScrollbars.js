@@ -15,16 +15,19 @@ export default class CustomScrollbars extends React.Component {
     contentHidden: PropTypes.bool,
     maxHeight: PropTypes.number,
     minHeight: PropTypes.number,
+    table: PropTypes.bool,
   }
 
   static defaultProps = {
     style: {},
+    options: {},
     autoHide: false,
     autoHeightMin: undefined,
     autoHeightMax: undefined,
     maxHeight: undefined,
     minHeight: undefined,
     contentHidden: false,
+    table: false,
   }
 
   componentDidMount = () => {
@@ -122,12 +125,17 @@ export default class CustomScrollbars extends React.Component {
 
     return (
       <PerfectScrollbar
-        className={`react-autoql-custom-scrollbars 
-            ${this.props.className ?? ''}
-            ${this.props.autoHide ? 'autohide' : 'always-visible'}`}
+        className={`${
+          this.props.className
+            ? `${this.props.className} react-autoql-custom-scrollbars`
+            : 'react-autoql-custom-scrollbars'
+        } ${this.props.autoHide ? 'autohide' : 'always-visible'} ${
+          this.props.table ? 'react-autoql-custom-scrollbars-table' : 'react-autoql-custom-scrollbars-div'
+        }`}
         ref={(r) => (this.ref = r)}
         style={this.getStyleProp()}
-        options={this.props.options}
+        options={{ minScrollbarLength: 15, ...this.props.options }}
+        component={this.props.component}
       >
         {this.props.children}
       </PerfectScrollbar>
