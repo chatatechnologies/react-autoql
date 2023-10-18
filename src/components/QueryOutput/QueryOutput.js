@@ -1192,13 +1192,14 @@ export class QueryOutput extends React.Component {
       const year = Number(columns?.[columnIndex]?.name)
       const month = row?.[stringColumnIndex]
       const value = `${this.pivotOriginalColumnData?.[year]?.[month]}`
+
       groupBys.push({
-        name: stringColumn.name,
+        name: stringColumn.drill_down ?? stringColumn.name,
         value,
       })
     } else if (stringColumn?.groupable) {
       groupBys.push({
-        name: stringColumn.name,
+        name: stringColumn.drill_down ?? stringColumn.name,
         value: `${row?.[stringColumnIndex]}`,
       })
     }
@@ -1207,7 +1208,7 @@ export class QueryOutput extends React.Component {
       if (column.origColumn) {
         // It is pivot data, add extra groupby
         groupBys.push({
-          name: legendColumn.name,
+          name: legendColumn.drill_down ?? legendColumn.name,
           value: `${column?.name}`,
         })
       }
