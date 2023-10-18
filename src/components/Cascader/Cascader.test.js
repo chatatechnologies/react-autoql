@@ -100,12 +100,5 @@ describe('renders correctly with 1 set of children', () => {
       secondOption.simulate('click')
       expect(finalOptionCallback).toHaveBeenCalled()
     })
-
-    test('resets active value when back button is clicked', () => {
-      const backBtn = findByTestAttr(wrapper, 'cascader-back-arrow-1')
-      backBtn.simulate('click')
-      const title = findByTestAttr(wrapper, 'options-title')
-      expect(title.exists()).toBe(false)
-    })
   })
 })

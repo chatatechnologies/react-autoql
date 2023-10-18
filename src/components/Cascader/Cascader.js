@@ -51,7 +51,6 @@ export default class Cascader extends React.Component {
         {!isFirstGroup && (
           <div
             className='options-title'
-            data-test='options-title'
             onClick={() => {
               const newArray = this.state.optionsArray.slice(0, index).map((opt, i) => {
                 if (i === index - 1) {
@@ -68,7 +67,8 @@ export default class Cascader extends React.Component {
             }}
           >
             <span data-test={`cascader-back-arrow-${index}`}>
-              <Icon className='cascader-back-arrow' type='caret-left' /> {mostRecentOptionLabel}
+              <Icon className='cascader-back-arrow' type='caret-left' />{' '}
+              <span data-test='options-title'>{mostRecentOptionLabel}</span>
             </span>
           </div>
         )}
