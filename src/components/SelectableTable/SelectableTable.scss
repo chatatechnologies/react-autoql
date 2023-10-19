@@ -28,6 +28,19 @@
     border: 1px solid var(--react-autoql-border-color);
     margin-top: 1px;
 
+    .ps__rail-y,
+    .ps__rail-x {
+      opacity: 0 !important;
+      transition: opacity 0.2s ease !important;
+    }
+
+    &:hover {
+      .ps__rail-y,
+      .ps__rail-x {
+        opacity: 0.5 !important;
+      }
+    }
+
     table {
       font-size: 13px;
       min-width: 100%;
