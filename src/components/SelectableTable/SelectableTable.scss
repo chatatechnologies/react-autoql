@@ -46,6 +46,12 @@
       min-width: 100%;
       border-collapse: collapse;
 
+      td.selectable-table-cell-disabled {
+        cursor: default;
+        opacity: 0.7;
+        background-color: var(--react-autoql-background-color-disabled) !important;
+      }
+
       &:hover {
         // If hovering the table AND hovering a column, highlight header and cells in column
         th.react-autoql-selectable-table-hovered::before {
@@ -58,7 +64,7 @@
         }
 
         td.react-autoql-selectable-table-hovered {
-          &:not(.selectable-table-cell-selected) {
+          &:not(.selectable-table-cell-selected):not(.selectable-table-cell-disabled) {
             background-color: RGBA(
               var(--react-autoql-accent-color-R),
               var(--react-autoql-accent-color-G),
@@ -66,7 +72,7 @@
               0.1
             );
           }
-          &.selectable-table-cell-selected {
+          &.selectable-table-cell-selected:not(.selectable-table-cell-disabled) {
             background-color: RGBA(
               var(--react-autoql-accent-color-R),
               var(--react-autoql-accent-color-G),
@@ -75,6 +81,15 @@
             );
           }
         }
+      }
+
+      th::before {
+        content: '\00a0';
+        position: absolute;
+        height: 100%;
+        width: 100%;
+        left: 0px;
+        top: 0px;
       }
 
       thead {
@@ -86,7 +101,26 @@
           z-index: 1;
           background-color: var(--react-autoql-background-color-secondary);
           border-bottom: 1px solid var(--react-autoql-table-border-color);
-          cursor: pointer;
+
+          &.selectable-table-column-disabled {
+            &::before {
+              background-color: var(--react-autoql-border-color) !important;
+            }
+            &::after {
+              content: '\00a0';
+              position: absolute;
+              height: 100%;
+              width: 100%;
+              left: 0px;
+              top: 0px;
+              opacity: 0.4;
+              background-color: var(--react-autoql-border-color);
+            }
+          }
+
+          &:not(.selectable-table-column-disabled) {
+            cursor: pointer;
+          }
 
           &.react-autoql-selectable-table-hovered {
             .react-autoql-checkbox__input {
@@ -100,19 +134,6 @@
           }
 
           &:not(.selectable-table-column-selected)::before {
-            content: '\00a0';
-            position: absolute;
-            height: 100%;
-            width: 100%;
-            left: 0px;
-            top: 0px;
-
-            // background-color: RGBA(
-            //   var(--react-autoql-accent-color-R),
-            //   var(--react-autoql-accent-color-G),
-            //   var(--react-autoql-accent-color-B),
-            //   0.3
-            // );
             background-color: var(--react-autoql-background-color-disabled);
           }
 
@@ -153,7 +174,10 @@
           td {
             position: relative;
             padding: 0 18px;
-            cursor: pointer;
+
+            &:not(.selectable-table-cell-disabled) {
+              cursor: pointer;
+            }
 
             &:not(:last-child) {
               border-right: 1px solid var(--react-autoql-table-border-color);
