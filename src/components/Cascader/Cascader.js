@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
+import _isEqual from 'lodash.isequal'
 
 import { Icon } from '../Icon'
 import { CustomScrollbars } from '../CustomScrollbars'
@@ -29,7 +30,16 @@ export default class Cascader extends React.Component {
 
   state = {
     activeKeys: [],
+    mostRecentOption: undefined,
     optionsArray: [{ options: this.props.options }],
+  }
+
+  componentDidUpdate = (prevProps) => {
+    const optionValues = this.props.options.map((option) => option.value)
+    const prevOptionValues = prevProps.options.map((option) => option.value)
+    if (!_isEqual(optionValues, prevOptionValues)) {
+      this.setState({ optionsArray: [{ options: this.props.options }], activeKeys: [], mostRecentOption: undefined })
+    }
   }
 
   renderOptionsList = ({ options, active, index }) => {
