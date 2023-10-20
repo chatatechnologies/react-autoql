@@ -88,7 +88,7 @@ export default class DataExplorer extends React.Component {
       source: 'data_explorer.data_preview',
       scope: 'data_explorer',
       cancelToken: this.axiosSource.token,
-      numRows: 100,
+      numRows: 20,
     })
       .then((response) => {
         if (this._isMounted) {

@@ -20,20 +20,23 @@ export default class TablePlaceholder extends React.Component {
     columns: 3,
   }
 
-  renderPlaceholderCell = () => {
-    return <div className='react-autoql-placeholder-loader' style={{}} />
+  renderPlaceholderCell = (key) => {
+    return <div key={key} className='react-autoql-placeholder-loader' />
   }
 
-  renderPlaceholderRow = () => {
-    const placeholderCells = new Array(this.props.columns)
-    placeholderCells.fill(this.renderPlaceholderCell())
+  renderPlaceholderRow = (key) => {
+    const placeholderCells = new Array(this.props.columns).fill(0).map((cell, i) => this.renderPlaceholderCell(i))
 
-    return <div className='react-autoql-table-placeholder-row'>{placeholderCells}</div>
+    return (
+      <div key={key} className='react-autoql-table-placeholder-row'>
+        {placeholderCells}
+      </div>
+    )
   }
 
   renderPlaceholderRows = () => {
-    const placeholderRows = new Array(this.props.rows)
-    placeholderRows.fill(this.renderPlaceholderRow())
+    const placeholderRows = new Array(this.props.rows).fill(0).map((row, i) => this.renderPlaceholderRow(i))
+
     return placeholderRows
   }
 
@@ -41,9 +44,9 @@ export default class TablePlaceholder extends React.Component {
     return (
       <div className={`react-autoql-placeholder-table-container ${this.props.className ?? ''}`}>
         <div className='react-autoql-table-placeholder-row react-autoql-table-placeholder-header'>
-          <div className='react-autoql-placeholder-loader' style={{}} />
-          <div className='react-autoql-placeholder-loader' style={{}} />
-          <div className='react-autoql-placeholder-loader' style={{}} />
+          <div className='react-autoql-placeholder-loader' />
+          <div className='react-autoql-placeholder-loader' />
+          <div className='react-autoql-placeholder-loader' />
         </div>
         {this.renderPlaceholderRows()}
       </div>
