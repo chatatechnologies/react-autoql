@@ -3,7 +3,7 @@ import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 
-import { COLUMN_TYPES, DataExplorerTypes, dataFormattingDefault, fetchSubjectList } from 'autoql-fe-utils'
+import { COLUMN_TYPES, DataExplorerTypes, dataFormattingDefault, fetchSubjectListV2 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
@@ -63,15 +63,26 @@ export default class DataExplorer extends React.Component {
 
   componentDidUpdate = (prevProps, prevState) => {
     if (
-      this.state.selectedSubject?.type !== prevState.selectedSubject?.type &&
+      !_isEqual(this.state.selectedSubject, prevState.selectedSubject) &&
       this.state.selectedSubject?.type === DataExplorerTypes.VL_TYPE
     ) {
       if (this.state.selectedSubject.valueLabel.canonical) {
-        fetchSubjectList({ ...this.props.authentication, valueLabel: this.state.selectedSubject.valueLabel.canonical })
-          .then((subjectList) => {
-            const filteredSubjects = subjectList.filter((subj) => !subj.isAggSeed())
+        fetchSubjectListV2({
+          ...this.props.authentication,
+          valueLabel: this.state.selectedSubject.valueLabel.canonical,
+        })
+          .then((subjects) => {
+            const subjectList = []
+
+            subjects.forEach((subject) => {
+              const foundSubject = this.inputRef?.state?.allSubjects?.find((subj) => subj.context === subject.subject)
+              if (foundSubject) {
+                subjectList.push(foundSubject)
+              }
+            })
+
             if (this._isMounted) {
-              this.setState({ subjectList: filteredSubjects })
+              this.setState({ subjectList })
             }
           })
           .catch((error) => console.error(error))
@@ -197,6 +208,8 @@ export default class DataExplorer extends React.Component {
               Select a Topic related to <em>"{this.state.selectedSubject?.displayName}"</em>:
             </div>
             <Cascader
+              // key={this.state.selectedSubject?.displayName}
+              // key={uuid()}
               options={options}
               onBackClick={() => this.setState({ selectedTopic: undefined, selectedColumns: [] })}
               onOptionClick={(option) => {
