@@ -3,7 +3,12 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import _has from 'lodash.has'
 import { isMobile } from 'react-device-detect'
-import { REQUEST_CANCELLED_ERROR, UNAUTHENTICATED_ERROR, GENERAL_QUERY_ERROR } from 'autoql-fe-utils'
+import {
+  REQUEST_CANCELLED_ERROR,
+  UNAUTHENTICATED_ERROR,
+  GENERAL_QUERY_ERROR,
+  dataFormattingDefault,
+} from 'autoql-fe-utils'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import { lang } from '../../js/Localization'
@@ -58,6 +63,7 @@ export default class ChatContent extends React.Component {
   }
 
   static defaultProps = {
+    dataFormatting: dataFormattingDefault,
     disableMaxMessageHeight: false,
     enableAjaxTableData: false,
     isResizing: false,
