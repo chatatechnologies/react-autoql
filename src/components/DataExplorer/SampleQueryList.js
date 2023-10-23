@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import { fetchDataExplorerSuggestionsV2 } from 'autoql-fe-utils'
 
-import { QueryValidationMessage } from '../QueryValidationMessage'
 import SampleQuery from './SampleQuery'
 
 import './SampleQueryList.scss'
@@ -14,7 +13,7 @@ export default class SampleQueryList extends React.Component {
 
     this.state = {
       queryList: undefined,
-      loading: false,
+      loading: true,
       error: false,
     }
   }
@@ -22,9 +21,8 @@ export default class SampleQueryList extends React.Component {
   static propTypes = {
     searchText: PropTypes.string,
     subject: PropTypes.shape({}),
-    columns: PropTypes.array,
+    columns: PropTypes.shape({}),
     valueLabel: PropTypes.shape({}),
-    skipQueryValidation: PropTypes.bool,
     onSuggestionListResponse: PropTypes.func,
     executeQuery: PropTypes.func,
   }
@@ -32,9 +30,8 @@ export default class SampleQueryList extends React.Component {
   static defaultProps = {
     searchText: '',
     subject: undefined,
-    columns: [],
+    columns: {},
     valueLabel: undefined,
-    skipQueryValidation: false,
     onSuggestionListResponse: () => {},
     executeQuery: () => {},
   }
@@ -70,7 +67,6 @@ export default class SampleQueryList extends React.Component {
 
     const newState = {
       loading: true,
-      validationResponse: undefined,
     }
 
     const { searchText } = this.props
@@ -86,20 +82,19 @@ export default class SampleQueryList extends React.Component {
       selectedVL: this.props.valueLabel,
       userVLSelection: this.props.userSelection,
       context: this.props.context,
-      skipQueryValidation: this.props.skipQueryValidation,
+      columns: this.props.columns,
     })
       .then((response) => {
         if (this._isMounted) {
-          this.props.onSuggestionListResponse({ response })
+          this.props.onSuggestionListResponse()
           const finishedState = {
             loading: false,
           }
-          if (response?.data?.data?.replacements) {
-            finishedState.validationResponse = response
-          } else {
-            finishedState.queryList = response?.data?.data?.suggestions || []
-            finishedState.keywords = searchText
-          }
+
+          console.log({ queryList: response?.data?.data?.suggestions, response })
+
+          finishedState.queryList = response?.data?.data?.suggestions || []
+          finishedState.keywords = searchText
 
           return this.setState(finishedState)
         }
@@ -113,10 +108,6 @@ export default class SampleQueryList extends React.Component {
       })
   }
 
-  onValidationSuggestionClick = (queryValidationObj) => {
-    this.props.onValidationSuggestionClick(queryValidationObj)
-  }
-
   updateScrollbars = () => {
     this.scrollbarTimeout = setTimeout(this.infiniteScroll?.updateScrollbars, 400)
   }
@@ -124,7 +115,6 @@ export default class SampleQueryList extends React.Component {
   clearQueryList = () => {
     this.setState({
       queryList: undefined,
-      validationResponse: undefined,
     })
   }
 
@@ -150,23 +140,9 @@ export default class SampleQueryList extends React.Component {
   }
 
   render = () => {
+    console.log('rendering sample query list')
     if (this.state.loading) {
       return this.renderSampleQueryPlaceholder()
-    }
-
-    if (this.state.validationResponse) {
-      return (
-        <div className='data-explorer-section-placeholder'>
-          <QueryValidationMessage
-            response={this.state.validationResponse}
-            onSuggestionClick={this.onValidationSuggestionClick}
-            autoSelectSuggestion={true}
-            submitText='Search'
-            submitIcon='search'
-            scope={this.props.scope}
-          />
-        </div>
-      )
     }
 
     if (!this.state.queryList) {
