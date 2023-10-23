@@ -28,6 +28,7 @@ import {
   getColumnTypeAmounts,
   getGroupableColumns,
   getStringColumnIndices,
+  getNumberOfGroupables,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
@@ -51,8 +52,9 @@ export default class RuleSimple extends React.Component {
 
     this.SUPPORTED_CONDITION_TYPES = getSupportedConditionTypes(initialData, queryResponse)
     this.IS_AGGREGATION_QUERY = isAggregation(queryResponse?.data?.data?.columns)
+    this.ALL_COLUMNS__AMOUNT = queryResponse?.data?.data?.columns.length
     this.NUMBER_COLUMNS_AMOUNT = getColumnTypeAmounts(queryResponse?.data?.data?.columns)['amountOfNumberColumns'] ?? 0
-
+    this.GROUPABLE_COLUMNS_AMOUNT = getNumberOfGroupables(queryResponse?.data?.data?.columns)
     this.SUPPORTED_OPERATORS = []
     if (
       this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE) ||
@@ -209,7 +211,7 @@ export default class RuleSimple extends React.Component {
     const selectedNumberColumnName = this.state.selectedColumns.map(
       (index) => this.props.queryResponse?.data?.data?.columns[index]?.name,
     )[0]
-    if (this.NUMBER_COLUMNS_AMOUNT >= 2) {
+    if (this.shouldRenderFeildSelectionGrid()) {
       expression[0].compare_column = selectedNumberColumnName
     }
 
@@ -838,7 +840,11 @@ export default class RuleSimple extends React.Component {
     )
   }
   shouldRenderFeildSelectionGrid = () => {
-    return this.NUMBER_COLUMNS_AMOUNT >= 2
+    return (
+      this.NUMBER_COLUMNS_AMOUNT >= 2 &&
+      this.ALL_COLUMNS__AMOUNT - this.GROUPABLE_COLUMNS_AMOUNT !== 1 &&
+      this.GROUPABLE_COLUMNS_AMOUNT > 0
+    )
   }
   renderFeildSelectionGrid = () => {
     const groupableColumns = getGroupableColumns(this.props.queryResponse?.data?.data?.columns)
