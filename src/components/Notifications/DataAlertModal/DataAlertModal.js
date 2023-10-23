@@ -14,6 +14,7 @@ import {
   getSupportedConditionTypes,
   authenticationDefault,
   getAuthentication,
+  dataFormattingDefault,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
@@ -31,7 +32,7 @@ import AppearanceSection from '../DataAlertSettings/AppearanceSection'
 import DataAlertSettings from '../DataAlertSettings/DataAlertSettings'
 
 import { withTheme } from '../../../theme'
-import { authenticationType } from '../../../props/types'
+import { authenticationType, dataFormattingType } from '../../../props/types'
 
 import './DataAlertModal.scss'
 
@@ -66,6 +67,7 @@ class DataAlertModal extends React.Component {
     onClosed: PropTypes.func,
     onOpened: PropTypes.func,
     editView: PropTypes.bool,
+    dataFormatting: dataFormattingType,
   }
 
   static defaultProps = {
@@ -84,6 +86,7 @@ class DataAlertModal extends React.Component {
     onOpened: () => {},
     enableQueryValidation: true,
     editView: false,
+    dataFormatting: dataFormattingDefault,
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -460,9 +463,10 @@ class DataAlertModal extends React.Component {
     return (
       <div className={`react-autoql-data-alert-modal-step ${active ? '' : 'hidden'}`}>
         <div style={{ display: 'flex' }}>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, width: '100%' }}>
             <ConditionBuilder
               authentication={this.props.authentication}
+              dataFormatting={this.props.dataFormatting}
               ref={(r) => (this.expressionRef = r)}
               key={`expression-${this.state.expressionKey}`}
               onChange={this.onExpressionChange}

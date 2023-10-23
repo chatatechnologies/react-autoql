@@ -319,6 +319,7 @@ export default class ChatMessage extends React.Component {
             ref={(r) => (this.optionsToolbarRef = r)}
             responseRef={this.responseRef}
             className='chat-message-toolbar right'
+            dataFormatting={this.props.dataFormatting}
             shouldRender={!this.props.isResizing && this.props.shouldRender}
             authentication={this.props.authentication}
             autoQLConfig={this.props.autoQLConfig}

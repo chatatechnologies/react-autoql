@@ -18,11 +18,17 @@ import {
   constructRTArray,
   getTimeFrameTextFromChunk,
   getSupportedConditionTypes,
+  isAggregation,
   REQUEST_CANCELLED_ERROR,
   isISODate,
   authenticationDefault,
   getAuthentication,
   getAutoQLConfig,
+  dataFormattingDefault,
+  getColumnTypeAmounts,
+  getGroupableColumns,
+  getStringColumnIndices,
+  getNumberOfGroupables,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
@@ -31,8 +37,8 @@ import { Input } from '../../Input'
 import { Select } from '../../Select'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { ReverseTranslation } from '../../ReverseTranslation'
-
-import { authenticationType } from '../../../props/types'
+import { SelectableTable } from '../../SelectableTable/'
+import { authenticationType, dataFormattingType } from '../../../props/types'
 
 import './RuleSimple.scss'
 
@@ -45,7 +51,10 @@ export default class RuleSimple extends React.Component {
     const { initialData, queryResponse } = props
 
     this.SUPPORTED_CONDITION_TYPES = getSupportedConditionTypes(initialData, queryResponse)
-
+    this.IS_AGGREGATION_QUERY = isAggregation(queryResponse?.data?.data?.columns)
+    this.ALL_COLUMNS__AMOUNT = queryResponse?.data?.data?.columns.length
+    this.NUMBER_COLUMNS_AMOUNT = getColumnTypeAmounts(queryResponse?.data?.data?.columns)['amountOfNumberColumns'] ?? 0
+    this.GROUPABLE_COLUMNS_AMOUNT = getNumberOfGroupables(queryResponse?.data?.data?.columns)
     this.SUPPORTED_OPERATORS = []
     if (
       this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE) ||
@@ -72,6 +81,7 @@ export default class RuleSimple extends React.Component {
       secondQueryError: '',
       isEditingQuery: false,
       queryFilters: this.getFilters(props),
+      selectedColumns: [],
     }
 
     if (initialData?.length) {
@@ -95,6 +105,7 @@ export default class RuleSimple extends React.Component {
     initialData: PropTypes.arrayOf(PropTypes.shape({})),
     queryResponse: PropTypes.shape({}),
     onLastInputEnterPress: PropTypes.func,
+    dataFormatting: dataFormattingType,
   }
 
   static defaultProps = {
@@ -104,6 +115,7 @@ export default class RuleSimple extends React.Component {
     initialData: undefined,
     queryResponse: undefined,
     onLastInputEnterPress: () => {},
+    dataFormatting: dataFormattingDefault,
   }
 
   componentDidMount = () => {
@@ -196,6 +208,12 @@ export default class RuleSimple extends React.Component {
         session_filter_locks: lockedFilters,
       },
     ]
+    const selectedNumberColumnName = this.state.selectedColumns.map(
+      (index) => this.props.queryResponse?.data?.data?.columns[index]?.name,
+    )[0]
+    if (this.shouldRenderFeildSelectionGrid()) {
+      expression[0].compare_column = selectedNumberColumnName
+    }
 
     if (this.allowOperators()) {
       const secondTerm = {
@@ -801,7 +819,9 @@ export default class RuleSimple extends React.Component {
             <Input
               label={
                 this.allowOperators()
-                  ? 'Trigger Alert when this query'
+                  ? this.IS_AGGREGATION_QUERY
+                    ? 'Trigger Alert when any value from this query'
+                    : 'Trigger Alert when this query'
                   : 'Trigger Alert when new data is detected for this query'
               }
               value={this.getFormattedQueryText()}
@@ -817,6 +837,32 @@ export default class RuleSimple extends React.Component {
           {this.renderFilterChips()}
         </div>
       </div>
+    )
+  }
+  shouldRenderFeildSelectionGrid = () => {
+    return (
+      this.NUMBER_COLUMNS_AMOUNT >= 2 &&
+      this.ALL_COLUMNS__AMOUNT - this.GROUPABLE_COLUMNS_AMOUNT !== 1 &&
+      this.GROUPABLE_COLUMNS_AMOUNT > 0
+    )
+  }
+  renderFeildSelectionGrid = () => {
+    const groupableColumns = getGroupableColumns(this.props.queryResponse?.data?.data?.columns)
+    const { stringColumnIndices } = getStringColumnIndices(this.props.queryResponse?.data?.data?.columns)
+    const disabledColumns = Array.from(new Set([...groupableColumns, ...stringColumnIndices]))
+
+    return (
+      <SelectableTable
+        dataFormatting={this.props.dataFormatting}
+        onColumnSelection={(columns) => this.setState({ selectedColumns: columns })}
+        selectedColumns={this.state.selectedColumns}
+        disabledColumns={disabledColumns}
+        shouldRender={this.shouldRenderFeildSelectionGrid()}
+        queryResponse={this.props.queryResponse}
+        radio={true}
+        showEndOfPreviewMessage={true}
+        tooltipID={this.props.tooltipID}
+      />
     )
   }
 
@@ -905,6 +951,18 @@ export default class RuleSimple extends React.Component {
           <div className='react-autoql-rule-simple-first-query' data-test='rule'>
             <div className='react-autoql-rule-first-input-container'>{this.renderBaseQuery()}</div>
           </div>
+          {/* {display it when the number type columns has more than one} */}
+          {this.shouldRenderFeildSelectionGrid() && (
+            <div className='react-autoql-rule-field-selection-first-query' data-test='rule'>
+              <div className='react-autoql-rule-first-field-selection-grid-container'>
+                <div className='react-autoql-rule-first-field-selection-description'>
+                  <div className='react-autoql-input-label'>Select a field of interest from this query</div>
+                </div>
+                {this.renderFeildSelectionGrid()}
+              </div>
+            </div>
+          )}
+
           <div className='react-autoql-notification-rule-container' data-test='rule'>
             {this.allowOperators() && (
               <>
