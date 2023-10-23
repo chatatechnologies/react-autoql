@@ -80,6 +80,7 @@
   }
   .react-autosuggest__section-title {
     display: flex;
+    flex-direction: column;
     padding: 5px 15px 1px 0px;
     font-size: 12px;
     color: var(--react-autoql-text-color-placeholder);

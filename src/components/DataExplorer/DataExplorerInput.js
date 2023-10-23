@@ -215,7 +215,10 @@ export default class DataExplorerInput extends React.Component {
     animateInputText({
       text,
       inputRef: this.inputRef,
-      callback: () => this.submitRawText(text, true),
+      totalAnimationTime: 500,
+      callback: () => {
+        this.submitRawText(text, true)
+      },
     })
   }
 

@@ -3,7 +3,14 @@ import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 
-import { COLUMN_TYPES, DataExplorerTypes, dataFormattingDefault, fetchSubjectListV2 } from 'autoql-fe-utils'
+import {
+  COLUMN_TYPES,
+  DataExplorerTypes,
+  dataFormattingDefault,
+  fetchSubjectListV2,
+  runQueryValidation,
+  getAuthentication,
+} from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
@@ -19,6 +26,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { authenticationType, dataFormattingType } from '../../props/types'
 
 import './DataExplorer.scss'
+import { QueryValidationMessage } from '../QueryValidationMessage'
 
 export default class DataExplorer extends React.Component {
   constructor(props) {
@@ -94,13 +102,32 @@ export default class DataExplorer extends React.Component {
     this._isMounted = false
   }
 
-  onInputSelection = (listItem, skipQueryValidation) => {
+  onInputSelection = async (listItem, skipQueryValidation) => {
+    let validationResponse = undefined
+    if (listItem?.type === DataExplorerTypes.TEXT_TYPE && !skipQueryValidation) {
+      this.setState({ validating: true })
+      try {
+        const queryValidationResponse = await runQueryValidation({
+          ...getAuthentication(this.props.authentication),
+          text: listItem.displayName,
+        })
+
+        if (queryValidationResponse?.data?.data?.replacements?.length > 0) {
+          validationResponse = queryValidationResponse
+        }
+      } catch (error) {
+        console.error(error)
+      }
+    }
+
     this.setState({
       selectedSubject: listItem,
       dataPreview: undefined,
       selectedTopic: undefined,
       selectedColumns: [],
       skipQueryValidation,
+      validating: false,
+      validationResponse,
     })
 
     this.inputRef?.blurInput()
@@ -317,6 +344,22 @@ export default class DataExplorer extends React.Component {
         ? this.state.selectedTopic
         : this.state.selectedSubject?.context
 
+    console.log('this.state.selectedSubjectj', this.state.selectedSubject)
+
+    let searchText = ''
+    if (this.state.selectedSubject?.type === DataExplorerTypes.TEXT_TYPE) {
+      searchText = this.state.selectedSubject?.displayName
+    }
+
+    const columns = {}
+
+    this.state.selectedColumns?.forEach((columnIndex) => {
+      const column = this.state.dataPreview?.data?.data?.columns[columnIndex]
+      columns[column.name] = { value: '' }
+    })
+
+    console.log('data preview:', this.state.dataPreview, { columns })
+
     return (
       <div className='data-explorer-section query-suggestions'>
         {this.renderSampleQueriesHeader()}
@@ -325,17 +368,16 @@ export default class DataExplorer extends React.Component {
             ref={(r) => (this.querySuggestionList = r)}
             key={this.querySuggestionsKey}
             authentication={this.props.authentication}
-            columns={this.state.selectedColumns}
+            columns={columns}
             context={context}
             valueLabel={this.state.selectedSubject?.valueLabel}
-            searchText={this.state.selectedSubject?.text}
+            searchText={searchText}
             executeQuery={this.props.executeQuery}
             skipQueryValidation={this.state.skipQueryValidation}
             userSelection={this.state.userSelection}
             tooltipID={this.props.tooltipID}
             scope={this.props.scope}
             shouldRender={this.props.shouldRender}
-            onValidationSuggestionClick={this.onValidationSuggestionClick}
             onSuggestionListResponse={() => {
               this.reloadScrollbars()
               this.setState({ skipQueryValidation: false })
@@ -380,6 +422,21 @@ export default class DataExplorer extends React.Component {
   }
 
   renderDataExplorerContent = () => {
+    if (this.state.validationResponse) {
+      return (
+        <div className='data-explorer-section query-validation-response'>
+          <QueryValidationMessage
+            response={this.state.validationResponse}
+            onSuggestionClick={this.onValidationSuggestionClick}
+            autoSelectSuggestion={true}
+            submitText='Search'
+            submitIcon='search'
+            scope={this.props.scope}
+          />
+        </div>
+      )
+    }
+
     const { selectedSubject } = this.state
 
     if (!selectedSubject) {
@@ -393,11 +450,11 @@ export default class DataExplorer extends React.Component {
             key={`data-explorer-sections-container-${selectedSubject?.id}`}
             className='data-explorer-sections-container'
           >
-            {!!selectedSubject?.displayName && (
+            {selectedSubject?.displayName && selectedSubject?.type !== DataExplorerTypes.TEXT_TYPE ? (
               <div className='react-autoql-data-explorer-selected-subject-title'>
                 <SubjectName subject={selectedSubject} />
               </div>
-            )}
+            ) : null}
             {this.renderDataPreview()}
             {this.renderTopicsListForVL()}
             {this.renderQuerySuggestions()}

@@ -28,15 +28,16 @@
     border: 1px solid var(--react-autoql-border-color);
     margin-top: 1px;
 
-    .ps__rail-y,
-    .ps__rail-x {
+    // Use these styles to show scrollbars on hover
+    .ps__rail-x,
+    .ps__rail-y {
       opacity: 0 !important;
       transition: opacity 0.2s ease !important;
     }
 
     &:hover {
-      .ps__rail-y,
-      .ps__rail-x {
+      .ps__rail-x,
+      .ps__rail-y {
         opacity: 0.5 !important;
       }
     }
