@@ -75,6 +75,7 @@ export default class DataExplorer extends React.Component {
       this.state.selectedSubject?.type === DataExplorerTypes.VL_TYPE
     ) {
       if (this.state.selectedSubject.valueLabel.canonical) {
+        this.setState({ loadingSubjects: true, subjectListError: undefined })
         fetchSubjectListV2({
           ...this.props.authentication,
           valueLabel: this.state.selectedSubject.valueLabel.canonical,
@@ -90,10 +91,13 @@ export default class DataExplorer extends React.Component {
             })
 
             if (this._isMounted) {
-              this.setState({ subjectList })
+              this.setState({ subjectList, loadingSubjects: false })
             }
           })
-          .catch((error) => console.error(error))
+          .catch((error) => {
+            console.error(error)
+            this.setState({ loadingSubjects: false, subjectListError: error })
+          })
       }
     }
   }
@@ -212,6 +216,41 @@ export default class DataExplorer extends React.Component {
   renderTopicsListForVL = () => {
     if (this.state.selectedSubject?.type !== DataExplorerTypes.VL_TYPE) {
       return null
+    }
+
+    if (this.state.loadingSubjects) {
+      const placeholderHeight = '15px'
+
+      return (
+        <div className='data-explorer-section-placeholder-loading-container'>
+          <div className='data-explorer-section-placeholder-loading-item'>
+            <div className='react-autoql-placeholder-loader' style={{ width: '60%', height: placeholderHeight }} />
+          </div>
+          <div className='data-explorer-section-placeholder-loading-item'>
+            <div className='react-autoql-placeholder-loader' style={{ width: '80%', height: placeholderHeight }} />
+          </div>
+          <div className='data-explorer-section-placeholder-loading-item'>
+            <div className='react-autoql-placeholder-loader' style={{ width: '40%', height: placeholderHeight }} />
+          </div>
+          <div className='data-explorer-section-placeholder-loading-item'>
+            <div className='react-autoql-placeholder-loader' style={{ width: '50%', height: placeholderHeight }} />
+          </div>
+        </div>
+      )
+    }
+
+    if (this.state.subjectListError) {
+      return (
+        <div className='data-explorer-section-error-container'>
+          <p>
+            {this.state.subjectListError?.message ||
+              'Uh oh.. an error occured while trying to retrieve the topics list. Please try again.'}
+          </p>
+          {this.state.subjectListError?.reference_id ? (
+            <p>Error ID: {this.state.subjectListError.reference_id}</p>
+          ) : null}
+        </div>
+      )
     }
 
     const options = this.state.subjectList?.map((subject) => ({
@@ -341,24 +380,33 @@ export default class DataExplorer extends React.Component {
 
     const context =
       this.state.selectedSubject?.type === DataExplorerTypes.VL_TYPE
-        ? this.state.selectedTopic
+        ? this.state.selectedTopic?.context
         : this.state.selectedSubject?.context
-
-    console.log('this.state.selectedSubjectj', this.state.selectedSubject)
 
     let searchText = ''
     if (this.state.selectedSubject?.type === DataExplorerTypes.TEXT_TYPE) {
       searchText = this.state.selectedSubject?.displayName
     }
 
-    const columns = {}
+    let columns
+    if (this.state.selectedSubject?.valueLabel?.canonical) {
+      columns = {
+        [this.state.selectedSubject.valueLabel.canonical]: { value: this.state.selectedSubject.valueLabel },
+      }
+    }
 
-    this.state.selectedColumns?.forEach((columnIndex) => {
-      const column = this.state.dataPreview?.data?.data?.columns[columnIndex]
-      columns[column.name] = { value: '' }
-    })
+    if (this.state.selectedColumns?.length) {
+      this.state.selectedColumns?.forEach((columnIndex) => {
+        if (!columns) {
+          columns = {}
+        }
 
-    console.log('data preview:', this.state.dataPreview, { columns })
+        const column = this.state.dataPreview?.data?.data?.columns[columnIndex]
+        if (!columns[column.name]) {
+          columns[column.name] = { value: '' }
+        }
+      })
+    }
 
     return (
       <div className='data-explorer-section query-suggestions'>

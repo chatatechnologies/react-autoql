@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
-import { fetchDataExplorerSuggestionsV2 } from 'autoql-fe-utils'
+import { fetchDataExplorerSampleQueries } from 'autoql-fe-utils'
 
 import SampleQuery from './SampleQuery'
 
@@ -30,7 +30,7 @@ export default class SampleQueryList extends React.Component {
   static defaultProps = {
     searchText: '',
     subject: undefined,
-    columns: {},
+    columns: undefined,
     valueLabel: undefined,
     onSuggestionListResponse: () => {},
     executeQuery: () => {},
@@ -67,6 +67,7 @@ export default class SampleQueryList extends React.Component {
 
     const newState = {
       loading: true,
+      error: false,
     }
 
     const { searchText } = this.props
@@ -76,7 +77,7 @@ export default class SampleQueryList extends React.Component {
 
     this.setState(newState)
 
-    return fetchDataExplorerSuggestionsV2({
+    return fetchDataExplorerSampleQueries({
       ...this.props.authentication,
       text: this.props.searchText,
       selectedVL: this.props.valueLabel,
@@ -91,8 +92,6 @@ export default class SampleQueryList extends React.Component {
             loading: false,
           }
 
-          console.log({ queryList: response?.data?.data?.suggestions, response })
-
           finishedState.queryList = response?.data?.data?.suggestions || []
           finishedState.keywords = searchText
 
@@ -102,8 +101,8 @@ export default class SampleQueryList extends React.Component {
       .catch((error) => {
         console.error(error)
         if (this._isMounted) {
-          this.props.onSuggestionListResponse({ error })
-          return this.setState({ loading: false })
+          this.props.onSuggestionListResponse()
+          return this.setState({ loading: false, error })
         }
       })
   }
@@ -140,9 +139,20 @@ export default class SampleQueryList extends React.Component {
   }
 
   render = () => {
-    console.log('rendering sample query list')
     if (this.state.loading) {
       return this.renderSampleQueryPlaceholder()
+    }
+
+    if (this.state.error) {
+      return (
+        <div className='data-explorer-section-error-container'>
+          <p>
+            {this.state.error?.message ||
+              'Uh oh.. an error occured while trying to retrieve your sample queries. Please try again.'}
+          </p>
+          {this.state.error?.reference_id ? <p>Error ID: {this.state.error.reference_id}</p> : null}
+        </div>
+      )
     }
 
     if (!this.state.queryList) {
@@ -151,9 +161,10 @@ export default class SampleQueryList extends React.Component {
 
     if (this.state.queryList?.length === 0) {
       return (
-        <div className='data-explorer-section-placeholder'>
+        <div className='data-explorer-section-error-container'>
           <p>
-            Sorry, I couldn’t find any queries matching your input. Try entering a different topic or keyword instead.
+            Sorry, I couldnU+2019t find any queries matching your input. Try entering a different topic or keyword
+            instead.
           </p>
         </div>
       )
