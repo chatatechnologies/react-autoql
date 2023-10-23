@@ -67,7 +67,7 @@ class DataAlertModal extends React.Component {
     onClosed: PropTypes.func,
     onOpened: PropTypes.func,
     editView: PropTypes.bool,
-    dataFormatting: dataFormattingType.isRequired,
+    dataFormatting: dataFormattingType,
   }
 
   static defaultProps = {

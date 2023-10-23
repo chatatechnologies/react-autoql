@@ -40,7 +40,7 @@ export default class ChatContent extends React.Component {
   static propTypes = {
     authentication: authenticationType.isRequired,
     autoQLConfig: autoQLConfigType.isRequired,
-    dataFormatting: dataFormattingType.isRequired,
+    dataFormatting: dataFormattingType,
     clearOnClose: PropTypes.bool.isRequired,
     enableVoiceRecord: PropTypes.bool.isRequired,
     maxMessages: PropTypes.number.isRequired,

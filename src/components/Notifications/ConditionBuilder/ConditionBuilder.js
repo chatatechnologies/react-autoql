@@ -28,7 +28,7 @@ export default class ConditionBuilder extends React.Component {
     conditionStatementOnly: PropTypes.bool, // Set this to true if you want a summary of the expression without needing to interact with it
     onChange: PropTypes.func, // this returns 2 params (isSectionComplete, expressionJSON)
     onLastInputEnterPress: PropTypes.func,
-    dataFormatting: dataFormattingType.isRequired,
+    dataFormatting: dataFormattingType,
   }
 
   static defaultProps = {

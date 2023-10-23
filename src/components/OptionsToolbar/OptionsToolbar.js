@@ -52,7 +52,7 @@ export class OptionsToolbar extends React.Component {
   static propTypes = {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
-    dataFormatting: dataFormattingType.isRequired,
+    dataFormatting: dataFormattingType,
     enableDeleteBtn: PropTypes.bool,
     shouldRender: PropTypes.bool,
     onSuccessAlert: PropTypes.func,

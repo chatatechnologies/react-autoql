@@ -105,7 +105,7 @@ export default class RuleSimple extends React.Component {
     initialData: PropTypes.arrayOf(PropTypes.shape({})),
     queryResponse: PropTypes.shape({}),
     onLastInputEnterPress: PropTypes.func,
-    dataFormatting: dataFormattingType.isRequired,
+    dataFormatting: dataFormattingType,
   }
 
   static defaultProps = {
