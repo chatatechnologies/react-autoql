@@ -5,7 +5,7 @@ import { v4 as uuid } from 'uuid'
 import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
-import { Menu, MenuItem } from '../Menu'
+import { Menu } from '../Menu'
 
 import './MultiSelect.scss'
 import { Checkbox } from '../Checkbox'
@@ -145,6 +145,7 @@ export default class MultiSelect extends React.Component {
                 <Checkbox
                   className='react-autoql-multi-select-item-checkbox'
                   checked={this.props.selected.includes(option.value)}
+                  clickable={false}
                 />
                 <div
                   className='react-autoql-multi-select-menu-item'
@@ -153,21 +154,6 @@ export default class MultiSelect extends React.Component {
                 >
                   {option.label ?? option.value}
                 </div>
-                {/* <MenuItem
-                  id={`select-option-${this.ID}-${i}`}
-                  className='react-autoql-multi-select-menu-item'
-                  key={option.value}
-                  title={option.listLabel ?? option.label ?? option.value}
-                  subtitle={option.subtitle}
-                  tooltip={option.tooltip}
-                  tooltipID={this.props.tooltipID ?? `select-tooltip-${this.ID}`}
-                  active={option.value === this.props.value}
-                  icon={option.icon}
-                  onClick={() => {
-                    this.setState({ isOpen: false })
-                    this.props.onChange(option.value)
-                  }}
-                /> */}
               </div>
             )
           })}

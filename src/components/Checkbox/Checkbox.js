@@ -17,6 +17,7 @@ export default class Checkbox extends React.Component {
     label: PropTypes.string,
     type: PropTypes.oneOf(['default', 'switch']),
     checked: PropTypes.bool,
+    clickable: PropTypes.bool,
     onChange: PropTypes.func,
   }
 
@@ -26,6 +27,7 @@ export default class Checkbox extends React.Component {
     type: 'default',
     label: '',
     checked: false,
+    clickable: true,
     onChange: () => {},
   }
 
@@ -43,11 +45,16 @@ export default class Checkbox extends React.Component {
   }
 
   onCheckedChange = (e) => {
+    if (!this.props.clickable) {
+      return
+    }
+
     this.props.onChange(e)
   }
 
   render = () => {
-    const { label, type, indeterminate, hasError, style, onChange, checked, ...nativeProps } = this.props
+    const { label, type, indeterminate, hasError, style, onChange, checked, clickable, onClick, ...nativeProps } =
+      this.props
 
     const checkboxClassname = `
       react-autoql-checkbox
@@ -59,11 +66,6 @@ export default class Checkbox extends React.Component {
       react-autoql-checkbox__input
       ${type === 'switch' ? 'react-autoql-checkbox--switch__input' : 'react-autoql-checkbox--checkbox__input'}
       ${hasError ? 'react-autoql-checkbox--has-error__input' : ''}
-    `
-
-    const labelClassname = `
-      react-autoql-checkbox__label
-      ${type === 'switch' && 'react-autoql-checkbox--switch__label'}
     `
 
     return (
@@ -83,7 +85,11 @@ export default class Checkbox extends React.Component {
               id={this.ID}
               checked={this.props.checked}
               disabled={this.props.disabled}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                if (this.props.clickable) {
+                  e.stopPropagation()
+                }
+              }}
               onChange={this.onCheckedChange}
             />
             {this.props.checked && this.props.type === 'default' && (
