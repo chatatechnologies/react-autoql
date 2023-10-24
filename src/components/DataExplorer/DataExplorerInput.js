@@ -27,7 +27,9 @@ export default class DataExplorerInput extends React.Component {
   constructor(props) {
     super(props)
 
-    this.componentKey = uuid()
+    this.MAX_RECENT_SEARCHES = 3
+    this.KEY = uuid()
+
     this.userTypedValue = null
     this.userSelectedValue = null
     this.isDirty = false
@@ -171,7 +173,7 @@ export default class DataExplorerInput extends React.Component {
     }
 
     // Maximum length of list should be 5
-    if (recentSearches.length === 5) {
+    if (recentSearches.length === this.MAX_RECENT_SEARCHES) {
       recentSearches.splice(-1)
     }
 
@@ -456,7 +458,7 @@ export default class DataExplorerInput extends React.Component {
           data-test='data-explorer-autocomplete'
         >
           <Autosuggest
-            id={`data-explorer-autosuggest-${this.componentKey}`}
+            id={`data-explorer-autosuggest-${this.KEY}`}
             className='react-autoql-data-explorer-autosuggest'
             onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
             onSuggestionsClearRequested={this.onSuggestionsClearRequested}

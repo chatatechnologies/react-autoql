@@ -117,7 +117,7 @@
   .data-explorer-result-container {
     color: var(--react-autoql-text-color-primary);
     width: 100%;
-    overflow: auto;
+    overflow: hidden;
     padding: 0px 24px 0px 24px;
     min-height: 0;
     height: calc(100% - 130px);
@@ -206,12 +206,8 @@
     }
 
     .data-explorer-query-suggestion-list {
-      display: flex;
-      flex-direction: column;
-      flex-wrap: nowrap;
-      height: 100%;
-      min-height: 0;
-      overflow: auto;
+      flex: 1;
+      overflow: hidden;
     }
   }
 
@@ -262,6 +258,13 @@
     .react-autoql-icon {
       margin-right: 0;
     }
+  }
+
+  .data-explorer-section-loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
   }
 
   .data-explorer-section-placeholder-loading-container {

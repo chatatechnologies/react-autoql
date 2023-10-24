@@ -6,6 +6,7 @@ import { fetchDataExplorerSampleQueries } from 'autoql-fe-utils'
 import SampleQuery from './SampleQuery'
 
 import './SampleQueryList.scss'
+import { CustomScrollbars } from '../CustomScrollbars'
 
 export default class SampleQueryList extends React.Component {
   constructor(props) {
@@ -107,10 +108,6 @@ export default class SampleQueryList extends React.Component {
       })
   }
 
-  updateScrollbars = () => {
-    this.scrollbarTimeout = setTimeout(this.infiniteScroll?.updateScrollbars, 400)
-  }
-
   clearQueryList = () => {
     this.setState({
       queryList: undefined,
@@ -171,21 +168,23 @@ export default class SampleQueryList extends React.Component {
     }
 
     return (
-      <div className='query-suggestion-list'>
-        {this.state.queryList.map((suggestion, i) => {
-          return (
-            <SampleQuery
-              key={i}
-              authentication={this.props.authentication}
-              valueLabel={this.props.valueLabel}
-              suggestion={suggestion}
-              executeQuery={this.props.executeQuery}
-              tooltipID={this.props.tooltipID}
-              context={this.props.context}
-              shouldRender={this.props.shouldRender}
-            />
-          )
-        })}
+      <div className='query-suggestion-list-wrapper'>
+        <div className='query-suggestion-list'>
+          {this.state.queryList.map((suggestion, i) => {
+            return (
+              <SampleQuery
+                key={i}
+                authentication={this.props.authentication}
+                valueLabel={this.props.valueLabel}
+                suggestion={suggestion}
+                executeQuery={this.props.executeQuery}
+                tooltipID={this.props.tooltipID}
+                context={this.props.context}
+                shouldRender={this.props.shouldRender}
+              />
+            )
+          })}
+        </div>
       </div>
     )
   }
