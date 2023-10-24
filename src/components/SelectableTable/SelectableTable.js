@@ -151,7 +151,7 @@ export default class SelectableTable extends React.Component {
       <ErrorBoundary>
         <div ref={(r) => (this.tableRef = r)} className='react-autoql-selectable-table'>
           <div className='react-autoql-selectable-table-wrapper'>
-            <CustomScrollbars autoHide={true} ref={(r) => (this.scrollbars = r)} table>
+            <CustomScrollbars autoHide={true} ref={(r) => (this.scrollbars = r)} >
               <table>
                 <thead>
                   <tr>
