@@ -16,6 +16,7 @@ import {
   authenticationDefault,
   getAuthentication,
   getAutoQLConfig,
+  dataFormattingDefault,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -28,7 +29,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import DataAlertModal from '../Notifications/DataAlertModal/DataAlertModal'
 
-import { autoQLConfigType, authenticationType } from '../../props/types'
+import { autoQLConfigType, authenticationType, dataFormattingType } from '../../props/types'
 
 import './OptionsToolbar.scss'
 
@@ -51,7 +52,7 @@ export class OptionsToolbar extends React.Component {
   static propTypes = {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
-
+    dataFormatting: dataFormattingType,
     enableDeleteBtn: PropTypes.bool,
     shouldRender: PropTypes.bool,
     onSuccessAlert: PropTypes.func,
@@ -67,7 +68,7 @@ export class OptionsToolbar extends React.Component {
   static defaultProps = {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
-
+    dataFormatting: dataFormattingDefault,
     enableDeleteBtn: false,
     shouldRender: true,
     onSuccessAlert: () => {},
@@ -310,6 +311,7 @@ export class OptionsToolbar extends React.Component {
       <ErrorBoundary>
         <DataAlertModal
           authentication={this.props.authentication}
+          dataFormatting={this.props.dataFormatting}
           isVisible={this.state.activeMenu === 'notification'}
           onClose={this.closeDataAlertModal}
           onErrorCallback={this.props.onErrorCallback}

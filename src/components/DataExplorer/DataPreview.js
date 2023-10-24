@@ -15,7 +15,7 @@ import { authenticationType, dataFormattingType } from '../../props/types'
 import './DataPreview.scss'
 import TablePlaceholder from '../TablePlaceholder/TablePlaceholder'
 
-export default class DataExplorer extends React.Component {
+export default class DataPreview extends React.Component {
   constructor(props) {
     super(props)
 
