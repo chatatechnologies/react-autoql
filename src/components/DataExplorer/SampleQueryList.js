@@ -6,7 +6,6 @@ import { fetchDataExplorerSampleQueries } from 'autoql-fe-utils'
 import SampleQuery from './SampleQuery'
 
 import './SampleQueryList.scss'
-import { CustomScrollbars } from '../CustomScrollbars'
 
 export default class SampleQueryList extends React.Component {
   constructor(props) {

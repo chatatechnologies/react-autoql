@@ -31,7 +31,6 @@ import { QueryValidationMessage } from '../QueryValidationMessage'
 import { authenticationType, dataFormattingType } from '../../props/types'
 
 import './DataExplorer.scss'
-import { QueryValidationMessage } from '../QueryValidationMessage'
 
 export default class DataExplorer extends React.Component {
   constructor(props) {
