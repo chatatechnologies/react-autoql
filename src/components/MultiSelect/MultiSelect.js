@@ -6,9 +6,9 @@ import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { Menu } from '../Menu'
+import { Checkbox } from '../Checkbox'
 
 import './MultiSelect.scss'
-import { Checkbox } from '../Checkbox'
 
 export default class MultiSelect extends React.Component {
   constructor(props) {

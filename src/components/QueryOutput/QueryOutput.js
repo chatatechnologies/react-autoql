@@ -668,17 +668,6 @@ export class QueryOutput extends React.Component {
         return false
       }
 
-      const areStringColumnsValid = tableConfig.stringColumnIndices.every((index) => {
-        return columns[index] && isColumnStringType(columns[index] || isColumnNumberType(columns[index]))
-      })
-
-      if (!areStringColumnsValid && !this.usePivotDataForChart()) {
-        console.debug('Saved string indices are not string columns:', {
-          stringColumnIndices: tableConfig.stringColumnIndices,
-        })
-        return false
-      }
-
       // To keep dashboards backwards compatible, we need to add
       // numberColumnIndices2 array to the tableConfig
       if (!tableConfig.numberColumnIndices2) {

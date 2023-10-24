@@ -16,7 +16,10 @@ export default class StringAxisSelector extends React.Component {
   getAllStringColumnIndices = () => {
     const columnIndices = []
     this.props.columns.forEach((col, i) => {
-      if (isColumnStringType(col) && col.is_visible) {
+      const isOnNumberAxis = this.props.numberColumnIndices?.includes(col.index)
+      const isOnSecondNumberAxis = this.props.hasSecondAxis && this.props.numberColumnIndices2?.includes(col.index)
+
+      if (!isOnNumberAxis && !isOnSecondNumberAxis && col.is_visible) {
         columnIndices.push(i)
       }
     })
