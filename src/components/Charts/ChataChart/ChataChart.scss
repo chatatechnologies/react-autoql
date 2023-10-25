@@ -100,20 +100,27 @@
     }
   }
 
+  &.drilldowns-enabled {
+    .bar,
+    .column,
+    .stacked-bar,
+    .stacked-column,
+    .slice {
+      cursor: pointer;
+    }
+  }
+
   /* These are not inline styles since they do not apply to saved PNG charts */
   .bar,
   .column,
   .stacked-bar,
   .stacked-column {
-    cursor: pointer;
-
     // Setting a transparent stroke allows a larger hover area
     stroke: transparent;
     stroke-width: 8px;
   }
 
   .slice {
-    cursor: pointer;
     stroke: transparent;
     stroke-width: 3px;
   }

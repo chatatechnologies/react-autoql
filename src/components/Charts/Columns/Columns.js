@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { getKey, getTooltipContent, scaleZero } from 'autoql-fe-utils'
+import { getKey, getTooltipContent, isColumnNumberType, scaleZero } from 'autoql-fe-utils'
 
 import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
 
