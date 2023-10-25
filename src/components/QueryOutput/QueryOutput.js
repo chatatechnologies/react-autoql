@@ -84,6 +84,7 @@ export class QueryOutput extends React.Component {
     this.QUERY_VALIDATION_KEY = uuid()
     this.TOOLTIP_ID = `react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`
     this.CHART_TOOLTIP_ID = `react-autoql-chart-tooltip-${this.COMPONENT_KEY}`
+    this.ALLOW_NUMERIC_STRING_COLUMNS = true
 
     this.queryResponse = _cloneDeep(props.queryResponse)
     this.columnDateRanges = getColumnDateRanges(props.queryResponse)
@@ -1439,7 +1440,11 @@ export class QueryOutput extends React.Component {
       !this.pivotTableConfig.stringColumnIndices ||
       !(this.pivotTableConfig.stringColumnIndex >= 0)
     ) {
-      const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(columns, 'supportsPivot')
+      const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
+        columns,
+        'supportsPivot',
+        this.ALLOW_NUMERIC_STRING_COLUMNS,
+      )
       this.pivotTableConfig.stringColumnIndices = stringColumnIndices
       this.pivotTableConfig.stringColumnIndex = stringColumnIndex
     }
@@ -1512,7 +1517,12 @@ export class QueryOutput extends React.Component {
       !this.tableConfig.stringColumnIndices ||
       !this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns)
     ) {
-      const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(columns)
+      const isPivot = false
+      const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
+        columns,
+        isPivot,
+        this.ALLOW_NUMERIC_STRING_COLUMNS,
+      )
       this.tableConfig.stringColumnIndices = stringColumnIndices
       this.tableConfig.stringColumnIndex = stringColumnIndex
     }
@@ -1634,6 +1644,7 @@ export class QueryOutput extends React.Component {
       columns: this.queryResponse?.data?.data?.columns?.map((col) => ({
         ...col,
       })),
+      allowNumericStringColumns: this.ALLOW_NUMERIC_STRING_COLUMNS,
     })
   }
 
@@ -1655,6 +1666,7 @@ export class QueryOutput extends React.Component {
       dataLength: this.getDataLength(),
       pivotDataLength: this.getPivotDataLength(),
       isDataLimited: this.isDataLimited(),
+      allowNumericStringColumns: this.ALLOW_NUMERIC_STRING_COLUMNS,
     })
   }
 
