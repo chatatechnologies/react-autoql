@@ -23,6 +23,7 @@ import {
   dataStructureChanged,
   getLegendLocation,
   mergeBoundingClientRects,
+  isColumnNumberType,
 } from 'autoql-fe-utils'
 
 import { Spinner } from '../../Spinner'
@@ -413,6 +414,16 @@ export default class ChataChart extends React.Component {
     this.bucketSize = bucketSize
   }
 
+  allowDrilldown = () =>
+    !isColumnNumberType(this.props.columns[this.props.stringColumnIndex]) &&
+    !this.props.columns[this.props.stringColumnIndex]?.groupable
+
+  onChartClick = (params) => {
+    if (this.allowDrilldown()) {
+      this.props.onChartClick(params)
+    }
+  }
+
   renderChartHeader = () => {
     let paddingLeft = this.state.deltaX - 10
     if (isMobile || paddingLeft < 0 || this.outerWidth < 300) {
@@ -455,6 +466,7 @@ export default class ChataChart extends React.Component {
       data,
       aggregated,
       disableTimeScale: this.disableTimeScale,
+      allowDrilldown: this.allowDrilldown(),
       colorScale,
       colorScale2,
       height: innerHeight,
@@ -477,6 +489,7 @@ export default class ChataChart extends React.Component {
       isLoading: this.state.isLoading,
       changeNumberColumnIndices: this.props.changeNumberColumnIndices,
       onAxesRenderComplete: this.adjustChartPosition,
+      onChartClick: this.onChartClick,
     }
   }
 
@@ -575,7 +588,8 @@ export default class ChataChart extends React.Component {
             className={`react-autoql-chart-container
             ${this.state.isLoading || this.props.isResizing ? 'loading' : ''}
             ${this.state.isLoadingMoreRows ? 'loading-rows' : ''}
-            ${this.props.hidden ? 'hidden' : ''}`}
+            ${this.props.hidden ? 'hidden' : ''}
+            ${this.allowDrilldown() ? 'drilldowns-enabled' : 'drilldowns-disabled'}`}
           >
             {!this.firstRender && !this.props.isResizing && !this.props.isAnimating && (
               <svg

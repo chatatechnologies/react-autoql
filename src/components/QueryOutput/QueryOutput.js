@@ -84,6 +84,7 @@ export class QueryOutput extends React.Component {
     this.QUERY_VALIDATION_KEY = uuid()
     this.TOOLTIP_ID = `react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`
     this.CHART_TOOLTIP_ID = `react-autoql-chart-tooltip-${this.COMPONENT_KEY}`
+    this.ALLOW_NUMERIC_STRING_COLUMNS = true
 
     this.queryResponse = _cloneDeep(props.queryResponse)
     this.columnDateRanges = getColumnDateRanges(props.queryResponse)
@@ -664,17 +665,6 @@ export class QueryOutput extends React.Component {
       if (!areSecondNumberColumnsValid) {
         console.debug('Saved second number indices are not number columns:', {
           numberColumnsIndices2: tableConfig.numberColumnIndices2,
-        })
-        return false
-      }
-
-      const areStringColumnsValid = tableConfig.stringColumnIndices.every((index) => {
-        return columns[index] && isColumnStringType(columns[index] || isColumnNumberType(columns[index]))
-      })
-
-      if (!areStringColumnsValid && !this.usePivotDataForChart()) {
-        console.debug('Saved string indices are not string columns:', {
-          stringColumnIndices: tableConfig.stringColumnIndices,
         })
         return false
       }
@@ -1450,7 +1440,11 @@ export class QueryOutput extends React.Component {
       !this.pivotTableConfig.stringColumnIndices ||
       !(this.pivotTableConfig.stringColumnIndex >= 0)
     ) {
-      const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(columns, 'supportsPivot')
+      const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
+        columns,
+        'supportsPivot',
+        this.ALLOW_NUMERIC_STRING_COLUMNS,
+      )
       this.pivotTableConfig.stringColumnIndices = stringColumnIndices
       this.pivotTableConfig.stringColumnIndex = stringColumnIndex
     }
@@ -1523,7 +1517,12 @@ export class QueryOutput extends React.Component {
       !this.tableConfig.stringColumnIndices ||
       !this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns)
     ) {
-      const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(columns)
+      const isPivot = false
+      const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
+        columns,
+        isPivot,
+        this.ALLOW_NUMERIC_STRING_COLUMNS,
+      )
       this.tableConfig.stringColumnIndices = stringColumnIndices
       this.tableConfig.stringColumnIndex = stringColumnIndex
     }
@@ -1645,6 +1644,7 @@ export class QueryOutput extends React.Component {
       columns: this.queryResponse?.data?.data?.columns?.map((col) => ({
         ...col,
       })),
+      allowNumericStringColumns: this.ALLOW_NUMERIC_STRING_COLUMNS,
     })
   }
 
@@ -1666,6 +1666,7 @@ export class QueryOutput extends React.Component {
       dataLength: this.getDataLength(),
       pivotDataLength: this.getPivotDataLength(),
       isDataLimited: this.isDataLimited(),
+      allowNumericStringColumns: this.ALLOW_NUMERIC_STRING_COLUMNS,
     })
   }
 
@@ -1856,10 +1857,14 @@ export class QueryOutput extends React.Component {
       newCol.sorter = this.setSorterFunction(newCol)
       newCol.headerSort = !!this.props.enableTableSorting
       newCol.headerSortStartingDir = 'desc'
-      newCol.headerClick = () => {
+      newCol.headerClick = (e, col) => {
         // To allow tabulator to sort, we must first restore redrawing,
         // then the component will disable it again afterwards automatically
-        this.tableRef?.ref?.restoreRedraw()
+        if (this.state.displayType === 'table') {
+          this.tableRef?.ref?.restoreRedraw()
+        } else if (this.state.displayType === 'pivot_table') {
+          this.pivotTableRef?.ref?.restoreRedraw()
+        }
       }
 
       // Show drilldown filter value in column title so user knows they can't filter on this column

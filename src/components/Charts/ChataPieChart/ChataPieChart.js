@@ -238,7 +238,6 @@ export default class ChataPieChart extends React.Component {
         if (d?.data?.value?.legendLabel?.isOther) {
           return 'default'
         }
-        return 'pointer'
       })
       .attr('stroke-width', '0.5px')
       .attr('stroke', this.props.backgroundColor)
