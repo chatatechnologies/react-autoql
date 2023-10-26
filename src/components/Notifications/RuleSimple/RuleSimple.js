@@ -233,7 +233,7 @@ export default class RuleSimple extends React.Component {
       this.props.queryResponse?.data?.data?.columns[this.state.firstQueryGroupableColumnIndex]?.name
     const secondQueryJoinColumnName =
       this.state.secondQueryResponse.data?.data?.columns[this.state.secondQueryGroupableColumnIndex]?.name
-    if (this.shouldRenderFirstFeildSelectionGrid()) {
+    if (this.shouldRenderFirstFieldSelectionGrid()) {
       expression[0].compare_column = firstQuerySelectedNumberColumnName
       expression[0].join_column = firstQueryJoinColumnName
     }
@@ -287,7 +287,7 @@ export default class RuleSimple extends React.Component {
 
   isComplete = () => {
     let firstTermComplete = !!this.state.inputValue?.length
-    if (this.shouldRenderFirstFeildSelectionGrid()) {
+    if (this.shouldRenderFirstFieldSelectionGrid()) {
       firstTermComplete = this.state.firstQuerySelectedColumn.length !== 0
     }
     if (!firstTermComplete) {
@@ -886,7 +886,7 @@ export default class RuleSimple extends React.Component {
       </div>
     )
   }
-  shouldRenderFirstFeildSelectionGrid = () => {
+  shouldRenderFirstFieldSelectionGrid = () => {
     return (
       this.NUMBER_COLUMNS_AMOUNT >= 2 &&
       this.ALL_COLUMNS__AMOUNT - this.GROUPABLE_COLUMNS_AMOUNT !== 1 &&
@@ -905,7 +905,7 @@ export default class RuleSimple extends React.Component {
       !this.state.isSecondQueryListQuery
     )
   }
-  renderfirstFeildSelectionGrid = () => {
+  renderfirstFieldSelectionGrid = () => {
     const groupableColumns = getGroupableColumns(this.props.queryResponse?.data?.data?.columns)
     const { stringColumnIndices } = getStringColumnIndices(this.props.queryResponse?.data?.data?.columns)
     const disabledColumns = Array.from(new Set([...groupableColumns, ...stringColumnIndices]))
@@ -918,7 +918,7 @@ export default class RuleSimple extends React.Component {
         }
         selectedColumns={this.state.firstQuerySelectedColumn}
         disabledColumns={disabledColumns}
-        shouldRender={this.shouldRenderFirstFeildSelectionGrid()}
+        shouldRender={this.shouldRenderFirstFieldSelectionGrid()}
         queryResponse={this.props.queryResponse}
         radio={true}
         showEndOfPreviewMessage={true}
@@ -926,7 +926,7 @@ export default class RuleSimple extends React.Component {
       />
     )
   }
-  renderSecondFeildSelectionGrid = () => {
+  renderSecondFieldSelectionGrid = () => {
     const groupableColumns = getGroupableColumns(this.state.secondQueryResponse?.data?.data?.columns)
     const { stringColumnIndices } = getStringColumnIndices(this.state.secondQueryResponse?.data?.data?.columns)
     const disabledColumns = Array.from(new Set([...groupableColumns, ...stringColumnIndices]))
@@ -1033,13 +1033,13 @@ export default class RuleSimple extends React.Component {
             <div className='react-autoql-rule-first-input-container'>{this.renderBaseQuery()}</div>
           </div>
           {/* {display it when the number type columns has more than one} */}
-          {this.shouldRenderFirstFeildSelectionGrid() && (
+          {this.shouldRenderFirstFieldSelectionGrid() && (
             <div className='react-autoql-rule-field-selection-first-query' data-test='rule'>
               <div className='react-autoql-rule-field-selection-grid-container'>
                 <div className='react-autoql-rule-field-selection-description'>
                   <div className='react-autoql-input-label'>Select a field of interest from this query</div>
                 </div>
-                {this.renderfirstFeildSelectionGrid()}
+                {this.renderfirstFieldSelectionGrid()}
               </div>
             </div>
           )}
@@ -1062,7 +1062,7 @@ export default class RuleSimple extends React.Component {
               <div className='react-autoql-rule-field-selection-description'>
                 <div className='react-autoql-input-label'>Select a field of interest from this query</div>
               </div>
-              {this.renderSecondFeildSelectionGrid()}
+              {this.renderSecondFieldSelectionGrid()}
             </div>
           )}
         </div>
