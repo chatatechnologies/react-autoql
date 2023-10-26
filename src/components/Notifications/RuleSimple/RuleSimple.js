@@ -14,6 +14,7 @@ import {
   NUMBER_TERM_TYPE,
   QUERY_TERM_TYPE,
   isNumber,
+  isListQuery,
   isSingleValueResponse,
   constructRTArray,
   getTimeFrameTextFromChunk,
@@ -47,7 +48,7 @@ export default class RuleSimple extends React.Component {
 
   constructor(props) {
     super(props)
-
+    this.secondFieldSelectionGridRef = React.createRef()
     const { initialData, queryResponse } = props
 
     this.SUPPORTED_CONDITION_TYPES = getSupportedConditionTypes(initialData, queryResponse)
@@ -81,7 +82,15 @@ export default class RuleSimple extends React.Component {
       secondQueryError: '',
       isEditingQuery: false,
       queryFilters: this.getFilters(props),
-      selectedColumns: [],
+      secondQueryResponse: {},
+      isSecondQueryListQuery: true,
+      firstQuerySelectedColumn: [],
+      firstQueryGroupableColumnIndex: 0,
+      secondQuerySelectedColumn: [],
+      secondQueryGroupableColumnIndex: 0,
+      secondQueryAmountOfNumberColumns: 0,
+      secondQueryAllColumnsAmount: 0,
+      secondQueryGroupableColumnsAmount: 0,
     }
 
     if (initialData?.length) {
@@ -137,6 +146,11 @@ export default class RuleSimple extends React.Component {
       this.state.secondInputValue?.length
     ) {
       this.validateSecondQuery()
+    }
+    if (this.state.secondQueryResponse && this.state.secondQueryResponse !== prevState.secondQueryResponse) {
+      setTimeout(() => {
+        this.secondFieldSelectionGridRef?.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+      }, 100)
     }
   }
 
@@ -208,11 +222,20 @@ export default class RuleSimple extends React.Component {
         session_filter_locks: lockedFilters,
       },
     ]
-    const selectedNumberColumnName = this.state.selectedColumns.map(
+    const firstQuerySelectedNumberColumnName = this.state.firstQuerySelectedColumn.map(
       (index) => this.props.queryResponse?.data?.data?.columns[index]?.name,
     )[0]
-    if (this.shouldRenderFeildSelectionGrid()) {
-      expression[0].compare_column = selectedNumberColumnName
+
+    const secondQuerySelectedNumberColumnName = this.state.secondQuerySelectedColumn.map(
+      (index) => this.state.secondQueryResponse?.data?.data?.columns[index]?.name,
+    )[0]
+    const firstQueryJoinColumnName =
+      this.props.queryResponse?.data?.data?.columns[this.state.firstQueryGroupableColumnIndex]?.name
+    const secondQueryJoinColumnName =
+      this.state.secondQueryResponse.data?.data?.columns[this.state.secondQueryGroupableColumnIndex]?.name
+    if (this.shouldRenderFirstFeildSelectionGrid()) {
+      expression[0].compare_column = firstQuerySelectedNumberColumnName
+      expression[0].join_column = firstQueryJoinColumnName
     }
 
     if (this.allowOperators()) {
@@ -221,6 +244,11 @@ export default class RuleSimple extends React.Component {
         term_type: this.state.secondTermType,
         condition: 'TERMINATOR',
         term_value: secondTermValue,
+      }
+
+      if (this.shouldRenderSecondFieldSelectionGrid()) {
+        secondTerm.compare_column = secondQuerySelectedNumberColumnName
+        secondTerm.join_column = secondQueryJoinColumnName
       }
 
       if (this.state.secondTermType === QUERY_TERM_TYPE) {
@@ -258,7 +286,10 @@ export default class RuleSimple extends React.Component {
   }
 
   isComplete = () => {
-    const firstTermComplete = !!this.state.inputValue?.length
+    let firstTermComplete = !!this.state.inputValue?.length
+    if (this.shouldRenderFirstFeildSelectionGrid()) {
+      firstTermComplete = this.state.firstQuerySelectedColumn.length !== 0
+    }
     if (!firstTermComplete) {
       return false
     }
@@ -274,7 +305,10 @@ export default class RuleSimple extends React.Component {
       return false
     }
 
-    const secondTermComplete = isNumber(this.state.secondInputValue) || !!this.state.secondInputValue?.length
+    let secondTermComplete = isNumber(this.state.secondInputValue) || !!this.state.secondInputValue?.length
+    if (this.shouldRenderSecondFieldSelectionGrid()) {
+      secondTermComplete = this.state.secondQuerySelectedColumn.length !== 0
+    }
     if (!secondTermComplete) {
       return false
     }
@@ -424,9 +458,17 @@ export default class RuleSimple extends React.Component {
   onValidationResponse = (response) => {
     let error
     let isInvalid = false
+    const isSecondQueryListQuery = isListQuery(response.data?.data?.columns) && !isSingleValueResponse(response)
+    const amountOfNumberColumns = getColumnTypeAmounts(response.data?.data?.columns)['amountOfNumberColumns'] ?? 0
+    const allColumnsAmount = response.data?.data?.columns.length
+    const groupableColumnsAmount = getNumberOfGroupables(response.data?.data?.columns)
     if (isSingleValueResponse(this.props.queryResponse) && !isSingleValueResponse(response)) {
       isInvalid = true
       error = <span>The result of this query must be a single value</span>
+    }
+    if (isSecondQueryListQuery && !isSingleValueResponse(this.props.queryResponse)) {
+      isInvalid = true
+      error = <span>Unsupported comparison query: Please use a query with a cumulative amount.</span>
     }
 
     this.setState({
@@ -434,6 +476,11 @@ export default class RuleSimple extends React.Component {
       secondQueryInvalid: isInvalid,
       secondQueryValidated: true,
       secondQueryError: error,
+      secondQueryResponse: response,
+      isSecondQueryListQuery: isSecondQueryListQuery,
+      secondQueryAmountOfNumberColumns: amountOfNumberColumns,
+      secondQueryAllColumnsAmount: allColumnsAmount,
+      secondQueryGroupableColumnsAmount: groupableColumnsAmount,
     })
   }
 
@@ -482,7 +529,7 @@ export default class RuleSimple extends React.Component {
 
   onSecondQueryChange = (e) => {
     const secondInputValue = e.target.value
-    const newState = { secondInputValue }
+    const newState = { secondInputValue, secondQueryValidated: false }
 
     if (!secondInputValue?.length) {
       newState.secondQueryValidating = false
@@ -839,14 +886,26 @@ export default class RuleSimple extends React.Component {
       </div>
     )
   }
-  shouldRenderFeildSelectionGrid = () => {
+  shouldRenderFirstFeildSelectionGrid = () => {
     return (
       this.NUMBER_COLUMNS_AMOUNT >= 2 &&
       this.ALL_COLUMNS__AMOUNT - this.GROUPABLE_COLUMNS_AMOUNT !== 1 &&
       this.GROUPABLE_COLUMNS_AMOUNT > 0
     )
   }
-  renderFeildSelectionGrid = () => {
+
+  shouldRenderSecondFieldSelectionGrid = () => {
+    return (
+      !isSingleValueResponse(this.props.queryResponse) &&
+      this.state.secondQueryAmountOfNumberColumns >= 2 &&
+      this.state.secondQueryAllColumnsAmount - this.state.secondQueryGroupableColumnsAmount !== 1 &&
+      this.state.secondQueryGroupableColumnsAmount > 0 &&
+      this.state.secondTermType !== NUMBER_TERM_TYPE &&
+      this.state.secondQueryValidated &&
+      !this.state.isSecondQueryListQuery
+    )
+  }
+  renderfirstFeildSelectionGrid = () => {
     const groupableColumns = getGroupableColumns(this.props.queryResponse?.data?.data?.columns)
     const { stringColumnIndices } = getStringColumnIndices(this.props.queryResponse?.data?.data?.columns)
     const disabledColumns = Array.from(new Set([...groupableColumns, ...stringColumnIndices]))
@@ -854,10 +913,12 @@ export default class RuleSimple extends React.Component {
     return (
       <SelectableTable
         dataFormatting={this.props.dataFormatting}
-        onColumnSelection={(columns) => this.setState({ selectedColumns: columns })}
-        selectedColumns={this.state.selectedColumns}
+        onColumnSelection={(columns) =>
+          this.setState({ firstQuerySelectedColumn: columns, firstQueryGroupableColumnIndex: groupableColumns[0] })
+        }
+        selectedColumns={this.state.firstQuerySelectedColumn}
         disabledColumns={disabledColumns}
-        shouldRender={this.shouldRenderFeildSelectionGrid()}
+        shouldRender={this.shouldRenderFirstFeildSelectionGrid()}
         queryResponse={this.props.queryResponse}
         radio={true}
         showEndOfPreviewMessage={true}
@@ -865,7 +926,27 @@ export default class RuleSimple extends React.Component {
       />
     )
   }
+  renderSecondFeildSelectionGrid = () => {
+    const groupableColumns = getGroupableColumns(this.state.secondQueryResponse?.data?.data?.columns)
+    const { stringColumnIndices } = getStringColumnIndices(this.state.secondQueryResponse?.data?.data?.columns)
+    const disabledColumns = Array.from(new Set([...groupableColumns, ...stringColumnIndices]))
 
+    return (
+      <SelectableTable
+        dataFormatting={this.props.dataFormatting}
+        onColumnSelection={(columns) =>
+          this.setState({ secondQuerySelectedColumn: columns, secondQueryGroupableColumnIndex: groupableColumns[0] })
+        }
+        selectedColumns={this.state.secondQuerySelectedColumn}
+        disabledColumns={disabledColumns}
+        shouldRender={this.shouldRenderSecondFieldSelectionGrid()}
+        queryResponse={this.state.secondQueryResponse}
+        radio={true}
+        showEndOfPreviewMessage={true}
+        tooltipID={this.props.tooltipID}
+      />
+    )
+  }
   getSecondInputPlaceholder = () => {
     const { secondTermType } = this.state
     const { queryResponse } = this.props
@@ -952,13 +1033,13 @@ export default class RuleSimple extends React.Component {
             <div className='react-autoql-rule-first-input-container'>{this.renderBaseQuery()}</div>
           </div>
           {/* {display it when the number type columns has more than one} */}
-          {this.shouldRenderFeildSelectionGrid() && (
+          {this.shouldRenderFirstFeildSelectionGrid() && (
             <div className='react-autoql-rule-field-selection-first-query' data-test='rule'>
-              <div className='react-autoql-rule-first-field-selection-grid-container'>
-                <div className='react-autoql-rule-first-field-selection-description'>
+              <div className='react-autoql-rule-field-selection-grid-container'>
+                <div className='react-autoql-rule-field-selection-description'>
                   <div className='react-autoql-input-label'>Select a field of interest from this query</div>
                 </div>
-                {this.renderFeildSelectionGrid()}
+                {this.renderfirstFeildSelectionGrid()}
               </div>
             </div>
           )}
@@ -976,6 +1057,14 @@ export default class RuleSimple extends React.Component {
               </>
             )}
           </div>
+          {this.shouldRenderSecondFieldSelectionGrid() && (
+            <div className='react-autoql-rule-field-selection-grid-container' ref={this.secondFieldSelectionGridRef}>
+              <div className='react-autoql-rule-field-selection-description'>
+                <div className='react-autoql-input-label'>Select a field of interest from this query</div>
+              </div>
+              {this.renderSecondFeildSelectionGrid()}
+            </div>
+          )}
         </div>
       </ErrorBoundary>
     )
