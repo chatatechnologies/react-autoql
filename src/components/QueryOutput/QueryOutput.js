@@ -1138,6 +1138,7 @@ export class QueryOutput extends React.Component {
         groupBys = [
           {
             name: columns[dateColumnIndex]?.name,
+            drill_down: columns[dateColumnIndex]?.drill_down,
             value,
           },
         ]
@@ -2028,6 +2029,7 @@ export class QueryOutput extends React.Component {
           }
           pivotTableColumns[pivotColumnIndex].origValues[month] = {
             name: columns[dateColumnIndex]?.name,
+            drill_down: columns[dateColumnIndex]?.drill_down,
             value: row[dateColumnIndex] || '',
           }
         }
@@ -2148,6 +2150,7 @@ export class QueryOutput extends React.Component {
 
         pivotTableColumns[pivotColumnIndex].origValues[pivotCategoryValue] = {
           name: columns[newStringColumnIndex]?.name,
+          drill_down: columns[newStringColumnIndex]?.drill_down,
           value: pivotCategoryValue,
         }
       })
