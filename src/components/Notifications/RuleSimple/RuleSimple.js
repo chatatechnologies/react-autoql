@@ -50,11 +50,13 @@ export default class RuleSimple extends React.Component {
     super(props)
     this.secondFieldSelectionGridRef = React.createRef()
     const { initialData, queryResponse } = props
-
     this.SUPPORTED_CONDITION_TYPES = getSupportedConditionTypes(initialData, queryResponse)
     this.IS_AGGREGATION_QUERY = isAggregation(queryResponse?.data?.data?.columns)
     this.ALL_COLUMNS__AMOUNT = queryResponse?.data?.data?.columns.length
-    this.NUMBER_COLUMNS_AMOUNT = getColumnTypeAmounts(queryResponse?.data?.data?.columns)['amountOfNumberColumns'] ?? 0
+    this.NUMBER_COLUMNS_AMOUNT =
+      initialData.length === 0
+        ? getColumnTypeAmounts(queryResponse?.data?.data?.columns)['amountOfNumberColumns'] ?? 0
+        : 0
     this.GROUPABLE_COLUMNS_AMOUNT = getNumberOfGroupables(queryResponse?.data?.data?.columns)
     this.SUPPORTED_OPERATORS = []
     if (
@@ -73,6 +75,10 @@ export default class RuleSimple extends React.Component {
 
     const state = {
       selectedOperator: initialData?.[0]?.condition ?? selectedOperator,
+      firstQueryJoinColumnName: initialData?.[0]?.join_column ?? null,
+      firstQuerySelectedNumberColumnName: initialData?.[0]?.compare_column ?? '',
+      secondQueryJoinColumnName: initialData?.[0]?.join_column ?? '',
+      secondQuerySelectedNumberColumnName: initialData?.[1]?.compare_column ?? '',
       inputValue: queryResponse?.data?.data?.text ?? '',
       secondInputValue: '',
       secondTermType: NUMBER_TERM_TYPE,
@@ -210,7 +216,11 @@ export default class RuleSimple extends React.Component {
     const userSelection = this.props.queryResponse?.data?.data?.fe_req?.disambiguation
     const tableFilters = this.state.queryFilters?.filter((f) => f.type === 'table')
     const lockedFilters = this.state.queryFilters?.filter((f) => f.type === 'locked')
-
+    let firstQueryJoinColumnName =
+      this.props.queryResponse?.data?.data?.columns[this.state.firstQueryGroupableColumnIndex]?.name
+    if (this.props.queryResponse && isSingleValueResponse(this.props.queryResponse)) {
+      firstQueryJoinColumnName = null
+    }
     const expression = [
       {
         id: this.TERM_ID_1,
@@ -220,22 +230,26 @@ export default class RuleSimple extends React.Component {
         user_selection: this.props.initialData?.[0]?.user_selection ?? userSelection,
         filters: tableFilters,
         session_filter_locks: lockedFilters,
+        join_column: firstQueryJoinColumnName ?? this.state.firstQueryJoinColumnName,
       },
     ]
     const firstQuerySelectedNumberColumnName = this.state.firstQuerySelectedColumn.map(
       (index) => this.props.queryResponse?.data?.data?.columns[index]?.name,
     )[0]
 
-    const secondQuerySelectedNumberColumnName = this.state.secondQuerySelectedColumn.map(
-      (index) => this.state.secondQueryResponse?.data?.data?.columns[index]?.name,
-    )[0]
-    const firstQueryJoinColumnName =
-      this.props.queryResponse?.data?.data?.columns[this.state.firstQueryGroupableColumnIndex]?.name
+    const secondQuerySelectedNumberColumnName =
+      this.state.secondQuerySelectedColumn.map(
+        (index) => this.state.secondQueryResponse?.data?.data?.columns[index]?.name,
+      )[0] ?? this.state.secondQuerySelectedNumberColumnName
+
     const secondQueryJoinColumnName =
-      this.state.secondQueryResponse.data?.data?.columns[this.state.secondQueryGroupableColumnIndex]?.name
+      this.state.secondQueryResponse.data?.data?.columns[this.state.secondQueryGroupableColumnIndex]?.name ??
+      this.state.secondQueryJoinColumnName
     if (this.shouldRenderFirstFieldSelectionGrid()) {
       expression[0].compare_column = firstQuerySelectedNumberColumnName
-      expression[0].join_column = firstQueryJoinColumnName
+    }
+    if (this.props.initialData?.length > 1 && this.state.firstQueryJoinColumnName !== null) {
+      expression[0].compare_column = this.state.firstQuerySelectedNumberColumnName
     }
 
     if (this.allowOperators()) {
@@ -246,6 +260,15 @@ export default class RuleSimple extends React.Component {
         term_value: secondTermValue,
       }
 
+      if (
+        this.props.initialData?.length > 1 &&
+        this.state.secondQueryJoinColumnName !== '' &&
+        !isSingleValueResponse(this.state.secondQueryResponse) &&
+        this.state.secondQueryAmountOfNumberColumns >= 2
+      ) {
+        secondTerm.compare_column = this.state.secondQuerySelectedNumberColumnName
+        secondTerm.join_column = this.state.secondQueryJoinColumnName
+      }
       if (this.shouldRenderSecondFieldSelectionGrid()) {
         secondTerm.compare_column = secondQuerySelectedNumberColumnName
         secondTerm.join_column = secondQueryJoinColumnName
@@ -462,7 +485,13 @@ export default class RuleSimple extends React.Component {
     const amountOfNumberColumns = getColumnTypeAmounts(response.data?.data?.columns)['amountOfNumberColumns'] ?? 0
     const allColumnsAmount = response.data?.data?.columns.length
     const groupableColumnsAmount = getNumberOfGroupables(response.data?.data?.columns)
-    if (isSingleValueResponse(this.props.queryResponse) && !isSingleValueResponse(response)) {
+    if (
+      (isSingleValueResponse(this.props.queryResponse) && !isSingleValueResponse(response)) ||
+      (!this.props.queryResponse &&
+        this.props.initialData?.length === 2 &&
+        this.state.firstQueryJoinColumnName === null &&
+        !isSingleValueResponse(response))
+    ) {
       isInvalid = true
       error = <span>The result of this query must be a single value</span>
     }
@@ -895,6 +924,13 @@ export default class RuleSimple extends React.Component {
   }
 
   shouldRenderSecondFieldSelectionGrid = () => {
+    if (
+      this.props.initialData?.length > 0 &&
+      !this.props.queryResponse &&
+      this.state.firstQueryJoinColumnName === null
+    ) {
+      return false
+    }
     return (
       !isSingleValueResponse(this.props.queryResponse) &&
       this.state.secondQueryAmountOfNumberColumns >= 2 &&
