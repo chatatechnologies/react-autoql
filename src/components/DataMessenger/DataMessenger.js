@@ -806,15 +806,16 @@ export class DataMessenger extends React.Component {
           shouldRender={this.shouldRenderPage('data-explorer')}
           tooltipID={this.TOOLTIP_ID}
           scope={this.props.scope}
-          executeQuery={(queryRequestParams) => {
+          executeQuery={(query) => {
             if (isMobile) {
               this.props.setMobileActivePage('data-messenger')
             }
             this.setState({ activePage: 'data-messenger' })
             clearTimeout(this.executeQueryTimeout)
+
             this.executeQueryTimeout = setTimeout(() => {
               this.dataMessengerContentRef?.animateInputTextAndSubmit({
-                ...queryRequestParams,
+                query,
                 source: ['data_explorer'],
               })
             }, 500)

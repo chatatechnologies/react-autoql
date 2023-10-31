@@ -203,7 +203,9 @@ export default class QuerySuggestionList extends React.Component {
             return (
               <div
                 className='query-tip-item animated-item'
-                onClick={() => this.props.executeQuery(query)}
+                onClick={() => {
+                  this.props.executeQuery(query)
+                }}
                 key={`query-tip-${i}`}
               >
                 <div className='query-suggestion-text'>

@@ -322,76 +322,6 @@ export default class DataExplorer extends React.Component {
     }
   }
 
-  renderColumnQuerySuggestions = (column) => {
-    const subject = this.state.selectedSubject?.displayName || ''
-    if (!subject) {
-      return null
-    }
-
-    const lowerCaseSubject = subject.toLowerCase()
-    const titleCaseSubject = lowerCaseSubject[0].toUpperCase() + lowerCaseSubject.substring(1)
-    const lowerCaseColumn = column?.displayName?.toLowerCase()
-    const suggestions = []
-
-    if (column.type === 'STRING') {
-      suggestions.push(`Show ${lowerCaseSubject} by ${lowerCaseColumn}`)
-      suggestions.push(`List all ${lowerCaseColumn}`)
-    }
-
-    if (column.type === 'DATE') {
-      suggestions.push(`${titleCaseSubject} by month this year`)
-      suggestions.push(`Show ${lowerCaseSubject} in the last 2 weeks`)
-    }
-
-    if (column.type === 'DATE_STRING') {
-      suggestions.push(`Show ${lowerCaseSubject} by ${lowerCaseColumn}`)
-    }
-
-    if (column.type === 'DOLLAR_AMT') {
-      suggestions.push(`Total ${lowerCaseColumn} ${lowerCaseSubject}`)
-      suggestions.push(`Highest ${lowerCaseColumn} ${lowerCaseSubject}`)
-    }
-
-    if (column.type === 'QUANTITY') {
-      suggestions.push(`Average ${lowerCaseColumn} ${lowerCaseSubject}`)
-      suggestions.push(`Lowest ${lowerCaseColumn} ${lowerCaseSubject}`)
-    }
-
-    return (
-      <>
-        {suggestions.map((query, i) => {
-          return (
-            <div key={i} onClick={() => this.props.executeQuery(query)} className='data-explorer-tooltip-query'>
-              <Icon type='react-autoql-bubbles-outlined' /> {query}
-            </div>
-          )
-        })}
-      </>
-    )
-  }
-
-  renderHeaderTooltipContent = (dataTip = '') => {
-    const column = JSON.parse(dataTip)
-    if (!column) {
-      return null
-    }
-
-    const formattedType = this.formatColumnType(column?.type)
-
-    return (
-      <div>
-        <div className='data-explorer-tooltip-title'>{column?.displayName}</div>
-        {!!formattedType && <div className='data-explorer-tooltip-section'>{formattedType}</div>}
-        {/* Disable this until we have a better way to get query suggestions for columns
-        <div className="data-explorer-tooltip-section">
-          <strong>Query suggestions:</strong>
-          <br />
-          {this.renderColumnQuerySuggestions(column)}
-        </div> */}
-      </div>
-    )
-  }
-
   render = () => {
     let display
     if (!this.props.shouldRender) {
@@ -416,18 +346,6 @@ export default class DataExplorer extends React.Component {
             tooltipID={this.props.tooltipID}
           />
           {this.renderDataExplorerContent()}
-          {!this.props.tooltipID && (
-            <Tooltip
-              className='data-preview-tooltip'
-              id='data-preview-tooltip'
-              place='right'
-              delayHide={200}
-              delayUpdate={200}
-              effect='solid'
-              getContent={this.renderHeaderTooltipContent}
-              clickable
-            />
-          )}
         </ErrorBoundary>
       </div>
     )
