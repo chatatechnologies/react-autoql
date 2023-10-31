@@ -486,35 +486,6 @@ export default class DataExplorer extends React.Component {
     )
   }
 
-  renderHeaderTooltipContent = ({ content }) => {
-    let column
-    try {
-      column = JSON.parse(content)
-    } catch (error) {
-      return null
-    }
-
-    if (!column) {
-      return null
-    }
-
-    const name = column.display_name
-    const type = COLUMN_TYPES[column.type]?.description
-    const icon = COLUMN_TYPES[column.type]?.icon
-
-    return (
-      <div>
-        <div className='data-explorer-tooltip-title'>{name}</div>
-        {!!type && (
-          <div className='data-explorer-tooltip-section'>
-            {!!icon && <Icon type={icon} />}
-            {type}
-          </div>
-        )}
-      </div>
-    )
-  }
-
   renderLoadingDots = () => {
     return (
       <div className='data-explorer-section-loading-container'>
@@ -597,16 +568,6 @@ export default class DataExplorer extends React.Component {
           />
           {this.renderDataExplorerContent()}
         </ErrorBoundary>
-        <Tooltip
-          className='data-preview-tooltip'
-          id={`data-preview-tooltip-${this.ID}`}
-          render={this.renderHeaderTooltipContent}
-          delayShow={500}
-          effect='solid'
-          place='top'
-          clickable
-          border
-        />
       </div>
     )
   }

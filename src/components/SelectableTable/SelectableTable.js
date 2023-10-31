@@ -4,8 +4,10 @@ import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 
-import { formatElement, getDataFormatting, dataFormattingDefault } from 'autoql-fe-utils'
+import { formatElement, getDataFormatting, dataFormattingDefault, COLUMN_TYPES } from 'autoql-fe-utils'
 
+import { Icon } from '../Icon'
+import { Tooltip } from '../Tooltip'
 import { Checkbox } from '../Checkbox'
 import { CustomScrollbars } from '../CustomScrollbars'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -30,6 +32,7 @@ export default class SelectableTable extends React.Component {
     disabledColumns: PropTypes.arrayOf(PropTypes.number),
     radio: PropTypes.bool,
     showEndOfPreviewMessage: PropTypes.bool,
+    showTooltips: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -41,6 +44,7 @@ export default class SelectableTable extends React.Component {
     disabledColumns: [],
     radio: false,
     showEndOfPreviewMessage: true,
+    showTooltips: true,
   }
 
   componentDidMount = () => {
@@ -53,8 +57,8 @@ export default class SelectableTable extends React.Component {
     return (
       <div
         className='selectable-table-col-header'
-        data-tooltip-id={this.props.tooltipID}
-        data-tooltip-content={JSON.stringify(column)}
+        data-tooltip-id={`selectable-table-column-header-tooltip-${this.ID}`}
+        data-tooltip-content={this.props.showTooltips ? JSON.stringify(column) : null}
       >
         <span>{column?.display_name}</span>
         <Checkbox
@@ -138,6 +142,35 @@ export default class SelectableTable extends React.Component {
     )
   }
 
+  renderHeaderTooltipContent = ({ content }) => {
+    let column
+    try {
+      column = JSON.parse(content)
+    } catch (error) {
+      return null
+    }
+
+    if (!column) {
+      return null
+    }
+
+    const name = column.display_name
+    const type = COLUMN_TYPES[column.type]?.description
+    const icon = COLUMN_TYPES[column.type]?.icon
+
+    return (
+      <div>
+        <div className='selectable-table-tooltip-title'>{name}</div>
+        {!!type && (
+          <div className='selectable-table-tooltip-section'>
+            {!!icon && <Icon type={icon} />}
+            {type}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   render = () => {
     if (!this.props.shouldRender) {
       return null
@@ -151,7 +184,7 @@ export default class SelectableTable extends React.Component {
       <ErrorBoundary>
         <div ref={(r) => (this.tableRef = r)} className='react-autoql-selectable-table'>
           <div className='react-autoql-selectable-table-wrapper'>
-            <CustomScrollbars autoHide={true} ref={(r) => (this.scrollbars = r)} >
+            <CustomScrollbars autoHide={true} ref={(r) => (this.scrollbars = r)}>
               <table>
                 <thead>
                   <tr>
@@ -214,6 +247,16 @@ export default class SelectableTable extends React.Component {
           </div>
           {!!this.props.caption && this.renderTableCaption()}
         </div>
+        <Tooltip
+          className='selectable-table-column-header-tooltip'
+          id={`selectable-table-column-header-tooltip-${this.ID}`}
+          render={this.renderHeaderTooltipContent}
+          delayShow={500}
+          effect='solid'
+          place='top'
+          clickable
+          border
+        />
       </ErrorBoundary>
     )
   }

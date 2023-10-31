@@ -220,3 +220,39 @@
     }
   }
 }
+
+.selectable-table-column-header-tooltip {
+  --border-color: var(--react-autoql-border-color);
+  --bg-color: var(--react-autoql-background-color-secondary);
+
+  opacity: 1 !important;
+  padding: 15px 25px !important;
+  font-size: 0.875rem !important;
+  background: var(--bg-color);
+  border: 2px solid var(--border-color);
+  color: var(--react-autoql-text-color);
+  box-shadow: var(--react-autoql-box-shadow-1);
+
+  &.place-bottom::after,
+  &.place-top::after,
+  &.place-left::after,
+  &.place-right::after {
+    border-right: 2px solid var(--react-autoql-border-color);
+    border-top: 2px solid var(--react-autoql-border-color);
+    background: var(--bg-color);
+  }
+
+  p {
+    margin-bottom: 0;
+  }
+
+  .selectable-table-tooltip-section {
+    &:not(:last-child) {
+      margin-bottom: 5px;
+    }
+  }
+
+  .selectable-table-tooltip-title {
+    font-weight: 600;
+  }
+}
