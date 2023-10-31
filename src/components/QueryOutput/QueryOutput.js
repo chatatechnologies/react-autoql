@@ -1054,6 +1054,8 @@ export class QueryOutput extends React.Component {
       formattedValue = `${isoDateStart},${isoDateEnd}`
       operator = 'between'
       column_type = 'TIME'
+    } else if (isColumnNumberType(column)) {
+      formattedValue = `${value}`
     }
 
     return {
