@@ -1,0 +1,86 @@
+.react-autoql-chatbar-input-container.data-explorer {
+  flex: 0;
+  padding: 10px;
+  margin: 10px;
+  margin-bottom: 0;
+
+  &.no-suggestions .react-autosuggest__suggestions-container--open .react-autosuggest__section-container:last-child ul {
+    pointer-events: none;
+    visibility: hidden;
+    background: transparent !important;
+    opacity: 0;
+  }
+
+  &.data-explorer {
+    animation: slideDown 0.5s ease;
+  }
+
+  .react-autoql-chatbar-input {
+    margin: 0;
+    width: 100%;
+    padding-left: 46px;
+    padding-right: 46px;
+  }
+
+  .data-explorer-no-suggestions {
+    padding-left: 10px;
+    font-size: 14px;
+  }
+
+  .react-autosuggest__container {
+    position: relative;
+  }
+  .react-autosuggest__suggestions-container--open {
+    position: absolute;
+    display: block;
+    margin: 0;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    width: 100%;
+    height: unset;
+    border-radius: 15px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: normal;
+    z-index: 2;
+    overflow: hidden;
+    margin-top: 3px;
+    border: 1px solid var(--react-autoql-border-color);
+    box-shadow: 0px 0px 5px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
+    background-color: var(--react-autoql-background-color-secondary);
+    color: var(--react-autoql-text-color-primary);
+    box-sizing: content-box;
+  }
+  .react-autosuggest__suggestions-list {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+  }
+  .react-autosuggest__input--focused {
+    outline: none;
+  }
+  .react-autosuggest__suggestion {
+    cursor: pointer;
+    padding: 2px;
+    padding-left: 18px;
+    letter-spacing: 0.05em;
+    line-height: 22.5px;
+
+    & > span {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      .react-autoql-icon {
+        margin-right: 5px;
+      }
+    }
+  }
+  .react-autosuggest__suggestion--highlighted {
+    background-color: rgba(0, 0, 0, 0.1) !important;
+  }
+  .react-autosuggest__section-title {
+    padding: 5px 0 0 10px;
+    font-size: 12px;
+    color: var(--react-autoql-text-color-placeholder);
+  }
+}
