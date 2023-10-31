@@ -9,7 +9,7 @@ import { mergeSources, autoQLConfigDefault, dataFormattingDefault, getAutoQLConf
 // Components
 import { Icon } from '../Icon'
 import { ExploreQueries } from '../ExploreQueries'
-import { DataExplorer } from '../DataExplorer'
+import { DataExplorer } from '../DataExplorerOld'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
 import { FilterLockPopover } from '../FilterLockPopover'

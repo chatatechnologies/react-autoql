@@ -30,7 +30,8 @@ import { QueryValidationMessage } from '../QueryValidationMessage'
 
 import { authenticationType, dataFormattingType } from '../../props/types'
 
-import './DataExplorer.scss'
+// TODO: add back for Data Explorer V2
+// import './DataExplorer.scss'
 
 export default class DataExplorer extends React.Component {
   constructor(props) {
