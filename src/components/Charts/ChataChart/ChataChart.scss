@@ -100,14 +100,15 @@
     }
   }
 
-  &.drilldowns-enabled {
-    .bar,
-    .column,
-    .stacked-bar,
-    .stacked-column,
-    .slice {
-      cursor: pointer;
-    }
+  .bar,
+  .column,
+  .stacked-bar,
+  .stacked-column,
+  .slice,
+  .square,
+  .line-dot-outer-circle,
+  .circle {
+    cursor: pointer;
   }
 
   /* These are not inline styles since they do not apply to saved PNG charts */

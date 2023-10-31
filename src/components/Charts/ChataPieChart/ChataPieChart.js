@@ -3,17 +3,16 @@ import { arc } from 'd3-shape'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import { select } from 'd3-selection'
-import { scaleOrdinal } from 'd3-scale'
 import _cloneDeep from 'lodash.clonedeep'
 
 import {
   legendColor,
   getPieChartData,
   deepEqual,
-  formatElement,
   removeFromDOM,
-  getChartColorVars,
   getTooltipContent,
+  getLegendLabels,
+  DisplayTypes,
 } from 'autoql-fe-utils'
 
 import StringAxisSelector from '../Axes/StringAxisSelector'
@@ -21,8 +20,6 @@ import StringAxisSelector from '../Axes/StringAxisSelector'
 import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers'
 
 import 'd3-transition'
-
-const MAX_SLICES = 10
 
 export default class ChataPieChart extends React.Component {
   constructor(props) {
@@ -37,43 +34,26 @@ export default class ChataPieChart extends React.Component {
     this.AXIS_TITLE_BORDER_PADDING_TOP = 3
     this.SECTION_PADDING = 30
 
-    this.sortedData = props.data
-      .concat() // this copies the array so the original isn't mutated
-      .sort((aRow, bRow) => {
-        const a = aRow[props.numberColumnIndex] || 0
-        const b = bRow[props.numberColumnIndex] || 0
-        return parseFloat(b) - parseFloat(a)
-      })
+    const {
+      data,
+      columns,
+      colorScale,
+      numberColumnIndex,
+      numberColumnIndices,
+      numberColumnIndices2,
+      stringColumnIndex,
+      dataFormatting,
+    } = props
 
-    if (this.sortedData?.length > MAX_SLICES) {
-      this.sortedData = this.aggregateOtherCategory(props, this.sortedData)
-    }
-
-    const { chartColors } = getChartColorVars()
-    this.colorScale = scaleOrdinal()
-      .domain(
-        this.sortedData.map((d) => {
-          return d[props.stringColumnIndex]
-        }),
-      )
-      .range(chartColors)
-
-    const legendLabels = this.sortedData.map((d, i) => {
-      const legendString = `${formatElement({
-        element: d[props.stringColumnIndex] || 'Untitled Category',
-        column: props.columns?.[props.stringColumnIndex],
-      })}: ${formatElement({
-        element: d[props.numberColumnIndex] || 0,
-        column: props.columns?.[props.numberColumnIndex],
-        config: props.columns?.[props.dataFormatting],
-      })}`
-      return {
-        label: legendString.trim(),
-        hidden: false,
-        dataIndex: i,
-        isOther: i >= MAX_SLICES,
-      }
-    })
+    const legendLabels =
+      getLegendLabels({
+        columns,
+        colorScales: { colorScale },
+        columnIndexConfig: { stringColumnIndex, numberColumnIndex, numberColumnIndices, numberColumnIndices2 },
+        dataFormatting,
+        data,
+        type: DisplayTypes.PIE,
+      })?.labels ?? []
 
     this.state = {
       activeKey: this.props.activeChartElementKey,
@@ -121,35 +101,15 @@ export default class ChataPieChart extends React.Component {
     removeFromDOM(this.pieChartContainer)
   }
 
-  aggregateOtherCategory = (props, sortedData) => {
-    const clonedSortedData = _cloneDeep(sortedData)
-    const sortedDataWithOther = []
-    clonedSortedData.forEach((row, i) => {
-      if (i === MAX_SLICES) {
-        sortedDataWithOther[MAX_SLICES] = row
-        sortedDataWithOther[MAX_SLICES][props.stringColumnIndex] = 'Other'
-      } else if (i > MAX_SLICES && sortedDataWithOther[MAX_SLICES]?.[props.numberColumnIndex]) {
-        sortedDataWithOther[MAX_SLICES][props.numberColumnIndex] += sortedData[i]?.[props.numberColumnIndex] ?? 0
-      } else {
-        sortedDataWithOther[i] = row
-      }
-    })
-
-    return sortedDataWithOther
-  }
-
   renderPie = () => {
     removeFromDOM(this.pieChartContainer)
 
     this.setPieRadius()
 
-    const { chartColors } = getChartColorVars()
-
     const { pieChartFn, legendScale } = getPieChartData({
-      data: this.sortedData,
+      data: this.props.data,
       numberColumnIndex: this.props.numberColumnIndex,
       legendLabels: this.state.legendLabels,
-      chartColors,
     })
 
     this.pieChartFn = pieChartFn
@@ -218,9 +178,7 @@ export default class ChataPieChart extends React.Component {
       .append('path')
       .attr('class', 'slice')
       .attr('d', arc().innerRadius(self.innerRadius).outerRadius(self.outerRadius))
-      .attr('fill', (d) => {
-        return self.colorScale(d.data.value[self.props.stringColumnIndex])
-      })
+      .attr('fill', (d) => d?.data?.value?.legendLabel?.color)
       .attr('data-tooltip-id', this.props.chartTooltipID)
       .attr('data-tooltip-html', function (d) {
         return getTooltipContent({
