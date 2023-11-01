@@ -126,9 +126,7 @@ export default class MultiSelect extends React.Component {
   renderPopoverContent = () => {
     return (
       <div className='react-autoql-select-popup-container' style={{ width: this.props.style.width }}>
-        {!this.props.tooltipID && (
-          <Tooltip id={`select-tooltip-${this.ID}`} className='react-autoql-tooltip' delayShow={500} />
-        )}
+        {!this.props.tooltipID && <Tooltip tooltipId={`select-tooltip-${this.ID}`} delayShow={500} />}
         {this.props.listTitle ? (
           <div className='react-autoql-multi-select-list-title'>{this.props.listTitle}</div>
         ) : null}

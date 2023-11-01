@@ -35,7 +35,7 @@ class DashboardWithoutTheme extends React.Component {
     this.COMPONENT_KEY = uuid()
     this.SOURCE = mergeSources(props.source, 'dashboards')
     this.TOOLTIP_ID = `react-autoql-dashboard-toolbar-btn-tooltip-${this.COMPONENT_KEY}`
-    this.CHART_TOOLTIP_ID = `react-autoql-chart-tooltip-${this.COMPONENT_KEY}`
+    this.CHART_TOOLTIP_ID = `react-autoql-dashboard-chart-tooltip-${this.COMPONENT_KEY}`
     this.tileRefs = {}
     this.debounceTime = 50
     this.onChangeTiles = null
@@ -714,8 +714,8 @@ class DashboardWithoutTheme extends React.Component {
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
             source={this.SOURCE}
           />
-          <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} delayShow={500} />
-          <Tooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} place='top' />
+          <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={500} />
+          <Tooltip className='react-autoql-chart-tooltip' tooltipId={this.CHART_TOOLTIP_ID} place='top' />
         </>
       </ErrorBoundary>
     )

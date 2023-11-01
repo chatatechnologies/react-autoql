@@ -671,7 +671,7 @@ class DataAlertModal extends React.Component {
           onClosed={this.props.onClosed}
         >
           {/* We must render a new <Tooltip/> inside of modals */}
-          <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} delayShow={500} />
+          <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={500} />
           <div
             key={`data-alert-modal-content-${this.COMPONENT_KEY}`}
             ref={(r) => (this.contentRef = r)}

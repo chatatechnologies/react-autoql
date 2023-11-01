@@ -207,7 +207,7 @@ export default class ReverseTranslation extends React.Component {
             {!this.props.tooltipID && (
               <Tooltip
                 className='react-autoql-reverse-translation-tooltip'
-                id={`react-autoql-reverse-translation-tooltip-${this.COMPONENT_KEY}`}
+                tooltipId={`react-autoql-reverse-translation-tooltip-${this.COMPONENT_KEY}`}
                 place='right'
               />
             )}

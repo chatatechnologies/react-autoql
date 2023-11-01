@@ -294,9 +294,7 @@ export class ExploreQueries extends React.Component {
           </div>
           <div className='query-tips-result-container'>{this.renderQueryList()}</div>
         </div>
-        {!this.props.tooltipID && (
-          <Tooltip className='react-autoql-tooltip' id='explore-queries-tooltips' delayShow={800} />
-        )}
+        {!this.props.tooltipID && <Tooltip tooltipId='explore-queries-tooltips' delayShow={800} />}
       </ErrorBoundary>
     )
   }

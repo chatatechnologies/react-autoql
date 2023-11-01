@@ -269,9 +269,7 @@ export default class ExpressionBuilder extends React.Component {
     return (
       <ErrorBoundary>
         {this.props.readOnly ? this.renderReadOnlyRules() : this.renderRules()}
-        {!this.props.tooltipID && (
-          <Tooltip className='react-autoql-tooltip' id='notification-expression-tooltip' delayShow={500} />
-        )}
+        {!this.props.tooltipID && <Tooltip tooltipId='notification-expression-tooltip' delayShow={500} />}
       </ErrorBoundary>
     )
   }

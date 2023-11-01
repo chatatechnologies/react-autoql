@@ -13,7 +13,6 @@ import {
   fetchVLAutocomplete,
   setFilters,
   unsetFilterFromAPI,
-  handleTooltipBoundaryCollision,
   REQUEST_CANCELLED_ERROR,
   authenticationDefault,
   getAuthentication,
@@ -771,14 +770,7 @@ export default class FilterLockPopover extends React.Component {
           limit={1}
           // theme={getTheme()}
         />
-        {!this.props.tooltipID && (
-          <Tooltip
-            // afterShow={(e) => handleTooltipBoundaryCollision(e, this)}
-            className='react-autoql-tooltip'
-            id={this.TOOLTIP_ID}
-            place='top'
-          />
-        )}
+        {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} place='top' />}
         <div className='filter-lock-menu-content' onClick={(e) => e.stopPropagation()}>
           {this.renderHeader()}
           {this.renderVLInput()}

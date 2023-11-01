@@ -80,9 +80,7 @@ class Dictaphone extends React.Component {
         >
           <Icon type='microphone' />
         </button>
-        {!this.props.tooltipID && (
-          <Tooltip className='react-autoql-tooltip' id='react-autoql-speech-to-text-tooltip' delayShow={800} />
-        )}
+        {!this.props.tooltipID && <Tooltip tooltipId='react-autoql-speech-to-text-tooltip' delayShow={800} />}
       </ErrorBoundary>
     )
   }
