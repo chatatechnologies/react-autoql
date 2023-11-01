@@ -251,7 +251,7 @@ export default class SelectableTable extends React.Component {
         </div>
         <Tooltip
           className='selectable-table-column-header-tooltip'
-          id={`selectable-table-column-header-tooltip-${this.ID}`}
+          tooltipId={`selectable-table-column-header-tooltip-${this.ID}`}
           render={this.renderHeaderTooltipContent}
           delayShow={500}
           effect='solid'

@@ -83,7 +83,7 @@ export class QueryOutput extends React.Component {
     this.COMPONENT_KEY = uuid()
     this.QUERY_VALIDATION_KEY = uuid()
     this.TOOLTIP_ID = `react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`
-    this.CHART_TOOLTIP_ID = `react-autoql-chart-tooltip-${this.COMPONENT_KEY}`
+    this.CHART_TOOLTIP_ID = `react-autoql-query-output-chart-tooltip-${this.COMPONENT_KEY}`
     this.ALLOW_NUMERIC_STRING_COLUMNS = true
 
     this.queryResponse = _cloneDeep(props.queryResponse)
@@ -1362,6 +1362,7 @@ export class QueryOutput extends React.Component {
       if (this.tableConfig.legendColumnIndex === index) {
         this.tableConfig.legendColumnIndex = undefined
       }
+
       this.tableConfig.stringColumnIndex = index
     }
 
@@ -2750,8 +2751,8 @@ export class QueryOutput extends React.Component {
           {this.renderResponse()}
           {this.props.reverseTranslationPlacement !== 'top' && this.renderFooter()}
         </div>
-        {!this.props.tooltipID && <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} />}
-        {!this.props.chartTooltipID && <Tooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} />}
+        {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} />}
+        {!this.props.chartTooltipID && <Tooltip tooltipId={this.CHART_TOOLTIP_ID} />}
       </ErrorBoundary>
     )
   }

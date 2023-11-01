@@ -294,7 +294,7 @@ export default class Axis extends Component {
       .style('fill-opacity', '1')
       .style('font-family', 'inherit')
       .attr('data-tooltip-id', this.props.chartTooltipID)
-      .attr('data-effect', 'float')
+      .attr('data-tooltip-effect', 'float')
       .attr('data-tooltip-content', function (d) {
         if (select(this).text()?.slice(-3) === '...') {
           const { fullWidthLabel } = formatChartLabel({ d, scale, maxLabelWidth })
@@ -302,7 +302,7 @@ export default class Axis extends Component {
             return fullWidthLabel
           }
         }
-        return null
+        return ''
       })
   }
 

@@ -137,9 +137,7 @@ export default class Select extends React.Component {
         className='react-autoql-select-popup-container'
         style={{ width: this.props.style.width }}
       >
-        {!this.props.tooltipID && (
-          <Tooltip id={`select-tooltip-${this.ID}`} className='react-autoql-tooltip' delayShow={500} />
-        )}
+        {!this.props.tooltipID && <Tooltip tooltipId={`select-tooltip-${this.ID}`} delayShow={500} />}
         {this.props.options?.length ? (
           <CustomScrollbars ref={(r) => (this.scrollbars = r)} autoHide={false} contentHidden={!this.state.isOpen}>
             <Menu options={this.props.options}>

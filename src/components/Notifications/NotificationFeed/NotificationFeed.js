@@ -518,9 +518,7 @@ class NotificationFeed extends React.Component {
           }`}
           data-test='notification-list'
         >
-          {this.props.tooltipID !== this.TOOLTIP_ID && (
-            <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} delayShow={500} />
-          )}
+          {this.props.tooltipID !== this.TOOLTIP_ID && <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={500} />}
           {this.state.notificationList?.length ? (
             <>
               {this.renderTopOptions()}

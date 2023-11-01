@@ -184,7 +184,7 @@ export default class SpeechToTextBtn extends React.Component {
             <Icon type='microphone' />
           </button>
         </Popover>
-        <Tooltip className='react-autoql-tooltip' id='react-autoql-speech-to-text-tooltip' delayShow={800} />
+        <Tooltip tooltipId='react-autoql-speech-to-text-tooltip' delayShow={800} />
       </ErrorBoundary>
     )
   }

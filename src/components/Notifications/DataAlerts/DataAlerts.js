@@ -235,7 +235,7 @@ class DataAlerts extends React.Component {
             {this.renderNotificationlist('custom', customAlertsList)}
             {this.renderNotificationEditModal()}
             {this.renderDeleteDialog()}
-            <Tooltip className='react-autoql-tooltip' id='react-autoql-notification-settings-tooltip' delayShow={500} />
+            <Tooltip tooltipId='react-autoql-notification-settings-tooltip' delayShow={500} />
           </div>
         </CustomScrollbars>
       </ErrorBoundary>

@@ -135,11 +135,7 @@ class VizToolbar extends React.Component {
             {this.createVisButton('scatterplot', 'Scatterplot', <Icon type='scatterplot' />)}
           </div>
           {!this.props.tooltipID && (
-            <Tooltip
-              className='react-autoql-tooltip'
-              id={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
-              delayShow={800}
-            />
+            <Tooltip tooltipId={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`} delayShow={800} />
           )}
         </ErrorBoundary>
       )

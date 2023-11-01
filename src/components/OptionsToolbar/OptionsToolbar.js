@@ -707,7 +707,7 @@ export class OptionsToolbar extends React.Component {
         {shouldShowButton.showReportProblemButton && this.renderReportProblemModal()}
         {shouldShowButton.showCreateNotificationIcon && this.renderDataAlertModal()}
         {shouldShowButton.showSQLButton && this.renderSQLModal()}
-        {!this.props.tooltipID && <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} delayShow={800} />}
+        {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={800} />}
       </ErrorBoundary>
     )
   }
