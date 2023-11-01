@@ -463,6 +463,9 @@ export default class ChataPieChart extends React.Component {
           popoverParentElement={this.props.popoverParentElement}
           stringColumnIndices={this.props.stringColumnIndices}
           stringColumnIndex={this.props.stringColumnIndex}
+          numberColumnIndex={this.props.numberColumnIndex}
+          numberColumnIndices={this.props.numberColumnIndices}
+          numberColumnIndices2={this.props.numberColumnIndices2}
           isAggregation={this.props.isAggregation}
           tooltipID={this.props.tooltipID}
           columns={this.props.columns}
