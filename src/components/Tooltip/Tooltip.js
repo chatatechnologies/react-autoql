@@ -12,6 +12,9 @@ export function Tooltip(props = {}) {
       place='top'
       effect='solid'
       {...props}
+      // id={props.tooltipId ?? TOOLTIP_ID}
+      // setIsOpen={setIsOpen}
+      className={`react-autoql-tooltip${props.className ? ` ${props.className}` : ''}`}
       border={props.border ? '1px solid var(--react-autoql-border-color)' : undefined}
     />
   )

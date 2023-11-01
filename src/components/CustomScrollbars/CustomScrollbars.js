@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import PerfectScrollbar from 'react-perfect-scrollbar'
 
+import 'react-perfect-scrollbar/dist/css/styles.css'
 import './CustomScrollbars.scss'
 
 export default class CustomScrollbars extends React.Component {

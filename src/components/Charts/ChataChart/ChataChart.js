@@ -1,7 +1,6 @@
 import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
-import { scaleOrdinal } from 'd3-scale'
 import { isMobile } from 'react-device-detect'
 
 import {
@@ -11,19 +10,16 @@ import {
   getBBoxFromRef,
   sortDataByDate,
   deepEqual,
-  rotateArray,
   onlyUnique,
   DATE_ONLY_CHART_TYPES,
   DOUBLE_AXIS_CHART_TYPES,
   CHARTS_WITHOUT_AGGREGATED_DATA,
   getDateColumnIndex,
   isColumnDateType,
-  getChartColorVars,
   getThemeValue,
   dataStructureChanged,
   getLegendLocation,
   mergeBoundingClientRects,
-  isColumnNumberType,
   DisplayTypes,
   isChartType,
   getColorScales,
@@ -34,6 +30,7 @@ import { Spinner } from '../../Spinner'
 import { ChataPieChart } from '../ChataPieChart'
 import { ChataBarChart } from '../ChataBarChart'
 import { ChataLineChart } from '../ChataLineChart'
+import { CSS_PREFIX } from '../../../js/Constants'
 import { ChataHistogram } from '../ChataHistogram'
 import { ChataColumnChart } from '../ChataColumnChart'
 import { ChataBubbleChart } from '../ChataBubbleChart'
@@ -48,7 +45,6 @@ import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPropHelpers.js'
 
 import './ChataChart.scss'
-import { CSS_PREFIX } from '../../../js/Constants'
 
 export default class ChataChart extends React.Component {
   constructor(props) {

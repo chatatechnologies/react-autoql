@@ -221,7 +221,7 @@
   }
 }
 
-.selectable-table-column-header-tooltip {
+.react-tooltip.selectable-table-column-header-tooltip {
   --border-color: var(--react-autoql-border-color);
   --bg-color: var(--react-autoql-background-color-secondary);
 
@@ -247,6 +247,10 @@
   }
 
   .selectable-table-tooltip-section {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+
     &:not(:last-child) {
       margin-bottom: 5px;
     }

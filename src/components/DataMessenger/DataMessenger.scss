@@ -397,31 +397,6 @@
   }
 }
 
-/* Tooltips */
-.react-autoql-tooltip {
-  font-family: var(--react-autoql-font-family), sans-serif;
-  letter-spacing: 0.04em;
-  line-height: 1.5em;
-  padding: 7px 15px;
-  transition: none;
-  text-align: left;
-  opacity: 1 !important;
-  z-index: 999999 !important; /* necessary to show up on top of rc drawer */
-  max-width: 300px;
-  word-break: break-word;
-}
-.interpretation-tooltip {
-  font-family: var(--react-autoql-font-family), sans-serif;
-  font-size: 12px;
-  text-align: left;
-  letter-spacing: 0.04em;
-  padding: 7px 15px;
-  max-width: 400px;
-  opacity: 1 !important;
-  transition: none;
-  z-index: 99999 !important; /* necessary to show up on top of rc drawer */
-}
-
 .clear-messages-confirm-popover {
   color: var(--react-autoql-text-color-primary);
   background: var(--react-autoql-background-color-secondary);

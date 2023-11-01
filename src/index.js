@@ -1,5 +1,4 @@
 import './index.scss'
-import 'react-perfect-scrollbar/dist/css/styles.css'
 
 export { getSupportedDisplayTypes, getDefaultDisplayType, isDisplayTypeValid, configureTheme } from 'autoql-fe-utils'
 

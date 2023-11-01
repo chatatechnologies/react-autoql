@@ -58,7 +58,7 @@ export default class SelectableTable extends React.Component {
       <div
         className='selectable-table-col-header'
         data-tooltip-id={`selectable-table-column-header-tooltip-${this.ID}`}
-        data-tooltip-html={this.props.showTooltips ? JSON.stringify(column) : null}
+        data-tooltip-content={this.props.showTooltips ? JSON.stringify(column) : null}
       >
         <span>{column?.display_name}</span>
         <Checkbox
@@ -160,11 +160,13 @@ export default class SelectableTable extends React.Component {
 
     return (
       <div>
-        <div className='selectable-table-tooltip-title'>{name}</div>
+        <div className='selectable-table-tooltip-title'>
+          <span>{name}</span>
+        </div>
         {!!type && (
           <div className='selectable-table-tooltip-section'>
             {!!icon && <Icon type={icon} />}
-            {type}
+            <span>{type}</span>
           </div>
         )}
       </div>
