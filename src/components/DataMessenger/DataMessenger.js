@@ -9,7 +9,7 @@ import { mergeSources, autoQLConfigDefault, dataFormattingDefault, getAutoQLConf
 // Components
 import { Icon } from '../Icon'
 import { ExploreQueries } from '../ExploreQueries'
-import { DataExplorer } from '../DataExplorerOld'
+import { DataExplorer } from '../DataExplorer'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
 import { FilterLockPopover } from '../FilterLockPopover'
@@ -806,7 +806,7 @@ export class DataMessenger extends React.Component {
           shouldRender={this.shouldRenderPage('data-explorer')}
           tooltipID={this.TOOLTIP_ID}
           scope={this.props.scope}
-          executeQuery={(query) => {
+          executeQuery={(queryRequestParams) => {
             if (isMobile) {
               this.props.setMobileActivePage('data-messenger')
             }
@@ -815,7 +815,7 @@ export class DataMessenger extends React.Component {
 
             this.executeQueryTimeout = setTimeout(() => {
               this.dataMessengerContentRef?.animateInputTextAndSubmit({
-                query,
+                ...queryRequestParams,
                 source: ['data_explorer'],
               })
             }, 500)

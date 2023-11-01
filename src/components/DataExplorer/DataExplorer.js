@@ -6,7 +6,6 @@ import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 
 import {
-  COLUMN_TYPES,
   DataExplorerTypes,
   getAuthentication,
   fetchSubjectListV2,
@@ -16,7 +15,6 @@ import {
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
-import { Tooltip } from '../Tooltip'
 import DataPreview from './DataPreview'
 import { SubjectName } from './SubjectName'
 import Cascader from '../Cascader/Cascader'
@@ -30,8 +28,7 @@ import { QueryValidationMessage } from '../QueryValidationMessage'
 
 import { authenticationType, dataFormattingType } from '../../props/types'
 
-// TODO: add back for Data Explorer V2
-// import './DataExplorer.scss'
+import './DataExplorer.scss'
 
 export default class DataExplorer extends React.Component {
   constructor(props) {
