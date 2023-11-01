@@ -654,7 +654,7 @@ export default class FilterLockPopover extends React.Component {
             className='filter-lock-category-title'
             data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
             data-tooltip-delay-show={800}
-            data-tooltip-content={category}
+            data-tooltip-html={category}
           >
             {category}
           </h4>
@@ -773,7 +773,7 @@ export default class FilterLockPopover extends React.Component {
         />
         {!this.props.tooltipID && (
           <Tooltip
-            afterShow={(e) => handleTooltipBoundaryCollision(e, this)}
+            // afterShow={(e) => handleTooltipBoundaryCollision(e, this)}
             className='react-autoql-tooltip'
             id={this.TOOLTIP_ID}
             place='top'

@@ -90,7 +90,7 @@ export default class Points extends React.Component {
           cy={yScale(valueY)}
           r={isActive ? 6 : 3}
           onClick={() => this.onPointClick(row, numberColumnIndex, key)}
-          data-tooltip-content={tooltip}
+          data-tooltip-html={tooltip}
           data-tooltip-id={this.props.chartTooltipID}
           style={{
             color: color1,
