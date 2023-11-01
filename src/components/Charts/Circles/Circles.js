@@ -108,7 +108,7 @@ export default class Circles extends Component {
               cy={scaleY + yBandwidth / 2}
               r={value < 0 ? 0 : this.radiusScale(value) / 2}
               onClick={() => this.onCircleClick(row, colIndex, index)}
-              data-tooltip-content={tooltip}
+              data-tooltip-html={tooltip}
               data-tooltip-id={this.props.chartTooltipID}
               style={{
                 stroke: 'transparent',

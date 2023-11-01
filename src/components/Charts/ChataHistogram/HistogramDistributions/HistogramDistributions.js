@@ -81,7 +81,7 @@ export default class HistogramDistributions extends React.Component {
           d={d}
           key={`${key}-hover`}
           className='path-hover-line'
-          data-tooltip-content={tooltip}
+          data-tooltip-html={tooltip}
           data-tooltip-id={this.props.chartTooltipID}
           data-effect='float'
           stroke='transparent'

@@ -88,7 +88,7 @@ export default class Chip extends React.Component {
           style={{ ...this.props.style }}
           onClick={this.props.onClick}
           data-tooltip-id={this.props.tooltipID}
-          data-tooltip-content={this.props.tooltip}
+          data-tooltip-html={this.props.tooltip}
         >
           <div className='react-autoql-chip-background' />
           <div className='react-autoql-chip-content'>

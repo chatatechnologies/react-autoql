@@ -183,7 +183,7 @@ export default class DataAlertListItem extends React.Component {
         <div
           className={`data-alert-state data-alert-error ${status}`}
           data-tooltip-id={this.props.tooltipID}
-          data-tooltip-content={
+          data-tooltip-html={
             isCustom
               ? 'There was a problem with this Data Alert. Try restarting the Alert by clicking the <em>refresh</em> button. If the problem persists, please contact your system administrator.'
               : 'There was a problem with this Data Alert. For more information, please contact your system administrator.'
@@ -331,7 +331,7 @@ export default class DataAlertListItem extends React.Component {
             <div
               className='data-alert-section-content data-alert-section-cycle'
               data-tooltip-id={this.props.tooltipID}
-              data-tooltip-content={this.getFrequencyTooltip()}
+              data-tooltip-html={this.getFrequencyTooltip()}
             >
               {this.renderDataAlertCycle()}
             </div>
