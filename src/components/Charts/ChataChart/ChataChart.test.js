@@ -33,7 +33,7 @@ describe('renders correctly', () => {
 
   describe('pivot data', () => {
     test('stacked-column', () => {
-      const wrapper = setup({ ...pivotSampleProps, type: 'stacked-column' })
+      const wrapper = setup({ ...pivotSampleProps, type: 'stacked_column' })
       const chartComponent = findByTestAttr(wrapper, 'react-autoql-chart')
       expect(chartComponent.exists()).toBe(true)
     })
