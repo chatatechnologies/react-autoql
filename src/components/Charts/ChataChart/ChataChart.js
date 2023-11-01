@@ -566,7 +566,12 @@ export default class ChataChart extends React.Component {
   }
 
   render = () => {
-    if (!this.state.data?.length || !isChartType(this.props.type)) {
+    if (!isChartType(this.props.type)) {
+      return null
+    }
+
+    if (!this.state.data?.length) {
+      console.error('Unable to render chart - There was no data provided to the chart component.')
       return null
     }
 
