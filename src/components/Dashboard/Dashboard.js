@@ -714,8 +714,8 @@ class DashboardWithoutTheme extends React.Component {
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
             source={this.SOURCE}
           />
-          <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={500} />
-          <Tooltip className='react-autoql-chart-tooltip' tooltipId={this.CHART_TOOLTIP_ID} place='top' />
+          <Tooltip tooltipId={this.TOOLTIP_ID} />
+          <Tooltip tooltipId={this.CHART_TOOLTIP_ID} className='react-autoql-chart-tooltip' delayShow={0} />
         </>
       </ErrorBoundary>
     )
