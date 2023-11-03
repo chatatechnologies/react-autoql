@@ -186,7 +186,6 @@ export default class DrilldownModal extends React.Component {
   }
 
   render = () => {
-    return null
     let queryResponse
     if (this.props.isOpen) {
       queryResponse = this.props.activeDrilldownRef?.queryResponse
