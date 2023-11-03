@@ -1366,6 +1366,7 @@ export class QueryOutput extends React.Component {
       this.tableConfig.stringColumnIndex = index
     }
 
+    this.onTableConfigChange()
     this.forceUpdate()
   }
 
@@ -1403,6 +1404,7 @@ export class QueryOutput extends React.Component {
         this.pivotTableColumns = newColumns
       }
 
+      this.onTableConfigChange()
       this.forceUpdate()
     } else {
       if (indices) {

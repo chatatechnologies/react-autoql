@@ -485,6 +485,8 @@ export default class Icon extends React.Component {
             fontSize: `${this.props.size}px`,
             ...this.props.style, // Overwrite other styles if provided
           }}
+          data-tooltip-content={this.props.tooltip}
+          data-tooltip-id={this.props.tooltipID}
         >
           {icon}
           {this.props.showBadge && <div className='react-autoql-badge' />}
