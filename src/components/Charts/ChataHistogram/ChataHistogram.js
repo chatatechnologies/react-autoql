@@ -19,7 +19,7 @@ import { Axes } from '../Axes'
 import { Slider } from '../../Slider'
 import { HistogramColumns } from './HistogramColumns'
 import { HistogramDistributions } from './HistogramDistributions'
-
+import { v4 as uuid } from 'uuid'
 import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers.js'
 
 export default class ChataHistogram extends React.Component {
