@@ -26,6 +26,10 @@ export default class InfiniteScrollAutoQL extends React.Component {
     contentHidden: false,
   }
 
+  componentDidUpdate = () => {
+    this.scrollComponent?.current?.update()
+  }
+
   updateScrollbars = (duration) => {
     this.scrollComponent?.current?.update(duration)
   }

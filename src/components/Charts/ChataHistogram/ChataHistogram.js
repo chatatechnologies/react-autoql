@@ -26,6 +26,7 @@ export default class ChataHistogram extends React.Component {
   constructor(props) {
     super(props)
 
+    this.HISTOGRAM_SLIDER_KEY = uuid()
     this.bucketConfig = this.getDefaultBucketConfig(props, props.initialBucketSize)
 
     this.state = {
