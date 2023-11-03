@@ -24,7 +24,7 @@ export function Tooltip(props = {}) {
     <ReactTooltip
       place='top'
       effect='solid'
-      delayShow={500}
+      delayShow={800}
       globalCloseEvents={{ scroll: true }}
       {...props}
       id={props.tooltipId ?? DEFAULT_TOOLTIP_ID}
