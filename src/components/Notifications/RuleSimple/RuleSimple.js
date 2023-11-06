@@ -251,6 +251,12 @@ export default class RuleSimple extends React.Component {
     if (this.props.initialData?.length > 1 && this.state.firstQueryJoinColumnName !== null) {
       expression[0].compare_column = this.state.firstQuerySelectedNumberColumnName
     }
+    //To see if this a multiple groupby query
+    if (this.GROUPABLE_COLUMNS_AMOUNT > 1 && this.NUMBER_COLUMNS_AMOUNT === 1) {
+      expression[0].compare_column = this.props.queryResponse?.data?.data?.columns
+        .filter((obj) => obj.groupable === false)
+        .map((obj) => obj.name)[0]
+    }
 
     if (this.allowOperators()) {
       const secondTerm = {
