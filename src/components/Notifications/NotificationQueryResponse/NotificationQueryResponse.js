@@ -59,6 +59,7 @@ export default class NotificationQueryResponse extends React.Component {
                 isResizing={this.props.isResizing || !this.props.shouldRender}
                 popoverParentElement={this.props.popoverParentElement}
                 showSingleValueResponseTitle={true}
+                tooltipID={this.props.tooltipID}
               />
             )
           ) : (
