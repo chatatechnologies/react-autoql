@@ -96,10 +96,10 @@
     overflow: hidden;
     padding: 10px 20px;
     font-weight: 500;
-    color: var(--react-autoql-accent-color);
 
     .data-alert-condition-statement-operator {
       text-decoration: underline;
+	  color: var(--react-autoql-accent-color);
     }
 
     .data-alerts-container,

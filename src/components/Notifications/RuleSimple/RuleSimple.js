@@ -102,7 +102,6 @@ export default class RuleSimple extends React.Component {
     if (initialData?.length) {
       this.TERM_ID_1 = initialData[0].id
       this.TERM_ID_2 = initialData.length > 1 ? initialData[1].id : uuid()
-
       state.selectedOperator = initialData[0].condition ?? this.SUPPORTED_OPERATORS[0]
       state.inputValue = initialData[0].term_value ?? ''
       state.secondInputValue = initialData[1]?.term_value ?? ''
@@ -178,15 +177,20 @@ export default class RuleSimple extends React.Component {
     const operatorText = tense === 'past' ? operator?.conditionTextPast : operator?.conditionText
     let secondTermText = this.state.secondInputValue
     if (this.state.secondTermType === QUERY_TERM_TYPE) {
-      secondTermText = `"${secondTermText}"`
+      secondTermText = (
+        <span>
+          "<ReverseTranslation queryResponse={this.props.queryResponse} textOnly termId={this.TERM_ID_2} />"
+        </span>
+      )
     }
 
     if (queryText && operatorText && secondTermText !== undefined) {
       return (
         <span className='data-alert-condition-statement'>
           <span className='data-alert-condition-statement-query1'>"{queryText}"</span>{' '}
-          <span className='data-alert-condition-statement-operator'>{operatorText}</span>{' '}
-          <span className='data-alert-condition-statement-query2'>{secondTermText}</span>
+          <span className='data-alert-condition-statement-query2'>
+            <span className='data-alert-condition-statement-operator'>{operatorText}</span> {secondTermText}
+          </span>
         </span>
       )
     } else if (queryText) {
