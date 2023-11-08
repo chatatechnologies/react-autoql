@@ -24,8 +24,10 @@ export default class ReverseTranslation extends React.Component {
 
     this.COMPONENT_KEY = uuid()
 
-    const reverseTranslationArray = constructRTArray(props.queryResponse?.data?.data?.parsed_interpretation)
-
+    let reverseTranslationArray = constructRTArray(props.queryResponse?.data?.data?.parsed_interpretation)
+    if (props.termId && props.queryResponse?.data?.data?.parsed_interpretations) {
+      reverseTranslationArray = constructRTArray(props.queryResponse?.data?.data?.parsed_interpretations[props.termId])
+    }
     this.state = {
       reverseTranslationArray,
     }
@@ -37,6 +39,7 @@ export default class ReverseTranslation extends React.Component {
     queryResponse: PropTypes.shape({}),
     tooltipID: PropTypes.string,
     textOnly: PropTypes.bool,
+    termId: PropTypes.string,
   }
 
   static defaultProps = {
@@ -45,6 +48,7 @@ export default class ReverseTranslation extends React.Component {
     queryResponse: undefined,
     tooltipID: undefined,
     textOnly: false,
+    termId: undefined,
   }
 
   componentDidMount = () => {
@@ -155,7 +159,7 @@ export default class ReverseTranslation extends React.Component {
         return ` ${chunk.eng}`
       }
       case 'DELIM': {
-        return `${chunk.eng}`
+        return ` ${chunk.eng}`
       }
       default: {
         return ` ${chunk.eng}`
