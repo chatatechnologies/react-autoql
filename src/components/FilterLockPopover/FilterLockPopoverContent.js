@@ -712,9 +712,8 @@ export default class FilterLockPopover extends React.Component {
           />
           <Icon
             className='react-autoql-remove-filter-icon'
-            data-tooltip-content='Remove filter'
-            data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
-            data-tooltip-delay-show={500}
+            tooltip='Remove filter'
+            tooltipID={this.props.tooltipID}
             data-test='react-autoql-remove-filter-icon'
             type='trash'
             onClick={() => this.removeFilter(filter)}
