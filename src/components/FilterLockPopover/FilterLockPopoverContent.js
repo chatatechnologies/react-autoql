@@ -710,14 +710,15 @@ export default class FilterLockPopover extends React.Component {
             checked={!filter.isSession}
             onChange={() => this.handlePersistToggle(filter)}
           />
-          <div
+          <Icon
             className='react-autoql-remove-filter-icon'
             data-tooltip-content='Remove filter'
             data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
             data-tooltip-delay-show={500}
-          >
-            <Icon data-test='react-autoql-remove-filter-icon' type='trash' onClick={() => this.removeFilter(filter)} />
-          </div>
+            data-test='react-autoql-remove-filter-icon'
+            type='trash'
+            onClick={() => this.removeFilter(filter)}
+          />
         </div>
       </div>
     )
