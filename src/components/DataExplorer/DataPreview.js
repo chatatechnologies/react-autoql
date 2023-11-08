@@ -6,20 +6,19 @@ import _isEqual from 'lodash.isequal'
 
 import { fetchDataPreview, REQUEST_CANCELLED_ERROR, dataFormattingDefault } from 'autoql-fe-utils'
 
-import { LoadingDots } from '../LoadingDots'
 import { SelectableTable } from '../SelectableTable'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import TablePlaceholder from '../TablePlaceholder/TablePlaceholder'
 
 import { authenticationType, dataFormattingType } from '../../props/types'
 
 import './DataPreview.scss'
-import TablePlaceholder from '../TablePlaceholder/TablePlaceholder'
 
 export default class DataPreview extends React.Component {
   constructor(props) {
     super(props)
 
-    this.DATA_PREVIEW_ROWS = 5
+    this.DATA_PREVIEW_ROWS = 20
     this.ID = uuid()
 
     this.state = {
@@ -88,7 +87,6 @@ export default class DataPreview extends React.Component {
       source: 'data_explorer.data_preview',
       scope: 'data_explorer',
       cancelToken: this.axiosSource.token,
-      numRows: 20,
     })
       .then((response) => {
         if (this._isMounted) {
