@@ -1366,6 +1366,7 @@ export class QueryOutput extends React.Component {
       this.tableConfig.stringColumnIndex = index
     }
 
+    this.onTableConfigChange()
     this.forceUpdate()
   }
 
@@ -1403,6 +1404,7 @@ export class QueryOutput extends React.Component {
         this.pivotTableColumns = newColumns
       }
 
+      this.onTableConfigChange()
       this.forceUpdate()
     } else {
       if (indices) {
@@ -2709,13 +2711,13 @@ export class QueryOutput extends React.Component {
       getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation && this.props.showQueryInterpretation
 
     return (
-      <div className='dashboard-data-limit-warning-icon'>
-        <Icon
-          type='warning'
-          data-tooltip-content={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached. Try querying a smaller time-frame to ensure all your data is displayed.`}
-          data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
-          data-place={isReverseTranslationRendered ? 'left' : 'right'}
-        />
+      <div
+        className='dashboard-data-limit-warning-icon'
+        data-tooltip-content={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached. Try querying a smaller time-frame to ensure all your data is displayed.`}
+        data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
+        data-place={isReverseTranslationRendered ? 'left' : 'right'}
+      >
+        <Icon type='warning' />
       </div>
     )
   }

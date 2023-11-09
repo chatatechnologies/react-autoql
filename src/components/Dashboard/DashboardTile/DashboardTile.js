@@ -832,7 +832,12 @@ export class DashboardTile extends React.Component {
             ${this.state.isTitleInputFocused ? 'title-focused' : ''}`}
           >
             <div className='dashboard-tile-left-input-container'>
-              <Icon className='query-input-icon' type='react-autoql-bubbles-outlined' />
+              <Icon
+                className='query-input-icon'
+                type='react-autoql-bubbles-outlined'
+                tooltip='Query'
+                tooltipID={this.props.tooltipID}
+              />
               {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
                 <Autosuggest
                   onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
@@ -849,9 +854,6 @@ export class DashboardTile extends React.Component {
                     className: 'dashboard-tile-autocomplete-input',
                     placeholder: 'Type a query in your own words',
                     value: this.state.query,
-                    'data-tooltip-content': 'Query',
-                    'data-tooltip-id': this.props.tooltipID,
-                    'data-place': 'bottom',
                     onFocus: (e) => {
                       e.stopPropagation()
                       this.setState({ isQueryInputFocused: true })
@@ -879,13 +881,10 @@ export class DashboardTile extends React.Component {
             </div>
 
             <div className='dashboard-tile-right-input-container'>
-              <Icon className='title-input-icon' type='title' />
+              <Icon className='title-input-icon' type='title' tooltip='Title' tooltipID={this.props.tooltipID} />
               <input
                 className='dashboard-tile-input title'
                 placeholder='Add descriptive title (optional)'
-                data-tooltip-content='Title'
-                data-tooltip-id={this.props.tooltipID}
-                data-place='bottom'
                 value={this.state.title}
                 onChange={(e) => this.debounceTitleInputChange(e.target.value)}
                 onFocus={() => this.setState({ isTitleInputFocused: true })}

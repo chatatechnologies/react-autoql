@@ -122,8 +122,9 @@
   }
 
   .slice {
-    stroke: transparent;
-    stroke-width: 3px;
+    stroke: var(--react-autoql-background-color-secondary);
+    stroke-width: 1px;
+    stroke-opacity: 0.3;
   }
 
   .point {
