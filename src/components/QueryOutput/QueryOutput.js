@@ -218,7 +218,6 @@ export class QueryOutput extends React.Component {
     enableDynamicCharting: true,
     onNoneOfTheseClick: undefined,
     autoChartAggregations: true,
-    enableFilterLocking: false,
     showQueryInterpretation: false,
     isTaskModule: false,
     enableAjaxTableData: false,
