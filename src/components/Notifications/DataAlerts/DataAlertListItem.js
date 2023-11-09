@@ -64,6 +64,9 @@ export default class DataAlertListItem extends React.Component {
     if (this.props.dataAlert?.title && this.props.dataAlert.title !== prevProps.dataAlert?.title) {
       this.setState({ title: this.props.dataAlert.title })
     }
+    if (this.props.dataAlert?.message && this.props.dataAlert.message !== prevProps.dataAlert?.message) {
+      this.setState({ message: this.props.dataAlert.message })
+    }
   }
 
   getDataAlertObj = () => {
