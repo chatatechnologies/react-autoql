@@ -507,6 +507,7 @@ export default class NotificationItem extends React.Component {
                   isResizing={this.props.isResizing}
                   shouldRender={this.state.expanded}
                   tooltipID={this.props.tooltipID}
+                  chartTooltipID={this.props.chartTooltipID}
                 />
               </>
             )}
