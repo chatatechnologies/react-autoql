@@ -684,6 +684,9 @@ export default class RuleSimple extends React.Component {
 
     let filterText = ''
     let filterTextStrings = []
+    if (filters.length === 0) {
+      return filterText
+    }
     filters.forEach((filter) => {
       const filterValue = filter.value?.trim().toLowerCase()
       const rtChunks = rtArray.filter((chunk) => {
@@ -762,7 +765,7 @@ export default class RuleSimple extends React.Component {
       }
 
       if (withFilters) {
-        queryText = `${queryText} ${queryFiltersText}`
+        queryText = `${queryText} ${queryFiltersText}`.trim()
       }
 
       return queryText
