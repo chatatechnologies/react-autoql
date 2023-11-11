@@ -31,8 +31,6 @@ export default class Axis extends Component {
     this.MINIMUM_TITLE_LENGTH = 10
 
     this.swatchElements = []
-    this.maxRows = 5000
-    this.initialRowNumber = 50
     this.fontSize = isMobile ? 10 : 12
     this.labelInlineStyles = {
       fontSize: `${this.fontSize}px`,
@@ -411,7 +409,7 @@ export default class Axis extends Component {
     }
 
     this.adjustTitleToFit()
-    this.adjustLoadMoreSelectorToFit()
+    // this.adjustLoadMoreSelectorToFit()
     this.adjustAxisSelectorBorder()
     this.adjustAxisScalerBorder()
     this.adjustLegendLocation()
@@ -926,7 +924,7 @@ export default class Axis extends Component {
           >
             <g className={`axis axis-${this.props.orient}`} ref={(el) => (this.axisElement = el)} />
             {this.renderAxisTitle()}
-            {this.renderLoadMoreDropdown()}
+            {/* {this.renderLoadMoreDropdown()} */}
             {this.renderAxisScaler()}
           </g>
         )}

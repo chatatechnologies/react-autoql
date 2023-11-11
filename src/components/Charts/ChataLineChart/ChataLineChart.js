@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { getBandScale, getLinearScales, deepEqual } from 'autoql-fe-utils'
+import { getBandScale, getLinearScales, deepEqual, getTimeScale } from 'autoql-fe-utils'
 
 import { Axes } from '../Axes'
 import { Line } from '../Line'
@@ -32,19 +32,19 @@ export default class ChataLineChart extends Component {
     }
 
     // Keep this for using linear scale for time series
-    // if (!this.props.disableTimeScale) {
-    //   this.xScale = getTimeScale({
-    //     props,
-    //     columnIndex: props.stringColumnIndex,
-    //     axis: 'x',
-    //   })
-    // } else {
-    this.xScale = getBandScale({
-      ...props,
-      columnIndex: props.stringColumnIndex,
-      axis: 'x',
-    })
-    // }
+    if (!this.props.disableTimeScale) {
+      this.xScale = getTimeScale({
+        ...props,
+        columnIndex: props.stringColumnIndex,
+        axis: 'x',
+      })
+    } else {
+      this.xScale = getBandScale({
+        ...props,
+        columnIndex: props.stringColumnIndex,
+        axis: 'x',
+      })
+    }
 
     const yScalesAndTicks = getLinearScales({
       ...props,
@@ -68,7 +68,7 @@ export default class ChataLineChart extends Component {
 
     return (
       <g ref={(r) => (this.chartRef = r)} className='react-autoql-axes-chart' data-test='react-autoql-line-chart'>
-        <Line {...this.props} xScale={this.xScale} yScale={this.yScale} />
+        {!this.props.hidden && <Line {...this.props} xScale={this.xScale} yScale={this.yScale} />}
         <Axes
           {...this.props}
           ref={(r) => (this.axesRef = r)}

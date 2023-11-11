@@ -21,7 +21,6 @@ import {
   getLegendLocation,
   mergeBoundingClientRects,
   DisplayTypes,
-  isChartType,
   getColorScales,
   aggregateOtherCategory,
 } from 'autoql-fe-utils'
@@ -36,6 +35,7 @@ import { ChataColumnChart } from '../ChataColumnChart'
 import { ChataBubbleChart } from '../ChataBubbleChart'
 import { ChataHeatmapChart } from '../ChataHeatmapChart'
 import { ChataColumnLineChart } from '../ChataColumnLine'
+import { DataLimitWarning } from '../../DataLimitWarning'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { ChataStackedBarChart } from '../ChataStackedBarChart'
 import { ChataScatterplotChart } from '../ChataScatterplotChart'
@@ -52,12 +52,11 @@ export default class ChataChart extends React.Component {
     const data = this.getData(props)
 
     this.PADDING = 0
-    this.FONT_SIZE = 12
-    this.HISTOGRAM_SLIDER_KEY = uuid()
 
     this.firstRender = true
     this.bucketSize = props.bucketSize
     this.shouldRecalculateDimensions = false
+    this.disableTimeScale = true
 
     this.state = {
       chartID: uuid(),
@@ -67,13 +66,6 @@ export default class ChataChart extends React.Component {
       isLoading: true,
       isLoadingMoreRows: false,
     }
-  }
-
-  DEFAULT_MARGINS = {
-    left: 50,
-    right: 10,
-    bottom: 100,
-    top: 10,
   }
 
   static propTypes = {
@@ -103,9 +95,9 @@ export default class ChataChart extends React.Component {
       return true
     }
 
-    if (this.props.dataChangeCount !== nextProps.dataChangeCount) {
-      return true
-    }
+    // if (this.props.dataChangeCount !== nextProps.dataChangeCount) {
+    //   return true
+    // }
 
     if ((nextProps.isResizing && this.props.isResizing) || (nextProps.hidden && this.props.hidden)) {
       return false
@@ -170,7 +162,8 @@ export default class ChataChart extends React.Component {
       this.setState({ chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
     }
 
-    if (dataStructureChanged(this.props, prevProps) || this.props.dataChangeCount !== prevProps.dataChangeCount) {
+    if (dataStructureChanged(this.props, prevProps)) {
+      // || this.props.dataChangeCount !== prevProps.dataChangeCount) {
       const data = this.getData(this.props)
       this.setState({ ...data, chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
     }
@@ -502,6 +495,14 @@ export default class ChataChart extends React.Component {
     )
   }
 
+  renderDataLimitWarning = () => {
+    if (this.props.hidden) {
+      return null
+    }
+
+    return <DataLimitWarning tooltipID={this.props.tooltipID} rowLimit={this.props.rowLimit} />
+  }
+
   renderChart = () => {
     const commonChartProps = this.getCommonChartProps()
 
@@ -579,6 +580,7 @@ export default class ChataChart extends React.Component {
     return (
       <ErrorBoundary>
         <>
+          {this.renderDataLimitWarning()}
           {this.renderChartHeader()}
           <div
             id={`react-autoql-chart-${this.state.chartID}`}
