@@ -11,18 +11,19 @@ import './DataLimitWarning.scss'
 function DataLimitWarning(props = {}) {
   const languageCode = getDataFormatting(props.dataFormatting).languageCode
   const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(props.rowLimit)
+  const maxChartElements = 300
 
   return (
     <ErrorBoundary>
       <div
         className={`react-autoql-data-limit-warning ${props.className ?? ''}`}
-        data-tooltip-content={`This chart has reached its data limit of ${rowLimitFormatted} rows. Despite appearances, extensive data has been used for calculations by grouping similar categories. To visualize all your data, try narrowing down the time-frame in your query.`}
+        // data-tooltip-content={`This chart has reached its data limit of ${rowLimitFormatted} rows. Despite appearances, extensive data has been used for calculations by grouping similar categories. To visualize all your data, try narrowing down the time-frame in your query.`}
+        data-tooltip-content={`To optimize performance, the visualization is limited to the initial <em>${rowLimitFormatted}</em> rows of data or ${maxChartElements} chart elements - whichever occurs first.`}
         data-tooltip-id={props.tooltipID}
       >
         <Icon type='warning' />
         <span>
-          <strong>Warning:</strong> Data limit reached! To optimize performance, the visualization is currently limited
-          to the initial <em>{rowLimitFormatted}</em> rows of data.
+          <strong>Warning:</strong> Data limit reached!
         </span>
       </div>
     </ErrorBoundary>
