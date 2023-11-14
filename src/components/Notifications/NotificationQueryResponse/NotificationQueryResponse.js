@@ -60,6 +60,9 @@ export default class NotificationQueryResponse extends React.Component {
                 popoverParentElement={this.props.popoverParentElement}
                 showSingleValueResponseTitle={true}
                 tooltipID={this.props.tooltipID}
+                chartTooltipID={this.props.chartTooltipID}
+                showQueryInterpretation={false}
+                enableDynamicCharting={true}
               />
             )
           ) : (

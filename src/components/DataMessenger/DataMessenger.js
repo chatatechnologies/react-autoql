@@ -148,7 +148,7 @@ export class DataMessenger extends React.Component {
     placement: 'right',
     maskClosable: true,
     isVisible: true,
-    width: 500,
+    width: 600,
     height: 350,
     showHandle: true,
     handleImage: undefined,
@@ -881,6 +881,7 @@ export class DataMessenger extends React.Component {
           onModalClose={this.onDataAlertModalClose}
           shouldRender={this.isOpen() && this.state.activePage === 'notifications'}
           tooltipID={this.TOOLTIP_ID}
+          chartTooltipID={this.CHART_TOOLTIP_ID}
           isResizing={this.state.isResizing || this.state.isWindowResizing}
           popoverParentElement={this.props.popoverParentElement}
         />

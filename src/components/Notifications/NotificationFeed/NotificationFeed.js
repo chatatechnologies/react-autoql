@@ -574,6 +574,7 @@ class NotificationFeed extends React.Component {
                         isResizing={this.props.isResizing}
                         updateScrollbars={this.updateScrollbars}
                         tooltipID={this.props.tooltipID}
+                        chartTooltipID={this.props.chartTooltipID}
                       />
                     )
                   })}

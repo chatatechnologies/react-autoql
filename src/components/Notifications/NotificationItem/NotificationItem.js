@@ -216,16 +216,7 @@ export default class NotificationItem extends React.Component {
     }
 
     const time = dateDayJS.format('h:mma')
-    const day = dateDayJS.format('MM-DD-YY')
-
-    const today = dayjs().format('MM-DD-YY')
-    const yesterday = dayjs().subtract(1, 'd').format('MM-DD-YY')
-
-    if (day === today) {
-      return `Today at ${time}`
-    } else if (day === yesterday) {
-      return `Yesterday at ${time}`
-    } else if (dayjs().isSame(dateDayJS, 'year')) {
+    if (dayjs().isSame(dateDayJS, 'year')) {
       return `${dateDayJS.format('MMMM Do')} at ${time}`
     }
     return `${dateDayJS.format('MMMM Do, YYYY')} at ${time}`
@@ -507,6 +498,7 @@ export default class NotificationItem extends React.Component {
                   isResizing={this.props.isResizing}
                   shouldRender={this.state.expanded}
                   tooltipID={this.props.tooltipID}
+                  chartTooltipID={this.props.chartTooltipID}
                 />
               </>
             )}

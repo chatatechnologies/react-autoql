@@ -568,17 +568,15 @@ class DataAlertModal extends React.Component {
     if (this.state.activeStep === this.getStepNumber(this.CONDITIONS_STEP) || !!this.props.currentDataAlert?.id) {
       return null
     }
-
+    const formattedQueryText = this.expressionRef?.getFormattedQueryText({
+      sentenceCase: false,
+      withFilters: true,
+    })
     return (
       <div className='data-alert-modal-query-summary-container'>
         <div className='data-alert-modal-query-summary-background' />
         <div className='data-alert-modal-query-summary'>
-          <strong>Your query:</strong> "
-          {this.expressionRef?.getFormattedQueryText({
-            sentenceCase: false,
-            withFilters: true,
-          })}
-          "
+          <strong>Your query:</strong> "{formattedQueryText}"
         </div>
       </div>
     )
