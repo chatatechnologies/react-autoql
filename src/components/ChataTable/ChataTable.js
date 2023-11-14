@@ -434,7 +434,7 @@ export default class ChataTable extends React.Component {
           cancelToken: this.axiosSource.token,
         })
 
-        response = { ..._cloneDeep(responseWrapper?.data?.data ?? {}), page: 1 }
+        response = { ...(responseWrapper?.data?.data ?? {}), page: 1 }
         if (response?.data?.data?.rows) {
           response.data.data.rows.splice(0, this.pageSize)
         }
@@ -467,7 +467,7 @@ export default class ChataTable extends React.Component {
     const start = (page - 1) * this.pageSize
     const end = start + this.pageSize
 
-    const newRows = _cloneDeep(props.response?.data?.data?.rows?.slice(start, end) ?? [])
+    const newRows = props.response?.data?.data?.rows?.slice(start, end) ?? []
     return newRows
   }
 

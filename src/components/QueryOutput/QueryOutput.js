@@ -84,7 +84,7 @@ export class QueryOutput extends React.Component {
     this.CHART_TOOLTIP_ID = `react-autoql-query-output-chart-tooltip-${this.COMPONENT_KEY}`
     this.ALLOW_NUMERIC_STRING_COLUMNS = true
 
-    this.queryResponse = _cloneDeep(props.queryResponse)
+    this.queryResponse = props.queryResponse
     this.columnDateRanges = getColumnDateRanges(props.queryResponse)
     this.queryID = this.queryResponse?.data?.data?.query_id
     this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
