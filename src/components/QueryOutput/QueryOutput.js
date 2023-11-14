@@ -4,7 +4,6 @@ import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import _isEmpty from 'lodash.isempty'
-import parse from 'html-react-parser'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
 
@@ -39,7 +38,6 @@ import {
   GENERAL_QUERY_ERROR,
   REQUEST_CANCELLED_ERROR,
   isColumnNumberType,
-  isColumnStringType,
   getDateColumnIndex,
   getStringColumnIndices,
   isAggregation,
@@ -48,7 +46,6 @@ import {
   MONTH_NAMES,
   DEFAULT_DATA_PAGE_SIZE,
   CHART_TYPES,
-  MAX_DATA_PAGE_SIZE,
   MAX_LEGEND_LABELS,
   formatTableParams,
   getColumnDateRanges,
@@ -61,6 +58,7 @@ import {
   getDataFormatting,
   getAutoQLConfig,
   getVisibleColumns,
+  isDataLimited,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -190,7 +188,6 @@ export class QueryOutput extends React.Component {
     dataPageSize: PropTypes.number,
     onPageSizeChange: PropTypes.func,
     allowDisplayTypeChange: PropTypes.bool,
-    onRenderComplete: PropTypes.func,
     onMount: PropTypes.func,
     onBucketSizeChange: PropTypes.func,
     bucketSize: PropTypes.number,
@@ -237,14 +234,12 @@ export class QueryOutput extends React.Component {
     onDrilldownEnd: () => {},
     onColumnChange: () => {},
     onPageSizeChange: () => {},
-    onRenderComplete: () => {},
     onMount: () => {},
     onBucketSizeChange: () => {},
   }
 
   componentDidMount = () => {
     try {
-      this.onRenderComplete()
       this._isMounted = true
       this.updateToolbars()
       this.props.onMount()
@@ -274,10 +269,6 @@ export class QueryOutput extends React.Component {
     try {
       const newState = {}
       let shouldForceUpdate = false
-
-      if (this.props.queryResponse && !prevProps.queryResponse) {
-        this.onRenderComplete()
-      }
 
       if (this.props.onDisplayTypeChange && this.state.displayType !== prevState.displayType) {
         this.props.onDisplayTypeChange(this.state.displayType)
@@ -348,37 +339,6 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  onChartRenderComplete = () => {
-    if (isChartType(this.state.displayType)) {
-      this.props.onRenderComplete()
-    }
-  }
-
-  onTableRenderComplete = () => {
-    if (this.state.displayType === 'table') {
-      this.props.onRenderComplete()
-    }
-  }
-
-  onPivotTableRenderComplete = () => {
-    if (this.state.displayType === 'pivot_table') {
-      this.props.onRenderComplete()
-    }
-  }
-
-  onRenderComplete = () => {
-    if (this.props.queryResponse) {
-      if (
-        !this._isMounted &&
-        ((!isChartType(this.state.displayType) && !isTableType(this.state.displayType)) ||
-          isSingleValueResponse(this.queryResponse))
-      ) {
-        this.renderComplete = true
-        this.props.onRenderComplete()
-      }
-    }
-  }
-
   refreshLayout = () => {
     if (this.chartRef) {
       this.chartRef?.adjustChartPosition()
@@ -445,7 +405,7 @@ export class QueryOutput extends React.Component {
       this.getDataLength(),
       this.getPivotDataLength(),
       preferredDisplayType,
-      this.isDataLimited(),
+      isDataLimited(this.queryResponse),
     )
   }
 
@@ -467,7 +427,7 @@ export class QueryOutput extends React.Component {
         this.tableData?.length,
         this.pivotTableData?.length,
         this.getColumns(),
-        this.isDataLimited(),
+        isDataLimited(this.queryResponse),
       )
     ) {
       displayType = defaultDisplayType
@@ -1359,7 +1319,7 @@ export class QueryOutput extends React.Component {
         this.tableConfig.numberColumnIndex2 = indices2[0]
       }
 
-      const columns = newColumns ?? this.state.columns
+      const columns = newColumns ?? this.getColumns()
       this.updateColumns(columns)
     }
   }
@@ -1603,7 +1563,7 @@ export class QueryOutput extends React.Component {
       this.getDataLength(),
       this.getPivotDataLength(),
       this.getColumns(),
-      this.isDataLimited(),
+      isDataLimited(this.queryResponse),
     )
   }
 
@@ -1613,7 +1573,7 @@ export class QueryOutput extends React.Component {
       columns: this.getColumns(),
       dataLength: this.getDataLength(),
       pivotDataLength: this.getPivotDataLength(),
-      isDataLimited: this.isDataLimited(),
+      isDataLimited: isDataLimited(this.queryResponse),
       allowNumericStringColumns: this.ALLOW_NUMERIC_STRING_COLUMNS,
     })
   }
@@ -2352,6 +2312,7 @@ export class QueryOutput extends React.Component {
           onNewData={this.onNewData}
           isDrilldown={this.isDrilldown()}
           updateColumns={this.updateColumns}
+          isDataLimited={isDataLimited(this.queryResponse)}
           source={this.props.source}
           scope={this.props.scope}
           queryFn={this.queryFn}
@@ -2404,17 +2365,6 @@ export class QueryOutput extends React.Component {
 
     // There is no error message in the response, display default error message
     return this.renderMessage()
-  }
-
-  isDataLimited = () => {
-    const numRows = this.tableData?.length ?? this.queryResponse?.data?.data?.rows?.length
-    const totalRows = this.queryResponse?.data?.data?.count_rows
-
-    if (!numRows || !totalRows) {
-      return false
-    }
-
-    return numRows < totalRows
   }
 
   noDataFound = () => {
@@ -2589,41 +2539,13 @@ export class QueryOutput extends React.Component {
     )
   }
 
-  shouldRenderDataLimitWarning = () => {
-    const isTableAndNotAjax = !this.props.enableAjaxTableData && this.state.displayType === 'table'
-    const isChartAndNotAjax = !this.props.enableAjaxTableData && isChartType(this.state.displayType)
-    return this.isDataLimited() && !areAllColumnsHidden(this.getColumns()) && (isTableAndNotAjax || isChartAndNotAjax)
-  }
-
-  renderDataLimitWarning = () => {
-    const isReverseTranslationRendered =
-      getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation && this.props.showQueryInterpretation
-
-    return (
-      <div
-        className='dashboard-data-limit-warning-icon'
-        data-tooltip-content={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached. Try querying a smaller time-frame to ensure all your data is displayed.`}
-        data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
-        data-place={isReverseTranslationRendered ? 'left' : 'right'}
-      >
-        <Icon type='warning' />
-      </div>
-    )
-  }
-
   renderFooter = () => {
     const shouldRenderRT = this.shouldRenderReverseTranslation()
-    const shouldRenderDLW = this.shouldRenderDataLimitWarning()
     const footerClassName = `query-output-footer ${!shouldRenderRT ? 'no-margin' : ''} ${
       this.props.reverseTranslationPlacement
     }`
 
-    return (
-      <div className={footerClassName}>
-        {shouldRenderRT && this.renderReverseTranslation()}
-        {shouldRenderDLW && this.renderDataLimitWarning()}
-      </div>
-    )
+    return <div className={footerClassName}>{shouldRenderRT && this.renderReverseTranslation()}</div>
   }
 
   render = () => {

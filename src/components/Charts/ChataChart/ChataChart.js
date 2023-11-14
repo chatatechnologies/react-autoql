@@ -4,25 +4,25 @@ import PropTypes from 'prop-types'
 import { isMobile } from 'react-device-detect'
 
 import {
-  aggregateData,
-  getLegendLabelsForMultiSeries,
   svgToPng,
-  getBBoxFromRef,
-  sortDataByDate,
   deepEqual,
   onlyUnique,
-  DATE_ONLY_CHART_TYPES,
-  DOUBLE_AXIS_CHART_TYPES,
-  CHARTS_WITHOUT_AGGREGATED_DATA,
-  getDateColumnIndex,
-  isColumnDateType,
-  getThemeValue,
-  dataStructureChanged,
-  getLegendLocation,
-  mergeBoundingClientRects,
   DisplayTypes,
+  getThemeValue,
+  aggregateData,
+  getBBoxFromRef,
+  sortDataByDate,
   getColorScales,
+  isColumnDateType,
+  getLegendLocation,
+  getDateColumnIndex,
+  dataStructureChanged,
+  DATE_ONLY_CHART_TYPES,
   aggregateOtherCategory,
+  DOUBLE_AXIS_CHART_TYPES,
+  mergeBoundingClientRects,
+  getLegendLabelsForMultiSeries,
+  CHARTS_WITHOUT_AGGREGATED_DATA,
 } from 'autoql-fe-utils'
 
 import { Spinner } from '../../Spinner'
@@ -59,10 +59,10 @@ export default class ChataChart extends React.Component {
     this.disableTimeScale = true
 
     this.state = {
-      chartID: uuid(),
       ...data,
       deltaX: 0,
       deltaY: 0,
+      chartID: uuid(),
       isLoading: true,
       isLoadingMoreRows: false,
     }
@@ -94,10 +94,6 @@ export default class ChataChart extends React.Component {
       this.shouldRecalculateDimensions = true
       return true
     }
-
-    // if (this.props.dataChangeCount !== nextProps.dataChangeCount) {
-    //   return true
-    // }
 
     if ((nextProps.isResizing && this.props.isResizing) || (nextProps.hidden && this.props.hidden)) {
       return false
@@ -500,7 +496,11 @@ export default class ChataChart extends React.Component {
       return null
     }
 
-    return <DataLimitWarning tooltipID={this.props.tooltipID} rowLimit={this.props.rowLimit} />
+    if (this.props.isDataLimited) {
+      return <DataLimitWarning tooltipID={this.props.tooltipID} rowLimit={this.props.rowLimit} />
+    }
+
+    return null
   }
 
   renderChart = () => {

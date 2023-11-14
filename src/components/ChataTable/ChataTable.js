@@ -13,20 +13,20 @@ import {
   currentEventLoopEnd,
   REQUEST_CANCELLED_ERROR,
   DAYJS_PRECISION_FORMATS,
+  isDataLimited,
 } from 'autoql-fe-utils'
 
-import { Icon } from '../Icon'
 import { Button } from '../Button'
 import { Spinner } from '../Spinner'
 import { Popover } from '../Popover'
 import TableWrapper from './TableWrapper'
 import { DateRangePicker } from '../DateRangePicker'
+import { DataLimitWarning } from '../DataLimitWarning'
 import { columnOptionsList } from './tabulatorConstants'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './ChataTable.scss'
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
-import { DataLimitWarning } from '../DataLimitWarning'
 
 export default class ChataTable extends React.Component {
   constructor(props) {
@@ -927,7 +927,11 @@ export default class ChataTable extends React.Component {
       return null
     }
 
-    return <DataLimitWarning tooltipID={this.props.tooltipID} rowLimit={this.props.response?.data?.data?.row_limit} />
+    if (isDataLimited(this.props.response)) {
+      return <DataLimitWarning tooltipID={this.props.tooltipID} rowLimit={this.props.response?.data?.data?.row_limit} />
+    }
+
+    return null
   }
 
   renderTableRowCount = () => {
