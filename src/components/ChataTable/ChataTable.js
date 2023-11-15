@@ -35,6 +35,7 @@ export default class ChataTable extends React.Component {
     this.TABLE_ID = uuid()
 
     this.hasSetInitialData = false
+    this.isSettingInitialData = false
     this.isFiltering = false
     this.isSorting = false
     this.pageSize = 100
@@ -331,6 +332,14 @@ export default class ChataTable extends React.Component {
     this.setFilterBadgeClasses()
   }
 
+  onDataProcessed = (data) => {
+    if (this.hasSetInitialData || data?.length || !this.props.response?.data?.data?.rows?.length) {
+      this.hasSetInitialData = true
+      this.isSettingInitialData = false
+      this.clearLoadingIndicators()
+    }
+  }
+
   setLoading = (loading) => {
     // Don't update state unnecessarily
     if (loading !== this.state.loading && this._isMounted) {
@@ -374,49 +383,49 @@ export default class ChataTable extends React.Component {
   }
 
   ajaxRequesting = (props, params) => {
-    // Use this fn to abort a request
+    // // Use this fn to abort a request
+    // if (!this.hasSetInitialData && !this.isSettingInitialData) {
+    //   const queryHasData = this.props.response?.data?.data?.rows?.length
+    //   const tabulatorHasData = this.ref?.tabulator?.getDataCount('active')?.length
+
+    //   if (!queryHasData || (queryHasData && tabulatorHasData)) {
+    //     this.hasSetInitialData = true
+    //     return true
+    //   }
+    // }
+
+    const tableParamsFormatted = formatTableParams(this.tableParams, props.columns)
+    const nextTableParamsFormatted = formatTableParams(params, props.columns)
+    const tableParamsUnchanged = _isEqual(tableParamsFormatted, nextTableParamsFormatted)
+
+    if (
+      this.hasSetInitialData &&
+      (this.state.pageLoading || this.state.scrollLoading || this.props.hidden || tableParamsUnchanged)
+    ) {
+      return false
+    }
   }
 
   ajaxRequestFunc = async (props, params) => {
-    const previousData = {
-      rows: this.getRows(this.props),
-      page: this.tableParams.page,
-      isPreviousData: true,
+    const initialData = {
+      rows: this.getRows(this.props, 1),
+      page: 1, // this.tableParams.page,
+      isInitialData: true,
     }
+
+    let response = initialData
 
     try {
       if (!this.hasSetInitialData) {
-        this.hasSetInitialData = true
-        return previousData
-      }
-
-      if (this.props.hidden) {
-        return previousData
-      }
-
-      const requestedNewPageWhileLoadingData = params?.page > 1 && (this.state.pageLoading || this.state.scrollLoading)
-      if (requestedNewPageWhileLoadingData) {
-        return previousData
-      }
-
-      const tableParamsFormatted = formatTableParams(this.tableParams, props.columns)
-      const nextTableParamsFormatted = formatTableParams(params, props.columns)
-
-      if (_isEqual(tableParamsFormatted, nextTableParamsFormatted)) {
-        return previousData
-      }
-
-      this.tableParams = params
-
-      if (!props.queryRequestData) {
-        console.warn('Original request data was not provided to ChataTable, unable to filter or sort table')
-        return previousData
+        return initialData
       }
 
       this.cancelCurrentRequest()
       this.axiosSource = axios.CancelToken?.source()
+      this.tableParams = params
 
-      let response
+      const nextTableParamsFormatted = formatTableParams(params, props.columns)
+
       if (params?.page > 1) {
         if (this._isMounted) {
           this.setState({ scrollLoading: true })
@@ -434,12 +443,10 @@ export default class ChataTable extends React.Component {
           cancelToken: this.axiosSource.token,
         })
 
-        response = { ...(responseWrapper?.data?.data ?? {}), page: 1 }
-        if (response?.data?.data?.rows) {
-          response.data.data.rows.splice(0, this.pageSize)
+        const currentScrollValue = this.ref?.tabulator?.rowManager?.element?.scrollLeft
+        if (currentScrollValue > 0) {
+          this.scrollLeft = currentScrollValue
         }
-
-        this.scrollLeft = this.ref?.tabulator?.rowManager?.element?.scrollLeft
 
         /* wait for current event loop to end so table is updated
         before callbacks are invoked */
@@ -447,19 +454,24 @@ export default class ChataTable extends React.Component {
 
         this.props.onTableParamsChange(params, nextTableParamsFormatted)
         this.props.onNewData(responseWrapper)
+
+        response = {
+          rows: responseWrapper?.data?.data?.rows?.slice(0, this.pageSize) ?? [],
+          page: 1,
+        }
       }
 
-      this.clearLoadingIndicators()
       return response
+      // }
     } catch (error) {
       if (error?.data?.message !== REQUEST_CANCELLED_ERROR) {
         console.error(error)
       }
 
       this.clearLoadingIndicators()
-      // Send empty promise so data doesn't change
-      return previousData
     }
+
+    return response
   }
 
   getRows = (props, pageNumber) => {
@@ -472,22 +484,16 @@ export default class ChataTable extends React.Component {
   }
 
   clearLoadingIndicators = async () => {
-    /* The height of the table temporarily goes to 0 when new rows
-    are added, which causes the scrollbar to jump up in DM.
-
-    When loading indicators are visible, the height of the table
-    is fixed to the previous height in px. We need to wait until
-    current event loop finishes so the table doesn't jump after
-    the new rows are added */
-    await currentEventLoopEnd()
+    this.ref?.restoreRedraw()
 
     // Temporary fix to scrollbars resetting after filtering or sorting
-    // It isnt perfect since it still causes the scrollbar to jump left then right again
+    // It isnt perfect since there are still error cases where it will jump
     // Watching tabulator for a fix:
     // https://github.com/olifolkerd/tabulator/issues/3450
     if (this.scrollLeft !== undefined) {
-      this.scrollLeft = undefined
+      this.ref.tabulator.columnManager.element.scrollLeft = this.scrollLeft
       this.ref.tabulator.rowManager.element.scrollLeft = this.scrollLeft
+      this.scrollLeft = undefined
     }
 
     if (this._isMounted) {
@@ -530,9 +536,9 @@ export default class ChataTable extends React.Component {
     const modResponse = { data: [], last_page: this.totalPages }
 
     if (response) {
-      if (!response.isPreviousData) {
-        this.ref?.restoreRedraw()
-      }
+      // if (!response.isInitialData) {
+      // this.ref?.restoreRedraw()
+      // }
 
       const isLastPage = (response?.rows?.length ?? 0) < this.pageSize
 
@@ -545,6 +551,10 @@ export default class ChataTable extends React.Component {
       }
 
       modResponse.data = response.rows
+    }
+
+    if (this.isSettingInitialData) {
+      this.isSettingInitialData = false
     }
 
     return modResponse
@@ -1025,6 +1035,7 @@ export default class ChataTable extends React.Component {
                     onDataSorted={this.onDataSorted}
                     onDataFiltering={this.onDataFiltering}
                     onDataFiltered={this.onDataFiltered}
+                    onDataProcessed={this.onDataProcessed}
                     pivot={this.props.pivot}
                   />
                   {isEmpty && this.renderEmptyPlaceholderText()}
