@@ -409,7 +409,6 @@ export default class Axis extends Component {
     }
 
     this.adjustTitleToFit()
-    // this.adjustLoadMoreSelectorToFit()
     this.adjustAxisSelectorBorder()
     this.adjustAxisScalerBorder()
     this.adjustLegendLocation()
@@ -867,22 +866,6 @@ export default class Axis extends Component {
     }
   }
 
-  renderLoadMoreDropdown = () => {
-    if (this.props.orient !== 'bottom' || !this.props.enableAjaxTableData) {
-      return null
-    }
-
-    return (
-      <g ref={(r) => (this.loadMoreDropdown = r)}>
-        <LoadMoreDropdown
-          ref={(r) => (this.loadMoreDropdownComponent = r)}
-          {...this.props}
-          style={{ ...this.labelInlineStyles, fontSize: this.fontSize }}
-        />
-      </g>
-    )
-  }
-
   shouldRenderAxisSelector = () => {
     return this.props.scale?.hasDropdown
   }
@@ -924,7 +907,6 @@ export default class Axis extends Component {
           >
             <g className={`axis axis-${this.props.orient}`} ref={(el) => (this.axisElement = el)} />
             {this.renderAxisTitle()}
-            {/* {this.renderLoadMoreDropdown()} */}
             {this.renderAxisScaler()}
           </g>
         )}

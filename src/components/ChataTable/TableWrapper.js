@@ -17,7 +17,7 @@ export default class TableWrapper extends React.Component {
     this.tabulator = null //variable to hold your table
     this.redrawRestored = true
     this.defaultOptions = {
-      // renderVerticalBuffer: 30, // Change this to help with performance if needed in the future
+      // renderVerticalBuffer: 10, // Change this to help with performance if needed in the future
       // renderHorizontal: 'virtual', // Todo: test this to see if it helps with performance
       height: this.props.height || '100%',
       headerFilterLiveFilterDelay: 300,

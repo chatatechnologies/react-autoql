@@ -1208,10 +1208,7 @@ export class QueryOutput extends React.Component {
   onNewData = (response) => {
     this.isOriginalData = false
     this.queryResponse = response
-    const responseData = response?.data?.data
-    this.tableData = responseData?.rows || []
-
-    this.forceUpdate() // console.log('Do we need this?')
+    this.tableData = response?.data?.data?.rows || []
   }
 
   onTableFilter = async (filters, rows) => {
@@ -1221,8 +1218,6 @@ export class QueryOutput extends React.Component {
 
     this.tableParams.filter = _cloneDeep(filters)
     this.formattedTableParams = formatTableParams(this.tableParams, this.getColumns())
-
-    this.forceUpdate() // console.log('is this needed?')
   }
 
   onTableSort = (sorters) => {
