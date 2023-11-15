@@ -1,31 +1,35 @@
 import React from 'react'
 import axios from 'axios'
 import { v4 as uuid } from 'uuid'
+import { median } from 'd3-array'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 
 import {
+  isColumnDateType,
   DataExplorerTypes,
   getAuthentication,
   fetchSubjectListV2,
   runQueryValidation,
+  isColumnNumberType,
   dataFormattingDefault,
   REQUEST_CANCELLED_ERROR,
+  isColumnStringType,
 } from 'autoql-fe-utils'
 
-import { Icon } from '../Icon'
 import DataPreview from './DataPreview'
-import { SubjectName } from './SubjectName'
-import Cascader from '../Cascader/Cascader'
-import { LoadingDots } from '../LoadingDots'
 import SampleQueryList from './SampleQueryList'
 import DataExplorerInput from './DataExplorerInput'
-import MultiSelect from '../MultiSelect/MultiSelect'
-import { CustomScrollbars } from '../CustomScrollbars'
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { QueryValidationMessage } from '../QueryValidationMessage'
 
+import { Icon } from '../Icon'
+import { Cascader } from '../Cascader'
+import { SubjectName } from './SubjectName'
+import { LoadingDots } from '../LoadingDots'
+import { MultiSelect } from '../MultiSelect'
+import { CustomScrollbars } from '../CustomScrollbars'
+import { ErrorBoundary } from '../../containers/ErrorHOC'
+import { QueryValidationMessage } from '../QueryValidationMessage'
 import { authenticationType, dataFormattingType } from '../../props/types'
 
 import './DataExplorer.scss'
@@ -256,6 +260,55 @@ export default class DataExplorer extends React.Component {
     )
   }
 
+  getValueFilter = (column, index) => {
+    const columnData = this.state.dataPreview?.data?.data?.rows?.map((row) => row[index])
+
+    let defaultValue = ''
+    if (isColumnNumberType(column)) {
+      // Use median value from dataset (median not avg, so it is guaranteed to conform with the dataset)
+      defaultValue = median(columnData)
+    } else if (isColumnDateType(column)) {
+      // Use first value that exists
+      defaultValue = columnData.find((date) => !!date)
+    } else {
+      // Find any value that exists
+      defaultValue = columnData.find((str) => !!str)
+    }
+
+    if (defaultValue) {
+      return `${defaultValue}`
+    }
+
+    return ''
+  }
+
+  getColumnsForSuggestions = () => {
+    let columns
+    if (this.state.selectedSubject?.valueLabel?.column_name) {
+      columns = {
+        [this.state.selectedSubject.valueLabel.column_name]: {
+          value: this.state.selectedSubject.valueLabel.keyword,
+        },
+      }
+    }
+
+    if (this.state.selectedColumns?.length) {
+      this.state.selectedColumns?.forEach((columnIndex) => {
+        if (!columns) {
+          columns = {}
+        }
+
+        const column = this.state.dataPreview?.data?.data?.columns[columnIndex]
+        if (!columns[column.name]) {
+          const value = this.getValueFilter(column, columnIndex) ?? ''
+          columns[column.name] = { value }
+        }
+      })
+    }
+
+    return columns
+  }
+
   renderTopicsListForVL = () => {
     if (this.state.selectedSubject?.type !== DataExplorerTypes.VL_TYPE) {
       return null
@@ -431,27 +484,7 @@ export default class DataExplorer extends React.Component {
       searchText = this.state.selectedSubject?.displayName
     }
 
-    let columns
-    if (this.state.selectedSubject?.valueLabel?.column_name) {
-      columns = {
-        [this.state.selectedSubject.valueLabel.column_name]: {
-          value: this.state.selectedSubject.valueLabel.keyword,
-        },
-      }
-    }
-
-    if (this.state.selectedColumns?.length) {
-      this.state.selectedColumns?.forEach((columnIndex) => {
-        if (!columns) {
-          columns = {}
-        }
-
-        const column = this.state.dataPreview?.data?.data?.columns[columnIndex]
-        if (!columns[column.name]) {
-          columns[column.name] = { value: '' }
-        }
-      })
-    }
+    const columns = this.getColumnsForSuggestions()
 
     return (
       <div className='data-explorer-section query-suggestions'>
