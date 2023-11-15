@@ -212,6 +212,7 @@ export default class ConditionBuilder extends React.Component {
                   initialData={this.props.expression}
                   tooltipID={this.props.tooltipID}
                   queryResponse={this.props.queryResponse}
+                  queryResultMetadata={this.props.queryResultMetadata}
                   onLastInputEnterPress={this.props.onLastInputEnterPress}
                   filters={this.props.filters}
                 />

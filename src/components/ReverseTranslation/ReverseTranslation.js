@@ -25,8 +25,8 @@ export default class ReverseTranslation extends React.Component {
     this.COMPONENT_KEY = uuid()
 
     let reverseTranslationArray = constructRTArray(props.queryResponse?.data?.data?.parsed_interpretation)
-    if (props.termId && props.queryResponse?.data?.data?.parsed_interpretations) {
-      reverseTranslationArray = constructRTArray(props.queryResponse?.data?.data?.parsed_interpretations[props.termId])
+    if (props.termId && props.queryResultMetadata?.data?.parsed_interpretations) {
+      reverseTranslationArray = constructRTArray(props.queryResultMetadata?.data?.parsed_interpretations[props.termId])
     }
     this.state = {
       reverseTranslationArray,

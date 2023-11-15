@@ -128,6 +128,7 @@ export default class RuleSimple extends React.Component {
     onUpdate: () => {},
     initialData: undefined,
     queryResponse: undefined,
+    queryResultMetadata: undefined,
     onLastInputEnterPress: () => {},
     dataFormatting: dataFormattingDefault,
   }
@@ -170,7 +171,14 @@ export default class RuleSimple extends React.Component {
     let queryText = this.getFormattedQueryText({ sentenceCase, withFilters })
 
     if (useRT) {
-      queryText = <ReverseTranslation queryResponse={this.props.queryResponse} textOnly />
+      queryText = (
+        <ReverseTranslation
+          queryResponse={this.props.queryResponse}
+          queryResultMetadata={this.props.queryResultMetadata}
+          termId={this.TERM_ID_1}
+          textOnly
+        />
+      )
     }
 
     const operator = DATA_ALERT_OPERATORS[this.state.selectedOperator]
@@ -179,7 +187,14 @@ export default class RuleSimple extends React.Component {
     if (this.state.secondTermType === QUERY_TERM_TYPE) {
       secondTermText = (
         <span>
-          "<ReverseTranslation queryResponse={this.props.queryResponse} textOnly termId={this.TERM_ID_2} />"
+          "
+          <ReverseTranslation
+            queryResponse={this.props.queryResponse}
+            queryResultMetadata={this.props.queryResultMetadata}
+            textOnly
+            termId={this.TERM_ID_2}
+          />
+          "
         </span>
       )
     }

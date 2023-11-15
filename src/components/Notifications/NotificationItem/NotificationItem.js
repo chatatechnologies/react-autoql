@@ -369,21 +369,25 @@ export default class NotificationItem extends React.Component {
     }
 
     const queryResponse = { data: notification?.query_result }
-
-    return (
-      <div className='react-autoql-notification-condition-statement'>
-        <span>Summary: </span>
-        <ConditionBuilder
-          key={`expression-builder-${this.COMPONENT_KEY}`}
-          expression={notification?.expression}
-          queryResponse={queryResponse}
-          conditionStatementOnly
-          conditionTense='past'
-          sentenceCase
-          useRT
-        />
-      </div>
-    )
+    const queryResultMetadata = { data: notification?.result_metadata }
+    if (queryResultMetadata.data !== null) {
+      return (
+        <div className='react-autoql-notification-condition-statement'>
+          <span>Summary: </span>
+          <ConditionBuilder
+            key={`expression-builder-${this.COMPONENT_KEY}`}
+            expression={notification?.expression}
+            queryResponse={queryResponse}
+            queryResultMetadata={queryResultMetadata}
+            conditionStatementOnly
+            conditionTense='past'
+            sentenceCase
+            useRT
+          />
+        </div>
+      )
+    }
+    return null
   }
 
   restartAlert = () => {
