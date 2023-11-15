@@ -38,9 +38,9 @@ export default class ChataTable extends React.Component {
     this.isSettingInitialData = false
     this.isFiltering = false
     this.isSorting = false
-    this.pageSize = 100
+    this.pageSize = 50
 
-    this.totalPages = Math.ceil(props.response?.data?.data?.rows?.length / this.pageSize)
+    this.totalPages = this.getTotalPages(props.response)
     if (isNaN(this.totalPages) || !this.totalPages) {
       this.totalPages = 1
     }
@@ -247,6 +247,21 @@ export default class ChataTable extends React.Component {
     } catch (error) {
       console.error(error)
     }
+  }
+
+  getTotalPages = (response) => {
+    const rows = response?.data?.data?.rows
+    if (!rows?.length) {
+      return 1
+    }
+
+    const totalPages = Math.ceil(rows.length / this.pageSize)
+
+    if (totalPages >= 1 && totalPages !== Infinity) {
+      return totalPages
+    }
+
+    return 1
   }
 
   setInfiniteScroll = (useInfiniteScroll) => {
@@ -456,9 +471,12 @@ export default class ChataTable extends React.Component {
         this.props.onTableParamsChange(params, nextTableParamsFormatted)
         this.props.onNewData(responseWrapper)
 
+        const totalPages = this.getTotalPages(responseWrapper)
+
         response = {
           rows: responseWrapper?.data?.data?.rows?.slice(0, this.pageSize) ?? [],
           page: 1,
+          last_page: totalPages,
         }
       }
 
@@ -533,7 +551,7 @@ export default class ChataTable extends React.Component {
   }
 
   ajaxResponseFunc = (props, response) => {
-    const modResponse = { data: [], last_page: this.totalPages }
+    const modResponse = { data: response?.rows ?? [], last_page: response?.last_page ?? this.totalPages }
 
     if (response) {
       if (this.tableParams?.page > 1) {
@@ -543,19 +561,9 @@ export default class ChataTable extends React.Component {
 
       const isLastPage = (response?.rows?.length ?? 0) < this.pageSize
 
-      if (this._isMounted) {
-        if (isLastPage && !this.state.isLastPage) {
-          this.setState({ isLastPage: true })
-        } else if (!isLastPage && this.state.isLastPage) {
-          this.setState({ isLastPage: false })
-        }
+      if (isLastPage !== this.state.isLastPage && this._isMounted) {
+        this.setState({ isLastPage })
       }
-
-      modResponse.data = response.rows
-    }
-
-    if (this.isSettingInitialData) {
-      this.isSettingInitialData = false
     }
 
     return modResponse
