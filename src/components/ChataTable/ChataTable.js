@@ -423,6 +423,7 @@ export default class ChataTable extends React.Component {
       this.cancelCurrentRequest()
       this.axiosSource = axios.CancelToken?.source()
       this.tableParams = params
+      this.scrollLeft = undefined
 
       const nextTableParamsFormatted = formatTableParams(params, props.columns)
 
@@ -462,7 +463,6 @@ export default class ChataTable extends React.Component {
       }
 
       return response
-      // }
     } catch (error) {
       if (error?.data?.message !== REQUEST_CANCELLED_ERROR) {
         console.error(error)
@@ -536,9 +536,10 @@ export default class ChataTable extends React.Component {
     const modResponse = { data: [], last_page: this.totalPages }
 
     if (response) {
-      // if (!response.isInitialData) {
-      // this.ref?.restoreRedraw()
-      // }
+      if (this.tableParams?.page > 1) {
+        // Only restore redraw for new page - doing this for filter/sort will reset the scroll value
+        this.ref?.restoreRedraw()
+      }
 
       const isLastPage = (response?.rows?.length ?? 0) < this.pageSize
 
