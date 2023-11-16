@@ -288,8 +288,9 @@ export default class RuleSimple extends React.Component {
       if (
         this.props.initialData?.length > 1 &&
         this.state.secondQueryJoinColumnName !== '' &&
+        this.state.secondQuerySelectedNumberColumnName !== '' &&
         !isSingleValueResponse(this.state.secondQueryResponse) &&
-        this.state.secondQueryAmountOfNumberColumns >= 2
+        this.state.secondQueryAmountOfNumberColumns !== 1
       ) {
         secondTerm.compare_column = this.state.secondQuerySelectedNumberColumnName
         secondTerm.join_column = this.state.secondQueryJoinColumnName
