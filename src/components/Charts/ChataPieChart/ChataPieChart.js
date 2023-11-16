@@ -21,6 +21,14 @@ import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers'
 
 import 'd3-transition'
 
+const isOtherCategory = (d) => {
+  // Temporary: until we update to autoql-fe-utils >= 1.0.49, we need to do a substr search
+  // Once we upgrade we can switch the next line to use:
+  // const isOtherCategory = d?.data?.value?.isOther
+  const isOtherCategory = d?.data?.value?.legendLabel?.label?.includes('Other')
+  return isOtherCategory
+}
+
 export default class ChataPieChart extends React.Component {
   constructor(props) {
     super(props)
@@ -142,8 +150,7 @@ export default class ChataPieChart extends React.Component {
 
   onSliceClick = (d) => {
     try {
-      const isOtherCategory = d?.data?.value?.legendLabel?.isOther
-      if (isOtherCategory) {
+      if (isOtherCategory(d)) {
         return
       }
 
@@ -193,7 +200,7 @@ export default class ChataPieChart extends React.Component {
       })
       .style('fill-opacity', 1)
       .style('cursor', function (d) {
-        if (d?.data?.value?.legendLabel?.isOther) {
+        if (isOtherCategory(d)) {
           return 'default'
         }
       })
