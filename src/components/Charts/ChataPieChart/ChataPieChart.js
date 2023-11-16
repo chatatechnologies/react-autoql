@@ -13,6 +13,7 @@ import {
   getTooltipContent,
   getLegendLabels,
   DisplayTypes,
+  isColumnNumberType,
 } from 'autoql-fe-utils'
 
 import StringAxisSelector from '../Axes/StringAxisSelector'
@@ -140,11 +141,39 @@ export default class ChataPieChart extends React.Component {
       .attr('transform', `translate(${width / 2 + this.outerRadius},${height / 2})`)
   }
 
-  onSliceClick = (d) => {
+  getOtherFilters = () => {
+    const column = this.props.columns[this.props.stringColumnIndex]
+
+    const filters = []
+
+    this.props.data.forEach((row) => {
+      // TODO: use row.isOther when util library is updated
+      if (!row[this.props.stringColumnIndex]?.includes('Other')) {
+        const filter = {
+          name: column.name,
+          operator: '<>',
+          value: `${row[this.props.stringColumnIndex]}`,
+        }
+
+        if (isColumnNumberType(column)) {
+          filter.operator = '!='
+        }
+
+        filters.push(filter)
+      }
+    })
+
+    return filters
+  }
+
+  onSliceClick = (d, self) => {
     try {
-      const isOtherCategory = d?.data?.value?.legendLabel?.isOther
+      const isOtherCategory = d?.data?.value?.legendLabel?.label?.includes('Other:')
+
+      let otherCategoryFilters
       if (isOtherCategory) {
-        return
+        otherCategoryFilters = self.getOtherFilters()
+        // return
       }
 
       const newActiveKey = d.data.key
@@ -159,6 +188,7 @@ export default class ChataPieChart extends React.Component {
           stringColumnIndex: this.props.stringColumnIndex,
           legendColumn: this.props.legendColumn,
           activeKey: newActiveKey,
+          filters: otherCategoryFilters,
         })
         this.setState({ activeKey: newActiveKey })
       }
@@ -206,7 +236,7 @@ export default class ChataPieChart extends React.Component {
         select(this).style('fill-opacity', 1)
       })
       .on('click', function (e, d) {
-        self.onSliceClick(d, e)
+        self.onSliceClick(d, self)
       })
 
     // render active pie slice if there is one

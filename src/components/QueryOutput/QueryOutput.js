@@ -983,7 +983,7 @@ export class QueryOutput extends React.Component {
     this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
   }
 
-  processDrilldown = async ({ groupBys, supportedByAPI, row, activeKey, stringColumnIndex, filter }) => {
+  processDrilldown = async ({ groupBys, supportedByAPI, row, activeKey, stringColumnIndex, filter, filters }) => {
     if (getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns) {
       try {
         // This will be a new query so we want to reset the page size back to default
@@ -1007,18 +1007,19 @@ export class QueryOutput extends React.Component {
           } catch (error) {
             this.props.onDrilldownEnd({ response: error })
           }
-        } else if ((!isNaN(stringColumnIndex) && !!row?.length) || filter) {
+        } else if ((!isNaN(stringColumnIndex) && !!row?.length) || filter || filters) {
           this.props.onDrilldownStart(activeKey)
 
-          let clickedFilter = filter
-          if (!filter) {
-            clickedFilter = this.constructFilter({
+          let newFilter = filter
+          if (!newFilter && row) {
+            newFilter = this.constructFilter({
               column: this.state.columns[stringColumnIndex],
               value: row[stringColumnIndex],
             })
           }
 
-          const allFilters = this.getCombinedFilters(clickedFilter)
+          const allFilters = this.getCombinedFilters(newFilter, filters)
+
           let response
           try {
             response = await this.queryFn({ tableFilters: allFilters, pageSize })
@@ -1066,7 +1067,12 @@ export class QueryOutput extends React.Component {
   }
 
   // Function to combine original query filters and current table filters
-  getCombinedFilters = (newFilter) => {
+  getCombinedFilters = (newFilter, newFilters) => {
+    const filterList = newFilters ?? []
+    if (newFilter) {
+      filterList.push(newFilter)
+    }
+
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
     const queryFilters = queryRequestData?.filters || []
     const tableFilters = this.formattedTableParams?.filters || []
@@ -1093,15 +1099,10 @@ export class QueryOutput extends React.Component {
       }
     })
 
-    if (newFilter) {
-      const existingClickedFilterIndex = allFilters.findIndex((filter) => filter.name === newFilter.name)
-      if (existingClickedFilterIndex >= 0) {
-        // Filter already exists, overwrite existing filter with clicked value
-        allFilters[existingClickedFilterIndex] = newFilter
-      } else {
-        // Filter didn't exist yet, add it to the list
-        allFilters.push(newFilter)
-      }
+    if (filterList?.length) {
+      filterList.forEach((f) => {
+        allFilters.push(f)
+      })
     }
 
     return allFilters.map((filter) => {
@@ -1163,12 +1164,13 @@ export class QueryOutput extends React.Component {
     this.processDrilldown({ groupBys, supportedByAPI: !!groupBys })
   }
 
-  onChartClick = ({ row, columnIndex, columns, stringColumnIndex, legendColumn, activeKey, filter }) => {
-    if (filter) {
+  onChartClick = ({ row, columnIndex, columns, stringColumnIndex, legendColumn, activeKey, filter, filters }) => {
+    if (filter || filters) {
       return this.processDrilldown({
         supportedByAPI: false,
         activeKey,
         filter,
+        filters,
       })
     }
 

@@ -27,10 +27,10 @@ export function Tooltip(props = {}) {
       delayShow={800}
       globalCloseEvents={{ scroll: true }}
       {...props}
+      setIsOpen={setIsOpen}
       id={props.tooltipId ?? DEFAULT_TOOLTIP_ID}
       className={`react-autoql-tooltip${props.className ? ` ${props.className}` : ''}`}
       border={props.border ? '1px solid var(--react-autoql-border-color)' : undefined}
-      setIsOpen={setIsOpen}
     />
   )
 }
