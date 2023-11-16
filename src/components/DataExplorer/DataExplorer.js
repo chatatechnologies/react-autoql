@@ -15,7 +15,6 @@ import {
   isColumnNumberType,
   dataFormattingDefault,
   REQUEST_CANCELLED_ERROR,
-  isColumnStringType,
 } from 'autoql-fe-utils'
 
 import DataPreview from './DataPreview'
@@ -267,13 +266,17 @@ export default class DataExplorer extends React.Component {
     if (isColumnNumberType(column)) {
       // Use median value from dataset (median not avg, so it is guaranteed to conform with the dataset)
       defaultValue = median(columnData)
-    } else if (isColumnDateType(column)) {
-      // Use first value that exists
-      defaultValue = columnData.find((date) => !!date)
-    } else {
-      // Find any value that exists
-      defaultValue = columnData.find((str) => !!str)
     }
+
+    // Remove for now - we don't always want to specify a VL or date since that will restrict samply queries with groupbys
+    // ie. It will not show "total sales by customer", instead it will always show "total sales for __VL_CUSTOMER__"
+    // else if (isColumnDateType(column)) {
+    //   // Use first value that exists
+    //   defaultValue = columnData.find((date) => !!date)
+    // } else {
+    //   // Find any value that exists
+    //   defaultValue = columnData.find((str) => !!str)
+    // }
 
     if (defaultValue) {
       return `${defaultValue}`
