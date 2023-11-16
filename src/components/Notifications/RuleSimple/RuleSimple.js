@@ -299,6 +299,12 @@ export default class RuleSimple extends React.Component {
         secondTerm.compare_column = secondQuerySelectedNumberColumnName
         secondTerm.join_column = secondQueryJoinColumnName
       }
+      if (this.state.secondQueryGroupableColumnsAmount > 1 && this.state.secondQueryAmountOfNumberColumns === 1) {
+        secondTerm.join_column = secondQueryJoinColumnName ?? this.state.secondQueryJoinColumnName
+        secondTerm.compare_column = this.state.secondQueryResponse?.data?.data?.columns
+          .filter((obj) => obj.groupable === false)
+          .map((obj) => obj.name)[0]
+      }
 
       if (this.state.secondTermType === QUERY_TERM_TYPE) {
         secondTerm.session_filter_locks = lockedFilters
