@@ -90,6 +90,14 @@ export default class DataPreview extends React.Component {
     })
       .then((response) => {
         if (this._isMounted) {
+          // Add metadata to determine whether or not a user can generate sample queries from the column
+          if (response?.data?.data?.columns?.length) {
+            response.data.data.columns.forEach((column) => {
+              column.isGroupable = this.isColumnGroupable(column)
+              column.isFilterable = this.isColumnFilterable(column)
+            })
+          }
+
           this.setState({ dataPreview: response, loading: false })
           this.props.onDataPreview?.(response)
         }
@@ -102,6 +110,20 @@ export default class DataPreview extends React.Component {
           }
         }
       })
+  }
+
+  isColumnGroupable = (column) => {
+    const groupsNotProvided = !this.props.subject?.groups
+    const existsInGroups = !!this.props.subject?.groups?.find((groupby) => groupby.table_column === column.name)
+    const groupbysAllowed = groupsNotProvided || existsInGroups
+    return groupbysAllowed
+  }
+
+  isColumnFilterable = (column) => {
+    const filtersNotProvided = !this.props.subject?.filters
+    const existsInFilters = !!this.props.subject?.filters?.find((filter) => filter.table_column === column.name)
+    const filtersAllowed = filtersNotProvided || existsInFilters
+    return filtersAllowed
   }
 
   renderDataPreviewGrid = () => {
@@ -119,11 +141,19 @@ export default class DataPreview extends React.Component {
       )
     }
 
+    const disabledColumns = []
+    this.state.dataPreview?.data?.data?.columns?.forEach((column, i) => {
+      if (!column.isFilterable && !column.isGroupable) {
+        disabledColumns.push(i)
+      }
+    })
+
     return (
       <SelectableTable
         dataFormatting={this.props.dataFormatting}
         onColumnSelection={this.props.onColumnSelection}
         selectedColumns={this.props.selectedColumns}
+        disabledColumns={disabledColumns}
         shouldRender={this.props.shouldRender}
         queryResponse={this.state.dataPreview}
         showEndOfPreviewMessage={true}

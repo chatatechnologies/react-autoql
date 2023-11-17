@@ -98,7 +98,7 @@ export default class DataExplorer extends React.Component {
             const subjectList = []
 
             subjects.forEach((subject) => {
-              const foundSubject = this.inputRef?.state?.allSubjects?.find((subj) => subj.context === subject.subject)
+              const foundSubject = this.getSubjectObject(subject.subject)
               if (foundSubject) {
                 subjectList.push(foundSubject)
               }
@@ -120,6 +120,10 @@ export default class DataExplorer extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
+  }
+
+  getSubjectObject = (context) => {
+    return this.inputRef?.state?.allSubjects?.find((subj) => subj.context === context)
   }
 
   resetState = (newState = {}) => {
@@ -247,6 +251,7 @@ export default class DataExplorer extends React.Component {
         onColumnSelection={(columns) => this.setState({ selectedColumns: columns })}
         onDataPreview={(dataPreview) => this.setState({ dataPreview })}
         data={this.state.dataPreview}
+        // subject={this.getSubjectObject(context)}
         selectedColumns={this.state.selectedColumns}
         onIsCollapsedChange={(isCollapsed) => {
           this.setState({
@@ -267,16 +272,15 @@ export default class DataExplorer extends React.Component {
       // Use median value from dataset (median not avg, so it is guaranteed to conform with the dataset)
       defaultValue = median(columnData)
     }
-
     // Remove for now - we don't always want to specify a VL or date since that will restrict samply queries with groupbys
     // ie. It will not show "total sales by customer", instead it will always show "total sales for __VL_CUSTOMER__"
-    // else if (isColumnDateType(column)) {
-    //   // Use first value that exists
-    //   defaultValue = columnData.find((date) => !!date)
-    // } else {
-    //   // Find any value that exists
-    //   defaultValue = columnData.find((str) => !!str)
-    // }
+    else if (isColumnDateType(column)) {
+      // Use first value that exists
+      defaultValue = columnData.find((date) => !!date)
+    } else {
+      // Find any value that exists
+      defaultValue = columnData.find((str) => !!str)
+    }
 
     if (defaultValue) {
       return `${defaultValue}`
