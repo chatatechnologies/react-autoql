@@ -124,7 +124,7 @@ export default class Icon extends React.Component {
   }
 
   render = () => {
-    const { type, size, showBadge, warning, danger, spinning, disabled, ...nativeProps } = this.props
+    const { type, size, showBadge, success, warning, danger, spinning, disabled, ...nativeProps } = this.props
 
     let icon = null
 
