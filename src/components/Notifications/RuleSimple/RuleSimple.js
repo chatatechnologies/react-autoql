@@ -267,7 +267,7 @@ export default class RuleSimple extends React.Component {
     if (this.shouldRenderFirstFieldSelectionGrid()) {
       expression[0].compare_column = firstQuerySelectedNumberColumnName
     }
-    if (this.props.initialData?.length > 1 && this.state.firstQueryJoinColumnName !== null) {
+    if (this.state.firstQuerySelectedNumberColumnName !== '' && this.state.firstQueryJoinColumnName !== null) {
       expression[0].compare_column = this.state.firstQuerySelectedNumberColumnName
     }
     //To see if this a multiple groupby query
