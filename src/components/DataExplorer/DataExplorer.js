@@ -436,12 +436,14 @@ export default class DataExplorer extends React.Component {
             size='small'
             align='start'
             popupClassname='react-autoql-sample-queries-filter-dropdown'
-            options={columns.map((col) => {
-              return {
-                value: col.name,
-                label: col.display_name,
-              }
-            })}
+            options={columns
+              .filter((col) => col.isGroupable || col.isFilterable)
+              .map((col) => {
+                return {
+                  value: col.name,
+                  label: col.display_name,
+                }
+              })}
             listTitle={fieldsDropdownTitle}
             selected={this.state.selectedColumns.map((index) => columns[index]?.name)}
             onChange={(selectedColumnNames) => {

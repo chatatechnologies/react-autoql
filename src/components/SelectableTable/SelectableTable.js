@@ -177,15 +177,23 @@ export default class SelectableTable extends React.Component {
             <span>{type}</span>
           </div>
         )}
-        {column.isGroupable === true && (
+        {column.isGroupable !== undefined && (
           <div className='selectable-table-tooltip-section'>
-            <Icon type='check' success />
+            <Icon
+              type={column.isGroupable ? 'check' : 'close'}
+              success={column.isGroupable}
+              danger={!column.isGroupable}
+            />
             <span> Supports grouping</span>
           </div>
         )}
-        {column.isFilterable === true && (
+        {column.isFilterable !== undefined && (
           <div className='selectable-table-tooltip-section'>
-            <Icon type='check' success />
+            <Icon
+              type={column.isFilterable ? 'check' : 'close'}
+              success={column.isFilterable}
+              danger={!column.isFilterable}
+            />
             <span> Supports filtering</span>
           </div>
         )}
