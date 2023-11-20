@@ -118,6 +118,7 @@ export default class SampleQuery extends React.Component {
                 onChange={(newValue) => this.onValueChange(newValue, chunk.name)}
                 tooltipID={this.props.tooltipID}
                 context={this.props.context}
+                column={chunk.replacement?.display_name}
                 shouldRender={this.props.shouldRender}
               />
             )

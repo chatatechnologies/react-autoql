@@ -43,12 +43,16 @@ export default class VLAutocompleteInput extends React.Component {
   static propTypes = {
     authentication: authenticationType,
     popoverPosition: PropTypes.string,
+    column: PropTypes.string,
+    context: PropTypes.string,
     onChange: PropTypes.func,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
     popoverPosition: 'bottom',
+    column: undefined,
+    context: undefined,
     onChange: () => {},
   }
 
@@ -156,6 +160,7 @@ export default class VLAutocompleteInput extends React.Component {
       ...getAuthentication(this.props.authentication),
       suggestion: value,
       context: this.props.context,
+      filter: this.props.column,
       cancelToken: this.axiosSource.token,
     })
       .then((response) => {
