@@ -110,16 +110,18 @@ export default class SampleQuery extends React.Component {
           let chunkContent = text
 
           if (chunk.type == SampleQueryReplacementTypes.SAMPLE_QUERY_VL_TYPE) {
+            const columnName = chunk.replacement?.display_name
+
             chunkContent = (
               <VLAutocompleteInputPopover
                 authentication={this.props.authentication}
-                placeholder='Search values'
                 value={this.state.values[chunk.name]?.replacement ?? undefined}
                 onChange={(newValue) => this.onValueChange(newValue, chunk.name)}
                 tooltipID={this.props.tooltipID}
                 context={this.props.context}
-                column={chunk.replacement?.display_name}
+                column={columnName}
                 shouldRender={this.props.shouldRender}
+                placeholder={columnName ? `Search a "${columnName}"` : 'Search values'}
               />
             )
           } else if (chunk.type == SampleQueryReplacementTypes.SAMPLE_QUERY_AMOUNT_TYPE) {
