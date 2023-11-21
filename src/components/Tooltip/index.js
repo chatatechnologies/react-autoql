@@ -1,1 +1,1 @@
-export { Tooltip, hideTooltips, rebuildTooltips } from './Tooltip'
+export { Tooltip } from './Tooltip'

@@ -411,7 +411,6 @@
   .title-input-icon {
     color: var(--react-autoql-accent-color);
     position: absolute;
-    pointer-events: none;
     z-index: 1;
   }
 
@@ -426,7 +425,9 @@
 .dashboard-tile-input:hover,
 .dashboard-tile-input:focus,
 .dashboard-tile-input-container .dashboard-tile-autocomplete-input:hover,
-.dashboard-tile-input-container .dashboard-tile-autocomplete-input:focus {
+.dashboard-tile-input-container .dashboard-tile-autocomplete-input:focus,
+.dashboard-tile-left-input-container:hover input,
+.dashboard-tile-right-input-container:hover input {
   border: 1px solid rgb(38, 167, 233) !important;
   border-color: var(--react-autoql-accent-color) !important;
 }

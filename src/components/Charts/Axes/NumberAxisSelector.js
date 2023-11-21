@@ -2,6 +2,7 @@ import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
+import _cloneDeep from 'lodash.clonedeep'
 import { isMobile } from 'react-device-detect'
 import { AGG_TYPES, COLUMN_TYPES } from 'autoql-fe-utils'
 
@@ -9,7 +10,6 @@ import { Button } from '../../Button'
 import { Select } from '../../Select'
 import { Popover } from '../../Popover'
 import { Checkbox } from '../../Checkbox'
-import { rebuildTooltips } from '../../Tooltip'
 import { SelectableList } from '../../SelectableList'
 import { CustomScrollbars } from '../../CustomScrollbars'
 
@@ -38,12 +38,6 @@ export default class NumberAxisSelector extends React.Component {
   static defaultProps = {
     changeNumberColumnIndices: () => {},
     positions: ['right', 'bottom', 'top', 'left'],
-  }
-
-  componentDidMount = () => {
-    if (!this.props.hidden) {
-      rebuildTooltips()
-    }
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -80,28 +74,27 @@ export default class NumberAxisSelector extends React.Component {
   }
 
   getColumnsOfType = (type) => {
-    const columns = this.state.columns?.filter((col) => col.type === type && col.is_visible)
+    const columns = this.state.columns?.filter((col) => {
+      return col.type === type && col.is_visible && col.index !== this.props.stringColumnIndex
+    })
+
     return columns
   }
 
   getSelectableListItems = (type) => {
-    const { columns } = this.state
     const items = []
 
     const otherAxisColumns = this.getOtherAxisColumns()
+    const columnsOfType = this.getColumnsOfType(type)
 
-    columns.forEach((col, i) => {
-      if (col.type !== type || !col.is_visible || col.pivot) {
-        return
-      }
-
-      const checked = this.state.checkedColumns.includes(i)
-      const disabled = otherAxisColumns.includes(i)
+    columnsOfType.forEach((col) => {
+      const checked = this.state.checkedColumns.includes(col.index)
+      const disabled = otherAxisColumns.includes(col.index)
 
       const aggTypeObj = AGG_TYPES[col.aggType]
 
       const item = {
-        key: `selectable-list-item-${this.COMPONENT_KEY}-${type}-${i}`,
+        key: `selectable-list-item-${this.COMPONENT_KEY}-${type}-${col.index}`,
         content: (
           <div className='agg-selector-column-item' key={`column-agg-type-symbol-${this.COMPONENT_KEY}`}>
             {!this.props.isAggregation && col.aggType && (
@@ -141,7 +134,7 @@ export default class NumberAxisSelector extends React.Component {
         ),
         disabled,
         checked,
-        columnIndex: i,
+        columnIndex: col.index,
       }
 
       items.push(item)
@@ -170,24 +163,24 @@ export default class NumberAxisSelector extends React.Component {
   getAllChecked = (type) => {
     const otherAxisColumns = this.getOtherAxisColumns()
     const areAllDisabled = this.areAllDisabled(type)
+    const columnsOfType = this.getColumnsOfType(type)
     return (
       !areAllDisabled &&
-      this.state.columns.every(
-        (col, i) =>
-          type !== col.type || this.state.checkedColumns.includes(i) || otherAxisColumns.includes(i) || !col.is_visible,
+      columnsOfType.every(
+        (col) => this.state.checkedColumns.includes(col.index) || otherAxisColumns.includes(col.index),
       )
     )
   }
 
   onColumnSelection = (selected, selectedColumns) => {
-    const selectedColumnIndices = selectedColumns.map((col) => col.columnIndex)
+    const selectedColumnIndices = selectedColumns.map((col) => col.index)
     this.setState({ selectedColumns: selectedColumnIndices })
   }
 
   onColumnCheck = (columns) => {
     const { checkedColumns } = this.state
+    const newCheckedColumns = _cloneDeep(checkedColumns)
 
-    const newCheckedColumns = [...checkedColumns]
     columns.forEach((col) => {
       const indexOfCheckedColumns = newCheckedColumns.indexOf(col.columnIndex)
       if (col.checked && indexOfCheckedColumns === -1) {

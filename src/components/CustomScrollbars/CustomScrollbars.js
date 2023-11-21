@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import PerfectScrollbar from 'react-perfect-scrollbar'
 
+import 'react-perfect-scrollbar/dist/css/styles.css'
 import './CustomScrollbars.scss'
 
 export default class CustomScrollbars extends React.Component {
@@ -13,14 +14,21 @@ export default class CustomScrollbars extends React.Component {
     autoHeightMax: PropTypes.number,
     autoHeightMin: PropTypes.number,
     contentHidden: PropTypes.bool,
+    maxHeight: PropTypes.number,
+    minHeight: PropTypes.number,
+    table: PropTypes.bool,
   }
 
   static defaultProps = {
     style: {},
-    autoHide: false,
+    options: {},
+    autoHide: true,
     autoHeightMin: undefined,
     autoHeightMax: undefined,
+    maxHeight: undefined,
+    minHeight: undefined,
     contentHidden: false,
+    table: false,
   }
 
   componentDidMount = () => {
@@ -46,7 +54,7 @@ export default class CustomScrollbars extends React.Component {
     }
 
     if (typeof duration !== 'number' || duration > this.MAX_UPDATE_DURATION) {
-      this.ref?._ps?.update()
+      setTimeout(() => this.ref?._ps?.update(), 0)
     } else {
       clearInterval(this.intervalID)
 
@@ -100,6 +108,14 @@ export default class CustomScrollbars extends React.Component {
     style.maxHeight = this.props.maxHeight
     style.minHeight = this.props.minHeight
 
+    if (this.props.suppressScrollY) {
+      style.overflowY = 'hidden'
+    }
+
+    if (this.props.suppressScrollX) {
+      style.overflowX = 'hidden'
+    }
+
     return style
   }
 
@@ -110,11 +126,15 @@ export default class CustomScrollbars extends React.Component {
 
     return (
       <PerfectScrollbar
-        className={`react-autoql-custom-scrollbars 
-            ${this.props.className ?? ''}
-            ${this.props.autoHide ? 'autohide' : ''}`}
+        className={`${
+          this.props.className
+            ? `${this.props.className} react-autoql-custom-scrollbars`
+            : 'react-autoql-custom-scrollbars'
+        } ${!!this.props.autoHide ? 'autohide' : 'always-visible'}`}
         ref={(r) => (this.ref = r)}
         style={this.getStyleProp()}
+        options={{ minScrollbarLength: 15, ...this.props.options }}
+        component={this.props.component}
       >
         {this.props.children}
       </PerfectScrollbar>

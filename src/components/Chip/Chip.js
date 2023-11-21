@@ -4,10 +4,9 @@ import { v4 as uuid } from 'uuid'
 
 import { Icon } from '../Icon'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { ConfirmPopover } from '../ConfirmPopover'
 
 import './Chip.scss'
-import { ConfirmPopover } from '../ConfirmPopover'
-import { hideTooltips } from '../Tooltip'
 
 export default class Chip extends React.Component {
   COMPONENT_KEY = `react-autoql-chip-${uuid()}`
@@ -41,7 +40,6 @@ export default class Chip extends React.Component {
   }
 
   onCloseClick = () => {
-    hideTooltips()
     this.setState({ isConfirmPopoverVisible: true })
   }
 
@@ -65,8 +63,8 @@ export default class Chip extends React.Component {
             className='react-autoql-chip-delete-btn'
             type='close'
             onClick={this.onCloseClick}
-            data-tip={this.props.deleteTooltip}
-            data-for={this.props.tooltipID}
+            data-tooltip-html={this.props.deleteTooltip}
+            data-tooltip-id={this.props.tooltipID}
           />
         </ConfirmPopover>
       )
@@ -89,8 +87,8 @@ export default class Chip extends React.Component {
           data-multiline={this.props.multiline}
           style={{ ...this.props.style }}
           onClick={this.props.onClick}
-          data-for={this.props.tooltipID}
-          data-tip={this.props.tooltip}
+          data-tooltip-id={this.props.tooltipID}
+          data-tooltip-html={this.props.tooltip}
         >
           <div className='react-autoql-chip-background' />
           <div className='react-autoql-chip-content'>

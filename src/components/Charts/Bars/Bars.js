@@ -1,8 +1,6 @@
 import React, { Component } from 'react'
 import { getKey, scaleZero, getTooltipContent } from 'autoql-fe-utils'
 
-import { rebuildTooltips } from '../../Tooltip'
-
 import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
 
 export default class Bars extends Component {
@@ -11,10 +9,6 @@ export default class Bars extends Component {
 
   state = {
     activeKey: this.props.activeChartElementKey,
-  }
-
-  componentDidMount = () => {
-    rebuildTooltips()
   }
 
   onBarClick = (row, colIndex, rowIndex) => {
@@ -93,8 +87,8 @@ export default class Bars extends Component {
                 width={width}
                 height={barHeight}
                 onClick={() => this.onBarClick(d, colIndex, index)}
-                data-tip={tooltip}
-                data-for={this.props.chartTooltipID}
+                data-tooltip-html={tooltip}
+                data-tooltip-id={this.props.chartTooltipID}
                 style={{ fill: color }}
               />
             )

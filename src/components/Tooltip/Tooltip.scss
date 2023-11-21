@@ -1,0 +1,17 @@
+.react-tooltip.react-autoql-tooltip,
+.react-tooltip.react-autoql-chart-tooltip {
+  font-family: var(--react-autoql-font-family), sans-serif;
+  letter-spacing: 0.04em;
+  line-height: 1.5em;
+  padding: 7px 15px;
+  transition: none;
+  text-align: left;
+  z-index: 999999 !important; /* necessary to show up on top of rc drawer */
+  max-width: 300px;
+  word-break: break-word;
+}
+
+.react-tooltip.interpretation-tooltip {
+  max-width: 400px;
+  transition: none;
+}

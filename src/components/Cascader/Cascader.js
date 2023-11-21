@@ -1,8 +1,10 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
+import _isEqual from 'lodash.isequal'
 
 import { Icon } from '../Icon'
+import { CustomScrollbars } from '../CustomScrollbars'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Cascader.scss'
@@ -15,6 +17,7 @@ export default class Cascader extends React.Component {
     onFinalOptionClick: PropTypes.func,
     onSeeMoreClick: PropTypes.func,
     showSeeMoreButton: PropTypes.bool,
+    customContent: PropTypes.element || PropTypes.func,
   }
 
   static defaultProps = {
@@ -22,79 +25,120 @@ export default class Cascader extends React.Component {
     onFinalOptionClick: () => {},
     onSeeMoreClick: undefined,
     showSeeMoreButton: true,
+    customContent: null,
   }
 
   state = {
     activeKeys: [],
+    mostRecentOption: undefined,
     optionsArray: [{ options: this.props.options }],
   }
 
+  componentDidUpdate = (prevProps) => {
+    const optionValues = this.props.options.map((option) => option.value)
+    const prevOptionValues = prevProps.options.map((option) => option.value)
+    if (!_isEqual(optionValues, prevOptionValues)) {
+      this.setState({ optionsArray: [{ options: this.props.options }], activeKeys: [], mostRecentOption: undefined })
+    }
+  }
+
   renderOptionsList = ({ options, active, index }) => {
+    if (!options?.length) {
+      return null
+    }
+
     const isLastGroup = index === (this.state.optionsArray?.length ?? 0) - 1
     const isFirstGroup = index === 0
     const mostRecentOptionLabel = this.state.mostRecentOption?.label
-    const hasNoChildren = options.every((option) => !option.children)
+    const hasNoChildren = options?.every((option) => !option.children)
 
     return (
       <div
         key={`options-list-${index}-${this.COMPONENT_ID}`}
         className={`options-container
-            ${isLastGroup ? 'visible' : 'hidden'}`}
+            ${isLastGroup ? 'cascader-options-container-visible' : 'cascader-options-container-hidden'}`}
         data-test={`options-list-${index}`}
       >
         {!isFirstGroup && (
-          <Fragment>
-            <div
-              className='cascader-back-arrow'
-              data-test={`cascader-back-arrow-${index}`}
-              onClick={() => {
-                const newArray = [...this.state.optionsArray]
-                newArray.pop()
-                this.setState({
-                  optionsArray: newArray,
-                })
-              }}
-            >
-              <Icon type='caret-left' />
-            </div>
-            <div className='options-title' data-test='options-title'>
-              {mostRecentOptionLabel}
-            </div>
-          </Fragment>
-        )}
-        {options.map((option, i) => {
-          return (
-            <div
-              key={`options-${i}-${this.COMPONENT_ID}`}
-              className={`option
-                  ${option.value === active ? 'active' : ''}`}
-              onClick={() => this.onOptionClick(option, index)}
-              data-test={`options-item-${index}-${i}`}
-            >
-              <span data-test={`options-item-${index}-${i}-text`}>{option.label}</span>
-              {!option?.children?.length && <Icon className='option-execute-icon' type='play' />}
-              {!!option?.children?.length && <Icon className='option-arrow' type='caret-right' />}
-            </div>
-          )
-        })}
-        {this.props.showSeeMoreButton && hasNoChildren && mostRecentOptionLabel && this.props.onSeeMoreClick && (
           <div
-            className='option'
-            data-test='see-more-option'
+            className='options-title'
             onClick={() => {
-              this.props.onSeeMoreClick(mostRecentOptionLabel)
+              const newArray = this.state.optionsArray.slice(0, index).map((opt, i) => {
+                if (i === index - 1) {
+                  return {
+                    ...opt,
+                    active: undefined,
+                  }
+                }
+                return opt
+              })
+
+              this.setState({ optionsArray: newArray })
+              this.props.onBackClick?.()
             }}
           >
-            <span>
-              <Icon type='light-bulb' /> See more...
+            <span data-test={`cascader-back-arrow-${index}`}>
+              <Icon className='cascader-back-arrow' type='caret-left' />{' '}
+              <span data-test='options-title'>{mostRecentOptionLabel}</span>
             </span>
           </div>
         )}
+        <div className='react-autoql-cascader-scrollbar-container'>
+          <CustomScrollbars autoHide={false}>
+            {options.map((option, i) => {
+              return (
+                <div
+                  key={`options-${i}-${this.COMPONENT_ID}`}
+                  className={`option
+                  ${option.value === active ? 'react-autoql-cascader-option-active' : ''}
+                  ${option.customContent ? 'react-autoql-cascader-option-custom-content' : ''}`}
+                  onClick={() => this.onOptionClick(option, index)}
+                  data-test={`options-item-${index}-${i}`}
+                >
+                  {option.customContent ? (
+                    typeof option.customContent === 'function' ? (
+                      option.customContent()
+                    ) : (
+                      option.customContent
+                    )
+                  ) : (
+                    <>
+                      <span className='react-autoql-cascader-option-item' data-test={`options-item-${index}-${i}-text`}>
+                        {option.label}
+                      </span>
+                      {!option?.children?.length && this.props.action ? this.props.action : null}
+                      {!!option?.children?.length && (
+                        <Icon className='react-autoql-cascader-option-arrow' type='caret-right' />
+                      )}
+                    </>
+                  )}
+                </div>
+              )
+            })}
+            {this.props.showSeeMoreButton && hasNoChildren && mostRecentOptionLabel && this.props.onSeeMoreClick && (
+              <div
+                className='option'
+                data-test='see-more-option'
+                onClick={() => {
+                  this.props.onSeeMoreClick(mostRecentOptionLabel)
+                }}
+              >
+                <span>
+                  <Icon type='light-bulb' /> See more...
+                </span>
+              </div>
+            )}
+          </CustomScrollbars>
+        </div>
       </div>
     )
   }
 
   onOptionClick = (option, index) => {
+    if (!option.customContent) {
+      this.props.onOptionClick?.(option)
+    }
+
     if (option.children) {
       // If an earlier option is clicked, reset the options and active keys arrays
       const newOptionsArray = this.state.optionsArray.slice(0, index + 1)

@@ -1,12 +1,11 @@
-import React, { Component } from 'react'
-import { scaleLinear } from 'd3-scale'
+import React from 'react'
 import { max, min } from 'd3-array'
+import { scaleLinear } from 'd3-scale'
 import { getChartColorVars, getTooltipContent, getKey } from 'autoql-fe-utils'
 
 import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
-import { rebuildTooltips } from '../../Tooltip'
 
-export default class Squares extends Component {
+export default class Squares extends React.Component {
   constructor(props) {
     super(props)
 
@@ -29,10 +28,6 @@ export default class Squares extends Component {
 
   static propTypes = chartElementPropTypes
   static defaultProps = chartElementDefaultProps
-
-  componentDidMount = () => {
-    rebuildTooltips()
-  }
 
   onSquareClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)
@@ -135,8 +130,8 @@ export default class Squares extends Component {
             width={xScale.bandwidth()}
             height={yScale.bandwidth()}
             onClick={() => this.onSquareClick(row, colIndex, index)}
-            data-tip={tooltip}
-            data-for={this.props.chartTooltipID}
+            data-tooltip-html={tooltip}
+            data-tooltip-id={this.props.chartTooltipID}
             style={{ color: activeFillColor }}
             fill={fillColor}
             fillOpacity={opacity}

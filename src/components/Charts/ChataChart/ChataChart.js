@@ -1,8 +1,8 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
-import { scaleOrdinal } from 'd3-scale'
+import PropTypes from 'prop-types'
 import { isMobile } from 'react-device-detect'
+
 import {
   aggregateData,
   getLegendLabelsForMultiSeries,
@@ -10,39 +10,41 @@ import {
   getBBoxFromRef,
   sortDataByDate,
   deepEqual,
-  rotateArray,
   onlyUnique,
   DATE_ONLY_CHART_TYPES,
   DOUBLE_AXIS_CHART_TYPES,
   CHARTS_WITHOUT_AGGREGATED_DATA,
   getDateColumnIndex,
   isColumnDateType,
-  getChartColorVars,
   getThemeValue,
   dataStructureChanged,
   getLegendLocation,
   mergeBoundingClientRects,
+  DisplayTypes,
+  isChartType,
+  getColorScales,
+  aggregateOtherCategory,
 } from 'autoql-fe-utils'
 
-import { ErrorBoundary } from '../../../containers/ErrorHOC'
-import { ChataColumnChart } from '../ChataColumnChart'
+import { Spinner } from '../../Spinner'
+import { ChataPieChart } from '../ChataPieChart'
 import { ChataBarChart } from '../ChataBarChart'
 import { ChataLineChart } from '../ChataLineChart'
-import { ChataPieChart } from '../ChataPieChart'
-import { ChataHeatmapChart } from '../ChataHeatmapChart'
-import { ChataBubbleChart } from '../ChataBubbleChart'
-import { ChataStackedBarChart } from '../ChataStackedBarChart'
-import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
-import { ChataStackedLineChart } from '../ChataStackedLineChart'
-import { ChataScatterplotChart } from '../ChataScatterplotChart'
-import { ChataColumnLineChart } from '../ChataColumnLine'
+import { CSS_PREFIX } from '../../../js/Constants'
 import { ChataHistogram } from '../ChataHistogram'
-import { Spinner } from '../../Spinner'
+import { ChataColumnChart } from '../ChataColumnChart'
+import { ChataBubbleChart } from '../ChataBubbleChart'
+import { ChataHeatmapChart } from '../ChataHeatmapChart'
+import { ChataColumnLineChart } from '../ChataColumnLine'
+import { ErrorBoundary } from '../../../containers/ErrorHOC'
+import { ChataStackedBarChart } from '../ChataStackedBarChart'
+import { ChataScatterplotChart } from '../ChataScatterplotChart'
+import { ChataStackedLineChart } from '../ChataStackedLineChart'
+import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 
 import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPropHelpers.js'
 
 import './ChataChart.scss'
-import { CSS_PREFIX } from '../../../js/Constants'
 
 export default class ChataChart extends React.Component {
   constructor(props) {
@@ -59,7 +61,7 @@ export default class ChataChart extends React.Component {
 
     this.state = {
       chartID: uuid(),
-      data,
+      ...data,
       deltaX: 0,
       deltaY: 0,
       isLoading: true,
@@ -170,7 +172,7 @@ export default class ChataChart extends React.Component {
 
     if (dataStructureChanged(this.props, prevProps) || this.props.dataChangeCount !== prevProps.dataChangeCount) {
       const data = this.getData(this.props)
-      this.setState({ data, chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
+      this.setState({ ...data, chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
     }
   }
 
@@ -181,18 +183,7 @@ export default class ChataChart extends React.Component {
 
   getColorScales = () => {
     const { numberColumnIndices, numberColumnIndices2 } = this.props
-    const { chartColors, chartColorsDark } = getChartColorVars()
-
-    const numSeries = numberColumnIndices?.length ?? 1
-    const chartColors2 = rotateArray(chartColorsDark, -1 * numSeries)
-
-    const colorScale = scaleOrdinal().range(chartColors).domain(numberColumnIndices)
-    let colorScale2
-    if (numberColumnIndices2?.length) {
-      colorScale2 = scaleOrdinal().range(chartColors2).domain(numberColumnIndices2)
-    }
-
-    return { colorScale, colorScale2 }
+    return getColorScales({ numberColumnIndices, numberColumnIndices2, data: this.props.data, type: this.props.type })
   }
 
   getData = (props) => {
@@ -200,8 +191,15 @@ export default class ChataChart extends React.Component {
       return
     }
 
+    const { stringColumnIndex, numberColumnIndex } = props
+
+    const maxElements = 10
+
     if (props.isDataAggregated) {
-      return sortDataByDate(props.data, props.columns, 'asc')
+      return {
+        data: sortDataByDate(props.data, props.columns, 'asc'),
+        dataReduced: aggregateOtherCategory(props.data, { stringColumnIndex, numberColumnIndex }, maxElements),
+      }
     } else {
       const indices1 = props.numberColumnIndices ?? []
       const indices2 = props.numberColumnIndices2 ?? []
@@ -211,13 +209,25 @@ export default class ChataChart extends React.Component {
         return
       }
 
-      return aggregateData({
+      const aggregatedWithOtherCategory = aggregateData({
+        data: props.data,
+        aggColIndex: stringColumnIndex,
+        columns: props.columns,
+        numberIndices,
+        dataFormatting: props.dataFormatting,
+        columnIndexConfig: { stringColumnIndex, numberColumnIndex },
+        maxElements,
+      })
+
+      const aggregated = aggregateData({
         data: props.data,
         aggColIndex: props.stringColumnIndex,
         columns: props.columns,
         numberIndices,
         dataFormatting: props.dataFormatting,
       })
+
+      return { data: aggregated, dataReduced: aggregatedWithOtherCategory }
     }
   }
 
@@ -264,7 +274,7 @@ export default class ChataChart extends React.Component {
   }
 
   getDeltas = () => {
-    if (this.props.type === 'pie') {
+    if (this.props.type == DisplayTypes.PIE) {
       return { deltaX: 0, deltaY: 0 }
     }
 
@@ -442,7 +452,10 @@ export default class ChataChart extends React.Component {
     const { colorScale, colorScale2 } = this.getColorScales()
 
     const aggregated = !CHARTS_WITHOUT_AGGREGATED_DATA.includes(this.props.type)
-    const data = (aggregated ? this.state.data : null) || this.props.data
+
+    const dataReduced = this.state.dataReduced ?? this.state.data
+    const stateData = this.props.type == DisplayTypes.PIE ? dataReduced : this.state.data
+    const data = (aggregated ? stateData : null) || this.props.data
 
     return {
       ...this.props,
@@ -493,34 +506,34 @@ export default class ChataChart extends React.Component {
     const commonChartProps = this.getCommonChartProps()
 
     switch (this.props.type) {
-      case 'column': {
+      case DisplayTypes.COLUMN: {
         return <ChataColumnChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
-      case 'bar': {
+      case DisplayTypes.BAR: {
         return <ChataBarChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
-      case 'line': {
+      case DisplayTypes.LINE: {
         return <ChataLineChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
-      case 'pie': {
+      case DisplayTypes.PIE: {
         return <ChataPieChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
-      case 'bubble': {
+      case DisplayTypes.BUBBLE: {
         return <ChataBubbleChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
-      case 'heatmap': {
+      case DisplayTypes.HEATMAP: {
         return <ChataHeatmapChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
-      case 'stacked_column': {
+      case DisplayTypes.STACKED_COLUMN: {
         return <ChataStackedColumnChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
-      case 'stacked_bar': {
+      case DisplayTypes.STACKED_BAR: {
         return <ChataStackedBarChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
-      case 'stacked_line': {
+      case DisplayTypes.STACKED_LINE: {
         return <ChataStackedLineChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
-      case 'column_line': {
+      case DisplayTypes.COLUMN_LINE: {
         const visibleSeriesIndices2 = this.props.numberColumnIndices2?.filter(
           (i) => this.props.columns?.[i] && !this.props.columns[i].isSeriesHidden,
         )
@@ -533,7 +546,7 @@ export default class ChataChart extends React.Component {
           />
         )
       }
-      case 'histogram': {
+      case DisplayTypes.HISTOGRAM: {
         return (
           <ChataHistogram
             {...commonChartProps}
@@ -543,7 +556,7 @@ export default class ChataChart extends React.Component {
           />
         )
       }
-      case 'scatterplot': {
+      case DisplayTypes.SCATTERPLOT: {
         return <ChataScatterplotChart {...commonChartProps} />
       }
       default: {
@@ -554,6 +567,7 @@ export default class ChataChart extends React.Component {
 
   render = () => {
     if (!this.state.data?.length) {
+      console.error('Unable to render chart - There was no data provided to the chart component.')
       return null
     }
 

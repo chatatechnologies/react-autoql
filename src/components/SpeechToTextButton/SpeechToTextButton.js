@@ -3,12 +3,12 @@ import axios from 'axios'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
-import RecordRTC, { StereoAudioRecorder } from 'recordrtc'
 import { authenticationDefault } from 'autoql-fe-utils'
+import RecordRTC, { StereoAudioRecorder } from 'recordrtc'
 
 import { Icon } from '../Icon'
 import { Popover } from '../Popover'
-import { hideTooltips, Tooltip } from '../Tooltip'
+import { Tooltip } from '../Tooltip'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType } from '../../props/types'
@@ -114,7 +114,6 @@ export default class SpeechToTextBtn extends React.Component {
   }
 
   onMouseDown = () => {
-    hideTooltips()
     this.startRecording()
   }
 
@@ -178,19 +177,14 @@ export default class SpeechToTextBtn extends React.Component {
             onMouseDown={this.onMouseDown}
             onMouseUp={this.stopRecording}
             onMouseLeave={this.state.isRecording ? this.stopRecording : undefined}
-            data-tip='Hold for voice-to-text'
-            data-for='react-autoql-speech-to-text-tooltip'
-            data-tip-disable={this.state.isRecording}
+            data-tooltip-content='Hold for voice-to-text'
+            data-tooltip-id='react-autoql-speech-to-text-tooltip'
+            data-tooltip-content-disable={this.state.isRecording}
           >
             <Icon type='microphone' />
           </button>
         </Popover>
-        <Tooltip
-          className='react-autoql-tooltip'
-          id='react-autoql-speech-to-text-tooltip'
-          effect='solid'
-          delayShow={800}
-        />
+        <Tooltip tooltipId='react-autoql-speech-to-text-tooltip' delayShow={800} />
       </ErrorBoundary>
     )
   }

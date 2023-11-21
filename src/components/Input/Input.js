@@ -1,18 +1,27 @@
-import React, { Fragment } from 'react'
+import React from 'react'
+import dayjs from '../../js/dayjsWithPlugins'
+import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 
 import { Icon } from '../Icon'
+import { Button } from '../Button'
+import { Select } from '../Select'
+import { Popover } from '../Popover'
+import { DateRangePicker } from '../DateRangePicker'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Input.scss'
-import { Select } from '../Select'
 
 export default class Input extends React.Component {
   constructor(props) {
     super(props)
 
+    this.INPUT_ID = uuid()
+
     this.state = {
       focused: false,
+      isDatePickerOpen: false,
+      dateRange: undefined,
     }
   }
 
@@ -23,6 +32,7 @@ export default class Input extends React.Component {
     size: PropTypes.oneOf(['small', 'large']),
     label: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
     fullWidth: PropTypes.bool,
+    datePicker: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -32,24 +42,39 @@ export default class Input extends React.Component {
     size: 'large',
     label: '',
     fullWidth: false,
+    datePicker: false,
   }
 
-  onFocus = () => {
-    this.setState({ focused: true })
-    if (this.props.onFocus) {
-      this.props.onFocus()
+  componentDidUpdate = (prevProps, prevState) => {
+    if (!this.state.focused && prevState.focused && !this.state.isDatePickerOpen) {
+      this.props.onBlur?.()
     }
   }
 
-  onBlur = () => {
-    this.setState({ focused: false })
-    if (this.props.onBlur) {
-      this.props.onBlur()
+  onFocus = (e) => {
+    this.setState({ focused: true })
+    this.props.onFocus?.(e)
+  }
+
+  onBlur = (e) => {
+    if (!this.state.isDatePickerOpen) {
+      this.setState({ focused: false })
     }
   }
 
   focus = () => {
     this.inputRef?.focus()
+    this.setState({ focused: true })
+  }
+
+  selectAll = () => {
+    if (this.inputRef) {
+      this.inputRef.select?.()
+
+      if (!this.inputRef.hasFocus?.()) {
+        this.focus()
+      }
+    }
   }
 
   onSelectChange = (value) => {
@@ -69,6 +94,44 @@ export default class Input extends React.Component {
   decrementNumber = () => {
     this.inputRef?.stepDown()
     this.simulateOnChange()
+  }
+
+  onDateRangeSelection = (dateRange) => {
+    this.setState({ dateRange })
+  }
+
+  onDateRangeApplyClick = () => {
+    this.setState({ isDatePickerOpen: false }, () => {
+      if (!this.state.dateRange || !this.inputRef) {
+        return
+      }
+
+      const { startDate, endDate } = this.state.dateRange
+
+      if (!startDate && !endDate) {
+        return
+      }
+
+      let inputText = ''
+      let start = startDate
+      let end = endDate
+      if (startDate && !endDate) {
+        end = start
+      } else if (!startDate && endDate) {
+        start = end
+      }
+
+      const formattedStart = dayjs(start).format('ll')
+      const formattedEnd = dayjs(end).format('ll')
+
+      if (formattedStart === formattedEnd) {
+        inputText = `on ${formattedStart}`
+      } else {
+        inputText = `between ${formattedStart} and ${formattedEnd}`
+      }
+
+      this.props.onDateRangeChange?.(this.state.dateRange, inputText)
+    })
   }
 
   renderSpinWheel = () => {
@@ -95,9 +158,67 @@ export default class Input extends React.Component {
     )
   }
 
+  renderDateRangePickerPopover = () => {
+    if (!this.props.datePicker) {
+      return null
+    }
+
+    return (
+      <Popover
+        isOpen={this.state.isDatePickerOpen}
+        align='middle'
+        positions={['top', 'bottom', 'right', 'left']}
+        containerClassName='react-autoql-inline-input-date-picker-popover'
+        onClickOutside={(e) => {
+          this.setState({ isDatePickerOpen: false }, () => {
+            this.focus()
+          })
+        }}
+        content={
+          <div className='react-autoql-popover-date-picker'>
+            <DateRangePicker onSelection={this.onDateRangeSelection} initialRange={this.props.initialDateRange} />
+            <Button type='primary' onClick={this.onDateRangeApplyClick}>
+              Apply
+            </Button>
+          </div>
+        }
+      >
+        <div className='react-autoql-inline-input-date-picker-btn'>
+          <Icon
+            className='react-autoql-inline-input-date-picker-btn-icon'
+            type='calendar'
+            data-tooltip-id={this.props.tooltipID}
+            data-tooltip-content='Pick a date range'
+            onClick={(e) => {
+              e.preventDefault()
+              this.setState({ isDatePickerOpen: !this.state.isDatePickerOpen })
+            }}
+            onMouseDown={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+            }}
+          />
+        </div>
+      </Popover>
+    )
+  }
+
   render = () => {
-    const { icon, area, size, selectOptions, style, selectValue, onSelectChange, fullWidth, ...nativeProps } =
-      this.props
+    const {
+      icon,
+      area,
+      size,
+      selectOptions,
+      style,
+      selectValue,
+      onSelectChange,
+      fullWidth,
+      datePicker,
+      onDateRangeChange,
+      initialDateRange,
+      ...nativeProps
+    } = this.props
+
     const { className, type, label } = nativeProps
 
     const hasSelect = !!selectOptions?.length
@@ -105,6 +226,7 @@ export default class Input extends React.Component {
     return (
       <ErrorBoundary>
         <div
+          ref={(r) => (this.wrapper = r)}
           className={`react-autoql-input-and-label-container
         ${className ?? ''}
         ${fullWidth ? 'react-autoql-input-full-width' : ''}`}
@@ -127,9 +249,10 @@ export default class Input extends React.Component {
                 className='react-autoql-input area'
                 onFocus={this.onFocus}
                 onBlur={this.onBlur}
+                style={this.props.inputStyle}
               />
             ) : (
-              <div className='react-autoql-input-and-icon'>
+              <div className={`react-autoql-input-and-icon ${this.props.datePicker ? 'with-date-picker' : ''}`}>
                 <input
                   autoComplete='one-time-code'
                   {...nativeProps}
@@ -139,10 +262,12 @@ export default class Input extends React.Component {
                 ${hasSelect ? 'with-select' : ''}`}
                   onFocus={this.onFocus}
                   onBlur={this.onBlur}
+                  style={this.props.inputStyle}
                 />
                 {icon && (
                   <Icon className={`react-autoql-input-icon ${this.state.focused ? ' focus' : ''}`} type={icon} />
                 )}
+                {this.props.datePicker ? this.renderDateRangePickerPopover() : null}
               </div>
             )}
             {type === 'number' && this.renderSpinWheel()}

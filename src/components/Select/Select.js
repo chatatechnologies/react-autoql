@@ -1,13 +1,17 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import _isEqual from 'lodash.isequal'
+
 import { Popover } from '../Popover'
 import { v4 as uuid } from 'uuid'
 import { Icon } from '../Icon'
-import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
+import { Tooltip } from '../Tooltip'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { Menu, MenuItem } from '../Menu'
 
 import './Select.scss'
+import { LoadingDots } from '../LoadingDots'
+import { CustomScrollbars } from '../CustomScrollbars'
 
 export default class Select extends React.Component {
   constructor(props) {
@@ -48,34 +52,35 @@ export default class Select extends React.Component {
   }
 
   componentDidMount = () => {
-    rebuildTooltips()
     this.scrollToValue()
   }
 
-  componentDidUpdate = (nextProps, nextState) => {
-    if (this.state.isOpen !== nextState.isOpen) {
-      hideTooltips()
-      rebuildTooltips()
-
+  componentDidUpdate = (prevProps, prevState) => {
+    if (this.state.isOpen !== prevState.isOpen || !_isEqual(this.props.options, prevProps.options)) {
       if (this.state.isOpen) {
         this.scrollToValue()
       }
     }
-
-    if (this.props.value !== nextProps.value) {
-      rebuildTooltips()
-    }
   }
 
   scrollToValue = () => {
-    const index = this.props.options?.findIndex((option) => this.props.value === option.value)
+    this.scrollbars?.update()
+
+    let index = this.props.options?.findIndex((option) => this.props.value === option.value)
+    if (index === -1) {
+      index = 0
+    }
+
     const element = document.querySelector(`#select-option-${this.ID}-${index}`)
+
     if (element) {
       element.scrollIntoView({
         behavior: 'auto',
         block: 'center',
         inline: 'center',
       })
+    } else {
+      this.popoverContent?.scrollIntoView?.()
     }
   }
 
@@ -95,10 +100,10 @@ export default class Select extends React.Component {
           data-test='react-autoql-select'
           onClick={() => this.setState({ isOpen: !this.state.isOpen })}
           style={this.props.style}
-          data-tip={this.props.tooltip}
-          data-for={this.props.tooltipID}
+          data-tooltip-html={this.props.tooltip}
+          data-tooltip-id={this.props.tooltipID}
           data-offset={10}
-          data-delay-show={500}
+          data-tooltip-delay-show={500}
         >
           <span className='react-autoql-select-text'>
             {selectedOption?.label || selectedOption?.value ? (
@@ -127,30 +132,38 @@ export default class Select extends React.Component {
 
   renderPopoverContent = () => {
     return (
-      <div className='react-autoql-select-popup-container' style={{ width: this.props.style.width }}>
-        {!this.props.tooltipID && (
-          <Tooltip id={`select-tooltip-${this.ID}`} className='react-autoql-tooltip' effect='solid' delayShow={500} />
+      <div
+        ref={(r) => (this.popoverContent = r)}
+        className='react-autoql-select-popup-container'
+        style={{ width: this.props.style.width }}
+      >
+        {!this.props.tooltipID && <Tooltip tooltipId={`select-tooltip-${this.ID}`} delayShow={500} />}
+        {this.props.options?.length ? (
+          <CustomScrollbars ref={(r) => (this.scrollbars = r)} autoHide={false} contentHidden={!this.state.isOpen}>
+            <Menu options={this.props.options}>
+              {this.props.options?.map((option, i) => {
+                return (
+                  <MenuItem
+                    id={`select-option-${this.ID}-${i}`}
+                    key={`select-menu-${option.value}-${i}`}
+                    title={option.listLabel ?? option.label ?? option.value}
+                    subtitle={option.subtitle}
+                    tooltip={option.tooltip}
+                    tooltipID={this.props.tooltipID ?? `select-tooltip-${this.ID}`}
+                    active={option.value === this.props.value}
+                    icon={option.icon}
+                    onClick={() => {
+                      this.setState({ isOpen: false })
+                      this.props.onChange(option.value)
+                    }}
+                  />
+                )
+              })}
+            </Menu>
+          </CustomScrollbars>
+        ) : (
+          <LoadingDots />
         )}
-        <Menu options={this.props.options}>
-          {this.props.options?.map((option, i) => {
-            return (
-              <MenuItem
-                id={`select-option-${this.ID}-${i}`}
-                key={`select-menu-${option.value}-${i}`}
-                title={option.listLabel ?? option.label ?? option.value}
-                subtitle={option.subtitle}
-                tooltip={option.tooltip}
-                tooltipID={this.props.tooltipID ?? `select-tooltip-${this.ID}`}
-                active={option.value === this.props.value}
-                icon={option.icon}
-                onClick={() => {
-                  this.setState({ isOpen: false })
-                  this.props.onChange(option.value)
-                }}
-              />
-            )
-          })}
-        </Menu>
       </div>
     )
   }

@@ -2,24 +2,33 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { isMobile } from 'react-device-detect'
 import { Popover, ArrowContainer } from 'react-tiny-popover'
+import { ErrorBoundary } from '../../containers/ErrorHOC'
 
 import './Popover.scss'
 
 class PopoverWithoutRef extends React.Component {
   static propTypes = {
     padding: PropTypes.number,
+    reposition: PropTypes.bool,
     showArrow: PropTypes.bool,
+    contentLocation: PropTypes.func,
+    onClickOutside: PropTypes.func,
   }
 
   static defaultProps = {
     padding: 10,
+    reposition: true,
     showArrow: false,
+    contentLocation: undefined,
+    onClickOutside: () => {},
   }
 
   renderContent = (params = {}) => {
-    if (typeof this.props.content === 'function') {
-      return this.props.content(params)
-    }
+    const content = (
+      <div className={`popover-container-content ${this.props.contentClassName ?? ''}`}>
+        {typeof this.props.content === 'function' ? this.props.content(params) : this.props.content}
+      </div>
+    )
 
     if (this.props.showArrow && !isMobile) {
       const { position, childRect, popoverRect } = params
@@ -33,14 +42,12 @@ class PopoverWithoutRef extends React.Component {
           popoverRect={popoverRect}
           arrowSize={10}
         >
-          <div className='popover-arrow-container-content'>
-            <div className={`popover-container-content ${this.props.contentClassName ?? ''}`}>{this.props.content}</div>
-          </div>
+          <div className='popover-arrow-container-content'>{content}</div>
         </ArrowContainer>
       )
     }
 
-    return <div className={`popover-container-content ${this.props.contentClassName ?? ''}`}>{this.props.content}</div>
+    return content
   }
 
   render = () => {
@@ -53,33 +60,37 @@ class PopoverWithoutRef extends React.Component {
     }
 
     return (
-      <Popover
-        id={this.props.id}
-        containerClassName={`react-tiny-popover-container react-autoql-popover${isMobile ? '-mobile' : ''}
+      <ErrorBoundary>
+        <Popover
+          id={this.props.id}
+          containerClassName={`react-tiny-popover-container react-autoql-popover${isMobile ? '-mobile' : ''}
           ${this.props.containerClassName ?? ''}
           ${
             this.props.showArrow && typeof this.props.content !== 'function' && !isMobile
               ? 'popover-with-arrow-container'
               : ''
           }`}
-        isOpen={this.props.isOpen}
-        content={this.renderContent}
-        ref={this.props.innerRef}
-        onClickOutside={(e) => {
-          e.stopPropagation()
-          e.preventDefault()
-          this.props.onClickOutside(e)
-        }}
-        parentElement={isMobile ? undefined : this.props.parentElement ?? undefined}
-        boundaryElement={isMobile ? undefined : this.props.boundaryElement ?? undefined}
-        positions={this.props.positions}
-        align={this.props.align}
-        reposition={true}
-        padding={this.props.padding}
-        boundaryInset={this.props.boundaryInset}
-      >
-        {this.props.children}
-      </Popover>
+          isOpen={this.props.isOpen}
+          content={this.renderContent}
+          ref={this.props.innerRef}
+          onClickOutside={(e) => {
+            e.stopPropagation()
+            e.preventDefault()
+            this.props.onClickOutside(e)
+          }}
+          parentElement={isMobile ? undefined : this.props.parentElement ?? undefined}
+          boundaryElement={isMobile ? undefined : this.props.boundaryElement ?? undefined}
+          positions={this.props.positions}
+          align={this.props.align}
+          reposition={this.props.reposition}
+          padding={this.props.padding}
+          boundaryInset={this.props.boundaryInset}
+          containerStyle={this.props.containerStyle}
+          contentLocation={this.props.contentLocation}
+        >
+          {this.props.children}
+        </Popover>
+      </ErrorBoundary>
     )
   }
 }

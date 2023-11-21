@@ -92,7 +92,7 @@ export default class TableWrapper extends React.Component {
       // Restore redraw manually before updating table data
       setTimeout(() => {
         this.blockRedraw()
-      }, 1000)
+      }, 0)
     })
     this.tabulator.on('dataLoadError', this.props.onDataLoadError)
     this.tabulator.on('cellClick', this.props.onCellClick)
@@ -111,14 +111,14 @@ export default class TableWrapper extends React.Component {
     })
   }
 
-  blockRedraw = (log) => {
+  blockRedraw = () => {
     if (this.isInitialized) {
       this.redrawRestored = false
       this.tabulator?.blockRedraw()
     }
   }
 
-  restoreRedraw = (log) => {
+  restoreRedraw = () => {
     if (this.tabulator && this.isInitialized && !this.redrawRestored && this._isMounted) {
       this.redrawRestored = true
       this.tabulator.restoreRedraw()

@@ -1,9 +1,10 @@
-import React, { Fragment } from 'react'
-import PropTypes from 'prop-types'
+import React from 'react'
 import { v4 as uuid } from 'uuid'
-import RGL, { WidthProvider } from 'react-grid-layout'
+import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
+import RGL, { WidthProvider } from 'react-grid-layout'
+
 import {
   deepEqual,
   mergeSources,
@@ -13,17 +14,17 @@ import {
   getAutoQLConfig,
 } from 'autoql-fe-utils'
 
-import { DashboardTile } from './DashboardTile'
-import { hideTooltips, Tooltip } from '../Tooltip'
+import { Tooltip } from '../Tooltip'
 import DrilldownModal from './DrilldownModal'
+import { DashboardTile } from './DashboardTile'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 
 import { withTheme } from '../../theme'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
+import './Dashboard.scss'
 import 'react-grid-layout/css/styles.css'
 import 'react-splitter-layout/lib/index.css'
-import './Dashboard.scss'
 
 const ReactGridLayout = WidthProvider(RGL)
 
@@ -34,7 +35,7 @@ class DashboardWithoutTheme extends React.Component {
     this.COMPONENT_KEY = uuid()
     this.SOURCE = mergeSources(props.source, 'dashboards')
     this.TOOLTIP_ID = `react-autoql-dashboard-toolbar-btn-tooltip-${this.COMPONENT_KEY}`
-    this.CHART_TOOLTIP_ID = `react-autoql-chart-tooltip-${this.COMPONENT_KEY}`
+    this.CHART_TOOLTIP_ID = `react-autoql-dashboard-chart-tooltip-${this.COMPONENT_KEY}`
     this.tileRefs = {}
     this.debounceTime = 50
     this.onChangeTiles = null
@@ -128,10 +129,6 @@ class DashboardWithoutTheme extends React.Component {
       this.setState({ isDragging: true }, () => {
         this.setState({ isDragging: false })
       })
-    }
-
-    if (this.state.isDrilldownModalVisible !== prevState.isDrilldownModalVisible) {
-      hideTooltips()
     }
   }
 
@@ -686,7 +683,7 @@ class DashboardWithoutTheme extends React.Component {
 
     return (
       <ErrorBoundary>
-        <Fragment>
+        <>
           <div
             ref={(ref) => (this.ref = ref)}
             className={`react-autoql-dashboard-container${this.props.isEditing ? ' edit-mode' : ''}`}
@@ -717,9 +714,9 @@ class DashboardWithoutTheme extends React.Component {
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
             source={this.SOURCE}
           />
-          <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' delayShow={500} html />
-          <Tooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} effect='solid' place='top' html />
-        </Fragment>
+          <Tooltip tooltipId={this.TOOLTIP_ID} />
+          <Tooltip tooltipId={this.CHART_TOOLTIP_ID} className='react-autoql-chart-tooltip' delayShow={0} />
+        </>
       </ErrorBoundary>
     )
   }

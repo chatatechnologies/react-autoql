@@ -383,7 +383,7 @@ export default class Rule extends React.Component {
               //     this.autoSuggest = ref
               //   }}
               //   renderSuggestion={suggestion => (
-              //     <Fragment>{suggestion.name}</Fragment>
+              //     <>{suggestion.name}</>
               //   )}
               //   inputProps={{
               //     className: 'react-autoql-rule-input react-autoql-input',
@@ -473,8 +473,8 @@ export default class Rule extends React.Component {
           <Icon
             className='react-autoql-rule-delete-btn'
             type='close'
-            data-tip='Remove Condition'
-            data-for='notification-expression-tooltip'
+            data-tooltip-content='Remove Condition'
+            data-tooltip-id='notification-expression-tooltip'
             onClick={() => {
               this.props.onDelete(this.props.ruleId)
             }}

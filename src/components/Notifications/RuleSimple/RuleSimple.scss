@@ -7,7 +7,20 @@
   &.with-query-validation .react-autoql-rule-condition-select-input-container {
     margin-bottom: 30px;
   }
+  .react-autoql-rule-field-selection-grid-container {
+    height: 100px;
+    margin-top: 10px;
+    margin-bottom: 25px;
+    padding-left: 20px;
 
+    .react-autoql-input-label {
+      display: inline;
+      padding-left: 5px;
+    }
+    .react-autoql-selectable-table {
+      padding: 0px 5px 5px 5px;
+    }
+  }
   .react-autoql-notification-rule-container {
     display: flex;
     align-items: flex-end;
@@ -168,5 +181,8 @@
   .data-alert-condition-statement-query1,
   .data-alert-condition-statement-query2 {
     font-style: italic;
+  }
+  .data-alert-condition-statement-query2 {
+    display: block;
   }
 }

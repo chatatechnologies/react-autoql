@@ -29,8 +29,8 @@
     }
 
     &.react-autoql-select-small {
-      line-height: 32px;
-      height: 34px;
+      line-height: 30px;
+      height: 30px;
     }
 
     &:hover {
@@ -54,7 +54,7 @@
       background: var(--react-autoql-background-color-secondary, white);
 
       &.react-autoql-select-small {
-        padding: 0px 14px;
+        padding: 0px 10px;
       }
 
       &:hover {
@@ -79,6 +79,10 @@
       padding-left: 8px;
       font-size: 0.875em;
       color: var(--react-autoql-text-color-placeholder);
+
+      svg {
+        stroke-width: 2em;
+      }
     }
   }
 }
@@ -86,5 +90,5 @@
 .react-autoql-select-popup-container {
   background: var(--react-autoql-background-color-secondary);
   max-height: 300px;
-  overflow-y: auto;
+  overflow: hidden;
 }

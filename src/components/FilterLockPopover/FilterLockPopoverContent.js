@@ -1,18 +1,18 @@
 import React from 'react'
-import PropTypes from 'prop-types'
-import Autosuggest from 'react-autosuggest'
 import axios from 'axios'
 import { v4 as uuid } from 'uuid'
-import { ToastContainer, toast } from 'react-toastify'
-import { Slide } from 'react-toastify'
+import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
+import { Slide } from 'react-toastify'
 import _cloneDeep from 'lodash.clonedeep'
+import Autosuggest from 'react-autosuggest'
 import { isMobile } from 'react-device-detect'
+import { ToastContainer, toast } from 'react-toastify'
+
 import {
   fetchVLAutocomplete,
   setFilters,
   unsetFilterFromAPI,
-  handleTooltipBoundaryCollision,
   REQUEST_CANCELLED_ERROR,
   authenticationDefault,
   getAuthentication,
@@ -21,11 +21,11 @@ import {
 import { Icon } from '../Icon'
 import { Radio } from '../Radio'
 import { Button } from '../Button'
+import { Tooltip } from '../Tooltip'
 import { Checkbox } from '../Checkbox'
 import { LoadingDots } from '../LoadingDots'
 import { CustomScrollbars } from '../CustomScrollbars'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { Tooltip, hideTooltips, rebuildTooltips } from '../Tooltip'
 
 import { lang } from '../../js/Localization'
 import { authenticationType } from '../../props/types'
@@ -76,26 +76,20 @@ export default class FilterLockPopover extends React.Component {
     if (this.props.isOpen && this.props.insertedFilter) {
       this.insertFilter(this.props.insertedFilter)
     }
-
-    rebuildTooltips()
   }
 
   componentDidUpdate = (prevProps, prevState) => {
     // Set initial filters from FilterLockPopover fetch on mount
     if (this.props.initialFilters && !prevProps.initialFilters) {
       this.setState({ filters: this.props.initialFilters })
-      rebuildTooltips()
     }
 
     if (!_isEqual(this.state.filters, prevState.filters)) {
       this.props.onChange(this.state.filters)
-      rebuildTooltips()
     }
 
     if (!this.props.isOpen && prevProps.isOpen) {
       this.setState({ inputValue: '' })
-    } else if (this.props.isOpen && !prevProps.isOpen) {
-      rebuildTooltips()
     }
 
     if (
@@ -455,8 +449,6 @@ export default class FilterLockPopover extends React.Component {
       console.error(error)
       this.setState({ filters: oldFilters })
     }
-
-    hideTooltips()
   }
 
   onInputChange = (e, { newValue, method }) => {
@@ -502,8 +494,8 @@ export default class FilterLockPopover extends React.Component {
           <Icon
             type='info'
             data-place='bottom'
-            data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
-            data-tip='Filters can be applied to narrow down your query results. Locking a filter ensures that only the specific data you wish to see is returned.'
+            data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
+            data-tooltip-content='Filters can be applied to narrow down your query results. Locking a filter ensures that only the specific data you wish to see is returned.'
           />
         </h3>
       </div>
@@ -540,9 +532,9 @@ export default class FilterLockPopover extends React.Component {
     return (
       <ul
         className='filter-lock-suggestion-item'
-        data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
-        data-delay-show={800}
-        data-tip={`${displayName} <em>(${name.show_message})</em>`}
+        data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
+        data-tooltip-delay-show={800}
+        data-tooltip-html={`${displayName} <em>(${name.show_message})</em>`}
       >
         <span>
           {displayName} <em>({name.show_message})</em>
@@ -608,30 +600,31 @@ export default class FilterLockPopover extends React.Component {
 
   renderVLInput = () => {
     return (
-      <Autosuggest
-        id='react-autoql-filter-menu-input'
-        highlightFirstSuggestion
-        suggestions={this.getSuggestions()}
-        renderSuggestion={this.renderSuggestion}
-        getSuggestionValue={this.getSuggestionValue}
-        onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
-        onSuggestionsClearRequested={this.onSuggestionsClearRequested}
-        renderSuggestionsContainer={this.renderSuggestionsContainer}
-        getSectionSuggestions={(section) => {
-          return section.suggestions
-        }}
-        renderSectionTitle={this.renderSectionTitle}
-        multiSection={true}
-        inputProps={{
-          onChange: this.onInputChange,
-          value: this.state.inputValue,
-          disabled: this.props.isFetchingFilters || this.state.isFetchingFilters,
-          placeholder: 'Search & select a filter',
-          ['data-test']: 'react-autoql-filter-locking-input',
-          className: 'react-autoql-filter-locking-input',
-          id: 'react-autoql-filter-menu-input',
-        }}
-      />
+      <span className='react-autoql-vl-autocomplete-input-wrapper'>
+        <Autosuggest
+          id='react-autoql-filter-menu-input'
+          className='react-autoql-vl-autocomplete-input'
+          highlightFirstSuggestion
+          suggestions={this.getSuggestions()}
+          renderSuggestion={this.renderSuggestion}
+          getSuggestionValue={this.getSuggestionValue}
+          onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
+          onSuggestionsClearRequested={this.onSuggestionsClearRequested}
+          renderSuggestionsContainer={this.renderSuggestionsContainer}
+          getSectionSuggestions={(section) => section.suggestions}
+          renderSectionTitle={this.renderSectionTitle}
+          multiSection={true}
+          inputProps={{
+            onChange: this.onInputChange,
+            value: this.state.inputValue,
+            disabled: this.props.isFetchingFilters || this.state.isFetchingFilters,
+            placeholder: 'Search & select a filter',
+            ['data-test']: 'react-autoql-vl-autocomplete-input',
+            className: 'react-autoql-vl-autocomplete-input',
+            id: 'react-autoql-filter-menu-input',
+          }}
+        />
+      </span>
     )
   }
 
@@ -658,9 +651,9 @@ export default class FilterLockPopover extends React.Component {
         <div className='filter-name-column'>
           <h4
             className='filter-lock-category-title'
-            data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
-            data-delay-show={800}
-            data-tip={category}
+            data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
+            data-tooltip-delay-show={800}
+            data-tooltip-html={category}
           >
             {category}
           </h4>
@@ -684,8 +677,8 @@ export default class FilterLockPopover extends React.Component {
             <Icon
               type='info'
               data-place='left'
-              data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
-              data-tip='
+              data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
+              data-tooltip-html='
                 Persistent filters remain locked at all<br />
                 times, unless the filter is removed. If<br />
                 unchecked, the filter will be locked<br />
@@ -719,10 +712,9 @@ export default class FilterLockPopover extends React.Component {
           />
           <Icon
             className='react-autoql-remove-filter-icon'
+            tooltip='Remove filter'
+            tooltipID={this.props.tooltipID}
             data-test='react-autoql-remove-filter-icon'
-            data-tip='Remove filter'
-            data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
-            data-delay-show={500}
             type='trash'
             onClick={() => this.removeFilter(filter)}
           />
@@ -777,16 +769,7 @@ export default class FilterLockPopover extends React.Component {
           limit={1}
           // theme={getTheme()}
         />
-        {!this.props.tooltipID && (
-          <Tooltip
-            afterShow={(e) => handleTooltipBoundaryCollision(e, this)}
-            className='react-autoql-tooltip'
-            id={this.TOOLTIP_ID}
-            effect='solid'
-            place='top'
-            html
-          />
-        )}
+        {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} place='top' />}
         <div className='filter-lock-menu-content' onClick={(e) => e.stopPropagation()}>
           {this.renderHeader()}
           {this.renderVLInput()}

@@ -2,21 +2,41 @@
   position: relative;
   white-space: nowrap;
   overflow: hidden;
+  display: flex;
   min-width: 300px;
-  // overflow-x: auto;
+
+  .react-autoql-cascader-scrollbar-container {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    width: 100%;
+    flex: 1 1;
+  }
 
   .options-container {
-    transition: max-width 0.3s ease;
-    display: inline-block;
-    vertical-align: top;
-    padding: 0 10px;
-    margin: 10px 0;
-    width: 100%;
-    max-width: calc(100% - 20px);
-    white-space: pre-wrap;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 0;
+    flex-shrink: 0;
+    flex-basis: 0%;
+    transition: flex-basis 0.2s ease;
 
-    &.hidden {
-      max-width: 0;
+    white-space: pre-wrap;
+    overflow: hidden;
+    max-height: 100%;
+    margin: 0;
+
+    &.cascader-options-container-visible {
+      flex-grow: 0;
+      flex-shrink: 0;
+      flex-basis: 100%;
+    }
+
+    &.cascader-options-container-hidden {
+      flex-grow: 0;
+      flex-shrink: 0;
+      flex-basis: 0%;
+      border: none;
 
       span {
         white-space: nowrap;
@@ -29,33 +49,35 @@
     }
 
     .options-title {
-      padding: 4px;
-      padding-left: 10px;
+      padding: 5px 15px;
       font-weight: 600;
-    }
+      flex: 0 0 auto;
 
-    .cascader-back-arrow {
-      position: absolute;
       cursor: pointer;
-      top: 15px;
-      left: 0;
       &:hover {
-        opacity: 0.8;
+        color: var(--react-autoql-accent-color);
       }
     }
 
     .option {
-      cursor: pointer;
-      padding: 4px;
+      position: relative;
+      padding: 6px 10px;
       display: flex;
       justify-content: space-between;
-      border-radius: 2px;
-      padding-left: 10px;
-      transition: color 0.1s ease, background-color 0.2s ease;
+      align-items: center;
+      transition: color 0.1s ease, background-color 0.1s ease;
+      height: 34px;
+      cursor: pointer;
 
-      .option-arrow {
-        opacity: 0.7;
+      .react-autoql-cascader-option-item {
+        z-index: 1;
+        padding: 0 8px;
       }
+
+      .react-autoql-cascader-option-arrow {
+        opacity: 0;
+      }
+
       .option-execute-icon {
         opacity: 0;
         color: var(--react-autoql-text-color-accent);
@@ -63,13 +85,47 @@
         vertical-align: middle;
       }
 
-      &:hover,
-      &.active {
-        background-color: var(--react-autoql-accent-color, #26a7df);
-        color: var(--react-autoql-text-color-accent);
+      &::before {
+        content: '\00a0';
+        position: absolute;
+        height: 100%;
+        width: 100%;
+        left: 0px;
+        top: 0px;
+        opacity: 0;
+        background: var(--react-autoql-accent-color);
+        transition: opacity 0.1s ease;
+      }
 
-        .option-execute-icon {
-          opacity: 1;
+      &.react-autoql-cascader-option-custom-content {
+        margin-left: -1px;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+        cursor: default;
+      }
+
+      &:not(.react-autoql-cascader-option-custom-content) {
+        letter-spacing: 0.03em;
+
+        &.react-autoql-cascader-option-active {
+          background-color: var(--react-autoql-accent-color, #26a7df);
+          color: var(--react-autoql-text-color-accent);
+          font-weight: 600;
+
+          .option-execute-icon {
+            opacity: 1;
+          }
+        }
+        &:hover {
+          .react-autoql-cascader-option-arrow {
+            opacity: 1;
+          }
+
+          &::before {
+            opacity: 0.2;
+            z-index: 0;
+          }
         }
       }
     }

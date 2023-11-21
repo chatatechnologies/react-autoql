@@ -255,19 +255,14 @@ export default class ChatMessage extends React.Component {
           autoQLConfig={this.props.autoQLConfig}
           queryResponse={this.props.response}
           onSuggestionClick={this.props.onSuggestionClick}
-          isQueryRunning={this.props.isChataThinking}
-          copyToClipboard={this.copyToClipboard}
           tableOptions={this.props.tableOptions}
           dataFormatting={this.props.dataFormatting}
           appliedFilters={this.props.appliedFilters}
           onDrilldownStart={this.props.onDrilldownStart}
           onDrilldownEnd={this.props.onDrilldownEnd}
-          demo={getAuthentication(this.props.authentication).demo}
           enableAjaxTableData={this.props.enableAjaxTableData}
           originalQueryID={this.props.originalQueryID}
-          backgroundColor={document.documentElement.style.getPropertyValue('--react-autoql-background-color-secondary')}
           onErrorCallback={this.props.onErrorCallback}
-          enableColumnHeaderContextMenu={true}
           isAnimating={this.state.isAnimatingMessageBubble}
           isResizing={this.props.isResizing}
           enableDynamicCharting={this.props.enableDynamicCharting}
@@ -276,7 +271,6 @@ export default class ChatMessage extends React.Component {
           onNoneOfTheseClick={this.props.onNoneOfTheseClick}
           autoChartAggregations={this.props.autoChartAggregations}
           showQueryInterpretation={false}
-          enableFilterLocking={this.props.enableFilterLocking}
           onRTValueLabelClick={this.props.onRTValueLabelClick}
           source={this.props.source}
           scope={this.props.scope}
@@ -319,6 +313,7 @@ export default class ChatMessage extends React.Component {
             ref={(r) => (this.optionsToolbarRef = r)}
             responseRef={this.responseRef}
             className='chat-message-toolbar right'
+            dataFormatting={this.props.dataFormatting}
             shouldRender={!this.props.isResizing && this.props.shouldRender}
             authentication={this.props.authentication}
             autoQLConfig={this.props.autoQLConfig}

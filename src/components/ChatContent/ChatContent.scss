@@ -1,3 +1,14 @@
+// Possible bug in PerfectScrollbars putting scrollbar on the left side
+.popover-container-content,
+.chat-content-scroll-container {
+  .react-autoql-custom-scrollbars {
+    .ps__rail-y {
+      right: 0px !important;
+      left: unset !important;
+    }
+  }
+}
+
 .drawer-content-wrapper {
   .drawer-content {
     .chat-content-scroll-container {

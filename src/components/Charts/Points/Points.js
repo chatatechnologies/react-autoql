@@ -1,13 +1,11 @@
-import React, { Component } from 'react'
-import { scaleLinear } from 'd3-scale'
+import React from 'react'
 import { max, min } from 'd3-array'
+import { scaleLinear } from 'd3-scale'
 import { deepEqual, getChartColorVars, getKey, getTooltipContent } from 'autoql-fe-utils'
-
-import { rebuildTooltips } from '../../Tooltip'
 
 import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
 
-export default class Points extends Component {
+export default class Points extends React.Component {
   constructor(props) {
     super(props)
 
@@ -23,10 +21,6 @@ export default class Points extends Component {
 
   static propTypes = chartElementPropTypes
   static defaultProps = chartElementDefaultProps
-
-  componentDidMount = () => {
-    rebuildTooltips()
-  }
 
   shouldComponentUpdate = (nextProps, nextState) => {
     const propsEqual = deepEqual(this.props, nextProps)
@@ -96,8 +90,8 @@ export default class Points extends Component {
           cy={yScale(valueY)}
           r={isActive ? 6 : 3}
           onClick={() => this.onPointClick(row, numberColumnIndex, key)}
-          data-tip={tooltip}
-          data-for={this.props.chartTooltipID}
+          data-tooltip-html={tooltip}
+          data-tooltip-id={this.props.chartTooltipID}
           style={{
             color: color1,
             stroke: 'transparent',

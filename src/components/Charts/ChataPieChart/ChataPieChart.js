@@ -1,29 +1,35 @@
-import React, { Component } from 'react'
-import PropTypes from 'prop-types'
-import _cloneDeep from 'lodash.clonedeep'
-import { v4 as uuid } from 'uuid'
-import { select } from 'd3-selection'
-import { scaleOrdinal } from 'd3-scale'
+import React from 'react'
 import { arc } from 'd3-shape'
+import { v4 as uuid } from 'uuid'
+import PropTypes from 'prop-types'
+import { select } from 'd3-selection'
+import _cloneDeep from 'lodash.clonedeep'
+
 import {
   legendColor,
   getPieChartData,
   deepEqual,
-  formatElement,
   removeFromDOM,
-  getChartColorVars,
   getTooltipContent,
+  getLegendLabels,
+  DisplayTypes,
 } from 'autoql-fe-utils'
 
-import { rebuildTooltips } from '../../Tooltip'
-import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers'
 import StringAxisSelector from '../Axes/StringAxisSelector'
+
+import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers'
 
 import 'd3-transition'
 
-const MAX_SLICES = 10
+const isOtherCategory = (d) => {
+  // Temporary: until we update to autoql-fe-utils >= 1.0.49, we need to do a substr search
+  // Once we upgrade we can switch the next line to use:
+  // const isOtherCategory = d?.data?.value?.isOther
+  const isOtherCategory = d?.data?.value?.legendLabel?.label?.includes('Other')
+  return isOtherCategory
+}
 
-export default class ChataPieChart extends Component {
+export default class ChataPieChart extends React.Component {
   constructor(props) {
     super(props)
 
@@ -36,43 +42,26 @@ export default class ChataPieChart extends Component {
     this.AXIS_TITLE_BORDER_PADDING_TOP = 3
     this.SECTION_PADDING = 30
 
-    this.sortedData = props.data
-      .concat() // this copies the array so the original isn't mutated
-      .sort((aRow, bRow) => {
-        const a = aRow[props.numberColumnIndex] || 0
-        const b = bRow[props.numberColumnIndex] || 0
-        return parseFloat(b) - parseFloat(a)
-      })
+    const {
+      data,
+      columns,
+      colorScale,
+      numberColumnIndex,
+      numberColumnIndices,
+      numberColumnIndices2,
+      stringColumnIndex,
+      dataFormatting,
+    } = props
 
-    if (this.sortedData?.length > MAX_SLICES) {
-      this.sortedData = this.aggregateOtherCategory(props, this.sortedData)
-    }
-
-    const { chartColors } = getChartColorVars()
-    this.colorScale = scaleOrdinal()
-      .domain(
-        this.sortedData.map((d) => {
-          return d[props.stringColumnIndex]
-        }),
-      )
-      .range(chartColors)
-
-    const legendLabels = this.sortedData.map((d, i) => {
-      const legendString = `${formatElement({
-        element: d[props.stringColumnIndex] || 'Untitled Category',
-        column: props.columns?.[props.stringColumnIndex],
-      })}: ${formatElement({
-        element: d[props.numberColumnIndex] || 0,
-        column: props.columns?.[props.numberColumnIndex],
-        config: props.columns?.[props.dataFormatting],
-      })}`
-      return {
-        label: legendString.trim(),
-        hidden: false,
-        dataIndex: i,
-        isOther: i >= MAX_SLICES,
-      }
-    })
+    const legendLabels =
+      getLegendLabels({
+        columns,
+        colorScales: { colorScale },
+        columnIndexConfig: { stringColumnIndex, numberColumnIndex, numberColumnIndices, numberColumnIndices2 },
+        dataFormatting,
+        data,
+        type: DisplayTypes.PIE,
+      })?.labels ?? []
 
     this.state = {
       activeKey: this.props.activeChartElementKey,
@@ -98,7 +87,6 @@ export default class ChataPieChart extends Component {
 
   componentDidMount = () => {
     this.renderPie()
-    rebuildTooltips()
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -121,35 +109,15 @@ export default class ChataPieChart extends Component {
     removeFromDOM(this.pieChartContainer)
   }
 
-  aggregateOtherCategory = (props, sortedData) => {
-    const clonedSortedData = _cloneDeep(sortedData)
-    const sortedDataWithOther = []
-    clonedSortedData.forEach((row, i) => {
-      if (i === MAX_SLICES) {
-        sortedDataWithOther[MAX_SLICES] = row
-        sortedDataWithOther[MAX_SLICES][props.stringColumnIndex] = 'Other'
-      } else if (i > MAX_SLICES && sortedDataWithOther[MAX_SLICES]?.[props.numberColumnIndex]) {
-        sortedDataWithOther[MAX_SLICES][props.numberColumnIndex] += sortedData[i]?.[props.numberColumnIndex] ?? 0
-      } else {
-        sortedDataWithOther[i] = row
-      }
-    })
-
-    return sortedDataWithOther
-  }
-
   renderPie = () => {
     removeFromDOM(this.pieChartContainer)
 
     this.setPieRadius()
 
-    const { chartColors } = getChartColorVars()
-
     const { pieChartFn, legendScale } = getPieChartData({
-      data: this.sortedData,
+      data: this.props.data,
       numberColumnIndex: this.props.numberColumnIndex,
       legendLabels: this.state.legendLabels,
-      chartColors,
     })
 
     this.pieChartFn = pieChartFn
@@ -182,8 +150,7 @@ export default class ChataPieChart extends Component {
 
   onSliceClick = (d) => {
     try {
-      const isOtherCategory = d?.data?.value?.legendLabel?.isOther
-      if (isOtherCategory) {
+      if (isOtherCategory(d)) {
         return
       }
 
@@ -218,11 +185,9 @@ export default class ChataPieChart extends Component {
       .append('path')
       .attr('class', 'slice')
       .attr('d', arc().innerRadius(self.innerRadius).outerRadius(self.outerRadius))
-      .attr('fill', (d) => {
-        return self.colorScale(d.data.value[self.props.stringColumnIndex])
-      })
-      .attr('data-for', this.props.chartTooltipID)
-      .attr('data-tip', function (d) {
+      .attr('fill', (d) => d?.data?.value?.legendLabel?.color)
+      .attr('data-tooltip-id', this.props.chartTooltipID)
+      .attr('data-tooltip-html', function (d) {
         return getTooltipContent({
           row: d.data.value,
           columns: self.props.columns,
@@ -235,10 +200,9 @@ export default class ChataPieChart extends Component {
       })
       .style('fill-opacity', 1)
       .style('cursor', function (d) {
-        if (d?.data?.value?.legendLabel?.isOther) {
+        if (isOtherCategory(d)) {
           return 'default'
         }
-        return 'pointer'
       })
       .attr('stroke-width', '0.5px')
       .attr('stroke', this.props.backgroundColor)
@@ -306,9 +270,7 @@ export default class ChataPieChart extends Component {
     if (!onlyLabelVisible) {
       const newLegendLabels = _cloneDeep(this.state.legendLabels)
       newLegendLabels[index].hidden = !this.state.legendLabels[index].hidden
-      this.setState({ legendLabels: newLegendLabels }, () => {
-        rebuildTooltips()
-      })
+      this.setState({ legendLabels: newLegendLabels })
     }
   }
 
@@ -508,6 +470,9 @@ export default class ChataPieChart extends Component {
           popoverParentElement={this.props.popoverParentElement}
           stringColumnIndices={this.props.stringColumnIndices}
           stringColumnIndex={this.props.stringColumnIndex}
+          numberColumnIndex={this.props.numberColumnIndex}
+          numberColumnIndices={this.props.numberColumnIndices}
+          numberColumnIndices2={this.props.numberColumnIndices2}
           isAggregation={this.props.isAggregation}
           tooltipID={this.props.tooltipID}
           columns={this.props.columns}

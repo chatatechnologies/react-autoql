@@ -8,19 +8,65 @@
   justify-content: flex-start;
   flex-wrap: nowrap;
   color: var(--react-autoql-text-color-primary);
+  overflow: hidden;
+  animation: fadeIn 0.2s linear;
+  animation-fill-mode: both;
 
-  .data-explorer-section,
-  .data-explorer-intro-message {
-    opacity: 0;
-    transform: translateY(100%);
-    animation: slideUp 0.6s cubic-bezier(0.26, 0.26, 0, 1);
-    animation-fill-mode: forwards;
-    animation-delay: 0s;
+  .react-autoql-cascader {
+    max-height: 200px;
+    border: 1px solid var(--react-autoql-border-color);
+    border-radius: 4px;
+    margin: 5px;
+    margin-top: 0;
+
+    .data-explorer-data-preview {
+      height: 100% !important;
+    }
+
+    .react-autoql-cascader-option-custom-content {
+      overflow: hidden;
+    }
   }
 
-  @for $i from 1 through 2 {
-    .data-explorer-section:nth-of-type(#{$i}) {
-      animation-delay: 0.2s * ($i - 1);
+  .react-autoql-selectable-table {
+    padding-top: 0;
+  }
+
+  .data-explorer-section.query-validation-response {
+    padding: 40px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    text-align: center;
+
+    .react-autoql-response-content-container {
+      max-width: 500px;
+    }
+  }
+
+  .data-explorer-section.topic-dropdown-section {
+    flex: 0 0 auto;
+    max-height: 35%;
+
+    .react-autoql-select-and-label .react-autoql-select {
+      line-height: 32px;
+      height: 34px;
+    }
+
+    .data-explorer-data-preview {
+      min-width: 100%;
+    }
+
+    .react-autoql-selectable-table {
+      padding: 0;
+      width: 100%;
+
+      .react-autoql-selectable-table-wrapper {
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+        border-radius: 0;
+      }
     }
   }
 
@@ -62,20 +108,17 @@
         align-items: center;
         .react-autoql-icon {
           margin-right: 5px;
+          padding: 0;
         }
       }
     }
   }
 
-  .data-explorer-topic-icon {
-    margin-right: 5px;
-  }
-
   .data-explorer-result-container {
     color: var(--react-autoql-text-color-primary);
     width: 100%;
-    overflow: auto;
-    padding-left: 5px;
+    overflow: hidden;
+    padding: 0px 24px 0px 24px;
     min-height: 0;
     height: calc(100% - 130px);
 
@@ -88,6 +131,69 @@
       justify-content: flex-start;
       overflow: hidden;
       min-height: 0;
+
+      .react-autoql-input-label {
+        display: inline;
+        padding-left: 8px;
+      }
+
+      .data-preview-section {
+        flex: 1.2;
+      }
+
+      .query-suggestions {
+        flex: 2;
+        padding-left: 12px;
+
+        .react-autoql-data-preview-selected-columns-selector {
+          font-size: 11px;
+          margin-left: 7px;
+          color: var(--react-autoql-text-color-secondary);
+          padding-left: 8px;
+          border-left: 1px solid var(--react-autoql-backgroud-color-disabled);
+
+          .react-autoql-select-and-label {
+            padding-right: 0px;
+
+            .react-autoql-multi-select {
+              color: inherit;
+              border-color: transparent !important;
+              padding: 0px 5px;
+              height: 25px;
+
+              &:hover {
+                color: var(--react-autoql-accent-color);
+                background-color: var(--react-autoql-hover-color);
+              }
+
+              .react-autoql-select-arrow {
+                svg {
+                  stroke: currentColor;
+                  stroke-width: 2em;
+                }
+              }
+            }
+          }
+        }
+
+        .react-autoql-data-preview-selected-columns-clear-btn {
+          color: var(--react-autoql-text-color-placeholder);
+          height: 25px;
+          font-size: 11px;
+          padding: 0px 6px;
+          font-weight: 600;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+
+          &:hover {
+            color: var(--react-autoql-accent-color);
+            background-color: var(--react-autoql-hover-color);
+          }
+        }
+      }
     }
 
     .data-explorer-section:last-of-type {
@@ -100,37 +206,105 @@
     }
 
     .data-explorer-query-suggestion-list {
-      display: flex;
-      flex-direction: column;
-      flex-wrap: nowrap;
-      flex: 0 1 100vh;
-      height: 100%;
-      padding-left: 8px;
-      min-height: 0;
+      flex: 1;
+      overflow: hidden;
     }
   }
 
-  .react-autoql-card-title-text {
+  .react-autoql-data-explorer-selected-subject-title {
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
+    flex: 0 0 auto;
+    font-weight: 600;
+    font-size: 16px;
+    margin: 2px;
+    margin-top: 4px;
+    margin-bottom: 10px;
+
+    .react-autoql-icon {
+      font-size: 17px;
+      margin-right: 5px;
+    }
+  }
+
+  .react-autoql-data-explorer-section-title {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    font-size: 18px;
+    margin: 4px 0px;
+    font-weight: 600;
 
     .react-autoql-icon {
       margin-right: 5px;
     }
   }
-  .data-explorer-card-placeholder {
+
+  .react-autoql-data-explorer-title-text {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 5px;
+    margin-top: 15px;
+    min-height: 30px;
+
+    .react-autoql-data-explorer-title-text-sample-queries {
+      padding-bottom: 2px;
+    }
+
+    .react-autoql-icon {
+      margin-right: 0;
+    }
+  }
+
+  .data-explorer-section-loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+  }
+
+  .data-explorer-section-placeholder-loading-container {
+    min-height: 90px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    flex-direction: column;
+
+    .data-explorer-section-placeholder-loading-item {
+      padding: 12px 0;
+      width: 100%;
+    }
+  }
+
+  .data-explorer-section-error-container {
+    min-height: 90px;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    text-align: center;
+    padding: 40px;
+    font-style: italic;
+    opacity: 0.7;
+  }
+
+  .data-explorer-section-placeholder {
     min-height: 90px;
     width: 100%;
     height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
-
-    &.data-preview {
-      height: 165px;
-    }
   }
+
   .data-preview-scroll-container {
     color: var(--react-autoql-text-color-primary);
     min-height: 0;
@@ -170,7 +344,7 @@
       }
 
       .animated-item {
-        animation: fadeIn 0.3s linear;
+        animation: fadeIn 0.2s linear;
         animation-fill-mode: both;
       }
     }
@@ -195,6 +369,18 @@
     &.visible {
       visibility: visible;
     }
+  }
+}
+
+.react-autoql-sample-queries-filter-dropdown {
+  min-width: 180px;
+
+  .popover-container-content {
+    padding: 0;
+  }
+
+  .data-explorer-topic-icon {
+    margin-right: 0.1em;
   }
 }
 

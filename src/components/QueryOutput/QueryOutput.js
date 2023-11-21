@@ -1,12 +1,13 @@
-import React, { Fragment } from 'react'
-import PropTypes from 'prop-types'
+import React from 'react'
+import axios from 'axios'
 import { v4 as uuid } from 'uuid'
+import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import _isEmpty from 'lodash.isempty'
+import parse from 'html-react-parser'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
-import parse from 'html-react-parser'
-import axios from 'axios'
+
 import {
   AggTypes,
   sendSuggestion,
@@ -63,12 +64,12 @@ import {
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
+import { Tooltip } from '../Tooltip'
 import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../Charts/ChataChart'
 import { ReverseTranslation } from '../ReverseTranslation'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { QueryValidationMessage } from '../QueryValidationMessage'
-import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
 
 import { withTheme } from '../../theme'
 import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
@@ -82,7 +83,8 @@ export class QueryOutput extends React.Component {
     this.COMPONENT_KEY = uuid()
     this.QUERY_VALIDATION_KEY = uuid()
     this.TOOLTIP_ID = `react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`
-    this.CHART_TOOLTIP_ID = `react-autoql-chart-tooltip-${this.COMPONENT_KEY}`
+    this.CHART_TOOLTIP_ID = `react-autoql-query-output-chart-tooltip-${this.COMPONENT_KEY}`
+    this.ALLOW_NUMERIC_STRING_COLUMNS = true
 
     this.queryResponse = _cloneDeep(props.queryResponse)
     this.columnDateRanges = getColumnDateRanges(props.queryResponse)
@@ -216,7 +218,6 @@ export class QueryOutput extends React.Component {
     enableDynamicCharting: true,
     onNoneOfTheseClick: undefined,
     autoChartAggregations: true,
-    enableFilterLocking: false,
     showQueryInterpretation: false,
     isTaskModule: false,
     enableAjaxTableData: false,
@@ -302,10 +303,6 @@ export class QueryOutput extends React.Component {
         this.props.onAggConfigChange(this.state.aggConfig)
       }
 
-      if (prevState.displayType !== this.state.displayType) {
-        rebuildTooltips()
-      }
-
       if (
         this.state.visibleRows?.length !== prevState.visibleRows?.length ||
         (this.state.displayType === 'table' && prevState.displayType === 'text')
@@ -362,7 +359,6 @@ export class QueryOutput extends React.Component {
   componentWillUnmount = () => {
     try {
       this._isMounted = false
-      hideTooltips()
     } catch (error) {
       console.error(error)
     }
@@ -668,17 +664,6 @@ export class QueryOutput extends React.Component {
       if (!areSecondNumberColumnsValid) {
         console.debug('Saved second number indices are not number columns:', {
           numberColumnsIndices2: tableConfig.numberColumnIndices2,
-        })
-        return false
-      }
-
-      const areStringColumnsValid = tableConfig.stringColumnIndices.every((index) => {
-        return columns[index] && isColumnStringType(columns[index] || isColumnNumberType(columns[index]))
-      })
-
-      if (!areStringColumnsValid && !this.usePivotDataForChart()) {
-        console.debug('Saved string indices are not string columns:', {
-          stringColumnIndices: tableConfig.stringColumnIndices,
         })
         return false
       }
@@ -1068,6 +1053,8 @@ export class QueryOutput extends React.Component {
       formattedValue = `${isoDateStart},${isoDateEnd}`
       operator = 'between'
       column_type = 'TIME'
+    } else if (isColumnNumberType(column)) {
+      formattedValue = `${value}`
     }
 
     return {
@@ -1152,6 +1139,7 @@ export class QueryOutput extends React.Component {
         groupBys = [
           {
             name: columns[dateColumnIndex]?.name,
+            drill_down: columns[dateColumnIndex]?.drill_down,
             value,
           },
         ]
@@ -1196,13 +1184,16 @@ export class QueryOutput extends React.Component {
       const year = Number(columns?.[columnIndex]?.name)
       const month = row?.[stringColumnIndex]
       const value = `${this.pivotOriginalColumnData?.[year]?.[month]}`
+
       groupBys.push({
         name: stringColumn.name,
+        drill_down: stringColumn.drill_down,
         value,
       })
     } else if (stringColumn?.groupable) {
       groupBys.push({
         name: stringColumn.name,
+        drill_down: stringColumn.drill_down,
         value: `${row?.[stringColumnIndex]}`,
       })
     }
@@ -1212,6 +1203,7 @@ export class QueryOutput extends React.Component {
         // It is pivot data, add extra groupby
         groupBys.push({
           name: legendColumn.name,
+          drill_down: legendColumn.drill_down,
           value: `${column?.name}`,
         })
       }
@@ -1369,9 +1361,11 @@ export class QueryOutput extends React.Component {
       if (this.tableConfig.legendColumnIndex === index) {
         this.tableConfig.legendColumnIndex = undefined
       }
+
       this.tableConfig.stringColumnIndex = index
     }
 
+    this.onTableConfigChange()
     this.forceUpdate()
   }
 
@@ -1409,6 +1403,7 @@ export class QueryOutput extends React.Component {
         this.pivotTableColumns = newColumns
       }
 
+      this.onTableConfigChange()
       this.forceUpdate()
     } else {
       if (indices) {
@@ -1450,7 +1445,11 @@ export class QueryOutput extends React.Component {
       !this.pivotTableConfig.stringColumnIndices ||
       !(this.pivotTableConfig.stringColumnIndex >= 0)
     ) {
-      const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(columns, 'supportsPivot')
+      const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
+        columns,
+        'supportsPivot',
+        this.ALLOW_NUMERIC_STRING_COLUMNS,
+      )
       this.pivotTableConfig.stringColumnIndices = stringColumnIndices
       this.pivotTableConfig.stringColumnIndex = stringColumnIndex
     }
@@ -1523,7 +1522,12 @@ export class QueryOutput extends React.Component {
       !this.tableConfig.stringColumnIndices ||
       !this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns)
     ) {
-      const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(columns)
+      const isPivot = false
+      const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
+        columns,
+        isPivot,
+        this.ALLOW_NUMERIC_STRING_COLUMNS,
+      )
       this.tableConfig.stringColumnIndices = stringColumnIndices
       this.tableConfig.stringColumnIndex = stringColumnIndex
     }
@@ -1645,6 +1649,7 @@ export class QueryOutput extends React.Component {
       columns: this.queryResponse?.data?.data?.columns?.map((col) => ({
         ...col,
       })),
+      allowNumericStringColumns: this.ALLOW_NUMERIC_STRING_COLUMNS,
     })
   }
 
@@ -1666,6 +1671,7 @@ export class QueryOutput extends React.Component {
       dataLength: this.getDataLength(),
       pivotDataLength: this.getPivotDataLength(),
       isDataLimited: this.isDataLimited(),
+      allowNumericStringColumns: this.ALLOW_NUMERIC_STRING_COLUMNS,
     })
   }
 
@@ -1856,10 +1862,14 @@ export class QueryOutput extends React.Component {
       newCol.sorter = this.setSorterFunction(newCol)
       newCol.headerSort = !!this.props.enableTableSorting
       newCol.headerSortStartingDir = 'desc'
-      newCol.headerClick = () => {
+      newCol.headerClick = (e, col) => {
         // To allow tabulator to sort, we must first restore redrawing,
         // then the component will disable it again afterwards automatically
-        this.tableRef?.ref?.restoreRedraw()
+        if (this.state.displayType === 'table') {
+          this.tableRef?.ref?.restoreRedraw()
+        } else if (this.state.displayType === 'pivot_table') {
+          this.pivotTableRef?.ref?.restoreRedraw()
+        }
       }
 
       // Show drilldown filter value in column title so user knows they can't filter on this column
@@ -2023,6 +2033,7 @@ export class QueryOutput extends React.Component {
           }
           pivotTableColumns[pivotColumnIndex].origValues[month] = {
             name: columns[dateColumnIndex]?.name,
+            drill_down: columns[dateColumnIndex]?.drill_down,
             value: row[dateColumnIndex] || '',
           }
         }
@@ -2143,6 +2154,7 @@ export class QueryOutput extends React.Component {
 
         pivotTableColumns[pivotColumnIndex].origValues[pivotCategoryValue] = {
           name: columns[newStringColumnIndex]?.name,
+          drill_down: columns[newStringColumnIndex]?.drill_down,
           value: pivotCategoryValue,
         }
       })
@@ -2449,7 +2461,7 @@ export class QueryOutput extends React.Component {
     }
 
     return (
-      <Fragment>
+      <>
         Great news, I can help with that:
         <br />
         {
@@ -2458,7 +2470,7 @@ export class QueryOutput extends React.Component {
             {linkText}
           </button>
         }
-      </Fragment>
+      </>
     )
   }
 
@@ -2504,8 +2516,8 @@ export class QueryOutput extends React.Component {
             <span>
               Query cancelled{' '}
               <Icon
-                data-tip='Pressing the ESC key will cancel the current query request. If you wish to re-run your last query, simply press the UP arrow in the input bar then hit ENTER.'
-                data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
+                data-tooltip-content='Pressing the ESC key will cancel the current query request. If you wish to re-run your last query, simply press the UP arrow in the input bar then hit ENTER.'
+                data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
                 type='question'
               />
             </span>
@@ -2524,10 +2536,10 @@ export class QueryOutput extends React.Component {
           <div className='query-output-error-message'>
             <div>{errorMessage}</div>
             {error.reference_id && (
-              <Fragment>
+              <>
                 <br />
                 <div>Error ID: {error.reference_id}</div>
-              </Fragment>
+              </>
             )}
           </div>
         )
@@ -2698,13 +2710,13 @@ export class QueryOutput extends React.Component {
       getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation && this.props.showQueryInterpretation
 
     return (
-      <div className='dashboard-data-limit-warning-icon'>
-        <Icon
-          type='warning'
-          data-tip={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached. Try querying a smaller time-frame to ensure all your data is displayed.`}
-          data-for={this.props.tooltipID ?? this.TOOLTIP_ID}
-          data-place={isReverseTranslationRendered ? 'left' : 'right'}
-        />
+      <div
+        className='dashboard-data-limit-warning-icon'
+        data-tooltip-content={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached. Try querying a smaller time-frame to ensure all your data is displayed.`}
+        data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
+        data-place={isReverseTranslationRendered ? 'left' : 'right'}
+      >
+        <Icon type='warning' />
       </div>
     )
   }
@@ -2740,12 +2752,8 @@ export class QueryOutput extends React.Component {
           {this.renderResponse()}
           {this.props.reverseTranslationPlacement !== 'top' && this.renderFooter()}
         </div>
-        {!this.props.tooltipID && (
-          <Tooltip className='react-autoql-tooltip' id={this.TOOLTIP_ID} effect='solid' place='top' html />
-        )}
-        {!this.props.chartTooltipID && (
-          <Tooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} effect='solid' html />
-        )}
+        {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} />}
+        {!this.props.chartTooltipID && <Tooltip tooltipId={this.CHART_TOOLTIP_ID} />}
       </ErrorBoundary>
     )
   }

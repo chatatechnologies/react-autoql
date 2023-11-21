@@ -1,9 +1,7 @@
 import React, { Component } from 'react'
 import { scaleLinear } from 'd3-scale'
 import { max, min } from 'd3-array'
-import { getChartColorVars, getTooltipContent, getKey } from 'autoql-fe-utils'
-
-import { rebuildTooltips } from '../../Tooltip'
+import { getChartColorVars, getTooltipContent, getKey, uuidv4 } from 'autoql-fe-utils'
 
 import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
 
@@ -30,23 +28,17 @@ export default class Circles extends Component {
     activeKey: this.props.activeChartElementKey,
   }
 
-  componentDidMount = () => {
-    rebuildTooltips()
-  }
-
-  onCircleClick = (row, colIndex, rowIndex) => {
-    const newActiveKey = getKey(colIndex, rowIndex)
-
+  onCircleClick = (row, colIndex, activeKey) => {
     this.props.onChartClick({
       row,
       columnIndex: colIndex,
       columns: this.props.columns,
       stringColumnIndex: this.props.stringColumnIndex,
       legendColumn: this.props.legendColumn,
-      activeKey: newActiveKey,
+      activeKey,
     })
 
-    this.setState({ activeKey: newActiveKey })
+    this.setState({ activeKey })
   }
 
   render = () => {
@@ -102,24 +94,27 @@ export default class Circles extends Component {
             aggregated: this.props.isAggregated,
           })
 
+          const key = getKey(colIndex, index)
+
           const scaleX = xScale(xLabel)
           const scaleY = yScale(yLabel)
 
           circles.push(
             <circle
-              key={getKey(colIndex, index)}
+              id={key}
+              key={key}
               data-test='circles'
-              className={`circle${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
+              className={`circle${this.state.activeKey === key ? ' active' : ''}`}
               cx={scaleX + xBandwidth / 2}
               cy={scaleY + yBandwidth / 2}
               r={value < 0 ? 0 : this.radiusScale(value) / 2}
-              onClick={() => this.onCircleClick(row, colIndex, index)}
-              data-tip={tooltip}
-              data-for={this.props.chartTooltipID}
+              onClick={() => this.onCircleClick(row, colIndex, key)}
+              data-tooltip-html={tooltip}
+              data-tooltip-id={this.props.chartTooltipID}
               style={{
                 stroke: 'transparent',
                 strokeWidth: 10,
-                fill: this.state.activeKey === getKey(colIndex, index) ? color1 : color0,
+                fill: this.state.activeKey === key ? color1 : color0,
                 fillOpacity: 0.7,
               }}
             />,

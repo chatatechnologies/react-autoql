@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import axios from 'axios'
@@ -7,6 +7,7 @@ import _cloneDeep from 'lodash.clonedeep'
 import { isMobile } from 'react-device-detect'
 import Autosuggest from 'react-autosuggest'
 import SpeechToTextButtonBrowser from '../SpeechToTextButton/SpeechToTextButtonBrowser'
+
 import {
   runQuery,
   runQueryOnly,
@@ -21,10 +22,10 @@ import {
   dataFormattingDefault,
   getAuthentication,
   getAutoQLConfig,
+  parseJwt,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
-import { hideTooltips } from '../Tooltip'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
@@ -40,7 +41,6 @@ class QueryInput extends React.Component {
 
     this.UNIQUE_ID = uuid()
     this.MAX_QUERY_HISTORY = 5
-    this.queryHistoryId = `query-history-${props.authentication?.domain}`
     this.autoCompleteTimer = undefined
     this.autoCompleteArray = []
 
@@ -272,7 +272,6 @@ class QueryInput extends React.Component {
   onFinalTranscript = (transcript) => {
     this.setState({ inputValue: transcript, listeningForTranscript: false }, () => {
       this.focus()
-      hideTooltips()
     })
   }
 
@@ -280,16 +279,33 @@ class QueryInput extends React.Component {
     this.inputRef = ref
   }
 
+  getQueryHistoryID = () => {
+    if (!this.props?.authentication?.token) {
+      return
+    }
+
+    try {
+      const tokenInfo = parseJwt(this.props.authentication.token)
+      const id = `query-history-${tokenInfo.user_id}-${tokenInfo.project_id}`
+      return id
+    } catch (error) {
+      console.error(error)
+      return
+    }
+  }
+
   getQueryHistory = () => {
     try {
-      const queryHistoryStr = localStorage.getItem(this.queryHistoryId)
+      const id = this.getQueryHistoryID()
+      const queryHistoryStr = localStorage.getItem(id)
+
       if (!queryHistoryStr) {
         return []
       }
 
       const queryHistory = JSON.parse(queryHistoryStr)
 
-      if ((queryHistory?.constructor !== Array) | !queryHistory?.length) {
+      if (queryHistory?.constructor !== Array || !queryHistory?.length) {
         return []
       }
 
@@ -302,6 +318,12 @@ class QueryInput extends React.Component {
 
   addQueryToHistory = (query) => {
     try {
+      const id = this.getQueryHistoryID()
+
+      if (!id) {
+        return
+      }
+
       let queryHistory = this.getQueryHistory().filter((q) => {
         return q !== query
       })
@@ -312,7 +334,7 @@ class QueryInput extends React.Component {
         queryHistory = queryHistory.slice(0, this.MAX_QUERY_HISTORY)
       }
 
-      localStorage.setItem(this.queryHistoryId, JSON.stringify(queryHistory))
+      localStorage.setItem(id, JSON.stringify(queryHistory))
     } catch (error) {
       console.error(error)
     }
@@ -569,7 +591,7 @@ class QueryInput extends React.Component {
                 multiSection={true}
                 shouldRenderSuggestions={() => !this.props.isDisabled}
                 ref={(ref) => (this.autoSuggest = ref)}
-                renderSuggestion={(suggestion) => <Fragment>{suggestion?.name}</Fragment>}
+                renderSuggestion={(suggestion) => <>{suggestion?.name}</>}
                 inputProps={inputProps}
               />
             ) : (

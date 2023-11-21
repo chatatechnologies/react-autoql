@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import Drawer from 'rc-drawer'
 import _isEmpty from 'lodash.isempty'
@@ -9,13 +9,13 @@ import { mergeSources, autoQLConfigDefault, dataFormattingDefault, getAutoQLConf
 // Components
 import { Icon } from '../Icon'
 import { ExploreQueries } from '../ExploreQueries'
-import { DataExplorer } from '../DataExplorer'
+import { DataExplorer } from '../DataExplorerOld'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
 import { FilterLockPopover } from '../FilterLockPopover'
 import { ConfirmPopover } from '../ConfirmPopover'
 import { ChatContent } from '../ChatContent'
-import { hideTooltips, rebuildTooltips, Tooltip } from '../Tooltip'
+import { Tooltip } from '../Tooltip'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 // Utils
@@ -148,7 +148,7 @@ export class DataMessenger extends React.Component {
     placement: 'right',
     maskClosable: true,
     isVisible: true,
-    width: 500,
+    width: 600,
     height: 350,
     showHandle: true,
     handleImage: undefined,
@@ -189,6 +189,7 @@ export class DataMessenger extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
+
     try {
       window.addEventListener('resize', this.onWindowResize)
     } catch (error) {
@@ -199,8 +200,6 @@ export class DataMessenger extends React.Component {
     if (this.props.defaultOpen && !this.isOpen()) {
       this.openDataMessenger()
     }
-
-    setTimeout(rebuildTooltips, 1000)
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -351,8 +350,6 @@ export class DataMessenger extends React.Component {
         this.setState({ isResizing: false })
       },
     )
-
-    hideTooltips()
   }
 
   getHandleProp = () => {
@@ -476,44 +473,46 @@ export class DataMessenger extends React.Component {
         <div className={`page-switcher-shadow-container  ${this.props.placement}`}>
           <div className={`page-switcher-container ${this.props.placement}`}>
             <div
-              className={`tab${page === 'data-messenger' ? ' active' : ''}`}
+              className={`react-autoql-dm-tab${page === 'data-messenger' ? ' active' : ''}`}
               onClick={() => this.setState({ activePage: 'data-messenger' })}
-              data-tip='Home'
-              data-for={this.TOOLTIP_ID}
+              data-tooltip-content='Home'
+              data-tooltip-id={this.TOOLTIP_ID}
             >
               <Icon type='react-autoql-bubbles-outlined' />
             </div>
             {this.props.enableExploreQueriesTab && (
               <div
-                className={`tab${page === 'explore-queries' ? ' active' : ''} react-autoql-explore-queries`}
+                className={`react-autoql-dm-tab${
+                  page === 'explore-queries' ? ' active' : ''
+                } react-autoql-explore-queries`}
                 onClick={() => this.setState({ activePage: 'explore-queries' })}
-                data-tip={lang.exploreQueries}
-                data-for={this.TOOLTIP_ID}
+                data-tooltip-content={lang.exploreQueries}
+                data-tooltip-id={this.TOOLTIP_ID}
               >
                 <Icon type='light-bulb' size={22} />
               </div>
             )}
             {this.props.enableDataExplorerTab && (
               <div
-                className={`tab${page === 'data-explorer' ? ' active' : ''} react-autoql-data-explorer`}
+                className={`react-autoql-dm-tab${page === 'data-explorer' ? ' active' : ''} react-autoql-data-explorer`}
                 onClick={() => this.setState({ activePage: 'data-explorer' })}
-                data-tip={lang.dataExplorer}
-                data-for={this.TOOLTIP_ID}
+                data-tooltip-content={lang.dataExplorer}
+                data-tooltip-id={this.TOOLTIP_ID}
               >
                 <Icon type='data-search' size={22} />
               </div>
             )}
             {this.props.enableNotificationsTab && getAutoQLConfig(this.props.autoQLConfig).enableNotifications && (
               <div
-                className={`tab${page === 'notifications' ? ' active' : ''} react-autoql-notifications`}
+                className={`react-autoql-dm-tab${page === 'notifications' ? ' active' : ''} react-autoql-notifications`}
                 onClick={() => {
                   if (this.notificationBadgeRef) {
                     this.notificationBadgeRef.resetCount()
                   }
                   this.setState({ activePage: 'notifications' })
                 }}
-                data-tip='Notifications'
-                data-for={this.TOOLTIP_ID}
+                data-tooltip-content='Notifications'
+                data-tooltip-id={this.TOOLTIP_ID}
               >
                 <div className='data-messenger-notification-btn'>
                   <NotificationIcon
@@ -537,8 +536,8 @@ export class DataMessenger extends React.Component {
               <div
                 className={`tab${page === 'dpr' ? ' active' : ''} react-autoql-dpr`}
                 onClick={() => this.setState({ activePage: 'dpr' })}
-                data-tip='Education'
-                data-for={this.TOOLTIP_ID}
+                data-tooltip-content='Education'
+                data-tooltip-id={this.TOOLTIP_ID}
               >
                 <Icon type='grad-cap' size={22} />
               </div>
@@ -567,7 +566,7 @@ export class DataMessenger extends React.Component {
           positions={['bottom', 'left', 'top', 'right']}
           align='end'
         >
-          <button data-tip={lang.clearQueriesTooltip} data-for={this.TOOLTIP_ID}>
+          <button data-tooltip-content={lang.clearQueriesTooltip} data-tooltip-id={this.TOOLTIP_ID}>
             <Icon type='trash' />
           </button>
         </ConfirmPopover>
@@ -651,8 +650,8 @@ export class DataMessenger extends React.Component {
           className={`react-autoql-drawer-header-btn filter-locking ${
             this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
           }`}
-          data-tip={lang.openFilterLocking}
-          data-for={this.TOOLTIP_ID}
+          data-tooltip-content={lang.openFilterLocking}
+          data-tooltip-id={this.TOOLTIP_ID}
           onClick={this.state.isFilterLockMenuOpen ? this.closeFilterLockMenu : this.openFilterLockMenu}
         >
           <span className='react-autoql-filter-lock-icon-container'>
@@ -668,7 +667,7 @@ export class DataMessenger extends React.Component {
     const { maxWidth, maxHeight } = this.getMaxWidthAndHeightFromDocument()
     const isFullScreen = this.state.width === maxWidth
     return (
-      <Fragment>
+      <>
         <div
           className={`react-autoql-header-left-container ${
             this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
@@ -679,16 +678,16 @@ export class DataMessenger extends React.Component {
               <button
                 onClick={this.closeDataMessenger}
                 className='react-autoql-drawer-header-btn'
-                data-tip={lang.closeDataMessenger}
-                data-for={this.TOOLTIP_ID}
+                data-tooltip-content={lang.closeDataMessenger}
+                data-tooltip-id={this.TOOLTIP_ID}
               >
                 <Icon type='close' />
               </button>
               <button
                 onClick={() => this.toggleFullScreen(isFullScreen, maxWidth, maxHeight)}
                 className='react-autoql-drawer-header-btn screen-mode'
-                data-tip={isFullScreen ? lang.minimizeDataMessenger : lang.maximizeDataMessenger}
-                data-for={this.TOOLTIP_ID}
+                data-tooltip-content={isFullScreen ? lang.minimizeDataMessenger : lang.maximizeDataMessenger}
+                data-tooltip-id={this.TOOLTIP_ID}
               >
                 <Icon type={isFullScreen ? 'minimize' : 'maximize'} />
               </button>
@@ -705,7 +704,7 @@ export class DataMessenger extends React.Component {
         >
           {this.renderRightHeaderContent()}
         </div>
-      </Fragment>
+      </>
     )
   }
 
@@ -813,6 +812,7 @@ export class DataMessenger extends React.Component {
             }
             this.setState({ activePage: 'data-messenger' })
             clearTimeout(this.executeQueryTimeout)
+
             this.executeQueryTimeout = setTimeout(() => {
               this.dataMessengerContentRef?.animateInputTextAndSubmit({
                 query,
@@ -881,6 +881,7 @@ export class DataMessenger extends React.Component {
           onModalClose={this.onDataAlertModalClose}
           shouldRender={this.isOpen() && this.state.activePage === 'notifications'}
           tooltipID={this.TOOLTIP_ID}
+          chartTooltipID={this.CHART_TOOLTIP_ID}
           isResizing={this.state.isResizing || this.state.isWindowResizing}
           popoverParentElement={this.props.popoverParentElement}
         />
@@ -1000,17 +1001,10 @@ export class DataMessenger extends React.Component {
 
   renderTooltips = () => {
     return (
-      <Fragment>
-        <Tooltip
-          className='react-autoql-tooltip'
-          id={this.TOOLTIP_ID}
-          effect='solid'
-          delayShow={800}
-          place='top'
-          html
-        />
-        <Tooltip className='react-autoql-chart-tooltip' id={this.CHART_TOOLTIP_ID} effect='solid' html />
-      </Fragment>
+      <>
+        <Tooltip tooltipId={this.TOOLTIP_ID} />
+        <Tooltip className='react-autoql-chart-tooltip' tooltipId={this.CHART_TOOLTIP_ID} delayShow={0} />
+      </>
     )
   }
 
@@ -1044,9 +1038,10 @@ export class DataMessenger extends React.Component {
           {isBrowser ? this.renderTabs() : null}
           <div
             ref={(r) => (this.messengerDrawerRef = r)}
-            className={
-              isMobile ? 'react-autoql-mobile-drawer-content-container' : 'react-autoql-drawer-content-container'
-            }
+            className={`
+              ${isMobile ? 'react-autoql-mobile-drawer-content-container' : 'react-autoql-drawer-content-container'}
+              ${this.state.activePage}
+            `}
           >
             <div className='chat-header-container'>{this.renderHeaderContent()}</div>
             {this.renderBodyContent()}

@@ -24,8 +24,10 @@ export default class ReverseTranslation extends React.Component {
 
     this.COMPONENT_KEY = uuid()
 
-    const reverseTranslationArray = constructRTArray(props.queryResponse?.data?.data?.parsed_interpretation)
-
+    let reverseTranslationArray = constructRTArray(props.queryResponse?.data?.data?.parsed_interpretation)
+    if (props.termId && props.queryResultMetadata?.data?.parsed_interpretations) {
+      reverseTranslationArray = constructRTArray(props.queryResultMetadata?.data?.parsed_interpretations[props.termId])
+    }
     this.state = {
       reverseTranslationArray,
     }
@@ -37,6 +39,7 @@ export default class ReverseTranslation extends React.Component {
     queryResponse: PropTypes.shape({}),
     tooltipID: PropTypes.string,
     textOnly: PropTypes.bool,
+    termId: PropTypes.string,
   }
 
   static defaultProps = {
@@ -45,6 +48,7 @@ export default class ReverseTranslation extends React.Component {
     queryResponse: undefined,
     tooltipID: undefined,
     textOnly: false,
+    termId: undefined,
   }
 
   componentDidMount = () => {
@@ -155,7 +159,7 @@ export default class ReverseTranslation extends React.Component {
         return ` ${chunk.eng}`
       }
       case 'DELIM': {
-        return `${chunk.eng}`
+        return ` ${chunk.eng}`
       }
       default: {
         return ` ${chunk.eng}`
@@ -191,10 +195,12 @@ export default class ReverseTranslation extends React.Component {
               <div className='react-autoql-reverse-translation'>
                 <Icon
                   type='info'
-                  data-tip={
+                  data-tooltip-content={
                     'This statement reflects how your query was interpreted in order to return this data response.'
                   }
-                  data-for={this.props.tooltipID ?? `react-autoql-reverse-translation-tooltip-${this.COMPONENT_KEY}`}
+                  data-tooltip-id={
+                    this.props.tooltipID ?? `react-autoql-reverse-translation-tooltip-${this.COMPONENT_KEY}`
+                  }
                 />
                 <strong> Interpreted as: </strong>
                 {this.state.reverseTranslationArray.map((chunk, i) => {
@@ -205,10 +211,8 @@ export default class ReverseTranslation extends React.Component {
             {!this.props.tooltipID && (
               <Tooltip
                 className='react-autoql-reverse-translation-tooltip'
-                id={`react-autoql-reverse-translation-tooltip-${this.COMPONENT_KEY}`}
-                effect='solid'
+                tooltipId={`react-autoql-reverse-translation-tooltip-${this.COMPONENT_KEY}`}
                 place='right'
-                html
               />
             )}
           </>
