@@ -112,6 +112,13 @@ export default class SampleQuery extends React.Component {
           if (chunk.type == SampleQueryReplacementTypes.SAMPLE_QUERY_VL_TYPE) {
             const columnName = chunk.replacement?.display_name
 
+            let vlAutocompleteValue
+            if (this.state.values[chunk.name]?.replacement) {
+              vlAutocompleteValue = {
+                ...this.state.values[chunk.name]?.replacement,
+              }
+            }
+
             chunkContent = (
               <VLAutocompleteInputPopover
                 authentication={this.props.authentication}
