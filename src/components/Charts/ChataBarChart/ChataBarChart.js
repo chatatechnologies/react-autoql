@@ -34,13 +34,11 @@ export default class ChataBarChart extends Component {
     this.yScale = getBandScale({
       ...props,
       columnIndex: props.stringColumnIndex,
-      config: props.dataFormatting,
       axis: 'y',
     })
 
     const xScalesAndTicks = getLinearScales({
       ...props,
-      config: props.dataFormatting,
       columnIndices1: numberColumnIndices,
       isScaled: this.state?.isChartScaled,
       axis: 'x',
