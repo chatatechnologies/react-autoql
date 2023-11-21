@@ -13,14 +13,22 @@ export default class SampleQuery extends React.Component {
 
     const initialValues = _cloneDeep(props.suggestion?.initialValues)
 
-    if (props.valueLabel && initialValues) {
-      Object.keys(initialValues).forEach((key) => {
-        if (initialValues[key]?.type === SampleQueryReplacementTypes.SAMPLE_QUERY_VL_TYPE) {
-          initialValues[key].replacement = props.valueLabel
-          initialValues[key].value = props.valueLabel?.format_txt
-        }
-      })
-    }
+    // Removing this for now. After some testing, this can be removed
+    // It is used to populate all initial values with the selected VL in the search bar
+    // But it might not be necessary if recommendation always sends back this default VL based on the column filter
+    // if (props.valueLabel && initialValues) {
+    //   Object.keys(initialValues).forEach((key) => {
+    //     if (!initialValues[key]?.type === SampleQueryReplacementTypes.SAMPLE_QUERY_VL_TYPE) {
+    //       return
+    //     }
+    //     const valueLabelColumn = props.valueLabel?.column_name
+    //     const replacementColumn = initialValues[key]?.replacement?.column_name
+    //     if (valueLabelColumn && replacementColumn && valueLabelColumn === replacementColumn) {
+    //       initialValues[key].replacement = props.valueLabel
+    //       initialValues[key].value = props.valueLabel?.format_txt
+    //     }
+    //   })
+    // }
 
     this.state = {
       values: initialValues,
