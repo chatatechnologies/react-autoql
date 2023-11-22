@@ -153,11 +153,14 @@ export default class DataPreview extends React.Component {
         dataFormatting={this.props.dataFormatting}
         onColumnSelection={this.props.onColumnSelection}
         selectedColumns={this.props.selectedColumns}
-        disabledColumns={disabledColumns}
         shouldRender={this.props.shouldRender}
         queryResponse={this.state.dataPreview}
         showEndOfPreviewMessage={true}
         tooltipID={this.props.tooltipID}
+        // Disable this for now, the logic to disable the columns does not match with the
+        // ability to create sample queries currently. We will need to revisit this logic
+        // with the recommendation service in the future if we want to have this feature
+        // disabledColumns={disabledColumns}
       />
     )
   }

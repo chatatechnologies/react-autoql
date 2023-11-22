@@ -251,7 +251,7 @@ export default class DataExplorer extends React.Component {
         onColumnSelection={(columns) => this.setState({ selectedColumns: columns })}
         onDataPreview={(dataPreview) => this.setState({ dataPreview })}
         data={this.state.dataPreview}
-        // subject={this.getSubjectObject(context)}
+        subject={this.getSubjectObject(context)}
         selectedColumns={this.state.selectedColumns}
         onIsCollapsedChange={(isCollapsed) => {
           this.setState({
@@ -272,8 +272,11 @@ export default class DataExplorer extends React.Component {
       // Use median value from dataset (median not avg, so it is guaranteed to conform with the dataset)
       defaultValue = median(columnData)
     }
-    // Remove for now - we don't always want to specify a VL or date since that will restrict samply queries with groupbys
+
+    // This will restrict sample queries with groupbys to only show "filter" queries and not "groupby" queries
     // ie. It will not show "total sales by customer", instead it will always show "total sales for __VL_CUSTOMER__"
+    // There may be work that needs to be done in the querybuilder service to show both types of queries regardless
+    // of a provided VL default value or not
     else if (isColumnDateType(column)) {
       // Use first value that exists
       defaultValue = columnData.find((date) => !!date)
