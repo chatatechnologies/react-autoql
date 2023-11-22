@@ -1,19 +1,19 @@
 import React from 'react'
-import PropTypes from 'prop-types'
-import { v4 as uuid } from 'uuid'
 import axios from 'axios'
+import { v4 as uuid } from 'uuid'
+import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
+
 import {
-  runQueryNewPage,
-  currentEventLoopEnd,
   deepEqual,
-  REQUEST_CANCELLED_ERROR,
   formatTableParams,
   getFilterPrecision,
+  currentEventLoopEnd,
+  REQUEST_CANCELLED_ERROR,
   DAYJS_PRECISION_FORMATS,
-  getAuthentication,
+  isDataLimited,
 } from 'autoql-fe-utils'
 
 import { Button } from '../Button'
@@ -21,39 +21,45 @@ import { Spinner } from '../Spinner'
 import { Popover } from '../Popover'
 import TableWrapper from './TableWrapper'
 import { DateRangePicker } from '../DateRangePicker'
+import { DataLimitWarning } from '../DataLimitWarning'
+import { columnOptionsList } from './tabulatorConstants'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { columnOptionsList } from './tabulatorConstants'
-
-import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
 import './ChataTable.scss'
+import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
 
 export default class ChataTable extends React.Component {
   constructor(props) {
     super(props)
 
     this.TABLE_ID = uuid()
-    this.hasSetInitialData = false
-    this.hasSetInitialParams = false
-    this.currentPage = 1
-    this.lastPage = props.data?.length < props.pageSize ? 1 : 2
-    this.filterTagElements = []
-    this.queryID = props.queryID
 
+    this.hasSetInitialData = false
+    this.isSettingInitialData = false
     this.isFiltering = false
     this.isSorting = false
+    this.pageSize = 50
 
-    this.tableParams = _cloneDeep(props.initialParams) ?? {
+    this.totalPages = this.getTotalPages(props.response)
+    if (isNaN(this.totalPages) || !this.totalPages) {
+      this.totalPages = 1
+    }
+
+    this.tableParams = {
       filter: [],
       sort: [],
       page: 1,
+    }
+
+    if (props.initialParams) {
+      this.tableParams = _cloneDeep(props.initialParams)
     }
 
     this.tableOptions = {
       selectableCheck: () => false,
       initialSort: !props.useInfiniteScroll ? this.tableParams?.sort : undefined,
       initialFilter: !props.useInfiniteScroll ? this.tableParams?.filter : undefined,
-      progressiveLoadScrollMargin: 100, // Trigger next ajax load when scroll bar is 800px or less from the bottom of the table.
+      progressiveLoadScrollMargin: 50, // Trigger next ajax load when scroll bar is 800px or less from the bottom of the table.
       // renderHorizontal: 'virtual', // v4: virtualDomHoz = false
       downloadEncoder: function (fileContents, mimeType) {
         //fileContents - the unencoded contents of the file
@@ -71,7 +77,7 @@ export default class ChataTable extends React.Component {
       this.tableOptions.paginationMode = 'remote'
       this.tableOptions.progressiveLoad = 'scroll' // v4: ajaxProgressiveLoad
       this.tableOptions.ajaxURL = 'https://required-placeholder-url.com'
-      this.tableOptions.paginationSize = props.pageSize
+      this.tableOptions.paginationSize = this.pageSize
       this.tableOptions.paginationInitialPage = 1
       this.tableOptions.ajaxRequesting = (url, params) => this.ajaxRequesting(props, params)
       this.tableOptions.ajaxRequestFunc = (url, config, params) => this.ajaxRequestFunc(props, params)
@@ -84,8 +90,7 @@ export default class ChataTable extends React.Component {
       loading: false,
       pageLoading: false,
       scrollLoading: false,
-      isLastPage: this.lastPage === 1,
-      ref: null,
+      isLastPage: this.tableParams.page === this.totalPages,
       subscribedData: undefined,
       firstRender: true,
     }
@@ -94,34 +99,49 @@ export default class ChataTable extends React.Component {
   static propTypes = {
     data: PropTypes.arrayOf(PropTypes.array),
     columns: PropTypes.arrayOf(PropTypes.shape({})),
-    shouldRender: PropTypes.bool,
+    initialParams: PropTypes.shape({}),
+    queryRequestData: PropTypes.shape({}),
     onFilterCallback: PropTypes.func,
     onSorterCallback: PropTypes.func,
     onTableParamsChange: PropTypes.func,
     isResizing: PropTypes.bool,
-    pageSize: PropTypes.number,
     useInfiniteScroll: PropTypes.bool,
-    onSetTableHeight: PropTypes.func,
-    onRenderComplete: PropTypes.func,
+    autoHeight: PropTypes.bool,
+    rowChangeCount: PropTypes.number,
+    isAnimating: PropTypes.bool,
+    onCellClick: PropTypes.func,
+    onErrorCallback: PropTypes.func,
+    hidden: PropTypes.bool,
+    onNewData: PropTypes.func,
+    tooltipID: PropTypes.string,
+    enableAjaxTableData: PropTypes.bool,
+    pivot: PropTypes.bool,
+    style: PropTypes.shape({}),
+    supportsDrilldowns: PropTypes.bool,
+    response: PropTypes.any,
   }
 
   static defaultProps = {
     queryRequestData: {},
+    initialParams: undefined,
     data: undefined,
     columns: undefined,
     isResizing: false,
-    pageSize: undefined,
     useInfiniteScroll: true,
-    source: null,
-    shouldRender: true,
     autoHeight: true,
+    rowChangeCount: 0,
+    isAnimating: false,
+    hidden: false,
+    response: undefined,
+    tooltipID: undefined,
+    enableAjaxTableData: false,
+    pivot: false,
     onFilterCallback: () => {},
     onSorterCallback: () => {},
     onTableParamsChange: () => {},
     onCellClick: () => {},
     onErrorCallback: () => {},
-    onSetTableHeight: () => {},
-    onRenderComplete: () => {},
+    onNewData: () => {},
   }
 
   componentDidMount = () => {
@@ -137,25 +157,20 @@ export default class ChataTable extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
-    if (!this.state.tabulatorMounted && nextState.tabulatorMounted) {
-      return true
-    }
-
-    if (this.props.rowChangeCount !== nextProps.rowChangeCount) {
-      return true
-    }
-
-    if (this.props.isAnimating && !nextProps.isAnimating) {
-      return true
-    }
-
-    if (!!this.state.datePickerColumn && !nextState.datePickerColumn) {
-      return true
-    }
+    const tabulatorJustMounted = !this.state.tabulatorMounted && nextState.tabulatorMounted
+    const rowsChanged = this.props.rowChangeCount !== nextProps.rowChangeCount
+    const animationEnded = this.props.isAnimating && !nextProps.isAnimating
+    const datePickerClosed = !!this.state.datePickerColumn && !nextState.datePickerColumn
+    const hiddenStateChanged = this.props.hidden !== nextProps.hidden
+    const isVisibleAndColumnsChanged = !this.props.hidden && !deepEqual(this.props.columns, nextProps.columns)
 
     if (
-      this.props.hidden !== nextProps.hidden ||
-      (!this.props.hidden && !deepEqual(this.props.columns, nextProps.columns))
+      tabulatorJustMounted ||
+      rowsChanged ||
+      animationEnded ||
+      datePickerClosed ||
+      hiddenStateChanged ||
+      isVisibleAndColumnsChanged
     ) {
       return true
     }
@@ -195,10 +210,6 @@ export default class ChataTable extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState, { shouldSetTableHeight, newTableHeight }) => {
-    if (this.props.rowChangeCount !== prevProps.rowChangeCount && this.props.hidden) {
-      this.setState({ subscribedData: this.props.data })
-    }
-
     if (shouldSetTableHeight) {
       this.setTableHeight(newTableHeight)
     }
@@ -223,8 +234,6 @@ export default class ChataTable extends React.Component {
       if (!this.props.hidden) {
         this.setTableHeight()
       }
-
-      this.hasSetInitialParams = true
     }
   }
 
@@ -235,11 +244,24 @@ export default class ChataTable extends React.Component {
       clearTimeout(this.setDimensionsTimeout)
       clearTimeout(this.setStateTimeout)
       this.cancelCurrentRequest()
-      this.existingFilterTag = undefined
-      this.filterTagElements = undefined
     } catch (error) {
       console.error(error)
     }
+  }
+
+  getTotalPages = (response) => {
+    const rows = response?.data?.data?.rows
+    if (!rows?.length) {
+      return 1
+    }
+
+    const totalPages = Math.ceil(rows.length / this.pageSize)
+
+    if (totalPages >= 1 && totalPages !== Infinity) {
+      return totalPages
+    }
+
+    return 1
   }
 
   setInfiniteScroll = (useInfiniteScroll) => {
@@ -325,23 +347,19 @@ export default class ChataTable extends React.Component {
     this.setFilterBadgeClasses()
   }
 
+  onDataProcessed = (data) => {
+    if (this.hasSetInitialData || data?.length || !this.props.response?.data?.data?.rows?.length) {
+      this.hasSetInitialData = true
+      this.isSettingInitialData = false
+      this.clearLoadingIndicators()
+    }
+  }
+
   setLoading = (loading) => {
     // Don't update state unnecessarily
     if (loading !== this.state.loading && this._isMounted) {
       this.setState({ loading })
     }
-  }
-
-  isLoading = () => {
-    return (
-      this.state.loading ||
-      this.state.firstRender ||
-      this.state.pageLoading ||
-      this.state.scrollLoading ||
-      this.isFiltering ||
-      this.isSorting ||
-      !this.hasSetInitialParams
-    )
   }
 
   onTableBuilt = async () => {
@@ -380,53 +398,56 @@ export default class ChataTable extends React.Component {
   }
 
   ajaxRequesting = (props, params) => {
-    // Use this fn to abort a request
+    // // Use this fn to abort a request
+    // if (!this.hasSetInitialData && !this.isSettingInitialData) {
+    //   const queryHasData = this.props.response?.data?.data?.rows?.length
+    //   const tabulatorHasData = this.ref?.tabulator?.getDataCount('active')?.length
+
+    //   if (!queryHasData || (queryHasData && tabulatorHasData)) {
+    //     this.hasSetInitialData = true
+    //     return true
+    //   }
+    // }
+
+    const tableParamsFormatted = formatTableParams(this.tableParams, props.columns)
+    const nextTableParamsFormatted = formatTableParams(params, props.columns)
+    const tableParamsUnchanged = _isEqual(tableParamsFormatted, nextTableParamsFormatted)
+
+    if (
+      this.hasSetInitialData &&
+      (this.state.pageLoading || this.state.scrollLoading || this.props.hidden || tableParamsUnchanged)
+    ) {
+      return false
+    }
   }
 
   ajaxRequestFunc = async (props, params) => {
-    const previousResponseData = this.props.response?.data?.data ?? {}
-    const previousData = { ...previousResponseData, page: 1, isPreviousData: true }
+    const initialData = {
+      rows: this.getRows(this.props, 1),
+      page: 1, // this.tableParams.page,
+      isInitialData: true,
+    }
+
+    let response = initialData
 
     try {
-      if (this.props.hidden) {
-        return previousData
-      }
-
-      const requestedNewPageWhileLoadingFilter = params?.page > 1 && this.state.pageLoading
       if (!this.hasSetInitialData) {
-        this.hasSetInitialData = true
-        return previousData
-      }
-
-      if (requestedNewPageWhileLoadingFilter) {
-        return previousData
-      }
-
-      const tableParamsFormatted = formatTableParams(this.tableParams, props.columns)
-      const nextTableParamsFormatted = formatTableParams(params, props.columns)
-
-      if (_isEqual(tableParamsFormatted, nextTableParamsFormatted)) {
-        return previousData
-      }
-
-      this.tableParams = params
-
-      if (!props.queryRequestData) {
-        console.warn('Original request data was not provided to ChataTable, unable to filter or sort table')
-        return previousData
+        return initialData
       }
 
       this.cancelCurrentRequest()
       this.axiosSource = axios.CancelToken?.source()
+      this.tableParams = params
+      this.scrollLeft = undefined
 
-      let response
+      const nextTableParamsFormatted = formatTableParams(params, props.columns)
+
       if (params?.page > 1) {
         if (this._isMounted) {
           this.setState({ scrollLoading: true })
         }
 
         response = await this.getNewPage(props, nextTableParamsFormatted)
-        this.props.onNewPage(response?.rows)
       } else {
         if (this._isMounted) {
           this.setState({ pageLoading: true })
@@ -437,10 +458,11 @@ export default class ChataTable extends React.Component {
           orders: nextTableParamsFormatted?.sorters,
           cancelToken: this.axiosSource.token,
         })
-        this.queryID = responseWrapper?.data?.data?.query_id
-        response = { ...(responseWrapper?.data?.data ?? {}), page: 1 }
 
-        this.scrollLeft = this.ref?.tabulator?.rowManager?.element?.scrollLeft
+        const currentScrollValue = this.ref?.tabulator?.rowManager?.element?.scrollLeft
+        if (currentScrollValue > 0) {
+          this.scrollLeft = currentScrollValue
+        }
 
         /* wait for current event loop to end so table is updated
         before callbacks are invoked */
@@ -448,39 +470,48 @@ export default class ChataTable extends React.Component {
 
         this.props.onTableParamsChange(params, nextTableParamsFormatted)
         this.props.onNewData(responseWrapper)
+
+        const totalPages = this.getTotalPages(responseWrapper)
+
+        response = {
+          rows: responseWrapper?.data?.data?.rows?.slice(0, this.pageSize) ?? [],
+          page: 1,
+          last_page: totalPages,
+        }
       }
 
-      this.clearLoadingIndicators()
       return response
     } catch (error) {
-      if (error?.data?.message === REQUEST_CANCELLED_ERROR) {
-        return previousData
+      if (error?.data?.message !== REQUEST_CANCELLED_ERROR) {
+        console.error(error)
       }
 
-      console.error(error)
       this.clearLoadingIndicators()
-      // Send empty promise so data doesn't change
-      return previousData
     }
+
+    return response
+  }
+
+  getRows = (props, pageNumber) => {
+    const page = pageNumber ?? this.tableParams.page
+    const start = (page - 1) * this.pageSize
+    const end = start + this.pageSize
+
+    const newRows = props.response?.data?.data?.rows?.slice(start, end) ?? []
+    return newRows
   }
 
   clearLoadingIndicators = async () => {
-    /* The height of the table temporarily goes to 0 when new rows
-    are added, which causes the scrollbar to jump up in DM.
-
-    When loading indicators are visible, the height of the table
-    is fixed to the previous height in px. We need to wait until
-    current event loop finishes so the table doesn't jump after
-    the new rows are added */
-    await currentEventLoopEnd()
+    this.ref?.restoreRedraw()
 
     // Temporary fix to scrollbars resetting after filtering or sorting
-    // It isnt perfect since it still causes the scrollbar to jump left then right again
+    // It isnt perfect since there are still error cases where it will jump
     // Watching tabulator for a fix:
     // https://github.com/olifolkerd/tabulator/issues/3450
     if (this.scrollLeft !== undefined) {
-      this.scrollLeft = undefined
+      this.ref.tabulator.columnManager.element.scrollLeft = this.scrollLeft
       this.ref.tabulator.rowManager.element.scrollLeft = this.scrollLeft
+      this.scrollLeft = undefined
     }
 
     if (this._isMounted) {
@@ -492,49 +523,50 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  // Todo: implement "clear all filters" button in options toolbar
-  clearHeaderFilters = () => {
-    this.ref?.tabulator?.clearHeaderFilter()
+  // TODO: implement "clear all filters" button in options toolbar
+  // clearHeaderFilters = () => {
+  //   this.ref?.tabulator?.clearHeaderFilter()
+  // }
+
+  onNewData = (response) => {
+    // The rows were changed from a chart, update data manually. ChataTable will handle
+    // toggling infinite scroll on or off
+    if (response?.data?.data?.rows?.length) {
+      this.updateData(response.data.data.rows)
+    }
   }
 
   getNewPage = (props, tableParams) => {
-    return runQueryNewPage({
-      ...getAuthentication(props.authentication),
-      ...tableParams,
-      queryId: this.queryID,
-      cancelToken: this.axiosSource.token,
-    })
+    try {
+      const response = {
+        page: tableParams.page,
+        rows: this.getRows(props, tableParams.page),
+      }
+
+      return Promise.resolve(response)
+    } catch (error) {
+      console.error(error)
+      return Promise.reject(error)
+    }
   }
 
   ajaxResponseFunc = (props, response) => {
+    const modResponse = { data: response?.rows ?? [], last_page: response?.last_page ?? this.totalPages }
+
     if (response) {
-      if (!response.isPreviousData) {
+      if (this.tableParams?.page > 1) {
+        // Only restore redraw for new page - doing this for filter/sort will reset the scroll value
         this.ref?.restoreRedraw()
       }
 
-      this.currentPage = response.page
-      const isLastPage = (response?.rows?.length ?? 0) < props.pageSize
-      this.lastPage = isLastPage ? this.currentPage : this.currentPage + 1
+      const isLastPage = (response?.rows?.length ?? 0) < this.pageSize
 
-      if (this._isMounted) {
-        if (isLastPage && !this.state.isLastPage) {
-          this.setState({ isLastPage: true })
-        } else if (!isLastPage && this.state.isLastPage) {
-          this.setState({ isLastPage: false })
-        }
+      if (isLastPage !== this.state.isLastPage && this._isMounted) {
+        this.setState({ isLastPage })
       }
-
-      const modResponse = {}
-      modResponse.data = response.rows
-      modResponse.last_page = this.lastPage
-
-      return modResponse
     }
 
-    return {
-      data: [],
-      last_page: this.lastPage,
-    }
+    return modResponse
   }
 
   cellClick = (e, cell) => {
@@ -548,23 +580,20 @@ export default class ChataTable extends React.Component {
   }
 
   saveAsCSV = (delay) => {
-    try {
-      if (this._isMounted && this.ref?.tabulator) {
-        let tableClone = _cloneDeep(this.ref.tabulator)
-        return new Promise((resolve, reject) => {
-          setTimeout(() => {
-            tableClone.download('csv', 'export.csv', {
-              delimiter: ',',
-            })
-            tableClone = undefined
-            resolve()
-          }, delay)
-        })
-      }
-    } catch (error) {
-      console.error(error)
+    if (this._isMounted && this.ref?.tabulator) {
+      let tableClone = _cloneDeep(this.ref.tabulator)
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          tableClone.download('csv', 'export.csv', {
+            delimiter: ',',
+          })
+          tableClone = undefined
+          resolve()
+        }, delay)
+      })
+    } else {
+      throw new Error('Unable to save CSV - Table instance not found')
     }
-    return Promise.reject()
   }
 
   debounceSetState = (state) => {
@@ -912,20 +941,29 @@ export default class ChataTable extends React.Component {
     return []
   }
 
+  renderPivotTableRowWarning = () => {
+    if (!this.props.pivot) {
+      return null
+    }
+
+    if (isDataLimited(this.props.response)) {
+      return <DataLimitWarning tooltipID={this.props.tooltipID} rowLimit={this.props.response?.data?.data?.row_limit} />
+    }
+
+    return null
+  }
+
   renderTableRowCount = () => {
-    let currentRowCount = this.props.data?.length
-    let totalRowCount = this.props.totalRows
+    if (this.isTableEmpty()) {
+      return null
+    }
+
+    const currentRowCount = this.getCurrentRowCount()
+    const totalRowCount = this.props.response?.data?.data?.count_rows
     const shouldRenderTRC = this.props.enableAjaxTableData && totalRowCount && currentRowCount
 
     if (!shouldRenderTRC) {
       return null
-    }
-
-    const tabulatorRowCount = this.getTabulatorRowCount()
-
-    if (!this.props.useInfiniteScroll && tabulatorRowCount !== undefined) {
-      currentRowCount = tabulatorRowCount
-      totalRowCount = tabulatorRowCount
     }
 
     return (
@@ -935,8 +973,18 @@ export default class ChataTable extends React.Component {
     )
   }
 
-  getTabulatorRowCount = () => {
-    return this.ref?.tabulator?.getDataCount('active')
+  getCurrentRowCount = () => {
+    let rowCount = this.ref?.tabulator?.getDataCount('active')
+
+    if (rowCount === undefined) {
+      rowCount = this.tableParams.page * this.pageSize
+    }
+
+    if (rowCount > this.props.response?.data?.data?.rows?.length) {
+      rowCount = this.props.response?.data?.data?.rows?.length
+    }
+
+    return rowCount
   }
 
   getTabulatorHeaderFilters = () => {
@@ -946,17 +994,7 @@ export default class ChataTable extends React.Component {
   }
 
   isTableEmpty = () => {
-    if (this.props.data?.length === 0) {
-      return true
-    }
-
-    const tabulatorRowCount = this.getTabulatorRowCount()
-
-    if (this.props.rowChangeCount > 0 && this.state.tabulatorMounted && tabulatorRowCount === 0) {
-      return true
-    }
-
-    return false
+    return this.props.response?.data?.data?.rows?.length === 0
   }
 
   render = () => {
@@ -981,38 +1019,42 @@ export default class ChataTable extends React.Component {
             ${this.props.hidden ? 'hidden' : ''}
             ${isEmpty ? 'empty' : ''}`}
         >
+          {this.renderPivotTableRowWarning()}
           <div ref={(r) => (this.tabulatorContainer = r)} className='react-autoql-tabulator-container'>
-            {!!this.props.data && !!this.props.columns && (this.props.autoHeight || !this.state.firstRender) && (
-              <>
-                <TableWrapper
-                  ref={(r) => (this.ref = r)}
-                  height={this.initialTableHeight}
-                  tableKey={`react-autoql-table-${this.TABLE_ID}`}
-                  id={`react-autoql-table-${this.TABLE_ID}`}
-                  key={`react-autoql-table-wrapper-${this.TABLE_ID}`}
-                  data-test='autoql-tabulator-table'
-                  columns={this.getFilteredTabulatorColumnDefinitions()}
-                  data={this.props.data}
-                  options={this.tableOptions}
-                  hidden={this.props.hidden}
-                  data-custom-attr='test-custom-attribute'
-                  className='react-autoql-table'
-                  onTableBuilt={this.onTableBuilt}
-                  onCellClick={this.cellClick}
-                  onDataSorting={this.onDataSorting}
-                  onDataSorted={this.onDataSorted}
-                  onDataFiltering={this.onDataFiltering}
-                  onDataFiltered={this.onDataFiltered}
-                  pivot={this.props.pivot}
-                />
-                {isEmpty && this.renderEmptyPlaceholderText()}
-                {(this.state.pageLoading || !this.state.tabulatorMounted) && this.renderPageLoader()}
-                {this.state.scrollLoading && this.renderScrollLoader()}
-              </>
-            )}
+            {!!this.props.response?.data?.data?.rows &&
+              !!this.props.columns &&
+              (this.props.autoHeight || !this.state.firstRender) && (
+                <>
+                  <TableWrapper
+                    ref={(r) => (this.ref = r)}
+                    height={this.initialTableHeight}
+                    tableKey={`react-autoql-table-${this.TABLE_ID}`}
+                    id={`react-autoql-table-${this.TABLE_ID}`}
+                    key={`react-autoql-table-wrapper-${this.TABLE_ID}`}
+                    data-test='autoql-tabulator-table'
+                    columns={this.getFilteredTabulatorColumnDefinitions()}
+                    data={this.getRows(this.props)}
+                    options={this.tableOptions}
+                    hidden={this.props.hidden}
+                    data-custom-attr='test-custom-attribute'
+                    className='react-autoql-table'
+                    onTableBuilt={this.onTableBuilt}
+                    onCellClick={this.cellClick}
+                    onDataSorting={this.onDataSorting}
+                    onDataSorted={this.onDataSorted}
+                    onDataFiltering={this.onDataFiltering}
+                    onDataFiltered={this.onDataFiltered}
+                    onDataProcessed={this.onDataProcessed}
+                    pivot={this.props.pivot}
+                  />
+                  {isEmpty && this.renderEmptyPlaceholderText()}
+                  {(this.state.pageLoading || !this.state.tabulatorMounted) && this.renderPageLoader()}
+                  {this.state.scrollLoading && this.renderScrollLoader()}
+                </>
+              )}
           </div>
           {this.renderDateRangePickerPopover()}
-          {!isEmpty && this.renderTableRowCount()}
+          {this.renderTableRowCount()}
         </div>
       </ErrorBoundary>
     )

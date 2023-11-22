@@ -45,6 +45,7 @@ export default class TableWrapper extends React.Component {
     onDataSorted: PropTypes.func,
     onDataFiltering: PropTypes.func,
     onDataFiltered: PropTypes.func,
+    onDataProcessed: PropTypes.func,
   }
 
   static defaultProps = {
@@ -57,6 +58,7 @@ export default class TableWrapper extends React.Component {
     onDataSorted: () => {},
     onDataFiltering: () => {},
     onDataFiltered: () => {},
+    onDataProcessed: () => {},
   }
 
   componentDidMount = async () => {
@@ -74,7 +76,7 @@ export default class TableWrapper extends React.Component {
     this.isInitialized = false
     setTimeout(() => {
       // We must destroy the table to remove it from memory
-      this.tabulator.destroy()
+      this.tabulator?.destroy()
     }, 1000)
   }
 
@@ -88,13 +90,15 @@ export default class TableWrapper extends React.Component {
     })
 
     this.tabulator.on('renderComplete', () => {
+      // Remove this for now, since it is causing bugs with the cell click event
       // Block redraw after every update for performance
       // Restore redraw manually before updating table data
-      setTimeout(() => {
-        this.blockRedraw()
-      }, 0)
+      // setTimeout(() => {
+      //   this.blockRedraw()
+      // }, 1000)
     })
     this.tabulator.on('dataLoadError', this.props.onDataLoadError)
+    this.tabulator.on('dataProcessed', this.props.onDataProcessed)
     this.tabulator.on('cellClick', this.props.onCellClick)
     this.tabulator.on('dataSorting', this.props.onDataSorting)
     this.tabulator.on('dataSorted', this.props.onDataSorted)

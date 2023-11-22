@@ -26,6 +26,9 @@ export function Tooltip(props = {}) {
       effect='solid'
       delayShow={800}
       globalCloseEvents={{ scroll: true }}
+      render={({ content, activeAnchor }) => {
+        return content
+      }}
       {...props}
       id={props.tooltipId ?? DEFAULT_TOOLTIP_ID}
       className={`react-autoql-tooltip${props.className ? ` ${props.className}` : ''}`}

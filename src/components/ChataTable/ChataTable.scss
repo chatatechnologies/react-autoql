@@ -11,6 +11,11 @@
   box-sizing: border-box;
   flex: 1;
 
+  .react-autoql-pivot-table-row-selector {
+    display: flex;
+    justify-content: center;
+  }
+
   .table-row-count {
     flex: 0;
     width: 100%;

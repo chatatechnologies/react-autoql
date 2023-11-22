@@ -55,7 +55,7 @@ export default class Bars extends Component {
               return null
             }
 
-            let width = Math.abs(xScale(value) - scaleZero(xScale))
+            let width = Math.abs(xScale.getValue(value) - scaleZero(xScale))
             if (isNaN(width)) {
               width = 0
             }
@@ -64,7 +64,7 @@ export default class Bars extends Component {
               return null
             }
 
-            const y0 = yScale(d[stringColumnIndex])
+            const y0 = yScale.getValue(d[stringColumnIndex])
             const dY = visibleIndex * barHeight
             const finalBarYPosition = y0 + dY
 
@@ -75,6 +75,7 @@ export default class Bars extends Component {
               colIndex2: stringColumnIndex,
               legendColumn,
               dataFormatting,
+              aggregated: this.props.isAggregated,
             })
 
             return (

@@ -1,0 +1,29 @@
+.react-autoql-data-limit-warning {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 2px 10px;
+  margin-bottom: 3px;
+  border: 1px solid var(--react-autoql-warning-color);
+  border-radius: 3px;
+  letter-spacing: initial;
+  width: 100%;
+
+  .react-autoql-icon {
+    margin-right: 6px;
+    svg {
+      color: var(--react-autoql-warning-color) !important;
+    }
+  }
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    background: var(--react-autoql-warning-color);
+    opacity: 0.1;
+  }
+}

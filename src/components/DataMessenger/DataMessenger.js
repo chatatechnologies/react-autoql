@@ -381,12 +381,24 @@ export class DataMessenger extends React.Component {
       return isMobile ? 'calc(100% - 80px)' : '100vh'
     }
 
+    const { maxHeight } = this.getMaxWidthAndHeightFromDocument()
+
+    if (this.state.height > maxHeight) {
+      return maxHeight
+    }
+
     return this.state.height
   }
 
   getDrawerWidth = () => {
     if (this.state.placement === 'top' || this.state.placement === 'bottom') {
       return '100vw'
+    }
+
+    const { maxWidth } = this.getMaxWidthAndHeightFromDocument()
+
+    if (this.state.width > maxWidth) {
+      return maxWidth
     }
 
     return this.state.width
