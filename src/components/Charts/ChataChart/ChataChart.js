@@ -4,26 +4,25 @@ import PropTypes from 'prop-types'
 import { isMobile } from 'react-device-detect'
 
 import {
-  aggregateData,
-  getLegendLabelsForMultiSeries,
   svgToPng,
-  getBBoxFromRef,
-  sortDataByDate,
   deepEqual,
   onlyUnique,
-  DATE_ONLY_CHART_TYPES,
-  DOUBLE_AXIS_CHART_TYPES,
-  CHARTS_WITHOUT_AGGREGATED_DATA,
-  getDateColumnIndex,
-  isColumnDateType,
-  getThemeValue,
-  dataStructureChanged,
-  getLegendLocation,
-  mergeBoundingClientRects,
   DisplayTypes,
-  isChartType,
+  getThemeValue,
+  aggregateData,
+  getBBoxFromRef,
+  sortDataByDate,
   getColorScales,
+  isColumnDateType,
+  getLegendLocation,
+  getDateColumnIndex,
+  dataStructureChanged,
+  DATE_ONLY_CHART_TYPES,
   aggregateOtherCategory,
+  DOUBLE_AXIS_CHART_TYPES,
+  mergeBoundingClientRects,
+  getLegendLabelsForMultiSeries,
+  CHARTS_WITHOUT_AGGREGATED_DATA,
 } from 'autoql-fe-utils'
 
 import { Spinner } from '../../Spinner'
@@ -36,6 +35,7 @@ import { ChataColumnChart } from '../ChataColumnChart'
 import { ChataBubbleChart } from '../ChataBubbleChart'
 import { ChataHeatmapChart } from '../ChataHeatmapChart'
 import { ChataColumnLineChart } from '../ChataColumnLine'
+import { DataLimitWarning } from '../../DataLimitWarning'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { ChataStackedBarChart } from '../ChataStackedBarChart'
 import { ChataScatterplotChart } from '../ChataScatterplotChart'
@@ -52,28 +52,20 @@ export default class ChataChart extends React.Component {
     const data = this.getData(props)
 
     this.PADDING = 0
-    this.FONT_SIZE = 12
-    this.HISTOGRAM_SLIDER_KEY = uuid()
 
     this.firstRender = true
     this.bucketSize = props.bucketSize
     this.shouldRecalculateDimensions = false
+    this.disableTimeScale = true
 
     this.state = {
-      chartID: uuid(),
       ...data,
       deltaX: 0,
       deltaY: 0,
+      chartID: uuid(),
       isLoading: true,
       isLoadingMoreRows: false,
     }
-  }
-
-  DEFAULT_MARGINS = {
-    left: 50,
-    right: 10,
-    bottom: 100,
-    top: 10,
   }
 
   static propTypes = {
@@ -100,10 +92,6 @@ export default class ChataChart extends React.Component {
   shouldComponentUpdate = (nextProps, nextState) => {
     if (this.props.isResizing && !nextProps.isResizing) {
       this.shouldRecalculateDimensions = true
-      return true
-    }
-
-    if (this.props.dataChangeCount !== nextProps.dataChangeCount) {
       return true
     }
 
@@ -170,7 +158,7 @@ export default class ChataChart extends React.Component {
       this.setState({ chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
     }
 
-    if (dataStructureChanged(this.props, prevProps) || this.props.dataChangeCount !== prevProps.dataChangeCount) {
+    if (dataStructureChanged(this.props, prevProps)) {
       const data = this.getData(this.props)
       this.setState({ ...data, chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
     }
@@ -502,6 +490,18 @@ export default class ChataChart extends React.Component {
     )
   }
 
+  renderDataLimitWarning = () => {
+    if (this.props.hidden) {
+      return null
+    }
+
+    if (this.props.isDataLimited) {
+      return <DataLimitWarning tooltipID={this.props.tooltipID} rowLimit={this.props.rowLimit} />
+    }
+
+    return null
+  }
+
   renderChart = () => {
     const commonChartProps = this.getCommonChartProps()
 
@@ -579,6 +579,7 @@ export default class ChataChart extends React.Component {
     return (
       <ErrorBoundary>
         <>
+          {this.renderDataLimitWarning()}
           {this.renderChartHeader()}
           <div
             id={`react-autoql-chart-${this.state.chartID}`}

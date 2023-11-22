@@ -123,7 +123,6 @@ export class DashboardTile extends React.Component {
     query: '',
     title: '',
     isEditing: false,
-    displayType: 'table',
     dataPageSize: undefined,
     queryValidationSelections: undefined,
     defaultSelectedSuggestion: undefined,
@@ -1100,7 +1099,7 @@ export class DashboardTile extends React.Component {
 
     const renderPlaceholder = !this.props.tile?.queryResponse || isExecuting || !isExecuted
 
-    const initialDisplayType = this.props?.displayType
+    const initialDisplayType = this.props?.tile?.displayType
 
     return this.renderResponse({
       renderPlaceholder,
@@ -1169,7 +1168,7 @@ export class DashboardTile extends React.Component {
       isExecuting ||
       !isExecuted
 
-    const initialDisplayType = this.props?.secondDisplayType
+    const initialDisplayType = this.props?.tile?.secondDisplayType
 
     return this.renderResponse({
       renderPlaceholder,
