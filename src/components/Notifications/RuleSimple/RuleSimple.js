@@ -128,6 +128,7 @@ export default class RuleSimple extends React.Component {
     onUpdate: () => {},
     initialData: undefined,
     queryResponse: undefined,
+    queryResultMetadata: undefined,
     onLastInputEnterPress: () => {},
     dataFormatting: dataFormattingDefault,
   }
@@ -170,7 +171,14 @@ export default class RuleSimple extends React.Component {
     let queryText = this.getFormattedQueryText({ sentenceCase, withFilters })
 
     if (useRT) {
-      queryText = <ReverseTranslation queryResponse={this.props.queryResponse} textOnly />
+      queryText = (
+        <ReverseTranslation
+          queryResponse={this.props.queryResponse}
+          queryResultMetadata={this.props.queryResultMetadata}
+          termId={this.TERM_ID_1}
+          textOnly
+        />
+      )
     }
 
     const operator = DATA_ALERT_OPERATORS[this.state.selectedOperator]
@@ -179,7 +187,14 @@ export default class RuleSimple extends React.Component {
     if (this.state.secondTermType === QUERY_TERM_TYPE) {
       secondTermText = (
         <span>
-          "<ReverseTranslation queryResponse={this.props.queryResponse} textOnly termId={this.TERM_ID_2} />"
+          "
+          <ReverseTranslation
+            queryResponse={this.props.queryResponse}
+            queryResultMetadata={this.props.queryResultMetadata}
+            textOnly
+            termId={this.TERM_ID_2}
+          />
+          "
         </span>
       )
     }
@@ -252,7 +267,7 @@ export default class RuleSimple extends React.Component {
     if (this.shouldRenderFirstFieldSelectionGrid()) {
       expression[0].compare_column = firstQuerySelectedNumberColumnName
     }
-    if (this.props.initialData?.length > 1 && this.state.firstQueryJoinColumnName !== null) {
+    if (this.state.firstQuerySelectedNumberColumnName !== '' && this.state.firstQueryJoinColumnName !== null) {
       expression[0].compare_column = this.state.firstQuerySelectedNumberColumnName
     }
     //To see if this a multiple groupby query
@@ -273,8 +288,9 @@ export default class RuleSimple extends React.Component {
       if (
         this.props.initialData?.length > 1 &&
         this.state.secondQueryJoinColumnName !== '' &&
+        this.state.secondQuerySelectedNumberColumnName !== '' &&
         !isSingleValueResponse(this.state.secondQueryResponse) &&
-        this.state.secondQueryAmountOfNumberColumns >= 2
+        this.state.secondQueryAmountOfNumberColumns !== 1
       ) {
         secondTerm.compare_column = this.state.secondQuerySelectedNumberColumnName
         secondTerm.join_column = this.state.secondQueryJoinColumnName
@@ -282,6 +298,12 @@ export default class RuleSimple extends React.Component {
       if (this.shouldRenderSecondFieldSelectionGrid()) {
         secondTerm.compare_column = secondQuerySelectedNumberColumnName
         secondTerm.join_column = secondQueryJoinColumnName
+      }
+      if (this.state.secondQueryGroupableColumnsAmount > 1 && this.state.secondQueryAmountOfNumberColumns === 1) {
+        secondTerm.join_column = secondQueryJoinColumnName ?? this.state.secondQueryJoinColumnName
+        secondTerm.compare_column = this.state.secondQueryResponse?.data?.data?.columns
+          .filter((obj) => obj.groupable === false)
+          .map((obj) => obj.name)[0]
       }
 
       if (this.state.secondTermType === QUERY_TERM_TYPE) {
