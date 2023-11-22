@@ -27,6 +27,7 @@
     border-radius: 2px;
     border: 1px solid var(--react-autoql-border-color);
     margin-top: 1px;
+    overflow: hidden; // Required for custom scrollbars to do their job
 
     // Use these styles to show scrollbars on hover
     .ps__rail-x,
