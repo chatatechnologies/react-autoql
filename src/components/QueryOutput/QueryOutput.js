@@ -1984,8 +1984,6 @@ export class QueryOutput extends React.Component {
         isFirstGeneration &&
         uniqueColumnHeaders?.length > uniqueRowHeaders?.length &&
         (!isColumnDateType(columns[stringColumnIndex]) || uniqueColumnHeaders.length > MAX_LEGEND_LABELS)
-        // Object.keys(uniqueColumnHeaders).length > Object.keys(uniqueRowHeaders).length &&
-        // (!isColumnDateType(columns[stringColumnIndex]) || Object.keys(uniqueColumnHeaders).length > MAX_LEGEND_LABELS)
       ) {
         newStringColumnIndex = legendColumnIndex
         newLegendColumnIndex = stringColumnIndex
