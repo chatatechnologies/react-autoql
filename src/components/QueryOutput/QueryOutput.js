@@ -1990,57 +1990,59 @@ export class QueryOutput extends React.Component {
         newStringColumnIndex = legendColumnIndex
         newLegendColumnIndex = stringColumnIndex
 
-        const tempValues = _cloneDeep(uniqueRowHeaders)
-        uniqueRowHeaders = _cloneDeep(uniqueColumnHeaders)
-        uniqueColumnHeaders = _cloneDeep(tempValues)
+        const tempValues = [...uniqueRowHeaders]
+        uniqueRowHeaders = [...uniqueColumnHeaders]
+        uniqueColumnHeaders = tempValues
       }
 
       if (uniqueRowHeaders?.length > maxRows) {
-        uniqueRowHeaders.splice(0, maxRows)
+        uniqueRowHeaders = uniqueRowHeaders.slice(0, maxRows)
         this.pivotTableRowsLimited = true
       }
 
-      uniqueRowHeaders = uniqueRowHeaders.reduce((map, title, i) => {
+      const uniqueRowHeadersObj = uniqueRowHeaders.reduce((map, title, i) => {
         map[title] = i
         return map
       }, {})
 
       if (uniqueColumnHeaders?.length > maxColumns) {
-        uniqueColumnHeaders.splice(0, maxColumns)
+        uniqueColumnHeaders = uniqueColumnHeaders.slice(0, maxColumns)
         this.pivotTableColumnsLimited = true
       }
 
-      uniqueColumnHeaders = uniqueColumnHeaders.reduce((map, title, i) => {
+      const uniqueColumnHeadersObj = uniqueColumnHeaders.reduce((map, title, i) => {
         map[title] = i
         return map
       }, {})
 
-      this.pivotColumnHeaders = uniqueColumnHeaders
-      this.pivotRowHeaders = uniqueRowHeaders
+      this.pivotColumnHeaders = uniqueColumnHeadersObj
+      this.pivotRowHeaders = uniqueRowHeadersObj
       this.tableConfig.legendColumnIndex = newLegendColumnIndex
       this.tableConfig.stringColumnIndex = newStringColumnIndex
       this.tableConfig.stringColumnIndices = [newStringColumnIndex]
 
       // Generate new column array
-      const pivotTableColumns = [
-        {
-          ...columns[newStringColumnIndex],
-          frozen: true,
-          visible: true,
-          is_visible: true,
-          field: '0',
-          cssClass: 'pivot-category',
-          pivot: true,
-          headerFilter: false,
-        },
-      ]
+      const pivotTableColumns = []
 
-      Object.keys(uniqueColumnHeaders).forEach((columnName, i) => {
+      // First column will be the row headers defined by the string column
+      pivotTableColumns.push({
+        ...columns[newStringColumnIndex],
+        frozen: true,
+        visible: true,
+        is_visible: true,
+        field: '0',
+        cssClass: 'pivot-category',
+        pivot: true,
+        headerFilter: false,
+      })
+
+      uniqueColumnHeaders.forEach((columnName, i) => {
         const formattedColumnName = formatElement({
           element: columnName,
           column: columns[newLegendColumnIndex],
           config: getDataFormatting(this.props.dataFormatting),
         })
+
         pivotTableColumns.push({
           ...columns[numberColumnIndex],
           origColumn: columns[numberColumnIndex],
@@ -2056,25 +2058,30 @@ export class QueryOutput extends React.Component {
       })
 
       const pivotTableData = makeEmptyArray(
-        Object.keys(uniqueColumnHeaders).length + 1, // Add one for the frozen first column
-        Object.keys(uniqueRowHeaders).length,
+        uniqueColumnHeaders.length + 1, // Add one for the frozen first column
+        uniqueRowHeaders.length,
       )
 
       tableData.forEach((row) => {
+        const pivotRowIndex = uniqueRowHeadersObj[row[newStringColumnIndex]]
+        const pivotRowHeaderValue = row[newStringColumnIndex]
+        if (!pivotRowHeaderValue || !pivotTableData[pivotRowIndex]) {
+          return
+        }
+
         // Populate first column
-        const pivotCategoryIndex = uniqueRowHeaders[row[newStringColumnIndex]]
-        const pivotCategoryValue = row[newStringColumnIndex]
-        pivotTableData[pivotCategoryIndex][0] = pivotCategoryValue
+        pivotTableData[pivotRowIndex][0] = pivotRowHeaderValue
 
         // Populate remaining columns
-        const pivotColumnIndex = uniqueColumnHeaders[row[newLegendColumnIndex]] + 1
         const pivotValue = Number(row[numberColumnIndex])
-        pivotTableData[pivotCategoryIndex][pivotColumnIndex] = pivotValue
-
-        pivotTableColumns[pivotColumnIndex].origValues[pivotCategoryValue] = {
-          name: columns[newStringColumnIndex]?.name,
-          drill_down: columns[newStringColumnIndex]?.drill_down,
-          value: pivotCategoryValue,
+        const pivotColumnIndex = uniqueColumnHeadersObj[row[newLegendColumnIndex]] + 1
+        pivotTableData[pivotRowIndex][pivotColumnIndex] = pivotValue
+        if (pivotTableColumns[pivotColumnIndex]) {
+          pivotTableColumns[pivotColumnIndex].origValues[pivotRowHeaderValue] = {
+            name: columns[newStringColumnIndex]?.name,
+            drill_down: columns[newStringColumnIndex]?.drill_down,
+            value: pivotRowHeaderValue,
+          }
         }
       })
 
@@ -2256,6 +2263,7 @@ export class QueryOutput extends React.Component {
         <ChataTable
           ref={(ref) => (this.pivotTableRef = ref)}
           columns={this.pivotTableColumns}
+          data={this.pivotTableData}
           onCellClick={this.onTableCellClick}
           isAnimating={this.props.isAnimating}
           isResizing={this.props.isResizing}
@@ -2267,6 +2275,7 @@ export class QueryOutput extends React.Component {
           scope={this.props.scope}
           tooltipID={this.props.tooltipID}
           response={this.queryResponse}
+          pivotDataLimited={this.pivotTableRowsLimited}
           pivot
         />
       </ErrorBoundary>
