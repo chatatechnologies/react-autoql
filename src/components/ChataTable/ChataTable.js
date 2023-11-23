@@ -493,6 +493,10 @@ export default class ChataTable extends React.Component {
   }
 
   getRows = (props, pageNumber) => {
+    if (props.pivot) {
+      return props.data
+    }
+
     const page = pageNumber ?? this.tableParams.page
     const start = (page - 1) * this.pageSize
     const end = start + this.pageSize
@@ -946,7 +950,7 @@ export default class ChataTable extends React.Component {
       return null
     }
 
-    if (isDataLimited(this.props.response)) {
+    if (isDataLimited(this.props.response) || this.props.pivotDataLimited) {
       return <DataLimitWarning tooltipID={this.props.tooltipID} rowLimit={this.props.response?.data?.data?.row_limit} />
     }
 
