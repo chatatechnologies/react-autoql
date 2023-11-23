@@ -43,12 +43,16 @@ export default class VLAutocompleteInput extends React.Component {
   static propTypes = {
     authentication: authenticationType,
     popoverPosition: PropTypes.string,
+    column: PropTypes.string,
+    context: PropTypes.string,
     onChange: PropTypes.func,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
     popoverPosition: 'bottom',
+    column: undefined,
+    context: undefined,
     onChange: () => {},
   }
 
@@ -139,16 +143,16 @@ export default class VLAutocompleteInput extends React.Component {
   }
 
   fetchSuggestions = ({ value }) => {
+    // If already fetching autocomplete, cancel it
+    if (this.axiosSource) {
+      this.axiosSource.cancel(REQUEST_CANCELLED_ERROR)
+    }
+
     if (!value) {
       return
     }
 
     this.setState({ isLoadingAutocomplete: true })
-
-    // If already fetching autocomplete, cancel it
-    if (this.axiosSource) {
-      this.axiosSource.cancel(REQUEST_CANCELLED_ERROR)
-    }
 
     this.axiosSource = axios.CancelToken?.source()
 
@@ -156,6 +160,7 @@ export default class VLAutocompleteInput extends React.Component {
       ...getAuthentication(this.props.authentication),
       suggestion: value,
       context: this.props.context,
+      filter: this.props.column,
       cancelToken: this.axiosSource.token,
     })
       .then((response) => {
@@ -202,8 +207,6 @@ export default class VLAutocompleteInput extends React.Component {
   }
 
   onSuggestionsFetchRequested = ({ value }) => {
-    this.setState({ isLoadingAutocomplete: true })
-
     // Only debounce if a request has already been made
     if (this.axiosSource) {
       clearTimeout(this.autocompleteTimer)
@@ -265,7 +268,12 @@ export default class VLAutocompleteInput extends React.Component {
     }
 
     if (typeof e?.target?.value === 'string') {
-      this.setState({ inputValue: e.target.value })
+      const newState = { inputValue: e.target.value }
+      if (!e?.target?.value && this.props.value) {
+        newState.suggestions = [{ name: this.props.value, title: '' }]
+      }
+
+      this.setState(newState)
     }
   }
 
@@ -325,7 +333,7 @@ export default class VLAutocompleteInput extends React.Component {
     const hasSuggestions = !!this.state.suggestions?.length && doneLoading
     const noSuggestions = !this.state.suggestions?.length && doneLoading
 
-    const title = `Results for "${this.state.inputValue}"`
+    const title = this.state.inputValue ? `Results for "${this.state.inputValue}"` : undefined
 
     if (!this.state.initialLoadComplete) {
       sections.push({

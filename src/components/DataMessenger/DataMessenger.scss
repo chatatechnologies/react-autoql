@@ -68,10 +68,9 @@
     overflow: hidden;
     border-radius: 4px;
 
-    // TODO: add back for Data Explorer V2
-    // &.data-explorer {
-    //   background: var(--react-autoql-background-color-secondary);
-    // }
+    &.data-explorer {
+      background: var(--react-autoql-background-color-secondary);
+    }
   }
   .react-autoql-mobile-drawer-content-container {
     width: 100%;
@@ -606,10 +605,9 @@
   position: relative;
   z-index: 2;
 
-  // TODO: add back for Data Explorer V2
-  // &.react-autoql-data-explorer {
-  //   background-color: var(--react-autoql-background-color-secondary);
-  // }
+  &.react-autoql-data-explorer {
+    background-color: var(--react-autoql-background-color-secondary);
+  }
 
   .react-autoql-icon.data-search svg {
     stroke: var(--react-autoql-background-color-primary);

@@ -80,8 +80,6 @@ export default class SampleQueryList extends React.Component {
     return fetchDataExplorerSampleQueries({
       ...this.props.authentication,
       text: this.props.searchText,
-      selectedVL: this.props.valueLabel,
-      userVLSelection: this.props.userSelection,
       context: this.props.context,
       columns: this.props.columns,
     })

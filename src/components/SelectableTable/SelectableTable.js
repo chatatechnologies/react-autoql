@@ -108,6 +108,13 @@ export default class SelectableTable extends React.Component {
   }
 
   onMouseOverColumn = (e, columnIndex) => {
+    // Avoids unnecessary css updates if mouse hasn't left the column
+    if (columnIndex === this.currentHoveredColumnIndex) {
+      return
+    }
+
+    this.currentHoveredColumnIndex = columnIndex
+
     // Must use vanilla styling to achieve hover styles for a whole column
     const allColumnHeaders = this.tableRef?.querySelectorAll('.selectable-table-column')
     allColumnHeaders?.forEach((header) => {
@@ -163,10 +170,31 @@ export default class SelectableTable extends React.Component {
         <div className='selectable-table-tooltip-title'>
           <span>{name}</span>
         </div>
+        {/* <div className='selectable-table-tooltip-subtitle react-autoql-input-label'>Column Details</div> */}
         {!!type && (
           <div className='selectable-table-tooltip-section'>
             {!!icon && <Icon type={icon} />}
             <span>{type}</span>
+          </div>
+        )}
+        {column.isGroupable !== undefined && (
+          <div className='selectable-table-tooltip-section'>
+            <Icon
+              type={column.isGroupable ? 'check' : 'close'}
+              success={column.isGroupable}
+              danger={!column.isGroupable}
+            />
+            <span> Supports grouping</span>
+          </div>
+        )}
+        {column.isFilterable !== undefined && (
+          <div className='selectable-table-tooltip-section'>
+            <Icon
+              type={column.isFilterable ? 'check' : 'close'}
+              success={column.isFilterable}
+              danger={!column.isFilterable}
+            />
+            <span> Supports filtering</span>
           </div>
         )}
       </div>
@@ -254,6 +282,7 @@ export default class SelectableTable extends React.Component {
           className='selectable-table-column-header-tooltip'
           render={this.renderHeaderTooltipContent}
           opacity={1}
+          clickable
           border
         />
       </ErrorBoundary>

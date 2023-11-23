@@ -1,37 +1,37 @@
 import React from 'react'
 import axios from 'axios'
 import { v4 as uuid } from 'uuid'
+import { median } from 'd3-array'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 
 import {
-  COLUMN_TYPES,
+  isColumnDateType,
   DataExplorerTypes,
   getAuthentication,
   fetchSubjectListV2,
   runQueryValidation,
+  isColumnNumberType,
   dataFormattingDefault,
   REQUEST_CANCELLED_ERROR,
 } from 'autoql-fe-utils'
 
-import { Icon } from '../Icon'
-import { Tooltip } from '../Tooltip'
 import DataPreview from './DataPreview'
-import { SubjectName } from './SubjectName'
-import Cascader from '../Cascader/Cascader'
-import { LoadingDots } from '../LoadingDots'
 import SampleQueryList from './SampleQueryList'
 import DataExplorerInput from './DataExplorerInput'
-import MultiSelect from '../MultiSelect/MultiSelect'
-import { CustomScrollbars } from '../CustomScrollbars'
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { QueryValidationMessage } from '../QueryValidationMessage'
 
+import { Icon } from '../Icon'
+import { Cascader } from '../Cascader'
+import { SubjectName } from './SubjectName'
+import { LoadingDots } from '../LoadingDots'
+import { MultiSelect } from '../MultiSelect'
+import { CustomScrollbars } from '../CustomScrollbars'
+import { ErrorBoundary } from '../../containers/ErrorHOC'
+import { QueryValidationMessage } from '../QueryValidationMessage'
 import { authenticationType, dataFormattingType } from '../../props/types'
 
-// TODO: add back for Data Explorer V2
-// import './DataExplorer.scss'
+import './DataExplorer.scss'
 
 export default class DataExplorer extends React.Component {
   constructor(props) {
@@ -98,7 +98,7 @@ export default class DataExplorer extends React.Component {
             const subjectList = []
 
             subjects.forEach((subject) => {
-              const foundSubject = this.inputRef?.state?.allSubjects?.find((subj) => subj.context === subject.subject)
+              const foundSubject = this.getSubjectObject(subject.subject)
               if (foundSubject) {
                 subjectList.push(foundSubject)
               }
@@ -120,6 +120,10 @@ export default class DataExplorer extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
+  }
+
+  getSubjectObject = (context) => {
+    return this.inputRef?.state?.allSubjects?.find((subj) => subj.context === context)
   }
 
   resetState = (newState = {}) => {
@@ -247,6 +251,7 @@ export default class DataExplorer extends React.Component {
         onColumnSelection={(columns) => this.setState({ selectedColumns: columns })}
         onDataPreview={(dataPreview) => this.setState({ dataPreview })}
         data={this.state.dataPreview}
+        subject={this.getSubjectObject(context)}
         selectedColumns={this.state.selectedColumns}
         onIsCollapsedChange={(isCollapsed) => {
           this.setState({
@@ -257,6 +262,61 @@ export default class DataExplorer extends React.Component {
         {...props}
       />
     )
+  }
+
+  getValueFilter = (column, index) => {
+    const columnData = this.state.dataPreview?.data?.data?.rows?.map((row) => row[index])
+
+    let defaultValue = ''
+    if (isColumnNumberType(column)) {
+      // Use median value from dataset (median not avg, so it is guaranteed to conform with the dataset)
+      defaultValue = median(columnData)
+    }
+
+    // This will restrict sample queries with groupbys to only show "filter" queries and not "groupby" queries
+    // ie. It will not show "total sales by customer", instead it will always show "total sales for __VL_CUSTOMER__"
+    // There may be work that needs to be done in the querybuilder service to show both types of queries regardless
+    // of a provided VL default value or not
+    else if (isColumnDateType(column)) {
+      // Use first value that exists
+      defaultValue = columnData.find((date) => !!date)
+    } else {
+      // Find any value that exists
+      defaultValue = columnData.find((str) => !!str)
+    }
+
+    if (defaultValue) {
+      return `${defaultValue}`
+    }
+
+    return ''
+  }
+
+  getColumnsForSuggestions = () => {
+    let columns
+    if (this.state.selectedSubject?.valueLabel?.column_name) {
+      columns = {
+        [this.state.selectedSubject.valueLabel.column_name]: {
+          value: this.state.selectedSubject.valueLabel.keyword,
+        },
+      }
+    }
+
+    if (this.state.selectedColumns?.length) {
+      this.state.selectedColumns?.forEach((columnIndex) => {
+        if (!columns) {
+          columns = {}
+        }
+
+        const column = this.state.dataPreview?.data?.data?.columns[columnIndex]
+        if (!columns[column.name]) {
+          const value = this.getValueFilter(column, columnIndex) ?? ''
+          columns[column.name] = { value }
+        }
+      })
+    }
+
+    return columns
   }
 
   renderTopicsListForVL = () => {
@@ -379,12 +439,14 @@ export default class DataExplorer extends React.Component {
             size='small'
             align='start'
             popupClassname='react-autoql-sample-queries-filter-dropdown'
-            options={columns.map((col) => {
-              return {
-                value: col.name,
-                label: col.display_name,
-              }
-            })}
+            options={columns
+              .filter((col) => col.isGroupable || col.isFilterable)
+              .map((col) => {
+                return {
+                  value: col.name,
+                  label: col.display_name,
+                }
+              })}
             listTitle={fieldsDropdownTitle}
             selected={this.state.selectedColumns.map((index) => columns[index]?.name)}
             onChange={(selectedColumnNames) => {
@@ -434,27 +496,7 @@ export default class DataExplorer extends React.Component {
       searchText = this.state.selectedSubject?.displayName
     }
 
-    let columns
-    if (this.state.selectedSubject?.valueLabel?.column_name) {
-      columns = {
-        [this.state.selectedSubject.valueLabel.column_name]: {
-          value: this.state.selectedSubject.valueLabel.keyword,
-        },
-      }
-    }
-
-    if (this.state.selectedColumns?.length) {
-      this.state.selectedColumns?.forEach((columnIndex) => {
-        if (!columns) {
-          columns = {}
-        }
-
-        const column = this.state.dataPreview?.data?.data?.columns[columnIndex]
-        if (!columns[column.name]) {
-          columns[column.name] = { value: '' }
-        }
-      })
-    }
+    const columns = this.getColumnsForSuggestions()
 
     return (
       <div className='data-explorer-section query-suggestions'>
