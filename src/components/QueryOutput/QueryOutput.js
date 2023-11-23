@@ -4,7 +4,6 @@ import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import _isEmpty from 'lodash.isempty'
-import parse from 'html-react-parser'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
 
@@ -39,7 +38,6 @@ import {
   GENERAL_QUERY_ERROR,
   REQUEST_CANCELLED_ERROR,
   isColumnNumberType,
-  isColumnStringType,
   getDateColumnIndex,
   getStringColumnIndices,
   isAggregation,
@@ -48,7 +46,6 @@ import {
   MONTH_NAMES,
   DEFAULT_DATA_PAGE_SIZE,
   CHART_TYPES,
-  MAX_DATA_PAGE_SIZE,
   MAX_LEGEND_LABELS,
   formatTableParams,
   getColumnDateRanges,
@@ -62,6 +59,7 @@ import {
   getAutoQLConfig,
   getVisibleColumns,
   sendTrainingData,
+  isDataLimited,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -141,15 +139,14 @@ export class QueryOutput extends React.Component {
       sorters: this.queryResponse?.data?.data?.fe_req?.sorters || [],
     }
 
+    this.DEFAULT_TABLE_PAGE_SIZE = 100
+
     this.state = {
       displayType,
       aggConfig: props.initialAggConfig,
       supportedDisplayTypes: this.initialSupportedDisplayTypes,
       columns,
       selectedSuggestion: props.defaultSelectedSuggestion,
-      visibleRows: this.queryResponse?.data?.data?.rows,
-      visibleRowChangeCount: 0,
-      visiblePivotRowChangeCount: 0,
       columnChangeCount: 0,
     }
   }
@@ -186,7 +183,6 @@ export class QueryOutput extends React.Component {
     enableTableSorting: PropTypes.bool,
     showSingleValueResponseTitle: PropTypes.bool,
 
-    onRowChange: PropTypes.func,
     mutable: PropTypes.bool,
     showSuggestionPrefix: PropTypes.bool,
     onDisplayTypeChange: PropTypes.func,
@@ -195,7 +191,6 @@ export class QueryOutput extends React.Component {
     dataPageSize: PropTypes.number,
     onPageSizeChange: PropTypes.func,
     allowDisplayTypeChange: PropTypes.bool,
-    onRenderComplete: PropTypes.func,
     onMount: PropTypes.func,
     onBucketSizeChange: PropTypes.func,
     bucketSize: PropTypes.number,
@@ -234,7 +229,6 @@ export class QueryOutput extends React.Component {
     allowDisplayTypeChange: true,
     showSingleValueResponseTitle: false,
     bucketSize: undefined,
-    onRowChange: () => {},
     onTableConfigChange: () => {},
     onAggConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
@@ -243,14 +237,12 @@ export class QueryOutput extends React.Component {
     onDrilldownEnd: () => {},
     onColumnChange: () => {},
     onPageSizeChange: () => {},
-    onRenderComplete: () => {},
     onMount: () => {},
     onBucketSizeChange: () => {},
   }
 
   componentDidMount = () => {
     try {
-      this.onRenderComplete()
       this._isMounted = true
       this.updateToolbars()
       this.props.onMount()
@@ -281,9 +273,6 @@ export class QueryOutput extends React.Component {
       const newState = {}
       let shouldForceUpdate = false
 
-      if (this.props.queryResponse && !prevProps.queryResponse) {
-        this.onRenderComplete()
-      }
       if (this.props.onDisplayTypeChange && this.state.displayType !== prevState.displayType) {
         this.props.onDisplayTypeChange(this.state.displayType)
       }
@@ -305,25 +294,12 @@ export class QueryOutput extends React.Component {
         this.props.onAggConfigChange(this.state.aggConfig)
       }
 
-      if (
-        this.state.visibleRows?.length !== prevState.visibleRows?.length ||
-        (this.state.displayType === 'table' && prevState.displayType === 'text')
-      ) {
-        // Wait for tabulator to finish rendering in DOM
-        setTimeout(() => {
-          this.props.onRowChange()
-        }, 0)
-      }
-
       // If columns changed, regenerate data if necessary
       // If table filtered or columns changed, regenerate pivot data and supported display types
       // Using a count variable so it doesn't have to deep compare on every udpate
       const columnsChanged = this.state.columnChangeCount !== prevState.columnChangeCount
-      const rowsChanged = this.state.visibleRowChangeCount !== prevState.visibleRowChangeCount
-      if (columnsChanged || rowsChanged) {
-        if (columnsChanged) {
-          this.props.onColumnChange(this.state.columns)
-        }
+      if (columnsChanged) {
+        this.props.onColumnChange(this.state.columns)
 
         if (this.shouldGeneratePivotData()) {
           this.generatePivotData({
@@ -370,23 +346,6 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  onChartRenderComplete = () => {
-    if (isChartType(this.state.displayType)) {
-      this.props.onRenderComplete()
-    }
-  }
-
-  onTableRenderComplete = () => {
-    if (this.state.displayType === 'table') {
-      this.props.onRenderComplete()
-    }
-  }
-
-  onPivotTableRenderComplete = () => {
-    if (this.state.displayType === 'pivot_table') {
-      this.props.onRenderComplete()
-    }
-  }
   uploadTrainingData = () => {
     const trainingData = this.getTrainingData()
     if (!this.cancelUploadTrainingDataTrigger) {
@@ -394,26 +353,16 @@ export class QueryOutput extends React.Component {
     }
     this.cancelUploadTrainingDataTrigger = false
   }
+
   setUploadTrainingDataClock = () => {
     clearTimeout(this.triggerUploadTrainingDataTimeoutId)
     this.triggerUploadTrainingDataTimeoutId = setTimeout(() => {
       this.uploadTrainingData()
     }, 120000)
   }
+
   cancelUploadTrainingDataClock = () => {
     this.cancelUploadTrainingDataTrigger = true
-  }
-  onRenderComplete = () => {
-    if (this.props.queryResponse) {
-      if (
-        !this._isMounted &&
-        ((!isChartType(this.state.displayType) && !isTableType(this.state.displayType)) ||
-          isSingleValueResponse(this.queryResponse))
-      ) {
-        this.renderComplete = true
-        this.props.onRenderComplete()
-      }
-    }
   }
 
   refreshLayout = () => {
@@ -467,7 +416,7 @@ export class QueryOutput extends React.Component {
   }
 
   getDataLength = () => {
-    return this.state?.visibleRows ? this.state?.visibleRows?.length : this.tableData?.length
+    return this.tableData?.length
   }
 
   getPivotDataLength = () => {
@@ -482,7 +431,7 @@ export class QueryOutput extends React.Component {
       this.getDataLength(),
       this.getPivotDataLength(),
       preferredDisplayType,
-      this.isDataLimited(),
+      isDataLimited(this.queryResponse),
     )
   }
 
@@ -504,7 +453,7 @@ export class QueryOutput extends React.Component {
         this.tableData?.length,
         this.pivotTableData?.length,
         this.getColumns(),
-        this.isDataLimited(),
+        isDataLimited(this.queryResponse),
       )
     ) {
       displayType = defaultDisplayType
@@ -748,7 +697,7 @@ export class QueryOutput extends React.Component {
   }
 
   shouldGeneratePivotData = () => {
-    return (this.state?.visibleRows || this.tableData) && this.potentiallySupportsPivot()
+    return this.tableData && this.potentiallySupportsPivot()
   }
 
   shouldGenerateTableData = () => {
@@ -772,10 +721,9 @@ export class QueryOutput extends React.Component {
   generatePivotData = ({ isFirstGeneration, dataChanged } = {}) => {
     try {
       this.pivotTableID = uuid()
-      const tableData = this.state?.visibleRows || this.tableData
       const columns = this.getColumns()
       if (columns.length === 2) {
-        this.generateDatePivotData(tableData)
+        this.generateDatePivotData(this.tableData)
       } else {
         this.generatePivotTableData({
           isFirstGeneration,
@@ -1358,50 +1306,15 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  onNewPage = (rows) => {
-    if (!rows?.length) {
-      return
-    }
-
-    try {
-      this.tableData = [...this.tableData, ...rows]
-
-      this.setState({
-        visibleRowChangeCount: this.state.visibleRowChangeCount + 1,
-        visibleRows: this.tableData,
-      })
-    } catch (error) {
-      console.error(error)
-    }
-  }
-
   onTableParamsChange = (params, formattedTableParams = {}) => {
     this.tableParams = _cloneDeep(params)
     this.formattedTableParams = formattedTableParams
   }
 
-  onNewData = (response, pageSize) => {
+  onNewData = (response) => {
     this.isOriginalData = false
     this.queryResponse = response
-    const responseData = response?.data?.data
-    this.tableData = responseData?.rows || []
-
-    if (this.state.displayType !== 'table' && this.props.allowDisplayTypeChange) {
-      // The rows were changed from a chart, update data manually. ChataTable will handle
-      // toggling infinite scroll on or off
-      this.tableRef?.updateData(this.tableData, this.isDataLimited())
-    }
-
-    this.setState(
-      {
-        visibleRows: response.data.data.rows,
-        visibleRowChangeCount: this.state.visibleRowChangeCount + 1,
-      },
-      () => {
-        const dataPageSize = pageSize ?? response?.data?.data?.fe_req?.page_size
-        this.props.onPageSizeChange(dataPageSize, this.state.visibleRows)
-      },
-    )
+    this.tableData = response?.data?.data?.rows || []
   }
 
   onTableFilter = async (filters, rows) => {
@@ -1411,16 +1324,6 @@ export class QueryOutput extends React.Component {
 
     this.tableParams.filter = _cloneDeep(filters)
     this.formattedTableParams = formatTableParams(this.tableParams, this.getColumns())
-
-    const newTableData = []
-    rows.forEach((row) => {
-      newTableData.push(row.getData())
-    })
-
-    this.setState({
-      visibleRows: newTableData,
-      visibleRowChangeCount: this.state.visibleRowChangeCount + 1,
-    })
   }
 
   onTableSort = (sorters) => {
@@ -1517,7 +1420,7 @@ export class QueryOutput extends React.Component {
         this.tableConfig.numberColumnIndex2 = indices2[0]
       }
 
-      const columns = newColumns ?? this.state.columns
+      const columns = newColumns ?? this.getColumns()
       this.updateColumns(columns)
     }
   }
@@ -1761,7 +1664,7 @@ export class QueryOutput extends React.Component {
       this.getDataLength(),
       this.getPivotDataLength(),
       this.getColumns(),
-      this.isDataLimited(),
+      isDataLimited(this.queryResponse),
     )
   }
 
@@ -1771,7 +1674,7 @@ export class QueryOutput extends React.Component {
       columns: this.getColumns(),
       dataLength: this.getDataLength(),
       pivotDataLength: this.getPivotDataLength(),
-      isDataLimited: this.isDataLimited(),
+      isDataLimited: isDataLimited(this.queryResponse),
       allowNumericStringColumns: this.ALLOW_NUMERIC_STRING_COLUMNS,
     })
   }
@@ -2157,7 +2060,7 @@ export class QueryOutput extends React.Component {
 
   generatePivotTableData = ({ isFirstGeneration } = {}) => {
     try {
-      let tableData = this.state?.visibleRows || this.tableData || this.queryResponse?.data?.data?.rows
+      let tableData = _cloneDeep(this.queryResponse?.data?.data?.rows)
       tableData = tableData.filter((row) => row[0] !== null)
 
       const columns = this.getColumns()
@@ -2390,11 +2293,9 @@ export class QueryOutput extends React.Component {
           autoHeight={this.props.autoHeight}
           authentication={this.props.authentication}
           dataFormatting={this.props.dataFormatting}
-          rowChangeCount={this.state.visibleRowChangeCount}
           ref={(ref) => (this.tableRef = ref)}
           columns={this.state.columns}
           response={this.queryResponse}
-          data={this.tableData}
           columnDateRanges={this.columnDateRanges}
           onCellClick={this.onTableCellClick}
           queryID={this.queryID}
@@ -2402,11 +2303,9 @@ export class QueryOutput extends React.Component {
           onFilterCallback={this.onTableFilter}
           onSorterCallback={this.onTableSort}
           onTableParamsChange={this.onTableParamsChange}
-          onNewPage={this.onNewPage}
           onNewData={this.onNewData}
           isAnimating={this.props.isAnimating}
           isResizing={this.props.isResizing}
-          pageSize={this.getQueryPageSize()}
           useInfiniteScroll={this.props.enableAjaxTableData}
           enableAjaxTableData={this.props.enableAjaxTableData}
           queryRequestData={this.queryResponse?.data?.data?.fe_req}
@@ -2416,7 +2315,6 @@ export class QueryOutput extends React.Component {
           isQueryOutputMounted={this._isMounted}
           popoverParentElement={this.props.popoverParentElement}
           hidden={this.state.displayType !== 'table'}
-          totalRows={this.queryResponse?.data?.data?.count_rows}
           supportsDrilldowns={
             isAggregation(this.state.columns) && getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
           }
@@ -2443,8 +2341,6 @@ export class QueryOutput extends React.Component {
         <ChataTable
           ref={(ref) => (this.pivotTableRef = ref)}
           columns={this.pivotTableColumns}
-          rowChangeCount={this.state.visibleRowChangeCount}
-          data={this.pivotTableData}
           onCellClick={this.onTableCellClick}
           isAnimating={this.props.isAnimating}
           isResizing={this.props.isResizing}
@@ -2455,6 +2351,7 @@ export class QueryOutput extends React.Component {
           source={this.props.source}
           scope={this.props.scope}
           tooltipID={this.props.tooltipID}
+          response={this.queryResponse}
           pivot
         />
       </ErrorBoundary>
@@ -2472,15 +2369,7 @@ export class QueryOutput extends React.Component {
       return this.renderMessage('Error: There was no data supplied for this chart')
     }
 
-    const isDataLimited = this.isDataLimited()
-
     const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
-    const combinedFilters = this.getCombinedFilters()
-
-    const formattedTableParams = {
-      ...this.formattedTableParams,
-      filters: combinedFilters,
-    }
 
     let isChartDataAggregated = false
     const numberOfGroupbys = getNumberOfGroupables(this.state.columns)
@@ -2488,17 +2377,7 @@ export class QueryOutput extends React.Component {
       isChartDataAggregated = true
     }
 
-    const data = usePivotData
-      ? this.state.visiblePivotRows || this.pivotTableData
-      : this.state.visibleRows || this.tableData
-
-    const originalTotalRows = this.queryResponse?.data?.data?.count_rows
-    let totalRows = originalTotalRows
-
-    if (!isDataLimited && this.state.visibleRows && this.state.visibleRows?.length < MAX_DATA_PAGE_SIZE) {
-      // This allows total row count to reflect FE filters in the table view
-      totalRows = this.state.visibleRows?.length
-    }
+    const data = usePivotData ? this.state.visiblePivotRows || this.pivotTableData : this.tableData
 
     return (
       <ErrorBoundary>
@@ -2512,7 +2391,6 @@ export class QueryOutput extends React.Component {
           type={this.state.displayType}
           isDataAggregated={isChartDataAggregated}
           popoverParentElement={this.props.popoverParentElement}
-          dataChangeCount={usePivotData ? this.state.visiblePivotRowChangeCount : this.state.visibleRowChangeCount}
           columns={usePivotData ? this.pivotTableColumns : this.state.columns}
           isAggregated={usePivotData}
           dataFormatting={this.props.dataFormatting}
@@ -2534,12 +2412,10 @@ export class QueryOutput extends React.Component {
           width={this.props.width}
           onNewData={this.onNewData}
           isDrilldown={this.isDrilldown()}
-          totalRowCount={totalRows}
-          currentRowCount={this.state.visibleRows?.length}
           updateColumns={this.updateColumns}
+          isDataLimited={isDataLimited(this.queryResponse)}
           source={this.props.source}
           scope={this.props.scope}
-          isRowCountSelectable={!this.isOriginalData || isDataLimited}
           queryFn={this.queryFn}
           onBucketSizeChange={this.props.onBucketSizeChange}
           bucketSize={this.props.bucketSize}
@@ -2595,17 +2471,6 @@ export class QueryOutput extends React.Component {
     return this.renderMessage()
   }
 
-  isDataLimited = () => {
-    const numRows = this.tableData?.length ?? this.queryResponse?.data?.data?.rows?.length
-    const totalRows = this.queryResponse?.data?.data?.count_rows
-
-    if (!numRows || !totalRows) {
-      return false
-    }
-
-    return numRows < totalRows
-  }
-
   noDataFound = () => {
     return this.queryResponse?.data?.data?.rows?.length === 0 && this.isOriginalData
   }
@@ -2657,27 +2522,6 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  renderHTMLMessage = () => {
-    const answer = this.queryResponse?.data?.data?.answer
-    if (answer) {
-      return parse(answer, {
-        // Use this if we need to add "target blank" to <a>
-        // replace: (domNode) => {
-        //   if (domNode.name === 'a') {
-        //     const props = domNode.attribs || {}
-        //     return (
-        //       <a {...props} target="_blank">
-        //         {domNode.children}
-        //       </a>
-        //     )
-        //   }
-        // },
-      })
-    } else {
-      return <span>I'm not sure I understood your question. Please try asking again in a different way.</span>
-    }
-  }
-
   renderTextResponse = (text) => {
     if (areAllColumnsHidden(this.getColumns())) {
       return this.renderAllColumnsHiddenMessage()
@@ -2691,10 +2535,6 @@ export class QueryOutput extends React.Component {
 
     if (this.hasError(this.queryResponse)) {
       return this.renderError(this.queryResponse)
-    }
-
-    if (displayType === 'html') {
-      return this.renderHTMLMessage()
     }
 
     if (this.state.customResponse) {
@@ -2803,41 +2643,13 @@ export class QueryOutput extends React.Component {
     )
   }
 
-  shouldRenderDataLimitWarning = () => {
-    const isTableAndNotAjax = !this.props.enableAjaxTableData && this.state.displayType === 'table'
-    const isChartAndNotAjax = !this.props.enableAjaxTableData && isChartType(this.state.displayType)
-    return this.isDataLimited() && !areAllColumnsHidden(this.getColumns()) && (isTableAndNotAjax || isChartAndNotAjax)
-  }
-
-  renderDataLimitWarning = () => {
-    const isReverseTranslationRendered =
-      getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation && this.props.showQueryInterpretation
-
-    return (
-      <div
-        className='dashboard-data-limit-warning-icon'
-        data-tooltip-content={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached. Try querying a smaller time-frame to ensure all your data is displayed.`}
-        data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
-        data-place={isReverseTranslationRendered ? 'left' : 'right'}
-      >
-        <Icon type='warning' />
-      </div>
-    )
-  }
-
   renderFooter = () => {
     const shouldRenderRT = this.shouldRenderReverseTranslation()
-    const shouldRenderDLW = this.shouldRenderDataLimitWarning()
     const footerClassName = `query-output-footer ${!shouldRenderRT ? 'no-margin' : ''} ${
       this.props.reverseTranslationPlacement
     }`
 
-    return (
-      <div className={footerClassName}>
-        {shouldRenderRT && this.renderReverseTranslation()}
-        {shouldRenderDLW && this.renderDataLimitWarning()}
-      </div>
-    )
+    return <div className={footerClassName}>{shouldRenderRT && this.renderReverseTranslation()}</div>
   }
 
   render = () => {

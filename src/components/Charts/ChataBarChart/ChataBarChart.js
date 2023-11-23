@@ -70,7 +70,7 @@ export default class ChataBarChart extends Component {
           linearAxis='x'
           toggleChartScale={this.toggleChartScale}
         >
-          <Bars {...this.props} xScale={this.xScale} yScale={this.yScale} />
+          {!this.props.hidden && <Bars {...this.props} xScale={this.xScale} yScale={this.yScale} />}
         </Axes>
       </g>
     )

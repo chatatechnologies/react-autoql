@@ -45,6 +45,7 @@ export default class TableWrapper extends React.Component {
     onDataSorted: PropTypes.func,
     onDataFiltering: PropTypes.func,
     onDataFiltered: PropTypes.func,
+    onDataProcessed: PropTypes.func,
   }
 
   static defaultProps = {
@@ -57,6 +58,7 @@ export default class TableWrapper extends React.Component {
     onDataSorted: () => {},
     onDataFiltering: () => {},
     onDataFiltered: () => {},
+    onDataProcessed: () => {},
   }
 
   componentDidMount = async () => {
@@ -96,6 +98,7 @@ export default class TableWrapper extends React.Component {
       // }, 1000)
     })
     this.tabulator.on('dataLoadError', this.props.onDataLoadError)
+    this.tabulator.on('dataProcessed', this.props.onDataProcessed)
     this.tabulator.on('cellClick', this.props.onCellClick)
     this.tabulator.on('dataSorting', this.props.onDataSorting)
     this.tabulator.on('dataSorted', this.props.onDataSorted)
