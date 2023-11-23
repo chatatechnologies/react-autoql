@@ -272,7 +272,7 @@ export default class VLAutocompleteInput extends React.Component {
     if (typeof e?.target?.value === 'string') {
       const newState = { inputValue: e.target.value }
       if (!e?.target?.value && this.allSuggestions?.length) {
-        newState.suggestions = this.allSuggestions // [{ name: this.props.value, title: '' }]
+        newState.suggestions = this.allSuggestions
       }
 
       this.setState(newState)
