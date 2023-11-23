@@ -1954,6 +1954,9 @@ export class QueryOutput extends React.Component {
 
   generatePivotTableData = ({ isFirstGeneration } = {}) => {
     try {
+      this.pivotTableColumnsLimited = false
+      this.pivotTableRowsLimited = false
+
       let tableData = _cloneDeep(this.queryResponse?.data?.data?.rows)
       tableData = tableData.filter((row) => row[0] !== null)
 
@@ -1961,41 +1964,59 @@ export class QueryOutput extends React.Component {
 
       const { legendColumnIndex, stringColumnIndex, numberColumnIndex } = this.tableConfig
 
-      let uniqueValues0 = sortDataByDate(tableData, columns, 'desc', 'isTable')
+      const maxColumns = 20
+      const maxRows = 100
+
+      let uniqueRowHeaders = sortDataByDate(tableData, columns, 'desc', 'isTable')
         .map((d) => d[stringColumnIndex])
         .filter(onlyUnique)
-        .reduce((map, title, i) => {
-          map[title] = i
-          return map
-        }, {})
 
-      let uniqueValues1 = sortDataByDate(tableData, columns, 'desc', 'isTable')
+      let uniqueColumnHeaders = sortDataByDate(tableData, columns, 'desc', 'isTable')
         .map((d) => d[legendColumnIndex])
         .filter(onlyUnique)
-        .reduce((map, title, i) => {
-          map[title] = i
-          return map
-        }, {})
 
       let newStringColumnIndex = stringColumnIndex
       let newLegendColumnIndex = legendColumnIndex
+
       // Make sure the longer list is in the legend, UNLESS its a date type
       // DATE types should always go in the axis if possible
       if (
         isFirstGeneration &&
-        Object.keys(uniqueValues1).length > Object.keys(uniqueValues0).length &&
-        (!isColumnDateType(columns[stringColumnIndex]) || Object.keys(uniqueValues1).length > MAX_LEGEND_LABELS)
+        uniqueColumnHeaders?.length > uniqueRowHeaders?.length &&
+        (!isColumnDateType(columns[stringColumnIndex]) || uniqueColumnHeaders.length > MAX_LEGEND_LABELS)
+        // Object.keys(uniqueColumnHeaders).length > Object.keys(uniqueRowHeaders).length &&
+        // (!isColumnDateType(columns[stringColumnIndex]) || Object.keys(uniqueColumnHeaders).length > MAX_LEGEND_LABELS)
       ) {
         newStringColumnIndex = legendColumnIndex
         newLegendColumnIndex = stringColumnIndex
 
-        const tempValues = _cloneDeep(uniqueValues0)
-        uniqueValues0 = _cloneDeep(uniqueValues1)
-        uniqueValues1 = _cloneDeep(tempValues)
+        const tempValues = _cloneDeep(uniqueRowHeaders)
+        uniqueRowHeaders = _cloneDeep(uniqueColumnHeaders)
+        uniqueColumnHeaders = _cloneDeep(tempValues)
       }
 
-      this.pivotColumnHeaders = uniqueValues1
-      this.pivotRowHeaders = uniqueValues0
+      if (uniqueRowHeaders?.length > maxRows) {
+        uniqueRowHeaders.splice(0, maxRows)
+        this.pivotTableRowsLimited = true
+      }
+
+      uniqueRowHeaders = uniqueRowHeaders.reduce((map, title, i) => {
+        map[title] = i
+        return map
+      }, {})
+
+      if (uniqueColumnHeaders?.length > maxColumns) {
+        uniqueColumnHeaders.splice(0, maxColumns)
+        this.pivotTableColumnsLimited = true
+      }
+
+      uniqueColumnHeaders = uniqueColumnHeaders.reduce((map, title, i) => {
+        map[title] = i
+        return map
+      }, {})
+
+      this.pivotColumnHeaders = uniqueColumnHeaders
+      this.pivotRowHeaders = uniqueRowHeaders
       this.tableConfig.legendColumnIndex = newLegendColumnIndex
       this.tableConfig.stringColumnIndex = newStringColumnIndex
       this.tableConfig.stringColumnIndices = [newStringColumnIndex]
@@ -2014,7 +2035,7 @@ export class QueryOutput extends React.Component {
         },
       ]
 
-      Object.keys(uniqueValues1).forEach((columnName, i) => {
+      Object.keys(uniqueColumnHeaders).forEach((columnName, i) => {
         const formattedColumnName = formatElement({
           element: columnName,
           column: columns[newLegendColumnIndex],
@@ -2035,18 +2056,18 @@ export class QueryOutput extends React.Component {
       })
 
       const pivotTableData = makeEmptyArray(
-        Object.keys(uniqueValues1).length + 1, // Add one for the frozen first column
-        Object.keys(uniqueValues0).length,
+        Object.keys(uniqueColumnHeaders).length + 1, // Add one for the frozen first column
+        Object.keys(uniqueRowHeaders).length,
       )
 
       tableData.forEach((row) => {
         // Populate first column
-        const pivotCategoryIndex = uniqueValues0[row[newStringColumnIndex]]
+        const pivotCategoryIndex = uniqueRowHeaders[row[newStringColumnIndex]]
         const pivotCategoryValue = row[newStringColumnIndex]
         pivotTableData[pivotCategoryIndex][0] = pivotCategoryValue
 
         // Populate remaining columns
-        const pivotColumnIndex = uniqueValues1[row[newLegendColumnIndex]] + 1
+        const pivotColumnIndex = uniqueColumnHeaders[row[newLegendColumnIndex]] + 1
         const pivotValue = Number(row[numberColumnIndex])
         pivotTableData[pivotCategoryIndex][pivotColumnIndex] = pivotValue
 

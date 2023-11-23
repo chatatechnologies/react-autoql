@@ -47,7 +47,9 @@ export default class ChataScatterplotChart extends Component {
 
     this.setNumberColumnIndices(props)
 
-    const xMinMax = getMinAndMaxValues(props.data, this.numberColumnIndices, isXScaled)
+    const data = props.data?.slice(0, 300)
+
+    const xMinMax = getMinAndMaxValues(data, this.numberColumnIndices, isXScaled)
     const xMaxValue = xMinMax.maxValue
     const xMinValue = xMinMax.minValue
 
@@ -62,7 +64,7 @@ export default class ChataScatterplotChart extends Component {
       allowMultipleSeries: false,
     })
 
-    const yMinMax = getMinAndMaxValues(props.data, this.numberColumnIndices2, isYScaled)
+    const yMinMax = getMinAndMaxValues(data, this.numberColumnIndices2, isYScaled)
     const yMaxValue = yMinMax.maxValue
     const yMinValue = yMinMax.minValue
 
