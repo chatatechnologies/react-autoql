@@ -61,6 +61,7 @@ import {
   getDataFormatting,
   getAutoQLConfig,
   getVisibleColumns,
+  sendTrainingData,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -87,6 +88,8 @@ export class QueryOutput extends React.Component {
     this.ALLOW_NUMERIC_STRING_COLUMNS = true
 
     this.queryResponse = _cloneDeep(props.queryResponse)
+    this.cancelUploadTrainingDataTrigger = false
+    this.triggerUploadTrainingDataTimeoutId = null
     this.columnDateRanges = getColumnDateRanges(props.queryResponse)
     this.queryID = this.queryResponse?.data?.data?.query_id
     this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
@@ -281,7 +284,6 @@ export class QueryOutput extends React.Component {
       if (this.props.queryResponse && !prevProps.queryResponse) {
         this.onRenderComplete()
       }
-
       if (this.props.onDisplayTypeChange && this.state.displayType !== prevState.displayType) {
         this.props.onDisplayTypeChange(this.state.displayType)
       }
@@ -358,6 +360,10 @@ export class QueryOutput extends React.Component {
 
   componentWillUnmount = () => {
     try {
+      if (this.triggerUploadTrainingDataTimeoutId) {
+        clearTimeout(this.triggerUploadTrainingDataTimeoutId)
+        this.uploadTrainingData()
+      }
       this._isMounted = false
     } catch (error) {
       console.error(error)
@@ -381,7 +387,22 @@ export class QueryOutput extends React.Component {
       this.props.onRenderComplete()
     }
   }
-
+  uploadTrainingData = () => {
+    const trainingData = this.getTrainingData()
+    if (!this.cancelUploadTrainingDataTrigger) {
+      sendTrainingData({ trainingData, ...getAuthentication(this.props.authentication) })
+    }
+    this.cancelUploadTrainingDataTrigger = false
+  }
+  setUploadTrainingDataClock = () => {
+    clearTimeout(this.triggerUploadTrainingDataTimeoutId)
+    this.triggerUploadTrainingDataTimeoutId = setTimeout(() => {
+      this.uploadTrainingData()
+    }, 120000)
+  }
+  cancelUploadTrainingDataClock = () => {
+    this.cancelUploadTrainingDataTrigger = true
+  }
   onRenderComplete = () => {
     if (this.props.queryResponse) {
       if (
@@ -908,7 +929,87 @@ export class QueryOutput extends React.Component {
 
     return undefined
   }
-
+  getTrainingData = () => {
+    const isYScaleStringColumn = !this.chartRef?.innerChartRef?.yScale.fields[0].hasOwnProperty('aggType')
+    const isXScaleStringColumn = !this.chartRef?.innerChartRef?.xScale.fields[0].hasOwnProperty('aggType')
+    const isTableFilterInXScale = this.queryResponse?.data?.data?.fe_req.filters.some(
+      (obj) => obj.name === this.chartRef?.innerChartRef?.xScale.column.name,
+    )
+    const isTableFilterInYScale = this.queryResponse?.data?.data?.fe_req.filters.some(
+      (obj) => obj.name === this.chartRef?.innerChartRef?.yScale.column.name,
+    )
+    const dataCollectionObj = {
+      source: this.props.source,
+      chart_type: this.state.displayType,
+      axes: [
+        {
+          axis: this.chartRef?.innerChartRef?.yScale.axis,
+          type: this.chartRef?.innerChartRef?.yScale.type,
+          columns: isYScaleStringColumn
+            ? {
+                name: this.chartRef?.innerChartRef?.yScale.column.name,
+                type: this.chartRef?.innerChartRef?.yScale.column.type,
+                filters: isTableFilterInYScale
+                  ? {
+                      table_filters: this.queryResponse?.data?.data?.fe_req.filters,
+                      value_lable_filters: {
+                        persistent_locked_conditions: this.queryResponse?.data?.data?.persistent_locked_conditions,
+                        session_locked_conditions: this.queryResponse?.data?.data?.session_locked_conditions,
+                      },
+                    }
+                  : null,
+              }
+            : this.chartRef?.innerChartRef?.yScale.fields.map((field) => ({
+                name: field.name,
+                aggType: field.hasOwnProperty('aggType') ? field.aggType : undefined,
+                type: field.type,
+                filters: isTableFilterInYScale
+                  ? {
+                      table_filters: this.queryResponse?.data?.data?.fe_req.filters,
+                      value_lable_filters: {
+                        persistent_locked_conditions: this.queryResponse?.data?.data?.persistent_locked_conditions,
+                        session_locked_conditions: this.queryResponse?.data?.data?.session_locked_conditions,
+                      },
+                    }
+                  : null,
+              })),
+        },
+        {
+          axis: this.chartRef?.innerChartRef?.xScale.axis,
+          type: this.chartRef?.innerChartRef?.xScale.type,
+          columns: isXScaleStringColumn
+            ? {
+                name: this.chartRef?.innerChartRef?.xScale.column.name,
+                type: this.chartRef?.innerChartRef?.xScale.column.type,
+                filters: isTableFilterInXScale
+                  ? {
+                      table_filters: this.queryResponse?.data?.data?.fe_req.filters,
+                      value_lable_filters: {
+                        persistent_locked_conditions: this.queryResponse?.data?.data?.persistent_locked_conditions,
+                        session_locked_conditions: this.queryResponse?.data?.data?.session_locked_conditions,
+                      },
+                    }
+                  : null,
+              }
+            : this.chartRef?.innerChartRef?.xScale.fields.map((field) => ({
+                name: field.name,
+                aggType: field.hasOwnProperty('aggType') ? field.aggType : undefined,
+                type: field.type,
+                filters: isTableFilterInXScale
+                  ? {
+                      table_filters: this.queryResponse?.data?.data?.fe_req.filters,
+                      value_lable_filters: {
+                        persistent_locked_conditions: this.queryResponse?.data?.data?.persistent_locked_conditions,
+                        session_locked_conditions: this.queryResponse?.data?.data?.session_locked_conditions,
+                      },
+                    }
+                  : null,
+              })),
+        },
+      ],
+    }
+    return dataCollectionObj
+  }
   saveChartAsPNG = () => {
     if (this.chartRef) {
       this.chartRef.saveAsPNG()
@@ -2442,6 +2543,9 @@ export class QueryOutput extends React.Component {
           queryFn={this.queryFn}
           onBucketSizeChange={this.props.onBucketSizeChange}
           bucketSize={this.props.bucketSize}
+          queryResponse={this.queryResponse}
+          setUploadTrainingDataClock={this.setUploadTrainingDataClock}
+          cancelUploadTrainingDataClock={this.cancelUploadTrainingDataClock}
         />
       </ErrorBoundary>
     )
