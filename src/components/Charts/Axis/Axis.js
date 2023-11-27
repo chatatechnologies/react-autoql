@@ -92,25 +92,7 @@ export default class Axis extends Component {
         prevProps.stringColumnIndex !== this.props.stringColumnIndex) &&
       this.state.isAxisSelectorOpen !== prevState.isAxisSelectorOpen
     ) {
-      const isStringColumn = !this.props.scale.fields[0].hasOwnProperty('aggType')
-      const requestedData = {
-        source: this.props.source,
-        chart_type: this.props.type,
-        axes: [
-          {
-            axis: this.props.scale.axis,
-            type: this.props.scale.type,
-            column: isStringColumn
-              ? { name: this.props.scale.column.name, type: this.props.scale.column.type }
-              : this.props.scale.fields.map((field) => ({
-                  name: field.name,
-                  aggType: field.hasOwnProperty('aggType') ? field.aggType : undefined,
-                  type: field.type,
-                })),
-          },
-        ],
-      }
-      // TODO---Ready to send to Backend
+      this.handleUploadTrainingDataClock()
     }
 
     const renderJustCompleted = this.state.axisRenderComplete && !prevState.axisRenderComplete
@@ -141,6 +123,15 @@ export default class Axis extends Component {
 
   setScale = () => {
     this.axis.scale(this.props.scale)
+  }
+  lastActionTimestamp = 0
+  handleUploadTrainingDataClock = () => {
+    const currentTimestamp = Date.now()
+    if (currentTimestamp - this.lastActionTimestamp < 120000) {
+      this.props.cancelUploadTrainingDataClock()
+    }
+    this.props.setUploadTrainingDataClock()
+    this.lastActionTimestamp = currentTimestamp
   }
 
   adjustLegendLocation = () => {
