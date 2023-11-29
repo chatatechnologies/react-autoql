@@ -1209,6 +1209,12 @@ export class QueryOutput extends React.Component {
     this.isOriginalData = false
     this.queryResponse = response
     this.tableData = response?.data?.data?.rows || []
+
+    if (this.shouldGeneratePivotData()) {
+      this.generatePivotData()
+    }
+
+    this.forceUpdate()
   }
 
   onTableFilter = async (filters, rows) => {
