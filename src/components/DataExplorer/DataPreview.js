@@ -135,7 +135,7 @@ export default class DataPreview extends React.Component {
           </p>
           {this.state.error?.reference_id ? <p>Error ID: {this.state.error.reference_id}</p> : null}
           <p>
-            <a onClick={() => this.props.onError}>Try again</a>
+            <a onClick={this.getDataPreview}>Try again</a>
           </p>
         </div>
       )
