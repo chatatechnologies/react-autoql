@@ -71,7 +71,7 @@ export default class ChataTable extends React.Component {
       },
     }
 
-    if (props.useInfiniteScroll) {
+    if (props.useInfiniteScroll && props.response?.data?.data?.rows?.length) {
       this.tableOptions.sortMode = 'remote' // v4: ajaxSorting = true
       this.tableOptions.filterMode = 'remote' // v4: ajaxFiltering = true
       this.tableOptions.paginationMode = 'remote'
@@ -158,7 +158,7 @@ export default class ChataTable extends React.Component {
 
   shouldComponentUpdate = (nextProps, nextState) => {
     const tabulatorJustMounted = !this.state.tabulatorMounted && nextState.tabulatorMounted
-    const rowsChanged = this.props.rowChangeCount !== nextProps.rowChangeCount
+    const dataChanged = this.props.response?.data?.data?.query_id !== nextProps.response?.data?.data?.query_id
     const animationEnded = this.props.isAnimating && !nextProps.isAnimating
     const datePickerClosed = !!this.state.datePickerColumn && !nextState.datePickerColumn
     const hiddenStateChanged = this.props.hidden !== nextProps.hidden
@@ -166,7 +166,7 @@ export default class ChataTable extends React.Component {
 
     if (
       tabulatorJustMounted ||
-      rowsChanged ||
+      dataChanged ||
       animationEnded ||
       datePickerClosed ||
       hiddenStateChanged ||
