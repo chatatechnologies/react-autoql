@@ -22,10 +22,7 @@ import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers'
 import 'd3-transition'
 
 const isOtherCategory = (d) => {
-  // Temporary: until we update to autoql-fe-utils >= 1.0.49, we need to do a substr search
-  // Once we upgrade we can switch the next line to use:
-  // const isOtherCategory = d?.data?.value?.isOther
-  const isOtherCategory = d?.data?.value?.legendLabel?.label?.includes('Other')
+  const isOtherCategory = d?.data?.value?.isOther
   return isOtherCategory
 }
 
