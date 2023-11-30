@@ -45,8 +45,8 @@ export default class Columns extends Component {
               return null
             }
 
-            let y = value < 0 ? scaleZero(yScale) : yScale(value)
-            let height = Math.abs(yScale(value) - scaleZero(yScale))
+            let y = value < 0 ? scaleZero(yScale) : yScale.getValue(value)
+            let height = Math.abs(yScale.getValue(value) - scaleZero(yScale))
 
             if (isNaN(height) || isNaN(value)) {
               y = scaleZero(yScale)

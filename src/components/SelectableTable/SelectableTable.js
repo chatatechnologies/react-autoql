@@ -282,7 +282,6 @@ export default class SelectableTable extends React.Component {
           className='selectable-table-column-header-tooltip'
           render={this.renderHeaderTooltipContent}
           opacity={1}
-          clickable
           border
         />
       </ErrorBoundary>

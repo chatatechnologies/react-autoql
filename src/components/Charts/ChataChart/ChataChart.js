@@ -14,8 +14,10 @@ import {
   sortDataByDate,
   getColorScales,
   isColumnDateType,
+  sortDataByColumn,
   getLegendLocation,
   getDateColumnIndex,
+  isColumnNumberType,
   dataStructureChanged,
   DATE_ONLY_CHART_TYPES,
   aggregateOtherCategory,
@@ -184,8 +186,16 @@ export default class ChataChart extends React.Component {
     const maxElements = 10
 
     if (props.isDataAggregated) {
+      let data = props.data
+
+      if (isColumnDateType(props.columns[stringColumnIndex])) {
+        data = sortDataByDate(props.data, props.columns, 'asc')
+      } else if (isColumnNumberType(props.columns[stringColumnIndex])) {
+        data = sortDataByColumn(props.data, props.columns, stringColumnIndex, 'asc')
+      }
+
       return {
-        data: sortDataByDate(props.data, props.columns, 'asc'),
+        data,
         dataReduced: aggregateOtherCategory(props.data, { stringColumnIndex, numberColumnIndex }, maxElements),
       }
     } else {
