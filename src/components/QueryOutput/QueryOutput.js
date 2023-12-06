@@ -89,7 +89,6 @@ export class QueryOutput extends React.Component {
     this.queryID = this.queryResponse?.data?.data?.query_id
     this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
     this.tableParams = {}
-    this.chartID = uuid()
     this.tableID = uuid()
     this.pivotTableID = uuid()
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
@@ -145,6 +144,7 @@ export class QueryOutput extends React.Component {
       columns,
       selectedSuggestion: props.defaultSelectedSuggestion,
       columnChangeCount: 0,
+      chartID: uuid(),
     }
   }
 
@@ -588,30 +588,6 @@ export class QueryOutput extends React.Component {
         }
       }
 
-      const areNumberColumnsValid = tableConfig.numberColumnIndices.every((index) => {
-        return columns[index] && isColumnNumberType(columns[index])
-      })
-
-      if (!areNumberColumnsValid) {
-        console.debug('Saved number indices are not number columns:', {
-          numberColumnIndices: tableConfig.numberColumnIndices,
-        })
-        return false
-      }
-
-      const areSecondNumberColumnsValid =
-        !tableConfig.numberColumnIndices2?.length ||
-        tableConfig.numberColumnIndices2.every((index) => {
-          return columns[index] && isColumnNumberType(columns[index])
-        })
-
-      if (!areSecondNumberColumnsValid) {
-        console.debug('Saved second number indices are not number columns:', {
-          numberColumnsIndices2: tableConfig.numberColumnIndices2,
-        })
-        return false
-      }
-
       // To keep dashboards backwards compatible, we need to add
       // numberColumnIndices2 array to the tableConfig
       if (!tableConfig.numberColumnIndices2) {
@@ -644,13 +620,13 @@ export class QueryOutput extends React.Component {
       if (!isValid) {
         this.tableConfig = undefined
         this.setTableConfig(newColumns)
-        this.chartID = uuid()
       }
 
       this.setState({
         columns: newColumns,
         aggConfig: this.getAggConfig(columns),
         columnChangeCount: this.state.columnChangeCount + 1,
+        chartID: isValid ? this.state.chartID : uuid(),
       })
     }
   }
@@ -1214,7 +1190,7 @@ export class QueryOutput extends React.Component {
       this.generatePivotData()
     }
 
-    this.forceUpdate()
+    this.setState({ chartID: uuid() })
   }
 
   onTableFilter = async (filters, rows) => {
@@ -1788,8 +1764,12 @@ export class QueryOutput extends React.Component {
       if (aggConfig) {
         aggType = aggConfig[col.name]
       }
-      if (isListQuery(columns) && isColumnNumberType(col)) {
-        newCol.aggType = aggType || AggTypes.SUM
+      if (isListQuery(columns)) {
+        if (isColumnNumberType(col)) {
+          newCol.aggType = aggType || AggTypes.SUM
+        } else {
+          newCol.aggType = aggType || AggTypes.COUNT
+        }
       }
 
       // Check if a date range is available
@@ -2310,7 +2290,7 @@ export class QueryOutput extends React.Component {
     return (
       <ErrorBoundary>
         <ChataChart
-          key={this.chartID}
+          key={this.state.chartID}
           {...tableConfig}
           data={data}
           hidden={!isChartType(this.state.displayType)}
@@ -2347,6 +2327,7 @@ export class QueryOutput extends React.Component {
           queryFn={this.queryFn}
           onBucketSizeChange={this.props.onBucketSizeChange}
           bucketSize={this.props.bucketSize}
+          queryID={this.queryResponse?.data?.data?.query_id}
         />
       </ErrorBoundary>
     )

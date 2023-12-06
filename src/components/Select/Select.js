@@ -2,16 +2,16 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 
-import { Popover } from '../Popover'
-import { v4 as uuid } from 'uuid'
 import { Icon } from '../Icon'
+import { v4 as uuid } from 'uuid'
+import { Popover } from '../Popover'
 import { Tooltip } from '../Tooltip'
-import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { Menu, MenuItem } from '../Menu'
-
-import './Select.scss'
 import { LoadingDots } from '../LoadingDots'
 import { CustomScrollbars } from '../CustomScrollbars'
+import { ErrorBoundary } from '../../containers/ErrorHOC'
+
+import './Select.scss'
 
 export default class Select extends React.Component {
   constructor(props) {
@@ -139,7 +139,12 @@ export default class Select extends React.Component {
       >
         {!this.props.tooltipID && <Tooltip tooltipId={`select-tooltip-${this.ID}`} delayShow={500} />}
         {this.props.options?.length ? (
-          <CustomScrollbars ref={(r) => (this.scrollbars = r)} autoHide={false} contentHidden={!this.state.isOpen}>
+          <CustomScrollbars
+            ref={(r) => (this.scrollbars = r)}
+            autoHide={false}
+            contentHidden={!this.state.isOpen}
+            maxHeight='100%'
+          >
             <Menu options={this.props.options}>
               {this.props.options?.map((option, i) => {
                 return (
@@ -189,6 +194,7 @@ export default class Select extends React.Component {
           boundaryElement={this.props.popoverBoundaryElement}
           onClickOutside={() => this.setState({ isOpen: false })}
           content={this.renderPopoverContent()}
+          containerStyle={{ maxHeight: '100%' }}
         >
           {this.renderSelect()}
         </Popover>
