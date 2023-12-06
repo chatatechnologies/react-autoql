@@ -44,9 +44,6 @@ export default class ChataTable extends React.Component {
     if (isNaN(this.totalPages) || !this.totalPages) {
       this.totalPages = 1
     }
-    if (props.initialParams) {
-      this.tableParams = _cloneDeep(props.initialParams)
-    }
 
     this.tableParams = {
       filter: [],
@@ -98,7 +95,6 @@ export default class ChataTable extends React.Component {
   static propTypes = {
     data: PropTypes.arrayOf(PropTypes.array),
     columns: PropTypes.arrayOf(PropTypes.shape({})),
-    initialParams: PropTypes.shape({}),
     queryRequestData: PropTypes.shape({}),
     onFilterCallback: PropTypes.func,
     onSorterCallback: PropTypes.func,
@@ -122,7 +118,6 @@ export default class ChataTable extends React.Component {
 
   static defaultProps = {
     queryRequestData: {},
-    initialParams: undefined,
     data: undefined,
     columns: undefined,
     isResizing: false,
