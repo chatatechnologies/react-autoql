@@ -4,7 +4,7 @@ import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import { isMobile } from 'react-device-detect'
-import { AGG_TYPES, COLUMN_TYPES } from 'autoql-fe-utils'
+import { AGG_TYPES, AggTypes, COLUMN_TYPES, isColumnStringType } from 'autoql-fe-utils'
 
 import { Button } from '../../Button'
 import { Select } from '../../Select'
@@ -12,6 +12,7 @@ import { Popover } from '../../Popover'
 import { Checkbox } from '../../Checkbox'
 import { SelectableList } from '../../SelectableList'
 import { CustomScrollbars } from '../../CustomScrollbars'
+import { Icon } from '../../Icon'
 
 export default class NumberAxisSelector extends React.Component {
   constructor(props) {
@@ -109,19 +110,32 @@ export default class NumberAxisSelector extends React.Component {
                 showArrow={false}
                 align='start'
                 size='small'
-                options={Object.keys(AGG_TYPES).map((agg) => {
-                  return {
-                    value: AGG_TYPES[agg].type,
-                    label: AGG_TYPES[agg].symbol,
-                    listLabel: (
-                      <span>
-                        <span className='agg-select-list-symbol'>{AGG_TYPES[agg].symbol}</span>
-                        {AGG_TYPES[agg].displayName}
-                      </span>
-                    ),
-                    tooltip: AGG_TYPES[agg].tooltip,
-                  }
-                })}
+                options={Object.keys(AGG_TYPES)
+                  .filter((agg) => {
+                    if (isColumnStringType(col)) {
+                      return agg === AggTypes.COUNT || agg === AggTypes.COUNT_DISTINCT
+                    }
+
+                    return true
+                  })
+                  .map((agg) => {
+                    let icon = AGG_TYPES[agg].symbol
+                    if (AGG_TYPES[agg].icon) {
+                      icon = <Icon type={AGG_TYPES[agg].icon} />
+                    }
+
+                    return {
+                      value: AGG_TYPES[agg].type,
+                      label: icon,
+                      listLabel: (
+                        <span>
+                          <span className='agg-select-list-symbol'>{icon}</span>
+                          {AGG_TYPES[agg].displayName}
+                        </span>
+                      ),
+                      tooltip: AGG_TYPES[agg].tooltip,
+                    }
+                  })}
                 onChange={(value) => {
                   this.onAggTypeSelect(value, col)
                 }}
@@ -217,9 +231,6 @@ export default class NumberAxisSelector extends React.Component {
       return null
     }
 
-    const maxHeight = 250
-    const minHeight = 100
-
     const title = typeObj.description
     const listItems = this.getSelectableListItems(type)
     const allChecked = this.getAllChecked(type)
@@ -251,14 +262,12 @@ export default class NumberAxisSelector extends React.Component {
           </div>
         </div>
         <div className='react-autoql-custom-scrollbars'>
-          <CustomScrollbars autoHeight autoHeightMin={minHeight} maxHeight={isMobile ? undefined : maxHeight}>
-            <SelectableList
-              ref={(r) => (this.listRefs[type] = r)}
-              items={listItems}
-              onSelect={this.onColumnSelection}
-              onChange={this.onColumnCheck}
-            />
-          </CustomScrollbars>
+          <SelectableList
+            ref={(r) => (this.listRefs[type] = r)}
+            items={listItems}
+            onSelect={this.onColumnSelection}
+            onChange={this.onColumnCheck}
+          />
         </div>
       </div>
     )
@@ -266,15 +275,17 @@ export default class NumberAxisSelector extends React.Component {
 
   renderSeriesSelectors = () => {
     return (
-      <div className='axis-series-selector'>
-        <div className='number-selector-field-group-container'>
-          {Object.keys(COLUMN_TYPES)
-            .filter((key) => COLUMN_TYPES[key].isNumber)
-            .map((key) => {
-              return this.renderSeriesSelector(COLUMN_TYPES[key])
-            })}
+      <CustomScrollbars autoHeight autoHeightMin={100} maxHeight={isMobile ? undefined : 200}>
+        <div className='axis-series-selector'>
+          <div className='number-selector-field-group-container'>
+            {Object.keys(COLUMN_TYPES)
+              // .filter((key) => COLUMN_TYPES[key].isNumber)
+              .map((key) => {
+                return this.renderSeriesSelector(COLUMN_TYPES[key])
+              })}
+          </div>
         </div>
-      </div>
+      </CustomScrollbars>
     )
   }
 

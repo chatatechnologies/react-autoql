@@ -95,6 +95,10 @@ import {
   singleViewIcon,
   gradCapIcon,
   columnLineIcon,
+  minimum,
+  maximum,
+  sum,
+  median,
 } from '../../svgIcons.js'
 
 import './Icon.scss'
@@ -222,6 +226,14 @@ export default class Icon extends React.Component {
         icon = <FiMinimize />
         break
       }
+      case 'minimum': {
+        icon = minimum
+        break
+      }
+      case 'maximum': {
+        icon = maximum
+        break
+      }
       case 'money': {
         icon = <MdAttachMoney />
         break
@@ -338,8 +350,16 @@ export default class Icon extends React.Component {
         icon = stackedLineIcon
         break
       }
+      case 'sum': {
+        icon = sum
+        break
+      }
       case 'menu': {
         icon = <AiOutlineMenu />
+        break
+      }
+      case 'median': {
+        icon = median
         break
       }
       case 'microphone': {

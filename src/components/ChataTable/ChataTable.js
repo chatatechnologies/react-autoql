@@ -14,6 +14,7 @@ import {
   REQUEST_CANCELLED_ERROR,
   DAYJS_PRECISION_FORMATS,
   isDataLimited,
+  formatElement,
 } from 'autoql-fe-utils'
 
 import { Button } from '../Button'
@@ -280,6 +281,26 @@ export default class ChataTable extends React.Component {
     }
 
     this.ref?.updateData(data)
+  }
+
+  transposeTable = () => {
+    // This is a WIP
+    if (this.ref?.tabulator) {
+      const newColumns = [
+        { name: 'Property', field: '0', frozen: true },
+        { name: 'Value', field: '1' },
+      ]
+
+      const row = this.props.response?.data?.data?.rows[0]
+      const newData = this.props.columns?.map((column, i) => {
+        return [column?.display_name, formatElement({ element: row[i], column, config: this.props.dataFormatting })]
+      })
+
+      this.ref.tabulator.options['headerVisible'] = false
+      this.ref.tabulator.options['layout'] = 'fitData'
+      this.ref.tabulator.setColumns(newColumns)
+      this.ref.tabulator.setData(newData)
+    }
   }
 
   onDataSorting = (sorters) => {

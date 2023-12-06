@@ -192,7 +192,7 @@ g.legendOrdinal tspan {
 
       .number-selector-field-group-container {
         display: flex;
-        flex-direction: row;
+        flex-direction: column;
         flex-wrap: wrap;
 
         .number-selector-field-group {
@@ -227,13 +227,21 @@ g.legendOrdinal tspan {
 }
 
 .agg-type-symbol-select {
-  .react-autoql-select-popup-container li {
-    font-size: 12px;
-    padding: 5px 15px;
+  margin: 0;
 
-    .agg-select-list-symbol {
-      font-weight: 600;
-      margin-right: 10px;
+  .react-autoql-select-popup-container {
+    .react-autoql-menu {
+      max-height: 150px;
+    }
+
+    li {
+      font-size: 12px;
+      padding: 5px 15px;
+
+      .agg-select-list-symbol {
+        font-weight: 600;
+        margin-right: 10px;
+      }
     }
   }
 }
