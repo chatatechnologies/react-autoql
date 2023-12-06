@@ -51,10 +51,6 @@ export default class ChataTable extends React.Component {
       page: 1,
     }
 
-    if (props.initialParams) {
-      this.tableParams = _cloneDeep(props.initialParams)
-    }
-
     this.tableOptions = {
       selectableCheck: () => false,
       initialSort: !props.useInfiniteScroll ? this.tableParams?.sort : undefined,
@@ -99,7 +95,6 @@ export default class ChataTable extends React.Component {
   static propTypes = {
     data: PropTypes.arrayOf(PropTypes.array),
     columns: PropTypes.arrayOf(PropTypes.shape({})),
-    initialParams: PropTypes.shape({}),
     queryRequestData: PropTypes.shape({}),
     onFilterCallback: PropTypes.func,
     onSorterCallback: PropTypes.func,
@@ -123,7 +118,6 @@ export default class ChataTable extends React.Component {
 
   static defaultProps = {
     queryRequestData: {},
-    initialParams: undefined,
     data: undefined,
     columns: undefined,
     isResizing: false,
