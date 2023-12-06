@@ -44,15 +44,14 @@ export default class ChataTable extends React.Component {
     if (isNaN(this.totalPages) || !this.totalPages) {
       this.totalPages = 1
     }
+    if (props.initialParams) {
+      this.tableParams = _cloneDeep(props.initialParams)
+    }
 
     this.tableParams = {
       filter: [],
       sort: [],
       page: 1,
-    }
-
-    if (props.initialParams) {
-      this.tableParams = _cloneDeep(props.initialParams)
     }
 
     this.tableOptions = {
