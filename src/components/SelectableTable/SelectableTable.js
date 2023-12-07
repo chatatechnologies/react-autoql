@@ -177,7 +177,7 @@ export default class SelectableTable extends React.Component {
             <span>{type}</span>
           </div>
         )}
-        {column.isGroupable !== undefined && (
+        {/* {column.isGroupable !== undefined && (
           <div className='selectable-table-tooltip-section'>
             <Icon
               type={column.isGroupable ? 'check' : 'close'}
@@ -196,7 +196,7 @@ export default class SelectableTable extends React.Component {
             />
             <span> Supports filtering</span>
           </div>
-        )}
+        )} */}
       </div>
     )
   }
