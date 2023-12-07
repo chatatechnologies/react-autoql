@@ -109,7 +109,6 @@ export class DashboardTile extends React.Component {
     onCSVDownloadStart: PropTypes.func,
     onCSVDownloadProgress: PropTypes.func,
     onCSVDownloadFinish: PropTypes.func,
-    enableAjaxTableData: PropTypes.bool,
     cancelQueriesOnUnmount: PropTypes.bool,
     setParamsForTile: PropTypes.func,
   }
@@ -128,7 +127,6 @@ export class DashboardTile extends React.Component {
     defaultSelectedSuggestion: undefined,
     notExecutedText: 'Hit "Execute" to run this dashboard',
     autoChartAggregations: true,
-    enableAjaxTableData: false,
     cancelQueriesOnUnmount: true,
     deleteTile: () => {},
     onErrorCallback: () => {},
@@ -1049,7 +1047,6 @@ export class DashboardTile extends React.Component {
         renderSuggestionsAsDropdown={this.props.tile.h < 4}
         enableDynamicCharting={this.props.enableDynamicCharting}
         backgroundColor={document.documentElement.style.getPropertyValue('--react-autoql-background-color-secondary')}
-        enableAjaxTableData={this.props.enableAjaxTableData}
         showQueryInterpretation={this.props.isEditing}
         reverseTranslationPlacement='top'
         tooltipID={this.props.tooltipID}

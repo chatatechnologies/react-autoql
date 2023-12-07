@@ -43,6 +43,12 @@ class DashboardWithoutTheme extends React.Component {
     this.tileLog = [props.tiles]
     this.currentLogIndex = 0
 
+    if (props.enableAjaxTableData !== undefined) {
+      console.warn(
+        'enableAjaxtableData is deprecated - the provided prop will be ignored and the default value of "true" will be used instead.',
+      )
+    }
+
     this.state = {
       isDragging: false,
       isReportProblemOpen: false,
@@ -71,7 +77,6 @@ class DashboardWithoutTheme extends React.Component {
     onCSVDownloadStart: PropTypes.func,
     onCSVDownloadProgress: PropTypes.func,
     onCSVDownloadFinish: PropTypes.func,
-    enableAjaxTableData: PropTypes.bool,
     cancelQueriesOnUnmount: PropTypes.bool,
     startEditingCallback: PropTypes.func,
   }
@@ -91,7 +96,6 @@ class DashboardWithoutTheme extends React.Component {
     notExecutedText: undefined,
     enableDynamicCharting: true,
     autoChartAggregations: true,
-    enableAjaxTableData: false,
     cancelQueriesOnUnmount: false,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
@@ -613,7 +617,7 @@ class DashboardWithoutTheme extends React.Component {
     })
 
     let dataPageSize = this.props.dataPageSize
-    if (this.props.enableAjaxTableData && !dataPageSize) {
+    if (!dataPageSize) {
       dataPageSize = this.DEFAULT_AJAX_PAGE_SIZE
     }
 
@@ -667,7 +671,6 @@ class DashboardWithoutTheme extends React.Component {
             onCSVDownloadStart={this.props.onCSVDownloadStart}
             onCSVDownloadProgress={this.props.onCSVDownloadProgress}
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
-            enableAjaxTableData={this.props.enableAjaxTableData}
             tooltipID={this.TOOLTIP_ID}
             chartTooltipID={this.CHART_TOOLTIP_ID}
             source={this.SOURCE}
@@ -705,7 +708,6 @@ class DashboardWithoutTheme extends React.Component {
             chartTooltipID={this.CHART_TOOLTIP_ID}
             showQueryInterpretation={this.props.isEditing}
             isDrilldownRunning={this.state.isDrilldownRunning}
-            enableAjaxTableData={this.props.enableAjaxTableData}
             onErrorCallback={this.props.onErrorCallback}
             onSuccessCallback={this.props.onSuccessCallback}
             activeDrilldownRef={this.activeDrilldownRef}

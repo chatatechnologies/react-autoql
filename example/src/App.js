@@ -93,7 +93,6 @@ export default class App extends Component {
   authTimer = undefined
 
   state = {
-    pagination: true,
     maintenance: false,
     currentPage: 'drawer',
     isNewDashboardModalOpen: false,
@@ -846,7 +845,6 @@ export default class App extends Component {
         {!this.state.isAuthenticated ? <div style={{ color: 'red', fontSize: '16px' }}>Please authenticate</div> : null}
         <h1>Authentication</h1>
         {this.renderAuthenticationForm()}
-        {this.createBooleanRadioGroup('Enable Infinite Scroll and API Filtering/Sorting', 'pagination', [true, false])}
         <h1>Customize Widgets</h1>
         <Button onClick={this.reloadDataMessenger} style={{ marginRight: '10px' }} icon={<ReloadOutlined />}>
           Reload Data Messenger
@@ -1095,7 +1093,6 @@ export default class App extends Component {
         AutoAEId={this.state.componentKey}
         maskClosable
         showHandle={this.state.showHandle}
-        enableAjaxTableData={this.state.pagination}
         placement={
           this.state.currentPage === 'drawer' ||
           this.state.currentPage === 'dashboard' ||
@@ -1186,7 +1183,6 @@ export default class App extends Component {
               queryInputRef={this.queryInputRef}
               queryResponse={this.state.response}
               initialDisplayType='table'
-              enableAjaxTableData={true}
               autoChartAggregations={true}
               enableDynamicCharting={true}
             />
@@ -1361,7 +1357,6 @@ export default class App extends Component {
               onErrorCallback={this.onError}
               onSuccessCallback={this.onSuccess}
               autoChartAggregations={this.state.autoChartAggregations}
-              enableAjaxTableData={this.state.pagination}
               onChange={this.handleTileChange}
             />
           </>

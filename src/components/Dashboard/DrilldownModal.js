@@ -46,7 +46,6 @@ export default class DrilldownModal extends React.Component {
     onCSVDownloadStart: PropTypes.func,
     onCSVDownloadProgress: PropTypes.func,
     onCSVDownloadFinish: PropTypes.func,
-    enableAjaxTableData: PropTypes.bool,
     cancelQueriesOnUnmount: PropTypes.bool,
   }
 
@@ -65,7 +64,6 @@ export default class DrilldownModal extends React.Component {
     notExecutedText: undefined,
     enableDynamicCharting: true,
     autoChartAggregations: true,
-    enableAjaxTableData: false,
     cancelQueriesOnUnmount: false,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
@@ -142,7 +140,6 @@ export default class DrilldownModal extends React.Component {
         tooltipID={this.props.tooltipID}
         chartTooltipID={this.props.chartTooltipID}
         reportProblemCallback={this.reportProblemCallback}
-        enableAjaxTableData={this.props.enableAjaxTableData}
         showQueryInterpretation={this.props.showQueryInterpretation}
         onErrorCallback={this.props.onErrorCallback}
         onSuccessCallback={this.props.onSuccessCallback}

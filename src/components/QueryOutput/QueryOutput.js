@@ -176,7 +176,6 @@ export class QueryOutput extends React.Component {
     isTaskModule: PropTypes.bool,
     onDrilldownStart: PropTypes.func,
     onDrilldownEnd: PropTypes.func,
-    enableAjaxTableData: PropTypes.bool,
     enableTableSorting: PropTypes.bool,
     showSingleValueResponseTitle: PropTypes.bool,
 
@@ -215,7 +214,6 @@ export class QueryOutput extends React.Component {
     autoChartAggregations: true,
     showQueryInterpretation: false,
     isTaskModule: false,
-    enableAjaxTableData: false,
     enableTableSorting: true,
     preferredDisplayType: undefined,
     onRTValueLabelClick: undefined,
@@ -2211,8 +2209,6 @@ export class QueryOutput extends React.Component {
           onNewData={this.onNewData}
           isAnimating={this.props.isAnimating}
           isResizing={this.props.isResizing}
-          useInfiniteScroll={this.props.enableAjaxTableData}
-          enableAjaxTableData={this.props.enableAjaxTableData}
           queryRequestData={this.queryResponse?.data?.data?.fe_req}
           queryText={this.queryResponse?.data?.data?.text}
           originalQueryID={this.props.originalQueryID}
@@ -2312,7 +2308,6 @@ export class QueryOutput extends React.Component {
           isAnimating={this.props.isAnimating}
           isDrilldownChartHidden={this.props.isDrilldownChartHidden}
           enableDynamicCharting={this.props.enableDynamicCharting}
-          enableAjaxTableData={this.props.enableAjaxTableData}
           tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
           chartTooltipID={this.props.chartTooltipID ?? this.CHART_TOOLTIP_ID}
           height={this.props.height}
