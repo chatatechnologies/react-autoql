@@ -55,7 +55,7 @@ export default class SampleQuery extends React.Component {
 
   submitQuery = () => {
     const queryRequestParams = getQueryRequestParams(this.props.suggestion, this.state.values)
-    this.props.executeQuery(queryRequestParams)
+    this.props.executeQuery({ ...queryRequestParams, userSelection: undefined })
   }
 
   onAmountChange = (rawValue, chunkName) => {
