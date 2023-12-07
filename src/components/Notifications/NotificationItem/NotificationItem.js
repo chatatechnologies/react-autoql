@@ -60,7 +60,6 @@ export default class NotificationItem extends React.Component {
     onDismissSuccessCallback: PropTypes.func,
     onErrorCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
-    enableAjaxTableData: PropTypes.bool,
     onClick: PropTypes.func,
     onDataAlertChange: PropTypes.func,
     onSuccessCallback: PropTypes.func,
@@ -495,7 +494,6 @@ export default class NotificationItem extends React.Component {
                   dataFormatting={this.props.dataFormatting}
                   queryResponse={this.state.queryResponse}
                   autoChartAggregations={this.props.autoChartAggregations}
-                  enableAjaxTableData={this.props.enableAjaxTableData}
                   onSuccessCallback={this.props.onSuccessCallback}
                   onErrorCallback={this.props.onErrorCallback}
                   popoverParentElement={this.props.popoverParentElement ?? this.notificationItemRef}

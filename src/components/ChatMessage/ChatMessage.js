@@ -66,7 +66,6 @@ export default class ChatMessage extends React.Component {
     addMessageToDM: PropTypes.func,
     csvDownloadProgress: PropTypes.number,
     onRTValueLabelClick: PropTypes.func,
-    enableAjaxTableData: PropTypes.bool,
     source: PropTypes.oneOfType([PropTypes.array, PropTypes.string]),
     scope: PropTypes.string,
     isVisibleInDOM: PropTypes.bool,
@@ -77,7 +76,6 @@ export default class ChatMessage extends React.Component {
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
 
-    enableAjaxTableData: false,
     isIntroMessage: false,
     source: null,
     scope: undefined,
@@ -260,7 +258,6 @@ export default class ChatMessage extends React.Component {
           appliedFilters={this.props.appliedFilters}
           onDrilldownStart={this.props.onDrilldownStart}
           onDrilldownEnd={this.props.onDrilldownEnd}
-          enableAjaxTableData={this.props.enableAjaxTableData}
           originalQueryID={this.props.originalQueryID}
           onErrorCallback={this.props.onErrorCallback}
           isAnimating={this.state.isAnimatingMessageBubble}

@@ -74,6 +74,12 @@ export class DataMessenger extends React.Component {
       </>,
     ]
 
+    if (props.enableAjaxTableData !== undefined) {
+      console.warn(
+        'enableAjaxtableData is deprecated - the provided prop will be ignored and the default value of "true" will be used instead.',
+      )
+    }
+
     this.state = {
       dataMessengerId: uuid(),
       hasError: false,
@@ -126,7 +132,6 @@ export class DataMessenger extends React.Component {
     autoChartAggregations: PropTypes.bool,
     enableFilterLocking: PropTypes.bool,
     enableQueryQuickStartTopics: PropTypes.bool,
-    enableAjaxTableData: PropTypes.bool,
 
     // Callbacks
     onNotificationExpandCallback: PropTypes.func,
@@ -174,7 +179,6 @@ export class DataMessenger extends React.Component {
     autoChartAggregations: true,
     enableFilterLocking: false,
     enableQueryQuickStartTopics: true,
-    enableAjaxTableData: false,
     enableDPRTab: false,
     mobileActivePage: 'data-messenger',
     setMobileActivePage: () => {},
@@ -753,7 +757,6 @@ export class DataMessenger extends React.Component {
           queryFilters={this.state.sessionFilters}
           introMessages={this.dataMessengerIntroMessages}
           inputPlaceholder={this.props.inputPlaceholder}
-          enableAjaxTableData={this.props.enableAjaxTableData}
           autoChartAggregations={this.props.autoChartAggregations}
           popoverParentElement={this.messengerDrawerRef}
           dataPageSize={this.props.dataPageSize}

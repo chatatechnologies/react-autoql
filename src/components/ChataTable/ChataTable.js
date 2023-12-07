@@ -110,7 +110,6 @@ export default class ChataTable extends React.Component {
     hidden: PropTypes.bool,
     onNewData: PropTypes.func,
     tooltipID: PropTypes.string,
-    enableAjaxTableData: PropTypes.bool,
     pivot: PropTypes.bool,
     style: PropTypes.shape({}),
     supportsDrilldowns: PropTypes.bool,
@@ -129,7 +128,6 @@ export default class ChataTable extends React.Component {
     hidden: false,
     response: undefined,
     tooltipID: undefined,
-    enableAjaxTableData: false,
     pivot: false,
     onFilterCallback: () => {},
     onSorterCallback: () => {},
@@ -979,7 +977,7 @@ export default class ChataTable extends React.Component {
 
     const currentRowCount = this.getCurrentRowCount()
     const totalRowCount = this.props.response?.data?.data?.count_rows
-    const shouldRenderTRC = this.props.enableAjaxTableData && totalRowCount && currentRowCount
+    const shouldRenderTRC = totalRowCount && currentRowCount
 
     if (!shouldRenderTRC) {
       return null

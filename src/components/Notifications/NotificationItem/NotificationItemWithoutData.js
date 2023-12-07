@@ -39,7 +39,6 @@ export default class NotificationItem extends React.Component {
     onDismissSuccessCallback: PropTypes.func,
     onErrorCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
-    enableAjaxTableData: PropTypes.bool,
     onClick: PropTypes.func,
     onDataAlertChange: PropTypes.func,
     onSuccessCallback: PropTypes.func,

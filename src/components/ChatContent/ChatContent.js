@@ -53,7 +53,6 @@ export default class ChatContent extends React.Component {
     onSuccessAlert: PropTypes.func.isRequired,
     onRTValueLabelClick: PropTypes.func,
     disableMaxMessageHeight: PropTypes.bool,
-    enableAjaxTableData: PropTypes.bool,
     dataPageSize: PropTypes.number,
     sessionId: PropTypes.string,
     isResizing: PropTypes.bool,
@@ -65,7 +64,6 @@ export default class ChatContent extends React.Component {
   static defaultProps = {
     dataFormatting: dataFormattingDefault,
     disableMaxMessageHeight: false,
-    enableAjaxTableData: false,
     isResizing: false,
     dataPageSize: undefined,
     source: null,
@@ -426,7 +424,6 @@ export default class ChatContent extends React.Component {
                     onRTValueLabelClick={this.props.onRTValueLabelClick}
                     appliedFilters={message.appliedFilters}
                     disableMaxHeight={this.props.disableMaxMessageHeight}
-                    enableAjaxTableData={this.props.enableAjaxTableData}
                     queryRequestData={message.queryRequestData}
                     popoverParentElement={this.chatContentRef}
                     isVisibleInDOM={this.props.shouldRender}
