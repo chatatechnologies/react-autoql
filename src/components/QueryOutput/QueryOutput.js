@@ -1953,7 +1953,7 @@ export class QueryOutput extends React.Component {
       const maxColumns = 20
       const maxRows = 100
       let uniqueRowHeaders = null
-      if (isColumnStringType(columns[stringColumnIndex])) {
+      if (isColumnStringType(columns[stringColumnIndex]) && !isColumnDateType(columns[stringColumnIndex])) {
         uniqueRowHeaders = sortDataByAlphabet(tableData, columns, 'asc', 'isTable')
           .map((d) => d[stringColumnIndex])
           .filter(onlyUnique)
