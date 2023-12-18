@@ -383,6 +383,11 @@
   .data-explorer-topic-icon {
     margin-right: 0.1em;
   }
+
+  .react-autoql-menu {
+    overflow-y: auto;
+    max-height: 200px;
+  }
 }
 
 @keyframes slideDown {

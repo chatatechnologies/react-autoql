@@ -175,7 +175,8 @@ export default class QuerySuggestionList extends React.Component {
       return (
         <div className='data-explorer-section-placeholder'>
           <p>
-            Sorry, I couldn’t find any queries matching your input. Try entering a different topic or keyword instead.
+            {`Sorry, I couldn't find any queries matching your input. Try entering a different topic or keyword
+            instead.`}
           </p>
         </div>
       )

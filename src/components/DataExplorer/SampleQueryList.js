@@ -157,8 +157,8 @@ export default class SampleQueryList extends React.Component {
       return (
         <div className='data-explorer-section-error-container'>
           <p>
-            Sorry, I couldnU+2019t find any queries matching your input. Try entering a different topic or keyword
-            instead.
+            {`Sorry, I couldn't find any queries matching your input. Try entering a different topic or keyword
+            instead.`}
           </p>
         </div>
       )
