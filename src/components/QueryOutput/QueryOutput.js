@@ -25,6 +25,7 @@ import {
   isChartType,
   areAllColumnsHidden,
   sortDataByDate,
+  sortDataByAlphabet,
   dateSortFn,
   getDayJSObj,
   getNumberOfGroupables,
@@ -42,6 +43,7 @@ import {
   getStringColumnIndices,
   isAggregation,
   isColumnDateType,
+  isColumnStringType,
   getColumnTypeAmounts,
   MONTH_NAMES,
   DEFAULT_DATA_PAGE_SIZE,
@@ -1950,11 +1952,16 @@ export class QueryOutput extends React.Component {
 
       const maxColumns = 20
       const maxRows = 100
-
-      let uniqueRowHeaders = sortDataByDate(tableData, columns, 'desc', 'isTable')
-        .map((d) => d[stringColumnIndex])
-        .filter(onlyUnique)
-
+      let uniqueRowHeaders = null
+      if (isColumnStringType(columns[stringColumnIndex]) && !isColumnDateType(columns[stringColumnIndex])) {
+        uniqueRowHeaders = sortDataByAlphabet(tableData, columns, 'asc', 'isTable')
+          .map((d) => d[stringColumnIndex])
+          .filter(onlyUnique)
+      } else {
+        uniqueRowHeaders = sortDataByDate(tableData, columns, 'desc', 'isTable')
+          .map((d) => d[stringColumnIndex])
+          .filter(onlyUnique)
+      }
       let uniqueColumnHeaders = sortDataByDate(tableData, columns, 'desc', 'isTable')
         .map((d) => d[legendColumnIndex])
         .filter(onlyUnique)
@@ -1965,9 +1972,10 @@ export class QueryOutput extends React.Component {
       // Make sure the longer list is in the legend, UNLESS its a date type
       // DATE types should always go in the axis if possible
       if (
-        isFirstGeneration &&
-        uniqueColumnHeaders?.length > uniqueRowHeaders?.length &&
-        (!isColumnDateType(columns[stringColumnIndex]) || uniqueColumnHeaders.length > MAX_LEGEND_LABELS)
+        isColumnDateType(columns[legendColumnIndex]) ||
+        (isFirstGeneration &&
+          uniqueColumnHeaders?.length > uniqueRowHeaders?.length &&
+          (!isColumnDateType(columns[stringColumnIndex]) || uniqueColumnHeaders.length > MAX_LEGEND_LABELS))
       ) {
         newStringColumnIndex = legendColumnIndex
         newLegendColumnIndex = stringColumnIndex
