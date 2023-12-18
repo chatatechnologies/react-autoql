@@ -1972,9 +1972,10 @@ export class QueryOutput extends React.Component {
       // Make sure the longer list is in the legend, UNLESS its a date type
       // DATE types should always go in the axis if possible
       if (
-        isFirstGeneration &&
-        uniqueColumnHeaders?.length > uniqueRowHeaders?.length &&
-        (!isColumnDateType(columns[stringColumnIndex]) || uniqueColumnHeaders.length > MAX_LEGEND_LABELS)
+        isColumnDateType(columns[legendColumnIndex]) ||
+        (isFirstGeneration &&
+          uniqueColumnHeaders?.length > uniqueRowHeaders?.length &&
+          (!isColumnDateType(columns[stringColumnIndex]) || uniqueColumnHeaders.length > MAX_LEGEND_LABELS))
       ) {
         newStringColumnIndex = legendColumnIndex
         newLegendColumnIndex = stringColumnIndex
