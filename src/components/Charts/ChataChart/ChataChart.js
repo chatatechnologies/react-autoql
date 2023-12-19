@@ -18,6 +18,7 @@ import {
   getLegendLocation,
   getDateColumnIndex,
   isColumnNumberType,
+  MAX_CHART_ELEMENTS,
   dataStructureChanged,
   DATE_ONLY_CHART_TYPES,
   aggregateOtherCategory,
@@ -185,6 +186,8 @@ export default class ChataChart extends React.Component {
 
     const maxElements = 10
 
+    let isDataTruncated = false
+
     if (props.isDataAggregated) {
       let data = props.data
 
@@ -194,9 +197,15 @@ export default class ChataChart extends React.Component {
         data = sortDataByColumn(props.data, props.columns, stringColumnIndex, 'asc')
       }
 
+      if (data?.length > MAX_CHART_ELEMENTS) {
+        data.splice(MAX_CHART_ELEMENTS)
+        isDataTruncated = true
+      }
+
       return {
         data,
         dataReduced: aggregateOtherCategory(props.data, { stringColumnIndex, numberColumnIndex }, maxElements),
+        isDataTruncated,
       }
     } else {
       const indices1 = props.numberColumnIndices ?? []
@@ -225,7 +234,12 @@ export default class ChataChart extends React.Component {
         dataFormatting: props.dataFormatting,
       })
 
-      return { data: aggregated, dataReduced: aggregatedWithOtherCategory }
+      if (aggregated?.length > MAX_CHART_ELEMENTS) {
+        aggregated.splice(MAX_CHART_ELEMENTS)
+        isDataTruncated = true
+      }
+
+      return { data: aggregated, dataReduced: aggregatedWithOtherCategory, isDataTruncated }
     }
   }
 
@@ -505,7 +519,9 @@ export default class ChataChart extends React.Component {
       return null
     }
 
-    if (this.props.isDataLimited) {
+    const isTruncated = this.state.isDataTruncated && this.props.type !== DisplayTypes.PIE
+
+    if (this.props.isDataLimited || isTruncated) {
       return <DataLimitWarning tooltipID={this.props.tooltipID} rowLimit={this.props.rowLimit} />
     }
 
