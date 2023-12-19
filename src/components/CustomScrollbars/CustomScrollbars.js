@@ -14,8 +14,8 @@ export default class CustomScrollbars extends React.Component {
     autoHeightMax: PropTypes.number,
     autoHeightMin: PropTypes.number,
     contentHidden: PropTypes.bool,
-    maxHeight: PropTypes.oneOf([PropTypes.number, PropTypes.string]),
-    minHeight: PropTypes.oneOf([PropTypes.number, PropTypes.string]),
+    maxHeight: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    minHeight: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     table: PropTypes.bool,
   }
 
