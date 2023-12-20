@@ -142,7 +142,7 @@ export default class SampleQueryList extends React.Component {
         <div className='data-explorer-section-error-container'>
           <p>
             {this.state.error?.message ||
-              'Uh oh.. an error occured while trying to retrieve your sample queries. Please try again.'}
+              'Uh oh.. an error occurred while trying to retrieve your sample queries. Please try again.'}
           </p>
           {this.state.error?.reference_id ? <p>Error ID: {this.state.error.reference_id}</p> : null}
         </div>
