@@ -404,7 +404,8 @@ export default class DataExplorer extends React.Component {
     return (
       <div className='data-explorer-section data-preview-section'>
         <div className='react-autoql-input-label'>
-          Select all fields of interest from <em>"{this.state.selectedSubject?.displayName}"</em>:
+          Select additional fields of interest from <em>"{this.state.selectedSubject?.displayName}"</em> to generate
+          more queries.
         </div>
         {this.getDataPreview({ subject: this.state.selectedSubject })}
       </div>
