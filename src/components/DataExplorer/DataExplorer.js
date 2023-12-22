@@ -208,7 +208,7 @@ export default class DataExplorer extends React.Component {
                   <Icon type='abacus' /> Explore data structure and column types
                 </p>
                 <p>
-                  <Icon type='react-autoql-bubbles-outlined' /> View a variety of query suggestions
+                  <Icon type='react-autoql-bubbles-outlined' /> View and customize a sample of query suggestions
                 </p>
               </div>
             </div>
