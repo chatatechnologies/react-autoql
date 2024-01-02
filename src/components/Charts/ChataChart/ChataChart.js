@@ -177,69 +177,78 @@ export default class ChataChart extends React.Component {
     return getColorScales({ numberColumnIndices, numberColumnIndices2, data: this.props.data, type: this.props.type })
   }
 
+  dataIsBinned = () => {
+    return this.props.type === DisplayTypes.HISTOGRAM
+  }
+
   getData = (props) => {
-    if (!props.data?.length || !props.columns?.length) {
-      return
-    }
-
-    const { stringColumnIndex, numberColumnIndex } = props
-
-    const maxElements = 10
-
-    let isDataTruncated = false
-
-    if (props.isDataAggregated) {
-      let data = props.data
-
-      if (isColumnDateType(props.columns[stringColumnIndex])) {
-        data = sortDataByDate(props.data, props.columns, 'asc')
-      } else if (isColumnNumberType(props.columns[stringColumnIndex])) {
-        data = sortDataByColumn(props.data, props.columns, stringColumnIndex, 'asc')
-      }
-
-      if (data?.length > MAX_CHART_ELEMENTS) {
-        data.splice(MAX_CHART_ELEMENTS)
-        isDataTruncated = true
-      }
-
-      return {
-        data,
-        dataReduced: aggregateOtherCategory(props.data, { stringColumnIndex, numberColumnIndex }, maxElements),
-        isDataTruncated,
-      }
-    } else {
-      const indices1 = props.numberColumnIndices ?? []
-      const indices2 = props.numberColumnIndices2 ?? []
-      const numberIndices = [...indices1, ...indices2].filter(onlyUnique)
-
-      if (!numberIndices.length) {
+    try {
+      if (!props.data?.length || !props.columns?.length) {
         return
       }
 
-      const aggregatedWithOtherCategory = aggregateData({
-        data: props.data,
-        aggColIndex: stringColumnIndex,
-        columns: props.columns,
-        numberIndices,
-        dataFormatting: props.dataFormatting,
-        columnIndexConfig: { stringColumnIndex, numberColumnIndex },
-        maxElements,
-      })
+      const { stringColumnIndex, numberColumnIndex } = props
 
-      const aggregated = aggregateData({
-        data: props.data,
-        aggColIndex: props.stringColumnIndex,
-        columns: props.columns,
-        numberIndices,
-        dataFormatting: props.dataFormatting,
-      })
+      const maxElements = 10
 
-      if (aggregated?.length > MAX_CHART_ELEMENTS) {
-        aggregated.splice(MAX_CHART_ELEMENTS)
-        isDataTruncated = true
+      let isDataTruncated = false
+
+      if (props.isDataAggregated) {
+        let data = props.data
+
+        if (isColumnDateType(props.columns[stringColumnIndex])) {
+          data = sortDataByDate(props.data, props.columns, 'asc')
+        } else if (isColumnNumberType(props.columns[stringColumnIndex])) {
+          data = sortDataByColumn(props.data, props.columns, stringColumnIndex, 'asc')
+        }
+
+        if (data?.length > MAX_CHART_ELEMENTS && !this.dataIsBinned()) {
+          data = data.slice(0, MAX_CHART_ELEMENTS)
+          isDataTruncated = true
+        }
+
+        return {
+          data,
+          dataReduced: aggregateOtherCategory(props.data, { stringColumnIndex, numberColumnIndex }, maxElements),
+          isDataTruncated,
+        }
+      } else {
+        const indices1 = props.numberColumnIndices ?? []
+        const indices2 = props.numberColumnIndices2 ?? []
+        const numberIndices = [...indices1, ...indices2].filter(onlyUnique)
+
+        if (!numberIndices.length) {
+          return
+        }
+
+        const aggregatedWithOtherCategory = aggregateData({
+          data: props.data,
+          aggColIndex: stringColumnIndex,
+          columns: props.columns,
+          numberIndices,
+          dataFormatting: props.dataFormatting,
+          columnIndexConfig: { stringColumnIndex, numberColumnIndex },
+          maxElements,
+        })
+
+        let aggregated = aggregateData({
+          data: props.data,
+          aggColIndex: props.stringColumnIndex,
+          columns: props.columns,
+          numberIndices,
+          dataFormatting: props.dataFormatting,
+        })
+
+        if (aggregated?.length > MAX_CHART_ELEMENTS && !this.dataIsBinned()) {
+          aggregated = aggregated.slice(0, MAX_CHART_ELEMENTS)
+          isDataTruncated = true
+        }
+
+        return { data: aggregated, dataReduced: aggregatedWithOtherCategory, isDataTruncated }
       }
-
-      return { data: aggregated, dataReduced: aggregatedWithOtherCategory, isDataTruncated }
+    } catch (error) {
+      console.error(error)
+      return { data: props.data, dataReduced: props.data }
     }
   }
 
