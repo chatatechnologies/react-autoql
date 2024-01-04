@@ -15,6 +15,8 @@ import {
   DAYJS_PRECISION_FORMATS,
   isDataLimited,
   formatElement,
+  MAX_CHART_ELEMENTS,
+  getDataFormatting,
 } from 'autoql-fe-utils'
 
 import { Button } from '../Button'
@@ -963,8 +965,41 @@ export default class ChataTable extends React.Component {
       return null
     }
 
-    if (isDataLimited(this.props.response) || this.props.pivotDataLimited) {
-      return <DataLimitWarning tooltipID={this.props.tooltipID} rowLimit={this.props.response?.data?.data?.row_limit} />
+    if (isDataLimited(this.props.response) || this.props.pivotTableRowsLimited || this.props.pivotTableColumnsLimited) {
+      const rowLimit = this.props.response?.data?.data?.row_limit
+      const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
+      const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(rowLimit)
+      const chartElementLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(MAX_CHART_ELEMENTS)
+      const totalRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(
+        this.props.response?.data?.data?.count_rows,
+      )
+      const totalPivotRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalRows)
+      const totalPivotColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalColumns)
+
+      let content
+      let tooltipContent
+
+      if (isDataLimited(this.props.response)) {
+        tooltipContent = `To optimize performance, this pivot table is limited to the initial <em>${rowLimitFormatted}/${totalRowsFormatted}</em> rows of the original dataset.`
+      } else if (this.props.pivotTableRowsLimited && this.props.pivotTableColumnsLimited) {
+        content = 'Rows and Columns have been limited!'
+        tooltipContent = `To optimize performance, this pivot table has been limited to the first <em>${this.props.maxColumns}/${totalPivotColumnsFormatted}</em> columns and <em>${chartElementLimitFormatted}/${totalPivotRowsFormatted}</em> rows of data.`
+      } else if (this.props.pivotTableRowsLimited) {
+        content = 'Rows have been limited!'
+        tooltipContent = `To optimize performance, this pivot table has limited to the first <em>${chartElementLimitFormatted}/${totalPivotRowsFormatted}</em> rows of data.`
+      } else if (this.props.pivotTableColumnsLimited) {
+        content = 'Columns have been limited!'
+        tooltipContent = `To optimize performance, this pivot table has been limited to the first <em>${this.props.maxColumns}/${totalPivotColumnsFormatted}</em> columns.`
+      }
+
+      return (
+        <DataLimitWarning
+          tooltipID={this.props.tooltipID}
+          rowLimit={rowLimit}
+          tooltipContent={tooltipContent}
+          content={content}
+        />
+      )
     }
 
     return null
@@ -975,8 +1010,17 @@ export default class ChataTable extends React.Component {
       return null
     }
 
-    const currentRowCount = this.getCurrentRowCount()
-    const totalRowCount = this.props.response?.data?.data?.count_rows
+    let currentRowCount
+    let totalRowCount
+
+    if (this.props.pivot) {
+      currentRowCount = this.getCurrentRowCount()
+      totalRowCount = this.props.data?.length
+    } else {
+      currentRowCount = this.getCurrentRowCount()
+      totalRowCount = this.props.response?.data?.data?.count_rows
+    }
+
     const shouldRenderTRC = totalRowCount && currentRowCount
 
     if (!shouldRenderTRC) {
