@@ -2296,6 +2296,9 @@ export class QueryOutput extends React.Component {
 
     const data = usePivotData ? this.state.visiblePivotRows || this.pivotTableData : this.tableData
 
+    const isPivotDataLimited =
+      this.usePivotDataForChart() && (this.pivotTableRowsLimited || this.pivotTableColumnsLimited)
+
     return (
       <ErrorBoundary>
         <ChataChart
@@ -2329,7 +2332,7 @@ export class QueryOutput extends React.Component {
           onNewData={this.onNewData}
           isDrilldown={this.isDrilldown()}
           updateColumns={this.updateColumns}
-          isDataLimited={isDataLimited(this.queryResponse)}
+          isDataLimited={isDataLimited(this.queryResponse) || isPivotDataLimited}
           source={this.props.source}
           scope={this.props.scope}
           queryFn={this.queryFn}
