@@ -61,6 +61,7 @@ import {
   getAutoQLConfig,
   getVisibleColumns,
   isDataLimited,
+  MAX_CHART_ELEMENTS,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -85,6 +86,7 @@ export class QueryOutput extends React.Component {
     this.TOOLTIP_ID = `react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`
     this.CHART_TOOLTIP_ID = `react-autoql-query-output-chart-tooltip-${this.COMPONENT_KEY}`
     this.ALLOW_NUMERIC_STRING_COLUMNS = true
+    this.MAX_PIVOT_TABLE_COLUMNS = 20
 
     this.queryResponse = props.queryResponse
     this.columnDateRanges = getColumnDateRanges(props.queryResponse)
@@ -1950,8 +1952,6 @@ export class QueryOutput extends React.Component {
 
       const { legendColumnIndex, stringColumnIndex, numberColumnIndex } = this.tableConfig
 
-      const maxColumns = 20
-      const maxRows = 100
       let uniqueRowHeaders = null
       if (isColumnStringType(columns[stringColumnIndex]) && !isColumnDateType(columns[stringColumnIndex])) {
         uniqueRowHeaders = sortDataByAlphabet(tableData, columns, 'asc', 'isTable')
@@ -1985,9 +1985,10 @@ export class QueryOutput extends React.Component {
         uniqueColumnHeaders = tempValues
       }
 
-      if (uniqueRowHeaders?.length > maxRows) {
-        uniqueRowHeaders = uniqueRowHeaders.slice(0, maxRows)
+      if (uniqueRowHeaders?.length > MAX_CHART_ELEMENTS) {
         this.pivotTableRowsLimited = true
+        this.pivotTableTotalRows = uniqueRowHeaders.length
+        uniqueRowHeaders = uniqueRowHeaders.slice(0, MAX_CHART_ELEMENTS)
       }
 
       const uniqueRowHeadersObj = uniqueRowHeaders.reduce((map, title, i) => {
@@ -1995,9 +1996,10 @@ export class QueryOutput extends React.Component {
         return map
       }, {})
 
-      if (uniqueColumnHeaders?.length > maxColumns) {
-        uniqueColumnHeaders = uniqueColumnHeaders.slice(0, maxColumns)
+      if (uniqueColumnHeaders?.length > this.MAX_PIVOT_TABLE_COLUMNS) {
         this.pivotTableColumnsLimited = true
+        this.pivotTableTotalColumns = uniqueColumnHeaders.length
+        uniqueColumnHeaders = uniqueColumnHeaders.slice(0, this.MAX_PIVOT_TABLE_COLUMNS)
       }
 
       const uniqueColumnHeadersObj = uniqueColumnHeaders.reduce((map, title, i) => {
@@ -2262,7 +2264,11 @@ export class QueryOutput extends React.Component {
           scope={this.props.scope}
           tooltipID={this.props.tooltipID}
           response={this.queryResponse}
-          pivotDataLimited={this.pivotTableRowsLimited}
+          pivotTableRowsLimited={this.pivotTableRowsLimited}
+          pivotTableColumnsLimited={this.pivotTableColumnsLimited}
+          totalRows={this.pivotTableTotalRows}
+          totalColumns={this.pivotTableTotalColumns}
+          maxColumns={this.MAX_PIVOT_TABLE_COLUMNS}
           pivot
         />
       </ErrorBoundary>
@@ -2289,6 +2295,9 @@ export class QueryOutput extends React.Component {
     }
 
     const data = usePivotData ? this.state.visiblePivotRows || this.pivotTableData : this.tableData
+
+    const isPivotDataLimited =
+      this.usePivotDataForChart() && (this.pivotTableRowsLimited || this.pivotTableColumnsLimited)
 
     return (
       <ErrorBoundary>
@@ -2323,7 +2332,7 @@ export class QueryOutput extends React.Component {
           onNewData={this.onNewData}
           isDrilldown={this.isDrilldown()}
           updateColumns={this.updateColumns}
-          isDataLimited={isDataLimited(this.queryResponse)}
+          isDataLimited={isDataLimited(this.queryResponse) || isPivotDataLimited}
           source={this.props.source}
           scope={this.props.scope}
           queryFn={this.queryFn}
