@@ -255,35 +255,50 @@ export default class ChataTable extends React.Component {
   }
 
   calculateSummaryStats = (props) => {
+    if (props.pivot) {
+      return {}
+    }
+
     const stats = {}
 
-    const rows = this.getAllRows(props)
-    props.columns?.forEach((column) => {
-      if (column.type === ColumnTypes.QUANTITY || column.type === ColumnTypes.DOLLAR_AMT) {
-        const columnData = rows.map((r) => r[column.index])
-        stats[column.index] = {
-          avg: formatElement({ element: mean(columnData), column, config: props.dataFormatting }),
-          sum: formatElement({ element: sum(columnData), column, config: props.dataFormatting }),
-        }
-      } else if (column.type === ColumnTypes.DATE) {
-        const columnData = rows.map((r) => (r[column.index] ? dayjs(r[column.index]) : undefined))
-        const min = dayjs.min(columnData)
-        const max = dayjs.max(columnData)
+    try {
+      const rows = this.getAllRows(props)
 
-        stats[column.index] = {
-          min: formatElement({
-            element: dayjs.min(columnData)?.toISOString(),
-            column,
-            config: props.dataFormatting,
-          }),
-          max: formatElement({
-            element: dayjs.max(columnData)?.toISOString(),
-            column,
-            config: props.dataFormatting,
-          }),
-        }
+      if (!(rows?.length > 1)) {
+        return {}
       }
-    })
+
+      props.columns?.forEach((column) => {
+        if (column.type === ColumnTypes.QUANTITY || column.type === ColumnTypes.DOLLAR_AMT) {
+          const columnData = rows.map((r) => r[column.index])
+          stats[column.index] = {
+            avg: formatElement({ element: mean(columnData), column, config: props.dataFormatting }),
+            sum: formatElement({ element: sum(columnData), column, config: props.dataFormatting }),
+          }
+        } else if (column.type === ColumnTypes.DATE) {
+          const columnData = rows
+            .map((r) => (r[column.index] ? dayjs(r[column.index]) : undefined))
+            ?.filter((r) => r?.isValid?.())
+          const min = dayjs.min(columnData)
+          const max = dayjs.max(columnData)
+
+          stats[column.index] = {
+            min: formatElement({
+              element: min?.toISOString(),
+              column,
+              config: props.dataFormatting,
+            }),
+            max: formatElement({
+              element: max?.toISOString(),
+              column,
+              config: props.dataFormatting,
+            }),
+          }
+        }
+      })
+    } catch (error) {
+      console.error(error)
+    }
 
     return stats
   }
@@ -483,7 +498,7 @@ export default class ChataTable extends React.Component {
   ajaxRequestFunc = async (props, params) => {
     const initialData = {
       rows: this.getRows(this.props, 1),
-      page: 1, // this.tableParams.page,
+      page: 1,
       isInitialData: true,
     }
 
@@ -598,14 +613,6 @@ export default class ChataTable extends React.Component {
   // clearHeaderFilters = () => {
   //   this.ref?.tabulator?.clearHeaderFilter()
   // }
-
-  onNewData = (response) => {
-    // The rows were changed from a chart, update data manually. ChataTable will handle
-    // toggling infinite scroll on or off
-    if (response?.data?.data?.rows?.length) {
-      this.updateData(response.data.data.rows)
-    }
-  }
 
   getNewPage = (props, tableParams) => {
     try {
@@ -758,13 +765,15 @@ export default class ChataTable extends React.Component {
         `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"] .tabulator-col-content input`,
       )
 
-      const headerElement = document.querySelector(
-        `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"]`,
-      )
+      if (!this.props.pivot) {
+        const headerElement = document.querySelector(
+          `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"]`,
+        )
 
-      if (headerElement) {
-        headerElement.setAttribute('data-tooltip-id', `selectable-table-column-header-tooltip-${this.TABLE_ID}`)
-        headerElement.setAttribute('data-tooltip-content', JSON.stringify(col))
+        if (headerElement) {
+          headerElement.setAttribute('data-tooltip-id', `selectable-table-column-header-tooltip-${this.TABLE_ID}`)
+          headerElement.setAttribute('data-tooltip-content', JSON.stringify(col))
+        }
       }
 
       if (inputElement) {
@@ -1258,14 +1267,16 @@ export default class ChataTable extends React.Component {
           {this.renderDateRangePickerPopover()}
           {this.renderTableRowCount()}
         </div>
-        <Tooltip
-          tooltipId={`selectable-table-column-header-tooltip-${this.TABLE_ID}`}
-          className='selectable-table-column-header-tooltip'
-          render={this.renderHeaderTooltipContent}
-          opacity={1}
-          delayHide={0}
-          border
-        />
+        {!this.props.pivot && (
+          <Tooltip
+            tooltipId={`selectable-table-column-header-tooltip-${this.TABLE_ID}`}
+            className='selectable-table-column-header-tooltip'
+            render={this.renderHeaderTooltipContent}
+            opacity={1}
+            delayHide={0}
+            border
+          />
+        )}
       </ErrorBoundary>
     )
   }

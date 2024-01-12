@@ -217,6 +217,24 @@
   }
 }
 
+.react-autoql-response-content-container .react-tooltip.selectable-table-column-header-tooltip {
+  padding: 13px 20px !important;
+
+  .selectable-table-tooltip-subtitle {
+    font-style: italic;
+    margin-bottom: 5px;
+  }
+
+  .selectable-table-tooltip-section {
+    font-size: 11px;
+  }
+
+  .selectable-table-tooltip-title {
+    font-weight: 600;
+    font-size: 12px;
+  }
+}
+
 .react-tooltip.selectable-table-column-header-tooltip {
   --border-color: var(--react-autoql-border-color);
   --bg-color: var(--react-autoql-background-color-secondary);
@@ -235,11 +253,6 @@
     border-right: 2px solid var(--react-autoql-border-color);
     border-top: 2px solid var(--react-autoql-border-color);
     background: var(--bg-color);
-  }
-
-  .selectable-table-tooltip-subtitle {
-    font-style: italic;
-    margin-bottom: 5px;
   }
 
   .table-tooltip-summary-stats-section {
