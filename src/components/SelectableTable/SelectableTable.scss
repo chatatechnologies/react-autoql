@@ -237,16 +237,26 @@
     background: var(--bg-color);
   }
 
+  .selectable-table-tooltip-subtitle {
+    font-style: italic;
+    margin-bottom: 5px;
+  }
+
+  .table-tooltip-summary-stats-section {
+    margin-left: 5px;
+  }
+
   .selectable-table-tooltip-section {
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
     font-size: 0.9em;
+    white-space: pre-wrap;
+    font-size: 12px;
   }
 
   .selectable-table-tooltip-title {
     font-weight: 600;
-    margin-bottom: 3px;
   }
 
   .react-autoql-icon {
