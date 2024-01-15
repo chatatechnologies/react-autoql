@@ -21,6 +21,7 @@ import {
   COLUMN_TYPES,
   ColumnTypes,
   MAX_DATA_PAGE_SIZE,
+  isNumber,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -276,23 +277,31 @@ export default class ChataTable extends React.Component {
             sum: formatElement({ element: sum(columnData), column, config: props.dataFormatting }),
           }
         } else if (column.type === ColumnTypes.DATE) {
-          const columnData = rows
-            .map((r) => (r[column.index] ? dayjs(r[column.index]) : undefined))
-            ?.filter((r) => r?.isValid?.())
+          const dates = rows.map((r) => r[column.index]).filter((date) => !!date)
+
+          let columnData
+          if (isNumber(dates[0])) {
+            columnData = dates.map((date) => dayjs.unix(date))?.filter((r) => r?.isValid?.())
+          } else {
+            columnData = dates.map((date) => dayjs(date))?.filter((r) => r?.isValid?.())
+          }
+
           const min = dayjs.min(columnData)
           const max = dayjs.max(columnData)
 
-          stats[column.index] = {
-            min: formatElement({
-              element: min?.toISOString(),
-              column,
-              config: props.dataFormatting,
-            }),
-            max: formatElement({
-              element: max?.toISOString(),
-              column,
-              config: props.dataFormatting,
-            }),
+          if (min && max) {
+            stats[column.index] = {
+              min: formatElement({
+                element: min?.toISOString(),
+                column,
+                config: props.dataFormatting,
+              }),
+              max: formatElement({
+                element: max?.toISOString(),
+                column,
+                config: props.dataFormatting,
+              }),
+            }
           }
         }
       })
@@ -1128,6 +1137,8 @@ export default class ChataTable extends React.Component {
       const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
       const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(MAX_DATA_PAGE_SIZE)
 
+      const stats = this.summaryStats[column.index]
+
       return (
         <div>
           <div className='selectable-table-tooltip-title'>
@@ -1142,7 +1153,7 @@ export default class ChataTable extends React.Component {
           {(column.type === ColumnTypes.QUANTITY ||
             column.type === ColumnTypes.DOLLAR_AMT ||
             column.type === ColumnTypes.DATE) &&
-            this.summaryStats[column.index] &&
+            stats &&
             (isDataLimited(this.props.response) ? (
               <div className='selectable-table-tooltip-section'>
                 <span>
@@ -1154,25 +1165,25 @@ export default class ChataTable extends React.Component {
                 {(column.type === ColumnTypes.QUANTITY || column.type === ColumnTypes.DOLLAR_AMT) && (
                   <div className='selectable-table-tooltip-section'>
                     <strong>Total: </strong>
-                    <span>{this.summaryStats[column.index]?.sum}</span>
+                    <span>{stats?.sum}</span>
                   </div>
                 )}
                 {(column.type === ColumnTypes.QUANTITY || column.type === ColumnTypes.DOLLAR_AMT) && (
                   <div className='selectable-table-tooltip-section'>
                     <strong>Average: </strong>
-                    <span>{this.summaryStats[column.index]?.avg}</span>
+                    <span>{stats?.avg}</span>
                   </div>
                 )}
-                {column.type === ColumnTypes.DATE && (
+                {column.type === ColumnTypes.DATE && stats?.min !== null && (
                   <div className='selectable-table-tooltip-section'>
                     <strong>Earliest: </strong>
-                    <span>{this.summaryStats[column.index]?.min}</span>
+                    <span>{stats.min}</span>
                   </div>
                 )}
-                {column.type === ColumnTypes.DATE && (
+                {column.type === ColumnTypes.DATE && stats?.max !== null && (
                   <div className='selectable-table-tooltip-section'>
                     <strong>Latest: </strong>
-                    <span>{this.summaryStats[column.index]?.max}</span>
+                    <span>{stats.max}</span>
                   </div>
                 )}
               </>
