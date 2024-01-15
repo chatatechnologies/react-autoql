@@ -217,6 +217,24 @@
   }
 }
 
+.react-autoql-response-content-container .react-tooltip.selectable-table-column-header-tooltip {
+  padding: 13px 20px !important;
+
+  .selectable-table-tooltip-subtitle {
+    font-style: italic;
+    margin-bottom: 5px;
+  }
+
+  .selectable-table-tooltip-section {
+    font-size: 11px;
+  }
+
+  .selectable-table-tooltip-title {
+    font-weight: 600;
+    font-size: 12px;
+  }
+}
+
 .react-tooltip.selectable-table-column-header-tooltip {
   --border-color: var(--react-autoql-border-color);
   --bg-color: var(--react-autoql-background-color-secondary);
@@ -237,16 +255,21 @@
     background: var(--bg-color);
   }
 
+  .table-tooltip-summary-stats-section {
+    margin-left: 5px;
+  }
+
   .selectable-table-tooltip-section {
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
     font-size: 0.9em;
+    white-space: pre-wrap;
+    font-size: 12px;
   }
 
   .selectable-table-tooltip-title {
     font-weight: 600;
-    margin-bottom: 3px;
   }
 
   .react-autoql-icon {

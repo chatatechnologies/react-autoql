@@ -9,8 +9,10 @@ import quarterOfYear from 'dayjs/plugin/quarterOfYear'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore'
 import isToday from 'dayjs/plugin/isToday'
+import minMax from 'dayjs/plugin/minMax'
 
 dayjs.extend(utc)
+dayjs.extend(minMax)
 dayjs.extend(isToday)
 dayjs.extend(timezone)
 dayjs.extend(isBetween)

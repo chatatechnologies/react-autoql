@@ -2,6 +2,7 @@ import React from 'react'
 import axios from 'axios'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
+import { mean, sum } from 'd3-array'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
@@ -17,11 +18,16 @@ import {
   formatElement,
   MAX_CHART_ELEMENTS,
   getDataFormatting,
+  COLUMN_TYPES,
+  ColumnTypes,
+  MAX_DATA_PAGE_SIZE,
 } from 'autoql-fe-utils'
 
+import { Icon } from '../Icon'
 import { Button } from '../Button'
 import { Spinner } from '../Spinner'
 import { Popover } from '../Popover'
+import { Tooltip } from '../Tooltip'
 import TableWrapper from './TableWrapper'
 import { DateRangePicker } from '../DateRangePicker'
 import { DataLimitWarning } from '../DataLimitWarning'
@@ -82,6 +88,8 @@ export default class ChataTable extends React.Component {
       this.tableOptions.ajaxRequestFunc = (url, config, params) => this.ajaxRequestFunc(props, params)
       this.tableOptions.ajaxResponse = (url, params, response) => this.ajaxResponseFunc(props, response)
     }
+
+    this.summaryStats = {}
 
     this.state = {
       isFiltering: false,
@@ -145,6 +153,8 @@ export default class ChataTable extends React.Component {
       this.initialTableHeight = this.tabulatorContainer?.clientHeight
       this.lockedTableHeight = this.initialTableHeight
     }
+
+    this.summaryStats = this.calculateSummaryStats(this.props)
 
     this.setState({
       firstRender: false,
@@ -242,6 +252,55 @@ export default class ChataTable extends React.Component {
     } catch (error) {
       console.error(error)
     }
+  }
+
+  calculateSummaryStats = (props) => {
+    if (props.pivot) {
+      return {}
+    }
+
+    const stats = {}
+
+    try {
+      const rows = this.getAllRows(props)
+
+      if (!(rows?.length > 1)) {
+        return {}
+      }
+
+      props.columns?.forEach((column) => {
+        if (column.type === ColumnTypes.QUANTITY || column.type === ColumnTypes.DOLLAR_AMT) {
+          const columnData = rows.map((r) => r[column.index])
+          stats[column.index] = {
+            avg: formatElement({ element: mean(columnData), column, config: props.dataFormatting }),
+            sum: formatElement({ element: sum(columnData), column, config: props.dataFormatting }),
+          }
+        } else if (column.type === ColumnTypes.DATE) {
+          const columnData = rows
+            .map((r) => (r[column.index] ? dayjs(r[column.index]) : undefined))
+            ?.filter((r) => r?.isValid?.())
+          const min = dayjs.min(columnData)
+          const max = dayjs.max(columnData)
+
+          stats[column.index] = {
+            min: formatElement({
+              element: min?.toISOString(),
+              column,
+              config: props.dataFormatting,
+            }),
+            max: formatElement({
+              element: max?.toISOString(),
+              column,
+              config: props.dataFormatting,
+            }),
+          }
+        }
+      })
+    } catch (error) {
+      console.error(error)
+    }
+
+    return stats
   }
 
   getTotalPages = (response) => {
@@ -439,7 +498,7 @@ export default class ChataTable extends React.Component {
   ajaxRequestFunc = async (props, params) => {
     const initialData = {
       rows: this.getRows(this.props, 1),
-      page: 1, // this.tableParams.page,
+      page: 1,
       isInitialData: true,
     }
 
@@ -507,6 +566,14 @@ export default class ChataTable extends React.Component {
     return response
   }
 
+  getAllRows = (props) => {
+    if (props.pivot) {
+      return props.data
+    }
+
+    return props.response?.data?.data?.rows
+  }
+
   getRows = (props, pageNumber) => {
     if (props.pivot) {
       return props.data
@@ -546,14 +613,6 @@ export default class ChataTable extends React.Component {
   // clearHeaderFilters = () => {
   //   this.ref?.tabulator?.clearHeaderFilter()
   // }
-
-  onNewData = (response) => {
-    // The rows were changed from a chart, update data manually. ChataTable will handle
-    // toggling infinite scroll on or off
-    if (response?.data?.data?.rows?.length) {
-      this.updateData(response.data.data.rows)
-    }
-  }
 
   getNewPage = (props, tableParams) => {
     try {
@@ -705,6 +764,17 @@ export default class ChataTable extends React.Component {
       const inputElement = document.querySelector(
         `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"] .tabulator-col-content input`,
       )
+
+      if (!this.props.pivot) {
+        const headerElement = document.querySelector(
+          `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"]`,
+        )
+
+        if (headerElement) {
+          headerElement.setAttribute('data-tooltip-id', `selectable-table-column-header-tooltip-${this.TABLE_ID}`)
+          headerElement.setAttribute('data-tooltip-content', JSON.stringify(col))
+        }
+      }
 
       if (inputElement) {
         inputElement.removeEventListener('keydown', this.inputKeydownListener)
@@ -1027,11 +1097,91 @@ export default class ChataTable extends React.Component {
       return null
     }
 
+    const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
+    const currentRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(currentRowCount)
+    const totalRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(totalRowCount)
+
     return (
       <div className='table-row-count'>
-        <span>{`Scrolled ${currentRowCount} / ${totalRowCount} rows`}</span>
+        <span>{`Scrolled ${currentRowsFormatted} / ${totalRowsFormatted} rows`}</span>
       </div>
     )
+  }
+
+  renderHeaderTooltipContent = ({ content }) => {
+    try {
+      let column
+      try {
+        column = JSON.parse(content)
+      } catch (error) {
+        return null
+      }
+
+      if (!column) {
+        return null
+      }
+
+      const name = column.display_name
+      const type = COLUMN_TYPES[column.type]?.description
+      const icon = COLUMN_TYPES[column.type]?.icon
+
+      const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
+      const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(MAX_DATA_PAGE_SIZE)
+
+      return (
+        <div>
+          <div className='selectable-table-tooltip-title'>
+            <span>{name}</span>
+          </div>
+          {!!type && (
+            <div className='selectable-table-tooltip-section selectable-table-tooltip-subtitle'>
+              {!!icon && <Icon type={icon} />}
+              <span>{type}</span>
+            </div>
+          )}
+          {(column.type === ColumnTypes.QUANTITY ||
+            column.type === ColumnTypes.DOLLAR_AMT ||
+            column.type === ColumnTypes.DATE) &&
+            this.summaryStats[column.index] &&
+            (isDataLimited(this.props.response) ? (
+              <div className='selectable-table-tooltip-section'>
+                <span>
+                  <Icon type='warning' /> Summary stats unavailable - dataset exceeds limit of {rowLimitFormatted} rows.
+                </span>
+              </div>
+            ) : (
+              <>
+                {(column.type === ColumnTypes.QUANTITY || column.type === ColumnTypes.DOLLAR_AMT) && (
+                  <div className='selectable-table-tooltip-section'>
+                    <strong>Total: </strong>
+                    <span>{this.summaryStats[column.index]?.sum}</span>
+                  </div>
+                )}
+                {(column.type === ColumnTypes.QUANTITY || column.type === ColumnTypes.DOLLAR_AMT) && (
+                  <div className='selectable-table-tooltip-section'>
+                    <strong>Average: </strong>
+                    <span>{this.summaryStats[column.index]?.avg}</span>
+                  </div>
+                )}
+                {column.type === ColumnTypes.DATE && (
+                  <div className='selectable-table-tooltip-section'>
+                    <strong>Earliest: </strong>
+                    <span>{this.summaryStats[column.index]?.min}</span>
+                  </div>
+                )}
+                {column.type === ColumnTypes.DATE && (
+                  <div className='selectable-table-tooltip-section'>
+                    <strong>Latest: </strong>
+                    <span>{this.summaryStats[column.index]?.max}</span>
+                  </div>
+                )}
+              </>
+            ))}
+        </div>
+      )
+    } catch (error) {
+      return null
+    }
   }
 
   getCurrentRowCount = () => {
@@ -1117,6 +1267,16 @@ export default class ChataTable extends React.Component {
           {this.renderDateRangePickerPopover()}
           {this.renderTableRowCount()}
         </div>
+        {!this.props.pivot && (
+          <Tooltip
+            tooltipId={`selectable-table-column-header-tooltip-${this.TABLE_ID}`}
+            className='selectable-table-column-header-tooltip'
+            render={this.renderHeaderTooltipContent}
+            opacity={1}
+            delayHide={0}
+            border
+          />
+        )}
       </ErrorBoundary>
     )
   }
