@@ -22,6 +22,7 @@ import {
   ColumnTypes,
   MAX_DATA_PAGE_SIZE,
   isNumber,
+  getDayJSObj,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -278,13 +279,7 @@ export default class ChataTable extends React.Component {
           }
         } else if (column.type === ColumnTypes.DATE) {
           const dates = rows.map((r) => r[column.index]).filter((date) => !!date)
-
-          let columnData
-          if (isNumber(dates[0])) {
-            columnData = dates.map((date) => dayjs.unix(date))?.filter((r) => r?.isValid?.())
-          } else {
-            columnData = dates.map((date) => dayjs(date))?.filter((r) => r?.isValid?.())
-          }
+          const columnData = dates.map((date) => getDayJSObj({ value: date, column }))?.filter((r) => r?.isValid?.())
 
           const min = dayjs.min(columnData)
           const max = dayjs.max(columnData)
