@@ -28,5 +28,19 @@
       justify-content: center;
       align-items: center;
     }
+
+    th.selectable-table-column-disabled {
+      .react-autoql-checkbox-container {
+        display: none;
+      }
+
+      &::after {
+        background-color: unset !important;
+      }
+    }
+
+    td.selectable-table-cell-disabled {
+      opacity: 1 !important;
+    }
   }
 }

@@ -80,8 +80,6 @@ export default class SampleQueryList extends React.Component {
     return fetchDataExplorerSampleQueries({
       ...this.props.authentication,
       text: this.props.searchText,
-      selectedVL: this.props.valueLabel,
-      userVLSelection: this.props.userSelection,
       context: this.props.context,
       columns: this.props.columns,
     })
@@ -144,7 +142,7 @@ export default class SampleQueryList extends React.Component {
         <div className='data-explorer-section-error-container'>
           <p>
             {this.state.error?.message ||
-              'Uh oh.. an error occured while trying to retrieve your sample queries. Please try again.'}
+              'Uh oh.. an error occurred while trying to retrieve your sample queries. Please try again.'}
           </p>
           {this.state.error?.reference_id ? <p>Error ID: {this.state.error.reference_id}</p> : null}
         </div>
@@ -159,8 +157,8 @@ export default class SampleQueryList extends React.Component {
       return (
         <div className='data-explorer-section-error-container'>
           <p>
-            Sorry, I couldnU+2019t find any queries matching your input. Try entering a different topic or keyword
-            instead.
+            {`Sorry, I couldn't find any queries matching your input. Try entering a different topic or keyword
+            instead.`}
           </p>
         </div>
       )

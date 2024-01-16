@@ -1,6 +1,6 @@
 {
   "name": "react-autoql",
-  "version": "8.1.37",
+  "version": "8.1.65",
   "description": "React Widget Library",
   "main": "dist/autoql.cjs.js",
   "module": "dist/autoql.esm.js",
@@ -62,7 +62,7 @@
   },
   "dependencies": {
     "@react-icons/all-files": "^4.1.0",
-    "autoql-fe-utils": "1.0.53",
+    "autoql-fe-utils": "1.0.68",
     "axios": "^1.4.0",
     "d3-array": "^2.3.3",
     "d3-axis": "^1.0.12",
@@ -109,6 +109,7 @@
   "devDependencies": {
     "@babel/cli": "^7.16.0",
     "@babel/core": "^7.16.0",
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@babel/plugin-syntax-object-rest-spread": "^7.8.3",
     "@babel/plugin-transform-class-properties": "^7.22.5",
     "@babel/plugin-transform-modules-commonjs": "^7.18.2",

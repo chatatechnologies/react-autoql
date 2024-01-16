@@ -355,3 +355,71 @@ export const scatterplotIcon = (
     <circle className='chart-icon-svg-0' cx='13.559' cy='6.895' r='1.2' />
   </svg>
 )
+
+export const minimum = (
+  <svg
+    stroke='currentColor'
+    fill='none'
+    stroke-width='2'
+    viewBox='0 0 24 24'
+    strokeLinecap='round'
+    strokeLinejoin='round'
+    height='200px'
+    width='200px'
+    xmlns='http://www.w3.org/2000/svg'
+  >
+    <path stroke='none' d='M0 0h24v24H0z' fill='none'></path>
+    <path d='M12 17a2 2 0 1 1 0 4a2 2 0 0 1 0 -4z'></path>
+    <path d='M3 4c0 8.75 4 14 7 14.5'></path>
+    <path d='M14 18.5c3 -.5 7 -5.75 7 -14.5'></path>
+  </svg>
+)
+
+export const maximum = (
+  <svg
+    stroke='currentColor'
+    fill='none'
+    stroke-width='2'
+    viewBox='0 0 24 24'
+    strokeLinecap='round'
+    strokeLinejoin='round'
+    height='200px'
+    width='200px'
+    xmlns='http://www.w3.org/2000/svg'
+  >
+    <path stroke='none' d='M0 0h24v24H0z' fill='none'></path>
+    <path d='M12 5m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0'></path>
+    <path d='M3 20c0 -8.75 4 -14 7 -14.5m4 0c3 .5 7 5.75 7 14.5'></path>
+  </svg>
+)
+
+export const sum = (
+  <svg
+    stroke='currentColor'
+    fill='none'
+    stroke-width='2'
+    viewBox='0 0 24 24'
+    strokeLinecap='round'
+    strokeLinejoin='round'
+    height='200px'
+    width='200px'
+    xmlns='http://www.w3.org/2000/svg'
+  >
+    <path stroke='none' d='M0 0h24v24H0z' fill='none'></path>
+    <path d='M18 16v2a1 1 0 0 1 -1 1h-11l6 -7l-6 -7h11a1 1 0 0 1 1 1v2'></path>
+  </svg>
+)
+
+export const median = (
+  <svg
+    stroke='currentColor'
+    fill='currentColor'
+    stroke-width='0'
+    viewBox='0 0 16 16'
+    height='200px'
+    width='200px'
+    xmlns='http://www.w3.org/2000/svg'
+  >
+    <path d='M6 13a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v10zM1 8a.5.5 0 0 0 .5.5H6v-1H1.5A.5.5 0 0 0 1 8zm14 0a.5.5 0 0 1-.5.5H10v-1h4.5a.5.5 0 0 1 .5.5z'></path>
+  </svg>
+)

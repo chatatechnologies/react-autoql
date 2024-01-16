@@ -13,6 +13,8 @@ import {
   roundUpToNearestMultiple,
   roundToNearestLog10,
   convertToNumber,
+  getLinearScale,
+  getBandScale,
 } from 'autoql-fe-utils'
 
 import { Axes } from '../Axes'
@@ -21,6 +23,8 @@ import { HistogramColumns } from './HistogramColumns'
 import { HistogramDistributions } from './HistogramDistributions'
 import { v4 as uuid } from 'uuid'
 import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers.js'
+import { Columns } from '../Columns'
+import { ChataColumnChart } from '../ChataColumnChart'
 
 export default class ChataHistogram extends React.Component {
   constructor(props) {
@@ -165,42 +169,45 @@ export default class ChataHistogram extends React.Component {
     return { buckets: binFn(this.props.data), bins }
   }
 
-  changeNumberColumnIndices = (indices, indices2, newColumns) => {
-    const minValue = min(this.props.data, (d) => convertToNumber(d[indices[0]]))
-    const maxValue = max(this.props.data, (d) => convertToNumber(d[indices[0]]))
-    this.setInitialBucketSize(minValue, maxValue)
-    this.props.changeNumberColumnIndices(indices, indices2, newColumns, bucketSize)
-  }
-
   setChartData = (props, bucketSize) => {
-    const { data, numberColumnIndex } = props
-    if (this.xScale && this.props.numberColumnIndex !== this.xScale.columnIndex) {
-      this.props.onBucketSizeChange(undefined)
-      this.bucketConfig = this.getDefaultBucketConfig(props)
+    if (this.axisIsNumerical()) {
+      const { data, numberColumnIndex } = props
+      if (this.xScale && this.props.numberColumnIndex !== this.xScale.columnIndex) {
+        this.props.onBucketSizeChange(undefined)
+        this.bucketConfig = this.getDefaultBucketConfig(props)
+      }
+
+      const uniqueNumberValues = props.data.map((d) => d[props.numberColumnIndex]).filter(onlyUnique).length
+      if (uniqueNumberValues < this.bucketConfig.maxBucketSize) {
+        this.bucketConfig.maxNumBuckets = uniqueNumberValues
+      }
+
+      const { buckets, bins } = getBinData({
+        newBucketSize: bucketSize,
+        bucketConfig: this.bucketConfig,
+        data,
+        numberColumnIndex,
+      })
+
+      this.buckets = buckets
+      this.bins = bins
+
+      this.xScale = getBinLinearScale({
+        ...props,
+        columnIndex: props.numberColumnIndex,
+        axis: 'x',
+        buckets: this.buckets,
+        bins,
+        isScaled: true,
+      })
+    } else {
+      this.xScale = getBandScale({
+        ...props,
+        columnIndex: props.stringColumnIndex,
+        axis: 'x',
+        isScaled: true,
+      })
     }
-
-    const uniqueNumberValues = props.data.map((d) => d[props.numberColumnIndex]).filter(onlyUnique).length
-    if (uniqueNumberValues < this.bucketConfig.maxBucketSize) {
-      this.bucketConfig.maxNumBuckets = uniqueNumberValues
-    }
-
-    const { buckets, bins } = getBinData({
-      newBucketSize: bucketSize,
-      bucketConfig: this.bucketConfig,
-      data,
-      numberColumnIndex,
-    })
-    this.buckets = buckets
-    this.bins = bins
-
-    this.xScale = getBinLinearScale({
-      ...props,
-      columnIndex: props.numberColumnIndex,
-      axis: 'x',
-      buckets: this.buckets,
-      bins,
-      isScaled: true,
-    })
 
     this.yScale = getHistogramScale({
       ...props,
@@ -261,12 +268,19 @@ export default class ChataHistogram extends React.Component {
     )
   }
 
+  axisIsNumerical = () => {
+    const column = this.props.columns[this.props.numberColumnIndex]
+    return column.isNumberType
+  }
+
   render = () => {
     this.setChartData(this.props, this.state.bucketSize)
 
     return (
       <>
-        {this.props.portalRef && createPortal(this.renderHistogramSlider(), this.props.portalRef)}
+        {this.axisIsNumerical() &&
+          this.props.portalRef &&
+          createPortal(this.renderHistogramSlider(), this.props.portalRef)}
         <g
           ref={(r) => (this.chartRef = r)}
           className='react-autoql-axes-chart'
@@ -278,17 +292,20 @@ export default class ChataHistogram extends React.Component {
             chartRef={this.chartRef}
             xScale={this.xScale}
             yScale={this.yScale}
-            changeNumberColumnIndices={this.changeNumberColumnIndices}
             linearAxis='y'
             yGridLines
           >
-            <HistogramColumns
-              {...this.props}
-              xScale={this.xScale}
-              yScale={this.yScale}
-              buckets={this.buckets}
-              bins={this.bins}
-            />
+            {this.axisIsNumerical() ? (
+              <HistogramColumns
+                {...this.props}
+                xScale={this.xScale}
+                yScale={this.yScale}
+                buckets={this.buckets}
+                bins={this.bins}
+              />
+            ) : (
+              <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />
+            )}
             <HistogramDistributions {...this.props} xScale={this.xScale} yScale={this.yScale} buckets={this.buckets} />
           </Axes>
         </g>

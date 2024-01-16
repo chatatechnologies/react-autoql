@@ -45,9 +45,6 @@
   }
 
   .data-explorer-section.topic-dropdown-section {
-    flex: 0 0 auto;
-    max-height: 35%;
-
     .react-autoql-select-and-label .react-autoql-select {
       line-height: 32px;
       height: 34px;
@@ -135,10 +132,15 @@
       .react-autoql-input-label {
         display: inline;
         padding-left: 8px;
+        white-space: pre-wrap;
       }
 
       .data-preview-section {
         flex: 1.2;
+
+        &.topic-dropdown-section {
+          flex: 1.6 1;
+        }
       }
 
       .query-suggestions {
@@ -381,6 +383,11 @@
 
   .data-explorer-topic-icon {
     margin-right: 0.1em;
+  }
+
+  .react-autoql-menu {
+    overflow-y: auto;
+    max-height: 200px;
   }
 }
 

@@ -1,5 +1,11 @@
 import React, { Component } from 'react'
-import { getLinearScale, getMinAndMaxValues, getNumberColumnIndices, deepEqual } from 'autoql-fe-utils'
+import {
+  getLinearScale,
+  getMinAndMaxValues,
+  getNumberColumnIndices,
+  deepEqual,
+  MAX_CHART_ELEMENTS,
+} from 'autoql-fe-utils'
 
 import { Axes } from '../Axes'
 import { Points } from '../Points'
@@ -47,7 +53,9 @@ export default class ChataScatterplotChart extends Component {
 
     this.setNumberColumnIndices(props)
 
-    const xMinMax = getMinAndMaxValues(props.data, this.numberColumnIndices, isXScaled)
+    this.data = props.data?.slice(0, MAX_CHART_ELEMENTS)
+
+    const xMinMax = getMinAndMaxValues(this.data, this.numberColumnIndices, isXScaled)
     const xMaxValue = xMinMax.maxValue
     const xMinValue = xMinMax.minValue
 
@@ -62,7 +70,7 @@ export default class ChataScatterplotChart extends Component {
       allowMultipleSeries: false,
     })
 
-    const yMinMax = getMinAndMaxValues(props.data, this.numberColumnIndices2, isYScaled)
+    const yMinMax = getMinAndMaxValues(this.data, this.numberColumnIndices2, isYScaled)
     const yMaxValue = yMinMax.maxValue
     const yMinValue = yMinMax.minValue
 
@@ -97,7 +105,7 @@ export default class ChataScatterplotChart extends Component {
         className='react-autoql-axes-chart react-autoql-scatterplot-chart'
         data-test='react-autoql-scatterplot-chart'
       >
-        <Points {...this.props} xScale={this.xScale} yScale={this.yScale} {...columnIndexProps} />
+        <Points {...this.props} data={this.data} xScale={this.xScale} yScale={this.yScale} {...columnIndexProps} />
         <Axes
           {...this.props}
           ref={(r) => (this.axesRef = r)}

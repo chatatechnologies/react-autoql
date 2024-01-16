@@ -66,7 +66,6 @@ class DataAlertModal extends React.Component {
     enableQueryValidation: PropTypes.bool,
     onClosed: PropTypes.func,
     onOpened: PropTypes.func,
-    editView: PropTypes.bool,
     dataFormatting: dataFormattingType,
   }
 
@@ -85,7 +84,6 @@ class DataAlertModal extends React.Component {
     onClosed: () => {},
     onOpened: () => {},
     enableQueryValidation: true,
-    editView: false,
     dataFormatting: dataFormattingDefault,
   }
 

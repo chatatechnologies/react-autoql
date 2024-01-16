@@ -71,7 +71,7 @@ export default class ChataColumnChart extends Component {
           toggleChartScale={this.toggleChartScale}
           yGridLines
         >
-          <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />
+          {!this.props.hidden && <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />}
         </Axes>
       </g>
     )

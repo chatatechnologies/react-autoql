@@ -6,20 +6,19 @@ import _isEqual from 'lodash.isequal'
 
 import { fetchDataPreview, REQUEST_CANCELLED_ERROR, dataFormattingDefault } from 'autoql-fe-utils'
 
-import { LoadingDots } from '../LoadingDots'
 import { SelectableTable } from '../SelectableTable'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import TablePlaceholder from '../TablePlaceholder/TablePlaceholder'
 
 import { authenticationType, dataFormattingType } from '../../props/types'
 
 import './DataPreview.scss'
-import TablePlaceholder from '../TablePlaceholder/TablePlaceholder'
 
 export default class DataPreview extends React.Component {
   constructor(props) {
     super(props)
 
-    this.DATA_PREVIEW_ROWS = 5
+    this.DATA_PREVIEW_ROWS = 20
     this.ID = uuid()
 
     this.state = {
@@ -88,10 +87,17 @@ export default class DataPreview extends React.Component {
       source: 'data_explorer.data_preview',
       scope: 'data_explorer',
       cancelToken: this.axiosSource.token,
-      numRows: 20,
     })
       .then((response) => {
         if (this._isMounted) {
+          // Add metadata to determine whether or not a user can generate sample queries from the column
+          if (response?.data?.data?.columns?.length) {
+            response.data.data.columns.forEach((column) => {
+              column.isGroupable = this.isColumnGroupable(column)
+              column.isFilterable = this.isColumnFilterable(column)
+            })
+          }
+
           this.setState({ dataPreview: response, loading: false })
           this.props.onDataPreview?.(response)
         }
@@ -106,6 +112,20 @@ export default class DataPreview extends React.Component {
       })
   }
 
+  isColumnGroupable = (column) => {
+    const groupsNotProvided = !this.props.subject?.groups
+    const existsInGroups = !!this.props.subject?.groups?.find((groupby) => groupby.table_column === column.name)
+    const groupbysAllowed = groupsNotProvided || existsInGroups
+    return groupbysAllowed
+  }
+
+  isColumnFilterable = (column) => {
+    const filtersNotProvided = !this.props.subject?.filters
+    const existsInFilters = !!this.props.subject?.filters?.find((filter) => filter.table_column === column.name)
+    const filtersAllowed = filtersNotProvided || existsInFilters
+    return filtersAllowed
+  }
+
   renderDataPreviewGrid = () => {
     if (this.state.error || !this.state.dataPreview?.data?.data?.columns || !this.state.dataPreview?.data?.data?.rows) {
       return (
@@ -115,11 +135,18 @@ export default class DataPreview extends React.Component {
           </p>
           {this.state.error?.reference_id ? <p>Error ID: {this.state.error.reference_id}</p> : null}
           <p>
-            <a onClick={() => this.props.onError}>Try again</a>
+            <a onClick={this.getDataPreview}>Try again</a>
           </p>
         </div>
       )
     }
+
+    const disabledColumns = []
+    this.state.dataPreview?.data?.data?.columns?.forEach((column, i) => {
+      if (!column.isFilterable && !column.isGroupable) {
+        disabledColumns.push(i)
+      }
+    })
 
     return (
       <SelectableTable
@@ -130,6 +157,10 @@ export default class DataPreview extends React.Component {
         queryResponse={this.state.dataPreview}
         showEndOfPreviewMessage={true}
         tooltipID={this.props.tooltipID}
+        // Disable this for now, the logic to disable the columns does not match with the
+        // ability to create sample queries currently. We will need to revisit this logic
+        // with the recommendation service in the future if we want to have this feature
+        // disabledColumns={disabledColumns}
       />
     )
   }
