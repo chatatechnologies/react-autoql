@@ -21,7 +21,6 @@ import {
   COLUMN_TYPES,
   ColumnTypes,
   MAX_DATA_PAGE_SIZE,
-  isNumber,
   getDayJSObj,
 } from 'autoql-fe-utils'
 
@@ -433,6 +432,10 @@ export default class ChataTable extends React.Component {
     }
   }
 
+  onDataLoadError = (error) => {
+    console.error(error)
+  }
+
   setLoading = (loading) => {
     // Don't update state unnecessarily
     if (loading !== this.state.loading && this._isMounted) {
@@ -501,7 +504,7 @@ export default class ChataTable extends React.Component {
 
   ajaxRequestFunc = async (props, params) => {
     const initialData = {
-      rows: this.getRows(this.props, 1),
+      rows: _cloneDeep(this.getRows(this.props, 1)),
       page: 1,
       isInitialData: true,
     }
@@ -1262,6 +1265,7 @@ export default class ChataTable extends React.Component {
                     onDataFiltering={this.onDataFiltering}
                     onDataFiltered={this.onDataFiltered}
                     onDataProcessed={this.onDataProcessed}
+                    onDataLoadError={this.onDataLoadError}
                     pivot={this.props.pivot}
                   />
                   {isEmpty && this.renderEmptyPlaceholderText()}

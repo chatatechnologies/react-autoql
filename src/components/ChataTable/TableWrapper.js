@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { TabulatorFull as Tabulator } from 'tabulator-tables' //import Tabulator library
+import _cloneDeep from 'lodash.clonedeep'
 
 // use Theme(s)
 import 'tabulator-tables/dist/css/tabulator.min.css'
@@ -51,6 +52,7 @@ export default class TableWrapper extends React.Component {
   static defaultProps = {
     tableKey: undefined,
     options: {},
+    data: [],
     onDataLoadError: () => {},
     onTableBuilt: () => {},
     onCellClick: () => {},
@@ -84,7 +86,7 @@ export default class TableWrapper extends React.Component {
     // Instantiate Tabulator when element is mounted
     this.tabulator = new Tabulator(this.tableRef, {
       columns: this.props.columns,
-      data: !this.props.options?.ajaxRequestFunc ? this.props.data : [],
+      data: this.props.options?.ajaxRequestFunc ? [] : _cloneDeep(this.props.data),
       ...this.defaultOptions,
       ...this.props.options,
     })
@@ -108,7 +110,11 @@ export default class TableWrapper extends React.Component {
     this.tabulator.on('tableBuilt', async () => {
       this.isInitialized = true
       if (this.props.options?.ajaxRequestFunc) {
-        await this.tabulator.setData()
+        try {
+          await this.tabulator.replaceData()
+        } catch (error) {
+          console.error(error)
+        }
       }
 
       this.props.onTableBuilt()
