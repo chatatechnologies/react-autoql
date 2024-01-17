@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
+import _cloneDeep from 'lodash.clonedeep'
 import { TabulatorFull as Tabulator } from 'tabulator-tables' //import Tabulator library
 
 // use Theme(s)
