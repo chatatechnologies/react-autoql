@@ -81,8 +81,8 @@ export default class TableWrapper extends React.Component {
   instantiateTabulator = () => {
     // Instantiate Tabulator when element is mounted
     this.tabulator = new Tabulator(this.tableRef, {
-      columns: this.props.columns,
-      data: !this.props.options?.ajaxRequestFunc ? this.props.data : [],
+      columns: _cloneDeep(this.props.columns),
+      data: this.props.options?.ajaxRequestFunc ? [] : _cloneDeep(this.props.data),
       ...this.defaultOptions,
       ...this.props.options,
     })
