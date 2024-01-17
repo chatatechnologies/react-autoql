@@ -148,7 +148,9 @@
     pointer-events: all;
     color: var(--react-autoql-accent-color);
     transition: opacity 0.3s ease, color 0.3s ease, flex-grow 0.3s ease;
-
+    &.react-autoql-toolbar-btn:hover {
+      opacity: 1;
+    }
     .react-autoql-btn {
       flex: 0 0 auto;
       margin: 0 10px;

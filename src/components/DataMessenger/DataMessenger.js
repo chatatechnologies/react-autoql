@@ -9,7 +9,7 @@ import { mergeSources, autoQLConfigDefault, dataFormattingDefault, getAutoQLConf
 // Components
 import { Icon } from '../Icon'
 import { ExploreQueries } from '../ExploreQueries'
-import { DataExplorer } from '../DataExplorerOld'
+import { DataExplorer } from '../DataExplorer'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
 import { FilterLockPopover } from '../FilterLockPopover'
@@ -74,6 +74,12 @@ export class DataMessenger extends React.Component {
       </>,
     ]
 
+    if (props.enableAjaxTableData !== undefined) {
+      console.warn(
+        'enableAjaxtableData is deprecated - the provided prop will be ignored and the default value of "true" will be used instead.',
+      )
+    }
+
     this.state = {
       dataMessengerId: uuid(),
       hasError: false,
@@ -126,7 +132,6 @@ export class DataMessenger extends React.Component {
     autoChartAggregations: PropTypes.bool,
     enableFilterLocking: PropTypes.bool,
     enableQueryQuickStartTopics: PropTypes.bool,
-    enableAjaxTableData: PropTypes.bool,
 
     // Callbacks
     onNotificationExpandCallback: PropTypes.func,
@@ -174,7 +179,6 @@ export class DataMessenger extends React.Component {
     autoChartAggregations: true,
     enableFilterLocking: false,
     enableQueryQuickStartTopics: true,
-    enableAjaxTableData: false,
     enableDPRTab: false,
     mobileActivePage: 'data-messenger',
     setMobileActivePage: () => {},
@@ -381,12 +385,24 @@ export class DataMessenger extends React.Component {
       return isMobile ? 'calc(100% - 80px)' : '100vh'
     }
 
+    const { maxHeight } = this.getMaxWidthAndHeightFromDocument()
+
+    if (this.state.height > maxHeight) {
+      return maxHeight
+    }
+
     return this.state.height
   }
 
   getDrawerWidth = () => {
     if (this.state.placement === 'top' || this.state.placement === 'bottom') {
       return '100vw'
+    }
+
+    const { maxWidth } = this.getMaxWidthAndHeightFromDocument()
+
+    if (this.state.width > maxWidth) {
+      return maxWidth
     }
 
     return this.state.width
@@ -741,7 +757,6 @@ export class DataMessenger extends React.Component {
           queryFilters={this.state.sessionFilters}
           introMessages={this.dataMessengerIntroMessages}
           inputPlaceholder={this.props.inputPlaceholder}
-          enableAjaxTableData={this.props.enableAjaxTableData}
           autoChartAggregations={this.props.autoChartAggregations}
           popoverParentElement={this.messengerDrawerRef}
           dataPageSize={this.props.dataPageSize}
@@ -806,7 +821,7 @@ export class DataMessenger extends React.Component {
           shouldRender={this.shouldRenderPage('data-explorer')}
           tooltipID={this.TOOLTIP_ID}
           scope={this.props.scope}
-          executeQuery={(query) => {
+          executeQuery={(queryRequestParams) => {
             if (isMobile) {
               this.props.setMobileActivePage('data-messenger')
             }
@@ -815,7 +830,7 @@ export class DataMessenger extends React.Component {
 
             this.executeQueryTimeout = setTimeout(() => {
               this.dataMessengerContentRef?.animateInputTextAndSubmit({
-                query,
+                ...queryRequestParams,
                 source: ['data_explorer'],
               })
             }, 500)

@@ -68,7 +68,6 @@ class NotificationFeed extends React.Component {
     onChange: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     showCreateAlertBtn: PropTypes.bool,
-    enableAjaxTableData: PropTypes.bool,
     onModalOpen: PropTypes.func,
     shouldRender: PropTypes.bool,
     onDataAlertChange: PropTypes.func,
@@ -81,7 +80,6 @@ class NotificationFeed extends React.Component {
     showNotificationDetails: true,
     autoChartAggregations: false,
     showCreateAlertBtn: false,
-    enableAjaxTableData: false,
     shouldRender: true,
     tooltipID: this.TOOLTIP_ID,
     onCollapseCallback: () => {},
@@ -570,7 +568,6 @@ class NotificationFeed extends React.Component {
                         onEditClick={(dataAlert) => {
                           this.showEditDataAlertModal(dataAlert)
                         }}
-                        enableAjaxTableData={this.props.enableAjaxTableData}
                         isResizing={this.props.isResizing}
                         updateScrollbars={this.updateScrollbars}
                         tooltipID={this.props.tooltipID}

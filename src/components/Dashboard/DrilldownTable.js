@@ -53,7 +53,6 @@ export default class DrilldownTable extends React.Component {
             queryResponse={this.props.queryResponse}
             renderTooltips={false}
             reportProblemCallback={this.props.reportProblemCallback}
-            enableAjaxTableData={this.props.enableAjaxTableData}
             showQueryInterpretation={this.props.showQueryInterpretation}
             reverseTranslationPlacement='top'
             tooltipID={this.props.tooltipID}

@@ -72,5 +72,6 @@
     margin-bottom: 3px;
     color: var(--react-autoql-text-color-secondary);
     border-bottom: 1px solid var(--react-autoql-border-color);
+    pointer-events: none;
   }
 }

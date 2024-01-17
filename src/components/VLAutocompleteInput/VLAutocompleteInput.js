@@ -27,28 +27,26 @@ export default class VLAutocompleteInput extends React.Component {
     this.TOOLTIP_ID = 'filter-locking-tooltip'
     this.MAX_SUGGESTIONS = 10
 
-    const suggestions = []
-    if (props.value) {
-      suggestions.push({ name: props.value })
-    }
-
     this.state = {
-      suggestions,
+      suggestions: undefined,
       inputValue: '',
       isLoadingAutocomplete: false,
-      initialLoadComplete: false,
     }
   }
 
   static propTypes = {
     authentication: authenticationType,
     popoverPosition: PropTypes.string,
+    column: PropTypes.string,
+    context: PropTypes.string,
     onChange: PropTypes.func,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
     popoverPosition: 'bottom',
+    column: undefined,
+    context: undefined,
     onChange: () => {},
   }
 
@@ -138,24 +136,27 @@ export default class VLAutocompleteInput extends React.Component {
     return undefined
   }
 
-  fetchSuggestions = ({ value }) => {
-    if (!value) {
-      return
+  fetchAllSuggestions = () => {
+    if (!this.allSuggestions) {
+      this.fetchSuggestions({ value: '' })
     }
+  }
 
-    this.setState({ isLoadingAutocomplete: true })
-
+  fetchSuggestions = ({ value }) => {
     // If already fetching autocomplete, cancel it
     if (this.axiosSource) {
       this.axiosSource.cancel(REQUEST_CANCELLED_ERROR)
     }
 
+    this.setState({ isLoadingAutocomplete: true })
+
     this.axiosSource = axios.CancelToken?.source()
 
-    fetchVLAutocomplete({
+    return fetchVLAutocomplete({
       ...getAuthentication(this.props.authentication),
       suggestion: value,
       context: this.props.context,
+      filter: this.props.column,
       cancelToken: this.axiosSource.token,
     })
       .then((response) => {
@@ -186,24 +187,27 @@ export default class VLAutocompleteInput extends React.Component {
           this.autoCompleteArray.push(anObject)
         }
 
+        if (!value) {
+          this.allSuggestions = this.autoCompleteArray
+        }
+
         this.setState({
           suggestions: this.autoCompleteArray,
           isLoadingAutocomplete: false,
-          initialLoadComplete: true,
         })
+
+        return this.autoCompleteArray
       })
       .catch((error) => {
         if (error?.data?.message !== REQUEST_CANCELLED_ERROR) {
           console.error(error)
         }
 
-        this.setState({ isLoadingAutocomplete: false, initialLoadComplete: true })
+        this.setState({ isLoadingAutocomplete: false })
       })
   }
 
   onSuggestionsFetchRequested = ({ value }) => {
-    this.setState({ isLoadingAutocomplete: true })
-
     // Only debounce if a request has already been made
     if (this.axiosSource) {
       clearTimeout(this.autocompleteTimer)
@@ -248,6 +252,7 @@ export default class VLAutocompleteInput extends React.Component {
 
   onInputFocus = () => {
     this.selectAll()
+    this.fetchAllSuggestions()
   }
 
   onInputChange = (e, { newValue, method }) => {
@@ -265,7 +270,12 @@ export default class VLAutocompleteInput extends React.Component {
     }
 
     if (typeof e?.target?.value === 'string') {
-      this.setState({ inputValue: e.target.value })
+      const newState = { inputValue: e.target.value }
+      if (!e?.target?.value && this.allSuggestions?.length) {
+        newState.suggestions = this.allSuggestions
+      }
+
+      this.setState(newState)
     }
   }
 
@@ -320,37 +330,43 @@ export default class VLAutocompleteInput extends React.Component {
   }
 
   getSuggestions = () => {
-    const sections = []
-    const doneLoading = !this.state.isLoadingAutocomplete
-    const hasSuggestions = !!this.state.suggestions?.length && doneLoading
-    const noSuggestions = !this.state.suggestions?.length && doneLoading
+    const showAllSuggestions = !this.state.inputValue && this.allSuggestions?.length
+    const noSuggestions = this.state.suggestions && !this.state.suggestions?.length && !this.state.isLoadingAutocomplete
+    const title = this.state.inputValue ? `Results for "${this.state.inputValue}"` : undefined
 
-    const title = `Results for "${this.state.inputValue}"`
-
-    if (!this.state.initialLoadComplete) {
-      sections.push({
-        title: undefined,
-        suggestions: this.state.suggestions,
-      })
-    } else if (!doneLoading) {
-      sections.push({
-        title,
-        suggestions: [{ name: '' }],
-      })
-    } else if (hasSuggestions) {
-      sections.push({
-        title,
-        suggestions: this.state.suggestions,
-      })
-    } else if (noSuggestions) {
-      sections.push({
-        title,
-        suggestions: [{ name: '' }],
-        emptyState: true,
-      })
+    // Suggestions have not been fetched yet
+    if (!this.state.suggestions) {
+      return []
     }
 
-    return sections
+    // If text is deleted, but full list has previously been fetched, show full list
+    if (showAllSuggestions) {
+      return [
+        {
+          title: undefined,
+          suggestions: this.allSuggestions,
+        },
+      ]
+    }
+
+    // Suggestions have been fetched, but there were no results
+    if (noSuggestions) {
+      return [
+        {
+          title,
+          suggestions: [{ name: '' }],
+          emptyState: true,
+        },
+      ]
+    }
+
+    // Default to current suggestion state
+    return [
+      {
+        title,
+        suggestions: this.state.suggestions,
+      },
+    ]
   }
 
   renderSectionTitle = (section) => {

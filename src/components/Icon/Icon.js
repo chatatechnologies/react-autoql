@@ -95,6 +95,10 @@ import {
   singleViewIcon,
   gradCapIcon,
   columnLineIcon,
+  minimum,
+  maximum,
+  sum,
+  median,
 } from '../../svgIcons.js'
 
 import './Icon.scss'
@@ -105,6 +109,7 @@ export default class Icon extends React.Component {
     size: PropTypes.number, // used for the image icons ie. react-autoql-bubbles
     showBadge: PropTypes.bool,
     color: PropTypes.string,
+    success: PropTypes.bool,
     warning: PropTypes.bool,
     danger: PropTypes.bool,
     spinning: PropTypes.bool,
@@ -115,6 +120,7 @@ export default class Icon extends React.Component {
     size: undefined,
     showBadge: false,
     color: undefined,
+    success: false,
     warning: false,
     danger: false,
     spinning: false,
@@ -122,7 +128,8 @@ export default class Icon extends React.Component {
   }
 
   render = () => {
-    const { type, size, showBadge, warning, danger, spinning, disabled, ...nativeProps } = this.props
+    const { type, size, showBadge, success, warning, danger, spinning, disabled, tooltip, tooltipID, ...nativeProps } =
+      this.props
 
     let icon = null
 
@@ -217,6 +224,14 @@ export default class Icon extends React.Component {
       }
       case 'minimize': {
         icon = <FiMinimize />
+        break
+      }
+      case 'minimum': {
+        icon = minimum
+        break
+      }
+      case 'maximum': {
+        icon = maximum
         break
       }
       case 'money': {
@@ -335,8 +350,16 @@ export default class Icon extends React.Component {
         icon = stackedLineIcon
         break
       }
+      case 'sum': {
+        icon = sum
+        break
+      }
       case 'menu': {
         icon = <AiOutlineMenu />
+        break
+      }
+      case 'median': {
+        icon = median
         break
       }
       case 'microphone': {
@@ -477,6 +500,7 @@ export default class Icon extends React.Component {
             ${this.props.className || ''}
             react-autoql-icon-${this.props.type}
             ${this.props.warning ? 'react-autoql-icon-warning' : ''}
+            ${this.props.success ? 'react-autoql-icon-success' : ''}
             ${this.props.danger ? 'react-autoql-icon-danger' : ''}
             ${this.props.spinning ? 'react-autoql-icon-spinning' : ''}
             ${this.props.disabled ? 'react-autoql-icon-disabled' : ''}`}

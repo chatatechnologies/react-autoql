@@ -214,7 +214,8 @@ export class ExploreQueries extends React.Component {
       return (
         <div className='query-tips-result-placeholder'>
           <p>
-            Sorry, I couldn’t find any queries matching your input. Try entering a different topic or keyword instead.
+            {`Sorry, I couldn't find any queries matching your input. Try entering a different topic or keyword
+            instead.`}
           </p>
         </div>
       )

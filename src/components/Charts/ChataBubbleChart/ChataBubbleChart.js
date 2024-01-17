@@ -40,7 +40,7 @@ export default class ChataBubbleChart extends Component {
         className='react-autoql-axes-chart react-autoql-bubble-chart'
         data-test='react-autoql-bubble-chart'
       >
-        <Circles {...this.props} xScale={this.xScale} yScale={this.yScale} />
+        {!this.props.hidden && <Circles {...this.props} xScale={this.xScale} yScale={this.yScale} />}
         <Axes
           {...this.props}
           ref={(r) => (this.axesRef = r)}

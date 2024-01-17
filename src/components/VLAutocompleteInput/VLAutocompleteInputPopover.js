@@ -117,6 +117,7 @@ export default class VLAutocompleteInputPopover extends React.Component {
           onChange={this.onVLSelection}
           tooltipID={this.props.tooltipID}
           context={this.props.context}
+          column={this.props.column}
         />
       </div>
     )
