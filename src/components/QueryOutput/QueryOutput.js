@@ -1234,10 +1234,9 @@ export class QueryOutput extends React.Component {
 
   onChangeStringColumnIndex = (index) => {
     if (this.usePivotDataForChart()) {
-      if (this.pivotTableConfig.legendColumnIndex === index) {
-        this.pivotTableConfig.legendColumnIndex = undefined
-      }
-      this.pivotTableConfig.stringColumnIndex = index
+      let stringColumnIndex = this.tableConfig.stringColumnIndex
+      this.tableConfig.stringColumnIndex = this.tableConfig.legendColumnIndex
+      this.tableConfig.legendColumnIndex = stringColumnIndex
       this.generatePivotTableData()
     } else {
       if (this.tableConfig.legendColumnIndex === index) {
@@ -1253,10 +1252,9 @@ export class QueryOutput extends React.Component {
 
   onChangeLegendColumnIndex = (index) => {
     if (this.usePivotDataForChart()) {
-      if (this.pivotTableConfig.stringColumnIndex === index) {
-        this.pivotTableConfig.stringColumnIndex = undefined
-      }
-      this.pivotTableConfig.legendColumnIndex = index
+      let stringColumnIndex = this.tableConfig.stringColumnIndex
+      this.tableConfig.stringColumnIndex = this.tableConfig.legendColumnIndex
+      this.tableConfig.legendColumnIndex = stringColumnIndex
 
       this.generatePivotTableData()
     } else {
@@ -2304,6 +2302,7 @@ export class QueryOutput extends React.Component {
         <ChataChart
           key={this.state.chartID}
           {...tableConfig}
+          originalColumn={this.queryResponse?.data?.data?.columns}
           data={data}
           hidden={!isChartType(this.state.displayType)}
           authentication={this.props.authentication}
@@ -2319,6 +2318,7 @@ export class QueryOutput extends React.Component {
           legendColumn={this.state.columns[this.tableConfig?.legendColumnIndex]}
           changeStringColumnIndex={this.onChangeStringColumnIndex}
           changeLegendColumnIndex={this.onChangeLegendColumnIndex}
+          usePivotDataForChart={this.usePivotDataForChart}
           changeNumberColumnIndices={this.onChangeNumberColumnIndices}
           onChartClick={this.onChartClick}
           isResizing={this.props.isResizing}

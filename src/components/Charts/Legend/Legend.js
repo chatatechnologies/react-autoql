@@ -6,7 +6,7 @@ import { scaleOrdinal } from 'd3-scale'
 import _cloneDeep from 'lodash.clonedeep'
 import { isMobile } from 'react-device-detect'
 import { symbol, symbolSquare } from 'd3-shape'
-
+import LegendSelector from '../Legend/LegendSelector'
 import {
   legendColor,
   deepEqual,
@@ -34,8 +34,12 @@ export default class Legend extends React.Component {
     this.SHAPE_SIZE = isMobile ? 50 : 75
     this.TOP_ADJUSTMENT = isMobile ? 12 : 15
     this.DEFAULT_MAX_WIDTH = isMobile ? 100 : 140
-
+    this.AXIS_TITLE_BORDER_PADDING_LEFT = 5
+    this.AXIS_TITLE_BORDER_PADDING_TOP = 3
     this.justMounted = true
+    this.state = {
+      isColumnSelectorOpen: false,
+    }
   }
 
   static propTypes = {
@@ -78,7 +82,7 @@ export default class Legend extends React.Component {
     this.renderAllLegends()
   }
 
-  shouldComponentUpdate = (nextProps) => {
+  shouldComponentUpdate = (nextProps, nextState) => {
     if (!deepEqual(this.props.columns, nextProps.columns)) {
       return true
     }
@@ -86,7 +90,9 @@ export default class Legend extends React.Component {
     if (this.props.height !== nextProps.height || this.props.outerHeight !== nextProps.outerHeight) {
       return true
     }
-
+    if (this.state.isColumnSelectorOpen !== nextState.isColumnSelectorOpen) {
+      return true
+    }
     return false
   }
 
@@ -301,7 +307,17 @@ export default class Legend extends React.Component {
     // Add border that shows on hover
     this.titleBBox = {}
     try {
-      this.titleBBox = select(legendElement).select('.legendTitle').node().getBBox()
+      const titleElement = select(legendElement).select('.legendTitle').node()
+      const titleBBox = select(legendElement).select('.legendTitle').node().getBBox()
+      const titleHeight = titleBBox?.height ?? 0
+      const titleWidth = titleBBox?.width ?? 0
+      this.titleBBox = titleBBox
+      select(this.columnSelector)
+        .attr('width', Math.round(titleWidth + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT))
+        .attr('height', Math.round(titleHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP))
+        .attr('x', Math.round(titleBBox?.x - this.AXIS_TITLE_BORDER_PADDING_LEFT))
+        .attr('y', Math.round(titleBBox?.y - this.AXIS_TITLE_BORDER_PADDING_TOP))
+        .style('transform', select(titleElement).style('transform'))
     } catch (error) {
       console.error(error)
     }
@@ -449,7 +465,7 @@ export default class Legend extends React.Component {
 
   applyTitleStyles = (title, isFirstSection, legendElement) => {
     if (title) {
-      if (this.props.onLegendTitleClick) {
+      if (this.props.usePivotDataForChart()) {
         this.styleLegendTitleWithBorder(legendElement, isFirstSection)
       } else {
         this.styleLegendTitleNoBorder(legendElement)
@@ -565,7 +581,50 @@ export default class Legend extends React.Component {
       />
     )
   }
+  openSelector = () => {
+    this.setState({ isColumnSelectorOpen: true }, () => {})
+  }
 
+  closeSelector = () => {
+    this.setState({ isColumnSelectorOpen: false })
+  }
+  renderTitleSelector = () => {
+    return (
+      <LegendSelector
+        chartContainerRef={this.props.chartContainerRef}
+        changeStringColumnIndex={this.props.changeStringColumnIndex}
+        changeLegendColumnIndex={this.props.changeLegendColumnIndex}
+        usePivotDataForChart={this.props.usePivotDataForChart}
+        legendColumn={this.props.legendColumn}
+        popoverParentElement={this.props.popoverParentElement}
+        stringColumnIndices={this.props.stringColumnIndices}
+        stringColumnIndex={this.props.stringColumnIndex}
+        numberColumnIndex={this.props.numberColumnIndex}
+        numberColumnIndices={this.props.numberColumnIndices}
+        numberColumnIndices2={this.props.numberColumnIndices2}
+        isAggregation={this.props.isAggregation}
+        tooltipID={this.props.tooltipID}
+        columns={this.props.columns}
+        align='center'
+        position='bottom'
+        positions={['top', 'bottom', 'right', 'left']}
+        legendSelectorRef={(r) => (this.columnSelector = r)}
+        isOpen={this.state.isColumnSelectorOpen}
+        closeSelector={this.closeSelector}
+      >
+        <rect
+          ref={(r) => (this.columnSelector = r)}
+          className='axis-label-border'
+          data-test='axis-label-border'
+          onClick={this.openSelector}
+          fill='transparent'
+          stroke='transparent'
+          strokeWidth='1px'
+          rx='4'
+        />
+      </LegendSelector>
+    )
+  }
   render = () => {
     const translateX = this.getTotalLeftPadding()
     const translateY = this.getTotalTopPadding() + this.TOP_ADJUSTMENT
@@ -575,6 +634,7 @@ export default class Legend extends React.Component {
         {this.renderLegendSections()}
         {this.renderLegendClippingContainer(translateX, translateY)}
         {this.renderLegendBorder()}
+        {this.props.usePivotDataForChart() && this.renderTitleSelector()}
       </g>
     )
   }

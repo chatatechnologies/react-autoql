@@ -496,6 +496,7 @@ export default class Axis extends Component {
         tooltipID={this.props.tooltipID}
         hidden={!this.shouldRenderAxisSelector()}
         columns={this.props.columns}
+        usePivotDataForChart={this.props.usePivotDataForChart}
         scale={this.props.scale}
         secondScale={this.props.scale?.secondScale}
         align='center'
@@ -505,6 +506,7 @@ export default class Axis extends Component {
         hasSecondAxis={this.props.hasSecondAxis}
         axisSelectorRef={(r) => (this.axisSelector = r)}
         isOpen={this.state.isAxisSelectorOpen}
+        originalColumn={this.props.originalColumn}
         closeSelector={this.closeSelector}
         isSecondAxis={isSecondAxis}
       >
@@ -867,6 +869,15 @@ export default class Axis extends Component {
   }
 
   shouldRenderAxisSelector = () => {
+    if (
+      (this.props.usePivotDataForChart() && !this.props.legendLocation && this.props.scale?.column?.isNumberType) ||
+      (this.props.usePivotDataForChart() && this.props.scale?.column?.isNumberType)
+    ) {
+      return false
+    } else if (this.props.usePivotDataForChart() && this.props.legendLocation) {
+      return true
+    }
+
     return this.props.scale?.hasDropdown
   }
 
