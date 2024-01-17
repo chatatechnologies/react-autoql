@@ -145,6 +145,7 @@ const datePivotData = [
 ]
 
 const listProps = {
+  usePivotDataForChart: () => {},
   columns: listColumns,
   data: listData,
   ...getNumberColumnIndices(listColumns),
