@@ -1,0 +1,55 @@
+.axis-label-border,
+.legend-title-border {
+  &.hidden {
+    stroke: transparent;
+    opacity: 0;
+  }
+
+  &:not(.hidden) {
+    cursor: pointer;
+    stroke: transparent;
+    opacity: 0.5;
+
+    &:hover {
+      stroke: var(--react-autoql-accent-color) !important;
+    }
+  }
+}
+.legend-selector-content {
+  list-style-type: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+
+  li {
+    color: var(--react-autoql-text-color-primary);
+    width: 100%;
+    height: 30px;
+    line-height: 30px;
+    padding: 0 15px;
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+  }
+}
+.legend-selector-container {
+  display: flex;
+  flex-direction: column;
+  background: var(--react-autoql-background-color-secondary);
+  color: var(--react-autoql-text-color-primary);
+  padding: 5px;
+  z-index: 9999;
+  max-height: 300px;
+
+  .legend-select-list-item {
+    font-size: 12px;
+    line-height: 28px;
+
+    &.active {
+      background: var(--react-autoql-accent-color);
+      color: var(--react-autoql-text-color-accent);
+    }
+  }
+}

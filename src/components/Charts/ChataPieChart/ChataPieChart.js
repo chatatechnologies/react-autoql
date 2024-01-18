@@ -461,6 +461,7 @@ export default class ChataPieChart extends React.Component {
     if (this.shouldRenderColumnSelector())
       return (
         <StringAxisSelector
+          {...this.props}
           chartContainerRef={this.props.chartContainerRef}
           changeStringColumnIndex={this.props.changeStringColumnIndex}
           legendColumn={this.props.legendColumn}
