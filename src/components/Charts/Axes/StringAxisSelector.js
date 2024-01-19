@@ -92,9 +92,9 @@ export default class StringAxisSelector extends React.Component {
                       this.props.changeStringColumnIndex(colIndex)
                     }}
                   >
-                    {this.props.usePivotDataForChart
+                    {this.props.usePivotDataForChart()
                       ? this.props.originalColumn?.[colIndex]?.display_name
-                      : this.props.column?.[colIndex]?.display_name}
+                      : this.props.columns?.[colIndex]?.display_name}
                   </li>
                 )
               })}
