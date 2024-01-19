@@ -1,8 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
-import { TabulatorFull as Tabulator } from 'tabulator-tables' //import Tabulator library
 import _cloneDeep from 'lodash.clonedeep'
+import { TabulatorFull as Tabulator } from 'tabulator-tables' //import Tabulator library
 
 // use Theme(s)
 import 'tabulator-tables/dist/css/tabulator.min.css'
@@ -85,7 +85,7 @@ export default class TableWrapper extends React.Component {
   instantiateTabulator = () => {
     // Instantiate Tabulator when element is mounted
     this.tabulator = new Tabulator(this.tableRef, {
-      columns: this.props.columns,
+      columns: _cloneDeep(this.props.columns),
       data: this.props.options?.ajaxRequestFunc ? [] : _cloneDeep(this.props.data),
       ...this.defaultOptions,
       ...this.props.options,
