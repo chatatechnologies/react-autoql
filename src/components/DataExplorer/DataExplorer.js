@@ -312,6 +312,10 @@ export default class DataExplorer extends React.Component {
         if (!columns[column.name]) {
           const value = this.getValueFilter(column, columnIndex) ?? ''
           columns[column.name] = { value }
+
+          if (column.alt_name) {
+            columns[column.name].alternative_column_names = [column.alt_name]
+          }
         }
       })
     }

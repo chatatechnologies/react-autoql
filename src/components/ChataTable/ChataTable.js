@@ -504,7 +504,7 @@ export default class ChataTable extends React.Component {
 
   ajaxRequestFunc = async (props, params) => {
     const initialData = {
-      rows: _cloneDeep(this.getRows(this.props, 1)),
+      rows: this.getRows(this.props, 1),
       page: 1,
       isInitialData: true,
     }
@@ -583,7 +583,7 @@ export default class ChataTable extends React.Component {
 
   getRows = (props, pageNumber) => {
     if (props.pivot) {
-      return props.data
+      return _cloneDeep(props.data)
     }
 
     const page = pageNumber ?? this.tableParams.page
@@ -591,7 +591,7 @@ export default class ChataTable extends React.Component {
     const end = start + this.pageSize
 
     const newRows = props.response?.data?.data?.rows?.slice(start, end) ?? []
-    return newRows
+    return _cloneDeep(newRows)
   }
 
   clearLoadingIndicators = async () => {
