@@ -11,7 +11,9 @@ export default class SampleQuery extends React.Component {
   constructor(props) {
     super(props)
 
-    const initialValues = _cloneDeep(props.suggestion?.initialValues)
+    const initialValuesFromProps =
+      props.initialValues && Object.keys(props.initialValues)?.length ? props.initialValues : undefined
+    const initialValues = _cloneDeep(initialValuesFromProps ?? props.suggestion?.initialValues)
 
     // Removing this for now. After some testing, this can be removed
     // It is used to populate all initial values with the selected VL in the search bar
@@ -36,12 +38,16 @@ export default class SampleQuery extends React.Component {
   }
 
   static propTypes = {
+    initialValues: PropTypes.shape({}),
     suggestion: PropTypes.shape({}),
+    onVLChange: PropTypes.func,
     executeQuery: PropTypes.func,
   }
 
   static defaultProps = {
+    initialValues: undefined,
     suggestion: undefined,
+    onVLChange: () => {},
     executeQuery: () => {},
   }
 
@@ -96,7 +102,9 @@ export default class SampleQuery extends React.Component {
         replacement: vl,
       },
     }
+
     this.setState({ values })
+    this.props.onVLChange(values)
   }
 
   render = () => {

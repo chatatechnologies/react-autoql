@@ -1,4 +1,5 @@
 import React from 'react'
+import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import { fetchDataExplorerSampleQueries } from 'autoql-fe-utils'
@@ -11,7 +12,10 @@ export default class SampleQueryList extends React.Component {
   constructor(props) {
     super(props)
 
+    this.COMPONENT_KEY = uuid()
+
     this.state = {
+      initialValues: undefined,
       queryList: undefined,
       loading: true,
       error: false,
@@ -111,6 +115,11 @@ export default class SampleQueryList extends React.Component {
     })
   }
 
+  onVLChange = (values = {}) => {
+    const initialValues = { ...(this.state.initialValues ?? {}), ...values }
+    this.setState({ initialValues })
+  }
+
   renderSampleQueryPlaceholder = () => {
     const placeholderHeight = '25px'
 
@@ -165,8 +174,8 @@ export default class SampleQueryList extends React.Component {
     }
 
     return (
-      <div className='query-suggestion-list-wrapper'>
-        <div className='query-suggestion-list'>
+      <div className='query-suggestion-list-wrapper' key={`query-suggestion-list-wrapper-${this.COMPONENT_KEY}`}>
+        <div className='query-suggestion-list' key={`query-suggestion-list-${this.COMPONENT_KEY}`}>
           {this.state.queryList.map((suggestion, i) => {
             return (
               <SampleQuery
@@ -178,6 +187,8 @@ export default class SampleQueryList extends React.Component {
                 tooltipID={this.props.tooltipID}
                 context={this.props.context}
                 shouldRender={this.props.shouldRender}
+                initialValues={this.state.initialValues}
+                onVLChange={this.onVLChange}
               />
             )
           })}
