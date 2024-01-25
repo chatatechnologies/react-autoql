@@ -2189,6 +2189,14 @@ export class QueryOutput extends React.Component {
     return this.props.dataPageSize ?? this.queryResponse?.data?.data?.fe_req?.page_size ?? DEFAULT_DATA_PAGE_SIZE
   }
 
+  renderAddColumnBtn = () => {
+    return (
+      <div className='react-autoql-table-add-column-btn'>
+        <Icon type='plus' />
+      </div>
+    )
+  }
+
   renderTable = () => {
     if (areAllColumnsHidden(this.getColumns())) {
       return this.renderAllColumnsHiddenMessage()
@@ -2232,6 +2240,7 @@ export class QueryOutput extends React.Component {
           source={this.props.source}
           scope={this.props.scope}
         />
+        {this.renderAddColumnBtn()}
       </ErrorBoundary>
     )
   }
