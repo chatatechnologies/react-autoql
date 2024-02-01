@@ -535,7 +535,10 @@ export default class ChataTable extends React.Component {
         }
 
         const responseWrapper = await props.queryFn({
-          tableFilters: nextTableParamsFormatted?.filters,
+          tableFilters:
+            nextTableParamsFormatted?.filters.length === 0
+              ? props.queryRequestData?.filters
+              : nextTableParamsFormatted?.filters,
           orders: nextTableParamsFormatted?.sorters,
           cancelToken: this.axiosSource.token,
         })
