@@ -62,11 +62,14 @@ import {
   getVisibleColumns,
   isDataLimited,
   MAX_CHART_ELEMENTS,
+  getAdditionalSelectColumns,
+  formatAdditionalSelectColumn,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
 import { ChataTable } from '../ChataTable'
+import { AddColumnBtn } from '../AddColumnBtn'
 import { ChataChart } from '../Charts/ChataChart'
 import { ReverseTranslation } from '../ReverseTranslation'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -605,6 +608,38 @@ export class QueryOutput extends React.Component {
     } catch (error) {
       console.debug('Saved table config was not valid for response:', error?.message)
       return false
+    }
+  }
+
+  updateColumnsAndData = (response) => {
+    if (response && this._isMounted) {
+      this.tableID = uuid()
+      this.isOriginalData = false
+      this.queryResponse = response
+      if (this.queryResponse?.data?.data?.columns) {
+        this.queryResponse.data.data.columns = this.queryResponse.data.data.columns.map((col) => ({
+          ...col,
+          is_visible: true,
+          visible: true,
+        }))
+      }
+      this.tableData = response?.data?.data?.rows || []
+
+      const newColumns = this.formatColumnsForTable(response?.data?.data?.columns)
+
+      // check if table config is still valid for new columns...
+      const isValid = this.isTableConfigValid(this.tableConfig, newColumns, this.state.displayType)
+      if (!isValid) {
+        this.tableConfig = undefined
+        this.setTableConfig(newColumns)
+      }
+
+      this.setState({
+        columns: newColumns,
+        aggConfig: this.getAggConfig(newColumns),
+        columnChangeCount: this.state.columnChangeCount + 1,
+        chartID: uuid(),
+      })
     }
   }
 
@@ -2189,11 +2224,30 @@ export class QueryOutput extends React.Component {
     return this.props.dataPageSize ?? this.queryResponse?.data?.data?.fe_req?.page_size ?? DEFAULT_DATA_PAGE_SIZE
   }
 
+  onAddColumnClick = (column) => {
+    this.tableRef?.setPageLoading(true)
+
+    const currentAdditionalSelectColumns = getAdditionalSelectColumns(this.state.columns)
+
+    this.queryFn({
+      newColumns: [...currentAdditionalSelectColumns, formatAdditionalSelectColumn(column)],
+    })
+      .then((response) => {
+        this.updateColumnsAndData(response)
+      })
+      .catch((error) => {
+        console.error(error)
+        this.tableRef?.setPageLoading(false)
+      })
+  }
+
   renderAddColumnBtn = () => {
     return (
-      <div className='react-autoql-table-add-column-btn'>
-        <Icon type='plus' />
-      </div>
+      <AddColumnBtn
+        queryResponse={this.queryResponse}
+        tooltipID={this.props.tooltipID}
+        onAddColumnClick={this.onAddColumnClick}
+      />
     )
   }
 

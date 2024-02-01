@@ -1,0 +1,44 @@
+.react-autoql-table-add-column-btn {
+  display: flex;
+  position: absolute;
+  align-items: center;
+  justify-content: center;
+
+  right: 0;
+  top: 0;
+  width: 23px;
+  height: 22px;
+  margin: 8px 0;
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+  border-radius: 50%;
+  transition: color 0.2s ease;
+  cursor: pointer;
+
+  box-shadow: var(--react-autoql-box-shadow-2);
+  color: var(--react-autoql-text-color-accent);
+  background-color: var(--react-autoql-accent-color);
+
+  &:hover {
+    box-shadow: var(--react-autoql-box-shadow-1);
+  }
+}
+
+.react-autoql-add-column-menu {
+  max-height: 250px;
+  overflow: auto;
+
+  li {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: start;
+    line-height: 30px;
+    padding: 0 17px;
+    font-size: 12px;
+  }
+
+  .react-autoql-input-label {
+    padding-left: 17px;
+  }
+}

@@ -358,33 +358,6 @@
   }
 }
 
-.react-autoql-table-add-column-btn {
-  display: flex;
-  position: absolute;
-  align-items: center;
-  justify-content: center;
-
-  right: 0;
-  top: 0;
-  width: 20px;
-  height: 22px;
-  margin: 5px 0;
-  border-top-right-radius: 4px;
-  border-bottom-right-radius: 4px;
-
-  transition: color 0.2s ease;
-  box-shadow: var(--react-autoql-box-shadow-2);
-  color: var(--react-autoql-text-color-primary);
-  border: 1px solid var(--react-autoql-border-color);
-  background-color: var(--react-autoql-background-color-secondary);
-
-  cursor: pointer;
-
-  &:hover {
-    color: var(--react-autoql-accent-color);
-  }
-}
-
 .react-autoql-popover-date-picker {
   background: var(--react-autoql-background-color-secondary);
   color: var(--react-autoql-text-color-primary);

@@ -443,6 +443,10 @@ export default class ChataTable extends React.Component {
     }
   }
 
+  setPageLoading = (loading) => {
+    this.setState({ pageLoading: !!loading })
+  }
+
   onTableBuilt = async () => {
     if (this._isMounted) {
       this.setState({
