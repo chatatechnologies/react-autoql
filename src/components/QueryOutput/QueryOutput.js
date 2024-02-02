@@ -2646,7 +2646,8 @@ export class QueryOutput extends React.Component {
           data-test='query-response-wrapper'
           className={`react-autoql-response-content-container
           ${isTableType(this.state.displayType) ? 'table' : ''}
-          ${isChartType(this.state.displayType) ? 'chart' : ''}`}
+          ${isChartType(this.state.displayType) ? 'chart' : ''} 
+		  ${!isChartType(this.state.displayType) && !isTableType(this.state.displayType) ? 'non-table-non-chart' : ''}`}
         >
           {this.props.reverseTranslationPlacement === 'top' && this.renderFooter()}
           {this.renderResponse()}

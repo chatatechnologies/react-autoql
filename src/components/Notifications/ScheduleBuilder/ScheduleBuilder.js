@@ -546,6 +546,7 @@ export default class ScheduleBuilder extends React.Component {
       <div className='react-autoql-data-alert-frequency-options-container continuous-alert'>
         {this.evaluationFrequencySelector()}
         {this.resetPeriodSelector()}
+        {this.timezoneSelector()}
       </div>
     )
   }

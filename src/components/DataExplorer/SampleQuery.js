@@ -11,9 +11,14 @@ export default class SampleQuery extends React.Component {
   constructor(props) {
     super(props)
 
-    const initialValuesFromProps =
-      props.initialValues && Object.keys(props.initialValues)?.length ? props.initialValues : undefined
-    const initialValues = _cloneDeep(initialValuesFromProps ?? props.suggestion?.initialValues)
+    const initialValues = props.suggestion?.initialValues ? _cloneDeep(props.suggestion?.initialValues) : {}
+
+    if (props.initialValues && Object.keys(props.initialValues)?.length) {
+      const initialValuesFromProps = _cloneDeep(props.initialValues)
+      Object.keys(initialValuesFromProps).forEach((key) => {
+        initialValues[key] = initialValuesFromProps[key]
+      })
+    }
 
     // Removing this for now. After some testing, this can be removed
     // It is used to populate all initial values with the selected VL in the search bar

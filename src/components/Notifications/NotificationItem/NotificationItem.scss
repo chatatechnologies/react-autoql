@@ -174,9 +174,11 @@
         .react-autoql-response-content-container {
           // max-height: 300px !important;
           flex: 1;
-          height: unset;
+          height: 45vh;
           max-height: 100%;
-
+          &.non-table-non-chart {
+            height: unset;
+          }
           .react-autoql-table-container .react-autoql-table.tabulator {
             padding-bottom: 5px;
           }
