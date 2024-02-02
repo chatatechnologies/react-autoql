@@ -82,7 +82,7 @@ export default class DataAlertListItem extends React.Component {
     return (
       this.state.status === 'GENERAL_ERROR' ||
       this.state.status === 'EVALUATION_ERROR' ||
-      this.state.status === 'DATA_RETURN_ERROR'
+      this.state.status === 'UNRECOVERABLE'
     )
   }
 

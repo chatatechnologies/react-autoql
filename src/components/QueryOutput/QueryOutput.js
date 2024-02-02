@@ -62,7 +62,6 @@ import {
   getVisibleColumns,
   isDataLimited,
   MAX_CHART_ELEMENTS,
-  getAdditionalSelectColumns,
   formatAdditionalSelectColumn,
 } from 'autoql-fe-utils'
 
@@ -2224,16 +2223,20 @@ export class QueryOutput extends React.Component {
     return this.props.dataPageSize ?? this.queryResponse?.data?.data?.fe_req?.page_size ?? DEFAULT_DATA_PAGE_SIZE
   }
 
-  onAddColumnClick = (column) => {
+  onAddColumnClick = (column, sqlFn) => {
     this.tableRef?.setPageLoading(true)
 
-    const currentAdditionalSelectColumns = getAdditionalSelectColumns(this.state.columns)
+    const currentAdditionalSelectColumns = this.queryResponse?.data?.data?.fe_req?.additional_selects ?? []
 
     this.queryFn({
-      newColumns: [...currentAdditionalSelectColumns, formatAdditionalSelectColumn(column)],
+      newColumns: [...currentAdditionalSelectColumns, formatAdditionalSelectColumn(column, sqlFn)],
     })
       .then((response) => {
-        this.updateColumnsAndData(response)
+        if (response?.data?.data?.rows) {
+          this.updateColumnsAndData(response)
+        } else {
+          throw new Error('New column addition failed')
+        }
       })
       .catch((error) => {
         console.error(error)
@@ -2242,13 +2245,15 @@ export class QueryOutput extends React.Component {
   }
 
   renderAddColumnBtn = () => {
-    return (
-      <AddColumnBtn
-        queryResponse={this.queryResponse}
-        tooltipID={this.props.tooltipID}
-        onAddColumnClick={this.onAddColumnClick}
-      />
-    )
+    if (this.state.displayType === 'table') {
+      return (
+        <AddColumnBtn
+          queryResponse={this.queryResponse}
+          tooltipID={this.props.tooltipID}
+          onAddColumnClick={this.onAddColumnClick}
+        />
+      )
+    }
   }
 
   renderTable = () => {
@@ -2294,7 +2299,6 @@ export class QueryOutput extends React.Component {
           source={this.props.source}
           scope={this.props.scope}
         />
-        {this.renderAddColumnBtn()}
       </ErrorBoundary>
     )
   }
@@ -2650,6 +2654,8 @@ export class QueryOutput extends React.Component {
         </div>
         {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} />}
         {!this.props.chartTooltipID && <Tooltip tooltipId={this.CHART_TOOLTIP_ID} />}
+        {/* <div ref={(r) => (this.addColumnBtnRef = r)}></div> */}
+        {this.renderAddColumnBtn()}
       </ErrorBoundary>
     )
   }

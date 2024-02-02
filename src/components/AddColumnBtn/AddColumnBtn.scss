@@ -4,8 +4,8 @@
   align-items: center;
   justify-content: center;
 
-  right: 0;
-  top: 0;
+  right: -6px;
+  top: 13px;
   width: 23px;
   height: 22px;
   margin: 8px 0;
@@ -26,19 +26,39 @@
 
 .react-autoql-add-column-menu {
   max-height: 250px;
-  overflow: auto;
+
+  &.more-options-menu {
+    overflow: unset;
+  }
 
   li {
     display: flex;
     flex-direction: row;
+    justify-content: space-between;
     align-items: center;
-    justify-content: start;
     line-height: 30px;
+    height: 30px;
     padding: 0 17px;
     font-size: 12px;
+
+    .react-autoql-add-column-menu-item {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: start;
+    }
+
+    .react-autoql-menu-expand-arrow {
+      margin-left: 10px;
+
+      .react-autoql-icon {
+        margin-right: 0;
+      }
+    }
   }
 
   .react-autoql-input-label {
     padding-left: 17px;
+    font-size: 11px;
   }
 }

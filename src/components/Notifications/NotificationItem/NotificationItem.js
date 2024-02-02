@@ -228,7 +228,7 @@ export default class NotificationItem extends React.Component {
     return (
       dataAlert?.status === 'GENERAL_ERROR' ||
       dataAlert?.status === 'EVALUATION_ERROR' ||
-      dataAlert?.status === 'DATA_RETURN_ERROR'
+      dataAlert?.status === 'UNRECOVERABLE'
     )
   }
 
