@@ -184,6 +184,7 @@ export class QueryOutput extends React.Component {
     onDrilldownEnd: PropTypes.func,
     enableTableSorting: PropTypes.bool,
     showSingleValueResponseTitle: PropTypes.bool,
+    allowColumnAddition: PropTypes.bool,
 
     mutable: PropTypes.bool,
     showSuggestionPrefix: PropTypes.bool,
@@ -230,6 +231,7 @@ export class QueryOutput extends React.Component {
     allowDisplayTypeChange: true,
     showSingleValueResponseTitle: false,
     bucketSize: undefined,
+    allowColumnAddition: false,
     onTableConfigChange: () => {},
     onAggConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
@@ -2245,7 +2247,7 @@ export class QueryOutput extends React.Component {
   }
 
   renderAddColumnBtn = () => {
-    if (this.state.displayType === 'table') {
+    if (this.props.allowColumnAddition && this.state.displayType === 'table') {
       return (
         <AddColumnBtn
           queryResponse={this.queryResponse}

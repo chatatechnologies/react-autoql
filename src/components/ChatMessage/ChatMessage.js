@@ -279,6 +279,7 @@ export default class ChatMessage extends React.Component {
           showSuggestionPrefix={false}
           dataPageSize={this.props.dataPageSize}
           popoverParentElement={this.props.popoverParentElement}
+          allowColumnAddition={true}
           reportProblemCallback={() => {
             if (this.optionsToolbarRef?._isMounted) {
               this.optionsToolbarRef?.openReportProblemModal()
@@ -324,6 +325,7 @@ export default class ChatMessage extends React.Component {
             deleteMessageCallback={this.onDeleteMessage}
             tooltipID={this.props.tooltipID}
             createDataAlertCallback={this.props.createDataAlertCallback}
+            customOptions={this.props.customToolbarOptions}
             popoverAlign='end'
           />
         ) : null}
