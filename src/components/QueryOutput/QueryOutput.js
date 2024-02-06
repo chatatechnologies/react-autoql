@@ -1294,38 +1294,18 @@ export class QueryOutput extends React.Component {
   }
 
   onChangeNumberColumnIndices = (indices, indices2, newColumns) => {
-    if (this.usePivotDataForChart()) {
-      if (indices) {
-        this.pivotTableConfig.numberColumnIndices = indices
-        this.pivotTableConfig.numberColumnIndex = indices[0]
-      }
-
-      if (indices2) {
-        this.pivotTableConfig.numberColumnIndices2 = indices2
-        this.pivotTableConfig.numberColumnIndex2 = indices2[0]
-      }
-
-      // Todo: pivot columns should live in state
-      if (newColumns) {
-        this.pivotTableColumns = newColumns
-      }
-
-      this.onTableConfigChange()
-      this.forceUpdate()
-    } else {
-      if (indices) {
-        this.tableConfig.numberColumnIndices = indices
-        this.tableConfig.numberColumnIndex = indices[0]
-      }
-
-      if (indices2) {
-        this.tableConfig.numberColumnIndices2 = indices2
-        this.tableConfig.numberColumnIndex2 = indices2[0]
-      }
-
-      const columns = newColumns ?? this.getColumns()
-      this.updateColumns(columns)
+    if (indices) {
+      this.tableConfig.numberColumnIndices = indices
+      this.tableConfig.numberColumnIndex = indices[0]
     }
+
+    if (indices2) {
+      this.tableConfig.numberColumnIndices2 = indices2
+      this.tableConfig.numberColumnIndex2 = indices2[0]
+    }
+
+    const columns = newColumns ?? this.getColumns()
+    this.updateColumns(columns)
   }
 
   resetPivotTableConfig = () => {
@@ -2359,7 +2339,7 @@ export class QueryOutput extends React.Component {
         <ChataChart
           key={this.state.chartID}
           {...tableConfig}
-          originalColumn={this.queryResponse?.data?.data?.columns}
+          originalColumns={this.queryResponse?.data?.data?.columns}
           data={data}
           hidden={!isChartType(this.state.displayType)}
           authentication={this.props.authentication}
@@ -2375,7 +2355,6 @@ export class QueryOutput extends React.Component {
           legendColumn={this.state.columns[this.tableConfig?.legendColumnIndex]}
           changeStringColumnIndex={this.onChangeStringColumnIndex}
           changeLegendColumnIndex={this.onChangeLegendColumnIndex}
-          usePivotDataForChart={this.usePivotDataForChart}
           changeNumberColumnIndices={this.onChangeNumberColumnIndices}
           onChartClick={this.onChartClick}
           isResizing={this.props.isResizing}

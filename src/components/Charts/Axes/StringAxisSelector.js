@@ -15,7 +15,7 @@ export default class StringAxisSelector extends React.Component {
 
   getAllStringColumnIndices = () => {
     const columnIndices = []
-    let columns = this.props.usePivotDataForChart() ? this.props.originalColumn : this.props.columns
+    let columns = this.props.isAggregated ? this.props.originalColumns : this.props.columns
     columns.forEach((col, i) => {
       const isOnNumberAxis = this.props.numberColumnIndices?.includes(col.index)
       const isOnSecondNumberAxis = this.props.hasSecondAxis && this.props.numberColumnIndices2?.includes(col.index)
@@ -63,7 +63,7 @@ export default class StringAxisSelector extends React.Component {
     } else {
       columnIndices = this.getAllStringColumnIndices()
     }
-    if (this.props.usePivotDataForChart()) {
+    if (this.props.isAggregated) {
       columnIndices = [this.props.legendColumn.index]
     }
 
@@ -84,7 +84,7 @@ export default class StringAxisSelector extends React.Component {
                 return (
                   <li
                     className={`string-select-list-item ${
-                      colIndex === this.props.stringColumnIndex || this.props.usePivotDataForChart() ? 'active' : ''
+                      colIndex === this.props.stringColumnIndex || this.props.isAggregated ? 'active' : ''
                     }`}
                     key={`string-column-select-${i}`}
                     onClick={() => {
@@ -92,8 +92,8 @@ export default class StringAxisSelector extends React.Component {
                       this.props.changeStringColumnIndex(colIndex)
                     }}
                   >
-                    {this.props.usePivotDataForChart()
-                      ? this.props.originalColumn?.[colIndex]?.display_name
+                    {this.props.isAggregated
+                      ? this.props.originalColumns?.[colIndex]?.display_name
                       : this.props.columns?.[colIndex]?.display_name}
                   </li>
                 )

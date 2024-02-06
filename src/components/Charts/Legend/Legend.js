@@ -465,7 +465,7 @@ export default class Legend extends React.Component {
 
   applyTitleStyles = (title, isFirstSection, legendElement) => {
     if (title) {
-      if (this.props.usePivotDataForChart()) {
+      if (this.props.isAggregated) {
         this.styleLegendTitleWithBorder(legendElement, isFirstSection)
       } else {
         this.styleLegendTitleNoBorder(legendElement)
@@ -594,7 +594,6 @@ export default class Legend extends React.Component {
         chartContainerRef={this.props.chartContainerRef}
         changeStringColumnIndex={this.props.changeStringColumnIndex}
         changeLegendColumnIndex={this.props.changeLegendColumnIndex}
-        usePivotDataForChart={this.props.usePivotDataForChart}
         legendColumn={this.props.legendColumn}
         popoverParentElement={this.props.popoverParentElement}
         stringColumnIndices={this.props.stringColumnIndices}
@@ -633,7 +632,7 @@ export default class Legend extends React.Component {
         {this.renderLegendSections()}
         {this.renderLegendClippingContainer(translateX, translateY)}
         {this.renderLegendBorder()}
-        {this.props.usePivotDataForChart() && this.renderTitleSelector()}
+        {this.props.isAggregated && this.renderTitleSelector()}
       </g>
     )
   }
