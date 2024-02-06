@@ -302,6 +302,7 @@ export class QueryOutput extends React.Component {
       // Using a count variable so it doesn't have to deep compare on every udpate
       const columnsChanged = this.state.columnChangeCount !== prevState.columnChangeCount
       if (columnsChanged) {
+        this.tableID = uuid()
         this.props.onColumnChange(this.state.columns)
 
         if (this.shouldGeneratePivotData()) {
@@ -617,29 +618,20 @@ export class QueryOutput extends React.Component {
       this.tableID = uuid()
       this.isOriginalData = false
       this.queryResponse = response
-      if (this.queryResponse?.data?.data?.columns) {
-        this.queryResponse.data.data.columns = this.queryResponse.data.data.columns.map((col) => ({
-          ...col,
-          is_visible: true,
-          visible: true,
-        }))
-      }
       this.tableData = response?.data?.data?.rows || []
 
       const newColumns = this.formatColumnsForTable(response?.data?.data?.columns)
 
-      // check if table config is still valid for new columns...
-      const isValid = this.isTableConfigValid(this.tableConfig, newColumns, this.state.displayType)
-      if (!isValid) {
-        this.tableConfig = undefined
-        this.setTableConfig(newColumns)
-      }
+      this.tableConfig = undefined
+      this.setTableConfig(newColumns)
+
+      const aggConfig = this.getAggConfig(newColumns)
 
       this.setState({
         columns: newColumns,
-        aggConfig: this.getAggConfig(newColumns),
         columnChangeCount: this.state.columnChangeCount + 1,
         chartID: uuid(),
+        aggConfig,
       })
     }
   }
@@ -1562,9 +1554,7 @@ export class QueryOutput extends React.Component {
   getPotentialDisplayTypes = () => {
     return getSupportedDisplayTypes({
       response: this.queryResponse,
-      columns: this.queryResponse?.data?.data?.columns?.map((col) => ({
-        ...col,
-      })),
+      columns: this.queryResponse?.data?.data?.columns,
       allowNumericStringColumns: this.ALLOW_NUMERIC_STRING_COLUMNS,
     })
   }
@@ -1580,10 +1570,10 @@ export class QueryOutput extends React.Component {
     )
   }
 
-  getCurrentSupportedDisplayTypes = () => {
+  getCurrentSupportedDisplayTypes = (newColumns) => {
     return getSupportedDisplayTypes({
       response: this.queryResponse,
-      columns: this.getColumns(),
+      columns: newColumns ?? this.getColumns(),
       dataLength: this.getDataLength(),
       pivotDataLength: this.getPivotDataLength(),
       isDataLimited: isDataLimited(this.queryResponse),
