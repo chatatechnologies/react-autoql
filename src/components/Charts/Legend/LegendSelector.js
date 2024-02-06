@@ -1,10 +1,10 @@
 import React from 'react'
-import _isEqual from 'lodash.isequal'
-import { v4 as uuid } from 'uuid'
 import { Popover } from '../../Popover'
-import { axesDefaultProps, axesPropTypes } from '../chartPropHelpers'
 import { CustomScrollbars } from '../../CustomScrollbars'
+import { axesDefaultProps, axesPropTypes } from '../chartPropHelpers'
+
 import './LegendSelector.scss'
+
 export default class LegendSelector extends React.Component {
   constructor(props) {
     super(props)
@@ -76,6 +76,7 @@ export default class LegendSelector extends React.Component {
         boundaryElement={this.props.popoverParentElement}
         positions={this.props.positions}
         align={this.props.align}
+        padding={0}
       >
         {this.props.children}
       </Popover>

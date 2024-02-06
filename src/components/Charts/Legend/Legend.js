@@ -32,7 +32,7 @@ export default class Legend extends React.Component {
     this.HORIZONTAL_LEGEND_SPACING = isMobile ? 15 : 20
     this.VERTICAL_LEGEND_SPACING = isMobile ? 15 : 25
     this.SHAPE_SIZE = isMobile ? 50 : 75
-    this.TOP_ADJUSTMENT = isMobile ? 12 : 15
+    this.TOP_ADJUSTMENT = isMobile ? 12 : 8
     this.DEFAULT_MAX_WIDTH = isMobile ? 100 : 140
     this.AXIS_TITLE_BORDER_PADDING_LEFT = 5
     this.AXIS_TITLE_BORDER_PADDING_TOP = 3
@@ -251,7 +251,7 @@ export default class Legend extends React.Component {
           select(this).remove()
         } else {
           const cellBBox = this.getBoundingClientRect()
-          const cellBottom = (cellBBox?.y ?? 0) + (cellBBox?.height ?? 0)
+          const cellBottom = (cellBBox?.y ?? 0) + (cellBBox?.height ?? 0) - 5
           if (cellBottom > legendBottom) {
             const bbox = this.getBBox()
             removedElementYBottom = (bbox?.y ?? 0) + (bbox?.height ?? 0)
@@ -606,8 +606,7 @@ export default class Legend extends React.Component {
         tooltipID={this.props.tooltipID}
         columns={this.props.columns}
         align='center'
-        position='bottom'
-        positions={['top', 'bottom', 'right', 'left']}
+        positions={['bottom', 'top', 'left', 'right']}
         legendSelectorRef={(r) => (this.columnSelector = r)}
         isOpen={this.state.isColumnSelectorOpen}
         closeSelector={this.closeSelector}
