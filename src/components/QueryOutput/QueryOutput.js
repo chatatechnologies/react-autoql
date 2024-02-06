@@ -481,7 +481,7 @@ export class QueryOutput extends React.Component {
 
   potentiallySupportsDatePivot = () => {
     const columns = this.getColumns()
-    return this.potentiallySupportsPivot() && columns?.length === 2
+    return this.potentiallySupportsPivot() && getNumberOfGroupables(columns) === 1
   }
 
   usePivotDataForChart = () => {
@@ -616,6 +616,7 @@ export class QueryOutput extends React.Component {
   updateColumnsAndData = (response) => {
     if (response && this._isMounted) {
       this.tableID = uuid()
+      this.pivotTableID = uuid()
       this.isOriginalData = false
       this.queryResponse = response
       this.tableData = response?.data?.data?.rows || []
@@ -702,12 +703,10 @@ export class QueryOutput extends React.Component {
     try {
       this.pivotTableID = uuid()
       const columns = this.getColumns()
-      if (columns.length === 2) {
+      if (getNumberOfGroupables(columns) === 1) {
         this.generateDatePivotData(this.tableData)
       } else {
-        this.generatePivotTableData({
-          isFirstGeneration,
-        })
+        this.generatePivotTableData({ isFirstGeneration })
       }
     } catch (error) {
       console.error(error)
@@ -1537,13 +1536,11 @@ export class QueryOutput extends React.Component {
       )
       this.tableConfig.numberColumnIndices2 = [this.tableConfig.numberColumnIndex2]
     }
+
     // Set legend index if there should be one
-    // Only set legend column if charts use pivot data
-    if (this.usePivotDataForChart()) {
-      const legendColumnIndex = columns.findIndex((col, i) => col.groupable && i !== this.tableConfig.stringColumnIndex)
-      if (legendColumnIndex >= 0) {
-        this.tableConfig.legendColumnIndex = legendColumnIndex
-      }
+    const legendColumnIndex = columns.findIndex((col, i) => col.groupable && i !== this.tableConfig.stringColumnIndex)
+    if (legendColumnIndex >= 0) {
+      this.tableConfig.legendColumnIndex = legendColumnIndex
     }
 
     if (!_isEqual(prevTableConfig, this.tableConfig)) {
@@ -2307,6 +2304,7 @@ export class QueryOutput extends React.Component {
     return (
       <ErrorBoundary>
         <ChataTable
+          key={this.pivotTableID}
           ref={(ref) => (this.pivotTableRef = ref)}
           columns={this.pivotTableColumns}
           data={this.pivotTableData}
