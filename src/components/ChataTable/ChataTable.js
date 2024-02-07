@@ -258,10 +258,6 @@ export default class ChataTable extends React.Component {
   }
 
   calculateSummaryStats = (props) => {
-    if (props.pivot) {
-      return {}
-    }
-
     const stats = {}
 
     try {
@@ -781,15 +777,13 @@ export default class ChataTable extends React.Component {
         `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"] .tabulator-col-content input`,
       )
 
-      if (!this.props.pivot) {
-        const headerElement = document.querySelector(
-          `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"]`,
-        )
+      const headerElement = document.querySelector(
+        `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"]:not(.tabulator-col-group) .tabulator-col-title-holder`,
+      )
 
-        if (headerElement) {
-          headerElement.setAttribute('data-tooltip-id', `selectable-table-column-header-tooltip-${this.TABLE_ID}`)
-          headerElement.setAttribute('data-tooltip-content', JSON.stringify(col))
-        }
+      if (headerElement) {
+        headerElement.setAttribute('data-tooltip-id', `selectable-table-column-header-tooltip-${this.TABLE_ID}`)
+        headerElement.setAttribute('data-tooltip-content', JSON.stringify(col))
       }
 
       if (inputElement) {
@@ -1156,6 +1150,7 @@ export default class ChataTable extends React.Component {
       }
 
       const name = column.display_name
+      const altName = column.title
       const type = COLUMN_TYPES[column.type]?.description
       const icon = COLUMN_TYPES[column.type]?.icon
 
@@ -1167,7 +1162,10 @@ export default class ChataTable extends React.Component {
       return (
         <div>
           <div className='selectable-table-tooltip-title'>
-            <span>{name}</span>
+            <span>
+              {name}
+              {altName !== name ? ` (${altName})` : ''}
+            </span>
           </div>
           {!!type && (
             <div className='selectable-table-tooltip-section selectable-table-tooltip-subtitle'>
@@ -1304,16 +1302,14 @@ export default class ChataTable extends React.Component {
           {this.renderDateRangePickerPopover()}
           {this.renderTableRowCount()}
         </div>
-        {!this.props.pivot && (
-          <Tooltip
-            tooltipId={`selectable-table-column-header-tooltip-${this.TABLE_ID}`}
-            className='selectable-table-column-header-tooltip'
-            render={this.renderHeaderTooltipContent}
-            opacity={1}
-            delayHide={0}
-            border
-          />
-        )}
+        <Tooltip
+          tooltipId={`selectable-table-column-header-tooltip-${this.TABLE_ID}`}
+          className='selectable-table-column-header-tooltip'
+          render={this.renderHeaderTooltipContent}
+          opacity={1}
+          delayHide={0}
+          border
+        />
       </ErrorBoundary>
     )
   }
