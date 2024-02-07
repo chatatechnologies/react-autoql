@@ -27,7 +27,7 @@ export default class NumberAxisSelector extends React.Component {
       aggType: undefined,
       selectedColumns: [],
       checkedColumns,
-      columns: props.isAggregated ? props.originalColumns : props.columns,
+      columns: props.columns,
     }
   }
 
@@ -46,7 +46,7 @@ export default class NumberAxisSelector extends React.Component {
       this.setState({
         selectedColumns: [],
         checkedColumns: this.getCheckedFromNumberColumnIndices(this.props),
-        columns: this.props.isAggregated ? this.props.originalColumns : this.props.columns,
+        columns: this.props.columns,
       })
     }
   }

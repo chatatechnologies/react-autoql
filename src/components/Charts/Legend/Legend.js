@@ -603,7 +603,7 @@ export default class Legend extends React.Component {
         numberColumnIndices2={this.props.numberColumnIndices2}
         isAggregation={this.props.isAggregation}
         tooltipID={this.props.tooltipID}
-        columns={this.props.columns}
+        columns={this.props.originalColumns}
         align='center'
         positions={['bottom', 'top', 'left', 'right']}
         legendSelectorRef={(r) => (this.columnSelector = r)}

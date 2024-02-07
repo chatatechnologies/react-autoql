@@ -56,6 +56,7 @@ export default class LegendSelector extends React.Component {
     } else {
       columnIndices = this.getAllStringColumnIndices()
     }
+
     return (
       <div
         className='legend-selector-container'
@@ -69,7 +70,7 @@ export default class LegendSelector extends React.Component {
             {columnIndices.map((colIndex, i) => {
               return (
                 <li
-                  className={`legend-select-list-item ${colIndex === this.props.stringColumnIndex ? 'active' : ''}`}
+                  className={`legend-select-list-item ${colIndex === this.props.legendColumn.index ? 'active' : ''}`}
                   key={`legend-column-select-${i}`}
                   onClick={() => {
                     this.props.closeSelector()

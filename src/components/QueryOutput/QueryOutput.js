@@ -1260,17 +1260,16 @@ export class QueryOutput extends React.Component {
   }
 
   onChangeStringColumnIndex = (index) => {
-    if (this.usePivotDataForChart()) {
+    if (this.tableConfig.legendColumnIndex === index) {
       let stringColumnIndex = this.tableConfig.stringColumnIndex
       this.tableConfig.stringColumnIndex = this.tableConfig.legendColumnIndex
       this.tableConfig.legendColumnIndex = stringColumnIndex
-      this.generatePivotTableData()
     } else {
-      if (this.tableConfig.legendColumnIndex === index) {
-        this.tableConfig.legendColumnIndex = undefined
-      }
-
       this.tableConfig.stringColumnIndex = index
+    }
+
+    if (this.usePivotDataForChart()) {
+      this.generatePivotTableData()
     }
 
     this.onTableConfigChange()
@@ -1278,18 +1277,19 @@ export class QueryOutput extends React.Component {
   }
 
   onChangeLegendColumnIndex = (index) => {
-    if (this.usePivotDataForChart()) {
+    if (this.tableConfig.stringColumnIndex === index) {
       let stringColumnIndex = this.tableConfig.stringColumnIndex
       this.tableConfig.stringColumnIndex = this.tableConfig.legendColumnIndex
       this.tableConfig.legendColumnIndex = stringColumnIndex
-
-      this.generatePivotTableData()
     } else {
-      if (this.tableConfig.stringColumnIndex === index) {
-        this.tableConfig.stringColumnIndex = undefined
-      }
       this.tableConfig.legendColumnIndex = index
     }
+
+    if (this.usePivotDataForChart()) {
+      this.generatePivotTableData()
+    }
+
+    this.onTableConfigChange()
     this.forceUpdate()
   }
 
@@ -1945,6 +1945,7 @@ export class QueryOutput extends React.Component {
     try {
       this.pivotTableColumnsLimited = false
       this.pivotTableRowsLimited = false
+      this.pivotTableID = uuid()
 
       let tableData = _cloneDeep(this.queryResponse?.data?.data?.rows)
       tableData = tableData.filter((row) => row[0] !== null)
@@ -2304,6 +2305,7 @@ export class QueryOutput extends React.Component {
           totalRows={this.pivotTableTotalRows}
           totalColumns={this.pivotTableTotalColumns}
           maxColumns={this.MAX_PIVOT_TABLE_COLUMNS}
+          pivotGroups={true} //{getNumberOfGroupables(this.state.columns) > 2}
           pivot
         />
       </ErrorBoundary>
