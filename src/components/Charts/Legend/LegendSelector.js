@@ -1,7 +1,7 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
-import { axesDefaultProps, axesPropTypes } from '../chartPropHelpers'
 
 import './LegendSelector.scss'
 
@@ -14,8 +14,29 @@ export default class LegendSelector extends React.Component {
     }
   }
 
-  static propTypes = axesPropTypes
-  static defaultProps = axesDefaultProps
+  static propTypes = {
+    changeStringColumnIndex: PropTypes.func,
+    changeLegendColumnIndex: PropTypes.func,
+    legendColumn: PropTypes.shape({}),
+    stringColumnIndices: PropTypes.arrayOf(PropTypes.number),
+    stringColumnIndex: PropTypes.number,
+    numberColumnIndex: PropTypes.number,
+    numberColumnIndices: PropTypes.arrayOf(PropTypes.number),
+    numberColumnIndices2: PropTypes.arrayOf(PropTypes.number),
+    isAggregation: PropTypes.bool,
+    tooltipID: PropTypes.string,
+    columns: PropTypes.arrayOf(PropTypes.shape({})),
+    align: PropTypes.string,
+    positions: PropTypes.arrayOf(PropTypes.string),
+    isOpen: PropTypes.bool,
+    closeSelector: PropTypes.func,
+  }
+
+  static defaultProps = {
+    changeStringColumnIndex: () => {},
+    changeLegendColumnIndex: () => {},
+    closeSelector: () => {},
+  }
 
   getAllStringColumnIndices = () => {
     const columnIndices = []
