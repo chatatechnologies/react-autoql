@@ -1026,7 +1026,25 @@ export default class ChataTable extends React.Component {
 
   getFilteredTabulatorColumnDefinitions = () => {
     try {
-      if (this.props.columns?.length) {
+      if (this.props.pivot && this.props.columns?.length) {
+        const columns = []
+        this.props.columns.forEach((col, i) => {
+          if (i === 0) {
+            columns.push(col)
+          } else {
+            if (!columns[1]) {
+              columns.push({
+                title: col.origColumn?.display_name,
+                columns: [col],
+              })
+            } else {
+              columns[1].columns.push(col)
+            }
+          }
+        })
+
+        return columns
+      } else if (this.props.columns?.length) {
         const filteredColumns = this.props.columns.map((col) => {
           const newCol = {}
           Object.keys(col).forEach((option) => {
