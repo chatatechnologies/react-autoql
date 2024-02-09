@@ -1426,21 +1426,23 @@ export class QueryOutput extends React.Component {
 
     const { amountOfNumberColumns } = getColumnTypeAmounts(columns) ?? {}
 
+    const {
+      allNumberColumnIndices,
+      numberColumnIndex,
+      numberColumnIndices,
+      numberColumnIndex2,
+      numberColumnIndices2,
+      currencyColumnIndices,
+      quantityColumnIndices,
+      ratioColumnIndices,
+    } = getNumberColumnIndices(columns, this.usePivotDataForChart())
+
     // Set number type columns and number series columns (linear axis)
     if (
       !this.tableConfig.numberColumnIndices?.length ||
       !(this.tableConfig.numberColumnIndex >= 0) ||
       !this.tableConfig.numberColumnIndices.includes(this.tableConfig.numberColumnIndex)
     ) {
-      const {
-        numberColumnIndex,
-        numberColumnIndices,
-        numberColumnIndex2,
-        numberColumnIndices2,
-        currencyColumnIndices,
-        quantityColumnIndices,
-        ratioColumnIndices,
-      } = getNumberColumnIndices(columns, this.usePivotDataForChart())
       this.tableConfig.numberColumnIndices = numberColumnIndices
       this.tableConfig.numberColumnIndex = numberColumnIndex
       this.tableConfig.numberColumnIndices2 = numberColumnIndices2
@@ -1448,8 +1450,14 @@ export class QueryOutput extends React.Component {
       this.tableConfig.currencyColumnIndices = currencyColumnIndices
       this.tableConfig.quantityColumnIndices = quantityColumnIndices
       this.tableConfig.ratioColumnIndices = ratioColumnIndices
+
+      if (this.tableConfig.numberColumnIndex === this.tableConfig.stringColumnIndex) {
+        this.tableConfig.numberColumnIndex = allNumberColumnIndices.find(
+          (index) => index !== this.tableConfig.stringColumnIndex,
+        )
+        this.tableConfig.numberColumnIndices = [this.tableConfig.numberColumnIndex]
+      }
     } else if (
-      amountOfNumberColumns > 1 &&
       this.isColumnIndexValid(this.tableConfig.numberColumnIndex, columns) &&
       (!this.isColumnIndicesValid(this.tableConfig.numberColumnIndices2, columns) ||
         !this.isColumnIndexValid(this.tableConfig.numberColumnIndex, columns))
@@ -1459,7 +1467,7 @@ export class QueryOutput extends React.Component {
         (col, index) => index !== this.tableConfig.numberColumnIndex && isColumnNumberType(col) && col.is_visible,
       )
       this.tableConfig.numberColumnIndices2 = [this.tableConfig.numberColumnIndex2]
-    } else if (amountOfNumberColumns > 1 && this.numberIndicesArraysOverlap(this.tableConfig)) {
+    } else if (this.numberIndicesArraysOverlap(this.tableConfig)) {
       // If either array contains all of the number columns, remove one of them
       if (this.tableConfig.numberColumnIndices.length === amountOfNumberColumns) {
         const indexToRemove = this.tableConfig.numberColumnIndices.findIndex(
@@ -1511,6 +1519,7 @@ export class QueryOutput extends React.Component {
         this.tableConfig.numberColumnIndices2 = filteredIndices2
       }
     }
+
     //Second axis indices had hidden columns
     if (this.tableConfig.numberColumnIndices2.find((i) => !columns[i].is_visible)) {
       this.tableConfig.numberColumnIndex2 = columns.findIndex(
@@ -2634,7 +2643,7 @@ export class QueryOutput extends React.Component {
           className={`react-autoql-response-content-container
           ${isTableType(this.state.displayType) ? 'table' : ''}
           ${isChartType(this.state.displayType) ? 'chart' : ''} 
-		  ${!isChartType(this.state.displayType) && !isTableType(this.state.displayType) ? 'non-table-non-chart' : ''}`}
+		      ${!isChartType(this.state.displayType) && !isTableType(this.state.displayType) ? 'non-table-non-chart' : ''}`}
         >
           {this.props.reverseTranslationPlacement === 'top' && this.renderFooter()}
           {this.renderResponse()}
@@ -2642,7 +2651,6 @@ export class QueryOutput extends React.Component {
         </div>
         {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} />}
         {!this.props.chartTooltipID && <Tooltip tooltipId={this.CHART_TOOLTIP_ID} />}
-        {/* <div ref={(r) => (this.addColumnBtnRef = r)}></div> */}
         {this.renderAddColumnBtn()}
       </ErrorBoundary>
     )

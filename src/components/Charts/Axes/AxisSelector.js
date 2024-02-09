@@ -11,8 +11,14 @@ export default class AxisSelector extends React.Component {
     this.KEY = uuid()
   }
 
-  renderSingleNumberAxisSelector = (props) => {
-    return <SingleNumberAxisSelector data-test='single-number-axis-selector' {...props} />
+  renderSingleNumberAxisSelector = (props, disableStringColumns) => {
+    return (
+      <SingleNumberAxisSelector
+        data-test='single-number-axis-selector'
+        {...props}
+        disableStringColumns={disableStringColumns}
+      />
+    )
   }
 
   renderNumberAxisSelector = (props) => <NumberAxisSelector {...props} data-test='number-axis-selector' />
@@ -31,7 +37,7 @@ export default class AxisSelector extends React.Component {
     }
 
     if (scale.type === 'BIN') {
-      return this.renderSingleNumberAxisSelector(props)
+      return this.renderSingleNumberAxisSelector(props, true)
     } else if (scale.type === 'LINEAR') {
       return scale.allowMultipleSeries && !this.props.isAggregated
         ? this.renderNumberAxisSelector(props)

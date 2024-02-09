@@ -13,7 +13,6 @@ import {
   roundUpToNearestMultiple,
   roundToNearestLog10,
   convertToNumber,
-  getLinearScale,
   getBandScale,
 } from 'autoql-fe-utils'
 
@@ -24,7 +23,6 @@ import { HistogramDistributions } from './HistogramDistributions'
 import { v4 as uuid } from 'uuid'
 import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers.js'
 import { Columns } from '../Columns'
-import { ChataColumnChart } from '../ChataColumnChart'
 
 export default class ChataHistogram extends React.Component {
   constructor(props) {
@@ -203,7 +201,7 @@ export default class ChataHistogram extends React.Component {
     } else {
       this.xScale = getBandScale({
         ...props,
-        columnIndex: props.stringColumnIndex,
+        columnIndex: props.numberColumnIndex,
         axis: 'x',
         isScaled: true,
       })
@@ -295,17 +293,17 @@ export default class ChataHistogram extends React.Component {
             linearAxis='y'
             yGridLines
           >
-            {this.axisIsNumerical() ? (
-              <HistogramColumns
-                {...this.props}
-                xScale={this.xScale}
-                yScale={this.yScale}
-                buckets={this.buckets}
-                bins={this.bins}
-              />
-            ) : (
+            {/* {this.axisIsNumerical() ? ( */}
+            <HistogramColumns
+              {...this.props}
+              xScale={this.xScale}
+              yScale={this.yScale}
+              buckets={this.buckets}
+              bins={this.bins}
+            />
+            {/* ) : (
               <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />
-            )}
+            )} */}
             <HistogramDistributions {...this.props} xScale={this.xScale} yScale={this.yScale} buckets={this.buckets} />
           </Axes>
         </g>
