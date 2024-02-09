@@ -285,7 +285,7 @@ export default class DataExplorer extends React.Component {
       defaultValue = columnData.find((str) => !!str)
     }
 
-    if (defaultValue) {
+    if (defaultValue !== null && defaultValue !== undefined) {
       return `${defaultValue}`
     }
 
