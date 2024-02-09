@@ -197,6 +197,7 @@ export class QueryOutput extends React.Component {
     onMount: PropTypes.func,
     onBucketSizeChange: PropTypes.func,
     bucketSize: PropTypes.number,
+    onNewData: PropTypes.func,
   }
 
   static defaultProps = {
@@ -242,6 +243,7 @@ export class QueryOutput extends React.Component {
     onPageSizeChange: () => {},
     onMount: () => {},
     onBucketSizeChange: () => {},
+    onNewData: () => {},
   }
 
   componentDidMount = () => {
@@ -906,6 +908,7 @@ export class QueryOutput extends React.Component {
       source: this.props.source,
       scope: this.props.scope,
       cancelToken: this.axiosSource.token,
+      newColumns: queryRequestData?.additional_selects,
       ...args,
     }).finally(() => {
       this.setState({ isLoadingData: false })
@@ -1218,6 +1221,8 @@ export class QueryOutput extends React.Component {
     if (this.shouldGeneratePivotData()) {
       this.generatePivotData()
     }
+
+    this.props.onNewData()
 
     this.setState({ chartID: uuid() })
   }
@@ -1754,6 +1759,17 @@ export class QueryOutput extends React.Component {
           this.pivotTableRef?.ref?.restoreRedraw()
         }
       }
+
+      // Column header context menu
+      // Keep for future use
+      // newCol.headerContextMenu = [
+      //   {
+      //     label: 'Hide Column',
+      //     action: function (e, column, a, b, c) {
+      //       column.hide()
+      //     },
+      //   },
+      // ]
 
       // Show drilldown filter value in column title so user knows they can't filter on this column
       if (drilldownGroupby) {
