@@ -265,7 +265,7 @@ export default class DataExplorer extends React.Component {
   }
 
   getValueFilter = (column, index) => {
-    const columnData = this.state.dataPreview?.data?.data?.rows?.map((row) => row[index])
+    const columnData = this.state.dataPreview?.data?.data?.rows?.map((row) => row[index]).filter((value) => !!value)
 
     let defaultValue = ''
     if (isColumnNumberType(column)) {
