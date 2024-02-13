@@ -514,7 +514,7 @@ export default class ChataTable extends React.Component {
     let response = initialData
 
     try {
-      if (!this.hasSetInitialData) {
+      if (!this.hasSetInitialData || !this._isMounted) {
         return initialData
       }
 
@@ -523,18 +523,12 @@ export default class ChataTable extends React.Component {
       this.tableParams = params
       this.scrollLeft = undefined
 
-      const nextTableParamsFormatted = formatTableParams(params, props.columns)
+      const nextTableParamsFormatted = formatTableParams(params, this.props.columns)
 
       if (params?.page > 1) {
-        if (this._isMounted) {
-          this.setState({ scrollLoading: true })
-        }
-
-        response = await this.getNewPage(props, nextTableParamsFormatted)
+        response = await this.getNewPage(this.props, nextTableParamsFormatted)
       } else {
-        if (this._isMounted) {
-          this.setState({ pageLoading: true })
-        }
+        this.setState({ pageLoading: true })
 
         const responseWrapper = await props.queryFn({
           tableFilters:
@@ -596,6 +590,7 @@ export default class ChataTable extends React.Component {
     const end = start + this.pageSize
 
     const newRows = props.response?.data?.data?.rows?.slice(start, end) ?? []
+
     return _cloneDeep(newRows)
   }
 
@@ -628,9 +623,10 @@ export default class ChataTable extends React.Component {
 
   getNewPage = (props, tableParams) => {
     try {
+      const rows = this.getRows(props, tableParams.page)
       const response = {
         page: tableParams.page,
-        rows: this.getRows(props, tableParams.page),
+        rows,
       }
 
       return Promise.resolve(response)
