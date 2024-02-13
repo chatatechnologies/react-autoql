@@ -57,7 +57,7 @@ export default class SingleNumberAxisSelector extends React.Component {
                   return null
                 }
 
-                const colIndex = columns.findIndex((origColumn) => origColumn.name === col.name)
+                const colIndex = columns.find((origColumn) => origColumn.name === col.name)?.index
 
                 return (
                   <li
@@ -66,7 +66,6 @@ export default class SingleNumberAxisSelector extends React.Component {
                     onClick={() => {
                       this.props.closeSelector()
                       scale.changeColumnIndices([colIndex])
-                      // this.props.changeNumberColumnIndices([colIndex])
                     }}
                   >
                     {col.display_name}

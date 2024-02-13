@@ -229,10 +229,12 @@ export default class ChataTable extends React.Component {
       }
     }
 
-    if (this.props.columns && !deepEqual(this.props.columns, prevProps.columns)) {
+    if (this.props.columns && this.state.tabulatorMounted && !deepEqual(this.props.columns, prevProps.columns)) {
       this.ref?.tabulator?.setColumns(this.getFilteredTabulatorColumnDefinitions())
+      this.updateData(this.getRows(this.props, 1))
       this.setHeaderInputEventListeners()
       this.setFilters()
+      this.clearLoadingIndicators()
     }
 
     if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
@@ -256,10 +258,6 @@ export default class ChataTable extends React.Component {
   }
 
   calculateSummaryStats = (props) => {
-    if (props.pivot) {
-      return {}
-    }
-
     const stats = {}
 
     try {
@@ -441,6 +439,10 @@ export default class ChataTable extends React.Component {
     if (loading !== this.state.loading && this._isMounted) {
       this.setState({ loading })
     }
+  }
+
+  setPageLoading = (loading) => {
+    this.setState({ pageLoading: !!loading })
   }
 
   onTableBuilt = async () => {
@@ -771,15 +773,13 @@ export default class ChataTable extends React.Component {
         `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"] .tabulator-col-content input`,
       )
 
-      if (!this.props.pivot) {
-        const headerElement = document.querySelector(
-          `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"]`,
-        )
+      const headerElement = document.querySelector(
+        `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"]:not(.tabulator-col-group) .tabulator-col-title-holder`,
+      )
 
-        if (headerElement) {
-          headerElement.setAttribute('data-tooltip-id', `selectable-table-column-header-tooltip-${this.TABLE_ID}`)
-          headerElement.setAttribute('data-tooltip-content', JSON.stringify(col))
-        }
+      if (headerElement) {
+        headerElement.setAttribute('data-tooltip-id', `selectable-table-column-header-tooltip-${this.TABLE_ID}`)
+        headerElement.setAttribute('data-tooltip-content', JSON.stringify(col))
       }
 
       if (inputElement) {
@@ -1016,7 +1016,25 @@ export default class ChataTable extends React.Component {
 
   getFilteredTabulatorColumnDefinitions = () => {
     try {
-      if (this.props.columns?.length) {
+      if (this.props.pivot && this.props.columns?.length) {
+        const columns = []
+        this.props.columns.forEach((col, i) => {
+          if (i === 0) {
+            columns.push(col)
+          } else {
+            if (!columns[1]) {
+              columns.push({
+                title: col.origColumn?.display_name,
+                columns: [col],
+              })
+            } else {
+              columns[1].columns.push(col)
+            }
+          }
+        })
+
+        return columns
+      } else if (this.props.columns?.length) {
         const filteredColumns = this.props.columns.map((col) => {
           const newCol = {}
           Object.keys(col).forEach((option) => {
@@ -1128,6 +1146,7 @@ export default class ChataTable extends React.Component {
       }
 
       const name = column.display_name
+      const altName = column.title
       const type = COLUMN_TYPES[column.type]?.description
       const icon = COLUMN_TYPES[column.type]?.icon
 
@@ -1139,7 +1158,10 @@ export default class ChataTable extends React.Component {
       return (
         <div>
           <div className='selectable-table-tooltip-title'>
-            <span>{name}</span>
+            <span>
+              {name}
+              {altName !== name ? ` (${altName})` : ''}
+            </span>
           </div>
           {!!type && (
             <div className='selectable-table-tooltip-section selectable-table-tooltip-subtitle'>
@@ -1276,16 +1298,14 @@ export default class ChataTable extends React.Component {
           {this.renderDateRangePickerPopover()}
           {this.renderTableRowCount()}
         </div>
-        {!this.props.pivot && (
-          <Tooltip
-            tooltipId={`selectable-table-column-header-tooltip-${this.TABLE_ID}`}
-            className='selectable-table-column-header-tooltip'
-            render={this.renderHeaderTooltipContent}
-            opacity={1}
-            delayHide={0}
-            border
-          />
-        )}
+        <Tooltip
+          tooltipId={`selectable-table-column-header-tooltip-${this.TABLE_ID}`}
+          className='selectable-table-column-header-tooltip'
+          render={this.renderHeaderTooltipContent}
+          opacity={1}
+          delayHide={0}
+          border
+        />
       </ErrorBoundary>
     )
   }

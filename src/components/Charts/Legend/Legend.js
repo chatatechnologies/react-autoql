@@ -32,7 +32,7 @@ export default class Legend extends React.Component {
     this.HORIZONTAL_LEGEND_SPACING = isMobile ? 15 : 20
     this.VERTICAL_LEGEND_SPACING = isMobile ? 15 : 25
     this.SHAPE_SIZE = isMobile ? 50 : 75
-    this.TOP_ADJUSTMENT = isMobile ? 12 : 15
+    this.TOP_ADJUSTMENT = isMobile ? 12 : 8
     this.DEFAULT_MAX_WIDTH = isMobile ? 100 : 140
     this.AXIS_TITLE_BORDER_PADDING_LEFT = 5
     this.AXIS_TITLE_BORDER_PADDING_TOP = 3
@@ -251,7 +251,7 @@ export default class Legend extends React.Component {
           select(this).remove()
         } else {
           const cellBBox = this.getBoundingClientRect()
-          const cellBottom = (cellBBox?.y ?? 0) + (cellBBox?.height ?? 0)
+          const cellBottom = (cellBBox?.y ?? 0) + (cellBBox?.height ?? 0) - 5
           if (cellBottom > legendBottom) {
             const bbox = this.getBBox()
             removedElementYBottom = (bbox?.y ?? 0) + (bbox?.height ?? 0)
@@ -465,7 +465,7 @@ export default class Legend extends React.Component {
 
   applyTitleStyles = (title, isFirstSection, legendElement) => {
     if (title) {
-      if (this.props.usePivotDataForChart()) {
+      if (this.props.isAggregated) {
         this.styleLegendTitleWithBorder(legendElement, isFirstSection)
       } else {
         this.styleLegendTitleNoBorder(legendElement)
@@ -594,7 +594,6 @@ export default class Legend extends React.Component {
         chartContainerRef={this.props.chartContainerRef}
         changeStringColumnIndex={this.props.changeStringColumnIndex}
         changeLegendColumnIndex={this.props.changeLegendColumnIndex}
-        usePivotDataForChart={this.props.usePivotDataForChart}
         legendColumn={this.props.legendColumn}
         popoverParentElement={this.props.popoverParentElement}
         stringColumnIndices={this.props.stringColumnIndices}
@@ -604,10 +603,9 @@ export default class Legend extends React.Component {
         numberColumnIndices2={this.props.numberColumnIndices2}
         isAggregation={this.props.isAggregation}
         tooltipID={this.props.tooltipID}
-        columns={this.props.columns}
+        columns={this.props.originalColumns}
         align='center'
-        position='bottom'
-        positions={['top', 'bottom', 'right', 'left']}
+        positions={['bottom', 'top', 'left', 'right']}
         legendSelectorRef={(r) => (this.columnSelector = r)}
         isOpen={this.state.isColumnSelectorOpen}
         closeSelector={this.closeSelector}
@@ -634,7 +632,7 @@ export default class Legend extends React.Component {
         {this.renderLegendSections()}
         {this.renderLegendClippingContainer(translateX, translateY)}
         {this.renderLegendBorder()}
-        {this.props.usePivotDataForChart() && this.renderTitleSelector()}
+        {this.props.isAggregated && this.renderTitleSelector()}
       </g>
     )
   }

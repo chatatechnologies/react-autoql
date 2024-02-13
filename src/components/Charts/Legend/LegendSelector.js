@@ -1,10 +1,10 @@
 import React from 'react'
-import _isEqual from 'lodash.isequal'
-import { v4 as uuid } from 'uuid'
+import PropTypes from 'prop-types'
 import { Popover } from '../../Popover'
-import { axesDefaultProps, axesPropTypes } from '../chartPropHelpers'
 import { CustomScrollbars } from '../../CustomScrollbars'
+
 import './LegendSelector.scss'
+
 export default class LegendSelector extends React.Component {
   constructor(props) {
     super(props)
@@ -14,8 +14,29 @@ export default class LegendSelector extends React.Component {
     }
   }
 
-  static propTypes = axesPropTypes
-  static defaultProps = axesDefaultProps
+  static propTypes = {
+    changeStringColumnIndex: PropTypes.func,
+    changeLegendColumnIndex: PropTypes.func,
+    legendColumn: PropTypes.shape({}),
+    stringColumnIndices: PropTypes.arrayOf(PropTypes.number),
+    stringColumnIndex: PropTypes.number,
+    numberColumnIndex: PropTypes.number,
+    numberColumnIndices: PropTypes.arrayOf(PropTypes.number),
+    numberColumnIndices2: PropTypes.arrayOf(PropTypes.number),
+    isAggregation: PropTypes.bool,
+    tooltipID: PropTypes.string,
+    columns: PropTypes.arrayOf(PropTypes.shape({})),
+    align: PropTypes.string,
+    positions: PropTypes.arrayOf(PropTypes.string),
+    isOpen: PropTypes.bool,
+    closeSelector: PropTypes.func,
+  }
+
+  static defaultProps = {
+    changeStringColumnIndex: () => {},
+    changeLegendColumnIndex: () => {},
+    closeSelector: () => {},
+  }
 
   getAllStringColumnIndices = () => {
     const columnIndices = []
@@ -35,6 +56,7 @@ export default class LegendSelector extends React.Component {
     } else {
       columnIndices = this.getAllStringColumnIndices()
     }
+
     return (
       <div
         className='legend-selector-container'
@@ -48,7 +70,7 @@ export default class LegendSelector extends React.Component {
             {columnIndices.map((colIndex, i) => {
               return (
                 <li
-                  className={`legend-select-list-item ${colIndex === this.props.stringColumnIndex ? 'active' : ''}`}
+                  className={`legend-select-list-item ${colIndex === this.props.legendColumn.index ? 'active' : ''}`}
                   key={`legend-column-select-${i}`}
                   onClick={() => {
                     this.props.closeSelector()
@@ -76,6 +98,7 @@ export default class LegendSelector extends React.Component {
         boundaryElement={this.props.popoverParentElement}
         positions={this.props.positions}
         align={this.props.align}
+        padding={0}
       >
         {this.props.children}
       </Popover>

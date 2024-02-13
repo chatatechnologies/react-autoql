@@ -360,7 +360,7 @@ export const minimum = (
   <svg
     stroke='currentColor'
     fill='none'
-    stroke-width='2'
+    strokeWidth='2'
     viewBox='0 0 24 24'
     strokeLinecap='round'
     strokeLinejoin='round'
@@ -379,7 +379,7 @@ export const maximum = (
   <svg
     stroke='currentColor'
     fill='none'
-    stroke-width='2'
+    strokeWidth='2'
     viewBox='0 0 24 24'
     strokeLinecap='round'
     strokeLinejoin='round'
@@ -397,7 +397,7 @@ export const sum = (
   <svg
     stroke='currentColor'
     fill='none'
-    stroke-width='2'
+    strokeWidth='2'
     viewBox='0 0 24 24'
     strokeLinecap='round'
     strokeLinejoin='round'
@@ -414,7 +414,7 @@ export const median = (
   <svg
     stroke='currentColor'
     fill='currentColor'
-    stroke-width='0'
+    strokeWidth='0'
     viewBox='0 0 16 16'
     height='200px'
     width='200px'
