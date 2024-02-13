@@ -12,6 +12,7 @@ class PopoverWithoutRef extends React.Component {
     reposition: PropTypes.bool,
     showArrow: PropTypes.bool,
     contentLocation: PropTypes.func,
+    stopClickPropagation: PropTypes.bool,
     onClickOutside: PropTypes.func,
   }
 
@@ -20,6 +21,7 @@ class PopoverWithoutRef extends React.Component {
     reposition: true,
     showArrow: false,
     contentLocation: undefined,
+    stopClickPropagation: true,
     onClickOutside: () => {},
   }
 
@@ -74,8 +76,11 @@ class PopoverWithoutRef extends React.Component {
           content={this.renderContent}
           ref={this.props.innerRef}
           onClickOutside={(e) => {
-            e.stopPropagation()
-            e.preventDefault()
+            if (this.props.stopClickPropagation) {
+              e.stopPropagation()
+              e.preventDefault()
+            }
+
             this.props.onClickOutside(e)
           }}
           parentElement={isMobile ? undefined : this.props.parentElement ?? undefined}

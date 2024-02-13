@@ -407,6 +407,7 @@ export default class ChatContent extends React.Component {
                     isResponse={message.isResponse}
                     isChataThinking={this.isChataThinking()}
                     onSuggestionClick={this.animateInputTextAndSubmit}
+                    customToolbarOptions={this.props.customToolbarOptions}
                     content={message.content}
                     scrollToBottom={this.scrollToBottom}
                     dataFormatting={this.props.dataFormatting}

@@ -480,6 +480,8 @@ export default class Axis extends Component {
   }
 
   renderAxisSelector = ({ positions, isSecondAxis, childProps = {} }) => {
+    const columnsForSelector = this.props.isAggregated ? this.props.originalColumns : this.props.columns
+
     return (
       <AxisSelector
         chartContainerRef={this.props.chartContainerRef}
@@ -492,11 +494,10 @@ export default class Axis extends Component {
         stringColumnIndices={this.props.stringColumnIndices}
         stringColumnIndex={this.props.stringColumnIndex}
         dateColumnsOnly={this.props.dateColumnsOnly}
-        isAggregation={this.props.isAggregation}
+        isAggregated={this.props.isAggregated}
         tooltipID={this.props.tooltipID}
         hidden={!this.shouldRenderAxisSelector()}
-        columns={this.props.columns}
-        usePivotDataForChart={this.props.usePivotDataForChart}
+        columns={columnsForSelector}
         scale={this.props.scale}
         secondScale={this.props.scale?.secondScale}
         align='center'
@@ -506,7 +507,7 @@ export default class Axis extends Component {
         hasSecondAxis={this.props.hasSecondAxis}
         axisSelectorRef={(r) => (this.axisSelector = r)}
         isOpen={this.state.isAxisSelectorOpen}
-        originalColumn={this.props.originalColumn}
+        originalColumns={this.props.originalColumns}
         closeSelector={this.closeSelector}
         isSecondAxis={isSecondAxis}
       >
@@ -869,12 +870,11 @@ export default class Axis extends Component {
   }
 
   shouldRenderAxisSelector = () => {
-    if (
-      (this.props.usePivotDataForChart() && !this.props.legendLocation && this.props.scale?.column?.isNumberType) ||
-      (this.props.usePivotDataForChart() && this.props.scale?.column?.isNumberType)
-    ) {
+    if (this.props.scale?.type === 'LINEAR' && this.props.scale?.allFields?.length <= 1) {
       return false
-    } else if (this.props.usePivotDataForChart() && this.props.legendLocation) {
+    } else if (this.props.scale?.type === 'BAND' && !this.props.isAggregated && this.props.scale?.allFields <= 1) {
+      return false
+    } else if (this.props.isAggregated && this.props.legendLocation) {
       return true
     }
 

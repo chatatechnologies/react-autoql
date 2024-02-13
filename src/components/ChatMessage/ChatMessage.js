@@ -236,6 +236,11 @@ export default class ChatMessage extends React.Component {
     return `Downloading your file ... ${this.state.csvDownloadProgress}%`
   }
 
+  onNewDataCallback = () => {
+    // To update the reverse translation:
+    this.forceUpdate()
+  }
+
   renderContent = () => {
     if (this.props.isCSVProgressMessage || typeof this.state.csvDownloadProgress !== 'undefined') {
       return <div className='chat-message-bubble-content-container'>{this.renderCSVProgressMessage()}</div>
@@ -249,6 +254,7 @@ export default class ChatMessage extends React.Component {
           ref={(ref) => (this.responseRef = ref)}
           optionsToolbarRef={this.optionsToolbarRef}
           vizToolbarRef={this.vizToolbarRef}
+          rtRef={this.rtRef}
           authentication={this.props.authentication}
           autoQLConfig={this.props.autoQLConfig}
           queryResponse={this.props.response}
@@ -279,6 +285,8 @@ export default class ChatMessage extends React.Component {
           showSuggestionPrefix={false}
           dataPageSize={this.props.dataPageSize}
           popoverParentElement={this.props.popoverParentElement}
+          allowColumnAddition={true}
+          onNewData={this.onNewDataCallback}
           reportProblemCallback={() => {
             if (this.optionsToolbarRef?._isMounted) {
               this.optionsToolbarRef?.openReportProblemModal()
@@ -324,6 +332,7 @@ export default class ChatMessage extends React.Component {
             deleteMessageCallback={this.onDeleteMessage}
             tooltipID={this.props.tooltipID}
             createDataAlertCallback={this.props.createDataAlertCallback}
+            customOptions={this.props.customToolbarOptions}
             popoverAlign='end'
           />
         ) : null}
@@ -378,6 +387,8 @@ export default class ChatMessage extends React.Component {
           {hasRT ? (
             <div className='chat-message-rt-container'>
               <ReverseTranslation
+                ref={(r) => (this.rtRef = r)}
+                key={this.responseRef.queryResponse?.data?.data?.query_id}
                 authentication={this.props.authentication}
                 onValueLabelClick={this.props.onRTValueLabelClick}
                 queryResponse={this.responseRef.queryResponse}

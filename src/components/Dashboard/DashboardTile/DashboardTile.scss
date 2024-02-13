@@ -184,6 +184,11 @@
 }
 
 .react-autoql-dashboard-tile-inner-div {
+  .react-autoql-table-add-column-btn {
+    right: 0;
+    top: 5px;
+  }
+
   .single-value-response-flex-container {
     display: flex;
     align-items: center;

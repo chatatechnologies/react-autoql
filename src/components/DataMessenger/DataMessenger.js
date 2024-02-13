@@ -764,6 +764,7 @@ export class DataMessenger extends React.Component {
           tooltipID={this.TOOLTIP_ID}
           chartTooltipID={this.CHART_TOOLTIP_ID}
           scope={this.props.scope}
+          customToolbarOptions={this.props.customToolbarOptions}
         />
       </ErrorBoundary>
     )

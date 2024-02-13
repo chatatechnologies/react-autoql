@@ -62,11 +62,13 @@ import {
   getVisibleColumns,
   isDataLimited,
   MAX_CHART_ELEMENTS,
+  formatAdditionalSelectColumn,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
 import { ChataTable } from '../ChataTable'
+import { AddColumnBtn } from '../AddColumnBtn'
 import { ChataChart } from '../Charts/ChataChart'
 import { ReverseTranslation } from '../ReverseTranslation'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -182,6 +184,7 @@ export class QueryOutput extends React.Component {
     onDrilldownEnd: PropTypes.func,
     enableTableSorting: PropTypes.bool,
     showSingleValueResponseTitle: PropTypes.bool,
+    allowColumnAddition: PropTypes.bool,
 
     mutable: PropTypes.bool,
     showSuggestionPrefix: PropTypes.bool,
@@ -194,6 +197,7 @@ export class QueryOutput extends React.Component {
     onMount: PropTypes.func,
     onBucketSizeChange: PropTypes.func,
     bucketSize: PropTypes.number,
+    onNewData: PropTypes.func,
   }
 
   static defaultProps = {
@@ -228,6 +232,7 @@ export class QueryOutput extends React.Component {
     allowDisplayTypeChange: true,
     showSingleValueResponseTitle: false,
     bucketSize: undefined,
+    allowColumnAddition: false,
     onTableConfigChange: () => {},
     onAggConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
@@ -238,6 +243,7 @@ export class QueryOutput extends React.Component {
     onPageSizeChange: () => {},
     onMount: () => {},
     onBucketSizeChange: () => {},
+    onNewData: () => {},
   }
 
   componentDidMount = () => {
@@ -298,6 +304,7 @@ export class QueryOutput extends React.Component {
       // Using a count variable so it doesn't have to deep compare on every udpate
       const columnsChanged = this.state.columnChangeCount !== prevState.columnChangeCount
       if (columnsChanged) {
+        this.tableID = uuid()
         this.props.onColumnChange(this.state.columns)
 
         if (this.shouldGeneratePivotData()) {
@@ -476,7 +483,7 @@ export class QueryOutput extends React.Component {
 
   potentiallySupportsDatePivot = () => {
     const columns = this.getColumns()
-    return this.potentiallySupportsPivot() && columns?.length === 2
+    return this.potentiallySupportsPivot() && getNumberOfGroupables(columns) === 1
   }
 
   usePivotDataForChart = () => {
@@ -608,6 +615,30 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  updateColumnsAndData = (response) => {
+    if (response && this._isMounted) {
+      this.tableID = uuid()
+      this.pivotTableID = uuid()
+      this.isOriginalData = false
+      this.queryResponse = response
+      this.tableData = response?.data?.data?.rows || []
+
+      const newColumns = this.formatColumnsForTable(response?.data?.data?.columns)
+
+      this.tableConfig = undefined
+      this.setTableConfig(newColumns)
+
+      const aggConfig = this.getAggConfig(newColumns)
+
+      this.setState({
+        columns: newColumns,
+        columnChangeCount: this.state.columnChangeCount + 1,
+        chartID: uuid(),
+        aggConfig,
+      })
+    }
+  }
+
   updateColumns = (columns) => {
     if (columns && this._isMounted) {
       // Change table ID so a new ChataTable mounts after column change
@@ -674,12 +705,10 @@ export class QueryOutput extends React.Component {
     try {
       this.pivotTableID = uuid()
       const columns = this.getColumns()
-      if (columns.length === 2) {
+      if (getNumberOfGroupables(columns) === 1) {
         this.generateDatePivotData(this.tableData)
       } else {
-        this.generatePivotTableData({
-          isFirstGeneration,
-        })
+        this.generatePivotTableData({ isFirstGeneration })
       }
     } catch (error) {
       console.error(error)
@@ -879,6 +908,7 @@ export class QueryOutput extends React.Component {
       source: this.props.source,
       scope: this.props.scope,
       cancelToken: this.axiosSource.token,
+      newColumns: queryRequestData?.additional_selects,
       ...args,
     }).finally(() => {
       this.setState({ isLoadingData: false })
@@ -1192,6 +1222,8 @@ export class QueryOutput extends React.Component {
       this.generatePivotData()
     }
 
+    this.props.onNewData()
+
     this.setState({ chartID: uuid() })
   }
 
@@ -1233,17 +1265,16 @@ export class QueryOutput extends React.Component {
   }
 
   onChangeStringColumnIndex = (index) => {
-    if (this.usePivotDataForChart()) {
+    if (this.tableConfig.legendColumnIndex === index) {
       let stringColumnIndex = this.tableConfig.stringColumnIndex
       this.tableConfig.stringColumnIndex = this.tableConfig.legendColumnIndex
       this.tableConfig.legendColumnIndex = stringColumnIndex
-      this.generatePivotTableData()
     } else {
-      if (this.tableConfig.legendColumnIndex === index) {
-        this.tableConfig.legendColumnIndex = undefined
-      }
-
       this.tableConfig.stringColumnIndex = index
+    }
+
+    if (this.usePivotDataForChart()) {
+      this.generatePivotTableData()
     }
 
     this.onTableConfigChange()
@@ -1251,54 +1282,35 @@ export class QueryOutput extends React.Component {
   }
 
   onChangeLegendColumnIndex = (index) => {
-    if (this.usePivotDataForChart()) {
+    if (this.tableConfig.stringColumnIndex === index) {
       let stringColumnIndex = this.tableConfig.stringColumnIndex
       this.tableConfig.stringColumnIndex = this.tableConfig.legendColumnIndex
       this.tableConfig.legendColumnIndex = stringColumnIndex
-
-      this.generatePivotTableData()
     } else {
-      if (this.tableConfig.stringColumnIndex === index) {
-        this.tableConfig.stringColumnIndex = undefined
-      }
       this.tableConfig.legendColumnIndex = index
     }
+
+    if (this.usePivotDataForChart()) {
+      this.generatePivotTableData()
+    }
+
+    this.onTableConfigChange()
     this.forceUpdate()
   }
 
   onChangeNumberColumnIndices = (indices, indices2, newColumns) => {
-    if (this.usePivotDataForChart()) {
-      if (indices) {
-        this.pivotTableConfig.numberColumnIndices = indices
-        this.pivotTableConfig.numberColumnIndex = indices[0]
-      }
-
-      if (indices2) {
-        this.pivotTableConfig.numberColumnIndices2 = indices2
-        this.pivotTableConfig.numberColumnIndex2 = indices2[0]
-      }
-
-      // Todo: pivot columns should live in state
-      if (newColumns) {
-        this.pivotTableColumns = newColumns
-      }
-
-      this.onTableConfigChange()
-      this.forceUpdate()
-    } else {
-      if (indices) {
-        this.tableConfig.numberColumnIndices = indices
-        this.tableConfig.numberColumnIndex = indices[0]
-      }
-
-      if (indices2) {
-        this.tableConfig.numberColumnIndices2 = indices2
-        this.tableConfig.numberColumnIndex2 = indices2[0]
-      }
-
-      const columns = newColumns ?? this.getColumns()
-      this.updateColumns(columns)
+    if (indices) {
+      this.tableConfig.numberColumnIndices = indices
+      this.tableConfig.numberColumnIndex = indices[0]
     }
+
+    if (indices2) {
+      this.tableConfig.numberColumnIndices2 = indices2
+      this.tableConfig.numberColumnIndex2 = indices2[0]
+    }
+
+    const columns = newColumns ?? this.getColumns()
+    this.updateColumns(columns)
   }
 
   resetPivotTableConfig = () => {
@@ -1414,21 +1426,23 @@ export class QueryOutput extends React.Component {
 
     const { amountOfNumberColumns } = getColumnTypeAmounts(columns) ?? {}
 
+    const {
+      allNumberColumnIndices,
+      numberColumnIndex,
+      numberColumnIndices,
+      numberColumnIndex2,
+      numberColumnIndices2,
+      currencyColumnIndices,
+      quantityColumnIndices,
+      ratioColumnIndices,
+    } = getNumberColumnIndices(columns, this.usePivotDataForChart())
+
     // Set number type columns and number series columns (linear axis)
     if (
       !this.tableConfig.numberColumnIndices?.length ||
       !(this.tableConfig.numberColumnIndex >= 0) ||
       !this.tableConfig.numberColumnIndices.includes(this.tableConfig.numberColumnIndex)
     ) {
-      const {
-        numberColumnIndex,
-        numberColumnIndices,
-        numberColumnIndex2,
-        numberColumnIndices2,
-        currencyColumnIndices,
-        quantityColumnIndices,
-        ratioColumnIndices,
-      } = getNumberColumnIndices(columns, this.usePivotDataForChart())
       this.tableConfig.numberColumnIndices = numberColumnIndices
       this.tableConfig.numberColumnIndex = numberColumnIndex
       this.tableConfig.numberColumnIndices2 = numberColumnIndices2
@@ -1436,8 +1450,14 @@ export class QueryOutput extends React.Component {
       this.tableConfig.currencyColumnIndices = currencyColumnIndices
       this.tableConfig.quantityColumnIndices = quantityColumnIndices
       this.tableConfig.ratioColumnIndices = ratioColumnIndices
+
+      if (this.tableConfig.numberColumnIndex === this.tableConfig.stringColumnIndex) {
+        this.tableConfig.numberColumnIndex = allNumberColumnIndices.find(
+          (index) => index !== this.tableConfig.stringColumnIndex,
+        )
+        this.tableConfig.numberColumnIndices = [this.tableConfig.numberColumnIndex]
+      }
     } else if (
-      amountOfNumberColumns > 1 &&
       this.isColumnIndexValid(this.tableConfig.numberColumnIndex, columns) &&
       (!this.isColumnIndicesValid(this.tableConfig.numberColumnIndices2, columns) ||
         !this.isColumnIndexValid(this.tableConfig.numberColumnIndex, columns))
@@ -1447,7 +1467,7 @@ export class QueryOutput extends React.Component {
         (col, index) => index !== this.tableConfig.numberColumnIndex && isColumnNumberType(col) && col.is_visible,
       )
       this.tableConfig.numberColumnIndices2 = [this.tableConfig.numberColumnIndex2]
-    } else if (amountOfNumberColumns > 1 && this.numberIndicesArraysOverlap(this.tableConfig)) {
+    } else if (this.numberIndicesArraysOverlap(this.tableConfig)) {
       // If either array contains all of the number columns, remove one of them
       if (this.tableConfig.numberColumnIndices.length === amountOfNumberColumns) {
         const indexToRemove = this.tableConfig.numberColumnIndices.findIndex(
@@ -1499,6 +1519,7 @@ export class QueryOutput extends React.Component {
         this.tableConfig.numberColumnIndices2 = filteredIndices2
       }
     }
+
     //Second axis indices had hidden columns
     if (this.tableConfig.numberColumnIndices2.find((i) => !columns[i].is_visible)) {
       this.tableConfig.numberColumnIndex2 = columns.findIndex(
@@ -1509,13 +1530,11 @@ export class QueryOutput extends React.Component {
       )
       this.tableConfig.numberColumnIndices2 = [this.tableConfig.numberColumnIndex2]
     }
+
     // Set legend index if there should be one
-    // Only set legend column if charts use pivot data
-    if (this.usePivotDataForChart()) {
-      const legendColumnIndex = columns.findIndex((col, i) => col.groupable && i !== this.tableConfig.stringColumnIndex)
-      if (legendColumnIndex >= 0) {
-        this.tableConfig.legendColumnIndex = legendColumnIndex
-      }
+    const legendColumnIndex = columns.findIndex((col, i) => col.groupable && i !== this.tableConfig.stringColumnIndex)
+    if (legendColumnIndex >= 0) {
+      this.tableConfig.legendColumnIndex = legendColumnIndex
     }
 
     if (!_isEqual(prevTableConfig, this.tableConfig)) {
@@ -1526,9 +1545,7 @@ export class QueryOutput extends React.Component {
   getPotentialDisplayTypes = () => {
     return getSupportedDisplayTypes({
       response: this.queryResponse,
-      columns: this.queryResponse?.data?.data?.columns?.map((col) => ({
-        ...col,
-      })),
+      columns: this.queryResponse?.data?.data?.columns,
       allowNumericStringColumns: this.ALLOW_NUMERIC_STRING_COLUMNS,
     })
   }
@@ -1544,10 +1561,10 @@ export class QueryOutput extends React.Component {
     )
   }
 
-  getCurrentSupportedDisplayTypes = () => {
+  getCurrentSupportedDisplayTypes = (newColumns) => {
     return getSupportedDisplayTypes({
       response: this.queryResponse,
-      columns: this.getColumns(),
+      columns: newColumns ?? this.getColumns(),
       dataLength: this.getDataLength(),
       pivotDataLength: this.getPivotDataLength(),
       isDataLimited: isDataLimited(this.queryResponse),
@@ -1752,6 +1769,17 @@ export class QueryOutput extends React.Component {
         }
       }
 
+      // Column header context menu
+      // Keep for future use
+      // newCol.headerContextMenu = [
+      //   {
+      //     label: 'Hide Column',
+      //     action: function (e, column, a, b, c) {
+      //       column.hide()
+      //     },
+      //   },
+      // ]
+
       // Show drilldown filter value in column title so user knows they can't filter on this column
       if (drilldownGroupby) {
         newCol.isDrilldownColumn = true
@@ -1942,6 +1970,7 @@ export class QueryOutput extends React.Component {
     try {
       this.pivotTableColumnsLimited = false
       this.pivotTableRowsLimited = false
+      this.pivotTableID = uuid()
 
       let tableData = _cloneDeep(this.queryResponse?.data?.data?.rows)
       tableData = tableData.filter((row) => row[0] !== null)
@@ -2189,6 +2218,39 @@ export class QueryOutput extends React.Component {
     return this.props.dataPageSize ?? this.queryResponse?.data?.data?.fe_req?.page_size ?? DEFAULT_DATA_PAGE_SIZE
   }
 
+  onAddColumnClick = (column, sqlFn) => {
+    this.tableRef?.setPageLoading(true)
+
+    const currentAdditionalSelectColumns = this.queryResponse?.data?.data?.fe_req?.additional_selects ?? []
+
+    this.queryFn({
+      newColumns: [...currentAdditionalSelectColumns, formatAdditionalSelectColumn(column, sqlFn)],
+    })
+      .then((response) => {
+        if (response?.data?.data?.rows) {
+          this.updateColumnsAndData(response)
+        } else {
+          throw new Error('New column addition failed')
+        }
+      })
+      .catch((error) => {
+        console.error(error)
+        this.tableRef?.setPageLoading(false)
+      })
+  }
+
+  renderAddColumnBtn = () => {
+    if (this.props.allowColumnAddition && this.state.displayType === 'table') {
+      return (
+        <AddColumnBtn
+          queryResponse={this.queryResponse}
+          tooltipID={this.props.tooltipID}
+          onAddColumnClick={this.onAddColumnClick}
+        />
+      )
+    }
+  }
+
   renderTable = () => {
     if (areAllColumnsHidden(this.getColumns())) {
       return this.renderAllColumnsHiddenMessage()
@@ -2248,6 +2310,7 @@ export class QueryOutput extends React.Component {
     return (
       <ErrorBoundary>
         <ChataTable
+          key={this.pivotTableID}
           ref={(ref) => (this.pivotTableRef = ref)}
           columns={this.pivotTableColumns}
           data={this.pivotTableData}
@@ -2267,6 +2330,7 @@ export class QueryOutput extends React.Component {
           totalRows={this.pivotTableTotalRows}
           totalColumns={this.pivotTableTotalColumns}
           maxColumns={this.MAX_PIVOT_TABLE_COLUMNS}
+          pivotGroups={true} //{getNumberOfGroupables(this.state.columns) > 2}
           pivot
         />
       </ErrorBoundary>
@@ -2302,7 +2366,7 @@ export class QueryOutput extends React.Component {
         <ChataChart
           key={this.state.chartID}
           {...tableConfig}
-          originalColumn={this.queryResponse?.data?.data?.columns}
+          originalColumns={this.queryResponse?.data?.data?.columns}
           data={data}
           hidden={!isChartType(this.state.displayType)}
           authentication={this.props.authentication}
@@ -2318,7 +2382,6 @@ export class QueryOutput extends React.Component {
           legendColumn={this.state.columns[this.tableConfig?.legendColumnIndex]}
           changeStringColumnIndex={this.onChangeStringColumnIndex}
           changeLegendColumnIndex={this.onChangeLegendColumnIndex}
-          usePivotDataForChart={this.usePivotDataForChart}
           changeNumberColumnIndices={this.onChangeNumberColumnIndices}
           onChartClick={this.onChartClick}
           isResizing={this.props.isResizing}
@@ -2580,7 +2643,7 @@ export class QueryOutput extends React.Component {
           className={`react-autoql-response-content-container
           ${isTableType(this.state.displayType) ? 'table' : ''}
           ${isChartType(this.state.displayType) ? 'chart' : ''} 
-		  ${!isChartType(this.state.displayType) && !isTableType(this.state.displayType) ? 'non-table-non-chart' : ''}`}
+		      ${!isChartType(this.state.displayType) && !isTableType(this.state.displayType) ? 'non-table-non-chart' : ''}`}
         >
           {this.props.reverseTranslationPlacement === 'top' && this.renderFooter()}
           {this.renderResponse()}
@@ -2588,6 +2651,7 @@ export class QueryOutput extends React.Component {
         </div>
         {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} />}
         {!this.props.chartTooltipID && <Tooltip tooltipId={this.CHART_TOOLTIP_ID} />}
+        {this.renderAddColumnBtn()}
       </ErrorBoundary>
     )
   }

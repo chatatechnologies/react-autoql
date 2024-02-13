@@ -226,6 +226,18 @@ g.legendOrdinal tspan {
   }
 }
 
+.agg-select-list-symbol {
+  font-weight: 600;
+  margin-right: 10px;
+  display: inline-block;
+  width: 10px;
+  text-align: center;
+
+  .react-autoql-icon {
+    margin-right: 0 !important;
+  }
+}
+
 .agg-type-symbol-select {
   margin: 0;
 
@@ -237,11 +249,6 @@ g.legendOrdinal tspan {
     li {
       font-size: 12px;
       padding: 5px 15px;
-
-      .agg-select-list-symbol {
-        font-weight: 600;
-        margin-right: 10px;
-      }
     }
   }
 }

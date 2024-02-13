@@ -445,6 +445,21 @@ export class OptionsToolbar extends React.Component {
               Create a Data Alert...
             </li>
           )}
+          {!!this.props.customOptions?.length &&
+            this.props.customOptions.map((option, i) => {
+              return (
+                <li
+                  key={`custom-option-${i}`}
+                  onClick={() => {
+                    this.setState({ activeMenu: undefined })
+                    option.callback?.(this.props.responseRef?.queryResponse)
+                  }}
+                >
+                  <Icon style={{ verticalAlign: 'middle', marginRight: '7px' }} type={option.icon} />
+                  {option.name}
+                </li>
+              )
+            })}
         </ul>
       </div>
     )

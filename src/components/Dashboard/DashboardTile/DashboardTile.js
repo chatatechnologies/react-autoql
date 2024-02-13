@@ -1018,6 +1018,7 @@ export class DashboardTile extends React.Component {
             shouldRender={!this.props.isDragging}
             tooltipID={this.props.tooltipID}
             popoverPositions={['top', 'left', 'bottom', 'right']}
+            customOptions={this.props.customToolbarOptions}
             popoverAlign='end'
             {...optionsToolbarProps}
           />
@@ -1052,6 +1053,7 @@ export class DashboardTile extends React.Component {
         tooltipID={this.props.tooltipID}
         chartTooltipID={this.props.chartTooltipID}
         shouldRender={!this.props.isDragging}
+        allowColumnAddition={false} // TODO: handle column addition and persistence
         source='dashboards.user'
         scope='dashboards'
         autoHeight={false}

@@ -1,7 +1,7 @@
 import React from 'react'
 import { v4 as uuid } from 'uuid'
 import { isMobile } from 'react-device-detect'
-import { isColumnDateType, isColumnStringType } from 'autoql-fe-utils'
+import { isColumnDateType } from 'autoql-fe-utils'
 
 import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
@@ -15,8 +15,7 @@ export default class StringAxisSelector extends React.Component {
 
   getAllStringColumnIndices = () => {
     const columnIndices = []
-    let columns = this.props.usePivotDataForChart() ? this.props.originalColumn : this.props.columns
-    columns.forEach((col, i) => {
+    this.props.columns.forEach((col, i) => {
       const isOnNumberAxis = this.props.numberColumnIndices?.includes(col.index)
       const isOnSecondNumberAxis = this.props.hasSecondAxis && this.props.numberColumnIndices2?.includes(col.index)
 
@@ -63,9 +62,6 @@ export default class StringAxisSelector extends React.Component {
     } else {
       columnIndices = this.getAllStringColumnIndices()
     }
-    if (this.props.usePivotDataForChart()) {
-      columnIndices = [this.props.legendColumn.index]
-    }
 
     return (
       <div
@@ -84,7 +80,7 @@ export default class StringAxisSelector extends React.Component {
                 return (
                   <li
                     className={`string-select-list-item ${
-                      colIndex === this.props.stringColumnIndex || this.props.usePivotDataForChart() ? 'active' : ''
+                      colIndex === this.props.scale?.column?.index ? 'active' : ''
                     }`}
                     key={`string-column-select-${i}`}
                     onClick={() => {
@@ -92,9 +88,7 @@ export default class StringAxisSelector extends React.Component {
                       this.props.changeStringColumnIndex(colIndex)
                     }}
                   >
-                    {this.props.usePivotDataForChart()
-                      ? this.props.originalColumn?.[colIndex]?.display_name
-                      : this.props.columns?.[colIndex]?.display_name}
+                    {this.props.columns?.[colIndex]?.display_name}
                   </li>
                 )
               })}
