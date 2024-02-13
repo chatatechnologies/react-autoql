@@ -293,7 +293,9 @@ export default class ChataHistogram extends React.Component {
             linearAxis='y'
             yGridLines
           >
-            {/* {this.axisIsNumerical() ? ( */}
+            {/* 
+            Keep for future use when we want to show histograms for categorical data
+            {this.axisIsNumerical() ? ( */}
             <HistogramColumns
               {...this.props}
               xScale={this.xScale}
@@ -301,7 +303,9 @@ export default class ChataHistogram extends React.Component {
               buckets={this.buckets}
               bins={this.bins}
             />
-            {/* ) : (
+            {/* 
+            Keep for future use when we want to show histograms for categorical data
+            ) : (
               <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />
             )} */}
             <HistogramDistributions {...this.props} xScale={this.xScale} yScale={this.yScale} buckets={this.buckets} />
