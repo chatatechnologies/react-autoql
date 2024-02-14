@@ -137,7 +137,7 @@ export default class ChataChart extends React.Component {
       DATE_ONLY_CHART_TYPES.includes(this.props.type) &&
       !isColumnDateType(this.props.columns[this.props.stringColumnIndex])
     ) {
-      const dateColumnIndex = getDateColumnIndex(this.props.columns)
+      const dateColumnIndex = getDateColumnIndex(this.props.originalColumns)
       this.props.changeStringColumnIndex(dateColumnIndex)
     } else if (this.props.type !== prevProps.type && DOUBLE_AXIS_CHART_TYPES.includes(this.props.type)) {
       const indicesIntersection = this.props.numberColumnIndices.filter((index) =>
