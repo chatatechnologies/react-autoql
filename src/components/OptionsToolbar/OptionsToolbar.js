@@ -452,7 +452,17 @@ export class OptionsToolbar extends React.Component {
                   key={`custom-option-${i}`}
                   onClick={() => {
                     this.setState({ activeMenu: undefined })
-                    option.callback?.(this.props.responseRef?.queryResponse)
+                    const responseRef = this.props.responseRef
+                    option.callback?.({
+                      query: responseRef?.queryResponse?.data?.data?.text,
+                      queryResponse: _cloneDeep(responseRef?.queryResponse),
+                      aggConfig: _cloneDeep(responseRef?.state?.aggConfig),
+                      displayType: responseRef?.state?.displayType,
+                      dataConfig: {
+                        tableConfig: _cloneDeep(responseRef?.tableConfig),
+                        pivotTableConfig: _cloneDeep(responseRef?.pivotTableConfig),
+                      },
+                    })
                   }}
                 >
                   <Icon style={{ verticalAlign: 'middle', marginRight: '7px' }} type={option.icon} />
