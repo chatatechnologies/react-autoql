@@ -423,11 +423,11 @@ class DashboardWithoutTheme extends React.Component {
     }
   }
 
-  addTile = () => {
+  addTile = (content) => {
     try {
       const tiles = _cloneDeep(this.getMostRecentTiles())
       const id = uuid()
-      tiles.push({
+      let tile = {
         key: id,
         i: id,
         w: 6,
@@ -436,7 +436,16 @@ class DashboardWithoutTheme extends React.Component {
         y: Number.MAX_VALUE,
         query: '',
         title: '',
-      })
+      }
+
+      if (content) {
+        tile = {
+          ...tile,
+          ...content,
+        }
+      }
+
+      tiles.push(tile)
 
       this.debouncedOnChange(tiles)
         .then(() => {

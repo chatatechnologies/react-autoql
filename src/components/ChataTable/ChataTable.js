@@ -526,6 +526,7 @@ export default class ChataTable extends React.Component {
       const nextTableParamsFormatted = formatTableParams(params, this.props.columns)
 
       if (params?.page > 1) {
+        this.setState({ scrollLoading: true })
         response = await this.getNewPage(this.props, nextTableParamsFormatted)
       } else {
         this.setState({ pageLoading: true })
@@ -1104,14 +1105,12 @@ export default class ChataTable extends React.Component {
       return null
     }
 
-    let currentRowCount
-    let totalRowCount
+    const currentRowCount = this.getCurrentRowCount()
 
+    let totalRowCount
     if (this.props.pivot) {
-      currentRowCount = this.getCurrentRowCount()
       totalRowCount = this.props.data?.length
     } else {
-      currentRowCount = this.getCurrentRowCount()
       totalRowCount = this.props.response?.data?.data?.count_rows
     }
 
