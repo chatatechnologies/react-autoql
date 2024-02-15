@@ -45,7 +45,7 @@ export default class StackedLines extends React.Component {
         cx={x}
         r={4}
         onClick={() => this.onDotClick(d, colIndex, i)}
-        data-tooltip-content={tooltip}
+        data-tooltip-html={tooltip}
         data-tooltip-id={this.props.chartTooltipID}
         style={{
           opacity: this.state.activeKey === getKey(colIndex, index) ? 1 : 0,
