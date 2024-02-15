@@ -481,25 +481,12 @@ export default class ChataTable extends React.Component {
   }
 
   ajaxRequesting = (props, params) => {
-    // // Use this fn to abort a request
-    // if (!this.hasSetInitialData && !this.isSettingInitialData) {
-    //   const queryHasData = this.props.response?.data?.data?.rows?.length
-    //   const tabulatorHasData = this.ref?.tabulator?.getDataCount('active')?.length
-
-    //   if (!queryHasData || (queryHasData && tabulatorHasData)) {
-    //     this.hasSetInitialData = true
-    //     return true
-    //   }
-    // }
-
+    // Use this fn to abort a request
     const tableParamsFormatted = formatTableParams(this.tableParams, props.columns)
     const nextTableParamsFormatted = formatTableParams(params, props.columns)
     const tableParamsUnchanged = _isEqual(tableParamsFormatted, nextTableParamsFormatted)
 
-    if (
-      this.hasSetInitialData &&
-      (this.state.pageLoading || this.state.scrollLoading || this.props.hidden || tableParamsUnchanged)
-    ) {
+    if (this.hasSetInitialData && (this.state.scrollLoading || this.props.hidden || tableParamsUnchanged)) {
       return false
     }
   }
@@ -521,7 +508,6 @@ export default class ChataTable extends React.Component {
       this.cancelCurrentRequest()
       this.axiosSource = axios.CancelToken?.source()
       this.tableParams = params
-      this.scrollLeft = undefined
 
       const nextTableParamsFormatted = formatTableParams(params, this.props.columns)
 
@@ -565,9 +551,10 @@ export default class ChataTable extends React.Component {
     } catch (error) {
       if (error?.data?.message !== REQUEST_CANCELLED_ERROR) {
         console.error(error)
+        this.clearLoadingIndicators()
+      } else {
+        return
       }
-
-      this.clearLoadingIndicators()
     }
 
     return response
@@ -651,6 +638,8 @@ export default class ChataTable extends React.Component {
       if (isLastPage !== this.state.isLastPage && this._isMounted) {
         this.setState({ isLastPage })
       }
+    } else {
+      return {}
     }
 
     return modResponse
