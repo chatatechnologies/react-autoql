@@ -24,6 +24,7 @@ export default class ChataHeatmapChart extends Component {
 
     this.yScale = getBandScale({
       ...props,
+      column: props.legendColumn,
       domain: props.legendLabels.map((d) => d.label),
       axis: 'y',
       innerPadding: 0.01,
