@@ -267,22 +267,22 @@ export default class ChataTable extends React.Component {
         return {}
       }
 
-      props.columns?.forEach((column) => {
+      props.columns?.forEach((column, columnIndex) => {
         if (column.type === ColumnTypes.QUANTITY || column.type === ColumnTypes.DOLLAR_AMT) {
-          const columnData = rows.map((r) => r[column.index])
-          stats[column.index] = {
+          const columnData = rows.map((r) => r[columnIndex])
+          stats[columnIndex] = {
             avg: formatElement({ element: mean(columnData), column, config: props.dataFormatting }),
             sum: formatElement({ element: sum(columnData), column, config: props.dataFormatting }),
           }
         } else if (column.type === ColumnTypes.DATE) {
-          const dates = rows.map((r) => r[column.index]).filter((date) => !!date)
+          const dates = rows.map((r) => r[columnIndex]).filter((date) => !!date)
           const columnData = dates.map((date) => getDayJSObj({ value: date, column }))?.filter((r) => r?.isValid?.())
 
           const min = dayjs.min(columnData)
           const max = dayjs.max(columnData)
 
           if (min && max) {
-            stats[column.index] = {
+            stats[columnIndex] = {
               min: formatElement({
                 element: min?.toISOString(),
                 column,
@@ -758,7 +758,7 @@ export default class ChataTable extends React.Component {
       return
     }
 
-    columns.forEach((col) => {
+    columns.forEach((col, i) => {
       const inputElement = document.querySelector(
         `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"] .tabulator-col-content input`,
       )
@@ -769,7 +769,7 @@ export default class ChataTable extends React.Component {
 
       if (headerElement) {
         headerElement.setAttribute('data-tooltip-id', `selectable-table-column-header-tooltip-${this.TABLE_ID}`)
-        headerElement.setAttribute('data-tooltip-content', JSON.stringify(col))
+        headerElement.setAttribute('data-tooltip-content', JSON.stringify({ ...col, index: i }))
       }
 
       if (inputElement) {
