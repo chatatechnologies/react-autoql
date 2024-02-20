@@ -142,7 +142,7 @@ export default class NumberAxisSelector extends React.Component {
               />
             )}
             <div className='agg-select-text'>
-              <span>{col.title}</span>
+              <span>{col.display_name}</span>
             </div>
           </div>
         ),
