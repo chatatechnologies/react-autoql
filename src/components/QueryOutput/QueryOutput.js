@@ -553,7 +553,7 @@ export class QueryOutput extends React.Component {
       if (
         isNumber(tableConfig.stringColumnIndex) &&
         (!columns[tableConfig.stringColumnIndex].is_visible ||
-          tableConfig.stringColumnIndices.find((i) => !columns[i].is_visible) !== undefined)
+          tableConfig.stringColumnIndices.find((i) => !columns[i]?.is_visible) !== undefined)
       ) {
         console.debug('Table config invalid: Some of the string column indices were pointing to hidden columns.')
         return false
@@ -561,8 +561,8 @@ export class QueryOutput extends React.Component {
 
       if (
         isNumber(tableConfig.numberColumnIndex) &&
-        (!columns[tableConfig.numberColumnIndex].is_visible ||
-          tableConfig.numberColumnIndices.find((i) => !columns[i].is_visible) !== undefined)
+        (!columns[tableConfig.numberColumnIndex]?.is_visible ||
+          tableConfig.numberColumnIndices.find((i) => !columns[i]?.is_visible) !== undefined)
       ) {
         console.debug('Table config invalid: Some of the number column indices were pointing to hidden columns.')
         return false
@@ -570,9 +570,9 @@ export class QueryOutput extends React.Component {
 
       if (
         isNumber(tableConfig.numberColumnIndex2) &&
-        (!columns[tableConfig.numberColumnIndex2].is_visible ||
+        (!columns[tableConfig.numberColumnIndex2]?.is_visible ||
           (tableConfig.numberColumnIndices2?.length &&
-            tableConfig.numberColumnIndices2.find((i) => !columns[i].is_visible) !== undefined))
+            tableConfig.numberColumnIndices2.find((i) => !columns[i]?.is_visible) !== undefined))
       ) {
         console.debug('Table config invalid: Some of the second number column indices were pointing to hidden columns.')
         return false
@@ -650,6 +650,7 @@ export class QueryOutput extends React.Component {
 
       // check if table config is still valid for new columns...
       const isValid = this.isTableConfigValid(this.tableConfig, newColumns, this.state.displayType)
+
       if (!isValid) {
         this.tableConfig = undefined
         this.setTableConfig(newColumns)
@@ -1521,7 +1522,7 @@ export class QueryOutput extends React.Component {
     }
 
     //Second axis indices had hidden columns
-    if (this.tableConfig.numberColumnIndices2.find((i) => !columns[i].is_visible)) {
+    if (this.tableConfig.numberColumnIndices2.find((i) => !!columns[i] && !columns[i]?.is_visible)) {
       this.tableConfig.numberColumnIndex2 = columns.findIndex(
         (col, i) =>
           isColumnNumberType(col) &&
@@ -2577,9 +2578,10 @@ export class QueryOutput extends React.Component {
 
     const supportsCharts = this.currentlySupportsCharts()
     const supportsPivotTable = this.currentlySupportsPivot()
+    const usePivotData = this.usePivotDataForChart()
 
-    const columns = this.usePivotDataForChart() ? this.pivotTableColumns : this.getColumns()
-    const tableConfig = this.usePivotDataForChart() ? this.pivotTableConfig : this.tableConfig
+    const columns = usePivotData ? this.pivotTableColumns : this.getColumns()
+    const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
     const tableConfigIsValid = this.isTableConfigValid(tableConfig, columns, this.state.displayType)
 
     const shouldRenderChart = (allowsDisplayTypeChange || displayTypeIsChart) && supportsCharts && tableConfigIsValid
