@@ -10,7 +10,6 @@ import { formatChartLabel, getBBoxFromRef, mergeBoundingClientRects, shouldLabel
 import { Legend } from '../Legend'
 import AxisScaler from './AxisScaler'
 import AxisSelector from '../Axes/AxisSelector'
-import LoadMoreDropdown from './LoadMoreDropdown'
 
 import { axesDefaultProps, axesPropTypes } from '../chartPropHelpers.js'
 
@@ -27,7 +26,6 @@ export default class Axis extends Component {
     this.AXIS_TITLE_PADDING_BOTTOM = 0
     this.AXIS_TITLE_BORDER_PADDING_LEFT = 5
     this.AXIS_TITLE_BORDER_PADDING_TOP = 3
-    this.LOAD_MORE_DROPDOWN_PADDING_BOTTOM = 10
     this.MINIMUM_TITLE_LENGTH = 10
 
     this.swatchElements = []
@@ -218,6 +216,7 @@ export default class Axis extends Component {
       if (label?.formattedLabel) {
         return label.formattedLabel
       }
+
       return d
     })
 
@@ -441,7 +440,6 @@ export default class Axis extends Component {
     let legendPadding = { top: 0, bottom: 0, left: 20, right: 0 }
     if (legendOrientation === 'horizontal') {
       legendPadding.right = legendPadding.left = this.props.chartPadding
-      legendPadding.top = this.LOAD_MORE_DROPDOWN_PADDING_BOTTOM
     }
 
     return (
@@ -805,46 +803,6 @@ export default class Axis extends Component {
     } else if (this.props.orient === 'left' || this.props.orient === 'right') {
       this.adjustVerticalTitleToFit()
     }
-  }
-
-  adjustLoadMoreSelectorToFit = () => {
-    if (!this.loadMoreDropdownComponent || !this.props.chartRef) {
-      return
-    }
-
-    this.loadMoreDropdownComponent.initializeWidth?.()
-    let loadMoreDropdownBBox = getBBoxFromRef(this.loadMoreDropdown)
-
-    // ---------------------- Chart width is too small to fit the whole line --------------------
-    const chartContainerWidth = this.props.outerWidth - 2 * this.props.chartPadding
-    const loadMoreDropdownWidth = loadMoreDropdownBBox.width ?? 0
-
-    if (loadMoreDropdownWidth > chartContainerWidth) {
-      // Shorten width to fit container
-      this.loadMoreDropdownComponent.adjustWidth?.(chartContainerWidth)
-    }
-    // --------------------------------------------------------------------------------------------
-
-    // Get new BBox to check horizontal alignment
-    loadMoreDropdownBBox = getBBoxFromRef(this.loadMoreDropdown)
-    const centerX = this.props.innerWidth / 2
-    const loadMoreDropdownCenterX = loadMoreDropdownBBox.x + loadMoreDropdownBBox.width / 2
-    const deltaCenter = centerX - loadMoreDropdownCenterX
-    const labelBBoxBottom = (this.labelsBBox?.y ?? 0) + (this.labelsBBox?.height ?? 0)
-    const axisTitleHeight = this.AXIS_TITLE_PADDING_TOP + this.AXIS_TITLE_PADDING_BOTTOM + this.fontSize
-    const rowSelectorY = labelBBoxBottom + axisTitleHeight
-
-    let translateX = deltaCenter
-    let translateY = rowSelectorY
-
-    const loadMoreDropdownRightX = loadMoreDropdownBBox.x + loadMoreDropdownBBox.width + translateX
-    const chartRightX = this.props.outerWidth - this.props.deltaX - this.props.chartPadding
-    const rightXDiff = chartRightX - loadMoreDropdownRightX
-    if (rightXDiff < 0) {
-      translateX += rightXDiff
-    }
-
-    select(this.loadMoreDropdown).attr('transform', `translate(${translateX}, ${translateY})`)
   }
 
   renderAxisTitle = () => {
