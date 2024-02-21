@@ -625,8 +625,7 @@ export class QueryOutput extends React.Component {
 
       const newColumns = this.formatColumnsForTable(response?.data?.data?.columns)
 
-      this.tableConfig = undefined
-      this.setTableConfig(newColumns)
+      this.resetTableConfig()
 
       const aggConfig = this.getAggConfig(newColumns)
 
@@ -641,26 +640,15 @@ export class QueryOutput extends React.Component {
 
   updateColumns = (columns) => {
     if (columns && this._isMounted) {
-      // Change table ID so a new ChataTable mounts after column change
-      // An alternative would be to manually set the new columns in tabulator:
-      // this.tableRef.ref.table.setColumns(columns)
-      // this.tableID = uuid()
-
       const newColumns = this.formatColumnsForTable(columns)
 
-      // check if table config is still valid for new columns...
-      const isValid = this.isTableConfigValid(this.tableConfig, newColumns, this.state.displayType)
-
-      if (!isValid) {
-        this.tableConfig = undefined
-        this.setTableConfig(newColumns)
-      }
+      this.resetTableConfig()
 
       this.setState({
         columns: newColumns,
         aggConfig: this.getAggConfig(columns),
         columnChangeCount: this.state.columnChangeCount + 1,
-        chartID: isValid ? this.state.chartID : uuid(),
+        chartID: uuid(), // isValid ? this.state.chartID : uuid(),
       })
     }
   }
