@@ -32,7 +32,7 @@ export default class Legend extends React.Component {
     this.HORIZONTAL_LEGEND_SPACING = isMobile ? 15 : 20
     this.VERTICAL_LEGEND_SPACING = isMobile ? 15 : 25
     this.SHAPE_SIZE = isMobile ? 50 : 75
-    this.TOP_ADJUSTMENT = isMobile ? 12 : 8
+    this.TOP_ADJUSTMENT = isMobile ? 12 : props.isAggregated ? 8 : 16
     this.DEFAULT_MAX_WIDTH = isMobile ? 100 : 140
     this.AXIS_TITLE_BORDER_PADDING_LEFT = 5
     this.AXIS_TITLE_BORDER_PADDING_TOP = 3
@@ -237,6 +237,9 @@ export default class Legend extends React.Component {
   }
 
   removeHiddenLegendLabels = (legendElement) => {
+    // Remove red arrow if it has been rendered already
+    select(legendElement).select('.legend-hidden-field-arrow').remove()
+
     const legendContainerBBox = this.legendBorder?.getBoundingClientRect()
     const legendBottom = (legendContainerBBox?.y ?? 0) + (legendContainerBBox?.height ?? 0) - this.BORDER_PADDING
 
@@ -252,6 +255,7 @@ export default class Legend extends React.Component {
         } else {
           const cellBBox = this.getBoundingClientRect()
           const cellBottom = (cellBBox?.y ?? 0) + (cellBBox?.height ?? 0) - 5
+
           if (cellBottom > legendBottom) {
             const bbox = this.getBBox()
             removedElementYBottom = (bbox?.y ?? 0) + (bbox?.height ?? 0)
@@ -268,7 +272,6 @@ export default class Legend extends React.Component {
     if (hasRemovedElement && removedElementTransform) {
       // Add red arrow to bottom of legend to show not all labels are visible
       const tooltipID = this.props.chartTooltipID
-      select(legendElement).select('.legend-hidden-field-arrow').remove()
       select(legendElement)
         .append('text')
         .html('&#9660 ...')
@@ -588,6 +591,7 @@ export default class Legend extends React.Component {
   closeSelector = () => {
     this.setState({ isColumnSelectorOpen: false })
   }
+
   renderTitleSelector = () => {
     return (
       <LegendSelector
