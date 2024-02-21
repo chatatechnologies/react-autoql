@@ -625,7 +625,7 @@ export class QueryOutput extends React.Component {
 
       const newColumns = this.formatColumnsForTable(response?.data?.data?.columns)
 
-      this.resetTableConfig()
+      this.resetTableConfig(newColumns)
 
       const aggConfig = this.getAggConfig(newColumns)
 
@@ -642,7 +642,7 @@ export class QueryOutput extends React.Component {
     if (columns && this._isMounted) {
       const newColumns = this.formatColumnsForTable(columns)
 
-      this.resetTableConfig()
+      this.resetTableConfig(newColumns)
 
       this.setState({
         columns: newColumns,
@@ -1361,9 +1361,9 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  resetTableConfig = () => {
+  resetTableConfig = (newColumns) => {
     this.tableConfig = undefined
-    this.setTableConfig()
+    this.setTableConfig(newColumns)
   }
 
   isColumnIndexValid = (index, columns) => {
