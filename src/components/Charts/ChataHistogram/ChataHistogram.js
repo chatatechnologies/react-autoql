@@ -307,8 +307,8 @@ export default class ChataHistogram extends React.Component {
             Keep for future use when we want to show histograms for categorical data
             ) : (
               <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />
-            )} */}
-            <HistogramDistributions {...this.props} xScale={this.xScale} yScale={this.yScale} buckets={this.buckets} />
+            )}
+            {/* <HistogramDistributions {...this.props} xScale={this.xScale} yScale={this.yScale} buckets={this.buckets} /> */}
           </Axes>
         </g>
       </>
