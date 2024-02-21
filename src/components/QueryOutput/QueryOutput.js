@@ -490,22 +490,6 @@ export class QueryOutput extends React.Component {
     return this.potentiallySupportsPivot() && !this.potentiallySupportsDatePivot()
   }
 
-  areColumnsValid = (columns) => {
-    /* Each provided column must exist in the original
-       query response columns for it to be valid */
-    const origColumns = this.queryResponse?.data?.data?.columns
-
-    if (!columns?.length || !origColumns?.length) {
-      return false
-    }
-
-    return columns.every((column) =>
-      origColumns.find((origColumn) => {
-        column.name === origColumn.name
-      }),
-    )
-  }
-
   numberIndicesArraysOverlap = (tableConfig) => {
     return (
       tableConfig.numberColumnIndices.length &&
@@ -642,13 +626,20 @@ export class QueryOutput extends React.Component {
     if (columns && this._isMounted) {
       const newColumns = this.formatColumnsForTable(columns)
 
-      this.resetTableConfig(newColumns)
+      const visibleColumnsChanged = !_isEqual(
+        newColumns?.filter((col) => col.is_visible).map((col) => col.name),
+        this.state.columns?.filter((col) => col.is_visible).map((col) => col.name),
+      )
+
+      if (visibleColumnsChanged) {
+        this.resetTableConfig(newColumns)
+      }
 
       this.setState({
         columns: newColumns,
-        aggConfig: this.getAggConfig(columns),
+        aggConfig: this.getAggConfig(newColumns),
         columnChangeCount: this.state.columnChangeCount + 1,
-        chartID: uuid(), // isValid ? this.state.chartID : uuid(),
+        chartID: visibleColumnsChanged ? uuid() : this.state.chartID,
       })
     }
   }
@@ -1254,6 +1245,10 @@ export class QueryOutput extends React.Component {
   }
 
   onChangeStringColumnIndex = (index) => {
+    if (!(index >= 0)) {
+      return
+    }
+
     if (this.tableConfig.legendColumnIndex === index) {
       let stringColumnIndex = this.tableConfig.stringColumnIndex
       this.tableConfig.stringColumnIndex = this.tableConfig.legendColumnIndex
@@ -2357,7 +2352,7 @@ export class QueryOutput extends React.Component {
         <ChataChart
           key={this.state.chartID}
           {...tableConfig}
-          originalColumns={this.queryResponse?.data?.data?.columns}
+          originalColumns={this.getColumns()}
           data={data}
           hidden={!isChartType(this.state.displayType)}
           authentication={this.props.authentication}
