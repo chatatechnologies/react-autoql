@@ -1546,7 +1546,7 @@ export class QueryOutput extends React.Component {
   getPotentialDisplayTypes = () => {
     return getSupportedDisplayTypes({
       response: this.queryResponse,
-      columns: this.queryResponse?.data?.data?.columns,
+      columns: this.getColumns(),
       allowNumericStringColumns: this.ALLOW_NUMERIC_STRING_COLUMNS,
     })
   }
@@ -1913,6 +1913,7 @@ export class QueryOutput extends React.Component {
           origValues: {},
           name: year,
           title: year,
+          display_name: year,
           field: `${i + 1}`,
           visible: true,
           is_visible: true,
@@ -2070,6 +2071,7 @@ export class QueryOutput extends React.Component {
           origValues: {},
           name: columnName,
           title: formattedColumnName,
+          display_name: formattedColumnName,
           field: `${i + 1}`,
           visible: true,
           is_visible: true,
