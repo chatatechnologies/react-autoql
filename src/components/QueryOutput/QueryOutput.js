@@ -1257,6 +1257,12 @@ export class QueryOutput extends React.Component {
       this.tableConfig.stringColumnIndex = index
     }
 
+    if (this.tableConfig.numberColumnIndices.includes(index)) {
+      const newNumberColumnIndices = getNumberColumnIndices(this.getColumns()).filter((i) => i !== index)
+      this.tableConfig.numberColumnIndices = newNumberColumnIndices
+      this.tableConfig.numberColumnIndex = newNumberColumnIndices[0]
+    }
+
     if (this.usePivotDataForChart()) {
       this.generatePivotTableData()
     }
@@ -1404,8 +1410,17 @@ export class QueryOutput extends React.Component {
         isPivot,
         this.ALLOW_NUMERIC_STRING_COLUMNS,
       )
+
       this.tableConfig.stringColumnIndices = stringColumnIndices
       this.tableConfig.stringColumnIndex = stringColumnIndex
+
+      // If it set all of the columns to string column indices, remove one so it can be set as the number column index
+      if (stringColumnIndices.length === getVisibleColumns(columns).length) {
+        const indexToRemove = stringColumnIndices.findIndex((i) => i !== stringColumnIndex)
+        if (indexToRemove > -1) {
+          this.tableConfig.stringColumnIndices.splice(indexToRemove, 1)
+        }
+      }
     }
 
     const { amountOfNumberColumns } = getColumnTypeAmounts(columns) ?? {}
@@ -1437,9 +1452,22 @@ export class QueryOutput extends React.Component {
 
       if (this.tableConfig.numberColumnIndex === this.tableConfig.stringColumnIndex) {
         this.tableConfig.numberColumnIndex = allNumberColumnIndices.find(
-          (index) => index !== this.tableConfig.stringColumnIndex,
+          (index) => !this.tableConfig.stringColumnIndices.includes(index),
         )
         this.tableConfig.numberColumnIndices = [this.tableConfig.numberColumnIndex]
+      }
+
+      if (this.tableConfig.numberColumnIndex2 === this.tableConfig.stringColumnIndex) {
+        this.tableConfig.numberColumnIndex2 = allNumberColumnIndices.find(
+          (index) =>
+            !this.tableConfig.stringColumnIndices.includes(index) &&
+            !this.tableConfig.numberColumnIndices.includes(index),
+        )
+        if (this.tableConfig.numberColumnIndex2) {
+          this.tableConfig.numberColumnIndices2 = [this.tableConfig.numberColumnIndex2]
+        } else {
+          this.tableConfig.numberColumnIndices2 = []
+        }
       }
     } else if (
       this.isColumnIndexValid(this.tableConfig.numberColumnIndex, columns) &&
@@ -2314,7 +2342,7 @@ export class QueryOutput extends React.Component {
           totalRows={this.pivotTableTotalRows}
           totalColumns={this.pivotTableTotalColumns}
           maxColumns={this.MAX_PIVOT_TABLE_COLUMNS}
-          pivotGroups={true} //{getNumberOfGroupables(this.state.columns) > 2}
+          pivotGroups={true}
           pivot
         />
       </ErrorBoundary>
