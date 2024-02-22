@@ -11,7 +11,7 @@ import { Legend } from '../Legend'
 import AxisScaler from './AxisScaler'
 import AxisSelector from '../Axes/AxisSelector'
 
-import { axesDefaultProps, axesPropTypes } from '../chartPropHelpers.js'
+import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers.js'
 
 import './Axis.scss'
 
@@ -48,7 +48,7 @@ export default class Axis extends Component {
   }
 
   static propTypes = {
-    ...axesPropTypes,
+    ...chartPropTypes,
     scale: PropTypes.func,
     orient: PropTypes.string,
     translateX: PropTypes.number,
@@ -56,11 +56,15 @@ export default class Axis extends Component {
   }
 
   static defaultProps = {
-    ...axesDefaultProps,
+    ...chartDefaultProps,
     orient: 'bottom',
     translate: undefined,
     translateX: 0,
     translateY: 0,
+    innerWidth: 0,
+    innerHeight: 0,
+    outerHeight: 0,
+    outerWidth: 0,
     onAxisRenderComplete: () => {},
   }
 
@@ -681,13 +685,15 @@ export default class Axis extends Component {
     const titleBBox = getBBoxFromRef(this.titleRef)
     const titleHeight = titleBBox?.height ?? 0
     const titleWidth = titleBBox?.width ?? 0
+    const titleX = titleBBox?.x ?? 0
+    const titleY = titleBBox?.y ?? 0
 
     select(this.axisSelector)
       .attr('transform', this.titleRef?.getAttribute('transform'))
       .attr('width', Math.round(titleWidth + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT))
       .attr('height', Math.round(titleHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP))
-      .attr('x', Math.round(titleBBox?.x - this.AXIS_TITLE_BORDER_PADDING_LEFT))
-      .attr('y', Math.round(titleBBox?.y - this.AXIS_TITLE_BORDER_PADDING_TOP))
+      .attr('x', Math.round(titleX - this.AXIS_TITLE_BORDER_PADDING_LEFT))
+      .attr('y', Math.round(titleY - this.AXIS_TITLE_BORDER_PADDING_TOP))
   }
 
   adjustAxisScalerBorder = () => {
