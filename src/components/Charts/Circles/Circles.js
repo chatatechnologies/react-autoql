@@ -96,8 +96,8 @@ export default class Circles extends Component {
 
           const key = getKey(colIndex, index)
 
-          const scaleX = xScale(xLabel)
-          const scaleY = yScale(yLabel)
+          const scaleX = xScale.getValue(xLabel)
+          const scaleY = yScale.getValue(yLabel)
 
           circles.push(
             <circle
