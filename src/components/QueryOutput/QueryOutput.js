@@ -25,7 +25,6 @@ import {
   isChartType,
   areAllColumnsHidden,
   sortDataByDate,
-  sortDataByAlphabet,
   dateSortFn,
   getDayJSObj,
   getNumberOfGroupables,
@@ -1965,16 +1964,10 @@ export class QueryOutput extends React.Component {
 
       const { legendColumnIndex, stringColumnIndex, numberColumnIndex } = this.tableConfig
 
-      let uniqueRowHeaders = null
-      if (isColumnStringType(columns[stringColumnIndex]) && !isColumnDateType(columns[stringColumnIndex])) {
-        uniqueRowHeaders = sortDataByAlphabet(tableData, columns, 'asc', 'isTable')
-          .map((d) => d[stringColumnIndex])
-          .filter(onlyUnique)
-      } else {
-        uniqueRowHeaders = sortDataByDate(tableData, columns, 'desc', 'isTable')
-          .map((d) => d[stringColumnIndex])
-          .filter(onlyUnique)
-      }
+      let uniqueRowHeaders = sortDataByDate(tableData, columns, 'desc', 'isTable')
+        .map((d) => d[stringColumnIndex])
+        .filter(onlyUnique)
+
       let uniqueColumnHeaders = sortDataByDate(tableData, columns, 'desc', 'isTable')
         .map((d) => d[legendColumnIndex])
         .filter(onlyUnique)
@@ -1996,6 +1989,10 @@ export class QueryOutput extends React.Component {
         const tempValues = [...uniqueRowHeaders]
         uniqueRowHeaders = [...uniqueColumnHeaders]
         uniqueColumnHeaders = tempValues
+      }
+
+      if (isColumnStringType(columns[newLegendColumnIndex]) && !isColumnDateType(columns[stringColumnIndex])) {
+        uniqueColumnHeaders.sort((a, b) => a.localeCompare?.(b))
       }
 
       if (uniqueRowHeaders?.length > MAX_CHART_ELEMENTS) {
