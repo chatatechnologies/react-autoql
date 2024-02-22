@@ -51,6 +51,7 @@ g.legendOrdinal tspan {
 }
 
 .number-axis-selector-popover {
+  max-height: 65vh;
   display: flex;
   overflow: hidden;
   flex: 1;
