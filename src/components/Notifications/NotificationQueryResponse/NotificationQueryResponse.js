@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { authenticationDefault, autoQLConfigDefault, dataFormattingDefault } from 'autoql-fe-utils'
-
+import { isMobile } from 'react-device-detect'
 import { VizToolbar } from '../../VizToolbar'
 import { LoadingDots } from '../../LoadingDots'
 import { QueryOutput } from '../../QueryOutput'
@@ -106,7 +106,10 @@ export default class NotificationQueryResponse extends React.Component {
 
   render = () => {
     return (
-      <div className='react-autoql-notification-data-container' onClick={(e) => e.stopPropagation()}>
+      <div
+        className={`react-autoql-notification-data-container ${isMobile ? 'mobile' : ''}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         {this.renderVisualization()}
         {this.renderToolbar()}
       </div>
