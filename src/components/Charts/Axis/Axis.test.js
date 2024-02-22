@@ -65,12 +65,14 @@ describe('after mount', () => {
   describe('renders axis labels correctly', () => {
     describe('short titles - pivot data', () => {
       test('renders string axis label', () => {
+        const scale = pivotSampleProps.stringScale({
+          title: pivotSampleProps.columns[pivotSampleProps.stringColumnIndex].display_name,
+        })
+
         const wrapper = setup({
           ...pivotSampleProps,
           col: pivotSampleProps.columns[pivotSampleProps.stringColumnIndex],
-          scale: pivotSampleProps.stringScale({
-            title: pivotSampleProps.columns[pivotSampleProps.stringColumnIndex].display_name,
-          }),
+          scale,
           orient: 'left',
         })
 
@@ -98,14 +100,16 @@ describe('after mount', () => {
           expect(labelArrow.exists()).toBe(false)
         })
 
-        test('renders dropdown with props', () => {
+        test('does not render dropdown even with props if there is only 1 column to choose from', () => {
+          const scale = pivotSampleProps.stringScale({
+            title: pivotSampleProps.columns[pivotSampleProps.stringColumnIndex].display_name,
+            hasDropdown: true,
+          })
+
           const wrapper2 = setup({
             ...pivotSampleProps,
-            col: pivotSampleProps.columns[pivotSampleProps.numberColumnIndex],
-            scale: pivotSampleProps.numberScale({
-              title: pivotSampleProps.columns[pivotSampleProps.numberColumnIndex].display_name,
-              hasDropdown: true,
-            }),
+            col: pivotSampleProps.columns[pivotSampleProps.stringColumnIndex],
+            scale,
             orient: 'bottom',
           })
 
