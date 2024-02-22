@@ -59,13 +59,13 @@ export default class StackedBars extends Component {
           let width
           if (value >= 0) {
             const nextPosValue = prevPosValue + value
-            width = Math.abs(xScale(value) - xScale(0) - 0.5)
-            x = xScale(prevPosValue)
+            width = Math.abs(xScale.getValue(value) - xScale.getValue(0) - 0.5)
+            x = xScale.getValue(prevPosValue)
             prevPosValue = nextPosValue
           } else {
             const nextNegValue = prevNegValue + value
-            width = Math.abs(xScale(Math.abs(value)) - xScale(0) - 0.5)
-            x = xScale(nextNegValue)
+            width = Math.abs(xScale.getValue(Math.abs(value)) - xScale.getValue(0) - 0.5)
+            x = xScale.getValue(nextNegValue)
             prevNegValue = nextNegValue
           }
 
@@ -88,7 +88,7 @@ export default class StackedBars extends Component {
               key={getKey(colIndex, index)}
               className={`column${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
               x={x}
-              y={yScale(d[stringColumnIndex])}
+              y={yScale.getValue(d[stringColumnIndex])}
               width={width}
               height={yScale.bandwidth()}
               onClick={() => this.onColumnClick(d, colIndex, index)}

@@ -60,13 +60,13 @@ export default class StackedColumns extends React.Component {
 
           if (value >= 0) {
             const nextPosValue = prevPosValue + value
-            height = Math.abs(yScale(value) - yScale(0)) - 0.5
-            y = yScale(nextPosValue) + 0.5
+            height = Math.abs(yScale.getValue(value) - yScale.getValue(0)) - 0.5
+            y = yScale.getValue(nextPosValue) + 0.5
             prevPosValue = nextPosValue
           } else {
             const nextNegValue = prevNegValue + value
-            height = Math.abs(yScale(value) - yScale(0)) - 0.5
-            y = yScale(prevNegValue) + 0.5
+            height = Math.abs(yScale.getValue(value) - yScale.getValue(0)) - 0.5
+            y = yScale.getValue(prevNegValue) + 0.5
             prevNegValue = nextNegValue
           }
 
@@ -88,7 +88,7 @@ export default class StackedColumns extends React.Component {
             <rect
               key={getKey(colIndex, index)}
               className={`bar${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
-              x={xScale(d[stringColumnIndex])}
+              x={xScale.getValue(d[stringColumnIndex])}
               y={y}
               width={xScale.bandwidth()}
               height={Math.abs(height)}
