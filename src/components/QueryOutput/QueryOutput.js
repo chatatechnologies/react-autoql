@@ -318,6 +318,8 @@ export class QueryOutput extends React.Component {
         const newSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
         if (!_isEqual(newSupportedDisplayTypes, this.state.supportedDisplayTypes)) {
           newState.supportedDisplayTypes = newSupportedDisplayTypes
+        } else {
+          shouldForceUpdate = true
         }
       }
 
@@ -601,7 +603,6 @@ export class QueryOutput extends React.Component {
 
   updateColumnsAndData = (response) => {
     if (response && this._isMounted) {
-      this.tableID = uuid()
       this.pivotTableID = uuid()
       this.isOriginalData = false
       this.queryResponse = response
