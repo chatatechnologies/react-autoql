@@ -125,8 +125,8 @@ export default class Squares extends React.Component {
             key={getKey(colIndex, index)}
             data-test='squares'
             className={`square${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
-            x={xScale(xLabel)}
-            y={yScale(yLabel)}
+            x={xScale.getValue(xLabel)}
+            y={yScale.getValue(yLabel)}
             width={xScale.bandwidth()}
             height={yScale.bandwidth()}
             onClick={() => this.onSquareClick(row, colIndex, index)}
