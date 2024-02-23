@@ -41,6 +41,10 @@ export default class LegendSelector extends React.Component {
   getAllStringColumnIndices = () => {
     const columnIndices = []
     this.props.columns.forEach((col, i) => {
+      if (!col.is_visible) {
+        return
+      }
+
       const isOnNumberAxis = this.props.numberColumnIndices?.includes(col.index)
       const isOnSecondNumberAxis = this.props.hasSecondAxis && this.props.numberColumnIndices2?.includes(col.index)
       if ((!isOnNumberAxis && !isOnSecondNumberAxis && col.is_visible) || (col.groupable && col.isStringType)) {
@@ -49,6 +53,7 @@ export default class LegendSelector extends React.Component {
     })
     return columnIndices
   }
+
   renderSelectorContent = () => {
     let columnIndices = []
     if (this.props.dateColumnsOnly) {

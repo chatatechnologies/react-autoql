@@ -73,6 +73,7 @@ export default class Circles extends Component {
     const { chartColors } = getChartColorVars()
     const color0 = chartColors[0]
     const color1 = chartColors[1]
+    const color2 = 'var(--react-autoql-danger-color)'
 
     this.props.data.forEach((row, index) => {
       numberColumnIndices.forEach((colIndex, i) => {
@@ -98,6 +99,7 @@ export default class Circles extends Component {
 
           const scaleX = xScale.getValue(xLabel)
           const scaleY = yScale.getValue(yLabel)
+          const radius = this.radiusScale(value) / 2
 
           circles.push(
             <circle
@@ -107,14 +109,14 @@ export default class Circles extends Component {
               className={`circle${this.state.activeKey === key ? ' active' : ''}`}
               cx={scaleX + xBandwidth / 2}
               cy={scaleY + yBandwidth / 2}
-              r={value < 0 ? 0 : this.radiusScale(value) / 2}
+              r={Math.abs(radius)}
               onClick={() => this.onCircleClick(row, colIndex, key)}
               data-tooltip-html={tooltip}
               data-tooltip-id={this.props.chartTooltipID}
               style={{
                 stroke: 'transparent',
                 strokeWidth: 10,
-                fill: this.state.activeKey === key ? color1 : color0,
+                fill: this.state.activeKey === key ? color1 : radius > 0 ? color0 : color2,
                 fillOpacity: 0.7,
               }}
             />,
