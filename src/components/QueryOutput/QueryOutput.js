@@ -1506,7 +1506,7 @@ export class QueryOutput extends React.Component {
       // Selected index is the same for both axes. Remove the overlapping values from the first axis
       if (this.tableConfig.numberColumnIndex === this.tableConfig.numberColumnIndex2) {
         this.tableConfig.numberColumnIndex2 = columns.findIndex(
-          (col, i) => isColumnNumberType(col) && i !== this.tableConfig.numberColumnIndex,
+          (col, i) => col.is_visible && isColumnNumberType(col) && i !== this.tableConfig.numberColumnIndex,
         )
         // If the new columnIndex2 is not already in the indices array, add it
         if (this.tableConfig.numberColumnIndices2.indexOf(this.tableConfig.numberColumnIndex2) === -1) {
@@ -1536,6 +1536,7 @@ export class QueryOutput extends React.Component {
     if (this.tableConfig.numberColumnIndices2.find((i) => !!columns[i] && !columns[i]?.is_visible)) {
       this.tableConfig.numberColumnIndex2 = columns.findIndex(
         (col, i) =>
+          col.is_visible &&
           isColumnNumberType(col) &&
           i !== this.tableConfig.numberColumnIndex &&
           i !== this.tableConfig.numberColumnIndex2,
@@ -1544,7 +1545,9 @@ export class QueryOutput extends React.Component {
     }
 
     // Set legend index if there should be one
-    const legendColumnIndex = columns.findIndex((col, i) => col.groupable && i !== this.tableConfig.stringColumnIndex)
+    const legendColumnIndex = columns.findIndex(
+      (col, i) => col.is_visible && col.groupable && i !== this.tableConfig.stringColumnIndex,
+    )
     if (legendColumnIndex >= 0) {
       this.tableConfig.legendColumnIndex = legendColumnIndex
     }
@@ -1859,7 +1862,9 @@ export class QueryOutput extends React.Component {
       const dateColumnIndex = getDateColumnIndex(columns)
       let numberColumnIndex = this.tableConfig.numberColumnIndex
       if (!(numberColumnIndex >= 0)) {
-        numberColumnIndex = columns.findIndex((col, index) => index !== dateColumnIndex && isColumnNumberType(col))
+        numberColumnIndex = columns.findIndex(
+          (col, index) => col.is_visible && index !== dateColumnIndex && isColumnNumberType(col),
+        )
       }
       const tableData = newTableData || this.queryResponse?.data?.data?.rows
 
@@ -2369,6 +2374,7 @@ export class QueryOutput extends React.Component {
     }
 
     const data = usePivotData ? this.state.visiblePivotRows || this.pivotTableData : this.tableData
+    const columns = usePivotData ? this.pivotTableColumns : this.state.columns
 
     const isPivotDataLimited =
       this.usePivotDataForChart() && (this.pivotTableRowsLimited || this.pivotTableColumnsLimited)
@@ -2386,7 +2392,7 @@ export class QueryOutput extends React.Component {
           type={this.state.displayType}
           isDataAggregated={isChartDataAggregated}
           popoverParentElement={this.props.popoverParentElement}
-          columns={usePivotData ? this.pivotTableColumns : this.state.columns}
+          columns={columns}
           isAggregated={usePivotData}
           dataFormatting={this.props.dataFormatting}
           activeChartElementKey={this.props.activeChartElementKey}
