@@ -257,7 +257,15 @@
         font-size: 17px;
       }
     }
-
+    &.mobile {
+      .react-autoql-notification-chart-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 10px 10px 10px 10px;
+        overflow: hidden;
+      }
+    }
     .react-autoql-notification-chart-container {
       flex: 1;
       display: flex;
