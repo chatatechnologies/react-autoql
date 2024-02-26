@@ -304,7 +304,11 @@ export class QueryOutput extends React.Component {
       const columnsChanged = this.state.columnChangeCount !== prevState.columnChangeCount
       if (columnsChanged) {
         this.tableID = uuid()
-        this.props.onColumnChange(this.state.columns)
+        this.props.onColumnChange(
+          this.state.columns,
+          this.queryResponse?.data?.data?.fe_req?.additional_selects,
+          this.queryResponse,
+        )
 
         if (this.shouldGeneratePivotData()) {
           this.generatePivotData({
