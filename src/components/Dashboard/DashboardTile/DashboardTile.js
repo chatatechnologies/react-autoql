@@ -726,8 +726,9 @@ export class DashboardTile extends React.Component {
   onDisplayTypeChange = (displayType) => this.debouncedSetParamsForTile({ displayType })
   onBucketSizeChange = (bucketSize) => this.debouncedSetParamsForTile({ bucketSize })
 
-  onColumnChange = (columns, columnSelects, queryResponse) =>
+  onColumnChange = (columns, columnSelects, queryResponse) => {
     this.debouncedSetParamsForTile({ columnSelects, queryResponse })
+  }
 
   onSecondAggConfigChange = (secondAggConfig) => this.debouncedSetParamsForTile({ secondAggConfig })
   onSecondDataConfigChange = (secondDataConfig) => this.debouncedSetParamsForTile({ secondDataConfig })
