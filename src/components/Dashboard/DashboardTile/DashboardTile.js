@@ -1057,7 +1057,7 @@ export class DashboardTile extends React.Component {
         enableDynamicCharting={this.props.enableDynamicCharting}
         backgroundColor={document.documentElement.style.getPropertyValue('--react-autoql-background-color-secondary')}
         showQueryInterpretation={this.props.isEditing}
-        reverseTranslationPlacement='top'
+        reverseTranslationPlacement='bottom'
         tooltipID={this.props.tooltipID}
         chartTooltipID={this.props.chartTooltipID}
         shouldRender={!this.props.isDragging}
