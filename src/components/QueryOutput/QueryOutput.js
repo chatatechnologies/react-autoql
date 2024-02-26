@@ -636,6 +636,9 @@ export class QueryOutput extends React.Component {
       )
 
       if (visibleColumnsChanged) {
+        if (this.queryResponse?.data?.data?.columns) {
+          this.queryResponse.data.data.columns = newColumns
+        }
         this.resetTableConfig(newColumns)
       }
 
