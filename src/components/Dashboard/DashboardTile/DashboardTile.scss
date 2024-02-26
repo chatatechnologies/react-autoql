@@ -198,17 +198,19 @@
     }
   }
 
-  .tabulator-header-contents {
-    height: 32px !important;
-  }
-  .react-autoql-table-container.filtering .tabulator-header-contents {
-    height: 55px !important;
-  }
-
   .react-autoql-table,
   .table-row-count {
     color: var(--react-autoql-text-color-primary);
     font-size: 11px;
+  }
+
+  .react-autoql-table-container.pivot
+    .tabulator-header[role='rowgroup']
+    .tabulator-header-contents
+    .tabulator-headers
+    .tabulator-col
+    .tabulator-col-content {
+    padding: 7px 5px;
   }
 
   .dashboard-tile-response-wrapper {
