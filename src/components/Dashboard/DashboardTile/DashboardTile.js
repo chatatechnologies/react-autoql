@@ -302,6 +302,7 @@ export class DashboardTile extends React.Component {
       }
 
       const useSecondAxiosSource = isSecondHalf && !this.areTopAndBottomSameQuery()
+      const additionalColumnSelects = isSecondHalf ? this.props.tile.secondColumnSelects : this.props.tile.columnSelects
       const cancelToken = useSecondAxiosSource ? this.secondAxiosSource?.token : this.axiosSource?.token
 
       const requestData = {
@@ -311,6 +312,7 @@ export class DashboardTile extends React.Component {
           ? false
           : getAutoQLConfig(this.props.autoQLConfig).enableQueryValidation,
         skipQueryValidation: skipQueryValidation,
+        newColumns: additionalColumnSelects,
         // Hardcode this for now until we change the filter lock blacklist to a whitelist
         // mergeSources(this.props.source, source),
         source: 'dashboards.user',
@@ -724,10 +726,16 @@ export class DashboardTile extends React.Component {
   onDisplayTypeChange = (displayType) => this.debouncedSetParamsForTile({ displayType })
   onBucketSizeChange = (bucketSize) => this.debouncedSetParamsForTile({ bucketSize })
 
+  onColumnChange = (columns, columnSelects, queryResponse) =>
+    this.debouncedSetParamsForTile({ columnSelects, queryResponse })
+
   onSecondAggConfigChange = (secondAggConfig) => this.debouncedSetParamsForTile({ secondAggConfig })
   onSecondDataConfigChange = (secondDataConfig) => this.debouncedSetParamsForTile({ secondDataConfig })
   onSecondDisplayTypeChange = (secondDisplayType) => this.debouncedSetParamsForTile({ secondDisplayType })
   onSecondBucketSizeChange = (secondBucketSize) => this.debouncedSetParamsForTile({ secondBucketSize })
+
+  onSecondColumnChange = (columns, secondColumnSelects, queryResponse) =>
+    this.debouncedSetParamsForTile({ secondColumnSelects, queryResponse })
 
   reportProblemCallback = () => {
     if (this.optionsToolbarRef?._isMounted) {
@@ -1053,7 +1061,7 @@ export class DashboardTile extends React.Component {
         tooltipID={this.props.tooltipID}
         chartTooltipID={this.props.chartTooltipID}
         shouldRender={!this.props.isDragging}
-        allowColumnAddition={false} // TODO: handle column addition and persistence
+        allowColumnAddition={this.props.isEditing}
         source='dashboards.user'
         scope='dashboards'
         autoHeight={false}
@@ -1115,6 +1123,7 @@ export class DashboardTile extends React.Component {
         initialAggConfig: this.props.tile.aggConfig,
         onTableConfigChange: this.onDataConfigChange,
         onAggConfigChange: this.onAggConfigChange,
+        onColumnChange: this.onColumnChange,
         queryValidationSelections: this.props.tile.queryValidationSelections,
         onSuggestionClick: this.onSuggestionClick,
         defaultSelectedSuggestion: this.props.tile?.defaultSelectedSuggestion,
@@ -1205,6 +1214,7 @@ export class DashboardTile extends React.Component {
         dataPageSize: this.props.tile.secondPageSize,
         onPageSizeChange: this.onSecondPageSizeChange,
         onBucketSizeChange: this.onSecondBucketSizeChange,
+        onColumnChange: this.onSecondColumnChange,
         bucketSize: this.props.tile.secondBucketSize,
       },
       vizToolbarProps: {
