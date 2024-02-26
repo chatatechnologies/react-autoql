@@ -149,7 +149,7 @@ export class AddColumnBtnWithoutRef extends React.Component {
         >
           <div
             onClick={() => this.setState({ isAddColumnMenuOpen: true })}
-            className='react-autoql-table-add-column-btn'
+            className={`react-autoql-table-add-column-btn${this.state.isAddColumnMenuOpen ? ' active' : ''}`}
             data-test='react-autoql-table-add-column-btn'
             data-tooltip-content='Add Column'
             data-tooltip-id={this.props.tooltipID}

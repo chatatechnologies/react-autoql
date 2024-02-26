@@ -250,6 +250,7 @@ export class QueryOutput extends React.Component {
       this._isMounted = true
       this.updateToolbars()
       this.props.onMount()
+      this.forceUpdate()
     } catch (error) {
       console.error(error)
       this.props.onErrorCallback(error)
@@ -624,6 +625,10 @@ export class QueryOutput extends React.Component {
 
   updateColumns = (columns) => {
     if (columns && this._isMounted) {
+      if (this.queryResponse?.data?.data?.columns) {
+        this.queryResponse.data.data.columns = _cloneDeep(columns)
+      }
+
       const newColumns = this.formatColumnsForTable(columns)
 
       const visibleColumnsChanged = !_isEqual(
@@ -1784,17 +1789,6 @@ export class QueryOutput extends React.Component {
         }
       }
 
-      // Column header context menu
-      // Keep for future use
-      // newCol.headerContextMenu = [
-      //   {
-      //     label: 'Hide Column',
-      //     action: function (e, column, a, b, c) {
-      //       column.hide()
-      //     },
-      //   },
-      // ]
-
       // Show drilldown filter value in column title so user knows they can't filter on this column
       if (drilldownGroupby) {
         newCol.isDrilldownColumn = true
@@ -2287,6 +2281,7 @@ export class QueryOutput extends React.Component {
           ref={(ref) => (this.tableRef = ref)}
           columns={this.state.columns}
           response={this.queryResponse}
+          updateColumns={this.updateColumns}
           columnDateRanges={this.columnDateRanges}
           onCellClick={this.onTableCellClick}
           queryID={this.queryID}
