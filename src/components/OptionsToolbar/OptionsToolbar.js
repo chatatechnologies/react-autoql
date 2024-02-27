@@ -446,6 +446,7 @@ export class OptionsToolbar extends React.Component {
             </li>
           )}
           {!!this.props.customOptions?.length &&
+            !this.isDrilldownResponse() &&
             this.props.customOptions.map((option, i) => {
               return (
                 <li
