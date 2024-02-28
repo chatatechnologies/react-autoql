@@ -185,7 +185,7 @@
 
 .react-autoql-dashboard-tile-inner-div {
   .react-autoql-table-add-column-btn {
-    right: 0;
+    right: 15px;
     top: 5px;
   }
 
@@ -198,17 +198,19 @@
     }
   }
 
-  .tabulator-header-contents {
-    height: 32px !important;
-  }
-  .react-autoql-table-container.filtering .tabulator-header-contents {
-    height: 55px !important;
-  }
-
   .react-autoql-table,
   .table-row-count {
     color: var(--react-autoql-text-color-primary);
     font-size: 11px;
+  }
+
+  .react-autoql-table-container.pivot
+    .tabulator-header[role='rowgroup']
+    .tabulator-header-contents
+    .tabulator-headers
+    .tabulator-col
+    .tabulator-col-content {
+    padding: 7px 5px;
   }
 
   .dashboard-tile-response-wrapper {
@@ -223,13 +225,6 @@
       color: var(--react-autoql-border-color);
       opacity: 0.3;
       pointer-events: none;
-    }
-
-    .react-autoql-response-content-container.table .query-output-footer {
-      min-height: 33px;
-      &.top {
-        min-height: unset;
-      }
     }
   }
 

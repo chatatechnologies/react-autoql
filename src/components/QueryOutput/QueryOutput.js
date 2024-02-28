@@ -305,7 +305,11 @@ export class QueryOutput extends React.Component {
       const columnsChanged = this.state.columnChangeCount !== prevState.columnChangeCount
       if (columnsChanged) {
         this.tableID = uuid()
-        this.props.onColumnChange(this.state.columns)
+        this.props.onColumnChange(
+          this.state.columns,
+          this.queryResponse?.data?.data?.fe_req?.additional_selects,
+          this.queryResponse,
+        )
 
         if (this.shouldGeneratePivotData()) {
           this.generatePivotData({
@@ -623,12 +627,8 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  updateColumns = (columns) => {
+  updateColumns = (columns, feReq) => {
     if (columns && this._isMounted) {
-      if (this.queryResponse?.data?.data?.columns) {
-        this.queryResponse.data.data.columns = _cloneDeep(columns)
-      }
-
       const newColumns = this.formatColumnsForTable(columns)
 
       const visibleColumnsChanged = !_isEqual(
@@ -637,6 +637,12 @@ export class QueryOutput extends React.Component {
       )
 
       if (visibleColumnsChanged) {
+        if (this.queryResponse?.data?.data?.columns) {
+          if (feReq) {
+            this.queryResponse.data.data.fe_req = feReq
+          }
+          this.queryResponse.data.data.columns = newColumns
+        }
         this.resetTableConfig(newColumns)
       }
 
@@ -1788,6 +1794,17 @@ export class QueryOutput extends React.Component {
           this.pivotTableRef?.ref?.restoreRedraw()
         }
       }
+
+      // Column header context menu
+      // Keep for future use
+      // newCol.headerContextMenu = [
+      //   {
+      //     label: 'Hide Column',
+      //     action: function (e, column, a, b, c) {
+      //       column.hide()
+      //     },
+      //   },
+      // ]
 
       // Show drilldown filter value in column title so user knows they can't filter on this column
       if (drilldownGroupby) {

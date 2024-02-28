@@ -969,7 +969,7 @@ export default class ChataTable extends React.Component {
         .queryFn({ newColumns: newAdditionalSelectColumns })
         .then((response) => {
           if (response?.data?.data?.rows) {
-            this.props.updateColumns(response?.data?.data?.columns)
+            this.props.updateColumns(response?.data?.data?.columns, response?.data?.data?.fe_req)
           } else {
             throw new Error('Column deletion failed')
           }

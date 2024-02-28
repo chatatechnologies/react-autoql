@@ -446,6 +446,7 @@ export class OptionsToolbar extends React.Component {
             </li>
           )}
           {!!this.props.customOptions?.length &&
+            !this.isDrilldownResponse(this.props) &&
             this.props.customOptions.map((option, i) => {
               return (
                 <li
@@ -453,11 +454,13 @@ export class OptionsToolbar extends React.Component {
                   onClick={() => {
                     this.setState({ activeMenu: undefined })
                     const responseRef = this.props.responseRef
+                    const responseCopy = _cloneDeep(responseRef?.queryResponse)
                     option.callback?.({
                       query: responseRef?.queryResponse?.data?.data?.text,
-                      queryResponse: _cloneDeep(responseRef?.queryResponse),
+                      queryResponse: responseCopy,
                       aggConfig: _cloneDeep(responseRef?.state?.aggConfig),
                       displayType: responseRef?.state?.displayType,
+                      columnSelects: responseCopy?.data?.data?.fe_req?.additional_selects,
                       dataConfig: {
                         tableConfig: _cloneDeep(responseRef?.tableConfig),
                         pivotTableConfig: _cloneDeep(responseRef?.pivotTableConfig),
