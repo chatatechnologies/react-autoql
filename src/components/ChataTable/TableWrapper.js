@@ -135,6 +135,23 @@ export default class TableWrapper extends React.Component {
     }
   }
 
+  addColumn = (column, before, position) => {
+    if (this.tabulator) {
+      return this.tabulator
+        .addColumn(column, before, position)
+        .then((column) => {
+          this.ref?.refreshData(false, 'all')
+        })
+        .catch((error) => {
+          console.error(error)
+        })
+    }
+  }
+
+  updateColumn = (name, params) => {
+    return this.tabulator?.updateColumnDefinition(name, params)
+  }
+
   updateData = (data) => {
     if (this.props.hidden) {
       // This allows current tasks to finish first

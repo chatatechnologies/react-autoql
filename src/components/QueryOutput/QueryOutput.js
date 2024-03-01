@@ -1733,6 +1733,8 @@ export class QueryOutput extends React.Component {
       newCol.field = `${i}`
       newCol.title = col.display_name
 
+      newCol.mutateLink = 'Custom'
+
       // Visibility flag: this can be changed through the column visibility editor modal
       newCol.visible = col.is_visible
       newCol.download = col.is_visible
@@ -2243,24 +2245,29 @@ export class QueryOutput extends React.Component {
   }
 
   onAddColumnClick = (column, sqlFn) => {
-    this.tableRef?.setPageLoading(true)
+    if (!column) {
+      // Add a custom column
+      this.tableRef?.addCustomColumn()
+    } else {
+      this.tableRef?.setPageLoading(true)
 
-    const currentAdditionalSelectColumns = this.queryResponse?.data?.data?.fe_req?.additional_selects ?? []
+      const currentAdditionalSelectColumns = this.queryResponse?.data?.data?.fe_req?.additional_selects ?? []
 
-    this.queryFn({
-      newColumns: [...currentAdditionalSelectColumns, formatAdditionalSelectColumn(column, sqlFn)],
-    })
-      .then((response) => {
-        if (response?.data?.data?.rows) {
-          this.updateColumnsAndData(response)
-        } else {
-          throw new Error('New column addition failed')
-        }
+      this.queryFn({
+        newColumns: [...currentAdditionalSelectColumns, formatAdditionalSelectColumn(column, sqlFn)],
       })
-      .catch((error) => {
-        console.error(error)
-        this.tableRef?.setPageLoading(false)
-      })
+        .then((response) => {
+          if (response?.data?.data?.rows) {
+            this.updateColumnsAndData(response)
+          } else {
+            throw new Error('New column addition failed')
+          }
+        })
+        .catch((error) => {
+          console.error(error)
+          this.tableRef?.setPageLoading(false)
+        })
+    }
   }
 
   renderAddColumnBtn = () => {
@@ -2270,6 +2277,7 @@ export class QueryOutput extends React.Component {
           queryResponse={this.queryResponse}
           tooltipID={this.props.tooltipID}
           onAddColumnClick={this.onAddColumnClick}
+          onCustomClick={this.onAddColumnClick}
         />
       )
     }
@@ -2317,6 +2325,7 @@ export class QueryOutput extends React.Component {
           queryFn={this.queryFn}
           source={this.props.source}
           scope={this.props.scope}
+          {...this.tableConfig}
         />
       </ErrorBoundary>
     )

@@ -568,7 +568,9 @@ export default class ChataTable extends React.Component {
     return props.response?.data?.data?.rows
   }
 
-  getRows = (props, pageNumber) => {
+  getRows = (providedProps, pageNumber) => {
+    const props = this.props ?? providedProps
+
     if (props.pivot) {
       return _cloneDeep(props.data)
     }
@@ -726,6 +728,39 @@ export default class ChataTable extends React.Component {
     e.preventDefault()
   }
 
+  addCustomColumn = () => {
+    const title = 'Custom'
+    const mutator = (value, data, type, params, component) => {
+      //value - original value of the cell
+      //data - the data for the row
+      //type - the type of mutation occurring  (data|edit)
+      //params - the mutatorParams object from the column definition
+      //component - when the "type" argument is "edit", this contains the cell component for the edited cell, otherwise it is the column component for the column
+      return data[this.props.numberColumnIndex] / 2 //return the sum of the other two columns.
+    }
+
+    const field = `${this.props.columns.length}`
+
+    const newColumn = {
+      ...this.props.columns[this.props.numberColumnIndex],
+      display_name: title,
+      title,
+      field,
+      custom: true,
+      fnSummary: `${this.props.columns[this.props.numberColumnIndex]?.display_name} / 2`,
+      mutator,
+    }
+
+    const newColumns = _cloneDeep(this.props.columns)
+    newColumns[this.props.numberColumnIndex].mutateLink = field
+
+    newColumns.push(newColumn)
+
+    this.ref?.tabulator?.setColumns(newColumns)
+    this.ref?.updateData(this.getRows())
+    this.setHeaderInputEventListeners(newColumns)
+  }
+
   renderHeaderInputClearBtn = (inputElement, column) => {
     const clearBtnText = document.createElement('span')
     clearBtnText.innerHTML = '&#x00d7;'
@@ -752,8 +787,8 @@ export default class ChataTable extends React.Component {
     inputElement.parentNode.appendChild(clearBtn)
   }
 
-  setHeaderInputEventListeners = () => {
-    const columns = this.props.columns
+  setHeaderInputEventListeners = (cols) => {
+    const columns = cols ?? this.props.columns
     if (!columns) {
       return
     }
@@ -1155,6 +1190,12 @@ export default class ChataTable extends React.Component {
             <div className='selectable-table-tooltip-section selectable-table-tooltip-subtitle'>
               {!!icon && <Icon type={icon} />}
               <span>{type}</span>
+            </div>
+          )}
+          {!!column.fnSummary && (
+            <div className='selectable-table-tooltip-section'>
+              <strong>Custom function: </strong>
+              <span>{column.fnSummary}</span>
             </div>
           )}
           {(column.type === ColumnTypes.QUANTITY ||

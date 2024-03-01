@@ -273,6 +273,13 @@
   width: 100%;
   margin: 0;
   padding: 0;
+  padding-bottom: 5px;
+
+  hr {
+    border-top: 1px solid var(--react-autoql-border-color);
+    border-bottom: none;
+    opacity: 0.5;
+  }
 }
 .context-menu-list li {
   color: var(--react-autoql-text-color-primary);

@@ -25,17 +25,26 @@ export class AddColumnBtnWithoutRef extends React.Component {
 
   static propTypes = {
     queryResponse: PropTypes.shape({}),
+    allowCustom: PropTypes.bool,
     onAddColumnClick: PropTypes.func,
+    onCustomClick: PropTypes.func,
   }
 
   static defaultProps = {
     queryResponse: undefined,
+    allowCustom: true,
     onAddColumnClick: () => {},
+    onCustomClick: () => {},
   }
 
   onAddColumnClick = (column, aggType) => {
     this.props.onAddColumnClick(column, aggType)
     this.setState({ isAddColumnMenuOpen: false, aggPopoverActiveID: undefined })
+  }
+
+  onCustomClick = () => {
+    this.setState({ isAddColumnMenuOpen: false, aggPopoverActiveID: undefined })
+    this.props.onCustomClick()
   }
 
   renderAggMenu = (column) => {
@@ -117,6 +126,12 @@ export class AddColumnBtnWithoutRef extends React.Component {
                 </Popover>
               )
             })}
+            {this.props.allowCustom && (
+              <>
+                <hr />
+                <li onClick={this.onCustomClick}>Custom...</li>
+              </>
+            )}
           </ul>
         </div>
       </CustomScrollbars>
