@@ -37,6 +37,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './ChataTable.scss'
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
+import CustomColumnModal from './CustomColumnModal'
 
 export default class ChataTable extends React.Component {
   constructor(props) {
@@ -729,36 +730,7 @@ export default class ChataTable extends React.Component {
   }
 
   addCustomColumn = () => {
-    const title = 'Custom'
-    const mutator = (value, data, type, params, component) => {
-      //value - original value of the cell
-      //data - the data for the row
-      //type - the type of mutation occurring  (data|edit)
-      //params - the mutatorParams object from the column definition
-      //component - when the "type" argument is "edit", this contains the cell component for the edited cell, otherwise it is the column component for the column
-      return data[this.props.numberColumnIndex] / 2 //return the sum of the other two columns.
-    }
-
-    const field = `${this.props.columns.length}`
-
-    const newColumn = {
-      ...this.props.columns[this.props.numberColumnIndex],
-      display_name: title,
-      title,
-      field,
-      custom: true,
-      fnSummary: `${this.props.columns[this.props.numberColumnIndex]?.display_name} / 2`,
-      mutator,
-    }
-
-    const newColumns = _cloneDeep(this.props.columns)
-    newColumns[this.props.numberColumnIndex].mutateLink = field
-
-    newColumns.push(newColumn)
-
-    this.ref?.tabulator?.setColumns(newColumns)
-    this.ref?.updateData(this.getRows())
-    this.setHeaderInputEventListeners(newColumns)
+    this.setState({ isCustomColumnPopoverOpen: true })
   }
 
   renderHeaderInputClearBtn = (inputElement, column) => {
@@ -1036,6 +1008,24 @@ export default class ChataTable extends React.Component {
           }}
         />
       </Popover>
+    )
+  }
+
+  renderCustomColumnPopover = () => {
+    return (
+      <CustomColumnModal
+        isOpen={this.state.isCustomColumnPopoverOpen}
+        onClose={() => this.setState({ isCustomColumnPopoverOpen: false })}
+        columns={this.props.columns}
+        tableConfig={this.props.tableConfig}
+        tableRef={this.ref}
+        onConfirm={(newColumns) => {
+          this.ref?.tabulator?.setColumns(newColumns)
+          this.ref?.updateData(this.getRows())
+          this.setHeaderInputEventListeners(newColumns)
+          this.setState({ isCustomColumnPopoverOpen: false })
+        }}
+      />
     )
   }
 
@@ -1325,6 +1315,7 @@ export default class ChataTable extends React.Component {
               )}
           </div>
           {this.renderDateRangePickerPopover()}
+          {this.renderCustomColumnPopover()}
           {this.renderTableRowCount()}
         </div>
         <Tooltip

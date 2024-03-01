@@ -2325,7 +2325,7 @@ export class QueryOutput extends React.Component {
           queryFn={this.queryFn}
           source={this.props.source}
           scope={this.props.scope}
-          {...this.tableConfig}
+          tableConfig={this.tableConfig}
         />
       </ErrorBoundary>
     )
