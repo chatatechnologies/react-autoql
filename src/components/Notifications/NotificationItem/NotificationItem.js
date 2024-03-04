@@ -64,6 +64,7 @@ export default class NotificationItem extends React.Component {
     onDataAlertChange: PropTypes.func,
     onSuccessCallback: PropTypes.func,
     onQueryClick: PropTypes.func,
+    isAutoAlerts: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -71,6 +72,7 @@ export default class NotificationItem extends React.Component {
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
     autoChartAggregations: false,
+    isAutoAlerts: false,
     onQueryClick: undefined,
     onRuleFetchCallback: () => {},
     updateScrollbars: () => {},
@@ -321,7 +323,7 @@ export default class NotificationItem extends React.Component {
 
     return (
       <Menu>
-        {!!this.props.dataAlert && !isMobile && (
+        {!!this.props.dataAlert && !isMobile && !this.props.isAutoAlerts && (
           <MenuItem
             data-test='react-autoql-toolbar-more-options-notification'
             title='Settings'
@@ -330,7 +332,7 @@ export default class NotificationItem extends React.Component {
             onClick={(e) => this.onOptionClick(() => this.props.onEditClick(this.props.dataAlert))}
           />
         )}
-        {!!status && (
+        {!!status && !this.props.isAutoAlerts && (
           <MenuItem
             onClick={() => this.onOptionClick(() => this.changeDataAlertStatus(isActive ? 'INACTIVE' : 'ACTIVE'))}
             icon={isActive ? 'notification-off' : 'notification'}

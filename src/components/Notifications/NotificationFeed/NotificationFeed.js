@@ -72,6 +72,7 @@ class NotificationFeed extends React.Component {
     shouldRender: PropTypes.bool,
     onDataAlertChange: PropTypes.func,
     tooltipID: PropTypes.string,
+    isAutoAlerts: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -79,6 +80,7 @@ class NotificationFeed extends React.Component {
     showDataAlertsManager: false,
     showNotificationDetails: true,
     autoChartAggregations: false,
+    isAutoAlerts: false,
     showCreateAlertBtn: false,
     shouldRender: true,
     tooltipID: this.TOOLTIP_ID,
@@ -546,6 +548,7 @@ class NotificationFeed extends React.Component {
                         }}
                         notification={notification}
                         dataAlert={dataAlert}
+                        isAutoAlerts={this.props.isAutoAlerts}
                         expanded={!!notification.expanded}
                         onDismissCallback={this.onDismissClick}
                         onUnreadCallback={this.onUnreadClick}
