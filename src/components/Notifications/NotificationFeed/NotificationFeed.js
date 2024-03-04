@@ -72,6 +72,8 @@ class NotificationFeed extends React.Component {
     shouldRender: PropTypes.bool,
     onDataAlertChange: PropTypes.func,
     tooltipID: PropTypes.string,
+    enableSettingsMenu: PropTypes.bool,
+    enableNotificationsMenu: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -82,6 +84,8 @@ class NotificationFeed extends React.Component {
     showCreateAlertBtn: false,
     shouldRender: true,
     tooltipID: this.TOOLTIP_ID,
+    enableSettingsMenu: true,
+    enableNotificationsMenu: true,
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
     onErrorCallback: () => {},
@@ -546,6 +550,8 @@ class NotificationFeed extends React.Component {
                         }}
                         notification={notification}
                         dataAlert={dataAlert}
+                        enableSettingsMenu={this.props.enableSettingsMenu}
+                        enableNotificationsMenu={this.props.enableNotificationsMenu}
                         expanded={!!notification.expanded}
                         onDismissCallback={this.onDismissClick}
                         onUnreadCallback={this.onUnreadClick}
