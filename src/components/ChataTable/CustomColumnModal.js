@@ -137,35 +137,11 @@ export default class CustomColumnModal extends React.Component {
     this.setState({ columns: newColumns })
   }
 
-  addColumn = () => {
-    //     const index = parseInt(this.state.columnFn[0].field)
-    //     const title = this.state.columnName
-    //     const mutator = (value, data, type, params, component) => {
-    //       //value - original value of the cell
-    //       //data - the data for the row
-    //       //type - the type of mutation occurring  (data|edit)
-    //       //params - the mutatorParams object from the column definition
-    //       //component - when the "type" argument is "edit", this contains the cell component for the edited cell, otherwise it is the column component for the column
-    //       return data[index] //return the sum of the other two columns.
-    //     }
-    //     const field = `${this.newColumn.field}`
-    //     const newColumn = {
-    //       ...this.props.columns[index],
-    //       display_name: title,
-    //       title,
-    //       field,
-    //       custom: true,
-    //       fnSummary: `${this.props.columns[index]?.display_name} / 2`,
-    //       mutator,
-    //     }
-    //     const newColumns = _cloneDeep(this.props.columns)
-    //     // newColumns[index].mutateLink = field
-    //     newColumns.push(newColumn)
-    //     this.tableRef.ref.tabulator.setColumns(newColumns)
-    //     this.tableRef.ref.updateData(this.tableRef?.getRows())
-    //     this.tableRef.setHeaderInputEventListeners(newColumns)
-    //     // this.tableRef?.forceUpdate()
-    //     // this.props.onConfirm(newColumns)
+  onAddColumnConfirm = () => {
+    const newColumns = _cloneDeep(this.props.columns)
+    newColumns.push(this.newColumn)
+
+    this.props.onConfirm(newColumns)
   }
 
   changeChunkValue = (value, type, i) => {
@@ -193,7 +169,7 @@ export default class CustomColumnModal extends React.Component {
           confirmText='Save Column'
           shouldRender={this.props.shouldRender}
           onClose={this.props.onClose}
-          onConfirm={this.addColumn}
+          onConfirm={this.onAddColumnConfirm}
         >
           <div className='custom-column-modal'>
             <div>
