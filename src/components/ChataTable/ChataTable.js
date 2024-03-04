@@ -49,7 +49,7 @@ export default class ChataTable extends React.Component {
     this.isSettingInitialData = false
     this.isFiltering = false
     this.isSorting = false
-    this.pageSize = 50
+    this.pageSize = props.pageSize ?? 50
 
     this.totalPages = this.getTotalPages(props.response)
     if (isNaN(this.totalPages) || !this.totalPages) {
@@ -76,6 +76,7 @@ export default class ChataTable extends React.Component {
 
         return new Blob([fileContents], { type: mimeType }) //must return a blob to proceed with the download, return false to abort download
       },
+      ...this.props.tableOptions,
     }
 
     if (props.useInfiniteScroll && props.response?.data?.data?.rows?.length) {
@@ -126,6 +127,7 @@ export default class ChataTable extends React.Component {
     style: PropTypes.shape({}),
     supportsDrilldowns: PropTypes.bool,
     response: PropTypes.any,
+    tableOptions: PropTypes.shape({}),
   }
 
   static defaultProps = {
@@ -141,6 +143,7 @@ export default class ChataTable extends React.Component {
     response: undefined,
     tooltipID: undefined,
     pivot: false,
+    tableOptions: {},
     onFilterCallback: () => {},
     onSorterCallback: () => {},
     onTableParamsChange: () => {},
@@ -1012,21 +1015,24 @@ export default class ChataTable extends React.Component {
   }
 
   renderCustomColumnPopover = () => {
-    return (
-      <CustomColumnModal
-        isOpen={this.state.isCustomColumnPopoverOpen}
-        onClose={() => this.setState({ isCustomColumnPopoverOpen: false })}
-        columns={this.props.columns}
-        tableConfig={this.props.tableConfig}
-        tableRef={this.ref}
-        onConfirm={(newColumns) => {
-          this.ref?.tabulator?.setColumns(newColumns)
-          this.ref?.updateData(this.getRows())
-          this.setHeaderInputEventListeners(newColumns)
-          this.setState({ isCustomColumnPopoverOpen: false })
-        }}
-      />
-    )
+    if (this.state.isCustomColumnPopoverOpen) {
+      return (
+        <CustomColumnModal
+          {...this.props}
+          isOpen={this.state.isCustomColumnPopoverOpen}
+          onClose={() => this.setState({ isCustomColumnPopoverOpen: false })}
+          tableRef={this.ref}
+          onConfirm={(newColumns) => {
+            this.ref?.tabulator?.setColumns(newColumns)
+            this.ref?.updateData(this.getRows())
+            this.setHeaderInputEventListeners(newColumns)
+            this.setState({ isCustomColumnPopoverOpen: false })
+          }}
+        />
+      )
+    }
+
+    return null
   }
 
   getFilteredTabulatorColumnDefinitions = () => {
@@ -1115,7 +1121,7 @@ export default class ChataTable extends React.Component {
   }
 
   renderTableRowCount = () => {
-    if (this.isTableEmpty()) {
+    if (this.isTableEmpty() || !this.props.useInfiniteScroll) {
       return null
     }
 

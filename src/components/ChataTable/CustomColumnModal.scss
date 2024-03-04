@@ -1,0 +1,46 @@
+.custom-column-modal {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  .react-autoql-formula-builder-container {
+    padding: 10px;
+    min-height: 150px;
+    border-radius: 2px;
+    margin-bottom: 10px;
+    border: 1px solid var(--react-autoql-border-color);
+    background: var(--react-autoql-background-color-primary);
+
+    .react-autoql-formula-builder-button-wrapper {
+      display: inline-flex;
+
+      .react-autoql-operator-select {
+        display: inline-flex;
+        border-color: var(--react-autoql-border-color);
+        color: var(--react-autoql-text-color-placeholder);
+        border-style: dashed;
+        margin: 0 5px;
+        padding: 10px;
+      }
+    }
+  }
+
+  .react-autoql-input-and-label-container {
+    padding: 0;
+    margin-bottom: 15px;
+  }
+
+  .react-autoql-select-and-label {
+    padding: 0;
+  }
+
+  .react-autoql-table-preview-container {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .react-autoql-table-container {
+    border: 1px solid var(--react-autoql-border-color);
+    border-radius: 2px;
+  }
+}

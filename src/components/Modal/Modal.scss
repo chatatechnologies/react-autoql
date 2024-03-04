@@ -47,6 +47,13 @@
       color: var(--react-autoql-text-color-placeholder);
     }
   }
+
+  hr {
+    border-top: 1px solid var(--react-autoql-border-color);
+    border-bottom: none;
+    opacity: 0.5;
+    margin: 2px 0px;
+  }
 }
 @media (max-width: 479px) {
   .ReactModal__Content {

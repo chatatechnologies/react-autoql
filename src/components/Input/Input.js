@@ -19,7 +19,7 @@ export default class Input extends React.Component {
     this.INPUT_ID = uuid()
 
     this.state = {
-      focused: false,
+      focused: props.focusOnMount,
       isDatePickerOpen: false,
       dateRange: undefined,
     }
@@ -33,6 +33,7 @@ export default class Input extends React.Component {
     label: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
     fullWidth: PropTypes.bool,
     datePicker: PropTypes.bool,
+    focusOnMount: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -43,6 +44,13 @@ export default class Input extends React.Component {
     label: '',
     fullWidth: false,
     datePicker: false,
+    focusOnMount: false,
+  }
+
+  componentDidMount = () => {
+    if (this.props.focusOnMount) {
+      this.selectAll()
+    }
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -216,6 +224,7 @@ export default class Input extends React.Component {
       datePicker,
       onDateRangeChange,
       initialDateRange,
+      focusOnMount,
       ...nativeProps
     } = this.props
 

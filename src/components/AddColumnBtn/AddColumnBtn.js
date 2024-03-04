@@ -6,7 +6,7 @@ import { Icon } from '../Icon'
 import { Popover } from '../Popover'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 
-import { AGG_TYPES, ColumnTypes } from 'autoql-fe-utils'
+import { AGG_TYPES, ColumnTypes, getVisibleColumns } from 'autoql-fe-utils'
 import { CustomScrollbars } from '../CustomScrollbars'
 
 import './AddColumnBtn.scss'
@@ -139,11 +139,11 @@ export class AddColumnBtnWithoutRef extends React.Component {
   }
 
   render = () => {
-    const availableColumns = this.props.queryResponse?.data?.data?.available_selects
-
-    if (!availableColumns?.length) {
+    if (!getVisibleColumns(this.props.queryResponse?.data?.data?.columns)?.length) {
       return null
     }
+
+    const availableColumns = this.props.queryResponse?.data?.data?.available_selects
 
     return (
       <ErrorBoundary>
