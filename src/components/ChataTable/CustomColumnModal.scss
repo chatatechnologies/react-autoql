@@ -37,10 +37,10 @@
   .react-autoql-table-preview-container {
     flex: 1;
     overflow: hidden;
-  }
 
-  .react-autoql-table-container {
-    border: 1px solid var(--react-autoql-border-color);
-    border-radius: 2px;
+    .react-autoql-table-container {
+      border: 1px solid var(--react-autoql-border-color);
+      border-radius: 2px;
+    }
   }
 }
