@@ -1265,7 +1265,8 @@ export class QueryOutput extends React.Component {
     }
 
     if (this.tableConfig.numberColumnIndices.includes(index)) {
-      const newNumberColumnIndices = getNumberColumnIndices(this.getColumns()).filter((i) => i !== index)
+      const numberColumnIndices = getNumberColumnIndices(this.getColumns())?.allNumberColumnIndices
+      const newNumberColumnIndices = numberColumnIndices?.filter((i) => i !== index)
       this.tableConfig.numberColumnIndices = newNumberColumnIndices
       this.tableConfig.numberColumnIndex = newNumberColumnIndices[0]
     }
