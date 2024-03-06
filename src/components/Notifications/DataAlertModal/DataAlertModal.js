@@ -218,7 +218,8 @@ class DataAlertModal extends React.Component {
   }
 
   onExpressionChange = (isComplete, isValid, expressionJSON) => {
-    this.setState({ expressionJSON })
+    const selectedConditionType = expressionJSON?.[0]?.condition === EXISTS_TYPE ? EXISTS_TYPE : COMPARE_TYPE
+    this.setState({ expressionJSON, selectedConditionType })
   }
 
   isConditionSectionReady = () => {
@@ -435,27 +436,27 @@ class DataAlertModal extends React.Component {
     )
   }
 
-  renderConditionTypeSelector = () => {
-    const options = this.SUPPORTED_CONDITION_TYPES?.map((type) => {
-      const conditionObj = DATA_ALERT_CONDITION_TYPES[type]
-      return {
-        value: type,
-        label: conditionObj.displayName,
-      }
-    })
+  // renderConditionTypeSelector = () => {
+  //   const options = this.SUPPORTED_CONDITION_TYPES?.map((type) => {
+  //     const conditionObj = DATA_ALERT_CONDITION_TYPES[type]
+  //     return {
+  //       value: type,
+  //       label: conditionObj.displayName,
+  //     }
+  //   })
 
-    return (
-      <Select
-        style={{ width: '100%' }}
-        options={options}
-        value={this.state.selectedConditionType}
-        className='react-autoql-rule-condition-type-select'
-        onChange={(value) => {
-          this.setState({ selectedConditionType: value })
-        }}
-      />
-    )
-  }
+  //   return (
+  //     <Select
+  //       style={{ width: '100%' }}
+  //       options={options}
+  //       value={this.state.selectedConditionType}
+  //       className='react-autoql-rule-condition-type-select'
+  //       onChange={(value) => {
+  //         this.setState({ selectedConditionType: value })
+  //       }}
+  //     />
+  //   )
+  // }
 
   renderConditionsStep = (active) => {
     return (

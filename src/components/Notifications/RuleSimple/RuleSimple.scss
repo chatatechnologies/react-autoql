@@ -4,9 +4,22 @@
     margin-bottom: 20px;
   }
 
+  .data-alert-description-span {
+    display: inline-block;
+    margin-bottom: 10px;
+  }
+
+  .react-autoql-select-and-label:not(.outlined) {
+    border-bottom: 1px solid var(--react-autoql-accent-color);
+    height: 35px;
+    margin: 0 3px;
+    padding: 0;
+  }
+
   &.with-query-validation .react-autoql-rule-condition-select-input-container {
     margin-bottom: 30px;
   }
+
   .react-autoql-rule-field-selection-grid-container {
     height: 100px;
     margin-top: 10px;
@@ -24,7 +37,6 @@
   .react-autoql-notification-rule-container {
     display: flex;
     align-items: flex-end;
-    margin-top: 10px;
 
     .react-autoql-rule-input {
       .react-autoql-input-icon.react-autoql-bubbles-outlined {

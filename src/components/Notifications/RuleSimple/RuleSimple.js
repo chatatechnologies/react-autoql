@@ -69,11 +69,10 @@ export default class RuleSimple extends React.Component {
     this.TERM_ID_1 = uuid()
     this.TERM_ID_2 = uuid()
 
-    const selectedOperator = this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE)
-      ? this.SUPPORTED_OPERATORS[0]
-      : EXISTS_TYPE
+    const selectedOperator = this.getInitialSelectedOperator()
 
     const state = {
+      columnSelectionType: 'any-column',
       selectedOperator: initialData?.[0]?.condition ?? selectedOperator,
       firstQueryJoinColumns: initialData?.[0]?.join_columns ?? [],
       firstQuerySelectedNumberColumnName: initialData?.[0]?.compare_column ?? '',
@@ -165,6 +164,10 @@ export default class RuleSimple extends React.Component {
     if (this.autoCompleteTimer) {
       clearTimeout(this.autoCompleteTimer)
     }
+  }
+
+  getInitialSelectedOperator = () => {
+    return this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE) ? this.SUPPORTED_OPERATORS[0] : EXISTS_TYPE
   }
 
   getConditionStatement = ({ tense, useRT, sentenceCase = false, withFilters = false } = {}) => {
@@ -296,7 +299,7 @@ export default class RuleSimple extends React.Component {
         .map((obj) => obj.name)[0]
     }
 
-    if (this.allowOperators()) {
+    if (this.allowOperators() && this.state.selectedOperator !== EXISTS_TYPE) {
       const secondTerm = {
         id: this.TERM_ID_2,
         term_type: this.state.secondTermType,
@@ -368,7 +371,7 @@ export default class RuleSimple extends React.Component {
       return false
     }
 
-    if (!this.allowOperators()) {
+    if (!this.allowOperators() || this.state.selectedOperator === EXISTS_TYPE) {
       return true
     }
 
@@ -513,7 +516,7 @@ export default class RuleSimple extends React.Component {
         options={options}
         value={this.state.selectedOperator}
         className='react-autoql-rule-condition-select'
-        label='Meets this condition'
+        // label='Meets this condition'
         onChange={(value) => {
           this.setState({ selectedOperator: value })
         }}
@@ -946,14 +949,36 @@ export default class RuleSimple extends React.Component {
             data-tooltip-id={this.props.tooltipID}
             data-tooltip-content='Editing this query is not permitted. To use a different query, simply create a new Data Alert via Data Messenger or a Dashboard.'
           >
+            <span className='data-alert-description-span'>Trigger Alert when this query</span>
+            {/* 
+            Save this bock for later when we want to allow column selection from list queries
+            Trigger Alert when{' '}
+            <Select
+              className='data-alert-schedule-step-type-selector'
+              options={[
+                {
+                  value: 'any-column',
+                  label: 'any column',
+                },
+                {
+                  value: 'selected-columns',
+                  label: 'selected columns',
+                },
+              ]}
+              value={this.state.columnSelectionType}
+              onChange={(type) => this.setState({ columnSelectionType: type })}
+              outlined={false}
+              showArrow={false}
+            />{' '}
+            from this query */}
             <Input
-              label={
-                this.allowOperators()
-                  ? this.IS_AGGREGATION_QUERY
-                    ? 'Trigger Alert when any value from this query'
-                    : 'Trigger Alert when this query'
-                  : 'Trigger Alert when new data is detected for this query'
-              }
+              // label={
+              //   this.allowOperators()
+              //     ? this.IS_AGGREGATION_QUERY
+              //       ? 'Trigger Alert when any value from this query'
+              //       : 'Trigger Alert when this query'
+              //     : 'Trigger Alert when new data is detected for this query'
+              // }
               value={this.getFormattedQueryText()}
               readOnly
               disabled
@@ -971,6 +996,7 @@ export default class RuleSimple extends React.Component {
   }
   shouldRenderFirstFieldSelectionGrid = () => {
     return (
+      this.state.selectedOperator !== EXISTS_TYPE &&
       this.NUMBER_COLUMNS_AMOUNT >= 2 &&
       this.ALL_COLUMNS__AMOUNT - this.GROUPABLE_COLUMNS_AMOUNT !== 1 &&
       this.GROUPABLE_COLUMNS_AMOUNT > 0
@@ -1122,6 +1148,7 @@ export default class RuleSimple extends React.Component {
           <div className='react-autoql-rule-simple-first-query' data-test='rule'>
             <div className='react-autoql-rule-first-input-container'>{this.renderBaseQuery()}</div>
           </div>
+
           {/* {display it when the number type columns has more than one} */}
           {this.shouldRenderFirstFieldSelectionGrid() && (
             <div className='react-autoql-rule-field-selection-first-query' data-test='rule'>
@@ -1134,27 +1161,62 @@ export default class RuleSimple extends React.Component {
             </div>
           )}
 
-          <div className='react-autoql-notification-rule-container' data-test='rule'>
-            {this.allowOperators() && (
-              <>
-                <div className='react-autoql-rule-condition-select-input-container'>
-                  {this.renderOperatorSelector()}
-                </div>
-                <div className='react-autoql-rule-second-input-container'>
-                  <div className='react-autoql-rule-input'>{this.renderSecondTermInput()}</div>
-                  {this.renderTermValidationSection()}
-                </div>
-              </>
-            )}
+          <br />
+
+          <div>
+            <span className='data-alert-description-span'>
+              <Select
+                className='data-alert-schedule-step-type-selector'
+                options={[
+                  {
+                    value: COMPARE_TYPE,
+                    label: 'Contains data that meets the following conditions:',
+                  },
+                  {
+                    value: EXISTS_TYPE,
+                    label: 'Receives new rows of data',
+                  },
+                ]}
+                value={this.state.selectedOperator === EXISTS_TYPE ? EXISTS_TYPE : COMPARE_TYPE}
+                onChange={(type) =>
+                  this.setState({
+                    selectedOperator: type === EXISTS_TYPE ? EXISTS_TYPE : this.getInitialSelectedOperator(),
+                  })
+                }
+                outlined={false}
+                showArrow={false}
+              />
+            </span>
           </div>
-          {this.shouldRenderSecondFieldSelectionGrid() && (
-            <div className='react-autoql-rule-field-selection-grid-container' ref={this.secondFieldSelectionGridRef}>
-              <div className='react-autoql-rule-field-selection-description'>
-                <div className='react-autoql-input-label'>Select a field of interest from this query</div>
+
+          {this.state.selectedOperator !== EXISTS_TYPE ? (
+            <>
+              <div className='react-autoql-notification-rule-container' data-test='rule'>
+                {this.allowOperators() && (
+                  <>
+                    <div className='react-autoql-rule-condition-select-input-container'>
+                      {this.renderOperatorSelector()}
+                    </div>
+                    <div className='react-autoql-rule-second-input-container'>
+                      <div className='react-autoql-rule-input'>{this.renderSecondTermInput()}</div>
+                      {this.renderTermValidationSection()}
+                    </div>
+                  </>
+                )}
               </div>
-              {this.renderSecondFieldSelectionGrid()}
-            </div>
-          )}
+              {this.shouldRenderSecondFieldSelectionGrid() && (
+                <div
+                  className='react-autoql-rule-field-selection-grid-container'
+                  ref={this.secondFieldSelectionGridRef}
+                >
+                  <div className='react-autoql-rule-field-selection-description'>
+                    <div className='react-autoql-input-label'>Select a field of interest from this query</div>
+                  </div>
+                  {this.renderSecondFieldSelectionGrid()}
+                </div>
+              )}
+            </>
+          ) : null}
         </div>
       </ErrorBoundary>
     )
