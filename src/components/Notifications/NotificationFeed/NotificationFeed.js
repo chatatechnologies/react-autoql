@@ -74,6 +74,7 @@ class NotificationFeed extends React.Component {
     tooltipID: PropTypes.string,
     enableSettingsMenu: PropTypes.bool,
     enableNotificationsMenu: PropTypes.bool,
+    enableFetchAllNotificationFeedAcrossProjects: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -86,6 +87,7 @@ class NotificationFeed extends React.Component {
     tooltipID: this.TOOLTIP_ID,
     enableSettingsMenu: true,
     enableNotificationsMenu: true,
+    enableFetchAllNotificationFeedAcrossProjects: false,
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
     onErrorCallback: () => {},
@@ -166,6 +168,7 @@ class NotificationFeed extends React.Component {
       ...getAuthentication(this.props.authentication),
       limit: this.NOTIFICATION_FETCH_LIMIT,
       offset,
+      enableFetchAllNotificationFeedAcrossProjects: this.props.enableFetchAllNotificationFeedAcrossProjects,
     })
       .then((data) => {
         if (!data?.items?.length) {
