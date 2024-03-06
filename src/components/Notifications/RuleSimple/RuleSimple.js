@@ -1161,9 +1161,7 @@ export default class RuleSimple extends React.Component {
             </div>
           )}
 
-          <br />
-
-          <div>
+          <div style={{ marginTop: '10px' }}>
             <span className='data-alert-description-span'>
               <Select
                 className='data-alert-schedule-step-type-selector'
