@@ -438,7 +438,7 @@ class DashboardWithoutTheme extends React.Component {
         title: '',
       }
 
-      if (content) {
+      if (content?.queryResponse) {
         tile = {
           ...tile,
           ...content,
@@ -597,7 +597,7 @@ class DashboardWithoutTheme extends React.Component {
       return (
         <div className='empty-dashboard-message-container'>
           Add a{' '}
-          <span className='empty-dashboard-new-tile-btn' onClick={this.addTile}>
+          <span className='empty-dashboard-new-tile-btn' onClick={() => this.addTile()}>
             New Tile
           </span>{' '}
           to get started
