@@ -726,8 +726,8 @@ export class DashboardTile extends React.Component {
   onDisplayTypeChange = (displayType) => this.debouncedSetParamsForTile({ displayType })
   onBucketSizeChange = (bucketSize) => this.debouncedSetParamsForTile({ bucketSize })
 
-  onColumnChange = (columns, columnSelects, queryResponse) => {
-    this.debouncedSetParamsForTile({ columnSelects, queryResponse })
+  onColumnChange = (columns, columnSelects, queryResponse, dataConfig) => {
+    this.debouncedSetParamsForTile({ columnSelects, queryResponse, dataConfig })
   }
 
   onSecondAggConfigChange = (secondAggConfig) => this.debouncedSetParamsForTile({ secondAggConfig })
@@ -735,8 +735,8 @@ export class DashboardTile extends React.Component {
   onSecondDisplayTypeChange = (secondDisplayType) => this.debouncedSetParamsForTile({ secondDisplayType })
   onSecondBucketSizeChange = (secondBucketSize) => this.debouncedSetParamsForTile({ secondBucketSize })
 
-  onSecondColumnChange = (columns, secondColumnSelects, queryResponse) =>
-    this.debouncedSetParamsForTile({ secondColumnSelects, queryResponse })
+  onSecondColumnChange = (secondColumns, secondColumnSelects, secondQueryResponse, secondDataConfig) =>
+    this.debouncedSetParamsForTile({ secondColumnSelects, secondQueryResponse, secondDataConfig })
 
   reportProblemCallback = () => {
     if (this.optionsToolbarRef?._isMounted) {
