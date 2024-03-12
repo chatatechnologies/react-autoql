@@ -62,6 +62,7 @@ import {
   isDataLimited,
   MAX_CHART_ELEMENTS,
   formatAdditionalSelectColumn,
+  setColumnVisibility,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -184,6 +185,8 @@ export class QueryOutput extends React.Component {
     enableTableSorting: PropTypes.bool,
     showSingleValueResponseTitle: PropTypes.bool,
     allowColumnAddition: PropTypes.bool,
+    onErrorCallback: PropTypes.func,
+    showQueryInterpretation: PropTypes.bool,
 
     mutable: PropTypes.bool,
     showSuggestionPrefix: PropTypes.bool,
@@ -2251,25 +2254,50 @@ export class QueryOutput extends React.Component {
     return this.props.dataPageSize ?? this.queryResponse?.data?.data?.fe_req?.page_size ?? DEFAULT_DATA_PAGE_SIZE
   }
 
-  onAddColumnClick = (column, sqlFn) => {
-    this.tableRef?.setPageLoading(true)
+  onAddColumnClick = (column, sqlFn, isHiddenColumn) => {
+    if (isHiddenColumn) {
+      this.tableRef?.setPageLoading(true)
 
-    const currentAdditionalSelectColumns = this.queryResponse?.data?.data?.fe_req?.additional_selects ?? []
-
-    this.queryFn({
-      newColumns: [...currentAdditionalSelectColumns, formatAdditionalSelectColumn(column, sqlFn)],
-    })
-      .then((response) => {
-        if (response?.data?.data?.rows) {
-          this.updateColumnsAndData(response)
-        } else {
-          throw new Error('New column addition failed')
+      const newColumns = this.state.columns.map((col) => {
+        if (col.name === column.name) {
+          return {
+            ...col,
+            is_visible: true,
+          }
         }
+
+        return col
       })
-      .catch((error) => {
-        console.error(error)
-        this.tableRef?.setPageLoading(false)
+
+      setColumnVisibility({ ...this.props.authentication, columns: newColumns })
+        .then(() => this.updateColumns(newColumns))
+        .catch((error) => {
+          console.error(error)
+          this.props.onErrorCallback(error)
+        })
+        .finally(() => {
+          this.tableRef?.setPageLoading(false)
+        })
+    } else {
+      this.tableRef?.setPageLoading(true)
+
+      const currentAdditionalSelectColumns = this.queryResponse?.data?.data?.fe_req?.additional_selects ?? []
+
+      this.queryFn({
+        newColumns: [...currentAdditionalSelectColumns, formatAdditionalSelectColumn(column, sqlFn)],
       })
+        .then((response) => {
+          if (response?.data?.data?.rows) {
+            this.updateColumnsAndData(response)
+          } else {
+            throw new Error('New column addition failed')
+          }
+        })
+        .catch((error) => {
+          console.error(error)
+          this.tableRef?.setPageLoading(false)
+        })
+    }
   }
 
   renderAddColumnBtn = () => {

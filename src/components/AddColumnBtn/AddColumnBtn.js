@@ -6,7 +6,7 @@ import { Icon } from '../Icon'
 import { Popover } from '../Popover'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 
-import { AGG_TYPES, ColumnTypes } from 'autoql-fe-utils'
+import { AGG_TYPES, ColumnTypes, getHiddenColumns } from 'autoql-fe-utils'
 import { CustomScrollbars } from '../CustomScrollbars'
 
 import './AddColumnBtn.scss'
@@ -26,15 +26,17 @@ export class AddColumnBtnWithoutRef extends React.Component {
   static propTypes = {
     queryResponse: PropTypes.shape({}),
     onAddColumnClick: PropTypes.func,
+    tooltipID: PropTypes.string,
   }
 
   static defaultProps = {
     queryResponse: undefined,
     onAddColumnClick: () => {},
+    tooltipID: undefined,
   }
 
-  onAddColumnClick = (column, aggType) => {
-    this.props.onAddColumnClick(column, aggType)
+  onAddColumnClick = (column, aggType, isHiddenColumn) => {
+    this.props.onAddColumnClick(column, aggType, isHiddenColumn)
     this.setState({ isAddColumnMenuOpen: false, aggPopoverActiveID: undefined })
   }
 
@@ -74,13 +76,17 @@ export class AddColumnBtnWithoutRef extends React.Component {
     )
   }
 
-  renderAddColumnMenu = (availableColumns) => {
+  renderAddColumnMenu = (availableSelectColumns, availableHiddenColumns) => {
+    if (!availableHiddenColumns && !availableHiddenColumns) {
+      return null
+    }
+
     return (
       <CustomScrollbars autoHide={false}>
         <div className='more-options-menu react-autoql-add-column-menu'>
           <ul className='context-menu-list'>
             <div className='react-autoql-input-label'>Add a Column</div>
-            {availableColumns.map((column, i) => {
+            {availableSelectColumns?.map((column, i) => {
               const columnIsNumerical = [ColumnTypes.DOLLAR_AMT, ColumnTypes.QUANTITY, ColumnTypes.RATIO].includes(
                 column.column_type,
               )
@@ -117,6 +123,20 @@ export class AddColumnBtnWithoutRef extends React.Component {
                 </Popover>
               )
             })}
+            {availableHiddenColumns?.map((column, i) => {
+              const isHiddenColumn = true
+              return (
+                <li
+                  key={`column-select-menu-item-hidden-column-${i}`}
+                  onClick={() => this.onAddColumnClick(column, undefined, isHiddenColumn)}
+                >
+                  <div className='react-autoql-add-column-menu-item'>
+                    <Icon type='plus' />
+                    <span>{column.display_name}</span>
+                  </div>
+                </li>
+              )
+            })}
           </ul>
         </div>
       </CustomScrollbars>
@@ -124,9 +144,10 @@ export class AddColumnBtnWithoutRef extends React.Component {
   }
 
   render = () => {
-    const availableColumns = this.props.queryResponse?.data?.data?.available_selects
+    const availableSelectColumns = this.props.queryResponse?.data?.data?.available_selects
+    const availableHiddenColumns = getHiddenColumns(this.props.queryResponse?.data?.data?.columns)
 
-    if (!availableColumns?.length) {
+    if (!availableSelectColumns?.length && !availableHiddenColumns?.length) {
       return null
     }
 
@@ -140,7 +161,7 @@ export class AddColumnBtnWithoutRef extends React.Component {
               this.setState({ isAddColumnMenuOpen: false })
             }
           }}
-          content={() => this.renderAddColumnMenu(availableColumns)}
+          content={() => this.renderAddColumnMenu(availableSelectColumns, availableHiddenColumns)}
           parentElement={this.props.popoverParentElement}
           boundaryElement={this.props.popoverParentElement}
           positions={this.props.popoverPositions ?? ['bottom', 'left', 'right', 'top']}

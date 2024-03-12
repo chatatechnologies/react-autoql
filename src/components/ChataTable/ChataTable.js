@@ -64,6 +64,7 @@ export default class ChataTable extends React.Component {
 
     this.tableOptions = {
       selectableCheck: () => false,
+      movableColumns: true,
       initialSort: !props.useInfiniteScroll ? this.tableParams?.sort : undefined,
       initialFilter: !props.useInfiniteScroll ? this.tableParams?.filter : undefined,
       progressiveLoadScrollMargin: 50, // Trigger next ajax load when scroll bar is 800px or less from the bottom of the table.
@@ -1092,8 +1093,8 @@ export default class ChataTable extends React.Component {
           <div className='more-options-menu' data-test='react-autoql-toolbar-more-options'>
             <ul className='context-menu-list'>
               <li onClick={this.onRemoveColumnClick}>
-                <Icon type='eye' />
-                Hide Column
+                <Icon type='close' />
+                Remove Column
               </li>
             </ul>
           </div>
