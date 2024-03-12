@@ -62,6 +62,7 @@ import {
   isDataLimited,
   MAX_CHART_ELEMENTS,
   formatAdditionalSelectColumn,
+  setColumnVisibility,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -184,6 +185,8 @@ export class QueryOutput extends React.Component {
     enableTableSorting: PropTypes.bool,
     showSingleValueResponseTitle: PropTypes.bool,
     allowColumnAddition: PropTypes.bool,
+    onErrorCallback: PropTypes.func,
+    showQueryInterpretation: PropTypes.bool,
 
     mutable: PropTypes.bool,
     showSuggestionPrefix: PropTypes.bool,
@@ -250,6 +253,7 @@ export class QueryOutput extends React.Component {
       this._isMounted = true
       this.updateToolbars()
       this.props.onMount()
+      this.forceUpdate()
     } catch (error) {
       console.error(error)
       this.props.onErrorCallback(error)
@@ -281,7 +285,7 @@ export class QueryOutput extends React.Component {
         this.props.onDisplayTypeChange(this.state.displayType)
       }
 
-      // If data config was changed here, tell the parent
+      // If initial data config was changed here, tell the parent
       if (
         !_isEqual(this.props.initialTableConfigs, {
           tableConfig: this.tableConfig,
@@ -308,6 +312,10 @@ export class QueryOutput extends React.Component {
           this.state.columns,
           this.queryResponse?.data?.data?.fe_req?.additional_selects,
           this.queryResponse,
+          {
+            tableConfig: this.tableConfig,
+            pivotTableConfig: this.pivotTableConfig,
+          },
         )
 
         if (this.shouldGeneratePivotData()) {
@@ -626,7 +634,7 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  updateColumns = (columns) => {
+  updateColumns = (columns, feReq) => {
     if (columns && this._isMounted) {
       const newColumns = this.formatColumnsForTable(columns)
 
@@ -637,6 +645,9 @@ export class QueryOutput extends React.Component {
 
       if (visibleColumnsChanged) {
         if (this.queryResponse?.data?.data?.columns) {
+          if (feReq) {
+            this.queryResponse.data.data.fe_req = feReq
+          }
           this.queryResponse.data.data.columns = newColumns
         }
         this.resetTableConfig(newColumns)
@@ -2245,8 +2256,31 @@ export class QueryOutput extends React.Component {
     return this.props.dataPageSize ?? this.queryResponse?.data?.data?.fe_req?.page_size ?? DEFAULT_DATA_PAGE_SIZE
   }
 
-  onAddColumnClick = (column, sqlFn) => {
-    if (!column) {
+  onAddColumnClick = (column, sqlFn, isHiddenColumn) => {
+    if (isHiddenColumn) {
+      this.tableRef?.setPageLoading(true)
+
+      const newColumns = this.state.columns.map((col) => {
+        if (col.name === column.name) {
+          return {
+            ...col,
+            is_visible: true,
+          }
+        }
+
+        return col
+      })
+
+      setColumnVisibility({ ...this.props.authentication, columns: newColumns })
+        .then(() => this.updateColumns(newColumns))
+        .catch((error) => {
+          console.error(error)
+          this.props.onErrorCallback(error)
+        })
+        .finally(() => {
+          this.tableRef?.setPageLoading(false)
+        })
+    } else if (!column) {
       // Add a custom column
       this.tableRef?.addCustomColumn()
     } else {
@@ -2303,6 +2337,7 @@ export class QueryOutput extends React.Component {
           ref={(ref) => (this.tableRef = ref)}
           columns={this.state.columns}
           response={this.queryResponse}
+          updateColumns={this.updateColumns}
           columnDateRanges={this.columnDateRanges}
           onCellClick={this.onTableCellClick}
           queryID={this.queryID}

@@ -22,6 +22,7 @@ import {
   ColumnTypes,
   MAX_DATA_PAGE_SIZE,
   getDayJSObj,
+  setColumnVisibility,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -64,6 +65,7 @@ export default class ChataTable extends React.Component {
 
     this.tableOptions = {
       selectableCheck: () => false,
+      movableColumns: true,
       initialSort: !props.useInfiniteScroll ? this.tableParams?.sort : undefined,
       initialFilter: !props.useInfiniteScroll ? this.tableParams?.filter : undefined,
       progressiveLoadScrollMargin: 50, // Trigger next ajax load when scroll bar is 800px or less from the bottom of the table.
@@ -727,6 +729,23 @@ export default class ChataTable extends React.Component {
     }
   }
 
+  headerContextMenuClick = (e, col) => {
+    e.stopPropagation()
+    e.preventDefault()
+
+    const coords = e.target.getBoundingClientRect()
+    const tableCoords = this.tableContainer.getBoundingClientRect()
+    if (coords?.top && coords?.left) {
+      this.debounceSetState({
+        contextMenuLocation: {
+          top: coords.top - tableCoords.top + coords.height + 5,
+          left: coords.left - tableCoords.left,
+        },
+        contextMenuColumn: col,
+      })
+    }
+  }
+
   inputDateKeypressListener = (e) => {
     e.stopPropagation()
     e.preventDefault()
@@ -780,6 +799,7 @@ export default class ChataTable extends React.Component {
       if (headerElement) {
         headerElement.setAttribute('data-tooltip-id', `selectable-table-column-header-tooltip-${this.TABLE_ID}`)
         headerElement.setAttribute('data-tooltip-content', JSON.stringify({ ...col, index: i }))
+        headerElement.addEventListener('contextmenu', (e) => this.headerContextMenuClick(e, col))
       }
 
       if (inputElement) {
@@ -944,6 +964,54 @@ export default class ChataTable extends React.Component {
     inputElement.blur()
   }
 
+  onRemoveColumnClick = () => {
+    const column = _cloneDeep(this.state.contextMenuColumn)
+
+    this.setState({ contextMenuColumn: undefined })
+
+    const currentAdditionalSelectColumns = this.props.response?.data?.data?.fe_req?.additional_selects ?? []
+    const newAdditionalSelectColumns = currentAdditionalSelectColumns?.filter(
+      (select) => select.columns[0] !== column.name,
+    )
+
+    if (currentAdditionalSelectColumns?.length !== newAdditionalSelectColumns?.length) {
+      this.setPageLoading(true)
+      this.props
+        .queryFn({ newColumns: newAdditionalSelectColumns })
+        .then((response) => {
+          if (response?.data?.data?.rows) {
+            this.props.updateColumns(response?.data?.data?.columns, response?.data?.data?.fe_req)
+          } else {
+            throw new Error('Column deletion failed')
+          }
+        })
+        .catch((error) => {
+          console.error(error)
+        })
+        .finally(() => {
+          this.setPageLoading(false)
+        })
+    } else {
+      const newColumns = this.props.columns.map((col) => {
+        if (col.name === column.name) {
+          return {
+            ...col,
+            visible: false,
+            is_visible: false,
+          }
+        }
+
+        return col
+      })
+
+      this.props.updateColumns(newColumns)
+
+      setColumnVisibility({ ...this.props.authentication, columns: newColumns }).catch((error) => {
+        console.error(error)
+      })
+    }
+  }
+
   renderEmptyPlaceholderText = () => {
     return (
       <div className='table-loader table-page-loader table-placeholder'>
@@ -1033,6 +1101,45 @@ export default class ChataTable extends React.Component {
     }
 
     return null
+  }
+
+  renderHeaderContextMenuPopover = () => {
+    if (!this.state.contextMenuColumn) {
+      return null
+    }
+
+    return (
+      <Popover
+        isOpen={!!this.state.contextMenuColumn}
+        padding={0}
+        align='start'
+        positions={['bottom', 'right', 'left', 'top']}
+        onClickOutside={(e) => {
+          e.stopPropagation()
+          if (this._isMounted) {
+            this.setState({ contextMenuColumn: undefined })
+          }
+        }}
+        content={
+          <div className='more-options-menu' data-test='react-autoql-toolbar-more-options'>
+            <ul className='context-menu-list'>
+              <li onClick={this.onRemoveColumnClick}>
+                <Icon type='close' />
+                Remove Column
+              </li>
+            </ul>
+          </div>
+        }
+      >
+        <div
+          style={{
+            position: 'absolute',
+            top: this.state.contextMenuLocation?.top,
+            left: this.state.contextMenuLocation?.left,
+          }}
+        />
+      </Popover>
+    )
   }
 
   getFilteredTabulatorColumnDefinitions = () => {
@@ -1322,6 +1429,7 @@ export default class ChataTable extends React.Component {
           </div>
           {this.renderDateRangePickerPopover()}
           {this.renderCustomColumnPopover()}
+          {this.renderHeaderContextMenuPopover()}
           {this.renderTableRowCount()}
         </div>
         <Tooltip

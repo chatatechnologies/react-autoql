@@ -74,6 +74,7 @@ class NotificationFeed extends React.Component {
     tooltipID: PropTypes.string,
     enableSettingsMenu: PropTypes.bool,
     enableNotificationsMenu: PropTypes.bool,
+    displayProjectName: PropTypes.bool,
     enableFetchAllNotificationFeedAcrossProjects: PropTypes.bool,
   }
 
@@ -87,6 +88,7 @@ class NotificationFeed extends React.Component {
     tooltipID: this.TOOLTIP_ID,
     enableSettingsMenu: true,
     enableNotificationsMenu: true,
+    displayProjectName: false,
     enableFetchAllNotificationFeedAcrossProjects: false,
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
@@ -555,6 +557,7 @@ class NotificationFeed extends React.Component {
                         dataAlert={dataAlert}
                         enableSettingsMenu={this.props.enableSettingsMenu}
                         enableNotificationsMenu={this.props.enableNotificationsMenu}
+                        displayProjectName={this.props.displayProjectName}
                         expanded={!!notification.expanded}
                         onDismissCallback={this.onDismissClick}
                         onUnreadCallback={this.onUnreadClick}
