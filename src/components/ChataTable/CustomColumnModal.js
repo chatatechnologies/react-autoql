@@ -158,6 +158,84 @@ export default class CustomColumnModal extends React.Component {
     }
   }
 
+  renderColumnNameInput = () => {
+    return (
+      <Input
+        ref={(r) => (this.inputRef = r)}
+        fullWidth
+        focusOnMount
+        label='Column Name'
+        placeholder='eg. "Difference"'
+        value={this.state.columnName}
+        onChange={(e) => this.setState({ columnName: e.target.value })}
+      />
+    )
+  }
+
+  renderColumnFnBuilder = () => {
+    return (
+      <>
+        <div className='react-autoql-input-label'>Column Formula</div>
+        <div className='react-autoql-formula-builder-container'>
+          <div className='react-autoql-formula-builder-button-wrapper'>
+            <span>= </span>
+            {this.state.columnFn.map((chunk, i) => {
+              if (chunk.type === 'column') {
+                return (
+                  <Select
+                    key={`custom-column-select-${i}`}
+                    placeholder='Select a Column'
+                    value={chunk.value}
+                    onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
+                    options={getVisibleColumns(this.props.columns).map((col) => {
+                      return {
+                        value: col.field,
+                        label: col.title,
+                        listLabel: col.title,
+                        icon: 'table',
+                      }
+                    })}
+                  />
+                )
+              } else if (chunk.type === 'operator') {
+              } else if (chunk.type === 'number') {
+              }
+            })}
+            <Button className='react-autoql-operator-select' icon='plus'>
+              <span> CONCAT</span>
+            </Button>
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  renderTablePreview = () => {
+    return (
+      <>
+        <div className='react-autoql-input-label'>Preview</div>
+        <div className='react-autoql-table-preview-container'>
+          <ChataTable
+            key={this.TABLE_ID}
+            ref={(r) => (this.tableRef = r)}
+            authentication={this.props.authentication}
+            dataFormatting={this.props.dataFormatting}
+            response={this.props.response}
+            queryRequestData={this.props.queryRequestData}
+            popoverParentElement={this.props.popoverParentElement}
+            tooltipID={this.props.tooltipID}
+            columns={this.state.columns}
+            useInfiniteScroll={false}
+            supportsDrilldowns={false}
+            keepScrolledRight={true}
+            pageSize={10}
+            tableOptions={{}}
+          />
+        </div>
+      </>
+    )
+  }
+
   render = () => {
     return (
       <ErrorBoundary>
@@ -173,67 +251,10 @@ export default class CustomColumnModal extends React.Component {
           onConfirm={this.onAddColumnConfirm}
         >
           <div className='custom-column-modal'>
+            {this.renderTablePreview()}
             <div>
-              <Input
-                ref={(r) => (this.inputRef = r)}
-                fullWidth
-                focusOnMount
-                label='Column Name'
-                placeholder='eg. "Difference"'
-                value={this.state.columnName}
-                onChange={(e) => this.setState({ columnName: e.target.value })}
-              />
-
-              <div className='react-autoql-input-label'>Column Formula</div>
-              <div className='react-autoql-formula-builder-container'>
-                <div className='react-autoql-formula-builder-button-wrapper'>
-                  {this.state.columnFn.map((chunk, i) => {
-                    if (chunk.type === 'column') {
-                      return (
-                        <Select
-                          key={`custom-column-select-${i}`}
-                          placeholder='Select a Column'
-                          value={chunk.value}
-                          onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
-                          options={getVisibleColumns(this.props.columns).map((col) => {
-                            return {
-                              value: col.field,
-                              label: col.title,
-                              listLabel: col.title,
-                              icon: 'table',
-                            }
-                          })}
-                        />
-                      )
-                    } else if (chunk.type === 'operator') {
-                    } else if (chunk.type === 'number') {
-                    }
-                  })}
-                  <Button className='react-autoql-operator-select' icon='plus'>
-                    <span> CONCAT</span>
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <div className='react-autoql-input-label'>Preview</div>
-            <div className='react-autoql-table-preview-container'>
-              <ChataTable
-                key={this.TABLE_ID}
-                ref={(r) => (this.tableRef = r)}
-                authentication={this.props.authentication}
-                dataFormatting={this.props.dataFormatting}
-                response={this.props.response}
-                queryRequestData={this.props.queryRequestData}
-                popoverParentElement={this.props.popoverParentElement}
-                tooltipID={this.props.tooltipID}
-                columns={this.state.columns}
-                useInfiniteScroll={false}
-                supportsDrilldowns={false}
-                keepScrolledRight={true}
-                pageSize={10}
-                tableOptions={{}}
-              />
+              {this.renderColumnNameInput()}
+              {this.renderColumnFnBuilder()}
             </div>
           </div>
         </Modal>

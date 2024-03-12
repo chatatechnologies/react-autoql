@@ -7,12 +7,13 @@
     padding: 10px;
     min-height: 150px;
     border-radius: 2px;
-    margin-bottom: 10px;
     border: 1px solid var(--react-autoql-border-color);
     background: var(--react-autoql-background-color-primary);
 
     .react-autoql-formula-builder-button-wrapper {
       display: inline-flex;
+      align-items: center;
+      white-space: pre;
 
       .react-autoql-operator-select {
         display: inline-flex;
@@ -37,6 +38,7 @@
   .react-autoql-table-preview-container {
     flex: 1;
     overflow: hidden;
+    margin-bottom: 10px;
 
     .react-autoql-table-container {
       border: 1px solid var(--react-autoql-border-color);
