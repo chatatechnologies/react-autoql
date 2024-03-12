@@ -146,6 +146,12 @@ export class AddColumnBtnWithoutRef extends React.Component {
                 </li>
               )
             })}
+            {this.props.allowCustom && (
+              <>
+                <hr />
+                <li onClick={this.onCustomClick}>Custom...</li>
+              </>
+            )}
           </ul>
         </div>
       </CustomScrollbars>

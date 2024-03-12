@@ -130,6 +130,8 @@ export default class ChataTable extends React.Component {
     supportsDrilldowns: PropTypes.bool,
     response: PropTypes.any,
     tableOptions: PropTypes.shape({}),
+    updateColumns: PropTypes.func,
+    keepScrolledRight: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -146,12 +148,14 @@ export default class ChataTable extends React.Component {
     tooltipID: undefined,
     pivot: false,
     tableOptions: {},
+    keepScrolledRight: false,
     onFilterCallback: () => {},
     onSorterCallback: () => {},
     onTableParamsChange: () => {},
     onCellClick: () => {},
     onErrorCallback: () => {},
     onNewData: () => {},
+    updateColumns: () => {},
   }
 
   componentDidMount = () => {
@@ -433,6 +437,10 @@ export default class ChataTable extends React.Component {
       this.hasSetInitialData = true
       this.isSettingInitialData = false
       this.clearLoadingIndicators()
+
+      // if (this.props.keepScrolledRight) {
+      //   this.scrollToRight()
+      // }
     }
   }
 
@@ -457,6 +465,10 @@ export default class ChataTable extends React.Component {
         tabulatorMounted: true,
         pageLoading: false,
       })
+
+      if (this.props.keepScrolledRight) {
+        this.scrollToRight()
+      }
     }
   }
 
@@ -616,6 +628,15 @@ export default class ChataTable extends React.Component {
   // clearHeaderFilters = () => {
   //   this.ref?.tabulator?.clearHeaderFilter()
   // }
+
+  scrollToRight = () => {
+    const tableWidth = document.querySelector(
+      `#react-autoql-table-container-${this.TABLE_ID} .tabulator-table`,
+    )?.clientWidth
+
+    this.ref.tabulator.columnManager.element.scrollLeft = tableWidth
+    this.ref.tabulator.rowManager.element.scrollLeft = tableWidth
+  }
 
   getNewPage = (props, tableParams) => {
     try {
@@ -1010,6 +1031,14 @@ export default class ChataTable extends React.Component {
         console.error(error)
       })
     }
+  }
+
+  updateColumn = (field, newParams) => {
+    this.ref?.updateColumn?.(field, newParams)?.then(() => {
+      if (this.props.keepScrolledRight) {
+        this.scrollToRight()
+      }
+    })
   }
 
   renderEmptyPlaceholderText = () => {

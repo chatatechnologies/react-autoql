@@ -47,6 +47,7 @@ export default class CustomColumnModal extends React.Component {
       custom: true,
       fnSummary: `= ${initialColumnFn[0].column?.display_name}`,
       mutator: this.getFnMutator(initialColumnFn),
+      cssClass: `${initialColumnFn[0].column.cssClass ?? ''} highlighted-column`,
     }
 
     this.state = {
@@ -83,7 +84,7 @@ export default class CustomColumnModal extends React.Component {
       // Debounce change since column update is expensive
       clearTimeout(this.debounceTimer)
       this.debounceTimer = setTimeout(() => {
-        this.tableRef?.ref?.updateColumn?.(this.newColumn.field, this.newColumn)
+        this.tableRef?.updateColumn?.(this.newColumn.field, this.newColumn)
       }, 500)
     }
 
@@ -132,7 +133,7 @@ export default class CustomColumnModal extends React.Component {
       return col
     })
 
-    this.tableRef?.ref?.updateColumn?.(this.newColumn.field, newParams)
+    this.tableRef?.updateColumn?.(this.newColumn.field, newParams)
 
     this.setState({ columns: newColumns })
   }
@@ -229,7 +230,9 @@ export default class CustomColumnModal extends React.Component {
                 columns={this.state.columns}
                 useInfiniteScroll={false}
                 supportsDrilldowns={false}
+                keepScrolledRight={true}
                 pageSize={10}
+                tableOptions={{}}
               />
             </div>
           </div>
