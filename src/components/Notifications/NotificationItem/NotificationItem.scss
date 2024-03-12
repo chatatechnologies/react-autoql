@@ -161,7 +161,7 @@
     &.expanded {
       position: relative;
       min-height: 70px;
-      max-height: 500px;
+      max-height: 550px;
 
       .react-autoql-notification-query-data-container {
         flex: 1;
@@ -408,6 +408,13 @@
     .react-autoql-notification-display-name {
       font-size: 18px;
       color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.7));
+      .react-autoql-icon {
+        font-size: 0.875em;
+      }
+    }
+    .react-autoql-notification-project-name {
+      font-size: 14px;
+      color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.7));
       .react-autoql-icon {
         font-size: 0.875em;
       }
