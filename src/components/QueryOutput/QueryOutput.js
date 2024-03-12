@@ -282,7 +282,7 @@ export class QueryOutput extends React.Component {
         this.props.onDisplayTypeChange(this.state.displayType)
       }
 
-      // If data config was changed here, tell the parent
+      // If initial data config was changed here, tell the parent
       if (
         !_isEqual(this.props.initialTableConfigs, {
           tableConfig: this.tableConfig,
@@ -309,6 +309,10 @@ export class QueryOutput extends React.Component {
           this.state.columns,
           this.queryResponse?.data?.data?.fe_req?.additional_selects,
           this.queryResponse,
+          {
+            tableConfig: this.tableConfig,
+            pivotTableConfig: this.pivotTableConfig,
+          },
         )
 
         if (this.shouldGeneratePivotData()) {

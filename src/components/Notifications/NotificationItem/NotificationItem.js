@@ -66,6 +66,7 @@ export default class NotificationItem extends React.Component {
     onQueryClick: PropTypes.func,
     enableSettingsMenu: PropTypes.bool,
     enableNotificationsMenu: PropTypes.bool,
+    displayProjectName: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -76,6 +77,7 @@ export default class NotificationItem extends React.Component {
     onQueryClick: undefined,
     enableSettingsMenu: true,
     enableNotificationsMenu: true,
+    displayProjectName: false,
     onRuleFetchCallback: () => {},
     updateScrollbars: () => {},
     onExpandCallback: () => {},
@@ -255,12 +257,19 @@ export default class NotificationItem extends React.Component {
 
     return this.props.notification.message
   }
-
+  renderProjectName = () => {
+    return (
+      <div className='react-autoql-notification-project-name'>
+        <span>{this.props.notification.project?.name}</span>
+      </div>
+    )
+  }
   renderNotificationHeader = () => {
     return (
       <div className='react-autoql-notification-list-item-header' onClick={() => this.onClick(this.props.notification)}>
         <div className='react-autoql-notification-display-name-container'>
           <div className='react-autoql-notification-display-name'>{this.renderNotificationTitle()}</div>
+          {this.props.displayProjectName && this.renderProjectName()}
           <div className='react-autoql-notification-description'>{this.renderNotificationMessage()}</div>
           <div className='react-autoql-notification-timestamp-container'>
             <span className='react-autoql-notification-timestamp'>
