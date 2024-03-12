@@ -691,10 +691,11 @@ export class OptionsToolbar extends React.Component {
           (displayType === 'table' || isChartType(displayType)) && !allColumnsHidden && hasMoreThanOneRow,
         showCopyButton: isTable && !allColumnsHidden,
         showSaveAsPNGButton: isChart,
-        showHideColumnsButton:
-          autoQLConfig.enableColumnVisibilityManager &&
-          hasData &&
-          (displayType === 'table' || (displayType === 'text' && allColumnsHidden)),
+        showHideColumnsButton: false,
+        // Keep for now until we confirm we want to remove this feature
+        // autoQLConfig.enableColumnVisibilityManager &&
+        // hasData &&
+        // (displayType === 'table' || (displayType === 'text' && allColumnsHidden)),
         showHiddenColsBadge: someColumnsHidden,
         showSQLButton: isDataResponse && autoQLConfig.debug,
         showSaveAsCSVButton: isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
