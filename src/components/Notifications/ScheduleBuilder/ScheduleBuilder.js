@@ -123,7 +123,7 @@ export default class ScheduleBuilder extends React.Component {
         this.setState({ resetPeriodSelectValue: 'NONE' })
       } else if (
         //  Change default reset period to default value when user changes condition type to "COMPARE" in first step
-        this.props.conditionType !== EXISTS_TYPE && // "when condition is met"
+        (this.props.conditionType !== EXISTS_TYPE || this.state.frequencyType === SCHEDULED_TYPE) && // "when condition is met"
         this.state.resetPeriodSelectValue === 'NONE'
       ) {
         this.setState({ resetPeriodSelectValue: this.timeRange ?? this.DEFAULT_RESET_PERIOD_SELECT_VALUE })
