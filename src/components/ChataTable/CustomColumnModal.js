@@ -8,6 +8,8 @@ import {
   dataFormattingDefault,
   deepEqual,
   getVisibleColumns,
+  COLUMN_TYPES,
+  ColumnTypes,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -20,6 +22,29 @@ import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
 import './CustomColumnModal.scss'
+
+const operators = {
+  CONCAT: {
+    value: 'CONCAT',
+    label: 'Concatenate(...)',
+  },
+  ADDITION: {
+    value: '',
+    label: '+',
+  },
+  SUBTRACTION: {
+    value: '',
+    label: '-',
+  },
+  MULTIPLICATION: {
+    value: '',
+    label: 'x',
+  },
+  DIVISION: {
+    value: '',
+    label: '/',
+  },
+}
 
 export default class CustomColumnModal extends React.Component {
   constructor(props) {
@@ -158,6 +183,37 @@ export default class CustomColumnModal extends React.Component {
     }
   }
 
+  getColumnType = () => {
+    const selectedColumnTypes = this.state.columnFn
+      .filter((chunk) => chunk.type === 'column')
+      .map((chunk) => chunk.column?.type)
+
+    console.log({ selectedColumnTypes })
+
+    // If all columns are the same, return that type
+    if (selectedColumnTypes.every((colType) => colType === selectedColumnTypes[0])) {
+      return selectedColumnTypes[0]
+    }
+
+    if (selectedColumnTypes.find((colType) => colType === ColumnTypes.STRING)) {
+      // If even one column selected is a string type, the output must be string type
+      return ColumnTypes.STRING
+    } else if (
+      selectedColumnTypes.every(
+        (colType) =>
+          colType === ColumnTypes.DOLLAR_AMT ||
+          colType === ColumnTypes.QUANTITY ||
+          colType === ColumnTypes.RATIO ||
+          colType === ColumnTypes.PERCENT,
+      )
+    ) {
+      // If column is a number type, just display as a "quantity" with no units
+      return ColumnTypes.QUANTITY
+    }
+
+    return ColumnTypes.STRING
+  }
+
   renderColumnNameInput = () => {
     return (
       <Input
@@ -170,6 +226,41 @@ export default class CustomColumnModal extends React.Component {
         onChange={(e) => this.setState({ columnName: e.target.value })}
       />
     )
+  }
+
+  renderNextAvailableOperator = () => {
+    const columnType = this.getColumnType()
+    const supportedOperators = COLUMN_TYPES[columnType].supportedOperators
+
+    if (!supportedOperators?.length) {
+      return null
+    } else if (supportedOperators?.length === 1) {
+      return (
+        <span className='react-autoql-operator-select-wrapper'>
+          <Button className='react-autoql-operator-select-btn' icon='plus'>
+            <span>{supportedOperators[0]}</span>
+          </Button>
+        </span>
+      )
+    } else {
+      return (
+        <span className='react-autoql-operator-select-wrapper'>
+          <Select
+            placeholder='Add Operator...'
+            className='react-autoql-operator-select'
+            value={this.state.operatorSelectValue}
+            onChange={(operatorSelectValue) => this.setState({ operatorSelectValue })}
+            options={supportedOperators.map((op) => {
+              return {
+                value: op,
+                label: operators[op].label,
+                listLabel: operators[op].label,
+              }
+            })}
+          />
+        </span>
+      )
+    }
   }
 
   renderColumnFnBuilder = () => {
@@ -201,9 +292,7 @@ export default class CustomColumnModal extends React.Component {
               } else if (chunk.type === 'number') {
               }
             })}
-            <Button className='react-autoql-operator-select' icon='plus'>
-              <span> CONCAT</span>
-            </Button>
+            {this.renderNextAvailableOperator()}
           </div>
         </div>
       </>

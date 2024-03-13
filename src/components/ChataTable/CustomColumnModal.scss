@@ -15,13 +15,23 @@
       align-items: center;
       white-space: pre;
 
-      .react-autoql-operator-select {
-        display: inline-flex;
-        border-color: var(--react-autoql-border-color);
-        color: var(--react-autoql-text-color-placeholder);
-        border-style: dashed;
-        margin: 0 5px;
-        padding: 10px;
+      .react-autoql-operator-select-wrapper {
+        .react-autoql-operator-select-btn {
+          display: inline-flex;
+          border-color: var(--react-autoql-border-color);
+          color: var(--react-autoql-text-color-placeholder);
+          border-style: dashed;
+          margin: 0 5px;
+          padding: 10px;
+          background-color: transparent;
+        }
+        .react-autoql-operator-select .react-autoql-select {
+          border-color: var(--react-autoql-border-color);
+          color: var(--react-autoql-text-color-placeholder);
+          background-color: transparent;
+          border-style: dashed;
+          margin: 0 5px;
+        }
       }
     }
   }
@@ -43,6 +53,10 @@
     .react-autoql-table-container {
       border: 1px solid var(--react-autoql-border-color);
       border-radius: 2px;
+
+      .react-autoql-table.tabulator .tabulator-row:last-child {
+        margin-bottom: 0px;
+      }
     }
   }
 }
