@@ -7,13 +7,14 @@
   .data-alert-description-span {
     display: inline-block;
     margin-bottom: 10px;
+    white-space: pre;
   }
 
   .react-autoql-select-and-label:not(.outlined) {
     border-bottom: 1px solid var(--react-autoql-accent-color);
     height: 35px;
     margin: 0 3px;
-    padding: 0;
+    padding: 2px;
   }
 
   &.with-query-validation .react-autoql-rule-condition-select-input-container {

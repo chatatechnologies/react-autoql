@@ -69,11 +69,14 @@ export default class RuleSimple extends React.Component {
     this.TERM_ID_1 = uuid()
     this.TERM_ID_2 = uuid()
 
-    const selectedOperator = this.getInitialSelectedOperator()
+    let selectedOperator = this.getInitialSelectedOperator()
+    if (isListQuery(queryResponse?.data?.data?.columns) && this.SUPPORTED_CONDITION_TYPES.includes(EXISTS_TYPE)) {
+      selectedOperator = EXISTS_TYPE
+    }
 
     const state = {
       columnSelectionType: 'any-column',
-      selectedOperator: initialData?.[0]?.condition ?? selectedOperator,
+      selectedOperator: initialData[0]?.condition ?? selectedOperator,
       firstQueryJoinColumns: initialData?.[0]?.join_columns ?? [],
       firstQuerySelectedNumberColumnName: initialData?.[0]?.compare_column ?? '',
       secondQueryJoinColumns: initialData?.[1]?.join_columns ?? [],
@@ -1168,11 +1171,19 @@ export default class RuleSimple extends React.Component {
                 options={[
                   {
                     value: COMPARE_TYPE,
-                    label: 'Contains data that meets the following conditions:',
+                    label: (
+                      <span>
+                        Meets the following <strong>conditions:</strong>
+                      </span>
+                    ),
                   },
                   {
                     value: EXISTS_TYPE,
-                    label: 'Receives new rows of data',
+                    label: (
+                      <span>
+                        Receives <strong>new rows</strong> of data
+                      </span>
+                    ),
                   },
                 ]}
                 value={this.state.selectedOperator === EXISTS_TYPE ? EXISTS_TYPE : COMPARE_TYPE}
@@ -1184,9 +1195,32 @@ export default class RuleSimple extends React.Component {
                 outlined={false}
                 showArrow={false}
               />
+              {this.state.selectedOperator !== EXISTS_TYPE &&
+                isListQuery(this.props.queryResponse?.data?.data?.columns) && (
+                  <span className='data-alert-description-span'>
+                    {' '}
+                    <Select
+                      className='data-alert-schedule-step-type-selector'
+                      options={[
+                        {
+                          value: 'all-columns',
+                          label: 'Any numerical column',
+                        },
+                        {
+                          value: 'selected-columns',
+                          label: 'Selected numerical column(s)',
+                        },
+                      ]}
+                      value={this.state.conditionColumnSelectType ?? 'all-columns'}
+                      onChange={(conditionColumnSelectType) => this.setState({ conditionColumnSelectType })}
+                      outlined={false}
+                      showArrow={false}
+                    />{' '}
+                    contains data that
+                  </span>
+                )}
             </span>
           </div>
-
           {this.state.selectedOperator !== EXISTS_TYPE ? (
             <>
               <div className='react-autoql-notification-rule-container' data-test='rule'>
