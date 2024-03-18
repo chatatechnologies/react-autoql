@@ -80,7 +80,6 @@
     "lodash.isempty": "^4.4.0",
     "lodash.isequal": "^4.5.0",
     "make-coverage-badge": "^1.2.0",
-    "moment-timezone": "^0.5.32",
     "parse-num": "^1.0.0",
     "prop-types": "^15.7.2",
     "rc-drawer": "4.4.3",
