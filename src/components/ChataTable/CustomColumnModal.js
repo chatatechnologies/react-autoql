@@ -10,6 +10,8 @@ import {
   getVisibleColumns,
   COLUMN_TYPES,
   ColumnTypes,
+  formatQueryColumns,
+  ColumnObj,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -46,38 +48,45 @@ const operators = {
   },
 }
 
+const HIGHLIGHTED_CLASS = 'highlighted-column'
+const DEFAULT_COLUMN_NAME = 'New Column'
+
 export default class CustomColumnModal extends React.Component {
   constructor(props) {
     super(props)
 
     this.TABLE_ID = uuid()
 
-    const columnName = 'New Column'
-
     const firstIndex = props.columns.findIndex((col) => col.is_visible)
+    const initialColumn = props.columns[firstIndex]
 
     const initialColumnFn = [
       {
         type: 'column',
-        value: props.columns[firstIndex].field,
-        column: props.columns[firstIndex],
+        value: initialColumn.field,
+        column: initialColumn,
       },
     ]
 
-    this.newColumn = {
-      ...initialColumnFn[0].column,
-      title: columnName,
-      display_name: columnName,
-      field: `${props.columns?.length}`,
-      custom: true,
-      fnSummary: `= ${initialColumnFn[0].column?.display_name}`,
+    this.newColumnRaw = this.getRawColumnParams(initialColumn)
+
+    this.newColumn = new ColumnObj({
+      ...this.newColumnRaw,
+      fnSummary: `= ${initialColumn?.display_name}`,
       mutator: this.getFnMutator(initialColumnFn),
-      cssClass: `${initialColumnFn[0].column.cssClass ?? ''} highlighted-column`,
-    }
+      field: `${props.columns?.length}`,
+      index: props.columns?.length,
+      custom: true,
+    })
+
+    const formattedColumn = this.getColumnParamsForTabulator(this.newColumn, props)
+    formattedColumn.cssClass = HIGHLIGHTED_CLASS
+
+    this.newColumn = formattedColumn
 
     this.state = {
       columns: [...props.columns, this.newColumn],
-      columnName,
+      columnName: DEFAULT_COLUMN_NAME,
       columnFn: initialColumnFn,
     }
   }
@@ -126,6 +135,21 @@ export default class CustomColumnModal extends React.Component {
     }
   }
 
+  getColumnParamsForTabulator = (column, providedProps) => {
+    const props = providedProps ?? this.props
+    const columns = _cloneDeep(props.columns)
+
+    const index = this.newColumn.index
+    columns[index] = column
+
+    return formatQueryColumns({
+      columns,
+      aggConfig: props.aggConfig,
+      queryResponse: props.queryResponse,
+      dataFormatting: props.dataFormatting,
+    })?.[index]
+  }
+
   getFnMutator = (columnFn) => {
     return (value, data, type, params, component) => {
       //value - original value of the cell
@@ -141,24 +165,48 @@ export default class CustomColumnModal extends React.Component {
     return `= ${columnFn[0].column?.display_name}`
   }
 
+  getRawColumnParams = (col) => {
+    return {
+      name: '',
+      display_name: this.state?.columnName ?? DEFAULT_COLUMN_NAME,
+      type: col.type,
+      drill_down: col.drill_down,
+      dow_style: col.dow_style,
+      alt_name: col.alt_name,
+    }
+  }
+
   updateTabulatorColumnFn = () => {
     const columns = _cloneDeep(this.state.columns)
+
+    const { columnFn } = this.state
+
     const newParams = {
-      mutator: this.getFnMutator(this.state.columnFn),
-      fnSummary: this.getFnSummary(this.state.columnFn),
+      mutator: this.getFnMutator(columnFn),
+      fnSummary: this.getFnSummary(columnFn),
     }
+
+    const columnForFn = columnFn[0]?.column
 
     const newColumns = columns.map((col) => {
       if (col.field === this.newColumn.field) {
-        return {
-          ...col,
-          ...newParams,
-        }
+        const newColFormatted = new ColumnObj(
+          this.getColumnParamsForTabulator({
+            ...this.getRawColumnParams(columnForFn),
+            ...newParams,
+          }),
+        )
+
+        newColFormatted.cssClass = HIGHLIGHTED_CLASS
+
+        this.newColumn = newColFormatted
+
+        return newColFormatted
       }
       return col
     })
 
-    this.tableRef?.updateColumn?.(this.newColumn.field, newParams)
+    // this.tableRef?.updateColumn?.(this.newColumn.field, newParams)
 
     this.setState({ columns: newColumns })
   }
@@ -187,8 +235,6 @@ export default class CustomColumnModal extends React.Component {
     const selectedColumnTypes = this.state.columnFn
       .filter((chunk) => chunk.type === 'column')
       .map((chunk) => chunk.column?.type)
-
-    console.log({ selectedColumnTypes })
 
     // If all columns are the same, return that type
     if (selectedColumnTypes.every((colType) => colType === selectedColumnTypes[0])) {
@@ -319,6 +365,7 @@ export default class CustomColumnModal extends React.Component {
             keepScrolledRight={true}
             pageSize={10}
             tableOptions={{}}
+            allowCustomColumns={false}
           />
         </div>
       </>

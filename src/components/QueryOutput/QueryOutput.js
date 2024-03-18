@@ -2362,6 +2362,7 @@ export class QueryOutput extends React.Component {
           source={this.props.source}
           scope={this.props.scope}
           tableConfig={this.tableConfig}
+          aggConfig={this.state.aggConfig}
         />
       </ErrorBoundary>
     )

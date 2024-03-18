@@ -132,6 +132,7 @@ export default class ChataTable extends React.Component {
     tableOptions: PropTypes.shape({}),
     updateColumns: PropTypes.func,
     keepScrolledRight: PropTypes.bool,
+    allowCustomColumns: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -149,6 +150,7 @@ export default class ChataTable extends React.Component {
     pivot: false,
     tableOptions: {},
     keepScrolledRight: false,
+    allowCustomColumns: true,
     onFilterCallback: () => {},
     onSorterCallback: () => {},
     onTableParamsChange: () => {},
@@ -241,7 +243,11 @@ export default class ChataTable extends React.Component {
 
     if (this.props.columns && this.state.tabulatorMounted && !deepEqual(this.props.columns, prevProps.columns)) {
       this.ref?.tabulator?.setColumns(this.getFilteredTabulatorColumnDefinitions())
-      this.updateData(this.getRows(this.props, 1))
+      this.updateData(this.getRows(this.props, 1)).then(() => {
+        if (this.props.keepScrolledRight) {
+          this.scrollToRight()
+        }
+      })
       this.setHeaderInputEventListeners()
       this.setFilters()
       this.clearLoadingIndicators()
@@ -350,7 +356,7 @@ export default class ChataTable extends React.Component {
       this.setInfiniteScroll(true)
     }
 
-    this.ref?.updateData(data)
+    return this.ref?.updateData(data)
   }
 
   transposeTable = () => {
@@ -630,12 +636,14 @@ export default class ChataTable extends React.Component {
   // }
 
   scrollToRight = () => {
-    const tableWidth = document.querySelector(
-      `#react-autoql-table-container-${this.TABLE_ID} .tabulator-table`,
-    )?.clientWidth
+    if (this.ref?.tabulator) {
+      const tableWidth = document.querySelector(
+        `#react-autoql-table-container-${this.TABLE_ID} .tabulator-table`,
+      )?.clientWidth
 
-    this.ref.tabulator.columnManager.element.scrollLeft = tableWidth
-    this.ref.tabulator.rowManager.element.scrollLeft = tableWidth
+      this.ref.tabulator.columnManager.element.scrollLeft = tableWidth
+      this.ref.tabulator.rowManager.element.scrollLeft = tableWidth
+    }
   }
 
   getNewPage = (props, tableParams) => {
@@ -1112,6 +1120,10 @@ export default class ChataTable extends React.Component {
   }
 
   renderCustomColumnPopover = () => {
+    if (!this.props.allowCustomColumns) {
+      return null
+    }
+
     if (this.state.isCustomColumnPopoverOpen) {
       return (
         <CustomColumnModal
@@ -1119,6 +1131,9 @@ export default class ChataTable extends React.Component {
           isOpen={this.state.isCustomColumnPopoverOpen}
           onClose={() => this.setState({ isCustomColumnPopoverOpen: false })}
           tableRef={this.ref}
+          aggConfig={this.props.aggConfig}
+          queryResponse={this.props.response}
+          dataFormatting={this.props.dataFormatting}
           onConfirm={(newColumns) => {
             this.ref?.tabulator?.setColumns(newColumns)
             this.ref?.updateData(this.getRows())
