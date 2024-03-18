@@ -162,7 +162,7 @@ export class AddColumnBtnWithoutRef extends React.Component {
     const availableSelectColumns = this.props.queryResponse?.data?.data?.available_selects
     const availableHiddenColumns = getHiddenColumns(this.props.queryResponse?.data?.data?.columns)
 
-    if (!availableSelectColumns?.length && !availableHiddenColumns?.length) {
+    if (!availableSelectColumns?.length && !availableHiddenColumns?.length && !this.props.allowCustom) {
       return null
     }
 
