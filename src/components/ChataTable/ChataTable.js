@@ -1046,6 +1046,7 @@ export default class ChataTable extends React.Component {
       if (this.props.keepScrolledRight) {
         this.scrollToRight()
       }
+      this.setHeaderInputEventListeners()
     })
   }
 
