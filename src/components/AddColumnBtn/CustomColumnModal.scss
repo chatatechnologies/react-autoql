@@ -71,6 +71,38 @@
       .react-autoql-table.tabulator .tabulator-row:last-child {
         margin-bottom: 0px;
       }
+
+      // Use this if we want to highlight the columns that are being used in the formula
+      // .tabulator-col.formula-column,
+      // .tabulator-cell.formula-column {
+      //   &::before {
+      //     content: '';
+      //     position: absolute;
+      //     top: 0;
+      //     left: 0;
+      //     height: 100%;
+      //     width: 100%;
+      //     background: yellow;
+      //     opacity: 0.4;
+      //   }
+      // }
+
+      .tabulator-col.highlighted-column,
+      .tabulator-cell.highlighted-column {
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          height: 100%;
+          width: 100%;
+          background: var(--react-autoql-accent-color);
+        }
+      }
+
+      .tabulator-cell.highlighted-column::before {
+        opacity: 0.2;
+      }
     }
   }
 }

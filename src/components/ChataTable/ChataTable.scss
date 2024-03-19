@@ -91,24 +91,6 @@
     }
   }
 
-  .tabulator-col.highlighted-column,
-  .tabulator-cell.highlighted-column {
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      height: 100%;
-      width: 100%;
-      background: yellow;
-      opacity: 0.4;
-    }
-  }
-
-  .tabulator-cell.highlighted-column::before {
-    opacity: 0.2;
-  }
-
   &.infinite .tabulator-col.DATE_STRING .tabulator-header-filter,
   .tabulator-col.DRILLDOWN .tabulator-header-filter {
     visibility: hidden;

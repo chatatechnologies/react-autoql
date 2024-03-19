@@ -32,19 +32,19 @@ const operators = {
     label: 'Concatenate(...)',
   },
   ADDITION: {
-    value: '',
+    value: '+',
     label: '+',
   },
   SUBTRACTION: {
-    value: '',
+    value: '-',
     label: '-',
   },
   MULTIPLICATION: {
-    value: '',
-    label: 'x',
+    value: 'x',
+    label: <Icon type='close' />,
   },
   DIVISION: {
-    value: '',
+    value: '/',
     label: '/',
   },
 }
@@ -95,6 +95,7 @@ export default class CustomColumnModal extends React.Component {
       columns: [...props.columns, this.newColumn],
       columnName: DEFAULT_COLUMN_NAME,
       columnFn: initialColumnFn,
+      columnType: 'auto',
     }
   }
 
@@ -238,10 +239,22 @@ export default class CustomColumnModal extends React.Component {
     }
   }
 
+  getFnColumns = () => {
+    return this.state.columnFn.filter((chunk) => chunk.type === 'column').map((chunk) => chunk.column)
+  }
+
+  getSupportedColumnTypes = () => {
+    const selectedColumns = this.getFnColumns()
+
+    if (selectedColumns.every((col) => isColumnNumberType(col))) {
+      return Object.keys(COLUMN_TYPES).filter((type) => COLUMN_TYPES[type].isNumber)
+    }
+
+    return [ColumnTypes.STRING]
+  }
+
   getColumnType = () => {
-    const selectedColumnTypes = this.state.columnFn
-      .filter((chunk) => chunk.type === 'column')
-      .map((chunk) => chunk.column?.type)
+    const selectedColumnTypes = this.getFnColumns()?.map((col) => col.type)
 
     // If all columns are the same, return that type
     if (selectedColumnTypes.every((colType) => colType === selectedColumnTypes[0])) {
@@ -287,14 +300,23 @@ export default class CustomColumnModal extends React.Component {
   }
 
   renderColumnTypeSelector = () => {
+    const supportedColumnTypes = this.getSupportedColumnTypes()
+
     return (
       <Select
         label='Column Type'
         className='custom-column-builder-type-selector'
-        options={Object.keys(COLUMN_TYPES).map((type) => ({
-          value: COLUMN_TYPES[type].description,
-        }))}
-        value={this.state.columnType ?? COLUMN_TYPES[this.getColumnType()].description}
+        options={[
+          {
+            value: 'auto',
+            label: 'Auto',
+          },
+          ...supportedColumnTypes.map((type) => ({
+            value: type,
+            label: COLUMN_TYPES[type]?.description,
+          })),
+        ]}
+        value={this.state.columnType ?? this.getColumnType()}
         onChange={(columnType) => this.setState({ columnType })}
       />
     )
