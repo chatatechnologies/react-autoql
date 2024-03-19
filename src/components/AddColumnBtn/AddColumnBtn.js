@@ -147,7 +147,7 @@ export class AddColumnBtnWithoutRef extends React.Component {
                 </li>
               )
             })}
-            {this.props.allowCustom && (
+            {this.enableCustomOption() && (
               <>
                 <hr />
                 <li onClick={this.onCustomClick}>Custom...</li>
@@ -159,16 +159,16 @@ export class AddColumnBtnWithoutRef extends React.Component {
     )
   }
 
+  enableCustomOption = () => {
+    const selectableColumnsForCustom = getSelectableColumns(this.props.queryResponse?.data?.data?.columns)
+    return this.props.allowCustom && !!selectableColumnsForCustom?.length
+  }
+
   render = () => {
     const availableSelectColumns = this.props.queryResponse?.data?.data?.available_selects
     const availableHiddenColumns = getHiddenColumns(this.props.queryResponse?.data?.data?.columns)
-    const selectableColumnsForCustom = getSelectableColumns(this.props.queryResponse?.data?.data?.columns)
 
-    if (
-      !availableSelectColumns?.length &&
-      !availableHiddenColumns?.length &&
-      (!this.props.allowCustom || !selectableColumnsForCustom?.length)
-    ) {
+    if (!availableSelectColumns?.length && !availableHiddenColumns?.length && !this.enableCustomOption()) {
       return null
     }
 

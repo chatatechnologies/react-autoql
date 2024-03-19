@@ -2310,6 +2310,7 @@ export class QueryOutput extends React.Component {
       return (
         <AddColumnBtn
           queryResponse={this.queryResponse}
+          columns={this.state.columns}
           tooltipID={this.props.tooltipID}
           onAddColumnClick={this.onAddColumnClick}
           onCustomClick={this.onAddColumnClick}

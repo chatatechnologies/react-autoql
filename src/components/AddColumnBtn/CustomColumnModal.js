@@ -267,6 +267,11 @@ export default class CustomColumnModal extends React.Component {
     return ColumnTypes.STRING
   }
 
+  getNextSupportedOperator = () => {
+    const columnType = this.getColumnType()
+    return COLUMN_TYPES[columnType].supportedOperators
+  }
+
   renderColumnNameInput = () => {
     return (
       <Input
@@ -281,9 +286,22 @@ export default class CustomColumnModal extends React.Component {
     )
   }
 
+  renderColumnTypeSelector = () => {
+    return (
+      <Select
+        label='Column Type'
+        className='custom-column-builder-type-selector'
+        options={Object.keys(COLUMN_TYPES).map((type) => ({
+          value: COLUMN_TYPES[type].description,
+        }))}
+        value={this.state.columnType ?? COLUMN_TYPES[this.getColumnType()].description}
+        onChange={(columnType) => this.setState({ columnType })}
+      />
+    )
+  }
+
   renderNextAvailableOperator = () => {
-    const columnType = this.getColumnType()
-    const supportedOperators = COLUMN_TYPES[columnType].supportedOperators
+    const supportedOperators = this.getNextSupportedOperator()
 
     if (!supportedOperators?.length) {
       return null
@@ -400,11 +418,14 @@ export default class CustomColumnModal extends React.Component {
           onConfirm={this.onAddColumnConfirm}
         >
           <div className='custom-column-modal'>
-            {this.renderTablePreview()}
             <div>
-              {this.renderColumnNameInput()}
+              <div className='custom-column-modal-name-and-type'>
+                {this.renderColumnNameInput()}
+                {this.renderColumnTypeSelector()}
+              </div>
               {this.renderColumnFnBuilder()}
             </div>
+            {this.renderTablePreview()}
           </div>
         </Modal>
       </ErrorBoundary>
