@@ -2,12 +2,13 @@ import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 
+import { AGG_TYPES, ColumnTypes, getHiddenColumns } from 'autoql-fe-utils'
+
 import { Icon } from '../Icon'
 import { Popover } from '../Popover'
-import { ErrorBoundary } from '../../containers/ErrorHOC'
-
-import { AGG_TYPES, ColumnTypes, getHiddenColumns } from 'autoql-fe-utils'
 import { CustomScrollbars } from '../CustomScrollbars'
+import { ErrorBoundary } from '../../containers/ErrorHOC'
+import { getSelectableColumns } from './CustomColumnModal'
 
 import './AddColumnBtn.scss'
 
@@ -161,12 +162,15 @@ export class AddColumnBtnWithoutRef extends React.Component {
   render = () => {
     const availableSelectColumns = this.props.queryResponse?.data?.data?.available_selects
     const availableHiddenColumns = getHiddenColumns(this.props.queryResponse?.data?.data?.columns)
+    const selectableColumnsForCustom = getSelectableColumns(this.props.queryResponse?.data?.data?.columns)
 
-    if (!availableSelectColumns?.length && !availableHiddenColumns?.length && !this.props.allowCustom) {
+    if (
+      !availableSelectColumns?.length &&
+      !availableHiddenColumns?.length &&
+      (!this.props.allowCustom || !selectableColumnsForCustom?.length)
+    ) {
       return null
     }
-
-    const availableColumns = this.props.queryResponse?.data?.data?.available_selects
 
     return (
       <ErrorBoundary>

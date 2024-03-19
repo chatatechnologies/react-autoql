@@ -38,7 +38,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './ChataTable.scss'
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
-import CustomColumnModal from './CustomColumnModal'
+import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
 
 export default class ChataTable extends React.Component {
   constructor(props) {

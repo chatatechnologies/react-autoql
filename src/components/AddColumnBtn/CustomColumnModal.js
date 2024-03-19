@@ -12,6 +12,7 @@ import {
   ColumnTypes,
   formatQueryColumns,
   ColumnObj,
+  isColumnNumberType,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -19,7 +20,7 @@ import { Modal } from '../Modal'
 import { Input } from '../Input'
 import { Button } from '../Button'
 import { Select } from '../Select'
-import ChataTable from './ChataTable'
+import ChataTable from '../ChataTable/ChataTable'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
@@ -49,7 +50,13 @@ const operators = {
 }
 
 const HIGHLIGHTED_CLASS = 'highlighted-column'
+const DISABLED_CLASS = 'disabled-column'
+const FORMULA_CLASS = 'formula-column'
 const DEFAULT_COLUMN_NAME = 'New Column'
+
+export const getSelectableColumns = (columns) => {
+  return getVisibleColumns(columns).filter((col) => isColumnNumberType(col))
+}
 
 export default class CustomColumnModal extends React.Component {
   constructor(props) {
@@ -57,7 +64,7 @@ export default class CustomColumnModal extends React.Component {
 
     this.TABLE_ID = uuid()
 
-    const firstIndex = props.columns.findIndex((col) => col.is_visible)
+    const firstIndex = props.columns.findIndex((col) => col.is_visible && isColumnNumberType(col))
     const initialColumn = props.columns[firstIndex]
 
     const initialColumnFn = [
@@ -310,6 +317,12 @@ export default class CustomColumnModal extends React.Component {
   }
 
   renderColumnFnBuilder = () => {
+    const selectableColumns = getSelectableColumns(this.props.columns)
+
+    if (!selectableColumns?.length) {
+      return null
+    }
+
     return (
       <>
         <div className='react-autoql-input-label'>Column Formula</div>
@@ -324,7 +337,7 @@ export default class CustomColumnModal extends React.Component {
                     placeholder='Select a Column'
                     value={chunk.value}
                     onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
-                    options={getVisibleColumns(this.props.columns).map((col) => {
+                    options={selectableColumns.map((col) => {
                       return {
                         value: col.field,
                         label: col.title,
