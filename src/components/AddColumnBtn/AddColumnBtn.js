@@ -97,9 +97,12 @@ export class AddColumnBtnWithoutRef extends React.Component {
           <ul className='context-menu-list'>
             <div className='react-autoql-input-label'>Add a Column</div>
             {availableSelectColumns?.map((column, i) => {
-              const columnIsNumerical = [ColumnTypes.DOLLAR_AMT, ColumnTypes.QUANTITY, ColumnTypes.RATIO].includes(
-                column.column_type,
-              )
+              const columnIsNumerical = [
+                ColumnTypes.DOLLAR_AMT,
+                ColumnTypes.QUANTITY,
+                ColumnTypes.RATIO,
+                ColumnTypes.PERCENT,
+              ].includes(column.column_type)
 
               return (
                 <Popover
