@@ -179,8 +179,6 @@ export default class CustomColumnModal extends React.Component {
       columnFn.forEach((chunk, i) => {
         const currentVal = chunk.column ? data[chunk.column?.index] : chunk.value
 
-        console.log({ currentVal, type: typeof currentVal })
-
         if (this.isValueEmpty(currentVal)) {
           return
         }
@@ -480,7 +478,6 @@ export default class CustomColumnModal extends React.Component {
               placeholder='Type a number'
               selectValue={chunk.operator}
               onChange={(e) => {
-                console.log(e.target.value, typeof e.target.value)
                 clearTimeout(this.inputDebounceTimer)
                 this.inputDebounceTimer = setTimeout(() => {
                   let value = e.target.value
