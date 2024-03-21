@@ -162,6 +162,10 @@ export default class CustomColumnModal extends React.Component {
     })?.[index]
   }
 
+  isValueEmpty = (value) => {
+    return value === null || value === undefined || value === ''
+  }
+
   getFnMutator = (columnFn) => {
     return (val, data, type, params, component) => {
       //val - original value of the cell
@@ -175,19 +179,25 @@ export default class CustomColumnModal extends React.Component {
       columnFn.forEach((chunk, i) => {
         const currentVal = chunk.column ? data[chunk.column?.index] : chunk.value
 
-        if (currentVal === null || currentVal === undefined) {
+        console.log({ currentVal, type: typeof currentVal })
+
+        if (this.isValueEmpty(currentVal)) {
           return
         }
 
         let newValue = value
-        if (newValue === null || newValue === undefined) {
+        if (this.isValueEmpty(newValue)) {
           newValue = currentVal
         } else if (operators[chunk.operator]) {
           newValue = operators[chunk.operator].fn(newValue, currentVal)
         }
 
-        if (newValue === Infinity || newValue === null || newValue === undefined) {
+        if (this.isValueEmpty(newValue)) {
           return
+        }
+
+        if (newValue === Infinity || isNaN(newValue)) {
+          newValue = null
         }
 
         value = newValue
@@ -469,6 +479,17 @@ export default class CustomColumnModal extends React.Component {
               showSpinWheel={false}
               placeholder='Type a number'
               selectValue={chunk.operator}
+              onChange={(e) => {
+                console.log(e.target.value, typeof e.target.value)
+                clearTimeout(this.inputDebounceTimer)
+                this.inputDebounceTimer = setTimeout(() => {
+                  let value = e.target.value
+
+                  const columnFn = _cloneDeep(this.state.columnFn)
+                  columnFn[i].value = value ? parseFloat(value) : value
+                  this.setState({ columnFn })
+                }, 500)
+              }}
               onSelectChange={(operator) => {
                 const columnFn = _cloneDeep(this.state.columnFn)
                 columnFn[i].operator = operator
@@ -528,7 +549,12 @@ export default class CustomColumnModal extends React.Component {
       return (
         <span className='react-autoql-operator-select-wrapper'>
           <Select
-            placeholder='ADD TERM'
+            placeholder={
+              <span>
+                <Icon type='plus' />
+                ADD TERM
+              </span>
+            }
             className='react-autoql-operator-select'
             showArrow={false}
             value={this.state.operatorSelectValue}
