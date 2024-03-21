@@ -19,6 +19,15 @@
       flex: 2;
       padding: 0;
       margin-bottom: 10px;
+      margin-right: 0;
+
+      // input {
+      //   border-right-color: transparent;
+
+      //   &:hover {
+      //     border-right-color: var(--react-autoql-accent-color);
+      //   }
+      // }
     }
   }
 
@@ -44,17 +53,46 @@
       white-space: pre;
       flex-wrap: wrap;
 
+      .react-autoql-term-type-selector {
+        .react-autoql-select {
+          border-top-left-radius: 0;
+          border-bottom-left-radius: 0;
+          padding: 0 5px;
+          border-left-color: transparent !important;
+          &:hover {
+            border-left-color: var(--react-autoql-accent-color) !important;
+          }
+        }
+      }
+
       .react-autoql-operator-select-wrapper {
         position: relative;
         margin-bottom: 5px;
+        margin-right: 8px;
+
+        .react-autoql-column-operator-selector {
+          margin-right: 0 !important;
+
+          .react-autoql-select {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            color: var(--react-autoql-accent-color);
+            font-size: 18px;
+            line-height: 34px;
+
+            .react-autoql-icon {
+              padding-bottom: 0;
+            }
+          }
+        }
 
         .react-autoql-operator-delete-btn {
           position: absolute;
           border-radius: 20px;
           height: 18px;
           width: 18px;
-          right: -5px;
-          top: -5px;
+          right: -8px;
+          top: -8px;
           padding: 0;
           margin: 0;
           z-index: 1;
@@ -87,6 +125,50 @@
           background-color: transparent;
           border-style: dashed;
         }
+
+        .react-autoql-select-and-label {
+          // margin-right: 5px;
+
+          &.react-autoql-available-column-selector .react-autoql-select {
+            font-weight: 600;
+            color: var(--react-autoql-accent-color);
+
+            .react-autoql-select-text-placeholder {
+              font-weight: 500;
+            }
+          }
+
+          &.has-operator {
+            margin-right: 0;
+
+            .react-autoql-select {
+              border-radius: 0;
+              border-left-color: transparent;
+
+              &:hover {
+                border-left-color: var(--react-autoql-accent-color) !important;
+              }
+            }
+          }
+        }
+
+        .react-autoql-select-and-label,
+        .react-autoql-input-and-label-container {
+          padding: 0;
+
+          .react-autoql-select-arrow {
+            opacity: 0.7;
+
+            .react-autoql-icon {
+              padding-bottom: 0;
+            }
+          }
+
+          input {
+            background: var(--react-autoql-background-color-secondary) !important;
+            border-radius: 0 !important;
+          }
+        }
       }
     }
   }
@@ -94,16 +176,6 @@
   .react-autoql-select-popover-container {
     .react-autoql-icon-divide {
       font-size: 16px;
-    }
-  }
-
-  .react-autoql-select-and-label,
-  .react-autoql-input-and-label-container {
-    padding: 0;
-    margin-right: 5px;
-
-    input {
-      background: var(--react-autoql-background-color-secondary) !important;
     }
   }
 
