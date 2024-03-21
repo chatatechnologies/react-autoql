@@ -63,6 +63,7 @@ import {
   MAX_CHART_ELEMENTS,
   formatAdditionalSelectColumn,
   setColumnVisibility,
+  ColumnTypes,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -1759,7 +1760,12 @@ export class QueryOutput extends React.Component {
       newCol.maxWidth = '300px'
 
       // Cell alignment
-      if (newCol.type === 'DOLLAR_AMT' || newCol.type === 'RATIO' || newCol.type === 'NUMBER') {
+      if (
+        newCol.type === ColumnTypes.DOLLAR_AMT ||
+        newCol.type === ColumnTypes.QUANTITY ||
+        newCol.type === ColumnTypes.RATIO ||
+        newCol.type === ColumnTypes.PERCENT
+      ) {
         newCol.hozAlign = 'right'
       } else {
         newCol.hozAlign = 'center'

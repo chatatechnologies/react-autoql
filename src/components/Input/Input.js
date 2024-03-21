@@ -1,7 +1,7 @@
 import React from 'react'
-import dayjs from '../../js/dayjsWithPlugins'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
+import dayjs from '../../js/dayjsWithPlugins'
 
 import { Icon } from '../Icon'
 import { Button } from '../Button'
@@ -34,6 +34,8 @@ export default class Input extends React.Component {
     fullWidth: PropTypes.bool,
     datePicker: PropTypes.bool,
     focusOnMount: PropTypes.bool,
+    showArrow: PropTypes.bool,
+    showSpinWheel: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -45,6 +47,8 @@ export default class Input extends React.Component {
     fullWidth: false,
     datePicker: false,
     focusOnMount: false,
+    showArrow: undefined,
+    showSpinWheel: true,
   }
 
   componentDidMount = () => {
@@ -158,6 +162,7 @@ export default class Input extends React.Component {
   renderSelectDropdown = () => {
     return (
       <Select
+        showArrow={this.props.showArrow}
         className='react-autoql-text-input-selector'
         options={this.props.selectOptions}
         value={this.props.selectValue}
@@ -279,7 +284,7 @@ export default class Input extends React.Component {
                 {this.props.datePicker ? this.renderDateRangePickerPopover() : null}
               </div>
             )}
-            {type === 'number' && this.renderSpinWheel()}
+            {type === 'number' && this.props.showSpinWheel && this.renderSpinWheel()}
           </div>
         </div>
       </ErrorBoundary>

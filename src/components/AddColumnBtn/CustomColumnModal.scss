@@ -22,11 +22,19 @@
     }
   }
 
+  .react-autoql-table-preview-wrapper {
+    flex: 1 1;
+    display: flex;
+    overflow: hidden;
+    flex-direction: column;
+  }
+
   .react-autoql-formula-builder-container {
     padding: 10px;
-    min-height: 150px;
+    min-height: 100px;
     border-radius: 2px;
-    margin-bottom: 15px;
+    margin-bottom: 25px;
+    overflow: auto;
     border: 1px solid var(--react-autoql-border-color);
     background: var(--react-autoql-background-color-primary);
 
@@ -34,14 +42,42 @@
       display: inline-flex;
       align-items: center;
       white-space: pre;
+      flex-wrap: wrap;
 
       .react-autoql-operator-select-wrapper {
+        position: relative;
+        margin-bottom: 5px;
+
+        .react-autoql-operator-delete-btn {
+          position: absolute;
+          border-radius: 20px;
+          height: 18px;
+          width: 18px;
+          right: -5px;
+          top: -5px;
+          padding: 0;
+          margin: 0;
+          z-index: 1;
+
+          opacity: 0;
+          background: var(--react-autoql-accent-color);
+          color: var(--react-autoql-text-color-accent);
+
+          .react-autoql-icon {
+            padding: 0;
+          }
+        }
+
+        &:hover .react-autoql-operator-delete-btn {
+          opacity: 1;
+        }
+
         .react-autoql-operator-select-btn {
           display: inline-flex;
           border-color: var(--react-autoql-border-color);
           color: var(--react-autoql-text-color-placeholder);
           border-style: dashed;
-          margin: 0 5px;
+          margin-right: 5px;
           padding: 10px;
           background-color: transparent;
         }
@@ -50,18 +86,30 @@
           color: var(--react-autoql-text-color-placeholder);
           background-color: transparent;
           border-style: dashed;
-          margin: 0 5px;
         }
       }
     }
   }
 
-  .react-autoql-select-and-label {
+  .react-autoql-select-popover-container {
+    .react-autoql-icon-divide {
+      font-size: 16px;
+    }
+  }
+
+  .react-autoql-select-and-label,
+  .react-autoql-input-and-label-container {
     padding: 0;
+    margin-right: 5px;
+
+    input {
+      background: var(--react-autoql-background-color-secondary) !important;
+    }
   }
 
   .react-autoql-table-preview-container {
     flex: 1;
+    display: flex;
     overflow: hidden;
 
     .react-autoql-table-container {
@@ -89,6 +137,10 @@
 
       .tabulator-col.highlighted-column,
       .tabulator-cell.highlighted-column {
+        .tabulator-col-content {
+          color: var(--react-autoql-text-color-accent);
+        }
+
         &::before {
           content: '';
           position: absolute;

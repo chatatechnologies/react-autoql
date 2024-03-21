@@ -3,16 +3,16 @@ import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.clonedeep'
 import {
-  authenticationDefault,
-  autoQLConfigDefault,
-  dataFormattingDefault,
-  deepEqual,
-  getVisibleColumns,
-  COLUMN_TYPES,
-  ColumnTypes,
-  formatQueryColumns,
   ColumnObj,
+  deepEqual,
+  ColumnTypes,
+  COLUMN_TYPES,
+  getVisibleColumns,
+  formatQueryColumns,
   isColumnNumberType,
+  autoQLConfigDefault,
+  authenticationDefault,
+  dataFormattingDefault,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -32,20 +32,20 @@ const operators = {
     label: 'Concatenate(...)',
   },
   ADDITION: {
-    value: '+',
-    label: '+',
+    value: 'ADD',
+    label: <Icon type='plus' />,
   },
   SUBTRACTION: {
-    value: '-',
-    label: '-',
+    value: 'SUBTRACT',
+    label: <Icon type='minus' />,
   },
   MULTIPLICATION: {
-    value: 'x',
+    value: 'MULTIPLY',
     label: <Icon type='close' />,
   },
   DIVISION: {
-    value: '/',
-    label: '/',
+    value: 'DIVIDE',
+    label: <Icon type='divide' />,
   },
 }
 
@@ -131,7 +131,7 @@ export default class CustomColumnModal extends React.Component {
     }
 
     // Update column mutator is function changed
-    if (!deepEqual(this.state.columnFn, prevState.columnFn)) {
+    if (!deepEqual(this.state.columnFn, prevState.columnFn) || this.state.columnType !== prevState.columnType) {
       setTimeout(() => {
         this.updateTabulatorColumnFn()
       }, 0)
@@ -187,11 +187,15 @@ export default class CustomColumnModal extends React.Component {
   updateTabulatorColumnFn = () => {
     const columns = _cloneDeep(this.state.columns)
 
-    const { columnFn } = this.state
+    const { columnFn, columnType } = this.state
 
     const newParams = {
       mutator: this.getFnMutator(columnFn),
       fnSummary: this.getFnSummary(columnFn),
+    }
+
+    if (columnType && columnType !== 'auto') {
+      newParams.type = columnType
     }
 
     const columnForFn = columnFn[0]?.column
@@ -304,22 +308,107 @@ export default class CustomColumnModal extends React.Component {
 
     return (
       <Select
-        label='Column Type'
+        label='Formatting'
         className='custom-column-builder-type-selector'
         options={[
           {
             value: 'auto',
-            label: 'Auto',
+            label: (
+              <span>
+                Auto{' '}
+                <em style={{ color: 'var(--react-autoql-text-color-placeholder)' }}>
+                  ({COLUMN_TYPES[this.getColumnType()]?.description})
+                </em>
+              </span>
+            ),
           },
           ...supportedColumnTypes.map((type) => ({
             value: type,
             label: COLUMN_TYPES[type]?.description,
           })),
+          // Todo: Add custom option to use excel type shapes
+          // {
+          //   value: 'custom',
+          //   label: 'Custom...'
+          // }
         ]}
         value={this.state.columnType ?? this.getColumnType()}
         onChange={(columnType) => this.setState({ columnType })}
       />
     )
+  }
+
+  renderOperatorDeleteBtn = (chunkIndex) => {
+    return (
+      <Button
+        className='react-autoql-operator-delete-btn'
+        onClick={() => {
+          const columnFn = this.state.columnFn.filter((chunk, i) => i !== chunkIndex)
+          this.setState({ columnFn })
+        }}
+      >
+        <Icon type='close' />
+      </Button>
+    )
+  }
+
+  renderColumnFnChunk = (chunk, i) => {
+    const supportedOperators = this.getNextSupportedOperator()
+
+    if (chunk.type === 'number') {
+      return (
+        <span className='react-autoql-operator-select-wrapper'>
+          <Input
+            hasSelect
+            type='number'
+            showArrow={false}
+            showSpinWheel={false}
+            placeholder='Type a number'
+            selectValue={chunk.operator}
+            onSelectChange={(operator) => {
+              const columnFn = _cloneDeep(this.state.columnFn)
+              columnFn[i].operator = operator
+              this.setState({ columnFn })
+            }}
+            selectOptions={supportedOperators.map((op) => {
+              return {
+                value: op,
+                label: operators[op].label,
+                listLabel: operators[op].label,
+              }
+            })}
+          />
+          {this.renderOperatorDeleteBtn(i)}
+        </span>
+      )
+    } else if (chunk.type === 'column' && !chunk.operator) {
+      const selectableColumns = getSelectableColumns(this.props.columns)
+      if (!selectableColumns?.length) {
+        return null
+      }
+
+      if (!chunk.operator) {
+        return (
+          <span className='react-autoql-operator-select-wrapper'>
+            <Select
+              key={`custom-column-select-${i}`}
+              placeholder='Select a Column'
+              value={chunk.value}
+              onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
+              options={selectableColumns.map((col) => {
+                return {
+                  value: col.field,
+                  label: col.title,
+                  listLabel: col.title,
+                  icon: 'table',
+                }
+              })}
+            />
+          </span>
+        )
+      }
+      return <div>COLUMN SELECT WITH OPERATOR</div>
+    }
   }
 
   renderNextAvailableOperator = () => {
@@ -339,10 +428,19 @@ export default class CustomColumnModal extends React.Component {
       return (
         <span className='react-autoql-operator-select-wrapper'>
           <Select
-            placeholder='Add Operator...'
+            placeholder='ADD TERM'
             className='react-autoql-operator-select'
+            showArrow={false}
             value={this.state.operatorSelectValue}
-            onChange={(operatorSelectValue) => this.setState({ operatorSelectValue })}
+            onChange={(operator) => {
+              const columnFn = _cloneDeep(this.state.columnFn)
+              columnFn.push({
+                type: 'number',
+                value: undefined,
+                operator,
+              })
+              this.setState({ columnFn })
+            }}
             options={supportedOperators.map((op) => {
               return {
                 value: op,
@@ -357,39 +455,14 @@ export default class CustomColumnModal extends React.Component {
   }
 
   renderColumnFnBuilder = () => {
-    const selectableColumns = getSelectableColumns(this.props.columns)
-
-    if (!selectableColumns?.length) {
-      return null
-    }
-
     return (
       <>
         <div className='react-autoql-input-label'>Column Formula</div>
         <div className='react-autoql-formula-builder-container'>
           <div className='react-autoql-formula-builder-button-wrapper'>
-            <span>= </span>
+            <span className='react-autoql-operator-select-wrapper'>= </span>
             {this.state.columnFn.map((chunk, i) => {
-              if (chunk.type === 'column') {
-                return (
-                  <Select
-                    key={`custom-column-select-${i}`}
-                    placeholder='Select a Column'
-                    value={chunk.value}
-                    onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
-                    options={selectableColumns.map((col) => {
-                      return {
-                        value: col.field,
-                        label: col.title,
-                        listLabel: col.title,
-                        icon: 'table',
-                      }
-                    })}
-                  />
-                )
-              } else if (chunk.type === 'operator') {
-              } else if (chunk.type === 'number') {
-              }
+              return this.renderColumnFnChunk(chunk, i)
             })}
             {this.renderNextAvailableOperator()}
           </div>
@@ -400,7 +473,7 @@ export default class CustomColumnModal extends React.Component {
 
   renderTablePreview = () => {
     return (
-      <>
+      <div className='react-autoql-table-preview-wrapper'>
         <div className='react-autoql-input-label'>Preview</div>
         <div className='react-autoql-table-preview-container'>
           <ChataTable
@@ -421,7 +494,7 @@ export default class CustomColumnModal extends React.Component {
             allowCustomColumns={false}
           />
         </div>
-      </>
+      </div>
     )
   }
 
