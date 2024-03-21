@@ -2,6 +2,7 @@ import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.clonedeep'
+
 import {
   ColumnObj,
   deepEqual,
@@ -34,21 +35,25 @@ const operators = {
   ADDITION: {
     value: 'ADD',
     label: <Icon type='plus' />,
+    icon: 'plus',
     fn: (a, b) => a + b,
   },
   SUBTRACTION: {
     value: 'SUBTRACT',
     label: <Icon type='minus' />,
+    icon: 'minus',
     fn: (a, b) => a - b,
   },
   MULTIPLICATION: {
     value: 'MULTIPLY',
     label: <Icon type='close' />,
+    icon: 'close',
     fn: (a, b) => a * b,
   },
   DIVISION: {
     value: 'DIVIDE',
     label: <Icon type='divide' />,
+    icon: 'divide',
     fn: (a, b) => a / b,
   },
 }
