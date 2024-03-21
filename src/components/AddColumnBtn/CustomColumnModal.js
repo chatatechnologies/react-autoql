@@ -164,6 +164,12 @@ export default class CustomColumnModal extends React.Component {
 
   getFnMutator = (columnFn) => {
     return (val, data, type, params, component) => {
+      //val - original value of the cell
+      //data - the data for the row
+      //type - the type of mutation occurring  (data|edit)
+      //params - the mutatorParams object from the column definition
+      //component - when the "type" argument is "edit", this contains the cell component for the edited cell, otherwise it is the column component for the column
+
       let value
 
       columnFn.forEach((chunk, i) => {
@@ -188,12 +194,6 @@ export default class CustomColumnModal extends React.Component {
       })
 
       return value
-      //value - original value of the cell
-      //data - the data for the row
-      //type - the type of mutation occurring  (data|edit)
-      //params - the mutatorParams object from the column definition
-      //component - when the "type" argument is "edit", this contains the cell component for the edited cell, otherwise it is the column component for the column
-      // return data[columnFn[0].column?.index] //return the sum of the other two columns.
     }
   }
 
