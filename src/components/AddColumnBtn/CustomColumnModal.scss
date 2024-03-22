@@ -31,21 +31,114 @@
     }
   }
 
+  .custom-column-modal-form-wrapper {
+    flex: 2;
+    display: flex;
+    overflow: hidden;
+    flex-direction: column;
+
+    .react-autoql-formula-builder-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      margin-bottom: 30px;
+
+      .react-autoql-formula-builder-section {
+        flex: 3;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        margin-right: 20px;
+        position: relative;
+      }
+
+      .react-autoql-formula-builder-calculator-container {
+        flex: 1 0 0;
+        max-width: 160px;
+
+        .react-autoql-btn {
+          padding: 0 16px;
+          height: 38px;
+        }
+
+        .react-autoql-formula-builder-calculator-buttons-container {
+          display: flex;
+          flex-direction: row;
+          flex-wrap: wrap;
+        }
+      }
+
+      .react-autoql-formula-builder-column-selection-container {
+        flex: 0 0 auto;
+        margin-right: 10px;
+
+        .react-autoql-btn {
+          padding: 7px 12px;
+        }
+      }
+
+      .react-autoql-formula-builder-calculator-container,
+      .react-autoql-formula-builder-column-selection-container {
+        height: 100%;
+        overflow: auto;
+        display: flex;
+        flex-direction: column;
+
+        .react-autoql-formula-builder-calculator-buttons-container {
+          overflow: auto;
+
+          .react-autoql-btn {
+            white-space: pre;
+            margin: 0;
+            margin-bottom: 5px;
+            margin-right: 5px;
+          }
+
+          .react-autoql-formula-calculator-button {
+            .react-autoql-icon {
+              padding: 0;
+            }
+          }
+        }
+      }
+    }
+  }
+
   .react-autoql-table-preview-wrapper {
     flex: 1 1;
     display: flex;
     overflow: hidden;
     flex-direction: column;
+    min-height: 150px;
+  }
+
+  .react-autoql-formula-builder-label-container {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .react-autoql-formula-builder-validation-message {
+    position: absolute;
+    bottom: -18px;
+    font-size: 12px;
+
+    .react-autoql-formula-builder-validation-message-success {
+      color: var(--react-autoql-success-color);
+    }
+
+    .react-autoql-formula-builder-validation-message-warning {
+      color: var(--react-autoql-warning-color);
+    }
   }
 
   .react-autoql-formula-builder-container {
-    padding: 10px;
     min-height: 100px;
-    border-radius: 2px;
-    margin-bottom: 25px;
+    padding: 10px;
     overflow: auto;
+    border-radius: 2px;
     border: 1px solid var(--react-autoql-border-color);
     background: var(--react-autoql-background-color-primary);
+    flex: 1;
 
     .react-autoql-formula-builder-button-wrapper {
       display: inline-flex;
@@ -69,6 +162,7 @@
         position: relative;
         margin-bottom: 5px;
         margin-right: 8px;
+        line-height: 38px;
 
         .react-autoql-column-operator-selector {
           margin-right: 0 !important;
@@ -168,7 +262,8 @@
         .react-autoql-input-and-label-container {
           input {
             background: var(--react-autoql-background-color-secondary) !important;
-            border-radius: 0 !important;
+            border-radius: 4px !important;
+            height: 38px !important;
           }
           .react-autoql-select {
             font-size: 18px;

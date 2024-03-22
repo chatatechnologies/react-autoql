@@ -33,7 +33,7 @@ export default class Select extends React.Component {
     size: PropTypes.string,
     showArrow: PropTypes.bool,
     outlined: PropTypes.bool,
-    placeholder: PropTypes.string,
+    placeholder: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
     fullWidth: PropTypes.bool,
   }
 

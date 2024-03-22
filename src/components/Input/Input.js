@@ -230,6 +230,7 @@ export default class Input extends React.Component {
       onDateRangeChange,
       initialDateRange,
       focusOnMount,
+      showSpinWheel,
       ...nativeProps
     } = this.props
 
