@@ -440,8 +440,12 @@ export default class CustomColumnModal extends React.Component {
     )
   }
 
-  renderOperatorSelector = (chunk, i) => {
-    const supportedOperators = this.getNextSupportedOperators()
+  renderOperator = (chunk, i) => {
+    const supportedOperators = this.getNextSupportedOperators().filter((op) => !globalOperators.includes(op))
+
+    if (globalOperators.includes(chunk.value) || !supportedOperators.includes(chunk.value)) {
+      return <span style={{ color: 'var(--react-autoql-accent-color)' }}>{operators[chunk.value].label}</span>
+    }
 
     return (
       <Select
@@ -451,6 +455,7 @@ export default class CustomColumnModal extends React.Component {
           columnFn[i].value = operator
           this.setState({ columnFn })
         }}
+        // outlined={false}
         options={supportedOperators.map((op) => {
           return {
             value: op,
@@ -470,14 +475,15 @@ export default class CustomColumnModal extends React.Component {
     } else if (chunk.type === 'column') {
       chunkElement = this.renderAvailableColumnSelector(chunk, i)
     } else if (chunk.type === 'operator') {
-      chunkElement = this.renderOperatorSelector(chunk, i)
+      chunkElement = this.renderOperator(chunk, i)
     }
 
     return (
       <span key={`column-fn-chunk-${i}`} className='react-autoql-operator-select-wrapper'>
         {chunkElement}
         {/* Only display delete button for last term, otherwise the function could become invalid */}
-        {i === this.state.columnFn.length - 1 && this.renderOperatorDeleteBtn(i)}
+        {/* {i === this.state.columnFn.length - 1 && */}
+        {this.renderOperatorDeleteBtn(i)}
       </span>
     )
   }
@@ -602,7 +608,12 @@ export default class CustomColumnModal extends React.Component {
                       value: op,
                     }
 
-                    if (lastTerm && lastTerm?.type === 'operator' && lastTerm?.value !== 'RIGHT_BRACKET') {
+                    if (
+                      lastTerm &&
+                      lastTerm?.type === 'operator' &&
+                      lastTerm?.value !== 'RIGHT_BRACKET' &&
+                      op !== 'LEFT_BRACKET'
+                    ) {
                       // Replace current operator
                       columnFn[columnFn.length - 1] = newChunk
                     } else {

@@ -47,6 +47,15 @@ export const operators = {
   },
 }
 
+const CHATA_ERROR = 'ChataError'
+
+function ChataError(message = '') {
+  this.name = CHATA_ERROR
+  this.message = message
+}
+
+ChataError.prototype = Error.prototype
+
 export const isValueEmpty = (value) => {
   return value === null || value === undefined || value === ''
 }
@@ -59,21 +68,21 @@ export const convertToFunctionStr = (origColumnFnArray) => {
     const numRightBrackets = origColumnFnArray.filter((chunk) => chunk.value === 'RIGHT_BRACKET')?.length
     const numLeftBrackets = origColumnFnArray.filter((chunk) => chunk.value === 'LEFT_BRACKET')?.length
     if (numRightBrackets !== numLeftBrackets) {
-      throw new Error('Function contains unclosed brackets')
+      throw new ChataError('Syntax Error: Formula contains unclosed brackets')
     }
 
     origColumnFnArray.forEach((chunk, i) => {
       if (chunk.type === 'operator') {
         if (i === origColumnFnArray.length - 1) {
           if (chunk.value !== 'RIGHT_BRACKET') {
-            throw new Error("The function can't end with an operator")
+            throw new ChataError("Syntax Error: Formula can't end with an operator")
           }
         }
 
         columnFnStr = columnFnStr + ' ' + (operators[chunk.value]?.js ?? '')
       } else if (chunk.type === 'number') {
         if (isValueEmpty(chunk.value)) {
-          throw new Error('Number input is empty')
+          throw new ChataError('Syntax Error: Number input is empty')
         }
 
         columnFnStr = columnFnStr + ' ' + chunk.value
@@ -88,9 +97,13 @@ export const convertToFunctionStr = (origColumnFnArray) => {
 
     return { fn }
   } catch (error) {
+    if (error.name == CHATA_ERROR) {
+      return { error }
+    }
+
+    console.warn('Formula error: ' + error.message)
     return {
-      fn: undefined,
-      error,
+      error: new ChataError('Syntax Error: Invalid column formula'),
     }
   }
 }

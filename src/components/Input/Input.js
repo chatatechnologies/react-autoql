@@ -231,6 +231,7 @@ export default class Input extends React.Component {
       initialDateRange,
       focusOnMount,
       showSpinWheel,
+      showArrow,
       ...nativeProps
     } = this.props
 

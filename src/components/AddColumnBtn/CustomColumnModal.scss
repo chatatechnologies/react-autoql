@@ -50,6 +50,13 @@
         flex-direction: column;
         margin-right: 20px;
         position: relative;
+
+        .react-autoql-select-and-label {
+          padding-right: 5px;
+          color: var(--react-autoql-accent-color);
+          // line-height: 32px;
+          // height: 34px;
+        }
       }
 
       .react-autoql-formula-builder-calculator-container {
@@ -161,7 +168,7 @@
       .react-autoql-operator-select-wrapper {
         position: relative;
         margin-bottom: 5px;
-        margin-right: 8px;
+        margin-right: 3px;
         line-height: 38px;
 
         .react-autoql-column-operator-selector {
@@ -221,11 +228,9 @@
         }
 
         .react-autoql-select-and-label {
-          // margin-right: 5px;
-
           &.react-autoql-available-column-selector .react-autoql-select {
             font-weight: 600;
-            color: var(--react-autoql-accent-color);
+            color: var(--react-autoql-accent-color) !important;
 
             .react-autoql-select-text-placeholder {
               font-weight: 500;
@@ -251,7 +256,7 @@
           padding: 0;
 
           .react-autoql-select-arrow {
-            opacity: 0.7;
+            opacity: 0.5;
 
             .react-autoql-icon {
               padding-bottom: 0;
