@@ -1007,7 +1007,7 @@ export default class ChataTable extends React.Component {
     inputElement.blur()
   }
 
-  onEditColumnClick = () => {
+  onUpdateColumnConfirm = () => {
     const column = _cloneDeep(this.state.contextMenuColumn)
     this.setState({ contextMenuColumn: undefined, isCustomColumnPopoverOpen: true, activeCustomColumn: column })
   }
@@ -1198,13 +1198,12 @@ export default class ChataTable extends React.Component {
         content={
           <div className='more-options-menu' data-test='react-autoql-toolbar-more-options'>
             <ul className='context-menu-list'>
-              {/* TODO: Allow user to edit custom columns */}
-              {/* {!!column?.custom && (
-                <li onClick={() => this.onEditColumnClick()}>
+              {!!this.state.contextMenuColumn?.custom && (
+                <li onClick={() => this.onUpdateColumnConfirm()}>
                   <Icon type='edit' />
                   Edit Column
                 </li>
-              )} */}
+              )}
               <li onClick={this.onRemoveColumnClick}>
                 <Icon type='close' />
                 Remove Column

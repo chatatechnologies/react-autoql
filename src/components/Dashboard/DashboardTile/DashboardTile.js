@@ -1067,6 +1067,7 @@ export class DashboardTile extends React.Component {
         chartTooltipID={this.props.chartTooltipID}
         shouldRender={!this.props.isDragging}
         allowColumnAddition={this.props.isEditing}
+        enableTableContextMenu={this.props.isEditing}
         source='dashboards.user'
         scope='dashboards'
         autoHeight={false}

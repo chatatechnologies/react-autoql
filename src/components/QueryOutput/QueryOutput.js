@@ -224,6 +224,7 @@ export class QueryOutput extends React.Component {
     bucketSize: PropTypes.number,
     onNewData: PropTypes.func,
     onCustomColumnUpdate: PropTypes.func,
+    enableTableContextMenu: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -259,6 +260,7 @@ export class QueryOutput extends React.Component {
     showSingleValueResponseTitle: false,
     bucketSize: undefined,
     allowColumnAddition: false,
+    enableTableContextMenu: true,
     onTableConfigChange: () => {},
     onAggConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
@@ -2411,9 +2413,10 @@ export class QueryOutput extends React.Component {
 
   onCustomColumnChange = (newColumn) => {
     const customColumns = _cloneDeep(this.state.customColumns)
-    const existingColumnIndex = customColumns.find((col) => col.id === newColumn.id) >= 0
-    if (existingColumnIndex) {
-      customColumns[existingColumnIndex] = newColumn
+    const existingCustomColumnIndex = customColumns.findIndex((col) => col.id === newColumn.id)
+
+    if (existingCustomColumnIndex >= 0) {
+      customColumns[existingCustomColumnIndex] = newColumn
     } else {
       customColumns.push(newColumn)
     }
@@ -2482,6 +2485,7 @@ export class QueryOutput extends React.Component {
           aggConfig={this.state.aggConfig}
           onCustomColumnChange={this.onCustomColumnChange}
           onCustomColumnDelete={this.onCustomColumnDelete}
+          enableContextMenu={this.props.enableTableContextMenu}
         />
       </ErrorBoundary>
     )

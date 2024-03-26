@@ -229,8 +229,8 @@ export default class CustomColumnModal extends React.Component {
     this.setState({ columns: newColumns })
   }
 
-  onEditColumnConfirm = () => {
-    this.props.onUpdateColumn(this.newColumn)
+  onUpdateColumnConfirm = () => {
+    this.props.onUpdateColumn({ ...this.newColumn, id: this.props.initialColumn?.id })
   }
 
   onAddColumnConfirm = () => {
@@ -410,18 +410,19 @@ export default class CustomColumnModal extends React.Component {
   }
 
   renderCustomNumberInput = (chunk, i) => {
+    const columnFn = _cloneDeep(this.state.columnFn)
+
     return (
       <Input
         type='number'
         showSpinWheel={false}
         placeholder='Type a number'
         ref={(r) => (this.numberInputRefs[chunk.id] = r)}
+        defaultValue={columnFn?.[i]?.value}
         onChange={(e) => {
           clearTimeout(this.inputDebounceTimer)
           this.inputDebounceTimer = setTimeout(() => {
             let value = e.target.value
-
-            const columnFn = _cloneDeep(this.state.columnFn)
             columnFn[i].value = value ? parseFloat(value) : value
             this.setState({ columnFn })
           }, 500)
@@ -684,7 +685,7 @@ export default class CustomColumnModal extends React.Component {
           confirmText={this.props.initialColumn ? 'Update Column' : 'Save Column'}
           shouldRender={this.props.shouldRender}
           onClose={this.props.onClose}
-          onConfirm={this.props.initialColumn ? this.onEditColumnConfirm : this.onAddColumnConfirm}
+          onConfirm={this.props.initialColumn ? this.onUpdateColumnConfirm : this.onAddColumnConfirm}
           confirmDisabled={!this.state.isFnValid}
         >
           <div className='custom-column-modal'>
