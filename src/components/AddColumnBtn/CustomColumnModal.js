@@ -221,7 +221,7 @@ export default class CustomColumnModal extends React.Component {
     const newColumns = _cloneDeep(this.props.columns)
     newColumns.push(this.newColumn)
 
-    this.props.onConfirm(newColumns, this.newColumn, this.state.columnFn)
+    this.props.onConfirm(this.newColumn)
   }
 
   changeChunkValue = (value, type, i) => {
@@ -525,37 +525,39 @@ export default class CustomColumnModal extends React.Component {
         <div className='react-autoql-formula-builder-column-selection-container'>
           <div className='react-autoql-input-label'>Variables</div>
           <div className='react-autoql-formula-builder-calculator-buttons-container'>
-            {getSelectableColumns(this.props.columns)?.map((col, i) => {
-              return (
-                <Button
-                  key={`react-autoql-column-select-button-${i}`}
-                  className='react-autoql-formula-calculator-button'
-                  icon='table'
-                  disabled={
-                    lastTerm?.type === 'column' || lastTerm?.type === 'number' || lastTerm?.value === 'RIGHT_BRACKET'
-                  }
-                  onClick={() => {
-                    const newChunk = {
-                      type: 'column',
-                      value: col.field,
-                      column: col,
+            {getSelectableColumns(this.props.columns)
+              ?.filter((col) => !col.custom)
+              ?.map((col, i) => {
+                return (
+                  <Button
+                    key={`react-autoql-column-select-button-${i}`}
+                    className='react-autoql-formula-calculator-button'
+                    icon='table'
+                    disabled={
+                      lastTerm?.type === 'column' || lastTerm?.type === 'number' || lastTerm?.value === 'RIGHT_BRACKET'
                     }
+                    onClick={() => {
+                      const newChunk = {
+                        type: 'column',
+                        value: col.field,
+                        column: col,
+                      }
 
-                    if (lastTerm && lastTerm.type !== 'operator') {
-                      // Replace current variable
-                      columnFn[columnFn.length - 1] = newChunk
-                    } else {
-                      // Add new variable
-                      columnFn.push(newChunk)
-                    }
+                      if (lastTerm && lastTerm.type !== 'operator') {
+                        // Replace current variable
+                        columnFn[columnFn.length - 1] = newChunk
+                      } else {
+                        // Add new variable
+                        columnFn.push(newChunk)
+                      }
 
-                    this.setState({ columnFn })
-                  }}
-                >
-                  {col.display_name}
-                </Button>
-              )
-            })}
+                      this.setState({ columnFn })
+                    }}
+                  >
+                    {col.display_name}
+                  </Button>
+                )
+              })}
             <Button
               key={`react-autoql-column-select-button-custom-number`}
               className='react-autoql-formula-calculator-button'
@@ -649,6 +651,7 @@ export default class CustomColumnModal extends React.Component {
             keepScrolledRight={true}
             pageSize={10}
             tableOptions={{}}
+            enableContextMenu={false}
             allowCustomColumns={false}
           />
         </div>

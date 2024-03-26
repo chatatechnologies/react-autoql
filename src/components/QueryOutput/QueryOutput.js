@@ -64,6 +64,7 @@ import {
   formatAdditionalSelectColumn,
   setColumnVisibility,
   ColumnTypes,
+  formatQueryColumns,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -309,21 +310,11 @@ export class QueryOutput extends React.Component {
         this.props.onDisplayTypeChange(this.state.displayType)
       }
 
-      if (!_isEqual(this.state.customColumns, prevState.customColumns)) {
-        let customColumns = _cloneDeep(this.state.customColumns)
-        // if (this.state.customColumns?.length) {
-        //   customColumns = customColumns.map((col) => {
-        //     if (col.mutator) {
-        //       return {
-        //         ...col,
-        //         mutator: col.mutator.toString(),
-        //       }
-        //     }
-        //     return col
-        //   })
-        // }
+      if (!deepEqual(this.state.customColumns, prevState.customColumns)) {
+        const customColumns = _cloneDeep(this.state.customColumns)
         this.props.onCustomColumnUpdate(customColumns)
         const response = this.getNewResponseWithCustomColumns()
+
         this.updateColumnsAndData(response)
       }
 
@@ -457,28 +448,41 @@ export class QueryOutput extends React.Component {
     const newResponse = _cloneDeep(response)
 
     const currentColumns = newResponse?.data?.data?.columns ?? []
+    const nonCustomColumns = currentColumns.filter((col) => !col.custom)
+
+    // We must reformat the columns to reset the field and index numbers
+    const newFormattedColumns = formatQueryColumns({
+      columns: currentColumns.filter((col) => !col.custom),
+      queryResponse: newResponse,
+      dataFormatting: this.props.dataFormatting,
+    })
+
     const currentCustomColumns = currentColumns.filter((col) => col.custom) ?? []
+
+    const customColsFormatted = customCols?.map((col, i) => {
+      const newIndex = newFormattedColumns.length + i
+      return {
+        ...col,
+        index: newIndex,
+        field: `${newIndex}`,
+      }
+    })
 
     // Remove any cells that are already created by custom columns
     let newRows = newResponse.data.data.rows
     if (currentCustomColumns?.length) {
       const customColumnIndexes = currentCustomColumns.map((col) => col.index)
-      // currentCustomColumns.forEach((col) => {
-      //   newRows = newResponse.data.data.rows.map((row) => {
-      //     return row.filter((cell, i) => col.index !== i)
-      //   })
-      // })
-
       newRows = newResponse.data.data.rows.map((row) => {
         return row.filter((cell, i) => !customColumnIndexes.includes(i))
       })
     }
 
-    newResponse.data.data.rows = newRows
+    newResponse.data.data.rows = _cloneDeep(newRows)
+    newResponse.data.data.columns = newFormattedColumns
 
     // Assign all custom column cells to query response rows
     try {
-      customCols.forEach((col) => {
+      customColsFormatted.forEach((col) => {
         if (col?.mutator && col?.index >= 0) {
           newResponse.data.data.rows.forEach((row) => {
             if (row) {
@@ -493,10 +497,7 @@ export class QueryOutput extends React.Component {
 
     // Assign new columns to query response
     // Remove mutator now that new cells have been defined
-    const newColumns = [
-      ...currentColumns.filter((col) => !col.custom),
-      ...customCols.map((col) => ({ ...col, mutator: undefined })),
-    ]
+    const newColumns = [...nonCustomColumns, ...customColsFormatted.map((col) => ({ ...col, mutator: undefined }))]
     newResponse.data.data.columns = newColumns
 
     return newResponse
@@ -2402,9 +2403,15 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  onCustomColumnDelete = (deletedColumn) => {
+    const columnIndex = deletedColumn.index
+    const customColumns = this.state.customColumns.filter((col) => col.index !== columnIndex)
+    this.setState({ customColumns })
+  }
+
   onNewCustomColumn = (newColumn) => {
     const customColumns = _cloneDeep(this.state.customColumns)
-    const existingColumnIndex = customColumns.findIndex((col) => col.field === newColumn.field) >= 0
+    const existingColumnIndex = customColumns.find((col) => col.id === newColumn.id) >= 0
     if (existingColumnIndex) {
       customColumns[existingColumnIndex] = newColumn
     } else {
@@ -2474,6 +2481,7 @@ export class QueryOutput extends React.Component {
           tableConfig={this.tableConfig}
           aggConfig={this.state.aggConfig}
           onNewCustomColumn={this.onNewCustomColumn}
+          onCustomColumnDelete={this.onCustomColumnDelete}
         />
       </ErrorBoundary>
     )

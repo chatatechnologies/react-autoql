@@ -134,6 +134,8 @@ export default class ChataTable extends React.Component {
     keepScrolledRight: PropTypes.bool,
     allowCustomColumns: PropTypes.bool,
     onNewCustomColumn: PropTypes.func,
+    onCustomColumnDelete: PropTypes.func,
+    enableContextMenu: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -152,6 +154,7 @@ export default class ChataTable extends React.Component {
     tableOptions: {},
     keepScrolledRight: false,
     allowCustomColumns: true,
+    enableContextMenu: true,
     onFilterCallback: () => {},
     onSorterCallback: () => {},
     onTableParamsChange: () => {},
@@ -160,6 +163,7 @@ export default class ChataTable extends React.Component {
     onNewData: () => {},
     updateColumns: () => {},
     onNewCustomColumn: () => {},
+    onCustomColumnDelete: () => {},
   }
 
   componentDidMount = () => {
@@ -830,7 +834,10 @@ export default class ChataTable extends React.Component {
       if (headerElement) {
         headerElement.setAttribute('data-tooltip-id', `selectable-table-column-header-tooltip-${this.TABLE_ID}`)
         headerElement.setAttribute('data-tooltip-content', JSON.stringify({ ...col, index: i }))
-        headerElement.addEventListener('contextmenu', (e) => this.headerContextMenuClick(e, col))
+
+        if (this.props.enableContextMenu) {
+          headerElement.addEventListener('contextmenu', (e) => this.headerContextMenuClick(e, col))
+        }
       }
 
       if (inputElement) {
@@ -1005,7 +1012,9 @@ export default class ChataTable extends React.Component {
       (select) => select.columns[0] !== column.name,
     )
 
-    if (currentAdditionalSelectColumns?.length !== newAdditionalSelectColumns?.length) {
+    if (column.custom) {
+      this.props.onCustomColumnDelete(column)
+    } else if (currentAdditionalSelectColumns?.length !== newAdditionalSelectColumns?.length) {
       this.setPageLoading(true)
       this.props
         .queryFn({ newColumns: newAdditionalSelectColumns })
@@ -1137,11 +1146,11 @@ export default class ChataTable extends React.Component {
           aggConfig={this.props.aggConfig}
           queryResponse={this.props.response}
           dataFormatting={this.props.dataFormatting}
-          onConfirm={(newColumns, newColumn, columnFn) => {
+          onConfirm={(newColumn) => {
             // this.ref?.tabulator?.setColumns(newColumns)
             // this.ref?.updateData(this.getRows())
             // this.setHeaderInputEventListeners(newColumns)
-            // this.setState({ isCustomColumnPopoverOpen: false })
+            this.setState({ isCustomColumnPopoverOpen: false })
             this.props.onNewCustomColumn(newColumn)
           }}
         />
