@@ -133,7 +133,7 @@ export default class ChataTable extends React.Component {
     updateColumns: PropTypes.func,
     keepScrolledRight: PropTypes.bool,
     allowCustomColumns: PropTypes.bool,
-    onNewCustomColumn: PropTypes.func,
+    onCustomColumnChange: PropTypes.func,
     onCustomColumnDelete: PropTypes.func,
     enableContextMenu: PropTypes.bool,
   }
@@ -162,7 +162,7 @@ export default class ChataTable extends React.Component {
     onErrorCallback: () => {},
     onNewData: () => {},
     updateColumns: () => {},
-    onNewCustomColumn: () => {},
+    onCustomColumnChange: () => {},
     onCustomColumnDelete: () => {},
   }
 
@@ -290,6 +290,11 @@ export default class ChataTable extends React.Component {
       }
 
       props.columns?.forEach((column, columnIndex) => {
+        // If column has a mutator function, stats cannot be calculated based on the cell values
+        if (column.mutator) {
+          return
+        }
+
         if (column.type === ColumnTypes.QUANTITY || column.type === ColumnTypes.DOLLAR_AMT) {
           const columnData = rows.map((r) => r[columnIndex])
           stats[columnIndex] = {
@@ -1002,6 +1007,11 @@ export default class ChataTable extends React.Component {
     inputElement.blur()
   }
 
+  onEditColumnClick = () => {
+    const column = _cloneDeep(this.state.contextMenuColumn)
+    this.setState({ contextMenuColumn: undefined, isCustomColumnPopoverOpen: true, activeCustomColumn: column })
+  }
+
   onRemoveColumnClick = () => {
     const column = _cloneDeep(this.state.contextMenuColumn)
 
@@ -1146,12 +1156,20 @@ export default class ChataTable extends React.Component {
           aggConfig={this.props.aggConfig}
           queryResponse={this.props.response}
           dataFormatting={this.props.dataFormatting}
-          onConfirm={(newColumn) => {
-            // this.ref?.tabulator?.setColumns(newColumns)
-            // this.ref?.updateData(this.getRows())
-            // this.setHeaderInputEventListeners(newColumns)
+          initialColumn={this.state.activeCustomColumn}
+          onUpdateColumn={(column) => {
+            // this.setState({ isCustomColumnPopoverOpen: false })
+            // const columns = _cloneDeep(this.props.columns)
+            // const colIndex = this.props.columns.find((col) => col.index === column.index)
+            // columns[colIndex] = column
+
+            // this.props.updateColumns(columns)
+            this.props.onCustomColumnChange(column)
             this.setState({ isCustomColumnPopoverOpen: false })
-            this.props.onNewCustomColumn(newColumn)
+          }}
+          onAddColumn={(column) => {
+            this.props.onCustomColumnChange(column)
+            this.setState({ isCustomColumnPopoverOpen: false })
           }}
         />
       )
@@ -1180,6 +1198,13 @@ export default class ChataTable extends React.Component {
         content={
           <div className='more-options-menu' data-test='react-autoql-toolbar-more-options'>
             <ul className='context-menu-list'>
+              {/* TODO: Allow user to edit custom columns */}
+              {/* {!!column?.custom && (
+                <li onClick={() => this.onEditColumnClick()}>
+                  <Icon type='edit' />
+                  Edit Column
+                </li>
+              )} */}
               <li onClick={this.onRemoveColumnClick}>
                 <Icon type='close' />
                 Remove Column
@@ -1354,8 +1379,10 @@ export default class ChataTable extends React.Component {
           )}
           {!!column.fnSummary && (
             <div className='selectable-table-tooltip-section'>
-              <strong>Custom function: </strong>
-              <span>{column.fnSummary}</span>
+              <span>
+                <strong>Custom formula:</strong>
+                <span> = {column.fnSummary}</span>
+              </span>
             </div>
           )}
           {(column.type === ColumnTypes.QUANTITY ||
@@ -1372,26 +1399,34 @@ export default class ChataTable extends React.Component {
               <>
                 {(column.type === ColumnTypes.QUANTITY || column.type === ColumnTypes.DOLLAR_AMT) && (
                   <div className='selectable-table-tooltip-section'>
-                    <strong>Total: </strong>
-                    <span>{stats?.sum}</span>
+                    <span>
+                      <strong>Total: </strong>
+                      <span>{stats?.sum}</span>
+                    </span>
                   </div>
                 )}
                 {(column.type === ColumnTypes.QUANTITY || column.type === ColumnTypes.DOLLAR_AMT) && (
                   <div className='selectable-table-tooltip-section'>
-                    <strong>Average: </strong>
-                    <span>{stats?.avg}</span>
+                    <span>
+                      <strong>Average: </strong>
+                      <span>{stats?.avg}</span>
+                    </span>
                   </div>
                 )}
                 {column.type === ColumnTypes.DATE && stats?.min !== null && (
                   <div className='selectable-table-tooltip-section'>
-                    <strong>Earliest: </strong>
-                    <span>{stats.min}</span>
+                    <span>
+                      <strong>Earliest: </strong>
+                      <span>{stats.min}</span>
+                    </span>
                   </div>
                 )}
                 {column.type === ColumnTypes.DATE && stats?.max !== null && (
                   <div className='selectable-table-tooltip-section'>
-                    <strong>Latest: </strong>
-                    <span>{stats.max}</span>
+                    <span>
+                      <strong>Latest: </strong>
+                      <span>{stats.max}</span>
+                    </span>
                   </div>
                 )}
               </>

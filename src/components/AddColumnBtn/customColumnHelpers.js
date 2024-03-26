@@ -122,3 +122,29 @@ export const createMutatorFn = (columnFnArray) => {
     return fnValue
   }
 }
+
+export const getFnSummary = (columnFnArray) => {
+  const fnObj = convertToFunctionStr(columnFnArray)
+  if (fnObj?.error || !fnObj.fn) {
+    return ''
+  }
+
+  try {
+    let fnSummary = ''
+
+    columnFnArray.forEach((chunk, i) => {
+      if (chunk.type === 'operator') {
+        fnSummary = `${fnSummary} ${operators[chunk.value]?.js}`
+      } else if (chunk.type === 'number') {
+        fnSummary = `${fnSummary} ${chunk.value}`
+      } else if (chunk.type === 'column' && chunk?.column) {
+        fnSummary = `${fnSummary} ${chunk.column?.display_name}`
+      }
+    })
+
+    return fnSummary
+  } catch (error) {
+    console.error(error)
+    return ''
+  }
+}

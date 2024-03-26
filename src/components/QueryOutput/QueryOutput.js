@@ -1833,7 +1833,7 @@ export class QueryOutput extends React.Component {
     const formattedColumns = columns.map((col, i) => {
       const newCol = _cloneDeep(col)
 
-      newCol.id = uuid()
+      newCol.id = col.id ?? uuid()
       newCol.field = `${i}`
       newCol.title = col.display_name
 
@@ -2409,7 +2409,7 @@ export class QueryOutput extends React.Component {
     this.setState({ customColumns })
   }
 
-  onNewCustomColumn = (newColumn) => {
+  onCustomColumnChange = (newColumn) => {
     const customColumns = _cloneDeep(this.state.customColumns)
     const existingColumnIndex = customColumns.find((col) => col.id === newColumn.id) >= 0
     if (existingColumnIndex) {
@@ -2480,7 +2480,7 @@ export class QueryOutput extends React.Component {
           scope={this.props.scope}
           tableConfig={this.tableConfig}
           aggConfig={this.state.aggConfig}
-          onNewCustomColumn={this.onNewCustomColumn}
+          onCustomColumnChange={this.onCustomColumnChange}
           onCustomColumnDelete={this.onCustomColumnDelete}
         />
       </ErrorBoundary>

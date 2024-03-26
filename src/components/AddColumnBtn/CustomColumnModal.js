@@ -24,7 +24,7 @@ import { Select } from '../Select'
 import ChataTable from '../ChataTable/ChataTable'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
-import { operators, createMutatorFn } from './customColumnHelpers'
+import { operators, createMutatorFn, getFnSummary } from './customColumnHelpers'
 
 import './CustomColumnModal.scss'
 
@@ -47,36 +47,49 @@ export default class CustomColumnModal extends React.Component {
     this.numberInputRefs = {}
 
     const firstIndex = props.columns.findIndex((col) => col.is_visible && isColumnNumberType(col))
-    const initialColumn = props.columns[firstIndex]
+    const initialColumn = props.initialColumn ?? props.columns[firstIndex]
 
-    const initialColumnFn = []
+    const initialColumnFn = props.initialColumn?.columnFnArray ?? []
 
-    this.newColumnRaw = this.getRawColumnParams(initialColumn)
+    this.newColumnRaw = this.getRawColumnParams(initialColumn, props.initialColumn?.display_name)
 
     const initialMutator = createMutatorFn(initialColumnFn)
     this.previousMutator = initialMutator
 
-    this.newColumn = new ColumnObj({
-      ...this.newColumnRaw,
-      fnSummary: `= ${initialColumn?.display_name}`,
-      mutator: initialMutator,
-      columnFnArray: initialColumnFn,
-      field: `${props.columns?.length}`,
-      index: props.columns?.length,
-      custom: true,
-    })
+    if (props.initialColumn) {
+      this.newColumn = _cloneDeep(props.initialColumn)
+    } else {
+      this.newColumn = new ColumnObj({
+        ...this.newColumnRaw,
+        id: props.initialColumn?.id,
+        fnSummary: props.initialColumn ? getFnSummary(props.initialColumn.columnFnArray) : '',
+        mutator: initialMutator,
+        columnFnArray: initialColumnFn,
+        field: props.initialColumn?.field ?? `${props.columns?.length}`,
+        index: props.initialColumn?.index >= 0 ? props.initialColumn?.index : props.columns?.length,
+        custom: true,
+      })
+    }
 
     const formattedColumn = this.getColumnParamsForTabulator(this.newColumn, props)
     formattedColumn.cssClass = HIGHLIGHTED_CLASS
 
     this.newColumn = formattedColumn
 
+    let columns = _cloneDeep(props.columns)
+    if (props.initialColumn) {
+      const colIndex = columns.findIndex((col) => props.initialColumn.id === col.id)
+      columns[colIndex] = this.newColumn
+    } else {
+      columns.push(this.newColumn)
+    }
+
     this.state = {
-      columns: [...props.columns, this.newColumn],
-      columnName: DEFAULT_COLUMN_NAME,
+      columns,
+      columnName: props.initialColumn?.display_name ?? DEFAULT_COLUMN_NAME,
       columnFn: initialColumnFn,
-      columnType: 'auto',
-      isFnValid: false,
+      columnType: props.initialColumn?.type ?? 'auto',
+      isFnValid: !!props.initialColumn,
     }
   }
 
@@ -85,7 +98,8 @@ export default class CustomColumnModal extends React.Component {
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
 
-    onConfirm: PropTypes.func,
+    onAddColumn: PropTypes.func,
+    onUpdateColumn: PropTypes.func,
     onClose: PropTypes.func,
   }
 
@@ -94,7 +108,8 @@ export default class CustomColumnModal extends React.Component {
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
 
-    onConfirm: () => {},
+    onAddColumn: () => {},
+    onUpdateColumn: () => {},
     onClose: () => {},
   }
 
@@ -143,14 +158,10 @@ export default class CustomColumnModal extends React.Component {
     return value === null || value === undefined || value === ''
   }
 
-  getFnSummary = (columnFn) => {
-    return `= ${columnFn[0]?.column?.display_name ?? ''}`
-  }
-
-  getRawColumnParams = (col) => {
+  getRawColumnParams = (col, columnName) => {
     return {
       name: '',
-      display_name: this.state?.columnName ?? DEFAULT_COLUMN_NAME,
+      display_name: columnName ?? this.state?.columnName ?? DEFAULT_COLUMN_NAME,
       type: col?.type,
       drill_down: col?.drill_down,
       dow_style: col?.dow_style,
@@ -166,7 +177,7 @@ export default class CustomColumnModal extends React.Component {
 
     // ----- If function threw an error, use the most recent working function ------
     let newMutator = createMutatorFn(columnFn)
-    let newFnSummary = this.getFnSummary(columnFn)
+    let newFnSummary = getFnSummary(columnFn)
 
     if (!newMutator || newMutator?.error?.message) {
       const fnError = newMutator?.error?.message
@@ -202,6 +213,7 @@ export default class CustomColumnModal extends React.Component {
             ...this.getRawColumnParams(columnForFn),
             ...newParams,
             custom: true,
+            id: this.props.initialColumn?.id,
           }),
         )
 
@@ -217,11 +229,12 @@ export default class CustomColumnModal extends React.Component {
     this.setState({ columns: newColumns })
   }
 
-  onAddColumnConfirm = () => {
-    const newColumns = _cloneDeep(this.props.columns)
-    newColumns.push(this.newColumn)
+  onEditColumnConfirm = () => {
+    this.props.onUpdateColumn(this.newColumn)
+  }
 
-    this.props.onConfirm(this.newColumn)
+  onAddColumnConfirm = () => {
+    this.props.onAddColumn(this.newColumn)
   }
 
   changeChunkValue = (value, type, i) => {
@@ -664,14 +677,14 @@ export default class CustomColumnModal extends React.Component {
       <ErrorBoundary>
         <Modal
           className='custom-column-modal'
-          title='Configure Custom Column'
+          title={this.props.initialColumn ? 'Edit Custom Column' : 'Configure Custom Column'}
           isVisible={this.props.isOpen}
           width='90vw'
           height='100vh'
-          confirmText='Save Column'
+          confirmText={this.props.initialColumn ? 'Update Column' : 'Save Column'}
           shouldRender={this.props.shouldRender}
           onClose={this.props.onClose}
-          onConfirm={this.onAddColumnConfirm}
+          onConfirm={this.props.initialColumn ? this.onEditColumnConfirm : this.onAddColumnConfirm}
           confirmDisabled={!this.state.isFnValid}
         >
           <div className='custom-column-modal'>
