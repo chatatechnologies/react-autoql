@@ -351,6 +351,7 @@ export class DashboardTile extends React.Component {
       dataConfig: queryChanged ? undefined : this.props.tile.dataConfig,
       skipQueryValidation: skipValidation,
       columns: queryChanged ? undefined : this.props.tile.columns,
+      customColumns: queryChanged ? undefined : this.props.tile.customColumns,
       defaultSelectedSuggestion: undefined,
       queryValidationSelections,
     })
@@ -394,6 +395,7 @@ export class DashboardTile extends React.Component {
       secondDataConfig: queryChanged ? undefined : this.props.tile.secondDataConfig,
       secondskipQueryValidation: skipValidation,
       secondColumns: queryChanged ? undefined : this.props.tile.secondColumns,
+      secondCustomColumns: queryChanged ? undefined : this.props.tile.secondCustomColumns,
       secondDefaultSelectedSuggestion: undefined,
       secondQueryValidationSelections: queryValidationSelections,
     })
@@ -725,6 +727,7 @@ export class DashboardTile extends React.Component {
   onDataConfigChange = (dataConfig) => this.debouncedSetParamsForTile({ dataConfig })
   onDisplayTypeChange = (displayType) => this.debouncedSetParamsForTile({ displayType })
   onBucketSizeChange = (bucketSize) => this.debouncedSetParamsForTile({ bucketSize })
+  onCustomColumnUpdate = (customColumns) => this.debouncedSetParamsForTile({ customColumns })
 
   onColumnChange = (columns, columnSelects, queryResponse, dataConfig) => {
     this.debouncedSetParamsForTile({ columnSelects, queryResponse, dataConfig })
@@ -734,6 +737,7 @@ export class DashboardTile extends React.Component {
   onSecondDataConfigChange = (secondDataConfig) => this.debouncedSetParamsForTile({ secondDataConfig })
   onSecondDisplayTypeChange = (secondDisplayType) => this.debouncedSetParamsForTile({ secondDisplayType })
   onSecondBucketSizeChange = (secondBucketSize) => this.debouncedSetParamsForTile({ secondBucketSize })
+  onSecondCustomColumnUpdate = (secondCustomColumns) => this.debouncedSetParamsForTile({ secondCustomColumns })
 
   onSecondColumnChange = (secondColumns, secondColumnSelects, secondQueryResponse, secondDataConfig) =>
     this.debouncedSetParamsForTile({ secondColumnSelects, secondQueryResponse, secondDataConfig })
@@ -1139,6 +1143,8 @@ export class DashboardTile extends React.Component {
         onPageSizeChange: this.onPageSizeChange,
         onBucketSizeChange: this.onBucketSizeChange,
         bucketSize: this.props.tile.bucketSize,
+        onCustomColumnUpdate: this.onCustomColumnUpdate,
+        customColumns: this.props.tile.customColumns,
       },
       vizToolbarProps: {
         ref: (r) => (this.vizToolbarRef = r),
@@ -1217,6 +1223,8 @@ export class DashboardTile extends React.Component {
         onBucketSizeChange: this.onSecondBucketSizeChange,
         onColumnChange: this.onSecondColumnChange,
         bucketSize: this.props.tile.secondBucketSize,
+        onCustomColumnUpdate: this.onSecondCustomColumnUpdate,
+        customColumns: this.props.tile.secondCustomColumns,
       },
       vizToolbarProps: {
         ref: (r) => (this.secondVizToolbarRef = r),

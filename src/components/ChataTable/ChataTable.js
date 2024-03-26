@@ -1142,7 +1142,7 @@ export default class ChataTable extends React.Component {
             // this.ref?.updateData(this.getRows())
             // this.setHeaderInputEventListeners(newColumns)
             // this.setState({ isCustomColumnPopoverOpen: false })
-            this.props.onNewCustomColumn(newColumns, newColumn, columnFn)
+            this.props.onNewCustomColumn(newColumn)
           }}
         />
       )

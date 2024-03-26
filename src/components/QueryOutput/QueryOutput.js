@@ -91,8 +91,15 @@ export class QueryOutput extends React.Component {
     this.ALLOW_NUMERIC_STRING_COLUMNS = true
     this.MAX_PIVOT_TABLE_COLUMNS = 20
 
-    this.queryResponse = props.queryResponse
-    this.columnDateRanges = getColumnDateRanges(props.queryResponse)
+    let response = props.queryResponse
+    if (props.customColumns?.length) {
+      console.log('custom columns:', props.customColumns)
+      response = this.getNewResponseWithCustomColumns(props.queryResponse, props.customColumns)
+      console.log({ response: _cloneDeep(response) })
+    }
+
+    this.queryResponse = response
+    this.columnDateRanges = getColumnDateRanges(response)
     this.queryID = this.queryResponse?.data?.data?.query_id
     this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
     this.tableParams = {}
@@ -152,7 +159,7 @@ export class QueryOutput extends React.Component {
       selectedSuggestion: props.defaultSelectedSuggestion,
       columnChangeCount: 0,
       chartID: uuid(),
-      customColumns: [],
+      customColumns: this.props.customColumns ?? [],
     }
   }
 
@@ -202,6 +209,7 @@ export class QueryOutput extends React.Component {
     onBucketSizeChange: PropTypes.func,
     bucketSize: PropTypes.number,
     onNewData: PropTypes.func,
+    onCustomColumnUpdate: PropTypes.func,
   }
 
   static defaultProps = {
@@ -248,6 +256,7 @@ export class QueryOutput extends React.Component {
     onMount: () => {},
     onBucketSizeChange: () => {},
     onNewData: () => {},
+    onCustomColumnUpdate: () => {},
   }
 
   componentDidMount = () => {
@@ -288,8 +297,10 @@ export class QueryOutput extends React.Component {
       }
 
       if (!_isEqual(this.state.customColumns, prevState.customColumns)) {
-        const response = this.getNewResponseWithCustomColumns(this.queryResponse)
+        console.log('custom columns were not equal!', _cloneDeep(this.state.customColumns))
+        const response = this.getNewResponseWithCustomColumns()
         this.updateColumnsAndData(response)
+        this.props.onCustomColumnUpdate(this.state.customColumns)
       }
 
       // If initial data config was changed here, tell the parent
@@ -418,31 +429,57 @@ export class QueryOutput extends React.Component {
     )
   }
 
-  getNewResponseWithCustomColumns = (response) => {
+  getNewResponseWithCustomColumns = (response = this.queryResponse, customCols = this.state?.customColumns ?? []) => {
+    console.log('getting new response with custom columns!', _cloneDeep(customCols))
     const newResponse = _cloneDeep(response)
 
-    const customColumns = this.state.customColumns
-    const currentCustomColumns = response.data.data.columns.filter((col) => col.custom)
-    const newColumns = [...newResponse.data.data.columns.filter((col) => !col.custom), ...customColumns]
+    const currentColumns = newResponse?.data?.data?.columns ?? []
+    const currentCustomColumns = currentColumns.filter((col) => col.custom) ?? []
+
+    console.log({ currentCustomColumns })
+
+    // Remove any cells that are already created by custom columns
     let newRows = newResponse.data.data.rows
-    if (currentCustomColumns.length) {
-      currentCustomColumns.forEach((col) => {
-        newRows = newResponse.data.data.rows.map((row) => {
-          row.splice(col.index, 1)
-        })
+    if (currentCustomColumns?.length) {
+      const customColumnIndexes = currentCustomColumns.map((col) => col.index)
+      // currentCustomColumns.forEach((col) => {
+      //   newRows = newResponse.data.data.rows.map((row) => {
+      //     return row.filter((cell, i) => col.index !== i)
+      //   })
+      // })
+
+      newRows = newResponse.data.data.rows.map((row) => {
+        return row.filter((cell, i) => !customColumnIndexes.includes(i))
       })
     }
 
-    // Assign new rows to query Response
-    customColumns.forEach((col) => {
-      newResponse.data.data.rows.forEach((row) => {
-        row[col.index] = col.mutator(undefined, row)
+    newResponse.data.data.rows = newRows
+
+    // Assign all custom column cells to query response rows
+    try {
+      console.log('ADDING CUSTOM COLS...', { customCols })
+      customCols.forEach((col) => {
+        if (col?.mutator && col?.index >= 0) {
+          newResponse.data.data.rows.forEach((row) => {
+            if (row) {
+              row[col.index] = col.mutator(undefined, row)
+            }
+          })
+        }
       })
-    })
+    } catch (error) {
+      console.error(error)
+    }
+
+    console.log('rows AFTER adding new indexes with custom columns:', _cloneDeep(newResponse.data.data.rows))
 
     // Assign new columns to query response
-    // Remove mutator now that rows have been defined
-    newResponse.data.data.columns = newColumns.map((col) => ({ ...col, mutator: undefined }))
+    // Remove mutator now that new cells have been defined
+    const newColumns = [
+      ...currentColumns.filter((col) => !col.custom),
+      ...customCols.map((col) => ({ ...col, mutator: undefined })),
+    ]
+    newResponse.data.data.columns = newColumns
 
     return newResponse
   }
@@ -2335,7 +2372,7 @@ export class QueryOutput extends React.Component {
         .then((response) => {
           if (response?.data?.data?.rows) {
             const newResponse = this.getNewResponseWithCustomColumns(response)
-            this.updateColumnsAndData(rewResponse)
+            this.updateColumnsAndData(newResponse)
           } else {
             throw new Error('New column addition failed')
           }
@@ -2347,7 +2384,8 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  onNewCustomColumn = (newColumns, newColumn, columnFn) => {
+  onNewCustomColumn = (newColumn) => {
+    console.log('on new custom column:', { newColumn: _cloneDeep(newColumn) })
     const customColumns = _cloneDeep(this.state.customColumns)
     const existingColumnIndex = customColumns.findIndex((col) => col.field === newColumn.field) >= 0
     if (existingColumnIndex) {

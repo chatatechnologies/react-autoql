@@ -199,6 +199,7 @@ export default class CustomColumnModal extends React.Component {
           this.getColumnParamsForTabulator({
             ...this.getRawColumnParams(columnForFn),
             ...newParams,
+            custom: true,
           }),
         )
 
