@@ -133,6 +133,7 @@ export default class ChataTable extends React.Component {
     updateColumns: PropTypes.func,
     keepScrolledRight: PropTypes.bool,
     allowCustomColumns: PropTypes.bool,
+    onNewCustomColumn: PropTypes.func,
   }
 
   static defaultProps = {
@@ -158,6 +159,7 @@ export default class ChataTable extends React.Component {
     onErrorCallback: () => {},
     onNewData: () => {},
     updateColumns: () => {},
+    onNewCustomColumn: () => {},
   }
 
   componentDidMount = () => {
@@ -1135,11 +1137,12 @@ export default class ChataTable extends React.Component {
           aggConfig={this.props.aggConfig}
           queryResponse={this.props.response}
           dataFormatting={this.props.dataFormatting}
-          onConfirm={(newColumns) => {
-            this.ref?.tabulator?.setColumns(newColumns)
-            this.ref?.updateData(this.getRows())
-            this.setHeaderInputEventListeners(newColumns)
-            this.setState({ isCustomColumnPopoverOpen: false })
+          onConfirm={(newColumns, newColumn, columnFn) => {
+            // this.ref?.tabulator?.setColumns(newColumns)
+            // this.ref?.updateData(this.getRows())
+            // this.setHeaderInputEventListeners(newColumns)
+            // this.setState({ isCustomColumnPopoverOpen: false })
+            this.props.onNewCustomColumn(newColumns, newColumn, columnFn)
           }}
         />
       )

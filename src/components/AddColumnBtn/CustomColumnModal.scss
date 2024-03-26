@@ -172,18 +172,17 @@
         line-height: 38px;
 
         .react-autoql-column-operator-selector {
-          margin-right: 0 !important;
-
           .react-autoql-select {
-            border-top-right-radius: 0;
-            border-bottom-right-radius: 0;
-            color: var(--react-autoql-accent-color);
             font-size: 18px;
             line-height: 34px;
+          }
+        }
 
-            .react-autoql-icon {
-              padding-bottom: 0;
-            }
+        .react-autoql-select {
+          color: var(--react-autoql-accent-color);
+
+          .react-autoql-icon {
+            padding-bottom: 0;
           }
         }
 
@@ -231,6 +230,7 @@
           &.react-autoql-available-column-selector .react-autoql-select {
             font-weight: 600;
             color: var(--react-autoql-accent-color) !important;
+            padding-right: 10px;
 
             .react-autoql-select-text-placeholder {
               font-weight: 500;
@@ -257,6 +257,7 @@
 
           .react-autoql-select-arrow {
             opacity: 0.5;
+            font-size: 9px;
 
             .react-autoql-icon {
               padding-bottom: 0;

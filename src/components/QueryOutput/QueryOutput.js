@@ -152,6 +152,7 @@ export class QueryOutput extends React.Component {
       selectedSuggestion: props.defaultSelectedSuggestion,
       columnChangeCount: 0,
       chartID: uuid(),
+      customColumns: [],
     }
   }
 
@@ -286,6 +287,11 @@ export class QueryOutput extends React.Component {
         this.props.onDisplayTypeChange(this.state.displayType)
       }
 
+      if (!_isEqual(this.state.customColumns, prevState.customColumns)) {
+        const response = this.getNewResponseWithCustomColumns(this.queryResponse)
+        this.updateColumnsAndData(response)
+      }
+
       // If initial data config was changed here, tell the parent
       if (
         !_isEqual(this.props.initialTableConfigs, {
@@ -410,6 +416,35 @@ export class QueryOutput extends React.Component {
         displayType || this.state.displayType
       } instead.`,
     )
+  }
+
+  getNewResponseWithCustomColumns = (response) => {
+    const newResponse = _cloneDeep(response)
+
+    const customColumns = this.state.customColumns
+    const currentCustomColumns = response.data.data.columns.filter((col) => col.custom)
+    const newColumns = [...newResponse.data.data.columns.filter((col) => !col.custom), ...customColumns]
+    let newRows = newResponse.data.data.rows
+    if (currentCustomColumns.length) {
+      currentCustomColumns.forEach((col) => {
+        newRows = newResponse.data.data.rows.map((row) => {
+          row.splice(col.index, 1)
+        })
+      })
+    }
+
+    // Assign new rows to query Response
+    customColumns.forEach((col) => {
+      newResponse.data.data.rows.forEach((row) => {
+        row[col.index] = col.mutator(undefined, row)
+      })
+    })
+
+    // Assign new columns to query response
+    // Remove mutator now that rows have been defined
+    newResponse.data.data.columns = newColumns.map((col) => ({ ...col, mutator: undefined }))
+
+    return newResponse
   }
 
   getDataLength = () => {
@@ -2299,7 +2334,8 @@ export class QueryOutput extends React.Component {
       })
         .then((response) => {
           if (response?.data?.data?.rows) {
-            this.updateColumnsAndData(response)
+            const newResponse = this.getNewResponseWithCustomColumns(response)
+            this.updateColumnsAndData(rewResponse)
           } else {
             throw new Error('New column addition failed')
           }
@@ -2309,6 +2345,18 @@ export class QueryOutput extends React.Component {
           this.tableRef?.setPageLoading(false)
         })
     }
+  }
+
+  onNewCustomColumn = (newColumns, newColumn, columnFn) => {
+    const customColumns = _cloneDeep(this.state.customColumns)
+    const existingColumnIndex = customColumns.findIndex((col) => col.field === newColumn.field) >= 0
+    if (existingColumnIndex) {
+      customColumns[existingColumnIndex] = newColumn
+    } else {
+      customColumns.push(newColumn)
+    }
+
+    this.setState({ customColumns })
   }
 
   renderAddColumnBtn = () => {
@@ -2370,6 +2418,7 @@ export class QueryOutput extends React.Component {
           scope={this.props.scope}
           tableConfig={this.tableConfig}
           aggConfig={this.state.aggConfig}
+          onNewCustomColumn={this.onNewCustomColumn}
         />
       </ErrorBoundary>
     )

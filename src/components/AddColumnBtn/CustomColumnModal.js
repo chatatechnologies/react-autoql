@@ -49,13 +49,7 @@ export default class CustomColumnModal extends React.Component {
     const firstIndex = props.columns.findIndex((col) => col.is_visible && isColumnNumberType(col))
     const initialColumn = props.columns[firstIndex]
 
-    const initialColumnFn = [
-      // {
-      //   type: 'column',
-      //   value: initialColumn.field,
-      //   column: initialColumn,
-      // },
-    ]
+    const initialColumnFn = []
 
     this.newColumnRaw = this.getRawColumnParams(initialColumn)
 
@@ -160,6 +154,7 @@ export default class CustomColumnModal extends React.Component {
       drill_down: col?.drill_down,
       dow_style: col?.dow_style,
       alt_name: col?.alt_name,
+      is_visible: true,
     }
   }
 
@@ -455,7 +450,6 @@ export default class CustomColumnModal extends React.Component {
           columnFn[i].value = operator
           this.setState({ columnFn })
         }}
-        // outlined={false}
         options={supportedOperators.map((op) => {
           return {
             value: op,
@@ -481,8 +475,6 @@ export default class CustomColumnModal extends React.Component {
     return (
       <span key={`column-fn-chunk-${i}`} className='react-autoql-operator-select-wrapper'>
         {chunkElement}
-        {/* Only display delete button for last term, otherwise the function could become invalid */}
-        {/* {i === this.state.columnFn.length - 1 && */}
         {this.renderOperatorDeleteBtn(i)}
       </span>
     )
