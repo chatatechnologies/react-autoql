@@ -79,6 +79,7 @@ import { withTheme } from '../../theme'
 import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
 
 import './QueryOutput.scss'
+import { createMutatorFn } from '../AddColumnBtn/customColumnHelpers'
 
 export class QueryOutput extends React.Component {
   constructor(props) {
@@ -93,9 +94,21 @@ export class QueryOutput extends React.Component {
 
     let response = props.queryResponse
     if (props.customColumns?.length) {
-      console.log('custom columns:', props.customColumns)
-      response = this.getNewResponseWithCustomColumns(props.queryResponse, props.customColumns)
-      console.log({ response: _cloneDeep(response) })
+      let customColumns = _cloneDeep(props.customColumns)
+
+      // Convert custom column mutator fn strings back to javascript function type if needed
+      customColumns = customColumns.map((col) => {
+        if (col.columnFnArray) {
+          const mutator = createMutatorFn(col.columnFnArray)
+          return {
+            ...col,
+            mutator,
+          }
+        }
+        return col
+      })
+
+      response = this.getNewResponseWithCustomColumns(props.queryResponse, customColumns)
     }
 
     this.queryResponse = response
@@ -297,10 +310,21 @@ export class QueryOutput extends React.Component {
       }
 
       if (!_isEqual(this.state.customColumns, prevState.customColumns)) {
-        console.log('custom columns were not equal!', _cloneDeep(this.state.customColumns))
+        let customColumns = _cloneDeep(this.state.customColumns)
+        // if (this.state.customColumns?.length) {
+        //   customColumns = customColumns.map((col) => {
+        //     if (col.mutator) {
+        //       return {
+        //         ...col,
+        //         mutator: col.mutator.toString(),
+        //       }
+        //     }
+        //     return col
+        //   })
+        // }
+        this.props.onCustomColumnUpdate(customColumns)
         const response = this.getNewResponseWithCustomColumns()
         this.updateColumnsAndData(response)
-        this.props.onCustomColumnUpdate(this.state.customColumns)
       }
 
       // If initial data config was changed here, tell the parent
@@ -430,13 +454,10 @@ export class QueryOutput extends React.Component {
   }
 
   getNewResponseWithCustomColumns = (response = this.queryResponse, customCols = this.state?.customColumns ?? []) => {
-    console.log('getting new response with custom columns!', _cloneDeep(customCols))
     const newResponse = _cloneDeep(response)
 
     const currentColumns = newResponse?.data?.data?.columns ?? []
     const currentCustomColumns = currentColumns.filter((col) => col.custom) ?? []
-
-    console.log({ currentCustomColumns })
 
     // Remove any cells that are already created by custom columns
     let newRows = newResponse.data.data.rows
@@ -457,7 +478,6 @@ export class QueryOutput extends React.Component {
 
     // Assign all custom column cells to query response rows
     try {
-      console.log('ADDING CUSTOM COLS...', { customCols })
       customCols.forEach((col) => {
         if (col?.mutator && col?.index >= 0) {
           newResponse.data.data.rows.forEach((row) => {
@@ -470,8 +490,6 @@ export class QueryOutput extends React.Component {
     } catch (error) {
       console.error(error)
     }
-
-    console.log('rows AFTER adding new indexes with custom columns:', _cloneDeep(newResponse.data.data.rows))
 
     // Assign new columns to query response
     // Remove mutator now that new cells have been defined
@@ -2385,7 +2403,6 @@ export class QueryOutput extends React.Component {
   }
 
   onNewCustomColumn = (newColumn) => {
-    console.log('on new custom column:', { newColumn: _cloneDeep(newColumn) })
     const customColumns = _cloneDeep(this.state.customColumns)
     const existingColumnIndex = customColumns.findIndex((col) => col.field === newColumn.field) >= 0
     if (existingColumnIndex) {

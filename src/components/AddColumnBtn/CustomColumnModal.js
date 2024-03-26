@@ -60,6 +60,7 @@ export default class CustomColumnModal extends React.Component {
       ...this.newColumnRaw,
       fnSummary: `= ${initialColumn?.display_name}`,
       mutator: initialMutator,
+      columnFnArray: initialColumnFn,
       field: `${props.columns?.length}`,
       index: props.columns?.length,
       custom: true,
@@ -182,6 +183,7 @@ export default class CustomColumnModal extends React.Component {
     const newParams = {
       mutator: newMutator,
       fnSummary: newFnSummary,
+      columnFnArray: this.state.columnFn,
     }
     // -----------------------------------------------------------------------------
 

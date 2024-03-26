@@ -115,6 +115,8 @@ export const createMutatorFn = (columnFnArray) => {
     return fnObj
   }
 
+  const fnString = fnObj.fn.toString()
+
   return (val, data, type, params, component) => {
     const fnValue = fnObj.fn(data)
     return fnValue
