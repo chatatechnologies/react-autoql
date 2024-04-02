@@ -35,6 +35,7 @@ import { withTheme } from '../../../theme'
 import { authenticationType, dataFormattingType } from '../../../props/types'
 
 import './DataAlertModal.scss'
+import { MultilineButton } from '../../MultilineButton'
 
 class DataAlertModal extends React.Component {
   constructor(props) {
@@ -45,6 +46,7 @@ class DataAlertModal extends React.Component {
     this.CONDITIONS_STEP = 'CONDITIONS'
     this.FREQUENCY_STEP = 'FREQUENCY'
     this.MESSAGE_STEP = 'MESSAGE'
+    this.TYPE_STEP = 'TYPE'
 
     this.steps = this.getSteps(props)
     this.state = this.getInitialState(props)
@@ -74,6 +76,7 @@ class DataAlertModal extends React.Component {
     onSave: () => {},
     onErrorCallback: () => {},
     currentDataAlert: undefined,
+    dataAlertType: 'condition-alert',
     isVisible: false,
     allowDelete: true,
     onClose: () => {},
@@ -130,6 +133,11 @@ class DataAlertModal extends React.Component {
       steps.unshift({ title: 'Set Up Conditions', value: this.CONDITIONS_STEP })
     }
 
+    steps.unshift({
+      title: 'Choose Alert Type',
+      value: this.TYPE_STEP,
+    })
+
     return steps
   }
 
@@ -146,6 +154,7 @@ class DataAlertModal extends React.Component {
       completedSections: [],
       expressionKey: uuid(),
       isMounted: false,
+      dataAlertType: 'condition-alert',
       isSettingsFormComplete: true,
     }
 
@@ -458,6 +467,31 @@ class DataAlertModal extends React.Component {
   //   )
   // }
 
+  renderTypeStep = (active) => {
+    return (
+      <div className={`react-autoql-data-alert-modal-step ${active ? '' : 'hidden'}`}>
+        <div style={{ display: 'flex' }}>
+          <div className='react-autoql-data-alert-type-step'>
+            <MultilineButton
+              title='Live Alert'
+              icon='live'
+              subtitle='Get notifications when the data for this query meets certain conditions.'
+              onClick={() => this.setState({ dataAlertType: 'condition-alert' })}
+              isActive={this.state.dataAlertType === 'condition-alert'}
+            />
+            <MultilineButton
+              title='Scheduled Alert'
+              icon='calendar'
+              subtitle='Get notifications with the result of this query at specific times.'
+              onClick={() => this.setState({ dataAlertType: 'schedule-alert' })}
+              isActive={this.state.dataAlertType === 'schedule-alert'}
+            />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   renderConditionsStep = (active) => {
     return (
       <div className={`react-autoql-data-alert-modal-step ${active ? '' : 'hidden'}`}>
@@ -538,6 +572,7 @@ class DataAlertModal extends React.Component {
 
     return (
       <>
+        {this.renderTypeStep(activeStep === this.getStepNumber(this.TYPE_STEP))}
         {this.renderConditionsStep(activeStep === this.getStepNumber(this.CONDITIONS_STEP))}
         {this.renderFrequencyStep(activeStep === this.getStepNumber(this.FREQUENCY_STEP))}
         {this.renderComposeMessageStep(activeStep === this.getStepNumber(this.MESSAGE_STEP))}
@@ -625,6 +660,9 @@ class DataAlertModal extends React.Component {
     const stepName = this.steps?.[activeStep]?.value
 
     switch (stepName) {
+      case this.TYPE_STEP: {
+        return !!this.state.dataAlertType
+      }
       case this.CONDITIONS_STEP: {
         return this.isConditionSectionReady()
       }
