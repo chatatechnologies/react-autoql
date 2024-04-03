@@ -33,6 +33,8 @@ import {
   getVisibleColumns,
   isColumnNumberType,
   DATA_ALERT_CONDITION_TYPES,
+  CONTINUOUS_TYPE,
+  SCHEDULED_TYPE,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
@@ -987,8 +989,9 @@ export default class RuleSimple extends React.Component {
             data-tooltip-id={this.props.tooltipID}
             data-tooltip-content='Editing this query is not permitted. To use a different query, simply create a new Data Alert via Data Messenger or a Dashboard.'
           >
+            {/* Save this bock for later when we want to allow column selection from list queries */}
             {/* <span className='data-alert-description-span'>Trigger Alert when this query</span>
-            Save this bock for later when we want to allow column selection from list queries Trigger Alert when{' '}
+             Trigger Alert when{' '}
             <Select
               className='data-alert-schedule-step-type-selector'
               options={[
@@ -1007,28 +1010,12 @@ export default class RuleSimple extends React.Component {
               showArrow={false}
             />{' '}
             from this query */}
-            <Input
-              // label={
-              //   this.allowOperators()
-              //     ? this.IS_AGGREGATION_QUERY
-              //       ? 'Trigger Alert when any value from this query'
-              //       : 'Trigger Alert when this query'
-              //     : 'Trigger Alert when new data is detected for this query'
-              // }
-              label='Query'
-              value={this.getFormattedQueryText()}
-              readOnly
-              disabled
-              fullWidth
-            />
+            <Input label='Query' value={this.getFormattedQueryText()} readOnly disabled fullWidth />
           </span>
           {this.shouldRenderFirstFieldSelectionGrid() && (
             <>
               <div className='react-autoql-rule-field-selection-first-query' data-test='rule'>
                 <div className='react-autoql-rule-field-selection-grid-container'>
-                  {/* <div className='react-autoql-rule-field-selection-description'>
-                                      <div className='react-autoql-input-label'>Select field of interest</div>
-                                    </div> */}
                   {this.renderfirstFieldSelectionGrid()}
                 </div>
               </div>
@@ -1208,21 +1195,31 @@ export default class RuleSimple extends React.Component {
           style={this.props.style}
         >
           <div style={{ marginBottom: '15px' }}>
-            <span className='data-alert-description-span'>Send a notification when your query</span>
-            <Select
-              className='data-alert-schedule-step-type-selector'
-              outlined={false}
-              showArrow={false}
-              options={options}
-              value={this.state.selectedConditionType}
-              // tooltipID={this.props.tooltipID}
-              onChange={(type) =>
-                this.setState({
-                  selectedOperator: type === EXISTS_TYPE ? EXISTS_TYPE : this.SUPPORTED_OPERATORS[0],
-                  selectedConditionType: type,
-                })
-              }
-            />
+            {this.props.dataAlertType === SCHEDULED_TYPE ? (
+              <span className='data-alert-description-span'>
+                Send a notification with the result of <strong>this query:</strong>
+              </span>
+            ) : (
+              <>
+                <span className='data-alert-description-span'>Send a notification when your query</span>
+                <Select
+                  className='data-alert-schedule-step-type-selector'
+                  outlined={false}
+                  showArrow={false}
+                  options={options}
+                  value={this.state.selectedConditionType}
+                  // tooltipID={this.props.tooltipID}
+                  onChange={(type) =>
+                    this.setState({
+                      selectedOperator: type === EXISTS_TYPE ? EXISTS_TYPE : this.SUPPORTED_OPERATORS[0],
+                      selectedConditionType: type,
+                    })
+                  }
+                />
+              </>
+            )}
+
+            {/* Keep for future use in case we want column selection for list queries */}
             {/* {this.state.selectedConditionType === COMPARE_TYPE && numericColumns?.length > 1 && (
               <span className='data-alert-description-span'>
                 {' '}
@@ -1252,7 +1249,7 @@ export default class RuleSimple extends React.Component {
             <div className='react-autoql-rule-first-input-container'>{this.renderBaseQuery()}</div>
           </div>
 
-          {this.state.selectedConditionType === COMPARE_TYPE ? (
+          {this.props.dataAlertType === CONTINUOUS_TYPE && this.state.selectedConditionType === COMPARE_TYPE ? (
             <>
               <div style={{ marginBottom: '10px', marginTop: '15px' }}>
                 {this.state.firstQuerySelectedColumns?.length ? (
@@ -1317,7 +1314,7 @@ export default class RuleSimple extends React.Component {
                   ref={this.secondFieldSelectionGridRef}
                 >
                   <div className='react-autoql-rule-field-selection-description'>
-                    <div className='react-autoql-input-label'>Select field of interest</div>
+                    <div className='react-autoql-input-label'>Select field to compare to</div>
                   </div>
                   {this.renderSecondFieldSelectionGrid()}
                 </div>

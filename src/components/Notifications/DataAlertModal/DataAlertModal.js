@@ -14,6 +14,8 @@ import {
   dataFormattingDefault,
   authenticationDefault,
   getSupportedConditionTypes,
+  CONTINUOUS_TYPE,
+  SCHEDULED_TYPE,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
@@ -73,7 +75,7 @@ class DataAlertModal extends React.Component {
     onSave: () => {},
     onErrorCallback: () => {},
     currentDataAlert: undefined,
-    dataAlertType: 'condition-alert',
+    dataAlertType: CONTINUOUS_TYPE,
     isVisible: false,
     allowDelete: true,
     onClose: () => {},
@@ -117,6 +119,37 @@ class DataAlertModal extends React.Component {
     return this.conditionsEditable() || this.hasFilters()
   }
 
+  getFilters = (props = this.props) => {
+    let lockedFilters = []
+    let tableFilters = []
+
+    if (!props.queryResponse) {
+      lockedFilters = props.initialData[0]?.session_filter_locks ?? []
+      tableFilters = props.initialData[0]?.filters ?? []
+    } else {
+      const persistentFilters = props.queryResponse?.data?.data?.fe_req?.persistent_filter_locks ?? []
+      const sessionFilters = props.queryResponse?.data?.data?.fe_req?.session_filter_locks ?? []
+      lockedFilters = [...persistentFilters, ...sessionFilters] ?? []
+      tableFilters = props.filters ?? []
+    }
+
+    const tableFiltersFormatted =
+      tableFilters.map((filter) => ({
+        ...filter,
+        value: filter?.displayValue ?? filter?.value,
+        type: 'table',
+      })) ?? []
+
+    const lockedFiltersFormatted = lockedFilters.map((filter) => ({
+      ...filter,
+      type: 'locked',
+    }))
+
+    const allFilters = [...tableFiltersFormatted, ...lockedFiltersFormatted]
+
+    return allFilters
+  }
+
   getSteps = (initialProps = this.props) => {
     const props = initialProps ?? this.props
     this.SUPPORTED_CONDITION_TYPES = getSupportedConditionTypes(props.currentDataAlert?.expression, props.queryResponse)
@@ -129,7 +162,8 @@ class DataAlertModal extends React.Component {
     if (
       // this.showConditionsStep() &&  // Comment this out for now. We want the user to be able to see this step even if only one condition option is available to select
       !this.state ||
-      this.state.dataAlertType === 'condition-alert'
+      this.state.dataAlertType === CONTINUOUS_TYPE ||
+      this.getFilters()?.length > 0
     ) {
       steps.unshift({ title: 'Set Up Conditions', value: this.CONDITIONS_STEP })
     }
@@ -157,7 +191,7 @@ class DataAlertModal extends React.Component {
       completedSections: [],
       expressionKey: uuid(),
       isMounted: false,
-      dataAlertType: 'condition-alert',
+      dataAlertType: CONTINUOUS_TYPE,
       isSettingsFormComplete: true,
     }
 
@@ -460,15 +494,15 @@ class DataAlertModal extends React.Component {
               title='Live Alert'
               icon='live'
               subtitle='Get notifications when the data for this query meets certain conditions.'
-              onClick={() => this.setState({ dataAlertType: 'condition-alert' })}
-              isActive={this.state.dataAlertType === 'condition-alert'}
+              onClick={() => this.setState({ dataAlertType: CONTINUOUS_TYPE })}
+              isActive={this.state.dataAlertType === CONTINUOUS_TYPE}
             />
             <MultilineButton
               title='Scheduled Alert'
               icon='calendar'
               subtitle='Get notifications with the result of this query at specific times.'
-              onClick={() => this.setState({ dataAlertType: 'schedule-alert' })}
-              isActive={this.state.dataAlertType === 'schedule-alert'}
+              onClick={() => this.setState({ dataAlertType: SCHEDULED_TYPE })}
+              isActive={this.state.dataAlertType === SCHEDULED_TYPE}
             />
           </div>
         </div>
@@ -492,6 +526,7 @@ class DataAlertModal extends React.Component {
               tooltipID={this.TOOLTIP_ID}
               onLastInputEnterPress={this.nextStep}
               filters={this.props.filters}
+              dataAlertType={this.state.dataAlertType}
             />
           </div>
         </div>
@@ -516,6 +551,7 @@ class DataAlertModal extends React.Component {
           conditionStatement={this.getConditionStatement()}
           queryResponse={this.props.queryResponse}
           expressionRef={this.expressionRef}
+          dataAlertType={this.state.dataAlertType}
           tooltipID={this.TOOLTIP_ID}
         />
       </div>
