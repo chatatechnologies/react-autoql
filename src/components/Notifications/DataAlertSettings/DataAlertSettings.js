@@ -195,16 +195,16 @@ export default class DataAlertSettings extends React.Component {
         fullWidth
         options={[
           {
-            value: SCHEDULED_TYPE,
-            label: 'Scheduled',
-            subtitle: 'Get notifications at specific times.',
-            icon: 'calendar',
-          },
-          {
             value: CONTINUOUS_TYPE,
             label: 'Live',
             subtitle: 'Get notifications as soon as the conditions are met.',
             icon: 'live',
+          },
+          {
+            value: SCHEDULED_TYPE,
+            label: 'Scheduled',
+            subtitle: 'Get notifications at specific times.',
+            icon: 'calendar',
           },
         ]}
       />

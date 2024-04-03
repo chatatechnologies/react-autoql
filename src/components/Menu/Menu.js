@@ -20,6 +20,7 @@ export class MenuItem extends React.Component {
     active: PropTypes.bool,
     tooltip: PropTypes.string,
     tooltipID: PropTypes.string,
+    disabled: PropTypes.bool,
     onClick: PropTypes.func,
   }
 
@@ -30,6 +31,7 @@ export class MenuItem extends React.Component {
     active: false,
     tooltip: undefined,
     tooltipID: undefined,
+    disabled: false,
     onClick: () => {},
   }
 
@@ -41,7 +43,8 @@ export class MenuItem extends React.Component {
         className={`react-autoql-menu-item
           ${this.props.className ?? ''}
           ${this.props.subtitle ? 'has-subtitles' : ''}
-          ${this.props.active ? 'active' : ''}`}
+          ${this.props.active ? 'active' : ''}
+          ${this.props.disabled ? 'react-autoql-menu-item-disabled' : ''}`}
         data-tooltip-html={this.props.tooltip}
         data-tooltip-id={this.props.tooltipID}
         data-offset={10}

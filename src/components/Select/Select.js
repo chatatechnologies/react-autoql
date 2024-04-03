@@ -157,6 +157,7 @@ export default class Select extends React.Component {
                     tooltip={option.tooltip}
                     tooltipID={this.props.tooltipID ?? `select-tooltip-${this.ID}`}
                     active={option.value === this.props.value}
+                    disabled={option.disabled}
                     icon={option.icon}
                     onClick={() => {
                       this.setState({ isOpen: false })

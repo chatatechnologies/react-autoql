@@ -30,6 +30,9 @@ import {
   getGroupableColumns,
   getStringColumnIndices,
   getNumberOfGroupables,
+  getVisibleColumns,
+  isColumnNumberType,
+  DATA_ALERT_CONDITION_TYPES,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
@@ -42,6 +45,19 @@ import { SelectableTable } from '../../SelectableTable/'
 import { authenticationType, dataFormattingType } from '../../../props/types'
 
 import './RuleSimple.scss'
+
+const CONDITION_TYPE_LABELS = {
+  EXISTS: (
+    <span>
+      receives <strong>new rows</strong> of data.
+    </span>
+  ),
+  COMPARE: (
+    <span>
+      contains data that meets the following <strong>conditions:</strong>
+    </span>
+  ),
+}
 
 export default class RuleSimple extends React.Component {
   autoCompleteTimer = undefined
@@ -74,11 +90,30 @@ export default class RuleSimple extends React.Component {
       selectedOperator = EXISTS_TYPE
     }
 
+    const firstQuerySelectedNumberColumnName = initialData?.[0]?.compare_column ?? ''
+
+    let firstQueryCompareColumnIndex
+    if (firstQuerySelectedNumberColumnName) {
+      firstQueryCompareColumnIndex = queryResponse?.data?.data?.columns?.findIndex(
+        (col) => col.name === firstQuerySelectedNumberColumnName,
+      )
+    } else {
+      firstQueryCompareColumnIndex = queryResponse?.data?.data?.columns?.findIndex(
+        (col) => isColumnNumberType(col) && col.is_visible,
+      )
+    }
+
+    if (firstQueryCompareColumnIndex === -1) {
+      firstQueryCompareColumnIndex = undefined
+    }
+
     const state = {
       columnSelectionType: 'any-column',
       selectedOperator: initialData[0]?.condition ?? selectedOperator,
+      selectedConditionType:
+        (initialData[0]?.condtion ?? selectedOperator) === EXISTS_TYPE ? EXISTS_TYPE : COMPARE_TYPE,
       firstQueryJoinColumns: initialData?.[0]?.join_columns ?? [],
-      firstQuerySelectedNumberColumnName: initialData?.[0]?.compare_column ?? '',
+      firstQuerySelectedNumberColumnName,
       secondQueryJoinColumns: initialData?.[1]?.join_columns ?? [],
       secondQuerySelectedNumberColumnName: initialData?.[1]?.compare_column ?? '',
       inputValue: queryResponse?.data?.data?.text ?? '',
@@ -92,7 +127,7 @@ export default class RuleSimple extends React.Component {
       queryFilters: this.getFilters(props),
       secondQueryResponse: {},
       isSecondQueryListQuery: true,
-      firstQuerySelectedColumn: [],
+      firstQuerySelectedColumns: [firstQueryCompareColumnIndex],
       firstQueryGroupableColumnIndex: 0,
       secondQuerySelectedColumn: [],
       secondQueryGroupableColumnIndex: 0,
@@ -105,6 +140,7 @@ export default class RuleSimple extends React.Component {
       this.TERM_ID_1 = initialData[0].id
       this.TERM_ID_2 = initialData.length > 1 ? initialData[1].id : uuid()
       state.selectedOperator = initialData[0].condition ?? this.SUPPORTED_OPERATORS[0]
+      state.selectedConditionType = state.selectedOperator === EXISTS_TYPE ? EXISTS_TYPE : COMPARE_TYPE
       state.inputValue = initialData[0].term_value ?? ''
       state.secondInputValue = initialData[1]?.term_value ?? ''
       state.secondTermType = initialData[1]?.term_type?.toUpperCase() ?? NUMBER_TERM_TYPE
@@ -268,7 +304,7 @@ export default class RuleSimple extends React.Component {
         join_columns: firstQueryJoinColumns.length === 0 ? this.state.firstQueryJoinColumns : firstQueryJoinColumns,
       },
     ]
-    const firstQuerySelectedNumberColumnName = this.state.firstQuerySelectedColumn.map(
+    const firstQuerySelectedNumberColumnName = this.state.firstQuerySelectedColumns.map(
       (index) => this.props.queryResponse?.data?.data?.columns[index]?.name,
     )[0]
 
@@ -368,7 +404,7 @@ export default class RuleSimple extends React.Component {
   isComplete = () => {
     let firstTermComplete = !!this.state.inputValue?.length
     if (this.shouldRenderFirstFieldSelectionGrid()) {
-      firstTermComplete = this.state.firstQuerySelectedColumn.length !== 0
+      firstTermComplete = this.state.firstQuerySelectedColumns.length !== 0
     }
     if (!firstTermComplete) {
       return false
@@ -519,7 +555,6 @@ export default class RuleSimple extends React.Component {
         options={options}
         value={this.state.selectedOperator}
         className='react-autoql-rule-condition-select'
-        // label='Meets this condition'
         onChange={(value) => {
           this.setState({ selectedOperator: value })
         }}
@@ -952,10 +987,8 @@ export default class RuleSimple extends React.Component {
             data-tooltip-id={this.props.tooltipID}
             data-tooltip-content='Editing this query is not permitted. To use a different query, simply create a new Data Alert via Data Messenger or a Dashboard.'
           >
-            <span className='data-alert-description-span'>Trigger Alert when this query</span>
-            {/* 
-            Save this bock for later when we want to allow column selection from list queries
-            Trigger Alert when{' '}
+            {/* <span className='data-alert-description-span'>Trigger Alert when this query</span>
+            Save this bock for later when we want to allow column selection from list queries Trigger Alert when{' '}
             <Select
               className='data-alert-schedule-step-type-selector'
               options={[
@@ -982,24 +1015,34 @@ export default class RuleSimple extends React.Component {
               //       : 'Trigger Alert when this query'
               //     : 'Trigger Alert when new data is detected for this query'
               // }
+              label='Query'
               value={this.getFormattedQueryText()}
               readOnly
               disabled
               fullWidth
             />
-            {/* 
-            Do we want the ability to edit this?
-            <Icon type='edit' onClick={() => this.setState({ isEditingQuery: true })} /> 
-          */}
           </span>
+          {this.shouldRenderFirstFieldSelectionGrid() && (
+            <>
+              <div className='react-autoql-rule-field-selection-first-query' data-test='rule'>
+                <div className='react-autoql-rule-field-selection-grid-container'>
+                  {/* <div className='react-autoql-rule-field-selection-description'>
+                                      <div className='react-autoql-input-label'>Select field of interest</div>
+                                    </div> */}
+                  {this.renderfirstFieldSelectionGrid()}
+                </div>
+              </div>
+            </>
+          )}
           {this.renderFilterChips()}
         </div>
       </div>
     )
   }
+
   shouldRenderFirstFieldSelectionGrid = () => {
     return (
-      this.state.selectedOperator !== EXISTS_TYPE &&
+      this.state.selectedConditionType === COMPARE_TYPE &&
       this.NUMBER_COLUMNS_AMOUNT >= 2 &&
       this.ALL_COLUMNS__AMOUNT - this.GROUPABLE_COLUMNS_AMOUNT !== 1 &&
       this.GROUPABLE_COLUMNS_AMOUNT > 0
@@ -1024,6 +1067,7 @@ export default class RuleSimple extends React.Component {
       !this.state.isSecondQueryListQuery
     )
   }
+
   renderfirstFieldSelectionGrid = () => {
     const groupableColumns = getGroupableColumns(this.props.queryResponse?.data?.data?.columns)
     const { stringColumnIndices } = getStringColumnIndices(this.props.queryResponse?.data?.data?.columns)
@@ -1033,18 +1077,20 @@ export default class RuleSimple extends React.Component {
       <SelectableTable
         dataFormatting={this.props.dataFormatting}
         onColumnSelection={(columns) =>
-          this.setState({ firstQuerySelectedColumn: columns, firstQueryGroupableColumnIndex: groupableColumns[0] })
+          this.setState({ firstQuerySelectedColumns: columns, firstQueryGroupableColumnIndex: groupableColumns[0] })
         }
-        selectedColumns={this.state.firstQuerySelectedColumn}
+        selectedColumns={this.state.firstQuerySelectedColumns}
         disabledColumns={disabledColumns}
         shouldRender={this.shouldRenderFirstFieldSelectionGrid()}
         queryResponse={this.props.queryResponse}
         radio={true}
         showEndOfPreviewMessage={true}
         tooltipID={this.props.tooltipID}
+        rowLimit={20}
       />
     )
   }
+
   renderSecondFieldSelectionGrid = () => {
     const groupableColumns = getGroupableColumns(this.state.secondQueryResponse?.data?.data?.columns)
     const { stringColumnIndices } = getStringColumnIndices(this.state.secondQueryResponse?.data?.data?.columns)
@@ -1063,9 +1109,11 @@ export default class RuleSimple extends React.Component {
         radio={true}
         showEndOfPreviewMessage={true}
         tooltipID={this.props.tooltipID}
+        rowLimit={20}
       />
     )
   }
+
   getSecondInputPlaceholder = () => {
     const { secondTermType } = this.state
     const { queryResponse } = this.props
@@ -1141,6 +1189,17 @@ export default class RuleSimple extends React.Component {
       return null
     }
 
+    const options = Object.keys(DATA_ALERT_CONDITION_TYPES).map((type) => {
+      const disabled = !this.SUPPORTED_CONDITION_TYPES.includes(type)
+
+      return {
+        value: type,
+        label: CONDITION_TYPE_LABELS[type],
+        disabled,
+        tooltip: disabled ? 'Your query is not eligible for this option.' : undefined,
+      }
+    })
+
     return (
       <ErrorBoundary>
         <div
@@ -1148,81 +1207,97 @@ export default class RuleSimple extends React.Component {
         ${this.shouldRenderValidationSection() ? 'with-query-validation' : ''}`}
           style={this.props.style}
         >
+          <div style={{ marginBottom: '15px' }}>
+            <span className='data-alert-description-span'>Send a notification when your query</span>
+            <Select
+              className='data-alert-schedule-step-type-selector'
+              outlined={false}
+              showArrow={false}
+              options={options}
+              value={this.state.selectedConditionType}
+              // tooltipID={this.props.tooltipID}
+              onChange={(type) =>
+                this.setState({
+                  selectedOperator: type === EXISTS_TYPE ? EXISTS_TYPE : this.SUPPORTED_OPERATORS[0],
+                  selectedConditionType: type,
+                })
+              }
+            />
+            {/* {this.state.selectedConditionType === COMPARE_TYPE && numericColumns?.length > 1 && (
+              <span className='data-alert-description-span'>
+                {' '}
+                <Select
+                  className='data-alert-schedule-step-type-selector'
+                  options={[
+                    {
+                      value: 'all-columns',
+                      label: 'Any numerical column',
+                    },
+                    {
+                      value: 'selected-columns',
+                      label: 'Selected numerical column(s):',
+                    },
+                  ]}
+                  value={this.state.conditionColumnSelectType ?? 'all-columns'}
+                  onChange={(conditionColumnSelectType) => this.setState({ conditionColumnSelectType })}
+                  outlined={false}
+                  showArrow={false}
+                />
+                contains data that
+              </span>
+            )} */}
+          </div>
+
           <div className='react-autoql-rule-simple-first-query' data-test='rule'>
             <div className='react-autoql-rule-first-input-container'>{this.renderBaseQuery()}</div>
           </div>
 
-          {/* {display it when the number type columns has more than one} */}
-          {this.shouldRenderFirstFieldSelectionGrid() && (
-            <div className='react-autoql-rule-field-selection-first-query' data-test='rule'>
-              <div className='react-autoql-rule-field-selection-grid-container'>
-                <div className='react-autoql-rule-field-selection-description'>
-                  <div className='react-autoql-input-label'>Select a field of interest from this query</div>
-                </div>
-                {this.renderfirstFieldSelectionGrid()}
-              </div>
-            </div>
-          )}
-
-          <div style={{ marginTop: '10px' }}>
-            <span className='data-alert-description-span'>
-              <Select
-                className='data-alert-schedule-step-type-selector'
-                options={[
-                  {
-                    value: COMPARE_TYPE,
-                    label: (
-                      <span>
-                        Meets the following <strong>conditions:</strong>
-                      </span>
-                    ),
-                  },
-                  {
-                    value: EXISTS_TYPE,
-                    label: (
-                      <span>
-                        Receives <strong>new rows</strong> of data
-                      </span>
-                    ),
-                  },
-                ]}
-                value={this.state.selectedOperator === EXISTS_TYPE ? EXISTS_TYPE : COMPARE_TYPE}
-                onChange={(type) =>
-                  this.setState({
-                    selectedOperator: type === EXISTS_TYPE ? EXISTS_TYPE : this.getInitialSelectedOperator(),
-                  })
-                }
-                outlined={false}
-                showArrow={false}
-              />
-              {this.state.selectedOperator !== EXISTS_TYPE &&
-                isListQuery(this.props.queryResponse?.data?.data?.columns) && (
-                  <span className='data-alert-description-span'>
-                    {' '}
-                    <Select
-                      className='data-alert-schedule-step-type-selector'
-                      options={[
-                        {
-                          value: 'all-columns',
-                          label: 'Any numerical column',
-                        },
-                        {
-                          value: 'selected-columns',
-                          label: 'Selected numerical column(s)',
-                        },
-                      ]}
-                      value={this.state.conditionColumnSelectType ?? 'all-columns'}
-                      onChange={(conditionColumnSelectType) => this.setState({ conditionColumnSelectType })}
-                      outlined={false}
-                      showArrow={false}
-                    />{' '}
-                    contains data that
-                  </span>
-                )}
-            </span>
-          </div>
-          {this.state.selectedOperator !== EXISTS_TYPE ? (
+          {this.state.selectedConditionType === COMPARE_TYPE ? (
             <>
+              <div style={{ marginBottom: '10px', marginTop: '15px' }}>
+                {this.state.firstQuerySelectedColumns?.length ? (
+                  <>
+                    <span>
+                      Any value from the field{' '}
+                      <Select
+                        value={this.state.firstQuerySelectedColumns[0]}
+                        onChange={(col) => this.setState({ firstQuerySelectedColumns: [col] })}
+                        outlined={false}
+                        showArrow={false}
+                        options={this.props.queryResponse?.data?.data?.columns
+                          ?.filter((col) => col.is_visible && isColumnNumberType(col))
+                          ?.map((col) => {
+                            return {
+                              value: col.index,
+                              label: col.display_name,
+                            }
+                          })}
+                      />
+                      {/* Keep for future use if we want to allow multiple column selection */}
+                      {/* {this.state.firstQuerySelectedColumns.map((colIndex, i) => {
+                        const column = this.props.queryResponse?.data?.data?.columns?.[colIndex]
+                        if (!column) {
+                          return null
+                        }
+
+                        let columnName = ''
+                        if (i !== 0) {
+                          columnName = ', '
+                        }
+
+                        columnName = `${columnName}${column.display_name}`
+                        return (
+                          <em>
+                            <strong>{columnName}</strong>
+                          </em>
+                        )
+                      })} */}
+                    </span>
+                  </>
+                ) : (
+                  <span>The result of your query</span>
+                )}
+              </div>
               <div className='react-autoql-notification-rule-container' data-test='rule'>
                 {this.allowOperators() && (
                   <>
@@ -1242,7 +1317,7 @@ export default class RuleSimple extends React.Component {
                   ref={this.secondFieldSelectionGridRef}
                 >
                   <div className='react-autoql-rule-field-selection-description'>
-                    <div className='react-autoql-input-label'>Select a field of interest from this query</div>
+                    <div className='react-autoql-input-label'>Select field of interest</div>
                   </div>
                   {this.renderSecondFieldSelectionGrid()}
                 </div>

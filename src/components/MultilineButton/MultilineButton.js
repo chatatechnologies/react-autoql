@@ -13,7 +13,7 @@ export class MultlineButtonWithoutRef extends React.Component {
     icon: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
     title: PropTypes.string,
     subtitle: PropTypes.string,
-    radio: PropTypes.boolean,
+    radio: PropTypes.bool,
     onClick: PropTypes.func,
   }
 
@@ -41,8 +41,6 @@ export class MultlineButtonWithoutRef extends React.Component {
     }
 
     let icon = this.props.icon
-
-    console.log('typeof icon:', typeof this.props.icon, this.props.icon)
 
     if (typeof this.props.icon === 'string') {
       icon = <Icon className='react-autoql-btn-icon' type={this.props.icon} />

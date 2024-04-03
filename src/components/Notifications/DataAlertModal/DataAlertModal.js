@@ -5,26 +5,25 @@ import _isEmpty from 'lodash.isempty'
 import _cloneDeep from 'lodash.clonedeep'
 
 import {
-  DATA_ALERT_CONDITION_TYPES,
-  COMPARE_TYPE,
   EXISTS_TYPE,
+  COMPARE_TYPE,
   QUERY_TERM_TYPE,
   createDataAlert,
   updateDataAlert,
-  getSupportedConditionTypes,
-  authenticationDefault,
   getAuthentication,
   dataFormattingDefault,
+  authenticationDefault,
+  getSupportedConditionTypes,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
 import { Modal } from '../../Modal'
 import { Button } from '../../Button'
-import { Select } from '../../Select'
 import { Tooltip } from '../../Tooltip'
 import { StepsHoz } from '../../StepsHoz'
 import { ScheduleBuilder } from '../ScheduleBuilder'
 import { ConditionBuilder } from '../ConditionBuilder'
+import { MultilineButton } from '../../MultilineButton'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { DataAlertDeleteDialog } from '../DataAlertDeleteDialog'
@@ -35,7 +34,6 @@ import { withTheme } from '../../../theme'
 import { authenticationType, dataFormattingType } from '../../../props/types'
 
 import './DataAlertModal.scss'
-import { MultilineButton } from '../../MultilineButton'
 
 class DataAlertModal extends React.Component {
   constructor(props) {
@@ -48,7 +46,6 @@ class DataAlertModal extends React.Component {
     this.MESSAGE_STEP = 'MESSAGE'
     this.TYPE_STEP = 'TYPE'
 
-    this.steps = this.getSteps(props)
     this.state = this.getInitialState(props)
   }
 
@@ -120,7 +117,7 @@ class DataAlertModal extends React.Component {
     return this.conditionsEditable() || this.hasFilters()
   }
 
-  getSteps = (initialProps) => {
+  getSteps = (initialProps = this.props) => {
     const props = initialProps ?? this.props
     this.SUPPORTED_CONDITION_TYPES = getSupportedConditionTypes(props.currentDataAlert?.expression, props.queryResponse)
 
@@ -129,7 +126,11 @@ class DataAlertModal extends React.Component {
       { title: 'Customize Appearance', value: this.MESSAGE_STEP },
     ]
 
-    if (this.showConditionsStep()) {
+    if (
+      // this.showConditionsStep() &&  // Comment this out for now. We want the user to be able to see this step even if only one condition option is available to select
+      !this.state ||
+      this.state.dataAlertType === 'condition-alert'
+    ) {
       steps.unshift({ title: 'Set Up Conditions', value: this.CONDITIONS_STEP })
     }
 
@@ -143,6 +144,8 @@ class DataAlertModal extends React.Component {
 
   getInitialState = (initialProps) => {
     const props = initialProps ?? this.props
+
+    const steps = this.getSteps(initialProps)
 
     const state = {
       titleInput: '',
@@ -164,7 +167,7 @@ class DataAlertModal extends React.Component {
       state.messageInput = currentDataAlert.message ?? ''
       state.selectedConditionType = currentDataAlert.expression?.[0]?.condition ?? this.SUPPORTED_CONDITION_TYPES?.[0]
       state.activeStep = 0
-      state.completedSections = this.steps.map(() => true)
+      state.completedSections = steps.map(() => true)
       state.expressionJSON = currentDataAlert?.expression
     }
 
@@ -172,7 +175,6 @@ class DataAlertModal extends React.Component {
   }
 
   initializeFields = (props) => {
-    this.steps = this.getSteps(props)
     this.setState(this.getInitialState(props))
   }
 
@@ -328,8 +330,10 @@ class DataAlertModal extends React.Component {
       return !this.state.isSettingsFormComplete
     }
 
-    const lastStep = this.steps.length - 1
-    const hasUnfinishedStep = !!this.steps.find((s, i) => {
+    const steps = this.getSteps()
+
+    const lastStep = steps.length - 1
+    const hasUnfinishedStep = !!steps.find((s, i) => {
       if (i === lastStep) {
         return false
       }
@@ -356,7 +360,9 @@ class DataAlertModal extends React.Component {
       )
     }
 
-    const isLastStep = this.state.activeStep === this.steps.length - 1
+    const steps = this.getSteps()
+
+    const isLastStep = this.state.activeStep === steps.length - 1
     if (isLastStep) {
       return (
         <Button
@@ -444,28 +450,6 @@ class DataAlertModal extends React.Component {
       </div>
     )
   }
-
-  // renderConditionTypeSelector = () => {
-  //   const options = this.SUPPORTED_CONDITION_TYPES?.map((type) => {
-  //     const conditionObj = DATA_ALERT_CONDITION_TYPES[type]
-  //     return {
-  //       value: type,
-  //       label: conditionObj.displayName,
-  //     }
-  //   })
-
-  //   return (
-  //     <Select
-  //       style={{ width: '100%' }}
-  //       options={options}
-  //       value={this.state.selectedConditionType}
-  //       className='react-autoql-rule-condition-type-select'
-  //       onChange={(value) => {
-  //         this.setState({ selectedConditionType: value })
-  //       }}
-  //     />
-  //   )
-  // }
 
   renderTypeStep = (active) => {
     return (
@@ -555,7 +539,8 @@ class DataAlertModal extends React.Component {
   }
 
   getStepNumber = (stepValue) => {
-    const stepNumber = this.steps.findIndex((step) => step.value && stepValue && step.value === stepValue)
+    const steps = this.getSteps()
+    const stepNumber = steps.findIndex((step) => step.value && stepValue && step.value === stepValue)
     return stepNumber
   }
 
@@ -599,7 +584,7 @@ class DataAlertModal extends React.Component {
   }
 
   renderQuerySummary = () => {
-    if (this.state.activeStep === this.getStepNumber(this.CONDITIONS_STEP) || !!this.props.currentDataAlert?.id) {
+    if (!!this.props.currentDataAlert?.id) {
       return null
     }
     const formattedQueryText = this.expressionRef?.getFormattedQueryText({
@@ -610,7 +595,9 @@ class DataAlertModal extends React.Component {
       <div className='data-alert-modal-query-summary-container'>
         <div className='data-alert-modal-query-summary-background' />
         <div className='data-alert-modal-query-summary'>
-          <strong>Your query:</strong> "{formattedQueryText}"
+          <span>
+            <strong>Your query:</strong> "{formattedQueryText}"
+          </span>
         </div>
       </div>
     )
@@ -620,6 +607,8 @@ class DataAlertModal extends React.Component {
     if (!this.props.isVisible) {
       return null
     }
+
+    const steps = this.getSteps()
 
     if (!!this.props.currentDataAlert?.id) {
       return (
@@ -643,7 +632,7 @@ class DataAlertModal extends React.Component {
         <StepsHoz
           activeStep={this.state.activeStep}
           onStepChange={this.setStep}
-          steps={this.steps.map((step, i) => {
+          steps={steps.map((step, i) => {
             return {
               title: step.title,
               complete: this.state.completedSections[i],
@@ -657,7 +646,9 @@ class DataAlertModal extends React.Component {
 
   isStepReady = () => {
     const { activeStep } = this.state
-    const stepName = this.steps?.[activeStep]?.value
+
+    const steps = this.getSteps()
+    const stepName = steps?.[activeStep]?.value
 
     switch (stepName) {
       case this.TYPE_STEP: {
