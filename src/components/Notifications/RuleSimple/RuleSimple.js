@@ -88,7 +88,10 @@ export default class RuleSimple extends React.Component {
     this.TERM_ID_2 = uuid()
 
     let selectedOperator = this.getInitialSelectedOperator()
-    if (isListQuery(queryResponse?.data?.data?.columns) && this.SUPPORTED_CONDITION_TYPES.includes(EXISTS_TYPE)) {
+    if (
+      props.dataAlertTypes === EXISTS_TYPE ||
+      (isListQuery(queryResponse?.data?.data?.columns) && this.SUPPORTED_CONDITION_TYPES.includes(EXISTS_TYPE))
+    ) {
       selectedOperator = EXISTS_TYPE
     }
 
@@ -141,7 +144,8 @@ export default class RuleSimple extends React.Component {
     if (initialData?.length) {
       this.TERM_ID_1 = initialData[0].id
       this.TERM_ID_2 = initialData.length > 1 ? initialData[1].id : uuid()
-      state.selectedOperator = initialData[0].condition ?? this.SUPPORTED_OPERATORS[0]
+      state.selectedOperator =
+        initialData[0].condition ?? state.selectedOperator === EXISTS_TYPE ? EXISTS_TYPE : this.SUPPORTED_OPERATORS[0]
       state.selectedConditionType = state.selectedOperator === EXISTS_TYPE ? EXISTS_TYPE : COMPARE_TYPE
       state.inputValue = initialData[0].term_value ?? ''
       state.secondInputValue = initialData[1]?.term_value ?? ''
@@ -267,18 +271,27 @@ export default class RuleSimple extends React.Component {
   }
 
   getJSON = () => {
-    const { secondInputValue } = this.state
-    let secondTermValue = secondInputValue
-    const percentageWithMissingFractionRegex = /^\d+\.%$/
-    if (percentageWithMissingFractionRegex.test(secondInputValue)) {
-      // If secondInputValue ends with a dot, slice off the '%' at the end, add '0%',
-      // Example: 40.% will become 40.0%
-      secondTermValue = secondInputValue.slice(0, -1) + '0%'
-    }
-
     const userSelection = this.props.queryResponse?.data?.data?.fe_req?.disambiguation
     const tableFilters = this.state.queryFilters?.filter((f) => f.type === 'table')
     const lockedFilters = this.state.queryFilters?.filter((f) => f.type === 'locked')
+
+    // If scheduled alert, we will just send back plain query response
+    // Expression condition will just be "TERMINATOR"
+    if (this.props.dataAlertType === SCHEDULED_TYPE) {
+      return [
+        {
+          id: this.TERM_ID_1,
+          term_type: QUERY_TERM_TYPE,
+          condition: 'TERMINATOR',
+          term_value: this.state.inputValue,
+          user_selection: this.props.initialData?.[0]?.user_selection ?? userSelection,
+          filters: tableFilters,
+          session_filter_locks: lockedFilters,
+          join_columns: [],
+        },
+      ]
+    }
+
     let firstQueryJoinColumnName =
       this.props.queryResponse?.data?.data?.columns[this.state.firstQueryGroupableColumnIndex]?.name
     let firstQueryJoinColumns = []
@@ -341,6 +354,15 @@ export default class RuleSimple extends React.Component {
     }
 
     if (this.allowOperators() && this.state.selectedOperator !== EXISTS_TYPE) {
+      const { secondInputValue } = this.state
+      let secondTermValue = secondInputValue
+      const percentageWithMissingFractionRegex = /^\d+\.%$/
+      if (percentageWithMissingFractionRegex.test(secondInputValue)) {
+        // If secondInputValue ends with a dot, slice off the '%' at the end, add '0%',
+        // Example: 40.% will become 40.0%
+        secondTermValue = secondInputValue.slice(0, -1) + '0%'
+      }
+
       const secondTerm = {
         id: this.TERM_ID_2,
         term_type: this.state.secondTermType,
