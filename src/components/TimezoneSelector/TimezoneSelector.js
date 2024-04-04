@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Select } from '../Select'
 
-const timezones = Intl.supportedValuesOf('timeZone')
+const timezones = Intl.supportedValuesOf?.('timeZone') ?? []
 
 const options = timezones.map((tz) => {
   return {
