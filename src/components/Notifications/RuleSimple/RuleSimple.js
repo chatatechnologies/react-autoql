@@ -132,7 +132,7 @@ export default class RuleSimple extends React.Component {
       queryFilters: this.getFilters(props),
       secondQueryResponse: {},
       isSecondQueryListQuery: true,
-      firstQuerySelectedColumns: [firstQueryCompareColumnIndex],
+      firstQuerySelectedColumns: firstQueryCompareColumnIndex ? [firstQueryCompareColumnIndex] : [],
       firstQueryGroupableColumnIndex: 0,
       secondQuerySelectedColumn: [],
       secondQueryGroupableColumnIndex: 0,
@@ -144,8 +144,6 @@ export default class RuleSimple extends React.Component {
     if (initialData?.length) {
       this.TERM_ID_1 = initialData[0].id
       this.TERM_ID_2 = initialData.length > 1 ? initialData[1].id : uuid()
-      state.selectedOperator =
-        initialData[0].condition ?? state.selectedOperator === EXISTS_TYPE ? EXISTS_TYPE : this.SUPPORTED_OPERATORS[0]
       state.selectedConditionType = state.selectedOperator === EXISTS_TYPE ? EXISTS_TYPE : COMPARE_TYPE
       state.inputValue = initialData[0].term_value ?? ''
       state.secondInputValue = initialData[1]?.term_value ?? ''
@@ -1081,9 +1079,18 @@ export default class RuleSimple extends React.Component {
   }
 
   renderfirstFieldSelectionGrid = () => {
-    const groupableColumns = getGroupableColumns(this.props.queryResponse?.data?.data?.columns)
-    const { stringColumnIndices } = getStringColumnIndices(this.props.queryResponse?.data?.data?.columns)
-    const disabledColumns = Array.from(new Set([...groupableColumns, ...stringColumnIndices]))
+    const columns = this.props.queryResponse?.data?.data?.columns
+    const additionalSelects = this.props.queryResponse?.data?.data?.fe_req?.additional_selects
+    const groupableColumns = getGroupableColumns(columns)
+    const { stringColumnIndices } = getStringColumnIndices(columns)
+    const additionalSelectColumns =
+      columns
+        ?.filter((col) => !!additionalSelects?.find((select) => select.columns[0] === col.name))
+        ?.map((col) => col.index) ?? []
+
+    const disabledColumns = Array.from(
+      new Set([...groupableColumns, ...stringColumnIndices, ...additionalSelectColumns]),
+    )
 
     return (
       <SelectableTable
@@ -1219,7 +1226,7 @@ export default class RuleSimple extends React.Component {
         ${this.shouldRenderValidationSection() ? 'with-query-validation' : ''}`}
           style={this.props.style}
         >
-          <div style={{ marginBottom: '15px' }}>
+          <div style={{ marginBottom: '10px' }}>
             {this.props.dataAlertType === SCHEDULED_TYPE ? (
               <span className='data-alert-description-span'>
                 Send a notification with the result of <strong>this query:</strong>
@@ -1274,20 +1281,28 @@ export default class RuleSimple extends React.Component {
             <div className='react-autoql-rule-first-input-container'>{this.renderBaseQuery()}</div>
           </div>
 
-          {this.props.dataAlertType === CONTINUOUS_TYPE && this.state.selectedConditionType === COMPARE_TYPE ? (
+          {this.props.dataAlertType !== SCHEDULED_TYPE && this.state.selectedConditionType === COMPARE_TYPE ? (
             <>
-              <div style={{ marginBottom: '10px', marginTop: '15px' }}>
+              <div style={{ marginTop: '15px' }}>
                 {this.state.firstQuerySelectedColumns?.length ? (
                   <>
-                    <span>
+                    <span className='data-alert-description-span'>
                       Any value from the field{' '}
                       <Select
+                        style={{ marginBottom: '14px' }}
                         value={this.state.firstQuerySelectedColumns[0]}
                         onChange={(col) => this.setState({ firstQuerySelectedColumns: [col] })}
                         outlined={false}
                         showArrow={false}
                         options={this.props.queryResponse?.data?.data?.columns
-                          ?.filter((col) => col.is_visible && isColumnNumberType(col))
+                          ?.filter(
+                            (col) =>
+                              col.is_visible &&
+                              isColumnNumberType(col) &&
+                              !this.props.queryResponse?.data?.data?.fe_req?.additional_selects?.find(
+                                (select) => select.columns[0] === col.name,
+                              ),
+                          )
                           ?.map((col) => {
                             return {
                               value: col.index,
@@ -1317,7 +1332,7 @@ export default class RuleSimple extends React.Component {
                     </span>
                   </>
                 ) : (
-                  <span>The result of your query</span>
+                  <span className='data-alert-description-span'>The result of your query</span>
                 )}
               </div>
               <div className='react-autoql-notification-rule-container' data-test='rule'>
