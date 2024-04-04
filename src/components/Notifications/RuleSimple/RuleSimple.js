@@ -304,9 +304,11 @@ export default class RuleSimple extends React.Component {
         .filter((obj) => obj.groupable === true)
         .map((obj) => firstQueryJoinColumns.push(obj.name))[0]
     }
+
     if (this.props.queryResponse && isSingleValueResponse(this.props.queryResponse)) {
       firstQueryJoinColumns = []
     }
+
     const expression = [
       {
         id: this.TERM_ID_1,
@@ -319,6 +321,7 @@ export default class RuleSimple extends React.Component {
         join_columns: firstQueryJoinColumns.length === 0 ? this.state.firstQueryJoinColumns : firstQueryJoinColumns,
       },
     ]
+
     const firstQuerySelectedNumberColumnName = this.state.firstQuerySelectedColumns.map(
       (index) => this.props.queryResponse?.data?.data?.columns[index]?.name,
     )[0]
