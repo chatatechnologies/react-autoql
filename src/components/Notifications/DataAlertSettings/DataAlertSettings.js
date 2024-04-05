@@ -233,7 +233,7 @@ export default class DataAlertSettings extends React.Component {
         authentication={this.props.authentication}
         ref={(r) => (this.expressionRef = r)}
         key={`expression-${this.state.expressionKey}`}
-        dataAlertType={this.props.currentDataAlert?.notification_type}
+        dataAlertType={this.state.notificationType}
         onChange={this.onExpressionChange}
         expression={this.state.expression}
         tooltipID={this.props.tooltipID}
