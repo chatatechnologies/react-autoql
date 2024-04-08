@@ -1376,6 +1376,27 @@ export class QueryOutput extends React.Component {
       this.tableConfig.numberColumnIndex = newNumberColumnIndices[0]
     }
 
+    if (this.tableConfig.numberColumnIndices2.includes(index)) {
+      this.tableConfig.numberColumnIndices2 = this.tableConfig.numberColumnIndices2.filter((i) => i !== index)
+
+      if (!this.tableConfig.numberColumnIndices2.length) {
+        const numberColumnIndex2 = this.getColumns().find(
+          (col) =>
+            col.is_visible &&
+            col.index !== index && // Must not be the same as the string index
+            !this.tableConfig.numberColumnIndices.includes(col.index) && // Must not already be in the first number column index array
+            isColumnNumberType(col), // Must be number type
+        )?.index
+
+        if (numberColumnIndex2 >= 0) {
+          this.tableConfig.numberColumnIndex2 = numberColumnIndex2
+          this.tableConfig.numberColumnIndices2 = [numberColumnIndex2]
+        }
+      } else if (this.tableConfig.numberColumnIndex2 === index) {
+        this.tableConfig.numberColumnIndex2 = this.tableConfig.numberColumnIndices2[0]
+      }
+    }
+
     if (this.usePivotDataForChart()) {
       this.generatePivotTableData()
     }
@@ -1585,11 +1606,15 @@ export class QueryOutput extends React.Component {
     } else if (
       this.isColumnIndexValid(this.tableConfig.numberColumnIndex, columns) &&
       (!this.isColumnIndicesValid(this.tableConfig.numberColumnIndices2, columns) ||
-        !this.isColumnIndexValid(this.tableConfig.numberColumnIndex, columns))
+        !this.isColumnIndexValid(this.tableConfig.numberColumnIndex2, columns))
     ) {
       // There are enough number column indices to have a second, but the second doesn't exist
       this.tableConfig.numberColumnIndex2 = columns.findIndex(
-        (col, index) => index !== this.tableConfig.numberColumnIndex && isColumnNumberType(col) && col.is_visible,
+        (col, index) =>
+          index !== this.tableConfig.numberColumnIndex &&
+          index !== this.tableConfig.stringColumnIndex &&
+          isColumnNumberType(col) &&
+          col.is_visible,
       )
       this.tableConfig.numberColumnIndices2 = [this.tableConfig.numberColumnIndex2]
     } else if (this.numberIndicesArraysOverlap(this.tableConfig)) {
