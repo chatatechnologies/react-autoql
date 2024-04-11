@@ -90,6 +90,7 @@ export default class Select extends React.Component {
       <div
         className={`react-autoql-select-and-label
         ${this.props.className ?? ''}
+        ${this.props.outlined ? 'outlined' : ''}
         ${this.props.fullWidth ? 'react-autoql-select-full-width' : ''}`}
       >
         {!!this.props.label && <div className='react-autoql-input-label'>{this.props.label}</div>}
@@ -156,6 +157,7 @@ export default class Select extends React.Component {
                     tooltip={option.tooltip}
                     tooltipID={this.props.tooltipID ?? `select-tooltip-${this.ID}`}
                     active={option.value === this.props.value}
+                    disabled={option.disabled}
                     icon={option.icon}
                     onClick={() => {
                       this.setState({ isOpen: false })

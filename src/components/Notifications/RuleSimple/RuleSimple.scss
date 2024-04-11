@@ -1,30 +1,43 @@
 .react-autoql-rule-simple {
   .react-autoql-data-alert-filters-container {
     padding: 5px;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
+  }
+
+  .data-alert-description-span {
+    display: inline-block;
+    margin-bottom: 10px;
+    margin-left: 5px;
+    white-space: pre;
+  }
+
+  .react-autoql-select-and-label:not(.outlined) {
+    border-bottom: 1px solid var(--react-autoql-accent-color);
+    height: 35px;
+    margin: 0 3px;
+    padding: 2px;
   }
 
   &.with-query-validation .react-autoql-rule-condition-select-input-container {
     margin-bottom: 30px;
   }
+
   .react-autoql-rule-field-selection-grid-container {
-    height: 100px;
-    margin-top: 10px;
-    margin-bottom: 25px;
-    padding-left: 20px;
+    max-height: 150px;
+    display: flex;
+    flex-direction: column;
 
     .react-autoql-input-label {
       display: inline;
       padding-left: 5px;
     }
-    .react-autoql-selectable-table {
-      padding: 0px 5px 5px 5px;
-    }
+    // .react-autoql-selectable-table {
+    //   padding: 0px 5px 5px 5px;
+    // }
   }
   .react-autoql-notification-rule-container {
     display: flex;
     align-items: flex-end;
-    margin-top: 10px;
 
     .react-autoql-rule-input {
       .react-autoql-input-icon.react-autoql-bubbles-outlined {
