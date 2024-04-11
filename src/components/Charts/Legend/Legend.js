@@ -595,6 +595,7 @@ export default class Legend extends React.Component {
   renderTitleSelector = () => {
     return (
       <LegendSelector
+        tableConfig={this.props.tableConfig}
         chartContainerRef={this.props.chartContainerRef}
         changeStringColumnIndex={this.props.changeStringColumnIndex}
         changeLegendColumnIndex={this.props.changeLegendColumnIndex}

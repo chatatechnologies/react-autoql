@@ -1312,12 +1312,26 @@ export class QueryOutput extends React.Component {
   }
 
   onChangeLegendColumnIndex = (index) => {
+    const currentLegendColumnIndex = this.tableConfig.legendColumnIndex
+
+    this.tableConfig.legendColumnIndex = index
+
     if (this.tableConfig.stringColumnIndex === index) {
-      let stringColumnIndex = this.tableConfig.stringColumnIndex
-      this.tableConfig.stringColumnIndex = this.tableConfig.legendColumnIndex
-      this.tableConfig.legendColumnIndex = stringColumnIndex
-    } else {
-      this.tableConfig.legendColumnIndex = index
+      this.tableConfig.stringColumnIndex = currentLegendColumnIndex
+    } else if (this.tableConfig.numberColumnIndices.includes(index)) {
+      if (this.tableConfig.numberColumnIndices.length > 1) {
+        this.tableConfig.numberColumnIndices = this.tableConfig.numberColumnIndices.filter((i) => i !== index)
+        this.tableConfig.numberColumnIndex = this.tableConfig.numberColumnIndices[0]
+      } else {
+        this.tableConfig.numberColumnIndex = this.state.columns.find(
+          (col) =>
+            col.is_visible &&
+            col.index !== index &&
+            col.index !== this.tableConfig.numberColumnIndex2 &&
+            col.index !== this.tableConfig.stringColumnIndex,
+        )?.index
+        this.tableConfig.numberColumnIndices = [this.tableConfig.numberColumnIndex]
+      }
     }
 
     if (this.usePivotDataForChart()) {
@@ -2168,7 +2182,7 @@ export class QueryOutput extends React.Component {
       this.pivotTableColumns = pivotTableColumns
       this.pivotTableData = pivotTableData
       this.numberOfPivotTableRows = this.pivotTableData?.length ?? 0
-      this.setPivotTableConfig(isFirstGeneration)
+      this.setPivotTableConfig(true)
     } catch (error) {
       console.error(error)
       this.props.onErrorCallback(error)
@@ -2454,6 +2468,7 @@ export class QueryOutput extends React.Component {
         <ChataChart
           key={this.state.chartID}
           {...tableConfig}
+          tableConfig={this.tableConfig}
           originalColumns={this.getColumns()}
           data={data}
           hidden={!isChartType(this.state.displayType)}
