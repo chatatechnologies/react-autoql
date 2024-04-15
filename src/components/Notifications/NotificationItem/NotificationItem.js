@@ -514,6 +514,7 @@ export default class NotificationItem extends React.Component {
                   shouldRender={this.state.expanded}
                   tooltipID={this.props.tooltipID}
                   chartTooltipID={this.props.chartTooltipID}
+                  enableFilterBtn={this.props.enableFilterBtn}
                 />
               </>
             )}

@@ -75,6 +75,7 @@ class NotificationFeed extends React.Component {
     enableSettingsMenu: PropTypes.bool,
     enableNotificationsMenu: PropTypes.bool,
     displayProjectName: PropTypes.bool,
+    enableFilterBtn: PropTypes.bool,
     enableFetchAllNotificationFeedAcrossProjects: PropTypes.bool,
   }
 
@@ -89,6 +90,7 @@ class NotificationFeed extends React.Component {
     enableSettingsMenu: true,
     enableNotificationsMenu: true,
     displayProjectName: false,
+    enableFilterBtn: false,
     enableFetchAllNotificationFeedAcrossProjects: false,
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
@@ -584,6 +586,7 @@ class NotificationFeed extends React.Component {
                         updateScrollbars={this.updateScrollbars}
                         tooltipID={this.props.tooltipID}
                         chartTooltipID={this.props.chartTooltipID}
+                        enableFilterBtn={this.props.enableFilterBtn}
                       />
                     )
                   })}
