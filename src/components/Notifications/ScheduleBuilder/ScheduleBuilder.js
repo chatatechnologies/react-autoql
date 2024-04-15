@@ -268,20 +268,16 @@ export default class ScheduleBuilder extends React.Component {
       return null
     }
 
-    if (this.props.conditionType === EXISTS_TYPE) {
-      return null
-    }
-
     return this.state.resetPeriodSelectValue
   }
 
   getNotificationType = () => {
-    if (this.props.conditionType === EXISTS_TYPE && this.props.dataAlertType === CONTINUOUS_TYPE) {
-      return CONTINUOUS_TYPE
-    }
-
     if (this.props.dataAlertType === CONTINUOUS_TYPE && this.state.resetPeriodSelectValue !== 'NONE') {
       return PERIODIC_TYPE
+    }
+
+    if (this.props.conditionType === EXISTS_TYPE && this.props.dataAlertType === CONTINUOUS_TYPE) {
+      return CONTINUOUS_TYPE
     }
 
     return this.props.dataAlertType
