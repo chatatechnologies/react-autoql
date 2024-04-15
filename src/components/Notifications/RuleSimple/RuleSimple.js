@@ -431,7 +431,7 @@ export default class RuleSimple extends React.Component {
     if (this.shouldRenderFirstFieldSelectionGrid()) {
       firstTermComplete = this.state.firstQuerySelectedColumns.length !== 0
     }
-    if (!firstTermComplete) {
+    if (!firstTermComplete && this.props.dataAlertType !== SCHEDULED_TYPE) {
       return false
     }
 
@@ -450,7 +450,7 @@ export default class RuleSimple extends React.Component {
     if (this.shouldRenderSecondFieldSelectionGrid()) {
       secondTermComplete = this.state.secondQuerySelectedColumn.length !== 0
     }
-    if (!secondTermComplete) {
+    if (!secondTermComplete && this.props.dataAlertType !== SCHEDULED_TYPE) {
       return false
     }
 
@@ -1200,7 +1200,7 @@ export default class RuleSimple extends React.Component {
   }
 
   allowOperators = () => {
-    return this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE)
+    return this.props.dataAlertType !== SCHEDULED_TYPE && this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE)
   }
 
   render = () => {
