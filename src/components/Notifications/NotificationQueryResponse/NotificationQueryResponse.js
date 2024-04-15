@@ -97,6 +97,7 @@ export default class NotificationQueryResponse extends React.Component {
             onSuccessAlert={this.props.onSuccessCallback}
             onErrorCallback={this.props.onErrorCallback}
             popoverPositions={['top', 'left', 'bottom', 'right']}
+            enableFilterBtn={this.props.enableFilterBtn}
             popoverAlign='end'
           />
         </div>
