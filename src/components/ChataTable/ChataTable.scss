@@ -137,11 +137,14 @@
       height: 35px;
     }
 
-    .tabulator-header-filter input {
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      line-height: 14px;
+    .tabulator-header-filter {
+      input,
+      .react-autoql-input-clear-btn {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        line-height: 14px;
+      }
     }
 
     .react-autoql-tabulator-container .tabulator-tableholder {
