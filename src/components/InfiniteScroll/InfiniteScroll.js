@@ -4,8 +4,6 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import InfiniteScroll from 'react-infinite-scroller'
 import { v4 as uuid } from 'uuid'
 
-import { CustomScrollbars } from '../CustomScrollbars'
-
 import './InfiniteScroll.scss'
 
 export default class InfiniteScrollAutoQL extends React.Component {
@@ -40,15 +38,13 @@ export default class InfiniteScrollAutoQL extends React.Component {
     return (
       <ErrorBoundary>
         <div className='react-autoql-infinite-scroll-container'>
-          <CustomScrollbars {...scrollbarProps} ref={this.scrollComponent} contentHidden={contentHidden}>
-            <InfiniteScroll
-              {...props}
-              className={`react-autoql-infinite-scroll ${className || ''}`}
-              getScrollParent={() => this.scrollComponent?.current?.getContainer()}
-            >
-              {children}
-            </InfiniteScroll>
-          </CustomScrollbars>
+          <InfiniteScroll
+            {...props}
+            className={`react-autoql-infinite-scroll ${className || ''}`}
+            getScrollParent={() => this.scrollComponent?.current?.getContainer()}
+          >
+            {children}
+          </InfiniteScroll>
         </div>
       </ErrorBoundary>
     )

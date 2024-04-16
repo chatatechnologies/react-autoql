@@ -392,6 +392,7 @@
 
     .tabulator-tableholder {
       background-color: inherit;
+      overscroll-behavior: auto !important;
     }
   }
 }
