@@ -86,10 +86,7 @@ export default class ChataTable extends React.Component {
       },
     }
 
-    if (
-      // props.useInfiniteScroll &&
-      props.response?.data?.data?.rows?.length
-    ) {
+    if (props.response?.data?.data?.rows?.length) {
       this.tableOptions.sortMode = 'remote' // v4: ajaxSorting = true
       this.tableOptions.filterMode = 'remote' // v4: ajaxFiltering = true
       this.tableOptions.paginationMode = 'remote'
