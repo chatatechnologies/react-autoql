@@ -120,7 +120,7 @@
     "@rollup/plugin-commonjs": "^25.0.4",
     "@rollup/plugin-image": "^2.0.5",
     "@rollup/plugin-node-resolve": "^13.3.0",
-    "@rollup/plugin-terser": "^0.4.3",
+    "@rollup/plugin-terser": "0.4.3",
     "autoprefixer": "^10.4.16",
     "axios-mock-adapter": "^1.18.1",
     "babel-core": "^7.0.0-bridge.0",

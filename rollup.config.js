@@ -15,7 +15,6 @@ const dist = 'dist'
 const bundle = 'autoql'
 
 const development = process.env.NODE_ENV === 'dev'
-const ci = process.env.NODE_ENV === 'ci'
 
 const external = [...Object.keys(pkg.peerDependencies || {}), ...Object.keys(pkg.dependencies || {})]
 
@@ -46,7 +45,7 @@ const common = {
       babelHelpers: 'bundled',
     }),
     commonjs(),
-    !development && !ci && terser(),
+    !development && terser(),
     gzipPlugin(),
   ],
   external: makeExternalPredicate(external),
