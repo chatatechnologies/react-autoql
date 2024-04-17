@@ -187,6 +187,7 @@ export class QueryOutput extends React.Component {
     allowColumnAddition: PropTypes.bool,
     onErrorCallback: PropTypes.func,
     showQueryInterpretation: PropTypes.bool,
+    useInfiniteScroll: PropTypes.bool,
 
     mutable: PropTypes.bool,
     showSuggestionPrefix: PropTypes.bool,
@@ -218,6 +219,7 @@ export class QueryOutput extends React.Component {
     defaultSelectedSuggestion: undefined,
     reverseTranslationPlacement: 'bottom',
     activeChartElementKey: undefined,
+    useInfiniteScroll: true,
     isResizing: false,
     enableDynamicCharting: true,
     onNoneOfTheseClick: undefined,
@@ -2374,6 +2376,7 @@ export class QueryOutput extends React.Component {
           columnDateRanges={this.columnDateRanges}
           onCellClick={this.onTableCellClick}
           queryID={this.queryID}
+          useInfiniteScroll={this.props.useInfiniteScroll}
           onFilterCallback={this.onTableFilter}
           onSorterCallback={this.onTableSort}
           onTableParamsChange={this.onTableParamsChange}

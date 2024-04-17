@@ -23,6 +23,8 @@ import {
   MAX_DATA_PAGE_SIZE,
   getDayJSObj,
   setColumnVisibility,
+  sortDataByColumn,
+  filterDataByColumn,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -44,6 +46,11 @@ export default class ChataTable extends React.Component {
     super(props)
 
     this.TABLE_ID = uuid()
+
+    if (!props.useInfiniteScroll) {
+      // We must store original query data to use as source of filter/sort for client side filtering
+      this.originalQueryResponse = _cloneDeep(props.response)
+    }
 
     this.hasSetInitialData = false
     this.isSettingInitialData = false
@@ -79,7 +86,10 @@ export default class ChataTable extends React.Component {
       },
     }
 
-    if (props.useInfiniteScroll && props.response?.data?.data?.rows?.length) {
+    if (
+      // props.useInfiniteScroll &&
+      props.response?.data?.data?.rows?.length
+    ) {
       this.tableOptions.sortMode = 'remote' // v4: ajaxSorting = true
       this.tableOptions.filterMode = 'remote' // v4: ajaxFiltering = true
       this.tableOptions.paginationMode = 'remote'
@@ -321,20 +331,14 @@ export default class ChataTable extends React.Component {
     return 1
   }
 
-  setInfiniteScroll = (useInfiniteScroll) => {
+  setInfiniteScroll = () => {
     if (!this.ref?.tabulator?.options) {
       return
     }
 
-    if (useInfiniteScroll) {
-      this.ref.tabulator.options.sortMode = 'remote'
-      this.ref.tabulator.options.filterMode = 'remote'
-      this.ref.tabulator.options.paginationMode = 'remote'
-    } else {
-      this.ref.tabulator.options.sortMode = 'local'
-      this.ref.tabulator.options.filterMode = 'local'
-      this.ref.tabulator.options.paginationMode = 'local'
-    }
+    this.ref.tabulator.options.sortMode = 'remote'
+    this.ref.tabulator.options.filterMode = 'remote'
+    this.ref.tabulator.options.paginationMode = 'remote'
   }
 
   updateData = (data, useInfiniteScroll) => {
@@ -519,7 +523,7 @@ export default class ChataTable extends React.Component {
       } else {
         this.setState({ pageLoading: true })
 
-        const responseWrapper = await props.queryFn({
+        const responseWrapper = await this.queryFn({
           tableFilters:
             nextTableParamsFormatted?.filters.length === 0
               ? props.queryRequestData?.filters
@@ -560,6 +564,42 @@ export default class ChataTable extends React.Component {
     }
 
     return response
+  }
+
+  clientSortAndFilterData = (params) => {
+    // Use FE for sorting and filtering
+    let response = _cloneDeep(this.originalQueryResponse)
+    let data = _cloneDeep(this.originalQueryResponse?.data?.data?.rows)
+
+    // Filters
+    if (params.tableFilters?.length) {
+      params.tableFilters.forEach((filter) => {
+        const filterColumnName = filter.name
+        const filterColumnIndex = this.props.columns.find((col) => col.name === filterColumnName)?.index
+
+        data = filterDataByColumn(data, this.props.columns, filterColumnIndex, filter.value, filter.operator)
+      })
+    }
+
+    // Sorters
+    if (params.orders?.length) {
+      const sortColumnName = params.orders[0].name
+      const sortColumnIndex = this.props.columns.find((col) => col.name === sortColumnName)?.index
+      const sortDirection = params.orders[0].sort === 'DESC' ? 'desc' : 'asc'
+
+      data = sortDataByColumn(data, this.props.columns, sortColumnIndex, sortDirection)
+    }
+
+    response.data.data.rows = data
+    return response
+  }
+
+  queryFn = (params) => {
+    if (this.props.useInfiniteScroll) {
+      return this.props.queryFn(params)
+    } else {
+      return Promise.resolve(this.clientSortAndFilterData(params))
+    }
   }
 
   getAllRows = (props) => {
@@ -966,8 +1006,7 @@ export default class ChataTable extends React.Component {
 
     if (currentAdditionalSelectColumns?.length !== newAdditionalSelectColumns?.length) {
       this.setPageLoading(true)
-      this.props
-        .queryFn({ newColumns: newAdditionalSelectColumns })
+      this.queryFn({ newColumns: newAdditionalSelectColumns })
         .then((response) => {
           if (response?.data?.data?.rows) {
             this.props.updateColumns(response?.data?.data?.columns, response?.data?.data?.fe_req)
