@@ -90,7 +90,7 @@ class NotificationFeed extends React.Component {
     enableSettingsMenu: true,
     enableNotificationsMenu: true,
     displayProjectName: false,
-    enableFilterBtn: false,
+    enableFilterBtn: true,
     enableFetchAllNotificationFeedAcrossProjects: false,
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
