@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { getThemeValue, createSVGPath, getKey, getTooltipContent } from 'autoql-fe-utils'
+import { getThemeValue, createSVGPath, getKey, getTooltipContent, getAutoQLConfig } from 'autoql-fe-utils'
 
 import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
 
@@ -87,7 +87,7 @@ export default class Line extends Component {
             colIndex2: stringColumnIndex,
             legendColumn,
             dataFormatting,
-            aggregated: this.props.isAggregated
+            aggregated: this.props.isAggregated,
           })
 
           if (isNaN(y)) {
@@ -107,7 +107,7 @@ export default class Line extends Component {
               style={{
                 stroke: 'transparent',
                 fill: 'transparent',
-                cursor: 'pointer',
+                cursor: getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? 'pointer' : 'default',
               }}
             />
           )

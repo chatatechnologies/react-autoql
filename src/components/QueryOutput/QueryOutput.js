@@ -2476,6 +2476,7 @@ export class QueryOutput extends React.Component {
           data={data}
           hidden={!isChartType(this.state.displayType)}
           authentication={this.props.authentication}
+          autoQLConfig={this.props.autoQLConfig}
           ref={(ref) => (this.chartRef = ref)}
           type={this.state.displayType}
           isDataAggregated={isChartDataAggregated}

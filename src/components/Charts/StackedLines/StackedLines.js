@@ -1,5 +1,5 @@
 import React from 'react'
-import { getKey, getTooltipContent } from 'autoql-fe-utils'
+import { getAutoQLConfig, getKey, getTooltipContent } from 'autoql-fe-utils'
 
 import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
 
@@ -49,7 +49,7 @@ export default class StackedLines extends React.Component {
         data-tooltip-id={this.props.chartTooltipID}
         style={{
           opacity: this.state.activeKey === getKey(colIndex, index) ? 1 : 0,
-          cursor: 'pointer',
+          cursor: getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? 'pointer' : 'default',
           stroke: color,
           strokeWidth: 3,
           strokeOpacity: 0.7,
