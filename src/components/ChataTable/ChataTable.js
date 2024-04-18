@@ -25,6 +25,7 @@ import {
   setColumnVisibility,
   sortDataByColumn,
   filterDataByColumn,
+  getAutoQLConfig,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -1384,7 +1385,7 @@ export default class ChataTable extends React.Component {
           style={this.props.style}
           className={`react-autoql-table-container 
            ${this.state.pageLoading || !this.state.tabulatorMounted ? 'loading' : ''}
-            ${this.props.supportsDrilldowns ? 'supports-drilldown' : ''}
+            ${getAutoQLConfig(this.props.autoQLConfig)?.enableDrilldowns ? 'supports-drilldown' : 'disable-drilldown'}
             ${this.state.isFiltering ? 'filtering' : ''}
             ${this.props.isResizing ? 'resizing' : ''}
             ${this.props.isAnimating ? 'animating' : ''}

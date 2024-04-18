@@ -2368,6 +2368,7 @@ export class QueryOutput extends React.Component {
           key={this.tableID}
           autoHeight={this.props.autoHeight}
           authentication={this.props.authentication}
+          autoQLConfig={this.props.autoQLConfig}
           dataFormatting={this.props.dataFormatting}
           ref={(ref) => (this.tableRef = ref)}
           columns={this.state.columns}
@@ -2416,6 +2417,8 @@ export class QueryOutput extends React.Component {
         <ChataTable
           key={this.pivotTableID}
           ref={(ref) => (this.pivotTableRef = ref)}
+          autoQLConfig={this.props.autoQLConfig}
+          dataFormatting={this.props.dataFormatting}
           columns={this.pivotTableColumns}
           data={this.pivotTableData}
           onCellClick={this.onTableCellClick}
