@@ -201,6 +201,17 @@
     }
   }
 
+  &.disable-drilldown {
+    .tabulator-row .tabulator-cell:not(.pivot-category) {
+      cursor: text !important;
+    }
+
+    &.pivot .react-autoql-table.tabulator .tabulator-row .tabulator-cell:not(.pivot-category):hover,
+    &:not(.pivot) .react-autoql-table.tabulator .tabulator-row:hover .tabulator-cell {
+      color: var(--react-autoql-text-color-primary) !important;
+    }
+  }
+
   &.supports-drilldown {
     .tabulator-row .tabulator-cell:not(.pivot-category) {
       transition: color 0.1s ease;
