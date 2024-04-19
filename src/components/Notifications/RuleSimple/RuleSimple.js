@@ -61,6 +61,19 @@ const CONDITION_TYPE_LABELS = {
   ),
 }
 
+const CONDITION_TYPE_LABELS_SCHEDULED = {
+  EXISTS: (
+    <span>
+      with the result of <strong>this query:</strong>
+    </span>
+  ),
+  COMPARE: (
+    <span>
+      based on the following <strong>conditions:</strong>
+    </span>
+  ),
+}
+
 export default class RuleSimple extends React.Component {
   autoCompleteTimer = undefined
 
@@ -273,23 +286,6 @@ export default class RuleSimple extends React.Component {
     const tableFilters = this.state.queryFilters?.filter((f) => f.type === 'table')
     const lockedFilters = this.state.queryFilters?.filter((f) => f.type === 'locked')
 
-    // If scheduled alert, we will just send back plain query response
-    // Expression condition will just be "TERMINATOR"
-    if (this.props.dataAlertType === SCHEDULED_TYPE) {
-      return [
-        {
-          id: this.TERM_ID_1,
-          term_type: QUERY_TERM_TYPE,
-          condition: 'TERMINATOR',
-          term_value: this.state.inputValue,
-          user_selection: this.props.initialData?.[0]?.user_selection ?? userSelection,
-          filters: tableFilters,
-          session_filter_locks: lockedFilters,
-          join_columns: [],
-        },
-      ]
-    }
-
     let firstQueryJoinColumnName =
       this.props.queryResponse?.data?.data?.columns[this.state.firstQueryGroupableColumnIndex]?.name
     let firstQueryJoinColumns = []
@@ -431,7 +427,8 @@ export default class RuleSimple extends React.Component {
     if (this.shouldRenderFirstFieldSelectionGrid()) {
       firstTermComplete = this.state.firstQuerySelectedColumns.length !== 0
     }
-    if (!firstTermComplete && this.props.dataAlertType !== SCHEDULED_TYPE) {
+
+    if (!firstTermComplete) {
       return false
     }
 
@@ -450,7 +447,8 @@ export default class RuleSimple extends React.Component {
     if (this.shouldRenderSecondFieldSelectionGrid()) {
       secondTermComplete = this.state.secondQuerySelectedColumn.length !== 0
     }
-    if (!secondTermComplete && this.props.dataAlertType !== SCHEDULED_TYPE) {
+
+    if (!secondTermComplete) {
       return false
     }
 
@@ -1200,7 +1198,7 @@ export default class RuleSimple extends React.Component {
   }
 
   allowOperators = () => {
-    return this.props.dataAlertType !== SCHEDULED_TYPE && this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE)
+    return this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE)
   }
 
   render = () => {
@@ -1213,7 +1211,10 @@ export default class RuleSimple extends React.Component {
 
       return {
         value: type,
-        label: CONDITION_TYPE_LABELS[type],
+        label:
+          this.props.dataAlertType === SCHEDULED_TYPE
+            ? CONDITION_TYPE_LABELS_SCHEDULED[type]
+            : CONDITION_TYPE_LABELS[type],
         disabled,
         tooltip: disabled ? 'Your query is not eligible for this option.' : undefined,
       }
@@ -1227,29 +1228,27 @@ export default class RuleSimple extends React.Component {
           style={this.props.style}
         >
           <div style={{ marginBottom: '10px' }}>
-            {this.props.dataAlertType === SCHEDULED_TYPE ? (
-              <span className='data-alert-description-span'>
-                Send a notification with the result of <strong>this query:</strong>
-              </span>
-            ) : (
-              <>
+            <>
+              {this.props.dataAlertType === SCHEDULED_TYPE ? (
+                <span className='data-alert-description-span'>Schedule a notification</span>
+              ) : (
                 <span className='data-alert-description-span'>Send a notification when your query</span>
-                <Select
-                  className='data-alert-schedule-step-type-selector'
-                  outlined={false}
-                  showArrow={false}
-                  options={options}
-                  value={this.state.selectedConditionType}
-                  // tooltipID={this.props.tooltipID}
-                  onChange={(type) =>
-                    this.setState({
-                      selectedOperator: type === EXISTS_TYPE ? EXISTS_TYPE : this.SUPPORTED_OPERATORS[0],
-                      selectedConditionType: type,
-                    })
-                  }
-                />
-              </>
-            )}
+              )}
+
+              <Select
+                className='data-alert-schedule-step-type-selector'
+                outlined={false}
+                showArrow={false}
+                options={options}
+                value={this.state.selectedConditionType}
+                onChange={(type) =>
+                  this.setState({
+                    selectedOperator: type === EXISTS_TYPE ? EXISTS_TYPE : this.SUPPORTED_OPERATORS[0],
+                    selectedConditionType: type,
+                  })
+                }
+              />
+            </>
 
             {/* Keep for future use in case we want column selection for list queries */}
             {/* {this.state.selectedConditionType === COMPARE_TYPE && numericColumns?.length > 1 && (
@@ -1281,7 +1280,7 @@ export default class RuleSimple extends React.Component {
             <div className='react-autoql-rule-first-input-container'>{this.renderBaseQuery()}</div>
           </div>
 
-          {this.props.dataAlertType !== SCHEDULED_TYPE && this.state.selectedConditionType === COMPARE_TYPE ? (
+          {this.state.selectedConditionType === COMPARE_TYPE ? (
             <>
               <div style={{ marginTop: '15px' }}>
                 {this.state.firstQuerySelectedColumns?.length ? (
