@@ -154,24 +154,12 @@ class DataAlertModal extends React.Component {
     const props = initialProps ?? this.props
     this.SUPPORTED_CONDITION_TYPES = getSupportedConditionTypes(props.currentDataAlert?.expression, props.queryResponse)
 
-    let steps = [
+    const steps = [
+      { title: 'Choose Alert Type', value: this.TYPE_STEP },
+      { title: 'Set Up Conditions', value: this.CONDITIONS_STEP },
       { title: 'Configure Timing', value: this.FREQUENCY_STEP },
       { title: 'Customize Appearance', value: this.MESSAGE_STEP },
     ]
-
-    if (
-      // this.showConditionsStep() &&  // Comment this out for now. We want the user to be able to see this step even if only one condition option is available to select
-      !this.state ||
-      this.state.dataAlertType === CONTINUOUS_TYPE ||
-      this.getFilters()?.length > 0
-    ) {
-      steps.unshift({ title: 'Set Up Conditions', value: this.CONDITIONS_STEP })
-    }
-
-    steps.unshift({
-      title: 'Choose Alert Type',
-      value: this.TYPE_STEP,
-    })
 
     return steps
   }
