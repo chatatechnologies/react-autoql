@@ -50,7 +50,11 @@ export default class ChataTable extends React.Component {
 
     if (!props.useInfiniteScroll) {
       // We must store original query data to use as source of filter/sort for client side filtering
-      this.originalQueryResponse = _cloneDeep(props.response)
+      if (props.pivot) {
+        this.originalQueryData = _cloneDeep(props.data)
+      } else {
+        this.originalQueryData = _cloneDeep(props.response?.data?.data?.rows)
+      }
     }
 
     this.hasSetInitialData = false
@@ -566,8 +570,8 @@ export default class ChataTable extends React.Component {
 
   clientSortAndFilterData = (params) => {
     // Use FE for sorting and filtering
-    let response = _cloneDeep(this.originalQueryResponse)
-    let data = _cloneDeep(this.originalQueryResponse?.data?.data?.rows)
+    let response = _cloneDeep(this.props.response)
+    let data = _cloneDeep(this.originalQueryData)
 
     // Filters
     if (params.tableFilters?.length) {
@@ -609,15 +613,34 @@ export default class ChataTable extends React.Component {
   }
 
   getRows = (props, pageNumber) => {
-    if (props.pivot) {
-      return _cloneDeep(props.data)
-    }
+    // if (props.pivot) {
+    //   return _cloneDeep(props.data)
+    // }
 
     const page = pageNumber ?? this.tableParams.page
     const start = (page - 1) * this.pageSize
     const end = start + this.pageSize
 
-    const newRows = props.response?.data?.data?.rows?.slice(start, end) ?? []
+    let newRows
+    if (props.pivot) {
+      if (this.tableParams?.filter?.length || this.tableParams?.sort?.length) {
+        // The pivot table has been sorted or filtered
+        // We must use sorted/filtered data to get new rows
+        const tableParamsFormatted = formatTableParams(this.tableParams, props.columns)
+        const tableParamsForAPI = {
+          tableFilters: tableParamsFormatted?.filters,
+          orders: tableParamsFormatted?.sorters,
+        }
+
+        const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows
+
+        newRows = sortedData?.slice(start, end) ?? []
+      } else {
+        newRows = props.data?.slice(start, end) ?? []
+      }
+    } else {
+      newRows = props.response?.data?.data?.rows?.slice(start, end) ?? []
+    }
 
     return _cloneDeep(newRows)
   }
