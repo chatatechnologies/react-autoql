@@ -13,6 +13,14 @@ ADD src src
 # build widgets
 RUN npm ci --legacy-peer-deps && npm run build 
 
+# buid example app
+WORKDIR /app
+ADD example .
+ENV NODE_ENV=ci
+
+RUN npm i file:./react-autoql
+RUN npm i --legacy-peer-deps && npm run build
+
 # final clean image
 FROM nginx:1.22.0-alpine
 
