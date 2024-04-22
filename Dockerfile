@@ -11,7 +11,7 @@ ADD src src
 
 # clean install of the dependencies and 
 # build widgets
-RUN npm ci && npm run build
+RUN npm ci --legacy-peer-deps && npm run build 
 
 # buid example app
 WORKDIR /app
