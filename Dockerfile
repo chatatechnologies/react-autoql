@@ -12,7 +12,7 @@ ADD src src
 # clean install of the dependencies and 
 # build widgets
 RUN npm ci --legacy-peer-deps && npm run build 
-RUN npm i react@16.8.1 react-dom@16.8.1 -D
+RUN npm i react@16.8.1 react-dom@16.8.1 -D --legacy-peer-deps
 RUN npm run test
 
 # final clean image
