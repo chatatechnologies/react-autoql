@@ -42,7 +42,7 @@ export default class NotificationItem extends React.Component {
       dataAlertStatus: undefined,
       queryResponse: undefined,
       isMoreOptionsMenuOpen: false,
-      displayMoreOptionsMenu: props.displayMoreOptionsMenu,
+      enableMoreOptionsMenu: props.enableMoreOptionsMenu,
     }
   }
 
@@ -69,7 +69,7 @@ export default class NotificationItem extends React.Component {
     enableNotificationsMenu: PropTypes.bool,
     displayProjectName: PropTypes.bool,
     defaultExpanded: PropTypes.bool,
-    displayMoreOptionsMenu: PropTypes.bool,
+    enableMoreOptionsMenu: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -82,7 +82,7 @@ export default class NotificationItem extends React.Component {
     enableNotificationsMenu: true,
     displayProjectName: false,
     defaultExpanded: false,
-    displayMoreOptionsMenu: true,
+    enableMoreOptionsMenu: true,
     onRuleFetchCallback: () => {},
     updateScrollbars: () => {},
     onExpandCallback: () => {},
@@ -277,7 +277,7 @@ export default class NotificationItem extends React.Component {
             </span>
           </div>
         </div>
-        {this.state.displayMoreOptionsMenu && this.moreOptionsButton()}
+        {this.state.enableMoreOptionsMenu && this.moreOptionsButton()}
         {this.renderExpandArrow()}
       </div>
     )
