@@ -38,7 +38,7 @@ export default class NotificationItem extends React.Component {
     this.COMPONENT_KEY = uuid()
 
     this.state = {
-      expanded: false,
+      expanded: props.defaultExpanded,
       dataAlertStatus: undefined,
       queryResponse: undefined,
       isMoreOptionsMenuOpen: false,
@@ -67,6 +67,7 @@ export default class NotificationItem extends React.Component {
     enableSettingsMenu: PropTypes.bool,
     enableNotificationsMenu: PropTypes.bool,
     displayProjectName: PropTypes.bool,
+    defaultExpanded: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -78,6 +79,7 @@ export default class NotificationItem extends React.Component {
     enableSettingsMenu: true,
     enableNotificationsMenu: true,
     displayProjectName: false,
+    defaultExpanded: false,
     onRuleFetchCallback: () => {},
     updateScrollbars: () => {},
     onExpandCallback: () => {},
@@ -94,11 +96,17 @@ export default class NotificationItem extends React.Component {
     onSuccessCallback: () => {},
   }
 
+  componentDidMount = () => {
+    if (this.props.defaultExpanded) {
+      this.setState({ queryResponse: { data: this.props.notification.query_result } })
+    }
+  }
+
   componentDidUpdate = (prevProps, prevState) => {
     if (this.state.expanded && !prevState.expanded) {
       this.props.updateScrollbars(500)
-      if (!this.state.queryResponse) {
-        this.fetchNotification()
+      if (!this.state.queryResponse && this.props.notification?.query_result) {
+        this.setState({ queryResponse: { data: this.props.notification.query_result } })
       }
     }
   }
@@ -113,17 +121,6 @@ export default class NotificationItem extends React.Component {
 
   isUnread = () => {
     return ['ACKNOWLEDGED', 'UNACKNOWLEDGED'].includes(this.props.notification?.state)
-  }
-
-  fetchNotification = () => {
-    const { notification } = this.props
-    fetchNotificationData({ id: notification.id, ...getAuthentication(this.props.authentication) })
-      .then((response) => {
-        this.setState({ queryResponse: response })
-      })
-      .catch((error) => {
-        this.setState({ queryResponse: error })
-      })
   }
 
   expand = () => {
@@ -500,22 +497,24 @@ export default class NotificationItem extends React.Component {
             ) : (
               <>
                 {this.renderSummarySection()}
-                <NotificationQueryResponse
-                  key={this.state.queryResponse?.data?.data?.query_id}
-                  authentication={this.props.authentication}
-                  autoQLConfig={this.props.autoQLConfig}
-                  dataFormatting={this.props.dataFormatting}
-                  queryResponse={this.state.queryResponse}
-                  autoChartAggregations={this.props.autoChartAggregations}
-                  onSuccessCallback={this.props.onSuccessCallback}
-                  onErrorCallback={this.props.onErrorCallback}
-                  popoverParentElement={this.props.popoverParentElement ?? this.notificationItemRef}
-                  isResizing={this.props.isResizing}
-                  shouldRender={this.state.expanded}
-                  tooltipID={this.props.tooltipID}
-                  chartTooltipID={this.props.chartTooltipID}
-                  enableFilterBtn={this.props.enableFilterBtn}
-                />
+                {!!this.state.expanded && (
+                  <NotificationQueryResponse
+                    key={this.state.queryResponse?.data?.data?.query_id}
+                    authentication={this.props.authentication}
+                    autoQLConfig={this.props.autoQLConfig}
+                    dataFormatting={this.props.dataFormatting}
+                    queryResponse={this.state.queryResponse}
+                    autoChartAggregations={this.props.autoChartAggregations}
+                    onSuccessCallback={this.props.onSuccessCallback}
+                    onErrorCallback={this.props.onErrorCallback}
+                    popoverParentElement={this.props.popoverParentElement ?? this.notificationItemRef}
+                    isResizing={this.props.isResizing}
+                    shouldRender={this.state.expanded}
+                    tooltipID={this.props.tooltipID}
+                    chartTooltipID={this.props.chartTooltipID}
+                    enableFilterBtn={this.props.enableFilterBtn}
+                  />
+                )}
               </>
             )}
           </div>
