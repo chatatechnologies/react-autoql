@@ -176,7 +176,18 @@ export default class NotificationItem extends React.Component {
       })
   }
 
-  delete = () => {
+  displayDeleteAnimation = () => {
+    return new Promise((resolve, reject) => {
+      this.setState({ deleted: true })
+      return setTimeout(() => {
+        resolve()
+      }, 300)
+    })
+  }
+
+  delete = async () => {
+    await this.displayDeleteAnimation()
+
     this.props.onDeleteClick(this.props.notification)
 
     deleteNotification({
@@ -537,7 +548,8 @@ export default class NotificationItem extends React.Component {
           ${this.state.expanded ? 'expanded' : 'collapsed'}
           ${this.isUnread() ? 'unread' : ''}
           ${this.isError() ? 'is-error' : ''}
-          ${this.state.isMoreOptionsMenuOpen ? 'menu-open' : ''}`}
+          ${this.state.isMoreOptionsMenuOpen ? 'menu-open' : ''}
+          ${this.state.deleted ? 'react-autoql-notification-item-deleted' : ''}`}
         >
           {this.renderNotificationHeader()}
           {this.renderNotificationContent()}
