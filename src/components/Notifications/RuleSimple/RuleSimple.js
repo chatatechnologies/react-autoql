@@ -1286,7 +1286,7 @@ export default class RuleSimple extends React.Component {
                 {this.state.firstQuerySelectedColumns?.length ? (
                   <>
                     <span className='data-alert-description-span'>
-                      Any value from the field{' '}
+                      Any value from{' '}
                       <Select
                         style={{ marginBottom: '14px' }}
                         value={this.state.firstQuerySelectedColumns[0]}
