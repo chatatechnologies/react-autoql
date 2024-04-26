@@ -1,12 +1,12 @@
 steps:
-  - name: 'tarampampam/node:14-alpine'
+  - name: 'tarampampam/node:16-alpine'
     id: build-and-test
     entrypoint: /bin/bash
     args:
       - '-exc'
       - |
-        npm ci
-        npm i react@16.14.0 react-dom@16.14.0 -D
+        npm ci --legacy-peer-deps
+        npm i react@16.8.1 react-dom@16.8.1 -D --legacy-peer-deps
         npm run test
 
     secretEnv: ['NPM_TOKEN', 'GH_TOKEN']

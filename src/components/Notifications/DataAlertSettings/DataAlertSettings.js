@@ -195,16 +195,16 @@ export default class DataAlertSettings extends React.Component {
         fullWidth
         options={[
           {
-            value: SCHEDULED_TYPE,
-            label: 'Scheduled',
-            subtitle: 'Get notifications at specific times.',
-            icon: 'calendar',
-          },
-          {
             value: CONTINUOUS_TYPE,
             label: 'Live',
             subtitle: 'Get notifications as soon as the conditions are met.',
             icon: 'live',
+          },
+          {
+            value: SCHEDULED_TYPE,
+            label: 'Scheduled',
+            subtitle: 'Get notifications at specific times.',
+            icon: 'calendar',
           },
         ]}
       />
@@ -219,6 +219,7 @@ export default class DataAlertSettings extends React.Component {
         tooltipID={this.props.tooltipID}
         dataAlert={this.props.currentDataAlert}
         showTypeSelector={false}
+        dataAlertType={this.props.currentDataAlert?.notification_type}
         onErrorCallback={this.props.onErrorCallback}
         frequencyType={this.state.notificationType}
         onCompleteChange={(isScheduleSectionComplete) => this.setState({ isScheduleSectionComplete })}
@@ -232,6 +233,7 @@ export default class DataAlertSettings extends React.Component {
         authentication={this.props.authentication}
         ref={(r) => (this.expressionRef = r)}
         key={`expression-${this.state.expressionKey}`}
+        dataAlertType={this.state.notificationType}
         onChange={this.onExpressionChange}
         expression={this.state.expression}
         tooltipID={this.props.tooltipID}

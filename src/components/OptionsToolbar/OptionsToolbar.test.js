@@ -17,7 +17,7 @@ const setup = (props = {}, queryOutputProps = {}, state = null) => {
       ref={(r) => {
         responseRef = r
       }}
-      queryResponse={responseTestCases[7]}
+      queryResponse={responseTestCases[8]}
       {...queryOutputProps}
     />,
   )
@@ -73,23 +73,24 @@ describe('column visibility manager', () => {
     },
   }
 
-  test('renders col visibility btn for list queries', () => {
-    const response = responseTestCases[7]
-    response.data.data.columns = response.data.data.columns.map((column) => {
-      column.is_visible = true
-      return column
-    })
-    const { wrapper, queryOutputComponent } = setup(
-      {
-        ...propsWithColVisEnabled,
-        response,
-      },
-      { initialDisplayType: 'table' },
-    )
-    const colVisibilityBtn = findByTestAttr(wrapper, 'options-toolbar-col-vis')
-    expect(colVisibilityBtn.exists()).toBe(true)
-    queryOutputComponent.unmount()
-  })
+  // Keep until we decide to remove this feature permanently
+  // test('renders col visibility btn for list queries', () => {
+  //   const response = responseTestCases[7]
+  //   response.data.data.columns = response.data.data.columns.map((column) => {
+  //     column.is_visible = true
+  //     return column
+  //   })
+  //   const { wrapper, queryOutputComponent } = setup(
+  //     {
+  //       ...propsWithColVisEnabled,
+  //       response,
+  //     },
+  //     { initialDisplayType: 'table' },
+  //   )
+  //   const colVisibilityBtn = findByTestAttr(wrapper, 'options-toolbar-col-vis')
+  //   expect(colVisibilityBtn.exists()).toBe(true)
+  //   queryOutputComponent.unmount()
+  // })
 })
 
 describe('trash button', () => {

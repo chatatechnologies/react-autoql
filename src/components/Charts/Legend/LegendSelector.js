@@ -4,6 +4,7 @@ import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
 
 import './LegendSelector.scss'
+import { getStringColumnIndices } from 'autoql-fe-utils'
 
 export default class LegendSelector extends React.Component {
   constructor(props) {
@@ -55,12 +56,12 @@ export default class LegendSelector extends React.Component {
   }
 
   renderSelectorContent = () => {
-    let columnIndices = []
-    if (this.props.dateColumnsOnly) {
-      columnIndices = this.getDateColumnIndices()
-    } else {
-      columnIndices = this.getAllStringColumnIndices()
-    }
+    const columnIndices =
+      getStringColumnIndices(this.props.columns, undefined, true)?.stringColumnIndices?.filter(
+        (i) =>
+          !this.props.tableConfig.numberColumnIndices.includes(i) &&
+          !this.props.tableConfig.numberColumnIndices2.includes(i),
+      ) ?? []
 
     return (
       <div

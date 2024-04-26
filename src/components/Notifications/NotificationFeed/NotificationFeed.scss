@@ -6,7 +6,6 @@
   padding-top: 100px;
   color: inherit;
   height: 100%;
-  background: var(--react-autoql-background-color-primary);
 }
 
 .empty-notifications-message {
@@ -34,12 +33,12 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--react-autoql-background-color-primary);
   font-family: var(--react-autoql-font-family), sans-serif;
   color: var(--react-autoql-text-color-primary);
 
   .notification-feed-list {
-    padding: 0 20px;
+    padding: 2px;
+    padding-right: 12px;
     padding-bottom: 10px;
     overflow: hidden;
   }
@@ -56,7 +55,7 @@
   flex-direction: row;
   justify-content: space-between;
   align-items: flex-end;
-  padding: 15px 22px 8px 22px;
+  padding: 15px 13px 8px;
   flex: 0;
 
   .react-autoql-notification-delete-all,

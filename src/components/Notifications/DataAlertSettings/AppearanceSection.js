@@ -39,7 +39,7 @@ export default class AppearanceSection extends React.Component {
         className='react-autoql-notification-display-name-input'
         placeholder='eg. "Budget alert!"'
         icon='title'
-        maxLength='50'
+        maxLength='75'
         label='Title'
         value={this.props.titleInput}
         onChange={this.props.onTitleInputChange}

@@ -20,6 +20,12 @@
       background: var(--react-autoql-hover-color);
     }
 
+    &.react-autoql-menu-item-disabled {
+      opacity: 0.4;
+      pointer-events: none;
+      cursor: default;
+    }
+
     .react-autoql-menu-item-title {
       display: flex;
       align-items: center;

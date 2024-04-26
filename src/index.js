@@ -1,6 +1,6 @@
 import './index.scss'
 
-export { getSupportedDisplayTypes, getDefaultDisplayType, isDisplayTypeValid, configureTheme } from 'autoql-fe-utils'
+export * from 'autoql-fe-utils'
 
 export * from './components/VizToolbar'
 export * from './components/QueryInput'
