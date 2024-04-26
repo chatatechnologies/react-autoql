@@ -19,7 +19,6 @@ import {
   constructRTArray,
   getTimeFrameTextFromChunk,
   getSupportedConditionTypes,
-  isAggregation,
   REQUEST_CANCELLED_ERROR,
   isISODate,
   authenticationDefault,
@@ -30,10 +29,8 @@ import {
   getGroupableColumns,
   getStringColumnIndices,
   getNumberOfGroupables,
-  getVisibleColumns,
   isColumnNumberType,
   DATA_ALERT_CONDITION_TYPES,
-  CONTINUOUS_TYPE,
   SCHEDULED_TYPE,
 } from 'autoql-fe-utils'
 
