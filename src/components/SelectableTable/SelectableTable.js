@@ -206,7 +206,10 @@ export default class SelectableTable extends React.Component {
       return null
     }
 
-    const rows = this.props.queryResponse?.data?.data?.rows
+    let rows = this.props.queryResponse?.data?.data?.rows
+    if (this.props.rowLimit && rows?.length > this.props.rowLimit) {
+      rows = rows.slice(0, this.props.rowLimit)
+    }
     const columns = this.props.queryResponse?.data?.data?.columns
     const config = getDataFormatting(this.props.dataFormatting)
 

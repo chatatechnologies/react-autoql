@@ -26,6 +26,7 @@ import {
   mergeBoundingClientRects,
   getLegendLabelsForMultiSeries,
   CHARTS_WITHOUT_AGGREGATED_DATA,
+  getAutoQLConfig,
 } from 'autoql-fe-utils'
 
 import { Spinner } from '../../Spinner'
@@ -624,7 +625,8 @@ export default class ChataChart extends React.Component {
             className={`react-autoql-chart-container
             ${this.state.isLoading || this.props.isResizing ? 'loading' : ''}
             ${this.state.isLoadingMoreRows ? 'loading-rows' : ''}
-            ${this.props.hidden ? 'hidden' : ''}`}
+            ${this.props.hidden ? 'hidden' : ''}
+            ${getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? 'enable-drilldown' : 'disable-drilldown'}`}
           >
             {!this.firstRender && !this.props.isResizing && !this.props.isAnimating && (
               <svg

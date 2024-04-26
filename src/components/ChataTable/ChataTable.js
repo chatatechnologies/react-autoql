@@ -23,6 +23,9 @@ import {
   MAX_DATA_PAGE_SIZE,
   getDayJSObj,
   setColumnVisibility,
+  sortDataByColumn,
+  filterDataByColumn,
+  getAutoQLConfig,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -45,6 +48,15 @@ export default class ChataTable extends React.Component {
     super(props)
 
     this.TABLE_ID = uuid()
+
+    if (!props.useInfiniteScroll) {
+      // We must store original query data to use as source of filter/sort for client side filtering
+      if (props.pivot) {
+        this.originalQueryData = _cloneDeep(props.data)
+      } else {
+        this.originalQueryData = _cloneDeep(props.response?.data?.data?.rows)
+      }
+    }
 
     this.hasSetInitialData = false
     this.isSettingInitialData = false
@@ -81,7 +93,7 @@ export default class ChataTable extends React.Component {
       ...this.props.tableOptions,
     }
 
-    if (props.useInfiniteScroll && props.response?.data?.data?.rows?.length) {
+    if (props.response?.data?.data?.rows?.length) {
       this.tableOptions.sortMode = 'remote' // v4: ajaxSorting = true
       this.tableOptions.filterMode = 'remote' // v4: ajaxFiltering = true
       this.tableOptions.paginationMode = 'remote'
@@ -346,20 +358,14 @@ export default class ChataTable extends React.Component {
     return 1
   }
 
-  setInfiniteScroll = (useInfiniteScroll) => {
+  setInfiniteScroll = () => {
     if (!this.ref?.tabulator?.options) {
       return
     }
 
-    if (useInfiniteScroll) {
-      this.ref.tabulator.options.sortMode = 'remote'
-      this.ref.tabulator.options.filterMode = 'remote'
-      this.ref.tabulator.options.paginationMode = 'remote'
-    } else {
-      this.ref.tabulator.options.sortMode = 'local'
-      this.ref.tabulator.options.filterMode = 'local'
-      this.ref.tabulator.options.paginationMode = 'local'
-    }
+    this.ref.tabulator.options.sortMode = 'remote'
+    this.ref.tabulator.options.filterMode = 'remote'
+    this.ref.tabulator.options.paginationMode = 'remote'
   }
 
   updateData = (data, useInfiniteScroll) => {
@@ -552,7 +558,7 @@ export default class ChataTable extends React.Component {
       } else {
         this.setState({ pageLoading: true })
 
-        const responseWrapper = await props.queryFn({
+        const responseWrapper = await this.queryFn({
           tableFilters:
             nextTableParamsFormatted?.filters.length === 0
               ? props.queryRequestData?.filters
@@ -595,6 +601,42 @@ export default class ChataTable extends React.Component {
     return response
   }
 
+  clientSortAndFilterData = (params) => {
+    // Use FE for sorting and filtering
+    let response = _cloneDeep(this.props.response)
+    let data = _cloneDeep(this.originalQueryData)
+
+    // Filters
+    if (params.tableFilters?.length) {
+      params.tableFilters.forEach((filter) => {
+        const filterColumnName = filter.name
+        const filterColumnIndex = this.props.columns.find((col) => col.name === filterColumnName)?.index
+
+        data = filterDataByColumn(data, this.props.columns, filterColumnIndex, filter.value, filter.operator)
+      })
+    }
+
+    // Sorters
+    if (params.orders?.length) {
+      const sortColumnName = params.orders[0].name
+      const sortColumnIndex = this.props.columns.find((col) => col.name === sortColumnName)?.index
+      const sortDirection = params.orders[0].sort === 'DESC' ? 'desc' : 'asc'
+
+      data = sortDataByColumn(data, this.props.columns, sortColumnIndex, sortDirection)
+    }
+
+    response.data.data.rows = data
+    return response
+  }
+
+  queryFn = (params) => {
+    if (this.props.useInfiniteScroll) {
+      return this.props.queryFn(params)
+    } else {
+      return Promise.resolve(this.clientSortAndFilterData(params))
+    }
+  }
+
   getAllRows = (props) => {
     if (props.pivot) {
       return props.data
@@ -603,18 +645,31 @@ export default class ChataTable extends React.Component {
     return props.response?.data?.data?.rows
   }
 
-  getRows = (providedProps, pageNumber) => {
-    const props = this.props ?? providedProps
-
-    if (props.pivot) {
-      return _cloneDeep(props.data)
-    }
-
+  getRows = (props, pageNumber) => {
     const page = pageNumber ?? this.tableParams.page
     const start = (page - 1) * this.pageSize
     const end = start + this.pageSize
 
-    const newRows = props.response?.data?.data?.rows?.slice(start, end) ?? []
+    let newRows
+    if (props.pivot) {
+      if (this.tableParams?.filter?.length || this.tableParams?.sort?.length) {
+        // The pivot table has been sorted or filtered
+        // We must use sorted/filtered data to get new rows
+        const tableParamsFormatted = formatTableParams(this.tableParams, props.columns)
+        const tableParamsForAPI = {
+          tableFilters: tableParamsFormatted?.filters,
+          orders: tableParamsFormatted?.sorters,
+        }
+
+        const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows
+
+        newRows = sortedData?.slice(start, end) ?? []
+      } else {
+        newRows = props.data?.slice(start, end) ?? []
+      }
+    } else {
+      newRows = props.response?.data?.data?.rows?.slice(start, end) ?? []
+    }
 
     return _cloneDeep(newRows)
   }
@@ -840,7 +895,7 @@ export default class ChataTable extends React.Component {
         headerElement.setAttribute('data-tooltip-id', `selectable-table-column-header-tooltip-${this.TABLE_ID}`)
         headerElement.setAttribute('data-tooltip-content', JSON.stringify({ ...col, index: i }))
 
-        if (this.props.enableContextMenu) {
+        if (!this.props.pivot && this.props.useInfiniteScroll) {
           headerElement.addEventListener('contextmenu', (e) => this.headerContextMenuClick(e, col))
         }
       }
@@ -1026,8 +1081,7 @@ export default class ChataTable extends React.Component {
       this.props.onCustomColumnDelete(column)
     } else if (currentAdditionalSelectColumns?.length !== newAdditionalSelectColumns?.length) {
       this.setPageLoading(true)
-      this.props
-        .queryFn({ newColumns: newAdditionalSelectColumns })
+      this.queryFn({ newColumns: newAdditionalSelectColumns })
         .then((response) => {
           if (response?.data?.data?.rows) {
             this.props.updateColumns(response?.data?.data?.columns, response?.data?.data?.fe_req)
@@ -1473,7 +1527,7 @@ export default class ChataTable extends React.Component {
           style={this.props.style}
           className={`react-autoql-table-container 
            ${this.state.pageLoading || !this.state.tabulatorMounted ? 'loading' : ''}
-            ${this.props.supportsDrilldowns ? 'supports-drilldown' : ''}
+            ${getAutoQLConfig(this.props.autoQLConfig)?.enableDrilldowns ? 'supports-drilldown' : 'disable-drilldown'}
             ${this.state.isFiltering ? 'filtering' : ''}
             ${this.props.isResizing ? 'resizing' : ''}
             ${this.props.isAnimating ? 'animating' : ''}
