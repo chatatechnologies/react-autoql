@@ -81,24 +81,19 @@ export default class RuleSimple extends React.Component {
     super(props)
     this.secondFieldSelectionGridRef = React.createRef()
     const { initialData, queryResponse } = props
+
+    this.TERM_ID_1 = uuid()
+    this.TERM_ID_2 = uuid()
+
     this.SUPPORTED_CONDITION_TYPES = getSupportedConditionTypes(initialData, queryResponse)
-    this.IS_AGGREGATION_QUERY = isAggregation(queryResponse?.data?.data?.columns)
-    this.ALL_COLUMNS__AMOUNT = queryResponse?.data?.data?.columns.length
-    this.NUMBER_COLUMNS_AMOUNT =
-      initialData.length === 0
-        ? getColumnTypeAmounts(queryResponse?.data?.data?.columns)['amountOfNumberColumns'] ?? 0
-        : 0
-    this.GROUPABLE_COLUMNS_AMOUNT = getNumberOfGroupables(queryResponse?.data?.data?.columns)
     this.SUPPORTED_OPERATORS = []
+
     if (
       this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE) ||
       Object.keys(DATA_ALERT_OPERATORS).includes(initialData?.[0]?.condition)
     ) {
       this.SUPPORTED_OPERATORS = Object.keys(DATA_ALERT_OPERATORS)
     }
-
-    this.TERM_ID_1 = uuid()
-    this.TERM_ID_2 = uuid()
 
     let selectedOperator = this.getInitialSelectedOperator()
     if (
@@ -289,11 +284,11 @@ export default class RuleSimple extends React.Component {
     let firstQueryJoinColumnName =
       this.props.queryResponse?.data?.data?.columns[this.state.firstQueryGroupableColumnIndex]?.name
     let firstQueryJoinColumns = []
-    if (this.GROUPABLE_COLUMNS_AMOUNT === 1) {
+    if (this.getGroupableColumnAmount() === 1) {
       firstQueryJoinColumns.push(firstQueryJoinColumnName)
     }
 
-    if (this.GROUPABLE_COLUMNS_AMOUNT === 2) {
+    if (this.getGroupableColumnAmount() === 2) {
       this.props.queryResponse?.data?.data?.columns
         .filter((obj) => obj.groupable === true)
         .map((obj) => firstQueryJoinColumns.push(obj.name))[0]
@@ -344,7 +339,7 @@ export default class RuleSimple extends React.Component {
       expression[0].compare_column = this.state.firstQuerySelectedNumberColumnName
     }
     //To see if this a multiple groupby query
-    if (this.GROUPABLE_COLUMNS_AMOUNT > 1 && this.NUMBER_COLUMNS_AMOUNT === 1) {
+    if (this.getGroupableColumnAmount() > 1 && this.getNumericalColumnAmount() === 1) {
       expression[0].compare_column = this.props.queryResponse?.data?.data?.columns
         .filter((obj) => obj.groupable === false)
         .map((obj) => obj.name)[0]
@@ -1048,13 +1043,16 @@ export default class RuleSimple extends React.Component {
     )
   }
 
+  getNumericalColumnAmount = () => {
+    return getColumnTypeAmounts(this.props.queryResponse?.data?.data?.columns)['amountOfNumberColumns'] ?? 0
+  }
+
+  getGroupableColumnAmount = () => {
+    return getNumberOfGroupables(this.props.queryResponse?.data?.data?.columns)
+  }
+
   shouldRenderFirstFieldSelectionGrid = () => {
-    return (
-      this.state.selectedConditionType === COMPARE_TYPE &&
-      this.NUMBER_COLUMNS_AMOUNT >= 2 &&
-      this.ALL_COLUMNS__AMOUNT - this.GROUPABLE_COLUMNS_AMOUNT !== 1 &&
-      this.GROUPABLE_COLUMNS_AMOUNT > 0
-    )
+    return this.state.selectedConditionType === COMPARE_TYPE && this.getNumericalColumnAmount() >= 2
   }
 
   shouldRenderSecondFieldSelectionGrid = () => {
