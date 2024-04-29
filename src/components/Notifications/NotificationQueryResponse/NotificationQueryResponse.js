@@ -25,8 +25,6 @@ export default class NotificationQueryResponse extends React.Component {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
-    tooltipID: null,
-    chartTooltipID: null,
     reportProblemCallback: () => {},
     onSuccessCallback: () => {},
     onErrorCallback: () => {},
