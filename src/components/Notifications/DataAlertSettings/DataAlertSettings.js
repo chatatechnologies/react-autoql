@@ -219,7 +219,7 @@ export default class DataAlertSettings extends React.Component {
         tooltipID={this.props.tooltipID}
         dataAlert={this.props.currentDataAlert}
         showTypeSelector={false}
-        dataAlertType={this.props.currentDataAlert?.notification_type}
+        dataAlertType={this.state.notificationType}
         onErrorCallback={this.props.onErrorCallback}
         frequencyType={this.state.notificationType}
         onCompleteChange={(isScheduleSectionComplete) => this.setState({ isScheduleSectionComplete })}
