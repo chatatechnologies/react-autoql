@@ -7,7 +7,6 @@ import {
   dismissNotification,
   deleteNotification,
   updateDataAlertStatus,
-  fetchNotificationData,
   markNotificationAsUnread,
   initializeAlert,
   isNumber,
@@ -20,6 +19,7 @@ import {
 import { Icon } from '../../Icon'
 import { Button } from '../../Button'
 import { Popover } from '../../Popover'
+import { Tooltip } from '../../Tooltip'
 import { Menu, MenuItem } from '../../Menu'
 import { LoadingDots } from '../../LoadingDots'
 import { ConfirmPopover } from '../../ConfirmPopover'
@@ -36,6 +36,8 @@ export default class NotificationItem extends React.Component {
     super(props)
 
     this.COMPONENT_KEY = uuid()
+    this.TOOLTIP_ID = `react-autoql-notification-item-tooltip-${uuid()}`
+    this.CHART_TOOLTIP_ID = `react-autoql-notification-item-chart-tooltip-${uuid()}`
 
     this.state = {
       expanded: props.defaultExpanded,
@@ -70,6 +72,8 @@ export default class NotificationItem extends React.Component {
     displayProjectName: PropTypes.bool,
     defaultExpanded: PropTypes.bool,
     enableMoreOptionsMenu: PropTypes.bool,
+    tooltipID: PropTypes.string,
+    chartTooltipID: PropTypes.string,
   }
 
   static defaultProps = {
@@ -524,8 +528,8 @@ export default class NotificationItem extends React.Component {
                     popoverParentElement={this.props.popoverParentElement ?? this.notificationItemRef}
                     isResizing={this.props.isResizing}
                     shouldRender={this.state.expanded}
-                    tooltipID={this.props.tooltipID}
-                    chartTooltipID={this.props.chartTooltipID}
+                    tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+                    chartTooltipID={this.props.chartTooltipID ?? this.CHART_TOOLTIP_ID}
                     enableFilterBtn={this.props.enableFilterBtn}
                   />
                 )}
@@ -551,6 +555,8 @@ export default class NotificationItem extends React.Component {
           ${this.state.isMoreOptionsMenuOpen ? 'menu-open' : ''}
           ${this.state.deleted ? 'react-autoql-notification-item-deleted' : ''}`}
         >
+          {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={500} />}
+          {!this.props.chartTooltipID && <Tooltip tooltipId={this.CHART_TOOLTIP_ID} delayShow={0} />}
           {this.renderNotificationHeader()}
           {this.renderNotificationContent()}
           {this.renderAlertColorStrip()}
