@@ -27,11 +27,11 @@ import ChataTable from '../ChataTable/ChataTable'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import {
-  operators,
   createMutatorFn,
   getFnSummary,
   WINDOW_FUNCTIONS,
   ORDERABLE_WINDOW_FN_TYPES,
+  getOperators,
 } from './customColumnHelpers'
 
 import './CustomColumnModal.scss'
@@ -61,6 +61,8 @@ export default class CustomColumnModal extends React.Component {
     super(props)
 
     this.TABLE_ID = uuid()
+    this.OPERATORS = getOperators(props.enableWindowFunctions)
+
     this.numberInputRefs = {}
 
     const firstIndex = props.columns.findIndex((col) => col.is_visible && isColumnNumberType(col))
@@ -390,7 +392,10 @@ export default class CustomColumnModal extends React.Component {
     const supportedOperators = COLUMN_TYPES[columnType]?.supportedOperators ?? []
     const operatorsArray = [...supportedOperators, ...globalOperators]
 
-    if (getColumnTypeAmounts(this.props.queryResponse?.data?.data?.columns)?.amountOfNumberColumns) {
+    if (
+      this.props.enableWindowFunctions &&
+      getColumnTypeAmounts(this.props.queryResponse?.data?.data?.columns)?.amountOfNumberColumns
+    ) {
       operatorsArray.push(FUNCTION_OPERATOR)
     }
 
@@ -604,7 +609,7 @@ export default class CustomColumnModal extends React.Component {
     const supportedOperators = this.getNextSupportedOperators().filter((op) => !globalOperators.includes(op))
 
     if (globalOperators.includes(chunk.value) || !supportedOperators.includes(chunk.value)) {
-      return <span>{operators[chunk.value].label}</span>
+      return <span>{this.OPERATORS[chunk.value]?.label}</span>
     }
 
     return (
@@ -620,8 +625,8 @@ export default class CustomColumnModal extends React.Component {
         options={supportedOperators.map((op) => {
           return {
             value: op,
-            label: operators[op].label,
-            listLabel: operators[op].label,
+            label: this.OPERATORS[op]?.label,
+            listLabel: this.OPERATORS[op]?.label,
           }
         })}
       />
@@ -791,7 +796,7 @@ export default class CustomColumnModal extends React.Component {
                     this.setState({ columnFn })
                   }}
                 >
-                  {operators[op].label}
+                  {this.OPERATORS[op]?.label}
                 </Button>
               )
             })}

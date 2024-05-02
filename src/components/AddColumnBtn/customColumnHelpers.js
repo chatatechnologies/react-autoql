@@ -54,6 +54,17 @@ export const operators = {
   },
 }
 
+export const getOperators = (enableWindowFns) => {
+  if (!enableWindowFns) {
+    return operators
+  }
+
+  return {
+    ...operators,
+    FUNCTION: undefined,
+  }
+}
+
 export const WINDOW_FUNCTIONS = {
   SUM: {
     value: 'SUM',
