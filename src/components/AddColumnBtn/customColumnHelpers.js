@@ -1,9 +1,10 @@
 import React from 'react'
 import { Icon } from '../Icon'
+import _cloneDeep from 'lodash.clonedeep'
 
 export const ORDERABLE_WINDOW_FN_TYPES = ['RANK']
 
-export const operators = {
+export const OPERATORS = {
   CONCAT: {
     value: 'CONCAT',
     label: 'Concatenate(...)',
@@ -55,14 +56,13 @@ export const operators = {
 }
 
 export const getOperators = (enableWindowFns) => {
+  const opArray = _cloneDeep(OPERATORS)
+
   if (!enableWindowFns) {
-    return operators
+    delete opArray.FUNCTION
   }
 
-  return {
-    ...operators,
-    FUNCTION: undefined,
-  }
+  return opArray
 }
 
 export const WINDOW_FUNCTIONS = {
@@ -116,7 +116,7 @@ export const convertToFunctionStr = (origColumnFnArray) => {
           }
         }
 
-        columnFnStr = columnFnStr + ' ' + (operators[chunk.value]?.js ?? '')
+        columnFnStr = columnFnStr + ' ' + (OPERATORS[chunk.value]?.js ?? '')
       } else if (chunk.type === 'number') {
         if (isValueEmpty(chunk.value)) {
           throw new ChataError('Syntax Error: Number input is empty')
@@ -171,7 +171,7 @@ export const getFnSummary = (columnFnArray) => {
 
     columnFnArray.forEach((chunk, i) => {
       if (chunk.type === 'operator') {
-        fnSummary = `${fnSummary} ${operators[chunk.value]?.js}`
+        fnSummary = `${fnSummary} ${OPERATORS[chunk.value]?.js}`
       } else if (chunk.type === 'number') {
         fnSummary = `${fnSummary} ${chunk.value}`
       } else if (chunk.type === 'column' && chunk?.column) {
