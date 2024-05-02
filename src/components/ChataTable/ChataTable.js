@@ -460,10 +460,6 @@ export default class ChataTable extends React.Component {
       this.hasSetInitialData = true
       this.isSettingInitialData = false
       this.clearLoadingIndicators()
-
-      // if (this.props.keepScrolledRight) {
-      //   this.scrollToRight()
-      // }
     }
   }
 
@@ -1212,12 +1208,6 @@ export default class ChataTable extends React.Component {
           dataFormatting={this.props.dataFormatting}
           initialColumn={this.state.activeCustomColumn}
           onUpdateColumn={(column) => {
-            // this.setState({ isCustomColumnPopoverOpen: false })
-            // const columns = _cloneDeep(this.props.columns)
-            // const colIndex = this.props.columns.find((col) => col.index === column.index)
-            // columns[colIndex] = column
-
-            // this.props.updateColumns(columns)
             this.props.onCustomColumnChange(column)
             this.setState({ isCustomColumnPopoverOpen: false })
           }}

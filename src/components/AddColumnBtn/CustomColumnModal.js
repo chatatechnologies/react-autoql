@@ -131,7 +131,7 @@ export default class CustomColumnModal extends React.Component {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
-    enableWindowFunctions: true,
+    enableWindowFunctions: false,
 
     onAddColumn: () => {},
     onUpdateColumn: () => {},
