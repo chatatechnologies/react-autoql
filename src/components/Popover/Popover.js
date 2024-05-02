@@ -26,6 +26,10 @@ class PopoverWithoutRef extends React.Component {
   }
 
   renderContent = (params = {}) => {
+    this.popoverRect = params?.popoverRect
+    this.childRect = params?.childRect
+    this.position = params?.position
+
     const content = (
       <div className={`popover-container-content ${this.props.contentClassName ?? ''}`}>
         {typeof this.props.content === 'function' ? this.props.content(params) : this.props.content}
@@ -76,12 +80,29 @@ class PopoverWithoutRef extends React.Component {
           content={this.renderContent}
           ref={this.props.innerRef}
           onClickOutside={(e) => {
-            if (this.props.stopClickPropagation) {
-              e.stopPropagation()
-              e.preventDefault()
-            }
+            if (isMobile) {
+              // If user clicks on modals with a higher z-index as the modal underneath, the onClickOutside function doesn't work properly
+              // This block is for an extra check if the cursor is within the x-y planar bounds of the popover container
+              const x = e?.clientX
+              const y = e?.clientY
 
-            this.props.onClickOutside(e)
+              if (this.position?.top !== undefined) {
+                if (
+                  y < this.position.top ||
+                  y > this.position.bottom ||
+                  x < this.position.left ||
+                  x > this.position.right
+                ) {
+                  if (this.props.stopClickPropagation) {
+                    e.stopPropagation()
+                    e.preventDefault()
+                  }
+                  this.props.onClickOutside(e)
+                }
+              }
+            } else {
+              this.props.onClickOutside(e)
+            }
           }}
           parentElement={isMobile ? undefined : this.props.parentElement ?? undefined}
           boundaryElement={isMobile ? undefined : this.props.boundaryElement ?? undefined}
