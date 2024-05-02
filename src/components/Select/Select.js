@@ -185,9 +185,9 @@ export default class Select extends React.Component {
         <Popover
           id={`select-popover-${this.ID}`}
           key={`select-popover-${this.ID}`}
-          containerClassName={`react-tiny-popover-container react-autoql-select-popover-container ${
-            this.props.popupClassname ?? ''
-          }`}
+          containerClassName={`react-tiny-popover-container react-autoql-select-popover-container
+            ${this.props.popupClassname ?? ''}
+            ${this.props.outlined ? '' : 'react-autoql-select-popover-no-margin'}`}
           isOpen={this.state.isOpen}
           positions={this.props.positions ?? ['bottom', 'top', 'left', 'right']}
           align={this.props.align ?? 'start'}

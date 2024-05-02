@@ -500,9 +500,10 @@ export default class CustomColumnModal extends React.Component {
       <Input
         type='number'
         showSpinWheel={false}
-        placeholder='Type a number'
+        placeholder='eg. "10"'
         ref={(r) => (this.numberInputRefs[chunk.id] = r)}
         defaultValue={columnFn?.[i]?.value}
+        style={{ width: '75px' }}
         onChange={(e) => {
           clearTimeout(this.inputDebounceTimer)
           this.inputDebounceTimer = setTimeout(() => {
@@ -617,6 +618,7 @@ export default class CustomColumnModal extends React.Component {
         outlined={false}
         showArrow={false}
         value={chunk.value}
+        align='middle'
         onChange={(operator) => {
           const columnFn = _cloneDeep(this.state.columnFn)
           columnFn[i].value = operator

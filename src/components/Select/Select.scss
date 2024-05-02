@@ -1,6 +1,10 @@
 .react-autoql-select-popover-container {
   margin: 0 6px;
 
+  &.react-autoql-select-popover-no-margin {
+    margin: 0;
+  }
+
   .popover-container-content {
     padding: 0 !important;
   }
