@@ -176,9 +176,11 @@ export default class ScheduleBuilder extends React.Component {
         const schedules = dataAlert?.schedules
         const schedulePeriod = schedules?.[0]?.notification_period ?? this.DEFAULT_RESET_PERIOD_SELECT_VALUE
 
+        state.timezone = schedules?.[0]?.time_zone
         state.resetPeriodSelectValue = schedulePeriod
         state.intervalTimeSelectValue =
-          getTimeObjFromTimeStamp(schedules?.[0]?.start_date, dataAlert?.time_zone) ?? this.DEFAULT_TIME_SELECT_VALUE
+          getTimeObjFromTimeStamp(schedules?.[0]?.start_date, schedules?.[0]?.time_zone) ??
+          this.DEFAULT_TIME_SELECT_VALUE
 
         if (schedulePeriod === 'MONTH_LAST_DAY') {
           state.resetPeriodSelectValue = 'MONTH'
@@ -188,7 +190,7 @@ export default class ScheduleBuilder extends React.Component {
         } else if (schedulePeriod === 'WEEK' && dataAlert.schedules.length === 7) {
           state.resetPeriodSelectValue = 'DAY'
         } else if (schedulePeriod === 'WEEK') {
-          state.weekDaySelectValue = getWeekdayFromTimeStamp(schedules[0]?.start_date, dataAlert?.time_zone)
+          state.weekDaySelectValue = getWeekdayFromTimeStamp(schedules[0]?.start_date, schedules?.[0]?.time_zone)
         }
       }
     } catch (error) {

@@ -1,6 +1,8 @@
 import React from 'react'
 import { Icon } from '../Icon'
 
+export const ORDERABLE_WINDOW_FN_TYPES = ['RANK']
+
 export const operators = {
   CONCAT: {
     value: 'CONCAT',
@@ -44,6 +46,30 @@ export const operators = {
     value: 'RIGHT_BRACKET',
     label: ' ) ',
     js: ')',
+  },
+  FUNCTION: {
+    value: 'FUNCTION',
+    label: 'Function...',
+    js: undefined,
+  },
+}
+
+export const WINDOW_FUNCTIONS = {
+  SUM: {
+    value: 'SUM',
+    label: 'SUM',
+  },
+  AVG: {
+    value: 'AVG',
+    label: 'AVERAGE',
+  },
+  COUNT: {
+    value: 'COUNT',
+    label: 'COUNT',
+  },
+  RANK: {
+    value: 'RANK',
+    label: 'RANK',
   },
 }
 

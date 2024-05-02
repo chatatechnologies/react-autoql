@@ -15,6 +15,12 @@
     display: flex;
   }
 
+  &.underlined {
+    border-bottom: 1px solid var(--react-autoql-accent-color);
+    margin: 0 3px;
+    padding: 2px;
+  }
+
   .react-autoql-select {
     display: inline-flex;
     justify-content: space-between;
@@ -44,6 +50,11 @@
       font-weight: 600;
       padding: 0;
       margin: 0;
+      height: 1.5em;
+
+      .react-autoql-select-text {
+        line-height: 1em;
+      }
     }
 
     &.outlined {

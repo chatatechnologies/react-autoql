@@ -14,6 +14,8 @@ import {
   autoQLConfigDefault,
   authenticationDefault,
   dataFormattingDefault,
+  getColumnTypeAmounts,
+  isColumnStringType,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -24,11 +26,18 @@ import { Select } from '../Select'
 import ChataTable from '../ChataTable/ChataTable'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
-import { operators, createMutatorFn, getFnSummary } from './customColumnHelpers'
+import {
+  operators,
+  createMutatorFn,
+  getFnSummary,
+  WINDOW_FUNCTIONS,
+  ORDERABLE_WINDOW_FN_TYPES,
+} from './customColumnHelpers'
 
 import './CustomColumnModal.scss'
 
 const globalOperators = ['LEFT_BRACKET', 'RIGHT_BRACKET']
+const FUNCTION_OPERATOR = 'FUNCTION'
 
 const HIGHLIGHTED_CLASS = 'highlighted-column'
 const DISABLED_CLASS = 'disabled-column'
@@ -37,6 +46,14 @@ const DEFAULT_COLUMN_NAME = 'New Column'
 
 export const getSelectableColumns = (columns) => {
   return getVisibleColumns(columns).filter((col) => isColumnNumberType(col))
+}
+
+export const getNumericalColumns = (columns) => {
+  return getVisibleColumns(columns).filter((col) => isColumnNumberType(col))
+}
+
+export const getStringColumns = (columns) => {
+  return getVisibleColumns(columns).filter((col) => isColumnStringType(col))
 }
 
 export default class CustomColumnModal extends React.Component {
@@ -84,12 +101,18 @@ export default class CustomColumnModal extends React.Component {
       columns.push(this.newColumn)
     }
 
+    const numericalColumns = getNumericalColumns(props.columns)
+
     this.state = {
       columns,
       columnName: props.initialColumn?.display_name ?? DEFAULT_COLUMN_NAME,
       columnFn: initialColumnFn,
       columnType: props.initialColumn?.type ?? 'auto',
       isFnValid: !!props.initialColumn,
+
+      isFunctionConfigModalVisible: false,
+      selectedFnType: Object.keys(WINDOW_FUNCTIONS)[0],
+      selectedFnColumn: numericalColumns?.[0]?.field,
     }
   }
 
@@ -97,6 +120,7 @@ export default class CustomColumnModal extends React.Component {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
+    enableWindowFunctions: PropTypes.bool,
 
     onAddColumn: PropTypes.func,
     onUpdateColumn: PropTypes.func,
@@ -107,6 +131,7 @@ export default class CustomColumnModal extends React.Component {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
+    enableWindowFunctions: true,
 
     onAddColumn: () => {},
     onUpdateColumn: () => {},
@@ -304,6 +329,11 @@ export default class CustomColumnModal extends React.Component {
     const { columnFn } = this.state
     const lastTerm = columnFn[columnFn.length - 1]
 
+    // The window function option is only available to use if it is on its own, since the calculation is done on the server side
+    // if (lastTerm?.value === FUNCTION_OPERATOR) {
+    //   return true
+    // }
+
     if (globalOperators.includes(op)) {
       if (op === 'LEFT_BRACKET') {
         if (!lastTerm) {
@@ -331,7 +361,24 @@ export default class CustomColumnModal extends React.Component {
           return true
         }
       }
-    } else if (lastTerm?.type === 'operator' && lastTerm?.value !== 'RIGHT_BRACKET') {
+    } else if (op === FUNCTION_OPERATOR) {
+      if (!lastTerm) {
+        return false
+      }
+
+      // This option is only available to use if it is on its own, since the calculation is done on the server side
+      // return true
+
+      if (lastTerm?.value === 'RIGHT_BRACKET' || lastTerm?.type !== 'operator') {
+        // Do not allow a function right after an closing bracket
+        // Do not allow a function right after a column or number
+        return true
+      }
+    } else if (
+      lastTerm?.type === 'operator' &&
+      lastTerm?.value !== 'RIGHT_BRACKET' &&
+      lastTerm?.value !== FUNCTION_OPERATOR
+    ) {
       return true
     }
 
@@ -341,8 +388,40 @@ export default class CustomColumnModal extends React.Component {
   getNextSupportedOperators = () => {
     const columnType = this.getColumnType()
     const supportedOperators = COLUMN_TYPES[columnType]?.supportedOperators ?? []
+    const operatorsArray = [...supportedOperators, ...globalOperators]
 
-    return [...supportedOperators, ...globalOperators]
+    if (getColumnTypeAmounts(this.props.queryResponse?.data?.data?.columns)?.amountOfNumberColumns) {
+      operatorsArray.push(FUNCTION_OPERATOR)
+    }
+
+    return operatorsArray
+  }
+
+  closeAddFunctionModal = () => {
+    this.setState({
+      isFunctionConfigModalVisible: false,
+    })
+  }
+
+  onAddFunction = () => {
+    const columnFn = _cloneDeep(this.state.columnFn)
+
+    columnFn.push({
+      type: 'function',
+      fn: this.state.selectedFnType,
+      column: this.props.columns.find((col) => col.field === this.state.selectedFnColumn),
+      groupby: this.state.selectedFnGroupby,
+      orderby: this.state.selectedFnOrderBy,
+    })
+
+    this.setState({
+      isFunctionConfigModalVisible: false,
+      columnFn,
+    })
+  }
+
+  isFunctionConfigComplete = () => {
+    return !!this.state.selectedFnType && !!this.state.selectedFnColumn
   }
 
   renderColumnNameInput = () => {
@@ -435,6 +514,8 @@ export default class CustomColumnModal extends React.Component {
     const selectableColumns = getSelectableColumns(this.props.columns)
     return (
       <Select
+        outlined={false}
+        showArrow={false}
         key={`custom-column-select-${i}`}
         placeholder='Select a Column'
         value={chunk.value}
@@ -452,15 +533,84 @@ export default class CustomColumnModal extends React.Component {
     )
   }
 
+  renderWindowFnChunk = (chunk, i) => {
+    return (
+      <span>
+        <span>{WINDOW_FUNCTIONS[chunk.fn].label}( </span>
+        <Select
+          key={`custom-column-select-${i}`}
+          placeholder='Select a Column'
+          value={chunk.column?.field}
+          outlined={false}
+          showArrow={false}
+          className='react-autoql-available-column-selector'
+          // onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
+          options={getNumericalColumns(this.props.columns).map((col) => {
+            return {
+              value: col.field,
+              label: col.title,
+              icon: 'table',
+            }
+          })}
+        />
+        {chunk.groupby ? (
+          <>
+            <span>, Grouped by </span>
+            <Select
+              key={`custom-column-select-${i}`}
+              placeholder='Select a Column'
+              value={chunk.groupby}
+              outlined={false}
+              showArrow={false}
+              className='react-autoql-available-column-selector'
+              // onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
+              options={getStringColumns(this.props.columns).map((col) => {
+                return {
+                  value: col.field,
+                  label: col.title,
+                  icon: 'table',
+                }
+              })}
+            />
+          </>
+        ) : null}
+        {chunk.orderby ? (
+          <>
+            <span>, Ordered by </span>
+            <Select
+              key={`custom-column-select-${i}`}
+              placeholder='Select a Column'
+              value={chunk.orderby}
+              outlined={false}
+              showArrow={false}
+              className='react-autoql-available-column-selector'
+              // onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
+              options={getStringColumns(this.props.columns).map((col) => {
+                return {
+                  value: col.field,
+                  label: col.title,
+                  icon: 'table',
+                }
+              })}
+            />
+          </>
+        ) : null}{' '}
+        )
+      </span>
+    )
+  }
+
   renderOperator = (chunk, i) => {
     const supportedOperators = this.getNextSupportedOperators().filter((op) => !globalOperators.includes(op))
 
     if (globalOperators.includes(chunk.value) || !supportedOperators.includes(chunk.value)) {
-      return <span style={{ color: 'var(--react-autoql-accent-color)' }}>{operators[chunk.value].label}</span>
+      return <span>{operators[chunk.value].label}</span>
     }
 
     return (
       <Select
+        outlined={false}
+        showArrow={false}
         value={chunk.value}
         onChange={(operator) => {
           const columnFn = _cloneDeep(this.state.columnFn)
@@ -487,6 +637,8 @@ export default class CustomColumnModal extends React.Component {
       chunkElement = this.renderAvailableColumnSelector(chunk, i)
     } else if (chunk.type === 'operator') {
       chunkElement = this.renderOperator(chunk, i)
+    } else if (chunk.type === 'function') {
+      chunkElement = this.renderWindowFnChunk(chunk, i)
     }
 
     return (
@@ -614,6 +766,10 @@ export default class CustomColumnModal extends React.Component {
                   className='react-autoql-formula-calculator-button'
                   disabled={this.shouldDisableOperator(op)}
                   onClick={() => {
+                    if (op === FUNCTION_OPERATOR) {
+                      return this.setState({ isFunctionConfigModalVisible: true })
+                    }
+
                     const newChunk = {
                       type: 'operator',
                       value: op,
@@ -673,6 +829,95 @@ export default class CustomColumnModal extends React.Component {
     )
   }
 
+  renderFunctionConfigModal = () => {
+    const numericalColumns = getNumericalColumns(this.props.columns)
+    const stringColumns = getStringColumns(this.props.columns)
+
+    const stringColumnOptions = stringColumns.map((col) => {
+      return {
+        value: col.field,
+        label: col.title,
+        listLabel: col.title,
+        icon: 'table',
+      }
+    })
+
+    stringColumnOptions.push({
+      value: null,
+      label: 'None',
+    })
+
+    return (
+      <Modal
+        className='custom-column-window-fn-modal'
+        title='Add Window Function'
+        isVisible={this.state.isFunctionConfigModalVisible}
+        width='550px'
+        height='500px'
+        confirmText='Add Function'
+        shouldRender={this.props.enableWindowFunctions}
+        onClose={this.closeAddFunctionModal}
+        onConfirm={this.onAddFunction}
+        confirmDisabled={!this.isFunctionConfigComplete()}
+      >
+        <div>
+          <div>
+            <Select
+              label='Function'
+              className='custom-column-window-fn-selector'
+              value={this.state.selectedFnType}
+              onChange={(selectedFnType) => this.setState({ selectedFnType })}
+              options={Object.keys(WINDOW_FUNCTIONS).map((fn) => {
+                const fnObj = WINDOW_FUNCTIONS[fn]
+                return {
+                  value: fnObj.value,
+                  label: fnObj.label,
+                }
+              })}
+            />
+            <Select
+              label='Column'
+              className='custom-column-window-fn-selector'
+              value={this.state.selectedFnColumn}
+              onChange={(selectedFnColumn) => this.setState({ selectedFnColumn })}
+              options={numericalColumns.map((col) => {
+                return {
+                  value: col.field,
+                  label: col.title,
+                  listLabel: col.title,
+                  icon: 'table',
+                }
+              })}
+            />
+          </div>
+          {stringColumns?.length > 0 && (
+            <div>
+              <Select
+                label='Group By Column'
+                className='custom-column-window-fn-selector'
+                value={this.state.selectedFnGroupby ?? null}
+                onChange={(selectedFnGroupby) => this.setState({ selectedFnGroupby })}
+                options={stringColumnOptions}
+              />
+            </div>
+          )}
+
+          {ORDERABLE_WINDOW_FN_TYPES.includes(this.state.selectedFnType) && (
+            <div>
+              <Select
+                label='Order By Column'
+                className='custom-column-window-fn-selector'
+                value={this.state.selectedFnOrderBy ?? null}
+                onChange={(selectedFnOrderBy) => this.setState({ selectedFnOrderBy })}
+                options={stringColumnOptions}
+              />
+            </div>
+          )}
+        </div>
+      </Modal>
+    )
+  }
+
   render = () => {
     return (
       <ErrorBoundary>
@@ -698,6 +943,7 @@ export default class CustomColumnModal extends React.Component {
             </div>
             {this.renderTablePreview()}
           </div>
+          {this.renderFunctionConfigModal()}
         </Modal>
       </ErrorBoundary>
     )
