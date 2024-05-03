@@ -1283,7 +1283,6 @@ export default class RuleSimple extends React.Component {
                     <span className='data-alert-description-span'>
                       Any value from{' '}
                       <Select
-                        style={{ marginBottom: '14px' }}
                         value={this.state.firstQuerySelectedColumns[0]}
                         onChange={(col) => this.setState({ firstQuerySelectedColumns: [col] })}
                         outlined={false}

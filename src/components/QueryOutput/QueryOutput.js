@@ -63,6 +63,9 @@ import {
   MAX_CHART_ELEMENTS,
   formatAdditionalSelectColumn,
   setColumnVisibility,
+  ColumnTypes,
+  createMutatorFn,
+  formatQueryColumns,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -90,8 +93,27 @@ export class QueryOutput extends React.Component {
     this.ALLOW_NUMERIC_STRING_COLUMNS = true
     this.MAX_PIVOT_TABLE_COLUMNS = 20
 
-    this.queryResponse = props.queryResponse
-    this.columnDateRanges = getColumnDateRanges(props.queryResponse)
+    let response = props.queryResponse
+    if (props.customColumns?.length) {
+      let customColumns = _cloneDeep(props.customColumns)
+
+      // Convert custom column mutator fn strings back to javascript function type if needed
+      customColumns = customColumns.map((col) => {
+        if (col.columnFnArray) {
+          const mutator = createMutatorFn(col.columnFnArray)
+          return {
+            ...col,
+            mutator,
+          }
+        }
+        return col
+      })
+
+      response = this.getNewResponseWithCustomColumns(props.queryResponse, customColumns)
+    }
+
+    this.queryResponse = response
+    this.columnDateRanges = getColumnDateRanges(response)
     this.queryID = this.queryResponse?.data?.data?.query_id
     this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
     this.tableParams = {}
@@ -151,6 +173,7 @@ export class QueryOutput extends React.Component {
       selectedSuggestion: props.defaultSelectedSuggestion,
       columnChangeCount: 0,
       chartID: uuid(),
+      customColumns: this.props.customColumns ?? [],
     }
   }
 
@@ -201,6 +224,8 @@ export class QueryOutput extends React.Component {
     onBucketSizeChange: PropTypes.func,
     bucketSize: PropTypes.number,
     onNewData: PropTypes.func,
+    onCustomColumnUpdate: PropTypes.func,
+    enableTableContextMenu: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -237,6 +262,7 @@ export class QueryOutput extends React.Component {
     showSingleValueResponseTitle: false,
     bucketSize: undefined,
     allowColumnAddition: false,
+    enableTableContextMenu: true,
     onTableConfigChange: () => {},
     onAggConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
@@ -248,6 +274,7 @@ export class QueryOutput extends React.Component {
     onMount: () => {},
     onBucketSizeChange: () => {},
     onNewData: () => {},
+    onCustomColumnUpdate: () => {},
   }
 
   componentDidMount = () => {
@@ -285,6 +312,14 @@ export class QueryOutput extends React.Component {
 
       if (this.props.onDisplayTypeChange && this.state.displayType !== prevState.displayType) {
         this.props.onDisplayTypeChange(this.state.displayType)
+      }
+
+      if (!deepEqual(this.state.customColumns, prevState.customColumns)) {
+        const customColumns = _cloneDeep(this.state.customColumns)
+        this.props.onCustomColumnUpdate(customColumns)
+        const response = this.getNewResponseWithCustomColumns()
+
+        this.updateColumnsAndData(response)
       }
 
       // If initial data config was changed here, tell the parent
@@ -411,6 +446,65 @@ export class QueryOutput extends React.Component {
         displayType || this.state.displayType
       } instead.`,
     )
+  }
+
+  getNewResponseWithCustomColumns = (response = this.queryResponse, customCols = this.state?.customColumns ?? []) => {
+    const newResponse = _cloneDeep(response)
+
+    const currentColumns = newResponse?.data?.data?.columns ?? []
+    const nonCustomColumns = currentColumns.filter((col) => !col.custom)
+
+    // We must reformat the columns to reset the field and index numbers
+    const newFormattedColumns = formatQueryColumns({
+      columns: currentColumns.filter((col) => !col.custom),
+      queryResponse: newResponse,
+      dataFormatting: this.props.dataFormatting,
+    })
+
+    const currentCustomColumns = currentColumns.filter((col) => col.custom) ?? []
+
+    const customColsFormatted = customCols?.map((col, i) => {
+      const newIndex = newFormattedColumns.length + i
+      return {
+        ...col,
+        index: newIndex,
+        field: `${newIndex}`,
+      }
+    })
+
+    // Remove any cells that are already created by custom columns
+    let newRows = newResponse.data.data.rows
+    if (currentCustomColumns?.length) {
+      const customColumnIndexes = currentCustomColumns.map((col) => col.index)
+      newRows = newResponse.data.data.rows.map((row) => {
+        return row.filter((cell, i) => !customColumnIndexes.includes(i))
+      })
+    }
+
+    newResponse.data.data.rows = _cloneDeep(newRows)
+    newResponse.data.data.columns = newFormattedColumns
+
+    // Assign all custom column cells to query response rows
+    try {
+      customColsFormatted.forEach((col) => {
+        if (col?.mutator && col?.index >= 0) {
+          newResponse.data.data.rows.forEach((row) => {
+            if (row) {
+              row[col.index] = col.mutator(undefined, row)
+            }
+          })
+        }
+      })
+    } catch (error) {
+      console.error(error)
+    }
+
+    // Assign new columns to query response
+    // Remove mutator now that new cells have been defined
+    const newColumns = [...nonCustomColumns, ...customColsFormatted.map((col) => ({ ...col, mutator: undefined }))]
+    newResponse.data.data.columns = newColumns
+
+    return newResponse
   }
 
   getDataLength = () => {
@@ -1782,9 +1876,11 @@ export class QueryOutput extends React.Component {
     const formattedColumns = columns.map((col, i) => {
       const newCol = _cloneDeep(col)
 
-      newCol.id = uuid()
+      newCol.id = col.id ?? uuid()
       newCol.field = `${i}`
       newCol.title = col.display_name
+
+      newCol.mutateLink = 'Custom'
 
       // Visibility flag: this can be changed through the column visibility editor modal
       newCol.visible = col.is_visible
@@ -1798,7 +1894,12 @@ export class QueryOutput extends React.Component {
       newCol.maxWidth = '300px'
 
       // Cell alignment
-      if (newCol.type === 'DOLLAR_AMT' || newCol.type === 'RATIO' || newCol.type === 'NUMBER') {
+      if (
+        newCol.type === ColumnTypes.DOLLAR_AMT ||
+        newCol.type === ColumnTypes.QUANTITY ||
+        newCol.type === ColumnTypes.RATIO ||
+        newCol.type === ColumnTypes.PERCENT
+      ) {
         newCol.hozAlign = 'right'
       } else {
         newCol.hozAlign = 'center'
@@ -2319,6 +2420,9 @@ export class QueryOutput extends React.Component {
         .finally(() => {
           this.tableRef?.setPageLoading(false)
         })
+    } else if (!column) {
+      // Add a custom column
+      this.tableRef?.addCustomColumn()
     } else {
       this.tableRef?.setPageLoading(true)
 
@@ -2329,7 +2433,8 @@ export class QueryOutput extends React.Component {
       })
         .then((response) => {
           if (response?.data?.data?.rows) {
-            this.updateColumnsAndData(response)
+            const newResponse = this.getNewResponseWithCustomColumns(response)
+            this.updateColumnsAndData(newResponse)
           } else {
             throw new Error('New column addition failed')
           }
@@ -2341,13 +2446,34 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  onCustomColumnDelete = (deletedColumn) => {
+    const columnIndex = deletedColumn.index
+    const customColumns = this.state.customColumns.filter((col) => col.index !== columnIndex)
+    this.setState({ customColumns })
+  }
+
+  onCustomColumnChange = (newColumn) => {
+    const customColumns = _cloneDeep(this.state.customColumns)
+    const existingCustomColumnIndex = customColumns.findIndex((col) => col.id === newColumn.id)
+
+    if (existingCustomColumnIndex >= 0) {
+      customColumns[existingCustomColumnIndex] = newColumn
+    } else {
+      customColumns.push(newColumn)
+    }
+
+    this.setState({ customColumns })
+  }
+
   renderAddColumnBtn = () => {
     if (this.props.allowColumnAddition && this.state.displayType === 'table') {
       return (
         <AddColumnBtn
           queryResponse={this.queryResponse}
+          columns={this.state.columns}
           tooltipID={this.props.tooltipID}
           onAddColumnClick={this.onAddColumnClick}
+          onCustomClick={this.onAddColumnClick}
         />
       )
     }
@@ -2398,6 +2524,11 @@ export class QueryOutput extends React.Component {
           queryFn={this.queryFn}
           source={this.props.source}
           scope={this.props.scope}
+          tableConfig={this.tableConfig}
+          aggConfig={this.state.aggConfig}
+          onCustomColumnChange={this.onCustomColumnChange}
+          onCustomColumnDelete={this.onCustomColumnDelete}
+          enableContextMenu={this.props.enableTableContextMenu}
         />
       </ErrorBoundary>
     )

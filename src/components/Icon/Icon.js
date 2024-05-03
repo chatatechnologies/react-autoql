@@ -48,11 +48,13 @@ import { FiMaximize } from '@react-icons/all-files/fi/FiMaximize'
 import { FiMinimize } from '@react-icons/all-files/fi/FiMinimize'
 import { FiRefreshCw } from '@react-icons/all-files/fi/FiRefreshCw'
 import { FiTool } from '@react-icons/all-files/fi/FiTool'
+import { FiMinus } from '@react-icons/all-files/fi/FiMinus'
 
 import { RiFilterLine } from '@react-icons/all-files/ri/RiFilterLine'
 import { RiFilterOffLine } from '@react-icons/all-files/ri/RiFilterOffLine'
 import { RiListSettingsLine } from '@react-icons/all-files/ri/RiListSettingsLine'
 import { RiBroadcastFill } from '@react-icons/all-files/ri/RiBroadcastFill'
+import { RiDivideFill } from '@react-icons/all-files/ri/RiDivideFill'
 
 import { GoReport } from '@react-icons/all-files/go/GoReport'
 
@@ -230,6 +232,10 @@ export default class Icon extends React.Component {
         icon = minimum
         break
       }
+      case 'minus': {
+        icon = <FiMinus />
+        break
+      }
       case 'maximum': {
         icon = maximum
         break
@@ -272,6 +278,10 @@ export default class Icon extends React.Component {
       }
       case 'description': {
         icon = <AiOutlineFileText />
+        break
+      }
+      case 'divide': {
+        icon = <RiDivideFill />
         break
       }
       case 'download': {

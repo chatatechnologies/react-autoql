@@ -2,12 +2,12 @@ import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 
+import { AGG_TYPES, ColumnTypes, getHiddenColumns, getSelectableColumns } from 'autoql-fe-utils'
+
 import { Icon } from '../Icon'
 import { Popover } from '../Popover'
-import { ErrorBoundary } from '../../containers/ErrorHOC'
-
-import { AGG_TYPES, ColumnTypes, getHiddenColumns } from 'autoql-fe-utils'
 import { CustomScrollbars } from '../CustomScrollbars'
+import { ErrorBoundary } from '../../containers/ErrorHOC'
 
 import './AddColumnBtn.scss'
 
@@ -25,19 +25,28 @@ export class AddColumnBtnWithoutRef extends React.Component {
 
   static propTypes = {
     queryResponse: PropTypes.shape({}),
+    allowCustom: PropTypes.bool,
     onAddColumnClick: PropTypes.func,
+    onCustomClick: PropTypes.func,
     tooltipID: PropTypes.string,
   }
 
   static defaultProps = {
     queryResponse: undefined,
+    allowCustom: true,
     onAddColumnClick: () => {},
+    onCustomClick: () => {},
     tooltipID: undefined,
   }
 
   onAddColumnClick = (column, aggType, isHiddenColumn) => {
     this.props.onAddColumnClick(column, aggType, isHiddenColumn)
     this.setState({ isAddColumnMenuOpen: false, aggPopoverActiveID: undefined })
+  }
+
+  onCustomClick = () => {
+    this.setState({ isAddColumnMenuOpen: false, aggPopoverActiveID: undefined })
+    this.props.onCustomClick()
   }
 
   renderAggMenu = (column) => {
@@ -140,17 +149,28 @@ export class AddColumnBtnWithoutRef extends React.Component {
                 </li>
               )
             })}
+            {this.enableCustomOption() && (
+              <>
+                <hr />
+                <li onClick={this.onCustomClick}>Custom...</li>
+              </>
+            )}
           </ul>
         </div>
       </CustomScrollbars>
     )
   }
 
+  enableCustomOption = () => {
+    const selectableColumnsForCustom = getSelectableColumns(this.props.queryResponse?.data?.data?.columns)
+    return this.props.allowCustom && !!selectableColumnsForCustom?.length
+  }
+
   render = () => {
     const availableSelectColumns = this.props.queryResponse?.data?.data?.available_selects
     const availableHiddenColumns = getHiddenColumns(this.props.queryResponse?.data?.data?.columns)
 
-    if (!availableSelectColumns?.length && !availableHiddenColumns?.length) {
+    if (!availableSelectColumns?.length && !availableHiddenColumns?.length && !this.enableCustomOption()) {
       return null
     }
 
