@@ -35,6 +35,7 @@ import {
 } from './customColumnHelpers'
 
 import './CustomColumnModal.scss'
+import { Popover } from '../Popover'
 
 const globalOperators = ['LEFT_BRACKET', 'RIGHT_BRACKET']
 const FUNCTION_OPERATOR = 'FUNCTION'
@@ -133,7 +134,7 @@ export default class CustomColumnModal extends React.Component {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
-    enableWindowFunctions: false,
+    enableWindowFunctions: true,
 
     onAddColumn: () => {},
     onUpdateColumn: () => {},
@@ -624,13 +625,15 @@ export default class CustomColumnModal extends React.Component {
           columnFn[i].value = operator
           this.setState({ columnFn })
         }}
-        options={supportedOperators.map((op) => {
-          return {
-            value: op,
-            label: this.OPERATORS[op]?.label,
-            listLabel: this.OPERATORS[op]?.label,
-          }
-        })}
+        options={supportedOperators
+          .filter((op) => op !== FUNCTION_OPERATOR)
+          .map((op) => {
+            return {
+              value: op,
+              label: this.OPERATORS[op]?.label,
+              listLabel: this.OPERATORS[op]?.label,
+            }
+          })}
       />
     )
   }
@@ -767,7 +770,7 @@ export default class CustomColumnModal extends React.Component {
           <div className='react-autoql-input-label'>Operators</div>
           <div className='react-autoql-formula-builder-calculator-buttons-container'>
             {supportedOperators?.map((op) => {
-              return (
+              const buttonElement = (
                 <Button
                   key={`react-autoql-formula-calculator-button-${op}`}
                   className='react-autoql-formula-calculator-button'
@@ -801,6 +804,23 @@ export default class CustomColumnModal extends React.Component {
                   {this.OPERATORS[op]?.label}
                 </Button>
               )
+
+              if (op === FUNCTION_OPERATOR) {
+                return (
+                  <Popover
+                    align='end'
+                    positions={['bottom', 'left', 'top', 'right']}
+                    key={`react-autoql-formula-calculator-button-popover`}
+                    isOpen={this.state.isFunctionConfigModalVisible}
+                    content={this.renderFunctionConfigModalContent}
+                    onClickOutside={this.closeAddFunctionModal}
+                  >
+                    {buttonElement}
+                  </Popover>
+                )
+              }
+
+              return buttonElement
             })}
           </div>
         </div>
@@ -836,7 +856,7 @@ export default class CustomColumnModal extends React.Component {
     )
   }
 
-  renderFunctionConfigModal = () => {
+  renderFunctionConfigModalContent = () => {
     const numericalColumns = getNumericalColumns(this.props.columns)
     const stringColumns = getStringColumns(this.props.columns)
 
@@ -855,6 +875,69 @@ export default class CustomColumnModal extends React.Component {
     })
 
     return (
+      <div>
+        <div>
+          <Select
+            label='Function'
+            className='custom-column-window-fn-selector'
+            value={this.state.selectedFnType}
+            onChange={(selectedFnType) => this.setState({ selectedFnType })}
+            options={Object.keys(WINDOW_FUNCTIONS).map((fn) => {
+              const fnObj = WINDOW_FUNCTIONS[fn]
+              return {
+                value: fnObj.value,
+                label: fnObj.label,
+              }
+            })}
+          />
+          <Select
+            label='Column'
+            className='custom-column-window-fn-selector'
+            value={this.state.selectedFnColumn}
+            onChange={(selectedFnColumn) => this.setState({ selectedFnColumn })}
+            options={numericalColumns.map((col) => {
+              return {
+                value: col.field,
+                label: col.title,
+                listLabel: col.title,
+                icon: 'table',
+              }
+            })}
+          />
+        </div>
+        {stringColumns?.length > 0 && (
+          <div>
+            <Select
+              label='Group By Column'
+              className='custom-column-window-fn-selector'
+              value={this.state.selectedFnGroupby ?? null}
+              onChange={(selectedFnGroupby) => this.setState({ selectedFnGroupby })}
+              options={stringColumnOptions}
+            />
+          </div>
+        )}
+
+        {ORDERABLE_WINDOW_FN_TYPES.includes(this.state.selectedFnType) && (
+          <div>
+            <Select
+              label='Order By Column'
+              className='custom-column-window-fn-selector'
+              value={this.state.selectedFnOrderBy ?? null}
+              onChange={(selectedFnOrderBy) => this.setState({ selectedFnOrderBy })}
+              options={stringColumnOptions}
+            />
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  renderFunctionConfigModal = () => {
+    const modalContent = this.renderFunctionConfigModalContent()
+
+    return null
+
+    return (
       <Modal
         className='custom-column-window-fn-modal'
         title='Add Window Function'
@@ -867,60 +950,7 @@ export default class CustomColumnModal extends React.Component {
         onConfirm={this.onAddFunction}
         confirmDisabled={!this.isFunctionConfigComplete()}
       >
-        <div>
-          <div>
-            <Select
-              label='Function'
-              className='custom-column-window-fn-selector'
-              value={this.state.selectedFnType}
-              onChange={(selectedFnType) => this.setState({ selectedFnType })}
-              options={Object.keys(WINDOW_FUNCTIONS).map((fn) => {
-                const fnObj = WINDOW_FUNCTIONS[fn]
-                return {
-                  value: fnObj.value,
-                  label: fnObj.label,
-                }
-              })}
-            />
-            <Select
-              label='Column'
-              className='custom-column-window-fn-selector'
-              value={this.state.selectedFnColumn}
-              onChange={(selectedFnColumn) => this.setState({ selectedFnColumn })}
-              options={numericalColumns.map((col) => {
-                return {
-                  value: col.field,
-                  label: col.title,
-                  listLabel: col.title,
-                  icon: 'table',
-                }
-              })}
-            />
-          </div>
-          {stringColumns?.length > 0 && (
-            <div>
-              <Select
-                label='Group By Column'
-                className='custom-column-window-fn-selector'
-                value={this.state.selectedFnGroupby ?? null}
-                onChange={(selectedFnGroupby) => this.setState({ selectedFnGroupby })}
-                options={stringColumnOptions}
-              />
-            </div>
-          )}
-
-          {ORDERABLE_WINDOW_FN_TYPES.includes(this.state.selectedFnType) && (
-            <div>
-              <Select
-                label='Order By Column'
-                className='custom-column-window-fn-selector'
-                value={this.state.selectedFnOrderBy ?? null}
-                onChange={(selectedFnOrderBy) => this.setState({ selectedFnOrderBy })}
-                options={stringColumnOptions}
-              />
-            </div>
-          )}
-        </div>
+        {modalContent}
       </Modal>
     )
   }
