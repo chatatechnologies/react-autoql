@@ -322,6 +322,7 @@ export class OptionsToolbar extends React.Component {
           tooltipID={this.props.tooltipID}
           queryResponse={queryResponse}
           filters={filters}
+          autoQLConfig={this.props.autoQLConfig}
         />
       </ErrorBoundary>
     )
