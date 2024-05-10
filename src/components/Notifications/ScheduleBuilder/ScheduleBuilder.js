@@ -21,13 +21,13 @@ import {
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
+import { Input } from '../../Input'
 import { Select } from '../../Select'
 import { TimePicker } from '../../TimePicker'
 import { TimezoneSelector } from '../../TimezoneSelector'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 
 import './ScheduleBuilder.scss'
-import { Input } from '../../Input'
 
 export default class ScheduleBuilder extends React.Component {
   constructor(props) {
@@ -162,9 +162,18 @@ export default class ScheduleBuilder extends React.Component {
     const { dataAlert } = props
 
     try {
-      state.evaluationFrequencySelectValue = dataAlert?.evaluation_frequency
+      const evalFrequency = dataAlert?.evaluation_frequency
+
       state.timezone = dataAlert?.time_zone
       state.resetPeriodSelectValue = dataAlert?.reset_period
+      state.evaluationFrequencySelectValue = dataAlert?.evaluation_frequency
+
+      // If evaluation frequency is not in predefined list, then it is a custom value:
+      if (!EVALUATION_FREQUENCY_OPTIONS[evalFrequency]) {
+        state.evaluationFrequencySelectValue = 'custom'
+        state.evaluationFrequencyMins = evalFrequency
+        state.isCustomEvaluationFrequencyInputVisible = true
+      }
 
       if (
         !state.resetPeriodSelectValue &&
