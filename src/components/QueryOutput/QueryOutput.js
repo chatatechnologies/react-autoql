@@ -64,6 +64,7 @@ import {
   formatAdditionalSelectColumn,
   setColumnVisibility,
   ColumnTypes,
+  createMutatorFn,
   formatQueryColumns,
 } from 'autoql-fe-utils'
 
@@ -80,7 +81,6 @@ import { withTheme } from '../../theme'
 import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
 
 import './QueryOutput.scss'
-import { createMutatorFn } from '../AddColumnBtn/customColumnHelpers'
 
 export class QueryOutput extends React.Component {
   constructor(props) {

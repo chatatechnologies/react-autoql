@@ -16,6 +16,8 @@ import {
   getSupportedConditionTypes,
   CONTINUOUS_TYPE,
   SCHEDULED_TYPE,
+  createManagementDataAlert,
+  autoQLConfigDefault,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
@@ -33,7 +35,7 @@ import AppearanceSection from '../DataAlertSettings/AppearanceSection'
 import DataAlertSettings from '../DataAlertSettings/DataAlertSettings'
 
 import { withTheme } from '../../../theme'
-import { authenticationType, dataFormattingType } from '../../../props/types'
+import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
 
 import './DataAlertModal.scss'
 
@@ -60,14 +62,12 @@ class DataAlertModal extends React.Component {
     isVisible: PropTypes.bool,
     allowDelete: PropTypes.bool,
     onClose: PropTypes.func,
-    isManagement: PropTypes.bool,
-    onManagementCreateDataAlert: PropTypes.func,
-    onManagementDeleteDataAlert: PropTypes.func,
     onSuccessAlert: PropTypes.func,
     enableQueryValidation: PropTypes.bool,
     onClosed: PropTypes.func,
     onOpened: PropTypes.func,
     dataFormatting: dataFormattingType,
+    autoQLConfig: autoQLConfigType,
   }
 
   static defaultProps = {
@@ -79,14 +79,13 @@ class DataAlertModal extends React.Component {
     isVisible: false,
     allowDelete: true,
     onClose: () => {},
-    isManagement: false,
-    onManagementCreateDataAlert: () => {},
-    onManagementDeleteDataAlert: () => {},
+    projectId: '',
     onSuccessAlert: () => {},
     onClosed: () => {},
     onOpened: () => {},
     enableQueryValidation: true,
     dataFormatting: dataFormattingDefault,
+    autoQLConfig: autoQLConfigDefault,
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -263,6 +262,23 @@ class DataAlertModal extends React.Component {
     return true
   }
 
+  onDataAlertCreateOrEditSuccess = (dataAlertResponse) => {
+    this.props.onSave(dataAlertResponse)
+    this.props.onSuccessAlert('Data Alert updated!')
+
+    this.setState({
+      isSavingDataAlert: false,
+    })
+  }
+
+  onDataAlertCreateOrEditError = (error) => {
+    console.error(error)
+    this.props.onErrorCallback(error?.message)
+    this.setState({
+      isSavingDataAlert: false,
+    })
+  }
+
   onDataAlertSave = () => {
     this.setState({
       isSavingDataAlert: true,
@@ -275,48 +291,36 @@ class DataAlertModal extends React.Component {
       ...getAuthentication(this.props.authentication),
     }
 
-    if (this.props.isManagement) {
-      this.props.onManagementCreateDataAlert(newDataAlert)
-      this.setState({
-        isSavingDataAlert: false,
+    if (this.props?.autoQLConfig?.projectId) {
+      createManagementDataAlert({
+        ...requestParams,
+        projectId: this.props?.autoQLConfig?.projectId
       })
+        .then((dataAlertResponse) => {
+          this.onDataAlertCreateOrEditSuccess(dataAlertResponse)
+        })
+        .catch((error) => {
+          this.onDataAlertCreateOrEditError(error)
+        })
     } else if (newDataAlert.id) {
       updateDataAlert({
         ...requestParams,
       })
         .then((dataAlertResponse) => {
-          this.props.onSave(dataAlertResponse)
-          this.props.onSuccessAlert('Data Alert updated!')
-
-          this.setState({
-            isSavingDataAlert: false,
-          })
+          this.onDataAlertCreateOrEditSuccess(dataAlertResponse)
         })
         .catch((error) => {
-          console.error(error)
-          this.props.onErrorCallback(error?.message)
-          this.setState({
-            isSavingDataAlert: false,
-          })
+          this.onDataAlertCreateOrEditError(error)
         })
     } else {
       createDataAlert({
         ...requestParams,
       })
         .then((dataAlertResponse) => {
-          this.props.onSave(dataAlertResponse)
-          this.props.onSuccessAlert('Data Alert created!')
-
-          this.setState({
-            isSavingDataAlert: false,
-          })
+          this.onDataAlertCreateOrEditSuccess(dataAlertResponse)
         })
         .catch((error) => {
-          console.error(error)
-          this.props.onErrorCallback(error)
-          this.setState({
-            isSavingDataAlert: false,
-          })
+          this.onDataAlertCreateOrEditError(error)
         })
     }
   }

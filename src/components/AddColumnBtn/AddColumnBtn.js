@@ -2,13 +2,12 @@ import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 
-import { AGG_TYPES, ColumnTypes, getHiddenColumns } from 'autoql-fe-utils'
+import { AGG_TYPES, ColumnTypes, getHiddenColumns, getSelectableColumns } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
 import { Popover } from '../Popover'
 import { CustomScrollbars } from '../CustomScrollbars'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
-import { getSelectableColumns } from './CustomColumnModal'
 
 import './AddColumnBtn.scss'
 

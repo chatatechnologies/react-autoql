@@ -8,14 +8,24 @@ import {
   deepEqual,
   ColumnTypes,
   COLUMN_TYPES,
-  getVisibleColumns,
   formatQueryColumns,
   isColumnNumberType,
   autoQLConfigDefault,
   authenticationDefault,
   dataFormattingDefault,
   getColumnTypeAmounts,
-  isColumnStringType,
+  createMutatorFn,
+  getFnSummary,
+  WINDOW_FUNCTIONS,
+  ORDERABLE_WINDOW_FN_TYPES,
+  getOperators,
+  GLOBAL_OPERATORS,
+  FUNCTION_OPERATOR,
+  HIGHLIGHTED_CLASS,
+  DEFAULT_COLUMN_NAME,
+  getSelectableColumns,
+  getNumericalColumns,
+  getStringColumns,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -23,39 +33,12 @@ import { Modal } from '../Modal'
 import { Input } from '../Input'
 import { Button } from '../Button'
 import { Select } from '../Select'
+import { Popover } from '../Popover'
 import ChataTable from '../ChataTable/ChataTable'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
-import {
-  createMutatorFn,
-  getFnSummary,
-  WINDOW_FUNCTIONS,
-  ORDERABLE_WINDOW_FN_TYPES,
-  getOperators,
-} from './customColumnHelpers'
 
 import './CustomColumnModal.scss'
-import { Popover } from '../Popover'
-
-const globalOperators = ['LEFT_BRACKET', 'RIGHT_BRACKET']
-const FUNCTION_OPERATOR = 'FUNCTION'
-
-const HIGHLIGHTED_CLASS = 'highlighted-column'
-const DISABLED_CLASS = 'disabled-column'
-const FORMULA_CLASS = 'formula-column'
-const DEFAULT_COLUMN_NAME = 'New Column'
-
-export const getSelectableColumns = (columns) => {
-  return getVisibleColumns(columns).filter((col) => isColumnNumberType(col))
-}
-
-export const getNumericalColumns = (columns) => {
-  return getVisibleColumns(columns).filter((col) => isColumnNumberType(col))
-}
-
-export const getStringColumns = (columns) => {
-  return getVisibleColumns(columns).filter((col) => isColumnStringType(col))
-}
 
 export default class CustomColumnModal extends React.Component {
   constructor(props) {
@@ -66,8 +49,12 @@ export default class CustomColumnModal extends React.Component {
 
     this.numberInputRefs = {}
 
-    const firstIndex = props.columns.findIndex((col) => col.is_visible && isColumnNumberType(col))
-    const initialColumn = props.initialColumn ?? props.columns[firstIndex]
+    const firstIndex = props.columns.findIndex((col) => col?.is_visible && isColumnNumberType(col))
+
+    let initialColumn = props.initialColumn
+    if (!initialColumn && firstIndex >= 0) {
+      initialColumn = props.columns[firstIndex]
+    }
 
     const initialColumnFn = props.initialColumn?.columnFnArray ?? []
 
@@ -99,7 +86,9 @@ export default class CustomColumnModal extends React.Component {
     let columns = _cloneDeep(props.columns)
     if (props.initialColumn) {
       const colIndex = columns.findIndex((col) => props.initialColumn.id === col.id)
-      columns[colIndex] = this.newColumn
+      if (colIndex >= 0) {
+        columns[colIndex] = this.newColumn
+      }
     } else {
       columns.push(this.newColumn)
     }
@@ -279,7 +268,7 @@ export default class CustomColumnModal extends React.Component {
   }
 
   getFnColumns = () => {
-    return this.state.columnFn.filter((chunk) => chunk.column).map((chunk) => chunk.column)
+    return this.state.columnFn?.filter((chunk) => chunk.column)?.map((chunk) => chunk.column)
   }
 
   getSupportedColumnTypes = () => {
@@ -290,6 +279,10 @@ export default class CustomColumnModal extends React.Component {
     }
 
     return [ColumnTypes.STRING]
+  }
+
+  getLabelForOperator = (operator) => {
+    return operator?.icon ? <Icon type={operator?.icon} /> : operator?.label
   }
 
   getColumnType = () => {
@@ -333,11 +326,11 @@ export default class CustomColumnModal extends React.Component {
     const lastTerm = columnFn[columnFn.length - 1]
 
     // The window function option is only available to use if it is on its own, since the calculation is done on the server side
-    // if (lastTerm?.value === FUNCTION_OPERATOR) {
-    //   return true
-    // }
+    if (lastTerm?.value === FUNCTION_OPERATOR) {
+      return true
+    }
 
-    if (globalOperators.includes(op)) {
+    if (GLOBAL_OPERATORS.includes(op)) {
       if (op === 'LEFT_BRACKET') {
         if (!lastTerm) {
           return false
@@ -391,7 +384,7 @@ export default class CustomColumnModal extends React.Component {
   getNextSupportedOperators = () => {
     const columnType = this.getColumnType()
     const supportedOperators = COLUMN_TYPES[columnType]?.supportedOperators ?? []
-    const operatorsArray = [...supportedOperators, ...globalOperators]
+    const operatorsArray = [...supportedOperators, ...GLOBAL_OPERATORS]
 
     if (
       this.props.enableWindowFunctions &&
@@ -543,7 +536,7 @@ export default class CustomColumnModal extends React.Component {
   renderWindowFnChunk = (chunk, i) => {
     return (
       <span>
-        <span>{WINDOW_FUNCTIONS[chunk.fn].label}( </span>
+        <span>{this.getLabelForOperator(WINDOW_FUNCTIONS[chunk.fn])}( </span>
         <Select
           key={`custom-column-select-${i}`}
           placeholder='Select a Column'
@@ -551,7 +544,7 @@ export default class CustomColumnModal extends React.Component {
           outlined={false}
           showArrow={false}
           className='react-autoql-available-column-selector'
-          // onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
+          onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
           options={getNumericalColumns(this.props.columns).map((col) => {
             return {
               value: col.field,
@@ -570,7 +563,7 @@ export default class CustomColumnModal extends React.Component {
               outlined={false}
               showArrow={false}
               className='react-autoql-available-column-selector'
-              // onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
+              onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
               options={getStringColumns(this.props.columns).map((col) => {
                 return {
                   value: col.field,
@@ -591,7 +584,7 @@ export default class CustomColumnModal extends React.Component {
               outlined={false}
               showArrow={false}
               className='react-autoql-available-column-selector'
-              // onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
+              onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
               options={getStringColumns(this.props.columns).map((col) => {
                 return {
                   value: col.field,
@@ -608,10 +601,10 @@ export default class CustomColumnModal extends React.Component {
   }
 
   renderOperator = (chunk, i) => {
-    const supportedOperators = this.getNextSupportedOperators().filter((op) => !globalOperators.includes(op))
+    const supportedOperators = this.getNextSupportedOperators().filter((op) => !GLOBAL_OPERATORS.includes(op))
 
-    if (globalOperators.includes(chunk.value) || !supportedOperators.includes(chunk.value)) {
-      return <span>{this.OPERATORS[chunk.value]?.label}</span>
+    if (GLOBAL_OPERATORS.includes(chunk.value) || !supportedOperators.includes(chunk.value)) {
+      return <span>{this.getLabelForOperator(this.OPERATORS[chunk.value])}</span>
     }
 
     return (
@@ -630,8 +623,7 @@ export default class CustomColumnModal extends React.Component {
           .map((op) => {
             return {
               value: op,
-              label: this.OPERATORS[op]?.label,
-              listLabel: this.OPERATORS[op]?.label,
+              label: this.getLabelForOperator(this.OPERATORS[op]),
             }
           })}
       />
@@ -801,7 +793,7 @@ export default class CustomColumnModal extends React.Component {
                     this.setState({ columnFn })
                   }}
                 >
-                  {this.OPERATORS[op]?.label}
+                  {this.getLabelForOperator(this.OPERATORS[op])}
                 </Button>
               )
 

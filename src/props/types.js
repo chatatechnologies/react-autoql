@@ -25,6 +25,7 @@ export const autoQLConfigType = PropTypes.shape({
   enableQuerySuggestions: PropTypes.bool,
   enableColumnVisibilityManager: PropTypes.bool,
   enableNotifications: PropTypes.bool,
+  projectId: PropTypes.string,
 })
 
 export const dataConfigType = PropTypes.shape({
