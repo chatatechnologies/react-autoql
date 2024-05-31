@@ -6,6 +6,7 @@ import { CONTINUOUS_TYPE, PERIODIC_TYPE, SCHEDULED_TYPE, authenticationDefault }
 
 import { Select } from '../../Select'
 import AppearanceSection from './AppearanceSection'
+import AlphaAlertsSettings from './AlphaAlertsSettings'
 import { ScheduleBuilder } from '../ScheduleBuilder'
 import { ConditionBuilder } from '../ConditionBuilder'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
@@ -34,11 +35,10 @@ const Settings = ({ children, className } = {}) => {
 const Divider = ({ horizontal, vertical }) => {
   return (
     <div
-      className={`react-autoql-settings-vertical-divider ${
-        vertical
-          ? 'react-autoql-settings-vertical-divider-vertical'
-          : 'react-autoql-settings-vertical-divider-horizontal'
-      }`}
+      className={`react-autoql-settings-vertical-divider ${vertical
+        ? 'react-autoql-settings-vertical-divider-vertical'
+        : 'react-autoql-settings-vertical-divider-horizontal'
+        }`}
     />
   )
 }
@@ -83,14 +83,16 @@ export default class DataAlertSettings extends React.Component {
     onErrorCallback: PropTypes.func,
     onExpressionChange: PropTypes.func,
     onCompleteChange: PropTypes.func,
+    showAlphaAlertsSettings: PropTypes.bool,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
     currentDataAlert: undefined,
-    onErrorCallback: () => {},
-    onExpressionChange: () => {},
-    onCompleteChange: () => {},
+    onErrorCallback: () => { },
+    onExpressionChange: () => { },
+    onCompleteChange: () => { },
+    showAlphaAlertsSettings: false,
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -121,6 +123,8 @@ export default class DataAlertSettings extends React.Component {
       expressionKey: uuid(),
       filters: currentDataAlert.filters,
       expression: currentDataAlert.expression,
+      billingUnitsInput: currentDataAlert.billing_units,
+      descriptionInput: currentDataAlert.description,
     }
 
     return state
@@ -154,6 +158,8 @@ export default class DataAlertSettings extends React.Component {
       time_zone: scheduleData.timezone,
       schedules: scheduleData.schedules,
       evaluation_frequency: scheduleData.evaluationFrequency,
+      billing_units: this.state.billingUnitsInput,
+      description: this.state.descriptionInput,
     }
   }
 
@@ -167,6 +173,21 @@ export default class DataAlertSettings extends React.Component {
 
   onExpressionChange = (isConditionSectionComplete, isValid, expression) => {
     this.setState({ expression, isConditionSectionComplete })
+  }
+
+  AlphaAlertsSettings = () => {
+    return (
+      <AlphaAlertsSettings
+        billingUnitsInput={this.state.billingUnitsInput}
+        descriptionInput={this.state.descriptionInput}
+        onBillingUnitsInputChange={(value) => {
+          this.setState({ billingUnitsInput: value })
+        }}
+        onDescriptionInputChange={(e) => {
+          this.setState({ descriptionInput: e.target.value })
+        }}
+      />
+    )
   }
 
   AppearanceSettings = () => {
@@ -261,6 +282,9 @@ export default class DataAlertSettings extends React.Component {
           </SettingSection>
           <Divider horizontal />
           <SettingSection title='Appearance'>{this.AppearanceSettings()}</SettingSection>
+          {this.props.showAlphaAlertsSettings &&
+            <SettingSection title='Alpha Alerts Settings'>{this.AlphaAlertsSettings()}</SettingSection>
+          }
         </Settings>
       </ErrorBoundary>
     )
