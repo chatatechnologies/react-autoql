@@ -17,6 +17,7 @@ import {
   CONTINUOUS_TYPE,
   SCHEDULED_TYPE,
   createManagementDataAlert,
+  updateManagementDataAlert,
   autoQLConfigDefault,
 } from 'autoql-fe-utils'
 
@@ -72,17 +73,16 @@ class DataAlertModal extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    onSave: () => {},
-    onErrorCallback: () => {},
+    onSave: () => { },
+    onErrorCallback: () => { },
     currentDataAlert: undefined,
     dataAlertType: CONTINUOUS_TYPE,
     isVisible: false,
     allowDelete: true,
-    onClose: () => {},
-    projectId: '',
-    onSuccessAlert: () => {},
-    onClosed: () => {},
-    onOpened: () => {},
+    onClose: () => { },
+    onSuccessAlert: () => { },
+    onClosed: () => { },
+    onOpened: () => { },
     enableQueryValidation: true,
     dataFormatting: dataFormattingDefault,
     autoQLConfig: autoQLConfigDefault,
@@ -292,16 +292,29 @@ class DataAlertModal extends React.Component {
     }
 
     if (this.props?.autoQLConfig?.projectId) {
-      createManagementDataAlert({
-        ...requestParams,
-        projectId: this.props?.autoQLConfig?.projectId
-      })
-        .then((dataAlertResponse) => {
-          this.onDataAlertCreateOrEditSuccess(dataAlertResponse)
+      if (newDataAlert.id) {
+        updateManagementDataAlert({
+          ...requestParams,
+          projectId: this.props?.autoQLConfig?.projectId
         })
-        .catch((error) => {
-          this.onDataAlertCreateOrEditError(error)
+          .then((dataAlertResponse) => {
+            this.onDataAlertCreateOrEditSuccess(dataAlertResponse)
+          })
+          .catch((error) => {
+            this.onDataAlertCreateOrEditError(error)
+          })
+      } else {
+        createManagementDataAlert({
+          ...requestParams,
+          projectId: this.props?.autoQLConfig?.projectId
         })
+          .then((dataAlertResponse) => {
+            this.onDataAlertCreateOrEditSuccess(dataAlertResponse)
+          })
+          .catch((error) => {
+            this.onDataAlertCreateOrEditError(error)
+          })
+      }
     } else if (newDataAlert.id) {
       updateDataAlert({
         ...requestParams,
