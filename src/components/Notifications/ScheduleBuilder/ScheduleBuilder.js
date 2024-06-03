@@ -21,6 +21,7 @@ import {
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
+import { Input } from '../../Input'
 import { Select } from '../../Select'
 import { TimePicker } from '../../TimePicker'
 import { TimezoneSelector } from '../../TimezoneSelector'
@@ -63,6 +64,7 @@ export default class ScheduleBuilder extends React.Component {
       monthOfYearSelectValue: this.DEFAULT_MONTH_OF_YEAR_SELECT_VALUE,
       monthDaySelectValue: this.DEFAULT_MONTH_DAY_SELECT_VALUE,
       resetPeriodSelectValue: this.timeRange ?? this.DEFAULT_RESET_PERIOD_SELECT_VALUE,
+      evaluationFrequencyMins: 5,
     }
 
     if (props.dataAlert) {
@@ -96,6 +98,10 @@ export default class ScheduleBuilder extends React.Component {
   componentDidUpdate = (prevProps, prevState) => {
     if (this.isCompleteChanged()) {
       this.props.onCompleteChange(this.isFormComplete)
+    }
+
+    if (this.state.isCustomEvaluationFrequencyInputVisible && !prevState.isCustomEvaluationFrequencyInputVisible) {
+      this.customEvalFrequencyInput?.selectAll()
     }
 
     if (this.props.queryResponse?.data?.data?.text !== prevProps.queryResponse?.data?.data?.text) {
@@ -135,6 +141,8 @@ export default class ScheduleBuilder extends React.Component {
       return false
     } else if (this.timePickerRef?._isMounted && !this.timePickerRef.isValid()) {
       return false
+    } else if (this.state.evaluationFrequencySelectValue === 'custom' && !this.state.evaluationFrequencyMins) {
+      return false
     }
 
     return true
@@ -154,9 +162,18 @@ export default class ScheduleBuilder extends React.Component {
     const { dataAlert } = props
 
     try {
-      state.evaluationFrequencySelectValue = dataAlert?.evaluation_frequency
+      const evalFrequency = dataAlert?.evaluation_frequency
+
       state.timezone = dataAlert?.time_zone
       state.resetPeriodSelectValue = dataAlert?.reset_period
+      state.evaluationFrequencySelectValue = dataAlert?.evaluation_frequency
+
+      // If evaluation frequency is not in predefined list, then it is a custom value:
+      if (!EVALUATION_FREQUENCY_OPTIONS[evalFrequency]) {
+        state.evaluationFrequencySelectValue = 'custom'
+        state.evaluationFrequencyMins = evalFrequency
+        state.isCustomEvaluationFrequencyInputVisible = true
+      }
 
       if (
         !state.resetPeriodSelectValue &&
@@ -209,7 +226,10 @@ export default class ScheduleBuilder extends React.Component {
     const resetPeriod = this.props.dataAlertType !== SCHEDULED_TYPE ? this.getResetPeriod() : undefined
     const schedules = this.getSchedules()
     const timezone = this.state.timezone
-    const evaluationFrequency = this.state.evaluationFrequencySelectValue
+    const evaluationFrequency =
+      (this.state.evaluationFrequencySelectValue === 'custom'
+        ? this.state.evaluationFrequencyMins
+        : this.state.evaluationFrequencySelectValue) ?? this.DEFAULT_EVALUATION_FREQUENCY
 
     return {
       notificationType,
@@ -492,6 +512,14 @@ export default class ScheduleBuilder extends React.Component {
         }
       })
 
+      options.push({
+        value: 'custom',
+        label: 'Custom...',
+      })
+
+      const maxValue = 60
+      const minValue = 1
+
       return (
         <div className='react-autoql-data-alert-frequency-option check-frequency'>
           <Select
@@ -508,8 +536,38 @@ export default class ScheduleBuilder extends React.Component {
                 />
               </span>
             }
-            onChange={(value) => this.setState({ evaluationFrequencySelectValue: value })}
+            onChange={(value) => {
+              if (value === 'custom') {
+                this.setState({ evaluationFrequencySelectValue: value, isCustomEvaluationFrequencyInputVisible: true })
+              } else {
+                this.setState({ evaluationFrequencySelectValue: value, isCustomEvaluationFrequencyInputVisible: false })
+              }
+            }}
           />
+          {this.state.isCustomEvaluationFrequencyInputVisible ? (
+            <Input
+              type='number'
+              ref={(r) => (this.customEvalFrequencyInput = r)}
+              value={this.state.evaluationFrequencyMins}
+              onChange={(e) => {
+                if (e.target.value !== undefined && e.target.value !== '') {
+                  const newValue = parseFloat(e.target.value)
+                  if (newValue > maxValue || newValue < minValue) {
+                    return
+                  }
+
+                  this.setState({ evaluationFrequencyMins: Math.abs(newValue) })
+                } else {
+                  this.setState({ evaluationFrequencyMins: '' })
+                }
+              }}
+              style={{ width: '125px', marginRight: '20px' }}
+              label='Minutes (1-60)'
+              max={60}
+              min={1}
+              step='1'
+            />
+          ) : null}
         </div>
       )
     }
