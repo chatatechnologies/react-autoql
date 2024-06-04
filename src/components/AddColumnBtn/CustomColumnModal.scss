@@ -1,0 +1,333 @@
+.custom-column-modal {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  .custom-column-modal-name-and-type {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    .custom-column-builder-type-selector {
+      flex: 1;
+      padding: 0;
+      margin-bottom: 10px;
+      margin-left: 15px;
+    }
+
+    .react-autoql-input-and-label-container {
+      flex: 2;
+      padding: 0;
+      margin-bottom: 10px;
+      margin-right: 0;
+    }
+  }
+
+  .custom-column-modal-form-wrapper {
+    flex: 2;
+    display: flex;
+    overflow: hidden;
+    flex-direction: column;
+
+    .react-autoql-formula-builder-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      margin-bottom: 30px;
+
+      .react-autoql-formula-builder-section {
+        flex: 3;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        margin-right: 20px;
+        position: relative;
+
+        .react-autoql-select-and-label {
+          padding-right: 5px;
+          color: var(--react-autoql-accent-color);
+        }
+      }
+
+      .react-autoql-formula-builder-calculator-container {
+        flex: 1 0 0;
+        max-width: 160px;
+
+        .react-autoql-btn {
+          padding: 0 16px;
+          height: 38px;
+        }
+
+        .react-autoql-formula-builder-calculator-buttons-container {
+          display: flex;
+          flex-direction: row;
+          flex-wrap: wrap;
+        }
+      }
+
+      .react-autoql-formula-builder-column-selection-container {
+        flex: 0 0 auto;
+        margin-right: 10px;
+
+        .react-autoql-btn {
+          padding: 7px 12px;
+        }
+      }
+
+      .react-autoql-formula-builder-calculator-container,
+      .react-autoql-formula-builder-column-selection-container {
+        height: 100%;
+        overflow: auto;
+        display: flex;
+        flex-direction: column;
+
+        .react-autoql-formula-builder-calculator-buttons-container {
+          overflow: auto;
+
+          .react-autoql-btn {
+            white-space: pre;
+            margin: 0;
+            margin-bottom: 5px;
+            margin-right: 5px;
+          }
+
+          .react-autoql-formula-calculator-button {
+            .react-autoql-icon {
+              padding: 0;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .react-autoql-table-preview-wrapper {
+    flex: 1 1;
+    display: flex;
+    overflow: hidden;
+    flex-direction: column;
+    min-height: 150px;
+  }
+
+  .react-autoql-formula-builder-label-container {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .react-autoql-formula-builder-validation-message {
+    position: absolute;
+    bottom: -18px;
+    font-size: 12px;
+
+    .react-autoql-formula-builder-validation-message-success {
+      color: var(--react-autoql-success-color);
+    }
+
+    .react-autoql-formula-builder-validation-message-warning {
+      color: var(--react-autoql-warning-color);
+    }
+  }
+
+  .react-autoql-formula-builder-container {
+    min-height: 100px;
+    padding: 10px;
+    overflow: auto;
+    border-radius: 2px;
+    border: 1px solid var(--react-autoql-border-color);
+    background: var(--react-autoql-background-color-primary);
+    flex: 1;
+
+    .react-autoql-formula-builder-button-wrapper {
+      display: inline-flex;
+      align-items: center;
+      white-space: pre;
+      flex-wrap: wrap;
+
+      .react-autoql-term-type-selector {
+        .react-autoql-select {
+          border-top-left-radius: 0;
+          border-bottom-left-radius: 0;
+          padding: 0 5px;
+          border-left-color: transparent !important;
+          &:hover {
+            border-left-color: var(--react-autoql-accent-color) !important;
+          }
+        }
+      }
+
+      .react-autoql-operator-select-wrapper {
+        position: relative;
+        margin-bottom: 5px;
+        margin-right: 8px;
+        line-height: 38px;
+
+        .react-autoql-column-operator-selector {
+          .react-autoql-select {
+            font-size: 18px;
+            line-height: 34px;
+          }
+        }
+
+        .react-autoql-select {
+          color: var(--react-autoql-accent-color);
+
+          .react-autoql-icon {
+            padding-bottom: 0;
+          }
+        }
+
+        .react-autoql-operator-delete-btn {
+          position: absolute;
+          border-radius: 20px;
+          height: 18px;
+          width: 18px;
+          right: -10px;
+          top: -5px;
+          padding: 0;
+          margin: 0;
+          z-index: 1;
+
+          opacity: 0;
+          background: var(--react-autoql-accent-color);
+          color: var(--react-autoql-text-color-accent);
+
+          .react-autoql-icon {
+            padding: 0;
+          }
+        }
+
+        &:hover .react-autoql-operator-delete-btn {
+          opacity: 1;
+        }
+
+        .react-autoql-operator-select-btn {
+          display: inline-flex;
+          border-color: var(--react-autoql-border-color);
+          color: var(--react-autoql-text-color-placeholder);
+          border-style: dashed;
+          margin-right: 5px;
+          padding: 10px;
+          background-color: transparent;
+        }
+        .react-autoql-operator-select .react-autoql-select {
+          border-color: var(--react-autoql-border-color);
+          color: var(--react-autoql-text-color-placeholder);
+          background-color: transparent;
+          border-style: dashed;
+        }
+
+        .react-autoql-select-and-label {
+          &.react-autoql-available-column-selector .react-autoql-select {
+            font-weight: 600;
+            color: var(--react-autoql-accent-color) !important;
+
+            .react-autoql-select-text-placeholder {
+              font-weight: 500;
+            }
+          }
+
+          &.has-operator {
+            margin-right: 0;
+
+            .react-autoql-select {
+              border-radius: 0;
+              border-left-color: transparent;
+
+              &:hover {
+                border-left-color: var(--react-autoql-accent-color) !important;
+              }
+            }
+          }
+        }
+
+        .react-autoql-select-and-label,
+        .react-autoql-input-and-label-container {
+          padding: 0;
+
+          .react-autoql-select-arrow {
+            opacity: 0.5;
+            font-size: 9px;
+
+            .react-autoql-icon {
+              padding-bottom: 0;
+            }
+          }
+        }
+
+        .react-autoql-input-and-label-container {
+          input {
+            background: var(--react-autoql-background-color-secondary) !important;
+            border-radius: 4px !important;
+            height: 38px !important;
+          }
+          .react-autoql-select {
+            font-size: 18px;
+            line-height: 34px;
+            color: var(--react-autoql-accent-color);
+
+            .react-autoql-icon {
+              padding-bottom: 0;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .react-autoql-select-popover-container {
+    .react-autoql-icon-divide {
+      font-size: 16px;
+    }
+  }
+
+  .react-autoql-table-preview-container {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+
+    .react-autoql-table-container {
+      border: 1px solid var(--react-autoql-border-color);
+      border-radius: 2px;
+
+      .react-autoql-table.tabulator .tabulator-row:last-child {
+        margin-bottom: 0px;
+      }
+
+      // Use this if we want to highlight the columns that are being used in the formula
+      // .tabulator-col.formula-column,
+      // .tabulator-cell.formula-column {
+      //   &::before {
+      //     content: '';
+      //     position: absolute;
+      //     top: 0;
+      //     left: 0;
+      //     height: 100%;
+      //     width: 100%;
+      //     background: yellow;
+      //     opacity: 0.4;
+      //   }
+      // }
+
+      .tabulator-col.highlighted-column,
+      .tabulator-cell.highlighted-column {
+        .tabulator-col-content {
+          color: var(--react-autoql-text-color-accent);
+        }
+
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          height: 100%;
+          width: 100%;
+          background: var(--react-autoql-accent-color);
+        }
+      }
+
+      .tabulator-cell.highlighted-column::before {
+        opacity: 0.2;
+      }
+    }
+  }
+}

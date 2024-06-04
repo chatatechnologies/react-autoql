@@ -33,7 +33,7 @@ export default class Select extends React.Component {
     size: PropTypes.string,
     showArrow: PropTypes.bool,
     outlined: PropTypes.bool,
-    placeholder: PropTypes.string,
+    placeholder: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
     fullWidth: PropTypes.bool,
   }
 
@@ -90,13 +90,13 @@ export default class Select extends React.Component {
       <div
         className={`react-autoql-select-and-label
         ${this.props.className ?? ''}
-        ${this.props.outlined ? 'outlined' : ''}
+        ${this.props.outlined ? 'outlined' : 'underlined'}
         ${this.props.fullWidth ? 'react-autoql-select-full-width' : ''}`}
       >
         {!!this.props.label && <div className='react-autoql-input-label'>{this.props.label}</div>}
         <div
           className={`react-autoql-select
-          ${this.props.outlined ? 'outlined' : ''}
+          ${this.props.outlined ? 'outlined' : 'underlined'}
           ${this.props.size === 'small' ? 'react-autoql-select-small' : 'react-autoql-select-large'}`}
           data-test='react-autoql-select'
           onClick={() => this.setState({ isOpen: !this.state.isOpen })}
@@ -111,7 +111,7 @@ export default class Select extends React.Component {
               <span className='react-autoql-menu-item-value-title'>
                 {!!selectedOption.icon && (
                   <span>
-                    <Icon style={{ marginLeft: '-3px' }} type={selectedOption.icon} />
+                    <Icon style={{ marginLeft: this.props.outlined ? '-3px' : '0px' }} type={selectedOption.icon} />
                     &nbsp;&nbsp;
                   </span>
                 )}
@@ -185,9 +185,9 @@ export default class Select extends React.Component {
         <Popover
           id={`select-popover-${this.ID}`}
           key={`select-popover-${this.ID}`}
-          containerClassName={`react-tiny-popover-container react-autoql-select-popover-container ${
-            this.props.popupClassname ?? ''
-          }`}
+          containerClassName={`react-tiny-popover-container react-autoql-select-popover-container
+            ${this.props.popupClassname ?? ''}
+            ${this.props.outlined ? '' : 'react-autoql-select-popover-no-margin'}`}
           isOpen={this.state.isOpen}
           positions={this.props.positions ?? ['bottom', 'top', 'left', 'right']}
           align={this.props.align ?? 'start'}

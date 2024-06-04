@@ -231,6 +231,12 @@
   white-space: nowrap;
   text-align: left;
 
+  &.react-autoql-input-label-clickable {
+    color: var(--react-autoql-accent-color);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
   .react-autoql-icon {
     margin: 0 3px;
     opacity: 0.6;

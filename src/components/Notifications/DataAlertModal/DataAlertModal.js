@@ -16,6 +16,9 @@ import {
   getSupportedConditionTypes,
   CONTINUOUS_TYPE,
   SCHEDULED_TYPE,
+  createManagementDataAlert,
+  updateManagementDataAlert,
+  autoQLConfigDefault,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
@@ -33,9 +36,10 @@ import AppearanceSection from '../DataAlertSettings/AppearanceSection'
 import DataAlertSettings from '../DataAlertSettings/DataAlertSettings'
 
 import { withTheme } from '../../../theme'
-import { authenticationType, dataFormattingType } from '../../../props/types'
+import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
 
 import './DataAlertModal.scss'
+import AlphaAlertsSettings from '../DataAlertSettings/AlphaAlertsSettings'
 
 class DataAlertModal extends React.Component {
   constructor(props) {
@@ -47,6 +51,7 @@ class DataAlertModal extends React.Component {
     this.FREQUENCY_STEP = 'FREQUENCY'
     this.MESSAGE_STEP = 'MESSAGE'
     this.TYPE_STEP = 'TYPE'
+    this.ALPHA_ALERTS_SETTINGS_STEP = 'ALPHA_ALERTS_SETTINGS_STEP'
 
     this.state = this.getInitialState(props)
   }
@@ -60,33 +65,29 @@ class DataAlertModal extends React.Component {
     isVisible: PropTypes.bool,
     allowDelete: PropTypes.bool,
     onClose: PropTypes.func,
-    isManagement: PropTypes.bool,
-    onManagementCreateDataAlert: PropTypes.func,
-    onManagementDeleteDataAlert: PropTypes.func,
     onSuccessAlert: PropTypes.func,
     enableQueryValidation: PropTypes.bool,
     onClosed: PropTypes.func,
     onOpened: PropTypes.func,
     dataFormatting: dataFormattingType,
+    autoQLConfig: autoQLConfigType,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
-    onSave: () => {},
-    onErrorCallback: () => {},
+    onSave: () => { },
+    onErrorCallback: () => { },
     currentDataAlert: undefined,
     dataAlertType: CONTINUOUS_TYPE,
     isVisible: false,
     allowDelete: true,
-    onClose: () => {},
-    isManagement: false,
-    onManagementCreateDataAlert: () => {},
-    onManagementDeleteDataAlert: () => {},
-    onSuccessAlert: () => {},
-    onClosed: () => {},
-    onOpened: () => {},
+    onClose: () => { },
+    onSuccessAlert: () => { },
+    onClosed: () => { },
+    onOpened: () => { },
     enableQueryValidation: true,
     dataFormatting: dataFormattingDefault,
+    autoQLConfig: autoQLConfigDefault,
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -161,6 +162,10 @@ class DataAlertModal extends React.Component {
       { title: 'Customize Appearance', value: this.MESSAGE_STEP },
     ]
 
+    if (this.props?.autoQLConfig?.projectId) {
+      steps.push({ title: 'Alpha Alerts Settings', value: this.ALPHA_ALERTS_SETTINGS_STEP })
+    }
+
     return steps
   }
 
@@ -181,6 +186,8 @@ class DataAlertModal extends React.Component {
       isMounted: false,
       dataAlertType: CONTINUOUS_TYPE,
       isSettingsFormComplete: true,
+      billingUnitsInput: '',
+      descriptionInput: '',
     }
 
     if (props.currentDataAlert) {
@@ -191,6 +198,8 @@ class DataAlertModal extends React.Component {
       state.activeStep = 0
       state.completedSections = steps.map(() => true)
       state.expressionJSON = currentDataAlert?.expression
+      state.billingUnitsInput = currentDataAlert?.billing_units
+      state.descriptionInput = currentDataAlert?.description
     }
 
     return state
@@ -203,7 +212,7 @@ class DataAlertModal extends React.Component {
   getDataAlertData = () => {
     try {
       const { currentDataAlert, queryResponse } = this.props
-      const { titleInput, messageInput } = this.state
+      const { titleInput, messageInput, billingUnitsInput, descriptionInput } = this.state
 
       if (!!this.props.currentDataAlert?.id) {
         return this.settingsViewRef?.getData()
@@ -241,6 +250,8 @@ class DataAlertModal extends React.Component {
           time_zone: scheduleData.timezone,
           schedules: scheduleData.schedules,
           evaluation_frequency: scheduleData.evaluationFrequency,
+          billing_units: billingUnitsInput,
+          description: descriptionInput,
         }
 
         return newDataAlert
@@ -263,6 +274,23 @@ class DataAlertModal extends React.Component {
     return true
   }
 
+  onDataAlertCreateOrEditSuccess = (dataAlertResponse) => {
+    this.props.onSave(dataAlertResponse)
+    this.props.onSuccessAlert('Data Alert updated!')
+
+    this.setState({
+      isSavingDataAlert: false,
+    })
+  }
+
+  onDataAlertCreateOrEditError = (error) => {
+    console.error(error)
+    this.props.onErrorCallback(error?.message)
+    this.setState({
+      isSavingDataAlert: false,
+    })
+  }
+
   onDataAlertSave = () => {
     this.setState({
       isSavingDataAlert: true,
@@ -275,48 +303,49 @@ class DataAlertModal extends React.Component {
       ...getAuthentication(this.props.authentication),
     }
 
-    if (this.props.isManagement) {
-      this.props.onManagementCreateDataAlert(newDataAlert)
-      this.setState({
-        isSavingDataAlert: false,
-      })
+    if (this.props?.autoQLConfig?.projectId) {
+      if (newDataAlert.id) {
+        updateManagementDataAlert({
+          ...requestParams,
+          projectId: this.props?.autoQLConfig?.projectId
+        })
+          .then((dataAlertResponse) => {
+            this.onDataAlertCreateOrEditSuccess(dataAlertResponse)
+          })
+          .catch((error) => {
+            this.onDataAlertCreateOrEditError(error)
+          })
+      } else {
+        createManagementDataAlert({
+          ...requestParams,
+          projectId: this.props?.autoQLConfig?.projectId
+        })
+          .then((dataAlertResponse) => {
+            this.onDataAlertCreateOrEditSuccess(dataAlertResponse)
+          })
+          .catch((error) => {
+            this.onDataAlertCreateOrEditError(error)
+          })
+      }
     } else if (newDataAlert.id) {
       updateDataAlert({
         ...requestParams,
       })
         .then((dataAlertResponse) => {
-          this.props.onSave(dataAlertResponse)
-          this.props.onSuccessAlert('Data Alert updated!')
-
-          this.setState({
-            isSavingDataAlert: false,
-          })
+          this.onDataAlertCreateOrEditSuccess(dataAlertResponse)
         })
         .catch((error) => {
-          console.error(error)
-          this.props.onErrorCallback(error?.message)
-          this.setState({
-            isSavingDataAlert: false,
-          })
+          this.onDataAlertCreateOrEditError(error)
         })
     } else {
       createDataAlert({
         ...requestParams,
       })
         .then((dataAlertResponse) => {
-          this.props.onSave(dataAlertResponse)
-          this.props.onSuccessAlert('Data Alert created!')
-
-          this.setState({
-            isSavingDataAlert: false,
-          })
+          this.onDataAlertCreateOrEditSuccess(dataAlertResponse)
         })
         .catch((error) => {
-          console.error(error)
-          this.props.onErrorCallback(error)
-          this.setState({
-            isSavingDataAlert: false,
-          })
+          this.onDataAlertCreateOrEditError(error)
         })
     }
   }
@@ -562,6 +591,25 @@ class DataAlertModal extends React.Component {
     )
   }
 
+
+  renderAlphaAlertsSettingStep = (active) => {
+    return (
+      <div className={`react-autoql-data-alert-modal-step ${active ? '' : 'hidden'}`}>
+        <AlphaAlertsSettings
+          ref={(r) => (this.alphaAlertsSettingRef = r)}
+          billingUnitsInput={this.state.billingUnitsInput}
+          descriptionInput={this.state.descriptionInput}
+          onBillingUnitsInputChange={(value) => {
+            this.setState({ billingUnitsInput: value })
+          }}
+          onDescriptionInputChange={(e) => {
+            this.setState({ descriptionInput: e.target.value })
+          }}
+        />
+      </div>
+    )
+  }
+
   getStepNumber = (stepValue) => {
     const steps = this.getSteps()
     const stepNumber = steps.findIndex((step) => step.value && stepValue && step.value === stepValue)
@@ -585,6 +633,7 @@ class DataAlertModal extends React.Component {
         {this.renderConditionsStep(activeStep === this.getStepNumber(this.CONDITIONS_STEP))}
         {this.renderFrequencyStep(activeStep === this.getStepNumber(this.FREQUENCY_STEP))}
         {this.renderComposeMessageStep(activeStep === this.getStepNumber(this.MESSAGE_STEP))}
+        {this.props?.autoQLConfig?.projectId && this.renderAlphaAlertsSettingStep(activeStep === this.getStepNumber(this.ALPHA_ALERTS_SETTINGS_STEP))}
       </>
     )
   }
@@ -646,6 +695,7 @@ class DataAlertModal extends React.Component {
             onErrorCallback={this.props.onErrorCallback}
             onCompleteChange={this.onSettingsCompleteChange}
             tooltipID={this.TOOLTIP_ID}
+            showAlphaAlertsSettings={!!this.props.autoQLConfig?.projectId}
           />
         </CustomScrollbars>
       )
@@ -686,6 +736,9 @@ class DataAlertModal extends React.Component {
       }
       case this.MESSAGE_STEP: {
         return !!this.state.titleInput
+      }
+      case this.ALPHA_ALERTS_SETTINGS_STEP: {
+        return true
       }
       default: {
         return false

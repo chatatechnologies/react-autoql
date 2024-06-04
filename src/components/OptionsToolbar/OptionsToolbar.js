@@ -322,6 +322,7 @@ export class OptionsToolbar extends React.Component {
           tooltipID={this.props.tooltipID}
           queryResponse={queryResponse}
           filters={filters}
+          autoQLConfig={this.props.autoQLConfig}
         />
       </ErrorBoundary>
     )
@@ -696,11 +697,11 @@ export class OptionsToolbar extends React.Component {
           hasMoreThanOneRow,
         showCopyButton: isTable && !allColumnsHidden,
         showSaveAsPNGButton: isChart,
-        showHideColumnsButton:
-          // Keep for now until we confirm we want to remove this feature
-          autoQLConfig.enableColumnVisibilityManager &&
-          hasData &&
-          (displayType === 'table' || (displayType === 'text' && allColumnsHidden)),
+        showHideColumnsButton: false,
+        // Keep for now until we confirm we want to remove this feature
+        // autoQLConfig.enableColumnVisibilityManager &&
+        // hasData &&
+        // (displayType === 'table' || (displayType === 'text' && allColumnsHidden)),
         showHiddenColsBadge: someColumnsHidden,
         showSQLButton: isDataResponse && autoQLConfig.debug,
         showSaveAsCSVButton: isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,

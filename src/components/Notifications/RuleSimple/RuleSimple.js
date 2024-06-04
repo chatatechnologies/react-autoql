@@ -19,7 +19,6 @@ import {
   constructRTArray,
   getTimeFrameTextFromChunk,
   getSupportedConditionTypes,
-  isAggregation,
   REQUEST_CANCELLED_ERROR,
   isISODate,
   authenticationDefault,
@@ -30,10 +29,8 @@ import {
   getGroupableColumns,
   getStringColumnIndices,
   getNumberOfGroupables,
-  getVisibleColumns,
   isColumnNumberType,
   DATA_ALERT_CONDITION_TYPES,
-  CONTINUOUS_TYPE,
   SCHEDULED_TYPE,
 } from 'autoql-fe-utils'
 
@@ -1286,7 +1283,6 @@ export default class RuleSimple extends React.Component {
                     <span className='data-alert-description-span'>
                       Any value from{' '}
                       <Select
-                        style={{ marginBottom: '14px' }}
                         value={this.state.firstQuerySelectedColumns[0]}
                         onChange={(col) => this.setState({ firstQuerySelectedColumns: [col] })}
                         outlined={false}

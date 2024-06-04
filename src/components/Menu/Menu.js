@@ -50,7 +50,7 @@ export class MenuItem extends React.Component {
         data-offset={10}
         onClick={(e) => {
           e.stopPropagation()
-          this.props.onClick()
+          this.props.onClick(e)
         }}
       >
         <span className='select-option-span'>
