@@ -40,6 +40,7 @@ import { authenticationType, autoQLConfigType, dataFormattingType } from '../../
 
 import './DataAlertModal.scss'
 import AlphaAlertsSettings from '../DataAlertSettings/AlphaAlertsSettings'
+import { CollapsableSection } from '../../Card'
 
 class DataAlertModal extends React.Component {
   constructor(props) {
@@ -51,7 +52,6 @@ class DataAlertModal extends React.Component {
     this.FREQUENCY_STEP = 'FREQUENCY'
     this.MESSAGE_STEP = 'MESSAGE'
     this.TYPE_STEP = 'TYPE'
-    this.ALPHA_ALERTS_SETTINGS_STEP = 'ALPHA_ALERTS_SETTINGS_STEP'
 
     this.state = this.getInitialState(props)
   }
@@ -161,10 +161,6 @@ class DataAlertModal extends React.Component {
       { title: 'Configure Timing', value: this.FREQUENCY_STEP },
       { title: 'Customize Appearance', value: this.MESSAGE_STEP },
     ]
-
-    if (this.props?.autoQLConfig?.projectId) {
-      steps.push({ title: 'Alpha Alerts Settings', value: this.ALPHA_ALERTS_SETTINGS_STEP })
-    }
 
     return steps
   }
@@ -575,6 +571,20 @@ class DataAlertModal extends React.Component {
     )
   }
 
+  renderAlphaAlertsSettings = () => {
+    return (
+      <CollapsableSection title='Additional Settings' defaultCollapsed={true}>
+        <AlphaAlertsSettings
+          ref={(r) => (this.alphaAlertsSettingRef = r)}
+          descriptionInput={this.state.descriptionInput}
+          onDescriptionInputChange={(e) => {
+            this.setState({ descriptionInput: e.target.value })
+          }}
+        />
+      </CollapsableSection>
+    )
+  }
+
   renderComposeMessageStep = (active) => {
     return (
       <div className={`react-autoql-data-alert-modal-step ${active ? '' : 'hidden'}`}>
@@ -587,28 +597,12 @@ class DataAlertModal extends React.Component {
           showConditionStatement
           conditionStatement={this.getConditionStatement()}
         />
+        {this.renderAlphaAlertsSettings()}
       </div>
     )
   }
 
 
-  renderAlphaAlertsSettingStep = (active) => {
-    return (
-      <div className={`react-autoql-data-alert-modal-step ${active ? '' : 'hidden'}`}>
-        <AlphaAlertsSettings
-          ref={(r) => (this.alphaAlertsSettingRef = r)}
-          billingUnitsInput={this.state.billingUnitsInput}
-          descriptionInput={this.state.descriptionInput}
-          onBillingUnitsInputChange={(value) => {
-            this.setState({ billingUnitsInput: value })
-          }}
-          onDescriptionInputChange={(e) => {
-            this.setState({ descriptionInput: e.target.value })
-          }}
-        />
-      </div>
-    )
-  }
 
   getStepNumber = (stepValue) => {
     const steps = this.getSteps()
@@ -633,7 +627,6 @@ class DataAlertModal extends React.Component {
         {this.renderConditionsStep(activeStep === this.getStepNumber(this.CONDITIONS_STEP))}
         {this.renderFrequencyStep(activeStep === this.getStepNumber(this.FREQUENCY_STEP))}
         {this.renderComposeMessageStep(activeStep === this.getStepNumber(this.MESSAGE_STEP))}
-        {this.props?.autoQLConfig?.projectId && this.renderAlphaAlertsSettingStep(activeStep === this.getStepNumber(this.ALPHA_ALERTS_SETTINGS_STEP))}
       </>
     )
   }
@@ -695,7 +688,6 @@ class DataAlertModal extends React.Component {
             onErrorCallback={this.props.onErrorCallback}
             onCompleteChange={this.onSettingsCompleteChange}
             tooltipID={this.TOOLTIP_ID}
-            showAlphaAlertsSettings={!!this.props.autoQLConfig?.projectId}
           />
         </CustomScrollbars>
       )
@@ -736,9 +728,6 @@ class DataAlertModal extends React.Component {
       }
       case this.MESSAGE_STEP: {
         return !!this.state.titleInput
-      }
-      case this.ALPHA_ALERTS_SETTINGS_STEP: {
-        return true
       }
       default: {
         return false

@@ -6,7 +6,6 @@ import { CONTINUOUS_TYPE, PERIODIC_TYPE, SCHEDULED_TYPE, authenticationDefault }
 
 import { Select } from '../../Select'
 import AppearanceSection from './AppearanceSection'
-import AlphaAlertsSettings from './AlphaAlertsSettings'
 import { ScheduleBuilder } from '../ScheduleBuilder'
 import { ConditionBuilder } from '../ConditionBuilder'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
@@ -14,6 +13,8 @@ import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { authenticationType } from '../../../props/types'
 
 import './DataAlertSettings.scss'
+import AlphaAlertsSettings from './AlphaAlertsSettings'
+import CollapsableSection from '../../Card/CollapsableSection'
 
 const SettingSection = ({ title, children } = {}) => {
   return (
@@ -83,7 +84,6 @@ export default class DataAlertSettings extends React.Component {
     onErrorCallback: PropTypes.func,
     onExpressionChange: PropTypes.func,
     onCompleteChange: PropTypes.func,
-    showAlphaAlertsSettings: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -92,7 +92,6 @@ export default class DataAlertSettings extends React.Component {
     onErrorCallback: () => { },
     onExpressionChange: () => { },
     onCompleteChange: () => { },
-    showAlphaAlertsSettings: false,
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -175,14 +174,11 @@ export default class DataAlertSettings extends React.Component {
     this.setState({ expression, isConditionSectionComplete })
   }
 
-  AlphaAlertsSettings = () => {
+  renderAlphaAlertsSettings = () => {
     return (
       <AlphaAlertsSettings
-        billingUnitsInput={this.state.billingUnitsInput}
+        ref={(r) => (this.alphaAlertsSettingRef = r)}
         descriptionInput={this.state.descriptionInput}
-        onBillingUnitsInputChange={(value) => {
-          this.setState({ billingUnitsInput: value })
-        }}
         onDescriptionInputChange={(e) => {
           this.setState({ descriptionInput: e.target.value })
         }}
@@ -282,9 +278,10 @@ export default class DataAlertSettings extends React.Component {
           </SettingSection>
           <Divider horizontal />
           <SettingSection title='Appearance'>{this.AppearanceSettings()}</SettingSection>
-          {this.props.showAlphaAlertsSettings &&
-            <SettingSection title='Alpha Alerts Settings'>{this.AlphaAlertsSettings()}</SettingSection>
-          }
+          <Divider horizontal />
+          <CollapsableSection defaultCollapsed={true} title='Additional Settings' onToggle={() => { }}>
+            {this.renderAlphaAlertsSettings()}
+          </CollapsableSection>
         </Settings>
       </ErrorBoundary>
     )

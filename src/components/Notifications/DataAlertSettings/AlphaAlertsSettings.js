@@ -41,7 +41,7 @@ export default class AlphaAlertsSettings extends React.Component {
     return (
       <Input
         ref={(r) => (this.billingUnitsRef = r)}
-        className='react-autoql-notification-display-name-input'
+        className='react-autoql-notification-billing-units-input'
         placeholder='eg. 10'
         number='number'
         maxLength='75'
@@ -55,11 +55,11 @@ export default class AlphaAlertsSettings extends React.Component {
   renderDataAlertDescriptionInput = () => {
     return (
       <Input
-        className='react-autoql-notification-message-input'
-        placeholder='eg. "This is a description of the alert"'
+        className='react-autoql-notification-description-input'
+        placeholder='eg. "Notify when we&apos;ve spent 80% of our Marketing budget for the month"'
         area
         maxLength='200'
-        label='Message (optional)'
+        label='Description (optional)'
         value={this.props.descriptionInput}
         onChange={this.props.onDescriptionInputChange}
       />
@@ -72,7 +72,6 @@ export default class AlphaAlertsSettings extends React.Component {
       <div>
         <div className='compose-message-section'>
           <div className='form-section'>
-            {this.renderDataAlertBillingUnitsInput()}
             {this.renderDataAlertDescriptionInput()}
           </div>
         </div>

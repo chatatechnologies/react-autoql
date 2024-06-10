@@ -24,8 +24,8 @@ export default class AppearanceSection extends React.Component {
     titleInput: '',
     messageInput: '',
     showConditionStatement: true,
-    onTitleInputChange: () => {},
-    onMessageInputChange: () => {},
+    onTitleInputChange: () => { },
+    onMessageInputChange: () => { },
   }
 
   focusTitleInput = () => {
@@ -51,7 +51,7 @@ export default class AppearanceSection extends React.Component {
     return (
       <Input
         className='react-autoql-notification-message-input'
-        placeholder='eg. "You have spent 80% of your budget for the month."'
+        placeholder='eg. "Marketing budget is running out!"'
         area
         maxLength='200'
         label='Message (optional)'

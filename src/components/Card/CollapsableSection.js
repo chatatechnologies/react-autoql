@@ -5,9 +5,9 @@ import { v4 as uuid } from 'uuid'
 import { Icon } from '../Icon'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import './Card.scss'
+import './CollapsableSection.scss'
 
-export default class Cascader extends React.Component {
+export default class CollapsableSection extends React.Component {
   constructor(props) {
     super(props)
 
@@ -31,7 +31,7 @@ export default class Cascader extends React.Component {
     subtitle: null,
     defaultCollapsed: false,
     isCollapsed: undefined,
-    onIsCollapsedChange: () => {},
+    onIsCollapsedChange: () => { },
   }
 
   componentDidMount = () => {
