@@ -221,7 +221,9 @@ export default class RuleSimple extends React.Component {
   getConditionStatement = ({ tense, useRT, sentenceCase = false, withFilters = false } = {}) => {
     let queryText = this.getFormattedQueryText({ sentenceCase, withFilters })
 
-    if (useRT) {
+    const RTExists = !!this.props.queryResponse?.data?.data?.parsed_interpretation?.length
+
+    if (useRT && RTExists) {
       queryText = (
         <ReverseTranslation
           queryResponse={this.props.queryResponse}
@@ -230,6 +232,8 @@ export default class RuleSimple extends React.Component {
           textOnly
         />
       )
+    } else {
+      queryText = this.props.queryResponse?.data?.data?.text ?? this.props.initialData?.expression?.[0]?.term_value
     }
 
     const operator = DATA_ALERT_OPERATORS[this.state.selectedOperator]
@@ -686,7 +690,7 @@ export default class RuleSimple extends React.Component {
     const rtArray = constructRTArray(parsedRT)
 
     if (!parsedRT?.length) {
-      return this.props.queryResponse?.data?.data?.text
+      return this.props.queryResponse?.data?.data?.text ?? this.props.initialData?.expression?.[0]?.term_value
     }
 
     let queryText = ''
@@ -728,7 +732,7 @@ export default class RuleSimple extends React.Component {
     const rtArray = constructRTArray(parsedRT)
 
     if (!parsedRT?.length) {
-      return this.props.queryResponse?.data?.data?.text
+      return this.props.queryResponse?.data?.data?.text ?? this.props.initialData?.expression?.[0]?.term_value
     }
 
     let numValueLabels = 0
@@ -777,6 +781,11 @@ export default class RuleSimple extends React.Component {
 
   getQueryFiltersText = () => {
     const rtArray = constructRTArray(this.props.queryResponse?.data?.data?.parsed_interpretation)
+
+    if (!rtArray) {
+      return this.props.queryResponse?.data?.data?.text ?? this.props.initialData?.expression?.[0]?.term_value
+    }
+
     const filters = this.state.queryFilters
 
     let filterText = ''
@@ -851,6 +860,8 @@ export default class RuleSimple extends React.Component {
       if (this.props.queryResponse) {
         queryText = this.props.queryResponse?.data?.data?.text
         queryFiltersText = this.getQueryFiltersText()
+      } else if (!queryText && this.props.initialData) {
+        queryText = this.props.initialData?.expression?.[0]?.term_value
       }
 
       if (!queryText) {
