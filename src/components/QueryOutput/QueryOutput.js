@@ -1449,6 +1449,12 @@ export class QueryOutput extends React.Component {
       this.tableConfig.numberColumnIndex2 = indices2[0]
     }
 
+    // If new number column indices conflict, reset table config to resolve the arrays
+    // The config should stay the same as much as possible while removing the overlapping indices
+    if (this.numberIndicesArraysOverlap(this.tableConfig)) {
+      this.setTableConfig()
+    }
+
     const columns = newColumns ?? this.getColumns()
     this.updateColumns(columns)
   }
