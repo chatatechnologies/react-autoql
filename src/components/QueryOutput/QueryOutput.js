@@ -66,6 +66,7 @@ import {
   ColumnTypes,
   createMutatorFn,
   formatQueryColumns,
+  DisplayTypes,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -312,6 +313,15 @@ export class QueryOutput extends React.Component {
 
       if (this.props.onDisplayTypeChange && this.state.displayType !== prevState.displayType) {
         this.props.onDisplayTypeChange(this.state.displayType)
+
+        // If new number column indices conflict, reset table config to resolve the arrays
+        // The config should stay the same as much as possible while removing the overlapping indices
+        if (!this.isTableConfigValid()) {
+          this.setTableConfig()
+        }
+        //this.state.displayType === DisplayTypes.SCATTERPLOT && this.numberIndicesArraysOverlap(this.tableConfig)) {
+        //   this.setTableConfig()
+        // }
       }
 
       if (!deepEqual(this.state.customColumns, prevState.customColumns)) {
@@ -671,7 +681,7 @@ export class QueryOutput extends React.Component {
         return false
       }
 
-      if (displayType === 'column_line' || displayType === 'scatterplot') {
+      if (displayType === DisplayTypes.COLUMN_LINE || displayType === DisplayTypes.SCATTERPLOT) {
         if (
           !this.isColumnIndexValid(tableConfig.numberColumnIndex, columns) ||
           !this.isColumnIndexValid(tableConfig.numberColumnIndex2, columns) ||
@@ -684,7 +694,7 @@ export class QueryOutput extends React.Component {
           return false
         }
 
-        if (this.numberIndicesArraysOverlap(tableConfig)) {
+        if (displayType === DisplayTypes.COLUMN_LINE && this.numberIndicesArraysOverlap(tableConfig)) {
           console.debug('Both axes reference one or more of the same number column index')
           return false
         }
@@ -1447,12 +1457,6 @@ export class QueryOutput extends React.Component {
     if (indices2) {
       this.tableConfig.numberColumnIndices2 = indices2
       this.tableConfig.numberColumnIndex2 = indices2[0]
-    }
-
-    // If new number column indices conflict, reset table config to resolve the arrays
-    // The config should stay the same as much as possible while removing the overlapping indices
-    if (this.numberIndicesArraysOverlap(this.tableConfig)) {
-      this.setTableConfig()
     }
 
     const columns = newColumns ?? this.getColumns()
