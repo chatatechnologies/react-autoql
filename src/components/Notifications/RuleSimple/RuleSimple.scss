@@ -55,7 +55,7 @@
 
     .react-autoql-rule-input {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       flex: 1;
 
       .react-autoql-input-icon.react-autoql-bubbles-outlined {
@@ -99,6 +99,20 @@
       }
       .react-autoql-rule-input {
         flex: 1;
+
+        .react-autoql-second-term-type-input {
+          flex: 1;
+        }
+
+        .react-autoql-second-term-multiplication-factor-input {
+          display: flex;
+          align-items: center;
+          flex: 0 0 160px;
+        }
+
+        .react-autoql-multiplication-factor-tooltip-icon {
+          color: var(--react-autoql-accent-color);
+        }
       }
       .react-autoql-delete-compare-btn {
         cursor: pointer;

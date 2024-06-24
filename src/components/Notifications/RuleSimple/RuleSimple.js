@@ -144,6 +144,8 @@ export default class RuleSimple extends React.Component {
       secondQueryAmountOfNumberColumns: 0,
       secondQueryAllColumnsAmount: 0,
       secondQueryGroupableColumnsAmount: 0,
+      secondTermMultiplicationFactorType: 'multiply',
+      secondTermMultiplicationFactorValue: '100%',
     }
 
     if (initialData?.length) {
@@ -361,6 +363,13 @@ export default class RuleSimple extends React.Component {
         term_type: this.state.secondTermType,
         condition: 'TERMINATOR',
         term_value: secondTermValue,
+      }
+
+      if (this.state.secondTermType === QUERY_TERM_TYPE) {
+        seecondTerm.adjustment = {
+          value: this.state.secondTermMultiplicationFactorValue,
+          operation: this.state.secondTermMultiplicationFactorType,
+        }
       }
 
       if (
@@ -1169,6 +1178,7 @@ export default class RuleSimple extends React.Component {
     return (
       <Input
         ref={(r) => (this.secondInput = r)}
+        className='react-autoql-second-term-type-input'
         spellCheck={false}
         placeholder={this.getSecondInputPlaceholder()}
         value={this.state.secondInputValue}
@@ -1200,6 +1210,82 @@ export default class RuleSimple extends React.Component {
         selectValue={this.state.secondTermType}
         onChange={this.onSecondQueryChange}
       />
+    )
+  }
+
+  renderSecondTermMultiplicationFactor = () => {
+    return (
+      <div className='react-autoql-second-term-multiplication-factor-input'>
+        <Input
+          ref={(r) => (this.multiplicationFactorInput = r)}
+          spellCheck={false}
+          placeholder='eg. 110%'
+          value={this.state.secondTermMultiplicationFactorValue}
+          onChange={(e) => {
+            this.setState({ secondTermMultiplicationFactorValue: e.target.value })
+          }}
+          type='text' // TODO: make custom number type where percent symbol is allowed
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              this.props.onLastInputEnterPress()
+            }
+          }}
+          selectOptions={[
+            {
+              value: 'multiply',
+              label: (
+                <span>
+                  <Icon type='close' />
+                </span>
+              ),
+            },
+            {
+              value: 'add',
+              label: (
+                <span>
+                  <Icon type='plus' />
+                </span>
+              ),
+            },
+            {
+              value: 'subtract',
+              label: (
+                <span>
+                  <Icon type='minus' />
+                </span>
+              ),
+            },
+          ]}
+          selectValue={this.state.secondTermMultiplicationFactorType}
+          onSelectChange={(secondTermMultiplicationFactorType) => {
+            if (secondTermMultiplicationFactorType === this.state.secondTermMultiplicationFactorType) {
+              return
+            }
+
+            const newState = { secondTermMultiplicationFactorType }
+
+            if (secondTermMultiplicationFactorType === 'multiply') {
+              newState.secondTermMultiplicationFactorValue = '100%'
+            } else {
+              newState.secondTermMultiplicationFactorValue = '0'
+            }
+
+            this.setState(newState, () => {
+              this.multiplicationFactorInput?.selectAll()
+            })
+          }}
+        />
+        <Icon
+          className='react-autoql-multiplication-factor-tooltip-icon'
+          type='info'
+          tooltipID={this.props.tooltipID}
+          tooltip={
+            this.state.secondTermMultiplicationFactorType === 'multiply'
+              ? 'Compare to a custom multiple or percentage of the query result (eg. 90% of total sales last month). You may type in a number or a percentage.'
+              : 'Add or subtract a specific amount from the query result to compare to.'
+          }
+        />
+      </div>
     )
   }
 
@@ -1346,7 +1432,10 @@ export default class RuleSimple extends React.Component {
                       {this.renderOperatorSelector()}
                     </div>
                     <div className='react-autoql-rule-second-input-container'>
-                      <div className='react-autoql-rule-input'>{this.renderSecondTermInput()}</div>
+                      <div className='react-autoql-rule-input'>
+                        {this.renderSecondTermInput()}
+                        {this.state.secondTermType === QUERY_TERM_TYPE && this.renderSecondTermMultiplicationFactor()}
+                      </div>
                       {this.renderTermValidationSection()}
                     </div>
                   </>
