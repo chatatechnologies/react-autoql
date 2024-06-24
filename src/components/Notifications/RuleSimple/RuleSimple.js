@@ -366,8 +366,10 @@ export default class RuleSimple extends React.Component {
       }
 
       if (this.state.secondTermType === QUERY_TERM_TYPE) {
-        secondTerm.multiplication_factor_type = this.state.secondTermMultiplicationFactorType
-        secondTerm.multiplication_factor = this.state.secondTermMultiplicationFactorValue
+        seecondTerm.adjustment = {
+          value: this.state.secondTermMultiplicationFactorValue,
+          operation: this.state.secondTermMultiplicationFactorType,
+        }
       }
 
       if (
