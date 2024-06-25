@@ -33,7 +33,7 @@ export class AddColumnBtnWithoutRef extends React.Component {
 
   static defaultProps = {
     queryResponse: undefined,
-    allowCustom: false,
+    allowCustom: true,
     onAddColumnClick: () => {},
     onCustomClick: () => {},
     tooltipID: undefined,

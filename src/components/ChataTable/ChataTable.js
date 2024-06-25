@@ -165,7 +165,7 @@ export default class ChataTable extends React.Component {
     pivot: false,
     tableOptions: {},
     keepScrolledRight: false,
-    allowCustomColumns: false,
+    allowCustomColumns: true,
     enableContextMenu: true,
     onFilterCallback: () => {},
     onSorterCallback: () => {},
