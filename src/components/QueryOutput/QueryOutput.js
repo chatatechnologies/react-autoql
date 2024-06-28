@@ -2364,8 +2364,8 @@ export class QueryOutput extends React.Component {
   }
 
   onCustomColumnDelete = (deletedColumn) => {
-    const columnIndex = deletedColumn.index
-    const customColumns = this.state.customColumns.filter((col) => col.index !== columnIndex)
+    const columnID = deletedColumn.id
+    const customColumns = this.state.customColumns.filter((col) => col.id !== columnID)
     this.setState({ customColumns })
   }
 
