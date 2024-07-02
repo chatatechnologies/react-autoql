@@ -1227,7 +1227,7 @@ export default class RuleSimple extends React.Component {
         <Input
           ref={(r) => (this.multiplicationFactorInput = r)}
           spellCheck={false}
-          placeholder='eg. 110'
+          placeholder=''
           value={this.state.secondTermMultiplicationFactorValue}
           onChange={(e) => {
             this.setState({ secondTermMultiplicationFactorValue: e.target.value })
@@ -1256,22 +1256,22 @@ export default class RuleSimple extends React.Component {
                 </span>
               ),
             },
-            // {
-            //   value: 'add',
-            //   label: (
-            //     <span>
-            //       <Icon type='plus' />
-            //     </span>
-            //   ),
-            // },
-            // {
-            //   value: 'subtract',
-            //   label: (
-            //     <span>
-            //       <Icon type='minus' />
-            //     </span>
-            //   ),
-            // },
+            {
+              value: 'add',
+              label: (
+                <span>
+                  <strong>more</strong> than
+                </span>
+              ),
+            },
+            {
+              value: 'subtract',
+              label: (
+                <span>
+                  <strong>less</strong> than
+                </span>
+              ),
+            },
           ]}
           selectValue={this.state.secondTermMultiplicationFactorType}
           onSelectChange={(secondTermMultiplicationFactorType) => {
@@ -1393,7 +1393,7 @@ export default class RuleSimple extends React.Component {
 
           {this.state.selectedConditionType === COMPARE_TYPE ? (
             <>
-              <div style={{ marginTop: '15px' }}>
+              <div style={{ marginTop: '25px' }}>
                 {this.state.firstQuerySelectedColumns?.length ? (
                   <>
                     <span className='data-alert-description-span'>
