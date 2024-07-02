@@ -11,7 +11,8 @@
     white-space: pre;
   }
 
-  &.with-query-validation .react-autoql-rule-condition-select-input-container {
+  &.with-query-validation .react-autoql-rule-condition-select-input-container,
+  &.with-query-validation .react-autoql-rule-mult-factor-select-input-container {
     margin-bottom: 30px;
   }
 
@@ -70,7 +71,12 @@
       margin-bottom: 28px;
     }
 
-    .react-autoql-rule-condition-select-input-container {
+    .react-autoql-rule-mult-factor-select-input-container .react-autoql-input {
+      max-width: 80px;
+    }
+
+    .react-autoql-rule-condition-select-input-container,
+    .react-autoql-rule-mult-factor-select-input-container {
       display: flex;
       flex-direction: column;
       padding: 2px 0;

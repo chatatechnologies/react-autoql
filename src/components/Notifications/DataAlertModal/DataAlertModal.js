@@ -75,19 +75,20 @@ class DataAlertModal extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    onSave: () => { },
-    onErrorCallback: () => { },
+    onSave: () => {},
+    onErrorCallback: () => {},
     currentDataAlert: undefined,
     dataAlertType: CONTINUOUS_TYPE,
     isVisible: false,
     allowDelete: true,
-    onClose: () => { },
-    onSuccessAlert: () => { },
-    onClosed: () => { },
-    onOpened: () => { },
+    onClose: () => {},
+    onSuccessAlert: () => {},
+    onClosed: () => {},
+    onOpened: () => {},
     enableQueryValidation: true,
     dataFormatting: dataFormattingDefault,
     autoQLConfig: autoQLConfigDefault,
+    enableAlphaAlertSettings: false,
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -303,7 +304,7 @@ class DataAlertModal extends React.Component {
       if (newDataAlert.id) {
         updateManagementDataAlert({
           ...requestParams,
-          projectId: this.props?.autoQLConfig?.projectId
+          projectId: this.props?.autoQLConfig?.projectId,
         })
           .then((dataAlertResponse) => {
             this.onDataAlertCreateOrEditSuccess(dataAlertResponse)
@@ -314,7 +315,7 @@ class DataAlertModal extends React.Component {
       } else {
         createManagementDataAlert({
           ...requestParams,
-          projectId: this.props?.autoQLConfig?.projectId
+          projectId: this.props?.autoQLConfig?.projectId,
         })
           .then((dataAlertResponse) => {
             this.onDataAlertCreateOrEditSuccess(dataAlertResponse)
@@ -597,12 +598,10 @@ class DataAlertModal extends React.Component {
           showConditionStatement
           conditionStatement={this.getConditionStatement()}
         />
-        {this.renderAlphaAlertsSettings()}
+        {this.props.enableAlphaAlertSettings && this.renderAlphaAlertsSettings()}
       </div>
     )
   }
-
-
 
   getStepNumber = (stepValue) => {
     const steps = this.getSteps()
