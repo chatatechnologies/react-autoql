@@ -144,8 +144,8 @@ export default class RuleSimple extends React.Component {
       secondQueryAmountOfNumberColumns: 0,
       secondQueryAllColumnsAmount: 0,
       secondQueryGroupableColumnsAmount: 0,
-      secondTermMultiplicationFactorType: 'multiply',
-      secondTermMultiplicationFactorValue: '100%',
+      secondTermMultiplicationFactorType: 'multiply-percent',
+      secondTermMultiplicationFactorValue: '100',
     }
 
     if (initialData?.length) {
@@ -366,9 +366,17 @@ export default class RuleSimple extends React.Component {
       }
 
       if (this.state.secondTermType === QUERY_TERM_TYPE) {
+        let operation = this.state.secondTermMultiplicationFactorType
+        let value = this.state.secondTermMultiplicationFactorValue
+
+        if (operation === 'multiply-percent') {
+          operation = 'multiply'
+          value = `${value}%`
+        }
+
         secondTerm.result_adjustment = {
-          value: this.state.secondTermMultiplicationFactorValue,
-          operation: this.state.secondTermMultiplicationFactorType,
+          value,
+          operation,
         }
       }
 
@@ -1219,7 +1227,7 @@ export default class RuleSimple extends React.Component {
         <Input
           ref={(r) => (this.multiplicationFactorInput = r)}
           spellCheck={false}
-          placeholder='eg. 110%'
+          placeholder=''
           value={this.state.secondTermMultiplicationFactorValue}
           onChange={(e) => {
             this.setState({ secondTermMultiplicationFactorValue: e.target.value })
@@ -1230,12 +1238,21 @@ export default class RuleSimple extends React.Component {
               this.props.onLastInputEnterPress()
             }
           }}
+          selectLocation='right'
           selectOptions={[
+            {
+              value: 'multiply-percent',
+              label: (
+                <span>
+                  <strong>% of</strong>
+                </span>
+              ),
+            },
             {
               value: 'multiply',
               label: (
                 <span>
-                  <Icon type='close' />
+                  <strong>times</strong> (multiple)
                 </span>
               ),
             },
@@ -1243,7 +1260,7 @@ export default class RuleSimple extends React.Component {
               value: 'add',
               label: (
                 <span>
-                  <Icon type='plus' />
+                  <strong>more</strong> than
                 </span>
               ),
             },
@@ -1251,7 +1268,7 @@ export default class RuleSimple extends React.Component {
               value: 'subtract',
               label: (
                 <span>
-                  <Icon type='minus' />
+                  <strong>less</strong> than
                 </span>
               ),
             },
@@ -1264,8 +1281,10 @@ export default class RuleSimple extends React.Component {
 
             const newState = { secondTermMultiplicationFactorType }
 
-            if (secondTermMultiplicationFactorType === 'multiply') {
-              newState.secondTermMultiplicationFactorValue = '100%'
+            if (secondTermMultiplicationFactorType === 'multiply-percent') {
+              newState.secondTermMultiplicationFactorValue = '100'
+            } else if (secondTermMultiplicationFactorType === 'multiply') {
+              newState.secondTermMultiplicationFactorValue = '1'
             } else {
               newState.secondTermMultiplicationFactorValue = '0'
             }
@@ -1275,7 +1294,7 @@ export default class RuleSimple extends React.Component {
             })
           }}
         />
-        <Icon
+        {/* <Icon
           className='react-autoql-multiplication-factor-tooltip-icon'
           type='info'
           tooltipID={this.props.tooltipID}
@@ -1284,7 +1303,7 @@ export default class RuleSimple extends React.Component {
               ? 'Compare to a custom multiple or percentage of the query result (eg. 90% of total sales last month). You may type in a number or a percentage.'
               : 'Add or subtract a specific amount from the query result to compare to.'
           }
-        />
+        /> */}
       </div>
     )
   }
@@ -1374,7 +1393,7 @@ export default class RuleSimple extends React.Component {
 
           {this.state.selectedConditionType === COMPARE_TYPE ? (
             <>
-              <div style={{ marginTop: '15px' }}>
+              <div style={{ marginTop: '25px' }}>
                 {this.state.firstQuerySelectedColumns?.length ? (
                   <>
                     <span className='data-alert-description-span'>
@@ -1431,11 +1450,11 @@ export default class RuleSimple extends React.Component {
                     <div className='react-autoql-rule-condition-select-input-container'>
                       {this.renderOperatorSelector()}
                     </div>
+                    <div className='react-autoql-rule-mult-factor-select-input-container'>
+                      {this.state.secondTermType === QUERY_TERM_TYPE && this.renderSecondTermMultiplicationFactor()}
+                    </div>
                     <div className='react-autoql-rule-second-input-container'>
-                      <div className='react-autoql-rule-input'>
-                        {this.renderSecondTermInput()}
-                        {this.state.secondTermType === QUERY_TERM_TYPE && this.renderSecondTermMultiplicationFactor()}
-                      </div>
+                      <div className='react-autoql-rule-input'>{this.renderSecondTermInput()}</div>
                       {this.renderTermValidationSection()}
                     </div>
                   </>
