@@ -1,6 +1,6 @@
 {
   "name": "react-autoql",
-  "version": "8.4.43",
+  "version": "8.4.51",
   "description": "React Widget Library",
   "main": "dist/autoql.cjs.js",
   "module": "dist/autoql.esm.js",
@@ -121,6 +121,7 @@
     "@rollup/plugin-image": "^2.0.5",
     "@rollup/plugin-node-resolve": "^13.3.0",
     "@rollup/plugin-terser": "^0.4.3",
+    "ajv": "^7.2.4",
     "autoprefixer": "^10.4.16",
     "axios-mock-adapter": "^1.18.1",
     "babel-core": "^7.0.0-bridge.0",

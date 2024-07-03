@@ -67,6 +67,7 @@ import {
   createMutatorFn,
   formatQueryColumns,
   DisplayTypes,
+  isColumnIndexConfigValid,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -316,12 +317,9 @@ export class QueryOutput extends React.Component {
 
         // If new number column indices conflict, reset table config to resolve the arrays
         // The config should stay the same as much as possible while removing the overlapping indices
-        if (!this.isTableConfigValid()) {
+        if (!this.isTableConfigValid(this.tableConfig, this.state.columns, this.state.displayType)) {
           this.setTableConfig()
         }
-        //this.state.displayType === DisplayTypes.SCATTERPLOT && this.numberIndicesArraysOverlap(this.tableConfig)) {
-        //   this.setTableConfig()
-        // }
       }
 
       if (!deepEqual(this.state.customColumns, prevState.customColumns)) {
@@ -619,103 +617,12 @@ export class QueryOutput extends React.Component {
   }
 
   isTableConfigValid = (tableConfig, columns, displayType) => {
-    if (!columns?.length || !this.queryResponse?.data?.data?.rows?.length) {
-      console.debug('Invalid Config: either no columns or no data were provided to table config validation')
-      return false
-    }
-
-    try {
-      if (!tableConfig || !tableConfig.numberColumnIndices || !tableConfig.stringColumnIndices) {
-        console.debug('Table config provided was incomplete: one of the index arrays are missing', { tableConfig })
-      }
-
-      const datasetHasNumberColButConfigDoesNot =
-        hasNumberColumn(getVisibleColumns(columns)) && !isNumber(tableConfig.numberColumnIndex)
-
-      const datasetHasStringColButConfigDoesNot =
-        hasStringColumn(getVisibleColumns(columns)) && !isNumber(tableConfig.stringColumnIndex)
-
-      if (datasetHasNumberColButConfigDoesNot || datasetHasStringColButConfigDoesNot) {
-        console.debug('Table config provided was incomplete:', {
-          datasetHasNumberColButConfigDoesNot,
-          datasetHasStringColButConfigDoesNot,
-        })
-        return false
-      }
-
-      if (!Array.isArray(tableConfig.numberColumnIndices)) {
-        console.debug('Number column indices in table config is not an array')
-        return false
-      }
-
-      if (!Array.isArray(tableConfig.stringColumnIndices)) {
-        console.debug('String column indices in table config is not an array')
-        return false
-      }
-
-      if (
-        isNumber(tableConfig.stringColumnIndex) &&
-        (!columns[tableConfig.stringColumnIndex].is_visible ||
-          tableConfig.stringColumnIndices.find((i) => !columns[i]?.is_visible) !== undefined)
-      ) {
-        console.debug('Table config invalid: Some of the string column indices were pointing to hidden columns.')
-        return false
-      }
-
-      if (
-        isNumber(tableConfig.numberColumnIndex) &&
-        (!columns[tableConfig.numberColumnIndex]?.is_visible ||
-          tableConfig.numberColumnIndices.find((i) => !columns[i]?.is_visible) !== undefined)
-      ) {
-        console.debug('Table config invalid: Some of the number column indices were pointing to hidden columns.')
-        return false
-      }
-
-      if (
-        isNumber(tableConfig.numberColumnIndex2) &&
-        (!columns[tableConfig.numberColumnIndex2]?.is_visible ||
-          (tableConfig.numberColumnIndices2?.length &&
-            tableConfig.numberColumnIndices2.find((i) => !columns[i]?.is_visible) !== undefined))
-      ) {
-        console.debug('Table config invalid: Some of the second number column indices were pointing to hidden columns.')
-        return false
-      }
-
-      if (displayType === DisplayTypes.COLUMN_LINE || displayType === DisplayTypes.SCATTERPLOT) {
-        if (
-          !this.isColumnIndexValid(tableConfig.numberColumnIndex, columns) ||
-          !this.isColumnIndexValid(tableConfig.numberColumnIndex2, columns) ||
-          tableConfig.numberColumnIndex === tableConfig.numberColumnIndex2
-        ) {
-          console.debug(
-            `Two unique number column indices were not found. This is required for display type: ${displayType}`,
-            tableConfig,
-          )
-          return false
-        }
-
-        if (displayType === DisplayTypes.COLUMN_LINE && this.numberIndicesArraysOverlap(tableConfig)) {
-          console.debug('Both axes reference one or more of the same number column index')
-          return false
-        }
-      }
-
-      // To keep dashboards backwards compatible, we need to add
-      // numberColumnIndices2 array to the tableConfig
-      if (!tableConfig.numberColumnIndices2) {
-        const { numberColumnIndices2, numberColumnIndex2 } = getNumberColumnIndices(
-          columns,
-          this.usePivotDataForChart(),
-        )
-        tableConfig.numberColumnIndices2 = numberColumnIndices2
-        tableConfig.numberColumnIndex2 = numberColumnIndex2
-      }
-
-      return true
-    } catch (error) {
-      console.debug('Saved table config was not valid for response:', error?.message)
-      return false
-    }
+    return isColumnIndexConfigValid({
+      response: this.queryResponse,
+      columnIndexConfig: tableConfig ?? this.tableConfig,
+      columns: columns ?? this.state.columns,
+      displayType: displayType ?? this.state.displayType,
+    })
   }
 
   updateColumnsAndData = (response) => {
@@ -2457,8 +2364,8 @@ export class QueryOutput extends React.Component {
   }
 
   onCustomColumnDelete = (deletedColumn) => {
-    const columnIndex = deletedColumn.index
-    const customColumns = this.state.customColumns.filter((col) => col.index !== columnIndex)
+    const columnID = deletedColumn.id
+    const customColumns = this.state.customColumns.filter((col) => col.id !== columnID)
     this.setState({ customColumns })
   }
 
