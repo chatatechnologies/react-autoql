@@ -876,7 +876,7 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  queryFn = (args = {}) => {
+  queryFn = async (args = {}) => {
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
     const allFilters = this.getCombinedFilters()
 
@@ -885,45 +885,64 @@ export class QueryOutput extends React.Component {
 
     this.setState({ isLoadingData: true })
 
+    let response
+
     if (this.isDrilldown()) {
-      return runDrilldown({
-        ...getAuthentication(this.props.authentication),
-        ...getAutoQLConfig(this.props.autoQLConfig),
-        source: this.props.source,
-        scope: this.props.scope,
-        debug: queryRequestData?.translation === 'include',
-        filters: queryRequestData?.session_filter_locks,
-        pageSize: queryRequestData?.page_size,
-        test: queryRequestData?.test,
-        groupBys: queryRequestData?.columns,
-        queryID: this.props.originalQueryID,
-        orders: this.formattedTableParams?.sorters,
-        tableFilters: allFilters,
-        cancelToken: this.axiosSource.token,
-        ...args,
-      }).finally(() => {
-        this.setState({ isLoadingData: false })
-      })
+      try {
+        response = await runDrilldown({
+          ...getAuthentication(this.props.authentication),
+          ...getAutoQLConfig(this.props.autoQLConfig),
+          source: this.props.source,
+          scope: this.props.scope,
+          debug: queryRequestData?.translation === 'include',
+          filters: queryRequestData?.session_filter_locks,
+          pageSize: queryRequestData?.page_size,
+          test: queryRequestData?.test,
+          groupBys: queryRequestData?.columns,
+          queryID: this.props.originalQueryID,
+          orders: this.formattedTableParams?.sorters,
+          tableFilters: allFilters,
+          cancelToken: this.axiosSource.token,
+          ...args,
+        })
+
+        if (this.state.customColumns?.length) {
+          response = this.getNewResponseWithCustomColumns(response, this.state.customColumns)
+        }
+      } catch (error) {
+        response = error
+      }
+    } else {
+      try {
+        response = await runQueryOnly({
+          ...getAuthentication(this.props.authentication),
+          ...getAutoQLConfig(this.props.autoQLConfig),
+          query: queryRequestData?.text,
+          debug: queryRequestData?.translation === 'include',
+          userSelection: queryRequestData?.disambiguation,
+          filters: queryRequestData?.session_filter_locks,
+          test: queryRequestData?.test,
+          pageSize: queryRequestData?.page_size,
+          orders: this.formattedTableParams?.sorters,
+          tableFilters: allFilters,
+          source: this.props.source,
+          scope: this.props.scope,
+          cancelToken: this.axiosSource.token,
+          newColumns: queryRequestData?.additional_selects,
+          ...args,
+        })
+
+        if (this.state.customColumns?.length) {
+          response = this.getNewResponseWithCustomColumns(response, this.state.customColumns)
+        }
+      } catch (error) {
+        response = error
+      }
     }
-    return runQueryOnly({
-      ...getAuthentication(this.props.authentication),
-      ...getAutoQLConfig(this.props.autoQLConfig),
-      query: queryRequestData?.text,
-      debug: queryRequestData?.translation === 'include',
-      userSelection: queryRequestData?.disambiguation,
-      filters: queryRequestData?.session_filter_locks,
-      test: queryRequestData?.test,
-      pageSize: queryRequestData?.page_size,
-      orders: this.formattedTableParams?.sorters,
-      tableFilters: allFilters,
-      source: this.props.source,
-      scope: this.props.scope,
-      cancelToken: this.axiosSource.token,
-      newColumns: queryRequestData?.additional_selects,
-      ...args,
-    }).finally(() => {
-      this.setState({ isLoadingData: false })
-    })
+
+    this.setState({ isLoadingData: false })
+
+    return response
   }
 
   getFilterDrilldown = ({ stringColumnIndex, row }) => {
