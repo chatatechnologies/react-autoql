@@ -55,6 +55,7 @@ export class OptionsToolbar extends React.Component {
     dataFormatting: dataFormattingType,
     enableDeleteBtn: PropTypes.bool,
     shouldRender: PropTypes.bool,
+    enableFilterBtn: PropTypes.bool,
     onSuccessAlert: PropTypes.func,
     onErrorCallback: PropTypes.func,
     onNewNotificationCallback: PropTypes.func,
@@ -69,6 +70,7 @@ export class OptionsToolbar extends React.Component {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
+    enableFilterBtn: true,
     enableDeleteBtn: false,
     shouldRender: true,
     onSuccessAlert: () => {},
@@ -320,6 +322,7 @@ export class OptionsToolbar extends React.Component {
           tooltipID={this.props.tooltipID}
           queryResponse={queryResponse}
           filters={filters}
+          autoQLConfig={this.props.autoQLConfig}
         />
       </ErrorBoundary>
     )
@@ -688,7 +691,10 @@ export class OptionsToolbar extends React.Component {
 
       shouldShowButton = {
         showFilterButton:
-          (displayType === 'table' || isChartType(displayType)) && !allColumnsHidden && hasMoreThanOneRow,
+          this.props.enableFilterBtn &&
+          (displayType === 'table' || isChartType(displayType)) &&
+          !allColumnsHidden &&
+          hasMoreThanOneRow,
         showCopyButton: isTable && !allColumnsHidden,
         showSaveAsPNGButton: isChart,
         showHideColumnsButton:

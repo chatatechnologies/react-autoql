@@ -10,14 +10,30 @@
   box-shadow: var(--react-autoql-box-shadow-1);
 
   margin-bottom: 8px;
+  opacity: 1;
 
   color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.6));
   font-family: var(--react-autoql-font-family), sans-serif;
 
-  // transition: all 1s ease;
-  transition: height 0.3s cubic-bezier(0.26, 0.26, 0, 1);
+  transition: height 0.3s cubic-bezier(0.26, 0.26, 0, 1), box-shadow 0.3s ease, margin-bottom 0.5s ease,
+    max-height 0.3s ease, opacity 0.3s ease !important;
   animation: slideIn 0.5s cubic-bezier(0.26, 0.26, 0, 1);
   animation-fill-mode: both;
+
+  &.expanded {
+    max-height: 100vh;
+  }
+
+  &.collapsed {
+    max-height: 150px;
+  }
+
+  &.react-autoql-notification-item-deleted {
+    max-height: 0px !important;
+    opacity: 0 !important;
+    margin-bottom: 0px !important;
+    box-shadow: none;
+  }
 
   &.is-error {
     .react-autoql-notification-alert-strip {
@@ -161,7 +177,7 @@
     &.expanded {
       position: relative;
       min-height: 70px;
-      max-height: 500px;
+      max-height: 550px;
 
       .react-autoql-notification-query-data-container {
         flex: 1;
@@ -408,6 +424,13 @@
     .react-autoql-notification-display-name {
       font-size: 18px;
       color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.7));
+      .react-autoql-icon {
+        font-size: 0.875em;
+      }
+    }
+    .react-autoql-notification-project-name {
+      font-size: 14px;
+      color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.7));
       .react-autoql-icon {
         font-size: 0.875em;
       }

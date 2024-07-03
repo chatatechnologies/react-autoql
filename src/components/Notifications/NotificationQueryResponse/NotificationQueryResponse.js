@@ -25,8 +25,6 @@ export default class NotificationQueryResponse extends React.Component {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
-    tooltipID: null,
-    chartTooltipID: null,
     reportProblemCallback: () => {},
     onSuccessCallback: () => {},
     onErrorCallback: () => {},
@@ -62,6 +60,7 @@ export default class NotificationQueryResponse extends React.Component {
                 chartTooltipID={this.props.chartTooltipID}
                 showQueryInterpretation={false}
                 enableDynamicCharting={true}
+                useInfiniteScroll={false}
               />
             )
           ) : (
@@ -97,6 +96,7 @@ export default class NotificationQueryResponse extends React.Component {
             onSuccessAlert={this.props.onSuccessCallback}
             onErrorCallback={this.props.onErrorCallback}
             popoverPositions={['top', 'left', 'bottom', 'right']}
+            enableFilterBtn={this.props.enableFilterBtn}
             popoverAlign='end'
           />
         </div>

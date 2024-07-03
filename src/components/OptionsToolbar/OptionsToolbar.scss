@@ -23,19 +23,17 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-
-  li {
-    display: flex;
-    align-items: center;
-  }
-}
-
-.more-options-menu {
+  font-size: 13px;
   background: var(--react-autoql-background-color-secondary);
   padding: 10px 0;
 
   span.react-autoql-icon {
     margin-right: 10px;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
   }
 }
 

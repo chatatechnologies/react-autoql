@@ -22,6 +22,10 @@ import {
   ColumnTypes,
   MAX_DATA_PAGE_SIZE,
   getDayJSObj,
+  setColumnVisibility,
+  sortDataByColumn,
+  filterDataByColumn,
+  getAutoQLConfig,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -37,6 +41,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './ChataTable.scss'
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
+import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
 
 export default class ChataTable extends React.Component {
   constructor(props) {
@@ -44,11 +49,20 @@ export default class ChataTable extends React.Component {
 
     this.TABLE_ID = uuid()
 
+    if (!props.useInfiniteScroll) {
+      // We must store original query data to use as source of filter/sort for client side filtering
+      if (props.pivot) {
+        this.originalQueryData = _cloneDeep(props.data)
+      } else {
+        this.originalQueryData = _cloneDeep(props.response?.data?.data?.rows)
+      }
+    }
+
     this.hasSetInitialData = false
     this.isSettingInitialData = false
     this.isFiltering = false
     this.isSorting = false
-    this.pageSize = 50
+    this.pageSize = props.pageSize ?? 50
 
     this.totalPages = this.getTotalPages(props.response)
     if (isNaN(this.totalPages) || !this.totalPages) {
@@ -63,6 +77,7 @@ export default class ChataTable extends React.Component {
 
     this.tableOptions = {
       selectableCheck: () => false,
+      movableColumns: true,
       initialSort: !props.useInfiniteScroll ? this.tableParams?.sort : undefined,
       initialFilter: !props.useInfiniteScroll ? this.tableParams?.filter : undefined,
       progressiveLoadScrollMargin: 50, // Trigger next ajax load when scroll bar is 800px or less from the bottom of the table.
@@ -76,9 +91,10 @@ export default class ChataTable extends React.Component {
 
         return new Blob([fileContents], { type: mimeType }) //must return a blob to proceed with the download, return false to abort download
       },
+      ...this.props.tableOptions,
     }
 
-    if (props.useInfiniteScroll && props.response?.data?.data?.rows?.length) {
+    if (props.response?.data?.data?.rows?.length) {
       this.tableOptions.sortMode = 'remote' // v4: ajaxSorting = true
       this.tableOptions.filterMode = 'remote' // v4: ajaxFiltering = true
       this.tableOptions.paginationMode = 'remote'
@@ -126,6 +142,13 @@ export default class ChataTable extends React.Component {
     style: PropTypes.shape({}),
     supportsDrilldowns: PropTypes.bool,
     response: PropTypes.any,
+    tableOptions: PropTypes.shape({}),
+    updateColumns: PropTypes.func,
+    keepScrolledRight: PropTypes.bool,
+    allowCustomColumns: PropTypes.bool,
+    onCustomColumnChange: PropTypes.func,
+    onCustomColumnDelete: PropTypes.func,
+    enableContextMenu: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -141,12 +164,19 @@ export default class ChataTable extends React.Component {
     response: undefined,
     tooltipID: undefined,
     pivot: false,
+    tableOptions: {},
+    keepScrolledRight: false,
+    allowCustomColumns: true,
+    enableContextMenu: true,
     onFilterCallback: () => {},
     onSorterCallback: () => {},
     onTableParamsChange: () => {},
     onCellClick: () => {},
     onErrorCallback: () => {},
     onNewData: () => {},
+    updateColumns: () => {},
+    onCustomColumnChange: () => {},
+    onCustomColumnDelete: () => {},
   }
 
   componentDidMount = () => {
@@ -232,7 +262,11 @@ export default class ChataTable extends React.Component {
 
     if (this.props.columns && this.state.tabulatorMounted && !deepEqual(this.props.columns, prevProps.columns)) {
       this.ref?.tabulator?.setColumns(this.getFilteredTabulatorColumnDefinitions())
-      this.updateData(this.getRows(this.props, 1))
+      this.updateData(this.getRows(this.props, 1)).then(() => {
+        if (this.props.keepScrolledRight) {
+          this.scrollToRight()
+        }
+      })
       this.setHeaderInputEventListeners()
       this.setFilters()
       this.clearLoadingIndicators()
@@ -269,6 +303,11 @@ export default class ChataTable extends React.Component {
       }
 
       props.columns?.forEach((column, columnIndex) => {
+        // If column has a mutator function, stats cannot be calculated based on the cell values
+        if (column.mutator) {
+          return
+        }
+
         if (column.type === ColumnTypes.QUANTITY || column.type === ColumnTypes.DOLLAR_AMT) {
           const columnData = rows.map((r) => r[columnIndex])
           stats[columnIndex] = {
@@ -320,20 +359,14 @@ export default class ChataTable extends React.Component {
     return 1
   }
 
-  setInfiniteScroll = (useInfiniteScroll) => {
+  setInfiniteScroll = () => {
     if (!this.ref?.tabulator?.options) {
       return
     }
 
-    if (useInfiniteScroll) {
-      this.ref.tabulator.options.sortMode = 'remote'
-      this.ref.tabulator.options.filterMode = 'remote'
-      this.ref.tabulator.options.paginationMode = 'remote'
-    } else {
-      this.ref.tabulator.options.sortMode = 'local'
-      this.ref.tabulator.options.filterMode = 'local'
-      this.ref.tabulator.options.paginationMode = 'local'
-    }
+    this.ref.tabulator.options.sortMode = 'remote'
+    this.ref.tabulator.options.filterMode = 'remote'
+    this.ref.tabulator.options.paginationMode = 'remote'
   }
 
   updateData = (data, useInfiniteScroll) => {
@@ -341,7 +374,7 @@ export default class ChataTable extends React.Component {
       this.setInfiniteScroll(true)
     }
 
-    this.ref?.updateData(data)
+    return this.ref?.updateData(data)
   }
 
   transposeTable = () => {
@@ -452,6 +485,10 @@ export default class ChataTable extends React.Component {
         tabulatorMounted: true,
         pageLoading: false,
       })
+
+      if (this.props.keepScrolledRight) {
+        this.scrollToRight()
+      }
     }
   }
 
@@ -518,7 +555,7 @@ export default class ChataTable extends React.Component {
       } else {
         this.setState({ pageLoading: true })
 
-        const responseWrapper = await props.queryFn({
+        const responseWrapper = await this.queryFn({
           tableFilters:
             nextTableParamsFormatted?.filters.length === 0
               ? props.queryRequestData?.filters
@@ -561,6 +598,42 @@ export default class ChataTable extends React.Component {
     return response
   }
 
+  clientSortAndFilterData = (params) => {
+    // Use FE for sorting and filtering
+    let response = _cloneDeep(this.props.response)
+    let data = _cloneDeep(this.originalQueryData)
+
+    // Filters
+    if (params.tableFilters?.length) {
+      params.tableFilters.forEach((filter) => {
+        const filterColumnName = filter.name
+        const filterColumnIndex = this.props.columns.find((col) => col.name === filterColumnName)?.index
+
+        data = filterDataByColumn(data, this.props.columns, filterColumnIndex, filter.value, filter.operator)
+      })
+    }
+
+    // Sorters
+    if (params.orders?.length) {
+      const sortColumnName = params.orders[0].name
+      const sortColumnIndex = this.props.columns.find((col) => col.name === sortColumnName)?.index
+      const sortDirection = params.orders[0].sort === 'DESC' ? 'desc' : 'asc'
+
+      data = sortDataByColumn(data, this.props.columns, sortColumnIndex, sortDirection)
+    }
+
+    response.data.data.rows = data
+    return response
+  }
+
+  queryFn = (params) => {
+    if (this.props.useInfiniteScroll) {
+      return this.props.queryFn(params)
+    } else {
+      return Promise.resolve(this.clientSortAndFilterData(params))
+    }
+  }
+
   getAllRows = (props) => {
     if (props.pivot) {
       return props.data
@@ -570,15 +643,30 @@ export default class ChataTable extends React.Component {
   }
 
   getRows = (props, pageNumber) => {
-    if (props.pivot) {
-      return _cloneDeep(props.data)
-    }
-
     const page = pageNumber ?? this.tableParams.page
     const start = (page - 1) * this.pageSize
     const end = start + this.pageSize
 
-    const newRows = props.response?.data?.data?.rows?.slice(start, end) ?? []
+    let newRows
+    if (props.pivot) {
+      if (this.tableParams?.filter?.length || this.tableParams?.sort?.length) {
+        // The pivot table has been sorted or filtered
+        // We must use sorted/filtered data to get new rows
+        const tableParamsFormatted = formatTableParams(this.tableParams, props.columns)
+        const tableParamsForAPI = {
+          tableFilters: tableParamsFormatted?.filters,
+          orders: tableParamsFormatted?.sorters,
+        }
+
+        const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows
+
+        newRows = sortedData?.slice(start, end) ?? []
+      } else {
+        newRows = props.data?.slice(start, end) ?? []
+      }
+    } else {
+      newRows = props.response?.data?.data?.rows?.slice(start, end) ?? []
+    }
 
     return _cloneDeep(newRows)
   }
@@ -609,6 +697,17 @@ export default class ChataTable extends React.Component {
   // clearHeaderFilters = () => {
   //   this.ref?.tabulator?.clearHeaderFilter()
   // }
+
+  scrollToRight = () => {
+    if (this.ref?.tabulator) {
+      const tableWidth = document.querySelector(
+        `#react-autoql-table-container-${this.TABLE_ID} .tabulator-table`,
+      )?.clientWidth
+
+      this.ref.tabulator.columnManager.element.scrollLeft = tableWidth
+      this.ref.tabulator.rowManager.element.scrollLeft = tableWidth
+    }
+  }
 
   getNewPage = (props, tableParams) => {
     try {
@@ -722,9 +821,30 @@ export default class ChataTable extends React.Component {
     }
   }
 
+  headerContextMenuClick = (e, col) => {
+    e.stopPropagation()
+    e.preventDefault()
+
+    const coords = e.target.getBoundingClientRect()
+    const tableCoords = this.tableContainer.getBoundingClientRect()
+    if (coords?.top && coords?.left) {
+      this.debounceSetState({
+        contextMenuLocation: {
+          top: coords.top - tableCoords.top + coords.height + 5,
+          left: coords.left - tableCoords.left,
+        },
+        contextMenuColumn: col,
+      })
+    }
+  }
+
   inputDateKeypressListener = (e) => {
     e.stopPropagation()
     e.preventDefault()
+  }
+
+  addCustomColumn = () => {
+    this.setState({ isCustomColumnPopoverOpen: true })
   }
 
   renderHeaderInputClearBtn = (inputElement, column) => {
@@ -753,8 +873,8 @@ export default class ChataTable extends React.Component {
     inputElement.parentNode.appendChild(clearBtn)
   }
 
-  setHeaderInputEventListeners = () => {
-    const columns = this.props.columns
+  setHeaderInputEventListeners = (cols) => {
+    const columns = cols ?? this.props.columns
     if (!columns) {
       return
     }
@@ -771,6 +891,10 @@ export default class ChataTable extends React.Component {
       if (headerElement) {
         headerElement.setAttribute('data-tooltip-id', `selectable-table-column-header-tooltip-${this.TABLE_ID}`)
         headerElement.setAttribute('data-tooltip-content', JSON.stringify({ ...col, index: i }))
+
+        if (!this.props.pivot && this.props.useInfiniteScroll) {
+          headerElement.addEventListener('contextmenu', (e) => this.headerContextMenuClick(e, col))
+        }
       }
 
       if (inputElement) {
@@ -935,6 +1059,69 @@ export default class ChataTable extends React.Component {
     inputElement.blur()
   }
 
+  onUpdateColumnConfirm = () => {
+    const column = _cloneDeep(this.state.contextMenuColumn)
+    this.setState({ contextMenuColumn: undefined, isCustomColumnPopoverOpen: true, activeCustomColumn: column })
+  }
+
+  onRemoveColumnClick = () => {
+    const column = _cloneDeep(this.state.contextMenuColumn)
+
+    this.setState({ contextMenuColumn: undefined })
+
+    const currentAdditionalSelectColumns = this.props.response?.data?.data?.fe_req?.additional_selects ?? []
+    const newAdditionalSelectColumns = currentAdditionalSelectColumns?.filter(
+      (select) => select.columns[0] !== column.name,
+    )
+
+    if (column.custom) {
+      this.props.onCustomColumnDelete(column)
+    } else if (currentAdditionalSelectColumns?.length !== newAdditionalSelectColumns?.length) {
+      this.setPageLoading(true)
+      this.queryFn({ newColumns: newAdditionalSelectColumns })
+        .then((response) => {
+          if (response?.data?.data?.rows) {
+            this.props.updateColumns(response?.data?.data?.columns, response?.data?.data?.fe_req)
+          } else {
+            throw new Error('Column deletion failed')
+          }
+        })
+        .catch((error) => {
+          console.error(error)
+        })
+        .finally(() => {
+          this.setPageLoading(false)
+        })
+    } else {
+      const newColumns = this.props.columns.map((col) => {
+        if (col.name === column.name) {
+          return {
+            ...col,
+            visible: false,
+            is_visible: false,
+          }
+        }
+
+        return col
+      })
+
+      this.props.updateColumns(newColumns)
+
+      setColumnVisibility({ ...this.props.authentication, columns: newColumns }).catch((error) => {
+        console.error(error)
+      })
+    }
+  }
+
+  updateColumn = (field, newParams) => {
+    this.ref?.updateColumn?.(field, newParams)?.then(() => {
+      if (this.props.keepScrolledRight) {
+        this.scrollToRight()
+      }
+      this.setHeaderInputEventListeners()
+    })
+  }
+
   renderEmptyPlaceholderText = () => {
     return (
       <div className='table-loader table-page-loader table-placeholder'>
@@ -999,6 +1186,82 @@ export default class ChataTable extends React.Component {
             position: 'absolute',
             top: this.state.datePickerLocation?.top,
             left: this.state.datePickerLocation?.left,
+          }}
+        />
+      </Popover>
+    )
+  }
+
+  renderCustomColumnPopover = () => {
+    if (!this.props.allowCustomColumns) {
+      return null
+    }
+
+    if (this.state.isCustomColumnPopoverOpen) {
+      return (
+        <CustomColumnModal
+          {...this.props}
+          isOpen={this.state.isCustomColumnPopoverOpen}
+          onClose={() => this.setState({ isCustomColumnPopoverOpen: false })}
+          tableRef={this.ref}
+          aggConfig={this.props.aggConfig}
+          queryResponse={this.props.response}
+          dataFormatting={this.props.dataFormatting}
+          initialColumn={this.state.activeCustomColumn}
+          onUpdateColumn={(column) => {
+            this.props.onCustomColumnChange(column)
+            this.setState({ isCustomColumnPopoverOpen: false })
+          }}
+          onAddColumn={(column) => {
+            this.props.onCustomColumnChange(column)
+            this.setState({ isCustomColumnPopoverOpen: false })
+          }}
+        />
+      )
+    }
+
+    return null
+  }
+
+  renderHeaderContextMenuPopover = () => {
+    if (!this.state.contextMenuColumn) {
+      return null
+    }
+
+    return (
+      <Popover
+        isOpen={!!this.state.contextMenuColumn}
+        padding={0}
+        align='start'
+        positions={['bottom', 'right', 'left', 'top']}
+        onClickOutside={(e) => {
+          e.stopPropagation()
+          if (this._isMounted) {
+            this.setState({ contextMenuColumn: undefined })
+          }
+        }}
+        content={
+          <div className='more-options-menu' data-test='react-autoql-toolbar-more-options'>
+            <ul className='context-menu-list'>
+              {!!this.state.contextMenuColumn?.custom && (
+                <li onClick={() => this.onUpdateColumnConfirm()}>
+                  <Icon type='edit' />
+                  Edit Column
+                </li>
+              )}
+              <li onClick={this.onRemoveColumnClick}>
+                <Icon type='close' />
+                Remove Column
+              </li>
+            </ul>
+          </div>
+        }
+      >
+        <div
+          style={{
+            position: 'absolute',
+            top: this.state.contextMenuLocation?.top,
+            left: this.state.contextMenuLocation?.left,
           }}
         />
       </Popover>
@@ -1091,7 +1354,7 @@ export default class ChataTable extends React.Component {
   }
 
   renderTableRowCount = () => {
-    if (this.isTableEmpty()) {
+    if (this.isTableEmpty() || !this.props.useInfiniteScroll) {
       return null
     }
 
@@ -1158,6 +1421,14 @@ export default class ChataTable extends React.Component {
               <span>{type}</span>
             </div>
           )}
+          {!!column.fnSummary && (
+            <div className='selectable-table-tooltip-section'>
+              <span>
+                <strong>Custom formula:</strong>
+                <span> = {column.fnSummary}</span>
+              </span>
+            </div>
+          )}
           {(column.type === ColumnTypes.QUANTITY ||
             column.type === ColumnTypes.DOLLAR_AMT ||
             column.type === ColumnTypes.DATE) &&
@@ -1172,26 +1443,34 @@ export default class ChataTable extends React.Component {
               <>
                 {(column.type === ColumnTypes.QUANTITY || column.type === ColumnTypes.DOLLAR_AMT) && (
                   <div className='selectable-table-tooltip-section'>
-                    <strong>Total: </strong>
-                    <span>{stats?.sum}</span>
+                    <span>
+                      <strong>Total: </strong>
+                      <span>{stats?.sum}</span>
+                    </span>
                   </div>
                 )}
                 {(column.type === ColumnTypes.QUANTITY || column.type === ColumnTypes.DOLLAR_AMT) && (
                   <div className='selectable-table-tooltip-section'>
-                    <strong>Average: </strong>
-                    <span>{stats?.avg}</span>
+                    <span>
+                      <strong>Average: </strong>
+                      <span>{stats?.avg}</span>
+                    </span>
                   </div>
                 )}
                 {column.type === ColumnTypes.DATE && stats?.min !== null && (
                   <div className='selectable-table-tooltip-section'>
-                    <strong>Earliest: </strong>
-                    <span>{stats.min}</span>
+                    <span>
+                      <strong>Earliest: </strong>
+                      <span>{stats.min}</span>
+                    </span>
                   </div>
                 )}
                 {column.type === ColumnTypes.DATE && stats?.max !== null && (
                   <div className='selectable-table-tooltip-section'>
-                    <strong>Latest: </strong>
-                    <span>{stats.max}</span>
+                    <span>
+                      <strong>Latest: </strong>
+                      <span>{stats.max}</span>
+                    </span>
                   </div>
                 )}
               </>
@@ -1239,7 +1518,7 @@ export default class ChataTable extends React.Component {
           style={this.props.style}
           className={`react-autoql-table-container 
            ${this.state.pageLoading || !this.state.tabulatorMounted ? 'loading' : ''}
-            ${this.props.supportsDrilldowns ? 'supports-drilldown' : ''}
+            ${getAutoQLConfig(this.props.autoQLConfig)?.enableDrilldowns ? 'supports-drilldown' : 'disable-drilldown'}
             ${this.state.isFiltering ? 'filtering' : ''}
             ${this.props.isResizing ? 'resizing' : ''}
             ${this.props.isAnimating ? 'animating' : ''}
@@ -1285,6 +1564,8 @@ export default class ChataTable extends React.Component {
               )}
           </div>
           {this.renderDateRangePickerPopover()}
+          {this.renderCustomColumnPopover()}
+          {this.renderHeaderContextMenuPopover()}
           {this.renderTableRowCount()}
         </div>
         <Tooltip

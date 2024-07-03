@@ -84,7 +84,7 @@ export default class ChatMessage extends React.Component {
     isActive: false,
     type: 'text',
     text: null,
-    enableColumnVisibilityManager: true,
+    enableColumnVisibilityManager: false,
     isResizing: false,
     enableDynamicCharting: true,
     autoChartAggregations: true,

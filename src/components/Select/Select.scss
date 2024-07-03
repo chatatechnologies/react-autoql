@@ -1,6 +1,10 @@
 .react-autoql-select-popover-container {
   margin: 0 6px;
 
+  &.react-autoql-select-popover-no-margin {
+    margin: 0;
+  }
+
   .popover-container-content {
     padding: 0 !important;
   }
@@ -13,6 +17,12 @@
 
   &.react-autoql-select-full-width {
     display: flex;
+  }
+
+  &.underlined {
+    border-bottom: 1px solid var(--react-autoql-accent-color);
+    margin: 0 3px;
+    padding: 2px;
   }
 
   .react-autoql-select {
@@ -44,6 +54,11 @@
       font-weight: 600;
       padding: 0;
       margin: 0;
+      height: 1.5em;
+
+      .react-autoql-select-text {
+        line-height: 1em;
+      }
     }
 
     &.outlined {

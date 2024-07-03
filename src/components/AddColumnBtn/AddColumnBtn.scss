@@ -26,6 +26,7 @@
 
 .react-autoql-add-column-menu {
   max-height: 250px;
+  min-width: 115px;
 
   &.more-options-menu {
     overflow: unset;
@@ -45,7 +46,7 @@
       display: flex;
       flex-direction: row;
       align-items: center;
-      justify-content: start;
+      justify-content: flex-start;
     }
 
     .react-autoql-menu-expand-arrow {

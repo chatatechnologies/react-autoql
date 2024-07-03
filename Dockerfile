@@ -1,4 +1,4 @@
-FROM node:14-alpine as build
+FROM node:16-alpine as build
 
 # Create app directory
 
@@ -11,7 +11,7 @@ ADD src src
 
 # clean install of the dependencies and 
 # build widgets
-RUN npm ci && npm run build
+RUN npm ci --legacy-peer-deps && npm run build 
 
 # buid example app
 WORKDIR /app
@@ -19,7 +19,7 @@ ADD example .
 ENV NODE_ENV=ci
 
 RUN npm i file:./react-autoql
-RUN npm i && npm run build
+RUN npm i --legacy-peer-deps && npm run build
 
 # final clean image
 FROM nginx:1.22.0-alpine

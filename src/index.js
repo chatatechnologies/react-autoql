@@ -1,6 +1,6 @@
 import './index.scss'
 
-export { getSupportedDisplayTypes, getDefaultDisplayType, isDisplayTypeValid, configureTheme } from 'autoql-fe-utils'
+export * from 'autoql-fe-utils'
 
 export * from './components/VizToolbar'
 export * from './components/QueryInput'
@@ -24,3 +24,4 @@ export { NotificationIcon } from './components/Notifications/NotificationIcon'
 export { NotificationFeed } from './components/Notifications/NotificationFeed'
 export { NotificationItem } from './components/Notifications/NotificationItem'
 export { ExpressionBuilder } from './components/Notifications/ExpressionBuilder'
+export { ChatContent } from './components/ChatContent'

@@ -7,7 +7,6 @@ import {
   dismissNotification,
   deleteNotification,
   updateDataAlertStatus,
-  fetchNotificationData,
   markNotificationAsUnread,
   initializeAlert,
   isNumber,
@@ -20,6 +19,7 @@ import {
 import { Icon } from '../../Icon'
 import { Button } from '../../Button'
 import { Popover } from '../../Popover'
+import { Tooltip } from '../../Tooltip'
 import { Menu, MenuItem } from '../../Menu'
 import { LoadingDots } from '../../LoadingDots'
 import { ConfirmPopover } from '../../ConfirmPopover'
@@ -36,12 +36,15 @@ export default class NotificationItem extends React.Component {
     super(props)
 
     this.COMPONENT_KEY = uuid()
+    this.TOOLTIP_ID = `react-autoql-notification-item-tooltip-${uuid()}`
+    this.CHART_TOOLTIP_ID = `react-autoql-notification-item-chart-tooltip-${uuid()}`
 
     this.state = {
-      expanded: false,
+      expanded: props.defaultExpanded,
       dataAlertStatus: undefined,
       queryResponse: undefined,
       isMoreOptionsMenuOpen: false,
+      enableMoreOptionsMenu: props.enableMoreOptionsMenu,
     }
   }
 
@@ -66,6 +69,11 @@ export default class NotificationItem extends React.Component {
     onQueryClick: PropTypes.func,
     enableSettingsMenu: PropTypes.bool,
     enableNotificationsMenu: PropTypes.bool,
+    displayProjectName: PropTypes.bool,
+    defaultExpanded: PropTypes.bool,
+    enableMoreOptionsMenu: PropTypes.bool,
+    tooltipID: PropTypes.string,
+    chartTooltipID: PropTypes.string,
   }
 
   static defaultProps = {
@@ -76,6 +84,9 @@ export default class NotificationItem extends React.Component {
     onQueryClick: undefined,
     enableSettingsMenu: true,
     enableNotificationsMenu: true,
+    displayProjectName: false,
+    defaultExpanded: false,
+    enableMoreOptionsMenu: true,
     onRuleFetchCallback: () => {},
     updateScrollbars: () => {},
     onExpandCallback: () => {},
@@ -92,11 +103,17 @@ export default class NotificationItem extends React.Component {
     onSuccessCallback: () => {},
   }
 
+  componentDidMount = () => {
+    if (this.props.defaultExpanded) {
+      this.setState({ queryResponse: { data: this.props.notification.query_result } })
+    }
+  }
+
   componentDidUpdate = (prevProps, prevState) => {
     if (this.state.expanded && !prevState.expanded) {
       this.props.updateScrollbars(500)
-      if (!this.state.queryResponse) {
-        this.fetchNotification()
+      if (!this.state.queryResponse && this.props.notification?.query_result) {
+        this.setState({ queryResponse: { data: this.props.notification.query_result } })
       }
     }
   }
@@ -111,17 +128,6 @@ export default class NotificationItem extends React.Component {
 
   isUnread = () => {
     return ['ACKNOWLEDGED', 'UNACKNOWLEDGED'].includes(this.props.notification?.state)
-  }
-
-  fetchNotification = () => {
-    const { notification } = this.props
-    fetchNotificationData({ id: notification.id, ...getAuthentication(this.props.authentication) })
-      .then((response) => {
-        this.setState({ queryResponse: response })
-      })
-      .catch((error) => {
-        this.setState({ queryResponse: error })
-      })
   }
 
   expand = () => {
@@ -174,7 +180,18 @@ export default class NotificationItem extends React.Component {
       })
   }
 
-  delete = () => {
+  displayDeleteAnimation = () => {
+    return new Promise((resolve, reject) => {
+      this.setState({ deleted: true })
+      return setTimeout(() => {
+        resolve()
+      }, 300)
+    })
+  }
+
+  delete = async () => {
+    await this.displayDeleteAnimation()
+
     this.props.onDeleteClick(this.props.notification)
 
     deleteNotification({
@@ -255,12 +272,19 @@ export default class NotificationItem extends React.Component {
 
     return this.props.notification.message
   }
-
+  renderProjectName = () => {
+    return (
+      <div className='react-autoql-notification-project-name'>
+        <span>{this.props.notification.project?.name}</span>
+      </div>
+    )
+  }
   renderNotificationHeader = () => {
     return (
       <div className='react-autoql-notification-list-item-header' onClick={() => this.onClick(this.props.notification)}>
         <div className='react-autoql-notification-display-name-container'>
           <div className='react-autoql-notification-display-name'>{this.renderNotificationTitle()}</div>
+          {this.props.displayProjectName && this.renderProjectName()}
           <div className='react-autoql-notification-description'>{this.renderNotificationMessage()}</div>
           <div className='react-autoql-notification-timestamp-container'>
             <span className='react-autoql-notification-timestamp'>
@@ -268,7 +292,7 @@ export default class NotificationItem extends React.Component {
             </span>
           </div>
         </div>
-        {this.moreOptionsButton()}
+        {this.state.enableMoreOptionsMenu && this.moreOptionsButton()}
         {this.renderExpandArrow()}
       </div>
     )
@@ -491,21 +515,24 @@ export default class NotificationItem extends React.Component {
             ) : (
               <>
                 {this.renderSummarySection()}
-                <NotificationQueryResponse
-                  key={this.state.queryResponse?.data?.data?.query_id}
-                  authentication={this.props.authentication}
-                  autoQLConfig={this.props.autoQLConfig}
-                  dataFormatting={this.props.dataFormatting}
-                  queryResponse={this.state.queryResponse}
-                  autoChartAggregations={this.props.autoChartAggregations}
-                  onSuccessCallback={this.props.onSuccessCallback}
-                  onErrorCallback={this.props.onErrorCallback}
-                  popoverParentElement={this.props.popoverParentElement ?? this.notificationItemRef}
-                  isResizing={this.props.isResizing}
-                  shouldRender={this.state.expanded}
-                  tooltipID={this.props.tooltipID}
-                  chartTooltipID={this.props.chartTooltipID}
-                />
+                {!!this.state.expanded && (
+                  <NotificationQueryResponse
+                    key={this.state.queryResponse?.data?.data?.query_id}
+                    authentication={this.props.authentication}
+                    autoQLConfig={this.props.autoQLConfig}
+                    dataFormatting={this.props.dataFormatting}
+                    queryResponse={this.state.queryResponse}
+                    autoChartAggregations={this.props.autoChartAggregations}
+                    onSuccessCallback={this.props.onSuccessCallback}
+                    onErrorCallback={this.props.onErrorCallback}
+                    popoverParentElement={this.props.popoverParentElement ?? this.notificationItemRef}
+                    isResizing={this.props.isResizing}
+                    shouldRender={this.state.expanded}
+                    tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+                    chartTooltipID={this.props.chartTooltipID ?? this.CHART_TOOLTIP_ID}
+                    enableFilterBtn={this.props.enableFilterBtn}
+                  />
+                )}
               </>
             )}
           </div>
@@ -525,8 +552,11 @@ export default class NotificationItem extends React.Component {
           ${this.state.expanded ? 'expanded' : 'collapsed'}
           ${this.isUnread() ? 'unread' : ''}
           ${this.isError() ? 'is-error' : ''}
-          ${this.state.isMoreOptionsMenuOpen ? 'menu-open' : ''}`}
+          ${this.state.isMoreOptionsMenuOpen ? 'menu-open' : ''}
+          ${this.state.deleted ? 'react-autoql-notification-item-deleted' : ''}`}
         >
+          {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={500} />}
+          {!this.props.chartTooltipID && <Tooltip tooltipId={this.CHART_TOOLTIP_ID} delayShow={0} />}
           {this.renderNotificationHeader()}
           {this.renderNotificationContent()}
           {this.renderAlertColorStrip()}

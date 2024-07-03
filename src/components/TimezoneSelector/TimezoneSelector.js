@@ -1,10 +1,10 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import momentTZ from 'moment-timezone'
-
 import { Select } from '../Select'
 
-const options = momentTZ.tz.names().map((tz) => {
+const timezones = Intl.supportedValuesOf?.('timeZone') ?? []
+
+const options = timezones.map((tz) => {
   return {
     value: tz,
     label: tz,
@@ -15,7 +15,7 @@ export default class TimezoneSelector extends React.Component {
   constructor(props) {
     super(props)
 
-    this.defaultTimeZone = momentTZ.tz.guess()
+    this.defaultTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
   }
 
   static propTypes = {

@@ -34,7 +34,7 @@
   margin-top: 20px;
   margin-bottom: 30px;
   max-width: calc(100vw - 160px);
-  max-height: calc(100vh - 90px);
+  max-height: calc(100vh - 40px);
 
   input.react-autoql-input,
   textarea.react-autoql-input,
@@ -46,6 +46,13 @@
     &::placeholder {
       color: var(--react-autoql-text-color-placeholder);
     }
+  }
+
+  hr {
+    border-top: 1px solid var(--react-autoql-border-color);
+    border-bottom: none;
+    opacity: 0.5;
+    margin: 2px 0px;
   }
 }
 @media (max-width: 479px) {
@@ -71,7 +78,7 @@
     margin-top: 20px;
     margin-bottom: 30px;
     max-width: calc(100vw - 30px);
-    max-height: calc(100vh - 90px);
+    max-height: calc(100vh - 40px);
 
     input.react-autoql-input,
     textarea.react-autoql-input,

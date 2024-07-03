@@ -62,6 +62,12 @@ import {
   isDataLimited,
   MAX_CHART_ELEMENTS,
   formatAdditionalSelectColumn,
+  setColumnVisibility,
+  ColumnTypes,
+  createMutatorFn,
+  formatQueryColumns,
+  DisplayTypes,
+  isColumnIndexConfigValid,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -89,8 +95,27 @@ export class QueryOutput extends React.Component {
     this.ALLOW_NUMERIC_STRING_COLUMNS = true
     this.MAX_PIVOT_TABLE_COLUMNS = 20
 
-    this.queryResponse = props.queryResponse
-    this.columnDateRanges = getColumnDateRanges(props.queryResponse)
+    let response = props.queryResponse
+    if (props.customColumns?.length) {
+      let customColumns = _cloneDeep(props.customColumns)
+
+      // Convert custom column mutator fn strings back to javascript function type if needed
+      customColumns = customColumns.map((col) => {
+        if (col.columnFnArray) {
+          const mutator = createMutatorFn(col.columnFnArray)
+          return {
+            ...col,
+            mutator,
+          }
+        }
+        return col
+      })
+
+      response = this.getNewResponseWithCustomColumns(props.queryResponse, customColumns)
+    }
+
+    this.queryResponse = response
+    this.columnDateRanges = getColumnDateRanges(response)
     this.queryID = this.queryResponse?.data?.data?.query_id
     this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
     this.tableParams = {}
@@ -150,6 +175,7 @@ export class QueryOutput extends React.Component {
       selectedSuggestion: props.defaultSelectedSuggestion,
       columnChangeCount: 0,
       chartID: uuid(),
+      customColumns: this.props.customColumns ?? [],
     }
   }
 
@@ -184,6 +210,9 @@ export class QueryOutput extends React.Component {
     enableTableSorting: PropTypes.bool,
     showSingleValueResponseTitle: PropTypes.bool,
     allowColumnAddition: PropTypes.bool,
+    onErrorCallback: PropTypes.func,
+    showQueryInterpretation: PropTypes.bool,
+    useInfiniteScroll: PropTypes.bool,
 
     mutable: PropTypes.bool,
     showSuggestionPrefix: PropTypes.bool,
@@ -197,6 +226,8 @@ export class QueryOutput extends React.Component {
     onBucketSizeChange: PropTypes.func,
     bucketSize: PropTypes.number,
     onNewData: PropTypes.func,
+    onCustomColumnUpdate: PropTypes.func,
+    enableTableContextMenu: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -215,6 +246,7 @@ export class QueryOutput extends React.Component {
     defaultSelectedSuggestion: undefined,
     reverseTranslationPlacement: 'bottom',
     activeChartElementKey: undefined,
+    useInfiniteScroll: true,
     isResizing: false,
     enableDynamicCharting: true,
     onNoneOfTheseClick: undefined,
@@ -232,6 +264,7 @@ export class QueryOutput extends React.Component {
     showSingleValueResponseTitle: false,
     bucketSize: undefined,
     allowColumnAddition: false,
+    enableTableContextMenu: true,
     onTableConfigChange: () => {},
     onAggConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
@@ -243,6 +276,7 @@ export class QueryOutput extends React.Component {
     onMount: () => {},
     onBucketSizeChange: () => {},
     onNewData: () => {},
+    onCustomColumnUpdate: () => {},
   }
 
   componentDidMount = () => {
@@ -250,6 +284,7 @@ export class QueryOutput extends React.Component {
       this._isMounted = true
       this.updateToolbars()
       this.props.onMount()
+      this.forceUpdate()
     } catch (error) {
       console.error(error)
       this.props.onErrorCallback(error)
@@ -279,9 +314,23 @@ export class QueryOutput extends React.Component {
 
       if (this.props.onDisplayTypeChange && this.state.displayType !== prevState.displayType) {
         this.props.onDisplayTypeChange(this.state.displayType)
+
+        // If new number column indices conflict, reset table config to resolve the arrays
+        // The config should stay the same as much as possible while removing the overlapping indices
+        if (!this.isTableConfigValid(this.tableConfig, this.state.columns, this.state.displayType)) {
+          this.setTableConfig()
+        }
       }
 
-      // If data config was changed here, tell the parent
+      if (!deepEqual(this.state.customColumns, prevState.customColumns)) {
+        const customColumns = _cloneDeep(this.state.customColumns)
+        this.props.onCustomColumnUpdate(customColumns)
+        const response = this.getNewResponseWithCustomColumns()
+
+        this.updateColumnsAndData(response)
+      }
+
+      // If initial data config was changed here, tell the parent
       if (
         !_isEqual(this.props.initialTableConfigs, {
           tableConfig: this.tableConfig,
@@ -308,6 +357,10 @@ export class QueryOutput extends React.Component {
           this.state.columns,
           this.queryResponse?.data?.data?.fe_req?.additional_selects,
           this.queryResponse,
+          {
+            tableConfig: this.tableConfig,
+            pivotTableConfig: this.pivotTableConfig,
+          },
         )
 
         if (this.shouldGeneratePivotData()) {
@@ -401,6 +454,65 @@ export class QueryOutput extends React.Component {
         displayType || this.state.displayType
       } instead.`,
     )
+  }
+
+  getNewResponseWithCustomColumns = (response = this.queryResponse, customCols = this.state?.customColumns ?? []) => {
+    const newResponse = _cloneDeep(response)
+
+    const currentColumns = newResponse?.data?.data?.columns ?? []
+    const nonCustomColumns = currentColumns.filter((col) => !col.custom)
+
+    // We must reformat the columns to reset the field and index numbers
+    const newFormattedColumns = formatQueryColumns({
+      columns: currentColumns.filter((col) => !col.custom),
+      queryResponse: newResponse,
+      dataFormatting: this.props.dataFormatting,
+    })
+
+    const currentCustomColumns = currentColumns.filter((col) => col.custom) ?? []
+
+    const customColsFormatted = customCols?.map((col, i) => {
+      const newIndex = newFormattedColumns.length + i
+      return {
+        ...col,
+        index: newIndex,
+        field: `${newIndex}`,
+      }
+    })
+
+    // Remove any cells that are already created by custom columns
+    let newRows = newResponse.data.data.rows
+    if (currentCustomColumns?.length) {
+      const customColumnIndexes = currentCustomColumns.map((col) => col.index)
+      newRows = newResponse.data.data.rows.map((row) => {
+        return row.filter((cell, i) => !customColumnIndexes.includes(i))
+      })
+    }
+
+    newResponse.data.data.rows = _cloneDeep(newRows)
+    newResponse.data.data.columns = newFormattedColumns
+
+    // Assign all custom column cells to query response rows
+    try {
+      customColsFormatted.forEach((col) => {
+        if (col?.mutator && col?.index >= 0) {
+          newResponse.data.data.rows.forEach((row) => {
+            if (row) {
+              row[col.index] = col.mutator(undefined, row)
+            }
+          })
+        }
+      })
+    } catch (error) {
+      console.error(error)
+    }
+
+    // Assign new columns to query response
+    // Remove mutator now that new cells have been defined
+    const newColumns = [...nonCustomColumns, ...customColsFormatted.map((col) => ({ ...col, mutator: undefined }))]
+    newResponse.data.data.columns = newColumns
+
+    return newResponse
   }
 
   getDataLength = () => {
@@ -505,103 +617,12 @@ export class QueryOutput extends React.Component {
   }
 
   isTableConfigValid = (tableConfig, columns, displayType) => {
-    if (!columns?.length || !this.queryResponse?.data?.data?.rows?.length) {
-      console.debug('Invalid Config: either no columns or no data were provided to table config validation')
-      return false
-    }
-
-    try {
-      if (!tableConfig || !tableConfig.numberColumnIndices || !tableConfig.stringColumnIndices) {
-        console.debug('Table config provided was incomplete: one of the index arrays are missing', { tableConfig })
-      }
-
-      const datasetHasNumberColButConfigDoesNot =
-        hasNumberColumn(getVisibleColumns(columns)) && !isNumber(tableConfig.numberColumnIndex)
-
-      const datasetHasStringColButConfigDoesNot =
-        hasStringColumn(getVisibleColumns(columns)) && !isNumber(tableConfig.stringColumnIndex)
-
-      if (datasetHasNumberColButConfigDoesNot || datasetHasStringColButConfigDoesNot) {
-        console.debug('Table config provided was incomplete:', {
-          datasetHasNumberColButConfigDoesNot,
-          datasetHasStringColButConfigDoesNot,
-        })
-        return false
-      }
-
-      if (!Array.isArray(tableConfig.numberColumnIndices)) {
-        console.debug('Number column indices in table config is not an array')
-        return false
-      }
-
-      if (!Array.isArray(tableConfig.stringColumnIndices)) {
-        console.debug('String column indices in table config is not an array')
-        return false
-      }
-
-      if (
-        isNumber(tableConfig.stringColumnIndex) &&
-        (!columns[tableConfig.stringColumnIndex].is_visible ||
-          tableConfig.stringColumnIndices.find((i) => !columns[i]?.is_visible) !== undefined)
-      ) {
-        console.debug('Table config invalid: Some of the string column indices were pointing to hidden columns.')
-        return false
-      }
-
-      if (
-        isNumber(tableConfig.numberColumnIndex) &&
-        (!columns[tableConfig.numberColumnIndex]?.is_visible ||
-          tableConfig.numberColumnIndices.find((i) => !columns[i]?.is_visible) !== undefined)
-      ) {
-        console.debug('Table config invalid: Some of the number column indices were pointing to hidden columns.')
-        return false
-      }
-
-      if (
-        isNumber(tableConfig.numberColumnIndex2) &&
-        (!columns[tableConfig.numberColumnIndex2]?.is_visible ||
-          (tableConfig.numberColumnIndices2?.length &&
-            tableConfig.numberColumnIndices2.find((i) => !columns[i]?.is_visible) !== undefined))
-      ) {
-        console.debug('Table config invalid: Some of the second number column indices were pointing to hidden columns.')
-        return false
-      }
-
-      if (displayType === 'column_line' || displayType === 'scatterplot') {
-        if (
-          !this.isColumnIndexValid(tableConfig.numberColumnIndex, columns) ||
-          !this.isColumnIndexValid(tableConfig.numberColumnIndex2, columns) ||
-          tableConfig.numberColumnIndex === tableConfig.numberColumnIndex2
-        ) {
-          console.debug(
-            `Two unique number column indices were not found. This is required for display type: ${displayType}`,
-            tableConfig,
-          )
-          return false
-        }
-
-        if (this.numberIndicesArraysOverlap(tableConfig)) {
-          console.debug('Both axes reference one or more of the same number column index')
-          return false
-        }
-      }
-
-      // To keep dashboards backwards compatible, we need to add
-      // numberColumnIndices2 array to the tableConfig
-      if (!tableConfig.numberColumnIndices2) {
-        const { numberColumnIndices2, numberColumnIndex2 } = getNumberColumnIndices(
-          columns,
-          this.usePivotDataForChart(),
-        )
-        tableConfig.numberColumnIndices2 = numberColumnIndices2
-        tableConfig.numberColumnIndex2 = numberColumnIndex2
-      }
-
-      return true
-    } catch (error) {
-      console.debug('Saved table config was not valid for response:', error?.message)
-      return false
-    }
+    return isColumnIndexConfigValid({
+      response: this.queryResponse,
+      columnIndexConfig: tableConfig ?? this.tableConfig,
+      columns: columns ?? this.state.columns,
+      displayType: displayType ?? this.state.displayType,
+    })
   }
 
   updateColumnsAndData = (response) => {
@@ -626,7 +647,7 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  updateColumns = (columns) => {
+  updateColumns = (columns, feReq) => {
     if (columns && this._isMounted) {
       const newColumns = this.formatColumnsForTable(columns)
 
@@ -637,6 +658,9 @@ export class QueryOutput extends React.Component {
 
       if (visibleColumnsChanged) {
         if (this.queryResponse?.data?.data?.columns) {
+          if (feReq) {
+            this.queryResponse.data.data.fe_req = feReq
+          }
           this.queryResponse.data.data.columns = newColumns
         }
         this.resetTableConfig(newColumns)
@@ -852,7 +876,7 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  queryFn = (args = {}) => {
+  queryFn = async (args = {}) => {
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
     const allFilters = this.getCombinedFilters()
 
@@ -861,45 +885,64 @@ export class QueryOutput extends React.Component {
 
     this.setState({ isLoadingData: true })
 
+    let response
+
     if (this.isDrilldown()) {
-      return runDrilldown({
-        ...getAuthentication(this.props.authentication),
-        ...getAutoQLConfig(this.props.autoQLConfig),
-        source: this.props.source,
-        scope: this.props.scope,
-        debug: queryRequestData?.translation === 'include',
-        filters: queryRequestData?.session_filter_locks,
-        pageSize: queryRequestData?.page_size,
-        test: queryRequestData?.test,
-        groupBys: queryRequestData?.columns,
-        queryID: this.props.originalQueryID,
-        orders: this.formattedTableParams?.sorters,
-        tableFilters: allFilters,
-        cancelToken: this.axiosSource.token,
-        ...args,
-      }).finally(() => {
-        this.setState({ isLoadingData: false })
-      })
+      try {
+        response = await runDrilldown({
+          ...getAuthentication(this.props.authentication),
+          ...getAutoQLConfig(this.props.autoQLConfig),
+          source: this.props.source,
+          scope: this.props.scope,
+          debug: queryRequestData?.translation === 'include',
+          filters: queryRequestData?.session_filter_locks,
+          pageSize: queryRequestData?.page_size,
+          test: queryRequestData?.test,
+          groupBys: queryRequestData?.columns,
+          queryID: this.props.originalQueryID,
+          orders: this.formattedTableParams?.sorters,
+          tableFilters: allFilters,
+          cancelToken: this.axiosSource.token,
+          ...args,
+        })
+
+        if (this.state.customColumns?.length) {
+          response = this.getNewResponseWithCustomColumns(response, this.state.customColumns)
+        }
+      } catch (error) {
+        response = error
+      }
+    } else {
+      try {
+        response = await runQueryOnly({
+          ...getAuthentication(this.props.authentication),
+          ...getAutoQLConfig(this.props.autoQLConfig),
+          query: queryRequestData?.text,
+          debug: queryRequestData?.translation === 'include',
+          userSelection: queryRequestData?.disambiguation,
+          filters: queryRequestData?.session_filter_locks,
+          test: queryRequestData?.test,
+          pageSize: queryRequestData?.page_size,
+          orders: this.formattedTableParams?.sorters,
+          tableFilters: allFilters,
+          source: this.props.source,
+          scope: this.props.scope,
+          cancelToken: this.axiosSource.token,
+          newColumns: queryRequestData?.additional_selects,
+          ...args,
+        })
+
+        if (this.state.customColumns?.length) {
+          response = this.getNewResponseWithCustomColumns(response, this.state.customColumns)
+        }
+      } catch (error) {
+        response = error
+      }
     }
-    return runQueryOnly({
-      ...getAuthentication(this.props.authentication),
-      ...getAutoQLConfig(this.props.autoQLConfig),
-      query: queryRequestData?.text,
-      debug: queryRequestData?.translation === 'include',
-      userSelection: queryRequestData?.disambiguation,
-      filters: queryRequestData?.session_filter_locks,
-      test: queryRequestData?.test,
-      pageSize: queryRequestData?.page_size,
-      orders: this.formattedTableParams?.sorters,
-      tableFilters: allFilters,
-      source: this.props.source,
-      scope: this.props.scope,
-      cancelToken: this.axiosSource.token,
-      newColumns: queryRequestData?.additional_selects,
-      ...args,
-    }).finally(() => {
-      this.setState({ isLoadingData: false })
-    })
+
+    this.setState({ isLoadingData: false })
+
+    return response
   }
 
   getFilterDrilldown = ({ stringColumnIndex, row }) => {
@@ -1271,6 +1314,27 @@ export class QueryOutput extends React.Component {
       this.tableConfig.numberColumnIndex = newNumberColumnIndices[0]
     }
 
+    if (this.tableConfig.numberColumnIndices2.includes(index)) {
+      this.tableConfig.numberColumnIndices2 = this.tableConfig.numberColumnIndices2.filter((i) => i !== index)
+
+      if (!this.tableConfig.numberColumnIndices2.length) {
+        const numberColumnIndex2 = this.getColumns().find(
+          (col) =>
+            col.is_visible &&
+            col.index !== index && // Must not be the same as the string index
+            !this.tableConfig.numberColumnIndices.includes(col.index) && // Must not already be in the first number column index array
+            isColumnNumberType(col), // Must be number type
+        )?.index
+
+        if (numberColumnIndex2 >= 0) {
+          this.tableConfig.numberColumnIndex2 = numberColumnIndex2
+          this.tableConfig.numberColumnIndices2 = [numberColumnIndex2]
+        }
+      } else if (this.tableConfig.numberColumnIndex2 === index) {
+        this.tableConfig.numberColumnIndex2 = this.tableConfig.numberColumnIndices2[0]
+      }
+    }
+
     if (this.usePivotDataForChart()) {
       this.generatePivotTableData()
     }
@@ -1280,12 +1344,26 @@ export class QueryOutput extends React.Component {
   }
 
   onChangeLegendColumnIndex = (index) => {
+    const currentLegendColumnIndex = this.tableConfig.legendColumnIndex
+
+    this.tableConfig.legendColumnIndex = index
+
     if (this.tableConfig.stringColumnIndex === index) {
-      let stringColumnIndex = this.tableConfig.stringColumnIndex
-      this.tableConfig.stringColumnIndex = this.tableConfig.legendColumnIndex
-      this.tableConfig.legendColumnIndex = stringColumnIndex
-    } else {
-      this.tableConfig.legendColumnIndex = index
+      this.tableConfig.stringColumnIndex = currentLegendColumnIndex
+    } else if (this.tableConfig.numberColumnIndices.includes(index)) {
+      if (this.tableConfig.numberColumnIndices.length > 1) {
+        this.tableConfig.numberColumnIndices = this.tableConfig.numberColumnIndices.filter((i) => i !== index)
+        this.tableConfig.numberColumnIndex = this.tableConfig.numberColumnIndices[0]
+      } else {
+        this.tableConfig.numberColumnIndex = this.state.columns.find(
+          (col) =>
+            col.is_visible &&
+            col.index !== index &&
+            col.index !== this.tableConfig.numberColumnIndex2 &&
+            col.index !== this.tableConfig.stringColumnIndex,
+        )?.index
+        this.tableConfig.numberColumnIndices = [this.tableConfig.numberColumnIndex]
+      }
     }
 
     if (this.usePivotDataForChart()) {
@@ -1480,11 +1558,15 @@ export class QueryOutput extends React.Component {
     } else if (
       this.isColumnIndexValid(this.tableConfig.numberColumnIndex, columns) &&
       (!this.isColumnIndicesValid(this.tableConfig.numberColumnIndices2, columns) ||
-        !this.isColumnIndexValid(this.tableConfig.numberColumnIndex, columns))
+        !this.isColumnIndexValid(this.tableConfig.numberColumnIndex2, columns))
     ) {
       // There are enough number column indices to have a second, but the second doesn't exist
       this.tableConfig.numberColumnIndex2 = columns.findIndex(
-        (col, index) => index !== this.tableConfig.numberColumnIndex && isColumnNumberType(col) && col.is_visible,
+        (col, index) =>
+          index !== this.tableConfig.numberColumnIndex &&
+          index !== this.tableConfig.stringColumnIndex &&
+          isColumnNumberType(col) &&
+          col.is_visible,
       )
       this.tableConfig.numberColumnIndices2 = [this.tableConfig.numberColumnIndex2]
     } else if (this.numberIndicesArraysOverlap(this.tableConfig)) {
@@ -1730,9 +1812,11 @@ export class QueryOutput extends React.Component {
     const formattedColumns = columns.map((col, i) => {
       const newCol = _cloneDeep(col)
 
-      newCol.id = uuid()
+      newCol.id = col.id ?? uuid()
       newCol.field = `${i}`
       newCol.title = col.display_name
+
+      newCol.mutateLink = 'Custom'
 
       // Visibility flag: this can be changed through the column visibility editor modal
       newCol.visible = col.is_visible
@@ -1746,7 +1830,12 @@ export class QueryOutput extends React.Component {
       newCol.maxWidth = '300px'
 
       // Cell alignment
-      if (newCol.type === 'DOLLAR_AMT' || newCol.type === 'RATIO' || newCol.type === 'NUMBER') {
+      if (
+        newCol.type === ColumnTypes.DOLLAR_AMT ||
+        newCol.type === ColumnTypes.QUANTITY ||
+        newCol.type === ColumnTypes.RATIO ||
+        newCol.type === ColumnTypes.PERCENT
+      ) {
         newCol.hozAlign = 'right'
       } else {
         newCol.hozAlign = 'center'
@@ -2132,7 +2221,7 @@ export class QueryOutput extends React.Component {
       this.pivotTableColumns = pivotTableColumns
       this.pivotTableData = pivotTableData
       this.numberOfPivotTableRows = this.pivotTableData?.length ?? 0
-      this.setPivotTableConfig(isFirstGeneration)
+      this.setPivotTableConfig(true)
     } catch (error) {
       console.error(error)
       this.props.onErrorCallback(error)
@@ -2243,25 +2332,73 @@ export class QueryOutput extends React.Component {
     return this.props.dataPageSize ?? this.queryResponse?.data?.data?.fe_req?.page_size ?? DEFAULT_DATA_PAGE_SIZE
   }
 
-  onAddColumnClick = (column, sqlFn) => {
-    this.tableRef?.setPageLoading(true)
+  onAddColumnClick = (column, sqlFn, isHiddenColumn) => {
+    if (isHiddenColumn) {
+      this.tableRef?.setPageLoading(true)
 
-    const currentAdditionalSelectColumns = this.queryResponse?.data?.data?.fe_req?.additional_selects ?? []
-
-    this.queryFn({
-      newColumns: [...currentAdditionalSelectColumns, formatAdditionalSelectColumn(column, sqlFn)],
-    })
-      .then((response) => {
-        if (response?.data?.data?.rows) {
-          this.updateColumnsAndData(response)
-        } else {
-          throw new Error('New column addition failed')
+      const newColumns = this.state.columns.map((col) => {
+        if (col.name === column.name) {
+          return {
+            ...col,
+            is_visible: true,
+          }
         }
+
+        return col
       })
-      .catch((error) => {
-        console.error(error)
-        this.tableRef?.setPageLoading(false)
+
+      setColumnVisibility({ ...this.props.authentication, columns: newColumns })
+        .then(() => this.updateColumns(newColumns))
+        .catch((error) => {
+          console.error(error)
+          this.props.onErrorCallback(error)
+        })
+        .finally(() => {
+          this.tableRef?.setPageLoading(false)
+        })
+    } else if (!column) {
+      // Add a custom column
+      this.tableRef?.addCustomColumn()
+    } else {
+      this.tableRef?.setPageLoading(true)
+
+      const currentAdditionalSelectColumns = this.queryResponse?.data?.data?.fe_req?.additional_selects ?? []
+
+      this.queryFn({
+        newColumns: [...currentAdditionalSelectColumns, formatAdditionalSelectColumn(column, sqlFn)],
       })
+        .then((response) => {
+          if (response?.data?.data?.rows) {
+            const newResponse = this.getNewResponseWithCustomColumns(response)
+            this.updateColumnsAndData(newResponse)
+          } else {
+            throw new Error('New column addition failed')
+          }
+        })
+        .catch((error) => {
+          console.error(error)
+          this.tableRef?.setPageLoading(false)
+        })
+    }
+  }
+
+  onCustomColumnDelete = (deletedColumn) => {
+    const columnID = deletedColumn.id
+    const customColumns = this.state.customColumns.filter((col) => col.id !== columnID)
+    this.setState({ customColumns })
+  }
+
+  onCustomColumnChange = (newColumn) => {
+    const customColumns = _cloneDeep(this.state.customColumns)
+    const existingCustomColumnIndex = customColumns.findIndex((col) => col.id === newColumn.id)
+
+    if (existingCustomColumnIndex >= 0) {
+      customColumns[existingCustomColumnIndex] = newColumn
+    } else {
+      customColumns.push(newColumn)
+    }
+
+    this.setState({ customColumns })
   }
 
   renderAddColumnBtn = () => {
@@ -2269,8 +2406,10 @@ export class QueryOutput extends React.Component {
       return (
         <AddColumnBtn
           queryResponse={this.queryResponse}
+          columns={this.state.columns}
           tooltipID={this.props.tooltipID}
           onAddColumnClick={this.onAddColumnClick}
+          onCustomClick={this.onAddColumnClick}
         />
       )
     }
@@ -2291,13 +2430,16 @@ export class QueryOutput extends React.Component {
           key={this.tableID}
           autoHeight={this.props.autoHeight}
           authentication={this.props.authentication}
+          autoQLConfig={this.props.autoQLConfig}
           dataFormatting={this.props.dataFormatting}
           ref={(ref) => (this.tableRef = ref)}
           columns={this.state.columns}
           response={this.queryResponse}
+          updateColumns={this.updateColumns}
           columnDateRanges={this.columnDateRanges}
           onCellClick={this.onTableCellClick}
           queryID={this.queryID}
+          useInfiniteScroll={this.props.useInfiniteScroll}
           onFilterCallback={this.onTableFilter}
           onSorterCallback={this.onTableSort}
           onTableParamsChange={this.onTableParamsChange}
@@ -2318,6 +2460,11 @@ export class QueryOutput extends React.Component {
           queryFn={this.queryFn}
           source={this.props.source}
           scope={this.props.scope}
+          tableConfig={this.tableConfig}
+          aggConfig={this.state.aggConfig}
+          onCustomColumnChange={this.onCustomColumnChange}
+          onCustomColumnDelete={this.onCustomColumnDelete}
+          enableContextMenu={this.props.enableTableContextMenu}
         />
       </ErrorBoundary>
     )
@@ -2337,6 +2484,8 @@ export class QueryOutput extends React.Component {
         <ChataTable
           key={this.pivotTableID}
           ref={(ref) => (this.pivotTableRef = ref)}
+          autoQLConfig={this.props.autoQLConfig}
+          dataFormatting={this.props.dataFormatting}
           columns={this.pivotTableColumns}
           data={this.pivotTableData}
           onCellClick={this.onTableCellClick}
@@ -2392,10 +2541,12 @@ export class QueryOutput extends React.Component {
         <ChataChart
           key={this.state.chartID}
           {...tableConfig}
+          tableConfig={this.tableConfig}
           originalColumns={this.getColumns()}
           data={data}
           hidden={!isChartType(this.state.displayType)}
           authentication={this.props.authentication}
+          autoQLConfig={this.props.autoQLConfig}
           ref={(ref) => (this.chartRef = ref)}
           type={this.state.displayType}
           isDataAggregated={isChartDataAggregated}

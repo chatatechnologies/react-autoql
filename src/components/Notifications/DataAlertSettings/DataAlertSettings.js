@@ -13,6 +13,8 @@ import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { authenticationType } from '../../../props/types'
 
 import './DataAlertSettings.scss'
+import AlphaAlertsSettings from './AlphaAlertsSettings'
+import CollapsableSection from '../../Card/CollapsableSection'
 
 const SettingSection = ({ title, children } = {}) => {
   return (
@@ -34,11 +36,10 @@ const Settings = ({ children, className } = {}) => {
 const Divider = ({ horizontal, vertical }) => {
   return (
     <div
-      className={`react-autoql-settings-vertical-divider ${
-        vertical
-          ? 'react-autoql-settings-vertical-divider-vertical'
-          : 'react-autoql-settings-vertical-divider-horizontal'
-      }`}
+      className={`react-autoql-settings-vertical-divider ${vertical
+        ? 'react-autoql-settings-vertical-divider-vertical'
+        : 'react-autoql-settings-vertical-divider-horizontal'
+        }`}
     />
   )
 }
@@ -88,9 +89,9 @@ export default class DataAlertSettings extends React.Component {
   static defaultProps = {
     authentication: authenticationDefault,
     currentDataAlert: undefined,
-    onErrorCallback: () => {},
-    onExpressionChange: () => {},
-    onCompleteChange: () => {},
+    onErrorCallback: () => { },
+    onExpressionChange: () => { },
+    onCompleteChange: () => { },
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -121,6 +122,8 @@ export default class DataAlertSettings extends React.Component {
       expressionKey: uuid(),
       filters: currentDataAlert.filters,
       expression: currentDataAlert.expression,
+      billingUnitsInput: currentDataAlert.billing_units,
+      descriptionInput: currentDataAlert.description,
     }
 
     return state
@@ -154,6 +157,8 @@ export default class DataAlertSettings extends React.Component {
       time_zone: scheduleData.timezone,
       schedules: scheduleData.schedules,
       evaluation_frequency: scheduleData.evaluationFrequency,
+      billing_units: this.state.billingUnitsInput,
+      description: this.state.descriptionInput,
     }
   }
 
@@ -167,6 +172,18 @@ export default class DataAlertSettings extends React.Component {
 
   onExpressionChange = (isConditionSectionComplete, isValid, expression) => {
     this.setState({ expression, isConditionSectionComplete })
+  }
+
+  renderAlphaAlertsSettings = () => {
+    return (
+      <AlphaAlertsSettings
+        ref={(r) => (this.alphaAlertsSettingRef = r)}
+        descriptionInput={this.state.descriptionInput}
+        onDescriptionInputChange={(e) => {
+          this.setState({ descriptionInput: e.target.value })
+        }}
+      />
+    )
   }
 
   AppearanceSettings = () => {
@@ -195,16 +212,16 @@ export default class DataAlertSettings extends React.Component {
         fullWidth
         options={[
           {
-            value: SCHEDULED_TYPE,
-            label: 'Scheduled',
-            subtitle: 'Get notifications at specific times.',
-            icon: 'calendar',
-          },
-          {
             value: CONTINUOUS_TYPE,
             label: 'Live',
             subtitle: 'Get notifications as soon as the conditions are met.',
             icon: 'live',
+          },
+          {
+            value: SCHEDULED_TYPE,
+            label: 'Scheduled',
+            subtitle: 'Get notifications at specific times.',
+            icon: 'calendar',
           },
         ]}
       />
@@ -219,6 +236,7 @@ export default class DataAlertSettings extends React.Component {
         tooltipID={this.props.tooltipID}
         dataAlert={this.props.currentDataAlert}
         showTypeSelector={false}
+        dataAlertType={this.state.notificationType}
         onErrorCallback={this.props.onErrorCallback}
         frequencyType={this.state.notificationType}
         onCompleteChange={(isScheduleSectionComplete) => this.setState({ isScheduleSectionComplete })}
@@ -232,6 +250,7 @@ export default class DataAlertSettings extends React.Component {
         authentication={this.props.authentication}
         ref={(r) => (this.expressionRef = r)}
         key={`expression-${this.state.expressionKey}`}
+        dataAlertType={this.state.notificationType}
         onChange={this.onExpressionChange}
         expression={this.state.expression}
         tooltipID={this.props.tooltipID}
@@ -259,6 +278,10 @@ export default class DataAlertSettings extends React.Component {
           </SettingSection>
           <Divider horizontal />
           <SettingSection title='Appearance'>{this.AppearanceSettings()}</SettingSection>
+          <Divider horizontal />
+          <CollapsableSection defaultCollapsed={true} title='Additional Settings' onToggle={() => { }}>
+            {this.renderAlphaAlertsSettings()}
+          </CollapsableSection>
         </Settings>
       </ErrorBoundary>
     )

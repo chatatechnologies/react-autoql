@@ -1,9 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { v4 as uuid } from 'uuid'
+
 import {
   CONTINUOUS_TYPE,
-  DATA_ALERT_FREQUENCY_TYPE_OPTIONS,
   SCHEDULE_INTERVAL_OPTIONS,
   RESET_PERIOD_OPTIONS,
   EVALUATION_FREQUENCY_OPTIONS,
@@ -22,6 +21,7 @@ import {
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
+import { Input } from '../../Input'
 import { Select } from '../../Select'
 import { TimePicker } from '../../TimePicker'
 import { TimezoneSelector } from '../../TimezoneSelector'
@@ -33,14 +33,13 @@ export default class ScheduleBuilder extends React.Component {
   constructor(props) {
     super(props)
 
-    this.COMPONENT_KEY = uuid()
-    this.SUPPORTED_CONDITION_TYPE =
-      getSupportedConditionTypes(props.dataAlert?.expression, props.queryResponse)?.[0] ?? EXISTS_TYPE
+    this.SUPPORTED_CONDITION_TYPES = getSupportedConditionTypes(props.dataAlert?.expression, props.queryResponse) ?? [
+      EXISTS_TYPE,
+    ]
     this.DEFAULT_EVALUATION_FREQUENCY = 5
     this.DEFAULT_WEEKDAY_SELECT_VALUE = 'Friday'
     this.DEFAULT_MONTH_DAY_SELECT_VALUE = 'LAST'
     this.DEFAULT_MONTH_OF_YEAR_SELECT_VALUE = 'December'
-    this.DEFAULT_FREQUENCY_TYPE = SCHEDULED_TYPE
     this.DEFAULT_RESET_PERIOD_SELECT_VALUE = 'MONTH'
     this.DEFAULT_TIME_SELECT_VALUE = {
       ampm: 'pm',
@@ -58,14 +57,14 @@ export default class ScheduleBuilder extends React.Component {
     }
 
     const state = {
+      timezone: undefined,
       evaluationFrequencySelectValue: this.DEFAULT_EVALUATION_FREQUENCY,
-      frequencyType: this.DEFAULT_FREQUENCY_TYPE,
       intervalTimeSelectValue: this.DEFAULT_TIME_SELECT_VALUE,
       weekDaySelectValue: this.DEFAULT_WEEKDAY_SELECT_VALUE,
       monthOfYearSelectValue: this.DEFAULT_MONTH_OF_YEAR_SELECT_VALUE,
-      resetPeriodSelectValue: this.timeRange ?? this.DEFAULT_RESET_PERIOD_SELECT_VALUE,
       monthDaySelectValue: this.DEFAULT_MONTH_DAY_SELECT_VALUE,
-      timezone: undefined,
+      resetPeriodSelectValue: this.timeRange ?? this.DEFAULT_RESET_PERIOD_SELECT_VALUE,
+      evaluationFrequencyMins: 5,
     }
 
     if (props.dataAlert) {
@@ -79,18 +78,14 @@ export default class ScheduleBuilder extends React.Component {
     conditionType: PropTypes.string,
     showTypeSelector: PropTypes.bool,
     dataAlert: PropTypes.shape({}),
-    onChange: PropTypes.func,
     onCompleteChange: PropTypes.func,
-    onErrorCallback: PropTypes.func,
   }
 
   static defaultProps = {
     conditionType: EXISTS_TYPE,
     showTypeSelector: true,
     dataAlert: undefined,
-    onChange: () => {},
     onCompleteChange: () => {},
-    onErrorCallback: () => {},
   }
 
   componentDidMount = () => {
@@ -100,19 +95,34 @@ export default class ScheduleBuilder extends React.Component {
     }
   }
 
-  componentDidUpdate = (prevProps) => {
+  componentDidUpdate = (prevProps, prevState) => {
     if (this.isCompleteChanged()) {
       this.props.onCompleteChange(this.isFormComplete)
+    }
+
+    if (this.state.isCustomEvaluationFrequencyInputVisible && !prevState.isCustomEvaluationFrequencyInputVisible) {
+      this.customEvalFrequencyInput?.selectAll()
     }
 
     if (this.props.queryResponse?.data?.data?.text !== prevProps.queryResponse?.data?.data?.text) {
       this.timeRange = getTimeRangeFromRT(props.queryResponse)
     }
 
-    if (this.props.frequencyType !== prevProps.frequencyType) {
-      const newState = {}
-      this.getInitialStateFromDataAlert(this.props, state)
-      this.setState(newState)
+    if (this.props.dataAlertType !== prevProps.dataAlertType || this.props.conditionType !== prevProps.conditionType) {
+      if (
+        // Change default reset period to "every time this happens" if a user changes frequency to "right away"
+        this.props.dataAlertType === CONTINUOUS_TYPE && // "right away"
+        this.props.conditionType === EXISTS_TYPE && // "new rows"
+        this.state.resetPeriodSelectValue !== 'NONE'
+      ) {
+        this.setState({ resetPeriodSelectValue: 'NONE' })
+      } else if (
+        //  Change default reset period to default value when user changes condition type to "COMPARE" in first step
+        (this.props.conditionType !== EXISTS_TYPE || this.props.dataAlertType === SCHEDULED_TYPE) && // "when condition is met"
+        this.state.resetPeriodSelectValue === 'NONE'
+      ) {
+        this.setState({ resetPeriodSelectValue: this.timeRange ?? this.DEFAULT_RESET_PERIOD_SELECT_VALUE })
+      }
     }
   }
 
@@ -130,6 +140,8 @@ export default class ScheduleBuilder extends React.Component {
     } else if (this.shouldRenderEvaluationFrequencySelector() && !this.state.evaluationFrequencySelectValue) {
       return false
     } else if (this.timePickerRef?._isMounted && !this.timePickerRef.isValid()) {
+      return false
+    } else if (this.state.evaluationFrequencySelectValue === 'custom' && !this.state.evaluationFrequencyMins) {
       return false
     }
 
@@ -150,15 +162,23 @@ export default class ScheduleBuilder extends React.Component {
     const { dataAlert } = props
 
     try {
-      state.frequencyType = props.frequencyType ?? dataAlert?.notification_type ?? this.DEFAULT_FREQUENCY_TYPE
-      state.evaluationFrequencySelectValue = dataAlert?.evaluation_frequency
+      const evalFrequency = dataAlert?.evaluation_frequency
+
       state.timezone = dataAlert?.time_zone
       state.resetPeriodSelectValue = dataAlert?.reset_period
+      state.evaluationFrequencySelectValue = dataAlert?.evaluation_frequency
+
+      // If evaluation frequency is not in predefined list, then it is a custom value:
+      if (!EVALUATION_FREQUENCY_OPTIONS[evalFrequency]) {
+        state.evaluationFrequencySelectValue = 'custom'
+        state.evaluationFrequencyMins = evalFrequency
+        state.isCustomEvaluationFrequencyInputVisible = true
+      }
 
       if (
         !state.resetPeriodSelectValue &&
-        state.frequencyType !== SCHEDULED_TYPE &&
-        this.SUPPORTED_CONDITION_TYPE === COMPARE_TYPE
+        props.dataAlertType !== SCHEDULED_TYPE &&
+        this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE)
       ) {
         // We don't want to support null reset_periods for compare type data alerts
         // To avoid continuous triggering of the alert. Use default value in this case
@@ -169,13 +189,15 @@ export default class ScheduleBuilder extends React.Component {
         state.resetPeriodSelectValue = 'NONE'
       }
 
-      if (state.frequencyType === SCHEDULED_TYPE) {
+      if (props.dataAlertType === SCHEDULED_TYPE) {
         const schedules = dataAlert?.schedules
         const schedulePeriod = schedules?.[0]?.notification_period ?? this.DEFAULT_RESET_PERIOD_SELECT_VALUE
 
+        state.timezone = schedules?.[0]?.time_zone
         state.resetPeriodSelectValue = schedulePeriod
         state.intervalTimeSelectValue =
-          getTimeObjFromTimeStamp(schedules?.[0]?.start_date, dataAlert?.time_zone) ?? this.DEFAULT_TIME_SELECT_VALUE
+          getTimeObjFromTimeStamp(schedules?.[0]?.start_date, schedules?.[0]?.time_zone) ??
+          this.DEFAULT_TIME_SELECT_VALUE
 
         if (schedulePeriod === 'MONTH_LAST_DAY') {
           state.resetPeriodSelectValue = 'MONTH'
@@ -185,7 +207,7 @@ export default class ScheduleBuilder extends React.Component {
         } else if (schedulePeriod === 'WEEK' && dataAlert.schedules.length === 7) {
           state.resetPeriodSelectValue = 'DAY'
         } else if (schedulePeriod === 'WEEK') {
-          state.weekDaySelectValue = getWeekdayFromTimeStamp(schedules[0]?.start_date, dataAlert?.time_zone)
+          state.weekDaySelectValue = getWeekdayFromTimeStamp(schedules[0]?.start_date, schedules?.[0]?.time_zone)
         }
       }
     } catch (error) {
@@ -201,10 +223,13 @@ export default class ScheduleBuilder extends React.Component {
 
   getData = () => {
     const notificationType = this.getNotificationType()
-    const resetPeriod = this.state.frequencyType !== SCHEDULED_TYPE ? this.getResetPeriod() : undefined
+    const resetPeriod = this.props.dataAlertType !== SCHEDULED_TYPE ? this.getResetPeriod() : undefined
     const schedules = this.getSchedules()
     const timezone = this.state.timezone
-    const evaluationFrequency = this.state.evaluationFrequencySelectValue
+    const evaluationFrequency =
+      (this.state.evaluationFrequencySelectValue === 'custom'
+        ? this.state.evaluationFrequencyMins
+        : this.state.evaluationFrequencySelectValue) ?? this.DEFAULT_EVALUATION_FREQUENCY
 
     return {
       notificationType,
@@ -234,7 +259,7 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   getSchedules = () => {
-    if (this.state.frequencyType !== SCHEDULED_TYPE) {
+    if (this.props.dataAlertType !== SCHEDULED_TYPE) {
       return
     }
 
@@ -269,15 +294,22 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   getNotificationType = () => {
-    if (this.state.frequencyType === CONTINUOUS_TYPE && this.state.resetPeriodSelectValue !== 'NONE') {
+    if (this.props.dataAlertType === CONTINUOUS_TYPE && this.state.resetPeriodSelectValue !== 'NONE') {
       return PERIODIC_TYPE
     }
 
-    return this.state.frequencyType
+    if (this.props.conditionType === EXISTS_TYPE && this.props.dataAlertType === CONTINUOUS_TYPE) {
+      return CONTINUOUS_TYPE
+    }
+
+    return this.props.dataAlertType
   }
 
   shouldRenderResetPeriodSelector = () => {
-    return this.state.frequencyType !== SCHEDULED_TYPE && this.SUPPORTED_CONDITION_TYPE === COMPARE_TYPE
+    return (
+      // (this.props.conditionType !== EXISTS_TYPE || this.props.dataAlertType === SCHEDULED_TYPE) &&
+      this.props.dataAlertType !== SCHEDULED_TYPE //&& this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE)
+    )
   }
 
   renderQuery = () => {
@@ -458,14 +490,14 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   shouldRenderEvaluationFrequencySelector = () => {
-    return showEvaluationFrequencySetting(this.state?.frequencyType)
+    return showEvaluationFrequencySetting(this.props.dataAlertType)
   }
 
   evaluationFrequencySelector = () => {
     if (this.shouldRenderEvaluationFrequencySelector()) {
       let tooltip =
         'How often should we run the query to check for new data? (You will only be notified if there is new data)'
-      if (this.SUPPORTED_CONDITION_TYPE === COMPARE_TYPE) {
+      if (this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE)) {
         tooltip = `How often should we run the query to check if the conditions are met?`
       }
 
@@ -479,6 +511,14 @@ export default class ScheduleBuilder extends React.Component {
           listLabel: freqObj?.listLabel ? <span dangerouslySetInnerHTML={{ __html: freqObj?.listLabel }} /> : label,
         }
       })
+
+      options.push({
+        value: 'custom',
+        label: 'Custom...',
+      })
+
+      const maxValue = 60
+      const minValue = 1
 
       return (
         <div className='react-autoql-data-alert-frequency-option check-frequency'>
@@ -496,8 +536,38 @@ export default class ScheduleBuilder extends React.Component {
                 />
               </span>
             }
-            onChange={(value) => this.setState({ evaluationFrequencySelectValue: value })}
+            onChange={(value) => {
+              if (value === 'custom') {
+                this.setState({ evaluationFrequencySelectValue: value, isCustomEvaluationFrequencyInputVisible: true })
+              } else {
+                this.setState({ evaluationFrequencySelectValue: value, isCustomEvaluationFrequencyInputVisible: false })
+              }
+            }}
           />
+          {this.state.isCustomEvaluationFrequencyInputVisible ? (
+            <Input
+              type='number'
+              ref={(r) => (this.customEvalFrequencyInput = r)}
+              value={this.state.evaluationFrequencyMins}
+              onChange={(e) => {
+                if (e.target.value !== undefined && e.target.value !== '') {
+                  const newValue = parseFloat(e.target.value)
+                  if (newValue > maxValue || newValue < minValue) {
+                    return
+                  }
+
+                  this.setState({ evaluationFrequencyMins: Math.abs(newValue) })
+                } else {
+                  this.setState({ evaluationFrequencyMins: '' })
+                }
+              }}
+              style={{ width: '125px', marginRight: '20px' }}
+              label='Minutes (1-60)'
+              max={60}
+              min={1}
+              step='1'
+            />
+          ) : null}
         </div>
       )
     }
@@ -518,7 +588,9 @@ export default class ScheduleBuilder extends React.Component {
               value,
               label: <span dangerouslySetInnerHTML={{ __html: RESET_PERIOD_OPTIONS[value].displayName }} />,
             }))
-            .filter((option) => (option?.value === 'NONE' ? this.SUPPORTED_CONDITION_TYPE === EXISTS_TYPE : true))}
+            // To show "every time this happens", it must be an exists type query that was either selected by the user,
+            // or an exists type query that does not have a compare option (list query)
+            .filter((option) => (option?.value === 'NONE' ? this.props.conditionType === EXISTS_TYPE : true))}
           label='Send a notification'
           value={this.state.resetPeriodSelectValue}
           onChange={(option) => this.setState({ resetPeriodSelectValue: option })}
@@ -571,7 +643,7 @@ export default class ScheduleBuilder extends React.Component {
       this.props.dataAlert?.expression?.[0]?.term_value
     const queryText = query ? <em>"{query}"</em> : 'this query'
 
-    let value = this.state.frequencyType
+    let value = this.props.dataAlertType
     if (value === PERIODIC_TYPE) {
       value = CONTINUOUS_TYPE
     }
@@ -579,11 +651,18 @@ export default class ScheduleBuilder extends React.Component {
     return (
       <div className='frequency-type-container'>
         <span>
-          <span>
-            If {this.props.conditionStatement ?? this.getConditionStatement({ tense: 'present', sentenceCase: false })},
-            you'll be notified
-          </span>
-          <Select
+          {this.props.dataAlertType === SCHEDULED_TYPE ? (
+            <span>
+              A notification will be sent with the query result <strong>at the following times:</strong>
+            </span>
+          ) : (
+            <span>
+              A notification will be sent <strong>right away</strong> when{' '}
+              {this.props.conditionStatement ?? this.getConditionStatement({ tense: 'present', sentenceCase: false })}.
+            </span>
+          )}
+
+          {/* <Select
             className='data-alert-schedule-step-type-selector'
             options={Object.keys(DATA_ALERT_FREQUENCY_TYPE_OPTIONS).map((key) => ({
               value: key,
@@ -593,9 +672,16 @@ export default class ScheduleBuilder extends React.Component {
               ),
             }))}
             value={value}
-            onChange={(type) => this.setState({ frequencyType: type })}
+            onChange={(type) => {
+              if (type === this.props.dataAlertType) {
+                return
+              }
+
+              this.setState({ frequencyType: type })
+            }}
+            showArrow={false}
             outlined={false}
-          />
+          /> */}
         </span>
       </div>
     )
@@ -604,7 +690,7 @@ export default class ScheduleBuilder extends React.Component {
   frequencyOptionsSection = () => {
     let content = null
 
-    switch (this.state.frequencyType) {
+    switch (this.props.dataAlertType) {
       case SCHEDULED_TYPE: {
         content = this.scheduleFrequencyOptions()
         break

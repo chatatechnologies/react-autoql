@@ -37,7 +37,8 @@ class NotificationFeed extends React.Component {
     this.COMPONENT_KEY = uuid()
     this.MODAL_COMPONENT_KEY = uuid()
     this.NOTIFICATION_FETCH_LIMIT = 10
-    this.TOOLTIP_ID = 'react-autoql-notification-tooltip'
+    this.TOOLTIP_ID = 'react-autoql-notification-feed-tooltip'
+    this.CHART_TOOLTIP_ID = 'react-autoql-notification-feed-chart-tooltip'
     // Open event source http connection here to receive SSE
     // notificationEventSource = new EventSource(
     //   'https://backend.chata.io/notifications'
@@ -72,8 +73,14 @@ class NotificationFeed extends React.Component {
     shouldRender: PropTypes.bool,
     onDataAlertChange: PropTypes.func,
     tooltipID: PropTypes.string,
+    chartTooltipID: PropTypes.string,
     enableSettingsMenu: PropTypes.bool,
     enableNotificationsMenu: PropTypes.bool,
+    displayProjectName: PropTypes.bool,
+    enableFilterBtn: PropTypes.bool,
+    enableFetchAllNotificationFeedAcrossProjects: PropTypes.bool,
+    selectedProjectId: PropTypes.string,
+    notificationTitle: PropTypes.string,
   }
 
   static defaultProps = {
@@ -83,9 +90,13 @@ class NotificationFeed extends React.Component {
     autoChartAggregations: false,
     showCreateAlertBtn: false,
     shouldRender: true,
-    tooltipID: this.TOOLTIP_ID,
     enableSettingsMenu: true,
     enableNotificationsMenu: true,
+    displayProjectName: false,
+    enableFilterBtn: true,
+    enableFetchAllNotificationFeedAcrossProjects: false,
+    selectedProjectId: 'all',
+    notificationTitle: '',
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
     onErrorCallback: () => {},
@@ -120,6 +131,16 @@ class NotificationFeed extends React.Component {
 
     if (prevState.notificationList?.length !== this.state.notificationList?.length) {
       this.updateScrollbars(1000)
+    }
+    if (
+      (prevProps.selectedProjectId !== this.props.selectedProjectId ||
+        prevProps.notificationTitle !== this.props.notificationTitle) &&
+      this.props.enableFetchAllNotificationFeedAcrossProjects
+    ) {
+      this.filterNotificationsByProject()
+      this.setState({
+        isFetchingFirstNotifications: true,
+      })
     }
   }
 
@@ -166,6 +187,9 @@ class NotificationFeed extends React.Component {
       ...getAuthentication(this.props.authentication),
       limit: this.NOTIFICATION_FETCH_LIMIT,
       offset,
+      enableFetchAllNotificationFeedAcrossProjects: this.props.enableFetchAllNotificationFeedAcrossProjects,
+      selectedProjectId: this.props.selectedProjectId,
+      notificationTitle: this.props.notificationTitle,
     })
       .then((data) => {
         if (!data?.items?.length) {
@@ -238,6 +262,43 @@ class NotificationFeed extends React.Component {
         }
 
         this.setState({
+          notificationList: response.items,
+          pagination: response.pagination,
+          unFetchedNotifications: 0,
+        })
+      })
+      .catch((error) => {
+        console.error(error)
+      })
+  }
+  filterNotificationsByProject = () => {
+    const limit =
+      (this.state.notificationList?.length || this.NOTIFICATION_FETCH_LIMIT) + (this.state.unFetchedNotifications ?? 0)
+
+    fetchNotificationFeed({
+      ...getAuthentication(this.props.authentication),
+      offset: 0,
+      limit,
+      enableFetchAllNotificationFeedAcrossProjects: true,
+      selectedProjectId: this.props.selectedProjectId,
+      notificationTitle: this.props.notificationTitle,
+    })
+      .then((response) => {
+        const items = response?.items
+        const notificationList = this.state.notificationList
+        const lastIndex = response.items?.length - 1
+
+        if (
+          items?.[0]?.id === notificationList?.[0]?.id &&
+          items?.[lastIndex]?.id === notificationList?.[lastIndex]?.id
+        ) {
+          // There are no new notifications if the first (newest) is the same as what is already there
+          this.setState({ unFetchedNotifications: 0, isFetchingFirstNotifications: false })
+          return
+        }
+
+        this.setState({
+          isFetchingFirstNotifications: false,
           notificationList: response.items,
           pagination: response.pagination,
           unFetchedNotifications: 0,
@@ -455,7 +516,7 @@ class NotificationFeed extends React.Component {
         onSave={this.onDataAlertSave}
         onErrorCallback={this.props.onErrorCallback}
         allowDelete={this.state.activeDataAlert?.type === 'CUSTOM'}
-        tooltipID={this.props.tooltipID}
+        tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
         editView
       />
     )
@@ -520,7 +581,8 @@ class NotificationFeed extends React.Component {
           }`}
           data-test='notification-list'
         >
-          {this.props.tooltipID !== this.TOOLTIP_ID && <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={500} />}
+          {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={500} />}
+          {!this.props.chartTooltipID && <Tooltip tooltipId={this.CHART_TOOLTIP_ID} delayShow={0} />}
           {this.state.notificationList?.length ? (
             <>
               {this.renderTopOptions()}
@@ -552,6 +614,7 @@ class NotificationFeed extends React.Component {
                         dataAlert={dataAlert}
                         enableSettingsMenu={this.props.enableSettingsMenu}
                         enableNotificationsMenu={this.props.enableNotificationsMenu}
+                        displayProjectName={this.props.displayProjectName}
                         expanded={!!notification.expanded}
                         onDismissCallback={this.onDismissClick}
                         onUnreadCallback={this.onUnreadClick}
@@ -576,8 +639,9 @@ class NotificationFeed extends React.Component {
                         }}
                         isResizing={this.props.isResizing}
                         updateScrollbars={this.updateScrollbars}
-                        tooltipID={this.props.tooltipID}
-                        chartTooltipID={this.props.chartTooltipID}
+                        tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+                        chartTooltipID={this.props.chartTooltipID ?? this.CHART_TOOLTIP_ID}
+                        enableFilterBtn={this.props.enableFilterBtn}
                       />
                     )
                   })}

@@ -203,6 +203,8 @@
 }
 .react-autoql-query-validation-select.react-autoql-select-and-label {
   padding: 0 !important;
+  border-bottom-style: dashed !important;
+  height: 1.5em;
 
   .react-autoql-select {
     position: relative;
@@ -216,7 +218,6 @@
     margin: 0;
     padding: 0 !important;
     border-radius: 0;
-    border-bottom: 1px dashed;
     color: var(--react-autoql-accent-color);
   }
 }
@@ -273,13 +274,20 @@
   width: 100%;
   margin: 0;
   padding: 0;
+  padding-bottom: 5px;
+
+  hr {
+    border-top: 1px solid var(--react-autoql-border-color);
+    border-bottom: none;
+    opacity: 0.5;
+  }
 }
 .context-menu-list li {
   color: var(--react-autoql-text-color-primary);
   width: 100%;
   height: 35px;
   line-height: 35px;
-  padding: 0 20px;
+  padding: 0 18px;
   cursor: pointer;
 }
 .context-menu-list li:hover {

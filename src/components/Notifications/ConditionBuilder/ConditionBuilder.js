@@ -214,6 +214,7 @@ export default class ConditionBuilder extends React.Component {
                   queryResponse={this.props.queryResponse}
                   queryResultMetadata={this.props.queryResultMetadata}
                   onLastInputEnterPress={this.props.onLastInputEnterPress}
+                  dataAlertType={this.props.dataAlertType}
                   filters={this.props.filters}
                 />
                 {this.props.conditionStatementOnly && (

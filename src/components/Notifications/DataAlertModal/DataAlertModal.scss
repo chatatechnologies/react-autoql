@@ -4,6 +4,11 @@
 
 .react-autoql-data-alert-creation-modal {
   height: calc(100vh - 90px);
+
+  .react-autoql-alert-type-btn-active {
+    background-color: var(--react-autoql-accent-color);
+  }
+
   .react-autoql-modal-footer {
     padding: 0;
 
@@ -19,6 +24,7 @@
         opacity: 0.2;
         background: var(--react-autoql-accent-color);
       }
+
       .data-alert-modal-query-summary {
         position: relative;
         padding: 10px 20px;
@@ -41,14 +47,20 @@
   flex-direction: column;
 
   .react-autoql-steps-hoz-container {
-    padding: 40px 100px;
-    padding-bottom: 35px;
+    padding: 0px 100px;
+    padding-bottom: 20px;
+  }
+
+  .react-autoql-data-alert-type-step {
+    flex: 1;
+    width: 100%;
+    margin-top: 20px;
   }
 
   .react-autoql-data-alert-modal-step {
     font-weight: 400;
     font-size: 15px;
-    padding: 100px;
+    padding: 75px;
     padding-top: 15px;
     padding-bottom: 20px;
 

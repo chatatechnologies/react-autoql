@@ -1,7 +1,7 @@
 import React from 'react'
-import dayjs from '../../js/dayjsWithPlugins'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
+import dayjs from '../../js/dayjsWithPlugins'
 
 import { Icon } from '../Icon'
 import { Button } from '../Button'
@@ -19,7 +19,7 @@ export default class Input extends React.Component {
     this.INPUT_ID = uuid()
 
     this.state = {
-      focused: false,
+      focused: props.focusOnMount,
       isDatePickerOpen: false,
       dateRange: undefined,
     }
@@ -33,6 +33,9 @@ export default class Input extends React.Component {
     label: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
     fullWidth: PropTypes.bool,
     datePicker: PropTypes.bool,
+    focusOnMount: PropTypes.bool,
+    showArrow: PropTypes.bool,
+    showSpinWheel: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -41,8 +44,18 @@ export default class Input extends React.Component {
     step: '1',
     size: 'large',
     label: '',
+    selectLocation: 'left',
     fullWidth: false,
     datePicker: false,
+    focusOnMount: false,
+    showArrow: undefined,
+    showSpinWheel: true,
+  }
+
+  componentDidMount = () => {
+    if (this.props.focusOnMount) {
+      this.selectAll()
+    }
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -150,6 +163,7 @@ export default class Input extends React.Component {
   renderSelectDropdown = () => {
     return (
       <Select
+        showArrow={this.props.showArrow}
         className='react-autoql-text-input-selector'
         options={this.props.selectOptions}
         value={this.props.selectValue}
@@ -216,6 +230,10 @@ export default class Input extends React.Component {
       datePicker,
       onDateRangeChange,
       initialDateRange,
+      focusOnMount,
+      showSpinWheel,
+      showArrow,
+      selectLocation,
       ...nativeProps
     } = this.props
 
@@ -238,10 +256,11 @@ export default class Input extends React.Component {
             ${this.state.focused ? 'focus' : ''}
             ${hasSelect ? 'with-select' : ''}
             ${size === 'small' ? 'react-autoql-input-small' : 'react-autoql-input-large'}
-            ${type === 'number' ? 'react-autoql-input-number' : ''}`}
+            ${type === 'number' ? 'react-autoql-input-number' : ''}
+            ${selectLocation === 'left' ? 'react-autoql-input-select-left' : 'react-autoql-input-select-right'}`}
             data-test='react-autoql-input'
           >
-            {hasSelect && this.renderSelectDropdown()}
+            {hasSelect && selectLocation === 'left' && this.renderSelectDropdown()}
             {!!area ? (
               <textarea
                 {...nativeProps}
@@ -270,7 +289,8 @@ export default class Input extends React.Component {
                 {this.props.datePicker ? this.renderDateRangePickerPopover() : null}
               </div>
             )}
-            {type === 'number' && this.renderSpinWheel()}
+            {type === 'number' && this.props.showSpinWheel && this.renderSpinWheel()}
+            {hasSelect && selectLocation === 'right' && this.renderSelectDropdown()}
           </div>
         </div>
       </ErrorBoundary>

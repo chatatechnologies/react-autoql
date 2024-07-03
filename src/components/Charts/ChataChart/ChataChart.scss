@@ -35,6 +35,19 @@
     pointer-events: none;
   }
 
+  &.disable-drilldown {
+    .bar,
+    .column,
+    .stacked-bar,
+    .stacked-column,
+    .slice,
+    .square,
+    .line-dot-outer-circle,
+    .circle {
+      cursor: default !important;
+    }
+  }
+
   svg {
     // set transparent in css but keep background in inline style for exporting to png
     background: transparent !important;
