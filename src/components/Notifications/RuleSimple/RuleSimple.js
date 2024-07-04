@@ -144,8 +144,8 @@ export default class RuleSimple extends React.Component {
       secondQueryAmountOfNumberColumns: 0,
       secondQueryAllColumnsAmount: 0,
       secondQueryGroupableColumnsAmount: 0,
-      secondTermMultiplicationFactorType: 'multiply-percent',
-      secondTermMultiplicationFactorValue: '100',
+      secondTermMultiplicationFactorType: 'multiply-percent-higher',
+      secondTermMultiplicationFactorValue: '0',
     }
 
     if (initialData?.length) {
@@ -369,9 +369,19 @@ export default class RuleSimple extends React.Component {
         let operation = this.state.secondTermMultiplicationFactorType
         let value = this.state.secondTermMultiplicationFactorValue
 
-        if (operation === 'multiply-percent') {
+        if (operation === 'multiply-percent-higher' || operation === 'multiply-percent-lower') {
+          let numberValue = parseInt(value ?? 0)
+          if (isNaN(numberValue)) {
+            numberValue = 0
+          }
+
+          if (operation === 'multiply-percent-higher') {
+            value = `${100 + numberValue}%`
+          } else if (operation === 'multiply-percent-lower') {
+            value = `${100 - numberValue}%`
+          }
+
           operation = 'multiply'
-          value = `${value}%`
         }
 
         secondTerm.result_adjustment = {
@@ -1222,6 +1232,14 @@ export default class RuleSimple extends React.Component {
   }
 
   renderSecondTermMultiplicationFactor = () => {
+    if (
+      this.state.secondTermType !== QUERY_TERM_TYPE ||
+      this.state.selectedOperator == 'EQUAL_TO' ||
+      this.state.selectedOperator == 'NOT_EQUAL_TO'
+    ) {
+      return null
+    }
+
     return (
       <div className='react-autoql-second-term-multiplication-factor-input'>
         <Input
@@ -1241,10 +1259,18 @@ export default class RuleSimple extends React.Component {
           selectLocation='right'
           selectOptions={[
             {
-              value: 'multiply-percent',
+              value: 'multiply-percent-higher',
               label: (
                 <span>
-                  <strong>% of</strong>
+                  <strong>% higher</strong> than
+                </span>
+              ),
+            },
+            {
+              value: 'multiply-percent-lower',
+              label: (
+                <span>
+                  <strong>% lower</strong> than
                 </span>
               ),
             },
@@ -1281,8 +1307,11 @@ export default class RuleSimple extends React.Component {
 
             const newState = { secondTermMultiplicationFactorType }
 
-            if (secondTermMultiplicationFactorType === 'multiply-percent') {
-              newState.secondTermMultiplicationFactorValue = '100'
+            if (
+              secondTermMultiplicationFactorType === 'multiply-percent-higher' ||
+              secondTermMultiplicationFactorType === 'multiply-percent-lower'
+            ) {
+              newState.secondTermMultiplicationFactorValue = '0'
             } else if (secondTermMultiplicationFactorType === 'multiply') {
               newState.secondTermMultiplicationFactorValue = '1'
             } else {
@@ -1451,7 +1480,7 @@ export default class RuleSimple extends React.Component {
                       {this.renderOperatorSelector()}
                     </div>
                     <div className='react-autoql-rule-mult-factor-select-input-container'>
-                      {this.state.secondTermType === QUERY_TERM_TYPE && this.renderSecondTermMultiplicationFactor()}
+                      {this.renderSecondTermMultiplicationFactor()}
                     </div>
                     <div className='react-autoql-rule-second-input-container'>
                       <div className='react-autoql-rule-input'>{this.renderSecondTermInput()}</div>
