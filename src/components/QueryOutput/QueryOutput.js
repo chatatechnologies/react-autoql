@@ -421,7 +421,7 @@ export class QueryOutput extends React.Component {
 
   checkAndUpdateTableConfigs = (displayType) => {
     // Check if table configs are still valid for new display type
-    const isTableConfigValid = this.isTableConfigValid(this.tableConfig, this.state.columns, displayType)
+    const isTableConfigValid = this.isTableConfigValid(this.tableConfig, this.getColumns(), displayType)
 
     if (!isTableConfigValid) {
       this.setTableConfig()
@@ -620,7 +620,7 @@ export class QueryOutput extends React.Component {
     return isColumnIndexConfigValid({
       response: this.queryResponse,
       columnIndexConfig: tableConfig ?? this.tableConfig,
-      columns: columns ?? this.state.columns,
+      columns: columns ?? this.getColumns(),
       displayType: displayType ?? this.state.displayType,
     })
   }
