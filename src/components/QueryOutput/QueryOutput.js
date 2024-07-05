@@ -469,7 +469,8 @@ export class QueryOutput extends React.Component {
       dataFormatting: this.props.dataFormatting,
     })
 
-    const currentCustomColumns = currentColumns.filter((col) => col.custom) ?? []
+    const currentCustomColumns =
+      currentColumns.filter((col) => col.custom && !currentColumns.find((c) => col.id === c.id)) ?? []
 
     const customColsFormatted = customCols?.map((col, i) => {
       const newIndex = newFormattedColumns.length + i
