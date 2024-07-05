@@ -8,14 +8,12 @@ import {
   deepEqual,
   ColumnTypes,
   COLUMN_TYPES,
-  getVisibleColumns,
   formatQueryColumns,
   isColumnNumberType,
   autoQLConfigDefault,
   authenticationDefault,
   dataFormattingDefault,
   getColumnTypeAmounts,
-  isColumnStringType,
   createMutatorFn,
   getFnSummary,
   WINDOW_FUNCTIONS,
@@ -69,12 +67,12 @@ export default class CustomColumnModal extends React.Component {
     } else {
       this.newColumn = new ColumnObj({
         ...this.newColumnRaw,
-        id: props.initialColumn?.id,
-        fnSummary: props.initialColumn ? getFnSummary(props.initialColumn.columnFnArray) : '',
+        id: uuid(),
+        fnSummary: '',
         mutator: initialMutator,
         columnFnArray: initialColumnFn,
-        field: props.initialColumn?.field ?? `${props.columns?.length}`,
-        index: props.initialColumn?.index >= 0 ? props.initialColumn?.index : props.columns?.length,
+        field: `${props.columns?.length}`,
+        index: props.columns?.length,
         custom: true,
       })
     }
