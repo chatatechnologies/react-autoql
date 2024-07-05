@@ -36,10 +36,11 @@ const Settings = ({ children, className } = {}) => {
 const Divider = ({ horizontal, vertical }) => {
   return (
     <div
-      className={`react-autoql-settings-vertical-divider ${vertical
-        ? 'react-autoql-settings-vertical-divider-vertical'
-        : 'react-autoql-settings-vertical-divider-horizontal'
-        }`}
+      className={`react-autoql-settings-vertical-divider ${
+        vertical
+          ? 'react-autoql-settings-vertical-divider-vertical'
+          : 'react-autoql-settings-vertical-divider-horizontal'
+      }`}
     />
   )
 }
@@ -84,14 +85,16 @@ export default class DataAlertSettings extends React.Component {
     onErrorCallback: PropTypes.func,
     onExpressionChange: PropTypes.func,
     onCompleteChange: PropTypes.func,
+    enableAlphaAlertSettings: PropTypes.bool,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
     currentDataAlert: undefined,
-    onErrorCallback: () => { },
-    onExpressionChange: () => { },
-    onCompleteChange: () => { },
+    onErrorCallback: () => {},
+    onExpressionChange: () => {},
+    onCompleteChange: () => {},
+    enableAlphaAlertSettings: false,
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -278,10 +281,14 @@ export default class DataAlertSettings extends React.Component {
           </SettingSection>
           <Divider horizontal />
           <SettingSection title='Appearance'>{this.AppearanceSettings()}</SettingSection>
-          <Divider horizontal />
-          <CollapsableSection defaultCollapsed={true} title='Additional Settings' onToggle={() => { }}>
-            {this.renderAlphaAlertsSettings()}
-          </CollapsableSection>
+          {this.props.enableAlphaAlertSettings && (
+            <>
+              <Divider horizontal />
+              <CollapsableSection defaultCollapsed={true} title='Additional Settings' onToggle={() => {}}>
+                {this.renderAlphaAlertsSettings()}
+              </CollapsableSection>
+            </>
+          )}
         </Settings>
       </ErrorBoundary>
     )
