@@ -242,6 +242,32 @@ export default class RuleSimple extends React.Component {
     return this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE) ? this.SUPPORTED_OPERATORS[0] : EXISTS_TYPE
   }
 
+  getMultiplicationFactorText = () => {
+    const type = this.state.secondTermMultiplicationFactorType
+    const value = this.state.secondTermMultiplicationFactorValue
+
+    if (this.shouldRenderMultiplicationFactorSection()) {
+      if (type === 'multiply-percent-higher') {
+        if (value == 0) return null
+        return `${value}% higher than`
+      } else if (type === 'multiply-percent-lower') {
+        if (value == 0) return null
+        return `${value}% lower than`
+      } else if (type === 'multiply') {
+        if (value == 1) return null
+        return `${value} times`
+      } else if (type === 'add') {
+        if (value == 0) return null
+        return `${value} more than`
+      } else if (type === 'subtract') {
+        if (value == 0) return null
+        return `${value} less than`
+      }
+    }
+
+    return null
+  }
+
   getConditionStatement = ({ tense, useRT, sentenceCase = false, withFilters = false } = {}) => {
     let queryText = this.getFormattedQueryText({ sentenceCase, withFilters })
 
@@ -262,6 +288,9 @@ export default class RuleSimple extends React.Component {
 
     const operator = DATA_ALERT_OPERATORS[this.state.selectedOperator]
     const operatorText = tense === 'past' ? operator?.conditionTextPast : operator?.conditionText
+
+    const multiplicationFactorText = this.getMultiplicationFactorText()
+
     let secondTermText = this.state.secondInputValue
     if (this.state.secondTermType === QUERY_TERM_TYPE) {
       secondTermText = (
@@ -283,7 +312,11 @@ export default class RuleSimple extends React.Component {
         <span className='data-alert-condition-statement'>
           <span className='data-alert-condition-statement-query1'>"{queryText}"</span>{' '}
           <span className='data-alert-condition-statement-query2'>
-            <span className='data-alert-condition-statement-operator'>{operatorText}</span> {secondTermText}
+            <span className='data-alert-condition-statement-operator'>{operatorText}</span>{' '}
+            {multiplicationFactorText ? (
+              <span className='data-alert-condition-statement-operator'>{multiplicationFactorText}</span>
+            ) : null}{' '}
+            {secondTermText}
           </span>
         </span>
       )
@@ -1253,12 +1286,16 @@ export default class RuleSimple extends React.Component {
     )
   }
 
+  shouldRenderMultiplicationFactorSection = () => {
+    return (
+      this.state.secondTermType === QUERY_TERM_TYPE &&
+      this.state.selectedOperator != 'EQUAL_TO' &&
+      this.state.selectedOperator != 'NOT_EQUAL_TO'
+    )
+  }
+
   renderSecondTermMultiplicationFactor = () => {
-    if (
-      this.state.secondTermType !== QUERY_TERM_TYPE ||
-      this.state.selectedOperator == 'EQUAL_TO' ||
-      this.state.selectedOperator == 'NOT_EQUAL_TO'
-    ) {
+    if (!this.shouldRenderMultiplicationFactorSection()) {
       return null
     }
 
