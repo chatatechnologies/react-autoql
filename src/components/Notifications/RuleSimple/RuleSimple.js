@@ -117,6 +117,28 @@ export default class RuleSimple extends React.Component {
       firstQueryCompareColumnIndex = undefined
     }
 
+    let secondTermMultiplicationFactorType = 'multiply-percent-higher'
+    let secondTermMultiplicationFactorValue = '0'
+
+    if (initialData?.[1]?.result_adjustment) {
+      let type = initialData[1].result_adjustment.operation
+      let value = initialData[1].result_adjustment.value
+
+      if (type === 'multiply' && value.includes('%')) {
+        value = value.replace(/%/g, '')
+        if (value > 100) {
+          type = 'multiply-percent-higher'
+          value = `${value - 100}`
+        } else if (value < 100) {
+          type = 'multiply-percent-lower'
+          value = `${100 - value}`
+        }
+      }
+
+      secondTermMultiplicationFactorType = type
+      secondTermMultiplicationFactorValue = value
+    }
+
     const state = {
       columnSelectionType: 'any-column',
       selectedOperator: initialData[0]?.condition ?? selectedOperator,
@@ -144,8 +166,8 @@ export default class RuleSimple extends React.Component {
       secondQueryAmountOfNumberColumns: 0,
       secondQueryAllColumnsAmount: 0,
       secondQueryGroupableColumnsAmount: 0,
-      secondTermMultiplicationFactorType: 'multiply-percent-higher',
-      secondTermMultiplicationFactorValue: '0',
+      secondTermMultiplicationFactorType,
+      secondTermMultiplicationFactorValue,
     }
 
     if (initialData?.length) {
