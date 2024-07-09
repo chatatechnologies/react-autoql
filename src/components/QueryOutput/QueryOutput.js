@@ -473,12 +473,11 @@ export class QueryOutput extends React.Component {
       currentColumns.filter((col) => col.custom && !currentColumns.find((c) => col.id === c.id)) ?? []
 
     const customColsFormatted = customCols?.map((col, i) => {
+      const newCol = _cloneDeep(col)
       const newIndex = newFormattedColumns.length + i
-      return {
-        ...col,
-        index: newIndex,
-        field: `${newIndex}`,
-      }
+      newCol.index = newIndex
+      newCol.field = `${newIndex}`
+      return newCol
     })
 
     // Remove any cells that are already created by custom columns
@@ -510,7 +509,15 @@ export class QueryOutput extends React.Component {
 
     // Assign new columns to query response
     // Remove mutator now that new cells have been defined
-    const newColumns = [...nonCustomColumns, ...customColsFormatted.map((col) => ({ ...col, mutator: undefined }))]
+    const newColumns = [
+      ...nonCustomColumns,
+      ...customColsFormatted.map((col) => {
+        const newCol = _cloneDeep(col)
+        newCol.mutator = undefined
+        return newCol
+      }),
+    ]
+
     newResponse.data.data.columns = newColumns
 
     return newResponse
@@ -1861,7 +1868,7 @@ export class QueryOutput extends React.Component {
 
       // Always have filtering enabled, but only
       // display if filtering is toggled by user
-      newCol.headerFilter = 'input'
+      newCol.headerFilter = col.headerFilter ?? 'input'
       newCol.headerFilterPlaceholder = this.setHeaderFilterPlaceholder(newCol)
 
       // Need to set custom filters for cells that are
@@ -1870,7 +1877,7 @@ export class QueryOutput extends React.Component {
 
       // Allow proper chronological sorting for date strings
       newCol.sorter = this.setSorterFunction(newCol)
-      newCol.headerSort = !!this.props.enableTableSorting
+      newCol.headerSort = col.headerSort ?? !!this.props.enableTableSorting
       newCol.headerSortStartingDir = 'desc'
       newCol.headerClick = (e, col) => {
         // To allow tabulator to sort, we must first restore redrawing,
