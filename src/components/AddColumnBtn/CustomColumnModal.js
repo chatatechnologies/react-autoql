@@ -74,6 +74,8 @@ export default class CustomColumnModal extends React.Component {
         field: `${props.columns?.length}`,
         index: props.columns?.length,
         custom: true,
+        headerFilter: false,
+        headerSort: false,
       })
     }
 
@@ -228,8 +230,10 @@ export default class CustomColumnModal extends React.Component {
           this.getColumnParamsForTabulator({
             ...this.getRawColumnParams(columnForFn),
             ...newParams,
-            custom: true,
             id: this.props.initialColumn?.id,
+            custom: true,
+            headerSort: false,
+            headerFilter: false,
           }),
         )
 
@@ -246,11 +250,14 @@ export default class CustomColumnModal extends React.Component {
   }
 
   onUpdateColumnConfirm = () => {
-    this.props.onUpdateColumn({ ...this.newColumn, id: this.props.initialColumn?.id })
+    const newColumn = _cloneDeep(this.newColumn)
+    newColumn.id = this.props.initialColumn?.id
+    this.props.onUpdateColumn(newColumn)
   }
 
   onAddColumnConfirm = () => {
-    this.props.onAddColumn(this.newColumn)
+    const newColumn = _cloneDeep(this.newColumn)
+    this.props.onAddColumn(newColumn)
   }
 
   changeChunkValue = (value, type, i) => {
