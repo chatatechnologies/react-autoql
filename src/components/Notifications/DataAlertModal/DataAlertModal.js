@@ -661,8 +661,7 @@ class DataAlertModal extends React.Component {
         <div className='data-alert-modal-query-summary-background' />
         <div className='data-alert-modal-query-summary'>
           <span>
-            <strong>Your query:</strong> "{formattedQueryText}" <br /> condition statement:{' '}
-            {this.expressionRef?.getConditionStatement()}
+            <strong>Your query:</strong> "{formattedQueryText}"
           </span>
         </div>
       </div>
