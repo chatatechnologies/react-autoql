@@ -495,7 +495,12 @@ export class QueryOutput extends React.Component {
     // Assign all custom column cells to query response rows
     try {
       customColsFormatted.forEach((col) => {
-        if (col?.mutator && col?.index >= 0) {
+        // If mutator is missing but column fn array is present, create mutator fn first
+        if (!col.mutator && !!col?.columnFnArray?.length) {
+          col.mutator = createMutatorFn(col.columnFnArray)
+        }
+
+        if (col.mutator && col.index >= 0) {
           newResponse.data.data.rows.forEach((row) => {
             if (row) {
               row[col.index] = col.mutator(undefined, row)
