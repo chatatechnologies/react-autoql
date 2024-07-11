@@ -35,8 +35,9 @@ export default class SingleNumberAxisSelector extends React.Component {
     }
 
     const existingNumberScale = scale.secondScale
+
     const filteredColumns = columns
-      .filter((col) => !existingNumberScale?.fields?.find((field) => field.name === col.name))
+      .filter((col) => !existingNumberScale?.fields?.find((field) => field.id === col.id))
       .filter((col) => col.is_visible)
 
     return (
@@ -52,26 +53,24 @@ export default class SingleNumberAxisSelector extends React.Component {
             }}
           >
             <ul className='axis-selector-content'>
-              {filteredColumns.map((col) => {
-                if (!isColumnNumberType(col)) {
-                  return null
-                }
+              {filteredColumns
+                .filter((col) => isColumnNumberType(col))
+                .map((col) => {
+                  const colIndex = columns.find((origColumn) => origColumn.id === col.id)?.index
 
-                const colIndex = columns.find((origColumn) => origColumn.name === col.name)?.index
-
-                return (
-                  <li
-                    className={`string-select-list-item ${colIndex === scale.columnIndex ? 'active' : ''}`}
-                    key={`string-column-select-${colIndex}`}
-                    onClick={() => {
-                      this.props.closeSelector()
-                      scale.changeColumnIndices([colIndex])
-                    }}
-                  >
-                    {col.display_name}
-                  </li>
-                )
-              })}
+                  return (
+                    <li
+                      className={`string-select-list-item ${col.id === scale.column?.id ? 'active' : ''}`}
+                      key={`string-column-select-${col.id}`}
+                      onClick={() => {
+                        this.props.closeSelector()
+                        scale.changeColumnIndices([colIndex])
+                      }}
+                    >
+                      {col.display_name}
+                    </li>
+                  )
+                })}
             </ul>
           </div>
         </CustomScrollbars>

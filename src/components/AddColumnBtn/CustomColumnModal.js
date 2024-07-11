@@ -8,14 +8,12 @@ import {
   deepEqual,
   ColumnTypes,
   COLUMN_TYPES,
-  getVisibleColumns,
   formatQueryColumns,
   isColumnNumberType,
   autoQLConfigDefault,
   authenticationDefault,
   dataFormattingDefault,
   getColumnTypeAmounts,
-  isColumnStringType,
   createMutatorFn,
   getFnSummary,
   WINDOW_FUNCTIONS,
@@ -69,13 +67,15 @@ export default class CustomColumnModal extends React.Component {
     } else {
       this.newColumn = new ColumnObj({
         ...this.newColumnRaw,
-        id: props.initialColumn?.id,
-        fnSummary: props.initialColumn ? getFnSummary(props.initialColumn.columnFnArray) : '',
+        id: uuid(),
+        fnSummary: '',
         mutator: initialMutator,
         columnFnArray: initialColumnFn,
-        field: props.initialColumn?.field ?? `${props.columns?.length}`,
-        index: props.initialColumn?.index >= 0 ? props.initialColumn?.index : props.columns?.length,
+        field: `${props.columns?.length}`,
+        index: props.columns?.length,
         custom: true,
+        headerFilter: false,
+        headerSort: false,
       })
     }
 
@@ -230,8 +230,10 @@ export default class CustomColumnModal extends React.Component {
           this.getColumnParamsForTabulator({
             ...this.getRawColumnParams(columnForFn),
             ...newParams,
-            custom: true,
             id: this.props.initialColumn?.id,
+            custom: true,
+            headerSort: false,
+            headerFilter: false,
           }),
         )
 
@@ -248,11 +250,14 @@ export default class CustomColumnModal extends React.Component {
   }
 
   onUpdateColumnConfirm = () => {
-    this.props.onUpdateColumn({ ...this.newColumn, id: this.props.initialColumn?.id })
+    const newColumn = _cloneDeep(this.newColumn)
+    newColumn.id = this.props.initialColumn?.id
+    this.props.onUpdateColumn(newColumn)
   }
 
   onAddColumnConfirm = () => {
-    this.props.onAddColumn(this.newColumn)
+    const newColumn = _cloneDeep(this.newColumn)
+    this.props.onAddColumn(newColumn)
   }
 
   changeChunkValue = (value, type, i) => {

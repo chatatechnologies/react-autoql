@@ -121,6 +121,8 @@
     "@rollup/plugin-image": "^2.0.5",
     "@rollup/plugin-node-resolve": "^13.3.0",
     "@rollup/plugin-terser": "^0.4.3",
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/react": "^12.1.2",
     "ajv": "^7.2.4",
     "autoprefixer": "^10.4.16",
     "axios-mock-adapter": "^1.18.1",

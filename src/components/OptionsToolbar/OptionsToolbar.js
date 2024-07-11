@@ -458,6 +458,7 @@ export class OptionsToolbar extends React.Component {
                     this.setState({ activeMenu: undefined })
                     const responseRef = this.props.responseRef
                     const responseCopy = _cloneDeep(responseRef?.queryResponse)
+
                     option.callback?.({
                       query: responseRef?.queryResponse?.data?.data?.text,
                       queryResponse: responseCopy,
