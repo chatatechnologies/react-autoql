@@ -1,26 +1,11 @@
 import React from 'react'
-import { shallow } from 'enzyme'
-
-import { findByTestAttr } from '../../../test/testUtils'
+import { render } from '@testing-library/react'
 import Icon from './Icon'
 
-const defaultProps = {
-  type: 'edit',
-}
-
-const setup = (props = {}, state = null) => {
-  const setupProps = { ...defaultProps, ...props }
-  const wrapper = shallow(<Icon {...setupProps} />)
-  if (state) {
-    wrapper.setState(state)
-  }
-  return wrapper
-}
-
-describe('renders correctly', () => {
+describe('RTL - ', () => {
   test('renders correctly with required props', () => {
-    const wrapper = setup()
-    const iconComponent = findByTestAttr(wrapper, 'react-autoql-icon')
-    expect(iconComponent.exists()).toBe(true)
+    const { getByTestId } = render(<Icon type='edit' />)
+    const iconComponent = getByTestId('react-autoql-icon')
+    expect(iconComponent).toBeTruthy()
   })
 })

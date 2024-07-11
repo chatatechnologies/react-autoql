@@ -458,6 +458,7 @@ export class OptionsToolbar extends React.Component {
                     this.setState({ activeMenu: undefined })
                     const responseRef = this.props.responseRef
                     const responseCopy = _cloneDeep(responseRef?.queryResponse)
+
                     option.callback?.({
                       query: responseRef?.queryResponse?.data?.data?.text,
                       queryResponse: responseCopy,
@@ -697,11 +698,10 @@ export class OptionsToolbar extends React.Component {
           hasMoreThanOneRow,
         showCopyButton: isTable && !allColumnsHidden,
         showSaveAsPNGButton: isChart,
-        showHideColumnsButton: false,
-        // Keep for now until we confirm we want to remove this feature
-        // autoQLConfig.enableColumnVisibilityManager &&
-        // hasData &&
-        // (displayType === 'table' || (displayType === 'text' && allColumnsHidden)),
+        showHideColumnsButton:
+          autoQLConfig.enableColumnVisibilityManager &&
+          hasData &&
+          (displayType === 'table' || (displayType === 'text' && allColumnsHidden)),
         showHiddenColsBadge: someColumnsHidden,
         showSQLButton: isDataResponse && autoQLConfig.debug,
         showSaveAsCSVButton: isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,

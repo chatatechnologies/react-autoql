@@ -117,6 +117,28 @@ export default class RuleSimple extends React.Component {
       firstQueryCompareColumnIndex = undefined
     }
 
+    let secondTermMultiplicationFactorType = 'multiply-percent-higher'
+    let secondTermMultiplicationFactorValue = '0'
+
+    if (initialData?.[1]?.result_adjustment) {
+      let type = initialData[1].result_adjustment.operation
+      let value = initialData[1].result_adjustment.value
+
+      if (type === 'multiply' && value.includes('%')) {
+        value = value.replace(/%/g, '')
+        if (value > 100) {
+          type = 'multiply-percent-higher'
+          value = `${value - 100}`
+        } else if (value < 100) {
+          type = 'multiply-percent-lower'
+          value = `${100 - value}`
+        }
+      }
+
+      secondTermMultiplicationFactorType = type
+      secondTermMultiplicationFactorValue = value
+    }
+
     const state = {
       columnSelectionType: 'any-column',
       selectedOperator: initialData[0]?.condition ?? selectedOperator,
@@ -144,6 +166,8 @@ export default class RuleSimple extends React.Component {
       secondQueryAmountOfNumberColumns: 0,
       secondQueryAllColumnsAmount: 0,
       secondQueryGroupableColumnsAmount: 0,
+      secondTermMultiplicationFactorType,
+      secondTermMultiplicationFactorValue,
     }
 
     if (initialData?.length) {
@@ -218,10 +242,38 @@ export default class RuleSimple extends React.Component {
     return this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE) ? this.SUPPORTED_OPERATORS[0] : EXISTS_TYPE
   }
 
+  getMultiplicationFactorText = () => {
+    const type = this.state.secondTermMultiplicationFactorType
+    const value = this.state.secondTermMultiplicationFactorValue
+
+    if (this.shouldRenderMultiplicationFactorSection()) {
+      if (type === 'multiply-percent-higher') {
+        if (value == 0) return null
+        return `${value}% higher than`
+      } else if (type === 'multiply-percent-lower') {
+        if (value == 0) return null
+        return `${value}% lower than`
+      } else if (type === 'multiply') {
+        if (value == 1) return null
+        return `${value} times`
+      } else if (type === 'add') {
+        if (value == 0) return null
+        return `${value} more than`
+      } else if (type === 'subtract') {
+        if (value == 0) return null
+        return `${value} less than`
+      }
+    }
+
+    return null
+  }
+
   getConditionStatement = ({ tense, useRT, sentenceCase = false, withFilters = false } = {}) => {
     let queryText = this.getFormattedQueryText({ sentenceCase, withFilters })
 
-    if (useRT) {
+    const RTExists = !!this.props.queryResponse?.data?.data?.parsed_interpretation?.length
+
+    if (useRT && RTExists) {
       queryText = (
         <ReverseTranslation
           queryResponse={this.props.queryResponse}
@@ -230,10 +282,15 @@ export default class RuleSimple extends React.Component {
           textOnly
         />
       )
+    } else {
+      queryText = this.props.queryResponse?.data?.data?.text ?? this.props.initialData?.expression?.[0]?.term_value
     }
 
     const operator = DATA_ALERT_OPERATORS[this.state.selectedOperator]
     const operatorText = tense === 'past' ? operator?.conditionTextPast : operator?.conditionText
+
+    const multiplicationFactorText = this.getMultiplicationFactorText()
+
     let secondTermText = this.state.secondInputValue
     if (this.state.secondTermType === QUERY_TERM_TYPE) {
       secondTermText = (
@@ -255,7 +312,11 @@ export default class RuleSimple extends React.Component {
         <span className='data-alert-condition-statement'>
           <span className='data-alert-condition-statement-query1'>"{queryText}"</span>{' '}
           <span className='data-alert-condition-statement-query2'>
-            <span className='data-alert-condition-statement-operator'>{operatorText}</span> {secondTermText}
+            <span className='data-alert-condition-statement-operator'>{operatorText}</span>{' '}
+            {multiplicationFactorText ? (
+              <span className='data-alert-condition-statement-operator'>{multiplicationFactorText}</span>
+            ) : null}{' '}
+            {secondTermText}
           </span>
         </span>
       )
@@ -357,6 +418,31 @@ export default class RuleSimple extends React.Component {
         term_type: this.state.secondTermType,
         condition: 'TERMINATOR',
         term_value: secondTermValue,
+      }
+
+      if (this.state.secondTermType === QUERY_TERM_TYPE) {
+        let operation = this.state.secondTermMultiplicationFactorType
+        let value = this.state.secondTermMultiplicationFactorValue
+
+        if (operation === 'multiply-percent-higher' || operation === 'multiply-percent-lower') {
+          let numberValue = parseInt(value ?? 0)
+          if (isNaN(numberValue)) {
+            numberValue = 0
+          }
+
+          if (operation === 'multiply-percent-higher') {
+            value = `${100 + numberValue}%`
+          } else if (operation === 'multiply-percent-lower') {
+            value = `${100 - numberValue}%`
+          }
+
+          operation = 'multiply'
+        }
+
+        secondTerm.result_adjustment = {
+          value,
+          operation,
+        }
       }
 
       if (
@@ -686,7 +772,7 @@ export default class RuleSimple extends React.Component {
     const rtArray = constructRTArray(parsedRT)
 
     if (!parsedRT?.length) {
-      return this.props.queryResponse?.data?.data?.text
+      return this.props.queryResponse?.data?.data?.text ?? this.props.initialData?.expression?.[0]?.term_value
     }
 
     let queryText = ''
@@ -728,7 +814,7 @@ export default class RuleSimple extends React.Component {
     const rtArray = constructRTArray(parsedRT)
 
     if (!parsedRT?.length) {
-      return this.props.queryResponse?.data?.data?.text
+      return this.props.queryResponse?.data?.data?.text ?? this.props.initialData?.expression?.[0]?.term_value
     }
 
     let numValueLabels = 0
@@ -777,6 +863,11 @@ export default class RuleSimple extends React.Component {
 
   getQueryFiltersText = () => {
     const rtArray = constructRTArray(this.props.queryResponse?.data?.data?.parsed_interpretation)
+
+    if (!rtArray) {
+      return this.props.queryResponse?.data?.data?.text ?? this.props.initialData?.expression?.[0]?.term_value
+    }
+
     const filters = this.state.queryFilters
 
     let filterText = ''
@@ -851,6 +942,8 @@ export default class RuleSimple extends React.Component {
       if (this.props.queryResponse) {
         queryText = this.props.queryResponse?.data?.data?.text
         queryFiltersText = this.getQueryFiltersText()
+      } else if (!queryText && this.props.initialData) {
+        queryText = this.props.initialData?.expression?.[0]?.term_value
       }
 
       if (!queryText) {
@@ -1158,6 +1251,7 @@ export default class RuleSimple extends React.Component {
     return (
       <Input
         ref={(r) => (this.secondInput = r)}
+        className='react-autoql-second-term-type-input'
         spellCheck={false}
         placeholder={this.getSecondInputPlaceholder()}
         value={this.state.secondInputValue}
@@ -1189,6 +1283,116 @@ export default class RuleSimple extends React.Component {
         selectValue={this.state.secondTermType}
         onChange={this.onSecondQueryChange}
       />
+    )
+  }
+
+  shouldRenderMultiplicationFactorSection = () => {
+    return (
+      this.state.secondTermType === QUERY_TERM_TYPE &&
+      this.state.selectedOperator != 'EQUAL_TO' &&
+      this.state.selectedOperator != 'NOT_EQUAL_TO'
+    )
+  }
+
+  renderSecondTermMultiplicationFactor = () => {
+    if (!this.shouldRenderMultiplicationFactorSection()) {
+      return null
+    }
+
+    return (
+      <div className='react-autoql-second-term-multiplication-factor-input'>
+        <Input
+          ref={(r) => (this.multiplicationFactorInput = r)}
+          spellCheck={false}
+          placeholder=''
+          value={this.state.secondTermMultiplicationFactorValue}
+          onChange={(e) => {
+            this.setState({ secondTermMultiplicationFactorValue: e.target.value })
+          }}
+          type='text' // TODO: make custom number type where percent symbol is allowed
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              this.props.onLastInputEnterPress()
+            }
+          }}
+          selectLocation='right'
+          selectOptions={[
+            {
+              value: 'multiply-percent-higher',
+              label: (
+                <span>
+                  <strong>% higher</strong> than
+                </span>
+              ),
+            },
+            {
+              value: 'multiply-percent-lower',
+              label: (
+                <span>
+                  <strong>% lower</strong> than
+                </span>
+              ),
+            },
+            {
+              value: 'multiply',
+              label: (
+                <span>
+                  <strong>times</strong> (multiple)
+                </span>
+              ),
+            },
+            {
+              value: 'add',
+              label: (
+                <span>
+                  <strong>more</strong> than
+                </span>
+              ),
+            },
+            {
+              value: 'subtract',
+              label: (
+                <span>
+                  <strong>less</strong> than
+                </span>
+              ),
+            },
+          ]}
+          selectValue={this.state.secondTermMultiplicationFactorType}
+          onSelectChange={(secondTermMultiplicationFactorType) => {
+            if (secondTermMultiplicationFactorType === this.state.secondTermMultiplicationFactorType) {
+              return
+            }
+
+            const newState = { secondTermMultiplicationFactorType }
+
+            if (
+              secondTermMultiplicationFactorType === 'multiply-percent-higher' ||
+              secondTermMultiplicationFactorType === 'multiply-percent-lower'
+            ) {
+              newState.secondTermMultiplicationFactorValue = '0'
+            } else if (secondTermMultiplicationFactorType === 'multiply') {
+              newState.secondTermMultiplicationFactorValue = '1'
+            } else {
+              newState.secondTermMultiplicationFactorValue = '0'
+            }
+
+            this.setState(newState, () => {
+              this.multiplicationFactorInput?.selectAll()
+            })
+          }}
+        />
+        {/* <Icon
+          className='react-autoql-multiplication-factor-tooltip-icon'
+          type='info'
+          tooltipID={this.props.tooltipID}
+          tooltip={
+            this.state.secondTermMultiplicationFactorType === 'multiply'
+              ? 'Compare to a custom multiple or percentage of the query result (eg. 90% of total sales last month). You may type in a number or a percentage.'
+              : 'Add or subtract a specific amount from the query result to compare to.'
+          }
+        /> */}
+      </div>
     )
   }
 
@@ -1277,7 +1481,7 @@ export default class RuleSimple extends React.Component {
 
           {this.state.selectedConditionType === COMPARE_TYPE ? (
             <>
-              <div style={{ marginTop: '15px' }}>
+              <div style={{ marginTop: '25px' }}>
                 {this.state.firstQuerySelectedColumns?.length ? (
                   <>
                     <span className='data-alert-description-span'>
@@ -1333,6 +1537,9 @@ export default class RuleSimple extends React.Component {
                   <>
                     <div className='react-autoql-rule-condition-select-input-container'>
                       {this.renderOperatorSelector()}
+                    </div>
+                    <div className='react-autoql-rule-mult-factor-select-input-container'>
+                      {this.renderSecondTermMultiplicationFactor()}
                     </div>
                     <div className='react-autoql-rule-second-input-container'>
                       <div className='react-autoql-rule-input'>{this.renderSecondTermInput()}</div>

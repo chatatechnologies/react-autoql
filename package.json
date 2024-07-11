@@ -1,6 +1,6 @@
 {
   "name": "react-autoql",
-  "version": "8.4.38",
+  "version": "8.5.0",
   "description": "React Widget Library",
   "main": "dist/autoql.cjs.js",
   "module": "dist/autoql.esm.js",
@@ -62,7 +62,7 @@
   },
   "dependencies": {
     "@react-icons/all-files": "^4.1.0",
-    "autoql-fe-utils": "1.0.108",
+    "autoql-fe-utils": "1.0.122",
     "axios": "^1.4.0",
     "d3-array": "^2.3.3",
     "d3-axis": "^1.0.12",
@@ -121,6 +121,9 @@
     "@rollup/plugin-image": "^2.0.5",
     "@rollup/plugin-node-resolve": "^13.3.0",
     "@rollup/plugin-terser": "^0.4.3",
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/react": "^12.1.2",
+    "ajv": "^7.2.4",
     "autoprefixer": "^10.4.16",
     "axios-mock-adapter": "^1.18.1",
     "babel-core": "^7.0.0-bridge.0",

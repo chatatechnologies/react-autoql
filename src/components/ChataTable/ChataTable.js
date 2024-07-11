@@ -82,6 +82,7 @@ export default class ChataTable extends React.Component {
       initialFilter: !props.useInfiniteScroll ? this.tableParams?.filter : undefined,
       progressiveLoadScrollMargin: 50, // Trigger next ajax load when scroll bar is 800px or less from the bottom of the table.
       // renderHorizontal: 'virtual', // v4: virtualDomHoz = false
+      movableColumns: true,
       downloadEncoder: function (fileContents, mimeType) {
         //fileContents - the unencoded contents of the file
         //mimeType - the suggested mime type for the output
@@ -165,7 +166,7 @@ export default class ChataTable extends React.Component {
     pivot: false,
     tableOptions: {},
     keepScrolledRight: false,
-    allowCustomColumns: false,
+    allowCustomColumns: true,
     enableContextMenu: true,
     onFilterCallback: () => {},
     onSorterCallback: () => {},
