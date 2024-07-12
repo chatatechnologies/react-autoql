@@ -157,12 +157,12 @@ class NotificationFeed extends React.Component {
   }
   handleButtonPress() {
     this.buttonPressTimer = setTimeout(this.onSelectNotificationClick, 1500)
-    document.body.style.userSelect = 'none'
+    document.body.style.webkitUserSelect = 'none'
   }
 
   handleButtonRelease() {
     clearTimeout(this.buttonPressTimer)
-    document.body.style.userSelect = null
+    document.body.style.webkitUserSelect = null
   }
 
   closeDataAlertModal = () => {
