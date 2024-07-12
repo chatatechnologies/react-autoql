@@ -32,6 +32,7 @@ import {
   isColumnNumberType,
   DATA_ALERT_CONDITION_TYPES,
   SCHEDULED_TYPE,
+  validateExpression,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
@@ -155,7 +156,6 @@ export default class RuleSimple extends React.Component {
       secondQueryValidated: false,
       secondQueryInvalid: false,
       secondQueryError: '',
-      isEditingQuery: false,
       queryFilters: this.getFilters(props),
       secondQueryResponse: {},
       isSecondQueryListQuery: true,
@@ -168,6 +168,7 @@ export default class RuleSimple extends React.Component {
       secondQueryGroupableColumnsAmount: 0,
       secondTermMultiplicationFactorType,
       secondTermMultiplicationFactorValue,
+      isEditingQuery: false,
     }
 
     if (initialData?.length) {
@@ -215,6 +216,10 @@ export default class RuleSimple extends React.Component {
   componentDidUpdate = (prevProps, prevState) => {
     if (!_isEqual(this.state, prevState)) {
       this.props.onUpdate(this.props.ruleId, this.isComplete(), this.isValid())
+    }
+
+    if (this.state.isEditingQuery && this.state.inputValue !== prevState.inputValue && this.state.inputValue?.length) {
+      this.validateFirstQuery()
     }
 
     if (
@@ -612,6 +617,30 @@ export default class RuleSimple extends React.Component {
     })
   }
 
+  renderFirstQueryValidationError = () => {
+    if (this.state.firstQueryValidating) {
+      return <span className='expression-term-validation expression-term-validation-loading'>Validating...</span>
+    } else if (this.state.firstQueryInvalid) {
+      return (
+        <span className='expression-term-validation expression-term-validation-error'>
+          <Icon type='warning-triangle' />{' '}
+          {this.state.firstQueryError ? (
+            <span>{this.state.firstQueryError}</span>
+          ) : (
+            <span>That query is invalid. Try entering a different query.</span>
+          )}
+        </span>
+      )
+    } else if (this.state.firstQueryValidated) {
+      return (
+        <span className='expression-term-validation expression-term-validation-valid'>
+          <Icon type='check' /> <span>Valid</span>
+        </span>
+      )
+    }
+    return null
+  }
+
   renderValidationError = () => {
     if (this.state.secondQueryValidating) {
       return <span className='expression-term-validation expression-term-validation-loading'>Validating...</span>
@@ -706,8 +735,34 @@ export default class RuleSimple extends React.Component {
     })
   }
 
+  cancelFirstValidation = () => {
+    this.firstQueryAxiosSource?.cancel(REQUEST_CANCELLED_ERROR)
+  }
+
   cancelSecondValidation = () => {
     this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
+  }
+
+  runQueryValidation = () => {
+    if (!this.state.inputValue) {
+      return
+    }
+
+    this.firstQueryAxiosSource = axios.CancelToken?.source()
+
+    validateExpression({ expression: this.getJSON(), ...getAuthentication(this.props.authentication) })
+      .then(() => {
+        this.setState({
+          firstQueryValidating: false,
+          firstQueryInvalid: false,
+          firstQueryValidated: true,
+        })
+      })
+      .catch((error) => {
+        if (error?.response?.data?.message !== REQUEST_CANCELLED_ERROR) {
+          this.setState({ firstQueryValidating: false, firstQueryInvalid: true })
+        }
+      })
   }
 
   runSecondValidation = () => {
@@ -734,6 +789,19 @@ export default class RuleSimple extends React.Component {
           this.setState({ secondQueryValidating: false, secondQueryInvalid: true })
         }
       })
+  }
+
+  validateFirstQuery = () => {
+    this.cancelFirstValidation()
+
+    if (!this.state.firstQueryValidating) {
+      this.setState({ firstQueryValidating: true })
+    }
+
+    clearTimeout(this.firstValidationTimeout)
+    this.firstValidationTimeout = setTimeout(() => {
+      this.runQueryValidation()
+    }, 1000)
   }
 
   validateSecondQuery = () => {
@@ -861,13 +929,12 @@ export default class RuleSimple extends React.Component {
     })
   }
 
-  getQueryFiltersText = () => {
-    const rtArray = constructRTArray(this.props.queryResponse?.data?.data?.parsed_interpretation)
+  getQueryFiltersText = (props = this.props) => {
+    const rtArray = constructRTArray(props.queryResponse?.data?.data?.parsed_interpretation)
 
     if (!rtArray) {
       return this.props.queryResponse?.data?.data?.text ?? this.props.initialData?.expression?.[0]?.term_value
     }
-
     const filters = this.state.queryFilters
 
     let filterText = ''
@@ -935,15 +1002,15 @@ export default class RuleSimple extends React.Component {
     }
     return undefined
   }
-  getFormattedQueryText = ({ sentenceCase = true, withFilters } = {}) => {
+  getFormattedQueryText = ({ sentenceCase = true, withFilters, props = this.props } = {}) => {
     try {
       let queryFiltersText = ''
       let queryText = this.state.inputValue
-      if (this.props.queryResponse) {
-        queryText = this.props.queryResponse?.data?.data?.text
-        queryFiltersText = this.getQueryFiltersText()
-      } else if (!queryText && this.props.initialData) {
-        queryText = this.props.initialData?.expression?.[0]?.term_value
+      if (props.queryResponse) {
+        queryText = props.queryResponse?.data?.data?.text
+        queryFiltersText = this.getQueryFiltersText(props)
+      } else if (!queryText && props.initialData) {
+        queryText = props.initialData?.expression?.[0]?.term_value
       }
 
       if (!queryText) {
@@ -1116,8 +1183,34 @@ export default class RuleSimple extends React.Component {
               showArrow={false}
             />{' '}
             from this query */}
-            <Input label='Query' value={this.getFormattedQueryText()} readOnly disabled fullWidth />
+            <Input
+              label='Query'
+              ref={(r) => (this.queryInputRef = r)}
+              value={this.state.inputValue}
+              onChange={(e) => this.setState({ inputValue: e.target.value })}
+              readOnly={!this.state.isEditingQuery}
+              disabled={!this.state.isEditingQuery}
+            />
+            {!!this.props.initialData ? (
+              <Icon
+                className='data-alert-rule-query-edit-button'
+                type='edit'
+                onClick={() => {
+                  this.setState({ isEditingQuery: true }, () => {
+                    this.queryInputRef?.selectAll()
+                  })
+                }}
+              />
+            ) : null}
           </span>
+          {this.state.isEditingQuery ? (
+            <div
+              className='rule-simple-validation-container'
+              style={{ justifyContent: 'flex-start', marginLeft: '10px' }}
+            >
+              {this.renderFirstQueryValidationError()}
+            </div>
+          ) : null}
           {this.shouldRenderFirstFieldSelectionGrid() && (
             <>
               <div className='react-autoql-rule-field-selection-first-query' data-test='rule'>
