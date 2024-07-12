@@ -156,7 +156,7 @@ class NotificationFeed extends React.Component {
     this._isMounted = false
   }
   handleButtonPress() {
-    this.buttonPressTimer = setTimeout(this.onSelectNotificationClick, 1500)
+    this.buttonPressTimer = setTimeout(this.onSelectNotificationClick, 1000)
     document.body.style.webkitUserSelect = 'none'
   }
 
