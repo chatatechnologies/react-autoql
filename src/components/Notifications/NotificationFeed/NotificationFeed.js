@@ -155,14 +155,14 @@ class NotificationFeed extends React.Component {
   componentWillUnmount = () => {
     this._isMounted = false
   }
-  handleButtonPress(event) {
+  handleButtonPress() {
     this.buttonPressTimer = setTimeout(this.onSelectNotificationClick, 1500)
-    event.preventDefault()
+    document.body.style.userSelect = 'none'
   }
 
-  handleButtonRelease(event) {
+  handleButtonRelease() {
     clearTimeout(this.buttonPressTimer)
-    event.preventDefault()
+    document.body.style.userSelect = null
   }
 
   closeDataAlertModal = () => {
