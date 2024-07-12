@@ -511,6 +511,10 @@ export default class RuleSimple extends React.Component {
       firstTermComplete = this.state.firstQuerySelectedColumns.length !== 0
     }
 
+    if (this.state.firstQueryValidating) {
+      return false
+    }
+
     if (!firstTermComplete) {
       return false
     }
@@ -750,7 +754,11 @@ export default class RuleSimple extends React.Component {
 
     this.firstQueryAxiosSource = axios.CancelToken?.source()
 
-    validateExpression({ expression: this.getJSON(), ...getAuthentication(this.props.authentication) })
+    validateExpression({
+      expression: this.getJSON(),
+      ...getAuthentication(this.props.authentication),
+      cancelToken: this.firstQueryAxiosSource.token,
+    })
       .then(() => {
         this.setState({
           firstQueryValidating: false,
@@ -759,7 +767,7 @@ export default class RuleSimple extends React.Component {
         })
       })
       .catch((error) => {
-        if (error?.response?.data?.message !== REQUEST_CANCELLED_ERROR) {
+        if (error?.message !== REQUEST_CANCELLED_ERROR) {
           this.setState({ firstQueryValidating: false, firstQueryInvalid: true })
         }
       })
@@ -1160,7 +1168,11 @@ export default class RuleSimple extends React.Component {
           <span
             className='data-alert-rule-query-readonly-container'
             data-tooltip-id={this.props.tooltipID}
-            data-tooltip-content='Editing this query is not permitted. To use a different query, simply create a new Data Alert via Data Messenger or a Dashboard.'
+            data-tooltip-content={
+              !!this.props.initialData
+                ? undefined
+                : 'Editing this query is not permitted. To use a different query, simply create a new Data Alert via Data Messenger or a Dashboard.'
+            }
           >
             {/* Save this bock for later when we want to allow column selection from list queries */}
             {/* <span className='data-alert-description-span'>Trigger Alert when this query</span>
@@ -1191,7 +1203,7 @@ export default class RuleSimple extends React.Component {
               readOnly={!this.state.isEditingQuery}
               disabled={!this.state.isEditingQuery}
             />
-            {!!this.props.initialData ? (
+            {!!this.props.initialData && !this.state.isEditingQuery ? (
               <Icon
                 className='data-alert-rule-query-edit-button'
                 type='edit'
