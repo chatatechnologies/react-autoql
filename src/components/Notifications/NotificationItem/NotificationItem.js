@@ -190,7 +190,8 @@ export default class NotificationItem extends React.Component {
   }
 
   delete = async () => {
-    await this.displayDeleteAnimation()
+    // await this.displayDeleteAnimation()
+    // comment out above as an workaround of a duplicated animation issue
 
     this.props.onDeleteClick(this.props.notification)
 

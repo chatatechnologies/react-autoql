@@ -28,6 +28,7 @@ export default class ConfirmPopover extends React.Component {
     icon: PropTypes.string,
     onClose: PropTypes.func,
     onConfirm: PropTypes.func,
+    disable: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -42,6 +43,7 @@ export default class ConfirmPopover extends React.Component {
     icon: undefined,
     onClose: () => {},
     onConfirm: () => {},
+    disable: false,
   }
 
   close = () => {
@@ -103,7 +105,13 @@ export default class ConfirmPopover extends React.Component {
         >
           <div
             className={`react-autoql-confirm-popover-click-wrapper ${this.props.className ?? ''}`}
-            onClick={() => this.setState({ isOpen: !this.state.isOpen })}
+            onClick={(event) => {
+              if (this.props.disable) {
+                event.preventDefault()
+                return
+              }
+              this.setState({ isOpen: !this.state.isOpen })
+            }}
           >
             {this.props.children}
           </div>
