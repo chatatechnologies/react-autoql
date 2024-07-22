@@ -923,7 +923,11 @@ export class QueryOutput extends React.Component {
           response = this.getNewResponseWithCustomColumns(response, this.state.customColumns)
         }
       } catch (error) {
-        response = error
+        if (error?.data?.message === REQUEST_CANCELLED_ERROR) {
+          response = this.queryResponse
+        } else {
+          response = error
+        }
       }
     } else {
       try {
@@ -949,7 +953,11 @@ export class QueryOutput extends React.Component {
           response = this.getNewResponseWithCustomColumns(response, this.state.customColumns)
         }
       } catch (error) {
-        response = error
+        if (error?.data?.message === REQUEST_CANCELLED_ERROR) {
+          response = this.queryResponse
+        } else {
+          response = error
+        }
       }
     }
 
