@@ -162,7 +162,13 @@ export class AddColumnBtnWithoutRef extends React.Component {
   }
 
   enableCustomOption = () => {
-    const selectableColumnsForCustom = getSelectableColumns(this.props.queryResponse?.data?.data?.columns)
+    let selectableColumnsForCustom
+    try {
+      selectableColumnsForCustom = getSelectableColumns(this.props.queryResponse?.data?.data?.columns)
+    } catch {
+      selectableColumnsForCustom = []
+    }
+
     return this.props.allowCustom && !!selectableColumnsForCustom?.length
   }
 
