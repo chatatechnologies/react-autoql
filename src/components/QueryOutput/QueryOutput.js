@@ -888,7 +888,13 @@ export class QueryOutput extends React.Component {
       this.chartRef.saveAsPNG()
     }
   }
-
+  handleQueryFnError = (error) => {
+    if (error?.data?.message === REQUEST_CANCELLED_ERROR) {
+      return this.queryResponse
+    } else {
+      return error
+    }
+  }
   queryFn = async (args = {}) => {
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
     const allFilters = this.getCombinedFilters()
@@ -923,11 +929,7 @@ export class QueryOutput extends React.Component {
           response = this.getNewResponseWithCustomColumns(response, this.state.customColumns)
         }
       } catch (error) {
-        if (error?.data?.message === REQUEST_CANCELLED_ERROR) {
-          response = this.queryResponse
-        } else {
-          response = error
-        }
+        response = this.handleQueryFnError(error)
       }
     } else {
       try {
@@ -953,11 +955,7 @@ export class QueryOutput extends React.Component {
           response = this.getNewResponseWithCustomColumns(response, this.state.customColumns)
         }
       } catch (error) {
-        if (error?.data?.message === REQUEST_CANCELLED_ERROR) {
-          response = this.queryResponse
-        } else {
-          response = error
-        }
+        response = this.handleQueryFnError(error)
       }
     }
 
