@@ -10,6 +10,7 @@ import {
   getAuthentication,
   getAutoQLConfig,
   deleteMultipleNotifications,
+  deleteAllNotifications,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
@@ -262,7 +263,9 @@ class NotificationFeed extends React.Component {
     fetchNotificationFeed({
       ...getAuthentication(this.props.authentication),
       offset: 0,
-      limit,
+      limit: this.props.enableFetchAllNotificationFeedAcrossProjects ? 10 : limit,
+      enableFetchAllNotificationFeedAcrossProjects: this.props.enableFetchAllNotificationFeedAcrossProjects,
+      selectedProjectId: this.props.selectedProjectId,
     })
       .then((response) => {
         const items = response?.items
@@ -289,13 +292,10 @@ class NotificationFeed extends React.Component {
       })
   }
   filterNotificationsByProject = () => {
-    const limit =
-      (this.state.notificationList?.length || this.NOTIFICATION_FETCH_LIMIT) + (this.state.unFetchedNotifications ?? 0)
-
     fetchNotificationFeed({
       ...getAuthentication(this.props.authentication),
       offset: 0,
-      limit,
+      limit: 10,
       enableFetchAllNotificationFeedAcrossProjects: true,
       selectedProjectId: this.props.selectedProjectId,
       notificationTitle: this.props.notificationTitle,
@@ -332,7 +332,6 @@ class NotificationFeed extends React.Component {
     if (!this.hasFetchedNotifications) {
       return this.getNotifications()
     }
-
     return this.getNewNotifications()
   }
 
@@ -350,7 +349,23 @@ class NotificationFeed extends React.Component {
     return newNotifications
   }
 
-  onDeleteAllClick = () => {}
+  onDeleteAllClick = () => {
+    const newList = []
+    let pagination = this.state.pagination ?? {}
+    if (pagination) {
+      pagination = {
+        ...pagination,
+        total_items: pagination.total_items > 0 ? pagination.total_items - 1 : 0,
+      }
+    }
+
+    this.setState({
+      notificationList: newList,
+      pagination,
+      isDeleting: true,
+      selectedNotifications: [],
+    })
+  }
   onMarkAllAsReadClick = () => {
     const newList = this.state.notificationList.map((n) => {
       return {
@@ -507,15 +522,21 @@ class NotificationFeed extends React.Component {
     )
   }
 
-  renderDeleteAllButton = () => {
-    return null
-    // Enable this once the batch delete endpoint is ready
-    return (
-      <div onClick={this.onDeleteAllClick} className='react-autoql-notification-delete-all'>
+  renderDeleteAllButton = () => (
+    <ConfirmPopover
+      onConfirm={this.deleteAllNotifications}
+      title='Delete all notifications?'
+      confirmText='Yes'
+      backText='Cancel'
+      popoverParentElement={this.props.popoverParentElement ?? this.feedContainer}
+      positions={['bottom', 'left', 'right', 'top']}
+      align='end'
+    >
+      <div className='react-autoql-notification-delete-all'>
         <Icon type='trash' /> <span>Delete all</span>
       </div>
-    )
-  }
+    </ConfirmPopover>
+  )
 
   renderMarkAllAsReadButton = () => (
     <ConfirmPopover
@@ -655,6 +676,12 @@ class NotificationFeed extends React.Component {
       .finally(this.onDeleteEnd())
   }
 
+  deleteAllNotifications = () => {
+    this.onDeleteAllClick()
+    deleteAllNotifications({ ...getAuthentication(this.props.authentication), projectId: this.props.selectedProjectId })
+      .then(this.props.onChange(this.state.notificationList))
+      .catch((error) => this.props.onErrorCallback(error))
+  }
   render = () => {
     let style = {}
     if (!this.props.shouldRender) {
