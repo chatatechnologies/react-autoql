@@ -528,6 +528,9 @@ class NotificationFeed extends React.Component {
     let title = 'Delete all notifications?'
     if (this.props.enableFetchAllNotificationFeedAcrossProjects) {
       title = `Delete all notifications for ${this.props.selectedProjectName}?`
+    } else {
+      return
+      //Enable this button for alpha alerts only temporarily
     }
     return (
       <ConfirmPopover
