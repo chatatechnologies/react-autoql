@@ -44,6 +44,7 @@ class NotificationIcon extends React.Component {
     pausePolling: PropTypes.bool,
     count: PropTypes.number,
     onCount: PropTypes.func,
+    enableFetchNotificationCountAcrossProjects: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -57,6 +58,7 @@ class NotificationIcon extends React.Component {
     pausePolling: false,
     count: undefined,
     onCount: () => {},
+    enableFetchNotificationCountAcrossProjects: false,
   }
 
   componentDidMount = async () => {
@@ -88,6 +90,7 @@ class NotificationIcon extends React.Component {
     return fetchNotificationCount({
       ...getAuthentication(this.props.authentication),
       unacknowledged: count,
+      enableFetchNotificationCountAcrossProjects: this.props.enableFetchNotificationCountAcrossProjects,
     })
       .then((response) => {
         const newCount = response?.data?.data?.unacknowledged
