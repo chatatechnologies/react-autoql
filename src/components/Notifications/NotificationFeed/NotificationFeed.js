@@ -88,6 +88,7 @@ class NotificationFeed extends React.Component {
     enableFilterBtn: PropTypes.bool,
     enableFetchAllNotificationFeedAcrossProjects: PropTypes.bool,
     selectedProjectId: PropTypes.string,
+    selectedProjectName: PropTypes.string,
     notificationTitle: PropTypes.string,
   }
 
@@ -105,6 +106,7 @@ class NotificationFeed extends React.Component {
     enableFilterBtn: true,
     enableFetchAllNotificationFeedAcrossProjects: false,
     selectedProjectId: 'all',
+    selectedProjectName: 'All Projects',
     notificationTitle: '',
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
@@ -522,21 +524,27 @@ class NotificationFeed extends React.Component {
     )
   }
 
-  renderDeleteAllButton = () => (
-    <ConfirmPopover
-      onConfirm={this.deleteAllNotifications}
-      title='Delete all notifications?'
-      confirmText='Yes'
-      backText='Cancel'
-      popoverParentElement={this.props.popoverParentElement ?? this.feedContainer}
-      positions={['bottom', 'left', 'right', 'top']}
-      align='end'
-    >
-      <div className='react-autoql-notification-delete-all'>
-        <Icon type='trash' /> <span>Delete all</span>
-      </div>
-    </ConfirmPopover>
-  )
+  renderDeleteAllButton = () => {
+    let title = 'Delete all notifications?'
+    if (this.props.enableFetchAllNotificationFeedAcrossProjects) {
+      title = `Delete all notifications for ${this.props.selectedProjectName}?`
+    }
+    return (
+      <ConfirmPopover
+        onConfirm={this.deleteAllNotifications}
+        title={title}
+        confirmText='Yes'
+        backText='Cancel'
+        popoverParentElement={this.props.popoverParentElement ?? this.feedContainer}
+        positions={['bottom', 'left', 'right', 'top']}
+        align='end'
+      >
+        <div className='react-autoql-notification-delete-all'>
+          <Icon type='trash' /> <span>Delete all</span>
+        </div>
+      </ConfirmPopover>
+    )
+  }
 
   renderMarkAllAsReadButton = () => (
     <ConfirmPopover
