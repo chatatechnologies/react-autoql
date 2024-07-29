@@ -259,13 +259,15 @@ class NotificationFeed extends React.Component {
   }
 
   getNewNotifications = () => {
-    const limit =
-      (this.state.notificationList?.length || this.NOTIFICATION_FETCH_LIMIT) + (this.state.unFetchedNotifications ?? 0)
+    const limit = this.props.enableFetchAllNotificationFeedAcrossProjects
+      ? this.NOTIFICATION_FETCH_LIMIT
+      : (this.state.notificationList?.length || this.NOTIFICATION_FETCH_LIMIT) +
+        (this.state.unFetchedNotifications ?? 0)
 
     fetchNotificationFeed({
       ...getAuthentication(this.props.authentication),
       offset: 0,
-      limit: this.props.enableFetchAllNotificationFeedAcrossProjects ? 10 : limit,
+      limit: limit,
       enableFetchAllNotificationFeedAcrossProjects: this.props.enableFetchAllNotificationFeedAcrossProjects,
       selectedProjectId: this.props.selectedProjectId,
     })
@@ -297,7 +299,7 @@ class NotificationFeed extends React.Component {
     fetchNotificationFeed({
       ...getAuthentication(this.props.authentication),
       offset: 0,
-      limit: 10,
+      limit: this.NOTIFICATION_FETCH_LIMIT,
       enableFetchAllNotificationFeedAcrossProjects: true,
       selectedProjectId: this.props.selectedProjectId,
       notificationTitle: this.props.notificationTitle,
@@ -525,13 +527,12 @@ class NotificationFeed extends React.Component {
   }
 
   renderDeleteAllButton = () => {
-    let title = 'Delete all notifications?'
-    if (this.props.enableFetchAllNotificationFeedAcrossProjects) {
-      title = `Delete all notifications for ${this.props.selectedProjectName}?`
-    } else {
+    if (!this.props.enableFetchAllNotificationFeedAcrossProjects) {
       return
-      //Enable this button for alpha alerts only temporarily
     }
+
+    const title = `Delete all notifications for ${this.props.selectedProjectName}?`
+
     return (
       <ConfirmPopover
         onConfirm={this.deleteAllNotifications}
