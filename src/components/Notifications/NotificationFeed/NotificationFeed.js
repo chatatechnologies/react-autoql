@@ -42,6 +42,7 @@ class NotificationFeed extends React.Component {
     this.NOTIFICATION_FETCH_LIMIT = 10
     this.TOOLTIP_ID = 'react-autoql-notification-feed-tooltip'
     this.CHART_TOOLTIP_ID = 'react-autoql-notification-feed-chart-tooltip'
+    this.ALL_PROJECTS = 'All'
     // Open event source http connection here to receive SSE
     // notificationEventSource = new EventSource(
     //   'https://backend.chata.io/notifications'
@@ -106,7 +107,7 @@ class NotificationFeed extends React.Component {
     enableFilterBtn: true,
     enableFetchAllNotificationFeedAcrossProjects: false,
     selectedProjectId: 'all',
-    selectedProjectName: 'All',
+    selectedProjectName: this.ALL_PROJECTS,
     notificationTitle: '',
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
@@ -529,10 +530,9 @@ class NotificationFeed extends React.Component {
   }
 
   renderDeleteAllButton = () => {
-    let title = `Delete all notifications for ${this.props.selectedProjectName}?`
-    if (this.props.selectedProjectName === 'All') {
-      title = `Delete all notifications for all data sources?`
-    }
+    const projectName =
+      this.props.selectedProjectName === this.ALL_PROJECTS ? 'all data sources' : this.props.selectedProjectName
+    let title = `Delete all notifications for ${projectName}?`
 
     return (
       <ConfirmPopover
