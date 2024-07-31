@@ -106,7 +106,7 @@ class NotificationFeed extends React.Component {
     enableFilterBtn: true,
     enableFetchAllNotificationFeedAcrossProjects: false,
     selectedProjectId: 'all',
-    selectedProjectName: 'All Projects',
+    selectedProjectName: 'All',
     notificationTitle: '',
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
@@ -531,7 +531,10 @@ class NotificationFeed extends React.Component {
       return
     }
 
-    const title = `Delete all notifications for ${this.props.selectedProjectName}?`
+    let title = `Delete all notifications for ${this.props.selectedProjectName}?`
+    if (this.props.selectedProjectName === 'All') {
+      title = `Delete all notifications for all data sources?`
+    }
 
     return (
       <ConfirmPopover
