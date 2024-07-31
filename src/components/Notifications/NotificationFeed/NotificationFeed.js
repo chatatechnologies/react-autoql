@@ -488,9 +488,11 @@ class NotificationFeed extends React.Component {
     })
   }
   renderTopOptions = () => {
+    const shouldRenderDeleteAllButton =
+      this.props.enableFetchAllNotificationFeedAcrossProjects && !this.state.displayNotificationItemCheckbox
     return (
       <div className='notification-feed-top-options-container'>
-        {this.renderDeleteAllButton()}
+        {shouldRenderDeleteAllButton && this.renderDeleteAllButton()}
         {this.renderDataAlertsManagerButton()}
         {this.renderSelectNotificationsButton()}
       </div>
@@ -527,10 +529,6 @@ class NotificationFeed extends React.Component {
   }
 
   renderDeleteAllButton = () => {
-    if (!this.props.enableFetchAllNotificationFeedAcrossProjects) {
-      return
-    }
-
     let title = `Delete all notifications for ${this.props.selectedProjectName}?`
     if (this.props.selectedProjectName === 'All') {
       title = `Delete all notifications for all data sources?`
