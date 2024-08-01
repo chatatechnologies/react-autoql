@@ -9,11 +9,14 @@ import {
   authenticationDefault,
   getAuthentication,
   getAutoQLConfig,
+  deleteMultipleNotifications,
+  deleteAllNotifications,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
 import { Modal } from '../../Modal'
 import { Button } from '../../Button'
+import { Checkbox } from '../../Checkbox'
 import { Spinner } from '../../Spinner'
 import { Tooltip } from '../../Tooltip'
 import { DataAlerts } from '../DataAlerts'
@@ -39,10 +42,7 @@ class NotificationFeed extends React.Component {
     this.NOTIFICATION_FETCH_LIMIT = 10
     this.TOOLTIP_ID = 'react-autoql-notification-feed-tooltip'
     this.CHART_TOOLTIP_ID = 'react-autoql-notification-feed-chart-tooltip'
-    // Open event source http connection here to receive SSE
-    // notificationEventSource = new EventSource(
-    //   'https://backend.chata.io/notifications'
-    // )
+    this.ALL_PROJECTS = 'All'
 
     this.notificationRefs = {}
 
@@ -54,7 +54,11 @@ class NotificationFeed extends React.Component {
       isFetching: false,
       isDeleting: false,
       pagination: {},
+      displayNotificationItemCheckbox: false,
+      selectedNotifications: [],
     }
+    this.handleButtonPress = this.handleButtonPress.bind(this)
+    this.handleButtonRelease = this.handleButtonRelease.bind(this)
   }
 
   static propTypes = {
@@ -77,9 +81,11 @@ class NotificationFeed extends React.Component {
     enableSettingsMenu: PropTypes.bool,
     enableNotificationsMenu: PropTypes.bool,
     displayProjectName: PropTypes.bool,
+    displayNotificationItemCheckbox: PropTypes.bool,
     enableFilterBtn: PropTypes.bool,
     enableFetchAllNotificationFeedAcrossProjects: PropTypes.bool,
     selectedProjectId: PropTypes.string,
+    selectedProjectName: PropTypes.string,
     notificationTitle: PropTypes.string,
   }
 
@@ -93,9 +99,11 @@ class NotificationFeed extends React.Component {
     enableSettingsMenu: true,
     enableNotificationsMenu: true,
     displayProjectName: false,
+    displayNotificationItemCheckbox: true,
     enableFilterBtn: true,
     enableFetchAllNotificationFeedAcrossProjects: false,
     selectedProjectId: 'all',
+    selectedProjectName: this.ALL_PROJECTS,
     notificationTitle: '',
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
@@ -146,6 +154,15 @@ class NotificationFeed extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
+  }
+  handleButtonPress() {
+    this.buttonPressTimer = setTimeout(this.onSelectNotificationClick, 1000)
+    document.body.style.webkitUserSelect = 'none'
+  }
+
+  handleButtonRelease() {
+    clearTimeout(this.buttonPressTimer)
+    document.body.style.webkitUserSelect = null
   }
 
   closeDataAlertModal = () => {
@@ -239,13 +256,17 @@ class NotificationFeed extends React.Component {
   }
 
   getNewNotifications = () => {
-    const limit =
-      (this.state.notificationList?.length || this.NOTIFICATION_FETCH_LIMIT) + (this.state.unFetchedNotifications ?? 0)
+    const limit = this.props.enableFetchAllNotificationFeedAcrossProjects
+      ? this.NOTIFICATION_FETCH_LIMIT
+      : (this.state.notificationList?.length || this.NOTIFICATION_FETCH_LIMIT) +
+        (this.state.unFetchedNotifications ?? 0)
 
     fetchNotificationFeed({
       ...getAuthentication(this.props.authentication),
       offset: 0,
-      limit,
+      limit: limit,
+      enableFetchAllNotificationFeedAcrossProjects: this.props.enableFetchAllNotificationFeedAcrossProjects,
+      selectedProjectId: this.props.selectedProjectId,
     })
       .then((response) => {
         const items = response?.items
@@ -272,13 +293,10 @@ class NotificationFeed extends React.Component {
       })
   }
   filterNotificationsByProject = () => {
-    const limit =
-      (this.state.notificationList?.length || this.NOTIFICATION_FETCH_LIMIT) + (this.state.unFetchedNotifications ?? 0)
-
     fetchNotificationFeed({
       ...getAuthentication(this.props.authentication),
       offset: 0,
-      limit,
+      limit: this.NOTIFICATION_FETCH_LIMIT,
       enableFetchAllNotificationFeedAcrossProjects: true,
       selectedProjectId: this.props.selectedProjectId,
       notificationTitle: this.props.notificationTitle,
@@ -315,7 +333,6 @@ class NotificationFeed extends React.Component {
     if (!this.hasFetchedNotifications) {
       return this.getNotifications()
     }
-
     return this.getNewNotifications()
   }
 
@@ -333,8 +350,23 @@ class NotificationFeed extends React.Component {
     return newNotifications
   }
 
-  onDeleteAllClick = () => {}
+  onDeleteAllClick = () => {
+    const newList = []
+    let pagination = this.state.pagination ?? {}
+    if (pagination) {
+      pagination = {
+        ...pagination,
+        total_items: pagination.total_items > 0 ? pagination.total_items - 1 : 0,
+      }
+    }
 
+    this.setState({
+      notificationList: newList,
+      pagination,
+      isDeleting: true,
+      selectedNotifications: [],
+    })
+  }
   onMarkAllAsReadClick = () => {
     const newList = this.state.notificationList.map((n) => {
       return {
@@ -387,9 +419,26 @@ class NotificationFeed extends React.Component {
       this.props.onDismissCallback(newList)
     })
   }
+  onDeleteMultipleNotificationsClick = () => {
+    const newList = this.state.notificationList.filter((n) => !this.state.selectedNotifications.includes(n.id))
+    let pagination = this.state.pagination ?? {}
+    if (pagination) {
+      pagination = {
+        ...pagination,
+        total_items: pagination.total_items > 0 ? pagination.total_items - 1 : 0,
+      }
+    }
 
+    this.setState({
+      notificationList: newList,
+      pagination,
+      isDeleting: true,
+      selectedNotifications: [],
+    })
+  }
   onDeleteClick = (notification) => {
     const newList = this.state.notificationList.filter((n) => n.id !== notification.id)
+
     let pagination = this.state.pagination ?? {}
     if (pagination) {
       pagination = {
@@ -416,17 +465,49 @@ class NotificationFeed extends React.Component {
   onDataAlertSave = () => {
     this.setState({ isEditModalVisible: false })
   }
+  onSelectNotificationClick = () => {
+    this.setState({ displayNotificationItemCheckbox: true })
+  }
+  onCancelSelectNotificationClick = () => {
+    this.setState({ displayNotificationItemCheckbox: false, selectedNotifications: [] })
+  }
+  onNotificationItemClick = (option) => {
+    let selected = []
 
+    if (this.state.selectedNotifications?.includes(option.id)) {
+      selected = this.state.selectedNotifications.filter((id) => id !== option.id)
+    } else {
+      selected = [...this.state.selectedNotifications, option.id]
+    }
+
+    this.setState({
+      selectedNotifications: selected,
+    })
+  }
   renderTopOptions = () => {
+    const shouldRenderDeleteAllButton =
+      this.props.enableFetchAllNotificationFeedAcrossProjects && !this.state.displayNotificationItemCheckbox
     return (
       <div className='notification-feed-top-options-container'>
-        {this.renderDeleteAllButton()}
+        {shouldRenderDeleteAllButton && this.renderDeleteAllButton()}
         {this.renderDataAlertsManagerButton()}
-        {this.renderMarkAllAsReadButton()}
+        {this.renderSelectNotificationsButton()}
       </div>
     )
   }
-
+  renderNotificationItemCheckbox = (notification) => {
+    return (
+      <div className='notification-item-checkbox'>
+        <Checkbox
+          checked={this.state.selectedNotifications.includes(notification.id)}
+          className='notification-item-checkbox'
+          onChange={() => {
+            this.onNotificationItemClick(notification)
+          }}
+        />
+      </div>
+    )
+  }
   renderDataAlertsManagerButton = () => {
     if (!this.props.showDataAlertsManager) {
       return <div />
@@ -445,12 +526,24 @@ class NotificationFeed extends React.Component {
   }
 
   renderDeleteAllButton = () => {
-    return null
-    // Enable this once the batch delete endpoint is ready
+    const projectName =
+      this.props.selectedProjectName === this.ALL_PROJECTS ? 'all data sources' : this.props.selectedProjectName
+    let title = `Delete all notifications for ${projectName}?`
+
     return (
-      <div onClick={this.onDeleteAllClick} className='react-autoql-notification-delete-all'>
-        <Icon type='trash' /> <span>Delete all</span>
-      </div>
+      <ConfirmPopover
+        onConfirm={this.deleteAllNotifications}
+        title={title}
+        confirmText='Yes'
+        backText='Cancel'
+        popoverParentElement={this.props.popoverParentElement ?? this.feedContainer}
+        positions={['bottom', 'left', 'right', 'top']}
+        align='end'
+      >
+        <div className='react-autoql-notification-delete-all'>
+          <Icon type='trash' /> <span>Delete all</span>
+        </div>
+      </ConfirmPopover>
     )
   }
 
@@ -469,6 +562,40 @@ class NotificationFeed extends React.Component {
       </div>
     </ConfirmPopover>
   )
+  renderDeleteButton = () => (
+    <ConfirmPopover
+      onConfirm={this.deleteSelectedNotification}
+      title='Delete the selected notifications?'
+      confirmText='Yes'
+      backText='Cancel'
+      popoverParentElement={this.props.popoverParentElement ?? this.feedContainer}
+      positions={['bottom', 'left', 'right', 'top']}
+      align='end'
+      disable={this.state.selectedNotifications.length === 0}
+    >
+      <div
+        className={`react-autoql-notification-delete ${this.state.selectedNotifications.length === 0 ? 'disable' : ''}`}
+      >
+        <Icon type='trash' /> <span>Delete</span>
+      </div>
+    </ConfirmPopover>
+  )
+  renderSelectNotificationsButton = () =>
+    this.state.displayNotificationItemCheckbox ? (
+      <div className='react-autoql-notification-select-container'>
+        {this.renderDeleteButton()}
+        <div className='react-autoql-notification-select-button'>
+          <span onClick={this.onCancelSelectNotificationClick}>Cancel</span>
+        </div>
+      </div>
+    ) : (
+      <div className='react-autoql-notification-select-container'>
+        <div className='react-autoql-notification-select-button'>
+          <span onClick={this.onSelectNotificationClick}>Select</span>
+        </div>
+        {this.renderMarkAllAsReadButton()}
+      </div>
+    )
 
   showEditDataAlertModal = (alertData) => {
     this.setState({ isEditModalVisible: true, activeDataAlert: alertData })
@@ -547,6 +674,23 @@ class NotificationFeed extends React.Component {
     return !this.state.isFetching && this.state.pagination?.total_items > this.state.notificationList?.length
   }
 
+  deleteSelectedNotification = () => {
+    this.onDeleteMultipleNotificationsClick()
+    deleteMultipleNotifications({
+      ...getAuthentication(this.props.authentication),
+      notificationList: this.state.selectedNotifications,
+    })
+      .then(this.props.onChange(this.state.notificationList))
+      .catch((error) => this.props.onErrorCallback(error))
+      .finally(this.onDeleteEnd())
+  }
+
+  deleteAllNotifications = () => {
+    this.onDeleteAllClick()
+    deleteAllNotifications({ ...getAuthentication(this.props.authentication), projectId: this.props.selectedProjectId })
+      .then(this.props.onChange(this.state.notificationList))
+      .catch((error) => this.props.onErrorCallback(error))
+  }
   render = () => {
     let style = {}
     if (!this.props.shouldRender) {
@@ -598,51 +742,60 @@ class NotificationFeed extends React.Component {
                   {this.state.notificationList.map((notification, i) => {
                     const dataAlert = this.state.dataAlerts?.find((alert) => alert.id === notification.data_alert_id)
                     return (
-                      <NotificationItem
-                        ref={(ref) => (this.notificationRefs[notification.id] = ref)}
-                        key={notification.id}
-                        authentication={this.props.authentication}
-                        autoQLConfig={{
-                          ...getAutoQLConfig(this.props.autoQLConfig),
-                          enableColumnVisibilityManager: false,
-                          enableNotifications: false,
-                          enableCSVDownload: false,
-                          enableDrilldowns: false,
-                          enableReportProblem: false,
-                        }}
-                        notification={notification}
-                        dataAlert={dataAlert}
-                        enableSettingsMenu={this.props.enableSettingsMenu}
-                        enableNotificationsMenu={this.props.enableNotificationsMenu}
-                        displayProjectName={this.props.displayProjectName}
-                        expanded={!!notification.expanded}
-                        onDismissCallback={this.onDismissClick}
-                        onUnreadCallback={this.onUnreadClick}
-                        onQueryClick={this.props.onQueryClick}
-                        popoverParentElement={this.props.popoverParentElement}
-                        onDismissSuccessCallback={() => {
-                          this.props.onChange(this.state.notificationList)
-                        }}
-                        onDeleteClick={this.onDeleteClick}
-                        onDeleteEnd={this.onDeleteEnd}
-                        onDeleteSuccessCallback={() => {
-                          this.props.onChange(this.state.notificationList)
-                        }}
-                        onExpandCallback={this.onNotificationExpand}
-                        onCollapseCallback={this.onNotificationCollapse}
-                        autoChartAggregations={this.props.autoChartAggregations}
-                        onErrorCallback={this.props.onErrorCallback}
-                        onSuccessCallback={this.props.onSuccessCallback}
-                        onDataAlertChange={this.props.onDataAlertChange}
-                        onEditClick={(dataAlert) => {
-                          this.showEditDataAlertModal(dataAlert)
-                        }}
-                        isResizing={this.props.isResizing}
-                        updateScrollbars={this.updateScrollbars}
-                        tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
-                        chartTooltipID={this.props.chartTooltipID ?? this.CHART_TOOLTIP_ID}
-                        enableFilterBtn={this.props.enableFilterBtn}
-                      />
+                      <div
+                        className='notification-item-container'
+                        onTouchStart={this.handleButtonPress}
+                        onTouchEnd={this.handleButtonRelease}
+                        key={i}
+                      >
+                        {this.state.displayNotificationItemCheckbox &&
+                          this.renderNotificationItemCheckbox(notification)}
+                        <NotificationItem
+                          ref={(ref) => (this.notificationRefs[notification.id] = ref)}
+                          key={notification.id}
+                          authentication={this.props.authentication}
+                          autoQLConfig={{
+                            ...getAutoQLConfig(this.props.autoQLConfig),
+                            enableColumnVisibilityManager: false,
+                            enableNotifications: false,
+                            enableCSVDownload: false,
+                            enableDrilldowns: false,
+                            enableReportProblem: false,
+                          }}
+                          notification={notification}
+                          dataAlert={dataAlert}
+                          enableSettingsMenu={this.props.enableSettingsMenu}
+                          enableNotificationsMenu={this.props.enableNotificationsMenu}
+                          displayProjectName={this.props.displayProjectName}
+                          expanded={!!notification.expanded}
+                          onDismissCallback={this.onDismissClick}
+                          onUnreadCallback={this.onUnreadClick}
+                          onQueryClick={this.props.onQueryClick}
+                          popoverParentElement={this.props.popoverParentElement}
+                          onDismissSuccessCallback={() => {
+                            this.props.onChange(this.state.notificationList)
+                          }}
+                          onDeleteClick={this.onDeleteClick}
+                          onDeleteEnd={this.onDeleteEnd}
+                          onDeleteSuccessCallback={() => {
+                            this.props.onChange(this.state.notificationList)
+                          }}
+                          onExpandCallback={this.onNotificationExpand}
+                          onCollapseCallback={this.onNotificationCollapse}
+                          autoChartAggregations={this.props.autoChartAggregations}
+                          onErrorCallback={this.props.onErrorCallback}
+                          onSuccessCallback={this.props.onSuccessCallback}
+                          onDataAlertChange={this.props.onDataAlertChange}
+                          onEditClick={(dataAlert) => {
+                            this.showEditDataAlertModal(dataAlert)
+                          }}
+                          isResizing={this.props.isResizing}
+                          updateScrollbars={this.updateScrollbars}
+                          tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+                          chartTooltipID={this.props.chartTooltipID ?? this.CHART_TOOLTIP_ID}
+                          enableFilterBtn={this.props.enableFilterBtn}
+                        />
+                      </div>
                     )
                   })}
                   {this.state.isFetching && (

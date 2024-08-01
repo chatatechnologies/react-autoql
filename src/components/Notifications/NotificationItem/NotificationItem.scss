@@ -21,10 +21,13 @@
   animation-fill-mode: both;
 
   &.expanded {
+    width: 100%;
     max-height: 100vh;
   }
 
   &.collapsed {
+    width: 100%;
+    flex: 1;
     max-height: 150px;
   }
 

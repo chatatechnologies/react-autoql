@@ -42,6 +42,14 @@
     padding-bottom: 10px;
     overflow: hidden;
   }
+  .notification-item-container {
+    width: 100%;
+    display: flex;
+    align-items: center;
+  }
+  .notification-item-checkbox {
+    padding-right: 5px;
+  }
 }
 
 .react-autoql-notification-list-container-mobile {
@@ -76,5 +84,33 @@
     &:hover {
       opacity: 1;
     }
+  }
+  .react-autoql-notification-select-button,
+  .react-autoql-notification-delete {
+    padding-right: 10px;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    color: inherit;
+    transition: color 0.1s ease;
+    opacity: 0.8;
+    cursor: pointer;
+
+    .react-autoql-icon {
+      margin-right: 6px;
+      margin-bottom: 3px;
+    }
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+  .react-autoql-notification-delete.disable {
+    opacity: 0.4;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+  }
+  .react-autoql-notification-select-container {
+    display: flex;
   }
 }

@@ -60,10 +60,11 @@
   .react-autoql-data-alert-modal-step {
     font-weight: 400;
     font-size: 15px;
-    padding: 75px;
     padding-top: 15px;
     padding-bottom: 20px;
-
+    @media (min-width: 1200px) {
+      padding: 75px;
+    }
     .react-autoql-data-alert-frequency-option {
       margin-right: 5px;
     }
