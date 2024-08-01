@@ -15,6 +15,15 @@
   &.with-query-validation .react-autoql-rule-mult-factor-select-input-container {
     margin-bottom: 30px;
   }
+  &.with-query-validation .react-autoql-notification-rule-container {
+    display: flex;
+    align-items: flex-end;
+    @media (max-width: 1200px) {
+      display: flex;
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
 
   .react-autoql-rule-field-selection-grid-container {
     max-height: 150px;
@@ -32,7 +41,11 @@
   .react-autoql-notification-rule-container {
     display: flex;
     align-items: flex-end;
-
+    @media (max-width: 767px) {
+      display: flex;
+      align-items: flex-start;
+      flex-direction: column;
+    }
     .react-autoql-rule-input {
       .react-autoql-input-icon.react-autoql-bubbles-outlined {
         font-size: 18px !important;
@@ -91,6 +104,7 @@
     .react-autoql-rule-second-input-container {
       display: flex;
       flex-direction: column;
+      width: 100%;
       padding: 2px 0;
       border-radius: 4px;
       transition-property: color, border-color, background-color, opacity;
