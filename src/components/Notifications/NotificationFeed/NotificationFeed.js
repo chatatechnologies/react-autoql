@@ -43,10 +43,6 @@ class NotificationFeed extends React.Component {
     this.TOOLTIP_ID = 'react-autoql-notification-feed-tooltip'
     this.CHART_TOOLTIP_ID = 'react-autoql-notification-feed-chart-tooltip'
     this.ALL_PROJECTS = 'All'
-    // Open event source http connection here to receive SSE
-    // notificationEventSource = new EventSource(
-    //   'https://backend.chata.io/notifications'
-    // )
 
     this.notificationRefs = {}
 
