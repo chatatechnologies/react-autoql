@@ -43,7 +43,7 @@ class NotificationFeed extends React.Component {
     this.TOOLTIP_ID = 'react-autoql-notification-feed-tooltip'
     this.CHART_TOOLTIP_ID = 'react-autoql-notification-feed-chart-tooltip'
     this.ALL_PROJECTS = 'All'
-
+    this.DELETE_NOTIFICATIONS_SUCCESSFULL_MESSAGE = 'The notifications have been deleted successfully.'
     this.notificationRefs = {}
 
     this.state = {
@@ -673,14 +673,17 @@ class NotificationFeed extends React.Component {
   hasMoreNotifications = () => {
     return !this.state.isFetching && this.state.pagination?.total_items > this.state.notificationList?.length
   }
-
+  handleDeleteNotificationsResponse = () => {
+    this.props.onChange(this.state.notificationList)
+    this.props.onSuccessCallback(this.DELETE_NOTIFICATIONS_SUCCESSFULL_MESSAGE)
+  }
   deleteSelectedNotification = () => {
     this.onDeleteMultipleNotificationsClick()
     deleteMultipleNotifications({
       ...getAuthentication(this.props.authentication),
       notificationList: this.state.selectedNotifications,
     })
-      .then(this.props.onChange(this.state.notificationList))
+      .then(this.handleDeleteNotificationsResponse())
       .catch((error) => this.props.onErrorCallback(error))
       .finally(this.onDeleteEnd())
   }
@@ -688,7 +691,7 @@ class NotificationFeed extends React.Component {
   deleteAllNotifications = () => {
     this.onDeleteAllClick()
     deleteAllNotifications({ ...getAuthentication(this.props.authentication), projectId: this.props.selectedProjectId })
-      .then(this.props.onChange(this.state.notificationList))
+      .then(this.handleDeleteNotificationsResponse())
       .catch((error) => this.props.onErrorCallback(error))
   }
   render = () => {
