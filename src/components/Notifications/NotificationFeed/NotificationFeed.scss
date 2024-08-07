@@ -85,6 +85,11 @@
       opacity: 1;
     }
   }
+  .react-autoql-notification-delete-all {
+    @media (max-width: 350px) {
+      margin-right: 30px;
+    }
+  }
   .react-autoql-notification-select-button,
   .react-autoql-notification-delete {
     padding-right: 10px;
