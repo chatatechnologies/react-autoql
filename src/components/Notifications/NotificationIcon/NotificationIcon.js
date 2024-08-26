@@ -193,7 +193,7 @@ class NotificationIcon extends React.Component {
     }
 
     if (this.props.useDot) {
-      return <div className='react-autoql-notifications-badge-dot' />
+      return <div className={`react-autoql-notifications-badge-dot ${isMobile ? 'mobile' : ''}`} />
     }
 
     let finalCount = count
