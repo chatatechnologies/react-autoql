@@ -146,6 +146,7 @@
 
 @media (max-width: 479px) {
   .react-autoql-drawer .react-autoql-header-center-container {
+    color: var(--react-autoql-text-color-primary);
     font-size: 18px;
     letter-spacing: 0.05em;
   }
@@ -161,6 +162,9 @@
   }
   .react-autoql-drawer .drawer-content-wrapper {
     transition: unset !important;
+  }
+  .mobile-popover-delete-button {
+    color: var(--react-autoql-text-color-primary) !important;
   }
 }
 @media (min-width: 480px) {
@@ -180,6 +184,9 @@
 .react-autoql-drawer .react-autoql-drawer-header-btn {
   &.hidden {
     display: none !important;
+  }
+  &.mobile {
+    color: var(--react-autoql-text-color-primary) !important;
   }
 
   .react-autoql-filter-lock-icon-container {

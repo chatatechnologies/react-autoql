@@ -382,7 +382,7 @@ export class DataMessenger extends React.Component {
 
   getDrawerHeight = () => {
     if (this.state.placement === 'right' || this.state.placement === 'left') {
-      return isMobile ? 'calc(100% - 80px)' : '100vh'
+      return isMobile ? 'calc(100% - 50px)' : '100vh'
     }
 
     const { maxHeight } = this.getMaxWidthAndHeightFromDocument()
@@ -582,7 +582,11 @@ export class DataMessenger extends React.Component {
           positions={['bottom', 'left', 'top', 'right']}
           align='end'
         >
-          <button data-tooltip-content={lang.clearQueriesTooltip} data-tooltip-id={this.TOOLTIP_ID}>
+          <button
+            data-tooltip-content={lang.clearQueriesTooltip}
+            data-tooltip-id={this.TOOLTIP_ID}
+            className={isMobile ? 'mobile-popover-delete-button' : 'popover-delete-button'}
+          >
             <Icon type='trash' />
           </button>
         </ConfirmPopover>
@@ -665,7 +669,7 @@ export class DataMessenger extends React.Component {
         <button
           className={`react-autoql-drawer-header-btn filter-locking ${
             this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
-          }`}
+          } ${isMobile ? 'mobile' : ''}`}
           data-tooltip-content={lang.openFilterLocking}
           data-tooltip-id={this.TOOLTIP_ID}
           onClick={this.state.isFilterLockMenuOpen ? this.closeFilterLockMenu : this.openFilterLockMenu}
@@ -693,7 +697,7 @@ export class DataMessenger extends React.Component {
             <>
               <button
                 onClick={this.closeDataMessenger}
-                className='react-autoql-drawer-header-btn'
+                className={'react-autoql-drawer-header-btn'}
                 data-tooltip-content={lang.closeDataMessenger}
                 data-tooltip-id={this.TOOLTIP_ID}
               >
@@ -1049,6 +1053,7 @@ export class DataMessenger extends React.Component {
           handler={this.getHandleProp()}
           level={this.props.shiftScreen ? 'all' : null}
           keyboard={false}
+          style={isMobile ? { top: '50px', boxShadow: 'unset' } : null}
         >
           {this.props.resizable && isBrowser && this.renderResizeHandle()}
           {isBrowser ? this.renderTabs() : null}
@@ -1059,7 +1064,9 @@ export class DataMessenger extends React.Component {
               ${this.state.activePage}
             `}
           >
-            <div className='chat-header-container'>{this.renderHeaderContent()}</div>
+            <div className='chat-header-container' id={isMobile ? 'mobile-version' : null}>
+              {this.renderHeaderContent()}
+            </div>
             {this.renderBodyContent()}
           </div>
         </Drawer>

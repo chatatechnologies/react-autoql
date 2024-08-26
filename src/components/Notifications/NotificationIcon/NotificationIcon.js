@@ -15,6 +15,7 @@ import { withTheme } from '../../../theme'
 import { authenticationType } from '../../../props/types'
 
 import './NotificationIcon.scss'
+import { isMobile } from 'react-device-detect'
 
 class NotificationIcon extends React.Component {
   constructor(props) {
@@ -209,7 +210,7 @@ class NotificationIcon extends React.Component {
         <div
           className={`react-autoql-notifications-button-container ${this.props.useDot ? 'dot' : ''}
           ${this.props.className || ''}
-        ${!this.state.count && !this.props.count ? 'no-badge' : ''}`}
+        ${!this.state.count && !this.props.count ? 'no-badge' : ''} ${isMobile ? 'mobile' : ''}`}
           data-test='notification-button'
           style={{ ...this.props.style }}
           onClick={() => {
