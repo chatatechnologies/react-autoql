@@ -30,17 +30,17 @@ import { ScheduleBuilder } from '../ScheduleBuilder'
 import { ConditionBuilder } from '../ConditionBuilder'
 import { MultilineButton } from '../../MultilineButton'
 import { CustomScrollbars } from '../../CustomScrollbars'
+import { CollapsableSection } from '../../Card'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { DataAlertDeleteDialog } from '../DataAlertDeleteDialog'
 import AppearanceSection from '../DataAlertSettings/AppearanceSection'
 import DataAlertSettings from '../DataAlertSettings/DataAlertSettings'
+import AlphaAlertsSettings from '../DataAlertSettings/AlphaAlertsSettings'
 
 import { withTheme } from '../../../theme'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
 
 import './DataAlertModal.scss'
-import AlphaAlertsSettings from '../DataAlertSettings/AlphaAlertsSettings'
-import { CollapsableSection } from '../../Card'
 
 class DataAlertModal extends React.Component {
   constructor(props) {
@@ -71,6 +71,7 @@ class DataAlertModal extends React.Component {
     onOpened: PropTypes.func,
     dataFormatting: dataFormattingType,
     autoQLConfig: autoQLConfigType,
+    enableAlphaAlertSettings: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -574,7 +575,7 @@ class DataAlertModal extends React.Component {
 
   renderAlphaAlertsSettings = () => {
     return (
-      <CollapsableSection title='Additional Settings' defaultCollapsed={true}>
+      <CollapsableSection title='Additional Settings'>
         <AlphaAlertsSettings
           ref={(r) => (this.alphaAlertsSettingRef = r)}
           descriptionInput={this.state.descriptionInput}
@@ -686,6 +687,7 @@ class DataAlertModal extends React.Component {
             supportedConditionTypes={this.SUPPORTED_CONDITION_TYPES}
             onErrorCallback={this.props.onErrorCallback}
             onCompleteChange={this.onSettingsCompleteChange}
+            enableAlphaAlertSettings={this.props.enableAlphaAlertSettings}
             tooltipID={this.TOOLTIP_ID}
           />
         </CustomScrollbars>
