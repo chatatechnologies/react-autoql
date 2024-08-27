@@ -4,7 +4,7 @@ import Drawer from 'rc-drawer'
 import _isEmpty from 'lodash.isempty'
 import { v4 as uuid } from 'uuid'
 import { isBrowser, isMobile } from 'react-device-detect'
-import { mergeSources, autoQLConfigDefault, dataFormattingDefault, getAutoQLConfig } from 'autoql-fe-utils'
+import { mergeSources, autoQLConfigDefault, dataFormattingDefault, getAutoQLConfig, SCHEDULE_INTERVAL_OPTIONS } from 'autoql-fe-utils'
 
 // Components
 import { Icon } from '../Icon'
@@ -16,6 +16,7 @@ import { FilterLockPopover } from '../FilterLockPopover'
 import { ConfirmPopover } from '../ConfirmPopover'
 import { ChatContent } from '../ChatContent'
 import { Tooltip } from '../Tooltip'
+import { Select } from '../Select'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 // Utils
@@ -94,6 +95,7 @@ export class DataMessenger extends React.Component {
       selectedValueLabel: undefined,
       isSizeMaximum: false,
     }
+    console.log(this.props?.selectedProjectId)
   }
 
   static propTypes = {
@@ -133,6 +135,15 @@ export class DataMessenger extends React.Component {
     enableFilterLocking: PropTypes.bool,
     enableQueryQuickStartTopics: PropTypes.bool,
 
+    // Projects
+    projectSelectList: PropTypes.arrayOf(
+      PropTypes.shape({
+        projectId: PropTypes.string.isRequired,
+        displayName: PropTypes.string.isRequired,
+      })
+    ),
+    selectedProjectId: PropTypes.string,
+
     // Callbacks
     onNotificationExpandCallback: PropTypes.func,
     onNewNotification: PropTypes.func,
@@ -141,12 +152,13 @@ export class DataMessenger extends React.Component {
     onErrorCallback: PropTypes.func,
     onSuccessAlert: PropTypes.func,
     setMobileActivePage: PropTypes.func,
+    onProjectSelectChange: PropTypes.func,
   }
 
   static defaultProps = {
     // Global
     authentication: {},
-    autoQLConfig: autoQLConfigDefault,
+    autoQLConfig: { ...autoQLConfigDefault, enableProjectSelect: false },
     dataFormatting: dataFormattingDefault,
 
     // UI
@@ -174,6 +186,10 @@ export class DataMessenger extends React.Component {
     defaultOpen: false,
     popoverParentElement: undefined,
 
+    // Projects
+    projectSelectList: undefined,
+    selectedProjectId: undefined,
+
     enableDynamicCharting: true,
     defaultTab: 'data-messenger',
     autoChartAggregations: true,
@@ -181,14 +197,15 @@ export class DataMessenger extends React.Component {
     enableQueryQuickStartTopics: true,
     enableDPRTab: false,
     mobileActivePage: 'data-messenger',
-    setMobileActivePage: () => {},
+    setMobileActivePage: () => { },
     // Callbacks
-    onNotificationExpandCallback: () => {},
-    onNewNotification: () => {},
-    onNotificationCount: () => {},
-    onVisibleChange: () => {},
-    onErrorCallback: () => {},
-    onSuccessAlert: () => {},
+    onNotificationExpandCallback: () => { },
+    onNewNotification: () => { },
+    onNotificationCount: () => { },
+    onVisibleChange: () => { },
+    onErrorCallback: () => { },
+    onSuccessAlert: () => { },
+    onProjectSelectChange: () => { },
   }
 
   componentDidMount = () => {
@@ -251,7 +268,7 @@ export class DataMessenger extends React.Component {
 
       clearTimeout(this.windowResizeTimer)
       clearTimeout(this.executeQueryTimeout)
-    } catch (error) {}
+    } catch (error) { }
   }
 
   onError = () => this.props.onErrorCallback('Something went wrong when creating this notification. Please try again.')
@@ -482,9 +499,8 @@ export class DataMessenger extends React.Component {
 
     return (
       <div
-        className={`data-messenger-tab-container ${this.props.placement} ${
-          this.state.isVisible ? 'visible' : 'hidden'
-        }`}
+        className={`data-messenger-tab-container ${this.props.placement} ${this.state.isVisible ? 'visible' : 'hidden'
+          }`}
       >
         <div className={`page-switcher-shadow-container  ${this.props.placement}`}>
           <div className={`page-switcher-container ${this.props.placement}`}>
@@ -498,9 +514,8 @@ export class DataMessenger extends React.Component {
             </div>
             {this.props.enableExploreQueriesTab && (
               <div
-                className={`react-autoql-dm-tab${
-                  page === 'explore-queries' ? ' active' : ''
-                } react-autoql-explore-queries`}
+                className={`react-autoql-dm-tab${page === 'explore-queries' ? ' active' : ''
+                  } react-autoql-explore-queries`}
                 onClick={() => this.setState({ activePage: 'explore-queries' })}
                 data-tooltip-content={lang.exploreQueries}
                 data-tooltip-id={this.TOOLTIP_ID}
@@ -571,9 +586,8 @@ export class DataMessenger extends React.Component {
           ? getAutoQLConfig(this.props.autoQLConfig).enableFilterLocking && this.renderFilterLockPopover()
           : null}
         <ConfirmPopover
-          className={`react-autoql-drawer-header-btn clear-all ${
-            this.state.activePage === 'data-messenger' || this.state.activePage === 'dpr' ? 'visible' : 'hidden'
-          }`}
+          className={`react-autoql-drawer-header-btn clear-all ${this.state.activePage === 'data-messenger' || this.state.activePage === 'dpr' ? 'visible' : 'hidden'
+            }`}
           popoverParentElement={this.messengerDrawerRef}
           title={lang.clearDataResponses}
           onConfirm={this.clearMessages}
@@ -590,11 +604,42 @@ export class DataMessenger extends React.Component {
     )
   }
 
+  projectSelectorHeader = () => {
+    return (
+      <div className='react-autoql-header-project-selector-container'>
+        <Select
+          className='custom-column-builder-type-selector'
+          size='small'
+          outlined={false}
+          fullWidth={true}
+          placeholder='Select a new project'
+          options={this.props.projectSelectList.map((project) => {
+            return ({
+              value: project?.projectId,
+              label: <span dangerouslySetInnerHTML={{ __html: project.displayName }} />,
+            })
+          }
+          )}
+          label={null}
+          value={this.props.selectedProjectId}
+          onChange={(option) => {
+            this.clearMessages()
+            this.props.onProjectSelectChange(option)
+          }}
+          color='text'
+        />
+      </div>
+    )
+  }
+
   renderHeaderTitle = () => {
     let title = ''
 
     switch (this.state.activePage) {
       case 'data-messenger': {
+        if (this.props.autoQLConfig?.enableProjectSelect) {
+          return this.projectSelectorHeader()
+        }
         title = this.props.title
         break
       }
@@ -663,9 +708,8 @@ export class DataMessenger extends React.Component {
         align='center'
       >
         <button
-          className={`react-autoql-drawer-header-btn filter-locking ${
-            this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
-          }`}
+          className={`react-autoql-drawer-header-btn filter-locking ${this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
+            }`}
           data-tooltip-content={lang.openFilterLocking}
           data-tooltip-id={this.TOOLTIP_ID}
           onClick={this.state.isFilterLockMenuOpen ? this.closeFilterLockMenu : this.openFilterLockMenu}
@@ -685,9 +729,8 @@ export class DataMessenger extends React.Component {
     return (
       <>
         <div
-          className={`react-autoql-header-left-container ${
-            this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
-          }`}
+          className={`react-autoql-header-left-container ${this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
+            }`}
         >
           {isBrowser ? (
             <>
@@ -714,9 +757,8 @@ export class DataMessenger extends React.Component {
         </div>
         <div className='react-autoql-header-center-container'>{this.renderHeaderTitle()}</div>
         <div
-          className={`react-autoql-header-right-container ${
-            this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
-          }`}
+          className={`react-autoql-header-right-container ${this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
+            }`}
         >
           {this.renderRightHeaderContent()}
         </div>

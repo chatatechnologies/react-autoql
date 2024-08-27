@@ -74,6 +74,7 @@
       background: var(--react-autoql-background-color-secondary);
     }
   }
+
   .react-autoql-mobile-drawer-content-container {
     width: 100%;
     height: 100%;
@@ -92,24 +93,35 @@
     flex: 0 0 auto;
     z-index: 1;
   }
+
   .react-autoql-header-left-container {
     display: flex;
     justify-content: left;
     width: 100px;
     margin-left: 10px;
   }
+
   .react-autoql-header-right-container {
     display: flex;
     justify-content: right;
     width: 100px;
     margin-right: 10px;
   }
+
   .react-autoql-header-center-container {
     display: flex;
     justify-content: center;
     align-items: center;
     position: relative;
     font-weight: 600;
+
+    .react-autoql-header-project-selector-container {
+      flex: 1;
+      padding: 0;
+      margin-bottom: 10px;
+      margin-left: 15px;
+      margin-top: 25px;
+    }
   }
 }
 
@@ -130,7 +142,7 @@
       margin-right: 10px;
     }
 
-    & > span > span {
+    &>span>span {
       display: flex;
       justify-content: center;
       align-items: center;
@@ -149,20 +161,24 @@
     font-size: 18px;
     letter-spacing: 0.05em;
   }
+
   .react-autoql-drawer .react-autoql-header-left-container {
     &.hidden {
       width: 0px;
     }
   }
+
   .react-autoql-drawer .react-autoql-header-right-container {
     &.hidden {
       width: 0px;
     }
   }
+
   .react-autoql-drawer .drawer-content-wrapper {
     transition: unset !important;
   }
 }
+
 @media (min-width: 480px) {
   .react-autoql-drawer .react-autoql-header-center-container {
     font-size: 18px;
@@ -240,6 +256,7 @@
 .topics-container {
   margin: 5px 0;
 }
+
 .intro-qi-link {
   cursor: pointer;
   color: var(--react-autoql-accent-color);
@@ -298,43 +315,54 @@
 .react-autoql-drawer.drawer-right .drawer-handle {
   left: -70px !important;
 }
+
 .react-autoql-drawer.drawer-left .drawer-handle {
   right: -60px !important;
 }
+
 .react-autoql-drawer.drawer-top .drawer-handle {
   bottom: -60px !important;
 }
+
 .react-autoql-drawer.drawer-bottom .drawer-handle {
   top: -60px !important;
 }
+
 .react-autoql-drawer .drawer-handle.hide {
   opacity: 0;
   visibility: hidden;
 }
+
 .react-autoql-drawer .drawer-handle-icon,
 .react-autoql-drawer .drawer-handle-icon::before,
 .react-autoql-drawer .drawer-handle-icon::after {
   background: var(--react-autoql-text-color-primary);
 }
+
 .react-autoql-drawer .drawer-bottom .drawer-content-wrapper,
 .react-autoql-drawer .drawer-top .drawer-content-wrapper {
   left: 0;
 }
+
 .react-autoql-drawer .drawer-content-wrapper {
   background: transparent;
 }
+
 @media (min-width: 1281px) {
+
   .react-autoql-drawer.drawer-right .drawer-content-wrapper,
   .react-autoql-drawer.drawer-left .drawer-content-wrapper {
     max-width: calc(100vw - 45px) !important;
     min-width: 400px !important;
   }
+
   .react-autoql-drawer.drawer-top .drawer-content-wrapper,
   .react-autoql-drawer.drawer-bottom .drawer-content-wrapper {
     max-height: calc(100vh - 45px) !important;
     min-height: 400px !important;
   }
 }
+
 .react-autoql-drawer-resize-handle {
   position: absolute;
   background: transparent;
@@ -350,6 +378,7 @@
     border-right-style: solid;
     transition: border-right-color 0.2s ease;
     cursor: ew-resize;
+
     &:hover {
       border-right-color: var(--react-autoql-accent-color);
     }
@@ -364,6 +393,7 @@
     border-left-width: 3px;
     border-left-style: solid;
     cursor: ew-resize;
+
     &:hover {
       border-left-color: var(--react-autoql-accent-color);
     }
@@ -378,6 +408,7 @@
     border-top-width: 3px;
     border-top-style: solid;
     cursor: ns-resize;
+
     &:hover {
       border-top-color: var(--react-autoql-accent-color);
     }
@@ -392,6 +423,7 @@
     border-bottom-width: 3px;
     border-bottom-style: solid;
     cursor: ns-resize;
+
     &:hover {
       border-bottom-color: var(--react-autoql-accent-color);
     }
@@ -405,16 +437,20 @@
   padding: 18px;
   width: 266px;
 }
+
 .react-autoql-confirm-text {
   text-align: center;
 }
+
 .react-autoql-menu-text {
   text-align: center;
+
   &:hover {
     color: var(--react-autoql-accent-color);
     cursor: pointer;
   }
 }
+
 .react-autoql-confirm-icon {
   color: #faad14 !important;
   vertical-align: middle;
@@ -441,16 +477,19 @@
     width: 60px;
     left: -60px;
   }
+
   &.left {
     height: 100vh;
     width: 60px;
     right: -60px;
   }
+
   &.top {
     width: 100vw;
     height: 60px;
     bottom: -60px;
   }
+
   &.bottom {
     width: 100vw;
     height: 60px;
@@ -464,13 +503,25 @@
   background: transparent;
   overflow: hidden;
 }
+
 .page-switcher-shadow-container.right {
   top: 80px;
   width: 60px;
 }
+
 .page-switcher-shadow-container.left {
   top: 80px;
   width: 60px;
+}
+
+.custom-column-builder-type-selector {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex: 1;
+  padding: 0;
+  margin-bottom: 10px;
+  margin-left: 15px;
 }
 
 /* Container holding the tabs */
@@ -569,17 +620,20 @@
 .react-autoql-notifications.react-autoql-dm-tab.active .react-autoql-notifications-badge-dot {
   border: 1px solid var(--react-autoql-background-color-primary);
 }
+
 .page-switcher-container .react-autoql-dm-tab {
   display: flex;
   justify-content: center;
   align-items: center;
 }
+
 .data-messenger-notification-btn {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   line-height: inherit;
 }
+
 .page-switcher-container.right .react-autoql-dm-tab,
 .page-switcher-container.left .react-autoql-dm-tab {
   height: 65px;
@@ -599,6 +653,7 @@
     stroke-width: 0.3px;
   }
 }
+
 .page-switcher-container .react-autoql-dm-tab.active {
   background: var(--react-autoql-background-color-primary);
   color: var(--react-autoql-accent-color);
@@ -616,6 +671,7 @@
     stroke-width: 0.3px;
   }
 }
+
 .page-switcher-container.bottom .react-autoql-dm-tab.active {
   background: var(--react-autoql-accent-color);
   color: var(--react-autoql-text-color-accent);
@@ -632,38 +688,47 @@
   0% {
     transform: scale(0);
   }
+
   100% {
     transform: scale(1);
   }
 }
+
 @keyframes response-loading3 {
   0% {
     transform: scale(1);
   }
+
   100% {
     transform: scale(0);
   }
 }
+
 @keyframes response-loading2 {
   0% {
     transform: translate(0, 0);
   }
+
   100% {
     transform: translate(19px, 0);
   }
 }
+
 @keyframes scale-up-center {
   0% {
     transform: scale(0);
   }
+
   100% {
     transform: scale(1);
   }
 }
+
 @keyframes fadeIn {
   0% {
     opacity: 0;
   }
+
   100% {
     opacity: 1;
   }
@@ -674,6 +739,7 @@
     top: 60px;
     opacity: 1;
   }
+
   to {
     top: 30px;
     opacity: 0;

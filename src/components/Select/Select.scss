@@ -1,3 +1,31 @@
+/* Shake animation */
+@keyframes shakeLeftToRight {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  /* Start and end at the original position */
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-1px);
+  }
+
+  /* Move left */
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(1px);
+  }
+
+  /* Move right */
+}
+
 .react-autoql-select-popover-container {
   margin: 0 6px;
 
@@ -32,6 +60,7 @@
     white-space: nowrap;
     font-size: inherit;
     cursor: pointer;
+    max-width: 250px; // need to set it for mobile as well at 175px
 
     &.react-autoql-select-large {
       line-height: 36px;
@@ -45,8 +74,18 @@
 
     &:hover {
       color: var(--react-autoql-accent-color, #26a7df);
+
+      &.text-color {
+        color: var(--react-autoql-text-color-accent);
+      }
+
       .react-autoql-select-arrow {
         color: var(--react-autoql-accent-color, #26a7df);
+        animation: shakeLeftToRight 0.5s ease-in-out; // need to make a prop to enable this 
+
+        &.text-color {
+          color: var(--react-autoql-text-color-accent);
+        }
       }
     }
 
@@ -81,6 +120,9 @@
     .react-autoql-select-text {
       display: block;
       height: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
 
       .react-autoql-select-text-placeholder {
         color: var(--react-autoql-text-color-placeholder);
@@ -94,9 +136,14 @@
       padding-left: 8px;
       font-size: 0.875em;
       color: var(--react-autoql-text-color-placeholder);
+      // margin-bottom: 5px; // need to make a prop to enable this 
 
       svg {
         stroke-width: 2em;
+      }
+
+      &.text-color {
+        color: var(--react-autoql-text-color-accent);
       }
     }
   }
