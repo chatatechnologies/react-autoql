@@ -5,7 +5,7 @@ import _isEmpty from 'lodash.isempty'
 import { v4 as uuid } from 'uuid'
 import { isBrowser, isMobile } from 'react-device-detect'
 import { mergeSources, autoQLConfigDefault, dataFormattingDefault, getAutoQLConfig } from 'autoql-fe-utils'
-
+import classNames from 'classnames'
 // Components
 import { Icon } from '../Icon'
 import { ExploreQueries } from '../ExploreQueries'
@@ -253,6 +253,10 @@ export class DataMessenger extends React.Component {
       clearTimeout(this.executeQueryTimeout)
     } catch (error) {}
   }
+  popoverDeleteButtonClass = classNames({
+    mobile: isMobile,
+    'popover-delete-button': true,
+  })
 
   onError = () => this.props.onErrorCallback('Something went wrong when creating this notification. Please try again.')
 
@@ -382,7 +386,7 @@ export class DataMessenger extends React.Component {
 
   getDrawerHeight = () => {
     if (this.state.placement === 'right' || this.state.placement === 'left') {
-      return isMobile ? 'calc(100% - 80px)' : '100vh'
+      return isMobile ? 'calc(100% - 50px)' : '100vh'
     }
 
     const { maxHeight } = this.getMaxWidthAndHeightFromDocument()
@@ -582,7 +586,11 @@ export class DataMessenger extends React.Component {
           positions={['bottom', 'left', 'top', 'right']}
           align='end'
         >
-          <button data-tooltip-content={lang.clearQueriesTooltip} data-tooltip-id={this.TOOLTIP_ID}>
+          <button
+            data-tooltip-content={lang.clearQueriesTooltip}
+            data-tooltip-id={this.TOOLTIP_ID}
+            className={this.popoverDeleteButtonClass}
+          >
             <Icon type='trash' />
           </button>
         </ConfirmPopover>
@@ -649,6 +657,12 @@ export class DataMessenger extends React.Component {
   }
 
   renderFilterLockPopover = () => {
+    this.filterLockingDrawerHeaderButtonClass = classNames({
+      'react-autoql-drawer-header-btn filter-locking': true,
+      visible: this.state.activePage === 'data-messenger',
+      hidden: this.state.activePage !== 'data-messenger',
+      mobile: isMobile,
+    })
     return (
       <FilterLockPopover
         ref={(r) => (this.filterLockRef = r)}
@@ -663,9 +677,7 @@ export class DataMessenger extends React.Component {
         align='center'
       >
         <button
-          className={`react-autoql-drawer-header-btn filter-locking ${
-            this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
-          }`}
+          className={this.filterLockingDrawerHeaderButtonClass}
           data-tooltip-content={lang.openFilterLocking}
           data-tooltip-id={this.TOOLTIP_ID}
           onClick={this.state.isFilterLockMenuOpen ? this.closeFilterLockMenu : this.openFilterLockMenu}
@@ -693,7 +705,7 @@ export class DataMessenger extends React.Component {
             <>
               <button
                 onClick={this.closeDataMessenger}
-                className='react-autoql-drawer-header-btn'
+                className={'react-autoql-drawer-header-btn'}
                 data-tooltip-content={lang.closeDataMessenger}
                 data-tooltip-id={this.TOOLTIP_ID}
               >
@@ -1049,17 +1061,20 @@ export class DataMessenger extends React.Component {
           handler={this.getHandleProp()}
           level={this.props.shiftScreen ? 'all' : null}
           keyboard={false}
+          style={isMobile ? { top: '50px', boxShadow: 'unset' } : null}
         >
           {this.props.resizable && isBrowser && this.renderResizeHandle()}
           {isBrowser ? this.renderTabs() : null}
           <div
             ref={(r) => (this.messengerDrawerRef = r)}
             className={`
-              ${isMobile ? 'react-autoql-mobile-drawer-content-container' : 'react-autoql-drawer-content-container'}
+              'react-autoql-drawer-content-container'
               ${this.state.activePage}
             `}
           >
-            <div className='chat-header-container'>{this.renderHeaderContent()}</div>
+            <div className='chat-header-container' id={isMobile ? 'mobile-version' : null}>
+              {this.renderHeaderContent()}
+            </div>
             {this.renderBodyContent()}
           </div>
         </Drawer>

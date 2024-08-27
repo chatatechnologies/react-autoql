@@ -18,14 +18,15 @@ import {
   resetDateIsFuture,
   authenticationDefault,
   getAuthentication,
+  DATA_ALERT_STATUSES,
 } from 'autoql-fe-utils'
 
-import { Icon } from '../../Icon'
-import { Switch } from '../../Switch'
+import { Icon } from '../../../Icon'
+import { Switch } from '../../../Switch'
 
-import { authenticationType } from '../../../props/types'
+import { authenticationType } from '../../../../props/types'
 
-import './DataAlerts.scss'
+import './DataAlertListItem.scss'
 
 export default class DataAlertListItem extends React.Component {
   constructor(props) {
@@ -36,7 +37,9 @@ export default class DataAlertListItem extends React.Component {
     this.state = {
       status: props.dataAlert?.status,
       title: props.dataAlert?.title,
+
       message: props.dataAlert?.message,
+      description: props.dataAlert?.description,
       isInitializing: false,
     }
   }
@@ -47,6 +50,14 @@ export default class DataAlertListItem extends React.Component {
     onSuccessAlert: PropTypes.func,
     onDeleteClick: PropTypes.func,
     onDataAlertStatusChange: PropTypes.func,
+    shouldRenderNotificationFrequency: PropTypes.bool,
+    shouldRenderDescription: PropTypes.bool,
+    shouldRenderNextCheck: PropTypes.bool,
+    shouldRenderStateDescription: PropTypes.bool,
+    shouldRenderDataAlertState: PropTypes.bool,
+    shouldRenderStateHeaderTitle: PropTypes.bool,
+    shouldRenderStatusHeaderTitle: PropTypes.bool,
+    shouldDisplaySwitchText: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -55,6 +66,14 @@ export default class DataAlertListItem extends React.Component {
     onSuccessAlert: () => {},
     onDeleteClick: () => {},
     onDataAlertStatusChange: () => {},
+    shouldRenderNotificationFrequency: true,
+    shouldRenderDescription: false,
+    shouldRenderNextCheck: true,
+    shouldRenderStateDescription: true,
+    shouldRenderDataAlertState: true,
+    shouldRenderStateHeaderTitle: true,
+    shouldRenderStatusHeaderTitle: true,
+    shouldDisplaySwitchText: true,
   }
 
   componentDidUpdate = (prevProps) => {
@@ -67,6 +86,9 @@ export default class DataAlertListItem extends React.Component {
     if (this.props.dataAlert?.message && this.props.dataAlert.message !== prevProps.dataAlert?.message) {
       this.setState({ message: this.props.dataAlert.message })
     }
+    if (this.props.dataAlert?.description && this.props.dataAlert.description !== prevProps.dataAlert?.description) {
+      this.setState({ message: this.props.dataAlert.description })
+    }
   }
 
   getDataAlertObj = () => {
@@ -75,6 +97,7 @@ export default class DataAlertListItem extends React.Component {
       status: this.state.status,
       title: this.state.title,
       message: this.state.message,
+      description: this.state.description,
     }
   }
 
@@ -87,6 +110,7 @@ export default class DataAlertListItem extends React.Component {
   }
 
   isEnabled = () => DATA_ALERT_ENABLED_STATUSES.includes(this.state.status)
+  isDisabled = () => DATA_ALERT_STATUSES.UNRECOVERABLE.includes(this.state.status)
 
   onInitializeClick = (e) => {
     e.stopPropagation()
@@ -130,6 +154,7 @@ export default class DataAlertListItem extends React.Component {
     })
       .then(() => {
         this.props.onDataAlertStatusChange()
+        this.props.onSuccessAlert()
       })
       .catch((error) => {
         console.error(error)
@@ -171,7 +196,7 @@ export default class DataAlertListItem extends React.Component {
   }
 
   renderDataAlertState = () => {
-    const { dataAlert } = this.props
+    const { dataAlert, shouldRenderStateDescription, shouldRenderDataAlertState } = this.props
     const hasError = this.hasError()
     const isEnabled = this.isEnabled()
     const isCustom = dataAlert.type === CUSTOM_TYPE
@@ -193,7 +218,7 @@ export default class DataAlertListItem extends React.Component {
           }
         >
           <Icon type='warning-triangle' />
-          <span>Error</span>
+          {shouldRenderStateDescription && <span>Error</span>}
           {isCustom && (
             <Icon
               type='refresh'
@@ -207,7 +232,9 @@ export default class DataAlertListItem extends React.Component {
         </div>
       )
     }
-
+    if (!shouldRenderDataAlertState) {
+      return null
+    }
     if (dataAlert.reset_date && resetDateIsFuture(dataAlert)) {
       return (
         <div className={`data-alert-state data-alert-triggered ${status}`}>
@@ -304,9 +331,10 @@ export default class DataAlertListItem extends React.Component {
   }
 
   render = () => {
-    const { dataAlert } = this.props
+    const { dataAlert, shouldRenderStateHeaderTitle, shouldRenderStatusHeaderTitle } = this.props
 
     const isEnabled = this.isEnabled()
+    const isDisabled = this.isDisabled()
     const isCustom = dataAlert.type === CUSTOM_TYPE
 
     return (
@@ -319,7 +347,7 @@ export default class DataAlertListItem extends React.Component {
         <div className='react-autoql-notification-setting-item-header'>
           <div className='react-autoql-notification-setting-display-name react-autoql-data-alert-list-item-section'>
             <div className='data-alert-header-item'>
-              <span>Data Alert Name</span>
+              <span>Data Alert</span>
             </div>
             <div className='data-alert-section-content'>
               <span className='react-autoql-notification-setting-display-name-title'>
@@ -327,38 +355,64 @@ export default class DataAlertListItem extends React.Component {
               </span>
             </div>
           </div>
-          <div className='react-autoql-data-alert-list-item-section react-autoql-data-alert-list-item-section-frequency'>
-            <div className='data-alert-header-item'>
-              <span>Notification Frequency</span>
+          {this.props.shouldRenderNotificationFrequency && (
+            <div className='react-autoql-data-alert-list-item-section react-autoql-data-alert-list-item-section-frequency'>
+              <div className='data-alert-header-item'>
+                <span>Notification Frequency</span>
+              </div>
+              <div
+                className='data-alert-section-content data-alert-section-cycle'
+                data-tooltip-id={this.props.tooltipID}
+                data-tooltip-html={this.getFrequencyTooltip()}
+              >
+                {this.renderDataAlertCycle()}
+              </div>
             </div>
-            <div
-              className='data-alert-section-content data-alert-section-cycle'
-              data-tooltip-id={this.props.tooltipID}
-              data-tooltip-html={this.getFrequencyTooltip()}
-            >
-              {this.renderDataAlertCycle()}
+          )}
+          {this.props.shouldRenderDescription && (
+            <div className='react-autoql-data-alert-list-item-section react-autoql-data-alert-list-item-section-description'>
+              <div className='data-alert-header-item'>
+                <span> Description</span>
+              </div>
+              <div
+                className='data-alert-section-content data-alert-section-description'
+                data-tooltip-id={this.props.tooltipID}
+              >
+                {this.state.description}
+              </div>
             </div>
-          </div>
+          )}
+
           <div className='react-autoql-data-alert-list-item-section react-autoql-data-alert-list-item-section-state'>
-            <div className='data-alert-header-item'>
-              <span>State</span>
-            </div>
+            {shouldRenderStateHeaderTitle && (
+              <div className='data-alert-header-item'>
+                <span>State</span>
+              </div>
+            )}
+
             <div className='data-alert-section-content'>{this.renderDataAlertState()}</div>
           </div>
-          <div className='react-autoql-data-alert-list-item-section react-autoql-data-alert-list-item-section-next-check'>
-            <div className='data-alert-header-item'>
-              <span>Next Check</span>
+          {this.props.shouldRenderNextCheck && (
+            <div className='react-autoql-data-alert-list-item-section react-autoql-data-alert-list-item-section-next-check'>
+              <div className='data-alert-header-item'>
+                <span>Next Check</span>
+              </div>
+              <div className='data-alert-section-content data-alert-section-cycle-start'>
+                {this.renderDataAlertCycleStart()}
+              </div>
             </div>
-            <div className='data-alert-section-content data-alert-section-cycle-start'>
-              {this.renderDataAlertCycleStart()}
-            </div>
-          </div>
+          )}
+
           <div className='react-autoql-data-alert-list-item-section react-autoql-data-alert-list-item-section-status'>
-            <div className='data-alert-header-item'>
-              <span>Status</span>
-            </div>
+            {shouldRenderStatusHeaderTitle && (
+              <div className='data-alert-header-item'>
+                <span>Status</span>
+              </div>
+            )}
+
             <div className='data-alert-section-content notification-status'>
               <Switch
+                disabled={isDisabled}
                 checked={isEnabled}
                 className='react-autoql-notification-enable-checkbox'
                 onClick={(e) => e.stopPropagation()}
@@ -367,6 +421,7 @@ export default class DataAlertListItem extends React.Component {
                 onChange={this.onEnableSwitchChange}
                 onText='Active'
                 offText='Inactive'
+                displaySwitchText={this.props.shouldDisplaySwitchText}
               />
             </div>
           </div>
