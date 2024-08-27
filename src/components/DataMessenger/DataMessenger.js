@@ -5,7 +5,7 @@ import _isEmpty from 'lodash.isempty'
 import { v4 as uuid } from 'uuid'
 import { isBrowser, isMobile } from 'react-device-detect'
 import { mergeSources, autoQLConfigDefault, dataFormattingDefault, getAutoQLConfig } from 'autoql-fe-utils'
-
+import classNames from 'classnames'
 // Components
 import { Icon } from '../Icon'
 import { ExploreQueries } from '../ExploreQueries'
@@ -253,6 +253,10 @@ export class DataMessenger extends React.Component {
       clearTimeout(this.executeQueryTimeout)
     } catch (error) {}
   }
+  popoverDeleteButtonClass = classNames({
+    mobile: isMobile,
+    'popover-delete-button': true,
+  })
 
   onError = () => this.props.onErrorCallback('Something went wrong when creating this notification. Please try again.')
 
@@ -585,7 +589,7 @@ export class DataMessenger extends React.Component {
           <button
             data-tooltip-content={lang.clearQueriesTooltip}
             data-tooltip-id={this.TOOLTIP_ID}
-            className={isMobile ? 'mobile-popover-delete-button' : 'popover-delete-button'}
+            className={this.popoverDeleteButtonClass}
           >
             <Icon type='trash' />
           </button>
@@ -653,6 +657,12 @@ export class DataMessenger extends React.Component {
   }
 
   renderFilterLockPopover = () => {
+    this.filterLockingDrawerHeaderButtonClass = classNames({
+      'react-autoql-drawer-header-btn filter-locking': true,
+      visible: this.state.activePage === 'data-messenger',
+      hidden: this.state.activePage !== 'data-messenger',
+      mobile: isMobile,
+    })
     return (
       <FilterLockPopover
         ref={(r) => (this.filterLockRef = r)}
@@ -667,9 +677,7 @@ export class DataMessenger extends React.Component {
         align='center'
       >
         <button
-          className={`react-autoql-drawer-header-btn filter-locking ${
-            this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
-          } ${isMobile ? 'mobile' : ''}`}
+          className={this.filterLockingDrawerHeaderButtonClass}
           data-tooltip-content={lang.openFilterLocking}
           data-tooltip-id={this.TOOLTIP_ID}
           onClick={this.state.isFilterLockMenuOpen ? this.closeFilterLockMenu : this.openFilterLockMenu}
@@ -1060,7 +1068,7 @@ export class DataMessenger extends React.Component {
           <div
             ref={(r) => (this.messengerDrawerRef = r)}
             className={`
-              ${isMobile ? 'react-autoql-mobile-drawer-content-container' : 'react-autoql-drawer-content-container'}
+              'react-autoql-drawer-content-container'
               ${this.state.activePage}
             `}
           >

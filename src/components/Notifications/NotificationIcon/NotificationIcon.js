@@ -13,7 +13,7 @@ import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import { withTheme } from '../../../theme'
 import { authenticationType } from '../../../props/types'
-
+import classNames from 'classnames'
 import './NotificationIcon.scss'
 import { isMobile } from 'react-device-detect'
 
@@ -80,7 +80,9 @@ class NotificationIcon extends React.Component {
     this.clearPollingComponent()
     clearInterval(this.pollInterval)
   }
-
+  notificationsBadgeDotClass = classNames('react-autoql-notifications-badge-dot', {
+    mobile: isMobile,
+  })
   getNotificationCount = (currentCount) => {
     const count = currentCount || this.state.count
 
@@ -193,7 +195,7 @@ class NotificationIcon extends React.Component {
     }
 
     if (this.props.useDot) {
-      return <div className={`react-autoql-notifications-badge-dot ${isMobile ? 'mobile' : ''}`} />
+      return <div className={this.notificationsBadgeDotClass} />
     }
 
     let finalCount = count
@@ -205,12 +207,21 @@ class NotificationIcon extends React.Component {
   }
 
   render = () => {
+    this.notificationsButtonContainerClass = classNames(
+      'react-autoql-notifications-button-container',
+      {
+        dot: this.props.useDot,
+      },
+      this.props.className || '',
+      {
+        'no-badge': !this.state.count && !this.props.count,
+        mobile: isMobile,
+      },
+    )
     return (
       <ErrorBoundary>
         <div
-          className={`react-autoql-notifications-button-container ${this.props.useDot ? 'dot' : ''}
-          ${this.props.className || ''}
-        ${!this.state.count && !this.props.count ? 'no-badge' : ''} ${isMobile ? 'mobile' : ''}`}
+          className={this.notificationsButtonContainerClass}
           data-test='notification-button'
           style={{ ...this.props.style }}
           onClick={() => {
