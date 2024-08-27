@@ -1067,10 +1067,7 @@ export class DataMessenger extends React.Component {
           {isBrowser ? this.renderTabs() : null}
           <div
             ref={(r) => (this.messengerDrawerRef = r)}
-            className={`
-              'react-autoql-drawer-content-container'
-              ${this.state.activePage}
-            `}
+            className={`react-autoql-drawer-content-container ${this.state.activePage}`}
           >
             <div className='chat-header-container' id={isMobile ? 'mobile-version' : null}>
               {this.renderHeaderContent()}
