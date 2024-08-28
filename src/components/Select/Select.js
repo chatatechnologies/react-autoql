@@ -127,7 +127,7 @@ export default class Select extends React.Component {
           </span>
           {this.props.showArrow && (
             <div className={`react-autoql-select-arrow ${this.props.color === 'text' ? 'text-color' : ''}`}>
-              <Icon type='caret-down' />
+              {this.state.isOpen ? <Icon type='caret-up' /> : <Icon type='caret-down' />}
             </div>
           )}
         </div>

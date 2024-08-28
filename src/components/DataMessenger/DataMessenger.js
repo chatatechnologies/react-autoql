@@ -95,7 +95,6 @@ export class DataMessenger extends React.Component {
       selectedValueLabel: undefined,
       isSizeMaximum: false,
     }
-    console.log(this.props?.selectedProjectId)
   }
 
   static propTypes = {
@@ -158,7 +157,7 @@ export class DataMessenger extends React.Component {
   static defaultProps = {
     // Global
     authentication: {},
-    autoQLConfig: { ...autoQLConfigDefault, enableProjectSelect: false },
+    autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
 
     // UI
