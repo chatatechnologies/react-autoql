@@ -12,7 +12,7 @@ import {
   deleteMultipleNotifications,
   deleteAllNotifications,
 } from 'autoql-fe-utils'
-
+import classNames from 'classnames'
 import { Icon } from '../../Icon'
 import { Modal } from '../../Modal'
 import { Button } from '../../Button'
@@ -155,6 +155,11 @@ class NotificationFeed extends React.Component {
   componentWillUnmount = () => {
     this._isMounted = false
   }
+
+  notificationListContainerClass = classNames('react-autoql-notification-list-container', {
+    mobile: isMobile,
+  })
+
   handleButtonPress() {
     this.buttonPressTimer = setTimeout(this.onSelectNotificationClick, 1000)
     document.body.style.webkitUserSelect = 'none'
@@ -723,9 +728,7 @@ class NotificationFeed extends React.Component {
         <div
           ref={(r) => (this.feedContainer = r)}
           style={style}
-          className={`react-autoql-notification-list-container ${
-            isMobile ? 'react-autoql-notification-list-container-mobile' : ''
-          }`}
+          className={this.notificationListContainerClass}
           data-test='notification-list'
         >
           {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={500} />}
