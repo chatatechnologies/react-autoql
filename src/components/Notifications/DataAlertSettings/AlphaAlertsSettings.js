@@ -46,7 +46,7 @@ export default class AlphaAlertsSettings extends React.Component {
         number='number'
         maxLength='75'
         label='Billing Units (optional)'
-        value={this.props.billingUnitsInput}
+        value={this.props.billingUnitsInput || ''}
         onChange={this.onBillingUnitsChange}
       />
     )
@@ -60,7 +60,7 @@ export default class AlphaAlertsSettings extends React.Component {
         area
         maxLength='200'
         label='Description (optional)'
-        value={this.props.descriptionInput}
+        value={this.props.descriptionInput || ''}
         onChange={this.props.onDescriptionInputChange}
       />
     )

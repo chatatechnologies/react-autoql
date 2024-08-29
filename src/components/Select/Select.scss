@@ -45,8 +45,18 @@
 
     &:hover {
       color: var(--react-autoql-accent-color, #26a7df);
+
+      &.text-color {
+        color: var(--react-autoql-text-color-accent);
+        opacity: 0.7;
+      }
+
       .react-autoql-select-arrow {
         color: var(--react-autoql-accent-color, #26a7df);
+
+        &.text-color {
+          color: var(--react-autoql-text-color-accent);
+        }
       }
     }
 
@@ -81,6 +91,9 @@
     .react-autoql-select-text {
       display: block;
       height: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
 
       .react-autoql-select-text-placeholder {
         color: var(--react-autoql-text-color-placeholder);
@@ -98,6 +111,16 @@
       svg {
         stroke-width: 2em;
       }
+
+      &.text-color {
+        color: var(--react-autoql-text-color-accent);
+      }
+    }
+  }
+
+  @media (max-width: 576px) {
+    .react-autoql-select {
+      max-width: 175px;
     }
   }
 }
