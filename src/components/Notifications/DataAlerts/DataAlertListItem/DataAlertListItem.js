@@ -20,7 +20,7 @@ import {
   getAuthentication,
   DATA_ALERT_STATUSES,
 } from 'autoql-fe-utils'
-
+import { Tooltip } from '../../../Tooltip'
 import { Icon } from '../../../Icon'
 import { Switch } from '../../../Switch'
 
@@ -458,6 +458,7 @@ export default class DataAlertListItem extends React.Component {
             </div>
           )}
         </div>
+        <Tooltip tooltipId={this.props.tooltipID} delayShow={300} />
       </div>
     )
   }
