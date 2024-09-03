@@ -20,13 +20,14 @@ import {
   getAuthentication,
   DATA_ALERT_STATUSES,
 } from 'autoql-fe-utils'
-
+import { Tooltip } from '../../../Tooltip'
 import { Icon } from '../../../Icon'
 import { Switch } from '../../../Switch'
 
 import { authenticationType } from '../../../../props/types'
 
 import './DataAlertListItem.scss'
+import { isMobile } from 'react-device-detect'
 
 export default class DataAlertListItem extends React.Component {
   constructor(props) {
@@ -432,15 +433,19 @@ export default class DataAlertListItem extends React.Component {
               <div className='data-alert-header-item'>
                 <span>Actions</span>
               </div>
+
               <div className='data-alert-section-content'>
-                <div className='react-autoql-notification-action-btn'>
-                  <Icon
-                    type='settings'
-                    data-tooltip-id={this.props.tooltipID}
-                    data-tooltip-content='Open Data Alert settings'
-                    onClick={this.onEditClick}
-                  />
-                </div>
+                {isMobile ? null : (
+                  <div className='react-autoql-notification-action-btn'>
+                    <Icon
+                      type='settings'
+                      data-tooltip-id={this.props.tooltipID}
+                      data-tooltip-content='Open Data Alert settings'
+                      onClick={this.onEditClick}
+                    />
+                  </div>
+                )}
+
                 <div className='react-autoql-notification-action-btn react-autoql-notification-action-btn-delete'>
                   <Icon
                     type='trash'
@@ -453,6 +458,7 @@ export default class DataAlertListItem extends React.Component {
             </div>
           )}
         </div>
+        <Tooltip tooltipId={this.props.tooltipID} delayShow={300} />
       </div>
     )
   }
