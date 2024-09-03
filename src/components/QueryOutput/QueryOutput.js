@@ -30,9 +30,6 @@ import {
   getNumberOfGroupables,
   deepEqual,
   isSingleValueResponse,
-  isNumber,
-  hasNumberColumn,
-  hasStringColumn,
   removeElementAtIndex,
   isListQuery,
   GENERAL_QUERY_ERROR,
@@ -66,7 +63,6 @@ import {
   ColumnTypes,
   createMutatorFn,
   formatQueryColumns,
-  DisplayTypes,
   isColumnIndexConfigValid,
 } from 'autoql-fe-utils'
 
@@ -265,18 +261,18 @@ export class QueryOutput extends React.Component {
     bucketSize: undefined,
     allowColumnAddition: false,
     enableTableContextMenu: true,
-    onTableConfigChange: () => {},
-    onAggConfigChange: () => {},
-    onQueryValidationSelectOption: () => {},
-    onErrorCallback: () => {},
-    onDrilldownStart: () => {},
-    onDrilldownEnd: () => {},
-    onColumnChange: () => {},
-    onPageSizeChange: () => {},
-    onMount: () => {},
-    onBucketSizeChange: () => {},
-    onNewData: () => {},
-    onCustomColumnUpdate: () => {},
+    onTableConfigChange: () => { },
+    onAggConfigChange: () => { },
+    onQueryValidationSelectOption: () => { },
+    onErrorCallback: () => { },
+    onDrilldownStart: () => { },
+    onDrilldownEnd: () => { },
+    onColumnChange: () => { },
+    onPageSizeChange: () => { },
+    onMount: () => { },
+    onBucketSizeChange: () => { },
+    onNewData: () => { },
+    onCustomColumnUpdate: () => { },
   }
 
   componentDidMount = () => {
@@ -450,8 +446,7 @@ export class QueryOutput extends React.Component {
 
   displayTypeInvalidWarning = (displayType) => {
     console.warn(
-      `Initial display type "${this.props.initialDisplayType}" provided is not valid for this dataset. Using ${
-        displayType || this.state.displayType
+      `Initial display type "${this.props.initialDisplayType}" provided is not valid for this dataset. Using ${displayType || this.state.displayType
       } instead.`,
     )
   }
@@ -516,7 +511,7 @@ export class QueryOutput extends React.Component {
     // Remove mutator now that new cells have been defined
     const newColumns = [
       ...nonCustomColumns,
-      ...customColsFormatted.map((col) => {
+      ...customColsFormatted.map((col) => { // remove this or whole function
         const newCol = _cloneDeep(col)
         newCol.mutator = undefined
         return newCol
@@ -581,7 +576,7 @@ export class QueryOutput extends React.Component {
       if (referenceIdNumber >= 200 && referenceIdNumber < 300) {
         return false
       }
-    } catch (error) {}
+    } catch (error) { }
     return true
   }
 
@@ -835,9 +830,8 @@ export class QueryOutput extends React.Component {
       <div className='single-value-response-flex-container'>
         <div className='single-value-response-container'>
           <a
-            className={`single-value-response ${
-              getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? ' with-drilldown' : ''
-            }`}
+            className={`single-value-response ${getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? ' with-drilldown' : ''
+              }`}
             onClick={() => {
               this.processDrilldown({ groupBys: [], supportedByAPI: true })
             }}
@@ -2388,8 +2382,8 @@ export class QueryOutput extends React.Component {
       })
         .then((response) => {
           if (response?.data?.data?.rows) {
-            const newResponse = this.getNewResponseWithCustomColumns(response)
-            this.updateColumnsAndData(newResponse)
+            // const newResponse = this.getNewResponseWithCustomColumns(response)
+            this.updateColumnsAndData(response)
           } else {
             throw new Error('New column addition failed')
           }
@@ -2417,7 +2411,10 @@ export class QueryOutput extends React.Component {
       customColumns.push(newColumn)
     }
 
-    this.setState({ customColumns })
+    if (newColumn?.table_column) {
+      this.onAddColumnClick(newColumn)
+    }
+    // this.setState({ customColumns })
   }
 
   renderAddColumnBtn = () => {
@@ -2822,9 +2819,8 @@ export class QueryOutput extends React.Component {
 
   renderFooter = () => {
     const shouldRenderRT = this.shouldRenderReverseTranslation()
-    const footerClassName = `query-output-footer ${!shouldRenderRT ? 'no-margin' : ''} ${
-      this.props.reverseTranslationPlacement
-    }`
+    const footerClassName = `query-output-footer ${!shouldRenderRT ? 'no-margin' : ''} ${this.props.reverseTranslationPlacement
+      }`
 
     return <div className={footerClassName}>{shouldRenderRT && this.renderReverseTranslation()}</div>
   }

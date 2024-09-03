@@ -36,6 +36,7 @@ export default class Input extends React.Component {
     focusOnMount: PropTypes.bool,
     showArrow: PropTypes.bool,
     showSpinWheel: PropTypes.bool,
+    disabled: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -50,6 +51,7 @@ export default class Input extends React.Component {
     focusOnMount: false,
     showArrow: undefined,
     showSpinWheel: true,
+    disabled: false,
   }
 
   componentDidMount = () => {
@@ -234,6 +236,7 @@ export default class Input extends React.Component {
       showSpinWheel,
       showArrow,
       selectLocation,
+      disabled,
       ...nativeProps
     } = this.props
 
@@ -282,6 +285,7 @@ export default class Input extends React.Component {
                   onFocus={this.onFocus}
                   onBlur={this.onBlur}
                   style={this.props.inputStyle}
+                  disabled={disabled}
                 />
                 {icon && (
                   <Icon className={`react-autoql-input-icon ${this.state.focused ? ' focus' : ''}`} type={icon} />

@@ -126,9 +126,9 @@ export default class CustomColumnModal extends React.Component {
     dataFormatting: dataFormattingDefault,
     enableWindowFunctions: false,
 
-    onAddColumn: () => {},
-    onUpdateColumn: () => {},
-    onClose: () => {},
+    onAddColumn: () => { },
+    onUpdateColumn: () => { },
+    onClose: () => { },
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -249,15 +249,40 @@ export default class CustomColumnModal extends React.Component {
     this.setState({ columns: newColumns })
   }
 
+  buildProtoTableColumn = (customColumn) => {
+    if (customColumn?.columnFnArray) {
+      let protoTableColumn = ''
+      for (const columnFn of customColumn?.columnFnArray) {
+        if (columnFn?.type === 'column') {
+          protoTableColumn += columnFn?.column?.name
+        } else if (columnFn?.type === 'operator') {
+          protoTableColumn += this.OPERATORS[columnFn?.value]?.js
+        } else if (columnFn?.type === 'number') {
+          protoTableColumn += columnFn?.value || 0
+        } else if (columnFn?.type === 'function') {
+          protoTableColumn += columnFn?.value || ''
+        } else {
+          console.error('Unknown columnFn type')
+        }
+        protoTableColumn += ' '
+      }
+
+      return protoTableColumn
+    }
+    return ''
+  }
+
   onUpdateColumnConfirm = () => {
     const newColumn = _cloneDeep(this.newColumn)
     newColumn.id = this.props.initialColumn?.id
-    this.props.onUpdateColumn(newColumn)
+    const protoTableColumn = this.buildProtoTableColumn(newColumn)
+    this.props.onUpdateColumn({ ...newColumn, table_column: protoTableColumn })
   }
 
   onAddColumnConfirm = () => {
     const newColumn = _cloneDeep(this.newColumn)
-    this.props.onAddColumn(newColumn)
+    const protoTableColumn = this.buildProtoTableColumn(newColumn)
+    this.props.onAddColumn({ ...newColumn, table_column: protoTableColumn })
   }
 
   changeChunkValue = (value, type, i) => {
@@ -437,8 +462,8 @@ export default class CustomColumnModal extends React.Component {
         focusOnMount
         label='Column Name'
         placeholder='eg. "Difference"'
-        value={this.state.columnName}
-        onChange={(e) => this.setState({ columnName: e.target.value })}
+        value={this.newColumn?.fnSummary || this.state.columnName}
+        disabled={true}
       />
     )
   }
@@ -451,6 +476,7 @@ export default class CustomColumnModal extends React.Component {
       <Select
         label='Formatting'
         className='custom-column-builder-type-selector'
+        fullWidth={true}
         options={[
           {
             value: 'auto',

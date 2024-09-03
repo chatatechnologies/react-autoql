@@ -76,16 +76,16 @@ class DataAlertModal extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    onSave: () => {},
-    onErrorCallback: () => {},
+    onSave: () => { },
+    onErrorCallback: () => { },
     currentDataAlert: undefined,
     dataAlertType: CONTINUOUS_TYPE,
     isVisible: false,
     allowDelete: true,
-    onClose: () => {},
-    onSuccessAlert: () => {},
-    onClosed: () => {},
-    onOpened: () => {},
+    onClose: () => { },
+    onSuccessAlert: () => { },
+    onClosed: () => { },
+    onOpened: () => { },
     enableQueryValidation: true,
     dataFormatting: dataFormattingDefault,
     autoQLConfig: autoQLConfigDefault,
@@ -230,6 +230,7 @@ class DataAlertModal extends React.Component {
               condition: EXISTS_TYPE,
               term_value: query,
               user_selection: queryResponse?.data?.data?.fe_req?.disambiguation,
+              additional_selects: queryResponse?.data?.data?.fe_req?.additional_selects || [],
             },
           ]
         }
