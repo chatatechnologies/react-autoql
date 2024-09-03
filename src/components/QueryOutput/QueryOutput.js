@@ -477,7 +477,9 @@ export class QueryOutput extends React.Component {
       if (referenceIdNumber >= 200 && referenceIdNumber < 300) {
         return false
       }
-    } catch (error) { }
+    } catch (error) {
+      console.error(error)
+    }
     return true
   }
 
