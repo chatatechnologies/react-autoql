@@ -147,7 +147,6 @@ export default class ChataTable extends React.Component {
     keepScrolledRight: PropTypes.bool,
     allowCustomColumns: PropTypes.bool,
     onCustomColumnChange: PropTypes.func,
-    onCustomColumnDelete: PropTypes.func,
     enableContextMenu: PropTypes.bool,
   }
 
@@ -168,15 +167,14 @@ export default class ChataTable extends React.Component {
     keepScrolledRight: false,
     allowCustomColumns: true,
     enableContextMenu: true,
-    onFilterCallback: () => {},
-    onSorterCallback: () => {},
-    onTableParamsChange: () => {},
-    onCellClick: () => {},
-    onErrorCallback: () => {},
-    onNewData: () => {},
-    updateColumns: () => {},
-    onCustomColumnChange: () => {},
-    onCustomColumnDelete: () => {},
+    onFilterCallback: () => { },
+    onSorterCallback: () => { },
+    onTableParamsChange: () => { },
+    onCellClick: () => { },
+    onErrorCallback: () => { },
+    onNewData: () => { },
+    updateColumns: () => { },
+    onCustomColumnChange: () => { },
   }
 
   componentDidMount = () => {
@@ -1074,9 +1072,7 @@ export default class ChataTable extends React.Component {
       (select) => select.columns[0] !== column.name,
     )
 
-    if (column.custom) {
-      this.props.onCustomColumnDelete(column)
-    } else if (currentAdditionalSelectColumns?.length !== newAdditionalSelectColumns?.length) {
+    if (currentAdditionalSelectColumns?.length !== newAdditionalSelectColumns?.length) {
       this.setPageLoading(true)
       this.queryFn({ newColumns: newAdditionalSelectColumns })
         .then((response) => {

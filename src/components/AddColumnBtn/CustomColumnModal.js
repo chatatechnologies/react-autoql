@@ -132,18 +132,6 @@ export default class CustomColumnModal extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (this.state.columnName && this.state.columnName !== prevState.columnName) {
-      const name = this.state.columnName
-      this.newColumn.display_name = name
-      this.newColumn.title = name
-
-      // Debounce change since column update is expensive
-      clearTimeout(this.debounceTimer)
-      this.debounceTimer = setTimeout(() => {
-        this.tableRef?.updateColumn?.(this.newColumn.field, this.newColumn)
-      }, 500)
-    }
-
     // Update column mutator is function changed
     if (!deepEqual(this.state.columnFn, prevState.columnFn) || this.state.columnType !== prevState.columnType) {
       setTimeout(() => {
@@ -228,7 +216,7 @@ export default class CustomColumnModal extends React.Component {
       if (col.field === this.newColumn?.field) {
         const newColFormatted = new ColumnObj(
           this.getColumnParamsForTabulator({
-            ...this.getRawColumnParams(columnForFn),
+            ...this.getRawColumnParams(columnForFn, newFnSummary),
             ...newParams,
             id: this.props.initialColumn?.id,
             custom: true,

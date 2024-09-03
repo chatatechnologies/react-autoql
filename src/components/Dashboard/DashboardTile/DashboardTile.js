@@ -128,15 +128,15 @@ export class DashboardTile extends React.Component {
     notExecutedText: 'Hit "Execute" to run this dashboard',
     autoChartAggregations: true,
     cancelQueriesOnUnmount: true,
-    deleteTile: () => {},
-    onErrorCallback: () => {},
-    onSuccessCallback: () => {},
-    onCSVDownloadStart: () => {},
-    onCSVDownloadProgress: () => {},
-    onCSVDownloadFinish: () => {},
-    onTouchStart: () => {},
-    onTouchEnd: () => {},
-    setParamsForTile: () => {},
+    deleteTile: () => { },
+    onErrorCallback: () => { },
+    onSuccessCallback: () => { },
+    onCSVDownloadStart: () => { },
+    onCSVDownloadProgress: () => { },
+    onCSVDownloadFinish: () => { },
+    onTouchStart: () => { },
+    onTouchEnd: () => { },
+    setParamsForTile: () => { },
   }
 
   componentDidMount = () => {
@@ -351,7 +351,6 @@ export class DashboardTile extends React.Component {
       dataConfig: queryChanged ? undefined : this.props.tile.dataConfig,
       skipQueryValidation: skipValidation,
       columns: queryChanged ? undefined : this.props.tile.columns,
-      customColumns: queryChanged ? undefined : this.props.tile.customColumns,
       defaultSelectedSuggestion: undefined,
       queryValidationSelections,
     })
@@ -727,7 +726,6 @@ export class DashboardTile extends React.Component {
   onDataConfigChange = (dataConfig) => this.debouncedSetParamsForTile({ dataConfig })
   onDisplayTypeChange = (displayType) => this.debouncedSetParamsForTile({ displayType })
   onBucketSizeChange = (bucketSize) => this.debouncedSetParamsForTile({ bucketSize })
-  onCustomColumnUpdate = (customColumns) => this.debouncedSetParamsForTile({ customColumns })
 
   onColumnChange = (columns, columnSelects, queryResponse, dataConfig) => {
     this.debouncedSetParamsForTile({ columnSelects, queryResponse, dataConfig })
@@ -797,9 +795,8 @@ export class DashboardTile extends React.Component {
           {this.renderBottomResponse()}
           {this.props.isEditing && (
             <div
-              className={`split-view-query-btn-container react-autoql-toolbar ${
-                this.state.isSecondQueryInputOpen ? 'open' : ''
-              }`}
+              className={`split-view-query-btn-container react-autoql-toolbar ${this.state.isSecondQueryInputOpen ? 'open' : ''
+                }`}
             >
               <div
                 className='react-autoql-toolbar viz-toolbar split-view-btn split-view-query-btn react-autoql-toolbar-btn'
@@ -1144,8 +1141,6 @@ export class DashboardTile extends React.Component {
         onPageSizeChange: this.onPageSizeChange,
         onBucketSizeChange: this.onBucketSizeChange,
         bucketSize: this.props.tile.bucketSize,
-        onCustomColumnUpdate: this.onCustomColumnUpdate,
-        customColumns: this.props.tile.customColumns,
       },
       vizToolbarProps: {
         ref: (r) => (this.vizToolbarRef = r),
@@ -1224,8 +1219,6 @@ export class DashboardTile extends React.Component {
         onBucketSizeChange: this.onSecondBucketSizeChange,
         onColumnChange: this.onSecondColumnChange,
         bucketSize: this.props.tile.secondBucketSize,
-        onCustomColumnUpdate: this.onSecondCustomColumnUpdate,
-        customColumns: this.props.tile.secondCustomColumns,
       },
       vizToolbarProps: {
         ref: (r) => (this.secondVizToolbarRef = r),
