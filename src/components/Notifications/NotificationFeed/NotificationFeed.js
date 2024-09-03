@@ -57,8 +57,6 @@ class NotificationFeed extends React.Component {
       displayNotificationItemCheckbox: false,
       selectedNotifications: [],
     }
-    this.handleButtonPress = this.handleButtonPress.bind(this)
-    this.handleButtonRelease = this.handleButtonRelease.bind(this)
   }
 
   static propTypes = {
@@ -159,11 +157,6 @@ class NotificationFeed extends React.Component {
   notificationListContainerClass = classNames('react-autoql-notification-list-container', {
     mobile: isMobile,
   })
-
-  handleButtonPress() {
-    this.buttonPressTimer = setTimeout(this.onSelectNotificationClick, 1000)
-    document.body.style.webkitUserSelect = 'none'
-  }
 
   handleButtonRelease() {
     clearTimeout(this.buttonPressTimer)
@@ -752,12 +745,7 @@ class NotificationFeed extends React.Component {
                   {this.state.notificationList.map((notification, i) => {
                     const dataAlert = this.state.dataAlerts?.find((alert) => alert.id === notification.data_alert_id)
                     return (
-                      <div
-                        className='notification-item-container'
-                        onTouchStart={this.handleButtonPress}
-                        onTouchEnd={this.handleButtonRelease}
-                        key={i}
-                      >
+                      <div className='notification-item-container' key={i}>
                         {this.state.displayNotificationItemCheckbox &&
                           this.renderNotificationItemCheckbox(notification)}
                         <NotificationItem
