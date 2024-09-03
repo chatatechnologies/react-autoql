@@ -688,7 +688,7 @@ class NotificationFeed extends React.Component {
       ...getAuthentication(this.props.authentication),
       notificationList: this.state.selectedNotifications,
     })
-      .then(this.handleDeleteNotificationsResponse())
+      .then(() => this.handleDeleteNotificationsResponse())
       .catch((error) => this.props.onErrorCallback(error))
       .finally(this.onDeleteEnd())
   }
@@ -696,8 +696,12 @@ class NotificationFeed extends React.Component {
   deleteAllNotifications = () => {
     this.onDeleteAllClick()
     deleteAllNotifications({ ...getAuthentication(this.props.authentication), projectId: this.props.selectedProjectId })
-      .then(this.handleDeleteNotificationsResponse())
-      .catch((error) => this.props.onErrorCallback(error))
+      .then(() => this.handleDeleteNotificationsResponse())
+
+      .catch((error) => {
+        console.error(error)
+        this.props.onErrorCallback(error)
+      })
   }
   render = () => {
     let style = {}
