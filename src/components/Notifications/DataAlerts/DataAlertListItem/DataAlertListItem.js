@@ -436,23 +436,21 @@ export default class DataAlertListItem extends React.Component {
 
               <div className='data-alert-section-content'>
                 {isMobile ? null : (
-                  <div className='react-autoql-notification-action-btn'>
-                    <Icon
-                      type='settings'
-                      data-tooltip-id={this.props.tooltipID}
-                      data-tooltip-content='Open Data Alert settings'
-                      onClick={this.onEditClick}
-                    />
+                  <div
+                    className='react-autoql-notification-action-btn'
+                    data-tooltip-id={this.props.tooltipID}
+                    data-tooltip-content='Open Data Alert settings'
+                  >
+                    <Icon type='settings' onClick={this.onEditClick} />
                   </div>
                 )}
 
-                <div className='react-autoql-notification-action-btn react-autoql-notification-action-btn-delete'>
-                  <Icon
-                    type='trash'
-                    data-tooltip-id={this.props.tooltipID}
-                    data-tooltip-content='Delete Data Alert'
-                    onClick={this.onDeleteClick}
-                  />
+                <div
+                  className='react-autoql-notification-action-btn react-autoql-notification-action-btn-delete'
+                  data-tooltip-id={this.props.tooltipID}
+                  data-tooltip-content='Delete Data Alert'
+                >
+                  <Icon type='trash' onClick={this.onDeleteClick} />
                 </div>
               </div>
             </div>
