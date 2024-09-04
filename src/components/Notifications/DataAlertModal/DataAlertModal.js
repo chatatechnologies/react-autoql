@@ -576,7 +576,7 @@ class DataAlertModal extends React.Component {
 
   renderAlphaAlertsSettings = () => {
     return (
-      <CollapsableSection title='Additional Settings'>
+      <CollapsableSection title='Additional Settings' onToggle={() => { }} defaultCollapsed={true}>
         <AlphaAlertsSettings
           ref={(r) => (this.alphaAlertsSettingRef = r)}
           descriptionInput={this.state.descriptionInput}

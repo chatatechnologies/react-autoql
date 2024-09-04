@@ -642,11 +642,12 @@ export class DataMessenger extends React.Component {
   renderHeaderTitle = () => {
     let title = ''
 
+    if (this.props?.autoQLConfig?.enableProjectSelect && this.props?.projectSelectList?.length > 0) {
+      return this.projectSelectorHeader()
+    }
+
     switch (this.state.activePage) {
       case 'data-messenger': {
-        if (this.props.autoQLConfig?.enableProjectSelect) {
-          return this.projectSelectorHeader()
-        }
         title = this.props.title
         break
       }
