@@ -768,7 +768,6 @@ export default class CustomColumnModal extends React.Component {
           <div className='react-autoql-input-label'>Variables</div>
           <div className='react-autoql-formula-builder-calculator-buttons-container'>
             {getSelectableColumns(this.props.columns)
-              ?.filter((col) => !col.custom)
               ?.map((col, i) => {
                 return (
                   <Button
