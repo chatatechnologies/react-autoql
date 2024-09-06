@@ -167,14 +167,14 @@ export default class ChataTable extends React.Component {
     keepScrolledRight: false,
     allowCustomColumns: true,
     enableContextMenu: true,
-    onFilterCallback: () => { },
-    onSorterCallback: () => { },
-    onTableParamsChange: () => { },
-    onCellClick: () => { },
-    onErrorCallback: () => { },
-    onNewData: () => { },
-    updateColumns: () => { },
-    onCustomColumnChange: () => { },
+    onFilterCallback: () => {},
+    onSorterCallback: () => {},
+    onTableParamsChange: () => {},
+    onCellClick: () => {},
+    onErrorCallback: () => {},
+    onNewData: () => {},
+    updateColumns: () => {},
+    onCustomColumnChange: () => {},
   }
 
   componentDidMount = () => {
@@ -1068,9 +1068,15 @@ export default class ChataTable extends React.Component {
     this.setState({ contextMenuColumn: undefined })
 
     const currentAdditionalSelectColumns = this.props.response?.data?.data?.fe_req?.additional_selects ?? []
-    const newAdditionalSelectColumns = currentAdditionalSelectColumns?.filter(
-      (select) => select.columns[0] !== column.name,
-    )
+    const newAdditionalSelectColumns = currentAdditionalSelectColumns?.map((select) => {
+      if (select.columns[0] !== column.name) {
+        return select
+      } else if (select.columns[0] === column.name) {
+        column.visible = false
+        column.is_visible = false
+        return column
+      }
+    })
 
     if (currentAdditionalSelectColumns?.length !== newAdditionalSelectColumns?.length) {
       this.setPageLoading(true)
