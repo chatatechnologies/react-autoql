@@ -61,8 +61,6 @@ import {
   formatAdditionalSelectColumn,
   setColumnVisibility,
   ColumnTypes,
-  createMutatorFn,
-  formatQueryColumns,
   isColumnIndexConfigValid,
 } from 'autoql-fe-utils'
 
@@ -109,7 +107,9 @@ export class QueryOutput extends React.Component {
     this.generateAllData()
     // -------------------------------------------
 
-    const columns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, props.initialAggConfig)
+    const additionalSelects = this.getAdditionalSelectsFromResponse(this.queryResponse)
+    const columns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, additionalSelects, props.initialAggConfig)
+    const customColumnSelects = this.getUpdatedCustomColumnSelects(additionalSelects, columns)
 
     // Supported display types may have changed after initial data generation
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
@@ -154,6 +154,7 @@ export class QueryOutput extends React.Component {
       selectedSuggestion: props.defaultSelectedSuggestion,
       columnChangeCount: 0,
       chartID: uuid(),
+      customColumnSelects: customColumnSelects || [],
     }
   }
 
@@ -424,6 +425,10 @@ export class QueryOutput extends React.Component {
     )
   }
 
+  getAdditionalSelectsFromResponse = (response) => {
+    return response?.data?.data?.fe_req?.additional_selects
+  }
+
   getDataLength = () => {
     return this.tableData?.length
   }
@@ -488,7 +493,7 @@ export class QueryOutput extends React.Component {
       return this.state.columns
     }
 
-    return this.formatColumnsForTable(this.queryResponse?.data?.data?.columns)
+    return this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, this.getAdditionalSelectsFromResponse(this.queryResponse))
   }
 
   currentlySupportsCharts = () => {
@@ -543,8 +548,9 @@ export class QueryOutput extends React.Component {
       this.queryResponse = response
       this.tableData = response?.data?.data?.rows || []
 
-      const newColumns = this.formatColumnsForTable(response?.data?.data?.columns)
-
+      const additionalSelects = this.getAdditionalSelectsFromResponse(response)
+      const newColumns = this.formatColumnsForTable(response?.data?.data?.columns, additionalSelects)
+      const customColumnSelects = this.getUpdatedCustomColumnSelects(additionalSelects, newColumns)
       this.resetTableConfig(newColumns)
 
       const aggConfig = this.getAggConfig(newColumns)
@@ -554,13 +560,14 @@ export class QueryOutput extends React.Component {
         columnChangeCount: this.state.columnChangeCount + 1,
         chartID: uuid(),
         aggConfig,
+        customColumnSelects,
       })
     }
   }
 
   updateColumns = (columns, feReq) => {
     if (columns && this._isMounted) {
-      const newColumns = this.formatColumnsForTable(columns)
+      const newColumns = this.formatColumnsForTable(columns, feReq?.additional_selects)
 
       const visibleColumnsChanged = !_isEqual(
         newColumns?.filter((col) => col.is_visible).map((col) => col.name),
@@ -584,6 +591,19 @@ export class QueryOutput extends React.Component {
         chartID: visibleColumnsChanged ? uuid() : this.state.chartID,
       })
     }
+  }
+
+  getUpdatedCustomColumnSelects = (additionalSelects, columns) => {
+    const customColumnSelects = []
+    for (let i = 0; i < columns.length; i++) {
+      const foundCustomSelect = additionalSelects?.find((select) => {
+        return select?.columns?.[0]?.replace(/ /g, '') === columns?.[i].name?.replace(/ /g, '')
+      })
+      if (foundCustomSelect) {
+        customColumnSelects.push({ id: columns[i].id, ...foundCustomSelect })
+      }
+    }
+    return customColumnSelects
   }
 
   generateAllData = () => {
@@ -1197,7 +1217,7 @@ export class QueryOutput extends React.Component {
       this.pivotTableColumns = newColumns
       this.forceUpdate()
     } else {
-      const formattedColumns = this.formatColumnsForTable(newColumns)
+      const formattedColumns = this.formatColumnsForTable(newColumns, this.getAdditionalSelectsFromResponse(this.queryResponse))
       this.setState({ columns: formattedColumns })
     }
   }
@@ -1711,7 +1731,7 @@ export class QueryOutput extends React.Component {
     return queryResponse?.data?.data?.fe_req?.columns?.find((column) => newCol.name === column.name)
   }
 
-  formatColumnsForTable = (columns, aggConfig) => {
+  formatColumnsForTable = (columns, additionalSelects = [], aggConfig = {}) => {
     // todo: do this inside of chatatable
     if (!columns) {
       return null
@@ -1827,6 +1847,15 @@ export class QueryOutput extends React.Component {
 
       if (dateRange) {
         newCol.dateRange = dateRange
+      }
+
+      if (additionalSelects?.length > 0) {
+        const customSelect = additionalSelects.find((select) => {
+          return select?.columns?.[0]?.replace(/ /g, '') === newCol?.name?.replace(/ /g, '')
+        })
+        if (customSelect) {
+          newCol.custom = true
+        }
       }
 
       return newCol
@@ -2270,7 +2299,15 @@ export class QueryOutput extends React.Component {
     } else {
       this.tableRef?.setPageLoading(true)
 
-      const currentAdditionalSelectColumns = this.queryResponse?.data?.data?.fe_req?.additional_selects ?? []
+      let currentAdditionalSelectColumns = this.getAdditionalSelectsFromResponse(this.queryResponse) ?? []
+      const existingCustomSelectForColumn = this.state.customColumnSelects.find((col) => col.id === column.id)
+      if (existingCustomSelectForColumn) {
+        currentAdditionalSelectColumns = currentAdditionalSelectColumns?.filter(
+          (select) => {
+            return select.columns[0]?.replace(/ /g, '') !== existingCustomSelectForColumn.columns[0]?.replace(/ /g, '')
+          },
+        )
+      }
 
       this.queryFn({
         newColumns: [...currentAdditionalSelectColumns, formatAdditionalSelectColumn(column, sqlFn)],
@@ -2306,6 +2343,7 @@ export class QueryOutput extends React.Component {
           tooltipID={this.props.tooltipID}
           onAddColumnClick={this.onAddColumnClick}
           onCustomClick={this.onAddColumnClick}
+          disableAddCustomColumnOption={this.isDrilldown()}
         />
       )
     }
