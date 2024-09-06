@@ -595,7 +595,7 @@ export class QueryOutput extends React.Component {
 
   getUpdatedCustomColumnSelects = (additionalSelects, columns) => {
     const customColumnSelects = []
-    for (let i = 0; i < columns.length; i++) {
+    for (let i = 0; i < columns?.length; i++) {
       const foundCustomSelect = additionalSelects?.find((select) => {
         return select?.columns?.[0]?.replace(/ /g, '') === columns?.[i].name?.replace(/ /g, '')
       })
