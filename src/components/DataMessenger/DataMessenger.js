@@ -615,7 +615,7 @@ export class DataMessenger extends React.Component {
     return (
       <div className='react-autoql-header-project-selector-container'>
         <Select
-          className='custom-column-builder-type-selector'
+          className='react-autoql-header-project-selector'
           size='small'
           outlined={false}
           fullWidth={true}
