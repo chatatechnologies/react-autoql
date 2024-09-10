@@ -57,7 +57,9 @@
         1880px: 1000px,
         1770px: 900px,
         1670px: 800px,
-        1480px: 600px,
+        1480px: 780px,
+        1380px: 700px,
+        1280px: 600px,
         1240px: 500px,
         1170px: 400px,
         1000px: 300px,
@@ -76,7 +78,7 @@
     );
   }
   &.react-autoql-data-alert-list-item-section-status {
-    width: 200px;
+    width: 150px;
     @include responsive-width(
       (
         1450px: 100px,
