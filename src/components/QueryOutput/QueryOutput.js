@@ -2717,13 +2717,11 @@ export class QueryOutput extends React.Component {
   }
 
   shouldRenderReverseTranslation = () => {
-    return false
-    // Keep this in case we want to revert back to this feature
-    // return (
-    //   getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
-    //   this.props.showQueryInterpretation &&
-    //   this.queryResponse?.data?.data?.parsed_interpretation
-    // )
+    return (
+      getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
+      this.props.showQueryInterpretation &&
+      this.queryResponse?.data?.data?.parsed_interpretation
+    )
   }
 
   getFilters = () => {
