@@ -346,7 +346,7 @@ export default class DataAlertListItem extends React.Component {
           ${dataAlert.type}`}
       >
         <div className='react-autoql-notification-setting-item-header'>
-          <div className='react-autoql-notification-setting-display-name react-autoql-data-alert-list-item-section'>
+          <div className='react-autoql-data-alert-list-item-section react-autoql-notification-setting-display-name'>
             <div className='data-alert-header-item'>
               <span>Data Alert</span>
             </div>
@@ -428,22 +428,20 @@ export default class DataAlertListItem extends React.Component {
           </div>
 
           {/* Actions */}
-          {isCustom && (
-            <div className='react-autoql-data-alert-list-item-section react-autoql-data-alert-list-item-section-actions'>
+          {isCustom && !isMobile && (
+            <div className='react-autoql-data-alert-list-item-section react-autoql-data-alert-list-item-section-actions isCustom'>
               <div className='data-alert-header-item'>
                 <span>Actions</span>
               </div>
 
               <div className='data-alert-section-content'>
-                {isMobile ? null : (
-                  <div
-                    className='react-autoql-notification-action-btn'
-                    data-tooltip-id={this.props.tooltipID}
-                    data-tooltip-content='Open Data Alert settings'
-                  >
-                    <Icon type='settings' onClick={this.onEditClick} />
-                  </div>
-                )}
+                <div
+                  className='react-autoql-notification-action-btn'
+                  data-tooltip-id={this.props.tooltipID}
+                  data-tooltip-content='Open Data Alert settings'
+                >
+                  <Icon type='settings' onClick={this.onEditClick} />
+                </div>
 
                 <div
                   className='react-autoql-notification-action-btn react-autoql-notification-action-btn-delete'

@@ -23,11 +23,11 @@
     cursor: default;
   }
 }
+
 .react-autoql-data-alert-list-item-section {
-  @media (min-width: 837px) {
-    width: 400px;
+  @media (min-width: 950px) {
+    width: 350px;
   }
-  flex: 1 0 60px;
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
@@ -39,7 +39,48 @@
   &.react-autoql-data-alert-list-item-section-next-check {
     flex: 1.5 0 50px;
   }
-
+  &.react-autoql-data-alert-list-item-section-state {
+    width: 50px;
+  }
+  &.react-autoql-data-alert-list-item-section-description {
+    width: 800px;
+    @mixin responsive-width($breakpoints) {
+      @each $breakpoint, $width in $breakpoints {
+        @media (max-width: $breakpoint) {
+          width: $width;
+        }
+      }
+    }
+    @include responsive-width(
+      (
+        1340px: 700px,
+        1240px: 700px,
+        1140px: 500px,
+        1070px: 400px,
+        970px: 300px,
+        870px: 200px,
+        670px: 100px,
+      )
+    );
+  }
+  &.react-autoql-notification-setting-display-name {
+    width: 300px;
+    @media (max-width: 770px) {
+      width: 200px;
+    }
+    @media (max-width: 670px) {
+      width: 130px;
+    }
+  }
+  &.react-autoql-data-alert-list-item-section-status {
+    width: 200px;
+    @media (max-width: 1450px) {
+      width: 100px;
+    }
+  }
+  &.react-autoql-data-alert-list-item-section-actions {
+    width: 50px;
+  }
   .react-autoql-notification-setting-display-name-title {
     width: 100%;
     text-overflow: ellipsis;
@@ -64,13 +105,17 @@
   }
 
   &:first-child {
-    flex: 1 0 100px;
+    // flex: 1 0 100px;
     padding-left: 12px;
   }
 
   &:last-child {
-    flex: 0 0 auto;
     padding-right: 12px;
+  }
+  &.isCustom {
+    &:last-child {
+      padding-right: 12px;
+    }
   }
 }
 .react-autoql-notification-setting-item {
@@ -109,7 +154,7 @@
   }
 
   .data-alert-header-item {
-    padding: 5px 16px;
+    padding-bottom: 4px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     position: absolute;
