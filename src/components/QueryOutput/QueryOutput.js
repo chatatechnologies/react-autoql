@@ -108,7 +108,11 @@ export class QueryOutput extends React.Component {
     // -------------------------------------------
 
     const additionalSelects = this.getAdditionalSelectsFromResponse(this.queryResponse)
-    const columns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, additionalSelects, props.initialAggConfig)
+    const columns = this.formatColumnsForTable(
+      this.queryResponse?.data?.data?.columns,
+      additionalSelects,
+      props.initialAggConfig,
+    )
     const customColumnSelects = this.getUpdatedCustomColumnSelects(additionalSelects, columns)
 
     // Supported display types may have changed after initial data generation
@@ -244,18 +248,18 @@ export class QueryOutput extends React.Component {
     bucketSize: undefined,
     allowColumnAddition: false,
     enableTableContextMenu: true,
-    onTableConfigChange: () => { },
-    onAggConfigChange: () => { },
-    onQueryValidationSelectOption: () => { },
-    onErrorCallback: () => { },
-    onDrilldownStart: () => { },
-    onDrilldownEnd: () => { },
-    onColumnChange: () => { },
-    onPageSizeChange: () => { },
-    onMount: () => { },
-    onBucketSizeChange: () => { },
-    onNewData: () => { },
-    onCustomColumnUpdate: () => { },
+    onTableConfigChange: () => {},
+    onAggConfigChange: () => {},
+    onQueryValidationSelectOption: () => {},
+    onErrorCallback: () => {},
+    onDrilldownStart: () => {},
+    onDrilldownEnd: () => {},
+    onColumnChange: () => {},
+    onPageSizeChange: () => {},
+    onMount: () => {},
+    onBucketSizeChange: () => {},
+    onNewData: () => {},
+    onCustomColumnUpdate: () => {},
   }
 
   componentDidMount = () => {
@@ -420,7 +424,8 @@ export class QueryOutput extends React.Component {
 
   displayTypeInvalidWarning = (displayType) => {
     console.warn(
-      `Initial display type "${this.props.initialDisplayType}" provided is not valid for this dataset. Using ${displayType || this.state.displayType
+      `Initial display type "${this.props.initialDisplayType}" provided is not valid for this dataset. Using ${
+        displayType || this.state.displayType
       } instead.`,
     )
   }
@@ -493,7 +498,10 @@ export class QueryOutput extends React.Component {
       return this.state.columns
     }
 
-    return this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, this.getAdditionalSelectsFromResponse(this.queryResponse))
+    return this.formatColumnsForTable(
+      this.queryResponse?.data?.data?.columns,
+      this.getAdditionalSelectsFromResponse(this.queryResponse),
+    )
   }
 
   currentlySupportsCharts = () => {
@@ -753,8 +761,9 @@ export class QueryOutput extends React.Component {
       <div className='single-value-response-flex-container'>
         <div className='single-value-response-container'>
           <a
-            className={`single-value-response ${getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? ' with-drilldown' : ''
-              }`}
+            className={`single-value-response ${
+              getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? ' with-drilldown' : ''
+            }`}
             onClick={() => {
               this.processDrilldown({ groupBys: [], supportedByAPI: true })
             }}
@@ -1217,7 +1226,10 @@ export class QueryOutput extends React.Component {
       this.pivotTableColumns = newColumns
       this.forceUpdate()
     } else {
-      const formattedColumns = this.formatColumnsForTable(newColumns, this.getAdditionalSelectsFromResponse(this.queryResponse))
+      const formattedColumns = this.formatColumnsForTable(
+        newColumns,
+        this.getAdditionalSelectsFromResponse(this.queryResponse),
+      )
       this.setState({ columns: formattedColumns })
     }
   }
@@ -2302,11 +2314,9 @@ export class QueryOutput extends React.Component {
       let currentAdditionalSelectColumns = this.getAdditionalSelectsFromResponse(this.queryResponse) ?? []
       const existingCustomSelectForColumn = this.state.customColumnSelects.find((col) => col.id === column.id)
       if (existingCustomSelectForColumn) {
-        currentAdditionalSelectColumns = currentAdditionalSelectColumns?.filter(
-          (select) => {
-            return select.columns[0]?.replace(/ /g, '') !== existingCustomSelectForColumn.columns[0]?.replace(/ /g, '')
-          },
-        )
+        currentAdditionalSelectColumns = currentAdditionalSelectColumns?.filter((select) => {
+          return select.columns[0]?.replace(/ /g, '') !== existingCustomSelectForColumn.columns[0]?.replace(/ /g, '')
+        })
       }
 
       this.queryFn({
@@ -2707,11 +2717,13 @@ export class QueryOutput extends React.Component {
   }
 
   shouldRenderReverseTranslation = () => {
-    return (
-      getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
-      this.props.showQueryInterpretation &&
-      this.queryResponse?.data?.data?.parsed_interpretation
-    )
+    return false
+    // Keep this in case we want to revert back to this feature
+    // return (
+    //   getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
+    //   this.props.showQueryInterpretation &&
+    //   this.queryResponse?.data?.data?.parsed_interpretation
+    // )
   }
 
   getFilters = () => {
@@ -2736,8 +2748,9 @@ export class QueryOutput extends React.Component {
 
   renderFooter = () => {
     const shouldRenderRT = this.shouldRenderReverseTranslation()
-    const footerClassName = `query-output-footer ${!shouldRenderRT ? 'no-margin' : ''} ${this.props.reverseTranslationPlacement
-      }`
+    const footerClassName = `query-output-footer ${!shouldRenderRT ? 'no-margin' : ''} ${
+      this.props.reverseTranslationPlacement
+    }`
 
     return <div className={footerClassName}>{shouldRenderRT && this.renderReverseTranslation()}</div>
   }
