@@ -25,6 +25,13 @@
 }
 
 .react-autoql-data-alert-list-item-section {
+  @mixin responsive-width($breakpoints) {
+    @each $breakpoint, $width in $breakpoints {
+      @media (max-width: $breakpoint) {
+        width: $width;
+      }
+    }
+  }
   @media (min-width: 950px) {
     width: 350px;
   }
@@ -44,13 +51,7 @@
   }
   &.react-autoql-data-alert-list-item-section-description {
     width: 800px;
-    @mixin responsive-width($breakpoints) {
-      @each $breakpoint, $width in $breakpoints {
-        @media (max-width: $breakpoint) {
-          width: $width;
-        }
-      }
-    }
+
     @include responsive-width(
       (
         1340px: 700px,
@@ -65,18 +66,20 @@
   }
   &.react-autoql-notification-setting-display-name {
     width: 300px;
-    @media (max-width: 770px) {
-      width: 200px;
-    }
-    @media (max-width: 670px) {
-      width: 130px;
-    }
+    @include responsive-width(
+      (
+        770px: 200px,
+        670px: 130px,
+      )
+    );
   }
   &.react-autoql-data-alert-list-item-section-status {
     width: 200px;
-    @media (max-width: 1450px) {
-      width: 100px;
-    }
+    @include responsive-width(
+      (
+        1450px: 100px,
+      )
+    );
   }
   &.react-autoql-data-alert-list-item-section-actions {
     width: 50px;
