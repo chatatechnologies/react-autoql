@@ -2345,7 +2345,8 @@ export class QueryOutput extends React.Component {
   }
 
   renderAddColumnBtn = () => {
-    if (this.props.allowColumnAddition && this.state.displayType === 'table') {
+    const shouldDisableAddColumnBtn = true
+    if (!shouldDisableAddColumnBtn && this.props.allowColumnAddition && this.state.displayType === 'table') {
       return (
         <AddColumnBtn
           queryResponse={this.queryResponse}
