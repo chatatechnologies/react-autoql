@@ -2,7 +2,12 @@ import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.clonedeep'
-import { CONTINUOUS_TYPE, PERIODIC_TYPE, SCHEDULED_TYPE, authenticationDefault } from 'autoql-fe-utils'
+import {
+  CONTINUOUS_TYPE,
+  PERIODIC_TYPE,
+  SCHEDULED_TYPE,
+  authenticationDefault,
+} from 'autoql-fe-utils'
 
 import { Select } from '../../Select'
 import AppearanceSection from './AppearanceSection'
@@ -36,11 +41,10 @@ const Settings = ({ children, className } = {}) => {
 const Divider = ({ horizontal, vertical }) => {
   return (
     <div
-      className={`react-autoql-settings-vertical-divider ${
-        vertical
-          ? 'react-autoql-settings-vertical-divider-vertical'
-          : 'react-autoql-settings-vertical-divider-horizontal'
-      }`}
+      className={`react-autoql-settings-vertical-divider ${vertical
+        ? 'react-autoql-settings-vertical-divider-vertical'
+        : 'react-autoql-settings-vertical-divider-horizontal'
+        }`}
     />
   )
 }
@@ -86,15 +90,17 @@ export default class DataAlertSettings extends React.Component {
     onExpressionChange: PropTypes.func,
     onCompleteChange: PropTypes.func,
     enableAlphaAlertSettings: PropTypes.bool,
+    categories: PropTypes.arrayOf(PropTypes.shape({})),
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
     currentDataAlert: undefined,
-    onErrorCallback: () => {},
-    onExpressionChange: () => {},
-    onCompleteChange: () => {},
+    onErrorCallback: () => { },
+    onExpressionChange: () => { },
+    onCompleteChange: () => { },
     enableAlphaAlertSettings: false,
+    categories: [],
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -127,6 +133,7 @@ export default class DataAlertSettings extends React.Component {
       expression: currentDataAlert.expression,
       billingUnitsInput: currentDataAlert.billing_units,
       descriptionInput: currentDataAlert.description,
+      categoryId: currentDataAlert.label?.id ?? '',
     }
 
     return state
@@ -162,6 +169,7 @@ export default class DataAlertSettings extends React.Component {
       evaluation_frequency: scheduleData.evaluationFrequency,
       billing_units: this.state.billingUnitsInput,
       description: this.state.descriptionInput,
+      categoryId: this.state.categoryId,
     }
   }
 
@@ -182,9 +190,18 @@ export default class DataAlertSettings extends React.Component {
       <AlphaAlertsSettings
         ref={(r) => (this.alphaAlertsSettingRef = r)}
         descriptionInput={this.state.descriptionInput}
+        billingUnitsInput={this.state.billingUnitsInput}
+        selectedCategory={this.state.categoryId}
         onDescriptionInputChange={(e) => {
           this.setState({ descriptionInput: e.target.value })
         }}
+        onBillingUnitsInputChange={(e) => {
+          this.setState({ billingUnitsInput: e.target.value })
+        }}
+        onCategorySelectChange={(value) => {
+          this.setState({ categoryId: value })
+        }}
+        categories={this.props.categories || []}
       />
     )
   }
@@ -284,7 +301,7 @@ export default class DataAlertSettings extends React.Component {
           {this.props.enableAlphaAlertSettings && (
             <>
               <Divider horizontal />
-              <CollapsableSection defaultCollapsed={true} title='Additional Settings' onToggle={() => {}}>
+              <CollapsableSection defaultCollapsed={true} title='Additional Settings' onToggle={() => { }}>
                 {this.renderAlphaAlertsSettings()}
               </CollapsableSection>
             </>

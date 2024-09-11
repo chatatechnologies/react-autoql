@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { Input } from '../../Input'
+import { Select } from '../../Select'
 
 export default class AlphaAlertsSettings extends React.Component {
   constructor(props) {
@@ -14,20 +15,21 @@ export default class AlphaAlertsSettings extends React.Component {
   static propTypes = {
     billingUnitsInput: PropTypes.string,
     descriptionInput: PropTypes.string,
+    selectedCategory: PropTypes.string,
     onBillingUnitsInputChange: PropTypes.func,
     onDescriptionInputChange: PropTypes.func,
+    onCategorySelectChange: PropTypes.func,
+    categories: PropTypes.array,
   }
 
   static defaultProps = {
     billingUnitsInput: '',
     descriptionInput: '',
-    showConditionStatement: true,
+    selectedCategory: '',
     onBillingUnitsInputChange: () => { },
     onDescriptionInputChange: () => { },
-  }
-
-  focusTitleInput = () => {
-    this.billingUnitsRef?.focus()
+    onCategorySelectChange: () => { },
+    categories: [],
   }
 
   onBillingUnitsChange = (e) => {
@@ -66,13 +68,38 @@ export default class AlphaAlertsSettings extends React.Component {
     )
   }
 
-  render = () => {
+  renderDataAlertLabelsSelect = () => {
+    const options = this.props?.categories?.length > 0 ? this.props?.categories?.map((label) => {
+      return {
+        value: label.id,
+        label: label.name,
+      }
+    }) :
+      [{
+        value: '-1',
+        label: 'No Categories Available',
+        disabled: true
+      }]
+    return (
+      <Select
+        label='Category (optional)'
+        placeholder='Select a category'
+        fullWidth={true}
+        options={options}
+        value={this.props.selectedCategory || ''}
+        onChange={this.props.onCategorySelectChange}
+      />
+    )
+  }
 
+  render = () => {
     return (
       <div>
         <div className='compose-message-section'>
           <div className='form-section'>
+            {this.renderDataAlertLabelsSelect()}
             {this.renderDataAlertDescriptionInput()}
+            {this.renderDataAlertBillingUnitsInput()}
           </div>
         </div>
       </div>

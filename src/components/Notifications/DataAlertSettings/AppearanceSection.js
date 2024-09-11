@@ -40,7 +40,7 @@ export default class AppearanceSection extends React.Component {
         placeholder='eg. "Budget alert!"'
         icon='title'
         maxLength='75'
-        label='Title'
+        label='Alert Name'
         value={this.props.titleInput}
         onChange={this.props.onTitleInputChange}
       />
@@ -54,7 +54,7 @@ export default class AppearanceSection extends React.Component {
         placeholder='eg. "Marketing budget is running out!"'
         area
         maxLength='200'
-        label='Message (optional)'
+        label='Notification Message (optional)'
         value={this.props.messageInput}
         onChange={this.props.onMessageInputChange}
       />
@@ -100,7 +100,7 @@ export default class AppearanceSection extends React.Component {
             {this.renderDataAlertMessageInput()}
           </div>
           <div className='preview-section'>
-            <div className='react-autoql-input-label'>Preview</div>
+            <div className='react-autoql-input-label'>Notification Preview</div>
             {this.renderDataAlertPreview()}
           </div>
         </div>
