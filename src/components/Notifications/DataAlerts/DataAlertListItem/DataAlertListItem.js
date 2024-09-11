@@ -220,7 +220,7 @@ export default class DataAlertListItem extends React.Component {
         >
           <Icon type='warning-triangle' />
           {shouldRenderStateDescription && <span>Error</span>}
-          {isCustom && (
+          {isCustom && shouldRenderDataAlertState && (
             <Icon
               type='refresh'
               className='react-autoql-notification-state-action-btn'
