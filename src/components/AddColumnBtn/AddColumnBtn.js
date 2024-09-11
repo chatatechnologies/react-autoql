@@ -164,12 +164,6 @@ export class AddColumnBtnWithoutRef extends React.Component {
   }
 
   enableCustomOption = () => {
-    const shouldDisableAddCustomColumnOption = true
-
-    if (shouldDisableAddCustomColumnOption) {
-      return false
-    }
-
     if (this.props.disableAddCustomColumnOption) {
       return false
     }

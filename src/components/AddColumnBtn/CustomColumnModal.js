@@ -990,7 +990,6 @@ export default class CustomColumnModal extends React.Component {
             <div className='custom-column-modal-form-wrapper'>
               <div className='custom-column-modal-name-and-type'>
                 {this.renderColumnNameInput()}
-                {this.renderColumnTypeSelector()}
               </div>
               {this.renderColumnFnBuilder()}
             </div>
