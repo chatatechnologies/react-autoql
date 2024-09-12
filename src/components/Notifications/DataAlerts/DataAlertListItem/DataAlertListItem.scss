@@ -310,8 +310,7 @@
   &:hover {
     background-color: var(--react-autoql-mask-color);
   }
-
-  overflow: scroll;
+  overflow: auto;
   min-height: 55px;
   display: flex;
   align-items: center;
