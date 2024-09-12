@@ -67,6 +67,15 @@
         670px: 100px,
       )
     );
+    &.landscape.mobile {
+      @include responsive-width(
+        (
+          1100px: 700px,
+          900px: 600px,
+          670px: 400px,
+        )
+      );
+    }
   }
   &.react-autoql-notification-setting-display-name {
     width: 300px;

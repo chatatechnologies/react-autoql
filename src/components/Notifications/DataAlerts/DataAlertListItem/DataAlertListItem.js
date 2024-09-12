@@ -1,6 +1,5 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-
 import {
   CONTINUOUS_TYPE,
   CUSTOM_TYPE,
@@ -36,6 +35,7 @@ export default class DataAlertListItem extends React.Component {
     this.ACTION_HIDDEN_CLASS = 'react-autoql-notification-action-hidden'
 
     this.state = {
+      isLandscape: window.matchMedia('(orientation: landscape)').matches,
       status: props.dataAlert?.status,
       title: props.dataAlert?.title,
 
@@ -44,7 +44,9 @@ export default class DataAlertListItem extends React.Component {
       isInitializing: false,
     }
   }
-
+  handleOrientationChange = (e) => {
+    this.setState({ isLandscape: e.matches })
+  }
   static propTypes = {
     authentication: authenticationType,
     onErrorCallback: PropTypes.func,
@@ -76,7 +78,10 @@ export default class DataAlertListItem extends React.Component {
     shouldRenderStatusHeaderTitle: true,
     shouldDisplaySwitchText: true,
   }
-
+  componentDidMount() {
+    this.mediaQueryList = window.matchMedia('(orientation: landscape)')
+    this.mediaQueryList.addEventListener('change', this.handleOrientationChange)
+  }
   componentDidUpdate = (prevProps) => {
     if (this.props.dataAlert?.status && this.props.dataAlert.status !== prevProps.dataAlert?.status) {
       this.setState({ status: this.props.dataAlert.status })
@@ -91,7 +96,9 @@ export default class DataAlertListItem extends React.Component {
       this.setState({ message: this.props.dataAlert.description })
     }
   }
-
+  componentWillUnmount() {
+    this.mediaQueryList.removeEventListener('change', this.handleOrientationChange)
+  }
   getDataAlertObj = () => {
     return {
       ...this.props.dataAlert,
@@ -371,7 +378,11 @@ export default class DataAlertListItem extends React.Component {
             </div>
           )}
           {this.props.shouldRenderDescription && (
-            <div className='react-autoql-data-alert-list-item-section react-autoql-data-alert-list-item-section-description'>
+            <div
+              className={`react-autoql-data-alert-list-item-section react-autoql-data-alert-list-item-section-description ${
+                this.state.isLandscape ? 'landscape' : ''
+              } ${isMobile ? 'mobile' : ''}`}
+            >
               <div className='data-alert-header-item'>
                 <span> Description</span>
               </div>
