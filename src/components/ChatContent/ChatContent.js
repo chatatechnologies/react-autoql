@@ -367,10 +367,13 @@ export default class ChatContent extends React.Component {
   }
 
   shouldHideQueryInputComponent = () => {
-    if (this.props.hideChatBarAfterInitialResponse && this.state.messages.length > 0) {
+    const { hideChatBarAfterInitialResponse, shouldRender } = this.props
+    const { messages } = this.state
+
+    if (hideChatBarAfterInitialResponse && messages.length > 0) {
       return true;
     }
-    if (!this.props.shouldRender) {
+    if (!shouldRender) {
       return true
     }
     return false
