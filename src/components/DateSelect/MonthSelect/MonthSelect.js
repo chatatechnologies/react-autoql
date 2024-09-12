@@ -103,14 +103,16 @@ export default class MonthSelect extends React.Component {
 
   render = () => {
     return (
-      <div className='react-autoql-radio-btn-container month-select' data-test='react-autoql-month-select'>
+      <div
+        className='react-autoql-radio-btn-container month-select'
+        data-test='react-autoql-month-select'
+        key={`month-select-${this.COMPONENT_KEY}`}
+      >
         {days.map((option, i) => {
           return (
-            <>
+            <fragment key={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}>
               <div
-                key={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}
-                className={`react-autoql-radio-btn
-                  ${this.getButtonClassNames(option, i)}`}
+                className={`react-autoql-radio-btn ${this.getButtonClassNames(option, i)}`}
                 onClick={() => this.onChange(option)}
               >
                 {option}
@@ -120,7 +122,7 @@ export default class MonthSelect extends React.Component {
                   i !== days.length - 1 && // not the last row
                   (i + 1) % 7 === 0 && <br /> // every 7th day
               }
-            </>
+            </fragment>
           )
         })}
         {this.renderLastDaySelector()}

@@ -148,6 +148,15 @@ export default class ChataTable extends React.Component {
     allowCustomColumns: PropTypes.bool,
     onCustomColumnChange: PropTypes.func,
     enableContextMenu: PropTypes.bool,
+    pageSize: PropTypes.number,
+    dataFormatting: PropTypes.string,
+    queryFn: PropTypes.func,
+    authentication: PropTypes.shape({}),
+    aggConfig: PropTypes.shape({}),
+    autoQLConfig: PropTypes.shape({}),
+    maxColumns: PropTypes.number,
+    totalColumns: PropTypes.number,
+    totalRows: PropTypes.number,
   }
 
   static defaultProps = {
@@ -167,14 +176,14 @@ export default class ChataTable extends React.Component {
     keepScrolledRight: false,
     allowCustomColumns: true,
     enableContextMenu: true,
-    onFilterCallback: () => { },
-    onSorterCallback: () => { },
-    onTableParamsChange: () => { },
-    onCellClick: () => { },
-    onErrorCallback: () => { },
-    onNewData: () => { },
-    updateColumns: () => { },
-    onCustomColumnChange: () => { },
+    onFilterCallback: () => {},
+    onSorterCallback: () => {},
+    onTableParamsChange: () => {},
+    onCellClick: () => {},
+    onErrorCallback: () => {},
+    onNewData: () => {},
+    updateColumns: () => {},
+    onCustomColumnChange: () => {},
   }
 
   componentDidMount = () => {
@@ -296,7 +305,7 @@ export default class ChataTable extends React.Component {
     try {
       const rows = this.getAllRows(props)
 
-      if (!(rows?.length > 1)) {
+      if (rows?.length <= 1) {
         return {}
       }
 
@@ -341,7 +350,6 @@ export default class ChataTable extends React.Component {
 
     return stats
   }
-
   getTotalPages = (response) => {
     const rows = response?.data?.data?.rows
     if (!rows?.length) {
@@ -718,10 +726,9 @@ export default class ChataTable extends React.Component {
       return Promise.resolve(response)
     } catch (error) {
       console.error(error)
-      return Promise.reject(error)
+      return Promise.reject(new Error(error))
     }
   }
-
   ajaxResponseFunc = (props, response) => {
     const modResponse = { data: response?.rows ?? [], last_page: response?.last_page ?? this.totalPages }
 
@@ -1059,7 +1066,11 @@ export default class ChataTable extends React.Component {
 
   onUpdateColumnConfirm = () => {
     const column = _cloneDeep(this.state.contextMenuColumn)
-    this.setState({ contextMenuColumn: undefined, isCustomColumnPopoverOpen: true, activeCustomColumn: column })
+    this.setState((prevState) => ({
+      contextMenuColumn: undefined,
+      isCustomColumnPopoverOpen: true,
+      activeCustomColumn: column,
+    }))
   }
 
   onRemoveColumnClick = () => {
@@ -1068,11 +1079,9 @@ export default class ChataTable extends React.Component {
     this.setState({ contextMenuColumn: undefined })
 
     const currentAdditionalSelectColumns = this.props.response?.data?.data?.fe_req?.additional_selects ?? []
-    const newAdditionalSelectColumns = currentAdditionalSelectColumns?.filter(
-      (select) => {
-        return select?.columns[0]?.replace(/ /g, '') !== column?.name?.replace(/ /g, '')
-      },
-    )
+    const newAdditionalSelectColumns = currentAdditionalSelectColumns?.filter((select) => {
+      return select?.columns[0]?.replace(/ /g, '') !== column?.name?.replace(/ /g, '')
+    })
 
     if (currentAdditionalSelectColumns?.length !== newAdditionalSelectColumns?.length) {
       this.setPageLoading(true)

@@ -542,38 +542,36 @@ export default class ChataChart extends React.Component {
     const commonChartProps = this.getCommonChartProps()
 
     switch (this.props.type) {
-      case DisplayTypes.COLUMN: {
+      case DisplayTypes.COLUMN:
         return <ChataColumnChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
-      }
-      case DisplayTypes.BAR: {
+
+      case DisplayTypes.BAR:
         return <ChataBarChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
-      }
-      case DisplayTypes.LINE: {
+
+      case DisplayTypes.LINE:
         return <ChataLineChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
-      }
-      case DisplayTypes.PIE: {
+
+      case DisplayTypes.PIE:
         return <ChataPieChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
-      }
-      case DisplayTypes.BUBBLE: {
+
+      case DisplayTypes.BUBBLE:
         return <ChataBubbleChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
-      }
-      case DisplayTypes.HEATMAP: {
+
+      case DisplayTypes.HEATMAP:
         return <ChataHeatmapChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
-      }
-      case DisplayTypes.STACKED_COLUMN: {
+
+      case DisplayTypes.STACKED_COLUMN:
         return <ChataStackedColumnChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
-      }
-      case DisplayTypes.STACKED_BAR: {
+
+      case DisplayTypes.STACKED_BAR:
         return <ChataStackedBarChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
-      }
-      case DisplayTypes.STACKED_LINE: {
+
+      case DisplayTypes.STACKED_LINE:
         return <ChataStackedLineChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
-      }
       case DisplayTypes.COLUMN_LINE: {
         const visibleSeriesIndices2 = this.props.numberColumnIndices2?.filter(
           (i) => this.props.columns?.[i] && !this.props.columns[i].isSeriesHidden,
         )
-
         return (
           <ChataColumnLineChart
             {...commonChartProps}
@@ -582,7 +580,7 @@ export default class ChataChart extends React.Component {
           />
         )
       }
-      case DisplayTypes.HISTOGRAM: {
+      case DisplayTypes.HISTOGRAM:
         return (
           <ChataHistogram
             {...commonChartProps}
@@ -591,13 +589,12 @@ export default class ChataChart extends React.Component {
             portalRef={this.sliderRef}
           />
         )
-      }
-      case DisplayTypes.SCATTERPLOT: {
+
+      case DisplayTypes.SCATTERPLOT:
         return <ChataScatterplotChart {...commonChartProps} />
-      }
-      default: {
-        return 'Unknown Display Type'
-      }
+
+      default:
+        return <div>Unknown Display Type</div>
     }
   }
 
