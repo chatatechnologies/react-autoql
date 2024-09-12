@@ -20,6 +20,7 @@ import {
   showEvaluationFrequencySetting,
   getDayOfTheMonthFromTimestamp,
   getDayOfTheMonthSuffix,
+  getTodaysDayOfTheMonth,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
@@ -40,7 +41,7 @@ export default class ScheduleBuilder extends React.Component {
     ]
     this.DEFAULT_EVALUATION_FREQUENCY = 5
     this.DEFAULT_WEEKDAY_SELECT_VALUE = 'Friday'
-    this.DEFAULT_MONTH_DAY_SELECT_VALUE = 'LAST'
+    this.DEFAULT_MONTH_DAY_SELECT_VALUE = getTodaysDayOfTheMonth() || 'LAST'
     this.DEFAULT_MONTH_OF_YEAR_SELECT_VALUE = 'December'
     this.DEFAULT_RESET_PERIOD_SELECT_VALUE = 'MONTH'
     this.DEFAULT_TIME_SELECT_VALUE = {

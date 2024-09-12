@@ -189,19 +189,10 @@ export default class DataAlertSettings extends React.Component {
     return (
       <AlphaAlertsSettings
         ref={(r) => (this.alphaAlertsSettingRef = r)}
-        descriptionInput={this.state.descriptionInput}
+        onBillingUnitsInputChange={(value) => {
+          this.setState({ billingUnitsInput: value })
+        }}
         billingUnitsInput={this.state.billingUnitsInput}
-        selectedCategory={this.state.categoryId}
-        onDescriptionInputChange={(e) => {
-          this.setState({ descriptionInput: e.target.value })
-        }}
-        onBillingUnitsInputChange={(e) => {
-          this.setState({ billingUnitsInput: e.target.value })
-        }}
-        onCategorySelectChange={(value) => {
-          this.setState({ categoryId: value })
-        }}
-        categories={this.props.categories || []}
       />
     )
   }
@@ -218,6 +209,16 @@ export default class DataAlertSettings extends React.Component {
           this.setState({ messageInput: e.target.value })
         }}
         showConditionStatement={false}
+        descriptionInput={this.state.descriptionInput}
+        selectedCategory={this.state.categoryId}
+        onDescriptionInputChange={(e) => {
+          this.setState({ descriptionInput: e.target.value })
+        }}
+        onCategorySelectChange={(value) => {
+          this.setState({ categoryId: value })
+        }}
+        categories={this.props.categories || []}
+        enableAlphaAlertSettings={this.props.enableAlphaAlertSettings}
       />
     )
   }

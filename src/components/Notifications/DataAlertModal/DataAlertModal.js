@@ -608,22 +608,13 @@ class DataAlertModal extends React.Component {
 
   renderAlphaAlertsSettings = () => {
     return (
-      <CollapsableSection title='Additional Settings'>
+      <CollapsableSection title='Additional Settings' defaultCollapsed={true} onToggle={() => { }}>
         <AlphaAlertsSettings
           ref={(r) => (this.alphaAlertsSettingRef = r)}
-          descriptionInput={this.state.descriptionInput}
           billingUnitsInput={this.state.billingUnitsInput}
-          selectedCategory={this.state.categoryId}
-          onDescriptionInputChange={(e) => {
-            this.setState({ descriptionInput: e.target.value })
+          onBillingUnitsInputChange={(value) => {
+            this.setState({ billingUnitsInput: value })
           }}
-          onBillingUnitsInputChange={(e) => {
-            this.setState({ billingUnitsInput: e.target.value })
-          }}
-          onCategorySelectChange={(value) => {
-            this.setState({ categoryId: value })
-          }}
-          categories={this.state.categories || []}
         />
       </CollapsableSection>
     )
@@ -640,6 +631,16 @@ class DataAlertModal extends React.Component {
           onMessageInputChange={(e) => this.setState({ messageInput: e.target.value })}
           showConditionStatement
           conditionStatement={this.getConditionStatement()}
+          descriptionInput={this.state.descriptionInput}
+          selectedCategory={this.state.categoryId}
+          onDescriptionInputChange={(e) => {
+            this.setState({ descriptionInput: e.target.value })
+          }}
+          onCategorySelectChange={(value) => {
+            this.setState({ categoryId: value })
+          }}
+          categories={this.state.categories || []}
+          enableAlphaAlertSettings={this.props.enableAlphaAlertSettings}
         />
         {this.props.enableAlphaAlertSettings && this.renderAlphaAlertsSettings()}
       </div>
