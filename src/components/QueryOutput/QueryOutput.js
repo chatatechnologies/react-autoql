@@ -30,9 +30,6 @@ import {
   getNumberOfGroupables,
   deepEqual,
   isSingleValueResponse,
-  isNumber,
-  hasNumberColumn,
-  hasStringColumn,
   removeElementAtIndex,
   isListQuery,
   GENERAL_QUERY_ERROR,
@@ -64,9 +61,6 @@ import {
   formatAdditionalSelectColumn,
   setColumnVisibility,
   ColumnTypes,
-  createMutatorFn,
-  formatQueryColumns,
-  DisplayTypes,
   isColumnIndexConfigValid,
 } from 'autoql-fe-utils'
 
@@ -96,23 +90,6 @@ export class QueryOutput extends React.Component {
     this.MAX_PIVOT_TABLE_COLUMNS = 20
 
     let response = props.queryResponse
-    if (props.customColumns?.length) {
-      let customColumns = _cloneDeep(props.customColumns)
-
-      // Convert custom column mutator fn strings back to javascript function type if needed
-      customColumns = customColumns.map((col) => {
-        if (col.columnFnArray) {
-          const mutator = createMutatorFn(col.columnFnArray)
-          return {
-            ...col,
-            mutator,
-          }
-        }
-        return col
-      })
-
-      response = this.getNewResponseWithCustomColumns(props.queryResponse, customColumns)
-    }
 
     this.queryResponse = response
     this.columnDateRanges = getColumnDateRanges(response)
@@ -130,7 +107,13 @@ export class QueryOutput extends React.Component {
     this.generateAllData()
     // -------------------------------------------
 
-    const columns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, props.initialAggConfig)
+    const additionalSelects = this.getAdditionalSelectsFromResponse(this.queryResponse)
+    const columns = this.formatColumnsForTable(
+      this.queryResponse?.data?.data?.columns,
+      additionalSelects,
+      props.initialAggConfig,
+    )
+    const customColumnSelects = this.getUpdatedCustomColumnSelects(additionalSelects, columns)
 
     // Supported display types may have changed after initial data generation
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
@@ -175,7 +158,7 @@ export class QueryOutput extends React.Component {
       selectedSuggestion: props.defaultSelectedSuggestion,
       columnChangeCount: 0,
       chartID: uuid(),
-      customColumns: this.props.customColumns ?? [],
+      customColumnSelects: customColumnSelects || [],
     }
   }
 
@@ -321,15 +304,6 @@ export class QueryOutput extends React.Component {
           this.setTableConfig()
         }
       }
-
-      if (!deepEqual(this.state.customColumns, prevState.customColumns)) {
-        const customColumns = _cloneDeep(this.state.customColumns)
-        this.props.onCustomColumnUpdate(customColumns)
-        const response = this.getNewResponseWithCustomColumns()
-
-        this.updateColumnsAndData(response)
-      }
-
       // If initial data config was changed here, tell the parent
       if (
         !_isEqual(this.props.initialTableConfigs, {
@@ -456,76 +430,8 @@ export class QueryOutput extends React.Component {
     )
   }
 
-  getNewResponseWithCustomColumns = (response = this.queryResponse, customCols = this.state?.customColumns ?? []) => {
-    const newResponse = _cloneDeep(response)
-
-    const currentColumns = newResponse?.data?.data?.columns ?? []
-    const nonCustomColumns = currentColumns.filter((col) => !col.custom)
-
-    // We must reformat the columns to reset the field and index numbers
-    const newFormattedColumns = formatQueryColumns({
-      columns: currentColumns.filter((col) => !col.custom),
-      queryResponse: newResponse,
-      dataFormatting: this.props.dataFormatting,
-    })
-
-    const currentCustomColumns =
-      currentColumns.filter((col) => col.custom && !currentColumns.find((c) => col.id === c.id)) ?? []
-
-    const customColsFormatted = customCols?.map((col, i) => {
-      const newCol = _cloneDeep(col)
-      const newIndex = newFormattedColumns.length + i
-      newCol.index = newIndex
-      newCol.field = `${newIndex}`
-      return newCol
-    })
-
-    // Remove any cells that are already created by custom columns
-    let newRows = newResponse.data.data.rows
-    if (currentCustomColumns?.length) {
-      const customColumnIndexes = currentCustomColumns.map((col) => col.index)
-      newRows = newResponse.data.data.rows.map((row) => {
-        return row.filter((cell, i) => !customColumnIndexes.includes(i))
-      })
-    }
-
-    newResponse.data.data.rows = _cloneDeep(newRows)
-    newResponse.data.data.columns = newFormattedColumns
-
-    // Assign all custom column cells to query response rows
-    try {
-      customColsFormatted.forEach((col) => {
-        // If mutator is missing but column fn array is present, create mutator fn first
-        if (!col.mutator && !!col?.columnFnArray?.length) {
-          col.mutator = createMutatorFn(col.columnFnArray)
-        }
-
-        if (col.mutator && col.index >= 0) {
-          newResponse.data.data.rows.forEach((row) => {
-            if (row) {
-              row[col.index] = col.mutator(undefined, row)
-            }
-          })
-        }
-      })
-    } catch (error) {
-      console.error(error)
-    }
-
-    // Assign new columns to query response
-    // Remove mutator now that new cells have been defined
-    const newColumns = [
-      ...nonCustomColumns,
-      ...customColsFormatted.map((col) => {
-        const newCol = _cloneDeep(col)
-        newCol.mutator = undefined
-        return newCol
-      }),
-    ]
-
-    newResponse.data.data.columns = newColumns
-
-    return newResponse
+  getAdditionalSelectsFromResponse = (response) => {
+    return response?.data?.data?.fe_req?.additional_selects
   }
 
   getDataLength = () => {
@@ -581,7 +487,9 @@ export class QueryOutput extends React.Component {
       if (referenceIdNumber >= 200 && referenceIdNumber < 300) {
         return false
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error(error)
+    }
     return true
   }
 
@@ -590,7 +498,10 @@ export class QueryOutput extends React.Component {
       return this.state.columns
     }
 
-    return this.formatColumnsForTable(this.queryResponse?.data?.data?.columns)
+    return this.formatColumnsForTable(
+      this.queryResponse?.data?.data?.columns,
+      this.getAdditionalSelectsFromResponse(this.queryResponse),
+    )
   }
 
   currentlySupportsCharts = () => {
@@ -645,8 +556,9 @@ export class QueryOutput extends React.Component {
       this.queryResponse = response
       this.tableData = response?.data?.data?.rows || []
 
-      const newColumns = this.formatColumnsForTable(response?.data?.data?.columns)
-
+      const additionalSelects = this.getAdditionalSelectsFromResponse(response)
+      const newColumns = this.formatColumnsForTable(response?.data?.data?.columns, additionalSelects)
+      const customColumnSelects = this.getUpdatedCustomColumnSelects(additionalSelects, newColumns)
       this.resetTableConfig(newColumns)
 
       const aggConfig = this.getAggConfig(newColumns)
@@ -656,13 +568,14 @@ export class QueryOutput extends React.Component {
         columnChangeCount: this.state.columnChangeCount + 1,
         chartID: uuid(),
         aggConfig,
+        customColumnSelects,
       })
     }
   }
 
   updateColumns = (columns, feReq) => {
     if (columns && this._isMounted) {
-      const newColumns = this.formatColumnsForTable(columns)
+      const newColumns = this.formatColumnsForTable(columns, feReq?.additional_selects)
 
       const visibleColumnsChanged = !_isEqual(
         newColumns?.filter((col) => col.is_visible).map((col) => col.name),
@@ -686,6 +599,19 @@ export class QueryOutput extends React.Component {
         chartID: visibleColumnsChanged ? uuid() : this.state.chartID,
       })
     }
+  }
+
+  getUpdatedCustomColumnSelects = (additionalSelects, columns) => {
+    const customColumnSelects = []
+    for (let i = 0; i < columns?.length; i++) {
+      const foundCustomSelect = additionalSelects?.find((select) => {
+        return select?.columns?.[0]?.replace(/ /g, '') === columns?.[i].name?.replace(/ /g, '')
+      })
+      if (foundCustomSelect) {
+        customColumnSelects.push({ id: columns[i].id, ...foundCustomSelect })
+      }
+    }
+    return customColumnSelects
   }
 
   generateAllData = () => {
@@ -924,10 +850,6 @@ export class QueryOutput extends React.Component {
           cancelToken: this.axiosSource.token,
           ...args,
         })
-
-        if (this.state.customColumns?.length) {
-          response = this.getNewResponseWithCustomColumns(response, this.state.customColumns)
-        }
       } catch (error) {
         response = this.handleQueryFnError(error)
       }
@@ -950,10 +872,6 @@ export class QueryOutput extends React.Component {
           newColumns: queryRequestData?.additional_selects,
           ...args,
         })
-
-        if (this.state.customColumns?.length) {
-          response = this.getNewResponseWithCustomColumns(response, this.state.customColumns)
-        }
       } catch (error) {
         response = this.handleQueryFnError(error)
       }
@@ -1308,7 +1226,10 @@ export class QueryOutput extends React.Component {
       this.pivotTableColumns = newColumns
       this.forceUpdate()
     } else {
-      const formattedColumns = this.formatColumnsForTable(newColumns)
+      const formattedColumns = this.formatColumnsForTable(
+        newColumns,
+        this.getAdditionalSelectsFromResponse(this.queryResponse),
+      )
       this.setState({ columns: formattedColumns })
     }
   }
@@ -1822,7 +1743,7 @@ export class QueryOutput extends React.Component {
     return queryResponse?.data?.data?.fe_req?.columns?.find((column) => newCol.name === column.name)
   }
 
-  formatColumnsForTable = (columns, aggConfig) => {
+  formatColumnsForTable = (columns, additionalSelects = [], aggConfig = {}) => {
     // todo: do this inside of chatatable
     if (!columns) {
       return null
@@ -1938,6 +1859,15 @@ export class QueryOutput extends React.Component {
 
       if (dateRange) {
         newCol.dateRange = dateRange
+      }
+
+      if (additionalSelects?.length > 0) {
+        const customSelect = additionalSelects.find((select) => {
+          return select?.columns?.[0]?.replace(/ /g, '') === newCol?.name?.replace(/ /g, '')
+        })
+        if (customSelect) {
+          newCol.custom = true
+        }
       }
 
       return newCol
@@ -2381,15 +2311,20 @@ export class QueryOutput extends React.Component {
     } else {
       this.tableRef?.setPageLoading(true)
 
-      const currentAdditionalSelectColumns = this.queryResponse?.data?.data?.fe_req?.additional_selects ?? []
+      let currentAdditionalSelectColumns = this.getAdditionalSelectsFromResponse(this.queryResponse) ?? []
+      const existingCustomSelectForColumn = this.state.customColumnSelects.find((col) => col.id === column.id)
+      if (existingCustomSelectForColumn) {
+        currentAdditionalSelectColumns = currentAdditionalSelectColumns?.filter((select) => {
+          return select.columns[0]?.replace(/ /g, '') !== existingCustomSelectForColumn.columns[0]?.replace(/ /g, '')
+        })
+      }
 
       this.queryFn({
         newColumns: [...currentAdditionalSelectColumns, formatAdditionalSelectColumn(column, sqlFn)],
       })
         .then((response) => {
           if (response?.data?.data?.rows) {
-            const newResponse = this.getNewResponseWithCustomColumns(response)
-            this.updateColumnsAndData(newResponse)
+            this.updateColumnsAndData(response)
           } else {
             throw new Error('New column addition failed')
           }
@@ -2401,23 +2336,12 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  onCustomColumnDelete = (deletedColumn) => {
-    const columnID = deletedColumn.id
-    const customColumns = this.state.customColumns.filter((col) => col.id !== columnID)
-    this.setState({ customColumns })
-  }
-
   onCustomColumnChange = (newColumn) => {
-    const customColumns = _cloneDeep(this.state.customColumns)
-    const existingCustomColumnIndex = customColumns.findIndex((col) => col.id === newColumn.id)
-
-    if (existingCustomColumnIndex >= 0) {
-      customColumns[existingCustomColumnIndex] = newColumn
+    if (newColumn?.table_column) {
+      this.onAddColumnClick(newColumn)
     } else {
-      customColumns.push(newColumn)
+      console.error('Unknown column type')
     }
-
-    this.setState({ customColumns })
   }
 
   renderAddColumnBtn = () => {
@@ -2429,6 +2353,7 @@ export class QueryOutput extends React.Component {
           tooltipID={this.props.tooltipID}
           onAddColumnClick={this.onAddColumnClick}
           onCustomClick={this.onAddColumnClick}
+          disableAddCustomColumnOption={this.isDrilldown()}
         />
       )
     }
@@ -2482,7 +2407,6 @@ export class QueryOutput extends React.Component {
           tableConfig={this.tableConfig}
           aggConfig={this.state.aggConfig}
           onCustomColumnChange={this.onCustomColumnChange}
-          onCustomColumnDelete={this.onCustomColumnDelete}
           enableContextMenu={this.props.enableTableContextMenu}
         />
       </ErrorBoundary>

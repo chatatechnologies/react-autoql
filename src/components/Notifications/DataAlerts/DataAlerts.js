@@ -7,7 +7,7 @@ import { fetchDataAlerts, authenticationDefault, getAuthentication } from 'autoq
 import { Tooltip } from '../../Tooltip'
 import { LoadingDots } from '../../LoadingDots'
 import { DataAlertModal } from '../DataAlertModal'
-import DataAlertListItem from './DataAlertListItem'
+import DataAlertListItem from './DataAlertListItem/DataAlertListItem'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { DataAlertDeleteDialog } from '../DataAlertDeleteDialog'

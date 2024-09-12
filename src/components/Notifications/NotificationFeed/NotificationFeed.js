@@ -12,7 +12,7 @@ import {
   deleteMultipleNotifications,
   deleteAllNotifications,
 } from 'autoql-fe-utils'
-
+import classNames from 'classnames'
 import { Icon } from '../../Icon'
 import { Modal } from '../../Modal'
 import { Button } from '../../Button'
@@ -57,8 +57,6 @@ class NotificationFeed extends React.Component {
       displayNotificationItemCheckbox: false,
       selectedNotifications: [],
     }
-    this.handleButtonPress = this.handleButtonPress.bind(this)
-    this.handleButtonRelease = this.handleButtonRelease.bind(this)
   }
 
   static propTypes = {
@@ -155,10 +153,10 @@ class NotificationFeed extends React.Component {
   componentWillUnmount = () => {
     this._isMounted = false
   }
-  handleButtonPress() {
-    this.buttonPressTimer = setTimeout(this.onSelectNotificationClick, 1000)
-    document.body.style.webkitUserSelect = 'none'
-  }
+
+  notificationListContainerClass = classNames('react-autoql-notification-list-container', {
+    mobile: isMobile,
+  })
 
   handleButtonRelease() {
     clearTimeout(this.buttonPressTimer)
@@ -683,7 +681,7 @@ class NotificationFeed extends React.Component {
       ...getAuthentication(this.props.authentication),
       notificationList: this.state.selectedNotifications,
     })
-      .then(this.handleDeleteNotificationsResponse())
+      .then(() => this.handleDeleteNotificationsResponse())
       .catch((error) => this.props.onErrorCallback(error))
       .finally(this.onDeleteEnd())
   }
@@ -691,8 +689,12 @@ class NotificationFeed extends React.Component {
   deleteAllNotifications = () => {
     this.onDeleteAllClick()
     deleteAllNotifications({ ...getAuthentication(this.props.authentication), projectId: this.props.selectedProjectId })
-      .then(this.handleDeleteNotificationsResponse())
-      .catch((error) => this.props.onErrorCallback(error))
+      .then(() => this.handleDeleteNotificationsResponse())
+
+      .catch((error) => {
+        console.error(error)
+        this.props.onErrorCallback(error)
+      })
   }
   render = () => {
     let style = {}
@@ -723,9 +725,7 @@ class NotificationFeed extends React.Component {
         <div
           ref={(r) => (this.feedContainer = r)}
           style={style}
-          className={`react-autoql-notification-list-container ${
-            isMobile ? 'react-autoql-notification-list-container-mobile' : ''
-          }`}
+          className={this.notificationListContainerClass}
           data-test='notification-list'
         >
           {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={500} />}
@@ -745,12 +745,7 @@ class NotificationFeed extends React.Component {
                   {this.state.notificationList.map((notification, i) => {
                     const dataAlert = this.state.dataAlerts?.find((alert) => alert.id === notification.data_alert_id)
                     return (
-                      <div
-                        className='notification-item-container'
-                        onTouchStart={this.handleButtonPress}
-                        onTouchEnd={this.handleButtonRelease}
-                        key={i}
-                      >
+                      <div className='notification-item-container' key={i}>
                         {this.state.displayNotificationItemCheckbox &&
                           this.renderNotificationItemCheckbox(notification)}
                         <NotificationItem

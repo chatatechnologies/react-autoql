@@ -323,6 +323,7 @@ export class OptionsToolbar extends React.Component {
           queryResponse={queryResponse}
           filters={filters}
           autoQLConfig={this.props.autoQLConfig}
+          enableAlphaAlertSettings={!!this.props.autoQLConfig?.projectId}
         />
       </ErrorBoundary>
     )

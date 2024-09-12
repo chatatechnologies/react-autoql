@@ -26,6 +26,7 @@ import {
   getSelectableColumns,
   getNumericalColumns,
   getStringColumns,
+  capitalizeFirstChar
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -55,7 +56,12 @@ export default class CustomColumnModal extends React.Component {
       initialColumn = props.columns[firstIndex]
     }
 
-    const initialColumnFn = props.initialColumn?.columnFnArray ?? []
+    let initialColumnFn
+    if (props.initialColumn?.name) {
+      initialColumnFn = this.buildFnArray(props.initialColumn?.name, props.columns)
+    } else {
+      initialColumnFn = props.initialColumn?.columnFnArray ?? []
+    }
 
     this.newColumnRaw = this.getRawColumnParams(initialColumn, props.initialColumn?.display_name)
 
@@ -126,24 +132,12 @@ export default class CustomColumnModal extends React.Component {
     dataFormatting: dataFormattingDefault,
     enableWindowFunctions: false,
 
-    onAddColumn: () => {},
-    onUpdateColumn: () => {},
-    onClose: () => {},
+    onAddColumn: () => { },
+    onUpdateColumn: () => { },
+    onClose: () => { },
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (this.state.columnName && this.state.columnName !== prevState.columnName) {
-      const name = this.state.columnName
-      this.newColumn.display_name = name
-      this.newColumn.title = name
-
-      // Debounce change since column update is expensive
-      clearTimeout(this.debounceTimer)
-      this.debounceTimer = setTimeout(() => {
-        this.tableRef?.updateColumn?.(this.newColumn.field, this.newColumn)
-      }, 500)
-    }
-
     // Update column mutator is function changed
     if (!deepEqual(this.state.columnFn, prevState.columnFn) || this.state.columnType !== prevState.columnType) {
       setTimeout(() => {
@@ -228,7 +222,7 @@ export default class CustomColumnModal extends React.Component {
       if (col.field === this.newColumn?.field) {
         const newColFormatted = new ColumnObj(
           this.getColumnParamsForTabulator({
-            ...this.getRawColumnParams(columnForFn),
+            ...this.getRawColumnParams(columnForFn, newFnSummary),
             ...newParams,
             id: this.props.initialColumn?.id,
             custom: true,
@@ -249,15 +243,90 @@ export default class CustomColumnModal extends React.Component {
     this.setState({ columns: newColumns })
   }
 
+  buildPlainColumnArrayFn(columnName) {
+    try {
+      // picks out all operators, columns, and numbers from the columnName
+      const extractOperatorsRegex = /(sum|avg|min|max)\([^()]*\)|[a-zA-Z0-9_]+|[+\-*/()]|\s+/g;
+      const operators = columnName.match(extractOperatorsRegex);
+      return operators.filter(op => op.trim() !== '');
+    } catch (error) {
+      console.error(error);
+      return []
+    }
+  }
+
+  buildFnArray = (columnName, cols) => {
+    try {
+      if (!columnName) {
+        return []
+      }
+
+      const ops = this.buildPlainColumnArrayFn(columnName)
+      if (ops?.length === 0) {
+        return []
+      }
+
+      const fnArray = []
+      let i = 0
+      for (const op of ops) {
+        if (op === '+' || op === '-' || op === '*' || op === '/' || op === ')' || op === '(') {
+          let opValue = ''
+          Object.keys(this.OPERATORS).forEach(key => {
+            if (this.OPERATORS?.[key]?.js === op) {
+              opValue = key
+            }
+          });
+          fnArray.push({ type: 'operator', value: opValue })
+        } else if (!isNaN(op)) {
+          fnArray.push({ type: 'number', value: op })
+        } else {
+          const column = cols?.find((col) => col?.name?.trim() === op)
+          fnArray.push({ type: 'column', value: column?.field, column })
+        }
+        i++
+      }
+
+      return fnArray
+    } catch (error) {
+      console.error(error)
+      return []
+    }
+  }
+
+  buildProtoTableColumn = (customColumn) => {
+    if (customColumn?.columnFnArray) {
+      let protoTableColumn = ''
+      for (const columnFn of customColumn?.columnFnArray) {
+        if (columnFn?.type === 'column') {
+          protoTableColumn += columnFn?.column?.name
+        } else if (columnFn?.type === 'operator') {
+          protoTableColumn += this.OPERATORS[columnFn?.value]?.js
+        } else if (columnFn?.type === 'number') {
+          protoTableColumn += columnFn?.value || 0
+        } else if (columnFn?.type === 'function') {
+          protoTableColumn += columnFn?.value || ''
+        } else {
+          console.error('Unknown columnFn type')
+        }
+        protoTableColumn += ' '
+      }
+
+      return protoTableColumn
+    }
+    return ''
+  }
+
   onUpdateColumnConfirm = () => {
     const newColumn = _cloneDeep(this.newColumn)
     newColumn.id = this.props.initialColumn?.id
-    this.props.onUpdateColumn(newColumn)
+    const protoTableColumn = this.buildProtoTableColumn(newColumn)
+    this.props.onUpdateColumn({ ...newColumn, table_column: protoTableColumn })
   }
 
   onAddColumnConfirm = () => {
     const newColumn = _cloneDeep(this.newColumn)
-    this.props.onAddColumn(newColumn)
+    const protoTableColumn = this.buildProtoTableColumn(newColumn)
+    this.props.onAddColumn({ ...newColumn, table_column: protoTableColumn })
   }
 
   changeChunkValue = (value, type, i) => {
@@ -437,45 +506,25 @@ export default class CustomColumnModal extends React.Component {
         focusOnMount
         label='Column Name'
         placeholder='eg. "Difference"'
-        value={this.state.columnName}
-        onChange={(e) => this.setState({ columnName: e.target.value })}
+        value={this.newColumn?.fnSummary || this.state.columnName}
+        disabled={true}
       />
     )
   }
 
   renderColumnTypeSelector = () => {
-    const supportedColumnTypes = this.getSupportedColumnTypes()
     const currentColumnType = COLUMN_TYPES[this.getColumnType()]?.description
-
+    const formattedCurrentColumnType = currentColumnType ? ` (${currentColumnType})` : ''
     return (
-      <Select
-        label='Formatting'
-        className='custom-column-builder-type-selector'
-        options={[
-          {
-            value: 'auto',
-            label: (
-              <span>
-                Auto
-                {!!currentColumnType && (
-                  <em style={{ color: 'var(--react-autoql-text-color-placeholder)' }}> ({currentColumnType})</em>
-                )}
-              </span>
-            ),
-          },
-          ...supportedColumnTypes.map((type) => ({
-            value: type,
-            label: COLUMN_TYPES[type]?.description,
-          })),
-          // Todo: Add custom option to use excel type shapes
-          // {
-          //   value: 'custom',
-          //   label: 'Custom...'
-          // }
-        ]}
-        value={this.state.columnType ?? this.getColumnType()}
-        onChange={(columnType) => this.setState({ columnType })}
-      />
+      <div className='custom-column-builder-type-selector'>
+        <Input
+          ref={(r) => (this.inputRef = r)}
+          focusOnMount
+          label='Formatting'
+          value={(capitalizeFirstChar(this.state.columnType) + formattedCurrentColumnType) ?? (this.getColumnType() + formattedCurrentColumnType)}
+          disabled={true}
+        />
+      </div>
     )
   }
 
@@ -495,7 +544,6 @@ export default class CustomColumnModal extends React.Component {
 
   renderCustomNumberInput = (chunk, i) => {
     const columnFn = _cloneDeep(this.state.columnFn)
-
     return (
       <Input
         type='number'
@@ -698,7 +746,6 @@ export default class CustomColumnModal extends React.Component {
           <div className='react-autoql-input-label'>Variables</div>
           <div className='react-autoql-formula-builder-calculator-buttons-container'>
             {getSelectableColumns(this.props.columns)
-              ?.filter((col) => !col.custom)
               ?.map((col, i) => {
                 return (
                   <Button
@@ -943,7 +990,6 @@ export default class CustomColumnModal extends React.Component {
             <div className='custom-column-modal-form-wrapper'>
               <div className='custom-column-modal-name-and-type'>
                 {this.renderColumnNameInput()}
-                {this.renderColumnTypeSelector()}
               </div>
               {this.renderColumnFnBuilder()}
             </div>

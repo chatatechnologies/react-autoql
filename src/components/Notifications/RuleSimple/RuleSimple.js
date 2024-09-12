@@ -196,11 +196,11 @@ export default class RuleSimple extends React.Component {
   static defaultProps = {
     authentication: authenticationDefault,
     ruleId: undefined,
-    onUpdate: () => {},
+    onUpdate: () => { },
     initialData: undefined,
     queryResponse: undefined,
     queryResultMetadata: undefined,
-    onLastInputEnterPress: () => {},
+    onLastInputEnterPress: () => { },
     dataFormatting: dataFormattingDefault,
   }
 
@@ -338,6 +338,7 @@ export default class RuleSimple extends React.Component {
     const userSelection = this.props.queryResponse?.data?.data?.fe_req?.disambiguation
     const tableFilters = this.state.queryFilters?.filter((f) => f.type === 'table')
     const lockedFilters = this.state.queryFilters?.filter((f) => f.type === 'locked')
+    const additionalSelects = this.props.queryResponse?.data?.data?.fe_req?.additional_selects || []
 
     let firstQueryJoinColumnName =
       this.props.queryResponse?.data?.data?.columns[this.state.firstQueryGroupableColumnIndex]?.name
@@ -366,6 +367,7 @@ export default class RuleSimple extends React.Component {
         filters: tableFilters,
         session_filter_locks: lockedFilters,
         join_columns: firstQueryJoinColumns.length === 0 ? this.state.firstQueryJoinColumns : firstQueryJoinColumns,
+        additional_selects: additionalSelects,
       },
     ]
 
