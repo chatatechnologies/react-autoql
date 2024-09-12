@@ -6,7 +6,6 @@
   }
 }
 .react-autoql-notification-settings-container {
-  margin: 20px;
   margin-top: 10px;
 }
 .react-autoql-re-initialize-btn {
@@ -24,11 +23,18 @@
     cursor: default;
   }
 }
+
 .react-autoql-data-alert-list-item-section {
-  @media (min-width: 837px) {
-    width: 400px;
+  @mixin responsive-width($breakpoints) {
+    @each $breakpoint, $width in $breakpoints {
+      @media (max-width: $breakpoint) {
+        width: $width;
+      }
+    }
   }
-  flex: 1 0 60px;
+  @media (min-width: 950px) {
+    width: 350px;
+  }
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
@@ -40,7 +46,57 @@
   &.react-autoql-data-alert-list-item-section-next-check {
     flex: 1.5 0 50px;
   }
+  &.react-autoql-data-alert-list-item-section-state {
+    width: 50px;
+  }
+  &.react-autoql-data-alert-list-item-section-description {
+    width: 1200px;
 
+    @include responsive-width(
+      (
+        1880px: 1000px,
+        1770px: 900px,
+        1670px: 800px,
+        1480px: 780px,
+        1380px: 700px,
+        1280px: 600px,
+        1240px: 500px,
+        1170px: 400px,
+        1000px: 300px,
+        900px: 150px,
+        670px: 100px,
+      )
+    );
+    &.landscape.mobile {
+      @include responsive-width(
+        (
+          1100px: 700px,
+          900px: 600px,
+          670px: 400px,
+        )
+      );
+    }
+  }
+  &.react-autoql-notification-setting-display-name {
+    width: 300px;
+    @include responsive-width(
+      (
+        770px: 200px,
+        670px: 130px,
+      )
+    );
+  }
+  &.react-autoql-data-alert-list-item-section-status {
+    width: 150px;
+    @include responsive-width(
+      (
+        1450px: 100px,
+      )
+    );
+  }
+  &.react-autoql-data-alert-list-item-section-actions {
+    width: 50px;
+  }
   .react-autoql-notification-setting-display-name-title {
     width: 100%;
     text-overflow: ellipsis;
@@ -65,13 +121,16 @@
   }
 
   &:first-child {
-    flex: 1 0 100px;
     padding-left: 12px;
   }
 
   &:last-child {
-    flex: 0 0 auto;
     padding-right: 12px;
+  }
+  &.isCustom {
+    &:last-child {
+      padding-right: 12px;
+    }
   }
 }
 .react-autoql-notification-setting-item {
@@ -79,18 +138,23 @@
   min-height: 55px;
   transition: height 0.3s cubic-bezier(0.26, 0.26, 0, 1);
   background-color: var(--react-autoql-background-color-secondary);
-  box-shadow: var(--react-autoql-box-shadow-1);
+  border-bottom: 1px solid var(--react-autoql-box-shadow-color);
   position: relative;
 
   &.react-autoql-dataalert-show-header {
-    margin-top: 38px;
+    margin-top: 40px;
+    &::before {
+      content: '';
+      position: absolute;
+      top: -40px;
+      left: 0;
+      right: 0;
+      height: 40px;
+      background-color: rgb(from var(--react-autoql-background-color-primary) r g b / 0.4);
+    }
   }
   &:not(.react-autoql-dataalert-show-header) .data-alert-header-item {
     display: none;
-  }
-
-  &:not(:last-child) {
-    border-bottom: 1px solid var(--react-autoql-box-shadow-color);
   }
 
   &:first-child,
@@ -105,13 +169,16 @@
   }
 
   .data-alert-header-item {
+    padding-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     position: absolute;
     line-height: 33px;
     white-space: nowrap;
     bottom: 100%;
     font-size: 0.875em;
+    font-weight: 600;
     color: var(--react-autoql-text-color-primary);
-    opacity: 0.7;
   }
 
   .react-autoql-notification-action-hidden {
@@ -148,7 +215,8 @@
       }
 
       &.data-alert-error {
-        color: var(--react-autoql-warning-color);
+        font-size: x-large;
+        color: #f04438;
         opacity: 1;
       }
     }
@@ -176,7 +244,7 @@
 
       &.data-alert-error {
         cursor: pointer;
-        color: var(--react-autoql-warning-color);
+        color: #f04438;
       }
     }
 
@@ -238,6 +306,11 @@
 }
 
 .react-autoql-notification-setting-item-header {
+  transition: background-color 0.2s ease;
+  &:hover {
+    background-color: var(--react-autoql-mask-color);
+  }
+
   overflow: scroll;
   min-height: 55px;
   display: flex;
