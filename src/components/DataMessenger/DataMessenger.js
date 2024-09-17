@@ -5,7 +5,7 @@ import _isEmpty from 'lodash.isempty'
 import { v4 as uuid } from 'uuid'
 import { isBrowser, isMobile } from 'react-device-detect'
 import { mergeSources, autoQLConfigDefault, dataFormattingDefault, getAutoQLConfig } from 'autoql-fe-utils'
-
+import classNames from 'classnames'
 // Components
 import { Icon } from '../Icon'
 import { ExploreQueries } from '../ExploreQueries'
@@ -16,6 +16,7 @@ import { FilterLockPopover } from '../FilterLockPopover'
 import { ConfirmPopover } from '../ConfirmPopover'
 import { ChatContent } from '../ChatContent'
 import { Tooltip } from '../Tooltip'
+import { Select } from '../Select'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 // Utils
@@ -133,6 +134,15 @@ export class DataMessenger extends React.Component {
     enableFilterLocking: PropTypes.bool,
     enableQueryQuickStartTopics: PropTypes.bool,
 
+    // Projects
+    projectSelectList: PropTypes.arrayOf(
+      PropTypes.shape({
+        projectId: PropTypes.string.isRequired,
+        displayName: PropTypes.string.isRequired,
+      }),
+    ),
+    selectedProjectId: PropTypes.string,
+
     // Callbacks
     onNotificationExpandCallback: PropTypes.func,
     onNewNotification: PropTypes.func,
@@ -141,6 +151,7 @@ export class DataMessenger extends React.Component {
     onErrorCallback: PropTypes.func,
     onSuccessAlert: PropTypes.func,
     setMobileActivePage: PropTypes.func,
+    onProjectSelectChange: PropTypes.func,
   }
 
   static defaultProps = {
@@ -174,6 +185,10 @@ export class DataMessenger extends React.Component {
     defaultOpen: false,
     popoverParentElement: undefined,
 
+    // Projects
+    projectSelectList: undefined,
+    selectedProjectId: undefined,
+
     enableDynamicCharting: true,
     defaultTab: 'data-messenger',
     autoChartAggregations: true,
@@ -189,6 +204,7 @@ export class DataMessenger extends React.Component {
     onVisibleChange: () => {},
     onErrorCallback: () => {},
     onSuccessAlert: () => {},
+    onProjectSelectChange: () => {},
   }
 
   componentDidMount = () => {
@@ -253,6 +269,10 @@ export class DataMessenger extends React.Component {
       clearTimeout(this.executeQueryTimeout)
     } catch (error) {}
   }
+  popoverDeleteButtonClass = classNames({
+    mobile: isMobile,
+    'popover-delete-button': true,
+  })
 
   onError = () => this.props.onErrorCallback('Something went wrong when creating this notification. Please try again.')
 
@@ -382,7 +402,7 @@ export class DataMessenger extends React.Component {
 
   getDrawerHeight = () => {
     if (this.state.placement === 'right' || this.state.placement === 'left') {
-      return isMobile ? 'calc(100% - 80px)' : '100vh'
+      return isMobile ? 'calc(100% - 50px)' : '100vh'
     }
 
     const { maxHeight } = this.getMaxWidthAndHeightFromDocument()
@@ -582,7 +602,11 @@ export class DataMessenger extends React.Component {
           positions={['bottom', 'left', 'top', 'right']}
           align='end'
         >
-          <button data-tooltip-content={lang.clearQueriesTooltip} data-tooltip-id={this.TOOLTIP_ID}>
+          <button
+            data-tooltip-content={lang.clearQueriesTooltip}
+            data-tooltip-id={this.TOOLTIP_ID}
+            className={this.popoverDeleteButtonClass}
+          >
             <Icon type='trash' />
           </button>
         </ConfirmPopover>
@@ -590,8 +614,39 @@ export class DataMessenger extends React.Component {
     )
   }
 
+  projectSelectorHeader = () => {
+    return (
+      <div className='react-autoql-header-project-selector-container'>
+        <Select
+          className='react-autoql-header-project-selector'
+          size='small'
+          outlined={false}
+          fullWidth={true}
+          placeholder='Select a new project'
+          options={this.props.projectSelectList.map((project) => {
+            return {
+              value: project?.projectId,
+              label: <span dangerouslySetInnerHTML={{ __html: project.displayName }} />,
+            }
+          })}
+          label={null}
+          value={this.props.selectedProjectId}
+          onChange={(option) => {
+            this.clearMessages()
+            this.props.onProjectSelectChange(option)
+          }}
+          color='text'
+        />
+      </div>
+    )
+  }
+
   renderHeaderTitle = () => {
     let title = ''
+
+    if (this.props?.autoQLConfig?.enableProjectSelect && this.props?.projectSelectList?.length > 0) {
+      return this.projectSelectorHeader()
+    }
 
     switch (this.state.activePage) {
       case 'data-messenger': {
@@ -649,6 +704,12 @@ export class DataMessenger extends React.Component {
   }
 
   renderFilterLockPopover = () => {
+    this.filterLockingDrawerHeaderButtonClass = classNames({
+      'react-autoql-drawer-header-btn filter-locking': true,
+      visible: this.state.activePage === 'data-messenger',
+      hidden: this.state.activePage !== 'data-messenger',
+      mobile: isMobile,
+    })
     return (
       <FilterLockPopover
         ref={(r) => (this.filterLockRef = r)}
@@ -663,9 +724,7 @@ export class DataMessenger extends React.Component {
         align='center'
       >
         <button
-          className={`react-autoql-drawer-header-btn filter-locking ${
-            this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
-          }`}
+          className={this.filterLockingDrawerHeaderButtonClass}
           data-tooltip-content={lang.openFilterLocking}
           data-tooltip-id={this.TOOLTIP_ID}
           onClick={this.state.isFilterLockMenuOpen ? this.closeFilterLockMenu : this.openFilterLockMenu}
@@ -693,7 +752,7 @@ export class DataMessenger extends React.Component {
             <>
               <button
                 onClick={this.closeDataMessenger}
-                className='react-autoql-drawer-header-btn'
+                className={'react-autoql-drawer-header-btn'}
                 data-tooltip-content={lang.closeDataMessenger}
                 data-tooltip-id={this.TOOLTIP_ID}
               >
@@ -1049,17 +1108,17 @@ export class DataMessenger extends React.Component {
           handler={this.getHandleProp()}
           level={this.props.shiftScreen ? 'all' : null}
           keyboard={false}
+          style={isMobile ? { top: '50px', boxShadow: 'unset' } : null}
         >
           {this.props.resizable && isBrowser && this.renderResizeHandle()}
           {isBrowser ? this.renderTabs() : null}
           <div
             ref={(r) => (this.messengerDrawerRef = r)}
-            className={`
-              ${isMobile ? 'react-autoql-mobile-drawer-content-container' : 'react-autoql-drawer-content-container'}
-              ${this.state.activePage}
-            `}
+            className={`react-autoql-drawer-content-container ${this.state.activePage}`}
           >
-            <div className='chat-header-container'>{this.renderHeaderContent()}</div>
+            <div className='chat-header-container' id={isMobile ? 'mobile-version' : null}>
+              {this.renderHeaderContent()}
+            </div>
             {this.renderBodyContent()}
           </div>
         </Drawer>

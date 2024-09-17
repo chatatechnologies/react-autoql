@@ -17,7 +17,10 @@ import {
   CONTINUOUS_TYPE,
   SCHEDULED_TYPE,
   createManagementDataAlert,
+  updateManagementDataAlert,
   autoQLConfigDefault,
+  getAllDataAlertsLabelsByProject,
+  assignLabelToManagementDataAlert,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
@@ -29,10 +32,12 @@ import { ScheduleBuilder } from '../ScheduleBuilder'
 import { ConditionBuilder } from '../ConditionBuilder'
 import { MultilineButton } from '../../MultilineButton'
 import { CustomScrollbars } from '../../CustomScrollbars'
+import { CollapsableSection } from '../../Card'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { DataAlertDeleteDialog } from '../DataAlertDeleteDialog'
 import AppearanceSection from '../DataAlertSettings/AppearanceSection'
 import DataAlertSettings from '../DataAlertSettings/DataAlertSettings'
+import AlphaAlertsSettings from '../DataAlertSettings/AlphaAlertsSettings'
 
 import { withTheme } from '../../../theme'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
@@ -68,24 +73,25 @@ class DataAlertModal extends React.Component {
     onOpened: PropTypes.func,
     dataFormatting: dataFormattingType,
     autoQLConfig: autoQLConfigType,
+    enableAlphaAlertSettings: PropTypes.bool,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
-    onSave: () => {},
-    onErrorCallback: () => {},
+    onSave: () => { },
+    onErrorCallback: () => { },
     currentDataAlert: undefined,
     dataAlertType: CONTINUOUS_TYPE,
     isVisible: false,
     allowDelete: true,
-    onClose: () => {},
-    projectId: '',
-    onSuccessAlert: () => {},
-    onClosed: () => {},
-    onOpened: () => {},
+    onClose: () => { },
+    onSuccessAlert: () => { },
+    onClosed: () => { },
+    onOpened: () => { },
     enableQueryValidation: true,
     dataFormatting: dataFormattingDefault,
     autoQLConfig: autoQLConfigDefault,
+    enableAlphaAlertSettings: false,
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -112,6 +118,21 @@ class DataAlertModal extends React.Component {
         this.setState({ completedSections: newCompletedSections })
       }
     }
+
+    if (!this.state.fetchedCategories) {
+      this.getLabels()
+    }
+
+  }
+
+  getLabels = () => {
+    if (this.props.authentication?.token && this.props.authentication?.domain && this.props.authentication?.apiKey)
+      getAllDataAlertsLabelsByProject({ ...getAuthentication(this.props.authentication) }).then((response) => {
+        this.setState({ categories: response?.data?.data?.items, fetchedCategories: true })
+      }).catch((error) => {
+        console.error('error fetching data alert categories', error)
+        this.setState({ categories: [], fetchedCategories: true })
+      })
   }
 
   showConditionsStep = () => {
@@ -180,6 +201,11 @@ class DataAlertModal extends React.Component {
       isMounted: false,
       dataAlertType: CONTINUOUS_TYPE,
       isSettingsFormComplete: true,
+      billingUnitsInput: '',
+      descriptionInput: '',
+      categoryId: '',
+      categories: null,
+      fetchedCategories: false,
     }
 
     if (props.currentDataAlert) {
@@ -190,6 +216,10 @@ class DataAlertModal extends React.Component {
       state.activeStep = 0
       state.completedSections = steps.map(() => true)
       state.expressionJSON = currentDataAlert?.expression
+      state.billingUnitsInput = currentDataAlert?.billing_units
+      state.descriptionInput = currentDataAlert?.description
+      state.descriptionInput = currentDataAlert?.label
+      state.categoryId = currentDataAlert?.label?.id
     }
 
     return state
@@ -202,7 +232,7 @@ class DataAlertModal extends React.Component {
   getDataAlertData = () => {
     try {
       const { currentDataAlert, queryResponse } = this.props
-      const { titleInput, messageInput } = this.state
+      const { titleInput, messageInput, billingUnitsInput, descriptionInput } = this.state
 
       if (!!this.props.currentDataAlert?.id) {
         return this.settingsViewRef?.getData()
@@ -222,6 +252,7 @@ class DataAlertModal extends React.Component {
               condition: EXISTS_TYPE,
               term_value: query,
               user_selection: queryResponse?.data?.data?.fe_req?.disambiguation,
+              additional_selects: queryResponse?.data?.data?.fe_req?.additional_selects || [],
             },
           ]
         }
@@ -240,6 +271,8 @@ class DataAlertModal extends React.Component {
           time_zone: scheduleData.timezone,
           schedules: scheduleData.schedules,
           evaluation_frequency: scheduleData.evaluationFrequency,
+          billing_units: billingUnitsInput,
+          description: descriptionInput,
         }
 
         return newDataAlert
@@ -292,16 +325,39 @@ class DataAlertModal extends React.Component {
     }
 
     if (this.props?.autoQLConfig?.projectId) {
-      createManagementDataAlert({
-        ...requestParams,
-        projectId: this.props?.autoQLConfig?.projectId
-      })
-        .then((dataAlertResponse) => {
-          this.onDataAlertCreateOrEditSuccess(dataAlertResponse)
+      if (newDataAlert.id) {
+        updateManagementDataAlert({
+          ...requestParams,
+          projectId: this.props?.autoQLConfig?.projectId,
         })
-        .catch((error) => {
-          this.onDataAlertCreateOrEditError(error)
+          .then((dataAlertResponse) => {
+            this.onDataAlertCreateOrEditSuccess(dataAlertResponse)
+            assignLabelToManagementDataAlert({
+              ...getAuthentication(this.props.authentication),
+              dataAlertId: newDataAlert?.id,
+              categoryId: newDataAlert?.categoryId,
+            })
+          })
+          .catch((error) => {
+            this.onDataAlertCreateOrEditError(error)
+          })
+      } else {
+        createManagementDataAlert({
+          ...requestParams,
+          projectId: this.props?.autoQLConfig?.projectId,
         })
+          .then((dataAlertResponse) => {
+            this.onDataAlertCreateOrEditSuccess(dataAlertResponse)
+            assignLabelToManagementDataAlert({
+              ...getAuthentication(this.props.authentication),
+              dataAlertId: dataAlertResponse?.data?.data?.id,
+              categoryId: this.state.categoryId,
+            })
+          })
+          .catch((error) => {
+            this.onDataAlertCreateOrEditError(error)
+          })
+      }
     } else if (newDataAlert.id) {
       updateDataAlert({
         ...requestParams,
@@ -550,6 +606,20 @@ class DataAlertModal extends React.Component {
     )
   }
 
+  renderAlphaAlertsSettings = () => {
+    return (
+      <CollapsableSection title='Additional Settings' defaultCollapsed={true} onToggle={() => { }}>
+        <AlphaAlertsSettings
+          ref={(r) => (this.alphaAlertsSettingRef = r)}
+          billingUnitsInput={this.state.billingUnitsInput}
+          onBillingUnitsInputChange={(value) => {
+            this.setState({ billingUnitsInput: value })
+          }}
+        />
+      </CollapsableSection>
+    )
+  }
+
   renderComposeMessageStep = (active) => {
     return (
       <div className={`react-autoql-data-alert-modal-step ${active ? '' : 'hidden'}`}>
@@ -561,7 +631,18 @@ class DataAlertModal extends React.Component {
           onMessageInputChange={(e) => this.setState({ messageInput: e.target.value })}
           showConditionStatement
           conditionStatement={this.getConditionStatement()}
+          descriptionInput={this.state.descriptionInput}
+          selectedCategory={this.state.categoryId}
+          onDescriptionInputChange={(e) => {
+            this.setState({ descriptionInput: e.target.value })
+          }}
+          onCategorySelectChange={(value) => {
+            this.setState({ categoryId: value })
+          }}
+          categories={this.state.categories || []}
+          enableAlphaAlertSettings={this.props.enableAlphaAlertSettings}
         />
+        {this.props.enableAlphaAlertSettings && this.renderAlphaAlertsSettings()}
       </div>
     )
   }
@@ -649,7 +730,9 @@ class DataAlertModal extends React.Component {
             supportedConditionTypes={this.SUPPORTED_CONDITION_TYPES}
             onErrorCallback={this.props.onErrorCallback}
             onCompleteChange={this.onSettingsCompleteChange}
+            enableAlphaAlertSettings={this.props.enableAlphaAlertSettings}
             tooltipID={this.TOOLTIP_ID}
+            categories={this.state.categories || []}
           />
         </CustomScrollbars>
       )

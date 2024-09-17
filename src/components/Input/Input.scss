@@ -118,9 +118,20 @@
 
     &.with-select {
       .react-autoql-input {
-        border-radius: 0px 4px 4px 0px;
         display: block;
         height: 100%;
+      }
+
+      &.react-autoql-input-select-left {
+        .react-autoql-input {
+          border-radius: 0px 4px 4px 0px;
+        }
+      }
+
+      &.react-autoql-input-select-right {
+        .react-autoql-input {
+          border-radius: 4px 0px 0px 4px;
+        }
       }
     }
 
@@ -130,9 +141,25 @@
       padding: 0;
 
       .react-autoql-select {
-        border-radius: 4px 0px 0px 4px;
-        border-right: none;
         margin: 0;
+      }
+    }
+
+    &.react-autoql-input-select-left {
+      .react-autoql-text-input-selector {
+        .react-autoql-select {
+          border-radius: 4px 0px 0px 4px;
+          border-right: none;
+        }
+      }
+    }
+
+    &.react-autoql-input-select-right {
+      .react-autoql-text-input-selector {
+        .react-autoql-select {
+          border-radius: 0px 4px 4px 0px;
+          border-left: none;
+        }
       }
     }
 
@@ -208,11 +235,19 @@
       border-color: var(--react-autoql-accent-color);
     }
 
-    &:hover {
+    &.react-autoql-input-select-left:hover {
       .react-autoql-input {
         border-left-color: var(--react-autoql-accent-color);
       }
+    }
 
+    &.react-autoql-input-select-right:hover {
+      .react-autoql-input {
+        border-right-color: var(--react-autoql-accent-color);
+      }
+    }
+
+    &:hover {
       .react-autoql-input-icon {
         color: var(--react-autoql-accent-color);
       }

@@ -74,6 +74,7 @@ export default class NotificationItem extends React.Component {
     enableMoreOptionsMenu: PropTypes.bool,
     tooltipID: PropTypes.string,
     chartTooltipID: PropTypes.string,
+    shouldRenderSummarySection: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -87,6 +88,7 @@ export default class NotificationItem extends React.Component {
     displayProjectName: false,
     defaultExpanded: false,
     enableMoreOptionsMenu: true,
+    shouldRenderSummarySection: false,
     onRuleFetchCallback: () => {},
     updateScrollbars: () => {},
     onExpandCallback: () => {},
@@ -190,7 +192,8 @@ export default class NotificationItem extends React.Component {
   }
 
   delete = async () => {
-    await this.displayDeleteAnimation()
+    // await this.displayDeleteAnimation()
+    // comment out above as an workaround of a duplicated animation issue
 
     this.props.onDeleteClick(this.props.notification)
 
@@ -514,7 +517,7 @@ export default class NotificationItem extends React.Component {
               this.renderErrorMessage()
             ) : (
               <>
-                {this.renderSummarySection()}
+                {this.props.shouldRenderSummarySection && this.renderSummarySection()}
                 {!!this.state.expanded && (
                   <NotificationQueryResponse
                     key={this.state.queryResponse?.data?.data?.query_id}

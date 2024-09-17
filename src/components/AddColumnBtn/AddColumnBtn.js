@@ -29,14 +29,16 @@ export class AddColumnBtnWithoutRef extends React.Component {
     onAddColumnClick: PropTypes.func,
     onCustomClick: PropTypes.func,
     tooltipID: PropTypes.string,
+    disableAddCustomColumnOption: PropTypes.bool,
   }
 
   static defaultProps = {
     queryResponse: undefined,
     allowCustom: true,
-    onAddColumnClick: () => {},
-    onCustomClick: () => {},
+    onAddColumnClick: () => { },
+    onCustomClick: () => { },
     tooltipID: undefined,
+    disableAddCustomColumnOption: false,
   }
 
   onAddColumnClick = (column, aggType, isHiddenColumn) => {
@@ -162,7 +164,17 @@ export class AddColumnBtnWithoutRef extends React.Component {
   }
 
   enableCustomOption = () => {
-    const selectableColumnsForCustom = getSelectableColumns(this.props.queryResponse?.data?.data?.columns)
+    if (this.props.disableAddCustomColumnOption) {
+      return false
+    }
+
+    let selectableColumnsForCustom
+    try {
+      selectableColumnsForCustom = getSelectableColumns(this.props.queryResponse?.data?.data?.columns)
+    } catch {
+      selectableColumnsForCustom = []
+    }
+
     return this.props.allowCustom && !!selectableColumnsForCustom?.length
   }
 

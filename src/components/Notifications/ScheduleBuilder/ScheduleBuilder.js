@@ -18,6 +18,9 @@ import {
   getTimeObjFromTimeStamp,
   getWeekdayFromTimeStamp,
   showEvaluationFrequencySetting,
+  getDayOfTheMonthFromTimestamp,
+  getDayOfTheMonthSuffix,
+  getTodaysDayOfTheMonth,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
@@ -38,7 +41,7 @@ export default class ScheduleBuilder extends React.Component {
     ]
     this.DEFAULT_EVALUATION_FREQUENCY = 5
     this.DEFAULT_WEEKDAY_SELECT_VALUE = 'Friday'
-    this.DEFAULT_MONTH_DAY_SELECT_VALUE = 'LAST'
+    this.DEFAULT_MONTH_DAY_SELECT_VALUE = getTodaysDayOfTheMonth() || 'LAST'
     this.DEFAULT_MONTH_OF_YEAR_SELECT_VALUE = 'December'
     this.DEFAULT_RESET_PERIOD_SELECT_VALUE = 'MONTH'
     this.DEFAULT_TIME_SELECT_VALUE = {
@@ -85,7 +88,7 @@ export default class ScheduleBuilder extends React.Component {
     conditionType: EXISTS_TYPE,
     showTypeSelector: true,
     dataAlert: undefined,
-    onCompleteChange: () => {},
+    onCompleteChange: () => { },
   }
 
   componentDidMount = () => {
@@ -203,7 +206,7 @@ export default class ScheduleBuilder extends React.Component {
           state.resetPeriodSelectValue = 'MONTH'
           state.monthDaySelectValue = 'LAST'
         } else if (schedulePeriod === 'MONTH') {
-          state.monthDaySelectValue = 'FIRST' // For now. Later we want to add month day numbers
+          state.monthDaySelectValue = getDayOfTheMonthFromTimestamp(schedules[0]?.start_date, schedules?.[0]?.time_zone)
         } else if (schedulePeriod === 'WEEK' && dataAlert.schedules.length === 7) {
           state.resetPeriodSelectValue = 'DAY'
         } else if (schedulePeriod === 'WEEK') {
@@ -216,9 +219,8 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   getSummary = () => {
-    return `${this.state.resetPeriodSelectValue} ${this.getDayOfSelection(this.state.resetPeriodSelectValue)} ${
-      this.state.intervalTimeSelectValue?.value
-    } ${this.state.timezone}`
+    return `${this.state.resetPeriodSelectValue} ${this.getDayOfSelection(this.state.resetPeriodSelectValue)} ${this.state.intervalTimeSelectValue?.value
+      } ${this.state.timezone}`
   }
 
   getData = () => {
@@ -389,17 +391,29 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   dayOfMonthSelector = () => {
+    const dayOptions = Array.from({ length: 31 }, (_, i) => i + 1);
+    const formattedOptions = dayOptions.map((value) => ({
+      value,
+      label: <span dangerouslySetInnerHTML={{ __html: `${value}${getDayOfTheMonthSuffix(value)}` }} />,
+    }))
+    formattedOptions.push({
+      value: 'LAST',
+      label: <span dangerouslySetInnerHTML={{ __html: MONTH_DAY_SELECT_OPTIONS['LAST'] }} />,
+    })
     return (
-      <div className='react-autoql-data-alert-frequency-option'>
-        <Select
-          value={this.state.monthDaySelectValue}
-          onChange={(monthDaySelectValue) => this.setState({ monthDaySelectValue })}
-          options={Object.keys(MONTH_DAY_SELECT_OPTIONS).map((value) => ({
-            value,
-            label: <span dangerouslySetInnerHTML={{ __html: MONTH_DAY_SELECT_OPTIONS[value] }} />,
-          }))}
-        />
-      </div>
+      <>
+        <div className='react-autoql-data-alert-frequency-option schedule-builder-at-connector'>
+          <span>on the</span>
+        </div>
+        <div className='react-autoql-data-alert-frequency-option'>
+          <Select
+            value={this.state.monthDaySelectValue}
+            onChange={(monthDaySelectValue) => this.setState({ monthDaySelectValue })}
+            options={formattedOptions}
+          />
+        </div>
+      </>
+
     )
   }
 

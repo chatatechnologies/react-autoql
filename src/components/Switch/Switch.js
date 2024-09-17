@@ -11,6 +11,8 @@ export default class Switch extends React.Component {
     onChange: PropTypes.func,
     onText: PropTypes.string,
     offText: PropTypes.string,
+    disabled: PropTypes.bool,
+    displaySwitchText: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -19,12 +21,16 @@ export default class Switch extends React.Component {
     onChange: () => {},
     onText: '',
     offText: '',
+    disabled: false,
+    displaySwitchText: true,
   }
 
   toggleChecked = () => {
     this.props.onChange(!this.props.checked)
   }
-
+  spanStyle = {
+    pointerEvents: this.props.disabled ? 'none' : 'auto',
+  }
   render = () => {
     const { type, hasError, style, onChange, checked, offText, onText, ...nativeProps } = this.props
     const switchText = this.props.checked ? this.props.onText : this.props.offText
@@ -38,7 +44,7 @@ export default class Switch extends React.Component {
           data-test='react-autoql-switch-container'
           style={this.props.style}
         >
-          <span className='toggle-switch-text-ruler'>{switchText}</span>
+          <span className='toggle-switch-text-ruler'> {this.props.displaySwitchText ? switchText : null} </span>
           <div className={`react-autoql-toggle-switch`}>
             <input
               {...nativeProps}
@@ -50,8 +56,8 @@ export default class Switch extends React.Component {
               onClick={(e) => e.stopPropagation()}
               onChange={this.toggleChecked}
             />
-            <span className='toggle-switch-slider' onClick={this.toggleChecked}>
-              <span className='toggle-switch-text'>{switchText}</span>
+            <span style={this.spanStyle} className='toggle-switch-slider' onClick={this.toggleChecked}>
+              <span className='toggle-switch-text'>{this.props.displaySwitchText ? switchText : null}</span>
             </span>
           </div>
         </div>

@@ -35,10 +35,11 @@ export default class Select extends React.Component {
     outlined: PropTypes.bool,
     placeholder: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
     fullWidth: PropTypes.bool,
+    color: PropTypes.oneOf(['primary', 'text']),
   }
 
   static defaultProps = {
-    onChange: () => {},
+    onChange: () => { },
     options: [],
     popupClassname: null,
     value: null,
@@ -49,6 +50,7 @@ export default class Select extends React.Component {
     outlined: true,
     placeholder: 'Select an item',
     fullWidth: false,
+    color: 'primary',
   }
 
   componentDidMount = () => {
@@ -97,7 +99,9 @@ export default class Select extends React.Component {
         <div
           className={`react-autoql-select
           ${this.props.outlined ? 'outlined' : 'underlined'}
-          ${this.props.size === 'small' ? 'react-autoql-select-small' : 'react-autoql-select-large'}`}
+          ${this.props.size === 'small' ? 'react-autoql-select-small' : 'react-autoql-select-large'}
+          ${this.props.color === 'text' ? 'text-color' : ''}`
+          }
           data-test='react-autoql-select'
           onClick={() => this.setState({ isOpen: !this.state.isOpen })}
           style={this.props.style}
@@ -122,8 +126,8 @@ export default class Select extends React.Component {
             )}
           </span>
           {this.props.showArrow && (
-            <div className='react-autoql-select-arrow'>
-              <Icon type='caret-down' />
+            <div className={`react-autoql-select-arrow ${this.props.color === 'text' ? 'text-color' : ''}`}>
+              {this.state.isOpen ? <Icon type='caret-up' /> : <Icon type='caret-down' />}
             </div>
           )}
         </div>

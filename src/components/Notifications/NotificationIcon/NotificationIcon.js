@@ -13,8 +13,9 @@ import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import { withTheme } from '../../../theme'
 import { authenticationType } from '../../../props/types'
-
+import classNames from 'classnames'
 import './NotificationIcon.scss'
+import { isMobile } from 'react-device-detect'
 
 class NotificationIcon extends React.Component {
   constructor(props) {
@@ -44,6 +45,7 @@ class NotificationIcon extends React.Component {
     pausePolling: PropTypes.bool,
     count: PropTypes.number,
     onCount: PropTypes.func,
+    enableFetchNotificationCountAcrossProjects: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -57,6 +59,7 @@ class NotificationIcon extends React.Component {
     pausePolling: false,
     count: undefined,
     onCount: () => {},
+    enableFetchNotificationCountAcrossProjects: false,
   }
 
   componentDidMount = async () => {
@@ -77,7 +80,9 @@ class NotificationIcon extends React.Component {
     this.clearPollingComponent()
     clearInterval(this.pollInterval)
   }
-
+  notificationsBadgeDotClass = classNames('react-autoql-notifications-badge-dot', {
+    mobile: isMobile,
+  })
   getNotificationCount = (currentCount) => {
     const count = currentCount || this.state.count
 
@@ -88,6 +93,7 @@ class NotificationIcon extends React.Component {
     return fetchNotificationCount({
       ...getAuthentication(this.props.authentication),
       unacknowledged: count,
+      enableFetchNotificationCountAcrossProjects: this.props.enableFetchNotificationCountAcrossProjects,
     })
       .then((response) => {
         const newCount = response?.data?.data?.unacknowledged
@@ -189,7 +195,7 @@ class NotificationIcon extends React.Component {
     }
 
     if (this.props.useDot) {
-      return <div className='react-autoql-notifications-badge-dot' />
+      return <div className={this.notificationsBadgeDotClass} />
     }
 
     let finalCount = count
@@ -201,12 +207,21 @@ class NotificationIcon extends React.Component {
   }
 
   render = () => {
+    this.notificationsButtonContainerClass = classNames(
+      'react-autoql-notifications-button-container',
+      {
+        dot: this.props.useDot,
+      },
+      this.props.className || '',
+      {
+        'no-badge': !this.state.count && !this.props.count,
+        mobile: isMobile,
+      },
+    )
     return (
       <ErrorBoundary>
         <div
-          className={`react-autoql-notifications-button-container ${this.props.useDot ? 'dot' : ''}
-          ${this.props.className || ''}
-        ${!this.state.count && !this.props.count ? 'no-badge' : ''}`}
+          className={this.notificationsButtonContainerClass}
           data-test='notification-button'
           style={{ ...this.props.style }}
           onClick={() => {

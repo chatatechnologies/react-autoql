@@ -36,6 +36,7 @@ export default class Input extends React.Component {
     focusOnMount: PropTypes.bool,
     showArrow: PropTypes.bool,
     showSpinWheel: PropTypes.bool,
+    disabled: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -44,11 +45,13 @@ export default class Input extends React.Component {
     step: '1',
     size: 'large',
     label: '',
+    selectLocation: 'left',
     fullWidth: false,
     datePicker: false,
     focusOnMount: false,
     showArrow: undefined,
     showSpinWheel: true,
+    disabled: false,
   }
 
   componentDidMount = () => {
@@ -232,6 +235,8 @@ export default class Input extends React.Component {
       focusOnMount,
       showSpinWheel,
       showArrow,
+      selectLocation,
+      disabled,
       ...nativeProps
     } = this.props
 
@@ -254,10 +259,11 @@ export default class Input extends React.Component {
             ${this.state.focused ? 'focus' : ''}
             ${hasSelect ? 'with-select' : ''}
             ${size === 'small' ? 'react-autoql-input-small' : 'react-autoql-input-large'}
-            ${type === 'number' ? 'react-autoql-input-number' : ''}`}
+            ${type === 'number' ? 'react-autoql-input-number' : ''}
+            ${selectLocation === 'left' ? 'react-autoql-input-select-left' : 'react-autoql-input-select-right'}`}
             data-test='react-autoql-input'
           >
-            {hasSelect && this.renderSelectDropdown()}
+            {hasSelect && selectLocation === 'left' && this.renderSelectDropdown()}
             {!!area ? (
               <textarea
                 {...nativeProps}
@@ -279,6 +285,7 @@ export default class Input extends React.Component {
                   onFocus={this.onFocus}
                   onBlur={this.onBlur}
                   style={this.props.inputStyle}
+                  disabled={disabled}
                 />
                 {icon && (
                   <Icon className={`react-autoql-input-icon ${this.state.focused ? ' focus' : ''}`} type={icon} />
@@ -287,6 +294,7 @@ export default class Input extends React.Component {
               </div>
             )}
             {type === 'number' && this.props.showSpinWheel && this.renderSpinWheel()}
+            {hasSelect && selectLocation === 'right' && this.renderSelectDropdown()}
           </div>
         </div>
       </ErrorBoundary>
