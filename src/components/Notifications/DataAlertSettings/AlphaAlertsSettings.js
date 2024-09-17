@@ -13,21 +13,12 @@ export default class AlphaAlertsSettings extends React.Component {
 
   static propTypes = {
     billingUnitsInput: PropTypes.string,
-    descriptionInput: PropTypes.string,
     onBillingUnitsInputChange: PropTypes.func,
-    onDescriptionInputChange: PropTypes.func,
   }
 
   static defaultProps = {
     billingUnitsInput: '',
-    descriptionInput: '',
-    showConditionStatement: true,
     onBillingUnitsInputChange: () => { },
-    onDescriptionInputChange: () => { },
-  }
-
-  focusTitleInput = () => {
-    this.billingUnitsRef?.focus()
   }
 
   onBillingUnitsChange = (e) => {
@@ -45,34 +36,20 @@ export default class AlphaAlertsSettings extends React.Component {
         placeholder='eg. 10'
         number='number'
         maxLength='75'
-        label='Billing Units (optional)'
+        label='Subscription Units (optional)'
         value={this.props.billingUnitsInput || ''}
         onChange={this.onBillingUnitsChange}
-      />
-    )
-  }
-
-  renderDataAlertDescriptionInput = () => {
-    return (
-      <Input
-        className='react-autoql-notification-description-input'
-        placeholder='eg. "Notify when we&apos;ve spent 80% of our Marketing budget for the month"'
-        area
-        maxLength='200'
-        label='Description (optional)'
-        value={this.props.descriptionInput || ''}
-        onChange={this.props.onDescriptionInputChange}
+        fullWidth={true}
       />
     )
   }
 
   render = () => {
-
     return (
       <div>
         <div className='compose-message-section'>
           <div className='form-section'>
-            {this.renderDataAlertDescriptionInput()}
+            {this.renderDataAlertBillingUnitsInput()}
           </div>
         </div>
       </div>
