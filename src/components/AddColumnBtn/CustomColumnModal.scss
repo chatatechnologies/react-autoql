@@ -59,6 +59,7 @@
           display: flex;
           flex-direction: row;
           flex-wrap: wrap;
+          overflow: auto;
         }
       }
 
@@ -80,6 +81,7 @@
 
         .react-autoql-formula-builder-calculator-buttons-container {
           overflow: auto;
+          max-height: 250px;
 
           .react-autoql-btn {
             white-space: pre;

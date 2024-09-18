@@ -1207,7 +1207,7 @@ export default class ChataTable extends React.Component {
         <CustomColumnModal
           {...this.props}
           isOpen={this.state.isCustomColumnPopoverOpen}
-          onClose={() => this.setState({ isCustomColumnPopoverOpen: false })}
+          onClose={() => this.setState({ isCustomColumnPopoverOpen: false, activeCustomColumn: undefined })}
           tableRef={this.ref}
           aggConfig={this.props.aggConfig}
           queryResponse={this.props.response}

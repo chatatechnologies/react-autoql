@@ -26,7 +26,10 @@ import {
   getSelectableColumns,
   getNumericalColumns,
   getStringColumns,
-  capitalizeFirstChar
+  capitalizeFirstChar,
+  getCleanColumnName,
+  buildPlainColumnArrayFn,
+  isOperatorJs,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -120,6 +123,7 @@ export default class CustomColumnModal extends React.Component {
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
     enableWindowFunctions: PropTypes.bool,
+    queryResponse: PropTypes.shape({}),
 
     onAddColumn: PropTypes.func,
     onUpdateColumn: PropTypes.func,
@@ -132,6 +136,7 @@ export default class CustomColumnModal extends React.Component {
     dataFormatting: dataFormattingDefault,
     enableWindowFunctions: false,
 
+    queryResponse: undefined,
     onAddColumn: () => { },
     onUpdateColumn: () => { },
     onClose: () => { },
@@ -243,25 +248,13 @@ export default class CustomColumnModal extends React.Component {
     this.setState({ columns: newColumns })
   }
 
-  buildPlainColumnArrayFn(columnName) {
-    try {
-      // picks out all operators, columns, and numbers from the columnName
-      const extractOperatorsRegex = /(sum|avg|min|max)\([^()]*\)|[a-zA-Z0-9_]+|[+\-*/()]|\s+/g;
-      const operators = columnName.match(extractOperatorsRegex);
-      return operators.filter(op => op.trim() !== '');
-    } catch (error) {
-      console.error(error);
-      return []
-    }
-  }
-
   buildFnArray = (columnName, cols) => {
     try {
       if (!columnName) {
         return []
       }
 
-      const ops = this.buildPlainColumnArrayFn(columnName)
+      const ops = buildPlainColumnArrayFn(columnName)
       if (ops?.length === 0) {
         return []
       }
@@ -269,7 +262,7 @@ export default class CustomColumnModal extends React.Component {
       const fnArray = []
       let i = 0
       for (const op of ops) {
-        if (op === '+' || op === '-' || op === '*' || op === '/' || op === ')' || op === '(') {
+        if (isOperatorJs(op)) {
           let opValue = ''
           Object.keys(this.OPERATORS).forEach(key => {
             if (this.OPERATORS?.[key]?.js === op) {
@@ -280,8 +273,18 @@ export default class CustomColumnModal extends React.Component {
         } else if (!isNaN(op)) {
           fnArray.push({ type: 'number', value: op })
         } else {
-          const column = cols?.find((col) => col?.name?.trim() === op)
-          fnArray.push({ type: 'column', value: column?.field, column })
+          let column = cols?.find((col) => col?.name?.trim() === op)
+          if (column) {
+            fnArray.push({ type: 'column', value: column?.field, column })
+          } else {
+            const cleanName = getCleanColumnName(op)
+            const availableSelect = this.props.queryResponse?.data?.data?.available_selects?.find((select) => {
+              return select?.table_column?.trim() === cleanName
+            })
+            if (availableSelect) {
+              fnArray.push({ type: 'column', value: availableSelect?.table_column, column: availableSelect })
+            }
+          }
         }
         i++
       }
@@ -684,7 +687,6 @@ export default class CustomColumnModal extends React.Component {
 
   renderColumnFnChunk = (chunk, i) => {
     let chunkElement
-
     if (chunk.type === 'number') {
       chunkElement = this.renderCustomNumberInput(chunk, i)
     } else if (chunk.type === 'column') {
@@ -707,7 +709,6 @@ export default class CustomColumnModal extends React.Component {
     const supportedOperators = this.getNextSupportedOperators()
     const columnFn = _cloneDeep(this.state.columnFn)
     const lastTerm = columnFn[columnFn.length - 1]
-
     return (
       <div className='react-autoql-formula-builder-wrapper'>
         <div className='react-autoql-formula-builder-section'>
