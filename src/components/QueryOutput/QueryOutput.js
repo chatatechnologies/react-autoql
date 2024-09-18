@@ -62,6 +62,7 @@ import {
   setColumnVisibility,
   ColumnTypes,
   isColumnIndexConfigValid,
+  getCleanColumnName,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -424,8 +425,7 @@ export class QueryOutput extends React.Component {
 
   displayTypeInvalidWarning = (displayType) => {
     console.warn(
-      `Initial display type "${this.props.initialDisplayType}" provided is not valid for this dataset. Using ${
-        displayType || this.state.displayType
+      `Initial display type "${this.props.initialDisplayType}" provided is not valid for this dataset. Using ${displayType || this.state.displayType
       } instead.`,
     )
   }
@@ -761,9 +761,8 @@ export class QueryOutput extends React.Component {
       <div className='single-value-response-flex-container'>
         <div className='single-value-response-container'>
           <a
-            className={`single-value-response ${
-              getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? ' with-drilldown' : ''
-            }`}
+            className={`single-value-response ${getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? ' with-drilldown' : ''
+              }`}
             onClick={() => {
               this.processDrilldown({ groupBys: [], supportedByAPI: true })
             }}
@@ -1861,11 +1860,16 @@ export class QueryOutput extends React.Component {
         newCol.dateRange = dateRange
       }
 
-      if (additionalSelects?.length > 0) {
+      if (additionalSelects?.length > 0 && isColumnNumberType(newCol)) {
         const customSelect = additionalSelects.find((select) => {
           return select?.columns?.[0]?.replace(/ /g, '') === newCol?.name?.replace(/ /g, '')
         })
-        if (customSelect) {
+        const cleanName = getCleanColumnName(newCol?.name)
+        const availableSelect = this.queryResponse?.data?.data?.available_selects?.find((select) => {
+          return select?.table_column?.trim() === cleanName
+        })
+
+        if (customSelect && !availableSelect) {
           newCol.custom = true
         }
       }
@@ -2746,9 +2750,8 @@ export class QueryOutput extends React.Component {
 
   renderFooter = () => {
     const shouldRenderRT = this.shouldRenderReverseTranslation()
-    const footerClassName = `query-output-footer ${!shouldRenderRT ? 'no-margin' : ''} ${
-      this.props.reverseTranslationPlacement
-    }`
+    const footerClassName = `query-output-footer ${!shouldRenderRT ? 'no-margin' : ''} ${this.props.reverseTranslationPlacement
+      }`
 
     return <div className={footerClassName}>{shouldRenderRT && this.renderReverseTranslation()}</div>
   }
