@@ -59,6 +59,7 @@ export default class ChatContent extends React.Component {
     source: PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.string), PropTypes.string]),
     scope: PropTypes.string,
     shouldRender: PropTypes.bool,
+    hideChatBarAfterInitialResponse: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -70,6 +71,7 @@ export default class ChatContent extends React.Component {
     scope: undefined,
     onRTValueLabelClick: undefined,
     shouldRender: true,
+    hideChatBarAfterInitialResponse: false,
   }
 
   componentDidMount = () => {
@@ -364,12 +366,35 @@ export default class ChatContent extends React.Component {
     return this.state.isQueryRunning || this.state.isDrilldownRunning
   }
 
+  shouldHideQueryInputComponent = () => {
+    const { hideChatBarAfterInitialResponse, shouldRender } = this.props
+    const { messages } = this.state
+
+    if (hideChatBarAfterInitialResponse && messages.length > 0) {
+      return true;
+    }
+    if (!shouldRender) {
+      return true
+    }
+    return false
+  }
+
   render = () => {
-    let visibility
-    let opacity
+    let chatMessageVisibility
+    let chatMessageOpacity
+    let queryInputVisibility
+    let queryInputOpacity
+
+    const hideQueryInput = this.shouldHideQueryInputComponent()
+
     if (!this.props.shouldRender) {
-      visibility = 'hidden'
-      opacity = '0'
+      chatMessageVisibility = 'hidden'
+      chatMessageOpacity = '0'
+      queryInputVisibility = 'hidden'
+      queryInputOpacity = '0'
+    } else if (hideQueryInput) {
+      queryInputVisibility = 'hidden'
+      queryInputOpacity = '0'
     }
 
     return (
@@ -377,7 +402,7 @@ export default class ChatContent extends React.Component {
         <div
           ref={(r) => (this.chatContentRef = r)}
           className={`chat-content-scroll-container ${this.props.shouldRender ? '' : 'react-autoql-content-hidden'}`}
-          style={{ visibility, opacity }}
+          style={{ visibility: chatMessageVisibility, opacity: chatMessageOpacity }}
         >
           <CustomScrollbars
             ref={(r) => (this.messengerScrollComponent = r)}
@@ -446,8 +471,8 @@ export default class ChatContent extends React.Component {
           )}
         </div>
         <div
-          style={{ visibility, opacity }}
-          className={`chat-bar-container ${this.props.shouldRender ? '' : 'react-autoql-content-hidden'}`}
+          style={{ visibility: queryInputVisibility, opacity: queryInputOpacity }}
+          className={`chat-bar-container ${!hideQueryInput ? '' : 'react-autoql-content-hidden'}`}
         >
           <div className='watermark'>
             <Icon type='react-autoql-bubbles-outlined' />

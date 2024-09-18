@@ -9,9 +9,6 @@
     align-items: center;
 
     .custom-column-builder-type-selector {
-      flex: 1;
-      padding: 0;
-      margin-bottom: 10px;
       margin-left: 15px;
     }
 
@@ -149,6 +146,7 @@
           border-bottom-left-radius: 0;
           padding: 0 5px;
           border-left-color: transparent !important;
+
           &:hover {
             border-left-color: var(--react-autoql-accent-color) !important;
           }
@@ -209,6 +207,7 @@
           padding: 10px;
           background-color: transparent;
         }
+
         .react-autoql-operator-select .react-autoql-select {
           border-color: var(--react-autoql-border-color);
           color: var(--react-autoql-text-color-placeholder);
@@ -260,6 +259,7 @@
             border-radius: 4px !important;
             height: 38px !important;
           }
+
           .react-autoql-select {
             font-size: 18px;
             line-height: 34px;
