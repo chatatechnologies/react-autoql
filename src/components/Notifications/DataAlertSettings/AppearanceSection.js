@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { Input } from '../../Input'
+import { Select } from '../../Select'
 import NotificationItemWithoutData from '../NotificationItem/NotificationItemWithoutData'
 
 export default class AppearanceSection extends React.Component {
@@ -18,6 +19,13 @@ export default class AppearanceSection extends React.Component {
     onTitleInputChange: PropTypes.func,
     onMessageInputChange: PropTypes.func,
     showConditionStatement: PropTypes.bool,
+
+    descriptionInput: PropTypes.string,
+    selectedCategory: PropTypes.string,
+    onDescriptionInputChange: PropTypes.func,
+    onCategorySelectChange: PropTypes.func,
+    categories: PropTypes.array,
+    enableAlphaAlertSettings: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -26,6 +34,52 @@ export default class AppearanceSection extends React.Component {
     showConditionStatement: true,
     onTitleInputChange: () => { },
     onMessageInputChange: () => { },
+
+    descriptionInput: '',
+    selectedCategory: '',
+    onDescriptionInputChange: () => { },
+    onCategorySelectChange: () => { },
+    categories: [],
+    enableAlphaAlertSettings: false
+  }
+
+  renderDataAlertDescriptionInput = () => {
+    return (
+      <Input
+        className='react-autoql-notification-description-input'
+        placeholder='eg. "Notify when we&apos;ve spent 80% of our Marketing budget for the month"'
+        area
+        maxLength='200'
+        fullWidth={true}
+        label='Alert Description (optional)'
+        value={this.props.descriptionInput || ''}
+        onChange={this.props.onDescriptionInputChange}
+      />
+    )
+  }
+
+  renderDataAlertCategorySelect = () => {
+    const options = this.props?.categories?.length > 0 ? this.props?.categories?.map((label) => {
+      return {
+        value: label.id,
+        label: label.name,
+      }
+    }) :
+      [{
+        value: '-1',
+        label: 'No Categories Available',
+        disabled: true
+      }]
+    return (
+      <Select
+        label='Alert Category (optional)'
+        placeholder='Select a category'
+        fullWidth={true}
+        options={options}
+        value={this.props.selectedCategory || ''}
+        onChange={this.props.onCategorySelectChange}
+      />
+    )
   }
 
   focusTitleInput = () => {
@@ -40,7 +94,8 @@ export default class AppearanceSection extends React.Component {
         placeholder='eg. "Budget alert!"'
         icon='title'
         maxLength='75'
-        label='Title'
+        fullWidth={true}
+        label='Alert Name'
         value={this.props.titleInput}
         onChange={this.props.onTitleInputChange}
       />
@@ -54,7 +109,8 @@ export default class AppearanceSection extends React.Component {
         placeholder='eg. "Marketing budget is running out!"'
         area
         maxLength='200'
-        label='Message (optional)'
+        fullWidth={true}
+        label='Notification Message (optional)'
         value={this.props.messageInput}
         onChange={this.props.onMessageInputChange}
       />
@@ -94,16 +150,36 @@ export default class AppearanceSection extends React.Component {
             </span>
           </div>
         ) : null}
-        <div className='compose-message-section'>
-          <div className='form-section'>
-            {this.renderDataAlertNameInput()}
-            {this.renderDataAlertMessageInput()}
+        {this.props?.enableAlphaAlertSettings ?
+          <div className='alert-information-container'>
+            <div className='alert-information-item'>
+              {this.renderDataAlertNameInput()}
+            </div>
+            <div className='alert-information-item'>
+              {this.renderDataAlertCategorySelect()}
+            </div>
+            <div className='alert-information-item'>
+              {this.renderDataAlertMessageInput()}
+            </div>
+            <div className='alert-information-item'>
+              {this.renderDataAlertDescriptionInput()}
+            </div>
+            <div className='alert-information-item full-width'>
+              <div className='react-autoql-input-label'>Notification Preview</div>
+              {this.renderDataAlertPreview()}
+            </div>
+          </div> :
+          <div className='compose-message-section'>
+            <div className='form-section'>
+              {this.renderDataAlertNameInput()}
+              {this.renderDataAlertMessageInput()}
+            </div>
+            <div className='preview-section'>
+              <div className='react-autoql-input-label'>Preview</div>
+              {this.renderDataAlertPreview()}
+            </div>
           </div>
-          <div className='preview-section'>
-            <div className='react-autoql-input-label'>Preview</div>
-            {this.renderDataAlertPreview()}
-          </div>
-        </div>
+        }
       </div>
     )
   }

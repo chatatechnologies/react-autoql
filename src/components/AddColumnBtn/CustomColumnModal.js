@@ -26,6 +26,7 @@ import {
   getSelectableColumns,
   getNumericalColumns,
   getStringColumns,
+  capitalizeFirstChar
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -55,7 +56,12 @@ export default class CustomColumnModal extends React.Component {
       initialColumn = props.columns[firstIndex]
     }
 
-    const initialColumnFn = props.initialColumn?.columnFnArray ?? []
+    let initialColumnFn
+    if (props.initialColumn?.name) {
+      initialColumnFn = this.buildFnArray(props.initialColumn?.name, props.columns)
+    } else {
+      initialColumnFn = props.initialColumn?.columnFnArray ?? []
+    }
 
     this.newColumnRaw = this.getRawColumnParams(initialColumn, props.initialColumn?.display_name)
 
@@ -235,6 +241,56 @@ export default class CustomColumnModal extends React.Component {
     })
 
     this.setState({ columns: newColumns })
+  }
+
+  buildPlainColumnArrayFn(columnName) {
+    try {
+      // picks out all operators, columns, and numbers from the columnName
+      const extractOperatorsRegex = /(sum|avg|min|max)\([^()]*\)|[a-zA-Z0-9_]+|[+\-*/()]|\s+/g;
+      const operators = columnName.match(extractOperatorsRegex);
+      return operators.filter(op => op.trim() !== '');
+    } catch (error) {
+      console.error(error);
+      return []
+    }
+  }
+
+  buildFnArray = (columnName, cols) => {
+    try {
+      if (!columnName) {
+        return []
+      }
+
+      const ops = this.buildPlainColumnArrayFn(columnName)
+      if (ops?.length === 0) {
+        return []
+      }
+
+      const fnArray = []
+      let i = 0
+      for (const op of ops) {
+        if (op === '+' || op === '-' || op === '*' || op === '/' || op === ')' || op === '(') {
+          let opValue = ''
+          Object.keys(this.OPERATORS).forEach(key => {
+            if (this.OPERATORS?.[key]?.js === op) {
+              opValue = key
+            }
+          });
+          fnArray.push({ type: 'operator', value: opValue })
+        } else if (!isNaN(op)) {
+          fnArray.push({ type: 'number', value: op })
+        } else {
+          const column = cols?.find((col) => col?.name?.trim() === op)
+          fnArray.push({ type: 'column', value: column?.field, column })
+        }
+        i++
+      }
+
+      return fnArray
+    } catch (error) {
+      console.error(error)
+      return []
+    }
   }
 
   buildProtoTableColumn = (customColumn) => {
@@ -457,39 +513,18 @@ export default class CustomColumnModal extends React.Component {
   }
 
   renderColumnTypeSelector = () => {
-    const supportedColumnTypes = this.getSupportedColumnTypes()
     const currentColumnType = COLUMN_TYPES[this.getColumnType()]?.description
-
+    const formattedCurrentColumnType = currentColumnType ? ` (${currentColumnType})` : ''
     return (
-      <Select
-        label='Formatting'
-        className='custom-column-builder-type-selector'
-        fullWidth={true}
-        options={[
-          {
-            value: 'auto',
-            label: (
-              <span>
-                Auto
-                {!!currentColumnType && (
-                  <em style={{ color: 'var(--react-autoql-text-color-placeholder)' }}> ({currentColumnType})</em>
-                )}
-              </span>
-            ),
-          },
-          ...supportedColumnTypes.map((type) => ({
-            value: type,
-            label: COLUMN_TYPES[type]?.description,
-          })),
-          // Todo: Add custom option to use excel type shapes
-          // {
-          //   value: 'custom',
-          //   label: 'Custom...'
-          // }
-        ]}
-        value={this.state.columnType ?? this.getColumnType()}
-        onChange={(columnType) => this.setState({ columnType })}
-      />
+      <div className='custom-column-builder-type-selector'>
+        <Input
+          ref={(r) => (this.inputRef = r)}
+          focusOnMount
+          label='Formatting'
+          value={(capitalizeFirstChar(this.state.columnType) + formattedCurrentColumnType) ?? (this.getColumnType() + formattedCurrentColumnType)}
+          disabled={true}
+        />
+      </div>
     )
   }
 
@@ -509,7 +544,6 @@ export default class CustomColumnModal extends React.Component {
 
   renderCustomNumberInput = (chunk, i) => {
     const columnFn = _cloneDeep(this.state.columnFn)
-
     return (
       <Input
         type='number'
@@ -712,7 +746,6 @@ export default class CustomColumnModal extends React.Component {
           <div className='react-autoql-input-label'>Variables</div>
           <div className='react-autoql-formula-builder-calculator-buttons-container'>
             {getSelectableColumns(this.props.columns)
-              ?.filter((col) => !col.custom)
               ?.map((col, i) => {
                 return (
                   <Button
@@ -957,7 +990,6 @@ export default class CustomColumnModal extends React.Component {
             <div className='custom-column-modal-form-wrapper'>
               <div className='custom-column-modal-name-and-type'>
                 {this.renderColumnNameInput()}
-                {this.renderColumnTypeSelector()}
               </div>
               {this.renderColumnFnBuilder()}
             </div>
