@@ -1068,14 +1068,8 @@ export default class ChataTable extends React.Component {
     this.setState({ contextMenuColumn: undefined })
 
     const currentAdditionalSelectColumns = this.props.response?.data?.data?.fe_req?.additional_selects ?? []
-    const newAdditionalSelectColumns = currentAdditionalSelectColumns?.map((select) => {
-      if (select?.columns[0]?.replace(/ /g, '') !== column?.name?.replace(/ /g, '')) {
-        return select
-      } else if (select.columns[0] === column.name) {
-        column.visible = false
-        column.is_visible = false
-        return column
-      }
+    const newAdditionalSelectColumns = currentAdditionalSelectColumns?.filter((select) => {
+      return select?.columns[0]?.replace(/ /g, '') !== column?.name?.replace(/ /g, '')
     })
 
     if (currentAdditionalSelectColumns?.length !== newAdditionalSelectColumns?.length) {
