@@ -1378,7 +1378,7 @@ export default class ChataTable extends React.Component {
     return (
       <div className='table-row-count'>
         <span>{`Scrolled ${currentRowsFormatted} / ${
-          totalRowCount > 50000 ? rowLimitFormatted + '+' : totalRowsFormatted
+          totalRowCount > rowLimit ? rowLimitFormatted + '+' : totalRowsFormatted
         } rows`}</span>
       </div>
     )
