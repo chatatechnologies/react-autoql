@@ -167,14 +167,14 @@ export default class ChataTable extends React.Component {
     keepScrolledRight: false,
     allowCustomColumns: true,
     enableContextMenu: true,
-    onFilterCallback: () => { },
-    onSorterCallback: () => { },
-    onTableParamsChange: () => { },
-    onCellClick: () => { },
-    onErrorCallback: () => { },
-    onNewData: () => { },
-    updateColumns: () => { },
-    onCustomColumnChange: () => { },
+    onFilterCallback: () => {},
+    onSorterCallback: () => {},
+    onTableParamsChange: () => {},
+    onCellClick: () => {},
+    onErrorCallback: () => {},
+    onNewData: () => {},
+    updateColumns: () => {},
+    onCustomColumnChange: () => {},
   }
 
   componentDidMount = () => {
@@ -1068,11 +1068,9 @@ export default class ChataTable extends React.Component {
     this.setState({ contextMenuColumn: undefined })
 
     const currentAdditionalSelectColumns = this.props.response?.data?.data?.fe_req?.additional_selects ?? []
-    const newAdditionalSelectColumns = currentAdditionalSelectColumns?.filter(
-      (select) => {
-        return select?.columns[0]?.replace(/ /g, '') !== column?.name?.replace(/ /g, '')
-      },
-    )
+    const newAdditionalSelectColumns = currentAdditionalSelectColumns?.filter((select) => {
+      return select?.columns[0]?.replace(/ /g, '') !== column?.name?.replace(/ /g, '')
+    })
 
     if (currentAdditionalSelectColumns?.length !== newAdditionalSelectColumns?.length) {
       this.setPageLoading(true)
@@ -1374,10 +1372,14 @@ export default class ChataTable extends React.Component {
     const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
     const currentRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(currentRowCount)
     const totalRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(totalRowCount)
+    const rowLimit = this.props.response?.data?.data?.row_limit
+    const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(rowLimit)
 
     return (
       <div className='table-row-count'>
-        <span>{`Scrolled ${currentRowsFormatted} / ${totalRowsFormatted} rows`}</span>
+        <span>{`Scrolled ${currentRowsFormatted} / ${
+          totalRowCount > 50000 ? rowLimitFormatted + '+' : totalRowsFormatted
+        } rows`}</span>
       </div>
     )
   }
