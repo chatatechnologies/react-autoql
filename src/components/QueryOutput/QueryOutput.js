@@ -1077,7 +1077,7 @@ export class QueryOutput extends React.Component {
       groupBys = getGroupBysFromTable(cell, columns)
     }
 
-    this.processDrilldown({ groupBys, supportedByAPI: !!groupBys })
+    this.processDrilldown({ groupBys: groupBys ?? [], supportedByAPI: true })
   }
 
   onChartClick = ({ row, columnIndex, columns, stringColumnIndex, legendColumn, activeKey, filter }) => {
@@ -1234,7 +1234,7 @@ export class QueryOutput extends React.Component {
   }
 
   onChangeStringColumnIndex = (index) => {
-    if (!(index >= 0)) {
+    if (index < 0) {
       return
     }
 
