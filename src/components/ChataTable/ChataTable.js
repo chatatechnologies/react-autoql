@@ -1372,10 +1372,14 @@ export default class ChataTable extends React.Component {
     const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
     const currentRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(currentRowCount)
     const totalRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(totalRowCount)
+    const rowLimit = this.props.response?.data?.data?.row_limit
+    const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(rowLimit)
 
     return (
       <div className='table-row-count'>
-        <span>{`Scrolled ${currentRowsFormatted} / ${totalRowsFormatted} rows`}</span>
+        <span>{`Scrolled ${currentRowsFormatted} / ${
+          totalRowCount > rowLimit ? rowLimitFormatted + '+' : totalRowsFormatted
+        } rows`}</span>
       </div>
     )
   }
