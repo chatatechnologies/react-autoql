@@ -1077,7 +1077,11 @@ export default class ChataTable extends React.Component {
       this.queryFn({ newColumns: newAdditionalSelectColumns })
         .then((response) => {
           if (response?.data?.data?.rows) {
-            this.props.updateColumns(response?.data?.data?.columns, response?.data?.data?.fe_req)
+            this.props.updateColumns(
+              response?.data?.data?.columns,
+              response?.data?.data?.fe_req,
+              response?.data?.data?.available_selects,
+            )
           } else {
             throw new Error('Column deletion failed')
           }
@@ -1101,7 +1105,7 @@ export default class ChataTable extends React.Component {
         return col
       })
 
-      this.props.updateColumns(newColumns)
+      this.props.updateColumns(newColumns, response?.data?.data?.fe_req, response?.data?.data?.available_selects)
 
       setColumnVisibility({ ...this.props.authentication, columns: newColumns }).catch((error) => {
         console.error(error)

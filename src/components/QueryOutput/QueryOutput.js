@@ -574,7 +574,7 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  updateColumns = (columns, feReq) => {
+  updateColumns = (columns, feReq, availableSelects) => {
     if (columns && this._isMounted) {
       const newColumns = this.formatColumnsForTable(columns, feReq?.additional_selects)
 
@@ -587,6 +587,9 @@ export class QueryOutput extends React.Component {
         if (this.queryResponse?.data?.data?.columns) {
           if (feReq) {
             this.queryResponse.data.data.fe_req = feReq
+          }
+          if (availableSelects) {
+            this.queryResponse.data.data.available_selects = availableSelects
           }
           this.queryResponse.data.data.columns = newColumns
         }

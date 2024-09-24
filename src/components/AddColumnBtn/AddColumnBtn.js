@@ -24,11 +24,22 @@ export class AddColumnBtnWithoutRef extends React.Component {
   }
 
   static propTypes = {
-    queryResponse: PropTypes.shape({}),
+    queryResponse: PropTypes.shape({
+      data: PropTypes.shape({
+        data: PropTypes.shape({
+          available_selects: PropTypes.array,
+          fe_req: PropTypes.shape({
+            additional_selects: PropTypes.array,
+          }),
+        }),
+      }),
+    }),
+    popoverParentElement: PropTypes.object,
+    popoverPositions: PropTypes.arrayOf(PropTypes.string),
+    tooltipID: PropTypes.string,
     allowCustom: PropTypes.bool,
     onAddColumnClick: PropTypes.func,
     onCustomClick: PropTypes.func,
-    tooltipID: PropTypes.string,
     disableAddCustomColumnOption: PropTypes.bool,
   }
 
@@ -88,7 +99,7 @@ export class AddColumnBtnWithoutRef extends React.Component {
   }
 
   renderAddColumnMenu = (availableSelectColumns, availableHiddenColumns) => {
-    if (!availableHiddenColumns && !availableHiddenColumns) {
+    if (!availableSelectColumns && !availableHiddenColumns) {
       return null
     }
 

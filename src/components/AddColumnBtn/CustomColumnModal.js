@@ -137,9 +137,9 @@ export default class CustomColumnModal extends React.Component {
     enableWindowFunctions: false,
 
     queryResponse: undefined,
-    onAddColumn: () => { },
-    onUpdateColumn: () => { },
-    onClose: () => { },
+    onAddColumn: () => {},
+    onUpdateColumn: () => {},
+    onClose: () => {},
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -264,11 +264,11 @@ export default class CustomColumnModal extends React.Component {
       for (const op of ops) {
         if (isOperatorJs(op)) {
           let opValue = ''
-          Object.keys(this.OPERATORS).forEach(key => {
+          Object.keys(this.OPERATORS).forEach((key) => {
             if (this.OPERATORS?.[key]?.js === op) {
               opValue = key
             }
-          });
+          })
           fnArray.push({ type: 'operator', value: opValue })
         } else if (!isNaN(op)) {
           fnArray.push({ type: 'number', value: op })
@@ -524,7 +524,10 @@ export default class CustomColumnModal extends React.Component {
           ref={(r) => (this.inputRef = r)}
           focusOnMount
           label='Formatting'
-          value={(capitalizeFirstChar(this.state.columnType) + formattedCurrentColumnType) ?? (this.getColumnType() + formattedCurrentColumnType)}
+          value={
+            capitalizeFirstChar(this.state.columnType) + formattedCurrentColumnType ??
+            this.getColumnType() + formattedCurrentColumnType
+          }
           disabled={true}
         />
       </div>
