@@ -303,6 +303,7 @@ export class DashboardTile extends React.Component {
 
       const useSecondAxiosSource = isSecondHalf && !this.areTopAndBottomSameQuery()
       const additionalColumnSelects = isSecondHalf ? this.props.tile.secondColumnSelects : this.props.tile.columnSelects
+      const currentDisplayOverrides = isSecondHalf ? [] : this.props.tile?.displayOverrides
       const cancelToken = useSecondAxiosSource ? this.secondAxiosSource?.token : this.axiosSource?.token
 
       const requestData = {
@@ -313,6 +314,7 @@ export class DashboardTile extends React.Component {
           : getAutoQLConfig(this.props.autoQLConfig).enableQueryValidation,
         skipQueryValidation: skipQueryValidation,
         newColumns: additionalColumnSelects,
+        displayOverrides: currentDisplayOverrides,
         // Hardcode this for now until we change the filter lock blacklist to a whitelist
         // mergeSources(this.props.source, source),
         source: 'dashboards.user',
@@ -727,8 +729,8 @@ export class DashboardTile extends React.Component {
   onDisplayTypeChange = (displayType) => this.debouncedSetParamsForTile({ displayType })
   onBucketSizeChange = (bucketSize) => this.debouncedSetParamsForTile({ bucketSize })
 
-  onColumnChange = (columns, columnSelects, queryResponse, dataConfig) => {
-    this.debouncedSetParamsForTile({ columnSelects, queryResponse, dataConfig })
+  onColumnChange = (displayOverrides, columns, columnSelects, queryResponse, dataConfig) => {
+    this.debouncedSetParamsForTile({ columnSelects, queryResponse, dataConfig, displayOverrides })
   }
 
   onSecondAggConfigChange = (secondAggConfig) => this.debouncedSetParamsForTile({ secondAggConfig })

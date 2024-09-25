@@ -253,6 +253,7 @@ class DataAlertModal extends React.Component {
               term_value: query,
               user_selection: queryResponse?.data?.data?.fe_req?.disambiguation,
               additional_selects: queryResponse?.data?.data?.fe_req?.additional_selects || [],
+              display_overrides: queryResponse?.data?.data?.fe_req?.display_overrides || [],
             },
           ]
         }

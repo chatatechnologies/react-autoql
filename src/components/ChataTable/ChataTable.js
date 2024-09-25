@@ -290,6 +290,10 @@ export default class ChataTable extends React.Component {
     }
   }
 
+  resetCustomColumnModal = () => {
+    this.setState({ isCustomColumnPopoverOpen: false, activeCustomColumn: undefined })
+  }
+
   calculateSummaryStats = (props) => {
     const stats = {}
 
@@ -1202,7 +1206,7 @@ export default class ChataTable extends React.Component {
         <CustomColumnModal
           {...this.props}
           isOpen={this.state.isCustomColumnPopoverOpen}
-          onClose={() => this.setState({ isCustomColumnPopoverOpen: false, activeCustomColumn: undefined })}
+          onClose={() => this.resetCustomColumnModal()}
           tableRef={this.ref}
           aggConfig={this.props.aggConfig}
           queryResponse={this.props.response}
@@ -1210,11 +1214,11 @@ export default class ChataTable extends React.Component {
           initialColumn={this.state.activeCustomColumn}
           onUpdateColumn={(column) => {
             this.props.onCustomColumnChange(column)
-            this.setState({ isCustomColumnPopoverOpen: false })
+            this.resetCustomColumnModal()
           }}
           onAddColumn={(column) => {
             this.props.onCustomColumnChange(column)
-            this.setState({ isCustomColumnPopoverOpen: false })
+            this.resetCustomColumnModal()
           }}
         />
       )
@@ -1381,9 +1385,8 @@ export default class ChataTable extends React.Component {
 
     return (
       <div className='table-row-count'>
-        <span>{`Scrolled ${currentRowsFormatted} / ${
-          totalRowCount > rowLimit ? rowLimitFormatted + '+' : totalRowsFormatted
-        } rows`}</span>
+        <span>{`Scrolled ${currentRowsFormatted} / ${totalRowCount > rowLimit ? rowLimitFormatted + '+' : totalRowsFormatted
+          } rows`}</span>
       </div>
     )
   }
