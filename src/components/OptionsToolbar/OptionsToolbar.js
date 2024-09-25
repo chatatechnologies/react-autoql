@@ -73,15 +73,15 @@ export class OptionsToolbar extends React.Component {
     enableFilterBtn: true,
     enableDeleteBtn: false,
     shouldRender: true,
-    onSuccessAlert: () => {},
-    onErrorCallback: () => {},
-    onNewNotificationCallback: () => {},
-    deleteMessageCallback: () => {},
-    createDataAlertCallback: () => {},
-    onColumnVisibilitySave: () => {},
-    onCSVDownloadStart: () => {},
-    onCSVDownloadFinish: () => {},
-    onCSVDownloadProgress: () => {},
+    onSuccessAlert: () => { },
+    onErrorCallback: () => { },
+    onNewNotificationCallback: () => { },
+    deleteMessageCallback: () => { },
+    createDataAlertCallback: () => { },
+    onColumnVisibilitySave: () => { },
+    onCSVDownloadStart: () => { },
+    onCSVDownloadFinish: () => { },
+    onCSVDownloadProgress: () => { },
   }
 
   componentDidMount = () => {
@@ -382,9 +382,9 @@ export class OptionsToolbar extends React.Component {
               style={
                 this.state.isCSVDownloading
                   ? {
-                      pointerEvents: 'none', // This makes it not clickable
-                      opacity: 0.6, // This grays it out to look disabled
-                    }
+                    pointerEvents: 'none', // This makes it not clickable
+                    opacity: 0.6, // This grays it out to look disabled
+                  }
                   : null
               }
             >
@@ -466,6 +466,7 @@ export class OptionsToolbar extends React.Component {
                       aggConfig: _cloneDeep(responseRef?.state?.aggConfig),
                       displayType: responseRef?.state?.displayType,
                       columnSelects: responseCopy?.data?.data?.fe_req?.additional_selects,
+                      displayOverrides: responseCopy?.data?.data?.fe_req?.display_overrides,
                       dataConfig: {
                         tableConfig: _cloneDeep(responseRef?.tableConfig),
                         pivotTableConfig: _cloneDeep(responseRef?.pivotTableConfig),

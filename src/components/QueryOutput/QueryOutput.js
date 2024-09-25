@@ -249,18 +249,18 @@ export class QueryOutput extends React.Component {
     bucketSize: undefined,
     allowColumnAddition: false,
     enableTableContextMenu: true,
-    onTableConfigChange: () => {},
-    onAggConfigChange: () => {},
-    onQueryValidationSelectOption: () => {},
-    onErrorCallback: () => {},
-    onDrilldownStart: () => {},
-    onDrilldownEnd: () => {},
-    onColumnChange: () => {},
-    onPageSizeChange: () => {},
-    onMount: () => {},
-    onBucketSizeChange: () => {},
-    onNewData: () => {},
-    onCustomColumnUpdate: () => {},
+    onTableConfigChange: () => { },
+    onAggConfigChange: () => { },
+    onQueryValidationSelectOption: () => { },
+    onErrorCallback: () => { },
+    onDrilldownStart: () => { },
+    onDrilldownEnd: () => { },
+    onColumnChange: () => { },
+    onPageSizeChange: () => { },
+    onMount: () => { },
+    onBucketSizeChange: () => { },
+    onNewData: () => { },
+    onCustomColumnUpdate: () => { },
   }
 
   componentDidMount = () => {
@@ -329,6 +329,7 @@ export class QueryOutput extends React.Component {
       if (columnsChanged) {
         this.tableID = uuid()
         this.props.onColumnChange(
+          this.queryResponse?.data?.data?.fe_req?.display_overrides,
           this.state.columns,
           this.queryResponse?.data?.data?.fe_req?.additional_selects,
           this.queryResponse,
@@ -432,6 +433,10 @@ export class QueryOutput extends React.Component {
 
   getAdditionalSelectsFromResponse = (response) => {
     return response?.data?.data?.fe_req?.additional_selects
+  }
+
+  getDisplayOverridesFromResponse = (response) => {
+    return response?.data?.data?.fe_req?.display_overrides
   }
 
   getDataLength = () => {
@@ -869,6 +874,7 @@ export class QueryOutput extends React.Component {
           scope: this.props.scope,
           cancelToken: this.axiosSource.token,
           newColumns: queryRequestData?.additional_selects,
+          displayOverrides: queryRequestData?.display_overrides,
           ...args,
         })
       } catch (error) {
@@ -2323,8 +2329,14 @@ export class QueryOutput extends React.Component {
         })
       }
 
+      let currentDisplayOverrides = this.getDisplayOverridesFromResponse(this.queryResponse) ?? []
+      currentDisplayOverrides = currentDisplayOverrides?.filter((override) => {
+        return override.table_column?.trim() !== column.table_column?.trim()
+      })
+
       this.queryFn({
         newColumns: [...currentAdditionalSelectColumns, formatAdditionalSelectColumn(column, sqlFn)],
+        displayOverrides: [...currentDisplayOverrides, { english: column?.custom_column_display_name, table_column: column?.table_column }],
       })
         .then((response) => {
           if (response?.data?.data?.rows) {

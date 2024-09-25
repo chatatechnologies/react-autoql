@@ -17,7 +17,8 @@
     input::-webkit-inner-spin-button {
       /* display: none; <- Crashes Chrome on hover */
       -webkit-appearance: none;
-      margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+      margin: 0;
+      /* <-- Apparently some margin are still there even though it's hidden */
     }
 
     .react-autoql-input[type='number'] {
@@ -36,6 +37,7 @@
       }
 
       &:hover {
+
         .react-autoql-input,
         .react-autoql-input-number-spin-button-container {
           border-color: var(--react-autoql-accent-color);
@@ -208,7 +210,8 @@
       &::placeholder {
         /* Chrome, Firefox, Opera, Safari 10.1+ */
         color: var(--react-autoql-text-color-placeholder);
-        opacity: 1; /* Firefox */
+        opacity: 1;
+        /* Firefox */
         font-style: italic;
       }
     }
@@ -253,6 +256,11 @@
       }
     }
   }
+}
+
+.error-message {
+  color: red;
+  font-size: 12px;
 }
 
 .react-autoql-input-label {

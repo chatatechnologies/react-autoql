@@ -111,6 +111,7 @@ export default class CustomColumnModal extends React.Component {
       columnFn: initialColumnFn,
       columnType: props.initialColumn?.type ?? 'auto',
       isFnValid: !!props.initialColumn,
+      isColumnNameValid: props.initialColumn ? true : this.checkColumnName(props.initialColumn?.display_name ?? DEFAULT_COLUMN_NAME),
 
       isFunctionConfigModalVisible: false,
       selectedFnType: Object.keys(WINDOW_FUNCTIONS)[0],
@@ -144,7 +145,9 @@ export default class CustomColumnModal extends React.Component {
 
   componentDidUpdate = (prevProps, prevState) => {
     // Update column mutator is function changed
-    if (!deepEqual(this.state.columnFn, prevState.columnFn) || this.state.columnType !== prevState.columnType) {
+    if (!deepEqual(this.state.columnFn, prevState.columnFn) ||
+      (this.state.columnType !== prevState.columnType) ||
+      (this.state.columnName !== prevState.columnName)) {
       setTimeout(() => {
         this.updateTabulatorColumnFn()
       }, 0)
@@ -227,7 +230,7 @@ export default class CustomColumnModal extends React.Component {
       if (col.field === this.newColumn?.field) {
         const newColFormatted = new ColumnObj(
           this.getColumnParamsForTabulator({
-            ...this.getRawColumnParams(columnForFn, newFnSummary),
+            ...this.getRawColumnParams(columnForFn),
             ...newParams,
             id: this.props.initialColumn?.id,
             custom: true,
@@ -299,6 +302,7 @@ export default class CustomColumnModal extends React.Component {
   buildProtoTableColumn = (customColumn) => {
     if (customColumn?.columnFnArray) {
       let protoTableColumn = ''
+      let i = 0
       for (const columnFn of customColumn?.columnFnArray) {
         if (columnFn?.type === 'column') {
           protoTableColumn += columnFn?.column?.name
@@ -311,25 +315,29 @@ export default class CustomColumnModal extends React.Component {
         } else {
           console.error('Unknown columnFn type')
         }
-        protoTableColumn += ' '
+        const nextValue = customColumn?.columnFnArray?.[i + 1]?.value
+        if (columnFn?.value !== 'LEFT_BRACKET' && nextValue !== 'RIGHT_BRACKET') {
+          protoTableColumn += ' '
+        }
+        i++
       }
 
       return protoTableColumn
     }
-    return ''
+    return customColumn?.name || ''
   }
 
   onUpdateColumnConfirm = () => {
     const newColumn = _cloneDeep(this.newColumn)
     newColumn.id = this.props.initialColumn?.id
     const protoTableColumn = this.buildProtoTableColumn(newColumn)
-    this.props.onUpdateColumn({ ...newColumn, table_column: protoTableColumn })
+    this.props.onUpdateColumn({ ...newColumn, table_column: protoTableColumn, custom_column_display_name: this.state?.columnName?.trim() })
   }
 
   onAddColumnConfirm = () => {
     const newColumn = _cloneDeep(this.newColumn)
     const protoTableColumn = this.buildProtoTableColumn(newColumn)
-    this.props.onAddColumn({ ...newColumn, table_column: protoTableColumn })
+    this.props.onAddColumn({ ...newColumn, table_column: protoTableColumn, custom_column_display_name: this.state?.columnName?.trim() })
   }
 
   changeChunkValue = (value, type, i) => {
@@ -501,6 +509,26 @@ export default class CustomColumnModal extends React.Component {
     return !!this.state.selectedFnType && !!this.state.selectedFnColumn
   }
 
+  checkColumnName = (nameVal) => {
+    const columnNameExists = this.props?.columns?.find((col) => col?.display_name === nameVal)
+    if (columnNameExists || !nameVal) {
+      return false
+    } else {
+      return true
+    }
+  }
+
+  handleColumnNameUpdate = (nameVal) => {
+    if (this.checkColumnName(nameVal)) {
+      this.setState({ isColumnNameValid: true })
+    } else {
+      this.setState({ isColumnNameValid: false })
+    }
+    this.setState({
+      columnName: nameVal,
+    })
+  }
+
   renderColumnNameInput = () => {
     return (
       <Input
@@ -509,8 +537,11 @@ export default class CustomColumnModal extends React.Component {
         focusOnMount
         label='Column Name'
         placeholder='eg. "Difference"'
-        value={this.newColumn?.fnSummary || this.state.columnName}
-        disabled={true}
+        value={this.state.columnName}
+        errormessage={this.state?.isColumnNameValid ? '' : this.state?.columnName?.length > 0 ? 'A column with this name already exists.' : 'Column name cannot be empty'}
+        onChange={(e) => {
+          this.handleColumnNameUpdate(e.target.value)
+        }}
       />
     )
   }
@@ -985,7 +1016,7 @@ export default class CustomColumnModal extends React.Component {
           shouldRender={this.props.shouldRender}
           onClose={this.props.onClose}
           onConfirm={this.props.initialColumn ? this.onUpdateColumnConfirm : this.onAddColumnConfirm}
-          confirmDisabled={!this.state.isFnValid}
+          confirmDisabled={!this.state.isFnValid || !this.state.isColumnNameValid || !this.state.columnFn?.length}
         >
           <div className='custom-column-modal'>
             <div className='custom-column-modal-form-wrapper'>

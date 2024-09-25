@@ -339,6 +339,7 @@ export default class RuleSimple extends React.Component {
     const tableFilters = this.state.queryFilters?.filter((f) => f.type === 'table')
     const lockedFilters = this.state.queryFilters?.filter((f) => f.type === 'locked')
     const additionalSelects = this.props.queryResponse?.data?.data?.fe_req?.additional_selects || []
+    const displayOverrides = this.props.queryResponse?.data?.data?.fe_req?.display_overrides || []
 
     let firstQueryJoinColumnName =
       this.props.queryResponse?.data?.data?.columns[this.state.firstQueryGroupableColumnIndex]?.name
@@ -368,6 +369,7 @@ export default class RuleSimple extends React.Component {
         session_filter_locks: lockedFilters,
         join_columns: firstQueryJoinColumns.length === 0 ? this.state.firstQueryJoinColumns : firstQueryJoinColumns,
         additional_selects: additionalSelects,
+        display_overrides: displayOverrides,
       },
     ]
 
