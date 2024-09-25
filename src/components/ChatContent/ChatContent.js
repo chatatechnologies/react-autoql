@@ -371,12 +371,9 @@ export default class ChatContent extends React.Component {
     const { messages } = this.state
 
     if (hideChatBarAfterInitialResponse && messages.length > 0) {
-      return true;
-    }
-    if (!shouldRender) {
       return true
     }
-    return false
+    return !shouldRender
   }
 
   render = () => {

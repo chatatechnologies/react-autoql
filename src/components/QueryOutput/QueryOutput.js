@@ -426,7 +426,8 @@ export class QueryOutput extends React.Component {
 
   displayTypeInvalidWarning = (displayType) => {
     console.warn(
-      `Initial display type "${this.props.initialDisplayType}" provided is not valid for this dataset. Using ${displayType || this.state.displayType
+      `Initial display type "${this.props.initialDisplayType}" provided is not valid for this dataset. Using ${
+        displayType || this.state.displayType
       } instead.`,
     )
   }
@@ -578,7 +579,7 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  updateColumns = (columns, feReq) => {
+  updateColumns = (columns, feReq, availableSelects) => {
     if (columns && this._isMounted) {
       const newColumns = this.formatColumnsForTable(columns, feReq?.additional_selects)
 
@@ -591,6 +592,9 @@ export class QueryOutput extends React.Component {
         if (this.queryResponse?.data?.data?.columns) {
           if (feReq) {
             this.queryResponse.data.data.fe_req = feReq
+          }
+          if (availableSelects) {
+            this.queryResponse.data.data.available_selects = availableSelects
           }
           this.queryResponse.data.data.columns = newColumns
         }
@@ -766,8 +770,9 @@ export class QueryOutput extends React.Component {
       <div className='single-value-response-flex-container'>
         <div className='single-value-response-container'>
           <a
-            className={`single-value-response ${getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? ' with-drilldown' : ''
-              }`}
+            className={`single-value-response ${
+              getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? ' with-drilldown' : ''
+            }`}
             onClick={() => {
               this.processDrilldown({ groupBys: [], supportedByAPI: true })
             }}
@@ -2765,8 +2770,9 @@ export class QueryOutput extends React.Component {
 
   renderFooter = () => {
     const shouldRenderRT = this.shouldRenderReverseTranslation()
-    const footerClassName = `query-output-footer ${!shouldRenderRT ? 'no-margin' : ''} ${this.props.reverseTranslationPlacement
-      }`
+    const footerClassName = `query-output-footer ${!shouldRenderRT ? 'no-margin' : ''} ${
+      this.props.reverseTranslationPlacement
+    }`
 
     return <div className={footerClassName}>{shouldRenderRT && this.renderReverseTranslation()}</div>
   }
