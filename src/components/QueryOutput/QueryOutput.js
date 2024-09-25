@@ -2333,10 +2333,13 @@ export class QueryOutput extends React.Component {
       currentDisplayOverrides = currentDisplayOverrides?.filter((override) => {
         return override.table_column?.trim() !== column.table_column?.trim()
       })
+      if (column?.custom_column_display_name) {
+        currentDisplayOverrides = [...currentDisplayOverrides, { english: column?.custom_column_display_name, table_column: column?.table_column }]
+      }
 
       this.queryFn({
         newColumns: [...currentAdditionalSelectColumns, formatAdditionalSelectColumn(column, sqlFn)],
-        displayOverrides: [...currentDisplayOverrides, { english: column?.custom_column_display_name, table_column: column?.table_column }],
+        displayOverrides: currentDisplayOverrides,
       })
         .then((response) => {
           if (response?.data?.data?.rows) {
