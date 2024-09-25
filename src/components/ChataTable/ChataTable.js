@@ -167,14 +167,14 @@ export default class ChataTable extends React.Component {
     keepScrolledRight: false,
     allowCustomColumns: true,
     enableContextMenu: true,
-    onFilterCallback: () => { },
-    onSorterCallback: () => { },
-    onTableParamsChange: () => { },
-    onCellClick: () => { },
-    onErrorCallback: () => { },
-    onNewData: () => { },
-    updateColumns: () => { },
-    onCustomColumnChange: () => { },
+    onFilterCallback: () => {},
+    onSorterCallback: () => {},
+    onTableParamsChange: () => {},
+    onCellClick: () => {},
+    onErrorCallback: () => {},
+    onNewData: () => {},
+    updateColumns: () => {},
+    onCustomColumnChange: () => {},
   }
 
   componentDidMount = () => {
