@@ -511,11 +511,7 @@ export default class CustomColumnModal extends React.Component {
 
   checkColumnName = (nameVal) => {
     const columnNameExists = this.props?.columns?.find((col) => col?.display_name === nameVal)
-    if (columnNameExists || !nameVal) {
-      return false
-    } else {
-      return true
-    }
+    return !columnNameExists && nameVal
   }
 
   handleColumnNameUpdate = (nameVal) => {
