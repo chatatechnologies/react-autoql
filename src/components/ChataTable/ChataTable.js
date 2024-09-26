@@ -38,7 +38,7 @@ import { DateRangePicker } from '../DateRangePicker'
 import { DataLimitWarning } from '../DataLimitWarning'
 import { columnOptionsList } from './tabulatorConstants'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-
+import { DATASET_TOO_LARGE } from '../../js/Constants'
 import './ChataTable.scss'
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
 import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
@@ -1444,8 +1444,7 @@ export default class ChataTable extends React.Component {
             (isDataLimited(this.props.response) ? (
               <div className='selectable-table-tooltip-section'>
                 <span>
-                  <Icon type='warning' /> Summary stats unavailable - dataset is too large. Please try refining your
-                  query.
+                  <Icon type='warning' /> {`Summary stats unavailable - ${DATASET_TOO_LARGE}`}
                 </span>
               </div>
             ) : (
