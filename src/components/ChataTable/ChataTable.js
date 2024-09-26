@@ -1385,8 +1385,9 @@ export default class ChataTable extends React.Component {
 
     return (
       <div className='table-row-count'>
-        <span>{`Scrolled ${currentRowsFormatted} / ${totalRowCount > rowLimit ? rowLimitFormatted + '+' : totalRowsFormatted
-          } rows`}</span>
+        <span>{`Scrolled ${currentRowsFormatted} / ${
+          totalRowCount > rowLimit ? rowLimitFormatted + '+' : totalRowsFormatted
+        } rows`}</span>
       </div>
     )
   }
@@ -1443,7 +1444,8 @@ export default class ChataTable extends React.Component {
             (isDataLimited(this.props.response) ? (
               <div className='selectable-table-tooltip-section'>
                 <span>
-                  <Icon type='warning' /> Summary stats unavailable - dataset exceeds limit of {rowLimitFormatted} rows.
+                  <Icon type='warning' /> Summary stats unavailable - dataset is too large. Please try refining your
+                  query.
                 </span>
               </div>
             ) : (
