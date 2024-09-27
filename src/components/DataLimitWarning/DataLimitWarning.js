@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { MAX_CHART_ELEMENTS, MAX_DATA_PAGE_SIZE, dataFormattingDefault, getDataFormatting } from 'autoql-fe-utils'
+import { DATASET_TOO_LARGE } from '../../js/Constants'
 
 import { Icon } from '../Icon'
 import { dataFormattingType } from '../../props/types'
@@ -46,7 +47,7 @@ DataLimitWarning.defaultProps = {
   rowLimit: MAX_DATA_PAGE_SIZE,
   dataFormatting: dataFormattingDefault,
   maxChartElements: MAX_CHART_ELEMENTS,
-  content: 'Data limit reached!',
+  content: DATASET_TOO_LARGE,
 }
 
 export default DataLimitWarning
