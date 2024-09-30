@@ -1109,7 +1109,11 @@ export default class ChataTable extends React.Component {
         return col
       })
 
-      this.props.updateColumns(newColumns, response?.data?.data?.fe_req, response?.data?.data?.available_selects)
+      this.props.updateColumns(
+        newColumns,
+        this.props.response?.data?.data?.fe_req,
+        this.props.response?.data?.data?.available_selects,
+      )
 
       setColumnVisibility({ ...this.props.authentication, columns: newColumns }).catch((error) => {
         console.error(error)
