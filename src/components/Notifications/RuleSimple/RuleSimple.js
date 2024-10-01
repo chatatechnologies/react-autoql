@@ -430,22 +430,17 @@ export default class RuleSimple extends React.Component {
 
         if (operation === 'multiply-percent-higher' || operation === 'multiply-percent-lower') {
           let numberValue = parseInt(value ?? 0)
-          if (isNaN(numberValue)) {
-            numberValue = 0
+          if (!isNaN(numberValue) && numberValue > 0) {
+            if (operation === 'multiply-percent-higher') {
+              value = `${100 + numberValue}%`
+            } else if (operation === 'multiply-percent-lower') {
+              value = `${100 - numberValue}%`
+            }
+            secondTerm.result_adjustment = {
+              value,
+              operation: 'multiply',
+            }
           }
-
-          if (operation === 'multiply-percent-higher') {
-            value = `${100 + numberValue}%`
-          } else if (operation === 'multiply-percent-lower') {
-            value = `${100 - numberValue}%`
-          }
-
-          operation = 'multiply'
-        }
-
-        secondTerm.result_adjustment = {
-          value,
-          operation,
         }
       }
 
