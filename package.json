@@ -80,6 +80,7 @@
     "lodash.has": "^4.5.2",
     "lodash.isempty": "^4.4.0",
     "lodash.isequal": "^4.5.0",
+    "luxon": "^3.5.0",
     "make-coverage-badge": "^1.2.0",
     "parse-num": "^1.0.0",
     "prop-types": "^15.7.2",
