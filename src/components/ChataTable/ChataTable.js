@@ -621,7 +621,7 @@ export default class ChataTable extends React.Component {
       const sortColumnIndex = this.props.columns.find((col) => col.name === sortColumnName)?.index
       const sortDirection = params.orders[0].sort === 'DESC' ? 'desc' : 'asc'
 
-      data = sortDataByColumn(data, this.props.columns, sortColumnIndex, sortDirection)
+      data = sortDataByColumn(data, this.props.columns, sortColumnIndex - 1, sortDirection)
     }
 
     response.data.data.rows = data
