@@ -2339,7 +2339,10 @@ export class QueryOutput extends React.Component {
         return override.table_column?.trim() !== column.table_column?.trim()
       })
       if (column?.custom_column_display_name) {
-        currentDisplayOverrides = [...currentDisplayOverrides, { english: column?.custom_column_display_name, table_column: column?.table_column }]
+        currentDisplayOverrides = [
+          ...currentDisplayOverrides,
+          { english: column?.custom_column_display_name, table_column: column?.table_column },
+        ]
       }
 
       this.queryFn({
