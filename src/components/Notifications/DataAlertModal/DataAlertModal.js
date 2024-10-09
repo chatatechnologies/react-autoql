@@ -119,7 +119,7 @@ class DataAlertModal extends React.Component {
       }
     }
 
-    if (!this.state.fetchedCategories) {
+    if (this.props?.autoQLConfig?.projectId && !this.state.fetchedCategories) {
       this.getLabels()
     }
 
