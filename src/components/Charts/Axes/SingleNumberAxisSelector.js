@@ -56,7 +56,7 @@ export default class SingleNumberAxisSelector extends React.Component {
               {filteredColumns
                 .filter((col) => isColumnNumberType(col))
                 .map((col) => {
-                  const colIndex = columns.find((origColumn) => origColumn.id === col.id)?.index
+                  const colIndex = columns.findIndex((origColumn) => origColumn.id === col.id)
 
                   return (
                     <li

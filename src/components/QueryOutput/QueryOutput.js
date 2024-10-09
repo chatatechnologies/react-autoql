@@ -4,7 +4,7 @@ import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import _isEmpty from 'lodash.isempty'
-import _cloneDeep from 'lodash.clonedeep'
+import _ from 'lodash'
 import dayjs from '../../js/dayjsWithPlugins'
 
 import {
@@ -131,7 +131,7 @@ export class QueryOutput extends React.Component {
       this.isTableConfigValid(props.initialTableConfigs?.tableConfig, columns, displayType)
     ) {
       const { tableConfig } = props.initialTableConfigs
-      this.tableConfig = _cloneDeep(tableConfig)
+      this.tableConfig = _.cloneDeep(tableConfig)
     }
 
     if (
@@ -139,7 +139,7 @@ export class QueryOutput extends React.Component {
       this.isTableConfigValid(props.initialTableConfigs?.pivotTableConfig, this.pivotTableColumns, displayType)
     ) {
       const { pivotTableConfig } = props.initialTableConfigs
-      this.pivotTableConfig = _cloneDeep(pivotTableConfig)
+      this.pivotTableConfig = _.cloneDeep(pivotTableConfig)
     }
 
     // Set initial table params to be any filters or sorters that
@@ -295,7 +295,6 @@ export class QueryOutput extends React.Component {
     try {
       const newState = {}
       let shouldForceUpdate = false
-
       if (this.props.onDisplayTypeChange && this.state.displayType !== prevState.displayType) {
         this.props.onDisplayTypeChange(this.state.displayType)
 
@@ -327,6 +326,7 @@ export class QueryOutput extends React.Component {
       // Using a count variable so it doesn't have to deep compare on every udpate
       const columnsChanged = this.state.columnChangeCount !== prevState.columnChangeCount
       if (columnsChanged) {
+        console.log('Columns changed, regenerating data')
         this.tableID = uuid()
         this.props.onColumnChange(
           this.queryResponse?.data?.data?.fe_req?.display_overrides,
@@ -366,9 +366,10 @@ export class QueryOutput extends React.Component {
 
       if (!_isEmpty(newState)) {
         this.setState(newState)
-      } else if (shouldForceUpdate) {
-        this.forceUpdate()
+        // } else if (shouldForceUpdate) {
+        //   this.forceUpdate()
       }
+      this.updateToolbars()
     } catch (error) {
       console.error(error)
     }
@@ -898,7 +899,7 @@ export class QueryOutput extends React.Component {
         return `${origRow[stringColumnIndex]}` === `${row[stringColumnIndex]}`
       })
 
-      const drilldownResponse = _cloneDeep(this.queryResponse)
+      const drilldownResponse = _.cloneDeep(this.queryResponse)
       drilldownResponse.data.data.rows = filteredRows
       drilldownResponse.data.data.count_rows = filteredRows.length
       return drilldownResponse
@@ -1186,7 +1187,7 @@ export class QueryOutput extends React.Component {
   }
 
   onTableParamsChange = (params, formattedTableParams = {}) => {
-    this.tableParams = _cloneDeep(params)
+    this.tableParams = _.cloneDeep(params)
     this.formattedTableParams = formattedTableParams
   }
 
@@ -1209,12 +1210,12 @@ export class QueryOutput extends React.Component {
       return
     }
 
-    this.tableParams.filter = _cloneDeep(filters)
+    this.tableParams.filter = _.cloneDeep(filters)
     this.formattedTableParams = formatTableParams(this.tableParams, this.getColumns())
   }
 
   onTableSort = (sorters) => {
-    this.tableParams.sort = _cloneDeep(sorters)
+    this.tableParams.sort = _.cloneDeep(sorters)
   }
 
   onLegendClick = (d) => {
@@ -1225,7 +1226,7 @@ export class QueryOutput extends React.Component {
 
     const columnIndex = d?.columnIndex
     const usePivotData = this.usePivotDataForChart()
-    const newColumns = usePivotData ? _cloneDeep(this.pivotTableColumns) : _cloneDeep(this.state.columns)
+    const newColumns = usePivotData ? _.cloneDeep(this.pivotTableColumns) : _.cloneDeep(this.state.columns)
     if (!newColumns?.length) {
       return
     }
@@ -1268,13 +1269,13 @@ export class QueryOutput extends React.Component {
       this.tableConfig.numberColumnIndices2 = this.tableConfig.numberColumnIndices2.filter((i) => i !== index)
 
       if (!this.tableConfig.numberColumnIndices2.length) {
-        const numberColumnIndex2 = this.getColumns().find(
+        const numberColumnIndex2 = this.getColumns().findIndex(
           (col) =>
             col.is_visible &&
             col.index !== index && // Must not be the same as the string index
             !this.tableConfig.numberColumnIndices.includes(col.index) && // Must not already be in the first number column index array
             isColumnNumberType(col), // Must be number type
-        )?.index
+        )
 
         if (numberColumnIndex2 >= 0) {
           this.tableConfig.numberColumnIndex2 = numberColumnIndex2
@@ -1305,13 +1306,13 @@ export class QueryOutput extends React.Component {
         this.tableConfig.numberColumnIndices = this.tableConfig.numberColumnIndices.filter((i) => i !== index)
         this.tableConfig.numberColumnIndex = this.tableConfig.numberColumnIndices[0]
       } else {
-        this.tableConfig.numberColumnIndex = this.state.columns.find(
+        this.tableConfig.numberColumnIndex = this.state.columns.findIndex(
           (col) =>
             col.is_visible &&
             col.index !== index &&
             col.index !== this.tableConfig.numberColumnIndex2 &&
             col.index !== this.tableConfig.stringColumnIndex,
-        )?.index
+        )
         this.tableConfig.numberColumnIndices = [this.tableConfig.numberColumnIndex]
       }
     }
@@ -1351,7 +1352,7 @@ export class QueryOutput extends React.Component {
       return
     }
 
-    const prevPivotTableConfig = _cloneDeep(this.pivotTableConfig)
+    const prevPivotTableConfig = _.cloneDeep(this.pivotTableConfig)
 
     if (!this.pivotTableConfig) {
       this.pivotTableConfig = {}
@@ -1429,7 +1430,7 @@ export class QueryOutput extends React.Component {
       return
     }
 
-    const prevTableConfig = _cloneDeep(this.tableConfig)
+    const prevTableConfig = _.cloneDeep(this.tableConfig)
 
     if (!this.tableConfig) {
       this.tableConfig = {}
@@ -1760,8 +1761,7 @@ export class QueryOutput extends React.Component {
     }
 
     const formattedColumns = columns.map((col, i) => {
-      const newCol = _cloneDeep(col)
-
+      const newCol = _.cloneDeep(col)
       newCol.id = col.id ?? uuid()
       newCol.field = `${i}`
       newCol.title = col.display_name
@@ -1851,9 +1851,10 @@ export class QueryOutput extends React.Component {
 
       // Set aggregate type is data is list query
       let aggType = col.aggType
-      if (aggConfig) {
+      if (aggConfig && Object.keys(aggConfig)?.length !== 0) {
         aggType = aggConfig[col.name]
       }
+
       if (isListQuery(columns)) {
         if (isColumnNumberType(col)) {
           newCol.aggType = aggType || AggTypes.SUM
@@ -2051,7 +2052,7 @@ export class QueryOutput extends React.Component {
       this.pivotTableRowsLimited = false
       this.pivotTableID = uuid()
 
-      let tableData = _cloneDeep(this.queryResponse?.data?.data?.rows)
+      let tableData = _.cloneDeep(this.queryResponse?.data?.data?.rows)
       tableData = tableData.filter((row) => row[0] !== null)
 
       const columns = this.getColumns()

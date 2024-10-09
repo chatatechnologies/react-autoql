@@ -2,7 +2,7 @@ import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
-import _cloneDeep from 'lodash.clonedeep'
+import { cloneDeep } from 'lodash'
 import { isMobile } from 'react-device-detect'
 import { AGG_TYPES, AggTypes, COLUMN_TYPES, isColumnStringType } from 'autoql-fe-utils'
 
@@ -193,7 +193,7 @@ export default class NumberAxisSelector extends React.Component {
 
   onColumnCheck = (columns) => {
     const { checkedColumns } = this.state
-    const newCheckedColumns = _cloneDeep(checkedColumns)
+    const newCheckedColumns = cloneDeep(checkedColumns)
 
     columns.forEach((col) => {
       const indexOfCheckedColumns = newCheckedColumns.indexOf(col.columnIndex)

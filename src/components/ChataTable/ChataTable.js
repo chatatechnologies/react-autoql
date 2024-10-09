@@ -4,7 +4,7 @@ import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import { mean, sum } from 'd3-array'
 import _isEqual from 'lodash.isequal'
-import _cloneDeep from 'lodash.clonedeep'
+import { cloneDeep } from 'lodash'
 import dayjs from '../../js/dayjsWithPlugins'
 
 import {
@@ -52,9 +52,9 @@ export default class ChataTable extends React.Component {
     if (!props.useInfiniteScroll) {
       // We must store original query data to use as source of filter/sort for client side filtering
       if (props.pivot) {
-        this.originalQueryData = _cloneDeep(props.data)
+        this.originalQueryData = cloneDeep(props.data)
       } else {
-        this.originalQueryData = _cloneDeep(props.response?.data?.data?.rows)
+        this.originalQueryData = cloneDeep(props.response?.data?.data?.rows)
       }
     }
 
@@ -76,7 +76,7 @@ export default class ChataTable extends React.Component {
     }
 
     this.tableOptions = {
-      selectableCheck: () => false,
+      selectableRowsCheck: () => false,
       movableColumns: true,
       initialSort: !props.useInfiniteScroll ? this.tableParams?.sort : undefined,
       initialFilter: !props.useInfiniteScroll ? this.tableParams?.filter : undefined,
@@ -266,6 +266,7 @@ export default class ChataTable extends React.Component {
         }
       })
       this.setHeaderInputEventListeners()
+      console.log('componentDidUpdate')
       this.setFilters()
       this.clearLoadingIndicators()
     }
@@ -445,7 +446,7 @@ export default class ChataTable extends React.Component {
       const headerFilters = this.ref?.tabulator?.getHeaderFilters()
 
       if (!this.props.useInfiniteScroll) {
-        this.tableParams.filter = _cloneDeep(headerFilters)
+        this.tableParams.filter = cloneDeep(headerFilters)
         this.props.onFilterCallback(headerFilters, rows)
       }
 
@@ -602,14 +603,14 @@ export default class ChataTable extends React.Component {
 
   clientSortAndFilterData = (params) => {
     // Use FE for sorting and filtering
-    let response = _cloneDeep(this.props.response)
-    let data = _cloneDeep(this.originalQueryData)
+    let response = cloneDeep(this.props.response)
+    let data = cloneDeep(this.originalQueryData)
 
     // Filters
     if (params.tableFilters?.length) {
       params.tableFilters.forEach((filter) => {
         const filterColumnName = filter.name
-        const filterColumnIndex = this.props.columns.find((col) => col.name === filterColumnName)?.index
+        const filterColumnIndex = this.props.columns.findIndex((col) => col.name === filterColumnName)
 
         data = filterDataByColumn(data, this.props.columns, filterColumnIndex, filter.value, filter.operator)
       })
@@ -670,7 +671,7 @@ export default class ChataTable extends React.Component {
       newRows = props.response?.data?.data?.rows?.slice(start, end) ?? []
     }
 
-    return _cloneDeep(newRows)
+    return cloneDeep(newRows)
   }
 
   clearLoadingIndicators = async () => {
@@ -759,7 +760,7 @@ export default class ChataTable extends React.Component {
 
   saveAsCSV = (delay) => {
     if (this._isMounted && this.ref?.tabulator) {
-      let tableClone = _cloneDeep(this.ref.tabulator)
+      let tableClone = cloneDeep(this.ref.tabulator)
       return new Promise((resolve, reject) => {
         setTimeout(() => {
           tableClone.download('csv', 'export.csv', {
@@ -1062,12 +1063,12 @@ export default class ChataTable extends React.Component {
   }
 
   onUpdateColumnConfirm = () => {
-    const column = _cloneDeep(this.state.contextMenuColumn)
+    const column = cloneDeep(this.state.contextMenuColumn)
     this.setState({ contextMenuColumn: undefined, isCustomColumnPopoverOpen: true, activeCustomColumn: column })
   }
 
   onRemoveColumnClick = () => {
-    const column = _cloneDeep(this.state.contextMenuColumn)
+    const column = cloneDeep(this.state.contextMenuColumn)
 
     this.setState({ contextMenuColumn: undefined })
 

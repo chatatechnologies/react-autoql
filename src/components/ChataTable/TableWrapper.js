@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
-import _cloneDeep from 'lodash.clonedeep'
+import { cloneDeep } from 'lodash'
 import { TabulatorFull as Tabulator } from 'tabulator-tables' //import Tabulator library
 
 // use Theme(s)
@@ -86,10 +86,18 @@ export default class TableWrapper extends React.Component {
     // Instantiate Tabulator when element is mounted
     this.tabulator = new Tabulator(this.tableRef, {
       debugInvalidOptions: false,
-      columns: _cloneDeep(this.props.columns),
-      data: this.props.options?.ajaxRequestFunc ? [] : _cloneDeep(this.props.data),
+      columns: cloneDeep(this.props.columns),
+      data: this.props.options?.ajaxRequestFunc ? [] : cloneDeep(this.props.data),
       ...this.defaultOptions,
       ...this.props.options,
+      // selectableRows:true, //Enable Row Selection - make rows selectable from selectable:true
+      // selectableRowsRollingSelection:false, //Rolling Row Selection - disable rolling selection from selectableRollingSelection:false,
+      // selectableRowsRangeMode:"click", //Range Mode - select row range on click from selectableRangeMode:"click",
+      // selectableRowsPersistence:false, //Persistent Selection - disable selection peristence from selectablePersistence:false,
+      // selectableRowsCheck:function(row){ // Persistent Selection - allow selection of rows where the age is greater than 18 - from selectableCheck
+      //   //row - row component
+      //   return row.getData().age > 18; //allow selection of rows where the age is greater than 18
+      // }
     })
 
     this.tabulator.on('renderComplete', () => {
