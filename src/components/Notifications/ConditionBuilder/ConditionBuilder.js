@@ -97,6 +97,8 @@ export default class ConditionBuilder extends React.Component {
       return true // Has error, but marked as complete so it shows warning in UI
     } else if (this.ruleRef) {
       return this.ruleRef.isComplete()
+    } else {
+      return true
     }
   }
 
