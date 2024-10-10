@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import './JoinColumnSelectionTable.scss'
 import { Select } from '../../Select'
 import { Icon } from '../../Icon'
-import { isListQuery, isAggregation, getGroupableColumns, getStringColumnIndices } from 'autoql-fe-utils'
+import { getQuerySelectableJoinColumns, getDefaultJoinColumnAndDisplayNameAndJoinColumnsIndices } from 'autoql-fe-utils'
 export default class JoinColumnSelectionTable extends React.Component {
   constructor(props) {
     super(props)
@@ -77,7 +77,7 @@ export default class JoinColumnSelectionTable extends React.Component {
   }
 
   getDefaultJoinColumn = (queryResult) => {
-    const { defaultJoinColumn } = this.getDefaultJoinColumnAndDisplayNameAndJoinColumnsIndices(queryResult)
+    const { defaultJoinColumn } = getDefaultJoinColumnAndDisplayNameAndJoinColumnsIndices(queryResult)
     return defaultJoinColumn?.[0]
   }
 
@@ -85,8 +85,8 @@ export default class JoinColumnSelectionTable extends React.Component {
     try {
       const firstQueryColumns = this.props.firstQueryResult?.data?.data?.columns || []
       const secondQueryColumns = this.props.secondQueryResult?.data?.data?.columns || []
-      const firstSelectableColumns = this.getQuerySelectableJoinColumns(firstQueryColumns)
-      const secondSelectableColumns = this.getQuerySelectableJoinColumns(secondQueryColumns)
+      const firstSelectableColumns = getQuerySelectableJoinColumns(firstQueryColumns)
+      const secondSelectableColumns = getQuerySelectableJoinColumns(secondQueryColumns)
 
       return Math.min(firstSelectableColumns.length, secondSelectableColumns.length)
     } catch (error) {
@@ -94,42 +94,7 @@ export default class JoinColumnSelectionTable extends React.Component {
       return 0
     }
   }
-  getQuerySelectableJoinColumns = (queryColumns) => {
-    return queryColumns
-      .map((col, index) => (getStringColumnIndices(queryColumns)?.stringColumnIndices?.includes(index) ? col : null))
-      .filter(Boolean)
-  }
-  getDefaultJoinColumnAndDisplayNameAndJoinColumnsIndices = (queryResult) => {
-    try {
-      const columns = queryResult?.data?.data?.columns || []
-      const selectableJoinColumns = this.getQuerySelectableJoinColumns(columns)
-      let defaultJoinColumn = []
-      let defaultDisplayName = ''
-      let defaultJoinColumnsIndices = []
 
-      if (isListQuery(columns)) {
-        if (selectableJoinColumns.length > 0) {
-          defaultJoinColumn = [selectableJoinColumns[0].name]
-          defaultDisplayName = selectableJoinColumns[0].display_name
-          defaultJoinColumnsIndices = [selectableJoinColumns.findIndex((col) => col.name === defaultJoinColumn[0])]
-        }
-      }
-
-      if (isAggregation(columns)) {
-        const groupableColumns = getGroupableColumns(columns)
-        if (groupableColumns.length > 0) {
-          defaultJoinColumn = [columns[groupableColumns[0]].name]
-          defaultDisplayName = columns[groupableColumns[0]].display_name
-          defaultJoinColumnsIndices = [selectableJoinColumns.findIndex((col) => col.name === defaultJoinColumn[0])]
-        }
-      }
-
-      return { defaultJoinColumn, defaultDisplayName, defaultJoinColumnsIndices }
-    } catch (error) {
-      console.error('Error getting default join column and display name:', error)
-      return { defaultJoinColumn: [], defaultDisplayName: '', defaultJoinColumnsIndices: [] }
-    }
-  }
   handleRemoveSecondRow = () => {
     this.setState({ showSecondRow: false })
     this.props.onRemoveSecondValues()

@@ -15,7 +15,6 @@ import {
   QUERY_TERM_TYPE,
   isNumber,
   isListQuery,
-  isAggregation,
   isSingleValueResponse,
   constructRTArray,
   getTimeFrameTextFromChunk,
@@ -33,6 +32,8 @@ import {
   isColumnNumberType,
   DATA_ALERT_CONDITION_TYPES,
   SCHEDULED_TYPE,
+  getDefaultJoinColumnAndDisplayNameAndJoinColumnsIndices,
+  getQuerySelectableJoinColumns,
 } from 'autoql-fe-utils'
 import LoadingDots from '../../LoadingDots/LoadingDots'
 import JoinColumnSelectionTable from '../JoinColumnSelectionTable/JoinColumnSelectionTable'
@@ -210,23 +211,20 @@ export default class RuleSimple extends React.Component {
       this.props.onUpdate(this.props.ruleId, this.isComplete(), this.isValid())
     }
 
-    if (
-      this.state.secondTermType === QUERY_TERM_TYPE &&
-      this.state.secondInputValue !== prevState.secondInputValue &&
-      this.state.secondInputValue?.length
-    ) {
+    if (this.shouldValidateSecondQuery(prevState)) {
       this.validateSecondQuery()
       this.handleResetSecondQueryJoinColumns()
     }
-    if (this.state.secondQueryResponse && this.state.secondQueryResponse !== prevState.secondQueryResponse) {
+    if (this.shouldScrollToSecondFieldSelectionGrid(prevState)) {
       setTimeout(() => {
         this.secondFieldSelectionGridRef?.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
       }, 100)
     }
-    if (this.state.secondQueryResult !== prevState.secondQueryResult && this.state.secondTermType === QUERY_TERM_TYPE) {
+
+    if (this.shouldUpdateSecondFieldSelectionGrid(prevState)) {
       this.updateSecondFieldSelectionGrid()
     }
-    if (this.state.secondQueryResult !== prevState.secondQueryResult && this.state.storedInitialData !== undefined) {
+    if (this.shouldResetJoinColumnsAndShowSelection(prevState)) {
       this.setState((prevState) => ({
         storedInitialData: [
           prevState.storedInitialData[0],
@@ -239,6 +237,22 @@ export default class RuleSimple extends React.Component {
         showJoinColumnSelection: this.state.secondTermType !== NUMBER_TERM_TYPE,
       }))
     }
+  }
+  shouldScrollToSecondFieldSelectionGrid = (prevState) => {
+    return this.state.secondQueryResponse && this.state.secondQueryResponse !== prevState.secondQueryResponse
+  }
+  shouldResetJoinColumnsAndShowSelection = (prevState) => {
+    return this.state.secondQueryResult !== prevState.secondQueryResult && this.state.storedInitialData !== undefined
+  }
+  shouldUpdateSecondFieldSelectionGrid = (prevState) => {
+    return this.state.secondQueryResult !== prevState.secondQueryResult && this.state.secondTermType === QUERY_TERM_TYPE
+  }
+  shouldValidateSecondQuery = (prevState) => {
+    return (
+      this.state.secondTermType === QUERY_TERM_TYPE &&
+      this.state.secondInputValue !== prevState.secondInputValue &&
+      this.state.secondInputValue?.length
+    )
   }
   handleFirstQueryFirstValueChange = (value) => {
     this.setState({ firstQueryFirstValue: value })
@@ -268,8 +282,8 @@ export default class RuleSimple extends React.Component {
     const firstQueryColumns = this.state.firstQueryResult?.data?.data?.columns || []
     const secondQueryColumns = this.state.secondQueryResult?.data?.data?.columns || []
 
-    const firstQuerySelectableJoinColumns = this.getQuerySelectableJoinColumns(firstQueryColumns)
-    const secondQuerySelectableJoinColumns = this.getQuerySelectableJoinColumns(secondQueryColumns)
+    const firstQuerySelectableJoinColumns = getQuerySelectableJoinColumns(firstQueryColumns)
+    const secondQuerySelectableJoinColumns = getQuerySelectableJoinColumns(secondQueryColumns)
     return (
       <div className='join-column-selection-prompt'>
         <h4>Select join columns for your queries:</h4>
@@ -278,20 +292,20 @@ export default class RuleSimple extends React.Component {
           columnHeaders={['Query 1', 'Query 2']}
           rowHeaders={['1st Join', '2nd Join']}
           firstQueryFirstOptions={firstQuerySelectableJoinColumns.map((col) => ({
-            value: col.name,
-            label: col.display_name,
+            value: col?.name,
+            label: col?.display_name,
           }))}
           firstQuerySecondOptions={firstQuerySelectableJoinColumns.map((col) => ({
-            value: col.name,
-            label: col.display_name,
+            value: col?.name,
+            label: col?.display_name,
           }))}
           secondQueryFirstOptions={secondQuerySelectableJoinColumns.map((col) => ({
-            value: col.name,
-            label: col.display_name,
+            value: col?.name,
+            label: col?.display_name,
           }))}
           secondQuerySecondOptions={secondQuerySelectableJoinColumns.map((col) => ({
-            value: col.name,
-            label: col.display_name,
+            value: col?.name,
+            label: col?.display_name,
           }))}
           firstQueryResult={this.state.firstQueryResult}
           secondQueryResult={this.state.secondQueryResult}
@@ -346,36 +360,6 @@ export default class RuleSimple extends React.Component {
     if (this.autoCompleteTimer) {
       clearTimeout(this.autoCompleteTimer)
     }
-  }
-
-  getDefaultJoinColumnAndDisplayNameAndJoinColumnsIndices = (queryResult) => {
-    const columns = queryResult?.data?.data?.columns || []
-    const selectableJoinColumns = this.getQuerySelectableJoinColumns(columns)
-    let defaultJoinColumn = []
-    let defaultDisplayName = ''
-    let defaultJoinColumnsIndices = []
-    if (isListQuery(columns)) {
-      if (selectableJoinColumns.length > 0) {
-        defaultJoinColumn = [selectableJoinColumns[0].name]
-        defaultDisplayName = selectableJoinColumns[0].display_name
-        defaultJoinColumnsIndices = [selectableJoinColumns.findIndex((col) => col.name === defaultJoinColumn[0])]
-      }
-    }
-    if (isAggregation(columns)) {
-      const groupableColumns = getGroupableColumns(columns)
-      if (groupableColumns.length > 0) {
-        defaultJoinColumn = [columns[groupableColumns[0]].name]
-        defaultDisplayName = columns[groupableColumns[0]].display_name
-        defaultJoinColumnsIndices = [selectableJoinColumns.findIndex((col) => col.name === defaultJoinColumn[0])]
-      }
-    }
-
-    return { defaultJoinColumn, defaultDisplayName, defaultJoinColumnsIndices }
-  }
-  getQuerySelectableJoinColumns = (queryColumns) => {
-    return queryColumns
-      .map((col, index) => (getStringColumnIndices(queryColumns)?.stringColumnIndices?.includes(index) ? col : null))
-      .filter(Boolean)
   }
 
   getInitialSelectedOperator = () => {
@@ -492,69 +476,87 @@ export default class RuleSimple extends React.Component {
 
     return compareColumnIndex === -1 ? undefined : compareColumnIndex
   }
+  shouldFetchSecondQuery = () => {
+    return (
+      this.state.secondTermType !== NUMBER_TERM_TYPE &&
+      this.props.initialData?.[1]?.term_value &&
+      !this.isValidSecondQueryResponse()
+    )
+  }
   getQuery = () => {
-    this.setState({ isLoadingFirstQuery: true, isLoadingSecondQuery: true })
-    const fetchFirstQuery = this.props.queryResponse
-      ? Promise.resolve(this.props.queryResponse)
-      : runQueryOnly({
-          query: this.props.initialData?.[0]?.term_value,
-          ...getAuthentication(this.props.authentication),
-          ...getAutoQLConfig(this.props.autoQLConfig),
-          source: 'data_alert_first_query',
-          pageSize: 2,
-          allowSuggestions: false,
-        })
-    const fetchSecondQuery =
-      this.state.secondTermType !== NUMBER_TERM_TYPE && this.props.initialData?.[1]?.term_value
-        ? (this.setState({ isLoadingSecondQuery: true }),
-          this.isValidSecondQueryResponse()
-            ? Promise.resolve(this.state.secondQueryResponse)
-            : runQueryOnly({
-                query: this.props.initialData?.[1]?.term_value,
-                ...getAuthentication(this.props.authentication),
-                ...getAutoQLConfig(this.props.autoQLConfig),
-                source: 'data_alert_second_query',
-                pageSize: 2,
-                allowSuggestions: false,
-              }))
+    try {
+      this.setState({ isLoadingFirstQuery: true, isLoadingSecondQuery: true })
+      const fetchFirstQuery = this.props.queryResponse
+        ? Promise.resolve(this.props.queryResponse)
+        : runQueryOnly({
+            query: this.props.initialData?.[0]?.term_value,
+            ...getAuthentication(this.props.authentication),
+            ...getAutoQLConfig(this.props.autoQLConfig),
+            source: 'data_alert_first_query',
+            pageSize: 2,
+            allowSuggestions: false,
+          })
+
+      const fetchSecondQuery = this.shouldFetchSecondQuery()
+        ? runQueryOnly({
+            query: this.props.initialData?.[1]?.term_value,
+            ...getAuthentication(this.props.authentication),
+            ...getAutoQLConfig(this.props.autoQLConfig),
+            source: 'data_alert_second_query',
+            pageSize: 2,
+            allowSuggestions: false,
+          })
         : Promise.resolve(null)
 
-    Promise.all([fetchFirstQuery, fetchSecondQuery])
-      .then(([firstResponse, secondResponse]) => {
-        const firstQueryCompareColumnIndex = this.getCompareColumnIndex(firstResponse, this.state.storedInitialData, 0)
-        const secondQueryCompareColumnIndex = this.getCompareColumnIndex(
-          secondResponse,
-          this.state.storedInitialData,
-          1,
-        )
-        this.setState({
-          firstQueryResult: firstResponse,
-          secondQueryResult: secondResponse,
-          isLoadingFirstQuery: false,
-          isLoadingSecondQuery: false,
-          firstQuerySelectedColumns: firstQueryCompareColumnIndex !== undefined ? [firstQueryCompareColumnIndex] : [],
-          secondQuerySelectedColumns:
-            secondQueryCompareColumnIndex !== undefined ? [secondQueryCompareColumnIndex] : [],
+      Promise.all([fetchFirstQuery, fetchSecondQuery])
+        .then(([firstResponse, secondResponse]) => {
+          const firstQueryCompareColumnIndex = this.getCompareColumnIndex(
+            firstResponse,
+            this.state.storedInitialData,
+            0,
+          )
+          const secondQueryCompareColumnIndex = this.getCompareColumnIndex(
+            secondResponse,
+            this.state.storedInitialData,
+            1,
+          )
+          this.setState({
+            firstQueryResult: firstResponse,
+            secondQueryResult: secondResponse,
+            isLoadingFirstQuery: false,
+            isLoadingSecondQuery: false,
+            firstQuerySelectedColumns: firstQueryCompareColumnIndex !== undefined ? [firstQueryCompareColumnIndex] : [],
+            secondQuerySelectedColumns:
+              secondQueryCompareColumnIndex !== undefined ? [secondQueryCompareColumnIndex] : [],
+          })
         })
-      })
-      .catch((error) => {
-        console.error('Error fetching query results:', error)
-        this.setState({
-          firstQueryResult: null,
-          secondQueryResult: null,
-          isLoadingFirstQuery: false,
-          isLoadingSecondQuery: false,
+        .catch((error) => {
+          console.error('Error fetching query results:', error)
+          this.setState({
+            firstQueryResult: null,
+            secondQueryResult: null,
+            isLoadingFirstQuery: false,
+            isLoadingSecondQuery: false,
+          })
         })
+    } catch (error) {
+      console.error('Error in getQuery:', error)
+      this.setState({
+        firstQueryResult: null,
+        secondQueryResult: null,
+        isLoadingFirstQuery: false,
+        isLoadingSecondQuery: false,
       })
+    }
   }
 
   getJSON = () => {
     let firstQueryJoinColumns = []
     let secondQueryJoinColumns = []
-    const { defaultJoinColumn: firstDefaultJoinColumn } = this.getDefaultJoinColumnAndDisplayNameAndJoinColumnsIndices(
+    const { defaultJoinColumn: firstDefaultJoinColumn } = getDefaultJoinColumnAndDisplayNameAndJoinColumnsIndices(
       this.state.firstQueryResult,
     )
-    const { defaultJoinColumn: secondDefaultJoinColumn } = this.getDefaultJoinColumnAndDisplayNameAndJoinColumnsIndices(
+    const { defaultJoinColumn: secondDefaultJoinColumn } = getDefaultJoinColumnAndDisplayNameAndJoinColumnsIndices(
       this.state.secondQueryResult,
     )
     if (!isSingleValueResponse(this.state.firstQueryResult) && !isSingleValueResponse(this.state.secondQueryResult)) {
