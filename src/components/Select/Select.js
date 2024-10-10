@@ -115,7 +115,7 @@ export default class Select extends React.Component {
               <span className='react-autoql-menu-item-value-title'>
                 {!!selectedOption.icon && (
                   <span>
-                    <Icon style={{ marginLeft: this.props.outlined ? '-3px' : '0px' }} type={selectedOption.icon} />
+                    <Icon style={{ marginLeft: this.props.outlined ? '-1px' : '0px' }} type={selectedOption.icon} />
                     &nbsp;&nbsp;
                   </span>
                 )}

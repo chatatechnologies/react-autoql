@@ -19,7 +19,7 @@ import {
   createManagementDataAlert,
   updateManagementDataAlert,
   autoQLConfigDefault,
-  getAllDataAlertsLabelsByProject,
+  getAllDataAlertsLabels,
   assignLabelToManagementDataAlert,
 } from 'autoql-fe-utils'
 
@@ -119,7 +119,7 @@ class DataAlertModal extends React.Component {
       }
     }
 
-    if (!this.state.fetchedCategories) {
+    if (this.props?.autoQLConfig?.projectId && !this.state.fetchedCategories) {
       this.getLabels()
     }
 
@@ -127,7 +127,7 @@ class DataAlertModal extends React.Component {
 
   getLabels = () => {
     if (this.props.authentication?.token && this.props.authentication?.domain && this.props.authentication?.apiKey)
-      getAllDataAlertsLabelsByProject({ ...getAuthentication(this.props.authentication) }).then((response) => {
+      getAllDataAlertsLabels({ ...getAuthentication(this.props.authentication) }).then((response) => {
         this.setState({ categories: response?.data?.data?.items, fetchedCategories: true })
       }).catch((error) => {
         console.error('error fetching data alert categories', error)
@@ -313,6 +313,17 @@ class DataAlertModal extends React.Component {
     })
   }
 
+  assignCategoryToDataAlert = async (categoryId, dataAlertId) => {
+    if (!categoryId || !dataAlertId) {
+      return Promise.resolve()
+    }
+    return await assignLabelToManagementDataAlert({
+      ...getAuthentication(this.props.authentication),
+      dataAlertId: dataAlertId,
+      categoryId: categoryId,
+    })
+  }
+
   onDataAlertSave = () => {
     this.setState({
       isSavingDataAlert: true,
@@ -332,11 +343,8 @@ class DataAlertModal extends React.Component {
           projectId: this.props?.autoQLConfig?.projectId,
         })
           .then((dataAlertResponse) => {
-            this.onDataAlertCreateOrEditSuccess(dataAlertResponse)
-            assignLabelToManagementDataAlert({
-              ...getAuthentication(this.props.authentication),
-              dataAlertId: newDataAlert?.id,
-              categoryId: newDataAlert?.categoryId,
+            this.assignCategoryToDataAlert(newDataAlert?.categoryId, newDataAlert?.id).then(() => {
+              this.onDataAlertCreateOrEditSuccess(dataAlertResponse)
             })
           })
           .catch((error) => {
@@ -348,11 +356,8 @@ class DataAlertModal extends React.Component {
           projectId: this.props?.autoQLConfig?.projectId,
         })
           .then((dataAlertResponse) => {
-            this.onDataAlertCreateOrEditSuccess(dataAlertResponse)
-            assignLabelToManagementDataAlert({
-              ...getAuthentication(this.props.authentication),
-              dataAlertId: dataAlertResponse?.data?.data?.id,
-              categoryId: this.state.categoryId,
+            this.assignCategoryToDataAlert(this.state.categoryId, dataAlertResponse?.data?.data?.id).then(() => {
+              this.onDataAlertCreateOrEditSuccess(dataAlertResponse)
             })
           })
           .catch((error) => {

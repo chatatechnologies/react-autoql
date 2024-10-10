@@ -12,7 +12,7 @@ export default class Switch extends React.Component {
     onText: PropTypes.string,
     offText: PropTypes.string,
     disabled: PropTypes.bool,
-    displaySwitchText: PropTypes.bool,
+    displayswitchtext: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -22,7 +22,7 @@ export default class Switch extends React.Component {
     onText: '',
     offText: '',
     disabled: false,
-    displaySwitchText: true,
+    displayswitchtext: true,
   }
 
   toggleChecked = () => {
@@ -44,7 +44,7 @@ export default class Switch extends React.Component {
           data-test='react-autoql-switch-container'
           style={this.props.style}
         >
-          <span className='toggle-switch-text-ruler'> {this.props.displaySwitchText ? switchText : null} </span>
+          <span className='toggle-switch-text-ruler'> {this.props.displayswitchtext ? switchText : null} </span>
           <div className={`react-autoql-toggle-switch`}>
             <input
               {...nativeProps}
@@ -57,7 +57,7 @@ export default class Switch extends React.Component {
               onChange={this.toggleChecked}
             />
             <span style={this.spanStyle} className='toggle-switch-slider' onClick={this.toggleChecked}>
-              <span className='toggle-switch-text'>{this.props.displaySwitchText ? switchText : null}</span>
+              <span className='toggle-switch-text'>{this.props.displayswitchtext ? switchText : null}</span>
             </span>
           </div>
         </div>

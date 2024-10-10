@@ -38,7 +38,7 @@ import { DateRangePicker } from '../DateRangePicker'
 import { DataLimitWarning } from '../DataLimitWarning'
 import { columnOptionsList } from './tabulatorConstants'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-
+import { DATASET_TOO_LARGE } from '../../js/Constants'
 import './ChataTable.scss'
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
 import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
@@ -618,7 +618,7 @@ export default class ChataTable extends React.Component {
     // Sorters
     if (params.orders?.length) {
       const sortColumnName = params.orders[0].name
-      const sortColumnIndex = this.props.columns.find((col) => col.name === sortColumnName)?.index
+      const sortColumnIndex = this.props.columns.findIndex((col) => col.name === sortColumnName)
       const sortDirection = params.orders[0].sort === 'DESC' ? 'desc' : 'asc'
 
       data = sortDataByColumn(data, this.props.columns, sortColumnIndex, sortDirection)
@@ -1109,7 +1109,11 @@ export default class ChataTable extends React.Component {
         return col
       })
 
-      this.props.updateColumns(newColumns, response?.data?.data?.fe_req, response?.data?.data?.available_selects)
+      this.props.updateColumns(
+        newColumns,
+        this.props.response?.data?.data?.fe_req,
+        this.props.response?.data?.data?.available_selects,
+      )
 
       setColumnVisibility({ ...this.props.authentication, columns: newColumns }).catch((error) => {
         console.error(error)
@@ -1385,8 +1389,9 @@ export default class ChataTable extends React.Component {
 
     return (
       <div className='table-row-count'>
-        <span>{`Scrolled ${currentRowsFormatted} / ${totalRowCount > rowLimit ? rowLimitFormatted + '+' : totalRowsFormatted
-          } rows`}</span>
+        <span>{`Scrolled ${currentRowsFormatted} / ${
+          totalRowCount > rowLimit ? rowLimitFormatted + '+' : totalRowsFormatted
+        } rows`}</span>
       </div>
     )
   }
@@ -1443,7 +1448,7 @@ export default class ChataTable extends React.Component {
             (isDataLimited(this.props.response) ? (
               <div className='selectable-table-tooltip-section'>
                 <span>
-                  <Icon type='warning' /> Summary stats unavailable - dataset exceeds limit of {rowLimitFormatted} rows.
+                  <Icon type='warning' /> {`Summary stats unavailable - ${DATASET_TOO_LARGE}`}
                 </span>
               </div>
             ) : (
