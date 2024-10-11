@@ -6,11 +6,53 @@
 
   .data-alert-description-span {
     display: inline-block;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     margin-left: 5px;
     white-space: pre;
   }
+  .join-column-selection-prompt {
+    background-color: var(--react-autoql-background-color-secondary);
 
+    h4 {
+      font-size: 16px;
+      color: var(--react-autoql-text-color);
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 14px;
+      color: var(--react-autoql-text-color-secondary);
+      margin-bottom: 15px;
+    }
+
+    .joinable-table {
+      margin-top: 10px;
+    }
+  }
+
+  .join-column-selectors {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .selected-display-name {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 5px;
+    font-size: 0.9em;
+    color: #666;
+  }
+  .first-query-join-column-selector,
+  .second-query-join-column-selector {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 48%;
+  }
+  .react-autoql-multi-select {
+    height: 40px;
+  }
   &.with-query-validation .react-autoql-rule-condition-select-input-container,
   &.with-query-validation .react-autoql-rule-mult-factor-select-input-container {
     margin-bottom: 30px;
