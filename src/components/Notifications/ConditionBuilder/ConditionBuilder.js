@@ -2,7 +2,7 @@ import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
-import _cloneDeep from 'lodash.clonedeep'
+import { cloneDeep } from 'lodash'
 import { GROUP_TERM_TYPE, QUERY_TERM_TYPE, authenticationDefault, dataFormattingDefault } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
@@ -78,7 +78,7 @@ export default class ConditionBuilder extends React.Component {
       if (initialExpression?.length > 1 || initialExpression?.[0]?.term_value?.length > 1) {
         expressionError = true
       } else if (initialExpression?.[0]?.term_value?.[0]?.term_value?.[0]?.term_type === QUERY_TERM_TYPE) {
-        expression = _cloneDeep(initialExpression[0].term_value[0].term_value)
+        expression = cloneDeep(initialExpression[0].term_value[0].term_value)
       } else {
         expressionError = true
       }

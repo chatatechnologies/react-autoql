@@ -2,7 +2,7 @@ import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import SplitterLayout from 'react-splitter-layout'
-import _cloneDeep from 'lodash.clonedeep'
+import { cloneDeep } from 'lodash'
 import { CHART_TYPES, authenticationDefault, autoQLConfigDefault, dataFormattingDefault } from 'autoql-fe-utils'
 
 import { Modal } from '../Modal'
@@ -186,9 +186,9 @@ export default class DrilldownModal extends React.Component {
   render = () => {
     let queryResponse
     if (this.props.isOpen) {
-      queryResponse = _cloneDeep(this.props.activeDrilldownRef?.queryResponse)
+      queryResponse = cloneDeep(this.props.activeDrilldownRef?.queryResponse)
       if (queryResponse) {
-        queryResponse.data.data.columns = _cloneDeep(this.props.activeDrilldownRef?.state?.columns)
+        queryResponse.data.data.columns = cloneDeep(this.props.activeDrilldownRef?.state?.columns)
       }
     }
 

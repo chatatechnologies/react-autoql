@@ -4,7 +4,7 @@ import { v4 as uuid } from 'uuid'
 import { median } from 'd3-array'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
-import _cloneDeep from 'lodash.clonedeep'
+import { cloneDeep } from 'lodash'
 
 import {
   isColumnDateType,
@@ -54,7 +54,7 @@ export default class DataExplorer extends React.Component {
       skipQueryValidation: false,
     }
 
-    this.state = _cloneDeep(this.defaultState)
+    this.state = cloneDeep(this.defaultState)
   }
 
   static propTypes = {

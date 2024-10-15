@@ -1,7 +1,7 @@
 import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
-import _cloneDeep from 'lodash.clonedeep'
+import { cloneDeep } from 'lodash'
 
 import {
   ColumnObj,
@@ -72,7 +72,7 @@ export default class CustomColumnModal extends React.Component {
     this.previousMutator = initialMutator
 
     if (props.initialColumn) {
-      this.newColumn = _cloneDeep(props.initialColumn)
+      this.newColumn = cloneDeep(props.initialColumn)
     } else {
       this.newColumn = new ColumnObj({
         ...this.newColumnRaw,
@@ -93,7 +93,7 @@ export default class CustomColumnModal extends React.Component {
 
     this.newColumn = formattedColumn
 
-    let columns = _cloneDeep(props.columns)
+    let columns = cloneDeep(props.columns)
     if (props.initialColumn) {
       const colIndex = columns.findIndex((col) => props.initialColumn.id === col.id)
       if (colIndex >= 0) {
@@ -111,7 +111,9 @@ export default class CustomColumnModal extends React.Component {
       columnFn: initialColumnFn,
       columnType: props.initialColumn?.type ?? 'auto',
       isFnValid: !!props.initialColumn,
-      isColumnNameValid: props.initialColumn ? true : this.checkColumnName(props.initialColumn?.display_name ?? DEFAULT_COLUMN_NAME),
+      isColumnNameValid: props.initialColumn
+        ? true
+        : this.checkColumnName(props.initialColumn?.display_name ?? DEFAULT_COLUMN_NAME),
 
       isFunctionConfigModalVisible: false,
       selectedFnType: Object.keys(WINDOW_FUNCTIONS)[0],
@@ -145,9 +147,11 @@ export default class CustomColumnModal extends React.Component {
 
   componentDidUpdate = (prevProps, prevState) => {
     // Update column mutator is function changed
-    if (!deepEqual(this.state.columnFn, prevState.columnFn) ||
-      (this.state.columnType !== prevState.columnType) ||
-      (this.state.columnName !== prevState.columnName)) {
+    if (
+      !deepEqual(this.state.columnFn, prevState.columnFn) ||
+      this.state.columnType !== prevState.columnType ||
+      this.state.columnName !== prevState.columnName
+    ) {
       setTimeout(() => {
         this.updateTabulatorColumnFn()
       }, 0)
@@ -161,7 +165,7 @@ export default class CustomColumnModal extends React.Component {
 
   getColumnParamsForTabulator = (column, providedProps) => {
     const props = providedProps ?? this.props
-    const columns = _cloneDeep(props.columns)
+    const columns = cloneDeep(props.columns)
 
     const index = this.newColumn.index
     columns[index] = column
@@ -191,7 +195,7 @@ export default class CustomColumnModal extends React.Component {
   }
 
   updateTabulatorColumnFn = () => {
-    const columns = _cloneDeep(this.state.columns)
+    const columns = cloneDeep(this.state.columns)
 
     const { columnFn, columnType } = this.state
 
@@ -328,22 +332,30 @@ export default class CustomColumnModal extends React.Component {
   }
 
   onUpdateColumnConfirm = () => {
-    const newColumn = _cloneDeep(this.newColumn)
+    const newColumn = cloneDeep(this.newColumn)
     newColumn.id = this.props.initialColumn?.id
     const protoTableColumn = this.buildProtoTableColumn(newColumn)
-    this.props.onUpdateColumn({ ...newColumn, table_column: protoTableColumn, custom_column_display_name: this.state?.columnName?.trim() })
+    this.props.onUpdateColumn({
+      ...newColumn,
+      table_column: protoTableColumn,
+      custom_column_display_name: this.state?.columnName?.trim(),
+    })
   }
 
   onAddColumnConfirm = () => {
-    const newColumn = _cloneDeep(this.newColumn)
+    const newColumn = cloneDeep(this.newColumn)
     const protoTableColumn = this.buildProtoTableColumn(newColumn)
-    this.props.onAddColumn({ ...newColumn, table_column: protoTableColumn, custom_column_display_name: this.state?.columnName?.trim() })
+    this.props.onAddColumn({
+      ...newColumn,
+      table_column: protoTableColumn,
+      custom_column_display_name: this.state?.columnName?.trim(),
+    })
   }
 
   changeChunkValue = (value, type, i) => {
     if (type === 'column') {
       const column = this.props.columns.find((col) => col.field === value)
-      const columnFn = _cloneDeep(this.state.columnFn)
+      const columnFn = cloneDeep(this.state.columnFn)
       if (columnFn[i]) {
         columnFn[i].value = value
         columnFn[i].column = column
@@ -489,7 +501,7 @@ export default class CustomColumnModal extends React.Component {
   }
 
   onAddFunction = () => {
-    const columnFn = _cloneDeep(this.state.columnFn)
+    const columnFn = cloneDeep(this.state.columnFn)
 
     columnFn.push({
       type: 'function',
@@ -534,7 +546,13 @@ export default class CustomColumnModal extends React.Component {
         label='Column Name'
         placeholder='eg. "Difference"'
         value={this.state.columnName}
-        errormessage={this.state?.isColumnNameValid ? '' : this.state?.columnName?.length > 0 ? 'A column with this name already exists.' : 'Column name cannot be empty'}
+        errormessage={
+          this.state?.isColumnNameValid
+            ? ''
+            : this.state?.columnName?.length > 0
+            ? 'A column with this name already exists.'
+            : 'Column name cannot be empty'
+        }
         onChange={(e) => {
           this.handleColumnNameUpdate(e.target.value)
         }}
@@ -576,7 +594,7 @@ export default class CustomColumnModal extends React.Component {
   }
 
   renderCustomNumberInput = (chunk, i) => {
-    const columnFn = _cloneDeep(this.state.columnFn)
+    const columnFn = cloneDeep(this.state.columnFn)
     return (
       <Input
         type='number'
@@ -701,7 +719,7 @@ export default class CustomColumnModal extends React.Component {
         value={chunk.value}
         align='middle'
         onChange={(operator) => {
-          const columnFn = _cloneDeep(this.state.columnFn)
+          const columnFn = cloneDeep(this.state.columnFn)
           columnFn[i].value = operator
           this.setState({ columnFn })
         }}
@@ -737,7 +755,7 @@ export default class CustomColumnModal extends React.Component {
 
   renderColumnFnBuilder = () => {
     const supportedOperators = this.getNextSupportedOperators()
-    const columnFn = _cloneDeep(this.state.columnFn)
+    const columnFn = cloneDeep(this.state.columnFn)
     const lastTerm = columnFn[columnFn.length - 1]
     return (
       <div className='react-autoql-formula-builder-wrapper'>
@@ -776,38 +794,37 @@ export default class CustomColumnModal extends React.Component {
         <div className='react-autoql-formula-builder-column-selection-container'>
           <div className='react-autoql-input-label'>Variables</div>
           <div className='react-autoql-formula-builder-calculator-buttons-container'>
-            {getSelectableColumns(this.props.columns)
-              ?.map((col, i) => {
-                return (
-                  <Button
-                    key={`react-autoql-column-select-button-${i}`}
-                    className='react-autoql-formula-calculator-button'
-                    icon='table'
-                    disabled={
-                      lastTerm?.type === 'column' || lastTerm?.type === 'number' || lastTerm?.value === 'RIGHT_BRACKET'
+            {getSelectableColumns(this.props.columns)?.map((col, i) => {
+              return (
+                <Button
+                  key={`react-autoql-column-select-button-${i}`}
+                  className='react-autoql-formula-calculator-button'
+                  icon='table'
+                  disabled={
+                    lastTerm?.type === 'column' || lastTerm?.type === 'number' || lastTerm?.value === 'RIGHT_BRACKET'
+                  }
+                  onClick={() => {
+                    const newChunk = {
+                      type: 'column',
+                      value: col.field,
+                      column: col,
                     }
-                    onClick={() => {
-                      const newChunk = {
-                        type: 'column',
-                        value: col.field,
-                        column: col,
-                      }
 
-                      if (lastTerm && lastTerm.type !== 'operator') {
-                        // Replace current variable
-                        columnFn[columnFn.length - 1] = newChunk
-                      } else {
-                        // Add new variable
-                        columnFn.push(newChunk)
-                      }
+                    if (lastTerm && lastTerm.type !== 'operator') {
+                      // Replace current variable
+                      columnFn[columnFn.length - 1] = newChunk
+                    } else {
+                      // Add new variable
+                      columnFn.push(newChunk)
+                    }
 
-                      this.setState({ columnFn })
-                    }}
-                  >
-                    {col.display_name}
-                  </Button>
-                )
-              })}
+                    this.setState({ columnFn })
+                  }}
+                >
+                  {col.display_name}
+                </Button>
+              )
+            })}
             <Button
               key={`react-autoql-column-select-button-custom-number`}
               className='react-autoql-formula-calculator-button'
@@ -1019,9 +1036,7 @@ export default class CustomColumnModal extends React.Component {
         >
           <div className='custom-column-modal'>
             <div className='custom-column-modal-form-wrapper'>
-              <div className='custom-column-modal-name-and-type'>
-                {this.renderColumnNameInput()}
-              </div>
+              <div className='custom-column-modal-name-and-type'>{this.renderColumnNameInput()}</div>
               {this.renderColumnFnBuilder()}
             </div>
             {this.renderTablePreview()}

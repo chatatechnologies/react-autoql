@@ -2,7 +2,6 @@ import React from 'react'
 import axios from 'axios'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
-import _cloneDeep from 'lodash.clonedeep'
 import { authenticationDefault } from 'autoql-fe-utils'
 import RecordRTC, { StereoAudioRecorder } from 'recordrtc'
 

@@ -2,7 +2,7 @@ import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEmpty from 'lodash.isempty'
-import _cloneDeep from 'lodash.clonedeep'
+import { cloneDeep } from 'lodash'
 
 import {
   EXISTS_TYPE,
@@ -78,16 +78,16 @@ class DataAlertModal extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    onSave: () => { },
-    onErrorCallback: () => { },
+    onSave: () => {},
+    onErrorCallback: () => {},
     currentDataAlert: undefined,
     dataAlertType: CONTINUOUS_TYPE,
     isVisible: false,
     allowDelete: true,
-    onClose: () => { },
-    onSuccessAlert: () => { },
-    onClosed: () => { },
-    onOpened: () => { },
+    onClose: () => {},
+    onSuccessAlert: () => {},
+    onClosed: () => {},
+    onOpened: () => {},
     enableQueryValidation: true,
     dataFormatting: dataFormattingDefault,
     autoQLConfig: autoQLConfigDefault,
@@ -122,17 +122,18 @@ class DataAlertModal extends React.Component {
     if (this.props?.autoQLConfig?.projectId && !this.state.fetchedCategories) {
       this.getLabels()
     }
-
   }
 
   getLabels = () => {
     if (this.props.authentication?.token && this.props.authentication?.domain && this.props.authentication?.apiKey)
-      getAllDataAlertsLabels({ ...getAuthentication(this.props.authentication) }).then((response) => {
-        this.setState({ categories: response?.data?.data?.items, fetchedCategories: true })
-      }).catch((error) => {
-        console.error('error fetching data alert categories', error)
-        this.setState({ categories: [], fetchedCategories: true })
-      })
+      getAllDataAlertsLabels({ ...getAuthentication(this.props.authentication) })
+        .then((response) => {
+          this.setState({ categories: response?.data?.data?.items, fetchedCategories: true })
+        })
+        .catch((error) => {
+          console.error('error fetching data alert categories', error)
+          this.setState({ categories: [], fetchedCategories: true })
+        })
   }
 
   showConditionsStep = () => {
@@ -237,7 +238,7 @@ class DataAlertModal extends React.Component {
       if (!!this.props.currentDataAlert?.id) {
         return this.settingsViewRef?.getData()
       } else {
-        let expressionJSON = _cloneDeep(this.state.expressionJSON)
+        let expressionJSON = cloneDeep(this.state.expressionJSON)
 
         if (this.expressionRef) {
           expressionJSON = this.expressionRef.getJSON()
@@ -614,7 +615,7 @@ class DataAlertModal extends React.Component {
 
   renderAlphaAlertsSettings = () => {
     return (
-      <CollapsableSection title='Additional Settings' defaultCollapsed={true} onToggle={() => { }}>
+      <CollapsableSection title='Additional Settings' defaultCollapsed={true} onToggle={() => {}}>
         <AlphaAlertsSettings
           ref={(r) => (this.alphaAlertsSettingRef = r)}
           billingUnitsInput={this.state.billingUnitsInput}

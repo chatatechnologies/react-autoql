@@ -326,7 +326,6 @@ export class QueryOutput extends React.Component {
       // Using a count variable so it doesn't have to deep compare on every udpate
       const columnsChanged = this.state.columnChangeCount !== prevState.columnChangeCount
       if (columnsChanged) {
-        console.log('Columns changed, regenerating data')
         this.tableID = uuid()
         this.props.onColumnChange(
           this.queryResponse?.data?.data?.fe_req?.display_overrides,

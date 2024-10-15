@@ -1,6 +1,6 @@
 import React from 'react'
 import { shallow, mount } from 'enzyme'
-import _cloneDeep from 'lodash.clonedeep'
+import { cloneDeep } from 'lodash'
 import { findByTestAttr } from '../../../test/testUtils'
 import { QueryOutput } from '../..'
 import { QueryOutput as QueryOutputWithoutTheme } from '../../components/QueryOutput/QueryOutput'
@@ -47,7 +47,7 @@ describe('test each response case', () => {
 
 describe('supported display types', () => {
   test('support charts even for 1 row of data', async () => {
-    const queryResponse = _cloneDeep(testCases[8])
+    const queryResponse = cloneDeep(testCases[8])
     queryResponse.data.data.rows = [queryResponse.data.data.rows[0]]
     const queryOutput = mount(<QueryOutputWithoutTheme queryResponse={queryResponse} />)
     const supportedDisplayTypes = queryOutput.instance().getCurrentSupportedDisplayTypes()
@@ -58,7 +58,7 @@ describe('supported display types', () => {
 
 describe('test table edge cases', () => {
   describe('all columns initially hidden then visibility changed', () => {
-    const testCaseHiddenColumns = _cloneDeep(testCases[8])
+    const testCaseHiddenColumns = cloneDeep(testCases[8])
     testCaseHiddenColumns.data.data.columns = testCaseHiddenColumns.data.data.columns.map((column) => {
       return {
         ...column,
@@ -82,7 +82,7 @@ describe('test table edge cases', () => {
       })
 
       test('display type is table after columns are unhidden', () => {
-        const newColumns = _cloneDeep(testCases[8].data.data.columns)
+        const newColumns = cloneDeep(testCases[8].data.data.columns)
 
         queryOutputVisible.find(QueryOutputWithoutTheme).instance().updateColumns(newColumns)
 

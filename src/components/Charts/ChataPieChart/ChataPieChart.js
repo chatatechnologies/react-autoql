@@ -3,7 +3,7 @@ import { arc } from 'd3-shape'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import { select } from 'd3-selection'
-import _cloneDeep from 'lodash.clonedeep'
+import { cloneDeep } from 'lodash'
 
 import {
   legendColor,
@@ -265,7 +265,7 @@ export default class ChataPieChart extends React.Component {
 
     const onlyLabelVisible = this.state.legendLabels.every((label) => label.label === legendLabel.label || label.hidden)
     if (!onlyLabelVisible) {
-      const newLegendLabels = _cloneDeep(this.state.legendLabels)
+      const newLegendLabels = cloneDeep(this.state.legendLabels)
       newLegendLabels[index].hidden = !this.state.legendLabels[index].hidden
       this.setState({ legendLabels: newLegendLabels })
     }

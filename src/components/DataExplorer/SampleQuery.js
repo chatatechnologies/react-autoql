@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import _cloneDeep from 'lodash.clonedeep'
+import { cloneDeep } from 'lodash'
 import { SampleQueryReplacementTypes, getQueryRequestParams, getTitleCase } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -11,10 +11,10 @@ export default class SampleQuery extends React.Component {
   constructor(props) {
     super(props)
 
-    const initialValues = props.suggestion?.initialValues ? _cloneDeep(props.suggestion?.initialValues) : {}
+    const initialValues = props.suggestion?.initialValues ? cloneDeep(props.suggestion?.initialValues) : {}
 
     if (props.initialValues && Object.keys(props.initialValues)?.length) {
-      const initialValuesFromProps = _cloneDeep(props.initialValues)
+      const initialValuesFromProps = cloneDeep(props.initialValues)
       Object.keys(initialValuesFromProps).forEach((key) => {
         initialValues[key] = initialValuesFromProps[key]
       })

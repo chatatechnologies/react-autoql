@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
-import _cloneDeep from 'lodash.clonedeep'
+import { cloneDeep } from 'lodash'
 
 import { Icon } from '../Icon'
 import { Select } from '../Select'
@@ -140,7 +140,7 @@ export default class QueryValidationMessage extends React.Component {
     }
 
     this.updateStartAndEndIndexes(selectedSuggestions)
-    this.setState({ selectedSuggestions: _cloneDeep(selectedSuggestions) })
+    this.setState({ selectedSuggestions: cloneDeep(selectedSuggestions) })
   }
 
   initializeQueryValidationOptions = (responseBody) => {
@@ -171,7 +171,7 @@ export default class QueryValidationMessage extends React.Component {
     }
 
     const newSuggestion = this.suggestionLists[index].find((suggestion) => suggestion.id === suggestionId)
-    const newSelectedSuggestions = _cloneDeep(this.state.selectedSuggestions)
+    const newSelectedSuggestions = cloneDeep(this.state.selectedSuggestions)
     newSelectedSuggestions[index] = newSuggestion
 
     // If user provided callback for validation selection
@@ -181,11 +181,11 @@ export default class QueryValidationMessage extends React.Component {
     )
 
     this.updateStartAndEndIndexes(newSelectedSuggestions)
-    this.setState({ selectedSuggestions: _cloneDeep(newSelectedSuggestions) })
+    this.setState({ selectedSuggestions: cloneDeep(newSelectedSuggestions) })
   }
 
   deleteQueryValidationSuggestion = (suggestionIndex) => {
-    const newSelectedSuggestions = _cloneDeep(
+    const newSelectedSuggestions = cloneDeep(
       this.state.selectedSuggestions.map((suggestion, index) => {
         if (index === suggestionIndex) {
           return {
@@ -205,12 +205,12 @@ export default class QueryValidationMessage extends React.Component {
 
     this.updateStartAndEndIndexes(newSelectedSuggestions)
     this.setState({
-      selectedSuggestions: _cloneDeep(newSelectedSuggestions),
+      selectedSuggestions: cloneDeep(newSelectedSuggestions),
     })
   }
 
   renderWordSelector = (suggestionDropdownIndex) => {
-    const suggestion = _cloneDeep(this.state.selectedSuggestions[suggestionDropdownIndex])
+    const suggestion = cloneDeep(this.state.selectedSuggestions[suggestionDropdownIndex])
     if (!suggestion || suggestion.hidden) {
       return null
     }

@@ -4,7 +4,7 @@ import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import { Slide } from 'react-toastify'
-import _cloneDeep from 'lodash.clonedeep'
+import { cloneDeep } from 'lodash'
 import Autosuggest from 'react-autosuggest'
 import { isMobile } from 'react-device-detect'
 import { ToastContainer, toast } from 'react-toastify'
@@ -167,7 +167,7 @@ export default class FilterLockPopover extends React.Component {
   }
 
   getPersistedFilters = () => {
-    return _cloneDeep(this.state.filters.filter((filter) => !filter.isSession))
+    return cloneDeep(this.state.filters.filter((filter) => !filter.isSession))
   }
 
   findFilter = ({ filterText, value, key }) => {
@@ -426,7 +426,7 @@ export default class FilterLockPopover extends React.Component {
         return filter.show_message === category
       })
 
-      this.setFilterTypes(categoryFilters, _cloneDeep(this.state.filters))
+      this.setFilterTypes(categoryFilters, cloneDeep(this.state.filters))
       this.setState({
         filters: newFilters,
       })

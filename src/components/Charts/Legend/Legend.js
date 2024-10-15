@@ -3,7 +3,7 @@ import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
-import _cloneDeep from 'lodash.clonedeep'
+import { cloneDeep } from 'lodash'
 import { isMobile } from 'react-device-detect'
 import { symbol, symbolSquare } from 'd3-shape'
 import LegendSelector from '../Legend/LegendSelector'
@@ -183,8 +183,8 @@ export default class Legend extends React.Component {
   }
 
   distributeListsEvenly = (list1Orig, list2Orig, numSections) => {
-    const list1 = _cloneDeep(list1Orig)
-    const list2 = _cloneDeep(list2Orig)
+    const list1 = cloneDeep(list1Orig)
+    const list2 = cloneDeep(list2Orig)
 
     const list1Size = list1?.length ?? 0
     const list2Size = list2?.length ?? 0

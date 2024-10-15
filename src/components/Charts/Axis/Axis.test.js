@@ -1,7 +1,6 @@
 import React from 'react'
 import { mount } from 'enzyme'
 import Axis from './Axis'
-import _cloneDeep from 'lodash.clonedeep'
 import { findByTestAttr } from '../../../../test/testUtils'
 import sampleProps from '../chartTestData'
 

@@ -2,7 +2,7 @@ import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import { format } from 'sql-formatter'
-import _cloneDeep from 'lodash.clonedeep'
+import { cloneDeep } from 'lodash'
 import { isMobile } from 'react-device-detect'
 import {
   setColumnVisibility,
@@ -306,7 +306,7 @@ export class OptionsToolbar extends React.Component {
   }
 
   renderDataAlertModal = () => {
-    const queryResponse = _cloneDeep(this.props.responseRef?.queryResponse)
+    const queryResponse = cloneDeep(this.props.responseRef?.queryResponse)
     const filters = this.props.responseRef?.getCombinedFilters()
 
     return (
@@ -382,9 +382,9 @@ export class OptionsToolbar extends React.Component {
               style={
                 this.state.isCSVDownloading
                   ? {
-                    pointerEvents: 'none', // This makes it not clickable
-                    opacity: 0.6, // This grays it out to look disabled
-                  }
+                      pointerEvents: 'none', // This makes it not clickable
+                      opacity: 0.6, // This grays it out to look disabled
+                    }
                   : null
               }
             >
@@ -458,18 +458,18 @@ export class OptionsToolbar extends React.Component {
                   onClick={() => {
                     this.setState({ activeMenu: undefined })
                     const responseRef = this.props.responseRef
-                    const responseCopy = _cloneDeep(responseRef?.queryResponse)
+                    const responseCopy = cloneDeep(responseRef?.queryResponse)
 
                     option.callback?.({
                       query: responseRef?.queryResponse?.data?.data?.text,
                       queryResponse: responseCopy,
-                      aggConfig: _cloneDeep(responseRef?.state?.aggConfig),
+                      aggConfig: cloneDeep(responseRef?.state?.aggConfig),
                       displayType: responseRef?.state?.displayType,
                       columnSelects: responseCopy?.data?.data?.fe_req?.additional_selects,
                       displayOverrides: responseCopy?.data?.data?.fe_req?.display_overrides,
                       dataConfig: {
-                        tableConfig: _cloneDeep(responseRef?.tableConfig),
-                        pivotTableConfig: _cloneDeep(responseRef?.pivotTableConfig),
+                        tableConfig: cloneDeep(responseRef?.tableConfig),
+                        pivotTableConfig: cloneDeep(responseRef?.pivotTableConfig),
                       },
                     })
                   }}

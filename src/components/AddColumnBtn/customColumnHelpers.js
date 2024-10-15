@@ -1,6 +1,6 @@
 import React from 'react'
 import { Icon } from '../Icon'
-import _cloneDeep from 'lodash.clonedeep'
+import { cloneDeep } from 'lodash'
 
 export const ORDERABLE_WINDOW_FN_TYPES = ['RANK']
 
@@ -56,7 +56,7 @@ export const OPERATORS = {
 }
 
 export const getOperators = (enableWindowFns) => {
-  const opArray = _cloneDeep(OPERATORS)
+  const opArray = cloneDeep(OPERATORS)
 
   if (!enableWindowFns) {
     delete opArray.FUNCTION

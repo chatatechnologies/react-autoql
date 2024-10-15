@@ -3,7 +3,6 @@ import axios from 'axios'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
-import _cloneDeep from 'lodash.clonedeep'
 import Autosuggest from 'react-autosuggest'
 
 import {

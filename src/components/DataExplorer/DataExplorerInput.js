@@ -2,7 +2,7 @@ import React from 'react'
 import axios from 'axios'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
-import _cloneDeep from 'lodash.clonedeep'
+import { cloneDeep } from 'lodash'
 import Autosuggest from 'react-autosuggest'
 
 import {
@@ -164,7 +164,7 @@ export default class DataExplorerInput extends React.Component {
   // }
 
   getNewrecentSearches = (subject) => {
-    const recentSearches = _cloneDeep(this.state.recentSearches)
+    const recentSearches = cloneDeep(this.state.recentSearches)
 
     // If value already exists in recent list, move it to the top
     const index = recentSearches.findIndex((subj) => subj.displayName == subject.displayName)

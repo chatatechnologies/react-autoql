@@ -3,7 +3,7 @@ import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import sanitizeHtml from 'sanitize-html'
-import _cloneDeep from 'lodash.clonedeep'
+import { cloneDeep } from 'lodash'
 import ContentEditable from 'react-contenteditable'
 import { runQueryValidation, setCaretPosition, authenticationDefault, getAuthentication } from 'autoql-fe-utils'
 
@@ -206,7 +206,7 @@ export default class QueryValidationMessage extends React.Component {
     }
 
     this.updateStartAndEndIndexes(selectedSuggestions)
-    this.setState({ selectedSuggestions: _cloneDeep(selectedSuggestions) }, () => {
+    this.setState({ selectedSuggestions: cloneDeep(selectedSuggestions) }, () => {
       setCaretPosition(this.inputRef, 5)
     })
   }
@@ -231,7 +231,7 @@ export default class QueryValidationMessage extends React.Component {
   onChangeQueryValidationSelectOption = (suggestionId) => {
     const index = this.validationSelectorIndex
     const newSuggestion = this.suggestionLists[index].find((suggestion) => suggestion.id === suggestionId)
-    const newSelectedSuggestions = _cloneDeep(this.state.selectedSuggestions)
+    const newSelectedSuggestions = cloneDeep(this.state.selectedSuggestions)
     newSelectedSuggestions[index] = newSuggestion
 
     // If user provided callback for validation selection
@@ -241,13 +241,13 @@ export default class QueryValidationMessage extends React.Component {
     )
 
     this.updateStartAndEndIndexes(newSelectedSuggestions)
-    this.setState({ selectedSuggestions: _cloneDeep(newSelectedSuggestions) }, () => {
+    this.setState({ selectedSuggestions: cloneDeep(newSelectedSuggestions) }, () => {
       // this.moveCaretAtEnd()
     })
   }
 
   getWordSelectorOptions = (suggestionDropdownIndex) => {
-    const suggestion = _cloneDeep(this.state.selectedSuggestions[suggestionDropdownIndex])
+    const suggestion = cloneDeep(this.state.selectedSuggestions[suggestionDropdownIndex])
     if (!suggestion || suggestion.hidden) {
       return []
     }
@@ -277,7 +277,7 @@ export default class QueryValidationMessage extends React.Component {
   }
 
   renderWordSelector = (suggestionDropdownIndex) => {
-    const suggestion = _cloneDeep(this.state.selectedSuggestions[suggestionDropdownIndex])
+    const suggestion = cloneDeep(this.state.selectedSuggestions[suggestionDropdownIndex])
     if (!suggestion || suggestion.hidden) {
       return null
     }
@@ -374,7 +374,7 @@ export default class QueryValidationMessage extends React.Component {
         const newQuery = response?.data?.data?.query
 
         if (this.isNewQueryAppendedToOldQuery(newQuery, currentQuery) && response?.data?.data?.replacements?.length) {
-          this.initializeQueryValidationOptions(_cloneDeep(response.data))
+          this.initializeQueryValidationOptions(cloneDeep(response.data))
         }
       })
       .catch((error) => {
@@ -497,7 +497,7 @@ export default class QueryValidationMessage extends React.Component {
       this.plainTextList.forEach((textValue, index) => {
         const textElement = `<span key="query-element-${index}">${textValue}</span>`
         // let suggestionElement = this.renderWordSelector(index)
-        const suggestion = _cloneDeep(this.state.selectedSuggestions[index])
+        const suggestion = cloneDeep(this.state.selectedSuggestions[index])
         let suggestionElement = ''
 
         if (suggestion) {

@@ -2,7 +2,7 @@ import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
-import _cloneDeep from 'lodash.clonedeep'
+import { cloneDeep } from 'lodash'
 import RGL, { WidthProvider } from 'react-grid-layout'
 
 import {
@@ -170,7 +170,7 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   debouncedOnChange = (tiles, saveInLog = true, callbackArray = []) => {
-    this.onChangeTiles = _cloneDeep(tiles)
+    this.onChangeTiles = cloneDeep(tiles)
     const debouncedPromise = new Promise((resolve, reject) => {
       try {
         this.subscribeToCallback([resolve])
@@ -191,7 +191,7 @@ class DashboardWithoutTheme extends React.Component {
             this.props.onChange(this.onChangeTiles)
             this.onChangeTiles = null
             if (this.callbackSubsciptions?.length) {
-              const callbackArray = _cloneDeep(this.callbackSubsciptions)
+              const callbackArray = cloneDeep(this.callbackSubsciptions)
               this.callbackSubsciptions = []
               callbackArray.forEach((callback, i) => {
                 this.callbackSubsciptionTimer = setTimeout(() => {
@@ -379,7 +379,7 @@ class DashboardWithoutTheme extends React.Component {
       return
     }
 
-    this.tileLog.unshift(_cloneDeep(tiles))
+    this.tileLog.unshift(cloneDeep(tiles))
   }
 
   onMoveEnd = (layout, oldItem, newItem, placeholder, e, element) => {
@@ -425,7 +425,7 @@ class DashboardWithoutTheme extends React.Component {
 
   addTile = (content) => {
     try {
-      const tiles = _cloneDeep(this.getMostRecentTiles())
+      const tiles = cloneDeep(this.getMostRecentTiles())
       const id = uuid()
       let tile = {
         key: id,
@@ -461,7 +461,7 @@ class DashboardWithoutTheme extends React.Component {
 
   changeCurrentTileState = (logIndex) => {
     try {
-      const newTileState = _cloneDeep(this.tileLog[logIndex])
+      const newTileState = cloneDeep(this.tileLog[logIndex])
 
       if (newTileState) {
         this.currentLogIndex = logIndex
@@ -496,7 +496,7 @@ class DashboardWithoutTheme extends React.Component {
 
   deleteTile = (id) => {
     try {
-      const tiles = _cloneDeep(this.getMostRecentTiles())
+      const tiles = cloneDeep(this.getMostRecentTiles())
       const tileIndex = tiles.map((item) => item.i).indexOf(id)
       ~tileIndex && tiles.splice(tileIndex, 1)
 
@@ -509,7 +509,7 @@ class DashboardWithoutTheme extends React.Component {
   setParamsForTile = (params, id, callbackArray) => {
     try {
       const originalTiles = this.getMostRecentTiles()
-      const tiles = _cloneDeep(this.getMostRecentTiles())
+      const tiles = cloneDeep(this.getMostRecentTiles())
       const tileIndex = tiles.map((item) => item.i).indexOf(id)
       tiles[tileIndex] = {
         ...tiles[tileIndex],

@@ -266,7 +266,7 @@ export default class ChataTable extends React.Component {
         }
       })
       this.setHeaderInputEventListeners()
-      console.log('componentDidUpdate')
+
       this.setFilters()
       this.clearLoadingIndicators()
     }

@@ -2,7 +2,7 @@ import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
-import _cloneDeep from 'lodash.clonedeep'
+import { cloneDeep } from 'lodash'
 
 import { formatElement, getDataFormatting, dataFormattingDefault, COLUMN_TYPES } from 'autoql-fe-utils'
 
@@ -95,7 +95,7 @@ export default class SelectableTable extends React.Component {
     if (this.props.radio) {
       this.props.onColumnSelection?.([index])
     } else {
-      let selectedColumns = _cloneDeep(this.props.selectedColumns)
+      let selectedColumns = cloneDeep(this.props.selectedColumns)
 
       if (selectedColumns?.includes(index)) {
         selectedColumns = selectedColumns.filter((i) => i !== index)
