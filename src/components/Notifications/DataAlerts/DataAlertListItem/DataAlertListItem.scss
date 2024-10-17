@@ -1,318 +1,319 @@
-.react-autoql-notification-setting-item.data-alert-disabled {
-  .data-alert-section-cycle,
-  .data-alert-state,
-  .data-alert-section-cycle-start {
-    opacity: 0.5;
-  }
-}
-.react-autoql-notification-settings-container {
-  margin-top: 10px;
-}
-.react-autoql-re-initialize-btn {
-  margin-left: 6px;
-}
-.react-autoql-notification-setting-display-name {
-  overflow: visible;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+// Keep this file with comments for a temporary workaround
+// .react-autoql-notification-setting-item.data-alert-disabled {
+//   .data-alert-section-cycle,
+//   .data-alert-state,
+//   .data-alert-section-cycle-start {
+//     opacity: 0.5;
+//   }
+// }
+// .react-autoql-notification-settings-container {
+//   margin-top: 10px;
+// }
+// .react-autoql-re-initialize-btn {
+//   margin-left: 6px;
+// }
+// .react-autoql-notification-setting-display-name {
+//   overflow: visible;
+//   white-space: nowrap;
+//   text-overflow: ellipsis;
 
-  .data-alert-section-content {
-    font-size: 14px;
-    overflow: visible;
-    white-space: normal;
-    cursor: default;
-  }
-}
+//   .data-alert-section-content {
+//     font-size: 14px;
+//     overflow: visible;
+//     white-space: normal;
+//     cursor: default;
+//   }
+// }
 
-.react-autoql-data-alert-list-item-section {
-  @mixin responsive-width($breakpoints) {
-    @each $breakpoint, $width in $breakpoints {
-      @media (max-width: $breakpoint) {
-        width: $width;
-      }
-    }
-  }
-  @media (min-width: 950px) {
-    width: 350px;
-  }
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-start;
-  align-items: center;
-  flex-wrap: nowrap;
-  overflow: visible;
+// .react-autoql-data-alert-list-item-section {
+//   @mixin responsive-width($breakpoints) {
+//     @each $breakpoint, $width in $breakpoints {
+//       @media (max-width: $breakpoint) {
+//         width: $width;
+//       }
+//     }
+//   }
+//   @media (min-width: 950px) {
+//     width: 350px;
+//   }
+//   display: flex;
+//   flex-direction: row;
+//   justify-content: flex-start;
+//   align-items: center;
+//   flex-wrap: nowrap;
+//   overflow: visible;
 
-  &.react-autoql-data-alert-list-item-section-frequency,
-  &.react-autoql-data-alert-list-item-section-next-check {
-    flex: 1.5 0 50px;
-  }
-  &.react-autoql-data-alert-list-item-section-state {
-    width: 50px;
-  }
-  &.react-autoql-data-alert-list-item-section-description {
-    width: 1200px;
+//   &.react-autoql-data-alert-list-item-section-frequency,
+//   &.react-autoql-data-alert-list-item-section-next-check {
+//     flex: 1.5 0 50px;
+//   }
+//   &.react-autoql-data-alert-list-item-section-state {
+//     width: 50px;
+//   }
+//   &.react-autoql-data-alert-list-item-section-description {
+//     width: 1200px;
 
-    @include responsive-width(
-      (
-        1880px: 1000px,
-        1770px: 900px,
-        1670px: 800px,
-        1480px: 780px,
-        1380px: 700px,
-        1280px: 600px,
-        1240px: 500px,
-        1170px: 400px,
-        1000px: 300px,
-        900px: 150px,
-        670px: 100px,
-      )
-    );
-    &.landscape.mobile {
-      @include responsive-width(
-        (
-          1100px: 700px,
-          900px: 600px,
-          670px: 400px,
-        )
-      );
-    }
-  }
-  &.react-autoql-notification-setting-display-name {
-    width: 300px;
-    @include responsive-width(
-      (
-        770px: 200px,
-        670px: 130px,
-      )
-    );
-  }
-  &.react-autoql-data-alert-list-item-section-status {
-    width: 150px;
-    @include responsive-width(
-      (
-        1450px: 100px,
-      )
-    );
-  }
-  &.react-autoql-data-alert-list-item-section-actions {
-    width: 50px;
-  }
-  .react-autoql-notification-setting-display-name-title {
-    width: 100%;
-    text-overflow: ellipsis;
-    overflow: auto;
-  }
+//     @include responsive-width(
+//       (
+//         1880px: 1000px,
+//         1770px: 900px,
+//         1670px: 800px,
+//         1480px: 780px,
+//         1380px: 700px,
+//         1280px: 600px,
+//         1240px: 500px,
+//         1170px: 400px,
+//         1000px: 300px,
+//         900px: 150px,
+//         670px: 100px,
+//       )
+//     );
+//     &.landscape.mobile {
+//       @include responsive-width(
+//         (
+//           1100px: 700px,
+//           900px: 600px,
+//           670px: 400px,
+//         )
+//       );
+//     }
+//   }
+//   &.react-autoql-notification-setting-display-name {
+//     width: 300px;
+//     @include responsive-width(
+//       (
+//         770px: 200px,
+//         670px: 130px,
+//       )
+//     );
+//   }
+//   &.react-autoql-data-alert-list-item-section-status {
+//     width: 150px;
+//     @include responsive-width(
+//       (
+//         1450px: 100px,
+//       )
+//     );
+//   }
+//   &.react-autoql-data-alert-list-item-section-actions {
+//     width: 50px;
+//   }
+//   .react-autoql-notification-setting-display-name-title {
+//     width: 100%;
+//     text-overflow: ellipsis;
+//     overflow: auto;
+//   }
 
-  .data-alert-section-content,
-  .data-alert-header-item {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    font-size: 13px;
-    cursor: default;
-  }
+//   .data-alert-section-content,
+//   .data-alert-header-item {
+//     display: flex;
+//     justify-content: flex-start;
+//     align-items: center;
+//     font-size: 13px;
+//     cursor: default;
+//   }
 
-  .data-alert-section-content {
-    padding: 8px 12px;
-  }
+//   .data-alert-section-content {
+//     padding: 8px 12px;
+//   }
 
-  .data-alert-header-item {
-    padding: 0 12px;
-  }
+//   .data-alert-header-item {
+//     padding: 0 12px;
+//   }
 
-  &:first-child {
-    padding-left: 12px;
-  }
+//   &:first-child {
+//     padding-left: 12px;
+//   }
 
-  &:last-child {
-    padding-right: 12px;
-  }
-  &.isCustom {
-    &:last-child {
-      padding-right: 12px;
-    }
-  }
-}
-.react-autoql-notification-setting-item {
-  display: block;
-  min-height: 55px;
-  transition: height 0.3s cubic-bezier(0.26, 0.26, 0, 1);
-  background-color: var(--react-autoql-background-color-secondary);
-  border-bottom: 1px solid var(--react-autoql-box-shadow-color);
-  position: relative;
+//   &:last-child {
+//     padding-right: 12px;
+//   }
+//   &.isCustom {
+//     &:last-child {
+//       padding-right: 12px;
+//     }
+//   }
+// }
+// .react-autoql-notification-setting-item {
+//   display: block;
+//   min-height: 55px;
+//   transition: height 0.3s cubic-bezier(0.26, 0.26, 0, 1);
+//   background-color: var(--react-autoql-background-color-secondary);
+//   border-bottom: 1px solid var(--react-autoql-box-shadow-color);
+//   position: relative;
 
-  &.react-autoql-dataalert-show-header {
-    margin-top: 40px;
-    &::before {
-      content: '';
-      position: absolute;
-      top: -40px;
-      left: 0;
-      right: 0;
-      height: 40px;
-      background-color: rgb(from var(--react-autoql-background-color-primary) r g b / 0.4);
-    }
-  }
-  &:not(.react-autoql-dataalert-show-header) .data-alert-header-item {
-    display: none;
-  }
+//   &.react-autoql-dataalert-show-header {
+//     margin-top: 40px;
+//     &::before {
+//       content: '';
+//       position: absolute;
+//       top: -40px;
+//       left: 0;
+//       right: 0;
+//       height: 40px;
+//       background-color: rgb(from var(--react-autoql-background-color-primary) r g b / 0.4);
+//     }
+//   }
+//   &:not(.react-autoql-dataalert-show-header) .data-alert-header-item {
+//     display: none;
+//   }
 
-  &:first-child,
-  &.react-autoql-dataalert-show-header {
-    border-top-left-radius: 4px;
-    border-top-right-radius: 4px;
-  }
+//   &:first-child,
+//   &.react-autoql-dataalert-show-header {
+//     border-top-left-radius: 4px;
+//     border-top-right-radius: 4px;
+//   }
 
-  &:last-child {
-    border-bottom-left-radius: 4px;
-    border-bottom-right-radius: 4px;
-  }
+//   &:last-child {
+//     border-bottom-left-radius: 4px;
+//     border-bottom-right-radius: 4px;
+//   }
 
-  .data-alert-header-item {
-    padding-bottom: 4px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    position: absolute;
-    line-height: 33px;
-    white-space: nowrap;
-    bottom: 100%;
-    font-size: 0.875em;
-    font-weight: 600;
-    color: var(--react-autoql-text-color-primary);
-  }
+//   .data-alert-header-item {
+//     padding-bottom: 4px;
+//     text-transform: uppercase;
+//     letter-spacing: 0.5px;
+//     position: absolute;
+//     line-height: 33px;
+//     white-space: nowrap;
+//     bottom: 100%;
+//     font-size: 0.875em;
+//     font-weight: 600;
+//     color: var(--react-autoql-text-color-primary);
+//   }
 
-  .react-autoql-notification-action-hidden {
-    pointer-events: none;
-    visibility: hidden;
-    opacity: 0;
-  }
+//   .react-autoql-notification-action-hidden {
+//     pointer-events: none;
+//     visibility: hidden;
+//     opacity: 0;
+//   }
 
-  .data-alert-state {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    padding: 2px 5px;
-    border-radius: 6px;
-    white-space: nowrap;
-    cursor: default;
+//   .data-alert-state {
+//     display: flex;
+//     align-items: center;
+//     justify-content: center;
+//     font-size: 13px;
+//     padding: 2px 5px;
+//     border-radius: 6px;
+//     white-space: nowrap;
+//     cursor: default;
 
-    .react-autoql-icon:not(:last-child) {
-      margin-right: 5px;
-    }
+//     .react-autoql-icon:not(:last-child) {
+//       margin-right: 5px;
+//     }
 
-    &.data-alert-off {
-      &.data-alert-ready {
-        color: var(--react-autoql-text-color-primary);
-      }
+//     &.data-alert-off {
+//       &.data-alert-ready {
+//         color: var(--react-autoql-text-color-primary);
+//       }
 
-      &.data-alert-paused {
-        color: var(--react-autoql-text-color-primary);
-      }
+//       &.data-alert-paused {
+//         color: var(--react-autoql-text-color-primary);
+//       }
 
-      &.data-alert-triggered {
-        color: var(--react-autoql-text-color-primary);
-      }
+//       &.data-alert-triggered {
+//         color: var(--react-autoql-text-color-primary);
+//       }
 
-      &.data-alert-error {
-        font-size: x-large;
-        color: #f04438;
-        opacity: 1;
-      }
-    }
+//       &.data-alert-error {
+//         font-size: x-large;
+//         color: #f04438;
+//         opacity: 1;
+//       }
+//     }
 
-    &.data-alert-on {
-      &.data-alert-active {
-        color: var(--react-autoql-success-color);
+//     &.data-alert-on {
+//       &.data-alert-active {
+//         color: var(--react-autoql-success-color);
 
-        .react-autoql-icon {
-          background-color: var(--react-autoql-success-color);
-        }
-      }
+//         .react-autoql-icon {
+//           background-color: var(--react-autoql-success-color);
+//         }
+//       }
 
-      &.data-alert-scheduled {
-        color: var(--react-autoql-success-color);
-      }
+//       &.data-alert-scheduled {
+//         color: var(--react-autoql-success-color);
+//       }
 
-      &.data-alert-triggered {
-        color: var(--react-autoql-info-color);
+//       &.data-alert-triggered {
+//         color: var(--react-autoql-info-color);
 
-        .react-autoql-icon-filled {
-          background-color: var(--react-autoql-info-color);
-        }
-      }
+//         .react-autoql-icon-filled {
+//           background-color: var(--react-autoql-info-color);
+//         }
+//       }
 
-      &.data-alert-error {
-        cursor: pointer;
-        color: #f04438;
-      }
-    }
+//       &.data-alert-error {
+//         cursor: pointer;
+//         color: #f04438;
+//       }
+//     }
 
-    .react-autoql-icon-filled {
-      border-radius: 20px;
-      color: #fff;
-      padding: 3px;
-      font-size: 1.1em;
-      box-sizing: content-box;
-    }
-  }
+//     .react-autoql-icon-filled {
+//       border-radius: 20px;
+//       color: #fff;
+//       padding: 3px;
+//       font-size: 1.1em;
+//       box-sizing: content-box;
+//     }
+//   }
 
-  .react-autoql-notification-state-action-btn {
-    display: flex;
-    transition: background-color 0.2s ease;
-    padding: 4px;
-    margin-left: 7px;
-    margin-right: 0;
-    box-sizing: content-box;
-    font-size: 11px;
-    border-radius: 20px;
-    color: var(--react-autoql-info-color);
-    border: 1px solid var(--react-autoql-info-color);
-    cursor: pointer;
+//   .react-autoql-notification-state-action-btn {
+//     display: flex;
+//     transition: background-color 0.2s ease;
+//     padding: 4px;
+//     margin-left: 7px;
+//     margin-right: 0;
+//     box-sizing: content-box;
+//     font-size: 11px;
+//     border-radius: 20px;
+//     color: var(--react-autoql-info-color);
+//     border: 1px solid var(--react-autoql-info-color);
+//     cursor: pointer;
 
-    &.react-autoql-notification-state-action-btn-hidden {
-      visibility: hidden;
-    }
+//     &.react-autoql-notification-state-action-btn-hidden {
+//       visibility: hidden;
+//     }
 
-    &:hover {
-      background-color: var(--react-autoql-hover-color);
-    }
-  }
+//     &:hover {
+//       background-color: var(--react-autoql-hover-color);
+//     }
+//   }
 
-  .react-autoql-notification-action-btn {
-    display: flex;
-    font-size: 18px;
-    transition-property: color, border-color, background-color, opacity;
-    transition-duration: 0.3s;
-    transition-timing-function: ease;
-    padding: 0 10px;
-    color: var(--react-autoql-text-color-primary);
-    cursor: pointer;
+//   .react-autoql-notification-action-btn {
+//     display: flex;
+//     font-size: 18px;
+//     transition-property: color, border-color, background-color, opacity;
+//     transition-duration: 0.3s;
+//     transition-timing-function: ease;
+//     padding: 0 10px;
+//     color: var(--react-autoql-text-color-primary);
+//     cursor: pointer;
 
-    &:first-child {
-      padding-left: 0px;
-    }
-    &:last-child {
-      padding-right: 0px;
-    }
+//     &:first-child {
+//       padding-left: 0px;
+//     }
+//     &:last-child {
+//       padding-right: 0px;
+//     }
 
-    &:hover {
-      color: var(--react-autoql-accent-color);
-      &.react-autoql-notification-action-btn-delete {
-        color: var(--react-autoql-danger-color);
-      }
-    }
-  }
-}
+//     &:hover {
+//       color: var(--react-autoql-accent-color);
+//       &.react-autoql-notification-action-btn-delete {
+//         color: var(--react-autoql-danger-color);
+//       }
+//     }
+//   }
+// }
 
-.react-autoql-notification-setting-item-header {
-  transition: background-color 0.2s ease;
-  &:hover {
-    background-color: var(--react-autoql-mask-color);
-  }
-  overflow: auto;
-  min-height: 55px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-}
+// .react-autoql-notification-setting-item-header {
+//   transition: background-color 0.2s ease;
+//   &:hover {
+//     background-color: var(--react-autoql-mask-color);
+//   }
+//   overflow: auto;
+//   min-height: 55px;
+//   display: flex;
+//   align-items: center;
+//   justify-content: flex-start;
+// }
