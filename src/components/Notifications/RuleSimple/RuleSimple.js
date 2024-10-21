@@ -289,7 +289,10 @@ export default class RuleSimple extends React.Component {
         <h4>Select join columns for your queries:</h4>
         <p>Please choose the columns to join your first and second queries.</p>
         <JoinColumnSelectionTable
-          columnHeaders={['Query 1', 'Query 2']}
+          columnHeaders={[
+            this.state.firstQueryResult?.data?.data?.text || 'Query 1',
+            this.state.secondQueryResult?.data?.data?.text || 'Query 2',
+          ]}
           rowHeaders={['1st Join', '2nd Join']}
           firstQueryFirstOptions={firstQuerySelectableJoinColumns.map((col) => ({
             value: col?.name,

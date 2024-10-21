@@ -105,7 +105,9 @@ export default class JoinColumnSelectionTable extends React.Component {
       <tr>
         <th></th>
         {this.props.columnHeaders.map((header, index) => (
-          <th key={`col-${index}`}>{header}</th>
+          <th key={`col-${index}`}>
+            <div className='header-content'>{header}</div>
+          </th>
         ))}
       </tr>
     )
