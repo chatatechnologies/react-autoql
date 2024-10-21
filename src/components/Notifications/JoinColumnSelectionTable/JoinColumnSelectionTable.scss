@@ -32,6 +32,25 @@
       position: sticky;
       top: 0;
       z-index: 1;
+      max-width: none;
+      white-space: nowrap;
+      overflow: visible;
+      .header-content {
+        overflow-x: auto;
+        max-width: 500px;
+        &::-webkit-scrollbar {
+          height: 4px;
+        }
+        &::-webkit-scrollbar-thumb {
+          background-color: rgba(0, 0, 0, 0.2);
+          border-radius: 2px;
+        }
+        &::-webkit-scrollbar-track {
+          background-color: rgba(0, 0, 0, 0.1);
+        }
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0, 0, 0, 0.2) rgba(0, 0, 0, 0.1);
+      }
     }
   }
 
