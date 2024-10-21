@@ -1851,7 +1851,7 @@ export class QueryOutput extends React.Component {
 
       // Set aggregate type is data is list query
       let aggType = col.aggType
-      if (aggConfig) {
+      if (aggConfig?.[col?.name]) {
         aggType = aggConfig[col.name]
       }
       if (isListQuery(columns)) {
