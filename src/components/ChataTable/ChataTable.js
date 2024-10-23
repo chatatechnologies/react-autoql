@@ -70,8 +70,8 @@ export default class ChataTable extends React.Component {
     }
 
     this.tableParams = {
-      filter: [],
-      sort: [],
+      filter: props?.initialTableParams?.filter || [],
+      sort: props?.initialTableParams?.sort || [],
       page: 1,
     }
 
@@ -148,6 +148,8 @@ export default class ChataTable extends React.Component {
     allowCustomColumns: PropTypes.bool,
     onCustomColumnChange: PropTypes.func,
     enableContextMenu: PropTypes.bool,
+    initialTableParams: PropTypes.shape({ filter: PropTypes.array, sort: PropTypes.array, page: PropTypes.number }),
+    updateColumnsAndData: PropTypes.func,
   }
 
   static defaultProps = {
@@ -175,6 +177,7 @@ export default class ChataTable extends React.Component {
     onNewData: () => {},
     updateColumns: () => {},
     onCustomColumnChange: () => {},
+    updateColumnsAndData: () => {},
   }
 
   componentDidMount = () => {
@@ -270,8 +273,17 @@ export default class ChataTable extends React.Component {
       this.clearLoadingIndicators()
     }
 
+    if (this.state.tabulatorMounted && prevProps?.initialTableParams?.filter !== this.props?.initialTableParams?.filter) {
+      this.setHeaderInputEventListeners()
+      this.setFilters()
+      if (!this.props.hidden) {
+        this.setTableHeight('100%')
+      }
+    }
+
     if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
       this.setHeaderInputEventListeners()
+      this.setFilters()
       if (!this.props.hidden) {
         this.setTableHeight()
       }
@@ -1081,11 +1093,7 @@ export default class ChataTable extends React.Component {
       this.queryFn({ newColumns: newAdditionalSelectColumns })
         .then((response) => {
           if (response?.data?.data?.rows) {
-            this.props.updateColumns(
-              response?.data?.data?.columns,
-              response?.data?.data?.fe_req,
-              response?.data?.data?.available_selects,
-            )
+            this.props.updateColumnsAndData(response)
           } else {
             throw new Error('Column deletion failed')
           }
@@ -1389,9 +1397,8 @@ export default class ChataTable extends React.Component {
 
     return (
       <div className='table-row-count'>
-        <span>{`Scrolled ${currentRowsFormatted} / ${
-          totalRowCount > rowLimit ? rowLimitFormatted + '+' : totalRowsFormatted
-        } rows`}</span>
+        <span>{`Scrolled ${currentRowsFormatted} / ${totalRowCount > rowLimit ? rowLimitFormatted + '+' : totalRowsFormatted} rows`}
+        </span>
       </div>
     )
   }
