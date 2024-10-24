@@ -221,7 +221,7 @@ export default class SelectableTable extends React.Component {
               <table>
                 <thead>
                   <tr>
-                    {columns.map((col, i) => {
+                    {columns?.map((col, i) => {
                       const isDisabled = this.props.disabledColumns.includes(i)
 
                       return (
@@ -243,10 +243,10 @@ export default class SelectableTable extends React.Component {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((row, i) => {
+                  {rows?.map((row, i) => {
                     return (
                       <tr key={`row-${i}`} className='selectable-table-row'>
-                        {row.map((cell, j) => {
+                        {row?.map((cell, j) => {
                           const column = columns[j]
                           const isDisabled = this.props.disabledColumns.includes(j)
                           return (

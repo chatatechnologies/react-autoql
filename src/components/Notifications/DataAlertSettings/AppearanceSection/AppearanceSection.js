@@ -1,11 +1,14 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
-import { Input } from '../../Input'
-import { Select } from '../../Select'
-import NotificationItemWithoutData from '../NotificationItem/NotificationItemWithoutData'
+import { withTheme } from '../../../../theme'
+import { Input } from '../../../Input'
+import { Select } from '../../../Select'
+import NotificationItemWithoutData from '../../NotificationItem/NotificationItemWithoutData'
 
-export default class AppearanceSection extends React.Component {
+import './AppearanceSection.scss'
+
+class AppearanceSection extends React.Component {
   constructor(props) {
     super(props)
 
@@ -32,15 +35,15 @@ export default class AppearanceSection extends React.Component {
     titleInput: '',
     messageInput: '',
     showConditionStatement: true,
-    onTitleInputChange: () => { },
-    onMessageInputChange: () => { },
+    onTitleInputChange: () => {},
+    onMessageInputChange: () => {},
 
     descriptionInput: '',
     selectedCategory: '',
-    onDescriptionInputChange: () => { },
-    onCategorySelectChange: () => { },
+    onDescriptionInputChange: () => {},
+    onCategorySelectChange: () => {},
     categories: [],
-    enableAlphaAlertSettings: false
+    enableAlphaAlertSettings: false,
   }
 
   renderDataAlertDescriptionInput = () => {
@@ -59,17 +62,21 @@ export default class AppearanceSection extends React.Component {
   }
 
   renderDataAlertCategorySelect = () => {
-    const options = this.props?.categories?.length > 0 ? this.props?.categories?.map((label) => {
-      return {
-        value: label.id,
-        label: label.name,
-      }
-    }) :
-      [{
-        value: '-1',
-        label: 'No Categories Available',
-        disabled: true
-      }]
+    const options =
+      this.props?.categories?.length > 0
+        ? this.props?.categories?.map((label) => {
+            return {
+              value: label.id,
+              label: label.name,
+            }
+          })
+        : [
+            {
+              value: '-1',
+              label: 'No Categories Available',
+              disabled: true,
+            },
+          ]
     return (
       <Select
         label='Alert Category (optional)'
@@ -150,25 +157,18 @@ export default class AppearanceSection extends React.Component {
             </span>
           </div>
         ) : null}
-        {this.props?.enableAlphaAlertSettings ?
+        {this.props?.enableAlphaAlertSettings ? (
           <div className='alert-information-container'>
-            <div className='alert-information-item'>
-              {this.renderDataAlertNameInput()}
-            </div>
-            <div className='alert-information-item'>
-              {this.renderDataAlertCategorySelect()}
-            </div>
-            <div className='alert-information-item'>
-              {this.renderDataAlertMessageInput()}
-            </div>
-            <div className='alert-information-item'>
-              {this.renderDataAlertDescriptionInput()}
-            </div>
+            <div className='alert-information-item'>{this.renderDataAlertNameInput()}</div>
+            <div className='alert-information-item'>{this.renderDataAlertCategorySelect()}</div>
+            <div className='alert-information-item'>{this.renderDataAlertMessageInput()}</div>
+            <div className='alert-information-item'>{this.renderDataAlertDescriptionInput()}</div>
             <div className='alert-information-item full-width'>
               <div className='react-autoql-input-label'>Notification Preview</div>
               {this.renderDataAlertPreview()}
             </div>
-          </div> :
+          </div>
+        ) : (
           <div className='compose-message-section'>
             <div className='form-section'>
               {this.renderDataAlertNameInput()}
@@ -179,8 +179,10 @@ export default class AppearanceSection extends React.Component {
               {this.renderDataAlertPreview()}
             </div>
           </div>
-        }
+        )}
       </div>
     )
   }
 }
+
+export default withTheme(AppearanceSection)
