@@ -273,19 +273,12 @@ export default class ChataTable extends React.Component {
       this.clearLoadingIndicators()
     }
 
-    if (this.state.tabulatorMounted && prevProps?.initialTableParams?.filter !== this.props?.initialTableParams?.filter) {
+    if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
+      this.tableParams.filter = this.props?.initialTableParams?.filter
+      this.setFilters(this.props?.initialTableParams?.filter)
       this.setHeaderInputEventListeners()
-      this.setFilters()
       if (!this.props.hidden) {
         this.setTableHeight('100%')
-      }
-    }
-
-    if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
-      this.setHeaderInputEventListeners()
-      this.setFilters()
-      if (!this.props.hidden) {
-        this.setTableHeight()
       }
     }
   }
@@ -568,12 +561,8 @@ export default class ChataTable extends React.Component {
         response = await this.getNewPage(this.props, nextTableParamsFormatted)
       } else {
         this.setState({ pageLoading: true })
-
         const responseWrapper = await this.queryFn({
-          tableFilters:
-            nextTableParamsFormatted?.filters.length === 0
-              ? props.queryRequestData?.filters
-              : nextTableParamsFormatted?.filters,
+          tableFilters: nextTableParamsFormatted?.filters,
           orders: nextTableParamsFormatted?.sorters,
           cancelToken: this.axiosSource.token,
         })
@@ -875,7 +864,6 @@ export default class ChataTable extends React.Component {
     clearBtn.addEventListener('click', (e) => {
       e.stopPropagation()
       this.setHeaderInputValue(inputElement, '')
-
       if (column.type === 'DATE' && !column.pivot) {
         this.currentDateRangeSelections = {}
         this.debounceSetState({
@@ -951,9 +939,8 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  setFilters = () => {
-    const filterValues = this.tableParams?.filter
-    this.settingFilterInputs = true
+  setFilters = (newFilters) => {
+    const filterValues = newFilters || this.tableParams?.filter
 
     if (filterValues) {
       filterValues.forEach((filter, i) => {
@@ -968,8 +955,6 @@ export default class ChataTable extends React.Component {
         }
       })
     }
-
-    this.settingFilterInputs = false
   }
   onDateRangeSelectionApplied = () => {
     this.setState({ datePickerColumn: undefined })
