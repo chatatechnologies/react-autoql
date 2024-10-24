@@ -2,15 +2,10 @@ import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.clonedeep'
-import {
-  CONTINUOUS_TYPE,
-  PERIODIC_TYPE,
-  SCHEDULED_TYPE,
-  authenticationDefault,
-} from 'autoql-fe-utils'
+import { CONTINUOUS_TYPE, PERIODIC_TYPE, SCHEDULED_TYPE, authenticationDefault } from 'autoql-fe-utils'
 
 import { Select } from '../../Select'
-import AppearanceSection from './AppearanceSection'
+import AppearanceSection from './AppearanceSection/AppearanceSection'
 import { ScheduleBuilder } from '../ScheduleBuilder'
 import { ConditionBuilder } from '../ConditionBuilder'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
@@ -41,10 +36,11 @@ const Settings = ({ children, className } = {}) => {
 const Divider = ({ horizontal, vertical }) => {
   return (
     <div
-      className={`react-autoql-settings-vertical-divider ${vertical
-        ? 'react-autoql-settings-vertical-divider-vertical'
-        : 'react-autoql-settings-vertical-divider-horizontal'
-        }`}
+      className={`react-autoql-settings-vertical-divider ${
+        vertical
+          ? 'react-autoql-settings-vertical-divider-vertical'
+          : 'react-autoql-settings-vertical-divider-horizontal'
+      }`}
     />
   )
 }
@@ -96,9 +92,9 @@ export default class DataAlertSettings extends React.Component {
   static defaultProps = {
     authentication: authenticationDefault,
     currentDataAlert: undefined,
-    onErrorCallback: () => { },
-    onExpressionChange: () => { },
-    onCompleteChange: () => { },
+    onErrorCallback: () => {},
+    onExpressionChange: () => {},
+    onCompleteChange: () => {},
     enableAlphaAlertSettings: false,
     categories: [],
   }
@@ -302,7 +298,7 @@ export default class DataAlertSettings extends React.Component {
           {this.props.enableAlphaAlertSettings && (
             <>
               <Divider horizontal />
-              <CollapsableSection defaultCollapsed={true} title='Additional Settings' onToggle={() => { }}>
+              <CollapsableSection defaultCollapsed={true} title='Additional Settings' onToggle={() => {}}>
                 {this.renderAlphaAlertsSettings()}
               </CollapsableSection>
             </>
