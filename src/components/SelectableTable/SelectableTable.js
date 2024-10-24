@@ -208,7 +208,7 @@ export default class SelectableTable extends React.Component {
 
     let rows = this.props.queryResponse?.data?.data?.rows
     if (this.props.rowLimit && rows?.length > this.props.rowLimit) {
-      rows = rows.slice(0, this.props.rowLimit)
+      rows = rows?.slice(0, this.props.rowLimit)
     }
     const columns = this.props.queryResponse?.data?.data?.columns
     const config = getDataFormatting(this.props.dataFormatting)
@@ -247,7 +247,7 @@ export default class SelectableTable extends React.Component {
                     return (
                       <tr key={`row-${i}`} className='selectable-table-row'>
                         {row?.map((cell, j) => {
-                          const column = columns[j]
+                          const column = columns?.[j]
                           const isDisabled = this.props.disabledColumns.includes(j)
                           return (
                             <td
@@ -269,7 +269,7 @@ export default class SelectableTable extends React.Component {
                   })}
                   {!!this.props.showEndOfPreviewMessage && (
                     <tr className='selectable-table-end-of-preview-message'>
-                      <td className='selectable-table-end-of-preview-sticky-wrapper' colSpan={`${columns.length}`}>
+                      <td className='selectable-table-end-of-preview-sticky-wrapper' colSpan={`${columns?.length}`}>
                         End of Preview
                       </td>
                     </tr>
