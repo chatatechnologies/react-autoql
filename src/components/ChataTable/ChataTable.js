@@ -70,8 +70,8 @@ export default class ChataTable extends React.Component {
     }
 
     this.tableParams = {
-      filter: [],
-      sort: [],
+      filter: props?.initialTableParams?.filter || [],
+      sort: props?.initialTableParams?.sort || [],
       page: 1,
     }
 
@@ -148,6 +148,8 @@ export default class ChataTable extends React.Component {
     allowCustomColumns: PropTypes.bool,
     onCustomColumnChange: PropTypes.func,
     enableContextMenu: PropTypes.bool,
+    initialTableParams: PropTypes.shape({ filter: PropTypes.array, sort: PropTypes.array, page: PropTypes.number }),
+    updateColumnsAndData: PropTypes.func,
   }
 
   static defaultProps = {
@@ -175,6 +177,7 @@ export default class ChataTable extends React.Component {
     onNewData: () => {},
     updateColumns: () => {},
     onCustomColumnChange: () => {},
+    updateColumnsAndData: () => {},
   }
 
   componentDidMount = () => {
@@ -271,9 +274,11 @@ export default class ChataTable extends React.Component {
     }
 
     if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
+      this.tableParams.filter = this.props?.initialTableParams?.filter
+      this.setFilters(this.props?.initialTableParams?.filter)
       this.setHeaderInputEventListeners()
       if (!this.props.hidden) {
-        this.setTableHeight()
+        this.setTableHeight('100%')
       }
     }
   }
@@ -556,12 +561,8 @@ export default class ChataTable extends React.Component {
         response = await this.getNewPage(this.props, nextTableParamsFormatted)
       } else {
         this.setState({ pageLoading: true })
-
         const responseWrapper = await this.queryFn({
-          tableFilters:
-            nextTableParamsFormatted?.filters.length === 0
-              ? props.queryRequestData?.filters
-              : nextTableParamsFormatted?.filters,
+          tableFilters: nextTableParamsFormatted?.filters,
           orders: nextTableParamsFormatted?.sorters,
           cancelToken: this.axiosSource.token,
         })
@@ -863,7 +864,6 @@ export default class ChataTable extends React.Component {
     clearBtn.addEventListener('click', (e) => {
       e.stopPropagation()
       this.setHeaderInputValue(inputElement, '')
-
       if (column.type === 'DATE' && !column.pivot) {
         this.currentDateRangeSelections = {}
         this.debounceSetState({
@@ -939,9 +939,8 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  setFilters = () => {
-    const filterValues = this.tableParams?.filter
-    this.settingFilterInputs = true
+  setFilters = (newFilters) => {
+    const filterValues = newFilters || this.tableParams?.filter
 
     if (filterValues) {
       filterValues.forEach((filter, i) => {
@@ -956,8 +955,6 @@ export default class ChataTable extends React.Component {
         }
       })
     }
-
-    this.settingFilterInputs = false
   }
   onDateRangeSelectionApplied = () => {
     this.setState({ datePickerColumn: undefined })
@@ -1081,11 +1078,7 @@ export default class ChataTable extends React.Component {
       this.queryFn({ newColumns: newAdditionalSelectColumns })
         .then((response) => {
           if (response?.data?.data?.rows) {
-            this.props.updateColumns(
-              response?.data?.data?.columns,
-              response?.data?.data?.fe_req,
-              response?.data?.data?.available_selects,
-            )
+            this.props.updateColumnsAndData(response)
           } else {
             throw new Error('Column deletion failed')
           }
@@ -1389,9 +1382,8 @@ export default class ChataTable extends React.Component {
 
     return (
       <div className='table-row-count'>
-        <span>{`Scrolled ${currentRowsFormatted} / ${
-          totalRowCount > rowLimit ? rowLimitFormatted + '+' : totalRowsFormatted
-        } rows`}</span>
+        <span>{`Scrolled ${currentRowsFormatted} / ${totalRowCount > rowLimit ? rowLimitFormatted + '+' : totalRowsFormatted} rows`}
+        </span>
       </div>
     )
   }

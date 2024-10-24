@@ -426,8 +426,7 @@ export class QueryOutput extends React.Component {
 
   displayTypeInvalidWarning = (displayType) => {
     console.warn(
-      `Initial display type "${this.props.initialDisplayType}" provided is not valid for this dataset. Using ${
-        displayType || this.state.displayType
+      `Initial display type "${this.props.initialDisplayType}" provided is not valid for this dataset. Using ${displayType || this.state.displayType
       } instead.`,
     )
   }
@@ -555,6 +554,29 @@ export class QueryOutput extends React.Component {
     })
   }
 
+  updateFilters = (filters, prevColumns, newColumns) => {
+    try {
+      const newFilters = _cloneDeep(filters)
+      for (let i = 0; i < filters?.length; i++) {
+        const filterColumn = prevColumns?.find((col) => {
+          return col?.field === filters[i]?.field
+        })
+
+        const newFilterColumn = newColumns?.find((col) => {
+          return col?.name?.trim() === filterColumn?.name?.trim()
+        })
+        newFilters[i] = {
+          ...filters[i],
+          field: newFilterColumn?.field,
+        }
+      }
+
+      this.tableParams.filter = newFilters
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   updateColumnsAndData = (response) => {
     if (response && this._isMounted) {
       this.pivotTableID = uuid()
@@ -565,17 +587,20 @@ export class QueryOutput extends React.Component {
       const additionalSelects = this.getAdditionalSelectsFromResponse(response)
       const newColumns = this.formatColumnsForTable(response?.data?.data?.columns, additionalSelects)
       const customColumnSelects = this.getUpdatedCustomColumnSelects(additionalSelects, newColumns)
+
+      this.updateFilters(this.tableParams.filter, this.state.columns, newColumns)
+
       this.resetTableConfig(newColumns)
 
       const aggConfig = this.getAggConfig(newColumns)
 
-      this.setState({
+      this.setState((prevState) => ({
         columns: newColumns,
-        columnChangeCount: this.state.columnChangeCount + 1,
+        columnChangeCount: prevState.columnChangeCount + 1,
         chartID: uuid(),
         aggConfig,
         customColumnSelects,
-      })
+      }))
     }
   }
 
@@ -770,9 +795,8 @@ export class QueryOutput extends React.Component {
       <div className='single-value-response-flex-container'>
         <div className='single-value-response-container'>
           <a
-            className={`single-value-response ${
-              getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? ' with-drilldown' : ''
-            }`}
+            className={`single-value-response ${getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? ' with-drilldown' : ''
+              }`}
             onClick={() => {
               this.processDrilldown({ groupBys: [], supportedByAPI: true })
             }}
@@ -1851,7 +1875,7 @@ export class QueryOutput extends React.Component {
 
       // Set aggregate type is data is list query
       let aggType = col.aggType
-      if (aggConfig) {
+      if (aggConfig?.[col?.name]) {
         aggType = aggConfig[col.name]
       }
       if (isListQuery(columns)) {
@@ -2435,6 +2459,8 @@ export class QueryOutput extends React.Component {
           aggConfig={this.state.aggConfig}
           onCustomColumnChange={this.onCustomColumnChange}
           enableContextMenu={this.props.enableTableContextMenu}
+          initialTableParams={this.tableParams}
+          updateColumnsAndData={this.updateColumnsAndData}
         />
       </ErrorBoundary>
     )
@@ -2474,6 +2500,8 @@ export class QueryOutput extends React.Component {
           totalRows={this.pivotTableTotalRows}
           totalColumns={this.pivotTableTotalColumns}
           maxColumns={this.MAX_PIVOT_TABLE_COLUMNS}
+          initialTableParams={this.tableParams}
+          updateColumnsAndData={this.updateColumnsAndData}
           pivotGroups={true}
           pivot
         />
@@ -2773,9 +2801,8 @@ export class QueryOutput extends React.Component {
 
   renderFooter = () => {
     const shouldRenderRT = this.shouldRenderReverseTranslation()
-    const footerClassName = `query-output-footer ${!shouldRenderRT ? 'no-margin' : ''} ${
-      this.props.reverseTranslationPlacement
-    }`
+    const footerClassName = `query-output-footer ${!shouldRenderRT ? 'no-margin' : ''} ${this.props.reverseTranslationPlacement
+      }`
 
     return <div className={footerClassName}>{shouldRenderRT && this.renderReverseTranslation()}</div>
   }

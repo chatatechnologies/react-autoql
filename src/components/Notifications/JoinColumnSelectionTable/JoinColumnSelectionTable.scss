@@ -1,0 +1,113 @@
+.joinable-table {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  border: 1px solid var(--react-autoql-border-color);
+  background-color: var(--react-autoql-background-color-disabled);
+
+  th,
+  td {
+    width: 33.33%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 10px;
+    border: 1px solid var(--react-autoql-table-border-color);
+  }
+  th:first-child,
+  td:first-child {
+    width: 20%;
+  }
+  th:not(:first-child),
+  td:not(:first-child) {
+    width: 40%;
+  }
+
+  thead {
+    th {
+      background-color: var(--react-autoql-border-color);
+      font-weight: 600;
+      text-align: left;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      max-width: none;
+      white-space: nowrap;
+      overflow: visible;
+      .header-content {
+        overflow-x: auto;
+        max-width: 500px;
+        &::-webkit-scrollbar {
+          height: 4px;
+        }
+        &::-webkit-scrollbar-thumb {
+          background-color: rgba(0, 0, 0, 0.2);
+          border-radius: 2px;
+        }
+        &::-webkit-scrollbar-track {
+          background-color: rgba(0, 0, 0, 0.1);
+        }
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0, 0, 0, 0.2) rgba(0, 0, 0, 0.1);
+      }
+    }
+  }
+
+  tbody {
+    tr {
+      background-color: var(--react-autoql-background-color-secondary);
+      &:nth-child(even) {
+        background-color: var(--react-autoql-background-color-secondary);
+      }
+    }
+
+    th {
+      position: relative;
+      overflow: visible;
+      font-weight: 600;
+      text-align: left;
+
+      background-color: var(--react-autoql-background-color-disabled);
+      position: relative;
+      .th-content {
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .add-second-join-icon,
+      .remove-second-join-icon {
+        position: absolute;
+        top: 37px;
+        left: -10px;
+        cursor: pointer;
+        background-color: var(--react-autoql-accent-color);
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1;
+
+        .react-autoql-icon {
+          color: white;
+          font-size: 14px;
+        }
+      }
+      .remove-second-join-icon {
+        top: auto;
+        bottom: -10px;
+      }
+    }
+
+    td {
+      .react-autoql-select {
+        width: 100%;
+      }
+    }
+  }
+}

@@ -541,9 +541,8 @@ export class OptionsToolbar extends React.Component {
   }
 
   renderFilterBtn = () => {
-    const tabulatorHeaderFilters = this.props.responseRef?.getTabulatorHeaderFilters()
     const isFiltered =
-      !!this.props.responseRef?.formattedTableParams?.filters?.length && !!tabulatorHeaderFilters?.length
+      !!this.props.responseRef?.formattedTableParams?.filters?.length
     const displayType = this.props.responseRef?.state?.displayType
     const isTable = displayType === 'table'
 
