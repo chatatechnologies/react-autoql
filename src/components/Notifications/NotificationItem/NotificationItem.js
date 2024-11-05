@@ -567,7 +567,6 @@ export default class NotificationItem extends React.Component {
         >
           {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={500} />}
           {!this.props.chartTooltipID && <Tooltip tooltipId={this.CHART_TOOLTIP_ID} delayShow={0} />}
-
           {this.renderNotificationHeader()}
           {this.renderNotificationContent()}
           {this.renderAlertColorStrip()}
