@@ -561,7 +561,7 @@ export default class NotificationItem extends React.Component {
           ${this.isUnread() ? 'unread' : ''}
           ${this.isError() ? 'is-error' : ''}
           ${this.state.isMoreOptionsMenuOpen ? 'menu-open' : ''}
-          ${this.state.deleted ? 'react-autoql-notification-item-deleted' : ''}
+		  ${this.state.deleted ? 'react-autoql-notification-item-deleted' : ''}
 		  ${this.props.notification?.project?.id === 'composite' ? 'composite-project' : ''}`}
         >
           {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={500} />}
