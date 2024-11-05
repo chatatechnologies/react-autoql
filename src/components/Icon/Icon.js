@@ -37,6 +37,7 @@ import { FiCheck } from '@react-icons/all-files/fi/FiCheck'
 import { FiDatabase } from '@react-icons/all-files/fi/FiDatabase'
 import { FiDownload } from '@react-icons/all-files/fi/FiDownload'
 import { FiEye } from '@react-icons/all-files/fi/FiEye'
+import { FiLayers } from '@react-icons/all-files/fi/FiLayers'
 import { FiMoreHorizontal } from '@react-icons/all-files/fi/FiMoreHorizontal'
 import { FiMoreVertical } from '@react-icons/all-files/fi/FiMoreVertical'
 import { FiPauseCircle } from '@react-icons/all-files/fi/FiPauseCircle'
@@ -49,7 +50,6 @@ import { FiMinimize } from '@react-icons/all-files/fi/FiMinimize'
 import { FiRefreshCw } from '@react-icons/all-files/fi/FiRefreshCw'
 import { FiTool } from '@react-icons/all-files/fi/FiTool'
 import { FiMinus } from '@react-icons/all-files/fi/FiMinus'
-
 import { RiFilterLine } from '@react-icons/all-files/ri/RiFilterLine'
 import { RiFilterOffLine } from '@react-icons/all-files/ri/RiFilterOffLine'
 import { RiListSettingsLine } from '@react-icons/all-files/ri/RiListSettingsLine'
@@ -210,6 +210,10 @@ export default class Icon extends React.Component {
       }
       case 'close': {
         icon = <MdClose />
+        break
+      }
+      case 'layers': {
+        icon = <FiLayers />
         break
       }
       case 'mark-read': {
