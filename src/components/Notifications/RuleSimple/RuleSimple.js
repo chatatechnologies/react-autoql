@@ -909,7 +909,12 @@ export default class RuleSimple extends React.Component {
     })
       .then((response) => {
         this.onValidationResponse(response)
-        this.setState({ isLoadingSecondQuery: false })
+        const secondQueryCompareColumnIndex = this.getCompareColumnIndex(response, this.state.storedInitialData, 1)
+        this.setState({
+          isLoadingSecondQuery: false,
+          secondQuerySelectedColumns:
+            secondQueryCompareColumnIndex !== undefined ? [secondQueryCompareColumnIndex] : [],
+        })
       })
       .catch((error) => {
         if (error?.response?.data?.message !== REQUEST_CANCELLED_ERROR) {

@@ -265,7 +265,12 @@ export default class NotificationItem extends React.Component {
       )
     }
 
-    return <span>{this.props.notification.title}</span>
+    return (
+      <span>
+        {this.props.notification?.project?.id === 'composite' && <Icon type='layers' style={{ marginRight: '5px' }} />}
+        {this.props.notification.title}
+      </span>
+    )
   }
 
   renderNotificationMessage = () => {
@@ -556,7 +561,8 @@ export default class NotificationItem extends React.Component {
           ${this.isUnread() ? 'unread' : ''}
           ${this.isError() ? 'is-error' : ''}
           ${this.state.isMoreOptionsMenuOpen ? 'menu-open' : ''}
-          ${this.state.deleted ? 'react-autoql-notification-item-deleted' : ''}`}
+          ${this.state.deleted ? 'react-autoql-notification-item-deleted' : ''}
+          ${this.props.notification?.project?.id === 'composite' ? 'composite-project' : ''}`}
         >
           {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={500} />}
           {!this.props.chartTooltipID && <Tooltip tooltipId={this.CHART_TOOLTIP_ID} delayShow={0} />}
