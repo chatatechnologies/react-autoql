@@ -163,9 +163,11 @@ export default class JoinColumnSelectionTable extends React.Component {
             <th>
               <div className='th-content'>
                 {this.props.rowHeaders[1]}
-                <div className='remove-second-join-icon' onClick={this.handleRemoveSecondRow}>
-                  <Icon type='minus' />
-                </div>
+                {!this.props.isReadOnly && (
+                  <div className='remove-second-join-icon' onClick={this.handleRemoveSecondRow}>
+                    <Icon type='minus' />
+                  </div>
+                )}
               </div>
             </th>
             <td>
@@ -176,6 +178,7 @@ export default class JoinColumnSelectionTable extends React.Component {
                 placeholder='Select column from first query'
                 value={this.props.firstQuerySecondValue}
                 onChange={this.props.onFirstQuerySecondValueChange}
+                isDisabled={this.props.isReadOnly}
               />
             </td>
             <td>
@@ -186,6 +189,7 @@ export default class JoinColumnSelectionTable extends React.Component {
                 value={this.props.secondQuerySecondValue}
                 onChange={this.props.onSecondQuerySecondValueChange}
                 placeholder='Select column from second query'
+                isDisabled={this.props.isReadOnly}
               />
             </td>
           </tr>
