@@ -25,7 +25,6 @@ export default class Select extends React.Component {
   }
 
   static propTypes = {
-    isDisabled: PropTypes.bool,
     onChange: PropTypes.func,
     options: PropTypes.arrayOf(PropTypes.shape({})),
     popupClassname: PropTypes.string,
@@ -37,6 +36,7 @@ export default class Select extends React.Component {
     placeholder: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
     fullWidth: PropTypes.bool,
     color: PropTypes.oneOf(['primary', 'text']),
+    isDisabled: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -105,7 +105,9 @@ export default class Select extends React.Component {
             ${this.props.size === 'small' ? 'react-autoql-select-small' : 'react-autoql-select-large'}
             ${this.props.color === 'text' ? 'text-color' : ''}`}
           data-test='react-autoql-select'
-          onClick={() => !this.props.isDisabled ?? this.setState({ isOpen: !this.state.isOpen })}
+          onClick={() => {
+            if (!this.props.isDisabled) this.setState({ isOpen: !this.state.isOpen })
+          }}
           style={this.props.style}
           data-tooltip-html={this.props.tooltip}
           data-tooltip-id={this.props.tooltipID}

@@ -61,6 +61,7 @@ export default class JoinColumnSelectionTable extends React.Component {
     secondQueryFirstOptions: [],
     secondQuerySecondOptions: [],
   }
+
   componentDidMount() {
     const firstDefaultJoinColumn =
       this.state.firstQueryFirstValue || this.getDefaultJoinColumn(this.props.firstQueryResult)
