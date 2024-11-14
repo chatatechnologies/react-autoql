@@ -67,11 +67,15 @@ export default class JoinColumnSelectionTable extends React.Component {
       this.props.firstQueryResult,
       this.props.secondQueryResult,
     )
-    const isEditingDataAlert = this.props.storedInitialData?.[0]?.join_columns?.[0] !== ''
+    const isEditingDataAlert = this.props.storedInitialData?.[0]?.join_columns?.[0] !== undefined
     const hasStoredFirstQuerySecondValue = this.props.storedInitialData?.[0]?.join_columns?.[1] !== undefined
     const hasStoredSecondQuerySecondValue = this.props.storedInitialData?.[1]?.join_columns?.[1] !== undefined
-    this.props.onFirstQueryFirstValueChange(firstJoinColumns?.[0])
-    this.props.onSecondQueryFirstValueChange(firstJoinColumns?.[1])
+    this.props.onFirstQueryFirstValueChange(
+      this.state.firstQueryFirstValue !== '' ? this.state.firstQueryFirstValue : firstJoinColumns?.[0],
+    )
+    this.props.onSecondQueryFirstValueChange(
+      this.state.secondQueryFirstValue !== '' ? this.state.secondQueryFirstValue : firstJoinColumns?.[1],
+    )
     if (this.state.firstQuerySecondValue || secondJoinColumns?.[0]) {
       if (isEditingDataAlert && !hasStoredFirstQuerySecondValue) {
         return
