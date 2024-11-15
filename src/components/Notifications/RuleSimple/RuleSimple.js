@@ -287,7 +287,6 @@ export default class RuleSimple extends React.Component {
     return (
       <div className='join-column-selection-prompt'>
         <h4>Select join columns for your queries:</h4>
-        <p>Please choose the columns to join your first and second queries.</p>
         <JoinColumnSelectionTable
           columnHeaders={[
             this.state.firstQueryResult?.data?.data?.text || 'Query 1',

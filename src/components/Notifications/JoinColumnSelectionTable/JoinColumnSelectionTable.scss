@@ -111,3 +111,10 @@
     }
   }
 }
+.join-column-selection-container {
+  .join-columns-notice {
+    margin-bottom: 12px;
+    color: var(--react-autoql-text-color);
+    font-size: 13px;
+  }
+}

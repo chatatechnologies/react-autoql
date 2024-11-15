@@ -214,9 +214,15 @@
         color: var(--react-autoql-text-color-primary);
       }
 
+      &.data-alert-warning {
+        font-size: x-large;
+        color: var(--react-autoql-warning-color);
+        opacity: 1;
+      }
+
       &.data-alert-error {
         font-size: x-large;
-        color: #f04438;
+        color: var(--react-autoql-error-color);
         opacity: 1;
       }
     }
@@ -242,9 +248,14 @@
         }
       }
 
+      &.data-alert-warning {
+        cursor: pointer;
+        color: var(--react-autoql-warning-color);
+      }
+
       &.data-alert-error {
         cursor: pointer;
-        color: #f04438;
+        color: var(--react-autoql-error-color);
       }
     }
 
