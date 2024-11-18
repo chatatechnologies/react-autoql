@@ -497,7 +497,7 @@ export default class RuleSimple extends React.Component {
             source: 'data_alert_first_query',
             pageSize: 2,
             allowSuggestions: false,
-            additional_selects: this.props.initialData?.[0]?.additional_selects,
+            newColumns: this.props.initialData?.[0]?.additional_selects,
           })
 
       const fetchSecondQuery = this.shouldFetchSecondQuery()
