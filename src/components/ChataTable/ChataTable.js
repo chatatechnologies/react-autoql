@@ -278,7 +278,7 @@ export default class ChataTable extends React.Component {
       this.setFilters(this.props?.initialTableParams?.filter)
       this.setHeaderInputEventListeners()
       if (!this.props.hidden) {
-        this.setTableHeight('100%')
+        this.setTableHeight()
       }
     }
   }
@@ -1382,7 +1382,10 @@ export default class ChataTable extends React.Component {
 
     return (
       <div className='table-row-count'>
-        <span>{`Scrolled ${currentRowsFormatted} / ${totalRowCount > rowLimit ? rowLimitFormatted + '+' : totalRowsFormatted} rows`}
+        <span>
+          {`Scrolled ${currentRowsFormatted} / ${
+            totalRowCount > rowLimit ? rowLimitFormatted + '+' : totalRowsFormatted
+          } rows`}
         </span>
       </div>
     )
