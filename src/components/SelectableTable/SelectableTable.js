@@ -70,7 +70,7 @@ export default class SelectableTable extends React.Component {
             checked={this.props.selectedColumns?.includes(i)}
             onChange={() => this.onColumnHeaderClick(i)}
           />
-          <span data-tooltip-id={this.props.tooltipID} data-tooltip-content='This is an additional selectable column'>
+          <span data-tooltip-id={this.props.tooltipID} data-tooltip-content='This is an additional selected column'>
             {this.props.additionalSelectColumns.includes(i) && <Icon type='info' className='additional-column-info' />}
           </span>
         </div>
