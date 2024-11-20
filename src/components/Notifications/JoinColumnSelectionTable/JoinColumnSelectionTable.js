@@ -3,7 +3,8 @@ import PropTypes from 'prop-types'
 import './JoinColumnSelectionTable.scss'
 import { Select } from '../../Select'
 import { Icon } from '../../Icon'
-import { getQuerySelectableJoinColumns, getDefaultJoinColumnAndDisplayNameAndJoinColumnsIndices } from 'autoql-fe-utils'
+import { getQuerySelectableJoinColumns, getDefaultJoinColumns } from 'autoql-fe-utils'
+
 export default class JoinColumnSelectionTable extends React.Component {
   constructor(props) {
     super(props)
@@ -18,6 +19,7 @@ export default class JoinColumnSelectionTable extends React.Component {
   }
 
   static propTypes = {
+    isReadOnly: PropTypes.bool,
     storedInitialData: PropTypes.arrayOf(
       PropTypes.shape({
         join_columns: PropTypes.arrayOf(PropTypes.string),
@@ -39,6 +41,7 @@ export default class JoinColumnSelectionTable extends React.Component {
   }
 
   static defaultProps = {
+    isReadOnly: false,
     storedInitialData: [],
     columnHeaders: [],
     rowHeaders: [],
@@ -58,27 +61,40 @@ export default class JoinColumnSelectionTable extends React.Component {
     secondQueryFirstOptions: [],
     secondQuerySecondOptions: [],
   }
+
   componentDidMount() {
-    const firstDefaultJoinColumn =
-      this.state.firstQueryFirstValue || this.getDefaultJoinColumn(this.props.firstQueryResult)
-    const secondDefaultJoinColumn =
-      this.state.secondQueryFirstValue || this.getDefaultJoinColumn(this.props.secondQueryResult)
-    this.props.onFirstQueryFirstValueChange(firstDefaultJoinColumn)
-    this.props.onSecondQueryFirstValueChange(secondDefaultJoinColumn)
-    if (this.state.firstQuerySecondValue) {
-      this.props.onFirstQuerySecondValueChange(this.state.firstQuerySecondValue)
+    const { firstJoinColumns, secondJoinColumns } = getDefaultJoinColumns(
+      this.props.firstQueryResult,
+      this.props.secondQueryResult,
+    )
+    const isEditingDataAlert = this.props.storedInitialData?.[0]?.join_columns?.[0] !== undefined
+    const hasStoredFirstQuerySecondValue = this.props.storedInitialData?.[0]?.join_columns?.[1] !== undefined
+    const hasStoredSecondQuerySecondValue = this.props.storedInitialData?.[1]?.join_columns?.[1] !== undefined
+    this.props.onFirstQueryFirstValueChange(
+      this.state.firstQueryFirstValue !== '' ? this.state.firstQueryFirstValue : firstJoinColumns?.[0],
+    )
+    this.props.onSecondQueryFirstValueChange(
+      this.state.secondQueryFirstValue !== '' ? this.state.secondQueryFirstValue : firstJoinColumns?.[1],
+    )
+    if (this.state.firstQuerySecondValue || secondJoinColumns?.[0]) {
+      if (isEditingDataAlert && !hasStoredFirstQuerySecondValue) {
+        return
+      }
+      this.props.onFirstQuerySecondValueChange(
+        this.state.firstQuerySecondValue !== '' ? this.state.firstQuerySecondValue : secondJoinColumns?.[0],
+      )
       this.setState({ showSecondRow: true })
     }
 
-    if (this.state.secondQuerySecondValue) {
-      this.props.onSecondQuerySecondValueChange(this.state.secondQuerySecondValue)
+    if (this.state.secondQuerySecondValue || secondJoinColumns?.[1]) {
+      if (isEditingDataAlert && !hasStoredSecondQuerySecondValue) {
+        return
+      }
+      this.props.onSecondQuerySecondValueChange(
+        this.state.secondQuerySecondValue !== '' ? this.state.secondQuerySecondValue : secondJoinColumns?.[1],
+      )
       this.setState({ showSecondRow: true })
     }
-  }
-
-  getDefaultJoinColumn = (queryResult) => {
-    const { defaultJoinColumn } = getDefaultJoinColumnAndDisplayNameAndJoinColumnsIndices(queryResult)
-    return defaultJoinColumn?.[0]
   }
 
   getSelectableJoinColumnsLength() {
@@ -124,7 +140,7 @@ export default class JoinColumnSelectionTable extends React.Component {
           <th>
             <div className='th-content'>
               {this.props.rowHeaders[0]}
-              {!this.state.showSecondRow && selectableJoinColumnsLength > 1 && (
+              {!this.state.showSecondRow && selectableJoinColumnsLength > 1 && !this.props.isReadOnly && (
                 <div className='add-second-join-icon' onClick={() => this.setState({ showSecondRow: true })}>
                   <Icon type='plus' />
                 </div>
@@ -139,6 +155,7 @@ export default class JoinColumnSelectionTable extends React.Component {
               placeholder='Select column from first query'
               value={this.props.firstQueryFirstValue}
               onChange={this.props.onFirstQueryFirstValueChange}
+              isDisabled={this.props.isReadOnly}
             />
           </td>
           <td>
@@ -149,6 +166,7 @@ export default class JoinColumnSelectionTable extends React.Component {
               value={this.props.secondQueryFirstValue}
               onChange={this.props.onSecondQueryFirstValueChange}
               placeholder='Select column from second query'
+              isDisabled={this.props.isReadOnly}
             />
           </td>
         </tr>
@@ -157,9 +175,11 @@ export default class JoinColumnSelectionTable extends React.Component {
             <th>
               <div className='th-content'>
                 {this.props.rowHeaders[1]}
-                <div className='remove-second-join-icon' onClick={this.handleRemoveSecondRow}>
-                  <Icon type='minus' />
-                </div>
+                {!this.props.isReadOnly && (
+                  <div className='remove-second-join-icon' onClick={this.handleRemoveSecondRow}>
+                    <Icon type='minus' />
+                  </div>
+                )}
               </div>
             </th>
             <td>
@@ -170,6 +190,7 @@ export default class JoinColumnSelectionTable extends React.Component {
                 placeholder='Select column from first query'
                 value={this.props.firstQuerySecondValue}
                 onChange={this.props.onFirstQuerySecondValueChange}
+                isDisabled={this.props.isReadOnly}
               />
             </td>
             <td>
@@ -180,6 +201,7 @@ export default class JoinColumnSelectionTable extends React.Component {
                 value={this.props.secondQuerySecondValue}
                 onChange={this.props.onSecondQuerySecondValueChange}
                 placeholder='Select column from second query'
+                isDisabled={this.props.isReadOnly}
               />
             </td>
           </tr>
@@ -191,6 +213,10 @@ export default class JoinColumnSelectionTable extends React.Component {
   render() {
     return (
       <div className='join-column-selection-container'>
+        <div className='join-columns-notice'>
+          Please review the join columns below and adjust if necessary to ensure correct relationships between your
+          datasets.
+        </div>
         <table className='joinable-table'>
           <thead>{this.renderHeaderRow()}</thead>
           <tbody>{this.renderBodyRows()}</tbody>

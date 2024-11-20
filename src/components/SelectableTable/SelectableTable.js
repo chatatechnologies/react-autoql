@@ -30,6 +30,7 @@ export default class SelectableTable extends React.Component {
     onColumnSelection: PropTypes.func,
     selectedColumns: PropTypes.arrayOf(PropTypes.number),
     disabledColumns: PropTypes.arrayOf(PropTypes.number),
+    additionalSelectColumns: PropTypes.arrayOf(PropTypes.number),
     radio: PropTypes.bool,
     showEndOfPreviewMessage: PropTypes.bool,
     showTooltips: PropTypes.bool,
@@ -42,6 +43,7 @@ export default class SelectableTable extends React.Component {
     onColumnSelection: () => {},
     selectedColumns: [],
     disabledColumns: [],
+    additionalSelectColumns: [],
     radio: false,
     showEndOfPreviewMessage: true,
     showTooltips: true,
@@ -55,17 +57,23 @@ export default class SelectableTable extends React.Component {
 
   formatColumnHeader = (column, i) => {
     return (
-      <div
-        className='selectable-table-col-header'
-        data-tooltip-id={`selectable-table-column-header-tooltip-${this.ID}`}
-        data-tooltip-content={this.props.showTooltips ? JSON.stringify(column) : null}
-      >
-        <span>{column?.display_name}</span>
-        <Checkbox
-          disabled={this.props.disabledColumns.includes(i)}
-          checked={this.props.selectedColumns?.includes(i)}
-          onChange={() => this.onColumnHeaderClick(i)}
-        />
+      <div className='selectable-table-col-header'>
+        <span
+          data-tooltip-id={`selectable-table-column-header-tooltip-${this.ID}`}
+          data-tooltip-content={this.props.showTooltips ? JSON.stringify(column) : null}
+        >
+          {column?.display_name}
+        </span>
+        <div className='checkbox-icon-wrapper'>
+          <Checkbox
+            disabled={this.props.disabledColumns.includes(i)}
+            checked={this.props.selectedColumns?.includes(i)}
+            onChange={() => this.onColumnHeaderClick(i)}
+          />
+          <span data-tooltip-id={this.props.tooltipID} data-tooltip-content='This is an additional selected column'>
+            {this.props.additionalSelectColumns.includes(i) && <Icon type='info' className='additional-column-info' />}
+          </span>
+        </div>
       </div>
     )
   }

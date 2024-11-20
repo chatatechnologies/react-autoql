@@ -36,10 +36,11 @@ export default class Select extends React.Component {
     placeholder: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
     fullWidth: PropTypes.bool,
     color: PropTypes.oneOf(['primary', 'text']),
+    isDisabled: PropTypes.bool,
   }
 
   static defaultProps = {
-    onChange: () => { },
+    onChange: () => {},
     options: [],
     popupClassname: null,
     value: null,
@@ -51,6 +52,7 @@ export default class Select extends React.Component {
     placeholder: 'Select an item',
     fullWidth: false,
     color: 'primary',
+    isDisabled: false,
   }
 
   componentDidMount = () => {
@@ -92,18 +94,20 @@ export default class Select extends React.Component {
       <div
         className={`react-autoql-select-and-label
         ${this.props.className ?? ''}
-        ${this.props.outlined ? 'outlined' : 'underlined'}
+        ${this.props.isDisabled ? '' : this.props.outlined ? 'outlined' : 'underlined'}
         ${this.props.fullWidth ? 'react-autoql-select-full-width' : ''}`}
       >
         {!!this.props.label && <div className='react-autoql-input-label'>{this.props.label}</div>}
         <div
-          className={`react-autoql-select
-          ${this.props.outlined ? 'outlined' : 'underlined'}
-          ${this.props.size === 'small' ? 'react-autoql-select-small' : 'react-autoql-select-large'}
-          ${this.props.color === 'text' ? 'text-color' : ''}`
-          }
+          className={`
+            ${this.props.isDisabled ? '' : 'react-autoql-select'}
+            ${this.props.isDisabled ? '' : this.props.outlined ? 'outlined' : 'underlined'}
+            ${this.props.size === 'small' ? 'react-autoql-select-small' : 'react-autoql-select-large'}
+            ${this.props.color === 'text' ? 'text-color' : ''}`}
           data-test='react-autoql-select'
-          onClick={() => this.setState({ isOpen: !this.state.isOpen })}
+          onClick={() => {
+            if (!this.props.isDisabled) this.setState({ isOpen: !this.state.isOpen })
+          }}
           style={this.props.style}
           data-tooltip-html={this.props.tooltip}
           data-tooltip-id={this.props.tooltipID}

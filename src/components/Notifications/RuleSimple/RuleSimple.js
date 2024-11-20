@@ -287,7 +287,6 @@ export default class RuleSimple extends React.Component {
     return (
       <div className='join-column-selection-prompt'>
         <h4>Select join columns for your queries:</h4>
-        <p>Please choose the columns to join your first and second queries.</p>
         <JoinColumnSelectionTable
           columnHeaders={[
             this.state.firstQueryResult?.data?.data?.text || 'Query 1',
@@ -498,6 +497,7 @@ export default class RuleSimple extends React.Component {
             source: 'data_alert_first_query',
             pageSize: 2,
             allowSuggestions: false,
+            newColumns: this.props.initialData?.[0]?.additional_selects,
           })
 
       const fetchSecondQuery = this.shouldFetchSecondQuery()
@@ -581,7 +581,10 @@ export default class RuleSimple extends React.Component {
     const userSelection = this.props.queryResponse?.data?.data?.fe_req?.disambiguation
     const tableFilters = this.state.queryFilters?.filter((f) => f.type === 'table')
     const lockedFilters = this.state.queryFilters?.filter((f) => f.type === 'locked')
-    const additionalSelects = this.props.queryResponse?.data?.data?.fe_req?.additional_selects || []
+    const additionalSelects =
+      this.props.queryResponse?.data?.data?.fe_req?.additional_selects ||
+      this.state.storedInitialData?.[0]?.additional_selects ||
+      []
     const displayOverrides = this.props.queryResponse?.data?.data?.fe_req?.display_overrides || []
     const firstQuerySelectedNumberColumnName = this.state.firstQuerySelectedColumns?.map(
       (index) => this.state.firstQueryResult?.data?.data?.columns[index]?.name,
@@ -1360,6 +1363,7 @@ export default class RuleSimple extends React.Component {
         }}
         selectedColumns={this.state.firstQuerySelectedColumns}
         disabledColumns={disabledColumns}
+        additionalSelectColumns={additionalSelectColumns}
         shouldRender={this.shouldRenderFirstFieldSelectionGrid()}
         queryResponse={this.state.firstQueryResult}
         radio={true}

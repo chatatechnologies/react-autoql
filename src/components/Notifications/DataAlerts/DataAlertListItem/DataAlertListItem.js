@@ -217,7 +217,7 @@ export default class DataAlertListItem extends React.Component {
     if (hasError) {
       return (
         <div
-          className={`data-alert-state data-alert-error ${status}`}
+          className={`data-alert-state data-alert-warning ${status}`}
           data-tooltip-id={this.props.tooltipID}
           data-tooltip-html={
             isCustom
