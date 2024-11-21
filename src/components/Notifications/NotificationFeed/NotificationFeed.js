@@ -86,6 +86,7 @@ class NotificationFeed extends React.Component {
     selectedProjectName: PropTypes.string,
     notificationTitle: PropTypes.string,
     showSelectNotificationsButton: PropTypes.bool,
+    onConfirmCallback: PropTypes.func,
   }
 
   static defaultProps = {
@@ -115,6 +116,7 @@ class NotificationFeed extends React.Component {
     onUnreadCallback: () => {},
     onDataAlertChange: () => {},
     onChange: () => {},
+    onConfirmCallback: () => {},
   }
 
   componentDidMount = () => {
@@ -691,6 +693,7 @@ class NotificationFeed extends React.Component {
   }
 
   deleteAllNotifications = () => {
+    this.props.onConfirmCallback()
     this.onDeleteAllClick()
     deleteAllNotifications({ ...getAuthentication(this.props.authentication), projectId: this.props.selectedProjectId })
       .then(() => this.handleDeleteNotificationsResponse())
