@@ -1,3 +1,4 @@
+@import '../../../styles/breakpoints';
 .notification-list-loading-container {
   display: flex;
   flex-direction: column;
@@ -12,7 +13,9 @@
   color: inherit;
   text-align: center;
   margin-top: 75px;
-
+  @include mobile-landscape {
+    margin-top: 25px;
+  }
   div {
     opacity: 0.6;
   }
@@ -26,6 +29,10 @@
   .empty-notifications-img {
     width: 250px;
     height: 250px;
+    @include mobile-landscape {
+      width: 150px;
+      height: 150px;
+    }
   }
 }
 
@@ -63,9 +70,13 @@
   flex-direction: row;
   justify-content: space-between;
   align-items: flex-end;
-  padding: 15px 13px 8px;
   flex: 0;
-
+  &:has(*:not(:empty)) {
+    padding: 15px 13px 8px;
+    @include mobile {
+      padding: 0px 13px 8px;
+    }
+  }
   .react-autoql-notification-delete-all,
   .react-autoql-notification-mark-all {
     flex: 0 0 auto;
