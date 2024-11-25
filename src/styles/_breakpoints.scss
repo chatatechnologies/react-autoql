@@ -48,13 +48,13 @@ $screen-xxl: 1400px;
 }
 
 @mixin mobile {
-  @media (max-width: #{$screen-md}) {
+  @media (max-width: #{$screen-lg}) {
     @content;
   }
 }
 
 @mixin mobile-landscape {
-  @media (max-width: #{$screen-md}) and (orientation: landscape) {
+  @media (max-width: #{$screen-lg}) and (orientation: landscape) {
     @content;
   }
 }
