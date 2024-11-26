@@ -1,7 +1,7 @@
 import './index.scss'
 
 export * from 'autoql-fe-utils'
-
+export * from './js/breakpoints'
 export * from './components/VizToolbar'
 export * from './components/QueryInput'
 export * from './components/Dashboard'

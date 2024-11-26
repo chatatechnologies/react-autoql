@@ -85,6 +85,8 @@ class NotificationFeed extends React.Component {
     selectedProjectId: PropTypes.string,
     selectedProjectName: PropTypes.string,
     notificationTitle: PropTypes.string,
+    showSelectNotificationsButton: PropTypes.bool,
+    onConfirmCallback: PropTypes.func,
   }
 
   static defaultProps = {
@@ -103,6 +105,7 @@ class NotificationFeed extends React.Component {
     selectedProjectId: 'all',
     selectedProjectName: this.ALL_PROJECTS,
     notificationTitle: '',
+    showSelectNotificationsButton: true,
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
     onErrorCallback: () => {},
@@ -113,6 +116,7 @@ class NotificationFeed extends React.Component {
     onUnreadCallback: () => {},
     onDataAlertChange: () => {},
     onChange: () => {},
+    onConfirmCallback: () => {},
   }
 
   componentDidMount = () => {
@@ -484,12 +488,14 @@ class NotificationFeed extends React.Component {
   }
   renderTopOptions = () => {
     const shouldRenderDeleteAllButton =
-      this.props.enableFetchAllNotificationFeedAcrossProjects && !this.state.displayNotificationItemCheckbox
+      this.props.enableFetchAllNotificationFeedAcrossProjects &&
+      !this.state.displayNotificationItemCheckbox &&
+      this.props.showSelectNotificationsButton
     return (
       <div className='notification-feed-top-options-container'>
         {shouldRenderDeleteAllButton && this.renderDeleteAllButton()}
         {this.renderDataAlertsManagerButton()}
-        {this.renderSelectNotificationsButton()}
+        {this.renderNotificationsOptionsButton()}
       </div>
     )
   }
@@ -560,6 +566,12 @@ class NotificationFeed extends React.Component {
       </div>
     </ConfirmPopover>
   )
+  renderSelectMultipleNotificationsButton = () => (
+    <div className='react-autoql-notification-select-button' onClick={this.onSelectNotificationClick}>
+      <Icon type='select-multiple' />
+      <span>Select</span>
+    </div>
+  )
   renderDeleteButton = () => (
     <ConfirmPopover
       onConfirm={this.deleteSelectedNotification}
@@ -578,7 +590,7 @@ class NotificationFeed extends React.Component {
       </div>
     </ConfirmPopover>
   )
-  renderSelectNotificationsButton = () =>
+  renderNotificationsOptionsButton = () =>
     this.state.displayNotificationItemCheckbox ? (
       <div className='react-autoql-notification-select-container'>
         {this.renderDeleteButton()}
@@ -586,14 +598,12 @@ class NotificationFeed extends React.Component {
           <span onClick={this.onCancelSelectNotificationClick}>Cancel</span>
         </div>
       </div>
-    ) : (
+    ) : this.props.showSelectNotificationsButton ? (
       <div className='react-autoql-notification-select-container'>
-        <div className='react-autoql-notification-select-button'>
-          <span onClick={this.onSelectNotificationClick}>Select</span>
-        </div>
+        {this.renderSelectMultipleNotificationsButton()}
         {this.renderMarkAllAsReadButton()}
       </div>
-    )
+    ) : null
 
   showEditDataAlertModal = (alertData) => {
     this.setState({ isEditModalVisible: true, activeDataAlert: alertData })
@@ -687,6 +697,7 @@ class NotificationFeed extends React.Component {
   }
 
   deleteAllNotifications = () => {
+    this.props.onConfirmCallback()
     this.onDeleteAllClick()
     deleteAllNotifications({ ...getAuthentication(this.props.authentication), projectId: this.props.selectedProjectId })
       .then(() => this.handleDeleteNotificationsResponse())
