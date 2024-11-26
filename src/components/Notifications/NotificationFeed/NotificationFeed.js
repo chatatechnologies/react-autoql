@@ -495,7 +495,7 @@ class NotificationFeed extends React.Component {
       <div className='notification-feed-top-options-container'>
         {shouldRenderDeleteAllButton && this.renderDeleteAllButton()}
         {this.renderDataAlertsManagerButton()}
-        {this.renderSelectNotificationsButton()}
+        {this.renderNotificationsOptionsButton()}
       </div>
     )
   }
@@ -566,6 +566,12 @@ class NotificationFeed extends React.Component {
       </div>
     </ConfirmPopover>
   )
+  renderSelectMultipleNotificationsButton = () => (
+    <div className='react-autoql-notification-select-button' onClick={this.onSelectNotificationClick}>
+      <Icon type='select-multiple' />
+      <span>Select</span>
+    </div>
+  )
   renderDeleteButton = () => (
     <ConfirmPopover
       onConfirm={this.deleteSelectedNotification}
@@ -584,7 +590,7 @@ class NotificationFeed extends React.Component {
       </div>
     </ConfirmPopover>
   )
-  renderSelectNotificationsButton = () =>
+  renderNotificationsOptionsButton = () =>
     this.state.displayNotificationItemCheckbox ? (
       <div className='react-autoql-notification-select-container'>
         {this.renderDeleteButton()}
@@ -594,9 +600,7 @@ class NotificationFeed extends React.Component {
       </div>
     ) : this.props.showSelectNotificationsButton ? (
       <div className='react-autoql-notification-select-container'>
-        <div className='react-autoql-notification-select-button'>
-          <span onClick={this.onSelectNotificationClick}>Select</span>
-        </div>
+        {this.renderSelectMultipleNotificationsButton()}
         {this.renderMarkAllAsReadButton()}
       </div>
     ) : null
