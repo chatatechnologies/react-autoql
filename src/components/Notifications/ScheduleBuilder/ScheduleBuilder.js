@@ -88,7 +88,7 @@ export default class ScheduleBuilder extends React.Component {
     conditionType: EXISTS_TYPE,
     showTypeSelector: true,
     dataAlert: undefined,
-    onCompleteChange: () => { },
+    onCompleteChange: () => {},
   }
 
   componentDidMount = () => {
@@ -163,7 +163,6 @@ export default class ScheduleBuilder extends React.Component {
 
   getInitialStateFromDataAlert = (props, state) => {
     const { dataAlert } = props
-
     try {
       const evalFrequency = dataAlert?.evaluation_frequency
 
@@ -176,16 +175,6 @@ export default class ScheduleBuilder extends React.Component {
         state.evaluationFrequencySelectValue = 'custom'
         state.evaluationFrequencyMins = evalFrequency
         state.isCustomEvaluationFrequencyInputVisible = true
-      }
-
-      if (
-        !state.resetPeriodSelectValue &&
-        props.dataAlertType !== SCHEDULED_TYPE &&
-        this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE)
-      ) {
-        // We don't want to support null reset_periods for compare type data alerts
-        // To avoid continuous triggering of the alert. Use default value in this case
-        state.resetPeriodSelectValue = this.timeRange ?? this.DEFAULT_RESET_PERIOD_SELECT_VALUE
       }
 
       if (state.resetPeriodSelectValue === null) {
@@ -219,8 +208,9 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   getSummary = () => {
-    return `${this.state.resetPeriodSelectValue} ${this.getDayOfSelection(this.state.resetPeriodSelectValue)} ${this.state.intervalTimeSelectValue?.value
-      } ${this.state.timezone}`
+    return `${this.state.resetPeriodSelectValue} ${this.getDayOfSelection(this.state.resetPeriodSelectValue)} ${
+      this.state.intervalTimeSelectValue?.value
+    } ${this.state.timezone}`
   }
 
   getData = () => {
@@ -391,7 +381,7 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   dayOfMonthSelector = () => {
-    const dayOptions = Array.from({ length: 31 }, (_, i) => i + 1);
+    const dayOptions = Array.from({ length: 31 }, (_, i) => i + 1)
     const formattedOptions = dayOptions.map((value) => ({
       value,
       label: <span dangerouslySetInnerHTML={{ __html: `${value}${getDayOfTheMonthSuffix(value)}` }} />,
@@ -413,7 +403,6 @@ export default class ScheduleBuilder extends React.Component {
           />
         </div>
       </>
-
     )
   }
 
@@ -597,14 +586,10 @@ export default class ScheduleBuilder extends React.Component {
     return (
       <div className='react-autoql-data-alert-frequency-option'>
         <Select
-          options={Object.keys(RESET_PERIOD_OPTIONS)
-            .map((value) => ({
-              value,
-              label: <span dangerouslySetInnerHTML={{ __html: RESET_PERIOD_OPTIONS[value].displayName }} />,
-            }))
-            // To show "every time this happens", it must be an exists type query that was either selected by the user,
-            // or an exists type query that does not have a compare option (list query)
-            .filter((option) => (option?.value === 'NONE' ? this.props.conditionType === EXISTS_TYPE : true))}
+          options={Object.keys(RESET_PERIOD_OPTIONS).map((value) => ({
+            value,
+            label: <span dangerouslySetInnerHTML={{ __html: RESET_PERIOD_OPTIONS[value].displayName }} />,
+          }))}
           label='Send a notification'
           value={this.state.resetPeriodSelectValue}
           onChange={(option) => this.setState({ resetPeriodSelectValue: option })}
