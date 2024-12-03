@@ -20,6 +20,16 @@
     }
   }
 
+  .react-autoql-window-fn-popover {
+    padding: 20px;
+
+    .react-autoql-window-fn-popover-footer {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+  }
+
   .custom-column-modal-form-wrapper {
     flex: 2;
     display: flex;
@@ -39,6 +49,7 @@
         flex-direction: column;
         margin-right: 20px;
         position: relative;
+        overflow: auto;
 
         .react-autoql-select-and-label {
           padding-right: 5px;
@@ -160,6 +171,7 @@
         margin-bottom: 5px;
         margin-right: 8px;
         line-height: 38px;
+        text-wrap: wrap;
 
         .react-autoql-column-operator-selector {
           .react-autoql-select {

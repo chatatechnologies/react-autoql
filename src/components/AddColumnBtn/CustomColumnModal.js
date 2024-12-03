@@ -37,6 +37,7 @@ import { Modal } from '../Modal'
 import { Input } from '../Input'
 import { Button } from '../Button'
 import { Select } from '../Select'
+import { Popover } from '../Popover'
 import ChataTable from '../ChataTable/ChataTable'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
@@ -135,7 +136,7 @@ export default class CustomColumnModal extends React.Component {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
-    enableWindowFunctions: false,
+    enableWindowFunctions: true,
 
     queryResponse: undefined,
     onAddColumn: () => {},
@@ -340,8 +341,28 @@ export default class CustomColumnModal extends React.Component {
     this.props.onAddColumn({ ...newColumn, table_column: protoTableColumn, custom_column_display_name: this.state?.columnName?.trim() })
   }
 
+  changeChunkGroupby = (value, type, i) => {
+    if (type === 'function') {
+      const columnFn = _cloneDeep(this.state.columnFn)
+      if (columnFn[i]) {
+        columnFn[i].groupby = value
+      }
+      this.setState({ columnFn })
+    }
+  }
+
+  changeChunkOrderby = (value, type, i) => {
+    if (type === 'function') {
+      const columnFn = _cloneDeep(this.state.columnFn)
+      if (columnFn[i]) {
+        columnFn[i].orderby = value
+      }
+      this.setState({ columnFn })
+    }
+  }
+
   changeChunkValue = (value, type, i) => {
-    if (type === 'column') {
+    if (type === 'column' || type === 'function') {
       const column = this.props.columns.find((col) => col.field === value)
       const columnFn = _cloneDeep(this.state.columnFn)
       if (columnFn[i]) {
@@ -622,8 +643,8 @@ export default class CustomColumnModal extends React.Component {
 
   renderWindowFnChunk = (chunk, i) => {
     return (
-      <span>
-        <span>{this.getLabelForOperator(WINDOW_FUNCTIONS[chunk.fn])}( </span>
+      <>
+        <>{this.getLabelForOperator(WINDOW_FUNCTIONS[chunk.fn])}( </>
         <Select
           key={`custom-column-select-${i}`}
           placeholder='Select a Column'
@@ -642,7 +663,7 @@ export default class CustomColumnModal extends React.Component {
         />
         {chunk.groupby ? (
           <>
-            <span>, Grouped by </span>
+            {', Grouped by '}
             <Select
               key={`custom-column-select-${i}`}
               placeholder='Select a Column'
@@ -650,7 +671,7 @@ export default class CustomColumnModal extends React.Component {
               outlined={false}
               showArrow={false}
               className='react-autoql-available-column-selector'
-              onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
+              onChange={(value) => this.changeChunkGroupby(value, chunk.type, i)}
               options={getStringColumns(this.props.columns).map((col) => {
                 return {
                   value: col.field,
@@ -663,7 +684,7 @@ export default class CustomColumnModal extends React.Component {
         ) : null}
         {chunk.orderby ? (
           <>
-            <span>, Ordered by </span>
+            {', Ordered by '}
             <Select
               key={`custom-column-select-${i}`}
               placeholder='Select a Column'
@@ -671,7 +692,7 @@ export default class CustomColumnModal extends React.Component {
               outlined={false}
               showArrow={false}
               className='react-autoql-available-column-selector'
-              onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
+              onChange={(value) => this.changeChunkOrderby(value, chunk.type, i)}
               options={getStringColumns(this.props.columns).map((col) => {
                 return {
                   value: col.field,
@@ -683,7 +704,7 @@ export default class CustomColumnModal extends React.Component {
           </>
         ) : null}{' '}
         )
-      </span>
+      </>
     )
   }
 
@@ -705,12 +726,14 @@ export default class CustomColumnModal extends React.Component {
           columnFn[i].value = operator
           this.setState({ columnFn })
         }}
-        options={supportedOperators.map((op) => {
-          return {
-            value: op,
-            label: this.getLabelForOperator(this.OPERATORS[op]),
-          }
-        })}
+        options={supportedOperators
+          .filter((op) => op !== FUNCTION_OPERATOR)
+          .map((op) => {
+            return {
+              value: op,
+              label: this.getLabelForOperator(this.OPERATORS[op]),
+            }
+          })}
       />
     )
   }
@@ -844,7 +867,7 @@ export default class CustomColumnModal extends React.Component {
           <div className='react-autoql-input-label'>Operators</div>
           <div className='react-autoql-formula-builder-calculator-buttons-container'>
             {supportedOperators?.map((op) => {
-              return (
+              const buttonElement = (
                 <Button
                   key={`react-autoql-formula-calculator-button-${op}`}
                   className='react-autoql-formula-calculator-button'
@@ -878,6 +901,23 @@ export default class CustomColumnModal extends React.Component {
                   {this.getLabelForOperator(this.OPERATORS[op])}
                 </Button>
               )
+
+              if (op === FUNCTION_OPERATOR) {
+                return (
+                  <Popover
+                    align='end'
+                    positions={['bottom', 'left', 'top', 'right']}
+                    key={`react-autoql-formula-calculator-button-popover`}
+                    isOpen={this.state.isFunctionConfigModalVisible}
+                    content={this.renderFunctionConfigModalContent}
+                    popoverParentElement={this.columnModalContentRef}
+                  >
+                    {buttonElement}
+                  </Popover>
+                )
+              }
+
+              return buttonElement
             })}
           </div>
         </div>
@@ -913,7 +953,7 @@ export default class CustomColumnModal extends React.Component {
     )
   }
 
-  renderFunctionConfigModal = () => {
+  renderFunctionConfigModalContent = () => {
     const numericalColumns = getNumericalColumns(this.props.columns)
     const stringColumns = getStringColumns(this.props.columns)
 
@@ -932,6 +972,81 @@ export default class CustomColumnModal extends React.Component {
     })
 
     return (
+      <div ref={(r) => (this.windowFnPopover = r)} className='react-autoql-window-fn-popover'>
+        <div>
+          <Select
+            label='Function'
+            className='custom-column-window-fn-selector'
+            value={this.state.selectedFnType}
+            onChange={(selectedFnType) => this.setState({ selectedFnType })}
+            positions={['bottom', 'top', 'right', 'left']}
+            options={Object.keys(WINDOW_FUNCTIONS).map((fn) => {
+              const fnObj = WINDOW_FUNCTIONS[fn]
+              return {
+                value: fnObj.value,
+                label: fnObj.label,
+              }
+            })}
+          />
+          <Select
+            label='Column'
+            className='custom-column-window-fn-selector'
+            value={this.state.selectedFnColumn}
+            onChange={(selectedFnColumn) => this.setState({ selectedFnColumn })}
+            positions={['bottom', 'top', 'right', 'left']}
+            options={numericalColumns.map((col) => {
+              return {
+                value: col.field,
+                label: col.title,
+                listLabel: col.title,
+                icon: 'table',
+              }
+            })}
+          />
+        </div>
+        {stringColumns?.length > 0 && (
+          <div>
+            <Select
+              label='Group By Column'
+              className='custom-column-window-fn-selector'
+              value={this.state.selectedFnGroupby ?? null}
+              onChange={(selectedFnGroupby) => this.setState({ selectedFnGroupby })}
+              positions={['bottom', 'top', 'right', 'left']}
+              options={stringColumnOptions}
+            />
+          </div>
+        )}
+
+        {ORDERABLE_WINDOW_FN_TYPES.includes(this.state.selectedFnType) && (
+          <div>
+            <Select
+              label='Order By Column'
+              className='custom-column-window-fn-selector'
+              value={this.state.selectedFnOrderBy ?? null}
+              onChange={(selectedFnOrderBy) => this.setState({ selectedFnOrderBy })}
+              positions={['bottom', 'top', 'right', 'left']}
+              options={stringColumnOptions}
+            />
+          </div>
+        )}
+        <div className='react-autoql-window-fn-popover-footer'>
+          <Button type='default' onClick={this.closeAddFunctionModal}>
+            Cancel
+          </Button>
+          <Button type='primary' onClick={this.onAddFunction} dsabled={!this.isFunctionConfigComplete()}>
+            Add Function
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  renderFunctionConfigModal = () => {
+    const modalContent = this.renderFunctionConfigModalContent()
+
+    return null
+
+    return (
       <Modal
         className='custom-column-window-fn-modal'
         title='Add Window Function'
@@ -944,60 +1059,7 @@ export default class CustomColumnModal extends React.Component {
         onConfirm={this.onAddFunction}
         confirmDisabled={!this.isFunctionConfigComplete()}
       >
-        <div>
-          <div>
-            <Select
-              label='Function'
-              className='custom-column-window-fn-selector'
-              value={this.state.selectedFnType}
-              onChange={(selectedFnType) => this.setState({ selectedFnType })}
-              options={Object.keys(WINDOW_FUNCTIONS).map((fn) => {
-                const fnObj = WINDOW_FUNCTIONS[fn]
-                return {
-                  value: fnObj.value,
-                  label: this.getLabelForOperator(fnObj),
-                }
-              })}
-            />
-            <Select
-              label='Column'
-              className='custom-column-window-fn-selector'
-              value={this.state.selectedFnColumn}
-              onChange={(selectedFnColumn) => this.setState({ selectedFnColumn })}
-              options={numericalColumns.map((col) => {
-                return {
-                  value: col.field,
-                  label: col.title,
-                  listLabel: col.title,
-                  icon: 'table',
-                }
-              })}
-            />
-          </div>
-          {stringColumns?.length > 0 && (
-            <div>
-              <Select
-                label='Group By Column'
-                className='custom-column-window-fn-selector'
-                value={this.state.selectedFnGroupby ?? null}
-                onChange={(selectedFnGroupby) => this.setState({ selectedFnGroupby })}
-                options={stringColumnOptions}
-              />
-            </div>
-          )}
-
-          {ORDERABLE_WINDOW_FN_TYPES.includes(this.state.selectedFnType) && (
-            <div>
-              <Select
-                label='Order By Column'
-                className='custom-column-window-fn-selector'
-                value={this.state.selectedFnOrderBy ?? null}
-                onChange={(selectedFnOrderBy) => this.setState({ selectedFnOrderBy })}
-                options={stringColumnOptions}
-              />
-            </div>
-          )}
-        </div>
+        {modalContent}
       </Modal>
     )
   }
@@ -1017,7 +1079,7 @@ export default class CustomColumnModal extends React.Component {
           onConfirm={this.props.initialColumn ? this.onUpdateColumnConfirm : this.onAddColumnConfirm}
           confirmDisabled={!this.state.isFnValid || !this.state.isColumnNameValid || !this.state.columnFn?.length}
         >
-          <div className='custom-column-modal'>
+          <div ref={(r) => (this.columnModalContentRef = r)} className='custom-column-modal'>
             <div className='custom-column-modal-form-wrapper'>
               <div className='custom-column-modal-name-and-type'>
                 {this.renderColumnNameInput()}
