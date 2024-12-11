@@ -112,7 +112,9 @@ export default class CustomColumnModal extends React.Component {
       columnFn: initialColumnFn,
       columnType: props.initialColumn?.type ?? 'auto',
       isFnValid: !!props.initialColumn,
-      isColumnNameValid: props.initialColumn ? true : this.checkColumnName(props.initialColumn?.display_name ?? DEFAULT_COLUMN_NAME),
+      isColumnNameValid: props.initialColumn
+        ? true
+        : this.checkColumnName(props.initialColumn?.display_name ?? DEFAULT_COLUMN_NAME),
 
       isFunctionConfigModalVisible: false,
       selectedFnType: Object.keys(WINDOW_FUNCTIONS)[0],
@@ -146,9 +148,11 @@ export default class CustomColumnModal extends React.Component {
 
   componentDidUpdate = (prevProps, prevState) => {
     // Update column mutator is function changed
-    if (!deepEqual(this.state.columnFn, prevState.columnFn) ||
-      (this.state.columnType !== prevState.columnType) ||
-      (this.state.columnName !== prevState.columnName)) {
+    if (
+      !deepEqual(this.state.columnFn, prevState.columnFn) ||
+      this.state.columnType !== prevState.columnType ||
+      this.state.columnName !== prevState.columnName
+    ) {
       setTimeout(() => {
         this.updateTabulatorColumnFn()
       }, 0)
@@ -312,7 +316,11 @@ export default class CustomColumnModal extends React.Component {
         } else if (columnFn?.type === 'number') {
           protoTableColumn += columnFn?.value || 0
         } else if (columnFn?.type === 'function') {
-          protoTableColumn += columnFn?.value || ''
+          protoTableColumn += `${columnFn.fn}(${columnFn?.column?.name}) OVER (${
+            this.state.selectedFnGroupby
+              ? 'PARTITION BY ' + getNumericalColumns(this.props.columns)[Number(this.state.selectedFnGroupby)]?.name
+              : ''
+          })`
         } else {
           console.error('Unknown columnFn type')
         }
@@ -332,13 +340,21 @@ export default class CustomColumnModal extends React.Component {
     const newColumn = _cloneDeep(this.newColumn)
     newColumn.id = this.props.initialColumn?.id
     const protoTableColumn = this.buildProtoTableColumn(newColumn)
-    this.props.onUpdateColumn({ ...newColumn, table_column: protoTableColumn, custom_column_display_name: this.state?.columnName?.trim() })
+    this.props.onUpdateColumn({
+      ...newColumn,
+      table_column: protoTableColumn,
+      custom_column_display_name: this.state?.columnName?.trim(),
+    })
   }
 
   onAddColumnConfirm = () => {
     const newColumn = _cloneDeep(this.newColumn)
     const protoTableColumn = this.buildProtoTableColumn(newColumn)
-    this.props.onAddColumn({ ...newColumn, table_column: protoTableColumn, custom_column_display_name: this.state?.columnName?.trim() })
+    this.props.onAddColumn({
+      ...newColumn,
+      table_column: protoTableColumn,
+      custom_column_display_name: this.state?.columnName?.trim(),
+    })
   }
 
   changeChunkGroupby = (value, type, i) => {
@@ -555,7 +571,13 @@ export default class CustomColumnModal extends React.Component {
         label='Column Name'
         placeholder='eg. "Difference"'
         value={this.state.columnName}
-        errormessage={this.state?.isColumnNameValid ? '' : this.state?.columnName?.length > 0 ? 'A column with this name already exists.' : 'Column name cannot be empty'}
+        errormessage={
+          this.state?.isColumnNameValid
+            ? ''
+            : this.state?.columnName?.length > 0
+            ? 'A column with this name already exists.'
+            : 'Column name cannot be empty'
+        }
         onChange={(e) => {
           this.handleColumnNameUpdate(e.target.value)
         }}
@@ -796,24 +818,57 @@ export default class CustomColumnModal extends React.Component {
             </div>
           )}
         </div>
-        <div className='react-autoql-formula-builder-column-selection-container'>
-          <div className='react-autoql-input-label'>Variables</div>
-          <div className='react-autoql-formula-builder-calculator-buttons-container'>
-            {getSelectableColumns(this.props.columns)
-              ?.map((col, i) => {
-                return (
+        <div style={{ position: 'relative' }}>
+          {!this.state.isFunctionConfigModalVisible && (
+            <span style={{ display: 'flex' }}>
+              <div className='react-autoql-formula-builder-column-selection-container'>
+                <div className='react-autoql-input-label'>Variables</div>
+                <div className='react-autoql-formula-builder-calculator-buttons-container'>
+                  {getSelectableColumns(this.props.columns)?.map((col, i) => {
+                    return (
+                      <Button
+                        key={`react-autoql-column-select-button-${i}`}
+                        className='react-autoql-formula-calculator-button'
+                        icon='table'
+                        disabled={
+                          lastTerm?.type === 'column' ||
+                          lastTerm?.type === 'number' ||
+                          lastTerm?.value === 'RIGHT_BRACKET'
+                        }
+                        onClick={() => {
+                          const newChunk = {
+                            type: 'column',
+                            value: col.field,
+                            column: col,
+                          }
+
+                          if (lastTerm && lastTerm.type !== 'operator') {
+                            // Replace current variable
+                            columnFn[columnFn.length - 1] = newChunk
+                          } else {
+                            // Add new variable
+                            columnFn.push(newChunk)
+                          }
+
+                          this.setState({ columnFn })
+                        }}
+                      >
+                        {col.display_name}
+                      </Button>
+                    )
+                  })}
                   <Button
-                    key={`react-autoql-column-select-button-${i}`}
+                    key={`react-autoql-column-select-button-custom-number`}
                     className='react-autoql-formula-calculator-button'
-                    icon='table'
                     disabled={
                       lastTerm?.type === 'column' || lastTerm?.type === 'number' || lastTerm?.value === 'RIGHT_BRACKET'
                     }
+                    icon='number'
                     onClick={() => {
                       const newChunk = {
-                        type: 'column',
-                        value: col.field,
-                        column: col,
+                        type: 'number',
+                        value: undefined,
+                        id: uuid(),
                       }
 
                       if (lastTerm && lastTerm.type !== 'operator') {
@@ -824,102 +879,63 @@ export default class CustomColumnModal extends React.Component {
                         columnFn.push(newChunk)
                       }
 
-                      this.setState({ columnFn })
+                      this.setState({ columnFn }, () => {
+                        // Focus number input after adding it
+                        this.numberInputRefs[newChunk.id]?.focus()
+                      })
                     }}
                   >
-                    {col.display_name}
+                    Custom Number...
                   </Button>
-                )
-              })}
-            <Button
-              key={`react-autoql-column-select-button-custom-number`}
-              className='react-autoql-formula-calculator-button'
-              disabled={
-                lastTerm?.type === 'column' || lastTerm?.type === 'number' || lastTerm?.value === 'RIGHT_BRACKET'
-              }
-              icon='number'
-              onClick={() => {
-                const newChunk = {
-                  type: 'number',
-                  value: undefined,
-                  id: uuid(),
-                }
+                </div>
+              </div>
+              <div className='react-autoql-formula-builder-calculator-container'>
+                <div className='react-autoql-input-label'>Operators</div>
+                <div className='react-autoql-formula-builder-calculator-buttons-container'>
+                  {supportedOperators?.map((op) => {
+                    const buttonElement = (
+                      <Button
+                        key={`react-autoql-formula-calculator-button-${op}`}
+                        className='react-autoql-formula-calculator-button'
+                        disabled={this.shouldDisableOperator(op)}
+                        style={{ width: `${op === FUNCTION_OPERATOR ? '-webkit-fill-available' : 'undefined'}` }}
+                        onClick={() => {
+                          if (op === FUNCTION_OPERATOR) {
+                            return this.setState({ isFunctionConfigModalVisible: true })
+                          }
 
-                if (lastTerm && lastTerm.type !== 'operator') {
-                  // Replace current variable
-                  columnFn[columnFn.length - 1] = newChunk
-                } else {
-                  // Add new variable
-                  columnFn.push(newChunk)
-                }
+                          const newChunk = {
+                            type: 'operator',
+                            value: op,
+                          }
 
-                this.setState({ columnFn }, () => {
-                  // Focus number input after adding it
-                  this.numberInputRefs[newChunk.id]?.focus()
-                })
-              }}
-            >
-              Custom Number...
-            </Button>
-          </div>
-        </div>
-        <div className='react-autoql-formula-builder-calculator-container'>
-          <div className='react-autoql-input-label'>Operators</div>
-          <div className='react-autoql-formula-builder-calculator-buttons-container'>
-            {supportedOperators?.map((op) => {
-              const buttonElement = (
-                <Button
-                  key={`react-autoql-formula-calculator-button-${op}`}
-                  className='react-autoql-formula-calculator-button'
-                  disabled={this.shouldDisableOperator(op)}
-                  onClick={() => {
-                    if (op === FUNCTION_OPERATOR) {
-                      return this.setState({ isFunctionConfigModalVisible: true })
-                    }
+                          if (
+                            lastTerm &&
+                            lastTerm?.type === 'operator' &&
+                            lastTerm?.value !== 'RIGHT_BRACKET' &&
+                            op !== 'LEFT_BRACKET'
+                          ) {
+                            // Replace current operator
+                            columnFn[columnFn.length - 1] = newChunk
+                          } else {
+                            // Add new operator
+                            columnFn.push(newChunk)
+                          }
 
-                    const newChunk = {
-                      type: 'operator',
-                      value: op,
-                    }
+                          this.setState({ columnFn })
+                        }}
+                      >
+                        {this.getLabelForOperator(this.OPERATORS[op])}
+                      </Button>
+                    )
 
-                    if (
-                      lastTerm &&
-                      lastTerm?.type === 'operator' &&
-                      lastTerm?.value !== 'RIGHT_BRACKET' &&
-                      op !== 'LEFT_BRACKET'
-                    ) {
-                      // Replace current operator
-                      columnFn[columnFn.length - 1] = newChunk
-                    } else {
-                      // Add new operator
-                      columnFn.push(newChunk)
-                    }
-
-                    this.setState({ columnFn })
-                  }}
-                >
-                  {this.getLabelForOperator(this.OPERATORS[op])}
-                </Button>
-              )
-
-              if (op === FUNCTION_OPERATOR) {
-                return (
-                  <Popover
-                    align='end'
-                    positions={['bottom', 'left', 'top', 'right']}
-                    key={`react-autoql-formula-calculator-button-popover`}
-                    isOpen={this.state.isFunctionConfigModalVisible}
-                    content={this.renderFunctionConfigModalContent}
-                    popoverParentElement={this.columnModalContentRef}
-                  >
-                    {buttonElement}
-                  </Popover>
-                )
-              }
-
-              return buttonElement
-            })}
-          </div>
+                    return buttonElement
+                  })}
+                </div>
+              </div>
+            </span>
+          )}
+          <div>{this.state.isFunctionConfigModalVisible && this.renderFunctionConfigModalContent()}</div>
         </div>
       </div>
     )
@@ -972,13 +988,15 @@ export default class CustomColumnModal extends React.Component {
     })
 
     return (
-      <div ref={(r) => (this.windowFnPopover = r)} className='react-autoql-window-fn-popover'>
+      <div ref={(r) => (this.windowFnPopover = r)}>
         <div>
           <Select
             label='Function'
-            className='custom-column-window-fn-selector'
+            className='custom-column-window-fn-selector-top'
             value={this.state.selectedFnType}
-            onChange={(selectedFnType) => this.setState({ selectedFnType })}
+            onChange={(selectedFnType) => {
+              this.setState({ selectedFnType })
+            }}
             positions={['bottom', 'top', 'right', 'left']}
             options={Object.keys(WINDOW_FUNCTIONS).map((fn) => {
               const fnObj = WINDOW_FUNCTIONS[fn]
@@ -990,7 +1008,7 @@ export default class CustomColumnModal extends React.Component {
           />
           <Select
             label='Column'
-            className='custom-column-window-fn-selector'
+            className='custom-column-window-fn-selector-top'
             value={this.state.selectedFnColumn}
             onChange={(selectedFnColumn) => this.setState({ selectedFnColumn })}
             positions={['bottom', 'top', 'right', 'left']}
@@ -1029,38 +1047,23 @@ export default class CustomColumnModal extends React.Component {
             />
           </div>
         )}
-        <div className='react-autoql-window-fn-popover-footer'>
+        <div
+          className='react-autoql-window-fn-popover-footer'
+          style={{
+            display: 'flex',
+            position: 'absolute',
+            right: 0,
+            bottom: 0,
+          }}
+        >
           <Button type='default' onClick={this.closeAddFunctionModal}>
             Cancel
           </Button>
-          <Button type='primary' onClick={this.onAddFunction} dsabled={!this.isFunctionConfigComplete()}>
+          <Button type='primary' onClick={this.onAddFunction} disabled={!this.isFunctionConfigComplete()}>
             Add Function
           </Button>
         </div>
       </div>
-    )
-  }
-
-  renderFunctionConfigModal = () => {
-    const modalContent = this.renderFunctionConfigModalContent()
-
-    return null
-
-    return (
-      <Modal
-        className='custom-column-window-fn-modal'
-        title='Add Window Function'
-        isVisible={this.state.isFunctionConfigModalVisible}
-        width='550px'
-        height='500px'
-        confirmText='Add Function'
-        shouldRender={this.props.enableWindowFunctions}
-        onClose={this.closeAddFunctionModal}
-        onConfirm={this.onAddFunction}
-        confirmDisabled={!this.isFunctionConfigComplete()}
-      >
-        {modalContent}
-      </Modal>
     )
   }
 
@@ -1081,14 +1084,11 @@ export default class CustomColumnModal extends React.Component {
         >
           <div ref={(r) => (this.columnModalContentRef = r)} className='custom-column-modal'>
             <div className='custom-column-modal-form-wrapper'>
-              <div className='custom-column-modal-name-and-type'>
-                {this.renderColumnNameInput()}
-              </div>
+              <div className='custom-column-modal-name-and-type'>{this.renderColumnNameInput()}</div>
               {this.renderColumnFnBuilder()}
             </div>
             {this.renderTablePreview()}
           </div>
-          {this.renderFunctionConfigModal()}
         </Modal>
       </ErrorBoundary>
     )

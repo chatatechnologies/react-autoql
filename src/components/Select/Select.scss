@@ -94,6 +94,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      padding-left: 2px;
 
       .react-autoql-select-text-placeholder {
         color: var(--react-autoql-text-color-placeholder);
