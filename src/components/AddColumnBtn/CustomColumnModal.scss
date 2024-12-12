@@ -1,9 +1,6 @@
 @import '../../styles/breakpoints';
 
 .custom-column-modal {
-  display: block;
-  height: '-webkit-fill-available';
-
   @include sm {
     display: block;
     overflow-y: scroll;
