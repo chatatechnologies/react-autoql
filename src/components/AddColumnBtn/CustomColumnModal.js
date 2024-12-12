@@ -1081,6 +1081,7 @@ export default class CustomColumnModal extends React.Component {
           onClose={this.props.onClose}
           onConfirm={this.props.initialColumn ? this.onUpdateColumnConfirm : this.onAddColumnConfirm}
           confirmDisabled={!this.state.isFnValid || !this.state.isColumnNameValid || !this.state.columnFn?.length}
+          enableBodyScroll={true}
         >
           <div ref={(r) => (this.columnModalContentRef = r)} className='custom-column-modal'>
             <div className='custom-column-modal-form-wrapper'>

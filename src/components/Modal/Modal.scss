@@ -164,11 +164,14 @@
   h3 {
     color: var(--react-autoql-text-color-primary);
   }
-  display: flex;
-  flex-direction: column;
+  display: block;
+  padding: 20px;
+  overflow: auto;
 
-  padding: 20px 30px;
-  flex: 1;
+  @include sm {
+    flex: unset;
+    flex-direction: unset;
+  }
 }
 .react-autoql-modal-close-btn {
   flex: 0;
