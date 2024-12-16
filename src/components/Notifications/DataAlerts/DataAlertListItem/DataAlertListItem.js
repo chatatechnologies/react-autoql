@@ -56,7 +56,6 @@ export default class DataAlertListItem extends React.Component {
     shouldRenderNotificationFrequency: PropTypes.bool,
     shouldRenderDescription: PropTypes.bool,
     shouldRenderNextCheck: PropTypes.bool,
-    shouldRenderStateDescription: PropTypes.bool,
     shouldRenderDataAlertState: PropTypes.bool,
     shouldRenderStateHeaderTitle: PropTypes.bool,
     shouldRenderStatusHeaderTitle: PropTypes.bool,
@@ -72,7 +71,6 @@ export default class DataAlertListItem extends React.Component {
     shouldRenderNotificationFrequency: true,
     shouldRenderDescription: false,
     shouldRenderNextCheck: true,
-    shouldRenderStateDescription: true,
     shouldRenderDataAlertState: true,
     shouldRenderStateHeaderTitle: true,
     shouldRenderStatusHeaderTitle: true,
@@ -204,7 +202,7 @@ export default class DataAlertListItem extends React.Component {
   }
 
   renderDataAlertState = () => {
-    const { dataAlert, shouldRenderStateDescription, shouldRenderDataAlertState } = this.props
+    const { dataAlert, shouldRenderDataAlertState } = this.props
     const hasError = this.hasError()
     const isEnabled = this.isEnabled()
     const isCustom = dataAlert.type === CUSTOM_TYPE
@@ -226,7 +224,6 @@ export default class DataAlertListItem extends React.Component {
           }
         >
           <Icon type='warning-triangle' />
-          {shouldRenderStateDescription && <span>Error</span>}
           {isCustom && shouldRenderDataAlertState && (
             <Icon
               type='refresh'
