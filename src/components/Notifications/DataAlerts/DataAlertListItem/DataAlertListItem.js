@@ -72,7 +72,7 @@ export default class DataAlertListItem extends React.Component {
     shouldRenderNotificationFrequency: true,
     shouldRenderDescription: false,
     shouldRenderNextCheck: true,
-    shouldRenderStateDescription: true,
+    shouldRenderStateDescription: false,
     shouldRenderDataAlertState: true,
     shouldRenderStateHeaderTitle: true,
     shouldRenderStatusHeaderTitle: true,
