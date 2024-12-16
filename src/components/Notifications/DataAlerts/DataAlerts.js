@@ -190,6 +190,7 @@ class DataAlerts extends React.Component {
                 <DataAlertListItem
                   authentication={this.props.authentication}
                   key={dataAlert.id}
+                  shouldRenderStateDescription={false}
                   dataAlert={dataAlert}
                   onSuccessCallback={this.props.onSuccessAlert}
                   onErrorCallback={this.props.onErrorCallback}
