@@ -40,7 +40,7 @@ export default class Switch extends React.Component {
         <div
           className={`react-autoql-switch-container ${
             this.props.checked ? 'react-autoql-switch-container-checked' : 'react-autoql-switch-container-unchecked'
-          } ${this.props.className}`}
+          } ${this.props.disabled ? 'react-autoql-switch-disabled' : ''} ${this.props.className}`}
           data-test='react-autoql-switch-container'
           style={this.props.style}
         >

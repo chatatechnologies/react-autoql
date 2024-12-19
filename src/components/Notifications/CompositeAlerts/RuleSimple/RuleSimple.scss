@@ -1,0 +1,270 @@
+.react-autoql-custom-filtered-alert-rule-simple {
+  .react-autoql-data-alert-filters-container {
+    padding: 5px;
+    margin-bottom: 15px;
+  }
+
+  .data-alert-description-span {
+    display: inline-block;
+    margin-bottom: 8px;
+    margin-left: 5px;
+    white-space: pre;
+  }
+  .join-column-selection-prompt {
+    background-color: var(--react-autoql-background-color-secondary);
+
+    h4 {
+      font-size: 16px;
+      color: var(--react-autoql-text-color);
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 14px;
+      color: var(--react-autoql-text-color-secondary);
+      margin-bottom: 15px;
+    }
+
+    .joinable-table {
+      margin-top: 10px;
+    }
+  }
+
+  .join-column-selectors {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .selected-display-name {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 5px;
+    font-size: 0.9em;
+    color: #666;
+  }
+  .first-query-join-column-selector,
+  .second-query-join-column-selector {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 48%;
+  }
+  .react-autoql-multi-select {
+    height: 40px;
+  }
+  &.with-query-validation .react-autoql-rule-condition-select-input-container,
+  &.with-query-validation .react-autoql-rule-mult-factor-select-input-container {
+    margin-bottom: 30px;
+  }
+  &.with-query-validation .react-autoql-notification-rule-container {
+    display: flex;
+    align-items: flex-end;
+    @media (max-width: 1200px) {
+      display: flex;
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+
+  .react-autoql-rule-field-selection-grid-container {
+    max-height: 150px;
+    display: flex;
+    flex-direction: column;
+
+    .react-autoql-input-label {
+      display: inline;
+      padding-left: 5px;
+    }
+    // .react-autoql-selectable-table {
+    //   padding: 0px 5px 5px 5px;
+    // }
+  }
+  .react-autoql-notification-rule-container {
+    display: flex;
+    align-items: flex-end;
+    @media (max-width: 767px) {
+      display: flex;
+      align-items: flex-start;
+      flex-direction: column;
+    }
+    .react-autoql-rule-input {
+      .react-autoql-input-icon.react-autoql-bubbles-outlined {
+        font-size: 18px !important;
+      }
+    }
+
+    .rule-second-input-type-select {
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .react-autoql-input-container,
+    .react-autoql-rule-condition-select {
+      margin: 0 !important;
+    }
+    .react-autoql-input-container:hover + .react-autoql-rule-term-type-selector,
+    .react-autoql-input-container.focus + .react-autoql-rule-term-type-selector {
+      color: var(--react-autoql-accent-color);
+      border-color: var(--react-autoql-accent-color);
+    }
+
+    .react-autoql-rule-input {
+      display: flex;
+      flex-direction: row;
+      flex: 1;
+
+      .react-autoql-input-icon.react-autoql-bubbles-outlined {
+        padding-bottom: 2px;
+      }
+    }
+
+    .react-autoql-rule-first-input-container {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      margin-bottom: 28px;
+    }
+
+    .react-autoql-rule-mult-factor-select-input-container .react-autoql-input {
+      max-width: 65px;
+    }
+
+    .react-autoql-rule-condition-select-input-container,
+    .react-autoql-rule-mult-factor-select-input-container {
+      display: flex;
+      flex-direction: column;
+      padding: 2px 0;
+      border-radius: 4px;
+      transition-property: color, border-color, background-color, opacity;
+      transition-duration: 0.3s;
+      transition-timing-function: ease;
+      flex: 0 0 auto;
+      margin-right: 6px;
+    }
+
+    .react-autoql-rule-second-input-container {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      padding: 2px 0;
+      border-radius: 4px;
+      transition-property: color, border-color, background-color, opacity;
+      transition-duration: 0.3s;
+      transition-timing-function: ease;
+      flex: 1;
+
+      .react-autoql-rule-condition-select {
+        flex: 0;
+        flex-basis: 33px;
+        height: 39px;
+      }
+      .react-autoql-rule-input {
+        flex: 1;
+
+        .react-autoql-second-term-type-input {
+          flex: 1;
+        }
+
+        .react-autoql-second-term-multiplication-factor-input {
+          display: flex;
+          align-items: center;
+          flex: 0 0 160px;
+        }
+
+        .react-autoql-multiplication-factor-tooltip-icon {
+          color: var(--react-autoql-accent-color);
+        }
+      }
+      .react-autoql-delete-compare-btn {
+        cursor: pointer;
+        opacity: 0.6;
+        padding: 6px;
+
+        &:hover {
+          opacity: 1;
+        }
+      }
+
+      &.hidden {
+        display: none;
+      }
+    }
+  }
+}
+
+.data-alert-rule-formatted-query {
+  display: flex;
+  align-items: center;
+  margin-top: 3px;
+  font-weight: 600;
+  padding: 3px 5px;
+  margin-bottom: 20px;
+  margin-top: 10px;
+
+  .data-alert-rule-tooltip-icon {
+    margin: 0;
+    padding: 0;
+    margin-left: 10px;
+    color: var(--react-autoql-text-color-placeholder);
+    opacity: 0.6;
+  }
+
+  .react-autoql-icon.react-autoql-bubbles-outlined {
+    margin-right: 5px;
+  }
+}
+
+.read-only-rule-term {
+  display: inline-block;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(0, 0, 0, 0.02);
+  padding: 3px 7px;
+  line-height: 1.5em;
+  margin-right: 5px;
+  margin-bottom: 2px;
+  margin-top: 2px;
+  border-radius: 4px;
+}
+
+.rule-simple-validation-container {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 5px;
+  height: 30px;
+
+  .expression-term-validation {
+    display: inline-flex;
+    justify-content: flex-end;
+    align-items: center;
+    height: 20px;
+
+    .react-autoql-icon {
+      margin-right: 5px;
+      vertical-align: text-bottom;
+      margin-bottom: 1px;
+    }
+  }
+
+  .expression-term-validation-loading {
+    color: var(--react-autoql-text-color-placeholder);
+  }
+
+  .expression-term-validation-error {
+    color: var(--react-autoql-warning-color);
+  }
+
+  .expression-term-validation-valid {
+    color: var(--react-autoql-success-color);
+  }
+}
+
+.data-alert-condition-statement {
+  .data-alert-condition-statement-query1,
+  .data-alert-condition-statement-query2 {
+    font-style: italic;
+  }
+  .data-alert-condition-statement-query2 {
+    display: block;
+  }
+}

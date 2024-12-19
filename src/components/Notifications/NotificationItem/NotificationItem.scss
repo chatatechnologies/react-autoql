@@ -63,6 +63,9 @@
       transform: scalex(1.75);
     }
   }
+  .react-autoql-notification-item-layer-icon {
+    color: var(--react-autoql-accent-color);
+  }
 
   .react-autoql-notification-item-hover-overlay {
     position: absolute;
@@ -423,6 +426,10 @@
     line-height: 23px;
     padding: 13px 0px;
     transition: color 0.2s ease;
+    .react-autoql-notification-display-name-wrapper {
+      display: flex;
+      align-items: center;
+    }
 
     .react-autoql-notification-display-name {
       font-size: 18px;

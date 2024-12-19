@@ -7,6 +7,7 @@ import { fetchDataAlerts, authenticationDefault, getAuthentication } from 'autoq
 import { Tooltip } from '../../Tooltip'
 import { LoadingDots } from '../../LoadingDots'
 import { DataAlertModal } from '../DataAlertModal'
+import { CustomFilteredAlertModal } from '../CompositeAlerts/CustomFilteredAlertModal'
 import DataAlertListItem from './DataAlertListItem/DataAlertListItem'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
@@ -44,6 +45,7 @@ class DataAlerts extends React.Component {
   state = {
     isFetchingList: true,
     isEditModalVisible: false,
+    isCustomFilteredAlertModalVisible: false,
     activeDataAlert: undefined,
 
     customAlertsList: undefined,
@@ -89,6 +91,10 @@ class DataAlerts extends React.Component {
   onDataAlertSave = () => {
     this.getDataAlerts()
     this.setState({ isEditModalVisible: false })
+  }
+  onCustomFilteredAlertSave = () => {
+    this.getDataAlerts()
+    this.setState({ isCustomFilteredAlertModalVisible: false })
   }
 
   onDataAlertDeleteClick = (dataAlertDeleteId) => {
@@ -137,6 +143,24 @@ class DataAlerts extends React.Component {
       />
     )
   }
+  renderCustomFilteredAlertModal = () => {
+    return (
+      <CustomFilteredAlertModal
+        ref={(r) => (this.customFilteredAlertModalRef = r)}
+        key={this.COMPONENT_KEY}
+        authentication={this.props.authentication}
+        isVisible={this.state.isCustomFilteredAlertModalVisible}
+        onClose={() => this.setState({ isCustomFilteredAlertModalVisible: false })}
+        currentDataAlert={this.state.activeDataAlert}
+        onSave={this.onCustomFilteredAlertSave}
+        onErrorCallback={this.props.onErrorCallback}
+        onSuccessAlert={this.props.onSuccessAlert}
+        onDelete={this.onDataAlertDelete}
+        tooltipID={this.props.tooltipID}
+        editView
+      />
+    )
+  }
 
   renderDataAlertGroupTitle = (title, description) => (
     <div className='react-autoql-data-alert-section-title-container'>
@@ -159,7 +183,12 @@ class DataAlerts extends React.Component {
       }, 0)
     }
   }
-
+  openCustomFilteredAlertModal = (activeDataAlert) => {
+    this.setState({
+      activeDataAlert,
+      isCustomFilteredAlertModalVisible: true,
+    })
+  }
   renderNotificationlist = (type, list) => {
     if (type === 'project' && !list?.length) {
       return null
@@ -195,11 +224,13 @@ class DataAlerts extends React.Component {
                   onSuccessCallback={this.props.onSuccessAlert}
                   onErrorCallback={this.props.onErrorCallback}
                   openEditModal={this.openEditModal}
+                  openCustomFilteredAlertModal={this.openCustomFilteredAlertModal}
                   onDeleteClick={() => this.onDataAlertDeleteClick(dataAlert?.id)}
                   tooltipID='react-autoql-notification-settings-tooltip'
                   onInitialize={this.getDataAlerts}
                   onDataAlertStatusChange={this.props.onDataAlertStatusChange}
                   showHeader={i === 0}
+                  shouldRenderCreateCustomFilteredAlert={true}
                 />
               )
             })}
@@ -234,6 +265,7 @@ class DataAlerts extends React.Component {
             {this.renderNotificationlist('project', projectAlertsList)}
             {this.renderNotificationlist('custom', customAlertsList)}
             {this.renderNotificationEditModal()}
+            {this.renderCustomFilteredAlertModal()}
             {this.renderDeleteDialog()}
             <Tooltip tooltipId='react-autoql-notification-settings-tooltip' delayShow={500} />
           </div>
