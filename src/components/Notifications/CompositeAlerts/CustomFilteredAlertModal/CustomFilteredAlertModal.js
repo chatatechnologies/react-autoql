@@ -21,10 +21,10 @@ import { Icon } from '../../../Icon'
 import { Modal } from '../../../Modal'
 import { Button } from '../../../Button'
 import { Tooltip } from '../../../Tooltip'
-import ConditionBuilder from '../ConditionBuilder/ConditionBuilder'
+import { ConditionBuilder } from '../../ConditionBuilder'
 import { ErrorBoundary } from '../../../../containers/ErrorHOC'
 import { DataAlertDeleteDialog } from '../../DataAlertDeleteDialog'
-import { AppearanceSection } from '../AppearanceSection'
+import AppearanceSection from '../../DataAlertSettings/AppearanceSection/AppearanceSection'
 import { withTheme } from '../../../../theme'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../../props/types'
 
@@ -488,7 +488,7 @@ class CustomFilteredAlertModal extends React.Component {
               queryResponse={this.props.queryResponse}
               tooltipID={this.TOOLTIP_ID}
               filters={this.props.filters}
-              isBuildingCustomFilteredAlert={true}
+              isCompositeAlert={true}
               dataAlert={this.props.currentDataAlert}
               baseDataAlertColumns={this.state.baseDataAlertColumns}
               baseDataAlertQueryResponse={this.state.baseDataAlertQueryResponse}
@@ -527,6 +527,7 @@ class CustomFilteredAlertModal extends React.Component {
           }}
           categories={this.state.categories || []}
           enableAlphaAlertSettings={this.props.enableAlphaAlertSettings}
+          isCompositeAlert={true}
         />
       </div>
     )

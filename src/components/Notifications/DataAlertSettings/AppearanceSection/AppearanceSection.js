@@ -29,6 +29,7 @@ class AppearanceSection extends React.Component {
     onCategorySelectChange: PropTypes.func,
     categories: PropTypes.array,
     enableAlphaAlertSettings: PropTypes.bool,
+    isCompositeAlert: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -44,6 +45,7 @@ class AppearanceSection extends React.Component {
     onCategorySelectChange: () => {},
     categories: [],
     enableAlphaAlertSettings: false,
+    isCompositeAlert: false,
   }
 
   renderDataAlertDescriptionInput = () => {
@@ -140,6 +142,7 @@ class AppearanceSection extends React.Component {
             state: 'UNACKNOWLEDGED',
             expanded: false,
           }}
+          isBuildingCustomFilteredAlert={this.props.isCompositeAlert}
         />
       </div>
     )

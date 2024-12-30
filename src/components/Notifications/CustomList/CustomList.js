@@ -17,13 +17,13 @@ import {
   getAuthentication,
 } from 'autoql-fe-utils'
 
-import { Icon } from '../../../Icon'
-import { Chip } from '../../../Chip'
-import { Tooltip } from '../../../Tooltip'
-import { LoadingDots } from '../../../LoadingDots'
-import { CustomScrollbars } from '../../../CustomScrollbars'
-import { ErrorBoundary } from '../../../../containers/ErrorHOC'
-import { authenticationType } from '../../../../props/types'
+import { Icon } from '../../Icon'
+import { Chip } from '../../Chip'
+import { Tooltip } from '../../Tooltip'
+import { LoadingDots } from '../../LoadingDots'
+import { CustomScrollbars } from '../../CustomScrollbars'
+import { ErrorBoundary } from '../../../containers/ErrorHOC'
+import { authenticationType } from '../../../props/types'
 
 import 'react-toastify/dist/ReactToastify.css'
 import './CustomList.scss'
