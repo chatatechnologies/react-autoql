@@ -31,6 +31,8 @@ import { authenticationType, autoQLConfigType, dataFormattingType } from '../../
 import './CustomFilteredAlertModal.scss'
 
 class CustomFilteredAlertModal extends React.Component {
+  NOTIFICATION_TYPE_EVENT = 'EVENT'
+  EVALUATION_MODE_COMPOSITE = 'COMPOSITE'
   constructor(props) {
     super(props)
 
@@ -278,11 +280,11 @@ class CustomFilteredAlertModal extends React.Component {
       let newDataAlert = {
         title: titleInput,
         message: messageInput,
-        notification_type: 'EVENT',
+        notification_type: this.NOTIFICATION_TYPE_EVENT,
         expression: expressionJSON,
         reset_period: null,
         projects: [],
-        evaluation_mode: 'COMPOSITE',
+        evaluation_mode: this.EVALUATION_MODE_COMPOSITE,
       }
       if (this.state.isEditingDataAlert) {
         newDataAlert = {
