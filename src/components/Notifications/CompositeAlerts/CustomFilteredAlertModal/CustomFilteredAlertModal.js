@@ -2,7 +2,7 @@ import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEmpty from 'lodash.isempty'
-
+import { CUSTOM_FILTERED_ALERT_MODAL_TITLES } from '../../../../js/Constants'
 import {
   getAuthentication,
   dataFormattingDefault,
@@ -35,10 +35,6 @@ class CustomFilteredAlertModal extends React.Component {
   EVALUATION_MODE_COMPOSITE = 'COMPOSITE'
   constructor(props) {
     super(props)
-    this.MODAL_TITLES = {
-      EDIT: 'Edit Custom Filtered Alert Settings',
-      CREATE: 'Create custom filtered alert',
-    }
 
     this.COMPONENT_KEY = uuid()
     this.TOOLTIP_ID = `react-autoql-data-alert-modal-tooltip-${this.COMPONENT_KEY}`
@@ -619,7 +615,11 @@ class CustomFilteredAlertModal extends React.Component {
           contentClassName='react-autoql-data-alert-creation-modal'
           bodyClassName='react-autoql-data-alert-modal-body'
           overlayStyle={{ zIndex: '9998' }}
-          title={this.state.isEditingDataAlert ? this.MODAL_TITLES.EDIT : this.MODAL_TITLES.CREATE}
+          title={
+            this.state.isEditingDataAlert
+              ? CUSTOM_FILTERED_ALERT_MODAL_TITLES.EDIT
+              : CUSTOM_FILTERED_ALERT_MODAL_TITLES.CREATE
+          }
           titleIcon={this.getTitleIcon()}
           ref={(r) => (this.modalRef = r)}
           isVisible={this.props.isVisible}
