@@ -35,6 +35,10 @@ class CustomFilteredAlertModal extends React.Component {
   EVALUATION_MODE_COMPOSITE = 'COMPOSITE'
   constructor(props) {
     super(props)
+    this.MODAL_TITLES = {
+      EDIT: 'Edit Custom Filtered Alert Settings',
+      CREATE: 'Create custom filtered alert',
+    }
 
     this.COMPONENT_KEY = uuid()
     this.TOOLTIP_ID = `react-autoql-data-alert-modal-tooltip-${this.COMPONENT_KEY}`
@@ -602,7 +606,7 @@ class CustomFilteredAlertModal extends React.Component {
   }
 
   getTitleIcon = () => {
-    if (!_isEmpty(this.props.currentDataAlert)) {
+    if (!_isEmpty(this.props.currentDataAlert) && this.state.isEditingDataAlert) {
       return <Icon key={`title-icon-${this.COMPONENT_KEY}`} type='settings' />
     }
     return <span key={`title-icon-${this.COMPONENT_KEY}`} />
@@ -615,7 +619,7 @@ class CustomFilteredAlertModal extends React.Component {
           contentClassName='react-autoql-data-alert-creation-modal'
           bodyClassName='react-autoql-data-alert-modal-body'
           overlayStyle={{ zIndex: '9998' }}
-          title={'Create custom filtered alert'}
+          title={this.state.isEditingDataAlert ? this.MODAL_TITLES.EDIT : this.MODAL_TITLES.CREATE}
           titleIcon={this.getTitleIcon()}
           ref={(r) => (this.modalRef = r)}
           isVisible={this.props.isVisible}
