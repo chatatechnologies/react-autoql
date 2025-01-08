@@ -2,7 +2,7 @@ import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEmpty from 'lodash.isempty'
-
+import { CUSTOM_FILTERED_ALERT_MODAL_TITLES } from '../../../../js/Constants'
 import {
   getAuthentication,
   dataFormattingDefault,
@@ -602,7 +602,7 @@ class CustomFilteredAlertModal extends React.Component {
   }
 
   getTitleIcon = () => {
-    if (!_isEmpty(this.props.currentDataAlert)) {
+    if (!_isEmpty(this.props.currentDataAlert) && this.state.isEditingDataAlert) {
       return <Icon key={`title-icon-${this.COMPONENT_KEY}`} type='settings' />
     }
     return <span key={`title-icon-${this.COMPONENT_KEY}`} />
@@ -615,7 +615,11 @@ class CustomFilteredAlertModal extends React.Component {
           contentClassName='react-autoql-data-alert-creation-modal'
           bodyClassName='react-autoql-data-alert-modal-body'
           overlayStyle={{ zIndex: '9998' }}
-          title={'Create custom filtered alert'}
+          title={
+            this.state.isEditingDataAlert
+              ? CUSTOM_FILTERED_ALERT_MODAL_TITLES.EDIT
+              : CUSTOM_FILTERED_ALERT_MODAL_TITLES.CREATE
+          }
           titleIcon={this.getTitleIcon()}
           ref={(r) => (this.modalRef = r)}
           isVisible={this.props.isVisible}
