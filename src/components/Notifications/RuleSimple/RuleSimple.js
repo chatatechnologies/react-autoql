@@ -162,6 +162,8 @@ export default class RuleSimple extends React.Component {
       firstQuerySecondValue: '',
       secondQueryFirstValue: '',
       secondQuerySecondValue: '',
+      isDisabledCustomList: true,
+      disabledReason: '',
     }
 
     if (initialData?.length) {
@@ -221,6 +223,13 @@ export default class RuleSimple extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    if (this.props.baseDataAlertQueryResponse !== prevProps.baseDataAlertQueryResponse) {
+      const isDisabled = this.isCustomListDisabled()
+      this.setState({
+        isDisabledCustomList: isDisabled,
+        disabledReason: isSingleValueResponse(this.props.baseDataAlertQueryResponse) ? this.showWarningMessage() : '',
+      })
+    }
     if (!_isEqual(this.state, prevState)) {
       this.props.onUpdate(this.props.ruleId, this.isComplete(), this.isValid())
     }
@@ -252,6 +261,19 @@ export default class RuleSimple extends React.Component {
       }))
     }
   }
+  isCustomListDisabled = () => {
+    return (
+      isSingleValueResponse(this.props.baseDataAlertQueryResponse) || this.props.isLoadingBaseDataAlertQueryResponse
+    )
+  }
+  showWarningMessage = () => (
+    <div style={{ display: 'flex', alignItems: 'center' }}>
+      <Icon className='warning-icon' type='warning-triangle' />
+      <div className='disabled-explanation'>
+        Custom filters are disabled because this alert contains no filterable columns
+      </div>
+    </div>
+  )
   transformTermValueToFilters = (termValue) => {
     if (!termValue?.rows || !termValue?.columns?.[0]?.name) {
       return []
@@ -1790,6 +1812,24 @@ export default class RuleSimple extends React.Component {
       </>
     )
   }
+  renderCustomList = () => {
+    return (
+      <div>
+        <div className='custom-list-container'>
+          <CustomList
+            authentication={this.props.authentication}
+            initialFilters={this.state.initialFilters}
+            baseDataAlertColumns={this.props.baseDataAlertColumns}
+            onCustomFiltersChange={this.props.onCustomFiltersChange}
+            customFilters={this.props.customFilters}
+            storedInitialData={this.state.storedInitialData}
+            tooltipID={this.props.tooltipID}
+          />
+        </div>
+        {this.state.isDisabledCustomList && <div>{this.state.disabledReason}</div>}
+      </div>
+    )
+  }
 
   render = () => {
     if (this.props.conditionStatementOnly) {
@@ -1810,19 +1850,7 @@ export default class RuleSimple extends React.Component {
           </div>
 
           {!this.props.isCompositeAlert && this.renderComparisonSection()}
-          {this.props.isCompositeAlert && (
-            <div>
-              <CustomList
-                authentication={this.props.authentication}
-                initialFilters={this.state.initialFilters}
-                baseDataAlertColumns={this.props.baseDataAlertColumns}
-                onCustomFiltersChange={this.props.onCustomFiltersChange}
-                customFilters={this.props.customFilters}
-                storedInitialData={this.state.storedInitialData}
-                tooltipID={this.props.tooltipID}
-              />
-            </div>
-          )}
+          {this.props.isCompositeAlert && this.renderCustomList()}
         </div>
       </ErrorBoundary>
     )
