@@ -3,7 +3,21 @@
     padding: 5px;
     margin-bottom: 15px;
   }
-
+  .custom-list-container {
+    &.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+  }
+  .warning-icon {
+    margin-left: 10px;
+    color: var(--react-autoql-warning-color);
+  }
+  .disabled-explanation {
+    color: var(--react-autoql-warning-color);
+    padding-left: 6px;
+    font-size: 14px;
+  }
   .data-alert-description-span {
     display: inline-block;
     margin-bottom: 8px;
