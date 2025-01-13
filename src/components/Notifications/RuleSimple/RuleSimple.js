@@ -1815,7 +1815,7 @@ export default class RuleSimple extends React.Component {
   renderCustomList = () => {
     return (
       <div>
-        <div className='custom-list-container'>
+        <div className={`custom-list-container ${this.state.isDisabledCustomList ? 'disabled' : ''}`}>
           <CustomList
             authentication={this.props.authentication}
             initialFilters={this.state.initialFilters}
