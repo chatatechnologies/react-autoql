@@ -414,7 +414,7 @@ export class QueryOutput extends React.Component {
     return this.tableConfig.stringColumnIndices.find((index) => {
       return (
         !isColumnNumberType(this.queryResponse.data.data.columns[index]) &&
-        defaultDateColumn.length > 0 &&
+        defaultDateColumn?.length > 0 &&
         this.queryResponse.data.data.columns[index]?.name === defaultDateColumn
       )
     })
@@ -432,7 +432,7 @@ export class QueryOutput extends React.Component {
     return this.tableConfig.numberColumnIndices.find((index) => {
       return (
         isColumnNumberType(this.queryResponse.data.data.columns[index]) &&
-        defaultAmountColumn.length > 0 &&
+        defaultAmountColumn?.length > 0 &&
         this.queryResponse.data.data.columns[index]?.name === defaultAmountColumn
       )
     })
