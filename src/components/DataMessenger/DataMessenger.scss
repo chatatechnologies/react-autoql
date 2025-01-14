@@ -135,7 +135,7 @@
       margin-right: 10px;
     }
 
-    &>span>span {
+    & > span > span {
       display: flex;
       justify-content: center;
       align-items: center;
@@ -146,6 +146,7 @@
 }
 
 .react-autoql-drawer.disable-selection {
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -351,7 +352,6 @@
 }
 
 @media (min-width: 1281px) {
-
   .react-autoql-drawer.drawer-right .drawer-content-wrapper,
   .react-autoql-drawer.drawer-left .drawer-content-wrapper {
     max-width: calc(100vw - 45px) !important;
