@@ -25,6 +25,13 @@
 }
 
 .react-autoql-data-alert-list-item-section {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  flex-wrap: nowrap;
+  overflow: visible;
+
   @mixin responsive-width($breakpoints) {
     @each $breakpoint, $width in $breakpoints {
       @media (max-width: $breakpoint) {
@@ -35,12 +42,6 @@
   @media (min-width: 950px) {
     width: 350px;
   }
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-start;
-  align-items: center;
-  flex-wrap: nowrap;
-  overflow: visible;
 
   &.react-autoql-data-alert-list-item-section-frequency,
   &.react-autoql-data-alert-list-item-section-next-check {
@@ -318,12 +319,13 @@
 
 .react-autoql-notification-setting-item-header {
   transition: background-color 0.2s ease;
-  &:hover {
-    background-color: var(--react-autoql-mask-color);
-  }
   overflow: auto;
   min-height: 55px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
+
+  &:hover {
+    background-color: var(--react-autoql-mask-color);
+  }
 }

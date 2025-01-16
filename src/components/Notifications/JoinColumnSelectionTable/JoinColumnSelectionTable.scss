@@ -38,6 +38,9 @@
       .header-content {
         overflow-x: auto;
         max-width: 500px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0, 0, 0, 0.2) rgba(0, 0, 0, 0.1);
+
         &::-webkit-scrollbar {
           height: 4px;
         }
@@ -48,8 +51,6 @@
         &::-webkit-scrollbar-track {
           background-color: rgba(0, 0, 0, 0.1);
         }
-        scrollbar-width: thin;
-        scrollbar-color: rgba(0, 0, 0, 0.2) rgba(0, 0, 0, 0.1);
       }
     }
   }
