@@ -25,6 +25,7 @@
   overflow: hidden;
   color: var(--react-autoql-text-color-primary);
   background: var(--react-autoql-background-color-secondary);
+  transition: opacity 0.2s ease;
 
   &.hidden {
     position: absolute;
@@ -55,7 +56,6 @@
     overflow: visible;
   }
 
-  transition: opacity 0.2s ease;
   &.loading {
     opacity: 0;
     transition: none;
