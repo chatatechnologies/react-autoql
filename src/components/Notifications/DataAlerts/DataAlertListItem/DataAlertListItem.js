@@ -61,6 +61,7 @@ export default class DataAlertListItem extends React.Component {
     shouldRenderStateHeaderTitle: PropTypes.bool,
     shouldRenderStatusHeaderTitle: PropTypes.bool,
     shouldDisplaySwitchText: PropTypes.bool,
+    shouldRenderCreateCustomFilteredAlert: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -77,6 +78,7 @@ export default class DataAlertListItem extends React.Component {
     shouldRenderStateHeaderTitle: true,
     shouldRenderStatusHeaderTitle: true,
     shouldDisplaySwitchText: true,
+    shouldRenderCreateCustomFilteredAlert: false,
   }
   componentDidMount() {
     this.mediaQueryList = window.matchMedia('(orientation: landscape)')
@@ -139,13 +141,24 @@ export default class DataAlertListItem extends React.Component {
     e.stopPropagation()
 
     if (this.props.dataAlert.type === CUSTOM_TYPE) {
+      if (this.props.dataAlert?.project?.id === 'composite') {
+        this.openCustomFilteredAlertModal()
+        return
+      }
       this.openEditModal(step)
     }
   }
-
+  onCustomFilteredAlertClick = (e) => {
+    e.stopPropagation()
+    this.openCustomFilteredAlertModal()
+  }
   openEditModal = (step) => {
     const dataAlert = this.getDataAlertObj()
     this.props.openEditModal(dataAlert, step)
+  }
+  openCustomFilteredAlertModal = () => {
+    const dataAlert = this.getDataAlertObj()
+    this.props.openCustomFilteredAlertModal(dataAlert)
   }
 
   onEnableSwitchChange = (checked) => {
@@ -166,7 +179,7 @@ export default class DataAlertListItem extends React.Component {
       })
       .catch((error) => {
         console.error(error)
-        this.props.onErrorCallback(new Error('Something went wrong. Please try again.'))
+        this.props.onErrorCallback(error)
         this.setState({ status: previousStatus })
       })
   }
@@ -344,7 +357,7 @@ export default class DataAlertListItem extends React.Component {
     const isEnabled = this.isEnabled()
     const isDisabled = this.isDisabled()
     const isCustom = dataAlert.type === CUSTOM_TYPE
-
+    const isIDLECustomCompositeAlert = dataAlert.status === 'IDLE' && dataAlert.evaluation_mode === 'COMPOSITE'
     return (
       <div
         className={`react-autoql-notification-setting-item
@@ -422,14 +435,22 @@ export default class DataAlertListItem extends React.Component {
               </div>
             )}
 
-            <div className='data-alert-section-content notification-status'>
+            <div
+              className='data-alert-section-content notification-status'
+              data-tooltip-content={
+                isEnabled
+                  ? 'Active'
+                  : isIDLECustomCompositeAlert
+                  ? 'To disable this alert, please disable its base alert.'
+                  : 'Inactive'
+              }
+              data-tooltip-id={this.props.tooltipID}
+            >
               <Switch
-                disabled={isDisabled}
-                checked={isEnabled}
+                disabled={isDisabled || isIDLECustomCompositeAlert}
+                checked={isEnabled || isIDLECustomCompositeAlert}
                 className='react-autoql-notification-enable-checkbox'
                 onClick={(e) => e.stopPropagation()}
-                data-tooltip-content={isEnabled ? 'Active' : 'Inactive'}
-                data-tooltip-id={this.props.tooltipID}
                 onChange={this.onEnableSwitchChange}
                 onText='Active'
                 offText='Inactive'
@@ -453,13 +474,37 @@ export default class DataAlertListItem extends React.Component {
                 >
                   <Icon type='settings' onClick={this.onEditClick} />
                 </div>
-
                 <div
                   className='react-autoql-notification-action-btn react-autoql-notification-action-btn-delete'
                   data-tooltip-id={this.props.tooltipID}
                   data-tooltip-content='Delete Data Alert'
                 >
                   <Icon type='trash' onClick={this.onDeleteClick} />
+                </div>
+                {this.props.shouldRenderCreateCustomFilteredAlert && (
+                  <div
+                    className='react-autoql-notification-action-btn react-autoql-notification-action-btn-create-custom-filtered-alert'
+                    data-tooltip-id={this.props.tooltipID}
+                    data-tooltip-content='Create Custom Filtered Alert'
+                  >
+                    <Icon type='layers-plus' onClick={this.onCustomFilteredAlertClick} />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          {!isCustom && !isMobile && this.props.shouldRenderCreateCustomFilteredAlert && (
+            <div className='react-autoql-data-alert-list-item-section react-autoql-data-alert-list-item-section-actions'>
+              <div className='data-alert-header-item'>
+                <span>Actions</span>
+              </div>
+              <div className='data-alert-section-content'>
+                <div
+                  className='react-autoql-notification-action-btn react-autoql-notification-action-btn-create-custom-filtered-alert'
+                  data-tooltip-id={this.props.tooltipID}
+                  data-tooltip-content='Create Custom Filtered Alert'
+                >
+                  <Icon type='layers-plus' onClick={this.onCustomFilteredAlertClick} />
                 </div>
               </div>
             </div>

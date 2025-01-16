@@ -21,6 +21,7 @@ import { BiNote } from '@react-icons/all-files/bi/BiNote'
 import { BiAbacus } from '@react-icons/all-files/bi/BiAbacus'
 import { BiEnvelope } from '@react-icons/all-files/bi/BiEnvelope'
 import { BiEnvelopeOpen } from '@react-icons/all-files/bi/BiEnvelopeOpen'
+import { BiLayerPlus } from '@react-icons/all-files/bi/BiLayerPlus'
 import { BiSelectMultiple } from '@react-icons/all-files/bi/BiSelectMultiple'
 import { BsArrowBarUp } from '@react-icons/all-files/bs/BsArrowBarUp'
 import { BsArrowBarDown } from '@react-icons/all-files/bs/BsArrowBarDown'
@@ -214,6 +215,10 @@ export default class Icon extends React.Component {
       }
       case 'layers': {
         icon = <FiLayers />
+        break
+      }
+      case 'layers-plus': {
+        icon = <BiLayerPlus />
         break
       }
       case 'mark-read': {

@@ -388,11 +388,62 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  onTableConfigChange = () => {
+  onTableConfigChange = (initialized = true) => {
+    const tableConfig = this.tableConfig
+    const pivotTableConfig = this.pivotTableConfig
+
+    if (!initialized) {
+      // Find default string column match
+      const defaultDateColumn = this.queryResponse.data.data.default_date_column
+      const stringColumnIndex = this.findDefaultStringColumnIndex(defaultDateColumn)
+      tableConfig.stringColumnIndex = this.getStringColumnIndex(stringColumnIndex)
+
+      // Find default amount column match
+      const defaultAmountColumn = this.queryResponse.data.data.default_amount_column
+      const numberColumnIndex = this.findDefaultNumberColumnIndex(defaultAmountColumn)
+      tableConfig.numberColumnIndex = this.getNumberColumnIndex(numberColumnIndex)
+    }
+
     this.props.onTableConfigChange({
-      tableConfig: this.tableConfig,
-      pivotTableConfig: this.pivotTableConfig,
+      tableConfig,
+      pivotTableConfig,
     })
+  }
+
+  findDefaultStringColumnIndex = (defaultDateColumn) => {
+    return this.tableConfig.stringColumnIndices.find((index) => {
+      return (
+        !isColumnNumberType(this.queryResponse.data.data.columns[index]) &&
+        defaultDateColumn?.length > 0 &&
+        this.queryResponse.data.data.columns[index]?.name === defaultDateColumn
+      )
+    })
+  }
+
+  getStringColumnIndex = (foundIndex) => {
+    return foundIndex
+      ? foundIndex
+      : this.tableConfig.stringColumnIndices.length > 0
+      ? this.tableConfig.stringColumnIndices[0]
+      : 0
+  }
+
+  findDefaultNumberColumnIndex = (defaultAmountColumn) => {
+    return this.tableConfig.numberColumnIndices.find((index) => {
+      return (
+        isColumnNumberType(this.queryResponse.data.data.columns[index]) &&
+        defaultAmountColumn?.length > 0 &&
+        this.queryResponse.data.data.columns[index]?.name === defaultAmountColumn
+      )
+    })
+  }
+
+  getNumberColumnIndex = (foundIndex) => {
+    return foundIndex
+      ? foundIndex
+      : this.tableConfig.numberColumnIndices.length > 0
+      ? this.tableConfig.numberColumnIndices[0]
+      : 0
   }
 
   checkAndUpdateTableConfigs = (displayType) => {
@@ -1619,7 +1670,7 @@ export class QueryOutput extends React.Component {
     }
 
     if (!_isEqual(prevTableConfig, this.tableConfig)) {
-      this.onTableConfigChange()
+      this.onTableConfigChange(this.hasCalledInitialTableConfigChange)
     }
   }
 

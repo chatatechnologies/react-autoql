@@ -79,4 +79,17 @@
       box-shadow: 0 0 1px var(--react-autoql-accent-color);
     }
   }
+  &.react-autoql-switch-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+
+    .react-autoql-toggle-switch {
+      cursor: not-allowed;
+
+      .toggle-switch-slider {
+        cursor: not-allowed;
+        background-color: var(--react-autoql-background-color-switch-input);
+      }
+    }
+  }
 }
