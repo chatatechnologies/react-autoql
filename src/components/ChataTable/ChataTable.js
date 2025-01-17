@@ -63,6 +63,7 @@ export default class ChataTable extends React.Component {
     this.isFiltering = false
     this.isSorting = false
     this.pageSize = props.pageSize ?? 50
+    this.isKeyPressedForRemote = true
 
     this.totalPages = this.getTotalPages(props.response)
     if (isNaN(this.totalPages) || !this.totalPages) {
@@ -118,6 +119,7 @@ export default class ChataTable extends React.Component {
       isLastPage: this.tableParams.page === this.totalPages,
       subscribedData: undefined,
       firstRender: true,
+      isKeyPressedForRemote: true,
     }
   }
 
@@ -442,6 +444,11 @@ export default class ChataTable extends React.Component {
   }
 
   onDataFiltered = (filters, rows) => {
+    const useRemote = this.props.response?.data?.data?.rows?.length >= 50000 || this.isKeyPressedForRemote
+    this.ref.tabulator.options.sortMode = useRemote ? 'remote' : 'local'
+    this.ref.tabulator.options.filterMode = useRemote ? 'remote' : 'local'
+    this.ref.tabulator.options.paginationMode = useRemote ? 'remote' : 'local'
+
     if (this.isFiltering && this.state.tabulatorMounted) {
       this.isFiltering = false
 
@@ -790,7 +797,10 @@ export default class ChataTable extends React.Component {
     }, 50)
   }
 
-  inputKeydownListener = () => {
+  inputKeydownListener = (event) => {
+    this.isKeyPressedForRemote = event.keyCode === 8 || event.keyCode === 46 // 8 = backspace, 46 = delete)
+    this.setState({ isKeyPressedForRemote: this.isKeyPressedForRemote })
+
     if (!this.props.useInfiniteScroll) {
       this.ref?.restoreRedraw()
     }
@@ -863,6 +873,10 @@ export default class ChataTable extends React.Component {
 
     clearBtn.addEventListener('click', (e) => {
       e.stopPropagation()
+      this.ref.tabulator.options.sortMode = 'remote'
+      this.ref.tabulator.options.filterMode = 'remote'
+      this.ref.tabulator.options.paginationMode = 'remote'
+
       this.setHeaderInputValue(inputElement, '')
       if (column.type === 'DATE' && !column.pivot) {
         this.currentDateRangeSelections = {}
