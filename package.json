@@ -105,7 +105,7 @@
     "recordrtc": "5.6.1",
     "sanitize-html": "2.3.2",
     "sql-formatter": "2.3.3",
-    "tabulator-tables": "5.6.1",
+    "tabulator-tables": "6.3.1",
     "uuid": "9.0.0"
   },
   "devDependencies": {
