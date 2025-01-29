@@ -25,7 +25,9 @@ import {
   setColumnVisibility,
   sortDataByColumn,
   filterDataByColumn,
+  getAuthentication,
   getAutoQLConfig,
+  runQueryOnly,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -152,6 +154,7 @@ export default class ChataTable extends React.Component {
     enableContextMenu: PropTypes.bool,
     initialTableParams: PropTypes.shape({ filter: PropTypes.array, sort: PropTypes.array, page: PropTypes.number }),
     updateColumnsAndData: PropTypes.func,
+    onUpdateFilterResponse: PropTypes.func,
   }
 
   static defaultProps = {
@@ -180,6 +183,7 @@ export default class ChataTable extends React.Component {
     updateColumns: () => {},
     onCustomColumnChange: () => {},
     updateColumnsAndData: () => {},
+    onUpdateFilterResponse: () => {},
   }
 
   componentDidMount = () => {
@@ -406,6 +410,33 @@ export default class ChataTable extends React.Component {
     }
   }
 
+  getRTForRemoteFilterAndSort = () => {
+    const headerFilters = this.ref?.tabulator?.getHeaderFilters()
+    this.tableParams.filter = _cloneDeep(headerFilters)
+
+    const headerSorters = this.ref?.tabulator?.getSorters()
+    this.tableParams.sort = headerSorters
+
+    const tableParamsFormatted = formatTableParams(this.tableParams, this.props.columns)
+
+    try {
+      runQueryOnly({
+        query: this.props.queryText,
+        ...getAuthentication(this.props.authentication),
+        ...getAutoQLConfig(this.props.autoQLConfig),
+        source: 'data_messenger',
+        debug: 'reverse_only',
+        allowSuggestions: false,
+        tableFilters: tableParamsFormatted?.filters,
+        orders: tableParamsFormatted?.sorters,
+      }).then((response) => {
+        this.props.onUpdateFilterResponse(response)
+      })
+    } catch (error) {
+      console.log('error', error)
+    }
+  }
+
   onDataSorting = (sorters) => {
     if (this._isMounted) {
       const formattedSorters = sorters.map((sorter) => {
@@ -462,6 +493,7 @@ export default class ChataTable extends React.Component {
         }
       }, 0)
     }
+    this.getRTForRemoteFilterAndSort()
     this.setFilterBadgeClasses()
   }
 
