@@ -28,6 +28,7 @@ import {
   getAuthentication,
   getAutoQLConfig,
   runQueryOnly,
+  TranslationTypes,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -425,7 +426,7 @@ export default class ChataTable extends React.Component {
         ...getAuthentication(this.props.authentication),
         ...getAutoQLConfig(this.props.autoQLConfig),
         source: 'data_messenger',
-        debug: 'reverse_only',
+        debug: TranslationTypes.REVERSE_ONLY,
         allowSuggestions: false,
         tableFilters: tableParamsFormatted?.filters,
         orders: tableParamsFormatted?.sorters,
