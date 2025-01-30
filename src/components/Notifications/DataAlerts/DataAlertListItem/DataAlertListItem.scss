@@ -151,7 +151,7 @@
       left: 0;
       right: 0;
       height: 40px;
-      background-color: rgb(from var(--react-autoql-background-color-primary) r g b / 0.4);
+      background-color: rgb(from var(--react-autoql-background-color-primary) rgb / 0.4);
     }
   }
   &:not(.react-autoql-dataalert-show-header) .data-alert-header-item {
@@ -324,7 +324,6 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-
   &:hover {
     background-color: var(--react-autoql-mask-color);
   }

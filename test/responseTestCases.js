@@ -111,9 +111,7 @@ export default [
       full_suggestion: [
         {
           start: 10,
-          suggestion_list: [
-            { text: 'Jane Johnson', value_label: 'customer name' },
-          ],
+          suggestion_list: [{ text: 'Jane Johnson', value_label: 'customer name' }],
           end: 14,
         },
       ],
@@ -201,7 +199,7 @@ export default [
         chart_images: null,
         fe_req: {
           test: false,
-          debug: false,
+          debug: 'exclude',
           chart_images: 'exclude',
           text: 'all online sales',
           disambiguation: [],
@@ -600,7 +598,7 @@ export default [
           orders: [],
           translation: 'exclude',
           test: false,
-          debug: false,
+          debug: 'exclude',
           disambiguation: [],
           text: 'Total online sales by region by year',
           session_filter_locks: [],
@@ -738,8 +736,7 @@ export default [
         ],
         query_id: 'q_zcOWrngkQiadAnmNGAYUKw',
         row_limit: 50,
-        interpretation:
-          'total online sales by Customer Name by Customer Region',
+        interpretation: 'total online sales by Customer Name by Customer Region',
         fe_req: {
           session_filter_locks: [],
           disambiguation: [],
@@ -750,7 +747,7 @@ export default [
           test: false,
           page_size: 50,
           orders: [],
-          debug: false,
+          debug: 'exclude',
           translation: 'exclude',
         },
         text: 'total online sales by region by customer',
