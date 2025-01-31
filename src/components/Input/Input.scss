@@ -135,7 +135,15 @@
         }
       }
     }
-
+    &.react-autoql-input-hidden.react-autoql-input-select-left {
+      .react-autoql-text-input-selector .react-autoql-select {
+        border-radius: 4px 4px 4px 4px;
+        border-right: 1px solid var(--react-autoql-border-color) !important;
+      }
+      .react-autoql-text-input-selector .react-autoql-select:hover {
+        border-right-color: unset !important;
+      }
+    }
     .react-autoql-text-input-selector {
       flex: 0;
       margin: 0;
