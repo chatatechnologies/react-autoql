@@ -1,6 +1,6 @@
 .react-autoql-table-container {
-  scrollbar-color: var(--react-autoql-background-color-tertiary) var(--react-autoql-mask-color);
   -webkit-transform: translate3d(0, 0, 0);
+  scrollbar-color: var(--react-autoql-scrollbar-thumb-color) transparent;
   display: flex;
   flex-direction: column;
   width: 100% !important;
