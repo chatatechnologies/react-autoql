@@ -203,7 +203,7 @@
 
       &:not(textarea) {
         padding: 0 10px;
-        height: 38px;
+        height: 38px !important;
       }
 
       &.with-select {

@@ -348,7 +348,6 @@ export default class RuleSimple extends React.Component {
       fetchFilters(getAuthentication(this.props.authentication))
         .then((response) => {
           const initialFilters = response?.data?.data?.data || []
-          this.props.onChange(initialFilters)
           if (this._isMounted) {
             this.setState({ initialFilters, isFetchingFilters: false })
           }
@@ -722,6 +721,11 @@ export default class RuleSimple extends React.Component {
         ...(this.state.secondTermType === 'selfComparisons'
           ? {
               self_compare_columns: [firstQuerySelectedNumberColumnName, this.state.columnSelectValue],
+              filters: tableFilters,
+              additional_selects: additionalSelects,
+              display_overrides: displayOverrides,
+              user_selection: this.props.initialData?.[0]?.user_selection ?? userSelection,
+              session_filter_locks: lockedFilters,
             }
           : {
               user_selection: this.props.initialData?.[0]?.user_selection ?? userSelection,
