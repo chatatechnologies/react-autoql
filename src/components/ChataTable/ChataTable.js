@@ -41,7 +41,7 @@ import { DateRangePicker } from '../DateRangePicker'
 import { DataLimitWarning } from '../DataLimitWarning'
 import { columnOptionsList } from './tabulatorConstants'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { DATASET_TOO_LARGE } from '../../js/Constants'
+import { DATASET_TOO_LARGE, TABULATOR_LOCAL_ROW_LIMIT } from '../../js/Constants'
 import './ChataTable.scss'
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
 import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
@@ -66,7 +66,7 @@ export default class ChataTable extends React.Component {
     this.isFiltering = false
     this.isSorting = false
     this.pageSize = props.pageSize ?? 50
-    this.useRemote = this.props.response?.data?.data?.count_rows > 50000 ? 'remote' : 'local'
+    this.useRemote = this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT ? 'remote' : 'local'
 
     this.totalPages = this.getTotalPages(props.response)
     if (isNaN(this.totalPages) || !this.totalPages) {
@@ -494,7 +494,9 @@ export default class ChataTable extends React.Component {
         }
       }, 0)
     }
-    this.getRTForRemoteFilterAndSort()
+    if (!this.props.pivot) {
+      this.getRTForRemoteFilterAndSort()
+    }
     this.setFilterBadgeClasses()
   }
 

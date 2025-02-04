@@ -62,7 +62,7 @@
   },
   "dependencies": {
     "@react-icons/all-files": "4.1.0",
-    "autoql-fe-utils": "1.6.13",
+    "autoql-fe-utils": "1.6.16",
     "axios": "1.4.0",
     "caniuse-lite": "1.0.30001692",
     "classnames": "2.5.1",
@@ -105,7 +105,7 @@
     "recordrtc": "5.6.1",
     "sanitize-html": "2.3.2",
     "sql-formatter": "2.3.3",
-    "tabulator-tables": "6.3.0",
+    "tabulator-tables": "5.6.1",
     "uuid": "9.0.0"
   },
   "devDependencies": {
