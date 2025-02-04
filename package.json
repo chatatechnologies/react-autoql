@@ -162,7 +162,7 @@
   },
   "overrides": {
     "simple-update-notifier": "2.0.0",
-    "cheerio": "1.0.0-rc.10"
+    "cheerio": "1.0.0-rc.12"
   },
   "engines": {
     "node": ">=14.17.3",
