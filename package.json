@@ -160,6 +160,9 @@
     "react": ">=16.8.1",
     "react-dom": ">=16.8.1"
   },
+  "resolutions": {
+    "cheerio": "1.0.0-rc.10"
+  },
   "overrides": {
     "simple-update-notifier": "2.0.0"
   },
