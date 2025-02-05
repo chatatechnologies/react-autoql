@@ -299,7 +299,8 @@ class DataAlertModal extends React.Component {
 
   onDataAlertCreateOrEditSuccess = (dataAlertResponse) => {
     this.props.onSave(dataAlertResponse)
-    this.props.onSuccessAlert('Data Alert updated!')
+    const message = dataAlertResponse?.status === 201 ? 'Data Alert created!' : 'Data Alert updated!'
+    this.props.onSuccessAlert(message)
 
     this.setState({
       isSavingDataAlert: false,

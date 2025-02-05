@@ -25,6 +25,13 @@
 }
 
 .react-autoql-data-alert-list-item-section {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  flex-wrap: nowrap;
+  overflow: visible;
+
   @mixin responsive-width($breakpoints) {
     @each $breakpoint, $width in $breakpoints {
       @media (max-width: $breakpoint) {
@@ -35,12 +42,6 @@
   @media (min-width: 950px) {
     width: 350px;
   }
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-start;
-  align-items: center;
-  flex-wrap: nowrap;
-  overflow: visible;
 
   &.react-autoql-data-alert-list-item-section-frequency,
   &.react-autoql-data-alert-list-item-section-next-check {
@@ -150,7 +151,7 @@
       left: 0;
       right: 0;
       height: 40px;
-      background-color: rgb(from var(--react-autoql-background-color-primary) r g b / 0.4);
+      background-color: rgb(from var(--react-autoql-background-color-primary) rgb / 0.4);
     }
   }
   &:not(.react-autoql-dataalert-show-header) .data-alert-header-item {
@@ -318,12 +319,12 @@
 
 .react-autoql-notification-setting-item-header {
   transition: background-color 0.2s ease;
-  &:hover {
-    background-color: var(--react-autoql-mask-color);
-  }
   overflow: auto;
   min-height: 55px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  &:hover {
+    background-color: var(--react-autoql-mask-color);
+  }
 }

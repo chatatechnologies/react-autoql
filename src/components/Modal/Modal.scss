@@ -161,14 +161,14 @@
   padding: 8px 10px;
 }
 .react-autoql-modal-body {
+  display: flex;
+  flex-direction: column;
+  padding: 20px 30px;
+  flex: 1;
+
   h3 {
     color: var(--react-autoql-text-color-primary);
   }
-  display: flex;
-  flex-direction: column;
-
-  padding: 20px 30px;
-  flex: 1;
 }
 .react-autoql-modal-close-btn {
   flex: 0;

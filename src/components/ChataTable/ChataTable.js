@@ -25,7 +25,10 @@ import {
   setColumnVisibility,
   sortDataByColumn,
   filterDataByColumn,
+  getAuthentication,
   getAutoQLConfig,
+  runQueryOnly,
+  TranslationTypes,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -38,7 +41,7 @@ import { DateRangePicker } from '../DateRangePicker'
 import { DataLimitWarning } from '../DataLimitWarning'
 import { columnOptionsList } from './tabulatorConstants'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { DATASET_TOO_LARGE } from '../../js/Constants'
+import { DATASET_TOO_LARGE, TABULATOR_LOCAL_ROW_LIMIT } from '../../js/Constants'
 import './ChataTable.scss'
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
 import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
@@ -63,6 +66,7 @@ export default class ChataTable extends React.Component {
     this.isFiltering = false
     this.isSorting = false
     this.pageSize = props.pageSize ?? 50
+    this.useRemote = this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT ? 'remote' : 'local'
 
     this.totalPages = this.getTotalPages(props.response)
     if (isNaN(this.totalPages) || !this.totalPages) {
@@ -76,7 +80,7 @@ export default class ChataTable extends React.Component {
     }
 
     this.tableOptions = {
-      selectableCheck: () => false,
+      selectableRowsCheck: () => false,
       movableColumns: true,
       initialSort: !props.useInfiniteScroll ? this.tableParams?.sort : undefined,
       initialFilter: !props.useInfiniteScroll ? this.tableParams?.filter : undefined,
@@ -95,9 +99,9 @@ export default class ChataTable extends React.Component {
     }
 
     if (props.response?.data?.data?.rows?.length) {
-      this.tableOptions.sortMode = 'remote' // v4: ajaxSorting = true
-      this.tableOptions.filterMode = 'remote' // v4: ajaxFiltering = true
-      this.tableOptions.paginationMode = 'remote'
+      this.tableOptions.sortMode = this.useRemote // v4: ajaxSorting = true
+      this.tableOptions.filterMode = this.useRemote // v4: ajaxFiltering = true
+      this.tableOptions.paginationMode = this.useRemote
       this.tableOptions.progressiveLoad = 'scroll' // v4: ajaxProgressiveLoad
       this.tableOptions.ajaxURL = 'https://required-placeholder-url.com'
       this.tableOptions.paginationSize = this.pageSize
@@ -118,6 +122,7 @@ export default class ChataTable extends React.Component {
       isLastPage: this.tableParams.page === this.totalPages,
       subscribedData: undefined,
       firstRender: true,
+      useRemote: 'remote',
     }
   }
 
@@ -150,6 +155,7 @@ export default class ChataTable extends React.Component {
     enableContextMenu: PropTypes.bool,
     initialTableParams: PropTypes.shape({ filter: PropTypes.array, sort: PropTypes.array, page: PropTypes.number }),
     updateColumnsAndData: PropTypes.func,
+    onUpdateFilterResponse: PropTypes.func,
   }
 
   static defaultProps = {
@@ -178,6 +184,7 @@ export default class ChataTable extends React.Component {
     updateColumns: () => {},
     onCustomColumnChange: () => {},
     updateColumnsAndData: () => {},
+    onUpdateFilterResponse: () => {},
   }
 
   componentDidMount = () => {
@@ -371,9 +378,9 @@ export default class ChataTable extends React.Component {
       return
     }
 
-    this.ref.tabulator.options.sortMode = 'remote'
-    this.ref.tabulator.options.filterMode = 'remote'
-    this.ref.tabulator.options.paginationMode = 'remote'
+    this.ref.tabulator.options.sortMode = this.useRemote
+    this.ref.tabulator.options.filterMode = this.useRemote
+    this.ref.tabulator.options.paginationMode = this.useRemote
   }
 
   updateData = (data, useInfiniteScroll) => {
@@ -401,6 +408,33 @@ export default class ChataTable extends React.Component {
       this.ref.tabulator.options['layout'] = 'fitData'
       this.ref.tabulator.setColumns(newColumns)
       this.ref.tabulator.setData(newData)
+    }
+  }
+
+  getRTForRemoteFilterAndSort = () => {
+    const headerFilters = this.ref?.tabulator?.getHeaderFilters()
+    this.tableParams.filter = _cloneDeep(headerFilters)
+
+    const headerSorters = this.ref?.tabulator?.getSorters()
+    this.tableParams.sort = headerSorters
+
+    const tableParamsFormatted = formatTableParams(this.tableParams, this.props.columns)
+
+    try {
+      runQueryOnly({
+        query: this.props.queryText,
+        ...getAuthentication(this.props.authentication),
+        ...getAutoQLConfig(this.props.autoQLConfig),
+        source: 'data_messenger',
+        debug: TranslationTypes.REVERSE_ONLY,
+        allowSuggestions: false,
+        tableFilters: tableParamsFormatted?.filters,
+        orders: tableParamsFormatted?.sorters,
+      }).then((response) => {
+        this.props.onUpdateFilterResponse(response)
+      })
+    } catch (error) {
+      console.log('error', error)
     }
   }
 
@@ -459,6 +493,9 @@ export default class ChataTable extends React.Component {
           this.setState({ loading: false })
         }
       }, 0)
+    }
+    if (!this.props.pivot) {
+      this.getRTForRemoteFilterAndSort()
     }
     this.setFilterBadgeClasses()
   }
@@ -790,7 +827,7 @@ export default class ChataTable extends React.Component {
     }, 50)
   }
 
-  inputKeydownListener = () => {
+  inputKeydownListener = (event) => {
     if (!this.props.useInfiniteScroll) {
       this.ref?.restoreRedraw()
     }
