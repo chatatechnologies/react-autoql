@@ -37,7 +37,7 @@ export default class Input extends React.Component {
     showArrow: PropTypes.bool,
     showSpinWheel: PropTypes.bool,
     disabled: PropTypes.bool,
-    errormessage: PropTypes.string
+    errormessage: PropTypes.string,
   }
 
   static defaultProps = {
@@ -292,9 +292,11 @@ export default class Input extends React.Component {
                 {icon && (
                   <Icon className={`react-autoql-input-icon ${this.state.focused ? ' focus' : ''}`} type={icon} />
                 )}
-                {this.props.errormessage &&
-                  <span id="input-error" className="error-message">{this.props.errormessage}</span>
-                }
+                {this.props.errormessage && (
+                  <span id='input-error' className='error-message'>
+                    {this.props.errormessage}
+                  </span>
+                )}
                 {this.props.datePicker ? this.renderDateRangePickerPopover() : null}
               </div>
             )}
