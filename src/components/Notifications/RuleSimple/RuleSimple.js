@@ -48,6 +48,7 @@ import { SelectableTable } from '../../SelectableTable/'
 import { authenticationType, dataFormattingType } from '../../../props/types'
 import { CustomList } from '../CustomList'
 import './RuleSimple.scss'
+const SELF_COMPARISONS_TYPE = 'selfComparisons'
 
 const CONDITION_TYPE_LABELS = {
   EXISTS: (
@@ -196,7 +197,7 @@ export default class RuleSimple extends React.Component {
         initialData[0]?.self_compare_columns?.length !== 0 &&
         initialData[0]?.self_compare_columns?.length !== undefined
       ) {
-        state.secondTermType = 'selfComparisons'
+        state.secondTermType = SELF_COMPARISONS_TYPE
       }
       state.secondQueryValidated = true
     }
@@ -590,7 +591,10 @@ export default class RuleSimple extends React.Component {
     )
   }
   getCompareColumnIndex = (response, storedInitialData, index) => {
-    const selectedNumberColumnName = storedInitialData?.[index]?.compare_column ?? ''
+    let selectedNumberColumnName = storedInitialData?.[index]?.compare_column ?? ''
+    if (this.state.secondTermType === SELF_COMPARISONS_TYPE) {
+      selectedNumberColumnName = storedInitialData?.[index]?.self_compare_columns[0]
+    }
     let compareColumnIndex
 
     if (selectedNumberColumnName) {
@@ -718,7 +722,7 @@ export default class RuleSimple extends React.Component {
         condition: this.state.selectedOperator,
         term_type: QUERY_TERM_TYPE,
         term_value: this.state.inputValue,
-        ...(this.state.secondTermType === 'selfComparisons'
+        ...(this.state.secondTermType === SELF_COMPARISONS_TYPE
           ? {
               self_compare_columns: [firstQuerySelectedNumberColumnName, this.state.columnSelectValue],
               filters: tableFilters,
@@ -760,7 +764,7 @@ export default class RuleSimple extends React.Component {
         term_value: secondTermValue,
       }
 
-      if (this.state.secondTermType === QUERY_TERM_TYPE || this.state.secondTermType === 'selfComparisons') {
+      if (this.state.secondTermType === QUERY_TERM_TYPE || this.state.secondTermType === SELF_COMPARISONS_TYPE) {
         let operation = this.state.secondTermMultiplicationFactorType
         let value = this.state.secondTermMultiplicationFactorValue
 
@@ -773,7 +777,7 @@ export default class RuleSimple extends React.Component {
               value = `${100 - numberValue}%`
             }
 
-            if (this.state.secondTermType === 'selfComparisons') {
+            if (this.state.secondTermType === SELF_COMPARISONS_TYPE) {
               expression[0].result_adjustment = {
                 value,
                 operation: 'multiply',
@@ -795,7 +799,7 @@ export default class RuleSimple extends React.Component {
         secondTerm.user_selection = this.props.initialData?.[1]?.user_selection ?? userSelection
       }
       secondTerm.compare_column = secondQuerySelectedNumberColumnName
-      if (this.state.secondTermType !== 'selfComparisons') {
+      if (this.state.secondTermType !== SELF_COMPARISONS_TYPE) {
         expression.push(secondTerm)
       }
     }
@@ -839,7 +843,7 @@ export default class RuleSimple extends React.Component {
     if (
       !this.allowOperators() ||
       this.state.selectedOperator === EXISTS_TYPE ||
-      this.state.secondTermType === 'selfComparisons'
+      this.state.secondTermType === SELF_COMPARISONS_TYPE
     ) {
       return true
     }
@@ -1517,7 +1521,7 @@ export default class RuleSimple extends React.Component {
   shouldRenderSecondFieldSelectionGrid = () => {
     return (
       this.state.secondTermType !== NUMBER_TERM_TYPE &&
-      this.state.secondTermType !== 'selfComparisons' &&
+      this.state.secondTermType !== SELF_COMPARISONS_TYPE &&
       this.state.secondQueryValidated
     )
   }
@@ -1659,11 +1663,11 @@ export default class RuleSimple extends React.Component {
         type={
           this.state.secondTermType === NUMBER_TERM_TYPE
             ? 'text'
-            : this.state.secondTermType === 'selfComparisons'
+            : this.state.secondTermType === SELF_COMPARISONS_TYPE
             ? 'hidden'
             : undefined
         }
-        displayColumnSelector={this.state.secondTermType === 'selfComparisons'}
+        displayColumnSelector={this.state.secondTermType === SELF_COMPARISONS_TYPE}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             this.props.onLastInputEnterPress()
@@ -1695,7 +1699,7 @@ export default class RuleSimple extends React.Component {
             ),
           },
           {
-            value: 'selfComparisons',
+            value: SELF_COMPARISONS_TYPE,
             label: (
               <span>
                 this column of current <strong>query:</strong>
@@ -1715,7 +1719,7 @@ export default class RuleSimple extends React.Component {
   shouldRenderMultiplicationFactorSection = () => {
     return (
       this.state.secondTermType === QUERY_TERM_TYPE ||
-      (this.state.secondTermType === 'selfComparisons' &&
+      (this.state.secondTermType === SELF_COMPARISONS_TYPE &&
         this.state.selectedOperator != 'EQUAL_TO' &&
         this.state.selectedOperator != 'NOT_EQUAL_TO')
     )
@@ -1824,7 +1828,7 @@ export default class RuleSimple extends React.Component {
   }
 
   allowOperators = () => {
-    return this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE, 'selfComparisons')
+    return this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE, SELF_COMPARISONS_TYPE)
   }
   renderNotificationHeader = () => {
     const options = Object.keys(DATA_ALERT_CONDITION_TYPES).map((type) => {
