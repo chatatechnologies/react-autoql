@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { DateRange } from 'react-date-range'
 import { PrecisionTypes, getThemeValue } from 'autoql-fe-utils'
+import dayjs from 'dayjs'
 
 import MonthRange from './MonthRangePicker'
 import YearRange from './YearRangePicker'
@@ -18,8 +19,16 @@ export default class DateRangePicker extends React.Component {
 
     this.state = {
       selectedRange: {
-        startDate: props.initialRange?.startDate ?? props.validRange?.startDate ?? new Date(),
-        endDate: props.initialRange?.endDate ?? props.validRange?.endDate ?? new Date(),
+        startDate: dayjs(props.initialRange?.startDate).isValid()
+          ? props.initialRange?.startDate
+          : dayjs(props.validRange?.startDate).isValid()
+          ? props.validRange?.startDate
+          : new Date(),
+        endDate: dayjs(props.initialRange?.endtDate).isValid()
+          ? props.initialRange?.endtDate
+          : dayjs(props.validRange?.endtDate).isValid()
+          ? props.validRange?.endtDate
+          : new Date(),
         key: 'selection',
       },
     }
@@ -72,8 +81,8 @@ export default class DateRangePicker extends React.Component {
             ref={(r) => (this.datePicker = r)}
             ranges={[this.state.selectedRange]}
             onChange={this.handleSelect}
-            minDate={this.props.validRange?.startDate}
-            maxDate={this.props.validRange?.endDate}
+            minDate={dayjs(this.props.validRange?.startDate).isValid() ? this.props.validRange?.startDate : undefined}
+            maxDate={dayjs(this.props.validRange?.endDate).isValid() ? this.props.validRange?.endDate : undefined}
             dragSelectionEnabled={false}
             rangeColors={[this.accentColor]}
             showMonthAndYearPickers={true}

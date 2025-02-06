@@ -1780,8 +1780,8 @@ export class QueryOutput extends React.Component {
           }
 
           // No logical operators detected, just compare numbers
-          const number = parseFloat(rowValue?.replace(/[^0-9.]/g, ''))
-          const filterNumber = parseFloat(headerValue?.replace(/[^0-9.]/g, ''))
+          const number = parseFloat(rowValue?.toString().replace(/[^0-9.]/g, ''))
+          const filterNumber = parseFloat(headerValue?.toString().replace(/[^0-9.]/g, ''))
           return !isNaN(number) && number === filterNumber
         } catch (error) {
           console.error(error)
