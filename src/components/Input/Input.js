@@ -33,6 +33,7 @@ export default class Input extends React.Component {
     label: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
     fullWidth: PropTypes.bool,
     datePicker: PropTypes.bool,
+    displayColumnSelector: PropTypes.bool,
     focusOnMount: PropTypes.bool,
     showArrow: PropTypes.bool,
     showSpinWheel: PropTypes.bool,
@@ -48,6 +49,7 @@ export default class Input extends React.Component {
     label: '',
     selectLocation: 'left',
     fullWidth: false,
+    displayColumnSelector: false,
     datePicker: false,
     focusOnMount: false,
     showArrow: undefined,
@@ -96,6 +98,10 @@ export default class Input extends React.Component {
 
   onSelectChange = (value) => {
     this.props.onSelectChange(value)
+    this.focus()
+  }
+  onColumnSelectValueChange = (value) => {
+    this.props.onColumnSelectValueChange(value)
     this.focus()
   }
 
@@ -172,6 +178,17 @@ export default class Input extends React.Component {
         options={this.props.selectOptions}
         value={this.props.selectValue}
         onChange={this.onSelectChange}
+      />
+    )
+  }
+  renderColumnSelectDropdown = () => {
+    return (
+      <Select
+        showArrow={this.props.showArrow}
+        className='react-autoql-text-input-selector'
+        options={this.props.columnSelectOptions}
+        value={this.props.columnSelectValue}
+        onChange={this.onColumnSelectValueChange}
       />
     )
   }
@@ -261,7 +278,7 @@ export default class Input extends React.Component {
             ${this.state.focused ? 'focus' : ''}
             ${hasSelect ? 'with-select' : ''}
             ${size === 'small' ? 'react-autoql-input-small' : 'react-autoql-input-large'}
-            ${type === 'number' ? 'react-autoql-input-number' : ''}
+            ${type === 'text' ? 'react-autoql-input-number' : 'hidden' ? 'react-autoql-input-hidden' : ''}
             ${selectLocation === 'left' ? 'react-autoql-input-select-left' : 'react-autoql-input-select-right'}`}
             data-test='react-autoql-input'
           >
@@ -298,6 +315,7 @@ export default class Input extends React.Component {
                   </span>
                 )}
                 {this.props.datePicker ? this.renderDateRangePickerPopover() : null}
+                {this.props.displayColumnSelector ? this.renderColumnSelectDropdown() : null}
               </div>
             )}
             {type === 'number' && this.props.showSpinWheel && this.renderSpinWheel()}
