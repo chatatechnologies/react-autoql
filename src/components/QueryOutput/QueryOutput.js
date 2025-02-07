@@ -1051,7 +1051,7 @@ export class QueryOutput extends React.Component {
     if (formattedValue === null) {
       formattedValue = 'NULL'
       operator = 'is'
-    } else if (column.type === 'DATE') {
+    } else if (column?.type === 'DATE') {
       const isoDate = getDayJSObj({ value, column, config: this.props.dataFormatting })
       const precision = getPrecisionForDayJS(column.precision)
       const isoDateStart = isoDate.startOf(precision).toISOString()

@@ -89,7 +89,7 @@ export default class SelectableTable extends React.Component {
       <div
         className='selectable-table-cell'
         style={{
-          textAlign: column.type === 'DOLLAR_AMT' ? 'right' : 'center',
+          textAlign: column?.type === 'DOLLAR_AMT' ? 'right' : 'center',
         }}
       >
         {formatElement({
@@ -176,8 +176,8 @@ export default class SelectableTable extends React.Component {
     }
 
     const name = column.display_name
-    const type = COLUMN_TYPES[column.type]?.description
-    const icon = COLUMN_TYPES[column.type]?.icon
+    const type = COLUMN_TYPES[column?.type]?.description
+    const icon = COLUMN_TYPES[column?.type]?.icon
 
     return (
       <div>

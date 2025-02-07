@@ -322,13 +322,13 @@ export default class ChataTable extends React.Component {
           return
         }
 
-        if (column.type === ColumnTypes.QUANTITY || column.type === ColumnTypes.DOLLAR_AMT) {
+        if (column?.type === ColumnTypes.QUANTITY || column?.type === ColumnTypes.DOLLAR_AMT) {
           const columnData = rows.map((r) => r[columnIndex])
           stats[columnIndex] = {
             avg: formatElement({ element: mean(columnData), column, config: props.dataFormatting }),
             sum: formatElement({ element: sum(columnData), column, config: props.dataFormatting }),
           }
-        } else if (column.type === ColumnTypes.DATE) {
+        } else if (column?.type === ColumnTypes.DATE) {
           const dates = rows.map((r) => r[columnIndex]).filter((date) => !!date)
           const columnData = dates.map((date) => getDayJSObj({ value: date, column }))?.filter((r) => r?.isValid?.())
 
@@ -901,7 +901,7 @@ export default class ChataTable extends React.Component {
     clearBtn.addEventListener('click', (e) => {
       e.stopPropagation()
       this.setHeaderInputValue(inputElement, '')
-      if (column.type === 'DATE' && !column.pivot) {
+      if (column?.type === 'DATE' && !column.pivot) {
         this.currentDateRangeSelections = {}
         this.debounceSetState({
           datePickerColumn: undefined,
@@ -1443,8 +1443,8 @@ export default class ChataTable extends React.Component {
 
       const name = column.display_name
       const altName = column.title
-      const type = COLUMN_TYPES[column.type]?.description
-      const icon = COLUMN_TYPES[column.type]?.icon
+      const type = COLUMN_TYPES[column?.type]?.description
+      const icon = COLUMN_TYPES[column?.type]?.icon
 
       const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
       const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(MAX_DATA_PAGE_SIZE)
@@ -1473,9 +1473,9 @@ export default class ChataTable extends React.Component {
               </span>
             </div>
           )}
-          {(column.type === ColumnTypes.QUANTITY ||
-            column.type === ColumnTypes.DOLLAR_AMT ||
-            column.type === ColumnTypes.DATE) &&
+          {(column?.type === ColumnTypes.QUANTITY ||
+            column?.type === ColumnTypes.DOLLAR_AMT ||
+            column?.type === ColumnTypes.DATE) &&
             stats &&
             (isDataLimited(this.props.response) ? (
               <div className='selectable-table-tooltip-section'>
@@ -1485,7 +1485,7 @@ export default class ChataTable extends React.Component {
               </div>
             ) : (
               <>
-                {(column.type === ColumnTypes.QUANTITY || column.type === ColumnTypes.DOLLAR_AMT) && (
+                {(column?.type === ColumnTypes.QUANTITY || column?.type === ColumnTypes.DOLLAR_AMT) && (
                   <div className='selectable-table-tooltip-section'>
                     <span>
                       <strong>Total: </strong>
@@ -1493,7 +1493,7 @@ export default class ChataTable extends React.Component {
                     </span>
                   </div>
                 )}
-                {(column.type === ColumnTypes.QUANTITY || column.type === ColumnTypes.DOLLAR_AMT) && (
+                {(column?.type === ColumnTypes.QUANTITY || column?.type === ColumnTypes.DOLLAR_AMT) && (
                   <div className='selectable-table-tooltip-section'>
                     <span>
                       <strong>Average: </strong>
@@ -1501,7 +1501,7 @@ export default class ChataTable extends React.Component {
                     </span>
                   </div>
                 )}
-                {column.type === ColumnTypes.DATE && stats?.min !== null && (
+                {column?.type === ColumnTypes.DATE && stats?.min !== null && (
                   <div className='selectable-table-tooltip-section'>
                     <span>
                       <strong>Earliest: </strong>
@@ -1509,7 +1509,7 @@ export default class ChataTable extends React.Component {
                     </span>
                   </div>
                 )}
-                {column.type === ColumnTypes.DATE && stats?.max !== null && (
+                {column?.type === ColumnTypes.DATE && stats?.max !== null && (
                   <div className='selectable-table-tooltip-section'>
                     <span>
                       <strong>Latest: </strong>
