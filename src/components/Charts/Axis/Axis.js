@@ -103,7 +103,7 @@ export default class Axis extends Component {
             axis: this.props.scale.axis,
             type: this.props.scale.type,
             column: isStringColumn
-              ? { name: this.props.scale.column.name, type: this.props.scale.column.type }
+              ? { name: this.props.scale.column.name, type: this.props.scale.column?.type }
               : this.props.scale.fields.map((field) => ({
                   name: field.name,
                   aggType: field.hasOwnProperty('aggType') ? field.aggType : undefined,
