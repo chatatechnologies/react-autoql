@@ -391,8 +391,8 @@ export class QueryOutput extends React.Component {
   }
 
   onTableConfigChange = (initialized = true) => {
-    const tableConfig = this.tableConfig
-    const pivotTableConfig = this.pivotTableConfig
+    const tableConfig = _cloneDeep(this.tableConfig)
+    const pivotTableConfig = _cloneDeep(this.pivotTableConfig)
 
     if (!initialized) {
       // Find default string column match
@@ -407,37 +407,39 @@ export class QueryOutput extends React.Component {
     }
 
     this.props.onTableConfigChange({
-      tableConfig,
-      pivotTableConfig,
+      tableConfig: tableConfig,
+      pivotTableConfig: pivotTableConfig,
     })
   }
 
   findDefaultStringColumnIndex = (defaultDateColumn) => {
-    return this.tableConfig.stringColumnIndices.find((index) => {
+    let strColIdx = this.tableConfig.stringColumnIndices.find((index) => {
       return (
         !isColumnNumberType(this.queryResponse.data.data.columns[index]) &&
         defaultDateColumn?.length > 0 &&
         this.queryResponse.data.data.columns[index]?.name === defaultDateColumn
       )
     })
+    return strColIdx > -1 ? strColIdx : 0
   }
 
   getStringColumnIndex = (foundIndex) => {
     return foundIndex
       ? foundIndex
-      : this.tableConfig.stringColumnIndices.length > 0
-      ? this.tableConfig.stringColumnIndices[0]
+      : this.tableConfig?.stringColumnIndices?.length > 0
+      ? this.tableConfig?.stringColumnIndices[0]
       : 0
   }
 
   findDefaultNumberColumnIndex = (defaultAmountColumn) => {
-    return this.tableConfig.numberColumnIndices.find((index) => {
+    let numColIdx = this.tableConfig.numberColumnIndices.find((index) => {
       return (
         isColumnNumberType(this.queryResponse.data.data.columns[index]) &&
         defaultAmountColumn?.length > 0 &&
         this.queryResponse.data.data.columns[index]?.name === defaultAmountColumn
       )
     })
+    return numColIdx > -1 ? numColIdx : 0
   }
 
   getNumberColumnIndex = (foundIndex) => {
