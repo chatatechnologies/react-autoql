@@ -421,7 +421,7 @@ export default class ChataTable extends React.Component {
     }
 
     this.tableParams.filter = _cloneDeep(headerFilters)
-    this.tableParams.sort = _cloneDeep(headerSorters)
+    this.tableParams.sort = headerSorters
 
     const tableParamsFormatted = formatTableParams(this.tableParams, this.props.columns)
 
