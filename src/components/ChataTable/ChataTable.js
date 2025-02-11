@@ -412,11 +412,16 @@ export default class ChataTable extends React.Component {
   }
 
   getRTForRemoteFilterAndSort = () => {
-    const headerFilters = this.ref?.tabulator?.getHeaderFilters()
-    this.tableParams.filter = _cloneDeep(headerFilters)
+    let headerFilters = []
+    let headerSorters = []
 
-    const headerSorters = this.ref?.tabulator?.getSorters()
-    this.tableParams.sort = headerSorters
+    if (this._isMounted && this.state.tabulatorMounted) {
+      headerFilters = this.ref?.tabulator?.getHeaderFilters()
+      headerSorters = this.ref?.tabulator?.getSorters()
+    }
+
+    this.tableParams.filter = _cloneDeep(headerFilters)
+    this.tableParams.sort = _cloneDeep(headerSorters)
 
     const tableParamsFormatted = formatTableParams(this.tableParams, this.props.columns)
 
