@@ -1450,11 +1450,29 @@ export default class RuleSimple extends React.Component {
 
   renderBaseQuery = () => {
     if (this.props.isCompositeAlert) {
+      // const baseAlert = this.props.dataAlert?.expression?.[0]?.
+      console.log('this.props.dataAlert', this.props.dataAlert)
       return (
         <div className='react-autoql-rule-input'>
           <div>
             <span className='data-alert-rule-query-readonly-container'>
-              <Input label='Data Alert' value={this.getFormattedDataAlertText()} readOnly disabled fullWidth />
+              <Input
+                label={
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    Data Alert
+                    <Icon
+                      type='info'
+                      className='info-icon'
+                      tooltipID={this.props.tooltipID}
+                      tooltip={'This Data Alert was created base on Alert: xxxx'}
+                    />
+                  </div>
+                }
+                value={this.getFormattedDataAlertText()}
+                readOnly
+                disabled
+                fullWidth
+              />
             </span>
             <div className='react-autoql-rule-field-selection-first-query'>
               <div className='react-autoql-rule-field-selection-grid-container'>{this.renderPreviewGrid()}</div>
