@@ -17,7 +17,7 @@ export const dataFormattingType = PropTypes.shape({
 })
 
 export const autoQLConfigType = PropTypes.shape({
-  debug: PropTypes.string,
+  debug: PropTypes.bool,
   test: PropTypes.bool,
   enableAutocomplete: PropTypes.bool,
   enableQueryValidation: PropTypes.bool,
