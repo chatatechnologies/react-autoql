@@ -87,9 +87,9 @@ export default class ChataTable extends React.Component {
       progressiveLoadScrollMargin: 50, // Trigger next ajax load when scroll bar is 800px or less from the bottom of the table.
       // renderHorizontal: 'virtual', // v4: virtualDomHoz = false
       movableColumns: true,
-      layout: 'fitDataFill',
-      progressiveLoad: this.useRemote === 'remote',
-      virtualDomBuffer: 500,
+      // layout: 'fitDataFill',
+      // progressiveLoad: this.useRemote === 'remote',
+      // virtualDomBuffer: 500,
       downloadEncoder: function (fileContents, mimeType) {
         //fileContents - the unencoded contents of the file
         //mimeType - the suggested mime type for the output
@@ -595,12 +595,11 @@ export default class ChataTable extends React.Component {
       this.ref?.tabulator?.setOption('virtualDom', true)
       this.ref?.tabulator?.setOption('virtualDomBuffer', 300)
 
-      return {
-        data: [], // Return empty since data is already set
-        last_page: 1,
-      }
+      //   return {
+      //     data: [], // Return empty since data is already set
+      //     last_page: 1,
+      //   }
     }
-    console.log(583, 'ajaxRequestFunc')
     const initialData = {
       rows: this.getRows(this.props, 1),
       page: 1,
@@ -701,6 +700,19 @@ before callbacks are invoked */
     }
   }
 
+  getFilteredRows = (props) => {
+    let rows = props.response?.data?.data?.rows || []
+    if (this.useRemote !== 'remote') {
+      if (this.tableParams?.filter?.length) {
+        this.tableParams.filter.forEach((filter) => {
+          const filterColumnIndex = this.props.columns.findIndex((col) => col.field === filter.field)
+          rows = filterDataByColumn(rows, this.props.columns, filterColumnIndex, filter.value, filter.operator)
+        })
+      }
+    }
+    return rows
+  }
+
   getAllRows = (props) => {
     if (props.pivot) {
       return props.data
@@ -735,7 +747,7 @@ before callbacks are invoked */
       newRows =
         this.useRemote === 'remote'
           ? props.response?.data?.data?.rows?.slice(start, end) ?? []
-          : props.response?.data?.data?.rows ?? []
+          : this.getFilteredRows(props)?.slice(start, end) ?? []
     }
 
     return _cloneDeep(newRows)
@@ -1433,7 +1445,10 @@ before callbacks are invoked */
     if (this.props.pivot) {
       totalRowCount = this.props.data?.length
     } else {
-      totalRowCount = this.props.response?.data?.data?.count_rows
+      totalRowCount =
+        this.useRemote === 'remote'
+          ? this.props.response?.data?.data?.count_rows
+          : this.getFilteredRows(this.props)?.length
     }
 
     const shouldRenderTRC = totalRowCount && currentRowCount
@@ -1561,14 +1576,22 @@ before callbacks are invoked */
     let rowCount = this.ref?.tabulator?.getDataCount()
     if (this.tableParams?.filter?.length) {
       let data = this.props.response?.data?.data?.rows || []
-      console.log('1539', data)
       this.tableParams.filter.forEach((filter) => {
         const filterColumnIndex = this.props.columns.findIndex((col) => col.field === filter.field)
         data = filterDataByColumn(data, this.props.columns, filterColumnIndex, filter.value, filter.operator)
       })
       rowCount = data.length
-      console.log('1545', data, rowCount)
     }
+
+    const dataCount =
+      this.useRemote === 'remote'
+        ? this.props.response?.data?.data?.rows?.length
+        : this.getFilteredRows(this.props)?.length
+
+    if (rowCount > dataCount) {
+      rowCount = dataCount
+    }
+
     return rowCount
   }
 
