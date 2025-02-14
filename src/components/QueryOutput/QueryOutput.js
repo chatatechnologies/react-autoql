@@ -212,6 +212,7 @@ export class QueryOutput extends React.Component {
     onNewData: PropTypes.func,
     onCustomColumnUpdate: PropTypes.func,
     enableTableContextMenu: PropTypes.bool,
+    onUpdateFilterResponse: PropTypes.func,
   }
 
   static defaultProps = {
@@ -261,6 +262,7 @@ export class QueryOutput extends React.Component {
     onBucketSizeChange: () => {},
     onNewData: () => {},
     onCustomColumnUpdate: () => {},
+    onUpdateFilterResponse: () => {},
   }
 
   componentDidMount = () => {
@@ -411,31 +413,33 @@ export class QueryOutput extends React.Component {
   }
 
   findDefaultStringColumnIndex = (defaultDateColumn) => {
-    return this.tableConfig.stringColumnIndices.find((index) => {
+    let strColIdx = this.tableConfig.stringColumnIndices.find((index) => {
       return (
         !isColumnNumberType(this.queryResponse.data.data.columns[index]) &&
         defaultDateColumn?.length > 0 &&
         this.queryResponse.data.data.columns[index]?.name === defaultDateColumn
       )
     })
+    return strColIdx > -1 ? strColIdx : 0
   }
 
   getStringColumnIndex = (foundIndex) => {
     return foundIndex
       ? foundIndex
-      : this.tableConfig.stringColumnIndices.length > 0
-      ? this.tableConfig.stringColumnIndices[0]
+      : this.tableConfig?.stringColumnIndices?.length > 0
+      ? this.tableConfig?.stringColumnIndices[0]
       : 0
   }
 
   findDefaultNumberColumnIndex = (defaultAmountColumn) => {
-    return this.tableConfig.numberColumnIndices.find((index) => {
+    let numColIdx = this.tableConfig.numberColumnIndices.find((index) => {
       return (
         isColumnNumberType(this.queryResponse.data.data.columns[index]) &&
         defaultAmountColumn?.length > 0 &&
         this.queryResponse.data.data.columns[index]?.name === defaultAmountColumn
       )
     })
+    return numColIdx > -1 ? numColIdx : 0
   }
 
   getNumberColumnIndex = (foundIndex) => {
@@ -540,7 +544,7 @@ export class QueryOutput extends React.Component {
 
   hasError = (response) => {
     try {
-      const referenceIdNumber = Number(response.data.reference_id.split('.')[2])
+      const referenceIdNumber = Number(response?.data?.reference_id?.split('.')[2])
       if (referenceIdNumber >= 200 && referenceIdNumber < 300) {
         return false
       }
@@ -925,7 +929,7 @@ export class QueryOutput extends React.Component {
           ...getAutoQLConfig(this.props.autoQLConfig),
           source: this.props.source,
           scope: this.props.scope,
-          debug: queryRequestData?.translation === 'include',
+          debug: queryRequestData?.translation,
           filters: queryRequestData?.session_filter_locks,
           pageSize: queryRequestData?.page_size,
           test: queryRequestData?.test,
@@ -945,7 +949,7 @@ export class QueryOutput extends React.Component {
           ...getAuthentication(this.props.authentication),
           ...getAutoQLConfig(this.props.autoQLConfig),
           query: queryRequestData?.text,
-          debug: queryRequestData?.translation === 'include',
+          debug: queryRequestData?.translation,
           userSelection: queryRequestData?.disambiguation,
           filters: queryRequestData?.session_filter_locks,
           test: queryRequestData?.test,
@@ -1049,7 +1053,7 @@ export class QueryOutput extends React.Component {
     if (formattedValue === null) {
       formattedValue = 'NULL'
       operator = 'is'
-    } else if (column.type === 'DATE') {
+    } else if (column?.type === 'DATE') {
       const isoDate = getDayJSObj({ value, column, config: this.props.dataFormatting })
       const precision = getPrecisionForDayJS(column.precision)
       const isoDateStart = isoDate.startOf(precision).toISOString()
@@ -1778,8 +1782,8 @@ export class QueryOutput extends React.Component {
           }
 
           // No logical operators detected, just compare numbers
-          const number = parseFloat(rowValue?.replace(/[^0-9.]/g, ''))
-          const filterNumber = parseFloat(headerValue?.replace(/[^0-9.]/g, ''))
+          const number = parseFloat(rowValue?.toString().replace(/[^0-9.]/g, ''))
+          const filterNumber = parseFloat(headerValue?.toString().replace(/[^0-9.]/g, ''))
           return !isNaN(number) && number === filterNumber
         } catch (error) {
           console.error(error)
@@ -2514,6 +2518,7 @@ export class QueryOutput extends React.Component {
           enableContextMenu={this.props.enableTableContextMenu}
           initialTableParams={this.tableParams}
           updateColumnsAndData={this.updateColumnsAndData}
+          onUpdateFilterResponse={this.props.onUpdateFilterResponse}
         />
       </ErrorBoundary>
     )

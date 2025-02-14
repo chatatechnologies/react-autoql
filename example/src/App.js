@@ -128,7 +128,7 @@ export default class App extends Component {
     darkAccentColor: '#26a7df',
     maxMessages: 20,
     isEditing: false,
-    debug: true,
+    debug: 'exclude',
     test: !isProd(),
     demo: getStoredProp('demo') === 'true',
     apiKey: getStoredProp('api-key') || '',
@@ -866,8 +866,8 @@ export default class App extends Component {
         {this.createBooleanRadioGroup('Enable Notifications', 'enableNotifications', [true, false])}
         {this.createBooleanRadioGroup('Enable CSV Download', 'enableCSVDownload', [true, false])}
         {this.createBooleanRadioGroup('Debug Mode - Show copy to SQL button in message toolbar', 'debug', [
-          true,
-          false,
+          'include',
+          'exclude',
         ])}
         {!isProd() &&
           this.createBooleanRadioGroup('Test Mode (Provides extra logging on the server side)', 'test', [true, false])}
