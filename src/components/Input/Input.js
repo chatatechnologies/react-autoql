@@ -321,7 +321,7 @@ export default class Input extends React.Component {
                   </span>
                 )}
                 {this.props.datePicker ? this.renderDateRangePickerPopover() : null}
-                {this.props.displayColumnSelector ? this.renderColumnSelectDropdown() : null}
+                {this.props.displayColumnSelector ? this.renderColumnSelectDropdown() : false}
               </div>
             )}
             {type === 'number' && this.props.showSpinWheel && this.renderSpinWheel()}
