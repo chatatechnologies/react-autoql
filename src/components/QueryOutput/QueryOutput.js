@@ -212,7 +212,6 @@ export class QueryOutput extends React.Component {
     onNewData: PropTypes.func,
     onCustomColumnUpdate: PropTypes.func,
     enableTableContextMenu: PropTypes.bool,
-    onUpdateFilterResponse: PropTypes.func,
   }
 
   static defaultProps = {
@@ -262,7 +261,6 @@ export class QueryOutput extends React.Component {
     onBucketSizeChange: () => {},
     onNewData: () => {},
     onCustomColumnUpdate: () => {},
-    onUpdateFilterResponse: () => {},
   }
 
   componentDidMount = () => {
@@ -391,8 +389,8 @@ export class QueryOutput extends React.Component {
   }
 
   onTableConfigChange = (initialized = true) => {
-    const tableConfig = this.tableConfig
-    const pivotTableConfig = this.pivotTableConfig
+    const tableConfig = _cloneDeep(this.tableConfig)
+    const pivotTableConfig = _cloneDeep(this.pivotTableConfig)
 
     if (!initialized) {
       // Find default string column match
@@ -407,8 +405,8 @@ export class QueryOutput extends React.Component {
     }
 
     this.props.onTableConfigChange({
-      tableConfig,
-      pivotTableConfig,
+      tableConfig: tableConfig,
+      pivotTableConfig: pivotTableConfig,
     })
   }
 
@@ -542,7 +540,7 @@ export class QueryOutput extends React.Component {
 
   hasError = (response) => {
     try {
-      const referenceIdNumber = Number(response.data?.reference_id?.split('.')[2])
+      const referenceIdNumber = Number(response.data.reference_id.split('.')[2])
       if (referenceIdNumber >= 200 && referenceIdNumber < 300) {
         return false
       }
@@ -927,7 +925,7 @@ export class QueryOutput extends React.Component {
           ...getAutoQLConfig(this.props.autoQLConfig),
           source: this.props.source,
           scope: this.props.scope,
-          debug: queryRequestData?.translation,
+          debug: queryRequestData?.translation === 'include',
           filters: queryRequestData?.session_filter_locks,
           pageSize: queryRequestData?.page_size,
           test: queryRequestData?.test,
@@ -947,7 +945,7 @@ export class QueryOutput extends React.Component {
           ...getAuthentication(this.props.authentication),
           ...getAutoQLConfig(this.props.autoQLConfig),
           query: queryRequestData?.text,
-          debug: queryRequestData?.translation,
+          debug: queryRequestData?.translation === 'include',
           userSelection: queryRequestData?.disambiguation,
           filters: queryRequestData?.session_filter_locks,
           test: queryRequestData?.test,
@@ -1167,7 +1165,9 @@ export class QueryOutput extends React.Component {
       groupBys = getGroupBysFromTable(cell, columns)
     }
 
-    this.processDrilldown({ groupBys: groupBys ?? [], supportedByAPI: true })
+    if (!!groupBys?.length) {
+      this.processDrilldown({ groupBys: groupBys ?? [], supportedByAPI: true })
+    }
   }
 
   onChartClick = ({ row, columnIndex, columns, stringColumnIndex, legendColumn, activeKey, filter }) => {
@@ -2516,7 +2516,6 @@ export class QueryOutput extends React.Component {
           enableContextMenu={this.props.enableTableContextMenu}
           initialTableParams={this.tableParams}
           updateColumnsAndData={this.updateColumnsAndData}
-          onUpdateFilterResponse={this.props.onUpdateFilterResponse}
         />
       </ErrorBoundary>
     )
