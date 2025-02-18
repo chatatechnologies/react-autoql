@@ -1164,8 +1164,10 @@ export class QueryOutput extends React.Component {
       // Regular table
       groupBys = getGroupBysFromTable(cell, columns)
     }
-    if (cell?.getColumn()?.getDefinition().groupable)
+
+    if (!!groupBys?.length) {
       this.processDrilldown({ groupBys: groupBys ?? [], supportedByAPI: true })
+    }
   }
 
   onChartClick = ({ row, columnIndex, columns, stringColumnIndex, legendColumn, activeKey, filter }) => {
