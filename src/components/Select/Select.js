@@ -37,6 +37,8 @@ export default class Select extends React.Component {
     fullWidth: PropTypes.bool,
     color: PropTypes.oneOf(['primary', 'text']),
     isDisabled: PropTypes.bool,
+    columnSelectValue: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    columnSelectOptions: PropTypes.arrayOf(PropTypes.shape({})),
   }
 
   static defaultProps = {
@@ -53,6 +55,8 @@ export default class Select extends React.Component {
     fullWidth: false,
     color: 'primary',
     isDisabled: false,
+    columnSelectValue: null,
+    columnSelectOptions: [],
   }
 
   componentDidMount = () => {

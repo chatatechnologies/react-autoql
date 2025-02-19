@@ -39,6 +39,11 @@ export default class Input extends React.Component {
     showSpinWheel: PropTypes.bool,
     disabled: PropTypes.bool,
     errormessage: PropTypes.string,
+    columnSelectOptions: PropTypes.arrayOf(PropTypes.string),
+    columnSelectValue: PropTypes.string,
+    onColumnSelectValueChange: PropTypes.func,
+    dataFormatting: PropTypes.object,
+    queryResponse: PropTypes.object,
   }
 
   static defaultProps = {
@@ -56,6 +61,11 @@ export default class Input extends React.Component {
     showSpinWheel: true,
     disabled: false,
     errormessage: undefined,
+    columnSelectOptions: [],
+    columnSelectValue: undefined,
+    onColumnSelectValueChange: () => {},
+    dataFormatting: {},
+    queryResponse: {},
   }
 
   componentDidMount = () => {
@@ -256,6 +266,12 @@ export default class Input extends React.Component {
       showArrow,
       selectLocation,
       disabled,
+      displayColumnSelector,
+      columnSelectOptions,
+      columnSelectValue,
+      onColumnSelectValueChange,
+      dataFormatting,
+      queryResponse,
       ...nativeProps
     } = this.props
 
@@ -321,7 +337,7 @@ export default class Input extends React.Component {
                   </span>
                 )}
                 {this.props.datePicker ? this.renderDateRangePickerPopover() : null}
-                {this.props.displayColumnSelector ? this.renderColumnSelectDropdown() : false}
+                {this.props.displayColumnSelector ? this.renderColumnSelectDropdown() : null}
               </div>
             )}
             {type === 'number' && this.props.showSpinWheel && this.renderSpinWheel()}
