@@ -39,6 +39,7 @@ import SpeechToTextPage from './SpeechToTextPage'
 import 'antd/dist/antd.css'
 import 'react-autoql/dist/autoql.esm.css'
 import './index.css'
+import { TranslationTypes } from 'autoql-fe-utils'
 
 const getStoredProp = (name) => {
   if (getBaseUrl() === 'https://backend-staging.chata.io') {
@@ -128,7 +129,7 @@ export default class App extends Component {
     darkAccentColor: '#26a7df',
     maxMessages: 20,
     isEditing: false,
-    debug: true,
+    translation: TranslationTypes.EXCLUDE,
     test: !isProd(),
     demo: getStoredProp('demo') === 'true',
     apiKey: getStoredProp('api-key') || '',
@@ -204,7 +205,7 @@ export default class App extends Component {
       enableColumnVisibilityManager: this.state.enableColumnVisibilityManager,
       enableQuerySuggestions: this.state.enableQuerySuggestions,
       enableNotifications: this.state.enableNotifications,
-      debug: this.state.debug,
+      translation: this.state.translation,
       test: this.state.test,
       enableCSVDownload: this.state.enableCSVDownload,
     }
@@ -865,9 +866,9 @@ export default class App extends Component {
         ])}
         {this.createBooleanRadioGroup('Enable Notifications', 'enableNotifications', [true, false])}
         {this.createBooleanRadioGroup('Enable CSV Download', 'enableCSVDownload', [true, false])}
-        {this.createBooleanRadioGroup('Debug Mode - Show copy to SQL button in message toolbar', 'debug', [
-          true,
-          false,
+        {this.createBooleanRadioGroup('Debug Mode - Show copy to SQL button in message toolbar', 'translation', [
+          'include',
+          'exclude',
         ])}
         {!isProd() &&
           this.createBooleanRadioGroup('Test Mode (Provides extra logging on the server side)', 'test', [true, false])}
