@@ -24,11 +24,11 @@ import {
   HIGHLIGHTED_CLASS,
   DEFAULT_COLUMN_NAME,
   getSelectableColumns,
-  getNumericalColumns,
-  getStringColumns,
+  getNumericalColumns, // useful? 
+  getStringColumns, // useful?
   capitalizeFirstChar,
-  getCleanColumnName,
-  buildPlainColumnArrayFn,
+  getCleanColumnName, // useful?
+  buildPlainColumnArrayFn, // useful?
   isOperatorJs,
 } from 'autoql-fe-utils'
 

@@ -52,8 +52,8 @@ export default class SampleQuery extends React.Component {
   static defaultProps = {
     initialValues: undefined,
     suggestion: undefined,
-    onVLChange: () => {},
-    executeQuery: () => {},
+    onVLChange: () => { },
+    executeQuery: () => { },
   }
 
   componentDidMount = () => {
