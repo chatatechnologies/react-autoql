@@ -37,7 +37,6 @@ export default class ChatMessage extends React.Component {
       isAnimatingMessageBubble: true,
       isSettingColumnVisibility: false,
       activeMenu: undefined,
-      filterResponse: null,
     }
   }
 
@@ -147,10 +146,6 @@ export default class ChatMessage extends React.Component {
     this._isMounted = false
     clearTimeout(this.scrollToBottomTimeout)
     clearTimeout(this.animationTimeout)
-  }
-
-  onUpdateFilterResponse = (filterResponse) => {
-    this.setState({ filterResponse })
   }
 
   setIsAnimating = () => {
@@ -297,7 +292,6 @@ export default class ChatMessage extends React.Component {
               this.optionsToolbarRef?.openReportProblemModal()
             }
           }}
-          onUpdateFilterResponse={this.onUpdateFilterResponse}
         />
       )
     }
@@ -400,7 +394,6 @@ export default class ChatMessage extends React.Component {
                 queryResponse={this.responseRef.queryResponse}
                 isResizing={this.props.isResizing}
                 tooltipID={this.props.tooltipID}
-                filterResponse={this.state.filterResponse}
               />
             </div>
           ) : null}

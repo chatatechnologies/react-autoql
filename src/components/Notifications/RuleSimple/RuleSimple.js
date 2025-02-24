@@ -1650,6 +1650,32 @@ export default class RuleSimple extends React.Component {
       const { stringColumnIndices } = getStringColumnIndices(queryResponse?.data?.data?.columns)
       disabledColumns = Array.from(new Set([...groupableColumns, ...stringColumnIndices]))
     }
+    const baseOptions = [
+      {
+        value: NUMBER_TERM_TYPE,
+        label: (
+          <span>
+            this <strong>number:</strong>
+          </span>
+        ),
+      },
+      {
+        value: QUERY_TERM_TYPE,
+        label: (
+          <span>
+            the result of this <strong>query:</strong>
+          </span>
+        ),
+      },
+    ]
+    const selfComparisonOption = {
+      value: SELF_COMPARISONS_TYPE,
+      label: (
+        <span>
+          this column of current <strong>query:</strong>
+        </span>
+      ),
+    }
 
     return (
       <Input
@@ -1667,7 +1693,9 @@ export default class RuleSimple extends React.Component {
             ? 'hidden'
             : undefined
         }
-        displayColumnSelector={this.state.secondTermType === SELF_COMPARISONS_TYPE}
+        displayColumnSelector={
+          this.state.secondTermType === SELF_COMPARISONS_TYPE && !isSingleValueResponse(queryResponse)
+        }
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             this.props.onLastInputEnterPress()
@@ -1681,32 +1709,7 @@ export default class RuleSimple extends React.Component {
               label: <span>{column.display_name}</span>,
             })) || []
         }
-        selectOptions={[
-          {
-            value: NUMBER_TERM_TYPE,
-            label: (
-              <span>
-                this <strong>number:</strong>
-              </span>
-            ),
-          },
-          {
-            value: QUERY_TERM_TYPE,
-            label: (
-              <span>
-                the result of this <strong>query:</strong>
-              </span>
-            ),
-          },
-          {
-            value: SELF_COMPARISONS_TYPE,
-            label: (
-              <span>
-                this column of current <strong>query:</strong>
-              </span>
-            ),
-          },
-        ]}
+        selectOptions={[...baseOptions, ...(!isSingleValueResponse(queryResponse) ? [selfComparisonOption] : [])]}
         onSelectChange={this.onSecondTermTypeChange}
         onColumnSelectValueChange={this.onColumnSelectValueChange}
         selectValue={this.state.secondTermType}

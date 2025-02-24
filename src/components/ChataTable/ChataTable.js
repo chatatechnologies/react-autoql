@@ -66,7 +66,7 @@ export default class ChataTable extends React.Component {
     this.isFiltering = false
     this.isSorting = false
     this.pageSize = props.pageSize ?? 50
-    this.useRemote = this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT ? 'remote' : 'local'
+    this.useRemote = this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT ? 'remote' : 'remote'
 
     this.totalPages = this.getTotalPages(props.response)
     if (isNaN(this.totalPages) || !this.totalPages) {
@@ -335,7 +335,7 @@ export default class ChataTable extends React.Component {
           const min = dayjs.min(columnData)
           const max = dayjs.max(columnData)
 
-          if (min && max) {
+          if (min && min?.length > 0 && max && max?.length > 0) {
             stats[columnIndex] = {
               min: formatElement({
                 element: min?.toISOString(),
@@ -415,12 +415,14 @@ export default class ChataTable extends React.Component {
     console.log('getRTForRemoteFilterAndSort')
     let headerFilters = []
     let headerSorters = []
-    this.ref?.tabulator?.on('tableBuilt', function () {
+
+    if (this._isMounted && this.state.tabulatorMounted) {
       headerFilters = this.ref?.tabulator?.getHeaderFilters()
       headerSorters = this.ref?.tabulator?.getSorters()
-    })
+    }
+
     this.tableParams.filter = _cloneDeep(headerFilters)
-    this.tableParams.sort = _cloneDeep(headerSorters)
+    this.tableParams.sort = headerSorters
 
     const tableParamsFormatted = formatTableParams(this.tableParams, this.props.columns)
 
@@ -430,7 +432,7 @@ export default class ChataTable extends React.Component {
         ...getAuthentication(this.props.authentication),
         ...getAutoQLConfig(this.props.autoQLConfig),
         source: 'data_messenger',
-        debug: TranslationTypes.REVERSE_ONLY,
+        translation: TranslationTypes.REVERSE_ONLY,
         allowSuggestions: false,
         tableFilters: tableParamsFormatted?.filters,
         orders: tableParamsFormatted?.sorters,
@@ -498,7 +500,7 @@ export default class ChataTable extends React.Component {
         }
       }, 0)
     }
-    if (!this.props.pivot) {
+    if (this.useRemote === 'local') {
       this.getRTForRemoteFilterAndSort()
     }
     this.setFilterBadgeClasses()
@@ -578,6 +580,23 @@ export default class ChataTable extends React.Component {
   }
 
   ajaxRequestFunc = async (props, params) => {
+    if (this.useRemote === 'local') {
+      const fullData = props.response?.data?.data?.rows || []
+
+      // Initialize table with complete dataset
+      this.ref?.tabulator?.setData(fullData)
+
+      if (this.ref?.tabulator?.options) {
+        // Configure virtual scrolling
+        this.ref.tabulator.options.virtualDom = true
+        this.ref.tabulator.options.virtualDomBuffer = '300'
+      }
+
+      //   return {
+      //     data: [], // Return empty since data is already set
+      //     last_page: 1,
+      //   }
+    }
     const initialData = {
       rows: this.getRows(this.props, 1),
       page: 1,
@@ -905,7 +924,7 @@ export default class ChataTable extends React.Component {
     clearBtn.addEventListener('click', (e) => {
       e.stopPropagation()
       this.setHeaderInputValue(inputElement, '')
-      if (column?.type === 'DATE' && !column.pivot) {
+      if (column?.type === 'DATE' && !column?.pivot) {
         this.currentDateRangeSelections = {}
         this.debounceSetState({
           datePickerColumn: undefined,

@@ -120,4 +120,5 @@ export const columnOptionsList = [
   'headerPopup', // add popup button to column header (see Column Header Popups for more details)
   'headerClickPopup', // add click popup to column header (see Column Header Popups for more details)
   'headerContextPopup', // add context popup to column header (see Column Header Popups for more details)
+  'groupable', // allow the column to be grouped (see Grouping Data for more details)
 ]

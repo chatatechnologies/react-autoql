@@ -278,7 +278,13 @@ export default class Input extends React.Component {
             ${this.state.focused ? 'focus' : ''}
             ${hasSelect ? 'with-select' : ''}
             ${size === 'small' ? 'react-autoql-input-small' : 'react-autoql-input-large'}
-            ${type === 'text' ? 'react-autoql-input-number' : 'hidden' ? 'react-autoql-input-hidden' : ''}
+            ${
+              type === 'text' || type === 'number'
+                ? 'react-autoql-input-number'
+                : 'hidden'
+                ? 'react-autoql-input-hidden'
+                : ''
+            }
             ${selectLocation === 'left' ? 'react-autoql-input-select-left' : 'react-autoql-input-select-right'}`}
             data-test='react-autoql-input'
           >
@@ -315,7 +321,7 @@ export default class Input extends React.Component {
                   </span>
                 )}
                 {this.props.datePicker ? this.renderDateRangePickerPopover() : null}
-                {this.props.displayColumnSelector ? this.renderColumnSelectDropdown() : null}
+                {this.props.displayColumnSelector ? this.renderColumnSelectDropdown() : false}
               </div>
             )}
             {type === 'number' && this.props.showSpinWheel && this.renderSpinWheel()}
