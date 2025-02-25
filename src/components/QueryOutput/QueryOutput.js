@@ -388,11 +388,62 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  onTableConfigChange = () => {
+  onTableConfigChange = (initialized = true) => {
+    const tableConfig = _cloneDeep(this.tableConfig)
+    const pivotTableConfig = _cloneDeep(this.pivotTableConfig)
+
+    if (!initialized) {
+      // Find default string column match
+      const defaultDateColumn = this.queryResponse.data.data.default_date_column
+      const stringColumnIndex = this.findDefaultStringColumnIndex(defaultDateColumn)
+      tableConfig.stringColumnIndex = this.getStringColumnIndex(stringColumnIndex)
+
+      // Find default amount column match
+      const defaultAmountColumn = this.queryResponse.data.data.default_amount_column
+      const numberColumnIndex = this.findDefaultNumberColumnIndex(defaultAmountColumn)
+      tableConfig.numberColumnIndex = this.getNumberColumnIndex(numberColumnIndex)
+    }
+
     this.props.onTableConfigChange({
-      tableConfig: this.tableConfig,
-      pivotTableConfig: this.pivotTableConfig,
+      tableConfig: tableConfig,
+      pivotTableConfig: pivotTableConfig,
     })
+  }
+
+  findDefaultStringColumnIndex = (defaultDateColumn) => {
+    return this.tableConfig.stringColumnIndices.find((index) => {
+      return (
+        !isColumnNumberType(this.queryResponse.data.data.columns[index]) &&
+        defaultDateColumn?.length > 0 &&
+        this.queryResponse.data.data.columns[index]?.name === defaultDateColumn
+      )
+    })
+  }
+
+  getStringColumnIndex = (foundIndex) => {
+    return foundIndex
+      ? foundIndex
+      : this.tableConfig.stringColumnIndices.length > 0
+      ? this.tableConfig.stringColumnIndices[0]
+      : 0
+  }
+
+  findDefaultNumberColumnIndex = (defaultAmountColumn) => {
+    return this.tableConfig.numberColumnIndices.find((index) => {
+      return (
+        isColumnNumberType(this.queryResponse.data.data.columns[index]) &&
+        defaultAmountColumn?.length > 0 &&
+        this.queryResponse.data.data.columns[index]?.name === defaultAmountColumn
+      )
+    })
+  }
+
+  getNumberColumnIndex = (foundIndex) => {
+    return foundIndex
+      ? foundIndex
+      : this.tableConfig.numberColumnIndices.length > 0
+      ? this.tableConfig.numberColumnIndices[0]
+      : 0
   }
 
   checkAndUpdateTableConfigs = (displayType) => {
@@ -874,7 +925,7 @@ export class QueryOutput extends React.Component {
           ...getAutoQLConfig(this.props.autoQLConfig),
           source: this.props.source,
           scope: this.props.scope,
-          debug: queryRequestData?.translation === 'include',
+          translation: queryRequestData?.translation,
           filters: queryRequestData?.session_filter_locks,
           pageSize: queryRequestData?.page_size,
           test: queryRequestData?.test,
@@ -894,7 +945,7 @@ export class QueryOutput extends React.Component {
           ...getAuthentication(this.props.authentication),
           ...getAutoQLConfig(this.props.autoQLConfig),
           query: queryRequestData?.text,
-          debug: queryRequestData?.translation === 'include',
+          translation: queryRequestData?.translation,
           userSelection: queryRequestData?.disambiguation,
           filters: queryRequestData?.session_filter_locks,
           test: queryRequestData?.test,
@@ -1114,7 +1165,9 @@ export class QueryOutput extends React.Component {
       groupBys = getGroupBysFromTable(cell, columns)
     }
 
-    this.processDrilldown({ groupBys: groupBys ?? [], supportedByAPI: true })
+    if (!!groupBys?.length) {
+      this.processDrilldown({ groupBys: groupBys ?? [], supportedByAPI: true })
+    }
   }
 
   onChartClick = ({ row, columnIndex, columns, stringColumnIndex, legendColumn, activeKey, filter }) => {
@@ -1619,7 +1672,7 @@ export class QueryOutput extends React.Component {
     }
 
     if (!_isEqual(prevTableConfig, this.tableConfig)) {
-      this.onTableConfigChange()
+      this.onTableConfigChange(this.hasCalledInitialTableConfigChange)
     }
   }
 

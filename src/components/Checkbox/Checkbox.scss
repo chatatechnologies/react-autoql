@@ -36,20 +36,19 @@
   flex-shrink: 0;
   width: 20px;
   height: 20px;
-  appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
+  appearance: none;
   outline: none;
   background: var(--react-autoql-background-color-checkbox);
   border: 1px solid;
   border-radius: 2px;
   box-sizing: content-box;
+  cursor: pointer;
 
   &:not(.react-autoql-checkbox--switch__input) {
     border-color: var(--react-autoql-accent-color, #26a7df);
   }
-
-  cursor: pointer;
 }
 .react-autoql-checkbox__input::before {
   content: ' ';

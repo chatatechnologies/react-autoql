@@ -20,6 +20,7 @@ export default class DataAlertDeleteDialog extends React.Component {
     authentication: authenticationType,
     dataAlertId: PropTypes.string,
     isVisible: PropTypes.bool,
+    currentDataAlert: PropTypes.shape({}),
     onClose: PropTypes.func,
     onErrorCallback: PropTypes.func,
   }
@@ -28,6 +29,7 @@ export default class DataAlertDeleteDialog extends React.Component {
     authentication: authenticationDefault,
     dataAlertId: undefined,
     isVisible: false,
+    currentDataAlert: undefined,
     onClose: () => {},
     onErrorCallback: () => {},
   }
@@ -54,7 +56,16 @@ export default class DataAlertDeleteDialog extends React.Component {
         })
     }
   }
+  getHeadingText = () => {
+    const { currentDataAlert } = this.props
 
+    if (!currentDataAlert?.title) {
+      return 'Are you sure you want to delete this Data Alert?'
+    }
+
+    const alertType = currentDataAlert.project?.id === 'composite' ? 'composite alert' : 'alert'
+    return `Are you sure you want to delete '${currentDataAlert.title}' ${alertType}?`
+  }
   render = () => {
     return (
       <ErrorBoundary>
@@ -67,7 +78,7 @@ export default class DataAlertDeleteDialog extends React.Component {
           confirmText='Delete'
           width='450px'
         >
-          <h3>Are you sure you want to delete this Data Alert?</h3>
+          <h3>{this.getHeadingText()}</h3>
           <p>You will no longer be notified about these changes in your data.</p>
         </ConfirmModal>
       </ErrorBoundary>

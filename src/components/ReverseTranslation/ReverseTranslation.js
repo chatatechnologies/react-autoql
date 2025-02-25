@@ -40,6 +40,7 @@ export default class ReverseTranslation extends React.Component {
     tooltipID: PropTypes.string,
     textOnly: PropTypes.bool,
     termId: PropTypes.string,
+    filterResponse: PropTypes.shape({}),
   }
 
   static defaultProps = {
@@ -49,6 +50,7 @@ export default class ReverseTranslation extends React.Component {
     tooltipID: undefined,
     textOnly: false,
     termId: undefined,
+    filterResponse: undefined,
   }
 
   componentDidMount = () => {
@@ -67,6 +69,14 @@ export default class ReverseTranslation extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    if (prevProps.filterResponse !== this.props.filterResponse) {
+      this.setState(
+        { reverseTranslationArray: constructRTArray(this.props.filterResponse?.data?.data?.parsed_interpretation) },
+        () => {
+          this.validateAndUpdateValueLabels()
+        },
+      )
+    }
     if (
       !deepEqual(
         prevProps.queryResponse?.data?.data?.parsed_interpretation,

@@ -24,11 +24,18 @@ export default class ConditionBuilder extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
-    expression: PropTypes.oneOfType([PropTypes.shape({}), PropTypes.array]), // This is the expression of the existing notification if you are editing one. I should change the name of this at some point
-    conditionStatementOnly: PropTypes.bool, // Set this to true if you want a summary of the expression without needing to interact with it
-    onChange: PropTypes.func, // this returns 2 params (isSectionComplete, expressionJSON)
+    expression: PropTypes.oneOfType([PropTypes.shape({}), PropTypes.array]),
+    conditionStatementOnly: PropTypes.bool,
+    onChange: PropTypes.func,
     onLastInputEnterPress: PropTypes.func,
     dataFormatting: dataFormattingType,
+    isCompositeAlert: PropTypes.bool,
+    dataAlert: PropTypes.object,
+    baseDataAlertColumns: PropTypes.array,
+    baseDataAlertQueryResponse: PropTypes.object,
+    isLoadingBaseDataAlertQueryResponse: PropTypes.bool,
+    onCustomFiltersChange: PropTypes.func,
+    customFilters: PropTypes.array,
   }
 
   static defaultProps = {
@@ -42,15 +49,24 @@ export default class ConditionBuilder extends React.Component {
     onChange: () => {},
     onLastInputEnterPress: () => {},
     dataFormatting: dataFormattingDefault,
+    isCompositeAlert: false,
+    dataAlert: {},
+    baseDataAlertColumns: [],
+    baseDataAlertQueryResponse: {},
+    isLoadingBaseDataAlertQueryResponse: false,
+    onCustomFiltersChange: () => {},
+    customFilters: [],
   }
 
   componentDidMount = () => {
     this._isMounted = true
-    this.props.onChange(this.isComplete(), this.isValid(), this.getJSON())
+    if (!this.props.isCompositeAlert) {
+      this.props.onChange(this.isComplete(), this.isValid(), this.getJSON())
+    }
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (!_isEqual(prevState, this.state)) {
+    if (!this.props.isCompositeAlert && !_isEqual(prevState, this.state)) {
       this.props.onChange(this.isComplete(), this.isValid(), this.getJSON())
     }
   }
@@ -210,14 +226,21 @@ export default class ConditionBuilder extends React.Component {
                   dataFormatting={this.props.dataFormatting}
                   ref={(r) => (this.ruleRef = r)}
                   ruleId={this.props.expression?.id ?? uuid()}
-                  onUpdate={this.onRuleUpdate}
+                  onUpdate={!this.props.isCompositeAlert ? this.onRuleUpdate : undefined}
                   initialData={this.props.expression}
                   tooltipID={this.props.tooltipID}
                   queryResponse={this.props.queryResponse}
                   queryResultMetadata={this.props.queryResultMetadata}
-                  onLastInputEnterPress={this.props.onLastInputEnterPress}
+                  onLastInputEnterPress={!this.props.isCompositeAlert ? this.props.onLastInputEnterPress : undefined}
                   dataAlertType={this.props.dataAlertType}
                   filters={this.props.filters}
+                  isCompositeAlert={this.props.isCompositeAlert}
+                  dataAlert={this.props.dataAlert}
+                  baseDataAlertColumns={this.props.baseDataAlertColumns}
+                  baseDataAlertQueryResponse={this.props.baseDataAlertQueryResponse}
+                  isLoadingBaseDataAlertQueryResponse={this.props.isLoadingBaseDataAlertQueryResponse}
+                  onCustomFiltersChange={this.props.onCustomFiltersChange}
+                  customFilters={this.props.customFilters}
                 />
                 {this.props.conditionStatementOnly && (
                   <span className='condition-builder-statement'>

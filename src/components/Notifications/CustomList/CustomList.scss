@@ -1,0 +1,379 @@
+.filter-lock-popover {
+  &:not(.filter-lock-popover-mobile) {
+    top: -15px !important;
+    left: -2px !important;
+    width: 450px;
+    height: 350px;
+  }
+
+  &.filter-lock-popover-mobile {
+    border: none;
+    transform: unset !important;
+    height: calc(100% - 80px);
+    max-height: calc(100% - 80px);
+    top: 0px !important;
+
+    .popover-container-content {
+      animation: scale-down-tl 0.2s ease;
+    }
+  }
+
+  .filter-lock-toast-container {
+    top: 0;
+    position: absolute;
+    max-width: calc(100% - 36px);
+    padding: 10px;
+    font-size: 14px;
+
+    .Toastify__toast {
+      min-height: 48px;
+    }
+
+    .Toastify__toast-body {
+      justify-content: center;
+    }
+
+    .Toastify__toast-body > div:last-child {
+      flex: unset;
+    }
+  }
+
+  .include-exclude-toggle-group {
+    height: 23px;
+    font-size: 12px;
+    font-weight: 400;
+
+    .react-autoql-radio-btn.active {
+      background-color: var(--react-autoql-border-color);
+    }
+
+    :first-child.react-autoql-radio-btn {
+      &:hover,
+      &.active {
+        color: var(--react-autoql-accent-color);
+        border-color: var(--react-autoql-accent-color);
+      }
+    }
+
+    :nth-child(2).react-autoql-radio-btn {
+      &:hover,
+      &.active {
+        color: var(--react-autoql-danger-color);
+        border-color: var(--react-autoql-danger-color);
+      }
+    }
+  }
+}
+
+.custom-list-menu-content {
+  padding: 5px 10px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  &.closed {
+    opacity: 0;
+  }
+
+  h3,
+  h4 {
+    margin: 0px;
+    color: var(--react-autoql-text-color-primary);
+  }
+
+  h4 {
+    font-weight: bold;
+  }
+
+  .react-autoql-empty-filter-list {
+    opacity: 0.7;
+  }
+
+  .react-autoql-filter-lock-list-loading-container,
+  .react-autoql-empty-filter-list {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.8;
+    padding-right: 20px;
+    padding-bottom: 6px;
+    color: var(--react-autoql-text-color-primary);
+  }
+
+  .react-autoql-filter-lock-list-loading-container,
+  .react-autoql-empty-filter-list,
+  .react-autoql-filter-list-container {
+    flex: 1;
+  }
+
+  .react-autoql-custom-list-title h3,
+  .persist-toggle-column,
+  .filter-name-column {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    justify-content: flex-start;
+    .react-autoql-icon {
+      margin: 0 5px;
+    }
+  }
+
+  .filter-lock-menu-header {
+    flex: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding-bottom: 15px;
+    box-sizing: border-box;
+
+    .filter-locking-close-and-saving-container {
+      display: flex;
+      justify-content: flex-end;
+
+      .filter-locking-close-btn {
+        border-radius: 20px;
+        margin: 0px;
+        padding: 0px;
+        font-size: 20px;
+        color: var(--react-autoql-text-color-primary);
+      }
+
+      .filter-locking-saving-indicator {
+        display: inline-block;
+        font-weight: 400;
+        font-size: 14px;
+        padding-right: 20px;
+        color: var(--react-autoql-accent-color);
+        transition: opacity 0.2s ease;
+
+        &.hidden {
+          opacity: 0;
+          visibility: hidden;
+        }
+      }
+    }
+  }
+
+  .filter-lock-menu-footer {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .react-autoql-filter-list-container {
+    margin-top: 15px;
+    margin-right: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    .react-autoql-filter-list-title {
+      position: sticky;
+      top: 0;
+      background: var(--react-autoql-background-color-secondary);
+      z-index: 1;
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 4px;
+
+      .filter-lock-category-title {
+        padding-right: 10px;
+        padding-top: 1px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .filter-name-column {
+        flex-wrap: wrap;
+        max-width: calc(100% - 100px);
+        flex: 1;
+      }
+
+      .persist-toggle-column {
+        display: flex;
+        flex-wrap: nowrap;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-end;
+        flex: 0 0 auto;
+        margin-right: 20px;
+      }
+    }
+    .react-autoql-filter-list {
+      overflow-y: auto;
+      flex: 1;
+    }
+    .react-autoql-filter-list-item-container {
+      margin-bottom: 10px;
+      margin-right: 0px;
+      color: var(--react-autoql-text-color-primary);
+
+      .react-autoql-filter-list-item {
+        margin: 1px 0px;
+        padding-top: 1px;
+        padding-bottom: 1px;
+        margin-right: 5px;
+        &.mobile {
+          padding-right: 1rem;
+        }
+        .react-autoql-filter-list-item-filter {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          padding-right: 5px;
+        }
+        .react-autoql-filter-list-item-actions {
+          padding-right: 12px;
+          white-space: nowrap;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+        .persist-toggle {
+          margin: 0 25px;
+        }
+        .react-autoql-remove-filter-icon {
+          cursor: pointer;
+
+          &:hover {
+            color: var(--react-autoql-danger-color);
+          }
+        }
+        &.react-autoql-highlight-row {
+          background-color: var(--react-autoql-accent-color);
+          color: var(--react-autoql-text-color-accent);
+          animation-name: highlightIn, highlightOut;
+          animation-duration: 300ms, 300ms;
+          animation-delay: 0ms, 1000ms;
+          animation-timing-function: ease-in, ease-out;
+          animation-iteration-count: 1, 1;
+        }
+      }
+    }
+  }
+}
+
+// ------------------- Autocomplete styles -------------------
+.react-autoql-vl-autocomplete-input {
+  padding: 5px;
+  padding-left: 20px;
+  height: 32px;
+  box-sizing: border-box;
+  border-radius: 24px;
+  font-size: 12px;
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  outline: none !important;
+  width: 100%;
+  font-family: inherit;
+  border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+  background: var(--react-autoql-background-color-secondary);
+  color: var(--react-autoql-text-color-primary);
+
+  &:hover {
+    box-shadow: 0px 0px 5px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
+  }
+
+  &::placeholder {
+    color: rgba(var(--react-autoql-text-color-placeholder), 2) !important;
+    opacity: 0.5;
+  }
+}
+.react-autoql-vl-autocomplete-input-wrapper {
+  .react-autosuggest__container--open {
+    position: relative;
+
+    .react-autosuggest__suggestions-container--open {
+      background-color: var(--react-autoql-background-color-secondary);
+      border: 1px solid var(--react-autoql-border-color);
+      color: var(--react-autoql-text-color-primary);
+      position: absolute;
+      padding: 10px 0;
+      display: block;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: normal;
+      z-index: 2;
+      box-shadow: var(--react-autoql-box-shadow-1);
+      text-align: left;
+      border-radius: 4px;
+      width: 100%;
+      max-height: calc(90vh - 180px);
+      box-sizing: border-box;
+      overflow: hidden;
+
+      .filter-lock-suggestion-item {
+        cursor: pointer;
+        width: 100%;
+        letter-spacing: 0.05em;
+        line-height: 22.5px;
+        padding: 0px 20px 3px 20px;
+        box-sizing: border-box;
+        line-height: inherit;
+        margin-bottom: 5px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .react-autosuggest__suggestion {
+        color: var(--react-autoql-text-color-primary);
+      }
+      .react-autosuggest__suggestions-list {
+        margin: 0;
+        padding: 0;
+        list-style-type: none;
+      }
+      .react-autosuggest__suggestion--highlighted {
+        background-color: rgba(0, 0, 0, 0.1) !important;
+      }
+      .react-autosuggest__section-title {
+        padding-left: 15px;
+        font-size: 12px;
+        color: var(--react-autoql-text-color-placeholder);
+      }
+      .filter-locking-no-suggestions-text {
+        padding-left: 8px;
+        font-size: 14px;
+      }
+    }
+  }
+}
+
+// ------------------------------------------------------------------------
+
+@keyframes highlightOut {
+  100% {
+    background-color: var(--react-autoql-background-color-secondary);
+    color: var(--react-autoql-text-color-primary);
+  }
+  0% {
+    background-color: var(--react-autoql-accent-color);
+    color: var(--react-autoql-text-color-accent);
+  }
+}
+@keyframes highlightIn {
+  100% {
+    background-color: var(--react-autoql-accent-color);
+    color: var(--react-autoql-text-color-accent);
+  }
+  0% {
+    background-color: var(--react-autoql-background-color-secondary);
+    color: var(--react-autoql-text-color-primary);
+    opacity: 1;
+  }
+}
+
+@keyframes scale-down-tl {
+  0% {
+    transform: scale(0.5);
+    transform-origin: 0% 0%;
+  }
+  100% {
+    transform: scale(1);
+    transform-origin: 0% 0%;
+  }
+}

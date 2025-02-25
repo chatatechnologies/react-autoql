@@ -43,6 +43,7 @@ export default class NotificationItem extends React.Component {
     onDataAlertChange: PropTypes.func,
     onSuccessCallback: PropTypes.func,
     onQueryClick: PropTypes.func,
+    isBuildingCustomFilteredAlert: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -65,6 +66,7 @@ export default class NotificationItem extends React.Component {
     onClick: () => {},
     onDataAlertChange: () => {},
     onSuccessCallback: () => {},
+    isBuildingCustomFilteredAlert: false,
   }
 
   componentWillUnmount = () => {
@@ -131,7 +133,14 @@ export default class NotificationItem extends React.Component {
     return (
       <div className='react-autoql-notification-list-item-header' onClick={() => this.onClick(this.props.notification)}>
         <div className='react-autoql-notification-display-name-container'>
-          <div className='react-autoql-notification-display-name'>{this.renderNotificationTitle()}</div>
+          <div className='react-autoql-notification-display-name-wrapper'>
+            {this.props.isBuildingCustomFilteredAlert && (
+              <span className='react-autoql-notification-item-layer-icon'>
+                <Icon type='layers' style={{ marginRight: '5px' }} />
+              </span>
+            )}
+            <div className='react-autoql-notification-display-name'>{this.renderNotificationTitle()}</div>
+          </div>
           <div className='react-autoql-notification-description'>{this.renderNotificationMessage()}</div>
           <div className='react-autoql-notification-timestamp-container'>
             <span className='react-autoql-notification-timestamp'>

@@ -2,49 +2,37 @@ import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEmpty from 'lodash.isempty'
-import _cloneDeep from 'lodash.clonedeep'
-
+import { CUSTOM_FILTERED_ALERT_MODAL_TITLES } from '../../../../js/Constants'
 import {
-  EXISTS_TYPE,
-  COMPARE_TYPE,
-  QUERY_TERM_TYPE,
-  createDataAlert,
-  updateDataAlert,
   getAuthentication,
   dataFormattingDefault,
   authenticationDefault,
-  getSupportedConditionTypes,
-  CONTINUOUS_TYPE,
-  SCHEDULED_TYPE,
   createManagementDataAlert,
-  updateManagementDataAlert,
   autoQLConfigDefault,
   getAllDataAlertsLabels,
   assignLabelToManagementDataAlert,
+  previewManagementDataAlert,
+  previewDataAlert,
+  createDataAlert,
+  updateDataAlert,
 } from 'autoql-fe-utils'
 
-import { Icon } from '../../Icon'
-import { Modal } from '../../Modal'
-import { Button } from '../../Button'
-import { Tooltip } from '../../Tooltip'
-import { StepsHoz } from '../../StepsHoz'
-import { ScheduleBuilder } from '../ScheduleBuilder'
-import { ConditionBuilder } from '../ConditionBuilder'
-import { MultilineButton } from '../../MultilineButton'
-import { CustomScrollbars } from '../../CustomScrollbars'
-import { CollapsableSection } from '../../Card'
-import { ErrorBoundary } from '../../../containers/ErrorHOC'
-import { DataAlertDeleteDialog } from '../DataAlertDeleteDialog'
-import AppearanceSection from '../DataAlertSettings/AppearanceSection/AppearanceSection'
-import DataAlertSettings from '../DataAlertSettings/DataAlertSettings'
-import AlphaAlertsSettings from '../DataAlertSettings/AlphaAlertsSettings'
+import { Icon } from '../../../Icon'
+import { Modal } from '../../../Modal'
+import { Button } from '../../../Button'
+import { Tooltip } from '../../../Tooltip'
+import { ConditionBuilder } from '../../ConditionBuilder'
+import { ErrorBoundary } from '../../../../containers/ErrorHOC'
+import { DataAlertDeleteDialog } from '../../DataAlertDeleteDialog'
+import AppearanceSection from '../../DataAlertSettings/AppearanceSection/AppearanceSection'
+import { withTheme } from '../../../../theme'
+import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../../props/types'
 
-import { withTheme } from '../../../theme'
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
+import './CustomFilteredAlertModal.scss'
 
-import './DataAlertModal.scss'
-
-class DataAlertModal extends React.Component {
+class CustomFilteredAlertModal extends React.Component {
+  NOTIFICATION_TYPE_EVENT = 'EVENT'
+  EVALUATION_MODE_COMPOSITE = 'COMPOSITE'
   constructor(props) {
     super(props)
 
@@ -54,7 +42,6 @@ class DataAlertModal extends React.Component {
     this.FREQUENCY_STEP = 'FREQUENCY'
     this.MESSAGE_STEP = 'MESSAGE'
     this.TYPE_STEP = 'TYPE'
-
     this.state = this.getInitialState(props)
   }
 
@@ -81,7 +68,6 @@ class DataAlertModal extends React.Component {
     onSave: () => {},
     onErrorCallback: () => {},
     currentDataAlert: undefined,
-    dataAlertType: CONTINUOUS_TYPE,
     isVisible: false,
     allowDelete: true,
     onClose: () => {},
@@ -95,6 +81,22 @@ class DataAlertModal extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    if (
+      this.state.customFilters !== prevState.customFilters ||
+      this.state.baseDataAlertColumns !== prevState.baseDataAlertColumns
+    ) {
+      const filteredColumns = this.state.baseDataAlertColumns.filter((col) =>
+        this.state.customFilters.some((filter) => filter.column_name === col.name),
+      )
+      const rows = this.state.customFilters.map((filter) => [filter.value])
+      this.setState({
+        termValue: {
+          columns: filteredColumns,
+          rows: rows,
+        },
+      })
+    }
+
     if (!this.props.isVisible && prevProps.isVisible) {
       setTimeout(this.initializeFields, 500)
       this.props.onClosed()
@@ -102,23 +104,7 @@ class DataAlertModal extends React.Component {
 
     if (this.props.isVisible && !prevProps.isVisible) {
       this.initializeFields()
-    } else if (this.props.isVisible) {
-      if (this.state.activeStep !== prevState.activeStep) {
-        if (this.state.activeStep === this.getStepNumber(this.MESSAGE_STEP)) {
-          this.appearanceSectionRef?.focusTitleInput()
-        }
-      }
-
-      if (!this.state.isFrequencySectionReady && prevState.isFrequencySectionReady) {
-        // If condition step changed and it affected the frequency step
-        // Then set frequency section back to incomplete
-        const frequencyStepNumber = this.getStepNumber(this.FREQUENCY_STEP)
-        const newCompletedSections = [...this.state.completedSections]
-        newCompletedSections[frequencyStepNumber] = false
-        this.setState({ completedSections: newCompletedSections })
-      }
     }
-
     if (this.props?.autoQLConfig?.projectId && !this.state.fetchedCategories) {
       this.getLabels()
     }
@@ -134,10 +120,6 @@ class DataAlertModal extends React.Component {
           console.error('error fetching data alert categories', error)
           this.setState({ categories: [], fetchedCategories: true })
         })
-  }
-
-  showConditionsStep = () => {
-    return this.conditionsEditable() || this.hasFilters()
   }
 
   getFilters = (props = this.props) => {
@@ -171,56 +153,92 @@ class DataAlertModal extends React.Component {
     return allFilters
   }
 
-  getSteps = (initialProps = this.props) => {
-    const props = initialProps ?? this.props
-    this.SUPPORTED_CONDITION_TYPES = getSupportedConditionTypes(props.currentDataAlert?.expression, props.queryResponse)
-
-    const steps = [
-      { title: 'Choose Alert Type', value: this.TYPE_STEP },
-      { title: 'Set Up Conditions', value: this.CONDITIONS_STEP },
-      { title: 'Configure Timing', value: this.FREQUENCY_STEP },
-      { title: 'Customize Appearance', value: this.MESSAGE_STEP },
-    ]
-
-    return steps
-  }
-
   getInitialState = (initialProps) => {
     const props = initialProps ?? this.props
-
-    const steps = this.getSteps(initialProps)
 
     const state = {
       titleInput: '',
       messageInput: '',
       expressionJSON: [],
       isConfirmDeleteModalVisible: false,
-      selectedConditionType: this.SUPPORTED_CONDITION_TYPES?.[0],
       activeStep: 0,
       completedSections: [],
       expressionKey: uuid(),
       isMounted: false,
-      dataAlertType: CONTINUOUS_TYPE,
       isSettingsFormComplete: true,
       billingUnitsInput: '',
       descriptionInput: '',
       categoryId: '',
       categories: null,
       fetchedCategories: false,
+      baseDataAlertColumns: [],
+      baseDataAlertQueryResponse: {},
+      isLoadingBaseDataAlertQueryResponse: true,
+      customFilters: [],
+      termValue: {},
+      isEditingDataAlert: this.props.currentDataAlert?.expression?.[1]?.term_type === 'DATA',
     }
 
     if (props.currentDataAlert) {
       const { currentDataAlert } = props
-      state.titleInput = currentDataAlert.title ?? ''
-      state.messageInput = currentDataAlert.message ?? ''
-      state.selectedConditionType = currentDataAlert.expression?.[0]?.condition ?? this.SUPPORTED_CONDITION_TYPES?.[0]
-      state.activeStep = 0
-      state.completedSections = steps.map(() => true)
+      if (
+        (currentDataAlert?.id && currentDataAlert?.project?.id) ||
+        (currentDataAlert?.id && currentDataAlert?.projects?.[0]?.id)
+      ) {
+        const dataAlertId = currentDataAlert.id
+        const projectId = currentDataAlert.projects?.[0]?.id
+        if (this.props?.autoQLConfig?.projectId) {
+          previewManagementDataAlert({
+            dataAlertId: dataAlertId,
+            ...getAuthentication(this.props.authentication),
+            projectId: projectId,
+          })
+            .then((response) => {
+              this.setState({
+                baseDataAlertColumns: response?.data?.data?.query_result?.data?.columns,
+                baseDataAlertQueryResponse: { data: response?.data?.data?.query_result },
+                isLoadingBaseDataAlertQueryResponse: false,
+              })
+            })
+            .catch((error) => {
+              const baseMessage = 'Unable to create custom filtered alert'
+              const errorDetail = error?.message || 'Please try again or contact support if the issue persists'
+              const errorMessage = `${baseMessage}: ${errorDetail}`
+              this.props.onErrorCallback(errorMessage)
+              console.error('Error getting data alert preview:', error)
+              this.setState({ isLoadingBaseDataAlertQueryResponse: false })
+            })
+        } else {
+          previewDataAlert({
+            dataAlertId: dataAlertId,
+            ...getAuthentication(this.props.authentication),
+          })
+            .then((response) => {
+              this.setState({
+                baseDataAlertColumns: response?.data?.data?.query_result?.data?.columns,
+                baseDataAlertQueryResponse: { data: response?.data?.data?.query_result },
+                isLoadingBaseDataAlertQueryResponse: false,
+              })
+            })
+            .catch((error) => {
+              const baseMessage = 'Unable to create custom filtered alert'
+              const errorDetail = error?.message || 'Please try again or contact support if the issue persists'
+              const errorMessage = `${baseMessage}: ${errorDetail}`
+              this.props.onErrorCallback(errorMessage)
+              console.error('Error getting data alert preview:', error)
+              this.setState({ isLoadingBaseDataAlertQueryResponse: false })
+            })
+        }
+      }
+      if (state.isEditingDataAlert) {
+        state.titleInput = currentDataAlert.title
+        state.messageInput = currentDataAlert.message
+      }
+
       state.expressionJSON = currentDataAlert?.expression
       state.billingUnitsInput = currentDataAlert?.billing_units
-      state.descriptionInput = currentDataAlert?.description
-      state.descriptionInput = currentDataAlert?.label
-      state.categoryId = currentDataAlert?.label?.id
+      state.descriptionInput = ''
+      state.categoryId = ''
     }
 
     return state
@@ -232,69 +250,61 @@ class DataAlertModal extends React.Component {
 
   getDataAlertData = () => {
     try {
-      const { currentDataAlert, queryResponse } = this.props
-      const { titleInput, messageInput, billingUnitsInput, descriptionInput } = this.state
+      const { currentDataAlert } = this.props
+      const { titleInput, messageInput } = this.state
 
-      if (!!this.props.currentDataAlert?.id) {
-        return this.settingsViewRef?.getData()
-      } else {
-        let expressionJSON = _cloneDeep(this.state.expressionJSON)
+      const customFilters = this.state.customFilters
 
-        if (this.expressionRef) {
-          expressionJSON = this.expressionRef.getJSON()
-        } else if (currentDataAlert) {
-          expressionJSON = currentDataAlert.expression
-        } else {
-          const query = queryResponse?.data?.data?.text
-          expressionJSON = [
-            {
-              id: uuid(),
-              term_type: QUERY_TERM_TYPE,
-              condition: EXISTS_TYPE,
-              term_value: query,
-              user_selection: queryResponse?.data?.data?.fe_req?.disambiguation,
-              additional_selects: queryResponse?.data?.data?.fe_req?.additional_selects || [],
-              display_overrides: queryResponse?.data?.data?.fe_req?.display_overrides || [],
-            },
-          ]
-        }
+      let expressionJSON = [
+        {
+          id: this.state.isEditingDataAlert ? currentDataAlert.expression?.[0]?.id : uuid(),
+          term_type: 'DATA_ALERT',
+          condition: 'INTERSECTS',
+          term_value: this.state.isEditingDataAlert
+            ? currentDataAlert.expression?.[0]?.term_value
+            : currentDataAlert.id,
+          project_id: this.state.isEditingDataAlert
+            ? currentDataAlert.expression?.[0]?.project_id
+            : currentDataAlert.project?.id || currentDataAlert.projects?.[0]?.id,
+          join_columns: [customFilters?.[0]?.column_name],
+        },
+        {
+          id: this.state.isEditingDataAlert ? currentDataAlert.expression?.[1]?.id : uuid(),
+          term_type: 'DATA',
+          condition: 'TERMINATOR',
+          term_value: this.state.termValue,
+          join_columns: [customFilters?.[0]?.column_name],
+        },
+      ]
 
-        let scheduleData = {}
-        if (this.scheduleBuilderRef) {
-          scheduleData = this.scheduleBuilderRef.getData()
-        }
-
-        const newDataAlert = {
+      let newDataAlert = {
+        title: titleInput,
+        message: messageInput,
+        notification_type: this.NOTIFICATION_TYPE_EVENT,
+        expression: expressionJSON,
+        reset_period: null,
+        projects: [],
+        evaluation_mode: this.EVALUATION_MODE_COMPOSITE,
+      }
+      if (this.state.isEditingDataAlert) {
+        newDataAlert = {
+          id: currentDataAlert?.id,
           title: titleInput,
           message: messageInput,
           expression: expressionJSON,
-          notification_type: scheduleData.notificationType,
-          reset_period: scheduleData.resetPeriod,
-          time_zone: scheduleData.timezone,
-          schedules: scheduleData.schedules,
-          evaluation_frequency: scheduleData.evaluationFrequency,
-          billing_units: billingUnitsInput,
-          description: descriptionInput,
+          reset_period: null,
+          projects: [],
+          evaluation_mode: 'COMPOSITE',
         }
-
-        return newDataAlert
       }
+      return newDataAlert
     } catch (error) {
       console.error(error)
     }
   }
 
-  onExpressionChange = (isComplete, isValid, expressionJSON) => {
-    const selectedConditionType = expressionJSON?.[0]?.condition === EXISTS_TYPE ? EXISTS_TYPE : COMPARE_TYPE
-    this.setState({ expressionJSON, selectedConditionType })
-  }
-
-  isConditionSectionReady = () => {
-    if (this.conditionsEditable() && this.expressionRef?._isMounted) {
-      return this.expressionRef?.isComplete()
-    }
-
-    return true
+  onExpressionChange = (expressionJSON) => {
+    this.setState({ expressionJSON })
   }
 
   onDataAlertCreateOrEditSuccess = (dataAlertResponse) => {
@@ -331,8 +341,7 @@ class DataAlertModal extends React.Component {
       isSavingDataAlert: true,
     })
 
-    const newDataAlert = !!this.props.currentDataAlert?.id ? this.settingsViewRef?.getData() : this.getDataAlertData()
-
+    const newDataAlert = this.getDataAlertData()
     const requestParams = {
       dataAlert: newDataAlert,
       ...getAuthentication(this.props.authentication),
@@ -366,7 +375,7 @@ class DataAlertModal extends React.Component {
             this.onDataAlertCreateOrEditError(error)
           })
       }
-    } else if (newDataAlert.id) {
+    } else if (newDataAlert?.id) {
       updateDataAlert({
         ...requestParams,
       })
@@ -389,72 +398,22 @@ class DataAlertModal extends React.Component {
     }
   }
 
-  nextStep = () => {
-    if (!this.isStepReady()) {
-      return
-    }
-
-    const completedSections = [...this.state.completedSections]
-    completedSections[this.state.activeStep] = true
-
-    this.setState({
-      activeStep: this.state.activeStep + 1,
-      completedSections,
-    })
-  }
-
-  previousStep = () => {
-    if (this.state.activeStep > 0) {
-      this.setState({
-        activeStep: this.state.activeStep - 1,
-      })
-    }
-  }
-
-  setStep = (step) => {
-    this.setState({ activeStep: step })
-  }
-
   isFinishBtnDisabled = () => {
-    if (!!this.props.currentDataAlert?.id) {
-      return !this.state.isSettingsFormComplete
-    }
-
-    const steps = this.getSteps()
-
-    const lastStep = steps.length - 1
-    const hasUnfinishedStep = !!steps.find((s, i) => {
-      if (i === lastStep) {
-        return false
-      }
-      return !this.state.completedSections[i]
-    })
-
-    const isLastStepReady = this.isStepReady(lastStep)
-
-    return hasUnfinishedStep || !isLastStepReady
+    return !this.isStepReady()
   }
 
-  renderNextBtn = () => {
-    if (!!this.props.currentDataAlert?.id) {
-      return (
-        <Button
-          type='primary'
-          loading={this.state.isSavingDataAlert}
-          onClick={this.onDataAlertSave}
-          disabled={this.isFinishBtnDisabled()}
-          tooltipID={this.TOOLTIP_ID}
-        >
-          Save Changes
-        </Button>
-      )
-    }
+  renderFinishAndSaveBtn = () => {
+    const tooltipContent =
+      this.state.titleInput === '' && this.state.customFilters.length === 0
+        ? 'You must provide both an alert title and at least one filter'
+        : this.state.titleInput === ''
+        ? 'You must provide an alert title'
+        : this.state.customFilters.length === 0
+        ? 'You must select at least one filter'
+        : ''
 
-    const steps = this.getSteps()
-
-    const isLastStep = this.state.activeStep === steps.length - 1
-    if (isLastStep) {
-      return (
+    return (
+      <span data-tooltip-id={this.TOOLTIP_ID} data-tooltip-content={tooltipContent}>
         <Button
           type='primary'
           loading={this.state.isSavingDataAlert}
@@ -464,31 +423,7 @@ class DataAlertModal extends React.Component {
         >
           Finish & Save
         </Button>
-      )
-    }
-
-    return (
-      <Button
-        className='react-autoql-data-alert-next-btn'
-        onClick={this.nextStep}
-        disabled={!this.isStepReady()}
-        type='primary'
-        tooltipID={this.TOOLTIP_ID}
-      >
-        Next
-      </Button>
-    )
-  }
-
-  renderBackBtn = (className) => {
-    if (this.state.activeStep === 0) {
-      return null
-    }
-
-    return (
-      <Button className={className} tooltipID={this.TOOLTIP_ID} onClick={this.previousStep}>
-        Back
-      </Button>
+      </span>
     )
   }
 
@@ -508,7 +443,6 @@ class DataAlertModal extends React.Component {
       </Button>
     )
   }
-
   renderDeleteBtn = () => {
     return (
       <Button
@@ -522,53 +456,28 @@ class DataAlertModal extends React.Component {
       </Button>
     )
   }
-
   renderFooter = () => {
     return (
       <div className='data-alert-modal-footer-container'>
         {this.renderQuerySummary()}
         <div ref={(r) => (this.footerElement = r)} className='react-autoql-data-alert-modal-footer'>
-          <div className='modal-footer-button-container'>
-            {this.props.currentDataAlert && this.props.allowDelete && this.renderDeleteBtn()}
-          </div>
+          <div className='modal-footer-button-container'></div>
           <div className='modal-footer-button-container'>
             {this.renderCancelBtn()}
-            {this.renderBackBtn()}
-            {this.renderNextBtn()}
+            {this.renderFinishAndSaveBtn()}
           </div>
         </div>
       </div>
     )
   }
 
-  renderTypeStep = (active) => {
-    return (
-      <div className={`react-autoql-data-alert-modal-step ${active ? '' : 'hidden'}`}>
-        <div style={{ display: 'flex' }}>
-          <div className='react-autoql-data-alert-type-step'>
-            <MultilineButton
-              title='Live Alert'
-              icon='live'
-              subtitle='Get notifications when the data for this query meets certain conditions.'
-              onClick={() => this.setState({ dataAlertType: CONTINUOUS_TYPE })}
-              isActive={this.state.dataAlertType === CONTINUOUS_TYPE}
-            />
-            <MultilineButton
-              title='Scheduled Alert'
-              icon='calendar'
-              subtitle='Get notifications with the result of this query at specific times.'
-              onClick={() => this.setState({ dataAlertType: SCHEDULED_TYPE })}
-              isActive={this.state.dataAlertType === SCHEDULED_TYPE}
-            />
-          </div>
-        </div>
-      </div>
-    )
+  updateCustomFilters = (filters) => {
+    this.setState({ customFilters: filters })
   }
 
-  renderConditionsStep = (active) => {
+  renderConditionsStep = () => {
     return (
-      <div className={`react-autoql-data-alert-modal-step ${active ? '' : 'hidden'}`}>
+      <div className={`react-autoql-custom-filtered-alert-modal-step`}>
         <div style={{ display: 'flex' }}>
           <div style={{ flex: 1, width: '100%' }}>
             <ConditionBuilder
@@ -580,9 +489,14 @@ class DataAlertModal extends React.Component {
               expression={this.state.expressionJSON}
               queryResponse={this.props.queryResponse}
               tooltipID={this.TOOLTIP_ID}
-              onLastInputEnterPress={this.nextStep}
               filters={this.props.filters}
-              dataAlertType={this.state.dataAlertType}
+              isCompositeAlert={true}
+              dataAlert={this.props.currentDataAlert}
+              baseDataAlertColumns={this.state.baseDataAlertColumns}
+              baseDataAlertQueryResponse={this.state.baseDataAlertQueryResponse}
+              isLoadingBaseDataAlertQueryResponse={this.state.isLoadingBaseDataAlertQueryResponse}
+              onCustomFiltersChange={this.updateCustomFilters}
+              customFilters={this.state.customFilters}
             />
           </div>
         </div>
@@ -591,46 +505,12 @@ class DataAlertModal extends React.Component {
   }
 
   getConditionStatement = () => {
-    return this.conditionsEditable() ? 'the Data Alert conditions are met' : 'new data is detected for your query'
+    return 'the alert conditions are met'
   }
 
-  renderFrequencyStep = (active) => {
+  renderComposeMessageStep = () => {
     return (
-      <div className={`react-autoql-data-alert-modal-step ${active ? '' : 'hidden'}`}>
-        <ScheduleBuilder
-          ref={(r) => (this.scheduleBuilderRef = r)}
-          key={`schedule-${this.COMPONENT_KEY}`}
-          dataAlert={this.props.currentDataAlert}
-          onCompleteChange={(isComplete) => this.setState({ isFrequencySectionReady: isComplete })}
-          onErrorCallback={this.props.onErrorCallback}
-          conditionType={this.state.selectedConditionType}
-          conditionStatement={this.getConditionStatement()}
-          queryResponse={this.props.queryResponse}
-          expressionRef={this.expressionRef}
-          dataAlertType={this.state.dataAlertType}
-          tooltipID={this.TOOLTIP_ID}
-        />
-      </div>
-    )
-  }
-
-  renderAlphaAlertsSettings = () => {
-    return (
-      <CollapsableSection title='Additional Settings' defaultCollapsed={true} onToggle={() => {}}>
-        <AlphaAlertsSettings
-          ref={(r) => (this.alphaAlertsSettingRef = r)}
-          billingUnitsInput={this.state.billingUnitsInput}
-          onBillingUnitsInputChange={(value) => {
-            this.setState({ billingUnitsInput: value })
-          }}
-        />
-      </CollapsableSection>
-    )
-  }
-
-  renderComposeMessageStep = (active) => {
-    return (
-      <div className={`react-autoql-data-alert-modal-step ${active ? '' : 'hidden'}`}>
+      <div className={`react-autoql-custom-filtered-alert-modal-step`}>
         <AppearanceSection
           ref={(r) => (this.appearanceSectionRef = r)}
           titleInput={this.state.titleInput}
@@ -649,35 +529,24 @@ class DataAlertModal extends React.Component {
           }}
           categories={this.state.categories || []}
           enableAlphaAlertSettings={this.props.enableAlphaAlertSettings}
+          isCompositeAlert={true}
         />
-        {this.props.enableAlphaAlertSettings && this.renderAlphaAlertsSettings()}
       </div>
     )
-  }
-
-  getStepNumber = (stepValue) => {
-    const steps = this.getSteps()
-    const stepNumber = steps.findIndex((step) => step.value && stepValue && step.value === stepValue)
-    return stepNumber
   }
 
   onDataAlertDelete = () => {
     const dataAlertId = this.props.currentDataAlert?.id
     if (dataAlertId) {
       this.setState({ isConfirmDeleteModalVisible: false })
-      this.props.onDelete(dataAlertId)
     }
   }
 
   renderStepContent = () => {
-    const { activeStep } = this.state
-
     return (
       <>
-        {this.renderTypeStep(activeStep === this.getStepNumber(this.TYPE_STEP))}
-        {this.renderConditionsStep(activeStep === this.getStepNumber(this.CONDITIONS_STEP))}
-        {this.renderFrequencyStep(activeStep === this.getStepNumber(this.FREQUENCY_STEP))}
-        {this.renderComposeMessageStep(activeStep === this.getStepNumber(this.MESSAGE_STEP))}
+        {this.renderConditionsStep()}
+        {this.renderComposeMessageStep()}
       </>
     )
   }
@@ -690,10 +559,6 @@ class DataAlertModal extends React.Component {
       !!this.props.currentDataAlert?.expression?.[0]?.session_filter_locks?.length ||
       !!this.props.currentDataAlert?.expression?.[0]?.filters?.length
     )
-  }
-
-  conditionsEditable = () => {
-    return this.SUPPORTED_CONDITION_TYPES?.includes(COMPARE_TYPE)
   }
 
   onSettingsCompleteChange = (isSettingsFormComplete) => {
@@ -713,7 +578,7 @@ class DataAlertModal extends React.Component {
         <div className='data-alert-modal-query-summary-background' />
         <div className='data-alert-modal-query-summary'>
           <span>
-            <strong>Your query:</strong> "{formattedQueryText}"
+            <strong>Your data alert:</strong> "{formattedQueryText}"
           </span>
         </div>
       </div>
@@ -725,74 +590,21 @@ class DataAlertModal extends React.Component {
       return null
     }
 
-    const steps = this.getSteps()
-
-    if (!!this.props.currentDataAlert?.id) {
-      return (
-        <CustomScrollbars className='data-alert-modal-settings-scroll-container'>
-          <DataAlertSettings
-            ref={(r) => (this.settingsViewRef = r)}
-            authentication={this.props.authentication}
-            currentDataAlert={this.props.currentDataAlert}
-            enableQueryValidation={this.props.enableQueryValidation}
-            supportedConditionTypes={this.SUPPORTED_CONDITION_TYPES}
-            onErrorCallback={this.props.onErrorCallback}
-            onCompleteChange={this.onSettingsCompleteChange}
-            enableAlphaAlertSettings={this.props.enableAlphaAlertSettings}
-            tooltipID={this.TOOLTIP_ID}
-            categories={this.state.categories || []}
-          />
-        </CustomScrollbars>
-      )
-    }
-
     return (
       <>
-        <StepsHoz
-          activeStep={this.state.activeStep}
-          onStepChange={this.setStep}
-          steps={steps.map((step, i) => {
-            return {
-              title: step.title,
-              complete: this.state.completedSections[i],
-            }
-          })}
-        />
         <div className='data-alert-modal-step-content-container'>{this.renderStepContent()}</div>
       </>
     )
   }
 
   isStepReady = () => {
-    const { activeStep } = this.state
-
-    const steps = this.getSteps()
-    const stepName = steps?.[activeStep]?.value
-
-    switch (stepName) {
-      case this.TYPE_STEP: {
-        return !!this.state.dataAlertType
-      }
-      case this.CONDITIONS_STEP: {
-        return this.isConditionSectionReady()
-      }
-      case this.FREQUENCY_STEP: {
-        return this.state.isFrequencySectionReady
-      }
-      case this.MESSAGE_STEP: {
-        return !!this.state.titleInput
-      }
-      default: {
-        return false
-      }
-    }
+    return this.state.titleInput !== '' && this.state.customFilters.length > 0
   }
 
   getTitleIcon = () => {
-    if (!_isEmpty(this.props.currentDataAlert)) {
+    if (!_isEmpty(this.props.currentDataAlert) && this.state.isEditingDataAlert) {
       return <Icon key={`title-icon-${this.COMPONENT_KEY}`} type='settings' />
     }
-
     return <span key={`title-icon-${this.COMPONENT_KEY}`} />
   }
 
@@ -803,7 +615,11 @@ class DataAlertModal extends React.Component {
           contentClassName='react-autoql-data-alert-creation-modal'
           bodyClassName='react-autoql-data-alert-modal-body'
           overlayStyle={{ zIndex: '9998' }}
-          title={!!this.props.currentDataAlert?.id ? 'Edit Data Alert Settings' : 'Create Data Alert'}
+          title={
+            this.state.isEditingDataAlert
+              ? CUSTOM_FILTERED_ALERT_MODAL_TITLES.EDIT
+              : CUSTOM_FILTERED_ALERT_MODAL_TITLES.CREATE
+          }
           titleIcon={this.getTitleIcon()}
           ref={(r) => (this.modalRef = r)}
           isVisible={this.props.isVisible}
@@ -815,7 +631,6 @@ class DataAlertModal extends React.Component {
           onOpened={this.props.onOpened}
           onClosed={this.props.onClosed}
         >
-          {/* We must render a new <Tooltip/> inside of modals */}
           <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={500} />
           <div
             key={`data-alert-modal-content-${this.COMPONENT_KEY}`}
@@ -839,4 +654,4 @@ class DataAlertModal extends React.Component {
   }
 }
 
-export default withTheme(DataAlertModal)
+export default withTheme(CustomFilteredAlertModal)

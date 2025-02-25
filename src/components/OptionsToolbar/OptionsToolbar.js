@@ -64,6 +64,7 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadStart: PropTypes.func,
     onCSVDownloadFinish: PropTypes.func,
     onCSVDownloadProgress: PropTypes.func,
+    showFilterBadge: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -82,6 +83,7 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadStart: () => {},
     onCSVDownloadFinish: () => {},
     onCSVDownloadProgress: () => {},
+    showFilterBadge: false,
   }
 
   componentDidMount = () => {
@@ -382,9 +384,9 @@ export class OptionsToolbar extends React.Component {
               style={
                 this.state.isCSVDownloading
                   ? {
-                    pointerEvents: 'none', // This makes it not clickable
-                    opacity: 0.6, // This grays it out to look disabled
-                  }
+                      pointerEvents: 'none', // This makes it not clickable
+                      opacity: 0.6, // This grays it out to look disabled
+                    }
                   : null
               }
             >
@@ -541,8 +543,7 @@ export class OptionsToolbar extends React.Component {
   }
 
   renderFilterBtn = () => {
-    const isFiltered =
-      !!this.props.responseRef?.formattedTableParams?.filters?.length
+    const isFiltered = !!this.props.responseRef?.formattedTableParams?.filters?.length || this.props.showFilterBadge
     const displayType = this.props.responseRef?.state?.displayType
     const isTable = displayType === 'table'
 
@@ -704,7 +705,7 @@ export class OptionsToolbar extends React.Component {
           hasData &&
           (displayType === 'table' || (displayType === 'text' && allColumnsHidden)),
         showHiddenColsBadge: someColumnsHidden,
-        showSQLButton: isDataResponse && autoQLConfig.debug,
+        showSQLButton: isDataResponse && autoQLConfig.translation === 'include',
         showSaveAsCSVButton: isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
         showDeleteButton: props.enableDeleteBtn,
         showReportProblemButton: autoQLConfig.enableReportProblem && !!response?.data?.data?.query_id,
