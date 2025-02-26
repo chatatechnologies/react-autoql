@@ -87,9 +87,6 @@ export default class ChataTable extends React.Component {
       progressiveLoadScrollMargin: 50, // Trigger next ajax load when scroll bar is 800px or less from the bottom of the table.
       // renderHorizontal: 'virtual', // v4: virtualDomHoz = false
       movableColumns: true,
-      // layout: 'fitDataFill',
-      // progressiveLoad: this.useRemote === 'remote',
-      // virtualDomBuffer: 500,
       downloadEncoder: function (fileContents, mimeType) {
         //fileContents - the unencoded contents of the file
         //mimeType - the suggested mime type for the output
@@ -273,7 +270,6 @@ export default class ChataTable extends React.Component {
 
     if (this.props.columns && this.state.tabulatorMounted && !deepEqual(this.props.columns, prevProps.columns)) {
       this.ref?.tabulator?.setColumns(this.getFilteredTabulatorColumnDefinitions())
-      console.log('columns updated')
       this.updateData(this.getRows(this.props, 1)).then(() => {
         if (this.props.keepScrolledRight) {
           this.scrollToRight()
@@ -474,10 +470,8 @@ export default class ChataTable extends React.Component {
   }
 
   onDataFiltering = () => {
-    console.log('Filter starting')
     if (this._isMounted && this.state.tabulatorMounted) {
       const headerFilters = this.ref?.tabulator?.getHeaderFilters()
-      console.log('Header filters:', headerFilters)
       if (headerFilters && !_isEqual(headerFilters, this.tableParams?.filter)) {
         this.isFiltering = true
         this.setLoading(true)
@@ -511,7 +505,6 @@ export default class ChataTable extends React.Component {
   }
 
   onDataProcessed = (data) => {
-    console.log('511', data)
     if (this.hasSetInitialData || data?.length || !this.props.response?.data?.data?.rows?.length) {
       this.hasSetInitialData = true
       this.isSettingInitialData = false
@@ -585,27 +578,12 @@ export default class ChataTable extends React.Component {
   }
 
   ajaxRequestFunc = async (props, params) => {
-    if (this.useRemote === 'local') {
-      const fullData = props.response?.data?.data?.rows || []
-
-      // Initialize table with complete dataset
-      this.ref?.tabulator?.setData(fullData)
-
-      // Configure virtual scrolling
-      this.ref?.tabulator?.setOption('virtualDom', true)
-      this.ref?.tabulator?.setOption('virtualDomBuffer', 300)
-
-      //   return {
-      //     data: [], // Return empty since data is already set
-      //     last_page: 1,
-      //   }
-    }
     const initialData = {
       rows: this.getRows(this.props, 1),
       page: 1,
       isInitialData: true,
     }
-    console.log('ajaxRequestFunc')
+
     let response = initialData
 
     try {
@@ -636,7 +614,7 @@ export default class ChataTable extends React.Component {
         }
 
         /* wait for current event loop to end so table is updated
-before callbacks are invoked */
+        before callbacks are invoked */
         await currentEventLoopEnd()
 
         this.props.onTableParamsChange(params, nextTableParamsFormatted)
@@ -744,10 +722,7 @@ before callbacks are invoked */
         newRows = props.data?.slice(start, end) ?? []
       }
     } else {
-      newRows =
-        this.useRemote === 'remote'
-          ? props.response?.data?.data?.rows?.slice(start, end) ?? []
-          : this.getFilteredRows(props)?.slice(start, end) ?? []
+      newRows = props.response?.data?.data?.rows?.slice(start, end) ?? []
     }
 
     return _cloneDeep(newRows)
@@ -794,7 +769,6 @@ before callbacks are invoked */
   getNewPage = (props, tableParams) => {
     try {
       const rows = this.getRows(props, tableParams.page)
-      console.log('getNewPage', rows)
       const response = {
         page: tableParams.page,
         rows,
@@ -1573,23 +1547,14 @@ before callbacks are invoked */
   }
 
   getCurrentRowCount = () => {
-    let rowCount = this.ref?.tabulator?.getDataCount()
-    if (this.tableParams?.filter?.length) {
-      let data = this.props.response?.data?.data?.rows || []
-      this.tableParams.filter.forEach((filter) => {
-        const filterColumnIndex = this.props.columns.findIndex((col) => col.field === filter.field)
-        data = filterDataByColumn(data, this.props.columns, filterColumnIndex, filter.value, filter.operator)
-      })
-      rowCount = data.length
+    let rowCount = this.ref?.tabulator?.getDataCount('active')
+
+    if (rowCount === undefined) {
+      rowCount = this.tableParams.page * this.pageSize
     }
 
-    const dataCount =
-      this.useRemote === 'remote'
-        ? this.props.response?.data?.data?.rows?.length
-        : this.getFilteredRows(this.props)?.length
-
-    if (rowCount > dataCount) {
-      rowCount = dataCount
+    if (rowCount > this.props.response?.data?.data?.rows?.length) {
+      rowCount = this.props.response?.data?.data?.rows?.length
     }
 
     return rowCount
@@ -1616,16 +1581,16 @@ before callbacks are invoked */
           data-test='react-autoql-table'
           style={this.props.style}
           className={`react-autoql-table-container 
-          ${this.state.pageLoading || !this.state.tabulatorMounted ? 'loading' : ''}
-          ${getAutoQLConfig(this.props.autoQLConfig)?.enableDrilldowns ? 'supports-drilldown' : 'disable-drilldown'}
-          ${this.state.isFiltering ? 'filtering' : ''}
-          ${this.props.isResizing ? 'resizing' : ''}
-          ${this.props.isAnimating ? 'animating' : ''}
-          ${this.props.useInfiniteScroll ? 'infinite' : 'limited'}
-          ${this.props.useInfiniteScroll && this.state.isLastPage ? 'last-page' : ''}
-          ${this.props.pivot ? 'pivot' : ''}
-          ${this.props.hidden ? 'hidden' : ''}
-          ${isEmpty ? 'empty' : ''}`}
+            ${this.state.pageLoading || !this.state.tabulatorMounted ? 'loading' : ''}
+            ${getAutoQLConfig(this.props.autoQLConfig)?.enableDrilldowns ? 'supports-drilldown' : 'disable-drilldown'}
+            ${this.state.isFiltering ? 'filtering' : ''}
+            ${this.props.isResizing ? 'resizing' : ''}
+            ${this.props.isAnimating ? 'animating' : ''}
+            ${this.props.useInfiniteScroll ? 'infinite' : 'limited'}
+            ${this.props.useInfiniteScroll && this.state.isLastPage ? 'last-page' : ''}
+            ${this.props.pivot ? 'pivot' : ''}
+            ${this.props.hidden ? 'hidden' : ''}
+            ${isEmpty ? 'empty' : ''}`}
         >
           {this.renderPivotTableRowWarning()}
           <div ref={(r) => (this.tabulatorContainer = r)} className='react-autoql-tabulator-container'>
