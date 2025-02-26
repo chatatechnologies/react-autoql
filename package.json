@@ -62,12 +62,12 @@
   },
   "dependencies": {
     "@react-icons/all-files": "4.1.0",
+    "autoql-fe-utils": "1.6.22",
     "axios": "1.4.0",
     "caniuse-lite": "1.0.30001692",
     "classnames": "2.5.1",
     "d3-array": "2.3.3",
     "d3-axis": "1.0.12",
-    "d3-collection": "^1.0.7",
     "d3-scale": "4.0.2",
     "d3-selection": "3.0.0",
     "d3-shape": "3.2.0",

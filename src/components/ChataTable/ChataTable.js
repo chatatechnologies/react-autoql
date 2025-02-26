@@ -66,7 +66,6 @@ export default class ChataTable extends React.Component {
     this.isFiltering = false
     this.isSorting = false
     this.pageSize = props.pageSize ?? 50
-    this.useRemote = this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT ? 'remote' : 'local'
 
     this.totalPages = this.getTotalPages(props.response)
     if (isNaN(this.totalPages) || !this.totalPages) {
@@ -77,6 +76,18 @@ export default class ChataTable extends React.Component {
       filter: props?.initialTableParams?.filter || [],
       sort: props?.initialTableParams?.sort || [],
       page: 1,
+    }
+
+    this.state = {
+      isFiltering: false,
+      isSorting: false,
+      loading: false,
+      pageLoading: false,
+      scrollLoading: false,
+      isLastPage: this.tableParams.page === this.totalPages,
+      subscribedData: undefined,
+      firstRender: true,
+      useRemote: this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT ? 'remote' : 'local',
     }
 
     this.tableOptions = {
@@ -99,31 +110,19 @@ export default class ChataTable extends React.Component {
     }
 
     if (props.response?.data?.data?.rows?.length) {
-      this.tableOptions.sortMode = this.useRemote // v4: ajaxSorting = true
-      this.tableOptions.filterMode = this.useRemote // v4: ajaxFiltering = true
-      this.tableOptions.paginationMode = this.useRemote
       this.tableOptions.progressiveLoad = 'scroll' // v4: ajaxProgressiveLoad
-      this.tableOptions.ajaxURL = 'https://required-placeholder-url.com'
+      this.tableOptions.sortMode = this.state.useRemote // v4: ajaxSorting = true
+      this.tableOptions.filterMode = this.state.useRemote // v4: ajaxFiltering = true
+      this.tableOptions.paginationMode = this.state.useRemote
       this.tableOptions.paginationSize = this.pageSize
       this.tableOptions.paginationInitialPage = 1
+      this.tableOptions.ajaxURL = 'https://required-placeholder-url.com'
       this.tableOptions.ajaxRequesting = (url, params) => this.ajaxRequesting(props, params)
       this.tableOptions.ajaxRequestFunc = (url, config, params) => this.ajaxRequestFunc(props, params)
       this.tableOptions.ajaxResponse = (url, params, response) => this.ajaxResponseFunc(props, response)
     }
 
     this.summaryStats = {}
-
-    this.state = {
-      isFiltering: false,
-      isSorting: false,
-      loading: false,
-      pageLoading: false,
-      scrollLoading: false,
-      isLastPage: this.tableParams.page === this.totalPages,
-      subscribedData: undefined,
-      firstRender: true,
-      useRemote: 'remote',
-    }
   }
 
   static propTypes = {
@@ -378,9 +377,9 @@ export default class ChataTable extends React.Component {
       return
     }
 
-    this.ref.tabulator.options.sortMode = this.useRemote
-    this.ref.tabulator.options.filterMode = this.useRemote
-    this.ref.tabulator.options.paginationMode = this.useRemote
+    this.ref.tabulator.options.sortMode = this.state.useRemote
+    this.ref.tabulator.options.filterMode = this.state.useRemote
+    this.ref.tabulator.options.paginationMode = this.state.useRemote
   }
 
   updateData = (data, useInfiniteScroll) => {
@@ -680,7 +679,7 @@ export default class ChataTable extends React.Component {
 
   getFilteredRows = (props) => {
     let rows = props.response?.data?.data?.rows || []
-    if (this.useRemote !== 'remote') {
+    if (this.state.useRemote === 'local') {
       if (this.tableParams?.filter?.length) {
         this.tableParams.filter.forEach((filter) => {
           const filterColumnIndex = this.props.columns.findIndex((col) => col.field === filter.field)
@@ -1420,7 +1419,7 @@ export default class ChataTable extends React.Component {
       totalRowCount = this.props.data?.length
     } else {
       totalRowCount =
-        this.useRemote === 'remote'
+        this.state.useRemote === 'remote'
           ? this.props.response?.data?.data?.count_rows
           : this.getFilteredRows(this.props)?.length
     }
