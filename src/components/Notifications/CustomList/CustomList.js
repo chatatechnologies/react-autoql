@@ -141,15 +141,8 @@ export default class CustomList extends React.Component {
         const sortingArray = []
         let suggestionsMatchArray = []
         this.autoCompleteArray = []
-        suggestionsMatchArray = body.matches.filter((suggestion) =>
-          this.props.baseDataAlertColumns.some(
-            (column) =>
-              column.name === suggestion.column_name &&
-              (this.state.filters.length === 0 ||
-                this.state.filters.some((filter) => filter.column_name === suggestion.column_name)),
-          ),
-        )
 
+        suggestionsMatchArray = body.matches
         for (let i = 0; i < suggestionsMatchArray.length; i++) {
           sortingArray.push(suggestionsMatchArray[i])
         }
