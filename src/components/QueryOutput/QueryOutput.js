@@ -151,6 +151,8 @@ export class QueryOutput extends React.Component {
 
     this.DEFAULT_TABLE_PAGE_SIZE = 100
 
+    console.log('subjects', this.props.subjects)
+
     this.state = {
       displayType,
       aggConfig: props.initialAggConfig,
@@ -197,6 +199,7 @@ export class QueryOutput extends React.Component {
     onErrorCallback: PropTypes.func,
     showQueryInterpretation: PropTypes.bool,
     useInfiniteScroll: PropTypes.bool,
+    subjects: PropTypes.arrayOf(PropTypes.shape({})),
 
     mutable: PropTypes.bool,
     showSuggestionPrefix: PropTypes.bool,
@@ -249,18 +252,19 @@ export class QueryOutput extends React.Component {
     bucketSize: undefined,
     allowColumnAddition: false,
     enableTableContextMenu: true,
-    onTableConfigChange: () => {},
-    onAggConfigChange: () => {},
-    onQueryValidationSelectOption: () => {},
-    onErrorCallback: () => {},
-    onDrilldownStart: () => {},
-    onDrilldownEnd: () => {},
-    onColumnChange: () => {},
-    onPageSizeChange: () => {},
-    onMount: () => {},
-    onBucketSizeChange: () => {},
-    onNewData: () => {},
-    onCustomColumnUpdate: () => {},
+    subjects: [],
+    onTableConfigChange: () => { },
+    onAggConfigChange: () => { },
+    onQueryValidationSelectOption: () => { },
+    onErrorCallback: () => { },
+    onDrilldownStart: () => { },
+    onDrilldownEnd: () => { },
+    onColumnChange: () => { },
+    onPageSizeChange: () => { },
+    onMount: () => { },
+    onBucketSizeChange: () => { },
+    onNewData: () => { },
+    onCustomColumnUpdate: () => { },
   }
 
   componentDidMount = () => {
@@ -424,8 +428,8 @@ export class QueryOutput extends React.Component {
     return foundIndex
       ? foundIndex
       : this.tableConfig.stringColumnIndices.length > 0
-      ? this.tableConfig.stringColumnIndices[0]
-      : 0
+        ? this.tableConfig.stringColumnIndices[0]
+        : 0
   }
 
   findDefaultNumberColumnIndex = (defaultAmountColumn) => {
@@ -442,8 +446,8 @@ export class QueryOutput extends React.Component {
     return foundIndex
       ? foundIndex
       : this.tableConfig.numberColumnIndices.length > 0
-      ? this.tableConfig.numberColumnIndices[0]
-      : 0
+        ? this.tableConfig.numberColumnIndices[0]
+        : 0
   }
 
   checkAndUpdateTableConfigs = (displayType) => {
@@ -477,8 +481,7 @@ export class QueryOutput extends React.Component {
 
   displayTypeInvalidWarning = (displayType) => {
     console.warn(
-      `Initial display type "${this.props.initialDisplayType}" provided is not valid for this dataset. Using ${
-        displayType || this.state.displayType
+      `Initial display type "${this.props.initialDisplayType}" provided is not valid for this dataset. Using ${displayType || this.state.displayType
       } instead.`,
     )
   }
@@ -847,9 +850,8 @@ export class QueryOutput extends React.Component {
       <div className='single-value-response-flex-container'>
         <div className='single-value-response-container'>
           <a
-            className={`single-value-response ${
-              getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? ' with-drilldown' : ''
-            }`}
+            className={`single-value-response ${getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? ' with-drilldown' : ''
+              }`}
             onClick={() => {
               this.processDrilldown({ groupBys: [], supportedByAPI: true })
             }}
@@ -907,7 +909,9 @@ export class QueryOutput extends React.Component {
       return error
     }
   }
+
   queryFn = async (args = {}) => {
+    console.log('hello')
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
     const allFilters = this.getCombinedFilters()
 
@@ -2842,6 +2846,7 @@ export class QueryOutput extends React.Component {
   }
 
   renderReverseTranslation = () => {
+    console.log('rendering reverse translation', this.props.subjects)
     return (
       <ReverseTranslation
         authentication={this.props.authentication}
@@ -2850,15 +2855,16 @@ export class QueryOutput extends React.Component {
         isResizing={this.props.isResizing}
         queryResponse={this.queryResponse}
         tooltipID={this.props.tooltipID}
+        subjects={this.props.subjects}
+        queryOutputRef={this.responseContainerRef}
       />
     )
   }
 
   renderFooter = () => {
     const shouldRenderRT = this.shouldRenderReverseTranslation()
-    const footerClassName = `query-output-footer ${!shouldRenderRT ? 'no-margin' : ''} ${
-      this.props.reverseTranslationPlacement
-    }`
+    const footerClassName = `query-output-footer ${!shouldRenderRT ? 'no-margin' : ''} ${this.props.reverseTranslationPlacement
+      }`
 
     return <div className={footerClassName}>{shouldRenderRT && this.renderReverseTranslation()}</div>
   }

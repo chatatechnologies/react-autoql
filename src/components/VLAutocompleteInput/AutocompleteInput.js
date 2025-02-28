@@ -50,6 +50,7 @@ const AutocompleteInput = ({
   const searchTimer = useRef(null)
 
   useEffect(() => {
+    inputElement.current.focus()
     return () => {
       if (searchTimer.current) {
         clearTimeout(searchTimer.current)
@@ -58,7 +59,7 @@ const AutocompleteInput = ({
   }, [])
 
   const selectAll = () => {
-    inputElement?.current?.select?.()
+    inputElement?.select?.()
   }
 
   const onInputFocus = () => {

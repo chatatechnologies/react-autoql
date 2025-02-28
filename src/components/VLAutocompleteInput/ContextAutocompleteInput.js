@@ -48,6 +48,7 @@ const ContextAutocompleteInput = ({
     if (existingFilter) {
       handleHighlightFilter(existingFilter)
     } else {
+      console.log('newFilter', newFilter)
       onChange(newFilter)
     }
   }, [onChange, findExistingFilter, handleHighlightFilter])
