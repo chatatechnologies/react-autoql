@@ -23,13 +23,20 @@
     }
   }
 
-  .react-autoql-window-fn-popover {
-    padding: 10px 0 0;
+  .react-autoql-window-fn-popover-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+    display: flex;
+    position: absolute;
+    right: 0;
+    bottom: 0;
 
-    .react-autoql-window-fn-popover-footer {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 20px;
+    @include sm {
+      position: unset;
+      padding: 10px 0px;
+      right: unset;
+      bottom: unset;
     }
   }
 
