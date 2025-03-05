@@ -669,7 +669,7 @@ export default class ChataTable extends React.Component {
     if (params.tableFilters?.length) {
       params.tableFilters.forEach((filter) => {
         const filterColumnName = filter.name
-        const filterColumnIndex = this.props.columns.find((col) => col.name === filterColumnName)?.index
+        const filterColumnIndex = this.props.columns.find((col) => col.id === filter.id)?.index
 
         data = filterDataByColumn(data, this.props.columns, filterColumnIndex, filter.value, filter.operator)
       })
@@ -1358,7 +1358,6 @@ export default class ChataTable extends React.Component {
           })
           return newCol
         })
-
         return filteredColumns
       }
     } catch (error) {

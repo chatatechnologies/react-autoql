@@ -1838,21 +1838,11 @@ export class QueryOutput extends React.Component {
       return null
     }
 
-    const usedNames = new Map()
     const formattedColumns = columns.map((col, i) => {
       const newCol = _cloneDeep(col)
 
       newCol.id = col.id ?? uuid()
       newCol.field = `${i}`
-      if (newCol.name) {
-        if (usedNames.has(newCol.name)) {
-          const count = usedNames.get(newCol.name) + 1
-          usedNames.set(newCol.name, count)
-          newCol.name = `${newCol.name} (${count})`
-        } else {
-          usedNames.set(newCol.name, 1)
-        }
-      }
       newCol.title = col.display_name
 
       newCol.mutateLink = 'Custom'
