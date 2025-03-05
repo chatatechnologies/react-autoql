@@ -1,4 +1,5 @@
 export const columnOptionsList = [
+  'id', // Identifier for a column
   'title', // Required This is the title that will be displayed in the header for this column
   'field', // Required (not required in icon/button columns) this is the key for this column in the data array
   'visible', // (boolean, default', // true) determines if the column is visible. (see Column Visibility for more details)
