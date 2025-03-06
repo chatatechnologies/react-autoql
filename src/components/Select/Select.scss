@@ -10,6 +10,12 @@
   }
 }
 
+.react-autoql-input-label {
+  &.disabled {
+    color: var(--react-autoql-background-color-disabled-dark);
+  }
+}
+
 .react-autoql-select-and-label {
   display: inline-flex;
   flex-direction: column;
@@ -86,6 +92,10 @@
         color: var(--react-autoql-accent-color);
         border-color: var(--react-autoql-accent-color);
       }
+    }
+
+    &.disabled {
+      color: var(--react-autoql-background-color-disabled-dark);
     }
 
     .react-autoql-select-text {

@@ -1085,6 +1085,8 @@ export default class CustomColumnModal extends React.Component {
                 onChange={(selectedFnOrderByDirection) => this.setState({ selectedFnOrderByDirection })}
                 positions={['bottom', 'top', 'right', 'left']}
                 options={orderbyDirections}
+                isDisabled={!this.state.selectedFnOrderBy}
+                outlined={true}
               />
             </div>
           )}

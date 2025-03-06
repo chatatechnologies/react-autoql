@@ -205,7 +205,8 @@
         margin-bottom: 5px;
         margin-right: 8px;
         line-height: 38px;
-        text-wrap: wrap;
+        word-wrap: break-word; // replace text-wrap: wrap with these two lines
+        overflow-wrap: break-word;
 
         .react-autoql-column-operator-selector {
           .react-autoql-select {
