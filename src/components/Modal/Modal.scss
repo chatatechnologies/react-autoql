@@ -163,15 +163,14 @@
 .react-autoql-modal-body {
   display: flex;
   flex-direction: column;
-  padding: 20px 30px;
   flex: 1;
+  display: block;
+  padding: 10px 20px;
+  overflow: auto;
 
   h3 {
     color: var(--react-autoql-text-color-primary);
   }
-  display: block;
-  padding: 20px;
-  overflow: auto;
 
   @include sm {
     flex: unset;

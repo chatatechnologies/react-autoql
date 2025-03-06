@@ -1,6 +1,8 @@
 @import '../../styles/breakpoints';
 
 .custom-column-modal {
+  height: -webkit-fill-available;
+
   @include sm {
     display: block;
     overflow-y: scroll;
@@ -28,9 +30,6 @@
     justify-content: flex-end;
     margin-top: 20px;
     display: flex;
-    position: absolute;
-    right: 0;
-    bottom: 0;
 
     @include sm {
       position: unset;
@@ -126,6 +125,7 @@
         .react-autoql-formula-builder-calculator-buttons-container {
           overflow: auto;
           max-height: 250px;
+          min-width: 108px;
 
           .react-autoql-btn {
             white-space: pre;

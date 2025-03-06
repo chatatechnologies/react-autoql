@@ -37,7 +37,6 @@ import { Modal } from '../Modal'
 import { Input } from '../Input'
 import { Button } from '../Button'
 import { Select } from '../Select'
-import { Popover } from '../Popover'
 import ChataTable from '../ChataTable/ChataTable'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
@@ -316,11 +315,27 @@ export default class CustomColumnModal extends React.Component {
         } else if (columnFn?.type === 'number') {
           protoTableColumn += columnFn?.value || 0
         } else if (columnFn?.type === 'function') {
-          protoTableColumn += `${columnFn.fn}(${columnFn?.column?.name}) OVER (${
-            this.state.selectedFnGroupby
-              ? 'PARTITION BY ' + getNumericalColumns(this.props.columns)[Number(this.state.selectedFnGroupby)]?.name
-              : ''
-          })`
+          protoTableColumn +=
+            `${columnFn.fn}(` +
+            `${!ORDERABLE_WINDOW_FN_TYPES.includes(this.state.selectedFnType) ? columnFn?.column?.name : ''})` +
+            ' OVER (' +
+            `${
+              this.state.selectedFnGroupby
+                ? ' PARTITION BY ' +
+                  getStringColumns(this.props.columns).find((column) => {
+                    return column.field === this.state.selectedFnGroupby
+                  })?.name
+                : ''
+            }` +
+            `${
+              this.state.selectedFnOrderBy
+                ? ' ORDER BY ' +
+                  getStringColumns(this.props.columns).find((column) => {
+                    return column.field === this.state.selectedFnOrderBy
+                  })?.name +
+                  ` ${this.state?.selectedFnOrderByDirection || 'DESC'}`
+                : ''
+            })`
         } else {
           console.error('Unknown columnFn type')
         }
@@ -534,6 +549,7 @@ export default class CustomColumnModal extends React.Component {
       column: this.props.columns.find((col) => col.field === this.state.selectedFnColumn),
       groupby: this.state.selectedFnGroupby,
       orderby: this.state.selectedFnOrderBy,
+      orderbyDirection: this.state.selectedFnOrderByDirection,
     })
 
     this.setState({
@@ -818,9 +834,9 @@ export default class CustomColumnModal extends React.Component {
             </div>
           )}
         </div>
-        <div style={{ position: 'relative' }}>
+        <div>
           {!this.state.isFunctionConfigModalVisible && (
-            <span style={{ display: 'flex' }}>
+            <span style={{ display: 'flex', height: '-webkit-fill-available' }}>
               <div className='react-autoql-formula-builder-column-selection-container'>
                 <div className='react-autoql-input-label'>Variables</div>
                 <div className='react-autoql-formula-builder-calculator-buttons-container'>
@@ -987,75 +1003,93 @@ export default class CustomColumnModal extends React.Component {
       label: 'None',
     })
 
-    return (
-      <div ref={(r) => (this.windowFnPopover = r)}>
-        <div>
-          <Select
-            label='Function'
-            className='custom-column-window-fn-selector-top'
-            value={this.state.selectedFnType}
-            onChange={(selectedFnType) => {
-              this.setState({ selectedFnType })
-            }}
-            positions={['bottom', 'top', 'right', 'left']}
-            options={Object.keys(WINDOW_FUNCTIONS).map((fn) => {
-              const fnObj = WINDOW_FUNCTIONS[fn]
-              return {
-                value: fnObj.value,
-                label: fnObj.label,
-              }
-            })}
-          />
-          <Select
-            label='Column'
-            className='custom-column-window-fn-selector-top'
-            value={this.state.selectedFnColumn}
-            onChange={(selectedFnColumn) => this.setState({ selectedFnColumn })}
-            positions={['bottom', 'top', 'right', 'left']}
-            options={numericalColumns.map((col) => {
-              return {
-                value: col.field,
-                label: col.title,
-                listLabel: col.title,
-                icon: 'table',
-              }
-            })}
-          />
-        </div>
-        {stringColumns?.length > 0 && (
-          <div>
-            <Select
-              label='Group By Column'
-              className='custom-column-window-fn-selector'
-              value={this.state.selectedFnGroupby ?? null}
-              onChange={(selectedFnGroupby) => this.setState({ selectedFnGroupby })}
-              positions={['bottom', 'top', 'right', 'left']}
-              options={stringColumnOptions}
-            />
-          </div>
-        )}
+    const orderbyDirections = [
+      {
+        value: 'ASC',
+        label: 'ASCENDING',
+      },
+      {
+        value: 'DESC',
+        label: 'DESCENDING',
+      },
+    ]
 
-        {ORDERABLE_WINDOW_FN_TYPES.includes(this.state.selectedFnType) && (
+    return (
+      <div>
+        <div ref={(r) => (this.windowFnPopover = r)}>
           <div>
             <Select
-              label='Order By Column'
-              className='custom-column-window-fn-selector'
-              value={this.state.selectedFnOrderBy ?? null}
-              onChange={(selectedFnOrderBy) => this.setState({ selectedFnOrderBy })}
+              label='Function'
+              className='custom-column-window-fn-selector-top'
+              value={this.state.selectedFnType}
+              onChange={(selectedFnType) => {
+                this.setState({ selectedFnType })
+              }}
               positions={['bottom', 'top', 'right', 'left']}
-              options={stringColumnOptions}
+              options={Object.keys(WINDOW_FUNCTIONS).map((fn) => {
+                const fnObj = WINDOW_FUNCTIONS[fn]
+                return {
+                  value: fnObj.value,
+                  label: fnObj.label,
+                }
+              })}
             />
+            {!ORDERABLE_WINDOW_FN_TYPES.includes(this.state.selectedFnType) && (
+              <Select
+                label='Column'
+                className='custom-column-window-fn-selector-top'
+                value={this.state.selectedFnColumn}
+                onChange={(selectedFnColumn) => this.setState({ selectedFnColumn })}
+                positions={['bottom', 'top', 'right', 'left']}
+                options={numericalColumns.map((col) => {
+                  return {
+                    value: col.field,
+                    label: col.title,
+                    listLabel: col.title,
+                    icon: 'table',
+                  }
+                })}
+              />
+            )}
           </div>
-        )}
-        <div
-          className='react-autoql-window-fn-popover-footer'
-          style={{
-            display: 'flex',
-            position: 'absolute',
-            right: 0,
-            bottom: 0,
-          }}
-        >
+          {stringColumns?.length > 0 && (
+            <div>
+              <Select
+                label='Group By Column'
+                className='custom-column-window-fn-selector'
+                value={this.state.selectedFnGroupby ?? null}
+                onChange={(selectedFnGroupby) => this.setState({ selectedFnGroupby })}
+                positions={['bottom', 'top', 'right', 'left']}
+                options={stringColumnOptions}
+              />
+            </div>
+          )}
+
+          {ORDERABLE_WINDOW_FN_TYPES.includes(this.state.selectedFnType) && (
+            <div>
+              <Select
+                label='Order By Column'
+                className='custom-column-window-fn-selector'
+                value={this.state.selectedFnOrderBy ?? null}
+                onChange={(selectedFnOrderBy) => {
+                  console.log('selectedFnOrderBy', selectedFnOrderBy)
+                  this.setState({ selectedFnOrderBy })
+                }}
+                positions={['bottom', 'top', 'right', 'left']}
+                options={stringColumnOptions}
+              />
+              <Select
+                label='Order By Direction'
+                className='custom-column-window-fn-selector'
+                value={this.state.selectedFnOrderByDirection ?? null}
+                onChange={(selectedFnOrderByDirection) => this.setState({ selectedFnOrderByDirection })}
+                positions={['bottom', 'top', 'right', 'left']}
+                options={orderbyDirections}
+              />
+            </div>
+          )}
+        </div>
+        <div className='react-autoql-window-fn-popover-footer'>
           <Button type='default' onClick={this.closeAddFunctionModal}>
             Cancel
           </Button>

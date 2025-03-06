@@ -256,6 +256,7 @@ export default class Input extends React.Component {
       showArrow,
       selectLocation,
       disabled,
+      displayColumnSelector,
       ...nativeProps
     } = this.props
 
