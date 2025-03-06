@@ -668,7 +668,6 @@ export default class ChataTable extends React.Component {
     // Filters
     if (params.tableFilters?.length) {
       params.tableFilters.forEach((filter) => {
-        const filterColumnName = filter.name
         const filterColumnIndex = this.props.columns.find((col) => col.id === filter.id)?.index
 
         data = filterDataByColumn(data, this.props.columns, filterColumnIndex, filter.value, filter.operator)
@@ -677,8 +676,7 @@ export default class ChataTable extends React.Component {
 
     // Sorters
     if (params.orders?.length) {
-      const sortColumnName = params.orders[0].name
-      const sortColumnIndex = this.props.columns.findIndex((col) => col.name === sortColumnName)
+      const sortColumnIndex = this.props.columns.find((col) => col.id === params?.orders[0]?.id)?.index
       const sortDirection = params.orders[0].sort === 'DESC' ? 'desc' : 'asc'
 
       data = sortDataByColumn(data, this.props.columns, sortColumnIndex, sortDirection)
