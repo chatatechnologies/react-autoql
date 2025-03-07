@@ -62,9 +62,6 @@
       }
     }
     .react-autoql-table.tabulator {
-      :hover {
-        overflow: auto;
-      }
       .tabulator-tableholder {
         overflow: hidden;
       }
@@ -405,8 +402,11 @@
     }
 
     .tabulator-tableholder {
+      &:hover {
+        overflow: auto;
+        overscroll-behavior: auto !important;
+      }
       background-color: inherit;
-      overscroll-behavior: auto !important;
     }
   }
 }
