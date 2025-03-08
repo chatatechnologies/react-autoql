@@ -148,6 +148,7 @@
     }
 
     .react-autoql-tabulator-container .tabulator-tableholder {
+      overflow: hidden;
       min-height: calc(100% - 37px) !important;
       height: calc(100% - 37px) !important;
       max-height: calc(100% - 37px) !important;
