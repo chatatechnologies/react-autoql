@@ -39,6 +39,7 @@ export default class Input extends React.Component {
     showSpinWheel: PropTypes.bool,
     disabled: PropTypes.bool,
     errormessage: PropTypes.string,
+    isRequired: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -56,6 +57,7 @@ export default class Input extends React.Component {
     showSpinWheel: true,
     disabled: false,
     errormessage: undefined,
+    isRequired: false,
   }
 
   componentDidMount = () => {
@@ -257,6 +259,7 @@ export default class Input extends React.Component {
       selectLocation,
       disabled,
       displayColumnSelector,
+      isRequired,
       ...nativeProps
     } = this.props
 
@@ -273,7 +276,7 @@ export default class Input extends React.Component {
         ${fullWidth ? 'react-autoql-input-full-width' : ''}`}
           style={style}
         >
-          {!!label && <div className='react-autoql-input-label'>{label}</div>}
+          {!!label && <div className='react-autoql-input-label'>{`${label}${this.props.isRequired ? ' *' : ''}`}</div>}
           <div
             className={`react-autoql-input-container
             ${this.state.focused ? 'focus' : ''}

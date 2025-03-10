@@ -17,7 +17,7 @@ import {
   createMutatorFn,
   getFnSummary,
   WINDOW_FUNCTIONS,
-  ORDERABLE_WINDOW_FN_TYPES,
+  ORDERBY_DIRECTIONS,
   getOperators,
   GLOBAL_OPERATORS,
   FUNCTION_OPERATOR,
@@ -118,6 +118,13 @@ export default class CustomColumnModal extends React.Component {
       isFunctionConfigModalVisible: false,
       selectedFnType: Object.keys(WINDOW_FUNCTIONS)[0],
       selectedFnColumn: numericalColumns?.[0]?.field,
+      selectedFnNTileNumber: null,
+      selectedFnGroupby: null,
+      selectedFnHaving: null,
+      selectedFnOperator: null,
+      selectedFnOperatorValue: null,
+      selectedFnOrderBy: null,
+      selectedFnOrderByDirection: null,
     }
   }
 
@@ -317,7 +324,13 @@ export default class CustomColumnModal extends React.Component {
         } else if (columnFn?.type === 'function') {
           protoTableColumn +=
             `${columnFn.fn}(` +
-            `${!ORDERABLE_WINDOW_FN_TYPES.includes(this.state.selectedFnType) ? columnFn?.column?.name : ''})` +
+            `${
+              WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === 'column'
+                ? columnFn?.column?.name
+                : WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === 'number'
+                ? this.state.selectedFnNTileNumber
+                : ''
+            })` +
             ' OVER (' +
             `${
               this.state.selectedFnGroupby
@@ -546,8 +559,15 @@ export default class CustomColumnModal extends React.Component {
     columnFn.push({
       type: 'function',
       fn: this.state.selectedFnType,
-      column: this.props.columns.find((col) => col.field === this.state.selectedFnColumn),
+      column:
+        WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === 'column'
+          ? this.props.columns.find((col) => col.field === this.state.selectedFnColumn)
+          : null,
+      nTileNumber: this.state.selectedFnNTileNumber,
       groupby: this.state.selectedFnGroupby,
+      having: this.state.selectedFnHaving,
+      operator: this.state.selectedFnOperator,
+      operatorValue: this.state.selectedFnOperatorValue,
       orderby: this.state.selectedFnOrderBy,
       orderbyDirection: this.state.selectedFnOrderByDirection,
     })
@@ -559,7 +579,16 @@ export default class CustomColumnModal extends React.Component {
   }
 
   isFunctionConfigComplete = () => {
-    return !!this.state.selectedFnType && !!this.state.selectedFnColumn
+    const allRequiredSet =
+      WINDOW_FUNCTIONS[this.state.selectedFnType]?.requiredCols !== null
+        ? WINDOW_FUNCTIONS[this.state.selectedFnType]?.requiredCols.filter((colName) => this.state[colName] === null)
+        : false
+    console.log('allRequiredSet', allRequiredSet)
+    return (
+      !!this.state.selectedFnType &&
+      (WINDOW_FUNCTIONS[this.state.selectedFnType]?.requiredCols === null ||
+        (WINDOW_FUNCTIONS[this.state.selectedFnType]?.requiredCols !== null && allRequiredSet.length === 0))
+    )
   }
 
   checkColumnName = (nameVal) => {
@@ -681,27 +710,30 @@ export default class CustomColumnModal extends React.Component {
 
   renderWindowFnChunk = (chunk, i) => {
     return (
-      <>
-        <>{this.getLabelForOperator(WINDOW_FUNCTIONS[chunk.fn])}( </>
-        <Select
-          key={`custom-column-select-${i}`}
-          placeholder='Select a Column'
-          value={chunk.column?.field}
-          outlined={false}
-          showArrow={false}
-          className='react-autoql-available-column-selector'
-          onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
-          options={getNumericalColumns(this.props.columns).map((col) => {
-            return {
-              value: col.field,
-              label: col.title,
-              icon: 'table',
-            }
-          })}
-        />
+      <span>
+        <span>{this.getLabelForOperator(WINDOW_FUNCTIONS[chunk.fn])}( </span>
+        {chunk.column && (
+          <Select
+            key={`custom-column-select-${i}`}
+            placeholder='Select a Column'
+            value={chunk.column?.field}
+            outlined={false}
+            showArrow={false}
+            className='react-autoql-available-column-selector'
+            onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
+            options={getNumericalColumns(this.props.columns).map((col) => {
+              return {
+                value: col.field,
+                label: col.title,
+                icon: 'table',
+              }
+            })}
+          />
+        )}
+        {chunk.nTileNumber && <span>{chunk.nTileNumber}</span>}
         {chunk.groupby ? (
           <>
-            {', Grouped by '}
+            <span>{`${!!chunk.column || !!chunk.nTileNumber ? ', ' : ''}Grouped by `} </span>
             <Select
               key={`custom-column-select-${i}`}
               placeholder='Select a Column'
@@ -709,7 +741,7 @@ export default class CustomColumnModal extends React.Component {
               outlined={false}
               showArrow={false}
               className='react-autoql-available-column-selector'
-              onChange={(value) => this.changeChunkGroupby(value, chunk.type, i)}
+              onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
               options={getStringColumns(this.props.columns).map((col) => {
                 return {
                   value: col.field,
@@ -722,7 +754,7 @@ export default class CustomColumnModal extends React.Component {
         ) : null}
         {chunk.orderby ? (
           <>
-            {', Ordered by '}
+            <span>, Ordered by </span>
             <Select
               key={`custom-column-select-${i}`}
               placeholder='Select a Column'
@@ -730,7 +762,7 @@ export default class CustomColumnModal extends React.Component {
               outlined={false}
               showArrow={false}
               className='react-autoql-available-column-selector'
-              onChange={(value) => this.changeChunkOrderby(value, chunk.type, i)}
+              onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
               options={getStringColumns(this.props.columns).map((col) => {
                 return {
                   value: col.field,
@@ -742,7 +774,7 @@ export default class CustomColumnModal extends React.Component {
           </>
         ) : null}{' '}
         )
-      </>
+      </span>
     )
   }
 
@@ -863,7 +895,15 @@ export default class CustomColumnModal extends React.Component {
                             columnFn[columnFn.length - 1] = newChunk
                           } else {
                             // Add new variable
+                            columnFn.push({
+                              type: 'operator',
+                              value: 'LEFT_BRACKET',
+                            })
                             columnFn.push(newChunk)
+                            columnFn.push({
+                              type: 'operator',
+                              value: 'RIGHT_BRACKET',
+                            })
                           }
 
                           this.setState({ columnFn })
@@ -917,7 +957,18 @@ export default class CustomColumnModal extends React.Component {
                         style={{ width: `${op === FUNCTION_OPERATOR ? '-webkit-fill-available' : 'undefined'}` }}
                         onClick={() => {
                           if (op === FUNCTION_OPERATOR) {
-                            return this.setState({ isFunctionConfigModalVisible: true })
+                            return this.setState({
+                              isFunctionConfigModalVisible: true,
+                              selectedFnType: null,
+                              selectedFnColumn: null,
+                              selectedFnNTileNumber: null,
+                              selectedFnGroupby: null,
+                              selectedFnHaving: null,
+                              selectedFnOperator: null,
+                              selectedFnOperatorValue: null,
+                              selectedFnOrderBy: null,
+                              selectedFnOrderByDirection: null,
+                            })
                           }
 
                           const newChunk = {
@@ -985,6 +1036,11 @@ export default class CustomColumnModal extends React.Component {
     )
   }
 
+  isInputRequired = (columnName) => {
+    return (
+      WINDOW_FUNCTIONS[this.state.selectedFnType]?.requiredCols?.find((colName) => colName === columnName)?.length > 1
+    )
+  }
   renderFunctionConfigModalContent = () => {
     const numericalColumns = getNumericalColumns(this.props.columns)
     const stringColumns = getStringColumns(this.props.columns)
@@ -1003,27 +1059,27 @@ export default class CustomColumnModal extends React.Component {
       label: 'None',
     })
 
-    const orderbyDirections = [
-      {
-        value: 'ASC',
-        label: 'ASCENDING',
-      },
-      {
-        value: 'DESC',
-        label: 'DESCENDING',
-      },
-    ]
-
     return (
       <div>
         <div ref={(r) => (this.windowFnPopover = r)}>
           <div>
             <Select
               label='Function'
+              isRequired={true}
               className='custom-column-window-fn-selector-top'
               value={this.state.selectedFnType}
               onChange={(selectedFnType) => {
-                this.setState({ selectedFnType })
+                this.setState({
+                  selectedFnType,
+                  selectedFnColumn: null,
+                  selectedFnNTileNumber: null,
+                  selectedFnGroupby: null,
+                  selectedFnHaving: null,
+                  selectedFnOperator: null,
+                  selectedFnOperatorValue: null,
+                  selectedFnOrderBy: null,
+                  selectedFnOrderByDirection: null,
+                })
               }}
               positions={['bottom', 'top', 'right', 'left']}
               options={Object.keys(WINDOW_FUNCTIONS).map((fn) => {
@@ -1034,9 +1090,10 @@ export default class CustomColumnModal extends React.Component {
                 }
               })}
             />
-            {!ORDERABLE_WINDOW_FN_TYPES.includes(this.state.selectedFnType) && (
+            {WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === 'column' && (
               <Select
                 label='Column'
+                isRequired={this.isInputRequired('selectedFnColumn')}
                 className='custom-column-window-fn-selector-top'
                 value={this.state.selectedFnColumn}
                 onChange={(selectedFnColumn) => this.setState({ selectedFnColumn })}
@@ -1051,28 +1108,67 @@ export default class CustomColumnModal extends React.Component {
                 })}
               />
             )}
+            {WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === 'number' && (
+              <Input
+                label='# of buckets'
+                isRequired={this.isInputRequired('selectedFnNTileNumber')}
+                type='number'
+                showSpinWheel={true}
+                placeholder='eg. "10"'
+                defaultValue={this.state.selectedFnNTileNumber}
+                onChange={(e) => {
+                  this.setState({ selectedFnNTileNumber: e.target.value })
+                }}
+              />
+            )}
           </div>
-          {stringColumns?.length > 0 && (
+          {stringColumns?.length > 0 && this.state.selectedFnType !== null && (
             <div>
               <Select
-                label='Group By Column'
+                label='Partition By Column'
+                isRequired={this.isInputRequired('selectedFnGroupby')}
                 className='custom-column-window-fn-selector'
                 value={this.state.selectedFnGroupby ?? null}
-                onChange={(selectedFnGroupby) => this.setState({ selectedFnGroupby })}
+                onChange={(selectedFnGroupby) => {
+                  this.setState({ selectedFnGroupby })
+                  if (selectedFnGroupby === null) this.setState({ selectedFnHaving: null })
+                }}
                 positions={['bottom', 'top', 'right', 'left']}
                 options={stringColumnOptions}
               />
+              {/* </div>
+            <div>
+              <Select
+                label='Having'
+                className='custom-column-window-fn-selector'
+                value={this.state.selectedFnHaving ?? null}
+                onChange={(selectedFnHaving) => this.setState({ selectedFnHaving })}
+                positions={['bottom', 'top', 'right', 'left']}
+                options={stringColumnOptions}
+                isDisabled={!this.state.selectedFnGroupby}
+                outlined={true}
+              />
+              <Select
+                label='Operator'
+                className='custom-column-window-fn-selector'
+                value={this.state.selectedFnOperator ?? null}
+                onChange={(selectedFnOperator) => this.setState({ selectedFnOperator })}
+                positions={['bottom', 'top', 'right', 'left']}
+                options={this.OPERATORS}
+                isDisabled={!this.state.selectedFnHaving}
+                outlined={true}
+              />*/}
             </div>
           )}
 
-          {ORDERABLE_WINDOW_FN_TYPES.includes(this.state.selectedFnType) && (
+          {WINDOW_FUNCTIONS[this.state.selectedFnType]?.orderable && (
             <div>
               <Select
                 label='Order By Column'
+                isRequired={this.isInputRequired('selectedFnOrderBy')}
                 className='custom-column-window-fn-selector'
                 value={this.state.selectedFnOrderBy ?? null}
                 onChange={(selectedFnOrderBy) => {
-                  console.log('selectedFnOrderBy', selectedFnOrderBy)
                   this.setState({ selectedFnOrderBy })
                 }}
                 positions={['bottom', 'top', 'right', 'left']}
@@ -1080,11 +1176,12 @@ export default class CustomColumnModal extends React.Component {
               />
               <Select
                 label='Order By Direction'
+                isRequired={this.isInputRequired('selectedFnOrderByDirection')}
                 className='custom-column-window-fn-selector'
                 value={this.state.selectedFnOrderByDirection ?? null}
                 onChange={(selectedFnOrderByDirection) => this.setState({ selectedFnOrderByDirection })}
                 positions={['bottom', 'top', 'right', 'left']}
-                options={orderbyDirections}
+                options={ORDERBY_DIRECTIONS}
                 isDisabled={!this.state.selectedFnOrderBy}
                 outlined={true}
               />

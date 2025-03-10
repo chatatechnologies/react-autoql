@@ -37,6 +37,7 @@ export default class Select extends React.Component {
     fullWidth: PropTypes.bool,
     color: PropTypes.oneOf(['primary', 'text']),
     isDisabled: PropTypes.bool,
+    isRequired: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -53,6 +54,7 @@ export default class Select extends React.Component {
     fullWidth: false,
     color: 'primary',
     isDisabled: false,
+    isRequired: false,
   }
 
   componentDidMount = () => {
@@ -102,7 +104,7 @@ export default class Select extends React.Component {
             className={`react-autoql-input-label
          ${this.props.isDisabled ? 'disabled' : ''}`}
           >
-            {this.props.label}
+            {`${this.props.label}${this.props.isRequired ? ' *' : ''}`}
           </div>
         )}
         <div
