@@ -4,6 +4,7 @@ import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.clonedeep'
 
 import {
+  AggTypes,
   ColumnObj,
   deepEqual,
   ColumnTypes,
@@ -315,6 +316,7 @@ export default class CustomColumnModal extends React.Component {
       let protoTableColumn = ''
       let i = 0
       for (const columnFn of customColumn?.columnFnArray) {
+        const colName = columnFn?.column?.name
         if (columnFn?.type === 'column') {
           protoTableColumn += columnFn?.column?.name
         } else if (columnFn?.type === 'operator') {
@@ -323,32 +325,34 @@ export default class CustomColumnModal extends React.Component {
           protoTableColumn += columnFn?.value || 0
         } else if (columnFn?.type === 'function') {
           protoTableColumn +=
-            `${columnFn.fn}(` +
-            `${
-              WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === 'column'
-                ? columnFn?.column?.name
-                : WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === 'number'
-                ? this.state.selectedFnNTileNumber
-                : ''
-            })` +
-            ' OVER (' +
-            `${
-              this.state.selectedFnGroupby
-                ? ' PARTITION BY ' +
-                  getStringColumns(this.props.columns).find((column) => {
-                    return column.field === this.state.selectedFnGroupby
-                  })?.name
-                : ''
-            }` +
-            `${
-              this.state.selectedFnOrderBy
-                ? ' ORDER BY ' +
-                  getStringColumns(this.props.columns).find((column) => {
-                    return column.field === this.state.selectedFnOrderBy
-                  })?.name +
-                  ` ${this.state?.selectedFnOrderByDirection || 'DESC'}`
-                : ''
-            })`
+            WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === 'sum'
+              ? `${colName?.substring(colName?.indexOf('sum(') + 4, colName?.indexOf(')'))} / ${colName} * 100`
+              : `${columnFn.fn}(` +
+                `${
+                  WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === 'column'
+                    ? columnFn?.column?.name
+                    : WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === 'number'
+                    ? this.state.selectedFnNTileNumber
+                    : this.state.selected
+                })` +
+                ' OVER (' +
+                `${
+                  this.state.selectedFnGroupby
+                    ? ' PARTITION BY ' +
+                      getStringColumns(this.props.columns).find((column) => {
+                        return column.field === this.state.selectedFnGroupby
+                      })?.name
+                    : ''
+                }` +
+                `${
+                  this.state.selectedFnOrderBy
+                    ? ' ORDER BY ' +
+                      getStringColumns(this.props.columns).find((column) => {
+                        return column.field === this.state.selectedFnOrderBy
+                      })?.name +
+                      ` ${this.state?.selectedFnOrderByDirection || 'DESC'}`
+                    : ''
+                })`
         } else {
           console.error('Unknown columnFn type')
         }
@@ -562,6 +566,8 @@ export default class CustomColumnModal extends React.Component {
       column:
         WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === 'column'
           ? this.props.columns.find((col) => col.field === this.state.selectedFnColumn)
+          : WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === 'sum'
+          ? this.props.columns.find((col) => col.field === this.state.selectedFnSum)
           : null,
       nTileNumber: this.state.selectedFnNTileNumber,
       groupby: this.state.selectedFnGroupby,
@@ -583,7 +589,6 @@ export default class CustomColumnModal extends React.Component {
       WINDOW_FUNCTIONS[this.state.selectedFnType]?.requiredCols !== null
         ? WINDOW_FUNCTIONS[this.state.selectedFnType]?.requiredCols.filter((colName) => this.state[colName] === null)
         : false
-    console.log('allRequiredSet', allRequiredSet)
     return (
       !!this.state.selectedFnType &&
       (WINDOW_FUNCTIONS[this.state.selectedFnType]?.requiredCols === null ||
@@ -866,7 +871,7 @@ export default class CustomColumnModal extends React.Component {
             </div>
           )}
         </div>
-        <div>
+        <div style={{ minWidth: '270px' }}>
           {!this.state.isFunctionConfigModalVisible && (
             <span style={{ display: 'flex', height: '-webkit-fill-available' }}>
               <div className='react-autoql-formula-builder-column-selection-container'>
@@ -1044,6 +1049,7 @@ export default class CustomColumnModal extends React.Component {
   renderFunctionConfigModalContent = () => {
     const numericalColumns = getNumericalColumns(this.props.columns)
     const stringColumns = getStringColumns(this.props.columns)
+    const sumColumns = numericalColumns.filter((col) => col?.name?.toUpperCase().startsWith(AggTypes.SUM))
 
     const stringColumnOptions = stringColumns.map((col) => {
       return {
@@ -1121,22 +1127,44 @@ export default class CustomColumnModal extends React.Component {
                 }}
               />
             )}
-          </div>
-          {stringColumns?.length > 0 && this.state.selectedFnType !== null && (
-            <div>
+            {WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === 'sum' && (
               <Select
-                label='Partition By Column'
-                isRequired={this.isInputRequired('selectedFnGroupby')}
+                label='Available Sums'
+                isRequired={this.isInputRequired('selectedFnSum')}
                 className='custom-column-window-fn-selector'
-                value={this.state.selectedFnGroupby ?? null}
-                onChange={(selectedFnGroupby) => {
-                  this.setState({ selectedFnGroupby })
-                  if (selectedFnGroupby === null) this.setState({ selectedFnHaving: null })
+                value={this.state.selectedFnSum ?? null}
+                onChange={(selectedFnSum) => {
+                  this.setState({ selectedFnSum })
                 }}
                 positions={['bottom', 'top', 'right', 'left']}
-                options={stringColumnOptions}
+                options={sumColumns.map((col) => {
+                  return {
+                    value: col.field,
+                    label: col.title,
+                    listLabel: col.title,
+                    icon: 'table',
+                  }
+                })}
               />
-              {/* </div>
+            )}
+          </div>
+          {stringColumns?.length > 0 &&
+            this.state.selectedFnType !== null &&
+            this.state.selectedFnType !== 'PERCENT_TOTAL' && (
+              <div>
+                <Select
+                  label='Partition By Column'
+                  isRequired={this.isInputRequired('selectedFnGroupby')}
+                  className='custom-column-window-fn-selector'
+                  value={this.state.selectedFnGroupby ?? null}
+                  onChange={(selectedFnGroupby) => {
+                    this.setState({ selectedFnGroupby })
+                    if (selectedFnGroupby === null) this.setState({ selectedFnHaving: null })
+                  }}
+                  positions={['bottom', 'top', 'right', 'left']}
+                  options={stringColumnOptions}
+                />
+                {/* </div>
             <div>
               <Select
                 label='Having'
@@ -1158,10 +1186,10 @@ export default class CustomColumnModal extends React.Component {
                 isDisabled={!this.state.selectedFnHaving}
                 outlined={true}
               />*/}
-            </div>
-          )}
+              </div>
+            )}
 
-          {WINDOW_FUNCTIONS[this.state.selectedFnType]?.orderable && (
+          {WINDOW_FUNCTIONS[this.state.selectedFnType]?.orderable && this.state.selectedFnType !== 'PERCENT_TOTAL' && (
             <div>
               <Select
                 label='Order By Column'
