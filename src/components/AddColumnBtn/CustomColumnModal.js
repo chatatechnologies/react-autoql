@@ -335,24 +335,28 @@ export default class CustomColumnModal extends React.Component {
                     ? this.state.selectedFnNTileNumber
                     : this.state.selected
                 })` +
-                ' OVER (' +
                 `${
-                  this.state.selectedFnGroupby
-                    ? ' PARTITION BY ' +
-                      getStringColumns(this.props.columns).find((column) => {
-                        return column.field === this.state.selectedFnGroupby
-                      })?.name
+                  this.state.selectedFnGroupby !== null || this.state.selectedFnOrderBy !== null
+                    ? ' OVER (' +
+                      `${
+                        this.state.selectedFnGroupby
+                          ? ' PARTITION BY ' +
+                            getStringColumns(this.props.columns).find((column) => {
+                              return column.field === this.state.selectedFnGroupby
+                            })?.name
+                          : ''
+                      }` +
+                      `${
+                        this.state.selectedFnOrderBy
+                          ? ' ORDER BY ' +
+                            getStringColumns(this.props.columns).find((column) => {
+                              return column.field === this.state.selectedFnOrderBy
+                            })?.name +
+                            ` ${this.state?.selectedFnOrderByDirection || 'DESC'}`
+                          : ''
+                      })`
                     : ''
-                }` +
-                `${
-                  this.state.selectedFnOrderBy
-                    ? ' ORDER BY ' +
-                      getStringColumns(this.props.columns).find((column) => {
-                        return column.field === this.state.selectedFnOrderBy
-                      })?.name +
-                      ` ${this.state?.selectedFnOrderByDirection || 'DESC'}`
-                    : ''
-                })`
+                }`
         } else {
           console.error('Unknown columnFn type')
         }
