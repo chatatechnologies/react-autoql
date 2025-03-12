@@ -585,15 +585,16 @@ export default class CustomColumnModal extends React.Component {
   }
 
   isFunctionConfigComplete = () => {
-    const allRequiredSet =
-      WINDOW_FUNCTIONS[this.state.selectedFnType]?.requiredCols !== null
-        ? WINDOW_FUNCTIONS[this.state.selectedFnType]?.requiredCols.filter((colName) => this.state[colName] === null)
-        : false
-    return (
-      !!this.state.selectedFnType &&
-      (WINDOW_FUNCTIONS[this.state.selectedFnType]?.requiredCols === null ||
-        (WINDOW_FUNCTIONS[this.state.selectedFnType]?.requiredCols !== null && allRequiredSet.length === 0))
-    )
+    const selectedFunc = this.state.selectedFnType
+    const requiredCols = WINDOW_FUNCTIONS[selectedFunc]?.requiredCols
+    const requiredNotSetArr =
+      requiredCols !== null
+        ? requiredCols?.filter((colName) => this.state[colName] === null || this.state[colName] === undefined)
+        : []
+
+    const metRequirements =
+      selectedFunc !== null && (requiredCols === null || (requiredCols !== null && requiredNotSetArr?.length === 0))
+    return metRequirements
   }
 
   checkColumnName = (nameVal) => {
