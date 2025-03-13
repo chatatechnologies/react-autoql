@@ -1,38 +1,32 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { isMobile, isMobileLandscape } from './breakpoints'
 
-export default class DeviceInfoProvider extends React.Component {
-  constructor(props) {
-    super(props)
+const DeviceInfoProvider = ({ children }) => {
+  const [deviceInfo, setDeviceInfo] = useState({
+    isMobile: isMobile(),
+    isLandscape: isMobileLandscape(),
+  })
 
-    this.state = {
+  const handleResize = () => {
+    setDeviceInfo({
       isMobile: isMobile(),
       isLandscape: isMobileLandscape(),
+    })
+  }
+
+  useEffect(() => {
+    window.addEventListener('resize', handleResize)
+    window.addEventListener('orientationchange', handleResize)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      window.removeEventListener('orientationchange', handleResize)
     }
+  }, [])
 
-    this.handleResize = this.handleResize.bind(this)
-  }
-
-  componentDidMount() {
-    window.addEventListener('resize', this.handleResize)
-    window.addEventListener('orientationchange', this.handleResize)
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('resize', this.handleResize)
-    window.removeEventListener('orientationchange', this.handleResize)
-  }
-
-  handleResize() {
-    this.setState({
-      isMobile: isMobile(),
-      isLandscape: isMobileLandscape(),
-    })
-  }
-
-  render() {
-    return React.Children.map(this.props.children, (child) => {
-      return React.cloneElement(child, { deviceInfo: this.state })
-    })
-  }
+  return React.Children.map(children, (child) => {
+    return React.cloneElement(child, { deviceInfo })
+  })
 }
+
+export default DeviceInfoProvider
