@@ -1057,6 +1057,22 @@ export default class CustomColumnModal extends React.Component {
     const numericalColumns = getNumericalColumns(this.props.columns)
     const stringColumns = getStringColumns(this.props.columns)
     const sumColumns = numericalColumns.filter((col) => col?.name?.toUpperCase().startsWith(AggTypes.SUM))
+    let sumComlumnOptions = []
+    if (sumColumns.length === 0) {
+      sumComlumnOptions.push({
+        value: null,
+        label: 'Must create a sum value to use here',
+      })
+    } else {
+      sumComlumnOptions = sumColumns.map((col) => {
+        return {
+          value: col.field,
+          label: col.title,
+          listLabel: col.title,
+          icon: 'table',
+        }
+      })
+    }
 
     const stringColumnOptions = stringColumns.map((col) => {
       return {
@@ -1144,14 +1160,7 @@ export default class CustomColumnModal extends React.Component {
                   this.setState({ selectedFnSum })
                 }}
                 positions={['bottom', 'top', 'right', 'left']}
-                options={sumColumns.map((col) => {
-                  return {
-                    value: col.field,
-                    label: col.title,
-                    listLabel: col.title,
-                    icon: 'table',
-                  }
-                })}
+                options={sumComlumnOptions}
               />
             )}
           </div>
