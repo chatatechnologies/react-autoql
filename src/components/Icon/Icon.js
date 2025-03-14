@@ -76,6 +76,7 @@ import { MdLock } from '@react-icons/all-files/md/MdLock'
 import { MdLockOpen } from '@react-icons/all-files/md/MdLockOpen'
 import { MdPlayCircleOutline } from '@react-icons/all-files/md/MdPlayCircleOutline'
 import { MdAttachMoney } from '@react-icons/all-files/md/MdAttachMoney'
+import { MdFunctions } from '@react-icons/all-files/md/MdFunctions'
 
 import {
   bubblesIcon,
@@ -307,6 +308,10 @@ export default class Icon extends React.Component {
       }
       case 'eye': {
         icon = <FiEye />
+        break
+      }
+      case 'function': {
+        icon = <MdFunctions />
         break
       }
       case 'filter': {
