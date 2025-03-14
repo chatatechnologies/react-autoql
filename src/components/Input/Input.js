@@ -162,10 +162,18 @@ export default class Input extends React.Component {
   renderSpinWheel = () => {
     return (
       <div className='react-autoql-input-number-spin-button-container'>
-        <button className='react-autoql-input-number-spin-button' onClick={this.incrementNumber}>
+        <button
+          className='react-autoql-input-number-spin-button'
+          onClick={this.incrementNumber}
+          disabled={this.props.disabled}
+        >
           <Icon type='caret-up' />
         </button>
-        <button className='react-autoql-input-number-spin-button' onClick={this.decrementNumber}>
+        <button
+          className='react-autoql-input-number-spin-button'
+          onClick={this.decrementNumber}
+          disabled={this.props.disabled}
+        >
           <Icon type='caret-down' />
         </button>
       </div>

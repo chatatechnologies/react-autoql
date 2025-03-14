@@ -336,7 +336,9 @@ export default class CustomColumnModal extends React.Component {
                     : this.state.selected
                 })` +
                 `${
-                  this.state.selectedFnGroupby !== null || this.state.selectedFnOrderBy !== null
+                  this.state.selectedFnGroupby !== null ||
+                  this.state.selectedFnOrderBy !== null ||
+                  this.state.selectedFnType === 'SUM'
                     ? ' OVER (' +
                       `${
                         this.state.selectedFnGroupby
