@@ -71,7 +71,7 @@
   align-items: flex-end;
   flex: 0;
   &:has(*:not(:empty)) {
-    padding: 15px 13px 8px;
+    padding: 5px 20px 10px;
     @include mobile {
       padding: 0px 13px 8px;
     }
