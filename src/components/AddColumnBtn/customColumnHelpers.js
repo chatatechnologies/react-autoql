@@ -2,8 +2,6 @@ import React from 'react'
 import { Icon } from '../Icon'
 import _cloneDeep from 'lodash.clonedeep'
 
-export const ORDERABLE_WINDOW_FN_TYPES = ['RANK']
-
 export const OPERATORS = {
   CONCAT: {
     value: 'CONCAT',

@@ -37,6 +37,7 @@ export default class Select extends React.Component {
     fullWidth: PropTypes.bool,
     color: PropTypes.oneOf(['primary', 'text']),
     isDisabled: PropTypes.bool,
+    isRequired: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -53,6 +54,7 @@ export default class Select extends React.Component {
     fullWidth: false,
     color: 'primary',
     isDisabled: false,
+    isRequired: false,
   }
 
   componentDidMount = () => {
@@ -94,14 +96,29 @@ export default class Select extends React.Component {
       <div
         className={`react-autoql-select-and-label
         ${this.props.className ?? ''}
-        ${this.props.isDisabled ? '' : this.props.outlined ? 'outlined' : 'underlined'}
+        ${this.props.isDisabled ? '' : this.props.outlined ? 'outlined disabled' : 'underlined'}
         ${this.props.fullWidth ? 'react-autoql-select-full-width' : ''}`}
       >
-        {!!this.props.label && <div className='react-autoql-input-label'>{this.props.label}</div>}
+        {!!this.props.label && (
+          <div
+            className={`react-autoql-input-label
+         ${this.props.isDisabled ? 'disabled' : ''}`}
+          >
+            {`${this.props.label}${this.props.isRequired ? ' *' : ''}`}
+          </div>
+        )}
         <div
           className={`
-            ${this.props.isDisabled ? '' : 'react-autoql-select'}
-            ${this.props.isDisabled ? '' : this.props.outlined ? 'outlined' : 'underlined'}
+            ${this.props.isDisabled ? (this.props.outlined ? 'react-autoql-select' : '') : 'react-autoql-select'}
+            ${
+              this.props.isDisabled
+                ? this.props.outlined
+                  ? 'outlined disabled'
+                  : ''
+                : this.props.outlined
+                ? 'outlined'
+                : 'underlined'
+            }
             ${this.props.size === 'small' ? 'react-autoql-select-small' : 'react-autoql-select-large'}
             ${this.props.color === 'text' ? 'text-color' : ''}`}
           data-test='react-autoql-select'
