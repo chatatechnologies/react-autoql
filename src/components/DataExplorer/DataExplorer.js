@@ -5,6 +5,7 @@ import { median } from 'd3-array'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
+import { isMobile } from 'react-device-detect'
 
 import {
   isColumnDateType,
@@ -188,32 +189,45 @@ export default class DataExplorer extends React.Component {
   }
 
   renderIntroMessage = () => {
+    const commonContent = this.props.introMessage ? (
+      <p>{this.props.introMessage}</p>
+    ) : (
+      <div>
+        <p>Explore your data and discover what you can ask AutoQL. Simply enter a term or topic above and:</p>
+        <div className='intro-message-list-container'>
+          <div>
+            <p>
+              <Icon type='table' /> Preview available data in a snapshot
+            </p>
+            <p>
+              <Icon type='abacus' /> Explore data structure and column types
+            </p>
+            <p>
+              <Icon type='react-autoql-bubbles-outlined' /> View and customize a sample of query suggestions
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+
+    if (isMobile) {
+      return (
+        <div className='data-explorer-intro-message mobile'>
+          <h3>
+            <Icon type='data-search' /> Explore Your Data
+          </h3>
+          {commonContent}
+        </div>
+      )
+    }
+
     return (
       <div className='data-explorer-intro-message'>
         <h2>
           Welcome to <Icon type='data-search' />
           Data Explorer
         </h2>
-        {this.props.introMessage ? (
-          <p>{this.props.introMessage}</p>
-        ) : (
-          <div>
-            <p>Explore your data and discover what you can ask AutoQL. Simply enter a term or topic above and:</p>
-            <div className='intro-message-list-container'>
-              <div>
-                <p>
-                  <Icon type='table' /> Preview available data in a snapshot
-                </p>
-                <p>
-                  <Icon type='abacus' /> Explore data structure and column types
-                </p>
-                <p>
-                  <Icon type='react-autoql-bubbles-outlined' /> View and customize a sample of query suggestions
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+        {commonContent}
       </div>
     )
   }

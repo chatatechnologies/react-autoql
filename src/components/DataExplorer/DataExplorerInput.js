@@ -4,7 +4,7 @@ import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.clonedeep'
 import Autosuggest from 'react-autosuggest'
-
+import { isMobile } from 'react-device-detect'
 import {
   fetchDataExplorerAutocomplete,
   fetchSubjectList,
@@ -464,7 +464,7 @@ export default class DataExplorerInput extends React.Component {
         <div
           className={`react-autoql-chatbar-input-container data-explorer ${
             this.hasNoSuggestions() ? 'no-suggestions' : ''
-          }`}
+          } ${isMobile ? 'mobile' : ''}`}
           data-test='data-explorer-autocomplete'
         >
           <Autosuggest
