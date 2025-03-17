@@ -333,13 +333,10 @@ export default class CustomColumnModal extends React.Component {
                     ? columnFn?.column?.name
                     : WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === 'number'
                     ? this.state.selectedFnNTileNumber
-                    : this.state.selected
+                    : this.state.selected ?? ''
                 })` +
                 `${
-                  this.state.selectedFnGroupby !== null ||
-                  this.state.selectedFnOrderBy !== null ||
-                  this.state.selectedFnType === 'SUM'
-                    ? ' OVER (' +
+                  ' OVER (' +
                       `${
                         this.state.selectedFnGroupby
                           ? ' PARTITION BY ' +
@@ -357,7 +354,6 @@ export default class CustomColumnModal extends React.Component {
                             ` ${this.state?.selectedFnOrderByDirection || 'DESC'}`
                           : ''
                       })`
-                    : ''
                 }`
         } else {
           console.error('Unknown columnFn type')
