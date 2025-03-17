@@ -1,3 +1,14 @@
+@media (max-width: 768px) {
+  .data-explorer-page-container {
+    .react-autoql-chatbar-input-container.data-explorer {
+      margin: 24px 10px 0;
+    }
+
+    .data-explorer-intro-message.mobile {
+      margin-top: 12px;
+    }
+  }
+}
 .data-explorer-page-container {
   position: absolute;
   height: 100%;
@@ -66,7 +77,43 @@
       }
     }
   }
+  .data-explorer-intro-message.mobile {
+    color: var(--react-autoql-text-color-primary);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    font-size: 15px;
+    min-height: 0;
+    justify-content: center;
+    h3 {
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
 
+    p {
+      font-size: 0.9rem;
+      line-height: 1.4;
+      color: var(--react-autoql-text-color-secondary, #666);
+    }
+
+    .intro-message-list-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: left;
+
+      p {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        .react-autoql-icon {
+          margin-right: 5px;
+          padding: 0;
+        }
+      }
+    }
+  }
   .data-explorer-intro-message {
     color: var(--react-autoql-text-color-primary);
     text-align: center;
