@@ -360,10 +360,10 @@ export default class CustomColumnModal extends React.Component {
                         })?.name +
                         ` ${this.state?.selectedFnOrderByDirection || ' DESC '} ` +
                         ` ${this.state?.selectedFnRowsOrRange || ''} ` +
-                        ` Between ` +
+                        ` ${!!this.state?.selectedFnRowsOrRange ? ' Between ' : ''}` +
                         ` ${this.state?.selectedFnRowsOrRangeOptionPreNValue || ''} ` +
                         ` ${this.state?.selectedFnRowsOrRangeOptionPre || ''} ` +
-                        ` AND ` +
+                        ` ${!!this.state?.selectedFnRowsOrRange ? ' AND ' : ''} ` +
                         ` ${this.state?.selectedFnRowsOrRangeOptionPostNValue || ''} ` +
                         ` ${this.state?.selectedFnRowsOrRangeOptionPost || ''} `
                       : ''
