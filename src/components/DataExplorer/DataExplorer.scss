@@ -113,13 +113,16 @@
     h3 {
       font-size: 1.1rem;
       margin-bottom: 8px;
-      font-weight: 500;
+      .react-autoql-icon {
+        margin-left: 5px;
+        margin-right: 2px;
+      }
     }
 
     p {
       font-size: 0.9rem;
       line-height: 1.4;
-      color: var(--react-autoql-text-color-secondary, #666);
+      color: var(--react-autoql-text-color-primary);
     }
 
     .intro-message-list-container {

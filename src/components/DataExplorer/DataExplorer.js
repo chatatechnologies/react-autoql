@@ -210,23 +210,17 @@ export default class DataExplorer extends React.Component {
       </div>
     )
 
-    if (isMobile) {
-      return (
-        <div className='data-explorer-intro-message mobile'>
-          <h3>
-            <Icon type='data-search' /> Explore Your Data
-          </h3>
-          {commonContent}
-        </div>
-      )
-    }
-
     return (
-      <div className='data-explorer-intro-message'>
-        <h2>
-          Welcome to <Icon type='data-search' />
-          Data Explorer
-        </h2>
+      <div className={`data-explorer-intro-message${isMobile ? ' mobile' : ''}`}>
+        {isMobile ? (
+          <h3>
+            Welcome to <Icon type='data-search' /> Data Explorer
+          </h3>
+        ) : (
+          <h2>
+            Welcome to <Icon type='data-search' /> Data Explorer
+          </h2>
+        )}
         {commonContent}
       </div>
     )
