@@ -33,6 +33,7 @@ import {
   isOperatorJs,
   ROWS_RANGE,
   ROWS_RANGE_OPTIONS,
+  getVisibleColumns,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -347,7 +348,7 @@ export default class CustomColumnModal extends React.Component {
                   `${
                     this.state.selectedFnGroupby
                       ? ' PARTITION BY ' +
-                        getStringColumns(this.props.columns).find((column) => {
+                        getVisibleColumns(this.props.columns).find((column) => {
                           return column.field === this.state.selectedFnGroupby
                         })?.name
                       : ''
@@ -355,7 +356,7 @@ export default class CustomColumnModal extends React.Component {
                   `${
                     this.state.selectedFnOrderBy
                       ? ' ORDER BY ' +
-                        getStringColumns(this.props.columns).find((column) => {
+                        getVisibleColumns(this.props.columns).find((column) => {
                           return column.field === this.state.selectedFnOrderBy
                         })?.name +
                         ` ${this.state?.selectedFnOrderByDirection || ' DESC '} ` +
@@ -397,6 +398,14 @@ export default class CustomColumnModal extends React.Component {
 
   onAddColumnConfirm = () => {
     const newColumn = _cloneDeep(this.newColumn)
+    newColumn?.columnFnArray?.unshift({
+      type: 'operator',
+      value: 'LEFT_BRACKET',
+    })
+    newColumn?.columnFnArray?.push({
+      type: 'operator',
+      value: 'RIGHT_BRACKET',
+    })
     const protoTableColumn = this.buildProtoTableColumn(newColumn)
     this.props.onAddColumn({
       ...newColumn,
@@ -805,7 +814,7 @@ export default class CustomColumnModal extends React.Component {
         {chunk.nTileNumber && <span>{chunk.nTileNumber}</span>}
         {chunk.groupby ? (
           <>
-            <span>{`${!!chunk.column || !!chunk.nTileNumber ? ', ' : ''}Grouped by `} </span>
+            <span>{`${!!chunk.column || !!chunk.nTileNumber ? ', ' : ''}Partition by `} </span>
             <Select
               key={`custom-column-select-${i}`}
               placeholder='Select a Column'
@@ -814,7 +823,7 @@ export default class CustomColumnModal extends React.Component {
               showArrow={false}
               className='react-autoql-available-column-selector'
               onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
-              options={getStringColumns(this.props.columns).map((col) => {
+              options={getVisibleColumns(this.props.columns).map((col) => {
                 return {
                   value: col.field,
                   label: col.title,
@@ -835,7 +844,7 @@ export default class CustomColumnModal extends React.Component {
               showArrow={false}
               className='react-autoql-available-column-selector'
               onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
-              options={getStringColumns(this.props.columns).map((col) => {
+              options={getVisibleColumns(this.props.columns).map((col) => {
                 return {
                   value: col.field,
                   label: col.title,
@@ -976,7 +985,7 @@ export default class CustomColumnModal extends React.Component {
             </div>
           )}
         </div>
-        <div style={{ minWidth: '270px' }}>
+        <div style={{ minWidth: '300px' }}>
           {!this.state.isFunctionConfigModalVisible && (
             <span style={{ display: 'flex', height: '-webkit-fill-available' }}>
               <div className='react-autoql-formula-builder-column-selection-container'>
@@ -1004,16 +1013,7 @@ export default class CustomColumnModal extends React.Component {
                             // Replace current variable
                             columnFn[columnFn.length - 1] = newChunk
                           } else {
-                            // Add new variable
-                            columnFn.push({
-                              type: 'operator',
-                              value: 'LEFT_BRACKET',
-                            })
                             columnFn.push(newChunk)
-                            columnFn.push({
-                              type: 'operator',
-                              value: 'RIGHT_BRACKET',
-                            })
                           }
 
                           this.setState({ columnFn })
@@ -1155,6 +1155,19 @@ export default class CustomColumnModal extends React.Component {
     )
   }
   renderFunctionConfigModalContent = () => {
+    const allColumns = getVisibleColumns(this.props.columns)
+    const allColumnsOptions = allColumns.map((col) => {
+      return {
+        value: col.field,
+        label: col.title,
+        listLabel: col.title,
+        icon: 'table',
+      }
+    })
+    allColumnsOptions.push({
+      value: null,
+      label: 'None',
+    })
     const numericalColumns = getNumericalColumns(this.props.columns)
     const stringColumns = getStringColumns(this.props.columns)
     const sumColumns = numericalColumns.filter((col) => col?.name?.toUpperCase().startsWith(AggTypes.SUM))
@@ -1191,7 +1204,7 @@ export default class CustomColumnModal extends React.Component {
 
     return (
       <div>
-        <div ref={(r) => (this.windowFnPopover = r)}>
+        <div ref={(r) => (this.windowFnPopover = r)} style={{ minHeight: '25vh' }}>
           <div>
             <Select
               label='Function'
@@ -1284,7 +1297,7 @@ export default class CustomColumnModal extends React.Component {
                     if (selectedFnGroupby === null) this.setState({ selectedFnHaving: null })
                   }}
                   positions={['bottom', 'top', 'right', 'left']}
-                  options={stringColumnOptions}
+                  options={allColumnsOptions}
                 />
                 {/* </div>
             <div>
@@ -1322,7 +1335,7 @@ export default class CustomColumnModal extends React.Component {
                   this.setState({ selectedFnOrderBy })
                 }}
                 positions={['bottom', 'top', 'right', 'left']}
-                options={stringColumnOptions}
+                options={allColumnsOptions}
               />
               <Select
                 label='Order By Direction'
