@@ -132,9 +132,9 @@
   border-bottom: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.05));
 
   .react-autoql-modal-header-title-container {
-    flex: 1;
+    width: 100%;
     text-align: center;
-    padding: 14px 0px 14px 60px;
+    padding: 10px 0px;
   }
 
   .react-autoql-modal-header-title {
