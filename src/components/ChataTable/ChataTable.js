@@ -195,8 +195,6 @@ export default class ChataTable extends React.Component {
       this.lockedTableHeight = this.initialTableHeight
     }
 
-    this.summaryStats = this.calculateSummaryStats(this.props)
-
     this.setState({
       firstRender: false,
     })
@@ -289,6 +287,7 @@ export default class ChataTable extends React.Component {
         this.setTableHeight()
       }
     }
+    this.summaryStats = this.calculateSummaryStats(this.props)
   }
 
   componentWillUnmount = () => {
