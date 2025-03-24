@@ -24,12 +24,15 @@
       margin-right: 0;
     }
 
+    &.react-autoql-input-number-spin-wheel {
+      display: inline-flex;
+    }
+
     &.react-autoql-input-number {
       flex: 1;
 
       .react-autoql-input,
       .react-autoql-input-number-spin-button-container {
-        display: inline-flex;
         height: inherit;
         max-height: 100%;
         min-height: 100%;

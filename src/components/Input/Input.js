@@ -54,7 +54,7 @@ export default class Input extends React.Component {
     datePicker: false,
     focusOnMount: false,
     showArrow: undefined,
-    showSpinWheel: true,
+    showSpinWheel: false,
     disabled: false,
     errormessage: undefined,
     isRequired: false,
@@ -297,7 +297,8 @@ export default class Input extends React.Component {
                 ? 'react-autoql-input-hidden'
                 : ''
             }
-            ${selectLocation === 'left' ? 'react-autoql-input-select-left' : 'react-autoql-input-select-right'}`}
+            ${selectLocation === 'left' ? 'react-autoql-input-select-left' : 'react-autoql-input-select-right'}
+            ${showSpinWheel ? 'react-autoql-input-number-spin-wheel' : ''}`}
             data-test='react-autoql-input'
           >
             {hasSelect && selectLocation === 'left' && this.renderSelectDropdown()}
