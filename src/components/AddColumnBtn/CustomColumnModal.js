@@ -749,7 +749,7 @@ export default class CustomColumnModal extends React.Component {
     return (
       <Input
         type='number'
-        showSpinWheel={false}
+        showSpinWheel={true}
         placeholder='eg. "10"'
         ref={(r) => (this.numberInputRefs[chunk.id] = r)}
         defaultValue={columnFn?.[i]?.value}
