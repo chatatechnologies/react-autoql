@@ -1952,7 +1952,10 @@ export class QueryOutput extends React.Component {
 
       if (additionalSelects?.length > 0 && isColumnNumberType(newCol)) {
         const customSelect = additionalSelects.find((select) => {
-          return select?.columns?.[0]?.replace(/ /g, '').toLowerCase() === newCol?.name?.replace(/ /g, '').toLowerCase()
+          return (
+            (select?.columns?.[0] ?? '').replace(/ /g, '').toLowerCase() ===
+            (newCol?.name ?? '').replace(/ /g, '').toLowerCase()
+          )
         })
         const cleanName = getCleanColumnName(newCol?.name)
         const availableSelect = this.queryResponse?.data?.data?.available_selects?.find((select) => {
