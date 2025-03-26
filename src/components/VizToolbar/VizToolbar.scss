@@ -1,3 +1,38 @@
+.react-autoql-toolbar-mobile.viz-toolbar {
+  display: flex;
+  flex-direction: row;
+  background: inherit;
+  padding: 5px;
+  border-radius: 6px;
+  line-height: 28px;
+  background: var(--react-autoql-background-color-secondary);
+  border: 1px solid var(--react-autoql-border-color);
+  box-shadow: 0px 2px 3px -2px var(--react-autoql-box-shadow-color);
+
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  flex-wrap: nowrap;
+  max-width: 75vw;
+
+  scrollbar-width: thin;
+  &::-webkit-scrollbar {
+    height: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--react-autoql-accent-color, rgba(38, 167, 223, 0.5));
+    border-radius: 3px;
+  }
+
+  .react-autoql-toolbar-btn {
+    flex: 0 0 auto;
+  }
+
+  &.vertical {
+    flex-direction: column;
+  }
+}
+
 .viz-toolbar {
   display: flex;
   flex-direction: row;
