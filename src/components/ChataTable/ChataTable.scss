@@ -40,6 +40,10 @@
     }
   }
 
+  .tabulator-footer {
+    display: none;
+  }
+
   &.loading {
     pointer-events: none;
   }
