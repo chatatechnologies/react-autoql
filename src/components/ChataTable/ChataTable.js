@@ -587,12 +587,6 @@ export default class ChataTable extends React.Component {
       // Initialize table with complete dataset
       this.ref?.tabulator?.setData(fullData)
 
-      // if (this.ref?.tabulator?.options) {
-      //   // Configure virtual scrolling
-      //   this.ref.tabulator.options.virtualDom = true
-      //   this.ref.tabulator.options.virtualDomBuffer = '300'
-      // }
-
       //   return {
       //     data: [], // Return empty since data is already set
       //     last_page: 1,
