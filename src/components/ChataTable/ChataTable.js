@@ -103,7 +103,7 @@ export default class ChataTable extends React.Component {
       this.tableOptions.virtualDomBuffer = '300'
       this.tableOptions.sortMode = this.useRemote // v4: ajaxSorting = true
       this.tableOptions.filterMode = this.useRemote // v4: ajaxFiltering = true
-      this.tableOptions.pagination = false
+      this.tableOptions.pagination = this.useRemote
       this.tableOptions.paginationMode = this.useRemote
       // this.tableOptions.progressiveLoad = 'scroll' // v4: ajaxProgressiveLoad
       this.tableOptions.ajaxURL = 'https://required-placeholder-url.com'
