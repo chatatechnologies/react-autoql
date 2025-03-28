@@ -99,6 +99,8 @@ export default class ChataTable extends React.Component {
     }
 
     if (props.response?.data?.data?.rows?.length) {
+      this.tableOptions.virtualDom = true
+      this.tableOptions.virtualDomBuffer = '300'
       this.tableOptions.sortMode = this.useRemote // v4: ajaxSorting = true
       this.tableOptions.filterMode = this.useRemote // v4: ajaxFiltering = true
       this.tableOptions.pagination = this.useRemote
@@ -584,12 +586,6 @@ export default class ChataTable extends React.Component {
 
       // Initialize table with complete dataset
       this.ref?.tabulator?.setData(fullData)
-
-      if (this.ref?.tabulator?.options) {
-        // Configure virtual scrolling
-        this.ref.tabulator.options.virtualDom = true
-        this.ref.tabulator.options.virtualDomBuffer = '300'
-      }
 
       //   return {
       //     data: [], // Return empty since data is already set
