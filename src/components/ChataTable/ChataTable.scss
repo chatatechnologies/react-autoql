@@ -62,9 +62,7 @@
     &:not(.filtering) {
       .tabulator-headers {
         overflow: hidden;
-        &:hover {
-          overflow: auto !important;
-        }
+
         height: 37px !important;
       }
     }
@@ -73,28 +71,23 @@
       &:hover {
         overflow: auto !important;
       }
+
       .tabulator-tableholder {
         overflow: hidden;
-        &:hover {
-          overflow: auto !important;
-        }
       }
+
       .tabulator-header {
-        border: none !important;
+        border-bottom: 2px solid var(--react-autoql-border-color);
+        /* Remove the overflow: visible that might be causing independent scrolling */
         overflow: hidden;
-        &:hover {
-          overflow: auto !important;
-        }
+
         .tabulator-header-contents {
+          /* Remove the overflow: visible that might be causing independent scrolling */
           overflow: hidden;
-          &:hover {
-            overflow: auto !important;
-          }
+
           .tabulator-headers {
             border-bottom: 2px solid var(--react-autoql-border-color);
-            &:hover {
-              overflow: auto !important;
-            }
+
             .tabulator-col {
               background: transparent;
             }
