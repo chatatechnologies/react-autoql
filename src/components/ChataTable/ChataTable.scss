@@ -62,7 +62,6 @@
     &:not(.filtering) {
       .tabulator-headers {
         overflow: hidden;
-
         height: 37px !important;
       }
     }
@@ -71,23 +70,17 @@
       &:hover {
         overflow: auto !important;
       }
-
       .tabulator-tableholder {
         overflow: hidden;
       }
-
       .tabulator-header {
         border-bottom: 2px solid var(--react-autoql-border-color);
-        /* Remove the overflow: visible that might be causing independent scrolling */
         overflow: hidden;
 
         .tabulator-header-contents {
-          /* Remove the overflow: visible that might be causing independent scrolling */
           overflow: hidden;
-
           .tabulator-headers {
             border-bottom: 2px solid var(--react-autoql-border-color);
-
             .tabulator-col {
               background: transparent;
             }
