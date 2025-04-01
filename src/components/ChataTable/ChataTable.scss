@@ -62,24 +62,39 @@
     &:not(.filtering) {
       .tabulator-headers {
         overflow: hidden;
+        &:hover {
+          overflow: auto !important;
+        }
         height: 37px !important;
       }
     }
     .react-autoql-table.tabulator {
       overflow: hidden;
       &:hover {
-        overflow: auto;
+        overflow: auto !important;
       }
       .tabulator-tableholder {
         overflow: hidden;
+        &:hover {
+          overflow: auto !important;
+        }
       }
       .tabulator-header {
         border: none !important;
-        overflow: visible;
+        overflow: hidden;
+        &:hover {
+          overflow: auto !important;
+        }
         .tabulator-header-contents {
-          overflow: visible;
+          overflow: hidden;
+          &:hover {
+            overflow: auto !important;
+          }
           .tabulator-headers {
             border-bottom: 2px solid var(--react-autoql-border-color);
+            &:hover {
+              overflow: auto !important;
+            }
             .tabulator-col {
               background: transparent;
             }
@@ -412,6 +427,7 @@
     }
 
     .tabulator-tableholder {
+      overflow: hidden;
       &:hover {
         overflow: auto !important;
       }
