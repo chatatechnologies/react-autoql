@@ -122,7 +122,7 @@
     }
 
     .react-autoql-tabulator-container .tabulator-tableholder {
-      overflow: auto;
+      overflow: hidden;
       min-height: calc(100% - 60px) !important;
       height: calc(100% - 60px) !important;
       max-height: calc(100% - 60px) !important;
@@ -154,7 +154,7 @@
     }
 
     .react-autoql-tabulator-container .tabulator-tableholder {
-      overflow: auto;
+      overflow: hidden;
       min-height: calc(100% - 37px) !important;
       height: calc(100% - 37px) !important;
       max-height: calc(100% - 37px) !important;
@@ -410,7 +410,7 @@
 
     .tabulator-tableholder {
       &:hover {
-        overscroll-behavior: auto !important;
+        overflow: auto !important;
       }
       background-color: inherit;
     }
