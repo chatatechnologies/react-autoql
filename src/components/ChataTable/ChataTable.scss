@@ -67,7 +67,7 @@
     }
     .react-autoql-table.tabulator {
       overflow: hidden;
-      :hover {
+      &:hover {
         overflow: auto;
       }
       .tabulator-tableholder {
