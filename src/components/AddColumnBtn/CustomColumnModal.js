@@ -153,7 +153,7 @@ export default class CustomColumnModal extends React.Component {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
-    enableWindowFunctions: false,
+    enableWindowFunctions: true,
 
     queryResponse: undefined,
     onAddColumn: () => {},
@@ -344,10 +344,10 @@ export default class CustomColumnModal extends React.Component {
                     : this.state.selected ?? ''
                 })` +
                 `${
-                  ' OVER (' +
+                  ' OVER(' +
                   `${
                     this.state.selectedFnGroupby
-                      ? ' PARTITION BY ' +
+                      ? 'PARTITION BY ' +
                         getVisibleColumns(this.props.columns).find((column) => {
                           return column.field === this.state.selectedFnGroupby
                         })?.name
@@ -355,18 +355,39 @@ export default class CustomColumnModal extends React.Component {
                   }` +
                   `${
                     this.state.selectedFnOrderBy
-                      ? ' ORDER BY ' +
+                      ? (this.state.selectedFnGroupby ? ' ' : '') +
+                        'ORDER BY ' +
                         getVisibleColumns(this.props.columns).find((column) => {
                           return column.field === this.state.selectedFnOrderBy
                         })?.name +
-                        ` ${this.state?.selectedFnOrderByDirection || ' DESC '} ` +
-                        ` ${this.state?.selectedFnRowsOrRange || ''} ` +
-                        ` ${!!this.state?.selectedFnRowsOrRange ? ' Between ' : ''}` +
-                        ` ${this.state?.selectedFnRowsOrRangeOptionPreNValue || ''} ` +
-                        ` ${this.state?.selectedFnRowsOrRangeOptionPre || ''} ` +
-                        ` ${!!this.state?.selectedFnRowsOrRange ? ' AND ' : ''} ` +
-                        ` ${this.state?.selectedFnRowsOrRangeOptionPostNValue || ''} ` +
-                        ` ${this.state?.selectedFnRowsOrRangeOptionPost || ''} `
+                        `${
+                          this.state?.selectedFnOrderByDirection
+                            ? ' ' + this.state?.selectedFnOrderByDirection
+                            : ' DESC'
+                        }` +
+                        `${this.state?.selectedFnRowsOrRange ? ' ' + this.state?.selectedFnRowsOrRange : ''}` +
+                        `${!!this.state?.selectedFnRowsOrRange ? ' Between ' : ''}` +
+                        `${
+                          this.state?.selectedFnRowsOrRangeOptionPreNValue
+                            ? ' ' + this.state?.selectedFnRowsOrRangeOptionPreNValue
+                            : ''
+                        }` +
+                        `${
+                          this.state?.selectedFnRowsOrRangeOptionPre
+                            ? ' ' + this.state?.selectedFnRowsOrRangeOptionPre
+                            : ''
+                        }` +
+                        `${!!this.state?.selectedFnRowsOrRange ? ' AND ' : ''}` +
+                        `${
+                          this.state?.selectedFnRowsOrRangeOptionPostNValue
+                            ? ' ' + this.state?.selectedFnRowsOrRangeOptionPostNValue
+                            : ''
+                        }` +
+                        `${
+                          this.state?.selectedFnRowsOrRangeOptionPost
+                            ? ' ' + this.state?.selectedFnRowsOrRangeOptionPost
+                            : ''
+                        }`
                       : ''
                   })`
                 }`
@@ -374,7 +395,11 @@ export default class CustomColumnModal extends React.Component {
           console.error('Unknown columnFn type')
         }
         const nextValue = customColumn?.columnFnArray?.[i + 1]?.value
-        if (columnFn?.value !== 'LEFT_BRACKET' && nextValue !== 'RIGHT_BRACKET') {
+        if (
+          columnFn?.value !== 'LEFT_BRACKET' &&
+          nextValue !== 'RIGHT_BRACKET' &&
+          !(columnFn?.value === 'RIGHT_BRACKET' && nextValue === undefined)
+        ) {
           protoTableColumn += ' '
         }
         i++

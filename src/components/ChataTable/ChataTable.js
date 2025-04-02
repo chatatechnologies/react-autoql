@@ -123,7 +123,6 @@ export default class ChataTable extends React.Component {
       isLastPage: this.tableParams.page === this.totalPages,
       subscribedData: undefined,
       firstRender: true,
-      useRemote: 'remote',
     }
   }
 
