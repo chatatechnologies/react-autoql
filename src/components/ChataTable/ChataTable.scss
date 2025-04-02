@@ -40,6 +40,10 @@
     }
   }
 
+  .tabulator-footer {
+    display: none;
+  }
+
   &.loading {
     pointer-events: none;
   }
@@ -62,15 +66,19 @@
       }
     }
     .react-autoql-table.tabulator {
-      overflow: auto;
+      overflow: hidden;
+      &:hover {
+        overflow: auto !important;
+      }
       .tabulator-tableholder {
         overflow: hidden;
       }
       .tabulator-header {
-        border: none !important;
-        overflow: visible;
+        border-bottom: 2px solid var(--react-autoql-border-color);
+        overflow: hidden;
+
         .tabulator-header-contents {
-          overflow: visible;
+          overflow: hidden;
           .tabulator-headers {
             border-bottom: 2px solid var(--react-autoql-border-color);
             .tabulator-col {
@@ -118,6 +126,7 @@
     }
 
     .react-autoql-tabulator-container .tabulator-tableholder {
+      overflow: hidden;
       min-height: calc(100% - 60px) !important;
       height: calc(100% - 60px) !important;
       max-height: calc(100% - 60px) !important;
@@ -149,6 +158,7 @@
     }
 
     .react-autoql-tabulator-container .tabulator-tableholder {
+      overflow: hidden;
       min-height: calc(100% - 37px) !important;
       height: calc(100% - 37px) !important;
       max-height: calc(100% - 37px) !important;
@@ -403,8 +413,11 @@
     }
 
     .tabulator-tableholder {
+      overflow: hidden;
+      &:hover {
+        overflow: auto !important;
+      }
       background-color: inherit;
-      overscroll-behavior: auto !important;
     }
   }
 }

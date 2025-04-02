@@ -1956,7 +1956,10 @@ export class QueryOutput extends React.Component {
 
       if (additionalSelects?.length > 0 && isColumnNumberType(newCol)) {
         const customSelect = additionalSelects.find((select) => {
-          return select?.columns?.[0]?.replace(/ /g, '') === newCol?.name?.replace(/ /g, '')
+          return (
+            (select?.columns?.[0] ?? '').replace(/ /g, '').toLowerCase() ===
+            (newCol?.name ?? '').replace(/ /g, '').toLowerCase()
+          )
         })
         const cleanName = getCleanColumnName(newCol?.name)
         const availableSelect = this.queryResponse?.data?.data?.available_selects?.find((select) => {
@@ -2880,7 +2883,7 @@ export class QueryOutput extends React.Component {
           className={`react-autoql-response-content-container
           ${isTableType(this.state.displayType) ? 'table' : ''}
           ${isChartType(this.state.displayType) ? 'chart' : ''} 
-		      ${!isChartType(this.state.displayType) && !isTableType(this.state.displayType) ? 'non-table-non-chart' : ''}`}
+          ${!isChartType(this.state.displayType) && !isTableType(this.state.displayType) ? 'non-table-non-chart' : ''}`}
         >
           {this.props.reverseTranslationPlacement === 'top' && this.renderFooter()}
           {this.renderResponse()}

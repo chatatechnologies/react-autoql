@@ -454,7 +454,7 @@ export default class DataAlertListItem extends React.Component {
                 onChange={this.onEnableSwitchChange}
                 onText='Active'
                 offText='Inactive'
-                displayswitchtext={this.props.shouldDisplaySwitchText}
+                displaySwitchText={this.props.shouldDisplaySwitchText}
               />
             </div>
           </div>

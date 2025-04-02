@@ -101,6 +101,7 @@ export default class ChataTable extends React.Component {
     if (props.response?.data?.data?.rows?.length) {
       this.tableOptions.sortMode = this.useRemote // v4: ajaxSorting = true
       this.tableOptions.filterMode = this.useRemote // v4: ajaxFiltering = true
+      this.tableOptions.pagination = false
       this.tableOptions.paginationMode = this.useRemote
       this.tableOptions.progressiveLoad = 'scroll' // v4: ajaxProgressiveLoad
       this.tableOptions.ajaxURL = 'https://required-placeholder-url.com'
@@ -194,8 +195,6 @@ export default class ChataTable extends React.Component {
       this.lockedTableHeight = this.initialTableHeight
     }
 
-    this.summaryStats = this.calculateSummaryStats(this.props)
-
     this.setState({
       firstRender: false,
     })
@@ -288,6 +287,7 @@ export default class ChataTable extends React.Component {
         this.setTableHeight()
       }
     }
+    this.summaryStats = this.calculateSummaryStats(this.props)
   }
 
   componentWillUnmount = () => {
@@ -586,12 +586,6 @@ export default class ChataTable extends React.Component {
       // Initialize table with complete dataset
       this.ref?.tabulator?.setData(fullData)
 
-      if (this.ref?.tabulator?.options) {
-        // Configure virtual scrolling
-        this.ref.tabulator.options.virtualDom = true
-        this.ref.tabulator.options.virtualDomBuffer = '300'
-      }
-
       //   return {
       //     data: [], // Return empty since data is already set
       //     last_page: 1,
@@ -669,8 +663,7 @@ export default class ChataTable extends React.Component {
     // Filters
     if (params.tableFilters?.length) {
       params.tableFilters.forEach((filter) => {
-        const filterColumnName = filter.name
-        const filterColumnIndex = this.props.columns.find((col) => col.name === filterColumnName)?.index
+        const filterColumnIndex = this.props.columns.find((col) => col.id === filter.id)?.index
 
         data = filterDataByColumn(data, this.props.columns, filterColumnIndex, filter.value, filter.operator)
       })
@@ -678,8 +671,7 @@ export default class ChataTable extends React.Component {
 
     // Sorters
     if (params.orders?.length) {
-      const sortColumnName = params.orders[0].name
-      const sortColumnIndex = this.props.columns.findIndex((col) => col.name === sortColumnName)
+      const sortColumnIndex = this.props.columns.find((col) => col.id === params?.orders[0]?.id)?.index
       const sortDirection = params.orders[0].sort === 'DESC' ? 'desc' : 'asc'
 
       data = sortDataByColumn(data, this.props.columns, sortColumnIndex, sortDirection)
@@ -1359,7 +1351,6 @@ export default class ChataTable extends React.Component {
           })
           return newCol
         })
-
         return filteredColumns
       }
     } catch (error) {

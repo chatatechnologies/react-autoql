@@ -39,6 +39,7 @@ export default class Input extends React.Component {
     showSpinWheel: PropTypes.bool,
     disabled: PropTypes.bool,
     errormessage: PropTypes.string,
+    isRequired: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -53,9 +54,10 @@ export default class Input extends React.Component {
     datePicker: false,
     focusOnMount: false,
     showArrow: undefined,
-    showSpinWheel: true,
+    showSpinWheel: false,
     disabled: false,
     errormessage: undefined,
+    isRequired: false,
   }
 
   componentDidMount = () => {
@@ -160,10 +162,18 @@ export default class Input extends React.Component {
   renderSpinWheel = () => {
     return (
       <div className='react-autoql-input-number-spin-button-container'>
-        <button className='react-autoql-input-number-spin-button' onClick={this.incrementNumber}>
+        <button
+          className='react-autoql-input-number-spin-button'
+          onClick={this.incrementNumber}
+          disabled={this.props.disabled}
+        >
           <Icon type='caret-up' />
         </button>
-        <button className='react-autoql-input-number-spin-button' onClick={this.decrementNumber}>
+        <button
+          className='react-autoql-input-number-spin-button'
+          onClick={this.decrementNumber}
+          disabled={this.props.disabled}
+        >
           <Icon type='caret-down' />
         </button>
       </div>
@@ -256,6 +266,8 @@ export default class Input extends React.Component {
       showArrow,
       selectLocation,
       disabled,
+      displayColumnSelector,
+      isRequired,
       ...nativeProps
     } = this.props
 
@@ -272,7 +284,7 @@ export default class Input extends React.Component {
         ${fullWidth ? 'react-autoql-input-full-width' : ''}`}
           style={style}
         >
-          {!!label && <div className='react-autoql-input-label'>{label}</div>}
+          {!!label && <div className='react-autoql-input-label'>{`${label}${this.props.isRequired ? ' *' : ''}`}</div>}
           <div
             className={`react-autoql-input-container
             ${this.state.focused ? 'focus' : ''}
@@ -285,7 +297,8 @@ export default class Input extends React.Component {
                 ? 'react-autoql-input-hidden'
                 : ''
             }
-            ${selectLocation === 'left' ? 'react-autoql-input-select-left' : 'react-autoql-input-select-right'}`}
+            ${selectLocation === 'left' ? 'react-autoql-input-select-left' : 'react-autoql-input-select-right'}
+            ${showSpinWheel ? 'react-autoql-input-number-spin-wheel' : ''}`}
             data-test='react-autoql-input'
           >
             {hasSelect && selectLocation === 'left' && this.renderSelectDropdown()}
