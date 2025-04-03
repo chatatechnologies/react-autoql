@@ -1,7 +1,12 @@
+@import '../../styles/breakpoints';
+
 .custom-column-modal {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+  height: -webkit-fill-available;
+
+  @include sm {
+    display: block;
+    overflow-y: scroll;
+  }
 
   .custom-column-modal-name-and-type {
     display: flex;
@@ -13,37 +18,69 @@
     }
 
     .react-autoql-input-and-label-container {
-      flex: 2;
-      padding: 0;
-      margin-bottom: 10px;
-      margin-right: 0;
+      padding: 5px 0px;
+      width: -webkit-fill-available;
+    }
+  }
+
+  .react-autoql-window-fn-popover-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+    display: flex;
+
+    @include sm {
+      position: unset;
+      padding: 10px 0px;
+      right: unset;
+      bottom: unset;
     }
   }
 
   .custom-column-modal-form-wrapper {
-    flex: 2;
+    flex: 1;
     display: flex;
     overflow: hidden;
     flex-direction: column;
 
+    @include sm {
+      display: block;
+      overflow: visible;
+      flex: unset;
+      flex-direction: unset;
+    }
+
     .react-autoql-formula-builder-wrapper {
-      flex: 1;
       display: flex;
       flex-direction: row;
-      margin-bottom: 30px;
+      margin-bottom: 12px;
+
+      @include sm {
+        display: block;
+      }
 
       .react-autoql-formula-builder-section {
         flex: 3;
-        height: 100%;
+        height: auto;
+        min-width: 150px;
         display: flex;
         flex-direction: column;
         margin-right: 20px;
         position: relative;
+        overflow: auto;
+
+        @include sm {
+          margin: 0px;
+        }
 
         .react-autoql-select-and-label {
           padding-right: 5px;
           color: var(--react-autoql-accent-color);
         }
+      }
+
+      .custom-column-window-fn-selector-top {
+        padding-top: 0px;
       }
 
       .react-autoql-formula-builder-calculator-container {
@@ -69,6 +106,9 @@
 
         .react-autoql-btn {
           padding: 7px 12px;
+          width: -webkit-fill-available;
+          justify-content: start;
+          height: 38px;
         }
       }
 
@@ -82,12 +122,14 @@
         .react-autoql-formula-builder-calculator-buttons-container {
           overflow: auto;
           max-height: 250px;
+          min-width: 108px;
 
           .react-autoql-btn {
             white-space: pre;
             margin: 0;
             margin-bottom: 5px;
             margin-right: 5px;
+            min-width: 48px;
           }
 
           .react-autoql-formula-calculator-button {
@@ -114,8 +156,6 @@
   }
 
   .react-autoql-formula-builder-validation-message {
-    position: absolute;
-    bottom: -18px;
     font-size: 12px;
 
     .react-autoql-formula-builder-validation-message-success {
@@ -160,6 +200,8 @@
         margin-bottom: 5px;
         margin-right: 8px;
         line-height: 38px;
+        word-wrap: break-word; // replace text-wrap: wrap with these two lines
+        overflow-wrap: break-word;
 
         .react-autoql-column-operator-selector {
           .react-autoql-select {

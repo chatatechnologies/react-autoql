@@ -3,7 +3,9 @@
   padding: 10px;
   margin: 10px;
   margin-bottom: 0;
-
+  &.mobile {
+    margin: 0 10px;
+  }
   &.no-suggestions .react-autosuggest__suggestions-container--open .react-autosuggest__section-container:last-child ul {
     pointer-events: none;
     visibility: hidden;
