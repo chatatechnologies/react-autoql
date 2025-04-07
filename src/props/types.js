@@ -11,6 +11,7 @@ export const dataFormattingType = PropTypes.shape({
   languageCode: PropTypes.string,
   currencyDecimals: PropTypes.number,
   quantityDecimals: PropTypes.number,
+  ratioDecimals: PropTypes.number,
   comparisonDisplay: PropTypes.string,
   monthYearFormat: PropTypes.string,
   dayMonthYearFormat: PropTypes.string,
