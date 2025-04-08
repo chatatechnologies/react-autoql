@@ -1,6 +1,6 @@
 {
   "name": "react-autoql",
-  "version": "8.8.109",
+  "version": "8.8.110",
   "description": "React Widget Library",
   "main": "dist/autoql.cjs.js",
   "module": "dist/autoql.esm.js",
