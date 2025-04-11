@@ -41,15 +41,17 @@ export class AddColumnBtnWithoutRef extends React.Component {
     onAddColumnClick: PropTypes.func,
     onCustomClick: PropTypes.func,
     disableAddCustomColumnOption: PropTypes.bool,
+    style: PropTypes.object,
   }
 
   static defaultProps = {
     queryResponse: undefined,
     allowCustom: true,
-    onAddColumnClick: () => {},
-    onCustomClick: () => {},
+    onAddColumnClick: () => { },
+    onCustomClick: () => { },
     tooltipID: undefined,
     disableAddCustomColumnOption: false,
+    style: {},
   }
 
   onAddColumnClick = (column, aggType, isHiddenColumn) => {
@@ -217,6 +219,9 @@ export class AddColumnBtnWithoutRef extends React.Component {
           <div
             onClick={() => this.setState({ isAddColumnMenuOpen: true })}
             className={`react-autoql-table-add-column-btn${this.state.isAddColumnMenuOpen ? ' active' : ''}`}
+            style={{
+              ...this.props.style, // Overwrite other styles if provided
+            }}
             data-test='react-autoql-table-add-column-btn'
             data-tooltip-content='Add Column'
             data-tooltip-id={this.props.tooltipID}

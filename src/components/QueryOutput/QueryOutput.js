@@ -63,6 +63,7 @@ import {
   ColumnTypes,
   isColumnIndexConfigValid,
   getCleanColumnName,
+  isDrilldown,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -150,8 +151,6 @@ export class QueryOutput extends React.Component {
     }
 
     this.DEFAULT_TABLE_PAGE_SIZE = 100
-
-    console.log('subjects', this.props.subjects)
 
     this.state = {
       displayType,
@@ -911,7 +910,6 @@ export class QueryOutput extends React.Component {
   }
 
   queryFn = async (args = {}) => {
-    console.log('hello')
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
     const allFilters = this.getCombinedFilters()
 
@@ -922,7 +920,7 @@ export class QueryOutput extends React.Component {
 
     let response
 
-    if (this.isDrilldown()) {
+    if (isDrilldown(this.queryResponse)) {
       try {
         response = await runDrilldown({
           ...getAuthentication(this.props.authentication),
@@ -2352,16 +2350,6 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  isDrilldown = () => {
-    try {
-      const queryText = this.queryResponse?.data?.data?.text || ''
-      const isDrilldown = queryText.split(':')[0] === 'Drilldown'
-      return isDrilldown
-    } catch (error) {
-      return false
-    }
-  }
-
   renderAllColumnsHiddenMessage = () => {
     return (
       <div className='no-columns-error-message' data-test='columns-hidden-message'>
@@ -2466,7 +2454,7 @@ export class QueryOutput extends React.Component {
           tooltipID={this.props.tooltipID}
           onAddColumnClick={this.onAddColumnClick}
           onCustomClick={this.onAddColumnClick}
-          disableAddCustomColumnOption={this.isDrilldown()}
+          disableAddCustomColumnOption={isDrilldown(this.queryResponse)}
         />
       )
     }
@@ -2506,7 +2494,7 @@ export class QueryOutput extends React.Component {
           queryRequestData={this.queryResponse?.data?.data?.fe_req}
           queryText={this.queryResponse?.data?.data?.text}
           originalQueryID={this.props.originalQueryID}
-          isDrilldown={this.isDrilldown()}
+          isDrilldown={isDrilldown(this.queryResponse)}
           isQueryOutputMounted={this._isMounted}
           popoverParentElement={this.props.popoverParentElement}
           hidden={this.state.displayType !== 'table'}
@@ -2630,7 +2618,7 @@ export class QueryOutput extends React.Component {
           height={this.props.height}
           width={this.props.width}
           onNewData={this.onNewData}
-          isDrilldown={this.isDrilldown()}
+          isDrilldown={isDrilldown(this.queryResponse)}
           updateColumns={this.updateColumns}
           isDataLimited={isDataLimited(this.queryResponse) || isPivotDataLimited}
           source={this.props.source}
@@ -2849,7 +2837,6 @@ export class QueryOutput extends React.Component {
   }
 
   renderReverseTranslation = () => {
-    console.log('rendering reverse translation', this.props.subjects)
     return (
       <ReverseTranslation
         authentication={this.props.authentication}
@@ -2860,6 +2847,8 @@ export class QueryOutput extends React.Component {
         tooltipID={this.props.tooltipID}
         subjects={this.props.subjects}
         queryOutputRef={this.responseContainerRef}
+        allowColumnAddition={this.props.allowColumnAddition && this.state.displayType === 'table'}
+        allowEditReverseTranslation={!isDrilldown(this.queryResponse)}
       />
     )
   }

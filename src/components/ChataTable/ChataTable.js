@@ -412,7 +412,6 @@ export default class ChataTable extends React.Component {
   }
 
   getRTForRemoteFilterAndSort = () => {
-    console.log('getRTForRemoteFilterAndSort')
     let headerFilters = []
     let headerSorters = []
 

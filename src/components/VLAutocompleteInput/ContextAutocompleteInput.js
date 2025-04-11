@@ -48,12 +48,10 @@ const ContextAutocompleteInput = ({
     if (existingFilter) {
       handleHighlightFilter(existingFilter)
     } else {
-      console.log('newFilter', newFilter)
       onChange(newFilter)
     }
   }, [onChange, findExistingFilter, handleHighlightFilter])
 
-  // Custom rendering functions for AutocompleteInput
   const renderSuggestion = useCallback((suggestion) => {
     return (
       <span
@@ -78,30 +76,19 @@ const ContextAutocompleteInput = ({
     )
   }, [])
 
-  // const sortSuggestions = useCallback((suggestions) => {
-  //   return [...suggestions].sort((a, b) => {
-  //     if (a.originalMatch?.context == value) {
-  //       return -1
-  //     }
-  //     const aText = a.description
-  //     const bText = b.description
-  //     return aText.toUpperCase() < bText.toUpperCase() ? -1 : aText > bText ? 1 : 0
-  //   })
-  // }, [])
-
   const sortSuggestions = useCallback((suggestions) => {
     return [...suggestions].sort((a, b) => {
-      const aIsMatch = a.originalMatch?.context === primaryContext?.context
-      const bIsMatch = b.originalMatch?.context === primaryContext?.context
+
+      const aIsMatch = a?.description === primaryContext?.displayName
+      const bIsMatch = b?.description === primaryContext?.displayName
 
       if (aIsMatch && !bIsMatch) return -1;
       if (!aIsMatch && bIsMatch) return 1;
 
-      return a.description.localeCompare(b.description, undefined, { sensitivity: 'base' })
+      return a?.description.localeCompare(b?.description, undefined, { sensitivity: 'base' })
     });
   }, [value]);
 
-  // Custom rendering functions for Popover
   const renderValue = useCallback((value) => {
     return value?.format_txt ?? placeholder
   }, [placeholder])
@@ -110,7 +97,6 @@ const ContextAutocompleteInput = ({
     return value?.show_message
   }, [])
 
-  // AutocompleteInput specific props
   const autocompleteProps = {
     renderSuggestion,
     filterSuggestions,

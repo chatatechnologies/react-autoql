@@ -10,6 +10,7 @@ import {
   fetchVLAutocomplete,
   authenticationDefault,
   ColumnTypes,
+  titlelizeString,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -22,7 +23,10 @@ import VLAutocompleteInputV2 from '../VLAutocompleteInput/VLAutocompleteInputV2'
 import GroupByAutocompleteInput from '../VLAutocompleteInput/GroupByAutocompleteInput'
 import ContextAutocompleteInput from '../VLAutocompleteInput/ContextAutocompleteInput'
 import InlineInputEditor from '../DataExplorer/InlineInputEditor'
-import { Button } from '../Button'
+import { Spinner } from '../Spinner'
+import { AddColumnBtn } from '../AddColumnBtn'
+import { Popover } from '../Popover'
+import AggMenu from '../AddColumnBtn/AggMenu'
 
 const ReverseTranslation = ({
   authentication = authenticationDefault,
@@ -33,10 +37,13 @@ const ReverseTranslation = ({
   termId,
   subjects = [],
   queryResponseRef = {},
+  allowColumnAddition = false,
+  allowEditReverseTranslation = false,
 }) => {
   const COMPONENT_KEY = useRef(uuid())
   const isMounted = useRef(false)
-  const initialParsedInterpretations = useRef(queryResponse?.data?.data?.parsed_interpretation)
+  const initialParsedInterpretations = useRef()
+  const validatedParsedInterpretations = useRef(null)
   const [log, setLog] = useState([])
 
   const initialReverseTranslationArray = termId && queryResponse?.data?.parsed_interpretations
@@ -44,17 +51,14 @@ const ReverseTranslation = ({
     : constructRTArray(queryResponse?.data?.data?.parsed_interpretation)
 
   const [reverseTranslationArray, setReverseTranslationArray] = useState(initialReverseTranslationArray)
-  const [refinedReverseTranslationArray, setRefinedReverseTranslationArray] = useState([])
   const [primaryContext, setPrimaryContext] = useState('')
-  const [isRefiningRT, setIsRefiningRT] = useState(true)
+  const [isRefiningRT, setIsRefiningRT] = useState(false)
+  const [aggPopoverActiveID, setAggPopoverActiveID] = useState(undefined)
   const [isLoading, setIsLoading] = useState(false)
 
-  console.log('un-fortmatted RT', queryResponse?.data?.data?.parsed_interpretation)
-  console.log('formatted RT', reverseTranslationArray)
-  console.log('primary context', primaryContext)
-  console.log('queryResponseRef', queryResponseRef)
-
-  const findPrimaryContextNameFromRT = useCallback(() => initialReverseTranslationArray?.find((rt) => rt?.c_type === 'SEED')?.clean_causes?.[0] ?? '', [initialReverseTranslationArray])
+  const findPrimaryContextNameFromRT = useCallback(() =>
+    initialReverseTranslationArray?.find((rt) => rt?.c_type === 'SEED')?.clean_causes?.[0] ?? '', [initialReverseTranslationArray]
+  )
 
   const buildValidatedMatch = (match) => {
     return {
@@ -105,22 +109,21 @@ const ReverseTranslation = ({
     return transformedSuggestions
   }, [primaryContext, subjects])
 
-  const validateAndUpdateReverseTranslation = async () => {
+  const validateAndUpdateReverseTranslation = async (rt) => {
     const sessionFilters = queryResponse?.data?.data?.fe_req?.persistent_filter_locks ?? []
     const persistentFilters = queryResponse?.data?.data?.fe_req?.session_filter_locks ?? []
     const lockedFilters = [...persistentFilters, ...sessionFilters] ?? []
+    let contextChunk = null
+    let contextChunkIndex = null
 
-    if (reverseTranslationArray?.length) {
+    if (rt?.length) {
 
-      console.log('contexts', subjects)
-
-      const validatedInterpretationArray = _cloneDeep(reverseTranslationArray)
+      const validatedInterpretationArray = _cloneDeep(rt)
 
       const primaryContextName = findPrimaryContextNameFromRT()
-      console.log('primary context name', primaryContextName)
       const context = subjects?.find((subject) => subject?.context === primaryContextName) || {}
 
-      const valueLabelValidationPromises = reverseTranslationArray.map(async (chunk, i) => {
+      const valueLabelValidationPromises = rt.map(async (chunk, i) => {
         if (chunk.c_type === 'VALUE_LABEL') {
           try {
             const response = await fetchVLAutocomplete({
@@ -164,6 +167,12 @@ const ReverseTranslation = ({
             if (filter?.display_name) {
               validatedInterpretationArray[i].c_type = 'VALIDATED_SEED'
               validatedInterpretationArray[i].match = buildValidatedMatch({ ...filter, eng: chunk?.eng })
+              contextChunk = {
+                c_type: 'SEED_SUFFIX',
+                eng: ` (${titlelizeString(context?.displayName)})`,
+                for: filter?.display_name
+              }
+              contextChunkIndex = i + 1
             }
 
           } catch (error) {
@@ -174,23 +183,27 @@ const ReverseTranslation = ({
 
       await Promise.all(valueLabelValidationPromises)
 
+      if (contextChunkIndex && contextChunk) {
+        validatedInterpretationArray.splice(contextChunkIndex, 0, contextChunk)
+      }
+
       if (isMounted.current) {
-        console.log('validatedInterpretationArray', validatedInterpretationArray)
-        console.log('context', context)
+        validatedParsedInterpretations.current = [...validatedInterpretationArray]
+        initialParsedInterpretations.current = queryResponse?.data?.data?.parsed_interpretation
         setPrimaryContext(context)
         setReverseTranslationArray([...validatedInterpretationArray])
       }
     }
   }
 
-  function removeBrackets(str) {
-    return str.replace(/[\[\]{}()]/g, '');
+  function removeBracketsAndParenthesesAndCharacterBetween(str) {
+    return str.replace(/\[[^\]]*\]|\{[^}]*\}|\([^\)]*\)/g, '');
   }
 
   const getText = () => {
     let rtString = ''
     reverseTranslationArray.forEach((chunk) => {
-      rtString = `${rtString} ${removeBrackets(chunk?.eng) || chunk}`
+      rtString = `${rtString} ${removeBracketsAndParenthesesAndCharacterBetween(chunk?.eng)}`
     })
     return rtString.trim()
   }
@@ -199,40 +212,49 @@ const ReverseTranslation = ({
     return null
   }
 
+  const resetReverseTranslation = () => {
+    setReverseTranslationArray(validatedParsedInterpretations?.current)
+    setIsRefiningRT(false)
+  }
+
   const queryNewRT = () => {
     const query = getText()
-    console.log('reverseTranslationArray', reverseTranslationArray)
-    console.log('query', query)
+    setIsLoading(true)
+    queryResponseRef?.tableRef?.setPageLoading(true)
     queryResponseRef?.queryFn({ query: query }).then((response) => {
       if (response?.data?.data?.rows) {
         queryResponseRef?.updateColumnsAndData(response)
       } else {
         throw new Error('New column addition failed')
       }
+      setIsRefiningRT(false)
+      setIsLoading(false)
+      queryResponseRef?.tableRef?.setPageLoading(false)
     })
       .catch((error) => {
         console.error(error)
-        this.tableRef?.setPageLoading(false)
+        setIsRefiningRT(false)
+        setIsLoading(false)
+        this.queryResponseRef?.setPageLoading(false)
       })
   }
 
-  useEffect(() => {
-    const executePrerequisites = async () => {
-      setIsLoading(true)
-      try {
-        console.log('1')
-        await validateAndUpdateReverseTranslation()
-      } catch (error) {
-        console.error(error)
-      } finally {
-        setIsLoading(false)
-      }
+  const executePrerequisites = async (rt) => {
+    setIsLoading(true)
+    try {
+      await validateAndUpdateReverseTranslation(rt)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setIsLoading(false)
     }
+  }
 
+  useEffect(() => {
     isMounted.current = true
 
     if (onValueLabelClick && reverseTranslationArray?.length) {
-      executePrerequisites()
+      executePrerequisites(reverseTranslationArray)
     } else {
       console.error('Prerequisites not met to render Reverse Translation')
     }
@@ -244,22 +266,21 @@ const ReverseTranslation = ({
 
   useEffect(() => {
     const newParsedInterpretation = queryResponse?.data?.data?.parsed_interpretation
-    console.log('newParsedInterpretation', newParsedInterpretation)
-    console.log('initialParsedInterpretations', initialParsedInterpretations)
-    if (!deepEqual(newParsedInterpretation, initialParsedInterpretations?.current)) {
+    if (initialParsedInterpretations?.current?.length &&
+      !deepEqual(newParsedInterpretation, initialParsedInterpretations?.current)) {
+      initialParsedInterpretations.current = newParsedInterpretation
       const newArray = constructRTArray(newParsedInterpretation)
-      setReverseTranslationArray(newArray)
-      validateAndUpdateReverseTranslation()
+      executePrerequisites(newArray)
     }
   }, [queryResponse?.data?.data?.parsed_interpretation])
 
   useEffect(() => {
-    if (reverseTranslationArray?.length && log?.length) {
+    if (isRefiningRT && primaryContext && reverseTranslationArray?.length) {
       queryNewRT()
     }
-  }, [log])
+  }, [primaryContext])
 
-  const renderValueLabelLink = (chunk) => {
+  const renderValueLabelLink = (chunk, disableAction) => {
     return (
       <a
         id='react-autoql-interpreted-value-label'
@@ -267,6 +288,7 @@ const ReverseTranslation = ({
         data-test='react-autoql-condition-link'
         onClick={(e) => {
           e.stopPropagation()
+          if (disableAction) return
           onValueLabelClick(chunk.eng)
         }}
       >
@@ -276,19 +298,57 @@ const ReverseTranslation = ({
     )
   }
 
+  const renderSeedHighlight = (chunk) => {
+    return (
+      <a
+        id='react-autoql-interpreted-value-label'
+        className='react-autoql-condition-link-filtered'
+        data-test='react-autoql-condition-link'
+        onClick={(e) => {
+          e.stopPropagation()
+        }}
+      >
+        {<span>{chunk.eng}</span>}
+      </a>
+    )
+  }
+
   const handleFilterChange = (filter, existingIndex) => {
-    console.log('filter', filter)
     setLog([...log, filter])
-    setReverseTranslationArray((prevRefinedReverseTranslationArray) => { // should be refined reverse translation
+    setReverseTranslationArray((prevRefinedReverseTranslationArray) => {
       if (existingIndex !== -1) {
-        return prevRefinedReverseTranslationArray.map((f, i) => (i === existingIndex ? filter : f))
+        if (filter?.c_type === 'VALIDATED_SEED' && filter?.match?.show_message !== primaryContext?.displayName) {
+          prevRefinedReverseTranslationArray.splice(existingIndex + 1);
+          return [...prevRefinedReverseTranslationArray.map((f, i) => (i === existingIndex ? filter : f))]
+        }
+        return [...prevRefinedReverseTranslationArray.map((f, i) => (i === existingIndex ? filter : f))]
       } else {
         return [...prevRefinedReverseTranslationArray, filter]
       }
     })
   }
 
-  const renderValueLabelChunk = (chunk, i) => { // all three of these AutoComplete inputs could be put into one
+  const renderAddColumnBtn = (key, disableGroupColumnsOptions = false, disableFilterColumnsOptions = false) => {
+    if (!allowColumnAddition) {
+      return null
+    }
+    return (
+      <AddColumnBtn
+        key={key}
+        id={key}
+        queryResponse={queryResponse}
+        columns={queryResponseRef?.state.columns}
+        tooltipID={tooltipID}
+        onAddColumnClick={queryResponseRef?.onAddColumnClick}
+        enableInlineStyle={true}
+        disableGroupColumnsOptions={disableGroupColumnsOptions}
+        disableFilterColumnsOptions={disableFilterColumnsOptions}
+        allowCustom={false}
+      />
+    )
+  }
+
+  const renderValueLabelChunk = (chunk, i) => {
     return (
       <VLAutocompleteInputV2
         authentication={authentication}
@@ -305,31 +365,68 @@ const ReverseTranslation = ({
 
   const renderSeedChunk = (chunk, i) => {
     return (
-      <ContextAutocompleteInput
-        value={chunk?.match}
-        onChange={(newValue) => handleFilterChange({ ...chunk, match: newValue, eng: newValue?.format_txt }, i)}
-        suggestions={transformFilterSuggestions()}
-        primaryContext={primaryContext}
-        filters={log}
-        onToast={true}
-      />
+      <>
+        <ContextAutocompleteInput
+          value={chunk?.match}
+          onChange={(newValue) => handleFilterChange({ ...chunk, match: newValue, eng: newValue?.format_txt }, i)}
+          suggestions={transformFilterSuggestions()}
+          primaryContext={primaryContext}
+          filters={log}
+          onToast={true}
+        />
+        {renderAddColumnBtn(`${COMPONENT_KEY}-seed-chunk-add-column-button`, true, false)}
+      </>
     )
   }
 
   const renderGroupByChunk = (chunk, i) => {
     return (
-      <GroupByAutocompleteInput
-        value={chunk?.match}
-        onChange={(newValue) => handleFilterChange({ ...chunk, match: newValue, eng: newValue?.format_txt }, i)}
-        suggestions={transformGroupBySuggestions()}
-        filters={log}
-        onToast={true}
-        placeholder="Choose a GROUP BY..."
-      />
+      <>
+        <GroupByAutocompleteInput
+          value={chunk?.match}
+          onChange={(newValue) => handleFilterChange({ ...chunk, match: newValue, eng: newValue?.format_txt }, i)}
+          suggestions={transformGroupBySuggestions()}
+          filters={log}
+          onToast={true}
+          placeholder="Choose a GROUP BY..."
+        />
+        {renderAddColumnBtn(`${COMPONENT_KEY}-groupby-chunk-add-column-button`, false, true)}
+      </>
     )
   }
 
-  const renderFilterChunk = (chunk, i) => {
+  const renderAggMenu = (chunk, i) => {
+    return (
+      <Popover
+        key={`agg-select-menu-${i}`}
+        isOpen={aggPopoverActiveID === `column-select-menu-item-${i}`}
+        onClickOutside={() => setAggPopoverActiveID(undefined)}
+        content={() =>
+          <AggMenu
+            handleAggMenuItemClick={(aggType) => {
+              handleFilterChange({ ...chunk, eng: aggType?.displayName }, i)
+              setAggPopoverActiveID(undefined)
+            }}
+          />
+        }
+        positions={['right', 'left']}
+        align='start'
+        padding={0}
+      >
+        <div>
+          <InlineInputEditor
+            value={chunk?.eng}
+            type='text'
+            disabledOnClickEdit={true}
+            onClickEdit={() => setAggPopoverActiveID(`column-select-menu-item-${i}`)}
+            tooltipID={tooltipID}
+          />
+        </div>
+      </Popover>
+    )
+  }
+
+  const renderInlineTextChunk = (chunk, i) => {
     return (
       <InlineInputEditor
         value={chunk?.eng}
@@ -356,7 +453,7 @@ const ReverseTranslation = ({
         if (isRefiningRT) {
           return renderSeedChunk(chunk, i)
         }
-        return ` ${chunk.eng}`
+        return renderSeedHighlight(chunk)
       }
       case 'VALIDATED_GROUP_BY': {
         if (isRefiningRT) {
@@ -364,12 +461,17 @@ const ReverseTranslation = ({
         }
         return ` ${chunk.eng}`
       }
-      case 'PREFIX':
+      case 'PREFIX': {
+        if (isRefiningRT) {
+          return renderAggMenu(chunk, i)
+        }
+        return ` ${chunk.eng}`
+      }
       case 'DATE':
       case 'TEXT':
       case 'FILTER': {
         if (isRefiningRT) {
-          return renderFilterChunk(chunk, i)
+          return renderInlineTextChunk(chunk, i)
         }
         return ` ${chunk.eng}`
       }
@@ -377,6 +479,53 @@ const ReverseTranslation = ({
         return ` ${chunk.eng}`
       }
     }
+  }
+
+  const renderActionIcon = () => {
+    if (isLoading) {
+      return (
+        <Spinner data-test='react-autoql-btn-loading' />
+      )
+    }
+    if (isRefiningRT) {
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Icon
+            type='play'
+            onClick={() => queryNewRT()}
+            data-tooltip-content={
+              'Execute query interpretation to update the data response.'
+            }
+            data-tooltip-id={
+              tooltipID ?? `react-autoql-update-reverse-translation-tooltip-${COMPONENT_KEY.current}`
+            }
+          />
+          <Icon
+            type='close-circle'
+            danger={true}
+            onClick={() => resetReverseTranslation()}
+            data-tooltip-content={
+              'Reset query interpretation to the original query.'
+            }
+            data-tooltip-id={
+              tooltipID ?? `react-autoql-reset-reverse-translation-tooltip-${COMPONENT_KEY.current}`
+            }
+          />
+        </div>
+      )
+    }
+    return (
+      <Icon
+        type='edit'
+        onClick={() => setIsRefiningRT(!isRefiningRT)}
+        data-tooltip-content={
+          'Edit query interpretation to update the data response.'
+        }
+        data-tooltip-id={
+          tooltipID ?? `react-autoql-edit-reverse-translation-tooltip-${COMPONENT_KEY.current}`
+        }
+      />
+    )
   }
 
   return (
@@ -401,18 +550,15 @@ const ReverseTranslation = ({
                 }
               />
               <strong> Interpreted as: </strong>
-
-              {isLoading ? '...' : reverseTranslationArray.map((chunk, i) => (
-                <div style={{ display: 'inline-block', marginRight: '3px' }}>
+              {reverseTranslationArray.map((chunk, i) => (
+                <div className='react-autoql-reverse-translation-chunk' key={i}>
                   {renderInterpretationChunk(chunk, i)}
                 </div>
               ))}
+              <div className={`react-autoql-reverse-translation-action-button${isRefiningRT ? ' active' : ''}`}>
+                {allowEditReverseTranslation ? renderActionIcon() : null}
+              </div>
             </div>
-            {/* <div>
-              <Button onClick={() => queryNewRT()}>
-                click me
-              </Button>
-            </div> */}
           </div>
           {!tooltipID && (
             <Tooltip
@@ -436,6 +582,7 @@ ReverseTranslation.propTypes = {
   termId: PropTypes.string,
   subjects: PropTypes.arrayOf(PropTypes.shape({})),
   queryResponseRef: PropTypes.shape({}),
+  allowColumnAddition: PropTypes.bool,
 }
 
 export default ReverseTranslation

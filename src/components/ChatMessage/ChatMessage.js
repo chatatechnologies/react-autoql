@@ -9,6 +9,9 @@ import {
   autoQLConfigDefault,
   dataFormattingDefault,
   getAuthentication,
+  isDrilldown,
+  isTableType,
+  isChartType,
 } from 'autoql-fe-utils'
 
 import { QueryOutput } from '../QueryOutput'
@@ -31,8 +34,6 @@ export default class ChatMessage extends React.Component {
     this.MESSAGE_HEIGHT_MARGINS = 40
     this.MESSAGE_WIDTH_MARGINS = 40
     this.ORIGINAL_TABLE_MESSAGE_HEIGHT = undefined
-
-    console.log('chatmessage subjects', this.props.subjects)
 
     this.state = {
       csvDownloadProgress: this.props.initialCSVDownloadProgress,
@@ -363,7 +364,6 @@ export default class ChatMessage extends React.Component {
 
   render = () => {
     const hasRT = !!this.responseRef?.queryResponse?.data?.data?.parsed_interpretation
-
     return (
       <ErrorBoundary>
         <div
@@ -401,6 +401,8 @@ export default class ChatMessage extends React.Component {
                 tooltipID={this.props.tooltipID}
                 subjects={this.props.subjects}
                 queryResponseRef={this.responseRef}
+                allowColumnAddition={this.props.isResponse && this.props.type !== 'text'}
+                allowEditReverseTranslation={!isDrilldown(this.responseRef.queryResponse)}
               />
             </div>
           ) : null}

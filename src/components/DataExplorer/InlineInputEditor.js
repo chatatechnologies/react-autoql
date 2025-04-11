@@ -26,13 +26,17 @@ export default class InlineInputEditor extends React.Component {
     type: PropTypes.string,
     onChange: PropTypes.func,
     datePicker: PropTypes.bool,
+    disabledOnClickEdit: PropTypes.bool,
+    onClickEdit: PropTypes.func,
   }
 
   static defaultProps = {
     value: '',
     type: 'text',
-    onChange: () => {},
     datePicker: false,
+    disabledOnClickEdit: false,
+    onChange: () => { },
+    onClickEdit: () => { },
   }
 
   componentDidMount = () => {
@@ -54,6 +58,10 @@ export default class InlineInputEditor extends React.Component {
       if (this.state.inputValue !== this.props.value) {
         this.props.onChange(this.state.inputValue)
       }
+    }
+
+    if (this.props.disabledOnClickEdit && this.props.value !== prevProps.value) {
+      this.setState({ inputValue: `${this.props.value}` })
     }
   }
 
@@ -140,10 +148,12 @@ export default class InlineInputEditor extends React.Component {
             </>
           ) : (
             <div
-              className={`inline-number-input-editor-btn ${
-                this.state.isInput ? 'inline-number-input-editor-btn-active' : ''
-              }`}
-              onClick={() => this.setState({ isInput: true })}
+              className={`inline-number-input-editor-btn ${this.state.isInput ? 'inline-number-input-editor-btn-active' : ''
+                }`}
+              onClick={() => {
+                this.setState({ isInput: this.props.disabledOnClickEdit ? false : true })
+                this.props.onClickEdit()
+              }}
             >
               {this.state.inputValue || this.props.value}
             </div>

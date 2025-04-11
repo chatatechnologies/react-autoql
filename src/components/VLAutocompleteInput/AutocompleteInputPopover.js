@@ -68,10 +68,6 @@ const AutocompleteInputPopover = ({
     let top
     let left
 
-    // console.log('childRect.bottom', childRect.bottom)
-    // console.log('POPOVER_MAX_HEIGHT', POPOVER_MAX_HEIGHT)
-    // console.log('boundaryRect.bottom', boundaryRect.bottom)
-
     if (childRect.bottom + POPOVER_MAX_HEIGHT < boundaryRect.bottom) {
       top = childRect.bottom
       newPosition = 'bottom'
