@@ -25,7 +25,7 @@ import {
   HIGHLIGHTED_CLASS,
   DEFAULT_COLUMN_NAME,
   getSelectableColumns,
-  getNumericalColumns, // useful? 
+  getNumericalColumns, // useful?
   getStringColumns, // useful?
   capitalizeFirstChar,
   getCleanColumnName, // useful?
@@ -1073,36 +1073,32 @@ export default class CustomColumnModal extends React.Component {
                         )
                       })}
                       <Button
-                        key={`react-autoql-column-select-button-custom-number`}
+                        key={`react-autoql-column-select-button-custom-${i}`}
                         className='react-autoql-formula-calculator-button'
+                        icon='table'
                         disabled={
                           lastTerm?.type === 'column' ||
                           lastTerm?.type === 'number' ||
                           lastTerm?.value === 'RIGHT_BRACKET'
                         }
-                        icon='number'
                         onClick={() => {
                           const newChunk = {
-                            type: 'number',
-                            value: undefined,
-                            id: uuid(),
+                            type: 'column',
+                            value: col.field,
+                            column: col,
                           }
 
                           if (lastTerm && lastTerm.type !== 'operator') {
                             // Replace current variable
                             columnFn[columnFn.length - 1] = newChunk
                           } else {
-                            // Add new variable
                             columnFn.push(newChunk)
                           }
 
-                          this.setState({ columnFn }, () => {
-                            // Focus number input after adding it
-                            this.numberInputRefs[newChunk.id]?.focus()
-                          })
+                          this.setState({ columnFn })
                         }}
                       >
-                        Custom Number...
+                        {col.display_name}
                       </Button>
                     </div>
                   </div>
