@@ -4,7 +4,10 @@
 
 .react-autoql-data-alert-creation-modal {
   height: calc(100vh - 90px);
-
+  &.preview-mode {
+    height: auto;
+    min-height: 400px;
+  }
   .react-autoql-alert-type-btn-active {
     background-color: var(--react-autoql-accent-color);
   }

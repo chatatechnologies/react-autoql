@@ -438,7 +438,7 @@ export default class ChataTable extends React.Component {
         this.props.onUpdateFilterResponse(response)
       })
     } catch (error) {
-      console.log('error', error)
+      console.error(error)
     }
   }
 
