@@ -335,7 +335,11 @@ export default class CustomColumnModal extends React.Component {
         } else if (columnFn?.type === 'function') {
           protoTableColumn +=
             columnFn.fn === 'PERCENT_TOTAL'
-              ? `(${columnFn?.column?.name} / SUM(${columnFn?.column?.name}) OVER (PARTITION BY ${columnFn.groupby})) * 100`
+              ? `(${columnFn?.column?.name} / SUM(${columnFn?.column?.name}) OVER (PARTITION BY ${
+                  getVisibleColumns(this.props.columns).find((column) => {
+                    return column.field === columnFn.groupby
+                  })?.name
+                })) * 100`
               : WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === 'sum'
               ? `${colName?.substring(colName?.indexOf('sum(') + 4, colName?.indexOf(')'))} / ${colName} * 100`
               : `${columnFn.fn}(` +
@@ -702,11 +706,13 @@ export default class CustomColumnModal extends React.Component {
       this.state.selectedFnOperation === 'PERCENT_TOTAL' &&
       !!this.state.selectedFnColumn &&
       !!this.state.selectedFnGroupby
+    const rankComplete = this.state.selectedFnOperation === 'RANK' && !!this.state.selectedFnOrderBy
     const metRequirements =
       (selectedFunc !== null &&
         (requiredCols === null || (requiredCols !== null && requiredNotSetArr?.length === 0)) &&
         rowOrRangeComplete) ||
-      totalPercentComplete
+      totalPercentComplete ||
+      rankComplete
 
     return metRequirements
   }
@@ -1228,7 +1234,7 @@ export default class CustomColumnModal extends React.Component {
     return (
       <div>
         <div ref={(r) => (this.windowFnPopover = r)} style={{ minHeight: '25vh' }}>
-          {this.state.selectedOp === 'FUNCTION' && (
+          {this.state.selectedFnOperation === 'FUNCTION' && (
             <>
               <div>
                 <Select
@@ -1442,9 +1448,9 @@ export default class CustomColumnModal extends React.Component {
               )}
             </>
           )}
-          {this.state.selectedOp === 'PERCENT_TOTAL' && (
+          {this.state.selectedFnOperation === 'PERCENT_TOTAL' && (
             <>
-              <div>this.state.selectedOp</div>
+              <div>PERCENT TOTAL</div>
               <div>
                 <Select
                   label='Total % of Column'
@@ -1477,6 +1483,49 @@ export default class CustomColumnModal extends React.Component {
                   }}
                   positions={['bottom', 'top', 'right', 'left']}
                   options={allColumnsOptions}
+                />
+              </div>
+            </>
+          )}
+          {this.state.selectedFnOperation === 'RANK' && (
+            <>
+              <div>RANK</div>
+              <div>
+                <Select
+                  label='Partition By Column'
+                  isRequired={this.isInputRequired('selectedFnGroupby')}
+                  className='custom-column-window-fn-selector'
+                  value={this.state.selectedFnGroupby ?? null}
+                  onChange={(selectedFnGroupby) => {
+                    this.setState({ selectedFnGroupby })
+                    if (selectedFnGroupby === null) this.setState({ selectedFnHaving: null })
+                  }}
+                  positions={['bottom', 'top', 'right', 'left']}
+                  options={allColumnsOptions}
+                />
+              </div>
+              <div>
+                <Select
+                  label='Order By Column'
+                  isRequired={true}
+                  className='custom-column-window-fn-selector'
+                  value={this.state.selectedFnOrderBy ?? null}
+                  onChange={(selectedFnOrderBy) => {
+                    this.setState({ selectedFnOrderBy })
+                  }}
+                  positions={['bottom', 'top', 'right', 'left']}
+                  options={allColumnsOptions}
+                />
+                <Select
+                  label='Order By Direction'
+                  isRequired={this.isInputRequired('selectedFnOrderByDirection')}
+                  className='custom-column-window-fn-selector'
+                  value={this.state.selectedFnOrderByDirection ?? null}
+                  onChange={(selectedFnOrderByDirection) => this.setState({ selectedFnOrderByDirection })}
+                  positions={['bottom', 'top', 'right', 'left']}
+                  options={ORDERBY_DIRECTIONS}
+                  isDisabled={!this.state.selectedFnOrderBy}
+                  outlined={true}
                 />
               </div>
             </>
