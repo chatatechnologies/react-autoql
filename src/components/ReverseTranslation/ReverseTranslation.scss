@@ -1,0 +1,31 @@
+.react-autoql-reverse-translation-action-button {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  top: 3px;
+  margin-left: 3px;
+  cursor: pointer;
+
+}
+
+.react-autoql-reverse-translation-action-button.active {
+  color: var(--react-autoql-accent-color);
+}
+
+.react-autoql-reverse-translation-chunk {
+  display: inline-flex;
+  margin-right: 3px;
+}
+
+.react-autoql-reverse-translation-add-column-btn-container {
+  display: inline-flex;
+}
+
+.react-autoql-reverse-translation-chunk:hover .react-autoql-inline-table-add-column-btn {
+  opacity: 1;
+  pointer-events: auto;
+  cursor: pointer;
+  width: 12px;
+  height: 12px;
+  transition: width 0.2s ease, height 0.2s ease;
+}

@@ -9,6 +9,9 @@ import {
   autoQLConfigDefault,
   dataFormattingDefault,
   getAuthentication,
+  isDrilldown,
+  isTableType,
+  isChartType,
 } from 'autoql-fe-utils'
 
 import { QueryOutput } from '../QueryOutput'
@@ -69,6 +72,7 @@ export default class ChatMessage extends React.Component {
     source: PropTypes.oneOfType([PropTypes.array, PropTypes.string]),
     scope: PropTypes.string,
     isVisibleInDOM: PropTypes.bool,
+    subjects: PropTypes.arrayOf(PropTypes.shape({})),
   }
 
   static defaultProps = {
@@ -91,12 +95,13 @@ export default class ChatMessage extends React.Component {
     csvDownloadProgress: undefined,
     onRTValueLabelClick: undefined,
     isVisibleInDOM: true,
-    onSuggestionClick: () => {},
-    onErrorCallback: () => {},
-    onSuccessAlert: () => {},
-    onConditionClickCallback: () => {},
-    scrollToBottom: () => {},
-    onNoneOfTheseClick: () => {},
+    subjects: [],
+    onSuggestionClick: () => { },
+    onErrorCallback: () => { },
+    onSuccessAlert: () => { },
+    onConditionClickCallback: () => { },
+    scrollToBottom: () => { },
+    onNoneOfTheseClick: () => { },
   }
 
   componentDidMount = () => {
@@ -292,6 +297,7 @@ export default class ChatMessage extends React.Component {
               this.optionsToolbarRef?.openReportProblemModal()
             }
           }}
+          subjects={this.props.subjects}
         />
       )
     }
@@ -358,7 +364,6 @@ export default class ChatMessage extends React.Component {
 
   render = () => {
     const hasRT = !!this.responseRef?.queryResponse?.data?.data?.parsed_interpretation
-
     return (
       <ErrorBoundary>
         <div
@@ -394,6 +399,10 @@ export default class ChatMessage extends React.Component {
                 queryResponse={this.responseRef.queryResponse}
                 isResizing={this.props.isResizing}
                 tooltipID={this.props.tooltipID}
+                subjects={this.props.subjects}
+                queryResponseRef={this.responseRef}
+                allowColumnAddition={this.props.isResponse && this.props.type !== 'text'}
+                enableEditReverseTranslation={this.props.autoQLConfig.enableEditReverseTranslation && !isDrilldown(this.responseRef.queryResponse)}
               />
             </div>
           ) : null}

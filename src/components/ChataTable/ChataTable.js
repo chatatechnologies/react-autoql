@@ -175,16 +175,16 @@ export default class ChataTable extends React.Component {
     keepScrolledRight: false,
     allowCustomColumns: true,
     enableContextMenu: true,
-    onFilterCallback: () => {},
-    onSorterCallback: () => {},
-    onTableParamsChange: () => {},
-    onCellClick: () => {},
-    onErrorCallback: () => {},
-    onNewData: () => {},
-    updateColumns: () => {},
-    onCustomColumnChange: () => {},
-    updateColumnsAndData: () => {},
-    onUpdateFilterResponse: () => {},
+    onFilterCallback: () => { },
+    onSorterCallback: () => { },
+    onTableParamsChange: () => { },
+    onCellClick: () => { },
+    onErrorCallback: () => { },
+    onNewData: () => { },
+    updateColumns: () => { },
+    onCustomColumnChange: () => { },
+    updateColumnsAndData: () => { },
+    onUpdateFilterResponse: () => { },
   }
 
   componentDidMount = () => {
@@ -438,7 +438,7 @@ export default class ChataTable extends React.Component {
         this.props.onUpdateFilterResponse(response)
       })
     } catch (error) {
-      console.log('error', error)
+      console.error('error', error)
     }
   }
 
@@ -1432,9 +1432,8 @@ export default class ChataTable extends React.Component {
     return (
       <div className='table-row-count'>
         <span>
-          {`Scrolled ${currentRowsFormatted} / ${
-            totalRowCount > rowLimit ? rowLimitFormatted + '+' : totalRowsFormatted
-          } rows`}
+          {`Scrolled ${currentRowsFormatted} / ${totalRowCount > rowLimit ? rowLimitFormatted + '+' : totalRowsFormatted
+            } rows`}
         </span>
       </div>
     )

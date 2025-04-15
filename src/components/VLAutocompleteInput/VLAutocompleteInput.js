@@ -47,7 +47,7 @@ export default class VLAutocompleteInput extends React.Component {
     popoverPosition: 'bottom',
     column: undefined,
     context: undefined,
-    onChange: () => {},
+    onChange: () => { },
   }
 
   componentDidMount = () => {
@@ -220,7 +220,7 @@ export default class VLAutocompleteInput extends React.Component {
     }
   }
 
-  onSuggestionsClearRequested = () => {}
+  onSuggestionsClearRequested = () => { }
 
   createNewFilterFromSuggestion = (suggestion) => {
     let filterType = 'include'
