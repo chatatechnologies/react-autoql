@@ -1073,7 +1073,7 @@ export default class CustomColumnModal extends React.Component {
                         )
                       })}
                       <Button
-                        key={`react-autoql-column-select-button-custom-${i}`}
+                        key={`react-autoql-column-select-button-${i}`}
                         className='react-autoql-formula-calculator-button'
                         icon='table'
                         disabled={
