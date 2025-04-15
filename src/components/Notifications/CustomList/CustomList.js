@@ -27,6 +27,7 @@ import { authenticationType } from '../../../props/types'
 
 import 'react-toastify/dist/ReactToastify.css'
 import './CustomList.scss'
+import { CUSTOM_FILTERS_TITLES } from '../../../js/Constants'
 export default class CustomList extends React.Component {
   constructor(props) {
     super(props)
@@ -49,6 +50,7 @@ export default class CustomList extends React.Component {
     onCustomFiltersChange: PropTypes.func,
     customFilters: PropTypes.array,
     storedInitialData: PropTypes.array,
+    isPreviewMode: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -57,6 +59,7 @@ export default class CustomList extends React.Component {
     onCustomFiltersChange: () => {},
     customFilters: [],
     storedInitialData: [],
+    isPreviewMode: false,
   }
 
   componentDidMount = () => {
@@ -315,7 +318,7 @@ export default class CustomList extends React.Component {
     return (
       <div className='react-autoql-custom-list-title'>
         <h3>
-          <span>{'Select Custom Filters'}</span>
+          <span>{this.props.isPreviewMode ? CUSTOM_FILTERS_TITLES.PREVIEW : CUSTOM_FILTERS_TITLES.SELECT}</span>
           <span
             data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
             data-tooltip-content='You can only add one type of filter.'
@@ -424,7 +427,7 @@ export default class CustomList extends React.Component {
           inputProps={{
             onChange: this.onInputChange,
             value: this.state.inputValue,
-            disabled: this.props.isFetchingFilters || this.state.isFetchingFilters,
+            disabled: this.props.isPreviewMode || this.props.isFetchingFilters || this.state.isFetchingFilters,
             placeholder: 'Search & select a filter',
             ['data-test']: 'react-autoql-vl-autocomplete-input',
             className: 'react-autoql-vl-autocomplete-input',
@@ -475,6 +478,7 @@ export default class CustomList extends React.Component {
         } ${isMobile ? 'mobile' : ''}`}
         data-test='react-autoql-filter-list-item'
         onDelete={() => this.removeFilter(filter)}
+        disabled={this.props.isPreviewMode}
         tooltip='Remove filter'
         tooltipID={this.props.tooltipID}
       >
@@ -531,7 +535,7 @@ export default class CustomList extends React.Component {
         {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} place='top' />}
         <div className='custom-list-menu-content' onClick={(e) => e.stopPropagation()}>
           {this.renderHeader()}
-          {this.renderVLInput()}
+          {!this.props.isPreviewMode && this.renderVLInput()}
           {this.renderFilterList()}
         </div>
       </ErrorBoundary>

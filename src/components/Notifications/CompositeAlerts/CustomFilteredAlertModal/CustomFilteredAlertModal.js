@@ -15,6 +15,7 @@ import {
   previewDataAlert,
   createDataAlert,
   updateDataAlert,
+  updateManagementDataAlert,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../../Icon'
@@ -61,6 +62,7 @@ class CustomFilteredAlertModal extends React.Component {
     dataFormatting: dataFormattingType,
     autoQLConfig: autoQLConfigType,
     enableAlphaAlertSettings: PropTypes.bool,
+    isPreviewMode: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -78,6 +80,7 @@ class CustomFilteredAlertModal extends React.Component {
     dataFormatting: dataFormattingDefault,
     autoQLConfig: autoQLConfigDefault,
     enableAlphaAlertSettings: false,
+    isPreviewMode: false,
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -414,15 +417,21 @@ class CustomFilteredAlertModal extends React.Component {
 
     return (
       <span data-tooltip-id={this.TOOLTIP_ID} data-tooltip-content={tooltipContent}>
-        <Button
-          type='primary'
-          loading={this.state.isSavingDataAlert}
-          onClick={this.onDataAlertSave}
-          disabled={this.isFinishBtnDisabled()}
-          tooltipID={this.TOOLTIP_ID}
-        >
-          Finish & Save
-        </Button>
+        {this.props.isPreviewMode ? (
+          <Button type='primary' onClick={this.props.onClose} tooltipID={this.TOOLTIP_ID}>
+            Close
+          </Button>
+        ) : (
+          <Button
+            type='primary'
+            loading={this.state.isSavingDataAlert}
+            onClick={this.onDataAlertSave}
+            disabled={this.isFinishBtnDisabled()}
+            tooltipID={this.TOOLTIP_ID}
+          >
+            Finish & Save
+          </Button>
+        )}
       </span>
     )
   }
@@ -463,7 +472,7 @@ class CustomFilteredAlertModal extends React.Component {
         <div ref={(r) => (this.footerElement = r)} className='react-autoql-data-alert-modal-footer'>
           <div className='modal-footer-button-container'></div>
           <div className='modal-footer-button-container'>
-            {this.renderCancelBtn()}
+            {!this.props.isPreviewMode && this.renderCancelBtn()}
             {this.renderFinishAndSaveBtn()}
           </div>
         </div>
@@ -497,6 +506,7 @@ class CustomFilteredAlertModal extends React.Component {
               isLoadingBaseDataAlertQueryResponse={this.state.isLoadingBaseDataAlertQueryResponse}
               onCustomFiltersChange={this.updateCustomFilters}
               customFilters={this.state.customFilters}
+              isPreviewMode={this.props.isPreviewMode}
             />
           </div>
         </div>
@@ -546,7 +556,7 @@ class CustomFilteredAlertModal extends React.Component {
     return (
       <>
         {this.renderConditionsStep()}
-        {this.renderComposeMessageStep()}
+        {!this.props.isPreviewMode && this.renderComposeMessageStep()}
       </>
     )
   }
@@ -612,19 +622,21 @@ class CustomFilteredAlertModal extends React.Component {
     return (
       <ErrorBoundary>
         <Modal
-          contentClassName='react-autoql-data-alert-creation-modal'
+          contentClassName={`react-autoql-data-alert-creation-modal ${this.props.isPreviewMode ? 'preview-mode' : ''}`}
           bodyClassName='react-autoql-data-alert-modal-body'
           overlayStyle={{ zIndex: '9998' }}
           title={
-            this.state.isEditingDataAlert
+            this.props.isPreviewMode
+              ? CUSTOM_FILTERED_ALERT_MODAL_TITLES.PREVIEW
+              : this.state.isEditingDataAlert
               ? CUSTOM_FILTERED_ALERT_MODAL_TITLES.EDIT
               : CUSTOM_FILTERED_ALERT_MODAL_TITLES.CREATE
           }
-          titleIcon={this.getTitleIcon()}
+          titleIcon={!this.props.isPreviewMode && this.getTitleIcon()}
           ref={(r) => (this.modalRef = r)}
           isVisible={this.props.isVisible}
           onClose={this.props.onClose}
-          confirmOnClose={true}
+          confirmOnClose={!this.props.isPreviewMode}
           enableBodyScroll
           width='1200px'
           footer={this.renderFooter()}

@@ -36,6 +36,7 @@ export default class ConditionBuilder extends React.Component {
     isLoadingBaseDataAlertQueryResponse: PropTypes.bool,
     onCustomFiltersChange: PropTypes.func,
     customFilters: PropTypes.array,
+    isPreviewMode: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -56,6 +57,7 @@ export default class ConditionBuilder extends React.Component {
     isLoadingBaseDataAlertQueryResponse: false,
     onCustomFiltersChange: () => {},
     customFilters: [],
+    isPreviewMode: false,
   }
 
   componentDidMount = () => {
@@ -241,6 +243,7 @@ export default class ConditionBuilder extends React.Component {
                   isLoadingBaseDataAlertQueryResponse={this.props.isLoadingBaseDataAlertQueryResponse}
                   onCustomFiltersChange={this.props.onCustomFiltersChange}
                   customFilters={this.props.customFilters}
+                  isPreviewMode={this.props.isPreviewMode}
                 />
                 {this.props.conditionStatementOnly && (
                   <span className='condition-builder-statement'>
