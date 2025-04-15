@@ -38,7 +38,7 @@ const ReverseTranslation = ({
   subjects = [],
   queryResponseRef = {},
   allowColumnAddition = false,
-  allowEditReverseTranslation = false,
+  enableEditReverseTranslation = false,
 }) => {
   const COMPONENT_KEY = useRef(uuid())
   const isMounted = useRef(false)
@@ -303,6 +303,7 @@ const ReverseTranslation = ({
       <a
         id='react-autoql-interpreted-value-label'
         className='react-autoql-condition-link-filtered'
+        style={{ cursor: 'default' }}
         data-test='react-autoql-condition-link'
         onClick={(e) => {
           e.stopPropagation()
@@ -556,7 +557,7 @@ const ReverseTranslation = ({
                 </div>
               ))}
               <div className={`react-autoql-reverse-translation-action-button${isRefiningRT ? ' active' : ''}`}>
-                {allowEditReverseTranslation ? renderActionIcon() : null}
+                {enableEditReverseTranslation ? renderActionIcon() : null}
               </div>
             </div>
           </div>

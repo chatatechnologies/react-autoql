@@ -2848,7 +2848,7 @@ export class QueryOutput extends React.Component {
         subjects={this.props.subjects}
         queryOutputRef={this.responseContainerRef}
         allowColumnAddition={this.props.allowColumnAddition && this.state.displayType === 'table'}
-        allowEditReverseTranslation={!isDrilldown(this.queryResponse)}
+        enableEditReverseTranslation={this.props.autoQLConfig.enableEditReverseTranslation && !isDrilldown(this.queryResponse)}
       />
     )
   }

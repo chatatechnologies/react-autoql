@@ -402,7 +402,7 @@ export default class ChatMessage extends React.Component {
                 subjects={this.props.subjects}
                 queryResponseRef={this.responseRef}
                 allowColumnAddition={this.props.isResponse && this.props.type !== 'text'}
-                allowEditReverseTranslation={!isDrilldown(this.responseRef.queryResponse)}
+                enableEditReverseTranslation={this.props.autoQLConfig.enableEditReverseTranslation && !isDrilldown(this.responseRef.queryResponse)}
               />
             </div>
           ) : null}

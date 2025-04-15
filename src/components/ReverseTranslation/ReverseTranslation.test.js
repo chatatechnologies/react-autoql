@@ -4,7 +4,7 @@ import { shallow } from 'enzyme'
 import { findByTestAttr } from '../../../test/testUtils'
 import ReverseTranslationV2 from './ReverseTranslationV2'
 
-const defaultProps = ReverseTranslation.defaultProps || {}
+const defaultProps = ReverseTranslationV2.defaultProps || {}
 
 const setup = (props = {}, state = null) => {
   const setupProps = {
@@ -12,7 +12,7 @@ const setup = (props = {}, state = null) => {
     ...props,
     queryResponse: { data: { data: { parsed_interpretation: props.reverseTranslation } } },
   }
-  const wrapper = shallow(<ReverseTranslation {...setupProps} />)
+  const wrapper = shallow(<ReverseTranslationV2 {...setupProps} />)
   if (state) {
     wrapper.setState(state)
   }
