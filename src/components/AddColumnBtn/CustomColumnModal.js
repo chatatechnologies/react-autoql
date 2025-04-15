@@ -606,7 +606,6 @@ export default class CustomColumnModal extends React.Component {
 
       // This option is only available to use if it is on its own, since the calculation is done on the server side
       // return true
-
       if (lastTerm?.value === 'RIGHT_BRACKET' || lastTerm?.type !== 'operator') {
         // Do not allow a function right after an closing bracket
         // Do not allow a function right after a column or number
@@ -632,7 +631,9 @@ export default class CustomColumnModal extends React.Component {
       this.props.enableWindowFunctions &&
       getColumnTypeAmounts(this.props.queryResponse?.data?.data?.columns)?.amountOfNumberColumns
     ) {
-      operatorsArray = operatorsArray.concat(FUNCTION_OPERATORS)
+      operatorsArray = operatorsArray.concat(
+        !this.state.columnFn || this.state.columnFn?.length === 0 ? FUNCTION_OPERATORS : [],
+      )
     }
 
     return operatorsArray
@@ -996,6 +997,7 @@ export default class CustomColumnModal extends React.Component {
     const supportedOperators = this.getNextSupportedOperators()
     const columnFn = _cloneDeep(this.state.columnFn)
     const lastTerm = columnFn[columnFn.length - 1]
+
     return (
       <div className='react-autoql-formula-builder-wrapper'>
         <div className='react-autoql-formula-builder-section'>
@@ -1031,142 +1033,149 @@ export default class CustomColumnModal extends React.Component {
           )}
         </div>
         <div style={{ minWidth: '300px' }}>
-          {!this.state.isFunctionConfigModalVisible && (
-            <span style={{ display: 'flex', height: '-webkit-fill-available' }}>
-              <div className='react-autoql-formula-builder-column-selection-container'>
-                <div className='react-autoql-input-label'>Variables</div>
-                <div className='react-autoql-formula-builder-calculator-buttons-container'>
-                  {getSelectableColumns(this.props.columns)?.map((col, i) => {
-                    return (
+          {(columnFn.length === 0 || columnFn?.some((op) => op?.fn === undefined || op?.fn?.length === 0)) && (
+            <>
+              {!this.state.isFunctionConfigModalVisible && (
+                <span style={{ display: 'flex', height: '-webkit-fill-available' }}>
+                  <div className='react-autoql-formula-builder-column-selection-container'>
+                    <div className='react-autoql-input-label'>Variables</div>
+                    <div className='react-autoql-formula-builder-calculator-buttons-container'>
+                      {getSelectableColumns(this.props.columns)?.map((col, i) => {
+                        return (
+                          <Button
+                            key={`react-autoql-column-select-button-${i}`}
+                            className='react-autoql-formula-calculator-button'
+                            icon='table'
+                            disabled={
+                              lastTerm?.type === 'column' ||
+                              lastTerm?.type === 'number' ||
+                              lastTerm?.value === 'RIGHT_BRACKET'
+                            }
+                            onClick={() => {
+                              const newChunk = {
+                                type: 'column',
+                                value: col.field,
+                                column: col,
+                              }
+
+                              if (lastTerm && lastTerm.type !== 'operator') {
+                                // Replace current variable
+                                columnFn[columnFn.length - 1] = newChunk
+                              } else {
+                                columnFn.push(newChunk)
+                              }
+
+                              this.setState({ columnFn })
+                            }}
+                          >
+                            {col.display_name}
+                          </Button>
+                        )
+                      })}
                       <Button
-                        key={`react-autoql-column-select-button-${i}`}
+                        key={`react-autoql-column-select-button-custom-number`}
                         className='react-autoql-formula-calculator-button'
-                        icon='table'
                         disabled={
                           lastTerm?.type === 'column' ||
                           lastTerm?.type === 'number' ||
                           lastTerm?.value === 'RIGHT_BRACKET'
                         }
+                        icon='number'
                         onClick={() => {
                           const newChunk = {
-                            type: 'column',
-                            value: col.field,
-                            column: col,
+                            type: 'number',
+                            value: undefined,
+                            id: uuid(),
                           }
 
                           if (lastTerm && lastTerm.type !== 'operator') {
                             // Replace current variable
                             columnFn[columnFn.length - 1] = newChunk
                           } else {
+                            // Add new variable
                             columnFn.push(newChunk)
                           }
 
-                          this.setState({ columnFn })
+                          this.setState({ columnFn }, () => {
+                            // Focus number input after adding it
+                            this.numberInputRefs[newChunk.id]?.focus()
+                          })
                         }}
                       >
-                        {col.display_name}
+                        Custom Number...
                       </Button>
-                    )
-                  })}
-                  <Button
-                    key={`react-autoql-column-select-button-custom-number`}
-                    className='react-autoql-formula-calculator-button'
-                    disabled={
-                      lastTerm?.type === 'column' || lastTerm?.type === 'number' || lastTerm?.value === 'RIGHT_BRACKET'
-                    }
-                    icon='number'
-                    onClick={() => {
-                      const newChunk = {
-                        type: 'number',
-                        value: undefined,
-                        id: uuid(),
-                      }
+                    </div>
+                  </div>
+                  <div className='react-autoql-formula-builder-calculator-container'>
+                    <div className='react-autoql-input-label'>Operators</div>
+                    <div className='react-autoql-formula-builder-calculator-buttons-container'>
+                      {supportedOperators?.map((op) => {
+                        const buttonElement = (
+                          <Button
+                            key={`react-autoql-formula-calculator-button-${op}`}
+                            className='react-autoql-formula-calculator-button'
+                            disabled={this.shouldDisableOperator(op)}
+                            style={{
+                              width: `${FUNCTION_OPERATORS.includes(op) ? '-webkit-fill-available' : 'undefined'}`,
+                            }}
+                            onClick={() => {
+                              if (FUNCTION_OPERATORS.includes(op)) {
+                                return this.setState({
+                                  selectedFnOperation: op,
+                                  isFunctionConfigModalVisible: true,
+                                  selectedFnType: null,
+                                  selectedFnColumn: null,
+                                  selectedFnNTileNumber: null,
+                                  selectedFnGroupby: null,
+                                  selectedFnHaving: null,
+                                  selectedFnOperator: null,
+                                  selectedFnOperatorValue: null,
+                                  selectedFnOrderBy: null,
+                                  selectedFnOrderByDirection: null,
+                                  selectedFnRowsOrRange: null,
+                                  selectedFnRowsOrRangeOptionPre: null,
+                                  selectedFnRowsOrRangeOptionPost: null,
+                                })
+                              }
 
-                      if (lastTerm && lastTerm.type !== 'operator') {
-                        // Replace current variable
-                        columnFn[columnFn.length - 1] = newChunk
-                      } else {
-                        // Add new variable
-                        columnFn.push(newChunk)
-                      }
+                              const newChunk = {
+                                type: 'operator',
+                                value: op,
+                              }
 
-                      this.setState({ columnFn }, () => {
-                        // Focus number input after adding it
-                        this.numberInputRefs[newChunk.id]?.focus()
-                      })
-                    }}
-                  >
-                    Custom Number...
-                  </Button>
-                </div>
-              </div>
-              <div className='react-autoql-formula-builder-calculator-container'>
-                <div className='react-autoql-input-label'>Operators</div>
-                <div className='react-autoql-formula-builder-calculator-buttons-container'>
-                  {supportedOperators?.map((op) => {
-                    const buttonElement = (
-                      <Button
-                        key={`react-autoql-formula-calculator-button-${op}`}
-                        className='react-autoql-formula-calculator-button'
-                        disabled={this.shouldDisableOperator(op)}
-                        style={{ width: `${FUNCTION_OPERATORS.includes(op) ? '-webkit-fill-available' : 'undefined'}` }}
-                        onClick={() => {
-                          if (FUNCTION_OPERATORS.includes(op)) {
-                            return this.setState({
-                              selectedFnOperation: op,
-                              isFunctionConfigModalVisible: true,
-                              selectedFnType: null,
-                              selectedFnColumn: null,
-                              selectedFnNTileNumber: null,
-                              selectedFnGroupby: null,
-                              selectedFnHaving: null,
-                              selectedFnOperator: null,
-                              selectedFnOperatorValue: null,
-                              selectedFnOrderBy: null,
-                              selectedFnOrderByDirection: null,
-                              selectedFnRowsOrRange: null,
-                              selectedFnRowsOrRangeOptionPre: null,
-                              selectedFnRowsOrRangeOptionPost: null,
-                            })
-                          }
+                              if (
+                                lastTerm &&
+                                lastTerm?.type === 'operator' &&
+                                lastTerm?.value !== 'RIGHT_BRACKET' &&
+                                op !== 'LEFT_BRACKET'
+                              ) {
+                                // Replace current operator
+                                columnFn[columnFn.length - 1] = newChunk
+                              } else {
+                                // Add new operator
+                                columnFn.push(newChunk)
+                              }
 
-                          const newChunk = {
-                            type: 'operator',
-                            value: op,
-                          }
+                              this.setState({ columnFn })
+                            }}
+                          >
+                            {this.getLabelForOperator(this.OPERATORS[op])}
+                          </Button>
+                        )
 
-                          if (
-                            lastTerm &&
-                            lastTerm?.type === 'operator' &&
-                            lastTerm?.value !== 'RIGHT_BRACKET' &&
-                            op !== 'LEFT_BRACKET'
-                          ) {
-                            // Replace current operator
-                            columnFn[columnFn.length - 1] = newChunk
-                          } else {
-                            // Add new operator
-                            columnFn.push(newChunk)
-                          }
-
-                          this.setState({ columnFn })
-                        }}
-                      >
-                        {this.getLabelForOperator(this.OPERATORS[op])}
-                      </Button>
-                    )
-
-                    return buttonElement
-                  })}
-                </div>
-              </div>
-            </span>
+                        return buttonElement
+                      })}
+                    </div>
+                  </div>
+                </span>
+              )}
+              <div>{this.state.isFunctionConfigModalVisible && this.renderFunctionConfigModalContent()}</div>
+            </>
           )}
-          <div>{this.state.isFunctionConfigModalVisible && this.renderFunctionConfigModalContent()}</div>
         </div>
       </div>
     )
   }
-
   renderTablePreview = () => {
     return (
       <div className='react-autoql-table-preview-wrapper'>
