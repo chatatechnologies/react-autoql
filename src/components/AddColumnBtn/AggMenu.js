@@ -55,7 +55,7 @@ const AggMenu = forwardRef((props, ref) => {
 })
 
 AggMenu.propTypes = {
-  handleAddColumnClick: PropTypes.func,
+  handleAggMenuItemClick: PropTypes.func,
 }
 
 AggMenu.defaultProps = {
