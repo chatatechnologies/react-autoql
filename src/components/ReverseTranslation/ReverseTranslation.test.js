@@ -2,9 +2,9 @@ import React from 'react'
 import { shallow } from 'enzyme'
 
 import { findByTestAttr } from '../../../test/testUtils'
-import ReverseTranslation from './ReverseTranslation'
+import ReverseTranslationV2 from './ReverseTranslationV2'
 
-const defaultProps = ReverseTranslation.defaultProps || {}
+const defaultProps = ReverseTranslationV2.defaultProps || {}
 
 const setup = (props = {}, state = null) => {
   const setupProps = {
@@ -12,7 +12,7 @@ const setup = (props = {}, state = null) => {
     ...props,
     queryResponse: { data: { data: { parsed_interpretation: props.reverseTranslation } } },
   }
-  const wrapper = shallow(<ReverseTranslation {...setupProps} />)
+  const wrapper = shallow(<ReverseTranslationV2 {...setupProps} />)
   if (state) {
     wrapper.setState(state)
   }
@@ -37,7 +37,7 @@ describe('renders correctly', () => {
   test('renders VALIDATED_VALUE_LABEL as anchor tag', () => {
     const wrapper = setup({
       reverseTranslation: [{ c_type: 'VALIDATED_VALUE_LABEL', eng: 'This is a test' }],
-      onValueLabelClick: () => {},
+      onValueLabelClick: () => { },
     })
 
     const reverseTranslationLink = findByTestAttr(wrapper, 'react-autoql-condition-link')

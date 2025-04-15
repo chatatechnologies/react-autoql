@@ -63,6 +63,7 @@ import {
   ColumnTypes,
   isColumnIndexConfigValid,
   getCleanColumnName,
+  isDrilldown,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -197,6 +198,7 @@ export class QueryOutput extends React.Component {
     onErrorCallback: PropTypes.func,
     showQueryInterpretation: PropTypes.bool,
     useInfiniteScroll: PropTypes.bool,
+    subjects: PropTypes.arrayOf(PropTypes.shape({})),
 
     mutable: PropTypes.bool,
     showSuggestionPrefix: PropTypes.bool,
@@ -249,18 +251,19 @@ export class QueryOutput extends React.Component {
     bucketSize: undefined,
     allowColumnAddition: false,
     enableTableContextMenu: true,
-    onTableConfigChange: () => {},
-    onAggConfigChange: () => {},
-    onQueryValidationSelectOption: () => {},
-    onErrorCallback: () => {},
-    onDrilldownStart: () => {},
-    onDrilldownEnd: () => {},
-    onColumnChange: () => {},
-    onPageSizeChange: () => {},
-    onMount: () => {},
-    onBucketSizeChange: () => {},
-    onNewData: () => {},
-    onCustomColumnUpdate: () => {},
+    subjects: [],
+    onTableConfigChange: () => { },
+    onAggConfigChange: () => { },
+    onQueryValidationSelectOption: () => { },
+    onErrorCallback: () => { },
+    onDrilldownStart: () => { },
+    onDrilldownEnd: () => { },
+    onColumnChange: () => { },
+    onPageSizeChange: () => { },
+    onMount: () => { },
+    onBucketSizeChange: () => { },
+    onNewData: () => { },
+    onCustomColumnUpdate: () => { },
   }
 
   componentDidMount = () => {
@@ -424,8 +427,8 @@ export class QueryOutput extends React.Component {
     return foundIndex
       ? foundIndex
       : this.tableConfig.stringColumnIndices.length > 0
-      ? this.tableConfig.stringColumnIndices[0]
-      : 0
+        ? this.tableConfig.stringColumnIndices[0]
+        : 0
   }
 
   findDefaultNumberColumnIndex = (defaultAmountColumn) => {
@@ -442,8 +445,8 @@ export class QueryOutput extends React.Component {
     return foundIndex
       ? foundIndex
       : this.tableConfig.numberColumnIndices.length > 0
-      ? this.tableConfig.numberColumnIndices[0]
-      : 0
+        ? this.tableConfig.numberColumnIndices[0]
+        : 0
   }
 
   checkAndUpdateTableConfigs = (displayType) => {
@@ -477,8 +480,7 @@ export class QueryOutput extends React.Component {
 
   displayTypeInvalidWarning = (displayType) => {
     console.warn(
-      `Initial display type "${this.props.initialDisplayType}" provided is not valid for this dataset. Using ${
-        displayType || this.state.displayType
+      `Initial display type "${this.props.initialDisplayType}" provided is not valid for this dataset. Using ${displayType || this.state.displayType
       } instead.`,
     )
   }
@@ -847,9 +849,8 @@ export class QueryOutput extends React.Component {
       <div className='single-value-response-flex-container'>
         <div className='single-value-response-container'>
           <a
-            className={`single-value-response ${
-              getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? ' with-drilldown' : ''
-            }`}
+            className={`single-value-response ${getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? ' with-drilldown' : ''
+              }`}
             onClick={() => {
               this.processDrilldown({ groupBys: [], supportedByAPI: true })
             }}
@@ -907,6 +908,7 @@ export class QueryOutput extends React.Component {
       return error
     }
   }
+
   queryFn = async (args = {}) => {
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
     const allFilters = this.getCombinedFilters()
@@ -918,7 +920,7 @@ export class QueryOutput extends React.Component {
 
     let response
 
-    if (this.isDrilldown()) {
+    if (isDrilldown(this.queryResponse)) {
       try {
         response = await runDrilldown({
           ...getAuthentication(this.props.authentication),
@@ -2348,16 +2350,6 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  isDrilldown = () => {
-    try {
-      const queryText = this.queryResponse?.data?.data?.text || ''
-      const isDrilldown = queryText.split(':')[0] === 'Drilldown'
-      return isDrilldown
-    } catch (error) {
-      return false
-    }
-  }
-
   renderAllColumnsHiddenMessage = () => {
     return (
       <div className='no-columns-error-message' data-test='columns-hidden-message'>
@@ -2462,7 +2454,7 @@ export class QueryOutput extends React.Component {
           tooltipID={this.props.tooltipID}
           onAddColumnClick={this.onAddColumnClick}
           onCustomClick={this.onAddColumnClick}
-          disableAddCustomColumnOption={this.isDrilldown()}
+          disableAddCustomColumnOption={isDrilldown(this.queryResponse)}
         />
       )
     }
@@ -2502,7 +2494,7 @@ export class QueryOutput extends React.Component {
           queryRequestData={this.queryResponse?.data?.data?.fe_req}
           queryText={this.queryResponse?.data?.data?.text}
           originalQueryID={this.props.originalQueryID}
-          isDrilldown={this.isDrilldown()}
+          isDrilldown={isDrilldown(this.queryResponse)}
           isQueryOutputMounted={this._isMounted}
           popoverParentElement={this.props.popoverParentElement}
           hidden={this.state.displayType !== 'table'}
@@ -2626,7 +2618,7 @@ export class QueryOutput extends React.Component {
           height={this.props.height}
           width={this.props.width}
           onNewData={this.onNewData}
-          isDrilldown={this.isDrilldown()}
+          isDrilldown={isDrilldown(this.queryResponse)}
           updateColumns={this.updateColumns}
           isDataLimited={isDataLimited(this.queryResponse) || isPivotDataLimited}
           source={this.props.source}
@@ -2853,15 +2845,18 @@ export class QueryOutput extends React.Component {
         isResizing={this.props.isResizing}
         queryResponse={this.queryResponse}
         tooltipID={this.props.tooltipID}
+        subjects={this.props.subjects}
+        queryOutputRef={this.responseContainerRef}
+        allowColumnAddition={this.props.allowColumnAddition && this.state.displayType === 'table'}
+        enableEditReverseTranslation={this.props.autoQLConfig.enableEditReverseTranslation && !isDrilldown(this.queryResponse)}
       />
     )
   }
 
   renderFooter = () => {
     const shouldRenderRT = this.shouldRenderReverseTranslation()
-    const footerClassName = `query-output-footer ${!shouldRenderRT ? 'no-margin' : ''} ${
-      this.props.reverseTranslationPlacement
-    }`
+    const footerClassName = `query-output-footer ${!shouldRenderRT ? 'no-margin' : ''} ${this.props.reverseTranslationPlacement
+      }`
 
     return <div className={footerClassName}>{shouldRenderRT && this.renderReverseTranslation()}</div>
   }

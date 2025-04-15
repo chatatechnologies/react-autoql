@@ -25,11 +25,11 @@ import {
   HIGHLIGHTED_CLASS,
   DEFAULT_COLUMN_NAME,
   getSelectableColumns,
-  getNumericalColumns,
-  getStringColumns,
+  getNumericalColumns, // useful? 
+  getStringColumns, // useful?
   capitalizeFirstChar,
-  getCleanColumnName,
-  buildPlainColumnArrayFn,
+  getCleanColumnName, // useful?
+  buildPlainColumnArrayFn, // useful?
   isOperatorJs,
   ROWS_RANGE,
   ROWS_RANGE_OPTIONS,
