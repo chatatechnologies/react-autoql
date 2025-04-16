@@ -4,7 +4,13 @@ import Drawer from 'rc-drawer'
 import _isEmpty from 'lodash.isempty'
 import { v4 as uuid } from 'uuid'
 import { isBrowser, isMobile } from 'react-device-detect'
-import { mergeSources, autoQLConfigDefault, dataFormattingDefault, getAutoQLConfig } from 'autoql-fe-utils'
+import {
+  mergeSources,
+  autoQLConfigDefault,
+  dataFormattingDefault,
+  getAutoQLConfig,
+  CustomColumnTypes,
+} from 'autoql-fe-utils'
 import classNames from 'classnames'
 // Components
 import { Icon } from '../Icon'
