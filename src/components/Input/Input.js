@@ -10,6 +10,8 @@ import { Popover } from '../Popover'
 import { DateRangePicker } from '../DateRangePicker'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
+import { CustomColumnTypes } from 'autoql-fe-utils'
+
 import './Input.scss'
 
 export default class Input extends React.Component {
