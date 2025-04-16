@@ -1246,7 +1246,7 @@ export default class CustomColumnModal extends React.Component {
     return (
       <div>
         <div ref={(r) => (this.windowFnPopover = r)} style={{ minHeight: '25vh' }}>
-          {this.state.selectedFnOperation === CustomColumnTypes.FUNCTION && (
+          {this.state.selectedFnOperation === CustomColumnValues.FUNCTION && (
             <>
               <div>
                 <Select
