@@ -291,7 +291,7 @@ export default class Input extends React.Component {
             ${hasSelect ? 'with-select' : ''}
             ${size === 'small' ? 'react-autoql-input-small' : 'react-autoql-input-large'}
             ${
-              type === 'text' || type === 'number'
+              type === 'text' || type === CustomColumnTypes.NUMBER
                 ? 'react-autoql-input-number'
                 : 'hidden'
                 ? 'react-autoql-input-hidden'
@@ -337,7 +337,7 @@ export default class Input extends React.Component {
                 {this.props.displayColumnSelector ? this.renderColumnSelectDropdown() : false}
               </div>
             )}
-            {type === 'number' && this.props.showSpinWheel && this.renderSpinWheel()}
+            {type === CustomColumnTypes.NUMBER && this.props.showSpinWheel && this.renderSpinWheel()}
             {hasSelect && selectLocation === 'right' && this.renderSelectDropdown()}
           </div>
         </div>

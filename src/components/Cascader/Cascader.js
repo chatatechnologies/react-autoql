@@ -96,7 +96,7 @@ export default class Cascader extends React.Component {
                   data-test={`options-item-${index}-${i}`}
                 >
                   {option.customContent ? (
-                    typeof option.customContent === 'function' ? (
+                    typeof option.customContent === CustomColumnTypes.FUNCTION ? (
                       option.customContent()
                     ) : (
                       option.customContent

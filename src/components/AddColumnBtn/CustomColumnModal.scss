@@ -100,18 +100,22 @@
         }
       }
 
-      .react-autoql-formula-builder-column-selection-container {
-        flex: 0 0 auto;
-        margin-right: 10px;
+      .react-autoql-formula-builder-column-container {
+        display: flex;
+        height: -webkit-fill-available;
 
-        .react-autoql-btn {
-          padding: 7px 12px;
-          width: -webkit-fill-available;
-          justify-content: start;
-          height: 38px;
+        .react-autoql-formula-builder-column-selection-container {
+          flex: 0 0 auto;
+          margin-right: 10px;
+
+          .react-autoql-btn {
+            padding: 7px 12px;
+            width: -webkit-fill-available;
+            justify-content: start;
+            height: 38px;
+          }
         }
       }
-
       .react-autoql-formula-builder-calculator-container,
       .react-autoql-formula-builder-column-selection-container {
         height: 100%;

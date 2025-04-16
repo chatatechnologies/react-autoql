@@ -128,15 +128,15 @@ export class DashboardTile extends React.Component {
     notExecutedText: 'Hit "Execute" to run this dashboard',
     autoChartAggregations: true,
     cancelQueriesOnUnmount: true,
-    deleteTile: () => { },
-    onErrorCallback: () => { },
-    onSuccessCallback: () => { },
-    onCSVDownloadStart: () => { },
-    onCSVDownloadProgress: () => { },
-    onCSVDownloadFinish: () => { },
-    onTouchStart: () => { },
-    onTouchEnd: () => { },
-    setParamsForTile: () => { },
+    deleteTile: () => {},
+    onErrorCallback: () => {},
+    onSuccessCallback: () => {},
+    onCSVDownloadStart: () => {},
+    onCSVDownloadProgress: () => {},
+    onCSVDownloadFinish: () => {},
+    onTouchStart: () => {},
+    onTouchEnd: () => {},
+    setParamsForTile: () => {},
   }
 
   componentDidMount = () => {
@@ -218,7 +218,7 @@ export class DashboardTile extends React.Component {
       ...params,
     }
 
-    if (typeof callback === 'function') {
+    if (typeof callback === CustomColumnTypes.FUNCTION) {
       this.callbackArray = [...this.callbackArray, callback]
     }
 
@@ -797,8 +797,9 @@ export class DashboardTile extends React.Component {
           {this.renderBottomResponse()}
           {this.props.isEditing && (
             <div
-              className={`split-view-query-btn-container react-autoql-toolbar ${this.state.isSecondQueryInputOpen ? 'open' : ''
-                }`}
+              className={`split-view-query-btn-container react-autoql-toolbar ${
+                this.state.isSecondQueryInputOpen ? 'open' : ''
+              }`}
             >
               <div
                 className='react-autoql-toolbar viz-toolbar split-view-btn split-view-query-btn react-autoql-toolbar-btn'

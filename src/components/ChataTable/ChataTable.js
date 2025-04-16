@@ -175,16 +175,16 @@ export default class ChataTable extends React.Component {
     keepScrolledRight: false,
     allowCustomColumns: true,
     enableContextMenu: true,
-    onFilterCallback: () => { },
-    onSorterCallback: () => { },
-    onTableParamsChange: () => { },
-    onCellClick: () => { },
-    onErrorCallback: () => { },
-    onNewData: () => { },
-    updateColumns: () => { },
-    onCustomColumnChange: () => { },
-    updateColumnsAndData: () => { },
-    onUpdateFilterResponse: () => { },
+    onFilterCallback: () => {},
+    onSorterCallback: () => {},
+    onTableParamsChange: () => {},
+    onCellClick: () => {},
+    onErrorCallback: () => {},
+    onNewData: () => {},
+    updateColumns: () => {},
+    onCustomColumnChange: () => {},
+    updateColumnsAndData: () => {},
+    onUpdateFilterResponse: () => {},
   }
 
   componentDidMount = () => {
@@ -914,7 +914,7 @@ export default class ChataTable extends React.Component {
     clearBtn.addEventListener('click', (e) => {
       e.stopPropagation()
       this.setHeaderInputValue(inputElement, '')
-      if (column?.type === 'DATE' && !column?.pivot) {
+      if (column?.type === ColumnTypes.DATE && !column?.pivot) {
         this.currentDateRangeSelections = {}
         this.debounceSetState({
           datePickerColumn: undefined,
@@ -958,7 +958,7 @@ export default class ChataTable extends React.Component {
           this.renderHeaderInputClearBtn(inputElement, col)
         }
 
-        if (col.type === 'DATE' && !col.pivot) {
+        if (col.type === ColumnTypes.DATE && !col.pivot) {
           // Open Calendar Picker when user clicks on this field
           inputElement.removeEventListener('click', (e) => this.inputDateClickListener(e, col))
           inputElement.addEventListener('click', (e) => this.inputDateClickListener(e, col))
@@ -1432,8 +1432,9 @@ export default class ChataTable extends React.Component {
     return (
       <div className='table-row-count'>
         <span>
-          {`Scrolled ${currentRowsFormatted} / ${totalRowCount > rowLimit ? rowLimitFormatted + '+' : totalRowsFormatted
-            } rows`}
+          {`Scrolled ${currentRowsFormatted} / ${
+            totalRowCount > rowLimit ? rowLimitFormatted + '+' : totalRowsFormatted
+          } rows`}
         </span>
       </div>
     )

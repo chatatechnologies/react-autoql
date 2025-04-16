@@ -343,8 +343,8 @@ export default class ChataChart extends React.Component {
   getInnerDimensions = () => {
     const { chartWidth, chartHeight } = this.getRenderedChartDimensions()
 
-    const propsWidth = typeof this.props.width === 'number' ? this.props.width : undefined
-    const propsHeight = typeof this.props.height === 'number' ? this.props.height : undefined
+    const propsWidth = typeof this.props.width === CustomColumnTypes.NUMBER ? this.props.width : undefined
+    const propsHeight = typeof this.props.height === CustomColumnTypes.NUMBER ? this.props.height : undefined
 
     const containerWidth = propsWidth ?? this.chartContainerRef?.clientWidth ?? 0
     const containerHeight = propsHeight ?? this.chartContainerRef?.clientHeight ?? 0

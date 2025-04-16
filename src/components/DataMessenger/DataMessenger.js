@@ -234,7 +234,7 @@ export class DataMessenger extends React.Component {
       }
 
       if (
-        typeof this.props.notificationCount === 'number' &&
+        typeof this.props.notificationCount === CustomColumnTypes.NUMBER &&
         this.props.notificationCount !== prevProps.notificationCount
       ) {
         this.refreshNotifications()

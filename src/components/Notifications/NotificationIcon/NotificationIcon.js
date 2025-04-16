@@ -179,7 +179,7 @@ class NotificationIcon extends React.Component {
   }
 
   getCurrentCount = () => {
-    if (typeof this.props.count === 'number') {
+    if (typeof this.props.count === CustomColumnTypes.NUMBER) {
       return this.props.count
     }
 

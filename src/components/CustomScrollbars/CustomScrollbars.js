@@ -53,7 +53,7 @@ export default class CustomScrollbars extends React.Component {
       return
     }
 
-    if (typeof duration !== 'number' || duration > this.MAX_UPDATE_DURATION) {
+    if (typeof duration !== CustomColumnTypes.NUMBER || duration > this.MAX_UPDATE_DURATION) {
       setTimeout(() => this.ref?._ps?.update(), 0)
     } else {
       clearInterval(this.intervalID)
