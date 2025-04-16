@@ -27,6 +27,7 @@ import {
   getLegendLabelsForMultiSeries,
   CHARTS_WITHOUT_AGGREGATED_DATA,
   getAutoQLConfig,
+  CustomColumnTypes,
 } from 'autoql-fe-utils'
 
 import { Spinner } from '../../Spinner'
