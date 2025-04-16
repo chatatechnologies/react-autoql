@@ -64,6 +64,7 @@ import {
   isColumnIndexConfigValid,
   getCleanColumnName,
   isDrilldown,
+  CustomColumnTypes,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
