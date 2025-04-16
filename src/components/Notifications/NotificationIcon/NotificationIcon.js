@@ -6,6 +6,7 @@ import {
   resetNotificationCount,
   authenticationDefault,
   getAuthentication,
+  CustomColumnTypes,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
