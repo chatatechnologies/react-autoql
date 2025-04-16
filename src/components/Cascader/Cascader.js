@@ -6,6 +6,7 @@ import _isEqual from 'lodash.isequal'
 import { Icon } from '../Icon'
 import { CustomScrollbars } from '../CustomScrollbars'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { CustomColumnTypes } from 'autoql-fe-utils'
 
 import './Cascader.scss'
 

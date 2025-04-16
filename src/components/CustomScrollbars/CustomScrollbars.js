@@ -4,6 +4,7 @@ import PerfectScrollbar from 'react-perfect-scrollbar'
 
 import 'react-perfect-scrollbar/dist/css/styles.css'
 import './CustomScrollbars.scss'
+import { CustomColumnTypes } from 'autoql-fe-utils'
 
 export default class CustomScrollbars extends React.Component {
   MAX_UPDATE_DURATION = 5000
