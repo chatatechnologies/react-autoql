@@ -6,6 +6,8 @@ import { ErrorBoundary } from '../../containers/ErrorHOC'
 
 import './Popover.scss'
 
+import { CustomColumnTypes } from 'autoql-fe-utils'
+
 class PopoverWithoutRef extends React.Component {
   static propTypes = {
     padding: PropTypes.number,
@@ -32,7 +34,7 @@ class PopoverWithoutRef extends React.Component {
 
     const content = (
       <div className={`popover-container-content ${this.props.contentClassName ?? ''}`}>
-        {typeof this.props.content === 'function' ? this.props.content(params) : this.props.content}
+        {typeof this.props.content === CustomColumnTypes.FUNCTION ? this.props.content(params) : this.props.content}
       </div>
     )
 
@@ -72,7 +74,7 @@ class PopoverWithoutRef extends React.Component {
           containerClassName={`react-tiny-popover-container react-autoql-popover${isMobile ? '-mobile' : ''}
           ${this.props.containerClassName ?? ''}
           ${
-            this.props.showArrow && typeof this.props.content !== 'function' && !isMobile
+            this.props.showArrow && typeof this.props.content !== CustomColumnTypes.FUNCTION && !isMobile
               ? 'popover-with-arrow-container'
               : ''
           }`}

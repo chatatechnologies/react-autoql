@@ -252,18 +252,18 @@ export class QueryOutput extends React.Component {
     allowColumnAddition: false,
     enableTableContextMenu: true,
     subjects: [],
-    onTableConfigChange: () => { },
-    onAggConfigChange: () => { },
-    onQueryValidationSelectOption: () => { },
-    onErrorCallback: () => { },
-    onDrilldownStart: () => { },
-    onDrilldownEnd: () => { },
-    onColumnChange: () => { },
-    onPageSizeChange: () => { },
-    onMount: () => { },
-    onBucketSizeChange: () => { },
-    onNewData: () => { },
-    onCustomColumnUpdate: () => { },
+    onTableConfigChange: () => {},
+    onAggConfigChange: () => {},
+    onQueryValidationSelectOption: () => {},
+    onErrorCallback: () => {},
+    onDrilldownStart: () => {},
+    onDrilldownEnd: () => {},
+    onColumnChange: () => {},
+    onPageSizeChange: () => {},
+    onMount: () => {},
+    onBucketSizeChange: () => {},
+    onNewData: () => {},
+    onCustomColumnUpdate: () => {},
   }
 
   componentDidMount = () => {
@@ -427,8 +427,8 @@ export class QueryOutput extends React.Component {
     return foundIndex
       ? foundIndex
       : this.tableConfig.stringColumnIndices.length > 0
-        ? this.tableConfig.stringColumnIndices[0]
-        : 0
+      ? this.tableConfig.stringColumnIndices[0]
+      : 0
   }
 
   findDefaultNumberColumnIndex = (defaultAmountColumn) => {
@@ -445,8 +445,8 @@ export class QueryOutput extends React.Component {
     return foundIndex
       ? foundIndex
       : this.tableConfig.numberColumnIndices.length > 0
-        ? this.tableConfig.numberColumnIndices[0]
-        : 0
+      ? this.tableConfig.numberColumnIndices[0]
+      : 0
   }
 
   checkAndUpdateTableConfigs = (displayType) => {
@@ -472,7 +472,7 @@ export class QueryOutput extends React.Component {
   changeDisplayType = (displayType, callback) => {
     this.checkAndUpdateTableConfigs(displayType)
     this.setState({ displayType }, () => {
-      if (typeof callback === 'function') {
+      if (typeof callback === CustomColumnTypes.FUNCTION) {
         callback()
       }
     })
@@ -480,7 +480,8 @@ export class QueryOutput extends React.Component {
 
   displayTypeInvalidWarning = (displayType) => {
     console.warn(
-      `Initial display type "${this.props.initialDisplayType}" provided is not valid for this dataset. Using ${displayType || this.state.displayType
+      `Initial display type "${this.props.initialDisplayType}" provided is not valid for this dataset. Using ${
+        displayType || this.state.displayType
       } instead.`,
     )
   }
@@ -849,8 +850,9 @@ export class QueryOutput extends React.Component {
       <div className='single-value-response-flex-container'>
         <div className='single-value-response-container'>
           <a
-            className={`single-value-response ${getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? ' with-drilldown' : ''
-              }`}
+            className={`single-value-response ${
+              getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? ' with-drilldown' : ''
+            }`}
             onClick={() => {
               this.processDrilldown({ groupBys: [], supportedByAPI: true })
             }}
@@ -1051,7 +1053,7 @@ export class QueryOutput extends React.Component {
     if (formattedValue === null) {
       formattedValue = 'NULL'
       operator = 'is'
-    } else if (column.type === 'DATE') {
+    } else if (column.type === ColumnTypes.DATE) {
       const isoDate = getDayJSObj({ value, column, config: this.props.dataFormatting })
       const precision = getPrecisionForDayJS(column.precision)
       const isoDateStart = isoDate.startOf(precision).toISOString()
@@ -1710,7 +1712,7 @@ export class QueryOutput extends React.Component {
 
   setFilterFunction = (col) => {
     const self = this
-    if (col.type === 'DATE') {
+    if (col.type === ColumnTypes.DATE) {
       return (headerValue, rowValue, rowData, filterParams) => {
         try {
           if (!rowValue) {
@@ -1797,7 +1799,7 @@ export class QueryOutput extends React.Component {
   }
 
   setSorterFunction = (col) => {
-    if (col.type === 'DATE' || col.type === 'DATE_STRING') {
+    if (col.type === ColumnTypes.DATE || col.type === 'DATE_STRING') {
       return (a, b) => dateSortFn(a, b, col, 'isTable')
     } else if (col.type === 'STRING') {
       // There is some bug in tabulator where its not sorting
@@ -1810,7 +1812,7 @@ export class QueryOutput extends React.Component {
   }
 
   setHeaderFilterPlaceholder = (col) => {
-    if (col.type === 'DATE' && !col.pivot) {
+    if (col.type === ColumnTypes.DATE && !col.pivot) {
       return 'Pick range'
     }
 
@@ -1854,7 +1856,7 @@ export class QueryOutput extends React.Component {
       newCol.download = col.is_visible
 
       newCol.minWidth = '90px'
-      if (newCol.type === 'DATE') {
+      if (newCol.type === ColumnTypes.DATE) {
         newCol.minWidth = '125px'
       }
 
@@ -1945,7 +1947,7 @@ export class QueryOutput extends React.Component {
 
       // Check if a date range is available
       const dateRange = this.columnDateRanges.find((rangeObj) => {
-        return newCol.type === 'DATE' && (rangeObj.columnName === newCol.display_name || !!newCol.groupable)
+        return newCol.type === ColumnTypes.DATE && (rangeObj.columnName === newCol.display_name || !!newCol.groupable)
       })
 
       if (dateRange) {
@@ -1977,7 +1979,7 @@ export class QueryOutput extends React.Component {
 
   formatDatePivotYear = (data, dateColumnIndex) => {
     const columns = this.getColumns()
-    if (columns[dateColumnIndex].type === 'DATE') {
+    if (columns[dateColumnIndex].type === ColumnTypes.DATE) {
       const dayJSObj = getDayJSObj({
         value: data[dateColumnIndex],
         column: columns[dateColumnIndex],
@@ -1990,7 +1992,7 @@ export class QueryOutput extends React.Component {
 
   formatDatePivotMonth = (data, dateColumnIndex) => {
     const columns = this.getColumns()
-    if (columns[dateColumnIndex].type === 'DATE') {
+    if (columns[dateColumnIndex].type === ColumnTypes.DATE) {
       const dayJSObj = getDayJSObj({
         value: data[dateColumnIndex],
         column: columns[dateColumnIndex],
@@ -2014,7 +2016,7 @@ export class QueryOutput extends React.Component {
       const tableData = newTableData || this.queryResponse?.data?.data?.rows
 
       const allYears = tableData.map((d) => {
-        if (columns[dateColumnIndex].type === 'DATE') {
+        if (columns[dateColumnIndex].type === ColumnTypes.DATE) {
           const dayJSObj = getDayJSObj({
             value: d[dateColumnIndex],
             column: columns[dateColumnIndex],
@@ -2848,15 +2850,18 @@ export class QueryOutput extends React.Component {
         subjects={this.props.subjects}
         queryOutputRef={this.responseContainerRef}
         allowColumnAddition={this.props.allowColumnAddition && this.state.displayType === 'table'}
-        enableEditReverseTranslation={this.props.autoQLConfig.enableEditReverseTranslation && !isDrilldown(this.queryResponse)}
+        enableEditReverseTranslation={
+          this.props.autoQLConfig.enableEditReverseTranslation && !isDrilldown(this.queryResponse)
+        }
       />
     )
   }
 
   renderFooter = () => {
     const shouldRenderRT = this.shouldRenderReverseTranslation()
-    const footerClassName = `query-output-footer ${!shouldRenderRT ? 'no-margin' : ''} ${this.props.reverseTranslationPlacement
-      }`
+    const footerClassName = `query-output-footer ${!shouldRenderRT ? 'no-margin' : ''} ${
+      this.props.reverseTranslationPlacement
+    }`
 
     return <div className={footerClassName}>{shouldRenderRT && this.renderReverseTranslation()}</div>
   }

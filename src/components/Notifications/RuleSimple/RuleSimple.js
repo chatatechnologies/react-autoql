@@ -8,6 +8,7 @@ import dayjs from '../../../js/dayjsWithPlugins'
 import {
   fetchAutocomplete,
   runQueryOnly,
+  ColumnTypes,
   COMPARE_TYPE,
   DATA_ALERT_OPERATORS,
   EXISTS_TYPE,
@@ -1139,7 +1140,7 @@ export default class RuleSimple extends React.Component {
         numValueLabels += 1
       }
 
-      if (type === 'DATE') {
+      if (type === ColumnTypes.DATE) {
         const timeFrame = getTimeFrameTextFromChunk(chunk)
         if (timeFrame) {
           text = timeFrame
@@ -1179,7 +1180,7 @@ export default class RuleSimple extends React.Component {
         return null
       }
 
-      if (type === 'DATE') {
+      if (type === ColumnTypes.DATE) {
         const timeFrame = getTimeFrameTextFromChunk(chunk)
         if (timeFrame) {
           text = timeFrame

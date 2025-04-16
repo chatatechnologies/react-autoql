@@ -6,6 +6,7 @@ import {
   resetNotificationCount,
   authenticationDefault,
   getAuthentication,
+  CustomColumnTypes,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
@@ -179,7 +180,7 @@ class NotificationIcon extends React.Component {
   }
 
   getCurrentCount = () => {
-    if (typeof this.props.count === 'number') {
+    if (typeof this.props.count === CustomColumnTypes.NUMBER) {
       return this.props.count
     }
 
