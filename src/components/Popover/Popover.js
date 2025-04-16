@@ -6,6 +6,8 @@ import { ErrorBoundary } from '../../containers/ErrorHOC'
 
 import './Popover.scss'
 
+import { CustomColumnTypes } from 'autoql-fe-utils'
+
 class PopoverWithoutRef extends React.Component {
   static propTypes = {
     padding: PropTypes.number,
