@@ -27,6 +27,7 @@ import {
   getSelectableColumns,
   getNumericalColumns,
   getStringColumns,
+  getDateColumns,
   capitalizeFirstChar,
   getCleanColumnName,
   buildPlainColumnArrayFn,
@@ -138,6 +139,7 @@ export default class CustomColumnModal extends React.Component {
       selectedFnRowsOrRangeOptionPreNValue: null,
       selectedFnRowsOrRangeOptionPost: null,
       selectedFnRowsOrRangeOptionPostNValue: null,
+      selectedFnMovingAverageTimeInterval: null,
     }
   }
 
@@ -327,6 +329,7 @@ export default class CustomColumnModal extends React.Component {
     if (customColumn?.columnFnArray) {
       let protoTableColumn = ''
       let i = 0
+
       for (const columnFn of customColumn?.columnFnArray) {
         const colName = columnFn?.column?.name
         if (columnFn?.type === CustomColumnTypes.COLUMN) {
@@ -338,11 +341,23 @@ export default class CustomColumnModal extends React.Component {
         } else if (columnFn?.type === CustomColumnTypes.FUNCTION) {
           protoTableColumn +=
             columnFn.fn === CustomColumnValues.PERCENT_TOTAL
-              ? `(${columnFn?.column?.name} / SUM(${columnFn?.column?.name}) OVER (PARTITION BY ${
+              ? `(${columnFn?.column?.name} / SUM(${columnFn?.column?.name}) OVER (
+              ${
+                this.state.selectedFnGroupby
+                  ? `PARTITION BY ${
+                      getVisibleColumns(this.props.columns).find((column) => {
+                        return column.field === columnFn.groupby
+                      })?.name
+                    }`
+                  : ''
+              }
+                )) * 100`
+              : columnFn.fn === CustomColumnValues.MOVING_AVG
+              ? `AVG(${columnFn?.column?.name}) OVER(ORDER BY ${
                   getVisibleColumns(this.props.columns).find((column) => {
-                    return column.field === columnFn.groupby
+                    return column.field === this.state.selectedFnOrderBy
                   })?.name
-                })) * 100`
+                } ROWS BETWEEN ${this.state.selectedFnMovingAverageTimeInterval} PRECEDING AND CURRENT ROW)`
               : WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === CustomColumnTypes.SUM
               ? `${colName?.substring(colName?.indexOf('sum(') + 4, colName?.indexOf(')'))} / ${colName} * 100`
               : `${columnFn.fn}(` +
@@ -678,6 +693,7 @@ export default class CustomColumnModal extends React.Component {
       rowsOrRangeOptionPreNValue: this.state.selectedFnRowsOrRangeOptionPreNValue,
       rowsOrRangeOptionPost: this.state.selectedFnRowsOrRangeOptionPost,
       rowsOrRangeOptionPostNValue: this.state.selectedFnRowsOrRangeOptionPostNValue,
+      movingAvgTimeInterval: this.state.selectedFnMovingAverageTimeInterval,
     })
 
     this.setState({
@@ -707,16 +723,22 @@ export default class CustomColumnModal extends React.Component {
             (this.state.selectedFnRowsOrRangeOptionPost === CustomColumnRowRangeTypes.FOLLOWING &&
               this.state.selectedFnRowsOrRangeOptionPostNValue !== null))
     const totalPercentComplete =
-      this.state.selectedFnOperation === CustomColumnValues.PERCENT_TOTAL &&
-      !!this.state.selectedFnColumn &&
-      !!this.state.selectedFnGroupby
+      this.state.selectedFnOperation === CustomColumnValues.PERCENT_TOTAL && !!this.state.selectedFnColumn
     const rankComplete = this.state.selectedFnOperation === CustomColumnValues.RANK && !!this.state.selectedFnOrderBy
+    const movingAvgComplete =
+      this.state.selectedFnOperation === CustomColumnValues.MOVING_AVG &&
+      !!this.state.selectedFnColumn &&
+      !!this.state.selectedFnOrderBy &&
+      !!this.state.selectedFnMovingAverageTimeInterval &&
+      this.state.selectedFnMovingAverageTimeInterval > 0
+
     const metRequirements =
       (selectedFunc !== null &&
         (requiredCols === null || (requiredCols !== null && requiredNotSetArr?.length === 0)) &&
         rowOrRangeComplete) ||
       totalPercentComplete ||
-      rankComplete
+      rankComplete ||
+      movingAvgComplete
 
     return metRequirements
   }
@@ -1137,6 +1159,7 @@ export default class CustomColumnModal extends React.Component {
                                   selectedFnRowsOrRange: null,
                                   selectedFnRowsOrRangeOptionPre: null,
                                   selectedFnRowsOrRangeOptionPost: null,
+                                  selectedFnMovingAverageTimeInterval: null,
                                 })
                               }
 
@@ -1228,6 +1251,7 @@ export default class CustomColumnModal extends React.Component {
     })
     const numericalColumns = getNumericalColumns(this.props.columns)
     const stringColumns = getStringColumns(this.props.columns)
+    const dateColumns = getDateColumns(this.props.columns)
 
     const stringColumnOptions = stringColumns.map((col) => {
       return {
@@ -1270,6 +1294,7 @@ export default class CustomColumnModal extends React.Component {
                       selectedFnRowsOrRangeOptionPreNValue: null,
                       selectedFnRowsOrRangeOptionPost: null,
                       selectedFnRowsOrRangeOptionPostNValue: null,
+                      selectedFnMovingAverageTimeInterval: null,
                     })
                   }}
                   positions={['bottom', 'top', 'right', 'left']}
@@ -1488,7 +1513,7 @@ export default class CustomColumnModal extends React.Component {
               <div>
                 <Select
                   label='Grouped By'
-                  isRequired={true}
+                  isRequired={false}
                   className='custom-column-window-fn-selector'
                   value={this.state.selectedFnGroupby ?? null}
                   onChange={(selectedFnGroupby) => {
@@ -1540,6 +1565,64 @@ export default class CustomColumnModal extends React.Component {
                   options={ORDERBY_DIRECTIONS}
                   isDisabled={!this.state.selectedFnOrderBy}
                   outlined={true}
+                />
+              </div>
+            </>
+          )}
+          {this.state.selectedFnOperation === CustomColumnValues.MOVING_AVG && (
+            <>
+              <div>Moving Average</div>
+              <div>
+                <Select
+                  label='Average Column'
+                  isRequired={true}
+                  className='custom-column-window-fn-selector'
+                  value={this.state.selectedFnColumn ?? null}
+                  onChange={(selectedFnColumn) => {
+                    this.setState({ selectedFnColumn })
+                  }}
+                  positions={['bottom', 'top', 'right', 'left']}
+                  options={numericalColumns.map((col) => {
+                    return {
+                      value: col.field,
+                      label: col.title,
+                      listLabel: col.title,
+                      icon: 'table',
+                    }
+                  })}
+                />
+              </div>
+              <div>
+                <Select
+                  label='Order By Column'
+                  isRequired={true}
+                  className='custom-column-window-fn-selector'
+                  value={this.state.selectedFnOrderBy ?? null}
+                  onChange={(selectedFnOrderBy) => {
+                    this.setState({ selectedFnOrderBy })
+                  }}
+                  positions={['bottom', 'top', 'right', 'left']}
+                  options={numericalColumns.concat(dateColumns).map((col) => {
+                    return {
+                      value: col.field,
+                      label: col.title,
+                      listLabel: col.title,
+                      icon: 'table',
+                    }
+                  })}
+                />
+              </div>
+              <div>
+                <Input
+                  label='Time Interval'
+                  isRequired={true}
+                  type='number'
+                  showSpinWheel={true}
+                  placeholder='eg. "10"'
+                  defaultValue={this.state.selectedFnMovingAverageTimeInterval ?? null}
+                  onChange={(e) => {
+                    this.setState({ selectedFnMovingAverageTimeInterval: e.target.value })
+                  }}
                 />
               </div>
             </>
