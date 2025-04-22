@@ -358,8 +358,27 @@ export default class CustomColumnModal extends React.Component {
                     return column.field === this.state.selectedFnOrderBy
                   })?.name
                 } ROWS BETWEEN ${this.state.selectedFnMovingAverageTimeInterval} PRECEDING AND CURRENT ROW)`
+              : columnFn.fn === CustomColumnValues.CHANGE
+              ? `${columnFn?.column?.name} - LAG(${columnFn?.column?.name}) 
+              OVER(ORDER BY ${
+                getVisibleColumns(this.props.columns).find((column) => {
+                  return column.field === this.state.selectedFnOrderBy
+                })?.name
+              })`
+              : columnFn.fn === CustomColumnValues.CUMULATIVE_SUM
+              ? `SUM(${columnFn?.column?.name}) OVER(ORDER BY ${
+                  getVisibleColumns(this.props.columns).find((column) => {
+                    return column.field === this.state.selectedFnOrderBy
+                  })?.name
+                } ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW )`
+              : columnFn.fn === CustomColumnValues.CUMULATIVE_PERCENT
+              ? `(SUM(${columnFn?.column?.name}) OVER(ORDER BY ${
+                  getVisibleColumns(this.props.columns).find((column) => {
+                    return column.field === this.state.selectedFnOrderBy
+                  })?.name
+                } ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) / SUM(${columnFn?.column?.name}) OVER()) * 100`
               : WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === CustomColumnTypes.SUM
-              ? `${colName?.substring(colName?.indexOf('sum(') + 4, colName?.indexOf(')'))} / ${colName} * 100`
+              ? `${colName?.substring(colName?.indexOf('SUM(') + 4, colName?.indexOf(')'))} / ${colName} * 100`
               : `${columnFn.fn}(` +
                 `${
                   WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === CustomColumnTypes.COLUMN
@@ -731,14 +750,28 @@ export default class CustomColumnModal extends React.Component {
       !!this.state.selectedFnOrderBy &&
       !!this.state.selectedFnMovingAverageTimeInterval &&
       this.state.selectedFnMovingAverageTimeInterval > 0
-
+    const cumulateiveSumComplete =
+      this.state.selectedFnOperation === CustomColumnValues.CUMULATIVE_SUM &&
+      !!this.state.selectedFnColumn &&
+      !!this.state.selectedFnOrderBy
+    const cumulateivePercentComplete =
+      this.state.selectedFnOperation === CustomColumnValues.CUMULATIVE_PERCENT &&
+      !!this.state.selectedFnColumn &&
+      !!this.state.selectedFnOrderBy
+    const changeComplete =
+      this.state.selectedFnOperation === CustomColumnValues.CHANGE &&
+      !!this.state.selectedFnColumn &&
+      !!this.state.selectedFnOrderBy
     const metRequirements =
       (selectedFunc !== null &&
         (requiredCols === null || (requiredCols !== null && requiredNotSetArr?.length === 0)) &&
         rowOrRangeComplete) ||
       totalPercentComplete ||
       rankComplete ||
-      movingAvgComplete
+      movingAvgComplete ||
+      cumulateiveSumComplete ||
+      cumulateivePercentComplete ||
+      changeComplete
 
     return metRequirements
   }
@@ -885,7 +918,7 @@ export default class CustomColumnModal extends React.Component {
         {chunk.nTileNumber && <span>{chunk.nTileNumber}</span>}
         {chunk.groupby ? (
           <>
-            <span>{`${!!chunk.column || !!chunk.nTileNumber ? ', ' : ''}Partition by `} </span>
+            <span>{`${!!chunk.column || !!chunk.nTileNumber ? ', ' : ''}Partition By `} </span>
             <Select
               key={`custom-column-select-${i}`}
               placeholder='Select a Column'
@@ -1194,7 +1227,9 @@ export default class CustomColumnModal extends React.Component {
                   </div>
                 </span>
               )}
-              <div>{this.state.isFunctionConfigModalVisible && this.renderFunctionConfigModalContent()}</div>
+              <div style={{ height: '100%' }}>
+                {this.state.isFunctionConfigModalVisible && this.renderFunctionConfigModalContent()}
+              </div>
             </>
           )}
         </div>
@@ -1268,8 +1303,8 @@ export default class CustomColumnModal extends React.Component {
     })
 
     return (
-      <div>
-        <div ref={(r) => (this.windowFnPopover = r)} style={{ minHeight: '25vh' }}>
+      <div style={{ height: '100%' }}>
+        <div ref={(r) => (this.windowFnPopover = r)} style={{ minHeight: 'calc(100% - 50px)' }}>
           {this.state.selectedFnOperation === CustomColumnValues.FUNCTION && (
             <>
               <div>
@@ -1361,7 +1396,7 @@ export default class CustomColumnModal extends React.Component {
                 this.state.selectedFnType !== CustomColumnValues.PERCENT_TOTAL && (
                   <div>
                     <Select
-                      label='Order By Column'
+                      label='Order By'
                       isRequired={this.isInputRequired('selectedFnOrderBy')}
                       className='custom-column-window-fn-selector'
                       value={this.state.selectedFnOrderBy ?? null}
@@ -1512,7 +1547,7 @@ export default class CustomColumnModal extends React.Component {
               </div>
               <div>
                 <Select
-                  label='Grouped By'
+                  label='Partition By Column'
                   isRequired={false}
                   className='custom-column-window-fn-selector'
                   value={this.state.selectedFnGroupby ?? null}
@@ -1614,7 +1649,7 @@ export default class CustomColumnModal extends React.Component {
               </div>
               <div>
                 <Input
-                  label='Time Interval'
+                  label='Precede Interval'
                   isRequired={true}
                   type='number'
                   showSpinWheel={true}
@@ -1623,6 +1658,141 @@ export default class CustomColumnModal extends React.Component {
                   onChange={(e) => {
                     this.setState({ selectedFnMovingAverageTimeInterval: e.target.value })
                   }}
+                />
+              </div>
+            </>
+          )}
+          {this.state.selectedFnOperation === CustomColumnValues.CUMULATIVE_SUM && (
+            <>
+              <div>Cumulative Sum</div>
+              <div>
+                <Select
+                  label='Cumulative Sum Column'
+                  isRequired={true}
+                  className='custom-column-window-fn-selector'
+                  value={this.state.selectedFnColumn ?? null}
+                  onChange={(selectedFnColumn) => {
+                    this.setState({ selectedFnColumn })
+                  }}
+                  positions={['bottom', 'top', 'right', 'left']}
+                  options={numericalColumns.map((col) => {
+                    return {
+                      value: col.field,
+                      label: col.title,
+                      listLabel: col.title,
+                      icon: 'table',
+                    }
+                  })}
+                />
+              </div>
+              <div>
+                <Select
+                  label='Order By Column'
+                  isRequired={true}
+                  className='custom-column-window-fn-selector'
+                  value={this.state.selectedFnOrderBy ?? null}
+                  onChange={(selectedFnOrderBy) => {
+                    this.setState({ selectedFnOrderBy })
+                  }}
+                  positions={['bottom', 'top', 'right', 'left']}
+                  options={numericalColumns.concat(dateColumns).map((col) => {
+                    return {
+                      value: col.field,
+                      label: col.title,
+                      listLabel: col.title,
+                      icon: 'table',
+                    }
+                  })}
+                />
+              </div>
+            </>
+          )}
+          {this.state.selectedFnOperation === CustomColumnValues.CUMULATIVE_PERCENT && (
+            <>
+              <div>Cumulative Percent</div>
+              <div>
+                <Select
+                  label='Cumulative Percent Column'
+                  isRequired={true}
+                  className='custom-column-window-fn-selector'
+                  value={this.state.selectedFnColumn ?? null}
+                  onChange={(selectedFnColumn) => {
+                    this.setState({ selectedFnColumn })
+                  }}
+                  positions={['bottom', 'top', 'right', 'left']}
+                  options={numericalColumns.map((col) => {
+                    return {
+                      value: col.field,
+                      label: col.title,
+                      listLabel: col.title,
+                      icon: 'table',
+                    }
+                  })}
+                />
+              </div>
+              <div>
+                <Select
+                  label='Order By Column'
+                  isRequired={true}
+                  className='custom-column-window-fn-selector'
+                  value={this.state.selectedFnOrderBy ?? null}
+                  onChange={(selectedFnOrderBy) => {
+                    this.setState({ selectedFnOrderBy })
+                  }}
+                  positions={['bottom', 'top', 'right', 'left']}
+                  options={numericalColumns.concat(dateColumns).map((col) => {
+                    return {
+                      value: col.field,
+                      label: col.title,
+                      listLabel: col.title,
+                      icon: 'table',
+                    }
+                  })}
+                />
+              </div>
+            </>
+          )}
+          {this.state.selectedFnOperation === CustomColumnValues.CHANGE && (
+            <>
+              <div>Change Value</div>
+              <div>
+                <Select
+                  label='Change Column'
+                  isRequired={true}
+                  className='custom-column-window-fn-selector'
+                  value={this.state.selectedFnColumn ?? null}
+                  onChange={(selectedFnColumn) => {
+                    this.setState({ selectedFnColumn })
+                  }}
+                  positions={['bottom', 'top', 'right', 'left']}
+                  options={numericalColumns.map((col) => {
+                    return {
+                      value: col.field,
+                      label: col.title,
+                      listLabel: col.title,
+                      icon: 'table',
+                    }
+                  })}
+                />
+              </div>
+              <div>
+                <Select
+                  label='Order By Column'
+                  isRequired={true}
+                  className='custom-column-window-fn-selector'
+                  value={this.state.selectedFnOrderBy ?? null}
+                  onChange={(selectedFnOrderBy) => {
+                    this.setState({ selectedFnOrderBy })
+                  }}
+                  positions={['bottom', 'top', 'right', 'left']}
+                  options={numericalColumns.concat(dateColumns).map((col) => {
+                    return {
+                      value: col.field,
+                      label: col.title,
+                      listLabel: col.title,
+                      icon: 'table',
+                    }
+                  })}
                 />
               </div>
             </>
