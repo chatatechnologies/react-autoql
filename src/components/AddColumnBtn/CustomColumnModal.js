@@ -918,7 +918,7 @@ export default class CustomColumnModal extends React.Component {
         {chunk.nTileNumber && <span>{chunk.nTileNumber}</span>}
         {chunk.groupby ? (
           <>
-            <span>{`${!!chunk.column || !!chunk.nTileNumber ? ', ' : ''}Partition by `} </span>
+            <span>{`${!!chunk.column || !!chunk.nTileNumber ? ', ' : ''}Partition By `} </span>
             <Select
               key={`custom-column-select-${i}`}
               placeholder='Select a Column'
@@ -1227,7 +1227,9 @@ export default class CustomColumnModal extends React.Component {
                   </div>
                 </span>
               )}
-              <div>{this.state.isFunctionConfigModalVisible && this.renderFunctionConfigModalContent()}</div>
+              <div style={{ height: '100%' }}>
+                {this.state.isFunctionConfigModalVisible && this.renderFunctionConfigModalContent()}
+              </div>
             </>
           )}
         </div>
@@ -1301,8 +1303,8 @@ export default class CustomColumnModal extends React.Component {
     })
 
     return (
-      <div>
-        <div ref={(r) => (this.windowFnPopover = r)} style={{ minHeight: '25vh' }}>
+      <div style={{ height: '100%' }}>
+        <div ref={(r) => (this.windowFnPopover = r)} style={{ minHeight: 'calc(100% - 50px)' }}>
           {this.state.selectedFnOperation === CustomColumnValues.FUNCTION && (
             <>
               <div>
@@ -1394,7 +1396,7 @@ export default class CustomColumnModal extends React.Component {
                 this.state.selectedFnType !== CustomColumnValues.PERCENT_TOTAL && (
                   <div>
                     <Select
-                      label='Order By Column'
+                      label='Order By'
                       isRequired={this.isInputRequired('selectedFnOrderBy')}
                       className='custom-column-window-fn-selector'
                       value={this.state.selectedFnOrderBy ?? null}
@@ -1545,7 +1547,7 @@ export default class CustomColumnModal extends React.Component {
               </div>
               <div>
                 <Select
-                  label='Grouped By'
+                  label='Partition By Column'
                   isRequired={false}
                   className='custom-column-window-fn-selector'
                   value={this.state.selectedFnGroupby ?? null}
@@ -1647,7 +1649,7 @@ export default class CustomColumnModal extends React.Component {
               </div>
               <div>
                 <Input
-                  label='Time Interval'
+                  label='Precede Interval'
                   isRequired={true}
                   type='number'
                   showSpinWheel={true}
