@@ -15,6 +15,7 @@ import {
   previewDataAlert,
   createDataAlert,
   updateDataAlert,
+  updateManagementDataAlert,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../../Icon'
