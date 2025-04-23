@@ -646,7 +646,7 @@ class CustomFilteredAlertModal extends React.Component {
           ref={(r) => (this.modalRef = r)}
           isVisible={this.props.isVisible}
           onClose={this.props.onClose}
-          confirmOnClose={true}
+          confirmOnClose={!this.props.isPreviewMode}
           enableBodyScroll
           width='1200px'
           height='auto'
