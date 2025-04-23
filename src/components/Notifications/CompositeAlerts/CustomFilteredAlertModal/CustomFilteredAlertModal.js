@@ -405,7 +405,6 @@ class CustomFilteredAlertModal extends React.Component {
   }
 
   renderFinishAndSaveBtn = () => {
-    // If in preview mode, we might want to show a different button or disable saving
     if (this.props.isPreviewMode) {
       return (
         <Button type='primary' onClick={this.props.onClose}>
@@ -439,7 +438,6 @@ class CustomFilteredAlertModal extends React.Component {
   }
 
   renderCancelBtn = () => {
-    // Don't render the cancel button in preview mode
     if (this.props.isPreviewMode) {
       return null
     }
