@@ -437,7 +437,7 @@ export default class Rule extends React.Component {
                 //   className="react-autoql-rule-input"
                 //   icon="react-autoql-bubbles-outlined"
                 //   type={inputType}
-                //   placeholder={inputType === 'number' ? 'Constant' : 'Query'}
+                //   placeholder={inputType === CustomColumnTypes.NUMBER ? 'Constant' : 'Query'}
                 //   value={this.state.input2Value}
                 //   onChange={e => this.setState({ input2Value: e.target.value })}
                 // />

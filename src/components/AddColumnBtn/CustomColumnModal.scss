@@ -2,6 +2,8 @@
 
 .custom-column-modal {
   height: -webkit-fill-available;
+  display: flex;
+  flex-direction: column;
 
   @include sm {
     display: block;
@@ -26,8 +28,7 @@
   .react-autoql-window-fn-popover-footer {
     display: flex;
     justify-content: flex-end;
-    margin-top: 20px;
-    display: flex;
+    margin-top: 10px;
 
     @include sm {
       position: unset;
@@ -40,8 +41,8 @@
   .custom-column-modal-form-wrapper {
     flex: 1;
     display: flex;
-    overflow: hidden;
     flex-direction: column;
+    margin-top: auto;
 
     @include sm {
       display: block;
@@ -54,6 +55,7 @@
       display: flex;
       flex-direction: row;
       margin-bottom: 12px;
+      height: -webkit-fill-available;
 
       @include sm {
         display: block;
@@ -100,18 +102,22 @@
         }
       }
 
-      .react-autoql-formula-builder-column-selection-container {
-        flex: 0 0 auto;
-        margin-right: 10px;
+      .react-autoql-formula-builder-column-container {
+        display: flex;
+        height: -webkit-fill-available;
 
-        .react-autoql-btn {
-          padding: 7px 12px;
-          width: -webkit-fill-available;
-          justify-content: start;
-          height: 38px;
+        .react-autoql-formula-builder-column-selection-container {
+          flex: 0 0 auto;
+          margin-right: 10px;
+
+          .react-autoql-btn {
+            padding: 7px 12px;
+            width: -webkit-fill-available;
+            justify-content: start;
+            height: 38px;
+          }
         }
       }
-
       .react-autoql-formula-builder-calculator-container,
       .react-autoql-formula-builder-column-selection-container {
         height: 100%;
@@ -121,7 +127,7 @@
 
         .react-autoql-formula-builder-calculator-buttons-container {
           overflow: auto;
-          max-height: 250px;
+          // max-height: 250px;
           min-width: 108px;
 
           .react-autoql-btn {
@@ -143,11 +149,12 @@
   }
 
   .react-autoql-table-preview-wrapper {
-    flex: 1 1;
+    // flex: 1 1;
     display: flex;
     overflow: hidden;
     flex-direction: column;
     min-height: 150px;
+    margin-top: auto;
   }
 
   .react-autoql-formula-builder-label-container {

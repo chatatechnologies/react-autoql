@@ -38,6 +38,14 @@
     color: var(--react-autoql-text-color-accent);
   }
 
+  &.disabled {
+    opacity: 0.7;
+    cursor: default;
+    pointer-events: none;
+    background-color: var(--react-autoql-background-color-tertiary);
+    color: var(--react-autoql-text-color-secondary);
+  }
+
   .react-autoql-chip-delete-btn {
     margin-left: 8px;
     transition: opacity 0.2s ease;
@@ -48,5 +56,9 @@
       opacity: 1;
       color: var(--react-autoql-accent-color);
     }
+  }
+
+  &.disabled .react-autoql-chip-delete-btn {
+    display: none;
   }
 }

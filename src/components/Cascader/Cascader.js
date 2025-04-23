@@ -6,6 +6,7 @@ import _isEqual from 'lodash.isequal'
 import { Icon } from '../Icon'
 import { CustomScrollbars } from '../CustomScrollbars'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { CustomColumnTypes } from 'autoql-fe-utils'
 
 import './Cascader.scss'
 
@@ -96,7 +97,7 @@ export default class Cascader extends React.Component {
                   data-test={`options-item-${index}-${i}`}
                 >
                   {option.customContent ? (
-                    typeof option.customContent === 'function' ? (
+                    typeof option.customContent === CustomColumnTypes.FUNCTION ? (
                       option.customContent()
                     ) : (
                       option.customContent

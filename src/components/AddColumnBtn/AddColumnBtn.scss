@@ -63,3 +63,40 @@
     font-size: 11px;
   }
 }
+
+.react-autoql-inline-table-add-column-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  left: -0.2em;
+  font-size: 0.9em;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  cursor: pointer;
+  pointer-events: none;
+  width: 0px;
+  height: 0px;
+  border-radius: 50%;
+  transition: color 0.2s ease;
+  transition: width 0.2s ease, height 0.2s ease;
+  cursor: pointer;
+
+  box-shadow: var(--react-autoql-box-shadow-2);
+  color: var(--react-autoql-text-color-accent);
+  background-color: var(--react-autoql-accent-color);
+}
+
+.react-autoql-inline-table-add-column-btn.active {
+  opacity: 1;
+  pointer-events: auto;
+  cursor: pointer;
+  width: 12px;
+  height: 12px;
+  transition: width 0.2s ease, height 0.2s ease;
+}
+
+.hover-text-wrapper:hover .react-autoql-inline-table-add-column-btn {
+  opacity: 1;
+  pointer-events: auto;
+}

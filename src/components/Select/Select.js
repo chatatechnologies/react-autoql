@@ -102,9 +102,12 @@ export default class Select extends React.Component {
         {!!this.props.label && (
           <div
             className={`react-autoql-input-label
-         ${this.props.isDisabled ? 'disabled' : ''}`}
+ ${this.props.isDisabled ? 'disabled' : ''}`}
           >
-            {`${this.props.label}${this.props.isRequired ? ' *' : ''}`}
+            {typeof this.props.label === 'string'
+              ? `${this.props.label}${this.props.isRequired ? ' *' : ''}`
+              : this.props.label}
+            {typeof this.props.label === 'object' && this.props.isRequired ? ' *' : ''}
           </div>
         )}
         <div
@@ -137,7 +140,7 @@ export default class Select extends React.Component {
                 {!!selectedOption.icon && (
                   <span>
                     <Icon style={{ marginLeft: this.props.outlined ? '-1px' : '0px' }} type={selectedOption.icon} />
-                    &nbsp;&nbsp;
+                      
                   </span>
                 )}
                 <span>{selectedOption.label ?? selectedOption.value}</span>

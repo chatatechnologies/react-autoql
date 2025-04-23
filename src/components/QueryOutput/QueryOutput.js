@@ -63,6 +63,8 @@ import {
   ColumnTypes,
   isColumnIndexConfigValid,
   getCleanColumnName,
+  isDrilldown,
+  CustomColumnTypes,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -197,6 +199,7 @@ export class QueryOutput extends React.Component {
     onErrorCallback: PropTypes.func,
     showQueryInterpretation: PropTypes.bool,
     useInfiniteScroll: PropTypes.bool,
+    subjects: PropTypes.arrayOf(PropTypes.shape({})),
 
     mutable: PropTypes.bool,
     showSuggestionPrefix: PropTypes.bool,
@@ -249,6 +252,7 @@ export class QueryOutput extends React.Component {
     bucketSize: undefined,
     allowColumnAddition: false,
     enableTableContextMenu: true,
+    subjects: [],
     onTableConfigChange: () => {},
     onAggConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
@@ -469,7 +473,7 @@ export class QueryOutput extends React.Component {
   changeDisplayType = (displayType, callback) => {
     this.checkAndUpdateTableConfigs(displayType)
     this.setState({ displayType }, () => {
-      if (typeof callback === 'function') {
+      if (typeof callback === CustomColumnTypes.FUNCTION) {
         callback()
       }
     })
@@ -907,6 +911,7 @@ export class QueryOutput extends React.Component {
       return error
     }
   }
+
   queryFn = async (args = {}) => {
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
     const allFilters = this.getCombinedFilters()
@@ -918,7 +923,7 @@ export class QueryOutput extends React.Component {
 
     let response
 
-    if (this.isDrilldown()) {
+    if (isDrilldown(this.queryResponse)) {
       try {
         response = await runDrilldown({
           ...getAuthentication(this.props.authentication),
@@ -1049,7 +1054,7 @@ export class QueryOutput extends React.Component {
     if (formattedValue === null) {
       formattedValue = 'NULL'
       operator = 'is'
-    } else if (column.type === 'DATE') {
+    } else if (column.type === ColumnTypes.DATE) {
       const isoDate = getDayJSObj({ value, column, config: this.props.dataFormatting })
       const precision = getPrecisionForDayJS(column.precision)
       const isoDateStart = isoDate.startOf(precision).toISOString()
@@ -1708,7 +1713,7 @@ export class QueryOutput extends React.Component {
 
   setFilterFunction = (col) => {
     const self = this
-    if (col.type === 'DATE') {
+    if (col.type === ColumnTypes.DATE) {
       return (headerValue, rowValue, rowData, filterParams) => {
         try {
           if (!rowValue) {
@@ -1795,7 +1800,7 @@ export class QueryOutput extends React.Component {
   }
 
   setSorterFunction = (col) => {
-    if (col.type === 'DATE' || col.type === 'DATE_STRING') {
+    if (col.type === ColumnTypes.DATE || col.type === 'DATE_STRING') {
       return (a, b) => dateSortFn(a, b, col, 'isTable')
     } else if (col.type === 'STRING') {
       // There is some bug in tabulator where its not sorting
@@ -1808,7 +1813,7 @@ export class QueryOutput extends React.Component {
   }
 
   setHeaderFilterPlaceholder = (col) => {
-    if (col.type === 'DATE' && !col.pivot) {
+    if (col.type === ColumnTypes.DATE && !col.pivot) {
       return 'Pick range'
     }
 
@@ -1852,7 +1857,7 @@ export class QueryOutput extends React.Component {
       newCol.download = col.is_visible
 
       newCol.minWidth = '90px'
-      if (newCol.type === 'DATE') {
+      if (newCol.type === ColumnTypes.DATE) {
         newCol.minWidth = '125px'
       }
 
@@ -1943,7 +1948,7 @@ export class QueryOutput extends React.Component {
 
       // Check if a date range is available
       const dateRange = this.columnDateRanges.find((rangeObj) => {
-        return newCol.type === 'DATE' && (rangeObj.columnName === newCol.display_name || !!newCol.groupable)
+        return newCol.type === ColumnTypes.DATE && (rangeObj.columnName === newCol.display_name || !!newCol.groupable)
       })
 
       if (dateRange) {
@@ -1975,7 +1980,7 @@ export class QueryOutput extends React.Component {
 
   formatDatePivotYear = (data, dateColumnIndex) => {
     const columns = this.getColumns()
-    if (columns[dateColumnIndex].type === 'DATE') {
+    if (columns[dateColumnIndex].type === ColumnTypes.DATE) {
       const dayJSObj = getDayJSObj({
         value: data[dateColumnIndex],
         column: columns[dateColumnIndex],
@@ -1988,7 +1993,7 @@ export class QueryOutput extends React.Component {
 
   formatDatePivotMonth = (data, dateColumnIndex) => {
     const columns = this.getColumns()
-    if (columns[dateColumnIndex].type === 'DATE') {
+    if (columns[dateColumnIndex].type === ColumnTypes.DATE) {
       const dayJSObj = getDayJSObj({
         value: data[dateColumnIndex],
         column: columns[dateColumnIndex],
@@ -2012,7 +2017,7 @@ export class QueryOutput extends React.Component {
       const tableData = newTableData || this.queryResponse?.data?.data?.rows
 
       const allYears = tableData.map((d) => {
-        if (columns[dateColumnIndex].type === 'DATE') {
+        if (columns[dateColumnIndex].type === ColumnTypes.DATE) {
           const dayJSObj = getDayJSObj({
             value: d[dateColumnIndex],
             column: columns[dateColumnIndex],
@@ -2348,16 +2353,6 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  isDrilldown = () => {
-    try {
-      const queryText = this.queryResponse?.data?.data?.text || ''
-      const isDrilldown = queryText.split(':')[0] === 'Drilldown'
-      return isDrilldown
-    } catch (error) {
-      return false
-    }
-  }
-
   renderAllColumnsHiddenMessage = () => {
     return (
       <div className='no-columns-error-message' data-test='columns-hidden-message'>
@@ -2462,7 +2457,7 @@ export class QueryOutput extends React.Component {
           tooltipID={this.props.tooltipID}
           onAddColumnClick={this.onAddColumnClick}
           onCustomClick={this.onAddColumnClick}
-          disableAddCustomColumnOption={this.isDrilldown()}
+          disableAddCustomColumnOption={isDrilldown(this.queryResponse)}
         />
       )
     }
@@ -2502,7 +2497,7 @@ export class QueryOutput extends React.Component {
           queryRequestData={this.queryResponse?.data?.data?.fe_req}
           queryText={this.queryResponse?.data?.data?.text}
           originalQueryID={this.props.originalQueryID}
-          isDrilldown={this.isDrilldown()}
+          isDrilldown={isDrilldown(this.queryResponse)}
           isQueryOutputMounted={this._isMounted}
           popoverParentElement={this.props.popoverParentElement}
           hidden={this.state.displayType !== 'table'}
@@ -2626,7 +2621,7 @@ export class QueryOutput extends React.Component {
           height={this.props.height}
           width={this.props.width}
           onNewData={this.onNewData}
-          isDrilldown={this.isDrilldown()}
+          isDrilldown={isDrilldown(this.queryResponse)}
           updateColumns={this.updateColumns}
           isDataLimited={isDataLimited(this.queryResponse) || isPivotDataLimited}
           source={this.props.source}
@@ -2853,6 +2848,12 @@ export class QueryOutput extends React.Component {
         isResizing={this.props.isResizing}
         queryResponse={this.queryResponse}
         tooltipID={this.props.tooltipID}
+        subjects={this.props.subjects}
+        queryOutputRef={this.responseContainerRef}
+        allowColumnAddition={this.props.allowColumnAddition && this.state.displayType === 'table'}
+        enableEditReverseTranslation={
+          this.props.autoQLConfig.enableEditReverseTranslation && !isDrilldown(this.queryResponse)
+        }
       />
     )
   }

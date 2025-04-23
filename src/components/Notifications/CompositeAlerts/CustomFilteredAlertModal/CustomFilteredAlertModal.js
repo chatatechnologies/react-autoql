@@ -15,6 +15,7 @@ import {
   previewDataAlert,
   createDataAlert,
   updateDataAlert,
+  updateManagementDataAlert,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../../Icon'
@@ -61,6 +62,7 @@ class CustomFilteredAlertModal extends React.Component {
     dataFormatting: dataFormattingType,
     autoQLConfig: autoQLConfigType,
     enableAlphaAlertSettings: PropTypes.bool,
+    isPreviewMode: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -78,6 +80,7 @@ class CustomFilteredAlertModal extends React.Component {
     dataFormatting: dataFormattingDefault,
     autoQLConfig: autoQLConfigDefault,
     enableAlphaAlertSettings: false,
+    isPreviewMode: false,
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -201,9 +204,8 @@ class CustomFilteredAlertModal extends React.Component {
               })
             })
             .catch((error) => {
-              const baseMessage = 'Unable to create custom filtered alert'
               const errorDetail = error?.message || 'Please try again or contact support if the issue persists'
-              const errorMessage = `${baseMessage}: ${errorDetail}`
+              const errorMessage = `${errorDetail}`
               this.props.onErrorCallback(errorMessage)
               console.error('Error getting data alert preview:', error)
               this.setState({ isLoadingBaseDataAlertQueryResponse: false })
@@ -221,9 +223,8 @@ class CustomFilteredAlertModal extends React.Component {
               })
             })
             .catch((error) => {
-              const baseMessage = 'Unable to create custom filtered alert'
               const errorDetail = error?.message || 'Please try again or contact support if the issue persists'
-              const errorMessage = `${baseMessage}: ${errorDetail}`
+              const errorMessage = ` ${errorDetail}`
               this.props.onErrorCallback(errorMessage)
               console.error('Error getting data alert preview:', error)
               this.setState({ isLoadingBaseDataAlertQueryResponse: false })
@@ -291,6 +292,7 @@ class CustomFilteredAlertModal extends React.Component {
           id: currentDataAlert?.id,
           title: titleInput,
           message: messageInput,
+          notification_type: this.NOTIFICATION_TYPE_EVENT,
           expression: expressionJSON,
           reset_period: null,
           projects: [],
@@ -403,6 +405,14 @@ class CustomFilteredAlertModal extends React.Component {
   }
 
   renderFinishAndSaveBtn = () => {
+    if (this.props.isPreviewMode) {
+      return (
+        <Button type='primary' onClick={this.props.onClose}>
+          Close Preview
+        </Button>
+      )
+    }
+
     const tooltipContent =
       this.state.titleInput === '' && this.state.customFilters.length === 0
         ? 'You must provide both an alert title and at least one filter'
@@ -428,6 +438,10 @@ class CustomFilteredAlertModal extends React.Component {
   }
 
   renderCancelBtn = () => {
+    if (this.props.isPreviewMode) {
+      return null
+    }
+
     return (
       <Button
         tooltipID={this.TOOLTIP_ID}
@@ -444,6 +458,10 @@ class CustomFilteredAlertModal extends React.Component {
     )
   }
   renderDeleteBtn = () => {
+    if (this.props.isPreviewMode) {
+      return null
+    }
+
     return (
       <Button
         type='danger'
@@ -497,6 +515,7 @@ class CustomFilteredAlertModal extends React.Component {
               isLoadingBaseDataAlertQueryResponse={this.state.isLoadingBaseDataAlertQueryResponse}
               onCustomFiltersChange={this.updateCustomFilters}
               customFilters={this.state.customFilters}
+              isPreviewMode={this.props.isPreviewMode}
             />
           </div>
         </div>
@@ -530,6 +549,7 @@ class CustomFilteredAlertModal extends React.Component {
           categories={this.state.categories || []}
           enableAlphaAlertSettings={this.props.enableAlphaAlertSettings}
           isCompositeAlert={true}
+          isPreviewMode={this.props.isPreviewMode}
         />
       </div>
     )
@@ -546,7 +566,7 @@ class CustomFilteredAlertModal extends React.Component {
     return (
       <>
         {this.renderConditionsStep()}
-        {this.renderComposeMessageStep()}
+        {!this.props.isPreviewMode && this.renderComposeMessageStep()}
       </>
     )
   }
@@ -616,7 +636,9 @@ class CustomFilteredAlertModal extends React.Component {
           bodyClassName='react-autoql-data-alert-modal-body'
           overlayStyle={{ zIndex: '9998' }}
           title={
-            this.state.isEditingDataAlert
+            this.props.isPreviewMode
+              ? CUSTOM_FILTERED_ALERT_MODAL_TITLES.PREVIEW
+              : this.state.isEditingDataAlert
               ? CUSTOM_FILTERED_ALERT_MODAL_TITLES.EDIT
               : CUSTOM_FILTERED_ALERT_MODAL_TITLES.CREATE
           }
@@ -624,9 +646,10 @@ class CustomFilteredAlertModal extends React.Component {
           ref={(r) => (this.modalRef = r)}
           isVisible={this.props.isVisible}
           onClose={this.props.onClose}
-          confirmOnClose={true}
+          confirmOnClose={!this.props.isPreviewMode}
           enableBodyScroll
           width='1200px'
+          height='auto'
           footer={this.renderFooter()}
           onOpened={this.props.onOpened}
           onClosed={this.props.onClosed}
