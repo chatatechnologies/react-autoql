@@ -220,6 +220,7 @@ export default class RuleSimple extends React.Component {
     baseDataAlertColumns: PropTypes.array,
     baseDataAlertQueryResponse: PropTypes.object,
     isLoadingBaseDataAlertQueryResponse: PropTypes.bool,
+    isPreviewMode: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -237,6 +238,7 @@ export default class RuleSimple extends React.Component {
     baseDataAlertColumns: [],
     baseDataAlertQueryResponse: {},
     isLoadingBaseDataAlertQueryResponse: false,
+    isPreviewMode: false,
   }
 
   componentDidMount = () => {
@@ -1949,6 +1951,7 @@ export default class RuleSimple extends React.Component {
             customFilters={this.props.customFilters}
             storedInitialData={this.state.storedInitialData}
             tooltipID={this.props.tooltipID}
+            isPreviewMode={this.props.isPreviewMode}
           />
         </div>
         {this.state.isDisabledCustomList && <div>{this.state.disabledReason}</div>}
@@ -1960,12 +1963,14 @@ export default class RuleSimple extends React.Component {
     if (this.props.conditionStatementOnly) {
       return null
     }
+    const isInputDisabled = this.props.isPreviewMode
 
     return (
       <ErrorBoundary>
         <div
           className={`react-autoql-rule-simple
-        ${this.shouldRenderValidationSection() ? 'with-query-validation' : ''}`}
+        ${this.shouldRenderValidationSection() ? 'with-query-validation' : ''}
+        ${this.props.isPreviewMode ? 'preview-mode' : ''}`}
           style={this.props.style}
         >
           {!this.props.isCompositeAlert && this.renderNotificationHeader()}

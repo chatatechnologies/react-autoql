@@ -30,6 +30,7 @@ class AppearanceSection extends React.Component {
     categories: PropTypes.array,
     enableAlphaAlertSettings: PropTypes.bool,
     isCompositeAlert: PropTypes.bool,
+    isPreviewMode: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -46,6 +47,7 @@ class AppearanceSection extends React.Component {
     categories: [],
     enableAlphaAlertSettings: false,
     isCompositeAlert: false,
+    isPreviewMode: false,
   }
 
   renderDataAlertDescriptionInput = () => {
