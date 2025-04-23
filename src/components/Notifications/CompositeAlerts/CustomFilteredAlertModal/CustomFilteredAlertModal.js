@@ -659,7 +659,6 @@ class CustomFilteredAlertModal extends React.Component {
             key={`data-alert-modal-content-${this.COMPONENT_KEY}`}
             ref={(r) => (this.contentRef = r)}
             className='react-autoql-data-alert-modal-content'
-            style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
           >
             {this.renderContent()}
           </div>

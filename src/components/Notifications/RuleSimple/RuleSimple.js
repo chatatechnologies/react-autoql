@@ -1969,8 +1969,8 @@ export default class RuleSimple extends React.Component {
       <ErrorBoundary>
         <div
           className={`react-autoql-rule-simple
-        ${this.shouldRenderValidationSection() ? 'with-query-validation' : ''}
-        ${this.props.isPreviewMode ? 'preview-mode' : ''}`}
+${this.shouldRenderValidationSection() && 'with-query-validation'}
+${this.props.isPreviewMode && 'preview-mode'}`}
           style={this.props.style}
         >
           {!this.props.isCompositeAlert && this.renderNotificationHeader()}
