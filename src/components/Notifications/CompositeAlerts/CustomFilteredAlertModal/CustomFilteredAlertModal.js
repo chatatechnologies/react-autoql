@@ -566,7 +566,7 @@ class CustomFilteredAlertModal extends React.Component {
     return (
       <>
         {this.renderConditionsStep()}
-        {this.props.isPreviewMode ? null : this.renderComposeMessageStep()}
+        {!this.props.isPreviewMode && this.renderComposeMessageStep()}
       </>
     )
   }
