@@ -1524,7 +1524,7 @@ export default class CustomColumnModal extends React.Component {
           )}
           {this.state.selectedFnOperation === CustomColumnValues.PERCENT_TOTAL && (
             <>
-              <div>PERCENT TOTAL</div>
+              <div>PERCENT OF TOTAL</div>
               <div>
                 <Select
                   label='Total % of Column'
