@@ -65,6 +65,8 @@ import {
   getCleanColumnName,
   isDrilldown,
   CustomColumnTypes,
+  formatFiltersForTabulator,
+  formatSortersForTabulator,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -147,8 +149,8 @@ export class QueryOutput extends React.Component {
     // Set initial table params to be any filters or sorters that
     // are already present in the current query
     this.formattedTableParams = {
-      filters: this.queryResponse?.data?.data?.fe_req?.filters || [],
-      sorters: this.queryResponse?.data?.data?.fe_req?.sorters || [],
+      filters: this.queryResponse?.data?.data?.fe_req?.filters || props?.initialFormattedTableParams?.filters || [],
+      sorters: this.queryResponse?.data?.data?.fe_req?.sorters || props?.initialFormattedTableParams?.sorters || [],
     }
 
     this.DEFAULT_TABLE_PAGE_SIZE = 100
@@ -215,6 +217,7 @@ export class QueryOutput extends React.Component {
     onNewData: PropTypes.func,
     onCustomColumnUpdate: PropTypes.func,
     enableTableContextMenu: PropTypes.bool,
+    initialFormattedTableParams: PropTypes.shape({}),
   }
 
   static defaultProps = {
@@ -253,6 +256,7 @@ export class QueryOutput extends React.Component {
     allowColumnAddition: false,
     enableTableContextMenu: true,
     subjects: [],
+    initialFormattedTableParams: undefined,
     onTableConfigChange: () => {},
     onAggConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
@@ -332,15 +336,20 @@ export class QueryOutput extends React.Component {
       const columnsChanged = this.state.columnChangeCount !== prevState.columnChangeCount
       if (columnsChanged) {
         this.tableID = uuid()
+        const dataConfig = {
+          tableConfig: this.tableConfig,
+          pivotTableConfig: this.pivotTableConfig,
+        }
+
         this.props.onColumnChange(
           this.queryResponse?.data?.data?.fe_req?.display_overrides,
           this.state.columns,
           this.queryResponse?.data?.data?.fe_req?.additional_selects,
           this.queryResponse,
-          {
-            tableConfig: this.tableConfig,
-            pivotTableConfig: this.pivotTableConfig,
-          },
+          dataConfig,
+          this.queryResponse?.data?.data?.fe_req?.filters,
+          this.queryResponse?.data?.data?.fe_req?.orders,
+          this.queryResponse?.data?.data?.fe_req?.session_filter_locks,
         )
 
         if (this.shouldGeneratePivotData()) {
@@ -915,12 +924,12 @@ export class QueryOutput extends React.Component {
   queryFn = async (args = {}) => {
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
     const allFilters = this.getCombinedFilters()
-
     this.cancelCurrentRequest()
     this.axiosSource = axios.CancelToken?.source()
 
     this.setState({ isLoadingData: true })
 
+    const sessionFilters = queryRequestData?.session_filter_locks || (this.props.scope === 'dashboards' ? this.initialFormattedTableParams?.sessionFilters : [])
     let response
 
     if (isDrilldown(this.queryResponse)) {
@@ -931,7 +940,7 @@ export class QueryOutput extends React.Component {
           source: this.props.source,
           scope: this.props.scope,
           translation: queryRequestData?.translation,
-          filters: queryRequestData?.session_filter_locks,
+          filters: sessionFilters,
           pageSize: queryRequestData?.page_size,
           test: queryRequestData?.test,
           groupBys: queryRequestData?.columns,
@@ -952,7 +961,7 @@ export class QueryOutput extends React.Component {
           query: queryRequestData?.text,
           translation: queryRequestData?.translation,
           userSelection: queryRequestData?.disambiguation,
-          filters: queryRequestData?.session_filter_locks,
+          filters: sessionFilters,
           test: queryRequestData?.test,
           pageSize: queryRequestData?.page_size,
           orders: this.formattedTableParams?.sorters,
@@ -1278,12 +1287,28 @@ export class QueryOutput extends React.Component {
     this.isOriginalData = false
     this.queryResponse = response
     this.tableData = response?.data?.data?.rows || []
-
     if (this.shouldGeneratePivotData()) {
       this.generatePivotData()
     }
 
     this.props.onNewData()
+
+    if (this.props.scope === 'dashboards') {
+      const dataConfig = {
+        tableConfig: this.tableConfig,
+        pivotTableConfig: this.pivotTableConfig,
+      }
+      this.props.onColumnChange(
+        response?.data?.data?.fe_req?.display_overrides,
+        this.state.columns,
+        response?.data?.data?.fe_req?.additional_selects,
+        response,
+        dataConfig,
+        response?.data?.data?.fe_req?.filters,
+        response?.data?.data?.fe_req?.orders,
+        response?.data?.data?.fe_req?.session_filter_locks,
+      )
+    }
 
     this.setState({ chartID: uuid() })
   }
@@ -1292,7 +1317,6 @@ export class QueryOutput extends React.Component {
     if (!filters || _isEqual(filters, this.tableParams?.filter)) {
       return
     }
-
     this.tableParams.filter = _cloneDeep(filters)
     this.formattedTableParams = formatTableParams(this.tableParams, this.getColumns())
   }
@@ -2472,6 +2496,14 @@ export class QueryOutput extends React.Component {
       return this.renderMessage('Error: There was no data supplied for this table')
     }
 
+    if (!this.tableParams.filter && this.props?.initialFormattedTableParams?.filters) {
+      this.tableParams.filter = formatFiltersForTabulator(this.props?.initialFormattedTableParams?.filters, this.state.columns)
+    }
+
+    if (!this.tableParams.sort && this.props?.initialFormattedTableParams?.sorters) {
+      this.tableParams.sort = formatSortersForTabulator(this.props?.initialFormattedTableParams?.sorters, this.state.columns)
+    }
+
     return (
       <ErrorBoundary>
         <ChataTable
@@ -2740,7 +2772,6 @@ export class QueryOutput extends React.Component {
 
   renderResponse = () => {
     const { displayType } = this.state
-
     if (this.hasError(this.queryResponse)) {
       return this.renderError(this.queryResponse)
     }

@@ -274,13 +274,15 @@ export default class ChataTable extends React.Component {
         }
       })
       this.setHeaderInputEventListeners()
-      this.setFilters()
+      this.setFilter()
+      this.setSorters()
       this.clearLoadingIndicators()
     }
 
     if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
       this.tableParams.filter = this.props?.initialTableParams?.filter
       this.setFilters(this.props?.initialTableParams?.filter)
+      this.setSorters(this.props?.initialTableParams?.sort)
       this.setHeaderInputEventListeners()
       if (!this.props.hidden) {
         this.setTableHeight()
@@ -580,15 +582,10 @@ export default class ChataTable extends React.Component {
   ajaxRequestFunc = async (props, params) => {
     if (this.useRemote === 'local') {
       const fullData = props.response?.data?.data?.rows || []
-
       // Initialize table with complete dataset
       this.ref?.tabulator?.setData(fullData)
-
-      //   return {
-      //     data: [], // Return empty since data is already set
-      //     last_page: 1,
-      //   }
     }
+
     const initialData = {
       rows: this.getRows(this.props, 1),
       page: 1,
@@ -629,6 +626,7 @@ export default class ChataTable extends React.Component {
         await currentEventLoopEnd()
 
         this.props.onTableParamsChange(params, nextTableParamsFormatted)
+
         this.props.onNewData(responseWrapper)
 
         const totalPages = this.getTotalPages(responseWrapper)
@@ -1057,8 +1055,8 @@ export default class ChataTable extends React.Component {
     this.setState({ dateRangeSelection })
   }
 
-  setSorters = () => {
-    const sorterValues = this.tableParams?.sort
+  setSorters = (newSorters) => {
+    const sorterValues = newSorters || this.tableParams?.sort
     this.settingSorters = true
 
     if (sorterValues) {

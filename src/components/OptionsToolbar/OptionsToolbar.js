@@ -458,10 +458,9 @@ export class OptionsToolbar extends React.Component {
                 <li
                   key={`custom-option-${i}`}
                   onClick={() => {
-                    this.setState({ activeMenu: undefined })
                     const responseRef = this.props.responseRef
                     const responseCopy = _cloneDeep(responseRef?.queryResponse)
-
+                    this.setState({ activeMenu: undefined })
                     option.callback?.({
                       query: responseRef?.queryResponse?.data?.data?.text,
                       queryResponse: responseCopy,
@@ -469,6 +468,9 @@ export class OptionsToolbar extends React.Component {
                       displayType: responseRef?.state?.displayType,
                       columnSelects: responseCopy?.data?.data?.fe_req?.additional_selects,
                       displayOverrides: responseCopy?.data?.data?.fe_req?.display_overrides,
+                      filters: responseCopy?.data?.data?.fe_req?.session_filter_locks,
+                      tableFilters: responseCopy?.data?.data?.fe_req?.filters,
+                      orders: responseCopy?.data?.data?.fe_req?.orders,
                       dataConfig: {
                         tableConfig: _cloneDeep(responseRef?.tableConfig),
                         pivotTableConfig: _cloneDeep(responseRef?.pivotTableConfig),

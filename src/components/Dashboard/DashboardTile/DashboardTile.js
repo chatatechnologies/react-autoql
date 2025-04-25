@@ -89,6 +89,16 @@ export class DashboardTile extends React.Component {
       isTopExecuted: !!tile.queryResponse,
       isBottomExecuted:
         tile.splitView && (this.areTopAndBottomSameQuery() ? !!tile.queryResponse : !!tile.secondQueryResponse),
+      initialFormattedTableParams: {
+        filters: tile?.tableFilters,
+        sorters: tile?.orders,
+        sessionFilters: tile?.filters
+      },
+      initialSecondFormattedTableParams: {
+        filters: tile?.secondTableFilters,
+        sorters: tile?.secondOrders,
+        sessionFilters: tile?.filters
+      },
     }
   }
 
@@ -304,7 +314,10 @@ export class DashboardTile extends React.Component {
 
       const useSecondAxiosSource = isSecondHalf && !this.areTopAndBottomSameQuery()
       const additionalColumnSelects = isSecondHalf ? this.props.tile.secondColumnSelects : this.props.tile.columnSelects
-      const currentDisplayOverrides = isSecondHalf ? [] : this.props.tile?.displayOverrides
+      const currentDisplayOverrides = isSecondHalf ? this.props.tile?.secondDisplayOverrides : this.props.tile?.displayOverrides
+      const currentSessionFilters = isSecondHalf ? this.props.tile.secondFilters : this.props.tile.filters
+      const currentOrders = isSecondHalf ? this.props.tile.secondOrders : this.props.tile.orders
+      const currentFilter = isSecondHalf ? this.props.tile.secondTableFilters : this.props.tile.tableFilters
       const cancelToken = useSecondAxiosSource ? this.secondAxiosSource?.token : this.axiosSource?.token
 
       const requestData = {
@@ -316,6 +329,9 @@ export class DashboardTile extends React.Component {
         skipQueryValidation: skipQueryValidation,
         newColumns: additionalColumnSelects,
         displayOverrides: currentDisplayOverrides,
+        filters: currentSessionFilters,
+        orders: currentOrders,
+        tableFilters: currentFilter,
         // Hardcode this for now until we change the filter lock blacklist to a whitelist
         // mergeSources(this.props.source, source),
         source: 'dashboards.user',
@@ -325,7 +341,6 @@ export class DashboardTile extends React.Component {
         pageSize,
         query,
       }
-
       return runQuery(requestData)
         .then((response) => {
           if (isSecondHalf) {
@@ -730,8 +745,8 @@ export class DashboardTile extends React.Component {
   onDisplayTypeChange = (displayType) => this.debouncedSetParamsForTile({ displayType })
   onBucketSizeChange = (bucketSize) => this.debouncedSetParamsForTile({ bucketSize })
 
-  onColumnChange = (displayOverrides, columns, columnSelects, queryResponse, dataConfig) => {
-    this.debouncedSetParamsForTile({ columnSelects, queryResponse, dataConfig, displayOverrides })
+  onColumnChange = (displayOverrides, columns, columnSelects, queryResponse, dataConfig, tableFilters, orders, filters) => {
+    this.debouncedSetParamsForTile({ columnSelects, queryResponse, dataConfig, displayOverrides, tableFilters, orders, filters })
   }
 
   onSecondAggConfigChange = (secondAggConfig) => this.debouncedSetParamsForTile({ secondAggConfig })
@@ -740,8 +755,10 @@ export class DashboardTile extends React.Component {
   onSecondBucketSizeChange = (secondBucketSize) => this.debouncedSetParamsForTile({ secondBucketSize })
   onSecondCustomColumnUpdate = (secondCustomColumns) => this.debouncedSetParamsForTile({ secondCustomColumns })
 
-  onSecondColumnChange = (secondColumns, secondColumnSelects, secondQueryResponse, secondDataConfig) =>
-    this.debouncedSetParamsForTile({ secondColumnSelects, secondQueryResponse, secondDataConfig })
+
+  onSecondColumnChange = (secondDisplayOverrides, secondColumns, secondColumnSelects, secondQueryResponse, secondDataConfig, secondTableFilters, secondOrders, secondFilters) => {
+    this.debouncedSetParamsForTile({ secondDisplayOverrides, secondColumnSelects, secondQueryResponse, secondDataConfig, secondTableFilters, secondTableFilters, secondFilters })
+  }
 
   reportProblemCallback = () => {
     if (this.optionsToolbarRef?._isMounted) {
@@ -1145,6 +1162,7 @@ export class DashboardTile extends React.Component {
         onPageSizeChange: this.onPageSizeChange,
         onBucketSizeChange: this.onBucketSizeChange,
         bucketSize: this.props.tile.bucketSize,
+        initialFormattedTableParams: this.state.initialFormattedTableParams,
       },
       vizToolbarProps: {
         ref: (r) => (this.vizToolbarRef = r),
@@ -1166,7 +1184,6 @@ export class DashboardTile extends React.Component {
 
   renderBottomResponse = () => {
     const isQuerySameAsTop = this.areTopAndBottomSameQuery()
-
     let isExecuting = this.state.isBottomExecuting
     let isExecuted = this.state.isBottomExecuted
     let queryRequestData = this.bottomRequestData
@@ -1223,6 +1240,7 @@ export class DashboardTile extends React.Component {
         onBucketSizeChange: this.onSecondBucketSizeChange,
         onColumnChange: this.onSecondColumnChange,
         bucketSize: this.props.tile.secondBucketSize,
+        initialFormattedTableParams: this.state.initialSecondFormattedTableParams,
       },
       vizToolbarProps: {
         ref: (r) => (this.secondVizToolbarRef = r),
