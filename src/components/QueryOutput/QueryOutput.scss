@@ -351,3 +351,40 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+.react-autoql-cell-value-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.react-autoql-cell-value {
+  flex: 1;
+}
+
+.react-autoql-copyable-cell {
+  cursor: context-menu !important;
+}
+
+.react-autoql-cell-value-wrapper {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.react-autoql-cell-value {
+  width: 100%;
+  text-align: inherit;
+}
+
+#react-autoql-query-output-tooltip {
+  cursor: pointer !important;
+}
+
+#react-autoql-query-output-tooltip:hover {
+  background-color: #f0f0f0 !important;
+}

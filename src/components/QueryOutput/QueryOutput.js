@@ -929,7 +929,9 @@ export class QueryOutput extends React.Component {
 
     this.setState({ isLoadingData: true })
 
-    const sessionFilters = queryRequestData?.session_filter_locks || (this.props.scope === 'dashboards' ? this.initialFormattedTableParams?.sessionFilters : [])
+    const sessionFilters =
+      queryRequestData?.session_filter_locks ||
+      (this.props.scope === 'dashboards' ? this.initialFormattedTableParams?.sessionFilters : [])
     let response
 
     if (isDrilldown(this.queryResponse)) {
@@ -1906,14 +1908,86 @@ export class QueryOutput extends React.Component {
         newCol.cssClass = `${newCol.cssClass} DRILLDOWN`
       }
 
-      // Cell formattingg
+      // Cell formatting
+
       newCol.formatter = (cell, formatterParams, onRendered) => {
-        return formatElement({
-          element: cell.getValue(),
+        const cellValue = cell.getValue()
+        const tooltipId = this.props.tooltipID ?? this.TOOLTIP_ID
+        const defaultTooltipText = 'Right-click to copy value'
+        const copiedTooltipText = 'Copied!'
+        const errorTooltipText = 'Copy failed. Please try again.'
+        const successTimeout = 1500
+        const errorTimeout = 3000
+
+        const wrapper = document.createElement('div')
+        wrapper.className = 'react-autoql-cell-value-wrapper'
+        const valueContainer = document.createElement('div')
+        valueContainer.className = 'react-autoql-cell-value'
+        const formattedValue = formatElement({
+          element: cellValue,
           column: newCol,
           config: getDataFormatting(this.props.dataFormatting),
           htmlElement: cell.getElement(),
         })
+        valueContainer.innerHTML = formattedValue
+        wrapper.appendChild(valueContainer)
+        if (cellValue !== null && cellValue !== undefined && cellValue !== '') {
+          onRendered(() => {
+            const cellElement = cell.getElement()
+            cellElement.setAttribute('data-tooltip-id', tooltipId)
+            cellElement.setAttribute('data-tooltip-content', defaultTooltipText)
+            cellElement.classList.add('react-autoql-copyable-cell')
+            cellElement.addEventListener('contextmenu', (e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              const textToCopy = formatElement({
+                element: cellValue,
+                column: newCol,
+                config: getDataFormatting(this.props.dataFormatting),
+                forExport: true,
+              })
+
+              copyToClipboard(textToCopy, cellElement)
+            })
+          })
+        }
+
+        return wrapper
+
+        function copyToClipboard(text, element) {
+          const textarea = document.createElement('textarea')
+          textarea.value = text
+          textarea.style.position = 'absolute'
+          textarea.style.opacity = '0'
+          textarea.style.left = '-9999px'
+
+          document.body.appendChild(textarea)
+
+          try {
+            textarea.select()
+            textarea.setSelectionRange(0, textarea.value.length)
+            const successful = document.execCommand('copy')
+            if (successful) {
+              element.setAttribute('data-tooltip-content', copiedTooltipText)
+              setTimeout(() => {
+                element.setAttribute('data-tooltip-content', defaultTooltipText)
+              }, successTimeout)
+            } else {
+              element.setAttribute('data-tooltip-content', errorTooltipText)
+              setTimeout(() => {
+                element.setAttribute('data-tooltip-content', defaultTooltipText)
+              }, errorTimeout)
+            }
+          } catch (err) {
+            console.error('Failed to copy: ', err)
+            element.setAttribute('data-tooltip-content', errorTooltipText)
+            setTimeout(() => {
+              element.setAttribute('data-tooltip-content', defaultTooltipText)
+            }, errorTimeout)
+          } finally {
+            document.body.removeChild(textarea)
+          }
+        }
       }
 
       // Always have filtering enabled, but only
@@ -2497,11 +2571,17 @@ export class QueryOutput extends React.Component {
     }
 
     if (!this.tableParams.filter && this.props?.initialFormattedTableParams?.filters) {
-      this.tableParams.filter = formatFiltersForTabulator(this.props?.initialFormattedTableParams?.filters, this.state.columns)
+      this.tableParams.filter = formatFiltersForTabulator(
+        this.props?.initialFormattedTableParams?.filters,
+        this.state.columns,
+      )
     }
 
     if (!this.tableParams.sort && this.props?.initialFormattedTableParams?.sorters) {
-      this.tableParams.sort = formatSortersForTabulator(this.props?.initialFormattedTableParams?.sorters, this.state.columns)
+      this.tableParams.sort = formatSortersForTabulator(
+        this.props?.initialFormattedTableParams?.sorters,
+        this.state.columns,
+      )
     }
 
     return (
