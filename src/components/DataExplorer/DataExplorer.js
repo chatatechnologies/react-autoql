@@ -16,6 +16,8 @@ import {
   isColumnNumberType,
   dataFormattingDefault,
   REQUEST_CANCELLED_ERROR,
+  formatElement,
+  getDataFormatting,
 } from 'autoql-fe-utils'
 
 import DataPreview from './DataPreview'
@@ -278,7 +280,11 @@ export default class DataExplorer extends React.Component {
     let defaultValue = ''
     if (isColumnNumberType(column)) {
       // Use median value from dataset (median not avg, so it is guaranteed to conform with the dataset)
-      defaultValue = median(columnData)
+      defaultValue = formatElement({
+        element: median(columnData),
+        column: column,
+        config: getDataFormatting(this.props.dataFormatting),
+      })
     }
 
     // This will restrict sample queries with groupbys to only show "filter" queries and not "groupby" queries
