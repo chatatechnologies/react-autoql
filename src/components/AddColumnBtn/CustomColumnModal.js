@@ -894,9 +894,10 @@ export default class CustomColumnModal extends React.Component {
   }
 
   renderWindowFnChunk = (chunk, i) => {
+    const label = this.getLabelForOperator(WINDOW_FUNCTIONS[chunk.fn]) ?? chunk.fn.replaceAll('_', ' ')
     return (
       <span>
-        <span>{this.getLabelForOperator(WINDOW_FUNCTIONS[chunk.fn])}( </span>
+        <span>{label}( </span>
         {chunk.column && (
           <Select
             key={`custom-column-select-${i}`}
