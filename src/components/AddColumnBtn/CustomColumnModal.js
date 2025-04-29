@@ -927,7 +927,7 @@ export default class CustomColumnModal extends React.Component {
               outlined={false}
               showArrow={false}
               className='react-autoql-available-column-selector'
-              onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
+              onChange={(value) => this.changeChunkGroupby(value, chunk.type, i)}
               options={getVisibleColumns(this.props.columns).map((col) => {
                 return {
                   value: col.field,
@@ -948,7 +948,7 @@ export default class CustomColumnModal extends React.Component {
               outlined={false}
               showArrow={false}
               className='react-autoql-available-column-selector'
-              onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
+              onChange={(value) => this.changeChunkOrderby(value, chunk.type, i)}
               options={getVisibleColumns(this.props.columns).map((col) => {
                 return {
                   value: col.field,
