@@ -365,10 +365,6 @@
   flex: 1;
 }
 
-.react-autoql-copyable-cell {
-  cursor: context-menu !important;
-}
-
 .react-autoql-cell-value-wrapper {
   display: flex;
   align-items: center;
@@ -387,4 +383,9 @@
 
 #react-autoql-query-output-tooltip:hover {
   background-color: #f0f0f0 !important;
+}
+.hidden-clipboard-textarea {
+  position: absolute;
+  opacity: 0;
+  left: -9999px;
 }

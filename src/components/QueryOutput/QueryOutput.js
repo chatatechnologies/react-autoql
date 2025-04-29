@@ -93,6 +93,9 @@ export class QueryOutput extends React.Component {
     this.CHART_TOOLTIP_ID = `react-autoql-query-output-chart-tooltip-${this.COMPONENT_KEY}`
     this.ALLOW_NUMERIC_STRING_COLUMNS = true
     this.MAX_PIVOT_TABLE_COLUMNS = 20
+    this.DEFAULT_TOOLTIP_TEXT = 'Right-click to copy value'
+    this.COPIED_TOOLTIP_TEXT = 'Copied!'
+    this.ERROR_TOOLTIP_TEXT = 'Copy failed. Please try again.'
 
     let response = props.queryResponse
 
@@ -1862,7 +1865,55 @@ export class QueryOutput extends React.Component {
   getDrilldownGroupby = (queryResponse, newCol) => {
     return queryResponse?.data?.data?.fe_req?.columns?.find((column) => newCol.name === column.name)
   }
+  copyToClipboard(text, element) {
+    const successTimeout = 1500
+    const errorTimeout = 3000
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.className = 'hidden-clipboard-textarea'
+    document.body.appendChild(textarea)
+    try {
+      textarea.select()
+      textarea.setSelectionRange(0, textarea.value.length)
+      const successful = document.execCommand('copy')
+      if (successful) {
+        element.setAttribute('data-tooltip-content', this.COPIED_TOOLTIP_TEXT)
+        setTimeout(() => {
+          element.setAttribute('data-tooltip-content', this.DEFAULT_TOOLTIP_TEXT)
+        }, successTimeout)
+      } else {
+        element.setAttribute('data-tooltip-content', this.ERROR_TOOLTIP_TEXT)
+        setTimeout(() => {
+          element.setAttribute('data-tooltip-content', this.DEFAULT_TOOLTIP_TEXT)
+        }, errorTimeout)
+      }
+    } catch (err) {
+      console.error('Failed to copy: ', err)
+      element.setAttribute('data-tooltip-content', this.ERROR_TOOLTIP_TEXT)
+      setTimeout(() => {
+        element.setAttribute('data-tooltip-content', this.DEFAULT_TOOLTIP_TEXT)
+      }, errorTimeout)
+    } finally {
+      document.body.removeChild(textarea)
+    }
+  }
+  addCopyToClipboardListener = (cellElement, cellValue, newCol, dataFormatting, tooltipId) => {
+    cellElement.setAttribute('data-tooltip-id', tooltipId)
+    cellElement.setAttribute('data-tooltip-content', this.DEFAULT_TOOLTIP_TEXT)
 
+    cellElement.addEventListener('contextmenu', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const textToCopy = formatElement({
+        element: cellValue,
+        column: newCol,
+        config: dataFormatting,
+        forExport: true,
+      })
+
+      this.copyToClipboard(textToCopy, cellElement)
+    })
+  }
   formatColumnsForTable = (columns, additionalSelects = [], aggConfig = {}) => {
     // todo: do this inside of chatatable
     if (!columns) {
@@ -1912,13 +1963,6 @@ export class QueryOutput extends React.Component {
 
       newCol.formatter = (cell, formatterParams, onRendered) => {
         const cellValue = cell.getValue()
-        const tooltipId = this.props.tooltipID ?? this.TOOLTIP_ID
-        const defaultTooltipText = 'Right-click to copy value'
-        const copiedTooltipText = 'Copied!'
-        const errorTooltipText = 'Copy failed. Please try again.'
-        const successTimeout = 1500
-        const errorTimeout = 3000
-
         const wrapper = document.createElement('div')
         wrapper.className = 'react-autoql-cell-value-wrapper'
         const valueContainer = document.createElement('div')
@@ -1931,63 +1975,20 @@ export class QueryOutput extends React.Component {
         })
         valueContainer.innerHTML = formattedValue
         wrapper.appendChild(valueContainer)
-        if (cellValue !== null && cellValue !== undefined && cellValue !== '') {
+        if (cellValue != null && cellValue !== '') {
           onRendered(() => {
             const cellElement = cell.getElement()
-            cellElement.setAttribute('data-tooltip-id', tooltipId)
-            cellElement.setAttribute('data-tooltip-content', defaultTooltipText)
-            cellElement.classList.add('react-autoql-copyable-cell')
-            cellElement.addEventListener('contextmenu', (e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              const textToCopy = formatElement({
-                element: cellValue,
-                column: newCol,
-                config: getDataFormatting(this.props.dataFormatting),
-                forExport: true,
-              })
-
-              copyToClipboard(textToCopy, cellElement)
-            })
+            this.addCopyToClipboardListener(
+              cellElement,
+              cellValue,
+              newCol,
+              getDataFormatting(this.props.dataFormatting),
+              this.props.tooltipID ?? this.TOOLTIP_ID,
+            )
           })
         }
 
         return wrapper
-
-        function copyToClipboard(text, element) {
-          const textarea = document.createElement('textarea')
-          textarea.value = text
-          textarea.style.position = 'absolute'
-          textarea.style.opacity = '0'
-          textarea.style.left = '-9999px'
-
-          document.body.appendChild(textarea)
-
-          try {
-            textarea.select()
-            textarea.setSelectionRange(0, textarea.value.length)
-            const successful = document.execCommand('copy')
-            if (successful) {
-              element.setAttribute('data-tooltip-content', copiedTooltipText)
-              setTimeout(() => {
-                element.setAttribute('data-tooltip-content', defaultTooltipText)
-              }, successTimeout)
-            } else {
-              element.setAttribute('data-tooltip-content', errorTooltipText)
-              setTimeout(() => {
-                element.setAttribute('data-tooltip-content', defaultTooltipText)
-              }, errorTimeout)
-            }
-          } catch (err) {
-            console.error('Failed to copy: ', err)
-            element.setAttribute('data-tooltip-content', errorTooltipText)
-            setTimeout(() => {
-              element.setAttribute('data-tooltip-content', defaultTooltipText)
-            }, errorTimeout)
-          } finally {
-            document.body.removeChild(textarea)
-          }
-        }
       }
 
       // Always have filtering enabled, but only
