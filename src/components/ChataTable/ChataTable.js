@@ -1292,7 +1292,7 @@ export default class ChataTable extends React.Component {
         content={
           <div className='more-options-menu' data-test='react-autoql-toolbar-more-options'>
             <ul className='context-menu-list'>
-              {!!this.state.contextMenuColumn?.custom && (
+              {!!this.state.contextMenuColumn?.custom && !this.state.contextMenuColumn?.has_window_func && (
                 <li onClick={() => this.onUpdateColumnConfirm()}>
                   <Icon type='edit' />
                   Edit Column
