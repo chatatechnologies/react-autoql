@@ -74,6 +74,7 @@ class DataAlertModal extends React.Component {
     dataFormatting: dataFormattingType,
     autoQLConfig: autoQLConfigType,
     enableAlphaAlertSettings: PropTypes.bool,
+    onDelete: PropTypes.func,
   }
 
   static defaultProps = {
@@ -89,6 +90,7 @@ class DataAlertModal extends React.Component {
     onClosed: () => {},
     onOpened: () => {},
     enableQueryValidation: true,
+    onDelete: () => {},
     dataFormatting: dataFormattingDefault,
     autoQLConfig: autoQLConfigDefault,
     enableAlphaAlertSettings: false,
