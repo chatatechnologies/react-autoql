@@ -466,6 +466,12 @@ class NotificationFeed extends React.Component {
   onDataAlertSave = () => {
     this.setState({ isEditModalVisible: false })
   }
+  onDataAlertDelete = () => {
+    this.setState({
+      isEditModalVisible: false,
+    })
+    this.refreshNotifications()
+  }
   onSelectNotificationClick = () => {
     this.setState({ displayNotificationItemCheckbox: true })
   }
@@ -646,6 +652,8 @@ class NotificationFeed extends React.Component {
         onClose={this.closeDataAlertModal}
         onOpened={this.props.onModalOpen}
         onClosed={this.props.onModalClose}
+        onDelete={this.onDataAlertDelete}
+        onSuccessAlert={this.props.onSuccessCallback}
         currentDataAlert={this.state.activeDataAlert}
         onSave={this.onDataAlertSave}
         onErrorCallback={this.props.onErrorCallback}
