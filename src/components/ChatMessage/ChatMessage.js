@@ -96,12 +96,12 @@ export default class ChatMessage extends React.Component {
     onRTValueLabelClick: undefined,
     isVisibleInDOM: true,
     subjects: [],
-    onSuggestionClick: () => { },
-    onErrorCallback: () => { },
-    onSuccessAlert: () => { },
-    onConditionClickCallback: () => { },
-    scrollToBottom: () => { },
-    onNoneOfTheseClick: () => { },
+    onSuggestionClick: () => {},
+    onErrorCallback: () => {},
+    onSuccessAlert: () => {},
+    onConditionClickCallback: () => {},
+    scrollToBottom: () => {},
+    onNoneOfTheseClick: () => {},
   }
 
   componentDidMount = () => {
@@ -401,7 +401,9 @@ export default class ChatMessage extends React.Component {
                 subjects={this.props.subjects}
                 queryResponseRef={this.responseRef}
                 allowColumnAddition={this.props.isResponse && this.props.type !== 'text'}
-                enableEditReverseTranslation={this.props.autoQLConfig.enableEditReverseTranslation && !isDrilldown(this.responseRef.queryResponse)}
+                enableEditReverseTranslation={
+                  this.props.autoQLConfig.enableEditReverseTranslation && !isDrilldown(this.responseRef.queryResponse)
+                }
               />
             </div>
           ) : null}
