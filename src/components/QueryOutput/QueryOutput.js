@@ -65,6 +65,8 @@ import {
   getCleanColumnName,
   isDrilldown,
   CustomColumnTypes,
+  formatFiltersForTabulator,
+  formatSortersForTabulator,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -91,6 +93,9 @@ export class QueryOutput extends React.Component {
     this.CHART_TOOLTIP_ID = `react-autoql-query-output-chart-tooltip-${this.COMPONENT_KEY}`
     this.ALLOW_NUMERIC_STRING_COLUMNS = true
     this.MAX_PIVOT_TABLE_COLUMNS = 20
+    this.DEFAULT_TOOLTIP_TEXT = 'Right-click to copy value'
+    this.COPIED_TOOLTIP_TEXT = 'Copied!'
+    this.ERROR_TOOLTIP_TEXT = 'Copy failed. Please try again.'
 
     let response = props.queryResponse
 
@@ -147,8 +152,8 @@ export class QueryOutput extends React.Component {
     // Set initial table params to be any filters or sorters that
     // are already present in the current query
     this.formattedTableParams = {
-      filters: this.queryResponse?.data?.data?.fe_req?.filters || [],
-      sorters: this.queryResponse?.data?.data?.fe_req?.sorters || [],
+      filters: this.queryResponse?.data?.data?.fe_req?.filters || props?.initialFormattedTableParams?.filters || [],
+      sorters: this.queryResponse?.data?.data?.fe_req?.sorters || props?.initialFormattedTableParams?.sorters || [],
     }
 
     this.DEFAULT_TABLE_PAGE_SIZE = 100
@@ -215,6 +220,7 @@ export class QueryOutput extends React.Component {
     onNewData: PropTypes.func,
     onCustomColumnUpdate: PropTypes.func,
     enableTableContextMenu: PropTypes.bool,
+    initialFormattedTableParams: PropTypes.shape({}),
   }
 
   static defaultProps = {
@@ -253,6 +259,7 @@ export class QueryOutput extends React.Component {
     allowColumnAddition: false,
     enableTableContextMenu: true,
     subjects: [],
+    initialFormattedTableParams: undefined,
     onTableConfigChange: () => {},
     onAggConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
@@ -332,15 +339,20 @@ export class QueryOutput extends React.Component {
       const columnsChanged = this.state.columnChangeCount !== prevState.columnChangeCount
       if (columnsChanged) {
         this.tableID = uuid()
+        const dataConfig = {
+          tableConfig: this.tableConfig,
+          pivotTableConfig: this.pivotTableConfig,
+        }
+
         this.props.onColumnChange(
           this.queryResponse?.data?.data?.fe_req?.display_overrides,
           this.state.columns,
           this.queryResponse?.data?.data?.fe_req?.additional_selects,
           this.queryResponse,
-          {
-            tableConfig: this.tableConfig,
-            pivotTableConfig: this.pivotTableConfig,
-          },
+          dataConfig,
+          this.queryResponse?.data?.data?.fe_req?.filters,
+          this.queryResponse?.data?.data?.fe_req?.orders,
+          this.queryResponse?.data?.data?.fe_req?.session_filter_locks,
         )
 
         if (this.shouldGeneratePivotData()) {
@@ -915,12 +927,14 @@ export class QueryOutput extends React.Component {
   queryFn = async (args = {}) => {
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
     const allFilters = this.getCombinedFilters()
-
     this.cancelCurrentRequest()
     this.axiosSource = axios.CancelToken?.source()
 
     this.setState({ isLoadingData: true })
 
+    const sessionFilters =
+      queryRequestData?.session_filter_locks ||
+      (this.props.scope === 'dashboards' ? this.initialFormattedTableParams?.sessionFilters : [])
     let response
 
     if (isDrilldown(this.queryResponse)) {
@@ -931,7 +945,7 @@ export class QueryOutput extends React.Component {
           source: this.props.source,
           scope: this.props.scope,
           translation: queryRequestData?.translation,
-          filters: queryRequestData?.session_filter_locks,
+          filters: sessionFilters,
           pageSize: queryRequestData?.page_size,
           test: queryRequestData?.test,
           groupBys: queryRequestData?.columns,
@@ -952,7 +966,7 @@ export class QueryOutput extends React.Component {
           query: queryRequestData?.text,
           translation: queryRequestData?.translation,
           userSelection: queryRequestData?.disambiguation,
-          filters: queryRequestData?.session_filter_locks,
+          filters: sessionFilters,
           test: queryRequestData?.test,
           pageSize: queryRequestData?.page_size,
           orders: this.formattedTableParams?.sorters,
@@ -1278,12 +1292,28 @@ export class QueryOutput extends React.Component {
     this.isOriginalData = false
     this.queryResponse = response
     this.tableData = response?.data?.data?.rows || []
-
     if (this.shouldGeneratePivotData()) {
       this.generatePivotData()
     }
 
     this.props.onNewData()
+
+    if (this.props.scope === 'dashboards') {
+      const dataConfig = {
+        tableConfig: this.tableConfig,
+        pivotTableConfig: this.pivotTableConfig,
+      }
+      this.props.onColumnChange(
+        response?.data?.data?.fe_req?.display_overrides,
+        this.state.columns,
+        response?.data?.data?.fe_req?.additional_selects,
+        response,
+        dataConfig,
+        response?.data?.data?.fe_req?.filters,
+        response?.data?.data?.fe_req?.orders,
+        response?.data?.data?.fe_req?.session_filter_locks,
+      )
+    }
 
     this.setState({ chartID: uuid() })
   }
@@ -1292,7 +1322,6 @@ export class QueryOutput extends React.Component {
     if (!filters || _isEqual(filters, this.tableParams?.filter)) {
       return
     }
-
     this.tableParams.filter = _cloneDeep(filters)
     this.formattedTableParams = formatTableParams(this.tableParams, this.getColumns())
   }
@@ -1836,7 +1865,55 @@ export class QueryOutput extends React.Component {
   getDrilldownGroupby = (queryResponse, newCol) => {
     return queryResponse?.data?.data?.fe_req?.columns?.find((column) => newCol.name === column.name)
   }
+  copyToClipboard(text, element) {
+    const successTimeout = 1500
+    const errorTimeout = 3000
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.className = 'hidden-clipboard-textarea'
+    document.body.appendChild(textarea)
+    try {
+      textarea.select()
+      textarea.setSelectionRange(0, textarea.value.length)
+      const successful = document.execCommand('copy')
+      if (successful) {
+        element.setAttribute('data-tooltip-content', this.COPIED_TOOLTIP_TEXT)
+        setTimeout(() => {
+          element.setAttribute('data-tooltip-content', this.DEFAULT_TOOLTIP_TEXT)
+        }, successTimeout)
+      } else {
+        element.setAttribute('data-tooltip-content', this.ERROR_TOOLTIP_TEXT)
+        setTimeout(() => {
+          element.setAttribute('data-tooltip-content', this.DEFAULT_TOOLTIP_TEXT)
+        }, errorTimeout)
+      }
+    } catch (err) {
+      console.error('Failed to copy: ', err)
+      element.setAttribute('data-tooltip-content', this.ERROR_TOOLTIP_TEXT)
+      setTimeout(() => {
+        element.setAttribute('data-tooltip-content', this.DEFAULT_TOOLTIP_TEXT)
+      }, errorTimeout)
+    } finally {
+      document.body.removeChild(textarea)
+    }
+  }
+  addCopyToClipboardListener = (cellElement, cellValue, newCol, dataFormatting, tooltipId) => {
+    cellElement.setAttribute('data-tooltip-id', tooltipId)
+    cellElement.setAttribute('data-tooltip-content', this.DEFAULT_TOOLTIP_TEXT)
 
+    cellElement.addEventListener('contextmenu', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const textToCopy = formatElement({
+        element: cellValue,
+        column: newCol,
+        config: dataFormatting,
+        forExport: true,
+      })
+
+      this.copyToClipboard(textToCopy, cellElement)
+    })
+  }
   formatColumnsForTable = (columns, additionalSelects = [], aggConfig = {}) => {
     // todo: do this inside of chatatable
     if (!columns) {
@@ -1882,14 +1959,36 @@ export class QueryOutput extends React.Component {
         newCol.cssClass = `${newCol.cssClass} DRILLDOWN`
       }
 
-      // Cell formattingg
+      // Cell formatting
+
       newCol.formatter = (cell, formatterParams, onRendered) => {
-        return formatElement({
-          element: cell.getValue(),
+        const cellValue = cell.getValue()
+        const wrapper = document.createElement('div')
+        wrapper.className = 'react-autoql-cell-value-wrapper'
+        const valueContainer = document.createElement('div')
+        valueContainer.className = 'react-autoql-cell-value'
+        const formattedValue = formatElement({
+          element: cellValue,
           column: newCol,
           config: getDataFormatting(this.props.dataFormatting),
           htmlElement: cell.getElement(),
         })
+        valueContainer.innerHTML = formattedValue
+        wrapper.appendChild(valueContainer)
+        if (cellValue != null && cellValue !== '') {
+          onRendered(() => {
+            const cellElement = cell.getElement()
+            this.addCopyToClipboardListener(
+              cellElement,
+              cellValue,
+              newCol,
+              getDataFormatting(this.props.dataFormatting),
+              this.props.tooltipID ?? this.TOOLTIP_ID,
+            )
+          })
+        }
+
+        return wrapper
       }
 
       // Always have filtering enabled, but only
@@ -2472,6 +2571,20 @@ export class QueryOutput extends React.Component {
       return this.renderMessage('Error: There was no data supplied for this table')
     }
 
+    if (!this.tableParams.filter && this.props?.initialFormattedTableParams?.filters) {
+      this.tableParams.filter = formatFiltersForTabulator(
+        this.props?.initialFormattedTableParams?.filters,
+        this.state.columns,
+      )
+    }
+
+    if (!this.tableParams.sort && this.props?.initialFormattedTableParams?.sorters) {
+      this.tableParams.sort = formatSortersForTabulator(
+        this.props?.initialFormattedTableParams?.sorters,
+        this.state.columns,
+      )
+    }
+
     return (
       <ErrorBoundary>
         <ChataTable
@@ -2740,7 +2853,6 @@ export class QueryOutput extends React.Component {
 
   renderResponse = () => {
     const { displayType } = this.state
-
     if (this.hasError(this.queryResponse)) {
       return this.renderError(this.queryResponse)
     }

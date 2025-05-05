@@ -340,7 +340,7 @@ export default class CustomColumnModal extends React.Component {
           protoTableColumn += columnFn?.value || 0
         } else if (columnFn?.type === CustomColumnTypes.FUNCTION) {
           protoTableColumn +=
-            columnFn.fn === CustomColumnValues.PERCENT_TOTAL
+            columnFn.fn === CustomColumnValues.PERCENT_OF_TOTAL
               ? `(${columnFn?.column?.name} / SUM(${columnFn?.column?.name}) OVER (
               ${
                 this.state.selectedFnGroupby
@@ -742,7 +742,7 @@ export default class CustomColumnModal extends React.Component {
             (this.state.selectedFnRowsOrRangeOptionPost === CustomColumnRowRangeTypes.FOLLOWING &&
               this.state.selectedFnRowsOrRangeOptionPostNValue !== null))
     const totalPercentComplete =
-      this.state.selectedFnOperation === CustomColumnValues.PERCENT_TOTAL && !!this.state.selectedFnColumn
+      this.state.selectedFnOperation === CustomColumnValues.PERCENT_OF_TOTAL && !!this.state.selectedFnColumn
     const rankComplete = this.state.selectedFnOperation === CustomColumnValues.RANK && !!this.state.selectedFnOrderBy
     const movingAvgComplete =
       this.state.selectedFnOperation === CustomColumnValues.MOVING_AVG &&
@@ -894,9 +894,10 @@ export default class CustomColumnModal extends React.Component {
   }
 
   renderWindowFnChunk = (chunk, i) => {
+    const label = this.getLabelForOperator(WINDOW_FUNCTIONS[chunk.fn]) ?? chunk.fn.replaceAll('_', ' ')
     return (
       <span>
-        <span>{this.getLabelForOperator(WINDOW_FUNCTIONS[chunk.fn])}( </span>
+        <span>{label}( </span>
         {chunk.column && (
           <Select
             key={`custom-column-select-${i}`}
@@ -926,7 +927,7 @@ export default class CustomColumnModal extends React.Component {
               outlined={false}
               showArrow={false}
               className='react-autoql-available-column-selector'
-              onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
+              onChange={(value) => this.changeChunkGroupby(value, chunk.type, i)}
               options={getVisibleColumns(this.props.columns).map((col) => {
                 return {
                   value: col.field,
@@ -947,7 +948,7 @@ export default class CustomColumnModal extends React.Component {
               outlined={false}
               showArrow={false}
               className='react-autoql-available-column-selector'
-              onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
+              onChange={(value) => this.changeChunkOrderby(value, chunk.type, i)}
               options={getVisibleColumns(this.props.columns).map((col) => {
                 return {
                   value: col.field,
@@ -1375,7 +1376,7 @@ export default class CustomColumnModal extends React.Component {
               </div>
               {stringColumns?.length > 0 &&
                 this.state.selectedFnType !== null &&
-                this.state.selectedFnType !== CustomColumnValues.PERCENT_TOTAL && (
+                this.state.selectedFnType !== CustomColumnValues.PERCENT_OF_TOTAL && (
                   <div>
                     <Select
                       label='Partition By Column'
@@ -1393,7 +1394,7 @@ export default class CustomColumnModal extends React.Component {
                 )}
 
               {WINDOW_FUNCTIONS[this.state.selectedFnType]?.orderable &&
-                this.state.selectedFnType !== CustomColumnValues.PERCENT_TOTAL && (
+                this.state.selectedFnType !== CustomColumnValues.PERCENT_OF_TOTAL && (
                   <div>
                     <Select
                       label='Order By'
@@ -1522,9 +1523,9 @@ export default class CustomColumnModal extends React.Component {
                 )}
             </>
           )}
-          {this.state.selectedFnOperation === CustomColumnValues.PERCENT_TOTAL && (
+          {this.state.selectedFnOperation === CustomColumnValues.PERCENT_OF_TOTAL && (
             <>
-              <div>PERCENT TOTAL</div>
+              <div>PERCENT OF TOTAL</div>
               <div>
                 <Select
                   label='Total % of Column'

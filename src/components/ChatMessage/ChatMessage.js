@@ -392,7 +392,6 @@ export default class ChatMessage extends React.Component {
           {hasRT ? (
             <div className='chat-message-rt-container'>
               <ReverseTranslation
-                ref={(r) => (this.rtRef = r)}
                 key={this.responseRef.queryResponse?.data?.data?.query_id}
                 authentication={this.props.authentication}
                 onValueLabelClick={this.props.onRTValueLabelClick}
