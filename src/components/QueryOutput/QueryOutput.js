@@ -445,7 +445,7 @@ export class QueryOutput extends React.Component {
   }
 
   findDefaultNumberColumnIndex = (defaultAmountColumn) => {
-    return this.tableConfig.numberColumnIndices.find((index) => {
+    return this.tableConfig.allNumberColumnIndices.find((index) => {
       return (
         isColumnNumberType(this.queryResponse.data.data.columns[index]) &&
         defaultAmountColumn?.length > 0 &&
@@ -1495,6 +1495,7 @@ export class QueryOutput extends React.Component {
         currencyColumnIndices,
         quantityColumnIndices,
         ratioColumnIndices,
+        allNumberColumnIndices,
       } = getNumberColumnIndices(columns, this.usePivotDataForChart())
 
       this.pivotTableConfig.numberColumnIndices = numberColumnIndices
@@ -1504,6 +1505,7 @@ export class QueryOutput extends React.Component {
       this.pivotTableConfig.currencyColumnIndices = currencyColumnIndices
       this.pivotTableConfig.quantityColumnIndices = quantityColumnIndices
       this.pivotTableConfig.ratioColumnIndices = ratioColumnIndices
+      this.pivotTableConfig.allNumberColumnIndices = allNumberColumnIndices
     }
 
     if (!_isEqual(prevPivotTableConfig, this.pivotTableConfig)) {
@@ -1598,6 +1600,7 @@ export class QueryOutput extends React.Component {
       this.tableConfig.currencyColumnIndices = currencyColumnIndices
       this.tableConfig.quantityColumnIndices = quantityColumnIndices
       this.tableConfig.ratioColumnIndices = ratioColumnIndices
+      this.tableConfig.allNumberColumnIndices = allNumberColumnIndices
 
       if (this.tableConfig.numberColumnIndex === this.tableConfig.stringColumnIndex) {
         this.tableConfig.numberColumnIndex = allNumberColumnIndices.find(
@@ -1708,6 +1711,17 @@ export class QueryOutput extends React.Component {
     if (!_isEqual(prevTableConfig, this.tableConfig)) {
       this.onTableConfigChange(this.hasCalledInitialTableConfigChange)
     }
+
+    // Find default string column match
+    const defaultDateColumn = this.queryResponse.data.data.default_date_column
+    const stringColumnIdx = this.findDefaultStringColumnIndex(defaultDateColumn)
+    this.tableConfig.stringColumnIndex = this.getStringColumnIndex(stringColumnIdx)
+
+    // Find default amount column match
+    const defaultAmountColumn = this.queryResponse.data.data.default_amount_column
+    const numberColumnIdx = this.findDefaultNumberColumnIndex(defaultAmountColumn)
+    this.tableConfig.numberColumnIndex = this.getStringColumnIndex(numberColumnIdx)
+    this.tableConfig.numberColumnIndices = [this.getStringColumnIndex(numberColumnIdx)]
   }
 
   getPotentialDisplayTypes = () => {
