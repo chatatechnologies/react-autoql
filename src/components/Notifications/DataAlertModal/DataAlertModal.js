@@ -74,6 +74,7 @@ class DataAlertModal extends React.Component {
     dataFormatting: dataFormattingType,
     autoQLConfig: autoQLConfigType,
     enableAlphaAlertSettings: PropTypes.bool,
+    onDelete: PropTypes.func,
   }
 
   static defaultProps = {
@@ -89,6 +90,7 @@ class DataAlertModal extends React.Component {
     onClosed: () => {},
     onOpened: () => {},
     enableQueryValidation: true,
+    onDelete: () => {},
     dataFormatting: dataFormattingDefault,
     autoQLConfig: autoQLConfigDefault,
     enableAlphaAlertSettings: false,
@@ -299,7 +301,8 @@ class DataAlertModal extends React.Component {
 
   onDataAlertCreateOrEditSuccess = (dataAlertResponse) => {
     this.props.onSave(dataAlertResponse)
-    this.props.onSuccessAlert('Data Alert updated!')
+    const message = dataAlertResponse?.status === 201 ? 'Data Alert created!' : 'Data Alert updated!'
+    this.props.onSuccessAlert(message)
 
     this.setState({
       isSavingDataAlert: false,

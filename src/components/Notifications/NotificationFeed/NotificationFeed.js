@@ -1,7 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
-import { isMobile } from 'react-device-detect'
 import {
   fetchNotificationFeed,
   dismissAllNotifications,
@@ -56,6 +55,8 @@ class NotificationFeed extends React.Component {
       pagination: {},
       displayNotificationItemCheckbox: false,
       selectedNotifications: [],
+      isMobile: false,
+      isLandscape: false,
     }
   }
 
@@ -90,6 +91,8 @@ class NotificationFeed extends React.Component {
   }
 
   static defaultProps = {
+    isMobile: false,
+    isMobileLandscape: false,
     authentication: authenticationDefault,
     showDataAlertsManager: false,
     showNotificationDetails: true,
@@ -157,10 +160,6 @@ class NotificationFeed extends React.Component {
   componentWillUnmount = () => {
     this._isMounted = false
   }
-
-  notificationListContainerClass = classNames('react-autoql-notification-list-container', {
-    mobile: isMobile,
-  })
 
   handleButtonRelease() {
     clearTimeout(this.buttonPressTimer)
@@ -467,6 +466,12 @@ class NotificationFeed extends React.Component {
   onDataAlertSave = () => {
     this.setState({ isEditModalVisible: false })
   }
+  onDataAlertDelete = () => {
+    this.setState({
+      isEditModalVisible: false,
+    })
+    this.refreshNotifications()
+  }
   onSelectNotificationClick = () => {
     this.setState({ displayNotificationItemCheckbox: true })
   }
@@ -647,6 +652,8 @@ class NotificationFeed extends React.Component {
         onClose={this.closeDataAlertModal}
         onOpened={this.props.onModalOpen}
         onClosed={this.props.onModalClose}
+        onDelete={this.onDataAlertDelete}
+        onSuccessAlert={this.props.onSuccessCallback}
         currentDataAlert={this.state.activeDataAlert}
         onSave={this.onDataAlertSave}
         onErrorCallback={this.props.onErrorCallback}
@@ -708,6 +715,12 @@ class NotificationFeed extends React.Component {
       })
   }
   render = () => {
+    const notificationListContainerClass = classNames('react-autoql-notification-list-container', {
+      desktop: !this.props.isMobile,
+      mobile: this.props.isMobile,
+      landscape: this.props.isMobileLandscape,
+    })
+
     let style = {}
     if (!this.props.shouldRender) {
       style.visibility = 'hidden'
@@ -736,7 +749,7 @@ class NotificationFeed extends React.Component {
         <div
           ref={(r) => (this.feedContainer = r)}
           style={style}
-          className={this.notificationListContainerClass}
+          className={notificationListContainerClass}
           data-test='notification-list'
         >
           {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={500} />}

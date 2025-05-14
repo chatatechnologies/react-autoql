@@ -4,7 +4,13 @@ import Drawer from 'rc-drawer'
 import _isEmpty from 'lodash.isempty'
 import { v4 as uuid } from 'uuid'
 import { isBrowser, isMobile } from 'react-device-detect'
-import { mergeSources, autoQLConfigDefault, dataFormattingDefault, getAutoQLConfig } from 'autoql-fe-utils'
+import {
+  mergeSources,
+  autoQLConfigDefault,
+  dataFormattingDefault,
+  getAutoQLConfig,
+  CustomColumnTypes,
+} from 'autoql-fe-utils'
 import classNames from 'classnames'
 // Components
 import { Icon } from '../Icon'
@@ -234,7 +240,7 @@ export class DataMessenger extends React.Component {
       }
 
       if (
-        typeof this.props.notificationCount === 'number' &&
+        typeof this.props.notificationCount === CustomColumnTypes.NUMBER &&
         this.props.notificationCount !== prevProps.notificationCount
       ) {
         this.refreshNotifications()
@@ -739,6 +745,9 @@ export class DataMessenger extends React.Component {
   }
 
   renderHeaderContent = () => {
+    if (isMobile && this.state.activePage === 'data-explorer') {
+      return null
+    }
     const { maxWidth, maxHeight } = this.getMaxWidthAndHeightFromDocument()
     const isFullScreen = this.state.width === maxWidth
     return (
@@ -771,7 +780,7 @@ export class DataMessenger extends React.Component {
             getAutoQLConfig(this.props.autoQLConfig).enableFilterLocking && this.renderFilterLockPopover()
           )}
         </div>
-        <div className='react-autoql-header-center-container'>{this.renderHeaderTitle()}</div>
+        {!isMobile && <div className='react-autoql-header-center-container'>{this.renderHeaderTitle()}</div>}
         <div
           className={`react-autoql-header-right-container ${
             this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
@@ -1087,6 +1096,7 @@ export class DataMessenger extends React.Component {
     if (this.state.hasError) {
       return null
     }
+    const shouldHideHeader = isMobile && this.state.activePage === 'data-explorer'
 
     return (
       <ErrorBoundary>
@@ -1116,9 +1126,11 @@ export class DataMessenger extends React.Component {
             ref={(r) => (this.messengerDrawerRef = r)}
             className={`react-autoql-drawer-content-container ${this.state.activePage}`}
           >
-            <div className='chat-header-container' id={isMobile ? 'mobile-version' : null}>
-              {this.renderHeaderContent()}
-            </div>
+            {!shouldHideHeader && (
+              <div className='chat-header-container' id={isMobile ? 'mobile-version' : null}>
+                {this.renderHeaderContent()}
+              </div>
+            )}
             {this.renderBodyContent()}
           </div>
         </Drawer>

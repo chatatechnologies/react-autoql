@@ -26,14 +26,17 @@
       margin-right: 0;
     }
 
+    &.react-autoql-input-number-spin-wheel {
+      display: inline-flex;
+    }
+
     &.react-autoql-input-number {
       flex: 1;
 
       .react-autoql-input,
       .react-autoql-input-number-spin-button-container {
-        height: 100%;
+        height: inherit;
         max-height: 100%;
-        min-height: 100%;
       }
 
       &:hover {
@@ -135,7 +138,15 @@
         }
       }
     }
-
+    &.react-autoql-input-hidden.react-autoql-input-select-left {
+      .react-autoql-text-input-selector .react-autoql-select {
+        border-radius: 4px 4px 4px 4px;
+        border-right: 1px solid var(--react-autoql-border-color) !important;
+      }
+      .react-autoql-text-input-selector .react-autoql-select:hover {
+        border-right-color: unset !important;
+      }
+    }
     .react-autoql-text-input-selector {
       flex: 0;
       margin: 0;
@@ -195,7 +206,7 @@
 
       &:not(textarea) {
         padding: 0 10px;
-        height: 38px;
+        height: 38px !important;
       }
 
       &.with-select {

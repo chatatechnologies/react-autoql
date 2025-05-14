@@ -1,3 +1,5 @@
+import { TranslationTypes } from 'autoql-fe-utils'
+
 export default [
   // 0. empty response
   { data: {} },
@@ -111,9 +113,7 @@ export default [
       full_suggestion: [
         {
           start: 10,
-          suggestion_list: [
-            { text: 'Jane Johnson', value_label: 'customer name' },
-          ],
+          suggestion_list: [{ text: 'Jane Johnson', value_label: 'customer name' }],
           end: 14,
         },
       ],
@@ -201,7 +201,6 @@ export default [
         chart_images: null,
         fe_req: {
           test: false,
-          debug: false,
           chart_images: 'exclude',
           text: 'all online sales',
           disambiguation: [],
@@ -210,7 +209,7 @@ export default [
           source: 'data_messenger',
           persistent_filter_locks: [],
           session_filter_locks: [],
-          translation: 'exclude',
+          translation: TranslationTypes.EXCLUDE,
           page_size: 50,
         },
         display_type: 'data',
@@ -598,9 +597,8 @@ export default [
           chart_images: 'exclude',
           page_size: null,
           orders: [],
-          translation: 'exclude',
+          translation: TranslationTypes.EXCLUDE,
           test: false,
-          debug: false,
           disambiguation: [],
           text: 'Total online sales by region by year',
           session_filter_locks: [],
@@ -738,8 +736,7 @@ export default [
         ],
         query_id: 'q_zcOWrngkQiadAnmNGAYUKw',
         row_limit: 50,
-        interpretation:
-          'total online sales by Customer Name by Customer Region',
+        interpretation: 'total online sales by Customer Name by Customer Region',
         fe_req: {
           session_filter_locks: [],
           disambiguation: [],
@@ -750,8 +747,7 @@ export default [
           test: false,
           page_size: 50,
           orders: [],
-          debug: false,
-          translation: 'exclude',
+          translation: TranslationTypes.EXCLUDE,
         },
         text: 'total online sales by region by customer',
       },

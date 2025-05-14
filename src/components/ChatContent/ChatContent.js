@@ -2,12 +2,15 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import _has from 'lodash.has'
+import _isEqual from 'lodash.isequal'
 import { isMobile } from 'react-device-detect'
 import {
   REQUEST_CANCELLED_ERROR,
   UNAUTHENTICATED_ERROR,
   GENERAL_QUERY_ERROR,
   dataFormattingDefault,
+  getAuthentication,
+  fetchSubjectList,
 } from 'autoql-fe-utils'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
@@ -34,6 +37,7 @@ export default class ChatContent extends React.Component {
 
     this.state = {
       messages: [],
+      subjects: [],
     }
   }
 
@@ -82,12 +86,18 @@ export default class ChatContent extends React.Component {
     if (this.props.shouldRender && !isMobile) {
       this.focusInput()
     }
+
+    this.fetchAllSubjects()
   }
 
   componentDidUpdate = (prevProps, prevState) => {
     //disable input focus for mobile, as ios keyboard has bug
     if (this.props.shouldRender && !prevProps.shouldRender && !isMobile) {
       this.focusInput()
+    }
+
+    if (!_isEqual(this.props.authentication, prevProps.authentication)) {
+      this.fetchAllSubjects()
     }
 
     this.messengerScrollComponent?.update()
@@ -97,6 +107,19 @@ export default class ChatContent extends React.Component {
     this._isMounted = false
     clearTimeout(this.feedbackTimeout)
     clearTimeout(this.responseDelayTimeout)
+  }
+
+  fetchAllSubjects = () => {
+    fetchSubjectList({ ...getAuthentication(this.props.authentication) })
+      .then((subjects) => {
+        if (this._isMounted) {
+          if (subjects?.length) {
+            const filteredSubjects = subjects.filter((subj) => !subj.isAggSeed())
+            this.setState({ subjects: filteredSubjects })
+          }
+        }
+      })
+      .catch((error) => console.error(error))
   }
 
   focusInput = () => {
@@ -454,6 +477,7 @@ export default class ChatContent extends React.Component {
                     scope={this.props.scope}
                     tooltipID={this.props.tooltipID}
                     chartTooltipID={this.props.chartTooltipID}
+                    subjects={this.state.subjects}
                   />
                 )
               })}

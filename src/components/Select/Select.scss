@@ -10,6 +10,12 @@
   }
 }
 
+.react-autoql-input-label {
+  &.disabled {
+    color: var(--react-autoql-background-color-disabled-dark);
+  }
+}
+
 .react-autoql-select-and-label {
   display: inline-flex;
   flex-direction: column;
@@ -88,12 +94,17 @@
       }
     }
 
+    &.disabled {
+      color: var(--react-autoql-background-color-disabled-dark);
+    }
+
     .react-autoql-select-text {
       display: block;
       height: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      padding-left: 2px;
 
       .react-autoql-select-text-placeholder {
         color: var(--react-autoql-text-color-placeholder);

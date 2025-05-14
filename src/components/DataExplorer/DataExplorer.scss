@@ -1,3 +1,39 @@
+@media (max-width: 768px) {
+  .data-explorer-page-container {
+    .react-autoql-chatbar-input-container.data-explorer {
+      margin: 24px 10px 0;
+    }
+
+    .data-explorer-intro-message.mobile {
+      margin-top: 12px;
+    }
+  }
+}
+@media (orientation: landscape) and (max-width: 1024px) and (max-height: 768px) {
+  .data-explorer-page-container {
+    .data-explorer-result-container {
+      height: 100% !important;
+      padding-bottom: 10px;
+      overflow: auto !important;
+    }
+
+    .data-explorer-sections-container {
+      display: contents !important;
+      overflow: auto !important;
+    }
+
+    .data-preview-section {
+      height: 70% !important;
+      overflow: auto;
+    }
+
+    .query-suggestions {
+      height: 100% !important;
+      overflow: auto;
+    }
+  }
+}
+
 .data-explorer-page-container {
   position: absolute;
   height: 100%;
@@ -9,8 +45,11 @@
   flex-wrap: nowrap;
   color: var(--react-autoql-text-color-primary);
   overflow: hidden;
-  animation: fadeIn 0.2s linear;
-  animation-fill-mode: both;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  &.mounted {
+    opacity: 1;
+  }
 
   .react-autoql-cascader {
     max-height: 200px;
@@ -66,7 +105,71 @@
       }
     }
   }
+  .data-explorer-intro-message.mobile {
+    color: var(--react-autoql-text-color-primary);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    font-size: 15px;
+    min-height: 0;
+    justify-content: flex-start;
 
+    &.animate-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+      animation: slideInUp 0.5s ease-in-out;
+      animation-fill-mode: both;
+
+      .react-autoql-icon {
+        margin-left: 5px;
+        margin-right: 2px;
+      }
+    }
+
+    p {
+      font-size: 0.9rem;
+      line-height: 1.4;
+      color: var(--react-autoql-text-color-primary);
+    }
+
+    .intro-message-item {
+      animation: slideInUp 0.5s ease-in-out;
+      animation-fill-mode: both;
+
+      &:nth-child(1) {
+        animation-delay: 0.1s;
+      }
+
+      &:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+
+      &:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+    }
+
+    .intro-message-list-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: left;
+
+      p {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        .react-autoql-icon {
+          margin-right: 5px;
+          padding: 0;
+        }
+      }
+    }
+  }
   .data-explorer-intro-message {
     color: var(--react-autoql-text-color-primary);
     text-align: center;
@@ -76,7 +179,11 @@
     min-height: 0;
     flex: 1;
 
-    h2 {
+    &.animate-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    .intro-message-title {
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -87,9 +194,37 @@
       margin-inline-start: 0px;
       margin-inline-end: 0px;
       color: var(--react-autoql-text-color-primary);
+      animation: slideInUp 0.5s ease-in-out;
+      animation-fill-mode: both;
+
       .react-autoql-icon {
         margin-left: 7px;
         margin-right: 2px;
+      }
+    }
+
+    .intro-message-item {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      animation: slideInUp 0.5s ease-in-out;
+      animation-fill-mode: both;
+
+      &:nth-child(1) {
+        animation-delay: 0.1s;
+      }
+
+      &:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+
+      &:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+
+      .react-autoql-icon {
+        margin-right: 5px;
+        padding: 0;
       }
     }
 
@@ -406,6 +541,25 @@
   }
   100% {
     transform: translateY(0%);
+    opacity: 1;
+  }
+}
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInUp {
+  0% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
     opacity: 1;
   }
 }

@@ -4,6 +4,7 @@ import PerfectScrollbar from 'react-perfect-scrollbar'
 
 import 'react-perfect-scrollbar/dist/css/styles.css'
 import './CustomScrollbars.scss'
+import { CustomColumnTypes } from 'autoql-fe-utils'
 
 export default class CustomScrollbars extends React.Component {
   MAX_UPDATE_DURATION = 5000
@@ -53,7 +54,7 @@ export default class CustomScrollbars extends React.Component {
       return
     }
 
-    if (typeof duration !== 'number' || duration > this.MAX_UPDATE_DURATION) {
+    if (typeof duration !== CustomColumnTypes.NUMBER || duration > this.MAX_UPDATE_DURATION) {
       setTimeout(() => this.ref?._ps?.update(), 0)
     } else {
       clearInterval(this.intervalID)

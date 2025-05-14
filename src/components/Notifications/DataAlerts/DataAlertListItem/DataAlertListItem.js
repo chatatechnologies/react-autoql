@@ -179,7 +179,7 @@ export default class DataAlertListItem extends React.Component {
       })
       .catch((error) => {
         console.error(error)
-        this.props.onErrorCallback(new Error('Something went wrong. Please try again.'))
+        this.props.onErrorCallback(error)
         this.setState({ status: previousStatus })
       })
   }
@@ -454,7 +454,7 @@ export default class DataAlertListItem extends React.Component {
                 onChange={this.onEnableSwitchChange}
                 onText='Active'
                 offText='Inactive'
-                displayswitchtext={this.props.shouldDisplaySwitchText}
+                displaySwitchText={this.props.shouldDisplaySwitchText}
               />
             </div>
           </div>

@@ -317,9 +317,10 @@
   .react-autoql-notification-options-btn-container {
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
+    justify-content: center;
+    align-self: center;
     align-items: center;
-    padding: 13px 8px;
+    padding: 8px;
 
     .react-autoql-notification-options-btn {
       display: flex;
@@ -423,8 +424,8 @@
 
   .react-autoql-notification-display-name-container {
     flex: 1;
-    line-height: 23px;
-    padding: 13px 0px;
+    line-height: 22px;
+    padding: 8px 0px;
     transition: color 0.2s ease;
     .react-autoql-notification-display-name-wrapper {
       display: flex;

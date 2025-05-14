@@ -272,6 +272,7 @@ export default class FilterLockPopover extends React.Component {
       show_message: suggestion.show_message,
       key: suggestion.canonical,
       filter_type: filterType,
+      canonical_key: suggestion.column_name,
     }
 
     return newFilter

@@ -10,6 +10,8 @@ import { Popover } from '../Popover'
 import { DateRangePicker } from '../DateRangePicker'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
+import { CustomColumnTypes } from 'autoql-fe-utils'
+
 import './Input.scss'
 
 export default class Input extends React.Component {
@@ -33,11 +35,13 @@ export default class Input extends React.Component {
     label: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
     fullWidth: PropTypes.bool,
     datePicker: PropTypes.bool,
+    displayColumnSelector: PropTypes.bool,
     focusOnMount: PropTypes.bool,
     showArrow: PropTypes.bool,
     showSpinWheel: PropTypes.bool,
     disabled: PropTypes.bool,
-    errormessage: PropTypes.string
+    errormessage: PropTypes.string,
+    isRequired: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -48,12 +52,14 @@ export default class Input extends React.Component {
     label: '',
     selectLocation: 'left',
     fullWidth: false,
+    displayColumnSelector: false,
     datePicker: false,
     focusOnMount: false,
     showArrow: undefined,
-    showSpinWheel: true,
+    showSpinWheel: false,
     disabled: false,
     errormessage: undefined,
+    isRequired: false,
   }
 
   componentDidMount = () => {
@@ -96,6 +102,10 @@ export default class Input extends React.Component {
 
   onSelectChange = (value) => {
     this.props.onSelectChange(value)
+    this.focus()
+  }
+  onColumnSelectValueChange = (value) => {
+    this.props.onColumnSelectValueChange(value)
     this.focus()
   }
 
@@ -154,10 +164,18 @@ export default class Input extends React.Component {
   renderSpinWheel = () => {
     return (
       <div className='react-autoql-input-number-spin-button-container'>
-        <button className='react-autoql-input-number-spin-button' onClick={this.incrementNumber}>
+        <button
+          className='react-autoql-input-number-spin-button'
+          onClick={this.incrementNumber}
+          disabled={this.props.disabled}
+        >
           <Icon type='caret-up' />
         </button>
-        <button className='react-autoql-input-number-spin-button' onClick={this.decrementNumber}>
+        <button
+          className='react-autoql-input-number-spin-button'
+          onClick={this.decrementNumber}
+          disabled={this.props.disabled}
+        >
           <Icon type='caret-down' />
         </button>
       </div>
@@ -172,6 +190,17 @@ export default class Input extends React.Component {
         options={this.props.selectOptions}
         value={this.props.selectValue}
         onChange={this.onSelectChange}
+      />
+    )
+  }
+  renderColumnSelectDropdown = () => {
+    return (
+      <Select
+        showArrow={this.props.showArrow}
+        className='react-autoql-text-input-selector'
+        options={this.props.columnSelectOptions}
+        value={this.props.columnSelectValue}
+        onChange={this.onColumnSelectValueChange}
       />
     )
   }
@@ -239,6 +268,8 @@ export default class Input extends React.Component {
       showArrow,
       selectLocation,
       disabled,
+      displayColumnSelector,
+      isRequired,
       ...nativeProps
     } = this.props
 
@@ -255,14 +286,21 @@ export default class Input extends React.Component {
         ${fullWidth ? 'react-autoql-input-full-width' : ''}`}
           style={style}
         >
-          {!!label && <div className='react-autoql-input-label'>{label}</div>}
+          {!!label && <div className='react-autoql-input-label'>{`${label}${this.props.isRequired ? ' *' : ''}`}</div>}
           <div
             className={`react-autoql-input-container
             ${this.state.focused ? 'focus' : ''}
             ${hasSelect ? 'with-select' : ''}
             ${size === 'small' ? 'react-autoql-input-small' : 'react-autoql-input-large'}
-            ${type === 'number' ? 'react-autoql-input-number' : ''}
-            ${selectLocation === 'left' ? 'react-autoql-input-select-left' : 'react-autoql-input-select-right'}`}
+            ${
+              type === 'text' || type === CustomColumnTypes.NUMBER
+                ? 'react-autoql-input-number'
+                : 'hidden'
+                ? 'react-autoql-input-hidden'
+                : ''
+            }
+            ${selectLocation === 'left' ? 'react-autoql-input-select-left' : 'react-autoql-input-select-right'}
+            ${showSpinWheel ? 'react-autoql-input-number-spin-wheel' : ''}`}
             data-test='react-autoql-input'
           >
             {hasSelect && selectLocation === 'left' && this.renderSelectDropdown()}
@@ -292,13 +330,16 @@ export default class Input extends React.Component {
                 {icon && (
                   <Icon className={`react-autoql-input-icon ${this.state.focused ? ' focus' : ''}`} type={icon} />
                 )}
-                {this.props.errormessage &&
-                  <span id="input-error" className="error-message">{this.props.errormessage}</span>
-                }
+                {this.props.errormessage && (
+                  <span id='input-error' className='error-message'>
+                    {this.props.errormessage}
+                  </span>
+                )}
                 {this.props.datePicker ? this.renderDateRangePickerPopover() : null}
+                {this.props.displayColumnSelector ? this.renderColumnSelectDropdown() : false}
               </div>
             )}
-            {type === 'number' && this.props.showSpinWheel && this.renderSpinWheel()}
+            {type === CustomColumnTypes.NUMBER && this.props.showSpinWheel && this.renderSpinWheel()}
             {hasSelect && selectLocation === 'right' && this.renderSelectDropdown()}
           </div>
         </div>

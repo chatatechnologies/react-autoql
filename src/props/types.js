@@ -11,13 +11,14 @@ export const dataFormattingType = PropTypes.shape({
   languageCode: PropTypes.string,
   currencyDecimals: PropTypes.number,
   quantityDecimals: PropTypes.number,
+  ratioDecimals: PropTypes.number,
   comparisonDisplay: PropTypes.string,
   monthYearFormat: PropTypes.string,
   dayMonthYearFormat: PropTypes.string,
 })
 
 export const autoQLConfigType = PropTypes.shape({
-  debug: PropTypes.bool,
+  translation: PropTypes.string,
   test: PropTypes.bool,
   enableAutocomplete: PropTypes.bool,
   enableQueryValidation: PropTypes.bool,
@@ -27,6 +28,8 @@ export const autoQLConfigType = PropTypes.shape({
   enableNotifications: PropTypes.bool,
   projectId: PropTypes.string,
   enableProjectSelect: PropTypes.bool,
+  enableProjectSelect: PropTypes.bool,
+  enableEditReverseTranslation: PropTypes.bool,
 })
 
 export const dataConfigType = PropTypes.shape({

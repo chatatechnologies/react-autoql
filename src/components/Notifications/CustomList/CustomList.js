@@ -49,6 +49,7 @@ export default class CustomList extends React.Component {
     onCustomFiltersChange: PropTypes.func,
     customFilters: PropTypes.array,
     storedInitialData: PropTypes.array,
+    isPreviewMode: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -57,6 +58,7 @@ export default class CustomList extends React.Component {
     onCustomFiltersChange: () => {},
     customFilters: [],
     storedInitialData: [],
+    isPreviewMode: false,
   }
 
   componentDidMount = () => {
@@ -143,10 +145,9 @@ export default class CustomList extends React.Component {
         this.autoCompleteArray = []
         suggestionsMatchArray = body.matches.filter((suggestion) =>
           this.props.baseDataAlertColumns.some(
-            (column) =>
-              column.name === suggestion.column_name &&
-              (this.state.filters.length === 0 ||
-                this.state.filters.some((filter) => filter.column_name === suggestion.column_name)),
+            () =>
+              this.state.filters.length === 0 ||
+              this.state.filters.some((filter) => filter.column_name === suggestion.column_name),
           ),
         )
 
@@ -316,7 +317,7 @@ export default class CustomList extends React.Component {
     return (
       <div className='react-autoql-custom-list-title'>
         <h3>
-          <span>{'Select Custom Filters'}</span>
+          <span>{this.props.isPreviewMode ? 'Selected Custom Filters' : 'Select Custom Filters'}</span>
           <span
             data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
             data-tooltip-content='You can only add one type of filter.'
@@ -327,7 +328,6 @@ export default class CustomList extends React.Component {
       </div>
     )
   }
-
   renderHeader = () => {
     return <div className='filter-lock-menu-header'>{this.renderTitle()}</div>
   }
@@ -407,6 +407,9 @@ export default class CustomList extends React.Component {
   }
 
   renderVLInput = () => {
+    if (this.props.isPreviewMode) {
+      return null
+    }
     return (
       <span className='react-autoql-vl-autocomplete-input-wrapper'>
         <Autosuggest
@@ -478,6 +481,7 @@ export default class CustomList extends React.Component {
         onDelete={() => this.removeFilter(filter)}
         tooltip='Remove filter'
         tooltipID={this.props.tooltipID}
+        disabled={this.props.isPreviewMode}
       >
         {filter.format_txt ?? filter.value}
       </Chip>

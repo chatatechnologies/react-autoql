@@ -5,6 +5,7 @@ import { median } from 'd3-array'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
+import { isMobile } from 'react-device-detect'
 
 import {
   isColumnDateType,
@@ -15,6 +16,8 @@ import {
   isColumnNumberType,
   dataFormattingDefault,
   REQUEST_CANCELLED_ERROR,
+  formatElement,
+  getDataFormatting,
 } from 'autoql-fe-utils'
 
 import DataPreview from './DataPreview'
@@ -188,32 +191,41 @@ export default class DataExplorer extends React.Component {
   }
 
   renderIntroMessage = () => {
-    return (
-      <div className='data-explorer-intro-message'>
-        <h2>
-          Welcome to <Icon type='data-search' />
-          Data Explorer
-        </h2>
-        {this.props.introMessage ? (
-          <p>{this.props.introMessage}</p>
-        ) : (
+    const commonContent = this.props.introMessage ? (
+      <p>{this.props.introMessage}</p>
+    ) : (
+      <div>
+        <p className='intro-message-item'>
+          Explore your data and discover what you can ask AutoQL. Simply enter a term or topic above and:
+        </p>
+        <div className='intro-message-list-container'>
           <div>
-            <p>Explore your data and discover what you can ask AutoQL. Simply enter a term or topic above and:</p>
-            <div className='intro-message-list-container'>
-              <div>
-                <p>
-                  <Icon type='table' /> Preview available data in a snapshot
-                </p>
-                <p>
-                  <Icon type='abacus' /> Explore data structure and column types
-                </p>
-                <p>
-                  <Icon type='react-autoql-bubbles-outlined' /> View and customize a sample of query suggestions
-                </p>
-              </div>
-            </div>
+            <p className='intro-message-item'>
+              <Icon type='table' /> Preview available data in a snapshot
+            </p>
+            <p className='intro-message-item'>
+              <Icon type='abacus' /> Explore data structure and column types
+            </p>
+            <p className='intro-message-item'>
+              <Icon type='react-autoql-bubbles-outlined' /> View and customize a sample of query suggestions
+            </p>
           </div>
+        </div>
+      </div>
+    )
+
+    return (
+      <div className={`data-explorer-intro-message${isMobile ? ' mobile' : ''} animate-in`}>
+        {isMobile ? (
+          <h3 className='intro-message-title'>
+            Welcome to <Icon type='data-search' /> Data Explorer
+          </h3>
+        ) : (
+          <h2 className='intro-message-title'>
+            Welcome to <Icon type='data-search' /> Data Explorer
+          </h2>
         )}
+        {commonContent}
       </div>
     )
   }
@@ -270,7 +282,11 @@ export default class DataExplorer extends React.Component {
     let defaultValue = ''
     if (isColumnNumberType(column)) {
       // Use median value from dataset (median not avg, so it is guaranteed to conform with the dataset)
-      defaultValue = median(columnData)
+      defaultValue = formatElement({
+        element: median(columnData),
+        column: column,
+        config: getDataFormatting(this.props.dataFormatting),
+      })
     }
 
     // This will restrict sample queries with groupbys to only show "filter" queries and not "groupby" queries
@@ -597,7 +613,7 @@ export default class DataExplorer extends React.Component {
     return (
       <div
         ref={(r) => (this.dataExplorerPage = r)}
-        className='data-explorer-page-container'
+        className={`data-explorer-page-container ${this._isMounted ? 'mounted' : ''}`}
         data-test='data-explorer-tab'
         style={{ display }}
       >
