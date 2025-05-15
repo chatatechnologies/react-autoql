@@ -1712,7 +1712,6 @@ export class QueryOutput extends React.Component {
       this.onTableConfigChange(this.hasCalledInitialTableConfigChange)
     }
 
-    // Find default string column match
     const defaultDateColumn = this.queryResponse.data.data.default_date_column
     const stringColumnIdx = this.findDefaultStringColumnIndex(defaultDateColumn)
     this.tableConfig.stringColumnIndex = this.getStringColumnIndex(stringColumnIdx)
@@ -1720,8 +1719,8 @@ export class QueryOutput extends React.Component {
     // Find default amount column match
     const defaultAmountColumn = this.queryResponse.data.data.default_amount_column
     const numberColumnIdx = this.findDefaultNumberColumnIndex(defaultAmountColumn)
-    this.tableConfig.numberColumnIndex = this.getStringColumnIndex(numberColumnIdx)
-    this.tableConfig.numberColumnIndices = [this.getStringColumnIndex(numberColumnIdx)]
+    this.tableConfig.numberColumnIndex = this.getNumberColumnIndex(numberColumnIdx)
+    this.tableConfig.numberColumnIndices = [this.getNumberColumnIndex(numberColumnIdx)]
   }
 
   getPotentialDisplayTypes = () => {
