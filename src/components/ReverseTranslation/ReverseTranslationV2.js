@@ -146,7 +146,7 @@ const ReverseTranslation = ({
           } catch (error) {
             console.error(error)
           }
-        } else if (chunk.c_type === 'GROUPBY') {
+        } else if (enableEditReverseTranslation && chunk.c_type === 'GROUPBY') {
           try {
             const groupByColumnName = chunk.clean_causes?.[0] ?? ''
             const group = context?.groups?.find(group => group.table_column === groupByColumnName) || {}
@@ -159,7 +159,7 @@ const ReverseTranslation = ({
           } catch (error) {
             console.error(error)
           }
-        } else if (chunk.c_type === 'SEED') {
+        } else if (enableEditReverseTranslation && chunk.c_type === 'SEED') {
           try {
             const filterName = chunk?.eng?.toLowerCase()?.trim() ?? ''
             const filter = context?.filters?.find(filter => filter?.display_name?.toLowerCase()?.trim() === filterName) || {}
@@ -456,17 +456,23 @@ const ReverseTranslation = ({
         }
         return renderSeedHighlight(chunk)
       }
+      case 'SEED': {
+        return ` ${titlelizeString(chunk.eng)}`
+      }
       case 'VALIDATED_GROUP_BY': {
         if (isRefiningRT) {
           return renderGroupByChunk(chunk, i)
         }
         return ` ${chunk.eng}`
       }
+      case 'GROUP_BY': {
+        return ` ${titlelizeString(chunk.eng)}`
+      }
       case 'PREFIX': {
         if (isRefiningRT) {
           return renderAggMenu(chunk, i)
         }
-        return ` ${chunk.eng}`
+        return ` ${titlelizeString(chunk.eng)}`
       }
       case 'DATE':
       case 'TEXT':
