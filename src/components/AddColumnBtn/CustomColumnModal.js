@@ -341,7 +341,7 @@ export default class CustomColumnModal extends React.Component {
         } else if (columnFn?.type === CustomColumnTypes.FUNCTION) {
           protoTableColumn +=
             columnFn.fn === CustomColumnValues.PERCENT_OF_TOTAL
-              ? `(${columnFn?.column?.name} / SUM(${columnFn?.column?.name}) OVER (
+              ? `((${columnFn?.column?.name}) / SUM(${columnFn?.column?.name}) OVER (
               ${
                 this.state.selectedFnGroupby
                   ? `PARTITION BY ${
