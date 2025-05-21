@@ -1973,7 +1973,6 @@ export class QueryOutput extends React.Component {
       }
 
       // Cell formatting
-
       newCol.formatter = (cell, formatterParams, onRendered) => {
         const cellValue = cell.getValue()
         const wrapper = document.createElement('div')
@@ -1986,7 +1985,9 @@ export class QueryOutput extends React.Component {
           config: getDataFormatting(this.props.dataFormatting),
           htmlElement: cell.getElement(),
         })
-        valueContainer.innerHTML = formattedValue
+
+        valueContainer.innerHTML = formattedValue ?? ''
+
         wrapper.appendChild(valueContainer)
         if (cellValue != null && cellValue !== '') {
           onRendered(() => {
