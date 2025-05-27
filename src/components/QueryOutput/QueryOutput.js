@@ -221,6 +221,7 @@ export class QueryOutput extends React.Component {
     onCustomColumnUpdate: PropTypes.func,
     enableTableContextMenu: PropTypes.bool,
     initialFormattedTableParams: PropTypes.shape({}),
+    onUpdateFilterResponse: PropTypes.func,
   }
 
   static defaultProps = {
@@ -272,6 +273,7 @@ export class QueryOutput extends React.Component {
     onBucketSizeChange: () => {},
     onNewData: () => {},
     onCustomColumnUpdate: () => {},
+    onUpdateFilterResponse: () => {},
   }
 
   componentDidMount = () => {
@@ -2641,6 +2643,7 @@ export class QueryOutput extends React.Component {
           enableContextMenu={this.props.enableTableContextMenu}
           initialTableParams={this.tableParams}
           updateColumnsAndData={this.updateColumnsAndData}
+          onUpdateFilterResponse={this.props.onUpdateFilterResponse}
         />
       </ErrorBoundary>
     )
