@@ -41,7 +41,7 @@ import { DateRangePicker } from '../DateRangePicker'
 import { DataLimitWarning } from '../DataLimitWarning'
 import { columnOptionsList } from './tabulatorConstants'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { DATASET_TOO_LARGE, TABULATOR_LOCAL_ROW_LIMIT } from '../../js/Constants'
+import { DATASET_TOO_LARGE, TABULATOR_LOCAL_ROW_LIMIT, LOCAL_OR_REMOTE } from '../../js/Constants'
 import './ChataTable.scss'
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
 import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
@@ -66,7 +66,10 @@ export default class ChataTable extends React.Component {
     this.isFiltering = false
     this.isSorting = false
     this.pageSize = props.pageSize ?? 50
-    this.useRemote = this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT ? 'remote' : 'local'
+    this.useRemote =
+      this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
+        ? LOCAL_OR_REMOTE.REMOTE
+        : LOCAL_OR_REMOTE.LOCAL
 
     this.totalPages = this.getTotalPages(props.response)
     if (isNaN(this.totalPages) || !this.totalPages) {
@@ -105,7 +108,7 @@ export default class ChataTable extends React.Component {
       this.tableOptions.paginationMode = this.useRemote
       this.tableOptions.paginationSize = this.pageSize
       this.tableOptions.paginationInitialPage = 1
-      if (this.useRemote === 'local') {
+      if (this.useRemote === LOCAL_OR_REMOTE.LOCAL) {
         this.tableOptions.progressiveLoad = 'load'
         this.tableOptions.data = props.response?.data?.data?.rows
       } else {
@@ -508,7 +511,7 @@ export default class ChataTable extends React.Component {
         }
       }, 0)
     }
-    if (this.useRemote === 'local') {
+    if (this.useRemote === LOCAL_OR_REMOTE.LOCAL) {
       this.getRTForRemoteFilterAndSort()
     }
     this.setFilterBadgeClasses()
@@ -1414,13 +1417,13 @@ export default class ChataTable extends React.Component {
 
     let currentRowCount = this.getCurrentRowCount()
     let totalRowCount
-    if (this.useRemote === 'remote') {
+    if (this.useRemote === LOCAL_OR_REMOTE.REMOTE) {
       if (this.props.pivot) {
         totalRowCount = this.props.data?.length
       } else {
         totalRowCount = this.props.response?.data?.data?.count_rows
       }
-    } else if (this.useRemote === 'local') {
+    } else if (this.useRemote === LOCAL_OR_REMOTE.LOCAL) {
       totalRowCount = this.ref?.tabulator?.getDataCount('active')
       const tabulatorRow = this.tableContainer?.querySelector('.tabulator-row.tabulator-unselectable') // tabulator default is 30
       const rowHeight = tabulatorRow?.clientHeight
