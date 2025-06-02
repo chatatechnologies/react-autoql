@@ -40,6 +40,7 @@ export default class ChatMessage extends React.Component {
       isAnimatingMessageBubble: true,
       isSettingColumnVisibility: false,
       activeMenu: undefined,
+      localRTFilterResponse: null,
     }
   }
 
@@ -96,12 +97,12 @@ export default class ChatMessage extends React.Component {
     onRTValueLabelClick: undefined,
     isVisibleInDOM: true,
     subjects: [],
-    onSuggestionClick: () => { },
-    onErrorCallback: () => { },
-    onSuccessAlert: () => { },
-    onConditionClickCallback: () => { },
-    scrollToBottom: () => { },
-    onNoneOfTheseClick: () => { },
+    onSuggestionClick: () => {},
+    onErrorCallback: () => {},
+    onSuccessAlert: () => {},
+    onConditionClickCallback: () => {},
+    scrollToBottom: () => {},
+    onNoneOfTheseClick: () => {},
   }
 
   componentDidMount = () => {
@@ -139,6 +140,10 @@ export default class ChatMessage extends React.Component {
     }
 
     return { messageWidth, shouldUpdateWidth }
+  }
+
+  onUpdateFilterResponse = (localRTFilterResponse) => {
+    this.setState({ localRTFilterResponse })
   }
 
   componentDidUpdate = (prevProps, prevState, { messageWidth, shouldUpdateWidth }) => {
@@ -298,6 +303,7 @@ export default class ChatMessage extends React.Component {
             }
           }}
           subjects={this.props.subjects}
+          onUpdateFilterResponse={this.onUpdateFilterResponse}
         />
       )
     }
@@ -340,6 +346,7 @@ export default class ChatMessage extends React.Component {
             createDataAlertCallback={this.props.createDataAlertCallback}
             customOptions={this.props.customToolbarOptions}
             popoverAlign='end'
+            showFilterBadge={this.state?.localRTFilterResponse?.data?.data?.fe_req?.filters?.length > 0}
           />
         ) : null}
       </div>
@@ -401,7 +408,10 @@ export default class ChatMessage extends React.Component {
                 subjects={this.props.subjects}
                 queryResponseRef={this.responseRef}
                 allowColumnAddition={this.props.isResponse && this.props.type !== 'text'}
-                enableEditReverseTranslation={this.props.autoQLConfig.enableEditReverseTranslation && !isDrilldown(this.responseRef.queryResponse)}
+                enableEditReverseTranslation={
+                  this.props.autoQLConfig.enableEditReverseTranslation && !isDrilldown(this.responseRef.queryResponse)
+                }
+                localRTFilterResponse={this.state.localRTFilterResponse}
               />
             </div>
           ) : null}

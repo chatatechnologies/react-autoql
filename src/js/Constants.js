@@ -6,3 +6,8 @@ export const CUSTOM_FILTERED_ALERT_MODAL_TITLES = {
   PREVIEW: 'Preview Custom Filtered Alert',
 }
 export const TABULATOR_LOCAL_ROW_LIMIT = 50000
+
+export const LOCAL_OR_REMOTE = {
+  LOCAL: 'local',
+  REMOTE: 'remote',
+}

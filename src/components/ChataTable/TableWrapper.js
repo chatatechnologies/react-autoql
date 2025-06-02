@@ -47,6 +47,7 @@ export default class TableWrapper extends React.Component {
     onDataFiltering: PropTypes.func,
     onDataFiltered: PropTypes.func,
     onDataProcessed: PropTypes.func,
+    onScrollVertical: PropTypes.func,
   }
 
   static defaultProps = {
@@ -61,6 +62,7 @@ export default class TableWrapper extends React.Component {
     onDataFiltering: () => {},
     onDataFiltered: () => {},
     onDataProcessed: () => {},
+    onScrollVertical: () => {},
   }
 
   componentDidMount = async () => {
@@ -107,6 +109,7 @@ export default class TableWrapper extends React.Component {
     this.tabulator.on('dataSorted', this.props.onDataSorted)
     this.tabulator.on('dataFiltering', this.props.onDataFiltering)
     this.tabulator.on('dataFiltered', this.props.onDataFiltered)
+    this.tabulator.on('scrollVertical', this.props.onScrollVertical)
 
     this.tabulator.on('tableBuilt', async () => {
       this.isInitialized = true

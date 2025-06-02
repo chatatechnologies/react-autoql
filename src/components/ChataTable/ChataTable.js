@@ -41,7 +41,7 @@ import { DateRangePicker } from '../DateRangePicker'
 import { DataLimitWarning } from '../DataLimitWarning'
 import { columnOptionsList } from './tabulatorConstants'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { DATASET_TOO_LARGE, TABULATOR_LOCAL_ROW_LIMIT } from '../../js/Constants'
+import { DATASET_TOO_LARGE, TABULATOR_LOCAL_ROW_LIMIT, LOCAL_OR_REMOTE } from '../../js/Constants'
 import './ChataTable.scss'
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
 import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
@@ -66,7 +66,10 @@ export default class ChataTable extends React.Component {
     this.isFiltering = false
     this.isSorting = false
     this.pageSize = props.pageSize ?? 50
-    this.useRemote = this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT ? 'remote' : 'remote'
+    this.useRemote =
+      this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
+        ? LOCAL_OR_REMOTE.REMOTE
+        : LOCAL_OR_REMOTE.LOCAL
 
     this.totalPages = this.getTotalPages(props.response)
     if (isNaN(this.totalPages) || !this.totalPages) {
@@ -103,13 +106,18 @@ export default class ChataTable extends React.Component {
       this.tableOptions.filterMode = this.useRemote // v4: ajaxFiltering = true
       this.tableOptions.pagination = false
       this.tableOptions.paginationMode = this.useRemote
-      this.tableOptions.progressiveLoad = 'scroll' // v4: ajaxProgressiveLoad
-      this.tableOptions.ajaxURL = 'https://required-placeholder-url.com'
       this.tableOptions.paginationSize = this.pageSize
       this.tableOptions.paginationInitialPage = 1
-      this.tableOptions.ajaxRequesting = (url, params) => this.ajaxRequesting(props, params)
-      this.tableOptions.ajaxRequestFunc = (url, config, params) => this.ajaxRequestFunc(props, params)
-      this.tableOptions.ajaxResponse = (url, params, response) => this.ajaxResponseFunc(props, response)
+      if (this.useRemote === LOCAL_OR_REMOTE.LOCAL) {
+        this.tableOptions.progressiveLoad = 'load'
+        this.tableOptions.data = props.response?.data?.data?.rows
+      } else {
+        this.tableOptions.progressiveLoad = 'scroll' // v4: ajaxProgressiveLoad
+        this.tableOptions.ajaxURL = 'https://required-placeholder-url.com'
+        this.tableOptions.ajaxRequesting = (url, params) => this.ajaxRequesting(props, params)
+        this.tableOptions.ajaxRequestFunc = (url, config, params) => this.ajaxRequestFunc(props, params)
+        this.tableOptions.ajaxResponse = (url, params, response) => this.ajaxResponseFunc(props, response)
+      }
     }
 
     this.summaryStats = {}
@@ -123,6 +131,7 @@ export default class ChataTable extends React.Component {
       isLastPage: this.tableParams.page === this.totalPages,
       subscribedData: undefined,
       firstRender: true,
+      scrollTop: 0,
     }
   }
 
@@ -193,6 +202,8 @@ export default class ChataTable extends React.Component {
       this.initialTableHeight = this.tabulatorContainer?.clientHeight
       this.lockedTableHeight = this.initialTableHeight
     }
+
+    this.summaryStats = this.calculateSummaryStats(this.props)
 
     this.setState({
       firstRender: false,
@@ -500,7 +511,7 @@ export default class ChataTable extends React.Component {
         }
       }, 0)
     }
-    if (this.useRemote === 'local') {
+    if (this.useRemote === LOCAL_OR_REMOTE.LOCAL) {
       this.getRTForRemoteFilterAndSort()
     }
     this.setFilterBadgeClasses()
@@ -580,12 +591,6 @@ export default class ChataTable extends React.Component {
   }
 
   ajaxRequestFunc = async (props, params) => {
-    if (this.useRemote === 'local') {
-      const fullData = props.response?.data?.data?.rows || []
-      // Initialize table with complete dataset
-      this.ref?.tabulator?.setData(fullData)
-    }
-
     const initialData = {
       rows: this.getRows(this.props, 1),
       page: 1,
@@ -1401,18 +1406,42 @@ export default class ChataTable extends React.Component {
     return null
   }
 
+  onScrollVertical = (top) => {
+    this.setState({ scrollTop: top })
+  }
+
   renderTableRowCount = () => {
     if (this.isTableEmpty() || !this.props.useInfiniteScroll) {
       return null
     }
 
-    const currentRowCount = this.getCurrentRowCount()
-
+    let currentRowCount = this.getCurrentRowCount()
     let totalRowCount
-    if (this.props.pivot) {
-      totalRowCount = this.props.data?.length
-    } else {
-      totalRowCount = this.props.response?.data?.data?.count_rows
+    if (this.useRemote === LOCAL_OR_REMOTE.REMOTE) {
+      if (this.props.pivot) {
+        totalRowCount = this.props.data?.length
+      } else {
+        totalRowCount = this.props.response?.data?.data?.count_rows
+      }
+    } else if (this.useRemote === LOCAL_OR_REMOTE.LOCAL) {
+      totalRowCount = this.ref?.tabulator?.getDataCount('active')
+      const tabulatorRow = this.tableContainer?.querySelector('.tabulator-row.tabulator-unselectable') // tabulator default is 30
+      const rowHeight = tabulatorRow?.clientHeight
+      // get client height from component
+      const tableHolder = this.tableContainer?.querySelector('.tabulator-tableholder')
+      const tableHolderHeight = tableHolder?.clientHeight
+      const tabulatorTable = this.tableContainer?.querySelector('.tabulator-table') // height of table with all rows loaded
+      const tableHeight = tabulatorTable?.clientHeight
+      const lastRowAndMargin = rowHeight + 15
+
+      // calculate how many rows are scrolled
+      const calcRowHeight = (tableHeight - lastRowAndMargin) / (totalRowCount - 1)
+      const baseRowCount = Math.floor(tableHolderHeight / calcRowHeight)
+      const calcRows = Math.floor((this.state.scrollTop + tableHolderHeight + rowHeight) / calcRowHeight)
+      const modCalcRows = (Math.floor(calcRows / 50) + 1) * 50
+      const scrolledRows = modCalcRows > totalRowCount ? totalRowCount : modCalcRows // currentRowCount
+
+      currentRowCount = scrolledRows
     }
 
     const shouldRenderTRC = totalRowCount && currentRowCount
@@ -1609,6 +1638,7 @@ export default class ChataTable extends React.Component {
                     onDataFiltered={this.onDataFiltered}
                     onDataProcessed={this.onDataProcessed}
                     onDataLoadError={this.onDataLoadError}
+                    onScrollVertical={this.onScrollVertical}
                     pivot={this.props.pivot}
                   />
                   {isEmpty && this.renderEmptyPlaceholderText()}
