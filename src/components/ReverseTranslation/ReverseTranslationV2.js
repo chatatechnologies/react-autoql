@@ -39,7 +39,7 @@ const ReverseTranslation = ({
   queryResponseRef = {},
   allowColumnAddition = false,
   enableEditReverseTranslation = false,
-  filterResponse,
+  localRTFilterResponse,
 }) => {
   const COMPONENT_KEY = useRef(uuid())
   const isMounted = useRef(false)
@@ -280,8 +280,9 @@ const ReverseTranslation = ({
     }
   }, [queryResponse?.data?.data?.parsed_interpretation])
 
+  // todo: see if we can update and remove this useEffect and use queryRepsonse instead
   useEffect(() => {
-    const newParsedInterpretation = filterResponse?.data?.data?.parsed_interpretation
+    const newParsedInterpretation = localRTFilterResponse?.data?.data?.parsed_interpretation
     if (
       initialParsedInterpretations?.current?.length &&
       !deepEqual(newParsedInterpretation, initialParsedInterpretations?.current)
@@ -290,7 +291,7 @@ const ReverseTranslation = ({
       const newArray = constructRTArray(newParsedInterpretation)
       executePrerequisites(newArray)
     }
-  }, [filterResponse?.data?.data?.parsed_interpretation])
+  }, [localRTFilterResponse?.data?.data?.parsed_interpretation])
 
   useEffect(() => {
     if (isRefiningRT && primaryContext && reverseTranslationArray?.length) {
@@ -592,7 +593,7 @@ ReverseTranslation.propTypes = {
   subjects: PropTypes.arrayOf(PropTypes.shape({})),
   queryResponseRef: PropTypes.shape({}),
   allowColumnAddition: PropTypes.bool,
-  filterResponse: PropTypes.shape({}),
+  localRTFilterResponse: PropTypes.shape({}),
 }
 
 export default ReverseTranslation

@@ -40,7 +40,7 @@ export default class ChatMessage extends React.Component {
       isAnimatingMessageBubble: true,
       isSettingColumnVisibility: false,
       activeMenu: undefined,
-      filterResponse: null,
+      localRTFilterResponse: null,
     }
   }
 
@@ -142,8 +142,8 @@ export default class ChatMessage extends React.Component {
     return { messageWidth, shouldUpdateWidth }
   }
 
-  onUpdateFilterResponse = (filterResponse) => {
-    this.setState({ filterResponse })
+  onUpdateFilterResponse = (localRTFilterResponse) => {
+    this.setState({ localRTFilterResponse })
   }
 
   componentDidUpdate = (prevProps, prevState, { messageWidth, shouldUpdateWidth }) => {
@@ -410,7 +410,7 @@ export default class ChatMessage extends React.Component {
                 enableEditReverseTranslation={
                   this.props.autoQLConfig.enableEditReverseTranslation && !isDrilldown(this.responseRef.queryResponse)
                 }
-                filterResponse={this.state.filterResponse}
+                localRTFilterResponse={this.state.localRTFilterResponse}
               />
             </div>
           ) : null}
