@@ -558,7 +558,7 @@ export class QueryOutput extends React.Component {
 
   hasError = (response) => {
     try {
-      const referenceIdNumber = Number(response.data?.reference_id?.split('.')[2])
+      const referenceIdNumber = Number(response.data.reference_id.split('.')[2])
       if (referenceIdNumber >= 200 && referenceIdNumber < 300) {
         return false
       }
