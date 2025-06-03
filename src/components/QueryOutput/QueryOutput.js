@@ -441,8 +441,8 @@ export class QueryOutput extends React.Component {
   getStringColumnIndex = (foundIndex) => {
     return foundIndex
       ? foundIndex
-      : this.tableConfig.stringColumnIndices.length > 0
-      ? this.tableConfig.stringColumnIndices[0]
+      : this.tableConfig?.stringColumnIndices.length > 0
+      ? this.tableConfig?.stringColumnIndices[0]
       : 0
   }
 
@@ -558,7 +558,7 @@ export class QueryOutput extends React.Component {
 
   hasError = (response) => {
     try {
-      const referenceIdNumber = Number(response.data.reference_id.split('.')[2])
+      const referenceIdNumber = Number(response.data?.reference_id?.split('.')[2])
       if (referenceIdNumber >= 200 && referenceIdNumber < 300) {
         return false
       }
@@ -1070,7 +1070,7 @@ export class QueryOutput extends React.Component {
     if (formattedValue === null) {
       formattedValue = 'NULL'
       operator = 'is'
-    } else if (column.type === ColumnTypes.DATE) {
+    } else if (column?.type === ColumnTypes.DATE) {
       const isoDate = getDayJSObj({ value, column, config: this.props.dataFormatting })
       const precision = getPrecisionForDayJS(column.precision)
       const isoDateStart = isoDate.startOf(precision).toISOString()
@@ -1829,8 +1829,8 @@ export class QueryOutput extends React.Component {
           }
 
           // No logical operators detected, just compare numbers
-          const number = parseFloat(rowValue?.replace(/[^0-9.]/g, ''))
-          const filterNumber = parseFloat(headerValue?.replace(/[^0-9.]/g, ''))
+          const number = parseFloat(rowValue?.toString().replace(/[^0-9.]/g, ''))
+          const filterNumber = parseFloat(headerValue?.toString().replace(/[^0-9.]/g, ''))
           return !isNaN(number) && number === filterNumber
         } catch (error) {
           console.error(error)
