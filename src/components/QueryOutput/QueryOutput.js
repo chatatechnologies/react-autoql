@@ -1829,8 +1829,8 @@ export class QueryOutput extends React.Component {
           }
 
           // No logical operators detected, just compare numbers
-          const number = parseFloat(rowValue?.toString().replace(/[^0-9.]/g, ''))
-          const filterNumber = parseFloat(headerValue?.toString().replace(/[^0-9.]/g, ''))
+          const number = parseFloat(rowValue)
+          const filterNumber = parseFloat(headerValue)
           return !isNaN(number) && number === filterNumber
         } catch (error) {
           console.error(error)
@@ -1987,6 +1987,12 @@ export class QueryOutput extends React.Component {
           config: getDataFormatting(this.props.dataFormatting),
           htmlElement: cell.getElement(),
         })
+
+        // console.log('cellValue', cellValue)
+        // console.log('formatterParams', formatterParams)
+        // console.log('dataFormmating', this.props.dataFormatting)
+        // console.log('getDataFormatting(this.props.dataFormatting)', getDataFormatting(this.props.dataFormatting))
+        // console.log('formattedValue', formattedValue)
 
         valueContainer.innerHTML = formattedValue ?? ''
 
