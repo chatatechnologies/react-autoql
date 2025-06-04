@@ -1988,11 +1988,6 @@ export class QueryOutput extends React.Component {
           htmlElement: cell.getElement(),
         })
 
-        // console.log('formatterParams', formatterParams)
-        // console.log('dataFormmating', this.props.dataFormatting)
-        // console.log('getDataFormatting(this.props.dataFormatting)', getDataFormatting(this.props.dataFormatting))
-        // console.log('formattedValue', formattedValue)
-
         valueContainer.innerHTML = formattedValue ?? ''
 
         wrapper.appendChild(valueContainer)
