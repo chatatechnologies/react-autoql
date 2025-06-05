@@ -1836,7 +1836,7 @@ export class QueryOutput extends React.Component {
             config: self.props.dataFormatting,
           })
 
-          return !isNaN(formattedNumber) && formattedNumber.toString() === filterNumber.toString()
+          return !isNaN(formattedNumber) && formattedNumber === filterNumber
         } catch (error) {
           console.error(error)
           this.props.onErrorCallback(error)
