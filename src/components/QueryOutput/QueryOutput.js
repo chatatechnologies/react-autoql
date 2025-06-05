@@ -1829,7 +1829,7 @@ export class QueryOutput extends React.Component {
           }
 
           // No logical operators detected, just compare numbers
-          const filterNumber = parseFloat(headerValue?.toString())
+          const filterNumber = headerValue?.toString()
           const formattedNumber = formatElement({
             element: rowValue,
             column: col,
