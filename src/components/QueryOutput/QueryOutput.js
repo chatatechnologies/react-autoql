@@ -1806,7 +1806,7 @@ export class QueryOutput extends React.Component {
     } else if (col.type === 'DOLLAR_AMT' || col.type === 'QUANTITY' || col.type === 'PERCENT' || col.type === 'RATIO') {
       return (headerValue, rowValue, rowData, filterParams) => {
         try {
-          if (!rowValue) {
+          if (!rowValue && rowValue !== 0) {
             return false
           }
 
@@ -1836,7 +1836,7 @@ export class QueryOutput extends React.Component {
             config: self.props.dataFormatting,
           })
 
-          return !isNaN(formattedNumber) && formattedNumber === filterNumber
+          return !isNaN(formattedNumber) && parseFloat(formattedNumber) === parseFloat(filterNumber)
         } catch (error) {
           console.error(error)
           this.props.onErrorCallback(error)
