@@ -1829,15 +1829,14 @@ export class QueryOutput extends React.Component {
           }
 
           // No logical operators detected, just compare numbers
-          const number = parseFloat(rowValue?.toString().replace(/[^0-9.]/g, ''))
-          const filterNumber = parseFloat(headerValue?.toString().replace(/[^0-9.]/g, ''))
+          const filterNumber = parseFloat(headerValue?.toString())
           const formattedNumber = formatElement({
             element: rowValue,
             column: col,
             config: self.props.dataFormatting,
           })
 
-          return !isNaN(number) && formattedNumber.toString().indexOf(filterNumber) !== -1
+          return !isNaN(formattedNumber) && formattedNumber.toString() === filterNumber.toString()
         } catch (error) {
           console.error(error)
           this.props.onErrorCallback(error)
