@@ -441,8 +441,8 @@ export class QueryOutput extends React.Component {
   getStringColumnIndex = (foundIndex) => {
     return foundIndex
       ? foundIndex
-      : this.tableConfig.stringColumnIndices.length > 0
-      ? this.tableConfig.stringColumnIndices[0]
+      : this.tableConfig?.stringColumnIndices.length > 0
+      ? this.tableConfig?.stringColumnIndices[0]
       : 0
   }
 
@@ -1070,7 +1070,7 @@ export class QueryOutput extends React.Component {
     if (formattedValue === null) {
       formattedValue = 'NULL'
       operator = 'is'
-    } else if (column.type === ColumnTypes.DATE) {
+    } else if (column?.type === ColumnTypes.DATE) {
       const isoDate = getDayJSObj({ value, column, config: this.props.dataFormatting })
       const precision = getPrecisionForDayJS(column.precision)
       const isoDateStart = isoDate.startOf(precision).toISOString()
@@ -1806,7 +1806,7 @@ export class QueryOutput extends React.Component {
     } else if (col.type === 'DOLLAR_AMT' || col.type === 'QUANTITY' || col.type === 'PERCENT' || col.type === 'RATIO') {
       return (headerValue, rowValue, rowData, filterParams) => {
         try {
-          if (!rowValue) {
+          if (!rowValue && rowValue !== 0) {
             return false
           }
 
@@ -1829,9 +1829,14 @@ export class QueryOutput extends React.Component {
           }
 
           // No logical operators detected, just compare numbers
-          const number = parseFloat(rowValue?.replace(/[^0-9.]/g, ''))
-          const filterNumber = parseFloat(headerValue?.replace(/[^0-9.]/g, ''))
-          return !isNaN(number) && number === filterNumber
+          const filterNumber = headerValue?.toString()
+          const formattedNumber = formatElement({
+            element: rowValue,
+            column: col,
+            config: self.props.dataFormatting,
+          })
+
+          return !isNaN(formattedNumber) && parseFloat(formattedNumber) === parseFloat(filterNumber)
         } catch (error) {
           console.error(error)
           this.props.onErrorCallback(error)
