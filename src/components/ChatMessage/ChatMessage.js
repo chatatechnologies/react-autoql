@@ -1,7 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { isMobile } from 'react-device-detect'
-import ResizableQueryOutputModal from '../ResizableQueryOutputModal/ResizableQueryOutputModal'
+// May use this later for resizable query output modal
+// import ResizableQueryOutputModal from '../ResizableQueryOutputModal/ResizableQueryOutputModal'
 import {
   deepEqual,
   UNAUTHENTICATED_ERROR,
@@ -470,7 +471,8 @@ export default class ChatMessage extends React.Component {
             </div>
           ) : null}
         </div>
-        {this.props.isResponse && this.props.response && (
+        {/* May use this later for resizable query output modal */}
+        {/* {this.props.isResponse && this.props.response && (
           <ResizableQueryOutputModal
             isVisible={this.state.isQueryOutputModalVisible}
             onClose={this.toggleQueryOutputModal}
@@ -491,7 +493,7 @@ export default class ChatMessage extends React.Component {
             chartTooltipID={this.props.chartTooltipID}
             subjects={this.props.subjects}
           />
-        )}
+        )} */}
       </ErrorBoundary>
     )
   }
