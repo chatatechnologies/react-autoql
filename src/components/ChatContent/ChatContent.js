@@ -396,6 +396,17 @@ export default class ChatContent extends React.Component {
     }
     return !shouldRender
   }
+  onMessageResize = (messageId) => {
+    if (this.messengerScrollComponent) {
+      this.messengerScrollComponent.update()
+      const lastMessage = this.state.messages[this.state.messages.length - 1]
+      if (lastMessage && lastMessage.id === messageId) {
+        setTimeout(() => {
+          this.scrollToBottom()
+        }, 100)
+      }
+    }
+  }
 
   render = () => {
     let chatMessageVisibility
@@ -478,6 +489,7 @@ export default class ChatContent extends React.Component {
                     tooltipID={this.props.tooltipID}
                     chartTooltipID={this.props.chartTooltipID}
                     subjects={this.state.subjects}
+                    onMessageResize={this.onMessageResize}
                   />
                 )
               })}

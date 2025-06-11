@@ -78,9 +78,11 @@ import { MdPlayCircleOutline } from '@react-icons/all-files/md/MdPlayCircleOutli
 import { MdAttachMoney } from '@react-icons/all-files/md/MdAttachMoney'
 import { MdFunctions } from '@react-icons/all-files/md/MdFunctions'
 
+import { RxOpenInNewWindow } from 'react-icons/rx'
+import { TfiArrowsCorner } from 'react-icons/tfi'
+import { TfiArrowsVertical } from 'react-icons/tfi'
 import {
   bubblesIcon,
-  bubblesIconFilled,
   bubblesIconFilledAlt,
   tableIcon,
   pivotTableIcon,
@@ -422,6 +424,10 @@ export default class Icon extends React.Component {
         icon = <BiAbacus />
         break
       }
+      case 'open-in-new': {
+        icon = <RxOpenInNewWindow />
+        break
+      }
       case 'pie-chart': {
         icon = pieChartIcon
         break
@@ -450,6 +456,15 @@ export default class Icon extends React.Component {
         icon = <FiRefreshCw />
         break
       }
+      case 'resize': {
+        icon = <TfiArrowsCorner />
+        break
+      }
+      case 'resize-vertical': {
+        icon = <TfiArrowsVertical />
+        break
+      }
+
       case 'report': {
         icon = <GoReport />
         break

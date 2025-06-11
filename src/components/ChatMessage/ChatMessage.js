@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { isMobile } from 'react-device-detect'
+import ResizableQueryOutputModal from '../ResizableQueryOutputModal/ResizableQueryOutputModal'
 import {
   deepEqual,
   UNAUTHENTICATED_ERROR,
@@ -41,7 +42,19 @@ export default class ChatMessage extends React.Component {
       isSettingColumnVisibility: false,
       activeMenu: undefined,
       localRTFilterResponse: null,
+      isQueryOutputModalVisible: false,
+      // Add resize state
+      isResizing: false,
+      messageHeight: 'auto', // Track current height
+      resizeStartY: 0,
+      resizeStartHeight: 0,
+      isResizable: false, // Add this
+      isUserResizing: false, // Track if user is actively resizing
+      currentHeight: 400, // Track current height in pixels
     }
+
+    // Minimum height for the message container
+    this.minMessageHeight = 300
   }
 
   static propTypes = {
@@ -74,6 +87,7 @@ export default class ChatMessage extends React.Component {
     scope: PropTypes.string,
     isVisibleInDOM: PropTypes.bool,
     subjects: PropTypes.arrayOf(PropTypes.shape({})),
+    onMessageResize: PropTypes.func,
   }
 
   static defaultProps = {
@@ -103,6 +117,7 @@ export default class ChatMessage extends React.Component {
     onConditionClickCallback: () => {},
     scrollToBottom: () => {},
     onNoneOfTheseClick: () => {},
+    onMessageResize: () => {},
   }
 
   componentDidMount = () => {
@@ -156,6 +171,11 @@ export default class ChatMessage extends React.Component {
     this._isMounted = false
     clearTimeout(this.scrollToBottomTimeout)
     clearTimeout(this.animationTimeout)
+  }
+  toggleQueryOutputModal = () => {
+    this.setState((prevState) => ({
+      isQueryOutputModalVisible: !prevState.isQueryOutputModalVisible,
+    }))
   }
 
   setIsAnimating = () => {
@@ -250,7 +270,21 @@ export default class ChatMessage extends React.Component {
     // To update the reverse translation:
     this.forceUpdate()
   }
+  onDisplayTypeChange = (displayType) => {
+    // Reset resizable state when changing display types
+    this.setState({
+      isResizable: false,
+      isUserResizing: false,
+      currentHeight: 400,
+    })
 
+    // Clear the CSS custom property
+    if (this.ref) {
+      this.ref.style.removeProperty('--message-height')
+    }
+
+    this.scrollIntoView()
+  }
   renderContent = () => {
     if (this.props.isCSVProgressMessage || typeof this.state.csvDownloadProgress !== 'undefined') {
       return <div className='chat-message-bubble-content-container'>{this.renderCSVProgressMessage()}</div>
@@ -261,6 +295,8 @@ export default class ChatMessage extends React.Component {
     } else if (this.props.response) {
       return (
         <QueryOutput
+          enableResizing={true}
+          onResize={this.onQueryOutputResize}
           ref={(ref) => (this.responseRef = ref)}
           optionsToolbarRef={this.optionsToolbarRef}
           vizToolbarRef={this.vizToolbarRef}
@@ -347,6 +383,7 @@ export default class ChatMessage extends React.Component {
             customOptions={this.props.customToolbarOptions}
             popoverAlign='end'
             showFilterBadge={this.state?.localRTFilterResponse?.data?.data?.fe_req?.filters?.length > 0}
+            onExpandClick={this.toggleQueryOutputModal}
           />
         ) : null}
       </div>
@@ -363,23 +400,36 @@ export default class ChatMessage extends React.Component {
             className='chat-message-toolbar left'
             tooltipID={this.props.tooltipID}
             shouldRender={!this.props.isResizing && this.props.shouldRender}
+            onDisplayTypeChange={this.onDisplayTypeChange}
           />
         ) : null}
       </div>
     )
   }
-
+  onQueryOutputResize = (dimensions) => {
+    this.setState({
+      isResizable: true,
+      isUserResizing: true,
+      currentHeight: dimensions.height,
+    })
+    if (this.props.onMessageResize) {
+      this.props.onMessageResize(this.props.id)
+    }
+  }
   render = () => {
     const hasRT = !!this.responseRef?.queryResponse?.data?.data?.parsed_interpretation
+    const isResizable =
+      this.props.response && !this.props.isCSVProgressMessage && !this.props.content && this.state.isResizable
+
     return (
       <ErrorBoundary>
         <div
           className={`chat-message-and-rt-container
-            ${this.props.isResponse ? 'response' : 'request'}
+			${this.props.isResponse ? 'response' : 'request'}
 			${isMobile ? 'pwa' : ''}
-            ${this.props.type === 'text' ? 'text' : ''}
-            ${this.props.isActive ? 'active' : ''}
-            ${this.props.disableMaxHeight || this.props.isIntroMessage ? ' no-max-height' : ''}`}
+			${this.props.type === 'text' ? 'text' : ''}
+			${this.props.isActive ? 'active' : ''}
+			${this.props.disableMaxHeight || this.props.isIntroMessage ? ' no-max-height' : ''}`}
           ref={(r) => (this.messageAndRTContainerRef = r)}
         >
           <div
@@ -392,7 +442,11 @@ export default class ChatMessage extends React.Component {
               {this.renderLeftToolbar()}
               {this.renderRightToolbar()}
             </div>
-            <div ref={(r) => (this.ref = r)} className='chat-message-bubble'>
+            <div
+              className={`chat-message-bubble 
+        ${isResizable ? 'resizable' : ''} 
+        ${this.state.isUserResizing ? 'user-resizing' : ''}`}
+            >
               {this.renderContent()}
             </div>
           </div>
@@ -416,6 +470,28 @@ export default class ChatMessage extends React.Component {
             </div>
           ) : null}
         </div>
+        {this.props.isResponse && this.props.response && (
+          <ResizableQueryOutputModal
+            isVisible={this.state.isQueryOutputModalVisible}
+            onClose={this.toggleQueryOutputModal}
+            authentication={this.props.authentication}
+            autoQLConfig={this.props.autoQLConfig}
+            dataFormatting={this.props.dataFormatting}
+            queryResponse={this.props.response}
+            responseRef={this.responseRef}
+            onSuggestionClick={this.props.onSuggestionClick}
+            onErrorCallback={this.props.onErrorCallback}
+            onSuccessAlert={this.props.onSuccessAlert}
+            onCSVDownloadStart={this.props.onCSVDownloadStart}
+            onCSVDownloadProgress={this.props.onCSVDownloadProgress}
+            onCSVDownloadFinish={this.props.onCSVDownloadFinish}
+            source={this.props.source}
+            scope={this.props.scope}
+            tooltipID={this.props.tooltipID}
+            chartTooltipID={this.props.chartTooltipID}
+            subjects={this.props.subjects}
+          />
+        )}
       </ErrorBoundary>
     )
   }

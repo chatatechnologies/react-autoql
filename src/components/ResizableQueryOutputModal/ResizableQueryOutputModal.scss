@@ -1,0 +1,64 @@
+.resizable-query-output-modal {
+  .resizable-query-output-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+  .resizable-query-output-toolbar {
+    display: flex;
+    padding: 8px;
+    border-bottom: 1px solid var(--react-autoql-border-color);
+  }
+
+  .resize-handle-circle {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: var(--react-autoql-accent-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: se-resize;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease, background-color 0.2s ease;
+    z-index: 10;
+
+    &:hover {
+      transform: scale(1.1);
+    }
+
+    &.resizing {
+      transform: scale(1.1);
+    }
+
+    .react-autoql-icon {
+      color: white;
+      font-size: 14px;
+    }
+  }
+
+  .resize-max-indicator {
+    position: absolute;
+    bottom: 60px;
+    right: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-size: 12px;
+    color: var(--react-autoql-accent-color);
+    opacity: 0.8;
+    pointer-events: none;
+
+    span {
+      background-color: rgba(255, 255, 255, 0.9);
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-bottom: 4px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+  }
+}
