@@ -212,18 +212,16 @@ export default class ChatContent extends React.Component {
   }
 
   deleteMessage = (id) => {
-    const messageIndex = this.state.messages.findIndex((message) => id === message.id)
-    const message = this.state.messages[messageIndex]
+    const { messages } = this.state
+    const messageIndex = messages.findIndex((message) => id === message.id)
+    const message = messages[messageIndex]
 
     let messagesToDelete = [id]
     if (message?.queryMessageID) {
-      messagesToDelete = this.state.messages
-        ?.filter((m) => m.queryMessageID === message.queryMessageID)
-        .map((m) => m.id)
+      messagesToDelete = messages?.filter((m) => m.queryMessageID === message.queryMessageID).map((m) => m.id)
     }
 
-    const newMessages = this.state.messages.filter((message) => !messagesToDelete.includes(message.id))
-
+    const newMessages = messages.filter((message) => !messagesToDelete.includes(message.id))
     this.setState({ messages: newMessages })
   }
 
@@ -247,15 +245,16 @@ export default class ChatContent extends React.Component {
     this.addMessages([message])
   }
 
-  addMessages = (messages) => {
-    let newMessages = [...this.state.messages, ...messages]
-    if (newMessages.length > this.props.maxMessages) {
-      newMessages = newMessages.slice(-this.props.maxMessages)
+  addMessages = (newMessages) => {
+    const { messages } = this.state
+    let updatedMessages = [...messages, ...newMessages]
+    if (updatedMessages.length > this.props.maxMessages) {
+      updatedMessages = updatedMessages.slice(-this.props.maxMessages)
     }
 
     if (this._isMounted) {
       this.setState({
-        messages: newMessages,
+        messages: updatedMessages,
       })
     }
   }
@@ -327,7 +326,7 @@ export default class ChatContent extends React.Component {
         this.addResponseMessage({
           content: (
             <span>
-              Looks like you’re trying to query a Microsoft Dynamics data source.
+              Looks like you're trying to query a Microsoft Dynamics data source.
               <a href={response.data.data.authorization_url} target='_blank' rel='noreferrer'>
                 Click here to authorize access then try querying again.
               </a>
@@ -397,18 +396,22 @@ export default class ChatContent extends React.Component {
     return !shouldRender
   }
   onMessageResize = (messageId) => {
-    if (this.messengerScrollComponent) {
-      this.messengerScrollComponent.update()
-      const lastMessage = this.state.messages[this.state.messages.length - 1]
-      if (lastMessage && lastMessage.id === messageId) {
-        setTimeout(() => {
-          this.scrollToBottom()
-        }, 100)
-      }
+    if (!this.messengerScrollComponent) {
+      return
+    }
+
+    this.messengerScrollComponent.update()
+    const { messages } = this.state
+    const lastMessage = messages[messages.length - 1]
+    if (lastMessage && lastMessage.id === messageId) {
+      setTimeout(() => {
+        this.scrollToBottom()
+      }, 100)
     }
   }
 
   render = () => {
+    const { messages } = this.state
     let chatMessageVisibility
     let chatMessageOpacity
     let queryInputVisibility
@@ -438,7 +441,7 @@ export default class ChatContent extends React.Component {
             className='chat-content-scrollbars-container'
           >
             <div className='chat-content-container'>
-              {this.state.messages.map((message) => {
+              {messages.map((message) => {
                 return (
                   <ChatMessage
                     key={message.id}

@@ -2784,6 +2784,7 @@ export class QueryOutput extends React.Component {
         <ChataTable
           key={this.pivotTableID}
           ref={(ref) => (this.pivotTableRef = ref)}
+          authentication={this.props.authentication}
           autoQLConfig={this.props.autoQLConfig}
           dataFormatting={this.props.dataFormatting}
           columns={this.pivotTableColumns}
@@ -2808,6 +2809,7 @@ export class QueryOutput extends React.Component {
           updateColumnsAndData={this.updateColumnsAndData}
           pivotGroups={true}
           pivot
+          queryText={this.queryResponse?.data?.data?.text}
         />
       </ErrorBoundary>
     )

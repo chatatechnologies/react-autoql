@@ -635,8 +635,6 @@ export class OptionsToolbar extends React.Component {
 			${this.props.className || ''}`}
           data-test='autoql-options-toolbar'
         >
-          {/* Uncomment if you want to show the Open in New button */}
-          {/* {shouldShowButton.showOpenInNewButton && this.renderOpenInNewBtn()} */}
           {shouldShowButton.showFilterButton && this.renderFilterBtn()}
           {shouldShowButton.showHideColumnsButton && this.renderColumnVizBtn(shouldShowButton)}
           {shouldShowButton.showReportProblemButton && this.renderReportProblemBtn()}
@@ -713,8 +711,6 @@ export class OptionsToolbar extends React.Component {
       const autoQLConfig = getAutoQLConfig(props.autoQLConfig)
 
       shouldShowButton = {
-        // uncomment this line if you want to show the Open in New button
-        // showOpenInNewButton: !!props.onExpandClick && isChart, // Changed from showExpandButton
         showFilterButton:
           this.props.enableFilterBtn &&
           (displayType === 'table' || isChartType(displayType)) &&
