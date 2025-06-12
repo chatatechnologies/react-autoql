@@ -80,6 +80,7 @@ import { QueryValidationMessage } from '../QueryValidationMessage'
 
 import { withTheme } from '../../theme'
 import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
+import { TABULATOR_LOCAL_ROW_LIMIT } from '../../js/Constants'
 
 import './QueryOutput.scss'
 
@@ -2716,7 +2717,11 @@ export class QueryOutput extends React.Component {
       isChartDataAggregated = true
     }
 
-    const data = usePivotData ? this.state.visiblePivotRows || this.pivotTableData : this.tableData
+    const data = usePivotData
+      ? this.state.visiblePivotRows || this.pivotTableData
+      : this.tableData > TABULATOR_LOCAL_ROW_LIMIT || !this.tableRef?._isMounted
+      ? this.tableData
+      : this.tableRef?.ref?.tabulator.getData('active')
     const columns = usePivotData ? this.pivotTableColumns : this.state.columns
 
     const isPivotDataLimited =
