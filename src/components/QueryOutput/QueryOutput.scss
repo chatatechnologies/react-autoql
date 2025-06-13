@@ -1,5 +1,45 @@
 // required for reverse translation
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+.react-autoql-query-output-resize-handle {
+  position: absolute;
+  background: transparent;
+  z-index: 99999;
+  pointer-events: auto;
+
+  &.bottom {
+    bottom: -2px;
+    left: 0;
+    height: 5px;
+    width: 100%;
+    border-bottom: 3px solid transparent;
+    border-radius: 0 0 6px 6px;
+    transition: border-bottom-color 0.2s ease;
+    cursor: ns-resize !important;
+
+    &:hover {
+      border-bottom-color: var(--react-autoql-accent-color);
+      cursor: ns-resize !important;
+    }
+  }
+}
+
+.react-autoql-response-content-container.resizing .react-autoql-query-output-resize-handle.bottom {
+  border-bottom-color: var(--react-autoql-accent-color) !important;
+}
+
+.react-autoql-response-content-container.resizing {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+body.react-autoql-no-select {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}
 
 .react-autoql-response-content-container {
   position: relative;

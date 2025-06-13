@@ -439,14 +439,14 @@ export default class ChataTable extends React.Component {
 
     try {
       runQueryOnly({
-        query: this.props.queryText,
         ...getAuthentication(this.props.authentication),
         ...getAutoQLConfig(this.props.autoQLConfig),
-        source: 'data_messenger',
+        query: this.props.queryText,
         translation: TranslationTypes.REVERSE_ONLY,
-        allowSuggestions: false,
-        tableFilters: tableParamsFormatted?.filters,
         orders: tableParamsFormatted?.sorters,
+        tableFilters: tableParamsFormatted?.filters,
+        source: 'data_messenger',
+        allowSuggestions: false,
       }).then((response) => {
         this.props.onUpdateFilterResponse(response)
       })
