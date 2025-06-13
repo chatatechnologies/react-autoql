@@ -479,7 +479,9 @@ export default class ChataChart extends React.Component {
     const dataReduced = this.state.dataReduced ?? this.state.data
     const stateData = this.props.type == DisplayTypes.PIE ? dataReduced : this.state.data
     const data = (aggregated ? stateData : null) || this.props.data
-
+    console.log('chataChart dataReduced', dataReduced)
+    console.log('chataChart stateData', stateData)
+    console.log('chataChart data', data)
     return {
       ...this.props,
       columns,

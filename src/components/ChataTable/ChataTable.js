@@ -423,7 +423,7 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  getRTForRemoteFilterAndSort = () => {
+  getRTForRemoteFilterAndSort = async () => {
     let headerFilters = []
     let headerSorters = []
 
@@ -438,15 +438,15 @@ export default class ChataTable extends React.Component {
     const tableParamsFormatted = formatTableParams(this.tableParams, this.props.columns)
 
     try {
-      runQueryOnly({
-        query: this.props.queryText,
+      await runQueryOnly({
         ...getAuthentication(this.props.authentication),
         ...getAutoQLConfig(this.props.autoQLConfig),
-        source: 'data_messenger',
+        query: this.props.queryText,
         translation: TranslationTypes.REVERSE_ONLY,
-        allowSuggestions: false,
-        tableFilters: tableParamsFormatted?.filters,
         orders: tableParamsFormatted?.sorters,
+        tableFilters: tableParamsFormatted?.filters,
+        source: 'data_messenger',
+        allowSuggestions: false,
       }).then((response) => {
         this.props.onUpdateFilterResponse(response)
       })
@@ -511,7 +511,7 @@ export default class ChataTable extends React.Component {
         }
       }, 0)
     }
-    if (this.useRemote === LOCAL_OR_REMOTE.LOCAL) {
+    if (this.useRemote === LOCAL_OR_REMOTE.LOCAL && !this.pivot) {
       this.getRTForRemoteFilterAndSort()
     }
     this.setFilterBadgeClasses()

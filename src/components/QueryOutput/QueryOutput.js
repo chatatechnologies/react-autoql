@@ -945,17 +945,18 @@ export class QueryOutput extends React.Component {
         response = await runDrilldown({
           ...getAuthentication(this.props.authentication),
           ...getAutoQLConfig(this.props.autoQLConfig),
-          source: this.props.source,
-          scope: this.props.scope,
+          query: queryRequestData?.text,
+          queryID: this.props.originalQueryID,
           translation: queryRequestData?.translation,
           filters: sessionFilters,
-          pageSize: queryRequestData?.page_size,
           test: queryRequestData?.test,
-          groupBys: queryRequestData?.columns,
-          queryID: this.props.originalQueryID,
+          source: this.props.source,
+          pageSize: queryRequestData?.page_size,
           orders: this.formattedTableParams?.sorters,
           tableFilters: allFilters,
+          scope: this.props.scope,
           cancelToken: this.axiosSource.token,
+          groupBys: queryRequestData?.columns,
           ...args,
         })
       } catch (error) {
@@ -2611,11 +2612,11 @@ export class QueryOutput extends React.Component {
       <ErrorBoundary>
         <ChataTable
           key={this.tableID}
+          ref={(ref) => (this.tableRef = ref)}
           autoHeight={this.props.autoHeight}
           authentication={this.props.authentication}
           autoQLConfig={this.props.autoQLConfig}
           dataFormatting={this.props.dataFormatting}
-          ref={(ref) => (this.tableRef = ref)}
           columns={this.state.columns}
           response={this.queryResponse}
           updateColumns={this.updateColumns}
@@ -2669,6 +2670,8 @@ export class QueryOutput extends React.Component {
         <ChataTable
           key={this.pivotTableID}
           ref={(ref) => (this.pivotTableRef = ref)}
+          autoHeight={this.props.autoHeight}
+          authentication={this.props.authentication}
           autoQLConfig={this.props.autoQLConfig}
           dataFormatting={this.props.dataFormatting}
           columns={this.pivotTableColumns}
@@ -2679,7 +2682,6 @@ export class QueryOutput extends React.Component {
           hidden={this.state.displayType !== 'pivot_table'}
           useInfiniteScroll={false}
           supportsDrilldowns={true}
-          autoHeight={this.props.autoHeight}
           source={this.props.source}
           scope={this.props.scope}
           tooltipID={this.props.tooltipID}
@@ -2693,6 +2695,7 @@ export class QueryOutput extends React.Component {
           updateColumnsAndData={this.updateColumnsAndData}
           pivotGroups={true}
           pivot
+          queryText={this.queryResponse?.data?.data?.text}
         />
       </ErrorBoundary>
     )

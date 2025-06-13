@@ -143,7 +143,9 @@ export default class ChatMessage extends React.Component {
   }
 
   onUpdateFilterResponse = (localRTFilterResponse) => {
-    this.setState({ localRTFilterResponse })
+    if (this._isMounted) {
+      this.setState({ localRTFilterResponse })
+    }
   }
 
   componentDidUpdate = (prevProps, prevState, { messageWidth, shouldUpdateWidth }) => {
