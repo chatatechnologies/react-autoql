@@ -756,6 +756,34 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  // Add these helper methods to the QueryOutput class
+
+  /**
+   * Determines if we should use local tabulator data or raw query data
+   */
+  shouldUseLocalTabulatorData = () => {
+    const hasLargeDataset = this.queryResponse?.data?.data?.rows.length > TABULATOR_LOCAL_ROW_LIMIT
+    const hasValidTableRef = this.tableRef?._isMounted
+    return !hasLargeDataset && hasValidTableRef
+  }
+
+  /**
+   * Gets the appropriate table data based on data size and table ref availability
+   */
+  getTableDataForProcessing = () => {
+    if (this.shouldUseLocalTabulatorData()) {
+      return this.tableRef.ref.tabulator.getData('active')
+    }
+    return this.queryResponse?.data?.data?.rows || []
+  }
+
+  /**
+   * Gets table data with deep cloning for safe manipulation
+   */
+  getClonedTableData = () => {
+    return _cloneDeep(this.getTableDataForProcessing())
+  }
+
   generatePivotData = ({ isFirstGeneration, dataChanged } = {}) => {
     try {
       this.pivotTableID = uuid()
@@ -2136,7 +2164,10 @@ export class QueryOutput extends React.Component {
           (col, index) => col.is_visible && index !== dateColumnIndex && isColumnNumberType(col),
         )
       }
-      const tableData = newTableData || this.queryResponse?.data?.data?.rows
+      const tableData =
+        newTableData || this.queryResponse?.data?.data?.rows > TABULATOR_LOCAL_ROW_LIMIT
+          ? this.queryResponse?.data?.data?.rows
+          : this.tableRef.ref.getData('active')
 
       const allYears = tableData.map((d) => {
         if (columns[dateColumnIndex].type === ColumnTypes.DATE) {
@@ -2254,13 +2285,15 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  // Then update the generatePivotTableData method:
   generatePivotTableData = ({ isFirstGeneration } = {}) => {
     try {
       this.pivotTableColumnsLimited = false
       this.pivotTableRowsLimited = false
       this.pivotTableID = uuid()
 
-      let tableData = _cloneDeep(this.queryResponse?.data?.data?.rows)
+      // Clean, readable data retrieval
+      let tableData = this.getClonedTableData()
       tableData = tableData.filter((row) => row[0] !== null)
 
       const columns = this.getColumns()
