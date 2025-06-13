@@ -504,7 +504,7 @@ export default class ChataTable extends React.Component {
         this.tableParams.filter = _cloneDeep(headerFilters)
         this.props.onFilterCallback(headerFilters, rows)
       }
-
+      this.props.onFilterCallback(headerFilters, rows) // needed to set pivot table data
       setTimeout(() => {
         if (this._isMounted) {
           this.setState({ loading: false })
@@ -998,7 +998,13 @@ export default class ChataTable extends React.Component {
     if (filterValues) {
       filterValues.forEach((filter, i) => {
         try {
-          this.ref?.tabulator?.setHeaderFilterValue(filter.field, filter.value)
+          // Get all columns to check if the target column exists
+          const columns = this.ref.tabulator.getColumns()
+          const targetColumn = columns.find((col) => col.getField() === filter.field)
+
+          if (targetColumn && targetColumn.getDefinition().headerFilter) {
+            this.ref.tabulator.setHeaderFilterValue(filter.field, filter.value)
+          }
           if (!this.props.useInfiniteScroll) {
             this.ref?.tabulator?.setFilter(filter.field, filter.type, filter.value)
           }

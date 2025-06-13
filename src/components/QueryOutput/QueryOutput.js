@@ -2285,15 +2285,15 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  // Then update the generatePivotTableData method:
   generatePivotTableData = ({ isFirstGeneration } = {}) => {
     try {
       this.pivotTableColumnsLimited = false
       this.pivotTableRowsLimited = false
       this.pivotTableID = uuid()
 
-      // Clean, readable data retrieval
-      let tableData = this.getClonedTableData()
+      const dataManager = new DataSourceManager(this.queryResponse, this.tableRef, TABULATOR_LOCAL_ROW_LIMIT)
+
+      let tableData = dataManager.getClonedData()
       tableData = tableData.filter((row) => row[0] !== null)
 
       const columns = this.getColumns()
