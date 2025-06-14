@@ -65,6 +65,7 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadFinish: PropTypes.func,
     onCSVDownloadProgress: PropTypes.func,
     showFilterBadge: PropTypes.bool,
+    onExpandClick: PropTypes.func,
   }
 
   static defaultProps = {
@@ -84,6 +85,7 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadFinish: () => {},
     onCSVDownloadProgress: () => {},
     showFilterBadge: false,
+    onExpandClick: () => {},
   }
 
   componentDidMount = () => {
@@ -119,6 +121,20 @@ export class OptionsToolbar extends React.Component {
     this._isMounted = false
     clearTimeout(this.temporaryStateTimeout)
     clearTimeout(this.pivotTableCSVDownloadTimeout)
+  }
+  renderOpenInNewBtn = () => {
+    return (
+      <Button
+        onClick={this.props.onExpandClick}
+        className={this.getMenuItemClass('open-in-new-btn')}
+        tooltip='Open in new window'
+        tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+        data-test='options-toolbar-open-in-new-btn'
+        size='small'
+      >
+        <Icon type='open-in-new' />
+      </Button>
+    )
   }
 
   onTableFilter = (newTableData) => {
@@ -615,8 +631,8 @@ export class OptionsToolbar extends React.Component {
       <ErrorBoundary>
         <div
           className={`${isMobile ? 'react-autoql-toolbar-mobile' : 'react-autoql-toolbar'} options-toolbar
-            ${this.state.activeMenu ? 'active' : ''}
-            ${this.props.className || ''}`}
+			${this.state.activeMenu ? 'active' : ''}
+			${this.props.className || ''}`}
           data-test='autoql-options-toolbar'
         >
           {shouldShowButton.showFilterButton && this.renderFilterBtn()}

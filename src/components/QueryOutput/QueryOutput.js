@@ -87,7 +87,9 @@ import './QueryOutput.scss'
 export class QueryOutput extends React.Component {
   constructor(props) {
     super(props)
-
+    this.minWidth = props.minWidth || 400
+    this.minHeight = props.minHeight || 300
+    this.resizeMultiplier = props.resizeMultiplier || 1.5
     this.COMPONENT_KEY = uuid()
     this.QUERY_VALIDATION_KEY = uuid()
     this.TOOLTIP_ID = `react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`
@@ -168,7 +170,13 @@ export class QueryOutput extends React.Component {
       columnChangeCount: 0,
       chartID: uuid(),
       customColumnSelects: customColumnSelects || [],
+      height: props.height || `${this.minHeight}px`,
+      isResizing: false,
+      resizeStartY: 0,
+      resizeStartHeight: 0,
+      isResizable: props.enableResizing || false,
     }
+    this.updateMaxConstraints()
   }
 
   static propTypes = {
@@ -223,6 +231,11 @@ export class QueryOutput extends React.Component {
     enableTableContextMenu: PropTypes.bool,
     initialFormattedTableParams: PropTypes.shape({}),
     onUpdateFilterResponse: PropTypes.func,
+    enableResizing: PropTypes.bool,
+    minHeight: PropTypes.number,
+    maxHeight: PropTypes.number,
+    resizeMultiplier: PropTypes.number,
+    onResize: PropTypes.func,
   }
 
   static defaultProps = {
@@ -275,6 +288,11 @@ export class QueryOutput extends React.Component {
     onNewData: () => {},
     onCustomColumnUpdate: () => {},
     onUpdateFilterResponse: () => {},
+    enableResizing: false,
+    minHeight: 300,
+    maxHeight: undefined,
+    resizeMultiplier: 1.5,
+    onResize: () => {},
   }
 
   componentDidMount = () => {
@@ -282,6 +300,12 @@ export class QueryOutput extends React.Component {
       this._isMounted = true
       this.updateToolbars()
       this.props.onMount()
+      if (this.props.enableResizing) {
+        document.addEventListener('mousemove', this.handleMouseMove)
+        document.addEventListener('mouseup', this.handleMouseUp)
+        window.addEventListener('resize', this.handleWindowResize)
+        this.updateMaxConstraints()
+      }
       this.forceUpdate()
     } catch (error) {
       console.error(error)
@@ -310,6 +334,13 @@ export class QueryOutput extends React.Component {
       const newState = {}
       let shouldForceUpdate = false
 
+      if (this.state.isResizing !== prevState.isResizing) {
+        if (!this.state.isResizing && prevState.isResizing) {
+          setTimeout(() => {
+            this.refreshLayout()
+          }, 50)
+        }
+      }
       if (this.props.onDisplayTypeChange && this.state.displayType !== prevState.displayType) {
         this.props.onDisplayTypeChange(this.state.displayType)
 
@@ -394,16 +425,101 @@ export class QueryOutput extends React.Component {
   }
 
   componentWillUnmount = () => {
-    try {
-      this._isMounted = false
-    } catch (error) {
-      console.error(error)
+    this._isMounted = false
+    document.removeEventListener('mousemove', this.handleMouseMove)
+    document.removeEventListener('mouseup', this.handleMouseUp)
+    document.removeEventListener('mouseleave', this.handleMouseUp)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+    window.removeEventListener('resize', this.handleWindowResize)
+    if (this.resizeTimeout) {
+      clearTimeout(this.resizeTimeout)
     }
+  }
+
+  updateMaxConstraints = () => {
+    if (!this.props.enableResizing) return
+
+    const windowWidth = window.innerWidth
+    const windowHeight = window.innerHeight
+
+    this.maxWidth = this.props.maxWidth || Math.floor(windowWidth * 0.9)
+    this.maxHeight = this.props.maxHeight || Math.floor(windowHeight * 0.9)
+
+    this.maxWidth = Math.max(this.maxWidth, this.minWidth)
+    this.maxHeight = Math.max(this.maxHeight, this.minHeight)
+  }
+
+  handleWindowResize = () => {
+    this.updateMaxConstraints()
+  }
+  handleResizeStart = (e) => {
+    if (!this.props.enableResizing) return
+
+    e.preventDefault()
+    this.updateMaxConstraints()
+
+    const rect = this.responseContainerRef?.getBoundingClientRect()
+
+    this.setState({
+      isResizing: true,
+      resizeStartY: e.clientY,
+      resizeStartHeight: rect?.height || this.minHeight,
+    })
+
+    document.addEventListener('mousemove', this.handleMouseMove)
+    document.addEventListener('mouseup', this.handleMouseUp)
+
+    document.body.style.cursor = 'ns-resize'
+    document.body.style.userSelect = 'none'
+  }
+
+  handleMouseMove = (e) => {
+    if (!this.state.isResizing || !this.props.enableResizing) return
+
+    const deltaY = (e.clientY - this.state.resizeStartY) * this.resizeMultiplier
+    const newHeight = Math.min(this.maxHeight, Math.max(this.minHeight, this.state.resizeStartHeight + deltaY))
+
+    this.setState({
+      height: `${newHeight}px`,
+    })
+
+    if (!this.resizeTimeout) {
+      this.resizeTimeout = setTimeout(() => {
+        this.refreshLayout()
+        this.resizeTimeout = null
+      }, 16)
+    }
+
+    this.props.onResize({ height: newHeight })
+  }
+  handleMouseUp = () => {
+    if (this.state.isResizing) {
+      this.setState({ isResizing: false }, () => {
+        this.refreshLayout()
+      })
+    }
+
+    document.removeEventListener('mousemove', this.handleMouseMove)
+    document.removeEventListener('mouseup', this.handleMouseUp)
+    document.removeEventListener('mouseleave', this.handleMouseUp)
+
+    document.body.style.userSelect = ''
+    document.body.style.webkitUserSelect = ''
+    document.body.style.mozUserSelect = ''
+    document.body.style.msUserSelect = ''
   }
 
   refreshLayout = () => {
     if (this.chartRef) {
       this.chartRef?.adjustChartPosition()
+    }
+    if (this.tableRef?._isMounted) {
+      this.tableRef.forceUpdate()
+    }
+
+    if (this.pivotTableRef?._isMounted) {
+      this.pivotTableRef.forceUpdate()
     }
   }
 
@@ -2662,7 +2778,7 @@ export class QueryOutput extends React.Component {
           onTableParamsChange={this.onTableParamsChange}
           onNewData={this.onNewData}
           isAnimating={this.props.isAnimating}
-          isResizing={this.props.isResizing}
+          isResizing={this.props.isResizing || this.state.isResizing}
           queryRequestData={this.queryResponse?.data?.data?.fe_req}
           queryText={this.queryResponse?.data?.data?.text}
           originalQueryID={this.props.originalQueryID}
@@ -2711,7 +2827,7 @@ export class QueryOutput extends React.Component {
           data={this.pivotTableData}
           onCellClick={this.onTableCellClick}
           isAnimating={this.props.isAnimating}
-          isResizing={this.props.isResizing}
+          isResizing={this.props.isResizing || this.state.isResizing}
           hidden={this.state.displayType !== 'pivot_table'}
           useInfiniteScroll={false}
           supportsDrilldowns={true}
@@ -2767,6 +2883,7 @@ export class QueryOutput extends React.Component {
       <ErrorBoundary>
         <ChataChart
           key={this.state.chartID}
+          isResizable={this.state.isResizable}
           {...tableConfig}
           tableConfig={this.tableConfig}
           originalColumns={this.getColumns()}
@@ -2788,7 +2905,7 @@ export class QueryOutput extends React.Component {
           changeLegendColumnIndex={this.onChangeLegendColumnIndex}
           changeNumberColumnIndices={this.onChangeNumberColumnIndices}
           onChartClick={this.onChartClick}
-          isResizing={this.props.isResizing}
+          isResizing={this.props.isResizing || this.state.isResizing}
           isAnimating={this.props.isAnimating}
           isDrilldownChartHidden={this.props.isDrilldownChartHidden}
           enableDynamicCharting={this.props.enableDynamicCharting}
@@ -3041,8 +3158,41 @@ export class QueryOutput extends React.Component {
 
     return <div className={footerClassName}>{shouldRenderRT && this.renderReverseTranslation()}</div>
   }
+  renderResizeHandle = () => {
+    const self = this
+    return (
+      <div
+        className='react-autoql-query-output-resize-handle bottom'
+        onMouseDown={(e) => {
+          e.preventDefault()
+
+          this.setState({
+            isResizing: true,
+            resizeStartY: e.pageY,
+            resizeStartHeight: this.responseContainerRef?.getBoundingClientRect()?.height || this.minHeight,
+          })
+
+          document.body.style.userSelect = 'none'
+          document.body.style.webkitUserSelect = 'none'
+          document.body.style.mozUserSelect = 'none'
+          document.body.style.msUserSelect = 'none'
+
+          document.addEventListener('mousemove', self.handleMouseMove)
+          document.addEventListener('mouseup', self.handleMouseUp)
+          document.addEventListener('mouseleave', self.handleMouseUp)
+        }}
+      />
+    )
+  }
 
   render = () => {
+    const containerStyle = this.props.enableResizing
+      ? {
+          height: this.state.height,
+          position: 'relative',
+        }
+      : {}
+
     return (
       <ErrorBoundary>
         <div
@@ -3050,10 +3200,13 @@ export class QueryOutput extends React.Component {
           ref={(r) => (this.responseContainerRef = r)}
           id={`react-autoql-response-content-container-${this.COMPONENT_KEY}`}
           data-test='query-response-wrapper'
+          style={containerStyle}
           className={`react-autoql-response-content-container
-          ${isTableType(this.state.displayType) ? 'table' : ''}
-          ${isChartType(this.state.displayType) ? 'chart' : ''} 
-          ${!isChartType(this.state.displayType) && !isTableType(this.state.displayType) ? 'non-table-non-chart' : ''}`}
+		  ${isTableType(this.state.displayType) ? 'table' : ''}
+		  ${isChartType(this.state.displayType) ? 'chart' : ''} 
+		  ${!isChartType(this.state.displayType) && !isTableType(this.state.displayType) ? 'non-table-non-chart' : ''}
+		  ${this.props.enableResizing ? 'resizable' : ''}
+		  ${this.state.isResizing ? 'resizing' : ''}`}
         >
           {this.props.reverseTranslationPlacement === 'top' && this.renderFooter()}
           {this.renderResponse()}
@@ -3062,6 +3215,7 @@ export class QueryOutput extends React.Component {
         {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} />}
         {!this.props.chartTooltipID && <Tooltip tooltipId={this.CHART_TOOLTIP_ID} />}
         {this.renderAddColumnBtn()}
+        {this.props.enableResizing && this.renderResizeHandle()}
       </ErrorBoundary>
     )
   }

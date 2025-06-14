@@ -28,12 +28,14 @@ class VizToolbar extends React.Component {
     shouldRender: PropTypes.bool,
     disableCharts: PropTypes.bool,
     vertical: PropTypes.bool,
+    onDisplayTypeChange: PropTypes.func,
   }
 
   static defaultProps = {
     shouldRender: true,
     disableCharts: false,
     vertical: false,
+    onDisplayTypeChange: undefined,
   }
 
   componentDidMount = () => {
@@ -68,6 +70,10 @@ class VizToolbar extends React.Component {
   onDisplayTypeChange = (displayType) => {
     if (this.props.responseRef?._isMounted) {
       this.props.responseRef?.changeDisplayType(displayType)
+    }
+
+    if (this.props.onDisplayTypeChange) {
+      this.props.onDisplayTypeChange(displayType)
     }
   }
 
