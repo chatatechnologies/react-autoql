@@ -83,6 +83,11 @@ body.react-autoql-no-select {
   overflow: hidden;
 }
 
+.react-autoql-response-content-container.non-table-non-chart {
+  min-height: 100%;
+  height: auto;
+}
+
 .react-autoql-suggestion-btn {
   padding: 6px 14px;
   background: transparent;
