@@ -344,13 +344,11 @@ export class QueryOutput extends React.Component {
           this.shouldEnableResize = shouldEnableResize
 
           if (shouldEnableResize) {
-            // Add resize listeners
             document.addEventListener('mousemove', this.handleMouseMove)
             document.addEventListener('mouseup', this.handleMouseUp)
             window.addEventListener('resize', this.handleWindowResize)
             this.updateMaxConstraints()
           } else {
-            // Remove resize listeners
             document.removeEventListener('mousemove', this.handleMouseMove)
             document.removeEventListener('mouseup', this.handleMouseUp)
             window.removeEventListener('resize', this.handleWindowResize)
