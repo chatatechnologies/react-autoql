@@ -177,7 +177,7 @@
       box-sizing: border-box;
       box-shadow: var(--react-autoql-box-shadow-1);
       &:not(.resizable) {
-        max-height: 400px;
+        max-height: 300px;
       }
       &.resizable {
         max-height: none;
