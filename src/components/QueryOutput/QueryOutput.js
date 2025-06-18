@@ -3202,7 +3202,7 @@ export class QueryOutput extends React.Component {
         {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} />}
         {!this.props.chartTooltipID && <Tooltip tooltipId={this.CHART_TOOLTIP_ID} />}
         {this.renderAddColumnBtn()}
-        {this.shouldEnableResize && this.renderResizeHandle()}{' '}
+        {this.shouldEnableResize && this.renderResizeHandle()}
       </ErrorBoundary>
     )
   }
