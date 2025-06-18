@@ -2874,7 +2874,7 @@ export class QueryOutput extends React.Component {
       ? this.state.visiblePivotRows || this.pivotTableData
       : this.tableData > TABULATOR_LOCAL_ROW_LIMIT || !this.tableRef?._isMounted
       ? this.tableData
-      : this.tableRef?.ref?.tabulator.getData('active')
+      : this.tableRef?.ref?.tabulator?.getData('active') || this.tableData
     const columns = usePivotData ? this.pivotTableColumns : this.state.columns
 
     const isPivotDataLimited =
