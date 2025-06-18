@@ -81,6 +81,7 @@ import { QueryValidationMessage } from '../QueryValidationMessage'
 import { withTheme } from '../../theme'
 import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
 import { TABULATOR_LOCAL_ROW_LIMIT } from '../../js/Constants'
+import { DataSourceManager } from '../../utils/dataSourceUtils'
 
 import './QueryOutput.scss'
 

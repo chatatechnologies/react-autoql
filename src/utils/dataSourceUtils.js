@@ -1,3 +1,5 @@
+import _cloneDeep from 'lodash/cloneDeep'
+
 export class DataSourceManager {
   constructor(queryResponse, tableRef, rowLimit) {
     this.queryResponse = queryResponse

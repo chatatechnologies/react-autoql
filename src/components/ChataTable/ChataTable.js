@@ -444,6 +444,7 @@ export default class ChataTable extends React.Component {
         query: this.props.queryText,
         translation: TranslationTypes.REVERSE_ONLY,
         orders: tableParamsFormatted?.sorters,
+        allowSuggestions: false,
         tableFilters: tableParamsFormatted?.filters,
         source: 'data_messenger',
         allowSuggestions: false,
