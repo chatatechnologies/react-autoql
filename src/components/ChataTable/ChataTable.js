@@ -1586,9 +1586,10 @@ export default class ChataTable extends React.Component {
   }
 
   isTableEmpty = () => {
-    return !this.isLocal
-      ? this.props.response?.data?.data?.rows?.length === 0
-      : this.ref?.tabulator?.getDataCount('active') === 0
+    return (
+      (this.isLocal && this.ref?.tabulator?.getDataCount('active') === 0) ||
+      (!this.isLocal && this.props.response?.data?.data?.rows?.length === 0)
+    )
   }
 
   render = () => {
