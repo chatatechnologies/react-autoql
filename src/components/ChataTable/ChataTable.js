@@ -69,7 +69,7 @@ export default class ChataTable extends React.Component {
     this.useRemote =
       this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
         ? LOCAL_OR_REMOTE.REMOTE
-        : LOCAL_OR_REMOTE.LOCAL
+        : LOCAL_OR_REMOTE.REMOTE
 
     this.totalPages = this.getTotalPages(props.response)
     if (isNaN(this.totalPages) || !this.totalPages) {
@@ -1586,7 +1586,9 @@ export default class ChataTable extends React.Component {
   }
 
   isTableEmpty = () => {
-    return this.props.response?.data?.data?.rows?.length === 0
+    return this.useRemote === LOCAL_OR_REMOTE.REMOTE
+      ? this.props.response?.data?.data?.rows?.length === 0
+      : this.useRemote === LOCAL_OR_REMOTE.LOCAL && this.ref?.tabulator?.getDataCount('active') === 0
   }
 
   render = () => {
