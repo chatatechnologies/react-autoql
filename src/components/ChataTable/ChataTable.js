@@ -47,6 +47,9 @@ import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator styleshe
 import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
 
 export default class ChataTable extends React.Component {
+  getIsLocal = () => {
+    return this.useRemote === LOCAL_OR_REMOTE.LOCAL
+  }
   constructor(props) {
     super(props)
 
@@ -69,7 +72,7 @@ export default class ChataTable extends React.Component {
     this.useRemote =
       this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
         ? LOCAL_OR_REMOTE.REMOTE
-        : LOCAL_OR_REMOTE.REMOTE
+        : LOCAL_OR_REMOTE.LOCAL
 
     this.totalPages = this.getTotalPages(props.response)
     if (isNaN(this.totalPages) || !this.totalPages) {
@@ -108,7 +111,7 @@ export default class ChataTable extends React.Component {
       this.tableOptions.paginationMode = this.useRemote
       this.tableOptions.paginationSize = this.pageSize
       this.tableOptions.paginationInitialPage = 1
-      if (this.useRemote === LOCAL_OR_REMOTE.LOCAL) {
+      if (this.getIsLocal()) {
         this.tableOptions.progressiveLoad = 'load'
         this.tableOptions.data = props.response?.data?.data?.rows
       } else {
@@ -511,7 +514,7 @@ export default class ChataTable extends React.Component {
         }
       }, 0)
     }
-    if (this.useRemote === LOCAL_OR_REMOTE.LOCAL) {
+    if (this.getIsLocal()) {
       this.getRTForRemoteFilterAndSort()
     }
     this.setFilterBadgeClasses()
@@ -1417,13 +1420,13 @@ export default class ChataTable extends React.Component {
 
     let currentRowCount = this.getCurrentRowCount()
     let totalRowCount
-    if (this.useRemote === LOCAL_OR_REMOTE.REMOTE) {
+    if (!this.getIsLocal()) {
       if (this.props.pivot) {
         totalRowCount = this.props.data?.length
       } else {
         totalRowCount = this.props.response?.data?.data?.count_rows
       }
-    } else if (this.useRemote === LOCAL_OR_REMOTE.LOCAL) {
+    } else if (this.getIsLocal()) {
       totalRowCount = this.ref?.tabulator?.getDataCount('active')
       const tabulatorRow = this.tableContainer?.querySelector('.tabulator-row.tabulator-unselectable') // tabulator default is 30
       const rowHeight = tabulatorRow?.clientHeight
@@ -1586,9 +1589,9 @@ export default class ChataTable extends React.Component {
   }
 
   isTableEmpty = () => {
-    return this.useRemote === LOCAL_OR_REMOTE.REMOTE
+    return !this.getIsLocal()
       ? this.props.response?.data?.data?.rows?.length === 0
-      : this.useRemote === LOCAL_OR_REMOTE.LOCAL && this.ref?.tabulator?.getDataCount('active') === 0
+      : this.ref?.tabulator?.getDataCount('active') === 0
   }
 
   render = () => {
