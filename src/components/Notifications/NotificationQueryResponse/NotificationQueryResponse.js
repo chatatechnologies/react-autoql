@@ -15,6 +15,7 @@ export default class NotificationQueryResponse extends React.Component {
     this.state = {
       isMounted: false,
       outputRef: null,
+      localRTFilterResponse: null,
     }
   }
   setOutputRef = (r) => {
@@ -38,6 +39,10 @@ export default class NotificationQueryResponse extends React.Component {
     reportProblemCallback: () => {},
     onSuccessCallback: () => {},
     onErrorCallback: () => {},
+  }
+
+  onUpdateFilterResponse = (localRTFilterResponse) => {
+    this.setState({ localRTFilterResponse })
   }
 
   componentDidMount = () => {
@@ -70,6 +75,7 @@ export default class NotificationQueryResponse extends React.Component {
               showQueryInterpretation={false}
               enableDynamicCharting={true}
               useInfiniteScroll={false}
+              onUpdateFilterResponse={this.onUpdateFilterResponse}
             />
           ) : (
             <div style={{ position: 'absolute', top: 0 }} className='loading-container-centered'>
@@ -106,6 +112,7 @@ export default class NotificationQueryResponse extends React.Component {
             popoverPositions={['top', 'left', 'bottom', 'right']}
             enableFilterBtn={this.props.enableFilterBtn}
             popoverAlign='end'
+            showFilterBadge={this.state?.localRTFilterResponse?.data?.data?.fe_req?.filters?.length > 0}
           />
         </div>
       </div>

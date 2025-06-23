@@ -87,17 +87,18 @@ export class DashboardTile extends React.Component {
       isSecondQueryInputOpen: false,
       isTitleOverFlow: false,
       isTopExecuted: !!tile.queryResponse,
+      localRTFilterResponse: null,
       isBottomExecuted:
         tile.splitView && (this.areTopAndBottomSameQuery() ? !!tile.queryResponse : !!tile.secondQueryResponse),
       initialFormattedTableParams: {
         filters: tile?.tableFilters,
         sorters: tile?.orders,
-        sessionFilters: tile?.filters
+        sessionFilters: tile?.filters,
       },
       initialSecondFormattedTableParams: {
         filters: tile?.secondTableFilters,
         sorters: tile?.secondOrders,
-        sessionFilters: tile?.filters
+        sessionFilters: tile?.filters,
       },
     }
   }
@@ -163,6 +164,10 @@ export class DashboardTile extends React.Component {
     const nextPropsFiltered = this.getFilteredProps(nextProps)
 
     return !deepEqual(thisPropsFiltered, nextPropsFiltered) || !deepEqual(this.state, nextState)
+  }
+
+  onUpdateFilterResponse = (localRTFilterResponse) => {
+    this.setState({ localRTFilterResponse })
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -314,7 +319,9 @@ export class DashboardTile extends React.Component {
 
       const useSecondAxiosSource = isSecondHalf && !this.areTopAndBottomSameQuery()
       const additionalColumnSelects = isSecondHalf ? this.props.tile.secondColumnSelects : this.props.tile.columnSelects
-      const currentDisplayOverrides = isSecondHalf ? this.props.tile?.secondDisplayOverrides : this.props.tile?.displayOverrides
+      const currentDisplayOverrides = isSecondHalf
+        ? this.props.tile?.secondDisplayOverrides
+        : this.props.tile?.displayOverrides
       const currentSessionFilters = isSecondHalf ? this.props.tile.secondFilters : this.props.tile.filters
       const currentOrders = isSecondHalf ? this.props.tile.secondOrders : this.props.tile.orders
       const currentFilter = isSecondHalf ? this.props.tile.secondTableFilters : this.props.tile.tableFilters
@@ -745,8 +752,25 @@ export class DashboardTile extends React.Component {
   onDisplayTypeChange = (displayType) => this.debouncedSetParamsForTile({ displayType })
   onBucketSizeChange = (bucketSize) => this.debouncedSetParamsForTile({ bucketSize })
 
-  onColumnChange = (displayOverrides, columns, columnSelects, queryResponse, dataConfig, tableFilters, orders, filters) => {
-    this.debouncedSetParamsForTile({ columnSelects, queryResponse, dataConfig, displayOverrides, tableFilters, orders, filters })
+  onColumnChange = (
+    displayOverrides,
+    columns,
+    columnSelects,
+    queryResponse,
+    dataConfig,
+    tableFilters,
+    orders,
+    filters,
+  ) => {
+    this.debouncedSetParamsForTile({
+      columnSelects,
+      queryResponse,
+      dataConfig,
+      displayOverrides,
+      tableFilters,
+      orders,
+      filters,
+    })
   }
 
   onSecondAggConfigChange = (secondAggConfig) => this.debouncedSetParamsForTile({ secondAggConfig })
@@ -755,9 +779,25 @@ export class DashboardTile extends React.Component {
   onSecondBucketSizeChange = (secondBucketSize) => this.debouncedSetParamsForTile({ secondBucketSize })
   onSecondCustomColumnUpdate = (secondCustomColumns) => this.debouncedSetParamsForTile({ secondCustomColumns })
 
-
-  onSecondColumnChange = (secondDisplayOverrides, secondColumns, secondColumnSelects, secondQueryResponse, secondDataConfig, secondTableFilters, secondOrders, secondFilters) => {
-    this.debouncedSetParamsForTile({ secondDisplayOverrides, secondColumnSelects, secondQueryResponse, secondDataConfig, secondTableFilters, secondTableFilters, secondFilters })
+  onSecondColumnChange = (
+    secondDisplayOverrides,
+    secondColumns,
+    secondColumnSelects,
+    secondQueryResponse,
+    secondDataConfig,
+    secondTableFilters,
+    secondOrders,
+    secondFilters,
+  ) => {
+    this.debouncedSetParamsForTile({
+      secondDisplayOverrides,
+      secondColumnSelects,
+      secondQueryResponse,
+      secondDataConfig,
+      secondTableFilters,
+      secondTableFilters,
+      secondFilters,
+    })
   }
 
   reportProblemCallback = () => {
@@ -1051,6 +1091,7 @@ export class DashboardTile extends React.Component {
             popoverPositions={['top', 'left', 'bottom', 'right']}
             customOptions={this.props.customToolbarOptions}
             popoverAlign='end'
+            showFilterBadge={this.state?.localRTFilterResponse?.data?.data?.fe_req?.filters?.length > 0}
             {...optionsToolbarProps}
           />
         </div>
@@ -1091,6 +1132,7 @@ export class DashboardTile extends React.Component {
         autoHeight={false}
         height='100%'
         width='100%'
+        onUpdateFilterResponse={this.onUpdateFilterResponse}
         {...queryOutputProps}
       />
     )
