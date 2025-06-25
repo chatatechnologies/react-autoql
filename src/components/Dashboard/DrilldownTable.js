@@ -27,6 +27,10 @@ export default class DrilldownTable extends React.Component {
     reportProblemCallback: () => {},
   }
 
+  onUpdateFilterResponse = (localRTFilterResponse) => {
+    this.setState({ localRTFilterResponse })
+  }
+
   componentDidMount = () => {
     this.setState({
       isMounted: true,
@@ -60,6 +64,7 @@ export default class DrilldownTable extends React.Component {
             allowDisplayTypeChange={true}
             height='100%'
             width='100%'
+            onUpdateFilterResponse={this.onUpdateFilterResponse}
           />
           <div className='drilldown-modal-toolbars'>
             <div className='drilldown-modal-viz-toolbar'>
@@ -72,10 +77,10 @@ export default class DrilldownTable extends React.Component {
             </div>
             <div className='drilldown-modal-options-toolbar'>
               <OptionsToolbar
-                authentication={this.props.authentication}
-                autoQLConfig={{ ...getAutoQLConfig(this.props.autoQLConfig), enableNotifications: false }}
                 ref={(r) => (this.optionsToolbarRef = r)}
                 responseRef={this.responseRef}
+                authentication={this.props.authentication}
+                autoQLConfig={{ ...getAutoQLConfig(this.props.autoQLConfig), enableNotifications: false }}
                 tooltipID={this.props.tooltipID}
                 onErrorCallback={this.props.onErrorCallback}
                 onSuccessAlert={this.props.onSuccessCallback}
@@ -84,6 +89,7 @@ export default class DrilldownTable extends React.Component {
                 onCSVDownloadProgress={this.props.onCSVDownloadProgress}
                 onCSVDownloadFinish={this.props.onCSVDownloadFinish}
                 popoverAlign='end'
+                showFilterBadge={this.responseRef?.tableRef?.getTabulatorHeaderFilters()?.length > 0}
               />
             </div>
           </div>
