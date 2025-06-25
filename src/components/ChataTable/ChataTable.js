@@ -956,6 +956,14 @@ export default class ChataTable extends React.Component {
         inputElement.removeEventListener('keydown', this.inputKeydownListener)
         inputElement.addEventListener('keydown', this.inputKeydownListener)
 
+        // if we want to populate the input with initial filter value
+        // const initialFilterValue = this.props.response?.data?.data?.fe_req?.filters?.find(
+        //   (filter) => filter.name === col.name,
+        // )
+        // if (initialFilterValue) {
+        //   this.setHeaderInputValue(inputElement, initialFilterValue?.value)
+        // }
+
         const clearBtn = document.querySelector(`#react-autoql-clear-btn-${this.TABLE_ID}-${col.field}`)
         if (!clearBtn) {
           this.renderHeaderInputClearBtn(inputElement, col)
