@@ -1091,7 +1091,7 @@ export class DashboardTile extends React.Component {
             popoverPositions={['top', 'left', 'bottom', 'right']}
             customOptions={this.props.customToolbarOptions}
             popoverAlign='end'
-            showFilterBadge={this.state?.localRTFilterResponse?.data?.data?.fe_req?.filters?.length > 0}
+            showFilterBadge={this.state.responseRef?.tableRef?.getTabulatorHeaderFilters()?.length > 0}
             {...optionsToolbarProps}
           />
         </div>
