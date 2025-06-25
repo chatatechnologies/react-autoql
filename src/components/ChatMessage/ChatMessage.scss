@@ -176,7 +176,17 @@
       letter-spacing: 0.04em;
       box-sizing: border-box;
       box-shadow: var(--react-autoql-box-shadow-1);
-      max-height: 400px;
+      &:not(.resizable) {
+        max-height: 300px;
+      }
+      &.resizable {
+        max-height: none;
+        &.user-resizing {
+          .react-autoql-response-content-container.chart {
+            flex: none !important;
+          }
+        }
+      }
 
       &.active {
         border: 1px solid #c3c3c3;

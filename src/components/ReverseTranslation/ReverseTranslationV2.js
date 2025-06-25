@@ -39,6 +39,7 @@ const ReverseTranslation = ({
   queryResponseRef = {},
   allowColumnAddition = false,
   enableEditReverseTranslation = false,
+  localRTFilterResponse,
 }) => {
   const COMPONENT_KEY = useRef(uuid())
   const isMounted = useRef(false)
@@ -46,9 +47,10 @@ const ReverseTranslation = ({
   const validatedParsedInterpretations = useRef(null)
   const [log, setLog] = useState([])
 
-  const initialReverseTranslationArray = termId && queryResponse?.data?.parsed_interpretations
-    ? constructRTArray(queryResponse?.data?.parsed_interpretations[termId])
-    : constructRTArray(queryResponse?.data?.data?.parsed_interpretation)
+  const initialReverseTranslationArray =
+    termId && queryResponse?.data?.parsed_interpretations
+      ? constructRTArray(queryResponse?.data?.parsed_interpretations[termId])
+      : constructRTArray(queryResponse?.data?.data?.parsed_interpretation)
 
   const [reverseTranslationArray, setReverseTranslationArray] = useState(initialReverseTranslationArray)
   const [primaryContext, setPrimaryContext] = useState('')
@@ -56,8 +58,9 @@ const ReverseTranslation = ({
   const [aggPopoverActiveID, setAggPopoverActiveID] = useState(undefined)
   const [isLoading, setIsLoading] = useState(false)
 
-  const findPrimaryContextNameFromRT = useCallback(() =>
-    initialReverseTranslationArray?.find((rt) => rt?.c_type === 'SEED')?.clean_causes?.[0] ?? '', [initialReverseTranslationArray]
+  const findPrimaryContextNameFromRT = useCallback(
+    () => initialReverseTranslationArray?.find((rt) => rt?.c_type === 'SEED')?.clean_causes?.[0] ?? '',
+    [initialReverseTranslationArray],
   )
 
   const buildValidatedMatch = (match) => {
@@ -65,7 +68,7 @@ const ReverseTranslation = ({
       canonical: match?.table_column,
       column_name: match?.table_column,
       format_txt: match?.eng,
-      keyword: match?.display_name
+      keyword: match?.display_name,
     }
   }
 
@@ -73,12 +76,12 @@ const ReverseTranslation = ({
     if (!primaryContext?.groups?.length) {
       return []
     }
-    return primaryContext?.groups.map(group => ({
+    return primaryContext?.groups.map((group) => ({
       value: group.table_column,
       label: `by ${group.display_name}`,
       description: primaryContext?.context,
       canonical: group.table_column,
-      originalMatch: group
+      originalMatch: group,
     }))
   }, [primaryContext])
 
@@ -92,14 +95,14 @@ const ReverseTranslation = ({
         continue
       }
 
-      const contextFilters = context?.filters?.map(filter => {
-        return ({
+      const contextFilters = context?.filters?.map((filter) => {
+        return {
           value: filter?.table_column,
           label: filter?.display_name,
           description: context?.displayName,
           canonical: filter?.table_column,
           originalMatch: { ...filter, subject: context?.context },
-        })
+        }
       })
 
       if (contextFilters?.length > 0) {
@@ -117,7 +120,6 @@ const ReverseTranslation = ({
     let contextChunkIndex = null
 
     if (rt?.length) {
-
       const validatedInterpretationArray = _cloneDeep(rt)
 
       const primaryContextName = findPrimaryContextNameFromRT()
@@ -136,7 +138,8 @@ const ReverseTranslation = ({
               validatedInterpretationArray[i].match = response.data.data.matches?.[0]
 
               const isLockedFilter = !!lockedFilters.find(
-                (filter) => filter?.value?.toLowerCase()?.trim() === validatedInterpretationArray[i].eng.toLowerCase().trim()
+                (filter) =>
+                  filter?.value?.toLowerCase()?.trim() === validatedInterpretationArray[i].eng.toLowerCase().trim(),
               )
 
               if (isLockedFilter) {
@@ -149,20 +152,20 @@ const ReverseTranslation = ({
         } else if (enableEditReverseTranslation && chunk.c_type === 'GROUPBY') {
           try {
             const groupByColumnName = chunk.clean_causes?.[0] ?? ''
-            const group = context?.groups?.find(group => group.table_column === groupByColumnName) || {}
+            const group = context?.groups?.find((group) => group.table_column === groupByColumnName) || {}
 
             if (group?.table_column) {
               validatedInterpretationArray[i].c_type = 'VALIDATED_GROUP_BY'
               validatedInterpretationArray[i].match = buildValidatedMatch({ ...group, eng: chunk?.eng })
             }
-
           } catch (error) {
             console.error(error)
           }
         } else if (enableEditReverseTranslation && chunk.c_type === 'SEED') {
           try {
             const filterName = chunk?.eng?.toLowerCase()?.trim() ?? ''
-            const filter = context?.filters?.find(filter => filter?.display_name?.toLowerCase()?.trim() === filterName) || {}
+            const filter =
+              context?.filters?.find((filter) => filter?.display_name?.toLowerCase()?.trim() === filterName) || {}
 
             if (filter?.display_name) {
               validatedInterpretationArray[i].c_type = 'VALIDATED_SEED'
@@ -170,11 +173,10 @@ const ReverseTranslation = ({
               contextChunk = {
                 c_type: 'SEED_SUFFIX',
                 eng: ` (${titlelizeString(context?.displayName)})`,
-                for: filter?.display_name
+                for: filter?.display_name,
               }
               contextChunkIndex = i + 1
             }
-
           } catch (error) {
             console.error(error)
           }
@@ -197,7 +199,7 @@ const ReverseTranslation = ({
   }
 
   function removeBracketsAndParenthesesAndCharacterBetween(str) {
-    return str.replace(/\[[^\]]*\]|\{[^}]*\}|\([^\)]*\)/g, '');
+    return str.replace(/\[[^\]]*\]|\{[^}]*\}|\([^\)]*\)/g, '')
   }
 
   const getText = () => {
@@ -221,16 +223,18 @@ const ReverseTranslation = ({
     const query = getText()
     setIsLoading(true)
     queryResponseRef?.tableRef?.setPageLoading(true)
-    queryResponseRef?.queryFn({ query: query }).then((response) => {
-      if (response?.data?.data?.rows) {
-        queryResponseRef?.updateColumnsAndData(response)
-      } else {
-        throw new Error('New column addition failed')
-      }
-      setIsRefiningRT(false)
-      setIsLoading(false)
-      queryResponseRef?.tableRef?.setPageLoading(false)
-    })
+    queryResponseRef
+      ?.queryFn({ query: query })
+      .then((response) => {
+        if (response?.data?.data?.rows) {
+          queryResponseRef?.updateColumnsAndData(response)
+        } else {
+          throw new Error('New column addition failed')
+        }
+        setIsRefiningRT(false)
+        setIsLoading(false)
+        queryResponseRef?.tableRef?.setPageLoading(false)
+      })
       .catch((error) => {
         console.error(error)
         setIsRefiningRT(false)
@@ -266,13 +270,28 @@ const ReverseTranslation = ({
 
   useEffect(() => {
     const newParsedInterpretation = queryResponse?.data?.data?.parsed_interpretation
-    if (initialParsedInterpretations?.current?.length &&
-      !deepEqual(newParsedInterpretation, initialParsedInterpretations?.current)) {
+    if (
+      initialParsedInterpretations?.current?.length &&
+      !deepEqual(newParsedInterpretation, initialParsedInterpretations?.current)
+    ) {
       initialParsedInterpretations.current = newParsedInterpretation
       const newArray = constructRTArray(newParsedInterpretation)
       executePrerequisites(newArray)
     }
   }, [queryResponse?.data?.data?.parsed_interpretation])
+
+  // todo: see if we can update and remove this useEffect and use queryRepsonse instead
+  useEffect(() => {
+    const newParsedInterpretation = localRTFilterResponse?.data?.data?.parsed_interpretation
+    if (
+      initialParsedInterpretations?.current?.length &&
+      !deepEqual(newParsedInterpretation, initialParsedInterpretations?.current)
+    ) {
+      initialParsedInterpretations.current = newParsedInterpretation
+      const newArray = constructRTArray(newParsedInterpretation)
+      executePrerequisites(newArray)
+    }
+  }, [localRTFilterResponse?.data?.data?.parsed_interpretation])
 
   useEffect(() => {
     if (isRefiningRT && primaryContext && reverseTranslationArray?.length) {
@@ -319,7 +338,7 @@ const ReverseTranslation = ({
     setReverseTranslationArray((prevRefinedReverseTranslationArray) => {
       if (existingIndex !== -1) {
         if (filter?.c_type === 'VALIDATED_SEED' && filter?.match?.show_message !== primaryContext?.displayName) {
-          prevRefinedReverseTranslationArray.splice(existingIndex + 1);
+          prevRefinedReverseTranslationArray.splice(existingIndex + 1)
           return [...prevRefinedReverseTranslationArray.map((f, i) => (i === existingIndex ? filter : f))]
         }
         return [...prevRefinedReverseTranslationArray.map((f, i) => (i === existingIndex ? filter : f))]
@@ -353,13 +372,13 @@ const ReverseTranslation = ({
     return (
       <VLAutocompleteInputV2
         authentication={authentication}
-        column="Player"
+        column='Player'
         context={primaryContext}
         value={chunk?.match}
         onChange={(newValue) => handleFilterChange({ ...chunk, match: newValue, eng: newValue?.format_txt }, i)}
         filters={log}
         onToast={true}
-        placeholder="Choose a VL..."
+        placeholder='Choose a VL...'
       />
     )
   }
@@ -389,7 +408,7 @@ const ReverseTranslation = ({
           suggestions={transformGroupBySuggestions()}
           filters={log}
           onToast={true}
-          placeholder="Choose a GROUP BY..."
+          placeholder='Choose a GROUP BY...'
         />
         {renderAddColumnBtn(`${COMPONENT_KEY}-groupby-chunk-add-column-button`, false, true)}
       </>
@@ -402,14 +421,14 @@ const ReverseTranslation = ({
         key={`agg-select-menu-${i}`}
         isOpen={aggPopoverActiveID === `column-select-menu-item-${i}`}
         onClickOutside={() => setAggPopoverActiveID(undefined)}
-        content={() =>
+        content={() => (
           <AggMenu
             handleAggMenuItemClick={(aggType) => {
               handleFilterChange({ ...chunk, eng: aggType?.displayName }, i)
               setAggPopoverActiveID(undefined)
             }}
           />
-        }
+        )}
         positions={['right', 'left']}
         align='start'
         padding={0}
@@ -490,9 +509,7 @@ const ReverseTranslation = ({
 
   const renderActionIcon = () => {
     if (isLoading) {
-      return (
-        <Spinner data-test='react-autoql-btn-loading' />
-      )
+      return <Spinner data-test='react-autoql-btn-loading' />
     }
     if (isRefiningRT) {
       return (
@@ -500,23 +517,15 @@ const ReverseTranslation = ({
           <Icon
             type='play'
             onClick={() => queryNewRT()}
-            data-tooltip-content={
-              'Execute query interpretation to update the data response.'
-            }
-            data-tooltip-id={
-              tooltipID ?? `react-autoql-update-reverse-translation-tooltip-${COMPONENT_KEY.current}`
-            }
+            data-tooltip-content={'Execute query interpretation to update the data response.'}
+            data-tooltip-id={tooltipID ?? `react-autoql-update-reverse-translation-tooltip-${COMPONENT_KEY.current}`}
           />
           <Icon
             type='close-circle'
             danger={true}
             onClick={() => resetReverseTranslation()}
-            data-tooltip-content={
-              'Reset query interpretation to the original query.'
-            }
-            data-tooltip-id={
-              tooltipID ?? `react-autoql-reset-reverse-translation-tooltip-${COMPONENT_KEY.current}`
-            }
+            data-tooltip-content={'Reset query interpretation to the original query.'}
+            data-tooltip-id={tooltipID ?? `react-autoql-reset-reverse-translation-tooltip-${COMPONENT_KEY.current}`}
           />
         </div>
       )
@@ -525,12 +534,8 @@ const ReverseTranslation = ({
       <Icon
         type='edit'
         onClick={() => setIsRefiningRT(!isRefiningRT)}
-        data-tooltip-content={
-          'Edit query interpretation to update the data response.'
-        }
-        data-tooltip-id={
-          tooltipID ?? `react-autoql-edit-reverse-translation-tooltip-${COMPONENT_KEY.current}`
-        }
+        data-tooltip-content={'Edit query interpretation to update the data response.'}
+        data-tooltip-id={tooltipID ?? `react-autoql-edit-reverse-translation-tooltip-${COMPONENT_KEY.current}`}
       />
     )
   }
@@ -552,9 +557,7 @@ const ReverseTranslation = ({
                 data-tooltip-content={
                   'This statement reflects how your query was interpreted in order to return this data response.'
                 }
-                data-tooltip-id={
-                  tooltipID ?? `react-autoql-reverse-translation-tooltip-${COMPONENT_KEY.current}`
-                }
+                data-tooltip-id={tooltipID ?? `react-autoql-reverse-translation-tooltip-${COMPONENT_KEY.current}`}
               />
               <strong> Interpreted as: </strong>
               {reverseTranslationArray.map((chunk, i) => (
@@ -590,6 +593,7 @@ ReverseTranslation.propTypes = {
   subjects: PropTypes.arrayOf(PropTypes.shape({})),
   queryResponseRef: PropTypes.shape({}),
   allowColumnAddition: PropTypes.bool,
+  localRTFilterResponse: PropTypes.shape({}),
 }
 
 export default ReverseTranslation

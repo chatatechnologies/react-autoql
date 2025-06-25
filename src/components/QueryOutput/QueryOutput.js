@@ -86,7 +86,10 @@ import './QueryOutput.scss'
 export class QueryOutput extends React.Component {
   constructor(props) {
     super(props)
-
+    this.minWidth = props.minWidth || 400
+    const isChart = isChartType(this.getDisplayTypeFromInitial(props))
+    this.minHeight = 300
+    this.resizeMultiplier = props.resizeMultiplier || 1.5
     this.COMPONENT_KEY = uuid()
     this.QUERY_VALIDATION_KEY = uuid()
     this.TOOLTIP_ID = `react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`
@@ -157,7 +160,7 @@ export class QueryOutput extends React.Component {
     }
 
     this.DEFAULT_TABLE_PAGE_SIZE = 100
-
+    this.shouldEnableResize = props.enableResizing && isChart
     this.state = {
       displayType,
       aggConfig: props.initialAggConfig,
@@ -167,7 +170,13 @@ export class QueryOutput extends React.Component {
       columnChangeCount: 0,
       chartID: uuid(),
       customColumnSelects: customColumnSelects || [],
+      height: props.height || `${this.minHeight}px`,
+      isResizing: false,
+      resizeStartY: 0,
+      resizeStartHeight: 0,
+      isResizable: this.shouldEnableResize,
     }
+    this.updateMaxConstraints()
   }
 
   static propTypes = {
@@ -221,6 +230,12 @@ export class QueryOutput extends React.Component {
     onCustomColumnUpdate: PropTypes.func,
     enableTableContextMenu: PropTypes.bool,
     initialFormattedTableParams: PropTypes.shape({}),
+    onUpdateFilterResponse: PropTypes.func,
+    enableResizing: PropTypes.bool,
+    minHeight: PropTypes.number,
+    maxHeight: PropTypes.number,
+    resizeMultiplier: PropTypes.number,
+    onResize: PropTypes.func,
   }
 
   static defaultProps = {
@@ -272,6 +287,12 @@ export class QueryOutput extends React.Component {
     onBucketSizeChange: () => {},
     onNewData: () => {},
     onCustomColumnUpdate: () => {},
+    onUpdateFilterResponse: () => {},
+    enableResizing: false,
+    minHeight: 300,
+    maxHeight: undefined,
+    resizeMultiplier: 1.5,
+    onResize: () => {},
   }
 
   componentDidMount = () => {
@@ -279,6 +300,12 @@ export class QueryOutput extends React.Component {
       this._isMounted = true
       this.updateToolbars()
       this.props.onMount()
+      if (this.shouldEnableResize) {
+        document.addEventListener('mousemove', this.handleMouseMove)
+        document.addEventListener('mouseup', this.handleMouseUp)
+        window.addEventListener('resize', this.handleWindowResize)
+        this.updateMaxConstraints()
+      }
       this.forceUpdate()
     } catch (error) {
       console.error(error)
@@ -307,6 +334,34 @@ export class QueryOutput extends React.Component {
       const newState = {}
       let shouldForceUpdate = false
 
+      if (this.state.displayType !== prevState.displayType) {
+        const isChart = isChartType(this.state.displayType)
+        const shouldEnableResize = this.props.enableResizing && isChart
+
+        if (shouldEnableResize !== this.shouldEnableResize) {
+          this.shouldEnableResize = shouldEnableResize
+
+          if (shouldEnableResize) {
+            document.addEventListener('mousemove', this.handleMouseMove)
+            document.addEventListener('mouseup', this.handleMouseUp)
+            window.addEventListener('resize', this.handleWindowResize)
+            this.updateMaxConstraints()
+          } else {
+            document.removeEventListener('mousemove', this.handleMouseMove)
+            document.removeEventListener('mouseup', this.handleMouseUp)
+            window.removeEventListener('resize', this.handleWindowResize)
+          }
+
+          this.setState({ isResizable: shouldEnableResize })
+        }
+      }
+      if (this.state.isResizing !== prevState.isResizing) {
+        if (!this.state.isResizing && prevState.isResizing) {
+          setTimeout(() => {
+            this.refreshLayout()
+          }, 50)
+        }
+      }
       if (this.props.onDisplayTypeChange && this.state.displayType !== prevState.displayType) {
         this.props.onDisplayTypeChange(this.state.displayType)
 
@@ -391,16 +446,103 @@ export class QueryOutput extends React.Component {
   }
 
   componentWillUnmount = () => {
-    try {
-      this._isMounted = false
-    } catch (error) {
-      console.error(error)
+    this._isMounted = false
+    document.removeEventListener('mousemove', this.handleMouseMove)
+    document.removeEventListener('mouseup', this.handleMouseUp)
+    document.removeEventListener('mouseleave', this.handleMouseUp)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+    window.removeEventListener('resize', this.handleWindowResize)
+    if (this.resizeTimeout) {
+      clearTimeout(this.resizeTimeout)
     }
+  }
+
+  updateMaxConstraints = () => {
+    if (!this.props.enableResizing) return
+
+    const windowWidth = window.innerWidth
+    const windowHeight = window.innerHeight
+
+    this.maxWidth = this.props.maxWidth || Math.floor(windowWidth * 0.9)
+    this.maxHeight = this.props.maxHeight || Math.floor(windowHeight * 0.9)
+
+    this.maxWidth = Math.max(this.maxWidth, this.minWidth)
+    this.maxHeight = Math.max(this.maxHeight, this.minHeight)
+  }
+
+  handleWindowResize = () => {
+    this.updateMaxConstraints()
+  }
+  handleResizeStart = (e) => {
+    if (!this.props.enableResizing) return
+
+    e.preventDefault()
+    this.updateMaxConstraints()
+
+    const rect = this.responseContainerRef?.getBoundingClientRect()
+
+    this.setState({
+      isResizing: true,
+      resizeStartY: e.clientY,
+      resizeStartHeight: rect?.height || this.minHeight,
+    })
+
+    document.addEventListener('mousemove', this.handleMouseMove)
+    document.addEventListener('mouseup', this.handleMouseUp)
+
+    document.body.style.cursor = 'ns-resize'
+    document.body.style.userSelect = 'none'
+  }
+
+  handleMouseMove = (e) => {
+    if (!this.state.isResizing || !this.props.enableResizing) return
+
+    const deltaY = (e.clientY - this.state.resizeStartY) * this.resizeMultiplier
+    const isChart = isChartType(this.state.displayType)
+    const effectiveMinHeight = isChart ? this.minHeight : 80
+    const newHeight = Math.min(this.maxHeight, Math.max(effectiveMinHeight, this.state.resizeStartHeight + deltaY))
+
+    this.setState({
+      height: `${newHeight}px`,
+    })
+
+    if (!this.resizeTimeout) {
+      this.resizeTimeout = setTimeout(() => {
+        this.refreshLayout()
+        this.resizeTimeout = null
+      }, 16)
+    }
+
+    this.props.onResize({ height: newHeight })
+  }
+  handleMouseUp = () => {
+    if (this.state.isResizing) {
+      this.setState({ isResizing: false }, () => {
+        this.refreshLayout()
+      })
+    }
+
+    document.removeEventListener('mousemove', this.handleMouseMove)
+    document.removeEventListener('mouseup', this.handleMouseUp)
+    document.removeEventListener('mouseleave', this.handleMouseUp)
+
+    document.body.style.userSelect = ''
+    document.body.style.webkitUserSelect = ''
+    document.body.style.mozUserSelect = ''
+    document.body.style.msUserSelect = ''
   }
 
   refreshLayout = () => {
     if (this.chartRef) {
       this.chartRef?.adjustChartPosition()
+    }
+    if (this.tableRef?._isMounted) {
+      this.tableRef.forceUpdate()
+    }
+
+    if (this.pivotTableRef?._isMounted) {
+      this.pivotTableRef.forceUpdate()
     }
   }
 
@@ -439,8 +581,8 @@ export class QueryOutput extends React.Component {
   getStringColumnIndex = (foundIndex) => {
     return foundIndex
       ? foundIndex
-      : this.tableConfig.stringColumnIndices.length > 0
-      ? this.tableConfig.stringColumnIndices[0]
+      : this.tableConfig?.stringColumnIndices.length > 0
+      ? this.tableConfig?.stringColumnIndices[0]
       : 0
   }
 
@@ -1068,7 +1210,7 @@ export class QueryOutput extends React.Component {
     if (formattedValue === null) {
       formattedValue = 'NULL'
       operator = 'is'
-    } else if (column.type === ColumnTypes.DATE) {
+    } else if (column?.type === ColumnTypes.DATE) {
       const isoDate = getDayJSObj({ value, column, config: this.props.dataFormatting })
       const precision = getPrecisionForDayJS(column.precision)
       const isoDateStart = isoDate.startOf(precision).toISOString()
@@ -1804,7 +1946,7 @@ export class QueryOutput extends React.Component {
     } else if (col.type === 'DOLLAR_AMT' || col.type === 'QUANTITY' || col.type === 'PERCENT' || col.type === 'RATIO') {
       return (headerValue, rowValue, rowData, filterParams) => {
         try {
-          if (!rowValue) {
+          if (!rowValue && rowValue !== 0) {
             return false
           }
 
@@ -1827,9 +1969,14 @@ export class QueryOutput extends React.Component {
           }
 
           // No logical operators detected, just compare numbers
-          const number = parseFloat(rowValue?.replace(/[^0-9.]/g, ''))
-          const filterNumber = parseFloat(headerValue?.replace(/[^0-9.]/g, ''))
-          return !isNaN(number) && number === filterNumber
+          const filterNumber = headerValue?.toString()
+          const formattedNumber = formatElement({
+            element: rowValue,
+            column: col,
+            config: self.props.dataFormatting,
+          })
+
+          return !isNaN(formattedNumber) && parseFloat(formattedNumber) === parseFloat(filterNumber)
         } catch (error) {
           console.error(error)
           this.props.onErrorCallback(error)
@@ -2620,7 +2767,7 @@ export class QueryOutput extends React.Component {
           onTableParamsChange={this.onTableParamsChange}
           onNewData={this.onNewData}
           isAnimating={this.props.isAnimating}
-          isResizing={this.props.isResizing}
+          isResizing={this.props.isResizing || this.state.isResizing}
           queryRequestData={this.queryResponse?.data?.data?.fe_req}
           queryText={this.queryResponse?.data?.data?.text}
           originalQueryID={this.props.originalQueryID}
@@ -2641,6 +2788,7 @@ export class QueryOutput extends React.Component {
           enableContextMenu={this.props.enableTableContextMenu}
           initialTableParams={this.tableParams}
           updateColumnsAndData={this.updateColumnsAndData}
+          onUpdateFilterResponse={this.props.onUpdateFilterResponse}
         />
       </ErrorBoundary>
     )
@@ -2660,13 +2808,14 @@ export class QueryOutput extends React.Component {
         <ChataTable
           key={this.pivotTableID}
           ref={(ref) => (this.pivotTableRef = ref)}
+          authentication={this.props.authentication}
           autoQLConfig={this.props.autoQLConfig}
           dataFormatting={this.props.dataFormatting}
           columns={this.pivotTableColumns}
           data={this.pivotTableData}
           onCellClick={this.onTableCellClick}
           isAnimating={this.props.isAnimating}
-          isResizing={this.props.isResizing}
+          isResizing={this.props.isResizing || this.state.isResizing}
           hidden={this.state.displayType !== 'pivot_table'}
           useInfiniteScroll={false}
           supportsDrilldowns={true}
@@ -2684,6 +2833,7 @@ export class QueryOutput extends React.Component {
           updateColumnsAndData={this.updateColumnsAndData}
           pivotGroups={true}
           pivot
+          queryText={this.queryResponse?.data?.data?.text}
         />
       </ErrorBoundary>
     )
@@ -2718,6 +2868,7 @@ export class QueryOutput extends React.Component {
       <ErrorBoundary>
         <ChataChart
           key={this.state.chartID}
+          isResizable={this.state.isResizable}
           {...tableConfig}
           tableConfig={this.tableConfig}
           originalColumns={this.getColumns()}
@@ -2739,7 +2890,7 @@ export class QueryOutput extends React.Component {
           changeLegendColumnIndex={this.onChangeLegendColumnIndex}
           changeNumberColumnIndices={this.onChangeNumberColumnIndices}
           onChartClick={this.onChartClick}
-          isResizing={this.props.isResizing}
+          isResizing={this.props.isResizing || this.state.isResizing}
           isAnimating={this.props.isAnimating}
           isDrilldownChartHidden={this.props.isDrilldownChartHidden}
           enableDynamicCharting={this.props.enableDynamicCharting}
@@ -2992,8 +3143,41 @@ export class QueryOutput extends React.Component {
 
     return <div className={footerClassName}>{shouldRenderRT && this.renderReverseTranslation()}</div>
   }
+  renderResizeHandle = () => {
+    const self = this
+    return (
+      <div
+        className='react-autoql-query-output-resize-handle bottom'
+        onMouseDown={(e) => {
+          e.preventDefault()
+
+          this.setState({
+            isResizing: true,
+            resizeStartY: e.pageY,
+            resizeStartHeight: this.responseContainerRef?.getBoundingClientRect()?.height || this.minHeight,
+          })
+
+          document.body.style.userSelect = 'none'
+          document.body.style.webkitUserSelect = 'none'
+          document.body.style.mozUserSelect = 'none'
+          document.body.style.msUserSelect = 'none'
+
+          document.addEventListener('mousemove', self.handleMouseMove)
+          document.addEventListener('mouseup', self.handleMouseUp)
+          document.addEventListener('mouseleave', self.handleMouseUp)
+        }}
+      />
+    )
+  }
 
   render = () => {
+    const containerStyle = this.shouldEnableResize
+      ? {
+          height: this.state.height,
+          position: 'relative',
+        }
+      : {}
+
     return (
       <ErrorBoundary>
         <div
@@ -3001,10 +3185,13 @@ export class QueryOutput extends React.Component {
           ref={(r) => (this.responseContainerRef = r)}
           id={`react-autoql-response-content-container-${this.COMPONENT_KEY}`}
           data-test='query-response-wrapper'
+          style={containerStyle}
           className={`react-autoql-response-content-container
-          ${isTableType(this.state.displayType) ? 'table' : ''}
-          ${isChartType(this.state.displayType) ? 'chart' : ''} 
-          ${!isChartType(this.state.displayType) && !isTableType(this.state.displayType) ? 'non-table-non-chart' : ''}`}
+        ${isTableType(this.state.displayType) ? 'table' : ''}
+        ${isChartType(this.state.displayType) ? 'chart' : ''} 
+        ${!isChartType(this.state.displayType) && !isTableType(this.state.displayType) ? 'non-table-non-chart' : ''}
+        ${this.shouldEnableResize ? 'resizable' : ''}
+        ${this.state.isResizing ? 'resizing' : ''}`}
         >
           {this.props.reverseTranslationPlacement === 'top' && this.renderFooter()}
           {this.renderResponse()}
@@ -3013,6 +3200,7 @@ export class QueryOutput extends React.Component {
         {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} />}
         {!this.props.chartTooltipID && <Tooltip tooltipId={this.CHART_TOOLTIP_ID} />}
         {this.renderAddColumnBtn()}
+        {this.shouldEnableResize && this.renderResizeHandle()}
       </ErrorBoundary>
     )
   }
