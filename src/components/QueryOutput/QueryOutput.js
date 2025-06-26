@@ -2894,11 +2894,14 @@ export class QueryOutput extends React.Component {
       isChartDataAggregated = true
     }
 
-    const data = usePivotData
-      ? this.state.visiblePivotRows || this.pivotTableData
-      : this.tableData > TABULATOR_LOCAL_ROW_LIMIT || !this.tableRef?._isMounted
-      ? this.tableData
-      : this.tableRef?.ref?.tabulator?.getData('active') || this.tableData
+    const data = usePivotData ? this.state.visiblePivotRows || this.pivotTableData : this.tableData
+
+    // console.log('getDataActive', this.tableRef?.ref?.tabulator?.getData('active'))
+    // const data = usePivotData
+    //   ? this.state.visiblePivotRows || this.pivotTableData
+    //   : this.tableData > TABULATOR_LOCAL_ROW_LIMIT || !this.tableRef?._isMounted
+    //   ? this.tableData
+    //   : this.tableRef?.ref?.tabulator?.getData('active') || this.tableData
     const columns = usePivotData ? this.pivotTableColumns : this.state.columns
 
     const isPivotDataLimited =
