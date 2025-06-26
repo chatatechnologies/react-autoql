@@ -89,9 +89,8 @@ export class QueryOutput extends React.Component {
   constructor(props) {
     super(props)
     this.minWidth = props.minWidth || 400
-    const isNonTableNonChart =
-      !isChartType(this.getDisplayTypeFromInitial(props)) && !isTableType(this.getDisplayTypeFromInitial(props))
-    this.minHeight = isNonTableNonChart ? 80 : props.minHeight || 300
+    const isChart = isChartType(this.getDisplayTypeFromInitial(props))
+    this.minHeight = 300
     this.resizeMultiplier = props.resizeMultiplier || 1.5
     this.COMPONENT_KEY = uuid()
     this.QUERY_VALIDATION_KEY = uuid()
@@ -163,8 +162,7 @@ export class QueryOutput extends React.Component {
     }
 
     this.DEFAULT_TABLE_PAGE_SIZE = 100
-    const isTableOrChart = isTableType(displayType) || isChartType(displayType)
-    this.shouldEnableResize = props.enableResizing && isTableOrChart
+    this.shouldEnableResize = props.enableResizing && isChart
     this.state = {
       displayType,
       aggConfig: props.initialAggConfig,
@@ -339,8 +337,8 @@ export class QueryOutput extends React.Component {
       let shouldForceUpdate = false
 
       if (this.state.displayType !== prevState.displayType) {
-        const isTableOrChart = isTableType(this.state.displayType) || isChartType(this.state.displayType)
-        const shouldEnableResize = this.props.enableResizing && isTableOrChart
+        const isChart = isChartType(this.state.displayType)
+        const shouldEnableResize = this.props.enableResizing && isChart
 
         if (shouldEnableResize !== this.shouldEnableResize) {
           this.shouldEnableResize = shouldEnableResize
@@ -503,8 +501,8 @@ export class QueryOutput extends React.Component {
     if (!this.state.isResizing || !this.props.enableResizing) return
 
     const deltaY = (e.clientY - this.state.resizeStartY) * this.resizeMultiplier
-    const isNonTableNonChart = !isChartType(this.state.displayType) && !isTableType(this.state.displayType)
-    const effectiveMinHeight = isNonTableNonChart ? 80 : this.minHeight
+    const isChart = isChartType(this.state.displayType)
+    const effectiveMinHeight = isChart ? this.minHeight : 80
     const newHeight = Math.min(this.maxHeight, Math.max(effectiveMinHeight, this.state.resizeStartHeight + deltaY))
 
     this.setState({
