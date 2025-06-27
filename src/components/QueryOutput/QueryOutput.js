@@ -448,7 +448,11 @@ export class QueryOutput extends React.Component {
   }
 
   componentWillUnmount = () => {
-    this._isMounted = false
+    try {
+      this._isMounted = false
+    } catch (error) {
+      console.error(error)
+    }
     document.removeEventListener('mousemove', this.handleMouseMove)
     document.removeEventListener('mouseup', this.handleMouseUp)
     document.removeEventListener('mouseleave', this.handleMouseUp)
@@ -539,6 +543,7 @@ export class QueryOutput extends React.Component {
     if (this.chartRef) {
       this.chartRef?.adjustChartPosition()
     }
+
     if (this.tableRef?._isMounted) {
       this.tableRef.forceUpdate()
     }
@@ -3213,7 +3218,7 @@ export class QueryOutput extends React.Component {
   }
 
   render = () => {
-    const containerStyle = this.shouldEnableResize
+    const containerStyle = this.props.enableResizing
       ? {
           height: this.state.height,
           position: 'relative',
@@ -3229,11 +3234,11 @@ export class QueryOutput extends React.Component {
           data-test='query-response-wrapper'
           style={containerStyle}
           className={`react-autoql-response-content-container
-        ${isTableType(this.state.displayType) ? 'table' : ''}
-        ${isChartType(this.state.displayType) ? 'chart' : ''} 
-        ${!isChartType(this.state.displayType) && !isTableType(this.state.displayType) ? 'non-table-non-chart' : ''}
-        ${this.shouldEnableResize ? 'resizable' : ''}
-        ${this.state.isResizing ? 'resizing' : ''}`}
+          ${isTableType(this.state.displayType) ? 'table' : ''}
+          ${isChartType(this.state.displayType) ? 'chart' : ''} 
+          ${!isChartType(this.state.displayType) && !isTableType(this.state.displayType) ? 'non-table-non-chart' : ''}
+          ${this.shouldEnableResize ? 'resizable' : ''}
+          ${this.state.isResizing ? 'resizing' : ''}`}
         >
           {this.props.reverseTranslationPlacement === 'top' && this.renderFooter()}
           {this.renderResponse()}
