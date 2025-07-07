@@ -738,8 +738,7 @@ export class OptionsToolbar extends React.Component {
           shouldShowButton.showSQLButton ||
           shouldShowButton.showCreateNotificationIcon ||
           shouldShowButton.showSaveAsCSVButton ||
-          shouldShowButton.showSaveAsPNGButton) &&
-        !isMobile
+          shouldShowButton.showSaveAsPNGButton)
     } catch (error) {
       console.error(error)
     }
