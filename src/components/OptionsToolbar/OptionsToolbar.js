@@ -561,7 +561,7 @@ export class OptionsToolbar extends React.Component {
   }
 
   renderFilterBtn = () => {
-    const isFiltered = !!this.props.responseRef?.formattedTableParams?.filters?.length || this.props.showFilterBadge
+    const isFiltered = this.props.showFilterBadge
     const displayType = this.props.responseRef?.state?.displayType
     const isTable = displayType === 'table'
 
@@ -738,8 +738,7 @@ export class OptionsToolbar extends React.Component {
           shouldShowButton.showSQLButton ||
           shouldShowButton.showCreateNotificationIcon ||
           shouldShowButton.showSaveAsCSVButton ||
-          shouldShowButton.showSaveAsPNGButton) &&
-        !isMobile
+          shouldShowButton.showSaveAsPNGButton)
     } catch (error) {
       console.error(error)
     }
