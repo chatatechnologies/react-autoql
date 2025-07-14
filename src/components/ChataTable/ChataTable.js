@@ -511,7 +511,7 @@ export default class ChataTable extends React.Component {
         }
       }, 0)
     }
-    if (this.useRemote === LOCAL_OR_REMOTE.LOCAL && !this.pivot) {
+    if (this.isLocal && !this.pivot) {
       this.getRTForRemoteFilterAndSort()
     }
     this.setFilterBadgeClasses()
@@ -1003,7 +1003,7 @@ export default class ChataTable extends React.Component {
           const targetColumn = columns.find((col) => col.getField() === filter.field)
 
           if (targetColumn && targetColumn.getDefinition().headerFilter) {
-            this.ref.tabulator.setHeaderFilterValue(filter.field, filter.value)
+            this.ref?.tabulator?.setHeaderFilterValue(filter.field, filter.value)
           }
           if (!this.props.useInfiniteScroll) {
             this.ref?.tabulator?.setFilter(filter.field, filter.type, filter.value)
