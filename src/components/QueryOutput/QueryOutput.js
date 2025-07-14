@@ -902,8 +902,6 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  // Add these helper methods to the QueryOutput class
-
   /**
    * Determines if we should use local tabulator data or raw query data
    */
