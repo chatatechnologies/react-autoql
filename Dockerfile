@@ -7,6 +7,11 @@ WORKDIR /app/react-autoql/
 COPY package*.json .
 COPY rollup.config.js .
 COPY babel.config.js .
+
+
+# Install babel plugins for modern JS syntax
+RUN npm install --save-dev @babel/plugin-proposal-optional-chaining @babel/plugin-proposal-nullish-coalescing-operator
+
 ADD src src
 
 # clean install of the dependencies and 
