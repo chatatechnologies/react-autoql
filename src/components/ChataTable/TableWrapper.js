@@ -24,9 +24,10 @@ export default class TableWrapper extends React.Component {
       headerFilterLiveFilterDelay: 300,
       minHeight: 100,
       reactiveData: false,
-      autoResize: false,
+      autoResize: true,
       rowHeight: 25,
-      layout: 'fitDataFill',
+      layout: 'fitColumns',
+      resizableColumnFit: true,
       clipboard: true,
       downloadConfig: {
         columnGroups: false,
