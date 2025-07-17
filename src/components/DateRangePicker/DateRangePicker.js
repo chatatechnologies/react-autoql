@@ -19,16 +19,26 @@ export default class DateRangePicker extends React.Component {
 
     this.state = {
       selectedRange: {
-        startDate: dayjs(props.initialRange?.startDate).isValid()
-          ? props.initialRange?.startDate
-          : dayjs(props.validRange?.startDate).isValid()
-          ? props.validRange?.startDate
-          : new Date(),
-        endDate: dayjs(props.initialRange?.endtDate).isValid()
-          ? props.initialRange?.endtDate
-          : dayjs(props.validRange?.endtDate).isValid()
-          ? props.validRange?.endtDate
-          : new Date(),
+        startDate:
+          props.initialRange?.startDate !== null &&
+          props.initialRange?.startDate !== undefined &&
+          dayjs(props.initialRange?.startDate).isValid()
+            ? props.initialRange?.startDate
+            : props.validRange?.startDate !== null &&
+              props.validRange?.startDate !== undefined &&
+              dayjs(props.validRange?.startDate).isValid()
+            ? props.validRange?.startDate
+            : new Date(),
+        endDate:
+          props.initialRange?.endDate !== null &&
+          props.initialRange?.endDate !== undefined &&
+          dayjs(props.initialRange?.endDate).isValid()
+            ? props.initialRange?.endDate
+            : props.validRange?.endDate !== null &&
+              props.validRange?.endDate !== undefined &&
+              dayjs(props.validRange?.endDate).isValid()
+            ? props.validRange?.endDate
+            : new Date(),
         key: 'selection',
       },
     }
