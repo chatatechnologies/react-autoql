@@ -25,7 +25,6 @@ import { ConfirmPopover } from '../../ConfirmPopover'
 import { InfiniteScroll } from '../../InfiniteScroll'
 import { NotificationItem } from '../NotificationItem'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
-
 import { withTheme } from '../../../theme'
 import { authenticationType } from '../../../props/types'
 import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
@@ -39,6 +38,10 @@ class NotificationFeed extends React.Component {
     this.COMPONENT_KEY = uuid()
     this.MODAL_COMPONENT_KEY = uuid()
     this.NOTIFICATION_FETCH_LIMIT = 10
+    this.MIN_FETCH_LIMIT = 10
+    this.MAX_FETCH_LIMIT = 30
+    this.CONTAINER_PADDING_OFFSET = 172.5 // Padding offset for container height calculation
+    this.NOTIFICATION_ITEM_HEIGHT = 60 // Height of each notification item
     this.TOOLTIP_ID = 'react-autoql-notification-feed-tooltip'
     this.CHART_TOOLTIP_ID = 'react-autoql-notification-feed-chart-tooltip'
     this.ALL_PROJECTS = 'All'
@@ -125,6 +128,7 @@ class NotificationFeed extends React.Component {
   componentDidMount = () => {
     this._isMounted = true
     if (this.props.shouldRender) {
+      this.updateFetchLimit()
       this.getNotifications()
       this.getDataAlerts()
     }
@@ -159,6 +163,22 @@ class NotificationFeed extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
+  }
+
+  estimateFetchLimitFromViewport = () => {
+    const viewportHeight = window.innerHeight
+    const containerHeight = viewportHeight - this.CONTAINER_PADDING_OFFSET
+    const itemHeight = this.NOTIFICATION_ITEM_HEIGHT
+    const visibleItemCount = Math.floor(containerHeight / itemHeight)
+    const optimalLimit = visibleItemCount < this.MIN_FETCH_LIMIT ? this.MIN_FETCH_LIMIT : visibleItemCount
+    return Math.min(optimalLimit, this.MAX_FETCH_LIMIT)
+  }
+
+  updateFetchLimit = () => {
+    const newLimit = this.estimateFetchLimitFromViewport()
+    if (newLimit !== this.NOTIFICATION_FETCH_LIMIT) {
+      this.NOTIFICATION_FETCH_LIMIT = newLimit
+    }
   }
 
   handleButtonRelease() {
