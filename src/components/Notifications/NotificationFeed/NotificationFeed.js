@@ -25,7 +25,7 @@ import { ConfirmPopover } from '../../ConfirmPopover'
 import { InfiniteScroll } from '../../InfiniteScroll'
 import { NotificationItem } from '../NotificationItem'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
-
+import { isMobile } from 'react-device-detect'
 import { withTheme } from '../../../theme'
 import { authenticationType } from '../../../props/types'
 import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
@@ -38,7 +38,7 @@ class NotificationFeed extends React.Component {
 
     this.COMPONENT_KEY = uuid()
     this.MODAL_COMPONENT_KEY = uuid()
-    this.NOTIFICATION_FETCH_LIMIT = 10
+    this.NOTIFICATION_FETCH_LIMIT = isMobile ? 15 : 10
     this.TOOLTIP_ID = 'react-autoql-notification-feed-tooltip'
     this.CHART_TOOLTIP_ID = 'react-autoql-notification-feed-chart-tooltip'
     this.ALL_PROJECTS = 'All'
