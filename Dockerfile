@@ -7,6 +7,7 @@ WORKDIR /app/react-autoql/
 COPY package*.json .
 COPY rollup.config.js .
 COPY babel.config.js .
+COPY .babelrc .
 ADD src src
 
 # clean install of the dependencies and 
