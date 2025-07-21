@@ -11,7 +11,7 @@ module.exports = function override(config, env) {
     // Add babel-loader rule for node_modules to handle modern syntax
     config.module.rules.push({
       test: /\.(js|mjs|jsx)$/,
-      include: /node_modules\/react-draggable/,
+      include: /node_modules\/(react-draggable|react-grid-layout)/,
       use: {
         loader: require.resolve('babel-loader'),
         options: {
