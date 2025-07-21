@@ -2074,9 +2074,6 @@ export class QueryOutput extends React.Component {
       this.copyToClipboard(textToCopy, cellElement)
     })
   }
-  isNumericColumn = (columnType) => {
-    return [ColumnTypes.DOLLAR_AMT, ColumnTypes.QUANTITY, ColumnTypes.RATIO, ColumnTypes.PERCENT].includes(columnType)
-  }
 
   formatColumnsForTable = (columns, additionalSelects = [], aggConfig = {}) => {
     // todo: do this inside of chatatable
@@ -2104,7 +2101,7 @@ export class QueryOutput extends React.Component {
 
       newCol.maxWidth = '300px'
 
-      if (this.isNumericColumn(newCol.type)) {
+      if (isColumnNumberType(newCol.type)) {
         newCol.hozAlign = 'right'
         newCol.minWidth = 50
       } else {
