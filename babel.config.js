@@ -18,8 +18,6 @@ module.exports = {
     '@babel/plugin-transform-class-properties',
     '@babel/plugin-transform-object-rest-spread',
     '@babel/plugin-syntax-object-rest-spread',
-    '@babel/plugin-transform-optional-chaining',
-    '@babel/plugin-transform-nullish-coalescing-operator',
     [
       '@babel/plugin-transform-runtime',
       {
@@ -40,8 +38,6 @@ module.exports = {
         '@babel/plugin-transform-class-properties',
         '@babel/plugin-transform-object-rest-spread',
         '@babel/plugin-syntax-object-rest-spread',
-        '@babel/plugin-transform-optional-chaining',
-        '@babel/plugin-transform-nullish-coalescing-operator',
       ],
     },
   },

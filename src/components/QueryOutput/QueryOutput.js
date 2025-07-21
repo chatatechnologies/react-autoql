@@ -2074,7 +2074,6 @@ export class QueryOutput extends React.Component {
       this.copyToClipboard(textToCopy, cellElement)
     })
   }
-
   formatColumnsForTable = (columns, additionalSelects = [], aggConfig = {}) => {
     // todo: do this inside of chatatable
     if (!columns) {
