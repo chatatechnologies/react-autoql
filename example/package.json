@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "antd": "^4.0.1",
+    "autoql-fe-utils": "1.7.11",
     "axios": "^0.19.0",
     "lodash": "^4.17.15",
     "react": "^16.14.0",
@@ -13,9 +14,9 @@
     "react-sortable": "^2.0.0"
   },
   "devDependencies": {
-    "react-app-rewired": "^2.2.1",
+    "@babel/plugin-transform-nullish-coalescing-operator": "^7.27.1",
     "@babel/plugin-transform-optional-chaining": "^7.27.1",
-    "@babel/plugin-transform-nullish-coalescing-operator": "^7.27.1"
+    "react-app-rewired": "^2.2.1"
   },
   "scripts": {
     "start": "export PORT=3001 && SKIP_PREFLIGHT_CHECK=true react-app-rewired start",
