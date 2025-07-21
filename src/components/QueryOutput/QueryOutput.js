@@ -2100,14 +2100,9 @@ export class QueryOutput extends React.Component {
 
       newCol.maxWidth = '300px'
 
-      // Cell alignment
-      if (
-        newCol.type === ColumnTypes.DOLLAR_AMT ||
-        newCol.type === ColumnTypes.QUANTITY ||
-        newCol.type === ColumnTypes.RATIO ||
-        newCol.type === ColumnTypes.PERCENT
-      ) {
+      if (isColumnNumberType(newCol)) {
         newCol.hozAlign = 'right'
+        newCol.minWidth = 50
       } else {
         newCol.hozAlign = 'center'
       }
