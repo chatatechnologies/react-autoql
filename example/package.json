@@ -13,7 +13,9 @@
     "react-sortable": "^2.0.0"
   },
   "devDependencies": {
-    "react-app-rewired": "^2.2.1"
+    "react-app-rewired": "^2.2.1",
+    "@babel/plugin-transform-optional-chaining": "^7.27.1",
+    "@babel/plugin-transform-nullish-coalescing-operator": "^7.27.1"
   },
   "scripts": {
     "start": "export PORT=3001 && SKIP_PREFLIGHT_CHECK=true react-app-rewired start",
