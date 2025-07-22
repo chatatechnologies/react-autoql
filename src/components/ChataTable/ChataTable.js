@@ -165,6 +165,8 @@ export default class ChataTable extends React.Component {
     initialTableParams: PropTypes.shape({ filter: PropTypes.array, sort: PropTypes.array, page: PropTypes.number }),
     updateColumnsAndData: PropTypes.func,
     onUpdateFilterResponse: PropTypes.func,
+    isDrilldown: PropTypes.bool,
+    scope: PropTypes.string,
   }
 
   static defaultProps = {
@@ -194,6 +196,8 @@ export default class ChataTable extends React.Component {
     onCustomColumnChange: () => {},
     updateColumnsAndData: () => {},
     onUpdateFilterResponse: () => {},
+    isDrilldown: false,
+    scope: undefined,
   }
 
   componentDidMount = () => {
@@ -1643,6 +1647,8 @@ export default class ChataTable extends React.Component {
                     onDataLoadError={this.onDataLoadError}
                     onScrollVertical={this.onScrollVertical}
                     pivot={this.props.pivot}
+                    scope={this.props.scope}
+                    isDrilldown={this.props.isDrilldown}
                   />
                   {isEmpty && this.renderEmptyPlaceholderText()}
                   {(this.state.pageLoading || !this.state.tabulatorMounted) && this.renderPageLoader()}
