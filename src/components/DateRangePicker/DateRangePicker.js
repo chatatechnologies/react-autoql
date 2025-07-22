@@ -16,23 +16,6 @@ export default class DateRangePicker extends React.Component {
     super(props)
 
     this.accentColor = getThemeValue('accent-color')
-    console.log('props', props)
-    console.log(
-      'startDate',
-      this.isValidDate(props.initialRange?.startDate)
-        ? props.initialRange?.startDate
-        : this.isValidDate(props.validRange?.startDate)
-        ? props.validRange?.startDate
-        : new Date(),
-    )
-    console.log(
-      'endDate',
-      this.isValidDate(props.initialRange?.endDate)
-        ? props.initialRange?.endDate
-        : this.isValidDate(props.validRange?.endDate)
-        ? props.validRange?.endDate
-        : new Date(),
-    )
 
     this.state = {
       selectedRange: {
@@ -49,7 +32,6 @@ export default class DateRangePicker extends React.Component {
         key: 'selection',
       },
     }
-    console.log('selectedRange', this.state.selectedRange)
   }
 
   static propTypes = {
