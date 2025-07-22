@@ -26,7 +26,7 @@ export default class TableWrapper extends React.Component {
       reactiveData: false,
       autoResize: true,
       rowHeight: 25,
-      layout: 'fitColumns',
+      layout: this.props.pivot ? 'fitDataFill' : 'fitColumns',
       resizableColumnFit: true,
       clipboard: true,
       downloadConfig: {
@@ -49,6 +49,7 @@ export default class TableWrapper extends React.Component {
     onDataFiltered: PropTypes.func,
     onDataProcessed: PropTypes.func,
     onScrollVertical: PropTypes.func,
+    pivot: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -64,6 +65,7 @@ export default class TableWrapper extends React.Component {
     onDataFiltered: () => {},
     onDataProcessed: () => {},
     onScrollVertical: () => {},
+    pivot: false,
   }
 
   componentDidMount = async () => {
