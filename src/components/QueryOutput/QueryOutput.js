@@ -2104,6 +2104,7 @@ export class QueryOutput extends React.Component {
         newCol.hozAlign = 'right'
         newCol.minWidth = 50
       } else {
+        newCol.minWidth = 120
         newCol.hozAlign = 'center'
       }
 
