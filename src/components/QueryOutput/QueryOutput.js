@@ -114,6 +114,11 @@ export class QueryOutput extends React.Component {
     this.renderComplete = false
     this.hasCalledInitialTableConfigChange = false
 
+    // Vars for handling refresh layout throttle during resize
+    this.throttleDelay = 200
+    this.lastCall = 0
+    this.throttleTimeout = null
+
     // --------- generate data before mount --------
     this.generateAllData()
     // -------------------------------------------
@@ -355,6 +360,17 @@ export class QueryOutput extends React.Component {
           this.setState({ isResizable: shouldEnableResize })
         }
       }
+
+      if (this.props.isResizing && !prevProps.isResizing) {
+        // Start throttling loop
+        this.startThrottledRefresh()
+      }
+
+      if (!this.props.isResizing && prevProps.isResizing) {
+        // Stop throttling loop
+        this.stopThrottledRefresh()
+      }
+
       if (this.state.isResizing !== prevState.isResizing) {
         if (!this.state.isResizing && prevState.isResizing) {
           setTimeout(() => {
@@ -456,6 +472,28 @@ export class QueryOutput extends React.Component {
     if (this.resizeTimeout) {
       clearTimeout(this.resizeTimeout)
     }
+    this.stopThrottledRefresh()
+  }
+
+  startThrottledRefresh = () => {
+    const loop = () => {
+      const now = Date.now()
+
+      if (now - this.lastCall >= this.throttleDelay) {
+        this.lastCall = now
+        this.refreshLayout()
+      }
+
+      this.throttleTimeout = setTimeout(loop, this.throttleDelay)
+    }
+
+    loop() // start the loop
+  }
+
+  stopThrottledRefresh = () => {
+    clearTimeout(this.throttleTimeout)
+    this.throttleTimeout = null
+    this.lastCall = 0
   }
 
   updateMaxConstraints = () => {
