@@ -63,6 +63,11 @@ export default class ChataChart extends React.Component {
     this.shouldRecalculateDimensions = false
     this.disableTimeScale = true
 
+    // Vars for handling refresh layout throttle during resize
+    this.throttleDelay = 200 // Default at 200 but adjust on the fly for data size
+    this.lastCall = 0
+    this.throttleTimeout = null
+
     this.state = {
       ...data,
       deltaX: 0,
@@ -122,6 +127,16 @@ export default class ChataChart extends React.Component {
       this.firstRender = true
     }
 
+    if (this.props.isResizing && !prevProps.isResizing && !this.props.hidden) {
+      // Start throttling loop
+      this.startThrottledRefresh()
+    }
+
+    if (!this.props.isResizing && prevProps.isResizing && !this.props.hidden) {
+      // Stop throttling loop
+      this.stopThrottledRefresh()
+    }
+
     if (
       this.props.type !== prevProps.type &&
       DATE_ONLY_CHART_TYPES.includes(this.props.type) &&
@@ -160,6 +175,40 @@ export default class ChataChart extends React.Component {
   componentWillUnmount = () => {
     this._isMounted = false
     clearTimeout(this.adjustVerticalPositionTimeout)
+    this.stopThrottledRefresh()
+  }
+
+  startThrottledRefresh = () => {
+    const aggregated = !CHARTS_WITHOUT_AGGREGATED_DATA.includes(this.props.type)
+    const dataReduced = this.state.dataReduced ?? this.state.data
+    const stateData = this.props.type == DisplayTypes.PIE ? dataReduced : this.state.data
+    const data = (aggregated ? stateData : null) || this.props.data
+
+    this.throttleDelay = (data?.length ?? 100) * 2
+    if (this.throttleDelay < 100) {
+      this.throttleDelay = 100
+    } else if (this.throttleDelay > 1000) {
+      this.throttleDelay = 1000
+    }
+
+    const loop = () => {
+      const now = Date.now()
+
+      if (now - this.lastCall >= this.throttleDelay) {
+        this.lastCall = now
+        this.adjustChartPosition()
+      }
+
+      this.throttleTimeout = setTimeout(loop, this.throttleDelay)
+    }
+
+    loop() // start the loop
+  }
+
+  stopThrottledRefresh = () => {
+    clearTimeout(this.throttleTimeout)
+    this.throttleTimeout = null
+    this.lastCall = 0
   }
 
   getColorScales = () => {
