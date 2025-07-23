@@ -90,16 +90,6 @@
     }
   }
 
-  &.resizing {
-    width: 100vw;
-
-    .react-autoql-table {
-      visibility: hidden;
-      opacity: 0;
-      pointer-events: none;
-    }
-  }
-
   &.infinite .tabulator-col.DATE_STRING .tabulator-header-filter,
   .tabulator-col.DRILLDOWN .tabulator-header-filter {
     visibility: hidden;
