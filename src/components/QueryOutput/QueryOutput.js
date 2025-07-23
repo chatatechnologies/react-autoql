@@ -2102,9 +2102,7 @@ export class QueryOutput extends React.Component {
 
       if (isColumnNumberType(newCol)) {
         newCol.hozAlign = 'right'
-        newCol.minWidth = 50
       } else {
-        newCol.minWidth = 120
         newCol.hozAlign = 'center'
       }
 
@@ -2132,6 +2130,19 @@ export class QueryOutput extends React.Component {
         valueContainer.innerHTML = formattedValue ?? ''
 
         wrapper.appendChild(valueContainer)
+        onRendered(() => {
+          // Check for overflow
+          if (valueContainer.scrollWidth > valueContainer.clientWidth) {
+            // Overflow detected, align left
+            valueContainer.style.textAlign = 'left'
+            // Optionally, also update the column definition if you want all cells in this column to align left
+            // cell.getColumn().updateDefinition({ hozAlign: 'left' });
+          } else {
+            // No overflow, keep original alignment
+            valueContainer.style.textAlign = newCol.hozAlign || 'right'
+          }
+        })
+
         if (cellValue != null && cellValue !== '') {
           onRendered(() => {
             const cellElement = cell.getElement()
