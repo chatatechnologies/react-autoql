@@ -69,7 +69,6 @@ export default class ChataChart extends React.Component {
       deltaY: 0,
       chartID: uuid(),
       isLoading: true,
-      isLoadingMoreRows: false,
     }
   }
 
@@ -95,13 +94,13 @@ export default class ChataChart extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
+    if (nextProps.hidden && this.props.hidden) {
+      return false
+    }
+
     if (this.props.isResizing && !nextProps.isResizing) {
       this.shouldRecalculateDimensions = true
       return true
-    }
-
-    if ((nextProps.isResizing && this.props.isResizing) || (nextProps.hidden && this.props.hidden)) {
-      return false
     }
 
     const propsEqual = deepEqual(this.props, nextProps)
@@ -121,17 +120,6 @@ export default class ChataChart extends React.Component {
 
     if (this.props.hidden && !prevProps.hidden) {
       this.firstRender = true
-    }
-
-    if (
-      (!this.props.isResizing && prevProps.isResizing && !this.props.hidden) ||
-      (!this.props.hidden && prevProps.hidden)
-    ) {
-      if (this.chartContainerRef) {
-        this.chartContainerRef.style.flexBasis = '100vh'
-      }
-
-      this.setState({ chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
     }
 
     if (
@@ -434,12 +422,6 @@ export default class ChataChart extends React.Component {
     }
   }
 
-  setIsLoadingMoreRows = (isLoading) => {
-    if (this._isMounted) {
-      this.setState({ isLoadingMoreRows: isLoading })
-    }
-  }
-
   onBucketSizeChange = (bucketSize) => {
     this.props.onBucketSizeChange(bucketSize)
     this.bucketSize = bucketSize
@@ -483,7 +465,6 @@ export default class ChataChart extends React.Component {
     return {
       ...this.props,
       columns,
-      setIsLoadingMoreRows: this.setIsLoadingMoreRows,
       ref: (r) => (this.innerChartRef = r),
       innerChartRef: this.innerChartRef?.chartRef,
       key: undefined,
@@ -624,12 +605,11 @@ export default class ChataChart extends React.Component {
             ref={(r) => (this.chartContainerRef = r)}
             data-test='react-autoql-chart'
             className={`react-autoql-chart-container
-            ${this.state.isLoading || this.props.isResizing ? 'loading' : ''}
-            ${this.state.isLoadingMoreRows ? 'loading-rows' : ''}
+            ${this.state.isLoading ? 'loading' : ''}
             ${this.props.hidden ? 'hidden' : ''}
             ${getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? 'enable-drilldown' : 'disable-drilldown'}`}
           >
-            {!this.firstRender && !this.props.isResizing && !this.props.isAnimating && (
+            {!this.firstRender && !this.props.isAnimating && (
               <svg
                 ref={(r) => (this.chartRef = r)}
                 xmlns='http://www.w3.org/2000/svg'
@@ -650,7 +630,6 @@ export default class ChataChart extends React.Component {
                 </g>
               </svg>
             )}
-            {this.state.isLoadingMoreRows && this.renderChartLoader()}
           </div>
         </>
       </ErrorBoundary>
