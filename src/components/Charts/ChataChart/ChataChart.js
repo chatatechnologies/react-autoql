@@ -46,6 +46,7 @@ import { ChataStackedBarChart } from '../ChataStackedBarChart'
 import { ChataScatterplotChart } from '../ChataScatterplotChart'
 import { ChataStackedLineChart } from '../ChataStackedLineChart'
 import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
+import { ChataSankeyChart } from '../ChataSankeyChart'
 
 import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPropHelpers.js'
 
@@ -297,7 +298,7 @@ export default class ChataChart extends React.Component {
   }
 
   getDeltas = () => {
-    if (this.props.type == DisplayTypes.PIE) {
+    if (this.props.type == DisplayTypes.PIE || this.props.type == DisplayTypes.SANKEY) {
       return { deltaX: 0, deltaY: 0 }
     }
 
@@ -554,6 +555,9 @@ export default class ChataChart extends React.Component {
       }
       case DisplayTypes.PIE: {
         return <ChataPieChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
+      }
+      case DisplayTypes.SANKEY: {
+        return <ChataSankeyChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
       }
       case DisplayTypes.BUBBLE: {
         return <ChataBubbleChart {...commonChartProps} legendLabels={this.getLegendLabels()} />

@@ -139,6 +139,7 @@ class VizToolbar extends React.Component {
             {this.createVisButton('column_line', 'Column Line Combo Chart', <Icon type='column-line-chart' />)}
             {this.createVisButton('histogram', 'Histogram', <Icon type='histogram-chart' />)}
             {this.createVisButton('scatterplot', 'Scatterplot', <Icon type='scatterplot' />)}
+            {this.createVisButton('sankey', 'Sankey', <Icon type='sankey-chart' />)}
           </div>
           {!this.props.tooltipID && (
             <Tooltip tooltipId={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`} delayShow={800} />

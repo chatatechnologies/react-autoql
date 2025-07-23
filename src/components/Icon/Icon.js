@@ -469,6 +469,10 @@ export default class Icon extends React.Component {
         icon = <GoReport />
         break
       }
+      case 'sankey-chart': {
+        icon = <MdContentCopy />
+        break
+      }
       case 'search': {
         icon = <IoIosSearch />
         break
