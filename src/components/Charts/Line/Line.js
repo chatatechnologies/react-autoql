@@ -1,9 +1,9 @@
-import React, { Component } from 'react'
+import React, { PureComponent } from 'react'
 import { getThemeValue, createSVGPath, getKey, getTooltipContent, getAutoQLConfig } from 'autoql-fe-utils'
 
 import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
 
-export default class Line extends Component {
+export default class Line extends PureComponent {
   constructor(props) {
     super(props)
 
