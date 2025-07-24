@@ -19,26 +19,16 @@ export default class DateRangePicker extends React.Component {
 
     this.state = {
       selectedRange: {
-        startDate:
-          props.initialRange?.startDate !== null &&
-          props.initialRange?.startDate !== undefined &&
-          dayjs(props.initialRange?.startDate).isValid()
-            ? props.initialRange?.startDate
-            : props.validRange?.startDate !== null &&
-              props.validRange?.startDate !== undefined &&
-              dayjs(props.validRange?.startDate).isValid()
-            ? props.validRange?.startDate
-            : new Date(),
-        endDate:
-          props.initialRange?.endDate !== null &&
-          props.initialRange?.endDate !== undefined &&
-          dayjs(props.initialRange?.endDate).isValid()
-            ? props.initialRange?.endDate
-            : props.validRange?.endDate !== null &&
-              props.validRange?.endDate !== undefined &&
-              dayjs(props.validRange?.endDate).isValid()
-            ? props.validRange?.endDate
-            : new Date(),
+        startDate: this.isValidDate(props.initialRange?.startDate)
+          ? props.initialRange?.startDate
+          : this.isValidDate(props.validRange?.startDate)
+          ? props.validRange?.startDate
+          : new Date(),
+        endDate: this.isValidDate(props.initialRange?.endDate)
+          ? props.initialRange?.endDate
+          : this.isValidDate(props.validRange?.endDate)
+          ? props.validRange?.endDate
+          : new Date(),
         key: 'selection',
       },
     }
@@ -54,6 +44,10 @@ export default class DateRangePicker extends React.Component {
     initialRange: undefined,
     validRange: undefined,
     type: PrecisionTypes.DAY,
+  }
+
+  isValidDate = (date) => {
+    return date !== null && date !== undefined && dayjs(date).isValid()
   }
 
   handleSelect = (ranges) => {
@@ -91,8 +85,8 @@ export default class DateRangePicker extends React.Component {
             ref={(r) => (this.datePicker = r)}
             ranges={[this.state.selectedRange]}
             onChange={this.handleSelect}
-            minDate={dayjs(this.props.validRange?.startDate).isValid() ? this.props.validRange?.startDate : undefined}
-            maxDate={dayjs(this.props.validRange?.endDate).isValid() ? this.props.validRange?.endDate : undefined}
+            minDate={this.isValidDate(this.props.validRange?.startDate) ? this.props.validRange?.startDate : undefined}
+            maxDate={this.isValidDate(this.props.validRange?.endDate) ? this.props.validRange?.endDate : undefined}
             dragSelectionEnabled={false}
             rangeColors={[this.accentColor]}
             showMonthAndYearPickers={true}

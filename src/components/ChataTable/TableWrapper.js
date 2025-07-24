@@ -24,9 +24,10 @@ export default class TableWrapper extends React.Component {
       headerFilterLiveFilterDelay: 300,
       minHeight: 100,
       reactiveData: false,
-      autoResize: false,
+      autoResize: true,
       rowHeight: 25,
-      layout: 'fitDataFill',
+      layout: this.props.isDrilldown ? 'fitDataFill' : (this.props.scope === 'dashboards' ? 'fitColumns' : 'fitDataFill'),
+      resizableColumnFit: true,
       clipboard: true,
       downloadConfig: {
         columnGroups: false,
@@ -48,6 +49,9 @@ export default class TableWrapper extends React.Component {
     onDataFiltered: PropTypes.func,
     onDataProcessed: PropTypes.func,
     onScrollVertical: PropTypes.func,
+    pivot: PropTypes.bool,
+    scope: PropTypes.string,
+    isDrilldown: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -63,6 +67,9 @@ export default class TableWrapper extends React.Component {
     onDataFiltered: () => {},
     onDataProcessed: () => {},
     onScrollVertical: () => {},
+    pivot: false,
+    scope: undefined,
+    isDrilldown: false,
   }
 
   componentDidMount = async () => {

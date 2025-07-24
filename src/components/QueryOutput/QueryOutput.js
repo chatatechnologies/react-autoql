@@ -357,6 +357,7 @@ export class QueryOutput extends React.Component {
           this.setState({ isResizable: shouldEnableResize })
         }
       }
+
       if (this.state.isResizing !== prevState.isResizing) {
         if (!this.state.isResizing && prevState.isResizing) {
           setTimeout(() => {
@@ -705,7 +706,7 @@ export class QueryOutput extends React.Component {
 
   hasError = (response) => {
     try {
-      const referenceIdNumber = Number(response.data.reference_id.split('.')[2])
+      const referenceIdNumber = Number(response.data?.reference_id?.split('.')[2])
       if (referenceIdNumber >= 200 && referenceIdNumber < 300) {
         return false
       }
@@ -2134,15 +2135,11 @@ export class QueryOutput extends React.Component {
 
       newCol.maxWidth = '300px'
 
-      // Cell alignment
-      if (
-        newCol.type === ColumnTypes.DOLLAR_AMT ||
-        newCol.type === ColumnTypes.QUANTITY ||
-        newCol.type === ColumnTypes.RATIO ||
-        newCol.type === ColumnTypes.PERCENT
-      ) {
+      if (isColumnNumberType(newCol)) {
         newCol.hozAlign = 'right'
+        newCol.minWidth = 50
       } else {
+        newCol.minWidth = 120
         newCol.hozAlign = 'center'
       }
 
