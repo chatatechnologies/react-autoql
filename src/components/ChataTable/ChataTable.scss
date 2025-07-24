@@ -49,7 +49,7 @@
   }
 
   &.hidden {
-    visibility: hidden !important;
+    display: none !important;
     position: absolute !important;
     pointer-events: none !important;
     opacity: 0 !important;
