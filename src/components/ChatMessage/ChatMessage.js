@@ -311,7 +311,7 @@ export default class ChatMessage extends React.Component {
           originalQueryID={this.props.originalQueryID}
           onErrorCallback={this.props.onErrorCallback}
           isAnimating={this.state.isAnimatingMessageBubble}
-          isResizing={this.props.isResizing || this.state.isUserResizing}
+          isResizing={this.props.isResizing}
           enableDynamicCharting={this.props.enableDynamicCharting}
           initialTableConfigs={this.state.dataConfig}
           onTableConfigChange={this.updateDataConfig}
