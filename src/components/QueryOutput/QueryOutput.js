@@ -2103,9 +2103,7 @@ export class QueryOutput extends React.Component {
 
       if (isColumnNumberType(newCol)) {
         newCol.hozAlign = 'right'
-        newCol.minWidth = 50
       } else {
-        newCol.minWidth = 120
         newCol.hozAlign = 'center'
       }
 
@@ -2133,6 +2131,7 @@ export class QueryOutput extends React.Component {
         valueContainer.innerHTML = formattedValue ?? ''
 
         wrapper.appendChild(valueContainer)
+
         if (cellValue != null && cellValue !== '') {
           onRendered(() => {
             const cellElement = cell.getElement()

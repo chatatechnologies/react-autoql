@@ -1,6 +1,6 @@
 {
   "name": "react-autoql",
-  "version": "8.12.14",
+  "version": "8.12.15",
   "description": "React Widget Library",
   "main": "dist/autoql.cjs.js",
   "module": "dist/autoql.esm.js",
@@ -81,6 +81,7 @@
     "lodash.has": "4.5.2",
     "lodash.isempty": "4.4.0",
     "lodash.isequal": "4.5.0",
+    "lodash.throttle": "^4.1.1",
     "make-coverage-badge": "1.2.0",
     "parse-num": "1.0.0",
     "prop-types": "15.7.2",
