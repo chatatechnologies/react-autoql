@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import _cloneDeep from 'lodash.clonedeep'
 import { TabulatorFull as Tabulator } from 'tabulator-tables' //import Tabulator library
+import throttle from 'lodash.throttle'
 
 // use Theme(s)
 import 'tabulator-tables/dist/css/tabulator.min.css'
@@ -35,6 +36,7 @@ export default class TableWrapper extends React.Component {
         columnCalcs: false,
       },
     }
+    this.throttledHandleResize = throttle(this.handleWindowResizeForAlignment, 100)
   }
 
   static propTypes = {
@@ -75,7 +77,7 @@ export default class TableWrapper extends React.Component {
   componentDidMount = async () => {
     this._isMounted = true
     this.instantiateTabulator()
-    window.addEventListener('resize', this.handleWindowResizeForAlignment)
+    window.addEventListener('resize', this.throttledHandleResize)
   }
 
   shouldComponentUpdate = () => {
@@ -90,7 +92,7 @@ export default class TableWrapper extends React.Component {
       // We must destroy the table to remove it from memory
       this.tabulator?.destroy()
     }, 1000)
-    window.removeEventListener('resize', this.handleWindowResizeForAlignment)
+    window.removeEventListener('resize', this.throttledHandleResize)
   }
 
   handleWindowResizeForAlignment = () => {
