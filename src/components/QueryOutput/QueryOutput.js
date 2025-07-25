@@ -3194,8 +3194,10 @@ export class QueryOutput extends React.Component {
           {this.renderResponse()}
           {this.props.reverseTranslationPlacement !== 'top' && this.renderFooter()}
         </div>
-        {!this.props.tooltipID && !this.props.isResizing && <Tooltip tooltipId={this.TOOLTIP_ID} />}
-        {!this.props.chartTooltipID && !this.props.isResizing && (
+        {!this.props.tooltipID && !this.props.isResizing && !this.props.isUserResizing && (
+          <Tooltip tooltipId={this.TOOLTIP_ID} />
+        )}
+        {!this.props.chartTooltipID && !this.props.isResizing && !this.props.isUserResizing && (
           <Tooltip tooltipId={this.CHART_TOOLTIP_ID} className='react-autoql-chart-tooltip' delayShow={0} />
         )}
         {this.renderAddColumnBtn()}
