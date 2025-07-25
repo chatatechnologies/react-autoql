@@ -63,13 +63,17 @@ export default class ChataChart extends React.Component {
     this.shouldRecalculateDimensions = false
     this.disableTimeScale = true
 
+    // Vars for handling refresh layout throttle during resize
+    this.throttleDelay = 200 // Default at 200 but adjust on the fly for data size
+    this.lastCall = 0
+    this.throttleTimeout = null
+
     this.state = {
       ...data,
       deltaX: 0,
       deltaY: 0,
       chartID: uuid(),
       isLoading: true,
-      isLoadingMoreRows: false,
     }
   }
 
@@ -95,13 +99,13 @@ export default class ChataChart extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
+    if (nextProps.hidden && this.props.hidden) {
+      return false
+    }
+
     if (this.props.isResizing && !nextProps.isResizing) {
       this.shouldRecalculateDimensions = true
       return true
-    }
-
-    if ((nextProps.isResizing && this.props.isResizing) || (nextProps.hidden && this.props.hidden)) {
-      return false
     }
 
     const propsEqual = deepEqual(this.props, nextProps)
@@ -123,15 +127,14 @@ export default class ChataChart extends React.Component {
       this.firstRender = true
     }
 
-    if (
-      (!this.props.isResizing && prevProps.isResizing && !this.props.hidden) ||
-      (!this.props.hidden && prevProps.hidden)
-    ) {
-      if (this.chartContainerRef) {
-        this.chartContainerRef.style.flexBasis = '100vh'
-      }
+    if (this.props.isResizing && !prevProps.isResizing && !this.props.hidden) {
+      // Start throttling loop
+      this.startThrottledRefresh()
+    }
 
-      this.setState({ chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
+    if (!this.props.isResizing && prevProps.isResizing && !this.props.hidden) {
+      // Stop throttling loop
+      this.stopThrottledRefresh()
     }
 
     if (
@@ -172,6 +175,40 @@ export default class ChataChart extends React.Component {
   componentWillUnmount = () => {
     this._isMounted = false
     clearTimeout(this.adjustVerticalPositionTimeout)
+    this.stopThrottledRefresh()
+  }
+
+  startThrottledRefresh = () => {
+    const aggregated = !CHARTS_WITHOUT_AGGREGATED_DATA.includes(this.props.type)
+    const dataReduced = this.state.dataReduced ?? this.state.data
+    const stateData = this.props.type == DisplayTypes.PIE ? dataReduced : this.state.data
+    const data = (aggregated ? stateData : null) || this.props.data
+
+    this.throttleDelay = (data?.length ?? 100) * 2
+    if (this.throttleDelay < 100) {
+      this.throttleDelay = 100
+    } else if (this.throttleDelay > 1000) {
+      this.throttleDelay = 1000
+    }
+
+    const loop = () => {
+      const now = Date.now()
+
+      if (now - this.lastCall >= this.throttleDelay) {
+        this.lastCall = now
+        this.adjustChartPosition()
+      }
+
+      this.throttleTimeout = setTimeout(loop, this.throttleDelay)
+    }
+
+    loop() // start the loop
+  }
+
+  stopThrottledRefresh = () => {
+    clearTimeout(this.throttleTimeout)
+    this.throttleTimeout = null
+    this.lastCall = 0
   }
 
   getColorScales = () => {
@@ -434,12 +471,6 @@ export default class ChataChart extends React.Component {
     }
   }
 
-  setIsLoadingMoreRows = (isLoading) => {
-    if (this._isMounted) {
-      this.setState({ isLoadingMoreRows: isLoading })
-    }
-  }
-
   onBucketSizeChange = (bucketSize) => {
     this.props.onBucketSizeChange(bucketSize)
     this.bucketSize = bucketSize
@@ -483,7 +514,6 @@ export default class ChataChart extends React.Component {
     return {
       ...this.props,
       columns,
-      setIsLoadingMoreRows: this.setIsLoadingMoreRows,
       ref: (r) => (this.innerChartRef = r),
       innerChartRef: this.innerChartRef?.chartRef,
       key: undefined,
@@ -624,12 +654,11 @@ export default class ChataChart extends React.Component {
             ref={(r) => (this.chartContainerRef = r)}
             data-test='react-autoql-chart'
             className={`react-autoql-chart-container
-            ${this.state.isLoading || this.props.isResizing ? 'loading' : ''}
-            ${this.state.isLoadingMoreRows ? 'loading-rows' : ''}
+            ${this.state.isLoading ? 'loading' : ''}
             ${this.props.hidden ? 'hidden' : ''}
             ${getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? 'enable-drilldown' : 'disable-drilldown'}`}
           >
-            {!this.firstRender && !this.props.isResizing && !this.props.isAnimating && (
+            {!this.firstRender && !this.props.isAnimating && (
               <svg
                 ref={(r) => (this.chartRef = r)}
                 xmlns='http://www.w3.org/2000/svg'
@@ -650,7 +679,6 @@ export default class ChataChart extends React.Component {
                 </g>
               </svg>
             )}
-            {this.state.isLoadingMoreRows && this.renderChartLoader()}
           </div>
         </>
       </ErrorBoundary>
