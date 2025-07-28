@@ -16,6 +16,7 @@ import {
 
 import { Tooltip } from '../Tooltip'
 import DrilldownModal from './DrilldownModal'
+import { DashboardToolbar } from '../DashboardToolbar'
 import { DashboardTile } from './DashboardTile'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 
@@ -697,6 +698,7 @@ class DashboardWithoutTheme extends React.Component {
     return (
       <ErrorBoundary>
         <>
+          <DashboardToolbar isEditing={this.props.isEditing} tooltipID={this.TOOLTIP_ID} title={this.props.title} />
           <div
             ref={(ref) => (this.ref = ref)}
             className={`react-autoql-dashboard-container${this.props.isEditing ? ' edit-mode' : ''}`}
