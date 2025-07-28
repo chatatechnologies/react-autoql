@@ -64,7 +64,7 @@ export default class ChataChart extends React.Component {
     this.disableTimeScale = true
 
     // Vars for handling refresh layout throttle during resize
-    this.throttleDelay = 200 // Default at 200 but adjust on the fly for data size
+    this.throttleDelay = 100 // Default at 200 but adjust on the fly for data size
     this.lastCall = 0
     this.throttleTimeout = null
 
@@ -185,8 +185,8 @@ export default class ChataChart extends React.Component {
     const data = (aggregated ? stateData : null) || this.props.data
 
     this.throttleDelay = (data?.length ?? 100) * 2
-    if (this.throttleDelay < 100) {
-      this.throttleDelay = 100
+    if (this.throttleDelay < 50) {
+      this.throttleDelay = 50
     } else if (this.throttleDelay > 1000) {
       this.throttleDelay = 1000
     }

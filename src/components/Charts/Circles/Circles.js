@@ -1,11 +1,11 @@
-import React, { Component } from 'react'
+import React, { PureComponent } from 'react'
 import { scaleLinear } from 'd3-scale'
 import { max, min } from 'd3-array'
-import { getChartColorVars, getTooltipContent, getKey, uuidv4 } from 'autoql-fe-utils'
+import { getChartColorVars, getTooltipContent, getKey } from 'autoql-fe-utils'
 
 import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
 
-export default class Circles extends Component {
+export default class Circles extends PureComponent {
   constructor(props) {
     super(props)
 
