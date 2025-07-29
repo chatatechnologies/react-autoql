@@ -1,9 +1,9 @@
-import React, { Component } from 'react'
+import React, { PureComponent } from 'react'
 import { getKey, getTooltipContent, isColumnNumberType, scaleZero } from 'autoql-fe-utils'
 
 import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
 
-export default class Columns extends Component {
+export default class Columns extends PureComponent {
   static propTypes = chartElementPropTypes
   static defaultProps = chartElementDefaultProps
 

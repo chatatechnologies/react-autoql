@@ -87,10 +87,6 @@ export default class ChataPieChart extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
-    if (this.props.isResizing && nextProps.isResizing) {
-      return false
-    }
-
     const propsEqual = deepEqual(this.props, nextProps)
     const stateEqual = deepEqual(this.state, nextState)
 
@@ -107,30 +103,32 @@ export default class ChataPieChart extends React.Component {
   }
 
   renderPie = () => {
-    removeFromDOM(this.pieChartContainer)
+    requestAnimationFrame(() => {
+      removeFromDOM(this.pieChartContainer)
 
-    this.setPieRadius()
+      this.setPieRadius()
 
-    const { pieChartFn, legendScale } = getPieChartData({
-      data: this.props.data,
-      numberColumnIndex: this.props.numberColumnIndex,
-      legendLabels: this.state.legendLabels,
+      const { pieChartFn, legendScale } = getPieChartData({
+        data: this.props.data,
+        numberColumnIndex: this.props.numberColumnIndex,
+        legendLabels: this.state.legendLabels,
+      })
+
+      this.pieChartFn = pieChartFn
+      this.legendScale = legendScale
+
+      this.renderPieContainer()
+      this.renderPieSlices()
+      this.renderLegend()
+
+      // Finally, translate container of legend and pie chart to center of parent container
+      this.centerVisualization()
+
+      if (!this.renderComplete) {
+        this.renderComplete = true
+        this.props.onAxesRenderComplete()
+      }
     })
-
-    this.pieChartFn = pieChartFn
-    this.legendScale = legendScale
-
-    this.renderPieContainer()
-    this.renderPieSlices()
-    this.renderLegend()
-
-    // Finally, translate container of legend and pie chart to center of parent container
-    this.centerVisualization()
-
-    if (!this.renderComplete) {
-      this.renderComplete = true
-      this.props.onAxesRenderComplete()
-    }
   }
 
   renderPieContainer = () => {

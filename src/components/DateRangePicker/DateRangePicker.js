@@ -19,15 +19,15 @@ export default class DateRangePicker extends React.Component {
 
     this.state = {
       selectedRange: {
-        startDate: dayjs(props.initialRange?.startDate).isValid()
+        startDate: this.isValidDate(props.initialRange?.startDate)
           ? props.initialRange?.startDate
-          : dayjs(props.validRange?.startDate).isValid()
+          : this.isValidDate(props.validRange?.startDate)
           ? props.validRange?.startDate
           : new Date(),
-        endDate: dayjs(props.initialRange?.endtDate).isValid()
-          ? props.initialRange?.endtDate
-          : dayjs(props.validRange?.endtDate).isValid()
-          ? props.validRange?.endtDate
+        endDate: this.isValidDate(props.initialRange?.endDate)
+          ? props.initialRange?.endDate
+          : this.isValidDate(props.validRange?.endDate)
+          ? props.validRange?.endDate
           : new Date(),
         key: 'selection',
       },
@@ -44,6 +44,10 @@ export default class DateRangePicker extends React.Component {
     initialRange: undefined,
     validRange: undefined,
     type: PrecisionTypes.DAY,
+  }
+
+  isValidDate = (date) => {
+    return date !== null && date !== undefined && dayjs(date).isValid()
   }
 
   handleSelect = (ranges) => {
@@ -81,8 +85,8 @@ export default class DateRangePicker extends React.Component {
             ref={(r) => (this.datePicker = r)}
             ranges={[this.state.selectedRange]}
             onChange={this.handleSelect}
-            minDate={dayjs(this.props.validRange?.startDate).isValid() ? this.props.validRange?.startDate : undefined}
-            maxDate={dayjs(this.props.validRange?.endDate).isValid() ? this.props.validRange?.endDate : undefined}
+            minDate={this.isValidDate(this.props.validRange?.startDate) ? this.props.validRange?.startDate : undefined}
+            maxDate={this.isValidDate(this.props.validRange?.endDate) ? this.props.validRange?.endDate : undefined}
             dragSelectionEnabled={false}
             rangeColors={[this.accentColor]}
             showMonthAndYearPickers={true}

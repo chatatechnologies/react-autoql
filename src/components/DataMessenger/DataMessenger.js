@@ -1087,7 +1087,9 @@ export class DataMessenger extends React.Component {
     return (
       <>
         <Tooltip tooltipId={this.TOOLTIP_ID} />
-        <Tooltip className='react-autoql-chart-tooltip' tooltipId={this.CHART_TOOLTIP_ID} delayShow={0} />
+        {!this.state.isResizing && (
+          <Tooltip className='react-autoql-chart-tooltip' tooltipId={this.CHART_TOOLTIP_ID} delayShow={0} />
+        )}
       </>
     )
   }

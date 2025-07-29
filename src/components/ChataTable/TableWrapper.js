@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import _cloneDeep from 'lodash.clonedeep'
 import { TabulatorFull as Tabulator } from 'tabulator-tables' //import Tabulator library
+import throttle from 'lodash.throttle'
 
 // use Theme(s)
 import 'tabulator-tables/dist/css/tabulator.min.css'
@@ -24,9 +25,10 @@ export default class TableWrapper extends React.Component {
       headerFilterLiveFilterDelay: 300,
       minHeight: 100,
       reactiveData: false,
-      autoResize: false,
+      autoResize: true,
       rowHeight: 25,
-      layout: 'fitDataFill',
+      layout: this.props.isDrilldown ? 'fitDataFill' : this.props.scope === 'dashboards' ? 'fitColumns' : 'fitDataFill',
+      resizableColumnFit: true,
       clipboard: true,
       downloadConfig: {
         columnGroups: false,
@@ -34,6 +36,7 @@ export default class TableWrapper extends React.Component {
         columnCalcs: false,
       },
     }
+    this.throttledHandleResize = throttle(this.handleWindowResizeForAlignment, 100)
   }
 
   static propTypes = {
@@ -48,6 +51,9 @@ export default class TableWrapper extends React.Component {
     onDataFiltered: PropTypes.func,
     onDataProcessed: PropTypes.func,
     onScrollVertical: PropTypes.func,
+    pivot: PropTypes.bool,
+    scope: PropTypes.string,
+    isDrilldown: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -63,11 +69,15 @@ export default class TableWrapper extends React.Component {
     onDataFiltered: () => {},
     onDataProcessed: () => {},
     onScrollVertical: () => {},
+    pivot: false,
+    scope: undefined,
+    isDrilldown: false,
   }
 
   componentDidMount = async () => {
     this._isMounted = true
     this.instantiateTabulator()
+    window.addEventListener('resize', this.throttledHandleResize)
   }
 
   shouldComponentUpdate = () => {
@@ -82,6 +92,24 @@ export default class TableWrapper extends React.Component {
       // We must destroy the table to remove it from memory
       this.tabulator?.destroy()
     }, 1000)
+    window.removeEventListener('resize', this.throttledHandleResize)
+  }
+
+  handleWindowResizeForAlignment = () => {
+    if (!this.tabulator) return
+    this.tabulator.getColumns().forEach((column) => {
+      const colDef = column.getDefinition()
+      const columnMinWidth = 90
+      column.getCells().forEach((cell) => {
+        const cellElement = cell.getElement()
+        if (!cellElement) return
+        if (cellElement.clientWidth < columnMinWidth) {
+          cellElement.style.textAlign = 'left'
+        } else {
+          cellElement.style.textAlign = colDef.hozAlign || 'right'
+        }
+      })
+    })
   }
 
   instantiateTabulator = () => {
