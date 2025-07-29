@@ -21,6 +21,7 @@ export class MenuItem extends React.Component {
     tooltip: PropTypes.string,
     tooltipID: PropTypes.string,
     disabled: PropTypes.bool,
+    style: PropTypes.shape({}),
     onClick: PropTypes.func,
   }
 
@@ -32,12 +33,14 @@ export class MenuItem extends React.Component {
     tooltip: undefined,
     tooltipID: undefined,
     disabled: false,
+    style: {},
     onClick: () => {},
   }
 
   render = () => {
     return (
       <li
+        style={this.props.style}
         id={this.props.id ?? `react-autoql-menu-item-${this.ID}`}
         key={`react-autoql-menu-item-${this.ID}`}
         className={`react-autoql-menu-item
