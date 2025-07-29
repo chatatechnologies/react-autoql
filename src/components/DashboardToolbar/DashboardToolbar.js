@@ -122,7 +122,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
         >
           <div className='react-autoql-dashboard-title-and-tools-container'>
             <div className='react-autoql-dashboard-title-container'>
-              {this.props.title}
+              <div>{this.props.title}</div>
               <Button
                 className='react-autoql-dashboard-rename-btn'
                 iconOnly
