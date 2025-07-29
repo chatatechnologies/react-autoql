@@ -556,6 +556,7 @@ export default class Icon extends React.Component {
           className={`react-autoql-icon
             ${this.props.className || ''}
             react-autoql-icon-${this.props.type}
+            ${this.props.info ? 'react-autoql-icon-info' : ''}
             ${this.props.warning ? 'react-autoql-icon-warning' : ''}
             ${this.props.success ? 'react-autoql-icon-success' : ''}
             ${this.props.danger ? 'react-autoql-icon-danger' : ''}

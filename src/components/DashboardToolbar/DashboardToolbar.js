@@ -9,6 +9,7 @@ import { Modal } from '../Modal'
 import { Input } from '../Input'
 
 import './DashboardToolbar.scss'
+import { Icon } from '../Icon'
 
 export class DashboardToolbarWithoutRef extends React.Component {
   static propTypes = {
@@ -123,17 +124,27 @@ export class DashboardToolbarWithoutRef extends React.Component {
           <div className='react-autoql-dashboard-title-and-tools-container'>
             <div className='react-autoql-dashboard-title-container'>
               <div>{this.props.title}</div>
-              <Button
-                className='react-autoql-dashboard-rename-btn'
-                iconOnly
-                icon='edit'
-                border={false}
-                tooltip='Rename Dashboard'
-                tooltipID={this.props.tooltipID}
-                onClick={() => {
-                  this.setState({ isRenameModalOpen: true })
-                }}
-              />
+              {this.props.isEditable ? (
+                <Button
+                  className='react-autoql-dashboard-rename-btn'
+                  iconOnly
+                  icon='edit'
+                  border={false}
+                  tooltip='Rename Dashboard'
+                  tooltipID={this.props.tooltipID}
+                  onClick={() => {
+                    this.setState({ isRenameModalOpen: true })
+                  }}
+                />
+              ) : (
+                <Icon
+                  type='info'
+                  info
+                  tooltip='This Dashboard is static and cannot be edited or removed.'
+                  tooltipID={this.props.tooltipID}
+                  style={{ marginBottom: '3px', marginLeft: '10px' }}
+                />
+              )}
             </div>
             {!this.props.isEditing && (
               <div className='react-autoql-dashboard-title-tools-container'>
