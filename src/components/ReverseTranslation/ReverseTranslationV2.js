@@ -248,7 +248,7 @@ const ReverseTranslation = ({
     try {
       await validateAndUpdateReverseTranslation(rt)
     } catch (error) {
-      console.error(error)
+      console.error('Prerequisites not met to render Reverse Translation', error)
     } finally {
       setIsLoading(false)
     }
@@ -257,11 +257,7 @@ const ReverseTranslation = ({
   useEffect(() => {
     isMounted.current = true
 
-    if (onValueLabelClick && reverseTranslationArray?.length) {
-      executePrerequisites(reverseTranslationArray)
-    } else {
-      console.error('Prerequisites not met to render Reverse Translation')
-    }
+    if (onValueLabelClick && reverseTranslationArray?.length) executePrerequisites(reverseTranslationArray)
 
     return () => {
       isMounted.current = false
