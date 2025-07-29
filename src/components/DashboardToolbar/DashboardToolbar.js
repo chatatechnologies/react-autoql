@@ -145,23 +145,25 @@ export class DashboardToolbarWithoutRef extends React.Component {
                   tooltipID={this.props.tooltipID}
                   onClick={this.props.onRefreshClick}
                 />
-                <Popover
-                  align='end'
-                  positions={['bottom', 'left', 'top', 'right']}
-                  padding={0}
-                  content={this.optionsMenu()}
-                  isOpen={this.state.isOptionsMenuOpen}
-                  onClickOutside={() => this.setState({ isOptionsMenuOpen: false })}
-                >
-                  <Button
-                    iconOnly
-                    icon='more-vertical'
-                    border={false}
-                    tooltip='Options'
-                    tooltipID={this.props.tooltipID}
-                    onClick={() => this.setState({ isOptionsMenuOpen: true })}
-                  />
-                </Popover>
+                {this.props.isEditable && (
+                  <Popover
+                    align='end'
+                    positions={['bottom', 'left', 'top', 'right']}
+                    padding={0}
+                    content={this.optionsMenu()}
+                    isOpen={this.state.isOptionsMenuOpen}
+                    onClickOutside={() => this.setState({ isOptionsMenuOpen: false })}
+                  >
+                    <Button
+                      iconOnly
+                      icon='more-vertical'
+                      border={false}
+                      tooltip='Options'
+                      tooltipID={this.props.tooltipID}
+                      onClick={() => this.setState({ isOptionsMenuOpen: true })}
+                    />
+                  </Popover>
+                )}
               </div>
             )}
           </div>
