@@ -83,6 +83,7 @@ class DashboardWithoutTheme extends React.Component {
     stopEditingCallback: PropTypes.func,
     onSaveCallback: PropTypes.func,
     onDeleteCallback: PropTypes.func,
+    showToolbar: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -101,6 +102,7 @@ class DashboardWithoutTheme extends React.Component {
     enableDynamicCharting: true,
     autoChartAggregations: true,
     cancelQueriesOnUnmount: false,
+    showToolbar: false,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
     onChange: () => {},
@@ -704,20 +706,22 @@ class DashboardWithoutTheme extends React.Component {
     return (
       <ErrorBoundary>
         <>
-          <DashboardToolbar
-            isEditing={this.props.isEditing}
-            tooltipID={this.TOOLTIP_ID}
-            title={this.props.title}
-            onEditClick={this.props.startEditingCallback}
-            onCancelClick={this.props.stopEditingCallback}
-            onAddTileClick={this.addTile}
-            onUndoClick={this.undo}
-            onRedoClick={this.redo}
-            onRefreshClick={this.executeDashboard}
-            onSaveClick={this.props.onSaveCallback}
-            onDeleteClick={this.props.onDeleteCallback}
-            onRenameClick={this.props.onRenameCallback}
-          />
+          {this.props.showToolbar && (
+            <DashboardToolbar
+              isEditing={this.props.isEditing}
+              tooltipID={this.TOOLTIP_ID}
+              title={this.props.title}
+              onEditClick={this.props.startEditingCallback}
+              onCancelClick={this.props.stopEditingCallback}
+              onAddTileClick={this.addTile}
+              onUndoClick={this.undo}
+              onRedoClick={this.redo}
+              onRefreshClick={this.executeDashboard}
+              onSaveClick={this.props.onSaveCallback}
+              onDeleteClick={this.props.onDeleteCallback}
+              onRenameClick={this.props.onRenameCallback}
+            />
+          )}
           <div
             ref={(ref) => (this.ref = ref)}
             className={`react-autoql-dashboard-container${this.props.isEditing ? ' edit-mode' : ''}`}
