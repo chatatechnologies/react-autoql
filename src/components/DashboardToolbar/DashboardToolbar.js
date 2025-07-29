@@ -97,12 +97,12 @@ export class DashboardToolbarWithoutRef extends React.Component {
         confirmText='Save'
         confirmDisabled={!this.state.dashboardName}
       >
-        <p>Enter a new name for the dashboard</p>
         <Input
           fullWidth
           ref={(r) => (this.inputRef = r)}
           placeholder='Dashboard Name'
           value={this.state.dashboardName}
+          label='Enter a new name for the dashboard'
           onChange={(e) => this.setState({ dashboardName: e.target.value })}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
