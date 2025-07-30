@@ -16,6 +16,7 @@ import {
 
 import { Tooltip } from '../Tooltip'
 import DrilldownModal from './DrilldownModal'
+import { DashboardToolbar } from '../DashboardToolbar'
 import { DashboardTile } from './DashboardTile'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 
@@ -79,6 +80,10 @@ class DashboardWithoutTheme extends React.Component {
     onCSVDownloadFinish: PropTypes.func,
     cancelQueriesOnUnmount: PropTypes.bool,
     startEditingCallback: PropTypes.func,
+    stopEditingCallback: PropTypes.func,
+    onSaveCallback: PropTypes.func,
+    onDeleteCallback: PropTypes.func,
+    showToolbar: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -97,6 +102,7 @@ class DashboardWithoutTheme extends React.Component {
     enableDynamicCharting: true,
     autoChartAggregations: true,
     cancelQueriesOnUnmount: false,
+    showToolbar: false,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
     onChange: () => {},
@@ -104,6 +110,9 @@ class DashboardWithoutTheme extends React.Component {
     onCSVDownloadProgress: () => {},
     onCSVDownloadFinish: () => {},
     startEditingCallback: () => {},
+    stopEditingCallback: () => {},
+    onSaveClick: () => {},
+    onDeleteCallback: () => {},
   }
 
   componentDidMount = () => {
@@ -697,6 +706,23 @@ class DashboardWithoutTheme extends React.Component {
     return (
       <ErrorBoundary>
         <>
+          {this.props.showToolbar && (
+            <DashboardToolbar
+              isEditing={this.props.isEditing}
+              isEditable={this.props.isEditable}
+              tooltipID={this.TOOLTIP_ID}
+              title={this.props.title}
+              onEditClick={this.props.startEditingCallback}
+              onCancelClick={this.props.stopEditingCallback}
+              onAddTileClick={this.addTile}
+              onUndoClick={this.undo}
+              onRedoClick={this.redo}
+              onRefreshClick={this.executeDashboard}
+              onSaveClick={this.props.onSaveCallback}
+              onDeleteClick={this.props.onDeleteCallback}
+              onRenameClick={this.props.onRenameCallback}
+            />
+          )}
           <div
             ref={(ref) => (this.ref = ref)}
             className={`react-autoql-dashboard-container${this.props.isEditing ? ' edit-mode' : ''}`}

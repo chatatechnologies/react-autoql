@@ -19,6 +19,20 @@
     }
   }
 
+  &.icon-only {
+    font-size: 1.2em;
+    border-radius: 50%;
+    width: 2em;
+    height: 2em;
+    margin: 4px 1px !important;
+    padding: 8px !important;
+
+    .react-autoql-btn-icon {
+      margin-right: 0;
+      margin-left: 0;
+    }
+  }
+
   .react-autoql-icon {
     display: flex;
   }
@@ -47,7 +61,7 @@
   margin: 3px 3px;
 }
 .react-autoql-btn.react-autoql-btn-large {
-  padding: 10px 16px;
+  padding: 8px 16px;
   margin: 2px 5px;
 }
 
@@ -73,6 +87,8 @@
   background: var(--react-autoql-accent-color);
   border: 1px solid var(--react-autoql-accent-color);
   color: var(--react-autoql-text-color-accent);
+  box-shadow: 0px 3px 1px -2px rgba(0, 0, 0, 0.2), 0px 2px 2px 0px rgba(0, 0, 0, 0.14),
+    0px 1px 5px 0px rgba(0, 0, 0, 0.12);
   &:hover {
     opacity: 0.8;
   }
@@ -83,6 +99,8 @@
     color: var(--react-autoql-danger-color, var(--react-autoql-danger-color-default));
     border: 1px solid var(--react-autoql-danger-color, var(--react-autoql-danger-color-default));
     background: inherit;
+    box-shadow: 0px 3px 1px -2px rgba(0, 0, 0, 0.2), 0px 2px 2px 0px rgba(0, 0, 0, 0.14),
+      0px 1px 5px 0px rgba(0, 0, 0, 0.12);
 
     &:hover {
       background: var(--react-autoql-mask-color);

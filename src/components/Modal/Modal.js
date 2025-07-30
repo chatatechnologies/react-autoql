@@ -94,7 +94,7 @@ export default class Modal extends React.Component {
     return (
       <div className='modal-footer-button-container right'>
         {this.props.showCancelButton && (
-          <Button type='default' onClick={this.onClose}>
+          <Button type='default' onClick={this.onClose} border={false}>
             Cancel
           </Button>
         )}
