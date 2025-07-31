@@ -2099,7 +2099,7 @@ export class QueryOutput extends React.Component {
         newCol.minWidth = '125px'
       }
 
-      newCol.maxWidth = '300px'
+      newCol.maxWidth = false
 
       if (isColumnNumberType(newCol)) {
         newCol.hozAlign = 'right'
