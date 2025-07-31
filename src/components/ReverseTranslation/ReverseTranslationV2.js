@@ -139,7 +139,8 @@ const ReverseTranslation = ({
 
               const isLockedFilter = !!lockedFilters.find(
                 (filter) =>
-                  filter?.toLowerCase()?.trim() === validatedInterpretationArray[i].eng?.toLowerCase()?.trim(),
+                  filter?.value?.toLowerCase()?.trim() === validatedInterpretationArray[i].eng.toLowerCase().trim() || // session filter returns an object with value
+                  filter?.toLowerCase()?.trim() === validatedInterpretationArray[i].eng.toLowerCase().trim(), // persistent filter returns a string in an array
               )
 
               if (isLockedFilter) {
