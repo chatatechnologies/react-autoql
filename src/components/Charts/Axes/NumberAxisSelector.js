@@ -90,8 +90,7 @@ export default class NumberAxisSelector extends React.Component {
 
     columnsOfType.forEach((col) => {
       const checked = this.state.checkedColumns.includes(col.index)
-      const disabled = otherAxisColumns.includes(col.index)
-
+      const disabled = false
       const aggTypeObj = AGG_TYPES[col.aggType]
 
       const item = {
@@ -165,25 +164,9 @@ export default class NumberAxisSelector extends React.Component {
     return this.props.isSecondAxis ? this.props.numberColumnIndices ?? [] : this.props.numberColumnIndices2 ?? []
   }
 
-  areAllDisabled = (type) => {
-    const otherAxisColumnsOfType = this.getOtherAxisColumns()?.filter(
-      (colIndex) => this.state.columns[colIndex].type === type,
-    )
-    const allColumnsOfType = this.getColumnsOfType(type)
-
-    return otherAxisColumnsOfType?.length === allColumnsOfType?.length
-  }
-
   getAllChecked = (type) => {
-    const otherAxisColumns = this.getOtherAxisColumns()
-    const areAllDisabled = this.areAllDisabled(type)
     const columnsOfType = this.getColumnsOfType(type)
-    return (
-      !areAllDisabled &&
-      columnsOfType.every(
-        (col) => this.state.checkedColumns.includes(col.index) || otherAxisColumns.includes(col.index),
-      )
-    )
+    return columnsOfType.every((col) => this.state.checkedColumns.includes(col.index))
   }
 
   onColumnSelection = (selected, selectedColumns) => {
@@ -234,7 +217,6 @@ export default class NumberAxisSelector extends React.Component {
     const title = typeObj.description
     const listItems = this.getSelectableListItems(type)
     const allChecked = this.getAllChecked(type)
-    const allDisabled = this.areAllDisabled(type)
 
     return (
       <div className='number-selector-field-group' key={`series-selector-group-${type}-${this.COMPONENT_KEY}`}>
@@ -249,7 +231,6 @@ export default class NumberAxisSelector extends React.Component {
           <div>
             <Checkbox
               checked={allChecked}
-              disabled={allDisabled}
               className='number-selector-list-checkbox'
               onChange={() => {
                 if (allChecked) {

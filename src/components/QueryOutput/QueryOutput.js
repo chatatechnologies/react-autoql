@@ -2137,9 +2137,7 @@ export class QueryOutput extends React.Component {
 
       if (isColumnNumberType(newCol)) {
         newCol.hozAlign = 'right'
-        newCol.minWidth = 50
       } else {
-        newCol.minWidth = 120
         newCol.hozAlign = 'center'
       }
 
@@ -2167,6 +2165,7 @@ export class QueryOutput extends React.Component {
         valueContainer.innerHTML = formattedValue ?? ''
 
         wrapper.appendChild(valueContainer)
+
         if (cellValue != null && cellValue !== '') {
           onRendered(() => {
             const cellElement = cell.getElement()
@@ -3239,8 +3238,12 @@ export class QueryOutput extends React.Component {
           {this.renderResponse()}
           {this.props.reverseTranslationPlacement !== 'top' && this.renderFooter()}
         </div>
-        {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} />}
-        {!this.props.chartTooltipID && <Tooltip tooltipId={this.CHART_TOOLTIP_ID} />}
+        {!this.props.tooltipID && !this.props.isResizing && !this.props.isUserResizing && (
+          <Tooltip tooltipId={this.TOOLTIP_ID} />
+        )}
+        {!this.props.chartTooltipID && !this.props.isResizing && !this.props.isUserResizing && (
+          <Tooltip tooltipId={this.CHART_TOOLTIP_ID} className='react-autoql-chart-tooltip' delayShow={0} />
+        )}
         {this.renderAddColumnBtn()}
         {this.shouldEnableResize && this.renderResizeHandle()}
       </ErrorBoundary>

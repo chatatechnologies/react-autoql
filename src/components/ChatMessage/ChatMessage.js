@@ -331,6 +331,7 @@ export default class ChatMessage extends React.Component {
           popoverParentElement={this.props.popoverParentElement}
           allowColumnAddition={true}
           onNewData={this.onNewDataCallback}
+          isUserResizing={this.state.isUserResizing}
           reportProblemCallback={() => {
             if (this.optionsToolbarRef?._isMounted) {
               this.optionsToolbarRef?.openReportProblemModal()

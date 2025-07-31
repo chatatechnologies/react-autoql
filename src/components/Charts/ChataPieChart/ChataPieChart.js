@@ -87,10 +87,6 @@ export default class ChataPieChart extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
-    if (this.props.isResizing && nextProps.isResizing) {
-      return false
-    }
-
     const propsEqual = deepEqual(this.props, nextProps)
     const stateEqual = deepEqual(this.state, nextState)
 
