@@ -1,0 +1,67 @@
+.react-autoql-dashboard-toolbar-container {
+  padding: 15px 10px 10px 24px;
+  top: 0;
+  left: auto;
+  right: 0;
+  position: sticky;
+  background: var(--react-autoql-background-color-primary);
+  z-index: 1000;
+
+  .react-autoql-dashboard-title-and-tools-container {
+    display: flex;
+    flex-wrap: nowrap;
+    max-width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    overflow: hidden;
+
+    .react-autoql-dashboard-title-container {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      font-size: 20px;
+      font-weight: 600;
+
+      .react-autoql-dashboard-rename-btn {
+        margin: 0 !important;
+        padding: 0 !important;
+        margin-left: 3px !important;
+        font-size: 15px;
+        opacity: 0;
+      }
+
+      &:hover .react-autoql-dashboard-rename-btn {
+        opacity: 1;
+      }
+    }
+
+    .react-autoql-dashboard-title-tools-container {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+
+      .react-autoql-btn {
+        color: var(--react-autoql-text-color-primary);
+      }
+    }
+  }
+
+  &.react-autoql-dashboard-toolbar-container-editing {
+    .react-autoql-dashboard-rename-btn {
+      opacity: 1 !important;
+    }
+  }
+
+  .react-autoql-dashboard-edit-toolbar-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-top: 5px;
+
+    .react-autoql-dashboard-edit-toolbar-container-left,
+    .react-autoql-dashboard-edit-toolbar-container-right {
+      display: flex;
+      justify-content: center;
+    }
+  }
+}

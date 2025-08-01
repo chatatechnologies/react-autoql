@@ -22,6 +22,7 @@ export class ButtonWithoutRef extends React.Component {
     border: PropTypes.bool,
     tooltip: PropTypes.string,
     icon: PropTypes.string,
+    iconOnly: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -34,6 +35,7 @@ export class ButtonWithoutRef extends React.Component {
     filled: false,
     border: true,
     icon: undefined,
+    iconOnly: false,
     onClick: () => {},
   }
 
@@ -86,7 +88,8 @@ export class ButtonWithoutRef extends React.Component {
             react-autoql-btn-${size}
             ${isDisabled ? ' disabled' : ''}
             ${this.props.border ? '' : 'btn-no-border'}
-            ${this.props.filled ? 'btn-filled' : ''}`}
+            ${this.props.filled ? 'btn-filled' : ''}
+            ${this.props.iconOnly ? 'icon-only' : ''}`}
           data-test='react-autoql-btn'
           data-multiline={this.props.multiline}
           style={{ ...this.props.style }}

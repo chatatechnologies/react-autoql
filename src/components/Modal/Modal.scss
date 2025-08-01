@@ -127,7 +127,7 @@
 
 .react-autoql-modal-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   position: relative;
   border-bottom: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.05));
 
@@ -139,10 +139,11 @@
 
   .react-autoql-modal-header-title {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     font-size: 17px;
-    margin: 3px;
+    margin-left: 20px;
+    font-weight: 600;
 
     .react-autoql-icon {
       margin-right: 5px;
@@ -181,7 +182,6 @@
   flex: 0;
   font-size: 22px;
   margin: 16px;
-  padding-left: 15px;
   opacity: 0.6 !important;
   cursor: pointer;
   box-sizing: content-box;

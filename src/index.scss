@@ -19,6 +19,16 @@
   opacity: 0;
 }
 
+.react-autoql-horizontal-divider {
+  width: 1px;
+  height: 70%;
+  margin: auto 16px;
+  background-color: #0000001f;
+  align-self: stretch;
+  border: none;
+  flex-shrink: 0;
+}
+
 @keyframes pulse {
   0% {
     opacity: 0.05;
