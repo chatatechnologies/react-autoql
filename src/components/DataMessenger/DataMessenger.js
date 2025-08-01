@@ -10,6 +10,7 @@ import {
   dataFormattingDefault,
   getAutoQLConfig,
   CustomColumnTypes,
+  normalizeString,
 } from 'autoql-fe-utils'
 import classNames from 'classnames'
 // Components
@@ -438,7 +439,7 @@ export class DataMessenger extends React.Component {
     const { placement } = this.props
     let formattedPlacement
     if (typeof placement === 'string') {
-      formattedPlacement = placement.trim().toLowerCase()
+      formattedPlacement = normalizeString(placement)
       if (
         formattedPlacement === 'right' ||
         formattedPlacement === 'left' ||

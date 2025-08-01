@@ -4,6 +4,7 @@ import PropTypes from 'prop-types'
 import { Spinner } from '../Spinner'
 import { Icon } from '../Icon'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
+import { normalizeString } from 'autoql-fe-utils'
 
 import './Button.scss'
 
@@ -41,7 +42,7 @@ export class ButtonWithoutRef extends React.Component {
 
   getType = () => {
     try {
-      const type = this.props.type.trim().toLowerCase()
+      const type = normalizeString(this.props.type)
       if (validTypes.includes(type)) {
         return type
       }
@@ -54,7 +55,7 @@ export class ButtonWithoutRef extends React.Component {
 
   getSize = () => {
     try {
-      const trimmedSize = this.props.size.trim().toLowerCase()
+      const trimmedSize = normalizeString(this.props.size)
       if (validSizes.includes(trimmedSize)) {
         return trimmedSize
       }

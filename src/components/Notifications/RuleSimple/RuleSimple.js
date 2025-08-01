@@ -36,6 +36,7 @@ import {
   getDefaultJoinColumnAndDisplayNameAndJoinColumnsIndices,
   getQuerySelectableJoinColumns,
   fetchFilters,
+  normalizeString,
 } from 'autoql-fe-utils'
 import LoadingDots from '../../LoadingDots/LoadingDots'
 import JoinColumnSelectionTable from '../JoinColumnSelectionTable/JoinColumnSelectionTable'
@@ -1224,7 +1225,7 @@ export default class RuleSimple extends React.Component {
       return filterText
     }
     filters.forEach((filter) => {
-      const filterValue = filter.value?.trim().toLowerCase()
+      const filterValue = normalizeString(filter.value)
       const rtChunks = rtArray.filter((chunk) => {
         return chunk.for?.trim()?.toLowerCase() === filterValue
       })
