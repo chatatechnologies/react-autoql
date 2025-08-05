@@ -25,10 +25,9 @@ export default class TableWrapper extends React.Component {
       headerFilterLiveFilterDelay: 300,
       minHeight: 100,
       reactiveData: false,
-      autoResize: true,
+      autoResize: this.props.isDrilldown ? false : this.props.scope === 'dashboards' ? true : false,
       rowHeight: 25,
       layout: this.props.isDrilldown ? 'fitDataFill' : this.props.scope === 'dashboards' ? 'fitColumns' : 'fitDataFill',
-      resizableColumnFit: true,
       clipboard: true,
       downloadConfig: {
         columnGroups: false,
