@@ -25,10 +25,9 @@ export default class TableWrapper extends React.Component {
       headerFilterLiveFilterDelay: 300,
       minHeight: 100,
       reactiveData: false,
-      autoResize: true,
+      autoResize: this.props.isDrilldown ? false : this.props.scope === 'dashboards' ? true : false,
       rowHeight: 25,
       layout: this.props.isDrilldown ? 'fitDataFill' : this.props.scope === 'dashboards' ? 'fitColumns' : 'fitDataFill',
-      resizableColumnFit: true,
       clipboard: true,
       downloadConfig: {
         columnGroups: false,
@@ -123,6 +122,9 @@ export default class TableWrapper extends React.Component {
     })
 
     this.tabulator.on('renderComplete', () => {
+      this.tabulator.modules.layout.autoResize = false // Manually disable auto-resize after render
+      this.tabulator.modules.layout.columnAutoResize = false
+
       // Remove this for now, since it is causing bugs with the cell click event
       // Block redraw after every update for performance
       // Restore redraw manually before updating table data
@@ -144,6 +146,11 @@ export default class TableWrapper extends React.Component {
       if (this.props.options?.ajaxRequestFunc) {
         try {
           await this.tabulator.replaceData()
+
+          setTimeout(() => {
+            // After table is built, sometimes the resize handles do not show. If we redraw the table they show up
+            this.tabulator.redraw()
+          }, 500)
         } catch (error) {
           console.error(error)
         }
