@@ -146,6 +146,11 @@ export default class TableWrapper extends React.Component {
       if (this.props.options?.ajaxRequestFunc) {
         try {
           await this.tabulator.replaceData()
+
+          setTimeout(() => {
+            // After table is built, sometimes the resize handles do not show. If we redraw the table they show up
+            this.tabulator.redraw()
+          }, 500)
         } catch (error) {
           console.error(error)
         }
