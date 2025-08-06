@@ -11,6 +11,7 @@ import {
   authenticationDefault,
   ColumnTypes,
   titlelizeString,
+  normalizeString,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -139,8 +140,9 @@ const ReverseTranslation = ({
 
               const isLockedFilter = !!lockedFilters.find(
                 (filter) =>
-                  normalizeString(filter?.value) === normalizeString(validatedInterpretationArray[i].eng) || // session filter returns an object with value
-                  normalizeString(filter) === normalizeString(validatedInterpretationArray[i].eng), // persistent filter returns a string in an array
+                  normalizeString(filter?.value) === normalizeString(validatedInterpretationArray[i].eng) ||
+                  (typeof filter === 'string' ? normalizeString(filter) : '') ===
+                    normalizeString(validatedInterpretationArray[i].eng),
               )
 
               if (isLockedFilter) {
