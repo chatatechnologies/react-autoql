@@ -122,6 +122,9 @@ export default class TableWrapper extends React.Component {
     })
 
     this.tabulator.on('renderComplete', () => {
+      this.tabulator.modules.layout.autoResize = false // Manually disable auto-resize after render
+      this.tabulator.modules.layout.columnAutoResize = false
+
       // Remove this for now, since it is causing bugs with the cell click event
       // Block redraw after every update for performance
       // Restore redraw manually before updating table data
