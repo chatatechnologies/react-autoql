@@ -11,6 +11,7 @@ import {
   authenticationDefault,
   ColumnTypes,
   titlelizeString,
+  normalizeString,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
