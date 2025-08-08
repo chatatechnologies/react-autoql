@@ -416,7 +416,6 @@ export default class ChatMessage extends React.Component {
     }
   }
   render = () => {
-    const hasRT = !!this.responseRef?.queryResponse?.data?.data?.parsed_interpretation
     const isResizable =
       this.props.response && !this.props.isCSVProgressMessage && !this.props.content && this.state.isResizable
 
@@ -449,10 +448,10 @@ export default class ChatMessage extends React.Component {
               {this.renderContent()}
             </div>
           </div>
-          {hasRT ? (
+          {!!this.responseRef && (
             <div className='chat-message-rt-container'>
               <ReverseTranslation
-                key={this.responseRef.queryResponse?.data?.data?.query_id}
+                key={this.responseRef?.queryResponse?.data?.data?.query_id}
                 authentication={this.props.authentication}
                 onValueLabelClick={this.props.onRTValueLabelClick}
                 queryResponse={this.responseRef.queryResponse}
@@ -467,7 +466,7 @@ export default class ChatMessage extends React.Component {
                 localRTFilterResponse={this.state.localRTFilterResponse}
               />
             </div>
-          ) : null}
+          )}
         </div>
       </ErrorBoundary>
     )

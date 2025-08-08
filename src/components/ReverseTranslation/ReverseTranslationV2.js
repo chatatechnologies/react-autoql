@@ -17,8 +17,6 @@ import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
 import { authenticationType } from '../../props/types'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
-
-import './ReverseTranslation.scss'
 import VLAutocompleteInputV2 from '../VLAutocompleteInput/VLAutocompleteInputV2'
 import GroupByAutocompleteInput from '../VLAutocompleteInput/GroupByAutocompleteInput'
 import ContextAutocompleteInput from '../VLAutocompleteInput/ContextAutocompleteInput'
@@ -27,6 +25,8 @@ import { Spinner } from '../Spinner'
 import { AddColumnBtn } from '../AddColumnBtn'
 import { Popover } from '../Popover'
 import AggMenu from '../AddColumnBtn/AggMenu'
+
+import './ReverseTranslation.scss'
 
 const ReverseTranslation = ({
   authentication = authenticationDefault,
@@ -208,10 +208,6 @@ const ReverseTranslation = ({
       rtString = `${rtString} ${removeBracketsAndParenthesesAndCharacterBetween(chunk?.eng)}`
     })
     return rtString.trim()
-  }
-
-  if (!reverseTranslationArray?.length) {
-    return null
   }
 
   const resetReverseTranslation = () => {
@@ -540,6 +536,13 @@ const ReverseTranslation = ({
     )
   }
 
+  const hasInterpretationArray = !!reverseTranslationArray?.length
+  const hasTextInterpretation = !!queryResponse?.data?.data?.interpretation
+
+  if (!hasInterpretationArray && !hasTextInterpretation) {
+    return null
+  }
+
   return (
     <ErrorBoundary>
       {textOnly ? (
@@ -560,14 +563,20 @@ const ReverseTranslation = ({
                 data-tooltip-id={tooltipID ?? `react-autoql-reverse-translation-tooltip-${COMPONENT_KEY.current}`}
               />
               <strong> Interpreted as: </strong>
-              {reverseTranslationArray.map((chunk, i) => (
-                <div className='react-autoql-reverse-translation-chunk' key={i}>
-                  {renderInterpretationChunk(chunk, i)}
-                </div>
-              ))}
-              <div className={`react-autoql-reverse-translation-action-button${isRefiningRT ? ' active' : ''}`}>
-                {enableEditReverseTranslation ? renderActionIcon() : null}
-              </div>
+              {hasInterpretationArray ? (
+                <>
+                  {reverseTranslationArray.map((chunk, i) => (
+                    <div className='react-autoql-reverse-translation-chunk' key={i}>
+                      {renderInterpretationChunk(chunk, i)}
+                    </div>
+                  ))}
+                  <div className={`react-autoql-reverse-translation-action-button${isRefiningRT ? ' active' : ''}`}>
+                    {enableEditReverseTranslation ? renderActionIcon() : null}
+                  </div>
+                </>
+              ) : (
+                <div>{queryResponse?.data?.data?.interpretation}</div>
+              )}
             </div>
           </div>
           {!tooltipID && (
