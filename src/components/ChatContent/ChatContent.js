@@ -62,6 +62,7 @@ export default class ChatContent extends React.Component {
     scope: PropTypes.string,
     shouldRender: PropTypes.bool,
     hideChatBarAfterInitialResponse: PropTypes.bool,
+    isLoadingLocal: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -74,6 +75,7 @@ export default class ChatContent extends React.Component {
     onRTValueLabelClick: undefined,
     shouldRender: true,
     hideChatBarAfterInitialResponse: false,
+    isLoadingLocal: false,
   }
 
   componentDidMount = () => {
@@ -493,6 +495,7 @@ export default class ChatContent extends React.Component {
                     chartTooltipID={this.props.chartTooltipID}
                     subjects={this.state.subjects}
                     onMessageResize={this.onMessageResize}
+                    isLoadingLocal={this.props.isLoadingLocal}
                   />
                 )
               })}

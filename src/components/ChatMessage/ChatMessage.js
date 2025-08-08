@@ -83,12 +83,14 @@ export default class ChatMessage extends React.Component {
     isVisibleInDOM: PropTypes.bool,
     subjects: PropTypes.arrayOf(PropTypes.shape({})),
     onMessageResize: PropTypes.func,
+    isLoadingLocal: PropTypes.bool,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
+    isLoadingLocal: false,
 
     isIntroMessage: false,
     source: null,
@@ -339,6 +341,7 @@ export default class ChatMessage extends React.Component {
           }}
           subjects={this.props.subjects}
           onUpdateFilterResponse={this.onUpdateFilterResponse}
+          isLoadingLocal={this.props.isLoadingLocal}
         />
       )
     }

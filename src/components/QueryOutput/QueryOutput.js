@@ -238,6 +238,8 @@ export class QueryOutput extends React.Component {
     maxHeight: PropTypes.number,
     resizeMultiplier: PropTypes.number,
     onResize: PropTypes.func,
+    localRTFilterResponse: PropTypes.shape({}),
+    isLoadingLocal: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -295,6 +297,8 @@ export class QueryOutput extends React.Component {
     maxHeight: undefined,
     resizeMultiplier: 1.5,
     onResize: () => {},
+    localRTFilterResponse: undefined,
+    isLoadingLocal: false,
   }
 
   componentDidMount = () => {
@@ -2824,6 +2828,7 @@ export class QueryOutput extends React.Component {
           initialTableParams={this.tableParams}
           updateColumnsAndData={this.updateColumnsAndData}
           onUpdateFilterResponse={this.props.onUpdateFilterResponse}
+          isLoadingLocal={this.props.isLoadingLocal}
         />
       </ErrorBoundary>
     )
@@ -2869,6 +2874,7 @@ export class QueryOutput extends React.Component {
           pivotGroups={true}
           pivot
           queryText={this.queryResponse?.data?.data?.text}
+          isLoadingLocal={this.props.isLoadingLocal}
         />
       </ErrorBoundary>
     )
@@ -3172,6 +3178,7 @@ export class QueryOutput extends React.Component {
         enableEditReverseTranslation={
           this.props.autoQLConfig.enableEditReverseTranslation && !isDrilldown(this.queryResponse)
         }
+        localRTFilterResponse={this.props.localRTFilterResponse}
       />
     )
   }

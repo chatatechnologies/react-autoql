@@ -69,7 +69,10 @@ export default class ChataTable extends React.Component {
     this.useRemote =
       this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
         ? LOCAL_OR_REMOTE.REMOTE
-        : LOCAL_OR_REMOTE.LOCAL
+        : this.props.isLoadingLocal
+        ? LOCAL_OR_REMOTE.LOCAL
+        : LOCAL_OR_REMOTE.REMOTE
+
     this.isLocal = this.useRemote === LOCAL_OR_REMOTE.LOCAL
     this.totalPages = this.getTotalPages(props.response)
     if (isNaN(this.totalPages) || !this.totalPages) {
@@ -167,6 +170,7 @@ export default class ChataTable extends React.Component {
     onUpdateFilterResponse: PropTypes.func,
     isDrilldown: PropTypes.bool,
     scope: PropTypes.string,
+    isLoadingLocal: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -198,6 +202,7 @@ export default class ChataTable extends React.Component {
     onUpdateFilterResponse: () => {},
     isDrilldown: false,
     scope: undefined,
+    isLoadingLocal: false,
   }
 
   componentDidMount = () => {
