@@ -2137,7 +2137,7 @@ export class QueryOutput extends React.Component {
         newCol.minWidth = '125px'
       }
 
-      newCol.maxWidth = '300px'
+      newCol.maxWidth = false
 
       if (isColumnNumberType(newCol)) {
         newCol.hozAlign = 'right'
@@ -2340,6 +2340,7 @@ export class QueryOutput extends React.Component {
         title: 'Month',
         name: 'Month',
         field: '0',
+        resizable: false,
         frozen: true,
         visible: true,
         is_visible: true,
@@ -2513,6 +2514,7 @@ export class QueryOutput extends React.Component {
         visible: true,
         is_visible: true,
         field: '0',
+        resizable: false,
         cssClass: 'pivot-category',
         pivot: true,
         headerFilter: false,
