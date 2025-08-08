@@ -80,6 +80,8 @@ import { QueryValidationMessage } from '../QueryValidationMessage'
 
 import { withTheme } from '../../theme'
 import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
+import { TABULATOR_LOCAL_ROW_LIMIT } from '../../js/Constants'
+import { DataSourceManager } from '../../utils/dataSourceUtils'
 
 import './QueryOutput.scss'
 
@@ -236,6 +238,8 @@ export class QueryOutput extends React.Component {
     maxHeight: PropTypes.number,
     resizeMultiplier: PropTypes.number,
     onResize: PropTypes.func,
+    localRTFilterResponse: PropTypes.shape({}),
+    isLoadingLocal: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -293,6 +297,8 @@ export class QueryOutput extends React.Component {
     maxHeight: undefined,
     resizeMultiplier: 1.5,
     onResize: () => {},
+    localRTFilterResponse: undefined,
+    isLoadingLocal: false,
   }
 
   componentDidMount = () => {
@@ -447,7 +453,11 @@ export class QueryOutput extends React.Component {
   }
 
   componentWillUnmount = () => {
-    this._isMounted = false
+    try {
+      this._isMounted = false
+    } catch (error) {
+      console.error(error)
+    }
     document.removeEventListener('mousemove', this.handleMouseMove)
     document.removeEventListener('mouseup', this.handleMouseUp)
     document.removeEventListener('mouseleave', this.handleMouseUp)
@@ -538,6 +548,7 @@ export class QueryOutput extends React.Component {
     if (this.chartRef) {
       this.chartRef?.adjustChartPosition()
     }
+
     if (this.tableRef?._isMounted) {
       this.tableRef.forceUpdate()
     }
@@ -896,6 +907,32 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  /**
+   * Determines if we should use local tabulator data or raw query data
+   */
+  shouldUseLocalTabulatorData = () => {
+    const hasLargeDataset = this.queryResponse?.data?.data?.rows.length > TABULATOR_LOCAL_ROW_LIMIT
+    const hasValidTableRef = this.tableRef?._isMounted
+    return !hasLargeDataset && hasValidTableRef
+  }
+
+  /**
+   * Gets the appropriate table data based on data size and table ref availability
+   */
+  getTableDataForProcessing = () => {
+    if (this.shouldUseLocalTabulatorData()) {
+      return this.tableRef.ref.tabulator.getData('active')
+    }
+    return this.queryResponse?.data?.data?.rows || []
+  }
+
+  /**
+   * Gets table data with deep cloning for safe manipulation
+   */
+  getClonedTableData = () => {
+    return _cloneDeep(this.getTableDataForProcessing())
+  }
+
   generatePivotData = ({ isFirstGeneration, dataChanged } = {}) => {
     try {
       this.pivotTableID = uuid()
@@ -1085,17 +1122,18 @@ export class QueryOutput extends React.Component {
         response = await runDrilldown({
           ...getAuthentication(this.props.authentication),
           ...getAutoQLConfig(this.props.autoQLConfig),
-          source: this.props.source,
-          scope: this.props.scope,
+          query: queryRequestData?.text,
+          queryID: this.props.originalQueryID,
           translation: queryRequestData?.translation,
           filters: sessionFilters,
-          pageSize: queryRequestData?.page_size,
           test: queryRequestData?.test,
-          groupBys: queryRequestData?.columns,
-          queryID: this.props.originalQueryID,
+          source: this.props.source,
+          pageSize: queryRequestData?.page_size,
           orders: this.formattedTableParams?.sorters,
           tableFilters: allFilters,
+          scope: this.props.scope,
           cancelToken: this.axiosSource.token,
+          groupBys: queryRequestData?.columns,
           ...args,
         })
       } catch (error) {
@@ -2270,7 +2308,10 @@ export class QueryOutput extends React.Component {
           (col, index) => col.is_visible && index !== dateColumnIndex && isColumnNumberType(col),
         )
       }
-      const tableData = newTableData || this.queryResponse?.data?.data?.rows
+      const tableData =
+        newTableData || this.queryResponse?.data?.data?.rows > TABULATOR_LOCAL_ROW_LIMIT
+          ? this.queryResponse?.data?.data?.rows
+          : this.tableRef.ref.getData('active')
 
       const allYears = tableData.map((d) => {
         if (columns[dateColumnIndex].type === ColumnTypes.DATE) {
@@ -2395,7 +2436,9 @@ export class QueryOutput extends React.Component {
       this.pivotTableRowsLimited = false
       this.pivotTableID = uuid()
 
-      let tableData = _cloneDeep(this.queryResponse?.data?.data?.rows)
+      const dataManager = new DataSourceManager(this.queryResponse, this.tableRef, TABULATOR_LOCAL_ROW_LIMIT)
+
+      let tableData = dataManager.getClonedData()
       tableData = tableData.filter((row) => row[0] !== null)
 
       const columns = this.getColumns()
@@ -2748,11 +2791,11 @@ export class QueryOutput extends React.Component {
       <ErrorBoundary>
         <ChataTable
           key={this.tableID}
+          ref={(ref) => (this.tableRef = ref)}
           autoHeight={this.props.autoHeight}
           authentication={this.props.authentication}
           autoQLConfig={this.props.autoQLConfig}
           dataFormatting={this.props.dataFormatting}
-          ref={(ref) => (this.tableRef = ref)}
           columns={this.state.columns}
           response={this.queryResponse}
           updateColumns={this.updateColumns}
@@ -2787,6 +2830,7 @@ export class QueryOutput extends React.Component {
           initialTableParams={this.tableParams}
           updateColumnsAndData={this.updateColumnsAndData}
           onUpdateFilterResponse={this.props.onUpdateFilterResponse}
+          isLoadingLocal={this.props.isLoadingLocal}
         />
       </ErrorBoundary>
     )
@@ -2806,6 +2850,7 @@ export class QueryOutput extends React.Component {
         <ChataTable
           key={this.pivotTableID}
           ref={(ref) => (this.pivotTableRef = ref)}
+          autoHeight={this.props.autoHeight}
           authentication={this.props.authentication}
           autoQLConfig={this.props.autoQLConfig}
           dataFormatting={this.props.dataFormatting}
@@ -2817,7 +2862,6 @@ export class QueryOutput extends React.Component {
           hidden={this.state.displayType !== 'pivot_table'}
           useInfiniteScroll={false}
           supportsDrilldowns={true}
-          autoHeight={this.props.autoHeight}
           source={this.props.source}
           scope={this.props.scope}
           tooltipID={this.props.tooltipID}
@@ -2832,6 +2876,7 @@ export class QueryOutput extends React.Component {
           pivotGroups={true}
           pivot
           queryText={this.queryResponse?.data?.data?.text}
+          isLoadingLocal={this.props.isLoadingLocal}
         />
       </ErrorBoundary>
     )
@@ -2856,7 +2901,13 @@ export class QueryOutput extends React.Component {
       isChartDataAggregated = true
     }
 
-    const data = usePivotData ? this.state.visiblePivotRows || this.pivotTableData : this.tableData
+    const data = usePivotData
+      ? this.state.visiblePivotRows || this.pivotTableData
+      : this.tableData > TABULATOR_LOCAL_ROW_LIMIT || !this.tableRef?._isMounted
+      ? this.tableData
+      : typeof this.tableRef?.ref?.tabulator?.getData === 'function'
+      ? this.tableRef?.ref?.tabulator?.getData('active')
+      : this.tableData
     const columns = usePivotData ? this.pivotTableColumns : this.state.columns
 
     const isPivotDataLimited =
@@ -3129,6 +3180,7 @@ export class QueryOutput extends React.Component {
         enableEditReverseTranslation={
           this.props.autoQLConfig.enableEditReverseTranslation && !isDrilldown(this.queryResponse)
         }
+        localRTFilterResponse={this.props.localRTFilterResponse}
       />
     )
   }
@@ -3169,7 +3221,7 @@ export class QueryOutput extends React.Component {
   }
 
   render = () => {
-    const containerStyle = this.shouldEnableResize
+    const containerStyle = this.props.enableResizing
       ? {
           height: this.state.height,
           position: 'relative',
@@ -3185,11 +3237,11 @@ export class QueryOutput extends React.Component {
           data-test='query-response-wrapper'
           style={containerStyle}
           className={`react-autoql-response-content-container
-        ${isTableType(this.state.displayType) ? 'table' : ''}
-        ${isChartType(this.state.displayType) ? 'chart' : ''} 
-        ${!isChartType(this.state.displayType) && !isTableType(this.state.displayType) ? 'non-table-non-chart' : ''}
-        ${this.shouldEnableResize ? 'resizable' : ''}
-        ${this.state.isResizing ? 'resizing' : ''}`}
+          ${isTableType(this.state.displayType) ? 'table' : ''}
+          ${isChartType(this.state.displayType) ? 'chart' : ''} 
+          ${!isChartType(this.state.displayType) && !isTableType(this.state.displayType) ? 'non-table-non-chart' : ''}
+          ${this.shouldEnableResize ? 'resizable' : ''}
+          ${this.state.isResizing ? 'resizing' : ''}`}
         >
           {this.props.reverseTranslationPlacement === 'top' && this.renderFooter()}
           {this.renderResponse()}

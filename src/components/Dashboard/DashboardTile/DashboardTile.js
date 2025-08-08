@@ -78,6 +78,7 @@ export class DashboardTile extends React.Component {
     // -------------------------------------------------------------------------------------
 
     this.state = {
+      tileIdx: tile.i,
       query: tile.query,
       secondQuery: tile.secondQuery || tile.query,
       title: tile.title,
@@ -108,6 +109,7 @@ export class DashboardTile extends React.Component {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
+    isLoadingLocal: PropTypes.bool,
 
     tile: PropTypes.shape({}).isRequired,
     isEditing: PropTypes.bool,
@@ -130,6 +132,7 @@ export class DashboardTile extends React.Component {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
+    isLoadingLocal: false,
 
     query: '',
     title: '',
@@ -1132,6 +1135,8 @@ export class DashboardTile extends React.Component {
         height='100%'
         width='100%'
         onUpdateFilterResponse={this.onUpdateFilterResponse}
+        localRTFilterResponse={this.state.localRTFilterResponse}
+        isLoadingLocal={this.props.isLoadingLocal}
         {...queryOutputProps}
       />
     )

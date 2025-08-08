@@ -109,6 +109,7 @@ export class DataMessenger extends React.Component {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
+    isLoadingLocal: PropTypes.bool,
 
     // UI
     placement: PropTypes.string,
@@ -166,6 +167,7 @@ export class DataMessenger extends React.Component {
     authentication: {},
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
+    isLoadingLocal: false,
 
     // UI
     placement: 'right',
@@ -834,6 +836,7 @@ export class DataMessenger extends React.Component {
           chartTooltipID={this.CHART_TOOLTIP_ID}
           scope={this.props.scope}
           customToolbarOptions={this.props.customToolbarOptions}
+          isLoadingLocal={this.props.isLoadingLocal}
         />
       </ErrorBoundary>
     )
@@ -872,6 +875,7 @@ export class DataMessenger extends React.Component {
           }}
           createDataAlertCallback={this.closeDataMessenger}
           tooltipID={this.TOOLTIP_ID}
+          isLoadingLocal={this.props.isLoadingLocal}
         />
       </ErrorBoundary>
     )
