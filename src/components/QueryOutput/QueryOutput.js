@@ -3103,7 +3103,7 @@ export class QueryOutput extends React.Component {
     return (
       getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
       this.props.showQueryInterpretation &&
-      this.queryResponse?.data?.data?.parsed_interpretation
+      (this.queryResponse?.data?.data?.parsed_interpretation || this.queryResponse?.data?.data?.interpretation)
     )
   }
 
