@@ -269,27 +269,17 @@ const ReverseTranslation = ({
 
   useEffect(() => {
     const newParsedInterpretation = queryResponse?.data?.data?.parsed_interpretation
-    if (
-      initialParsedInterpretations?.current?.length &&
-      !deepEqual(newParsedInterpretation, initialParsedInterpretations?.current)
-    ) {
-      initialParsedInterpretations.current = newParsedInterpretation
-      const newArray = constructRTArray(newParsedInterpretation)
-      executePrerequisites(newArray)
-    }
+    initialParsedInterpretations.current = newParsedInterpretation
+    const newArray = constructRTArray(newParsedInterpretation)
+    executePrerequisites(newArray)
   }, [queryResponse?.data?.data?.parsed_interpretation])
 
   // todo: see if we can update and remove this useEffect and use queryRepsonse instead
   useEffect(() => {
     const newParsedInterpretation = localRTFilterResponse?.data?.data?.parsed_interpretation
-    if (
-      initialParsedInterpretations?.current?.length &&
-      !deepEqual(newParsedInterpretation, initialParsedInterpretations?.current)
-    ) {
-      initialParsedInterpretations.current = newParsedInterpretation
-      const newArray = constructRTArray(newParsedInterpretation)
-      executePrerequisites(newArray)
-    }
+    initialParsedInterpretations.current = newParsedInterpretation
+    const newArray = constructRTArray(newParsedInterpretation)
+    executePrerequisites(newArray)
   }, [localRTFilterResponse?.data?.data?.parsed_interpretation])
 
   useEffect(() => {

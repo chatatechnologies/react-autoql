@@ -170,7 +170,17 @@ export class DashboardTile extends React.Component {
   }
 
   onUpdateFilterResponse = (localRTFilterResponse) => {
-    this.setState({ localRTFilterResponse })
+    this.setState({
+      localRTFilterResponse,
+      initialFormattedTableParams: { filters: localRTFilterResponse.data.data.fe_req.filters },
+      tableFilters: localRTFilterResponse.data.data.fe_req.filters,
+    })
+    this.props.setParamsForTile(
+      {
+        tableFilters: localRTFilterResponse.data.data.fe_req.filters,
+      },
+      this.state.tileIdx,
+    )
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -770,7 +780,7 @@ export class DashboardTile extends React.Component {
       queryResponse,
       dataConfig,
       displayOverrides,
-      tableFilters,
+      tableFilters, // This will update the filters
       orders,
       filters,
     })
@@ -1390,6 +1400,38 @@ export class DashboardTile extends React.Component {
       </ErrorBoundary>
     )
   }
+
+  // // Add a new method to update table filters directly
+  // updateTableFilters = (newTableFilters) => {
+  //   this.debouncedSetParamsForTile({
+  //     tableFilters: newTableFilters,
+  //   })
+  // }
+
+  // // For second query filters
+  // updateSecondTableFilters = (newSecondTableFilters) => {
+  //   this.debouncedSetParamsForTile({
+  //     secondTableFilters: newSecondTableFilters,
+  //   })
+  // }
+
+  // onTableFiltersChange = (tableFilters, isSecondHalf = false) => {
+  //   if (isSecondHalf) {
+  //     this.debouncedSetParamsForTile({
+  //       secondTableFilters: tableFilters,
+  //     })
+  //   } else {
+  //     this.debouncedSetParamsForTile({
+  //       tableFilters: tableFilters,
+  //     })
+  //   }
+  // }
+
+  // onTableFiltersUpdate = (tableFilters, isSecondHalf = false) => {
+  //   const params = isSecondHalf ? { secondTableFilters: tableFilters } : { tableFilters: tableFilters }
+
+  //   this.debouncedSetParamsForTile(params)
+  // }
 }
 
 // React-Grid-Layout needs the forwarded original ref
