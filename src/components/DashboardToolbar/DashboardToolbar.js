@@ -10,6 +10,9 @@ import { Input } from '../Input'
 
 import './DashboardToolbar.scss'
 import { Icon } from '../Icon'
+import { VLAutocompleteInput } from '../VLAutocompleteInput'
+import FilterAutocomplete from './DashboardFilterAutocomplete'
+import { Chip } from '../Chip'
 
 export class DashboardToolbarWithoutRef extends React.Component {
   static propTypes = {
@@ -44,6 +47,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     isOptionsMenuOpen: false,
     isConfirmCloseModalOpen: false,
     isRenameModalOpen: false,
+    dashboardFilters: [],
     dashboardName: '',
   }
 
@@ -54,6 +58,10 @@ export class DashboardToolbarWithoutRef extends React.Component {
       })
     } else if (prevState.isRenameModalOpen && !this.state.isRenameModalOpen) {
       this.setState({ dashboardName: '' })
+    }
+
+    if (this.state.dashboardFilters?.length !== prevState.dashboardFilters?.length) {
+      // Do something with the filters
     }
   }
 
@@ -148,6 +156,12 @@ export class DashboardToolbarWithoutRef extends React.Component {
             </div>
             {!this.props.isEditing && (
               <div className='react-autoql-dashboard-title-tools-container'>
+                <FilterAutocomplete
+                  authentication={this.props.authentication}
+                  onSelect={(selected) =>
+                    this.setState({ dashboardFilters: [...this.state.dashboardFilters, selected] })
+                  }
+                />
                 <Button
                   iconOnly
                   icon='refresh'
@@ -229,6 +243,25 @@ export class DashboardToolbarWithoutRef extends React.Component {
               </div>
             </div>
           ) : null}
+          <div>
+            {this.state.dashboardFilters?.length ? <span>Filters: </span> : null}
+            {this.state.dashboardFilters?.map((filter, i) => {
+              const displayName = filter.format_txt ?? filter.keyword
+
+              let displayNameType = ''
+              if (filter.show_message) {
+                displayNameType = `(${filter.show_message})`
+              }
+
+              return (
+                <Chip key={i}>
+                  <span>
+                    <strong>{displayName}</strong> <em>{displayNameType}</em>
+                  </span>
+                </Chip>
+              )
+            })}
+          </div>
         </div>
         <ConfirmModal
           isVisible={this.state.isConfirmCloseModalOpen}

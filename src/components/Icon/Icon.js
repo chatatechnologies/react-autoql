@@ -78,7 +78,7 @@ import { MdLockOpen } from '@react-icons/all-files/md/MdLockOpen'
 import { MdPlayCircleOutline } from '@react-icons/all-files/md/MdPlayCircleOutline'
 import { MdAttachMoney } from '@react-icons/all-files/md/MdAttachMoney'
 import { MdFunctions } from '@react-icons/all-files/md/MdFunctions'
-import { MdOutlineUndo, MdOutlineRedo } from 'react-icons/md'
+import { MdOutlineUndo, MdOutlineRedo, MdFilterList } from 'react-icons/md'
 
 import { RxOpenInNewWindow } from 'react-icons/rx'
 import { TfiArrowsCorner } from 'react-icons/tfi'
@@ -324,6 +324,10 @@ export default class Icon extends React.Component {
       }
       case 'filter': {
         icon = <RiFilterLine />
+        break
+      }
+      case 'filter-lines': {
+        icon = <MdFilterList />
         break
       }
       case 'filter-off': {

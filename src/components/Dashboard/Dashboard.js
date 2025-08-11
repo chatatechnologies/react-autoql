@@ -708,6 +708,7 @@ class DashboardWithoutTheme extends React.Component {
         <>
           {this.props.showToolbar && (
             <DashboardToolbar
+              authentication={this.props.authentication}
               isEditing={this.props.isEditing}
               isEditable={this.props.isEditable}
               tooltipID={this.TOOLTIP_ID}
