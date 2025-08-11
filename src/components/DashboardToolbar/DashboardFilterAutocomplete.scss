@@ -13,6 +13,22 @@
     background-color: var(--react-autoql-hover-color);
     cursor: pointer;
   }
+
+  .react-autoql-dashboard-filter-autocomplete-li-delete-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0 4px;
+    color: var(--react-autoql-text-color-primary);
+    opacity: 0.8;
+
+    &:hover {
+      color: var(--react-autoql-accent-color);
+    }
+  }
 }
 
 .react-autoql-dashboard-filter-autocomplete-li-header {

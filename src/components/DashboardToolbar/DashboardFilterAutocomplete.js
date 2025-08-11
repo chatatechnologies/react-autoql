@@ -89,6 +89,20 @@ class FilterAutocomplete extends Component {
     }
   }
 
+  removeFromRecent = (itemToRemove) => {
+    const { recentSuggestions } = this.state
+    const filtered = recentSuggestions.filter((r) => this.getDisplayName(r) !== this.getDisplayName(itemToRemove))
+    this.setState({ recentSuggestions: filtered })
+
+    // Update localStorage
+    const key = this.getRecentKey()
+    try {
+      localStorage.setItem(key, JSON.stringify(filtered))
+    } catch {
+      // ignore localStorage errors silently
+    }
+  }
+
   /************** helpers **************/
   getDisplayName = (s) => {
     if (!s) return ''
@@ -230,14 +244,12 @@ class FilterAutocomplete extends Component {
     const hasSuggestions = suggestions.length > 0 && value
     return hasRecent || hasSuggestions || loading || error
   }
-
   renderSuggestions = () => {
     const { suggestions, highlightedIndex, recentSuggestions, value, loading } = this.state
 
     const elements = []
     let itemIndex = 0 // index for navigation (ignores headers)
 
-    console.log({ value })
     // --- Recently Used Section ---
     if (recentSuggestions.length > 0 && !value) {
       elements.push(
@@ -263,8 +275,22 @@ class FilterAutocomplete extends Component {
             role='option'
             aria-selected={isHighlighted}
             id={`autocomplete-item-${itemIndex}`}
+            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
           >
-            <strong>{displayName}</strong> <em>{displayNameType}</em>
+            <span>
+              <strong>{displayName}</strong> <em>{displayNameType}</em>
+            </span>
+            <button
+              type='button'
+              className='react-autoql-dashboard-filter-autocomplete-li-delete-btn'
+              onClick={(e) => {
+                e.stopPropagation()
+                this.removeFromRecent(s)
+              }}
+              aria-label={`Remove ${displayName} from recent`}
+            >
+              ×
+            </button>
           </div>,
         )
 
