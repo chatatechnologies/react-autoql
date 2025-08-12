@@ -121,6 +121,7 @@ export class DashboardTile extends React.Component {
     onCSVDownloadStart: PropTypes.func,
     onCSVDownloadProgress: PropTypes.func,
     onCSVDownloadFinish: PropTypes.func,
+    onPNGDownloadFinish: PropTypes.func,
     cancelQueriesOnUnmount: PropTypes.bool,
     setParamsForTile: PropTypes.func,
   }
@@ -146,6 +147,7 @@ export class DashboardTile extends React.Component {
     onCSVDownloadStart: () => {},
     onCSVDownloadProgress: () => {},
     onCSVDownloadFinish: () => {},
+    onPNGDownloadFinish: () => {},
     onTouchStart: () => {},
     onTouchEnd: () => {},
     setParamsForTile: () => {},
@@ -1060,6 +1062,8 @@ export class DashboardTile extends React.Component {
       tileId: this.props.tile.i,
     })
 
+  onPNGDownloadFinish = () => this.props.onPNGDownloadFinish({ tileId: this.props.tile.i })
+
   onDrilldownStart = (activeKey) =>
     this.props.onDrilldownStart({
       tileId: this.props.tile.i,
@@ -1086,6 +1090,7 @@ export class DashboardTile extends React.Component {
             onCSVDownloadStart={this.onCSVDownloadStart}
             onCSVDownloadProgress={this.onCSVDownloadProgress}
             onCSVDownloadFinish={this.onCSVDownloadFinish}
+            onPNGDownloadFinish={this.onPNGDownloadFinish}
             shouldRender={!this.props.isDragging}
             tooltipID={this.props.tooltipID}
             popoverPositions={['top', 'left', 'bottom', 'right']}

@@ -228,7 +228,12 @@ export class OptionsToolbar extends React.Component {
   }
 
   saveChartAsPNG = () => {
-    this.props.responseRef?.saveChartAsPNG()
+    try {
+      this.props.responseRef?.saveChartAsPNG()
+      this.props.onPNGDownloadFinish()
+    } catch (error) {
+      console.error('error downloading PNG:', error)
+    }
   }
 
   deleteMessage = () => {
@@ -734,11 +739,11 @@ export class OptionsToolbar extends React.Component {
       }
 
       shouldShowButton.showMoreOptionsButton =
-        (shouldShowButton.showCopyButton ||
-          shouldShowButton.showSQLButton ||
-          shouldShowButton.showCreateNotificationIcon ||
-          shouldShowButton.showSaveAsCSVButton ||
-          shouldShowButton.showSaveAsPNGButton)
+        shouldShowButton.showCopyButton ||
+        shouldShowButton.showSQLButton ||
+        shouldShowButton.showCreateNotificationIcon ||
+        shouldShowButton.showSaveAsCSVButton ||
+        shouldShowButton.showSaveAsPNGButton
     } catch (error) {
       console.error(error)
     }

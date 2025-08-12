@@ -78,6 +78,7 @@ class DashboardWithoutTheme extends React.Component {
     onCSVDownloadStart: PropTypes.func,
     onCSVDownloadProgress: PropTypes.func,
     onCSVDownloadFinish: PropTypes.func,
+    onPNGDownloadFinish: PropTypes.func,
     cancelQueriesOnUnmount: PropTypes.bool,
     startEditingCallback: PropTypes.func,
     stopEditingCallback: PropTypes.func,
@@ -690,6 +691,7 @@ class DashboardWithoutTheme extends React.Component {
             onCSVDownloadStart={this.props.onCSVDownloadStart}
             onCSVDownloadProgress={this.props.onCSVDownloadProgress}
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
+            onPNGDownloadFinish={this.props.onPNGDownloadFinish}
             tooltipID={this.TOOLTIP_ID}
             chartTooltipID={this.CHART_TOOLTIP_ID}
             source={this.SOURCE}
@@ -754,6 +756,7 @@ class DashboardWithoutTheme extends React.Component {
             onCSVDownloadStart={this.props.onCSVDownloadStart}
             onCSVDownloadProgress={this.props.onCSVDownloadProgress}
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
+            onPNGDownloadFinish={this.props.onPNGDownloadFinish}
             source={this.SOURCE}
           />
           <Tooltip tooltipId={this.TOOLTIP_ID} />
