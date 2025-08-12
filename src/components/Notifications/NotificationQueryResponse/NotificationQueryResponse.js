@@ -74,7 +74,7 @@ export default class NotificationQueryResponse extends React.Component {
               chartTooltipID={this.props.chartTooltipID}
               showQueryInterpretation={false}
               enableDynamicCharting={true}
-              useInfiniteScroll={false}
+              overrideUseInfiniteScroll={false}
               onUpdateFilterResponse={this.onUpdateFilterResponse}
             />
           ) : (

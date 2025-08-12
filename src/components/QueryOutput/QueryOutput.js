@@ -212,7 +212,7 @@ export class QueryOutput extends React.Component {
     allowColumnAddition: PropTypes.bool,
     onErrorCallback: PropTypes.func,
     showQueryInterpretation: PropTypes.bool,
-    useInfiniteScroll: PropTypes.bool,
+    overrideUseInfiniteScroll: PropTypes.bool,
     subjects: PropTypes.arrayOf(PropTypes.shape({})),
 
     mutable: PropTypes.bool,
@@ -254,7 +254,7 @@ export class QueryOutput extends React.Component {
     defaultSelectedSuggestion: undefined,
     reverseTranslationPlacement: 'bottom',
     activeChartElementKey: undefined,
-    useInfiniteScroll: true,
+    overrideUseInfiniteScroll: undefined,
     isResizing: false,
     enableDynamicCharting: true,
     onNoneOfTheseClick: undefined,
@@ -699,7 +699,7 @@ export class QueryOutput extends React.Component {
 
   hasError = (response) => {
     try {
-      const referenceIdNumber = Number(response.data?.reference_id?.split('.')[2])
+      const referenceIdNumber = Number(response?.data?.reference_id?.split('.')[2])
       if (referenceIdNumber >= 200 && referenceIdNumber < 300) {
         return false
       }
@@ -1470,7 +1470,53 @@ export class QueryOutput extends React.Component {
   }
 
   onTableSort = (sorters) => {
-    this.tableParams.sort = _cloneDeep(sorters)
+    try {
+      // Initialize tableParams if needed
+      this.tableParams = this.tableParams || {}
+
+      // Early exit if no valid sorters
+      if (!sorters) {
+        this.tableParams.sort = []
+        return
+      }
+
+      // Safely handle sorters array
+      let validSorters = []
+      if (Array.isArray(sorters)) {
+        validSorters = sorters
+          .filter(
+            (sorter) =>
+              sorter &&
+              typeof sorter === 'object' &&
+              sorter.field !== undefined && // Change from column to field
+              typeof sorter.dir === 'string',
+          )
+          .map((sorter) => ({
+            field: sorter.field,
+            dir: sorter.dir,
+          }))
+      }
+
+      // Update table params with clean sort data
+      this.tableParams.sort = validSorters
+
+      // Update formatted params
+      this.formattedTableParams = {
+        ...this.formattedTableParams,
+        sorters: validSorters.map((sorter) => ({
+          field: sorter.field,
+          dir: sorter.dir,
+        })),
+      }
+    } catch (error) {
+      console.error('Error in onTableSort:', error)
+      // Reset sorting on error
+      this.tableParams.sort = []
+      this.formattedTableParams = {
+        ...this.formattedTableParams,
+        sorters: [],
+      }
+    }
   }
 
   onLegendClick = (d) => {
@@ -2759,7 +2805,7 @@ export class QueryOutput extends React.Component {
           columnDateRanges={this.columnDateRanges}
           onCellClick={this.onTableCellClick}
           queryID={this.queryID}
-          useInfiniteScroll={this.props.useInfiniteScroll}
+          overrideUseInfiniteScroll={this.props.overrideUseInfiniteScroll}
           onFilterCallback={this.onTableFilter}
           onSorterCallback={this.onTableSort}
           onTableParamsChange={this.onTableParamsChange}
@@ -2815,7 +2861,7 @@ export class QueryOutput extends React.Component {
           isAnimating={this.props.isAnimating}
           isResizing={this.props.isResizing || this.state.isResizing}
           hidden={this.state.displayType !== 'pivot_table'}
-          useInfiniteScroll={false}
+          overrideUseInfiniteScroll={this.props.overrideUseInfiniteScroll}
           supportsDrilldowns={true}
           autoHeight={this.props.autoHeight}
           source={this.props.source}
