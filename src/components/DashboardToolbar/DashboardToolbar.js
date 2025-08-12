@@ -99,6 +99,44 @@ export class DashboardToolbarWithoutRef extends React.Component {
     }))
   }
 
+  renderFilterInput = () => {
+    return (
+      <FilterAutocomplete
+        authentication={this.props.authentication}
+        onSelect={(selected) => {
+          const filterExists = this.state.dashboardFilters.find((filter) => filter.keyword === selected.keyword)
+          if (!filterExists) {
+            this.setState({ dashboardFilters: [...this.state.dashboardFilters, selected] })
+          }
+        }}
+      />
+    )
+  }
+
+  renderFilterList = () => {
+    return (
+      <div>
+        {this.state.dashboardFilters?.length ? <span>Filters: </span> : null}
+        {this.state.dashboardFilters?.map((filter, i) => {
+          const displayName = filter.format_txt ?? filter.keyword
+
+          let displayNameType = ''
+          if (filter.show_message) {
+            displayNameType = `(${filter.show_message})`
+          }
+
+          return (
+            <Chip key={filter.keyword} onDelete={() => this.removeFilter(filter)}>
+              <span>
+                <strong>{displayName}</strong> <em>{displayNameType}</em>
+              </span>
+            </Chip>
+          )
+        })}
+      </div>
+    )
+  }
+
   renderRenameModal = () => {
     return (
       <Modal
@@ -160,19 +198,9 @@ export class DashboardToolbarWithoutRef extends React.Component {
                 />
               )}
             </div>
-            {!this.props.isEditing && (
-              <div className='react-autoql-dashboard-title-tools-container'>
-                <FilterAutocomplete
-                  authentication={this.props.authentication}
-                  onSelect={(selected) => {
-                    const filterExists = this.state.dashboardFilters.find(
-                      (filter) => filter.keyword === selected.keyword,
-                    )
-                    if (!filterExists) {
-                      this.setState({ dashboardFilters: [...this.state.dashboardFilters, selected] })
-                    }
-                  }}
-                />
+            <div className='react-autoql-dashboard-title-tools-container'>
+              {this.renderFilterInput()}
+              {!this.props.isEditing && (
                 <Button
                   iconOnly
                   icon='refresh'
@@ -181,28 +209,29 @@ export class DashboardToolbarWithoutRef extends React.Component {
                   tooltipID={this.props.tooltipID}
                   onClick={this.props.onRefreshClick}
                 />
-                {this.props.isEditable && (
-                  <Popover
-                    align='end'
-                    positions={['bottom', 'left', 'top', 'right']}
-                    padding={0}
-                    content={this.optionsMenu()}
-                    isOpen={this.state.isOptionsMenuOpen}
-                    onClickOutside={() => this.setState({ isOptionsMenuOpen: false })}
-                  >
-                    <Button
-                      iconOnly
-                      icon='more-vertical'
-                      border={false}
-                      tooltip='Options'
-                      tooltipID={this.props.tooltipID}
-                      onClick={() => this.setState({ isOptionsMenuOpen: true })}
-                    />
-                  </Popover>
-                )}
-              </div>
-            )}
+              )}
+              {this.props.isEditable && !this.props.isEditing && (
+                <Popover
+                  align='end'
+                  positions={['bottom', 'left', 'top', 'right']}
+                  padding={0}
+                  content={this.optionsMenu()}
+                  isOpen={this.state.isOptionsMenuOpen}
+                  onClickOutside={() => this.setState({ isOptionsMenuOpen: false })}
+                >
+                  <Button
+                    iconOnly
+                    icon='more-vertical'
+                    border={false}
+                    tooltip='Options'
+                    tooltipID={this.props.tooltipID}
+                    onClick={() => this.setState({ isOptionsMenuOpen: true })}
+                  />
+                </Popover>
+              )}
+            </div>
           </div>
+          {this.renderFilterList()}
           {this.props.isEditing ? (
             <div className='react-autoql-dashboard-edit-toolbar-container'>
               <div className='react-autoql-dashboard-edit-toolbar-container-left'>
@@ -254,25 +283,6 @@ export class DashboardToolbarWithoutRef extends React.Component {
               </div>
             </div>
           ) : null}
-          <div>
-            {this.state.dashboardFilters?.length ? <span>Filters: </span> : null}
-            {this.state.dashboardFilters?.map((filter, i) => {
-              const displayName = filter.format_txt ?? filter.keyword
-
-              let displayNameType = ''
-              if (filter.show_message) {
-                displayNameType = `(${filter.show_message})`
-              }
-
-              return (
-                <Chip key={filter.keyword} onDelete={() => this.removeFilter(filter)}>
-                  <span>
-                    <strong>{displayName}</strong> <em>{displayNameType}</em>
-                  </span>
-                </Chip>
-              )
-            })}
-          </div>
         </div>
         <ConfirmModal
           isVisible={this.state.isConfirmCloseModalOpen}

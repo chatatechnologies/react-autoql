@@ -15,6 +15,12 @@
     justify-content: space-between;
     overflow: hidden;
 
+    .react-autoql-dashboard-title-and-filter-container {
+      display: flex;
+      justify-content: space-between;
+      flex-direction: row;
+    }
+
     .react-autoql-dashboard-title-container {
       display: flex;
       justify-content: flex-start;
