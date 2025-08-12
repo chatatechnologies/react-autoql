@@ -715,19 +715,17 @@ class DashboardWithoutTheme extends React.Component {
               tooltipID={this.TOOLTIP_ID}
               title={this.props.title}
               onEditClick={this.props.startEditingCallback}
-              onCancelClick={() => {
-                this.debouncedOnChange(this.uneditedDashboardTiles)
-                this.props.stopEditingCallback()
-              }}
               onAddTileClick={this.addTile}
               onUndoClick={this.undo}
               onRedoClick={this.redo}
               onRefreshClick={this.executeDashboard}
-              onSaveClick={() => {
-                this.props.onSaveCallback()
-              }}
+              onSaveClick={this.props.onSaveCallback}
               onDeleteClick={this.props.onDeleteCallback}
               onRenameClick={this.props.onRenameCallback}
+              onCancelClick={() => {
+                this.debouncedOnChange(this.uneditedDashboardTiles)
+                this.props.stopEditingCallback()
+              }}
             />
           )}
           <div
