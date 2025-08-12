@@ -93,6 +93,12 @@ export class DashboardToolbarWithoutRef extends React.Component {
     )
   }
 
+  removeFilter = (filterToRemove) => {
+    this.setState((prevState) => ({
+      dashboardFilters: prevState.dashboardFilters.filter((f) => f.keyword !== filterToRemove.keyword),
+    }))
+  }
+
   renderRenameModal = () => {
     return (
       <Modal
@@ -158,9 +164,14 @@ export class DashboardToolbarWithoutRef extends React.Component {
               <div className='react-autoql-dashboard-title-tools-container'>
                 <FilterAutocomplete
                   authentication={this.props.authentication}
-                  onSelect={(selected) =>
-                    this.setState({ dashboardFilters: [...this.state.dashboardFilters, selected] })
-                  }
+                  onSelect={(selected) => {
+                    const filterExists = this.state.dashboardFilters.find(
+                      (filter) => filter.keyword === selected.keyword,
+                    )
+                    if (!filterExists) {
+                      this.setState({ dashboardFilters: [...this.state.dashboardFilters, selected] })
+                    }
+                  }}
                 />
                 <Button
                   iconOnly
@@ -254,7 +265,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
               }
 
               return (
-                <Chip key={i}>
+                <Chip key={filter.keyword} onDelete={() => this.removeFilter(filter)}>
                   <span>
                     <strong>{displayName}</strong> <em>{displayNameType}</em>
                   </span>
