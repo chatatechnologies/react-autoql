@@ -7,14 +7,19 @@ import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { ConfirmModal } from '../ConfirmModal'
 import { Modal } from '../Modal'
 import { Input } from '../Input'
-
-import './DashboardToolbar.scss'
 import { Icon } from '../Icon'
-import { VLAutocompleteInput } from '../VLAutocompleteInput'
 import FilterAutocomplete from './DashboardFilterAutocomplete'
 import { Chip } from '../Chip'
 
+import './DashboardToolbar.scss'
+
 export class DashboardToolbarWithoutRef extends React.Component {
+  constructor(props) {
+    super(props)
+
+    this.dashboardSlicingFeatureToggle = true
+  }
+
   static propTypes = {
     onSaveClick: PropTypes.func,
     onCancelClick: PropTypes.func,
@@ -199,7 +204,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
               )}
             </div>
             <div className='react-autoql-dashboard-title-tools-container'>
-              {this.renderFilterInput()}
+              {this.dashboardSlicingFeatureToggle && this.renderFilterInput()}
               {!this.props.isEditing && (
                 <Button
                   iconOnly
@@ -231,7 +236,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
               )}
             </div>
           </div>
-          {this.renderFilterList()}
+          {this.dashboardSlicingFeatureToggle && this.renderFilterList()}
           {this.props.isEditing ? (
             <div className='react-autoql-dashboard-edit-toolbar-container'>
               <div className='react-autoql-dashboard-edit-toolbar-container-left'>

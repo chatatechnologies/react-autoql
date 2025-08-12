@@ -6,8 +6,11 @@
 
 .react-autoql-dashboard-filter-autocomplete-li {
   padding: 8px 12px;
-  border-bottom: 1px solid var(--react-autoql-border-color);
   cursor: pointer;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--react-autoql-border-color);
+  }
 
   &.highlighted {
     background-color: var(--react-autoql-hover-color);
