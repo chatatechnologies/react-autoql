@@ -725,7 +725,6 @@ class DashboardWithoutTheme extends React.Component {
               onRefreshClick={this.executeDashboard}
               onSaveClick={() => {
                 this.props.onSaveCallback()
-                this.executeDashboard()
               }}
               onDeleteClick={this.props.onDeleteCallback}
               onRenameClick={this.props.onRenameCallback}
