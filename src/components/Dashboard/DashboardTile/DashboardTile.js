@@ -37,6 +37,7 @@ let autoCompleteArray = []
 export class DashboardTile extends React.Component {
   constructor(props) {
     super(props)
+    this._isMounted = false
     this.dashboardTileTitleRef = undefined
     this.optionsToolbarRef = undefined
     this.secondOptionsToolbarRef = undefined
@@ -169,7 +170,9 @@ export class DashboardTile extends React.Component {
   }
 
   onUpdateFilterResponse = (localRTFilterResponse) => {
-    this.setState({ localRTFilterResponse })
+    if (this._isMounted) {
+      this.setState({ localRTFilterResponse })
+    }
   }
 
   componentDidUpdate = (prevProps, prevState) => {
