@@ -70,7 +70,6 @@ export default class ChataTable extends React.Component {
     this.useInfiniteScroll = props.useInfiniteScroll ? props.useInfiniteScroll : !this.isLocal
 
     if (!this.useInfiniteScroll) {
-      // We must store original query data to use as source of filter/sort for client side filtering
       if (props.pivot) {
         this.originalQueryData = _cloneDeep(props.data)
       } else {
@@ -505,7 +504,6 @@ export default class ChataTable extends React.Component {
       const headerFilters = this.ref?.tabulator?.getHeaderFilters()
 
       if (!this.useInfiniteScroll) {
-        // Get filtered count by applying filters to original dataset
         const tableParamsFormatted = formatTableParams(
           { ...this.tableParams, filter: headerFilters },
           this.props.columns,
@@ -1440,7 +1438,6 @@ export default class ChataTable extends React.Component {
     let currentRowCount
     let totalRowCount
 
-    // Get total count
     if (this.isLocal && this.tableParams?.filter?.length > 0) {
       totalRowCount = this.state.filterCount
     } else {
