@@ -8,7 +8,10 @@ import {
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
+  getAuthentication,
   isDrilldown,
+  isTableType,
+  isChartType,
 } from 'autoql-fe-utils'
 
 import { QueryOutput } from '../QueryOutput'
@@ -83,14 +86,12 @@ export default class ChatMessage extends React.Component {
     isVisibleInDOM: PropTypes.bool,
     subjects: PropTypes.arrayOf(PropTypes.shape({})),
     onMessageResize: PropTypes.func,
-    isLoadingLocal: PropTypes.bool,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
-    isLoadingLocal: false,
 
     isIntroMessage: false,
     source: null,
@@ -155,9 +156,7 @@ export default class ChatMessage extends React.Component {
   }
 
   onUpdateFilterResponse = (localRTFilterResponse) => {
-    if (this._isMounted) {
-      this.setState({ localRTFilterResponse })
-    }
+    this.setState({ localRTFilterResponse })
   }
 
   componentDidUpdate = (prevProps, prevState, { messageWidth, shouldUpdateWidth }) => {
@@ -285,7 +284,6 @@ export default class ChatMessage extends React.Component {
     // To update the reverse translation:
     this.forceUpdate()
   }
-
   onDisplayTypeChange = (displayType) => {
     // Reset resizable state when changing display types
     this.setState({
@@ -357,7 +355,6 @@ export default class ChatMessage extends React.Component {
           }}
           subjects={this.props.subjects}
           onUpdateFilterResponse={this.onUpdateFilterResponse}
-          isLoadingLocal={this.props.isLoadingLocal}
         />
       )
     }
@@ -425,7 +422,6 @@ export default class ChatMessage extends React.Component {
       </div>
     )
   }
-
   onQueryOutputResize = (dimensions) => {
     this.setState({
       isResizable: true,
@@ -436,7 +432,6 @@ export default class ChatMessage extends React.Component {
       this.props.onMessageResize(this.props.id)
     }
   }
-
   render = () => {
     const isResizable =
       this.props.response && !this.props.isCSVProgressMessage && !this.props.content && this.state.isResizable
@@ -464,9 +459,8 @@ export default class ChatMessage extends React.Component {
             </div>
             <div
               className={`chat-message-bubble 
-                          ${isResizable ? 'resizable' : ''} 
-                          ${this.state.isUserResizing ? 'user-resizing' : ''}
-                        `}
+        ${isResizable ? 'resizable' : ''} 
+        ${this.state.isUserResizing ? 'user-resizing' : ''}`}
             >
               {this.renderContent()}
             </div>

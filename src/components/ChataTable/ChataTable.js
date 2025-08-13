@@ -61,10 +61,7 @@ export default class ChataTable extends React.Component {
     this.useRemote =
       this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
         ? LOCAL_OR_REMOTE.REMOTE
-        : this.props.isLoadingLocal
-        ? LOCAL_OR_REMOTE.LOCAL
-        : LOCAL_OR_REMOTE.REMOTE
-
+        : LOCAL_OR_REMOTE.LOCAL
     this.isLocal = this.useRemote === LOCAL_OR_REMOTE.LOCAL
     this.totalPages = this.getTotalPages(props.response)
     if (isNaN(this.totalPages) || !this.totalPages) {
@@ -168,7 +165,6 @@ export default class ChataTable extends React.Component {
     onUpdateFilterResponse: PropTypes.func,
     isDrilldown: PropTypes.bool,
     scope: PropTypes.string,
-    isLoadingLocal: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -200,7 +196,6 @@ export default class ChataTable extends React.Component {
     onUpdateFilterResponse: () => {},
     isDrilldown: false,
     scope: undefined,
-    isLoadingLocal: false,
   }
 
   componentDidMount = () => {
@@ -430,7 +425,7 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  getRTForRemoteFilterAndSort = async () => {
+  getRTForRemoteFilterAndSort = () => {
     let headerFilters = []
     let headerSorters = []
 
@@ -445,7 +440,7 @@ export default class ChataTable extends React.Component {
     const tableParamsFormatted = formatTableParams(this.tableParams, this.props.columns)
 
     try {
-      await runQueryOnly({
+      runQueryOnly({
         ...getAuthentication(this.props.authentication),
         ...getAutoQLConfig(this.props.autoQLConfig),
         query: this.props.queryText,
@@ -524,7 +519,7 @@ export default class ChataTable extends React.Component {
 
         this.filterCount = filteredData.length
       }
-      this.props.onFilterCallback(headerFilters, rows) // needed to set pivot table data
+
       setTimeout(() => {
         if (this._isMounted) {
           this.setState({
@@ -534,7 +529,7 @@ export default class ChataTable extends React.Component {
         }
       }, 0)
     }
-    if (this.isLocal && !this.pivot) {
+    if (this.isLocal) {
       this.getRTForRemoteFilterAndSort()
     }
     this.setFilterBadgeClasses()
@@ -1021,13 +1016,7 @@ export default class ChataTable extends React.Component {
     if (filterValues) {
       filterValues.forEach((filter, i) => {
         try {
-          // Get all columns to check if the target column exists
-          const columns = this.ref.tabulator.getColumns()
-          const targetColumn = columns.find((col) => col.getField() === filter.field)
-
-          if (targetColumn && targetColumn.getDefinition().headerFilter) {
-            this.ref?.tabulator?.setHeaderFilterValue(filter.field, filter.value)
-          }
+          this.ref?.tabulator?.setHeaderFilterValue(filter.field, filter.value)
           if (!this.useInfiniteScroll) {
             this.ref?.tabulator?.setFilter(filter.field, filter.type, filter.value)
           }

@@ -79,7 +79,6 @@ export class DashboardTile extends React.Component {
     // -------------------------------------------------------------------------------------
 
     this.state = {
-      tileIdx: tile.i,
       query: tile.query,
       secondQuery: tile.secondQuery || tile.query,
       title: tile.title,
@@ -110,7 +109,6 @@ export class DashboardTile extends React.Component {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
-    isLoadingLocal: PropTypes.bool,
 
     tile: PropTypes.shape({}).isRequired,
     isEditing: PropTypes.bool,
@@ -134,7 +132,6 @@ export class DashboardTile extends React.Component {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
-    isLoadingLocal: false,
 
     query: '',
     title: '',
@@ -174,17 +171,7 @@ export class DashboardTile extends React.Component {
 
   onUpdateFilterResponse = (localRTFilterResponse) => {
     if (this._isMounted) {
-      this.setState({
-        localRTFilterResponse,
-        initialFormattedTableParams: { filters: localRTFilterResponse.data.data.fe_req.filters },
-        tableFilters: localRTFilterResponse.data.data.fe_req.filters,
-      })
-      this.props.setParamsForTile(
-        {
-          tableFilters: localRTFilterResponse.data.data.fe_req.filters,
-        },
-        this.state.tileIdx,
-      )
+      this.setState({ localRTFilterResponse })
     }
   }
 
@@ -785,7 +772,7 @@ export class DashboardTile extends React.Component {
       queryResponse,
       dataConfig,
       displayOverrides,
-      tableFilters, // This will update the filters
+      tableFilters,
       orders,
       filters,
     })
@@ -1153,8 +1140,6 @@ export class DashboardTile extends React.Component {
         height='100%'
         width='100%'
         onUpdateFilterResponse={this.onUpdateFilterResponse}
-        localRTFilterResponse={this.state.localRTFilterResponse}
-        isLoadingLocal={this.props.isLoadingLocal}
         {...queryOutputProps}
       />
     )
@@ -1408,38 +1393,6 @@ export class DashboardTile extends React.Component {
       </ErrorBoundary>
     )
   }
-
-  // // Add a new method to update table filters directly
-  // updateTableFilters = (newTableFilters) => {
-  //   this.debouncedSetParamsForTile({
-  //     tableFilters: newTableFilters,
-  //   })
-  // }
-
-  // // For second query filters
-  // updateSecondTableFilters = (newSecondTableFilters) => {
-  //   this.debouncedSetParamsForTile({
-  //     secondTableFilters: newSecondTableFilters,
-  //   })
-  // }
-
-  // onTableFiltersChange = (tableFilters, isSecondHalf = false) => {
-  //   if (isSecondHalf) {
-  //     this.debouncedSetParamsForTile({
-  //       secondTableFilters: tableFilters,
-  //     })
-  //   } else {
-  //     this.debouncedSetParamsForTile({
-  //       tableFilters: tableFilters,
-  //     })
-  //   }
-  // }
-
-  // onTableFiltersUpdate = (tableFilters, isSecondHalf = false) => {
-  //   const params = isSecondHalf ? { secondTableFilters: tableFilters } : { tableFilters: tableFilters }
-
-  //   this.debouncedSetParamsForTile(params)
-  // }
 }
 
 // React-Grid-Layout needs the forwarded original ref
