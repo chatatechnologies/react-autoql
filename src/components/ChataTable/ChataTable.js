@@ -505,7 +505,6 @@ export default class ChataTable extends React.Component {
       const headerFilters = this.ref?.tabulator?.getHeaderFilters()
 
       if (!this.useInfiniteScroll) {
-        // if (this.isLocal) {
         // Get filtered count by applying filters to original dataset
         const tableParamsFormatted = formatTableParams(
           { ...this.tableParams, filter: headerFilters },
