@@ -1253,7 +1253,7 @@ export default class CustomColumnModal extends React.Component {
             popoverParentElement={this.props.popoverParentElement}
             tooltipID={this.props.tooltipID}
             columns={this.state.columns}
-            overrideUseInfiniteScroll={false}
+            useInfiniteScroll={false}
             supportsDrilldowns={false}
             keepScrolledRight={true}
             pageSize={10}

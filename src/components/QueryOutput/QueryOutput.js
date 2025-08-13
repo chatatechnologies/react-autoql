@@ -212,7 +212,7 @@ export class QueryOutput extends React.Component {
     allowColumnAddition: PropTypes.bool,
     onErrorCallback: PropTypes.func,
     showQueryInterpretation: PropTypes.bool,
-    overrideUseInfiniteScroll: PropTypes.bool,
+    useInfiniteScroll: PropTypes.bool,
     subjects: PropTypes.arrayOf(PropTypes.shape({})),
 
     mutable: PropTypes.bool,
@@ -254,7 +254,7 @@ export class QueryOutput extends React.Component {
     defaultSelectedSuggestion: undefined,
     reverseTranslationPlacement: 'bottom',
     activeChartElementKey: undefined,
-    overrideUseInfiniteScroll: undefined,
+    useInfiniteScroll: undefined,
     isResizing: false,
     enableDynamicCharting: true,
     onNoneOfTheseClick: undefined,
@@ -2799,7 +2799,7 @@ export class QueryOutput extends React.Component {
           columnDateRanges={this.columnDateRanges}
           onCellClick={this.onTableCellClick}
           queryID={this.queryID}
-          overrideUseInfiniteScroll={this.props.overrideUseInfiniteScroll}
+          useInfiniteScroll={this.props.useInfiniteScroll}
           onFilterCallback={this.onTableFilter}
           onSorterCallback={this.onTableSort}
           onTableParamsChange={this.onTableParamsChange}
@@ -2855,7 +2855,7 @@ export class QueryOutput extends React.Component {
           isAnimating={this.props.isAnimating}
           isResizing={this.props.isResizing || this.state.isResizing}
           hidden={this.state.displayType !== 'pivot_table'}
-          overrideUseInfiniteScroll={this.props.overrideUseInfiniteScroll}
+          useInfiniteScroll={this.props.useInfiniteScroll}
           supportsDrilldowns={true}
           autoHeight={this.props.autoHeight}
           source={this.props.source}

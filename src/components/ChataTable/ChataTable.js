@@ -67,7 +67,7 @@ export default class ChataTable extends React.Component {
     if (isNaN(this.totalPages) || !this.totalPages) {
       this.totalPages = 1
     }
-    this.useInfiniteScroll = props.overrideUseInfiniteScroll ? props.overrideUseInfiniteScroll : !this.isLocal
+    this.useInfiniteScroll = props.useInfiniteScroll ? props.useInfiniteScroll : !this.isLocal
 
     if (!this.useInfiniteScroll) {
       // We must store original query data to use as source of filter/sort for client side filtering
@@ -142,7 +142,7 @@ export default class ChataTable extends React.Component {
     onSorterCallback: PropTypes.func,
     onTableParamsChange: PropTypes.func,
     isResizing: PropTypes.bool,
-    overrideUseInfiniteScroll: PropTypes.bool,
+    useInfiniteScroll: PropTypes.bool,
     autoHeight: PropTypes.bool,
     rowChangeCount: PropTypes.number,
     isAnimating: PropTypes.bool,
@@ -173,7 +173,7 @@ export default class ChataTable extends React.Component {
     data: undefined,
     columns: undefined,
     isResizing: false,
-    overrideUseInfiniteScroll: undefined,
+    useInfiniteScroll: undefined,
     autoHeight: true,
     rowChangeCount: 0,
     isAnimating: false,
