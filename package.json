@@ -61,8 +61,8 @@
     "url": "https://github.com/chatatechnologies/react-autoql/issues"
   },
   "dependencies": {
-    "autoql-fe-utils": "1.7.19",
     "@react-icons/all-files": "4.1.0",
+    "autoql-fe-utils": "1.7.19",
     "axios": "1.4.0",
     "caniuse-lite": "1.0.30001731",
     "classnames": "2.5.1",
