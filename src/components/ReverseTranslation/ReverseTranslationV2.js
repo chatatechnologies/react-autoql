@@ -140,8 +140,9 @@ const ReverseTranslation = ({
 
               const isLockedFilter = !!lockedFilters.find(
                 (filter) =>
-                  normalizeString(filter?.value) === normalizeString(validatedInterpretationArray[i].eng) || // session filter returns an object with value
-                  normalizeString(filter) === normalizeString(validatedInterpretationArray[i].eng), // persistent filter returns a string in an array
+                  normalizeString(filter?.value) === normalizeString(validatedInterpretationArray[i].eng) ||
+                  (typeof filter === 'string' ? normalizeString(filter) : '') ===
+                    normalizeString(validatedInterpretationArray[i].eng),
               )
 
               if (isLockedFilter) {
@@ -246,7 +247,7 @@ const ReverseTranslation = ({
     try {
       await validateAndUpdateReverseTranslation(rt)
     } catch (error) {
-      console.error(error)
+      console.error('Prerequisites not met to render Reverse Translation', error)
     } finally {
       setIsLoading(false)
     }
@@ -255,11 +256,7 @@ const ReverseTranslation = ({
   useEffect(() => {
     isMounted.current = true
 
-    if (onValueLabelClick && reverseTranslationArray?.length) {
-      executePrerequisites(reverseTranslationArray)
-    } else {
-      console.error('Prerequisites not met to render Reverse Translation')
-    }
+    if (onValueLabelClick && reverseTranslationArray?.length) executePrerequisites(reverseTranslationArray)
 
     return () => {
       isMounted.current = false
@@ -268,27 +265,17 @@ const ReverseTranslation = ({
 
   useEffect(() => {
     const newParsedInterpretation = queryResponse?.data?.data?.parsed_interpretation
-    if (
-      initialParsedInterpretations?.current?.length &&
-      !deepEqual(newParsedInterpretation, initialParsedInterpretations?.current)
-    ) {
-      initialParsedInterpretations.current = newParsedInterpretation
-      const newArray = constructRTArray(newParsedInterpretation)
-      executePrerequisites(newArray)
-    }
+    initialParsedInterpretations.current = newParsedInterpretation
+    const newArray = constructRTArray(newParsedInterpretation)
+    executePrerequisites(newArray)
   }, [queryResponse?.data?.data?.parsed_interpretation])
 
   // todo: see if we can update and remove this useEffect and use queryRepsonse instead
   useEffect(() => {
     const newParsedInterpretation = localRTFilterResponse?.data?.data?.parsed_interpretation
-    if (
-      initialParsedInterpretations?.current?.length &&
-      !deepEqual(newParsedInterpretation, initialParsedInterpretations?.current)
-    ) {
-      initialParsedInterpretations.current = newParsedInterpretation
-      const newArray = constructRTArray(newParsedInterpretation)
-      executePrerequisites(newArray)
-    }
+    initialParsedInterpretations.current = newParsedInterpretation
+    const newArray = constructRTArray(newParsedInterpretation)
+    executePrerequisites(newArray)
   }, [localRTFilterResponse?.data?.data?.parsed_interpretation])
 
   useEffect(() => {

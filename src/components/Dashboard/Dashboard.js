@@ -62,6 +62,7 @@ class DashboardWithoutTheme extends React.Component {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
+    isLoadingLocal: PropTypes.bool,
 
     tiles: PropTypes.arrayOf(PropTypes.shape({})),
     executeOnMount: PropTypes.bool,
@@ -92,6 +93,7 @@ class DashboardWithoutTheme extends React.Component {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
+    isLoadingLocal: false,
 
     tiles: [],
     executeOnMount: true,
@@ -696,6 +698,7 @@ class DashboardWithoutTheme extends React.Component {
             source={this.SOURCE}
             scope={this.props.scope}
             customToolbarOptions={this.props.customToolbarOptions}
+            isLoadingLocal={this.props.isLoadingLocal}
           />
         ))}
       </ReactGridLayout>
