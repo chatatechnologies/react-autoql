@@ -79,6 +79,7 @@ export class DashboardTile extends React.Component {
     // -------------------------------------------------------------------------------------
 
     this.state = {
+      tileIdx: tile.i,
       query: tile.query,
       secondQuery: tile.secondQuery || tile.query,
       title: tile.title,
@@ -772,7 +773,7 @@ export class DashboardTile extends React.Component {
       queryResponse,
       dataConfig,
       displayOverrides,
-      tableFilters,
+      tableFilters, // This will update the filters
       orders,
       filters,
     })
@@ -1140,6 +1141,7 @@ export class DashboardTile extends React.Component {
         height='100%'
         width='100%'
         onUpdateFilterResponse={this.onUpdateFilterResponse}
+        localRTFilterResponse={this.state.localRTFilterResponse}
         {...queryOutputProps}
       />
     )

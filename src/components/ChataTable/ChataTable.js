@@ -425,7 +425,7 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  getRTForRemoteFilterAndSort = () => {
+  getRTForRemoteFilterAndSort = async () => {
     let headerFilters = []
     let headerSorters = []
 
@@ -440,7 +440,7 @@ export default class ChataTable extends React.Component {
     const tableParamsFormatted = formatTableParams(this.tableParams, this.props.columns)
 
     try {
-      runQueryOnly({
+      await runQueryOnly({
         ...getAuthentication(this.props.authentication),
         ...getAutoQLConfig(this.props.autoQLConfig),
         query: this.props.queryText,
@@ -519,7 +519,7 @@ export default class ChataTable extends React.Component {
 
         this.filterCount = filteredData.length
       }
-
+      this.props.onFilterCallback(headerFilters, rows) // needed to set pivot table data
       setTimeout(() => {
         if (this._isMounted) {
           this.setState({
@@ -529,7 +529,7 @@ export default class ChataTable extends React.Component {
         }
       }, 0)
     }
-    if (this.isLocal) {
+    if (this.isLocal && !this.pivot) {
       this.getRTForRemoteFilterAndSort()
     }
     this.setFilterBadgeClasses()
@@ -1016,7 +1016,13 @@ export default class ChataTable extends React.Component {
     if (filterValues) {
       filterValues.forEach((filter, i) => {
         try {
-          this.ref?.tabulator?.setHeaderFilterValue(filter.field, filter.value)
+          // Get all columns to check if the target column exists
+          const columns = this.ref.tabulator.getColumns()
+          const targetColumn = columns.find((col) => col.getField() === filter.field)
+
+          if (targetColumn && targetColumn.getDefinition().headerFilter) {
+            this.ref?.tabulator?.setHeaderFilterValue(filter.field, filter.value)
+          }
           if (!this.useInfiniteScroll) {
             this.ref?.tabulator?.setFilter(filter.field, filter.type, filter.value)
           }
