@@ -47,6 +47,7 @@ export default class DrilldownModal extends React.Component {
     onCSVDownloadStart: PropTypes.func,
     onCSVDownloadProgress: PropTypes.func,
     onCSVDownloadFinish: PropTypes.func,
+    onPNGDownloadFinish: PropTypes.func,
     cancelQueriesOnUnmount: PropTypes.bool,
   }
 
@@ -72,6 +73,7 @@ export default class DrilldownModal extends React.Component {
     onCSVDownloadStart: () => {},
     onCSVDownloadProgress: () => {},
     onCSVDownloadFinish: () => {},
+    onPNGDownloadFinish: () => {},
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -147,6 +149,7 @@ export default class DrilldownModal extends React.Component {
         onCSVDownloadStart={this.props.onCSVDownloadStart}
         onCSVDownloadProgress={this.props.onCSVDownloadProgress}
         onCSVDownloadFinish={this.props.onCSVDownloadFinish}
+        onPNGDownloadFinish={this.props.onPNGDownloadFinish}
       />
     )
   }

@@ -88,6 +88,7 @@ export default class DrilldownTable extends React.Component {
                 onCSVDownloadStart={this.props.onCSVDownloadStart}
                 onCSVDownloadProgress={this.props.onCSVDownloadProgress}
                 onCSVDownloadFinish={this.props.onCSVDownloadFinish}
+                onPNGDownloadFinish={this.props.onPNGDownloadFinish}
                 popoverAlign='end'
                 showFilterBadge={this.responseRef?.tableRef?.getTabulatorHeaderFilters()?.length > 0}
               />
