@@ -1471,51 +1471,45 @@ export class QueryOutput extends React.Component {
 
   onTableSort = (sorters) => {
     try {
-      // Initialize tableParams if needed
       this.tableParams = this.tableParams || {}
+      this.tableParams.sort = []
 
-      // Early exit if no valid sorters
       if (!sorters) {
-        this.tableParams.sort = []
         return
       }
 
-      // Safely handle sorters array
-      let validSorters = []
-      if (Array.isArray(sorters)) {
-        validSorters = sorters
-          .filter(
-            (sorter) =>
-              sorter &&
-              typeof sorter === 'object' &&
-              sorter.field !== undefined && // Change from column to field
-              typeof sorter.dir === 'string',
-          )
-          .map((sorter) => ({
-            field: sorter.field,
-            dir: sorter.dir,
-          }))
-      }
+      const validSorters = Array.isArray(sorters) ? sorters.filter(this.isValidSorter).map(this.formatSorter) : []
 
-      // Update table params with clean sort data
+      // Update table params and formatted params
       this.tableParams.sort = validSorters
-
-      // Update formatted params
-      this.formattedTableParams = {
-        ...this.formattedTableParams,
-        sorters: validSorters.map((sorter) => ({
-          field: sorter.field,
-          dir: sorter.dir,
-        })),
-      }
+      this.updateFormattedTableParams(validSorters)
     } catch (error) {
       console.error('Error in onTableSort:', error)
-      // Reset sorting on error
-      this.tableParams.sort = []
-      this.formattedTableParams = {
-        ...this.formattedTableParams,
-        sorters: [],
-      }
+      this.resetSorting()
+    }
+  }
+
+  isValidSorter = (sorter) => {
+    return sorter && typeof sorter === 'object' && sorter.field !== undefined && typeof sorter.dir === 'string'
+  }
+
+  formatSorter = (sorter) => ({
+    field: sorter.field,
+    dir: sorter.dir,
+  })
+
+  updateFormattedTableParams = (validSorters) => {
+    this.formattedTableParams = {
+      ...this.formattedTableParams,
+      sorters: validSorters,
+    }
+  }
+
+  resetSorting = () => {
+    this.tableParams.sort = []
+    this.formattedTableParams = {
+      ...this.formattedTableParams,
+      sorters: [],
     }
   }
 
