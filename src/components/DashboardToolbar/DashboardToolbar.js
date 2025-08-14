@@ -17,7 +17,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
   constructor(props) {
     super(props)
 
-    this.dashboardSlicingFeatureToggle = true
+    this.dashboardSlicingFeatureToggle = false
   }
 
   static propTypes = {
@@ -204,8 +204,8 @@ export class DashboardToolbarWithoutRef extends React.Component {
               )}
             </div>
             <div className='react-autoql-dashboard-title-tools-container'>
-              {this.dashboardSlicingFeatureToggle && this.renderFilterInput()}
-              {!this.props.isEditing && (
+              {this.dashboardSlicingFeatureToggle && !this.props.isEditing && this.renderFilterInput()}
+              {!this.props.isEditing ? (
                 <Button
                   iconOnly
                   icon='refresh'
@@ -214,6 +214,26 @@ export class DashboardToolbarWithoutRef extends React.Component {
                   tooltipID={this.props.tooltipID}
                   onClick={this.props.onRefreshClick}
                 />
+              ) : (
+                <div className='react-autoql-dashboard-edit-toolbar-container-right'>
+                  <Button
+                    border={false}
+                    tooltip='Close without saving'
+                    tooltipID={this.props.tooltipID}
+                    onClick={() => this.setState({ isConfirmCloseModalOpen: true })}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type='primary'
+                    icon='save'
+                    tooltip='Save and close'
+                    tooltipID={this.props.tooltipID}
+                    onClick={this.props.onSaveClick}
+                  >
+                    Save
+                  </Button>
+                </div>
               )}
               {this.props.isEditable && !this.props.isEditing && (
                 <Popover
@@ -237,6 +257,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
             </div>
           </div>
           {this.dashboardSlicingFeatureToggle && this.renderFilterList()}
+
           {this.props.isEditing ? (
             <div className='react-autoql-dashboard-edit-toolbar-container'>
               <div className='react-autoql-dashboard-edit-toolbar-container-left'>
@@ -268,23 +289,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
                 </Button>
               </div>
               <div className='react-autoql-dashboard-edit-toolbar-container-right'>
-                <Button
-                  border={false}
-                  tooltip='Close without saving'
-                  tooltipID={this.props.tooltipID}
-                  onClick={() => this.setState({ isConfirmCloseModalOpen: true })}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type='primary'
-                  icon='save'
-                  tooltip='Save and close'
-                  tooltipID={this.props.tooltipID}
-                  onClick={this.props.onSaveClick}
-                >
-                  Save
-                </Button>
+                {this.dashboardSlicingFeatureToggle && this.renderFilterInput()}
               </div>
             </div>
           ) : null}
