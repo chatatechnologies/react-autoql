@@ -172,14 +172,22 @@ export class DashboardTile extends React.Component {
 
   onUpdateFilterResponse = (localRTFilterResponse) => {
     if (this._isMounted) {
+      const filters = localRTFilterResponse?.data?.data?.fe_req?.filters
+
+      // Update both state and formatted params
       this.setState({
         localRTFilterResponse,
-        initialFormattedTableParams: { filters: localRTFilterResponse.data.data.fe_req.filters },
-        tableFilters: localRTFilterResponse.data.data.fe_req.filters,
+        tableFilters: filters,
+        initialFormattedTableParams: {
+          ...this.state.initialFormattedTableParams,
+          filters,
+        },
       })
+
+      // Always update parent state regardless of edit mode
       this.props.setParamsForTile(
         {
-          tableFilters: localRTFilterResponse.data.data.fe_req.filters,
+          tableFilters: filters,
         },
         this.state.tileIdx,
       )
@@ -208,6 +216,24 @@ export class DashboardTile extends React.Component {
       this.props.tile.displayType !== this.responseRef.state.displayType
     ) {
       this.responseRef.changeDisplayType(this.props.tile.displayType)
+    }
+
+    // Handle isEditing changes to preserve filter state
+    if (prevProps.isEditing !== this.props.isEditing) {
+      this.setState({
+        initialFormattedTableParams: {
+          ...this.state.initialFormattedTableParams,
+          filters: this.props.tile?.tableFilters || this.state.tableFilters,
+          sorters: this.props.tile?.orders,
+          sessionFilters: this.props.tile?.filters,
+        },
+        initialSecondFormattedTableParams: {
+          ...this.state.initialSecondFormattedTableParams,
+          filters: this.props.tile?.secondTableFilters,
+          sorters: this.props.tile?.secondOrders,
+          sessionFilters: this.props.tile?.filters,
+        },
+      })
     }
   }
 

@@ -519,8 +519,19 @@ class DashboardWithoutTheme extends React.Component {
   setParamsForTile = (params, id, callbackArray) => {
     try {
       const originalTiles = this.getMostRecentTiles()
-      const tiles = _cloneDeep(this.getMostRecentTiles())
+      const tiles = _cloneDeep(originalTiles)
       const tileIndex = tiles.map((item) => item.i).indexOf(id)
+
+      // Always update filter state regardless of edit mode
+      if (params.tableFilters !== undefined) {
+        tiles[tileIndex] = {
+          ...tiles[tileIndex],
+          tableFilters: params.tableFilters,
+        }
+        this.debouncedOnChange(tiles, false, callbackArray)
+        return
+      }
+
       tiles[tileIndex] = {
         ...tiles[tileIndex],
         ...params,
