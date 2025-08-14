@@ -172,7 +172,17 @@ export class DashboardTile extends React.Component {
 
   onUpdateFilterResponse = (localRTFilterResponse) => {
     if (this._isMounted) {
-      this.setState({ localRTFilterResponse })
+      this.setState({
+        localRTFilterResponse,
+        initialFormattedTableParams: { filters: localRTFilterResponse.data.data.fe_req.filters },
+        tableFilters: localRTFilterResponse.data.data.fe_req.filters,
+      })
+      this.props.setParamsForTile(
+        {
+          tableFilters: localRTFilterResponse.data.data.fe_req.filters,
+        },
+        this.state.tileIdx,
+      )
     }
   }
 

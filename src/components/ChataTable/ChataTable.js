@@ -487,9 +487,16 @@ export default class ChataTable extends React.Component {
     if (this._isMounted && this.state.tabulatorMounted) {
       this.isFiltering = true // Set this to true when filtering starts
       const headerFilters = this.ref?.tabulator?.getHeaderFilters()
+      const filterWasRemoved = this.tableParams?.filter?.length > (headerFilters?.length || 0)
 
       if (headerFilters && !_isEqual(headerFilters, this.tableParams?.filter)) {
         this.tableParams.filter = _cloneDeep(headerFilters)
+
+        // If filter was removed and using local data, requery
+        if (filterWasRemoved && this.isLocal) {
+          this.getRTForRemoteFilterAndSort()
+        }
+
         this.setState({ loading: true })
       }
     }
