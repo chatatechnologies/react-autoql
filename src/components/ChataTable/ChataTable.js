@@ -67,7 +67,7 @@ export default class ChataTable extends React.Component {
     if (isNaN(this.totalPages) || !this.totalPages) {
       this.totalPages = 1
     }
-    this.useInfiniteScroll = props.useInfiniteScroll ? props.useInfiniteScroll : !this.isLocal
+    this.useInfiniteScroll = props.useInfiniteScroll ?? !this.isLocal
 
     if (!this.useInfiniteScroll) {
       if (props.pivot) {
@@ -104,10 +104,10 @@ export default class ChataTable extends React.Component {
     }
 
     if (props.response?.data?.data?.rows?.length) {
-      this.tableOptions.sortMode = 'remote' // v4: ajaxSorting = true
-      this.tableOptions.filterMode = 'remote' // v4: ajaxFiltering = true
+      this.tableOptions.sortMode = LOCAL_OR_REMOTE.REMOTE
+      this.tableOptions.filterMode = LOCAL_OR_REMOTE.REMOTE
       this.tableOptions.pagination = false
-      this.tableOptions.paginationMode = 'remote'
+      this.tableOptions.paginationMode = LOCAL_OR_REMOTE.REMOTE
       this.tableOptions.paginationSize = this.pageSize
       this.tableOptions.paginationInitialPage = 1
       this.tableOptions.progressiveLoad = 'scroll' // v4: ajaxProgressiveLoad
@@ -392,9 +392,9 @@ export default class ChataTable extends React.Component {
       return
     }
 
-    this.ref.tabulator.options.sortMode = 'remote'
-    this.ref.tabulator.options.filterMode = 'remote'
-    this.ref.tabulator.options.paginationMode = 'remote'
+    this.ref.tabulator.options.sortMode = LOCAL_OR_REMOTE.REMOTE
+    this.ref.tabulator.options.filterMode = LOCAL_OR_REMOTE.REMOTE
+    this.ref.tabulator.options.paginationMode = LOCAL_OR_REMOTE.REMOTE
   }
 
   updateData = (data, useInfiniteScroll) => {
@@ -485,7 +485,7 @@ export default class ChataTable extends React.Component {
 
   onDataFiltering = (filters, rows) => {
     if (this._isMounted && this.state.tabulatorMounted) {
-      this.isFiltering = true // Set this to true when filtering starts
+      this.isFiltering = true
       const headerFilters = this.ref?.tabulator?.getHeaderFilters()
       const filterWasRemoved = this.tableParams?.filter?.length > (headerFilters?.length || 0)
 

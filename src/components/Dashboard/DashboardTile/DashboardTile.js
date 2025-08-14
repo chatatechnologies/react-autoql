@@ -809,7 +809,7 @@ export class DashboardTile extends React.Component {
       queryResponse,
       dataConfig,
       displayOverrides,
-      tableFilters, // This will update the filters
+      tableFilters,
       orders,
       filters,
     })
