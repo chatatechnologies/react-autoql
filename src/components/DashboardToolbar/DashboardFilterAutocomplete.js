@@ -8,7 +8,7 @@ import { ErrorBoundary } from '../../containers/ErrorHOC'
 
 import './DashboardFilterAutocomplete.scss'
 
-class FilterAutocomplete extends Component {
+class DashboardFilterAutocomplete extends Component {
   constructor(props) {
     super(props)
 
@@ -22,7 +22,7 @@ class FilterAutocomplete extends Component {
       loading: false,
       error: null,
       popoverOpen: false,
-      highlightedIndex: -1, // added
+      highlightedIndex: -1,
     }
 
     this.axiosSource = axios.CancelToken.source()
@@ -244,6 +244,7 @@ class FilterAutocomplete extends Component {
     const hasSuggestions = suggestions.length > 0 && value
     return hasRecent || hasSuggestions || loading || error
   }
+
   renderSuggestions = () => {
     const { suggestions, highlightedIndex, recentSuggestions, value, loading } = this.state
 
@@ -401,4 +402,4 @@ class FilterAutocomplete extends Component {
   }
 }
 
-export default FilterAutocomplete
+export default DashboardFilterAutocomplete

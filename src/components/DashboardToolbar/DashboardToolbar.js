@@ -66,7 +66,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     }
 
     if (this.state.dashboardFilters?.length !== prevState.dashboardFilters?.length) {
-      // Do something with the filters
+      // TODO: Apply filters to dashboard once API changes are complete
     }
   }
 
