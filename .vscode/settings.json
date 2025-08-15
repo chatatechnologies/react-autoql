@@ -3,5 +3,6 @@
   "prettier.options": { "configFile": "../.prettierrc" },
   "eslint.options": { "configFile": "../.eslintrc.json" },
   "eslint.workingDirectories": ["./examples", "./src"],
-  "eslint.enable": false
+  "eslint.enable": false,
+  "makefile.configureOnOpen": false
 }

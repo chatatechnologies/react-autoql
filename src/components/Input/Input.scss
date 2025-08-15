@@ -188,6 +188,11 @@
       transition-timing-function: ease;
       padding: 10px;
       line-height: 1em;
+      background: var(--react-autoql-background-color-secondary);
+
+      &.react-autoql-input-round {
+        border-radius: 20px;
+      }
 
       &:disabled {
         background: var(--react-autoql-hover-color);
