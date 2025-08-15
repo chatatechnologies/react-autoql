@@ -119,7 +119,11 @@ export default class MonthSelect extends React.Component {
 
   render = () => {
     return (
-      <div className='react-autoql-radio-btn-container year-select' data-test='react-autoql-year-select'>
+      <div
+        key={`react-autoql-radio-btn-container year-select-${this.COMPONENT_KEY}`}
+        className='react-autoql-radio-btn-container year-select'
+        data-test='react-autoql-year-select'
+      >
         {days.map((option, i) => {
           let isActive = this.props.value === option.value
           if (this.props.multiSelect) {
