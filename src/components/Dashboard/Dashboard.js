@@ -96,7 +96,7 @@ class DashboardWithoutTheme extends React.Component {
     tiles: [],
     executeOnMount: true,
     dataPageSize: undefined,
-    executeOnStopEditing: true,
+    executeOnStopEditing: false,
     isEditing: false,
     isEditable: true,
     notExecutedText: undefined,
@@ -136,6 +136,7 @@ class DashboardWithoutTheme extends React.Component {
 
     if (!prevProps.isEditing && this.props.isEditing) {
       this.refreshTileLayouts()
+      this.uneditedDashboardTiles = _cloneDeep(this.props.tiles)
     }
 
     if (this.props.isEditing !== prevProps.isEditing) {
@@ -721,12 +722,12 @@ class DashboardWithoutTheme extends React.Component {
         <>
           {this.props.showToolbar && (
             <DashboardToolbar
+              authentication={this.props.authentication}
               isEditing={this.props.isEditing}
               isEditable={this.props.isEditable}
               tooltipID={this.TOOLTIP_ID}
               title={this.props.title}
               onEditClick={this.props.startEditingCallback}
-              onCancelClick={this.props.stopEditingCallback}
               onAddTileClick={this.addTile}
               onUndoClick={this.undo}
               onRedoClick={this.redo}
@@ -734,6 +735,10 @@ class DashboardWithoutTheme extends React.Component {
               onSaveClick={this.props.onSaveCallback}
               onDeleteClick={this.props.onDeleteCallback}
               onRenameClick={this.props.onRenameCallback}
+              onCancelClick={() => {
+                this.debouncedOnChange(this.uneditedDashboardTiles)
+                this.props.stopEditingCallback()
+              }}
             />
           )}
           <div

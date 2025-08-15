@@ -15,6 +15,12 @@
     justify-content: space-between;
     overflow: hidden;
 
+    .react-autoql-dashboard-title-and-filter-container {
+      display: flex;
+      justify-content: space-between;
+      flex-direction: row;
+    }
+
     .react-autoql-dashboard-title-container {
       display: flex;
       justify-content: flex-start;
@@ -40,7 +46,7 @@
       justify-content: flex-end;
       align-items: center;
 
-      .react-autoql-btn {
+      .react-autoql-btn.icon-only {
         color: var(--react-autoql-text-color-primary);
       }
     }
@@ -57,11 +63,11 @@
     flex-wrap: wrap;
     justify-content: space-between;
     margin-top: 5px;
+  }
 
-    .react-autoql-dashboard-edit-toolbar-container-left,
-    .react-autoql-dashboard-edit-toolbar-container-right {
-      display: flex;
-      justify-content: center;
-    }
+  .react-autoql-dashboard-edit-toolbar-container-left,
+  .react-autoql-dashboard-edit-toolbar-container-right {
+    display: flex;
+    justify-content: center;
   }
 }

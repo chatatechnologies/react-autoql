@@ -42,6 +42,7 @@ export default class Input extends React.Component {
     disabled: PropTypes.bool,
     errormessage: PropTypes.string,
     isRequired: PropTypes.bool,
+    round: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -60,6 +61,7 @@ export default class Input extends React.Component {
     disabled: false,
     errormessage: undefined,
     isRequired: false,
+    round: false,
   }
 
   componentDidMount = () => {
@@ -88,6 +90,11 @@ export default class Input extends React.Component {
   focus = () => {
     this.inputRef?.focus()
     this.setState({ focused: true })
+  }
+
+  blur = () => {
+    this.inputRef?.blur()
+    this.setState({ focused: false })
   }
 
   selectAll = () => {
@@ -270,6 +277,7 @@ export default class Input extends React.Component {
       disabled,
       displayColumnSelector,
       isRequired,
+      round,
       ...nativeProps
     } = this.props
 
@@ -321,7 +329,8 @@ export default class Input extends React.Component {
                   ref={(r) => (this.inputRef = r)}
                   className={`react-autoql-input
                 ${icon ? 'with-icon' : ''}
-                ${hasSelect ? 'with-select' : ''}`}
+                ${hasSelect ? 'with-select' : ''}
+                ${round ? 'react-autoql-input-round' : ''}`}
                   onFocus={this.onFocus}
                   onBlur={this.onBlur}
                   style={this.props.inputStyle}
