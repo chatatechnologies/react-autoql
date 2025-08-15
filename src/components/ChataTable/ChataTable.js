@@ -483,31 +483,23 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  onDataFiltering = (filters, rows) => {
-    if (this._isMounted && this.state.tabulatorMounted) {
-      this.isFiltering = true
-      const headerFilters = this.ref?.tabulator?.getHeaderFilters()
-      const filterWasRemoved = this.tableParams?.filter?.length > (headerFilters?.length || 0)
+  calculateFilteredData = (originalData, filters, columns) => {
+    // Create column id to index mapping once
+    const columnIndexMap = new Map(columns.map((col) => [col.id, col.index]))
 
-      if (headerFilters && !_isEqual(headerFilters, this.tableParams?.filter)) {
-        this.tableParams.filter = _cloneDeep(headerFilters)
-
-        // If filter was removed and using local data, requery
-        if (filterWasRemoved && this.isLocal) {
-          this.getRTForRemoteFilterAndSort()
-        }
-
-        this.setState({ loading: true })
+    return filters.reduce((filteredRows, filter) => {
+      const columnIndex = columnIndexMap.get(filter.id)
+      if (columnIndex === undefined) {
+        return filteredRows
       }
-    }
+      return filterDataByColumn(filteredRows, columns, columnIndex, filter.value, filter.operator)
+    }, originalData)
   }
 
   onDataFiltered = (filters, rows) => {
     if (this.isFiltering && this.state.tabulatorMounted) {
       this.isFiltering = false
 
-      // The filters provided to this function don't include header filters
-      // We only use header filters so we have to use the function below
       const headerFilters = this.ref?.tabulator?.getHeaderFilters()
 
       if (!this.useInfiniteScroll) {
@@ -516,17 +508,17 @@ export default class ChataTable extends React.Component {
           this.props.columns,
         )
 
-        // Apply filters to original data to get true count
-        const filteredData = this.originalQueryData.filter((row) => {
-          return tableParamsFormatted.filters.every((filter) => {
-            const columnIndex = this.props.columns.find((col) => col.id === filter.id)?.index
-            return filterDataByColumn([row], this.props.columns, columnIndex, filter.value, filter.operator).length > 0
-          })
-        })
+        const filteredData = this.calculateFilteredData(
+          this.originalQueryData,
+          tableParamsFormatted.filters,
+          this.props.columns,
+        )
 
         this.filterCount = filteredData.length
       }
-      this.props.onFilterCallback(headerFilters, rows) // needed to set pivot table data
+
+      this.props.onFilterCallback(headerFilters, rows)
+
       setTimeout(() => {
         if (this._isMounted) {
           this.setState({
@@ -536,6 +528,7 @@ export default class ChataTable extends React.Component {
         }
       }, 0)
     }
+
     if (this.isLocal && !this.pivot) {
       this.getRTForRemoteFilterAndSort()
     }
