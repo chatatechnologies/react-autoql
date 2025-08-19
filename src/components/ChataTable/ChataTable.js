@@ -965,7 +965,7 @@ export default class ChataTable extends React.Component {
         headerElement.setAttribute('data-tooltip-id', `selectable-table-column-header-tooltip-${this.TABLE_ID}`)
         headerElement.setAttribute('data-tooltip-content', JSON.stringify({ ...col, index: i }))
 
-        if (!this.props.pivot && this.useInfiniteScroll) {
+        if (!this.props.pivot) {
           headerElement.addEventListener('contextmenu', (e) => this.headerContextMenuClick(e, col))
         }
       }

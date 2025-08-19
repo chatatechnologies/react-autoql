@@ -396,6 +396,7 @@ export class QueryOutput extends React.Component {
       // Using a count variable so it doesn't have to deep compare on every udpate
       const columnsChanged = this.state.columnChangeCount !== prevState.columnChangeCount
       if (columnsChanged) {
+        this.setTableConfig(this.state.columns)
         this.tableID = uuid()
         const dataConfig = {
           tableConfig: this.tableConfig,
