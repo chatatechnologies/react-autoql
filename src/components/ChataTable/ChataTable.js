@@ -85,7 +85,6 @@ export default class ChataTable extends React.Component {
 
     this.tableOptions = {
       selectableRowsCheck: () => false,
-      selectableCheck: () => false,
       movableColumns: true,
       initialSort: !this.useInfiniteScroll ? this.tableParams?.sort : undefined,
       initialFilter: !this.useInfiniteScroll ? this.tableParams?.filter : undefined,
@@ -483,6 +482,17 @@ export default class ChataTable extends React.Component {
     }
   }
 
+  onDataFiltering = () => {
+    if (this._isMounted && this.state.tabulatorMounted) {
+      const headerFilters = this.ref?.tabulator?.getHeaderFilters()
+
+      if (headerFilters && !_isEqual(headerFilters, this.tableParams?.filter)) {
+        this.isFiltering = true
+        this.setLoading(true)
+      }
+    }
+  }
+
   calculateFilteredData = (originalData, filters, columns) => {
     // Create column id to index mapping once
     const columnIndexMap = new Map(columns.map((col) => [col.id, col.index]))
@@ -529,7 +539,7 @@ export default class ChataTable extends React.Component {
       }, 0)
     }
 
-    if (this.isLocal && !this.pivot) {
+    if (!this.useInfiniteScroll && !this.pivot) {
       this.getRTForRemoteFilterAndSort()
     }
     this.setFilterBadgeClasses()
@@ -1444,7 +1454,7 @@ export default class ChataTable extends React.Component {
     let currentRowCount
     let totalRowCount
 
-    if (this.isLocal && this.tableParams?.filter?.length > 0) {
+    if (!this.useInfiniteScroll && this.tableParams?.filter?.length > 0) {
       totalRowCount = this.state.filterCount
     } else {
       totalRowCount = this.props.pivot ? this.props.data?.length : this.props.response?.data?.data?.count_rows
