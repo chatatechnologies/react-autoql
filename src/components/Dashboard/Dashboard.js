@@ -738,7 +738,8 @@ class DashboardWithoutTheme extends React.Component {
               onRefreshClick={this.executeDashboard}
               onSaveClick={() => {
                 Promise.resolve(this.props.onSaveCallback ? this.props.onSaveCallback() : undefined).then((result) => {
-                  this.executeDashboard()
+                  // Keep if we need to add back in the near future
+                  // this.executeDashboard()
                 })
               }}
               onDeleteClick={this.props.onDeleteCallback}
