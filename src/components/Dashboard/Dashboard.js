@@ -150,7 +150,7 @@ class DashboardWithoutTheme extends React.Component {
 
     if (!prevProps.isEditing && this.props.isEditing) {
       this.refreshTileLayouts()
-      this.state.uneditedDashboardTiles = _cloneDeep(this.props.tiles)
+      this.setState({ uneditedDashboardTiles: _cloneDeep(this.props.tiles) })
     }
 
     if (this.props.isEditing !== prevProps.isEditing) {
@@ -537,16 +537,6 @@ class DashboardWithoutTheme extends React.Component {
       const tiles = _cloneDeep(originalTiles)
       const tileIndex = tiles.map((item) => item.i).indexOf(id)
 
-      // Always update filter state regardless of edit mode
-      if (params.tableFilters !== undefined) {
-        tiles[tileIndex] = {
-          ...tiles[tileIndex],
-          tableFilters: params.tableFilters,
-        }
-        this.debouncedOnChange(tiles, false, callbackArray)
-        return
-      }
-
       tiles[tileIndex] = {
         ...tiles[tileIndex],
         ...params,
@@ -748,7 +738,8 @@ class DashboardWithoutTheme extends React.Component {
               onRefreshClick={this.executeDashboard}
               onSaveClick={() => {
                 Promise.resolve(this.props.onSaveCallback ? this.props.onSaveCallback() : undefined).then((result) => {
-                  this.executeDashboard()
+                  // Keep if we need to add back in the near future
+                  // this.executeDashboard()
                 })
               }}
               onDeleteClick={this.props.onDeleteCallback}
