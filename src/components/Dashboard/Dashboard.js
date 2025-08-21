@@ -54,6 +54,7 @@ class DashboardWithoutTheme extends React.Component {
       isDragging: false,
       isReportProblemOpen: false,
       isResizingDrilldown: false,
+      uneditedDashboardTiles: null,
     }
   }
 
@@ -116,6 +117,19 @@ class DashboardWithoutTheme extends React.Component {
     onDeleteCallback: () => {},
   }
 
+  static getDerivedStateFromProps(nextProps, prevState) {
+    if (!prevState.wasEditing && nextProps.isEditing) {
+      return {
+        wasEditing: true,
+        uneditedDashboardTiles: _cloneDeep(nextProps.tiles),
+      }
+    }
+    if (prevState.wasEditing && !nextProps.isEditing) {
+      return { wasEditing: false }
+    }
+    return null
+  }
+
   componentDidMount = () => {
     this._isMounted = true
     if (this.props.executeOnMount) {
@@ -136,7 +150,7 @@ class DashboardWithoutTheme extends React.Component {
 
     if (!prevProps.isEditing && this.props.isEditing) {
       this.refreshTileLayouts()
-      this.uneditedDashboardTiles = _cloneDeep(this.props.tiles)
+      this.state.uneditedDashboardTiles = _cloneDeep(this.props.tiles)
     }
 
     if (this.props.isEditing !== prevProps.isEditing) {
@@ -732,11 +746,15 @@ class DashboardWithoutTheme extends React.Component {
               onUndoClick={this.undo}
               onRedoClick={this.redo}
               onRefreshClick={this.executeDashboard}
-              onSaveClick={this.props.onSaveCallback}
+              onSaveClick={() => {
+                Promise.resolve(this.props.onSaveCallback ? this.props.onSaveCallback() : undefined).then((result) => {
+                  this.executeDashboard()
+                })
+              }}
               onDeleteClick={this.props.onDeleteCallback}
               onRenameClick={this.props.onRenameCallback}
               onCancelClick={() => {
-                this.debouncedOnChange(this.uneditedDashboardTiles)
+                this.debouncedOnChange(this.state.uneditedDashboardTiles)
                 this.props.stopEditingCallback()
               }}
             />
