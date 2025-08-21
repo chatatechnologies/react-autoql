@@ -35,3 +35,30 @@ describe('refresh layout', () => {
     expect(spy).toHaveBeenCalled()
   })
 })
+
+describe('Dashboard.setParamsForTile', () => {
+  let wrapper, instance, mockDebouncedOnChange
+
+  beforeEach(() => {
+    mockDebouncedOnChange = jest.fn()
+    wrapper = setup()
+    instance = wrapper.instance()
+    instance.debouncedOnChange = mockDebouncedOnChange
+
+    instance.getMostRecentTiles = jest.fn(() => [{ i: 'tile-1', name: 'old-name', tableFilters: [], query: 'q1' }])
+  })
+
+  test('should update multiple params including tableFilters', () => {
+    const params = { name: 'new-name', tableFilters: ['f1'] }
+
+    instance.setParamsForTile(params, 'tile-1')
+
+    const updatedTiles = mockDebouncedOnChange.mock.calls[0][0]
+
+    expect(updatedTiles[0]).toMatchObject({
+      i: 'tile-1',
+      name: 'new-name',
+      tableFilters: ['f1'],
+    })
+  })
+})
