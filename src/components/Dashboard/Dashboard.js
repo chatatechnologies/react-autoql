@@ -150,7 +150,7 @@ class DashboardWithoutTheme extends React.Component {
 
     if (!prevProps.isEditing && this.props.isEditing) {
       this.refreshTileLayouts()
-      this.state.uneditedDashboardTiles = _cloneDeep(this.props.tiles)
+      this.setState({ uneditedDashboardTiles: _cloneDeep(this.props.tiles) })
     }
 
     if (this.props.isEditing !== prevProps.isEditing) {
@@ -536,16 +536,6 @@ class DashboardWithoutTheme extends React.Component {
       const originalTiles = this.getMostRecentTiles()
       const tiles = _cloneDeep(originalTiles)
       const tileIndex = tiles.map((item) => item.i).indexOf(id)
-
-      // Always update filter state regardless of edit mode
-      if (params.tableFilters !== undefined) {
-        tiles[tileIndex] = {
-          ...tiles[tileIndex],
-          tableFilters: params.tableFilters,
-        }
-        this.debouncedOnChange(tiles, false, callbackArray)
-        return
-      }
 
       tiles[tileIndex] = {
         ...tiles[tileIndex],
