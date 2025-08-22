@@ -217,6 +217,24 @@ export class DashboardTile extends React.Component {
     ) {
       this.responseRef.changeDisplayType(this.props.tile.displayType)
     }
+
+    // Handle isEditing changes to preserve filter state
+    if (prevProps.isEditing !== this.props.isEditing) {
+      this.setState({
+        initialFormattedTableParams: {
+          ...this.state.initialFormattedTableParams,
+          filters: this.props.tile?.tableFilters || this.state.tableFilters,
+          sorters: this.props.tile?.orders,
+          sessionFilters: this.props.tile?.filters,
+        },
+        initialSecondFormattedTableParams: {
+          ...this.state.initialSecondFormattedTableParams,
+          filters: this.props.tile?.secondTableFilters,
+          sorters: this.props.tile?.secondOrders,
+          sessionFilters: this.props.tile?.filters,
+        },
+      })
+    }
   }
 
   componentWillUnmount = () => {
