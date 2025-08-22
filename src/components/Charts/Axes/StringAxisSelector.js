@@ -1,7 +1,7 @@
 import React from 'react'
 import { v4 as uuid } from 'uuid'
 import { isMobile } from 'react-device-detect'
-import { isColumnDateType } from 'autoql-fe-utils'
+import { ColumnTypes, DateStringPrecisionTypes, isColumnDateType, PrecisionTypes } from 'autoql-fe-utils'
 
 import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
@@ -18,13 +18,17 @@ export default class StringAxisSelector extends React.Component {
 
     // Define the cyclical bucket options for date columns
     this.dateBucketOptions = [
-      { key: 'exact_date', label: 'Exact Date' },
-      { key: 'quarter', label: 'Quarter' },
-      { key: 'month_of_year', label: 'Month of Year' },
-      { key: 'week_of_year', label: 'Week of Year' },
-      { key: 'day_of_month', label: 'Day of Month' },
-      { key: 'day_of_week', label: 'Day of Week' },
-      { key: 'hour_of_day', label: 'Hour of Day' },
+      { type: ColumnTypes.DATE, precision: PrecisionTypes.WEEK, label: 'Week' },
+      { type: ColumnTypes.DATE, precision: PrecisionTypes.DAY, label: 'Day' },
+      { type: ColumnTypes.DATE, precision: PrecisionTypes.DATE_HOUR, label: 'Hour' },
+      { type: ColumnTypes.DATE, precision: PrecisionTypes.DATE_MINUTE, label: 'Minute' },
+      { type: ColumnTypes.DATE, precision: PrecisionTypes.DATE_SECOND, label: 'Second' },
+      { type: ColumnTypes.DATE_STRING, precision: DateStringPrecisionTypes.QUARTERONLY, label: 'Quarter of Year' },
+      { type: ColumnTypes.DATE_STRING, precision: DateStringPrecisionTypes.MONTHONLY, label: 'Month of Year' },
+      { type: ColumnTypes.DATE_STRING, precision: DateStringPrecisionTypes.WEEKONLY, label: 'Week of Year' },
+      { type: ColumnTypes.DATE_STRING, precision: DateStringPrecisionTypes.DOM, label: 'Day of Month' },
+      { type: ColumnTypes.DATE_STRING, precision: DateStringPrecisionTypes.DOW, label: 'Day of Week' },
+      { type: ColumnTypes.DATE_STRING, precision: DateStringPrecisionTypes.HOUR, label: 'Hour of Day' },
     ]
   }
 
@@ -72,7 +76,23 @@ export default class StringAxisSelector extends React.Component {
     }, 100)
   }
 
-  handleDateBucketSelect = (colIndex, bucketType) => {
+  changeDateColumnBucket = (colIndex, bucketOption) => {
+    const { columns } = this.props
+    const newColumns = columns.map((col) => {
+      if (col.index === colIndex) {
+        return {
+          ...col,
+          type: bucketOption.type,
+          precision: bucketOption.precision,
+        }
+      }
+      return col
+    })
+
+    this.props.changeStringColumnIndex(colIndex, newColumns)
+  }
+
+  handleDateBucketSelect = (colIndex, bucketOption) => {
     this.setState({
       hoveredColumn: null,
       dateBucketMenuPosition: null,
@@ -80,15 +100,7 @@ export default class StringAxisSelector extends React.Component {
 
     this.props.closeSelector()
 
-    // Handle exact date selection (no bucketing)
-    if (bucketType === 'exact_date') {
-      this.props.changeStringColumnIndex(colIndex)
-    } else {
-      // You'll need to add this prop to handle date bucket selection
-      if (this.props.changeDateColumnBucket) {
-        this.props.changeDateColumnBucket(colIndex, bucketType)
-      }
-    }
+    this.changeDateColumnBucket(colIndex, bucketOption)
   }
 
   renderDateBucketMenu = (element, colIndex) => {
@@ -118,18 +130,15 @@ export default class StringAxisSelector extends React.Component {
                     })
                   }
                 }}
-                onClick={(e) => {
-                  e.stopPropagation()
-                }}
               >
                 <ul className='axis-selector-content'>
                   {this.dateBucketOptions.map((option) => (
                     <li
                       className='string-select-list-item'
-                      key={option.key}
+                      key={option.precision}
                       onClick={(e) => {
                         e.stopPropagation()
-                        this.handleDateBucketSelect(this.state.hoveredColumn, option.key)
+                        this.handleDateBucketSelect(this.state.hoveredColumn, option)
                       }}
                     >
                       {option.label}
@@ -268,7 +277,11 @@ export default class StringAxisSelector extends React.Component {
         innerRef={this.props.axisSelectorRef}
         isOpen={this.props.isOpen}
         content={this.renderSelectorContent}
-        onClickOutside={this.props.closeSelector}
+        onClickOutside={() =>
+          setTimeout(() => {
+            this.props.closeSelector()
+          }, 0)
+        }
         parentElement={this.props.popoverParentElement}
         boundaryElement={this.props.popoverParentElement}
         positions={this.props.positions}

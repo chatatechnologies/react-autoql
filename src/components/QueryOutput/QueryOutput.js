@@ -1544,7 +1544,7 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  onChangeStringColumnIndex = (index) => {
+  onChangeStringColumnIndex = (index, newColumns) => {
     if (index < 0) {
       return
     }
@@ -1587,6 +1587,10 @@ export class QueryOutput extends React.Component {
 
     if (this.usePivotDataForChart()) {
       this.generatePivotTableData()
+    }
+
+    if (newColumns) {
+      this.updateColumns(newColumns)
     }
 
     this.onTableConfigChange()
