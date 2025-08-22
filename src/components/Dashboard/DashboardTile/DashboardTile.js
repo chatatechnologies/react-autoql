@@ -180,7 +180,6 @@ export class DashboardTile extends React.Component {
         tableFilters: filters,
         initialFormattedTableParams: {
           ...this.state.initialFormattedTableParams,
-          ...params,
           filters,
         },
       })
