@@ -1026,13 +1026,7 @@ export default class ChataTable extends React.Component {
     if (filterValues) {
       filterValues.forEach((filter, i) => {
         try {
-          // Get all columns to check if the target column exists
-          const columns = this.ref.tabulator.getColumns()
-          const targetColumn = columns.find((col) => col.getField() === filter.field)
-
-          if (targetColumn && targetColumn.getDefinition().headerFilter) {
-            this.ref?.tabulator?.setHeaderFilterValue(filter.field, filter.value)
-          }
+          this.ref?.tabulator?.setHeaderFilterValue(filter.field, filter.value)
           if (!this.useInfiniteScroll) {
             this.ref?.tabulator?.setFilter(filter.field, filter.type, filter.value)
           }
@@ -1626,7 +1620,7 @@ export default class ChataTable extends React.Component {
           data-test='react-autoql-table'
           style={this.props.style}
           className={`react-autoql-table-container 
-            ${this.state.pageLoading || !this.state.tabulatorMounted ? 'loading' : ''}
+           ${this.state.pageLoading || !this.state.tabulatorMounted ? 'loading' : ''}
             ${getAutoQLConfig(this.props.autoQLConfig)?.enableDrilldowns ? 'supports-drilldown' : 'disable-drilldown'}
             ${this.state.isFiltering ? 'filtering' : ''}
             ${this.props.isAnimating ? 'animating' : ''}
