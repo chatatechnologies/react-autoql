@@ -760,15 +760,10 @@ export class QueryOutput extends React.Component {
   }
 
   isTableConfigValid = (tableConfig, columns, displayType) => {
-    const validColumns = columns ?? this.getColumns()
-    const validTableConfig = tableConfig ?? this.tableConfig
-    if (!validColumns || !validColumns.length || !validTableConfig) {
-      return false
-    }
     return isColumnIndexConfigValid({
       response: this.queryResponse,
-      columnIndexConfig: validTableConfig,
-      columns: validColumns,
+      columnIndexConfig: tableConfig ?? this.tableConfig,
+      columns: columns ?? this.getColumns(),
       displayType: displayType ?? this.state.displayType,
     })
   }
