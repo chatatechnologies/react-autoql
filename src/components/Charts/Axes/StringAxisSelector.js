@@ -18,6 +18,9 @@ export default class StringAxisSelector extends React.Component {
 
     // Define the cyclical bucket options for date columns
     this.dateBucketOptions = [
+      { type: ColumnTypes.DATE, precision: PrecisionTypes.YEAR, label: 'Year' },
+      { type: ColumnTypes.DATE, precision: PrecisionTypes.QUARTER, label: 'Quarter' },
+      { type: ColumnTypes.DATE, precision: PrecisionTypes.MONTH, label: 'Month' },
       { type: ColumnTypes.DATE, precision: PrecisionTypes.WEEK, label: 'Week' },
       { type: ColumnTypes.DATE, precision: PrecisionTypes.DAY, label: 'Day' },
       { type: ColumnTypes.DATE, precision: PrecisionTypes.DATE_HOUR, label: 'Hour' },
@@ -104,6 +107,21 @@ export default class StringAxisSelector extends React.Component {
   }
 
   renderDateBucketMenu = (element, colIndex) => {
+    let maxHeight = 300
+    const minHeight = 35
+    const padding = 50
+
+    const chartHeight = this.props.chartContainerRef?.clientHeight
+    if (chartHeight && chartHeight > minHeight + padding) {
+      maxHeight = chartHeight - padding
+    } else if (chartHeight && chartHeight < minHeight + padding) {
+      maxHeight = minHeight
+    }
+
+    if (maxHeight > window.innerHeight) {
+      maxHeight = window.innerHeight
+    }
+
     return (
       <Popover
         id={`string-axis-selector-${this.COMPONENT_KEY}`}
@@ -115,37 +133,44 @@ export default class StringAxisSelector extends React.Component {
                 isMobile ? 'mobile-string-axis-selector-popover-content' : 'string-axis-selector-popover-content'
               }
             >
-              <div
-                className='axis-selector-container date-bucket-submenu'
-                onMouseEnter={(e) => {
-                  this.setState({ hoveredColumn: colIndex, hoveredSubmenu: colIndex })
-                  e.stopPropagation()
-                }}
-                onMouseLeave={(e) => {
-                  // Only close if we're really leaving the submenu
-                  const relatedTarget = e.relatedTarget
-                  if (!relatedTarget || !relatedTarget.closest('.date-bucket-submenu')) {
-                    this.setState({
-                      hoveredSubmenu: null,
-                    })
-                  }
-                }}
+              <CustomScrollbars
+                autoHeight
+                autoHeightMin={minHeight}
+                maxHeight={maxHeight}
+                options={{ suppressScrollX: true }}
               >
-                <ul className='axis-selector-content'>
-                  {this.dateBucketOptions.map((option) => (
-                    <li
-                      className='string-select-list-item'
-                      key={option.precision}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        this.handleDateBucketSelect(this.state.hoveredColumn, option)
-                      }}
-                    >
-                      {option.label}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                <div
+                  className='axis-selector-container date-bucket-submenu'
+                  onMouseEnter={(e) => {
+                    this.setState({ hoveredColumn: colIndex, hoveredSubmenu: colIndex })
+                    e.stopPropagation()
+                  }}
+                  onMouseLeave={(e) => {
+                    // Only close if we're really leaving the submenu
+                    const relatedTarget = e.relatedTarget
+                    if (!relatedTarget || !relatedTarget.closest('.date-bucket-submenu')) {
+                      this.setState({
+                        hoveredSubmenu: null,
+                      })
+                    }
+                  }}
+                >
+                  <ul className='axis-selector-content'>
+                    {this.dateBucketOptions.map((option) => (
+                      <li
+                        className='string-select-list-item'
+                        key={option.precision}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          this.handleDateBucketSelect(this.state.hoveredColumn, option)
+                        }}
+                      >
+                        {option.label}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </CustomScrollbars>
             </div>
           )
         }}

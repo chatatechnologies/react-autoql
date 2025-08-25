@@ -1110,7 +1110,7 @@ export default class ChataTable extends React.Component {
         ?.getColumns()
         ?.find((col) => col.getField() === this.tableParams.filter[0]?.field)
 
-      column.scrollTo('middle')
+      column?.scrollTo('middle')
     }
 
     let isFiltering = !this.state.isFiltering
