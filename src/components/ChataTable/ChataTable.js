@@ -539,7 +539,7 @@ export default class ChataTable extends React.Component {
       }, 0)
     }
 
-    if (!this.useInfiniteScroll && !this.pivot) {
+    if (this.isLocal && !this.pivot) {
       this.getRTForRemoteFilterAndSort()
     }
     this.setFilterBadgeClasses()
@@ -1447,7 +1447,7 @@ export default class ChataTable extends React.Component {
   }
 
   renderTableRowCount = () => {
-    if (this.isTableEmpty()) {
+    if (this.isTableEmpty() || !this.props.useInfiniteScroll) {
       return null
     }
 
