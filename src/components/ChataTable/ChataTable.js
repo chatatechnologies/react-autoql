@@ -1629,7 +1629,6 @@ export default class ChataTable extends React.Component {
             ${this.state.pageLoading || !this.state.tabulatorMounted ? 'loading' : ''}
             ${getAutoQLConfig(this.props.autoQLConfig)?.enableDrilldowns ? 'supports-drilldown' : 'disable-drilldown'}
             ${this.state.isFiltering ? 'filtering' : ''}
-            ${this.props.isResizing ? 'resizing' : ''}
             ${this.props.isAnimating ? 'animating' : ''}
             ${this.useInfiniteScroll ? 'infinite' : 'limited'}
             ${this.useInfiniteScroll && this.state.isLastPage ? 'last-page' : ''}
