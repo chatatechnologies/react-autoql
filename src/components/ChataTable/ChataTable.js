@@ -1447,7 +1447,7 @@ export default class ChataTable extends React.Component {
   }
 
   renderTableRowCount = () => {
-    if (this.isTableEmpty() || !this.props.useInfiniteScroll) {
+    if (this.isTableEmpty()) {
       return null
     }
 
