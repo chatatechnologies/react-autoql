@@ -67,7 +67,7 @@ export default class ChataTable extends React.Component {
     if (isNaN(this.totalPages) || !this.totalPages) {
       this.totalPages = 1
     }
-    this.useInfiniteScroll = props.useInfiniteScroll ?? !this.isLocal
+    this.useInfiniteScroll = props.useInfiniteScroll // ?? !this.isLocal
 
     if (!this.useInfiniteScroll) {
       if (props.pivot) {
@@ -171,7 +171,7 @@ export default class ChataTable extends React.Component {
     data: undefined,
     columns: undefined,
     isResizing: false,
-    useInfiniteScroll: undefined,
+    useInfiniteScroll: true,
     autoHeight: true,
     rowChangeCount: 0,
     isAnimating: false,
@@ -539,7 +539,7 @@ export default class ChataTable extends React.Component {
       }, 0)
     }
 
-    if (!this.useInfiniteScroll && !this.pivot) {
+    if (this.isLocal && !this.pivot) {
       this.getRTForRemoteFilterAndSort()
     }
     this.setFilterBadgeClasses()
@@ -1629,7 +1629,6 @@ export default class ChataTable extends React.Component {
             ${this.state.pageLoading || !this.state.tabulatorMounted ? 'loading' : ''}
             ${getAutoQLConfig(this.props.autoQLConfig)?.enableDrilldowns ? 'supports-drilldown' : 'disable-drilldown'}
             ${this.state.isFiltering ? 'filtering' : ''}
-            ${this.props.isResizing ? 'resizing' : ''}
             ${this.props.isAnimating ? 'animating' : ''}
             ${this.useInfiniteScroll ? 'infinite' : 'limited'}
             ${this.useInfiniteScroll && this.state.isLastPage ? 'last-page' : ''}
