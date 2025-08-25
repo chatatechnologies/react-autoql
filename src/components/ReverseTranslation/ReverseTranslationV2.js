@@ -120,6 +120,8 @@ const ReverseTranslation = ({
     let contextChunk = null
     let contextChunkIndex = null
 
+    let cancelled = false
+
     if (rt?.length) {
       const validatedInterpretationArray = _cloneDeep(rt)
 
@@ -127,6 +129,7 @@ const ReverseTranslation = ({
       const context = subjects?.find((subject) => subject?.context === primaryContextName) || {}
 
       const valueLabelValidationPromises = rt.map(async (chunk, i) => {
+        if (cancelled) return
         if (chunk.c_type === 'VALUE_LABEL') {
           try {
             const response = await fetchVLAutocomplete({
@@ -198,6 +201,10 @@ const ReverseTranslation = ({
         setReverseTranslationArray([...validatedInterpretationArray])
       }
     }
+
+    return () => {
+      cancelled = true
+    }
   }
 
   function removeBracketsAndParenthesesAndCharacterBetween(str) {
@@ -246,7 +253,7 @@ const ReverseTranslation = ({
     try {
       await validateAndUpdateReverseTranslation(rt)
     } catch (error) {
-      console.error(error)
+      console.error('Prerequisites not met to render Reverse Translation')
     } finally {
       setIsLoading(false)
     }
@@ -254,6 +261,8 @@ const ReverseTranslation = ({
 
   useEffect(() => {
     isMounted.current = true
+
+    let cancelled = false
 
     if (onValueLabelClick && reverseTranslationArray?.length) {
       executePrerequisites(reverseTranslationArray)
@@ -263,6 +272,7 @@ const ReverseTranslation = ({
 
     return () => {
       isMounted.current = false
+      cancelled = true
     }
   }, [])
 
