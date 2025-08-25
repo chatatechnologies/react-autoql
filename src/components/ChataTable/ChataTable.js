@@ -67,7 +67,7 @@ export default class ChataTable extends React.Component {
     if (isNaN(this.totalPages) || !this.totalPages) {
       this.totalPages = 1
     }
-    this.useInfiniteScroll = props.useInfiniteScroll ?? !this.isLocal
+    this.useInfiniteScroll = props.useInfiniteScroll // ?? !this.isLocal
 
     if (!this.useInfiniteScroll) {
       if (props.pivot) {
@@ -171,7 +171,7 @@ export default class ChataTable extends React.Component {
     data: undefined,
     columns: undefined,
     isResizing: false,
-    useInfiniteScroll: undefined,
+    useInfiniteScroll: true,
     autoHeight: true,
     rowChangeCount: 0,
     isAnimating: false,
