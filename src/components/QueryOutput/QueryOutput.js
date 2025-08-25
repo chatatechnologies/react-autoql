@@ -1918,6 +1918,9 @@ export class QueryOutput extends React.Component {
     return getSupportedDisplayTypes({
       response: this.queryResponse,
       columns: this.getColumns(),
+      dataLength: this.getDataLength(),
+      pivotDataLength: this.getPivotDataLength(),
+      isDataLimited: isDataLimited(this.queryResponse),
       allowNumericStringColumns: this.ALLOW_NUMERIC_STRING_COLUMNS,
     })
   }
@@ -3165,19 +3168,23 @@ export class QueryOutput extends React.Component {
   }
 
   renderReverseTranslation = () => {
+    if (!this.shouldRenderReverseTranslation()) {
+      return null
+    }
+
     return (
       <ReverseTranslation
         authentication={this.props.authentication}
         onValueLabelClick={this.props.onRTValueLabelClick}
-        appliedFilters={this.getFilters()}
+        appliedFilters={this.getFilters() || []}
         isResizing={this.props.isResizing}
         queryResponse={this.queryResponse}
         tooltipID={this.props.tooltipID}
-        subjects={this.props.subjects}
+        subjects={this.props.subjects || []}
         queryOutputRef={this.responseContainerRef}
         allowColumnAddition={this.props.allowColumnAddition && this.state.displayType === 'table'}
         enableEditReverseTranslation={
-          this.props.autoQLConfig.enableEditReverseTranslation && !isDrilldown(this.queryResponse)
+          this.props.autoQLConfig?.enableEditReverseTranslation && !isDrilldown(this.queryResponse)
         }
         localRTFilterResponse={this.props.localRTFilterResponse}
       />
@@ -3236,11 +3243,11 @@ export class QueryOutput extends React.Component {
           data-test='query-response-wrapper'
           style={containerStyle}
           className={`react-autoql-response-content-container
-          ${isTableType(this.state.displayType) ? 'table' : ''}
-          ${isChartType(this.state.displayType) ? 'chart' : ''} 
-          ${!isChartType(this.state.displayType) && !isTableType(this.state.displayType) ? 'non-table-non-chart' : ''}
-          ${this.shouldEnableResize ? 'resizable' : ''}
-          ${this.state.isResizing ? 'resizing' : ''}`}
+        ${isTableType(this.state.displayType) ? 'table' : ''}
+        ${isChartType(this.state.displayType) ? 'chart' : ''} 
+        ${!isChartType(this.state.displayType) && !isTableType(this.state.displayType) ? 'non-table-non-chart' : ''}
+        ${this.shouldEnableResize ? 'resizable' : ''}
+        ${this.state.isResizing ? 'resizing' : ''}`}
         >
           {this.props.reverseTranslationPlacement === 'top' && this.renderFooter()}
           {this.renderResponse()}

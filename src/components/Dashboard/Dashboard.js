@@ -54,6 +54,7 @@ class DashboardWithoutTheme extends React.Component {
       isDragging: false,
       isReportProblemOpen: false,
       isResizingDrilldown: false,
+      uneditedDashboardTiles: null,
     }
   }
 
@@ -116,6 +117,19 @@ class DashboardWithoutTheme extends React.Component {
     onDeleteCallback: () => {},
   }
 
+  static getDerivedStateFromProps(nextProps, prevState) {
+    if (!prevState.wasEditing && nextProps.isEditing) {
+      return {
+        wasEditing: true,
+        uneditedDashboardTiles: _cloneDeep(nextProps.tiles),
+      }
+    }
+    if (prevState.wasEditing && !nextProps.isEditing) {
+      return { wasEditing: false }
+    }
+    return null
+  }
+
   componentDidMount = () => {
     this._isMounted = true
     if (this.props.executeOnMount) {
@@ -136,7 +150,7 @@ class DashboardWithoutTheme extends React.Component {
 
     if (!prevProps.isEditing && this.props.isEditing) {
       this.refreshTileLayouts()
-      this.uneditedDashboardTiles = _cloneDeep(this.props.tiles)
+      this.setState({ uneditedDashboardTiles: _cloneDeep(this.props.tiles) })
     }
 
     if (this.props.isEditing !== prevProps.isEditing) {
@@ -523,16 +537,6 @@ class DashboardWithoutTheme extends React.Component {
       const tiles = _cloneDeep(originalTiles)
       const tileIndex = tiles.map((item) => item.i).indexOf(id)
 
-      // Always update filter state regardless of edit mode
-      if (params.tableFilters !== undefined) {
-        tiles[tileIndex] = {
-          ...tiles[tileIndex],
-          tableFilters: params.tableFilters,
-        }
-        this.debouncedOnChange(tiles, false, callbackArray)
-        return
-      }
-
       tiles[tileIndex] = {
         ...tiles[tileIndex],
         ...params,
@@ -732,11 +736,16 @@ class DashboardWithoutTheme extends React.Component {
               onUndoClick={this.undo}
               onRedoClick={this.redo}
               onRefreshClick={this.executeDashboard}
-              onSaveClick={this.props.onSaveCallback}
+              onSaveClick={() => {
+                Promise.resolve(this.props.onSaveCallback ? this.props.onSaveCallback() : undefined).then((result) => {
+                  // Keep if we need to add back in the near future
+                  // this.executeDashboard()
+                })
+              }}
               onDeleteClick={this.props.onDeleteCallback}
               onRenameClick={this.props.onRenameCallback}
               onCancelClick={() => {
-                this.debouncedOnChange(this.uneditedDashboardTiles)
+                this.debouncedOnChange(this.state.uneditedDashboardTiles)
                 this.props.stopEditingCallback()
               }}
             />

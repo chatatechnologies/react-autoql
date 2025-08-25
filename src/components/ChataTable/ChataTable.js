@@ -61,13 +61,13 @@ export default class ChataTable extends React.Component {
     this.useRemote =
       this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
         ? LOCAL_OR_REMOTE.REMOTE
-        : LOCAL_OR_REMOTE.LOCAL
+        : LOCAL_OR_REMOTE.REMOTE
     this.isLocal = this.useRemote === LOCAL_OR_REMOTE.LOCAL
     this.totalPages = this.getTotalPages(props.response)
     if (isNaN(this.totalPages) || !this.totalPages) {
       this.totalPages = 1
     }
-    this.useInfiniteScroll = props.useInfiniteScroll ?? !this.isLocal
+    this.useInfiniteScroll = props.useInfiniteScroll // ?? !this.isLocal
 
     if (!this.useInfiniteScroll) {
       if (props.pivot) {
@@ -85,7 +85,6 @@ export default class ChataTable extends React.Component {
 
     this.tableOptions = {
       selectableRowsCheck: () => false,
-      selectableCheck: () => false,
       movableColumns: true,
       initialSort: !this.useInfiniteScroll ? this.tableParams?.sort : undefined,
       initialFilter: !this.useInfiniteScroll ? this.tableParams?.filter : undefined,
@@ -172,7 +171,7 @@ export default class ChataTable extends React.Component {
     data: undefined,
     columns: undefined,
     isResizing: false,
-    useInfiniteScroll: undefined,
+    useInfiniteScroll: true,
     autoHeight: true,
     rowChangeCount: 0,
     isAnimating: false,
@@ -480,6 +479,17 @@ export default class ChataTable extends React.Component {
         this.props.onSorterCallback(sorters)
       }
       this.setLoading(false)
+    }
+  }
+
+  onDataFiltering = () => {
+    if (this._isMounted && this.state.tabulatorMounted) {
+      const headerFilters = this.ref?.tabulator?.getHeaderFilters()
+
+      if (headerFilters && !_isEqual(headerFilters, this.tableParams?.filter)) {
+        this.isFiltering = true
+        this.setLoading(true)
+      }
     }
   }
 
@@ -965,7 +975,7 @@ export default class ChataTable extends React.Component {
         headerElement.setAttribute('data-tooltip-id', `selectable-table-column-header-tooltip-${this.TABLE_ID}`)
         headerElement.setAttribute('data-tooltip-content', JSON.stringify({ ...col, index: i }))
 
-        if (!this.props.pivot && this.useInfiniteScroll) {
+        if (!this.props.pivot) {
           headerElement.addEventListener('contextmenu', (e) => this.headerContextMenuClick(e, col))
         }
       }
@@ -1444,7 +1454,7 @@ export default class ChataTable extends React.Component {
     let currentRowCount
     let totalRowCount
 
-    if (this.isLocal && this.tableParams?.filter?.length > 0) {
+    if (!this.useInfiniteScroll && this.tableParams?.filter?.length > 0) {
       totalRowCount = this.state.filterCount
     } else {
       totalRowCount = this.props.pivot ? this.props.data?.length : this.props.response?.data?.data?.count_rows
@@ -1619,7 +1629,6 @@ export default class ChataTable extends React.Component {
             ${this.state.pageLoading || !this.state.tabulatorMounted ? 'loading' : ''}
             ${getAutoQLConfig(this.props.autoQLConfig)?.enableDrilldowns ? 'supports-drilldown' : 'disable-drilldown'}
             ${this.state.isFiltering ? 'filtering' : ''}
-            ${this.props.isResizing ? 'resizing' : ''}
             ${this.props.isAnimating ? 'animating' : ''}
             ${this.useInfiniteScroll ? 'infinite' : 'limited'}
             ${this.useInfiniteScroll && this.state.isLastPage ? 'last-page' : ''}
