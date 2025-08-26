@@ -1450,8 +1450,10 @@ export default class ChataTable extends React.Component {
 
     if (!this.useInfiniteScroll && this.tableParams?.filter?.length > 0) {
       totalRowCount = this.state.filterCount
+    } else if (this.props.pivot) {
+      totalRowCount = this.props.data?.length ?? 0
     } else {
-      totalRowCount = this.props.pivot ? this.props.data?.length : this.props.response?.data?.data?.count_rows
+      totalRowCount = this.props.response?.data?.data?.count_rows ?? 0
     }
 
     // Calculate which group of 50 records user has scrolled to
@@ -1620,7 +1622,7 @@ export default class ChataTable extends React.Component {
           data-test='react-autoql-table'
           style={this.props.style}
           className={`react-autoql-table-container 
-           ${this.state.pageLoading || !this.state.tabulatorMounted ? 'loading' : ''}
+            ${this.state.pageLoading || !this.state.tabulatorMounted ? 'loading' : ''}
             ${getAutoQLConfig(this.props.autoQLConfig)?.enableDrilldowns ? 'supports-drilldown' : 'disable-drilldown'}
             ${this.state.isFiltering ? 'filtering' : ''}
             ${this.props.isAnimating ? 'animating' : ''}
