@@ -236,6 +236,7 @@ export class QueryOutput extends React.Component {
     maxHeight: PropTypes.number,
     resizeMultiplier: PropTypes.number,
     onResize: PropTypes.func,
+    localRTFilterResponse: PropTypes.shape({}),
   }
 
   static defaultProps = {
@@ -254,7 +255,7 @@ export class QueryOutput extends React.Component {
     defaultSelectedSuggestion: undefined,
     reverseTranslationPlacement: 'bottom',
     activeChartElementKey: undefined,
-    useInfiniteScroll: true,
+    useInfiniteScroll: undefined,
     isResizing: false,
     enableDynamicCharting: true,
     onNoneOfTheseClick: undefined,
@@ -293,6 +294,7 @@ export class QueryOutput extends React.Component {
     maxHeight: undefined,
     resizeMultiplier: 1.5,
     onResize: () => {},
+    localRTFilterResponse: undefined,
   }
 
   componentDidMount = () => {
@@ -538,6 +540,7 @@ export class QueryOutput extends React.Component {
     if (this.chartRef) {
       this.chartRef?.adjustChartPosition()
     }
+
     if (this.tableRef?._isMounted) {
       this.tableRef.forceUpdate()
     }
@@ -699,7 +702,7 @@ export class QueryOutput extends React.Component {
 
   hasError = (response) => {
     try {
-      const referenceIdNumber = Number(response.data?.reference_id?.split('.')[2])
+      const referenceIdNumber = Number(response?.data?.reference_id?.split('.')[2])
       if (referenceIdNumber >= 200 && referenceIdNumber < 300) {
         return false
       }
@@ -1092,6 +1095,7 @@ export class QueryOutput extends React.Component {
           pageSize: queryRequestData?.page_size,
           test: queryRequestData?.test,
           groupBys: queryRequestData?.columns,
+          query: queryRequestData?.text,
           queryID: this.props.originalQueryID,
           orders: this.formattedTableParams?.sorters,
           tableFilters: allFilters,
@@ -1470,7 +1474,47 @@ export class QueryOutput extends React.Component {
   }
 
   onTableSort = (sorters) => {
-    this.tableParams.sort = _cloneDeep(sorters)
+    try {
+      this.tableParams = this.tableParams || {}
+      this.tableParams.sort = []
+
+      if (!sorters) {
+        return
+      }
+
+      const validSorters = Array.isArray(sorters) ? sorters.filter(this.isValidSorter).map(this.formatSorter) : []
+
+      // Update table params and formatted params
+      this.tableParams.sort = validSorters
+      this.updateFormattedTableParams(validSorters)
+    } catch (error) {
+      console.error('Error in onTableSort:', error)
+      this.resetSorting()
+    }
+  }
+
+  isValidSorter = (sorter) => {
+    return sorter && typeof sorter === 'object' && sorter.field !== undefined && typeof sorter.dir === 'string'
+  }
+
+  formatSorter = (sorter) => ({
+    field: sorter.field,
+    dir: sorter.dir,
+  })
+
+  updateFormattedTableParams = (validSorters) => {
+    this.formattedTableParams = {
+      ...this.formattedTableParams,
+      sorters: validSorters,
+    }
+  }
+
+  resetSorting = () => {
+    this.tableParams.sort = []
+    this.formattedTableParams = {
+      ...this.formattedTableParams,
+      sorters: [],
+    }
   }
 
   onLegendClick = (d) => {
@@ -1870,6 +1914,9 @@ export class QueryOutput extends React.Component {
     return getSupportedDisplayTypes({
       response: this.queryResponse,
       columns: this.getColumns(),
+      dataLength: this.getDataLength(),
+      pivotDataLength: this.getPivotDataLength(),
+      isDataLimited: isDataLimited(this.queryResponse),
       allowNumericStringColumns: this.ALLOW_NUMERIC_STRING_COLUMNS,
     })
   }
@@ -2299,6 +2346,7 @@ export class QueryOutput extends React.Component {
         title: 'Month',
         name: 'Month',
         field: '0',
+        resizable: false,
         frozen: true,
         visible: true,
         is_visible: true,
@@ -2470,6 +2518,7 @@ export class QueryOutput extends React.Component {
         visible: true,
         is_visible: true,
         field: '0',
+        resizable: false,
         cssClass: 'pivot-category',
         pivot: true,
         headerFilter: false,
@@ -2746,11 +2795,11 @@ export class QueryOutput extends React.Component {
       <ErrorBoundary>
         <ChataTable
           key={this.tableID}
+          ref={(ref) => (this.tableRef = ref)}
           autoHeight={this.props.autoHeight}
           authentication={this.props.authentication}
           autoQLConfig={this.props.autoQLConfig}
           dataFormatting={this.props.dataFormatting}
-          ref={(ref) => (this.tableRef = ref)}
           columns={this.state.columns}
           response={this.queryResponse}
           updateColumns={this.updateColumns}
@@ -2785,6 +2834,7 @@ export class QueryOutput extends React.Component {
           initialTableParams={this.tableParams}
           updateColumnsAndData={this.updateColumnsAndData}
           onUpdateFilterResponse={this.props.onUpdateFilterResponse}
+          isLoadingLocal={this.props.isLoadingLocal}
         />
       </ErrorBoundary>
     )
@@ -2804,6 +2854,7 @@ export class QueryOutput extends React.Component {
         <ChataTable
           key={this.pivotTableID}
           ref={(ref) => (this.pivotTableRef = ref)}
+          autoHeight={this.props.autoHeight}
           authentication={this.props.authentication}
           autoQLConfig={this.props.autoQLConfig}
           dataFormatting={this.props.dataFormatting}
@@ -2813,9 +2864,8 @@ export class QueryOutput extends React.Component {
           isAnimating={this.props.isAnimating}
           isResizing={this.props.isResizing || this.state.isResizing}
           hidden={this.state.displayType !== 'pivot_table'}
-          useInfiniteScroll={false}
+          useInfiniteScroll={this.props.useInfiniteScroll}
           supportsDrilldowns={true}
-          autoHeight={this.props.autoHeight}
           source={this.props.source}
           scope={this.props.scope}
           tooltipID={this.props.tooltipID}
@@ -2830,6 +2880,7 @@ export class QueryOutput extends React.Component {
           pivotGroups={true}
           pivot
           queryText={this.queryResponse?.data?.data?.text}
+          isLoadingLocal={this.props.isLoadingLocal}
         />
       </ErrorBoundary>
     )
@@ -3113,20 +3164,25 @@ export class QueryOutput extends React.Component {
   }
 
   renderReverseTranslation = () => {
+    if (!this.shouldRenderReverseTranslation()) {
+      return null
+    }
+
     return (
       <ReverseTranslation
         authentication={this.props.authentication}
         onValueLabelClick={this.props.onRTValueLabelClick}
-        appliedFilters={this.getFilters()}
+        appliedFilters={this.getFilters() || []}
         isResizing={this.props.isResizing}
         queryResponse={this.queryResponse}
         tooltipID={this.props.tooltipID}
-        subjects={this.props.subjects}
+        subjects={this.props.subjects || []}
         queryOutputRef={this.responseContainerRef}
         allowColumnAddition={this.props.allowColumnAddition && this.state.displayType === 'table'}
         enableEditReverseTranslation={
-          this.props.autoQLConfig.enableEditReverseTranslation && !isDrilldown(this.queryResponse)
+          this.props.autoQLConfig?.enableEditReverseTranslation && !isDrilldown(this.queryResponse)
         }
+        localRTFilterResponse={this.props.localRTFilterResponse}
       />
     )
   }

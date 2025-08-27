@@ -156,7 +156,9 @@ export default class ChatMessage extends React.Component {
   }
 
   onUpdateFilterResponse = (localRTFilterResponse) => {
-    this.setState({ localRTFilterResponse })
+    if (this._isMounted) {
+      this.setState({ localRTFilterResponse })
+    }
   }
 
   componentDidUpdate = (prevProps, prevState, { messageWidth, shouldUpdateWidth }) => {
@@ -223,6 +225,22 @@ export default class ChatMessage extends React.Component {
     })
   }
 
+  onPNGDownloadFinish = () => {
+    const queryText = this.props.response?.data?.data?.text
+
+    this.props.addMessageToDM({
+      content: (
+        <>
+          Your PNG file has successfully been downloaded for the query{' '}
+          <b>
+            <i>{queryText}</i>
+          </b>
+          .
+        </>
+      ),
+    })
+  }
+
   isScrolledIntoView = (elem) => {
     if (this.props.scrollContainerRef) {
       const scrollTop = this.props.scrollContainerRef.getScrollTop()
@@ -268,6 +286,7 @@ export default class ChatMessage extends React.Component {
     // To update the reverse translation:
     this.forceUpdate()
   }
+
   onDisplayTypeChange = (displayType) => {
     // Reset resizable state when changing display types
     this.setState({
@@ -372,6 +391,7 @@ export default class ChatMessage extends React.Component {
             onCSVDownloadStart={this.onCSVDownloadStart}
             onCSVDownloadFinish={this.onCSVDownloadFinish}
             onCSVDownloadProgress={this.props.onCSVDownloadProgress}
+            onPNGDownloadFinish={this.onPNGDownloadFinish}
             onSuccessAlert={this.props.onSuccessAlert}
             onErrorCallback={this.props.onErrorCallback}
             enableDeleteBtn={!this.props.isIntroMessage}
@@ -405,6 +425,7 @@ export default class ChatMessage extends React.Component {
       </div>
     )
   }
+
   onQueryOutputResize = (dimensions) => {
     this.setState({
       isResizable: true,
@@ -415,6 +436,7 @@ export default class ChatMessage extends React.Component {
       this.props.onMessageResize(this.props.id)
     }
   }
+
   render = () => {
     const isResizable =
       this.props.response && !this.props.isCSVProgressMessage && !this.props.content && this.state.isResizable

@@ -37,6 +37,7 @@ let autoCompleteArray = []
 export class DashboardTile extends React.Component {
   constructor(props) {
     super(props)
+    this._isMounted = false
     this.dashboardTileTitleRef = undefined
     this.optionsToolbarRef = undefined
     this.secondOptionsToolbarRef = undefined
@@ -78,6 +79,7 @@ export class DashboardTile extends React.Component {
     // -------------------------------------------------------------------------------------
 
     this.state = {
+      tileIdx: tile.i,
       query: tile.query,
       secondQuery: tile.secondQuery || tile.query,
       title: tile.title,
@@ -121,6 +123,7 @@ export class DashboardTile extends React.Component {
     onCSVDownloadStart: PropTypes.func,
     onCSVDownloadProgress: PropTypes.func,
     onCSVDownloadFinish: PropTypes.func,
+    onPNGDownloadFinish: PropTypes.func,
     cancelQueriesOnUnmount: PropTypes.bool,
     setParamsForTile: PropTypes.func,
   }
@@ -146,6 +149,7 @@ export class DashboardTile extends React.Component {
     onCSVDownloadStart: () => {},
     onCSVDownloadProgress: () => {},
     onCSVDownloadFinish: () => {},
+    onPNGDownloadFinish: () => {},
     onTouchStart: () => {},
     onTouchEnd: () => {},
     setParamsForTile: () => {},
@@ -167,7 +171,27 @@ export class DashboardTile extends React.Component {
   }
 
   onUpdateFilterResponse = (localRTFilterResponse) => {
-    this.setState({ localRTFilterResponse })
+    if (this._isMounted) {
+      const filters = localRTFilterResponse?.data?.data?.fe_req?.filters
+
+      // Update both state and formatted params
+      this.setState({
+        localRTFilterResponse,
+        tableFilters: filters,
+        initialFormattedTableParams: {
+          ...this.state.initialFormattedTableParams,
+          filters,
+        },
+      })
+
+      // Always update parent state regardless of edit mode
+      this.props.setParamsForTile(
+        {
+          tableFilters: filters,
+        },
+        this.state.tileIdx,
+      )
+    }
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -1060,6 +1084,8 @@ export class DashboardTile extends React.Component {
       tileId: this.props.tile.i,
     })
 
+  onPNGDownloadFinish = () => this.props.onPNGDownloadFinish({ tileId: this.props.tile.i })
+
   onDrilldownStart = (activeKey) =>
     this.props.onDrilldownStart({
       tileId: this.props.tile.i,
@@ -1086,6 +1112,7 @@ export class DashboardTile extends React.Component {
             onCSVDownloadStart={this.onCSVDownloadStart}
             onCSVDownloadProgress={this.onCSVDownloadProgress}
             onCSVDownloadFinish={this.onCSVDownloadFinish}
+            onPNGDownloadFinish={this.onPNGDownloadFinish}
             shouldRender={!this.props.isDragging}
             tooltipID={this.props.tooltipID}
             popoverPositions={['top', 'left', 'bottom', 'right']}
@@ -1109,7 +1136,6 @@ export class DashboardTile extends React.Component {
 
     return (
       <QueryOutput
-        key={`${this.props.tile?.key}${this.props.isEditing ? '-editing' : '-notediting'}`}
         authentication={this.props.authentication}
         autoQLConfig={this.props.autoQLConfig}
         dataFormatting={this.props.dataFormatting}
@@ -1132,6 +1158,7 @@ export class DashboardTile extends React.Component {
         height='100%'
         width='100%'
         onUpdateFilterResponse={this.onUpdateFilterResponse}
+        localRTFilterResponse={this.state.localRTFilterResponse}
         {...queryOutputProps}
       />
     )
@@ -1181,7 +1208,7 @@ export class DashboardTile extends React.Component {
         ref: (ref) => ref && ref !== this.state.responseRef && this._isMounted && this.setState({ responseRef: ref }),
         optionsToolbarRef: this.optionsToolbarRef,
         vizToolbarRef: this.vizToolbarRef,
-        key: `dashboard-tile-query-top-${this.FIRST_QUERY_RESPONSE_KEY}`,
+        key: `dashboard-tile-query-top-${this.FIRST_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
         initialDisplayType,
         queryResponse: this.props.tile?.queryResponse,
         initialTableConfigs: this.props.tile.dataConfig,
@@ -1248,7 +1275,7 @@ export class DashboardTile extends React.Component {
       isExecuting,
       isExecuted,
       queryOutputProps: {
-        key: `dashboard-tile-query-bottom-${this.SECOND_QUERY_RESPONSE_KEY}`,
+        key: `dashboard-tile-query-bottom-${this.SECOND_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
         ref: (ref) =>
           ref && ref !== this.state.secondResponseRef && this._isMounted && this.setState({ secondResponseRef: ref }),
         optionsToolbarRef: this.secondOptionsToolbarRef,

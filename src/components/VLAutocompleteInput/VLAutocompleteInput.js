@@ -40,6 +40,7 @@ export default class VLAutocompleteInput extends React.Component {
     column: PropTypes.string,
     context: PropTypes.string,
     onChange: PropTypes.func,
+    inputProps: PropTypes.shape({}),
   }
 
   static defaultProps = {
@@ -47,7 +48,8 @@ export default class VLAutocompleteInput extends React.Component {
     popoverPosition: 'bottom',
     column: undefined,
     context: undefined,
-    onChange: () => { },
+    onChange: () => {},
+    inputProps: {},
   }
 
   componentDidMount = () => {
@@ -220,7 +222,7 @@ export default class VLAutocompleteInput extends React.Component {
     }
   }
 
-  onSuggestionsClearRequested = () => { }
+  onSuggestionsClearRequested = () => {}
 
   createNewFilterFromSuggestion = (suggestion) => {
     let filterType = 'include'
@@ -409,6 +411,7 @@ export default class VLAutocompleteInput extends React.Component {
               className: 'react-autoql-vl-autocomplete-input',
               id: 'react-autoql-filter-menu-input',
               onFocus: this.onInputFocus,
+              ...this.props.inputProps,
             }}
           />
         </span>

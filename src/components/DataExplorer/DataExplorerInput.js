@@ -12,6 +12,7 @@ import {
   animateInputText,
   DataExplorerTypes,
   parseJwt,
+  normalizeString,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -193,9 +194,7 @@ export default class DataExplorerInput extends React.Component {
   }
 
   submitRawText = (text = '', skipQueryValidation) => {
-    const subject = this.state.allSubjects.find(
-      (subj) => subj?.displayName?.toLowerCase().trim() === text?.toLowerCase().trim(),
-    )
+    const subject = this.state.allSubjects.find((subj) => normalizeString(subj?.displayName) === normalizeString(text))
 
     if (subject) {
       this.selectSubject(subject)
@@ -203,7 +202,7 @@ export default class DataExplorerInput extends React.Component {
     }
 
     const vl = this.state.suggestions.find(
-      (sugg) => sugg?.valueLabel?.format_txt?.toLowerCase().trim() === text?.toLowerCase().trim(),
+      (sugg) => normalizeString(sugg?.valueLabel?.format_txt) === normalizeString(text),
     )
 
     if (vl) {

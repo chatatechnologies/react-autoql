@@ -11,6 +11,7 @@ import {
   authenticationDefault,
   ColumnTypes,
   titlelizeString,
+  normalizeString,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -119,6 +120,8 @@ const ReverseTranslation = ({
     let contextChunk = null
     let contextChunkIndex = null
 
+    let cancelled = false
+
     if (rt?.length) {
       const validatedInterpretationArray = _cloneDeep(rt)
 
@@ -126,6 +129,7 @@ const ReverseTranslation = ({
       const context = subjects?.find((subject) => subject?.context === primaryContextName) || {}
 
       const valueLabelValidationPromises = rt.map(async (chunk, i) => {
+        if (cancelled) return
         if (chunk.c_type === 'VALUE_LABEL') {
           try {
             const response = await fetchVLAutocomplete({
@@ -139,7 +143,8 @@ const ReverseTranslation = ({
 
               const isLockedFilter = !!lockedFilters.find(
                 (filter) =>
-                  filter?.toLowerCase()?.trim() === validatedInterpretationArray[i].eng?.toLowerCase()?.trim(),
+                  normalizeString(filter?.value) === normalizeString(validatedInterpretationArray[i].eng) || // session filter returns an object with value
+                  normalizeString(filter) === normalizeString(validatedInterpretationArray[i].eng), // persistent filter returns a string in an array
               )
 
               if (isLockedFilter) {
@@ -196,6 +201,10 @@ const ReverseTranslation = ({
         setReverseTranslationArray([...validatedInterpretationArray])
       }
     }
+
+    return () => {
+      cancelled = true
+    }
   }
 
   function removeBracketsAndParenthesesAndCharacterBetween(str) {
@@ -244,7 +253,7 @@ const ReverseTranslation = ({
     try {
       await validateAndUpdateReverseTranslation(rt)
     } catch (error) {
-      console.error(error)
+      console.error('Prerequisites not met to render Reverse Translation')
     } finally {
       setIsLoading(false)
     }
@@ -252,6 +261,8 @@ const ReverseTranslation = ({
 
   useEffect(() => {
     isMounted.current = true
+
+    let cancelled = false
 
     if (onValueLabelClick && reverseTranslationArray?.length) {
       executePrerequisites(reverseTranslationArray)
@@ -261,32 +272,23 @@ const ReverseTranslation = ({
 
     return () => {
       isMounted.current = false
+      cancelled = true
     }
   }, [])
 
   useEffect(() => {
     const newParsedInterpretation = queryResponse?.data?.data?.parsed_interpretation
-    if (
-      initialParsedInterpretations?.current?.length &&
-      !deepEqual(newParsedInterpretation, initialParsedInterpretations?.current)
-    ) {
-      initialParsedInterpretations.current = newParsedInterpretation
-      const newArray = constructRTArray(newParsedInterpretation)
-      executePrerequisites(newArray)
-    }
+    initialParsedInterpretations.current = newParsedInterpretation
+    const newArray = constructRTArray(newParsedInterpretation)
+    executePrerequisites(newArray)
   }, [queryResponse?.data?.data?.parsed_interpretation])
 
   // todo: see if we can update and remove this useEffect and use queryRepsonse instead
   useEffect(() => {
     const newParsedInterpretation = localRTFilterResponse?.data?.data?.parsed_interpretation
-    if (
-      initialParsedInterpretations?.current?.length &&
-      !deepEqual(newParsedInterpretation, initialParsedInterpretations?.current)
-    ) {
-      initialParsedInterpretations.current = newParsedInterpretation
-      const newArray = constructRTArray(newParsedInterpretation)
-      executePrerequisites(newArray)
-    }
+    initialParsedInterpretations.current = newParsedInterpretation
+    const newArray = constructRTArray(newParsedInterpretation)
+    executePrerequisites(newArray)
   }, [localRTFilterResponse?.data?.data?.parsed_interpretation])
 
   useEffect(() => {
