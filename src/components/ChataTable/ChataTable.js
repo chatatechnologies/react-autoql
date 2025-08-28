@@ -46,7 +46,7 @@ import './ChataTable.scss'
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
 import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
 
-export default class ChataTable extends React.Component {
+class ChataTable extends React.Component {
   constructor(props) {
     super(props)
 
@@ -197,6 +197,14 @@ export default class ChataTable extends React.Component {
     scope: undefined,
   }
 
+  // Expose this method for parent components via ref
+  hideAllHeaderFilters = () => {
+    // Only hide the filter UI, do not clear filter values
+    if (this._isMounted) {
+      this.setState({ isFiltering: false })
+    }
+  }
+
   componentDidMount = () => {
     this._isMounted = true
     if (!this.props.autoHeight) {
@@ -265,6 +273,10 @@ export default class ChataTable extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState, { shouldSetTableHeight, newTableHeight }) => {
+    // Hide header filters if not in edit mode
+    if (this.props.isEditing === false) {
+      this.hideAllHeaderFilters()
+    }
     if (shouldSetTableHeight) {
       this.setTableHeight(newTableHeight)
     }
@@ -1038,6 +1050,26 @@ export default class ChataTable extends React.Component {
     }
   }
 
+  // New method: set header filters and UI to original values
+  setHeaderFiltersToOriginal = (filters = []) => {
+    if (this.ref?.tabulator) {
+      // Clear all filters first
+      this.ref.tabulator.clearHeaderFilter()
+      // Set each filter value
+      filters.forEach((filter) => {
+        this.ref.tabulator.setHeaderFilterValue(filter.field, filter.value)
+        // Also set the input value for the header filter UI
+        const inputElement = document.querySelector(
+          `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-content input`,
+        )
+        if (inputElement) {
+          inputElement.value = filter.value || ''
+          inputElement.title = filter.value || ''
+        }
+      })
+    }
+  }
+
   onDateRangeSelectionApplied = () => {
     this.setState({ datePickerColumn: undefined })
     const column = this.state.datePickerColumn
@@ -1685,3 +1717,5 @@ export default class ChataTable extends React.Component {
     )
   }
 }
+
+export default React.forwardRef((props, ref) => <ChataTable {...props} ref={ref} />)

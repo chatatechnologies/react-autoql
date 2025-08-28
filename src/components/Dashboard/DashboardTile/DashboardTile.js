@@ -164,10 +164,10 @@ export class DashboardTile extends React.Component {
       return false
     }
 
-    const thisPropsFiltered = this.getFilteredProps(this.props)
-    const nextPropsFiltered = this.getFilteredProps(nextProps)
-
-    return !deepEqual(thisPropsFiltered, nextPropsFiltered) || !deepEqual(this.state, nextState)
+    return (
+      !deepEqual(this.getFilteredProps(this.props), this.getFilteredProps(nextProps)) ||
+      !deepEqual(this.state, nextState)
+    )
   }
 
   onUpdateFilterResponse = (localRTFilterResponse) => {
@@ -238,8 +238,13 @@ export class DashboardTile extends React.Component {
   }
 
   refreshLayout = () => {
-    this.state.responseRef?.refreshLayout()
-    this.state.secondResponseRef?.refreshLayout()
+    // Only refresh if refs are mounted
+    if (this.state.responseRef?._isMounted && typeof this.state.responseRef.refreshLayout === 'function') {
+      this.state.responseRef.refreshLayout()
+    }
+    if (this.state.secondResponseRef?._isMounted && typeof this.state.secondResponseRef.refreshLayout === 'function') {
+      this.state.secondResponseRef.refreshLayout()
+    }
   }
 
   cancelAllQueries = () => {
@@ -300,7 +305,14 @@ export class DashboardTile extends React.Component {
           queryResponse: response,
           defaultSelectedSuggestion: undefined,
         },
-        this.setTopExecuted,
+        () => {
+          this.setTopExecuted()
+          // After save, close filters in OptionsToolbar
+          if (this.optionsToolbarRef && typeof this.optionsToolbarRef.closeFilters === 'function') {
+            this.state.responseRef?.tableRef?.hideAllHeaderFilters()
+            this.optionsToolbarRef.closeFilters()
+          }
+        },
       )
       return response
     } else {
@@ -1136,7 +1148,7 @@ export class DashboardTile extends React.Component {
 
     return (
       <QueryOutput
-        key={`${this.props.tile?.key}${this.props.isEditing ? '-editing' : '-notediting'}`}
+        // key={`${this.props.tile?.key}${this.props.isEditing ? '-editing' : '-notediting'}`}
         authentication={this.props.authentication}
         autoQLConfig={this.props.autoQLConfig}
         dataFormatting={this.props.dataFormatting}
