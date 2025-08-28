@@ -762,7 +762,41 @@ class DashboardWithoutTheme extends React.Component {
               onDeleteClick={this.props.onDeleteCallback}
               onRenameClick={this.props.onRenameCallback}
               onCancelClick={() => {
-                this.debouncedOnChange(this.state.uneditedDashboardTiles)
+                // Restore displayType for each tile from uneditedDashboardTiles
+                const restoredTiles = this.state.uneditedDashboardTiles?.map((originalTile) => {
+                  const currentTile = this.getMostRecentTiles().find((t) => t.key === originalTile.key)
+                  if (!currentTile) return originalTile
+                  // Overwrite displayType and related properties
+                  return {
+                    ...currentTile,
+                    displayType: originalTile.displayType,
+                    secondDisplayType: originalTile.secondDisplayType,
+                    secondDisplayPercentage: originalTile.secondDisplayPercentage,
+                  }
+                })
+                this.debouncedOnChange(restoredTiles || this.state.uneditedDashboardTiles, true, [
+                  () => {
+                    for (const key in this.tileRefs) {
+                      const tileRef = this.tileRefs[key]
+                      if (tileRef && tileRef.state && tileRef.state.responseRef && tileRef.state.responseRef.tableRef) {
+                        // Restore display type
+                        if (typeof tileRef.state.responseRef.tableRef.restoreOriginalDisplayType === 'function') {
+                          tileRef.state.responseRef.tableRef.restoreOriginalDisplayType()
+                        }
+                        // Restore header filters to original values
+                        if (typeof tileRef.state.responseRef.tableRef.setHeaderFiltersToOriginal === 'function') {
+                          tileRef.state.responseRef.tableRef.setHeaderFiltersToOriginal(
+                            tileRef.state.responseRef.tableRef.originalFilters,
+                          )
+                        }
+                        // Close filter UI
+                        if (typeof tileRef.state.responseRef.tableRef.hideAllHeaderFilters === 'function') {
+                          tileRef.state.responseRef.tableRef.hideAllHeaderFilters()
+                        }
+                      }
+                    }
+                  },
+                ])
                 this.props.stopEditingCallback()
               }}
             />

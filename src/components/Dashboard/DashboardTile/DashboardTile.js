@@ -164,10 +164,10 @@ export class DashboardTile extends React.Component {
       return false
     }
 
-    return (
-      !deepEqual(this.getFilteredProps(this.props), this.getFilteredProps(nextProps)) ||
-      !deepEqual(this.state, nextState)
-    )
+    const thisPropsFiltered = this.getFilteredProps(this.props)
+    const nextPropsFiltered = this.getFilteredProps(nextProps)
+
+    return !deepEqual(thisPropsFiltered, nextPropsFiltered) || !deepEqual(this.state, nextState)
   }
 
   onUpdateFilterResponse = (localRTFilterResponse) => {
@@ -239,12 +239,12 @@ export class DashboardTile extends React.Component {
 
   refreshLayout = () => {
     // Only refresh if refs are mounted
-    if (this.state.responseRef?._isMounted && typeof this.state.responseRef.refreshLayout === 'function') {
-      this.state.responseRef.refreshLayout()
-    }
-    if (this.state.secondResponseRef?._isMounted && typeof this.state.secondResponseRef.refreshLayout === 'function') {
-      this.state.secondResponseRef.refreshLayout()
-    }
+    // if (this.state.responseRef?._isMounted && typeof this.state.responseRef.refreshLayout === 'function') {
+    this.state.responseRef.refreshLayout()
+    // }
+    // if (this.state.secondResponseRef?._isMounted && typeof this.state.secondResponseRef.refreshLayout === 'function') {
+    this.state.secondResponseRef.refreshLayout()
+    // }
   }
 
   cancelAllQueries = () => {
@@ -305,14 +305,7 @@ export class DashboardTile extends React.Component {
           queryResponse: response,
           defaultSelectedSuggestion: undefined,
         },
-        () => {
-          this.setTopExecuted()
-          // After save, close filters in OptionsToolbar
-          if (this.optionsToolbarRef && typeof this.optionsToolbarRef.closeFilters === 'function') {
-            this.state.responseRef?.tableRef?.hideAllHeaderFilters()
-            this.optionsToolbarRef.closeFilters()
-          }
-        },
+        this.setTopExecuted,
       )
       return response
     } else {
@@ -1221,7 +1214,7 @@ export class DashboardTile extends React.Component {
         ref: (ref) => ref && ref !== this.state.responseRef && this._isMounted && this.setState({ responseRef: ref }),
         optionsToolbarRef: this.optionsToolbarRef,
         vizToolbarRef: this.vizToolbarRef,
-        key: `dashboard-tile-query-top-${this.FIRST_QUERY_RESPONSE_KEY}`,
+        key: `dashboard-tile-query-top-${this.FIRST_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
         initialDisplayType,
         queryResponse: this.props.tile?.queryResponse,
         initialTableConfigs: this.props.tile.dataConfig,
@@ -1288,7 +1281,7 @@ export class DashboardTile extends React.Component {
       isExecuting,
       isExecuted,
       queryOutputProps: {
-        key: `dashboard-tile-query-bottom-${this.SECOND_QUERY_RESPONSE_KEY}`,
+        key: `dashboard-tile-query-bottom-${this.SECOND_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
         ref: (ref) =>
           ref && ref !== this.state.secondResponseRef && this._isMounted && this.setState({ secondResponseRef: ref }),
         optionsToolbarRef: this.secondOptionsToolbarRef,

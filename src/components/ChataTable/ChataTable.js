@@ -47,6 +47,30 @@ import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator styleshe
 import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
 
 class ChataTable extends React.Component {
+  // Restore display type to original if changed
+  restoreOriginalDisplayType = () => {
+    if (
+      typeof this.onDisplayTypeChange === 'function' &&
+      this.originalDisplayType &&
+      this.props.displayType !== this.originalDisplayType
+    ) {
+      this.onDisplayTypeChange(this.originalDisplayType)
+    }
+    if (
+      typeof this.onSecondDisplayTypeChange === 'function' &&
+      this.originalSecondDisplayType &&
+      this.props.secondDisplayType !== this.originalSecondDisplayType
+    ) {
+      this.onSecondDisplayTypeChange(this.originalSecondDisplayType)
+    }
+    if (
+      typeof this.onSecondDisplayPercentageChange === 'function' &&
+      this.originalSecondDisplayPercentage !== undefined &&
+      this.props.secondDisplayPercentage !== this.originalSecondDisplayPercentage
+    ) {
+      this.onSecondDisplayPercentageChange(this.originalSecondDisplayPercentage)
+    }
+  }
   constructor(props) {
     super(props)
 
@@ -67,7 +91,7 @@ class ChataTable extends React.Component {
     if (isNaN(this.totalPages) || !this.totalPages) {
       this.totalPages = 1
     }
-    this.useInfiniteScroll = props.useInfiniteScroll // ?? !this.isLocal
+    this.useInfiniteScroll = props.useInfiniteScroll
 
     if (!this.useInfiniteScroll) {
       if (props.pivot) {
@@ -82,6 +106,11 @@ class ChataTable extends React.Component {
       sort: props?.initialTableParams?.sort || [],
       page: 1,
     }
+
+    this.originalFilters = []
+    this.originalDisplayType = props?.displayType
+    this.originalSecondDisplayType = props?.secondDisplayType
+    this.originalSecondDisplayPercentage = props?.secondDisplayPercentage
 
     this.tableOptions = {
       selectableRowsCheck: () => false,
@@ -199,10 +228,7 @@ class ChataTable extends React.Component {
 
   // Expose this method for parent components via ref
   hideAllHeaderFilters = () => {
-    // Only hide the filter UI, do not clear filter values
-    if (this._isMounted) {
-      this.setState({ isFiltering: false })
-    }
+    if (this._isMounted) this.setState({ isFiltering: false })
   }
 
   componentDidMount = () => {
@@ -590,6 +616,7 @@ class ChataTable extends React.Component {
       if (this.props.keepScrolledRight) {
         this.scrollToRight()
       }
+      this.storeOriginalFilters()
     }
   }
 
@@ -1036,7 +1063,7 @@ class ChataTable extends React.Component {
     const filterValues = newFilters || this.tableParams?.filter
 
     if (filterValues) {
-      filterValues.forEach((filter, i) => {
+      filterValues.forEach((filter) => {
         try {
           this.ref?.tabulator?.setHeaderFilterValue(filter.field, filter.value)
           if (!this.useInfiniteScroll) {
@@ -1050,14 +1077,29 @@ class ChataTable extends React.Component {
     }
   }
 
+  storeOriginalFilters = () => {
+    this.originalFilters = this.ref?.tabulator?.getHeaderFilters?.() || []
+    this.originalSorters = this.ref?.tabulator?.getSorters?.() || []
+  }
+
+  restoreOriginalFilters = () => {
+    if (this.originalFilters) {
+      this.setFilters(this.originalFilters)
+    }
+    if (this.originalSorters) {
+      this.setSorters(this.originalSorters)
+    }
+    this.hideAllHeaderFilters()
+  }
+
   // New method: set header filters and UI to original values
   setHeaderFiltersToOriginal = (filters = []) => {
     if (this.ref?.tabulator) {
-      // Clear all filters first
-      this.ref.tabulator.clearHeaderFilter()
-      // Set each filter value
       filters.forEach((filter) => {
         this.ref.tabulator.setHeaderFilterValue(filter.field, filter.value)
+        if (!this.useInfiniteScroll) {
+          this.ref.tabulator.setFilter(filter.field, filter.type, filter.value)
+        }
         // Also set the input value for the header filter UI
         const inputElement = document.querySelector(
           `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-content input`,
