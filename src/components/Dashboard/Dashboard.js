@@ -768,6 +768,7 @@ class DashboardWithoutTheme extends React.Component {
             activeDrilldownChartElementKey={this.state.activeDrilldownChartElementKey}
             isAnimating={this.state.isAnimatingModal}
             tooltipID={this.TOOLTIP_ID}
+            chartTooltipID={this.CHART_TOOLTIP_ID}
             showQueryInterpretation={this.props.isEditing}
             isDrilldownRunning={this.state.isDrilldownRunning}
             onErrorCallback={this.props.onErrorCallback}
@@ -780,6 +781,7 @@ class DashboardWithoutTheme extends React.Component {
             source={this.SOURCE}
           />
           <Tooltip tooltipId={this.TOOLTIP_ID} />
+          <Tooltip tooltipId={this.CHART_TOOLTIP_ID} className='react-autoql-chart-tooltip' delayShow={0} />
         </>
       </ErrorBoundary>
     )

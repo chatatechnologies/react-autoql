@@ -1149,6 +1149,7 @@ export class DashboardTile extends React.Component {
         showQueryInterpretation={this.props.isEditing}
         reverseTranslationPlacement='bottom'
         tooltipID={this.props.tooltipID}
+        chartTooltipID={this.props.chartTooltipID}
         shouldRender={!this.props.isDragging}
         allowColumnAddition={this.props.isEditing}
         enableTableContextMenu={this.props.isEditing}
