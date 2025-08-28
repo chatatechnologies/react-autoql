@@ -1462,18 +1462,19 @@ export default class ChataTable extends React.Component {
       totalRowCount = this.props.response?.data?.data?.count_rows ?? this.props.data?.length ?? 0
     }
 
-    // Calculate current row count based on scroll position
+    // Calculate which group of 50 records user has scrolled to
     if (this.tableContainer) {
-      const tableHolder = this.tableContainer.querySelector('.tabulator-tableholder')
+      const tableHolder = this.tableContainer?.querySelector('.tabulator-tableholder')
       const scrollTop = tableHolder?.scrollTop || 0
-      const rowHeight = this.tableContainer.querySelector('.tabulator-row')?.offsetHeight || 0
+      const rowHeight = this.tableContainer?.querySelector('.tabulator-row')?.offsetHeight || 0
 
-      if (rowHeight > 0 && totalRowCount > 0) {
-        currentRowCount = Math.min(Math.ceil(scrollTop / rowHeight / 50) * 50 + 50, totalRowCount)
+      if (rowHeight > 0) {
+        const visibleRows = Math.ceil(scrollTop / rowHeight)
+        currentRowCount = Math.min((Math.floor(visibleRows / 50) + 1) * 50, totalRowCount)
       }
     }
 
-    if (!totalRowCount || !currentRowCount || totalRowCount <= 0) {
+    if (!totalRowCount || !currentRowCount) {
       return null
     }
 
