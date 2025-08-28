@@ -336,13 +336,12 @@ export class QueryOutput extends React.Component {
       const newState = {}
       let shouldForceUpdate = false
 
-        // Reset displayType if initialDisplayType prop changes
-        if (this.props.initialDisplayType !== prevProps.initialDisplayType) {
-          const newDisplayType = this.getDisplayTypeFromInitial(this.props)
-          if (newDisplayType !== this.state.displayType) {
-            this.setState({ displayType: newDisplayType })
-          }
+      if (this.props.initialDisplayType !== prevProps.initialDisplayType) {
+        const newDisplayType = this.getDisplayTypeFromInitial(this.props)
+        if (newDisplayType !== this.state.displayType) {
+          this.setState({ displayType: newDisplayType })
         }
+      }
 
       if (this.state.displayType !== prevState.displayType) {
         const isChart = isChartType(this.state.displayType)
@@ -544,18 +543,24 @@ export class QueryOutput extends React.Component {
     document.body.style.msUserSelect = ''
   }
 
+  refreshLayoutTimeout = null
   refreshLayout = () => {
-    if (this.chartRef) {
-      this.chartRef?.adjustChartPosition()
+    if (this.refreshLayoutTimeout) {
+      clearTimeout(this.refreshLayoutTimeout)
     }
-
-    if (this.tableRef?._isMounted) {
-      this.tableRef.forceUpdate()
-    }
-
-    if (this.pivotTableRef?._isMounted) {
-      this.pivotTableRef.forceUpdate()
-    }
+    this.refreshLayoutTimeout = setTimeout(() => {
+      window.requestAnimationFrame(() => {
+        if (this.chartRef) {
+          this.chartRef?.adjustChartPosition()
+        }
+        if (this.tableRef?._isMounted) {
+          this.tableRef.forceUpdate()
+        }
+        if (this.pivotTableRef?._isMounted) {
+          this.pivotTableRef.forceUpdate()
+        }
+      })
+    }, 50)
   }
 
   onTableConfigChange = (initialized = true) => {
@@ -3172,27 +3177,46 @@ export class QueryOutput extends React.Component {
   }
 
   renderReverseTranslation = () => {
-    if (!this.shouldRenderReverseTranslation()) {
-      return null
+    // Simplified guard for required props
+    const valid =
+      this.shouldRenderReverseTranslation() &&
+      this.queryResponse?.data?.data &&
+      this.props.authentication &&
+      Array.isArray(this.props.subjects) &&
+      Array.isArray(this.getFilters()) &&
+      this.responseContainerRef &&
+      typeof this.state.displayType === 'string' &&
+      typeof this.props.autoQLConfig?.enableEditReverseTranslation === 'boolean'
+
+    if (!valid) {
+      return <div className='reverse-translation-error-message'>Reverse Translation prerequisites not met.</div>
     }
 
-    return (
-      <ReverseTranslation
-        authentication={this.props.authentication}
-        onValueLabelClick={this.props.onRTValueLabelClick}
-        appliedFilters={this.getFilters() || []}
-        isResizing={this.props.isResizing}
-        queryResponse={this.queryResponse}
-        tooltipID={this.props.tooltipID}
-        subjects={this.props.subjects || []}
-        queryOutputRef={this.responseContainerRef}
-        allowColumnAddition={this.props.allowColumnAddition && this.state.displayType === 'table'}
-        enableEditReverseTranslation={
-          this.props.autoQLConfig?.enableEditReverseTranslation && !isDrilldown(this.queryResponse)
-        }
-        localRTFilterResponse={this.props.localRTFilterResponse}
-      />
-    )
+    try {
+      return (
+        <ReverseTranslation
+          authentication={this.props.authentication}
+          onValueLabelClick={this.props.onRTValueLabelClick}
+          appliedFilters={this.getFilters() || []}
+          isResizing={this.props.isResizing}
+          queryResponse={this.queryResponse}
+          tooltipID={this.props.tooltipID}
+          subjects={this.props.subjects || []}
+          queryOutputRef={this.responseContainerRef}
+          allowColumnAddition={this.props.allowColumnAddition && this.state.displayType === 'table'}
+          enableEditReverseTranslation={
+            this.props.autoQLConfig?.enableEditReverseTranslation && !isDrilldown(this.queryResponse)
+          }
+          localRTFilterResponse={this.props.localRTFilterResponse}
+        />
+      )
+    } catch (error) {
+      return (
+        <div className='reverse-translation-error-message'>
+          Error rendering Reverse Translation: {error?.message || 'Unknown error'}
+        </div>
+      )
+    }
   }
 
   renderFooter = () => {
