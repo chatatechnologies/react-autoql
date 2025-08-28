@@ -776,6 +776,20 @@ export class DashboardTile extends React.Component {
   onDisplayTypeChange = (displayType) => this.debouncedSetParamsForTile({ displayType })
   onBucketSizeChange = (bucketSize) => this.debouncedSetParamsForTile({ bucketSize })
 
+  onTableParamsChange = (params, formattedParams) => {
+    this.debouncedSetParamsForTile({
+      tableFilters: formattedParams.filters,
+      orders: formattedParams.sorters,
+    })
+  }
+
+  onSecondTableParamsChange = (params, formattedParams) => {
+    this.debouncedSetParamsForTile({
+      secondTableFilters: formattedParams.filters,
+      secondOrders: formattedParams.sorters,
+    })
+  }
+
   onColumnChange = (
     displayOverrides,
     columns,
@@ -1118,7 +1132,6 @@ export class DashboardTile extends React.Component {
             popoverPositions={['top', 'left', 'bottom', 'right']}
             customOptions={this.props.customToolbarOptions}
             popoverAlign='end'
-            showFilterBadge={this.state.responseRef?.tableRef?.getTabulatorHeaderFilters()?.length > 0}
             {...optionsToolbarProps}
           />
         </div>
@@ -1149,6 +1162,7 @@ export class DashboardTile extends React.Component {
         showQueryInterpretation={this.props.isEditing}
         reverseTranslationPlacement='bottom'
         tooltipID={this.props.tooltipID}
+        chartTooltipID={this.props.chartTooltipID}
         shouldRender={!this.props.isDragging}
         allowColumnAddition={this.props.isEditing}
         enableTableContextMenu={this.props.isEditing}
@@ -1214,6 +1228,7 @@ export class DashboardTile extends React.Component {
         initialTableConfigs: this.props.tile.dataConfig,
         initialAggConfig: this.props.tile.aggConfig,
         onTableConfigChange: this.onDataConfigChange,
+        onTableParamsChange: this.onTableParamsChange,
         onAggConfigChange: this.onAggConfigChange,
         onColumnChange: this.onColumnChange,
         queryValidationSelections: this.props.tile.queryValidationSelections,
@@ -1230,15 +1245,21 @@ export class DashboardTile extends React.Component {
         onPageSizeChange: this.onPageSizeChange,
         onBucketSizeChange: this.onBucketSizeChange,
         bucketSize: this.props.tile.bucketSize,
-        initialFormattedTableParams: this.state.initialFormattedTableParams,
+        initialFormattedTableParams: {
+          filters: this.props.tile?.tableFilters,
+          sorters: this.props.tile?.orders,
+          sessionFilters: this.props.tile?.filters,
+        },
       },
       vizToolbarProps: {
         ref: (r) => (this.vizToolbarRef = r),
         responseRef: this.state.responseRef,
+        key: `dashboard-tile-viz-toolbar-${this.FIRST_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
       },
       optionsToolbarProps: {
         ref: (r) => (this.optionsToolbarRef = r),
         responseRef: this.state.responseRef,
+        key: `dashboard-tile-options-toolbar-${this.FIRST_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
       },
     })
   }
@@ -1285,6 +1306,7 @@ export class DashboardTile extends React.Component {
         initialTableConfigs: this.props.tile.secondDataConfig,
         initialAggConfig: this.props.tile.secondAggConfig,
         onTableConfigChange: this.onSecondDataConfigChange,
+        onTableParamsChange: this.onSecondTableParamsChange,
         onAggConfigChange: this.onSecondAggConfigChange,
         queryValidationSelections: this.props.tile.secondQueryValidationSelections,
         onSuggestionClick: this.onSecondSuggestionClick,
@@ -1308,15 +1330,23 @@ export class DashboardTile extends React.Component {
         onBucketSizeChange: this.onSecondBucketSizeChange,
         onColumnChange: this.onSecondColumnChange,
         bucketSize: this.props.tile.secondBucketSize,
-        initialFormattedTableParams: this.state.initialSecondFormattedTableParams,
+        initialFormattedTableParams: {
+          filters: this.props.tile?.secondTableFilters,
+          sorters: this.props.tile?.secondOrders,
+          sessionFilters: this.props.tile?.secondFilters,
+        },
       },
       vizToolbarProps: {
         ref: (r) => (this.secondVizToolbarRef = r),
         responseRef: this.state.secondResponseRef,
+        key: `dashboard-tile-viz-toolbar-${this.SECOND_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
       },
       optionsToolbarProps: {
         ref: (r) => (this.secondOptionsToolbarRef = r),
         responseRef: this.state.secondResponseRef,
+        key: `dashboard-tile-options-toolbar-${this.SECOND_QUERY_RESPONSE_KEY}${
+          this.props.isEditing ? '-editing' : ''
+        }`,
       },
       isSecondHalf: true,
     })
