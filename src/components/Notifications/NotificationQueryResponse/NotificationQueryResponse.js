@@ -112,7 +112,6 @@ export default class NotificationQueryResponse extends React.Component {
             popoverPositions={['top', 'left', 'bottom', 'right']}
             enableFilterBtn={this.props.enableFilterBtn}
             popoverAlign='end'
-            showFilterBadge={this.state.outputRef?.tableRef?.getTabulatorHeaderFilters()?.length > 0}
           />
         </div>
       </div>

@@ -401,7 +401,6 @@ export default class ChatMessage extends React.Component {
             createDataAlertCallback={this.props.createDataAlertCallback}
             customOptions={this.props.customToolbarOptions}
             popoverAlign='end'
-            showFilterBadge={this.responseRef?.tableRef?.getTabulatorHeaderFilters()?.length > 0}
             onExpandClick={this.toggleQueryOutputModal}
           />
         ) : null}

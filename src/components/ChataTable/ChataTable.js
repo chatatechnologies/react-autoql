@@ -42,9 +42,10 @@ import { DataLimitWarning } from '../DataLimitWarning'
 import { columnOptionsList } from './tabulatorConstants'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { DATASET_TOO_LARGE, TABULATOR_LOCAL_ROW_LIMIT, LOCAL_OR_REMOTE } from '../../js/Constants'
+import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
+
 import './ChataTable.scss'
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
-import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
 
 export default class ChataTable extends React.Component {
   constructor(props) {
@@ -58,16 +59,11 @@ export default class ChataTable extends React.Component {
     this.filterCount = 0
     this.isSorting = false
     this.pageSize = props.pageSize ?? 50
-    this.useRemote =
-      this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
-        ? LOCAL_OR_REMOTE.REMOTE
-        : LOCAL_OR_REMOTE.REMOTE
-    this.isLocal = this.useRemote === LOCAL_OR_REMOTE.LOCAL
     this.totalPages = this.getTotalPages(props.response)
     if (isNaN(this.totalPages) || !this.totalPages) {
       this.totalPages = 1
     }
-    this.useInfiniteScroll = props.useInfiniteScroll // ?? !this.isLocal
+    this.useInfiniteScroll = props.useInfiniteScroll
 
     if (!this.useInfiniteScroll) {
       if (props.pivot) {
@@ -289,6 +285,10 @@ export default class ChataTable extends React.Component {
       this.setFilters()
       this.setSorters()
       this.clearLoadingIndicators()
+    }
+
+    if (this.tabulatorMounted && !prevState.tabulatorJustMounted) {
+      this.setFilterBadgeClasses()
     }
 
     if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
@@ -539,9 +539,10 @@ export default class ChataTable extends React.Component {
       }, 0)
     }
 
-    if (this.isLocal && !this.pivot) {
+    if (!this.props.useInfiniteScroll && !this.pivot) {
       this.getRTForRemoteFilterAndSort()
     }
+
     this.setFilterBadgeClasses()
   }
 
@@ -1042,6 +1043,8 @@ export default class ChataTable extends React.Component {
         }
       })
     }
+
+    this.setFilterBadgeClasses()
   }
 
   onDateRangeSelectionApplied = () => {
