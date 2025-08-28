@@ -189,6 +189,7 @@ export default class ChataTable extends React.Component {
     onCustomColumnChange: () => {},
     updateColumnsAndData: () => {},
     onUpdateFilterResponse: () => {},
+    onTableParamsChange: () => {},
     isDrilldown: false,
     scope: undefined,
   }
@@ -659,7 +660,7 @@ export default class ChataTable extends React.Component {
         before callbacks are invoked */
         await currentEventLoopEnd()
 
-        this.props.onTableParamsChange(params, nextTableParamsFormatted)
+        this.props.onTableParamsChange?.(params, nextTableParamsFormatted)
 
         this.props.onNewData(responseWrapper)
 

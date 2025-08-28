@@ -290,6 +290,7 @@ export class QueryOutput extends React.Component {
     onNewData: () => {},
     onCustomColumnUpdate: () => {},
     onUpdateFilterResponse: () => {},
+    onTableParamsChange: () => {},
     enableResizing: false,
     minHeight: 300,
     maxHeight: undefined,
@@ -1442,7 +1443,7 @@ export class QueryOutput extends React.Component {
     this.tableParams = _cloneDeep(params)
     this.formattedTableParams = formattedTableParams
 
-    this.props.onTableParamsChange(this.tableParams, this.formattedTableParams)
+    this.props.onTableParamsChange?.(this.tableParams, this.formattedTableParams)
 
     // This will update the filter badge in OptionsToolbar
     this.updateToolbars()
