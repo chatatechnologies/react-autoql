@@ -1477,7 +1477,7 @@ export class QueryOutput extends React.Component {
       )
     }
 
-    this.setState({ chartID: uuid(), displayType })
+    this.setState({ chartID: uuid() })
   }
 
   onTableFilter = async (filters, rows) => {
