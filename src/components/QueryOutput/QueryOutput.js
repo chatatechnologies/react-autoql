@@ -336,6 +336,14 @@ export class QueryOutput extends React.Component {
       const newState = {}
       let shouldForceUpdate = false
 
+        // Reset displayType if initialDisplayType prop changes
+        if (this.props.initialDisplayType !== prevProps.initialDisplayType) {
+          const newDisplayType = this.getDisplayTypeFromInitial(this.props)
+          if (newDisplayType !== this.state.displayType) {
+            this.setState({ displayType: newDisplayType })
+          }
+        }
+
       if (this.state.displayType !== prevState.displayType) {
         const isChart = isChartType(this.state.displayType)
         const shouldEnableResize = this.props.enableResizing && isChart
