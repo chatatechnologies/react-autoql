@@ -255,7 +255,7 @@ export class QueryOutput extends React.Component {
     defaultSelectedSuggestion: undefined,
     reverseTranslationPlacement: 'bottom',
     activeChartElementKey: undefined,
-    useInfiniteScroll: undefined,
+    useInfiniteScroll: true,
     isResizing: false,
     enableDynamicCharting: true,
     onNoneOfTheseClick: undefined,
@@ -2864,7 +2864,7 @@ export class QueryOutput extends React.Component {
           isAnimating={this.props.isAnimating}
           isResizing={this.props.isResizing || this.state.isResizing}
           hidden={this.state.displayType !== 'pivot_table'}
-          useInfiniteScroll={this.props.useInfiniteScroll}
+          useInfiniteScroll={false}
           supportsDrilldowns={true}
           source={this.props.source}
           scope={this.props.scope}
