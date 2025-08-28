@@ -1450,10 +1450,8 @@ export default class ChataTable extends React.Component {
 
     if (!this.useInfiniteScroll && this.tableParams?.filter?.length > 0) {
       totalRowCount = this.state.filterCount
-    } else if (this.props.pivot) {
-      totalRowCount = this.props.data?.length ?? 0
     } else {
-      totalRowCount = this.props.response?.data?.data?.count_rows ?? 0
+      totalRowCount = this.props.pivot ? this.props.data?.length : this.props.response?.data?.data?.count_rows
     }
 
     // Calculate which group of 50 records user has scrolled to
