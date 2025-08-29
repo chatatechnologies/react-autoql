@@ -47,30 +47,6 @@ import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator styleshe
 import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
 
 class ChataTable extends React.Component {
-  // Restore display type to original if changed
-  restoreOriginalDisplayType = () => {
-    if (
-      typeof this.onDisplayTypeChange === 'function' &&
-      this.originalDisplayType &&
-      this.props.displayType !== this.originalDisplayType
-    ) {
-      this.onDisplayTypeChange(this.originalDisplayType)
-    }
-    if (
-      typeof this.onSecondDisplayTypeChange === 'function' &&
-      this.originalSecondDisplayType &&
-      this.props.secondDisplayType !== this.originalSecondDisplayType
-    ) {
-      this.onSecondDisplayTypeChange(this.originalSecondDisplayType)
-    }
-    if (
-      typeof this.onSecondDisplayPercentageChange === 'function' &&
-      this.originalSecondDisplayPercentage !== undefined &&
-      this.props.secondDisplayPercentage !== this.originalSecondDisplayPercentage
-    ) {
-      this.onSecondDisplayPercentageChange(this.originalSecondDisplayPercentage)
-    }
-  }
   constructor(props) {
     super(props)
 
@@ -85,13 +61,13 @@ class ChataTable extends React.Component {
     this.useRemote =
       this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
         ? LOCAL_OR_REMOTE.REMOTE
-        : LOCAL_OR_REMOTE.REMOTE
+        : LOCAL_OR_REMOTE.LOCAL
     this.isLocal = this.useRemote === LOCAL_OR_REMOTE.LOCAL
     this.totalPages = this.getTotalPages(props.response)
     if (isNaN(this.totalPages) || !this.totalPages) {
       this.totalPages = 1
     }
-    this.useInfiniteScroll = props.useInfiniteScroll
+    this.useInfiniteScroll = props.useInfiniteScroll ?? !this.isLocal
 
     if (!this.useInfiniteScroll) {
       if (props.pivot) {
@@ -200,7 +176,7 @@ class ChataTable extends React.Component {
     data: undefined,
     columns: undefined,
     isResizing: false,
-    useInfiniteScroll: true,
+    useInfiniteScroll: undefined,
     autoHeight: true,
     rowChangeCount: 0,
     isAnimating: false,
@@ -229,6 +205,40 @@ class ChataTable extends React.Component {
   // Expose this method for parent components via ref
   hideAllHeaderFilters = () => {
     if (this._isMounted) this.setState({ isFiltering: false })
+  }
+
+  debouncedFilterCallback = (() => {
+    let timeout
+    return (headerFilters, rows) => {
+      clearTimeout(timeout)
+      timeout = setTimeout(() => {
+        this.props.onFilterCallback(headerFilters, rows)
+      }, 500)
+    }
+  })()
+  // Restore display type to original if changed
+  restoreOriginalDisplayType = () => {
+    if (
+      typeof this.onDisplayTypeChange === 'function' &&
+      this.originalDisplayType &&
+      this.props.displayType !== this.originalDisplayType
+    ) {
+      this.onDisplayTypeChange(this.originalDisplayType)
+    }
+    if (
+      typeof this.onSecondDisplayTypeChange === 'function' &&
+      this.originalSecondDisplayType &&
+      this.props.secondDisplayType !== this.originalSecondDisplayType
+    ) {
+      this.onSecondDisplayTypeChange(this.originalSecondDisplayType)
+    }
+    if (
+      typeof this.onSecondDisplayPercentageChange === 'function' &&
+      this.originalSecondDisplayPercentage !== undefined &&
+      this.props.secondDisplayPercentage !== this.originalSecondDisplayPercentage
+    ) {
+      this.onSecondDisplayPercentageChange(this.originalSecondDisplayPercentage)
+    }
   }
 
   componentDidMount = () => {
@@ -565,7 +575,7 @@ class ChataTable extends React.Component {
         this.filterCount = filteredData.length
       }
 
-      this.props.onFilterCallback(headerFilters, rows)
+      this.debouncedFilterCallback(headerFilters, rows)
 
       setTimeout(() => {
         if (this._isMounted) {
@@ -577,7 +587,7 @@ class ChataTable extends React.Component {
       }, 0)
     }
 
-    if (this.isLocal && !this.pivot) {
+    if (!this.useInfiniteScroll && !this.pivot) {
       this.getRTForRemoteFilterAndSort()
     }
     this.setFilterBadgeClasses()

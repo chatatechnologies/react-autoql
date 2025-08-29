@@ -255,7 +255,7 @@ export class QueryOutput extends React.Component {
     defaultSelectedSuggestion: undefined,
     reverseTranslationPlacement: 'bottom',
     activeChartElementKey: undefined,
-    useInfiniteScroll: true,
+    useInfiniteScroll: undefined,
     isResizing: false,
     enableDynamicCharting: true,
     onNoneOfTheseClick: undefined,
