@@ -79,7 +79,7 @@ import { MdPlayCircleOutline } from '@react-icons/all-files/md/MdPlayCircleOutli
 import { MdAttachMoney } from '@react-icons/all-files/md/MdAttachMoney'
 import { MdFunctions } from '@react-icons/all-files/md/MdFunctions'
 import { MdOutlineUndo, MdOutlineRedo, MdFilterList } from 'react-icons/md'
-
+import { MdSchedule } from 'react-icons/md'
 import { RxOpenInNewWindow } from 'react-icons/rx'
 import { TfiArrowsCorner } from 'react-icons/tfi'
 import { TfiArrowsVertical } from 'react-icons/tfi'
@@ -489,6 +489,10 @@ export default class Icon extends React.Component {
       }
       case 'data-search': {
         icon = <BiSearchAlt />
+        break
+      }
+      case 'schedule': {
+        icon = <MdSchedule />
         break
       }
       case 'send': {
