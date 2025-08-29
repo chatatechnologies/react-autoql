@@ -42,9 +42,10 @@ import { DataLimitWarning } from '../DataLimitWarning'
 import { columnOptionsList } from './tabulatorConstants'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { DATASET_TOO_LARGE, TABULATOR_LOCAL_ROW_LIMIT, LOCAL_OR_REMOTE } from '../../js/Constants'
+import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
+
 import './ChataTable.scss'
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
-import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
 
 class ChataTable extends React.Component {
   constructor(props) {
@@ -198,6 +199,7 @@ class ChataTable extends React.Component {
     onCustomColumnChange: () => {},
     updateColumnsAndData: () => {},
     onUpdateFilterResponse: () => {},
+    onTableParamsChange: () => {},
     isDrilldown: false,
     scope: undefined,
   }
@@ -337,6 +339,10 @@ class ChataTable extends React.Component {
       this.setFilters()
       this.setSorters()
       this.clearLoadingIndicators()
+    }
+
+    if (this.tabulatorMounted && !prevState.tabulatorJustMounted) {
+      this.setFilterBadgeClasses()
     }
 
     if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
@@ -590,6 +596,7 @@ class ChataTable extends React.Component {
     if (!this.useInfiniteScroll && !this.pivot) {
       this.getRTForRemoteFilterAndSort()
     }
+
     this.setFilterBadgeClasses()
   }
 
@@ -707,7 +714,7 @@ class ChataTable extends React.Component {
         before callbacks are invoked */
         await currentEventLoopEnd()
 
-        this.props.onTableParamsChange(params, nextTableParamsFormatted)
+        this.props.onTableParamsChange?.(params, nextTableParamsFormatted)
 
         this.props.onNewData(responseWrapper)
 
@@ -1085,6 +1092,8 @@ class ChataTable extends React.Component {
         }
       })
     }
+
+    this.setFilterBadgeClasses()
   }
 
   storeOriginalFilters = () => {
