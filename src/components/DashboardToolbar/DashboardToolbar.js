@@ -99,7 +99,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
 
   getRefreshIntervalText = () => {
     const { refreshInterval } = this.props
-    if (refreshInterval === 0 || null || undefined) {
+    if (!refreshInterval) {
       return 'No refresh interval set'
     }
     return `Dashboard refreshes every ${this.formatRefreshInterval(true)}`
@@ -107,7 +107,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
 
   getRefreshIntervalDisplay = () => {
     const { refreshInterval } = this.props
-    if (refreshInterval === 0 || null || undefined) {
+    if (!refreshInterval) {
       return 'No interval'
     }
     return this.formatRefreshInterval(false)
