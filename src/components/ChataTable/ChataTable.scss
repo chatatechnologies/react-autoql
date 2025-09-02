@@ -413,11 +413,17 @@
     }
 
     .tabulator-tableholder {
-      overflow: hidden;
-      &:hover {
-        overflow: auto !important;
-      }
-      background-color: inherit;
+      // Commenting out for now, could be causing mobile scrolling issues
+      // overflow: hidden;
+      // &:hover {
+      //   overflow: auto !important;
+      // }
+
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+
+      overscroll-behavior-x: contain; /* stop horizontal swipe bubbling */
+      overscroll-behavior-y: auto; /* let vertical swipe bubble up */
     }
   }
 }
