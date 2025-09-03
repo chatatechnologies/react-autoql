@@ -66,10 +66,7 @@
       }
     }
     .react-autoql-table.tabulator {
-      overflow: hidden;
-      &:hover {
-        overflow: auto !important;
-      }
+      overflow: auto !important;
       .tabulator-tableholder {
         overflow: hidden;
       }
@@ -214,12 +211,18 @@
 
   &.disable-drilldown {
     .tabulator-row .tabulator-cell:not(.pivot-category) {
-      cursor: text !important;
+      /* Only show text cursor on hover-capable devices */
+      @media (hover: hover) and (pointer: fine) {
+        cursor: text !important;
+      }
     }
 
-    &.pivot .react-autoql-table.tabulator .tabulator-row .tabulator-cell:not(.pivot-category):hover,
-    &:not(.pivot) .react-autoql-table.tabulator .tabulator-row:hover .tabulator-cell {
-      color: var(--react-autoql-text-color-primary) !important;
+    /* Hover effect only for non-touch devices */
+    @media (hover: hover) and (pointer: fine) {
+      &.pivot .react-autoql-table.tabulator .tabulator-row .tabulator-cell:not(.pivot-category):hover,
+      &:not(.pivot) .react-autoql-table.tabulator .tabulator-row:hover .tabulator-cell {
+        color: var(--react-autoql-text-color-primary) !important;
+      }
     }
   }
 
@@ -419,11 +422,13 @@
       //   overflow: auto !important;
       // }
 
-      overflow: auto;
-      -webkit-overflow-scrolling: touch;
-
-      overscroll-behavior-x: contain; /* stop horizontal swipe bubbling */
-      overscroll-behavior-y: auto; /* let vertical swipe bubble up */
+      overflow-x: scroll !important; /* enable horizontal */
+      overflow-y: scroll !important; /* enable vertical */
+      -webkit-overflow-scrolling: touch; /* smooth on iOS */
+      overscroll-behavior: contain; /* prevent parent page from stealing scroll */
+      touch-action: pan-x pan-y; /* allow both horizontal & vertical panning */
+      transform: translateZ(0); /* Force hardware acceleration */
+      will-change: scroll-position;
     }
   }
 }
@@ -494,5 +499,15 @@
     bottom: 20px;
     width: 100%;
     z-index: 0;
+  }
+}
+
+/* On touch devices → no hover */
+@media (hover: none) and (pointer: coarse) {
+  .tabulator-cell {
+    cursor: default; /* don’t trick the browser into thinking cells are “clickable” */
+    -webkit-user-drag: none;
+    user-select: none;
+    touch-action: pan-x pan-y !important;
   }
 }

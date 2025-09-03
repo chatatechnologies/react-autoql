@@ -212,6 +212,7 @@ export default class TableWrapper extends React.Component {
         className={`table-condensed ${this.props.className}`}
         id={`react-tabulator-id-${this.COMPONENT_KEY}`}
         key={this.COMPONENT_KEY}
+        tabindex='0'
       />
     )
   }
