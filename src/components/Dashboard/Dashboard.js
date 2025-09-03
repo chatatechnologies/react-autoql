@@ -778,21 +778,8 @@ class DashboardWithoutTheme extends React.Component {
                   () => {
                     for (const key in this.tileRefs) {
                       const tileRef = this.tileRefs[key]
-                      if (tileRef && tileRef.state && tileRef.state.responseRef && tileRef.state.responseRef.tableRef) {
-                        // Restore display type
-                        if (typeof tileRef.restoreOriginalDisplayType === 'function') {
-                          tileRef.restoreOriginalDisplayType()
-                        }
-                        // Restore header filters to original values
-                        if (typeof tileRef.state.responseRef.tableRef.setHeaderFiltersToOriginal === 'function') {
-                          tileRef.state.responseRef.tableRef.setHeaderFiltersToOriginal(
-                            tileRef.state.responseRef.tableRef.originalFilters,
-                          )
-                        }
-                        // Close filter UI
-                        if (typeof tileRef.state.responseRef.tableRef.hideAllHeaderFilters === 'function') {
-                          tileRef.state.responseRef.tableRef.hideAllHeaderFilters()
-                        }
+                      if (tileRef && typeof tileRef.restoreTileUIState === 'function') {
+                        tileRef.restoreTileUIState()
                       }
                     }
                   },
