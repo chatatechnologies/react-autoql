@@ -780,8 +780,8 @@ class DashboardWithoutTheme extends React.Component {
                       const tileRef = this.tileRefs[key]
                       if (tileRef && tileRef.state && tileRef.state.responseRef && tileRef.state.responseRef.tableRef) {
                         // Restore display type
-                        if (typeof tileRef.state.responseRef.tableRef.restoreOriginalDisplayType === 'function') {
-                          tileRef.state.responseRef.tableRef.restoreOriginalDisplayType()
+                        if (typeof tileRef.restoreOriginalDisplayType === 'function') {
+                          tileRef.restoreOriginalDisplayType()
                         }
                         // Restore header filters to original values
                         if (typeof tileRef.state.responseRef.tableRef.setHeaderFiltersToOriginal === 'function') {

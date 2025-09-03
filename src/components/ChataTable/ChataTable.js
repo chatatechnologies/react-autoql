@@ -218,30 +218,6 @@ class ChataTable extends React.Component {
       }, 500)
     }
   })()
-  // Restore display type to original if changed
-  restoreOriginalDisplayType = () => {
-    if (
-      typeof this.onDisplayTypeChange === 'function' &&
-      this.originalDisplayType &&
-      this.props.displayType !== this.originalDisplayType
-    ) {
-      this.onDisplayTypeChange(this.originalDisplayType)
-    }
-    if (
-      typeof this.onSecondDisplayTypeChange === 'function' &&
-      this.originalSecondDisplayType &&
-      this.props.secondDisplayType !== this.originalSecondDisplayType
-    ) {
-      this.onSecondDisplayTypeChange(this.originalSecondDisplayType)
-    }
-    if (
-      typeof this.onSecondDisplayPercentageChange === 'function' &&
-      this.originalSecondDisplayPercentage !== undefined &&
-      this.props.secondDisplayPercentage !== this.originalSecondDisplayPercentage
-    ) {
-      this.onSecondDisplayPercentageChange(this.originalSecondDisplayPercentage)
-    }
-  }
 
   componentDidMount = () => {
     this._isMounted = true
@@ -311,10 +287,6 @@ class ChataTable extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState, { shouldSetTableHeight, newTableHeight }) => {
-    // Hide header filters if not in edit mode
-    if (this.props.isEditing === false) {
-      this.hideAllHeaderFilters()
-    }
     if (shouldSetTableHeight) {
       this.setTableHeight(newTableHeight)
     }

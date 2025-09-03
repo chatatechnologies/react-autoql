@@ -155,6 +155,45 @@ export class DashboardTile extends React.Component {
     setParamsForTile: () => {},
   }
 
+  restoreTableUI = (tableRef) => {
+    if (!tableRef) return
+    if (typeof tableRef.setHeaderFiltersToOriginal === 'function') {
+      tableRef.setHeaderFiltersToOriginal(tableRef.originalFilters)
+    }
+    if (typeof tableRef.hideAllHeaderFilters === 'function') {
+      tableRef.hideAllHeaderFilters()
+    }
+  }
+
+  restoreTileUIState = () => {
+    this.restoreOriginalDisplayType && this.restoreOriginalDisplayType()
+    this.restoreTableUI(this.state.responseRef?.tableRef)
+    this.restoreTableUI(this.state.secondResponseRef?.tableRef)
+  }
+
+  restoreOriginalDisplayType = () => {
+    const { displayType, secondDisplayType, secondDisplayPercentage } = this.props.tile || {}
+    const { originalDisplayType, originalSecondDisplayType, originalSecondDisplayPercentage } = this.props.tile || {}
+
+    if (typeof this.onDisplayTypeChange === 'function' && originalDisplayType && displayType !== originalDisplayType) {
+      this.onDisplayTypeChange(originalDisplayType)
+    }
+    if (
+      typeof this.onSecondDisplayTypeChange === 'function' &&
+      originalSecondDisplayType &&
+      secondDisplayType !== originalSecondDisplayType
+    ) {
+      this.onSecondDisplayTypeChange(originalSecondDisplayType)
+    }
+    if (
+      typeof this.onSecondDisplayPercentageChange === 'function' &&
+      originalSecondDisplayPercentage !== undefined &&
+      secondDisplayPercentage !== originalSecondDisplayPercentage
+    ) {
+      this.onSecondDisplayPercentageChange(originalSecondDisplayPercentage)
+    }
+  }
+
   componentDidMount = () => {
     this._isMounted = true
   }
@@ -1154,7 +1193,6 @@ export class DashboardTile extends React.Component {
 
     return (
       <QueryOutput
-        // key={`${this.props.tile?.key}${this.props.isEditing ? '-editing' : '-notediting'}`}
         authentication={this.props.authentication}
         autoQLConfig={this.props.autoQLConfig}
         dataFormatting={this.props.dataFormatting}
