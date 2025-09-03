@@ -237,6 +237,7 @@ export class QueryOutput extends React.Component {
     resizeMultiplier: PropTypes.number,
     onResize: PropTypes.func,
     localRTFilterResponse: PropTypes.shape({}),
+    enableCustomColumns: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -296,6 +297,7 @@ export class QueryOutput extends React.Component {
     resizeMultiplier: 1.5,
     onResize: () => {},
     localRTFilterResponse: undefined,
+    enableCustomColumns: true,
   }
 
   componentDidMount = () => {
@@ -2770,7 +2772,7 @@ export class QueryOutput extends React.Component {
           tooltipID={this.props.tooltipID}
           onAddColumnClick={this.onAddColumnClick}
           onCustomClick={this.onAddColumnClick}
-          disableAddCustomColumnOption={isDrilldown(this.queryResponse)}
+          disableAddCustomColumnOption={!this.props.enableCustomColumns || isDrilldown(this.queryResponse)}
         />
       )
     }
