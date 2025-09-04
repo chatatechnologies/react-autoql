@@ -86,6 +86,7 @@ class DashboardWithoutTheme extends React.Component {
     onSaveCallback: PropTypes.func,
     onDeleteCallback: PropTypes.func,
     showToolbar: PropTypes.bool,
+    refreshInterval: PropTypes.number,
   }
 
   static defaultProps = {
@@ -105,6 +106,7 @@ class DashboardWithoutTheme extends React.Component {
     autoChartAggregations: true,
     cancelQueriesOnUnmount: false,
     showToolbar: false,
+    refreshInterval: 60,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
     onChange: () => {},
@@ -786,6 +788,7 @@ class DashboardWithoutTheme extends React.Component {
                 ])
                 this.props.stopEditingCallback()
               }}
+              refreshInterval={this.props.refreshInterval}
             />
           )}
           <div
