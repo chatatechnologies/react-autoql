@@ -76,6 +76,8 @@ export default class NotificationQueryResponse extends React.Component {
               enableDynamicCharting={true}
               useInfiniteScroll={false}
               onUpdateFilterResponse={this.onUpdateFilterResponse}
+              enableCustomColumns={this.props.enableCustomColumns}
+              preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
             />
           ) : (
             <div style={{ position: 'absolute', top: 0 }} className='loading-container-centered'>
