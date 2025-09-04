@@ -35,15 +35,6 @@
     min-height: 140px;
     overflow: hidden;
 
-    // On mobile, ensure the container allows horizontal scrolling
-    @media (hover: none) and (pointer: coarse) {
-      overflow: auto;
-      // Optimize for smooth scrolling performance
-      -webkit-overflow-scrolling: touch;
-      -webkit-transform: translateZ(0);
-      transform: translateZ(0);
-    }
-
     .tabulator-cell,
     .tabulator-col {
       color: var(--react-autoql-text-color-primary);
@@ -51,6 +42,11 @@
 
     // Improve touch handling on mobile devices
     @media (hover: none) and (pointer: coarse) {
+      overflow: auto;
+      // Optimize for smooth scrolling performance
+      -webkit-overflow-scrolling: touch;
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
       // Let browser handle touch events naturally, but optimize for performance
       touch-action: auto;
       // Add hardware acceleration for smoother scrolling

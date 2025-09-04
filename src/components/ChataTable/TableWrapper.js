@@ -39,7 +39,6 @@ export default class TableWrapper extends React.Component {
       ...(isMobile && {
         responsiveLayout: false, // Disable responsive layout to allow horizontal scrolling
         responsiveLayoutCollapseStartOpen: false,
-        touchUi: true, // Enable touch-friendly UI
         scrollToColumnPosition: 'middle', // Better column scrolling behavior
         scrollToColumnIfVisible: false, // Prevent unnecessary scrolling
         // Ensure horizontal scrolling is enabled
@@ -137,35 +136,10 @@ export default class TableWrapper extends React.Component {
     // Add minimal touch handling to prevent parent container scrolling when actively interacting with table
     const setupHandlers = () => {
       const tableholder = this.tableRef?.querySelector('.tabulator-tableholder')
-      const tableContainer = this.tableRef?.querySelector('.react-autoql-table-container')
-
       if (tableholder) {
         // Track if user is currently actively touching the table (not just momentum scrolling)
         let isActivelyTouchingTable = false
         let touchStartTime = 0
-
-        // Function to stop table momentum scrolling
-        const stopTableMomentum = () => {
-          try {
-            // Method 1: Force stop momentum by briefly changing overflow and restoring it
-            const currentOverflow = tableholder.style.overflow
-            tableholder.style.overflow = 'hidden'
-
-            // Method 2: Also try to set scroll position to current position to stop momentum
-            const currentScrollLeft = tableholder.scrollLeft
-            const currentScrollTop = tableholder.scrollTop
-
-            // Use requestAnimationFrame to ensure the changes are applied
-            requestAnimationFrame(() => {
-              tableholder.style.overflow = currentOverflow || 'auto'
-              // Reset scroll position to stop momentum
-              tableholder.scrollLeft = currentScrollLeft
-              tableholder.scrollTop = currentScrollTop
-            })
-          } catch (error) {
-            console.warn('Failed to stop table momentum:', error)
-          }
-        }
 
         this.touchStartHandler = (e) => {
           // Only mark as actively touching if the touch is directly on the table
@@ -208,15 +182,6 @@ export default class TableWrapper extends React.Component {
 
           if (isTableElement) {
             e.stopPropagation()
-
-            // Optional: Stop momentum scrolling when finger lifts off the table
-            // This can be enabled/disabled based on user preference
-            // Currently disabled to allow natural momentum scrolling behavior
-            // Uncomment the lines below if you want momentum to stop when lifting finger:
-
-            setTimeout(() => {
-              stopTableMomentum()
-            }, 300) // 300ms allows for some natural deceleration before stopping
           }
 
           // Remove visual indicator after a short delay to account for momentum
@@ -229,10 +194,6 @@ export default class TableWrapper extends React.Component {
         this.touchCancelHandler = (e) => {
           isActivelyTouchingTable = false
           tableholder.style.outline = 'none'
-
-          // Stop momentum scrolling immediately when touch is cancelled
-          // (This is more aggressive than touchend since cancel is usually unexpected)
-          stopTableMomentum()
         }
 
         // Add global touch handler to detect touches outside the table
@@ -240,10 +201,9 @@ export default class TableWrapper extends React.Component {
           const target = e.target
           const isTableElement = tableholder.contains(target)
 
-          // If user touches outside the table, stop table momentum
+          // If user touches outside the table, remove any visual indicators
           if (!isTableElement) {
-            stopTableMomentum()
-            // Also remove any visual indicators
+            // Remove any visual indicators
             tableholder.style.outline = 'none'
           }
         }
