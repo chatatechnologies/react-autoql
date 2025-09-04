@@ -4,6 +4,7 @@ import { v4 as uuid } from 'uuid'
 import _cloneDeep from 'lodash.clonedeep'
 import { TabulatorFull as Tabulator } from 'tabulator-tables' //import Tabulator library
 import throttle from 'lodash.throttle'
+import { isMobile } from 'react-device-detect'
 
 // use Theme(s)
 import 'tabulator-tables/dist/css/tabulator.min.css'
@@ -34,6 +35,14 @@ export default class TableWrapper extends React.Component {
         rowGroups: false,
         columnCalcs: false,
       },
+      // Mobile-specific optimizations
+      ...(isMobile && {
+        responsiveLayout: 'hide', // Hide columns that don't fit instead of collapsing
+        responsiveLayoutCollapseStartOpen: false,
+        touchUi: true, // Enable touch-friendly UI
+        scrollToColumnPosition: 'middle', // Better column scrolling behavior
+        scrollToColumnIfVisible: false, // Prevent unnecessary scrolling
+      }),
     }
     this.throttledHandleResize = throttle(this.handleWindowResizeForAlignment, 100)
   }
@@ -77,6 +86,11 @@ export default class TableWrapper extends React.Component {
     this._isMounted = true
     this.instantiateTabulator()
     window.addEventListener('resize', this.throttledHandleResize)
+
+    // Add touch event listeners for better mobile scrolling
+    if (isMobile && this.tableRef) {
+      this.setupMobileTouchHandlers()
+    }
   }
 
   shouldComponentUpdate = () => {
@@ -92,6 +106,11 @@ export default class TableWrapper extends React.Component {
       this.tabulator?.destroy()
     }, 1000)
     window.removeEventListener('resize', this.throttledHandleResize)
+
+    // Clean up mobile touch handlers
+    if (isMobile && this.tableRef) {
+      this.cleanupMobileTouchHandlers()
+    }
   }
 
   handleWindowResizeForAlignment = () => {
@@ -109,6 +128,107 @@ export default class TableWrapper extends React.Component {
         }
       })
     })
+  }
+
+  setupMobileTouchHandlers = () => {
+    // Find the tabulator tableholder element once it's created
+    const setupHandlers = () => {
+      const tableholder = this.tableRef?.querySelector('.tabulator-tableholder')
+      if (tableholder) {
+        // Store initial touch position to distinguish between scrolling and tapping
+        let initialTouchPos = null
+        let isScrolling = false
+
+        this.touchStartHandler = (e) => {
+          // Store initial touch position
+          initialTouchPos = {
+            x: e.touches[0].clientX,
+            y: e.touches[0].clientY,
+            timestamp: Date.now(),
+          }
+          isScrolling = false
+
+          // Stop propagation to prevent parent containers from handling the event
+          e.stopPropagation()
+
+          // Force focus on the table container to ensure it receives subsequent touch events
+          tableholder.focus({ preventScroll: true })
+        }
+
+        this.touchMoveHandler = (e) => {
+          if (initialTouchPos) {
+            const currentTouch = e.touches[0]
+            const deltaX = Math.abs(currentTouch.clientX - initialTouchPos.x)
+            const deltaY = Math.abs(currentTouch.clientY - initialTouchPos.y)
+
+            // If user has moved more than 10px, consider it scrolling
+            if (deltaX > 10 || deltaY > 10) {
+              isScrolling = true
+            }
+          }
+
+          // Stop propagation to prevent parent containers from handling the event
+          e.stopPropagation()
+        }
+
+        this.touchEndHandler = (e) => {
+          // Reset touch tracking
+          initialTouchPos = null
+          isScrolling = false
+
+          // Stop propagation to prevent parent containers from handling the event
+          e.stopPropagation()
+        }
+
+        // Add event listeners with proper options
+        tableholder.addEventListener('touchstart', this.touchStartHandler, {
+          passive: true,
+          capture: true,
+        })
+        tableholder.addEventListener('touchmove', this.touchMoveHandler, {
+          passive: true,
+          capture: true,
+        })
+        tableholder.addEventListener('touchend', this.touchEndHandler, {
+          passive: true,
+          capture: true,
+        })
+
+        // Also prevent parent containers from capturing touch events
+        const tableContainer = this.tableRef?.querySelector('.react-autoql-tabulator-container')
+        if (tableContainer) {
+          const preventParentCapture = (e) => {
+            // Only prevent if the touch started within the tableholder
+            if (tableholder.contains(e.target)) {
+              e.stopPropagation()
+            }
+          }
+
+          tableContainer.addEventListener('touchstart', preventParentCapture, {
+            passive: true,
+            capture: false,
+          })
+          tableContainer.addEventListener('touchmove', preventParentCapture, {
+            passive: true,
+            capture: false,
+          })
+        }
+      } else {
+        // If tableholder isn't ready yet, try again after a short delay
+        setTimeout(setupHandlers, 100)
+      }
+    }
+
+    setupHandlers()
+  }
+
+  cleanupMobileTouchHandlers = () => {
+    const tableholder = this.tableRef?.querySelector('.tabulator-tableholder')
+    if (tableholder && this.touchStartHandler) {
+      tableholder.removeEventListener('touchstart', this.touchStartHandler, { capture: true })
+      tableholder.removeEventListener('touchmove', this.touchMoveHandler, { capture: true })
+      tableholder.removeEventListener('touchend', this.touchEndHandler, { capture: true })
+    }
   }
 
   instantiateTabulator = () => {

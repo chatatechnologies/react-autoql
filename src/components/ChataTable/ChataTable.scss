@@ -1,5 +1,6 @@
 .react-autoql-table-container {
   -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
   scrollbar-color: var(--react-autoql-scrollbar-thumb-color) transparent;
   display: flex;
   flex-direction: column;
@@ -37,6 +38,17 @@
     .tabulator-cell,
     .tabulator-col {
       color: var(--react-autoql-text-color-primary);
+    }
+
+    // Improve touch handling on mobile devices
+    @media (hover: none) and (pointer: coarse) {
+      // Ensure the container doesn't interfere with touch events
+      touch-action: manipulation;
+
+      // Make sure the container can receive focus for touch events
+      &:focus-within {
+        outline: none;
+      }
     }
   }
 
@@ -418,6 +430,38 @@
         overflow: auto !important;
       }
       background-color: inherit;
+
+      // Enable smooth scrolling on mobile devices
+      -webkit-overflow-scrolling: touch;
+
+      // On mobile devices, always show scrollbars for better touch interaction
+      @media (hover: none) and (pointer: coarse) {
+        overflow: auto !important;
+        // Ensure touch events are properly handled
+        touch-action: pan-x pan-y;
+        // Prevent touch delay
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+
+        // Ensure scrollbars are visible on mobile
+        &::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+
+        &::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+          background-color: var(--react-autoql-scrollbar-thumb-color, rgba(0, 0, 0, 0.3));
+          border-radius: 4px;
+        }
+      }
     }
   }
 }
