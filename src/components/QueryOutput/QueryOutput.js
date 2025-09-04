@@ -241,6 +241,7 @@ export class QueryOutput extends React.Component {
     localRTFilterResponse: PropTypes.shape({}),
     enableCustomColumns: PropTypes.bool,
     preferRegularTableInitialDisplayType: PropTypes.bool,
+    forceAjaxTableData: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -302,6 +303,7 @@ export class QueryOutput extends React.Component {
     localRTFilterResponse: undefined,
     enableCustomColumns: true,
     preferRegularTableInitialDisplayType: false,
+    forceAjaxTableData: false,
   }
 
   componentDidMount = () => {
@@ -2846,7 +2848,7 @@ export class QueryOutput extends React.Component {
           columnDateRanges={this.columnDateRanges}
           onCellClick={this.onTableCellClick}
           queryID={this.queryID}
-          useInfiniteScroll={!useLocalFilters && this.props.useInfiniteScroll}
+          useInfiniteScroll={this.props.forceAjaxTableData || (!useLocalFilters && this.props.useInfiniteScroll)}
           onFilterCallback={this.onTableFilter}
           onSorterCallback={this.onTableSort}
           onTableParamsChange={this.onTableParamsChange}
