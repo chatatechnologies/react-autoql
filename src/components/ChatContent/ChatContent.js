@@ -493,6 +493,8 @@ export default class ChatContent extends React.Component {
                     chartTooltipID={this.props.chartTooltipID}
                     subjects={this.state.subjects}
                     onMessageResize={this.onMessageResize}
+                    enableCustomColumns={this.props.enableCustomColumns}
+                    preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
                   />
                 )
               })}
