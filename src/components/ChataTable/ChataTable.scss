@@ -439,10 +439,7 @@
     }
 
     .tabulator-tableholder {
-      overflow: hidden;
-      &:hover {
-        overflow: auto !important;
-      }
+      overflow: auto;
       background-color: inherit;
 
       // Enable smooth scrolling on mobile devices
