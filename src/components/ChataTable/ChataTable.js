@@ -59,11 +59,18 @@ export default class ChataTable extends React.Component {
     this.filterCount = 0
     this.isSorting = false
     this.pageSize = props.pageSize ?? 50
+    this.useRemote =
+      this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
+        ? LOCAL_OR_REMOTE.REMOTE
+        : this.props.response?.data?.data?.fe_req?.filters?.length > 0
+        ? LOCAL_OR_REMOTE.REMOTE
+        : LOCAL_OR_REMOTE.LOCAL
+    this.isLocal = this.useRemote === LOCAL_OR_REMOTE.LOCAL
     this.totalPages = this.getTotalPages(props.response)
     if (isNaN(this.totalPages) || !this.totalPages) {
       this.totalPages = 1
     }
-    this.useInfiniteScroll = props.useInfiniteScroll
+    this.useInfiniteScroll = props.useInfiniteScroll ?? !this.isLocal
 
     if (!this.useInfiniteScroll) {
       if (props.pivot) {
@@ -167,7 +174,7 @@ export default class ChataTable extends React.Component {
     data: undefined,
     columns: undefined,
     isResizing: false,
-    useInfiniteScroll: true,
+    useInfiniteScroll: undefined,
     autoHeight: true,
     rowChangeCount: 0,
     isAnimating: false,
@@ -540,7 +547,7 @@ export default class ChataTable extends React.Component {
       }, 0)
     }
 
-    if (!this.props.useInfiniteScroll && !this.pivot) {
+    if (!this.useInfiniteScroll && !this.pivot) {
       this.getRTForRemoteFilterAndSort()
     }
 
