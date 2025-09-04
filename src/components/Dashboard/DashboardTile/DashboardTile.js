@@ -1174,6 +1174,7 @@ export class DashboardTile extends React.Component {
         onUpdateFilterResponse={this.onUpdateFilterResponse}
         localRTFilterResponse={this.state.localRTFilterResponse}
         enableCustomColumns={this.props.enableCustomColumns}
+        preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
         {...queryOutputProps}
       />
     )

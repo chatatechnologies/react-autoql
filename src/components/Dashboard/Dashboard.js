@@ -715,6 +715,7 @@ class DashboardWithoutTheme extends React.Component {
             scope={this.props.scope}
             customToolbarOptions={this.props.customToolbarOptions}
             enableCustomColumns={this.props.enableCustomColumns}
+            preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
           />
         ))}
       </ReactGridLayout>

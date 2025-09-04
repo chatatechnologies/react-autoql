@@ -494,6 +494,7 @@ export default class ChatContent extends React.Component {
                     subjects={this.state.subjects}
                     onMessageResize={this.onMessageResize}
                     enableCustomColumns={this.props.enableCustomColumns}
+                    preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
                   />
                 )
               })}

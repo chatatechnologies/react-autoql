@@ -248,6 +248,7 @@ export default class DrilldownModal extends React.Component {
                           allowDisplayTypeChange={false}
                           source={this.props.source}
                           enableCustomColumns={this.props.enableCustomColumns}
+                          preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
                           height='100%'
                           width='100%'
                         />

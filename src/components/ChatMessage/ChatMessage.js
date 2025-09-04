@@ -359,6 +359,7 @@ export default class ChatMessage extends React.Component {
           subjects={this.props.subjects}
           onUpdateFilterResponse={this.onUpdateFilterResponse}
           enableCustomColumns={this.props.enableCustomColumns}
+          preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
         />
       )
     }

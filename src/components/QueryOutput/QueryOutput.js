@@ -238,6 +238,7 @@ export class QueryOutput extends React.Component {
     onResize: PropTypes.func,
     localRTFilterResponse: PropTypes.shape({}),
     enableCustomColumns: PropTypes.bool,
+    preferRegularTableInitialDisplayType: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -298,6 +299,7 @@ export class QueryOutput extends React.Component {
     onResize: () => {},
     localRTFilterResponse: undefined,
     enableCustomColumns: true,
+    preferRegularTableInitialDisplayType: false,
   }
 
   componentDidMount = () => {
@@ -673,6 +675,7 @@ export class QueryOutput extends React.Component {
       this.getPivotDataLength(),
       preferredDisplayType,
       isDataLimited(this.queryResponse),
+      this.props.preferRegularTableInitialDisplayType,
     )
   }
 

@@ -873,6 +873,7 @@ export class DataMessenger extends React.Component {
           }}
           createDataAlertCallback={this.closeDataMessenger}
           tooltipID={this.TOOLTIP_ID}
+          preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
         />
       </ErrorBoundary>
     )
