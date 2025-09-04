@@ -99,6 +99,7 @@
   &:hover .react-autoql-toolbar,
   &:hover .react-autoql-table-add-column-btn,
   .react-autoql-table-add-column-btn.active,
+  .react-autoql-table-add-column-btn.add-column-btn-is-loading,
   .react-autoql-toolbar.active {
     pointer-events: auto !important;
     visibility: visible !important;

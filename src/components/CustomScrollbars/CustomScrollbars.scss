@@ -10,6 +10,18 @@
     }
   }
 
+  &.suppress-scroll-x {
+    .ps__rail-x {
+      display: none;
+    }
+  }
+
+  &.suppress-scroll-y {
+    .ps__rail-y {
+      display: none;
+    }
+  }
+
   .ps__rail-y,
   .ps__rail-x {
     z-index: 1;

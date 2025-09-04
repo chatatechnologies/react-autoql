@@ -256,7 +256,7 @@ export default class NumberAxisSelector extends React.Component {
 
   renderSeriesSelectors = () => {
     return (
-      <CustomScrollbars autoHeight autoHeightMin={100} maxHeight={isMobile ? undefined : 200}>
+      <CustomScrollbars autoHeight autoHeightMin={100} maxHeight={isMobile ? undefined : 200} suppressScrollX>
         <div className='axis-series-selector'>
           <div className='number-selector-field-group-container'>
             {Object.keys(COLUMN_TYPES)
