@@ -37,11 +37,14 @@ export default class TableWrapper extends React.Component {
       },
       // Mobile-specific optimizations
       ...(isMobile && {
-        responsiveLayout: 'hide', // Hide columns that don't fit instead of collapsing
+        responsiveLayout: false, // Disable responsive layout to allow horizontal scrolling
         responsiveLayoutCollapseStartOpen: false,
         touchUi: true, // Enable touch-friendly UI
         scrollToColumnPosition: 'middle', // Better column scrolling behavior
         scrollToColumnIfVisible: false, // Prevent unnecessary scrolling
+        // Ensure horizontal scrolling is enabled
+        virtualDomHoz: false, // Disable horizontal virtual DOM which can interfere with touch scrolling
+        layout: 'fitDataFill', // Force this layout on mobile to ensure horizontal scrolling
       }),
     }
     this.throttledHandleResize = throttle(this.handleWindowResizeForAlignment, 100)
@@ -131,88 +134,143 @@ export default class TableWrapper extends React.Component {
   }
 
   setupMobileTouchHandlers = () => {
-    // Find the tabulator tableholder element once it's created
+    // Add minimal touch handling to prevent parent container scrolling when actively interacting with table
     const setupHandlers = () => {
       const tableholder = this.tableRef?.querySelector('.tabulator-tableholder')
+      const tableContainer = this.tableRef?.querySelector('.react-autoql-table-container')
+
       if (tableholder) {
-        // Store initial touch position to distinguish between scrolling and tapping
-        let initialTouchPos = null
-        let isScrolling = false
+        // Track if user is currently actively touching the table (not just momentum scrolling)
+        let isActivelyTouchingTable = false
+        let touchStartTime = 0
+
+        // Function to stop table momentum scrolling
+        const stopTableMomentum = () => {
+          try {
+            // Method 1: Force stop momentum by briefly changing overflow and restoring it
+            const currentOverflow = tableholder.style.overflow
+            tableholder.style.overflow = 'hidden'
+
+            // Method 2: Also try to set scroll position to current position to stop momentum
+            const currentScrollLeft = tableholder.scrollLeft
+            const currentScrollTop = tableholder.scrollTop
+
+            // Use requestAnimationFrame to ensure the changes are applied
+            requestAnimationFrame(() => {
+              tableholder.style.overflow = currentOverflow || 'auto'
+              // Reset scroll position to stop momentum
+              tableholder.scrollLeft = currentScrollLeft
+              tableholder.scrollTop = currentScrollTop
+            })
+          } catch (error) {
+            console.warn('Failed to stop table momentum:', error)
+          }
+        }
 
         this.touchStartHandler = (e) => {
-          // Store initial touch position
-          initialTouchPos = {
-            x: e.touches[0].clientX,
-            y: e.touches[0].clientY,
-            timestamp: Date.now(),
+          // Only mark as actively touching if the touch is directly on the table
+          const target = e.target
+          const isTableElement = tableholder.contains(target)
+
+          if (isTableElement) {
+            isActivelyTouchingTable = true
+            touchStartTime = Date.now()
+
+            // Stop the event from bubbling to parent containers
+            // but don't prevent default to allow native table scrolling
+            e.stopPropagation()
+
+            // Add a visual indicator that the table is active (optional)
+            tableholder.style.outline = '1px solid rgba(0, 123, 255, 0.3)'
           }
-          isScrolling = false
-
-          // Stop propagation to prevent parent containers from handling the event
-          e.stopPropagation()
-
-          // Force focus on the table container to ensure it receives subsequent touch events
-          tableholder.focus({ preventScroll: true })
         }
 
         this.touchMoveHandler = (e) => {
-          if (initialTouchPos) {
-            const currentTouch = e.touches[0]
-            const deltaX = Math.abs(currentTouch.clientX - initialTouchPos.x)
-            const deltaY = Math.abs(currentTouch.clientY - initialTouchPos.y)
+          // Only stop propagation if user is actively touching the table (not momentum scrolling)
+          if (isActivelyTouchingTable) {
+            const target = e.target
+            const isTableElement = tableholder.contains(target)
 
-            // If user has moved more than 10px, consider it scrolling
-            if (deltaX > 10 || deltaY > 10) {
-              isScrolling = true
-            }
-          }
-
-          // Stop propagation to prevent parent containers from handling the event
-          e.stopPropagation()
-        }
-
-        this.touchEndHandler = (e) => {
-          // Reset touch tracking
-          initialTouchPos = null
-          isScrolling = false
-
-          // Stop propagation to prevent parent containers from handling the event
-          e.stopPropagation()
-        }
-
-        // Add event listeners with proper options
-        tableholder.addEventListener('touchstart', this.touchStartHandler, {
-          passive: true,
-          capture: true,
-        })
-        tableholder.addEventListener('touchmove', this.touchMoveHandler, {
-          passive: true,
-          capture: true,
-        })
-        tableholder.addEventListener('touchend', this.touchEndHandler, {
-          passive: true,
-          capture: true,
-        })
-
-        // Also prevent parent containers from capturing touch events
-        const tableContainer = this.tableRef?.querySelector('.react-autoql-tabulator-container')
-        if (tableContainer) {
-          const preventParentCapture = (e) => {
-            // Only prevent if the touch started within the tableholder
-            if (tableholder.contains(e.target)) {
+            if (isTableElement) {
+              // User is actively scrolling the table, prevent parent containers from scrolling
               e.stopPropagation()
             }
           }
-
-          tableContainer.addEventListener('touchstart', preventParentCapture, {
-            passive: true,
-            capture: false,
-          })
-          tableContainer.addEventListener('touchmove', preventParentCapture, {
-            passive: true,
-            capture: false,
-          })
         }
+
+        this.touchEndHandler = (e) => {
+          // Reset interaction flag immediately when touch ends
+          isActivelyTouchingTable = false
+
+          // Only stop propagation if this was a table interaction
+          const target = e.target
+          const isTableElement = tableholder.contains(target)
+
+          if (isTableElement) {
+            e.stopPropagation()
+
+            // Optional: Stop momentum scrolling when finger lifts off the table
+            // This can be enabled/disabled based on user preference
+            // Currently disabled to allow natural momentum scrolling behavior
+            // Uncomment the lines below if you want momentum to stop when lifting finger:
+
+            setTimeout(() => {
+              stopTableMomentum()
+            }, 300) // 300ms allows for some natural deceleration before stopping
+          }
+
+          // Remove visual indicator after a short delay to account for momentum
+          setTimeout(() => {
+            tableholder.style.outline = 'none'
+          }, 100)
+        }
+
+        // Also handle touch cancel events
+        this.touchCancelHandler = (e) => {
+          isActivelyTouchingTable = false
+          tableholder.style.outline = 'none'
+
+          // Stop momentum scrolling immediately when touch is cancelled
+          // (This is more aggressive than touchend since cancel is usually unexpected)
+          stopTableMomentum()
+        }
+
+        // Add global touch handler to detect touches outside the table
+        this.globalTouchStartHandler = (e) => {
+          const target = e.target
+          const isTableElement = tableholder.contains(target)
+
+          // If user touches outside the table, stop table momentum
+          if (!isTableElement) {
+            stopTableMomentum()
+            // Also remove any visual indicators
+            tableholder.style.outline = 'none'
+          }
+        }
+
+        // Add event listeners with passive: true to allow native scrolling
+        tableholder.addEventListener('touchstart', this.touchStartHandler, {
+          passive: true,
+          capture: false,
+        })
+        tableholder.addEventListener('touchmove', this.touchMoveHandler, {
+          passive: true,
+          capture: false,
+        })
+        tableholder.addEventListener('touchend', this.touchEndHandler, {
+          passive: true,
+          capture: false,
+        })
+        tableholder.addEventListener('touchcancel', this.touchCancelHandler, {
+          passive: true,
+          capture: false,
+        })
+
+        // Add global touch listener to detect touches outside table
+        document.addEventListener('touchstart', this.globalTouchStartHandler, {
+          passive: true,
+          capture: true, // Use capture to catch events before they reach other elements
+        })
       } else {
         // If tableholder isn't ready yet, try again after a short delay
         setTimeout(setupHandlers, 100)
@@ -225,9 +283,15 @@ export default class TableWrapper extends React.Component {
   cleanupMobileTouchHandlers = () => {
     const tableholder = this.tableRef?.querySelector('.tabulator-tableholder')
     if (tableholder && this.touchStartHandler) {
-      tableholder.removeEventListener('touchstart', this.touchStartHandler, { capture: true })
-      tableholder.removeEventListener('touchmove', this.touchMoveHandler, { capture: true })
-      tableholder.removeEventListener('touchend', this.touchEndHandler, { capture: true })
+      tableholder.removeEventListener('touchstart', this.touchStartHandler, { capture: false })
+      tableholder.removeEventListener('touchmove', this.touchMoveHandler, { capture: false })
+      tableholder.removeEventListener('touchend', this.touchEndHandler, { capture: false })
+      tableholder.removeEventListener('touchcancel', this.touchCancelHandler, { capture: false })
+    }
+
+    // Remove global touch listener
+    if (this.globalTouchStartHandler) {
+      document.removeEventListener('touchstart', this.globalTouchStartHandler, { capture: true })
     }
   }
 

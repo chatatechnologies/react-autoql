@@ -35,6 +35,15 @@
     min-height: 140px;
     overflow: hidden;
 
+    // On mobile, ensure the container allows horizontal scrolling
+    @media (hover: none) and (pointer: coarse) {
+      overflow: auto;
+      // Optimize for smooth scrolling performance
+      -webkit-overflow-scrolling: touch;
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+    }
+
     .tabulator-cell,
     .tabulator-col {
       color: var(--react-autoql-text-color-primary);
@@ -42,8 +51,13 @@
 
     // Improve touch handling on mobile devices
     @media (hover: none) and (pointer: coarse) {
-      // Ensure the container doesn't interfere with touch events
-      touch-action: manipulation;
+      // Let browser handle touch events naturally, but optimize for performance
+      touch-action: auto;
+      // Add hardware acceleration for smoother scrolling
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+      // Performance optimization to contain layout changes
+      contain: layout style;
 
       // Make sure the container can receive focus for touch events
       &:focus-within {
@@ -434,18 +448,23 @@
       // Enable smooth scrolling on mobile devices
       -webkit-overflow-scrolling: touch;
 
+      // Ensure table content has minimum width to trigger horizontal scrolling
+      .tabulator-table {
+        min-width: max-content;
+      }
+
       // On mobile devices, always show scrollbars for better touch interaction
       @media (hover: none) and (pointer: coarse) {
         overflow: auto !important;
-        // Ensure touch events are properly handled
-        touch-action: pan-x pan-y;
-        // Prevent touch delay
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        -khtml-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
+        // Let browser handle all touch interactions naturally
+        touch-action: auto;
+        // Enable momentum scrolling on iOS and add performance optimizations
+        -webkit-overflow-scrolling: touch;
+        // Hardware acceleration for smoother scrolling
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+        // Optimize rendering for mobile
+        will-change: scroll-position;
 
         // Ensure scrollbars are visible on mobile
         &::-webkit-scrollbar {
