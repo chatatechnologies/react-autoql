@@ -2222,6 +2222,7 @@ export class QueryOutput extends React.Component {
       // display if filtering is toggled by user
       newCol.headerFilter = col.headerFilter ?? 'input'
       newCol.headerFilterPlaceholder = this.setHeaderFilterPlaceholder(newCol)
+      newCol.headerFilterLiveFilter = false
 
       // Need to set custom filters for cells that are
       // displayed differently than the data (ie. dates)
@@ -2380,6 +2381,7 @@ export class QueryOutput extends React.Component {
         cssClass: 'pivot-category',
         sorter: (a, b) => dateSortFn(a, b, origDateColumn, 'isTable'),
         headerFilter: false,
+        headerFilterLiveFilter: false,
         headerFilterPlaceholder: 'filter...',
       }
 
@@ -2409,6 +2411,7 @@ export class QueryOutput extends React.Component {
           visible: true,
           is_visible: true,
           headerFilter: false,
+          headerFilterLiveFilter: false,
         })
       })
 
@@ -2545,6 +2548,7 @@ export class QueryOutput extends React.Component {
         cssClass: 'pivot-category',
         pivot: true,
         headerFilter: false,
+        headerFilterLiveFilter: false,
       })
 
       uniqueColumnHeaders.forEach((columnName, i) => {
@@ -2566,6 +2570,7 @@ export class QueryOutput extends React.Component {
           visible: true,
           is_visible: true,
           headerFilter: false,
+          headerFilterLiveFilter: false,
         })
       })
 
