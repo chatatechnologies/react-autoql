@@ -238,6 +238,8 @@ export class QueryOutput extends React.Component {
     resizeMultiplier: PropTypes.number,
     onResize: PropTypes.func,
     localRTFilterResponse: PropTypes.shape({}),
+    enableCustomColumns: PropTypes.bool,
+    preferRegularTableInitialDisplayType: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -297,6 +299,8 @@ export class QueryOutput extends React.Component {
     resizeMultiplier: 1.5,
     onResize: () => {},
     localRTFilterResponse: undefined,
+    enableCustomColumns: true,
+    preferRegularTableInitialDisplayType: false,
   }
 
   componentDidMount = () => {
@@ -672,6 +676,7 @@ export class QueryOutput extends React.Component {
       this.getPivotDataLength(),
       preferredDisplayType,
       isDataLimited(this.queryResponse),
+      this.props.preferRegularTableInitialDisplayType,
     )
   }
 
@@ -2787,7 +2792,7 @@ export class QueryOutput extends React.Component {
           tooltipID={this.props.tooltipID}
           onAddColumnClick={this.onAddColumnClick}
           onCustomClick={this.onAddColumnClick}
-          disableAddCustomColumnOption={isDrilldown(this.queryResponse)}
+          disableAddCustomColumnOption={!this.props.enableCustomColumns || isDrilldown(this.queryResponse)}
           className={isSingleValue ? 'single-value-add-col-btn' : 'table-add-col-btn'}
           isAddingColumn={this.state.isAddingColumn}
         />
