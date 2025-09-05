@@ -380,7 +380,7 @@ export default class ChataPieChart extends React.Component {
     this.titleBBox = {}
     try {
       const titleElement = this.legend.select('.legendTitle').node()
-      const titleBBox = titleElement.getBBox()
+      const titleBBox = titleElement?.getBBox()
       const titleHeight = titleBBox?.height ?? 0
       const titleWidth = titleBBox?.width ?? 0
 
