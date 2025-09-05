@@ -1247,7 +1247,6 @@ export class DashboardTile extends React.Component {
         onPageSizeChange: this.onPageSizeChange,
         onBucketSizeChange: this.onBucketSizeChange,
         bucketSize: this.props.tile.bucketSize,
-        forceAjaxTableData: this.props.tile?.tableFilters && Object.keys(this.props.tile.tableFilters).length > 0,
         initialFormattedTableParams: {
           filters: this.props.tile?.tableFilters,
           sorters: this.props.tile?.orders,
@@ -1333,8 +1332,6 @@ export class DashboardTile extends React.Component {
         onBucketSizeChange: this.onSecondBucketSizeChange,
         onColumnChange: this.onSecondColumnChange,
         bucketSize: this.props.tile.secondBucketSize,
-        forceAjaxTableData:
-          this.props.tile?.secondTableFilters && Object.keys(this.props.tile.secondTableFilters).length > 0,
         initialFormattedTableParams: {
           filters: this.props.tile?.secondTableFilters,
           sorters: this.props.tile?.secondOrders,

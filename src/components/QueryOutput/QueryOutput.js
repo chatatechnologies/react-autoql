@@ -83,7 +83,6 @@ import { withTheme } from '../../theme'
 import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
 
 import './QueryOutput.scss'
-import { TABULATOR_LOCAL_ROW_LIMIT } from '../../js/Constants'
 
 export class QueryOutput extends React.Component {
   constructor(props) {
@@ -241,7 +240,6 @@ export class QueryOutput extends React.Component {
     localRTFilterResponse: PropTypes.shape({}),
     enableCustomColumns: PropTypes.bool,
     preferRegularTableInitialDisplayType: PropTypes.bool,
-    forceAjaxTableData: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -303,7 +301,6 @@ export class QueryOutput extends React.Component {
     localRTFilterResponse: undefined,
     enableCustomColumns: true,
     preferRegularTableInitialDisplayType: false,
-    forceAjaxTableData: false,
   }
 
   componentDidMount = () => {
@@ -2831,8 +2828,6 @@ export class QueryOutput extends React.Component {
       )
     }
 
-    const useLocalFilters = this.queryResponse?.data?.data?.rows?.length <= TABULATOR_LOCAL_ROW_LIMIT
-
     return (
       <ErrorBoundary>
         <ChataTable
@@ -2848,7 +2843,7 @@ export class QueryOutput extends React.Component {
           columnDateRanges={this.columnDateRanges}
           onCellClick={this.onTableCellClick}
           queryID={this.queryID}
-          useInfiniteScroll={this.props.forceAjaxTableData || (!useLocalFilters && this.props.useInfiniteScroll)}
+          useInfiniteScroll={this.props.useInfiniteScroll}
           onFilterCallback={this.onTableFilter}
           onSorterCallback={this.onTableSort}
           onTableParamsChange={this.onTableParamsChange}
