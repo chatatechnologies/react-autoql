@@ -67,6 +67,7 @@ import {
   CustomColumnTypes,
   formatFiltersForTabulator,
   formatSortersForTabulator,
+  DisplayTypes,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -237,6 +238,8 @@ export class QueryOutput extends React.Component {
     resizeMultiplier: PropTypes.number,
     onResize: PropTypes.func,
     localRTFilterResponse: PropTypes.shape({}),
+    enableCustomColumns: PropTypes.bool,
+    preferRegularTableInitialDisplayType: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -296,6 +299,8 @@ export class QueryOutput extends React.Component {
     resizeMultiplier: 1.5,
     onResize: () => {},
     localRTFilterResponse: undefined,
+    enableCustomColumns: true,
+    preferRegularTableInitialDisplayType: false,
   }
 
   componentDidMount = () => {
@@ -684,6 +689,7 @@ export class QueryOutput extends React.Component {
       this.getPivotDataLength(),
       preferredDisplayType,
       isDataLimited(this.queryResponse),
+      this.props.preferRegularTableInitialDisplayType,
     )
   }
 
@@ -822,12 +828,19 @@ export class QueryOutput extends React.Component {
 
       const aggConfig = this.getAggConfig(newColumns)
 
+      // If data is a single value, change display type to table
+      let displayType = this.state.displayType
+      if (this.state.displayType === 'single-value' && !isSingleValueResponse(this.queryResponse)) {
+        displayType = DisplayTypes.TABLE
+      }
+
       this.setState((prevState) => ({
         columns: newColumns,
         columnChangeCount: prevState.columnChangeCount + 1,
         chartID: uuid(),
         aggConfig,
         customColumnSelects,
+        displayType,
       }))
     }
   }
@@ -1458,6 +1471,7 @@ export class QueryOutput extends React.Component {
     this.isOriginalData = false
     this.queryResponse = response
     this.tableData = response?.data?.data?.rows || []
+
     if (this.shouldGeneratePivotData()) {
       this.generatePivotData()
     }
@@ -2220,6 +2234,7 @@ export class QueryOutput extends React.Component {
       // display if filtering is toggled by user
       newCol.headerFilter = col.headerFilter ?? 'input'
       newCol.headerFilterPlaceholder = this.setHeaderFilterPlaceholder(newCol)
+      newCol.headerFilterLiveFilter = false
 
       // Need to set custom filters for cells that are
       // displayed differently than the data (ie. dates)
@@ -2378,6 +2393,7 @@ export class QueryOutput extends React.Component {
         cssClass: 'pivot-category',
         sorter: (a, b) => dateSortFn(a, b, origDateColumn, 'isTable'),
         headerFilter: false,
+        headerFilterLiveFilter: false,
         headerFilterPlaceholder: 'filter...',
       }
 
@@ -2407,6 +2423,7 @@ export class QueryOutput extends React.Component {
           visible: true,
           is_visible: true,
           headerFilter: false,
+          headerFilterLiveFilter: false,
         })
       })
 
@@ -2543,6 +2560,7 @@ export class QueryOutput extends React.Component {
         cssClass: 'pivot-category',
         pivot: true,
         headerFilter: false,
+        headerFilterLiveFilter: false,
       })
 
       uniqueColumnHeaders.forEach((columnName, i) => {
@@ -2564,6 +2582,7 @@ export class QueryOutput extends React.Component {
           visible: true,
           is_visible: true,
           headerFilter: false,
+          headerFilterLiveFilter: false,
         })
       })
 
@@ -2701,6 +2720,7 @@ export class QueryOutput extends React.Component {
 
   onAddColumnClick = (column, sqlFn, isHiddenColumn) => {
     if (isHiddenColumn) {
+      this.setState({ isAddingColumn: true })
       this.tableRef?.setPageLoading(true)
 
       const newColumns = this.state.columns.map((col) => {
@@ -2722,11 +2742,13 @@ export class QueryOutput extends React.Component {
         })
         .finally(() => {
           this.tableRef?.setPageLoading(false)
+          this.setState({ isAddingColumn: false })
         })
     } else if (!column) {
       // Add a custom column
       this.tableRef?.addCustomColumn()
     } else {
+      this.setState({ isAddingColumn: true })
       this.tableRef?.setPageLoading(true)
 
       let currentAdditionalSelectColumns = this.getAdditionalSelectsFromResponse(this.queryResponse) ?? []
@@ -2763,6 +2785,9 @@ export class QueryOutput extends React.Component {
           console.error(error)
           this.tableRef?.setPageLoading(false)
         })
+        .finally(() => {
+          this.setState({ isAddingColumn: false })
+        })
     }
   }
 
@@ -2775,7 +2800,9 @@ export class QueryOutput extends React.Component {
   }
 
   renderAddColumnBtn = () => {
-    if (this.props.allowColumnAddition && this.state.displayType === 'table') {
+    const isSingleValue = isSingleValueResponse(this.queryResponse)
+
+    if (this.props.allowColumnAddition && (this.state.displayType === 'table' || isSingleValue)) {
       return (
         <AddColumnBtn
           queryResponse={this.queryResponse}
@@ -2783,7 +2810,9 @@ export class QueryOutput extends React.Component {
           tooltipID={this.props.tooltipID}
           onAddColumnClick={this.onAddColumnClick}
           onCustomClick={this.onAddColumnClick}
-          disableAddCustomColumnOption={isDrilldown(this.queryResponse)}
+          disableAddCustomColumnOption={!this.props.enableCustomColumns || isDrilldown(this.queryResponse)}
+          className={isSingleValue ? 'single-value-add-col-btn' : 'table-add-col-btn'}
+          isAddingColumn={this.state.isAddingColumn}
         />
       )
     }
