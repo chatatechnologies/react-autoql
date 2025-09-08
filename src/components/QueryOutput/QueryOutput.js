@@ -2799,7 +2799,8 @@ export class QueryOutput extends React.Component {
           onAddColumnClick={this.onAddColumnClick}
           onCustomClick={this.onAddColumnClick}
           disableAddCustomColumnOption={!this.props.enableCustomColumns || isDrilldown(this.queryResponse)}
-          className={isSingleValue ? 'single-value-add-col-btn' : 'table-add-col-btn'}
+          // className={isSingleValue ? 'single-value-add-col-btn' : 'table-add-col-btn'}
+          className='table-add-col-btn'
           isAddingColumn={this.state.isAddingColumn}
         />
       )
