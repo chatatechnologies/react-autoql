@@ -1300,12 +1300,12 @@ export class DashboardTile extends React.Component {
       vizToolbarProps: {
         ref: (r) => (this.vizToolbarRef = r),
         responseRef: this.state.responseRef,
-        key: `dashboard-tile-viz-toolbar-${this.FIRST_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
+        key: `dashboard-tile-viz-toolbar-${this.FIRST_QUERY_RESPONSE_KEY}`,
       },
       optionsToolbarProps: {
         ref: (r) => (this.optionsToolbarRef = r),
         responseRef: this.state.responseRef,
-        key: `dashboard-tile-options-toolbar-${this.FIRST_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
+        key: `dashboard-tile-options-toolbar-${this.FIRST_QUERY_RESPONSE_KEY}`,
       },
     })
   }
@@ -1385,14 +1385,12 @@ export class DashboardTile extends React.Component {
       vizToolbarProps: {
         ref: (r) => (this.secondVizToolbarRef = r),
         responseRef: this.state.secondResponseRef,
-        key: `dashboard-tile-viz-toolbar-${this.SECOND_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
+        key: `dashboard-tile-viz-toolbar-${this.SECOND_QUERY_RESPONSE_KEY}`,
       },
       optionsToolbarProps: {
         ref: (r) => (this.secondOptionsToolbarRef = r),
         responseRef: this.state.secondResponseRef,
-        key: `dashboard-tile-options-toolbar-${this.SECOND_QUERY_RESPONSE_KEY}${
-          this.props.isEditing ? '-editing' : ''
-        }`,
+        key: `dashboard-tile-options-toolbar-${this.SECOND_QUERY_RESPONSE_KEY}`,
       },
       isSecondHalf: true,
     })

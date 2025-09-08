@@ -41,7 +41,7 @@ class DashboardWithoutTheme extends React.Component {
     this.debounceTime = 50
     this.onChangeTiles = null
     this.callbackSubsciptions = []
-    this.tileLog = [props.tiles]
+    this.tileLog = [_cloneDeep(props.tiles)]
     this.currentLogIndex = 0
 
     if (props.enableAjaxTableData !== undefined) {
@@ -119,6 +119,43 @@ class DashboardWithoutTheme extends React.Component {
     onDeleteCallback: () => {},
   }
 
+  restoreAllHeaderFilters = () => {
+    for (const key in this.tileRefs) {
+      const tileRef = this.tileRefs[key]
+      if (
+        tileRef &&
+        tileRef.state &&
+        tileRef.state.responseRef &&
+        tileRef.state.responseRef.tableRef &&
+        typeof tileRef.state.responseRef.tableRef.hideAllHeaderFilters === 'function'
+      ) {
+        tileRef.state.responseRef.tableRef.hideAllHeaderFilters()
+      }
+    }
+  }
+
+  restoreAllTileUIState = () => {
+    for (const key in this.tileRefs) {
+      const tileRef = this.tileRefs[key]
+      if (tileRef && typeof tileRef.restoreTileUIState === 'function') {
+        tileRef.restoreTileUIState()
+      }
+    }
+  }
+
+  getRestoredTiles = () => {
+    return this.state.uneditedDashboardTiles?.map((originalTile) => {
+      const currentTile = this.getMostRecentTiles().find((t) => t.key === originalTile.key)
+      if (!currentTile) return originalTile
+      return {
+        ...currentTile,
+        displayType: originalTile.displayType,
+        secondDisplayType: originalTile.secondDisplayType,
+        secondDisplayPercentage: originalTile.secondDisplayPercentage,
+      }
+    })
+  }
+
   static getDerivedStateFromProps(nextProps, prevState) {
     if (!prevState.wasEditing && nextProps.isEditing) {
       return {
@@ -187,9 +224,9 @@ class DashboardWithoutTheme extends React.Component {
 
   getMostRecentTiles = () => {
     if (this.onChangeTiles) {
-      return this.onChangeTiles
+      return _cloneDeep(this.onChangeTiles)
     }
-    return this.props.tiles
+    return _cloneDeep(this.props.tiles)
   }
 
   subscribeToCallback = (callbackArray) => {
@@ -743,22 +780,7 @@ class DashboardWithoutTheme extends React.Component {
               onSaveClick={() => {
                 Promise.resolve(this.props.onSaveCallback ? this.props.onSaveCallback() : undefined).then((result) => {
                   // After dashboard save, close all header filters in all tiles
-                  this.debouncedOnChange(this.getMostRecentTiles(), true, [
-                    () => {
-                      for (const key in this.tileRefs) {
-                        const tileRef = this.tileRefs[key]
-                        if (
-                          tileRef &&
-                          tileRef.state &&
-                          tileRef.state.responseRef &&
-                          tileRef.state.responseRef.tableRef &&
-                          typeof tileRef.state.responseRef.tableRef.hideAllHeaderFilters === 'function'
-                        ) {
-                          tileRef.state.responseRef.tableRef.hideAllHeaderFilters()
-                        }
-                      }
-                    },
-                  ])
+                  this.debouncedOnChange(this.getMostRecentTiles(), true, [this.restoreAllHeaderFilters])
                   // Keep if we need to add back in the near future
                   // this.executeDashboard()
                 })
@@ -767,26 +789,9 @@ class DashboardWithoutTheme extends React.Component {
               onRenameClick={this.props.onRenameCallback}
               onCancelClick={() => {
                 // Restore displayType for each tile from uneditedDashboardTiles
-                const restoredTiles = this.state.uneditedDashboardTiles?.map((originalTile) => {
-                  const currentTile = this.getMostRecentTiles().find((t) => t.key === originalTile.key)
-                  if (!currentTile) return originalTile
-                  // Overwrite displayType and related properties
-                  return {
-                    ...currentTile,
-                    displayType: originalTile.displayType,
-                    secondDisplayType: originalTile.secondDisplayType,
-                    secondDisplayPercentage: originalTile.secondDisplayPercentage,
-                  }
-                })
+                const restoredTiles = this.getRestoredTiles()
                 this.debouncedOnChange(restoredTiles || this.state.uneditedDashboardTiles, true, [
-                  () => {
-                    for (const key in this.tileRefs) {
-                      const tileRef = this.tileRefs[key]
-                      if (tileRef && typeof tileRef.restoreTileUIState === 'function') {
-                        tileRef.restoreTileUIState()
-                      }
-                    }
-                  },
+                  this.restoreAllTileUIState,
                 ])
                 this.props.stopEditingCallback()
               }}
