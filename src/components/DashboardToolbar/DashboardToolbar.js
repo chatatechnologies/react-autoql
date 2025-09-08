@@ -8,6 +8,7 @@ import { ConfirmModal } from '../ConfirmModal'
 import { Modal } from '../Modal'
 import { Input } from '../Input'
 import { Icon } from '../Icon'
+import { Tooltip } from '../Tooltip'
 import FilterAutocomplete from './DashboardFilterAutocomplete'
 import { Chip } from '../Chip'
 
@@ -108,7 +109,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
   getRefreshIntervalDisplay = () => {
     const { refreshInterval } = this.props
     if (!refreshInterval) {
-      return 'No interval'
+      return 'Auto-refresh: Off'
     }
     return this.formatRefreshInterval(false)
   }
@@ -245,7 +246,10 @@ export class DashboardToolbarWithoutRef extends React.Component {
               {this.dashboardSlicingFeatureToggle && !this.props.isEditing && this.renderFilterInput()}
               {!this.props.isEditing ? (
                 <>
-                  <div
+                  {/* 
+				  This is the refresh interval button that is currently disabled
+				  TODO: Re-enable this button once the refresh interval is implemented
+				   <div
                     style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '8px', opacity: 0.7 }}
                   >
                     <Icon
@@ -254,8 +258,10 @@ export class DashboardToolbarWithoutRef extends React.Component {
                       tooltipID={this.props.tooltipID}
                       style={{ marginRight: '6px', fontSize: '1.2rem' }}
                     />
-                    <span>{this.getRefreshIntervalDisplay()}</span>
-                  </div>
+                    <span data-tooltip-content={this.getRefreshIntervalText()} data-tooltip-id={this.props.tooltipID}>
+                      {this.getRefreshIntervalDisplay()}
+                    </span>
+                  </div> */}
                   <Button
                     iconOnly
                     icon='refresh'
@@ -373,6 +379,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
           </p>
         </ConfirmModal>
         {this.renderRenameModal()}
+        <Tooltip tooltipId={this.props.tooltipID} />
       </ErrorBoundary>
     )
   }
