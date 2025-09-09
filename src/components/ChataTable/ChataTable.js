@@ -1375,7 +1375,11 @@ export default class ChataTable extends React.Component {
       return null
     }
 
-    if (isDataLimited(this.props.response) || this.props.pivotTableRowsLimited || this.props.pivotTableColumnsLimited) {
+    if (
+      (this.useInfiniteScroll && isDataLimited(this.props.response)) ||
+      this.props.pivotTableRowsLimited ||
+      this.props.pivotTableColumnsLimited
+    ) {
       const rowLimit = this.props.response?.data?.data?.row_limit
       const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
       const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(rowLimit)
@@ -1389,7 +1393,7 @@ export default class ChataTable extends React.Component {
       let content
       let tooltipContent
 
-      if (isDataLimited(this.props.response)) {
+      if (this.useInfiniteScroll && isDataLimited(this.props.response)) {
         tooltipContent = `To optimize performance, this pivot table is limited to the initial <em>${rowLimitFormatted}/${totalRowsFormatted}</em> rows of the original dataset.`
       } else if (this.props.pivotTableRowsLimited && this.props.pivotTableColumnsLimited) {
         content = 'Rows and Columns have been limited!'
@@ -1520,7 +1524,7 @@ export default class ChataTable extends React.Component {
             column?.type === ColumnTypes.DOLLAR_AMT ||
             column?.type === ColumnTypes.DATE) &&
             stats &&
-            (isDataLimited(this.props.response) ? (
+            (this.useInfiniteScroll && isDataLimited(this.props.response) ? (
               <div className='selectable-table-tooltip-section'>
                 <span>
                   <Icon type='warning' /> {`Summary stats unavailable - ${DATASET_TOO_LARGE}`}
