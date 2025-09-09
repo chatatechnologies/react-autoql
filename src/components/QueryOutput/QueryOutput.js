@@ -156,8 +156,8 @@ export class QueryOutput extends React.Component {
     // Set initial table params to be any filters or sorters that
     // are already present in the current query
     this.formattedTableParams = {
-      filters: this.queryResponse?.data?.data?.fe_req?.filters || props?.initialFormattedTableParams?.filters || [],
-      sorters: this.queryResponse?.data?.data?.fe_req?.sorters || props?.initialFormattedTableParams?.sorters || [],
+      filters: props?.initialFormattedTableParams?.filters || this.queryResponse?.data?.data?.fe_req?.filters || [],
+      sorters: props?.initialFormattedTableParams?.sorters || this.queryResponse?.data?.data?.fe_req?.sorters || [],
     }
 
     this.DEFAULT_TABLE_PAGE_SIZE = 100
@@ -1483,16 +1483,6 @@ export class QueryOutput extends React.Component {
     }
 
     this.setState({ chartID: uuid() })
-  }
-
-  onTableFilter = async (filters, rows) => {
-    if (!filters || _isEqual(filters, this.tableParams?.filter)) {
-      return
-    }
-
-    this.tableParams.filter = _cloneDeep(filters)
-    this.formattedTableParams = formatTableParams(this.tableParams, this.getColumns())
-    this.onTableParamsChange(this.tableParams, this.formattedTableParams)
   }
 
   onTableSort = (sorters) => {
@@ -2846,8 +2836,6 @@ export class QueryOutput extends React.Component {
           onCellClick={this.onTableCellClick}
           queryID={this.queryID}
           useInfiniteScroll={this.props.useInfiniteScroll}
-          onFilterCallback={this.onTableFilter}
-          onSorterCallback={this.onTableSort}
           onTableParamsChange={this.onTableParamsChange}
           onNewData={this.onNewData}
           isAnimating={this.props.isAnimating}
