@@ -156,8 +156,8 @@ export class QueryOutput extends React.Component {
     // Set initial table params to be any filters or sorters that
     // are already present in the current query
     this.formattedTableParams = {
-      filters: props?.initialFormattedTableParams?.filters || this.queryResponse?.data?.data?.fe_req?.filters || [],
-      sorters: props?.initialFormattedTableParams?.sorters || this.queryResponse?.data?.data?.fe_req?.sorters || [],
+      filters: props?.initialFormattedTableParams?.filters || [],
+      sorters: props?.initialFormattedTableParams?.sorters || [],
     }
 
     this.DEFAULT_TABLE_PAGE_SIZE = 100
@@ -414,8 +414,6 @@ export class QueryOutput extends React.Component {
           this.queryResponse?.data?.data?.fe_req?.additional_selects,
           this.queryResponse,
           dataConfig,
-          this.queryResponse?.data?.data?.fe_req?.filters,
-          this.queryResponse?.data?.data?.fe_req?.orders,
           this.queryResponse?.data?.data?.fe_req?.session_filter_locks,
         )
 
@@ -442,7 +440,9 @@ export class QueryOutput extends React.Component {
         newState.displayType = this.getUpdatedDefaultDisplayType('table')
       }
 
-      this.updateToolbars()
+      setTimeout(() => {
+        this.updateToolbars()
+      }, 0)
 
       if (!_isEmpty(newState)) {
         this.setState(newState)
@@ -1451,7 +1451,9 @@ export class QueryOutput extends React.Component {
     this.props.onTableParamsChange?.(this.tableParams, this.formattedTableParams)
 
     // This will update the filter badge in OptionsToolbar
-    this.updateToolbars()
+    setTimeout(() => {
+      this.updateToolbars()
+    }, 0)
   }
 
   onNewData = (response) => {
@@ -1476,8 +1478,6 @@ export class QueryOutput extends React.Component {
         response?.data?.data?.fe_req?.additional_selects,
         response,
         dataConfig,
-        response?.data?.data?.fe_req?.filters,
-        response?.data?.data?.fe_req?.orders,
         response?.data?.data?.fe_req?.session_filter_locks,
       )
     }
