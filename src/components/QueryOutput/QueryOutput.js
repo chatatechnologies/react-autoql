@@ -3216,7 +3216,6 @@ export class QueryOutput extends React.Component {
   }
 
   renderReverseTranslation = () => {
-    // Simplified guard for required props
     const valid =
       this.shouldRenderReverseTranslation() &&
       this.queryResponse?.data?.data &&

@@ -779,7 +779,6 @@ class DashboardWithoutTheme extends React.Component {
               onRefreshClick={this.executeDashboard}
               onSaveClick={() => {
                 Promise.resolve(this.props.onSaveCallback ? this.props.onSaveCallback() : undefined).then((result) => {
-                  // After dashboard save, close all header filters in all tiles
                   this.debouncedOnChange(this.getMostRecentTiles(), true, [this.restoreAllHeaderFilters])
                   // Keep if we need to add back in the near future
                   // this.executeDashboard()

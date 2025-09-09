@@ -206,7 +206,6 @@ class ChataTable extends React.Component {
     scope: undefined,
   }
 
-  // Expose this method for parent components via ref
   hideAllHeaderFilters = () => {
     if (this._isMounted) this.setState({ isFiltering: false })
   }
@@ -1085,7 +1084,6 @@ class ChataTable extends React.Component {
     this.hideAllHeaderFilters()
   }
 
-  // New method: set header filters and UI to original values
   setHeaderFiltersToOriginal = (filters = []) => {
     if (this.ref?.tabulator) {
       filters.forEach((filter) => {

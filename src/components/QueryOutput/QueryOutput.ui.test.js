@@ -15,5 +15,4 @@ describe('QueryOutput displayType restoration', () => {
     instance.reverseTranslationRef = null
     expect(() => instance.refreshLayout()).not.toThrow()
   })
-
 })
