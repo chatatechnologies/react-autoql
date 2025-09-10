@@ -506,13 +506,6 @@ export default class ChataTable extends React.Component {
       }, 0)
     }
 
-    // Reset filter count when all filters are cleared (for non-infinite scroll)
-    if (!this.useInfiniteScroll && (!filters || filters.length === 0)) {
-      this.filterCount = 0 // Reset to 0 so renderTableRowCount uses original count
-      // Force a re-render to update the UI with the reset filter count
-      this.forceUpdate()
-    }
-
     if (!this.useInfiniteScroll && !this.pivot) {
       this.getRTForRemoteFilterAndSort()
     }
