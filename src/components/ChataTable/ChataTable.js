@@ -506,6 +506,13 @@ export default class ChataTable extends React.Component {
       }, 0)
     }
 
+    // Reset filter count when all filters are cleared (for non-infinite scroll)
+    if (!this.useInfiniteScroll && (!filters || filters.length === 0)) {
+      this.filterCount = 0 // Reset to 0 so renderTableRowCount uses original count
+      // Force a re-render to update the UI with the reset filter count
+      this.forceUpdate()
+    }
+
     if (!this.useInfiniteScroll && !this.pivot) {
       this.getRTForRemoteFilterAndSort()
     }
@@ -545,6 +552,22 @@ export default class ChataTable extends React.Component {
 
       if (this.props.keepScrolledRight) {
         this.scrollToRight()
+      }
+
+      // Set initial filter count for non-infinite scroll tables with initial filters
+      if (!this.useInfiniteScroll && this.tableParams?.filter?.length > 0) {
+        // Calculate the filtered count using the same logic as ajaxRequestFunc
+        const tableParamsFormatted = formatTableParams(this.tableParams, this.props.columns)
+        if (tableParamsFormatted) {
+          const filteredResponse = this.clientSortAndFilterData({
+            tableFilters: tableParamsFormatted?.filters,
+            orders: tableParamsFormatted?.sorters,
+          })
+          this.filterCount = filteredResponse?.data?.data?.rows?.length || 0
+
+          // Force a re-render to update the UI with the new filter count
+          this.forceUpdate()
+        }
       }
     }
   }
