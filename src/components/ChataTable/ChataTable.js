@@ -794,6 +794,13 @@ export default class ChataTable extends React.Component {
       if (isLastPage !== this.state.isLastPage && this._isMounted) {
         this.setState({ isLastPage })
       }
+      // Force re-render to update filter count display after data is processed
+      if (this._isMounted) {
+        setTimeout(() => {
+          this.filterCount = response?.rows?.length ?? 0
+          this.forceUpdate()
+        }, 0)
+      }
     } else {
       return {}
     }

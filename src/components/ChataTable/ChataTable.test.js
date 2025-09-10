@@ -260,4 +260,164 @@ describe('ChataTable', () => {
       expect(instance.originalQueryData).toEqual(originalData)
     })
   })
+
+  describe('filterCount functionality', () => {
+    test('should initialize filterCount to 0', () => {
+      const wrapper = setup()
+      const instance = wrapper.instance()
+
+      expect(instance.filterCount).toBe(0)
+    })
+
+    test('should update filterCount in ajaxResponseFunc when data is processed', (done) => {
+      const wrapper = setup()
+      const instance = wrapper.instance()
+      const mockForceUpdate = jest.fn()
+      instance.forceUpdate = mockForceUpdate
+
+      // Mock response with filtered data
+      const mockResponse = {
+        rows: [
+          ['online', 'John'],
+          ['online', 'Bob'],
+        ],
+        last_page: 1,
+      }
+
+      // Call ajaxResponseFunc
+      instance.ajaxResponseFunc({}, mockResponse)
+
+      // Wait for setTimeout to execute
+      setTimeout(() => {
+        // Should update filterCount and force re-render
+        expect(instance.filterCount).toBe(2)
+        expect(mockForceUpdate).toHaveBeenCalled()
+        done()
+      }, 10)
+    })
+
+    test('should not reset filterCount in onDataFiltered (user removed this logic)', () => {
+      const wrapper = setup()
+      const instance = wrapper.instance()
+
+      // Set initial filter count
+      instance.filterCount = 5
+
+      // Call onDataFiltered with no filters (cleared)
+      instance.onDataFiltered([], [])
+
+      // Should NOT reset filterCount (user removed this logic)
+      expect(instance.filterCount).toBe(5)
+    })
+
+    test('should not reset filterCount when filters are applied in onDataFiltered', () => {
+      const wrapper = setup()
+      const instance = wrapper.instance()
+
+      // Set initial filter count
+      instance.filterCount = 3
+
+      // Call onDataFiltered with active filters
+      const activeFilters = [{ field: '1', type: '=', value: 'online' }]
+      instance.onDataFiltered(activeFilters, [])
+
+      // Should not reset filterCount
+      expect(instance.filterCount).toBe(3)
+    })
+
+    test('should update filterCount in ajaxRequestFunc for infinite scroll tables', () => {
+      const props = {
+        useInfiniteScroll: true,
+      }
+      const wrapper = setup(props)
+      const instance = wrapper.instance()
+
+      // Mock response wrapper with filtered data
+      const mockResponseWrapper = {
+        data: {
+          data: {
+            rows: [
+              ['online', 'John'],
+              ['online', 'Bob'],
+              ['online', 'Alice'],
+            ],
+          },
+        },
+      }
+
+      // Mock the queryFn to return our mock response
+      instance.queryFn = jest.fn().mockResolvedValue(mockResponseWrapper)
+
+      // Mock hasSetInitialData to be true so ajaxRequestFunc processes the request
+      instance.hasSetInitialData = true
+
+      // Call ajaxRequestFunc
+      const params = { page: 1, filter: [{ field: '1', type: '=', value: 'online' }] }
+
+      // We need to mock the async behavior
+      return instance.ajaxRequestFunc({}, params).then(() => {
+        // Should update filterCount to the length of filtered rows (this happens in ajaxRequestFunc)
+        expect(instance.filterCount).toBe(3)
+      })
+    })
+
+    test('should handle empty response in ajaxResponseFunc', () => {
+      const wrapper = setup()
+      const instance = wrapper.instance()
+      const mockForceUpdate = jest.fn()
+      instance.forceUpdate = mockForceUpdate
+
+      // Call ajaxResponseFunc with empty response
+      const result = instance.ajaxResponseFunc({}, null)
+
+      // Should return empty object and not force update
+      expect(result).toEqual({})
+      expect(mockForceUpdate).not.toHaveBeenCalled()
+    })
+
+    test('should handle undefined response in ajaxResponseFunc', () => {
+      const wrapper = setup()
+      const instance = wrapper.instance()
+      const mockForceUpdate = jest.fn()
+      instance.forceUpdate = mockForceUpdate
+
+      // Call ajaxResponseFunc with undefined response
+      const result = instance.ajaxResponseFunc({}, undefined)
+
+      // Should return empty object and not force update
+      expect(result).toEqual({})
+      expect(mockForceUpdate).not.toHaveBeenCalled()
+    })
+
+    test('should update filterCount and trigger re-render after data processing', (done) => {
+      const wrapper = setup()
+      const instance = wrapper.instance()
+      const mockForceUpdate = jest.fn()
+      instance.forceUpdate = mockForceUpdate
+
+      // Mock response with filtered data
+      const mockResponse = {
+        rows: [
+          ['online', 'John'],
+          ['online', 'Bob'],
+          ['online', 'Alice'],
+          ['online', 'Charlie'],
+        ],
+        last_page: 1,
+      }
+
+      // Call ajaxResponseFunc
+      instance.ajaxResponseFunc({}, mockResponse)
+
+      // Wait for setTimeout to execute
+      setTimeout(() => {
+        // Should update filterCount to match the number of rows
+        expect(instance.filterCount).toBe(4)
+
+        // Should force re-render to update UI
+        expect(mockForceUpdate).toHaveBeenCalled()
+        done()
+      }, 10)
+    })
+  })
 })
