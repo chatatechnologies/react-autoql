@@ -394,6 +394,7 @@ export class DashboardTile extends React.Component {
       columns: queryChanged ? undefined : this.props.tile.columns,
       defaultSelectedSuggestion: undefined,
       queryValidationSelections,
+      tableFilters: queryChanged ? undefined : this.props.tile.tableFilters,
     })
 
     return this.processQuery({
