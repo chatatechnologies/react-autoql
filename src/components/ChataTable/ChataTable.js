@@ -59,12 +59,12 @@ export default class ChataTable extends React.Component {
     this.filterCount = 0
     this.isSorting = false
     this.pageSize = props.pageSize ?? 50
-    this.useRemote =
-      this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
-        ? LOCAL_OR_REMOTE.REMOTE
-        : this.props.response?.data?.data?.fe_req?.filters?.length > 0
-        ? LOCAL_OR_REMOTE.REMOTE
-        : LOCAL_OR_REMOTE.LOCAL
+    this.useRemote = true
+    // this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
+    //   ? LOCAL_OR_REMOTE.REMOTE
+    //   : this.props.response?.data?.data?.fe_req?.filters?.length > 0
+    //   ? LOCAL_OR_REMOTE.REMOTE
+    //   : LOCAL_OR_REMOTE.LOCAL
     this.isLocal = this.useRemote === LOCAL_OR_REMOTE.LOCAL
     this.totalPages = this.getTotalPages(props.response)
     if (isNaN(this.totalPages) || !this.totalPages) {
