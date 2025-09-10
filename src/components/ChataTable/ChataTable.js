@@ -62,7 +62,7 @@ export default class ChataTable extends React.Component {
     this.useRemote =
       this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
         ? LOCAL_OR_REMOTE.REMOTE
-        : this.props.response?.data?.data?.fe_req?.filters?.length > 0
+        : this.props.response?.data?.data?.fe_req?.filters?.length > 0 || props.initialTableParams?.filter?.length > 0
         ? LOCAL_OR_REMOTE.REMOTE
         : LOCAL_OR_REMOTE.LOCAL
     this.isLocal = this.useRemote === LOCAL_OR_REMOTE.LOCAL
@@ -281,12 +281,10 @@ export default class ChataTable extends React.Component {
           this.scrollToRight()
         }
       })
-      setTimeout(() => {
-        this.setHeaderInputEventListeners()
-        this.setFilters()
-        this.setSorters()
-        this.clearLoadingIndicators()
-      }, 0)
+      this.setHeaderInputEventListeners()
+      this.setFilters()
+      this.setSorters()
+      this.clearLoadingIndicators()
     }
 
     if (this.tabulatorMounted && !prevState.tabulatorJustMounted) {
@@ -627,11 +625,7 @@ export default class ChataTable extends React.Component {
 
         this.props.onTableParamsChange?.(params, nextTableParamsFormatted)
 
-        // This can not be used with local filters because it updates the original data
-        // And you can get stuck in a filtered state and not be able to filter on the original dataset
-        if (this.useInfiniteScroll) {
-          this.props.onNewData(responseWrapper)
-        }
+        this.props.onNewData(responseWrapper)
 
         const totalPages = this.getTotalPages(responseWrapper)
 
