@@ -1025,9 +1025,6 @@ export default class ChataTable extends React.Component {
 
     if (filterValues) {
       try {
-        // Method 1: Try using setHeaderFilterValue one by one but with more logging
-        const beforeFilters = this.ref?.tabulator?.getHeaderFilters()
-
         // Block all table redraws/data loads while setting filters
         this.ref?.tabulator?.blockRedraw()
 
