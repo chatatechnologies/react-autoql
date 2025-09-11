@@ -121,6 +121,9 @@ export default class ChataPieChart extends React.Component {
     backgroundColor: PropTypes.string,
     fontSize: PropTypes.number,
     margin: PropTypes.number,
+    hiddenLegendLabels: PropTypes.arrayOf(PropTypes.string),
+    onLegendVisibilityChange: PropTypes.func,
+    isEditing: PropTypes.bool,
   }
 
   static defaultProps = {
