@@ -188,13 +188,13 @@ export default class ChataTable extends React.Component {
     onCustomColumnChange: () => {},
     updateColumnsAndData: () => {},
     onUpdateFilterResponse: () => {},
-    onTableParamsChange: () => {},
     isDrilldown: false,
     scope: undefined,
   }
 
   componentDidMount = () => {
     this._isMounted = true
+    this._setFiltersTime = Date.now() // Track when component mounted to avoid duplicate requests
     if (!this.props.autoHeight) {
       this.initialTableHeight = this.tabulatorContainer?.clientHeight
       this.lockedTableHeight = this.initialTableHeight
@@ -309,6 +309,13 @@ export default class ChataTable extends React.Component {
       clearTimeout(this.clickListenerTimeout)
       clearTimeout(this.setDimensionsTimeout)
       clearTimeout(this.setStateTimeout)
+
+      // Clear any pending filter check timeouts to prevent state updates after unmount
+      if (this._filterCheckTimeout) {
+        clearTimeout(this._filterCheckTimeout)
+        this._filterCheckTimeout = null
+      }
+
       this.cancelCurrentRequest()
     } catch (error) {
       console.error(error)
@@ -530,7 +537,9 @@ export default class ChataTable extends React.Component {
   }
 
   setPageLoading = (loading) => {
-    this.setState({ pageLoading: !!loading })
+    if (this._isMounted) {
+      this.setState({ pageLoading: !!loading })
+    }
   }
 
   onTableBuilt = async () => {
@@ -579,7 +588,8 @@ export default class ChataTable extends React.Component {
     const tableParamsUnchanged = _isEqual(tableParamsFormatted, nextTableParamsFormatted)
 
     if (this.hasSetInitialData && (this.state.scrollLoading || this.props.hidden || tableParamsUnchanged)) {
-      return false
+      // Return undefined to let the request proceed, but ajaxRequestFunc will handle it
+      return
     }
   }
 
@@ -593,7 +603,10 @@ export default class ChataTable extends React.Component {
     let response = initialData
 
     try {
-      if (!this.hasSetInitialData || !this._isMounted) {
+      // Check if table just mounted - avoid any AJAX requests for recently mounted tables
+      const hasRecentlySetHeaderFilters = this.state.tabulatorMounted && Date.now() - (this._setFiltersTime || 0) < 2000 // 2 seconds
+
+      if (!this.hasSetInitialData || !this._isMounted || hasRecentlySetHeaderFilters) {
         return initialData
       }
 
@@ -604,10 +617,14 @@ export default class ChataTable extends React.Component {
       const nextTableParamsFormatted = formatTableParams(params, this.props.columns)
 
       if (params?.page > 1) {
-        this.setState({ scrollLoading: true })
+        if (this._isMounted) {
+          this.setState({ scrollLoading: true })
+        }
         response = await this.getNewPage(this.props, nextTableParamsFormatted)
       } else {
-        this.setState({ pageLoading: true })
+        if (this._isMounted) {
+          this.setState({ pageLoading: true })
+        }
         const responseWrapper = await this.queryFn({
           tableFilters: nextTableParamsFormatted?.filters,
           orders: nextTableParamsFormatted?.sorters,
@@ -683,7 +700,8 @@ export default class ChataTable extends React.Component {
       return this.props.queryFn(params)
     } else {
       return new Promise((resolve) => {
-        resolve(this.clientSortAndFilterData(params))
+        const result = this.clientSortAndFilterData(params)
+        resolve(result)
       })
     }
   }
@@ -999,24 +1017,42 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  setFilters = (newFilters) => {
+  setFilters = async (newFilters) => {
+    // Track when setFilters was called to prevent duplicate AJAX requests
+    this._setFiltersTime = Date.now()
+
     const filterValues = newFilters || this.tableParams?.filter
 
     if (filterValues) {
-      filterValues.forEach((filter, i) => {
-        try {
-          // Get all columns to check if the target column exists
-          const columns = this.ref.tabulator.getColumns()
-          const targetColumn = columns.find((col) => col.getField() === filter.field)
+      try {
+        // Method 1: Try using setHeaderFilterValue one by one but with more logging
+        const beforeFilters = this.ref?.tabulator?.getHeaderFilters()
 
-          if (targetColumn && targetColumn.getDefinition().headerFilter) {
-            this.ref?.tabulator?.setHeaderFilterValue(filter.field, filter.value)
-          }
-        } catch (error) {
-          console.error(error)
-          this.props.onErrorCallback(error)
+        // Block all table redraws/data loads while setting filters
+        this.ref?.tabulator?.blockRedraw()
+
+        try {
+          filterValues.forEach((filter) => {
+            // Get all columns to check if the target column exists
+            const columns = this.ref.tabulator.getColumns()
+            const targetColumn = columns.find((col) => col.getField() === filter.field)
+
+            if (targetColumn && targetColumn.getDefinition().headerFilter) {
+              this.ref?.tabulator?.setHeaderFilterValue(filter.field, filter.value)
+            }
+          })
+        } finally {
+          // Always restore redraw even if there's an error - this will trigger ONE AJAX request with all filters
+          this.ref?.tabulator?.restoreRedraw()
         }
-      })
+
+        // Final check after all filters set - with cleanup
+        this._filterCheckTimeout = setTimeout(() => {
+          this._filterCheckTimeout = null
+        }, 10)
+      } catch (error) {
+        console.error('CHATATABLE - error setting filters:', error)
+      }
     }
 
     this.setFilterBadgeClasses()

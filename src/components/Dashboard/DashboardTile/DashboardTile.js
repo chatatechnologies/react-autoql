@@ -1233,7 +1233,7 @@ export class DashboardTile extends React.Component {
           filters: this.props.tile?.tableFilters,
           sorters: this.props.tile?.orders,
           sessionFilters: this.props.tile?.filters,
-        },
+        initialFormattedTableParams: this.state.initialFormattedTableParams,
       },
       vizToolbarProps: {
         ref: (r) => (this.vizToolbarRef = r),

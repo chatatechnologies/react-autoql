@@ -1486,25 +1486,12 @@ export class QueryOutput extends React.Component {
   }
 
   onTableSort = (sorters) => {
-    try {
-      this.tableParams = this.tableParams || {}
-      this.tableParams.sort = []
-
-      if (!sorters) {
-        return
-      }
 
       const validSorters = Array.isArray(sorters) ? sorters.filter(this.isValidSorter).map(this.formatSorter) : []
 
       // Update table params and formatted params
       this.tableParams.sort = validSorters
       this.updateFormattedTableParams(validSorters)
-    } catch (error) {
-      console.error('Error in onTableSort:', error)
-      this.resetSorting()
-    }
-  }
-
   isValidSorter = (sorter) => {
     return sorter && typeof sorter === 'object' && sorter.field !== undefined && typeof sorter.dir === 'string'
   }
