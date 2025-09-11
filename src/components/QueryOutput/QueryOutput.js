@@ -1485,13 +1485,6 @@ export class QueryOutput extends React.Component {
     this.setState({ chartID: uuid() })
   }
 
-  onTableSort = (sorters) => {
-
-      const validSorters = Array.isArray(sorters) ? sorters.filter(this.isValidSorter).map(this.formatSorter) : []
-
-      // Update table params and formatted params
-      this.tableParams.sort = validSorters
-      this.updateFormattedTableParams(validSorters)
   isValidSorter = (sorter) => {
     return sorter && typeof sorter === 'object' && sorter.field !== undefined && typeof sorter.dir === 'string'
   }
