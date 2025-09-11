@@ -206,6 +206,7 @@ export default class ChataPieChart extends React.Component {
   componentWillUnmount = () => {
     removeFromDOM(this.legend)
     removeFromDOM(this.pieChartContainer)
+    this.legendSwatchElements = null
   }
 
   renderPie = () => {
