@@ -569,36 +569,44 @@ export default class ChataChart extends React.Component {
     return null
   }
 
+  handleLegendVisibilityChange = (hiddenLabels) => this.props.onLegendVisibilityChange?.(hiddenLabels)
+
   renderChart = () => {
     const commonChartProps = this.getCommonChartProps()
+    const commonLegendProps = {
+      legendLabels: this.getLegendLabels(),
+      isEditing: this.props.isEditing,
+      hiddenLegendLabels: this.props.hiddenLegendLabels,
+      onLegendVisibilityChange: this.handleLegendVisibilityChange,
+    }
 
     switch (this.props.type) {
       case DisplayTypes.COLUMN: {
-        return <ChataColumnChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
+        return <ChataColumnChart {...commonChartProps} {...commonLegendProps} />
       }
       case DisplayTypes.BAR: {
-        return <ChataBarChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
+        return <ChataBarChart {...commonChartProps} {...commonLegendProps} />
       }
       case DisplayTypes.LINE: {
-        return <ChataLineChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
+        return <ChataLineChart {...commonChartProps} {...commonLegendProps} />
       }
       case DisplayTypes.PIE: {
-        return <ChataPieChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
+        return <ChataPieChart {...commonChartProps} {...commonLegendProps} />
       }
       case DisplayTypes.BUBBLE: {
-        return <ChataBubbleChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
+        return <ChataBubbleChart {...commonChartProps} {...commonLegendProps} />
       }
       case DisplayTypes.HEATMAP: {
-        return <ChataHeatmapChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
+        return <ChataHeatmapChart {...commonChartProps} {...commonLegendProps} />
       }
       case DisplayTypes.STACKED_COLUMN: {
-        return <ChataStackedColumnChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
+        return <ChataStackedColumnChart {...commonChartProps} {...commonLegendProps} />
       }
       case DisplayTypes.STACKED_BAR: {
-        return <ChataStackedBarChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
+        return <ChataStackedBarChart {...commonChartProps} {...commonLegendProps} />
       }
       case DisplayTypes.STACKED_LINE: {
-        return <ChataStackedLineChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
+        return <ChataStackedLineChart {...commonChartProps} {...commonLegendProps} />
       }
       case DisplayTypes.COLUMN_LINE: {
         const visibleSeriesIndices2 = this.props.numberColumnIndices2?.filter(

@@ -16,10 +16,59 @@ import {
 } from 'autoql-fe-utils'
 
 import StringAxisSelector from '../Axes/StringAxisSelector'
-
 import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers'
-
 import 'd3-transition'
+
+// Simple legend state management using localStorage
+const LegendStateManager = {
+  sessionKey: null,
+
+  setSession(columns, columnIndex) {
+    const columnName = columns?.[columnIndex]?.name
+    this.sessionKey = columnName ? `chata-pie-chart-legend-session-${columnName}` : null
+  },
+
+  resetSession() {
+    this.sessionKey = null
+  },
+
+  save(legendLabels, columns, columnIndex) {
+    this.setSession(columns, columnIndex)
+    const key = this.sessionKey
+    if (!key || !Array.isArray(legendLabels)) return
+
+    try {
+      const hiddenStates = {}
+      legendLabels.forEach(({ label, hidden }) => {
+        if (hidden) hiddenStates[label] = true
+      })
+
+      localStorage.setItem(key, JSON.stringify(hiddenStates))
+    } catch (error) {
+      console.error('Failed to save legend state:', error)
+    }
+  },
+
+  load(legendLabels, columns, columnIndex) {
+    this.setSession(columns, columnIndex)
+    const key = this.sessionKey
+    if (!key || !Array.isArray(legendLabels)) return legendLabels
+
+    try {
+      const stored = localStorage.getItem(key)
+      if (!stored) return legendLabels
+
+      const hiddenStates = JSON.parse(stored)
+      return legendLabels.map((label) => ({
+        ...label,
+        hidden: !!hiddenStates[label.label],
+      }))
+    } catch (error) {
+      console.error('Failed to load legend state:', error)
+      return legendLabels
+    }
+  },
+}
 
 const isOtherCategory = (d) => {
   const isOtherCategory = d?.data?.value?.isOther
@@ -62,7 +111,7 @@ export default class ChataPieChart extends React.Component {
 
     this.state = {
       activeKey: this.props.activeChartElementKey,
-      legendLabels,
+      legendLabels: this.getControlledLegendLabels(legendLabels),
     }
   }
 
@@ -82,6 +131,26 @@ export default class ChataPieChart extends React.Component {
     margin: 40,
   }
 
+  getControlledLegendLabels = (legendLabels) => {
+    const { hiddenLegendLabels } = this.props
+    const legendLabelsWithSavedState = LegendStateManager.load(
+      legendLabels,
+      this.props.columns,
+      this.props.stringColumnIndex,
+    )
+
+    return legendLabelsWithSavedState.map((label) => ({
+      ...label,
+      hidden: Array.isArray(hiddenLegendLabels) ? hiddenLegendLabels.includes(label.label) : label.hidden,
+    }))
+  }
+
+  filterHiddenSlices = (pieData) => (pieData ? pieData.filter((slice) => !slice?.data?.value?.legendLabel?.hidden) : [])
+
+  storeHiddenLegendState = () => {
+    LegendStateManager.save(this.state.legendLabels, this.props.columns, this.props.stringColumnIndex)
+  }
+
   componentDidMount = () => {
     this.renderPie()
   }
@@ -93,7 +162,44 @@ export default class ChataPieChart extends React.Component {
     return !propsEqual || !stateEqual
   }
 
-  componentDidUpdate = () => {
+  componentDidUpdate(prevProps, prevState) {
+    if (prevProps.stringColumnIndex !== this.props.stringColumnIndex) {
+      LegendStateManager.resetSession()
+    }
+
+    if (
+      !deepEqual(prevProps.data, this.props.data) ||
+      !deepEqual(prevProps.columns, this.props.columns) ||
+      !deepEqual(prevProps.hiddenLegendLabels, this.props.hiddenLegendLabels) ||
+      prevProps.stringColumnIndex !== this.props.stringColumnIndex
+    ) {
+      const legendLabels =
+        getLegendLabels({
+          columns: this.props.columns,
+          colorScales: { colorScale: this.props.colorScale },
+          columnIndexConfig: {
+            stringColumnIndex: this.props.stringColumnIndex,
+            numberColumnIndex: this.props.numberColumnIndex,
+            numberColumnIndices: this.props.numberColumnIndices,
+            numberColumnIndices2: this.props.numberColumnIndices2,
+          },
+          dataFormatting: this.props.dataFormatting,
+          data: this.props.data,
+          type: DisplayTypes.PIE,
+        })?.labels ?? []
+
+      const controlledLabels = this.getControlledLegendLabels(legendLabels)
+      const hasLegendChanges = !deepEqual(controlledLabels, this.state.legendLabels)
+
+      if (hasLegendChanges) {
+        this.setState({ legendLabels: controlledLabels }, () => {
+          this.storeHiddenLegendState()
+        })
+      }
+    } else if (!deepEqual(prevState.legendLabels, this.state.legendLabels)) {
+      this.storeHiddenLegendState()
+    }
+
     this.renderPie()
   }
 
@@ -105,18 +211,17 @@ export default class ChataPieChart extends React.Component {
   renderPie = () => {
     requestAnimationFrame(() => {
       removeFromDOM(this.pieChartContainer)
-
+      this.chartElement && select(this.chartElement).selectAll('*').remove()
       this.setPieRadius()
 
-      const { pieChartFn, legendScale } = getPieChartData({
+      const chartData = getPieChartData({
         data: this.props.data,
         numberColumnIndex: this.props.numberColumnIndex,
         legendLabels: this.state.legendLabels,
       })
 
-      this.pieChartFn = pieChartFn
-      this.legendScale = legendScale
-
+      this.legendScale = chartData.legendScale
+      this.pieChartFn = this.filterHiddenSlices(chartData.pieChartFn)
       this.renderPieContainer()
       this.renderPieSlices()
       this.renderLegend()
@@ -254,18 +359,42 @@ export default class ChataPieChart extends React.Component {
       return
     }
 
-    const index = legendObj?.dataIndex
-    const legendLabel = this.state.legendLabels?.[index]
+    let index = -1
+    let legendLabel = undefined
+    let lookupLabel = legendObj?.label
 
-    if (!legendLabel) {
-      return
+    if (lookupLabel) {
+      try {
+        const parsed = JSON.parse(lookupLabel)
+        if (parsed && parsed.label) {
+          lookupLabel = parsed.label
+        }
+      } catch (e) {
+        // Not a stringified object, use as is
+      }
+      index = this.state.legendLabels.findIndex((l) => l.label === lookupLabel)
+      legendLabel = this.state.legendLabels[index]
     }
-
+    if (!legendLabel && typeof legendObj?.dataIndex === 'number') {
+      index = legendObj.dataIndex
+      legendLabel = this.state.legendLabels[index]
+    }
+    if (!legendLabel || index === -1) return
     const onlyLabelVisible = this.state.legendLabels.every((label) => label.label === legendLabel.label || label.hidden)
-    if (!onlyLabelVisible) {
-      const newLegendLabels = _cloneDeep(this.state.legendLabels)
+    if (!onlyLabelVisible || legendLabel.hidden) {
+      const newLegendLabels = this.state.legendLabels.map((label) => ({ ...label }))
       newLegendLabels[index].hidden = !this.state.legendLabels[index].hidden
-      this.setState({ legendLabels: newLegendLabels })
+      const newHiddenLabels = newLegendLabels.filter((l) => l.hidden).map((l) => l.label)
+      if (this.props.onLegendVisibilityChange) {
+        this.props.onLegendVisibilityChange(newHiddenLabels)
+      }
+      this.setState({ legendLabels: newLegendLabels }, () => {
+        if (this.chartElement) {
+          select(this.chartElement).selectAll('*').remove()
+        }
+        this.renderPie()
+        this.storeHiddenLegendState()
+      })
     }
   }
 
@@ -322,8 +451,19 @@ export default class ChataPieChart extends React.Component {
       .scale(self.legendScale)
       .title(title)
       .titleWidth(self.props.width / 2)
-      .on('cellclick', function () {
-        self.onLegendClick(select(this)?.data())
+      .on('cellclick', function (event, d) {
+        const data = d || select(this).data()[0]
+        const dataIndex = self.state.legendLabels.findIndex((labelObj) => labelObj.label === data)
+        const legendObjStr = JSON.stringify({
+          dataIndex,
+          label: data,
+        })
+
+        self.onLegendClick(legendObjStr)
+
+        if (self.props.onLegendClick) {
+          self.props.onLegendClick({ label: data, columnIndex: self.props.stringColumnIndex })
+        }
       })
 
     this.legend.select('.legendOrdinal').call(legendOrdinal)
@@ -331,15 +471,17 @@ export default class ChataPieChart extends React.Component {
     let legendBBox
     const legendElement = this.legend.select('.legendOrdinal').node()
 
-    select(legendElement)
-      .selectAll('.cell')
-      .style('font-size', `${this.props.fontSize - 2}px`)
+    if (legendElement) {
+      select(legendElement)
+        .selectAll('.cell')
+        .style('font-size', `${this.props.fontSize - 2}px`)
 
-    this.applyTitleStyles(title, legendElement)
-    this.applyColumnSelectorStyles(legendElement)
+      this.applyTitleStyles(title, legendElement)
+      this.applyColumnSelectorStyles(legendElement)
 
-    if (this.legendWrapper) {
-      legendBBox = legendElement.getBBox()
+      if (this.legendWrapper) {
+        legendBBox = legendElement.getBBox()
+      }
     }
 
     const legendHeight = legendBBox?.height ?? 0
@@ -415,13 +557,22 @@ export default class ChataPieChart extends React.Component {
 
     if (this.legendSwatchElements) {
       this.legendSwatchElements.forEach((el) => {
-        const swatchElement = el.parentElement.parentElement.querySelector('.swatch')
+        const parentCell = el.parentElement.parentElement
+        const swatchElement = parentCell.querySelector('.swatch')
+        const textElement = parentCell.querySelector('.label')
+
         swatchElement.style.strokeWidth = '2px'
 
         if (legendLabelTexts.includes(el.textContent)) {
           swatchElement.style.opacity = 0.3
+          swatchElement.style.stroke = '#999'
+          textElement.style.opacity = 0.5
+          textElement.style.textDecoration = 'line-through'
         } else {
           swatchElement.style.opacity = 1
+          swatchElement.style.stroke = 'none'
+          textElement.style.opacity = 1
+          textElement.style.textDecoration = 'none'
         }
       })
     }
