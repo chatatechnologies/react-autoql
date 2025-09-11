@@ -183,14 +183,6 @@ export class DashboardTile extends React.Component {
           filters,
         },
       })
-
-      // Always update parent state regardless of edit mode
-      this.props.setParamsForTile(
-        {
-          tableFilters: filters,
-        },
-        this.state.tileIdx,
-      )
     }
   }
 
@@ -402,6 +394,7 @@ export class DashboardTile extends React.Component {
       columns: queryChanged ? undefined : this.props.tile.columns,
       defaultSelectedSuggestion: undefined,
       queryValidationSelections,
+      tableFilters: queryChanged ? undefined : this.props.tile.tableFilters,
     })
 
     return this.processQuery({
@@ -790,23 +783,12 @@ export class DashboardTile extends React.Component {
     })
   }
 
-  onColumnChange = (
-    displayOverrides,
-    columns,
-    columnSelects,
-    queryResponse,
-    dataConfig,
-    tableFilters,
-    orders,
-    filters,
-  ) => {
+  onColumnChange = (displayOverrides, columns, columnSelects, queryResponse, dataConfig, filters) => {
     this.debouncedSetParamsForTile({
       columnSelects,
       queryResponse,
       dataConfig,
       displayOverrides,
-      tableFilters,
-      orders,
       filters,
     })
   }

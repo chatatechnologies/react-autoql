@@ -59,12 +59,12 @@ export default class ChataTable extends React.Component {
     this.filterCount = 0
     this.isSorting = false
     this.pageSize = props.pageSize ?? 50
-    this.useRemote = true
-    // this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
-    //   ? LOCAL_OR_REMOTE.REMOTE
-    //   : this.props.response?.data?.data?.fe_req?.filters?.length > 0
-    //   ? LOCAL_OR_REMOTE.REMOTE
-    //   : LOCAL_OR_REMOTE.LOCAL
+    this.useRemote =
+      this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
+        ? LOCAL_OR_REMOTE.REMOTE
+        : this.props.response?.data?.data?.fe_req?.filters?.length > 0 || props.initialTableParams?.filter?.length > 0
+        ? LOCAL_OR_REMOTE.REMOTE
+        : LOCAL_OR_REMOTE.LOCAL
     this.isLocal = this.useRemote === LOCAL_OR_REMOTE.LOCAL
     this.totalPages = this.getTotalPages(props.response)
     if (isNaN(this.totalPages) || !this.totalPages) {
@@ -72,12 +72,9 @@ export default class ChataTable extends React.Component {
     }
     this.useInfiniteScroll = props.useInfiniteScroll ?? !this.isLocal
 
-    if (!this.useInfiniteScroll) {
-      if (props.pivot) {
-        this.originalQueryData = _cloneDeep(props.data)
-      } else {
-        this.originalQueryData = _cloneDeep(props.response?.data?.data?.rows)
-      }
+    this.originalQueryData = _cloneDeep(props.response?.data?.data?.rows)
+    if (props.pivot) {
+      this.originalQueryData = _cloneDeep(props.data)
     }
 
     this.tableParams = {
@@ -89,8 +86,8 @@ export default class ChataTable extends React.Component {
     this.tableOptions = {
       selectableRowsCheck: () => false,
       movableColumns: true,
-      initialSort: !this.useInfiniteScroll ? this.tableParams?.sort : undefined,
-      initialFilter: !this.useInfiniteScroll ? this.tableParams?.filter : undefined,
+      initialSort: undefined, // Let getRows do initial sorting and filtering
+      initialFilter: undefined, // Let getRows do initial sorting and filtering
       progressiveLoadScrollMargin: 50, // Trigger next ajax load when scroll bar is 800px or less from the bottom of the table.
       // renderHorizontal: 'virtual', // v4: virtualDomHoz = false
       movableColumns: true,
@@ -685,7 +682,9 @@ export default class ChataTable extends React.Component {
     if (this.useInfiniteScroll) {
       return this.props.queryFn(params)
     } else {
-      return Promise.resolve(this.clientSortAndFilterData(params))
+      return new Promise((resolve) => {
+        resolve(this.clientSortAndFilterData(params))
+      })
     }
   }
 
@@ -702,23 +701,25 @@ export default class ChataTable extends React.Component {
     const start = (page - 1) * this.pageSize
     const end = start + this.pageSize
 
+    const tableParamsFormatted = formatTableParams(this.tableParams, props.columns)
+    const tableParamsForAPI = {
+      tableFilters: tableParamsFormatted?.filters,
+      orders: tableParamsFormatted?.sorters,
+    }
+
     let newRows
     if (props.pivot) {
       if (this.tableParams?.filter?.length || this.tableParams?.sort?.length) {
-        // The pivot table has been sorted or filtered
-        // We must use sorted/filtered data to get new rows
-        const tableParamsFormatted = formatTableParams(this.tableParams, props.columns)
-        const tableParamsForAPI = {
-          tableFilters: tableParamsFormatted?.filters,
-          orders: tableParamsFormatted?.sorters,
-        }
-
         const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows
 
         newRows = sortedData?.slice(start, end) ?? []
       } else {
         newRows = props.data?.slice(start, end) ?? []
       }
+    } else if (!this.useInfiniteScroll) {
+      const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows
+
+      newRows = sortedData?.slice(start, end) ?? []
     } else {
       newRows = props.response?.data?.data?.rows?.slice(start, end) ?? []
     }
@@ -792,6 +793,13 @@ export default class ChataTable extends React.Component {
 
       if (isLastPage !== this.state.isLastPage && this._isMounted) {
         this.setState({ isLastPage })
+      }
+      // Force re-render to update filter count display after data is processed
+      if (this._isMounted) {
+        setTimeout(() => {
+          this.filterCount = response?.rows?.length ?? 0
+          this.forceUpdate()
+        }, 0)
       }
     } else {
       return {}
@@ -1004,9 +1012,6 @@ export default class ChataTable extends React.Component {
           if (targetColumn && targetColumn.getDefinition().headerFilter) {
             this.ref?.tabulator?.setHeaderFilterValue(filter.field, filter.value)
           }
-          if (!this.useInfiniteScroll) {
-            this.ref?.tabulator?.setFilter(filter.field, filter.type, filter.value)
-          }
         } catch (error) {
           console.error(error)
           this.props.onErrorCallback(error)
@@ -1181,7 +1186,9 @@ export default class ChataTable extends React.Component {
       if (this.props.keepScrolledRight) {
         this.scrollToRight()
       }
-      this.setHeaderInputEventListeners()
+      setTimeout(() => {
+        this.setHeaderInputEventListeners()
+      }, 0)
     })
   }
 
