@@ -8,6 +8,7 @@ import { ConfirmModal } from '../ConfirmModal'
 import { Modal } from '../Modal'
 import { Input } from '../Input'
 import { Icon } from '../Icon'
+import { Tooltip } from '../Tooltip'
 import FilterAutocomplete from './DashboardFilterAutocomplete'
 import { Chip } from '../Chip'
 
@@ -32,6 +33,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onRenameClick: PropTypes.func,
     tooltipID: PropTypes.string,
     title: PropTypes.string,
+    refreshInterval: PropTypes.number,
   }
 
   static defaultProps = {
@@ -46,6 +48,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onRenameClick: () => {},
     tooltipID: undefined,
     title: 'Untitled Dashboard',
+    refreshInterval: 60,
   }
 
   state = {
@@ -73,6 +76,42 @@ export class DashboardToolbarWithoutRef extends React.Component {
   handleDashboardRename = () => {
     this.props.onRenameClick(this.state.dashboardName)
     this.setState({ isRenameModalOpen: false })
+  }
+
+  formatRefreshInterval = (useFullWords = false) => {
+    const { refreshInterval } = this.props
+
+    if (refreshInterval >= 60) {
+      const minutes = Math.floor(refreshInterval / 60)
+      const seconds = refreshInterval % 60
+      if (seconds === 0) {
+        return `${minutes} ${minutes === 1 ? 'min' : 'mins'}`
+      } else {
+        return `${minutes} ${minutes === 1 ? 'min' : 'mins'} ${seconds} ${seconds === 1 ? 'sec' : 'secs'}`
+      }
+    } else {
+      if (useFullWords) {
+        return `${refreshInterval} ${refreshInterval === 1 ? 'second' : 'seconds'}`
+      } else {
+        return `${refreshInterval} ${refreshInterval === 1 ? 'sec' : 'secs'}`
+      }
+    }
+  }
+
+  getRefreshIntervalText = () => {
+    const { refreshInterval } = this.props
+    if (!refreshInterval) {
+      return 'No refresh interval set'
+    }
+    return `Dashboard refreshes every ${this.formatRefreshInterval(true)}`
+  }
+
+  getRefreshIntervalDisplay = () => {
+    const { refreshInterval } = this.props
+    if (!refreshInterval) {
+      return 'Auto-refresh: Off'
+    }
+    return this.formatRefreshInterval(false)
   }
 
   optionsMenu = () => {
@@ -206,14 +245,32 @@ export class DashboardToolbarWithoutRef extends React.Component {
             <div className='react-autoql-dashboard-title-tools-container'>
               {this.dashboardSlicingFeatureToggle && !this.props.isEditing && this.renderFilterInput()}
               {!this.props.isEditing ? (
-                <Button
-                  iconOnly
-                  icon='refresh'
-                  border={false}
-                  tooltip='Refresh Dashboard Data'
-                  tooltipID={this.props.tooltipID}
-                  onClick={this.props.onRefreshClick}
-                />
+                <>
+                  {/* 
+				  This is the refresh interval button that is currently disabled
+				  TODO: Re-enable this button once the refresh interval is implemented
+				   <div
+                    style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '8px', opacity: 0.7 }}
+                  >
+                    <Icon
+                      type='schedule'
+                      tooltip={this.getRefreshIntervalText()}
+                      tooltipID={this.props.tooltipID}
+                      style={{ marginRight: '6px', fontSize: '1.2rem' }}
+                    />
+                    <span data-tooltip-content={this.getRefreshIntervalText()} data-tooltip-id={this.props.tooltipID}>
+                      {this.getRefreshIntervalDisplay()}
+                    </span>
+                  </div> */}
+                  <Button
+                    iconOnly
+                    icon='refresh'
+                    border={false}
+                    tooltip='Refresh Dashboard Data'
+                    tooltipID={this.props.tooltipID}
+                    onClick={this.props.onRefreshClick}
+                  />
+                </>
               ) : (
                 <div className='react-autoql-dashboard-edit-toolbar-container-right'>
                   <Button
@@ -322,6 +379,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
           </p>
         </ConfirmModal>
         {this.renderRenameModal()}
+        <Tooltip tooltipId={this.props.tooltipID} />
       </ErrorBoundary>
     )
   }

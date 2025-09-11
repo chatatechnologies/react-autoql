@@ -131,7 +131,9 @@ export default class CustomScrollbars extends React.Component {
           this.props.className
             ? `${this.props.className} react-autoql-custom-scrollbars`
             : 'react-autoql-custom-scrollbars'
-        } ${!!this.props.autoHide ? 'autohide' : 'always-visible'}`}
+        } ${!!this.props.autoHide ? 'autohide' : 'always-visible'} ${
+          this.props.suppressScrollX ? 'suppress-scroll-x' : 'allow-scroll-x'
+        } ${this.props.suppressScrollY ? 'suppress-scroll-y' : 'allow-scroll-y'}`}
         ref={(r) => (this.ref = r)}
         style={this.getStyleProp()}
         options={{ minScrollbarLength: 15, ...this.props.options }}

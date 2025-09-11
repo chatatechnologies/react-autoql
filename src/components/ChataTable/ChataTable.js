@@ -59,11 +59,18 @@ export default class ChataTable extends React.Component {
     this.filterCount = 0
     this.isSorting = false
     this.pageSize = props.pageSize ?? 50
+    this.useRemote = true
+    // this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
+    //   ? LOCAL_OR_REMOTE.REMOTE
+    //   : this.props.response?.data?.data?.fe_req?.filters?.length > 0
+    //   ? LOCAL_OR_REMOTE.REMOTE
+    //   : LOCAL_OR_REMOTE.LOCAL
+    this.isLocal = this.useRemote === LOCAL_OR_REMOTE.LOCAL
     this.totalPages = this.getTotalPages(props.response)
     if (isNaN(this.totalPages) || !this.totalPages) {
       this.totalPages = 1
     }
-    this.useInfiniteScroll = props.useInfiniteScroll
+    this.useInfiniteScroll = props.useInfiniteScroll ?? !this.isLocal
 
     if (!this.useInfiniteScroll) {
       if (props.pivot) {
@@ -116,7 +123,6 @@ export default class ChataTable extends React.Component {
 
     this.state = {
       isFiltering: false,
-      filterCount: 0,
       isSorting: false,
       loading: false,
       pageLoading: false,
@@ -132,8 +138,6 @@ export default class ChataTable extends React.Component {
     data: PropTypes.arrayOf(PropTypes.array),
     columns: PropTypes.arrayOf(PropTypes.shape({})),
     queryRequestData: PropTypes.shape({}),
-    onFilterCallback: PropTypes.func,
-    onSorterCallback: PropTypes.func,
     onTableParamsChange: PropTypes.func,
     isResizing: PropTypes.bool,
     useInfiniteScroll: PropTypes.bool,
@@ -167,7 +171,7 @@ export default class ChataTable extends React.Component {
     data: undefined,
     columns: undefined,
     isResizing: false,
-    useInfiniteScroll: true,
+    useInfiniteScroll: undefined,
     autoHeight: true,
     rowChangeCount: 0,
     isAnimating: false,
@@ -179,8 +183,6 @@ export default class ChataTable extends React.Component {
     keepScrolledRight: false,
     allowCustomColumns: true,
     enableContextMenu: true,
-    onFilterCallback: () => {},
-    onSorterCallback: () => {},
     onTableParamsChange: () => {},
     onCellClick: () => {},
     onErrorCallback: () => {},
@@ -476,9 +478,6 @@ export default class ChataTable extends React.Component {
   onDataSorted = (sorters, rows) => {
     if (this.isSorting) {
       this.isSorting = false
-      if (!this.useInfiniteScroll && this.ref) {
-        this.props.onSorterCallback(sorters)
-      }
       this.setLoading(false)
     }
   }
@@ -494,53 +493,20 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  calculateFilteredData = (originalData, filters, columns) => {
-    // Create column id to index mapping once
-    const columnIndexMap = new Map(columns.map((col) => [col.id, col.index]))
-
-    return filters.reduce((filteredRows, filter) => {
-      const columnIndex = columnIndexMap.get(filter.id)
-      if (columnIndex === undefined) {
-        return filteredRows
-      }
-      return filterDataByColumn(filteredRows, columns, columnIndex, filter.value, filter.operator)
-    }, originalData)
-  }
-
   onDataFiltered = (filters, rows) => {
     if (this.isFiltering && this.state.tabulatorMounted) {
       this.isFiltering = false
-
-      const headerFilters = this.ref?.tabulator?.getHeaderFilters()
-
-      if (!this.useInfiniteScroll) {
-        const tableParamsFormatted = formatTableParams(
-          { ...this.tableParams, filter: headerFilters },
-          this.props.columns,
-        )
-
-        const filteredData = this.calculateFilteredData(
-          this.originalQueryData,
-          tableParamsFormatted.filters,
-          this.props.columns,
-        )
-
-        this.filterCount = filteredData.length
-      }
-
-      this.props.onFilterCallback(headerFilters, rows)
 
       setTimeout(() => {
         if (this._isMounted) {
           this.setState({
             loading: false,
-            filterCount: this.filterCount,
           })
         }
       }, 0)
     }
 
-    if (!this.props.useInfiniteScroll && !this.pivot) {
+    if (!this.useInfiniteScroll && !this.pivot) {
       this.getRTForRemoteFilterAndSort()
     }
 
@@ -665,6 +631,9 @@ export default class ChataTable extends React.Component {
         this.props.onNewData(responseWrapper)
 
         const totalPages = this.getTotalPages(responseWrapper)
+
+        // Capture the full filtered count before slicing
+        this.filterCount = responseWrapper?.data?.data?.rows?.length || 0
 
         response = {
           rows: responseWrapper?.data?.data?.rows?.slice(0, this.pageSize) ?? [],
@@ -1406,7 +1375,11 @@ export default class ChataTable extends React.Component {
       return null
     }
 
-    if (isDataLimited(this.props.response) || this.props.pivotTableRowsLimited || this.props.pivotTableColumnsLimited) {
+    if (
+      (this.useInfiniteScroll && isDataLimited(this.props.response)) ||
+      this.props.pivotTableRowsLimited ||
+      this.props.pivotTableColumnsLimited
+    ) {
       const rowLimit = this.props.response?.data?.data?.row_limit
       const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
       const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(rowLimit)
@@ -1420,7 +1393,7 @@ export default class ChataTable extends React.Component {
       let content
       let tooltipContent
 
-      if (isDataLimited(this.props.response)) {
+      if (this.useInfiniteScroll && isDataLimited(this.props.response)) {
         tooltipContent = `To optimize performance, this pivot table is limited to the initial <em>${rowLimitFormatted}/${totalRowsFormatted}</em> rows of the original dataset.`
       } else if (this.props.pivotTableRowsLimited && this.props.pivotTableColumnsLimited) {
         content = 'Rows and Columns have been limited!'
@@ -1455,15 +1428,18 @@ export default class ChataTable extends React.Component {
       return null
     }
 
-    let currentRowCount
-    let totalRowCount
+    let currentRowCount = 50
+    if (this.props.data?.length < 50) {
+      currentRowCount = this.props.data?.length
+    }
 
-    if (!this.useInfiniteScroll && this.tableParams?.filter?.length > 0) {
-      totalRowCount = this.state.filterCount
-    } else if (this.props.pivot) {
-      totalRowCount = this.props.data?.length ?? 0
-    } else {
-      totalRowCount = this.props.response?.data?.data?.count_rows ?? this.props.data?.length ?? 0
+    let totalRowCount = this.props.pivot ? this.props.data?.length : this.props.response?.data?.data?.count_rows
+
+    // If filters are applied, use the full filtered count captured before slicing
+    if (this.tableParams?.filter?.length > 0) {
+      if (this.filterCount > 0) {
+        totalRowCount = this.filterCount
+      }
     }
 
     // Calculate which group of 50 records user has scrolled to
@@ -1478,7 +1454,7 @@ export default class ChataTable extends React.Component {
       }
     }
 
-    if (!totalRowCount || !currentRowCount) {
+    if (!totalRowCount || !(currentRowCount > 0)) {
       return null
     }
 
@@ -1548,7 +1524,7 @@ export default class ChataTable extends React.Component {
             column?.type === ColumnTypes.DOLLAR_AMT ||
             column?.type === ColumnTypes.DATE) &&
             stats &&
-            (isDataLimited(this.props.response) ? (
+            (this.useInfiniteScroll && isDataLimited(this.props.response) ? (
               <div className='selectable-table-tooltip-section'>
                 <span>
                   <Icon type='warning' /> {`Summary stats unavailable - ${DATASET_TOO_LARGE}`}

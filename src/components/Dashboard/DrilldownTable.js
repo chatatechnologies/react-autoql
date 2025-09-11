@@ -65,6 +65,7 @@ export default class DrilldownTable extends React.Component {
             height='100%'
             width='100%'
             onUpdateFilterResponse={this.onUpdateFilterResponse}
+            enableCustomColumns={this.props.enableCustomColumns}
           />
           <div className='drilldown-modal-toolbars'>
             <div className='drilldown-modal-viz-toolbar'>

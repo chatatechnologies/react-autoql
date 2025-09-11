@@ -4,6 +4,7 @@ import { v4 as uuid } from 'uuid'
 import _cloneDeep from 'lodash.clonedeep'
 import { TabulatorFull as Tabulator } from 'tabulator-tables' //import Tabulator library
 import throttle from 'lodash.throttle'
+import { isMobile } from 'react-device-detect'
 
 // use Theme(s)
 import 'tabulator-tables/dist/css/tabulator.min.css'
@@ -34,6 +35,16 @@ export default class TableWrapper extends React.Component {
         rowGroups: false,
         columnCalcs: false,
       },
+      // Mobile-specific optimizations
+      ...(isMobile && {
+        responsiveLayout: false, // Disable responsive layout to allow horizontal scrolling
+        responsiveLayoutCollapseStartOpen: false,
+        scrollToColumnPosition: 'middle', // Better column scrolling behavior
+        scrollToColumnIfVisible: false, // Prevent unnecessary scrolling
+        // Ensure horizontal scrolling is enabled
+        virtualDomHoz: false, // Disable horizontal virtual DOM which can interfere with touch scrolling
+        layout: 'fitDataFill', // Force this layout on mobile to ensure horizontal scrolling
+      }),
     }
     this.throttledHandleResize = throttle(this.handleWindowResizeForAlignment, 100)
   }
@@ -77,6 +88,11 @@ export default class TableWrapper extends React.Component {
     this._isMounted = true
     this.instantiateTabulator()
     window.addEventListener('resize', this.throttledHandleResize)
+
+    // Add touch event listeners for better mobile scrolling
+    if (isMobile && this.tableRef) {
+      this.setupMobileTouchHandlers()
+    }
   }
 
   shouldComponentUpdate = () => {
@@ -92,6 +108,11 @@ export default class TableWrapper extends React.Component {
       this.tabulator?.destroy()
     }, 1000)
     window.removeEventListener('resize', this.throttledHandleResize)
+
+    // Clean up mobile touch handlers
+    if (isMobile && this.tableRef) {
+      this.cleanupMobileTouchHandlers()
+    }
   }
 
   handleWindowResizeForAlignment = () => {
@@ -109,6 +130,129 @@ export default class TableWrapper extends React.Component {
         }
       })
     })
+  }
+
+  setupMobileTouchHandlers = () => {
+    // Add minimal touch handling to prevent parent container scrolling when actively interacting with table
+    const setupHandlers = () => {
+      const tableholder = this.tableRef?.querySelector('.tabulator-tableholder')
+      if (tableholder) {
+        // Track if user is currently actively touching the table (not just momentum scrolling)
+        let isActivelyTouchingTable = false
+        let touchStartTime = 0
+
+        this.touchStartHandler = (e) => {
+          // Only mark as actively touching if the touch is directly on the table
+          const target = e.target
+          const isTableElement = tableholder.contains(target)
+
+          if (isTableElement) {
+            isActivelyTouchingTable = true
+            touchStartTime = Date.now()
+
+            // Stop the event from bubbling to parent containers
+            // but don't prevent default to allow native table scrolling
+            e.stopPropagation()
+
+            // Add a visual indicator that the table is active (optional)
+            tableholder.style.outline = '1px solid rgba(0, 123, 255, 0.3)'
+          }
+        }
+
+        this.touchMoveHandler = (e) => {
+          // Only stop propagation if user is actively touching the table (not momentum scrolling)
+          if (isActivelyTouchingTable) {
+            const target = e.target
+            const isTableElement = tableholder.contains(target)
+
+            if (isTableElement) {
+              // User is actively scrolling the table, prevent parent containers from scrolling
+              e.stopPropagation()
+            }
+          }
+        }
+
+        this.touchEndHandler = (e) => {
+          // Reset interaction flag immediately when touch ends
+          isActivelyTouchingTable = false
+
+          // Only stop propagation if this was a table interaction
+          const target = e.target
+          const isTableElement = tableholder.contains(target)
+
+          if (isTableElement) {
+            e.stopPropagation()
+          }
+
+          // Remove visual indicator after a short delay to account for momentum
+          setTimeout(() => {
+            tableholder.style.outline = 'none'
+          }, 100)
+        }
+
+        // Also handle touch cancel events
+        this.touchCancelHandler = (e) => {
+          isActivelyTouchingTable = false
+          tableholder.style.outline = 'none'
+        }
+
+        // Add global touch handler to detect touches outside the table
+        this.globalTouchStartHandler = (e) => {
+          const target = e.target
+          const isTableElement = tableholder.contains(target)
+
+          // If user touches outside the table, remove any visual indicators
+          if (!isTableElement) {
+            // Remove any visual indicators
+            tableholder.style.outline = 'none'
+          }
+        }
+
+        // Add event listeners with passive: true to allow native scrolling
+        tableholder.addEventListener('touchstart', this.touchStartHandler, {
+          passive: true,
+          capture: false,
+        })
+        tableholder.addEventListener('touchmove', this.touchMoveHandler, {
+          passive: true,
+          capture: false,
+        })
+        tableholder.addEventListener('touchend', this.touchEndHandler, {
+          passive: true,
+          capture: false,
+        })
+        tableholder.addEventListener('touchcancel', this.touchCancelHandler, {
+          passive: true,
+          capture: false,
+        })
+
+        // Add global touch listener to detect touches outside table
+        document.addEventListener('touchstart', this.globalTouchStartHandler, {
+          passive: true,
+          capture: true, // Use capture to catch events before they reach other elements
+        })
+      } else {
+        // If tableholder isn't ready yet, try again after a short delay
+        setTimeout(setupHandlers, 100)
+      }
+    }
+
+    setupHandlers()
+  }
+
+  cleanupMobileTouchHandlers = () => {
+    const tableholder = this.tableRef?.querySelector('.tabulator-tableholder')
+    if (tableholder && this.touchStartHandler) {
+      tableholder.removeEventListener('touchstart', this.touchStartHandler, { capture: false })
+      tableholder.removeEventListener('touchmove', this.touchMoveHandler, { capture: false })
+      tableholder.removeEventListener('touchend', this.touchEndHandler, { capture: false })
+      tableholder.removeEventListener('touchcancel', this.touchCancelHandler, { capture: false })
+    }
+
+    // Remove global touch listener
+    if (this.globalTouchStartHandler) {
+      document.removeEventListener('touchstart', this.globalTouchStartHandler, { capture: true })
+    }
   }
 
   instantiateTabulator = () => {
