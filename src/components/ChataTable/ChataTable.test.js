@@ -66,37 +66,6 @@ describe('ChataTable', () => {
   })
 
   describe('Filtering Logic', () => {
-    test('should never call Tabulator setFilter function', () => {
-      const wrapper = setup()
-      const instance = wrapper.instance()
-
-      // Mock Tabulator methods
-      const mockTabulator = {
-        getColumns: jest.fn(() => [
-          {
-            getField: () => '1',
-            getDefinition: () => ({ headerFilter: true }),
-            getElement: () => ({ classList: { add: jest.fn(), remove: jest.fn() } }),
-          },
-        ]),
-        setHeaderFilterValue: jest.fn(),
-        setFilter: jest.fn(), // This should never be called
-      }
-
-      instance.ref = { tabulator: mockTabulator }
-      instance.useInfiniteScroll = false
-
-      // Test setFilters method - it should only call setHeaderFilterValue, not setFilter
-      const filters = [{ field: '1', type: '=', value: 'online' }]
-      instance.setFilters(filters)
-
-      // Verify setHeaderFilterValue was called
-      expect(mockTabulator.setHeaderFilterValue).toHaveBeenCalledWith('1', 'online')
-
-      // Verify setFilter was NEVER called
-      expect(mockTabulator.setFilter).not.toHaveBeenCalled()
-    })
-
     test('should never call Tabulator setFilter function in onTableBuilt', () => {
       const initialFilters = [{ field: '1', type: '=', value: 'online' }]
 

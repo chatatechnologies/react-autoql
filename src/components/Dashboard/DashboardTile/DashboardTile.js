@@ -1229,11 +1229,7 @@ export class DashboardTile extends React.Component {
         onPageSizeChange: this.onPageSizeChange,
         onBucketSizeChange: this.onBucketSizeChange,
         bucketSize: this.props.tile.bucketSize,
-        initialFormattedTableParams: {
-          filters: this.props.tile?.tableFilters,
-          sorters: this.props.tile?.orders,
-          sessionFilters: this.props.tile?.filters,
-        },
+        initialFormattedTableParams: this.state.initialFormattedTableParams,
       },
       vizToolbarProps: {
         ref: (r) => (this.vizToolbarRef = r),
