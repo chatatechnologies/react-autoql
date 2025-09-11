@@ -439,6 +439,7 @@ export default class ChatContent extends React.Component {
           <CustomScrollbars
             ref={(r) => (this.messengerScrollComponent = r)}
             className='chat-content-scrollbars-container'
+            suppressScrollX
           >
             <div className='chat-content-container'>
               {messages.map((message) => {

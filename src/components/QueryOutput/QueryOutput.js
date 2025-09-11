@@ -160,8 +160,8 @@ export class QueryOutput extends React.Component {
     // Set initial table params to be any filters or sorters that
     // are already present in the current query
     this.formattedTableParams = {
-      filters: this.queryResponse?.data?.data?.fe_req?.filters || props?.initialFormattedTableParams?.filters || [],
-      sorters: this.queryResponse?.data?.data?.fe_req?.sorters || props?.initialFormattedTableParams?.sorters || [],
+      filters: props?.initialFormattedTableParams?.filters || this.queryResponse?.data?.data?.fe_req?.filters || [],
+      sorters: props?.initialFormattedTableParams?.sorters || this.queryResponse?.data?.data?.fe_req?.sorters || [],
     }
 
     this.DEFAULT_TABLE_PAGE_SIZE = 100
@@ -1547,16 +1547,6 @@ export class QueryOutput extends React.Component {
     this.setState({ chartID: uuid() })
   }
 
-  onTableFilter = async (filters, rows) => {
-    if (!filters || _isEqual(filters, this.tableParams?.filter)) {
-      return
-    }
-
-    this.tableParams.filter = _cloneDeep(filters)
-    this.formattedTableParams = formatTableParams(this.tableParams, this.getColumns())
-    this.onTableParamsChange(this.tableParams, this.formattedTableParams)
-  }
-
   onTableSort = (sorters) => {
     try {
       this.tableParams = this.tableParams || {}
@@ -2285,6 +2275,7 @@ export class QueryOutput extends React.Component {
       // display if filtering is toggled by user
       newCol.headerFilter = col.headerFilter ?? 'input'
       newCol.headerFilterPlaceholder = this.setHeaderFilterPlaceholder(newCol)
+      newCol.headerFilterLiveFilter = false
 
       // Need to set custom filters for cells that are
       // displayed differently than the data (ie. dates)
@@ -2443,6 +2434,7 @@ export class QueryOutput extends React.Component {
         cssClass: 'pivot-category',
         sorter: (a, b) => dateSortFn(a, b, origDateColumn, 'isTable'),
         headerFilter: false,
+        headerFilterLiveFilter: false,
         headerFilterPlaceholder: 'filter...',
       }
 
@@ -2472,6 +2464,7 @@ export class QueryOutput extends React.Component {
           visible: true,
           is_visible: true,
           headerFilter: false,
+          headerFilterLiveFilter: false,
         })
       })
 
@@ -2608,6 +2601,7 @@ export class QueryOutput extends React.Component {
         cssClass: 'pivot-category',
         pivot: true,
         headerFilter: false,
+        headerFilterLiveFilter: false,
       })
 
       uniqueColumnHeaders.forEach((columnName, i) => {
@@ -2629,6 +2623,7 @@ export class QueryOutput extends React.Component {
           visible: true,
           is_visible: true,
           headerFilter: false,
+          headerFilterLiveFilter: false,
         })
       })
 
@@ -2846,9 +2841,10 @@ export class QueryOutput extends React.Component {
   }
 
   renderAddColumnBtn = () => {
-    const isSingleValue = isSingleValueResponse(this.queryResponse)
-
-    if (this.props.allowColumnAddition && (this.state.displayType === 'table' || isSingleValue)) {
+    // Comment out for now. Uncomment for next deploy
+    // const isSingleValue = isSingleValueResponse(this.queryResponse)
+    // if (this.props.allowColumnAddition && (this.state.displayType === 'table' || isSingleValue)) {
+    if (this.props.allowColumnAddition && this.state.displayType === 'table') {
       return (
         <AddColumnBtn
           queryResponse={this.queryResponse}
@@ -2857,7 +2853,8 @@ export class QueryOutput extends React.Component {
           onAddColumnClick={this.onAddColumnClick}
           onCustomClick={this.onAddColumnClick}
           disableAddCustomColumnOption={!this.props.enableCustomColumns || isDrilldown(this.queryResponse)}
-          className={isSingleValue ? 'single-value-add-col-btn' : 'table-add-col-btn'}
+          // className={isSingleValue ? 'single-value-add-col-btn' : 'table-add-col-btn'}
+          className='table-add-col-btn'
           isAddingColumn={this.state.isAddingColumn}
         />
       )
@@ -2903,8 +2900,6 @@ export class QueryOutput extends React.Component {
           onCellClick={this.onTableCellClick}
           queryID={this.queryID}
           useInfiniteScroll={this.props.useInfiniteScroll}
-          onFilterCallback={this.onTableFilter}
-          onSorterCallback={this.onTableSort}
           onTableParamsChange={this.onTableParamsChange}
           onNewData={this.onNewData}
           isAnimating={this.props.isAnimating}
