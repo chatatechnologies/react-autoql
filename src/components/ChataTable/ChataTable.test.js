@@ -87,6 +87,8 @@ describe('ChataTable', () => {
         ]),
         setHeaderFilterValue: jest.fn(),
         setFilter: jest.fn(), // This should never be called
+        blockRedraw: jest.fn(),
+        restoreRedraw: jest.fn(),
       }
 
       instance.ref = { tabulator: mockTabulator }
@@ -122,6 +124,8 @@ describe('ChataTable', () => {
         setSort: jest.fn(),
         getHeaderFilters: jest.fn(() => []),
         getSorters: jest.fn(() => []),
+        blockRedraw: jest.fn(),
+        restoreRedraw: jest.fn(),
       }
 
       instance.ref = { tabulator: mockTabulator }
@@ -231,38 +235,43 @@ describe('ChataTable', () => {
   })
 
   describe('filterCount functionality', () => {
-    test('should initialize filterCount to 0', () => {
+    test('should initialize filterCount based on initial data', () => {
       const wrapper = setup()
       const instance = wrapper.instance()
 
-      expect(instance.filterCount).toBe(0)
+      // When useInfiniteScroll is false, getRows calls clientSortAndFilterData which sets filterCount
+      expect(instance.filterCount).toBe(4) // Should be set to the length of initial data
     })
 
-    test('should update filterCount in ajaxResponseFunc when data is processed', (done) => {
+    test('should update filterCount from queryFn response using array length before slicing to 50 rows', async () => {
       const wrapper = setup()
       const instance = wrapper.instance()
-      const mockForceUpdate = jest.fn()
-      instance.forceUpdate = mockForceUpdate
 
-      // Mock response with filtered data
-      const mockResponse = {
-        rows: [
-          ['online', 'John'],
-          ['online', 'Bob'],
-        ],
-        last_page: 1,
+      // Set up conditions for ajaxRequestFunc to actually run
+      instance.hasSetInitialData = true
+      instance._isMounted = true
+      instance._setFiltersTime = 0 // Make it not recently mounted
+      instance.state = { tabulatorMounted: true }
+
+      // Mock queryFn to return response with 100 rows (but only 50 will be sliced)
+      const mockQueryFnResponse = {
+        data: {
+          data: {
+            rows: new Array(100).fill().map((_, i) => [`row${i}`, `data${i}`]), // 100 actual rows
+          },
+        },
       }
 
-      // Call ajaxResponseFunc
-      instance.ajaxResponseFunc({}, mockResponse)
+      instance.queryFn = jest.fn().mockResolvedValue(mockQueryFnResponse)
+      instance.useInfiniteScroll = true
 
-      // Wait for setTimeout to execute
-      setTimeout(() => {
-        // Should update filterCount and force re-render
-        expect(instance.filterCount).toBe(2)
-        expect(mockForceUpdate).toHaveBeenCalled()
-        done()
-      }, 10)
+      // Call ajaxRequestFunc (which calls queryFn)
+      const params = { page: 1, size: 50, filter: [], sort: [] }
+      await instance.ajaxRequestFunc({}, params)
+
+      // Should set filterCount to the full array length (100), not the sliced count (50)
+      expect(instance.filterCount).toBe(100)
+      expect(instance.queryFn).toHaveBeenCalled()
     })
 
     test('should not reset filterCount in onDataFiltered (user removed this logic)', () => {
