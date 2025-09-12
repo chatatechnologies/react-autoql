@@ -646,8 +646,9 @@ export default class ChataTable extends React.Component {
 
         const totalPages = this.getTotalPages(responseWrapper)
 
-        // Capture the full filtered count before slicing
-        this.filterCount = responseWrapper?.data?.data?.rows?.length || 0
+        // Capture the total filtered count from the response (not just the sliced rows)
+        // Use count_rows which represents the total count of filtered results
+        this.filterCount = responseWrapper?.data?.data?.count_rows || responseWrapper?.data?.data?.rows?.length || 0
 
         response = {
           rows: responseWrapper?.data?.data?.rows?.slice(0, this.pageSize) ?? [],
@@ -813,9 +814,9 @@ export default class ChataTable extends React.Component {
         this.setState({ isLastPage })
       }
       // Force re-render to update filter count display after data is processed
+      // Note: this.filterCount is already set correctly in ajaxRequestFunc from the queryFn response
       if (this._isMounted) {
         setTimeout(() => {
-          this.filterCount = response?.rows?.length ?? 0
           this.forceUpdate()
         }, 0)
       }
