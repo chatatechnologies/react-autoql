@@ -683,6 +683,9 @@ export default class ChataTable extends React.Component {
       })
     }
 
+    // Update filterCount for local filtering
+    this.filterCount = data?.length || 0
+
     // Sorters
     if (params.orders?.length) {
       const sortColumnIndex = this.props.columns.find((col) => col.id === params?.orders[0]?.id)?.index
