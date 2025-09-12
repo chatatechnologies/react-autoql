@@ -646,9 +646,8 @@ export default class ChataTable extends React.Component {
 
         const totalPages = this.getTotalPages(responseWrapper)
 
-        // Capture the total filtered count from the response (not just the sliced rows)
-        // Use count_rows which represents the total count of filtered results
-        this.filterCount = responseWrapper?.data?.data?.count_rows || responseWrapper?.data?.data?.rows?.length || 0
+        // Capture the full filtered count before slicing
+        this.filterCount = responseWrapper?.data?.data?.rows?.length || 0
 
         response = {
           rows: responseWrapper?.data?.data?.rows?.slice(0, this.pageSize) ?? [],
