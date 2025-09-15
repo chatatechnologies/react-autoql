@@ -64,7 +64,6 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadStart: PropTypes.func,
     onCSVDownloadFinish: PropTypes.func,
     onCSVDownloadProgress: PropTypes.func,
-    showFilterBadge: PropTypes.bool,
     onExpandClick: PropTypes.func,
   }
 
@@ -84,7 +83,6 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadStart: () => {},
     onCSVDownloadFinish: () => {},
     onCSVDownloadProgress: () => {},
-    showFilterBadge: false,
     onExpandClick: () => {},
   }
 
@@ -228,7 +226,12 @@ export class OptionsToolbar extends React.Component {
   }
 
   saveChartAsPNG = () => {
-    this.props.responseRef?.saveChartAsPNG()
+    try {
+      this.props.responseRef?.saveChartAsPNG()
+      this.props.onPNGDownloadFinish()
+    } catch (error) {
+      console.error('error downloading PNG:', error)
+    }
   }
 
   deleteMessage = () => {
@@ -561,7 +564,9 @@ export class OptionsToolbar extends React.Component {
   }
 
   renderFilterBtn = () => {
-    const isFiltered = this.props.showFilterBadge
+    const tabulatorHeaderFilters = this.props.responseRef?.getTabulatorHeaderFilters()
+    const isFiltered =
+      !!this.props.responseRef?.formattedTableParams?.filters?.length && !!tabulatorHeaderFilters?.length
     const displayType = this.props.responseRef?.state?.displayType
     const isTable = displayType === 'table'
 
@@ -734,11 +739,11 @@ export class OptionsToolbar extends React.Component {
       }
 
       shouldShowButton.showMoreOptionsButton =
-        (shouldShowButton.showCopyButton ||
-          shouldShowButton.showSQLButton ||
-          shouldShowButton.showCreateNotificationIcon ||
-          shouldShowButton.showSaveAsCSVButton ||
-          shouldShowButton.showSaveAsPNGButton)
+        shouldShowButton.showCopyButton ||
+        shouldShowButton.showSQLButton ||
+        shouldShowButton.showCreateNotificationIcon ||
+        shouldShowButton.showSaveAsCSVButton ||
+        shouldShowButton.showSaveAsPNGButton
     } catch (error) {
       console.error(error)
     }

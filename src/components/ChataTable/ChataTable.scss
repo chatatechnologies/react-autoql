@@ -1,5 +1,6 @@
 .react-autoql-table-container {
   -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
   scrollbar-color: var(--react-autoql-scrollbar-thumb-color) transparent;
   display: flex;
   flex-direction: column;
@@ -38,6 +39,27 @@
     .tabulator-col {
       color: var(--react-autoql-text-color-primary);
     }
+
+    // Improve touch handling on mobile devices
+    @media (hover: none) and (pointer: coarse) {
+      overflow: auto;
+      // Optimize for smooth scrolling performance
+      -webkit-overflow-scrolling: touch;
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+      // Let browser handle touch events naturally, but optimize for performance
+      touch-action: auto;
+      // Add hardware acceleration for smoother scrolling
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+      // Performance optimization to contain layout changes
+      contain: layout style;
+
+      // Make sure the container can receive focus for touch events
+      &:focus-within {
+        outline: none;
+      }
+    }
   }
 
   .tabulator-footer {
@@ -49,7 +71,7 @@
   }
 
   &.hidden {
-    display: none !important;
+    visibility: hidden !important;
     position: absolute !important;
     pointer-events: none !important;
     opacity: 0 !important;
@@ -87,6 +109,16 @@
           }
         }
       }
+    }
+  }
+
+  &.resizing {
+    width: 100vw;
+
+    .react-autoql-table {
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
     }
   }
 
@@ -403,11 +435,45 @@
     }
 
     .tabulator-tableholder {
-      overflow: hidden;
-      &:hover {
-        overflow: auto !important;
-      }
+      overflow: auto;
       background-color: inherit;
+
+      // Enable smooth scrolling on mobile devices
+      -webkit-overflow-scrolling: touch;
+
+      // Ensure table content has minimum width to trigger horizontal scrolling
+      .tabulator-table {
+        min-width: max-content;
+      }
+
+      // On mobile devices, always show scrollbars for better touch interaction
+      @media (hover: none) and (pointer: coarse) {
+        overflow: auto !important;
+        // Let browser handle all touch interactions naturally
+        touch-action: auto;
+        // Enable momentum scrolling on iOS and add performance optimizations
+        -webkit-overflow-scrolling: touch;
+        // Hardware acceleration for smoother scrolling
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+        // Optimize rendering for mobile
+        will-change: scroll-position;
+
+        // Ensure scrollbars are visible on mobile
+        &::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+
+        &::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+          background-color: var(--react-autoql-scrollbar-thumb-color, rgba(0, 0, 0, 0.3));
+          border-radius: 4px;
+        }
+      }
     }
   }
 }

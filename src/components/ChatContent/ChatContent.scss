@@ -22,6 +22,39 @@
       .chat-content-container {
         overflow: hidden;
       }
+
+      // Improve touch handling for nested scrollable content on mobile
+      @media (hover: none) and (pointer: coarse) {
+        // Allow vertical scrolling for chat content, optimized for performance
+        touch-action: pan-y;
+        // Add performance optimizations for smooth scrolling
+        -webkit-overflow-scrolling: touch;
+        contain: layout style;
+
+        // Ensure tables within chat messages can handle touch events properly
+        .react-autoql-table-container {
+          // Let the table handle its own touch events (both directions)
+          touch-action: auto;
+          // Optimize performance by containing layout changes
+          contain: layout;
+
+          // Prevent the chat scroll from interfering with table scroll
+          .react-autoql-tabulator-container {
+            // Ensure table gets priority for touch events
+            position: relative;
+            touch-action: auto;
+            // Performance optimization
+            contain: layout style;
+
+            // Create a new stacking context to isolate events
+            .tabulator-tableholder {
+              position: relative;
+              // Performance optimization for scrolling
+              contain: layout style;
+            }
+          }
+        }
+      }
     }
   }
 }

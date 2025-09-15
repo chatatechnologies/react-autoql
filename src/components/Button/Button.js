@@ -4,6 +4,7 @@ import PropTypes from 'prop-types'
 import { Spinner } from '../Spinner'
 import { Icon } from '../Icon'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
+import { normalizeString } from 'autoql-fe-utils'
 
 import './Button.scss'
 
@@ -22,6 +23,7 @@ export class ButtonWithoutRef extends React.Component {
     border: PropTypes.bool,
     tooltip: PropTypes.string,
     icon: PropTypes.string,
+    iconOnly: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -34,12 +36,13 @@ export class ButtonWithoutRef extends React.Component {
     filled: false,
     border: true,
     icon: undefined,
+    iconOnly: false,
     onClick: () => {},
   }
 
   getType = () => {
     try {
-      const type = this.props.type.trim().toLowerCase()
+      const type = normalizeString(this.props.type)
       if (validTypes.includes(type)) {
         return type
       }
@@ -52,7 +55,7 @@ export class ButtonWithoutRef extends React.Component {
 
   getSize = () => {
     try {
-      const trimmedSize = this.props.size.trim().toLowerCase()
+      const trimmedSize = normalizeString(this.props.size)
       if (validSizes.includes(trimmedSize)) {
         return trimmedSize
       }
@@ -86,7 +89,8 @@ export class ButtonWithoutRef extends React.Component {
             react-autoql-btn-${size}
             ${isDisabled ? ' disabled' : ''}
             ${this.props.border ? '' : 'btn-no-border'}
-            ${this.props.filled ? 'btn-filled' : ''}`}
+            ${this.props.filled ? 'btn-filled' : ''}
+            ${this.props.iconOnly ? 'icon-only' : ''}`}
           data-test='react-autoql-btn'
           data-multiline={this.props.multiline}
           style={{ ...this.props.style }}

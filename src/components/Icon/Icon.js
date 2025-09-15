@@ -51,6 +51,7 @@ import { FiMinimize } from '@react-icons/all-files/fi/FiMinimize'
 import { FiRefreshCw } from '@react-icons/all-files/fi/FiRefreshCw'
 import { FiTool } from '@react-icons/all-files/fi/FiTool'
 import { FiMinus } from '@react-icons/all-files/fi/FiMinus'
+import { FiSave } from 'react-icons/fi'
 import { RiFilterLine } from '@react-icons/all-files/ri/RiFilterLine'
 import { RiFilterOffLine } from '@react-icons/all-files/ri/RiFilterOffLine'
 import { RiListSettingsLine } from '@react-icons/all-files/ri/RiListSettingsLine'
@@ -77,7 +78,8 @@ import { MdLockOpen } from '@react-icons/all-files/md/MdLockOpen'
 import { MdPlayCircleOutline } from '@react-icons/all-files/md/MdPlayCircleOutline'
 import { MdAttachMoney } from '@react-icons/all-files/md/MdAttachMoney'
 import { MdFunctions } from '@react-icons/all-files/md/MdFunctions'
-
+import { MdOutlineUndo, MdOutlineRedo, MdFilterList } from 'react-icons/md'
+import { MdSchedule } from 'react-icons/md'
 import { RxOpenInNewWindow } from 'react-icons/rx'
 import { TfiArrowsCorner } from 'react-icons/tfi'
 import { TfiArrowsVertical } from 'react-icons/tfi'
@@ -158,6 +160,10 @@ export default class Icon extends React.Component {
       }
       case 'bookmark': {
         icon = <BiBookmark />
+        break
+      }
+      case 'save': {
+        icon = <FiSave />
         break
       }
       case 'scatterplot': {
@@ -320,6 +326,10 @@ export default class Icon extends React.Component {
         icon = <RiFilterLine />
         break
       }
+      case 'filter-lines': {
+        icon = <MdFilterList />
+        break
+      }
       case 'filter-off': {
         icon = <RiFilterOffLine />
         break
@@ -452,6 +462,10 @@ export default class Icon extends React.Component {
         icon = <AiOutlineQuestionCircle />
         break
       }
+      case 'redo': {
+        icon = <MdOutlineRedo />
+        break
+      }
       case 'refresh': {
         icon = <FiRefreshCw />
         break
@@ -475,6 +489,10 @@ export default class Icon extends React.Component {
       }
       case 'data-search': {
         icon = <BiSearchAlt />
+        break
+      }
+      case 'schedule': {
+        icon = <MdSchedule />
         break
       }
       case 'send': {
@@ -517,6 +535,10 @@ export default class Icon extends React.Component {
         icon = <BiSelectMultiple />
         break
       }
+      case 'undo': {
+        icon = <MdOutlineUndo />
+        break
+      }
       case 'unlock': {
         icon = <MdLockOpen />
         break
@@ -542,6 +564,7 @@ export default class Icon extends React.Component {
           className={`react-autoql-icon
             ${this.props.className || ''}
             react-autoql-icon-${this.props.type}
+            ${this.props.info ? 'react-autoql-icon-info' : ''}
             ${this.props.warning ? 'react-autoql-icon-warning' : ''}
             ${this.props.success ? 'react-autoql-icon-success' : ''}
             ${this.props.danger ? 'react-autoql-icon-danger' : ''}

@@ -16,6 +16,7 @@ import {
 
 import { Tooltip } from '../Tooltip'
 import DrilldownModal from './DrilldownModal'
+import { DashboardToolbar } from '../DashboardToolbar'
 import { DashboardTile } from './DashboardTile'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 
@@ -53,6 +54,7 @@ class DashboardWithoutTheme extends React.Component {
       isDragging: false,
       isReportProblemOpen: false,
       isResizingDrilldown: false,
+      uneditedDashboardTiles: null,
     }
   }
 
@@ -77,8 +79,14 @@ class DashboardWithoutTheme extends React.Component {
     onCSVDownloadStart: PropTypes.func,
     onCSVDownloadProgress: PropTypes.func,
     onCSVDownloadFinish: PropTypes.func,
+    onPNGDownloadFinish: PropTypes.func,
     cancelQueriesOnUnmount: PropTypes.bool,
     startEditingCallback: PropTypes.func,
+    stopEditingCallback: PropTypes.func,
+    onSaveCallback: PropTypes.func,
+    onDeleteCallback: PropTypes.func,
+    showToolbar: PropTypes.bool,
+    refreshInterval: PropTypes.number,
   }
 
   static defaultProps = {
@@ -90,13 +98,15 @@ class DashboardWithoutTheme extends React.Component {
     tiles: [],
     executeOnMount: true,
     dataPageSize: undefined,
-    executeOnStopEditing: true,
+    executeOnStopEditing: false,
     isEditing: false,
     isEditable: true,
     notExecutedText: undefined,
     enableDynamicCharting: true,
     autoChartAggregations: true,
     cancelQueriesOnUnmount: false,
+    showToolbar: false,
+    refreshInterval: 60,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
     onChange: () => {},
@@ -104,6 +114,22 @@ class DashboardWithoutTheme extends React.Component {
     onCSVDownloadProgress: () => {},
     onCSVDownloadFinish: () => {},
     startEditingCallback: () => {},
+    stopEditingCallback: () => {},
+    onSaveClick: () => {},
+    onDeleteCallback: () => {},
+  }
+
+  static getDerivedStateFromProps(nextProps, prevState) {
+    if (!prevState.wasEditing && nextProps.isEditing) {
+      return {
+        wasEditing: true,
+        uneditedDashboardTiles: _cloneDeep(nextProps.tiles),
+      }
+    }
+    if (prevState.wasEditing && !nextProps.isEditing) {
+      return { wasEditing: false }
+    }
+    return null
   }
 
   componentDidMount = () => {
@@ -126,6 +152,7 @@ class DashboardWithoutTheme extends React.Component {
 
     if (!prevProps.isEditing && this.props.isEditing) {
       this.refreshTileLayouts()
+      this.setState({ uneditedDashboardTiles: _cloneDeep(this.props.tiles) })
     }
 
     if (this.props.isEditing !== prevProps.isEditing) {
@@ -509,8 +536,9 @@ class DashboardWithoutTheme extends React.Component {
   setParamsForTile = (params, id, callbackArray) => {
     try {
       const originalTiles = this.getMostRecentTiles()
-      const tiles = _cloneDeep(this.getMostRecentTiles())
+      const tiles = _cloneDeep(originalTiles)
       const tileIndex = tiles.map((item) => item.i).indexOf(id)
+
       tiles[tileIndex] = {
         ...tiles[tileIndex],
         ...params,
@@ -680,11 +708,14 @@ class DashboardWithoutTheme extends React.Component {
             onCSVDownloadStart={this.props.onCSVDownloadStart}
             onCSVDownloadProgress={this.props.onCSVDownloadProgress}
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
+            onPNGDownloadFinish={this.props.onPNGDownloadFinish}
             tooltipID={this.TOOLTIP_ID}
             chartTooltipID={this.CHART_TOOLTIP_ID}
             source={this.SOURCE}
             scope={this.props.scope}
             customToolbarOptions={this.props.customToolbarOptions}
+            enableCustomColumns={this.props.enableCustomColumns}
+            preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
           />
         ))}
       </ReactGridLayout>
@@ -697,6 +728,33 @@ class DashboardWithoutTheme extends React.Component {
     return (
       <ErrorBoundary>
         <>
+          {this.props.showToolbar && (
+            <DashboardToolbar
+              authentication={this.props.authentication}
+              isEditing={this.props.isEditing}
+              isEditable={this.props.isEditable}
+              tooltipID={this.TOOLTIP_ID}
+              title={this.props.title}
+              onEditClick={this.props.startEditingCallback}
+              onAddTileClick={this.addTile}
+              onUndoClick={this.undo}
+              onRedoClick={this.redo}
+              onRefreshClick={this.executeDashboard}
+              onSaveClick={() => {
+                Promise.resolve(this.props.onSaveCallback ? this.props.onSaveCallback() : undefined).then((result) => {
+                  // Keep if we need to add back in the near future
+                  // this.executeDashboard()
+                })
+              }}
+              onDeleteClick={this.props.onDeleteCallback}
+              onRenameClick={this.props.onRenameCallback}
+              onCancelClick={() => {
+                this.debouncedOnChange(this.state.uneditedDashboardTiles)
+                this.props.stopEditingCallback()
+              }}
+              refreshInterval={this.props.refreshInterval}
+            />
+          )}
           <div
             ref={(ref) => (this.ref = ref)}
             className={`react-autoql-dashboard-container${this.props.isEditing ? ' edit-mode' : ''}`}
@@ -715,6 +773,7 @@ class DashboardWithoutTheme extends React.Component {
             activeDrilldownChartElementKey={this.state.activeDrilldownChartElementKey}
             isAnimating={this.state.isAnimatingModal}
             tooltipID={this.TOOLTIP_ID}
+            chartTooltipID={this.CHART_TOOLTIP_ID}
             showQueryInterpretation={this.props.isEditing}
             isDrilldownRunning={this.state.isDrilldownRunning}
             onErrorCallback={this.props.onErrorCallback}
@@ -723,9 +782,11 @@ class DashboardWithoutTheme extends React.Component {
             onCSVDownloadStart={this.props.onCSVDownloadStart}
             onCSVDownloadProgress={this.props.onCSVDownloadProgress}
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
+            onPNGDownloadFinish={this.props.onPNGDownloadFinish}
             source={this.SOURCE}
           />
           <Tooltip tooltipId={this.TOOLTIP_ID} />
+          <Tooltip tooltipId={this.CHART_TOOLTIP_ID} className='react-autoql-chart-tooltip' delayShow={0} />
         </>
       </ErrorBoundary>
     )

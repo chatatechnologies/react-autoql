@@ -10,18 +10,13 @@ import { CustomScrollbars } from '../CustomScrollbars'
 import './AddColumnBtn.scss'
 
 const AggMenu = forwardRef((props, ref) => {
-  const {
-    handleAggMenuItemClick,
-  } = props
+  const { handleAggMenuItemClick } = props
 
   const COMPONENT_KEY = React.useMemo(() => uuid(), [])
 
   return (
-    <CustomScrollbars autoHide={false}>
-      <div
-        className='more-options-menu react-autoql-add-column-menu'
-        key={`agg-menu-${COMPONENT_KEY}`}
-      >
+    <CustomScrollbars autoHide={false} suppressScrollX>
+      <div className='more-options-menu react-autoql-add-column-menu' key={`agg-menu-${COMPONENT_KEY}`}>
         <ul className='context-menu-list'>
           <div className='react-autoql-input-label'>Aggregation</div>
           {Object.keys(AGG_TYPES)
@@ -59,7 +54,7 @@ AggMenu.propTypes = {
 }
 
 AggMenu.defaultProps = {
-  handleAggMenuItemClick: () => { },
+  handleAggMenuItemClick: () => {},
 }
 
 export default AggMenu

@@ -67,6 +67,7 @@ import {
   CustomColumnTypes,
   formatFiltersForTabulator,
   formatSortersForTabulator,
+  DisplayTypes,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -155,8 +156,8 @@ export class QueryOutput extends React.Component {
     // Set initial table params to be any filters or sorters that
     // are already present in the current query
     this.formattedTableParams = {
-      filters: this.queryResponse?.data?.data?.fe_req?.filters || props?.initialFormattedTableParams?.filters || [],
-      sorters: this.queryResponse?.data?.data?.fe_req?.sorters || props?.initialFormattedTableParams?.sorters || [],
+      filters: props?.initialFormattedTableParams?.filters || [],
+      sorters: props?.initialFormattedTableParams?.sorters || [],
     }
 
     this.DEFAULT_TABLE_PAGE_SIZE = 100
@@ -236,6 +237,9 @@ export class QueryOutput extends React.Component {
     maxHeight: PropTypes.number,
     resizeMultiplier: PropTypes.number,
     onResize: PropTypes.func,
+    localRTFilterResponse: PropTypes.shape({}),
+    enableCustomColumns: PropTypes.bool,
+    preferRegularTableInitialDisplayType: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -254,7 +258,7 @@ export class QueryOutput extends React.Component {
     defaultSelectedSuggestion: undefined,
     reverseTranslationPlacement: 'bottom',
     activeChartElementKey: undefined,
-    useInfiniteScroll: true,
+    useInfiniteScroll: undefined,
     isResizing: false,
     enableDynamicCharting: true,
     onNoneOfTheseClick: undefined,
@@ -288,11 +292,15 @@ export class QueryOutput extends React.Component {
     onNewData: () => {},
     onCustomColumnUpdate: () => {},
     onUpdateFilterResponse: () => {},
+    onTableParamsChange: () => {},
     enableResizing: false,
     minHeight: 300,
     maxHeight: undefined,
     resizeMultiplier: 1.5,
     onResize: () => {},
+    localRTFilterResponse: undefined,
+    enableCustomColumns: true,
+    preferRegularTableInitialDisplayType: false,
   }
 
   componentDidMount = () => {
@@ -406,8 +414,6 @@ export class QueryOutput extends React.Component {
           this.queryResponse?.data?.data?.fe_req?.additional_selects,
           this.queryResponse,
           dataConfig,
-          this.queryResponse?.data?.data?.fe_req?.filters,
-          this.queryResponse?.data?.data?.fe_req?.orders,
           this.queryResponse?.data?.data?.fe_req?.session_filter_locks,
         )
 
@@ -434,7 +440,9 @@ export class QueryOutput extends React.Component {
         newState.displayType = this.getUpdatedDefaultDisplayType('table')
       }
 
-      this.updateToolbars()
+      setTimeout(() => {
+        this.updateToolbars()
+      }, 0)
 
       if (!_isEmpty(newState)) {
         this.setState(newState)
@@ -538,6 +546,7 @@ export class QueryOutput extends React.Component {
     if (this.chartRef) {
       this.chartRef?.adjustChartPosition()
     }
+
     if (this.tableRef?._isMounted) {
       this.tableRef.forceUpdate()
     }
@@ -667,6 +676,7 @@ export class QueryOutput extends React.Component {
       this.getPivotDataLength(),
       preferredDisplayType,
       isDataLimited(this.queryResponse),
+      this.props.preferRegularTableInitialDisplayType,
     )
   }
 
@@ -699,7 +709,7 @@ export class QueryOutput extends React.Component {
 
   hasError = (response) => {
     try {
-      const referenceIdNumber = Number(response.data?.reference_id?.split('.')[2])
+      const referenceIdNumber = Number(response?.data?.reference_id?.split('.')[2])
       if (referenceIdNumber >= 200 && referenceIdNumber < 300) {
         return false
       }
@@ -805,12 +815,19 @@ export class QueryOutput extends React.Component {
 
       const aggConfig = this.getAggConfig(newColumns)
 
+      // If data is a single value, change display type to table
+      let displayType = this.state.displayType
+      if (this.state.displayType === 'single-value' && !isSingleValueResponse(this.queryResponse)) {
+        displayType = DisplayTypes.TABLE
+      }
+
       this.setState((prevState) => ({
         columns: newColumns,
         columnChangeCount: prevState.columnChangeCount + 1,
         chartID: uuid(),
         aggConfig,
         customColumnSelects,
+        displayType,
       }))
     }
   }
@@ -1092,6 +1109,7 @@ export class QueryOutput extends React.Component {
           pageSize: queryRequestData?.page_size,
           test: queryRequestData?.test,
           groupBys: queryRequestData?.columns,
+          query: queryRequestData?.text,
           queryID: this.props.originalQueryID,
           orders: this.formattedTableParams?.sorters,
           tableFilters: allFilters,
@@ -1429,12 +1447,20 @@ export class QueryOutput extends React.Component {
   onTableParamsChange = (params, formattedTableParams = {}) => {
     this.tableParams = _cloneDeep(params)
     this.formattedTableParams = formattedTableParams
+
+    this.props.onTableParamsChange?.(this.tableParams, this.formattedTableParams)
+
+    // This will update the filter badge in OptionsToolbar
+    setTimeout(() => {
+      this.updateToolbars()
+    }, 0)
   }
 
   onNewData = (response) => {
     this.isOriginalData = false
     this.queryResponse = response
     this.tableData = response?.data?.data?.rows || []
+
     if (this.shouldGeneratePivotData()) {
       this.generatePivotData()
     }
@@ -1452,8 +1478,6 @@ export class QueryOutput extends React.Component {
         response?.data?.data?.fe_req?.additional_selects,
         response,
         dataConfig,
-        response?.data?.data?.fe_req?.filters,
-        response?.data?.data?.fe_req?.orders,
         response?.data?.data?.fe_req?.session_filter_locks,
       )
     }
@@ -1461,16 +1485,28 @@ export class QueryOutput extends React.Component {
     this.setState({ chartID: uuid() })
   }
 
-  onTableFilter = async (filters, rows) => {
-    if (!filters || _isEqual(filters, this.tableParams?.filter)) {
-      return
-    }
-    this.tableParams.filter = _cloneDeep(filters)
-    this.formattedTableParams = formatTableParams(this.tableParams, this.getColumns())
+  isValidSorter = (sorter) => {
+    return sorter && typeof sorter === 'object' && sorter.field !== undefined && typeof sorter.dir === 'string'
   }
 
-  onTableSort = (sorters) => {
-    this.tableParams.sort = _cloneDeep(sorters)
+  formatSorter = (sorter) => ({
+    field: sorter.field,
+    dir: sorter.dir,
+  })
+
+  updateFormattedTableParams = (validSorters) => {
+    this.formattedTableParams = {
+      ...this.formattedTableParams,
+      sorters: validSorters,
+    }
+  }
+
+  resetSorting = () => {
+    this.tableParams.sort = []
+    this.formattedTableParams = {
+      ...this.formattedTableParams,
+      sorters: [],
+    }
   }
 
   onLegendClick = (d) => {
@@ -1870,6 +1906,9 @@ export class QueryOutput extends React.Component {
     return getSupportedDisplayTypes({
       response: this.queryResponse,
       columns: this.getColumns(),
+      dataLength: this.getDataLength(),
+      pivotDataLength: this.getPivotDataLength(),
+      isDataLimited: isDataLimited(this.queryResponse),
       allowNumericStringColumns: this.ALLOW_NUMERIC_STRING_COLUMNS,
     })
   }
@@ -2152,6 +2191,7 @@ export class QueryOutput extends React.Component {
       // display if filtering is toggled by user
       newCol.headerFilter = col.headerFilter ?? 'input'
       newCol.headerFilterPlaceholder = this.setHeaderFilterPlaceholder(newCol)
+      newCol.headerFilterLiveFilter = false
 
       // Need to set custom filters for cells that are
       // displayed differently than the data (ie. dates)
@@ -2299,6 +2339,7 @@ export class QueryOutput extends React.Component {
         title: 'Month',
         name: 'Month',
         field: '0',
+        resizable: false,
         frozen: true,
         visible: true,
         is_visible: true,
@@ -2309,6 +2350,7 @@ export class QueryOutput extends React.Component {
         cssClass: 'pivot-category',
         sorter: (a, b) => dateSortFn(a, b, origDateColumn, 'isTable'),
         headerFilter: false,
+        headerFilterLiveFilter: false,
         headerFilterPlaceholder: 'filter...',
       }
 
@@ -2338,6 +2380,7 @@ export class QueryOutput extends React.Component {
           visible: true,
           is_visible: true,
           headerFilter: false,
+          headerFilterLiveFilter: false,
         })
       })
 
@@ -2470,9 +2513,11 @@ export class QueryOutput extends React.Component {
         visible: true,
         is_visible: true,
         field: '0',
+        resizable: false,
         cssClass: 'pivot-category',
         pivot: true,
         headerFilter: false,
+        headerFilterLiveFilter: false,
       })
 
       uniqueColumnHeaders.forEach((columnName, i) => {
@@ -2494,6 +2539,7 @@ export class QueryOutput extends React.Component {
           visible: true,
           is_visible: true,
           headerFilter: false,
+          headerFilterLiveFilter: false,
         })
       })
 
@@ -2631,6 +2677,7 @@ export class QueryOutput extends React.Component {
 
   onAddColumnClick = (column, sqlFn, isHiddenColumn) => {
     if (isHiddenColumn) {
+      this.setState({ isAddingColumn: true })
       this.tableRef?.setPageLoading(true)
 
       const newColumns = this.state.columns.map((col) => {
@@ -2652,11 +2699,13 @@ export class QueryOutput extends React.Component {
         })
         .finally(() => {
           this.tableRef?.setPageLoading(false)
+          this.setState({ isAddingColumn: false })
         })
     } else if (!column) {
       // Add a custom column
       this.tableRef?.addCustomColumn()
     } else {
+      this.setState({ isAddingColumn: true })
       this.tableRef?.setPageLoading(true)
 
       let currentAdditionalSelectColumns = this.getAdditionalSelectsFromResponse(this.queryResponse) ?? []
@@ -2693,6 +2742,9 @@ export class QueryOutput extends React.Component {
           console.error(error)
           this.tableRef?.setPageLoading(false)
         })
+        .finally(() => {
+          this.setState({ isAddingColumn: false })
+        })
     }
   }
 
@@ -2705,6 +2757,9 @@ export class QueryOutput extends React.Component {
   }
 
   renderAddColumnBtn = () => {
+    // Comment out for now. Uncomment for next deploy
+    // const isSingleValue = isSingleValueResponse(this.queryResponse)
+    // if (this.props.allowColumnAddition && (this.state.displayType === 'table' || isSingleValue)) {
     if (this.props.allowColumnAddition && this.state.displayType === 'table') {
       return (
         <AddColumnBtn
@@ -2713,7 +2768,10 @@ export class QueryOutput extends React.Component {
           tooltipID={this.props.tooltipID}
           onAddColumnClick={this.onAddColumnClick}
           onCustomClick={this.onAddColumnClick}
-          disableAddCustomColumnOption={isDrilldown(this.queryResponse)}
+          disableAddCustomColumnOption={!this.props.enableCustomColumns || isDrilldown(this.queryResponse)}
+          // className={isSingleValue ? 'single-value-add-col-btn' : 'table-add-col-btn'}
+          className='table-add-col-btn'
+          isAddingColumn={this.state.isAddingColumn}
         />
       )
     }
@@ -2746,11 +2804,11 @@ export class QueryOutput extends React.Component {
       <ErrorBoundary>
         <ChataTable
           key={this.tableID}
+          ref={(ref) => (this.tableRef = ref)}
           autoHeight={this.props.autoHeight}
           authentication={this.props.authentication}
           autoQLConfig={this.props.autoQLConfig}
           dataFormatting={this.props.dataFormatting}
-          ref={(ref) => (this.tableRef = ref)}
           columns={this.state.columns}
           response={this.queryResponse}
           updateColumns={this.updateColumns}
@@ -2758,8 +2816,6 @@ export class QueryOutput extends React.Component {
           onCellClick={this.onTableCellClick}
           queryID={this.queryID}
           useInfiniteScroll={this.props.useInfiniteScroll}
-          onFilterCallback={this.onTableFilter}
-          onSorterCallback={this.onTableSort}
           onTableParamsChange={this.onTableParamsChange}
           onNewData={this.onNewData}
           isAnimating={this.props.isAnimating}
@@ -2785,6 +2841,7 @@ export class QueryOutput extends React.Component {
           initialTableParams={this.tableParams}
           updateColumnsAndData={this.updateColumnsAndData}
           onUpdateFilterResponse={this.props.onUpdateFilterResponse}
+          isLoadingLocal={this.props.isLoadingLocal}
         />
       </ErrorBoundary>
     )
@@ -2804,6 +2861,7 @@ export class QueryOutput extends React.Component {
         <ChataTable
           key={this.pivotTableID}
           ref={(ref) => (this.pivotTableRef = ref)}
+          autoHeight={this.props.autoHeight}
           authentication={this.props.authentication}
           autoQLConfig={this.props.autoQLConfig}
           dataFormatting={this.props.dataFormatting}
@@ -2813,9 +2871,8 @@ export class QueryOutput extends React.Component {
           isAnimating={this.props.isAnimating}
           isResizing={this.props.isResizing || this.state.isResizing}
           hidden={this.state.displayType !== 'pivot_table'}
-          useInfiniteScroll={false}
+          useInfiniteScroll={this.props.useInfiniteScroll}
           supportsDrilldowns={true}
-          autoHeight={this.props.autoHeight}
           source={this.props.source}
           scope={this.props.scope}
           tooltipID={this.props.tooltipID}
@@ -2830,6 +2887,7 @@ export class QueryOutput extends React.Component {
           pivotGroups={true}
           pivot
           queryText={this.queryResponse?.data?.data?.text}
+          isLoadingLocal={this.props.isLoadingLocal}
         />
       </ErrorBoundary>
     )
@@ -3113,20 +3171,25 @@ export class QueryOutput extends React.Component {
   }
 
   renderReverseTranslation = () => {
+    if (!this.shouldRenderReverseTranslation()) {
+      return null
+    }
+
     return (
       <ReverseTranslation
         authentication={this.props.authentication}
         onValueLabelClick={this.props.onRTValueLabelClick}
-        appliedFilters={this.getFilters()}
+        appliedFilters={this.getFilters() || []}
         isResizing={this.props.isResizing}
         queryResponse={this.queryResponse}
         tooltipID={this.props.tooltipID}
-        subjects={this.props.subjects}
+        subjects={this.props.subjects || []}
         queryOutputRef={this.responseContainerRef}
         allowColumnAddition={this.props.allowColumnAddition && this.state.displayType === 'table'}
         enableEditReverseTranslation={
-          this.props.autoQLConfig.enableEditReverseTranslation && !isDrilldown(this.queryResponse)
+          this.props.autoQLConfig?.enableEditReverseTranslation && !isDrilldown(this.queryResponse)
         }
+        localRTFilterResponse={this.props.localRTFilterResponse}
       />
     )
   }

@@ -11,6 +11,7 @@ import { ErrorBoundary } from '../../containers/ErrorHOC'
 
 import './AddColumnBtn.scss'
 import AggMenu from './AggMenu'
+import { Spinner } from '../Spinner'
 
 const AddColumnBtnWithoutRef = forwardRef((props, ref) => {
   const {
@@ -26,6 +27,8 @@ const AddColumnBtnWithoutRef = forwardRef((props, ref) => {
     enableInlineStyle,
     disableGroupColumnsOptions,
     disableFilterColumnsOptions,
+    className,
+    isAddingColumn,
   } = props
 
   const COMPONENT_KEY = React.useMemo(() => uuid(), [])
@@ -61,12 +64,7 @@ const AddColumnBtnWithoutRef = forwardRef((props, ref) => {
   }
 
   const isColumnNumerical = (columnType) => {
-    return [
-      ColumnTypes.DOLLAR_AMT,
-      ColumnTypes.QUANTITY,
-      ColumnTypes.RATIO,
-      ColumnTypes.PERCENT,
-    ].includes(columnType)
+    return [ColumnTypes.DOLLAR_AMT, ColumnTypes.QUANTITY, ColumnTypes.RATIO, ColumnTypes.PERCENT].includes(columnType)
   }
 
   const renderAddColumnMenu = (availableSelectColumns, availableHiddenColumns) => {
@@ -75,7 +73,7 @@ const AddColumnBtnWithoutRef = forwardRef((props, ref) => {
     }
 
     return (
-      <CustomScrollbars autoHide={false}>
+      <CustomScrollbars autoHide={false} suppressScrollX>
         <div className='more-options-menu react-autoql-add-column-menu'>
           <ul className='context-menu-list'>
             <div className='react-autoql-input-label'>Add a Column</div>
@@ -87,7 +85,12 @@ const AddColumnBtnWithoutRef = forwardRef((props, ref) => {
                   key={`agg-select-menu-${i}`}
                   isOpen={aggPopoverActiveID === `column-select-menu-item-${i}`}
                   onClickOutside={() => setAggPopoverActiveID(undefined)}
-                  content={() => <AggMenu column={column} handleAggMenuItemClick={(aggType) => handleAddColumnClick(column, aggType?.sqlFn)} />}
+                  content={() => (
+                    <AggMenu
+                      column={column}
+                      handleAggMenuItemClick={(aggType) => handleAddColumnClick(column, aggType?.sqlFn)}
+                    />
+                  )}
                   parentElement={popoverParentElement}
                   boundaryElement={popoverParentElement}
                   positions={popoverPositions ?? ['right', 'left']}
@@ -98,9 +101,7 @@ const AddColumnBtnWithoutRef = forwardRef((props, ref) => {
                     key={`column-select-menu-item-${i}`}
                     onClick={() => (columnIsNumerical ? undefined : handleAddColumnClick(column))}
                     onMouseOver={(e) => {
-                      setAggPopoverActiveID(
-                        columnIsNumerical ? `column-select-menu-item-${i}` : undefined
-                      )
+                      setAggPopoverActiveID(columnIsNumerical ? `column-select-menu-item-${i}` : undefined)
                     }}
                   >
                     <div className='react-autoql-add-column-menu-item'>
@@ -173,7 +174,12 @@ const AddColumnBtnWithoutRef = forwardRef((props, ref) => {
       >
         <div
           onClick={() => setIsAddColumnMenuOpen(true)}
-          className={!enableInlineStyle ? `react-autoql-table-add-column-btn${isAddColumnMenuOpen ? ' active' : ''}` : `react-autoql-inline-table-add-column-btn${isAddColumnMenuOpen ? ' active' : ''}`}
+          className={`${
+            !enableInlineStyle
+              ? `react-autoql-table-add-column-btn${isAddColumnMenuOpen ? ' active' : ''}`
+              : `react-autoql-inline-table-add-column-btn${isAddColumnMenuOpen ? ' active' : ''}`
+          }
+             ${className} ${isAddingColumn ? 'add-column-btn-is-loading' : 'add-column-btn-not-loading'}`}
           style={{
             ...style, // Overwrite other styles if provided
           }}
@@ -182,7 +188,7 @@ const AddColumnBtnWithoutRef = forwardRef((props, ref) => {
           data-tooltip-id={tooltipID}
           size='small'
         >
-          <Icon type='plus' />
+          {isAddingColumn ? <Spinner /> : <Icon type='plus' />}
         </div>
       </Popover>
     </ErrorBoundary>
@@ -216,8 +222,8 @@ AddColumnBtnWithoutRef.propTypes = {
 AddColumnBtnWithoutRef.defaultProps = {
   queryResponse: undefined,
   allowCustom: true,
-  onAddColumnClick: () => { },
-  onCustomClick: () => { },
+  onAddColumnClick: () => {},
+  onCustomClick: () => {},
   tooltipID: undefined,
   disableAddCustomColumnOption: false,
   style: {},

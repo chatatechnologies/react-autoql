@@ -539,6 +539,7 @@ export default class NotificationItem extends React.Component {
                     tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
                     chartTooltipID={this.props.chartTooltipID ?? this.CHART_TOOLTIP_ID}
                     enableFilterBtn={this.props.enableFilterBtn}
+                    enableCustomColumns={this.props.enableCustomColumns}
                   />
                 )}
               </>
