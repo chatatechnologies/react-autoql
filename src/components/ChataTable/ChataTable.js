@@ -6,7 +6,7 @@ import { mean, sum } from 'd3-array'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
-import { isNumericColumn } from './utils/columnUtils'
+import { isColumnSummable } from 'autoql-fe-utils'
 
 import {
   deepEqual,
@@ -343,7 +343,7 @@ export default class ChataTable extends React.Component {
           return
         }
 
-        if (isNumericColumn(column)) {
+        if (isColumnSummable(column)) {
           const columnData = rows.map((r) => r[columnIndex])
           stats[columnIndex] = {
             avg: formatElement({ element: mean(columnData), column, config: props.dataFormatting }),
@@ -1145,7 +1145,7 @@ export default class ChataTable extends React.Component {
   }
 
   hasBottomCalc = () => {
-    return this.props.columns?.some((col) => col.visible !== false && (col.bottomCalc || isNumericColumn(col)))
+    return this.props.columns?.some((col) => col.visible !== false && (col.bottomCalc || isColumnSummable(col)))
   }
 
   toggleIsFiltering = (filterOn, scrollToFirstFilteredColumn) => {
@@ -1432,7 +1432,7 @@ export default class ChataTable extends React.Component {
               newCol[option] = col[option]
             }
           })
-          if (isNumericColumn(col)) {
+          if (isColumnSummable(col)) {
             newCol['bottomCalc'] = function (values, data, calcParams) {
               return calcParams?.stats?.sum ?? null
             }
@@ -1612,7 +1612,7 @@ export default class ChataTable extends React.Component {
               </div>
             ) : (
               <>
-                {isNumericColumn(column) && (
+                {isColumnSummable(column) && (
                   <div className='selectable-table-tooltip-section'>
                     <span>
                       <strong>Total: </strong>
@@ -1620,7 +1620,7 @@ export default class ChataTable extends React.Component {
                     </span>
                   </div>
                 )}
-                {isNumericColumn(column) && (
+                {isColumnSummable(column) && (
                   <div className='selectable-table-tooltip-section'>
                     <span>
                       <strong>Average: </strong>
