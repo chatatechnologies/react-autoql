@@ -1542,7 +1542,7 @@ export default class ChataTable extends React.Component {
     const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
     const currentRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(currentRowCount)
     const totalRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(totalRowCount)
-    const rowLimit = this.props.response?.data?.data?.row_limit
+    const rowLimit = this.props.response?.data?.data?.row_limit ?? MAX_DATA_PAGE_SIZE
     const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(rowLimit)
 
     return (
