@@ -101,8 +101,12 @@ export class QueryOutput extends React.Component {
     this.COPIED_TOOLTIP_TEXT = 'Copied!'
     this.ERROR_TOOLTIP_TEXT = 'Copy failed. Please try again.'
 
-    let response = props.queryResponse
+    this.originalLegendState = {
+      hiddenLegendLabels: [],
+      isEditing: false,
+    }
 
+    let response = props.queryResponse
     this.queryResponse = response
     this.columnDateRanges = getColumnDateRanges(response)
     this.queryID = this.queryResponse?.data?.data?.query_id
@@ -176,6 +180,9 @@ export class QueryOutput extends React.Component {
       resizeStartY: 0,
       resizeStartHeight: 0,
       isResizable: this.shouldEnableResize,
+      hiddenLegendLabels: [],
+      legendStateByChart: {},
+      originalLegendState: this.originalLegendState,
     }
     this.updateMaxConstraints()
   }
@@ -233,6 +240,7 @@ export class QueryOutput extends React.Component {
     initialFormattedTableParams: PropTypes.shape({}),
     onUpdateFilterResponse: PropTypes.func,
     enableResizing: PropTypes.bool,
+    isEditing: PropTypes.bool,
     minHeight: PropTypes.number,
     maxHeight: PropTypes.number,
     resizeMultiplier: PropTypes.number,
@@ -279,6 +287,7 @@ export class QueryOutput extends React.Component {
     enableTableContextMenu: true,
     subjects: [],
     initialFormattedTableParams: undefined,
+    isEditing: false,
     onTableConfigChange: () => {},
     onAggConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
@@ -319,6 +328,31 @@ export class QueryOutput extends React.Component {
       console.error(error)
       this.props.onErrorCallback(error)
     }
+  }
+
+  handleLegendVisibilityChange = (hiddenLabels) => {
+    const currentType = this.state.displayType
+    this.setState({
+      hiddenLegendLabels: hiddenLabels,
+      legendStateByChart: {
+        ...this.state.legendStateByChart,
+        [currentType]: hiddenLabels,
+      },
+    })
+  }
+
+  handleLegendClick = (label) => {
+    const { hiddenLegendLabels, legendStateByChart, displayType } = this.state
+    const isHidden = hiddenLegendLabels.includes(label)
+    const newHiddenLabels = isHidden ? hiddenLegendLabels.filter((l) => l !== label) : [...hiddenLegendLabels, label]
+
+    this.setState({
+      hiddenLegendLabels: newHiddenLabels,
+      legendStateByChart: {
+        ...legendStateByChart,
+        [displayType]: newHiddenLabels,
+      },
+    })
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -371,8 +405,36 @@ export class QueryOutput extends React.Component {
           }, 50)
         }
       }
-      if (this.props.onDisplayTypeChange && this.state.displayType !== prevState.displayType) {
-        this.props.onDisplayTypeChange(this.state.displayType)
+
+      if (prevProps.isEditing !== this.props.isEditing) {
+        if (this.props.isEditing) {
+          this.originalLegendState = {
+            hiddenLegendLabels: [...this.state.hiddenLegendLabels],
+            isEditing: true,
+          }
+        } else {
+          this.setState({
+            hiddenLegendLabels: this.originalLegendState.hiddenLegendLabels,
+          })
+        }
+      }
+
+      if (this.state.displayType !== prevState.displayType) {
+        const { legendStateByChart } = this.state
+        const updatedLegendStateByChart = {
+          ...legendStateByChart,
+          [prevState.displayType]: this.state.hiddenLegendLabels,
+        }
+
+        const newChartLegendState = updatedLegendStateByChart[this.state.displayType] || []
+
+        this.setState(
+          {
+            hiddenLegendLabels: newChartLegendState,
+            legendStateByChart: updatedLegendStateByChart,
+          },
+          () => this.props.onDisplayTypeChange?.(this.state.displayType),
+        )
 
         // If new number column indices conflict, reset table config to resolve the arrays
         // The config should stay the same as much as possible while removing the overlapping indices
@@ -1510,6 +1572,8 @@ export class QueryOutput extends React.Component {
   }
 
   onLegendClick = (d) => {
+    d?.label && this.handleLegendClick(d.label)
+
     if (!d) {
       console.debug('no legend item was provided on click event')
       return
@@ -2939,6 +3003,7 @@ export class QueryOutput extends React.Component {
           dataFormatting={this.props.dataFormatting}
           activeChartElementKey={this.props.activeChartElementKey}
           onLegendClick={this.onLegendClick}
+          currentLegendState={this.state.hiddenLegendLabels}
           legendColumn={this.state.columns[this.tableConfig?.legendColumnIndex]}
           changeStringColumnIndex={this.onChangeStringColumnIndex}
           changeLegendColumnIndex={this.onChangeLegendColumnIndex}
@@ -2962,6 +3027,9 @@ export class QueryOutput extends React.Component {
           onBucketSizeChange={this.props.onBucketSizeChange}
           bucketSize={this.props.bucketSize}
           queryID={this.queryResponse?.data?.data?.query_id}
+          isEditing={this.props.isEditing}
+          hiddenLegendLabels={this.state.hiddenLegendLabels}
+          onLegendVisibilityChange={this.handleLegendVisibilityChange}
         />
       </ErrorBoundary>
     )
