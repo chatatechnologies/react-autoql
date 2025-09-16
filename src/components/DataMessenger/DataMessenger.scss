@@ -2,6 +2,9 @@
   font-family: var(--react-autoql-font-family), sans-serif;
   line-height: 22px;
   outline: none !important;
+  /* Prevent iOS Safari from automatically scaling fonts during screen rotation */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 
   .react-autoql-notification-list-container {
     height: calc(100% - 60px);
@@ -85,6 +88,10 @@
     box-shadow: 0 0 12px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
     flex: 0 0 auto;
     z-index: 1;
+
+    &.mobile-hidden {
+      display: none !important;
+    }
   }
 
   .react-autoql-header-left-container {
@@ -92,6 +99,10 @@
     justify-content: left;
     width: 100px;
     margin-left: 10px;
+
+    &.mobile-hidden {
+      display: none !important;
+    }
   }
 
   .react-autoql-header-right-container {
@@ -99,6 +110,10 @@
     justify-content: right;
     width: 100px;
     margin-right: 10px;
+
+    &.mobile-hidden {
+      display: none !important;
+    }
   }
 
   .react-autoql-header-center-container {
