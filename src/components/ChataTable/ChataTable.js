@@ -59,12 +59,12 @@ export default class ChataTable extends React.Component {
     this.filterCount = 0
     this.isSorting = false
     this.pageSize = props.pageSize ?? 50
-    this.useRemote = true
-    // this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
-    //   ? LOCAL_OR_REMOTE.REMOTE
-    //   : this.props.response?.data?.data?.fe_req?.filters?.length > 0
-    //   ? LOCAL_OR_REMOTE.REMOTE
-    //   : LOCAL_OR_REMOTE.LOCAL
+    this.useRemote =
+      this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
+        ? LOCAL_OR_REMOTE.REMOTE
+        : this.props.response?.data?.data?.fe_req?.filters?.length > 0 || props.initialTableParams?.filter?.length > 0
+        ? LOCAL_OR_REMOTE.REMOTE
+        : LOCAL_OR_REMOTE.LOCAL
     this.isLocal = this.useRemote === LOCAL_OR_REMOTE.LOCAL
     this.totalPages = this.getTotalPages(props.response)
     if (isNaN(this.totalPages) || !this.totalPages) {
@@ -72,12 +72,9 @@ export default class ChataTable extends React.Component {
     }
     this.useInfiniteScroll = props.useInfiniteScroll ?? !this.isLocal
 
-    if (!this.useInfiniteScroll) {
-      if (props.pivot) {
-        this.originalQueryData = _cloneDeep(props.data)
-      } else {
-        this.originalQueryData = _cloneDeep(props.response?.data?.data?.rows)
-      }
+    this.originalQueryData = _cloneDeep(props.response?.data?.data?.rows)
+    if (props.pivot) {
+      this.originalQueryData = _cloneDeep(props.data)
     }
 
     this.tableParams = {
@@ -89,8 +86,8 @@ export default class ChataTable extends React.Component {
     this.tableOptions = {
       selectableRowsCheck: () => false,
       movableColumns: true,
-      initialSort: !this.useInfiniteScroll ? this.tableParams?.sort : undefined,
-      initialFilter: !this.useInfiniteScroll ? this.tableParams?.filter : undefined,
+      initialSort: undefined, // Let getRows do initial sorting and filtering
+      initialFilter: undefined, // Let getRows do initial sorting and filtering
       progressiveLoadScrollMargin: 50, // Trigger next ajax load when scroll bar is 800px or less from the bottom of the table.
       // renderHorizontal: 'virtual', // v4: virtualDomHoz = false
       movableColumns: true,
@@ -191,13 +188,13 @@ export default class ChataTable extends React.Component {
     onCustomColumnChange: () => {},
     updateColumnsAndData: () => {},
     onUpdateFilterResponse: () => {},
-    onTableParamsChange: () => {},
     isDrilldown: false,
     scope: undefined,
   }
 
   componentDidMount = () => {
     this._isMounted = true
+    this._setFiltersTime = Date.now() // Track when component mounted to avoid duplicate requests
     if (!this.props.autoHeight) {
       this.initialTableHeight = this.tabulatorContainer?.clientHeight
       this.lockedTableHeight = this.initialTableHeight
@@ -312,6 +309,13 @@ export default class ChataTable extends React.Component {
       clearTimeout(this.clickListenerTimeout)
       clearTimeout(this.setDimensionsTimeout)
       clearTimeout(this.setStateTimeout)
+
+      // Clear any pending filter check timeouts to prevent state updates after unmount
+      if (this._filterCheckTimeout) {
+        clearTimeout(this._filterCheckTimeout)
+        this._filterCheckTimeout = null
+      }
+
       this.cancelCurrentRequest()
     } catch (error) {
       console.error(error)
@@ -533,7 +537,9 @@ export default class ChataTable extends React.Component {
   }
 
   setPageLoading = (loading) => {
-    this.setState({ pageLoading: !!loading })
+    if (this._isMounted) {
+      this.setState({ pageLoading: !!loading })
+    }
   }
 
   onTableBuilt = async () => {
@@ -582,7 +588,8 @@ export default class ChataTable extends React.Component {
     const tableParamsUnchanged = _isEqual(tableParamsFormatted, nextTableParamsFormatted)
 
     if (this.hasSetInitialData && (this.state.scrollLoading || this.props.hidden || tableParamsUnchanged)) {
-      return false
+      // Return undefined to let the request proceed, but ajaxRequestFunc will handle it
+      return
     }
   }
 
@@ -596,7 +603,10 @@ export default class ChataTable extends React.Component {
     let response = initialData
 
     try {
-      if (!this.hasSetInitialData || !this._isMounted) {
+      // Check if table just mounted - avoid any AJAX requests for recently mounted tables
+      const hasRecentlySetHeaderFilters = this.state.tabulatorMounted && Date.now() - (this._setFiltersTime || 0) < 2000 // 2 seconds
+
+      if (!this.hasSetInitialData || !this._isMounted || hasRecentlySetHeaderFilters) {
         return initialData
       }
 
@@ -607,10 +617,14 @@ export default class ChataTable extends React.Component {
       const nextTableParamsFormatted = formatTableParams(params, this.props.columns)
 
       if (params?.page > 1) {
-        this.setState({ scrollLoading: true })
+        if (this._isMounted) {
+          this.setState({ scrollLoading: true })
+        }
         response = await this.getNewPage(this.props, nextTableParamsFormatted)
       } else {
-        this.setState({ pageLoading: true })
+        if (this._isMounted) {
+          this.setState({ pageLoading: true })
+        }
         const responseWrapper = await this.queryFn({
           tableFilters: nextTableParamsFormatted?.filters,
           orders: nextTableParamsFormatted?.sorters,
@@ -669,6 +683,9 @@ export default class ChataTable extends React.Component {
       })
     }
 
+    // Update filterCount for local filtering
+    this.filterCount = data?.length || 0
+
     // Sorters
     if (params.orders?.length) {
       const sortColumnIndex = this.props.columns.find((col) => col.id === params?.orders[0]?.id)?.index
@@ -685,7 +702,10 @@ export default class ChataTable extends React.Component {
     if (this.useInfiniteScroll) {
       return this.props.queryFn(params)
     } else {
-      return Promise.resolve(this.clientSortAndFilterData(params))
+      return new Promise((resolve) => {
+        const result = this.clientSortAndFilterData(params)
+        resolve(result)
+      })
     }
   }
 
@@ -702,23 +722,25 @@ export default class ChataTable extends React.Component {
     const start = (page - 1) * this.pageSize
     const end = start + this.pageSize
 
+    const tableParamsFormatted = formatTableParams(this.tableParams, props.columns)
+    const tableParamsForAPI = {
+      tableFilters: tableParamsFormatted?.filters,
+      orders: tableParamsFormatted?.sorters,
+    }
+
     let newRows
     if (props.pivot) {
       if (this.tableParams?.filter?.length || this.tableParams?.sort?.length) {
-        // The pivot table has been sorted or filtered
-        // We must use sorted/filtered data to get new rows
-        const tableParamsFormatted = formatTableParams(this.tableParams, props.columns)
-        const tableParamsForAPI = {
-          tableFilters: tableParamsFormatted?.filters,
-          orders: tableParamsFormatted?.sorters,
-        }
-
         const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows
 
         newRows = sortedData?.slice(start, end) ?? []
       } else {
         newRows = props.data?.slice(start, end) ?? []
       }
+    } else if (!this.useInfiniteScroll) {
+      const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows
+
+      newRows = sortedData?.slice(start, end) ?? []
     } else {
       newRows = props.response?.data?.data?.rows?.slice(start, end) ?? []
     }
@@ -792,6 +814,13 @@ export default class ChataTable extends React.Component {
 
       if (isLastPage !== this.state.isLastPage && this._isMounted) {
         this.setState({ isLastPage })
+      }
+      // Force re-render to update filter count display after data is processed
+      // Note: this.filterCount is already set correctly in ajaxRequestFunc from the queryFn response
+      if (this._isMounted) {
+        setTimeout(() => {
+          this.forceUpdate()
+        }, 0)
       }
     } else {
       return {}
@@ -991,27 +1020,39 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  setFilters = (newFilters) => {
+  setFilters = async (newFilters) => {
+    // Track when setFilters was called to prevent duplicate AJAX requests
+    this._setFiltersTime = Date.now()
+
     const filterValues = newFilters || this.tableParams?.filter
 
     if (filterValues) {
-      filterValues.forEach((filter, i) => {
-        try {
-          // Get all columns to check if the target column exists
-          const columns = this.ref.tabulator.getColumns()
-          const targetColumn = columns.find((col) => col.getField() === filter.field)
+      try {
+        // Block all table redraws/data loads while setting filters
+        this.ref?.tabulator?.blockRedraw()
 
-          if (targetColumn && targetColumn.getDefinition().headerFilter) {
-            this.ref?.tabulator?.setHeaderFilterValue(filter.field, filter.value)
-          }
-          if (!this.useInfiniteScroll) {
-            this.ref?.tabulator?.setFilter(filter.field, filter.type, filter.value)
-          }
-        } catch (error) {
-          console.error(error)
-          this.props.onErrorCallback(error)
+        try {
+          filterValues.forEach((filter) => {
+            // Get all columns to check if the target column exists
+            const columns = this.ref.tabulator.getColumns()
+            const targetColumn = columns.find((col) => col.getField() === filter.field)
+
+            if (targetColumn && targetColumn.getDefinition().headerFilter) {
+              this.ref?.tabulator?.setHeaderFilterValue(filter.field, filter.value)
+            }
+          })
+        } finally {
+          // Always restore redraw even if there's an error - this will trigger ONE AJAX request with all filters
+          this.ref?.tabulator?.restoreRedraw()
         }
-      })
+
+        // Final check after all filters set - with cleanup
+        this._filterCheckTimeout = setTimeout(() => {
+          this._filterCheckTimeout = null
+        }, 10)
+      } catch (error) {
+        console.error('CHATATABLE - error setting filters:', error)
+      }
     }
 
     this.setFilterBadgeClasses()
@@ -1181,7 +1222,9 @@ export default class ChataTable extends React.Component {
       if (this.props.keepScrolledRight) {
         this.scrollToRight()
       }
-      this.setHeaderInputEventListeners()
+      setTimeout(() => {
+        this.setHeaderInputEventListeners()
+      }, 0)
     })
   }
 
