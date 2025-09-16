@@ -684,6 +684,9 @@ export default class ChataTable extends React.Component {
       })
     }
 
+    // Update filterCount for local filtering
+    this.filterCount = data?.length || 0
+
     // Sorters
     if (params.orders?.length) {
       const sortColumnIndex = this.props.columns.find((col) => col.id === params?.orders[0]?.id)?.index
@@ -814,9 +817,9 @@ export default class ChataTable extends React.Component {
         this.setState({ isLastPage })
       }
       // Force re-render to update filter count display after data is processed
+      // Note: this.filterCount is already set correctly in ajaxRequestFunc from the queryFn response
       if (this._isMounted) {
         setTimeout(() => {
-          this.filterCount = response?.rows?.length ?? 0
           this.forceUpdate()
         }, 0)
       }
