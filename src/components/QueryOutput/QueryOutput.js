@@ -2821,10 +2821,8 @@ export class QueryOutput extends React.Component {
   }
 
   renderAddColumnBtn = () => {
-    // Comment out for now. Uncomment for next deploy
-    // const isSingleValue = isSingleValueResponse(this.queryResponse)
-    // if (this.props.allowColumnAddition && (this.state.displayType === 'table' || isSingleValue)) {
-    if (this.props.allowColumnAddition && this.state.displayType === 'table') {
+    const isSingleValue = isSingleValueResponse(this.queryResponse)
+    if (this.props.allowColumnAddition && (this.state.displayType === 'table' || isSingleValue)) {
       return (
         <AddColumnBtn
           queryResponse={this.queryResponse}
@@ -2833,8 +2831,7 @@ export class QueryOutput extends React.Component {
           onAddColumnClick={this.onAddColumnClick}
           onCustomClick={this.onAddColumnClick}
           disableAddCustomColumnOption={!this.props.enableCustomColumns || isDrilldown(this.queryResponse)}
-          // className={isSingleValue ? 'single-value-add-col-btn' : 'table-add-col-btn'}
-          className='table-add-col-btn'
+          className={isSingleValue ? 'single-value-add-col-btn' : 'table-add-col-btn'}
           isAddingColumn={this.state.isAddingColumn}
         />
       )
