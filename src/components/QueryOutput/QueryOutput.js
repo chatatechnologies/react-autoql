@@ -119,10 +119,6 @@ export class QueryOutput extends React.Component {
     this.renderComplete = false
     this.hasCalledInitialTableConfigChange = false
 
-    // --------- generate data before mount --------
-    this.generateAllData()
-    // -------------------------------------------
-
     const additionalSelects = this.getAdditionalSelectsFromResponse(this.queryResponse)
     const columns = this.formatColumnsForTable(
       this.queryResponse?.data?.data?.columns,
@@ -149,13 +145,9 @@ export class QueryOutput extends React.Component {
       this.tableConfig = _cloneDeep(tableConfig)
     }
 
-    if (
-      props.initialTableConfigs?.pivotTableConfig &&
-      this.isTableConfigValid(props.initialTableConfigs?.pivotTableConfig, this.pivotTableColumns, displayType)
-    ) {
-      const { pivotTableConfig } = props.initialTableConfigs
-      this.pivotTableConfig = _cloneDeep(pivotTableConfig)
-    }
+    // --------- generate data before mount --------
+    this.generateAllData()
+    // -------------------------------------------
 
     // Set initial table params to be any filters or sorters that
     // are already present in the current query
@@ -979,13 +971,15 @@ export class QueryOutput extends React.Component {
     try {
       this.pivotTableID = uuid()
       const columns = this.getColumns()
-      if (getNumberOfGroupables(columns) === 1) {
+      const numGroupables = getNumberOfGroupables(columns)
+
+      if (numGroupables === 1) {
         this.generateDatePivotData(this.tableData)
       } else {
         this.generatePivotTableData({ isFirstGeneration })
       }
     } catch (error) {
-      console.error(error)
+      console.error('Error generating pivot data', error)
       this.props.onErrorCallback(error)
       this.pivotTableData = undefined
     }
@@ -2521,8 +2515,12 @@ export class QueryOutput extends React.Component {
 
       // Make sure the longer list is in the legend, UNLESS its a date type
       // DATE types should always go in the axis if possible
+      // BUT: Don't switch if we have saved axis preferences (respect user choice)
+      const hasSavedAxisConfig = this.props.initialTableConfigs?.tableConfig
+
       if (
         isFirstGeneration &&
+        !hasSavedAxisConfig && // Skip switching if user has saved preferences
         (isColumnDateType(columns[legendColumnIndex]) ||
           (uniqueColumnHeaders?.length > uniqueRowHeaders?.length &&
             (!isColumnDateType(columns[stringColumnIndex]) || uniqueColumnHeaders.length > MAX_LEGEND_LABELS)))
