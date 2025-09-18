@@ -479,12 +479,6 @@ export class QueryOutput extends React.Component {
           shouldForceUpdate = true
         }
 
-        if (isSingleValueResponse(this.queryResponse) && this.state.displayType !== 'single-value') {
-          newState.displayType = 'single-value'
-        } else if (!isSingleValueResponse(this.queryResponse) && this.state.displayType === 'single-value') {
-          newState.displayType = 'table'
-        }
-
         const newSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
         if (!_isEqual(newSupportedDisplayTypes, this.state.supportedDisplayTypes)) {
           newState.supportedDisplayTypes = newSupportedDisplayTypes
@@ -916,11 +910,27 @@ export class QueryOutput extends React.Component {
         this.resetTableConfig(newColumns)
       }
 
+      // Determine appropriate display type based on column visibility
+      let displayType = this.state.displayType
+      const visibleColumns = newColumns?.filter((col) => col.is_visible) || []
+
+      if (isSingleValueResponse(this.queryResponse)) {
+        // Single visible column AND single row (or no data) → single-value display
+        displayType = 'single-value'
+      } else if (visibleColumns.length === 0) {
+        // All columns hidden → show text
+        displayType = 'text'
+      } else if (visibleColumns.length > 0) {
+        // Multiple visible columns OR single column with multiple rows → table display
+        displayType = 'table'
+      }
+
       this.setState({
         columns: newColumns,
         aggConfig: this.getAggConfig(newColumns),
         columnChangeCount: this.state.columnChangeCount + 1,
         chartID: visibleColumnsChanged ? uuid() : this.state.chartID,
+        displayType,
       })
     }
   }
@@ -3313,7 +3323,6 @@ export class QueryOutput extends React.Component {
   }
 
   render = () => {
-    console.log('is single value response', isSingleValueResponse(this.queryResponse), this.queryResponse)
     const containerStyle = this.shouldEnableResize
       ? {
           height: this.state.height,
