@@ -651,7 +651,7 @@ export class QueryOutput extends React.Component {
   }
 
   findDefaultNumberColumnIndex = (defaultAmountColumn) => {
-    return this.tableConfig.allNumberColumnIndices.find((index) => {
+    return this.tableConfig.allNumberColumnIndices?.find((index) => {
       return (
         isColumnNumberType(this.queryResponse.data.data.columns[index]) &&
         defaultAmountColumn?.length > 0 &&
@@ -873,6 +873,8 @@ export class QueryOutput extends React.Component {
       let displayType = this.state.displayType
       if (this.state.displayType === 'single-value' && !isSingleValueResponse(this.queryResponse)) {
         displayType = DisplayTypes.TABLE
+      } else if (this.state.displayType !== 'single-value' && isSingleValueResponse(this.queryResponse)) {
+        displayType = 'single-value'
       }
 
       this.setState((prevState) => ({
@@ -908,11 +910,27 @@ export class QueryOutput extends React.Component {
         this.resetTableConfig(newColumns)
       }
 
+      // Determine appropriate display type based on column visibility
+      let displayType = this.state.displayType
+      const visibleColumns = newColumns?.filter((col) => col.is_visible) || []
+
+      if (isSingleValueResponse(this.queryResponse)) {
+        // Single visible column AND single row (or no data) → single-value display
+        displayType = 'single-value'
+      } else if (visibleColumns.length === 0) {
+        // All columns hidden → show text
+        displayType = 'text'
+      } else if (visibleColumns.length > 0) {
+        // Multiple visible columns OR single column with multiple rows → table display
+        displayType = 'table'
+      }
+
       this.setState({
         columns: newColumns,
         aggConfig: this.getAggConfig(newColumns),
         columnChangeCount: this.state.columnChangeCount + 1,
         chartID: visibleColumnsChanged ? uuid() : this.state.chartID,
+        displayType,
       })
     }
   }
@@ -1075,6 +1093,18 @@ export class QueryOutput extends React.Component {
   }
 
   renderSingleValueResponse = () => {
+    let column, columnIndex
+
+    // If there's only 1 column, use it regardless of is_visible status
+    if (this.state.columns?.length === 1) {
+      column = this.state.columns[0]
+      columnIndex = 0
+    } else {
+      // If multiple columns, search for the visible one (existing logic)
+      column = this.state.columns?.filter((col) => col.is_visible)?.[0]
+      columnIndex = this.state.columns?.findIndex((col) => col.is_visible)
+    }
+
     return (
       <div className='single-value-response-flex-container'>
         <div className='single-value-response-container'>
@@ -1088,12 +1118,12 @@ export class QueryOutput extends React.Component {
           >
             {this.props.showSingleValueResponseTitle && (
               <span>
-                <strong>{this.state.columns?.[0]?.display_name}: </strong>
+                <strong>{column?.display_name}: </strong>
               </span>
             )}
             {formatElement({
-              element: this.queryResponse.data.data.rows[0]?.[0] ?? 0,
-              column: this.state.columns?.[0],
+              element: this.queryResponse.data.data.rows[columnIndex]?.[0] ?? 0,
+              column,
               config: getDataFormatting(this.props.dataFormatting),
             })}
           </a>

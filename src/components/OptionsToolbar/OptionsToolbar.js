@@ -726,7 +726,7 @@ export class OptionsToolbar extends React.Component {
         showHideColumnsButton:
           autoQLConfig.enableColumnVisibilityManager &&
           hasData &&
-          (displayType === 'table' || (displayType === 'text' && allColumnsHidden)),
+          (displayType === 'table' || displayType === 'single-value' || (displayType === 'text' && allColumnsHidden)),
         showHiddenColsBadge: someColumnsHidden,
         showSQLButton: isDataResponse && autoQLConfig.translation === 'include',
         showSaveAsCSVButton: isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
