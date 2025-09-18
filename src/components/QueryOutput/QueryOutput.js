@@ -651,7 +651,7 @@ export class QueryOutput extends React.Component {
   }
 
   findDefaultNumberColumnIndex = (defaultAmountColumn) => {
-    return this.tableConfig.allNumberColumnIndices.find((index) => {
+    return this.tableConfig.allNumberColumnIndices?.find((index) => {
       return (
         isColumnNumberType(this.queryResponse.data.data.columns[index]) &&
         defaultAmountColumn?.length > 0 &&
