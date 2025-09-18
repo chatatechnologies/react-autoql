@@ -703,7 +703,7 @@ export default class ChataTable extends React.Component {
   }
 
   queryFn = (params) => {
-    if (this.useInfiniteScroll) {
+    // Always use server-side queryFn when dealing with column changes (newColumns)
     // because column removal is a schema change, not just data filtering
     if (this.useInfiniteScroll || typeof params.newColumns !== 'undefined') {
       return this.props.queryFn(params)
