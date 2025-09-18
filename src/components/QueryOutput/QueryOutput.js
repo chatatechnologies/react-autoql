@@ -479,6 +479,12 @@ export class QueryOutput extends React.Component {
           shouldForceUpdate = true
         }
 
+        if (isSingleValueResponse(this.queryResponse) && this.state.displayType !== 'single-value') {
+          newState.displayType = 'single-value'
+        } else if (!isSingleValueResponse(this.queryResponse) && this.state.displayType === 'single-value') {
+          newState.displayType = 'table'
+        }
+
         const newSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
         if (!_isEqual(newSupportedDisplayTypes, this.state.supportedDisplayTypes)) {
           newState.supportedDisplayTypes = newSupportedDisplayTypes
@@ -873,6 +879,8 @@ export class QueryOutput extends React.Component {
       let displayType = this.state.displayType
       if (this.state.displayType === 'single-value' && !isSingleValueResponse(this.queryResponse)) {
         displayType = DisplayTypes.TABLE
+      } else if (this.state.displayType !== 'single-value' && isSingleValueResponse(this.queryResponse)) {
+        displayType = 'single-value'
       }
 
       this.setState((prevState) => ({
@@ -1075,6 +1083,18 @@ export class QueryOutput extends React.Component {
   }
 
   renderSingleValueResponse = () => {
+    let column, columnIndex
+
+    // If there's only 1 column, use it regardless of is_visible status
+    if (this.state.columns?.length === 1) {
+      column = this.state.columns[0]
+      columnIndex = 0
+    } else {
+      // If multiple columns, search for the visible one (existing logic)
+      column = this.state.columns?.filter((col) => col.is_visible)?.[0]
+      columnIndex = this.state.columns?.findIndex((col) => col.is_visible)
+    }
+
     return (
       <div className='single-value-response-flex-container'>
         <div className='single-value-response-container'>
@@ -1088,12 +1108,12 @@ export class QueryOutput extends React.Component {
           >
             {this.props.showSingleValueResponseTitle && (
               <span>
-                <strong>{this.state.columns?.[0]?.display_name}: </strong>
+                <strong>{column?.display_name}: </strong>
               </span>
             )}
             {formatElement({
-              element: this.queryResponse.data.data.rows[0]?.[0] ?? 0,
-              column: this.state.columns?.[0],
+              element: this.queryResponse.data.data.rows[columnIndex]?.[0] ?? 0,
+              column,
               config: getDataFormatting(this.props.dataFormatting),
             })}
           </a>
@@ -3293,6 +3313,7 @@ export class QueryOutput extends React.Component {
   }
 
   render = () => {
+    console.log('is single value response', isSingleValueResponse(this.queryResponse), this.queryResponse)
     const containerStyle = this.shouldEnableResize
       ? {
           height: this.state.height,
