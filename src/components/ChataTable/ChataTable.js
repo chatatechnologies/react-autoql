@@ -361,16 +361,9 @@ export default class ChataTable extends React.Component {
   }
 
   updateColumnDefinitions = () => {
-    if (this.ref?.tabulator && !this.props.pivot) {
-      this.props.columns?.forEach((col, index) => {
-        if (isColumnSummable(col)) {
-          const column = this.ref.tabulator.getColumn(col.field)
-          if (column) {
-            column.updateDefinition({ bottomCalcParams: { stats: this.summaryStats[index] } })
-          }
-        }
-      })
-    }
+    // No longer needed: bottomCalcParams logic removed
+    // All summary logic handled by custom React summary row
+    return
   }
 
   scheduleTooltipRefresh = (delay = 10) => {
@@ -1282,16 +1275,8 @@ export default class ChataTable extends React.Component {
   }
 
   updateFooterVisibility = () => {
-    if (this._isMounted && this.state.tabulatorMounted) {
-      const footer = this.ref?.tabulator?.element?.querySelector('.tabulator-footer')
-      if (footer) {
-        if (this.hasBottomCalc()) {
-          footer.classList.add('showing')
-        } else {
-          footer.classList.remove('showing')
-        }
-      }
-    }
+    // No longer needed: Tabulator footer visibility logic removed
+    return
   }
 
   setFilters = async (newFilters) => {
@@ -1402,9 +1387,7 @@ export default class ChataTable extends React.Component {
     this.settingSorters = false
   }
 
-  hasBottomCalc = () => {
-    return this.props.columns?.some((col) => col.visible !== false && (col.bottomCalc || isColumnSummable(col)))
-  }
+  // Removed: hasBottomCalc helper, not needed
 
   toggleIsFiltering = (filterOn, scrollToFirstFilteredColumn) => {
     if (scrollToFirstFilteredColumn && this.tableParams?.filter?.length) {
@@ -1424,14 +1407,7 @@ export default class ChataTable extends React.Component {
       this.setState({ isFiltering })
     }
 
-    const footer = this.ref?.tabulator?.element?.querySelector('.tabulator-footer')
-    if (footer) {
-      if (this.hasBottomCalc()) {
-        footer.classList.add('showing')
-      } else {
-        footer.classList.remove('showing')
-      }
-    }
+    // Removed: Tabulator footer logic, not needed
 
     return isFiltering
   }
@@ -2089,7 +2065,7 @@ export default class ChataTable extends React.Component {
 
         const renderSummaryRow = (type) => (
           <div
-            className='tabulator-calcs-holder'
+            // Removed: tabulator-calcs-holder class, not needed
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -2143,7 +2119,7 @@ export default class ChataTable extends React.Component {
 
         summaryRow = (
           <div
-            className={`tabulator-footer showing custom-summary-row${isPivot ? ' pivot-summary-row' : ''}`}
+            className={`custom-summary-row${isPivot ? ' pivot-summary-row' : ''}`}
             style={{ width: '100%', overflowX: 'auto', fontFamily: 'inherit', fontSize: '11px' }}
             ref={scrollRef}
           >

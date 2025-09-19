@@ -62,32 +62,6 @@
     }
   }
 
-  .tabulator-footer {
-    display: none;
-    opacity: 0;
-    transition: opacity 0.2s ease-in-out;
-
-    &.showing {
-      display: block;
-      opacity: 1;
-      border-top: px solid var(--react-autoql-table-border-color);
-    }
-
-    .tabulator-calcs-holder {
-      border-top: 2px solid var(--react-autoql-table-border-color);
-      border-bottom: 1px solid var(--react-autoql-table-border-color);
-      background-color: var(--react-autoql-background-color-secondary);
-      height: 26px;
-
-      .tabulator-calcs {
-        .tabulator-cell {
-          background-color: #333333 !important;
-          font-weight: 400;
-        }
-      }
-    }
-  }
-
   &.loading {
     pointer-events: none;
   }
@@ -115,12 +89,6 @@
         overflow: auto !important;
       }
       // Force-hide Tabulator's built-in summary row/footer
-      .tabulator-footer {
-        display: none !important;
-        opacity: 0 !important;
-        height: 0 !important;
-        pointer-events: none !important;
-      }
       visibility: hidden;
       opacity: 0;
       pointer-events: none;
@@ -157,12 +125,6 @@
       min-height: calc(100% - 60px) !important;
       height: calc(100% - 60px) !important;
       max-height: calc(100% - 60px) !important;
-
-      &:has(~ .tabulator-footer.showing) {
-        min-height: calc(100% - 85px) !important;
-        height: calc(100% - 85px) !important;
-        max-height: calc(100% - 85px) !important;
-      }
     }
 
     &.empty {
@@ -195,12 +157,6 @@
       min-height: calc(100% - 37px) !important;
       height: calc(100% - 37px) !important;
       max-height: calc(100% - 37px) !important;
-
-      &:has(~ .tabulator-footer.showing) {
-        min-height: calc(100% - 65px) !important;
-        height: calc(100% - 65px) !important;
-        max-height: calc(100% - 65px) !important;
-      }
     }
   }
 
