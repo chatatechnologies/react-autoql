@@ -2153,6 +2153,7 @@ export class QueryOutput extends React.Component {
   getDrilldownGroupby = (queryResponse, newCol) => {
     return queryResponse?.data?.data?.fe_req?.columns?.find((column) => newCol.name === column.name)
   }
+
   copyToClipboard(text, element) {
     const successTimeout = 1500
     const errorTimeout = 3000
@@ -2185,6 +2186,7 @@ export class QueryOutput extends React.Component {
       document.body.removeChild(textarea)
     }
   }
+
   addCopyToClipboardListener = (cellElement, cellValue, newCol, dataFormatting, tooltipId) => {
     cellElement.setAttribute('data-tooltip-id', tooltipId)
     cellElement.setAttribute('data-tooltip-content', this.DEFAULT_TOOLTIP_TEXT)
@@ -2202,6 +2204,7 @@ export class QueryOutput extends React.Component {
       this.copyToClipboard(textToCopy, cellElement)
     })
   }
+
   formatColumnsForTable = (columns, additionalSelects = [], aggConfig = {}) => {
     // todo: do this inside of chatatable
     if (!columns) {
