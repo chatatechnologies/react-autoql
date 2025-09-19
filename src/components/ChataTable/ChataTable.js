@@ -674,8 +674,6 @@ export default class ChataTable extends React.Component {
         pageLoading: false,
       })
 
-      this.updateFooterVisibility()
-
       // Add a small delay to ensure DOM is fully ready
       setTimeout(() => {
         this.setHeaderInputEventListeners()
@@ -1476,7 +1474,6 @@ export default class ChataTable extends React.Component {
         this.scrollToRight()
       }
       this.setHeaderInputEventListeners()
-      this.updateFooterVisibility()
       this.summaryStats = this.calculateSummaryStats(this.props)
       this.forceUpdate()
     })
