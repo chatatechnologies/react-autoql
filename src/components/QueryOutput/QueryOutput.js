@@ -101,8 +101,12 @@ export class QueryOutput extends React.Component {
     this.COPIED_TOOLTIP_TEXT = 'Copied!'
     this.ERROR_TOOLTIP_TEXT = 'Copy failed. Please try again.'
 
-    let response = props.queryResponse
+    this.originalLegendState = {
+      hiddenLegendLabels: [],
+      isEditing: false,
+    }
 
+    let response = props.queryResponse
     this.queryResponse = response
     this.columnDateRanges = getColumnDateRanges(response)
     this.queryID = this.queryResponse?.data?.data?.query_id
@@ -114,10 +118,6 @@ export class QueryOutput extends React.Component {
     this.isOriginalData = true
     this.renderComplete = false
     this.hasCalledInitialTableConfigChange = false
-
-    // --------- generate data before mount --------
-    this.generateAllData()
-    // -------------------------------------------
 
     const additionalSelects = this.getAdditionalSelectsFromResponse(this.queryResponse)
     const columns = this.formatColumnsForTable(
@@ -145,13 +145,9 @@ export class QueryOutput extends React.Component {
       this.tableConfig = _cloneDeep(tableConfig)
     }
 
-    if (
-      props.initialTableConfigs?.pivotTableConfig &&
-      this.isTableConfigValid(props.initialTableConfigs?.pivotTableConfig, this.pivotTableColumns, displayType)
-    ) {
-      const { pivotTableConfig } = props.initialTableConfigs
-      this.pivotTableConfig = _cloneDeep(pivotTableConfig)
-    }
+    // --------- generate data before mount --------
+    this.generateAllData()
+    // -------------------------------------------
 
     // Set initial table params to be any filters or sorters that
     // are already present in the current query
@@ -176,6 +172,9 @@ export class QueryOutput extends React.Component {
       resizeStartY: 0,
       resizeStartHeight: 0,
       isResizable: this.shouldEnableResize,
+      hiddenLegendLabels: [],
+      legendStateByChart: {},
+      originalLegendState: this.originalLegendState,
     }
     this.updateMaxConstraints()
   }
@@ -233,6 +232,7 @@ export class QueryOutput extends React.Component {
     initialFormattedTableParams: PropTypes.shape({}),
     onUpdateFilterResponse: PropTypes.func,
     enableResizing: PropTypes.bool,
+    isEditing: PropTypes.bool,
     minHeight: PropTypes.number,
     maxHeight: PropTypes.number,
     resizeMultiplier: PropTypes.number,
@@ -279,6 +279,7 @@ export class QueryOutput extends React.Component {
     enableTableContextMenu: true,
     subjects: [],
     initialFormattedTableParams: undefined,
+    isEditing: false,
     onTableConfigChange: () => {},
     onAggConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
@@ -319,6 +320,31 @@ export class QueryOutput extends React.Component {
       console.error(error)
       this.props.onErrorCallback(error)
     }
+  }
+
+  handleLegendVisibilityChange = (hiddenLabels) => {
+    const currentType = this.state.displayType
+    this.setState({
+      hiddenLegendLabels: hiddenLabels,
+      legendStateByChart: {
+        ...this.state.legendStateByChart,
+        [currentType]: hiddenLabels,
+      },
+    })
+  }
+
+  handleLegendClick = (label) => {
+    const { hiddenLegendLabels, legendStateByChart, displayType } = this.state
+    const isHidden = hiddenLegendLabels.includes(label)
+    const newHiddenLabels = isHidden ? hiddenLegendLabels.filter((l) => l !== label) : [...hiddenLegendLabels, label]
+
+    this.setState({
+      hiddenLegendLabels: newHiddenLabels,
+      legendStateByChart: {
+        ...legendStateByChart,
+        [displayType]: newHiddenLabels,
+      },
+    })
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -371,8 +397,36 @@ export class QueryOutput extends React.Component {
           }, 50)
         }
       }
-      if (this.props.onDisplayTypeChange && this.state.displayType !== prevState.displayType) {
-        this.props.onDisplayTypeChange(this.state.displayType)
+
+      if (prevProps.isEditing !== this.props.isEditing) {
+        if (this.props.isEditing) {
+          this.originalLegendState = {
+            hiddenLegendLabels: [...this.state.hiddenLegendLabels],
+            isEditing: true,
+          }
+        } else {
+          this.setState({
+            hiddenLegendLabels: this.originalLegendState.hiddenLegendLabels,
+          })
+        }
+      }
+
+      if (this.state.displayType !== prevState.displayType) {
+        const { legendStateByChart } = this.state
+        const updatedLegendStateByChart = {
+          ...legendStateByChart,
+          [prevState.displayType]: this.state.hiddenLegendLabels,
+        }
+
+        const newChartLegendState = updatedLegendStateByChart[this.state.displayType] || []
+
+        this.setState(
+          {
+            hiddenLegendLabels: newChartLegendState,
+            legendStateByChart: updatedLegendStateByChart,
+          },
+          () => this.props.onDisplayTypeChange?.(this.state.displayType),
+        )
 
         // If new number column indices conflict, reset table config to resolve the arrays
         // The config should stay the same as much as possible while removing the overlapping indices
@@ -597,7 +651,7 @@ export class QueryOutput extends React.Component {
   }
 
   findDefaultNumberColumnIndex = (defaultAmountColumn) => {
-    return this.tableConfig.allNumberColumnIndices.find((index) => {
+    return this.tableConfig.allNumberColumnIndices?.find((index) => {
       return (
         isColumnNumberType(this.queryResponse.data.data.columns[index]) &&
         defaultAmountColumn?.length > 0 &&
@@ -819,6 +873,8 @@ export class QueryOutput extends React.Component {
       let displayType = this.state.displayType
       if (this.state.displayType === 'single-value' && !isSingleValueResponse(this.queryResponse)) {
         displayType = DisplayTypes.TABLE
+      } else if (this.state.displayType !== 'single-value' && isSingleValueResponse(this.queryResponse)) {
+        displayType = 'single-value'
       }
 
       this.setState((prevState) => ({
@@ -854,11 +910,27 @@ export class QueryOutput extends React.Component {
         this.resetTableConfig(newColumns)
       }
 
+      // Determine appropriate display type based on column visibility
+      let displayType = this.state.displayType
+      const visibleColumns = newColumns?.filter((col) => col.is_visible) || []
+
+      if (isSingleValueResponse(this.queryResponse)) {
+        // Single visible column AND single row (or no data) → single-value display
+        displayType = 'single-value'
+      } else if (visibleColumns.length === 0) {
+        // All columns hidden → show text
+        displayType = 'text'
+      } else if (visibleColumns.length > 0) {
+        // Multiple visible columns OR single column with multiple rows → table display
+        displayType = 'table'
+      }
+
       this.setState({
         columns: newColumns,
         aggConfig: this.getAggConfig(newColumns),
         columnChangeCount: this.state.columnChangeCount + 1,
         chartID: visibleColumnsChanged ? uuid() : this.state.chartID,
+        displayType,
       })
     }
   }
@@ -917,13 +989,15 @@ export class QueryOutput extends React.Component {
     try {
       this.pivotTableID = uuid()
       const columns = this.getColumns()
-      if (getNumberOfGroupables(columns) === 1) {
+      const numGroupables = getNumberOfGroupables(columns)
+
+      if (numGroupables === 1) {
         this.generateDatePivotData(this.tableData)
       } else {
         this.generatePivotTableData({ isFirstGeneration })
       }
     } catch (error) {
-      console.error(error)
+      console.error('Error generating pivot data', error)
       this.props.onErrorCallback(error)
       this.pivotTableData = undefined
     }
@@ -1019,6 +1093,18 @@ export class QueryOutput extends React.Component {
   }
 
   renderSingleValueResponse = () => {
+    let column, columnIndex
+
+    // If there's only 1 column, use it regardless of is_visible status
+    if (this.state.columns?.length === 1) {
+      column = this.state.columns[0]
+      columnIndex = 0
+    } else {
+      // If multiple columns, search for the visible one (existing logic)
+      column = this.state.columns?.filter((col) => col.is_visible)?.[0]
+      columnIndex = this.state.columns?.findIndex((col) => col.is_visible)
+    }
+
     return (
       <div className='single-value-response-flex-container'>
         <div className='single-value-response-container'>
@@ -1032,12 +1118,12 @@ export class QueryOutput extends React.Component {
           >
             {this.props.showSingleValueResponseTitle && (
               <span>
-                <strong>{this.state.columns?.[0]?.display_name}: </strong>
+                <strong>{column?.display_name}: </strong>
               </span>
             )}
             {formatElement({
-              element: this.queryResponse.data.data.rows[0]?.[0] ?? 0,
-              column: this.state.columns?.[0],
+              element: this.queryResponse.data.data.rows[columnIndex]?.[0] ?? 0,
+              column,
               config: getDataFormatting(this.props.dataFormatting),
             })}
           </a>
@@ -1510,6 +1596,8 @@ export class QueryOutput extends React.Component {
   }
 
   onLegendClick = (d) => {
+    d?.label && this.handleLegendClick(d.label)
+
     if (!d) {
       console.debug('no legend item was provided on click event')
       return
@@ -2460,8 +2548,12 @@ export class QueryOutput extends React.Component {
 
       // Make sure the longer list is in the legend, UNLESS its a date type
       // DATE types should always go in the axis if possible
+      // BUT: Don't switch if we have saved axis preferences (respect user choice)
+      const hasSavedAxisConfig = this.props.initialTableConfigs?.tableConfig
+
       if (
         isFirstGeneration &&
+        !hasSavedAxisConfig && // Skip switching if user has saved preferences
         (isColumnDateType(columns[legendColumnIndex]) ||
           (uniqueColumnHeaders?.length > uniqueRowHeaders?.length &&
             (!isColumnDateType(columns[stringColumnIndex]) || uniqueColumnHeaders.length > MAX_LEGEND_LABELS)))
@@ -2760,10 +2852,8 @@ export class QueryOutput extends React.Component {
   }
 
   renderAddColumnBtn = () => {
-    // Comment out for now. Uncomment for next deploy
-    // const isSingleValue = isSingleValueResponse(this.queryResponse)
-    // if (this.props.allowColumnAddition && (this.state.displayType === 'table' || isSingleValue)) {
-    if (this.props.allowColumnAddition && this.state.displayType === 'table') {
+    const isSingleValue = isSingleValueResponse(this.queryResponse)
+    if (this.props.allowColumnAddition && (this.state.displayType === 'table' || isSingleValue)) {
       return (
         <AddColumnBtn
           queryResponse={this.queryResponse}
@@ -2772,8 +2862,7 @@ export class QueryOutput extends React.Component {
           onAddColumnClick={this.onAddColumnClick}
           onCustomClick={this.onAddColumnClick}
           disableAddCustomColumnOption={!this.props.enableCustomColumns || isDrilldown(this.queryResponse)}
-          // className={isSingleValue ? 'single-value-add-col-btn' : 'table-add-col-btn'}
-          className='table-add-col-btn'
+          className={isSingleValue ? 'single-value-add-col-btn' : 'table-add-col-btn'}
           isAddingColumn={this.state.isAddingColumn}
         />
       )
@@ -2942,6 +3031,7 @@ export class QueryOutput extends React.Component {
           dataFormatting={this.props.dataFormatting}
           activeChartElementKey={this.props.activeChartElementKey}
           onLegendClick={this.onLegendClick}
+          currentLegendState={this.state.hiddenLegendLabels}
           legendColumn={this.state.columns[this.tableConfig?.legendColumnIndex]}
           changeStringColumnIndex={this.onChangeStringColumnIndex}
           changeLegendColumnIndex={this.onChangeLegendColumnIndex}
@@ -2965,6 +3055,9 @@ export class QueryOutput extends React.Component {
           onBucketSizeChange={this.props.onBucketSizeChange}
           bucketSize={this.props.bucketSize}
           queryID={this.queryResponse?.data?.data?.query_id}
+          isEditing={this.props.isEditing}
+          hiddenLegendLabels={this.state.hiddenLegendLabels}
+          onLegendVisibilityChange={this.handleLegendVisibilityChange}
         />
       </ErrorBoundary>
     )
