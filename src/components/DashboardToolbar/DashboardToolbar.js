@@ -27,6 +27,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onDeleteClick: PropTypes.func,
     onEditClick: PropTypes.func,
     onRefreshClick: PropTypes.func,
+    onCachedRefreshClick: PropTypes.func,
     onAddTileClick: PropTypes.func,
     onUndoClick: PropTypes.func,
     onRedoClick: PropTypes.func,
@@ -42,6 +43,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onDeleteClick: () => {},
     onEditClick: () => {},
     onRefreshClick: () => {},
+    onCachedRefreshClick: () => {},
     onAddTileClick: () => {},
     onUndoClick: () => {},
     onRedoClick: () => {},
@@ -265,7 +267,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
                     border={false}
                     tooltip='Refresh Dashboard Data'
                     tooltipID={this.props.tooltipID}
-                    onClick={this.props.onRefreshClick}
+                    onClick={this.props.onCachedRefreshClick}
                   />
                 </>
               ) : (

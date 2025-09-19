@@ -87,6 +87,7 @@ class DashboardWithoutTheme extends React.Component {
     onDeleteCallback: PropTypes.func,
     showToolbar: PropTypes.bool,
     refreshInterval: PropTypes.number,
+    dashboardId: PropTypes.string,
   }
 
   static defaultProps = {
@@ -117,6 +118,7 @@ class DashboardWithoutTheme extends React.Component {
     stopEditingCallback: () => {},
     onSaveClick: () => {},
     onDeleteCallback: () => {},
+    dashboardId: undefined,
   }
 
   static getDerivedStateFromProps(nextProps, prevState) {
@@ -287,6 +289,25 @@ class DashboardWithoutTheme extends React.Component {
       for (var dashboardTile in this.tileRefs) {
         if (this.tileRefs[dashboardTile]) {
           promises.push(this.tileRefs[dashboardTile].processTile())
+        }
+      }
+
+      return Promise.all(promises).catch(() => {
+        return Promise.reject(new Error('There was an error processing this dashboard. Please try again.'))
+      })
+    } catch (error) {
+      console.error(error)
+      return undefined
+    }
+  }
+
+  executeCachedDashboard = () => {
+    console.log('executeCachedDashboard')
+    try {
+      const promises = []
+      for (var dashboardTile in this.tileRefs) {
+        if (this.tileRefs[dashboardTile]) {
+          promises.push(this.tileRefs[dashboardTile].processTile({ isCachedRefresh: true }))
         }
       }
 
@@ -716,6 +737,8 @@ class DashboardWithoutTheme extends React.Component {
             customToolbarOptions={this.props.customToolbarOptions}
             enableCustomColumns={this.props.enableCustomColumns}
             preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
+            dashboardId={this.props.dashboardId}
+            tileKey={tile.key}
           />
         ))}
       </ReactGridLayout>
@@ -740,6 +763,7 @@ class DashboardWithoutTheme extends React.Component {
               onUndoClick={this.undo}
               onRedoClick={this.redo}
               onRefreshClick={this.executeDashboard}
+              onCachedRefreshClick={this.executeCachedDashboard}
               onSaveClick={() => {
                 Promise.resolve(this.props.onSaveCallback ? this.props.onSaveCallback() : undefined).then((result) => {
                   // Keep if we need to add back in the near future
