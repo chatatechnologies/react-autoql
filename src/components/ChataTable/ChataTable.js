@@ -1274,11 +1274,6 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  updateFooterVisibility = () => {
-    // No longer needed: Tabulator footer visibility logic removed
-    return
-  }
-
   setFilters = async (newFilters) => {
     // Track when setFilters was called to prevent duplicate AJAX requests
     this._setFiltersTime = Date.now()
