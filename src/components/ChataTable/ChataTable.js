@@ -48,7 +48,6 @@ import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
 
 import { handleCellCopy, setupCopyableCell } from './CopyUtils'
 import './ChataTable.scss'
-import './tooltipFixes.css'
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
 import { PerformanceOptimizer } from './PerformanceOptimizer'
 
@@ -2076,7 +2075,6 @@ export default class ChataTable extends React.Component {
                 title = stat && stat.avg !== undefined ? formatSummaryValue(stat.avg, col, i) : ''
               }
 
-              // Set up raw value for copying
               let rawValue = null
               if (type === 'total') {
                 rawValue = stat && stat.sum !== undefined ? stat.sum : null
@@ -2084,7 +2082,6 @@ export default class ChataTable extends React.Component {
                 rawValue = stat && stat.avg !== undefined ? stat.avg : null
               }
 
-              // Determine if this cell should be copyable (exclude labels like "Total", "Average")
               const shouldEnableCopy = i !== 0 && rawValue !== null
 
               const setTooltipAttributes = (element) => {
@@ -2215,7 +2212,6 @@ export default class ChataTable extends React.Component {
           border
         />
 
-        {/* Dedicated tooltip for summary row cells */}
         <EnhancedTooltip tooltipId={this.SUMMARY_TOOLTIP_ID} className='summary-row-tooltip' delayHide={0} />
       </ErrorBoundary>
     )

@@ -1,14 +1,3 @@
-/**
- * Utilities for handling copy functionality in ChataTable
- */
-
-/**
- * Copy text to clipboard and manage tooltip feedback
- * @param {Event} e - Context menu event
- * @param {string} textToCopy - The text to copy to clipboard
- * @param {Object} tooltipTexts - Object containing tooltip text constants
- * @returns {boolean} - Whether copy was successful
- */
 export const handleCellCopy = (e, textToCopy, tooltipTexts) => {
   e.preventDefault()
   e.stopPropagation()
@@ -56,11 +45,6 @@ export const handleCellCopy = (e, textToCopy, tooltipTexts) => {
   }
 }
 
-/**
- * Update tooltip content with forced re-render
- * @param {HTMLElement} element - The element with the tooltip
- * @param {string} content - The new tooltip content
- */
 export const updateTooltipContent = (element, content) => {
   if (!element) return
 
@@ -76,12 +60,6 @@ export const updateTooltipContent = (element, content) => {
   }, 10)
 }
 
-/**
- * Set up tooltip attributes for a copyable cell
- * @param {HTMLElement} element - The cell element
- * @param {string} tooltipId - The ID of the tooltip
- * @param {string} defaultContent - The default tooltip content
- */
 export const setupCopyableCell = (element, tooltipId, defaultContent) => {
   if (!element) return
 
