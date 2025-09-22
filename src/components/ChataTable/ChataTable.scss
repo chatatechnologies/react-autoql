@@ -13,6 +13,34 @@
   box-sizing: border-box;
   flex: 1;
 
+  // Style for copyable cells in summary row
+  .copyable-cell {
+    &:hover {
+      background-color: var(--react-autoql-hover-color) !important;
+    }
+
+    &.active {
+      background-color: var(--react-autoql-accent-color) !important;
+      color: white !important;
+    }
+  }
+
+  // Hidden textarea for copy to clipboard functionality
+  .hidden-clipboard-textarea {
+    position: absolute;
+    left: -9999px;
+    top: -9999px;
+    opacity: 0;
+    height: 0;
+    width: 0;
+  }
+
+  // Tooltip styles for copy functionality
+  .summary-row-tooltip {
+    z-index: 9999 !important;
+    pointer-events: none !important;
+  }
+
   .react-autoql-pivot-table-row-selector {
     display: flex;
     justify-content: center;
@@ -424,6 +452,18 @@
       }
     }
   }
+}
+
+[data-tooltip-content='Copied!'],
+[data-tooltip-content='Copied!'] .react-tooltip-content {
+  background-color: var(--react-autoql-accent-color, #26a7df) !important;
+  color: white !important;
+}
+
+[data-tooltip-content='Failed to copy'],
+[data-tooltip-content='Failed to copy'] .react-tooltip-content {
+  background-color: var(--react-autoql-error-color, #f44336) !important;
+  color: white !important;
 }
 
 .react-autoql-popover-date-picker {
