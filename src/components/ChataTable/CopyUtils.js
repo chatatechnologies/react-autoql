@@ -26,13 +26,10 @@ export const handleCellCopy = (e, textToCopy, tooltipTexts) => {
     const successful = document.execCommand('copy')
 
     if (successful) {
-      // Add active class to highlight the cell
       currentElement.classList.add('active')
-
-      // Update tooltip to show copy success
       updateTooltipContent(currentElement, tooltipTexts.COPIED)
 
-      // Reset the tooltip and cell appearance after delay
+      // Reset after delay
       setTimeout(() => {
         if (currentElement && document.body.contains(currentElement)) {
           updateTooltipContent(currentElement, tooltipTexts.DEFAULT)
@@ -67,14 +64,11 @@ export const handleCellCopy = (e, textToCopy, tooltipTexts) => {
 export const updateTooltipContent = (element, content) => {
   if (!element) return
 
-  // Force re-render of tooltip by temporarily removing and re-adding the attribute
   const tooltipId = element.getAttribute('data-tooltip-id')
   element.removeAttribute('data-tooltip-id')
-
-  // Set the tooltip content
   element.setAttribute('data-tooltip-content', content)
 
-  // Re-apply the tooltip ID after a brief delay to force a re-render
+  // Re-apply ID after delay to force re-render
   setTimeout(() => {
     if (element && document.body.contains(element)) {
       element.setAttribute('data-tooltip-id', tooltipId)

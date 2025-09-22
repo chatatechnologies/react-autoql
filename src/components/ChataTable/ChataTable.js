@@ -48,7 +48,7 @@ import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
 
 import { handleCellCopy, setupCopyableCell } from './CopyUtils'
 import './ChataTable.scss'
-import './tooltipFixes.css' // Additional tooltip styles
+import './tooltipFixes.css'
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
 import { PerformanceOptimizer } from './PerformanceOptimizer'
 
@@ -2087,10 +2087,8 @@ export default class ChataTable extends React.Component {
               // Determine if this cell should be copyable (exclude labels like "Total", "Average")
               const shouldEnableCopy = i !== 0 && rawValue !== null
 
-              // Set up ref callback to set tooltip attributes when the element mounts
               const setTooltipAttributes = (element) => {
                 if (shouldEnableCopy && element) {
-                  // Add tooltip attributes using our dedicated summary tooltip ID
                   setupCopyableCell(element, this.SUMMARY_TOOLTIP_ID, TOOLTIP_COPY_TEXTS.DEFAULT)
                 }
               }
