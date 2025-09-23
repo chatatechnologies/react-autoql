@@ -2861,7 +2861,9 @@ export class QueryOutput extends React.Component {
 
   renderAddColumnBtn = () => {
     const isSingleValue = isSingleValueResponse(this.queryResponse)
-    if (this.props.allowColumnAddition && (this.state.displayType === 'table' || isSingleValue)) {
+    const allColumnsHidden = areAllColumnsHidden(this.getColumns())
+
+    if (!allColumnsHidden && this.props.allowColumnAddition && (this.state.displayType === 'table' || isSingleValue)) {
       return (
         <AddColumnBtn
           queryResponse={this.queryResponse}
