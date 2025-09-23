@@ -1745,6 +1745,153 @@ export default class ChataTable extends React.Component {
     this.setState({ scrollTop: top })
   }
 
+  getColumnIndexMapping = (tabulatorColumns) => {
+    const mapping = []
+    const reorderedColumns = []
+
+    for (const tabulatorCol of tabulatorColumns) {
+      const definition = tabulatorCol.getDefinition()
+      const originalIndex = definition.index
+
+      if (originalIndex !== undefined && this.props.columns[originalIndex]) {
+        mapping.push(originalIndex)
+        reorderedColumns.push(this.props.columns[originalIndex])
+      }
+    }
+
+    return { mapping, reorderedColumns }
+  }
+
+  reorderResponseData = (response, columnIndexMapping) => {
+    const newResponse = _cloneDeep(response)
+
+    if (newResponse.data?.data?.rows) {
+      newResponse.data.data.rows = newResponse.data.data.rows.map((row) =>
+        columnIndexMapping.map((originalIndex) => row[originalIndex]),
+      )
+    }
+
+    if (newResponse.data?.data?.columns) {
+      newResponse.data.data.columns = columnIndexMapping.map(
+        (originalIndex) => newResponse.data.data.columns[originalIndex],
+      )
+    }
+
+    return newResponse
+  }
+
+  resetTableState = () => {
+    this.tableParams.filter = []
+    this.tableParams.sort = []
+  }
+
+  onColumnMoved = (column, columns) => {
+    if (!columns || !this.props.columns || !this.props.updateColumnsAndData) {
+      return
+    }
+
+    try {
+      const { mapping, reorderedColumns } = this.getColumnIndexMapping(columns)
+
+      if (reorderedColumns.length !== this.props.columns.length || !this.props.response) {
+        return
+      }
+
+      const newResponse = this.reorderResponseData(this.props.response, mapping)
+      this.resetTableState()
+      this.props.updateColumnsAndData(newResponse)
+    } catch (error) {
+      console.error('Error updating column order:', error)
+    }
+
+    if (this.props.keepScrolledRight) {
+      this.scrollToRight()
+    }
+    this.setHeaderInputEventListeners()
+    this.forceUpdate()
+  }
+
+  onColumnResized = (column) => {
+    if (this.props.keepScrolledRight) {
+      this.scrollToRight()
+    }
+  }
+
+  getSummaryRowValue = (type, stat, index, formatSummaryValue, col) => {
+    if (index === 0) {
+      return type === 'total' ? 'Total' : 'Average'
+    }
+
+    if (!stat) return ''
+
+    const value = type === 'total' ? stat.sum : stat.avg
+    return value !== undefined ? formatSummaryValue(value, col, index) : ''
+  }
+
+  getSummaryRowStyles = (type, colWidth, isFirstColumn, isPivot, columnAlign) => {
+    return {
+      width: colWidth || 100,
+      minWidth: colWidth || 100,
+      maxWidth: colWidth || 100,
+      padding: '4px 8px',
+      borderRight: '1px solid var(--react-autoql-table-border-color)',
+      background: 'var(--react-autoql-background-color-secondary)',
+      fontWeight: isFirstColumn ? 600 : 400,
+      boxSizing: 'border-box',
+      fontFamily: 'inherit',
+      fontSize: '11px',
+      textAlign: columnAlign || (isFirstColumn ? 'left' : 'right'),
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      cursor: !isFirstColumn ? 'pointer' : 'default',
+    }
+  }
+
+  renderSummaryCell = (type, col, index, stat, colWidth, isPivot, formatSummaryValue) => {
+    if (col.visible === false || col.is_visible === false) return null
+
+    const isFirstColumn = index === 0
+    const value = this.getSummaryRowValue(type, stat, index, formatSummaryValue, col)
+    const rawValue = type === 'total' ? stat?.sum : stat?.avg
+    const shouldEnableCopy = !isFirstColumn && rawValue !== null
+
+    const cellProps = {
+      key: index,
+      className: `tabulator-cell${isPivot && isFirstColumn ? ' pivot-category' : ''} ${
+        shouldEnableCopy ? 'copyable-cell' : ''
+      }`,
+      style: this.getSummaryRowStyles(type, colWidth, isFirstColumn, isPivot, col?.align),
+      title: shouldEnableCopy ? null : value,
+      ref: shouldEnableCopy
+        ? (el) => el && setupCopyableCell(el, this.SUMMARY_TOOLTIP_ID, TOOLTIP_COPY_TEXTS.DEFAULT)
+        : null,
+      onContextMenu: shouldEnableCopy ? (e) => handleCellCopy(e, value, TOOLTIP_COPY_TEXTS) : undefined,
+    }
+
+    return <div {...cellProps}>{value}</div>
+  }
+
+  renderSummaryRow = (type, columns, summaryStats, colWidths, isPivot, formatSummaryValue) => {
+    const containerStyle = {
+      display: 'flex',
+      alignItems: 'center',
+      minHeight: '26px',
+      background: 'var(--react-autoql-background-color-secondary)',
+      borderTop: type === 'total' ? '2px solid var(--react-autoql-table-border-color)' : undefined,
+      borderBottom: '1px solid var(--react-autoql-table-border-color)',
+      minWidth: 'max-content',
+    }
+
+    return (
+      <div className='tabulator-calcs-holder' style={containerStyle}>
+        {columns.map((col, i) =>
+          this.renderSummaryCell(type, col, i, summaryStats[i], colWidths[i], isPivot, formatSummaryValue),
+        )}
+      </div>
+    )
+  }
+
   renderTableRowCount = () => {
     if (this.isTableEmpty()) {
       return null
@@ -2049,93 +2196,14 @@ export default class ChataTable extends React.Component {
           }
         }, 0)
 
-        const renderSummaryRow = (type) => (
-          <div
-            className='tabulator-calcs-holder'
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              minHeight: '26px',
-              background: 'var(--react-autoql-background-color-secondary)',
-              borderTop: type === 'total' ? '2px solid var(--react-autoql-table-border-color)' : undefined,
-              borderBottom: '1px solid var(--react-autoql-table-border-color)',
-              minWidth: 'max-content',
-            }}
-          >
-            {columns.map((col, i) => {
-              if (col.visible === false || col.is_visible === false) return null
-              const stat = summaryStats[i]
-              let value = ''
-              let title = ''
-              if (type === 'total') {
-                value = i === 0 ? 'Total' : stat && stat.sum !== undefined ? formatSummaryValue(stat.sum, col, i) : ''
-                title = stat && stat.sum !== undefined ? formatSummaryValue(stat.sum, col, i) : ''
-              } else {
-                value = i === 0 ? 'Average' : stat && stat.avg !== undefined ? formatSummaryValue(stat.avg, col, i) : ''
-                title = stat && stat.avg !== undefined ? formatSummaryValue(stat.avg, col, i) : ''
-              }
-
-              let rawValue = null
-              if (type === 'total') {
-                rawValue = stat && stat.sum !== undefined ? stat.sum : null
-              } else {
-                rawValue = stat && stat.avg !== undefined ? stat.avg : null
-              }
-
-              const shouldEnableCopy = i !== 0 && rawValue !== null
-
-              const setTooltipAttributes = (element) => {
-                if (shouldEnableCopy && element) {
-                  setupCopyableCell(element, this.SUMMARY_TOOLTIP_ID, TOOLTIP_COPY_TEXTS.DEFAULT)
-                }
-              }
-
-              return (
-                <div
-                  key={i}
-                  ref={shouldEnableCopy ? setTooltipAttributes : null}
-                  className={`tabulator-cell${isPivot && i === 0 ? ' pivot-category' : ''} ${
-                    shouldEnableCopy ? 'copyable-cell' : ''
-                  }`}
-                  style={{
-                    width: colWidths[i] || 100,
-                    minWidth: colWidths[i] || 100,
-                    maxWidth: colWidths[i] || 100,
-                    padding: '4px 8px',
-                    borderRight: '1px solid var(--react-autoql-table-border-color)',
-                    background: 'var(--react-autoql-background-color-secondary)',
-                    fontWeight: i === 0 ? 600 : 400,
-                    boxSizing: 'border-box',
-                    fontFamily: 'inherit',
-                    fontSize: '11px',
-                    textAlign: col?.align || (i === 0 ? 'left' : 'right'),
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    cursor: shouldEnableCopy ? 'pointer' : 'default',
-                  }}
-                  title={shouldEnableCopy ? null : title}
-                  onContextMenu={(e) => {
-                    if (shouldEnableCopy) {
-                      handleCellCopy(e, value, TOOLTIP_COPY_TEXTS)
-                    }
-                  }}
-                >
-                  {value}
-                </div>
-              )
-            })}
-          </div>
-        )
-
         summaryRow = (
           <div
             className={`custom-summary-row${isPivot ? ' pivot-summary-row' : ''}`}
             style={{ width: '100%', overflowX: 'auto', fontFamily: 'inherit', fontSize: '11px' }}
             ref={scrollRef}
           >
-            {renderSummaryRow('total')}
-            {renderSummaryRow('average')}
+            {this.renderSummaryRow('total', columns, summaryStats, colWidths, isPivot, formatSummaryValue)}
+            {this.renderSummaryRow('average', columns, summaryStats, colWidths, isPivot, formatSummaryValue)}
           </div>
         )
       }
@@ -2187,6 +2255,8 @@ export default class ChataTable extends React.Component {
                     onDataProcessed={(...args) => this.onDataProcessed(...args)}
                     onDataLoadError={(...args) => this.onDataLoadError(...args)}
                     onScrollVertical={(...args) => this.onScrollVertical(...args)}
+                    onColumnMoved={(...args) => this.onColumnMoved(...args)}
+                    onColumnResized={(...args) => this.onColumnResized(...args)}
                     pivot={this.props.pivot}
                     scope={this.props.scope}
                     isDrilldown={this.props.isDrilldown}

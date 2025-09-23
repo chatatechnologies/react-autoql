@@ -61,6 +61,8 @@ export default class TableWrapper extends React.Component {
     onDataFiltered: PropTypes.func,
     onDataProcessed: PropTypes.func,
     onScrollVertical: PropTypes.func,
+    onColumnMoved: PropTypes.func,
+    onColumnResized: PropTypes.func,
     pivot: PropTypes.bool,
     scope: PropTypes.string,
     isDrilldown: PropTypes.bool,
@@ -79,6 +81,8 @@ export default class TableWrapper extends React.Component {
     onDataFiltered: () => {},
     onDataProcessed: () => {},
     onScrollVertical: () => {},
+    onColumnMoved: () => {},
+    onColumnResized: () => {},
     pivot: false,
     scope: undefined,
     isDrilldown: false,
@@ -284,6 +288,8 @@ export default class TableWrapper extends React.Component {
     this.tabulator.on('dataFiltering', this.props.onDataFiltering)
     this.tabulator.on('dataFiltered', this.props.onDataFiltered)
     this.tabulator.on('scrollVertical', this.props.onScrollVertical)
+    this.tabulator.on('columnMoved', this.props.onColumnMoved)
+    this.tabulator.on('columnResized', this.props.onColumnResized)
 
     this.tabulator.on('tableBuilt', async () => {
       this.isInitialized = true
