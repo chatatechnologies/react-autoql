@@ -43,7 +43,7 @@ import { DateRangePicker } from '../DateRangePicker'
 import { DataLimitWarning } from '../DataLimitWarning'
 import { columnOptionsList } from './tabulatorConstants'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { DATASET_TOO_LARGE, TABULATOR_LOCAL_ROW_LIMIT, LOCAL_OR_REMOTE, TOOLTIP_COPY_TEXTS } from '../../js/Constants'
+import { TABULATOR_LOCAL_ROW_LIMIT, LOCAL_OR_REMOTE, TOOLTIP_COPY_TEXTS } from '../../js/Constants'
 import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
 
 import { handleCellCopy, setupCopyableCell } from './CopyUtils'
@@ -831,6 +831,7 @@ export default class ChataTable extends React.Component {
     }
 
     response.data.data.rows = data
+    response.data.data.count_rows = data.length
 
     setTimeout(() => {
       this.updateSummaryStats({
