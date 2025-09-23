@@ -1817,8 +1817,33 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  getSummaryRowValue = (type, stat, index, formatSummaryValue, col) => {
-    if (index === 0) {
+  getFirstVisibleColumnIndex = (columns) => {
+    for (let i = 0; i < columns.length; i++) {
+      if (columns[i].visible !== false && columns[i].is_visible !== false) {
+        return i
+      }
+    }
+    return 0
+  }
+
+  getVisibleColumns = (columns) => {
+    return columns.filter((col) => col.visible !== false && col.is_visible !== false)
+  }
+
+  needsLabelColumn = (columns) => {
+    const visibleColumns = this.getVisibleColumns(columns)
+    if (visibleColumns.length === 1 && isColumnSummable(visibleColumns[0])) {
+      return true
+    }
+    // Also need to split when first visible column is summable
+    if (visibleColumns.length > 1 && isColumnSummable(visibleColumns[0])) {
+      return true
+    }
+    return false
+  }
+
+  getSummaryRowValue = (type, stat, index, formatSummaryValue, col, isFirstVisibleColumn, hasLabelColumn) => {
+    if (isFirstVisibleColumn && !hasLabelColumn) {
       return type === 'total' ? 'Total' : 'Average'
     }
 
@@ -1828,7 +1853,7 @@ export default class ChataTable extends React.Component {
     return value !== undefined ? formatSummaryValue(value, col, index) : ''
   }
 
-  getSummaryRowStyles = (type, colWidth, isFirstColumn, isPivot, columnAlign) => {
+  getSummaryRowStyles = (type, colWidth, isFirstVisibleColumn, isPivot, columnAlign) => {
     return {
       width: colWidth || 100,
       minWidth: colWidth || 100,
@@ -1836,32 +1861,49 @@ export default class ChataTable extends React.Component {
       padding: '4px 8px',
       borderRight: '1px solid var(--react-autoql-table-border-color)',
       background: 'var(--react-autoql-background-color-secondary)',
-      fontWeight: isFirstColumn ? 600 : 400,
+      fontWeight: isFirstVisibleColumn ? 600 : 400,
       boxSizing: 'border-box',
       fontFamily: 'inherit',
       fontSize: '11px',
-      textAlign: columnAlign || (isFirstColumn ? 'left' : 'right'),
+      textAlign: columnAlign || (isFirstVisibleColumn ? 'left' : 'right'),
       whiteSpace: 'nowrap',
       overflow: 'hidden',
       textOverflow: 'ellipsis',
-      cursor: !isFirstColumn ? 'pointer' : 'default',
+      cursor: !isFirstVisibleColumn ? 'pointer' : 'default',
     }
   }
 
-  renderSummaryCell = (type, col, index, stat, colWidth, isPivot, formatSummaryValue) => {
+  renderSummaryCell = (
+    type,
+    col,
+    index,
+    stat,
+    colWidth,
+    isPivot,
+    formatSummaryValue,
+    isFirstVisibleColumn,
+    hasLabelColumn,
+  ) => {
     if (col.visible === false || col.is_visible === false) return null
 
-    const isFirstColumn = index === 0
-    const value = this.getSummaryRowValue(type, stat, index, formatSummaryValue, col)
+    const value = this.getSummaryRowValue(
+      type,
+      stat,
+      index,
+      formatSummaryValue,
+      col,
+      isFirstVisibleColumn,
+      hasLabelColumn,
+    )
     const rawValue = type === 'total' ? stat?.sum : stat?.avg
-    const shouldEnableCopy = !isFirstColumn && rawValue !== null
+    const shouldEnableCopy = (!isFirstVisibleColumn || hasLabelColumn) && rawValue !== null
 
     const cellProps = {
       key: index,
-      className: `tabulator-cell${isPivot && isFirstColumn ? ' pivot-category' : ''} ${
+      className: `tabulator-cell${isPivot && index === 0 ? ' pivot-category' : ''} ${
         shouldEnableCopy ? 'copyable-cell' : ''
       }`,
-      style: this.getSummaryRowStyles(type, colWidth, isFirstColumn, isPivot, col?.align),
+      style: this.getSummaryRowStyles(type, colWidth, isFirstVisibleColumn && !hasLabelColumn, isPivot, col?.align),
       title: shouldEnableCopy ? null : value,
       ref: shouldEnableCopy
         ? (el) => el && setupCopyableCell(el, this.SUMMARY_TOOLTIP_ID, TOOLTIP_COPY_TEXTS.DEFAULT)
@@ -1870,6 +1912,149 @@ export default class ChataTable extends React.Component {
     }
 
     return <div {...cellProps}>{value}</div>
+  }
+
+  getSummaryColumnWidths = (totalWidth) => {
+    const labelWidth = Math.max(80, totalWidth * 0.4)
+    const valueWidth = totalWidth - labelWidth
+    return { labelWidth, valueWidth }
+  }
+
+  getSummaryCellStyle = (width, isLabel, columnAlign) => {
+    return {
+      width,
+      minWidth: width,
+      maxWidth: width,
+      padding: '4px 8px',
+      borderRight: '1px solid var(--react-autoql-table-border-color)',
+      background: 'var(--react-autoql-background-color-secondary)',
+      fontWeight: isLabel ? 600 : 400,
+      boxSizing: 'border-box',
+      fontFamily: 'inherit',
+      fontSize: '11px',
+      textAlign: isLabel ? 'left' : columnAlign || 'right',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      cursor: isLabel ? 'default' : 'pointer',
+    }
+  }
+
+  renderSingleColumnSummary = (type, columns, summaryStats, colWidths, formatSummaryValue) => {
+    const visibleColumns = this.getVisibleColumns(columns)
+    const singleColumn = visibleColumns[0]
+    const singleColumnIndex = columns.indexOf(singleColumn)
+    const stat = summaryStats[singleColumnIndex]
+
+    const value = type === 'total' ? stat?.sum : stat?.avg
+    const formattedValue = value !== undefined ? formatSummaryValue(value, singleColumn, singleColumnIndex) : ''
+    const labelValue = type === 'total' ? 'Total' : 'Average'
+
+    const totalWidth = colWidths[singleColumnIndex] || 100
+    const { labelWidth, valueWidth } = this.getSummaryColumnWidths(totalWidth)
+
+    return (
+      <>
+        <div
+          key={`${type}-label`}
+          className='tabulator-cell label-column'
+          style={this.getSummaryCellStyle(labelWidth, true)}
+          title={labelValue}
+        >
+          {labelValue}
+        </div>
+        <div
+          key={`${type}-value`}
+          ref={(el) =>
+            el && value !== null && setupCopyableCell(el, this.SUMMARY_TOOLTIP_ID, TOOLTIP_COPY_TEXTS.DEFAULT)
+          }
+          className={`tabulator-cell${value !== null ? ' copyable-cell' : ''}`}
+          style={this.getSummaryCellStyle(valueWidth, false, singleColumn?.align)}
+          onContextMenu={value !== null ? (e) => handleCellCopy(e, formattedValue, TOOLTIP_COPY_TEXTS) : undefined}
+        >
+          {formattedValue}
+        </div>
+      </>
+    )
+  }
+
+  renderSplitFirstColumnSummary = (type, columns, summaryStats, colWidths, isPivot, formatSummaryValue) => {
+    const visibleColumns = this.getVisibleColumns(columns)
+    const firstColumn = visibleColumns[0]
+    const firstColumnIndex = columns.indexOf(firstColumn)
+    const stat = summaryStats[firstColumnIndex]
+
+    const value = type === 'total' ? stat?.sum : stat?.avg
+    const formattedValue = value !== undefined ? formatSummaryValue(value, firstColumn, firstColumnIndex) : ''
+    const labelValue = type === 'total' ? 'Total' : 'Average'
+
+    const totalWidth = colWidths[firstColumnIndex] || 100
+    const { labelWidth, valueWidth } = this.getSummaryColumnWidths(totalWidth)
+
+    const cells = []
+
+    // Add the split first column (label + value)
+    cells.push(
+      <div
+        key={`${type}-label`}
+        className='tabulator-cell label-column'
+        style={this.getSummaryCellStyle(labelWidth, true)}
+        title={labelValue}
+      >
+        {labelValue}
+      </div>,
+    )
+
+    cells.push(
+      <div
+        key={`${type}-value`}
+        ref={(el) => el && value !== null && setupCopyableCell(el, this.SUMMARY_TOOLTIP_ID, TOOLTIP_COPY_TEXTS.DEFAULT)}
+        className={`tabulator-cell${value !== null ? ' copyable-cell' : ''}`}
+        style={this.getSummaryCellStyle(valueWidth, false, firstColumn?.align)}
+        onContextMenu={value !== null ? (e) => handleCellCopy(e, formattedValue, TOOLTIP_COPY_TEXTS) : undefined}
+      >
+        {formattedValue}
+      </div>,
+    )
+
+    // Add the remaining columns normally
+    for (let i = 1; i < visibleColumns.length; i++) {
+      const col = visibleColumns[i]
+      const colIndex = columns.indexOf(col)
+      cells.push(
+        this.renderSummaryCell(
+          type,
+          col,
+          colIndex,
+          summaryStats[colIndex],
+          colWidths[colIndex],
+          isPivot,
+          formatSummaryValue,
+          false, // not first visible column for remaining columns
+          false,
+        ),
+      )
+    }
+
+    return cells
+  }
+
+  renderMultiColumnSummary = (type, columns, summaryStats, colWidths, isPivot, formatSummaryValue) => {
+    const firstVisibleColumnIndex = this.getFirstVisibleColumnIndex(columns)
+
+    return columns.map((col, i) =>
+      this.renderSummaryCell(
+        type,
+        col,
+        i,
+        summaryStats[i],
+        colWidths[i],
+        isPivot,
+        formatSummaryValue,
+        i === firstVisibleColumnIndex,
+        false,
+      ),
+    )
   }
 
   renderSummaryRow = (type, columns, summaryStats, colWidths, isPivot, formatSummaryValue) => {
@@ -1883,11 +2068,40 @@ export default class ChataTable extends React.Component {
       minWidth: 'max-content',
     }
 
+    const visibleColumns = this.getVisibleColumns(columns)
+    const needsSingleColumnLayout = this.needsLabelColumn(columns)
+
+    let summaryContent
+    if (needsSingleColumnLayout) {
+      if (visibleColumns.length === 1) {
+        // True single column case
+        summaryContent = this.renderSingleColumnSummary(type, columns, summaryStats, colWidths, formatSummaryValue)
+      } else {
+        // Multiple columns but first is summable - split the first column
+        summaryContent = this.renderSplitFirstColumnSummary(
+          type,
+          columns,
+          summaryStats,
+          colWidths,
+          isPivot,
+          formatSummaryValue,
+        )
+      }
+    } else {
+      // Regular multi-column layout
+      summaryContent = this.renderMultiColumnSummary(
+        type,
+        columns,
+        summaryStats,
+        colWidths,
+        isPivot,
+        formatSummaryValue,
+      )
+    }
+
     return (
       <div className='tabulator-calcs-holder' style={containerStyle}>
-        {columns.map((col, i) =>
-          this.renderSummaryCell(type, col, i, summaryStats[i], colWidths[i], isPivot, formatSummaryValue),
-        )}
+        {summaryContent}
       </div>
     )
   }
