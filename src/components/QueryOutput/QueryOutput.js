@@ -1893,14 +1893,16 @@ export class QueryOutput extends React.Component {
         !this.isColumnIndexValid(this.tableConfig.numberColumnIndex2, columns))
     ) {
       // There are enough number column indices to have a second, but the second doesn't exist
-      this.tableConfig.numberColumnIndex2 = columns.findIndex(
+      const foundNumberColumnIndex2 = columns.findIndex(
         (col, index) =>
           index !== this.tableConfig.numberColumnIndex &&
           index !== this.tableConfig.stringColumnIndex &&
           isColumnNumberType(col) &&
           col.is_visible,
       )
-      this.tableConfig.numberColumnIndices2 = [this.tableConfig.numberColumnIndex2]
+      this.tableConfig.numberColumnIndex2 = foundNumberColumnIndex2 >= 0 ? foundNumberColumnIndex2 : undefined
+      this.tableConfig.numberColumnIndices2 =
+        this.tableConfig.numberColumnIndex2 !== undefined ? [this.tableConfig.numberColumnIndex2] : []
     } else if (this.numberIndicesArraysOverlap(this.tableConfig)) {
       // If either array contains all of the number columns, remove one of them
       if (this.tableConfig.numberColumnIndices.length === amountOfNumberColumns) {
@@ -1927,11 +1929,16 @@ export class QueryOutput extends React.Component {
 
       // Selected index is the same for both axes. Remove the overlapping values from the first axis
       if (this.tableConfig.numberColumnIndex === this.tableConfig.numberColumnIndex2) {
-        this.tableConfig.numberColumnIndex2 = columns.findIndex(
+        const foundAlternativeIndex = columns.findIndex(
           (col, i) => col.is_visible && isColumnNumberType(col) && i !== this.tableConfig.numberColumnIndex,
         )
-        // If the new columnIndex2 is not already in the indices array, add it
-        if (this.tableConfig.numberColumnIndices2.indexOf(this.tableConfig.numberColumnIndex2) === -1) {
+        this.tableConfig.numberColumnIndex2 = foundAlternativeIndex >= 0 ? foundAlternativeIndex : undefined
+
+        // If the new columnIndex2 is valid and not already in the indices array, add it
+        if (
+          this.tableConfig.numberColumnIndex2 !== undefined &&
+          this.tableConfig.numberColumnIndices2.indexOf(this.tableConfig.numberColumnIndex2) === -1
+        ) {
           this.tableConfig.numberColumnIndices2.push(this.tableConfig.numberColumnIndex2)
         }
         if (_isEqual(this.tableConfig.numberColumnIndices2, this.tableConfig.numberColumnIndices)) {
@@ -1956,14 +1963,16 @@ export class QueryOutput extends React.Component {
 
     //Second axis indices had hidden columns
     if (this.tableConfig.numberColumnIndices2.find((i) => !!columns[i] && !columns[i]?.is_visible)) {
-      this.tableConfig.numberColumnIndex2 = columns.findIndex(
+      const foundVisibleIndex = columns.findIndex(
         (col, i) =>
           col.is_visible &&
           isColumnNumberType(col) &&
           i !== this.tableConfig.numberColumnIndex &&
           i !== this.tableConfig.numberColumnIndex2,
       )
-      this.tableConfig.numberColumnIndices2 = [this.tableConfig.numberColumnIndex2]
+      this.tableConfig.numberColumnIndex2 = foundVisibleIndex >= 0 ? foundVisibleIndex : undefined
+      this.tableConfig.numberColumnIndices2 =
+        this.tableConfig.numberColumnIndex2 !== undefined ? [this.tableConfig.numberColumnIndex2] : []
     }
 
     // Set legend index if there should be one
