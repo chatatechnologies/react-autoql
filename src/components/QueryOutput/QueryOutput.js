@@ -916,11 +916,11 @@ export class QueryOutput extends React.Component {
       if (isSingleValueResponse(this.queryResponse)) {
         // Single visible column AND single row (or no data) → single-value display
         displayType = 'single-value'
-      } else if (visibleColumns.length === 0) {
+      } else if (displayType === DisplayTypes.TABLE && visibleColumns.length === 0) {
         // All columns hidden → show text
         displayType = 'text'
-      } else if (visibleColumns.length > 0) {
-        // Multiple visible columns OR single column with multiple rows → table display
+      } else if (displayType === 'text' && visibleColumns.length > 0) {
+        // Multiple visible columns → table display
         displayType = 'table'
       }
 
