@@ -453,10 +453,6 @@ export default class ChataTable extends React.Component {
     try {
       const rows = this.getAllRows(props)
 
-      if (!(rows?.length > 1)) {
-        return {}
-      }
-
       props.columns?.forEach((column, columnIndex) => {
         // If column has a mutator function, stats cannot be calculated based on the cell values
         if (column.mutator) {
