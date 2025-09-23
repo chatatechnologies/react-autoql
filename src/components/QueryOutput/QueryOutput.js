@@ -919,6 +919,9 @@ export class QueryOutput extends React.Component {
       } else if (displayType === DisplayTypes.TABLE && visibleColumns.length === 0) {
         // All columns hidden → show text
         displayType = 'text'
+      } else if (displayType === 'text' && visibleColumns.length > 0) {
+        // Multiple visible columns → table display
+        displayType = 'table'
       }
 
       this.setState({
