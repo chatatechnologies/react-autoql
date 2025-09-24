@@ -622,6 +622,27 @@ export default class ChataTable extends React.Component {
   onDataFiltered = (filters, rows) => {
     if (this.isFiltering && this.state.tabulatorMounted) {
       this.isFiltering = false
+      
+      // If columns have been moved and filters are applied, ensure alignment is maintained
+      if (this.columnMapping && this.columnMapping.length > 0 && filters && filters.length > 0) {
+        try {
+          // Get filtered data
+          const filteredData = this.ref.tabulator.getData();
+          
+          // Force a redraw to ensure headers and data stay aligned
+          this.ref.tabulator.redraw(true);
+          
+          // Additional verification after a short delay
+          setTimeout(() => {
+            if (this._isMounted && this.ref?.tabulator) {
+              this.ref.tabulator.redraw(false);
+            }
+          }, 10);
+        } catch (error) {
+          console.error('Error maintaining column alignment after filtering:', error);
+        }
+      }
+      
       this.debounceSetState({ loading: false })
     }
 
@@ -805,29 +826,51 @@ export default class ChataTable extends React.Component {
     // Use FE for sorting and filtering
     let response = _cloneDeep(this.props.response)
     let data = _cloneDeep(this.originalQueryData)
+    
+    // Apply column reordering to match the response data structure
+    if (this.columnMapping && this.columnMapping.length > 0) {
+      data = data.map(row => {
+        const newRow = []
+        this.columnMapping.forEach(originalIndex => {
+          newRow.push(row[originalIndex])
+        })
+        return newRow
+      })
+    }
 
-    // Filters
+    // Filters - use the column index directly since we've already updated them in onColumnMoved
     if (params.tableFilters?.length) {
       params.tableFilters.forEach((filter) => {
-        const filterColumnIndex = this.props.columns.find((col) => col.id === filter.id)?.index
-
-        data = filterDataByColumn(data, this.props.columns, filterColumnIndex, filter.value, filter.operator)
+        const column = this.props.columns.find((col) => col.id === filter.id)
+        if (column) {
+          // Use the column's current index which was updated in onColumnMoved
+          data = filterDataByColumn(data, this.props.columns, column.index, filter.value, filter.operator)
+        }
       })
     }
 
     // Update filterCount for local filtering
     this.filterCount = data?.length || 0
 
-    // Sorters
+    // Sorters - use the column index directly since we've already updated them in onColumnMoved
     if (params.orders?.length) {
-      const sortColumnIndex = this.props.columns.find((col) => col.id === params?.orders[0]?.id)?.index
-      const sortDirection = params.orders[0].sort === 'DESC' ? 'desc' : 'asc'
-
-      data = sortDataByColumn(data, this.props.columns, sortColumnIndex, sortDirection)
+      const column = this.props.columns.find((col) => col.id === params?.orders[0]?.id)
+      if (column) {
+        // Use the column's current index which was updated in onColumnMoved
+        const sortDirection = params.orders[0].sort === 'DESC' ? 'desc' : 'asc'
+        data = sortDataByColumn(data, this.props.columns, column.index, sortDirection)
+      }
     }
 
     response.data.data.rows = data
     response.data.data.count_rows = data.length
+    
+    // If columns were reordered, we need to update the response columns too
+    if (this.columnMapping && this.columnMapping.length > 0 && response.data?.data?.columns) {
+      response.data.data.columns = this.columnMapping.map(
+        (originalIndex) => response.data.data.columns[originalIndex]
+      )
+    }
 
     setTimeout(() => {
       this.updateSummaryStats({
@@ -962,7 +1005,7 @@ export default class ChataTable extends React.Component {
       // Note: this.filterCount is already set correctly in ajaxRequestFunc from the queryFn response
       if (this._isMounted) {
         setTimeout(() => {
-          this.forceUpdate()
+          if (this._isMounted) this.forceUpdate()
           this.scheduleTooltipRefresh(150)
         }, 0)
       }
@@ -1275,13 +1318,27 @@ export default class ChataTable extends React.Component {
         this.ref?.tabulator?.blockRedraw()
 
         try {
+          // If columns have been moved, make sure the column indexes are up-to-date
+          // This is critical for filtering with the correct column positions
+          if (this.columnMapping && this.columnMapping.length > 0) {
+            this.prepareForFilterAfterColumnMove();
+          }
+          
           filterValues.forEach((filter) => {
             // Get all columns to check if the target column exists
             const columns = this.ref.tabulator.getColumns()
-            const targetColumn = columns.find((col) => col.getField() === filter.field)
+            
+            // Find the corresponding column by ID
+            const targetColumn = this.props.columns.find((col) => col.id === filter.id)
+            
+            // If we found the column, get its field name
+            const fieldToUse = targetColumn ? targetColumn.field : filter.field
+            
+            // Find the tabulator column by field name
+            const tabulatorColumn = columns.find((col) => col.getField() === fieldToUse)
 
-            if (targetColumn && targetColumn.getDefinition().headerFilter) {
-              this.ref?.tabulator?.setHeaderFilterValue(filter.field, filter.value)
+            if (tabulatorColumn && tabulatorColumn.getDefinition().headerFilter) {
+              this.ref?.tabulator?.setHeaderFilterValue(fieldToUse, filter.value)
             }
           })
         } finally {
@@ -1430,7 +1487,7 @@ export default class ChataTable extends React.Component {
           if (response?.data?.data?.rows) {
             this.props.updateColumnsAndData(response)
             this.summaryStats = this.calculateSummaryStats(this.props)
-            this.forceUpdate()
+            if (this._isMounted) this.forceUpdate()
           } else {
             throw new Error('Column deletion failed')
           }
@@ -1464,7 +1521,7 @@ export default class ChataTable extends React.Component {
         console.error(error)
       })
       this.summaryStats = this.calculateSummaryStats(this.props)
-      this.forceUpdate()
+      if (this._isMounted) this.forceUpdate()
     }
   }
 
@@ -1475,7 +1532,7 @@ export default class ChataTable extends React.Component {
       }
       this.setHeaderInputEventListeners()
       this.summaryStats = this.calculateSummaryStats(this.props)
-      this.forceUpdate()
+      if (this._isMounted) this.forceUpdate()
     })
   }
 
@@ -1752,7 +1809,10 @@ export default class ChataTable extends React.Component {
 
       if (originalIndex !== undefined && this.props.columns[originalIndex]) {
         mapping.push(originalIndex)
-        reorderedColumns.push(this.props.columns[originalIndex])
+        
+        // Clone the column to avoid modifying the original
+        const columnCopy = { ...this.props.columns[originalIndex] }
+        reorderedColumns.push(columnCopy)
       }
     }
 
@@ -1781,6 +1841,57 @@ export default class ChataTable extends React.Component {
     this.tableParams.filter = []
     this.tableParams.sort = []
   }
+  
+  // Method to prepare the table for filtering after column movement
+  prepareForFilterAfterColumnMove = () => {
+    if (!this.ref?.tabulator || !this.columnMapping || !this.columnMapping.length) return;
+    
+    try {
+      // Store the current scroll position
+      const columnElement = this.ref.tabulator.columnManager.element;
+      const rowElement = this.ref.tabulator.rowManager.element;
+      const columnScrollLeft = columnElement.scrollLeft;
+      const rowScrollLeft = rowElement.scrollLeft;
+      
+      // Get current columns and their definitions
+      const visibleColumns = this.ref.tabulator.getColumns();
+      
+      // Update column indexes if they don't match the current visual order
+      if (this.props.columns) {
+        // Create a mapping of field names to their current visual positions
+        const fieldPositions = {};
+        visibleColumns.forEach((col) => {
+          const field = col.getField();
+          if (field) {
+            // Convert from 1-indexed to 0-indexed
+            fieldPositions[field] = col.getPosition(true) - 1;
+          }
+        });
+        
+        // Update indexes in the columns array to match their current positions
+        let updatedColumns = [...this.props.columns];
+        updatedColumns.forEach(col => {
+          if (fieldPositions[col.field] !== undefined) {
+            col.index = fieldPositions[col.field];
+          }
+        });
+        
+        // If columns changed, update them
+        if (!_isEqual(updatedColumns, this.props.columns) && this.props.updateColumns) {
+          this.props.updateColumns(updatedColumns);
+        }
+      }
+      
+      // Force a complete redraw to ensure UI consistency
+      this.ref.tabulator.redraw(true);
+      
+      // Restore scroll positions
+      columnElement.scrollLeft = columnScrollLeft;
+      rowElement.scrollLeft = rowScrollLeft;
+    } catch (error) {
+      console.error('Error preparing for filter after column move:', error);
+    }
+  }
 
   onColumnMoved = (column, columns) => {
     if (!columns || !this.props.columns || !this.props.updateColumnsAndData) {
@@ -1793,10 +1904,23 @@ export default class ChataTable extends React.Component {
       if (reorderedColumns.length !== this.props.columns.length || !this.props.response) {
         return
       }
-
+      
+      // Update indexes in the reordered columns to match their new positions
+      reorderedColumns.forEach((col, newIndex) => {
+        col.index = newIndex
+      })
+      
+      // Store the column mapping for data transformation
+      this.columnMapping = mapping
+      
+      // Create a new response with reordered data
       const newResponse = this.reorderResponseData(this.props.response, mapping)
-      this.resetTableState()
-      this.props.updateColumnsAndData(newResponse)
+      
+      // Reset sort state, but keep filter state
+      this.tableParams.sort = []
+      
+      // Update columns and data with the new ordering
+      this.props.updateColumnsAndData(reorderedColumns, newResponse)
     } catch (error) {
       console.error('Error updating column order:', error)
     }
@@ -1805,7 +1929,7 @@ export default class ChataTable extends React.Component {
       this.scrollToRight()
     }
     this.setHeaderInputEventListeners()
-    this.forceUpdate()
+    if (this._isMounted) this.forceUpdate()
   }
 
   onColumnResized = (column) => {
@@ -2378,7 +2502,7 @@ export default class ChataTable extends React.Component {
           if (!this._summaryResizeListenerAdded) {
             this.ref.tabulator.on('columnResized', () => {
               if (this._isMounted) {
-                this.forceUpdate()
+                if (this._isMounted) this.forceUpdate()
               }
             })
             this._summaryResizeListenerAdded = true
