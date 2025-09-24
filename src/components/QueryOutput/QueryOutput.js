@@ -98,7 +98,7 @@ export class QueryOutput extends React.Component {
     this.TOOLTIP_ID = `react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`
     this.CHART_TOOLTIP_ID = `react-autoql-query-output-chart-tooltip-${this.COMPONENT_KEY}`
     this.ALLOW_NUMERIC_STRING_COLUMNS = true
-    this.MAX_PIVOT_TABLE_COLUMNS = 20
+    this.MAX_PIVOT_TABLE_COLUMNS = 50
 
     this.originalLegendState = {
       hiddenLegendLabels: [],
