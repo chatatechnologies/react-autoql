@@ -2415,7 +2415,7 @@ export default class ChataTable extends React.Component {
 
   getTableContainerClasses = (isEmpty) => {
     const classes = ['react-autoql-table-container']
-    
+
     if (this.isSingleColumnTable()) classes.push('single-column')
     if (this.state.pageLoading || !this.state.tabulatorMounted) classes.push('loading')
     if (getAutoQLConfig(this.props.autoQLConfig)?.enableDrilldowns) {
@@ -2431,7 +2431,7 @@ export default class ChataTable extends React.Component {
     if (this.props.pivot) classes.push('pivot')
     if (this.props.hidden) classes.push('hidden')
     if (isEmpty) classes.push('empty')
-    
+
     return classes.join(' ')
   }
 
