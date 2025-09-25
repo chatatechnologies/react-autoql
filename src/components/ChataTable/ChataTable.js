@@ -1949,6 +1949,10 @@ export default class ChataTable extends React.Component {
     return columns.filter((col) => col.visible !== false && col.is_visible !== false)
   }
 
+  isSingleColumnTable = () => {
+    return this.getVisibleColumns(this.props.columns || []).length === 1
+  }
+
   needsLabelColumn = (columns) => {
     const visibleColumns = this.getVisibleColumns(columns)
     if (visibleColumns.length === 1 && isColumnSummable(visibleColumns[0])) {
@@ -2409,6 +2413,28 @@ export default class ChataTable extends React.Component {
     return this.props.response?.data?.data?.rows?.length === 0
   }
 
+  getTableContainerClasses = (isEmpty) => {
+    const classes = ['react-autoql-table-container']
+    
+    if (this.isSingleColumnTable()) classes.push('single-column')
+    if (this.state.pageLoading || !this.state.tabulatorMounted) classes.push('loading')
+    if (getAutoQLConfig(this.props.autoQLConfig)?.enableDrilldowns) {
+      classes.push('supports-drilldown')
+    } else {
+      classes.push('disable-drilldown')
+    }
+    if (this.state.isFiltering) classes.push('filtering')
+    if (this.props.isAnimating) classes.push('animating')
+    if (this.useInfiniteScroll) classes.push('infinite')
+    else classes.push('limited')
+    if (this.useInfiniteScroll && this.state.isLastPage) classes.push('last-page')
+    if (this.props.pivot) classes.push('pivot')
+    if (this.props.hidden) classes.push('hidden')
+    if (isEmpty) classes.push('empty')
+    
+    return classes.join(' ')
+  }
+
   render = () => {
     const isEmpty = this.isTableEmpty()
 
@@ -2542,8 +2568,6 @@ export default class ChataTable extends React.Component {
       }
     }
 
-    const tableColumns = this.props.columns || []
-    const isSingleColumn = this.getVisibleColumns(tableColumns).length === 1
     return (
       <ErrorBoundary>
         <div
@@ -2551,17 +2575,7 @@ export default class ChataTable extends React.Component {
           ref={(ref) => (this.tableContainer = ref)}
           data-test='react-autoql-table'
           style={this.props.style}
-          className={`react-autoql-table-container 
-            ${isSingleColumn ? 'single-column' : ''}
-            ${this.state.pageLoading || !this.state.tabulatorMounted ? 'loading' : ''}
-            ${getAutoQLConfig(this.props.autoQLConfig)?.enableDrilldowns ? 'supports-drilldown' : 'disable-drilldown'}
-            ${this.state.isFiltering ? 'filtering' : ''}
-            ${this.props.isAnimating ? 'animating' : ''}
-            ${this.useInfiniteScroll ? 'infinite' : 'limited'}
-            ${this.useInfiniteScroll && this.state.isLastPage ? 'last-page' : ''}
-            ${this.props.pivot ? 'pivot' : ''}
-            ${this.props.hidden ? 'hidden' : ''}
-            ${isEmpty ? 'empty' : ''}`}
+          className={this.getTableContainerClasses(isEmpty)}
         >
           {this.renderPivotTableRowWarning()}
           <div ref={(r) => (this.tabulatorContainer = r)} className='react-autoql-tabulator-container'>

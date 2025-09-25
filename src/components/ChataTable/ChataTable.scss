@@ -454,7 +454,6 @@
   }
 }
 
-/* Single-column layout styles */
 .single-column {
   .tabulator-header .tabulator-col,
   .tabulator-row .tabulator-cell {
@@ -462,6 +461,7 @@
   }
 
   .tabulator-tableholder .tabulator-table {
+    width: -webkit-fill-available !important;
     min-width: -webkit-fill-available !important;
   }
 
