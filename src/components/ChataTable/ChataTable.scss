@@ -461,6 +461,10 @@
     width: -webkit-fill-available !important;
   }
 
+  .tabulator-tableholder .tabulator-table {
+    min-width: -webkit-fill-available !important;
+  }
+
   .label-column {
     width: 70px !important;
     min-width: 70px !important;
