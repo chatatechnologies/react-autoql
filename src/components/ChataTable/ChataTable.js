@@ -6,7 +6,12 @@ import { mean, sum } from 'd3-array'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
-import { isColumnSummable } from 'autoql-fe-utils'
+import {
+  isColumnSummable,
+  getColumnFieldCompat,
+  getColumnOriginalIndexCompat,
+  getColumnPositionCompat,
+} from 'autoql-fe-utils'
 
 import {
   deepEqual,
@@ -89,11 +94,9 @@ export default class ChataTable extends React.Component {
 
     this.tableOptions = {
       selectableRowsCheck: () => false,
-      movableColumns: true,
       initialSort: undefined, // Let getRows do initial sorting and filtering
       initialFilter: undefined, // Let getRows do initial sorting and filtering
       progressiveLoadScrollMargin: 50, // Trigger next ajax load when scroll bar is 800px or less from the bottom of the table.
-      // renderHorizontal: 'virtual', // v4: virtualDomHoz = false
       movableColumns: true,
       smoothScroll: true,
       touchUndoSize: 5,
@@ -196,6 +199,60 @@ export default class ChataTable extends React.Component {
     onUpdateFilterResponse: () => {},
     isDrilldown: false,
     scope: undefined,
+  }
+
+  // Resolve a column's field name across Tabulator ColumnComponent and utils Column instances
+  // Uses autoql-fe-utils getColumnFieldCompat when available, with safe fallbacks.
+  resolveColumnField = (col) => {
+    try {
+      if (!col) return undefined
+
+      const v = getColumnFieldCompat(col)
+      if (v) return v
+      return col?.getField?.() || col?.getDefinition?.()?.field || col?.field
+    } catch (e) {
+      return undefined
+    }
+  }
+
+  // Best-effort check to detect Tabulator ColumnComponent instances
+  isTabulatorColumnComponent = (obj) => {
+    if (!obj || typeof obj !== 'object') return false
+    return (
+      typeof obj.getField === 'function' ||
+      typeof obj.getDefinition === 'function' ||
+      typeof obj.getCells === 'function' ||
+      typeof obj.getElement === 'function'
+    )
+  }
+
+  // Compat: best-effort resolve original index without touching Tabulator-only methods
+  compatOriginalIndex = (col) => {
+    // Prefer utils helper when the object is not a Tabulator ColumnComponent
+    if (!this.isTabulatorColumnComponent(col) && typeof getColumnOriginalIndexCompat === 'function') {
+      try {
+        const idx = getColumnOriginalIndexCompat(col, this.props.columns)
+        if (typeof idx === 'number' && idx >= 0) return idx
+      } catch (_) {}
+    }
+    const field = this.resolveColumnField(col)
+    if (field) {
+      const idx = (this.props.columns || []).findIndex((c) => c?.field === field)
+      if (idx >= 0) return idx
+    }
+    const defIdx = col?.getDefinition?.()?.index
+    return typeof defIdx === 'number' ? defIdx : undefined
+  }
+
+  // Compat: best-effort resolve visual position without calling ColumnComponent.getPosition
+  compatVisualPosition = (col, visibleColumns) => {
+    if (!this.isTabulatorColumnComponent(col) && typeof getColumnPositionCompat === 'function') {
+      try {
+        const pos = getColumnPositionCompat(col, visibleColumns)
+        if (typeof pos === 'number' && pos >= 0) return pos
+      } catch (_) {}
+    }
+    return Array.isArray(visibleColumns) ? visibleColumns.indexOf(col) : -1
   }
 
   componentDidMount = () => {
@@ -1281,10 +1338,7 @@ export default class ChataTable extends React.Component {
         if (!column) return
 
         try {
-          const field =
-            typeof column.getColumnField === 'function'
-              ? column.getColumnField()
-              : column.getField?.() ?? column.getDefinition?.()?.field ?? column?.field
+          const field = this.resolveColumnField(column)
           const isFiltering = !!activeFilters[field]
 
           const getElement = column.getElement
@@ -1336,13 +1390,7 @@ export default class ChataTable extends React.Component {
             const fieldToUse = targetColumn ? targetColumn.field : filter.field
 
             // Find the tabulator column by field name
-            const tabulatorColumn = columns.find((col) => {
-              const f =
-                typeof col.getColumnField === 'function'
-                  ? col.getColumnField()
-                  : col.getField?.() ?? col.getDefinition?.()?.field ?? col?.field
-              return f === fieldToUse
-            })
+            const tabulatorColumn = columns.find((col) => this.resolveColumnField(col) === fieldToUse)
 
             if (tabulatorColumn && tabulatorColumn.getDefinition().headerFilter) {
               this.ref?.tabulator?.setHeaderFilterValue(fieldToUse, filter.value)
@@ -1435,17 +1483,11 @@ export default class ChataTable extends React.Component {
     this.settingSorters = false
   }
 
-  // Removed: hasBottomCalc helper, not needed
-
   toggleIsFiltering = (filterOn, scrollToFirstFilteredColumn) => {
     if (scrollToFirstFilteredColumn && this.tableParams?.filter?.length) {
-      const column = this.ref?.tabulator?.getColumns()?.find((col) => {
-        const f =
-          typeof col.getColumnField === 'function'
-            ? col.getColumnField()
-            : col.getField?.() ?? col.getDefinition?.()?.field ?? col?.field
-        return f === this.tableParams.filter[0]?.field
-      })
+      const column = this.ref?.tabulator
+        ?.getColumns()
+        ?.find((col) => this.resolveColumnField(col) === this.tableParams.filter[0]?.field)
 
       column?.scrollTo('middle')
     }
@@ -1458,8 +1500,6 @@ export default class ChataTable extends React.Component {
     if (this._isMounted) {
       this.setState({ isFiltering })
     }
-
-    // Removed: Tabulator footer logic, not needed
 
     return isFiltering
   }
@@ -1815,16 +1855,10 @@ export default class ChataTable extends React.Component {
     const reorderedColumns = []
 
     for (const tabulatorCol of tabulatorColumns) {
-      // Prefer enhanced API from autoql-fe-utils; fallback to Tabulator definition
-      const originalIndex =
-        typeof tabulatorCol.getIndex === 'function' ? tabulatorCol.getIndex() : tabulatorCol.getDefinition?.()?.index
-
-      if (originalIndex !== undefined && this.props.columns[originalIndex]) {
+      const originalIndex = this.compatOriginalIndex(tabulatorCol)
+      if (typeof originalIndex === 'number' && originalIndex >= 0 && this.props.columns?.[originalIndex]) {
         mapping.push(originalIndex)
-
-        // Clone the column to avoid modifying the original
-        const columnCopy = { ...this.props.columns[originalIndex] }
-        reorderedColumns.push(columnCopy)
+        reorderedColumns.push({ ...this.props.columns[originalIndex] })
       }
     }
 
@@ -1874,19 +1908,9 @@ export default class ChataTable extends React.Component {
         // Create a mapping of field names to their current visual positions
         const fieldPositions = {}
         visibleColumns.forEach((col) => {
-          // Use helpers provided by autoql-fe-utils when available
-          const field =
-            typeof col.getColumnField === 'function'
-              ? col.getColumnField()
-              : col.getField?.() ?? col.getDefinition?.()?.field ?? col?.field
+          const field = this.resolveColumnField(col)
           if (!field) return
-
-          // Prefer normalized helper; fallback to position in visibleColumns
-          let zeroIndexedPos = typeof col.getPosition === 'function' ? col.getPosition() : undefined
-          if (typeof zeroIndexedPos !== 'number') {
-            zeroIndexedPos = Array.isArray(visibleColumns) ? visibleColumns.indexOf(col) : -1
-          }
-          fieldPositions[field] = zeroIndexedPos
+          fieldPositions[field] = this.compatVisualPosition(col, visibleColumns)
         })
 
         // Update indexes in the columns array to match their current positions
@@ -1912,8 +1936,6 @@ export default class ChataTable extends React.Component {
       console.error('Error preparing for filter after column move:', error)
     }
   }
-
-  // Helpers now provided by autoql-fe-utils via column.getColumnField(), column.getPosition(), and column.getIndex()
 
   onColumnMoved = (column, columns) => {
     const validColumns = Array.isArray(columns) && columns.length ? columns : this.props.columns || []
