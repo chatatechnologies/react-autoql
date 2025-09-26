@@ -136,12 +136,13 @@ export class QueryOutput extends React.Component {
 
     // Set initial config if needed
     // If this config causes errors, it will be reset when the error occurs
-    if (
-      props.initialTableConfigs?.tableConfig &&
-      this.isTableConfigValid(props.initialTableConfigs?.tableConfig, columns, displayType)
-    ) {
-      const { tableConfig } = props.initialTableConfigs
-      this.tableConfig = _cloneDeep(tableConfig)
+    if (props.initialTableConfigs?.tableConfig) {
+      const isValid = this.isTableConfigValid(props.initialTableConfigs?.tableConfig, columns, displayType)
+
+      if (isValid) {
+        const { tableConfig } = props.initialTableConfigs
+        this.tableConfig = _cloneDeep(tableConfig)
+      }
     }
 
     // --------- generate data before mount --------
@@ -1817,10 +1818,9 @@ export class QueryOutput extends React.Component {
     }
 
     // Set string type columns (ordinal axis)
-    if (
-      !this.tableConfig.stringColumnIndices ||
-      !this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns)
-    ) {
+    const isStringColumnIndexValid = this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns)
+
+    if (!this.tableConfig.stringColumnIndices || !isStringColumnIndexValid) {
       const isPivot = false
       const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
         columns,
@@ -1987,15 +1987,19 @@ export class QueryOutput extends React.Component {
       this.onTableConfigChange(this.hasCalledInitialTableConfigChange)
     }
 
-    const defaultDateColumn = this.queryResponse.data.data.default_date_column
-    const stringColumnIdx = this.findDefaultStringColumnIndex(defaultDateColumn)
-    this.tableConfig.stringColumnIndex = this.getStringColumnIndex(stringColumnIdx)
+    // Only reset to defaults if this is a fresh initialization (no previous config)
+    // Don't reset if we're updating an existing config with user selections
+    if (!prevTableConfig || Object.keys(prevTableConfig).length === 0) {
+      const defaultDateColumn = this.queryResponse.data.data.default_date_column
+      const stringColumnIdx = this.findDefaultStringColumnIndex(defaultDateColumn)
+      this.tableConfig.stringColumnIndex = this.getStringColumnIndex(stringColumnIdx)
 
-    // Find default amount column match
-    const defaultAmountColumn = this.queryResponse.data.data.default_amount_column
-    const numberColumnIdx = this.findDefaultNumberColumnIndex(defaultAmountColumn)
-    this.tableConfig.numberColumnIndex = this.getNumberColumnIndex(numberColumnIdx)
-    this.tableConfig.numberColumnIndices = [this.getNumberColumnIndex(numberColumnIdx)]
+      // Find default amount column match
+      const defaultAmountColumn = this.queryResponse.data.data.default_amount_column
+      const numberColumnIdx = this.findDefaultNumberColumnIndex(defaultAmountColumn)
+      this.tableConfig.numberColumnIndex = this.getNumberColumnIndex(numberColumnIdx)
+      this.tableConfig.numberColumnIndices = [this.getNumberColumnIndex(numberColumnIdx)]
+    }
   }
 
   getPotentialDisplayTypes = () => {
