@@ -48,7 +48,7 @@ describe('test each response case', () => {
 describe('supported display types', () => {
   test('support charts even for 1 row of data', async () => {
     const queryResponse = _cloneDeep(testCases[8])
-    queryResponse.data.data.rows = [queryResponse.data.data.rows[0]]
+    queryResponse.data.data.rows = [queryResponse?.data?.data?.rows[0]]
     const queryOutput = mount(<QueryOutputWithoutTheme queryResponse={queryResponse} />)
     const supportedDisplayTypes = queryOutput.instance().getCurrentSupportedDisplayTypes()
     expect(supportedDisplayTypes).toEqual(['table', 'column', 'bar'])

@@ -322,6 +322,8 @@ export class QueryOutput extends React.Component {
   }
 
   handleLegendVisibilityChange = (hiddenLabels) => {
+    if (!this._isMounted) return
+
     const currentType = this.state.displayType
     this.setState({
       hiddenLegendLabels: hiddenLabels,
@@ -333,6 +335,8 @@ export class QueryOutput extends React.Component {
   }
 
   handleLegendClick = (label) => {
+    if (!this._isMounted) return
+
     const { hiddenLegendLabels, legendStateByChart, displayType } = this.state
     const isHidden = hiddenLegendLabels.includes(label)
     const newHiddenLabels = isHidden ? hiddenLegendLabels.filter((l) => l !== label) : [...hiddenLegendLabels, label]
@@ -494,7 +498,9 @@ export class QueryOutput extends React.Component {
       }
 
       setTimeout(() => {
-        this.updateToolbars()
+        if (this._isMounted) {
+          this.updateToolbars()
+        }
       }, 0)
 
       if (!_isEmpty(newState)) {
@@ -509,6 +515,9 @@ export class QueryOutput extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
+
+    // Cancel any pending requests
+    this.cancelCurrentRequest()
     document.removeEventListener('mousemove', this.handleMouseMove)
     document.removeEventListener('mouseup', this.handleMouseUp)
     document.removeEventListener('mouseleave', this.handleMouseUp)
@@ -537,7 +546,7 @@ export class QueryOutput extends React.Component {
     this.updateMaxConstraints()
   }
   handleResizeStart = (e) => {
-    if (!this.props.enableResizing) return
+    if (!this._isMounted || !this.props.enableResizing) return
 
     e.preventDefault()
     this.updateMaxConstraints()
@@ -558,7 +567,7 @@ export class QueryOutput extends React.Component {
   }
 
   handleMouseMove = (e) => {
-    if (!this.state.isResizing || !this.props.enableResizing) return
+    if (!this._isMounted || !this.state.isResizing || !this.props.enableResizing) return
 
     const deltaY = (e.clientY - this.state.resizeStartY) * this.resizeMultiplier
     const isChart = isChartType(this.state.displayType)
@@ -579,7 +588,7 @@ export class QueryOutput extends React.Component {
     this.props.onResize({ height: newHeight })
   }
   handleMouseUp = () => {
-    if (this.state.isResizing) {
+    if (this._isMounted && this.state.isResizing) {
       this.setState({ isResizing: false }, () => {
         this.refreshLayout()
       })
@@ -688,6 +697,8 @@ export class QueryOutput extends React.Component {
   }
 
   changeDisplayType = (displayType, callback) => {
+    if (!this._isMounted) return
+
     this.checkAndUpdateTableConfigs(displayType)
     this.setState({ displayType }, () => {
       if (typeof callback === CustomColumnTypes.FUNCTION) {
@@ -856,14 +867,14 @@ export class QueryOutput extends React.Component {
   }
 
   updateColumnsAndData = (response) => {
-    if (response && this._isMounted) {
+    if (response && response.data && response.data.data && this._isMounted) {
       this.pivotTableID = uuid()
       this.isOriginalData = false
       this.queryResponse = response
-      this.tableData = response?.data?.data?.rows || []
+      this.tableData = response.data.data.rows || []
 
       const additionalSelects = this.getAdditionalSelectsFromResponse(response)
-      const newColumns = this.formatColumnsForTable(response?.data?.data?.columns, additionalSelects)
+      const newColumns = this.formatColumnsForTable(response.data.data.columns, additionalSelects)
       const customColumnSelects = this.getUpdatedCustomColumnSelects(additionalSelects, newColumns)
 
       this.updateFilters(this.tableParams.filter, this.state.columns, newColumns)
@@ -1541,7 +1552,9 @@ export class QueryOutput extends React.Component {
 
     // This will update the filter badge in OptionsToolbar
     setTimeout(() => {
-      this.updateToolbars()
+      if (this._isMounted) {
+        this.updateToolbars()
+      }
     }, 0)
   }
 
@@ -1571,7 +1584,9 @@ export class QueryOutput extends React.Component {
       )
     }
 
-    this.setState({ chartID: uuid() })
+    if (this._isMounted) {
+      this.setState({ chartID: uuid() })
+    }
   }
 
   isValidSorter = (sorter) => {
@@ -1623,7 +1638,9 @@ export class QueryOutput extends React.Component {
         newColumns,
         this.getAdditionalSelectsFromResponse(this.queryResponse),
       )
-      this.setState({ columns: formattedColumns })
+      if (this._isMounted) {
+        this.setState({ columns: formattedColumns })
+      }
     }
   }
 
@@ -1785,7 +1802,10 @@ export class QueryOutput extends React.Component {
 
   resetTableConfig = (newColumns) => {
     this.tableConfig = undefined
-    this.setTableConfig(newColumns)
+    const validColumns =
+      Array.isArray(newColumns) && newColumns.length ? newColumns : this.getColumns?.() || this.props.columns || []
+    if (!validColumns.length) return
+    this.setTableConfig(validColumns)
   }
 
   isColumnIndexValid = (index, columns) => {
@@ -1867,9 +1887,7 @@ export class QueryOutput extends React.Component {
 
   setTableConfig = (newColumns) => {
     const columns = newColumns ?? this.getColumns()
-    if (!columns) {
-      return
-    }
+    if (!columns || !Array.isArray(columns) || columns.length === 0 || !this.queryResponse?.data?.data) return
 
     const prevTableConfig = _cloneDeep(this.tableConfig)
 

@@ -510,10 +510,13 @@ export class DashboardTile extends React.Component {
 
     return Promise.all(promises)
       .then((queryResponses) => {
+        // Helper to normalize query response
+        const normalizeResponse = (resp) => (Array.isArray(resp) ? { data: { rows: resp } } : resp ?? {})
+
         return {
           ...this.props.tile,
-          queryResponse: queryResponses?.[0],
-          secondQueryResponse: queryResponses?.[1],
+          queryResponse: normalizeResponse(queryResponses?.[0]),
+          secondQueryResponse: normalizeResponse(queryResponses?.[1]),
           defaultSelectedSuggestion: undefined,
           secondDefaultSelectedSuggestion: undefined,
         }
@@ -1198,6 +1201,9 @@ export class DashboardTile extends React.Component {
 
     const initialDisplayType = this.props?.tile?.displayType
 
+    // Helper to normalize query response
+    const normalizeResponse = (resp) => (Array.isArray(resp) ? { data: { rows: resp } } : resp ?? {})
+
     return this.renderResponse({
       renderPlaceholder,
       isExecuting,
@@ -1208,7 +1214,7 @@ export class DashboardTile extends React.Component {
         vizToolbarRef: this.vizToolbarRef,
         key: `dashboard-tile-query-top-${this.FIRST_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
         initialDisplayType,
-        queryResponse: this.props.tile?.queryResponse,
+        queryResponse: normalizeResponse(this.props.tile?.queryResponse),
         initialTableConfigs: this.props.tile.dataConfig,
         initialAggConfig: this.props.tile.aggConfig,
         onTableConfigChange: this.onDataConfigChange,

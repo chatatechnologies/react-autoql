@@ -1278,10 +1278,13 @@ export default class ChataTable extends React.Component {
       }
 
       columns.forEach((column) => {
-        if (!column || typeof column.getField !== 'function') return
+        if (!column) return
 
         try {
-          const field = column.getField()
+          const field =
+            typeof column.getColumnField === 'function'
+              ? column.getColumnField()
+              : column.getField?.() ?? column.getDefinition?.()?.field ?? column?.field
           const isFiltering = !!activeFilters[field]
 
           const getElement = column.getElement
@@ -1333,7 +1336,13 @@ export default class ChataTable extends React.Component {
             const fieldToUse = targetColumn ? targetColumn.field : filter.field
 
             // Find the tabulator column by field name
-            const tabulatorColumn = columns.find((col) => col.getField() === fieldToUse)
+            const tabulatorColumn = columns.find((col) => {
+              const f =
+                typeof col.getColumnField === 'function'
+                  ? col.getColumnField()
+                  : col.getField?.() ?? col.getDefinition?.()?.field ?? col?.field
+              return f === fieldToUse
+            })
 
             if (tabulatorColumn && tabulatorColumn.getDefinition().headerFilter) {
               this.ref?.tabulator?.setHeaderFilterValue(fieldToUse, filter.value)
@@ -1430,9 +1439,13 @@ export default class ChataTable extends React.Component {
 
   toggleIsFiltering = (filterOn, scrollToFirstFilteredColumn) => {
     if (scrollToFirstFilteredColumn && this.tableParams?.filter?.length) {
-      const column = this.ref?.tabulator
-        ?.getColumns()
-        ?.find((col) => col.getField() === this.tableParams.filter[0]?.field)
+      const column = this.ref?.tabulator?.getColumns()?.find((col) => {
+        const f =
+          typeof col.getColumnField === 'function'
+            ? col.getColumnField()
+            : col.getField?.() ?? col.getDefinition?.()?.field ?? col?.field
+        return f === this.tableParams.filter[0]?.field
+      })
 
       column?.scrollTo('middle')
     }
@@ -1802,8 +1815,9 @@ export default class ChataTable extends React.Component {
     const reorderedColumns = []
 
     for (const tabulatorCol of tabulatorColumns) {
-      const definition = tabulatorCol.getDefinition()
-      const originalIndex = definition.index
+      // Prefer enhanced API from autoql-fe-utils; fallback to Tabulator definition
+      const originalIndex =
+        typeof tabulatorCol.getIndex === 'function' ? tabulatorCol.getIndex() : tabulatorCol.getDefinition?.()?.index
 
       if (originalIndex !== undefined && this.props.columns[originalIndex]) {
         mapping.push(originalIndex)
@@ -1853,25 +1867,33 @@ export default class ChataTable extends React.Component {
 
       // Get current columns and their definitions
       const visibleColumns = this.ref.tabulator.getColumns()
+      if (!Array.isArray(visibleColumns) || !visibleColumns.length) return
 
       // Update column indexes if they don't match the current visual order
       if (this.props.columns) {
         // Create a mapping of field names to their current visual positions
         const fieldPositions = {}
         visibleColumns.forEach((col) => {
-          const field = col.getField()
-          if (field) {
-            // Convert from 1-indexed to 0-indexed
-            fieldPositions[field] = col.getPosition(true) - 1
+          // Use helpers provided by autoql-fe-utils when available
+          const field =
+            typeof col.getColumnField === 'function'
+              ? col.getColumnField()
+              : col.getField?.() ?? col.getDefinition?.()?.field ?? col?.field
+          if (!field) return
+
+          // Prefer normalized helper; fallback to position in visibleColumns
+          let zeroIndexedPos = typeof col.getPosition === 'function' ? col.getPosition() : undefined
+          if (typeof zeroIndexedPos !== 'number') {
+            zeroIndexedPos = Array.isArray(visibleColumns) ? visibleColumns.indexOf(col) : -1
           }
+          fieldPositions[field] = zeroIndexedPos
         })
 
         // Update indexes in the columns array to match their current positions
-        let updatedColumns = [...this.props.columns]
-        updatedColumns.forEach((col) => {
-          if (fieldPositions[col.field] !== undefined) {
-            col.index = fieldPositions[col.field]
-          }
+        // Create new objects to avoid mutating props directly
+        const updatedColumns = (this.props.columns || []).map((col) => {
+          const pos = fieldPositions[col.field]
+          return pos !== undefined ? { ...col, index: pos } : col
         })
 
         // If columns changed, update them
@@ -1891,34 +1913,22 @@ export default class ChataTable extends React.Component {
     }
   }
 
+  // Helpers now provided by autoql-fe-utils via column.getColumnField(), column.getPosition(), and column.getIndex()
+
   onColumnMoved = (column, columns) => {
-    if (!columns || !this.props.columns || !this.props.updateColumnsAndData) {
-      return
-    }
+    const validColumns = Array.isArray(columns) && columns.length ? columns : this.props.columns || []
+    if (!validColumns.length || !this.props.updateColumnsAndData) return
 
     try {
-      const { mapping, reorderedColumns } = this.getColumnIndexMapping(columns)
-
-      if (reorderedColumns.length !== this.props.columns.length || !this.props.response) {
-        return
-      }
-
-      // Update indexes in the reordered columns to match their new positions
+      const { mapping, reorderedColumns } = this.getColumnIndexMapping(validColumns)
+      if (reorderedColumns.length !== this.props.columns.length || !this.props.response) return
       reorderedColumns.forEach((col, newIndex) => {
         col.index = newIndex
       })
-
-      // Store the column mapping for data transformation
       this.columnMapping = mapping
-
-      // Create a new response with reordered data
       const newResponse = this.reorderResponseData(this.props.response, mapping)
-
-      // Reset sort state, but keep filter state
       this.tableParams.sort = []
-
-      // Update columns and data with the new ordering
-      this.props.updateColumnsAndData(reorderedColumns, newResponse)
+      if (newResponse && !Array.isArray(newResponse)) this.props.updateColumnsAndData(newResponse)
     } catch (error) {
       console.error('Error updating column order:', error)
     }
