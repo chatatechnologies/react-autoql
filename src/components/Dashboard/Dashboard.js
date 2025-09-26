@@ -585,11 +585,12 @@ class DashboardWithoutTheme extends React.Component {
     }
   }
 
-  onDrilldownEnd = ({ response, error }) => {
+  onDrilldownEnd = ({ response, error, drilldownFilters }) => {
     if (response) {
       if (this._isMounted) {
         this.setState({
           activeDrilldownResponse: response,
+          activeDrilldownFilters: drilldownFilters,
           isDrilldownRunning: false,
         })
       }
@@ -599,6 +600,7 @@ class DashboardWithoutTheme extends React.Component {
         this.setState({
           isDrilldownRunning: false,
           activeDrilldownResponse: undefined,
+          activeDrilldownFilters: undefined,
         })
       }
     }
@@ -769,6 +771,7 @@ class DashboardWithoutTheme extends React.Component {
             isOpen={this.state.isDrilldownModalVisible}
             onClose={this.closeDrilldownModal}
             drilldownResponse={this.state.activeDrilldownResponse}
+            drilldownFilters={this.state.activeDrilldownFilters}
             shouldRender={this.state.isDrilldownModalVisible && !this.state.isDragging && !this.state.isWindowResizing}
             activeDrilldownChartElementKey={this.state.activeDrilldownChartElementKey}
             isAnimating={this.state.isAnimatingModal}
