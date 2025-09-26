@@ -55,6 +55,7 @@ export default class DrilldownTable extends React.Component {
             originalQueryID={this.props.queryResponse?.data?.data?.query_id}
             dataFormatting={this.props.dataFormatting}
             queryResponse={this.props.queryResponse}
+            drilldownFilters={this.props.drilldownFilters}
             renderTooltips={false}
             reportProblemCallback={this.props.reportProblemCallback}
             showQueryInterpretation={this.props.showQueryInterpretation}
