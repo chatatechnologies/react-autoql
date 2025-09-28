@@ -98,7 +98,7 @@ export class QueryOutput extends React.Component {
     this.TOOLTIP_ID = `react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`
     this.CHART_TOOLTIP_ID = `react-autoql-query-output-chart-tooltip-${this.COMPONENT_KEY}`
     this.ALLOW_NUMERIC_STRING_COLUMNS = true
-    this.MAX_PIVOT_TABLE_COLUMNS = 20
+    this.MAX_PIVOT_TABLE_COLUMNS = 50
 
     this.originalLegendState = {
       hiddenLegendLabels: [],
@@ -136,12 +136,13 @@ export class QueryOutput extends React.Component {
 
     // Set initial config if needed
     // If this config causes errors, it will be reset when the error occurs
-    if (
-      props.initialTableConfigs?.tableConfig &&
-      this.isTableConfigValid(props.initialTableConfigs?.tableConfig, columns, displayType)
-    ) {
-      const { tableConfig } = props.initialTableConfigs
-      this.tableConfig = _cloneDeep(tableConfig)
+    if (props.initialTableConfigs?.tableConfig) {
+      const isValid = this.isTableConfigValid(props.initialTableConfigs?.tableConfig, columns, displayType)
+
+      if (isValid) {
+        const { tableConfig } = props.initialTableConfigs
+        this.tableConfig = _cloneDeep(tableConfig)
+      }
     }
 
     // --------- generate data before mount --------
@@ -239,6 +240,7 @@ export class QueryOutput extends React.Component {
     localRTFilterResponse: PropTypes.shape({}),
     enableCustomColumns: PropTypes.bool,
     preferRegularTableInitialDisplayType: PropTypes.bool,
+    drilldownFilters: PropTypes.arrayOf(PropTypes.shape({})),
   }
 
   static defaultProps = {
@@ -301,6 +303,7 @@ export class QueryOutput extends React.Component {
     localRTFilterResponse: undefined,
     enableCustomColumns: true,
     preferRegularTableInitialDisplayType: false,
+    drilldownFilters: undefined,
   }
 
   componentDidMount = () => {
@@ -1186,7 +1189,8 @@ export class QueryOutput extends React.Component {
 
   queryFn = async (args = {}) => {
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
-    const allFilters = this.getCombinedFilters()
+    const allFilters = this.getCombinedFilters(args?.tableFilters)
+
     this.cancelCurrentRequest()
     this.axiosSource = axios.CancelToken?.source()
 
@@ -1218,6 +1222,7 @@ export class QueryOutput extends React.Component {
         })
       } catch (error) {
         response = this.handleQueryFnError(error)
+        console.error(error)
       }
     } else {
       try {
@@ -1231,16 +1236,17 @@ export class QueryOutput extends React.Component {
           test: queryRequestData?.test,
           pageSize: queryRequestData?.page_size,
           orders: this.formattedTableParams?.sorters,
-          tableFilters: allFilters,
           source: this.props.source,
           scope: this.props.scope,
           cancelToken: this.axiosSource.token,
           newColumns: queryRequestData?.additional_selects,
           displayOverrides: queryRequestData?.display_overrides,
           ...args,
+          tableFilters: allFilters,
         })
       } catch (error) {
         response = this.handleQueryFnError(error)
+        console.error(error)
       }
     }
 
@@ -1277,6 +1283,7 @@ export class QueryOutput extends React.Component {
         if (supportedByAPI) {
           this.props.onDrilldownStart(activeKey)
           try {
+            const allFilters = this.getCombinedFilters()
             const response = await runDrilldown({
               ...getAuthentication(this.props.authentication),
               ...getAutoQLConfig(this.props.autoQLConfig),
@@ -1284,13 +1291,15 @@ export class QueryOutput extends React.Component {
               source: this.props.source,
               groupBys,
               pageSize,
+              tableFilters: allFilters, // Include existing filters
             })
             this.props.onDrilldownEnd({
               response,
               originalQueryID: this.queryID,
+              drilldownFilters: allFilters,
             })
           } catch (error) {
-            this.props.onDrilldownEnd({ response: error })
+            this.props.onDrilldownEnd({ response: error, drilldownFilters: [] })
           }
         } else if ((!isNaN(stringColumnIndex) && !!row?.length) || filter) {
           this.props.onDrilldownStart(activeKey)
@@ -1303,7 +1312,7 @@ export class QueryOutput extends React.Component {
             })
           }
 
-          const allFilters = this.getCombinedFilters(clickedFilter)
+          const allFilters = this.getCombinedFilters([clickedFilter])
           let response
           try {
             response = await this.queryFn({ tableFilters: allFilters, pageSize })
@@ -1311,7 +1320,11 @@ export class QueryOutput extends React.Component {
             response = error
           }
 
-          this.props.onDrilldownEnd({ response, originalQueryID: this.queryID })
+          this.props.onDrilldownEnd({
+            response,
+            originalQueryID: this.queryID,
+            drilldownFilters: allFilters,
+          })
         }
       } catch (error) {
         console.error(error)
@@ -1351,7 +1364,7 @@ export class QueryOutput extends React.Component {
   }
 
   // Function to combine original query filters and current table filters
-  getCombinedFilters = (newFilter) => {
+  getCombinedFilters = (newFilters = []) => {
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
     const queryFilters = queryRequestData?.filters || []
     const tableFilters = this.formattedTableParams?.filters || []
@@ -1378,15 +1391,32 @@ export class QueryOutput extends React.Component {
       }
     })
 
-    if (newFilter) {
-      const existingClickedFilterIndex = allFilters.findIndex((filter) => filter.name === newFilter.name)
-      if (existingClickedFilterIndex >= 0) {
-        // Filter already exists, overwrite existing filter with clicked value
-        allFilters[existingClickedFilterIndex] = newFilter
-      } else {
-        // Filter didn't exist yet, add it to the list
-        allFilters.push(newFilter)
-      }
+    // Include the drilldown filters if they exist
+    if (this.props.drilldownFilters && this.props.drilldownFilters.length > 0) {
+      this.props.drilldownFilters.forEach((drilldownFilter) => {
+        const existingDrilldownFilterIndex = allFilters.findIndex((filter) => filter.name === drilldownFilter.name)
+        if (existingDrilldownFilterIndex >= 0) {
+          // Filter already exists, overwrite existing filter with drilldown value
+          allFilters[existingDrilldownFilterIndex] = drilldownFilter
+        } else {
+          // Filter didn't exist yet, add it to the list
+          allFilters.push(drilldownFilter)
+        }
+      })
+    }
+
+    // Include new filters if they exist
+    if (newFilters && newFilters.length > 0) {
+      newFilters.forEach((newFilter) => {
+        const existingFilterIndex = allFilters.findIndex((filter) => filter.name === newFilter.name)
+        if (existingFilterIndex >= 0) {
+          // Filter already exists, overwrite existing filter with new value
+          allFilters[existingFilterIndex] = newFilter
+        } else {
+          // Filter didn't exist yet, add it to the list
+          allFilters.push(newFilter)
+        }
+      })
     }
 
     return allFilters.map((filter) => {
@@ -2050,15 +2080,19 @@ export class QueryOutput extends React.Component {
       this.onTableConfigChange(this.hasCalledInitialTableConfigChange)
     }
 
-    const defaultDateColumn = this.queryResponse.data.data.default_date_column
-    const stringColumnIdx = this.findDefaultStringColumnIndex(defaultDateColumn)
-    this.tableConfig.stringColumnIndex = this.getStringColumnIndex(stringColumnIdx)
+    // Only reset to defaults if this is a fresh initialization (no previous config)
+    // Don't reset if we're updating an existing config with user selections
+    if (!prevTableConfig || Object.keys(prevTableConfig).length === 0) {
+      const defaultDateColumn = this.queryResponse.data.data.default_date_column
+      const stringColumnIdx = this.findDefaultStringColumnIndex(defaultDateColumn)
+      this.tableConfig.stringColumnIndex = this.getStringColumnIndex(stringColumnIdx)
 
-    // Find default amount column match
-    const defaultAmountColumn = this.queryResponse.data.data.default_amount_column
-    const numberColumnIdx = this.findDefaultNumberColumnIndex(defaultAmountColumn)
-    this.tableConfig.numberColumnIndex = this.getNumberColumnIndex(numberColumnIdx)
-    this.tableConfig.numberColumnIndices = [this.getNumberColumnIndex(numberColumnIdx)]
+      // Find default amount column match
+      const defaultAmountColumn = this.queryResponse.data.data.default_amount_column
+      const numberColumnIdx = this.findDefaultNumberColumnIndex(defaultAmountColumn)
+      this.tableConfig.numberColumnIndex = this.getNumberColumnIndex(numberColumnIdx)
+      this.tableConfig.numberColumnIndices = [this.getNumberColumnIndex(numberColumnIdx)]
+    }
   }
 
   getPotentialDisplayTypes = () => {

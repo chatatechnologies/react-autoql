@@ -86,6 +86,7 @@ export default class ChatMessage extends React.Component {
     isVisibleInDOM: PropTypes.bool,
     subjects: PropTypes.arrayOf(PropTypes.shape({})),
     onMessageResize: PropTypes.func,
+    drilldownFilters: PropTypes.arrayOf(PropTypes.shape({})),
   }
 
   static defaultProps = {
@@ -109,6 +110,7 @@ export default class ChatMessage extends React.Component {
     onRTValueLabelClick: undefined,
     isVisibleInDOM: true,
     subjects: [],
+    drilldownFilters: undefined,
     onSuggestionClick: () => {},
     onErrorCallback: () => {},
     onSuccessAlert: () => {},
@@ -340,6 +342,7 @@ export default class ChatMessage extends React.Component {
           onRTValueLabelClick={this.props.onRTValueLabelClick}
           source={this.props.source}
           scope={this.props.scope}
+          drilldownFilters={this.props.drilldownFilters}
           onRowChange={this.scrollIntoView}
           onDisplayTypeChange={this.scrollIntoView}
           mutable={false}
