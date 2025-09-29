@@ -138,7 +138,6 @@ export default class ChataTable extends React.Component {
     // Create a stable key based on queryRequestData or response content, not random UUID
     const stableId = this.getStableMappingKey(props)
     this.persistentMappingKey = `chataTable_columnMapping_${stableId}`
-    console.log('ChataTable: constructor - using stable mapping key:', this.persistentMappingKey)
 
     // Initialize utility classes
     this.summaryStatsCalculator = new SummaryStatsCalculator(this.props.dataFormatting)
@@ -224,40 +223,47 @@ export default class ChataTable extends React.Component {
   getStableMappingKey = (props) => {
     try {
       // Use query ID if available
-      if (props.response?.data?.data?.query_id) {
-        return `query_${props.response.data.data.query_id}`
-      }
+      const qid = props.response?.data?.data?.query_id
+      if (qid) return `query_${qid}`
 
       // Use response ID if available
-      if (props.response?.data?.response_id) {
-        return `response_${props.response.data.response_id}`
-      }
+      const rid = props.response?.data?.response_id
+      if (rid) return `response_${rid}`
 
       // Use hash of column names as fallback
       if (Array.isArray(props.columns) && props.columns.length > 0) {
-        const columnFields = props.columns.map((col) => col.field || '').join('|')
-        const hash = this.simpleHash(columnFields)
-        return `columns_${hash}`
+        const s = props.columns.map((c) => c.field || '').join('|')
+        let h = 0
+        for (let i = 0; i < s.length; i++) (h = (h << 5) - h + s.charCodeAt(i)), (h &= h)
+        return `columns_${Math.abs(h).toString(36)}`
       }
-
       // Final fallback - use a default key
       return 'default'
-    } catch (e) {
-      console.warn('ChataTable: Error generating stable mapping key:', e)
+    } catch (_) {
       return 'fallback'
     }
   }
 
-  // Simple hash function for generating stable keys
-  simpleHash = (str) => {
-    let hash = 0
-    if (str.length === 0) return hash
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i)
-      hash = (hash << 5) - hash + char
-      hash = hash & hash // Convert to 32bit integer
-    }
-    return Math.abs(hash).toString(36)
+  savePersistedMappings = (columnMapping, storedColumnMapping) => {
+    try {
+      localStorage.setItem(this.persistentMappingKey, JSON.stringify({ columnMapping, storedColumnMapping }))
+    } catch (_) {}
+  }
+
+  loadPersistedMappings = () => {
+    try {
+      const stored = localStorage.getItem(this.persistentMappingKey)
+      if (!stored) return
+      const { columnMapping, storedColumnMapping } = JSON.parse(stored)
+      if (Array.isArray(columnMapping) && columnMapping.length > 0) {
+        this.persistentColumnMapping = columnMapping
+        this.columnMapping = [...columnMapping]
+      }
+      if (Array.isArray(storedColumnMapping) && storedColumnMapping.length > 0) {
+        this.persistentStoredMapping = storedColumnMapping
+        this.storedColumnMapping = [...storedColumnMapping]
+      }
+    } catch (_) {}
   }
 
   // Resolve a column's field name across Tabulator ColumnComponent and utils Column instances
@@ -665,7 +671,6 @@ export default class ChataTable extends React.Component {
   }
 
   onDataFiltering = () => {
-    console.log('ChataTable: onDataFiltering called')
     if (this._isMounted && this.state.tabulatorMounted) {
       const headerFilters = this.ref?.tabulator?.getHeaderFilters()
 
@@ -673,21 +678,12 @@ export default class ChataTable extends React.Component {
         this.isFiltering = true
         this.setLoading(true)
 
-        // Store the current visual column order before filtering
         this.storeCurrentVisualOrder()
       }
     }
   }
 
   onDataFiltered = (filters, rows) => {
-    console.log(
-      'ChataTable: onDataFiltered called, columnMapping:',
-      this.columnMapping,
-      'storedColumnMapping:',
-      this.storedColumnMapping,
-      'filters:',
-      filters,
-    )
     if (this.isFiltering && this.state.tabulatorMounted) {
       this.isFiltering = false
 
@@ -757,213 +753,71 @@ export default class ChataTable extends React.Component {
   }
 
   onTableBuilt = async () => {
-    console.log('ChataTable: onTableBuilt called, movableColumns:', this.tableOptions.movableColumns)
-
-    // Try to restore persistent mappings from localStorage first
-    try {
-      console.log('ChataTable: onTableBuilt - checking localStorage with key:', this.persistentMappingKey)
-      const storedMappings = localStorage.getItem(this.persistentMappingKey)
-      console.log('ChataTable: onTableBuilt - raw localStorage data:', storedMappings)
-
-      if (storedMappings) {
-        const { columnMapping, storedColumnMapping } = JSON.parse(storedMappings)
-        console.log('ChataTable: onTableBuilt - parsed from localStorage:', { columnMapping, storedColumnMapping })
-
-        if (Array.isArray(columnMapping) && columnMapping.length > 0) {
-          this.persistentColumnMapping = columnMapping
-          this.columnMapping = [...columnMapping]
-          console.log('ChataTable: onTableBuilt - restored columnMapping from localStorage:', this.columnMapping)
-        }
-        if (Array.isArray(storedColumnMapping) && storedColumnMapping.length > 0) {
-          this.persistentStoredMapping = storedColumnMapping
-          this.storedColumnMapping = [...storedColumnMapping]
-          console.log(
-            'ChataTable: onTableBuilt - restored storedColumnMapping from localStorage:',
-            this.storedColumnMapping,
-          )
-        }
-      } else {
-        console.log('ChataTable: onTableBuilt - no data found in localStorage')
-      }
-    } catch (e) {
-      console.warn('ChataTable: Failed to restore mappings from localStorage:', e)
-    }
-
-    console.log(
-      'ChataTable: onTableBuilt - final mappings, persistent:',
-      this.persistentColumnMapping,
-      'stored:',
-      this.persistentStoredMapping,
-    )
+    this.loadPersistedMappings()
 
     // Fallback to instance variables if localStorage didn't work
-    if (!this.columnMapping && this.persistentColumnMapping) {
-      this.columnMapping = [...this.persistentColumnMapping]
-      console.log('ChataTable: onTableBuilt - restored columnMapping from instance:', this.columnMapping)
-    }
-    if (!this.storedColumnMapping && this.persistentStoredMapping) {
+    if (!this.columnMapping && this.persistentColumnMapping) this.columnMapping = [...this.persistentColumnMapping]
+    if (!this.storedColumnMapping && this.persistentStoredMapping)
       this.storedColumnMapping = [...this.persistentStoredMapping]
-      console.log('ChataTable: onTableBuilt - restored storedColumnMapping from instance:', this.storedColumnMapping)
-    }
 
     if (this._isMounted) {
-      this.setState({
-        tabulatorMounted: true,
-        pageLoading: false,
-      })
-
+      this.setState({ tabulatorMounted: true, pageLoading: false })
       // Add a small delay to ensure DOM is fully ready
       setTimeout(() => {
         if (!this._isMounted) return
         this.setHeaderInputEventListeners()
         this.addPassiveScrollListeners()
-
-        // Check if column moved event is properly attached
-        if (this.ref?.tabulator) {
-          console.log('ChataTable: checking tabulator events after build')
-          try {
-            // Test if movableColumns is enabled
-            const hasMovableColumns = this.ref.tabulator.options.movableColumns
-            console.log('ChataTable: movableColumns option:', hasMovableColumns)
-          } catch (e) {
-            console.log('ChataTable: error checking movableColumns:', e)
-          }
-        }
       }, 100)
-
       this.updateSummaryStats(this.props)
-
-      if (this.props.keepScrolledRight) {
-        this.scrollToRight()
-      }
+      if (this.props.keepScrolledRight) this.scrollToRight()
     }
   }
 
   // Store the current visual column order for later restoration
   storeCurrentVisualOrder = () => {
-    console.log('ChataTable: storeCurrentVisualOrder called')
     try {
-      if (!this.ref?.tabulator || !Array.isArray(this.props.columns)) {
-        console.log('ChataTable: storeCurrentVisualOrder - no tabulator or columns')
-        return
-      }
-
+      if (!this.ref?.tabulator || !Array.isArray(this.props.columns)) return
       const visibleColumns = this.ref.tabulator.getColumns()
-      if (!Array.isArray(visibleColumns) || visibleColumns.length === 0) {
-        console.log('ChataTable: storeCurrentVisualOrder - no visible columns')
-        return
-      }
-
-      console.log(
-        'ChataTable: storeCurrentVisualOrder - visibleColumns fields:',
-        visibleColumns.map((col) => this.resolveColumnField(col)),
-      )
-      console.log(
-        'ChataTable: storeCurrentVisualOrder - props.columns fields:',
-        this.props.columns.map((col) => col.field),
-      )
+      if (!Array.isArray(visibleColumns) || visibleColumns.length === 0) return
 
       // Use existing columnMapping if available, otherwise create new mapping
       if (Array.isArray(this.columnMapping) && this.columnMapping.length > 0) {
         this.storedColumnMapping = [...this.columnMapping]
-        this.persistentStoredMapping = [...this.columnMapping] // Store persistently
+        this.persistentStoredMapping = [...this.columnMapping]
+        this.savePersistedMappings(this.columnMapping, this.storedColumnMapping)
+        return
+      }
 
-        // Update localStorage
-        try {
-          localStorage.setItem(
-            this.persistentMappingKey,
-            JSON.stringify({
-              columnMapping: this.columnMapping,
-              storedColumnMapping: this.storedColumnMapping,
-            }),
-          )
-        } catch (e) {
-          console.warn('ChataTable: Failed to update localStorage in storeCurrentVisualOrder:', e)
-        }
-
-        console.log('ChataTable: storeCurrentVisualOrder - using existing columnMapping:', this.storedColumnMapping)
-      } else if (Array.isArray(this.persistentColumnMapping) && this.persistentColumnMapping.length > 0) {
-        // Use persistent mapping if available
+      if (Array.isArray(this.persistentColumnMapping) && this.persistentColumnMapping.length > 0) {
         this.storedColumnMapping = [...this.persistentColumnMapping]
         this.persistentStoredMapping = [...this.persistentColumnMapping]
-
-        // Update localStorage
-        try {
-          localStorage.setItem(
-            this.persistentMappingKey,
-            JSON.stringify({
-              columnMapping: this.persistentColumnMapping,
-              storedColumnMapping: this.storedColumnMapping,
-            }),
-          )
-        } catch (e) {
-          console.warn('ChataTable: Failed to update localStorage in storeCurrentVisualOrder (persistent):', e)
-        }
-
-        console.log('ChataTable: storeCurrentVisualOrder - using persistent columnMapping:', this.storedColumnMapping)
-      } else {
-        // Fallback: create mapping from current visual order
-        const mapping = []
-        const fieldToOriginalIndex = {}
-
-        // First, map field names to their original indices
-        this.props.columns.forEach((col, originalIndex) => {
-          if (col.field) {
-            fieldToOriginalIndex[col.field] = originalIndex
-          }
-        })
-
-        // Then, create the mapping based on current visual order
-        visibleColumns.forEach((col, visualIndex) => {
-          const field = this.resolveColumnField(col)
-          const originalIndex = fieldToOriginalIndex[field]
-          if (typeof originalIndex === 'number') {
-            mapping.push(originalIndex)
-          }
-        })
-
-        this.storedColumnMapping = mapping
-        this.persistentStoredMapping = [...mapping] // Store persistently
-
-        // Update localStorage
-        try {
-          localStorage.setItem(
-            this.persistentMappingKey,
-            JSON.stringify({
-              columnMapping: this.columnMapping || mapping,
-              storedColumnMapping: mapping,
-            }),
-          )
-        } catch (e) {
-          console.warn('ChataTable: Failed to update localStorage in storeCurrentVisualOrder (new):', e)
-        }
-
-        console.log('ChataTable: storeCurrentVisualOrder - created new mapping:', this.storedColumnMapping)
+        this.savePersistedMappings(this.persistentColumnMapping, this.storedColumnMapping)
+        return
       }
-    } catch (e) {
-      console.error('Error storing current visual order:', e)
-    }
+
+      const fieldToOriginalIndex = {}
+      ;(this.props.columns || []).forEach((col, i) => {
+        if (col.field) fieldToOriginalIndex[col.field] = i
+      })
+      const mapping = []
+      visibleColumns.forEach((col) => {
+        const field = this.resolveColumnField(col)
+        const originalIndex = fieldToOriginalIndex[field]
+        if (typeof originalIndex === 'number') mapping.push(originalIndex)
+      })
+      this.storedColumnMapping = mapping
+      this.persistentStoredMapping = [...mapping]
+      this.savePersistedMappings(this.columnMapping || mapping, mapping)
+    } catch (_) {}
   }
 
   // Sync the index property on this.props.columns to the current visual order
   syncColumnIndicesToVisualOrder = () => {
-    console.log('ChataTable: syncColumnIndicesToVisualOrder called')
     try {
-      if (!this.ref?.tabulator || !Array.isArray(this.props.columns)) {
-        console.log('ChataTable: syncColumnIndicesToVisualOrder - early return, no tabulator or columns')
-        return
-      }
+      if (!this.ref?.tabulator || !Array.isArray(this.props.columns)) return
       const visibleColumns = this.ref.tabulator.getColumns()
-      console.log(
-        'ChataTable: syncColumnIndicesToVisualOrder - visibleColumns:',
-        visibleColumns.map((c) => ({ field: this.resolveColumnField(c), index: c.getDefinition?.()?.index })),
-      )
-      if (!Array.isArray(visibleColumns) || visibleColumns.length === 0) {
-        console.log('ChataTable: syncColumnIndicesToVisualOrder - no visible columns')
-        return
-      }
+      if (!Array.isArray(visibleColumns) || visibleColumns.length === 0) return
 
-      // Build a mapping from field to current visual position
       const fieldToVisualPos = {}
       visibleColumns.forEach((col, visualIndex) => {
         const field = this.resolveColumnField(col)
@@ -971,33 +825,13 @@ export default class ChataTable extends React.Component {
           fieldToVisualPos[field] = visualIndex
         }
       })
-      console.log('ChataTable: syncColumnIndicesToVisualOrder - fieldToVisualPos:', fieldToVisualPos)
-
-      // Update the index property of each column to match its current visual position
       const updatedColumns = this.props.columns.map((col) => {
         const visualPos = fieldToVisualPos[col.field]
         return visualPos !== undefined ? { ...col, index: visualPos } : col
       })
-
-      console.log(
-        'ChataTable: syncColumnIndicesToVisualOrder - props.columns before:',
-        this.props.columns.map((c) => ({ field: c.field, index: c.index })),
-      )
-      console.log(
-        'ChataTable: syncColumnIndicesToVisualOrder - updatedColumns:',
-        updatedColumns.map((c) => ({ field: c.field, index: c.index })),
-      )
-
-      // Only update if there are actual changes
-      if (!_isEqual(updatedColumns, this.props.columns) && this.props.updateColumns) {
-        console.log('ChataTable: syncColumnIndicesToVisualOrder - calling updateColumns')
+      if (!_isEqual(updatedColumns, this.props.columns) && this.props.updateColumns)
         this.props.updateColumns(updatedColumns)
-      } else {
-        console.log('ChataTable: syncColumnIndicesToVisualOrder - no changes needed or no updateColumns prop')
-      }
-    } catch (e) {
-      console.error('Error syncing column indices to visual order:', e)
-    }
+    } catch (e) {}
   }
 
   setTableHeight = (height) => {
@@ -1093,27 +927,15 @@ export default class ChataTable extends React.Component {
           // Use stored mapping if available, fallback to columnMapping
           const mappingToUse = this.storedColumnMapping || this.columnMapping
           if (Array.isArray(mappingToUse) && mappingToUse.length > 0) {
-            console.log('ChataTable: ajaxRequestFunc - applying mapping to response:', mappingToUse)
             alignedResponse = this.reorderResponseData(responseWrapper, mappingToUse)
-            console.log('ChataTable: ajaxRequestFunc - response reordered')
-          } else {
-            console.log('ChataTable: ajaxRequestFunc - no mapping to apply')
           }
         } catch (e) {
-          // Fallback to original response if anything goes wrong
-          console.log('ChataTable: ajaxRequestFunc - error reordering response:', e)
           alignedResponse = responseWrapper
         }
 
         this.props.onNewData(alignedResponse)
 
         // After new data arrives, ensure column indices match the current visual order
-        console.log(
-          'ChataTable: ajaxRequestFunc - about to call syncColumnIndicesToVisualOrder, storedColumnMapping:',
-          this.storedColumnMapping,
-          'columnMapping:',
-          this.columnMapping,
-        )
         this.syncColumnIndicesToVisualOrder()
 
         const totalPages = this.getTotalPages(alignedResponse)
@@ -2171,61 +1993,26 @@ export default class ChataTable extends React.Component {
   }
 
   onColumnMoved = (column, columns) => {
-    console.log('ChataTable: onColumnMoved called', { column, columns })
     const validColumns = Array.isArray(columns) && columns.length ? columns : this.props.columns || []
     if (!validColumns.length || !this.props.updateColumnsAndData) return
 
     try {
       const { mapping, reorderedColumns } = this.getColumnIndexMapping(validColumns)
-      console.log(
-        'ChataTable: onColumnMoved - mapping:',
-        mapping,
-        'reorderedColumns:',
-        reorderedColumns.map((c) => ({ field: c.field, index: c.index })),
-      )
       if (reorderedColumns.length !== this.props.columns.length || !this.props.response) return
       reorderedColumns.forEach((col, newIndex) => {
         col.index = newIndex
       })
       this.columnMapping = mapping
       this.persistentColumnMapping = [...mapping] // Store persistently
-
-      // Store in localStorage for persistence across component remounts
-      try {
-        localStorage.setItem(
-          this.persistentMappingKey,
-          JSON.stringify({
-            columnMapping: mapping,
-            storedColumnMapping: this.storedColumnMapping,
-          }),
-        )
-        console.log('ChataTable: onColumnMoved - stored mapping in localStorage with key:', this.persistentMappingKey)
-      } catch (e) {
-        console.warn('ChataTable: Failed to store mapping in localStorage:', e)
-      }
-
-      console.log(
-        'ChataTable: onColumnMoved - set columnMapping:',
-        this.columnMapping,
-        'persistentColumnMapping:',
-        this.persistentColumnMapping,
-      )
+      this.savePersistedMappings(mapping, this.storedColumnMapping)
       const newResponse = this.reorderResponseData(this.props.response, mapping)
       this.tableParams.sort = []
       if (newResponse && !Array.isArray(newResponse)) {
-        console.log(
-          'ChataTable: onColumnMoved - calling updateColumnsAndData, preserving columnMapping:',
-          this.columnMapping,
-        )
         this.props.updateColumnsAndData(newResponse)
         // Preserve the columnMapping after the update
         setTimeout(() => {
           if (!this.columnMapping || this.columnMapping.length === 0) {
             this.columnMapping = mapping
-            console.log(
-              'ChataTable: onColumnMoved - restored columnMapping after updateColumnsAndData:',
-              this.columnMapping,
-            )
           }
         }, 0)
       }
