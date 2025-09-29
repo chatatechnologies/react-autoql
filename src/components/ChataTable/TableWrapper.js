@@ -288,7 +288,10 @@ export default class TableWrapper extends React.Component {
     this.tabulator.on('dataFiltering', this.props.onDataFiltering)
     this.tabulator.on('dataFiltered', this.props.onDataFiltered)
     this.tabulator.on('scrollVertical', this.props.onScrollVertical)
-    this.tabulator.on('columnMoved', this.props.onColumnMoved)
+    this.tabulator.on('columnMoved', (...args) => {
+      console.log('TableWrapper: columnMoved event fired', args)
+      this.props.onColumnMoved(...args)
+    })
     this.tabulator.on('columnResized', this.props.onColumnResized)
 
     this.tabulator.on('tableBuilt', async () => {

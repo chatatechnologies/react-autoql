@@ -75,7 +75,7 @@ export class SummaryRowRenderer {
     }
   }
 
-  createSummaryCell(type, value, width, isLabel = false, columnAlign, shouldEnableCopy = false) {
+  createSummaryCell(type, value, width, isLabel = false, columnAlign, shouldEnableCopy = false, key) {
     const cellProps = {
       className: `tabulator-cell${shouldEnableCopy ? ' copyable-cell' : ''}${isLabel ? ' label-column' : ''}`,
       style: this.createCellStyle(width, isLabel, columnAlign),
@@ -86,7 +86,11 @@ export class SummaryRowRenderer {
       onContextMenu: shouldEnableCopy ? (e) => handleCellCopy(e, value, this.TOOLTIP_COPY_TEXTS) : undefined,
     }
 
-    return <div {...cellProps}>{value}</div>
+    return (
+      <div key={key} {...cellProps}>
+        {value}
+      </div>
+    )
   }
 
   renderSingleColumn(type, columns, summaryStats, colWidths) {
@@ -103,8 +107,16 @@ export class SummaryRowRenderer {
     const { labelWidth, valueWidth } = this.getColumnWidths(totalWidth)
 
     return [
-      this.createSummaryCell(type, labelValue, labelWidth, true),
-      this.createSummaryCell(type, formattedValue, valueWidth, false, column?.align, value !== null),
+      this.createSummaryCell(type, labelValue, labelWidth, true, undefined, false, `${type}-label`),
+      this.createSummaryCell(
+        type,
+        formattedValue,
+        valueWidth,
+        false,
+        column?.align,
+        value !== null,
+        `${type}-value-${columnIndex}`,
+      ),
     ]
   }
 
@@ -133,8 +145,16 @@ export class SummaryRowRenderer {
     const { labelWidth, valueWidth } = this.getColumnWidths(totalWidth)
 
     const cells = [
-      this.createSummaryCell(type, labelValue, labelWidth, true),
-      this.createSummaryCell(type, formattedValue, valueWidth, false, firstColumn?.align, value !== null),
+      this.createSummaryCell(type, labelValue, labelWidth, true, undefined, false, `${type}-first-label`),
+      this.createSummaryCell(
+        type,
+        formattedValue,
+        valueWidth,
+        false,
+        firstColumn?.align,
+        value !== null,
+        `${type}-first-value-${firstColumnIndex}`,
+      ),
     ]
 
     // Add remaining columns
@@ -146,7 +166,15 @@ export class SummaryRowRenderer {
       const colFormatted = colValue !== undefined ? this.formatSummaryValue(colValue, col, colIndex) : ''
 
       cells.push(
-        this.createSummaryCell(type, colFormatted, colWidths[colIndex] || 100, false, col?.align, colValue !== null),
+        this.createSummaryCell(
+          type,
+          colFormatted,
+          colWidths[colIndex] || 100,
+          false,
+          col?.align,
+          colValue !== null,
+          `${type}-col-${colIndex}`,
+        ),
       )
     }
 
@@ -179,6 +207,7 @@ export class SummaryRowRenderer {
         isFirstVisible && !this.needsLabelColumn(columns),
         col?.align,
         shouldEnableCopy && stat,
+        `${type}-${col?.field ?? index}`,
       )
     })
   }
@@ -205,7 +234,7 @@ export class SummaryRowRenderer {
 
     return (
       <div className='tabulator-calcs-holder' style={containerStyle}>
-        {summaryContent}
+        {React.Children.toArray(summaryContent)}
       </div>
     )
   }

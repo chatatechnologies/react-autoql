@@ -49,7 +49,7 @@ export function SummaryRow({
 
   return (
     <div className='tabulator-calcs-holder' style={containerStyle}>
-      {summaryContent}
+      {React.Children.toArray(summaryContent)}
     </div>
   )
 }
