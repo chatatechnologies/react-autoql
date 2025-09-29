@@ -137,7 +137,10 @@ export default class ChataTable extends React.Component {
 
     // Create a stable key based on queryRequestData or response content, not random UUID
     const stableId = this.getStableMappingKey(props)
-    this.persistentMappingKey = `chataTable_columnMapping_${stableId}`
+    const ns = props.persistKeyNamespace || props.scope
+    this.persistentMappingKey = props.persistColumnOrder
+      ? `chataTable_columnMapping_${ns ? `${ns}_` : ''}${stableId}`
+      : undefined
 
     // Initialize utility classes
     this.summaryStatsCalculator = new SummaryStatsCalculator(this.props.dataFormatting)
@@ -188,6 +191,8 @@ export default class ChataTable extends React.Component {
     onUpdateFilterResponse: PropTypes.func,
     isDrilldown: PropTypes.bool,
     scope: PropTypes.string,
+    persistColumnOrder: PropTypes.bool,
+    persistKeyNamespace: PropTypes.string,
   }
 
   static defaultProps = {
@@ -217,6 +222,8 @@ export default class ChataTable extends React.Component {
     onUpdateFilterResponse: () => {},
     isDrilldown: false,
     scope: undefined,
+    persistColumnOrder: true,
+    persistKeyNamespace: undefined,
   }
 
   // Generate a stable key for localStorage based on table content, not random UUID
@@ -246,12 +253,14 @@ export default class ChataTable extends React.Component {
 
   savePersistedMappings = (columnMapping, storedColumnMapping) => {
     try {
+      if (!this.props.persistColumnOrder || !this.persistentMappingKey) return
       localStorage.setItem(this.persistentMappingKey, JSON.stringify({ columnMapping, storedColumnMapping }))
     } catch (_) {}
   }
 
   loadPersistedMappings = () => {
     try {
+      if (!this.props.persistColumnOrder || !this.persistentMappingKey) return
       const stored = localStorage.getItem(this.persistentMappingKey)
       if (!stored) return
       const { columnMapping, storedColumnMapping } = JSON.parse(stored)
@@ -264,6 +273,20 @@ export default class ChataTable extends React.Component {
         this.storedColumnMapping = [...storedColumnMapping]
       }
     } catch (_) {}
+  }
+
+  clearColumnOrderPersistence = (restoreDefault = true) => {
+    try {
+      if (this.persistentMappingKey) localStorage.removeItem(this.persistentMappingKey)
+    } catch (_) {}
+    this.columnMapping = null
+    this.storedColumnMapping = null
+    this.persistentColumnMapping = null
+    this.persistentStoredMapping = null
+    if (restoreDefault && Array.isArray(this.props.columns)) {
+      const updatedColumns = (this.props.columns || []).map((c, i) => ({ ...c, index: i }))
+      if (this.props.updateColumns) this.props.updateColumns(updatedColumns)
+    }
   }
 
   // Resolve a column's field name across Tabulator ColumnComponent and utils Column instances
