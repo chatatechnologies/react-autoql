@@ -2,7 +2,6 @@ import React from 'react'
 import axios from 'axios'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
-import { mean, sum } from 'd3-array'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
@@ -51,16 +50,21 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { TABULATOR_LOCAL_ROW_LIMIT, LOCAL_OR_REMOTE, TOOLTIP_COPY_TEXTS } from '../../js/Constants'
 import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
 
-import { handleCellCopy, setupCopyableCell } from './CopyUtils'
 import './ChataTable.scss'
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
 import { PerformanceOptimizer } from './PerformanceOptimizer'
+import { SummaryStatsCalculator } from './SummaryStatsCalculator'
+import { SummaryRowRenderer } from './SummaryRowRenderer'
+import { AsyncErrorHandler } from './AsyncErrorHandler'
+import { TableLifecycleManager } from './TableLifecycleManager'
+import { TimeoutManager } from './TimeoutManager'
 
 export default class ChataTable extends React.Component {
   constructor(props) {
     super(props)
 
     this.TABLE_ID = uuid()
+    this.SUMMARY_TOOLTIP_ID = `summary-tooltip-${uuid()}`
 
     this.hasSetInitialData = false
     this.isSettingInitialData = false
@@ -126,6 +130,12 @@ export default class ChataTable extends React.Component {
     }
 
     this.summaryStats = {}
+
+    // Initialize utility classes
+    this.summaryStatsCalculator = new SummaryStatsCalculator(this.props.dataFormatting)
+    this.summaryRowRenderer = new SummaryRowRenderer(this.SUMMARY_TOOLTIP_ID, TOOLTIP_COPY_TEXTS)
+    this.lifecycleManager = new TableLifecycleManager(this)
+    this.timeoutManager = new TimeoutManager()
 
     this.state = {
       isFiltering: false,
@@ -266,7 +276,7 @@ export default class ChataTable extends React.Component {
       this.lockedTableHeight = this.initialTableHeight
     }
 
-    this.summaryStats = this.calculateSummaryStats(this.props)
+    this.summaryStats = this.summaryStatsCalculator.calculate(this.props)
 
     this.setState({
       firstRender: false,
@@ -274,9 +284,6 @@ export default class ChataTable extends React.Component {
   }
 
   initializeHelpers = () => {
-    this.tooltipTimeout = null
-    this.namedTimeouts = new Map()
-    this.SUMMARY_TOOLTIP_ID = `summary-tooltip-${uuid()}`
     PerformanceOptimizer.applyPassiveEventPatch()
   }
 
@@ -380,16 +387,7 @@ export default class ChataTable extends React.Component {
     try {
       this._isMounted = false
 
-      if (this.tooltipTimeout) {
-        clearTimeout(this.tooltipTimeout)
-      }
-      this.namedTimeouts.forEach((timeoutId) => clearTimeout(timeoutId))
-      this.namedTimeouts.clear()
-
-      clearTimeout(this.clickListenerTimeout)
-      clearTimeout(this.setDimensionsTimeout)
-      clearTimeout(this.setStateTimeout)
-
+      this.timeoutManager.clearAllTimeouts()
       this.cancelCurrentRequest()
     } catch (error) {
       console.error(error)
@@ -404,7 +402,7 @@ export default class ChataTable extends React.Component {
     this.setTimeout(
       'summaryStats',
       () => {
-        this.summaryStats = this.calculateSummaryStats(props)
+        this.summaryStats = this.summaryStatsCalculator.calculate(props)
 
         if (this.shouldUpdateColumns()) {
           this.updateColumnDefinitions()
@@ -427,24 +425,18 @@ export default class ChataTable extends React.Component {
   }
 
   scheduleTooltipRefresh = (delay = 10) => {
-    if (this.tooltipTimeout) {
-      clearTimeout(this.tooltipTimeout)
-    }
-    this.tooltipTimeout = setTimeout(() => this.setHeaderInputEventListeners(), delay)
+    this.timeoutManager.scheduleTooltipRefresh(() => this.setHeaderInputEventListeners(), delay)
   }
 
   refreshTooltips = () => {
-    this.setHeaderInputEventListeners()
+    this.timeoutManager.scheduleTooltipRefresh(() => {
+      this.setupTooltips()
+      this.setHeaderInputEventListeners()
+    })
   }
 
   setTimeout = (key, callback, delay) => {
-    const existing = this.namedTimeouts.get(key)
-    if (existing) {
-      clearTimeout(existing)
-    }
-    const timeoutId = setTimeout(callback, delay)
-    this.namedTimeouts.set(key, timeoutId)
-    return timeoutId
+    this.timeoutManager.setNamedTimeout(key, callback, delay)
   }
 
   addPassiveScrollListeners = () => {
@@ -502,54 +494,6 @@ export default class ChataTable extends React.Component {
     headerElement.setAttribute('data-column-type', tooltipData.type || 'unknown')
     headerElement.setAttribute('data-column-index', index.toString())
     headerElement.setAttribute('data-column-field', fieldRef)
-  }
-
-  calculateSummaryStats = (props) => {
-    const stats = {}
-
-    try {
-      const rows = this.getAllRows(props)
-
-      props.columns?.forEach((column, columnIndex) => {
-        // If column has a mutator function, stats cannot be calculated based on the cell values
-        if (column.mutator) {
-          return
-        }
-
-        if (isColumnSummable(column)) {
-          const columnData = rows.map((r) => r[columnIndex])
-          stats[columnIndex] = {
-            avg: formatElement({ element: mean(columnData), column, config: props.dataFormatting }),
-            sum: formatElement({ element: sum(columnData), column, config: props.dataFormatting }),
-          }
-        } else if (column?.type === ColumnTypes.DATE) {
-          const dates = rows.map((r) => r[columnIndex]).filter((date) => !!date)
-          const columnData = dates.map((date) => getDayJSObj({ value: date, column }))?.filter((r) => r?.isValid?.())
-
-          const min = dayjs.min(columnData)
-          const max = dayjs.max(columnData)
-
-          if (min && min?.length > 0 && max && max?.length > 0) {
-            stats[columnIndex] = {
-              min: formatElement({
-                element: min?.toISOString(),
-                column,
-                config: props.dataFormatting,
-              }),
-              max: formatElement({
-                element: max?.toISOString(),
-                column,
-                config: props.dataFormatting,
-              }),
-            }
-          }
-        }
-      })
-    } catch (error) {
-      console.error(error)
-    }
-
-    return stats
   }
 
   getTotalPages = (response) => {
@@ -1060,7 +1004,7 @@ export default class ChataTable extends React.Component {
       // Note: this.filterCount is already set correctly in ajaxRequestFunc from the queryFn response
       if (this._isMounted) {
         setTimeout(() => {
-          if (this._isMounted) this.forceUpdate()
+          this.lifecycleManager.safeForceUpdate()
           this.scheduleTooltipRefresh(150)
         }, 0)
       }
@@ -1099,18 +1043,7 @@ export default class ChataTable extends React.Component {
   }
 
   debounceSetState = (state) => {
-    this.stateToSet = {
-      ...this.stateToSet,
-      ...state,
-    }
-
-    clearTimeout(this.setStateTimeout)
-    this.setStateTimeout = setTimeout(() => {
-      if (this._isMounted) {
-        this.setState(this.stateToSet)
-        this.stateToSet = {}
-      }
-    }, 50)
+    this.lifecycleManager.debounceSetState(state, this.setState.bind(this))
   }
 
   inputKeydownListener = (event) => {
@@ -1211,25 +1144,12 @@ export default class ChataTable extends React.Component {
 
     this._settingEventListeners = true
 
-    let pivotSummaryStats = null
     if (this.props.pivot && this.props.data && this.props.data.length > 0) {
-      pivotSummaryStats = columns.map((col, i) => {
-        if (i === 0) return null
-        const values = this.props.data.map((row) => row[i])
-        const sum = values.reduce((acc, val) => {
-          const num = typeof val === 'number' ? val : parseFloat(val)
-          return isNaN(num) ? acc : acc + num
-        }, 0)
-        return sum
-      })
+      this.summaryStats = this.summaryStatsCalculator.calculate(this.props)
     }
 
     try {
       columns.forEach((col, i) => {
-        if (this.props.pivot && pivotSummaryStats) {
-          if (!this.summaryStats) this.summaryStats = {}
-          this.summaryStats[i] = pivotSummaryStats[i]
-        }
         this.setupColumnHeader(col, i)
         this.setupColumnInput(col, i)
       })
@@ -1471,12 +1391,7 @@ export default class ChataTable extends React.Component {
 
     if (sorterValues) {
       sorterValues.forEach((sorter, i) => {
-        try {
-          this.ref?.tabulator?.setSort(sorter.field, sorter.dir)
-        } catch (error) {
-          console.error(error)
-          this.props.onErrorCallback(error)
-        }
+        AsyncErrorHandler.handleTabulatorSort(this.ref?.tabulator, sorter.field, sorter.dir, this.props.onErrorCallback)
       })
     }
 
@@ -1537,8 +1452,8 @@ export default class ChataTable extends React.Component {
         .then((response) => {
           if (response?.data?.data?.rows) {
             this.props.updateColumnsAndData(response)
-            this.summaryStats = this.calculateSummaryStats(this.props)
-            if (this._isMounted) this.forceUpdate()
+            this.summaryStats = this.summaryStatsCalculator.calculate(this.props)
+            this.lifecycleManager.safeForceUpdate()
           } else {
             throw new Error('Column deletion failed')
           }
@@ -1571,8 +1486,8 @@ export default class ChataTable extends React.Component {
       setColumnVisibility({ ...this.props.authentication, columns: newColumns }).catch((error) => {
         console.error(error)
       })
-      this.summaryStats = this.calculateSummaryStats(this.props)
-      if (this._isMounted) this.forceUpdate()
+      this.summaryStats = this.summaryStatsCalculator.calculate(this.props)
+      this.lifecycleManager.safeForceUpdate()
     }
   }
 
@@ -1582,8 +1497,8 @@ export default class ChataTable extends React.Component {
         this.scrollToRight()
       }
       this.setHeaderInputEventListeners()
-      this.summaryStats = this.calculateSummaryStats(this.props)
-      if (this._isMounted) this.forceUpdate()
+      this.summaryStats = this.summaryStatsCalculator.calculate(this.props)
+      this.lifecycleManager.safeForceUpdate()
     })
   }
 
@@ -1959,7 +1874,7 @@ export default class ChataTable extends React.Component {
       this.scrollToRight()
     }
     this.setHeaderInputEventListeners()
-    if (this._isMounted) this.forceUpdate()
+    this.lifecycleManager.safeForceUpdate()
   }
 
   onColumnResized = (column) => {
@@ -1983,282 +1898,6 @@ export default class ChataTable extends React.Component {
 
   isSingleColumnTable = () => {
     return this.getVisibleColumns(this.props.columns || []).length === 1
-  }
-
-  needsLabelColumn = (columns) => {
-    const visibleColumns = this.getVisibleColumns(columns)
-    if (visibleColumns.length === 1 && isColumnSummable(visibleColumns[0])) {
-      return true
-    }
-    // Also need to split when first visible column is summable
-    if (visibleColumns.length > 1 && isColumnSummable(visibleColumns[0])) {
-      return true
-    }
-    return false
-  }
-
-  getSummaryRowValue = (type, stat, index, formatSummaryValue, col, isFirstVisibleColumn, hasLabelColumn) => {
-    if (isFirstVisibleColumn && !hasLabelColumn) {
-      return type === 'total' ? 'Total' : 'Average'
-    }
-
-    if (!stat) return ''
-
-    const value = type === 'total' ? stat.sum : stat.avg
-    return value !== undefined ? formatSummaryValue(value, col, index) : ''
-  }
-
-  getSummaryRowStyles = (type, colWidth, isFirstVisibleColumn, isPivot, columnAlign) => {
-    return {
-      width: colWidth || 100,
-      minWidth: colWidth || 100,
-      maxWidth: colWidth || 100,
-      padding: '4px 8px',
-      borderRight: '1px solid var(--react-autoql-table-border-color)',
-      background: 'var(--react-autoql-background-color-secondary)',
-      fontWeight: isFirstVisibleColumn ? 600 : 400,
-      boxSizing: 'border-box',
-      fontFamily: 'inherit',
-      fontSize: '11px',
-      textAlign: columnAlign || (isFirstVisibleColumn ? 'left' : 'right'),
-      whiteSpace: 'nowrap',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      cursor: !isFirstVisibleColumn ? 'pointer' : 'default',
-    }
-  }
-
-  renderSummaryCell = (
-    type,
-    col,
-    index,
-    stat,
-    colWidth,
-    isPivot,
-    formatSummaryValue,
-    isFirstVisibleColumn,
-    hasLabelColumn,
-  ) => {
-    if (col.visible === false || col.is_visible === false) return null
-
-    const value = this.getSummaryRowValue(
-      type,
-      stat,
-      index,
-      formatSummaryValue,
-      col,
-      isFirstVisibleColumn,
-      hasLabelColumn,
-    )
-    const rawValue = type === 'total' ? stat?.sum : stat?.avg
-    const shouldEnableCopy = (!isFirstVisibleColumn || hasLabelColumn) && rawValue !== null
-
-    const cellProps = {
-      key: index,
-      className: `tabulator-cell${isPivot && index === 0 ? ' pivot-category' : ''} ${
-        shouldEnableCopy ? 'copyable-cell' : ''
-      }`,
-      style: this.getSummaryRowStyles(type, colWidth, isFirstVisibleColumn && !hasLabelColumn, isPivot, col?.align),
-      title: shouldEnableCopy ? null : value,
-      ref: shouldEnableCopy
-        ? (el) => el && setupCopyableCell(el, this.SUMMARY_TOOLTIP_ID, TOOLTIP_COPY_TEXTS.DEFAULT)
-        : null,
-      onContextMenu: shouldEnableCopy ? (e) => handleCellCopy(e, value, TOOLTIP_COPY_TEXTS) : undefined,
-    }
-
-    return <div {...cellProps}>{value}</div>
-  }
-
-  getSummaryColumnWidths = (totalWidth) => {
-    const labelWidth = Math.max(80, totalWidth * 0.4)
-    const valueWidth = totalWidth - labelWidth
-    return { labelWidth, valueWidth }
-  }
-
-  getSummaryCellStyle = (width, isLabel, columnAlign) => {
-    return {
-      width,
-      minWidth: width,
-      maxWidth: width,
-      padding: '4px 8px',
-      borderRight: '1px solid var(--react-autoql-table-border-color)',
-      background: 'var(--react-autoql-background-color-secondary)',
-      fontWeight: isLabel ? 600 : 400,
-      boxSizing: 'border-box',
-      fontFamily: 'inherit',
-      fontSize: '11px',
-      textAlign: isLabel ? 'left' : columnAlign || 'right',
-      whiteSpace: 'nowrap',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      cursor: isLabel ? 'default' : 'pointer',
-    }
-  }
-
-  renderSingleColumnSummary = (type, columns, summaryStats, colWidths, formatSummaryValue) => {
-    const visibleColumns = this.getVisibleColumns(columns)
-    const singleColumn = visibleColumns[0]
-    const singleColumnIndex = columns.indexOf(singleColumn)
-    const stat = summaryStats[singleColumnIndex]
-
-    const value = type === 'total' ? stat?.sum : stat?.avg
-    const formattedValue = value !== undefined ? formatSummaryValue(value, singleColumn, singleColumnIndex) : ''
-    const labelValue = type === 'total' ? 'Total' : 'Average'
-
-    const totalWidth = colWidths[singleColumnIndex] || 100
-    const { labelWidth, valueWidth } = this.getSummaryColumnWidths(totalWidth)
-
-    return (
-      <>
-        <div
-          key={`${type}-label`}
-          className='tabulator-cell label-column'
-          style={this.getSummaryCellStyle(labelWidth, true)}
-          title={labelValue}
-        >
-          {labelValue}
-        </div>
-        <div
-          key={`${type}-value`}
-          ref={(el) =>
-            el && value !== null && setupCopyableCell(el, this.SUMMARY_TOOLTIP_ID, TOOLTIP_COPY_TEXTS.DEFAULT)
-          }
-          className={`tabulator-cell${value !== null ? ' copyable-cell' : ''}`}
-          style={this.getSummaryCellStyle(valueWidth, false, singleColumn?.align)}
-          onContextMenu={value !== null ? (e) => handleCellCopy(e, formattedValue, TOOLTIP_COPY_TEXTS) : undefined}
-        >
-          {formattedValue}
-        </div>
-      </>
-    )
-  }
-
-  renderSplitFirstColumnSummary = (type, columns, summaryStats, colWidths, isPivot, formatSummaryValue) => {
-    const visibleColumns = this.getVisibleColumns(columns)
-    const firstColumn = visibleColumns[0]
-    const firstColumnIndex = columns.indexOf(firstColumn)
-    const stat = summaryStats[firstColumnIndex]
-
-    const value = type === 'total' ? stat?.sum : stat?.avg
-    const formattedValue = value !== undefined ? formatSummaryValue(value, firstColumn, firstColumnIndex) : ''
-    const labelValue = type === 'total' ? 'Total' : 'Average'
-
-    const totalWidth = colWidths[firstColumnIndex] || 100
-    const { labelWidth, valueWidth } = this.getSummaryColumnWidths(totalWidth)
-
-    const cells = []
-
-    // Add the split first column (label + value)
-    cells.push(
-      <div
-        key={`${type}-label`}
-        className='tabulator-cell label-column'
-        style={this.getSummaryCellStyle(labelWidth, true)}
-        title={labelValue}
-      >
-        {labelValue}
-      </div>,
-    )
-
-    cells.push(
-      <div
-        key={`${type}-value`}
-        ref={(el) => el && value !== null && setupCopyableCell(el, this.SUMMARY_TOOLTIP_ID, TOOLTIP_COPY_TEXTS.DEFAULT)}
-        className={`tabulator-cell${value !== null ? ' copyable-cell' : ''}`}
-        style={this.getSummaryCellStyle(valueWidth, false, firstColumn?.align)}
-        onContextMenu={value !== null ? (e) => handleCellCopy(e, formattedValue, TOOLTIP_COPY_TEXTS) : undefined}
-      >
-        {formattedValue}
-      </div>,
-    )
-
-    // Add the remaining columns normally
-    for (let i = 1; i < visibleColumns.length; i++) {
-      const col = visibleColumns[i]
-      const colIndex = columns.indexOf(col)
-      cells.push(
-        this.renderSummaryCell(
-          type,
-          col,
-          colIndex,
-          summaryStats[colIndex],
-          colWidths[colIndex],
-          isPivot,
-          formatSummaryValue,
-          false, // not first visible column for remaining columns
-          false,
-        ),
-      )
-    }
-
-    return cells
-  }
-
-  renderMultiColumnSummary = (type, columns, summaryStats, colWidths, isPivot, formatSummaryValue) => {
-    const firstVisibleColumnIndex = this.getFirstVisibleColumnIndex(columns)
-
-    return columns.map((col, i) =>
-      this.renderSummaryCell(
-        type,
-        col,
-        i,
-        summaryStats[i],
-        colWidths[i],
-        isPivot,
-        formatSummaryValue,
-        i === firstVisibleColumnIndex,
-        false,
-      ),
-    )
-  }
-
-  renderSummaryRow = (type, columns, summaryStats, colWidths, isPivot, formatSummaryValue) => {
-    const containerStyle = {
-      display: 'flex',
-      alignItems: 'center',
-      minHeight: '26px',
-      background: 'var(--react-autoql-background-color-secondary)',
-      borderTop: type === 'total' ? '2px solid var(--react-autoql-table-border-color)' : undefined,
-      borderBottom: '1px solid var(--react-autoql-table-border-color)',
-      minWidth: 'max-content',
-    }
-
-    const visibleColumns = this.getVisibleColumns(columns)
-    const needsSingleColumnLayout = this.needsLabelColumn(columns)
-
-    let summaryContent
-    if (needsSingleColumnLayout) {
-      if (visibleColumns.length === 1) {
-        // True single column case
-        summaryContent = this.renderSingleColumnSummary(type, columns, summaryStats, colWidths, formatSummaryValue)
-      } else {
-        // Multiple columns but first is summable - split the first column
-        summaryContent = this.renderSplitFirstColumnSummary(
-          type,
-          columns,
-          summaryStats,
-          colWidths,
-          isPivot,
-          formatSummaryValue,
-        )
-      }
-    } else {
-      // Regular multi-column layout
-      summaryContent = this.renderMultiColumnSummary(
-        type,
-        columns,
-        summaryStats,
-        colWidths,
-        isPivot,
-        formatSummaryValue,
-      )
-    }
-
-    return (
-      <div className='tabulator-calcs-holder' style={containerStyle}>
-        {summaryContent}
-      </div>
-    )
   }
 
   renderTableRowCount = () => {
@@ -2472,35 +2111,6 @@ export default class ChataTable extends React.Component {
 
     let summaryRow = null
 
-    const formatSummaryValue = (value, col, colIdx) => {
-      if (col && typeof col.formatter === 'function') {
-        const mockCell = {
-          getValue: () => value,
-          getColumn: () => col,
-          getElement: () => null,
-        }
-        try {
-          const formatted = col.formatter(mockCell, col.formatterParams || {}, () => {})
-          if (formatted instanceof window.HTMLElement) {
-            return formatted.textContent || ''
-          }
-          if (Array.isArray(formatted)) {
-            return formatted.join('')
-          }
-          if (typeof formatted === 'object' && formatted !== null) {
-            return value
-          }
-          return formatted
-        } catch (e) {
-          return value
-        }
-      }
-      if (typeof value === 'number') {
-        return value.toLocaleString()
-      }
-      return value
-    }
-
     // Shared logic for both table types
     let colWidths = []
     let columns = this.props.columns || []
@@ -2510,31 +2120,8 @@ export default class ChataTable extends React.Component {
     let isRegular = !this.props.pivot && columns && this.props.response?.data?.data?.rows?.length > 0
 
     if (isPivot || isRegular) {
-      const getSummaryStats = (values) => {
-        const valid = values.filter(
-          (v) => typeof v === 'number' || (!isNaN(parseFloat(v)) && v !== null && v !== undefined),
-        )
-        const sum = valid.reduce((acc, val) => acc + (typeof val === 'number' ? val : parseFloat(val)), 0)
-        const avg = valid.length > 0 ? sum / valid.length : null
-        return { sum, avg }
-      }
-
-      if (isPivot) {
-        summaryStats = columns.map((col, i) => {
-          if (i === 0 || col.visible === false || col.is_visible === false) return null
-          const values = this.props.data.map((row) => row[i])
-          return getSummaryStats(values)
-        })
-      } else if (isRegular) {
-        summaryStats = columns.map((col, i) => {
-          if (col.visible === false || col.is_visible === false) return null
-          if (col.type === 'QUANTITY' || col.type === 'NUMBER' || isColumnSummable(col)) {
-            const values = this.props.response.data.data.rows.map((row) => row[i])
-            return getSummaryStats(values)
-          }
-          return null
-        })
-      }
+      const statsObject = this.summaryStats || this.summaryStatsCalculator.calculate(this.props)
+      summaryStats = columns.map((col, index) => statsObject[index] || null)
 
       const hasVisibleSummable = columns.some((col, i) => {
         return (
@@ -2558,7 +2145,7 @@ export default class ChataTable extends React.Component {
           if (!this._summaryResizeListenerAdded) {
             this.ref.tabulator.on('columnResized', () => {
               if (this._isMounted) {
-                if (this._isMounted) this.forceUpdate()
+                this.lifecycleManager.safeForceUpdate()
               }
             })
             this._summaryResizeListenerAdded = true
@@ -2593,8 +2180,8 @@ export default class ChataTable extends React.Component {
             style={{ width: '100%', overflowX: 'auto', fontFamily: 'inherit', fontSize: '11px' }}
             ref={scrollRef}
           >
-            {this.renderSummaryRow('total', columns, summaryStats, colWidths, isPivot, formatSummaryValue)}
-            {this.renderSummaryRow('average', columns, summaryStats, colWidths, isPivot, formatSummaryValue)}
+            {this.summaryRowRenderer?.render('total', columns, summaryStats, colWidths, isPivot)}
+            {this.summaryRowRenderer?.render('average', columns, summaryStats, colWidths, isPivot)}
           </div>
         )
       }
