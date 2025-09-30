@@ -80,6 +80,7 @@ export default class ChataChart extends React.Component {
       isLoading: true,
       showAverageLine: false,
       showRegressionLine: false,
+      scaleVersion: 0, // Track scale changes to force line re-render
     }
   }
 
@@ -557,6 +558,7 @@ export default class ChataChart extends React.Component {
       toggleAverageLine: this.toggleAverageLine,
       showRegressionLine: this.state.showRegressionLine,
       toggleRegressionLine: this.toggleRegressionLine,
+      incrementScaleVersion: this.incrementScaleVersion,
     }
   }
 
@@ -592,6 +594,10 @@ export default class ChataChart extends React.Component {
 
   toggleRegressionLine = () => {
     this.setState({ showRegressionLine: !this.state.showRegressionLine })
+  }
+
+  incrementScaleVersion = () => {
+    this.setState((prevState) => ({ scaleVersion: prevState.scaleVersion + 1 }))
   }
 
   shouldShowAverageLine = () => {
@@ -756,9 +762,7 @@ export default class ChataChart extends React.Component {
                     {this.state.showAverageLine && (
                       <g transform={`translate(${this.state.deltaX}, ${this.state.deltaY})`}>
                         <AverageLine
-                          key={`average-line-${this.innerChartRef?.yScale?.domain?.()?.join('-') || 'default'}-${
-                            this.state.chartID
-                          }`}
+                          key={`average-line-${this.state.scaleVersion}-${this.state.chartID}`}
                           data={this.props.data}
                           columns={this.props.columns}
                           numberColumnIndex={this.props.numberColumnIndex}
@@ -809,9 +813,7 @@ export default class ChataChart extends React.Component {
                       })() && (
                         <g transform={`translate(${this.state.deltaX}, ${this.state.deltaY})`}>
                           <RegressionLine
-                            key={`regression-line-${this.innerChartRef?.yScale?.domain?.()?.join('-') || 'default'}-${
-                              this.state.chartID
-                            }`}
+                            key={`regression-line-${this.state.scaleVersion}-${this.state.chartID}`}
                             data={this.props.data}
                             columns={this.props.columns}
                             numberColumnIndex={this.props.numberColumnIndex}
