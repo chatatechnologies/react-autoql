@@ -38,28 +38,12 @@ export class AverageLine extends React.Component {
   calculateAverage = () => {
     const { data, columns, numberColumnIndex, visibleSeriesIndices, chartType, numberColumnIndex2 } = this.props
 
-    console.log('🔍 AVERAGE CALCULATION DEBUG:', {
-      chartType,
-      dataLength: data?.length,
-      numberColumnIndex,
-      numberColumnIndex2,
-      visibleSeriesIndices: visibleSeriesIndices?.length,
-    })
-
     if (!data?.length) {
-      console.log('🔍 AVERAGE CALCULATION DEBUG - No data, returning null')
       return null
     }
 
     // For scatterplots, calculate average of Y-values (second number column)
     if (chartType === 'scatterplot') {
-      console.log('🔍 SCATTERPLOT AVERAGE DEBUG:', {
-        chartType,
-        dataLength: data?.length,
-        numberColumnIndex2,
-        hasNumberColumnIndex2: numberColumnIndex2 !== undefined && numberColumnIndex2 !== null,
-      })
-
       const yValues = data
         .map((row) => {
           const value = row[numberColumnIndex2] // Y-axis column for scatterplot
@@ -68,19 +52,11 @@ export class AverageLine extends React.Component {
         })
         .filter((value) => value !== null && value !== undefined)
 
-      console.log('🔍 SCATTERPLOT AVERAGE DEBUG - yValues:', {
-        yValuesLength: yValues.length,
-        sampleValues: yValues.slice(0, 5),
-      })
-
       if (yValues.length === 0) {
-        console.log('🔍 SCATTERPLOT AVERAGE DEBUG - No valid Y values found')
         return null
       }
 
-      const average = mean(yValues)
-      console.log('🔍 SCATTERPLOT AVERAGE DEBUG - calculated average:', average)
-      return average
+      return mean(yValues)
     }
 
     // Determine which series indices to use for calculation
@@ -139,21 +115,11 @@ export class AverageLine extends React.Component {
       }
     })
 
-    console.log('🔍 REGULAR CHART AVERAGE DEBUG:', {
-      chartType,
-      seriesIndices,
-      allValuesLength: allValues.length,
-      sampleValues: allValues.slice(0, 5),
-    })
-
     if (allValues.length === 0) {
-      console.log('🔍 REGULAR CHART AVERAGE DEBUG - No valid values, returning null')
       return null
     }
 
-    const average = mean(allValues)
-    console.log('🔍 REGULAR CHART AVERAGE DEBUG - calculated average:', average)
-    return average
+    return mean(allValues)
   }
 
   render = () => {
@@ -173,29 +139,13 @@ export class AverageLine extends React.Component {
       chartType,
     } = this.props
 
-    console.log('🔍 AVERAGE LINE RENDER DEBUG:', {
-      isVisible,
-      chartType,
-      hasXScale: !!xScale,
-      hasYScale: !!yScale,
-      hasWidth: !!width,
-      hasHeight: !!height,
-      numberColumnIndex,
-      numberColumnIndex2,
-      visibleSeriesIndices: this.props.visibleSeriesIndices?.length,
-    })
-
     if (!isVisible) {
-      console.log('🔍 AVERAGE LINE RENDER DEBUG - Not visible, returning null')
       return null
     }
 
     const averageValue = this.calculateAverage()
 
-    console.log('🔍 AVERAGE LINE RENDER DEBUG - averageValue:', averageValue)
-
     if (averageValue === null || averageValue === undefined) {
-      console.log('🔍 AVERAGE LINE RENDER DEBUG - No average value, returning null')
       return null
     }
 
@@ -213,20 +163,9 @@ export class AverageLine extends React.Component {
     // For bar charts, use xScale (horizontal axis); for column charts, use yScale (vertical axis)
     const position = this.isBarChart() ? xScale(averageValue) : yScale(averageValue)
 
-    console.log('🔍 AVERAGE LINE POSITION DEBUG:', {
-      averageValue,
-      position,
-      isNaN: isNaN(position),
-      withinBounds: this.isBarChart() ? position >= 0 && position <= width : position >= 0 && position <= height,
-      width,
-      height,
-      isBarChart: this.isBarChart(),
-    })
-
     // Check if the position is valid and within chart bounds
     const maxBound = this.isBarChart() ? width : height
     if (isNaN(position) || position < 0 || position > maxBound) {
-      console.log('🔍 AVERAGE LINE POSITION DEBUG - Position invalid, returning null')
       return null
     }
 
@@ -260,15 +199,6 @@ export class AverageLine extends React.Component {
       x2: this.isBarChart() ? position + 5 : width,
       y2: this.isBarChart() ? height : position + 5,
     }
-
-    console.log('🔍 AVERAGE LINE RENDERING DEBUG:', {
-      isBarChart: this.isBarChart(),
-      lineProps,
-      hoverAreaProps,
-      color,
-      strokeWidth,
-      strokeDasharray,
-    })
 
     return (
       <g className='average-line-container' style={{ outline: 'none' }}>

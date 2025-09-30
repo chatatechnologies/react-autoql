@@ -48,14 +48,6 @@ export class RegressionLine extends React.Component {
 
     // For scatterplots, use X and Y number columns directly
     if (chartType === 'scatterplot') {
-      console.log('🔍 SCATTERPLOT REGRESSION DEBUG:', {
-        chartType,
-        dataLength: data?.length,
-        numberColumnIndex,
-        numberColumnIndex2,
-        hasNumberColumnIndex2: numberColumnIndex2 !== undefined && numberColumnIndex2 !== null,
-      })
-
       const points = data
         .map((row) => {
           const xValue = row[numberColumnIndex] // X-axis column
@@ -77,18 +69,11 @@ export class RegressionLine extends React.Component {
         })
         .filter((point) => point !== null)
 
-      console.log('🔍 SCATTERPLOT REGRESSION DEBUG - points:', {
-        pointsLength: points.length,
-        samplePoints: points.slice(0, 3),
-      })
-
       if (points.length < 2) {
-        console.log('🔍 SCATTERPLOT REGRESSION DEBUG - Not enough points for regression')
         return null
       }
 
       const regression = this.calculateRegressionFromPoints(points)
-      console.log('🔍 SCATTERPLOT REGRESSION DEBUG - calculated regression:', regression)
       return regression
     }
 
@@ -197,14 +182,7 @@ export class RegressionLine extends React.Component {
   }
 
   render = () => {
-    console.log('🔍 REGRESSION LINE RENDER DEBUG:', {
-      isVisible: this.props.isVisible,
-      chartType: this.props.chartType,
-      visibleSeriesIndices: this.props.visibleSeriesIndices?.length,
-    })
-
     if (!this.props.isVisible) {
-      console.log('🔍 REGRESSION LINE RENDER DEBUG - Not visible, returning null')
       return null
     }
 
@@ -216,19 +194,11 @@ export class RegressionLine extends React.Component {
       chartType === 'stacked_area' ||
       chartType === 'stacked_line'
 
-    console.log('🔍 REGRESSION LINE RENDER DEBUG - Logic:', {
-      isMultiSeries,
-      isStacked,
-      willUseCombined: isStacked || !isMultiSeries,
-    })
-
     if (isStacked || !isMultiSeries) {
       // Use combined trend line for stacked charts or single series
-      console.log('🔍 REGRESSION LINE RENDER DEBUG - Using combined trend line')
       return this.renderCombinedTrendLine()
     } else {
       // Use individual trend lines for regular multi-series charts
-      console.log('🔍 REGRESSION LINE RENDER DEBUG - Using individual trend lines')
       return this.renderIndividualTrendLines()
     }
   }

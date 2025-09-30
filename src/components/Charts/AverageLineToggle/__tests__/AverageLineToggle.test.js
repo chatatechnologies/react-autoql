@@ -8,6 +8,12 @@ describe('AverageLineToggle', () => {
     onToggle: jest.fn(),
     isEditing: false,
     disabled: false,
+    columns: [
+      { name: 'Category', type: 'STRING' },
+      { name: 'Value', type: 'NUMBER' },
+    ],
+    visibleSeriesIndices: [1],
+    chartTooltipID: 'test-tooltip',
   }
 
   beforeEach(() => {
@@ -18,7 +24,8 @@ describe('AverageLineToggle', () => {
     const wrapper = mount(<AverageLineToggle {...defaultProps} />)
 
     expect(wrapper.find('button')).toHaveLength(1)
-    expect(wrapper.find('button').hasClass('disabled')).toBe(true)
+    // When isEnabled: false and disabled: false, should have neither class
+    expect(wrapper.find('button').hasClass('disabled')).toBe(false)
     expect(wrapper.find('button').hasClass('enabled')).toBe(false)
   })
 
@@ -51,25 +58,15 @@ describe('AverageLineToggle', () => {
     const wrapper = mount(<AverageLineToggle {...defaultProps} />)
 
     const tooltipContent = wrapper.find('button').prop('data-tooltip-content')
-    const parsedContent = JSON.parse(tooltipContent)
-
-    expect(parsedContent.title).toBe('Show Average Line')
-    expect(parsedContent.description).toBe(
-      'Display a horizontal line showing the average value across all data points in the chart',
-    )
+    expect(tooltipContent).toBe('Show Average Line')
   })
 
   it('shows different tooltip content when enabled', () => {
     const props = { ...defaultProps, isEnabled: true }
     const wrapper = mount(<AverageLineToggle {...props} />)
-    
+
     const tooltipContent = wrapper.find('button').prop('data-tooltip-content')
-    const parsedContent = JSON.parse(tooltipContent)
-    
-    expect(parsedContent.title).toBe('Hide Average Line')
-    expect(parsedContent.description).toBe(
-      'Display a horizontal line showing the average value across all data points in the chart',
-    )
+    expect(tooltipContent).toBe('Hide Average Line')
   })
 
   it('disables button and shows warning when mixed column types', () => {
@@ -78,26 +75,23 @@ describe('AverageLineToggle', () => {
       { name: 'Revenue', type: 'CURRENCY' },
       { name: 'Count', type: 'NUMBER' },
     ]
-    
+
     const props = {
       ...defaultProps,
       columns: mockColumns,
       visibleSeriesIndices: [1, 2], // Currency and Number types
     }
-    
+
     const wrapper = mount(<AverageLineToggle {...props} />)
-    
+
     // Button should be disabled
     expect(wrapper.find('button').prop('disabled')).toBe(true)
     expect(wrapper.find('button').hasClass('disabled')).toBe(true)
-    
+
     // Tooltip should show warning
     const tooltipContent = wrapper.find('button').prop('data-tooltip-content')
-    const parsedContent = JSON.parse(tooltipContent)
-    
-    expect(parsedContent.title).toBe('Average Line Unavailable')
-    expect(parsedContent.description).toBe(
-      'Cannot show average line when chart has columns with different data types (e.g., currency and count)',
+    expect(tooltipContent).toBe(
+      'Cannot show average line when chart has series with different data types (e.g., currency and quantity)',
     )
   })
 
@@ -107,15 +101,15 @@ describe('AverageLineToggle', () => {
       { name: 'Revenue', type: 'CURRENCY' },
       { name: 'Sales', type: 'CURRENCY' },
     ]
-    
+
     const props = {
       ...defaultProps,
       columns: mockColumns,
       visibleSeriesIndices: [1, 2], // Both Currency types
     }
-    
+
     const wrapper = mount(<AverageLineToggle {...props} />)
-    
+
     // Button should not be disabled
     expect(wrapper.find('button').prop('disabled')).toBe(false)
     expect(wrapper.find('button').hasClass('disabled')).toBe(false)
