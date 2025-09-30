@@ -23,9 +23,9 @@ export class RegressionLine extends React.Component {
 
   static defaultProps = {
     dataFormatting: {},
-    color: '#4ecdc4',
+    color: '#27ae60', // Default green, will be overridden dynamically
     strokeWidth: 2,
-    strokeDasharray: '0',
+    strokeDasharray: '0', // Solid line
   }
 
   calculateLinearRegression = () => {
@@ -266,8 +266,11 @@ export class RegressionLine extends React.Component {
     const isTrendUp = chartSlope < 0 // Negative slope = visually up in SVG
     const textY = isTrendUp ? midY - 10 : midY + 15
 
+    // Set color based on trend direction
+    const trendColor = isTrendUp ? '#2ecc71' : '#e74c3c' // Light green for up, red for down
+
     return (
-      <g className='regression-line-container'>
+      <g className='regression-line-container' style={{ outline: 'none' }}>
         {/* Invisible hover area with 5px buffer */}
         <line
           x1={Math.min(extendedStartX, extendedEndX)}
@@ -288,7 +291,7 @@ export class RegressionLine extends React.Component {
           y1={extendedStartY}
           x2={extendedEndX}
           y2={extendedEndY}
-          stroke={color}
+          stroke={trendColor}
           strokeWidth={strokeWidth}
           strokeDasharray={strokeDasharray}
           className='regression-line'

@@ -24,9 +24,9 @@ export class AverageLine extends React.Component {
 
   static defaultProps = {
     dataFormatting: {},
-    color: '#ff6b6b',
+    color: 'var(--react-autoql-text-color-primary)',
     strokeWidth: 2,
-    strokeDasharray: '5,5',
+    strokeDasharray: '0',
   }
 
   calculateAverage = () => {
@@ -141,7 +141,7 @@ export class AverageLine extends React.Component {
     const textY = isNearTop ? yPosition + 15 : yPosition - 5
 
     return (
-      <g className='average-line-container'>
+      <g className='average-line-container' style={{ outline: 'none' }}>
         {/* Invisible hover area with 5px buffer */}
         <line
           x1={0}
