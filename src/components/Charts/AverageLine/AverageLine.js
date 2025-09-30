@@ -26,7 +26,12 @@ export class AverageLine extends React.Component {
     dataFormatting: {},
     color: 'var(--react-autoql-text-color-primary)',
     strokeWidth: 2,
-    strokeDasharray: '0',
+    strokeDasharray: '5,5', // Dashed line
+  }
+
+  isBarChart = () => {
+    const { chartType } = this.props
+    return chartType === 'bar' || chartType === 'stacked_bar'
   }
 
   calculateAverage = () => {
@@ -45,7 +50,12 @@ export class AverageLine extends React.Component {
     }
 
     // For stacked charts, calculate average of the sum of each stack
-    if (chartType === 'stacked_column' || chartType === 'stacked_bar') {
+    if (
+      chartType === 'stacked_column' ||
+      chartType === 'stacked_bar' ||
+      chartType === 'stacked_area' ||
+      chartType === 'stacked_line'
+    ) {
       const stackTotals = data
         .map((row) => {
           let stackSum = 0
@@ -168,11 +178,11 @@ export class AverageLine extends React.Component {
           className='average-line'
         />
 
-        {/* Text background rectangle - dynamically sized */}
+        {/* Text background rectangle - properly positioned for right-aligned text */}
         <rect
-          x={width - Math.max(80, formattedAverage.length * 8 + 20)}
+          x={width - 10 - Math.max(70, formattedAverage.length * 8)}
           y={textY - 12}
-          width={Math.max(70, formattedAverage.length * 8)}
+          width={Math.max(70, formattedAverage.length * 8) + 8}
           height='16'
           fill='var(--react-autoql-background-color)'
           fillOpacity='0.85'

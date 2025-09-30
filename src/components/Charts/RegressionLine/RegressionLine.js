@@ -26,7 +26,12 @@ export class RegressionLine extends React.Component {
     dataFormatting: {},
     color: '#27ae60', // Default green, will be overridden dynamically
     strokeWidth: 2,
-    strokeDasharray: '0', // Solid line
+    strokeDasharray: '5,5', // Dashed line
+  }
+
+  isBarChart = () => {
+    const { chartType } = this.props
+    return chartType === 'bar' || chartType === 'stacked_bar'
   }
 
   calculateLinearRegression = () => {
@@ -52,7 +57,12 @@ export class RegressionLine extends React.Component {
     // Check if this is a multi-series chart (multiple visible series)
     const isMultiSeries = seriesIndices.length > 1
 
-    if (chartType === 'stacked_column' || chartType === 'stacked_bar') {
+    if (
+      chartType === 'stacked_column' ||
+      chartType === 'stacked_bar' ||
+      chartType === 'stacked_area' ||
+      chartType === 'stacked_line'
+    ) {
       // For stacked charts, use stack totals
       points = data
         .map((row, index) => {
@@ -142,7 +152,11 @@ export class RegressionLine extends React.Component {
 
     const { chartType, visibleSeriesIndices } = this.props
     const isMultiSeries = visibleSeriesIndices?.length > 1
-    const isStacked = chartType === 'stacked_column' || chartType === 'stacked_bar'
+    const isStacked =
+      chartType === 'stacked_column' ||
+      chartType === 'stacked_bar' ||
+      chartType === 'stacked_area' ||
+      chartType === 'stacked_line'
 
     if (isStacked || !isMultiSeries) {
       // Use combined trend line for stacked charts or single series
@@ -192,9 +206,9 @@ export class RegressionLine extends React.Component {
     const trendColor = isTrendUp ? '#2ecc71' : '#e74c3c' // Light green for up, light red for down
 
     // Position text above or below the line based on available space
-    const midX = width / 2
-    const midY = (extendedStartY + extendedEndY) / 2
-    const textY = midY < 20 ? midY + 15 : midY - 5
+    const midX = this.isBarChart() ? (extendedStartY + extendedEndY) / 2 : width / 2
+    const midY = this.isBarChart() ? height / 2 : (extendedStartY + extendedEndY) / 2
+    const textY = this.isBarChart() ? (midY < 20 ? midY + 15 : midY - 5) : midY < 20 ? midY + 15 : midY - 5
     const formattedSlope = formatElement({
       element: displayedSlope,
       column: this.props.columns[this.props.numberColumnIndex],
@@ -223,10 +237,10 @@ export class RegressionLine extends React.Component {
 
         {/* Visible regression line */}
         <line
-          x1={extendedStartX}
-          y1={extendedStartY}
-          x2={extendedEndX}
-          y2={extendedEndY}
+          x1={this.isBarChart() ? extendedStartY : extendedStartX}
+          y1={this.isBarChart() ? extendedStartX : extendedStartY}
+          x2={this.isBarChart() ? extendedEndY : extendedEndX}
+          y2={this.isBarChart() ? extendedEndX : extendedEndY}
           stroke={trendColor}
           strokeWidth={strokeWidth}
           strokeDasharray={strokeDasharray}
@@ -281,7 +295,18 @@ export class RegressionLine extends React.Component {
       strokeWidth,
       strokeDasharray,
       dataFormatting,
+      chartType,
     } = this.props
+
+    // Skip individual trend lines for stacked charts - they should use combined trend line
+    const isStacked =
+      chartType === 'stacked_column' ||
+      chartType === 'stacked_bar' ||
+      chartType === 'stacked_area' ||
+      chartType === 'stacked_line'
+    if (isStacked) {
+      return null
+    }
 
     if (!visibleSeriesIndices?.length) {
       return null
@@ -396,18 +421,30 @@ export class RegressionLine extends React.Component {
 
           return (
             <g key={`individual-trend-${columnIndex}`} className={`individual-regression-line series-${seriesIndex}`}>
+              {/* Invisible hover area for easier tooltip triggering */}
+              <line
+                x1={this.isBarChart() ? extendedStartY : extendedStartX}
+                y1={this.isBarChart() ? extendedStartX : extendedStartY}
+                x2={this.isBarChart() ? extendedEndY : extendedEndX}
+                y2={this.isBarChart() ? extendedEndX : extendedEndY}
+                stroke='transparent'
+                strokeWidth={10}
+                className='regression-line-hover-area'
+                data-tooltip-content={tooltipContent}
+                data-tooltip-id={this.props.chartTooltipID}
+                style={{ cursor: 'default' }}
+              />
+
               {/* Visible regression line */}
               <line
-                x1={extendedStartX}
-                y1={extendedStartY}
-                x2={extendedEndX}
-                y2={extendedEndY}
+                x1={this.isBarChart() ? extendedStartY : extendedStartX}
+                y1={this.isBarChart() ? extendedStartX : extendedStartY}
+                x2={this.isBarChart() ? extendedEndY : extendedEndX}
+                y2={this.isBarChart() ? extendedEndX : extendedEndY}
                 stroke={trendColor}
                 strokeWidth={strokeWidth}
                 strokeDasharray={strokeDasharray}
                 className='regression-line'
-                data-tooltip-content={tooltipContent}
-                data-tooltip-id={this.props.chartTooltipID}
               />
 
               {/* Only render text labels if there are 5 or fewer series */}

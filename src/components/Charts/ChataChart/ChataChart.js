@@ -632,14 +632,18 @@ export default class ChataChart extends React.Component {
   }
 
   shouldShowAverageLine = () => {
-    // Average line is only supported for column-based charts
-    const columnBasedCharts = [
+    // Average and regression lines are supported for column-based charts, line charts, and area charts
+    const supportedCharts = [
       DisplayTypes.COLUMN,
       DisplayTypes.STACKED_COLUMN,
       DisplayTypes.BAR,
       DisplayTypes.STACKED_BAR,
+      DisplayTypes.LINE,
+      DisplayTypes.STACKED_LINE,
+      DisplayTypes.AREA,
+      DisplayTypes.STACKED_AREA,
     ]
-    return columnBasedCharts.includes(this.props.type)
+    return supportedCharts.includes(this.props.type)
   }
 
   getChartTypeString = () => {
@@ -653,6 +657,14 @@ export default class ChataChart extends React.Component {
         return 'bar'
       case DisplayTypes.STACKED_BAR:
         return 'stacked_bar'
+      case DisplayTypes.LINE:
+        return 'line'
+      case DisplayTypes.STACKED_LINE:
+        return 'stacked_line'
+      case DisplayTypes.AREA:
+        return 'area'
+      case DisplayTypes.STACKED_AREA:
+        return 'stacked_area'
       default:
         return 'column'
     }
