@@ -501,7 +501,38 @@ export default class ChataChart extends React.Component {
         className={`react-autoql-chart-header-container ${
           this.state.isLoading || this.props.isResizing ? 'loading' : ''
         }`}
-      />
+      >
+        {/* Chart Control Buttons */}
+        {this.shouldShowAverageLine() && !this.props.hidden && (
+          <div
+            className='chart-control-buttons'
+            style={{
+              display: 'flex',
+              gap: '8px',
+              justifyContent: 'flex-start',
+            }}
+          >
+            <AverageLineToggle
+              isEnabled={this.state.showAverageLine}
+              onToggle={this.toggleAverageLine}
+              columns={this.props.columns}
+              visibleSeriesIndices={this.props.numberColumnIndices?.filter(
+                (colIndex) => this.props.columns?.[colIndex] && !this.props.columns[colIndex].isSeriesHidden,
+              )}
+              chartTooltipID={this.props.chartTooltipID}
+            />
+            <RegressionLineToggle
+              isEnabled={this.state.showRegressionLine}
+              onToggle={this.toggleRegressionLine}
+              columns={this.props.columns}
+              visibleSeriesIndices={this.props.numberColumnIndices?.filter(
+                (colIndex) => this.props.columns?.[colIndex] && !this.props.columns[colIndex].isSeriesHidden,
+              )}
+              chartTooltipID={this.props.chartTooltipID}
+            />
+          </div>
+        )}
+      </div>
     )
   }
 
@@ -742,98 +773,60 @@ export default class ChataChart extends React.Component {
                   {this.renderChart()}
                 </g>
 
-                {/* Average Line Components - only for column-based charts */}
-                {this.shouldShowAverageLine() && !this.props.hidden && (
-                  <>
-                    {/* Toggle Button */}
-                    <g transform={`translate(${this.state.deltaX + 10}, ${this.state.deltaY})`}>
-                      <AverageLineToggle
-                        isEnabled={this.state.showAverageLine}
-                        onToggle={this.toggleAverageLine}
+                {/* Average Line - only when enabled */}
+                {this.shouldShowAverageLine() &&
+                  this.state.showAverageLine &&
+                  !this.props.hidden &&
+                  this.innerChartRef?.xScale &&
+                  this.innerChartRef?.yScale && (
+                    <g transform={`translate(${this.state.deltaX}, ${this.state.deltaY})`}>
+                      <AverageLine
+                        key={`average-line-${this.state.scaleVersion}-${this.state.chartID}`}
+                        data={this.getCommonChartProps().data}
                         columns={this.props.columns}
+                        numberColumnIndex={this.props.numberColumnIndex}
                         visibleSeriesIndices={this.props.numberColumnIndices?.filter(
                           (colIndex) => this.props.columns?.[colIndex] && !this.props.columns[colIndex].isSeriesHidden,
                         )}
+                        xScale={this.innerChartRef.xScale}
+                        yScale={this.innerChartRef.yScale}
+                        width={this.getInnerDimensions().innerWidth}
+                        height={this.getInnerDimensions().innerHeight}
+                        isVisible={this.state.showAverageLine}
+                        dataFormatting={this.props.dataFormatting}
                         chartTooltipID={this.props.chartTooltipID}
+                        chartType={this.getChartTypeString()}
                       />
                     </g>
+                  )}
 
-                    {/* Average Line - only when enabled */}
-                    {this.state.showAverageLine && (
-                      <g transform={`translate(${this.state.deltaX}, ${this.state.deltaY})`}>
-                        <AverageLine
-                          key={`average-line-${this.state.scaleVersion}-${this.state.chartID}`}
-                          data={this.props.data}
-                          columns={this.props.columns}
-                          numberColumnIndex={this.props.numberColumnIndex}
-                          visibleSeriesIndices={this.props.numberColumnIndices?.filter(
-                            (colIndex) =>
-                              this.props.columns?.[colIndex] && !this.props.columns[colIndex].isSeriesHidden,
-                          )}
-                          xScale={this.innerChartRef?.xScale}
-                          yScale={this.innerChartRef?.yScale}
-                          width={this.getInnerDimensions().innerWidth}
-                          height={this.getInnerDimensions().innerHeight}
-                          isVisible={this.state.showAverageLine}
-                          dataFormatting={this.props.dataFormatting}
-                          chartTooltipID={this.props.chartTooltipID}
-                          chartType={this.getChartTypeString()}
-                        />
-                      </g>
-                    )}
-                  </>
-                )}
-
-                {/* Regression Line Components - only for column-based charts */}
-                {this.shouldShowAverageLine() && !this.props.hidden && (
-                  <>
-                    {/* Toggle Button */}
-                    <g transform={`translate(${this.state.deltaX + 80}, ${this.state.deltaY})`}>
-                      <RegressionLineToggle
-                        isEnabled={this.state.showRegressionLine}
-                        onToggle={this.toggleRegressionLine}
+                {/* Regression Line - only when enabled */}
+                {this.shouldShowAverageLine() &&
+                  this.state.showRegressionLine &&
+                  !this.props.hidden &&
+                  this.innerChartRef?.xScale &&
+                  this.innerChartRef?.yScale && (
+                    <g transform={`translate(${this.state.deltaX}, ${this.state.deltaY})`}>
+                      <RegressionLine
+                        key={`regression-line-${this.state.scaleVersion}-${this.state.chartID}`}
+                        data={this.getCommonChartProps().data}
                         columns={this.props.columns}
+                        numberColumnIndex={this.props.numberColumnIndex}
                         visibleSeriesIndices={this.props.numberColumnIndices?.filter(
                           (colIndex) => this.props.columns?.[colIndex] && !this.props.columns[colIndex].isSeriesHidden,
                         )}
+                        xScale={this.innerChartRef.xScale}
+                        yScale={this.innerChartRef.yScale}
+                        width={this.getInnerDimensions().innerWidth}
+                        height={this.getInnerDimensions().innerHeight}
+                        isVisible={this.state.showRegressionLine}
+                        dataFormatting={this.props.dataFormatting}
                         chartTooltipID={this.props.chartTooltipID}
+                        chartType={this.getChartTypeString()}
+                        colorScale={this.getColorScales()?.colorScale}
                       />
                     </g>
-
-                    {/* Regression Line - only when enabled */}
-                    {this.state.showRegressionLine &&
-                      (() => {
-                        console.log('🔍 CHATA CHART DEBUG - Rendering regression line:', {
-                          hasInnerChartRef: !!this.innerChartRef,
-                          hasXScale: !!this.innerChartRef?.xScale,
-                          hasYScale: !!this.innerChartRef?.yScale,
-                          innerChartRef: this.innerChartRef,
-                        })
-                        return true
-                      })() && (
-                        <g transform={`translate(${this.state.deltaX}, ${this.state.deltaY})`}>
-                          <RegressionLine
-                            key={`regression-line-${this.state.scaleVersion}-${this.state.chartID}`}
-                            data={this.props.data}
-                            columns={this.props.columns}
-                            numberColumnIndex={this.props.numberColumnIndex}
-                            visibleSeriesIndices={this.props.numberColumnIndices?.filter(
-                              (colIndex) =>
-                                this.props.columns?.[colIndex] && !this.props.columns[colIndex].isSeriesHidden,
-                            )}
-                            xScale={this.innerChartRef?.xScale}
-                            yScale={this.innerChartRef?.yScale}
-                            width={this.getInnerDimensions().innerWidth}
-                            height={this.getInnerDimensions().innerHeight}
-                            isVisible={this.state.showRegressionLine}
-                            dataFormatting={this.props.dataFormatting}
-                            chartTooltipID={this.props.chartTooltipID}
-                            chartType={this.getChartTypeString()}
-                          />
-                        </g>
-                      )}
-                  </>
-                )}
+                  )}
               </svg>
             )}
           </div>

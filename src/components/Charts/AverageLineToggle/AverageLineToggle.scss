@@ -1,81 +1,38 @@
-// SVG button styles using CSS hover states
+// HTML button styles
 .average-line-toggle {
-  outline: none; // Remove focus outline
-  opacity: 1 !important; // Override JS opacity for browser display
-
-  .button-background {
-    fill: rgba(0, 0, 0, 0.08);
-    stroke: rgba(0, 0, 0, 0.1);
-    stroke-width: 1px;
-    transition: all 0.2s ease;
-  }
-
-  .button-icon,
-  .button-label {
-    fill: var(--react-autoql-text-color-primary);
-    transition: all 0.2s ease;
-  }
+  width: 60px;
+  height: 26px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--react-autoql-text-color-primary);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.2s ease;
 
   // Hover state
   &:hover:not(.disabled) {
-    .button-background {
-      stroke: var(--react-autoql-accent-color);
-    }
-
-    .button-icon,
-    .button-label {
-      fill: var(--react-autoql-text-color-primary);
-    }
+    border-color: var(--react-autoql-accent-color);
   }
 
   // Enabled state (toggle is ON)
   &.enabled {
-    .button-background {
-      stroke: var(--react-autoql-accent-color);
-    }
-
-    .button-icon,
-    .button-label {
-      fill: var(--react-autoql-accent-color);
-    }
-
-    // Enabled hover state
-    &:hover:not(.disabled) {
-      .button-background {
-        stroke: var(--react-autoql-accent-color);
-      }
-
-      .button-icon,
-      .button-label {
-        fill: var(--react-autoql-accent-color);
-      }
-    }
+    border-color: var(--react-autoql-accent-color);
+    color: var(--react-autoql-accent-color);
   }
 
   // Disabled state
   &.disabled {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.05);
+    color: var(--react-autoql-text-color-secondary);
     opacity: 0.5;
     cursor: not-allowed;
-
-    .button-background {
-      fill: rgba(0, 0, 0, 0.05);
-      stroke: transparent;
-    }
-
-    .button-icon,
-    .button-label {
-      fill: var(--react-autoql-text-color-secondary);
-    }
-
-    &:hover {
-      .button-background {
-        stroke: transparent;
-      }
-
-      .button-icon,
-      .button-label {
-        fill: var(--react-autoql-text-color-secondary);
-      }
-    }
   }
 }

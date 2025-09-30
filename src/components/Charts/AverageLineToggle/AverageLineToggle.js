@@ -51,36 +51,17 @@ export class AverageLineToggle extends React.Component {
       tooltipContent = isEnabled ? 'Hide Average Line' : 'Show Average Line'
     }
 
-    // Button dimensions
-    const buttonWidth = 60
-    const buttonHeight = 26
-    const borderRadius = 4
-
     return (
-      <g
+      <button
         className={`average-line-toggle ${isEnabled ? 'enabled' : ''} ${isDisabled ? 'disabled' : ''}`}
-        onClick={isDisabled ? undefined : this.handleClick}
-        style={{ cursor: isDisabled ? 'not-allowed' : 'pointer', opacity: 0 }}
+        onClick={this.handleClick}
+        disabled={isDisabled}
         data-tooltip-content={tooltipContent}
         data-tooltip-id={chartTooltipID}
       >
-        {/* Button background */}
-        <rect
-          x={0}
-          y={0}
-          width={buttonWidth}
-          height={buttonHeight}
-          rx={borderRadius}
-          ry={borderRadius}
-          className='button-background'
-        />
-        <text x={8} y={16} fontSize='12' className='button-icon'>
-          ↗
-        </text>
-        <text x={24} y={16} fontSize='11' className='button-label'>
-          AVG
-        </text>
-      </g>
+        <span>↗</span>
+        <span>AVG</span>
+      </button>
     )
   }
 }

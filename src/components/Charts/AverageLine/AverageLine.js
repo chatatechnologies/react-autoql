@@ -168,13 +168,27 @@ export class AverageLine extends React.Component {
           className='average-line'
         />
 
+        {/* Text background rectangle - dynamically sized */}
+        <rect
+          x={width - Math.max(80, formattedAverage.length * 8 + 20)}
+          y={textY - 12}
+          width={Math.max(70, formattedAverage.length * 8)}
+          height='16'
+          fill='var(--react-autoql-background-color)'
+          fillOpacity='0.85'
+          stroke={color}
+          strokeWidth='1'
+          rx='3'
+          className='average-line-text-bg'
+        />
+
         {/* Text label */}
         <text
           x={width - 10}
           y={textY}
           fontSize='11'
           fontWeight='bold'
-          fill='var(--react-autoql-text-color-primary)'
+          fill={color}
           stroke='var(--react-autoql-background-color)'
           strokeWidth='3'
           strokeLinejoin='round'
