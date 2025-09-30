@@ -116,7 +116,30 @@
       &:hover {
         overflow: auto !important;
       }
-      // Force-hide Tabulator's built-in summary row/footer
+      .tabulator-tableholder {
+        overflow: hidden;
+      }
+      .tabulator-header {
+        border-bottom: 2px solid var(--react-autoql-border-color);
+        overflow: hidden;
+
+        .tabulator-header-contents {
+          overflow: hidden;
+          .tabulator-headers {
+            border-bottom: 2px solid var(--react-autoql-border-color);
+            .tabulator-col {
+              background: transparent;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  &.resizing {
+    width: 100vw;
+
+    .react-autoql-table {
       visibility: hidden;
       opacity: 0;
       pointer-events: none;
