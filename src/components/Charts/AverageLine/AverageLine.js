@@ -19,6 +19,7 @@ export class AverageLine extends React.Component {
     strokeWidth: PropTypes.number,
     strokeDasharray: PropTypes.string,
     chartTooltipID: PropTypes.string,
+    chartType: PropTypes.string,
   }
 
   static defaultProps = {
@@ -29,7 +30,7 @@ export class AverageLine extends React.Component {
   }
 
   calculateAverage = () => {
-    const { data, columns, numberColumnIndex, visibleSeriesIndices } = this.props
+    const { data, columns, numberColumnIndex, visibleSeriesIndices, chartType } = this.props
 
     if (!data?.length) {
       return null
@@ -43,7 +44,32 @@ export class AverageLine extends React.Component {
       seriesIndices = visibleSeriesIndices
     }
 
-    // Extract values from all relevant series
+    // For stacked charts, calculate average of the sum of each stack
+    if (chartType === 'stacked_column' || chartType === 'stacked_bar') {
+      const stackTotals = data
+        .map((row) => {
+          let stackSum = 0
+          seriesIndices.forEach((columnIndex) => {
+            if (columns?.[columnIndex]) {
+              const value = row[columnIndex]
+              const numValue = typeof value === 'string' ? parseFloat(value) : value
+              if (!isNaN(numValue) && numValue !== null && numValue !== undefined) {
+                stackSum += numValue
+              }
+            }
+          })
+          return stackSum
+        })
+        .filter((sum) => sum !== 0) // Filter out rows with no valid data
+
+      if (stackTotals.length === 0) {
+        return null
+      }
+
+      return mean(stackTotals)
+    }
+
+    // For regular (non-stacked) charts, calculate average across all series values
     const allValues = []
 
     seriesIndices.forEach((columnIndex) => {
@@ -70,7 +96,6 @@ export class AverageLine extends React.Component {
 
   render = () => {
     const {
-      xScale,
       yScale,
       width,
       height,
@@ -149,6 +174,10 @@ export class AverageLine extends React.Component {
           y={textY}
           fontSize='11'
           fill='var(--react-autoql-text-color-primary)'
+          stroke='var(--react-autoql-background-color)'
+          strokeWidth='3'
+          strokeLinejoin='round'
+          strokeLinecap='round'
           textAnchor='end'
           className='average-line-label'
         >

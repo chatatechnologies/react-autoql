@@ -46,6 +46,8 @@ import { ChataStackedBarChart } from '../ChataStackedBarChart'
 import { ChataScatterplotChart } from '../ChataScatterplotChart'
 import { ChataStackedLineChart } from '../ChataStackedLineChart'
 import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
+import { AverageLine } from '../AverageLine'
+import { AverageLineToggle } from '../AverageLineToggle'
 
 import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPropHelpers.js'
 
@@ -74,6 +76,7 @@ export default class ChataChart extends React.Component {
       deltaY: 0,
       chartID: uuid(),
       isLoading: true,
+      showAverageLine: false,
     }
   }
 
@@ -547,6 +550,8 @@ export default class ChataChart extends React.Component {
       isLoading: this.state.isLoading,
       changeNumberColumnIndices: this.props.changeNumberColumnIndices,
       onAxesRenderComplete: this.adjustChartPosition,
+      showAverageLine: this.state.showAverageLine,
+      toggleAverageLine: this.toggleAverageLine,
     }
   }
 
@@ -575,6 +580,37 @@ export default class ChataChart extends React.Component {
   }
 
   handleLegendVisibilityChange = (hiddenLabels) => this.props.onLegendVisibilityChange?.(hiddenLabels)
+
+  toggleAverageLine = () => {
+    this.setState({ showAverageLine: !this.state.showAverageLine })
+  }
+
+  shouldShowAverageLine = () => {
+    // Average line is only supported for column-based charts
+    const columnBasedCharts = [
+      DisplayTypes.COLUMN,
+      DisplayTypes.STACKED_COLUMN,
+      DisplayTypes.BAR,
+      DisplayTypes.STACKED_BAR,
+    ]
+    return columnBasedCharts.includes(this.props.type)
+  }
+
+  getChartTypeString = () => {
+    // Convert DisplayTypes enum to string format expected by AverageLine component
+    switch (this.props.type) {
+      case DisplayTypes.COLUMN:
+        return 'column'
+      case DisplayTypes.STACKED_COLUMN:
+        return 'stacked_column'
+      case DisplayTypes.BAR:
+        return 'bar'
+      case DisplayTypes.STACKED_BAR:
+        return 'stacked_bar'
+      default:
+        return 'column'
+    }
+  }
 
   renderChart = () => {
     const commonChartProps = this.getCommonChartProps()
@@ -690,6 +726,47 @@ export default class ChataChart extends React.Component {
                 >
                   {this.renderChart()}
                 </g>
+
+                {/* Average Line Components - only for column-based charts */}
+                {this.shouldShowAverageLine() && !this.props.hidden && (
+                  <>
+                    {/* Toggle Button */}
+                    <g transform={`translate(${this.state.deltaX + 10}, ${this.state.deltaY})`}>
+                      <AverageLineToggle
+                        isEnabled={this.state.showAverageLine}
+                        onToggle={this.toggleAverageLine}
+                        columns={this.props.columns}
+                        visibleSeriesIndices={this.props.numberColumnIndices?.filter(
+                          (colIndex) => this.props.columns?.[colIndex] && !this.props.columns[colIndex].isSeriesHidden,
+                        )}
+                        chartTooltipID={this.props.chartTooltipID}
+                      />
+                    </g>
+
+                    {/* Average Line - only when enabled */}
+                    {this.state.showAverageLine && (
+                      <g transform={`translate(${this.state.deltaX}, ${this.state.deltaY})`}>
+                        <AverageLine
+                          data={this.props.data}
+                          columns={this.props.columns}
+                          numberColumnIndex={this.props.numberColumnIndex}
+                          visibleSeriesIndices={this.props.numberColumnIndices?.filter(
+                            (colIndex) =>
+                              this.props.columns?.[colIndex] && !this.props.columns[colIndex].isSeriesHidden,
+                          )}
+                          xScale={this.innerChartRef?.xScale}
+                          yScale={this.innerChartRef?.yScale}
+                          width={this.getInnerDimensions().innerWidth}
+                          height={this.getInnerDimensions().innerHeight}
+                          isVisible={this.state.showAverageLine}
+                          dataFormatting={this.props.dataFormatting}
+                          chartTooltipID={this.props.chartTooltipID}
+                          chartType={this.getChartTypeString()}
+                        />
+                      </g>
+                    )}
+                  </>
+                )}
               </svg>
             )}
           </div>

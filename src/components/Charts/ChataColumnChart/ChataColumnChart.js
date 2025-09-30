@@ -3,8 +3,6 @@ import { getBandScale, getLinearScales, deepEqual } from 'autoql-fe-utils'
 
 import { Axes } from '../Axes'
 import { Columns } from '../Columns'
-import { AverageLine } from '../AverageLine'
-import { AverageLineToggle } from '../AverageLineToggle'
 
 import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers.js'
 
@@ -14,7 +12,6 @@ export default class ChataColumnChart extends Component {
 
     this.state = {
       isChartScaled: true,
-      showAverageLine: false,
     }
   }
 
@@ -55,15 +52,10 @@ export default class ChataColumnChart extends Component {
     this.setState({ isChartScaled: !this.state.isChartScaled })
   }
 
-  toggleAverageLine = () => {
-    this.setState({ showAverageLine: !this.state.showAverageLine })
-  }
-
   render = () => {
     this.setChartData(this.props)
 
     const yCol = this.props.columns[this.props.numberColumnIndex]
-    const { showAverageLine } = this.state
 
     return (
       <g ref={(r) => (this.chartRef = r)} className='react-autoql-axes-chart' data-test='react-autoql-column-chart'>
@@ -80,36 +72,7 @@ export default class ChataColumnChart extends Component {
           yGridLines
         >
           {!this.props.hidden && <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />}
-
-          {/* Average Line */}
-          {showAverageLine && !this.props.hidden && (
-            <AverageLine
-              data={this.props.data}
-              columns={this.props.columns}
-              numberColumnIndex={this.props.numberColumnIndex}
-              visibleSeriesIndices={this.props.visibleSeriesIndices}
-              xScale={this.xScale}
-              yScale={this.yScale}
-              width={this.props.width}
-              height={this.props.height}
-              isVisible={showAverageLine}
-              dataFormatting={this.props.dataFormatting}
-              chartTooltipID={this.props.chartTooltipID}
-            />
-          )}
         </Axes>
-        {/* Average Line Toggle Button */}
-        {!this.props.hidden && (
-          <g transform='translate(10, 10)'>
-            <AverageLineToggle
-              isEnabled={showAverageLine}
-              onToggle={this.toggleAverageLine}
-              columns={this.props.columns}
-              visibleSeriesIndices={this.props.visibleSeriesIndices}
-              chartTooltipID={this.props.chartTooltipID}
-            />
-          </g>
-        )}
       </g>
     )
   }

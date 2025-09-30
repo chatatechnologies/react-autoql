@@ -78,7 +78,7 @@ export class AverageLineToggle extends React.Component {
           ↗
         </text>
         <text x={24} y={16} fontSize='11' className='button-label'>
-          Avg
+          AVG
         </text>
       </g>
     )
