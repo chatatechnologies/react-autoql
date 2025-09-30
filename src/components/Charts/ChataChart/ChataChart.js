@@ -48,6 +48,8 @@ import { ChataStackedLineChart } from '../ChataStackedLineChart'
 import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 import { AverageLine } from '../AverageLine'
 import { AverageLineToggle } from '../AverageLineToggle'
+import { RegressionLine } from '../RegressionLine'
+import { RegressionLineToggle } from '../RegressionLineToggle'
 
 import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPropHelpers.js'
 
@@ -77,6 +79,7 @@ export default class ChataChart extends React.Component {
       chartID: uuid(),
       isLoading: true,
       showAverageLine: false,
+      showRegressionLine: false,
     }
   }
 
@@ -552,6 +555,8 @@ export default class ChataChart extends React.Component {
       onAxesRenderComplete: this.adjustChartPosition,
       showAverageLine: this.state.showAverageLine,
       toggleAverageLine: this.toggleAverageLine,
+      showRegressionLine: this.state.showRegressionLine,
+      toggleRegressionLine: this.toggleRegressionLine,
     }
   }
 
@@ -583,6 +588,10 @@ export default class ChataChart extends React.Component {
 
   toggleAverageLine = () => {
     this.setState({ showAverageLine: !this.state.showAverageLine })
+  }
+
+  toggleRegressionLine = () => {
+    this.setState({ showRegressionLine: !this.state.showRegressionLine })
   }
 
   shouldShowAverageLine = () => {
@@ -747,6 +756,9 @@ export default class ChataChart extends React.Component {
                     {this.state.showAverageLine && (
                       <g transform={`translate(${this.state.deltaX}, ${this.state.deltaY})`}>
                         <AverageLine
+                          key={`average-line-${this.innerChartRef?.yScale?.domain?.()?.join('-') || 'default'}-${
+                            this.state.chartID
+                          }`}
                           data={this.props.data}
                           columns={this.props.columns}
                           numberColumnIndex={this.props.numberColumnIndex}
@@ -765,6 +777,59 @@ export default class ChataChart extends React.Component {
                         />
                       </g>
                     )}
+                  </>
+                )}
+
+                {/* Regression Line Components - only for column-based charts */}
+                {this.shouldShowAverageLine() && !this.props.hidden && (
+                  <>
+                    {/* Toggle Button */}
+                    <g transform={`translate(${this.state.deltaX + 80}, ${this.state.deltaY})`}>
+                      <RegressionLineToggle
+                        isEnabled={this.state.showRegressionLine}
+                        onToggle={this.toggleRegressionLine}
+                        columns={this.props.columns}
+                        visibleSeriesIndices={this.props.numberColumnIndices?.filter(
+                          (colIndex) => this.props.columns?.[colIndex] && !this.props.columns[colIndex].isSeriesHidden,
+                        )}
+                        chartTooltipID={this.props.chartTooltipID}
+                      />
+                    </g>
+
+                    {/* Regression Line - only when enabled */}
+                    {this.state.showRegressionLine &&
+                      (() => {
+                        console.log('🔍 CHATA CHART DEBUG - Rendering regression line:', {
+                          hasInnerChartRef: !!this.innerChartRef,
+                          hasXScale: !!this.innerChartRef?.xScale,
+                          hasYScale: !!this.innerChartRef?.yScale,
+                          innerChartRef: this.innerChartRef,
+                        })
+                        return true
+                      })() && (
+                        <g transform={`translate(${this.state.deltaX}, ${this.state.deltaY})`}>
+                          <RegressionLine
+                            key={`regression-line-${this.innerChartRef?.yScale?.domain?.()?.join('-') || 'default'}-${
+                              this.state.chartID
+                            }`}
+                            data={this.props.data}
+                            columns={this.props.columns}
+                            numberColumnIndex={this.props.numberColumnIndex}
+                            visibleSeriesIndices={this.props.numberColumnIndices?.filter(
+                              (colIndex) =>
+                                this.props.columns?.[colIndex] && !this.props.columns[colIndex].isSeriesHidden,
+                            )}
+                            xScale={this.innerChartRef?.xScale}
+                            yScale={this.innerChartRef?.yScale}
+                            width={this.getInnerDimensions().innerWidth}
+                            height={this.getInnerDimensions().innerHeight}
+                            isVisible={this.state.showRegressionLine}
+                            dataFormatting={this.props.dataFormatting}
+                            chartTooltipID={this.props.chartTooltipID}
+                            chartType={this.getChartTypeString()}
+                          />
+                        </g>
+                      )}
                   </>
                 )}
               </svg>

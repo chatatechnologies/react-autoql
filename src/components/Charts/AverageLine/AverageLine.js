@@ -9,8 +9,8 @@ export class AverageLine extends React.Component {
     columns: PropTypes.array.isRequired,
     numberColumnIndex: PropTypes.number.isRequired,
     visibleSeriesIndices: PropTypes.array,
-    xScale: PropTypes.object.isRequired,
-    yScale: PropTypes.object.isRequired,
+    xScale: PropTypes.func.isRequired,
+    yScale: PropTypes.func.isRequired,
     width: PropTypes.number.isRequired,
     height: PropTypes.number.isRequired,
     isVisible: PropTypes.bool.isRequired,
@@ -173,6 +173,7 @@ export class AverageLine extends React.Component {
           x={width - 10}
           y={textY}
           fontSize='11'
+          fontWeight='bold'
           fill='var(--react-autoql-text-color-primary)'
           stroke='var(--react-autoql-background-color)'
           strokeWidth='3'
@@ -180,6 +181,8 @@ export class AverageLine extends React.Component {
           strokeLinecap='round'
           textAnchor='end'
           className='average-line-label'
+          data-tooltip-content={tooltipContent}
+          data-tooltip-id={this.props.chartTooltipID}
         >
           Avg: {formattedAverage}
         </text>
