@@ -86,11 +86,11 @@ export default class ChataTable extends React.Component {
 
     this.tableOptions = {
       selectableRowsCheck: () => false,
+      movableColumns: true,
       initialSort: undefined, // Let getRows do initial sorting and filtering
       initialFilter: undefined, // Let getRows do initial sorting and filtering
       progressiveLoadScrollMargin: 50, // Trigger next ajax load when scroll bar is 800px or less from the bottom of the table.
       // renderHorizontal: 'virtual', // v4: virtualDomHoz = false
-      movableColumns: true,
       downloadEncoder: function (fileContents, mimeType) {
         //fileContents - the unencoded contents of the file
         //mimeType - the suggested mime type for the output
@@ -331,10 +331,6 @@ export default class ChataTable extends React.Component {
 
     try {
       const rows = this.getAllRows(props)
-
-      if (!(rows?.length > 1)) {
-        return {}
-      }
 
       props.columns?.forEach((column, columnIndex) => {
         // If column has a mutator function, stats cannot be calculated based on the cell values
