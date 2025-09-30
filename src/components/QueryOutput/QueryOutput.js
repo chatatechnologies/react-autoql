@@ -325,6 +325,8 @@ export class QueryOutput extends React.Component {
   }
 
   handleLegendVisibilityChange = (hiddenLabels) => {
+    if (!this._isMounted) return
+
     const currentType = this.state.displayType
     this.setState({
       hiddenLegendLabels: hiddenLabels,
@@ -336,6 +338,8 @@ export class QueryOutput extends React.Component {
   }
 
   handleLegendClick = (label) => {
+    if (!this._isMounted) return
+
     const { hiddenLegendLabels, legendStateByChart, displayType } = this.state
     const isHidden = hiddenLegendLabels.includes(label)
     const newHiddenLabels = isHidden ? hiddenLegendLabels.filter((l) => l !== label) : [...hiddenLegendLabels, label]
@@ -497,7 +501,9 @@ export class QueryOutput extends React.Component {
       }
 
       setTimeout(() => {
-        this.updateToolbars()
+        if (this._isMounted) {
+          this.updateToolbars()
+        }
       }, 0)
 
       if (!_isEmpty(newState)) {
@@ -512,6 +518,9 @@ export class QueryOutput extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
+
+    // Cancel any pending requests
+    this.cancelCurrentRequest()
     document.removeEventListener('mousemove', this.handleMouseMove)
     document.removeEventListener('mouseup', this.handleMouseUp)
     document.removeEventListener('mouseleave', this.handleMouseUp)
@@ -540,7 +549,7 @@ export class QueryOutput extends React.Component {
     this.updateMaxConstraints()
   }
   handleResizeStart = (e) => {
-    if (!this.props.enableResizing) return
+    if (!this._isMounted || !this.props.enableResizing) return
 
     e.preventDefault()
     this.updateMaxConstraints()
@@ -561,7 +570,7 @@ export class QueryOutput extends React.Component {
   }
 
   handleMouseMove = (e) => {
-    if (!this.state.isResizing || !this.props.enableResizing) return
+    if (!this._isMounted || !this.state.isResizing || !this.props.enableResizing) return
 
     const deltaY = (e.clientY - this.state.resizeStartY) * this.resizeMultiplier
     const isChart = isChartType(this.state.displayType)
@@ -582,7 +591,7 @@ export class QueryOutput extends React.Component {
     this.props.onResize({ height: newHeight })
   }
   handleMouseUp = () => {
-    if (this.state.isResizing) {
+    if (this._isMounted && this.state.isResizing) {
       this.setState({ isResizing: false }, () => {
         this.refreshLayout()
       })
@@ -647,7 +656,7 @@ export class QueryOutput extends React.Component {
   getStringColumnIndex = (foundIndex) => {
     return foundIndex
       ? foundIndex
-      : this.tableConfig?.stringColumnIndices.length > 0
+      : this.tableConfig?.stringColumnIndices?.length > 0
       ? this.tableConfig?.stringColumnIndices[0]
       : 0
   }
@@ -691,6 +700,8 @@ export class QueryOutput extends React.Component {
   }
 
   changeDisplayType = (displayType, callback) => {
+    if (!this._isMounted) return
+
     this.checkAndUpdateTableConfigs(displayType)
     this.setState({ displayType }, () => {
       if (typeof callback === CustomColumnTypes.FUNCTION) {
@@ -823,11 +834,15 @@ export class QueryOutput extends React.Component {
   }
 
   isTableConfigValid = (tableConfig, columns, displayType) => {
+    const configToValidate = tableConfig ?? this.tableConfig
+    const columnsToValidate = columns ?? this.getColumns()
+    const displayTypeToValidate = displayType ?? this.state.displayType
+
     return isColumnIndexConfigValid({
       response: this.queryResponse,
-      columnIndexConfig: tableConfig ?? this.tableConfig,
-      columns: columns ?? this.getColumns(),
-      displayType: displayType ?? this.state.displayType,
+      columnIndexConfig: configToValidate,
+      columns: columnsToValidate,
+      displayType: displayTypeToValidate,
     })
   }
 
@@ -855,14 +870,14 @@ export class QueryOutput extends React.Component {
   }
 
   updateColumnsAndData = (response) => {
-    if (response && this._isMounted) {
+    if (response && response.data && response.data.data && this._isMounted) {
       this.pivotTableID = uuid()
       this.isOriginalData = false
       this.queryResponse = response
-      this.tableData = response?.data?.data?.rows || []
+      this.tableData = response.data.data.rows || []
 
       const additionalSelects = this.getAdditionalSelectsFromResponse(response)
-      const newColumns = this.formatColumnsForTable(response?.data?.data?.columns, additionalSelects)
+      const newColumns = this.formatColumnsForTable(response.data.data.columns, additionalSelects)
       const customColumnSelects = this.getUpdatedCustomColumnSelects(additionalSelects, newColumns)
 
       this.updateFilters(this.tableParams.filter, this.state.columns, newColumns)
@@ -1567,7 +1582,9 @@ export class QueryOutput extends React.Component {
 
     // This will update the filter badge in OptionsToolbar
     setTimeout(() => {
-      this.updateToolbars()
+      if (this._isMounted) {
+        this.updateToolbars()
+      }
     }, 0)
   }
 
@@ -1597,7 +1614,9 @@ export class QueryOutput extends React.Component {
       )
     }
 
-    this.setState({ chartID: uuid() })
+    if (this._isMounted) {
+      this.setState({ chartID: uuid() })
+    }
   }
 
   isValidSorter = (sorter) => {
@@ -1649,7 +1668,9 @@ export class QueryOutput extends React.Component {
         newColumns,
         this.getAdditionalSelectsFromResponse(this.queryResponse),
       )
-      this.setState({ columns: formattedColumns })
+      if (this._isMounted) {
+        this.setState({ columns: formattedColumns })
+      }
     }
   }
 
@@ -1811,7 +1832,10 @@ export class QueryOutput extends React.Component {
 
   resetTableConfig = (newColumns) => {
     this.tableConfig = undefined
-    this.setTableConfig(newColumns)
+    const validColumns =
+      Array.isArray(newColumns) && newColumns.length ? newColumns : this.getColumns?.() || this.props.columns || []
+    if (!validColumns.length) return
+    this.setTableConfig(validColumns)
   }
 
   isColumnIndexValid = (index, columns) => {
@@ -1834,11 +1858,66 @@ export class QueryOutput extends React.Component {
     return indices?.findIndex((i) => index === i) !== -1
   }
 
-  setTableConfig = (newColumns) => {
-    const columns = newColumns ?? this.getColumns()
-    if (!columns) {
+  shouldUpdateStringColumnIndices = (columns) => {
+    return (
+      !this.tableConfig.stringColumnIndices ||
+      !this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns) ||
+      !getVisibleColumns(columns).some((col) => this.tableConfig.stringColumnIndices.includes(col.index))
+    )
+  }
+
+  initializeNumberColumnIndices = (columns) => {
+    const visibleCols = getVisibleColumns(columns) || []
+    const visibleNumberColumns =
+      visibleCols.filter((col) => isColumnNumberType(col)) || (columns || []).filter((col) => isColumnNumberType(col))
+
+    if (
+      visibleNumberColumns.length > 0 &&
+      (!this.tableConfig.numberColumnIndices || !this.tableConfig.numberColumnIndices.length)
+    ) {
+      this.tableConfig.numberColumnIndices = [visibleNumberColumns[0].index]
+      this.tableConfig.numberColumnIndex = visibleNumberColumns[0].index
+    }
+  }
+
+  configureStringColumnIndices = (columns, currentDisplayType) => {
+    const visibleColumns = getVisibleColumns(columns)
+    const visibleStringColumns = visibleColumns.filter((col) => !isColumnNumberType(col))
+
+    let stringColumnIndices = visibleStringColumns.map((col) => col.index)
+    let stringColumnIndex = stringColumnIndices.length > 0 ? stringColumnIndices[0] : undefined
+
+    // For histograms with only numeric columns, don't assign string columns
+    if (!stringColumnIndices.length && currentDisplayType === 'histogram') {
+      this.tableConfig.stringColumnIndices = []
+      this.tableConfig.stringColumnIndex = undefined
       return
     }
+
+    // For other display types, fallback to first visible column if no string columns
+    if (!stringColumnIndices.length) {
+      const fallback = visibleColumns[0]
+      if (fallback) {
+        stringColumnIndices = [fallback.index]
+        stringColumnIndex = fallback.index
+      }
+    }
+
+    this.tableConfig.stringColumnIndices = stringColumnIndices
+    this.tableConfig.stringColumnIndex = stringColumnIndex
+
+    // Ensure not all columns are string columns (reserve at least one for numbers)
+    if (stringColumnIndices.length === visibleColumns.length) {
+      const indexToRemove = stringColumnIndices.findIndex((i) => i !== stringColumnIndex)
+      if (indexToRemove > -1) {
+        this.tableConfig.stringColumnIndices.splice(indexToRemove, 1)
+      }
+    }
+  }
+
+  setTableConfig = (newColumns) => {
+    const columns = newColumns ?? this.getColumns()
+    if (!columns || !Array.isArray(columns) || columns.length === 0 || !this.queryResponse?.data?.data) return
 
     const prevTableConfig = _cloneDeep(this.tableConfig)
 
@@ -1846,27 +1925,12 @@ export class QueryOutput extends React.Component {
       this.tableConfig = {}
     }
 
-    // Set string type columns (ordinal axis)
-    const isStringColumnIndexValid = this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns)
+    const currentDisplayType = this.state?.displayType ?? this.getDisplayTypeFromInitial(this.props)
 
-    if (!this.tableConfig.stringColumnIndices || !isStringColumnIndexValid) {
-      const isPivot = false
-      const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
-        columns,
-        isPivot,
-        this.ALLOW_NUMERIC_STRING_COLUMNS,
-      )
+    this.initializeNumberColumnIndices(columns)
 
-      this.tableConfig.stringColumnIndices = stringColumnIndices
-      this.tableConfig.stringColumnIndex = stringColumnIndex
-
-      // If it set all of the columns to string column indices, remove one so it can be set as the number column index
-      if (stringColumnIndices.length === getVisibleColumns(columns).length) {
-        const indexToRemove = stringColumnIndices.findIndex((i) => i !== stringColumnIndex)
-        if (indexToRemove > -1) {
-          this.tableConfig.stringColumnIndices.splice(indexToRemove, 1)
-        }
-      }
+    if (this.shouldUpdateStringColumnIndices(columns)) {
+      this.configureStringColumnIndices(columns, currentDisplayType)
     }
 
     const { amountOfNumberColumns } = getColumnTypeAmounts(columns) ?? {}
@@ -3280,7 +3344,6 @@ export class QueryOutput extends React.Component {
     const columns = usePivotData ? this.pivotTableColumns : this.getColumns()
     const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
     const tableConfigIsValid = this.isTableConfigValid(tableConfig, columns, this.state.displayType)
-
     const shouldRenderChart = (allowsDisplayTypeChange || displayTypeIsChart) && supportsCharts && tableConfigIsValid
     const shouldRenderTable = allowsDisplayTypeChange || displayTypeIsTable
     const shouldRenderPivotTable = (allowsDisplayTypeChange || displayTypeIsPivotTable) && supportsPivotTable
