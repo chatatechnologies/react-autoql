@@ -35,10 +35,42 @@ export class AverageLine extends React.Component {
   }
 
   calculateAverage = () => {
-    const { data, columns, numberColumnIndex, visibleSeriesIndices, chartType } = this.props
+    const { data, columns, numberColumnIndex, visibleSeriesIndices, chartType, numberColumnIndex2 } = this.props
 
     if (!data?.length) {
       return null
+    }
+
+    // For scatterplots, calculate average of Y-values (second number column)
+    if (chartType === 'scatterplot') {
+      console.log('🔍 SCATTERPLOT AVERAGE DEBUG:', {
+        chartType,
+        dataLength: data?.length,
+        numberColumnIndex2,
+        hasNumberColumnIndex2: numberColumnIndex2 !== undefined && numberColumnIndex2 !== null,
+      })
+
+      const yValues = data
+        .map((row) => {
+          const value = row[numberColumnIndex2] // Y-axis column for scatterplot
+          const numValue = typeof value === 'string' ? parseFloat(value) : value
+          return isNaN(numValue) ? null : numValue
+        })
+        .filter((value) => value !== null && value !== undefined)
+
+      console.log('🔍 SCATTERPLOT AVERAGE DEBUG - yValues:', {
+        yValuesLength: yValues.length,
+        sampleValues: yValues.slice(0, 5),
+      })
+
+      if (yValues.length === 0) {
+        console.log('🔍 SCATTERPLOT AVERAGE DEBUG - No valid Y values found')
+        return null
+      }
+
+      const average = mean(yValues)
+      console.log('🔍 SCATTERPLOT AVERAGE DEBUG - calculated average:', average)
+      return average
     }
 
     // Determine which series indices to use for calculation
@@ -116,22 +148,39 @@ export class AverageLine extends React.Component {
       dataFormatting,
       columns,
       numberColumnIndex,
+      numberColumnIndex2,
+      chartType,
     } = this.props
 
+    console.log('🔍 AVERAGE LINE RENDER DEBUG:', {
+      isVisible,
+      chartType,
+      hasYScale: !!yScale,
+      hasWidth: !!width,
+      hasHeight: !!height,
+    })
+
     if (!isVisible) {
+      console.log('🔍 AVERAGE LINE RENDER DEBUG - Not visible, returning null')
       return null
     }
 
     const averageValue = this.calculateAverage()
 
+    console.log('🔍 AVERAGE LINE RENDER DEBUG - averageValue:', averageValue)
+
     if (averageValue === null || averageValue === undefined) {
+      console.log('🔍 AVERAGE LINE RENDER DEBUG - No average value, returning null')
       return null
     }
+
+    // For scatterplots, use the Y-column for formatting; for other charts, use the main number column
+    const columnForFormatting = chartType === 'scatterplot' ? columns[numberColumnIndex2] : columns[numberColumnIndex]
 
     // Format the average value with proper units
     const formattedAverage = formatElement({
       element: averageValue,
-      column: columns[numberColumnIndex],
+      column: columnForFormatting,
       config: dataFormatting,
     })
 

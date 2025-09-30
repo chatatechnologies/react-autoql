@@ -34,11 +34,62 @@ export class RegressionLine extends React.Component {
     return chartType === 'bar' || chartType === 'stacked_bar'
   }
 
+  isScatterplot = () => {
+    const { chartType } = this.props
+    return chartType === 'scatterplot'
+  }
+
   calculateLinearRegression = () => {
-    const { data, columns, numberColumnIndex, visibleSeriesIndices, chartType } = this.props
+    const { data, columns, numberColumnIndex, visibleSeriesIndices, chartType, numberColumnIndex2 } = this.props
 
     if (!data?.length) {
       return null
+    }
+
+    // For scatterplots, use X and Y number columns directly
+    if (chartType === 'scatterplot') {
+      console.log('🔍 SCATTERPLOT REGRESSION DEBUG:', {
+        chartType,
+        dataLength: data?.length,
+        numberColumnIndex,
+        numberColumnIndex2,
+        hasNumberColumnIndex2: numberColumnIndex2 !== undefined && numberColumnIndex2 !== null,
+      })
+
+      const points = data
+        .map((row) => {
+          const xValue = row[numberColumnIndex] // X-axis column
+          const yValue = row[numberColumnIndex2] // Y-axis column
+          const numX = typeof xValue === 'string' ? parseFloat(xValue) : xValue
+          const numY = typeof yValue === 'string' ? parseFloat(yValue) : yValue
+
+          if (
+            !isNaN(numX) &&
+            !isNaN(numY) &&
+            numX !== null &&
+            numY !== null &&
+            numX !== undefined &&
+            numY !== undefined
+          ) {
+            return { x: numX, y: numY }
+          }
+          return null
+        })
+        .filter((point) => point !== null)
+
+      console.log('🔍 SCATTERPLOT REGRESSION DEBUG - points:', {
+        pointsLength: points.length,
+        samplePoints: points.slice(0, 3),
+      })
+
+      if (points.length < 2) {
+        console.log('🔍 SCATTERPLOT REGRESSION DEBUG - Not enough points for regression')
+        return null
+      }
+
+      const regression = this.calculateRegressionFromPoints(points)
+      console.log('🔍 SCATTERPLOT REGRESSION DEBUG - calculated regression:', regression)
+      return regression
     }
 
     // Determine which series indices to use for calculation
@@ -146,7 +197,14 @@ export class RegressionLine extends React.Component {
   }
 
   render = () => {
+    console.log('🔍 REGRESSION LINE RENDER DEBUG:', {
+      isVisible: this.props.isVisible,
+      chartType: this.props.chartType,
+      visibleSeriesIndices: this.props.visibleSeriesIndices?.length,
+    })
+
     if (!this.props.isVisible) {
+      console.log('🔍 REGRESSION LINE RENDER DEBUG - Not visible, returning null')
       return null
     }
 
@@ -158,11 +216,19 @@ export class RegressionLine extends React.Component {
       chartType === 'stacked_area' ||
       chartType === 'stacked_line'
 
+    console.log('🔍 REGRESSION LINE RENDER DEBUG - Logic:', {
+      isMultiSeries,
+      isStacked,
+      willUseCombined: isStacked || !isMultiSeries,
+    })
+
     if (isStacked || !isMultiSeries) {
       // Use combined trend line for stacked charts or single series
+      console.log('🔍 REGRESSION LINE RENDER DEBUG - Using combined trend line')
       return this.renderCombinedTrendLine()
     } else {
       // Use individual trend lines for regular multi-series charts
+      console.log('🔍 REGRESSION LINE RENDER DEBUG - Using individual trend lines')
       return this.renderIndividualTrendLines()
     }
   }
@@ -209,9 +275,14 @@ export class RegressionLine extends React.Component {
     const midX = this.isBarChart() ? (extendedStartY + extendedEndY) / 2 : width / 2
     const midY = this.isBarChart() ? height / 2 : (extendedStartY + extendedEndY) / 2
     const textY = this.isBarChart() ? (midY < 20 ? midY + 15 : midY - 5) : midY < 20 ? midY + 15 : midY - 5
+    // For scatterplots, use Y-column for formatting; for other charts, use main number column
+    const columnForFormatting = this.isScatterplot()
+      ? this.props.columns[this.props.numberColumnIndex2]
+      : this.props.columns[this.props.numberColumnIndex]
+
     const formattedSlope = formatElement({
       element: displayedSlope,
-      column: this.props.columns[this.props.numberColumnIndex],
+      column: columnForFormatting,
       config: dataFormatting,
     })
 
@@ -402,10 +473,15 @@ export class RegressionLine extends React.Component {
           // Calculate displayed slope value to match visual direction
           const displayedSlope = isTrendUp ? Math.abs(regression.slope) : -Math.abs(regression.slope)
 
+          // For scatterplots, use Y-column for formatting; for other charts, use series column
+          const columnForFormatting = this.isScatterplot()
+            ? this.props.columns[this.props.numberColumnIndex2]
+            : columns[columnIndex]
+
           // Format the slope value
           const formattedSlope = formatElement({
             element: displayedSlope,
-            column: columns[columnIndex],
+            column: columnForFormatting,
             config: dataFormatting,
           })
 

@@ -632,7 +632,7 @@ export default class ChataChart extends React.Component {
   }
 
   shouldShowAverageLine = () => {
-    // Average and regression lines are supported for column-based charts, line charts, and area charts
+    // Average and regression lines are supported for column-based charts, line charts, area charts, and scatterplots
     const supportedCharts = [
       DisplayTypes.COLUMN,
       DisplayTypes.STACKED_COLUMN,
@@ -642,6 +642,7 @@ export default class ChataChart extends React.Component {
       DisplayTypes.STACKED_LINE,
       DisplayTypes.AREA,
       DisplayTypes.STACKED_AREA,
+      DisplayTypes.SCATTERPLOT,
     ]
     return supportedCharts.includes(this.props.type)
   }
@@ -665,6 +666,8 @@ export default class ChataChart extends React.Component {
         return 'area'
       case DisplayTypes.STACKED_AREA:
         return 'stacked_area'
+      case DisplayTypes.SCATTERPLOT:
+        return 'scatterplot'
       default:
         return 'column'
     }
@@ -731,7 +734,7 @@ export default class ChataChart extends React.Component {
         )
       }
       case DisplayTypes.SCATTERPLOT: {
-        return <ChataScatterplotChart {...commonChartProps} />
+        return <ChataScatterplotChart {...commonChartProps} incrementScaleVersion={this.incrementScaleVersion} />
       }
       default: {
         return 'Unknown Display Type'
@@ -797,6 +800,7 @@ export default class ChataChart extends React.Component {
                         data={this.getCommonChartProps().data}
                         columns={this.props.columns}
                         numberColumnIndex={this.props.numberColumnIndex}
+                        numberColumnIndex2={this.props.numberColumnIndex2}
                         visibleSeriesIndices={this.props.numberColumnIndices?.filter(
                           (colIndex) => this.props.columns?.[colIndex] && !this.props.columns[colIndex].isSeriesHidden,
                         )}
@@ -824,6 +828,7 @@ export default class ChataChart extends React.Component {
                         data={this.getCommonChartProps().data}
                         columns={this.props.columns}
                         numberColumnIndex={this.props.numberColumnIndex}
+                        numberColumnIndex2={this.props.numberColumnIndex2}
                         visibleSeriesIndices={this.props.numberColumnIndices?.filter(
                           (colIndex) => this.props.columns?.[colIndex] && !this.props.columns[colIndex].isSeriesHidden,
                         )}
