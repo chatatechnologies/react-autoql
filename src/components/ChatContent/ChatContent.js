@@ -188,7 +188,7 @@ export default class ChatContent extends React.Component {
     this.setState({ isDrilldownRunning: true, isInputDisabled: true })
   }
 
-  onDrilldownEnd = ({ response, error, originalQueryID } = {}) => {
+  onDrilldownEnd = ({ response, error, originalQueryID, drilldownFilters } = {}) => {
     if (this._isMounted) {
       if (this.keepLoading) {
         this.keepLoading = false
@@ -197,7 +197,7 @@ export default class ChatContent extends React.Component {
         this.setState({ isDrilldownRunning: false, isInputDisabled: false })
 
         if (response) {
-          this.addResponseMessage({ response, originalQueryID })
+          this.addResponseMessage({ response, originalQueryID, drilldownFilters })
         } else if (error) {
           this.addResponseMessage({
             content: error,
@@ -471,6 +471,7 @@ export default class ChatContent extends React.Component {
                     dataFormatting={this.props.dataFormatting}
                     response={message.response}
                     type={message.type}
+                    drilldownFilters={message.drilldownFilters}
                     onErrorCallback={this.props.onErrorCallback}
                     onSuccessAlert={this.props.onSuccessAlert}
                     deleteMessageCallback={this.deleteMessage}

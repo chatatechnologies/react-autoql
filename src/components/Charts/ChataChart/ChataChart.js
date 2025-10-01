@@ -391,7 +391,12 @@ export default class ChataChart extends React.Component {
     if (this.innerChartRef?.xScale && chartWidth) {
       const rangeInPx = this.innerChartRef.xScale.range()[1] - this.innerChartRef.xScale.range()[0]
       const totalHorizontalMargins = chartWidth - rangeInPx
-      innerWidth = containerWidth - totalHorizontalMargins - 2 * this.PADDING
+
+      // Add extra margin for right axis dropdown if second axis exists
+      const hasRightAxis = this.innerChartRef?.axesRef?.rightAxis
+      const rightAxisDropdownMargin = hasRightAxis ? 10 : 0 // Extra space for axis dropdown
+
+      innerWidth = containerWidth - totalHorizontalMargins - 2 * this.PADDING - rightAxisDropdownMargin
     }
 
     let innerHeight = containerHeight - 2 * this.PADDING

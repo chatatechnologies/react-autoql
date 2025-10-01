@@ -263,7 +263,6 @@ export default class TableWrapper extends React.Component {
       data: this.props.options?.ajaxRequestFunc ? [] : _cloneDeep(this.props.data),
       ...this.defaultOptions,
       ...this.props.options,
-      columnCalcs: 'true',
     })
 
     this.tabulator.on('renderComplete', () => {

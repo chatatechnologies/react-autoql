@@ -664,10 +664,6 @@
   position: relative;
   z-index: 2;
 
-  &.react-autoql-data-explorer {
-    background-color: var(--react-autoql-background-color-secondary);
-  }
-
   .react-autoql-icon.data-search svg {
     stroke: var(--react-autoql-background-color-primary);
     stroke-width: 0.3px;

@@ -140,6 +140,7 @@ export default class DrilldownModal extends React.Component {
         isResizing={this.props.isAnimating || this.state.isResizingDrilldown}
         isLoading={this.props.isDrilldownRunning}
         queryResponse={this.props.drilldownResponse}
+        drilldownFilters={this.props.drilldownFilters}
         tooltipID={this.props.tooltipID}
         chartTooltipID={this.props.chartTooltipID}
         reportProblemCallback={this.reportProblemCallback}
