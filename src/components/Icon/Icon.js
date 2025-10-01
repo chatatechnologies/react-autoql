@@ -110,6 +110,7 @@ import {
 } from '../../svgIcons.js'
 
 import './Icon.scss'
+import { info } from 'autoprefixer'
 
 export default class Icon extends React.Component {
   static propTypes = {
@@ -117,6 +118,7 @@ export default class Icon extends React.Component {
     size: PropTypes.number, // used for the image icons ie. react-autoql-bubbles
     showBadge: PropTypes.bool,
     color: PropTypes.string,
+    info: PropTypes.bool,
     success: PropTypes.bool,
     warning: PropTypes.bool,
     danger: PropTypes.bool,
@@ -128,6 +130,7 @@ export default class Icon extends React.Component {
     size: undefined,
     showBadge: false,
     color: undefined,
+    info: false,
     success: false,
     warning: false,
     danger: false,
@@ -136,8 +139,20 @@ export default class Icon extends React.Component {
   }
 
   render = () => {
-    const { type, size, showBadge, success, warning, danger, spinning, disabled, tooltip, tooltipID, ...nativeProps } =
-      this.props
+    const {
+      type,
+      size,
+      showBadge,
+      info,
+      success,
+      warning,
+      danger,
+      spinning,
+      disabled,
+      tooltip,
+      tooltipID,
+      ...nativeProps
+    } = this.props
 
     let icon = null
 
