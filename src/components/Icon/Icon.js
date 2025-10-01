@@ -110,7 +110,6 @@ import {
 } from '../../svgIcons.js'
 
 import './Icon.scss'
-import { info } from 'autoprefixer'
 
 export default class Icon extends React.Component {
   static propTypes = {
