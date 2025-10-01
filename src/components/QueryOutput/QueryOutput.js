@@ -876,10 +876,10 @@ export class QueryOutput extends React.Component {
       this.pivotTableID = uuid()
       this.isOriginalData = false
       this.queryResponse = response
-      this.tableData = response.data.data.rows || []
+      this.tableData = response?.data?.data?.rows || []
 
       const additionalSelects = this.getAdditionalSelectsFromResponse(response)
-      const newColumns = this.formatColumnsForTable(response.data.data.columns, additionalSelects)
+      const newColumns = this.formatColumnsForTable(response?.data?.data?.columns, additionalSelects)
       const customColumnSelects = this.getUpdatedCustomColumnSelects(additionalSelects, newColumns)
 
       this.updateFilters(this.tableParams.filter, this.state.columns, newColumns)
@@ -1230,6 +1230,7 @@ export class QueryOutput extends React.Component {
         })
       } catch (error) {
         response = this.handleQueryFnError(error)
+        console.error(error)
       }
     } else {
       try {
@@ -1253,10 +1254,12 @@ export class QueryOutput extends React.Component {
         })
       } catch (error) {
         response = this.handleQueryFnError(error)
+        console.error(error)
       }
     }
 
     this.setState({ isLoadingData: false })
+
     return response
   }
 
@@ -2324,6 +2327,7 @@ export class QueryOutput extends React.Component {
   }
 
   formatColumnsForTable = (columns, additionalSelects = [], aggConfig = {}) => {
+    // todo: do this inside of chatatable
     if (!columns) {
       return null
     }
@@ -3356,6 +3360,7 @@ export class QueryOutput extends React.Component {
     const columns = usePivotData ? this.pivotTableColumns : this.getColumns()
     const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
     const tableConfigIsValid = this.isTableConfigValid(tableConfig, columns, this.state.displayType)
+
     const shouldRenderChart = (allowsDisplayTypeChange || displayTypeIsChart) && supportsCharts && tableConfigIsValid
     const shouldRenderTable = allowsDisplayTypeChange || displayTypeIsTable
     const shouldRenderPivotTable = (allowsDisplayTypeChange || displayTypeIsPivotTable) && supportsPivotTable
