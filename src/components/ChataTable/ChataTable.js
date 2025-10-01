@@ -882,6 +882,19 @@ export default class ChataTable extends React.Component {
     if (!this.useInfiniteScroll) {
       this.ref?.restoreRedraw()
     }
+
+    // Handle Enter key press
+    if (event.key === 'Enter') {
+      const inputElement = event.target
+      const fieldName =
+        inputElement.getAttribute('data-field') ||
+        inputElement.closest('.tabulator-col')?.getAttribute('tabulator-field')
+
+      // If input is empty, remove the filter from Tabulator's internal state
+      if (fieldName && (!inputElement.value || inputElement.value.trim() === '')) {
+        this.ref?.tabulator?.setHeaderFilterValue(fieldName, undefined)
+      }
+    }
   }
 
   inputSearchListener = () => {
@@ -952,6 +965,8 @@ export default class ChataTable extends React.Component {
     clearBtn.addEventListener('click', (e) => {
       e.stopPropagation()
       this.setHeaderInputValue(inputElement, '')
+      // Actually remove the filter from Tabulator's internal state
+      this.ref?.tabulator?.setHeaderFilterValue(column.field, undefined)
       if (column?.type === ColumnTypes.DATE && !column?.pivot) {
         this.currentDateRangeSelections = {}
         this.debounceSetState({
@@ -1316,6 +1331,7 @@ export default class ChataTable extends React.Component {
           {...this.props}
           isOpen={this.state.isCustomColumnPopoverOpen}
           onClose={() => this.resetCustomColumnModal()}
+          // TableComponent={ChataTable}
           tableRef={this.ref}
           aggConfig={this.props.aggConfig}
           queryResponse={this.props.response}

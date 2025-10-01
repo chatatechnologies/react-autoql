@@ -99,6 +99,9 @@ export class QueryOutput extends React.Component {
     this.CHART_TOOLTIP_ID = `react-autoql-query-output-chart-tooltip-${this.COMPONENT_KEY}`
     this.ALLOW_NUMERIC_STRING_COLUMNS = true
     this.MAX_PIVOT_TABLE_COLUMNS = 50
+    this.DEFAULT_TOOLTIP_TEXT = 'Right-click to copy value'
+    this.COPIED_TOOLTIP_TEXT = 'Copied!'
+    this.ERROR_TOOLTIP_TEXT = 'Copy failed. Please try again.'
 
     this.originalLegendState = {
       hiddenLegendLabels: [],
@@ -136,13 +139,12 @@ export class QueryOutput extends React.Component {
 
     // Set initial config if needed
     // If this config causes errors, it will be reset when the error occurs
-    if (props.initialTableConfigs?.tableConfig) {
-      const isValid = this.isTableConfigValid(props.initialTableConfigs?.tableConfig, columns, displayType)
-
-      if (isValid) {
-        const { tableConfig } = props.initialTableConfigs
-        this.tableConfig = _cloneDeep(tableConfig)
-      }
+    if (
+      props.initialTableConfigs?.tableConfig &&
+      this.isTableConfigValid(props.initialTableConfigs?.tableConfig, columns, displayType)
+    ) {
+      const { tableConfig } = props.initialTableConfigs
+      this.tableConfig = _cloneDeep(tableConfig)
     }
 
     // --------- generate data before mount --------
@@ -1193,12 +1195,18 @@ export class QueryOutput extends React.Component {
 
     this.cancelCurrentRequest()
     this.axiosSource = axios.CancelToken?.source()
-
     this.setState({ isLoadingData: true })
 
-    const sessionFilters =
-      queryRequestData?.session_filter_locks ||
-      (this.props.scope === 'dashboards' ? this.initialFormattedTableParams?.sessionFilters : [])
+    // Only send whitelisted fields to API
+    const sanitizeFilters = (filters = []) =>
+      (filters || []).map((f) => ({
+        name: f?.name,
+        operator: f?.operator,
+        value: f?.value,
+        column_type: f?.column_type,
+      }))
+    const sessionFilters = sanitizeFilters(queryRequestData?.session_filter_locks || [])
+    const allFiltersSanitized = sanitizeFilters(allFilters)
     let response
 
     if (isDrilldown(this.queryResponse)) {
@@ -1210,19 +1218,18 @@ export class QueryOutput extends React.Component {
           scope: this.props.scope,
           translation: queryRequestData?.translation,
           filters: sessionFilters,
+          tableFilters: allFiltersSanitized,
           pageSize: queryRequestData?.page_size,
           test: queryRequestData?.test,
           groupBys: queryRequestData?.columns,
           query: queryRequestData?.text,
           queryID: this.props.originalQueryID,
           orders: this.formattedTableParams?.sorters,
-          tableFilters: allFilters,
           cancelToken: this.axiosSource.token,
           ...args,
         })
       } catch (error) {
         response = this.handleQueryFnError(error)
-        console.error(error)
       }
     } else {
       try {
@@ -1233,6 +1240,7 @@ export class QueryOutput extends React.Component {
           translation: queryRequestData?.translation,
           userSelection: queryRequestData?.disambiguation,
           filters: sessionFilters,
+          tableFilters: allFiltersSanitized,
           test: queryRequestData?.test,
           pageSize: queryRequestData?.page_size,
           orders: this.formattedTableParams?.sorters,
@@ -1242,16 +1250,13 @@ export class QueryOutput extends React.Component {
           newColumns: queryRequestData?.additional_selects,
           displayOverrides: queryRequestData?.display_overrides,
           ...args,
-          tableFilters: allFilters,
         })
       } catch (error) {
         response = this.handleQueryFnError(error)
-        console.error(error)
       }
     }
 
     this.setState({ isLoadingData: false })
-
     return response
   }
 
@@ -1283,15 +1288,36 @@ export class QueryOutput extends React.Component {
         if (supportedByAPI) {
           this.props.onDrilldownStart(activeKey)
           try {
+            const queryRequestData = this.queryResponse?.data?.data?.fe_req
             const allFilters = this.getCombinedFilters()
+            // Only send whitelisted fields to API
+            const sanitizeFilters = (filters = []) =>
+              (filters || []).map((f) => ({
+                name: f?.name,
+                operator: f?.operator,
+                value: f?.value,
+                column_type: f?.column_type,
+              }))
+            const sessionFilters = sanitizeFilters(queryRequestData?.session_filter_locks || [])
+            const allFiltersSanitized = sanitizeFilters(allFilters)
+
             const response = await runDrilldown({
               ...getAuthentication(this.props.authentication),
               ...getAutoQLConfig(this.props.autoQLConfig),
-              queryID: this.queryID,
+              // Context
               source: this.props.source,
+              scope: this.props.scope,
+              // Base query information
+              query: queryRequestData?.text,
+              translation: queryRequestData?.translation,
+              queryID: this.queryID,
+              // Drilldown specifics
               groupBys,
               pageSize,
-              tableFilters: allFilters, // Include existing filters
+              orders: this.formattedTableParams?.sorters,
+              // Filters
+              filters: sessionFilters,
+              tableFilters: allFiltersSanitized,
             })
             this.props.onDrilldownEnd({
               response,
@@ -1315,7 +1341,14 @@ export class QueryOutput extends React.Component {
           const allFilters = this.getCombinedFilters([clickedFilter])
           let response
           try {
-            response = await this.queryFn({ tableFilters: allFilters, pageSize })
+            const queryRequestData = this.queryResponse?.data?.data?.fe_req
+            response = await this.queryFn({
+              tableFilters: allFilters,
+              pageSize,
+              // For completeness, pass through context for the underlying query
+              query: queryRequestData?.text,
+              translation: queryRequestData?.translation,
+            })
           } catch (error) {
             response = error
           }
@@ -1368,56 +1401,24 @@ export class QueryOutput extends React.Component {
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
     const queryFilters = queryRequestData?.filters || []
     const tableFilters = this.formattedTableParams?.filters || []
+    const drilldownFilters = this.props.drilldownFilters || []
 
-    const allFilters = []
-
-    tableFilters.forEach((tableFilter) => {
-      let filter = tableFilter
-
+    const filtersSource = Array.isArray(newFilters) ? newFilters : tableFilters
+    let allFilters = filtersSource.map((tableFilter) => {
       const foundQueryFilter = queryFilters.find((filter) => filter.name === tableFilter.name)
-      if (foundQueryFilter) {
-        filter = {
-          ...tableFilter,
-          ...foundQueryFilter,
-        }
-      }
-
-      allFilters.push(filter)
+      return foundQueryFilter ? { ...tableFilter, ...foundQueryFilter } : tableFilter
     })
 
-    queryFilters.forEach((queryFilter) => {
-      if (!allFilters.find((filter) => filter.name === queryFilter.name)) {
-        allFilters.push(queryFilter)
+    drilldownFilters.forEach((drilldownFilter) => {
+      const idx = allFilters.findIndex((filter) => filter.name === drilldownFilter.name)
+      if (idx >= 0) {
+        allFilters[idx] = drilldownFilter
+      } else {
+        allFilters.push(drilldownFilter)
       }
     })
 
-    // Include the drilldown filters if they exist
-    if (this.props.drilldownFilters && this.props.drilldownFilters.length > 0) {
-      this.props.drilldownFilters.forEach((drilldownFilter) => {
-        const existingDrilldownFilterIndex = allFilters.findIndex((filter) => filter.name === drilldownFilter.name)
-        if (existingDrilldownFilterIndex >= 0) {
-          // Filter already exists, overwrite existing filter with drilldown value
-          allFilters[existingDrilldownFilterIndex] = drilldownFilter
-        } else {
-          // Filter didn't exist yet, add it to the list
-          allFilters.push(drilldownFilter)
-        }
-      })
-    }
-
-    // Include new filters if they exist
-    if (newFilters && newFilters.length > 0) {
-      newFilters.forEach((newFilter) => {
-        const existingFilterIndex = allFilters.findIndex((filter) => filter.name === newFilter.name)
-        if (existingFilterIndex >= 0) {
-          // Filter already exists, overwrite existing filter with new value
-          allFilters[existingFilterIndex] = newFilter
-        } else {
-          // Filter didn't exist yet, add it to the list
-          allFilters.push(newFilter)
-        }
-      })
-    }
+    allFilters = allFilters.filter((f) => f.value !== undefined && f.value !== null && f.value !== '')
 
     return allFilters.map((filter) => {
       const foundColumn = this.getColumns()?.find((column) => column.name === filter.name)
@@ -1460,8 +1461,20 @@ export class QueryOutput extends React.Component {
         ]
       } else {
         // Regular pivot table
-        const columnHeaderDefinition = columns[this.tableConfig.legendColumnIndex]
-        const rowHeaderDefinition = columns[this.tableConfig.stringColumnIndex]
+        // Safely resolve header definitions with sensible fallbacks
+        const legendIdx = this.tableConfig?.legendColumnIndex
+        let columnHeaderDefinition = columns?.[legendIdx]
+        if (!columnHeaderDefinition) {
+          columnHeaderDefinition =
+            columns?.find((col, idx) => idx !== this.tableConfig?.stringColumnIndex && col?.groupable) || columns?.[0]
+        }
+
+        const rowIdx = this.tableConfig?.stringColumnIndex
+        let rowHeaderDefinition = columns?.[rowIdx]
+        if (!rowHeaderDefinition) {
+          // Prefer a non-number (string/date) column for the row header; fallback to first column
+          rowHeaderDefinition = columns?.find((col) => !isColumnNumberType(col)) || columns?.[0]
+        }
         groupBys = getGroupBysFromPivotTable({
           cell,
           rowHeaders: this.pivotRowHeaders,
@@ -2311,7 +2324,6 @@ export class QueryOutput extends React.Component {
   }
 
   formatColumnsForTable = (columns, additionalSelects = [], aggConfig = {}) => {
-    // todo: do this inside of chatatable
     if (!columns) {
       return null
     }

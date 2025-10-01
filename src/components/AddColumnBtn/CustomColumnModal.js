@@ -4,7 +4,6 @@ import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.clonedeep'
 
 import {
-  AggTypes,
   ColumnObj,
   deepEqual,
   ColumnTypes,
@@ -39,7 +38,6 @@ import {
   CustomColumnTypes,
   CustomColumnRowRangeTypes,
 } from 'autoql-fe-utils'
-
 import { Icon } from '../Icon'
 import { Modal } from '../Modal'
 import { Input } from '../Input'
@@ -48,71 +46,47 @@ import { Select } from '../Select'
 import ChataTable from '../ChataTable/ChataTable'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
-
 import './CustomColumnModal.scss'
 
 export default class CustomColumnModal extends React.Component {
   constructor(props) {
     super(props)
-
     this.TABLE_ID = uuid()
     this.OPERATORS = getOperators(props.enableWindowFunctions)
-
     this.numberInputRefs = {}
-
     const firstIndex = props.columns.findIndex((col) => col?.is_visible && isColumnNumberType(col))
-
-    let initialColumn = props.initialColumn
-    if (!initialColumn && firstIndex >= 0) {
-      initialColumn = props.columns[firstIndex]
-    }
-
-    let initialColumnFn
-    if (props.initialColumn?.name) {
-      initialColumnFn = this.buildFnArray(props.initialColumn?.name, props.columns)
-    } else {
-      initialColumnFn = props.initialColumn?.columnFnArray ?? []
-    }
-
+    let initialColumn = props.initialColumn || (firstIndex >= 0 ? props.columns[firstIndex] : undefined)
+    let initialColumnFn = props.initialColumn?.name
+      ? this.buildFnArray(props.initialColumn?.name, props.columns)
+      : props.initialColumn?.columnFnArray ?? []
     this.newColumnRaw = this.getRawColumnParams(initialColumn, props.initialColumn?.display_name)
-
     const initialMutator = createMutatorFn(initialColumnFn)
     this.previousMutator = initialMutator
-
-    if (props.initialColumn) {
-      this.newColumn = _cloneDeep(props.initialColumn)
-    } else {
-      this.newColumn = new ColumnObj({
-        ...this.newColumnRaw,
-        id: uuid(),
-        fnSummary: '',
-        mutator: initialMutator,
-        columnFnArray: initialColumnFn,
-        field: `${props.columns?.length}`,
-        index: props.columns?.length,
-        custom: true,
-        headerFilter: false,
-        headerSort: false,
-      })
-    }
-
+    this.newColumn = props.initialColumn
+      ? _cloneDeep(props.initialColumn)
+      : new ColumnObj({
+          ...this.newColumnRaw,
+          id: uuid(),
+          fnSummary: '',
+          mutator: initialMutator,
+          columnFnArray: initialColumnFn,
+          field: `${props.columns?.length}`,
+          index: props.columns?.length,
+          custom: true,
+          headerFilter: false,
+          headerSort: false,
+        })
     const formattedColumn = this.getColumnParamsForTabulator(this.newColumn, props)
     formattedColumn.cssClass = HIGHLIGHTED_CLASS
-
     this.newColumn = formattedColumn
-
     let columns = _cloneDeep(props.columns)
     if (props.initialColumn) {
       const colIndex = columns.findIndex((col) => props.initialColumn.id === col.id)
-      if (colIndex >= 0) {
-        columns[colIndex] = this.newColumn
-      }
+      if (colIndex >= 0) columns[colIndex] = this.newColumn
     } else {
       columns.push(this.newColumn)
     }
-
     const numericalColumns = getNumericalColumns(props.columns)
-
     this.state = {
       columns,
       columnName: props.initialColumn?.display_name ?? DEFAULT_COLUMN_NAME,
@@ -122,7 +96,6 @@ export default class CustomColumnModal extends React.Component {
       isColumnNameValid: props.initialColumn
         ? true
         : this.checkColumnName(props.initialColumn?.display_name ?? DEFAULT_COLUMN_NAME),
-
       isFunctionConfigModalVisible: false,
       selectedFnOperation: null,
       selectedFnType: Object.keys(WINDOW_FUNCTIONS)[0],
@@ -141,6 +114,12 @@ export default class CustomColumnModal extends React.Component {
       selectedFnRowsOrRangeOptionPostNValue: null,
       selectedFnMovingAverageTimeInterval: null,
     }
+
+    // Bind callbacks used directly in JSX to preserve `this`
+    this.closeAddFunctionModal = this.closeAddFunctionModal.bind(this)
+    this.onAddFunction = this.onAddFunction.bind(this)
+    this.onUpdateColumnConfirm = this.onUpdateColumnConfirm.bind(this)
+    this.onAddColumnConfirm = this.onAddColumnConfirm.bind(this)
   }
 
   static propTypes = {
@@ -149,6 +128,7 @@ export default class CustomColumnModal extends React.Component {
     dataFormatting: dataFormattingType,
     enableWindowFunctions: PropTypes.bool,
     queryResponse: PropTypes.shape({}),
+    // TableComponent: PropTypes.any,
 
     onAddColumn: PropTypes.func,
     onUpdateColumn: PropTypes.func,
@@ -162,6 +142,7 @@ export default class CustomColumnModal extends React.Component {
     enableWindowFunctions: true,
 
     queryResponse: undefined,
+    // TableComponent: undefined,
     onAddColumn: () => {},
     onUpdateColumn: () => {},
     onClose: () => {},
@@ -1239,11 +1220,16 @@ export default class CustomColumnModal extends React.Component {
   }
 
   renderTablePreview = () => {
+    // const TableComponent = this.props.TableComponent
+    // if (!TableComponent) {
+    //   return null
+    // }
     return (
       <div className='react-autoql-table-preview-wrapper'>
         <div className='react-autoql-input-label'>Preview</div>
         <div className='react-autoql-table-preview-container'>
           <ChataTable
+            // <TableComponent
             key={this.TABLE_ID}
             ref={(r) => (this.tableRef = r)}
             authentication={this.props.authentication}
