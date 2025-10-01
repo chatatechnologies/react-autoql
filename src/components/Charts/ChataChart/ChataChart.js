@@ -504,14 +504,7 @@ export default class ChataChart extends React.Component {
       >
         {/* Chart Control Buttons */}
         {this.shouldShowAverageLine() && !this.props.hidden && (
-          <div
-            className='chart-control-buttons'
-            style={{
-              display: 'flex',
-              gap: '8px',
-              justifyContent: 'flex-start',
-            }}
-          >
+          <div className='chart-control-buttons'>
             <AverageLineToggle
               isEnabled={this.state.showAverageLine}
               onToggle={this.toggleAverageLine}
