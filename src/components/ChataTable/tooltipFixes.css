@@ -1,0 +1,21 @@
+/* This file contains additional styles for tooltips */
+
+/* Target tooltip content with specific text */
+[data-tooltip-content='Copied!'],
+[data-tooltip-content='Copied!'] .react-tooltip-content {
+  background-color: var(--react-autoql-accent-color, #26a7df) !important;
+  color: white !important;
+}
+
+[data-tooltip-content='Failed to copy'],
+[data-tooltip-content='Failed to copy'] .react-tooltip-content {
+  background-color: var(--react-autoql-error-color, #f44336) !important;
+  color: white !important;
+}
+
+[data-tooltip-content='Right-click to copy value'],
+[data-tooltip-content='Right-click to copy value'] .react-tooltip-content {
+  background-color: var(--react-autoql-background-color-secondary) !important;
+  color: var(--react-autoql-text-color-primary) !important;
+  border: 1px solid var(--react-autoql-border-color) !important;
+}
