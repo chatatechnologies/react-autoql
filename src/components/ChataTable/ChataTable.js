@@ -1017,17 +1017,11 @@ export default class ChataTable extends React.Component {
 
   inputKeydownListener = (event) => {
     if (event.key === 'Enter' && event.target.value === '') {
-      // Clear filter from both raw and formatted filters when Enter is pressed on empty input
       const columnField = event.target.getAttribute('data-column-field')
       if (columnField && this.tableParams?.filter) {
-        // Remove filter from raw tableParams
         this.tableParams.filter = this.tableParams.filter.filter((filter) => filter.field !== columnField)
-
-        // Immediately update formatted params and notify parent BEFORE any table refresh
         const currentTableParamsFormatted = formatTableParams(this.tableParams, this.props.columns)
         this.props.onTableParamsChange?.(this.tableParams, currentTableParamsFormatted)
-
-        // Trigger a table refresh to update tableParamsFormatted
         if (!this.useInfiniteScroll) {
           this.ref?.restoreRedraw()
         }
@@ -1038,7 +1032,6 @@ export default class ChataTable extends React.Component {
   }
 
   inputSearchListener = () => {
-    // When "x" button is clicked in the input box
     if (!this.useInfiniteScroll) {
       this.ref?.restoreRedraw()
     }
@@ -1105,20 +1098,10 @@ export default class ChataTable extends React.Component {
     clearBtn.addEventListener('click', (e) => {
       e.stopPropagation()
       this.setHeaderInputValue(inputElement, '')
-
-      // Clear filter from both raw and formatted filters when clear button is clicked
       if (column?.field && this.tableParams?.filter) {
-        // Find the column by field to get its ID
-        const columnData = this.props.columns?.find((col) => col.field === column.field)
-
-        // Remove filter from raw tableParams
         this.tableParams.filter = this.tableParams.filter.filter((filter) => filter.field !== column.field)
-
-        // Immediately update formatted params and notify parent BEFORE any table refresh
         const currentTableParamsFormatted = formatTableParams(this.tableParams, this.props.columns)
         this.props.onTableParamsChange?.(this.tableParams, currentTableParamsFormatted)
-
-        // Trigger a table refresh to update tableParamsFormatted
         this.ref?.restoreRedraw()
       }
 
