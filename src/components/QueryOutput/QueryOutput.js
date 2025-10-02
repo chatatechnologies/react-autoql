@@ -1174,6 +1174,16 @@ export class QueryOutput extends React.Component {
 
   queryFn = async (args = {}) => {
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
+
+    // Update formattedTableParams with current state from ChataTable before processing
+    if (args?.tableFilters || args?.orders) {
+      this.formattedTableParams = {
+        ...this.formattedTableParams,
+        filters: args?.tableFilters || [],
+        sorters: args?.orders || [],
+      }
+    }
+
     const allFilters = this.getCombinedFilters(args?.tableFilters)
 
     this.cancelCurrentRequest()
@@ -1201,9 +1211,9 @@ export class QueryOutput extends React.Component {
           query: queryRequestData?.text,
           queryID: this.props.originalQueryID,
           orders: this.formattedTableParams?.sorters,
-          tableFilters: allFilters,
           cancelToken: this.axiosSource.token,
           ...args,
+          tableFilters: allFilters,
         })
       } catch (error) {
         response = this.handleQueryFnError(error)
@@ -1350,31 +1360,8 @@ export class QueryOutput extends React.Component {
 
   // Function to combine original query filters and current table filters
   getCombinedFilters = (newFilters = []) => {
-    const queryRequestData = this.queryResponse?.data?.data?.fe_req
-    const queryFilters = queryRequestData?.filters || []
     const tableFilters = this.formattedTableParams?.filters || []
-
-    const allFilters = []
-
-    tableFilters.forEach((tableFilter) => {
-      let filter = tableFilter
-
-      const foundQueryFilter = queryFilters.find((filter) => filter.name === tableFilter.name)
-      if (foundQueryFilter) {
-        filter = {
-          ...tableFilter,
-          ...foundQueryFilter,
-        }
-      }
-
-      allFilters.push(filter)
-    })
-
-    queryFilters.forEach((queryFilter) => {
-      if (!allFilters.find((filter) => filter.name === queryFilter.name)) {
-        allFilters.push(queryFilter)
-      }
-    })
+    const allFilters = [...tableFilters]
 
     // Include the drilldown filters if they exist
     if (this.props.drilldownFilters && this.props.drilldownFilters.length > 0) {
