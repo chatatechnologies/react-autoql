@@ -31,6 +31,20 @@ describe('renders correctly', () => {
     })
   })
 
+  describe('chart controls', () => {
+    test('shows chart controls when enableChartControls is true', () => {
+      const wrapper = setup({ ...listSampleProps, type: 'column', enableChartControls: true })
+      const chartControls = wrapper.find('.chart-control-buttons')
+      expect(chartControls.exists()).toBe(true)
+    })
+
+    test('hides chart controls when enableChartControls is false', () => {
+      const wrapper = setup({ ...listSampleProps, type: 'column', enableChartControls: false })
+      const chartControls = wrapper.find('.chart-control-buttons')
+      expect(chartControls.exists()).toBe(false)
+    })
+  })
+
   describe('pivot data', () => {
     test('stacked-column', () => {
       const wrapper = setup({ ...pivotSampleProps, type: 'stacked_column' })

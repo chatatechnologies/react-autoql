@@ -89,11 +89,13 @@ export default class ChataChart extends React.Component {
 
     type: PropTypes.string.isRequired,
     onBucketSizeChange: PropTypes.func,
+    enableChartControls: PropTypes.bool,
   }
 
   static defaultProps = {
     ...chartContainerDefaultProps,
     onBucketSizeChange: () => {},
+    enableChartControls: true,
   }
 
   componentDidMount = () => {
@@ -503,7 +505,7 @@ export default class ChataChart extends React.Component {
         }`}
       >
         {/* Chart Control Buttons */}
-        {this.shouldShowAverageLine() && !this.props.hidden && (
+        {this.props.enableChartControls && this.shouldShowAverageLine() && !this.props.hidden && (
           <div className='chart-control-buttons'>
             <AverageLineToggle
               isEnabled={this.state.showAverageLine}

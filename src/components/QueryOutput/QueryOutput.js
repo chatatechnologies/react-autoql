@@ -241,6 +241,7 @@ export class QueryOutput extends React.Component {
     enableCustomColumns: PropTypes.bool,
     preferRegularTableInitialDisplayType: PropTypes.bool,
     drilldownFilters: PropTypes.arrayOf(PropTypes.shape({})),
+    enableChartControls: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -304,6 +305,7 @@ export class QueryOutput extends React.Component {
     enableCustomColumns: true,
     preferRegularTableInitialDisplayType: false,
     drilldownFilters: undefined,
+    enableChartControls: true,
   }
 
   componentDidMount = () => {
@@ -3101,6 +3103,7 @@ export class QueryOutput extends React.Component {
           isEditing={this.props.isEditing}
           hiddenLegendLabels={this.state.hiddenLegendLabels}
           onLegendVisibilityChange={this.handleLegendVisibilityChange}
+          enableChartControls={this.props.enableChartControls}
         />
       </ErrorBoundary>
     )
