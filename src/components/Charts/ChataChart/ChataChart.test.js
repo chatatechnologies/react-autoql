@@ -43,6 +43,42 @@ describe('renders correctly', () => {
       const chartControls = wrapper.find('.chart-control-buttons')
       expect(chartControls.exists()).toBe(false)
     })
+
+    test('uses initial chart control values', () => {
+      const initialControls = { showAverageLine: true, showRegressionLine: true }
+      const wrapper = setup({ 
+        ...listSampleProps, 
+        type: 'column', 
+        enableChartControls: true,
+        initialChartControls: initialControls
+      })
+      expect(wrapper.state('showAverageLine')).toBe(true)
+      expect(wrapper.state('showRegressionLine')).toBe(true)
+    })
+
+    test('calls onChartControlsChange when toggles are changed', () => {
+      const onChartControlsChange = jest.fn()
+      const wrapper = setup({ 
+        ...listSampleProps, 
+        type: 'column', 
+        enableChartControls: true,
+        onChartControlsChange
+      })
+      
+      // Toggle average line
+      wrapper.instance().toggleAverageLine()
+      expect(onChartControlsChange).toHaveBeenCalledWith({
+        showAverageLine: true,
+        showRegressionLine: false
+      })
+      
+      // Toggle regression line
+      wrapper.instance().toggleRegressionLine()
+      expect(onChartControlsChange).toHaveBeenCalledWith({
+        showAverageLine: true,
+        showRegressionLine: true
+      })
+    })
   })
 
   describe('pivot data', () => {

@@ -78,8 +78,8 @@ export default class ChataChart extends React.Component {
       deltaY: 0,
       chartID: uuid(),
       isLoading: true,
-      showAverageLine: false,
-      showRegressionLine: false,
+      showAverageLine: props.initialChartControls?.showAverageLine || false,
+      showRegressionLine: props.initialChartControls?.showRegressionLine || false,
       scaleVersion: 0, // Track scale changes to force line re-render
     }
   }
@@ -90,12 +90,24 @@ export default class ChataChart extends React.Component {
     type: PropTypes.string.isRequired,
     onBucketSizeChange: PropTypes.func,
     enableChartControls: PropTypes.bool,
+    initialChartControls: PropTypes.shape({
+      showAverageLine: PropTypes.bool,
+      showRegressionLine: PropTypes.bool,
+    }),
+    onChartControlsChange: PropTypes.func,
   }
 
   static defaultProps = {
     ...chartContainerDefaultProps,
     onBucketSizeChange: () => {},
     enableChartControls: true,
+    initialChartControls: {
+      showAverageLine: false,
+      showRegressionLine: false,
+      showAverageLine: false,
+      showRegressionLine: false,
+    },
+    onChartControlsChange: () => {},
   }
 
   componentDidMount = () => {
@@ -617,17 +629,25 @@ export default class ChataChart extends React.Component {
   handleLegendVisibilityChange = (hiddenLabels) => this.props.onLegendVisibilityChange?.(hiddenLabels)
 
   toggleAverageLine = () => {
-    this.setState({ showAverageLine: !this.state.showAverageLine })
+    const newShowAverageLine = !this.state.showAverageLine
+    this.setState({ showAverageLine: newShowAverageLine })
+    this.props.onChartControlsChange({
+      showAverageLine: newShowAverageLine,
+      showRegressionLine: this.state.showRegressionLine,
+    })
   }
 
   toggleRegressionLine = () => {
-    this.setState({ showRegressionLine: !this.state.showRegressionLine })
+    const newShowRegressionLine = !this.state.showRegressionLine
+    this.setState({ showRegressionLine: newShowRegressionLine })
+    this.props.onChartControlsChange({
+      showAverageLine: this.state.showAverageLine,
+      showRegressionLine: newShowRegressionLine,
+    })
   }
-
   incrementScaleVersion = () => {
     this.setState((prevState) => ({ scaleVersion: prevState.scaleVersion + 1 }))
   }
-
   shouldShowAverageLine = () => {
     // Average lines are supported for all chart types
     const supportedCharts = [
