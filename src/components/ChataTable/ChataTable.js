@@ -6,7 +6,6 @@ import { mean, sum } from 'd3-array'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
-import { isColumnSummable } from 'autoql-fe-utils'
 
 import {
   deepEqual,
@@ -343,7 +342,7 @@ export default class ChataTable extends React.Component {
           return
         }
 
-        if (isColumnSummable(column)) {
+        if (column?.type === ColumnTypes.QUANTITY || column?.type === ColumnTypes.DOLLAR_AMT) {
           const columnData = rows.map((r) => r[columnIndex])
           stats[columnIndex] = {
             avg: formatElement({ element: mean(columnData), column, config: props.dataFormatting }),
@@ -550,8 +549,6 @@ export default class ChataTable extends React.Component {
         tabulatorMounted: true,
         pageLoading: false,
       })
-
-      this.updateFooterVisibility()
 
       if (this.props.keepScrolledRight) {
         this.scrollToRight()
@@ -1028,19 +1025,6 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  updateFooterVisibility = () => {
-    if (this._isMounted && this.state.tabulatorMounted) {
-      const footer = this.ref?.tabulator?.element?.querySelector('.tabulator-footer')
-      if (footer) {
-        if (this.hasBottomCalc()) {
-          footer.classList.add('showing')
-        } else {
-          footer.classList.remove('showing')
-        }
-      }
-    }
-  }
-
   setFilters = async (newFilters) => {
     // Track when setFilters was called to prevent duplicate AJAX requests
     this._setFiltersTime = Date.now()
@@ -1149,10 +1133,6 @@ export default class ChataTable extends React.Component {
     this.settingSorters = false
   }
 
-  hasBottomCalc = () => {
-    return this.props.columns?.some((col) => col.visible !== false && (col.bottomCalc || isColumnSummable(col)))
-  }
-
   toggleIsFiltering = (filterOn, scrollToFirstFilteredColumn) => {
     if (scrollToFirstFilteredColumn && this.tableParams?.filter?.length) {
       const column = this.ref?.tabulator
@@ -1169,15 +1149,6 @@ export default class ChataTable extends React.Component {
 
     if (this._isMounted) {
       this.setState({ isFiltering })
-    }
-
-    const footer = this.ref?.tabulator?.element?.querySelector('.tabulator-footer')
-    if (footer) {
-      if (this.hasBottomCalc()) {
-        footer.classList.add('showing')
-      } else {
-        footer.classList.remove('showing')
-      }
     }
 
     return isFiltering
@@ -1258,7 +1229,6 @@ export default class ChataTable extends React.Component {
       }
       setTimeout(() => {
         this.setHeaderInputEventListeners()
-        this.updateFooterVisibility()
       }, 0)
     })
   }
@@ -1437,13 +1407,6 @@ export default class ChataTable extends React.Component {
               newCol[option] = col[option]
             }
           })
-          if (isColumnSummable(col)) {
-            newCol['bottomCalc'] = function (values, data, calcParams) {
-              return calcParams?.stats?.sum ?? null
-            }
-            const columnIndex = this.props.columns.indexOf(col)
-            newCol['bottomCalcParams'] = { stats: this.summaryStats[columnIndex] }
-          }
           return newCol
         })
         return filteredColumns
@@ -1617,7 +1580,7 @@ export default class ChataTable extends React.Component {
               </div>
             ) : (
               <>
-                {isColumnSummable(column) && (
+                {(column?.type === ColumnTypes.QUANTITY || column?.type === ColumnTypes.DOLLAR_AMT) && (
                   <div className='selectable-table-tooltip-section'>
                     <span>
                       <strong>Total: </strong>
@@ -1625,7 +1588,7 @@ export default class ChataTable extends React.Component {
                     </span>
                   </div>
                 )}
-                {isColumnSummable(column) && (
+                {(column?.type === ColumnTypes.QUANTITY || column?.type === ColumnTypes.DOLLAR_AMT) && (
                   <div className='selectable-table-tooltip-section'>
                     <span>
                       <strong>Average: </strong>

@@ -64,13 +64,6 @@
 
   .tabulator-footer {
     display: none;
-    opacity: 0;
-    transition: opacity 0.2s ease-in-out;
-
-    &.showing {
-      display: block;
-      opacity: 1;
-    }
   }
 
   &.loading {
@@ -159,12 +152,6 @@
       min-height: calc(100% - 60px) !important;
       height: calc(100% - 60px) !important;
       max-height: calc(100% - 60px) !important;
-
-      &:has(~ .tabulator-footer.showing) {
-        min-height: calc(100% - 88px) !important;
-        height: calc(100% - 88px) !important;
-        max-height: calc(100% - 88px) !important;
-      }
     }
 
     &.empty {
@@ -197,12 +184,6 @@
       min-height: calc(100% - 37px) !important;
       height: calc(100% - 37px) !important;
       max-height: calc(100% - 37px) !important;
-
-      &:has(~ .tabulator-footer.showing) {
-        min-height: calc(100% - 65px) !important;
-        height: calc(100% - 65px) !important;
-        max-height: calc(100% - 65px) !important;
-      }
     }
   }
 
