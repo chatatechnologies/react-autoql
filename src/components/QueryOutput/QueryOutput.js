@@ -647,7 +647,7 @@ export class QueryOutput extends React.Component {
   getStringColumnIndex = (foundIndex) => {
     return foundIndex
       ? foundIndex
-      : this.tableConfig?.stringColumnIndices.length > 0
+      : this.tableConfig?.stringColumnIndices?.length > 0
       ? this.tableConfig?.stringColumnIndices[0]
       : 0
   }
@@ -1833,25 +1833,34 @@ export class QueryOutput extends React.Component {
       this.tableConfig = {}
     }
 
-    // Set string type columns (ordinal axis)
-    const isStringColumnIndexValid = this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns)
+    const currentDisplayType = this.state?.displayType ?? this.getDisplayTypeFromInitial(this.props)
 
-    if (!this.tableConfig.stringColumnIndices || !isStringColumnIndexValid) {
-      const isPivot = false
-      const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
-        columns,
-        isPivot,
-        this.ALLOW_NUMERIC_STRING_COLUMNS,
-      )
+    // Configure string columns using utility function, with special handling for histograms
+    const needsStringColumnUpdate =
+      !this.tableConfig.stringColumnIndices ||
+      !this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns) ||
+      !getVisibleColumns(columns).some((col) => this.tableConfig.stringColumnIndices.includes(col.index))
 
-      this.tableConfig.stringColumnIndices = stringColumnIndices
-      this.tableConfig.stringColumnIndex = stringColumnIndex
+    if (needsStringColumnUpdate) {
+      // For histograms with only numeric columns, don't assign string columns
+      if (currentDisplayType === 'histogram' && !getVisibleColumns(columns).some((col) => !isColumnNumberType(col))) {
+        this.tableConfig.stringColumnIndices = []
+        this.tableConfig.stringColumnIndex = undefined
+      } else {
+        const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
+          columns,
+          false, // isPivot
+          this.ALLOW_NUMERIC_STRING_COLUMNS,
+        )
+        this.tableConfig.stringColumnIndices = stringColumnIndices
+        this.tableConfig.stringColumnIndex = stringColumnIndex
 
-      // If it set all of the columns to string column indices, remove one so it can be set as the number column index
-      if (stringColumnIndices.length === getVisibleColumns(columns).length) {
-        const indexToRemove = stringColumnIndices.findIndex((i) => i !== stringColumnIndex)
-        if (indexToRemove > -1) {
-          this.tableConfig.stringColumnIndices.splice(indexToRemove, 1)
+        // If it set all of the columns to string column indices, remove one so it can be set as the number column index
+        if (stringColumnIndices.length === getVisibleColumns(columns).length) {
+          const indexToRemove = stringColumnIndices.findIndex((i) => i !== stringColumnIndex)
+          if (indexToRemove > -1) {
+            this.tableConfig.stringColumnIndices.splice(indexToRemove, 1)
+          }
         }
       }
     }
