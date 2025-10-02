@@ -246,7 +246,10 @@ export class DashboardToolbarWithoutRef extends React.Component {
               {this.dashboardSlicingFeatureToggle && !this.props.isEditing && this.renderFilterInput()}
               {!this.props.isEditing ? (
                 <>
-                  <div
+                  {/* 
+				  This is the refresh interval button that is currently disabled
+				  TODO: Re-enable this button once the refresh interval is implemented
+				   <div
                     style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '8px', opacity: 0.7 }}
                   >
                     <Icon
@@ -258,7 +261,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
                     <span data-tooltip-content={this.getRefreshIntervalText()} data-tooltip-id={this.props.tooltipID}>
                       {this.getRefreshIntervalDisplay()}
                     </span>
-                  </div>
+                  </div> */}
                   <Button
                     iconOnly
                     icon='refresh'
