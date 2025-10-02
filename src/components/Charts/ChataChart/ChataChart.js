@@ -715,7 +715,6 @@ export default class ChataChart extends React.Component {
           <ChataBarChart
             {...commonChartProps}
             {...commonLegendProps}
-            incrementScaleVersion={this.incrementScaleVersion}
           />
         )
       }
@@ -764,7 +763,7 @@ export default class ChataChart extends React.Component {
         )
       }
       case DisplayTypes.SCATTERPLOT: {
-        return <ChataScatterplotChart {...commonChartProps} incrementScaleVersion={this.incrementScaleVersion} />
+        return <ChataScatterplotChart {...commonChartProps} />
       }
       default: {
         return 'Unknown Display Type'
