@@ -11,9 +11,3 @@ export const LOCAL_OR_REMOTE = {
   LOCAL: 'local',
   REMOTE: 'remote',
 }
-
-export const TOOLTIP_COPY_TEXTS = {
-  DEFAULT: 'Right-click to copy value',
-  COPIED: 'Copied!',
-  ERROR: 'Failed to copy',
-}
