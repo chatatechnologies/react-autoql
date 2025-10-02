@@ -264,7 +264,7 @@ export class RegressionLine extends React.Component {
           className='regression-line-hover-area'
           data-tooltip-content={tooltipContent}
           data-tooltip-id={this.props.chartTooltipID}
-          style={{ cursor: 'default' }}
+          style={{ cursor: 'default', outline: 'none' }}
         />
 
         {/* Visible regression line */}
@@ -277,6 +277,7 @@ export class RegressionLine extends React.Component {
           strokeWidth={strokeWidth}
           strokeDasharray={strokeDasharray}
           className='regression-line'
+          style={{ outline: 'none' }}
         />
 
         {/* Text background rectangle - dynamically sized */}
@@ -291,6 +292,7 @@ export class RegressionLine extends React.Component {
           strokeWidth='1'
           rx='3'
           className='regression-line-text-bg'
+          style={{ outline: 'none' }}
         />
 
         {/* Text label */}
@@ -308,6 +310,7 @@ export class RegressionLine extends React.Component {
           className='regression-line-label'
           data-tooltip-content={tooltipContent}
           data-tooltip-id={this.props.chartTooltipID}
+          style={{ outline: 'none' }}
         >
           {isTrendUp ? '↗' : '↘'} {formattedSlope}
         </text>
@@ -465,7 +468,7 @@ export class RegressionLine extends React.Component {
                 className='regression-line-hover-area'
                 data-tooltip-content={tooltipContent}
                 data-tooltip-id={this.props.chartTooltipID}
-                style={{ cursor: 'default' }}
+                style={{ cursor: 'default', outline: 'none' }}
               />
 
               {/* Visible regression line */}
@@ -478,6 +481,7 @@ export class RegressionLine extends React.Component {
                 strokeWidth={strokeWidth}
                 strokeDasharray={strokeDasharray}
                 className='regression-line'
+                style={{ outline: 'none' }}
               />
 
               {/* Only render text labels if there are 5 or fewer series */}
@@ -495,6 +499,7 @@ export class RegressionLine extends React.Component {
                     strokeWidth='1'
                     rx='3'
                     className='regression-line-text-bg'
+                    style={{ outline: 'none' }}
                   />
 
                   {/* Text label */}
@@ -512,6 +517,7 @@ export class RegressionLine extends React.Component {
                     className='regression-line-label'
                     data-tooltip-content={tooltipContent}
                     data-tooltip-id={this.props.chartTooltipID}
+                    style={{ outline: 'none' }}
                   >
                     {isTrendUp ? '↗' : '↘'} {formattedSlope}
                   </text>

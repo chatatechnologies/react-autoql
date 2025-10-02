@@ -46,11 +46,11 @@ describe('renders correctly', () => {
 
     test('uses initial chart control values', () => {
       const initialControls = { showAverageLine: true, showRegressionLine: true }
-      const wrapper = setup({ 
-        ...listSampleProps, 
-        type: 'column', 
+      const wrapper = setup({
+        ...listSampleProps,
+        type: 'column',
         enableChartControls: true,
-        initialChartControls: initialControls
+        initialChartControls: initialControls,
       })
       expect(wrapper.state('showAverageLine')).toBe(true)
       expect(wrapper.state('showRegressionLine')).toBe(true)
@@ -58,25 +58,54 @@ describe('renders correctly', () => {
 
     test('calls onChartControlsChange when toggles are changed', () => {
       const onChartControlsChange = jest.fn()
-      const wrapper = setup({ 
-        ...listSampleProps, 
-        type: 'column', 
+      const wrapper = setup({
+        ...listSampleProps,
+        type: 'column',
         enableChartControls: true,
-        onChartControlsChange
+        onChartControlsChange,
       })
-      
+
       // Toggle average line
       wrapper.instance().toggleAverageLine()
       expect(onChartControlsChange).toHaveBeenCalledWith({
         showAverageLine: true,
-        showRegressionLine: false
+        showRegressionLine: false,
       })
-      
+
       // Toggle regression line
       wrapper.instance().toggleRegressionLine()
       expect(onChartControlsChange).toHaveBeenCalledWith({
         showAverageLine: true,
-        showRegressionLine: true
+        showRegressionLine: true,
+      })
+    })
+
+    test('does not show regression line toggle for horizontal bar charts', () => {
+      const wrapper = setup({
+        ...listSampleProps,
+        type: 'bar',
+        enableChartControls: true,
+      })
+
+      // shouldShowRegressionLine should return false for bar charts
+      expect(wrapper.instance().shouldShowRegressionLine()).toBe(false)
+
+      // RegressionLineToggle should not be rendered
+      const regressionToggle = wrapper.find('RegressionLineToggle')
+      expect(regressionToggle.exists()).toBe(false)
+    })
+
+    test('shows regression line toggle for supported chart types', () => {
+      const supportedTypes = ['column', 'stacked_column', 'line', 'scatterplot']
+
+      supportedTypes.forEach((chartType) => {
+        const wrapper = setup({
+          ...listSampleProps,
+          type: chartType,
+          enableChartControls: true,
+        })
+
+        expect(wrapper.instance().shouldShowRegressionLine()).toBe(true)
       })
     })
   })

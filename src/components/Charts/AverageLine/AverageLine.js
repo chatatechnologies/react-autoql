@@ -205,7 +205,7 @@ export class AverageLine extends React.Component {
           className='average-line-hover-area'
           data-tooltip-content={tooltipContent}
           data-tooltip-id={this.props.chartTooltipID}
-          style={{ cursor: 'default' }}
+          style={{ cursor: 'default', outline: 'none' }}
         />
 
         {/* Visible average line */}
@@ -215,6 +215,7 @@ export class AverageLine extends React.Component {
           strokeWidth={strokeWidth}
           strokeDasharray={strokeDasharray}
           className='average-line'
+          style={{ outline: 'none' }}
         />
 
         {/* Text background rectangle - positioned based on chart type */}
@@ -237,6 +238,7 @@ export class AverageLine extends React.Component {
           strokeWidth='1'
           rx='3'
           className='average-line-text-bg'
+          style={{ outline: 'none' }}
         />
 
         {/* Text label */}
@@ -254,6 +256,7 @@ export class AverageLine extends React.Component {
           className='average-line-label'
           data-tooltip-content={tooltipContent}
           data-tooltip-id={this.props.chartTooltipID}
+          style={{ outline: 'none' }}
         >
           Avg: {formattedAverage}
         </text>
