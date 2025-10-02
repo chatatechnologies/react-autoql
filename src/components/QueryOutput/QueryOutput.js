@@ -647,7 +647,7 @@ export class QueryOutput extends React.Component {
   getStringColumnIndex = (foundIndex) => {
     return foundIndex
       ? foundIndex
-      : this.tableConfig?.stringColumnIndices.length > 0
+      : this.tableConfig?.stringColumnIndices?.length > 0
       ? this.tableConfig?.stringColumnIndices[0]
       : 0
   }
@@ -668,6 +668,19 @@ export class QueryOutput extends React.Component {
       : this.tableConfig.numberColumnIndices.length > 0
       ? this.tableConfig.numberColumnIndices[0]
       : 0
+  }
+
+  isTableConfigValid = (tableConfig, columns, displayType) => {
+    const configToValidate = tableConfig ?? this.tableConfig
+    const columnsToValidate = columns ?? this.getColumns()
+    const displayTypeToValidate = displayType ?? this.state.displayType
+
+    return isColumnIndexConfigValid({
+      response: this.queryResponse,
+      columnIndexConfig: configToValidate,
+      columns: columnsToValidate,
+      displayType: displayTypeToValidate,
+    })
   }
 
   checkAndUpdateTableConfigs = (displayType) => {
@@ -822,12 +835,16 @@ export class QueryOutput extends React.Component {
     )
   }
 
-  isTableConfigValid = (tableConfig, columns, displayType) => {
+  sTableConfigValid = (tableConfig, columns, displayType) => {
+    const configToValidate = tableConfig ?? this.tableConfig
+    const columnsToValidate = columns ?? this.getColumns()
+    const displayTypeToValidate = displayType ?? this.state.displayType
+
     return isColumnIndexConfigValid({
       response: this.queryResponse,
-      columnIndexConfig: tableConfig ?? this.tableConfig,
-      columns: columns ?? this.getColumns(),
-      displayType: displayType ?? this.state.displayType,
+      columnIndexConfig: configToValidate,
+      columns: columnsToValidate,
+      displayType: displayTypeToValidate,
     })
   }
 
@@ -1172,8 +1189,18 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  getSessionFilters = (feReq) => {
+    if (feReq && Object.prototype.hasOwnProperty.call(feReq, 'session_filter_locks')) {
+      return feReq.session_filter_locks
+    }
+    if (this.props.scope === 'dashboards') {
+      return this.initialFormattedTableParams?.sessionFilters ?? []
+    }
+    return []
+  }
+
   queryFn = async (args = {}) => {
-    const queryRequestData = this.queryResponse?.data?.data?.fe_req
+    const feReq = this.queryResponse?.data?.data?.fe_req
     const allFilters = this.getCombinedFilters(args?.tableFilters)
 
     this.cancelCurrentRequest()
@@ -1181,9 +1208,7 @@ export class QueryOutput extends React.Component {
 
     this.setState({ isLoadingData: true })
 
-    const sessionFilters =
-      queryRequestData?.session_filter_locks ||
-      (this.props.scope === 'dashboards' ? this.initialFormattedTableParams?.sessionFilters : [])
+    const sessionFilters = this.getSessionFilters(feReq)
     let response
 
     if (isDrilldown(this.queryResponse)) {
@@ -1193,12 +1218,12 @@ export class QueryOutput extends React.Component {
           ...getAutoQLConfig(this.props.autoQLConfig),
           source: this.props.source,
           scope: this.props.scope,
-          translation: queryRequestData?.translation,
+          translation: feReq?.translation,
           filters: sessionFilters,
-          pageSize: queryRequestData?.page_size,
-          test: queryRequestData?.test,
-          groupBys: queryRequestData?.columns,
-          query: queryRequestData?.text,
+          pageSize: feReq?.page_size,
+          test: feReq?.test,
+          groupBys: feReq?.columns,
+          query: feReq?.text,
           queryID: this.props.originalQueryID,
           orders: this.formattedTableParams?.sorters,
           tableFilters: allFilters,
@@ -1214,18 +1239,18 @@ export class QueryOutput extends React.Component {
         response = await runQueryOnly({
           ...getAuthentication(this.props.authentication),
           ...getAutoQLConfig(this.props.autoQLConfig),
-          query: queryRequestData?.text,
-          translation: queryRequestData?.translation,
-          userSelection: queryRequestData?.disambiguation,
+          query: feReq?.text,
+          translation: feReq?.translation,
+          userSelection: feReq?.disambiguation,
           filters: sessionFilters,
-          test: queryRequestData?.test,
-          pageSize: queryRequestData?.page_size,
+          test: feReq?.test,
+          pageSize: feReq?.page_size,
           orders: this.formattedTableParams?.sorters,
           source: this.props.source,
           scope: this.props.scope,
           cancelToken: this.axiosSource.token,
-          newColumns: queryRequestData?.additional_selects,
-          displayOverrides: queryRequestData?.display_overrides,
+          newColumns: feReq?.additional_selects,
+          displayOverrides: feReq?.display_overrides,
           ...args,
           tableFilters: allFilters,
         })
@@ -1348,13 +1373,15 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  // Function to combine original query filters and current table filters
   getCombinedFilters = (newFilters = []) => {
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
     const queryFilters = queryRequestData?.filters || []
     const tableFilters = this.formattedTableParams?.filters || []
 
     const allFilters = []
+
+    const tableFilterNames = new Set(tableFilters.map((f) => f?.name).filter(Boolean))
+    const tableFilterIds = new Set(tableFilters.map((f) => f?.id).filter(Boolean))
 
     tableFilters.forEach((tableFilter) => {
       let filter = tableFilter
@@ -1371,34 +1398,32 @@ export class QueryOutput extends React.Component {
     })
 
     queryFilters.forEach((queryFilter) => {
-      if (!allFilters.find((filter) => filter.name === queryFilter.name)) {
+      const byName = queryFilter?.name && tableFilterNames.has(queryFilter.name)
+      const byId = queryFilter?.id && tableFilterIds.has(queryFilter.id)
+      const existsInTableFilters = byName || byId
+
+      if (existsInTableFilters && !allFilters.find((filter) => filter.name === queryFilter.name)) {
         allFilters.push(queryFilter)
       }
     })
 
-    // Include the drilldown filters if they exist
     if (this.props.drilldownFilters && this.props.drilldownFilters.length > 0) {
       this.props.drilldownFilters.forEach((drilldownFilter) => {
         const existingDrilldownFilterIndex = allFilters.findIndex((filter) => filter.name === drilldownFilter.name)
         if (existingDrilldownFilterIndex >= 0) {
-          // Filter already exists, overwrite existing filter with drilldown value
           allFilters[existingDrilldownFilterIndex] = drilldownFilter
         } else {
-          // Filter didn't exist yet, add it to the list
           allFilters.push(drilldownFilter)
         }
       })
     }
 
-    // Include new filters if they exist
     if (newFilters && newFilters.length > 0) {
       newFilters.forEach((newFilter) => {
         const existingFilterIndex = allFilters.findIndex((filter) => filter.name === newFilter.name)
         if (existingFilterIndex >= 0) {
-          // Filter already exists, overwrite existing filter with new value
           allFilters[existingFilterIndex] = newFilter
         } else {
-          // Filter didn't exist yet, add it to the list
           allFilters.push(newFilter)
         }
       })
@@ -1562,10 +1587,16 @@ export class QueryOutput extends React.Component {
   onTableParamsChange = (params, formattedTableParams = {}) => {
     this.tableParams = _cloneDeep(params)
     this.formattedTableParams = formattedTableParams
+    if (this.queryResponse?.data?.data?.fe_req) {
+      try {
+        this.queryResponse.data.data.fe_req.filters = this.formattedTableParams?.filters || []
+      } catch (e) {
+        console.error(e)
+      }
+    }
 
     this.props.onTableParamsChange?.(this.tableParams, this.formattedTableParams)
 
-    // This will update the filter badge in OptionsToolbar
     setTimeout(() => {
       this.updateToolbars()
     }, 0)
@@ -1834,6 +1865,63 @@ export class QueryOutput extends React.Component {
     return indices?.findIndex((i) => index === i) !== -1
   }
 
+  shouldUpdateStringColumnIndices = (columns) => {
+    return (
+      !this.tableConfig.stringColumnIndices ||
+      !this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns) ||
+      !getVisibleColumns(columns).some((col) => this.tableConfig.stringColumnIndices.includes(col.index))
+    )
+  }
+
+  initializeNumberColumnIndices = (columns) => {
+    const visibleCols = getVisibleColumns(columns) || []
+    const visibleNumberColumns =
+      visibleCols.filter((col) => isColumnNumberType(col)) || (columns || []).filter((col) => isColumnNumberType(col))
+
+    if (
+      visibleNumberColumns.length > 0 &&
+      (!this.tableConfig.numberColumnIndices || !this.tableConfig.numberColumnIndices.length)
+    ) {
+      this.tableConfig.numberColumnIndices = [visibleNumberColumns[0].index]
+      this.tableConfig.numberColumnIndex = visibleNumberColumns[0].index
+    }
+  }
+
+  configureStringColumnIndices = (columns, currentDisplayType) => {
+    const visibleColumns = getVisibleColumns(columns)
+    const visibleStringColumns = visibleColumns.filter((col) => !isColumnNumberType(col))
+
+    let stringColumnIndices = visibleStringColumns.map((col) => col.index)
+    let stringColumnIndex = stringColumnIndices.length > 0 ? stringColumnIndices[0] : undefined
+
+    // For histograms with only numeric columns, don't assign string columns
+    if (!stringColumnIndices.length && currentDisplayType === 'histogram') {
+      this.tableConfig.stringColumnIndices = []
+      this.tableConfig.stringColumnIndex = undefined
+      return
+    }
+
+    // For other display types, fallback to first visible column if no string columns
+    if (!stringColumnIndices.length) {
+      const fallback = visibleColumns[0]
+      if (fallback) {
+        stringColumnIndices = [fallback.index]
+        stringColumnIndex = fallback.index
+      }
+    }
+
+    this.tableConfig.stringColumnIndices = stringColumnIndices
+    this.tableConfig.stringColumnIndex = stringColumnIndex
+
+    // Ensure not all columns are string columns (reserve at least one for numbers)
+    if (stringColumnIndices.length === visibleColumns.length) {
+      const indexToRemove = stringColumnIndices.findIndex((i) => i !== stringColumnIndex)
+      if (indexToRemove > -1) {
+        this.tableConfig.stringColumnIndices.splice(indexToRemove, 1)
+      }
+    }
+  }
+
   setTableConfig = (newColumns) => {
     const columns = newColumns ?? this.getColumns()
     if (!columns) {
@@ -1846,27 +1934,12 @@ export class QueryOutput extends React.Component {
       this.tableConfig = {}
     }
 
-    // Set string type columns (ordinal axis)
-    const isStringColumnIndexValid = this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns)
+    const currentDisplayType = this.state?.displayType ?? this.getDisplayTypeFromInitial(this.props)
 
-    if (!this.tableConfig.stringColumnIndices || !isStringColumnIndexValid) {
-      const isPivot = false
-      const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
-        columns,
-        isPivot,
-        this.ALLOW_NUMERIC_STRING_COLUMNS,
-      )
+    this.initializeNumberColumnIndices(columns)
 
-      this.tableConfig.stringColumnIndices = stringColumnIndices
-      this.tableConfig.stringColumnIndex = stringColumnIndex
-
-      // If it set all of the columns to string column indices, remove one so it can be set as the number column index
-      if (stringColumnIndices.length === getVisibleColumns(columns).length) {
-        const indexToRemove = stringColumnIndices.findIndex((i) => i !== stringColumnIndex)
-        if (indexToRemove > -1) {
-          this.tableConfig.stringColumnIndices.splice(indexToRemove, 1)
-        }
-      }
+    if (this.shouldUpdateStringColumnIndices(columns)) {
+      this.configureStringColumnIndices(columns, currentDisplayType)
     }
 
     const { amountOfNumberColumns } = getColumnTypeAmounts(columns) ?? {}

@@ -37,16 +37,19 @@ import { Button } from '../Button'
 import { Spinner } from '../Spinner'
 import { Popover } from '../Popover'
 import { Tooltip } from '../Tooltip'
+import EnhancedTooltip from '../Tooltip/EnhancedTooltip'
 import TableWrapper from './TableWrapper'
 import { DateRangePicker } from '../DateRangePicker'
 import { DataLimitWarning } from '../DataLimitWarning'
 import { columnOptionsList } from './tabulatorConstants'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { TABULATOR_LOCAL_ROW_LIMIT, LOCAL_OR_REMOTE } from '../../js/Constants'
+import { TABULATOR_LOCAL_ROW_LIMIT, LOCAL_OR_REMOTE, TOOLTIP_COPY_TEXTS } from '../../js/Constants'
 import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
 
+import { handleCellCopy, setupCopyableCell } from './CopyUtils'
 import './ChataTable.scss'
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
+import { PerformanceOptimizer } from './PerformanceOptimizer'
 
 export default class ChataTable extends React.Component {
   constructor(props) {
@@ -91,6 +94,9 @@ export default class ChataTable extends React.Component {
       initialFilter: undefined, // Let getRows do initial sorting and filtering
       progressiveLoadScrollMargin: 50, // Trigger next ajax load when scroll bar is 800px or less from the bottom of the table.
       // renderHorizontal: 'virtual', // v4: virtualDomHoz = false
+      movableColumns: true,
+      smoothScroll: true,
+      touchUndoSize: 5,
       downloadEncoder: function (fileContents, mimeType) {
         //fileContents - the unencoded contents of the file
         //mimeType - the suggested mime type for the output
@@ -195,6 +201,9 @@ export default class ChataTable extends React.Component {
   componentDidMount = () => {
     this._isMounted = true
     this._setFiltersTime = Date.now() // Track when component mounted to avoid duplicate requests
+
+    this.initializeHelpers()
+
     if (!this.props.autoHeight) {
       this.initialTableHeight = this.tabulatorContainer?.clientHeight
       this.lockedTableHeight = this.initialTableHeight
@@ -205,6 +214,13 @@ export default class ChataTable extends React.Component {
     this.setState({
       firstRender: false,
     })
+  }
+
+  initializeHelpers = () => {
+    this.tooltipTimeout = null
+    this.namedTimeouts = new Map()
+    this.SUMMARY_TOOLTIP_ID = `summary-tooltip-${uuid()}`
+    PerformanceOptimizer.applyPassiveEventPatch()
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -300,21 +316,22 @@ export default class ChataTable extends React.Component {
         this.setTableHeight()
       }
     }
-    this.summaryStats = this.calculateSummaryStats(this.props)
+    this.updateSummaryStats(this.props)
   }
 
   componentWillUnmount = () => {
     try {
       this._isMounted = false
+
+      if (this.tooltipTimeout) {
+        clearTimeout(this.tooltipTimeout)
+      }
+      this.namedTimeouts.forEach((timeoutId) => clearTimeout(timeoutId))
+      this.namedTimeouts.clear()
+
       clearTimeout(this.clickListenerTimeout)
       clearTimeout(this.setDimensionsTimeout)
       clearTimeout(this.setStateTimeout)
-
-      // Clear any pending filter check timeouts to prevent state updates after unmount
-      if (this._filterCheckTimeout) {
-        clearTimeout(this._filterCheckTimeout)
-        this._filterCheckTimeout = null
-      }
 
       this.cancelCurrentRequest()
     } catch (error) {
@@ -324,6 +341,110 @@ export default class ChataTable extends React.Component {
 
   resetCustomColumnModal = () => {
     this.setState({ isCustomColumnPopoverOpen: false, activeCustomColumn: undefined })
+  }
+
+  updateSummaryStats = (props) => {
+    this.setTimeout(
+      'summaryStats',
+      () => {
+        this.summaryStats = this.calculateSummaryStats(props)
+
+        if (this.shouldUpdateColumns()) {
+          this.updateColumnDefinitions()
+        }
+      },
+      10,
+    )
+
+    return this.summaryStats
+  }
+
+  shouldUpdateColumns = () => {
+    return this.state.tabulatorMounted && this._isMounted && this.ref?.tabulator
+  }
+
+  updateColumnDefinitions = () => {
+    // No longer needed: bottomCalcParams logic removed
+    // All summary logic handled by custom React summary row
+    return
+  }
+
+  scheduleTooltipRefresh = (delay = 10) => {
+    if (this.tooltipTimeout) {
+      clearTimeout(this.tooltipTimeout)
+    }
+    this.tooltipTimeout = setTimeout(() => this.setHeaderInputEventListeners(), delay)
+  }
+
+  refreshTooltips = () => {
+    this.setHeaderInputEventListeners()
+  }
+
+  setTimeout = (key, callback, delay) => {
+    const existing = this.namedTimeouts.get(key)
+    if (existing) {
+      clearTimeout(existing)
+    }
+    const timeoutId = setTimeout(callback, delay)
+    this.namedTimeouts.set(key, timeoutId)
+    return timeoutId
+  }
+
+  addPassiveScrollListeners = () => {
+    PerformanceOptimizer.applyScrollOptimizations(this.TABLE_ID)
+  }
+
+  generateFieldReference = (col, index) => {
+    return (
+      col.field ||
+      (col.name && col.name.replace(/\s+/g, '_').toLowerCase()) ||
+      (col.display_name && col.display_name.replace(/\s+/g, '_').toLowerCase()) ||
+      `column_${index}`
+    )
+  }
+
+  findHeaderElement = (fieldRef, index) => {
+    if (!this.ref?.tabulator) {
+      return null
+    }
+
+    try {
+      const column = this.ref.tabulator.getColumn(fieldRef)
+      if (column && typeof column.getElement === 'function') {
+        const columnElement = column.getElement()
+        return columnElement?.querySelector('.tabulator-col-title-holder') || null
+      }
+
+      const allColumns = this.ref.tabulator.getColumns()
+      if (allColumns && allColumns[index] && typeof allColumns[index].getElement === 'function') {
+        const columnElement = allColumns[index].getElement()
+        return columnElement?.querySelector('.tabulator-col-title-holder') || null
+      }
+    } catch (error) {
+      // Silent fallback to DOM query if Tabulator API fails
+    }
+
+    return document.querySelector(
+      `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${fieldRef}"]:not(.tabulator-col-group) .tabulator-col-title-holder`,
+    )
+  }
+
+  createTooltipData = (col, fieldRef, index) => {
+    const tooltipData = { ...col, field: fieldRef, index }
+
+    if (!tooltipData.display_name && tooltipData.title) {
+      tooltipData.display_name = tooltipData.title
+    }
+
+    return tooltipData
+  }
+
+  setTooltipAttributes = (headerElement, tooltipData, index, fieldRef) => {
+    headerElement.setAttribute('data-tooltip-id', `selectable-table-column-header-tooltip-${this.TABLE_ID}`)
+    headerElement.setAttribute('data-tooltip-content', JSON.stringify(tooltipData))
+    headerElement.setAttribute('data-column-type', tooltipData.type || 'unknown')
+    headerElement.setAttribute('data-column-index', index.toString())
+    headerElement.setAttribute('data-column-field', fieldRef)
   }
 
   calculateSummaryStats = (props) => {
@@ -338,7 +459,7 @@ export default class ChataTable extends React.Component {
           return
         }
 
-        if (column?.type === ColumnTypes.QUANTITY || column?.type === ColumnTypes.DOLLAR_AMT) {
+        if (isColumnSummable(column)) {
           const columnData = rows.map((r) => r[columnIndex])
           stats[columnIndex] = {
             avg: formatElement({ element: mean(columnData), column, config: props.dataFormatting }),
@@ -403,6 +524,7 @@ export default class ChataTable extends React.Component {
     if (useInfiniteScroll) {
       this.setInfiniteScroll(true)
     }
+    this.updateSummaryStats(this.props)
 
     return this.ref?.updateData(data)
   }
@@ -479,6 +601,10 @@ export default class ChataTable extends React.Component {
     if (this.isSorting) {
       this.isSorting = false
       this.setLoading(false)
+
+      this.updateSummaryStats(this.props)
+
+      this.scheduleTooltipRefresh(100)
     }
   }
 
@@ -496,18 +622,11 @@ export default class ChataTable extends React.Component {
   onDataFiltered = (filters, rows) => {
     if (this.isFiltering && this.state.tabulatorMounted) {
       this.isFiltering = false
-
-      setTimeout(() => {
-        if (this._isMounted) {
-          this.setState({
-            loading: false,
-          })
-        }
-      }, 0)
+      this.debounceSetState({ loading: false })
     }
 
     // Debounce getRTForRemoteFilterAndSort to prevent multiple calls after hide/show columns
-    if (!this.useInfiniteScroll && !this.pivot && !this.props.isDrilldown && this.tableParams?.filter?.length > 0) {
+    if (!this.useInfiniteScroll && !this.pivot && this.tableParams?.filter?.length > 0) {
       if (this._debounceTimeout) clearTimeout(this._debounceTimeout)
       this._debounceTimeout = setTimeout(() => {
         try {
@@ -519,6 +638,7 @@ export default class ChataTable extends React.Component {
     }
 
     this.setFilterBadgeClasses()
+    this.scheduleTooltipRefresh(100)
   }
 
   onDataProcessed = (data) => {
@@ -552,6 +672,14 @@ export default class ChataTable extends React.Component {
         tabulatorMounted: true,
         pageLoading: false,
       })
+
+      // Add a small delay to ensure DOM is fully ready
+      setTimeout(() => {
+        this.setHeaderInputEventListeners()
+        this.addPassiveScrollListeners()
+      }, 100)
+
+      this.updateSummaryStats(this.props)
 
       if (this.props.keepScrolledRight) {
         this.scrollToRight()
@@ -607,8 +735,7 @@ export default class ChataTable extends React.Component {
     let response = initialData
 
     try {
-      // Check if table just mounted - avoid any AJAX requests for recently mounted tables
-      const hasRecentlySetHeaderFilters = this.state.tabulatorMounted && Date.now() - (this._setFiltersTime || 0) < 2000 // 2 seconds
+      const hasRecentlySetHeaderFilters = this.state.tabulatorMounted && Date.now() - (this._setFiltersTime || 0) < 2000
 
       if (!this.hasSetInitialData || !this._isMounted || hasRecentlySetHeaderFilters) {
         return initialData
@@ -619,6 +746,11 @@ export default class ChataTable extends React.Component {
       this.tableParams = params
 
       const nextTableParamsFormatted = formatTableParams(params, this.props.columns)
+      try {
+        this.props.onTableParamsChange?.(params, nextTableParamsFormatted)
+      } catch (e) {
+        console.error('onTableParamsChange error:', e)
+      }
 
       if (params?.page > 1) {
         if (this._isMounted) {
@@ -640,11 +772,7 @@ export default class ChataTable extends React.Component {
           this.scrollLeft = currentScrollValue
         }
 
-        /* wait for current event loop to end so table is updated
-        before callbacks are invoked */
         await currentEventLoopEnd()
-
-        this.props.onTableParamsChange?.(params, nextTableParamsFormatted)
 
         this.props.onNewData(responseWrapper)
 
@@ -699,14 +827,22 @@ export default class ChataTable extends React.Component {
     }
 
     response.data.data.rows = data
-
     response.data.data.count_rows = data.length
+
+    setTimeout(() => {
+      this.updateSummaryStats({
+        ...this.props,
+        response: response,
+      })
+    }, 0)
 
     return response
   }
 
   queryFn = (params) => {
-    if (this.useInfiniteScroll) {
+    // Always use server-side queryFn when dealing with column changes (newColumns)
+    // because column removal is a schema change, not just data filtering
+    if (this.useInfiniteScroll || typeof params.newColumns !== 'undefined') {
       return this.props.queryFn(params)
     } else {
       return new Promise((resolve) => {
@@ -827,6 +963,7 @@ export default class ChataTable extends React.Component {
       if (this._isMounted) {
         setTimeout(() => {
           this.forceUpdate()
+          this.scheduleTooltipRefresh(150)
         }, 0)
       }
     } else {
@@ -879,21 +1016,24 @@ export default class ChataTable extends React.Component {
   }
 
   inputKeydownListener = (event) => {
-    if (!this.useInfiniteScroll) {
-      this.ref?.restoreRedraw()
-    }
+    if (event.key === 'Enter' && event.target.value === '') {
+      // Clear filter from both raw and formatted filters when Enter is pressed on empty input
+      const columnField = event.target.getAttribute('data-column-field')
+      if (columnField && this.tableParams?.filter) {
+        // Remove filter from raw tableParams
+        this.tableParams.filter = this.tableParams.filter.filter((filter) => filter.field !== columnField)
 
-    // Handle Enter key press
-    if (event.key === 'Enter') {
-      const inputElement = event.target
-      const fieldName =
-        inputElement.getAttribute('data-field') ||
-        inputElement.closest('.tabulator-col')?.getAttribute('tabulator-field')
+        // Immediately update formatted params and notify parent BEFORE any table refresh
+        const currentTableParamsFormatted = formatTableParams(this.tableParams, this.props.columns)
+        this.props.onTableParamsChange?.(this.tableParams, currentTableParamsFormatted)
 
-      // If input is empty, remove the filter from Tabulator's internal state
-      if (fieldName && (!inputElement.value || inputElement.value.trim() === '')) {
-        this.ref?.tabulator?.setHeaderFilterValue(fieldName, undefined)
+        // Trigger a table refresh to update tableParamsFormatted
+        if (!this.useInfiniteScroll) {
+          this.ref?.restoreRedraw()
+        }
       }
+    } else if (!this.useInfiniteScroll) {
+      this.ref?.restoreRedraw()
     }
   }
 
@@ -965,8 +1105,23 @@ export default class ChataTable extends React.Component {
     clearBtn.addEventListener('click', (e) => {
       e.stopPropagation()
       this.setHeaderInputValue(inputElement, '')
-      // Actually remove the filter from Tabulator's internal state
-      this.ref?.tabulator?.setHeaderFilterValue(column.field, undefined)
+
+      // Clear filter from both raw and formatted filters when clear button is clicked
+      if (column?.field && this.tableParams?.filter) {
+        // Find the column by field to get its ID
+        const columnData = this.props.columns?.find((col) => col.field === column.field)
+
+        // Remove filter from raw tableParams
+        this.tableParams.filter = this.tableParams.filter.filter((filter) => filter.field !== column.field)
+
+        // Immediately update formatted params and notify parent BEFORE any table refresh
+        const currentTableParamsFormatted = formatTableParams(this.tableParams, this.props.columns)
+        this.props.onTableParamsChange?.(this.tableParams, currentTableParamsFormatted)
+
+        // Trigger a table refresh to update tableParamsFormatted
+        this.ref?.restoreRedraw()
+      }
+
       if (column?.type === ColumnTypes.DATE && !column?.pivot) {
         this.currentDateRangeSelections = {}
         this.debounceSetState({
@@ -979,66 +1134,168 @@ export default class ChataTable extends React.Component {
   }
 
   setHeaderInputEventListeners = (cols) => {
-    const columns = cols ?? this.props.columns
-    if (!columns) {
+    // Prevent duplicate calls if already in progress
+    if (this._settingEventListeners) {
       return
     }
 
-    columns.forEach((col, i) => {
-      const inputElement = document.querySelector(
-        `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"] .tabulator-col-content input`,
-      )
+    const columns = cols ?? this.props.columns
+    if (!columns?.length) {
+      return
+    }
 
-      const headerElement = document.querySelector(
-        `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"]:not(.tabulator-col-group) .tabulator-col-title-holder`,
-      )
+    this._settingEventListeners = true
 
-      if (headerElement) {
-        headerElement.setAttribute('data-tooltip-id', `selectable-table-column-header-tooltip-${this.TABLE_ID}`)
-        headerElement.setAttribute('data-tooltip-content', JSON.stringify({ ...col, index: i }))
+    let pivotSummaryStats = null
+    if (this.props.pivot && this.props.data && this.props.data.length > 0) {
+      pivotSummaryStats = columns.map((col, i) => {
+        if (i === 0) return null
+        const values = this.props.data.map((row) => row[i])
+        const sum = values.reduce((acc, val) => {
+          const num = typeof val === 'number' ? val : parseFloat(val)
+          return isNaN(num) ? acc : acc + num
+        }, 0)
+        return sum
+      })
+    }
 
-        if (!this.props.pivot) {
-          headerElement.addEventListener('contextmenu', (e) => this.headerContextMenuClick(e, col))
+    try {
+      columns.forEach((col, i) => {
+        if (this.props.pivot && pivotSummaryStats) {
+          if (!this.summaryStats) this.summaryStats = {}
+          this.summaryStats[i] = pivotSummaryStats[i]
         }
+        this.setupColumnHeader(col, i)
+        this.setupColumnInput(col, i)
+      })
+    } finally {
+      this._settingEventListeners = false
+    }
+  }
+
+  setupColumnHeader = (col, index) => {
+    const fieldRef = this.generateFieldReference(col, index)
+    const headerElement = this.findHeaderElement(fieldRef, index)
+
+    if (headerElement) {
+      const tooltipData = this.createTooltipData(col, fieldRef, index)
+      this.setTooltipAttributes(headerElement, tooltipData, index, fieldRef)
+
+      if (!this.props.pivot) {
+        headerElement.addEventListener('contextmenu', (e) => this.headerContextMenuClick(e, col))
+      }
+    }
+  }
+
+  setupColumnInput = (col, index) => {
+    const fieldRef = this.generateFieldReference(col, index)
+    const inputElement = this.findInputElement(fieldRef, index)
+
+    if (inputElement) {
+      this.attachInputListeners(inputElement, col)
+      this.ensureClearButton(inputElement, col)
+    }
+  }
+
+  findInputElement = (fieldRef, index) => {
+    if (!this.ref?.tabulator) {
+      return null
+    }
+
+    try {
+      // Try to get column by field reference first
+      const column = this.ref.tabulator.getColumn(fieldRef)
+      if (column && typeof column.getElement === 'function') {
+        const columnElement = column.getElement()
+        return columnElement?.querySelector('.tabulator-col-content input') || null
       }
 
-      if (inputElement) {
-        inputElement.removeEventListener('keydown', this.inputKeydownListener)
-        inputElement.addEventListener('keydown', this.inputKeydownListener)
-
-        const clearBtn = document.querySelector(`#react-autoql-clear-btn-${this.TABLE_ID}-${col.field}`)
-        if (!clearBtn) {
-          this.renderHeaderInputClearBtn(inputElement, col)
-        }
-
-        if (col.type === ColumnTypes.DATE && !col.pivot) {
-          // Open Calendar Picker when user clicks on this field
-          inputElement.removeEventListener('click', (e) => this.inputDateClickListener(e, col))
-          inputElement.addEventListener('click', (e) => this.inputDateClickListener(e, col))
-
-          // Do not allow user to type in this field
-          const keyboardEvents = ['keypress', 'keydown', 'keyup']
-          keyboardEvents.forEach((evt) => {
-            inputElement.removeEventListener(evt, this.inputDateKeypressListener)
-            inputElement.addEventListener(evt, this.inputDateKeypressListener)
-          })
-        }
+      // Fallback: get column by index if field reference doesn't work
+      const allColumns = this.ref.tabulator.getColumns()
+      if (allColumns && allColumns[index] && typeof allColumns[index].getElement === 'function') {
+        const columnElement = allColumns[index].getElement()
+        return columnElement?.querySelector('.tabulator-col-content input') || null
       }
-    })
+    } catch (error) {
+      // Silent fallback to DOM query if Tabulator API fails
+    }
+
+    return document.querySelector(
+      `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${fieldRef}"] .tabulator-col-content input`,
+    )
+  }
+
+  attachInputListeners = (inputElement, col) => {
+    // Add column field data attribute for filter clearing
+    inputElement.setAttribute('data-column-field', col.field)
+
+    // Remove existing listeners to prevent duplicates
+    inputElement.removeEventListener('keydown', this.inputKeydownListener)
+    inputElement.addEventListener('keydown', this.inputKeydownListener)
+
+    if (col.type === ColumnTypes.DATE && !col.pivot) {
+      inputElement.removeEventListener('click', (e) => this.inputDateClickListener(e, col))
+      inputElement.addEventListener('click', (e) => this.inputDateClickListener(e, col))
+
+      const keyboardEvents = ['keypress', 'keydown', 'keyup']
+      keyboardEvents.forEach((evt) => {
+        inputElement.removeEventListener(evt, this.inputDateKeypressListener)
+        inputElement.addEventListener(evt, this.inputDateKeypressListener)
+      })
+    }
+  }
+
+  ensureClearButton = (inputElement, col) => {
+    const clearBtn = document.querySelector(`#react-autoql-clear-btn-${this.TABLE_ID}-${col.field}`)
+    if (!clearBtn) {
+      this.renderHeaderInputClearBtn(inputElement, col)
+    }
   }
 
   setFilterBadgeClasses = () => {
-    if (this._isMounted && this.state.tabulatorMounted) {
-      this.ref?.tabulator?.getColumns()?.forEach((column) => {
-        const isFiltering = !!this.tableParams?.filter?.find((filter) => filter.field === column.getField())
-        const columnElement = column?.getElement()
+    if (!this._isMounted || !this.state.tabulatorMounted || !this.ref?.tabulator) {
+      return
+    }
 
-        if (isFiltering) {
-          columnElement?.classList.add('is-filtered')
-        } else {
-          columnElement?.classList.remove('is-filtered')
+    try {
+      const activeFilters = {}
+      if (this.tableParams?.filter) {
+        this.tableParams.filter.forEach((filter) => {
+          if (filter.field) {
+            activeFilters[filter.field] = true
+          }
+        })
+      }
+
+      const columns = this.ref.tabulator.getColumns()
+      if (!columns || !Array.isArray(columns)) {
+        return
+      }
+
+      columns.forEach((column) => {
+        if (!column || typeof column.getField !== 'function') return
+
+        try {
+          const field = column.getField()
+          const isFiltering = !!activeFilters[field]
+
+          const getElement = column.getElement
+          if (typeof getElement !== 'function') return
+
+          const columnElement = getElement.call(column)
+          if (!columnElement || !columnElement.classList) return
+
+          if (isFiltering) {
+            columnElement.classList.add('is-filtered')
+          } else {
+            columnElement.classList.remove('is-filtered')
+          }
+        } catch (err) {
+          // Silent fail for individual column to prevent breaking the entire table
         }
       })
+    } catch (err) {
+      // Silent fail to prevent breaking the entire component
     }
   }
 
@@ -1069,15 +1326,15 @@ export default class ChataTable extends React.Component {
         }
 
         // Final check after all filters set - with cleanup
-        this._filterCheckTimeout = setTimeout(() => {
-          this._filterCheckTimeout = null
-        }, 10)
+        this.setTimeout('filterCheck', () => {}, 10)
       } catch (error) {
         console.error('CHATATABLE - error setting filters:', error)
       }
     }
 
     this.setFilterBadgeClasses()
+
+    this.scheduleTooltipRefresh(100)
   }
 
   onDateRangeSelectionApplied = () => {
@@ -1204,6 +1461,8 @@ export default class ChataTable extends React.Component {
         .then((response) => {
           if (response?.data?.data?.rows) {
             this.props.updateColumnsAndData(response)
+            this.summaryStats = this.calculateSummaryStats(this.props)
+            this.forceUpdate()
           } else {
             throw new Error('Column deletion failed')
           }
@@ -1236,6 +1495,8 @@ export default class ChataTable extends React.Component {
       setColumnVisibility({ ...this.props.authentication, columns: newColumns }).catch((error) => {
         console.error(error)
       })
+      this.summaryStats = this.calculateSummaryStats(this.props)
+      this.forceUpdate()
     }
   }
 
@@ -1244,9 +1505,9 @@ export default class ChataTable extends React.Component {
       if (this.props.keepScrolledRight) {
         this.scrollToRight()
       }
-      setTimeout(() => {
-        this.setHeaderInputEventListeners()
-      }, 0)
+      this.setHeaderInputEventListeners()
+      this.summaryStats = this.calculateSummaryStats(this.props)
+      this.forceUpdate()
     })
   }
 
@@ -1331,7 +1592,6 @@ export default class ChataTable extends React.Component {
           {...this.props}
           isOpen={this.state.isCustomColumnPopoverOpen}
           onClose={() => this.resetCustomColumnModal()}
-          // TableComponent={ChataTable}
           tableRef={this.ref}
           aggConfig={this.props.aggConfig}
           queryResponse={this.props.response}
@@ -1418,13 +1678,38 @@ export default class ChataTable extends React.Component {
 
         return columns
       } else if (this.props.columns?.length) {
-        const filteredColumns = this.props.columns.map((col) => {
-          const newCol = {}
+        const filteredColumns = this.props.columns.map((col, index) => {
+          // Create a safe copy of the column with essential properties
+          const newCol = {
+            index,
+          }
+
+          if (col.field) {
+            newCol.field = col.field
+          } else if (col.name) {
+            newCol.field = col.name.replace(/\s+/g, '_').toLowerCase()
+          } else if (col.display_name) {
+            newCol.field = col.display_name.replace(/\s+/g, '_').toLowerCase()
+          } else {
+            newCol.field = `column_${index}`
+          }
+
           Object.keys(col).forEach((option) => {
             if (columnOptionsList.includes(option)) {
               newCol[option] = col[option]
             }
           })
+
+          if (!newCol.title) {
+            if (col.display_name) {
+              newCol.title = col.display_name
+            } else if (col.name) {
+              newCol.title = col.name
+            } else if (col.field) {
+              newCol.title = col.field
+            }
+          }
+
           return newCol
         })
         return filteredColumns
@@ -1527,7 +1812,7 @@ export default class ChataTable extends React.Component {
     const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
     const currentRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(currentRowCount)
     const totalRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(totalRowCount)
-    const rowLimit = this.props.response?.data?.data?.row_limit
+    const rowLimit = this.props.response?.data?.data?.row_limit ?? MAX_DATA_PAGE_SIZE
     const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(rowLimit)
 
     return (
@@ -1543,101 +1828,111 @@ export default class ChataTable extends React.Component {
 
   renderHeaderTooltipContent = ({ content }) => {
     try {
-      let column
-      try {
-        column = JSON.parse(content)
-      } catch (error) {
-        return null
-      }
+      const column = this.parseTooltipContent(content)
+      if (!column) return null
 
-      if (!column) {
-        return null
-      }
+      const tooltipProps = this.extractTooltipProps(column)
+      return this.renderTooltipSections(tooltipProps)
+    } catch (error) {
+      console.error('Error in renderHeaderTooltipContent:', error)
+      return null
+    }
+  }
 
-      const name = column.display_name
-      const altName = column.title
-      const type = COLUMN_TYPES[column?.type]?.description
-      const icon = COLUMN_TYPES[column?.type]?.icon
+  parseTooltipContent = (content) => {
+    if (!content) return null
 
-      const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
-      const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(MAX_DATA_PAGE_SIZE)
-
-      const stats = this.summaryStats[column.index]
-
-      return (
-        <div>
-          <div className='selectable-table-tooltip-title'>
-            <span>
-              {name}
-              {altName !== name ? ` (${altName})` : ''}
-            </span>
-          </div>
-          {!!type && (
-            <div className='selectable-table-tooltip-section selectable-table-tooltip-subtitle'>
-              {!!icon && <Icon type={icon} />}
-              <span>{type}</span>
-            </div>
-          )}
-          {!!column.fnSummary && (
-            <div className='selectable-table-tooltip-section'>
-              <span>
-                <strong>Custom formula:</strong>
-                <span> = {column.fnSummary}</span>
-              </span>
-            </div>
-          )}
-          {(column?.type === ColumnTypes.QUANTITY ||
-            column?.type === ColumnTypes.DOLLAR_AMT ||
-            column?.type === ColumnTypes.DATE) &&
-            stats &&
-            (this.useInfiniteScroll && isDataLimited(this.props.response) ? (
-              <div className='selectable-table-tooltip-section'>
-                <span>
-                  <Icon type='warning' /> {`Summary stats unavailable - ${DATASET_TOO_LARGE}`}
-                </span>
-              </div>
-            ) : (
-              <>
-                {(column?.type === ColumnTypes.QUANTITY || column?.type === ColumnTypes.DOLLAR_AMT) && (
-                  <div className='selectable-table-tooltip-section'>
-                    <span>
-                      <strong>Total: </strong>
-                      <span>{stats?.sum}</span>
-                    </span>
-                  </div>
-                )}
-                {(column?.type === ColumnTypes.QUANTITY || column?.type === ColumnTypes.DOLLAR_AMT) && (
-                  <div className='selectable-table-tooltip-section'>
-                    <span>
-                      <strong>Average: </strong>
-                      <span>{stats?.avg}</span>
-                    </span>
-                  </div>
-                )}
-                {column?.type === ColumnTypes.DATE && stats?.min !== null && (
-                  <div className='selectable-table-tooltip-section'>
-                    <span>
-                      <strong>Earliest: </strong>
-                      <span>{stats.min}</span>
-                    </span>
-                  </div>
-                )}
-                {column?.type === ColumnTypes.DATE && stats?.max !== null && (
-                  <div className='selectable-table-tooltip-section'>
-                    <span>
-                      <strong>Latest: </strong>
-                      <span>{stats.max}</span>
-                    </span>
-                  </div>
-                )}
-              </>
-            ))}
-        </div>
-      )
+    try {
+      const column = JSON.parse(content)
+      return column && typeof column === 'object' ? column : null
     } catch (error) {
       return null
     }
   }
+
+  extractTooltipProps = (column) => {
+    const name = column.display_name || column.title || column.field || 'Unknown Column'
+    const altName = column.title && column.title !== name ? column.title : null
+    const type = COLUMN_TYPES[column?.type]?.description
+    const icon = COLUMN_TYPES[column?.type]?.icon
+
+    const columnIndex =
+      typeof column.index === 'number' ? column.index : column.index ? parseInt(column.index, 10) : null
+
+    const stats =
+      columnIndex !== null && !isNaN(columnIndex) && this.summaryStats ? this.summaryStats[columnIndex] : null
+
+    return { column, name, altName, type, icon, stats }
+  }
+
+  renderTooltipSections = ({ column, name, altName, type, icon, stats }) => {
+    return (
+      <div>
+        {this.renderTooltipTitle(name, altName)}
+        {this.renderTooltipType(type, icon)}
+        {this.renderTooltipFormula(column)}
+        {this.renderTooltipStats(column, stats)}
+      </div>
+    )
+  }
+
+  renderTooltipTitle = (name, altName) => (
+    <div className='selectable-table-tooltip-title'>
+      <span>
+        {name}
+        {altName && ` (${altName})`}
+      </span>
+    </div>
+  )
+
+  renderTooltipType = (type, icon) => {
+    if (!type) return null
+
+    return (
+      <div className='selectable-table-tooltip-section selectable-table-tooltip-subtitle'>
+        {icon && <Icon type={icon} />}
+        <span>{type}</span>
+      </div>
+    )
+  }
+
+  renderTooltipFormula = (column) => {
+    if (!column.fnSummary) return null
+
+    return (
+      <div className='selectable-table-tooltip-section'>
+        <span>
+          <strong>Custom formula:</strong>
+          <span> = {column.fnSummary}</span>
+        </span>
+      </div>
+    )
+  }
+
+  renderTooltipStats = (column, stats) => {
+    if (!stats) return null
+
+    const isQuantityColumn = isColumnSummable(column)
+    const isDateColumn = column.type === ColumnTypes.DATE
+
+    return (
+      <>
+        {isQuantityColumn && stats.sum !== undefined && this.renderStatSection('Total', stats.sum)}
+        {isQuantityColumn && stats.avg !== undefined && this.renderStatSection('Average', stats.avg)}
+        {isDateColumn && stats.min !== null && stats.min !== undefined && this.renderStatSection('Earliest', stats.min)}
+        {isDateColumn && stats.max !== null && stats.max !== undefined && this.renderStatSection('Latest', stats.max)}
+      </>
+    )
+  }
+
+  renderStatSection = (label, value) => (
+    <div className='selectable-table-tooltip-section'>
+      <span>
+        <strong>{label}: </strong>
+        <span>{value}</span>
+      </span>
+    </div>
+  )
 
   getCurrentRowCount = () => {
     let rowCount = this.ref?.tabulator?.getDataCount('active')
@@ -1665,6 +1960,215 @@ export default class ChataTable extends React.Component {
 
   render = () => {
     const isEmpty = this.isTableEmpty()
+
+    let summaryRow = null
+
+    const formatSummaryValue = (value, col, colIdx) => {
+      if (col && typeof col.formatter === 'function') {
+        const mockCell = {
+          getValue: () => value,
+          getColumn: () => col,
+          getElement: () => null,
+        }
+        try {
+          const formatted = col.formatter(mockCell, col.formatterParams || {}, () => {})
+          if (formatted instanceof window.HTMLElement) {
+            return formatted.textContent || ''
+          }
+          if (Array.isArray(formatted)) {
+            return formatted.join('')
+          }
+          if (typeof formatted === 'object' && formatted !== null) {
+            return value
+          }
+          return formatted
+        } catch (e) {
+          return value
+        }
+      }
+      if (typeof value === 'number') {
+        return value.toLocaleString()
+      }
+      return value
+    }
+
+    // Shared logic for both table types
+    let colWidths = []
+    let columns = this.props.columns || []
+    let summaryStats = []
+    let scrollRef = null
+    let isPivot = this.props.pivot && columns && this.props.data && this.props.data.length > 0
+    let isRegular = !this.props.pivot && columns && this.props.response?.data?.data?.rows?.length > 0
+
+    if (isPivot || isRegular) {
+      const getSummaryStats = (values) => {
+        const valid = values.filter(
+          (v) => typeof v === 'number' || (!isNaN(parseFloat(v)) && v !== null && v !== undefined),
+        )
+        const sum = valid.reduce((acc, val) => acc + (typeof val === 'number' ? val : parseFloat(val)), 0)
+        const avg = valid.length > 0 ? sum / valid.length : null
+        return { sum, avg }
+      }
+
+      if (isPivot) {
+        summaryStats = columns.map((col, i) => {
+          if (i === 0 || col.visible === false || col.is_visible === false) return null
+          const values = this.props.data.map((row) => row[i])
+          return getSummaryStats(values)
+        })
+      } else if (isRegular) {
+        summaryStats = columns.map((col, i) => {
+          if (col.visible === false || col.is_visible === false) return null
+          if (col.type === 'QUANTITY' || col.type === 'NUMBER' || isColumnSummable(col)) {
+            const values = this.props.response.data.data.rows.map((row) => row[i])
+            return getSummaryStats(values)
+          }
+          return null
+        })
+      }
+
+      const hasVisibleSummable = columns.some((col, i) => {
+        return (
+          col.visible !== false &&
+          col.is_visible !== false &&
+          (col.type === 'QUANTITY' || col.type === 'NUMBER' || isColumnSummable(col))
+        )
+      })
+
+      if (hasVisibleSummable) {
+        if (!this.summaryScrollRef) {
+          this.summaryScrollRef = React.createRef()
+        }
+        scrollRef = this.summaryScrollRef
+        if (this.ref?.tabulator) {
+          const tabCols = this.ref.tabulator.getColumns()
+          colWidths = tabCols.map((col, idx) => {
+            const el = col.getElement()
+            return el ? el.offsetWidth : 100
+          })
+          if (!this._summaryResizeListenerAdded) {
+            this.ref.tabulator.on('columnResized', () => {
+              if (this._isMounted) {
+                this.forceUpdate()
+              }
+            })
+            this._summaryResizeListenerAdded = true
+          }
+        } else {
+          colWidths = columns.map((col, idx) => col.width || 100)
+        }
+
+        setTimeout(() => {
+          if (this.ref?.tabulator && scrollRef?.current) {
+            const tableHolder = this.ref.tabulator.rowManager?.element
+            const summaryHolder = scrollRef.current
+            if (tableHolder && summaryHolder && !summaryHolder._scrollSynced) {
+              tableHolder.addEventListener('scroll', () => {
+                if (summaryHolder.scrollLeft !== tableHolder.scrollLeft) {
+                  summaryHolder.scrollLeft = tableHolder.scrollLeft
+                }
+              })
+              summaryHolder.addEventListener('scroll', () => {
+                if (tableHolder.scrollLeft !== summaryHolder.scrollLeft) {
+                  tableHolder.scrollLeft = summaryHolder.scrollLeft
+                }
+              })
+              summaryHolder._scrollSynced = true
+            }
+          }
+        }, 0)
+
+        const renderSummaryRow = (type) => (
+          <div
+            className='tabulator-calcs-holder'
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              minHeight: '26px',
+              background: 'var(--react-autoql-background-color-secondary)',
+              borderTop: type === 'total' ? '2px solid var(--react-autoql-table-border-color)' : undefined,
+              borderBottom: '1px solid var(--react-autoql-table-border-color)',
+              minWidth: 'max-content',
+            }}
+          >
+            {columns.map((col, i) => {
+              if (col.visible === false || col.is_visible === false) return null
+              const stat = summaryStats[i]
+              let value = ''
+              let title = ''
+              if (type === 'total') {
+                value = i === 0 ? 'Total' : stat && stat.sum !== undefined ? formatSummaryValue(stat.sum, col, i) : ''
+                title = stat && stat.sum !== undefined ? formatSummaryValue(stat.sum, col, i) : ''
+              } else {
+                value = i === 0 ? 'Average' : stat && stat.avg !== undefined ? formatSummaryValue(stat.avg, col, i) : ''
+                title = stat && stat.avg !== undefined ? formatSummaryValue(stat.avg, col, i) : ''
+              }
+
+              let rawValue = null
+              if (type === 'total') {
+                rawValue = stat && stat.sum !== undefined ? stat.sum : null
+              } else {
+                rawValue = stat && stat.avg !== undefined ? stat.avg : null
+              }
+
+              const shouldEnableCopy = i !== 0 && rawValue !== null
+
+              const setTooltipAttributes = (element) => {
+                if (shouldEnableCopy && element) {
+                  setupCopyableCell(element, this.SUMMARY_TOOLTIP_ID, TOOLTIP_COPY_TEXTS.DEFAULT)
+                }
+              }
+
+              return (
+                <div
+                  key={i}
+                  ref={shouldEnableCopy ? setTooltipAttributes : null}
+                  className={`tabulator-cell${isPivot && i === 0 ? ' pivot-category' : ''} ${
+                    shouldEnableCopy ? 'copyable-cell' : ''
+                  }`}
+                  style={{
+                    width: colWidths[i] || 100,
+                    minWidth: colWidths[i] || 100,
+                    maxWidth: colWidths[i] || 100,
+                    padding: '4px 8px',
+                    borderRight: '1px solid var(--react-autoql-table-border-color)',
+                    background: 'var(--react-autoql-background-color-secondary)',
+                    fontWeight: i === 0 ? 600 : 400,
+                    boxSizing: 'border-box',
+                    fontFamily: 'inherit',
+                    fontSize: '11px',
+                    textAlign: col?.align || (i === 0 ? 'left' : 'right'),
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    cursor: shouldEnableCopy ? 'pointer' : 'default',
+                  }}
+                  title={shouldEnableCopy ? null : title}
+                  onContextMenu={(e) => {
+                    if (shouldEnableCopy) {
+                      handleCellCopy(e, value, TOOLTIP_COPY_TEXTS)
+                    }
+                  }}
+                >
+                  {value}
+                </div>
+              )
+            })}
+          </div>
+        )
+
+        summaryRow = (
+          <div
+            className={`custom-summary-row${isPivot ? ' pivot-summary-row' : ''}`}
+            style={{ width: '100%', overflowX: 'auto', fontFamily: 'inherit', fontSize: '11px' }}
+            ref={scrollRef}
+          >
+            {renderSummaryRow('total')}
+            {renderSummaryRow('average')}
+          </div>
+        )
+      }
+    }
 
     return (
       <ErrorBoundary>
@@ -1712,8 +2216,6 @@ export default class ChataTable extends React.Component {
                     onDataProcessed={(...args) => this.onDataProcessed(...args)}
                     onDataLoadError={(...args) => this.onDataLoadError(...args)}
                     onScrollVertical={(...args) => this.onScrollVertical(...args)}
-                    // onColumnMoved={(...args) => this.onColumnMoved(...args)}
-                    // onColumnResized={(...args) => this.onColumnResized(...args)}
                     pivot={this.props.pivot}
                     scope={this.props.scope}
                     isDrilldown={this.props.isDrilldown}
@@ -1737,6 +2239,8 @@ export default class ChataTable extends React.Component {
           delayHide={0}
           border
         />
+
+        <EnhancedTooltip tooltipId={this.SUMMARY_TOOLTIP_ID} className='summary-row-tooltip' delayHide={0} />
       </ErrorBoundary>
     )
   }
