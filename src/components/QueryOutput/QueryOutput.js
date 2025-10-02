@@ -7,8 +7,6 @@ import _isEmpty from 'lodash.isempty'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
 
-import { TOOLTIP_COPY_TEXTS } from '../../js/Constants'
-
 import {
   AggTypes,
   sendSuggestion,
@@ -99,6 +97,9 @@ export class QueryOutput extends React.Component {
     this.CHART_TOOLTIP_ID = `react-autoql-query-output-chart-tooltip-${this.COMPONENT_KEY}`
     this.ALLOW_NUMERIC_STRING_COLUMNS = true
     this.MAX_PIVOT_TABLE_COLUMNS = 50
+    this.DEFAULT_TOOLTIP_TEXT = 'Right-click to copy value'
+    this.COPIED_TOOLTIP_TEXT = 'Copied!'
+    this.ERROR_TOOLTIP_TEXT = 'Copy failed. Please try again.'
 
     this.originalLegendState = {
       hiddenLegendLabels: [],
@@ -2207,21 +2208,21 @@ export class QueryOutput extends React.Component {
       textarea.setSelectionRange(0, textarea.value.length)
       const successful = document.execCommand('copy')
       if (successful) {
-        element.setAttribute('data-tooltip-content', TOOLTIP_COPY_TEXTS.COPIED)
+        element.setAttribute('data-tooltip-content', this.COPIED_TOOLTIP_TEXT)
         setTimeout(() => {
-          element.setAttribute('data-tooltip-content', TOOLTIP_COPY_TEXTS.DEFAULT)
+          element.setAttribute('data-tooltip-content', this.DEFAULT_TOOLTIP_TEXT)
         }, successTimeout)
       } else {
-        element.setAttribute('data-tooltip-content', TOOLTIP_COPY_TEXTS.ERROR)
+        element.setAttribute('data-tooltip-content', this.ERROR_TOOLTIP_TEXT)
         setTimeout(() => {
-          element.setAttribute('data-tooltip-content', TOOLTIP_COPY_TEXTS.DEFAULT)
+          element.setAttribute('data-tooltip-content', this.DEFAULT_TOOLTIP_TEXT)
         }, errorTimeout)
       }
     } catch (err) {
       console.error('Failed to copy: ', err)
-      element.setAttribute('data-tooltip-content', TOOLTIP_COPY_TEXTS.ERROR)
+      element.setAttribute('data-tooltip-content', this.ERROR_TOOLTIP_TEXT)
       setTimeout(() => {
-        element.setAttribute('data-tooltip-content', TOOLTIP_COPY_TEXTS.DEFAULT)
+        element.setAttribute('data-tooltip-content', this.DEFAULT_TOOLTIP_TEXT)
       }, errorTimeout)
     } finally {
       document.body.removeChild(textarea)
@@ -2230,7 +2231,7 @@ export class QueryOutput extends React.Component {
 
   addCopyToClipboardListener = (cellElement, cellValue, newCol, dataFormatting, tooltipId) => {
     cellElement.setAttribute('data-tooltip-id', tooltipId)
-    cellElement.setAttribute('data-tooltip-content', TOOLTIP_COPY_TEXTS.DEFAULT)
+    cellElement.setAttribute('data-tooltip-content', this.DEFAULT_TOOLTIP_TEXT)
 
     cellElement.addEventListener('contextmenu', (e) => {
       e.preventDefault()

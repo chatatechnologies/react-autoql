@@ -37,16 +37,14 @@ import { Button } from '../Button'
 import { Spinner } from '../Spinner'
 import { Popover } from '../Popover'
 import { Tooltip } from '../Tooltip'
-import EnhancedTooltip from '../Tooltip/EnhancedTooltip'
 import TableWrapper from './TableWrapper'
 import { DateRangePicker } from '../DateRangePicker'
 import { DataLimitWarning } from '../DataLimitWarning'
 import { columnOptionsList } from './tabulatorConstants'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { TABULATOR_LOCAL_ROW_LIMIT, LOCAL_OR_REMOTE, TOOLTIP_COPY_TEXTS } from '../../js/Constants'
+import { TABULATOR_LOCAL_ROW_LIMIT, LOCAL_OR_REMOTE } from '../../js/Constants'
 import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
 
-import { handleCellCopy, setupCopyableCell } from './CopyUtils'
 import './ChataTable.scss'
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
 import { PerformanceOptimizer } from './PerformanceOptimizer'
@@ -219,7 +217,6 @@ export default class ChataTable extends React.Component {
   initializeHelpers = () => {
     this.tooltipTimeout = null
     this.namedTimeouts = new Map()
-    this.SUMMARY_TOOLTIP_ID = `summary-tooltip-${uuid()}`
     PerformanceOptimizer.applyPassiveEventPatch()
   }
 
@@ -2052,7 +2049,7 @@ export default class ChataTable extends React.Component {
 
         const renderSummaryRow = (type) => (
           <div
-            className='tabulator-calcs-holder'
+            // Removed: tabulator-calcs-holder class, not needed
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -2075,29 +2072,10 @@ export default class ChataTable extends React.Component {
                 value = i === 0 ? 'Average' : stat && stat.avg !== undefined ? formatSummaryValue(stat.avg, col, i) : ''
                 title = stat && stat.avg !== undefined ? formatSummaryValue(stat.avg, col, i) : ''
               }
-
-              let rawValue = null
-              if (type === 'total') {
-                rawValue = stat && stat.sum !== undefined ? stat.sum : null
-              } else {
-                rawValue = stat && stat.avg !== undefined ? stat.avg : null
-              }
-
-              const shouldEnableCopy = i !== 0 && rawValue !== null
-
-              const setTooltipAttributes = (element) => {
-                if (shouldEnableCopy && element) {
-                  setupCopyableCell(element, this.SUMMARY_TOOLTIP_ID, TOOLTIP_COPY_TEXTS.DEFAULT)
-                }
-              }
-
               return (
                 <div
                   key={i}
-                  ref={shouldEnableCopy ? setTooltipAttributes : null}
-                  className={`tabulator-cell${isPivot && i === 0 ? ' pivot-category' : ''} ${
-                    shouldEnableCopy ? 'copyable-cell' : ''
-                  }`}
+                  className={`tabulator-cell${isPivot && i === 0 ? ' pivot-category' : ''}`}
                   style={{
                     width: colWidths[i] || 100,
                     minWidth: colWidths[i] || 100,
@@ -2113,14 +2091,8 @@ export default class ChataTable extends React.Component {
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    cursor: shouldEnableCopy ? 'pointer' : 'default',
                   }}
-                  title={shouldEnableCopy ? null : title}
-                  onContextMenu={(e) => {
-                    if (shouldEnableCopy) {
-                      handleCellCopy(e, value, TOOLTIP_COPY_TEXTS)
-                    }
-                  }}
+                  title={title}
                 >
                   {value}
                 </div>
@@ -2212,8 +2184,6 @@ export default class ChataTable extends React.Component {
           delayHide={0}
           border
         />
-
-        <EnhancedTooltip tooltipId={this.SUMMARY_TOOLTIP_ID} className='summary-row-tooltip' delayHide={0} />
       </ErrorBoundary>
     )
   }
