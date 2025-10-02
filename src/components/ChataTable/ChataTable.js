@@ -144,7 +144,11 @@ export default class ChataTable extends React.Component {
 
     // Initialize utility classes
     this.summaryStatsCalculator = new SummaryStatsCalculator(this.props.dataFormatting)
-    this.summaryRowRenderer = new SummaryRowRenderer(this.SUMMARY_TOOLTIP_ID, TOOLTIP_COPY_TEXTS)
+    this.summaryRowRenderer = new SummaryRowRenderer(
+      this.SUMMARY_TOOLTIP_ID,
+      TOOLTIP_COPY_TEXTS,
+      this.props.dataFormatting,
+    )
     this.lifecycleManager = new TableLifecycleManager(this)
     this.timeoutManager = new TimeoutManager()
 
@@ -2216,22 +2220,34 @@ export default class ChataTable extends React.Component {
 
     return (
       <>
-        {isQuantityColumn && stats.sum !== undefined && this.renderStatSection('Total', stats.sum)}
-        {isQuantityColumn && stats.avg !== undefined && this.renderStatSection('Average', stats.avg)}
-        {isDateColumn && stats.min !== null && stats.min !== undefined && this.renderStatSection('Earliest', stats.min)}
-        {isDateColumn && stats.max !== null && stats.max !== undefined && this.renderStatSection('Latest', stats.max)}
+        {isQuantityColumn && stats.sum !== undefined && this.renderStatSection('Total', stats.sum, column)}
+        {isQuantityColumn && stats.avg !== undefined && this.renderStatSection('Average', stats.avg, column)}
+        {isDateColumn &&
+          stats.min !== null &&
+          stats.min !== undefined &&
+          this.renderStatSection('Earliest', stats.min, column)}
+        {isDateColumn &&
+          stats.max !== null &&
+          stats.max !== undefined &&
+          this.renderStatSection('Latest', stats.max, column)}
       </>
     )
   }
 
-  renderStatSection = (label, value) => (
-    <div className='selectable-table-tooltip-section'>
-      <span>
-        <strong>{label}: </strong>
-        <span>{value}</span>
-      </span>
-    </div>
-  )
+  renderStatSection = (label, value, column) => {
+    const formatted =
+      typeof value === 'number'
+        ? formatElement({ element: value, column, config: getDataFormatting(this.props.dataFormatting) })
+        : value
+    return (
+      <div className='selectable-table-tooltip-section'>
+        <span>
+          <strong>{label}: </strong>
+          <span>{formatted}</span>
+        </span>
+      </div>
+    )
+  }
 
   getCurrentRowCount = () => {
     let rowCount = this.ref?.tabulator?.getDataCount('active')
@@ -2293,7 +2309,8 @@ export default class ChataTable extends React.Component {
     let isRegular = !this.props.pivot && columns && this.props.response?.data?.data?.rows?.length > 0
 
     if (isPivot || isRegular) {
-      const statsObject = this.summaryStats || this.summaryStatsCalculator.calculate(this.props)
+      // Always recalculate summary stats using filtered/visible data, matching tooltip
+      const statsObject = this.summaryStatsCalculator.calculate(this.props, this.ref)
       summaryStats = columns.map((col, index) => statsObject[index] || null)
 
       const hasVisibleSummable = columns.some((col, i) => {

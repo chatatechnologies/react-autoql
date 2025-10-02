@@ -477,30 +477,6 @@
   }
 }
 
-.single-column {
-  .tabulator-header .tabulator-col,
-  .tabulator-row .tabulator-cell {
-    width: -webkit-fill-available !important;
-  }
-
-  .tabulator-tableholder .tabulator-table {
-    width: -webkit-fill-available !important;
-    min-width: -webkit-fill-available !important;
-  }
-
-  .label-column {
-    width: 70px !important;
-    min-width: 70px !important;
-    max-width: 70px !important;
-  }
-
-  .copyable-cell {
-    width: calc(100% - 70px) !important;
-    min-width: calc(100% - 70px) !important;
-    max-width: calc(100% - 70px) !important;
-  }
-}
-
 [data-tooltip-content='Copied!'],
 [data-tooltip-content='Copied!'] .react-tooltip-content {
   background-color: var(--react-autoql-accent-color, #26a7df) !important;

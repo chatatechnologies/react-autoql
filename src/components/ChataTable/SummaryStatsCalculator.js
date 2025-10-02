@@ -37,16 +37,8 @@ export class SummaryStatsCalculator {
       .map((v) => (typeof v === 'number' ? v : parseFloat(v)))
 
     return {
-      avg: formatElement({
-        element: mean(columnData),
-        column,
-        config: this.dataFormatting,
-      }),
-      sum: formatElement({
-        element: sum(columnData),
-        column,
-        config: this.dataFormatting,
-      }),
+      avg: mean(columnData),
+      sum: sum(columnData),
     }
   }
 

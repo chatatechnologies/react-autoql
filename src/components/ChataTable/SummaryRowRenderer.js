@@ -1,38 +1,17 @@
 import React from 'react'
-import { isColumnSummable } from 'autoql-fe-utils'
+import { isColumnSummable, formatElement } from 'autoql-fe-utils'
 import { setupCopyableCell, handleCellCopy } from './CopyUtils'
 
 export class SummaryRowRenderer {
-  constructor(summaryTooltipId, tooltipCopyTexts) {
+  constructor(summaryTooltipId, tooltipCopyTexts, dataFormatting) {
     this.SUMMARY_TOOLTIP_ID = summaryTooltipId
     this.TOOLTIP_COPY_TEXTS = tooltipCopyTexts
+    this.dataFormatting = dataFormatting
   }
 
   formatSummaryValue(value, col, colIdx) {
-    if (col && typeof col.formatter === 'function') {
-      const mockCell = {
-        getValue: () => value,
-        getColumn: () => col,
-        getElement: () => null,
-      }
-      try {
-        const formatted = col.formatter(mockCell, col.formatterParams || {}, () => {})
-        if (formatted instanceof window.HTMLElement) {
-          return formatted.textContent || ''
-        }
-        if (Array.isArray(formatted)) {
-          return formatted.join('')
-        }
-        if (typeof formatted === 'object' && formatted !== null) {
-          return value
-        }
-        return formatted
-      } catch (e) {
-        return value
-      }
-    }
     if (typeof value === 'number') {
-      return value.toLocaleString()
+      return formatElement({ element: value, column: col, config: this.dataFormatting })
     }
     return value
   }
