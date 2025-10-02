@@ -93,12 +93,7 @@ export class RegressionLine extends React.Component {
     // Check if this is a multi-series chart (multiple visible series)
     const isMultiSeries = seriesIndices.length > 1
 
-    if (
-      chartType === 'stacked_column' ||
-      chartType === 'stacked_bar' ||
-      chartType === 'stacked_area' ||
-      chartType === 'stacked_line'
-    ) {
+    if (chartType === 'stacked_column' || chartType === 'stacked_bar' || chartType === 'stacked_line') {
       // For stacked charts, use stack totals
       points = data
         .map((row, index) => {
@@ -188,11 +183,7 @@ export class RegressionLine extends React.Component {
 
     const { chartType, visibleSeriesIndices } = this.props
     const isMultiSeries = visibleSeriesIndices?.length > 1
-    const isStacked =
-      chartType === 'stacked_column' ||
-      chartType === 'stacked_bar' ||
-      chartType === 'stacked_area' ||
-      chartType === 'stacked_line'
+    const isStacked = chartType === 'stacked_column' || chartType === 'stacked_bar' || chartType === 'stacked_line'
 
     if (isStacked || !isMultiSeries) {
       // Use combined trend line for stacked charts or single series
@@ -340,11 +331,7 @@ export class RegressionLine extends React.Component {
     } = this.props
 
     // Skip individual trend lines for stacked charts - they should use combined trend line
-    const isStacked =
-      chartType === 'stacked_column' ||
-      chartType === 'stacked_bar' ||
-      chartType === 'stacked_area' ||
-      chartType === 'stacked_line'
+    const isStacked = chartType === 'stacked_column' || chartType === 'stacked_bar' || chartType === 'stacked_line'
     if (isStacked) {
       return null
     }

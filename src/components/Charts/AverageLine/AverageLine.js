@@ -68,12 +68,7 @@ export class AverageLine extends React.Component {
     }
 
     // For stacked charts, calculate average of the sum of each stack
-    if (
-      chartType === 'stacked_column' ||
-      chartType === 'stacked_bar' ||
-      chartType === 'stacked_area' ||
-      chartType === 'stacked_line'
-    ) {
+    if (chartType === 'stacked_column' || chartType === 'stacked_bar' || chartType === 'stacked_line') {
       const stackTotals = data
         .map((row) => {
           let stackSum = 0

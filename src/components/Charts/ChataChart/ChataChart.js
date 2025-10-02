@@ -657,25 +657,21 @@ export default class ChataChart extends React.Component {
       DisplayTypes.STACKED_BAR,
       DisplayTypes.LINE,
       DisplayTypes.STACKED_LINE,
-      DisplayTypes.AREA,
-      DisplayTypes.STACKED_AREA,
       DisplayTypes.SCATTERPLOT,
     ]
     return supportedCharts.includes(this.props.type)
   }
 
   shouldShowRegressionLine = () => {
-    // Regression lines only make sense for charts with ordered data or time series
     const supportedCharts = [
-      DisplayTypes.COLUMN, // Time series or ordered categories
-      DisplayTypes.STACKED_COLUMN, // Time series or ordered categories
-      DisplayTypes.LINE, // Time series
-      DisplayTypes.STACKED_LINE, // Time series
-      DisplayTypes.AREA, // Time series
-      DisplayTypes.STACKED_AREA, // Time series
-      DisplayTypes.SCATTERPLOT, // Correlation analysis
+      DisplayTypes.COLUMN,
+      DisplayTypes.STACKED_COLUMN,
+      DisplayTypes.LINE,
+      DisplayTypes.STACKED_LINE,
+      DisplayTypes.SCATTERPLOT,
     ]
-    // Exclude BAR and STACKED_BAR - categories are typically nominal, not ordered
+
+    // Exclude BAR and STACKED_BAR - line is vertical
     return supportedCharts.includes(this.props.type)
   }
 
@@ -694,10 +690,6 @@ export default class ChataChart extends React.Component {
         return 'line'
       case DisplayTypes.STACKED_LINE:
         return 'stacked_line'
-      case DisplayTypes.AREA:
-        return 'area'
-      case DisplayTypes.STACKED_AREA:
-        return 'stacked_area'
       case DisplayTypes.SCATTERPLOT:
         return 'scatterplot'
       default:
