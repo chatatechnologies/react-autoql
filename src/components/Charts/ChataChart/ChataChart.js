@@ -152,6 +152,21 @@ export default class ChataChart extends React.Component {
       }
     }
 
+    // If the histogram rendered initially without data due to missing/invalid stringColumnIndex,
+    // recalculate data once a valid configuration is present.
+    if (
+      this.props.type === DisplayTypes.HISTOGRAM &&
+      (!this.state.data || !this.state.data.length) &&
+      this.props.data?.length &&
+      this.props.numberColumnIndex >= 0 &&
+      this.props.columns?.[this.props.numberColumnIndex]
+    ) {
+      const newData = this.getData(this.props)
+      if (newData?.data?.length) {
+        this.setState({ ...newData, chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
+      }
+    }
+
     if (
       this.props.type !== prevProps.type &&
       DATE_ONLY_CHART_TYPES.includes(this.props.type) &&
@@ -246,6 +261,15 @@ export default class ChataChart extends React.Component {
       const maxElements = 10
 
       let isDataTruncated = false
+
+      // Histograms only require a valid numberColumnIndex; they don't rely on the string (ordinal) axis.
+      if (props.type === DisplayTypes.HISTOGRAM) {
+        if (typeof numberColumnIndex === 'number' && props.columns[numberColumnIndex]) {
+          // For histograms, just pass through the raw data (no top-N truncation here; binning handles density)
+          return { data: props.data, dataReduced: props.data, isDataTruncated: false }
+        }
+        // Fall through to existing logic if numberColumnIndex is somehow invalid
+      }
 
       if (props.isDataAggregated) {
         let data = props.data
