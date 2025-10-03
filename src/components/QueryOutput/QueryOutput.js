@@ -1823,25 +1823,37 @@ export class QueryOutput extends React.Component {
 
   setTableConfig = (newColumns) => {
     const columns = newColumns ?? this.getColumns()
-    if (!columns) return
+    if (!columns) {
+      return
+    }
 
     const prevTableConfig = _cloneDeep(this.tableConfig)
-    if (!this.tableConfig) this.tableConfig = {}
 
-    // Configure string columns using utility function
-    const needsStringColumnUpdate =
-      !this.tableConfig.stringColumnIndices ||
-      !this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns) ||
-      !getVisibleColumns(columns).some((col) => this.tableConfig.stringColumnIndices.includes(col.index))
+    if (!this.tableConfig) {
+      this.tableConfig = {}
+    }
 
-    if (needsStringColumnUpdate) {
+    // Set string type columns (ordinal axis)
+    const isStringColumnIndexValid = this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns)
+
+    if (!this.tableConfig.stringColumnIndices || !isStringColumnIndexValid) {
+      const isPivot = false
       const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
         columns,
-        false, // isPivot
+        isPivot,
         this.ALLOW_NUMERIC_STRING_COLUMNS,
       )
+
       this.tableConfig.stringColumnIndices = stringColumnIndices
       this.tableConfig.stringColumnIndex = stringColumnIndex
+
+      // If it set all of the columns to string column indices, remove one so it can be set as the number column index
+      if (stringColumnIndices.length === getVisibleColumns(columns).length) {
+        const indexToRemove = stringColumnIndices.findIndex((i) => i !== stringColumnIndex)
+        if (indexToRemove > -1) {
+          this.tableConfig.stringColumnIndices.splice(indexToRemove, 1)
+        }
+      }
     }
 
     const { amountOfNumberColumns } = getColumnTypeAmounts(columns) ?? {}
