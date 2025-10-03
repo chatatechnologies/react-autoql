@@ -647,7 +647,7 @@ export class QueryOutput extends React.Component {
   getStringColumnIndex = (foundIndex) => {
     return foundIndex
       ? foundIndex
-      : this.tableConfig?.stringColumnIndices.length > 0
+      : this.tableConfig?.stringColumnIndices?.length > 0
       ? this.tableConfig?.stringColumnIndices[0]
       : 0
   }
