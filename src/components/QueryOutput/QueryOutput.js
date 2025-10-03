@@ -3028,6 +3028,46 @@ export class QueryOutput extends React.Component {
 
     const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
 
+    // Histogram single-column fallback:
+    // If the display type is histogram and there is only one visible numeric column
+    // (or effectively no valid string axis selected), some downstream logic may
+    // result in an empty chart on first render. We cannot modify setTableConfig,
+    // but we can ensure at render time that stringColumnIndex points to a visible
+    // column (even if numeric) so ChataChart receives consistent indices.
+    if (this.state.displayType === 'histogram') {
+      try {
+        const visibleCols = this.state.columns?.filter((c) => c?.is_visible)
+        if (visibleCols?.length) {
+          const hasValidString =
+            tableConfig?.stringColumnIndex >= 0 && this.state.columns[tableConfig.stringColumnIndex]
+          if (!hasValidString) {
+            const fallback = visibleCols[0]
+            if (fallback) {
+              // Non-invasive override (do not persist permanently): clone & patch for this render only
+              tableConfig.stringColumnIndex = fallback.index
+              if (
+                Array.isArray(tableConfig.stringColumnIndices) &&
+                !tableConfig.stringColumnIndices.includes(fallback.index)
+              ) {
+                tableConfig.stringColumnIndices = [...tableConfig.stringColumnIndices, fallback.index]
+              }
+              // Ensure the primary numberColumnIndex is not the same as stringColumnIndex (if multiple numbers exist)
+              if (tableConfig.numberColumnIndex === tableConfig.stringColumnIndex) {
+                const altNumber = visibleCols.find((c) => c.index !== tableConfig.stringColumnIndex && c.isNumberType)
+                if (altNumber) {
+                  tableConfig.numberColumnIndex = altNumber.index
+                  tableConfig.numberColumnIndices = [altNumber.index]
+                }
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // Safe debug, won't crash render
+        console.debug('Histogram fallback failed', e)
+      }
+    }
+
     let isChartDataAggregated = false
     const numberOfGroupbys = getNumberOfGroupables(this.state.columns)
     if (numberOfGroupbys === 1 || (numberOfGroupbys >= 2 && usePivotData)) {
@@ -3047,6 +3087,18 @@ export class QueryOutput extends React.Component {
           isResizable={this.state.isResizable}
           {...tableConfig}
           tableConfig={this.tableConfig}
+          // Debug props (temporary): helps diagnose initial histogram configuration
+          debugHistogramConfig={
+            this.state.displayType === 'histogram'
+              ? {
+                  tableConfigStringColumnIndex: tableConfig.stringColumnIndex,
+                  tableConfigStringColumnIndices: tableConfig.stringColumnIndices,
+                  tableConfigNumberColumnIndex: tableConfig.numberColumnIndex,
+                  tableConfigNumberColumnIndices: tableConfig.numberColumnIndices,
+                  dataLength: this.tableData?.length,
+                }
+              : undefined
+          }
           originalColumns={this.getColumns()}
           data={data}
           hidden={!isChartType(this.state.displayType)}

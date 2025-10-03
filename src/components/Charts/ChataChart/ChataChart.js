@@ -75,6 +75,10 @@ export default class ChataChart extends React.Component {
       chartID: uuid(),
       isLoading: true,
     }
+
+    // Debug flags to avoid spam
+    this._histDebugLogged = { constructor: false, mount: false, update: false, render: false }
+    this.logHistogramDebug('constructor')
   }
 
   static propTypes = {
@@ -96,6 +100,7 @@ export default class ChataChart extends React.Component {
       this.firstRender = false
       this.forceUpdate()
     }
+    this.logHistogramDebug('mount')
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -115,6 +120,7 @@ export default class ChataChart extends React.Component {
   }
 
   componentDidUpdate = (prevProps) => {
+    this.logHistogramDebug('update', prevProps)
     // If the histogram rendered initially without data due to missing/invalid stringColumnIndex,
     // recalculate data once a valid configuration is present.
     if (
@@ -723,6 +729,7 @@ export default class ChataChart extends React.Component {
         return null
       }
     }
+    this.logHistogramDebug('render')
 
     // We need to set these inline in order for them to be applied in the exported PNG
     const chartFontFamily = getThemeValue('font-family')
@@ -771,3 +778,51 @@ export default class ChataChart extends React.Component {
     )
   }
 }
+
+// ---------- DEBUG UTILITIES (non-production behavioral) ----------
+ChataChart.prototype.logHistogramDebug = function (phase, prevProps) {
+  try {
+    if (this.props.type !== DisplayTypes.HISTOGRAM) return
+    if (this._histDebugLogged?.[phase]) return // prevent duplicate logs per phase
+
+    const debugParent = this.props.debugHistogramConfig || {}
+
+    const info = {
+      phase,
+      chartID: this.state?.chartID,
+      firstRenderFlag: this.firstRender,
+      hasStateData: !!this.state?.data?.length,
+      stateDataLength: this.state?.data?.length,
+      propsDataLength: this.props.data?.length,
+      numberColumnIndex: this.props.numberColumnIndex,
+      numberColumnIndices: this.props.numberColumnIndices,
+      numberColumnIndex2: this.props.numberColumnIndex2,
+      numberColumnIndices2: this.props.numberColumnIndices2,
+      stringColumnIndex: this.props.stringColumnIndex,
+      stringColumnIndices: this.props.stringColumnIndices,
+      parentDebug: debugParent,
+      prevType: prevProps?.type,
+      prevNumberColumnIndex: prevProps?.numberColumnIndex,
+      prevStringColumnIndex: prevProps?.stringColumnIndex,
+    }
+
+    // Highlight potential problem conditions
+    info.flags = {
+      missingStateData: !info.hasStateData,
+      hasRawPropsData: !!this.props.data?.length,
+      missingNumberIndex: !(this.props.numberColumnIndex >= 0),
+      missingStringIndex: !(this.props.stringColumnIndex >= 0),
+      singleVisibleColumn: Array.isArray(this.props.columns)
+        ? this.props.columns.filter((c) => c?.is_visible).length === 1
+        : undefined,
+    }
+
+    // eslint-disable-next-line no-console
+    console.debug('[HistogramDebug]', info)
+    this._histDebugLogged[phase] = true
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.debug('[HistogramDebug] logging failed', e)
+  }
+}
+
