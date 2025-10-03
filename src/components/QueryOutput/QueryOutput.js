@@ -1833,25 +1833,31 @@ export class QueryOutput extends React.Component {
       this.tableConfig = {}
     }
 
-    // Set string type columns (ordinal axis)
-    const isStringColumnIndexValid = this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns)
+    const currentDisplayType = this.state?.displayType ?? this.getDisplayTypeFromInitial(this.props)
 
-    if (!this.tableConfig.stringColumnIndices || !isStringColumnIndexValid) {
-      const isPivot = false
-      const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
-        columns,
-        isPivot,
-        this.ALLOW_NUMERIC_STRING_COLUMNS,
-      )
+    // Configure string columns using utility function, with special handling for histograms
+    const needsStringColumnUpdate =
+      !this.tableConfig.stringColumnIndices ||
+      !this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns) ||
+      !getVisibleColumns(columns).some((col) => this.tableConfig.stringColumnIndices.includes(col.index))
 
-      this.tableConfig.stringColumnIndices = stringColumnIndices
-      this.tableConfig.stringColumnIndex = stringColumnIndex
+    if (needsStringColumnUpdate) {
+      {
+        const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
+          columns,
+          false, // isPivot
+          this.ALLOW_NUMERIC_STRING_COLUMNS,
+        )
 
-      // If it set all of the columns to string column indices, remove one so it can be set as the number column index
-      if (stringColumnIndices.length === getVisibleColumns(columns).length) {
-        const indexToRemove = stringColumnIndices.findIndex((i) => i !== stringColumnIndex)
-        if (indexToRemove > -1) {
-          this.tableConfig.stringColumnIndices.splice(indexToRemove, 1)
+        this.tableConfig.stringColumnIndices = stringColumnIndices
+        this.tableConfig.stringColumnIndex = stringColumnIndex
+
+        // If it set all of the columns to string column indices, remove one so it can be set as the number column index
+        if (stringColumnIndices.length === getVisibleColumns(columns).length) {
+          const indexToRemove = stringColumnIndices.findIndex((i) => i !== stringColumnIndex)
+          if (indexToRemove > -1) {
+            this.tableConfig.stringColumnIndices.splice(indexToRemove, 1)
+          }
         }
       }
     }
@@ -3028,46 +3034,6 @@ export class QueryOutput extends React.Component {
 
     const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
 
-    // Histogram single-column fallback:
-    // If the display type is histogram and there is only one visible numeric column
-    // (or effectively no valid string axis selected), some downstream logic may
-    // result in an empty chart on first render. We cannot modify setTableConfig,
-    // but we can ensure at render time that stringColumnIndex points to a visible
-    // column (even if numeric) so ChataChart receives consistent indices.
-    if (this.state.displayType === 'histogram') {
-      try {
-        const visibleCols = this.state.columns?.filter((c) => c?.is_visible)
-        if (visibleCols?.length) {
-          const hasValidString =
-            tableConfig?.stringColumnIndex >= 0 && this.state.columns[tableConfig.stringColumnIndex]
-          if (!hasValidString) {
-            const fallback = visibleCols[0]
-            if (fallback) {
-              // Non-invasive override (do not persist permanently): clone & patch for this render only
-              tableConfig.stringColumnIndex = fallback.index
-              if (
-                Array.isArray(tableConfig.stringColumnIndices) &&
-                !tableConfig.stringColumnIndices.includes(fallback.index)
-              ) {
-                tableConfig.stringColumnIndices = [...tableConfig.stringColumnIndices, fallback.index]
-              }
-              // Ensure the primary numberColumnIndex is not the same as stringColumnIndex (if multiple numbers exist)
-              if (tableConfig.numberColumnIndex === tableConfig.stringColumnIndex) {
-                const altNumber = visibleCols.find((c) => c.index !== tableConfig.stringColumnIndex && c.isNumberType)
-                if (altNumber) {
-                  tableConfig.numberColumnIndex = altNumber.index
-                  tableConfig.numberColumnIndices = [altNumber.index]
-                }
-              }
-            }
-          }
-        }
-      } catch (e) {
-        // Safe debug, won't crash render
-        console.debug('Histogram fallback failed', e)
-      }
-    }
-
     let isChartDataAggregated = false
     const numberOfGroupbys = getNumberOfGroupables(this.state.columns)
     if (numberOfGroupbys === 1 || (numberOfGroupbys >= 2 && usePivotData)) {
@@ -3080,25 +3046,23 @@ export class QueryOutput extends React.Component {
     const isPivotDataLimited =
       this.usePivotDataForChart() && (this.pivotTableRowsLimited || this.pivotTableColumnsLimited)
 
+    // Only for histogram with only one visible numeric column, shallow clone config and clear stringColumnIndices
+    let chartTableConfig = tableConfig
+    if (
+      this.state.displayType === 'histogram' &&
+      Array.isArray(columns) &&
+      columns.filter((col) => col?.is_visible && col.isNumberType).length === 1
+    ) {
+      chartTableConfig = { ...tableConfig, stringColumnIndex: undefined, stringColumnIndices: [] }
+    }
+
     return (
       <ErrorBoundary>
         <ChataChart
           key={this.state.chartID}
           isResizable={this.state.isResizable}
-          {...tableConfig}
-          tableConfig={this.tableConfig}
-          // Debug props (temporary): helps diagnose initial histogram configuration
-          debugHistogramConfig={
-            this.state.displayType === 'histogram'
-              ? {
-                  tableConfigStringColumnIndex: tableConfig.stringColumnIndex,
-                  tableConfigStringColumnIndices: tableConfig.stringColumnIndices,
-                  tableConfigNumberColumnIndex: tableConfig.numberColumnIndex,
-                  tableConfigNumberColumnIndices: tableConfig.numberColumnIndices,
-                  dataLength: this.tableData?.length,
-                }
-              : undefined
-          }
+          {...chartTableConfig}
+          tableConfig={chartTableConfig}
           originalColumns={this.getColumns()}
           data={data}
           hidden={!isChartType(this.state.displayType)}

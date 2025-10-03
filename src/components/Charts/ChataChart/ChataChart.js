@@ -75,10 +75,6 @@ export default class ChataChart extends React.Component {
       chartID: uuid(),
       isLoading: true,
     }
-
-    // Debug flags to avoid spam
-    this._histDebugLogged = { constructor: false, mount: false, update: false, render: false }
-    this.logHistogramDebug('constructor')
   }
 
   static propTypes = {
@@ -100,7 +96,6 @@ export default class ChataChart extends React.Component {
       this.firstRender = false
       this.forceUpdate()
     }
-    this.logHistogramDebug('mount')
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -120,22 +115,6 @@ export default class ChataChart extends React.Component {
   }
 
   componentDidUpdate = (prevProps) => {
-    this.logHistogramDebug('update', prevProps)
-    // If the histogram rendered initially without data due to missing/invalid stringColumnIndex,
-    // recalculate data once a valid configuration is present.
-    if (
-      this.props.type === DisplayTypes.HISTOGRAM &&
-      (!this.state.data || !this.state.data.length) &&
-      this.props.data?.length &&
-      this.props.numberColumnIndex >= 0 &&
-      this.props.columns?.[this.props.numberColumnIndex]
-    ) {
-      const newData = this.getData(this.props)
-      if (newData?.data?.length) {
-        this.setState({ ...newData, chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
-      }
-    }
-
     if (!this._isMounted) {
       return
     }
@@ -156,36 +135,6 @@ export default class ChataChart extends React.Component {
     if (!this.props.isResizing && prevProps.isResizing && !this.props.hidden) {
       // Stop throttling loop
       this.stopThrottledRefresh()
-    }
-
-    if (
-      this.props.type === DisplayTypes.HISTOGRAM &&
-      Array.isArray(this.props.stringColumnIndices) &&
-      (!this.props.stringColumnIndices.length ||
-        !this.props.columns?.some((col) => this.props.stringColumnIndices.includes(col.index)))
-    ) {
-      const visible = this.props.columns?.filter((col) => col.is_visible)
-      if (visible?.length) {
-        const fallbackIndex = visible[0].index
-        if (typeof this.props.changeStringColumnIndex === 'function') {
-          this.props.changeStringColumnIndex(fallbackIndex)
-        }
-      }
-    }
-
-    // If the histogram rendered initially without data due to missing/invalid stringColumnIndex,
-    // recalculate data once a valid configuration is present.
-    if (
-      this.props.type === DisplayTypes.HISTOGRAM &&
-      (!this.state.data || !this.state.data.length) &&
-      this.props.data?.length &&
-      this.props.numberColumnIndex >= 0 &&
-      this.props.columns?.[this.props.numberColumnIndex]
-    ) {
-      const newData = this.getData(this.props)
-      if (newData?.data?.length) {
-        this.setState({ ...newData, chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
-      }
     }
 
     if (
@@ -230,14 +179,10 @@ export default class ChataChart extends React.Component {
   }
 
   startThrottledRefresh = () => {
-    // Histograms should always operate on raw data (they perform their own binning)
-    const aggregated =
-      this.props.type === DisplayTypes.HISTOGRAM ? false : !CHARTS_WITHOUT_AGGREGATED_DATA.includes(this.props.type)
+    const aggregated = !CHARTS_WITHOUT_AGGREGATED_DATA.includes(this.props.type)
     const dataReduced = this.state.dataReduced ?? this.state.data
     const stateData = this.props.type == DisplayTypes.PIE ? dataReduced : this.state.data
-    // For histograms, always use raw props.data (stateData may be undefined early)
-    const data =
-      this.props.type === DisplayTypes.HISTOGRAM ? this.props.data : (aggregated ? stateData : null) || this.props.data
+    const data = (aggregated ? stateData : null) || this.props.data
 
     this.throttleDelay = (data?.length ?? 100) * 2
     if (this.throttleDelay < 50) {
@@ -279,22 +224,6 @@ export default class ChataChart extends React.Component {
     try {
       if (!props.data?.length || !props.columns?.length) {
         return
-      }
-
-      // Histograms only need the raw numeric series data. They do not require
-      // a categorical (string) axis for aggregation like other charts. When the
-      // query response only returns a single numeric column, the generic
-      // aggregation logic below can fail to produce state.data on first load
-      // (because there is no valid stringColumnIndex). If state.data is not set
-      // the initial render aborts, resulting in a blank histogram until a later
-      // lifecycle correction fires. By short‑circuiting here we ensure the
-      // histogram always receives the raw rows immediately on mount.
-      if (props.type === DisplayTypes.HISTOGRAM) {
-        return {
-          data: props.data,
-          dataReduced: props.data, // keep the shape consistent
-          isDataTruncated: false,
-        }
       }
 
       const { stringColumnIndex, numberColumnIndex } = props
@@ -716,20 +645,25 @@ export default class ChataChart extends React.Component {
     }
   }
 
+  // Helper: get visible numeric columns
+  getVisibleNumericColumns = () => {
+    if (!Array.isArray(this.props.columns)) return []
+    return this.props.columns.filter(
+      (col) =>
+        col?.is_visible &&
+        (col.isNumberType ||
+          col.type === 'NUMBER' ||
+          col.type === 'DOLLAR_AMT' ||
+          col.type === 'QUANTITY' ||
+          col.type === 'RATIO'),
+    )
+  }
+
   render = () => {
-    // For most chart types we rely on state.data being initialized via getData.
-    // Histograms, however, can operate directly on props.data (raw rows) without
-    // requiring pre-aggregation or a string axis. If state.data is still empty
-    // on the first render but we're rendering a histogram and props.data exists,
-    // allow the render to proceed to avoid an initial blank chart.
     if (!this.state.data?.length) {
-      const isHistogramWithRawData = this.props.type === DisplayTypes.HISTOGRAM && this.props.data?.length
-      if (!isHistogramWithRawData) {
-        console.error('Unable to render chart - There was no data provided to the chart component.')
-        return null
-      }
+      console.error('Unable to render chart - There was no data provided to the chart component.')
+      return null
     }
-    this.logHistogramDebug('render')
 
     // We need to set these inline in order for them to be applied in the exported PNG
     const chartFontFamily = getThemeValue('font-family')
@@ -778,51 +712,3 @@ export default class ChataChart extends React.Component {
     )
   }
 }
-
-// ---------- DEBUG UTILITIES (non-production behavioral) ----------
-ChataChart.prototype.logHistogramDebug = function (phase, prevProps) {
-  try {
-    if (this.props.type !== DisplayTypes.HISTOGRAM) return
-    if (this._histDebugLogged?.[phase]) return // prevent duplicate logs per phase
-
-    const debugParent = this.props.debugHistogramConfig || {}
-
-    const info = {
-      phase,
-      chartID: this.state?.chartID,
-      firstRenderFlag: this.firstRender,
-      hasStateData: !!this.state?.data?.length,
-      stateDataLength: this.state?.data?.length,
-      propsDataLength: this.props.data?.length,
-      numberColumnIndex: this.props.numberColumnIndex,
-      numberColumnIndices: this.props.numberColumnIndices,
-      numberColumnIndex2: this.props.numberColumnIndex2,
-      numberColumnIndices2: this.props.numberColumnIndices2,
-      stringColumnIndex: this.props.stringColumnIndex,
-      stringColumnIndices: this.props.stringColumnIndices,
-      parentDebug: debugParent,
-      prevType: prevProps?.type,
-      prevNumberColumnIndex: prevProps?.numberColumnIndex,
-      prevStringColumnIndex: prevProps?.stringColumnIndex,
-    }
-
-    // Highlight potential problem conditions
-    info.flags = {
-      missingStateData: !info.hasStateData,
-      hasRawPropsData: !!this.props.data?.length,
-      missingNumberIndex: !(this.props.numberColumnIndex >= 0),
-      missingStringIndex: !(this.props.stringColumnIndex >= 0),
-      singleVisibleColumn: Array.isArray(this.props.columns)
-        ? this.props.columns.filter((c) => c?.is_visible).length === 1
-        : undefined,
-    }
-
-    // eslint-disable-next-line no-console
-    console.debug('[HistogramDebug]', info)
-    this._histDebugLogged[phase] = true
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.debug('[HistogramDebug] logging failed', e)
-  }
-}
-
