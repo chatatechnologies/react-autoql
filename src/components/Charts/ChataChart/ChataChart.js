@@ -115,6 +115,22 @@ export default class ChataChart extends React.Component {
   }
 
   componentDidUpdate = (prevProps) => {
+    // HISTOGRAM-SPECIFIC FIX: Ensure stringColumnIndex is always valid for histograms
+    if (
+      this.props.type === DisplayTypes.HISTOGRAM &&
+      Array.isArray(this.props.stringColumnIndices) &&
+      (!this.props.stringColumnIndices.length ||
+        !this.props.columns?.some((col) => this.props.stringColumnIndices.includes(col.index)))
+    ) {
+      // Fallback: pick the first visible column as stringColumnIndex if none is set
+      const visible = this.props.columns?.filter((col) => col.is_visible)
+      if (visible?.length) {
+        const fallbackIndex = visible[0].index
+        if (typeof this.props.changeStringColumnIndex === 'function') {
+          this.props.changeStringColumnIndex(fallbackIndex)
+        }
+      }
+    }
     if (!this._isMounted) {
       return
     }
@@ -137,14 +153,12 @@ export default class ChataChart extends React.Component {
       this.stopThrottledRefresh()
     }
 
-    // HISTOGRAM-SPECIFIC FIX: Ensure stringColumnIndex is always valid for histograms
     if (
       this.props.type === DisplayTypes.HISTOGRAM &&
       Array.isArray(this.props.stringColumnIndices) &&
       (!this.props.stringColumnIndices.length ||
         !this.props.columns?.some((col) => this.props.stringColumnIndices.includes(col.index)))
     ) {
-      // Fallback: pick the first visible column as stringColumnIndex if none is set
       const visible = this.props.columns?.filter((col) => col.is_visible)
       if (visible?.length) {
         const fallbackIndex = visible[0].index
