@@ -3049,16 +3049,12 @@ export class QueryOutput extends React.Component {
     const isPivotDataLimited =
       this.usePivotDataForChart() && (this.pivotTableRowsLimited || this.pivotTableColumnsLimited)
 
-    // Use the original tableConfig for all chart types including histograms
-    const chartTableConfig = tableConfig
-
     return (
       <ErrorBoundary>
         <ChataChart
           key={this.state.chartID}
           isResizable={this.state.isResizable}
-          {...chartTableConfig}
-          tableConfig={chartTableConfig}
+          tableConfig={tableConfig}
           originalColumns={this.getColumns()}
           data={data}
           hidden={!isChartType(this.state.displayType)}
