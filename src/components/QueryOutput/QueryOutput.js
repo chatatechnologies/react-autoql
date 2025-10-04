@@ -1839,7 +1839,6 @@ export class QueryOutput extends React.Component {
 
     const currentDisplayType = this.state?.displayType ?? this.getDisplayTypeFromInitial(this.props)
 
-    // Configure string columns using utility function, with special handling for histograms
     const needsStringColumnUpdate =
       !this.tableConfig.stringColumnIndices ||
       !this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns) ||
