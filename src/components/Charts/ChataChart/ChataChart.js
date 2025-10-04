@@ -645,12 +645,6 @@ export default class ChataChart extends React.Component {
     }
   }
 
-  getVisibleNumericColumns = () => {
-    if (!Array.isArray(this.props.columns)) return []
-
-    return this.props.columns.filter((col) => col?.is_visible && col.isNumberType)
-  }
-
   render = () => {
     if (!this.state.data?.length) {
       console.error('Unable to render chart - There was no data provided to the chart component.')
