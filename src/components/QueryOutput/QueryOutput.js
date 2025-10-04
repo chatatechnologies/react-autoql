@@ -106,7 +106,6 @@ export class QueryOutput extends React.Component {
     }
 
     let response = props.queryResponse
-    // Create a deep copy to avoid issues with frozen/read-only objects from props
     this.queryResponse = _cloneDeep(response)
     this.columnDateRanges = getColumnDateRanges(response)
     this.queryID = this.queryResponse?.data?.data?.query_id
@@ -902,7 +901,6 @@ export class QueryOutput extends React.Component {
 
       if (visibleColumnsChanged) {
         if (this.queryResponse?.data?.data?.columns) {
-          // Create a deep copy to avoid mutating frozen/read-only objects
           this.queryResponse = _cloneDeep(this.queryResponse)
 
           if (feReq) {
@@ -3054,7 +3052,7 @@ export class QueryOutput extends React.Component {
         <ChataChart
           key={this.state.chartID}
           isResizable={this.state.isResizable}
-          tableConfig={tableConfig}
+          tableConfig={tableConfig} // Use the original tableConfig for all chart types including histograms
           originalColumns={this.getColumns()}
           data={data}
           hidden={!isChartType(this.state.displayType)}
