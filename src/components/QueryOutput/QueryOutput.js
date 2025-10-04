@@ -106,7 +106,8 @@ export class QueryOutput extends React.Component {
     }
 
     let response = props.queryResponse
-    this.queryResponse = response
+    // Create a deep copy to avoid issues with frozen/read-only objects from props
+    this.queryResponse = _cloneDeep(response)
     this.columnDateRanges = getColumnDateRanges(response)
     this.queryID = this.queryResponse?.data?.data?.query_id
     this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
@@ -901,6 +902,9 @@ export class QueryOutput extends React.Component {
 
       if (visibleColumnsChanged) {
         if (this.queryResponse?.data?.data?.columns) {
+          // Create a deep copy to avoid mutating frozen/read-only objects
+          this.queryResponse = _cloneDeep(this.queryResponse)
+
           if (feReq) {
             this.queryResponse.data.data.fe_req = feReq
           }
@@ -3046,15 +3050,8 @@ export class QueryOutput extends React.Component {
     const isPivotDataLimited =
       this.usePivotDataForChart() && (this.pivotTableRowsLimited || this.pivotTableColumnsLimited)
 
-    // Only for histogram with only one visible numeric column, shallow clone config and clear stringColumnIndices
-    let chartTableConfig = tableConfig
-    if (
-      this.state.displayType === 'histogram' &&
-      Array.isArray(columns) &&
-      columns.filter((col) => col?.is_visible && col.isNumberType).length === 1
-    ) {
-      chartTableConfig = { ...tableConfig, stringColumnIndex: undefined, stringColumnIndices: [] }
-    }
+    // Use the original tableConfig for all chart types including histograms
+    const chartTableConfig = tableConfig
 
     return (
       <ErrorBoundary>
