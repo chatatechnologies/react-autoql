@@ -645,7 +645,6 @@ export default class ChataChart extends React.Component {
     }
   }
 
-  // Helper: get visible numeric columns
   getVisibleNumericColumns = () => {
     if (!Array.isArray(this.props.columns)) return []
 
