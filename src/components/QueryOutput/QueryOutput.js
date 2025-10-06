@@ -106,7 +106,7 @@ export class QueryOutput extends React.Component {
     }
 
     let response = props.queryResponse
-    this.queryResponse = _cloneDeep(response)
+    this.queryResponse = response
     this.columnDateRanges = getColumnDateRanges(response)
     this.queryID = this.queryResponse?.data?.data?.query_id
     this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
@@ -901,8 +901,6 @@ export class QueryOutput extends React.Component {
 
       if (visibleColumnsChanged) {
         if (this.queryResponse?.data?.data?.columns) {
-          this.queryResponse = _cloneDeep(this.queryResponse)
-
           if (feReq) {
             this.queryResponse.data.data.fe_req = feReq
           }
@@ -1835,30 +1833,25 @@ export class QueryOutput extends React.Component {
       this.tableConfig = {}
     }
 
-    const currentDisplayType = this.state?.displayType ?? this.getDisplayTypeFromInitial(this.props)
+    // Set string type columns (ordinal axis)
+    const isStringColumnIndexValid = this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns)
 
-    const needsStringColumnUpdate =
-      !this.tableConfig.stringColumnIndices ||
-      !this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns) ||
-      !getVisibleColumns(columns).some((col) => this.tableConfig.stringColumnIndices.includes(col.index))
+    if (!this.tableConfig.stringColumnIndices || !isStringColumnIndexValid) {
+      const isPivot = false
+      const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
+        columns,
+        isPivot,
+        this.ALLOW_NUMERIC_STRING_COLUMNS,
+      )
 
-    if (needsStringColumnUpdate) {
-      {
-        const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
-          columns,
-          false, // isPivot
-          this.ALLOW_NUMERIC_STRING_COLUMNS,
-        )
+      this.tableConfig.stringColumnIndices = stringColumnIndices
+      this.tableConfig.stringColumnIndex = stringColumnIndex
 
-        this.tableConfig.stringColumnIndices = stringColumnIndices
-        this.tableConfig.stringColumnIndex = stringColumnIndex
-
-        // If it set all of the columns to string column indices, remove one so it can be set as the number column index
-        if (stringColumnIndices.length === getVisibleColumns(columns).length) {
-          const indexToRemove = stringColumnIndices.findIndex((i) => i !== stringColumnIndex)
-          if (indexToRemove > -1) {
-            this.tableConfig.stringColumnIndices.splice(indexToRemove, 1)
-          }
+      // If it set all of the columns to string column indices, remove one so it can be set as the number column index
+      if (stringColumnIndices.length === getVisibleColumns(columns).length) {
+        const indexToRemove = stringColumnIndices.findIndex((i) => i !== stringColumnIndex)
+        if (indexToRemove > -1) {
+          this.tableConfig.stringColumnIndices.splice(indexToRemove, 1)
         }
       }
     }
@@ -3052,7 +3045,8 @@ export class QueryOutput extends React.Component {
         <ChataChart
           key={this.state.chartID}
           isResizable={this.state.isResizable}
-          tableConfig={tableConfig} // Use the original tableConfig for all chart types including histograms
+          {...tableConfig}
+          tableConfig={this.tableConfig}
           originalColumns={this.getColumns()}
           data={data}
           hidden={!isChartType(this.state.displayType)}
