@@ -1,6 +1,6 @@
 import React from 'react'
 import { isColumnSummable, formatElement } from 'autoql-fe-utils'
-import { setupCopyableCell, handleCellCopy } from './CopyUtils'
+import { setupCopyableCell, handleCellCopy } from './CopyUtils.js'
 
 export class SummaryRowRenderer {
   constructor(summaryTooltipId, tooltipCopyTexts, dataFormatting) {

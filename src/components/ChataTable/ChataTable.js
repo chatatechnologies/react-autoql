@@ -5,12 +5,6 @@ import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
-import {
-  isColumnSummable,
-  getColumnFieldCompat,
-  getColumnOriginalIndexCompat,
-  getColumnPositionCompat,
-} from 'autoql-fe-utils'
 
 import {
   deepEqual,
@@ -34,6 +28,10 @@ import {
   getAutoQLConfig,
   runQueryOnly,
   TranslationTypes,
+  isColumnSummable,
+  getColumnFieldCompat,
+  getColumnOriginalIndexCompat,
+  getColumnPositionCompat,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -41,13 +39,12 @@ import { Button } from '../Button'
 import { Spinner } from '../Spinner'
 import { Popover } from '../Popover'
 import { Tooltip } from '../Tooltip'
-import EnhancedTooltip from '../Tooltip/EnhancedTooltip'
 import TableWrapper from './TableWrapper'
 import { DateRangePicker } from '../DateRangePicker'
 import { DataLimitWarning } from '../DataLimitWarning'
 import { columnOptionsList } from './tabulatorConstants'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { TABULATOR_LOCAL_ROW_LIMIT, LOCAL_OR_REMOTE, TOOLTIP_COPY_TEXTS } from '../../js/Constants'
+import { DATASET_TOO_LARGE, TABULATOR_LOCAL_ROW_LIMIT, LOCAL_OR_REMOTE } from '../../js/Constants'
 import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
 
 import './ChataTable.scss'
@@ -102,8 +99,6 @@ export default class ChataTable extends React.Component {
       initialFilter: undefined, // Let getRows do initial sorting and filtering
       progressiveLoadScrollMargin: 50, // Trigger next ajax load when scroll bar is 800px or less from the bottom of the table.
       movableColumns: true,
-      smoothScroll: true,
-      touchUndoSize: 5,
       downloadEncoder: function (fileContents, mimeType) {
         //fileContents - the unencoded contents of the file
         //mimeType - the suggested mime type for the output
@@ -350,9 +345,6 @@ export default class ChataTable extends React.Component {
   componentDidMount = () => {
     this._isMounted = true
     this._setFiltersTime = Date.now() // Track when component mounted to avoid duplicate requests
-
-    this.initializeHelpers()
-
     if (!this.props.autoHeight) {
       this.initialTableHeight = this.tabulatorContainer?.clientHeight
       this.lockedTableHeight = this.initialTableHeight
@@ -462,14 +454,21 @@ export default class ChataTable extends React.Component {
         this.setTableHeight()
       }
     }
-    this.updateSummaryStats(this.props)
+    this.summaryStats = this.calculateSummaryStats(this.props)
   }
 
   componentWillUnmount = () => {
     try {
       this._isMounted = false
-
       this.timeoutManager.clearAllTimeouts()
+      clearTimeout(this.setStateTimeout)
+
+      // Clear any pending filter check timeouts to prevent state updates after unmount
+      if (this._filterCheckTimeout) {
+        clearTimeout(this._filterCheckTimeout)
+        this._filterCheckTimeout = null
+      }
+
       this.cancelCurrentRequest()
 
       // DON'T clean up localStorage here - we need it to persist across component remounts
@@ -582,6 +581,58 @@ export default class ChataTable extends React.Component {
     headerElement.setAttribute('data-column-field', fieldRef)
   }
 
+  calculateSummaryStats = (props) => {
+    const stats = {}
+
+    try {
+      const rows = this.getAllRows(props)
+
+      if (!(rows?.length > 1)) {
+        return {}
+      }
+
+      props.columns?.forEach((column, columnIndex) => {
+        // If column has a mutator function, stats cannot be calculated based on the cell values
+        if (column.mutator) {
+          return
+        }
+
+        if (column?.type === ColumnTypes.QUANTITY || column?.type === ColumnTypes.DOLLAR_AMT) {
+          const columnData = rows.map((r) => r[columnIndex])
+          stats[columnIndex] = {
+            avg: formatElement({ element: mean(columnData), column, config: props.dataFormatting }),
+            sum: formatElement({ element: sum(columnData), column, config: props.dataFormatting }),
+          }
+        } else if (column?.type === ColumnTypes.DATE) {
+          const dates = rows.map((r) => r[columnIndex]).filter((date) => !!date)
+          const columnData = dates.map((date) => getDayJSObj({ value: date, column }))?.filter((r) => r?.isValid?.())
+
+          const min = dayjs.min(columnData)
+          const max = dayjs.max(columnData)
+
+          if (min && min?.length > 0 && max && max?.length > 0) {
+            stats[columnIndex] = {
+              min: formatElement({
+                element: min?.toISOString(),
+                column,
+                config: props.dataFormatting,
+              }),
+              max: formatElement({
+                element: max?.toISOString(),
+                column,
+                config: props.dataFormatting,
+              }),
+            }
+          }
+        }
+      })
+    } catch (error) {
+      console.error(error)
+    }
+
+    return stats
+  }
+
   getTotalPages = (response) => {
     const rows = response?.data?.data?.rows
     if (!rows?.length) {
@@ -611,7 +662,6 @@ export default class ChataTable extends React.Component {
     if (useInfiniteScroll) {
       this.setInfiniteScroll(true)
     }
-    this.updateSummaryStats(this.props)
 
     return this.ref?.updateData(data)
   }
@@ -690,10 +740,6 @@ export default class ChataTable extends React.Component {
     if (this.isSorting) {
       this.isSorting = false
       this.setLoading(false)
-
-      this.updateSummaryStats(this.props)
-
-      this.scheduleTooltipRefresh(100)
     }
   }
 
@@ -751,7 +797,6 @@ export default class ChataTable extends React.Component {
     }
 
     this.setFilterBadgeClasses()
-    this.scheduleTooltipRefresh(100)
   }
 
   onDataProcessed = (data) => {
@@ -1298,155 +1343,159 @@ export default class ChataTable extends React.Component {
     inputElement.parentNode.appendChild(clearBtn)
   }
 
-  setHeaderInputEventListeners = (cols) => {
-    // Prevent duplicate calls if already in progress
-    if (this._settingEventListeners) {
-      return
-    }
+  //   setHeaderInputEventListeners = (cols) => {
+  //     const columns = cols ?? this.props.columns
+  //     if (!columns) {
+  //       return
+  //     }
 
-    const columns = cols ?? this.props.columns
-    if (!columns?.length) {
-      return
-    }
+  //     columns.forEach((col, i) => {
+  //       const inputElement = document.querySelector(
+  //         `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"] .tabulator-col-content input`,
+  //       )
 
-    this._settingEventListeners = true
+  // <<<<<<< HEAD
+  //     if (this.props.pivot && this.props.data && this.props.data.length > 0) {
+  //       this.summaryStats = this.summaryStatsCalculator.calculate(this.props)
+  //     }
 
-    if (this.props.pivot && this.props.data && this.props.data.length > 0) {
-      this.summaryStats = this.summaryStatsCalculator.calculate(this.props)
-    }
+  //     try {
+  //       columns.forEach((col, i) => {
+  //         this.setupColumnHeader(col, i)
+  //         this.setupColumnInput(col, i)
+  //       })
+  //     } finally {
+  //       this._settingEventListeners = false
+  //     }
+  //   }
 
-    try {
-      columns.forEach((col, i) => {
-        this.setupColumnHeader(col, i)
-        this.setupColumnInput(col, i)
-      })
-    } finally {
-      this._settingEventListeners = false
-    }
-  }
+  //   setupColumnHeader = (col, index) => {
+  //     const fieldRef = this.generateFieldReference(col, index)
+  //     const headerElement = this.findHeaderElement(fieldRef, index)
 
-  setupColumnHeader = (col, index) => {
-    const fieldRef = this.generateFieldReference(col, index)
-    const headerElement = this.findHeaderElement(fieldRef, index)
+  //     if (headerElement) {
+  //       const tooltipData = this.createTooltipData(col, fieldRef, index)
+  //       this.setTooltipAttributes(headerElement, tooltipData, index, fieldRef)
 
-    if (headerElement) {
-      const tooltipData = this.createTooltipData(col, fieldRef, index)
-      this.setTooltipAttributes(headerElement, tooltipData, index, fieldRef)
+  //       if (!this.props.pivot) {
+  //         headerElement.addEventListener('contextmenu', (e) => this.headerContextMenuClick(e, col))
+  //       }
+  //     }
+  //   }
 
-      if (!this.props.pivot) {
-        headerElement.addEventListener('contextmenu', (e) => this.headerContextMenuClick(e, col))
-      }
-    }
-  }
+  //   setupColumnInput = (col, index) => {
+  //     const fieldRef = this.generateFieldReference(col, index)
+  //     const inputElement = this.findInputElement(fieldRef, index)
 
-  setupColumnInput = (col, index) => {
-    const fieldRef = this.generateFieldReference(col, index)
-    const inputElement = this.findInputElement(fieldRef, index)
+  //     if (inputElement) {
+  //       this.attachInputListeners(inputElement, col)
+  //       this.ensureClearButton(inputElement, col)
+  //     }
+  //   }
 
-    if (inputElement) {
-      this.attachInputListeners(inputElement, col)
-      this.ensureClearButton(inputElement, col)
-    }
-  }
+  //   findInputElement = (fieldRef, index) => {
+  //     if (!this.ref?.tabulator) {
+  //       return null
+  //     }
 
-  findInputElement = (fieldRef, index) => {
-    if (!this.ref?.tabulator) {
-      return null
-    }
+  //     try {
+  //       // Try to get column by field reference first
+  //       const column = this.ref.tabulator.getColumn(fieldRef)
+  //       if (column && typeof column.getElement === 'function') {
+  //         const columnElement = column.getElement()
+  //         return columnElement?.querySelector('.tabulator-col-content input') || null
+  // =======
+  //       const headerElement = document.querySelector(
+  //         `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"]:not(.tabulator-col-group) .tabulator-col-title-holder`,
+  //       )
 
-    try {
-      // Try to get column by field reference first
-      const column = this.ref.tabulator.getColumn(fieldRef)
-      if (column && typeof column.getElement === 'function') {
-        const columnElement = column.getElement()
-        return columnElement?.querySelector('.tabulator-col-content input') || null
-      }
+  //       if (headerElement) {
+  //         headerElement.setAttribute('data-tooltip-id', `selectable-table-column-header-tooltip-${this.TABLE_ID}`)
+  //         headerElement.setAttribute('data-tooltip-content', JSON.stringify({ ...col, index: i }))
 
-      // Fallback: get column by index if field reference doesn't work
-      const allColumns = this.ref.tabulator.getColumns()
-      if (allColumns && allColumns[index] && typeof allColumns[index].getElement === 'function') {
-        const columnElement = allColumns[index].getElement()
-        return columnElement?.querySelector('.tabulator-col-content input') || null
-      }
-    } catch (error) {
-      // Silent fallback to DOM query if Tabulator API fails
-    }
+  //         if (!this.props.pivot) {
+  //           headerElement.addEventListener('contextmenu', (e) => this.headerContextMenuClick(e, col))
+  //         }
+  // >>>>>>> 1e703d3464d7e01eb80df7c2fefdb859a072af24
+  //       }
 
-    return document.querySelector(
-      `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${fieldRef}"] .tabulator-col-content input`,
-    )
-  }
+  //       if (inputElement) {
+  //         inputElement.removeEventListener('keydown', this.inputKeydownListener)
+  //         inputElement.addEventListener('keydown', this.inputKeydownListener)
 
-  attachInputListeners = (inputElement, col) => {
-    // Remove existing listeners to prevent duplicates
-    inputElement.removeEventListener('keydown', this.inputKeydownListener)
-    inputElement.addEventListener('keydown', this.inputKeydownListener)
+  //         const clearBtn = document.querySelector(`#react-autoql-clear-btn-${this.TABLE_ID}-${col.field}`)
+  //         if (!clearBtn) {
+  //           this.renderHeaderInputClearBtn(inputElement, col)
+  //         }
 
-    if (col.type === ColumnTypes.DATE && !col.pivot) {
-      inputElement.removeEventListener('click', (e) => this.inputDateClickListener(e, col))
-      inputElement.addEventListener('click', (e) => this.inputDateClickListener(e, col))
+  //         if (col.type === ColumnTypes.DATE && !col.pivot) {
+  //           // Open Calendar Picker when user clicks on this field
+  //           inputElement.removeEventListener('click', (e) => this.inputDateClickListener(e, col))
+  //           inputElement.addEventListener('click', (e) => this.inputDateClickListener(e, col))
 
-      const keyboardEvents = ['keypress', 'keydown', 'keyup']
-      keyboardEvents.forEach((evt) => {
-        inputElement.removeEventListener(evt, this.inputDateKeypressListener)
-        inputElement.addEventListener(evt, this.inputDateKeypressListener)
-      })
-    }
-  }
+  //           // Do not allow user to type in this field
+  //           const keyboardEvents = ['keypress', 'keydown', 'keyup']
+  //           keyboardEvents.forEach((evt) => {
+  //             inputElement.removeEventListener(evt, this.inputDateKeypressListener)
+  //             inputElement.addEventListener(evt, this.inputDateKeypressListener)
+  //           })
+  //         }
+  //       }
+  //     })
+  //   }
 
-  ensureClearButton = (inputElement, col) => {
-    const clearBtn = document.querySelector(`#react-autoql-clear-btn-${this.TABLE_ID}-${col.field}`)
-    if (!clearBtn) {
-      this.renderHeaderInputClearBtn(inputElement, col)
-    }
-  }
+  //   setFilterBadgeClasses = () => {
+  //     if (this._isMounted && this.state.tabulatorMounted) {
+  //       this.ref?.tabulator?.getColumns()?.forEach((column) => {
+  //         const isFiltering = !!this.tableParams?.filter?.find((filter) => filter.field === column.getField())
+  //         const columnElement = column?.getElement()
 
-  setFilterBadgeClasses = () => {
-    if (!this._isMounted || !this.state.tabulatorMounted || !this.ref?.tabulator) {
-      return
-    }
+  // <<<<<<< HEAD
+  //     try {
+  //       const activeFilters = {}
+  //       if (this.tableParams?.filter) {
+  //         this.tableParams.filter.forEach((filter) => {
+  //           if (filter.field) {
+  //             activeFilters[filter.field] = true
+  //           }
+  //         })
+  //       }
 
-    try {
-      const activeFilters = {}
-      if (this.tableParams?.filter) {
-        this.tableParams.filter.forEach((filter) => {
-          if (filter.field) {
-            activeFilters[filter.field] = true
-          }
-        })
-      }
+  //       const columns = this.ref.tabulator.getColumns()
+  //       if (!columns || !Array.isArray(columns)) {
+  //         return
+  //       }
 
-      const columns = this.ref.tabulator.getColumns()
-      if (!columns || !Array.isArray(columns)) {
-        return
-      }
+  //       columns.forEach((column) => {
+  //         if (!column) return
 
-      columns.forEach((column) => {
-        if (!column) return
+  //         try {
+  //           const field = this.resolveColumnField(column)
+  //           const isFiltering = !!activeFilters[field]
 
-        try {
-          const field = this.resolveColumnField(column)
-          const isFiltering = !!activeFilters[field]
+  //           const getElement = column.getElement
+  //           if (typeof getElement !== 'function') return
 
-          const getElement = column.getElement
-          if (typeof getElement !== 'function') return
+  //           const columnElement = getElement.call(column)
+  //           if (!columnElement || !columnElement.classList) return
 
-          const columnElement = getElement.call(column)
-          if (!columnElement || !columnElement.classList) return
-
-          if (isFiltering) {
-            columnElement.classList.add('is-filtered')
-          } else {
-            columnElement.classList.remove('is-filtered')
-          }
-        } catch (err) {
-          // Silent fail for individual column to prevent breaking the entire table
-        }
-      })
-    } catch (err) {
-      // Silent fail to prevent breaking the entire component
-    }
-  }
+  //           if (isFiltering) {
+  //             columnElement.classList.add('is-filtered')
+  //           } else {
+  //             columnElement.classList.remove('is-filtered')
+  //           }
+  //         } catch (err) {
+  //           // Silent fail for individual column to prevent breaking the entire table
+  // =======
+  //         if (isFiltering) {
+  //           columnElement?.classList.add('is-filtered')
+  //         } else {
+  //           columnElement?.classList.remove('is-filtered')
+  // >>>>>>> 1e703d3464d7e01eb80df7c2fefdb859a072af24
+  //         }
+  //       })
+  //     }
+  //   }
 
   setFilters = async (newFilters) => {
     // Track when setFilters was called to prevent duplicate AJAX requests
@@ -1489,15 +1538,15 @@ export default class ChataTable extends React.Component {
         }
 
         // Final check after all filters set - with cleanup
-        this.setTimeout('filterCheck', () => {}, 10)
+        this._filterCheckTimeout = setTimeout(() => {
+          this._filterCheckTimeout = null
+        }, 10)
       } catch (error) {
         console.error('CHATATABLE - error setting filters:', error)
       }
     }
 
     this.setFilterBadgeClasses()
-
-    this.scheduleTooltipRefresh(100)
   }
 
   onDateRangeSelectionApplied = () => {
@@ -1663,9 +1712,11 @@ export default class ChataTable extends React.Component {
       if (this.props.keepScrolledRight) {
         this.scrollToRight()
       }
-      this.setHeaderInputEventListeners()
       this.summaryStats = this.summaryStatsCalculator.calculate(this.props)
       this.lifecycleManager.safeForceUpdate()
+      setTimeout(() => {
+        this.setHeaderInputEventListeners()
+      }, 0)
     })
   }
 
@@ -1836,38 +1887,13 @@ export default class ChataTable extends React.Component {
 
         return columns
       } else if (this.props.columns?.length) {
-        const filteredColumns = this.props.columns.map((col, index) => {
-          // Create a safe copy of the column with essential properties
-          const newCol = {
-            index,
-          }
-
-          if (col.field) {
-            newCol.field = col.field
-          } else if (col.name) {
-            newCol.field = col.name.replace(/\s+/g, '_').toLowerCase()
-          } else if (col.display_name) {
-            newCol.field = col.display_name.replace(/\s+/g, '_').toLowerCase()
-          } else {
-            newCol.field = `column_${index}`
-          }
-
+        const filteredColumns = this.props.columns.map((col) => {
+          const newCol = {}
           Object.keys(col).forEach((option) => {
             if (columnOptionsList.includes(option)) {
               newCol[option] = col[option]
             }
           })
-
-          if (!newCol.title) {
-            if (col.display_name) {
-              newCol.title = col.display_name
-            } else if (col.name) {
-              newCol.title = col.name
-            } else if (col.field) {
-              newCol.title = col.field
-            }
-          }
-
           return newCol
         })
         return filteredColumns
@@ -2131,23 +2157,97 @@ export default class ChataTable extends React.Component {
 
   renderHeaderTooltipContent = ({ content }) => {
     try {
-      const column = this.parseTooltipContent(content)
-      if (!column) return null
+      let column
+      try {
+        column = JSON.parse(content)
+      } catch (error) {
+        return null
+      }
 
-      const tooltipProps = this.extractTooltipProps(column)
-      return this.renderTooltipSections(tooltipProps)
-    } catch (error) {
-      console.error('Error in renderHeaderTooltipContent:', error)
-      return null
-    }
-  }
+      if (!column) {
+        return null
+      }
 
-  parseTooltipContent = (content) => {
-    if (!content) return null
+      const name = column.display_name
+      const altName = column.title
+      const type = COLUMN_TYPES[column?.type]?.description
+      const icon = COLUMN_TYPES[column?.type]?.icon
 
-    try {
-      const column = JSON.parse(content)
-      return column && typeof column === 'object' ? column : null
+      const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
+      const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(MAX_DATA_PAGE_SIZE)
+
+      const stats = this.summaryStats[column.index]
+
+      return (
+        <div>
+          <div className='selectable-table-tooltip-title'>
+            <span>
+              {name}
+              {altName !== name ? ` (${altName})` : ''}
+            </span>
+          </div>
+          {!!type && (
+            <div className='selectable-table-tooltip-section selectable-table-tooltip-subtitle'>
+              {!!icon && <Icon type={icon} />}
+              <span>{type}</span>
+            </div>
+          )}
+          {!!column.fnSummary && (
+            <div className='selectable-table-tooltip-section'>
+              <span>
+                <strong>Custom formula:</strong>
+                <span> = {column.fnSummary}</span>
+              </span>
+            </div>
+          )}
+          {(column?.type === ColumnTypes.QUANTITY ||
+            column?.type === ColumnTypes.DOLLAR_AMT ||
+            column?.type === ColumnTypes.DATE) &&
+            stats &&
+            (this.useInfiniteScroll && isDataLimited(this.props.response) ? (
+              <div className='selectable-table-tooltip-section'>
+                <span>
+                  <Icon type='warning' /> {`Summary stats unavailable - ${DATASET_TOO_LARGE}`}
+                </span>
+              </div>
+            ) : (
+              <>
+                {(column?.type === ColumnTypes.QUANTITY || column?.type === ColumnTypes.DOLLAR_AMT) && (
+                  <div className='selectable-table-tooltip-section'>
+                    <span>
+                      <strong>Total: </strong>
+                      <span>{stats?.sum}</span>
+                    </span>
+                  </div>
+                )}
+                {(column?.type === ColumnTypes.QUANTITY || column?.type === ColumnTypes.DOLLAR_AMT) && (
+                  <div className='selectable-table-tooltip-section'>
+                    <span>
+                      <strong>Average: </strong>
+                      <span>{stats?.avg}</span>
+                    </span>
+                  </div>
+                )}
+                {column?.type === ColumnTypes.DATE && stats?.min !== null && (
+                  <div className='selectable-table-tooltip-section'>
+                    <span>
+                      <strong>Earliest: </strong>
+                      <span>{stats.min}</span>
+                    </span>
+                  </div>
+                )}
+                {column?.type === ColumnTypes.DATE && stats?.max !== null && (
+                  <div className='selectable-table-tooltip-section'>
+                    <span>
+                      <strong>Latest: </strong>
+                      <span>{stats.max}</span>
+                    </span>
+                  </div>
+                )}
+              </>
+            ))}
+        </div>
+      )
     } catch (error) {
       return null
     }
@@ -2429,7 +2529,6 @@ export default class ChataTable extends React.Component {
                 </>
               )}
           </div>
-          {summaryRow}
           {this.renderDateRangePickerPopover()}
           {this.renderCustomColumnPopover()}
           {this.renderHeaderContextMenuPopover()}
@@ -2443,8 +2542,6 @@ export default class ChataTable extends React.Component {
           delayHide={0}
           border
         />
-
-        <EnhancedTooltip tooltipId={this.SUMMARY_TOOLTIP_ID} className='summary-row-tooltip' delayHide={0} />
       </ErrorBoundary>
     )
   }

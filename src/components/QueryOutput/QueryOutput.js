@@ -625,18 +625,6 @@ export class QueryOutput extends React.Component {
     const tableConfig = _cloneDeep(this.tableConfig)
     const pivotTableConfig = _cloneDeep(this.pivotTableConfig)
 
-    if (!initialized) {
-      // Find default string column match
-      const defaultDateColumn = this.queryResponse.data.data.default_date_column
-      const stringColumnIndex = this.findDefaultStringColumnIndex(defaultDateColumn)
-      tableConfig.stringColumnIndex = this.getStringColumnIndex(stringColumnIndex)
-
-      // Find default amount column match
-      const defaultAmountColumn = this.queryResponse.data.data.default_amount_column
-      const numberColumnIndex = this.findDefaultNumberColumnIndex(defaultAmountColumn)
-      tableConfig.numberColumnIndex = this.getNumberColumnIndex(numberColumnIndex)
-    }
-
     this.props.onTableConfigChange({
       tableConfig: tableConfig,
       pivotTableConfig: pivotTableConfig,
@@ -1189,6 +1177,16 @@ export class QueryOutput extends React.Component {
 
   queryFn = async (args = {}) => {
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
+
+    // Update formattedTableParams with current state from ChataTable before processing
+    if (args?.tableFilters || args?.orders) {
+      this.formattedTableParams = {
+        ...this.formattedTableParams,
+        filters: args?.tableFilters || [],
+        sorters: args?.orders || [],
+      }
+    }
+
     const allFilters = this.getCombinedFilters(args?.tableFilters)
 
     this.cancelCurrentRequest()
@@ -1216,9 +1214,9 @@ export class QueryOutput extends React.Component {
           query: queryRequestData?.text,
           queryID: this.props.originalQueryID,
           orders: this.formattedTableParams?.sorters,
-          tableFilters: allFilters,
           cancelToken: this.axiosSource.token,
           ...args,
+          tableFilters: allFilters,
         })
       } catch (error) {
         response = this.handleQueryFnError(error)
@@ -1365,31 +1363,8 @@ export class QueryOutput extends React.Component {
 
   // Function to combine original query filters and current table filters
   getCombinedFilters = (newFilters = []) => {
-    const queryRequestData = this.queryResponse?.data?.data?.fe_req
-    const queryFilters = queryRequestData?.filters || []
     const tableFilters = this.formattedTableParams?.filters || []
-
-    const allFilters = []
-
-    tableFilters.forEach((tableFilter) => {
-      let filter = tableFilter
-
-      const foundQueryFilter = queryFilters.find((filter) => filter.name === tableFilter.name)
-      if (foundQueryFilter) {
-        filter = {
-          ...tableFilter,
-          ...foundQueryFilter,
-        }
-      }
-
-      allFilters.push(filter)
-    })
-
-    queryFilters.forEach((queryFilter) => {
-      if (!allFilters.find((filter) => filter.name === queryFilter.name)) {
-        allFilters.push(queryFilter)
-      }
-    })
+    const allFilters = [...tableFilters]
 
     // Include the drilldown filters if they exist
     if (this.props.drilldownFilters && this.props.drilldownFilters.length > 0) {
@@ -1932,6 +1907,17 @@ export class QueryOutput extends React.Component {
     if (this.shouldUpdateStringColumnIndices(columns)) {
       this.configureStringColumnIndices(columns, currentDisplayType)
     }
+    const isPivot = false
+    const defaultDateColumn = this.queryResponse?.data?.data?.default_date_column
+    const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
+      columns,
+      isPivot,
+      this.ALLOW_NUMERIC_STRING_COLUMNS,
+      defaultDateColumn,
+    )
+
+    this.tableConfig.stringColumnIndices = stringColumnIndices
+    this.tableConfig.stringColumnIndex = stringColumnIndex
 
     const { amountOfNumberColumns } = getColumnTypeAmounts(columns) ?? {}
 
@@ -1944,9 +1930,12 @@ export class QueryOutput extends React.Component {
       currencyColumnIndices,
       quantityColumnIndices,
       ratioColumnIndices,
-    } = getNumberColumnIndices(columns, this.usePivotDataForChart())
+    } = getNumberColumnIndices(
+      columns,
+      this.usePivotDataForChart(),
+      this.queryResponse?.data?.data?.default_amount_column,
+    )
 
-    // Set number type columns and number series columns (linear axis)
     if (
       !this.tableConfig.numberColumnIndices?.length ||
       !(this.tableConfig.numberColumnIndex >= 0) ||
@@ -1961,18 +1950,24 @@ export class QueryOutput extends React.Component {
       this.tableConfig.ratioColumnIndices = ratioColumnIndices
       this.tableConfig.allNumberColumnIndices = allNumberColumnIndices
 
-      if (this.tableConfig.numberColumnIndex === this.tableConfig.stringColumnIndex) {
-        this.tableConfig.numberColumnIndex = allNumberColumnIndices.find(
-          (index) => !this.tableConfig.stringColumnIndices.includes(index),
+      if (
+        this.tableConfig.numberColumnIndex === this.tableConfig.stringColumnIndex &&
+        this.tableConfig.numberColumnIndices.length > 1
+      ) {
+        this.tableConfig.numberColumnIndex = allNumberColumnIndices?.find(
+          (index) => !this.tableConfig.stringColumnIndices?.includes(index),
         )
         this.tableConfig.numberColumnIndices = [this.tableConfig.numberColumnIndex]
       }
 
-      if (this.tableConfig.numberColumnIndex2 === this.tableConfig.stringColumnIndex) {
+      if (
+        this.tableConfig.numberColumnIndex2 === this.tableConfig.stringColumnIndex &&
+        this.tableConfig.numberColumnIndices.length > 1
+      ) {
         this.tableConfig.numberColumnIndex2 = allNumberColumnIndices.find(
           (index) =>
-            !this.tableConfig.stringColumnIndices.includes(index) &&
-            !this.tableConfig.numberColumnIndices.includes(index),
+            !this.tableConfig.stringColumnIndices?.includes(index) &&
+            !this.tableConfig.numberColumnIndices?.includes(index),
         )
         if (this.tableConfig.numberColumnIndex2) {
           this.tableConfig.numberColumnIndices2 = [this.tableConfig.numberColumnIndex2]
@@ -2078,20 +2073,6 @@ export class QueryOutput extends React.Component {
 
     if (!_isEqual(prevTableConfig, this.tableConfig)) {
       this.onTableConfigChange(this.hasCalledInitialTableConfigChange)
-    }
-
-    // Only reset to defaults if this is a fresh initialization (no previous config)
-    // Don't reset if we're updating an existing config with user selections
-    if (!prevTableConfig || Object.keys(prevTableConfig).length === 0) {
-      const defaultDateColumn = this.queryResponse.data.data.default_date_column
-      const stringColumnIdx = this.findDefaultStringColumnIndex(defaultDateColumn)
-      this.tableConfig.stringColumnIndex = this.getStringColumnIndex(stringColumnIdx)
-
-      // Find default amount column match
-      const defaultAmountColumn = this.queryResponse.data.data.default_amount_column
-      const numberColumnIdx = this.findDefaultNumberColumnIndex(defaultAmountColumn)
-      this.tableConfig.numberColumnIndex = this.getNumberColumnIndex(numberColumnIdx)
-      this.tableConfig.numberColumnIndices = [this.getNumberColumnIndex(numberColumnIdx)]
     }
   }
 

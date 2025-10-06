@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { isColumnSummable } from 'autoql-fe-utils'
-import { handleCellCopy, setupCopyableCell } from './CopyUtils'
+import { handleCellCopy, setupCopyableCell } from './CopyUtils.js'
 import { TOOLTIP_COPY_TEXTS } from '../../js/Constants'
 
 export function SummaryRow({
