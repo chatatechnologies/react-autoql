@@ -138,21 +138,6 @@ export default class ChataChart extends React.Component {
     }
 
     if (
-      this.props.type === DisplayTypes.HISTOGRAM &&
-      Array.isArray(this.props.stringColumnIndices) &&
-      (!this.props.stringColumnIndices.length ||
-        !this.props.columns?.some((col) => this.props.stringColumnIndices.includes(col.index)))
-    ) {
-      const visible = this.props.columns?.filter((col) => col.is_visible)
-      if (visible?.length) {
-        const fallbackIndex = visible[0].index
-        if (typeof this.props.changeStringColumnIndex === 'function') {
-          this.props.changeStringColumnIndex(fallbackIndex)
-        }
-      }
-    }
-
-    if (
       this.props.type !== prevProps.type &&
       DATE_ONLY_CHART_TYPES.includes(this.props.type) &&
       !isColumnDateType(this.props.columns[this.props.stringColumnIndex])
