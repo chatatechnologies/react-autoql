@@ -616,40 +616,10 @@ export class QueryOutput extends React.Component {
     const tableConfig = _cloneDeep(this.tableConfig)
     const pivotTableConfig = _cloneDeep(this.pivotTableConfig)
 
-    if (!initialized) {
-      // Find default string column match
-      const defaultDateColumn = this.queryResponse.data.data.default_date_column
-      const stringColumnIndex = this.findDefaultStringColumnIndex(defaultDateColumn)
-      tableConfig.stringColumnIndex = this.getStringColumnIndex(stringColumnIndex)
-
-      // Find default amount column match
-      const defaultAmountColumn = this.queryResponse.data.data.default_amount_column
-      const numberColumnIndex = this.findDefaultNumberColumnIndex(defaultAmountColumn)
-      tableConfig.numberColumnIndex = this.getNumberColumnIndex(numberColumnIndex)
-    }
-
     this.props.onTableConfigChange({
       tableConfig: tableConfig,
       pivotTableConfig: pivotTableConfig,
     })
-  }
-
-  findDefaultStringColumnIndex = (defaultDateColumn) => {
-    return this.tableConfig.stringColumnIndices.find((index) => {
-      return (
-        !isColumnNumberType(this.queryResponse.data.data.columns[index]) &&
-        defaultDateColumn?.length > 0 &&
-        this.queryResponse.data.data.columns[index]?.name === defaultDateColumn
-      )
-    })
-  }
-
-  getStringColumnIndex = (foundIndex) => {
-    return foundIndex
-      ? foundIndex
-      : this.tableConfig?.stringColumnIndices?.length > 0
-      ? this.tableConfig?.stringColumnIndices[0]
-      : 0
   }
 
   findDefaultNumberColumnIndex = (defaultAmountColumn) => {
@@ -1833,28 +1803,17 @@ export class QueryOutput extends React.Component {
       this.tableConfig = {}
     }
 
-    // Set string type columns (ordinal axis)
-    const isStringColumnIndexValid = this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns)
+    const isPivot = false
+    const defaultDateColumn = this.queryResponse?.data?.data?.default_date_column
+    const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
+      columns,
+      isPivot,
+      this.ALLOW_NUMERIC_STRING_COLUMNS,
+      defaultDateColumn,
+    )
 
-    if (!this.tableConfig.stringColumnIndices || !isStringColumnIndexValid) {
-      const isPivot = false
-      const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
-        columns,
-        isPivot,
-        this.ALLOW_NUMERIC_STRING_COLUMNS,
-      )
-
-      this.tableConfig.stringColumnIndices = stringColumnIndices
-      this.tableConfig.stringColumnIndex = stringColumnIndex
-
-      // If it set all of the columns to string column indices, remove one so it can be set as the number column index
-      if (stringColumnIndices.length === getVisibleColumns(columns).length) {
-        const indexToRemove = stringColumnIndices.findIndex((i) => i !== stringColumnIndex)
-        if (indexToRemove > -1) {
-          this.tableConfig.stringColumnIndices.splice(indexToRemove, 1)
-        }
-      }
-    }
+    this.tableConfig.stringColumnIndices = stringColumnIndices
+    this.tableConfig.stringColumnIndex = stringColumnIndex
 
     const { amountOfNumberColumns } = getColumnTypeAmounts(columns) ?? {}
 
@@ -1867,9 +1826,12 @@ export class QueryOutput extends React.Component {
       currencyColumnIndices,
       quantityColumnIndices,
       ratioColumnIndices,
-    } = getNumberColumnIndices(columns, this.usePivotDataForChart())
+    } = getNumberColumnIndices(
+      columns,
+      this.usePivotDataForChart(),
+      this.queryResponse?.data?.data?.default_amount_column,
+    )
 
-    // Set number type columns and number series columns (linear axis)
     if (
       !this.tableConfig.numberColumnIndices?.length ||
       !(this.tableConfig.numberColumnIndex >= 0) ||
@@ -1884,18 +1846,24 @@ export class QueryOutput extends React.Component {
       this.tableConfig.ratioColumnIndices = ratioColumnIndices
       this.tableConfig.allNumberColumnIndices = allNumberColumnIndices
 
-      if (this.tableConfig.numberColumnIndex === this.tableConfig.stringColumnIndex) {
-        this.tableConfig.numberColumnIndex = allNumberColumnIndices.find(
-          (index) => !this.tableConfig.stringColumnIndices.includes(index),
+      if (
+        this.tableConfig.numberColumnIndex === this.tableConfig.stringColumnIndex &&
+        this.tableConfig.numberColumnIndices.length > 1
+      ) {
+        this.tableConfig.numberColumnIndex = allNumberColumnIndices?.find(
+          (index) => !this.tableConfig.stringColumnIndices?.includes(index),
         )
         this.tableConfig.numberColumnIndices = [this.tableConfig.numberColumnIndex]
       }
 
-      if (this.tableConfig.numberColumnIndex2 === this.tableConfig.stringColumnIndex) {
+      if (
+        this.tableConfig.numberColumnIndex2 === this.tableConfig.stringColumnIndex &&
+        this.tableConfig.numberColumnIndices.length > 1
+      ) {
         this.tableConfig.numberColumnIndex2 = allNumberColumnIndices.find(
           (index) =>
-            !this.tableConfig.stringColumnIndices.includes(index) &&
-            !this.tableConfig.numberColumnIndices.includes(index),
+            !this.tableConfig.stringColumnIndices?.includes(index) &&
+            !this.tableConfig.numberColumnIndices?.includes(index),
         )
         if (this.tableConfig.numberColumnIndex2) {
           this.tableConfig.numberColumnIndices2 = [this.tableConfig.numberColumnIndex2]
@@ -2001,20 +1969,6 @@ export class QueryOutput extends React.Component {
 
     if (!_isEqual(prevTableConfig, this.tableConfig)) {
       this.onTableConfigChange(this.hasCalledInitialTableConfigChange)
-    }
-
-    // Only reset to defaults if this is a fresh initialization (no previous config)
-    // Don't reset if we're updating an existing config with user selections
-    if (!prevTableConfig || Object.keys(prevTableConfig).length === 0) {
-      const defaultDateColumn = this.queryResponse.data.data.default_date_column
-      const stringColumnIdx = this.findDefaultStringColumnIndex(defaultDateColumn)
-      this.tableConfig.stringColumnIndex = this.getStringColumnIndex(stringColumnIdx)
-
-      // Find default amount column match
-      const defaultAmountColumn = this.queryResponse.data.data.default_amount_column
-      const numberColumnIdx = this.findDefaultNumberColumnIndex(defaultAmountColumn)
-      this.tableConfig.numberColumnIndex = this.getNumberColumnIndex(numberColumnIdx)
-      this.tableConfig.numberColumnIndices = [this.getNumberColumnIndex(numberColumnIdx)]
     }
   }
 
