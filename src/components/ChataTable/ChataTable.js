@@ -500,18 +500,19 @@ export default class ChataTable extends React.Component {
   onDataFiltered = (filters, rows) => {
     if (this.isFiltering && this.state.tabulatorMounted) {
       this.isFiltering = false
-
-      setTimeout(() => {
-        if (this._isMounted) {
-          this.setState({
-            loading: false,
-          })
-        }
-      }, 0)
+      this.debounceSetState({ loading: false })
     }
 
-    if (!this.useInfiniteScroll && !this.pivot) {
-      this.getRTForRemoteFilterAndSort()
+    // Debounce getRTForRemoteFilterAndSort to prevent multiple calls after hide/show columns
+    if (!this.useInfiniteScroll && !this.pivot && this.tableParams?.filter?.length > 0) {
+      if (this._debounceTimeout) clearTimeout(this._debounceTimeout)
+      this._debounceTimeout = setTimeout(() => {
+        try {
+          this.getRTForRemoteFilterAndSort()
+        } catch (error) {
+          console.error('Error in debounced getRTForRemoteFilterAndSort:', error)
+        }
+      }, 100)
     }
 
     this.setFilterBadgeClasses()
@@ -695,11 +696,15 @@ export default class ChataTable extends React.Component {
     }
 
     response.data.data.rows = data
+    response.data.data.count_rows = data.length
+
     return response
   }
 
   queryFn = (params) => {
-    if (this.useInfiniteScroll) {
+    // Always use server-side queryFn when dealing with column changes (newColumns)
+    // because column removal is a schema change, not just data filtering
+    if (this.useInfiniteScroll || typeof params.newColumns !== 'undefined') {
       return this.props.queryFn(params)
     } else {
       return new Promise((resolve) => {
@@ -1504,7 +1509,7 @@ export default class ChataTable extends React.Component {
     const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
     const currentRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(currentRowCount)
     const totalRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(totalRowCount)
-    const rowLimit = this.props.response?.data?.data?.row_limit
+    const rowLimit = this.props.response?.data?.data?.row_limit ?? MAX_DATA_PAGE_SIZE
     const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(rowLimit)
 
     return (
@@ -1680,15 +1685,15 @@ export default class ChataTable extends React.Component {
                     hidden={this.props.hidden}
                     data-custom-attr='test-custom-attribute'
                     className='react-autoql-table'
-                    onTableBuilt={this.onTableBuilt}
-                    onCellClick={this.cellClick}
-                    onDataSorting={this.onDataSorting}
-                    onDataSorted={this.onDataSorted}
-                    onDataFiltering={this.onDataFiltering}
-                    onDataFiltered={this.onDataFiltered}
-                    onDataProcessed={this.onDataProcessed}
-                    onDataLoadError={this.onDataLoadError}
-                    onScrollVertical={this.onScrollVertical}
+                    onTableBuilt={(...args) => this.onTableBuilt(...args)}
+                    onCellClick={(...args) => this.cellClick(...args)}
+                    onDataSorting={(...args) => this.onDataSorting(...args)}
+                    onDataSorted={(...args) => this.onDataSorted(...args)}
+                    onDataFiltering={(...args) => this.onDataFiltering(...args)}
+                    onDataFiltered={(...args) => this.onDataFiltered(...args)}
+                    onDataProcessed={(...args) => this.onDataProcessed(...args)}
+                    onDataLoadError={(...args) => this.onDataLoadError(...args)}
+                    onScrollVertical={(...args) => this.onScrollVertical(...args)}
                     pivot={this.props.pivot}
                     scope={this.props.scope}
                     isDrilldown={this.props.isDrilldown}

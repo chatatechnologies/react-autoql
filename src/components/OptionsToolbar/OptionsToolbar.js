@@ -488,7 +488,7 @@ export class OptionsToolbar extends React.Component {
                       columnSelects: responseCopy?.data?.data?.fe_req?.additional_selects,
                       displayOverrides: responseCopy?.data?.data?.fe_req?.display_overrides,
                       filters: responseCopy?.data?.data?.fe_req?.session_filter_locks,
-                      tableFilters: responseCopy?.data?.data?.fe_req?.filters,
+                      tableFilters: responseRef?.getCombinedFilters?.(),
                       orders: responseCopy?.data?.data?.fe_req?.orders,
                       dataConfig: {
                         tableConfig: _cloneDeep(responseRef?.tableConfig),
@@ -726,7 +726,7 @@ export class OptionsToolbar extends React.Component {
         showHideColumnsButton:
           autoQLConfig.enableColumnVisibilityManager &&
           hasData &&
-          (displayType === 'table' || (displayType === 'text' && allColumnsHidden)),
+          (displayType === 'table' || displayType === 'single-value' || (displayType === 'text' && allColumnsHidden)),
         showHiddenColsBadge: someColumnsHidden,
         showSQLButton: isDataResponse && autoQLConfig.translation === 'include',
         showSaveAsCSVButton: isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
