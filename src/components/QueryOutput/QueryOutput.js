@@ -950,7 +950,18 @@ export class QueryOutput extends React.Component {
       const columns = cols || this.getColumns()
       this.tableData = this.queryResponse?.data?.data?.rows
 
-      this.setTableConfig()
+      // Only set table config if no valid initial config was provided AND this is during mount
+      const isDuringMount = !this._isMounted
+      const displayType = this.state?.displayType || this.getDisplayTypeFromInitial(this.props)
+      const hasValidInitialConfig =
+        isDuringMount &&
+        this.props.initialTableConfigs?.tableConfig &&
+        this.isTableConfigValid(this.props.initialTableConfigs.tableConfig, columns, displayType)
+
+      if (!hasValidInitialConfig) {
+        this.setTableConfig()
+      }
+
       if (this._isMounted) {
         this.setState({ columns })
       }
