@@ -70,10 +70,12 @@ export class RegressionLine extends React.Component {
         .filter((point) => point !== null)
 
       if (points.length < 2) {
+        console.log('Regression: Not enough points for scatterplot:', points.length)
         return null
       }
 
       const regression = this.calculateRegressionFromPoints(points)
+      console.log('Regression: Scatterplot regression calculated:', regression)
       return regression
     }
 
@@ -204,8 +206,17 @@ export class RegressionLine extends React.Component {
     }
 
     // Convert regression points to SVG coordinates
-    const startX = xScale(regression.startX)
-    const endX = xScale(regression.endX)
+    // For bar charts, center the line through the middle of the bars
+    let startX = xScale(regression.startX)
+    let endX = xScale(regression.endX)
+
+    // If this is a band scale (bar charts), add half bandwidth to center the line
+    if (xScale.bandwidth && typeof xScale.bandwidth === 'function') {
+      const bandwidth = xScale.bandwidth()
+      startX += bandwidth / 2
+      endX += bandwidth / 2
+    }
+
     const startY = yScale(regression.startY)
     const endY = yScale(regression.endY)
 
@@ -218,8 +229,66 @@ export class RegressionLine extends React.Component {
     const chartSlope = (endY - startY) / (endX - startX)
     const extendedStartX = 0
     const extendedEndX = width
+
+    // Calculate the extended Y coordinates
     const extendedStartY = startY - chartSlope * (startX - extendedStartX)
     const extendedEndY = endY + chartSlope * (extendedEndX - endX)
+
+    // Get chart bounds from yScale range to clip the line
+    const yScaleRange = yScale.range()
+    const topBound = Math.min(yScaleRange[0], yScaleRange[1]) // Top of chart (smaller Y coordinate)
+    const bottomBound = Math.max(yScaleRange[0], yScaleRange[1]) // Bottom of chart (larger Y coordinate)
+
+    // Calculate where the line intersects the chart bounds to maintain correct slope
+    let clippedStartX = extendedStartX
+    let clippedStartY = extendedStartY
+    let clippedEndX = extendedEndX
+    let clippedEndY = extendedEndY
+
+    // If the line goes outside bounds, find intersection points
+    if (
+      extendedStartY < topBound ||
+      extendedStartY > bottomBound ||
+      extendedEndY < topBound ||
+      extendedEndY > bottomBound
+    ) {
+      // Calculate intersection with top and bottom bounds
+      const intersectTopX =
+        chartSlope !== 0 ? extendedStartX + (topBound - extendedStartY) / chartSlope : extendedStartX
+      const intersectBottomX =
+        chartSlope !== 0 ? extendedStartX + (bottomBound - extendedStartY) / chartSlope : extendedStartX
+
+      // Determine which intersections are within the chart width
+      const validIntersections = []
+      if (intersectTopX >= 0 && intersectTopX <= width) {
+        validIntersections.push({ x: intersectTopX, y: topBound })
+      }
+      if (intersectBottomX >= 0 && intersectBottomX <= width) {
+        validIntersections.push({ x: intersectBottomX, y: bottomBound })
+      }
+
+      if (validIntersections.length >= 2) {
+        // Line intersects both bounds within chart width
+        clippedStartX = validIntersections[0].x
+        clippedStartY = validIntersections[0].y
+        clippedEndX = validIntersections[1].x
+        clippedEndY = validIntersections[1].y
+      } else if (validIntersections.length === 1) {
+        // Line intersects one bound, use original endpoints if they're within bounds
+        const intersection = validIntersections[0]
+        if (extendedStartY >= topBound && extendedStartY <= bottomBound) {
+          clippedStartX = extendedStartX
+          clippedStartY = extendedStartY
+          clippedEndX = intersection.x
+          clippedEndY = intersection.y
+        } else {
+          clippedStartX = intersection.x
+          clippedStartY = intersection.y
+          clippedEndX = extendedEndX
+          clippedEndY = extendedEndY
+        }
+      }
+    }
 
     // Determine if trend is up or down based on chart slope (visual coordinates)
     // chartSlope is calculated from actual SVG coordinates where Y increases downward
@@ -233,8 +302,8 @@ export class RegressionLine extends React.Component {
     const trendColor = isTrendUp ? '#2ecc71' : '#e74c3c' // Light green for up, light red for down
 
     // Position text above or below the line based on available space
-    const midX = this.isBarChart() ? (extendedStartY + extendedEndY) / 2 : width / 2
-    const midY = this.isBarChart() ? height / 2 : (extendedStartY + extendedEndY) / 2
+    const midX = this.isBarChart() ? (clippedStartY + clippedEndY) / 2 : (clippedStartX + clippedEndX) / 2
+    const midY = this.isBarChart() ? height / 2 : (clippedStartY + clippedEndY) / 2
     const textY = this.isBarChart() ? (midY < 20 ? midY + 15 : midY - 5) : midY < 20 ? midY + 15 : midY - 5
     // For scatterplots, use Y-column for formatting; for other charts, use main number column
     const columnForFormatting = this.isScatterplot()
@@ -255,10 +324,10 @@ export class RegressionLine extends React.Component {
       <g className='regression-line-container' style={{ outline: 'none' }}>
         {/* Invisible hover area for easier tooltip triggering */}
         <line
-          x1={Math.min(extendedStartX, extendedEndX)}
-          y1={Math.min(extendedStartY, extendedEndY) - 5}
-          x2={Math.max(extendedStartX, extendedEndX)}
-          y2={Math.max(extendedStartY, extendedEndY) + 5}
+          x1={Math.min(clippedStartX, clippedEndX)}
+          y1={Math.min(clippedStartY, clippedEndY) - 5}
+          x2={Math.max(clippedStartX, clippedEndX)}
+          y2={Math.max(clippedStartY, clippedEndY) + 5}
           stroke='transparent'
           strokeWidth={10}
           className='regression-line-hover-area'
@@ -269,10 +338,10 @@ export class RegressionLine extends React.Component {
 
         {/* Visible regression line */}
         <line
-          x1={this.isBarChart() ? extendedStartY : extendedStartX}
-          y1={this.isBarChart() ? extendedStartX : extendedStartY}
-          x2={this.isBarChart() ? extendedEndY : extendedEndX}
-          y2={this.isBarChart() ? extendedEndX : extendedEndY}
+          x1={this.isBarChart() ? clippedStartY : clippedStartX}
+          y1={this.isBarChart() ? clippedStartX : clippedStartY}
+          x2={this.isBarChart() ? clippedEndY : clippedEndX}
+          y2={this.isBarChart() ? clippedEndX : clippedEndY}
           stroke={trendColor}
           strokeWidth={strokeWidth}
           strokeDasharray={strokeDasharray}
@@ -382,8 +451,17 @@ export class RegressionLine extends React.Component {
           }
 
           // Convert regression points to SVG coordinates using original x-values
-          const startX = xScale(points[0].x) // Use first data point's x-value
-          const endX = xScale(points[points.length - 1].x) // Use last data point's x-value
+          // For bar charts, center the line through the middle of the bars
+          let startX = xScale(points[0].x) // Use first data point's x-value
+          let endX = xScale(points[points.length - 1].x) // Use last data point's x-value
+
+          // If this is a band scale (bar charts), add half bandwidth to center the line
+          if (xScale.bandwidth && typeof xScale.bandwidth === 'function') {
+            const bandwidth = xScale.bandwidth()
+            startX += bandwidth / 2
+            endX += bandwidth / 2
+          }
+
           const startY = yScale(regression.startY)
           const endY = yScale(regression.endY)
 
@@ -398,6 +476,62 @@ export class RegressionLine extends React.Component {
           const extendedEndX = width
           const extendedStartY = startY - chartSlope * (startX - extendedStartX)
           const extendedEndY = endY + chartSlope * (extendedEndX - endX)
+
+          // Get chart bounds from yScale range to clip the line
+          const yScaleRange = yScale.range()
+          const topBound = Math.min(yScaleRange[0], yScaleRange[1]) // Top of chart (smaller Y coordinate)
+          const bottomBound = Math.max(yScaleRange[0], yScaleRange[1]) // Bottom of chart (larger Y coordinate)
+
+          // Calculate where the line intersects the chart bounds to maintain correct slope
+          let clippedStartX = extendedStartX
+          let clippedStartY = extendedStartY
+          let clippedEndX = extendedEndX
+          let clippedEndY = extendedEndY
+
+          // If the line goes outside bounds, find intersection points
+          if (
+            extendedStartY < topBound ||
+            extendedStartY > bottomBound ||
+            extendedEndY < topBound ||
+            extendedEndY > bottomBound
+          ) {
+            // Calculate intersection with top and bottom bounds
+            const intersectTopX =
+              chartSlope !== 0 ? extendedStartX + (topBound - extendedStartY) / chartSlope : extendedStartX
+            const intersectBottomX =
+              chartSlope !== 0 ? extendedStartX + (bottomBound - extendedStartY) / chartSlope : extendedStartX
+
+            // Determine which intersections are within the chart width
+            const validIntersections = []
+            if (intersectTopX >= 0 && intersectTopX <= width) {
+              validIntersections.push({ x: intersectTopX, y: topBound })
+            }
+            if (intersectBottomX >= 0 && intersectBottomX <= width) {
+              validIntersections.push({ x: intersectBottomX, y: bottomBound })
+            }
+
+            if (validIntersections.length >= 2) {
+              // Line intersects both bounds within chart width
+              clippedStartX = validIntersections[0].x
+              clippedStartY = validIntersections[0].y
+              clippedEndX = validIntersections[1].x
+              clippedEndY = validIntersections[1].y
+            } else if (validIntersections.length === 1) {
+              // Line intersects one bound, use original endpoints if they're within bounds
+              const intersection = validIntersections[0]
+              if (extendedStartY >= topBound && extendedStartY <= bottomBound) {
+                clippedStartX = extendedStartX
+                clippedStartY = extendedStartY
+                clippedEndX = intersection.x
+                clippedEndY = intersection.y
+              } else {
+                clippedStartX = intersection.x
+                clippedStartY = intersection.y
+                clippedEndX = extendedEndX
+                clippedEndY = extendedEndY
+              }
+            }
+          }
 
           // Determine if trend is up or down based on chart slope (visual coordinates)
           const isTrendUp = chartSlope < 0 // Negative chart slope = visual up (Y decreases as X increases)
@@ -424,7 +558,7 @@ export class RegressionLine extends React.Component {
           const clampedTextX = Math.min(textX, width - 50)
 
           // Calculate Y position on the actual regression line at textX
-          const lineY = extendedStartY + chartSlope * (clampedTextX - extendedStartX)
+          const lineY = clippedStartY + chartSlope * (clampedTextX - clippedStartX)
 
           // Position text at a consistent distance above or below the line
           const textOffset = seriesIndex % 2 === 0 ? -20 : 20 // Consistent 20px offset
@@ -459,10 +593,10 @@ export class RegressionLine extends React.Component {
             <g key={`individual-trend-${columnIndex}`} className={`individual-regression-line series-${seriesIndex}`}>
               {/* Invisible hover area for easier tooltip triggering */}
               <line
-                x1={this.isBarChart() ? extendedStartY : extendedStartX}
-                y1={this.isBarChart() ? extendedStartX : extendedStartY}
-                x2={this.isBarChart() ? extendedEndY : extendedEndX}
-                y2={this.isBarChart() ? extendedEndX : extendedEndY}
+                x1={this.isBarChart() ? clippedStartY : clippedStartX}
+                y1={this.isBarChart() ? clippedStartX : clippedStartY}
+                x2={this.isBarChart() ? clippedEndY : clippedEndX}
+                y2={this.isBarChart() ? clippedEndX : clippedEndY}
                 stroke='transparent'
                 strokeWidth={10}
                 className='regression-line-hover-area'
@@ -473,10 +607,10 @@ export class RegressionLine extends React.Component {
 
               {/* Visible regression line */}
               <line
-                x1={this.isBarChart() ? extendedStartY : extendedStartX}
-                y1={this.isBarChart() ? extendedStartX : extendedStartY}
-                x2={this.isBarChart() ? extendedEndY : extendedEndX}
-                y2={this.isBarChart() ? extendedEndX : extendedEndY}
+                x1={this.isBarChart() ? clippedStartY : clippedStartX}
+                y1={this.isBarChart() ? clippedStartX : clippedStartY}
+                x2={this.isBarChart() ? clippedEndY : clippedEndX}
+                y2={this.isBarChart() ? clippedEndX : clippedEndY}
                 stroke={trendColor}
                 strokeWidth={strokeWidth}
                 strokeDasharray={strokeDasharray}
