@@ -70,12 +70,10 @@ export class RegressionLine extends React.Component {
         .filter((point) => point !== null)
 
       if (points.length < 2) {
-        console.log('Regression: Not enough points for scatterplot:', points.length)
         return null
       }
 
       const regression = this.calculateRegressionFromPoints(points)
-      console.log('Regression: Scatterplot regression calculated:', regression)
       return regression
     }
 
@@ -227,6 +225,7 @@ export class RegressionLine extends React.Component {
 
     // Extend the regression line to the full chart width
     const chartSlope = (endY - startY) / (endX - startX)
+
     const extendedStartX = 0
     const extendedEndX = width
 

@@ -711,12 +711,7 @@ export default class ChataChart extends React.Component {
         return <ChataColumnChart {...commonChartProps} {...commonLegendProps} />
       }
       case DisplayTypes.BAR: {
-        return (
-          <ChataBarChart
-            {...commonChartProps}
-            {...commonLegendProps}
-          />
-        )
+        return <ChataBarChart {...commonChartProps} {...commonLegendProps} />
       }
       case DisplayTypes.LINE: {
         return <ChataLineChart {...commonChartProps} {...commonLegendProps} />
@@ -856,6 +851,7 @@ export default class ChataChart extends React.Component {
                         key={`regression-line-${this.state.scaleVersion}-${this.state.chartID}`}
                         data={this.getCommonChartProps().data}
                         columns={this.props.columns}
+                        stringColumnIndex={this.props.stringColumnIndex}
                         numberColumnIndex={this.props.numberColumnIndex}
                         numberColumnIndex2={this.props.numberColumnIndex2}
                         visibleSeriesIndices={this.props.numberColumnIndices?.filter(
