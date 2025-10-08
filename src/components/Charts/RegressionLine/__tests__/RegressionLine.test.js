@@ -10,6 +10,25 @@ jest.mock('autoql-fe-utils', () => ({
 }))
 
 describe('RegressionLine', () => {
+  // Create mock scale functions with necessary methods
+  const createMockXScale = () => {
+    const scale = jest.fn((value) => {
+      // Mock scale that converts category names to positions
+      const categories = ['A', 'B', 'C', 'D']
+      return categories.indexOf(value) * 100
+    })
+    // Add bandwidth method for band scales (used in bar charts)
+    scale.bandwidth = jest.fn(() => 50)
+    return scale
+  }
+
+  const createMockYScale = () => {
+    const scale = jest.fn((value) => 400 - value * 2) // Mock scale where higher values = lower Y positions
+    // Add range method that returns the output range of the scale
+    scale.range = jest.fn(() => [400, 0]) // Typical y-axis range: bottom to top
+    return scale
+  }
+
   const defaultProps = {
     data: [],
     columns: [
@@ -18,12 +37,8 @@ describe('RegressionLine', () => {
     ],
     numberColumnIndex: 1,
     visibleSeriesIndices: [1],
-    xScale: jest.fn((value) => {
-      // Mock scale that converts category names to positions
-      const categories = ['A', 'B', 'C', 'D']
-      return categories.indexOf(value) * 100
-    }),
-    yScale: jest.fn((value) => 400 - value * 2), // Mock scale where higher values = lower Y positions
+    xScale: createMockXScale(),
+    yScale: createMockYScale(),
     width: 400,
     height: 400,
     isVisible: true,
@@ -122,6 +137,8 @@ describe('RegressionLine', () => {
 
       const props = {
         ...defaultProps,
+        xScale: createMockXScale(),
+        yScale: createMockYScale(),
         data: stackedAreaData,
         chartType: 'stacked_area',
         columns: [
@@ -167,6 +184,8 @@ describe('RegressionLine', () => {
 
       const props = {
         ...defaultProps,
+        xScale: createMockXScale(),
+        yScale: createMockYScale(),
         data: multiSeriesData,
         columns: [
           { name: 'Category', type: 'string' },
