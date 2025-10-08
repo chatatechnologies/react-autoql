@@ -2384,6 +2384,35 @@ export class QueryOutput extends React.Component {
     return dayjs(data[dateColumnIndex]).format('MMMM')
   }
 
+  applyFiltersToData = (data, filters, columns) => {
+    if (!filters?.length) return data
+    return data.filter((row) => {
+      return filters.every((filter) => {
+        const colIndex = columns.findIndex((col) => col.name === filter.name)
+        if (colIndex === -1) return true
+        const value = row[colIndex]
+        switch (filter.operator) {
+          case '=':
+            return value == filter.value
+          case '!=':
+            return value != filter.value
+          case '>':
+            return value > filter.value
+          case '<':
+            return value < filter.value
+          case '>=':
+            return value >= filter.value
+          case '<=':
+            return value <= filter.value
+          case 'contains':
+            return value && value.toString().includes(filter.value)
+          default:
+            return true
+        }
+      })
+    })
+  }
+
   generateDatePivotData = (newTableData) => {
     try {
       const columns = this.getColumns()
@@ -2394,7 +2423,11 @@ export class QueryOutput extends React.Component {
           (col, index) => col.is_visible && index !== dateColumnIndex && isColumnNumberType(col),
         )
       }
-      const tableData = newTableData || this.queryResponse?.data?.data?.rows
+      // Apply filters
+      let tableData = newTableData || this.queryResponse?.data?.data?.rows
+      if (this.tableParams?.filter && this.tableParams.filter.length > 0) {
+        tableData = this.applyFiltersToData(tableData, this.tableParams.filter, columns)
+      }
 
       const allYears = tableData.map((d) => {
         if (columns[dateColumnIndex].type === ColumnTypes.DATE) {
@@ -2521,7 +2554,11 @@ export class QueryOutput extends React.Component {
       this.pivotTableRowsLimited = false
       this.pivotTableID = uuid()
 
+      // Apply filters
       let tableData = _cloneDeep(this.queryResponse?.data?.data?.rows)
+      if (this.tableParams?.filter && this.tableParams.filter.length > 0) {
+        tableData = this.applyFiltersToData(tableData, this.tableParams.filter, this.getColumns())
+      }
       tableData = tableData.filter((row) => row[0] !== null)
 
       const columns = this.getColumns()
