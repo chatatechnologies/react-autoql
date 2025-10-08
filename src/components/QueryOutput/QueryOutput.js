@@ -8,6 +8,7 @@ import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
 
 import { TOOLTIP_COPY_TEXTS } from '../../js/Constants'
+import { applyFiltersToData, normalizeFilters } from '../../js/filterUtils'
 
 import {
   AggTypes,
@@ -974,10 +975,17 @@ export class QueryOutput extends React.Component {
       const columns = this.getColumns()
       const numGroupables = getNumberOfGroupables(columns)
 
+      // Normalize filters before applying to pivot data
+      const filters = this.formattedTableParams?.filters || []
+      const normalizedFilters = normalizeFilters(filters, columns)
+      const filteredData = applyFiltersToData(this.tableData, normalizedFilters, columns, this.props.dataFormatting, {
+        caseInsensitiveContains: true,
+        treatEmptyStringAsNull: true,
+      })
       if (numGroupables === 1) {
-        this.generateDatePivotData(this.tableData)
+        this.generateDatePivotData(filteredData)
       } else {
-        this.generatePivotTableData({ isFirstGeneration })
+        this.generatePivotTableData({ isFirstGeneration, filteredData })
       }
     } catch (error) {
       console.error('Error generating pivot data', error)
@@ -2384,35 +2392,6 @@ export class QueryOutput extends React.Component {
     return dayjs(data[dateColumnIndex]).format('MMMM')
   }
 
-  applyFiltersToData = (data, filters, columns) => {
-    if (!filters?.length) return data
-    return data.filter((row) => {
-      return filters.every((filter) => {
-        const colIndex = columns.findIndex((col) => col.name === filter.name)
-        if (colIndex === -1) return true
-        const value = row[colIndex]
-        switch (filter.operator) {
-          case '=':
-            return value == filter.value
-          case '!=':
-            return value != filter.value
-          case '>':
-            return value > filter.value
-          case '<':
-            return value < filter.value
-          case '>=':
-            return value >= filter.value
-          case '<=':
-            return value <= filter.value
-          case 'contains':
-            return value && value.toString().includes(filter.value)
-          default:
-            return true
-        }
-      })
-    })
-  }
-
   generateDatePivotData = (newTableData) => {
     try {
       const columns = this.getColumns()
@@ -2426,7 +2405,13 @@ export class QueryOutput extends React.Component {
       // Apply filters
       let tableData = newTableData || this.queryResponse?.data?.data?.rows
       if (this.tableParams?.filter && this.tableParams.filter.length > 0) {
-        tableData = this.applyFiltersToData(tableData, this.tableParams.filter, columns)
+        tableData = applyFiltersToData(
+          tableData,
+          this.tableParams.filter,
+          columns,
+          getDataFormatting(this.props.dataFormatting),
+          { caseInsensitiveContains: true, failOnUnknownColumn: false },
+        )
       }
 
       const allYears = tableData.map((d) => {
@@ -2557,7 +2542,13 @@ export class QueryOutput extends React.Component {
       // Apply filters
       let tableData = _cloneDeep(this.queryResponse?.data?.data?.rows)
       if (this.tableParams?.filter && this.tableParams.filter.length > 0) {
-        tableData = this.applyFiltersToData(tableData, this.tableParams.filter, this.getColumns())
+        tableData = applyFiltersToData(
+          tableData,
+          this.tableParams.filter,
+          this.getColumns(),
+          getDataFormatting(this.props.dataFormatting),
+          { caseInsensitiveContains: true, failOnUnknownColumn: false },
+        )
       }
       tableData = tableData.filter((row) => row[0] !== null)
 
