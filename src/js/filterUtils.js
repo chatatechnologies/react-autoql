@@ -1,16 +1,16 @@
-// Utility to normalize Tabulator-style filters to canonical format
+import dayjs from './dayjsWithPlugins'
+import { ColumnTypes, getDayJSObj } from 'autoql-fe-utils'
+
 export function normalizeFilters(filters, columns) {
   if (!Array.isArray(filters)) return []
   return filters.map((f) => {
-    // Tabulator filter: { field, type, value }
-    // Canonical: { name, operator, value }
     const col = columns?.find((c) => c.field === f.field || c.name === f.field)
     let operator = '='
-    if (f.type === 'like' || f.type === 'contains') operator = 'contains'
+    if (['like', 'contains'].includes(f.type)) operator = 'contains'
     else if (f.type === 'between') operator = 'between'
     else if (['=', '!=', '>', '<', '>=', '<='].includes(f.type)) operator = f.type
     else if (f.type === 'is') operator = 'is'
-    // BETWEEN: value may be a string 'a to b' or array [a, b]
+
     let value = f.value
     if (operator === 'between' && typeof value === 'string' && value.includes(' to ')) {
       value = value.split(' to ')
@@ -22,12 +22,9 @@ export function normalizeFilters(filters, columns) {
     }
   })
 }
-import dayjs from './dayjsWithPlugins'
-import { ColumnTypes, getDayJSObj } from 'autoql-fe-utils'
 
 export const normalizeValue = (raw, column, config, { treatEmptyStringAsNull = true } = {}) => {
-  if (raw == null) return null
-  if (treatEmptyStringAsNull && raw === '') return null
+  if (raw == null || (treatEmptyStringAsNull && raw === '')) return null
 
   switch (column?.type) {
     case ColumnTypes.DOLLAR_AMT:
@@ -156,7 +153,7 @@ export const applyFiltersToData = (
 
   return data.filter((row) =>
     enrichedFilters.every((f) => {
-      if (f.colIndex === -1) return true // skipped if failOnUnknownColumn = false
+      if (f.colIndex === -1) return true
       const cellValue = row[f.colIndex]
       return compareValue({
         value: cellValue,
