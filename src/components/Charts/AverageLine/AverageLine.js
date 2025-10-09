@@ -1,7 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { mean } from 'd3-array'
-import { formatElement } from 'autoql-fe-utils'
+import { DisplayTypes, formatElement } from 'autoql-fe-utils'
+import './AverageLine.scss'
 
 export class AverageLine extends React.Component {
   static propTypes = {
@@ -30,9 +31,44 @@ export class AverageLine extends React.Component {
     strokeDasharray: '5,5', // Dashed line
   }
 
+  constructor(props) {
+    super(props)
+    this.textRef = React.createRef()
+    this.state = {
+      textBBox: null,
+    }
+  }
+
+  componentDidMount() {
+    this.updateTextBBox()
+  }
+
+  componentDidUpdate(prevProps) {
+    // Re-measure if data or formatting changes
+    if (
+      prevProps.data !== this.props.data ||
+      prevProps.dataFormatting !== this.props.dataFormatting ||
+      prevProps.numberColumnIndex !== this.props.numberColumnIndex
+    ) {
+      this.updateTextBBox()
+    }
+  }
+
+  updateTextBBox = () => {
+    if (this.textRef.current) {
+      try {
+        const bbox = this.textRef.current.getBBox()
+        this.setState({ textBBox: bbox })
+      } catch (error) {
+        // getBBox can fail in some browsers/contexts, fail silently
+        console.warn('Failed to get text bounding box:', error)
+      }
+    }
+  }
+
   isBarChart = () => {
     const { chartType } = this.props
-    return chartType === 'bar' || chartType === 'stacked_bar'
+    return chartType === DisplayTypes.BAR || chartType === DisplayTypes.STACKED_BAR
   }
 
   calculateAverage = () => {
@@ -195,6 +231,41 @@ export class AverageLine extends React.Component {
       y2: this.isBarChart() ? height : position + 5,
     }
 
+    const { textBBox } = this.state
+    const padding = 4 // Padding inside the rect around the text
+
+    // Calculate rect dimensions based on actual text bounding box if available
+    let rectX, rectY, rectWidth, rectHeight
+    if (textBBox) {
+      // Use width and height from bbox, but add extra padding to ensure proper spacing
+      rectWidth = textBBox.width + padding * 3 // Extra padding for better visual spacing
+      rectHeight = textBBox.height + padding * 2
+
+      // Text anchor is "middle" for bar charts, "end" for column charts
+      if (this.isBarChart()) {
+        // textAnchor="middle" - center the rect on textX
+        rectX = textX - rectWidth / 2
+      } else {
+        // textAnchor="end" - align rect to end at textX, but account for extra padding
+        rectX = textX - rectWidth + padding // Add padding to the right side
+      }
+
+      // Y position: text baseline is at textY
+      // For typical fonts, about 75% of the height is above the baseline, 25% below (for descenders)
+      // To center the rect on the visual text, we position it slightly above the baseline
+      rectY = textY - textBBox.height * 0.75 - padding
+    } else {
+      // Fallback to estimated dimensions if bbox not yet available
+      rectX = this.isBarChart()
+        ? textX - Math.max(35, formattedAverage.length * 4)
+        : textX - Math.max(70, formattedAverage.length * 8)
+      rectY = textY - 12
+      rectWidth = this.isBarChart()
+        ? Math.max(70, formattedAverage.length * 8)
+        : Math.max(70, formattedAverage.length * 8) + 8
+      rectHeight = 16
+    }
+
     return (
       <g className='average-line-container' style={{ outline: 'none' }}>
         {/* Invisible hover area with 5px buffer */}
@@ -218,21 +289,12 @@ export class AverageLine extends React.Component {
           style={{ outline: 'none' }}
         />
 
-        {/* Text background rectangle - positioned based on chart type */}
+        {/* Text background rectangle - sized based on actual text bounding box */}
         <rect
-          x={
-            this.isBarChart()
-              ? textX - Math.max(35, formattedAverage.length * 4)
-              : textX - Math.max(70, formattedAverage.length * 8)
-          }
-          y={textY - 12}
-          width={
-            this.isBarChart()
-              ? Math.max(70, formattedAverage.length * 8)
-              : Math.max(70, formattedAverage.length * 8) + 8
-          }
-          height='16'
-          fill='var(--react-autoql-background-color)'
+          x={rectX}
+          y={rectY}
+          width={rectWidth}
+          height={rectHeight}
           fillOpacity='0.85'
           stroke={color}
           strokeWidth='1'
@@ -243,6 +305,7 @@ export class AverageLine extends React.Component {
 
         {/* Text label */}
         <text
+          ref={this.textRef}
           x={textX}
           y={textY}
           fontSize='11'

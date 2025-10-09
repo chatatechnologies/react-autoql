@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { formatElement, getChartColorVars } from 'autoql-fe-utils'
+import './RegressionLine.scss'
 
 export class RegressionLine extends React.Component {
   static propTypes = {
@@ -27,6 +28,62 @@ export class RegressionLine extends React.Component {
     color: '#27ae60', // Default green, will be overridden dynamically
     strokeWidth: 2,
     strokeDasharray: '5,5', // Dashed line
+  }
+
+  constructor(props) {
+    super(props)
+    this.textRef = React.createRef()
+    this.individualTextRefs = {}
+    this.state = {
+      textBBox: null,
+      individualTextBBoxes: {},
+    }
+  }
+
+  componentDidMount() {
+    this.updateTextBBox()
+    this.updateIndividualTextBBoxes()
+  }
+
+  componentDidUpdate(prevProps) {
+    // Re-measure if data or formatting changes
+    if (
+      prevProps.data !== this.props.data ||
+      prevProps.dataFormatting !== this.props.dataFormatting ||
+      prevProps.numberColumnIndex !== this.props.numberColumnIndex
+    ) {
+      this.updateTextBBox()
+      this.updateIndividualTextBBoxes()
+    }
+  }
+
+  updateTextBBox = () => {
+    if (this.textRef.current) {
+      try {
+        const bbox = this.textRef.current.getBBox()
+        this.setState({ textBBox: bbox })
+      } catch (error) {
+        // getBBox can fail in some browsers/contexts, fail silently
+        console.warn('Failed to get text bounding box:', error)
+      }
+    }
+  }
+
+  updateIndividualTextBBoxes = () => {
+    const bboxes = {}
+    Object.keys(this.individualTextRefs).forEach((key) => {
+      const ref = this.individualTextRefs[key]
+      if (ref) {
+        try {
+          bboxes[key] = ref.getBBox()
+        } catch (error) {
+          console.warn(`Failed to get text bounding box for ${key}:`, error)
+        }
+      }
+    })
+    if (Object.keys(bboxes).length > 0) {
+      this.setState({ individualTextBBoxes: bboxes })
+    }
   }
 
   isBarChart = () => {
@@ -319,6 +376,30 @@ export class RegressionLine extends React.Component {
     const rSquaredFormatted = (regression.rSquared * 100).toFixed(1)
     const tooltipContent = `${isTrendUp ? 'Up' : 'Down'} ${formattedSlope} per period (R² = ${rSquaredFormatted}%)`
 
+    const { textBBox } = this.state
+    const padding = 4
+
+    // Calculate rect dimensions based on actual text bounding box if available
+    let rectX, rectY, rectWidth, rectHeight
+    if (textBBox) {
+      // Use width and height from bbox, but calculate position based on text anchor
+      rectWidth = textBBox.width + padding * 2
+      rectHeight = textBBox.height + padding * 2
+
+      // textAnchor="middle" - center the rect on midX
+      rectX = midX - rectWidth / 2
+
+      // Y position: text baseline is at textY
+      // For typical fonts, about 75% of the height is above the baseline, 25% below (for descenders)
+      rectY = textY - textBBox.height * 0.75 - padding
+    } else {
+      // Fallback to estimated dimensions if bbox not yet available
+      rectX = midX - Math.max(30, formattedSlope.length * 4)
+      rectY = textY - 12
+      rectWidth = Math.max(60, formattedSlope.length * 8)
+      rectHeight = 16
+    }
+
     return (
       <g className='regression-line-container' style={{ outline: 'none' }}>
         {/* Invisible hover area for easier tooltip triggering */}
@@ -348,13 +429,12 @@ export class RegressionLine extends React.Component {
           style={{ outline: 'none' }}
         />
 
-        {/* Text background rectangle - dynamically sized */}
+        {/* Text background rectangle - sized based on actual text bounding box */}
         <rect
-          x={midX - Math.max(30, formattedSlope.length * 4)}
-          y={textY - 12}
-          width={Math.max(60, formattedSlope.length * 8)}
-          height='16'
-          fill='var(--react-autoql-background-color)'
+          x={rectX}
+          y={rectY}
+          width={rectWidth}
+          height={rectHeight}
           fillOpacity='0.85'
           stroke={trendColor}
           strokeWidth='1'
@@ -365,6 +445,7 @@ export class RegressionLine extends React.Component {
 
         {/* Text label */}
         <text
+          ref={this.textRef}
           x={midX}
           y={textY}
           fontSize='11'
@@ -588,6 +669,32 @@ export class RegressionLine extends React.Component {
           // Only show labels if there are 5 or fewer series to avoid clutter
           const shouldShowLabels = visibleSeriesIndices.length <= 5
 
+          // Get the bounding box for this specific series if available
+          const refKey = `series-${columnIndex}`
+          const textBBox = this.state.individualTextBBoxes[refKey]
+          const padding = 4
+
+          // Calculate rect dimensions based on actual text bounding box if available
+          let rectX, rectY, rectWidth, rectHeight
+          if (textBBox) {
+            // Use width and height from bbox, but calculate position based on text anchor
+            rectWidth = textBBox.width + padding * 2
+            rectHeight = textBBox.height + padding * 2
+
+            // textAnchor="middle" - center the rect on clampedTextX
+            rectX = clampedTextX - rectWidth / 2
+
+            // Y position: text baseline is at textY
+            // For typical fonts, about 75% of the height is above the baseline, 25% below (for descenders)
+            rectY = textY - textBBox.height * 0.75 - padding
+          } else {
+            // Fallback to estimated dimensions
+            rectX = clampedTextX - Math.max(30, formattedSlope.length * 4)
+            rectY = textY - 12
+            rectWidth = Math.max(60, formattedSlope.length * 8)
+            rectHeight = 16
+          }
+
           return (
             <g key={`individual-trend-${columnIndex}`} className={`individual-regression-line series-${seriesIndex}`}>
               {/* Invisible hover area for easier tooltip triggering */}
@@ -620,13 +727,12 @@ export class RegressionLine extends React.Component {
               {/* Only render text labels if there are 5 or fewer series */}
               {shouldShowLabels && (
                 <>
-                  {/* Text background rectangle - dynamically sized */}
+                  {/* Text background rectangle - sized based on actual text bounding box */}
                   <rect
-                    x={clampedTextX - Math.max(30, formattedSlope.length * 4)}
-                    y={textY - 12}
-                    width={Math.max(60, formattedSlope.length * 8)}
-                    height='16'
-                    fill='var(--react-autoql-background-color)'
+                    x={rectX}
+                    y={rectY}
+                    width={rectWidth}
+                    height={rectHeight}
                     fillOpacity='0.85'
                     stroke={seriesColor}
                     strokeWidth='1'
@@ -637,6 +743,7 @@ export class RegressionLine extends React.Component {
 
                   {/* Text label */}
                   <text
+                    ref={(ref) => (this.individualTextRefs[refKey] = ref)}
                     x={clampedTextX}
                     y={textY}
                     fontSize='10'
