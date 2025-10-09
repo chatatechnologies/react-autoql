@@ -179,9 +179,10 @@ export class RegressionLine extends React.Component {
         .map((row, index) => {
           const value = row[numberColumnIndex]
           const numValue = typeof value === 'string' ? parseFloat(value) : value
+          const xValue = row[stringColumnIndex]
+
           if (!isNaN(numValue) && numValue !== null && numValue !== undefined) {
             // Use the actual x-axis value (string) instead of index
-            const xValue = row[stringColumnIndex]
             if (xValue !== null && xValue !== undefined) {
               return { x: xValue, y: numValue }
             }
@@ -222,7 +223,7 @@ export class RegressionLine extends React.Component {
     const ssTot = numericPoints.reduce((sum, point) => sum + Math.pow(point.y - yMean, 2), 0)
     const rSquared = 1 - ssRes / ssTot
 
-    return {
+    const result = {
       slope,
       intercept,
       rSquared,
@@ -231,6 +232,8 @@ export class RegressionLine extends React.Component {
       startY: intercept, // Y-value at x=0 (first position)
       endY: slope * (n - 1) + intercept, // Y-value at x=n-1 (last position)
     }
+
+    return result
   }
 
   hasMixedColumnTypes = () => {
@@ -276,8 +279,9 @@ export class RegressionLine extends React.Component {
 
     // Convert regression points to SVG coordinates
     // For bar charts, center the line through the middle of the bars
-    let startX = xScale(regression.startX)
-    let endX = xScale(regression.endX)
+    // Use getValue method if available (for custom scales), otherwise use direct call
+    let startX = xScale.getValue ? xScale.getValue(regression.startX) : xScale(regression.startX)
+    let endX = xScale.getValue ? xScale.getValue(regression.endX) : xScale(regression.endX)
 
     // If this is a band scale (bar charts), add half bandwidth to center the line
     if (xScale.bandwidth && typeof xScale.bandwidth === 'function') {
@@ -286,8 +290,8 @@ export class RegressionLine extends React.Component {
       endX += bandwidth / 2
     }
 
-    const startY = yScale(regression.startY)
-    const endY = yScale(regression.endY)
+    const startY = yScale.getValue ? yScale.getValue(regression.startY) : yScale(regression.startY)
+    const endY = yScale.getValue ? yScale.getValue(regression.endY) : yScale(regression.endY)
 
     // Check for NaN values in scale conversion
     if (isNaN(startX) || isNaN(endX) || isNaN(startY) || isNaN(endY)) {
@@ -546,8 +550,11 @@ export class RegressionLine extends React.Component {
 
           // Convert regression points to SVG coordinates using original x-values
           // For bar charts, center the line through the middle of the bars
-          let startX = xScale(points[0].x) // Use first data point's x-value
-          let endX = xScale(points[points.length - 1].x) // Use last data point's x-value
+          // Use getValue method if available (for custom scales), otherwise use direct call
+          let startX = xScale.getValue ? xScale.getValue(points[0].x) : xScale(points[0].x) // Use first data point's x-value
+          let endX = xScale.getValue
+            ? xScale.getValue(points[points.length - 1].x)
+            : xScale(points[points.length - 1].x) // Use last data point's x-value
 
           // If this is a band scale (bar charts), add half bandwidth to center the line
           if (xScale.bandwidth && typeof xScale.bandwidth === 'function') {
@@ -556,8 +563,8 @@ export class RegressionLine extends React.Component {
             endX += bandwidth / 2
           }
 
-          const startY = yScale(regression.startY)
-          const endY = yScale(regression.endY)
+          const startY = yScale.getValue ? yScale.getValue(regression.startY) : yScale(regression.startY)
+          const endY = yScale.getValue ? yScale.getValue(regression.endY) : yScale(regression.endY)
 
           // Check for NaN values in scale conversion
           if (isNaN(startX) || isNaN(endX) || isNaN(startY) || isNaN(endY)) {

@@ -19,6 +19,11 @@ describe('RegressionLine', () => {
     })
     // Add bandwidth method for band scales (used in bar charts)
     scale.bandwidth = jest.fn(() => 50)
+    // Add getValue method for custom scales
+    scale.getValue = jest.fn((value) => {
+      const categories = ['A', 'B', 'C', 'D']
+      return categories.indexOf(value) * 100
+    })
     return scale
   }
 
@@ -26,6 +31,8 @@ describe('RegressionLine', () => {
     const scale = jest.fn((value) => 400 - value * 2) // Mock scale where higher values = lower Y positions
     // Add range method that returns the output range of the scale
     scale.range = jest.fn(() => [400, 0]) // Typical y-axis range: bottom to top
+    // Add getValue method for custom scales
+    scale.getValue = jest.fn((value) => 400 - value * 2)
     return scale
   }
 
@@ -252,6 +259,37 @@ describe('RegressionLine', () => {
       expect(hoverArea.prop('data-tooltip-content')).toContain('per period')
       expect(hoverArea.prop('data-tooltip-content')).toContain('R² =')
       expect(hoverArea.prop('data-tooltip-id')).toBe('test-tooltip')
+    })
+
+    it('should work correctly when stringColumnIndex points to a numeric column (treated as categorical)', () => {
+      // Test data where the x-axis column has type 'number' but is still treated as categorical
+      // This is the correct behavior - even number columns used as x-axis are categorical
+      const numericXData = [
+        [10, 100], // x=10, y=100 (treated as categorical position 0)
+        [20, 150], // x=20, y=150 (treated as categorical position 1)
+        [30, 200], // x=30, y=200 (treated as categorical position 2)
+        [40, 250], // x=40, y=250 (treated as categorical position 3)
+      ]
+
+      const props = {
+        ...defaultProps,
+        data: numericXData,
+        columns: [
+          { name: 'X Value', type: 'number' }, // This is the stringColumnIndex
+          { name: 'Y Value', type: 'number' },
+        ],
+        stringColumnIndex: 0, // Points to the numeric X column
+        numberColumnIndex: 1,
+      }
+
+      const wrapper = shallow(<RegressionLine {...props} />)
+
+      // Should render a regression line treating the numeric x-axis as categorical
+      const regressionLine = wrapper.find('line.regression-line')
+      expect(regressionLine).toHaveLength(1)
+
+      // The line should be GREEN (upward trend)
+      expect(regressionLine.prop('stroke')).toBe('#2ecc71')
     })
   })
 })
