@@ -13,34 +13,6 @@
   box-sizing: border-box;
   flex: 1;
 
-  // Style for copyable cells in summary row
-  .copyable-cell {
-    &:hover {
-      background-color: var(--react-autoql-hover-color) !important;
-    }
-
-    &.active {
-      background-color: var(--react-autoql-accent-color) !important;
-      color: white !important;
-    }
-  }
-
-  // Hidden textarea for copy to clipboard functionality
-  .hidden-clipboard-textarea {
-    position: absolute;
-    left: -9999px;
-    top: -9999px;
-    opacity: 0;
-    height: 0;
-    width: 0;
-  }
-
-  // Tooltip styles for copy functionality
-  .summary-row-tooltip {
-    z-index: 9999 !important;
-    pointer-events: none !important;
-  }
-
   .react-autoql-pivot-table-row-selector {
     display: flex;
     justify-content: center;
@@ -90,6 +62,10 @@
     }
   }
 
+  .tabulator-footer {
+    display: none;
+  }
+
   &.loading {
     pointer-events: none;
   }
@@ -116,7 +92,30 @@
       &:hover {
         overflow: auto !important;
       }
-      // Force-hide Tabulator's built-in summary row/footer
+      .tabulator-tableholder {
+        overflow: hidden;
+      }
+      .tabulator-header {
+        border-bottom: 2px solid var(--react-autoql-border-color);
+        overflow: hidden;
+
+        .tabulator-header-contents {
+          overflow: hidden;
+          .tabulator-headers {
+            border-bottom: 2px solid var(--react-autoql-border-color);
+            .tabulator-col {
+              background: transparent;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  &.resizing {
+    width: 100vw;
+
+    .react-autoql-table {
       visibility: hidden;
       opacity: 0;
       pointer-events: none;
@@ -367,7 +366,7 @@
 
       &:last-child {
         border-bottom: none;
-        margin-bottom: 0px;
+        margin-bottom: 15px;
       }
 
       .tabulator-cell {
@@ -435,35 +434,48 @@
       background-color: var(--react-autoql-background-color-secondary);
     }
 
-    // Hide Tabulator's horizontal scrollbar visually, but keep it functional
     .tabulator-tableholder {
       overflow: auto;
       background-color: inherit;
+
+      // Enable smooth scrolling on mobile devices
       -webkit-overflow-scrolling: touch;
+
+      // Ensure table content has minimum width to trigger horizontal scrolling
       .tabulator-table {
         min-width: max-content;
       }
-      scrollbar-width: none; /* Firefox */
-      &::-webkit-scrollbar {
-        display: none; /* Chrome, Safari */
-        width: 0 !important;
-        height: 0 !important;
-        background: transparent !important;
+
+      // On mobile devices, always show scrollbars for better touch interaction
+      @media (hover: none) and (pointer: coarse) {
+        overflow: auto !important;
+        // Let browser handle all touch interactions naturally
+        touch-action: auto;
+        // Enable momentum scrolling on iOS and add performance optimizations
+        -webkit-overflow-scrolling: touch;
+        // Hardware acceleration for smoother scrolling
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+        // Optimize rendering for mobile
+        will-change: scroll-position;
+
+        // Ensure scrollbars are visible on mobile
+        &::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+
+        &::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+          background-color: var(--react-autoql-scrollbar-thumb-color, rgba(0, 0, 0, 0.3));
+          border-radius: 4px;
+        }
       }
     }
   }
-}
-
-[data-tooltip-content='Copied!'],
-[data-tooltip-content='Copied!'] .react-tooltip-content {
-  background-color: var(--react-autoql-accent-color, #26a7df) !important;
-  color: white !important;
-}
-
-[data-tooltip-content='Failed to copy'],
-[data-tooltip-content='Failed to copy'] .react-tooltip-content {
-  background-color: var(--react-autoql-error-color, #f44336) !important;
-  color: white !important;
 }
 
 .react-autoql-popover-date-picker {
