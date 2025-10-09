@@ -8,7 +8,7 @@ import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
 
 import { TOOLTIP_COPY_TEXTS } from '../../js/Constants'
-import { applyFiltersToData, normalizeFilters } from '../../js/filterUtils'
+import { applyFiltersToData, normalizeFilters } from 'autoql-fe-utils'
 
 import {
   AggTypes,
@@ -975,7 +975,6 @@ export class QueryOutput extends React.Component {
       const columns = this.getColumns()
       const numGroupables = getNumberOfGroupables(columns)
 
-      // Normalize filters before applying to pivot data
       const filters = this.formattedTableParams?.filters || []
       const normalizedFilters = normalizeFilters(filters, columns)
       const filteredData = applyFiltersToData(this.tableData, normalizedFilters, columns, this.props.dataFormatting, {
@@ -2402,17 +2401,7 @@ export class QueryOutput extends React.Component {
           (col, index) => col.is_visible && index !== dateColumnIndex && isColumnNumberType(col),
         )
       }
-      // Apply filters
-      let tableData = newTableData || this.queryResponse?.data?.data?.rows
-      if (this.tableParams?.filter && this.tableParams.filter.length > 0) {
-        tableData = applyFiltersToData(
-          tableData,
-          this.tableParams.filter,
-          columns,
-          getDataFormatting(this.props.dataFormatting),
-          { caseInsensitiveContains: true, failOnUnknownColumn: false },
-        )
-      }
+      const tableData = newTableData || this.queryResponse?.data?.data?.rows
 
       const allYears = tableData.map((d) => {
         if (columns[dateColumnIndex].type === ColumnTypes.DATE) {
@@ -2539,17 +2528,7 @@ export class QueryOutput extends React.Component {
       this.pivotTableRowsLimited = false
       this.pivotTableID = uuid()
 
-      // Apply filters
       let tableData = _cloneDeep(this.queryResponse?.data?.data?.rows)
-      if (this.tableParams?.filter && this.tableParams.filter.length > 0) {
-        tableData = applyFiltersToData(
-          tableData,
-          this.tableParams.filter,
-          this.getColumns(),
-          getDataFormatting(this.props.dataFormatting),
-          { caseInsensitiveContains: true, failOnUnknownColumn: false },
-        )
-      }
       tableData = tableData.filter((row) => row[0] !== null)
 
       const columns = this.getColumns()
