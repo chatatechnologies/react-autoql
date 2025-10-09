@@ -18,7 +18,7 @@ import {
   getAuthentication,
   getAutoQLConfig,
   CustomColumnTypes,
-  // CHANGE: Added imports for embedded runCachedDashboardQuery function
+  runCachedDashboardQuery,
   QueryErrorTypes,
   transformQueryResponse,
   fetchSuggestions,
@@ -36,80 +36,6 @@ import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
 
 import './DashboardTile.scss'
-
-// CHANGE: Added embedded runCachedDashboardQuery function for cached dashboard refresh
-// This function makes GET requests to the dashboard tile cache endpoint instead of regular POST queries
-const runCachedDashboardQuery = async ({
-  query,
-  domain,
-  apiKey,
-  token,
-  source,
-  orders,
-  tableFilters,
-  allowSuggestions,
-  cancelToken,
-  scope,
-  newColumns,
-  queryIndex,
-  tileKey,
-  dashboardId,
-} = {}) => {
-  if (!dashboardId) {
-    console.error('No dashboard ID supplied in request')
-    return Promise.reject({ error: 'Dashboard ID not supplied' })
-  }
-
-  if (!tileKey) {
-    console.error('No tile key supplied in request')
-    return Promise.reject({ error: 'Tile key not supplied' })
-  }
-
-  if (!apiKey || !domain || !token) {
-    console.error('authentication invalid for request')
-    return Promise.reject({ error: 'authentication invalid for request' })
-  }
-
-  let finalScope = scope
-  // This is a failsafe for data messenger filter locking. Keep it around for a while until we migrate to using scope only for filter locks
-  if (!!source?.includes && source.includes('data_messenger')) {
-    finalScope = 'data_messenger'
-  }
-
-  const queryParams = new URLSearchParams({
-    key: apiKey,
-    query_index: (queryIndex || 0).toString(),
-  })
-
-  const url = `${domain}/autoql/api/v1/dashboards/${dashboardId}/tiles/${tileKey}/query?${queryParams.toString()}`
-
-  const config = {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  }
-
-  return axios
-    .get(url, config)
-    .then((response) => {
-      if (!response?.data?.data) {
-        // JSON response is invalid
-        throw new Error(QueryErrorTypes.PARSE_ERROR)
-      }
-
-      return Promise.resolve(transformQueryResponse(response, undefined, undefined, newColumns))
-    })
-    .catch((error) => {
-      const referenceId = error?.response?.data?.reference_id
-      const isSubquery = tableFilters?.length || orders?.length
-      const needsSuggestions = referenceId === '1.1.430' || referenceId === '1.1.431' || isError500Type(referenceId)
-
-      if (needsSuggestions && allowSuggestions && !isSubquery) {
-        const queryId = error?.response?.data?.data?.query_id
-        return fetchSuggestions({ query, queryId, domain, apiKey, token, cancelToken })
-      }
-    })
-}
 
 let autoCompleteArray = []
 
@@ -205,7 +131,6 @@ export class DashboardTile extends React.Component {
     onPNGDownloadFinish: PropTypes.func,
     cancelQueriesOnUnmount: PropTypes.bool,
     setParamsForTile: PropTypes.func,
-    // CHANGE: Added new props for cached dashboard functionality
     dashboardId: PropTypes.string,
     tileKey: PropTypes.string,
     isCachedRefresh: PropTypes.bool,
@@ -236,7 +161,6 @@ export class DashboardTile extends React.Component {
     onTouchStart: () => {},
     onTouchEnd: () => {},
     setParamsForTile: () => {},
-    // CHANGE: Added default values for new cached dashboard props
     dashboardId: undefined,
     tileKey: undefined,
     isCachedRefresh: false,
@@ -452,10 +376,8 @@ export class DashboardTile extends React.Component {
         query,
       }
 
-      // CHANGE: Use runCachedDashboardQuery for cached refresh, runQuery for regular queries
       const queryFunction = isCachedRefresh ? runCachedDashboardQuery : runQuery
 
-      // CHANGE: Add additional parameters required for runCachedDashboardQuery
       if (isCachedRefresh) {
         requestData.dashboardId = this.props.dashboardId
         requestData.tileKey = this.props.tileKey
@@ -476,7 +398,6 @@ export class DashboardTile extends React.Component {
     return Promise.reject()
   }
 
-  // CHANGE: Updated to accept and pass isCachedRefresh parameter for cached dashboard functionality
   processTileTop = ({ query, userSelection, skipQueryValidation, source, pageSize, isCachedRefresh }) => {
     this.setState({ isTopExecuting: true, queryResponse: null })
     const queryChanged = this.props.tile.query !== query
@@ -517,7 +438,6 @@ export class DashboardTile extends React.Component {
       })
   }
 
-  // CHANGE: Updated to accept and pass isCachedRefresh parameter for cached dashboard functionality
   processTileBottom = ({ query, userSelection, skipQueryValidation, source, isCachedRefresh }) => {
     this.setState({
       isBottomExecuting: true,
@@ -587,7 +507,6 @@ export class DashboardTile extends React.Component {
     })
   }
 
-  // CHANGE: Updated to accept and pass isCachedRefresh parameter for cached dashboard functionality
   processTile = ({
     query,
     secondQuery,
@@ -933,12 +852,10 @@ export class DashboardTile extends React.Component {
       secondFilters,
     }
 
-    // CHANGE: Only set table filters if they have data (prevents clearing filters set by onSecondTableParamsChange)
     if (secondTableFilters && secondTableFilters.length > 0) {
       paramsToSet.secondTableFilters = secondTableFilters
     }
 
-    // CHANGE: Only set orders if they have data (don't overwrite with empty/undefined)
     if (secondOrders && secondOrders.length > 0) {
       paramsToSet.secondOrders = secondOrders
     }
@@ -1355,11 +1272,15 @@ export class DashboardTile extends React.Component {
         onPageSizeChange: this.onPageSizeChange,
         onBucketSizeChange: this.onBucketSizeChange,
         bucketSize: this.props.tile.bucketSize,
-        initialFormattedTableParams: {
-          filters: this.props.tile?.tableFilters,
-          sorters: this.props.tile?.orders,
-          sessionFilters: this.props.tile?.filters,
-        },
+        initialFormattedTableParams: (() => {
+          const feReqFilters = this.props.tile?.queryResponse?.data?.data?.fe_req?.filters
+          const filtersToUse = feReqFilters?.length > 0 ? feReqFilters : this.props.tile?.tableFilters
+          return {
+            filters: filtersToUse,
+            sorters: this.props.tile?.orders,
+            sessionFilters: this.props.tile?.filters,
+          }
+        })(),
       },
       vizToolbarProps: {
         ref: (r) => (this.vizToolbarRef = r),
@@ -1440,11 +1361,17 @@ export class DashboardTile extends React.Component {
         onBucketSizeChange: this.onSecondBucketSizeChange,
         onColumnChange: this.onSecondColumnChange,
         bucketSize: this.props.tile.secondBucketSize,
-        initialFormattedTableParams: {
-          filters: this.props.tile?.secondTableFilters,
-          sorters: this.props.tile?.secondOrders,
-          sessionFilters: this.props.tile?.secondFilters,
-        },
+        initialFormattedTableParams: (() => {
+          const queryResponse = this.props.tile?.secondQueryResponse || this.props.tile?.queryResponse
+          const feReqFilters = queryResponse?.data?.data?.fe_req?.filters
+          const filtersToUse = feReqFilters?.length > 0 ? feReqFilters : this.props.tile?.secondTableFilters
+
+          return {
+            filters: filtersToUse,
+            sorters: this.props.tile?.secondOrders,
+            sessionFilters: this.props.tile?.secondFilters,
+          }
+        })(),
       },
       vizToolbarProps: {
         ref: (r) => (this.secondVizToolbarRef = r),
