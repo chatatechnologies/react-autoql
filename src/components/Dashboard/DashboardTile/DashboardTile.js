@@ -829,9 +829,6 @@ export class DashboardTile extends React.Component {
   onSecondDisplayTypeChange = (secondDisplayType) => this.debouncedSetParamsForTile({ secondDisplayType })
   onSecondBucketSizeChange = (secondBucketSize) => this.debouncedSetParamsForTile({ secondBucketSize })
   onSecondCustomColumnUpdate = (secondCustomColumns) => this.debouncedSetParamsForTile({ secondCustomColumns })
-
-  // CHANGE: Fixed to prevent overwriting valid secondTableFilters with empty arrays
-  // This was causing the bug where secondTableFilters were not being saved for split dashboard tiles
   onSecondColumnChange = (
     secondDisplayOverrides,
     secondColumns,
@@ -842,8 +839,6 @@ export class DashboardTile extends React.Component {
     secondOrders,
     secondFilters,
   ) => {
-    // Only include table filters and orders if they have actual data
-    // Otherwise, let onSecondTableParamsChange handle them
     const paramsToSet = {
       secondDisplayOverrides,
       secondColumnSelects,
