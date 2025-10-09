@@ -233,8 +233,22 @@ export class RegressionLine extends React.Component {
     }
   }
 
+  hasMixedColumnTypes = () => {
+    const { columns, visibleSeriesIndices } = this.props
+
+    if (!columns || !visibleSeriesIndices || visibleSeriesIndices.length <= 1) {
+      return false
+    }
+
+    // Get the types of all visible series columns
+    const columnTypes = visibleSeriesIndices.map((index) => columns[index]?.type).filter((type) => type) // Remove undefined types
+
+    // Check if there are multiple different types
+    return new Set(columnTypes).size > 1
+  }
+
   render = () => {
-    if (!this.props.isVisible) {
+    if (!this.props.isVisible || this.hasMixedColumnTypes()) {
       return null
     }
 
