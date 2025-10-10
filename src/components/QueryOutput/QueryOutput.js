@@ -8,6 +8,7 @@ import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
 
 import { TOOLTIP_COPY_TEXTS } from '../../js/Constants'
+import { applyFiltersToData, normalizeFilters } from 'autoql-fe-utils'
 
 import {
   AggTypes,
@@ -986,10 +987,16 @@ export class QueryOutput extends React.Component {
       const columns = this.getColumns()
       const numGroupables = getNumberOfGroupables(columns)
 
+      const filters = this.formattedTableParams?.filters || []
+      const normalizedFilters = normalizeFilters(filters, columns)
+      const filteredData = applyFiltersToData(this.tableData, normalizedFilters, columns, this.props.dataFormatting, {
+        caseInsensitiveContains: true,
+        treatEmptyStringAsNull: true,
+      })
       if (numGroupables === 1) {
-        this.generateDatePivotData(this.tableData)
+        this.generateDatePivotData(filteredData)
       } else {
-        this.generatePivotTableData({ isFirstGeneration })
+        this.generatePivotTableData({ isFirstGeneration, filteredData })
       }
     } catch (error) {
       console.error('Error generating pivot data', error)
