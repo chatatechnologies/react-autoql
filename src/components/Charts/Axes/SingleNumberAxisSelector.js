@@ -34,11 +34,7 @@ export default class SingleNumberAxisSelector extends React.Component {
       maxHeight = Window.innerHeight
     }
 
-    const existingNumberScale = scale.secondScale
-
-    const filteredColumns = columns
-      .filter((col) => !existingNumberScale?.fields?.find((field) => field.id === col.id))
-      .filter((col) => col.is_visible)
+    const filteredColumns = columns.filter((col) => col.is_visible)
 
     return (
       <div

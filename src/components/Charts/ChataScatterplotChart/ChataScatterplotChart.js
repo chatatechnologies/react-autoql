@@ -32,6 +32,19 @@ export default class ChataScatterplotChart extends Component {
     return !propsEqual || !stateEqual
   }
 
+  componentDidUpdate(prevProps, prevState) {
+    // Check if the scale has changed (for average/regression line redrawing)
+    const wasXScaled = prevState.isXScaled
+    const wasYScaled = prevState.isYScaled
+    const isXScaled = this.state.isXScaled
+    const isYScaled = this.state.isYScaled
+
+    if (wasXScaled !== isXScaled || wasYScaled !== isYScaled) {
+      // Scale has changed, increment scale version to force line redrawing
+      this.props.incrementScaleVersion?.()
+    }
+  }
+
   setNumberColumnIndices = (props) => {
     this.numberColumnIndex = props.numberColumnIndex
     this.numberColumnIndex2 = props.numberColumnIndex2
