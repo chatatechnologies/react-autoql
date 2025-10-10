@@ -86,6 +86,7 @@ class DashboardWithoutTheme extends React.Component {
     onSaveCallback: PropTypes.func,
     onDeleteCallback: PropTypes.func,
     showToolbar: PropTypes.bool,
+    refreshInterval: PropTypes.number,
   }
 
   static defaultProps = {
@@ -105,6 +106,7 @@ class DashboardWithoutTheme extends React.Component {
     autoChartAggregations: true,
     cancelQueriesOnUnmount: false,
     showToolbar: false,
+    refreshInterval: 60,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
     onChange: () => {},
@@ -583,11 +585,12 @@ class DashboardWithoutTheme extends React.Component {
     }
   }
 
-  onDrilldownEnd = ({ response, error }) => {
+  onDrilldownEnd = ({ response, error, drilldownFilters }) => {
     if (response) {
       if (this._isMounted) {
         this.setState({
           activeDrilldownResponse: response,
+          activeDrilldownFilters: drilldownFilters,
           isDrilldownRunning: false,
         })
       }
@@ -597,6 +600,7 @@ class DashboardWithoutTheme extends React.Component {
         this.setState({
           isDrilldownRunning: false,
           activeDrilldownResponse: undefined,
+          activeDrilldownFilters: undefined,
         })
       }
     }
@@ -712,6 +716,8 @@ class DashboardWithoutTheme extends React.Component {
             source={this.SOURCE}
             scope={this.props.scope}
             customToolbarOptions={this.props.customToolbarOptions}
+            enableCustomColumns={this.props.enableCustomColumns}
+            preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
           />
         ))}
       </ReactGridLayout>
@@ -748,6 +754,7 @@ class DashboardWithoutTheme extends React.Component {
                 this.debouncedOnChange(this.state.uneditedDashboardTiles)
                 this.props.stopEditingCallback()
               }}
+              refreshInterval={this.props.refreshInterval}
             />
           )}
           <div
@@ -764,10 +771,12 @@ class DashboardWithoutTheme extends React.Component {
             isOpen={this.state.isDrilldownModalVisible}
             onClose={this.closeDrilldownModal}
             drilldownResponse={this.state.activeDrilldownResponse}
+            drilldownFilters={this.state.activeDrilldownFilters}
             shouldRender={this.state.isDrilldownModalVisible && !this.state.isDragging && !this.state.isWindowResizing}
             activeDrilldownChartElementKey={this.state.activeDrilldownChartElementKey}
             isAnimating={this.state.isAnimatingModal}
             tooltipID={this.TOOLTIP_ID}
+            chartTooltipID={this.CHART_TOOLTIP_ID}
             showQueryInterpretation={this.props.isEditing}
             isDrilldownRunning={this.state.isDrilldownRunning}
             onErrorCallback={this.props.onErrorCallback}

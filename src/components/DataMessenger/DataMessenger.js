@@ -834,6 +834,7 @@ export class DataMessenger extends React.Component {
           chartTooltipID={this.CHART_TOOLTIP_ID}
           scope={this.props.scope}
           customToolbarOptions={this.props.customToolbarOptions}
+          enableCustomColumns={this.props.enableCustomColumns}
         />
       </ErrorBoundary>
     )
@@ -872,6 +873,7 @@ export class DataMessenger extends React.Component {
           }}
           createDataAlertCallback={this.closeDataMessenger}
           tooltipID={this.TOOLTIP_ID}
+          preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
         />
       </ErrorBoundary>
     )
@@ -891,6 +893,7 @@ export class DataMessenger extends React.Component {
           shouldRender={this.shouldRenderPage('data-explorer')}
           tooltipID={this.TOOLTIP_ID}
           scope={this.props.scope}
+          enableQuerySuggestions={this.props.enableQuerySuggestions}
           executeQuery={(queryRequestParams) => {
             if (isMobile) {
               this.props.setMobileActivePage('data-messenger')
@@ -969,6 +972,7 @@ export class DataMessenger extends React.Component {
           chartTooltipID={this.CHART_TOOLTIP_ID}
           isResizing={this.state.isResizing || this.state.isWindowResizing}
           popoverParentElement={this.props.popoverParentElement}
+          enableCustomColumns={this.props.enableCustomColumns}
         />
       </ErrorBoundary>
     )

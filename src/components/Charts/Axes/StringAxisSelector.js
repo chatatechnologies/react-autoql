@@ -217,12 +217,7 @@ export default class StringAxisSelector extends React.Component {
       <div
         className={isMobile ? 'mobile-string-axis-selector-popover-content' : 'string-axis-selector-popover-content'}
       >
-        <CustomScrollbars
-          autoHeight
-          autoHeightMin={minHeight}
-          maxHeight={maxHeight}
-          options={{ suppressScrollX: true }}
-        >
+        <CustomScrollbars autoHeight autoHeightMin={minHeight} maxHeight={maxHeight} suppressScrollX>
           <div
             className='axis-selector-container'
             id='string-column-selector-content'

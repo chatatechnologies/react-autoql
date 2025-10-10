@@ -140,6 +140,7 @@ export default class DrilldownModal extends React.Component {
         isResizing={this.props.isAnimating || this.state.isResizingDrilldown}
         isLoading={this.props.isDrilldownRunning}
         queryResponse={this.props.drilldownResponse}
+        drilldownFilters={this.props.drilldownFilters}
         tooltipID={this.props.tooltipID}
         chartTooltipID={this.props.chartTooltipID}
         reportProblemCallback={this.reportProblemCallback}
@@ -247,6 +248,8 @@ export default class DrilldownModal extends React.Component {
                           reverseTranslationPlacement='top'
                           allowDisplayTypeChange={false}
                           source={this.props.source}
+                          enableCustomColumns={this.props.enableCustomColumns}
+                          preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
                           height='100%'
                           width='100%'
                         />

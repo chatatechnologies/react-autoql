@@ -66,6 +66,7 @@ export default class DataExplorer extends React.Component {
     shouldRender: PropTypes.bool,
     inputPlaceholder: PropTypes.string,
     introMessage: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
+    enableQuerySuggestions: PropTypes.bool,
 
     executeQuery: PropTypes.func,
     isSmallScreen: PropTypes.bool,
@@ -77,6 +78,7 @@ export default class DataExplorer extends React.Component {
     shouldRender: true,
     inputPlaceholder: undefined,
     introMessage: undefined,
+    enableQuerySuggestions: true,
     executeQuery: () => {},
     isSmallScreen: false,
   }
@@ -598,7 +600,7 @@ export default class DataExplorer extends React.Component {
           ) : null}
           {this.renderDataPreview()}
           {this.renderTopicsListForVL()}
-          {this.renderQuerySuggestions()}
+          {this.props.enableQuerySuggestions && this.renderQuerySuggestions()}
         </div>
       </div>
     )

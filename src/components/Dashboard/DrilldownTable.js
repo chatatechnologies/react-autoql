@@ -55,6 +55,7 @@ export default class DrilldownTable extends React.Component {
             originalQueryID={this.props.queryResponse?.data?.data?.query_id}
             dataFormatting={this.props.dataFormatting}
             queryResponse={this.props.queryResponse}
+            drilldownFilters={this.props.drilldownFilters}
             renderTooltips={false}
             reportProblemCallback={this.props.reportProblemCallback}
             showQueryInterpretation={this.props.showQueryInterpretation}
@@ -65,6 +66,7 @@ export default class DrilldownTable extends React.Component {
             height='100%'
             width='100%'
             onUpdateFilterResponse={this.onUpdateFilterResponse}
+            enableCustomColumns={this.props.enableCustomColumns}
           />
           <div className='drilldown-modal-toolbars'>
             <div className='drilldown-modal-viz-toolbar'>
@@ -90,7 +92,6 @@ export default class DrilldownTable extends React.Component {
                 onCSVDownloadFinish={this.props.onCSVDownloadFinish}
                 onPNGDownloadFinish={this.props.onPNGDownloadFinish}
                 popoverAlign='end'
-                showFilterBadge={this.responseRef?.tableRef?.getTabulatorHeaderFilters()?.length > 0}
               />
             </div>
           </div>

@@ -1,8 +1,9 @@
 import React from 'react'
+import axios from 'axios'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
-import { fetchDataExplorerSampleQueries } from 'autoql-fe-utils'
+import { fetchDataExplorerSampleQueries, REQUEST_CANCELLED_ERROR } from 'autoql-fe-utils'
 
 import SampleQuery from './SampleQuery'
 
@@ -61,13 +62,26 @@ export default class SampleQueryList extends React.Component {
   componentWillUnmount = () => {
     this._isMounted = false
 
+    // Cancel any pending sample queries requests
+    this.cancelSampleQueries()
     clearTimeout(this.scrollbarTimeout)
+  }
+
+  cancelSampleQueries = () => {
+    this.axiosSourceSampleQueries?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSourceSampleQueries = undefined
   }
 
   getSampleQueries = () => {
     if (this.props.hidden || (!this.props.searchText && !this.props.context && !this.props.valueLabel)) {
       return
     }
+
+    // Cancel any previous request before making a new one
+    this.cancelSampleQueries()
+
+    // Create new cancel token for this request
+    this.axiosSourceSampleQueries = axios.CancelToken.source()
 
     const newState = {
       loading: true,
@@ -86,6 +100,7 @@ export default class SampleQueryList extends React.Component {
       text: this.props.searchText,
       context: this.props.context,
       columns: this.props.columns,
+      cancelToken: this.axiosSourceSampleQueries.token,
     })
       .then((response) => {
         if (this._isMounted) {
@@ -101,8 +116,16 @@ export default class SampleQueryList extends React.Component {
         }
       })
       .catch((error) => {
-        console.error(error)
-        if (this._isMounted) {
+        const isCancelled =
+          error?.data?.message === REQUEST_CANCELLED_ERROR ||
+          error?.message === REQUEST_CANCELLED_ERROR ||
+          axios.isCancel(error)
+
+        if (!isCancelled) {
+          console.error(error)
+        }
+
+        if (this._isMounted && !isCancelled) {
           this.props.onSuggestionListResponse()
           return this.setState({ loading: false, error })
         }

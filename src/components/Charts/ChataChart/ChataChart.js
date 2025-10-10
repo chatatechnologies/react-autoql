@@ -46,6 +46,10 @@ import { ChataStackedBarChart } from '../ChataStackedBarChart'
 import { ChataScatterplotChart } from '../ChataScatterplotChart'
 import { ChataStackedLineChart } from '../ChataStackedLineChart'
 import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
+import { AverageLine } from '../AverageLine'
+import { AverageLineToggle } from '../AverageLineToggle'
+import { RegressionLine } from '../RegressionLine'
+import { RegressionLineToggle } from '../RegressionLineToggle'
 
 import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPropHelpers.js'
 
@@ -74,6 +78,9 @@ export default class ChataChart extends React.Component {
       deltaY: 0,
       chartID: uuid(),
       isLoading: true,
+      showAverageLine: props.initialChartControls?.showAverageLine || false,
+      showRegressionLine: props.initialChartControls?.showRegressionLine || false,
+      scaleVersion: 0, // Track scale changes to force line re-render
     }
   }
 
@@ -82,11 +89,25 @@ export default class ChataChart extends React.Component {
 
     type: PropTypes.string.isRequired,
     onBucketSizeChange: PropTypes.func,
+    enableChartControls: PropTypes.bool,
+    initialChartControls: PropTypes.shape({
+      showAverageLine: PropTypes.bool,
+      showRegressionLine: PropTypes.bool,
+    }),
+    onChartControlsChange: PropTypes.func,
   }
 
   static defaultProps = {
     ...chartContainerDefaultProps,
     onBucketSizeChange: () => {},
+    enableChartControls: true,
+    initialChartControls: {
+      showAverageLine: false,
+      showRegressionLine: false,
+      showAverageLine: false,
+      showRegressionLine: false,
+    },
+    onChartControlsChange: () => {},
   }
 
   componentDidMount = () => {
@@ -391,7 +412,12 @@ export default class ChataChart extends React.Component {
     if (this.innerChartRef?.xScale && chartWidth) {
       const rangeInPx = this.innerChartRef.xScale.range()[1] - this.innerChartRef.xScale.range()[0]
       const totalHorizontalMargins = chartWidth - rangeInPx
-      innerWidth = containerWidth - totalHorizontalMargins - 2 * this.PADDING
+
+      // Add extra margin for right axis dropdown if second axis exists
+      const hasRightAxis = this.innerChartRef?.axesRef?.rightAxis
+      const rightAxisDropdownMargin = hasRightAxis ? 10 : 0 // Extra space for axis dropdown
+
+      innerWidth = containerWidth - totalHorizontalMargins - 2 * this.PADDING - rightAxisDropdownMargin
     }
 
     let innerHeight = containerHeight - 2 * this.PADDING
@@ -489,7 +515,33 @@ export default class ChataChart extends React.Component {
         className={`react-autoql-chart-header-container ${
           this.state.isLoading || this.props.isResizing ? 'loading' : ''
         }`}
-      />
+      >
+        {/* Chart Control Buttons */}
+        {this.props.enableChartControls && this.shouldShowAverageLine() && !this.props.hidden && (
+          <div className='chart-control-buttons'>
+            <AverageLineToggle
+              isEnabled={this.state.showAverageLine}
+              onToggle={this.toggleAverageLine}
+              columns={this.props.columns}
+              visibleSeriesIndices={this.props.numberColumnIndices?.filter(
+                (colIndex) => this.props.columns?.[colIndex] && !this.props.columns[colIndex].isSeriesHidden,
+              )}
+              chartTooltipID={this.props.chartTooltipID}
+            />
+            {this.shouldShowRegressionLine() && (
+              <RegressionLineToggle
+                isEnabled={this.state.showRegressionLine}
+                onToggle={this.toggleRegressionLine}
+                columns={this.props.columns}
+                visibleSeriesIndices={this.props.numberColumnIndices?.filter(
+                  (colIndex) => this.props.columns?.[colIndex] && !this.props.columns[colIndex].isSeriesHidden,
+                )}
+                chartTooltipID={this.props.chartTooltipID}
+              />
+            )}
+          </div>
+        )}
+      </div>
     )
   }
 
@@ -542,6 +594,11 @@ export default class ChataChart extends React.Component {
       isLoading: this.state.isLoading,
       changeNumberColumnIndices: this.props.changeNumberColumnIndices,
       onAxesRenderComplete: this.adjustChartPosition,
+      showAverageLine: this.state.showAverageLine,
+      toggleAverageLine: this.toggleAverageLine,
+      showRegressionLine: this.state.showRegressionLine,
+      toggleRegressionLine: this.toggleRegressionLine,
+      incrementScaleVersion: this.incrementScaleVersion,
     }
   }
 
@@ -569,36 +626,113 @@ export default class ChataChart extends React.Component {
     return null
   }
 
+  handleLegendVisibilityChange = (hiddenLabels) => this.props.onLegendVisibilityChange?.(hiddenLabels)
+
+  toggleAverageLine = () => {
+    const newShowAverageLine = !this.state.showAverageLine
+    this.setState({ showAverageLine: newShowAverageLine })
+    this.props.onChartControlsChange({
+      showAverageLine: newShowAverageLine,
+      showRegressionLine: this.state.showRegressionLine,
+    })
+  }
+
+  toggleRegressionLine = () => {
+    const newShowRegressionLine = !this.state.showRegressionLine
+    this.setState({ showRegressionLine: newShowRegressionLine })
+    this.props.onChartControlsChange({
+      showAverageLine: this.state.showAverageLine,
+      showRegressionLine: newShowRegressionLine,
+    })
+  }
+  incrementScaleVersion = () => {
+    this.setState((prevState) => ({ scaleVersion: prevState.scaleVersion + 1 }))
+  }
+  shouldShowAverageLine = () => {
+    // Average lines are supported for all chart types
+    const supportedCharts = [
+      DisplayTypes.COLUMN,
+      DisplayTypes.STACKED_COLUMN,
+      DisplayTypes.BAR,
+      DisplayTypes.STACKED_BAR,
+      DisplayTypes.LINE,
+      DisplayTypes.STACKED_LINE,
+      DisplayTypes.SCATTERPLOT,
+    ]
+    return supportedCharts.includes(this.props.type)
+  }
+
+  shouldShowRegressionLine = () => {
+    const supportedCharts = [
+      DisplayTypes.COLUMN,
+      DisplayTypes.STACKED_COLUMN,
+      DisplayTypes.LINE,
+      DisplayTypes.STACKED_LINE,
+      DisplayTypes.SCATTERPLOT,
+    ]
+
+    // Exclude BAR and STACKED_BAR - line is vertical
+    return supportedCharts.includes(this.props.type)
+  }
+
+  getChartTypeString = () => {
+    // Convert DisplayTypes enum to string format expected by AverageLine component
+    switch (this.props.type) {
+      case DisplayTypes.COLUMN:
+        return 'column'
+      case DisplayTypes.STACKED_COLUMN:
+        return 'stacked_column'
+      case DisplayTypes.BAR:
+        return 'bar'
+      case DisplayTypes.STACKED_BAR:
+        return 'stacked_bar'
+      case DisplayTypes.LINE:
+        return 'line'
+      case DisplayTypes.STACKED_LINE:
+        return 'stacked_line'
+      case DisplayTypes.SCATTERPLOT:
+        return 'scatterplot'
+      default:
+        return 'column'
+    }
+  }
+
   renderChart = () => {
     const commonChartProps = this.getCommonChartProps()
+    const commonLegendProps = {
+      legendLabels: this.getLegendLabels(),
+      isEditing: this.props.isEditing,
+      hiddenLegendLabels: this.props.hiddenLegendLabels,
+      onLegendVisibilityChange: this.handleLegendVisibilityChange,
+    }
 
     switch (this.props.type) {
       case DisplayTypes.COLUMN: {
-        return <ChataColumnChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
+        return <ChataColumnChart {...commonChartProps} {...commonLegendProps} />
       }
       case DisplayTypes.BAR: {
-        return <ChataBarChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
+        return <ChataBarChart {...commonChartProps} {...commonLegendProps} />
       }
       case DisplayTypes.LINE: {
-        return <ChataLineChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
+        return <ChataLineChart {...commonChartProps} {...commonLegendProps} />
       }
       case DisplayTypes.PIE: {
-        return <ChataPieChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
+        return <ChataPieChart {...commonChartProps} {...commonLegendProps} />
       }
       case DisplayTypes.BUBBLE: {
-        return <ChataBubbleChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
+        return <ChataBubbleChart {...commonChartProps} {...commonLegendProps} />
       }
       case DisplayTypes.HEATMAP: {
-        return <ChataHeatmapChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
+        return <ChataHeatmapChart {...commonChartProps} {...commonLegendProps} />
       }
       case DisplayTypes.STACKED_COLUMN: {
-        return <ChataStackedColumnChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
+        return <ChataStackedColumnChart {...commonChartProps} {...commonLegendProps} />
       }
       case DisplayTypes.STACKED_BAR: {
-        return <ChataStackedBarChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
+        return <ChataStackedBarChart {...commonChartProps} {...commonLegendProps} />
       }
       case DisplayTypes.STACKED_LINE: {
-        return <ChataStackedLineChart {...commonChartProps} legendLabels={this.getLegendLabels()} />
+        return <ChataStackedLineChart {...commonChartProps} {...commonLegendProps} />
       }
       case DisplayTypes.COLUMN_LINE: {
         const visibleSeriesIndices2 = this.props.numberColumnIndices2?.filter(
@@ -677,6 +811,64 @@ export default class ChataChart extends React.Component {
                 >
                   {this.renderChart()}
                 </g>
+
+                {/* Average Line - only when enabled */}
+                {this.shouldShowAverageLine() &&
+                  this.state.showAverageLine &&
+                  !this.props.hidden &&
+                  this.innerChartRef?.xScale &&
+                  this.innerChartRef?.yScale && (
+                    <g transform={`translate(${this.state.deltaX}, ${this.state.deltaY})`}>
+                      <AverageLine
+                        key={`average-line-${this.state.scaleVersion}-${this.state.chartID}`}
+                        data={this.getCommonChartProps().data}
+                        columns={this.props.columns}
+                        numberColumnIndex={this.props.numberColumnIndex}
+                        numberColumnIndex2={this.props.numberColumnIndex2}
+                        visibleSeriesIndices={this.props.numberColumnIndices?.filter(
+                          (colIndex) => this.props.columns?.[colIndex] && !this.props.columns[colIndex].isSeriesHidden,
+                        )}
+                        xScale={this.innerChartRef.xScale}
+                        yScale={this.innerChartRef.yScale}
+                        width={this.getInnerDimensions().innerWidth}
+                        height={this.getInnerDimensions().innerHeight}
+                        isVisible={this.state.showAverageLine}
+                        dataFormatting={this.props.dataFormatting}
+                        chartTooltipID={this.props.chartTooltipID}
+                        chartType={this.getChartTypeString()}
+                      />
+                    </g>
+                  )}
+
+                {/* Regression Line - only when enabled */}
+                {this.shouldShowRegressionLine() &&
+                  this.state.showRegressionLine &&
+                  !this.props.hidden &&
+                  this.innerChartRef?.xScale &&
+                  this.innerChartRef?.yScale && (
+                    <g transform={`translate(${this.state.deltaX}, ${this.state.deltaY})`}>
+                      <RegressionLine
+                        key={`regression-line-${this.state.scaleVersion}-${this.state.chartID}`}
+                        data={this.getCommonChartProps().data}
+                        columns={this.props.columns}
+                        stringColumnIndex={this.props.stringColumnIndex}
+                        numberColumnIndex={this.props.numberColumnIndex}
+                        numberColumnIndex2={this.props.numberColumnIndex2}
+                        visibleSeriesIndices={this.props.numberColumnIndices?.filter(
+                          (colIndex) => this.props.columns?.[colIndex] && !this.props.columns[colIndex].isSeriesHidden,
+                        )}
+                        xScale={this.innerChartRef.xScale}
+                        yScale={this.innerChartRef.yScale}
+                        width={this.getInnerDimensions().innerWidth}
+                        height={this.getInnerDimensions().innerHeight}
+                        isVisible={this.state.showRegressionLine}
+                        dataFormatting={this.props.dataFormatting}
+                        chartTooltipID={this.props.chartTooltipID}
+                        chartType={this.getChartTypeString()}
+                        colorScale={this.getColorScales()?.colorScale}
+                      />
+                    </g>
+                  )}
               </svg>
             )}
           </div>
