@@ -27,6 +27,8 @@ import {
   isChartType,
   areAllColumnsHidden,
   sortDataByDate,
+  sortDataByColumn,
+  filterDataByColumn,
   dateSortFn,
   getDayJSObj,
   getNumberOfGroupables,
@@ -1545,6 +1547,11 @@ export class QueryOutput extends React.Component {
 
     this.props.onTableParamsChange?.(this.tableParams, this.formattedTableParams)
 
+    // Regenerate pivot data when table params change (filters/sorters)
+    if (this.shouldGeneratePivotData()) {
+      this.generatePivotData()
+    }
+
     // This will update the filter badge in OptionsToolbar
     setTimeout(() => {
       this.updateToolbars()
@@ -2538,6 +2545,15 @@ export class QueryOutput extends React.Component {
 
       const columns = this.getColumns()
 
+      if (this.formattedTableParams?.filters?.length) {
+        this.formattedTableParams.filters.forEach((filter) => {
+          const filterColumnIndex = columns.find((col) => col.id === filter.id)?.index
+          if (filterColumnIndex !== undefined) {
+            tableData = filterDataByColumn(tableData, columns, filterColumnIndex, filter.value, filter.operator)
+          }
+        })
+      }
+
       const { legendColumnIndex, stringColumnIndex, numberColumnIndex } = this.tableConfig
 
       let uniqueRowHeaders = sortDataByDate(tableData, columns, 'desc', 'isTable')
@@ -2675,6 +2691,9 @@ export class QueryOutput extends React.Component {
       this.pivotTableData = pivotTableData
       this.numberOfPivotTableRows = this.pivotTableData?.length ?? 0
       this.setPivotTableConfig(true)
+      if (this._isMounted) {
+        this.forceUpdate()
+      }
     } catch (error) {
       console.error(error)
       this.props.onErrorCallback(error)
