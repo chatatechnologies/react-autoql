@@ -27,6 +27,8 @@ import {
   isChartType,
   areAllColumnsHidden,
   sortDataByDate,
+  sortDataByColumn,
+  filterDataByColumn,
   dateSortFn,
   getDayJSObj,
   getNumberOfGroupables,
@@ -70,7 +72,6 @@ import {
   formatFiltersForTabulator,
   formatSortersForTabulator,
   DisplayTypes,
-  applyFiltersAndSortersToData,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -975,20 +976,10 @@ export class QueryOutput extends React.Component {
       const columns = this.getColumns()
       const numGroupables = getNumberOfGroupables(columns)
 
-      const { filters = [], sorters = [] } = this.formattedTableParams || {}
-      const processedData = applyFiltersAndSortersToData(
-        this.queryResponse?.data?.data?.rows || [],
-        filters,
-        sorters,
-        columns,
-        this.props.dataFormatting,
-        { caseInsensitiveContains: true, treatEmptyStringAsNull: true },
-      )
-
       if (numGroupables === 1) {
-        this.generateDatePivotData(processedData)
+        this.generateDatePivotData(this.tableData)
       } else {
-        this.generatePivotTableData({ isFirstGeneration, filteredData: processedData })
+        this.generatePivotTableData({ isFirstGeneration })
       }
     } catch (error) {
       console.error('Error generating pivot data', error)
@@ -1544,12 +1535,9 @@ export class QueryOutput extends React.Component {
 
     this.props.onTableParamsChange?.(this.tableParams, this.formattedTableParams)
 
-    if (this.potentiallySupportsPivot()) {
-      try {
-        this.generatePivotData({ dataChanged: true })
-      } catch (e) {
-        console.error('Error regenerating pivot data on table params change', e)
-      }
+    // Regenerate pivot data when table params change (filters/sorters)
+    if (this.shouldGeneratePivotData()) {
+      this.generatePivotData()
     }
 
     // This will update the filter badge in OptionsToolbar
@@ -2534,62 +2522,43 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  generatePivotTableData = ({ isFirstGeneration, filteredData } = {}) => {
+  generatePivotTableData = ({ isFirstGeneration } = {}) => {
     try {
       this.pivotTableColumnsLimited = false
       this.pivotTableRowsLimited = false
       this.pivotTableID = uuid()
 
-      let tableData = _cloneDeep(filteredData ?? this.queryResponse?.data?.data?.rows)
+      let tableData = _cloneDeep(this.queryResponse?.data?.data?.rows)
+      tableData = tableData.filter((row) => row[0] !== null)
+
       const columns = this.getColumns()
+
+      if (this.formattedTableParams?.filters?.length) {
+        this.formattedTableParams.filters.forEach((filter) => {
+          const filterColumnIndex = columns.find((col) => col.id === filter.id)?.index
+          if (filterColumnIndex !== undefined) {
+            tableData = filterDataByColumn(tableData, columns, filterColumnIndex, filter.value, filter.operator)
+          }
+        })
+      }
+
+      if (this.formattedTableParams?.sorters?.length) {
+        const sortColumnIndex = columns.find((col) => col.id === this.formattedTableParams.sorters[0]?.id)?.index
+        const sortDirection = this.formattedTableParams.sorters[0]?.sort === 'DESC' ? 'desc' : 'asc'
+        if (sortColumnIndex !== undefined) {
+          tableData = sortDataByColumn(tableData, columns, sortColumnIndex, sortDirection)
+        }
+      }
 
       const { legendColumnIndex, stringColumnIndex, numberColumnIndex } = this.tableConfig
 
-      // Filter out rows that do not have a valid row header value
-      tableData = tableData?.filter(
-        (row) => row?.[stringColumnIndex] !== null && row?.[stringColumnIndex] !== undefined,
-      )
+      let uniqueRowHeaders = sortDataByDate(tableData, columns, 'desc', 'isTable')
+        .map((d) => d[stringColumnIndex])
+        .filter(onlyUnique)
 
-      // Get unique headers while preserving the order from the filtered/sorted data
-      let uniqueRowHeaders = []
-      let uniqueColumnHeaders = []
-      const seenRowHeaders = new Set()
-      const seenColumnHeaders = new Set()
-
-      // Extract headers in the order they appear in the processed data
-      tableData.forEach((row) => {
-        const rowHeader = row?.[stringColumnIndex]
-        const columnHeader = row?.[legendColumnIndex]
-
-        if (rowHeader !== null && rowHeader !== undefined && !seenRowHeaders.has(rowHeader)) {
-          uniqueRowHeaders.push(rowHeader)
-          seenRowHeaders.add(rowHeader)
-        }
-
-        if (columnHeader !== null && columnHeader !== undefined && !seenColumnHeaders.has(columnHeader)) {
-          uniqueColumnHeaders.push(columnHeader)
-          seenColumnHeaders.add(columnHeader)
-        }
-      })
-
-      // For string row headers: preserve processed data order when any sorters are active.
-      // Only apply fallback alphabetical sort when there are no sorters at all.
-      if (isColumnStringType(columns[stringColumnIndex]) && !isColumnDateType(columns[stringColumnIndex])) {
-        const hasAnySorter = (this.formattedTableParams?.sorters?.length ?? 0) > 0
-        if (!hasAnySorter) {
-          uniqueRowHeaders.sort((a, b) => a?.localeCompare?.(b))
-        }
-      }
-
-      if (isColumnStringType(columns[legendColumnIndex]) && !isColumnDateType(columns[legendColumnIndex])) {
-        // Only sort if we don't have explicit sorters that would affect this column
-        const hasLegendColumnSorter = this.formattedTableParams?.sorters?.some(
-          (s) => s.field === columns[legendColumnIndex]?.field || s.field === legendColumnIndex.toString(),
-        )
-        if (!hasLegendColumnSorter) {
-          uniqueColumnHeaders.sort((a, b) => a?.localeCompare?.(b))
-        }
-      }
+      let uniqueColumnHeaders = sortDataByDate(tableData, columns, 'desc', 'isTable')
+        .map((d) => d[legendColumnIndex])
+        .filter(onlyUnique)
 
       let newStringColumnIndex = stringColumnIndex
       let newLegendColumnIndex = legendColumnIndex
@@ -2692,37 +2661,24 @@ export class QueryOutput extends React.Component {
       )
 
       tableData.forEach((row) => {
-        const rowHeaderValue = row?.[newStringColumnIndex]
-        const pivotRowIndex = uniqueRowHeadersObj[rowHeaderValue]
-
-        // Skip if the row header value is null/undefined or not part of our header map
-        if (rowHeaderValue === null || rowHeaderValue === undefined || pivotRowIndex === undefined) {
+        const pivotRowIndex = uniqueRowHeadersObj[row[newStringColumnIndex]]
+        const pivotRowHeaderValue = row[newStringColumnIndex]
+        if (!pivotRowHeaderValue || !pivotTableData[pivotRowIndex]) {
           return
         }
 
-        // Populate first column (frozen category column)
-        if (pivotTableData[pivotRowIndex]) {
-          pivotTableData[pivotRowIndex][0] = rowHeaderValue
-        } else {
-          return
-        }
+        // Populate first column
+        pivotTableData[pivotRowIndex][0] = pivotRowHeaderValue
 
         // Populate remaining columns
-        const legendHeaderValue = row?.[newLegendColumnIndex]
-        const legendOffset = uniqueColumnHeadersObj[legendHeaderValue]
-        if (legendOffset === undefined) {
-          return
-        }
-        const pivotColumnIndex = legendOffset + 1
-
-        const pivotValue = Number(row?.[numberColumnIndex])
+        const pivotValue = Number(row[numberColumnIndex])
+        const pivotColumnIndex = uniqueColumnHeadersObj[row[newLegendColumnIndex]] + 1
         pivotTableData[pivotRowIndex][pivotColumnIndex] = pivotValue
-
         if (pivotTableColumns[pivotColumnIndex]) {
-          pivotTableColumns[pivotColumnIndex].origValues[rowHeaderValue] = {
+          pivotTableColumns[pivotColumnIndex].origValues[pivotRowHeaderValue] = {
             name: columns[newStringColumnIndex]?.name,
             drill_down: columns[newStringColumnIndex]?.drill_down,
-            value: rowHeaderValue,
+            value: pivotRowHeaderValue,
           }
         }
       })
@@ -2731,6 +2687,9 @@ export class QueryOutput extends React.Component {
       this.pivotTableData = pivotTableData
       this.numberOfPivotTableRows = this.pivotTableData?.length ?? 0
       this.setPivotTableConfig(true)
+      if (this._isMounted) {
+        this.forceUpdate()
+      }
     } catch (error) {
       console.error(error)
       this.props.onErrorCallback(error)
@@ -3011,16 +2970,6 @@ export class QueryOutput extends React.Component {
       return this.renderMessage('Error: There was no data supplied for this table')
     }
 
-    // When rendering the pivot table, we've already applied filters/sorters to build
-    // this.pivotTableData. Passing the table's initial filters/sorts to Tabulator again
-    // can cause it to filter out all rows (fields don't map to pivot columns).
-    // To avoid double-filtering/sorting, strip them from the params we pass to the pivot grid.
-    const pivotTableParams = this.tableParams ? _cloneDeep(this.tableParams) : undefined
-    if (pivotTableParams) {
-      delete pivotTableParams.filter
-      delete pivotTableParams.sort
-    }
-
     return (
       <ErrorBoundary>
         <ChataTable
@@ -3047,7 +2996,7 @@ export class QueryOutput extends React.Component {
           totalRows={this.pivotTableTotalRows}
           totalColumns={this.pivotTableTotalColumns}
           maxColumns={this.MAX_PIVOT_TABLE_COLUMNS}
-          initialTableParams={pivotTableParams}
+          initialTableParams={this.tableParams}
           updateColumnsAndData={this.updateColumnsAndData}
           pivotGroups={true}
           pivot
