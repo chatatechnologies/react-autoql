@@ -14,6 +14,13 @@
   }
 }
 
+.chart-control-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+  padding: 0 0 4px 8px;
+}
+
 .react-autoql-chart-container {
   position: relative;
   width: 100%;
@@ -282,5 +289,27 @@
     left: 50%;
     width: 40px;
     height: 40px;
+  }
+}
+
+// Remove outlines from chart lines and labels
+.average-line-container,
+.regression-line-container,
+.individual-regression-lines-container,
+.average-line,
+.average-line-hover-area,
+.average-line-label,
+.average-line-text-bg,
+.regression-line,
+.regression-line-hover-area,
+.regression-line-label,
+.regression-line-text-bg,
+.individual-regression-line {
+  outline: none !important;
+
+  &:focus,
+  &:active,
+  &:focus-visible {
+    outline: none !important;
   }
 }
