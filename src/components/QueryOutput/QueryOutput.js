@@ -2554,14 +2554,6 @@ export class QueryOutput extends React.Component {
         })
       }
 
-      if (this.formattedTableParams?.sorters?.length) {
-        const sortColumnIndex = columns.find((col) => col.id === this.formattedTableParams.sorters[0]?.id)?.index
-        const sortDirection = this.formattedTableParams.sorters[0]?.sort === 'DESC' ? 'desc' : 'asc'
-        if (sortColumnIndex !== undefined) {
-          tableData = sortDataByColumn(tableData, columns, sortColumnIndex, sortDirection)
-        }
-      }
-
       const { legendColumnIndex, stringColumnIndex, numberColumnIndex } = this.tableConfig
 
       let uniqueRowHeaders = sortDataByDate(tableData, columns, 'desc', 'isTable')
