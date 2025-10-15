@@ -25,6 +25,17 @@ export default class ChataBarChart extends Component {
     return !propsEqual || !stateEqual
   }
 
+  componentDidUpdate(prevProps, prevState) {
+    // Check if the scale has changed (for average/regression line redrawing)
+    const wasChartScaled = prevState.isChartScaled
+    const isChartScaled = this.state.isChartScaled
+
+    if (wasChartScaled !== isChartScaled) {
+      // Scale has changed, increment scale version to force line redrawing
+      this.props.incrementScaleVersion?.()
+    }
+  }
+
   setChartData = (props) => {
     let numberColumnIndices = props.numberColumnIndices
     if (props.visibleSeriesIndices?.length) {

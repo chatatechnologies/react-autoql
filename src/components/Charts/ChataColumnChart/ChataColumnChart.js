@@ -52,6 +52,16 @@ export default class ChataColumnChart extends Component {
     this.setState({ isChartScaled: !this.state.isChartScaled })
   }
 
+  componentDidUpdate(prevProps, prevState) {
+    // Check if the scale state changed and notify parent
+    if (prevState.isChartScaled !== this.state.isChartScaled) {
+      // Use setTimeout to ensure this happens after the render cycle
+      setTimeout(() => {
+        this.props.incrementScaleVersion?.()
+      }, 0)
+    }
+  }
+
   render = () => {
     this.setChartData(this.props)
 
