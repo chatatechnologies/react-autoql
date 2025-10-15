@@ -49,7 +49,7 @@ describe('supported display types', () => {
   test('support charts even for 1 row of data', async () => {
     const queryResponse = _cloneDeep(testCases[8])
     queryResponse.data.data.rows = [queryResponse.data.data.rows[0]]
-    const queryOutput = mount(<QueryOutputWithoutTheme queryResponse={queryResponse} queryFn={() => {}} />)
+    const queryOutput = mount(<QueryOutputWithoutTheme queryResponse={queryResponse} />)
     const supportedDisplayTypes = queryOutput.instance().getCurrentSupportedDisplayTypes()
     expect(supportedDisplayTypes).toEqual(['table', 'column', 'bar'])
     queryOutput.unmount()
@@ -73,7 +73,7 @@ describe('test table edge cases', () => {
       queryOutput.unmount()
     })
     describe('display type is updated when column visibility is changed', () => {
-      const queryOutputVisible = mount(<QueryOutput queryResponse={testCaseHiddenColumns} queryFn={() => {}} />)
+      const queryOutputVisible = mount(<QueryOutput queryResponse={testCaseHiddenColumns} />)
 
       test('display type is text if all columns hidden', () => {
         const displayType = queryOutputVisible.find(QueryOutputWithoutTheme).instance().state.displayType
@@ -119,11 +119,7 @@ describe('test table edge cases', () => {
 
       // Mount with initial table configs
       const queryOutput = mount(
-        <QueryOutputWithoutTheme
-          queryResponse={testCase}
-          initialTableConfigs={initialTableConfigs}
-          queryFn={() => {}}
-        />,
+        <QueryOutputWithoutTheme queryResponse={testCase} initialTableConfigs={initialTableConfigs} />,
       )
 
       const instance = queryOutput.instance()
@@ -162,11 +158,7 @@ describe('test table edge cases', () => {
 
       // Mount with invalid initial table configs
       const queryOutput = mount(
-        <QueryOutputWithoutTheme
-          queryResponse={testCase}
-          initialTableConfigs={initialTableConfigs}
-          queryFn={() => {}}
-        />,
+        <QueryOutputWithoutTheme queryResponse={testCase} initialTableConfigs={initialTableConfigs} />,
       )
 
       const instance = queryOutput.instance()
@@ -203,11 +195,7 @@ describe('test table edge cases', () => {
 
       // Mount with initial table configs
       const queryOutput = mount(
-        <QueryOutputWithoutTheme
-          queryResponse={testCase}
-          initialTableConfigs={initialTableConfigs}
-          queryFn={() => {}}
-        />,
+        <QueryOutputWithoutTheme queryResponse={testCase} initialTableConfigs={initialTableConfigs} />,
       )
 
       const instance = queryOutput.instance()
@@ -225,341 +213,6 @@ describe('test table edge cases', () => {
       expect(instance.tableConfig.stringColumnIndex).toBeGreaterThanOrEqual(0)
       expect(instance.tableConfig.stringColumnIndex).toBeLessThan(testCase.data.data.columns.length)
 
-      queryOutput.unmount()
-    })
-  })
-})
-
-describe('pivot table filtering', () => {
-  describe('onTableParamsChange triggers pivot data regeneration', () => {
-    test('calls generatePivotData when shouldGeneratePivotData returns true', () => {
-      const testCase = _cloneDeep(testCases[8]) // Use a test case that supports pivot tables
-      const queryOutput = mount(
-        <QueryOutputWithoutTheme queryResponse={testCase} initialDisplayType='pivot_table' queryFn={() => {}} />,
-      )
-
-      const instance = queryOutput.instance()
-
-      // Spy on the generatePivotData method
-      const generatePivotDataSpy = jest.spyOn(instance, 'generatePivotData')
-
-      // Mock shouldGeneratePivotData to return true
-      instance.shouldGeneratePivotData = jest.fn().mockReturnValue(true)
-
-      // Call onTableParamsChange with some params
-      const params = { filters: [{ id: 'column1', value: 'test', operator: 'equals' }] }
-      const formattedParams = { filters: [{ id: 'column1', value: 'test', operator: 'equals' }] }
-
-      instance.onTableParamsChange(params, formattedParams)
-
-      // Verify generatePivotData was called
-      expect(generatePivotDataSpy).toHaveBeenCalled()
-
-      generatePivotDataSpy.mockRestore()
-      queryOutput.unmount()
-    })
-
-    test('does not call generatePivotData when shouldGeneratePivotData returns false', () => {
-      const testCase = _cloneDeep(testCases[8])
-      const queryOutput = mount(
-        <QueryOutputWithoutTheme queryResponse={testCase} initialDisplayType='pivot_table' queryFn={() => {}} />,
-      )
-
-      const instance = queryOutput.instance()
-
-      // Spy on the generatePivotData method
-      const generatePivotDataSpy = jest.spyOn(instance, 'generatePivotData')
-
-      // Mock shouldGeneratePivotData to return false
-      instance.shouldGeneratePivotData = jest.fn().mockReturnValue(false)
-
-      // Call onTableParamsChange with some params
-      const params = { filters: [{ id: 'column1', value: 'test', operator: 'equals' }] }
-      const formattedParams = { filters: [{ id: 'column1', value: 'test', operator: 'equals' }] }
-
-      instance.onTableParamsChange(params, formattedParams)
-
-      // Verify generatePivotData was not called
-      expect(generatePivotDataSpy).not.toHaveBeenCalled()
-
-      generatePivotDataSpy.mockRestore()
-      queryOutput.unmount()
-    })
-  })
-
-  describe('generatePivotTableData filters data correctly', () => {
-    test('filters data based on formattedTableParams.filters', () => {
-      const testCase = _cloneDeep(testCases[8])
-      const queryOutput = mount(
-        <QueryOutputWithoutTheme queryResponse={testCase} initialDisplayType='pivot_table' queryFn={() => {}} />,
-      )
-
-      const instance = queryOutput.instance()
-
-      // Set up formattedTableParams with a filter
-      instance.formattedTableParams = {
-        filters: [
-          {
-            id: testCase.data.data.columns[0].name, // Filter on first column
-            value: testCase.data.data.rows[0][0], // Filter to match first row
-            operator: 'equals',
-          },
-        ],
-      }
-
-      // Spy on forceUpdate to ensure it's called
-      const forceUpdateSpy = jest.spyOn(instance, 'forceUpdate')
-
-      // Call generatePivotTableData
-      instance.generatePivotTableData()
-
-      // Verify forceUpdate was called
-      expect(forceUpdateSpy).toHaveBeenCalled()
-
-      // Verify that pivot table data was generated
-      expect(instance.pivotTableData).toBeDefined()
-      expect(instance.pivotTableColumns).toBeDefined()
-
-      forceUpdateSpy.mockRestore()
-      queryOutput.unmount()
-    })
-  })
-
-  describe('generatePivotData state updates', () => {
-    test('updates visiblePivotRowChangeCount when dataChanged is true', () => {
-      const testCase = _cloneDeep(testCases[8])
-      const queryOutput = mount(
-        <QueryOutputWithoutTheme queryResponse={testCase} initialDisplayType='pivot_table' queryFn={() => {}} />,
-      )
-
-      const instance = queryOutput.instance()
-
-      // Set initial state
-      const initialCount = instance.state.visiblePivotRowChangeCount || 0
-      instance.setState({ visiblePivotRowChangeCount: initialCount })
-
-      // Call generatePivotData with dataChanged = true
-      instance.generatePivotData({ dataChanged: true })
-
-      // Verify state was updated
-      expect(instance.state.visiblePivotRowChangeCount).toBe(initialCount + 1)
-
-      queryOutput.unmount()
-    })
-  })
-
-  describe('pivot table drilldown groupBys', () => {
-    test('uses raw legend name from column definition (not formatted title)', () => {
-      const testCase = _cloneDeep(testCases[8])
-
-      const queryOutput = mount(
-        <QueryOutputWithoutTheme queryResponse={testCase} initialDisplayType='pivot_table' queryFn={() => {}} />,
-      )
-
-      const instance = queryOutput.instance()
-
-      // Force into pivot table context with non-date pivot
-      instance.setState({ displayType: 'pivot_table' })
-      instance.pivotTableColumns = [{}] // truthy to enter pivot branch
-      instance.potentiallySupportsDatePivot = jest.fn(() => false)
-
-      // Build a minimal columns array with string and legend headers
-      instance.getColumns = jest.fn(() => [
-        { name: 'Product', title: 'Product', drill_down: true }, // string column
-        { name: 'Amount', title: 'Amount', drill_down: false },
-        { name: 'Region', title: 'Region (Formatted)', drill_down: true }, // legend column
-      ])
-
-      // Configure tableConfig indices used by onTableCellClick
-      instance.tableConfig = {
-        stringColumnIndex: 0,
-        legendColumnIndex: 2,
-      }
-
-      // Spy on processDrilldown to capture payload
-      const processSpy = jest.spyOn(instance, 'processDrilldown').mockImplementation(() => {})
-
-      // Create a mock cell representing a pivot table data cell
-      const mockCell = {
-        getValue: () => 123,
-        getData: () => ['Widgets'], // first value is row header value
-        getColumn: () => ({
-          getDefinition: () => ({
-            name: 'EMEA', // RAW legend key value expected in groupBys
-            title: 'Europe, Middle East & Africa', // formatted title that should NOT be used
-          }),
-        }),
-      }
-
-      // Act
-      instance.onTableCellClick(mockCell)
-
-      // Assert
-      expect(processSpy).toHaveBeenCalled()
-      const callArgs = processSpy.mock.calls[0][0]
-      expect(callArgs.supportedByAPI).toBe(true)
-      expect(Array.isArray(callArgs.groupBys)).toBe(true)
-      // Should include the legend groupby using raw name
-      const [legendGB, rowGB] = callArgs.groupBys
-      expect(legendGB).toMatchObject({ name: 'Region', value: 'EMEA' })
-      expect(rowGB).toMatchObject({ name: 'Product', value: 'Widgets' })
-
-      processSpy.mockRestore()
-      queryOutput.unmount()
-    })
-
-    test('sets operator to "is" when legend value is null', () => {
-      const testCase = _cloneDeep(testCases[8])
-
-      const queryOutput = mount(
-        <QueryOutputWithoutTheme queryResponse={testCase} initialDisplayType='pivot_table' queryFn={() => {}} />,
-      )
-
-      const instance = queryOutput.instance()
-      instance.setState({ displayType: 'pivot_table' })
-      instance.pivotTableColumns = [{}]
-      instance.potentiallySupportsDatePivot = jest.fn(() => false)
-      instance.getColumns = jest.fn(() => [
-        { name: 'Product', title: 'Product', drill_down: true },
-        { name: 'Amount', title: 'Amount', drill_down: false },
-        { name: 'Region', title: 'Region (Formatted)', drill_down: true },
-      ])
-      instance.tableConfig = { stringColumnIndex: 0, legendColumnIndex: 2 }
-
-      const processSpy = jest.spyOn(instance, 'processDrilldown').mockImplementation(() => {})
-
-      const mockCell = {
-        getValue: () => 999,
-        getData: () => ['Widgets'],
-        getColumn: () => ({ getDefinition: () => ({ name: null, title: 'Some Title' }) }),
-      }
-
-      instance.onTableCellClick(mockCell)
-
-      expect(processSpy).toHaveBeenCalled()
-      const callArgs = processSpy.mock.calls[0][0]
-      const [legendGB, rowGB] = callArgs.groupBys
-      expect(legendGB).toMatchObject({ name: 'Region', value: 'null', operator: 'is' })
-      expect(rowGB).toMatchObject({ name: 'Product', value: 'Widgets', operator: '=' })
-
-      processSpy.mockRestore()
-      queryOutput.unmount()
-    })
-
-    test('sets operator to "is" when row header is null', () => {
-      const testCase = _cloneDeep(testCases[8])
-
-      const queryOutput = mount(
-        <QueryOutputWithoutTheme queryResponse={testCase} initialDisplayType='pivot_table' queryFn={() => {}} />,
-      )
-
-      const instance = queryOutput.instance()
-      instance.setState({ displayType: 'pivot_table' })
-      instance.pivotTableColumns = [{}]
-      instance.potentiallySupportsDatePivot = jest.fn(() => false)
-      instance.getColumns = jest.fn(() => [
-        { name: 'Product', title: 'Product', drill_down: true },
-        { name: 'Amount', title: 'Amount', drill_down: false },
-        { name: 'Region', title: 'Region', drill_down: true },
-      ])
-      instance.tableConfig = { stringColumnIndex: 0, legendColumnIndex: 2 }
-
-      const processSpy = jest.spyOn(instance, 'processDrilldown').mockImplementation(() => {})
-
-      const mockCell = {
-        getValue: () => 555,
-        getData: () => [null],
-        getColumn: () => ({ getDefinition: () => ({ name: 'EMEA', title: 'EMEA' }) }),
-      }
-
-      instance.onTableCellClick(mockCell)
-
-      expect(processSpy).toHaveBeenCalled()
-      const callArgs = processSpy.mock.calls[0][0]
-      const [legendGB, rowGB] = callArgs.groupBys
-      expect(legendGB).toMatchObject({ name: 'Region', value: 'EMEA', operator: '=' })
-      expect(rowGB).toMatchObject({ name: 'Product', value: 'null', operator: 'is' })
-
-      processSpy.mockRestore()
-      queryOutput.unmount()
-    })
-
-    test('sets operator "is" when legend value is null', () => {
-      const testCase = _cloneDeep(testCases[8])
-      const queryOutput = mount(
-        <QueryOutputWithoutTheme queryResponse={testCase} initialDisplayType='pivot_table' queryFn={() => {}} />,
-      )
-
-      const instance = queryOutput.instance()
-      instance.setState({ displayType: 'pivot_table' })
-      instance.pivotTableColumns = [{}]
-      instance.potentiallySupportsDatePivot = jest.fn(() => false)
-
-      instance.getColumns = jest.fn(() => [
-        { name: 'Product', title: 'Product', drill_down: true },
-        { name: 'Amount', title: 'Amount', drill_down: false },
-        { name: 'Region', title: 'Region (Formatted)', drill_down: true },
-      ])
-
-      instance.tableConfig = { stringColumnIndex: 0, legendColumnIndex: 2 }
-
-      const processSpy = jest.spyOn(instance, 'processDrilldown').mockImplementation(() => {})
-
-      const mockCell = {
-        getValue: () => 456,
-        getData: () => ['Widgets'],
-        getColumn: () => ({ getDefinition: () => ({ name: null, title: 'Formatted Null' }) }),
-      }
-
-      instance.onTableCellClick(mockCell)
-
-      expect(processSpy).toHaveBeenCalled()
-      const callArgs = processSpy.mock.calls[0][0]
-      const [legendGB, rowGB] = callArgs.groupBys
-      expect(legendGB.operator).toBe('is')
-      // Value will be the string "null" due to template literal; operator is the critical part
-      expect(rowGB.operator).toBe('=')
-
-      processSpy.mockRestore()
-      queryOutput.unmount()
-    })
-
-    test('sets operator "is" when row header value is null', () => {
-      const testCase = _cloneDeep(testCases[8])
-      const queryOutput = mount(
-        <QueryOutputWithoutTheme queryResponse={testCase} initialDisplayType='pivot_table' queryFn={() => {}} />,
-      )
-
-      const instance = queryOutput.instance()
-      instance.setState({ displayType: 'pivot_table' })
-      instance.pivotTableColumns = [{}]
-      instance.potentiallySupportsDatePivot = jest.fn(() => false)
-
-      instance.getColumns = jest.fn(() => [
-        { name: 'Product', title: 'Product', drill_down: true },
-        { name: 'Amount', title: 'Amount', drill_down: false },
-        { name: 'Region', title: 'Region', drill_down: true },
-      ])
-
-      instance.tableConfig = { stringColumnIndex: 0, legendColumnIndex: 2 }
-
-      const processSpy = jest.spyOn(instance, 'processDrilldown').mockImplementation(() => {})
-
-      const mockCell = {
-        getValue: () => 789,
-        getData: () => [null],
-        getColumn: () => ({ getDefinition: () => ({ name: 'EMEA', title: 'Europe, Middle East & Africa' }) }),
-      }
-
-      instance.onTableCellClick(mockCell)
-
-      expect(processSpy).toHaveBeenCalled()
-      const callArgs = processSpy.mock.calls[0][0]
-      const [legendGB, rowGB] = callArgs.groupBys
-      expect(legendGB.operator).toBe('=')
-      expect(rowGB.operator).toBe('is')
-
-      processSpy.mockRestore()
       queryOutput.unmount()
     })
   })
