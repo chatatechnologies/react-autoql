@@ -1431,8 +1431,6 @@ export class QueryOutput extends React.Component {
         const rowHeaderDefinition = columns[this.tableConfig.stringColumnIndex]
         groupBys = getGroupBysFromPivotTable({
           cell,
-          rowHeaders: this.pivotRowHeaders,
-          columnHeaders: this.pivotColumnHeaders,
           rowHeaderDefinition,
           columnHeaderDefinition,
         })
