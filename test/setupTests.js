@@ -13,11 +13,3 @@ jest.mock('tabulator-tables', () => {
 Enzyme.configure({ adapter: new EnzymeAdapter() })
 
 configure({ testIdAttribute: 'data-test' })
-
-// // jsdom doesn't define the global CSS object used by some libraries (e.g., react-tooltip)
-// // Provide a minimal stub so components that check CSS.supports don't crash in tests.
-// if (typeof global.CSS === 'undefined') {
-//   global.CSS = {
-//     supports: () => false,
-//   }
-// }
