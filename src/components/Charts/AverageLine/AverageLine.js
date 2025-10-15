@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { mean } from 'd3-array'
-import { DisplayTypes, formatElement } from 'autoql-fe-utils'
+import { DisplayTypes, formatElement, getThemeValue } from 'autoql-fe-utils'
 import './AverageLine.scss'
 
 export class AverageLine extends React.Component {
@@ -36,6 +36,13 @@ export class AverageLine extends React.Component {
     this.textRef = React.createRef()
     this.state = {
       textBBox: null,
+    }
+
+    this.labelInlineStyles = {
+      fontSize: '11px',
+      fontWeight: 'bold',
+      fill: 'currentColor',
+      fontFamily: 'var(--react-autoql-font-family)',
     }
   }
 
@@ -296,7 +303,7 @@ export class AverageLine extends React.Component {
         {/* Visible average line */}
         <line
           {...lineProps}
-          stroke={color}
+          stroke='currentColor'
           strokeWidth={strokeWidth}
           strokeDasharray={strokeDasharray}
           className='average-line'
@@ -310,11 +317,14 @@ export class AverageLine extends React.Component {
           width={rectWidth}
           height={rectHeight}
           fillOpacity='0.85'
-          stroke={color}
+          stroke='currentColor'
           strokeWidth='1'
           rx='3'
           className='average-line-text-bg'
-          style={{ outline: 'none' }}
+          style={{
+            outline: 'none',
+            fill: getThemeValue('background-color-secondary') || '#f8f9fa',
+          }}
         />
 
         {/* Text label */}
@@ -322,18 +332,14 @@ export class AverageLine extends React.Component {
           ref={this.textRef}
           x={textX}
           y={textY}
-          fontSize='11'
-          fontWeight='bold'
-          fill={color}
-          stroke='var(--react-autoql-background-color)'
-          strokeWidth='3'
+          strokeWidth={0}
           strokeLinejoin='round'
           strokeLinecap='round'
           textAnchor={this.isBarChart() ? 'middle' : 'end'}
           className='average-line-label'
           data-tooltip-content={tooltipContent}
           data-tooltip-id={this.props.chartTooltipID}
-          style={{ outline: 'none' }}
+          style={this.labelInlineStyles}
         >
           Avg: {formattedAverage}
         </text>

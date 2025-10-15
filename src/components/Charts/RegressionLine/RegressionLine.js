@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { formatElement, getChartColorVars } from 'autoql-fe-utils'
+import { formatElement, getThemeValue } from 'autoql-fe-utils'
 import './RegressionLine.scss'
 
 export class RegressionLine extends React.Component {
@@ -37,6 +37,20 @@ export class RegressionLine extends React.Component {
     this.state = {
       textBBox: null,
       individualTextBBoxes: {},
+    }
+
+    this.labelInlineStyles = {
+      fontSize: '11px',
+      fontWeight: 'bold',
+      fill: 'currentColor',
+      fontFamily: 'var(--react-autoql-font-family)',
+    }
+
+    this.individualLabelInlineStyles = {
+      fontSize: '10px',
+      fontWeight: 'bold',
+      fill: 'currentColor',
+      fontFamily: 'var(--react-autoql-font-family)',
     }
   }
 
@@ -458,7 +472,10 @@ export class RegressionLine extends React.Component {
           strokeWidth='1'
           rx='3'
           className='regression-line-text-bg'
-          style={{ outline: 'none' }}
+          style={{
+            outline: 'none',
+            fill: getThemeValue('background-color-secondary') || '#f8f9fa',
+          }}
         />
 
         {/* Text label */}
@@ -466,18 +483,19 @@ export class RegressionLine extends React.Component {
           ref={this.textRef}
           x={midX}
           y={textY}
-          fontSize='11'
-          fontWeight='bold'
-          fill={trendColor}
-          stroke='var(--react-autoql-background-color)'
-          strokeWidth='3'
+          strokeWidth={0}
           strokeLinejoin='round'
           strokeLinecap='round'
           textAnchor='middle'
           className='regression-line-label'
           data-tooltip-content={tooltipContent}
           data-tooltip-id={this.props.chartTooltipID}
-          style={{ outline: 'none' }}
+          style={{
+            ...this.labelInlineStyles,
+            outline: 'none',
+            fill: trendColor,
+            stroke: getThemeValue('background-color-secondary') || '#f8f9fa',
+          }}
         >
           {isTrendUp ? '↗' : '↘'} {formattedSlope}
         </text>
@@ -759,7 +777,10 @@ export class RegressionLine extends React.Component {
                     strokeWidth='1'
                     rx='3'
                     className='regression-line-text-bg'
-                    style={{ outline: 'none' }}
+                    style={{
+                      outline: 'none',
+                      fill: getThemeValue('background-color-secondary') || '#f8f9fa',
+                    }}
                   />
 
                   {/* Text label */}
@@ -767,18 +788,17 @@ export class RegressionLine extends React.Component {
                     ref={(ref) => (this.individualTextRefs[refKey] = ref)}
                     x={clampedTextX}
                     y={textY}
-                    fontSize='10'
-                    fontWeight='bold'
-                    fill={seriesColor}
-                    stroke='var(--react-autoql-background-color)'
-                    strokeWidth='3'
+                    strokeWidth={0}
                     strokeLinejoin='round'
                     strokeLinecap='round'
                     textAnchor='middle'
                     className='regression-line-label'
                     data-tooltip-content={tooltipContent}
                     data-tooltip-id={this.props.chartTooltipID}
-                    style={{ outline: 'none' }}
+                    style={{
+                      ...this.individualLabelInlineStyles,
+                      fill: seriesColor,
+                    }}
                   >
                     {isTrendUp ? '↗' : '↘'} {formattedSlope}
                   </text>
