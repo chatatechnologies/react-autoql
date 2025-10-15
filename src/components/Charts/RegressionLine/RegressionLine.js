@@ -60,14 +60,21 @@ export class RegressionLine extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    // Re-measure if data or formatting changes
+    // Re-measure if data, formatting, or visibility changes
     if (
       prevProps.data !== this.props.data ||
       prevProps.dataFormatting !== this.props.dataFormatting ||
-      prevProps.numberColumnIndex !== this.props.numberColumnIndex
+      prevProps.numberColumnIndex !== this.props.numberColumnIndex ||
+      prevProps.visibleSeriesIndices !== this.props.visibleSeriesIndices ||
+      prevProps.stringColumnIndex !== this.props.stringColumnIndex ||
+      prevProps.columns !== this.props.columns ||
+      prevProps.isVisible !== this.props.isVisible
     ) {
-      this.updateTextBBox()
-      this.updateIndividualTextBBoxes()
+      // Use setTimeout to ensure DOM is updated before measuring
+      setTimeout(() => {
+        this.updateTextBBox()
+        this.updateIndividualTextBBoxes()
+      }, 0)
     }
   }
 
@@ -402,6 +409,7 @@ export class RegressionLine extends React.Component {
       element: displayedSlope,
       column: columnForFormatting,
       config: dataFormatting,
+      isChart: true,
     })
 
     // Create tooltip content with R-squared and per-period terminology
@@ -696,6 +704,7 @@ export class RegressionLine extends React.Component {
             element: displayedSlope,
             column: columnForFormatting,
             config: dataFormatting,
+            isChart: true,
           })
 
           // Create tooltip content with R-squared and per-period terminology

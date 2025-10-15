@@ -51,13 +51,20 @@ export class AverageLine extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    // Re-measure if data or formatting changes
+    // Re-measure if data, formatting, or visibility changes
     if (
       prevProps.data !== this.props.data ||
       prevProps.dataFormatting !== this.props.dataFormatting ||
-      prevProps.numberColumnIndex !== this.props.numberColumnIndex
+      prevProps.numberColumnIndex !== this.props.numberColumnIndex ||
+      prevProps.visibleSeriesIndices !== this.props.visibleSeriesIndices ||
+      prevProps.stringColumnIndex !== this.props.stringColumnIndex ||
+      prevProps.columns !== this.props.columns ||
+      prevProps.isVisible !== this.props.isVisible
     ) {
-      this.updateTextBBox()
+      // Use setTimeout to ensure DOM is updated before measuring
+      setTimeout(() => {
+        this.updateTextBBox()
+      }, 0)
     }
   }
 
@@ -209,6 +216,7 @@ export class AverageLine extends React.Component {
       element: averageValue,
       column: columnForFormatting,
       config: dataFormatting,
+      isChart: true,
     })
 
     // Convert the average value to coordinate using the correct scale
