@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { formatElement, getThemeValue } from 'autoql-fe-utils'
+import { formatElement, getThemeValue, getChartColorVars } from 'autoql-fe-utils'
 import './RegressionLine.scss'
 
 export class RegressionLine extends React.Component {
