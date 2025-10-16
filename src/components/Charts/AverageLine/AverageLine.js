@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { mean } from 'd3-array'
-import { DisplayTypes, formatElement } from 'autoql-fe-utils'
+import { DisplayTypes, formatElement, getChartColorVars } from 'autoql-fe-utils'
 import './AverageLine.scss'
 
 export class AverageLine extends React.Component {
@@ -22,6 +22,7 @@ export class AverageLine extends React.Component {
     chartTooltipID: PropTypes.string,
     chartType: PropTypes.string,
     numberColumnIndex2: PropTypes.number,
+    colorScale: PropTypes.func,
   }
 
   static defaultProps = {
@@ -153,6 +154,46 @@ export class AverageLine extends React.Component {
     return mean(allValues)
   }
 
+  calculateIndividualSeriesAverage = (columnIndex) => {
+    const { data, columns, chartType, numberColumnIndex2 } = this.props
+
+    if (!data?.length || !columns?.[columnIndex]) {
+      return null
+    }
+
+    // For scatterplots, calculate average of Y-values (second number column)
+    if (chartType === 'scatterplot') {
+      const yValues = data
+        .map((row) => {
+          const value = row[numberColumnIndex2] // Y-axis column for scatterplot
+          const numValue = typeof value === 'string' ? parseFloat(value) : value
+          return isNaN(numValue) ? null : numValue
+        })
+        .filter((value) => value !== null && value !== undefined)
+
+      if (yValues.length === 0) {
+        return null
+      }
+
+      return mean(yValues)
+    }
+
+    // For regular charts, calculate average for this specific series
+    const columnValues = data
+      .map((row) => {
+        const value = row[columnIndex]
+        const numValue = typeof value === 'string' ? parseFloat(value) : value
+        return isNaN(numValue) ? null : numValue
+      })
+      .filter((value) => value !== null && value !== undefined)
+
+    if (columnValues.length === 0) {
+      return null
+    }
+
+    return mean(columnValues)
+  }
+
   hasMixedColumnTypes = () => {
     const { columns, visibleSeriesIndices } = this.props
 
@@ -165,6 +206,249 @@ export class AverageLine extends React.Component {
 
     // Check if there are multiple different types
     return new Set(columnTypes).size > 1
+  }
+
+  renderIndividualAverageLines = () => {
+    const {
+      visibleSeriesIndices,
+      columns,
+      data,
+      xScale,
+      yScale,
+      width,
+      height,
+      dataFormatting,
+      numberColumnIndex,
+      numberColumnIndex2,
+      chartType,
+      strokeWidth,
+      strokeDasharray,
+      chartTooltipID,
+    } = this.props
+
+    if (!visibleSeriesIndices?.length || visibleSeriesIndices.length <= 1) {
+      return null
+    }
+
+    // Only show labels if there are 5 or fewer series to avoid clutter
+    const shouldShowLabels = visibleSeriesIndices.length <= 5
+
+    // First, collect all series data
+    const seriesData = visibleSeriesIndices
+      .map((columnIndex, seriesIndex) => {
+        const averageValue = this.calculateIndividualSeriesAverage(columnIndex)
+
+        if (averageValue === null || averageValue === undefined) {
+          return null
+        }
+
+        // Get series color using the same logic as bars (colorScale with columnIndex)
+        let seriesColor = '#666666' // Default fallback
+
+        if (this.props.colorScale) {
+          seriesColor = this.props.colorScale(columnIndex)
+        } else {
+          // Fallback to chart colors if colorScale is not available
+          const { chartColors } = getChartColorVars()
+          seriesColor = chartColors[seriesIndex % chartColors.length] || '#666666'
+        }
+
+        // For scatterplots, use the Y-column for formatting; for other charts, use the main number column
+        const columnForFormatting = chartType === 'scatterplot' ? columns[numberColumnIndex2] : columns[columnIndex]
+
+        // Format the average value with proper units
+        const formattedAverage = formatElement({
+          element: averageValue,
+          column: columnForFormatting,
+          config: dataFormatting,
+        })
+
+        // Convert the average value to coordinate using the correct scale
+        const position = this.isBarChart() ? xScale(averageValue) : yScale(averageValue)
+
+        // Check if the position is valid and within chart bounds
+        const maxBound = this.isBarChart() ? width : height
+        if (isNaN(position) || position < 0 || position > maxBound) {
+          return null
+        }
+
+        // Create tooltip content
+        const tooltipContent = `Average (${
+          columns[columnIndex]?.name || `Series ${seriesIndex + 1}`
+        }): ${formattedAverage}`
+
+        // Determine text position - different logic for bar charts vs column charts
+        let textX, textY
+        if (this.isBarChart()) {
+          // For bar charts (vertical line), position text horizontally
+          const isNearLeft = position < 50
+          textX = isNearLeft ? position + 10 : position - 10
+          // Spread labels vertically for multiple series
+          const labelSpacing = Math.max(30, height / Math.max(2, visibleSeriesIndices.length))
+          textY = 30 + seriesIndex * labelSpacing
+        } else {
+          // For column charts (horizontal line), position text vertically
+          const isNearTop = position < 20
+          // Spread labels horizontally for multiple series
+          const labelSpacing = Math.max(80, width / Math.max(2, visibleSeriesIndices.length))
+          textX = width - 10 - seriesIndex * labelSpacing
+          textY = isNearTop ? position + 15 : position - 5
+        }
+
+        const lineProps = {
+          x1: this.isBarChart() ? position : 0,
+          y1: this.isBarChart() ? 0 : position,
+          x2: this.isBarChart() ? position : width,
+          y2: this.isBarChart() ? height : position,
+        }
+
+        const hoverAreaProps = {
+          x1: this.isBarChart() ? position - 5 : 0,
+          y1: this.isBarChart() ? 0 : position - 5,
+          x2: this.isBarChart() ? position + 5 : width,
+          y2: this.isBarChart() ? height : position + 5,
+        }
+
+        const { textBBox } = this.state
+        const padding = 4 // Padding inside the rect around the text
+
+        // Calculate rect dimensions based on actual text bounding box if available
+        let rectX, rectY, rectWidth, rectHeight
+        if (textBBox && shouldShowLabels) {
+          // Use width and height from bbox, but add extra padding to ensure proper spacing
+          rectWidth = textBBox.width + padding * 3 // Extra padding for better visual spacing
+          rectHeight = textBBox.height + padding * 2
+
+          // Text anchor is "middle" for bar charts, "end" for column charts
+          if (this.isBarChart()) {
+            // textAnchor="middle" - center the rect on textX
+            rectX = textX - rectWidth / 2
+          } else {
+            // textAnchor="end" - align rect to end at textX, but account for extra padding
+            rectX = textX - rectWidth + padding // Add padding to the right side
+          }
+
+          // Y position: text baseline is at textY
+          // For typical fonts, about 75% of the height is above the baseline, 25% below (for descenders)
+          // To center the rect on the visual text, we position it slightly above the baseline
+          rectY = textY - textBBox.height * 0.75 - padding
+        } else {
+          // Fallback to estimated dimensions if bbox not yet available or labels hidden
+          rectX = this.isBarChart()
+            ? textX - Math.max(35, formattedAverage.length * 4)
+            : textX - Math.max(70, formattedAverage.length * 8)
+          rectY = textY - 12
+          rectWidth = this.isBarChart()
+            ? Math.max(70, formattedAverage.length * 8)
+            : Math.max(70, formattedAverage.length * 8) + 8
+          rectHeight = 16
+        }
+
+        return {
+          columnIndex,
+          seriesIndex,
+          seriesColor,
+          formattedAverage,
+          tooltipContent,
+          textX,
+          textY,
+          lineProps,
+          hoverAreaProps,
+          rectX,
+          rectY,
+          rectWidth,
+          rectHeight,
+        }
+      })
+      .filter(Boolean) // Remove null entries
+
+    return (
+      <g className='individual-average-lines-container' style={{ outline: 'none' }}>
+        {/* First render all lines */}
+        {seriesData.map(({ columnIndex, seriesColor, lineProps, hoverAreaProps, tooltipContent }) => (
+          <g key={`avg-line-${columnIndex}`} className='individual-average-line-container' style={{ outline: 'none' }}>
+            {/* Invisible hover area with 5px buffer */}
+            <line
+              {...hoverAreaProps}
+              stroke='transparent'
+              strokeWidth={10}
+              className='average-line-hover-area'
+              data-tooltip-content={tooltipContent}
+              data-tooltip-id={chartTooltipID}
+              style={{ cursor: 'default', outline: 'none' }}
+            />
+
+            {/* Visible average line */}
+            <line
+              {...lineProps}
+              stroke={seriesColor}
+              strokeWidth={strokeWidth}
+              strokeDasharray={strokeDasharray}
+              className='average-line'
+              style={{ outline: 'none' }}
+            />
+          </g>
+        ))}
+
+        {/* Then render all labels on top */}
+        {shouldShowLabels &&
+          seriesData.map(
+            ({
+              columnIndex,
+              seriesColor,
+              formattedAverage,
+              tooltipContent,
+              textX,
+              textY,
+              rectX,
+              rectY,
+              rectWidth,
+              rectHeight,
+            }) => (
+              <g
+                key={`avg-label-${columnIndex}`}
+                className='individual-average-label-container'
+                style={{ outline: 'none' }}
+              >
+                {/* Text background rectangle */}
+                <rect
+                  x={rectX}
+                  y={rectY}
+                  width={rectWidth}
+                  height={rectHeight}
+                  fillOpacity='0.85'
+                  stroke={seriesColor}
+                  strokeWidth='1'
+                  rx='3'
+                  className='average-line-text-bg'
+                  style={{ outline: 'none' }}
+                />
+
+                {/* Text label */}
+                <text
+                  ref={this.textRef}
+                  x={textX}
+                  y={textY}
+                  fontSize='11'
+                  fontWeight='bold'
+                  fill={seriesColor}
+                  stroke='var(--react-autoql-background-color)'
+                  strokeWidth='3'
+                  strokeLinejoin='round'
+                  strokeLinecap='round'
+                  textAnchor={this.isBarChart() ? 'middle' : 'end'}
+                  className='average-line-label'
+                  data-tooltip-content={tooltipContent}
+                  data-tooltip-id={chartTooltipID}
+                  style={{ outline: 'none' }}
+                >
+                  Avg: {formattedAverage}
+                </text>
+              </g>
+            ),
+          )}
+      </g>
+    )
   }
 
   render = () => {
@@ -182,12 +466,22 @@ export class AverageLine extends React.Component {
       numberColumnIndex,
       numberColumnIndex2,
       chartType,
+      visibleSeriesIndices,
     } = this.props
 
     if (!isVisible || this.hasMixedColumnTypes()) {
       return null
     }
 
+    // Check if we should render individual series averages or single average
+    const isMultiSeries = visibleSeriesIndices?.length > 1
+
+    if (isMultiSeries) {
+      // Render individual average lines for each series
+      return this.renderIndividualAverageLines()
+    }
+
+    // Single series - render the traditional single average line
     const averageValue = this.calculateAverage()
 
     if (averageValue === null || averageValue === undefined) {
