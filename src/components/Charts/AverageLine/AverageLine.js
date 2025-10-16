@@ -233,6 +233,26 @@ export class AverageLine extends React.Component {
     // Only show labels if there are 5 or fewer series to avoid clutter
     const shouldShowLabels = visibleSeriesIndices.length <= 5
 
+    // Calculate dynamic font size based on number of series and chart size
+    const getFontSize = () => {
+      const baseFontSize = 11
+      const seriesCount = visibleSeriesIndices.length
+
+      // Consider chart size - smaller charts need smaller fonts
+      const chartArea = width * height
+      const isSmallChart = chartArea < 200000 // Less than ~447x447 pixels
+
+      // Reduce font size for multiple series to prevent overlap (but keep minimum readable)
+      if (seriesCount >= 4) return isSmallChart ? 9 : 10
+      if (seriesCount >= 3) return isSmallChart ? 10 : 11
+      if (seriesCount >= 2) return isSmallChart ? 10.5 : 11
+
+      // Single series - still consider chart size
+      return isSmallChart ? 10.5 : baseFontSize
+    }
+
+    const fontSize = getFontSize()
+
     // First, collect all series data
     const seriesData = visibleSeriesIndices
       .map((columnIndex, seriesIndex) => {
@@ -286,6 +306,9 @@ export class AverageLine extends React.Component {
           // Spread labels vertically for multiple series
           const labelSpacing = Math.max(30, height / Math.max(2, visibleSeriesIndices.length))
           textY = 30 + seriesIndex * labelSpacing
+
+          // Clamp Y position to stay within chart bounds
+          textY = Math.max(20, Math.min(textY, height - 20))
         } else {
           // For column charts (horizontal line), position text vertically
           const isNearTop = position < 20
@@ -293,6 +316,9 @@ export class AverageLine extends React.Component {
           const labelSpacing = Math.max(80, width / Math.max(2, visibleSeriesIndices.length))
           textX = width - 10 - seriesIndex * labelSpacing
           textY = isNearTop ? position + 15 : position - 5
+
+          // Clamp X position to stay within chart bounds
+          textX = Math.max(50, Math.min(textX, width - 50))
         }
 
         const lineProps = {
@@ -343,6 +369,21 @@ export class AverageLine extends React.Component {
             : Math.max(70, formattedAverage.length * 8) + 8
           rectHeight = 16
         }
+
+        // Clamp rectangle bounds to stay within chart area
+        rectX = Math.max(5, Math.min(rectX, width - rectWidth - 5))
+        rectY = Math.max(5, Math.min(rectY, height - rectHeight - 5))
+
+        // Adjust text position to align with clamped rectangle
+        if (this.isBarChart()) {
+          // For bar charts, text is centered horizontally on the rectangle
+          textX = rectX + rectWidth / 2
+        } else {
+          // For column charts, text is aligned to the end of the rectangle
+          textX = rectX + rectWidth - padding
+        }
+        // Text Y position is based on the rectangle center
+        textY = rectY + rectHeight / 2 + (textBBox ? textBBox.height * 0.25 : 4)
 
         return {
           columnIndex,
@@ -429,7 +470,7 @@ export class AverageLine extends React.Component {
                   ref={this.textRef}
                   x={textX}
                   y={textY}
-                  fontSize='11'
+                  fontSize={fontSize}
                   fontWeight='bold'
                   fill={seriesColor}
                   stroke='var(--react-autoql-background-color)'
@@ -481,6 +522,17 @@ export class AverageLine extends React.Component {
       return this.renderIndividualAverageLines()
     }
 
+    // Calculate dynamic font size for single series based on chart size
+    const getSingleSeriesFontSize = () => {
+      const baseFontSize = 11
+      const chartArea = width * height
+      const isSmallChart = chartArea < 200000 // Less than ~447x447 pixels
+
+      return isSmallChart ? 10.5 : baseFontSize
+    }
+
+    const fontSize = getSingleSeriesFontSize()
+
     // Single series - render the traditional single average line
     const averageValue = this.calculateAverage()
 
@@ -518,11 +570,17 @@ export class AverageLine extends React.Component {
       const isNearLeft = position < 50
       textX = isNearLeft ? position + 10 : position - 10
       textY = height / 2
+
+      // Clamp Y position to stay within chart bounds
+      textY = Math.max(20, Math.min(textY, height - 20))
     } else {
       // For column charts (horizontal line), position text vertically
       const isNearTop = position < 20
       textX = width - 10
       textY = isNearTop ? position + 15 : position - 5
+
+      // Clamp X position to stay within chart bounds
+      textX = Math.max(50, Math.min(textX, width - 50))
     }
 
     const lineProps = {
@@ -574,6 +632,21 @@ export class AverageLine extends React.Component {
       rectHeight = 16
     }
 
+    // Clamp rectangle bounds to stay within chart area
+    rectX = Math.max(5, Math.min(rectX, width - rectWidth - 5))
+    rectY = Math.max(5, Math.min(rectY, height - rectHeight - 5))
+
+    // Adjust text position to align with clamped rectangle
+    if (this.isBarChart()) {
+      // For bar charts, text is centered horizontally on the rectangle
+      textX = rectX + rectWidth / 2
+    } else {
+      // For column charts, text is aligned to the end of the rectangle
+      textX = rectX + rectWidth - padding
+    }
+    // Text Y position is based on the rectangle center
+    textY = rectY + rectHeight / 2 + (textBBox ? textBBox.height * 0.25 : 4)
+
     return (
       <g className='average-line-container' style={{ outline: 'none' }}>
         {/* Invisible hover area with 5px buffer */}
@@ -616,7 +689,7 @@ export class AverageLine extends React.Component {
           ref={this.textRef}
           x={textX}
           y={textY}
-          fontSize='11'
+          fontSize={fontSize}
           fontWeight='bold'
           fill={color}
           stroke='var(--react-autoql-background-color)'

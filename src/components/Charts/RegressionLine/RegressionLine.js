@@ -269,13 +269,25 @@ export class RegressionLine extends React.Component {
   }
 
   renderCombinedTrendLine = () => {
-    const { xScale, yScale, width, height, strokeWidth, strokeDasharray, dataFormatting } = this.props
+    const { xScale, yScale, width, height, strokeWidth, strokeDasharray, dataFormatting, visibleSeriesIndices } =
+      this.props
 
     const regression = this.calculateLinearRegression()
 
     if (!regression) {
       return null
     }
+
+    // Calculate dynamic font size for combined trend line based on chart size
+    const getCombinedFontSize = () => {
+      const baseFontSize = 11
+      const chartArea = width * height
+      const isSmallChart = chartArea < 200000 // Less than ~447x447 pixels
+
+      return isSmallChart ? 11 : baseFontSize
+    }
+
+    const fontSize = getCombinedFontSize()
 
     // Convert regression points to SVG coordinates
     // For bar charts, center the line through the middle of the bars
@@ -466,7 +478,7 @@ export class RegressionLine extends React.Component {
           ref={this.textRef}
           x={midX}
           y={textY}
-          fontSize='11'
+          fontSize={fontSize}
           fontWeight='bold'
           fill={trendColor}
           stroke='var(--react-autoql-background-color)'
@@ -511,6 +523,29 @@ export class RegressionLine extends React.Component {
     }
 
     const stringColumnIndex = this.props.stringColumnIndex || 0
+
+    // Only show labels if there are 5 or fewer series to avoid clutter
+    const shouldShowLabels = visibleSeriesIndices.length <= 5
+
+    // Calculate dynamic font size based on number of series and chart size
+    const getFontSize = () => {
+      const baseFontSize = 10
+      const seriesCount = visibleSeriesIndices.length
+
+      // Consider chart size - smaller charts need smaller fonts
+      const chartArea = width * height
+      const isSmallChart = chartArea < 200000 // Less than ~447x447 pixels
+
+      // Reduce font size for multiple series to prevent overlap (but keep minimum readable)
+      if (seriesCount >= 4) return isSmallChart ? 9 : 10
+      if (seriesCount >= 3) return isSmallChart ? 10 : 11
+      if (seriesCount >= 2) return isSmallChart ? 10.5 : 11
+
+      // Single series - still consider chart size
+      return isSmallChart ? 10.5 : baseFontSize
+    }
+
+    const fontSize = getFontSize()
 
     return (
       <g className='individual-regression-lines-container' style={{ outline: 'none' }}>
@@ -767,7 +802,7 @@ export class RegressionLine extends React.Component {
                     ref={(ref) => (this.individualTextRefs[refKey] = ref)}
                     x={clampedTextX}
                     y={textY}
-                    fontSize='10'
+                    fontSize={fontSize}
                     fontWeight='bold'
                     fill={seriesColor}
                     stroke='var(--react-autoql-background-color)'
