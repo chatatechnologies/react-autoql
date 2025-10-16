@@ -1272,11 +1272,15 @@ export class DashboardTile extends React.Component {
         onPageSizeChange: this.onPageSizeChange,
         onBucketSizeChange: this.onBucketSizeChange,
         bucketSize: this.props.tile.bucketSize,
-        initialFormattedTableParams: {
-          filters: this.props.tile?.tableFilters,
-          sorters: this.props.tile?.orders,
-          sessionFilters: this.props.tile?.filters,
-        },
+        initialFormattedTableParams: (() => {
+          const feReqFilters = this.props.tile?.queryResponse?.data?.data?.fe_req?.filters
+          const filtersToUse = feReqFilters?.length > 0 ? feReqFilters : this.props.tile?.tableFilters
+          return {
+            filters: filtersToUse,
+            sorters: this.props.tile?.orders,
+            sessionFilters: this.props.tile?.filters,
+          }
+        })(),
         enableChartControls: true,
         initialChartControls: this.props.tile?.chartControls || {
           showAverageLine: false,
@@ -1363,11 +1367,17 @@ export class DashboardTile extends React.Component {
         onBucketSizeChange: this.onSecondBucketSizeChange,
         onColumnChange: this.onSecondColumnChange,
         bucketSize: this.props.tile.secondBucketSize,
-        initialFormattedTableParams: {
-          filters: this.props.tile?.secondTableFilters,
-          sorters: this.props.tile?.secondOrders,
-          sessionFilters: this.props.tile?.secondFilters,
-        },
+        initialFormattedTableParams: (() => {
+          const queryResponse = this.props.tile?.secondQueryResponse || this.props.tile?.queryResponse
+          const feReqFilters = queryResponse?.data?.data?.fe_req?.filters
+          const filtersToUse = feReqFilters?.length > 0 ? feReqFilters : this.props.tile?.secondTableFilters
+
+          return {
+            filters: filtersToUse,
+            sorters: this.props.tile?.secondOrders,
+            sessionFilters: this.props.tile?.secondFilters,
+          }
+        })(),
         enableChartControls: true,
         initialChartControls: this.props.tile?.secondChartControls || {
           showAverageLine: false,
