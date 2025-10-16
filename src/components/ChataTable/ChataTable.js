@@ -1167,6 +1167,27 @@ export default class ChataTable extends React.Component {
     this.setState({ contextMenuColumn: undefined, isCustomColumnPopoverOpen: true, activeCustomColumn: column })
   }
 
+  isColumnFrozen = (column) => {
+    const columns = this.ref?.tabulator?.getColumns()
+    const targetColumn = columns?.find((col) => col.getField() === column.field)
+    return targetColumn?.getDefinition()?.frozen === true
+  }
+
+  onFreezeColumnClick = (column) => {
+    this.setState({ contextMenuColumn: undefined })
+    const columns = this.ref?.tabulator?.getColumns()
+    const targetColumn = columns?.find((col) => col.getField() === column.field)
+
+    if (targetColumn) {
+      const isCurrentlyFrozen = this.isColumnFrozen(column)
+      targetColumn.updateDefinition({ frozen: !isCurrentlyFrozen })
+      // Re-attach event listeners after DOM recreation
+      setTimeout(() => {
+        this.setHeaderInputEventListeners()
+      }, 0)
+    }
+  }
+
   onRemoveColumnClick = () => {
     const column = _cloneDeep(this.state.contextMenuColumn)
 
@@ -1350,6 +1371,10 @@ export default class ChataTable extends React.Component {
         content={
           <div className='more-options-menu' data-test='react-autoql-toolbar-more-options'>
             <ul className='context-menu-list'>
+              <li onClick={() => this.onFreezeColumnClick(this.state.contextMenuColumn)}>
+                <Icon type={this.isColumnFrozen(this.state.contextMenuColumn) ? 'unlock' : 'lock'} />
+                {this.isColumnFrozen(this.state.contextMenuColumn) ? 'Unfreeze Column' : 'Freeze Column'}
+              </li>
               {!!this.state.contextMenuColumn?.custom && !this.state.contextMenuColumn?.has_window_func && (
                 <li onClick={() => this.onUpdateColumnConfirm()}>
                   <Icon type='edit' />
