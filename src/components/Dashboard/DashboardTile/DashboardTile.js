@@ -800,6 +800,8 @@ export class DashboardTile extends React.Component {
   onDisplayTypeChange = (displayType) => this.debouncedSetParamsForTile({ displayType })
   onBucketSizeChange = (bucketSize) => this.debouncedSetParamsForTile({ bucketSize })
 
+  onChartControlsChange = (chartControls) => this.debouncedSetParamsForTile({ chartControls })
+
   onTableParamsChange = (params, formattedParams) => {
     this.debouncedSetParamsForTile({
       tableFilters: formattedParams.filters,
@@ -829,6 +831,9 @@ export class DashboardTile extends React.Component {
   onSecondDisplayTypeChange = (secondDisplayType) => this.debouncedSetParamsForTile({ secondDisplayType })
   onSecondBucketSizeChange = (secondBucketSize) => this.debouncedSetParamsForTile({ secondBucketSize })
   onSecondCustomColumnUpdate = (secondCustomColumns) => this.debouncedSetParamsForTile({ secondCustomColumns })
+
+  onSecondChartControlsChange = (secondChartControls) => this.debouncedSetParamsForTile({ secondChartControls })
+
   onSecondColumnChange = (
     secondDisplayOverrides,
     secondColumns,
@@ -1276,6 +1281,12 @@ export class DashboardTile extends React.Component {
             sessionFilters: this.props.tile?.filters,
           }
         })(),
+        enableChartControls: true,
+        initialChartControls: this.props.tile?.chartControls || {
+          showAverageLine: false,
+          showRegressionLine: false,
+        },
+        onChartControlsChange: this.onChartControlsChange,
       },
       vizToolbarProps: {
         ref: (r) => (this.vizToolbarRef = r),
@@ -1367,6 +1378,12 @@ export class DashboardTile extends React.Component {
             sessionFilters: this.props.tile?.secondFilters,
           }
         })(),
+        enableChartControls: true,
+        initialChartControls: this.props.tile?.secondChartControls || {
+          showAverageLine: false,
+          showRegressionLine: false,
+        },
+        onChartControlsChange: this.onSecondChartControlsChange,
       },
       vizToolbarProps: {
         ref: (r) => (this.secondVizToolbarRef = r),

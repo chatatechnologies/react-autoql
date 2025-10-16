@@ -1,0 +1,38 @@
+// HTML button styles
+.average-line-toggle {
+  width: 60px;
+  height: 26px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--react-autoql-text-color-primary);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+
+  // Hover state
+  &:hover:not(.disabled) {
+    border-color: var(--react-autoql-accent-color);
+  }
+
+  // Enabled state (toggle is ON)
+  &.enabled {
+    border-color: var(--react-autoql-accent-color);
+    color: var(--react-autoql-accent-color);
+  }
+
+  // Disabled state
+  &.disabled {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.05);
+    color: var(--react-autoql-text-color-secondary);
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
