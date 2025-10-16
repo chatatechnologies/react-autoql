@@ -302,7 +302,6 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   executeCachedDashboard = () => {
-    console.log('executeCachedDashboard')
     try {
       const promises = []
       for (var dashboardTile in this.tileRefs) {
