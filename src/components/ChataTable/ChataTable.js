@@ -735,13 +735,9 @@ export default class ChataTable extends React.Component {
 
     let newRows
     if (props.pivot) {
-      if (this.tableParams?.filter?.length || this.tableParams?.sort?.length) {
-        const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows
-
-        newRows = sortedData?.slice(start, end) ?? []
-      } else {
-        newRows = props.data?.slice(start, end) ?? []
-      }
+      // For pivot tables, data is already filtered/sorted in QueryOutput.generatePivotTableData
+      // Do not re-apply filters or sorting here to avoid empty results
+      newRows = props.data?.slice(start, end) ?? []
     } else if (!this.useInfiniteScroll) {
       const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows
 
