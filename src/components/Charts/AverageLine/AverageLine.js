@@ -253,6 +253,9 @@ export class AverageLine extends React.Component {
 
     const fontSize = getFontSize()
 
+    // Collect all labels to render at the end
+    const labelElements = []
+
     // First, collect all series data
     const seriesData = visibleSeriesIndices
       .map((columnIndex, seriesIndex) => {
@@ -403,6 +406,67 @@ export class AverageLine extends React.Component {
       })
       .filter(Boolean) // Remove null entries
 
+    // Collect labels during the first map iteration
+    seriesData.forEach(
+      ({
+        columnIndex,
+        seriesColor,
+        formattedAverage,
+        tooltipContent,
+        textX,
+        textY,
+        rectX,
+        rectY,
+        rectWidth,
+        rectHeight,
+      }) => {
+        if (shouldShowLabels) {
+          labelElements.push(
+            <g
+              key={`avg-label-${columnIndex}`}
+              className='individual-average-label-container'
+              style={{ outline: 'none' }}
+            >
+              {/* Text background rectangle */}
+              <rect
+                x={rectX}
+                y={rectY}
+                width={rectWidth}
+                height={rectHeight}
+                fillOpacity='0.85'
+                stroke={seriesColor}
+                strokeWidth='1'
+                rx='3'
+                className='average-line-text-bg'
+                style={{ outline: 'none' }}
+              />
+
+              {/* Text label */}
+              <text
+                ref={this.textRef}
+                x={textX}
+                y={textY}
+                fontSize={fontSize}
+                fontWeight='bold'
+                fill={seriesColor}
+                stroke='var(--react-autoql-background-color)'
+                strokeWidth='3'
+                strokeLinejoin='round'
+                strokeLinecap='round'
+                textAnchor={this.isBarChart() ? 'middle' : 'end'}
+                className='average-line-label'
+                data-tooltip-content={tooltipContent}
+                data-tooltip-id={chartTooltipID}
+                style={{ outline: 'none' }}
+              >
+                Avg: {formattedAverage}
+              </text>
+            </g>,
+          )
+        }
+      },
+    )
+
     return (
       <g className='individual-average-lines-container' style={{ outline: 'none' }}>
         {/* First render all lines */}
@@ -431,63 +495,8 @@ export class AverageLine extends React.Component {
           </g>
         ))}
 
-        {/* Then render all labels on top */}
-        {shouldShowLabels &&
-          seriesData.map(
-            ({
-              columnIndex,
-              seriesColor,
-              formattedAverage,
-              tooltipContent,
-              textX,
-              textY,
-              rectX,
-              rectY,
-              rectWidth,
-              rectHeight,
-            }) => (
-              <g
-                key={`avg-label-${columnIndex}`}
-                className='individual-average-label-container'
-                style={{ outline: 'none' }}
-              >
-                {/* Text background rectangle */}
-                <rect
-                  x={rectX}
-                  y={rectY}
-                  width={rectWidth}
-                  height={rectHeight}
-                  fillOpacity='0.85'
-                  stroke={seriesColor}
-                  strokeWidth='1'
-                  rx='3'
-                  className='average-line-text-bg'
-                  style={{ outline: 'none' }}
-                />
-
-                {/* Text label */}
-                <text
-                  ref={this.textRef}
-                  x={textX}
-                  y={textY}
-                  fontSize={fontSize}
-                  fontWeight='bold'
-                  fill={seriesColor}
-                  stroke='var(--react-autoql-background-color)'
-                  strokeWidth='3'
-                  strokeLinejoin='round'
-                  strokeLinecap='round'
-                  textAnchor={this.isBarChart() ? 'middle' : 'end'}
-                  className='average-line-label'
-                  data-tooltip-content={tooltipContent}
-                  data-tooltip-id={chartTooltipID}
-                  style={{ outline: 'none' }}
-                >
-                  Avg: {formattedAverage}
-                </text>
-              </g>
-            ),
-          )}
+        {/* Render all labels on top */}
+        {labelElements}
       </g>
     )
   }
@@ -516,9 +525,10 @@ export class AverageLine extends React.Component {
 
     // Check if we should render individual series averages or single average
     const isMultiSeries = visibleSeriesIndices?.length > 1
+    const isStacked = chartType === 'stacked_column' || chartType === 'stacked_bar' || chartType === 'stacked_line'
 
-    if (isMultiSeries) {
-      // Render individual average lines for each series
+    if (isMultiSeries && !isStacked) {
+      // Render individual average lines for each series (but not for stacked charts)
       return this.renderIndividualAverageLines()
     }
 
