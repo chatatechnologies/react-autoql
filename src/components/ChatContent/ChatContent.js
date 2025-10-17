@@ -62,6 +62,7 @@ export default class ChatContent extends React.Component {
     scope: PropTypes.string,
     shouldRender: PropTypes.bool,
     hideChatBarAfterInitialResponse: PropTypes.bool,
+    executeQuery: PropTypes.func,
   }
 
   static defaultProps = {
@@ -74,6 +75,7 @@ export default class ChatContent extends React.Component {
     onRTValueLabelClick: undefined,
     shouldRender: true,
     hideChatBarAfterInitialResponse: false,
+    executeQuery: () => {},
   }
 
   componentDidMount = () => {
@@ -539,6 +541,7 @@ export default class ChatContent extends React.Component {
             isResizing={this.props.isResizing}
             shouldRender={this.props.shouldRender}
             tooltipID={this.props.tooltipID}
+            executeQuery={this.props.executeQuery}
           />
         </div>
       </ErrorBoundary>

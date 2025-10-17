@@ -28,7 +28,7 @@ import { Icon } from '../Icon'
 import { Cascader } from '../Cascader'
 import { SubjectName } from './SubjectName'
 import { LoadingDots } from '../LoadingDots'
-import { MultiSelect } from '../MultiSelect'
+import FieldSelector from '../FieldSelector'
 import { CustomScrollbars } from '../CustomScrollbars'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { QueryValidationMessage } from '../QueryValidationMessage'
@@ -437,58 +437,14 @@ export default class DataExplorer extends React.Component {
   renderFieldSelector = () => {
     const columns = this.state.dataPreview?.data?.data?.columns
 
-    if (!columns?.length) {
-      return null
-    }
-
-    let fieldsDropdownTitle = 'Select fields of interest'
-    if (this.state.selectedSubject?.type === DataExplorerTypes.VL_TYPE) {
-      if (!this.state.selectedTopic) {
-        return null
-      }
-
-      fieldsDropdownTitle = (
-        <span>
-          Select fields from <SubjectName subject={this.state.selectedTopic} />
-        </span>
-      )
-    }
-
     return (
-      <>
-        <span className='react-autoql-data-preview-selected-columns-selector'>
-          <MultiSelect
-            title='FIELDS'
-            size='small'
-            align='start'
-            popupClassname='react-autoql-sample-queries-filter-dropdown'
-            options={columns.map((col) => {
-              return {
-                value: col.name,
-                label: col.display_name,
-              }
-            })}
-            listTitle={fieldsDropdownTitle}
-            selected={this.state.selectedColumns.map((index) => columns[index]?.name)}
-            onChange={(selectedColumnNames) => {
-              const selectedColumnIndexes = selectedColumnNames.map((name) =>
-                columns.findIndex((col) => name === col.name),
-              )
-              this.setState({
-                selectedColumns: selectedColumnIndexes,
-              })
-            }}
-          />
-        </span>
-        {!!this.state.selectedColumns?.length && (
-          <span
-            className='react-autoql-data-preview-selected-columns-clear-btn'
-            onClick={() => this.setState({ selectedColumns: [] })}
-          >
-            CLEAR
-          </span>
-        )}
-      </>
+      <FieldSelector
+        columns={columns}
+        selectedColumns={this.state.selectedColumns}
+        onColumnsChange={(selectedColumns) => this.setState({ selectedColumns })}
+        selectedSubject={this.state.selectedSubject}
+        selectedTopic={this.state.selectedTopic}
+      />
     )
   }
 

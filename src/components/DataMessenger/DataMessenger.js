@@ -827,6 +827,12 @@ export class DataMessenger extends React.Component {
           introMessages={this.dataMessengerIntroMessages}
           inputPlaceholder={this.props.inputPlaceholder}
           autoChartAggregations={this.props.autoChartAggregations}
+          executeQuery={(queryRequestParams) => {
+            this.dataMessengerContentRef?.animateInputTextAndSubmit({
+              ...queryRequestParams,
+              source: ['query_suggestions'],
+            })
+          }}
           popoverParentElement={this.messengerDrawerRef}
           dataPageSize={this.props.dataPageSize}
           createDataAlertCallback={this.closeDataMessenger}

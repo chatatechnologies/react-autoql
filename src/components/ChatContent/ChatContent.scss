@@ -15,7 +15,7 @@
       position: absolute;
       height: 100%;
       width: 100%;
-      padding-bottom: 158px;
+      padding-bottom: 174px;
       background-color: var(--react-autoql-background-color-primary);
       overflow-x: hidden;
 
@@ -69,10 +69,10 @@
 .react-autoql-drawer .chat-bar-container {
   position: absolute;
   bottom: 0;
-  padding: 10px;
-  padding-top: 0;
+  padding: 0px;
   height: 92px;
   width: 100%;
+  overflow: visible;
 
   background: transparent;
 }
