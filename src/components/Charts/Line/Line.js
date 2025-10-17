@@ -74,8 +74,11 @@ export default class Line extends PureComponent {
           const xShift = xScale.tickSize / 2
           const x = xScale.getValue(d[stringColumnIndex]) + xShift
 
-          const minValue = yScale.domain()[0]
-          const y = yScale(value || minValue)
+          const y = yScale(value)
+
+          if (isNaN(y)) {
+            return
+          }
 
           const xy = [x, y]
           vertices.push(xy)
@@ -89,10 +92,6 @@ export default class Line extends PureComponent {
             dataFormatting,
             aggregated: this.props.isAggregated,
           })
-
-          if (isNaN(y)) {
-            return
-          }
 
           const key = getKey(colIndex, index)
 

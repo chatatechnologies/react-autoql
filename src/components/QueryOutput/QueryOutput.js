@@ -1004,7 +1004,10 @@ export class QueryOutput extends React.Component {
     }
 
     if (dataChanged && this._isMounted) {
-      this.setState({ visiblePivotRowChangeCount: this.state.visiblePivotRowChangeCount + 1 })
+      this.setState({
+        visiblePivotRowChangeCount: this.state.visiblePivotRowChangeCount + 1,
+        chartID: uuid(), // Force chart to re-render with new pivot data
+      })
     }
   }
 
