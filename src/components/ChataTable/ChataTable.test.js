@@ -398,4 +398,236 @@ describe('ChataTable', () => {
       }, 10)
     })
   })
+
+  describe('No Data with Initial Filters Scenario', () => {
+    const mockResponseWithNoData = {
+      data: {
+        data: {
+          rows: [], // No data
+          count_rows: 0,
+          query_id: 'test-query-empty',
+        },
+      },
+    }
+
+    const mockResponseWithData = {
+      data: {
+        data: {
+          rows: [
+            ['online', 'John'],
+            ['offline', 'Jane'],
+          ],
+          count_rows: 2,
+          query_id: 'test-query-data',
+        },
+      },
+    }
+
+    test('should return initial data on mount when there are no rows but initial filters exist', async () => {
+      const initialFilters = [{ field: '1', type: '=', value: 'online' }]
+
+      const props = {
+        response: mockResponseWithNoData,
+        initialTableParams: { filter: initialFilters },
+        queryFn: jest.fn(),
+      }
+
+      const wrapper = setup(props)
+      const instance = wrapper.instance()
+
+      // Mock the ajaxRequestFunc to track if it gets called
+      const ajaxRequestFuncSpy = jest.spyOn(instance, 'ajaxRequestFunc')
+
+      // Simulate the table mounting and initial data processing
+      instance.onDataProcessed([])
+
+      // Wait a bit to ensure any async operations complete
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
+      // ajaxRequestFunc should NOT be called immediately on mount
+      expect(ajaxRequestFuncSpy).not.toHaveBeenCalled()
+
+      // Initial data should be returned (empty rows)
+      const initialData = instance.getRows(props, 1)
+      expect(initialData).toEqual([])
+
+      // Filters should be preserved
+      expect(instance.tableParams.filter).toEqual(initialFilters)
+    })
+
+    test('should call ajaxRequestFunc when filter is cleared on table with no initial data', async () => {
+      const initialFilters = [{ field: '1', type: '=', value: 'online' }]
+
+      const props = {
+        response: mockResponseWithNoData,
+        initialTableParams: { filter: initialFilters },
+        queryFn: jest.fn().mockResolvedValue(mockResponseWithData),
+      }
+
+      const wrapper = setup(props)
+      const instance = wrapper.instance()
+
+      // Set up the component state to simulate it being mounted and initial data processed
+      instance.hasSetInitialData = true
+      instance._isMounted = true
+      instance._setInitialDataTime = Date.now() - 3000 // 3 seconds ago (not recent)
+      instance.state = { tabulatorMounted: true }
+
+      // Mock the ajaxRequestFunc
+      const ajaxRequestFuncSpy = jest.spyOn(instance, 'ajaxRequestFunc').mockImplementation(async (props, params) => {
+        // Simulate clearing filters (empty filter array)
+        const clearedFilters = []
+        const mockResponse = await props.queryFn({
+          tableFilters: clearedFilters,
+          orders: [],
+        })
+        return {
+          rows: mockResponse.data.data.rows,
+          page: 1,
+          last_page: 1,
+        }
+      })
+
+      // Simulate filter clearing by calling ajaxRequestFunc with empty filters
+      const clearFilterParams = {
+        page: 1,
+        filter: [], // Cleared filters
+        sort: [],
+      }
+
+      await instance.ajaxRequestFunc(props, clearFilterParams)
+
+      // ajaxRequestFunc should be called when filters are cleared
+      expect(ajaxRequestFuncSpy).toHaveBeenCalledWith(props, clearFilterParams)
+
+      // queryFn should be called to get unfiltered data
+      expect(props.queryFn).toHaveBeenCalledWith({
+        tableFilters: [],
+        orders: [],
+      })
+    })
+
+    test('should not call ajaxRequestFunc immediately after initial data is processed (timing protection)', async () => {
+      const initialFilters = [{ field: '1', type: '=', value: 'online' }]
+
+      const props = {
+        response: mockResponseWithNoData,
+        initialTableParams: { filter: initialFilters },
+        queryFn: jest.fn(),
+      }
+
+      const wrapper = setup(props)
+      const instance = wrapper.instance()
+
+      // Set up component state
+      instance.hasSetInitialData = false
+      instance._isMounted = true
+      instance.state = { tabulatorMounted: true }
+
+      const ajaxRequestFuncSpy = jest.spyOn(instance, 'ajaxRequestFunc')
+
+      // Simulate initial data processing
+      instance.onDataProcessed([])
+
+      // Verify _setInitialDataTime was set
+      expect(instance._setInitialDataTime).toBeDefined()
+
+      // Immediately try to call ajaxRequestFunc (should be blocked by timing protection)
+      const params = { page: 1, filter: [], sort: [] }
+      const result = await instance.ajaxRequestFunc(props, params)
+
+      // Should return initial data instead of making API call
+      expect(result.isInitialData).toBe(true)
+      expect(result.rows).toEqual([])
+
+      // ajaxRequestFunc should not have made an actual API call due to timing protection
+      expect(props.queryFn).not.toHaveBeenCalled()
+    })
+
+    test('should allow ajaxRequestFunc calls after timing protection period expires', async () => {
+      const initialFilters = [{ field: '1', type: '=', value: 'online' }]
+
+      const props = {
+        response: mockResponseWithNoData,
+        initialTableParams: { filter: initialFilters },
+        queryFn: jest.fn().mockResolvedValue(mockResponseWithData),
+        useInfiniteScroll: true, // Enable infinite scroll to use server-side queryFn
+      }
+
+      const wrapper = setup(props)
+      const instance = wrapper.instance()
+
+      // Set up component state to ensure ajaxRequestFunc will actually make the API call
+      instance.hasSetInitialData = true
+      instance._isMounted = true
+      instance.state = { tabulatorMounted: true }
+      instance._setFiltersTime = Date.now() - 2000 // Set to 2 seconds ago (not recent)
+
+      // Set _setInitialDataTime to 2 seconds ago (outside protection period of 1000ms)
+      instance._setInitialDataTime = Date.now() - 2000
+
+      // Try to call ajaxRequestFunc after protection period
+      const params = { page: 1, filter: [], sort: [] }
+
+      // Ensure all conditions are properly set to allow the API call
+      expect(instance.hasSetInitialData).toBe(true)
+      expect(instance._isMounted).toBe(true)
+      expect(instance.state.tabulatorMounted).toBe(true)
+
+      const result = await instance.ajaxRequestFunc(props, params)
+
+      // Should make the API call since protection period has expired
+      expect(props.queryFn).toHaveBeenCalled()
+
+      // Should return the API response, not initial data
+      expect(result.isInitialData).toBeFalsy()
+    })
+
+    test('should handle the complete flow: mount with no data + filters, then clear filters', async () => {
+      const initialFilters = [{ field: '1', type: '=', value: 'online' }]
+
+      const props = {
+        response: mockResponseWithNoData,
+        initialTableParams: { filter: initialFilters },
+        queryFn: jest.fn().mockResolvedValue(mockResponseWithData),
+        useInfiniteScroll: true, // Enable infinite scroll to use server-side queryFn
+      }
+
+      const wrapper = setup(props)
+      const instance = wrapper.instance()
+
+      // Step 1: Initial mount - should return empty data, no API call
+      instance.onDataProcessed([])
+
+      // Verify initial state
+      expect(instance.tableParams.filter).toEqual(initialFilters)
+      expect(instance.originalQueryData).toEqual([])
+
+      // Step 2: Simulate user clearing filters after protection period
+      instance.hasSetInitialData = true
+      instance._isMounted = true
+      instance._setInitialDataTime = Date.now() - 2000 // Outside protection period of 1000ms
+      instance._setFiltersTime = Date.now() - 2000 // Set to 2 seconds ago (not recent)
+      instance.state = { tabulatorMounted: true }
+
+      // Step 3: Clear filters (simulate user action)
+      const clearFilterParams = {
+        page: 1,
+        filter: [], // Cleared filters
+        sort: [],
+      }
+
+      const result = await instance.ajaxRequestFunc(props, clearFilterParams)
+
+      // Should have called queryFn to get unfiltered data
+      expect(props.queryFn).toHaveBeenCalledWith({
+        tableFilters: [],
+        orders: [],
+        cancelToken: expect.any(Object), // axios CancelToken
+      })
+
+      // Should return the unfiltered data
+      expect(result.rows).toEqual(mockResponseWithData.data.data.rows)
+    })
+  })
 })
