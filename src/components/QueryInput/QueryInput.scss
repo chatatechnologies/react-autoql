@@ -256,6 +256,21 @@
   min-width: 0; /* Allow flex item to shrink below content size */
 }
 
+.query-suggestions-buttons-label {
+  color: var(--react-autoql-text-color-primary);
+  opacity: 0.7;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+
+  .react-autoql-icon {
+    margin-right: 3px;
+    margin-top: 2px;
+  }
+}
+
 .query-suggestions-buttons::-webkit-scrollbar {
   height: 4px;
 }
@@ -350,7 +365,7 @@
 .query-suggestions-sample-list {
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
   min-height: 0; /* Allow flex item to shrink */
 
   /* Placeholder loading items */

@@ -140,6 +140,7 @@ export class DataMessenger extends React.Component {
     autoChartAggregations: PropTypes.bool,
     enableFilterLocking: PropTypes.bool,
     enableQueryQuickStartTopics: PropTypes.bool,
+    enableQueryInputTopics: PropTypes.bool,
 
     // Projects
     projectSelectList: PropTypes.arrayOf(
@@ -201,6 +202,7 @@ export class DataMessenger extends React.Component {
     autoChartAggregations: true,
     enableFilterLocking: false,
     enableQueryQuickStartTopics: true,
+    enableQueryInputTopics: true,
     enableDPRTab: false,
     mobileActivePage: 'data-messenger',
     setMobileActivePage: () => {},

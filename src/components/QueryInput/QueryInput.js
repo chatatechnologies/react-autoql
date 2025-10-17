@@ -815,6 +815,9 @@ class QueryInput extends React.Component {
 
               {/* <div className='query-suggestions-label'>Quick Topics:</div> */}
               <div className='query-suggestions-buttons'>
+                <span className='query-suggestions-buttons-label'>
+                  <Icon type='sparkles' /> Quick Topics:{' '}
+                </span>
                 {this.state.topics.map((topic, index) => (
                   <button
                     key={topic.context || index}
