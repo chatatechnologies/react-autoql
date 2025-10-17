@@ -24,7 +24,6 @@ import {
   getAutoQLConfig,
   parseJwt,
   fetchSubjectList,
-  DataExplorerTypes,
   fetchDataPreview,
 } from 'autoql-fe-utils'
 
@@ -88,6 +87,7 @@ class QueryInput extends React.Component {
     dataPageSize: PropTypes.number,
     shouldRender: PropTypes.bool,
     enableQuerySuggestions: PropTypes.bool,
+    enableQueryInputTopics: PropTypes.bool,
     columns: PropTypes.array,
     executeQuery: PropTypes.func,
   }
@@ -108,6 +108,7 @@ class QueryInput extends React.Component {
     queryFilters: undefined,
     clearQueryOnSubmit: true,
     enableQuerySuggestions: true,
+    enableQueryInputTopics: true,
     placeholder: 'Type your queries here',
     dataPageSize: undefined,
     shouldRender: true,
@@ -121,8 +122,10 @@ class QueryInput extends React.Component {
     document.addEventListener('keydown', this.onEscKeypress)
     document.addEventListener('mousedown', this.handleClickOutside)
 
-    // Fetch topics (enabled by default)
-    this.fetchTopics()
+    // Fetch topics if enabled
+    if (this.props.enableQueryInputTopics) {
+      this.fetchTopics()
+    }
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -773,7 +776,7 @@ class QueryInput extends React.Component {
       <ErrorBoundary>
         <div className='react-autoql-query-input-wrapper' ref={(ref) => (this.queryInputWrapperRef = ref)}>
           {/* Query Suggestions - Always visible buttons */}
-          {this.props.enableQuerySuggestions && this.state.topics.length > 0 && (
+          {this.props.enableQuerySuggestions && this.props.enableQueryInputTopics && this.state.topics.length > 0 && (
             <div className={`react-autoql-input-query-suggestions ${this.state.isExpanded ? 'expanded' : ''}`}>
               {/* Close button for expanded suggestions container */}
               {this.state.isExpanded && (

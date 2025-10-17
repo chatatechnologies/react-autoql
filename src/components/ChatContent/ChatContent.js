@@ -435,7 +435,9 @@ export default class ChatContent extends React.Component {
       <ErrorBoundary>
         <div
           ref={(r) => (this.chatContentRef = r)}
-          className={`chat-content-scroll-container ${this.props.shouldRender ? '' : 'react-autoql-content-hidden'}`}
+          className={`chat-content-scroll-container ${this.props.shouldRender ? '' : 'react-autoql-content-hidden'} ${
+            this.props.enableQueryInputTopics === false ? 'no-topics' : ''
+          }`}
           style={{ visibility: chatMessageVisibility, opacity: chatMessageOpacity }}
         >
           <CustomScrollbars
@@ -542,6 +544,7 @@ export default class ChatContent extends React.Component {
             shouldRender={this.props.shouldRender}
             tooltipID={this.props.tooltipID}
             executeQuery={this.props.executeQuery}
+            enableQueryInputTopics={this.props.enableQueryInputTopics}
           />
         </div>
       </ErrorBoundary>
