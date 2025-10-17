@@ -520,14 +520,12 @@ export class QueryOutput extends React.Component {
         this.updateToolbars()
       }, 0)
 
-      // Detect external changes to initialFormattedTableParams (e.g., dashboard tiles updating filters)
       if (!_isEqual(prevProps.initialFormattedTableParams, this.props.initialFormattedTableParams)) {
         this.formattedTableParams = {
           filters: this.props?.initialFormattedTableParams?.filters || [],
           sorters: this.props?.initialFormattedTableParams?.sorters || [],
         }
 
-        // If currently supporting pivot, regenerate to apply new filters
         if (this.shouldGeneratePivotData()) {
           shouldRegeneratePivot = true
         }
@@ -1571,12 +1569,10 @@ export class QueryOutput extends React.Component {
 
     this.props.onTableParamsChange?.(this.tableParams, this.formattedTableParams)
 
-    // Regenerate pivot data when table params change (filters/sorters)
     if (this.shouldGeneratePivotData()) {
       this.generatePivotData()
     }
 
-    // This will update the filter badge in OptionsToolbar
     setTimeout(() => {
       this.updateToolbars()
     }, 0)
@@ -2586,12 +2582,23 @@ export class QueryOutput extends React.Component {
         })
       }
 
-      let uniqueRowHeaders = sortDataByDate(tableData, columns, 'desc', 'isTable')
+      const hasUserSort = this.formattedTableParams?.sorters?.length > 0
+      if (hasUserSort) {
+        const sortColumnIndex = columns.find((col) => col.id === this.formattedTableParams.sorters[0]?.id)?.index
+        const sortDirection = this.formattedTableParams.sorters[0]?.sort === 'DESC' ? 'desc' : 'asc'
+        if (sortColumnIndex !== undefined) {
+          tableData = sortDataByColumn(tableData, columns, sortColumnIndex, sortDirection)
+        }
+      }
+
+      const sortedData = hasUserSort ? tableData : sortDataByDate(tableData, columns, 'desc', 'isTable')
+
+      let uniqueRowHeaders = sortedData
         .map((d) => d[effectiveStringIndex])
         .filter((v) => v !== null && v !== undefined)
         .filter(onlyUnique)
 
-      let uniqueColumnHeaders = sortDataByDate(tableData, columns, 'desc', 'isTable')
+      let uniqueColumnHeaders = sortedData
         .map((d) => d[legendColumnIndex])
         .filter((v) => v !== null && v !== undefined)
         .filter(onlyUnique)
@@ -2688,7 +2695,7 @@ export class QueryOutput extends React.Component {
 
       const pivotTableData = makeEmptyArray(uniqueColumnHeaders.length + 1, uniqueRowHeaders.length)
 
-      tableData.forEach((row) => {
+      sortedData.forEach((row) => {
         const pivotRowIndex = uniqueRowHeadersObj[row[newStringColumnIndex]]
         const pivotRowHeaderValue = row[newStringColumnIndex]
         if (!pivotRowHeaderValue || !pivotTableData[pivotRowIndex]) {
@@ -3016,6 +3023,7 @@ export class QueryOutput extends React.Component {
           source={this.props.source}
           scope={this.props.scope}
           tooltipID={this.props.tooltipID}
+          queryFn={this.queryFn}
           response={this.queryResponse}
           pivotTableRowsLimited={this.pivotTableRowsLimited}
           pivotTableColumnsLimited={this.pivotTableColumnsLimited}

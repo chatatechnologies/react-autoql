@@ -83,10 +83,18 @@ export default class ChataTable extends React.Component {
       page: 1,
     }
 
+    let initialSort = undefined
+    if (props.pivot && props.initialTableParams?.sort?.length) {
+      initialSort = props.initialTableParams.sort.map((sorter) => ({
+        field: sorter.field,
+        dir: sorter.dir,
+      }))
+    }
+
     this.tableOptions = {
       selectableRowsCheck: () => false,
       movableColumns: true,
-      initialSort: undefined, // Let getRows do initial sorting and filtering
+      initialSort,
       initialFilter: undefined, // Let getRows do initial sorting and filtering
       progressiveLoadScrollMargin: 50, // Trigger next ajax load when scroll bar is 800px or less from the bottom of the table.
       // renderHorizontal: 'virtual', // v4: virtualDomHoz = false
@@ -109,7 +117,7 @@ export default class ChataTable extends React.Component {
       this.tableOptions.paginationMode = LOCAL_OR_REMOTE.REMOTE
       this.tableOptions.paginationSize = this.pageSize
       this.tableOptions.paginationInitialPage = 1
-      this.tableOptions.progressiveLoad = 'scroll' // v4: ajaxProgressiveLoad
+      this.tableOptions.progressiveLoad = 'scroll'
       this.tableOptions.ajaxURL = 'https://required-placeholder-url.com'
       this.tableOptions.ajaxRequesting = (url, params) => this.ajaxRequesting(props, params)
       this.tableOptions.ajaxRequestFunc = (url, config, params) => this.ajaxRequestFunc(props, params)
@@ -294,7 +302,6 @@ export default class ChataTable extends React.Component {
     if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
       this.tableParams.filter = this.props?.initialTableParams?.filter
       this.setFilters(this.props?.initialTableParams?.filter)
-      this.setSorters(this.props?.initialTableParams?.sort)
       this.setHeaderInputEventListeners()
       if (!this.props.hidden) {
         this.setTableHeight()
@@ -480,6 +487,9 @@ export default class ChataTable extends React.Component {
   }
 
   onDataSorted = (sorters, rows) => {
+    if (Array.isArray(sorters)) {
+      this.tableParams.sort = sorters.map((s) => ({ field: s.field, dir: s.dir }))
+    }
     if (this.isSorting) {
       this.isSorting = false
       this.setLoading(false)
@@ -504,7 +514,7 @@ export default class ChataTable extends React.Component {
     }
 
     // Debounce getRTForRemoteFilterAndSort to prevent multiple calls after hide/show columns
-    if (!this.useInfiniteScroll && !this.pivot && this.tableParams?.filter?.length > 0) {
+    if (!this.useInfiniteScroll && !this.props.pivot && this.tableParams?.filter?.length > 0) {
       if (this._debounceTimeout) clearTimeout(this._debounceTimeout)
       this._debounceTimeout = setTimeout(() => {
         try {
@@ -606,16 +616,23 @@ export default class ChataTable extends React.Component {
     try {
       // Check if table just mounted - avoid any AJAX requests for recently mounted tables
       const hasRecentlySetHeaderFilters = this.state.tabulatorMounted && Date.now() - (this._setFiltersTime || 0) < 2000 // 2 seconds
+      const nextTableParamsFormatted = formatTableParams(params, this.props.columns)
 
-      if (!this.hasSetInitialData || !this._isMounted || hasRecentlySetHeaderFilters) {
+      if (!this.hasSetInitialData || !this._isMounted) {
         return initialData
+      }
+
+      if (hasRecentlySetHeaderFilters) {
+        const isSortAttempt = !!nextTableParamsFormatted?.sorters?.length
+        const allowThrough = this.props.pivot && isSortAttempt
+        if (!allowThrough) {
+          return initialData
+        }
       }
 
       this.cancelCurrentRequest()
       this.axiosSource = axios.CancelToken?.source()
       this.tableParams = params
-
-      const nextTableParamsFormatted = formatTableParams(params, this.props.columns)
 
       if (params?.page > 1) {
         if (this._isMounted) {
@@ -675,6 +692,36 @@ export default class ChataTable extends React.Component {
     let response = _cloneDeep(this.props.response)
     let data = _cloneDeep(this.originalQueryData)
 
+    if (this.props.pivot) {
+      if (params?.orders?.length) {
+        const primaryOrder = params.orders[0]
+        let sortColumnIndex
+        if (primaryOrder?.field !== undefined) {
+          const parsed = parseInt(primaryOrder.field, 10)
+          if (!isNaN(parsed)) {
+            sortColumnIndex = parsed
+          } else {
+            sortColumnIndex = this.props.columns.findIndex((col) => col.field === primaryOrder.field)
+          }
+        } else if (primaryOrder?.id !== undefined) {
+          sortColumnIndex = this.props.columns.findIndex((col) => col.id === primaryOrder.id)
+        }
+
+        if (sortColumnIndex !== undefined && sortColumnIndex !== -1) {
+          const sortDirection = primaryOrder.sort === 'DESC' ? 'desc' : 'asc'
+          data = sortDataByColumn(data, this.props.columns, sortColumnIndex, sortDirection)
+        }
+      }
+
+      this.originalQueryData = _cloneDeep(data)
+
+      response.data = response.data || {}
+      response.data.data = response.data.data || {}
+      response.data.data.rows = data
+      response.data.data.count_rows = data?.length || 0
+      return response
+    }
+
     // Filters
     if (params.tableFilters?.length) {
       params.tableFilters.forEach((filter) => {
@@ -704,7 +751,7 @@ export default class ChataTable extends React.Component {
   queryFn = (params) => {
     // Always use server-side queryFn when dealing with column changes (newColumns)
     // because column removal is a schema change, not just data filtering
-    if (this.useInfiniteScroll || typeof params.newColumns !== 'undefined') {
+    if ((this.useInfiniteScroll || typeof params.newColumns !== 'undefined') && !this.props.pivot) {
       return this.props.queryFn(params)
     } else {
       return new Promise((resolve) => {
@@ -735,9 +782,7 @@ export default class ChataTable extends React.Component {
 
     let newRows
     if (props.pivot) {
-      // For pivot tables, data is already filtered/sorted in QueryOutput.generatePivotTableData
-      // Do not re-apply filters or sorting here to avoid empty results
-      newRows = props.data?.slice(start, end) ?? []
+      newRows = this.originalQueryData?.slice(start, end) ?? []
     } else if (!this.useInfiniteScroll) {
       const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows
 
@@ -1115,10 +1160,10 @@ export default class ChataTable extends React.Component {
     const sorterValues = newSorters || this.tableParams?.sort
     this.settingSorters = true
 
-    if (sorterValues) {
-      sorterValues.forEach((sorter, i) => {
+    if (this.ref?.tabulator && sorterValues && Array.isArray(sorterValues)) {
+      sorterValues.forEach((sorter) => {
         try {
-          this.ref?.tabulator?.setSort(sorter.field, sorter.dir)
+          this.ref.tabulator.setSort(sorter.field, sorter.dir)
         } catch (error) {
           console.error(error)
           this.props.onErrorCallback(error)
