@@ -630,18 +630,30 @@ export default class ChataChart extends React.Component {
 
   toggleAverageLine = () => {
     const newShowAverageLine = !this.state.showAverageLine
-    this.setState({ showAverageLine: newShowAverageLine })
+    // When turning on average line, turn off regression line (radio button behavior)
+    const newShowRegressionLine = newShowAverageLine ? false : this.state.showRegressionLine
+
+    this.setState({
+      showAverageLine: newShowAverageLine,
+      showRegressionLine: newShowRegressionLine,
+    })
     this.props.onChartControlsChange({
       showAverageLine: newShowAverageLine,
-      showRegressionLine: this.state.showRegressionLine,
+      showRegressionLine: newShowRegressionLine,
     })
   }
 
   toggleRegressionLine = () => {
     const newShowRegressionLine = !this.state.showRegressionLine
-    this.setState({ showRegressionLine: newShowRegressionLine })
+    // When turning on regression line, turn off average line (radio button behavior)
+    const newShowAverageLine = newShowRegressionLine ? false : this.state.showAverageLine
+
+    this.setState({
+      showAverageLine: newShowAverageLine,
+      showRegressionLine: newShowRegressionLine,
+    })
     this.props.onChartControlsChange({
-      showAverageLine: this.state.showAverageLine,
+      showAverageLine: newShowAverageLine,
       showRegressionLine: newShowRegressionLine,
     })
   }

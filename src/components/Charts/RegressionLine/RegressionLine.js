@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { formatElement, getChartColorVars } from 'autoql-fe-utils'
+import { formatElement, getChartColorVars, getThemeValue } from 'autoql-fe-utils'
 import './RegressionLine.scss'
 
 export class RegressionLine extends React.Component {
@@ -269,13 +269,25 @@ export class RegressionLine extends React.Component {
   }
 
   renderCombinedTrendLine = () => {
-    const { xScale, yScale, width, height, strokeWidth, strokeDasharray, dataFormatting } = this.props
+    const { xScale, yScale, width, height, strokeWidth, strokeDasharray, dataFormatting, visibleSeriesIndices } =
+      this.props
 
     const regression = this.calculateLinearRegression()
 
     if (!regression) {
       return null
     }
+
+    // Calculate dynamic font size for combined trend line based on chart size
+    const getCombinedFontSize = () => {
+      const baseFontSize = 11
+      const chartArea = width * height
+      const isSmallChart = chartArea < 200000 // Less than ~447x447 pixels
+
+      return isSmallChart ? 11 : baseFontSize
+    }
+
+    const fontSize = getCombinedFontSize()
 
     // Convert regression points to SVG coordinates
     // For bar charts, center the line through the middle of the bars
@@ -422,10 +434,10 @@ export class RegressionLine extends React.Component {
       <g className='regression-line-container' style={{ outline: 'none' }}>
         {/* Invisible hover area for easier tooltip triggering */}
         <line
-          x1={Math.min(clippedStartX, clippedEndX)}
-          y1={Math.min(clippedStartY, clippedEndY) - 5}
-          x2={Math.max(clippedStartX, clippedEndX)}
-          y2={Math.max(clippedStartY, clippedEndY) + 5}
+          x1={this.isBarChart() ? clippedStartY : clippedStartX}
+          y1={this.isBarChart() ? clippedStartX : clippedStartY}
+          x2={this.isBarChart() ? clippedEndY : clippedEndX}
+          y2={this.isBarChart() ? clippedEndX : clippedEndY}
           stroke='transparent'
           strokeWidth={10}
           className='regression-line-hover-area'
@@ -466,7 +478,7 @@ export class RegressionLine extends React.Component {
           ref={this.textRef}
           x={midX}
           y={textY}
-          fontSize='11'
+          fontSize={fontSize}
           fontWeight='bold'
           fill={trendColor}
           stroke='var(--react-autoql-background-color)'
@@ -511,6 +523,32 @@ export class RegressionLine extends React.Component {
     }
 
     const stringColumnIndex = this.props.stringColumnIndex || 0
+
+    // Only show labels if there are 5 or fewer series to avoid clutter
+    const shouldShowLabels = visibleSeriesIndices.length <= 5
+
+    // Calculate dynamic font size based on number of series and chart size
+    const getFontSize = () => {
+      const baseFontSize = 10
+      const seriesCount = visibleSeriesIndices.length
+
+      // Consider chart size - smaller charts need smaller fonts
+      const chartArea = width * height
+      const isSmallChart = chartArea < 200000 // Less than ~447x447 pixels
+
+      // Reduce font size for multiple series to prevent overlap (but keep minimum readable)
+      if (seriesCount >= 4) return isSmallChart ? 9 : 10
+      if (seriesCount >= 3) return isSmallChart ? 10 : 11
+      if (seriesCount >= 2) return isSmallChart ? 10.5 : 11
+
+      // Single series - still consider chart size
+      return isSmallChart ? 10.5 : baseFontSize
+    }
+
+    const fontSize = getFontSize()
+
+    // Collect all labels to render at the end
+    const labelElements = []
 
     return (
       <g className='individual-regression-lines-container' style={{ outline: 'none' }}>
@@ -745,48 +783,58 @@ export class RegressionLine extends React.Component {
                 style={{ outline: 'none' }}
               />
 
-              {/* Only render text labels if there are 5 or fewer series */}
-              {shouldShowLabels && (
-                <>
-                  {/* Text background rectangle - sized based on actual text bounding box */}
-                  <rect
-                    x={rectX}
-                    y={rectY}
-                    width={rectWidth}
-                    height={rectHeight}
-                    fillOpacity='0.85'
-                    stroke={seriesColor}
-                    strokeWidth='1'
-                    rx='3'
-                    className='regression-line-text-bg'
-                    style={{ outline: 'none' }}
-                  />
-
-                  {/* Text label */}
-                  <text
-                    ref={(ref) => (this.individualTextRefs[refKey] = ref)}
-                    x={clampedTextX}
-                    y={textY}
-                    fontSize='10'
-                    fontWeight='bold'
-                    fill={seriesColor}
-                    stroke='var(--react-autoql-background-color)'
-                    strokeWidth='3'
-                    strokeLinejoin='round'
-                    strokeLinecap='round'
-                    textAnchor='middle'
-                    className='regression-line-label'
-                    data-tooltip-content={tooltipContent}
-                    data-tooltip-id={this.props.chartTooltipID}
+              {/* Collect labels to render at the end */}
+              {shouldShowLabels &&
+                labelElements.push(
+                  <g
+                    key={`trend-label-${columnIndex}`}
+                    className='individual-regression-label-container'
                     style={{ outline: 'none' }}
                   >
-                    {isTrendUp ? '↗' : '↘'} {formattedSlope}
-                  </text>
-                </>
-              )}
+                    {/* Text background rectangle - sized based on actual text bounding box */}
+                    <rect
+                      x={rectX}
+                      y={rectY}
+                      width={rectWidth}
+                      height={rectHeight}
+                      fillOpacity='0.85'
+                      stroke={seriesColor}
+                      strokeWidth='1'
+                      rx='3'
+                      className='regression-line-text-bg'
+                      style={{
+                        outline: 'none',
+                        fill: getThemeValue('background-color-secondary') || '#f8f9fa',
+                      }}
+                    />
+
+                    {/* Text label */}
+                    <text
+                      ref={(ref) => (this.individualTextRefs[refKey] = ref)}
+                      x={clampedTextX}
+                      y={textY}
+                      fontSize={fontSize}
+                      fontWeight='bold'
+                      fill={seriesColor}
+                      stroke='var(--react-autoql-background-color)'
+                      strokeWidth='3'
+                      strokeLinejoin='round'
+                      strokeLinecap='round'
+                      textAnchor='middle'
+                      className='regression-line-label'
+                      data-tooltip-content={tooltipContent}
+                      data-tooltip-id={this.props.chartTooltipID}
+                      style={{ outline: 'none' }}
+                    >
+                      {isTrendUp ? '↗' : '↘'} {formattedSlope}
+                    </text>
+                  </g>,
+                )}
             </g>
           )
         })}
+        {/* Render all labels on top */}
+        {labelElements}
       </g>
     )
   }
