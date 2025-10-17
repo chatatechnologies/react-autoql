@@ -509,15 +509,15 @@ export default class ChatContent extends React.Component {
               <LoadingDots />
             </div>
           )}
+          <div className='watermark'>
+            <Icon type='react-autoql-bubbles-outlined' />
+            {lang.run}
+          </div>
         </div>
         <div
           style={{ visibility: queryInputVisibility, opacity: queryInputOpacity }}
           className={`chat-bar-container ${!hideQueryInput ? '' : 'react-autoql-content-hidden'}`}
         >
-          <div className='watermark'>
-            <Icon type='react-autoql-bubbles-outlined' />
-            {lang.run}
-          </div>
           <QueryInput
             ref={(r) => (this.queryInputRef = r)}
             className='chat-drawer-chat-bar'

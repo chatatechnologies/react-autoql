@@ -193,16 +193,32 @@ class QueryInput extends React.Component {
   }
 
   handleClickOutside = (event) => {
-    if (this.state.isExpanded && this.queryInputWrapperRef && !this.queryInputWrapperRef.contains(event.target)) {
-      // Check if the click is on a dropdown or popup that should not close the suggestions
-      const isDropdownClick =
-        event.target.closest('.react-autoql-multiselect-popup') ||
-        event.target.closest('.react-autoql-sample-queries-filter-dropdown') ||
-        event.target.closest('[data-tooltip-id]')
+    if (!this.state.isExpanded || !this.queryInputWrapperRef) {
+      return
+    }
 
-      if (!isDropdownClick) {
-        this.collapseSuggestions()
-      }
+    // Check if the click is on a dropdown or popup that should not close the suggestions
+    const isDropdownClick =
+      event.target.closest('.react-autoql-multiselect-popup') ||
+      event.target.closest('.react-autoql-sample-queries-filter-dropdown') ||
+      event.target.closest('[data-tooltip-id]') ||
+      event.target.closest('.VLAutocompleteInputPopover') ||
+      event.target.closest('.VLAutocompleteInput') ||
+      event.target.closest('.react-autosuggest__suggestions-container') ||
+      event.target.closest('.react-autosuggest__input') ||
+      event.target.closest('.react-autosuggest__container') ||
+      event.target.closest('.VLAutocompleteInputPopover__container') ||
+      event.target.closest('.VLAutocompleteInputPopover__list') ||
+      event.target.closest('.VLAutocompleteInput__container')
+
+    // Don't close if clicking on a dropdown
+    if (isDropdownClick) {
+      return
+    }
+
+    // Only close if clicking outside the wrapper
+    if (!this.queryInputWrapperRef.contains(event.target)) {
+      this.collapseSuggestions()
     }
   }
 
@@ -213,7 +229,7 @@ class QueryInput extends React.Component {
     return (
       <div className='react-autoql-data-explorer-title-text'>
         <span className='react-autoql-data-explorer-title-text-sample-queries'>
-          {topicName ? `Sample Queries for ${topicName}` : 'Sample Queries'}
+          <Icon type='sparkles' /> What can I query?
         </span>
         <FieldSelector
           columns={columns}
@@ -796,7 +812,7 @@ class QueryInput extends React.Component {
 
               {/* <div className='query-suggestions-label'>Quick Topics:</div> */}
               <div className='query-suggestions-buttons'>
-                {this.state.topics.slice(0, 8).map((topic, index) => (
+                {this.state.topics.map((topic, index) => (
                   <button
                     key={topic.context || index}
                     className={`query-suggestion-button ${
@@ -838,6 +854,18 @@ class QueryInput extends React.Component {
                 ) : (
                   <input {...inputProps} />
                 )}
+                {/* Microphone button inside input */}
+                {!isMobile && this.props.enableVoiceRecord && (
+                  <div className='input-microphone-button'>
+                    <SpeechToTextButtonBrowser
+                      onTranscriptStart={this.onTranscriptStart}
+                      onTranscriptChange={this.onTranscriptChange}
+                      onFinalTranscript={this.onFinalTranscript}
+                      authentication={this.props.authentication}
+                      tooltipID={this.props.tooltipID}
+                    />
+                  </div>
+                )}
               </div>
               {this.props.showChataIcon && (
                 <div className='chat-bar-input-icon'>
@@ -849,15 +877,15 @@ class QueryInput extends React.Component {
                   <LoadingDots />
                 </div>
               )}
-              {!isMobile && this.props.enableVoiceRecord && (
-                <SpeechToTextButtonBrowser
-                  onTranscriptStart={this.onTranscriptStart}
-                  onTranscriptChange={this.onTranscriptChange}
-                  onFinalTranscript={this.onFinalTranscript}
-                  authentication={this.props.authentication}
-                  tooltipID={this.props.tooltipID}
-                />
-              )}
+              {/* Send button */}
+              <button
+                className='react-autoql-input-send-button'
+                onClick={() => this.submitQuery()}
+                disabled={!this.state.inputValue || this.props.isDisabled}
+                type='button'
+              >
+                <Icon type='send' />
+              </button>
             </div>
           </div>
         </div>
