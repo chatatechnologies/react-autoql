@@ -58,3 +58,61 @@ describe('renders correctly', () => {
     expect(dashboardTileComponent.exists()).toBe(true)
   })
 })
+
+describe('dashboard tile pivot after filtering', () => {
+  test('filter in table view then switch to pivot shows data', () => {
+    const tileWithTable = {
+      ...sampleTile,
+      displayType: 'table',
+      // Start with no filters, will apply via initialFormattedTableParams updates
+      tableFilters: [],
+      orders: [],
+    }
+
+    const wrapper = setup({ tile: tileWithTable })
+
+    // Ensure QueryOutput mounted
+    const instance = wrapper.instance()
+    expect(instance).toBeTruthy()
+
+    // Simulate external filter being applied (like user filters in table)
+    wrapper.setProps({
+      tile: {
+        ...tileWithTable,
+        tableFilters: [
+          {
+            // Filter by Region using name match (QueryOutput resolves by id/field/name)
+            name: tileWithTable.dataConfig.tableConfig.legendColumnIndex === 0
+              ? sampleTile.dataConfig.tableConfig.legendColumnIndex
+              : null,
+            // Using actual column name from response
+            id: sampleTile.queryResponse.data.data.columns[0].name,
+            value: 'West',
+            operator: '=',
+          },
+        ],
+      },
+    })
+
+    // Now switch the tile display type to pivot_table
+    wrapper.setProps({
+      tile: {
+        ...wrapper.props().tile,
+        displayType: 'pivot_table',
+      },
+    })
+
+    // Grab QueryOutput from top half
+    const qo = wrapper.find('QueryOutput').at(0)
+    expect(qo.exists()).toBe(true)
+
+    const qoInstance = qo.instance().wrappedInstance || qo.instance()
+
+    // After switching, pivotTableData should exist and have rows
+    expect(qoInstance.pivotTableData).toBeDefined()
+    expect(Array.isArray(qoInstance.pivotTableData)).toBe(true)
+    expect(qoInstance.pivotTableData.length).toBeGreaterThan(0)
+
+    wrapper.unmount()
+  })
+})
