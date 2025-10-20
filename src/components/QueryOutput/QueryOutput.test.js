@@ -231,28 +231,27 @@ describe('test table edge cases', () => {
 })
 
 describe('pivot table filtering', () => {
+  const setupPivotTableTest = () => {
+    const testCase = _cloneDeep(testCases[8])
+    return {
+      testCase,
+      queryOutput: mount(
+        <QueryOutputWithoutTheme queryResponse={testCase} initialDisplayType='pivot_table' queryFn={() => {}} />,
+      ),
+    }
+  }
+
   describe('onTableParamsChange triggers pivot data regeneration', () => {
     test('calls generatePivotData when shouldGeneratePivotData returns true', () => {
-      const testCase = _cloneDeep(testCases[8]) // Use a test case that supports pivot tables
-      const queryOutput = mount(
-        <QueryOutputWithoutTheme queryResponse={testCase} initialDisplayType='pivot_table' queryFn={() => {}} />,
-      )
+      const { queryOutput } = setupPivotTableTest()
 
       const instance = queryOutput.instance()
 
-      // Spy on the generatePivotData method
       const generatePivotDataSpy = jest.spyOn(instance, 'generatePivotData')
-
-      // Mock shouldGeneratePivotData to return true
       instance.shouldGeneratePivotData = jest.fn().mockReturnValue(true)
 
-      // Call onTableParamsChange with some params
-      const params = { filters: [{ id: 'column1', value: 'test', operator: 'equals' }] }
-      const formattedParams = { filters: [{ id: 'column1', value: 'test', operator: 'equals' }] }
+      instance.onTableParamsChange({}, {})
 
-      instance.onTableParamsChange(params, formattedParams)
-
-      // Verify generatePivotData was called
       expect(generatePivotDataSpy).toHaveBeenCalled()
 
       generatePivotDataSpy.mockRestore()
@@ -260,26 +259,15 @@ describe('pivot table filtering', () => {
     })
 
     test('does not call generatePivotData when shouldGeneratePivotData returns false', () => {
-      const testCase = _cloneDeep(testCases[8])
-      const queryOutput = mount(
-        <QueryOutputWithoutTheme queryResponse={testCase} initialDisplayType='pivot_table' queryFn={() => {}} />,
-      )
+      const { queryOutput } = setupPivotTableTest()
 
       const instance = queryOutput.instance()
 
-      // Spy on the generatePivotData method
       const generatePivotDataSpy = jest.spyOn(instance, 'generatePivotData')
-
-      // Mock shouldGeneratePivotData to return false
       instance.shouldGeneratePivotData = jest.fn().mockReturnValue(false)
 
-      // Call onTableParamsChange with some params
-      const params = { filters: [{ id: 'column1', value: 'test', operator: 'equals' }] }
-      const formattedParams = { filters: [{ id: 'column1', value: 'test', operator: 'equals' }] }
+      instance.onTableParamsChange({}, {})
 
-      instance.onTableParamsChange(params, formattedParams)
-
-      // Verify generatePivotData was not called
       expect(generatePivotDataSpy).not.toHaveBeenCalled()
 
       generatePivotDataSpy.mockRestore()
@@ -289,34 +277,25 @@ describe('pivot table filtering', () => {
 
   describe('generatePivotTableData filters data correctly', () => {
     test('filters data based on formattedTableParams.filters', () => {
-      const testCase = _cloneDeep(testCases[8])
-      const queryOutput = mount(
-        <QueryOutputWithoutTheme queryResponse={testCase} initialDisplayType='pivot_table' queryFn={() => {}} />,
-      )
+      const { testCase, queryOutput } = setupPivotTableTest()
 
       const instance = queryOutput.instance()
 
-      // Set up formattedTableParams with a filter
       instance.formattedTableParams = {
         filters: [
           {
-            id: testCase.data.data.columns[0].name, // Filter on first column
-            value: testCase.data.data.rows[0][0], // Filter to match first row
+            id: testCase.data.data.columns[0].name,
+            value: testCase.data.data.rows[0][0],
             operator: 'equals',
           },
         ],
       }
 
-      // Spy on forceUpdate to ensure it's called
       const forceUpdateSpy = jest.spyOn(instance, 'forceUpdate')
 
-      // Call generatePivotTableData
       instance.generatePivotTableData()
 
-      // Verify forceUpdate was called
       expect(forceUpdateSpy).toHaveBeenCalled()
-
-      // Verify that pivot table data was generated
       expect(instance.pivotTableData).toBeDefined()
       expect(instance.pivotTableColumns).toBeDefined()
 
@@ -327,22 +306,31 @@ describe('pivot table filtering', () => {
 
   describe('generatePivotData state updates', () => {
     test('updates visiblePivotRowChangeCount when dataChanged is true', () => {
-      const testCase = _cloneDeep(testCases[8])
-      const queryOutput = mount(
-        <QueryOutputWithoutTheme queryResponse={testCase} initialDisplayType='pivot_table' queryFn={() => {}} />,
-      )
+      const { queryOutput } = setupPivotTableTest()
 
       const instance = queryOutput.instance()
 
-      // Set initial state
       const initialCount = instance.state.visiblePivotRowChangeCount || 0
       instance.setState({ visiblePivotRowChangeCount: initialCount })
 
-      // Call generatePivotData with dataChanged = true
       instance.generatePivotData({ dataChanged: true })
 
-      // Verify state was updated
       expect(instance.state.visiblePivotRowChangeCount).toBe(initialCount + 1)
+
+      queryOutput.unmount()
+    })
+
+    test('does not increment visiblePivotRowChangeCount when dataChanged is false', () => {
+      const { queryOutput } = setupPivotTableTest()
+
+      const instance = queryOutput.instance()
+
+      const initialCount = instance.state.visiblePivotRowChangeCount || 0
+      instance.setState({ visiblePivotRowChangeCount: initialCount })
+
+      instance.generatePivotData({ dataChanged: false })
+
+      expect(instance.state.visiblePivotRowChangeCount).toBe(initialCount)
 
       queryOutput.unmount()
     })
