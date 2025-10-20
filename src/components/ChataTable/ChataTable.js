@@ -623,6 +623,8 @@ export default class ChataTable extends React.Component {
         return initialData
       }
 
+      const nextTableParamsFormatted = formatTableParams(params, this.props.columns)
+
       if (hasRecentlySetHeaderFilters) {
         const isSortAttempt = !!nextTableParamsFormatted?.sorters?.length
         const allowThrough = this.props.pivot && isSortAttempt
