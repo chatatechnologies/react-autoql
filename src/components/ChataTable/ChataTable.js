@@ -83,6 +83,7 @@ export default class ChataTable extends React.Component {
       page: 1,
     }
 
+    // pivot table headers reflect the correct sort direction
     let initialSort = undefined
     if (props.pivot && props.initialTableParams?.sort?.length) {
       initialSort = props.initialTableParams.sort.map((sorter) => ({
@@ -487,6 +488,7 @@ export default class ChataTable extends React.Component {
   }
 
   onDataSorted = (sorters, rows) => {
+    // persists sort state when the user sorts the table when switching between tabs
     if (Array.isArray(sorters)) {
       this.tableParams.sort = sorters.map((s) => ({ field: s.field, dir: s.dir }))
     }
@@ -707,6 +709,7 @@ export default class ChataTable extends React.Component {
           sortColumnIndex = this.props.columns.findIndex((col) => col.id === primaryOrder.id)
         }
 
+        // handles sorting by column index/field for pivot tables
         if (sortColumnIndex !== undefined && sortColumnIndex !== -1) {
           const sortDirection = primaryOrder.sort === 'DESC' ? 'desc' : 'asc'
           data = sortDataByColumn(data, this.props.columns, sortColumnIndex, sortDirection)
