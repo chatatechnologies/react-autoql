@@ -84,6 +84,7 @@
     "lodash.isequal": "4.5.0",
     "lodash.throttle": "4.1.1",
     "make-coverage-badge": "1.2.0",
+    "pako": "^2.1.0",
     "parse-num": "1.0.0",
     "prop-types": "15.7.2",
     "rc-drawer": "4.4.3",

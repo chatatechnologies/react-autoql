@@ -4,6 +4,7 @@ import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import RGL, { WidthProvider } from 'react-grid-layout'
+import pako from 'pako'
 
 import {
   deepEqual,
@@ -553,11 +554,14 @@ class DashboardWithoutTheme extends React.Component {
         },
       }
 
-      // Convert to JSON string with formatting
-      const dataStr = JSON.stringify(dashboardExport, null, 2)
+      // Convert to JSON string
+      const jsonStr = JSON.stringify(dashboardExport, null, 2)
 
-      // Create a blob and download it
-      const dataBlob = new Blob([dataStr], { type: 'application/json' })
+      // Compress using gzip
+      const compressed = pako.gzip(jsonStr)
+
+      // Create blob with compressed data
+      const dataBlob = new Blob([compressed], { type: 'application/gzip' })
       const url = URL.createObjectURL(dataBlob)
       const link = document.createElement('a')
       link.href = url
@@ -572,8 +576,37 @@ class DashboardWithoutTheme extends React.Component {
       document.body.removeChild(link)
       URL.revokeObjectURL(url)
     } catch (error) {
-      console.error('Error downloading dashboard:', error)
+      console.error('Error exporting dashboard:', error)
     }
+  }
+
+  importDashboard = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+
+      reader.onload = (e) => {
+        try {
+          const uint8Array = new Uint8Array(e.target.result)
+
+          // Try to decompress - if it fails, assume it's uncompressed JSON
+          let jsonStr
+          try {
+            jsonStr = pako.ungzip(uint8Array, { to: 'string' })
+          } catch (decompressError) {
+            // Fallback to plain text for backwards compatibility with old uncompressed files
+            jsonStr = new TextDecoder().decode(uint8Array)
+          }
+
+          const dashboardData = JSON.parse(jsonStr)
+          resolve(dashboardData)
+        } catch (error) {
+          reject(new Error('Failed to parse dashboard file: ' + error.message))
+        }
+      }
+
+      reader.onerror = () => reject(new Error('Failed to read file'))
+      reader.readAsArrayBuffer(file)
+    })
   }
 
   setParamsForTile = (params, id, callbackArray) => {
