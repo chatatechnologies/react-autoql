@@ -533,6 +533,49 @@ class DashboardWithoutTheme extends React.Component {
     }
   }
 
+  exportDashboard = () => {
+    try {
+      const tiles = this.getMostRecentTiles()
+
+      // Create the dashboard export object with complete tile state
+      const dashboardExport = {
+        version: '1.0',
+        exportDate: new Date().toISOString(),
+        dashboard: {
+          title: this.props.title || 'Untitled Dashboard',
+          tiles: tiles.map((tile) => {
+            // Save the entire tile state
+            return { ...tile }
+          }),
+          props: {
+            dataPageSize: this.props.dataPageSize,
+          },
+        },
+      }
+
+      // Convert to JSON string with formatting
+      const dataStr = JSON.stringify(dashboardExport, null, 2)
+
+      // Create a blob and download it
+      const dataBlob = new Blob([dataStr], { type: 'application/json' })
+      const url = URL.createObjectURL(dataBlob)
+      const link = document.createElement('a')
+      link.href = url
+
+      // Generate filename with sanitized title and timestamp
+      const sanitizedTitle = (this.props.title || 'dashboard').replace(/[^a-z0-9]/gi, '_').toLowerCase()
+      const timestamp = new Date().toISOString().split('T')[0]
+      link.download = `${sanitizedTitle}_${timestamp}.autoql`
+
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Error downloading dashboard:', error)
+    }
+  }
+
   setParamsForTile = (params, id, callbackArray) => {
     try {
       const originalTiles = this.getMostRecentTiles()
@@ -689,7 +732,17 @@ class DashboardWithoutTheme extends React.Component {
             dashboardRef={this.ref}
             authentication={this.props.authentication}
             cancelQueriesOnUnmount={this.props.cancelQueriesOnUnmount}
-            autoQLConfig={this.props.autoQLConfig}
+            autoQLConfig={
+              !this.props.offline
+                ? this.props.autoQLConfig
+                : {
+                    ...getAutoQLConfig(this.props.autoQLConfig),
+                    enableDrilldowns: false,
+                    enableReportProblem: false,
+                    enableColumnVisibilityManager: false,
+                    enableNotifications: false,
+                  }
+            }
             tile={{ ...tile, i: tile.key, maxH: 10, minH: 2, minW: 3 }}
             displayType={tile.displayType}
             secondDisplayType={tile.secondDisplayType}
@@ -718,6 +771,7 @@ class DashboardWithoutTheme extends React.Component {
             customToolbarOptions={this.props.customToolbarOptions}
             enableCustomColumns={this.props.enableCustomColumns}
             preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
+            useInfiniteScroll={!this.props.offline}
           />
         ))}
       </ReactGridLayout>
@@ -742,6 +796,7 @@ class DashboardWithoutTheme extends React.Component {
               onUndoClick={this.undo}
               onRedoClick={this.redo}
               onRefreshClick={this.executeDashboard}
+              onDownloadClick={this.exportDashboard}
               onSaveClick={() => {
                 Promise.resolve(this.props.onSaveCallback ? this.props.onSaveCallback() : undefined).then((result) => {
                   // Keep if we need to add back in the near future
