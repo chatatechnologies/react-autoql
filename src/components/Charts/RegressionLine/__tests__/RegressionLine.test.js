@@ -14,6 +14,9 @@ jest.mock('autoql-fe-utils', () => ({
     }
     return themeValues[key] || '#f8f9fa'
   }),
+  DisplayTypes: {
+    SCATTERPLOT: 'scatterplot',
+  },
 }))
 
 describe('RegressionLine', () => {

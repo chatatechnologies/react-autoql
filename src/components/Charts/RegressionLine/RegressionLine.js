@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { formatElement, getChartColorVars, getThemeValue } from 'autoql-fe-utils'
+import { DisplayTypes, formatElement, getChartColorVars, getThemeValue } from 'autoql-fe-utils'
 import './RegressionLine.scss'
 
 export class RegressionLine extends React.Component {
@@ -104,7 +104,7 @@ export class RegressionLine extends React.Component {
     }
 
     // For scatterplots, use X and Y number columns directly
-    if (chartType === 'scatterplot') {
+    if (chartType === DisplayTypes.SCATTERPLOT) {
       const points = data
         .map((row) => {
           const xValue = row[numberColumnIndex] // X-axis column

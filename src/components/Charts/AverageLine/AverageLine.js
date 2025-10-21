@@ -80,7 +80,7 @@ export class AverageLine extends React.Component {
     }
 
     // For scatterplots, calculate average of Y-values (second number column)
-    if (chartType === 'scatterplot') {
+    if (chartType === DisplayTypes.SCATTERPLOT) {
       const yValues = data
         .map((row) => {
           const value = row[numberColumnIndex2] // Y-axis column for scatterplot
@@ -162,7 +162,7 @@ export class AverageLine extends React.Component {
     }
 
     // For scatterplots, calculate average of Y-values (second number column)
-    if (chartType === 'scatterplot') {
+    if (chartType === DisplayTypes.SCATTERPLOT) {
       const yValues = data
         .map((row) => {
           const value = row[numberColumnIndex2] // Y-axis column for scatterplot
