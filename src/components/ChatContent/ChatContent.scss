@@ -19,6 +19,10 @@
       background-color: var(--react-autoql-background-color-primary);
       overflow-x: hidden;
 
+      &.mobile-padding {
+        padding-bottom: 90px;
+      }
+
       .chat-content-container {
         overflow: hidden;
       }
@@ -64,6 +68,10 @@
   bottom: 102px;
   left: 20px;
   z-index: 1;
+
+  &.mobile-padding {
+    bottom: 44px;
+  }
 }
 
 .react-autoql-drawer .chat-bar-container {

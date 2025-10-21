@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { DisplayTypes, formatElement, getChartColorVars, getThemeValue } from 'autoql-fe-utils'
+
 import './RegressionLine.scss'
 
 export class RegressionLine extends React.Component {
@@ -38,6 +39,20 @@ export class RegressionLine extends React.Component {
       textBBox: null,
       individualTextBBoxes: {},
     }
+
+    this.labelInlineStyles = {
+      fontSize: '11px',
+      fontWeight: 'bold',
+      fill: 'currentColor',
+      fontFamily: 'var(--react-autoql-font-family)',
+    }
+
+    this.individualLabelInlineStyles = {
+      fontSize: '10px',
+      fontWeight: 'bold',
+      fill: 'currentColor',
+      fontFamily: 'var(--react-autoql-font-family)',
+    }
   }
 
   componentDidMount() {
@@ -46,14 +61,21 @@ export class RegressionLine extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    // Re-measure if data or formatting changes
+    // Re-measure if data, formatting, or visibility changes
     if (
       prevProps.data !== this.props.data ||
       prevProps.dataFormatting !== this.props.dataFormatting ||
-      prevProps.numberColumnIndex !== this.props.numberColumnIndex
+      prevProps.numberColumnIndex !== this.props.numberColumnIndex ||
+      prevProps.visibleSeriesIndices !== this.props.visibleSeriesIndices ||
+      prevProps.stringColumnIndex !== this.props.stringColumnIndex ||
+      prevProps.columns !== this.props.columns ||
+      prevProps.isVisible !== this.props.isVisible
     ) {
-      this.updateTextBBox()
-      this.updateIndividualTextBBoxes()
+      // Use setTimeout to ensure DOM is updated before measuring
+      setTimeout(() => {
+        this.updateTextBBox()
+        this.updateIndividualTextBBoxes()
+      }, 0)
     }
   }
 
@@ -378,6 +400,10 @@ export class RegressionLine extends React.Component {
     const midX = this.isBarChart() ? (clippedStartY + clippedEndY) / 2 : (clippedStartX + clippedEndX) / 2
     const midY = this.isBarChart() ? height / 2 : (clippedStartY + clippedEndY) / 2
     const textY = this.isBarChart() ? (midY < 20 ? midY + 15 : midY - 5) : midY < 20 ? midY + 15 : midY - 5
+
+    // Clamp text position to stay within chart bounds
+    const clampedMidX = Math.max(50, Math.min(midX, width - 50))
+    const clampedTextY = Math.max(20, Math.min(textY, height - 20))
     // For scatterplots, use Y-column for formatting; for other charts, use main number column
     const columnForFormatting = this.isScatterplot()
       ? this.props.columns[this.props.numberColumnIndex2]
@@ -387,6 +413,7 @@ export class RegressionLine extends React.Component {
       element: displayedSlope,
       column: columnForFormatting,
       config: dataFormatting,
+      isChart: true,
     })
 
     // Create tooltip content with R-squared and per-period terminology
@@ -403,19 +430,23 @@ export class RegressionLine extends React.Component {
       rectWidth = textBBox.width + padding * 2
       rectHeight = textBBox.height + padding * 2
 
-      // textAnchor="middle" - center the rect on midX
-      rectX = midX - rectWidth / 2
+      // textAnchor="middle" - center the rect on clampedMidX
+      rectX = clampedMidX - rectWidth / 2
 
-      // Y position: text baseline is at textY
+      // Y position: text baseline is at clampedTextY
       // For typical fonts, about 75% of the height is above the baseline, 25% below (for descenders)
-      rectY = textY - textBBox.height * 0.75 - padding
+      rectY = clampedTextY - textBBox.height * 0.75 - padding
     } else {
       // Fallback to estimated dimensions if bbox not yet available
-      rectX = midX - Math.max(30, formattedSlope.length * 4)
-      rectY = textY - 12
+      rectX = clampedMidX - Math.max(30, formattedSlope.length * 4)
+      rectY = clampedTextY - 12
       rectWidth = Math.max(60, formattedSlope.length * 8)
       rectHeight = 16
     }
+
+    // Clamp rectangle bounds to stay within chart area
+    rectX = Math.max(5, Math.min(rectX, width - rectWidth - 5))
+    rectY = Math.max(5, Math.min(rectY, height - rectHeight - 5))
 
     return (
       <g className='regression-line-container' style={{ outline: 'none' }}>
@@ -457,26 +488,30 @@ export class RegressionLine extends React.Component {
           strokeWidth='1'
           rx='3'
           className='regression-line-text-bg'
-          style={{ outline: 'none' }}
+          style={{
+            outline: 'none',
+            fill: getThemeValue('background-color-secondary'),
+          }}
         />
 
         {/* Text label */}
         <text
           ref={this.textRef}
-          x={midX}
-          y={textY}
-          fontSize={fontSize}
-          fontWeight='bold'
-          fill={trendColor}
-          stroke='var(--react-autoql-background-color)'
-          strokeWidth='3'
+          x={clampedMidX}
+          y={clampedTextY}
+          strokeWidth={0}
           strokeLinejoin='round'
           strokeLinecap='round'
           textAnchor='middle'
           className='regression-line-label'
           data-tooltip-content={tooltipContent}
           data-tooltip-id={this.props.chartTooltipID}
-          style={{ outline: 'none' }}
+          style={{
+            ...this.labelInlineStyles,
+            outline: 'none',
+            fill: trendColor,
+            stroke: getThemeValue('background-color-secondary'),
+          }}
         >
           {isTrendUp ? '↗' : '↘'} {formattedSlope}
         </text>
@@ -690,6 +725,9 @@ export class RegressionLine extends React.Component {
           const textOffset = seriesIndex % 2 === 0 ? -20 : 20 // Consistent 20px offset
           const textY = lineY + textOffset
 
+          // Clamp Y position to stay within chart bounds
+          const clampedTextY = Math.max(20, Math.min(textY, height - 20))
+
           // Calculate displayed slope value to match visual direction
           const displayedSlope = isTrendUp ? Math.abs(regression.slope) : -Math.abs(regression.slope)
 
@@ -703,6 +741,7 @@ export class RegressionLine extends React.Component {
             element: displayedSlope,
             column: columnForFormatting,
             config: dataFormatting,
+            isChart: true,
           })
 
           // Create tooltip content with R-squared and per-period terminology
@@ -730,16 +769,20 @@ export class RegressionLine extends React.Component {
             // textAnchor="middle" - center the rect on clampedTextX
             rectX = clampedTextX - rectWidth / 2
 
-            // Y position: text baseline is at textY
+            // Y position: text baseline is at clampedTextY
             // For typical fonts, about 75% of the height is above the baseline, 25% below (for descenders)
-            rectY = textY - textBBox.height * 0.75 - padding
+            rectY = clampedTextY - textBBox.height * 0.75 - padding
           } else {
             // Fallback to estimated dimensions
             rectX = clampedTextX - Math.max(30, formattedSlope.length * 4)
-            rectY = textY - 12
+            rectY = clampedTextY - 12
             rectWidth = Math.max(60, formattedSlope.length * 8)
             rectHeight = 16
           }
+
+          // Clamp rectangle bounds to stay within chart area
+          rectX = Math.max(5, Math.min(rectX, width - rectWidth - 5))
+          rectY = Math.max(5, Math.min(rectY, height - rectHeight - 5))
 
           return (
             <g key={`individual-trend-${columnIndex}`} className={`individual-regression-line series-${seriesIndex}`}>
@@ -770,53 +813,47 @@ export class RegressionLine extends React.Component {
                 style={{ outline: 'none' }}
               />
 
-              {/* Collect labels to render at the end */}
-              {shouldShowLabels &&
-                labelElements.push(
-                  <g
-                    key={`trend-label-${columnIndex}`}
-                    className='individual-regression-label-container'
-                    style={{ outline: 'none' }}
-                  >
-                    {/* Text background rectangle - sized based on actual text bounding box */}
-                    <rect
-                      x={rectX}
-                      y={rectY}
-                      width={rectWidth}
-                      height={rectHeight}
-                      fillOpacity='0.85'
-                      stroke={seriesColor}
-                      strokeWidth='1'
-                      rx='3'
-                      className='regression-line-text-bg'
-                      style={{
-                        outline: 'none',
-                        fill: getThemeValue('background-color-secondary') || '#f8f9fa',
-                      }}
-                    />
+              {/* Only render text labels if there are 5 or fewer series */}
+              {shouldShowLabels && (
+                <>
+                  {/* Text background rectangle - sized based on actual text bounding box */}
+                  <rect
+                    x={rectX}
+                    y={rectY}
+                    width={rectWidth}
+                    height={rectHeight}
+                    fillOpacity='0.85'
+                    stroke={seriesColor}
+                    strokeWidth='1'
+                    rx='3'
+                    className='regression-line-text-bg'
+                    style={{
+                      outline: 'none',
+                      fill: getThemeValue('background-color-secondary'),
+                    }}
+                  />
 
-                    {/* Text label */}
-                    <text
-                      ref={(ref) => (this.individualTextRefs[refKey] = ref)}
-                      x={clampedTextX}
-                      y={textY}
-                      fontSize={fontSize}
-                      fontWeight='bold'
-                      fill={seriesColor}
-                      stroke='var(--react-autoql-background-color)'
-                      strokeWidth='3'
-                      strokeLinejoin='round'
-                      strokeLinecap='round'
-                      textAnchor='middle'
-                      className='regression-line-label'
-                      data-tooltip-content={tooltipContent}
-                      data-tooltip-id={this.props.chartTooltipID}
-                      style={{ outline: 'none' }}
-                    >
-                      {isTrendUp ? '↗' : '↘'} {formattedSlope}
-                    </text>
-                  </g>,
-                )}
+                  {/* Text label */}
+                  <text
+                    ref={(ref) => (this.individualTextRefs[refKey] = ref)}
+                    x={clampedTextX}
+                    y={clampedTextY}
+                    strokeWidth={0}
+                    strokeLinejoin='round'
+                    strokeLinecap='round'
+                    textAnchor='middle'
+                    className='regression-line-label'
+                    data-tooltip-content={tooltipContent}
+                    data-tooltip-id={this.props.chartTooltipID}
+                    style={{
+                      ...this.individualLabelInlineStyles,
+                      fill: seriesColor,
+                    }}
+                  >
+                    {isTrendUp ? '↗' : '↘'} {formattedSlope}
+                  </text>
+                </>
+              )}
             </g>
           )
         })}
