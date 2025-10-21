@@ -194,19 +194,6 @@ export class AverageLine extends React.Component {
     return mean(columnValues)
   }
 
-  hasMixedColumnTypes = () => {
-    const { columns, visibleSeriesIndices } = this.props
-
-    if (!columns || !visibleSeriesIndices || visibleSeriesIndices.length <= 1) {
-      return false
-    }
-
-    // Get the types of all visible series columns
-    const columnTypes = visibleSeriesIndices.map((index) => columns[index]?.type).filter((type) => type) // Remove undefined types
-
-    // Check if there are multiple different types
-    return new Set(columnTypes).size > 1
-  }
 
   renderIndividualAverageLines = () => {
     const {
@@ -520,7 +507,7 @@ export class AverageLine extends React.Component {
       visibleSeriesIndices,
     } = this.props
 
-    if (!isVisible || this.hasMixedColumnTypes()) {
+    if (!isVisible) {
       return null
     }
 
