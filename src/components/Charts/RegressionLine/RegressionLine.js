@@ -93,7 +93,7 @@ export class RegressionLine extends React.Component {
 
   isScatterplot = () => {
     const { chartType } = this.props
-    return chartType === 'scatterplot'
+    return chartType === DisplayTypes.SCATTERPLOT
   }
 
   calculateLinearRegression = () => {

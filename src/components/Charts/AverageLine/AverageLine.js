@@ -277,7 +277,8 @@ export class AverageLine extends React.Component {
         }
 
         // For scatterplots, use the Y-column for formatting; for other charts, use the main number column
-        const columnForFormatting = chartType === 'scatterplot' ? columns[numberColumnIndex2] : columns[columnIndex]
+        const columnForFormatting =
+          chartType === DisplayTypes.SCATTERPLOT ? columns[numberColumnIndex2] : columns[columnIndex]
 
         // Format the average value with proper units
         const formattedAverage = formatElement({
@@ -551,7 +552,8 @@ export class AverageLine extends React.Component {
     }
 
     // For scatterplots, use the Y-column for formatting; for other charts, use the main number column
-    const columnForFormatting = chartType === 'scatterplot' ? columns[numberColumnIndex2] : columns[numberColumnIndex]
+    const columnForFormatting =
+      chartType === DisplayTypes.SCATTERPLOT ? columns[numberColumnIndex2] : columns[numberColumnIndex]
 
     // Format the average value with proper units
     const formattedAverage = formatElement({
