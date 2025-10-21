@@ -490,7 +490,7 @@ export class RegressionLine extends React.Component {
           className='regression-line-text-bg'
           style={{
             outline: 'none',
-            fill: getThemeValue('background-color-secondary') || '#f8f9fa',
+            fill: getThemeValue('background-color-secondary'),
           }}
         />
 
@@ -510,7 +510,7 @@ export class RegressionLine extends React.Component {
             ...this.labelInlineStyles,
             outline: 'none',
             fill: trendColor,
-            stroke: getThemeValue('background-color-secondary') || '#f8f9fa',
+            stroke: getThemeValue('background-color-secondary'),
           }}
         >
           {isTrendUp ? '↗' : '↘'} {formattedSlope}
@@ -803,7 +803,7 @@ export class RegressionLine extends React.Component {
                     className='regression-line-text-bg'
                     style={{
                       outline: 'none',
-                      fill: getThemeValue('background-color-secondary') || '#f8f9fa',
+                      fill: getThemeValue('background-color-secondary'),
                     }}
                   />
 

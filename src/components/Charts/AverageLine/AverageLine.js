@@ -311,7 +311,7 @@ export class AverageLine extends React.Component {
         {/* Visible average line */}
         <line
           {...lineProps}
-          stroke='currentColor'
+          stroke={this.labelInlineStyles.fill}
           strokeWidth={strokeWidth}
           strokeDasharray={strokeDasharray}
           className='average-line'
@@ -325,13 +325,13 @@ export class AverageLine extends React.Component {
           width={rectWidth}
           height={rectHeight}
           fillOpacity='0.85'
-          stroke='currentColor'
+          stroke={this.labelInlineStyles.fill}
           strokeWidth='1'
           rx='3'
           className='average-line-text-bg'
           style={{
             outline: 'none',
-            fill: getThemeValue('background-color-secondary') || '#f8f9fa',
+            fill: getThemeValue('background-color-secondary'),
           }}
         />
 
