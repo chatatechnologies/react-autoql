@@ -244,12 +244,13 @@ export class RegressionLine extends React.Component {
     const { chartType, visibleSeriesIndices } = this.props
     const isMultiSeries = visibleSeriesIndices?.length > 1
     const isStacked = chartType === 'stacked_column' || chartType === 'stacked_bar' || chartType === 'stacked_line'
+    const isScatterplot = this.isScatterplot()
 
-    if (isStacked || !isMultiSeries) {
-      // Use combined trend line for stacked charts or single series
+    // For scatterplots, stacked charts, or single series, use combined trend line
+    // For multi-series non-stacked regular charts, use individual trend lines
+    if (isScatterplot || isStacked || !isMultiSeries) {
       return this.renderCombinedTrendLine()
     } else {
-      // Use individual trend lines for regular multi-series charts
       return this.renderIndividualTrendLines()
     }
   }
@@ -705,7 +706,7 @@ export class RegressionLine extends React.Component {
           })
 
           // Create tooltip content with R-squared and per-period terminology
-          const seriesName = columns[columnIndex]?.name || `Series ${seriesIndex + 1}`
+          const seriesName = columns[columnIndex]?.display_name || `Series ${seriesIndex + 1}`
           const rSquaredFormatted = (regression.rSquared * 100).toFixed(1)
           const tooltipContent = `${seriesName}: ${
             isTrendUp ? 'Up' : 'Down'

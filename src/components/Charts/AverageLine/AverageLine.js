@@ -194,7 +194,6 @@ export class AverageLine extends React.Component {
     return mean(columnValues)
   }
 
-
   renderIndividualAverageLines = () => {
     const {
       visibleSeriesIndices,
@@ -285,7 +284,7 @@ export class AverageLine extends React.Component {
 
         // Create tooltip content
         const tooltipContent = `Average (${
-          columns[columnIndex]?.name || `Series ${seriesIndex + 1}`
+          columns[columnIndex]?.display_name || `Series ${seriesIndex + 1}`
         }): ${formattedAverage}`
 
         // Determine text position - different logic for bar charts vs column charts
@@ -329,37 +328,29 @@ export class AverageLine extends React.Component {
         const { textBBox } = this.state
         const padding = 4 // Padding inside the rect around the text
 
-        // Calculate rect dimensions based on actual text bounding box if available
+        // Calculate rect dimensions based on text content
+        // For multi-series, we can't rely on a single textBBox, so estimate based on text length
+        const labelText = `Avg: ${formattedAverage}`
+        const estimatedCharWidth = fontSize * 0.6 // Approximate character width for bold font
+        const estimatedTextWidth = labelText.length * estimatedCharWidth
+
         let rectX, rectY, rectWidth, rectHeight
-        if (textBBox && shouldShowLabels) {
-          // Use width and height from bbox, but add extra padding to ensure proper spacing
-          rectWidth = textBBox.width + padding * 3 // Extra padding for better visual spacing
-          rectHeight = textBBox.height + padding * 2
 
-          // Text anchor is "middle" for bar charts, "end" for column charts
-          if (this.isBarChart()) {
-            // textAnchor="middle" - center the rect on textX
-            rectX = textX - rectWidth / 2
-          } else {
-            // textAnchor="end" - align rect to end at textX, but account for extra padding
-            rectX = textX - rectWidth + padding // Add padding to the right side
-          }
+        // Use estimated dimensions based on text length and font size
+        rectWidth = Math.max(estimatedTextWidth + padding * 4, 60) // Ensure minimum width
+        rectHeight = fontSize + padding * 2
 
-          // Y position: text baseline is at textY
-          // For typical fonts, about 75% of the height is above the baseline, 25% below (for descenders)
-          // To center the rect on the visual text, we position it slightly above the baseline
-          rectY = textY - textBBox.height * 0.75 - padding
+        // Text anchor is "middle" for bar charts, "end" for column charts
+        if (this.isBarChart()) {
+          // textAnchor="middle" - center the rect on textX
+          rectX = textX - rectWidth / 2
         } else {
-          // Fallback to estimated dimensions if bbox not yet available or labels hidden
-          rectX = this.isBarChart()
-            ? textX - Math.max(35, formattedAverage.length * 4)
-            : textX - Math.max(70, formattedAverage.length * 8)
-          rectY = textY - 12
-          rectWidth = this.isBarChart()
-            ? Math.max(70, formattedAverage.length * 8)
-            : Math.max(70, formattedAverage.length * 8) + 8
-          rectHeight = 16
+          // textAnchor="end" - align rect to end at textX
+          rectX = textX - rectWidth + padding
         }
+
+        // Y position: center the rect on textY
+        rectY = textY - rectHeight / 2 - padding / 2
 
         // Clamp rectangle bounds to stay within chart area
         rectX = Math.max(5, Math.min(rectX, width - rectWidth - 5))
@@ -373,8 +364,8 @@ export class AverageLine extends React.Component {
           // For column charts, text is aligned to the end of the rectangle
           textX = rectX + rectWidth - padding
         }
-        // Text Y position is based on the rectangle center
-        textY = rectY + rectHeight / 2 + (textBBox ? textBBox.height * 0.25 : 4)
+        // Text Y position is vertically centered in the rectangle
+        textY = rectY + rectHeight / 2 + fontSize * 0.35 // Adjust for baseline
 
         return {
           columnIndex,
@@ -514,9 +505,11 @@ export class AverageLine extends React.Component {
     // Check if we should render individual series averages or single average
     const isMultiSeries = visibleSeriesIndices?.length > 1
     const isStacked = chartType === 'stacked_column' || chartType === 'stacked_bar' || chartType === 'stacked_line'
+    const isScatterplot = chartType === DisplayTypes.SCATTERPLOT
 
-    if (isMultiSeries && !isStacked) {
-      // Render individual average lines for each series (but not for stacked charts)
+    // For scatterplots, always render a single average line
+    // For multi-series non-stacked charts, render individual average lines
+    if (isMultiSeries && !isStacked && !isScatterplot) {
       return this.renderIndividualAverageLines()
     }
 
@@ -599,37 +592,28 @@ export class AverageLine extends React.Component {
     const { textBBox } = this.state
     const padding = 4 // Padding inside the rect around the text
 
-    // Calculate rect dimensions based on actual text bounding box if available
+    // Calculate rect dimensions based on text content
+    const labelText = `Avg: ${formattedAverage}`
+    const estimatedCharWidth = fontSize * 0.6 // Approximate character width for bold font
+    const estimatedTextWidth = labelText.length * estimatedCharWidth
+
     let rectX, rectY, rectWidth, rectHeight
-    if (textBBox) {
-      // Use width and height from bbox, but add extra padding to ensure proper spacing
-      rectWidth = textBBox.width + padding * 3 // Extra padding for better visual spacing
-      rectHeight = textBBox.height + padding * 2
 
-      // Text anchor is "middle" for bar charts, "end" for column charts
-      if (this.isBarChart()) {
-        // textAnchor="middle" - center the rect on textX
-        rectX = textX - rectWidth / 2
-      } else {
-        // textAnchor="end" - align rect to end at textX, but account for extra padding
-        rectX = textX - rectWidth + padding // Add padding to the right side
-      }
+    // Use estimated dimensions based on text length and font size
+    rectWidth = Math.max(estimatedTextWidth + padding * 4, 60) // Ensure minimum width
+    rectHeight = fontSize + padding * 2
 
-      // Y position: text baseline is at textY
-      // For typical fonts, about 75% of the height is above the baseline, 25% below (for descenders)
-      // To center the rect on the visual text, we position it slightly above the baseline
-      rectY = textY - textBBox.height * 0.75 - padding
+    // Text anchor is "middle" for bar charts, "end" for column charts
+    if (this.isBarChart()) {
+      // textAnchor="middle" - center the rect on textX
+      rectX = textX - rectWidth / 2
     } else {
-      // Fallback to estimated dimensions if bbox not yet available
-      rectX = this.isBarChart()
-        ? textX - Math.max(35, formattedAverage.length * 4)
-        : textX - Math.max(70, formattedAverage.length * 8)
-      rectY = textY - 12
-      rectWidth = this.isBarChart()
-        ? Math.max(70, formattedAverage.length * 8)
-        : Math.max(70, formattedAverage.length * 8) + 8
-      rectHeight = 16
+      // textAnchor="end" - align rect to end at textX
+      rectX = textX - rectWidth + padding
     }
+
+    // Y position: center the rect on textY
+    rectY = textY - rectHeight / 2 - padding / 2
 
     // Clamp rectangle bounds to stay within chart area
     rectX = Math.max(5, Math.min(rectX, width - rectWidth - 5))
@@ -643,8 +627,8 @@ export class AverageLine extends React.Component {
       // For column charts, text is aligned to the end of the rectangle
       textX = rectX + rectWidth - padding
     }
-    // Text Y position is based on the rectangle center
-    textY = rectY + rectHeight / 2 + (textBBox ? textBBox.height * 0.25 : 4)
+    // Text Y position is vertically centered in the rectangle
+    textY = rectY + rectHeight / 2 + fontSize * 0.35 // Adjust for baseline
 
     return (
       <g className='average-line-container' style={{ outline: 'none' }}>
