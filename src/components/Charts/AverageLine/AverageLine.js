@@ -429,7 +429,10 @@ export class AverageLine extends React.Component {
                 strokeWidth='1'
                 rx='3'
                 className='average-line-text-bg'
-                style={{ outline: 'none' }}
+                style={{
+                  outline: 'none',
+                  fill: getThemeValue('background-color-secondary'),
+                }}
               />
 
               {/* Text label */}
@@ -437,18 +440,18 @@ export class AverageLine extends React.Component {
                 ref={this.textRef}
                 x={textX}
                 y={textY}
-                fontSize={fontSize}
-                fontWeight='bold'
-                fill={seriesColor}
-                stroke='var(--react-autoql-background-color)'
-                strokeWidth='3'
+                strokeWidth={0}
                 strokeLinejoin='round'
                 strokeLinecap='round'
                 textAnchor={this.isBarChart() ? 'middle' : 'end'}
                 className='average-line-label'
                 data-tooltip-content={tooltipContent}
                 data-tooltip-id={chartTooltipID}
-                style={{ outline: 'none' }}
+                style={{
+                  ...this.labelInlineStyles,
+                  fill: seriesColor,
+                  outline: 'none',
+                }}
               >
                 Avg: {formattedAverage}
               </text>
