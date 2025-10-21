@@ -105,7 +105,6 @@ describe('AverageLine', () => {
   it('applies custom styling', () => {
     const props = {
       ...defaultProps,
-      color: '#ff0000',
       strokeWidth: 3,
       strokeDasharray: '10,5',
     }
@@ -113,7 +112,7 @@ describe('AverageLine', () => {
     const wrapper = mount(<AverageLine {...props} />)
 
     const visibleLine = wrapper.find('line.average-line')
-    expect(visibleLine.prop('stroke')).toBe('#ff0000')
+    expect(visibleLine.prop('stroke')).toBe('currentColor')
     expect(visibleLine.prop('strokeWidth')).toBe(3)
     expect(visibleLine.prop('strokeDasharray')).toBe('10,5')
   })

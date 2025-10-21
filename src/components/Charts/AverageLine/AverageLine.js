@@ -16,7 +16,6 @@ export class AverageLine extends React.Component {
     height: PropTypes.number.isRequired,
     isVisible: PropTypes.bool.isRequired,
     dataFormatting: PropTypes.object,
-    color: PropTypes.string,
     strokeWidth: PropTypes.number,
     strokeDasharray: PropTypes.string,
     chartTooltipID: PropTypes.string,
@@ -26,7 +25,6 @@ export class AverageLine extends React.Component {
 
   static defaultProps = {
     dataFormatting: {},
-    color: 'var(--react-autoql-text-color-primary)',
     strokeWidth: 2,
     strokeDasharray: '5,5', // Dashed line
   }
@@ -188,7 +186,6 @@ export class AverageLine extends React.Component {
       width,
       height,
       isVisible,
-      color,
       strokeWidth,
       strokeDasharray,
       dataFormatting,
