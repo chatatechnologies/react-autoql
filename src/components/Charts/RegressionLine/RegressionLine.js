@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { formatElement, getThemeValue, getChartColorVars } from 'autoql-fe-utils'
+import { DisplayTypes, formatElement, getChartColorVars, getThemeValue } from 'autoql-fe-utils'
+
 import './RegressionLine.scss'
 
 export class RegressionLine extends React.Component {
@@ -114,7 +115,7 @@ export class RegressionLine extends React.Component {
 
   isScatterplot = () => {
     const { chartType } = this.props
-    return chartType === 'scatterplot'
+    return chartType === DisplayTypes.SCATTERPLOT
   }
 
   calculateLinearRegression = () => {
@@ -125,7 +126,7 @@ export class RegressionLine extends React.Component {
     }
 
     // For scatterplots, use X and Y number columns directly
-    if (chartType === 'scatterplot') {
+    if (chartType === DisplayTypes.SCATTERPLOT) {
       const points = data
         .map((row) => {
           const xValue = row[numberColumnIndex] // X-axis column
@@ -257,46 +258,45 @@ export class RegressionLine extends React.Component {
     return result
   }
 
-  hasMixedColumnTypes = () => {
-    const { columns, visibleSeriesIndices } = this.props
-
-    if (!columns || !visibleSeriesIndices || visibleSeriesIndices.length <= 1) {
-      return false
-    }
-
-    // Get the types of all visible series columns
-    const columnTypes = visibleSeriesIndices.map((index) => columns[index]?.type).filter((type) => type) // Remove undefined types
-
-    // Check if there are multiple different types
-    return new Set(columnTypes).size > 1
-  }
-
   render = () => {
-    if (!this.props.isVisible || this.hasMixedColumnTypes()) {
+    if (!this.props.isVisible) {
       return null
     }
 
     const { chartType, visibleSeriesIndices } = this.props
     const isMultiSeries = visibleSeriesIndices?.length > 1
     const isStacked = chartType === 'stacked_column' || chartType === 'stacked_bar' || chartType === 'stacked_line'
+    const isScatterplot = this.isScatterplot()
 
-    if (isStacked || !isMultiSeries) {
-      // Use combined trend line for stacked charts or single series
+    // For scatterplots, stacked charts, or single series, use combined trend line
+    // For multi-series non-stacked regular charts, use individual trend lines
+    if (isScatterplot || isStacked || !isMultiSeries) {
       return this.renderCombinedTrendLine()
     } else {
-      // Use individual trend lines for regular multi-series charts
       return this.renderIndividualTrendLines()
     }
   }
 
   renderCombinedTrendLine = () => {
-    const { xScale, yScale, width, height, strokeWidth, strokeDasharray, dataFormatting } = this.props
+    const { xScale, yScale, width, height, strokeWidth, strokeDasharray, dataFormatting, visibleSeriesIndices } =
+      this.props
 
     const regression = this.calculateLinearRegression()
 
     if (!regression) {
       return null
     }
+
+    // Calculate dynamic font size for combined trend line based on chart size
+    const getCombinedFontSize = () => {
+      const baseFontSize = 11
+      const chartArea = width * height
+      const isSmallChart = chartArea < 200000 // Less than ~447x447 pixels
+
+      return isSmallChart ? 11 : baseFontSize
+    }
+
+    const fontSize = getCombinedFontSize()
 
     // Convert regression points to SVG coordinates
     // For bar charts, center the line through the middle of the bars
@@ -452,10 +452,10 @@ export class RegressionLine extends React.Component {
       <g className='regression-line-container' style={{ outline: 'none' }}>
         {/* Invisible hover area for easier tooltip triggering */}
         <line
-          x1={Math.min(clippedStartX, clippedEndX)}
-          y1={Math.min(clippedStartY, clippedEndY) - 5}
-          x2={Math.max(clippedStartX, clippedEndX)}
-          y2={Math.max(clippedStartY, clippedEndY) + 5}
+          x1={this.isBarChart() ? clippedStartY : clippedStartX}
+          y1={this.isBarChart() ? clippedStartX : clippedStartY}
+          x2={this.isBarChart() ? clippedEndY : clippedEndX}
+          y2={this.isBarChart() ? clippedEndX : clippedEndY}
           stroke='transparent'
           strokeWidth={10}
           className='regression-line-hover-area'
@@ -545,6 +545,32 @@ export class RegressionLine extends React.Component {
     }
 
     const stringColumnIndex = this.props.stringColumnIndex || 0
+
+    // Only show labels if there are 5 or fewer series to avoid clutter
+    const shouldShowLabels = visibleSeriesIndices.length <= 5
+
+    // Calculate dynamic font size based on number of series and chart size
+    const getFontSize = () => {
+      const baseFontSize = 10
+      const seriesCount = visibleSeriesIndices.length
+
+      // Consider chart size - smaller charts need smaller fonts
+      const chartArea = width * height
+      const isSmallChart = chartArea < 200000 // Less than ~447x447 pixels
+
+      // Reduce font size for multiple series to prevent overlap (but keep minimum readable)
+      if (seriesCount >= 4) return isSmallChart ? 9 : 10
+      if (seriesCount >= 3) return isSmallChart ? 10 : 11
+      if (seriesCount >= 2) return isSmallChart ? 10.5 : 11
+
+      // Single series - still consider chart size
+      return isSmallChart ? 10.5 : baseFontSize
+    }
+
+    const fontSize = getFontSize()
+
+    // Collect all labels to render at the end
+    const labelElements = []
 
     return (
       <g className='individual-regression-lines-container' style={{ outline: 'none' }}>
@@ -719,7 +745,7 @@ export class RegressionLine extends React.Component {
           })
 
           // Create tooltip content with R-squared and per-period terminology
-          const seriesName = columns[columnIndex]?.name || `Series ${seriesIndex + 1}`
+          const seriesName = columns[columnIndex]?.display_name || `Series ${seriesIndex + 1}`
           const rSquaredFormatted = (regression.rSquared * 100).toFixed(1)
           const tooltipContent = `${seriesName}: ${
             isTrendUp ? 'Up' : 'Down'
@@ -831,6 +857,8 @@ export class RegressionLine extends React.Component {
             </g>
           )
         })}
+        {/* Render all labels on top */}
+        {labelElements}
       </g>
     )
   }

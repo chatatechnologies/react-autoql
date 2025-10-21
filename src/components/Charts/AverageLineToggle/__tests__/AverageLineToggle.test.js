@@ -69,32 +69,6 @@ describe('AverageLineToggle', () => {
     expect(tooltipContent).toBe('Hide Average Line')
   })
 
-  it('disables button and shows warning when mixed column types', () => {
-    const mockColumns = [
-      { name: 'Category', type: 'STRING' },
-      { name: 'Revenue', type: 'CURRENCY' },
-      { name: 'Count', type: 'NUMBER' },
-    ]
-
-    const props = {
-      ...defaultProps,
-      columns: mockColumns,
-      visibleSeriesIndices: [1, 2], // Currency and Number types
-    }
-
-    const wrapper = mount(<AverageLineToggle {...props} />)
-
-    // Button should be disabled
-    expect(wrapper.find('button').prop('disabled')).toBe(true)
-    expect(wrapper.find('button').hasClass('disabled')).toBe(true)
-
-    // Tooltip should show warning
-    const tooltipContent = wrapper.find('button').prop('data-tooltip-content')
-    expect(tooltipContent).toBe(
-      'Cannot show average line when chart has series with different data types (e.g., currency and quantity)',
-    )
-  })
-
   it('allows button when all columns have same type', () => {
     const mockColumns = [
       { name: 'Category', type: 'STRING' },
