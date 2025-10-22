@@ -25,6 +25,7 @@ import {
   parseJwt,
   fetchSubjectList,
   fetchDataPreview,
+  transformQueryResponse,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -75,6 +76,7 @@ class QueryInput extends React.Component {
     isDisabled: PropTypes.bool,
     onSubmit: PropTypes.func,
     onResponseCallback: PropTypes.func,
+    addResponseMessage: PropTypes.func,
     className: PropTypes.string,
     autoCompletePlacement: PropTypes.string,
     showLoadingDots: PropTypes.bool,
@@ -114,6 +116,7 @@ class QueryInput extends React.Component {
     shouldRender: true,
     onSubmit: () => {},
     onResponseCallback: () => {},
+    addResponseMessage: () => {},
     executeQuery: () => {},
   }
 
@@ -227,22 +230,37 @@ class QueryInput extends React.Component {
 
   renderSampleQueriesHeader = () => {
     const columns = this.state.dataPreview?.data?.data?.columns
-    const topicName = this.state.selectedTopic?.displayName || ''
 
     return (
       <div className='react-autoql-data-explorer-title-text'>
-        <span className='react-autoql-data-explorer-title-text-sample-queries'>
-          <Icon type='sparkles' /> What can I query?
-        </span>
-        <FieldSelector
-          columns={columns}
-          selectedColumns={this.state.selectedColumns}
-          onColumnsChange={(selectedColumns) => this.setState({ selectedColumns })}
-          selectedSubject={this.state.selectedTopic}
-          selectedTopic={null}
-          loading={this.state.isDataPreviewLoading}
-        />
+        <div className='react-autoql-data-explorer-title-row'>
+          <span className='react-autoql-data-explorer-title-text-sample-queries'>
+            <Icon type='sparkles' /> What can I query?
+          </span>
+          {this.renderDataPreviewButton()}
+          <FieldSelector
+            columns={columns}
+            selectedColumns={this.state.selectedColumns}
+            onColumnsChange={(selectedColumns) => this.setState({ selectedColumns })}
+            selectedSubject={this.state.selectedTopic}
+            selectedTopic={null}
+            loading={this.state.isDataPreviewLoading}
+          />
+        </div>
       </div>
+    )
+  }
+
+  renderDataPreviewButton = () => {
+    return (
+      <button
+        className='data-preview-button'
+        onClick={this.triggerDataPreviewQuery}
+        disabled={this.state.isDataPreviewLoading}
+        type='button'
+      >
+        <Icon type='send' /> Show <strong>Data Preview</strong>
+      </button>
     )
   }
 
@@ -352,6 +370,83 @@ class QueryInput extends React.Component {
     })
   }
 
+  triggerDataPreviewQuery = () => {
+    if (!this.state.selectedTopic) {
+      return
+    }
+
+    const topicName = this.state.selectedTopic?.displayName || 'this topic'
+    const queryText = `Data Preview - ${topicName}`
+
+    // Collapse the suggestions
+    this.collapseSuggestions()
+
+    // Submit immediately without animating
+    this.submitDataPreviewQuery(queryText)
+  }
+
+  submitDataPreviewQuery = (queryText) => {
+    if (!this.state.selectedTopic?.context) {
+      return
+    }
+
+    const id = uuid()
+    const numRows = 20
+    const topicName = this.state.selectedTopic?.displayName || 'this topic'
+
+    // Notify parent that we're submitting a query (this shows the request message)
+    this.props.onSubmit(queryText, id)
+
+    // Set query running state
+    this.setState({ isQueryRunning: true })
+
+    // Cancel any previous data preview request
+    this.axiosSourceDataPreview?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSourceDataPreview = axios.CancelToken.source()
+
+    // Fetch data preview with more rows for display
+    fetchDataPreview({
+      ...this.props.authentication,
+      subject: this.state.selectedTopic?.context,
+      numRows: numRows,
+      source: 'query_input.data_preview_query',
+      scope: this.props.scope,
+      cancelToken: this.axiosSourceDataPreview.token,
+    })
+      .then((response) => {
+        // Mark this response as a data preview type
+        if (response?.data?.data) {
+          response.data.data.isDataPreview = true
+          // Disable infinite scroll to enable local sorting
+          response.data.data.useInfiniteScroll = false
+        }
+
+        const formattedResponse = transformQueryResponse(response)
+
+        // Send an informational text message first
+        const actualRows = formattedResponse?.data?.data?.rows?.length || numRows
+        const infoMessage = `Displaying the first ${actualRows} rows from "${topicName}"`
+
+        // Add the text content message using the same approach as ChatContent
+        this.props.addResponseMessage({
+          content: infoMessage,
+          queryMessageID: id,
+        })
+
+        // Add a small delay to ensure the informational message appears before the data table
+        setTimeout(() => {
+          // Format the response to look like a regular query response
+          // This allows it to be rendered in the DataMessenger
+          this.onResponse(formattedResponse, queryText, id)
+        }, 100)
+      })
+      .catch((error) => {
+        if (error?.message !== REQUEST_CANCELLED_ERROR) {
+          console.error(error)
+          this.onResponse(error, queryText, id)
+        }
+      })
+  }
   submitDprQuery = (query, id) => {
     dprQuery({
       dprKey: this.props.authentication?.dprKey,
@@ -778,21 +873,16 @@ class QueryInput extends React.Component {
           {/* Query Suggestions - Always visible buttons */}
           {this.props.enableQuerySuggestions && this.props.enableQueryInputTopics && this.state.topics.length > 0 && (
             <div className={`react-autoql-input-query-suggestions ${this.state.isExpanded ? 'expanded' : ''}`}>
-              {/* Close button for expanded suggestions container */}
-              {this.state.isExpanded && (
-                <button className='query-suggestions-main-close' onClick={this.collapseSuggestions} type='button'>
-                  <Icon type='close' />
-                </button>
-              )}
-
               {/* Expanded Sample Queries Section */}
               {this.state.isExpanded && this.state.selectedTopic && (
                 <div className='query-suggestions-expanded'>
                   <div className='query-suggestions-expanded-header'>
                     {this.renderSampleQueriesHeader()}
-                    <button className='query-suggestions-close' onClick={this.onCloseExpanded} type='button'>
-                      <Icon type='react-autoql-close' />
-                    </button>
+                    <div className='query-suggestions-expanded-header-actions'>
+                      <button className='query-suggestions-main-close' onClick={this.collapseSuggestions} type='button'>
+                        <Icon type='close' />
+                      </button>
+                    </div>
                   </div>
                   <div className='query-suggestions-sample-list'>
                     <SampleQueryList

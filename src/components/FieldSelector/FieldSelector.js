@@ -58,7 +58,7 @@ export default class FieldSelector extends React.Component {
             title={
               <span className='field-selector-title'>
                 <Icon name='filter' size='small' />
-                FIELDS
+                SELECT FIELDS
               </span>
             }
             size='small'

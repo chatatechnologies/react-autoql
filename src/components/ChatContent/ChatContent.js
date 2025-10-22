@@ -527,6 +527,7 @@ export default class ChatContent extends React.Component {
             autoQLConfig={this.props.autoQLConfig}
             onSubmit={this.onInputSubmit}
             onResponseCallback={this.onResponse}
+            addResponseMessage={this.addResponseMessage}
             isDisabled={this.state.isInputDisabled}
             enableVoiceRecord={this.props.enableVoiceRecord}
             autoCompletePlacement='above'

@@ -205,9 +205,6 @@
   }
 
   .query-suggestions-main-close {
-    position: absolute;
-    top: 8px;
-    right: 8px;
     width: 20px;
     height: 20px;
     border: none;
@@ -412,13 +409,76 @@
   color: var(--react-autoql-text-color-primary);
 }
 
+.react-autoql-query-input-wrapper .react-autoql-data-explorer-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
 .react-autoql-query-input-wrapper .react-autoql-data-explorer-title-text-sample-queries {
   font-size: 16px;
   color: var(--react-autoql-text-color-primary);
-  margin-right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
 
   .react-autoql-icon {
     color: var(--react-autoql-accent-color);
+  }
+}
+
+.react-autoql-query-input-wrapper .query-suggestions-expanded-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.react-autoql-query-input-wrapper .query-suggestions-expanded-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  margin-top: -2px;
+}
+
+.react-autoql-query-input-wrapper .data-preview-button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 12px;
+  margin-left: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 4px;
+  background-color: var(--react-autoql-background-color-secondary);
+  color: var(--react-autoql-text-color-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) {
+    color: var(--react-autoql-accent-color);
+    border-color: var(--react-autoql-accent-color);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .react-autoql-icon {
+    font-size: 14px;
   }
 }
 
