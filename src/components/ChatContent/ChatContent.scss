@@ -21,10 +21,14 @@
 
       &.no-topics {
         padding-bottom: 146px;
+
+        &.mobile-padding {
+          padding-bottom: 90px;
+        }
       }
 
       &.mobile-padding {
-        padding-bottom: 90px;
+        padding-bottom: 136px;
       }
 
       .chat-content-container {
@@ -74,13 +78,17 @@
   z-index: 11;
 
   &.mobile-padding {
-    bottom: 44px;
+    bottom: 88px;
   }
 }
 
 .chat-content-scroll-container.no-topics .response-loading-container {
   bottom: 100px;
   z-index: 1;
+
+  &.mobile-padding {
+    bottom: 44px;
+  }
 }
 
 .react-autoql-drawer .chat-bar-container {
