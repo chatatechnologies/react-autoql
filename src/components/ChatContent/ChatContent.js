@@ -435,9 +435,9 @@ export default class ChatContent extends React.Component {
       <ErrorBoundary>
         <div
           ref={(r) => (this.chatContentRef = r)}
-          className={`chat-content-scroll-container ${this.props.shouldRender ? '' : 'react-autoql-content-hidden'} ${
-            this.props.enableQueryInputTopics === false ? 'no-topics' : ''
-          }`}
+          className={`chat-content-scroll-container ${this.props.shouldRender ? '' : 'react-autoql-content-hidden'}
+            ${this.props.enableQueryInputTopics === false ? 'no-topics' : ''}
+            ${isMobile ? 'mobile-padding' : ''}`}
           style={{ visibility: chatMessageVisibility, opacity: chatMessageOpacity }}
         >
           <CustomScrollbars
@@ -507,7 +507,7 @@ export default class ChatContent extends React.Component {
             </div>
           </CustomScrollbars>
           {this.isChataThinking() && (
-            <div className='response-loading-container'>
+            <div className={`response-loading-container ${isMobile ? 'mobile-padding' : ''}`}>
               <LoadingDots />
             </div>
           )}

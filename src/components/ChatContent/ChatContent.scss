@@ -23,6 +23,10 @@
         padding-bottom: 146px;
       }
 
+      &.mobile-padding {
+        padding-bottom: 90px;
+      }
+
       .chat-content-container {
         overflow: hidden;
       }
@@ -68,10 +72,15 @@
   bottom: 150px;
   left: 20px;
   z-index: 11;
+
+  &.mobile-padding {
+    bottom: 44px;
+  }
 }
 
 .chat-content-scroll-container.no-topics .response-loading-container {
   bottom: 100px;
+  z-index: 1;
 }
 
 .react-autoql-drawer .chat-bar-container {

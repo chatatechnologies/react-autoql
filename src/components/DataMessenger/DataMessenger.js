@@ -758,7 +758,7 @@ export class DataMessenger extends React.Component {
         <div
           className={`react-autoql-header-left-container ${
             this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
-          }`}
+          } ${isMobile ? 'mobile-hidden' : ''}`}
         >
           {isBrowser ? (
             <>
@@ -787,7 +787,7 @@ export class DataMessenger extends React.Component {
         <div
           className={`react-autoql-header-right-container ${
             this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
-          }`}
+          } ${isMobile ? 'mobile-hidden' : ''}`}
         >
           {this.renderRightHeaderContent()}
         </div>
@@ -1143,7 +1143,10 @@ export class DataMessenger extends React.Component {
             className={`react-autoql-drawer-content-container ${this.state.activePage}`}
           >
             {!shouldHideHeader && (
-              <div className='chat-header-container' id={isMobile ? 'mobile-version' : null}>
+              <div
+                className={`chat-header-container ${isMobile ? 'mobile-hidden' : ''}`}
+                id={isMobile ? 'mobile-version' : null}
+              >
                 {this.renderHeaderContent()}
               </div>
             )}
