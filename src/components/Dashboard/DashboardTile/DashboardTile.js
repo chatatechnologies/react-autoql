@@ -1161,6 +1161,7 @@ export class DashboardTile extends React.Component {
         localRTFilterResponse={this.state.localRTFilterResponse}
         enableCustomColumns={this.props.enableCustomColumns}
         preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
+        useInfiniteScroll={this.props.useInfiniteScroll}
         {...queryOutputProps}
       />
     )
