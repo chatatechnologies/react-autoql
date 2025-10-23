@@ -235,7 +235,7 @@ class QueryInput extends React.Component {
       <div className='react-autoql-data-explorer-title-text'>
         <div className='react-autoql-data-explorer-title-row'>
           <span className='react-autoql-data-explorer-title-text-sample-queries'>
-            <Icon type='sparkles' /> What can I query?
+            <Icon type='light-bulb-on' /> What can I query?
           </span>
           {this.renderDataPreviewButton()}
           <FieldSelector
@@ -906,7 +906,7 @@ class QueryInput extends React.Component {
               {/* <div className='query-suggestions-label'>Quick Topics:</div> */}
               <div className='query-suggestions-buttons'>
                 <span className='query-suggestions-buttons-label'>
-                  <Icon type='sparkles' /> Quick Topics:{' '}
+                  <Icon type='lightning' /> Quick Topics:{' '}
                 </span>
                 {this.state.topics.map((topic, index) => (
                   <button
