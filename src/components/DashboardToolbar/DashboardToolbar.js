@@ -27,6 +27,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onDeleteClick: PropTypes.func,
     onEditClick: PropTypes.func,
     onRefreshClick: PropTypes.func,
+    onCachedRefreshClick: PropTypes.func,
     onAddTileClick: PropTypes.func,
     onUndoClick: PropTypes.func,
     onRedoClick: PropTypes.func,
@@ -43,6 +44,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onDeleteClick: () => {},
     onEditClick: () => {},
     onRefreshClick: () => {},
+    onCachedRefreshClick: () => {},
     onAddTileClick: () => {},
     onUndoClick: () => {},
     onRedoClick: () => {},
@@ -256,7 +258,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
               {this.dashboardSlicingFeatureToggle && !this.props.isEditing && this.renderFilterInput()}
               {!this.props.isEditing ? (
                 <>
-                  {/* <div
+                  <div
                     style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '8px', opacity: 0.7 }}
                   >
                     <Icon
@@ -268,14 +270,14 @@ export class DashboardToolbarWithoutRef extends React.Component {
                     <span data-tooltip-content={this.getRefreshIntervalText()} data-tooltip-id={this.props.tooltipID}>
                       {this.getRefreshIntervalDisplay()}
                     </span>
-                  </div> */}
+                  </div>
                   <Button
                     iconOnly
                     icon='refresh'
                     border={false}
                     tooltip='Refresh Dashboard Data'
                     tooltipID={this.props.tooltipID}
-                    onClick={this.props.onRefreshClick}
+                    onClick={this.props.onCachedRefreshClick}
                   />
                 </>
               ) : (

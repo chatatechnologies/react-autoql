@@ -18,6 +18,11 @@ import {
   getAuthentication,
   getAutoQLConfig,
   CustomColumnTypes,
+  runCachedDashboardQuery,
+  QueryErrorTypes,
+  transformQueryResponse,
+  fetchSuggestions,
+  isError500Type,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
@@ -126,6 +131,9 @@ export class DashboardTile extends React.Component {
     onPNGDownloadFinish: PropTypes.func,
     cancelQueriesOnUnmount: PropTypes.bool,
     setParamsForTile: PropTypes.func,
+    dashboardId: PropTypes.string,
+    tileKey: PropTypes.string,
+    isCachedRefresh: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -153,6 +161,9 @@ export class DashboardTile extends React.Component {
     onTouchStart: () => {},
     onTouchEnd: () => {},
     setParamsForTile: () => {},
+    dashboardId: undefined,
+    tileKey: undefined,
+    isCachedRefresh: false,
   }
 
   componentDidMount = () => {
@@ -324,7 +335,7 @@ export class DashboardTile extends React.Component {
     }
   }
 
-  processQuery = ({ query, userSelection, skipQueryValidation, source, isSecondHalf }) => {
+  processQuery = ({ query, userSelection, skipQueryValidation, source, isSecondHalf, isCachedRefresh }) => {
     if (this.isQueryValid(query)) {
       let pageSize
       if (isSecondHalf && isChartType(this.props.tile.secondDisplayType)) {
@@ -364,7 +375,16 @@ export class DashboardTile extends React.Component {
         pageSize,
         query,
       }
-      return runQuery(requestData)
+
+      const queryFunction = isCachedRefresh ? runCachedDashboardQuery : runQuery
+
+      if (isCachedRefresh) {
+        requestData.dashboardId = this.props.dashboardId
+        requestData.tileKey = this.props.tileKey
+        requestData.queryIndex = isSecondHalf ? 1 : 0
+      }
+
+      return queryFunction(requestData)
         .then((response) => {
           if (isSecondHalf) {
             this.bottomRequestData = requestData
@@ -378,7 +398,7 @@ export class DashboardTile extends React.Component {
     return Promise.reject()
   }
 
-  processTileTop = ({ query, userSelection, skipQueryValidation, source, pageSize }) => {
+  processTileTop = ({ query, userSelection, skipQueryValidation, source, pageSize, isCachedRefresh }) => {
     this.setState({ isTopExecuting: true, queryResponse: null })
     const queryChanged = this.props.tile.query !== query
     const skipValidation = skipQueryValidation || (this.props.tile.skipQueryValidation && !queryChanged)
@@ -404,6 +424,7 @@ export class DashboardTile extends React.Component {
       source,
       pageSize,
       isSecondHalf: false,
+      isCachedRefresh,
     })
       .then((response) => {
         return this.endTopQuery({ response })
@@ -417,7 +438,7 @@ export class DashboardTile extends React.Component {
       })
   }
 
-  processTileBottom = ({ query, userSelection, skipQueryValidation, source }) => {
+  processTileBottom = ({ query, userSelection, skipQueryValidation, source, isCachedRefresh }) => {
     this.setState({
       isBottomExecuting: true,
       isSecondQueryInputOpen: false,
@@ -439,6 +460,7 @@ export class DashboardTile extends React.Component {
       secondCustomColumns: queryChanged ? undefined : this.props.tile.secondCustomColumns,
       secondDefaultSelectedSuggestion: undefined,
       secondQueryValidationSelections: queryValidationSelections,
+      secondTableFilters: queryChanged ? undefined : this.props.tile.secondTableFilters,
     })
 
     return this.processQuery({
@@ -447,6 +469,7 @@ export class DashboardTile extends React.Component {
       skipQueryValidation: skipQueryValidation,
       source,
       isSecondHalf: true,
+      isCachedRefresh,
     })
       .then((response) => this.endBottomQuery({ response }))
       .catch((response) => {
@@ -484,7 +507,14 @@ export class DashboardTile extends React.Component {
     })
   }
 
-  processTile = ({ query, secondQuery, skipQueryValidation, secondskipQueryValidation, source } = {}) => {
+  processTile = ({
+    query,
+    secondQuery,
+    skipQueryValidation,
+    secondskipQueryValidation,
+    source,
+    isCachedRefresh,
+  } = {}) => {
     // If tile is already processing, cancel current process
     this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
     this.secondAxiosSource?.cancel(REQUEST_CANCELLED_ERROR)
@@ -503,10 +533,11 @@ export class DashboardTile extends React.Component {
         query: q2,
         skipQueryValidation: secondskipQueryValidation,
         source,
+        isCachedRefresh,
       })
     }
 
-    promises[0] = this.processTileTop({ query: q1, skipQueryValidation, source })
+    promises[0] = this.processTileTop({ query: q1, skipQueryValidation, source, isCachedRefresh })
 
     return Promise.all(promises)
       .then((queryResponses) => {
@@ -813,15 +844,23 @@ export class DashboardTile extends React.Component {
     secondOrders,
     secondFilters,
   ) => {
-    this.debouncedSetParamsForTile({
+    const paramsToSet = {
       secondDisplayOverrides,
       secondColumnSelects,
       secondQueryResponse,
       secondDataConfig,
-      secondTableFilters,
-      secondTableFilters,
       secondFilters,
-    })
+    }
+
+    if (secondTableFilters && secondTableFilters.length > 0) {
+      paramsToSet.secondTableFilters = secondTableFilters
+    }
+
+    if (secondOrders && secondOrders.length > 0) {
+      paramsToSet.secondOrders = secondOrders
+    }
+
+    this.debouncedSetParamsForTile(paramsToSet)
   }
 
   reportProblemCallback = () => {
@@ -1234,11 +1273,15 @@ export class DashboardTile extends React.Component {
         onPageSizeChange: this.onPageSizeChange,
         onBucketSizeChange: this.onBucketSizeChange,
         bucketSize: this.props.tile.bucketSize,
-        initialFormattedTableParams: {
-          filters: this.props.tile?.tableFilters,
-          sorters: this.props.tile?.orders,
-          sessionFilters: this.props.tile?.filters,
-        },
+        initialFormattedTableParams: (() => {
+          const feReqFilters = this.props.tile?.queryResponse?.data?.data?.fe_req?.filters
+          const filtersToUse = feReqFilters?.length > 0 ? feReqFilters : this.props.tile?.tableFilters
+          return {
+            filters: filtersToUse,
+            sorters: this.props.tile?.orders,
+            sessionFilters: this.props.tile?.filters,
+          }
+        })(),
         enableChartControls: true,
         initialChartControls: this.props.tile?.chartControls || {
           showAverageLine: false,
@@ -1325,11 +1368,17 @@ export class DashboardTile extends React.Component {
         onBucketSizeChange: this.onSecondBucketSizeChange,
         onColumnChange: this.onSecondColumnChange,
         bucketSize: this.props.tile.secondBucketSize,
-        initialFormattedTableParams: {
-          filters: this.props.tile?.secondTableFilters,
-          sorters: this.props.tile?.secondOrders,
-          sessionFilters: this.props.tile?.secondFilters,
-        },
+        initialFormattedTableParams: (() => {
+          const queryResponse = this.props.tile?.secondQueryResponse || this.props.tile?.queryResponse
+          const feReqFilters = queryResponse?.data?.data?.fe_req?.filters
+          const filtersToUse = feReqFilters?.length > 0 ? feReqFilters : this.props.tile?.secondTableFilters
+
+          return {
+            filters: filtersToUse,
+            sorters: this.props.tile?.secondOrders,
+            sessionFilters: this.props.tile?.secondFilters,
+          }
+        })(),
         enableChartControls: true,
         initialChartControls: this.props.tile?.secondChartControls || {
           showAverageLine: false,
