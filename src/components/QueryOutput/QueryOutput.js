@@ -2647,6 +2647,11 @@ export class QueryOutput extends React.Component {
         uniqueColumnHeaders = uniqueColumnHeaders.slice(0, this.MAX_PIVOT_TABLE_COLUMNS)
       }
 
+      const hasValidLegend = newLegendColumnIndex !== undefined && columns[newLegendColumnIndex]
+      if (!hasValidLegend) {
+        uniqueColumnHeaders = ['Value']
+      }
+
       const uniqueColumnHeadersObj = uniqueColumnHeaders.reduce((map, title, i) => {
         map[title] = i
         return map
@@ -2674,16 +2679,18 @@ export class QueryOutput extends React.Component {
       })
 
       uniqueColumnHeaders.forEach((columnName, i) => {
-        const formattedColumnName = formatElement({
-          element: columnName,
-          column: columns[newLegendColumnIndex],
-          config: getDataFormatting(this.props.dataFormatting),
-        })
+        const formattedColumnName = !hasValidLegend
+          ? columnName
+          : formatElement({
+              element: columnName,
+              column: columns[newLegendColumnIndex],
+              config: getDataFormatting(this.props.dataFormatting),
+            })
 
         pivotTableColumns.push({
           ...columns[numberColumnIndex],
           origColumn: columns[numberColumnIndex],
-          origPivotColumn: columns[newLegendColumnIndex],
+          origPivotColumn: hasValidLegend ? columns[newLegendColumnIndex] : undefined,
           origValues: {},
           name: columnName,
           title: formattedColumnName,
@@ -2701,16 +2708,22 @@ export class QueryOutput extends React.Component {
       sortedData.forEach((row) => {
         const pivotRowIndex = uniqueRowHeadersObj[row[newStringColumnIndex]]
         const pivotRowHeaderValue = row[newStringColumnIndex]
-        if (!pivotRowHeaderValue || !pivotTableData[pivotRowIndex]) {
+        if (!pivotRowHeaderValue || pivotTableData[pivotRowIndex] === undefined) {
           return
         }
 
         pivotTableData[pivotRowIndex][0] = pivotRowHeaderValue
 
         const pivotValue = Number(row[numberColumnIndex])
-        const pivotColumnIndex = uniqueColumnHeadersObj[row[newLegendColumnIndex]] + 1
-        pivotTableData[pivotRowIndex][pivotColumnIndex] = pivotValue
-        if (pivotTableColumns[pivotColumnIndex]) {
+        const pivotColumnIndex = hasValidLegend ? uniqueColumnHeadersObj[row[newLegendColumnIndex]] + 1 : 1
+
+        pivotTableData[pivotRowIndex][pivotColumnIndex] =
+          (pivotTableData[pivotRowIndex][pivotColumnIndex] ?? 0) + pivotValue
+
+        if (
+          pivotTableColumns[pivotColumnIndex] &&
+          !pivotTableColumns[pivotColumnIndex].origValues[pivotRowHeaderValue]
+        ) {
           pivotTableColumns[pivotColumnIndex].origValues[pivotRowHeaderValue] = {
             name: columns[newStringColumnIndex]?.name,
             drill_down: columns[newStringColumnIndex]?.drill_down,
@@ -3017,6 +3030,7 @@ export class QueryOutput extends React.Component {
           dataFormatting={this.props.dataFormatting}
           columns={this.pivotTableColumns}
           data={this.pivotTableData}
+          tableConfig={this.pivotTableConfig}
           onCellClick={this.onTableCellClick}
           isAnimating={this.props.isAnimating}
           isResizing={this.props.isResizing || this.state.isResizing}
@@ -3317,6 +3331,7 @@ export class QueryOutput extends React.Component {
     return (
       getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
       this.props.showQueryInterpretation &&
+      this.props.onRTValueLabelClick &&
       (this.queryResponse?.data?.data?.parsed_interpretation || this.queryResponse?.data?.data?.interpretation)
     )
   }

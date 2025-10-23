@@ -123,6 +123,19 @@ export default class ChataTable extends React.Component {
     this.tableOptions.ajaxRequestFunc = (url, config, params) => this.ajaxRequestFunc(props, params)
     this.tableOptions.ajaxResponse = (url, params, response) => this.ajaxResponseFunc(props, response)
 
+    if (props.pivot) {
+      this.useInfiniteScroll = false
+      this.tableOptions.sortMode = LOCAL_OR_REMOTE.LOCAL
+      this.tableOptions.filterMode = LOCAL_OR_REMOTE.LOCAL
+      this.tableOptions.paginationMode = LOCAL_OR_REMOTE.LOCAL
+      this.tableOptions.progressiveLoad = false
+      // Remove ajax handlers so TableWrapper uses provided data directly
+      delete this.tableOptions.ajaxRequestFunc
+      delete this.tableOptions.ajaxRequesting
+      delete this.tableOptions.ajaxResponse
+      delete this.tableOptions.ajaxURL
+    }
+
     this.summaryStats = {}
 
     this.state = {
