@@ -4,6 +4,7 @@ import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import RGL, { WidthProvider } from 'react-grid-layout'
+import pako from 'pako'
 
 import {
   deepEqual,
@@ -533,6 +534,81 @@ class DashboardWithoutTheme extends React.Component {
     }
   }
 
+  exportDashboard = () => {
+    try {
+      const tiles = this.getMostRecentTiles()
+
+      // Create the dashboard export object with complete tile state
+      const dashboardExport = {
+        version: '1.0',
+        exportDate: new Date().toISOString(),
+        dashboard: {
+          title: this.props.title || 'Untitled Dashboard',
+          tiles: tiles.map((tile) => {
+            // Save the entire tile state
+            return { ...tile }
+          }),
+          props: {
+            dataPageSize: this.props.dataPageSize,
+          },
+        },
+      }
+
+      // Convert to JSON string
+      const jsonStr = JSON.stringify(dashboardExport, null, 2)
+
+      // Compress using gzip
+      const compressed = pako.gzip(jsonStr)
+
+      // Create blob with compressed data
+      const dataBlob = new Blob([compressed], { type: 'application/gzip' })
+      const url = URL.createObjectURL(dataBlob)
+      const link = document.createElement('a')
+      link.href = url
+
+      // Generate filename with sanitized title and timestamp
+      const sanitizedTitle = (this.props.title || 'dashboard').replace(/[^a-z0-9]/gi, '_').toLowerCase()
+      const timestamp = new Date().toISOString().split('T')[0]
+      link.download = `${sanitizedTitle}_${timestamp}.autoql`
+
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Error exporting dashboard:', error)
+    }
+  }
+
+  importDashboard = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+
+      reader.onload = (e) => {
+        try {
+          const uint8Array = new Uint8Array(e.target.result)
+
+          // Try to decompress - if it fails, assume it's uncompressed JSON
+          let jsonStr
+          try {
+            jsonStr = pako.ungzip(uint8Array, { to: 'string' })
+          } catch (decompressError) {
+            // Fallback to plain text for backwards compatibility with old uncompressed files
+            jsonStr = new TextDecoder().decode(uint8Array)
+          }
+
+          const dashboardData = JSON.parse(jsonStr)
+          resolve(dashboardData)
+        } catch (error) {
+          reject(new Error('Failed to parse dashboard file: ' + error.message))
+        }
+      }
+
+      reader.onerror = () => reject(new Error('Failed to read file'))
+      reader.readAsArrayBuffer(file)
+    })
+  }
+
   setParamsForTile = (params, id, callbackArray) => {
     try {
       const originalTiles = this.getMostRecentTiles()
@@ -689,7 +765,17 @@ class DashboardWithoutTheme extends React.Component {
             dashboardRef={this.ref}
             authentication={this.props.authentication}
             cancelQueriesOnUnmount={this.props.cancelQueriesOnUnmount}
-            autoQLConfig={this.props.autoQLConfig}
+            autoQLConfig={
+              !this.props.offline
+                ? this.props.autoQLConfig
+                : {
+                    ...getAutoQLConfig(this.props.autoQLConfig),
+                    enableDrilldowns: false,
+                    enableReportProblem: false,
+                    enableColumnVisibilityManager: false,
+                    enableNotifications: false,
+                  }
+            }
             tile={{ ...tile, i: tile.key, maxH: 10, minH: 2, minW: 3 }}
             displayType={tile.displayType}
             secondDisplayType={tile.secondDisplayType}
@@ -718,6 +804,7 @@ class DashboardWithoutTheme extends React.Component {
             customToolbarOptions={this.props.customToolbarOptions}
             enableCustomColumns={this.props.enableCustomColumns}
             preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
+            useInfiniteScroll={!this.props.offline}
           />
         ))}
       </ReactGridLayout>
@@ -742,6 +829,7 @@ class DashboardWithoutTheme extends React.Component {
               onUndoClick={this.undo}
               onRedoClick={this.redo}
               onRefreshClick={this.executeDashboard}
+              onDownloadClick={this.exportDashboard}
               onSaveClick={() => {
                 Promise.resolve(this.props.onSaveCallback ? this.props.onSaveCallback() : undefined).then((result) => {
                   // Keep if we need to add back in the near future

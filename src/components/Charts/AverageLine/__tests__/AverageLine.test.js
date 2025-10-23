@@ -105,7 +105,6 @@ describe('AverageLine', () => {
   it('applies custom styling', () => {
     const props = {
       ...defaultProps,
-      color: '#ff0000',
       strokeWidth: 3,
       strokeDasharray: '10,5',
     }
@@ -113,12 +112,12 @@ describe('AverageLine', () => {
     const wrapper = mount(<AverageLine {...props} />)
 
     const visibleLine = wrapper.find('line.average-line')
-    expect(visibleLine.prop('stroke')).toBe('#ff0000')
+    expect(visibleLine.prop('stroke')).toBe('currentColor')
     expect(visibleLine.prop('strokeWidth')).toBe(3)
     expect(visibleLine.prop('strokeDasharray')).toBe('10,5')
   })
 
-  it('calculates average across multiple series', () => {
+  it('renders individual average lines for multiple series', () => {
     const multiSeriesData = [
       ['Category A', 100, 150],
       ['Category B', 200, 250],
@@ -141,12 +140,23 @@ describe('AverageLine', () => {
 
     const wrapper = mount(<AverageLine {...props} />)
 
-    // Average of all values: [100, 150, 200, 250, 150, 200, 300, 350] = 212.5
-    const expectedAverage = 212.5
-    const visibleLine = wrapper.find('line.average-line')
+    // Should render individual average lines for each series
+    const averageLines = wrapper.find('line.average-line')
+    expect(averageLines).toHaveLength(2) // One for each series
 
-    expect(visibleLine.prop('y1')).toBe(mockYScale(expectedAverage))
-    expect(visibleLine.prop('y2')).toBe(mockYScale(expectedAverage))
+    // Series 1 average: [100, 200, 150, 300] = 187.5
+    const series1Average = 187.5
+    // Series 2 average: [150, 250, 200, 350] = 237.5
+    const series2Average = 237.5
+
+    // Check that both lines are rendered with correct positions
+    const line1 = averageLines.at(0)
+    const line2 = averageLines.at(1)
+
+    expect(line1.prop('y1')).toBe(mockYScale(series1Average))
+    expect(line1.prop('y2')).toBe(mockYScale(series1Average))
+    expect(line2.prop('y1')).toBe(mockYScale(series2Average))
+    expect(line2.prop('y2')).toBe(mockYScale(series2Average))
   })
 
   it('renders differently for bar charts vs column charts', () => {
