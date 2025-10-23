@@ -32,6 +32,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onUndoClick: PropTypes.func,
     onRedoClick: PropTypes.func,
     onRenameClick: PropTypes.func,
+    onDownloadClick: PropTypes.func,
     tooltipID: PropTypes.string,
     title: PropTypes.string,
     refreshInterval: PropTypes.number,
@@ -48,6 +49,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onUndoClick: () => {},
     onRedoClick: () => {},
     onRenameClick: () => {},
+    onDownloadClick: () => {},
     tooltipID: undefined,
     title: 'Untitled Dashboard',
     refreshInterval: 60,
@@ -124,6 +126,14 @@ export class DashboardToolbarWithoutRef extends React.Component {
           icon='edit'
           onClick={() => {
             this.props.onEditClick()
+            this.setState({ isOptionsMenuOpen: false })
+          }}
+        />
+        <MenuItem
+          title='Export Dashboard (.autoql)'
+          icon='download'
+          onClick={() => {
+            this.props.onDownloadClick()
             this.setState({ isOptionsMenuOpen: false })
           }}
         />
