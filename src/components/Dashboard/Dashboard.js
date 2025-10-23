@@ -774,6 +774,7 @@ class DashboardWithoutTheme extends React.Component {
                     enableReportProblem: false,
                     enableColumnVisibilityManager: false,
                     enableNotifications: false,
+                    enableCSVDownload: false,
                   }
             }
             tile={{ ...tile, i: tile.key, maxH: 10, minH: 2, minW: 3 }}
