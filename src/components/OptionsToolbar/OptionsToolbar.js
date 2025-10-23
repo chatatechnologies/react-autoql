@@ -56,6 +56,7 @@ export class OptionsToolbar extends React.Component {
     enableDeleteBtn: PropTypes.bool,
     shouldRender: PropTypes.bool,
     enableFilterBtn: PropTypes.bool,
+    enableCopyBtn: PropTypes.bool,
     onSuccessAlert: PropTypes.func,
     onErrorCallback: PropTypes.func,
     onNewNotificationCallback: PropTypes.func,
@@ -73,6 +74,7 @@ export class OptionsToolbar extends React.Component {
     dataFormatting: dataFormattingDefault,
     enableFilterBtn: true,
     enableDeleteBtn: false,
+    enableCopyBtn: true,
     shouldRender: true,
     onSuccessAlert: () => {},
     onErrorCallback: () => {},
@@ -721,7 +723,7 @@ export class OptionsToolbar extends React.Component {
           (displayType === 'table' || isChartType(displayType)) &&
           !allColumnsHidden &&
           hasMoreThanOneRow,
-        showCopyButton: isTable && !allColumnsHidden,
+        showCopyButton: this.props.enableCopyBtn && isTable && !allColumnsHidden,
         showSaveAsPNGButton: isChart,
         showHideColumnsButton:
           autoQLConfig.enableColumnVisibilityManager &&

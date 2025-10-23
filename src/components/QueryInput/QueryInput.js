@@ -23,11 +23,17 @@ import {
   getAuthentication,
   getAutoQLConfig,
   parseJwt,
+  fetchSubjectList,
+  fetchDataPreview,
+  transformQueryResponse,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
+import { Spinner } from '../Spinner'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import SampleQueryList from '../DataExplorer/SampleQueryList'
+import FieldSelector from '../FieldSelector'
 
 import { withTheme } from '../../theme'
 import { dprQuery } from '../../js/dprService'
@@ -52,6 +58,13 @@ class QueryInput extends React.Component {
       suggestions: [],
       isQueryRunning: false,
       listeningForTranscript: false,
+      topics: [],
+      isInputFocused: false,
+      selectedTopic: null,
+      isExpanded: false,
+      selectedColumns: [],
+      dataPreview: undefined,
+      isDataPreviewLoading: false,
     }
   }
 
@@ -63,6 +76,7 @@ class QueryInput extends React.Component {
     isDisabled: PropTypes.bool,
     onSubmit: PropTypes.func,
     onResponseCallback: PropTypes.func,
+    addResponseMessage: PropTypes.func,
     className: PropTypes.string,
     autoCompletePlacement: PropTypes.string,
     showLoadingDots: PropTypes.bool,
@@ -74,6 +88,10 @@ class QueryInput extends React.Component {
     sessionId: PropTypes.string,
     dataPageSize: PropTypes.number,
     shouldRender: PropTypes.bool,
+    enableQuerySuggestions: PropTypes.bool,
+    enableQueryInputTopics: PropTypes.bool,
+    columns: PropTypes.array,
+    executeQuery: PropTypes.func,
   }
 
   static defaultProps = {
@@ -91,16 +109,26 @@ class QueryInput extends React.Component {
     source: null,
     queryFilters: undefined,
     clearQueryOnSubmit: true,
+    enableQuerySuggestions: true,
+    enableQueryInputTopics: true,
     placeholder: 'Type your queries here',
     dataPageSize: undefined,
     shouldRender: true,
     onSubmit: () => {},
     onResponseCallback: () => {},
+    addResponseMessage: () => {},
+    executeQuery: () => {},
   }
 
   componentDidMount = () => {
     this._isMounted = true
     document.addEventListener('keydown', this.onEscKeypress)
+    document.addEventListener('mousedown', this.handleClickOutside)
+
+    // Fetch topics if enabled
+    if (this.props.enableQueryInputTopics) {
+      this.fetchTopics()
+    }
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -127,6 +155,193 @@ class QueryInput extends React.Component {
     clearTimeout(this.queryValidationTimer)
     clearTimeout(this.caretMoveTimeout)
     document.removeEventListener('keydown', this.onEscKeypress)
+    document.removeEventListener('mousedown', this.handleClickOutside)
+    this.axiosSourceDataPreview?.cancel(REQUEST_CANCELLED_ERROR)
+  }
+
+  fetchTopics = () => {
+    fetchSubjectList({ ...this.props.authentication })
+      .then((subjects) => {
+        if (this._isMounted && subjects?.length) {
+          // Filter out aggregate seed subjects, similar to DataExplorer
+          const filteredSubjects = subjects.filter((subj) => !subj.isAggSeed())
+          this.setState({ topics: filteredSubjects })
+        }
+      })
+      .catch((error) => console.error('Error fetching topics:', error))
+  }
+
+  onTopicClick = (topic) => {
+    // Set the selected topic and expand the container
+    this.setState(
+      {
+        selectedTopic: topic,
+        isExpanded: true,
+        isDataPreviewLoading: true,
+        selectedColumns: [],
+        dataPreview: undefined,
+      },
+      () => {
+        // Fetch data preview after state is set
+        this.fetchDataPreviewData()
+      },
+    )
+  }
+
+  collapseSuggestions = () => {
+    this.setState({
+      selectedTopic: null,
+      isExpanded: false,
+      selectedColumns: [],
+      dataPreview: undefined,
+      isDataPreviewLoading: false,
+    })
+  }
+
+  handleClickOutside = (event) => {
+    if (!this.state.isExpanded || !this.queryInputWrapperRef) {
+      return
+    }
+
+    // Check if the click is on a dropdown or popup that should not close the suggestions
+    const isDropdownClick =
+      event.target.closest('.react-autoql-multiselect-popup') ||
+      event.target.closest('.react-autoql-sample-queries-filter-dropdown') ||
+      event.target.closest('[data-tooltip-id]') ||
+      event.target.closest('.VLAutocompleteInputPopover') ||
+      event.target.closest('.VLAutocompleteInput') ||
+      event.target.closest('.react-autosuggest__suggestions-container') ||
+      event.target.closest('.react-autosuggest__input') ||
+      event.target.closest('.react-autosuggest__container') ||
+      event.target.closest('.VLAutocompleteInputPopover__container') ||
+      event.target.closest('.VLAutocompleteInputPopover__list') ||
+      event.target.closest('.VLAutocompleteInput__container')
+
+    // Don't close if clicking on a dropdown
+    if (isDropdownClick) {
+      return
+    }
+
+    // Only close if clicking outside the wrapper
+    if (!this.queryInputWrapperRef.contains(event.target)) {
+      this.collapseSuggestions()
+    }
+  }
+
+  renderSampleQueriesHeader = () => {
+    const columns = this.state.dataPreview?.data?.data?.columns
+
+    return (
+      <div className='react-autoql-data-explorer-title-text'>
+        <div className='react-autoql-data-explorer-title-row'>
+          <span className='react-autoql-data-explorer-title-text-sample-queries'>
+            <Icon type='light-bulb-on' /> What can I query?
+          </span>
+          {this.renderDataPreviewButton()}
+          <FieldSelector
+            columns={columns}
+            selectedColumns={this.state.selectedColumns}
+            onColumnsChange={(selectedColumns) => this.setState({ selectedColumns })}
+            selectedSubject={this.state.selectedTopic}
+            selectedTopic={null}
+            loading={this.state.isDataPreviewLoading}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  renderDataPreviewButton = () => {
+    return (
+      <button
+        className='data-preview-button'
+        onClick={this.triggerDataPreviewQuery}
+        disabled={this.state.isDataPreviewLoading}
+        type='button'
+      >
+        <Icon type='send' /> Show <strong>Data Preview</strong>
+      </button>
+    )
+  }
+
+  onCloseExpanded = () => {
+    this.collapseSuggestions()
+  }
+
+  getColumnsForSuggestions = () => {
+    // Only include columns if user has explicitly selected them
+    // Otherwise return undefined to prevent re-fetching when data preview loads
+    if (!this.state.selectedColumns?.length) {
+      return undefined
+    }
+
+    let columns = {}
+
+    this.state.selectedColumns.forEach((columnIndex) => {
+      const column = this.state.dataPreview?.data?.data?.columns[columnIndex]
+      if (column && !columns[column.name]) {
+        columns[column.name] = { value: '' }
+
+        if (column.alt_name) {
+          columns[column.name].alternative_column_names = [column.alt_name]
+        }
+      }
+    })
+
+    return columns
+  }
+
+  fetchDataPreviewData = () => {
+    if (!this.state.selectedTopic?.context) {
+      return
+    }
+
+    // Cancel any previous data preview request
+    this.axiosSourceDataPreview?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSourceDataPreview = axios.CancelToken.source()
+
+    fetchDataPreview({
+      ...this.props.authentication,
+      subject: this.state.selectedTopic?.context,
+      numRows: 1,
+      source: 'query_input.query_suggestions',
+      cancelToken: this.axiosSourceDataPreview.token,
+    })
+      .then((response) => {
+        if (this._isMounted) {
+          // Add metadata to determine whether or not a user can generate sample queries from the column
+          if (response?.data?.data?.columns?.length) {
+            response.data.data.columns.forEach((column) => {
+              column.isGroupable = this.isColumnGroupable(column)
+              column.isFilterable = this.isColumnFilterable(column)
+            })
+          }
+
+          this.setState({ dataPreview: response, isDataPreviewLoading: false })
+        }
+      })
+      .catch((error) => {
+        if (this._isMounted) {
+          if (error?.message !== REQUEST_CANCELLED_ERROR) {
+            console.error(error)
+            this.setState({ isDataPreviewLoading: false })
+          }
+        }
+      })
+  }
+
+  isColumnGroupable = (column) => {
+    const groupsNotProvided = !this.state.selectedTopic?.groups
+    const existsInGroups = !!this.state.selectedTopic?.groups?.find((groupby) => groupby.table_column === column.name)
+    const groupbysAllowed = groupsNotProvided || existsInGroups
+    return groupbysAllowed
+  }
+
+  isColumnFilterable = (column) => {
+    const filtersNotProvided = !this.state.selectedTopic?.filters
+    const existsInFilters = !!this.state.selectedTopic?.filters?.find((filter) => filter.table_column === column.name)
+    const filtersAllowed = filtersNotProvided || existsInFilters
+    return filtersAllowed
   }
 
   onEscKeypress = (event) => {
@@ -155,6 +370,83 @@ class QueryInput extends React.Component {
     })
   }
 
+  triggerDataPreviewQuery = () => {
+    if (!this.state.selectedTopic) {
+      return
+    }
+
+    const topicName = this.state.selectedTopic?.displayName || 'this topic'
+    const queryText = `Data Preview - ${topicName}`
+
+    // Collapse the suggestions
+    this.collapseSuggestions()
+
+    // Submit immediately without animating
+    this.submitDataPreviewQuery(queryText)
+  }
+
+  submitDataPreviewQuery = (queryText) => {
+    if (!this.state.selectedTopic?.context) {
+      return
+    }
+
+    const id = uuid()
+    const numRows = 20
+    const topicName = this.state.selectedTopic?.displayName || 'this topic'
+
+    // Notify parent that we're submitting a query (this shows the request message)
+    this.props.onSubmit(queryText, id)
+
+    // Set query running state
+    this.setState({ isQueryRunning: true })
+
+    // Cancel any previous data preview request
+    this.axiosSourceDataPreview?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSourceDataPreview = axios.CancelToken.source()
+
+    // Fetch data preview with more rows for display
+    fetchDataPreview({
+      ...this.props.authentication,
+      subject: this.state.selectedTopic?.context,
+      numRows: numRows,
+      source: 'query_input.data_preview_query',
+      scope: this.props.scope,
+      cancelToken: this.axiosSourceDataPreview.token,
+    })
+      .then((response) => {
+        // Mark this response as a data preview type
+        if (response?.data?.data) {
+          response.data.data.isDataPreview = true
+          // Disable infinite scroll to enable local sorting
+          response.data.data.useInfiniteScroll = false
+        }
+
+        const formattedResponse = transformQueryResponse(response)
+
+        // Send an informational text message first
+        const actualRows = formattedResponse?.data?.data?.rows?.length || numRows
+        const infoMessage = `Displaying the first ${actualRows} rows from "${topicName}"`
+
+        // Add the text content message using the same approach as ChatContent
+        this.props.addResponseMessage({
+          content: infoMessage,
+          queryMessageID: id,
+        })
+
+        // Add a small delay to ensure the informational message appears before the data table
+        setTimeout(() => {
+          // Format the response to look like a regular query response
+          // This allows it to be rendered in the DataMessenger
+          this.onResponse(formattedResponse, queryText, id)
+        }, 100)
+      })
+      .catch((error) => {
+        if (error?.message !== REQUEST_CANCELLED_ERROR) {
+          console.error(error)
+          this.onResponse(error, queryText, id)
+        }
+      })
+  }
   submitDprQuery = (query, id) => {
     dprQuery({
       dprKey: this.props.authentication?.dprKey,
@@ -203,6 +495,11 @@ class QueryInput extends React.Component {
       queryHistoryIndex: -1,
       queryValidationResponse: undefined,
       queryValidationComponentId: uuid(),
+    }
+
+    // Collapse suggestions when submitting a query
+    if (this.state.isExpanded) {
+      this.collapseSuggestions()
     }
 
     if (this.props.clearQueryOnSubmit) {
@@ -572,51 +869,121 @@ class QueryInput extends React.Component {
 
     return (
       <ErrorBoundary>
-        <div
-          className={`react-autoql-bar-container ${this.props.className} ${
-            this.props.autoCompletePlacement === 'below' ? 'autosuggest-bottom' : 'autosuggest-top'
-          }`}
-          data-test='chat-bar'
-        >
-          <div className='react-autoql-chatbar-input-container'>
-            {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
-              <Autosuggest
-                onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
-                onSuggestionsClearRequested={this.onSuggestionsClearRequested}
-                renderSuggestionsContainer={this.renderSuggestionsContainer}
-                getSuggestionValue={this.userSelectedSuggestionHandler}
-                getSectionSuggestions={this.getSectionSuggestions}
-                renderSectionTitle={this.renderSectionTitle}
-                suggestions={this.getSuggestions()}
-                multiSection={true}
-                shouldRenderSuggestions={() => !this.props.isDisabled}
-                ref={(ref) => (this.autoSuggest = ref)}
-                renderSuggestion={(suggestion) => <>{suggestion?.name}</>}
-                inputProps={inputProps}
-              />
-            ) : (
-              <input {...inputProps} />
-            )}
+        <div className='react-autoql-query-input-wrapper' ref={(ref) => (this.queryInputWrapperRef = ref)}>
+          {/* Query Suggestions - Always visible buttons */}
+          {this.props.enableQuerySuggestions && this.props.enableQueryInputTopics && this.state.topics.length > 0 && (
+            <div className={`react-autoql-input-query-suggestions ${this.state.isExpanded ? 'expanded' : ''}`}>
+              {/* Expanded Sample Queries Section */}
+              {this.state.isExpanded && this.state.selectedTopic && (
+                <div className='query-suggestions-expanded'>
+                  <div className='query-suggestions-expanded-header'>
+                    {this.renderSampleQueriesHeader()}
+                    <div className='query-suggestions-expanded-header-actions'>
+                      <button className='query-suggestions-main-close' onClick={this.collapseSuggestions} type='button'>
+                        <Icon type='close' />
+                      </button>
+                    </div>
+                  </div>
+                  <div className='query-suggestions-sample-list'>
+                    <SampleQueryList
+                      authentication={this.props.authentication}
+                      columns={this.getColumnsForSuggestions()}
+                      context={this.state.selectedTopic.context}
+                      valueLabel={this.state.selectedTopic.valueLabel}
+                      searchText=''
+                      executeQuery={this.props.executeQuery}
+                      skipQueryValidation={false}
+                      userSelection={null}
+                      tooltipID={this.props.tooltipID}
+                      scope={this.props.scope}
+                      shouldRender={this.props.shouldRender}
+                      onSuggestionListResponse={() => {}}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* <div className='query-suggestions-label'>Quick Topics:</div> */}
+              <div className='query-suggestions-buttons'>
+                <span className='query-suggestions-buttons-label'>
+                  <Icon type='lightning' /> Quick Topics:{' '}
+                </span>
+                {this.state.topics.map((topic, index) => (
+                  <button
+                    key={topic.context || index}
+                    className={`query-suggestion-button ${
+                      this.state.selectedTopic?.context === topic.context ? 'selected' : ''
+                    }`}
+                    onClick={() => this.onTopicClick(topic)}
+                    type='button'
+                  >
+                    {topic.displayName}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div
+            className={`react-autoql-bar-container ${this.props.className} ${
+              this.props.autoCompletePlacement === 'below' ? 'autosuggest-bottom' : 'autosuggest-top'
+            }`}
+            data-test='chat-bar'
+          >
+            <div className='react-autoql-input-row'>
+              <div className='react-autoql-chatbar-input-container'>
+                {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
+                  <Autosuggest
+                    onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
+                    onSuggestionsClearRequested={this.onSuggestionsClearRequested}
+                    renderSuggestionsContainer={this.renderSuggestionsContainer}
+                    getSuggestionValue={this.userSelectedSuggestionHandler}
+                    getSectionSuggestions={this.getSectionSuggestions}
+                    renderSectionTitle={this.renderSectionTitle}
+                    suggestions={this.getSuggestions()}
+                    multiSection={true}
+                    shouldRenderSuggestions={() => !this.props.isDisabled}
+                    ref={(ref) => (this.autoSuggest = ref)}
+                    renderSuggestion={(suggestion) => <>{suggestion?.name}</>}
+                    inputProps={inputProps}
+                  />
+                ) : (
+                  <input {...inputProps} />
+                )}
+                {/* Microphone button inside input */}
+                {!isMobile && this.props.enableVoiceRecord && (
+                  <div className='input-microphone-button'>
+                    <SpeechToTextButtonBrowser
+                      onTranscriptStart={this.onTranscriptStart}
+                      onTranscriptChange={this.onTranscriptChange}
+                      onFinalTranscript={this.onFinalTranscript}
+                      authentication={this.props.authentication}
+                      tooltipID={this.props.tooltipID}
+                    />
+                  </div>
+                )}
+              </div>
+              {this.props.showChataIcon && (
+                <div className='chat-bar-input-icon'>
+                  <Icon type='react-autoql-bubbles-outlined' />
+                </div>
+              )}
+              {this.props.showLoadingDots && this.state.isQueryRunning && (
+                <div className='input-response-loading-container'>
+                  <LoadingDots />
+                </div>
+              )}
+              {/* Send button */}
+              <button
+                className='react-autoql-input-send-button'
+                onClick={() => this.submitQuery()}
+                disabled={!this.state.inputValue || this.props.isDisabled}
+                type='button'
+              >
+                <Icon type='send' />
+              </button>
+            </div>
           </div>
-          {this.props.showChataIcon && (
-            <div className='chat-bar-input-icon'>
-              <Icon type='react-autoql-bubbles-outlined' />
-            </div>
-          )}
-          {this.props.showLoadingDots && this.state.isQueryRunning && (
-            <div className='input-response-loading-container'>
-              <LoadingDots />
-            </div>
-          )}
-          {!isMobile && this.props.enableVoiceRecord && (
-            <SpeechToTextButtonBrowser
-              onTranscriptStart={this.onTranscriptStart}
-              onTranscriptChange={this.onTranscriptChange}
-              onFinalTranscript={this.onFinalTranscript}
-              authentication={this.props.authentication}
-              tooltipID={this.props.tooltipID}
-            />
-          )}
         </div>
       </ErrorBoundary>
     )

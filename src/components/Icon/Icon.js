@@ -60,6 +60,9 @@ import { RiDivideFill } from '@react-icons/all-files/ri/RiDivideFill'
 
 import { GoReport } from '@react-icons/all-files/go/GoReport'
 
+import { HiSparkles } from 'react-icons/hi'
+import { HiOutlineLightBulb } from 'react-icons/hi'
+
 import { IoIosCloseCircleOutline } from '@react-icons/all-files/io/IoIosCloseCircleOutline'
 import { IoIosGlobe } from '@react-icons/all-files/io/IoIosGlobe'
 import { IoIosHourglass } from '@react-icons/all-files/io/IoIosHourglass'
@@ -376,6 +379,10 @@ export default class Icon extends React.Component {
         icon = <AiOutlineBulb />
         break
       }
+      case 'light-bulb-on': {
+        icon = <HiOutlineLightBulb />
+        break
+      }
       case 'lightning': {
         icon = <BsLightning />
         break
@@ -511,6 +518,11 @@ export default class Icon extends React.Component {
       }
       case 'send': {
         icon = <FiSend />
+        break
+      }
+      case 'sparks':
+      case 'sparkles': {
+        icon = <HiSparkles />
         break
       }
       case 'settings': {

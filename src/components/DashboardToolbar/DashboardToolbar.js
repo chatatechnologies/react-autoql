@@ -121,30 +121,34 @@ export class DashboardToolbarWithoutRef extends React.Component {
   optionsMenu = () => {
     return (
       <Menu>
+        {this.props.isEditable && (
+          <MenuItem
+            title='Edit Dashboard'
+            icon='edit'
+            onClick={() => {
+              this.props.onEditClick()
+              this.setState({ isOptionsMenuOpen: false })
+            }}
+          />
+        )}
         <MenuItem
-          title='Edit Dashboard'
-          icon='edit'
-          onClick={() => {
-            this.props.onEditClick()
-            this.setState({ isOptionsMenuOpen: false })
-          }}
-        />
-        <MenuItem
-          title='Export Dashboard (.autoql)'
+          title='Export Snapshot (.aqldash)'
           icon='download'
           onClick={() => {
             this.props.onDownloadClick()
             this.setState({ isOptionsMenuOpen: false })
           }}
         />
-        <MenuItem
-          title='Delete Dashboard'
-          icon='trash'
-          style={{ color: 'var(--react-autoql-danger-color)' }}
-          onClick={() => {
-            this.setState({ isOptionsMenuOpen: false, isConfirmDeleteModalVisible: true })
-          }}
-        />
+        {this.props.isEditable && (
+          <MenuItem
+            title='Delete Dashboard'
+            icon='trash'
+            style={{ color: 'var(--react-autoql-danger-color)' }}
+            onClick={() => {
+              this.setState({ isOptionsMenuOpen: false, isConfirmDeleteModalVisible: true })
+            }}
+          />
+        )}
       </Menu>
     )
   }
@@ -301,7 +305,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
                   </Button>
                 </div>
               )}
-              {this.props.isEditable && !this.props.isEditing && (
+              {!this.props.isEditing && (
                 <Popover
                   align='end'
                   positions={['bottom', 'left', 'top', 'right']}

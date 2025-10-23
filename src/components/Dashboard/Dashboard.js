@@ -589,7 +589,7 @@ class DashboardWithoutTheme extends React.Component {
       // Generate filename with sanitized title and timestamp
       const sanitizedTitle = (this.props.title || 'dashboard').replace(/[^a-z0-9]/gi, '_').toLowerCase()
       const timestamp = new Date().toISOString().split('T')[0]
-      link.download = `${sanitizedTitle}_${timestamp}.autoql`
+      link.download = `${sanitizedTitle}_${timestamp}.aqldash`
 
       document.body.appendChild(link)
       link.click()
@@ -794,6 +794,7 @@ class DashboardWithoutTheme extends React.Component {
                     enableReportProblem: false,
                     enableColumnVisibilityManager: false,
                     enableNotifications: false,
+                    enableCSVDownload: false,
                   }
             }
             tile={{ ...tile, i: tile.key, maxH: 10, minH: 2, minW: 3 }}
