@@ -2710,7 +2710,7 @@ export class QueryOutput extends React.Component {
       sortedData.forEach((row) => {
         const pivotRowIndex = uniqueRowHeadersObj[row[newStringColumnIndex]]
         const pivotRowHeaderValue = row[newStringColumnIndex]
-        if (!pivotRowHeaderValue || pivotTableData[pivotRowIndex] === undefined) {
+        if (!pivotRowHeaderValue || pivotRowIndex === undefined || !pivotTableData[pivotRowIndex]) {
           return
         }
 
