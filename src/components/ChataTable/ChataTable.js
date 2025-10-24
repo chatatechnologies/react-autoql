@@ -362,7 +362,7 @@ export default class ChataTable extends React.Component {
         }
 
         if (column?.type === ColumnTypes.QUANTITY || column?.type === ColumnTypes.DOLLAR_AMT) {
-          const columnData = rows.map((r) => r[columnIndex])
+          const columnData = rows.map((r) => r[columnIndex]).filter((val) => Number.isFinite(val))
           stats[columnIndex] = {
             avg: formatElement({ element: mean(columnData), column, config: props.dataFormatting }),
             sum: formatElement({ element: sum(columnData), column, config: props.dataFormatting }),
