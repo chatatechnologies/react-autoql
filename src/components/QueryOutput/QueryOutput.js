@@ -2651,11 +2651,6 @@ export class QueryOutput extends React.Component {
         uniqueColumnHeaders = uniqueColumnHeaders.slice(0, this.MAX_PIVOT_TABLE_COLUMNS)
       }
 
-      const hasValidLegend = newLegendColumnIndex !== undefined && columns[newLegendColumnIndex]
-      if (!hasValidLegend) {
-        uniqueColumnHeaders = ['Value']
-      }
-
       const uniqueColumnHeadersObj = uniqueColumnHeaders.reduce((map, title, i) => {
         map[title] = i
         return map
@@ -2683,18 +2678,16 @@ export class QueryOutput extends React.Component {
       })
 
       uniqueColumnHeaders.forEach((columnName, i) => {
-        const formattedColumnName = !hasValidLegend
-          ? columnName
-          : formatElement({
-              element: columnName,
-              column: columns[newLegendColumnIndex],
-              config: getDataFormatting(this.props.dataFormatting),
-            })
+        const formattedColumnName = formatElement({
+          element: columnName,
+          column: columns[newLegendColumnIndex],
+          config: getDataFormatting(this.props.dataFormatting),
+        })
 
         pivotTableColumns.push({
           ...columns[numberColumnIndex],
           origColumn: columns[numberColumnIndex],
-          origPivotColumn: hasValidLegend ? columns[newLegendColumnIndex] : undefined,
+          origPivotColumn: columns[newLegendColumnIndex],
           origValues: {},
           name: columnName,
           title: formattedColumnName,
@@ -3037,7 +3030,6 @@ export class QueryOutput extends React.Component {
           dataFormatting={this.props.dataFormatting}
           columns={this.pivotTableColumns}
           data={this.pivotTableData}
-          tableConfig={this.pivotTableConfig}
           onCellClick={this.onTableCellClick}
           isAnimating={this.props.isAnimating}
           isResizing={this.props.isResizing || this.state.isResizing}
@@ -3338,7 +3330,6 @@ export class QueryOutput extends React.Component {
     return (
       getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
       this.props.showQueryInterpretation &&
-      this.props.onRTValueLabelClick &&
       (this.queryResponse?.data?.data?.parsed_interpretation || this.queryResponse?.data?.data?.interpretation)
     )
   }
