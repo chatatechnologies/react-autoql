@@ -819,22 +819,22 @@ export class QueryOutput extends React.Component {
     if (!this.potentiallySupportsPivot() || this.potentiallySupportsDatePivot()) {
       return false
     }
-    
+
     // Additional check: ensure we have valid visible columns for pivot
     const columns = this.getColumns()
     const visibleColumns = columns?.filter((col) => col.is_visible) || []
-    
+
     // For pivot charting, we need at least: 1 string, 1 legend (groupable), 1 number
     // If we don't have at least 3 visible columns or no valid legend column, can't use pivot
     if (visibleColumns.length < 3) {
       return false
     }
-    
+
     const { legendColumnIndex } = this.tableConfig || {}
     if (legendColumnIndex === undefined || !columns[legendColumnIndex]?.is_visible) {
       return false
     }
-    
+
     return true
   }
 
@@ -2584,10 +2584,10 @@ export class QueryOutput extends React.Component {
 
       let tableData = _cloneDeep(this.queryResponse?.data?.data?.rows) || []
       const columns = this.getColumns()
-      
+
       // Filter to only visible columns for pivot generation
       const visibleColumns = columns?.filter((col) => col.is_visible) || []
-      
+
       // If we don't have enough visible columns for pivot, bail out
       if (visibleColumns.length < 2) {
         this.pivotTableData = undefined
@@ -2596,19 +2596,19 @@ export class QueryOutput extends React.Component {
       }
 
       const { legendColumnIndex, stringColumnIndex, numberColumnIndex } = this.tableConfig
-      
+
       // Validate that the indices point to visible columns
       const isLegendVisible = legendColumnIndex !== undefined && columns[legendColumnIndex]?.is_visible
       const isStringVisible = stringColumnIndex !== undefined && columns[stringColumnIndex]?.is_visible
       const isNumberVisible = numberColumnIndex !== undefined && columns[numberColumnIndex]?.is_visible
-      
+
       if (!isStringVisible || !isNumberVisible) {
         // Can't generate pivot without visible string and number columns
         this.pivotTableData = undefined
         this.pivotTableColumns = undefined
         return
       }
-      
+
       const effectiveStringIndex = typeof stringColumnIndex === 'number' ? stringColumnIndex : 0
 
       tableData = tableData.filter(
@@ -2665,6 +2665,9 @@ export class QueryOutput extends React.Component {
           .map((d) => d[legendColumnIndex])
           .filter((v) => v !== null && v !== undefined)
           .filter(onlyUnique)
+      } else {
+        // No legend column - create a single "Value" column for 2-column pivots
+        uniqueColumnHeaders = ['Value']
       }
 
       let newStringColumnIndex = stringColumnIndex
@@ -2742,16 +2745,22 @@ export class QueryOutput extends React.Component {
       })
 
       uniqueColumnHeaders.forEach((columnName, i) => {
-        const formattedColumnName = formatElement({
-          element: columnName,
-          column: columns[newLegendColumnIndex],
-          config: getDataFormatting(this.props.dataFormatting),
-        })
+        let formattedColumnName
+        if (isLegendVisible && newLegendColumnIndex !== undefined && columns[newLegendColumnIndex]) {
+          formattedColumnName = formatElement({
+            element: columnName,
+            column: columns[newLegendColumnIndex],
+            config: getDataFormatting(this.props.dataFormatting),
+          })
+        } else {
+          // For 2-column pivots, use the column name as-is (e.g., "Value")
+          formattedColumnName = columnName
+        }
 
         pivotTableColumns.push({
           ...columns[numberColumnIndex],
           origColumn: columns[numberColumnIndex],
-          origPivotColumn: columns[newLegendColumnIndex],
+          origPivotColumn: newLegendColumnIndex !== undefined ? columns[newLegendColumnIndex] : undefined,
           origValues: {},
           name: columnName,
           title: formattedColumnName,
@@ -2776,16 +2785,27 @@ export class QueryOutput extends React.Component {
         pivotTableData[pivotRowIndex][0] = pivotRowHeaderValue
 
         const rawPivotValue = row[numberColumnIndex]
-        let pivotValue = typeof rawPivotValue === 'number' ? rawPivotValue : parseFloat(`${rawPivotValue}`.replace(/[^0-9.-]/g, ''))
+        let pivotValue =
+          typeof rawPivotValue === 'number' ? rawPivotValue : parseFloat(`${rawPivotValue}`.replace(/[^0-9.-]/g, ''))
         if (!isFinite(pivotValue)) {
           return
         }
-        const headerKey = row[newLegendColumnIndex]
-        const headerIndex = uniqueColumnHeadersObj[headerKey]
-        if (headerIndex === undefined) {
-          return
+        
+        // Determine which column to write the value to
+        let pivotColumnIndex
+        if (isLegendVisible && newLegendColumnIndex !== undefined) {
+          // Multi-column pivot: use legend value to determine column
+          const headerKey = row[newLegendColumnIndex]
+          const headerIndex = uniqueColumnHeadersObj[headerKey]
+          if (headerIndex === undefined) {
+            return
+          }
+          pivotColumnIndex = headerIndex + 1
+        } else {
+          // 2-column pivot: always write to column 1 (the single value column)
+          pivotColumnIndex = 1
         }
-        const pivotColumnIndex = headerIndex + 1
+        
         pivotTableData[pivotRowIndex][pivotColumnIndex] = pivotValue
         if (pivotTableColumns[pivotColumnIndex]) {
           pivotTableColumns[pivotColumnIndex].origValues[pivotRowHeaderValue] = {
