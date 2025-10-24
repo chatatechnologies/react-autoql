@@ -105,7 +105,7 @@ export default class ChataTable extends React.Component {
 
     this.tableOptions = {
       selectableRowsCheck: () => false,
-      initialSort: undefined, // Let getRows do initial sorting and filtering
+      initialSort, //: undefined, // Let getRows do initial sorting and filtering
       initialFilter: undefined, // Let getRows do initial sorting and filtering
       progressiveLoadScrollMargin: 50, // Trigger next ajax load when scroll bar is 800px or less from the bottom of the table.
       movableColumns: true,
@@ -1599,16 +1599,17 @@ export default class ChataTable extends React.Component {
     const sorterValues = newSorters || this.tableParams?.sort
     this.settingSorters = true
 
-    //     if (sorterValues) {
-    //       sorterValues.forEach((sorter, i) => {
-    //         AsyncErrorHandler.handleTabulatorSort(this.ref?.tabulator, sorter.field, sorter.dir, this.props.onErrorCallback)
     if (this.ref?.tabulator && sorterValues && Array.isArray(sorterValues)) {
       sorterValues.forEach((sorter) => {
         try {
-          this.ref.tabulator.setSort(sorter.field, sorter.dir)
-        } catch (error) {
-          console.error(error)
-          this.props.onErrorCallback(error)
+          AsyncErrorHandler.handleTabulatorSort(
+            this.ref.tabulator,
+            sorter.field,
+            sorter.dir,
+            this.props.onErrorCallback,
+          )
+        } catch (_) {
+          // Error already reported by AsyncErrorHandler
         }
       })
     }
