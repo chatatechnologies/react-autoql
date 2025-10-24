@@ -2530,8 +2530,7 @@ export class QueryOutput extends React.Component {
 
         if (monthNumber >= 0 && yearNumber) {
           const rawValue = row[numberColumnIndex]
-          const safeValue = Number.isFinite(rawValue) ? rawValue : 0
-          pivotTableData[monthNumber][yearNumber] = safeValue
+          pivotTableData[monthNumber][yearNumber] = rawValue
           pivotOriginalColumnData[year] = {
             ...pivotOriginalColumnData[year],
             [month]: row[dateColumnIndex],
@@ -2717,11 +2716,11 @@ export class QueryOutput extends React.Component {
         pivotTableData[pivotRowIndex][0] = pivotRowHeaderValue
 
         const rawPivotValue = Number(row[numberColumnIndex])
-        const pivotValue = Number.isFinite(rawPivotValue) ? rawPivotValue : 0
+        const pivotValue = rawPivotValue
         const pivotColumnIndex = hasValidLegend ? uniqueColumnHeadersObj[row[newLegendColumnIndex]] + 1 : 1
 
         const accumulated = (pivotTableData[pivotRowIndex][pivotColumnIndex] ?? 0) + pivotValue
-        pivotTableData[pivotRowIndex][pivotColumnIndex] = Number.isFinite(accumulated) ? accumulated : 0
+        pivotTableData[pivotRowIndex][pivotColumnIndex] = accumulated
 
         if (
           pivotTableColumns[pivotColumnIndex] &&
