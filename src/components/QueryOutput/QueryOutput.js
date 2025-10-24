@@ -816,7 +816,26 @@ export class QueryOutput extends React.Component {
   }
 
   usePivotDataForChart = () => {
-    return this.potentiallySupportsPivot() && !this.potentiallySupportsDatePivot()
+    if (!this.potentiallySupportsPivot() || this.potentiallySupportsDatePivot()) {
+      return false
+    }
+    
+    // Additional check: ensure we have valid visible columns for pivot
+    const columns = this.getColumns()
+    const visibleColumns = columns?.filter((col) => col.is_visible) || []
+    
+    // For pivot charting, we need at least: 1 string, 1 legend (groupable), 1 number
+    // If we don't have at least 3 visible columns or no valid legend column, can't use pivot
+    if (visibleColumns.length < 3) {
+      return false
+    }
+    
+    const { legendColumnIndex } = this.tableConfig || {}
+    if (legendColumnIndex === undefined || !columns[legendColumnIndex]?.is_visible) {
+      return false
+    }
+    
+    return true
   }
 
   numberIndicesArraysOverlap = (tableConfig) => {
@@ -2565,8 +2584,31 @@ export class QueryOutput extends React.Component {
 
       let tableData = _cloneDeep(this.queryResponse?.data?.data?.rows) || []
       const columns = this.getColumns()
+      
+      // Filter to only visible columns for pivot generation
+      const visibleColumns = columns?.filter((col) => col.is_visible) || []
+      
+      // If we don't have enough visible columns for pivot, bail out
+      if (visibleColumns.length < 2) {
+        this.pivotTableData = undefined
+        this.pivotTableColumns = undefined
+        return
+      }
 
       const { legendColumnIndex, stringColumnIndex, numberColumnIndex } = this.tableConfig
+      
+      // Validate that the indices point to visible columns
+      const isLegendVisible = legendColumnIndex !== undefined && columns[legendColumnIndex]?.is_visible
+      const isStringVisible = stringColumnIndex !== undefined && columns[stringColumnIndex]?.is_visible
+      const isNumberVisible = numberColumnIndex !== undefined && columns[numberColumnIndex]?.is_visible
+      
+      if (!isStringVisible || !isNumberVisible) {
+        // Can't generate pivot without visible string and number columns
+        this.pivotTableData = undefined
+        this.pivotTableColumns = undefined
+        return
+      }
+      
       const effectiveStringIndex = typeof stringColumnIndex === 'number' ? stringColumnIndex : 0
 
       tableData = tableData.filter(
@@ -2616,10 +2658,14 @@ export class QueryOutput extends React.Component {
         .filter((v) => v !== null && v !== undefined)
         .filter(onlyUnique)
 
-      let uniqueColumnHeaders = sortedData
-        .map((d) => d[legendColumnIndex])
-        .filter((v) => v !== null && v !== undefined)
-        .filter(onlyUnique)
+      // Only generate unique column headers if we have a valid legend column
+      let uniqueColumnHeaders = []
+      if (isLegendVisible && legendColumnIndex !== undefined) {
+        uniqueColumnHeaders = sortedData
+          .map((d) => d[legendColumnIndex])
+          .filter((v) => v !== null && v !== undefined)
+          .filter(onlyUnique)
+      }
 
       let newStringColumnIndex = stringColumnIndex
       let newLegendColumnIndex = legendColumnIndex
@@ -2629,6 +2675,8 @@ export class QueryOutput extends React.Component {
       if (
         isFirstGeneration &&
         !hasSavedAxisConfig &&
+        isLegendVisible &&
+        legendColumnIndex !== undefined &&
         (isColumnDateType(columns[legendColumnIndex]) ||
           (uniqueColumnHeaders?.length > uniqueRowHeaders?.length &&
             (!isColumnDateType(columns[stringColumnIndex]) || uniqueColumnHeaders.length > MAX_LEGEND_LABELS)))
@@ -2641,7 +2689,12 @@ export class QueryOutput extends React.Component {
         uniqueColumnHeaders = tempValues
       }
 
-      if (isColumnStringType(columns[newLegendColumnIndex]) && !isColumnDateType(columns[stringColumnIndex])) {
+      if (
+        newLegendColumnIndex !== undefined &&
+        columns[newLegendColumnIndex] &&
+        isColumnStringType(columns[newLegendColumnIndex]) &&
+        !isColumnDateType(columns[stringColumnIndex])
+      ) {
         uniqueColumnHeaders.sort((a, b) => a?.localeCompare?.(b))
       }
 
