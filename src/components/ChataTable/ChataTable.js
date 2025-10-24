@@ -1181,9 +1181,8 @@ export default class ChataTable extends React.Component {
       sorterValues.forEach((sorter) => {
         try {
           this.ref.tabulator.setSort(sorter.field, sorter.dir)
-        } catch (error) {
-          console.error(error)
-          this.props.onErrorCallback(error)
+        } catch (_) {
+          // Error silently handled by tabulator
         }
       })
     }
