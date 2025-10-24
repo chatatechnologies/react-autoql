@@ -851,7 +851,7 @@ class DashboardWithoutTheme extends React.Component {
               onAddTileClick={this.addTile}
               onUndoClick={this.undo}
               onRedoClick={this.redo}
-              onRefreshClick={this.executeDashboard}
+              onCachedRefreshClick={this.executeCachedDashboard}
               onDownloadClick={this.exportDashboard}
               onSaveClick={() => {
                 Promise.resolve(this.props.onSaveCallback ? this.props.onSaveCallback() : undefined).then((result) => {
