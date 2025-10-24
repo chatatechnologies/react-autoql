@@ -1,6 +1,6 @@
 {
   "name": "react-autoql",
-  "version": "8.17.0",
+  "version": "8.18.0",
   "description": "React Widget Library",
   "main": "dist/autoql.cjs.js",
   "module": "dist/autoql.esm.js",
@@ -62,7 +62,7 @@
   },
   "dependencies": {
     "@react-icons/all-files": "4.1.0",
-    "autoql-fe-utils": "1.9.7",
+    "autoql-fe-utils": "1.9.8",
     "axios": "1.4.0",
     "caniuse-lite": "1.0.30001692",
     "classnames": "2.5.1",
