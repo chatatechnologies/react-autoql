@@ -27,10 +27,12 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onDeleteClick: PropTypes.func,
     onEditClick: PropTypes.func,
     onRefreshClick: PropTypes.func,
+    onCachedRefreshClick: PropTypes.func,
     onAddTileClick: PropTypes.func,
     onUndoClick: PropTypes.func,
     onRedoClick: PropTypes.func,
     onRenameClick: PropTypes.func,
+    onDownloadClick: PropTypes.func,
     tooltipID: PropTypes.string,
     title: PropTypes.string,
     refreshInterval: PropTypes.number,
@@ -42,10 +44,12 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onDeleteClick: () => {},
     onEditClick: () => {},
     onRefreshClick: () => {},
+    onCachedRefreshClick: () => {},
     onAddTileClick: () => {},
     onUndoClick: () => {},
     onRedoClick: () => {},
     onRenameClick: () => {},
+    onDownloadClick: () => {},
     tooltipID: undefined,
     title: 'Untitled Dashboard',
     refreshInterval: 60,
@@ -117,22 +121,34 @@ export class DashboardToolbarWithoutRef extends React.Component {
   optionsMenu = () => {
     return (
       <Menu>
+        {this.props.isEditable && (
+          <MenuItem
+            title='Edit Dashboard'
+            icon='edit'
+            onClick={() => {
+              this.props.onEditClick()
+              this.setState({ isOptionsMenuOpen: false })
+            }}
+          />
+        )}
         <MenuItem
-          title='Edit Dashboard'
-          icon='edit'
+          title='Export Snapshot (.aqldash)'
+          icon='download'
           onClick={() => {
-            this.props.onEditClick()
+            this.props.onDownloadClick()
             this.setState({ isOptionsMenuOpen: false })
           }}
         />
-        <MenuItem
-          title='Delete Dashboard'
-          icon='trash'
-          style={{ color: 'var(--react-autoql-danger-color)' }}
-          onClick={() => {
-            this.setState({ isOptionsMenuOpen: false, isConfirmDeleteModalVisible: true })
-          }}
-        />
+        {this.props.isEditable && (
+          <MenuItem
+            title='Delete Dashboard'
+            icon='trash'
+            style={{ color: 'var(--react-autoql-danger-color)' }}
+            onClick={() => {
+              this.setState({ isOptionsMenuOpen: false, isConfirmDeleteModalVisible: true })
+            }}
+          />
+        )}
       </Menu>
     )
   }
@@ -265,7 +281,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
                     border={false}
                     tooltip='Refresh Dashboard Data'
                     tooltipID={this.props.tooltipID}
-                    onClick={this.props.onRefreshClick}
+                    onClick={this.props.onCachedRefreshClick}
                   />
                 </>
               ) : (
@@ -289,7 +305,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
                   </Button>
                 </div>
               )}
-              {this.props.isEditable && !this.props.isEditing && (
+              {!this.props.isEditing && (
                 <Popover
                   align='end'
                   positions={['bottom', 'left', 'top', 'right']}

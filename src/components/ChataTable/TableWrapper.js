@@ -345,6 +345,10 @@ export default class TableWrapper extends React.Component {
   }
 
   updateData = (data) => {
+    if (!this.tabulator || !this.isInitialized) {
+      return Promise.resolve()
+    }
+
     if (this.props.hidden) {
       // This allows current tasks to finish first
       // Makes it seems much more responsive

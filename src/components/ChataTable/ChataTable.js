@@ -94,6 +94,15 @@ export default class ChataTable extends React.Component {
       page: 1,
     }
 
+    // pivot table headers reflect the correct sort direction
+    let initialSort = undefined
+    if (props.pivot && props.initialTableParams?.sort?.length) {
+      initialSort = props.initialTableParams.sort.map((sorter) => ({
+        field: sorter.field,
+        dir: sorter.dir,
+      }))
+    }
+
     this.tableOptions = {
       selectableRowsCheck: () => false,
       initialSort: undefined, // Let getRows do initial sorting and filtering
@@ -111,18 +120,29 @@ export default class ChataTable extends React.Component {
       ...this.props.tableOptions,
     }
 
-    if (props.response?.data?.data?.rows?.length) {
-      this.tableOptions.sortMode = LOCAL_OR_REMOTE.REMOTE
-      this.tableOptions.filterMode = LOCAL_OR_REMOTE.REMOTE
-      this.tableOptions.pagination = false
-      this.tableOptions.paginationMode = LOCAL_OR_REMOTE.REMOTE
-      this.tableOptions.paginationSize = this.pageSize
-      this.tableOptions.paginationInitialPage = 1
-      this.tableOptions.progressiveLoad = 'scroll' // v4: ajaxProgressiveLoad
-      this.tableOptions.ajaxURL = 'https://required-placeholder-url.com'
-      this.tableOptions.ajaxRequesting = (url, params) => this.ajaxRequesting(props, params)
-      this.tableOptions.ajaxRequestFunc = (url, config, params) => this.ajaxRequestFunc(props, params)
-      this.tableOptions.ajaxResponse = (url, params, response) => this.ajaxResponseFunc(props, response)
+    this.tableOptions.sortMode = LOCAL_OR_REMOTE.REMOTE
+    this.tableOptions.filterMode = LOCAL_OR_REMOTE.REMOTE
+    this.tableOptions.pagination = false
+    this.tableOptions.paginationMode = LOCAL_OR_REMOTE.REMOTE
+    this.tableOptions.paginationSize = this.pageSize
+    this.tableOptions.paginationInitialPage = 1
+    this.tableOptions.progressiveLoad = 'scroll' // v4: ajaxProgressiveLoad
+    this.tableOptions.ajaxURL = 'https://required-placeholder-url.com'
+    this.tableOptions.ajaxRequesting = (url, params) => this.ajaxRequesting(props, params)
+    this.tableOptions.ajaxRequestFunc = (url, config, params) => this.ajaxRequestFunc(props, params)
+    this.tableOptions.ajaxResponse = (url, params, response) => this.ajaxResponseFunc(props, response)
+
+    if (props.pivot) {
+      this.useInfiniteScroll = false
+      this.tableOptions.sortMode = LOCAL_OR_REMOTE.LOCAL
+      this.tableOptions.filterMode = LOCAL_OR_REMOTE.LOCAL
+      this.tableOptions.paginationMode = LOCAL_OR_REMOTE.LOCAL
+      this.tableOptions.progressiveLoad = false
+      // Remove ajax handlers so TableWrapper uses provided data directly
+      delete this.tableOptions.ajaxRequestFunc
+      delete this.tableOptions.ajaxRequesting
+      delete this.tableOptions.ajaxResponse
+      delete this.tableOptions.ajaxURL
     }
 
     this.summaryStats = {}
@@ -449,7 +469,6 @@ export default class ChataTable extends React.Component {
     if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
       this.tableParams.filter = this.props?.initialTableParams?.filter
       this.setFilters(this.props?.initialTableParams?.filter)
-      this.setSorters(this.props?.initialTableParams?.sort)
       this.setHeaderInputEventListeners()
       if (!this.props.hidden) {
         this.setTableHeight()
@@ -738,6 +757,10 @@ export default class ChataTable extends React.Component {
   }
 
   onDataSorted = (sorters, rows) => {
+    // persists sort state when the user sorts the table when switching between tabs
+    if (Array.isArray(sorters)) {
+      this.tableParams.sort = sorters.map((s) => ({ field: s.field, dir: s.dir }))
+    }
     if (this.isSorting) {
       this.isSorting = false
       this.setLoading(false)
@@ -786,7 +809,7 @@ export default class ChataTable extends React.Component {
     }
 
     // Debounce getRTForRemoteFilterAndSort to prevent multiple calls after hide/show columns
-    if (!this.useInfiniteScroll && !this.pivot && !this.props.isDrilldown && this.tableParams?.filter?.length > 0) {
+    if (!this.useInfiniteScroll && !this.props.pivot && this.tableParams?.filter?.length > 0) {
       if (this._debounceTimeout) clearTimeout(this._debounceTimeout)
       this._debounceTimeout = setTimeout(() => {
         try {
@@ -804,6 +827,7 @@ export default class ChataTable extends React.Component {
     if (this.hasSetInitialData || data?.length || !this.props.response?.data?.data?.rows?.length) {
       this.hasSetInitialData = true
       this.isSettingInitialData = false
+      this._setInitialDataTime = Date.now()
       this.clearLoadingIndicators()
     }
   }
@@ -956,17 +980,26 @@ export default class ChataTable extends React.Component {
 
     try {
       // Check if table just mounted - avoid any AJAX requests for recently mounted tables
-      const hasRecentlySetHeaderFilters = this.state.tabulatorMounted && Date.now() - (this._setFiltersTime || 0) < 2000 // 2 seconds
+      const hasRecentlySetHeaderFilters = this.state.tabulatorMounted && Date.now() - (this._setFiltersTime || 0) < 1000
+      const hasRecentlySetInitialData = Date.now() - (this._setInitialDataTime || 0) < 1000
 
-      if (!this.hasSetInitialData || !this._isMounted || hasRecentlySetHeaderFilters) {
+      if (!this.hasSetInitialData || !this._isMounted || hasRecentlySetHeaderFilters || hasRecentlySetInitialData) {
         return initialData
+      }
+
+      const nextTableParamsFormatted = formatTableParams(params, this.props.columns)
+
+      if (hasRecentlySetHeaderFilters) {
+        const isSortAttempt = !!nextTableParamsFormatted?.sorters?.length
+        const allowThrough = this.props.pivot && isSortAttempt
+        if (!allowThrough) {
+          return initialData
+        }
       }
 
       this.cancelCurrentRequest()
       this.axiosSource = axios.CancelToken?.source()
       this.tableParams = params
-
-      const nextTableParamsFormatted = formatTableParams(params, this.props.columns)
 
       if (params?.page > 1) {
         if (this._isMounted) {
@@ -1041,18 +1074,50 @@ export default class ChataTable extends React.Component {
     let response = _cloneDeep(this.props.response)
     let data = _cloneDeep(this.originalQueryData)
 
-    // Apply column reordering to match the response data structure
-    if (this.columnMapping && this.columnMapping.length > 0) {
-      data = data.map((row) => {
-        const newRow = []
-        this.columnMapping.forEach((originalIndex) => {
-          newRow.push(row[originalIndex])
-        })
-        return newRow
-      })
+    // // Apply column reordering to match the response data structure
+    // if (this.columnMapping && this.columnMapping.length > 0) {
+    //   data = data.map((row) => {
+    //     const newRow = []
+    //     this.columnMapping.forEach((originalIndex) => {
+    //       newRow.push(row[originalIndex])
+    //     })
+    //     return newRow
+    //   })
+    // }
+
+    // // Filters - use the column index directly since we've already updated them in onColumnMoved
+    if (this.props.pivot) {
+      if (params?.orders?.length) {
+        const primaryOrder = params.orders[0]
+        let sortColumnIndex
+        if (primaryOrder?.field !== undefined) {
+          const parsed = parseInt(primaryOrder.field, 10)
+          if (!isNaN(parsed)) {
+            sortColumnIndex = parsed
+          } else {
+            sortColumnIndex = this.props.columns.findIndex((col) => col.field === primaryOrder.field)
+          }
+        } else if (primaryOrder?.id !== undefined) {
+          sortColumnIndex = this.props.columns.findIndex((col) => col.id === primaryOrder.id)
+        }
+
+        // handles sorting by column index/field for pivot tables
+        if (sortColumnIndex !== undefined && sortColumnIndex !== -1) {
+          const sortDirection = primaryOrder.sort === 'DESC' ? 'desc' : 'asc'
+          data = sortDataByColumn(data, this.props.columns, sortColumnIndex, sortDirection)
+        }
+      }
+
+      this.originalQueryData = _cloneDeep(data)
+
+      response.data = response.data || {}
+      response.data.data = response.data.data || {}
+      response.data.data.rows = data
+      response.data.data.count_rows = data?.length || 0
+      return response
     }
 
-    // Filters - use the column index directly since we've already updated them in onColumnMoved
+    // Filters
     if (params.tableFilters?.length) {
       params.tableFilters.forEach((filter) => {
         const column = this.props.columns.find((col) => col.id === filter.id)
@@ -1097,7 +1162,7 @@ export default class ChataTable extends React.Component {
   queryFn = (params) => {
     // Always use server-side queryFn when dealing with column changes (newColumns)
     // because column removal is a schema change, not just data filtering
-    if (this.useInfiniteScroll || typeof params.newColumns !== 'undefined') {
+    if ((this.useInfiniteScroll || typeof params.newColumns !== 'undefined') && !this.props.pivot) {
       return this.props.queryFn(params)
     } else {
       return new Promise((resolve) => {
@@ -1128,13 +1193,7 @@ export default class ChataTable extends React.Component {
 
     let newRows
     if (props.pivot) {
-      if (this.tableParams?.filter?.length || this.tableParams?.sort?.length) {
-        const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows
-
-        newRows = sortedData?.slice(start, end) ?? []
-      } else {
-        newRows = props.data?.slice(start, end) ?? []
-      }
+      newRows = this.originalQueryData?.slice(start, end) ?? []
     } else if (!this.useInfiniteScroll) {
       const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows
 
@@ -1540,9 +1599,17 @@ export default class ChataTable extends React.Component {
     const sorterValues = newSorters || this.tableParams?.sort
     this.settingSorters = true
 
-    if (sorterValues) {
-      sorterValues.forEach((sorter, i) => {
-        AsyncErrorHandler.handleTabulatorSort(this.ref?.tabulator, sorter.field, sorter.dir, this.props.onErrorCallback)
+    //     if (sorterValues) {
+    //       sorterValues.forEach((sorter, i) => {
+    //         AsyncErrorHandler.handleTabulatorSort(this.ref?.tabulator, sorter.field, sorter.dir, this.props.onErrorCallback)
+    if (this.ref?.tabulator && sorterValues && Array.isArray(sorterValues)) {
+      sorterValues.forEach((sorter) => {
+        try {
+          this.ref.tabulator.setSort(sorter.field, sorter.dir)
+        } catch (error) {
+          console.error(error)
+          this.props.onErrorCallback(error)
+        }
       })
     }
 
@@ -1585,6 +1652,27 @@ export default class ChataTable extends React.Component {
   onUpdateColumnConfirm = () => {
     const column = _cloneDeep(this.state.contextMenuColumn)
     this.setState({ contextMenuColumn: undefined, isCustomColumnPopoverOpen: true, activeCustomColumn: column })
+  }
+
+  isColumnFrozen = (column) => {
+    const columns = this.ref?.tabulator?.getColumns()
+    const targetColumn = columns?.find((col) => col.getField() === column.field)
+    return targetColumn?.getDefinition()?.frozen === true
+  }
+
+  onFreezeColumnClick = (column) => {
+    this.setState({ contextMenuColumn: undefined })
+    const columns = this.ref?.tabulator?.getColumns()
+    const targetColumn = columns?.find((col) => col.getField() === column.field)
+
+    if (targetColumn) {
+      const isCurrentlyFrozen = this.isColumnFrozen(column)
+      targetColumn.updateDefinition({ frozen: !isCurrentlyFrozen })
+      // Re-attach event listeners after DOM recreation
+      setTimeout(() => {
+        this.setHeaderInputEventListeners()
+      }, 0)
+    }
   }
 
   onRemoveColumnClick = () => {
@@ -1776,6 +1864,10 @@ export default class ChataTable extends React.Component {
         content={
           <div className='more-options-menu' data-test='react-autoql-toolbar-more-options'>
             <ul className='context-menu-list'>
+              <li onClick={() => this.onFreezeColumnClick(this.state.contextMenuColumn)}>
+                <Icon type={this.isColumnFrozen(this.state.contextMenuColumn) ? 'unlock' : 'lock'} />
+                {this.isColumnFrozen(this.state.contextMenuColumn) ? 'Unfreeze Column' : 'Freeze Column'}
+              </li>
               {!!this.state.contextMenuColumn?.custom && !this.state.contextMenuColumn?.has_window_func && (
                 <li onClick={() => this.onUpdateColumnConfirm()}>
                   <Icon type='edit' />
