@@ -2585,16 +2585,20 @@ export class QueryOutput extends React.Component {
         })
       }
 
-      const hasUserSort = this.formattedTableParams?.sorters?.length > 0
-      if (hasUserSort) {
-        const sortColumnIndex = columns.find((col) => col.id === this.formattedTableParams.sorters[0]?.id)?.index
-        const sortDirection = this.formattedTableParams.sorters[0]?.sort === 'DESC' ? 'desc' : 'asc'
-        if (sortColumnIndex !== undefined) {
-          tableData = sortDataByColumn(tableData, columns, sortColumnIndex, sortDirection)
+      const userSorters = this.formattedTableParams?.sorters || []
+      let sortedData = null
+      if (userSorters.length > 0) {
+        const primary = userSorters[0]
+        let sortColumnIndex = columns.find((col) => col.id === primary?.id)?.index
+        if (sortColumnIndex === undefined && primary?.field !== undefined) {
+          const parsed = parseInt(primary.field, 10)
+          sortColumnIndex = !isNaN(parsed) ? parsed : columns.find((col) => col.field === primary.field)?.index
         }
+        const sortDirection = (primary?.sort || primary?.dir)?.toString().toUpperCase() === 'DESC' ? 'desc' : 'asc'
+        if (sortColumnIndex !== undefined)
+          sortedData = sortDataByColumn(tableData, columns, sortColumnIndex, sortDirection)
       }
-
-      const sortedData = hasUserSort ? tableData : sortDataByDate(tableData, columns, 'desc', 'isTable')
+      if (!sortedData) sortedData = sortDataByDate(tableData, columns, 'desc', 'isTable')
 
       let uniqueRowHeaders = sortedData
         .map((d) => d[effectiveStringIndex])
@@ -2647,11 +2651,6 @@ export class QueryOutput extends React.Component {
         uniqueColumnHeaders = uniqueColumnHeaders.slice(0, this.MAX_PIVOT_TABLE_COLUMNS)
       }
 
-      const hasValidLegend = newLegendColumnIndex !== undefined && columns[newLegendColumnIndex]
-      if (!hasValidLegend) {
-        uniqueColumnHeaders = ['Value']
-      }
-
       const uniqueColumnHeadersObj = uniqueColumnHeaders.reduce((map, title, i) => {
         map[title] = i
         return map
@@ -2679,18 +2678,16 @@ export class QueryOutput extends React.Component {
       })
 
       uniqueColumnHeaders.forEach((columnName, i) => {
-        const formattedColumnName = !hasValidLegend
-          ? columnName
-          : formatElement({
-              element: columnName,
-              column: columns[newLegendColumnIndex],
-              config: getDataFormatting(this.props.dataFormatting),
-            })
+        const formattedColumnName = formatElement({
+          element: columnName,
+          column: columns[newLegendColumnIndex],
+          config: getDataFormatting(this.props.dataFormatting),
+        })
 
         pivotTableColumns.push({
           ...columns[numberColumnIndex],
           origColumn: columns[numberColumnIndex],
-          origPivotColumn: hasValidLegend ? columns[newLegendColumnIndex] : undefined,
+          origPivotColumn: columns[newLegendColumnIndex],
           origValues: {},
           name: columnName,
           title: formattedColumnName,
@@ -2708,22 +2705,21 @@ export class QueryOutput extends React.Component {
       sortedData.forEach((row) => {
         const pivotRowIndex = uniqueRowHeadersObj[row[newStringColumnIndex]]
         const pivotRowHeaderValue = row[newStringColumnIndex]
-        if (!pivotRowHeaderValue || pivotTableData[pivotRowIndex] === undefined) {
+        if (!pivotRowHeaderValue || !pivotTableData[pivotRowIndex]) {
           return
         }
 
         pivotTableData[pivotRowIndex][0] = pivotRowHeaderValue
 
-        const pivotValue = Number(row[numberColumnIndex])
-        const pivotColumnIndex = hasValidLegend ? uniqueColumnHeadersObj[row[newLegendColumnIndex]] + 1 : 1
+        const rawPivotValue = row[numberColumnIndex]
+        let pivotValue =
+          typeof rawPivotValue === 'number' ? rawPivotValue : parseFloat(`${rawPivotValue}`.replace(/[^0-9.-]/g, ''))
+        if (!isFinite(pivotValue)) return
 
+        const pivotColumnIndex = uniqueColumnHeadersObj[row[newLegendColumnIndex]] + 1
         pivotTableData[pivotRowIndex][pivotColumnIndex] =
           (pivotTableData[pivotRowIndex][pivotColumnIndex] ?? 0) + pivotValue
-
-        if (
-          pivotTableColumns[pivotColumnIndex] &&
-          !pivotTableColumns[pivotColumnIndex].origValues[pivotRowHeaderValue]
-        ) {
+        if (pivotTableColumns[pivotColumnIndex]) {
           pivotTableColumns[pivotColumnIndex].origValues[pivotRowHeaderValue] = {
             name: columns[newStringColumnIndex]?.name,
             drill_down: columns[newStringColumnIndex]?.drill_down,
@@ -3030,7 +3026,6 @@ export class QueryOutput extends React.Component {
           dataFormatting={this.props.dataFormatting}
           columns={this.pivotTableColumns}
           data={this.pivotTableData}
-          tableConfig={this.pivotTableConfig}
           onCellClick={this.onTableCellClick}
           isAnimating={this.props.isAnimating}
           isResizing={this.props.isResizing || this.state.isResizing}
@@ -3331,7 +3326,6 @@ export class QueryOutput extends React.Component {
     return (
       getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
       this.props.showQueryInterpretation &&
-      this.props.onRTValueLabelClick &&
       (this.queryResponse?.data?.data?.parsed_interpretation || this.queryResponse?.data?.data?.interpretation)
     )
   }
