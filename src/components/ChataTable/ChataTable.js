@@ -1227,11 +1227,19 @@ export default class ChataTable extends React.Component {
     const targetColumn = columns?.find((col) => col.getField() === column.field)
 
     if (targetColumn) {
+      // Capture current filter values before freezing/unfreezing
+      const currentFilters = this.ref?.tabulator?.getHeaderFilters()
+
       const isCurrentlyFrozen = this.isColumnFrozen(column)
       targetColumn.updateDefinition({ frozen: !isCurrentlyFrozen })
-      // Re-attach event listeners after DOM recreation
+
+      // Re-attach event listeners and restore filters after DOM recreation
       setTimeout(() => {
         this.setHeaderInputEventListeners()
+        // Restore filter values after column recreation
+        if (currentFilters && currentFilters.length > 0) {
+          this.setFilters(currentFilters)
+        }
       }, 0)
     }
   }

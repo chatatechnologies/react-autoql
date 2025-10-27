@@ -27,7 +27,6 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onDeleteClick: PropTypes.func,
     onEditClick: PropTypes.func,
     onRefreshClick: PropTypes.func,
-    onCachedRefreshClick: PropTypes.func,
     onAddTileClick: PropTypes.func,
     onUndoClick: PropTypes.func,
     onRedoClick: PropTypes.func,
@@ -36,6 +35,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     tooltipID: PropTypes.string,
     title: PropTypes.string,
     refreshInterval: PropTypes.number,
+    enableAutoRefresh: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -44,7 +44,6 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onDeleteClick: () => {},
     onEditClick: () => {},
     onRefreshClick: () => {},
-    onCachedRefreshClick: () => {},
     onAddTileClick: () => {},
     onUndoClick: () => {},
     onRedoClick: () => {},
@@ -53,6 +52,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     tooltipID: undefined,
     title: 'Untitled Dashboard',
     refreshInterval: 60,
+    enableAutoRefresh: false,
   }
 
   state = {
@@ -262,26 +262,28 @@ export class DashboardToolbarWithoutRef extends React.Component {
               {this.dashboardSlicingFeatureToggle && !this.props.isEditing && this.renderFilterInput()}
               {!this.props.isEditing ? (
                 <>
-                  <div
-                    style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '8px', opacity: 0.7 }}
-                  >
-                    <Icon
-                      type='schedule'
-                      tooltip={this.getRefreshIntervalText()}
-                      tooltipID={this.props.tooltipID}
-                      style={{ marginRight: '6px', fontSize: '1.2rem' }}
-                    />
-                    <span data-tooltip-content={this.getRefreshIntervalText()} data-tooltip-id={this.props.tooltipID}>
-                      {this.getRefreshIntervalDisplay()}
-                    </span>
-                  </div>
+                  {this.props.enableAutoRefresh && (
+                    <div
+                      style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '8px', opacity: 0.7 }}
+                    >
+                      <Icon
+                        type='schedule'
+                        tooltip={this.getRefreshIntervalText()}
+                        tooltipID={this.props.tooltipID}
+                        style={{ marginRight: '6px', fontSize: '1.2rem' }}
+                      />
+                      <span data-tooltip-content={this.getRefreshIntervalText()} data-tooltip-id={this.props.tooltipID}>
+                        {this.getRefreshIntervalDisplay()}
+                      </span>
+                    </div>
+                  )}
                   <Button
                     iconOnly
                     icon='refresh'
                     border={false}
                     tooltip='Refresh Dashboard Data'
                     tooltipID={this.props.tooltipID}
-                    onClick={this.props.onCachedRefreshClick}
+                    onClick={this.props.onRefreshClick}
                   />
                 </>
               ) : (
