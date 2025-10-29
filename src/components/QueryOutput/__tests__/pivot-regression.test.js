@@ -40,11 +40,11 @@ describe('QueryOutput pivot invariants', () => {
     instance.generatePivotTableData({ isFirstGeneration: true, tableData })
 
     // Sanity checks
-  expect(instance.pivotTableColumns).toBeDefined()
-  expect(instance.pivotTableColumns.length).toBe(2)
+    expect(instance.pivotTableColumns).toBeDefined()
+    expect(instance.pivotTableColumns.length).toBe(2)
 
-  const axisCol = instance.pivotTableColumns[0]
-  const valueCol = instance.pivotTableColumns[1]
+    const axisCol = instance.pivotTableColumns[0]
+    const valueCol = instance.pivotTableColumns[1]
 
     // Axis column should be pivot category and have expected flags
     expect(axisCol.field).toBe('0')
