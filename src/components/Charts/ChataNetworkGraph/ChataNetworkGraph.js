@@ -1,13 +1,12 @@
 import React, { useEffect, useRef, useState, useCallback, forwardRef } from 'react'
-import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import { select } from 'd3-selection'
 import { drag } from 'd3-drag'
 import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide } from 'd3-force'
 import { zoom, zoomIdentity } from 'd3-zoom'
-import _cloneDeep from 'lodash.clonedeep'
+import { MdOutlineFitScreen } from 'react-icons/md'
 
-import { deepEqual, getTooltipContent, DisplayTypes, findNetworkColumns } from 'autoql-fe-utils'
+import { findNetworkColumns } from 'autoql-fe-utils'
 
 import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers'
 import './ChataNetworkGraph.scss'
@@ -15,10 +14,29 @@ import './ChataNetworkGraph.scss'
 const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
   const chartRef = useRef()
   const simulationRef = useRef()
+  const zoomBehaviorRef = useRef()
 
   const [nodes, setNodes] = useState([])
   const [links, setLinks] = useState([])
   const [simulation, setSimulation] = useState(null)
+
+  // Suppress ResizeObserver loop errors (harmless warnings)
+  useEffect(() => {
+    const handleError = (e) => {
+      if (
+        e.message === 'ResizeObserver loop completed with undelivered notifications.' ||
+        e.message === 'ResizeObserver loop limit exceeded'
+      ) {
+        e.stopImmediatePropagation()
+        return false
+      }
+    }
+
+    window.addEventListener('error', handleError)
+    return () => {
+      window.removeEventListener('error', handleError)
+    }
+  }, [])
 
   // Recenter function to fit all nodes in view
   const recenter = useCallback(() => {
@@ -58,6 +76,20 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
     const container = select(chartRef.current).select('g')
     container.attr('transform', `translate(${finalTranslateX}, ${finalTranslateY}) scale(${scale})`)
+
+    // Update zoom behavior's state to match the recenter transform
+    const svg = select(chartRef.current)
+    if (zoomBehaviorRef.current) {
+      // Update the currentTransform tracking
+      if (window.currentTransform) {
+        window.currentTransform.x = finalTranslateX
+        window.currentTransform.y = finalTranslateY
+        window.currentTransform.k = scale
+      }
+
+      const recenterTransform = zoomIdentity.translate(finalTranslateX, finalTranslateY).scale(scale)
+      svg.call(zoomBehaviorRef.current.transform, recenterTransform)
+    }
 
     // Disable dynamic zooming after manual recenter
     if (window.userInteracting !== undefined) {
@@ -198,17 +230,17 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
   }, [])
 
   const getNodeRadius = useCallback((d) => {
-    const baseRadius = 8
-    const connectionMultiplier = Math.min(d.connections / 5, 3)
-    return baseRadius + connectionMultiplier * 2
+    const baseRadius = 6
+    const connectionMultiplier = Math.min(d.connections / 3, 4)
+    return baseRadius + connectionMultiplier * 4
   }, [])
 
   const getNodeColor = useCallback((d) => {
-    // Nodes that are both sender and receiver get a unique color
-    if (d.isSender && d.isReceiver) return '#9b59b6' // Purple for both sender and receiver
-    if (d.isAirdrop) return '#ff6b6b' // Red for airdrop (receiver only)
-    if (d.isSender) return '#4ecdc4' // Teal for sender only
-    return '#45b7d1' // Blue for other nodes
+    // Nodes that are both sender and receiver get blue color
+    if (d.isSender && d.isReceiver) return '#28A8E0' // Blue for both sender and receiver
+    if (d.isAirdrop) return '#28A745' // Green for airdrop (receiver only)
+    if (d.isSender) return '#DC3545' // Red for sender only
+    return '#28A745' // Green for other nodes (receivers)
   }, [])
 
   const getEdgeColor = useCallback((d) => {
@@ -234,6 +266,14 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       window.initialZooming = false
     }
 
+    // Disable all tooltips during drag
+    const svg = select(chartRef.current)
+    svg
+      .selectAll('[data-tooltip-id]')
+      .attr('data-tooltip-id', null)
+      .attr('data-tooltip-html', null)
+      .style('pointer-events', 'none')
+
     if (!event.active) simulationRef.current?.alphaTarget(0.3).restart()
     d.fx = d.x
     d.fy = d.y
@@ -244,12 +284,90 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
     d.fy = event.y
   }, [])
 
-  const dragended = useCallback((event, d) => {
-    if (!event.active) simulationRef.current?.alphaTarget(0)
-    // Keep position fixed where user dropped it (like sample script)
-    // d.fx = null
-    // d.fy = null
-  }, [])
+  const dragended = useCallback(
+    (event, d) => {
+      if (!event.active) simulationRef.current?.alphaTarget(0)
+
+      // Re-enable all tooltips after drag
+      const svg = select(chartRef.current)
+      svg
+        .selectAll('.node')
+        .attr('data-tooltip-id', props.chartTooltipID)
+        .style('pointer-events', 'all')
+        .each(function (d) {
+          // Restore the tooltip HTML for nodes
+          const node = select(this)
+          let nodeType = 'Standard Node'
+          if (d.isSender && d.isReceiver) {
+            nodeType = 'Sender & Receiver Node'
+          } else if (d.isSender) {
+            nodeType = 'Sender Node'
+          } else if (d.isReceiver) {
+            nodeType = 'Receiver Node'
+          }
+
+          node.attr(
+            'data-tooltip-html',
+            `
+           <div>
+             <strong>${d.name}</strong><br/>
+             <br/>
+             <strong>Node Type:</strong><br/>
+             ${nodeType}<br/>
+             <br/>
+             <strong>Roles:</strong><br/>
+             ${d.isSender ? '✓ Sender' : '✗ Sender'}<br/>
+             ${d.isReceiver ? '✓ Receiver' : '✗ Receiver'}<br/>
+             <br/>
+             <strong>Network Stats:</strong><br/>
+             Total Connections: ${d.connections}<br/>
+             Node ID: ${d.id}
+           </div>
+         `,
+          )
+        })
+      svg
+        .selectAll('.link')
+        .attr('data-tooltip-id', props.chartTooltipID)
+        .style('pointer-events', 'all')
+        .each(function (d) {
+          // Restore the tooltip HTML for links
+          const link = select(this)
+          const { sourceColumnIndex, targetColumnIndex, weightColumnIndex } = findNetworkColumns(props.columns)
+          const sourceColName =
+            sourceColumnIndex !== -1 ? props.columns[sourceColumnIndex]?.display_name || 'Source' : 'Source'
+          const targetColName =
+            targetColumnIndex !== -1 ? props.columns[targetColumnIndex]?.display_name || 'Target' : 'Target'
+          const weightColName =
+            weightColumnIndex !== -1 ? props.columns[weightColumnIndex]?.display_name || 'Weight' : 'Weight'
+
+          link.attr(
+            'data-tooltip-html',
+            `
+           <div>
+             <strong>Connection</strong><br/>
+             <br/>
+             <strong>Relationship:</strong><br/>
+             ${d.source.name} → ${d.target.name}<br/>
+             <br/>
+             <strong>Column Mapping:</strong><br/>
+             ${sourceColName} → ${targetColName}<br/>
+             <br/>
+             <strong>Weight Details:</strong><br/>
+             ${weightColName}: ${d.weight.toLocaleString()}<br/>
+             Category: ${d.weight_category}<br/>
+             Type: ${d.edge_type.replace(/_/g, ' ')}
+           </div>
+         `,
+          )
+        })
+
+      // Keep position fixed where user dropped it (like sample script)
+      // d.fx = null
+      // d.fy = null
+    },
+    [props.chartTooltipID],
+  )
 
   // Function to calculate initial scale based on node count and available space
   const calculateInitialScale = useCallback((nodes, links, width, height) => {
@@ -335,7 +453,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         .append('marker')
         .attr('id', 'arrowhead')
         .attr('viewBox', '0 -5 10 10')
-        .attr('refX', 15)
+        .attr('refX', 10)
         .attr('refY', 0)
         .attr('markerWidth', 6)
         .attr('markerHeight', 6)
@@ -346,18 +464,30 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         .style('stroke', 'none')
 
       // Add zoom behavior
+      let isProgrammaticZoom = false // Flag to track programmatic zoom updates
+      let currentTransform = { x: deltaX || 0, y: deltaY || 0, k: 1.0 } // Track current transform for smooth interpolation
       const zoomBehavior = zoom()
+
+      // Store zoom behavior reference for recenter function
+      zoomBehaviorRef.current = zoomBehavior
         .scaleExtent([0.01, 8]) // Allow zooming out much further to see all networks
         .filter((event) => {
-          // Only allow zoom on wheel events, not click/drag events
-          return event.type === 'wheel'
+          // Allow both wheel and mouse events for zoom and pan
+          return event.type === 'wheel' || event.type === 'mousedown' || event.type === 'mousemove'
         })
         .on('zoom', (event) => {
-          // Disable dynamic zooming when user starts interacting
-          userInteracting = true
-          initialZooming = false
-          window.userInteracting = true
-          window.initialZooming = false
+          // Only disable dynamic zooming if this is a user interaction, not a programmatic update
+          if (!isProgrammaticZoom) {
+            userInteracting = true
+            initialZooming = false
+            window.userInteracting = true
+            window.initialZooming = false
+          }
+
+          // Update the current transform tracking
+          currentTransform.x = event.transform.x
+          currentTransform.y = event.transform.y
+          currentTransform.k = event.transform.k
 
           // Simply apply the D3 zoom transform directly
           container.attr('transform', event.transform)
@@ -414,40 +544,37 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         .attr('class', (d) => `link ${d.edge_type}`)
         .style('stroke', (d) => getEdgeColor(d))
         .style('stroke-width', (d) => getEdgeWidth(d))
+        .style('outline', 'none')
+        .style('pointer-events', 'all')
+        .style('cursor', 'pointer')
         .attr('marker-end', 'url(#arrowhead)')
         .attr('data-tooltip-id', props.chartTooltipID)
         .attr('data-tooltip-html', (d) => {
           // Create a tooltip for network edges with relationship information
           const { sourceColumnIndex, targetColumnIndex, weightColumnIndex } = findNetworkColumns(props.columns)
           const sourceColName =
-            sourceColumnIndex !== -1
-              ? props.columns[sourceColumnIndex]?.name || props.columns[sourceColumnIndex]?.display_name || 'Source'
-              : 'Source'
+            sourceColumnIndex !== -1 ? props.columns[sourceColumnIndex]?.display_name || 'Source' : 'Source'
           const targetColName =
-            targetColumnIndex !== -1
-              ? props.columns[targetColumnIndex]?.name || props.columns[targetColumnIndex]?.display_name || 'Target'
-              : 'Target'
+            targetColumnIndex !== -1 ? props.columns[targetColumnIndex]?.display_name || 'Target' : 'Target'
           const weightColName =
-            weightColumnIndex !== -1
-              ? props.columns[weightColumnIndex]?.name || props.columns[weightColumnIndex]?.display_name || 'Weight'
-              : 'Weight'
+            weightColumnIndex !== -1 ? props.columns[weightColumnIndex]?.display_name || 'Weight' : 'Weight'
 
           return `
-             <div>
-               <strong>Connection</strong><br/>
-               <br/>
-               <strong>Relationship:</strong><br/>
-               ${d.source.name} → ${d.target.name}<br/>
-               <br/>
-               <strong>Column Mapping:</strong><br/>
-               ${sourceColName} → ${targetColName}<br/>
-               <br/>
-               <strong>Weight Details:</strong><br/>
-               ${weightColName}: ${d.weight.toLocaleString()}<br/>
-               Category: ${d.weight_category}<br/>
-               Type: ${d.edge_type.replace(/_/g, ' ')}
-             </div>
-           `
+           <div>
+             <strong>Connection</strong><br/>
+             <br/>
+             <strong>Relationship:</strong><br/>
+             ${d.source.name} → ${d.target.name}<br/>
+             <br/>
+             <strong>Column Mapping:</strong><br/>
+             ${sourceColName} → ${targetColName}<br/>
+             <br/>
+             <strong>Weight Details:</strong><br/>
+             ${weightColName}: ${d.weight.toLocaleString()}<br/>
+             Category: ${d.weight_category}<br/>
+             Type: ${d.edge_type.replace(/_/g, ' ')}
+           </div>
+         `
         })
 
       // Create nodes
@@ -464,6 +591,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         .style('stroke', '#fff')
         .style('stroke-width', '1.5px')
         .style('cursor', 'move')
+        .style('outline', 'none')
         .attr('data-tooltip-id', props.chartTooltipID)
         .attr('data-tooltip-html', (d) => {
           // Create a tooltip for network nodes with node-specific information
@@ -526,35 +654,6 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         .attr('fill', 'transparent')
         .style('cursor', 'grab')
         .style('pointer-events', 'all') // Ensure it can receive events
-        .call(
-          drag()
-            .on('start', (event) => {
-              background.style('cursor', 'grabbing')
-            })
-            .on('drag', (event) => {
-              const transform = container.attr('transform') || 'translate(0,0) scale(1)'
-              const translateMatch = transform.match(/translate\(([^,]+),\s*([^)]+)\)/)
-              const scaleMatch = transform.match(/scale\(([^)]+)\)/)
-
-              const currentX = translateMatch ? parseFloat(translateMatch[1]) : 0
-              const currentY = translateMatch ? parseFloat(translateMatch[2]) : 0
-              const currentScale = scaleMatch ? parseFloat(scaleMatch[1]) : 1
-
-              // Apply pan while preserving existing scale
-              const newTransform = `translate(${currentX + event.dx},${currentY + event.dy}) scale(${currentScale})`
-              container.attr('transform', newTransform)
-
-              // Update zoom behavior's transform state to prevent jumps
-              // Update the zoom behavior's internal state using the correct D3 API
-              // Use the correct D3 zoom transform API
-              // Create a proper D3 zoom transform object
-              const zoomTransform = zoomIdentity.translate(currentX + event.dx, currentY + event.dy).scale(currentScale)
-              svg.call(zoomBehavior.transform, zoomTransform)
-            })
-            .on('end', () => {
-              background.style('cursor', 'grab')
-            }),
-        )
 
       // Update positions on simulation tick with dynamic zooming
       let initialZooming = true
@@ -563,13 +662,46 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       // Make variables accessible to drag handlers
       window.initialZooming = initialZooming
       window.userInteracting = userInteracting
+      window.currentTransform = currentTransform
 
       simulation.on('tick', () => {
         link
-          .attr('x1', (d) => d.source.x)
-          .attr('y1', (d) => d.source.y)
-          .attr('x2', (d) => d.target.x)
-          .attr('y2', (d) => d.target.y)
+          .attr('x1', (d) => {
+            const sourceRadius = getNodeRadius(d.source)
+            const dx = d.target.x - d.source.x
+            const dy = d.target.y - d.source.y
+            const distance = Math.sqrt(dx * dx + dy * dy)
+            if (distance === 0) return d.source.x
+            const ratio = sourceRadius / distance
+            return d.source.x + dx * ratio
+          })
+          .attr('y1', (d) => {
+            const sourceRadius = getNodeRadius(d.source)
+            const dx = d.target.x - d.source.x
+            const dy = d.target.y - d.source.y
+            const distance = Math.sqrt(dx * dx + dy * dy)
+            if (distance === 0) return d.source.y
+            const ratio = sourceRadius / distance
+            return d.source.y + dy * ratio
+          })
+          .attr('x2', (d) => {
+            const targetRadius = getNodeRadius(d.target)
+            const dx = d.source.x - d.target.x
+            const dy = d.source.y - d.target.y
+            const distance = Math.sqrt(dx * dx + dy * dy)
+            if (distance === 0) return d.target.x
+            const ratio = targetRadius / distance
+            return d.target.x + dx * ratio
+          })
+          .attr('y2', (d) => {
+            const targetRadius = getNodeRadius(d.target)
+            const dx = d.source.x - d.target.x
+            const dy = d.source.y - d.target.y
+            const distance = Math.sqrt(dx * dx + dy * dy)
+            if (distance === 0) return d.target.y
+            const ratio = targetRadius / distance
+            return d.target.y + dy * ratio
+          })
 
         node.attr('cx', (d) => d.x).attr('cy', (d) => d.y)
 
@@ -587,24 +719,43 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
           // Calculate scale to fit nodes in view with some padding
           const padding = 50
-          const scale = Math.min(
+          const targetScale = Math.min(
             (chartWidth - padding) / nodeSpread,
             (chartHeight - padding) / nodeSpread,
             1, // Don't zoom in beyond 1x
           )
 
           // Apply zoom if nodes are spreading out of view
-          if (scale < 0.8) {
+          if (targetScale < 0.8) {
             const centerX = (bounds.xMin + bounds.xMax) / 2
             const centerY = (bounds.yMin + bounds.yMax) / 2
-            const translateX = chartWidth / 2 - centerX * scale
-            const translateY = chartHeight / 2 - centerY * scale
+            const targetTranslateX = chartWidth / 2 - centerX * targetScale
+            const targetTranslateY = chartHeight / 2 - centerY * targetScale
 
             // Preserve the initial deltaX and deltaY offsets
-            const finalTranslateX = translateX + (deltaX || 0)
-            const finalTranslateY = translateY + (deltaY || 0)
+            const finalTargetX = targetTranslateX + (deltaX || 0)
+            const finalTargetY = targetTranslateY + (deltaY || 0)
 
-            container.attr('transform', `translate(${finalTranslateX}, ${finalTranslateY}) scale(${scale})`)
+            // Smooth interpolation to make zooming slower (interpolation factor: 0.15 makes it slower)
+            const interpolationFactor = 0.15
+            currentTransform.x += (finalTargetX - currentTransform.x) * interpolationFactor
+            currentTransform.y += (finalTargetY - currentTransform.y) * interpolationFactor
+            currentTransform.k += (targetScale - currentTransform.k) * interpolationFactor
+
+            container.attr(
+              'transform',
+              `translate(${currentTransform.x}, ${currentTransform.y}) scale(${currentTransform.k})`,
+            )
+
+            // Update zoom behavior's state to match the dynamic zooming (without triggering user interaction)
+            if (zoomBehavior && svg) {
+              isProgrammaticZoom = true
+              const dynamicZoomTransform = zoomIdentity
+                .translate(currentTransform.x, currentTransform.y)
+                .scale(currentTransform.k)
+              svg.call(zoomBehavior.transform, dynamicZoomTransform)
+              isProgrammaticZoom = false
+            }
           }
         }
 
@@ -614,17 +765,13 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
           window.initialZooming = false
 
           // Update zoom behavior's state to match the final dynamic zooming state
-          const currentTransform = container.attr('transform') || 'translate(0,0) scale(1)'
-          const translateMatch = currentTransform.match(/translate\(([^,]+),\s*([^)]+)\)/)
-          const scaleMatch = currentTransform.match(/scale\(([^)]+)\)/)
-
-          if (translateMatch && scaleMatch) {
-            const currentX = parseFloat(translateMatch[1])
-            const currentY = parseFloat(translateMatch[2])
-            const currentScale = parseFloat(scaleMatch[1])
-
-            const finalZoomTransform = zoomIdentity.translate(currentX, currentY).scale(currentScale)
+          if (zoomBehavior && svg) {
+            isProgrammaticZoom = true
+            const finalZoomTransform = zoomIdentity
+              .translate(currentTransform.x, currentTransform.y)
+              .scale(currentTransform.k)
             svg.call(zoomBehavior.transform, finalZoomTransform)
+            isProgrammaticZoom = false
           }
         }
       })
@@ -699,40 +846,72 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
     <g className='react-autoql-network-viz'>
       <svg
         ref={chartRef}
-        width={props.width}
-        height={props.height}
+        width={props.width || 600}
+        height={props.height || 400}
+        viewBox={`0 0 ${props.width || 600} ${props.height || 400}`}
         style={{
           background: 'var(--react-autoql-background-color-secondary, #f9f9f9)',
         }}
       />
-      {/* Recenter button */}
-      <button
+      {/* Recenter button as SVG element */}
+      <g
         onClick={recenter}
-        style={{
-          position: 'absolute',
-          top: '10px',
-          right: '10px',
-          zIndex: 1000,
-          padding: '8px 12px',
-          backgroundColor: 'var(--react-autoql-background-color, #ffffff)',
-          border: '1px solid var(--react-autoql-border-color, #ddd)',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          fontSize: '12px',
-          fontWeight: '500',
-          color: 'var(--react-autoql-text-color, #333)',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          transition: 'all 0.2s ease',
-        }}
+        style={{ cursor: 'pointer', outline: 'none' }}
+        className='recenter-button'
+        transform={`translate(${(props.width || 600) - 50}, 10)`}
         onMouseEnter={(e) => {
-          e.target.style.backgroundColor = 'var(--react-autoql-background-color-hover, #f5f5f5)'
+          const rect = e.currentTarget.querySelector('rect')
+          const icon = e.currentTarget.querySelector('g')
+          if (rect) {
+            rect.setAttribute('stroke', 'var(--react-autoql-accent-color, #007bff)')
+          }
+          if (icon) {
+            icon.setAttribute('fill', 'var(--react-autoql-accent-color, #007bff)')
+            // Also set the color on the SVG element inside
+            const svgIcon = icon.querySelector('svg')
+            if (svgIcon) {
+              svgIcon.style.color = 'var(--react-autoql-accent-color, #007bff)'
+            }
+          }
         }}
         onMouseLeave={(e) => {
-          e.target.style.backgroundColor = 'var(--react-autoql-background-color, #ffffff)'
+          const rect = e.currentTarget.querySelector('rect')
+          const icon = e.currentTarget.querySelector('g')
+          if (rect) {
+            rect.setAttribute('stroke', 'var(--react-autoql-border-color, #ddd)')
+          }
+          if (icon) {
+            icon.setAttribute('fill', 'var(--react-autoql-text-color, #333)')
+            // Also reset the color on the SVG element inside
+            const svgIcon = icon.querySelector('svg')
+            if (svgIcon) {
+              svgIcon.style.color = 'var(--react-autoql-text-color, #333)'
+            }
+          }
         }}
+        data-tooltip-id={props.chartTooltipID}
+        data-tooltip-html='Fit to screen'
       >
-        🎯 Recenter
-      </button>
+        <rect
+          width='30'
+          height='30'
+          rx='4'
+          fill='var(--react-autoql-background-color-secondary, #f8f9fa)'
+          stroke='var(--react-autoql-border-color, #ddd)'
+          strokeWidth='1'
+          style={{
+            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
+            transition: 'all 0.2s ease',
+          }}
+        />
+        <g
+          transform='translate(5, 5)'
+          fill='var(--react-autoql-text-color, #333)'
+          style={{ transition: 'all 0.2s ease' }}
+        >
+          <MdOutlineFitScreen size={20} />
+        </g>
+      </g>
     </g>
   )
 })

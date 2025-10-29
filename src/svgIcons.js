@@ -431,9 +431,15 @@ export const networkIcon = (
     <circle className='chart-icon-svg-0' cx='8' cy='8' r='2' />
     <circle className='chart-icon-svg-0' cx='3' cy='13' r='1.5' />
     <circle className='chart-icon-svg-0' cx='13' cy='13' r='1.5' />
-    <path className='chart-icon-svg-0' d='M4.5,4.5L7.2,7.2' strokeWidth='1' fill='none' />
-    <path className='chart-icon-svg-0' d='M11.5,4.5L8.8,7.2' strokeWidth='1' fill='none' />
-    <path className='chart-icon-svg-0' d='M4.5,11.5L7.2,8.8' strokeWidth='1' fill='none' />
-    <path className='chart-icon-svg-0' d='M11.5,11.5L8.8,8.8' strokeWidth='1' fill='none' />
+    {/* Lines from center to all nodes */}
+    <path className='chart-icon-svg-0' d='M4.5,4.5L7.2,7.2' strokeWidth='1' fill='none' stroke='currentColor' />
+    <path className='chart-icon-svg-0' d='M11.5,4.5L8.8,7.2' strokeWidth='1' fill='none' stroke='currentColor' />
+    <path className='chart-icon-svg-0' d='M4.5,11.5L7.2,8.8' strokeWidth='1' fill='none' stroke='currentColor' />
+    <path className='chart-icon-svg-0' d='M11.5,11.5L8.8,8.8' strokeWidth='1' fill='none' stroke='currentColor' />
+    {/* Additional connections between outer nodes */}
+    <path className='chart-icon-svg-0' d='M4.5,4.5L11.5,4.5' strokeWidth='1' fill='none' stroke='currentColor' strokeDasharray='1,1' />
+    <path className='chart-icon-svg-0' d='M4.5,4.5L4.5,11.5' strokeWidth='1' fill='none' stroke='currentColor' strokeDasharray='1,1' />
+    <path className='chart-icon-svg-0' d='M11.5,4.5L11.5,11.5' strokeWidth='1' fill='none' stroke='currentColor' strokeDasharray='1,1' />
+    <path className='chart-icon-svg-0' d='M4.5,11.5L11.5,11.5' strokeWidth='1' fill='none' stroke='currentColor' strokeDasharray='1,1' />
   </svg>
 )
