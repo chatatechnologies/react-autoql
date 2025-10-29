@@ -2572,6 +2572,10 @@ export class QueryOutput extends React.Component {
 
   generatePivotTableData = ({ isFirstGeneration, tableData: providedTableData } = {}) => {
     try {
+      this.pivotTableColumnsLimited = false
+      this.pivotTableRowsLimited = false
+      this.pivotTableID = uuid()
+
       const PIVOT_COLUMN_DEFAULTS = {
         frozen: true,
         visible: true,
@@ -2582,9 +2586,17 @@ export class QueryOutput extends React.Component {
         pivot: true,
       }
 
-      this.pivotTableColumnsLimited = false
-      this.pivotTableRowsLimited = false
-      this.pivotTableID = uuid()
+      const makePivotColumn = (sourceColumn = {}, extra = {}) => {
+        const col = {
+          ...sourceColumn,
+          ...PIVOT_COLUMN_DEFAULTS,
+          ...extra,
+        }
+
+        if (!col.origValues) col.origValues = {}
+        if (col.field !== undefined) col.field = `${col.field}`
+        return col
+      }
 
       let tableData =
         _cloneDeep(providedTableData) ||
@@ -2713,26 +2725,26 @@ export class QueryOutput extends React.Component {
           return
         }
 
-        pivotTableColumns.push({
-          ...groupableColumn,
-          ...PIVOT_COLUMN_DEFAULTS,
-          index: 0,
-          field: `0`,
-          cssClass: 'pivot-category',
-        })
+        pivotTableColumns.push(
+          makePivotColumn(groupableColumn, {
+            index: 0,
+            field: `0`,
+            cssClass: 'pivot-category',
+          }),
+        )
 
-        pivotTableColumns.push({
-          ...numberColumn,
-          ...PIVOT_COLUMN_DEFAULTS,
-          index: 1,
-          origColumn: numberColumn,
-          origPivotColumn: undefined,
-          origValues: {},
-          name: numberColumn.name,
-          title: numberColumn.display_name,
-          display_name: numberColumn.display_name,
-          field: '1',
-        })
+        pivotTableColumns.push(
+          makePivotColumn(numberColumn, {
+            index: 1,
+            origColumn: numberColumn,
+            origPivotColumn: undefined,
+            origValues: {},
+            name: numberColumn.name,
+            title: numberColumn.display_name,
+            display_name: numberColumn.display_name,
+            field: '1',
+          }),
+        )
 
         const aggregated = tableData.reduce((acc, row) => {
           const groupValue = row[groupColumnIndex]
@@ -2758,13 +2770,13 @@ export class QueryOutput extends React.Component {
       }
 
       // Add the left-most pivot axis column ('0') only for multi-column pivots, since simple pivots build their own
-      pivotTableColumns.push({
-        ...columns[newStringColumnIndex],
-        ...PIVOT_COLUMN_DEFAULTS,
-        index: 0,
-        field: `0`,
-        cssClass: 'pivot-category',
-      })
+      pivotTableColumns.push(
+        makePivotColumn(columns[newStringColumnIndex], {
+          index: 0,
+          field: `0`,
+          cssClass: 'pivot-category',
+        }),
+      )
 
       uniqueColumnHeaders.forEach((columnName, i) => {
         const formattedColumnName = formatElement({
@@ -2773,18 +2785,18 @@ export class QueryOutput extends React.Component {
           config: getDataFormatting(this.props.dataFormatting),
         })
 
-        pivotTableColumns.push({
-          ...columns[numberColumnIndex],
-          ...PIVOT_COLUMN_DEFAULTS,
-          index: i + 1,
-          origColumn: columns[numberColumnIndex],
-          origPivotColumn: columns[newLegendColumnIndex],
-          origValues: {},
-          name: columnName,
-          title: formattedColumnName,
-          display_name: formattedColumnName,
-          field: `${i + 1}`,
-        })
+        pivotTableColumns.push(
+          makePivotColumn(columns[numberColumnIndex], {
+            index: i + 1,
+            origColumn: columns[numberColumnIndex],
+            origPivotColumn: columns[newLegendColumnIndex],
+            origValues: {},
+            name: columnName,
+            title: formattedColumnName,
+            display_name: formattedColumnName,
+            field: `${i + 1}`,
+          }),
+        )
       })
 
       const pivotTableData = makeEmptyArray(uniqueColumnHeaders.length + 1, uniqueRowHeaders.length)
