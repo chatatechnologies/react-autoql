@@ -20,7 +20,6 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
   const [nodes, setNodes] = useState([])
   const [links, setLinks] = useState([])
   const [simulation, setSimulation] = useState(null)
-  const [usePyramidLayout, setUsePyramidLayout] = useState(false)
 
   // Suppress ResizeObserver loop errors (harmless warnings)
   useEffect(() => {
@@ -184,44 +183,6 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
     },
     [props.columns, props.dataFormatting, props.autoQLConfig],
   )
-
-  // Pyramid layout function
-  const applyPyramidLayout = useCallback((nodes, chartWidth, chartHeight) => {
-    if (!nodes.length) return nodes
-
-    // Sort nodes by amount sent (descending) for pyramid hierarchy
-    const sortedNodes = [...nodes].sort((a, b) => (b.amountSent || 0) - (a.amountSent || 0))
-
-    const centerX = chartWidth / 2
-    const centerY = chartHeight / 2
-    const maxWidth = chartWidth * 0.8
-    const maxHeight = chartHeight * 0.8
-
-    // Calculate pyramid levels
-    const totalNodes = sortedNodes.length
-    const levels = Math.ceil(Math.sqrt(totalNodes))
-
-    sortedNodes.forEach((node, index) => {
-      const level = Math.floor(index / Math.ceil(totalNodes / levels))
-      const nodesInLevel = Math.min(Math.ceil(totalNodes / levels), totalNodes - level * Math.ceil(totalNodes / levels))
-      const positionInLevel = index - level * Math.ceil(totalNodes / levels)
-
-      // Calculate position within the level
-      const levelWidth = (maxWidth * (level + 1)) / levels
-      const levelHeight = maxHeight / levels
-      const nodeSpacing = levelWidth / Math.max(nodesInLevel, 1)
-
-      // Position nodes in a pyramid shape
-      node.x = centerX - levelWidth / 2 + (positionInLevel + 0.5) * nodeSpacing
-      node.y = centerY - maxHeight / 2 + (level + 0.5) * levelHeight
-
-      // Add some randomness to prevent perfect alignment
-      node.x += (Math.random() - 0.5) * 20
-      node.y += (Math.random() - 0.5) * 10
-    })
-
-    return sortedNodes
-  }, [])
 
   // Process network data from tabular data
   const processNetworkData = useCallback((data, columns) => {
@@ -609,7 +570,9 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         .force('center', forceCenter(centerX, centerY))
         .force(
           'collision',
-          forceCollide().radius((d) => getNodeRadius(d) * 1.2),
+          forceCollide()
+            .radius((d) => getNodeRadius(d) * 1.2)
+            .strength(1),
         )
         .force('boundary', createBoundaryForce(chartWidth, chartHeight))
 

@@ -60,22 +60,22 @@
     pointer-events: all;
   }
 
-  .recenter-button {
-    opacity: 1 !important;
-  }
-
-  g.recenter-button {
-    opacity: 1 !important;
-  }
-
-  svg .recenter-button {
-    opacity: 1 !important;
-  }
-
-  .react-autoql-network-viz .recenter-button {
-    opacity: 1 !important;
-  }
+.recenter-button {
+  opacity: 1 !important;
 }
+
+g.recenter-button {
+  opacity: 1 !important;
+}
+
+svg .recenter-button {
+  opacity: 1 !important;
+}
+
+.react-autoql-network-viz .recenter-button {
+  opacity: 1 !important;
+}
+
 
 .react-autoql-network-tooltip {
   position: absolute;
