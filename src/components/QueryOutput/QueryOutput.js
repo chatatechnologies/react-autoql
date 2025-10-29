@@ -88,6 +88,13 @@ import { dataFormattingType, autoQLConfigType, authenticationType } from '../../
 
 import './QueryOutput.scss'
 
+const PIVOT_COLUMN_DEFAULTS = {
+  visible: true,
+  is_visible: true,
+  headerFilter: false,
+  headerFilterLiveFilter: false,
+}
+
 export class QueryOutput extends React.Component {
   constructor(props) {
     super(props)
@@ -2576,12 +2583,7 @@ export class QueryOutput extends React.Component {
       this.pivotTableRowsLimited = false
       this.pivotTableID = uuid()
 
-      const PIVOT_COLUMN_DEFAULTS = {
-        visible: true,
-        is_visible: true,
-        headerFilter: false,
-        headerFilterLiveFilter: false,
-      }
+      // use module-level PIVOT_COLUMN_DEFAULTS
 
       let tableData =
         _cloneDeep(providedTableData) ||
