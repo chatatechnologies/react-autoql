@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import _cloneDeep from 'lodash.clonedeep'
+import { sanitizePivotOptions } from './pivotUtils'
 import { TabulatorFull as Tabulator } from 'tabulator-tables' //import Tabulator library
 import throttle from 'lodash.throttle'
 import { isMobile } from 'react-device-detect'
@@ -144,32 +145,25 @@ export default class TableWrapper extends React.Component {
         this.touchStartHandler = (e) => {
           // Only mark as actively touching if the touch is directly on the table
           const target = e.target
-          const isTableElement = tableholder.contains(target)
+          if (!tableholder.contains(target)) return
 
-          if (isTableElement) {
-            isActivelyTouchingTable = true
-            touchStartTime = Date.now()
+          isActivelyTouchingTable = true
+          touchStartTime = Date.now()
 
-            // Stop the event from bubbling to parent containers
-            // but don't prevent default to allow native table scrolling
-            e.stopPropagation()
+          // Stop the event from bubbling to parent containers
+          // but don't prevent default to allow native table scrolling
+          e.stopPropagation()
 
-            // Add a visual indicator that the table is active (optional)
-            tableholder.style.outline = '1px solid rgba(0, 123, 255, 0.3)'
-          }
+          // Add a visual indicator that the table is active (optional)
+          tableholder.style.outline = '1px solid rgba(0, 123, 255, 0.3)'
         }
 
         this.touchMoveHandler = (e) => {
           // Only stop propagation if user is actively touching the table (not momentum scrolling)
-          if (isActivelyTouchingTable) {
-            const target = e.target
-            const isTableElement = tableholder.contains(target)
-
-            if (isTableElement) {
-              // User is actively scrolling the table, prevent parent containers from scrolling
-              e.stopPropagation()
-            }
-          }
+          if (!isActivelyTouchingTable) return
+          if (!tableholder.contains(e.target)) return
+          // User is actively scrolling the table, prevent parent containers from scrolling
+          e.stopPropagation()
         }
 
         this.touchEndHandler = (e) => {
@@ -257,12 +251,36 @@ export default class TableWrapper extends React.Component {
 
   instantiateTabulator = () => {
     // Instantiate Tabulator when element is mounted
+
+    // If this is a pivot table, prefer passing data directly and avoid using ajaxRequestFunc/progressive loading
+    const isPivot = !!this.props.pivot
+    const passedOptions = sanitizePivotOptions(this.props.options, isPivot)
+
+    // Ensure Tabulator uses local modes for pivot tables even if the global constant isn't available
+    if (isPivot) {
+      if (typeof LOCAL_OR_REMOTE !== 'undefined' && LOCAL_OR_REMOTE && 'LOCAL' in LOCAL_OR_REMOTE) {
+        passedOptions.sortMode = LOCAL_OR_REMOTE.LOCAL
+        passedOptions.filterMode = LOCAL_OR_REMOTE.LOCAL
+        passedOptions.paginationMode = LOCAL_OR_REMOTE.LOCAL
+      } else {
+        passedOptions.sortMode = 'local'
+        passedOptions.filterMode = 'local'
+        passedOptions.paginationMode = 'local'
+      }
+    }
+
+    const initialData = isPivot
+      ? _cloneDeep(this.props.data)
+      : passedOptions?.ajaxRequestFunc
+      ? []
+      : _cloneDeep(this.props.data)
+
     this.tabulator = new Tabulator(this.tableRef, {
       debugInvalidOptions: false,
       columns: _cloneDeep(this.props.columns),
-      data: this.props.options?.ajaxRequestFunc ? [] : _cloneDeep(this.props.data),
+      data: initialData,
       ...this.defaultOptions,
-      ...this.props.options,
+      ...passedOptions,
     })
 
     this.tabulator.on('renderComplete', () => {
@@ -287,7 +305,8 @@ export default class TableWrapper extends React.Component {
 
     this.tabulator.on('tableBuilt', async () => {
       this.isInitialized = true
-      if (this.props.options?.ajaxRequestFunc) {
+
+      if (this.props.options?.ajaxRequestFunc && !this.props.pivot) {
         try {
           await this.tabulator.replaceData()
 
@@ -335,6 +354,52 @@ export default class TableWrapper extends React.Component {
     return this.tabulator?.updateColumnDefinition(name, params)
   }
 
+  recreateTabulatorForPivot = (data) => {
+    // Destroy and recreate the tabulator instance for pivot tables to ensure a clean state
+    try {
+      if (this.tabulator) {
+        this.tabulator.destroy()
+      }
+    } catch (e) {
+      console.error('TableWrapper.recreateTabulatorForPivot: error destroying tabulator', e)
+    }
+
+    // Defensive: sanitize options for pivot recreation
+    const passedOptions = sanitizePivotOptions(this.props.options, true)
+
+    const initialData = _cloneDeep(Array.isArray(data) ? data : [])
+
+    this.tabulator = new Tabulator(this.tableRef, {
+      debugInvalidOptions: false,
+      columns: _cloneDeep(this.props.columns),
+      data: initialData,
+      ...this.defaultOptions,
+      ...passedOptions,
+    })
+
+    // Reattach the same event handlers
+    this.tabulator.on('renderComplete', () => {
+      this.tabulator.modules.layout.autoResize = false
+      this.tabulator.modules.layout.columnAutoResize = false
+    })
+    this.tabulator.on('dataLoadError', this.props.onDataLoadError)
+    this.tabulator.on('dataProcessed', this.props.onDataProcessed)
+    this.tabulator.on('cellClick', this.props.onCellClick)
+    this.tabulator.on('dataSorting', this.props.onDataSorting)
+    this.tabulator.on('dataSorted', this.props.onDataSorted)
+    this.tabulator.on('dataFiltering', this.props.onDataFiltering)
+    this.tabulator.on('dataFiltered', this.props.onDataFiltered)
+    this.tabulator.on('scrollVertical', this.props.onScrollVertical)
+
+    // Mark initialized and notify parent
+    this.isInitialized = true
+    try {
+      this.props.onTableBuilt()
+    } catch (e) {
+      console.error('TableWrapper.recreateTabulatorForPivot: onTableBuilt threw', e)
+    }
+  }
+
   updateData = (data) => {
     if (!this.tabulator || !this.isInitialized) {
       return Promise.resolve()
@@ -347,10 +412,17 @@ export default class TableWrapper extends React.Component {
         this.restoreRedraw()
         return this.tabulator?.setData(data)
       }, 0)
-    } else {
-      this.restoreRedraw()
-      return this.tabulator?.setData(data)
     }
+
+    this.restoreRedraw()
+
+    // Remount pivot tables to prevent Tabulator loader/pagination state from duplicating rows
+    if (this.props.pivot) {
+      this.recreateTabulatorForPivot(data)
+      return Promise.resolve()
+    }
+
+    return this.tabulator?.setData(data)
   }
 
   render = () => {

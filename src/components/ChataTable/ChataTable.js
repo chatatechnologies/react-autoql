@@ -138,6 +138,12 @@ export default class ChataTable extends React.Component {
     }
   }
 
+  // For pivot tables, remove ajax/progressive/pagination options so Tabulator treats them as static tables.
+  getTableWrapperOptions = () => {
+    // Return a deep-cloned tableOptions so TableWrapper handles pivot cleanup without breaking remote sorting/filtering
+    return _cloneDeep(this.tableOptions || {})
+  }
+
   static propTypes = {
     data: PropTypes.arrayOf(PropTypes.array),
     columns: PropTypes.arrayOf(PropTypes.shape({})),
@@ -1758,7 +1764,7 @@ export default class ChataTable extends React.Component {
                     data-test='autoql-tabulator-table'
                     columns={this.getFilteredTabulatorColumnDefinitions()}
                     data={this.getRows(this.props)}
-                    options={this.tableOptions}
+                    options={this.getTableWrapperOptions()}
                     hidden={this.props.hidden}
                     data-custom-attr='test-custom-attribute'
                     className='react-autoql-table'
