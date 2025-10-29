@@ -6,7 +6,7 @@ import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide } 
 import { zoom, zoomIdentity } from 'd3-zoom'
 import { MdOutlineFitScreen } from 'react-icons/md'
 
-import { findNetworkColumns } from 'autoql-fe-utils'
+import { findNetworkColumns, formatElement, getAutoQLConfig } from 'autoql-fe-utils'
 
 import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers'
 import './ChataNetworkGraph.scss'
@@ -15,6 +15,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
   const chartRef = useRef()
   const simulationRef = useRef()
   const zoomBehaviorRef = useRef()
+  const radiusScaleRef = useRef(() => 6)
 
   const [nodes, setNodes] = useState([])
   const [links, setLinks] = useState([])
@@ -139,6 +140,8 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
           id: source,
           name: source,
           connections: 0,
+          amountSent: 0,
+          amountReceived: 0,
           isSender: false, // Will be updated based on actual data
           isAirdrop: false, // Will be updated based on actual data
         })
@@ -151,6 +154,8 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
           id: target,
           name: target,
           connections: 0,
+          amountSent: 0,
+          amountReceived: 0,
           isSender: false, // Will be updated based on actual data
           isAirdrop: false, // Will be updated based on actual data
         })
@@ -177,6 +182,10 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
           edge_type: getEdgeType(source, target, nodeMap.get(source), nodeMap.get(target)),
         })
       }
+
+      // Track amount sent/received per node
+      nodeMap.get(source).amountSent += weight
+      nodeMap.get(target).amountReceived += weight
     })
 
     // Set final connection counts and roles based on actual data
@@ -230,9 +239,12 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
   }, [])
 
   const getNodeRadius = useCallback((d) => {
-    const baseRadius = 6
-    const connectionMultiplier = Math.min(d.connections / 3, 4)
-    return baseRadius + connectionMultiplier * 4
+    const scaleFn = radiusScaleRef.current
+    try {
+      return Math.max(2, scaleFn(d?.amountSent || 0))
+    } catch (e) {
+      return 6
+    }
   }, [])
 
   const getNodeColor = useCallback((d) => {
@@ -258,7 +270,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
     return d.weight_category === 'large' ? 1.5 : 0.8
   }, [])
 
-  // Drag event handlers (matching sample script)
+  // Drag event handlers
   const dragstarted = useCallback((event, d) => {
     // Disable dynamic zooming when user starts dragging
     if (window.userInteracting !== undefined) {
@@ -297,14 +309,27 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         .each(function (d) {
           // Restore the tooltip HTML for nodes
           const node = select(this)
-          let nodeType = 'Standard Node'
-          if (d.isSender && d.isReceiver) {
-            nodeType = 'Sender & Receiver Node'
-          } else if (d.isSender) {
-            nodeType = 'Sender Node'
-          } else if (d.isReceiver) {
-            nodeType = 'Receiver Node'
-          }
+
+          // Get column info for proper formatting and labels
+          const { sourceColumnIndex, targetColumnIndex, weightColumnIndex } = findNetworkColumns(props.columns)
+          const sourceColumn = sourceColumnIndex !== -1 ? props.columns[sourceColumnIndex] : null
+          const targetColumn = targetColumnIndex !== -1 ? props.columns[targetColumnIndex] : null
+          const weightColumn = weightColumnIndex !== -1 ? props.columns[weightColumnIndex] : null
+
+          const formattingConfig = props.dataFormatting || getAutoQLConfig(props.autoQLConfig)?.dataFormatting
+          const formattedAmountSent = weightColumn
+            ? formatElement({
+                element: d.amountSent || 0,
+                column: weightColumn,
+                config: formattingConfig,
+              })
+            : new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
+                maximumFractionDigits: 4,
+              }).format(Number(d.amountSent || 0))
+
+          const totalSentTitle = weightColumn?.display_name || 'Total Sent'
+          const senderLabel = sourceColumn?.display_name || 'Sender'
+          const receiverLabel = targetColumn?.display_name || 'Receiver'
 
           node.attr(
             'data-tooltip-html',
@@ -312,16 +337,15 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
            <div>
              <strong>${d.name}</strong><br/>
              <br/>
-             <strong>Node Type:</strong><br/>
-             ${nodeType}<br/>
-             <br/>
              <strong>Roles:</strong><br/>
-             ${d.isSender ? '✓ Sender' : '✗ Sender'}<br/>
-             ${d.isReceiver ? '✓ Receiver' : '✗ Receiver'}<br/>
+             ${d.isSender ? `✓ ${senderLabel}` : `✗ ${senderLabel}`}<br/>
+             ${d.isReceiver ? `✓ ${receiverLabel}` : `✗ ${receiverLabel}`}<br/>
+             <br/>
+             <strong>Total ${totalSentTitle.toLowerCase()}:</strong><br/>
+             ${formattedAmountSent}<br/>
              <br/>
              <strong>Network Stats:</strong><br/>
-             Total Connections: ${d.connections}<br/>
-             Node ID: ${d.id}
+             Total Connections: ${d.connections}
            </div>
          `,
           )
@@ -361,10 +385,6 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
          `,
           )
         })
-
-      // Keep position fixed where user dropped it (like sample script)
-      // d.fx = null
-      // d.fy = null
     },
     [props.chartTooltipID],
   )
@@ -514,19 +534,19 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       const centerX = chartWidth / 2
       const centerY = chartHeight / 2
 
-      // Create simulation matching sample script parameters
+      // Create simulation
       const simulation = forceSimulation(nodes)
         .force(
           'link',
           forceLink(links)
             .id((d) => d.id)
-            .distance(100), // Same as sample script
+            .distance(100),
         )
-        .force('charge', forceManyBody().strength(-300)) // Same as sample script
+        .force('charge', forceManyBody().strength(-300))
         .force('center', forceCenter(centerX, centerY))
         .force(
           'collision',
-          forceCollide().radius((d) => getNodeRadius(d) * 1.2), // Same as sample script
+          forceCollide().radius((d) => getNodeRadius(d) * 1.2),
         )
         .force('boundary', createBoundaryForce(chartWidth, chartHeight))
 
@@ -595,29 +615,41 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         .attr('data-tooltip-id', props.chartTooltipID)
         .attr('data-tooltip-html', (d) => {
           // Create a tooltip for network nodes with node-specific information
-          let nodeType = 'Standard Node'
-          if (d.isSender && d.isReceiver) {
-            nodeType = 'Sender & Receiver Node'
-          } else if (d.isSender) {
-            nodeType = 'Sender Node'
-          } else if (d.isReceiver) {
-            nodeType = 'Receiver Node'
-          }
+
+          // Get column info for proper formatting and labels
+          const { sourceColumnIndex, targetColumnIndex, weightColumnIndex } = findNetworkColumns(props.columns)
+          const sourceColumn = sourceColumnIndex !== -1 ? props.columns[sourceColumnIndex] : null
+          const targetColumn = targetColumnIndex !== -1 ? props.columns[targetColumnIndex] : null
+          const weightColumn = weightColumnIndex !== -1 ? props.columns[weightColumnIndex] : null
+
+          const formattingConfig = props.dataFormatting || getAutoQLConfig(props.autoQLConfig)?.dataFormatting
+          const formattedAmountSent = weightColumn
+            ? formatElement({
+                element: d.amountSent || 0,
+                column: weightColumn,
+                config: formattingConfig,
+              })
+            : new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
+                maximumFractionDigits: 4,
+              }).format(Number(d.amountSent || 0))
+
+          const totalSentTitle = weightColumn?.display_name || 'Total Sent'
+          const senderLabel = sourceColumn?.display_name || 'Sender'
+          const receiverLabel = targetColumn?.display_name || 'Receiver'
 
           return `
              <div>
                <strong>${d.name}</strong><br/>
                <br/>
-               <strong>Node Type:</strong><br/>
-               ${nodeType}<br/>
-               <br/>
                <strong>Roles:</strong><br/>
-               ${d.isSender ? '✓ Sender' : '✗ Sender'}<br/>
-               ${d.isReceiver ? '✓ Receiver' : '✗ Receiver'}<br/>
+               ${d.isSender ? `✓ ${senderLabel}` : `✗ ${senderLabel}`}<br/>
+               ${d.isReceiver ? `✓ ${receiverLabel}` : `✗ ${receiverLabel}`}<br/>
+               <br/>
+               <strong>${totalSentTitle}:</strong><br/>
+               ${formattedAmountSent}<br/>
                <br/>
                <strong>Network Stats:</strong><br/>
-               Total Connections: ${d.connections}<br/>
-               Node ID: ${d.id}
+               Total Connections: ${d.connections}
              </div>
            `
         })
@@ -830,6 +862,33 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
   // Create visualization when nodes/links change
   useEffect(() => {
     if (nodes.length > 0 && links.length > 0) {
+      // Compute dynamic radius scale based on amountSent across nodes
+      const amounts = nodes.map((n) => n.amountSent || 0)
+      const minAmount = Math.min(...amounts)
+      const maxAmount = Math.max(...amounts)
+
+      // Avoid divide-by-zero; define a reasonable visual range
+      const minRadius = 6
+      const maxRadius = 28
+
+      if (isFinite(minAmount) && isFinite(maxAmount) && maxAmount > minAmount) {
+        // Apply 5x diameter constraint: largest diameter cannot be more than 5x the smallest
+        const minDiameter = minRadius * 2
+        const maxAllowedDiameter = minDiameter * 5
+        const maxAllowedRadius = maxAllowedDiameter / 2
+
+        // Use the smaller of our desired max radius or the 5x constraint
+        const effectiveMaxRadius = Math.min(maxRadius, maxAllowedRadius)
+
+        radiusScaleRef.current = (val) => {
+          const t = (val - minAmount) / (maxAmount - minAmount)
+          return minRadius + t * (effectiveMaxRadius - minRadius)
+        }
+      } else {
+        // All amounts equal or invalid; use constant radius
+        radiusScaleRef.current = () => minRadius
+      }
+
       createNetworkVisualization()
     }
   }, [nodes, links, createNetworkVisualization])
