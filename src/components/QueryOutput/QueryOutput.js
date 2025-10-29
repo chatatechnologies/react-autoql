@@ -88,6 +88,13 @@ import { dataFormattingType, autoQLConfigType, authenticationType } from '../../
 
 import './QueryOutput.scss'
 
+const PIVOT_COLUMN_DEFAULTS = {
+  visible: true,
+  is_visible: true,
+  headerFilter: false,
+  headerFilterLiveFilter: false,
+}
+
 export class QueryOutput extends React.Component {
   constructor(props) {
     super(props)
@@ -933,13 +940,20 @@ export class QueryOutput extends React.Component {
         displayType = 'table'
       }
 
-      this.setState({
-        columns: newColumns,
-        aggConfig: this.getAggConfig(newColumns),
-        columnChangeCount: this.state.columnChangeCount + 1,
-        chartID: visibleColumnsChanged ? uuid() : this.state.chartID,
-        displayType,
-      })
+      this.setState(
+        {
+          columns: newColumns,
+          aggConfig: this.getAggConfig(newColumns),
+          columnChangeCount: this.state.columnChangeCount + 1,
+          chartID: visibleColumnsChanged ? uuid() : this.state.chartID,
+          displayType,
+        },
+        () => {
+          if (visibleColumnsChanged && this.state.displayType && this.state.displayType.indexOf('pivot') !== -1) {
+            this.generateAllData()
+          }
+        },
+      )
     }
   }
 
@@ -1008,12 +1022,12 @@ export class QueryOutput extends React.Component {
     try {
       this.pivotTableID = uuid()
       const columns = this.getColumns()
-      const numGroupables = getNumberOfGroupables(columns)
+      const numVisibleGroupables = columns.filter((col) => col.is_visible && col.groupable)?.length
 
-      if (numGroupables === 1) {
-        this.generateDatePivotData(this.tableData)
+      if (numVisibleGroupables === 0) {
+        this.pivotTableData = undefined
       } else {
-        this.generatePivotTableData({ isFirstGeneration })
+        this.generatePivotTableData({ isFirstGeneration, tableData: this.tableData })
       }
     } catch (error) {
       console.error('Error generating pivot data', error)
@@ -1021,8 +1035,8 @@ export class QueryOutput extends React.Component {
       this.pivotTableData = undefined
     }
 
-    if (this.props.allowDisplayTypeChange) {
-      this.pivotTableRef?.updateData(this.pivotTableData)
+    if (this.pivotTableRef) {
+      this.pivotTableRef.updateData(this.pivotTableData)
     }
 
     if (dataChanged && this._isMounted) {
@@ -2465,6 +2479,7 @@ export class QueryOutput extends React.Component {
         title: 'Month',
         name: 'Month',
         field: '0',
+        index: 0,
         resizable: false,
         frozen: true,
         visible: true,
@@ -2497,6 +2512,7 @@ export class QueryOutput extends React.Component {
       Object.keys(uniqueYears).forEach((year, i) => {
         pivotTableColumns.push({
           ...columns[numberColumnIndex],
+          index: i + 1,
           origColumn: columns[numberColumnIndex],
           origValues: {},
           name: year,
@@ -2529,7 +2545,11 @@ export class QueryOutput extends React.Component {
         const pivotColumnIndex = pivotTableColumns.findIndex((col) => col.name === year)
 
         if (monthNumber >= 0 && yearNumber) {
-          pivotTableData[monthNumber][yearNumber] = row[numberColumnIndex]
+          const rawValue = row[numberColumnIndex]
+          // Only write if value is finite
+          if (Number.isFinite(rawValue)) {
+            pivotTableData[monthNumber][yearNumber] = rawValue
+          }
           pivotOriginalColumnData[year] = {
             ...pivotOriginalColumnData[year],
             [month]: row[dateColumnIndex],
@@ -2557,13 +2577,19 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  generatePivotTableData = ({ isFirstGeneration } = {}) => {
+  generatePivotTableData = ({ isFirstGeneration, tableData: providedTableData } = {}) => {
     try {
       this.pivotTableColumnsLimited = false
       this.pivotTableRowsLimited = false
       this.pivotTableID = uuid()
 
-      let tableData = _cloneDeep(this.queryResponse?.data?.data?.rows) || []
+      // use module-level PIVOT_COLUMN_DEFAULTS
+
+      let tableData =
+        _cloneDeep(providedTableData) ||
+        _cloneDeep(this.tableData) ||
+        _cloneDeep(this.queryResponse?.data?.data?.rows) ||
+        []
       const columns = this.getColumns()
 
       const { legendColumnIndex, stringColumnIndex, numberColumnIndex } = this.tableConfig
@@ -2616,9 +2642,9 @@ export class QueryOutput extends React.Component {
       const hasSavedAxisConfig = this.props.initialTableConfigs?.tableConfig
 
       if (
-        isFirstGeneration &&
         !hasSavedAxisConfig &&
-        (isColumnDateType(columns[legendColumnIndex]) ||
+        (isFirstGeneration ||
+          isColumnDateType(columns[legendColumnIndex]) ||
           (uniqueColumnHeaders?.length > uniqueRowHeaders?.length &&
             (!isColumnDateType(columns[stringColumnIndex]) || uniqueColumnHeaders.length > MAX_LEGEND_LABELS)))
       ) {
@@ -2664,17 +2690,85 @@ export class QueryOutput extends React.Component {
 
       const pivotTableColumns = []
 
+      // If there is exactly one visible groupable, generate the simple 2-column pivot output
+      const visibleGroupables = columns.filter((col) => col.is_visible && col.groupable)
+      const numVisibleGroupables = visibleGroupables.length
+
+      if (numVisibleGroupables === 1) {
+        // Simple pivot: one categorical column (string) + one numeric column aggregated
+        const groupableColumn = visibleGroupables[0]
+        const numberColumn = columns.find((col) => col.is_visible && !col.groupable && isColumnNumberType(col))
+        const groupColumnIndex = columns.indexOf(groupableColumn)
+        const numberColumnIndexLocal = columns.indexOf(numberColumn)
+
+        if (groupColumnIndex < 0 || numberColumnIndexLocal < 0) {
+          // nothing to do
+          this.pivotTableData = undefined
+          this.pivotTableColumns = []
+          this.numberOfPivotTableRows = 0
+          this.pivotRowHeaders = {}
+          this.pivotColumnHeaders = {}
+          this.setPivotTableConfig(true)
+          return
+        }
+
+        pivotTableColumns.push({
+          ...PIVOT_COLUMN_DEFAULTS,
+          ...groupableColumn,
+          index: 0,
+          field: `0`,
+          cssClass: 'pivot-category',
+          frozen: true,
+          resizable: false,
+          pivot: true,
+        })
+
+        pivotTableColumns.push({
+          ...PIVOT_COLUMN_DEFAULTS,
+          ...numberColumn,
+          index: 1,
+          origColumn: numberColumn,
+          origPivotColumn: undefined,
+          origValues: {},
+          name: numberColumn.name,
+          title: numberColumn.display_name,
+          display_name: numberColumn.display_name,
+          field: '1',
+        })
+
+        const aggregated = tableData.reduce((acc, row) => {
+          const groupValue = row[groupColumnIndex]
+          const numberValue = row[numberColumnIndexLocal]
+          if (groupValue != null && Number.isFinite(numberValue)) {
+            acc[groupValue] = (acc[groupValue] || 0) + numberValue
+          }
+          return acc
+        }, {})
+
+        const pivotTableData = Object.entries(aggregated).map(([groupValue, sum]) => [groupValue, sum])
+
+        this.pivotTableColumns = pivotTableColumns
+        this.pivotTableData = pivotTableData
+        this.numberOfPivotTableRows = pivotTableData.length
+        this.pivotRowHeaders = {}
+        this.pivotColumnHeaders = {}
+        this.setPivotTableConfig(true)
+        if (this._isMounted) {
+          this.forceUpdate()
+        }
+        return
+      }
+
+      // Add the left-most pivot axis column ('0') only for multi-column pivots, since simple pivots build their own
       pivotTableColumns.push({
+        ...PIVOT_COLUMN_DEFAULTS,
         ...columns[newStringColumnIndex],
+        index: 0,
         frozen: true,
-        visible: true,
-        is_visible: true,
-        field: '0',
+        field: `0`,
         resizable: false,
         cssClass: 'pivot-category',
         pivot: true,
-        headerFilter: false,
-        headerFilterLiveFilter: false,
       })
 
       uniqueColumnHeaders.forEach((columnName, i) => {
@@ -2685,7 +2779,9 @@ export class QueryOutput extends React.Component {
         })
 
         pivotTableColumns.push({
+          ...PIVOT_COLUMN_DEFAULTS,
           ...columns[numberColumnIndex],
+          index: i + 1,
           origColumn: columns[numberColumnIndex],
           origPivotColumn: columns[newLegendColumnIndex],
           origValues: {},
@@ -2693,10 +2789,6 @@ export class QueryOutput extends React.Component {
           title: formattedColumnName,
           display_name: formattedColumnName,
           field: `${i + 1}`,
-          visible: true,
-          is_visible: true,
-          headerFilter: false,
-          headerFilterLiveFilter: false,
         })
       })
 
@@ -3075,8 +3167,9 @@ export class QueryOutput extends React.Component {
     const data = usePivotData ? this.state.visiblePivotRows || this.pivotTableData : this.tableData
     const columns = usePivotData ? this.pivotTableColumns : this.state.columns
 
-    const isPivotDataLimited =
-      this.usePivotDataForChart() && (this.pivotTableRowsLimited || this.pivotTableColumnsLimited)
+    if (!data || !data.length) {
+      return this.renderMessage('Error: There was no data supplied for this chart')
+    }
 
     return (
       <ErrorBoundary>
@@ -3084,7 +3177,7 @@ export class QueryOutput extends React.Component {
           key={this.state.chartID}
           isResizable={this.state.isResizable}
           {...tableConfig}
-          tableConfig={this.tableConfig}
+          tableConfig={tableConfig}
           originalColumns={this.getColumns()}
           data={data}
           hidden={!isChartType(this.state.displayType)}
@@ -3116,7 +3209,10 @@ export class QueryOutput extends React.Component {
           onNewData={this.onNewData}
           isDrilldown={isDrilldown(this.queryResponse)}
           updateColumns={this.updateColumns}
-          isDataLimited={isDataLimited(this.queryResponse) || isPivotDataLimited}
+          isDataLimited={
+            isDataLimited(this.queryResponse) ||
+            (usePivotData && (this.pivotTableRowsLimited || this.pivotTableColumnsLimited))
+          }
           source={this.props.source}
           scope={this.props.scope}
           queryFn={this.queryFn}
