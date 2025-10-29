@@ -68,31 +68,13 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
   // Process network data from tabular data
   const processNetworkData = useCallback((data, columns) => {
-    console.log('ChataNetworkGraph: processNetworkData called with:', {
-      dataLength: data?.length,
-      columnsLength: columns?.length,
-    })
-
     if (!data || !Array.isArray(data) || data.length === 0) {
-      console.log('ChataNetworkGraph: processNetworkData - no data')
       return { nodes: [], links: [] }
     }
 
-    console.log('ChataNetworkGraph: processNetworkData - data sample:', data.slice(0, 3))
-    console.log(
-      'ChataNetworkGraph: processNetworkData - columns:',
-      columns.map((c) => ({ name: c.name, type: c.type })),
-    )
-
     const { sourceColumnIndex, targetColumnIndex, weightColumnIndex } = findNetworkColumns(columns) // Using autoql-fe-utils
-    console.log('ChataNetworkGraph: processNetworkData - found columns:', {
-      sourceColumnIndex,
-      targetColumnIndex,
-      weightColumnIndex,
-    })
 
     if (sourceColumnIndex === -1 || targetColumnIndex === -1) {
-      console.log('ChataNetworkGraph: processNetworkData - no valid source/target columns found')
       return { nodes: [], links: [] }
     }
 
@@ -179,16 +161,6 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
     const nodes = Array.from(nodeMap.values())
     const links = Array.from(linkMap.values())
-
-    console.log('ChataNetworkGraph: processNetworkData - created nodes:', nodes.length, 'links:', links.length)
-    console.log(
-      'ChataNetworkGraph: processNetworkData - original rows:',
-      data.length,
-      'aggregated edges:',
-      data.length - links.length,
-    )
-    console.log('ChataNetworkGraph: processNetworkData - sample nodes:', nodes.slice(0, 3))
-    console.log('ChataNetworkGraph: processNetworkData - sample links:', links.slice(0, 3))
 
     return { nodes, links }
   }, [])
@@ -337,19 +309,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
   const createNetworkVisualization = useCallback(() => {
     const { height, width, deltaX, deltaY, innerHeight, innerWidth } = props
 
-    console.log('ChataNetworkGraph: Creating visualization with:', {
-      nodes: nodes.length,
-      links: links.length,
-      height,
-      width,
-      innerHeight,
-      innerWidth,
-      deltaX,
-      deltaY,
-    })
-
     if (!nodes.length || !links.length) {
-      console.log('ChataNetworkGraph: No nodes or links to render')
       return
     }
 
@@ -361,20 +321,13 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       // Get our SVG element
       const svgElement = chartRef.current
       if (!svgElement) {
-        console.log('ChataNetworkGraph: SVG element not found')
         return
       }
 
-      console.log('ChataNetworkGraph: Found SVG element:', svgElement)
-
       const svg = select(svgElement)
-      console.log('ChataNetworkGraph: SVG selected:', svg.node())
 
       // Create container for links and nodes with zoom support
       const container = svg.append('g')
-      console.log('ChataNetworkGraph: Container created:', container.node())
-
-      console.log('ChataNetworkGraph: Background panning added')
 
       // Add arrow definitions for directed edges
       svg
@@ -391,8 +344,6 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         .attr('d', 'M0,-5L10,0L0,5')
         .attr('fill', '#999')
         .style('stroke', 'none')
-
-      console.log('ChataNetworkGraph: Arrow definitions added')
 
       // Add zoom behavior
       const zoomBehavior = zoom()
@@ -427,8 +378,6 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         })
         .call(zoomBehavior)
 
-      console.log('ChataNetworkGraph: Zoom behavior added')
-
       // Use inner dimensions for proper centering (like pie chart)
       const chartWidth = innerWidth || width
       const chartHeight = innerHeight || height
@@ -450,8 +399,6 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
           forceCollide().radius((d) => getNodeRadius(d) * 1.2), // Same as sample script
         )
         .force('boundary', createBoundaryForce(chartWidth, chartHeight))
-
-      console.log('ChataNetworkGraph: Simulation created:', simulation)
 
       simulationRef.current = simulation
       setSimulation(simulation)
@@ -714,38 +661,29 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
   // Process data on mount and when props change
   useEffect(() => {
     const { data, columns } = props
-    console.log('ChataNetworkGraph: Processing data:', data, 'columns:', columns)
 
     if (!data || !Array.isArray(data) || data.length === 0) {
-      console.log('ChataNetworkGraph: No data or empty data array')
       setNodes([])
       setLinks([])
       return
     }
 
     if (!columns || !Array.isArray(columns) || columns.length === 0) {
-      console.log('ChataNetworkGraph: No columns or empty columns array')
       setNodes([])
       setLinks([])
       return
     }
 
     const processedData = processNetworkData(data, columns)
-    console.log('ChataNetworkGraph: Processed data:', processedData)
-    console.log('ChataNetworkGraph: Nodes count:', processedData.nodes.length)
-    console.log('ChataNetworkGraph: Links count:', processedData.links.length)
+
     setNodes(processedData.nodes)
     setLinks(processedData.links)
   }, [props.data, props.columns, processNetworkData])
 
   // Create visualization when nodes/links change
   useEffect(() => {
-    console.log('ChataNetworkGraph: useEffect triggered, nodes:', nodes.length, 'links:', links.length)
     if (nodes.length > 0 && links.length > 0) {
-      console.log('ChataNetworkGraph: Creating visualization...')
       createNetworkVisualization()
-    } else {
-      console.log('ChataNetworkGraph: Not enough data to create visualization')
     }
   }, [nodes, links, createNetworkVisualization])
 
@@ -757,7 +695,6 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
   }, [destroyVisualization])
 
   // Render - create our own SVG inside the g container
-  console.log('ChataNetworkGraph: Rendering, chartRef:', chartRef)
   return (
     <g className='react-autoql-network-viz'>
       <svg
