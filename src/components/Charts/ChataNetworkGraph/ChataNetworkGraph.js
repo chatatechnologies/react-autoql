@@ -20,6 +20,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
   const [nodes, setNodes] = useState([])
   const [links, setLinks] = useState([])
   const [simulation, setSimulation] = useState(null)
+  const [usePyramidLayout, setUsePyramidLayout] = useState(false)
 
   // Suppress ResizeObserver loop errors (harmless warnings)
   useEffect(() => {
@@ -99,6 +100,129 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
     }
   }, [nodes, props])
 
+  // Generate tooltip HTML for network links
+  const generateLinkTooltipHTML = useCallback(
+    (d) => {
+      const { sourceColumnIndex, targetColumnIndex, weightColumnIndex } = findNetworkColumns(props.columns)
+      const sourceColName =
+        sourceColumnIndex !== -1 ? props.columns[sourceColumnIndex]?.display_name || 'Source' : 'Source'
+      const targetColName =
+        targetColumnIndex !== -1 ? props.columns[targetColumnIndex]?.display_name || 'Target' : 'Target'
+      const weightColName =
+        weightColumnIndex !== -1 ? props.columns[weightColumnIndex]?.display_name || 'Weight' : 'Weight'
+
+      const formattingConfig = props.dataFormatting || getAutoQLConfig(props.autoQLConfig)?.dataFormatting
+      const weightColumn = weightColumnIndex !== -1 ? props.columns[weightColumnIndex] : null
+      const formattedWeight = weightColumn
+        ? formatElement({
+            element: d.weight || 0,
+            column: weightColumn,
+            config: formattingConfig,
+          })
+        : new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
+            maximumFractionDigits: 4,
+          }).format(Number(d.weight || 0))
+
+      return `
+       <div>
+         <strong>Relationship:</strong><br/>
+         ${d.source.name} → ${d.target.name}<br/>
+         <br/>
+         <strong>Column Mapping:</strong><br/>
+         ${sourceColName} → ${targetColName}<br/>
+         <br/>
+         <strong>Weight Details:</strong><br/>
+         Total ${weightColName}: ${formattedWeight}<br/>
+         Category: ${d.weight_category}<br/>
+         Type: ${d.edge_type.replace(/_/g, ' ')}
+       </div>
+     `
+    },
+    [props.columns, props.dataFormatting, props.autoQLConfig],
+  )
+
+  // Generate tooltip HTML for network nodes
+  const generateNodeTooltipHTML = useCallback(
+    (d) => {
+      // Get column info for proper formatting and labels
+      const { sourceColumnIndex, targetColumnIndex, weightColumnIndex } = findNetworkColumns(props.columns)
+      const sourceColumn = sourceColumnIndex !== -1 ? props.columns[sourceColumnIndex] : null
+      const targetColumn = targetColumnIndex !== -1 ? props.columns[targetColumnIndex] : null
+      const weightColumn = weightColumnIndex !== -1 ? props.columns[weightColumnIndex] : null
+
+      const formattingConfig = props.dataFormatting || getAutoQLConfig(props.autoQLConfig)?.dataFormatting
+      const formattedAmountSent = weightColumn
+        ? formatElement({
+            element: d.amountSent || 0,
+            column: weightColumn,
+            config: formattingConfig,
+          })
+        : new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
+            maximumFractionDigits: 4,
+          }).format(Number(d.amountSent || 0))
+
+      const totalSentTitle = weightColumn?.display_name || 'Total Sent'
+      const senderLabel = sourceColumn?.display_name || 'Sender'
+      const receiverLabel = targetColumn?.display_name || 'Receiver'
+
+      return `
+       <div>
+         <strong>${d.name}</strong><br/>
+         <br/>
+         <strong>Roles:</strong><br/>
+         ${d.isSender ? `✓ ${senderLabel}` : `✗ ${senderLabel}`}<br/>
+         ${d.isReceiver ? `✓ ${receiverLabel}` : `✗ ${receiverLabel}`}<br/>
+         <br/>
+         <strong>Total ${totalSentTitle}:</strong><br/>
+         ${formattedAmountSent}<br/>
+         <br/>
+         <strong>Network Stats:</strong><br/>
+         Unique Connections: ${d.connections}<br/>
+         Total Records: ${d.totalTransfers || 0}
+       </div>
+     `
+    },
+    [props.columns, props.dataFormatting, props.autoQLConfig],
+  )
+
+  // Pyramid layout function
+  const applyPyramidLayout = useCallback((nodes, chartWidth, chartHeight) => {
+    if (!nodes.length) return nodes
+
+    // Sort nodes by amount sent (descending) for pyramid hierarchy
+    const sortedNodes = [...nodes].sort((a, b) => (b.amountSent || 0) - (a.amountSent || 0))
+
+    const centerX = chartWidth / 2
+    const centerY = chartHeight / 2
+    const maxWidth = chartWidth * 0.8
+    const maxHeight = chartHeight * 0.8
+
+    // Calculate pyramid levels
+    const totalNodes = sortedNodes.length
+    const levels = Math.ceil(Math.sqrt(totalNodes))
+
+    sortedNodes.forEach((node, index) => {
+      const level = Math.floor(index / Math.ceil(totalNodes / levels))
+      const nodesInLevel = Math.min(Math.ceil(totalNodes / levels), totalNodes - level * Math.ceil(totalNodes / levels))
+      const positionInLevel = index - level * Math.ceil(totalNodes / levels)
+
+      // Calculate position within the level
+      const levelWidth = (maxWidth * (level + 1)) / levels
+      const levelHeight = maxHeight / levels
+      const nodeSpacing = levelWidth / Math.max(nodesInLevel, 1)
+
+      // Position nodes in a pyramid shape
+      node.x = centerX - levelWidth / 2 + (positionInLevel + 0.5) * nodeSpacing
+      node.y = centerY - maxHeight / 2 + (level + 0.5) * levelHeight
+
+      // Add some randomness to prevent perfect alignment
+      node.x += (Math.random() - 0.5) * 20
+      node.y += (Math.random() - 0.5) * 10
+    })
+
+    return sortedNodes
+  }, [])
+
   // Process network data from tabular data
   const processNetworkData = useCallback((data, columns) => {
     if (!data || !Array.isArray(data) || data.length === 0) {
@@ -140,8 +264,8 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
           id: source,
           name: source,
           connections: 0,
+          totalTransfers: 0,
           amountSent: 0,
-          amountReceived: 0,
           isSender: false, // Will be updated based on actual data
           isAirdrop: false, // Will be updated based on actual data
         })
@@ -154,8 +278,8 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
           id: target,
           name: target,
           connections: 0,
+          totalTransfers: 0,
           amountSent: 0,
-          amountReceived: 0,
           isSender: false, // Will be updated based on actual data
           isAirdrop: false, // Will be updated based on actual data
         })
@@ -183,9 +307,12 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         })
       }
 
-      // Track amount sent/received per node
+      // Track amount sent per node
       nodeMap.get(source).amountSent += weight
-      nodeMap.get(target).amountReceived += weight
+
+      // Track total transfers (count of individual transactions)
+      nodeMap.get(source).totalTransfers += 1
+      nodeMap.get(target).totalTransfers += 1
     })
 
     // Set final connection counts and roles based on actual data
@@ -310,45 +437,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
           // Restore the tooltip HTML for nodes
           const node = select(this)
 
-          // Get column info for proper formatting and labels
-          const { sourceColumnIndex, targetColumnIndex, weightColumnIndex } = findNetworkColumns(props.columns)
-          const sourceColumn = sourceColumnIndex !== -1 ? props.columns[sourceColumnIndex] : null
-          const targetColumn = targetColumnIndex !== -1 ? props.columns[targetColumnIndex] : null
-          const weightColumn = weightColumnIndex !== -1 ? props.columns[weightColumnIndex] : null
-
-          const formattingConfig = props.dataFormatting || getAutoQLConfig(props.autoQLConfig)?.dataFormatting
-          const formattedAmountSent = weightColumn
-            ? formatElement({
-                element: d.amountSent || 0,
-                column: weightColumn,
-                config: formattingConfig,
-              })
-            : new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
-                maximumFractionDigits: 4,
-              }).format(Number(d.amountSent || 0))
-
-          const totalSentTitle = weightColumn?.display_name || 'Total Sent'
-          const senderLabel = sourceColumn?.display_name || 'Sender'
-          const receiverLabel = targetColumn?.display_name || 'Receiver'
-
-          node.attr(
-            'data-tooltip-html',
-            `
-           <div>
-             <strong>${d.name}</strong><br/>
-             <br/>
-             <strong>Roles:</strong><br/>
-             ${d.isSender ? `✓ ${senderLabel}` : `✗ ${senderLabel}`}<br/>
-             ${d.isReceiver ? `✓ ${receiverLabel}` : `✗ ${receiverLabel}`}<br/>
-             <br/>
-             <strong>Total ${totalSentTitle.toLowerCase()}:</strong><br/>
-             ${formattedAmountSent}<br/>
-             <br/>
-             <strong>Network Stats:</strong><br/>
-             Total Connections: ${d.connections}
-           </div>
-         `,
-          )
+          node.attr('data-tooltip-html', generateNodeTooltipHTML(d))
         })
       svg
         .selectAll('.link')
@@ -357,33 +446,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         .each(function (d) {
           // Restore the tooltip HTML for links
           const link = select(this)
-          const { sourceColumnIndex, targetColumnIndex, weightColumnIndex } = findNetworkColumns(props.columns)
-          const sourceColName =
-            sourceColumnIndex !== -1 ? props.columns[sourceColumnIndex]?.display_name || 'Source' : 'Source'
-          const targetColName =
-            targetColumnIndex !== -1 ? props.columns[targetColumnIndex]?.display_name || 'Target' : 'Target'
-          const weightColName =
-            weightColumnIndex !== -1 ? props.columns[weightColumnIndex]?.display_name || 'Weight' : 'Weight'
-
-          link.attr(
-            'data-tooltip-html',
-            `
-           <div>
-             <strong>Connection</strong><br/>
-             <br/>
-             <strong>Relationship:</strong><br/>
-             ${d.source.name} → ${d.target.name}<br/>
-             <br/>
-             <strong>Column Mapping:</strong><br/>
-             ${sourceColName} → ${targetColName}<br/>
-             <br/>
-             <strong>Weight Details:</strong><br/>
-             ${weightColName}: ${d.weight.toLocaleString()}<br/>
-             Category: ${d.weight_category}<br/>
-             Type: ${d.edge_type.replace(/_/g, ' ')}
-           </div>
-         `,
-          )
+          link.attr('data-tooltip-html', generateLinkTooltipHTML(d))
         })
     },
     [props.chartTooltipID],
@@ -569,33 +632,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         .style('cursor', 'pointer')
         .attr('marker-end', 'url(#arrowhead)')
         .attr('data-tooltip-id', props.chartTooltipID)
-        .attr('data-tooltip-html', (d) => {
-          // Create a tooltip for network edges with relationship information
-          const { sourceColumnIndex, targetColumnIndex, weightColumnIndex } = findNetworkColumns(props.columns)
-          const sourceColName =
-            sourceColumnIndex !== -1 ? props.columns[sourceColumnIndex]?.display_name || 'Source' : 'Source'
-          const targetColName =
-            targetColumnIndex !== -1 ? props.columns[targetColumnIndex]?.display_name || 'Target' : 'Target'
-          const weightColName =
-            weightColumnIndex !== -1 ? props.columns[weightColumnIndex]?.display_name || 'Weight' : 'Weight'
-
-          return `
-           <div>
-             <strong>Connection</strong><br/>
-             <br/>
-             <strong>Relationship:</strong><br/>
-             ${d.source.name} → ${d.target.name}<br/>
-             <br/>
-             <strong>Column Mapping:</strong><br/>
-             ${sourceColName} → ${targetColName}<br/>
-             <br/>
-             <strong>Weight Details:</strong><br/>
-             ${weightColName}: ${d.weight.toLocaleString()}<br/>
-             Category: ${d.weight_category}<br/>
-             Type: ${d.edge_type.replace(/_/g, ' ')}
-           </div>
-         `
-        })
+        .attr('data-tooltip-html', generateLinkTooltipHTML)
 
       // Create nodes
       const nodeGroup = container.append('g').attr('class', 'nodes')
@@ -613,46 +650,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         .style('cursor', 'move')
         .style('outline', 'none')
         .attr('data-tooltip-id', props.chartTooltipID)
-        .attr('data-tooltip-html', (d) => {
-          // Create a tooltip for network nodes with node-specific information
-
-          // Get column info for proper formatting and labels
-          const { sourceColumnIndex, targetColumnIndex, weightColumnIndex } = findNetworkColumns(props.columns)
-          const sourceColumn = sourceColumnIndex !== -1 ? props.columns[sourceColumnIndex] : null
-          const targetColumn = targetColumnIndex !== -1 ? props.columns[targetColumnIndex] : null
-          const weightColumn = weightColumnIndex !== -1 ? props.columns[weightColumnIndex] : null
-
-          const formattingConfig = props.dataFormatting || getAutoQLConfig(props.autoQLConfig)?.dataFormatting
-          const formattedAmountSent = weightColumn
-            ? formatElement({
-                element: d.amountSent || 0,
-                column: weightColumn,
-                config: formattingConfig,
-              })
-            : new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
-                maximumFractionDigits: 4,
-              }).format(Number(d.amountSent || 0))
-
-          const totalSentTitle = weightColumn?.display_name || 'Total Sent'
-          const senderLabel = sourceColumn?.display_name || 'Sender'
-          const receiverLabel = targetColumn?.display_name || 'Receiver'
-
-          return `
-             <div>
-               <strong>${d.name}</strong><br/>
-               <br/>
-               <strong>Roles:</strong><br/>
-               ${d.isSender ? `✓ ${senderLabel}` : `✗ ${senderLabel}`}<br/>
-               ${d.isReceiver ? `✓ ${receiverLabel}` : `✗ ${receiverLabel}`}<br/>
-               <br/>
-               <strong>${totalSentTitle}:</strong><br/>
-               ${formattedAmountSent}<br/>
-               <br/>
-               <strong>Network Stats:</strong><br/>
-               Total Connections: ${d.connections}
-             </div>
-           `
-        })
+        .attr('data-tooltip-html', generateNodeTooltipHTML)
         .call(drag().on('start', dragstarted).on('drag', dragged).on('end', dragended))
 
       // Set initial positions spread out in a reasonable area

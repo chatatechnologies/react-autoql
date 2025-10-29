@@ -263,7 +263,7 @@ export default class ChataChart extends React.Component {
           data = sortDataByColumn(props.data, props.columns, stringColumnIndex, 'asc')
         }
 
-        if (data?.length > MAX_CHART_ELEMENTS && !this.dataIsBinned()) {
+        if (data?.length > MAX_CHART_ELEMENTS && !this.dataIsBinned() && props.type !== DisplayTypes.NETWORK_GRAPH) {
           data = data.slice(0, MAX_CHART_ELEMENTS)
           isDataTruncated = true
         }
@@ -300,7 +300,11 @@ export default class ChataChart extends React.Component {
           dataFormatting: props.dataFormatting,
         })
 
-        if (aggregated?.length > MAX_CHART_ELEMENTS && !this.dataIsBinned()) {
+        if (
+          aggregated?.length > MAX_CHART_ELEMENTS &&
+          !this.dataIsBinned() &&
+          props.type !== DisplayTypes.NETWORK_GRAPH
+        ) {
           aggregated = aggregated.slice(0, MAX_CHART_ELEMENTS)
           isDataTruncated = true
         }
