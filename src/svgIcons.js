@@ -423,3 +423,17 @@ export const median = (
     <path d='M6 13a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v10zM1 8a.5.5 0 0 0 .5.5H6v-1H1.5A.5.5 0 0 0 1 8zm14 0a.5.5 0 0 1-.5.5H10v-1h4.5a.5.5 0 0 1 .5.5z'></path>
   </svg>
 )
+
+export const networkIcon = (
+  <svg x='0px' y='0px' width='16px' height='16px' viewBox='0 0 16 16'>
+    <circle className='chart-icon-svg-0' cx='3' cy='3' r='1.5' />
+    <circle className='chart-icon-svg-0' cx='13' cy='3' r='1.5' />
+    <circle className='chart-icon-svg-0' cx='8' cy='8' r='2' />
+    <circle className='chart-icon-svg-0' cx='3' cy='13' r='1.5' />
+    <circle className='chart-icon-svg-0' cx='13' cy='13' r='1.5' />
+    <path className='chart-icon-svg-0' d='M4.5,4.5L7.2,7.2' strokeWidth='1' fill='none' />
+    <path className='chart-icon-svg-0' d='M11.5,4.5L8.8,7.2' strokeWidth='1' fill='none' />
+    <path className='chart-icon-svg-0' d='M4.5,11.5L7.2,8.8' strokeWidth='1' fill='none' />
+    <path className='chart-icon-svg-0' d='M11.5,11.5L8.8,8.8' strokeWidth='1' fill='none' />
+  </svg>
+)

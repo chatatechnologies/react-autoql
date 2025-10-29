@@ -46,6 +46,7 @@ import { ChataStackedBarChart } from '../ChataStackedBarChart'
 import { ChataScatterplotChart } from '../ChataScatterplotChart'
 import { ChataStackedLineChart } from '../ChataStackedLineChart'
 import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
+import ChataNetworkGraph from '../ChataNetworkGraph'
 import { AverageLine } from '../AverageLine'
 import { AverageLineToggle } from '../AverageLineToggle'
 import { RegressionLine } from '../RegressionLine'
@@ -340,6 +341,10 @@ export default class ChataChart extends React.Component {
   }
 
   adjustChartPosition = () => {
+    if (this.props.type === DisplayTypes.NETWORK_GRAPH) {
+      return
+    }
+
     if (!this.props.hidden) {
       clearTimeout(this.adjustPositionTimeout)
       this.adjustPositionTimeout = setTimeout(() => {
@@ -772,6 +777,9 @@ export default class ChataChart extends React.Component {
       case DisplayTypes.SCATTERPLOT: {
         return <ChataScatterplotChart {...commonChartProps} />
       }
+      case DisplayTypes.NETWORK_GRAPH: {
+        return <ChataNetworkGraph {...commonChartProps} />
+      }
       default: {
         return 'Unknown Display Type'
       }
@@ -800,7 +808,7 @@ export default class ChataChart extends React.Component {
             ref={(r) => (this.chartContainerRef = r)}
             data-test='react-autoql-chart'
             className={`react-autoql-chart-container
-            ${this.state.isLoading ? 'loading' : ''}
+            ${this.state.isLoading && this.props.type !== DisplayTypes.NETWORK_GRAPH ? 'loading' : ''}
             ${this.props.hidden ? 'hidden' : ''}
             ${getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? 'enable-drilldown' : 'disable-drilldown'}`}
           >
