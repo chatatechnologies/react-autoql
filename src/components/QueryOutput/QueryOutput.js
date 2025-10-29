@@ -2572,6 +2572,16 @@ export class QueryOutput extends React.Component {
 
   generatePivotTableData = ({ isFirstGeneration, tableData: providedTableData } = {}) => {
     try {
+      const PIVOT_COLUMN_DEFAULTS = {
+        frozen: true,
+        visible: true,
+        is_visible: true,
+        resizable: false,
+        headerFilter: false,
+        headerFilterLiveFilter: false,
+        pivot: true,
+      }
+
       this.pivotTableColumnsLimited = false
       this.pivotTableRowsLimited = false
       this.pivotTableID = uuid()
@@ -2704,20 +2714,15 @@ export class QueryOutput extends React.Component {
         }
 
         pivotTableColumns.push({
+          ...PIVOT_COLUMN_DEFAULTS,
           ...groupableColumn,
           index: 0,
-          frozen: true,
-          visible: true,
-          is_visible: true,
           field: `0`,
-          resizable: false,
           cssClass: 'pivot-category',
-          pivot: true,
-          headerFilter: false,
-          headerFilterLiveFilter: false,
         })
 
         pivotTableColumns.push({
+          ...PIVOT_COLUMN_DEFAULTS,
           ...numberColumn,
           index: 1,
           origColumn: numberColumn,
@@ -2727,10 +2732,6 @@ export class QueryOutput extends React.Component {
           title: numberColumn.display_name,
           display_name: numberColumn.display_name,
           field: '1',
-          visible: true,
-          is_visible: true,
-          headerFilter: false,
-          headerFilterLiveFilter: false,
         })
 
         const aggregated = tableData.reduce((acc, row) => {
@@ -2758,17 +2759,11 @@ export class QueryOutput extends React.Component {
 
       // Add the left-most pivot axis column ('0') only for multi-column pivots, since simple pivots build their own
       pivotTableColumns.push({
+        ...PIVOT_COLUMN_DEFAULTS,
         ...columns[newStringColumnIndex],
         index: 0,
-        frozen: true,
-        visible: true,
-        is_visible: true,
         field: `0`,
-        resizable: false,
         cssClass: 'pivot-category',
-        pivot: true,
-        headerFilter: false,
-        headerFilterLiveFilter: false,
       })
 
       uniqueColumnHeaders.forEach((columnName, i) => {
@@ -2779,6 +2774,7 @@ export class QueryOutput extends React.Component {
         })
 
         pivotTableColumns.push({
+          ...PIVOT_COLUMN_DEFAULTS,
           ...columns[numberColumnIndex],
           index: i + 1,
           origColumn: columns[numberColumnIndex],
@@ -2788,10 +2784,6 @@ export class QueryOutput extends React.Component {
           title: formattedColumnName,
           display_name: formattedColumnName,
           field: `${i + 1}`,
-          visible: true,
-          is_visible: true,
-          headerFilter: false,
-          headerFilterLiveFilter: false,
         })
       })
 

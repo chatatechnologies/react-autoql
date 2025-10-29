@@ -283,25 +283,7 @@ export default class TableWrapper extends React.Component {
       ...passedOptions,
     })
 
-    this.tabulator.on('renderComplete', () => {
-      this.tabulator.modules.layout.autoResize = false // Manually disable auto-resize after render
-      this.tabulator.modules.layout.columnAutoResize = false
-
-      // Remove this for now, since it is causing bugs with the cell click event
-      // Block redraw after every update for performance
-      // Restore redraw manually before updating table data
-      // setTimeout(() => {
-      //   this.blockRedraw()
-      // }, 1000)
-    })
-    this.tabulator.on('dataLoadError', this.props.onDataLoadError)
-    this.tabulator.on('dataProcessed', this.props.onDataProcessed)
-    this.tabulator.on('cellClick', this.props.onCellClick)
-    this.tabulator.on('dataSorting', this.props.onDataSorting)
-    this.tabulator.on('dataSorted', this.props.onDataSorted)
-    this.tabulator.on('dataFiltering', this.props.onDataFiltering)
-    this.tabulator.on('dataFiltered', this.props.onDataFiltered)
-    this.tabulator.on('scrollVertical', this.props.onScrollVertical)
+    this.attachTabulatorEventHandlers(this.tabulator)
 
     this.tabulator.on('tableBuilt', async () => {
       this.isInitialized = true
@@ -354,6 +336,21 @@ export default class TableWrapper extends React.Component {
     return this.tabulator?.updateColumnDefinition(name, params)
   }
 
+  attachTabulatorEventHandlers = (tabulator) => {
+    tabulator.on('renderComplete', () => {
+      tabulator.modules.layout.autoResize = false
+      tabulator.modules.layout.columnAutoResize = false
+    })
+    tabulator.on('dataLoadError', this.props.onDataLoadError)
+    tabulator.on('dataProcessed', this.props.onDataProcessed)
+    tabulator.on('cellClick', this.props.onCellClick)
+    tabulator.on('dataSorting', this.props.onDataSorting)
+    tabulator.on('dataSorted', this.props.onDataSorted)
+    tabulator.on('dataFiltering', this.props.onDataFiltering)
+    tabulator.on('dataFiltered', this.props.onDataFiltered)
+    tabulator.on('scrollVertical', this.props.onScrollVertical)
+  }
+
   recreateTabulatorForPivot = (data) => {
     // Destroy and recreate the tabulator instance for pivot tables to ensure a clean state
     try {
@@ -377,19 +374,7 @@ export default class TableWrapper extends React.Component {
       ...passedOptions,
     })
 
-    // Reattach the same event handlers
-    this.tabulator.on('renderComplete', () => {
-      this.tabulator.modules.layout.autoResize = false
-      this.tabulator.modules.layout.columnAutoResize = false
-    })
-    this.tabulator.on('dataLoadError', this.props.onDataLoadError)
-    this.tabulator.on('dataProcessed', this.props.onDataProcessed)
-    this.tabulator.on('cellClick', this.props.onCellClick)
-    this.tabulator.on('dataSorting', this.props.onDataSorting)
-    this.tabulator.on('dataSorted', this.props.onDataSorted)
-    this.tabulator.on('dataFiltering', this.props.onDataFiltering)
-    this.tabulator.on('dataFiltered', this.props.onDataFiltered)
-    this.tabulator.on('scrollVertical', this.props.onScrollVertical)
+    this.attachTabulatorEventHandlers(this.tabulator)
 
     // Mark initialized and notify parent
     this.isInitialized = true
