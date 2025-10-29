@@ -2714,16 +2714,16 @@ export class QueryOutput extends React.Component {
         }
 
         pivotTableColumns.push({
-          ...PIVOT_COLUMN_DEFAULTS,
           ...groupableColumn,
+          ...PIVOT_COLUMN_DEFAULTS,
           index: 0,
           field: `0`,
           cssClass: 'pivot-category',
         })
 
         pivotTableColumns.push({
-          ...PIVOT_COLUMN_DEFAULTS,
           ...numberColumn,
+          ...PIVOT_COLUMN_DEFAULTS,
           index: 1,
           origColumn: numberColumn,
           origPivotColumn: undefined,
@@ -2759,8 +2759,8 @@ export class QueryOutput extends React.Component {
 
       // Add the left-most pivot axis column ('0') only for multi-column pivots, since simple pivots build their own
       pivotTableColumns.push({
-        ...PIVOT_COLUMN_DEFAULTS,
         ...columns[newStringColumnIndex],
+        ...PIVOT_COLUMN_DEFAULTS,
         index: 0,
         field: `0`,
         cssClass: 'pivot-category',
@@ -2774,8 +2774,8 @@ export class QueryOutput extends React.Component {
         })
 
         pivotTableColumns.push({
-          ...PIVOT_COLUMN_DEFAULTS,
           ...columns[numberColumnIndex],
+          ...PIVOT_COLUMN_DEFAULTS,
           index: i + 1,
           origColumn: columns[numberColumnIndex],
           origPivotColumn: columns[newLegendColumnIndex],
