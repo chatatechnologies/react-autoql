@@ -1,21 +1,25 @@
 import { QueryOutput } from '../QueryOutput'
+import { ColumnTypes, isColumnNumberType } from 'autoql-fe-utils'
 
 describe('QueryOutput pivot invariants', () => {
   test('simple pivot generates axis and value columns with defaults', () => {
     // Create a minimal context to call the method without mounting the component
-    const ctx = {}
+    // instantiate a component instance (class fields are initialized in constructor)
+    const instance = new QueryOutput({})
 
     // Minimal getColumns result: groupable string column + numeric column
     const columns = [
       { name: 'Group', display_name: 'Group', is_visible: true, groupable: true, type: 'STRING' },
-      { name: 'Value', display_name: 'Value', is_visible: true, groupable: false, type: 'NUMBER' },
+      // Use a realistic numeric type from response fixtures so isColumnNumberType returns true
+      { name: 'Value', display_name: 'Value', is_visible: true, groupable: false, type: 'DOLLAR_AMT' },
     ]
 
-    ctx.getColumns = () => columns
-    ctx.tableConfig = { legendColumnIndex: 1, stringColumnIndex: 0, numberColumnIndex: 1 }
-    ctx.formattedTableParams = {}
-    ctx.setPivotTableConfig = () => {}
-    ctx._isMounted = false
+    // override instance methods/state that generatePivotTableData expects
+    instance.getColumns = () => columns
+    instance.tableConfig = { legendColumnIndex: 1, stringColumnIndex: 0, numberColumnIndex: 1 }
+    instance.formattedTableParams = {}
+    instance.setPivotTableConfig = () => {}
+    instance._isMounted = false
 
     // Sample table data: [group, value]
     const tableData = [
@@ -24,15 +28,23 @@ describe('QueryOutput pivot invariants', () => {
       ['A', 3],
     ]
 
-    // Call the class method with our context
-    QueryOutput.prototype.generatePivotTableData.call(ctx, { isFirstGeneration: true, tableData })
+    // Quick pre-checks to catch why pivot generation may no-op
+    const colsFromInstance = instance.getColumns()
+    expect(colsFromInstance).toBeDefined()
+    const visibleGroupables = colsFromInstance.filter((c) => c.is_visible && c.groupable)
+    expect(visibleGroupables.length).toBe(1)
+    const numberColumnFound = colsFromInstance.find((c) => c.is_visible && !c.groupable && isColumnNumberType(c))
+    expect(numberColumnFound).toBeDefined()
+
+    // Call the instance method
+    instance.generatePivotTableData({ isFirstGeneration: true, tableData })
 
     // Sanity checks
-    expect(ctx.pivotTableColumns).toBeDefined()
-    expect(ctx.pivotTableColumns.length).toBe(2)
+  expect(instance.pivotTableColumns).toBeDefined()
+  expect(instance.pivotTableColumns.length).toBe(2)
 
-    const axisCol = ctx.pivotTableColumns[0]
-    const valueCol = ctx.pivotTableColumns[1]
+  const axisCol = instance.pivotTableColumns[0]
+  const valueCol = instance.pivotTableColumns[1]
 
     // Axis column should be pivot category and have expected flags
     expect(axisCol.field).toBe('0')
