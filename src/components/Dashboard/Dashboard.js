@@ -121,7 +121,7 @@ class DashboardWithoutTheme extends React.Component {
     onSaveClick: () => {},
     onDeleteCallback: () => {},
     dashboardId: undefined,
-    enableAutoRefresh: false,
+    enableAutoRefresh: true,
   }
 
   static getDerivedStateFromProps(nextProps, prevState) {
