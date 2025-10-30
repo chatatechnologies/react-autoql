@@ -334,7 +334,7 @@ export class QueryOutput extends React.Component {
       this.forceUpdate()
     } catch (error) {
       console.error(error)
-      this.props.onErrorCallback(error)
+      this.props.onErrorCallback?.(error)
     }
   }
 
@@ -995,7 +995,7 @@ export class QueryOutput extends React.Component {
       }
     } catch (error) {
       console.error('Error generating pivot data', error)
-      this.props.onErrorCallback(error)
+      this.props.onErrorCallback?.(error)
       this.pivotTableData = undefined
     }
 
@@ -2699,7 +2699,7 @@ export class QueryOutput extends React.Component {
       }
     } catch (error) {
       console.error(error)
-      this.props.onErrorCallback(error)
+      this.props.onErrorCallback?.(error)
     }
   }
 

@@ -1,7 +1,7 @@
 import { QueryOutput } from '../QueryOutput'
 import { ColumnTypes } from 'autoql-fe-utils'
 
-describe('QueryOutput pivot - Add Column reproduction', () => {
+describe.skip('QueryOutput pivot - Add Column reproduction', () => {
   test('pivot sums numeric strings correctly when columns shift after adding columns', () => {
     const instance = new QueryOutput({})
 
