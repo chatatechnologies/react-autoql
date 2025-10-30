@@ -338,36 +338,6 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  /* Helpers for pivot numeric handling (refactor of recent fixes) */
-  _coerceToNumber = (value) => {
-    if (typeof value === 'number') return value
-    const parsed = parseFloat(`${value}`.replace(/[^0-9.-]/g, ''))
-    return Number.isFinite(parsed) ? parsed : NaN
-  }
-
-  _coerceExistingCellToNumber = (cell) => {
-    if (cell === null || cell === undefined) return 0
-    if (typeof cell === 'number') return cell
-    const parsed = this._coerceToNumber(cell)
-    return Number.isFinite(parsed) ? parsed : 0
-  }
-
-  _initPivotNumericCells = (pivotTableData, rowCount, numCols) => {
-    for (let r = 0; r < rowCount; r++) {
-      if (!Array.isArray(pivotTableData[r])) pivotTableData[r] = []
-      // ensure at least numCols entries exist; initialize to null
-      for (let c = 0; c < numCols; c++) {
-        if (pivotTableData[r][c] === undefined) pivotTableData[r][c] = null
-      }
-    }
-  }
-
-  _ensureRowNumericCells = (rowArray, numCols) => {
-    for (let c = 1; c < numCols; c++) {
-      if (rowArray[c] === undefined) rowArray[c] = null
-    }
-  }
-
   handleLegendVisibilityChange = (hiddenLabels) => {
     const currentType = this.state.displayType
     this.setState({
@@ -413,7 +383,6 @@ export class QueryOutput extends React.Component {
     try {
       const newState = {}
       let shouldForceUpdate = false
-      let shouldRegeneratePivot = false
 
       if (this.state.displayType !== prevState.displayType) {
         const isChart = isChartType(this.state.displayType)
@@ -480,11 +449,6 @@ export class QueryOutput extends React.Component {
         if (!this.isTableConfigValid(this.tableConfig, this.state.columns, this.state.displayType)) {
           this.setTableConfig()
         }
-
-        // If switching to pivot table, ensure pivot data is regenerated with latest filters
-        if (this.state.displayType === 'pivot_table' && prevState.displayType !== 'pivot_table') {
-          shouldRegeneratePivot = true
-        }
       }
       // If initial data config was changed here, tell the parent
       if (
@@ -549,22 +513,6 @@ export class QueryOutput extends React.Component {
       setTimeout(() => {
         this.updateToolbars()
       }, 0)
-
-      if (!_isEqual(prevProps.initialFormattedTableParams, this.props.initialFormattedTableParams)) {
-        this.formattedTableParams = {
-          filters: this.props?.initialFormattedTableParams?.filters || [],
-          sorters: this.props?.initialFormattedTableParams?.sorters || [],
-        }
-
-        if (this.shouldGeneratePivotData()) {
-          shouldRegeneratePivot = true
-        }
-      }
-
-      if (shouldRegeneratePivot && this.shouldGeneratePivotData()) {
-        this.generatePivotData({ dataChanged: true })
-        shouldForceUpdate = true
-      }
 
       if (!_isEmpty(newState)) {
         this.setState(newState)
@@ -963,20 +911,13 @@ export class QueryOutput extends React.Component {
         displayType = 'table'
       }
 
-      this.setState(
-        {
-          columns: newColumns,
-          aggConfig: this.getAggConfig(newColumns),
-          columnChangeCount: this.state.columnChangeCount + 1,
-          chartID: visibleColumnsChanged ? uuid() : this.state.chartID,
-          displayType,
-        },
-        () => {
-          if (visibleColumnsChanged && this.state.displayType && this.state.displayType.indexOf('pivot') !== -1) {
-            this.generateAllData()
-          }
-        },
-      )
+      this.setState({
+        columns: newColumns,
+        aggConfig: this.getAggConfig(newColumns),
+        columnChangeCount: this.state.columnChangeCount + 1,
+        chartID: visibleColumnsChanged ? uuid() : this.state.chartID,
+        displayType,
+      })
     }
   }
 
@@ -1045,12 +986,12 @@ export class QueryOutput extends React.Component {
     try {
       this.pivotTableID = uuid()
       const columns = this.getColumns()
-      const numVisibleGroupables = columns.filter((col) => col.is_visible && col.groupable)?.length
+      const numGroupables = getNumberOfGroupables(columns)
 
-      if (numVisibleGroupables === 0) {
-        this.pivotTableData = undefined
+      if (numGroupables === 1) {
+        this.generateDatePivotData(this.tableData)
       } else {
-        this.generatePivotTableData({ isFirstGeneration, tableData: this.tableData })
+        this.generatePivotTableData({ isFirstGeneration })
       }
     } catch (error) {
       console.error('Error generating pivot data', error)
@@ -1058,8 +999,8 @@ export class QueryOutput extends React.Component {
       this.pivotTableData = undefined
     }
 
-    if (this.pivotTableRef) {
-      this.pivotTableRef.updateData(this.pivotTableData)
+    if (this.props.allowDisplayTypeChange) {
+      this.pivotTableRef?.updateData(this.pivotTableData)
     }
 
     if (dataChanged && this._isMounted) {
@@ -1609,10 +1550,12 @@ export class QueryOutput extends React.Component {
 
     this.props.onTableParamsChange?.(this.tableParams, this.formattedTableParams)
 
+    // Regenerate pivot data when table params change (filters/sorters)
     if (this.shouldGeneratePivotData()) {
       this.generatePivotData()
     }
 
+    // This will update the filter badge in OptionsToolbar
     setTimeout(() => {
       this.updateToolbars()
     }, 0)
@@ -2502,7 +2445,6 @@ export class QueryOutput extends React.Component {
         title: 'Month',
         name: 'Month',
         field: '0',
-        index: 0,
         resizable: false,
         frozen: true,
         visible: true,
@@ -2535,7 +2477,6 @@ export class QueryOutput extends React.Component {
       Object.keys(uniqueYears).forEach((year, i) => {
         pivotTableColumns.push({
           ...columns[numberColumnIndex],
-          index: i + 1,
           origColumn: columns[numberColumnIndex],
           origValues: {},
           name: year,
@@ -2549,17 +2490,13 @@ export class QueryOutput extends React.Component {
         })
       })
 
-      const pivotTableData = makeEmptyArray(MONTH_NAMES.length, Object.keys(uniqueYears).length + 1)
+      const pivotTableData = makeEmptyArray(Object.keys(uniqueYears).length, 12)
       const pivotOriginalColumnData = {}
 
       // Populate first column
       MONTH_NAMES.forEach((month, i) => {
         pivotTableData[i][0] = month
       })
-
-      // Initialize numeric cells (columns 1..N) to null so later accumulation uses numeric 0
-      const numYearCols = Object.keys(uniqueYears).length + 1
-      this._initPivotNumericCells(pivotTableData, MONTH_NAMES.length, numYearCols)
 
       // Populate remaining columns
       tableData.forEach((row) => {
@@ -2572,11 +2509,7 @@ export class QueryOutput extends React.Component {
         const pivotColumnIndex = pivotTableColumns.findIndex((col) => col.name === year)
 
         if (monthNumber >= 0 && yearNumber) {
-          const rawValue = row[numberColumnIndex]
-          // Only write if value is finite
-          if (Number.isFinite(rawValue)) {
-            pivotTableData[monthNumber][yearNumber] = rawValue
-          }
+          pivotTableData[monthNumber][yearNumber] = row[numberColumnIndex]
           pivotOriginalColumnData[year] = {
             ...pivotOriginalColumnData[year],
             [month]: row[dateColumnIndex],
@@ -2604,72 +2537,48 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  generatePivotTableData = ({ isFirstGeneration, tableData: providedTableData } = {}) => {
+  generatePivotTableData = ({ isFirstGeneration } = {}) => {
     try {
       this.pivotTableColumnsLimited = false
       this.pivotTableRowsLimited = false
       this.pivotTableID = uuid()
 
-      let tableData =
-        _cloneDeep(providedTableData) ||
-        _cloneDeep(this.tableData) ||
-        _cloneDeep(this.queryResponse?.data?.data?.rows) ||
-        []
+      let tableData = _cloneDeep(this.queryResponse?.data?.data?.rows)
+      tableData = tableData.filter((row) => row[0] !== null)
+
       const columns = this.getColumns()
-
-      const { legendColumnIndex, stringColumnIndex, numberColumnIndex } = this.tableConfig
-      const effectiveStringIndex = typeof stringColumnIndex === 'number' ? stringColumnIndex : 0
-
-      tableData = tableData.filter(
-        (row) => row?.[effectiveStringIndex] !== null && row?.[effectiveStringIndex] !== undefined,
-      )
 
       if (this.formattedTableParams?.filters?.length) {
         this.formattedTableParams.filters.forEach((filter) => {
-          const match = columns.find(
-            (col) => col.id === filter.id || col.field === filter.field || col.name === filter.name,
-          )
-          const filterColumnIndex = match?.index
+          const filterColumnIndex = columns.find((col) => col.id === filter.id)?.index
           if (filterColumnIndex !== undefined) {
             tableData = filterDataByColumn(tableData, columns, filterColumnIndex, filter.value, filter.operator)
           }
         })
       }
 
-      const userSorters = this.formattedTableParams?.sorters || []
-      let sortedData = null
-      if (userSorters.length > 0) {
-        const primary = userSorters[0]
-        let sortColumnIndex = columns.find((col) => col.id === primary?.id)?.index
-        if (sortColumnIndex === undefined && primary?.field !== undefined) {
-          const parsed = parseInt(primary.field, 10)
-          sortColumnIndex = !isNaN(parsed) ? parsed : columns.find((col) => col.field === primary.field)?.index
-        }
-        const sortDirection = (primary?.sort || primary?.dir)?.toString().toUpperCase() === 'DESC' ? 'desc' : 'asc'
-        if (sortColumnIndex !== undefined)
-          sortedData = sortDataByColumn(tableData, columns, sortColumnIndex, sortDirection)
-      }
-      if (!sortedData) sortedData = sortDataByDate(tableData, columns, 'desc', 'isTable')
+      const { legendColumnIndex, stringColumnIndex, numberColumnIndex } = this.tableConfig
 
-      let uniqueRowHeaders = sortedData
-        .map((d) => d[effectiveStringIndex])
-        .filter((v) => v !== null && v !== undefined)
+      let uniqueRowHeaders = sortDataByDate(tableData, columns, 'desc', 'isTable')
+        .map((d) => d[stringColumnIndex])
         .filter(onlyUnique)
 
-      let uniqueColumnHeaders = sortedData
+      let uniqueColumnHeaders = sortDataByDate(tableData, columns, 'desc', 'isTable')
         .map((d) => d[legendColumnIndex])
-        .filter((v) => v !== null && v !== undefined)
         .filter(onlyUnique)
 
       let newStringColumnIndex = stringColumnIndex
       let newLegendColumnIndex = legendColumnIndex
 
+      // Make sure the longer list is in the legend, UNLESS its a date type
+      // DATE types should always go in the axis if possible
+      // BUT: Don't switch if we have saved axis preferences (respect user choice)
       const hasSavedAxisConfig = this.props.initialTableConfigs?.tableConfig
 
       if (
-        !hasSavedAxisConfig &&
-        (isFirstGeneration ||
-          isColumnDateType(columns[legendColumnIndex]) ||
+        isFirstGeneration &&
+        !hasSavedAxisConfig && // Skip switching if user has saved preferences
+        (isColumnDateType(columns[legendColumnIndex]) ||
           (uniqueColumnHeaders?.length > uniqueRowHeaders?.length &&
             (!isColumnDateType(columns[stringColumnIndex]) || uniqueColumnHeaders.length > MAX_LEGEND_LABELS)))
       ) {
@@ -2713,91 +2622,16 @@ export class QueryOutput extends React.Component {
       this.tableConfig.stringColumnIndex = newStringColumnIndex
       this.tableConfig.stringColumnIndices = [newStringColumnIndex]
 
+      // Generate new column array
       const pivotTableColumns = []
 
-      // If there is exactly one visible groupable, generate the simple 2-column pivot output
-      const visibleGroupables = columns.filter((col) => col.is_visible && col.groupable)
-      const numVisibleGroupables = visibleGroupables.length
-
-      if (numVisibleGroupables === 1) {
-        // Simple pivot: one categorical column (string) + one numeric column aggregated
-        const groupableColumn = visibleGroupables[0]
-        const numberColumn = columns.find((col) => col.is_visible && !col.groupable && isColumnNumberType(col))
-        const groupColumnIndex = columns.indexOf(groupableColumn)
-        const numberColumnIndexLocal = columns.indexOf(numberColumn)
-
-        if (groupColumnIndex < 0 || numberColumnIndexLocal < 0) {
-          // nothing to do
-          this.pivotTableData = undefined
-          this.pivotTableColumns = []
-          this.numberOfPivotTableRows = 0
-          this.pivotRowHeaders = {}
-          this.pivotColumnHeaders = {}
-          this.setPivotTableConfig(true)
-          return
-        }
-
-        pivotTableColumns.push({
-          ...groupableColumn,
-          index: 0,
-          frozen: true,
-          visible: true,
-          is_visible: true,
-          field: `0`,
-          resizable: false,
-          cssClass: 'pivot-category',
-          pivot: true,
-          headerFilter: false,
-          headerFilterLiveFilter: false,
-        })
-
-        pivotTableColumns.push({
-          ...numberColumn,
-          index: 1,
-          origColumn: numberColumn,
-          origPivotColumn: undefined,
-          origValues: {},
-          name: numberColumn.name,
-          title: numberColumn.display_name,
-          display_name: numberColumn.display_name,
-          field: '1',
-          visible: true,
-          is_visible: true,
-          headerFilter: false,
-          headerFilterLiveFilter: false,
-        })
-
-        const aggregated = tableData.reduce((acc, row) => {
-          const groupValue = row[groupColumnIndex]
-          const numberValue = row[numberColumnIndexLocal]
-          if (groupValue != null && Number.isFinite(numberValue)) {
-            acc[groupValue] = (acc[groupValue] || 0) + numberValue
-          }
-          return acc
-        }, {})
-
-        const pivotTableData = Object.entries(aggregated).map(([groupValue, sum]) => [groupValue, sum])
-
-        this.pivotTableColumns = pivotTableColumns
-        this.pivotTableData = pivotTableData
-        this.numberOfPivotTableRows = pivotTableData.length
-        this.pivotRowHeaders = {}
-        this.pivotColumnHeaders = {}
-        this.setPivotTableConfig(true)
-        if (this._isMounted) {
-          this.forceUpdate()
-        }
-        return
-      }
-
-      // Add the left-most pivot axis column ('0') only for multi-column pivots, since simple pivots build their own
+      // First column will be the row headers defined by the string column
       pivotTableColumns.push({
         ...columns[newStringColumnIndex],
-        index: 0,
         frozen: true,
         visible: true,
         is_visible: true,
-        field: `0`,
+        field: '0',
         resizable: false,
         cssClass: 'pivot-category',
         pivot: true,
@@ -2814,7 +2648,6 @@ export class QueryOutput extends React.Component {
 
         pivotTableColumns.push({
           ...columns[numberColumnIndex],
-          index: i + 1,
           origColumn: columns[numberColumnIndex],
           origPivotColumn: columns[newLegendColumnIndex],
           origValues: {},
@@ -2829,29 +2662,25 @@ export class QueryOutput extends React.Component {
         })
       })
 
-      const pivotTableData = makeEmptyArray(uniqueRowHeaders.length, uniqueColumnHeaders.length + 1)
+      const pivotTableData = makeEmptyArray(
+        uniqueColumnHeaders.length + 1, // Add one for the frozen first column
+        uniqueRowHeaders.length,
+      )
 
-      sortedData.forEach((row) => {
+      tableData.forEach((row) => {
         const pivotRowIndex = uniqueRowHeadersObj[row[newStringColumnIndex]]
         const pivotRowHeaderValue = row[newStringColumnIndex]
         if (!pivotRowHeaderValue || !pivotTableData[pivotRowIndex]) {
           return
         }
 
+        // Populate first column
         pivotTableData[pivotRowIndex][0] = pivotRowHeaderValue
 
-        // Ensure numeric cells start as null so additions use numeric zero
-        this._ensureRowNumericCells(pivotTableData[pivotRowIndex], uniqueColumnHeaders.length + 1)
-
-        const rawPivotValue = row[numberColumnIndex]
-        let pivotValue = this._coerceToNumber(rawPivotValue)
-        if (!isFinite(pivotValue)) return
-
+        // Populate remaining columns
+        const pivotValue = Number(row[numberColumnIndex])
         const pivotColumnIndex = uniqueColumnHeadersObj[row[newLegendColumnIndex]] + 1
-        // Coerce any existing cell to a number before adding to avoid string concatenation
-        const existingCell = pivotTableData[pivotRowIndex][pivotColumnIndex]
-        const existingNumber = this._coerceExistingCellToNumber(existingCell)
-        pivotTableData[pivotRowIndex][pivotColumnIndex] = existingNumber + pivotValue
+        pivotTableData[pivotRowIndex][pivotColumnIndex] = pivotValue
         if (pivotTableColumns[pivotColumnIndex]) {
           pivotTableColumns[pivotColumnIndex].origValues[pivotRowHeaderValue] = {
             name: columns[newStringColumnIndex]?.name,
@@ -3168,7 +2997,6 @@ export class QueryOutput extends React.Component {
           source={this.props.source}
           scope={this.props.scope}
           tooltipID={this.props.tooltipID}
-          queryFn={this.queryFn}
           response={this.queryResponse}
           pivotTableRowsLimited={this.pivotTableRowsLimited}
           pivotTableColumnsLimited={this.pivotTableColumnsLimited}
@@ -3208,9 +3036,8 @@ export class QueryOutput extends React.Component {
     const data = usePivotData ? this.state.visiblePivotRows || this.pivotTableData : this.tableData
     const columns = usePivotData ? this.pivotTableColumns : this.state.columns
 
-    if (!data || !data.length) {
-      return this.renderMessage('Error: There was no data supplied for this chart')
-    }
+    const isPivotDataLimited =
+      this.usePivotDataForChart() && (this.pivotTableRowsLimited || this.pivotTableColumnsLimited)
 
     return (
       <ErrorBoundary>
@@ -3218,7 +3045,7 @@ export class QueryOutput extends React.Component {
           key={this.state.chartID}
           isResizable={this.state.isResizable}
           {...tableConfig}
-          tableConfig={tableConfig}
+          tableConfig={this.tableConfig}
           originalColumns={this.getColumns()}
           data={data}
           hidden={!isChartType(this.state.displayType)}
@@ -3250,10 +3077,7 @@ export class QueryOutput extends React.Component {
           onNewData={this.onNewData}
           isDrilldown={isDrilldown(this.queryResponse)}
           updateColumns={this.updateColumns}
-          isDataLimited={
-            isDataLimited(this.queryResponse) ||
-            (usePivotData && (this.pivotTableRowsLimited || this.pivotTableColumnsLimited))
-          }
+          isDataLimited={isDataLimited(this.queryResponse) || isPivotDataLimited}
           source={this.props.source}
           scope={this.props.scope}
           queryFn={this.queryFn}
