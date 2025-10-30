@@ -88,13 +88,6 @@ import { dataFormattingType, autoQLConfigType, authenticationType } from '../../
 
 import './QueryOutput.scss'
 
-const PIVOT_COLUMN_DEFAULTS = {
-  visible: true,
-  is_visible: true,
-  headerFilter: false,
-  headerFilterLiveFilter: false,
-}
-
 export class QueryOutput extends React.Component {
   constructor(props) {
     super(props)
@@ -342,6 +335,36 @@ export class QueryOutput extends React.Component {
     } catch (error) {
       console.error(error)
       this.props.onErrorCallback(error)
+    }
+  }
+
+  /* Helpers for pivot numeric handling (refactor of recent fixes) */
+  _coerceToNumber = (value) => {
+    if (typeof value === 'number') return value
+    const parsed = parseFloat(`${value}`.replace(/[^0-9.-]/g, ''))
+    return Number.isFinite(parsed) ? parsed : NaN
+  }
+
+  _coerceExistingCellToNumber = (cell) => {
+    if (cell === null || cell === undefined) return 0
+    if (typeof cell === 'number') return cell
+    const parsed = this._coerceToNumber(cell)
+    return Number.isFinite(parsed) ? parsed : 0
+  }
+
+  _initPivotNumericCells = (pivotTableData, rowCount, numCols) => {
+    for (let r = 0; r < rowCount; r++) {
+      if (!Array.isArray(pivotTableData[r])) pivotTableData[r] = []
+      // ensure at least numCols entries exist; initialize to null
+      for (let c = 0; c < numCols; c++) {
+        if (pivotTableData[r][c] === undefined) pivotTableData[r][c] = null
+      }
+    }
+  }
+
+  _ensureRowNumericCells = (rowArray, numCols) => {
+    for (let c = 1; c < numCols; c++) {
+      if (rowArray[c] === undefined) rowArray[c] = null
     }
   }
 
@@ -2526,13 +2549,17 @@ export class QueryOutput extends React.Component {
         })
       })
 
-      const pivotTableData = makeEmptyArray(Object.keys(uniqueYears).length, 12)
+      const pivotTableData = makeEmptyArray(MONTH_NAMES.length, Object.keys(uniqueYears).length + 1)
       const pivotOriginalColumnData = {}
 
       // Populate first column
       MONTH_NAMES.forEach((month, i) => {
         pivotTableData[i][0] = month
       })
+
+      // Initialize numeric cells (columns 1..N) to null so later accumulation uses numeric 0
+      const numYearCols = Object.keys(uniqueYears).length + 1
+      this._initPivotNumericCells(pivotTableData, MONTH_NAMES.length, numYearCols)
 
       // Populate remaining columns
       tableData.forEach((row) => {
@@ -2582,8 +2609,6 @@ export class QueryOutput extends React.Component {
       this.pivotTableColumnsLimited = false
       this.pivotTableRowsLimited = false
       this.pivotTableID = uuid()
-
-      // use module-level PIVOT_COLUMN_DEFAULTS
 
       let tableData =
         _cloneDeep(providedTableData) ||
@@ -2713,18 +2738,20 @@ export class QueryOutput extends React.Component {
         }
 
         pivotTableColumns.push({
-          ...PIVOT_COLUMN_DEFAULTS,
           ...groupableColumn,
           index: 0,
-          field: `0`,
-          cssClass: 'pivot-category',
           frozen: true,
+          visible: true,
+          is_visible: true,
+          field: `0`,
           resizable: false,
+          cssClass: 'pivot-category',
           pivot: true,
+          headerFilter: false,
+          headerFilterLiveFilter: false,
         })
 
         pivotTableColumns.push({
-          ...PIVOT_COLUMN_DEFAULTS,
           ...numberColumn,
           index: 1,
           origColumn: numberColumn,
@@ -2734,6 +2761,10 @@ export class QueryOutput extends React.Component {
           title: numberColumn.display_name,
           display_name: numberColumn.display_name,
           field: '1',
+          visible: true,
+          is_visible: true,
+          headerFilter: false,
+          headerFilterLiveFilter: false,
         })
 
         const aggregated = tableData.reduce((acc, row) => {
@@ -2761,14 +2792,17 @@ export class QueryOutput extends React.Component {
 
       // Add the left-most pivot axis column ('0') only for multi-column pivots, since simple pivots build their own
       pivotTableColumns.push({
-        ...PIVOT_COLUMN_DEFAULTS,
         ...columns[newStringColumnIndex],
         index: 0,
         frozen: true,
+        visible: true,
+        is_visible: true,
         field: `0`,
         resizable: false,
         cssClass: 'pivot-category',
         pivot: true,
+        headerFilter: false,
+        headerFilterLiveFilter: false,
       })
 
       uniqueColumnHeaders.forEach((columnName, i) => {
@@ -2779,7 +2813,6 @@ export class QueryOutput extends React.Component {
         })
 
         pivotTableColumns.push({
-          ...PIVOT_COLUMN_DEFAULTS,
           ...columns[numberColumnIndex],
           index: i + 1,
           origColumn: columns[numberColumnIndex],
@@ -2789,10 +2822,14 @@ export class QueryOutput extends React.Component {
           title: formattedColumnName,
           display_name: formattedColumnName,
           field: `${i + 1}`,
+          visible: true,
+          is_visible: true,
+          headerFilter: false,
+          headerFilterLiveFilter: false,
         })
       })
 
-      const pivotTableData = makeEmptyArray(uniqueColumnHeaders.length + 1, uniqueRowHeaders.length)
+      const pivotTableData = makeEmptyArray(uniqueRowHeaders.length, uniqueColumnHeaders.length + 1)
 
       sortedData.forEach((row) => {
         const pivotRowIndex = uniqueRowHeadersObj[row[newStringColumnIndex]]
@@ -2803,14 +2840,18 @@ export class QueryOutput extends React.Component {
 
         pivotTableData[pivotRowIndex][0] = pivotRowHeaderValue
 
+        // Ensure numeric cells start as null so additions use numeric zero
+        this._ensureRowNumericCells(pivotTableData[pivotRowIndex], uniqueColumnHeaders.length + 1)
+
         const rawPivotValue = row[numberColumnIndex]
-        let pivotValue =
-          typeof rawPivotValue === 'number' ? rawPivotValue : parseFloat(`${rawPivotValue}`.replace(/[^0-9.-]/g, ''))
+        let pivotValue = this._coerceToNumber(rawPivotValue)
         if (!isFinite(pivotValue)) return
 
         const pivotColumnIndex = uniqueColumnHeadersObj[row[newLegendColumnIndex]] + 1
-        pivotTableData[pivotRowIndex][pivotColumnIndex] =
-          (pivotTableData[pivotRowIndex][pivotColumnIndex] ?? 0) + pivotValue
+        // Coerce any existing cell to a number before adding to avoid string concatenation
+        const existingCell = pivotTableData[pivotRowIndex][pivotColumnIndex]
+        const existingNumber = this._coerceExistingCellToNumber(existingCell)
+        pivotTableData[pivotRowIndex][pivotColumnIndex] = existingNumber + pivotValue
         if (pivotTableColumns[pivotColumnIndex]) {
           pivotTableColumns[pivotColumnIndex].origValues[pivotRowHeaderValue] = {
             name: columns[newStringColumnIndex]?.name,
