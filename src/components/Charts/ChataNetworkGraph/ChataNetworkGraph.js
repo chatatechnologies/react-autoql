@@ -9,12 +9,15 @@ import { MdOutlineFitScreen } from 'react-icons/md'
 import { findNetworkColumns, formatElement, getAutoQLConfig } from 'autoql-fe-utils'
 
 import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers'
+
 import './ChataNetworkGraph.scss'
 
 const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
   const chartRef = useRef()
   const simulationRef = useRef()
   const zoomBehaviorRef = useRef()
+  // After the simulation is stopped once, disable further auto-stops for the lifetime of this component
+  const earlyStopDisabledRef = useRef(false)
   const radiusScaleRef = useRef(() => 6)
 
   const [nodes, setNodes] = useState([])
@@ -228,7 +231,6 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
           totalTransfers: 0,
           amountSent: 0,
           isSender: false, // Will be updated based on actual data
-          isAirdrop: false, // Will be updated based on actual data
         })
         connectionCounts.set(source, new Set())
       }
@@ -242,7 +244,6 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
           totalTransfers: 0,
           amountSent: 0,
           isSender: false, // Will be updated based on actual data
-          isAirdrop: false, // Will be updated based on actual data
         })
         connectionCounts.set(target, new Set())
       }
@@ -283,8 +284,6 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       if (roles) {
         node.isSender = roles.isSender
         node.isReceiver = roles.isReceiver
-        // A node is an "airdrop" if it's a receiver (gets tokens) but not a sender (doesn't send tokens)
-        node.isAirdrop = roles.isReceiver && !roles.isSender
       }
     })
 
@@ -300,16 +299,6 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       return name.trim()
     }
     return String(name || 'Unknown')
-  }, [])
-
-  const isSenderNode = useCallback((name) => {
-    const senderKeywords = ['sender', 'from', 'origin', 'source']
-    return senderKeywords.some((keyword) => name.toLowerCase().includes(keyword))
-  }, [])
-
-  const isAirdropNode = useCallback((name) => {
-    const airdropKeywords = ['airdrop', 'reward', 'bonus', 'claim']
-    return airdropKeywords.some((keyword) => name.toLowerCase().includes(keyword))
   }, [])
 
   const getWeightCategory = useCallback((weight) => {
@@ -338,24 +327,8 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
   const getNodeColor = useCallback((d) => {
     // Nodes that are both sender and receiver get blue color
     if (d.isSender && d.isReceiver) return '#28A8E0' // Blue for both sender and receiver
-    if (d.isAirdrop) return '#28A745' // Green for airdrop (receiver only)
     if (d.isSender) return '#DC3545' // Red for sender only
     return '#28A745' // Green for other nodes (receivers)
-  }, [])
-
-  const getEdgeColor = useCallback((d) => {
-    switch (d.edge_type) {
-      case 'sender-to-sender':
-        return '#ff9f43'
-      case 'airdrop':
-        return '#ff6b6b'
-      default:
-        return '#95a5a6'
-    }
-  }, [])
-
-  const getEdgeWidth = useCallback((d) => {
-    return d.weight_category === 'large' ? 1.5 : 0.8
   }, [])
 
   // Drag event handlers
@@ -374,7 +347,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       .attr('data-tooltip-html', null)
       .style('pointer-events', 'none')
 
-    if (!event.active) simulationRef.current?.alphaTarget(0.3).restart()
+    if (!event.active) simulationRef.current?.alphaTarget(0.4).restart()
     d.fx = d.x
     d.fy = d.y
   }, [])
@@ -409,6 +382,11 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
           const link = select(this)
           link.attr('data-tooltip-html', generateLinkTooltipHTML(d))
         })
+
+      // Mark user interaction complete so future auto-stop applies only to initial animation
+      if (window.userInteracting !== undefined) {
+        window.userInteracting = false
+      }
     },
     [props.chartTooltipID],
   )
@@ -504,7 +482,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         .attr('orient', 'auto')
         .append('path')
         .attr('d', 'M0,-5L10,0L0,5')
-        .attr('fill', '#999')
+        .attr('fill', 'var(--react-autoql-text-color-placeholder)')
         .style('stroke', 'none')
 
       // Add zoom behavior
@@ -514,7 +492,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
       // Store zoom behavior reference for recenter function
       zoomBehaviorRef.current = zoomBehavior
-        .scaleExtent([0.01, 8]) // Allow zooming out much further to see all networks
+        .scaleExtent([0.001, 32]) // Allow zooming out/in much further to see all networks
         .filter((event) => {
           // Allow both wheel and mouse events for zoom and pan
           return event.type === 'wheel' || event.type === 'mousedown' || event.type === 'mousemove'
@@ -560,13 +538,17 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
       // Create simulation
       const simulation = forceSimulation(nodes)
+        .alpha(1) // start "hotter" so nodes move faster initially
+        .alphaDecay(0.04) // cool faster to settle sooner
+        .velocityDecay(0.2) // less friction than default (0.4) -> snappier motion
         .force(
           'link',
           forceLink(links)
             .id((d) => d.id)
-            .distance(100),
+            .distance(80)
+            .strength(0.2),
         )
-        .force('charge', forceManyBody().strength(-300))
+        .force('charge', forceManyBody().strength(-600))
         .force('center', forceCenter(centerX, centerY))
         .force(
           'collision',
@@ -588,8 +570,8 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         .enter()
         .append('line')
         .attr('class', (d) => `link ${d.edge_type}`)
-        .style('stroke', (d) => getEdgeColor(d))
-        .style('stroke-width', (d) => getEdgeWidth(d))
+        .style('stroke', (d) => 'var(--react-autoql-text-color-placeholder)')
+        .style('stroke-width', 1)
         .style('outline', 'none')
         .style('pointer-events', 'all')
         .style('cursor', 'pointer')
@@ -656,6 +638,13 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       window.initialZooming = initialZooming
       window.userInteracting = userInteracting
       window.currentTransform = currentTransform
+
+      // Early-stop controls to prevent sluggish simulations from hogging the browser
+      const simulationStartMs = Date.now()
+      let consecutiveSlowTicks = 0
+      const MAX_SIMULATION_RUNTIME_MS = 10000 // hard cap
+      const SLOW_SPEED_EPSILON = 0.01 // avg |vx| + |vy| per node considered "slow"
+      const MAX_CONSECUTIVE_SLOW_TICKS = 60 // e.g., ~1s at 60fps
 
       simulation.on('tick', () => {
         link
@@ -767,16 +756,32 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
             isProgrammaticZoom = false
           }
         }
+
+        // Early-stop if the graph is barely moving for a while or we exceed max runtime
+        const avgSpeed = nodes.length
+          ? nodes.reduce((sum, n) => sum + Math.abs(n.vx || 0) + Math.abs(n.vy || 0), 0) / nodes.length
+          : 0
+        if (avgSpeed < SLOW_SPEED_EPSILON) {
+          consecutiveSlowTicks += 1
+        } else {
+          consecutiveSlowTicks = 0
+        }
+        const ranTooLong = Date.now() - simulationStartMs > MAX_SIMULATION_RUNTIME_MS
+        const movingTooSlow = consecutiveSlowTicks >= MAX_CONSECUTIVE_SLOW_TICKS
+        if ((ranTooLong || movingTooSlow) && !earlyStopDisabledRef.current) {
+          initialZooming = false
+          window.initialZooming = false
+          // Stop once, then disable further auto-stops for component lifetime
+          simulation.stop()
+          earlyStopDisabledRef.current = true
+        }
       })
     })
   }, [
-    props,
     nodes,
     links,
     getNodeRadius,
     getNodeColor,
-    getEdgeColor,
-    getEdgeWidth,
     dragstarted,
     dragged,
     dragended,
@@ -863,8 +868,9 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
   // Render - create our own SVG inside the g container
   return (
-    <g className='react-autoql-network-viz'>
+    <g>
       <svg
+        className='react-autoql-network-viz'
         ref={chartRef}
         width={props.width || 600}
         height={props.height || 400}
@@ -879,57 +885,20 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         style={{ cursor: 'pointer', outline: 'none' }}
         className='recenter-button'
         transform={`translate(${(props.width || 600) - 50}, 10)`}
-        onMouseEnter={(e) => {
-          const rect = e.currentTarget.querySelector('rect')
-          const icon = e.currentTarget.querySelector('g')
-          if (rect) {
-            rect.setAttribute('stroke', 'var(--react-autoql-accent-color, #007bff)')
-          }
-          if (icon) {
-            icon.setAttribute('fill', 'var(--react-autoql-accent-color, #007bff)')
-            // Also set the color on the SVG element inside
-            const svgIcon = icon.querySelector('svg')
-            if (svgIcon) {
-              svgIcon.style.color = 'var(--react-autoql-accent-color, #007bff)'
-            }
-          }
-        }}
-        onMouseLeave={(e) => {
-          const rect = e.currentTarget.querySelector('rect')
-          const icon = e.currentTarget.querySelector('g')
-          if (rect) {
-            rect.setAttribute('stroke', 'var(--react-autoql-border-color, #ddd)')
-          }
-          if (icon) {
-            icon.setAttribute('fill', 'var(--react-autoql-text-color, #333)')
-            // Also reset the color on the SVG element inside
-            const svgIcon = icon.querySelector('svg')
-            if (svgIcon) {
-              svgIcon.style.color = 'var(--react-autoql-text-color, #333)'
-            }
-          }
-        }}
         data-tooltip-id={props.chartTooltipID}
         data-tooltip-html='Fit to screen'
       >
         <rect
+          className='recenter-button-rect'
           width='30'
           height='30'
           rx='4'
-          fill='var(--react-autoql-background-color-secondary, #f8f9fa)'
-          stroke='var(--react-autoql-border-color, #ddd)'
           strokeWidth='1'
-          style={{
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
-            transition: 'all 0.2s ease',
-          }}
+          opacity={0} // Use opacity 0 so it doesnt show in the exported PNG
         />
-        <g
-          transform='translate(5, 5)'
-          fill='var(--react-autoql-text-color, #333)'
-          style={{ transition: 'all 0.2s ease' }}
-        >
-          <MdOutlineFitScreen size={20} />
+        <g transform='translate(5, 5)'>
+          {/* Use opacity 0 so it doesnt show in the exported PNG */}
+          <MdOutlineFitScreen className='recenter-button-icon' size={20} style={{ opacity: 0 }} />
         </g>
       </g>
     </g>

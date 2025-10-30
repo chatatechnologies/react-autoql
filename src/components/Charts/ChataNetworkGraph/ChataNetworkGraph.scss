@@ -1,94 +1,20 @@
-.react-autoql-network-graph {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  background-color: var(--react-autoql-background-color-secondary, #f9f9f9);
-  border-radius: 4px;
-  overflow: hidden;
-  touch-action: none;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
+.recenter-button-rect {
+  box-shadow: 0px 2px 3px -2px var(--react-autoql-box-shadow-color);
+  stroke-width: 1px;
+  stroke: var(--react-autoql-border-color);
+  fill: var(--react-autoql-background-color-secondary);
 
-  svg {
-    width: 100%;
-    height: 100%;
-    display: block;
+  &:hover {
+    stroke: var(--react-autoql-accent-color);
   }
-
-  .node {
-    stroke: var(--react-autoql-background-color-primary, #fff);
-    stroke-width: 1.5px;
-    cursor: move;
-    transition: all 0.2s ease;
-
-    &:hover {
-      stroke-width: 2px;
-      stroke: var(--react-autoql-text-color-primary, #000);
-    }
-  }
-
-  .link {
-    stroke-opacity: 0.6;
-    transition: stroke-opacity 0.2s ease;
-
-    &:hover {
-      stroke-opacity: 1;
-    }
-
-    &.sender_to_sender {
-      stroke: #ff0000;
-    }
-
-    &.sender_to_airdrop {
-      stroke: #0000ff;
-    }
-
-    &.airdrop_to_airdrop {
-      stroke: #999999;
-    }
-  }
-
-  .links {
-    pointer-events: none;
-  }
-
-  .nodes {
-    pointer-events: all;
-  }
-
-.recenter-button {
-  opacity: 1 !important;
 }
 
-g.recenter-button {
-  opacity: 1 !important;
-}
-
-svg .recenter-button {
-  opacity: 1 !important;
-}
-
-.react-autoql-network-viz .recenter-button {
-  opacity: 1 !important;
-}
-
-
-.react-autoql-network-tooltip {
-  position: absolute;
-  padding: 4px 8px;
-  background-color: rgba(0, 0, 0, 0.8);
-  color: white;
-  border-radius: 4px;
+.recenter-button-icon {
   pointer-events: none;
-  font-size: 12px;
-  max-width: 300px;
-  word-wrap: break-word;
-  z-index: 1001;
-  font-family: var(--react-autoql-font-family, inherit);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.recenter-button-icon,
+.recenter-button-rect {
+  opacity: 1 !important;
+  transition: all 0.2s ease;
 }
