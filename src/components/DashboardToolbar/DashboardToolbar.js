@@ -82,23 +82,26 @@ export class DashboardToolbarWithoutRef extends React.Component {
     this.setState({ isRenameModalOpen: false })
   }
 
-  formatRefreshInterval = (useFullWords = false) => {
+  formatRefreshInterval = () => {
     const { refreshInterval } = this.props
+    const totalMinutes = Math.floor(refreshInterval / 60)
 
-    if (refreshInterval >= 60) {
-      const minutes = Math.floor(refreshInterval / 60)
-      const seconds = refreshInterval % 60
-      if (seconds === 0) {
-        return `${minutes} ${minutes === 1 ? 'min' : 'mins'}`
+    // Check for days (1440 minutes = 1 day)
+    if (totalMinutes >= 1440) {
+      return '1 day'
+    } else if (totalMinutes >= 60) {
+      // Handle hours (60 minutes = 1 hour)
+      const hours = Math.floor(totalMinutes / 60)
+      const minutes = totalMinutes % 60
+
+      if (minutes === 0) {
+        return `${hours} ${hours === 1 ? 'hr' : 'hrs'}`
       } else {
-        return `${minutes} ${minutes === 1 ? 'min' : 'mins'} ${seconds} ${seconds === 1 ? 'sec' : 'secs'}`
+        return `${hours} ${hours === 1 ? 'hr' : 'hrs'} ${minutes} ${minutes === 1 ? 'min' : 'mins'}`
       }
     } else {
-      if (useFullWords) {
-        return `${refreshInterval} ${refreshInterval === 1 ? 'second' : 'seconds'}`
-      } else {
-        return `${refreshInterval} ${refreshInterval === 1 ? 'sec' : 'secs'}`
-      }
+      // Minutes only (minimum is 1 minute)
+      return `${totalMinutes} ${totalMinutes === 1 ? 'min' : 'mins'}`
     }
   }
 
