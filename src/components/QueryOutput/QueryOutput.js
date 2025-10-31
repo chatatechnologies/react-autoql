@@ -334,7 +334,7 @@ export class QueryOutput extends React.Component {
       this.forceUpdate()
     } catch (error) {
       console.error(error)
-      this.props.onErrorCallback(error)
+      this.props.onErrorCallback?.(error)
     }
   }
 
@@ -995,7 +995,7 @@ export class QueryOutput extends React.Component {
       }
     } catch (error) {
       console.error('Error generating pivot data', error)
-      this.props.onErrorCallback(error)
+      this.props.onErrorCallback?.(error)
       this.pivotTableData = undefined
     }
 
@@ -1004,7 +1004,10 @@ export class QueryOutput extends React.Component {
     }
 
     if (dataChanged && this._isMounted) {
-      this.setState({ visiblePivotRowChangeCount: this.state.visiblePivotRowChangeCount + 1 })
+      this.setState({
+        visiblePivotRowChangeCount: this.state.visiblePivotRowChangeCount + 1,
+        chartID: uuid(), // Force chart to re-render with new pivot data
+      })
     }
   }
 
@@ -2696,7 +2699,7 @@ export class QueryOutput extends React.Component {
       }
     } catch (error) {
       console.error(error)
-      this.props.onErrorCallback(error)
+      this.props.onErrorCallback?.(error)
     }
   }
 

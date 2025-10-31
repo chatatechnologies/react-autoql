@@ -1,6 +1,6 @@
 {
   "name": "react-autoql",
-  "version": "8.16.0",
+  "version": "8.18.1",
   "description": "React Widget Library",
   "main": "dist/autoql.cjs.js",
   "module": "dist/autoql.esm.js",
@@ -62,7 +62,7 @@
   },
   "dependencies": {
     "@react-icons/all-files": "4.1.0",
-    "autoql-fe-utils": "1.9.5",
+    "autoql-fe-utils": "1.9.8",
     "axios": "1.4.0",
     "caniuse-lite": "1.0.30001692",
     "classnames": "2.5.1",
@@ -84,6 +84,7 @@
     "lodash.isequal": "4.5.0",
     "lodash.throttle": "4.1.1",
     "make-coverage-badge": "1.2.0",
+    "pako": "^2.1.0",
     "parse-num": "1.0.0",
     "prop-types": "15.7.2",
     "rc-drawer": "4.4.3",

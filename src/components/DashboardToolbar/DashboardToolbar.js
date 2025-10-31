@@ -31,9 +31,11 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onUndoClick: PropTypes.func,
     onRedoClick: PropTypes.func,
     onRenameClick: PropTypes.func,
+    onDownloadClick: PropTypes.func,
     tooltipID: PropTypes.string,
     title: PropTypes.string,
     refreshInterval: PropTypes.number,
+    enableAutoRefresh: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -46,9 +48,11 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onUndoClick: () => {},
     onRedoClick: () => {},
     onRenameClick: () => {},
+    onDownloadClick: () => {},
     tooltipID: undefined,
     title: 'Untitled Dashboard',
     refreshInterval: 60,
+    enableAutoRefresh: false,
   }
 
   state = {
@@ -117,22 +121,34 @@ export class DashboardToolbarWithoutRef extends React.Component {
   optionsMenu = () => {
     return (
       <Menu>
+        {this.props.isEditable && (
+          <MenuItem
+            title='Edit Dashboard'
+            icon='edit'
+            onClick={() => {
+              this.props.onEditClick()
+              this.setState({ isOptionsMenuOpen: false })
+            }}
+          />
+        )}
         <MenuItem
-          title='Edit Dashboard'
-          icon='edit'
+          title='Export Snapshot (.aqldash)'
+          icon='download'
           onClick={() => {
-            this.props.onEditClick()
+            this.props.onDownloadClick()
             this.setState({ isOptionsMenuOpen: false })
           }}
         />
-        <MenuItem
-          title='Delete Dashboard'
-          icon='trash'
-          style={{ color: 'var(--react-autoql-danger-color)' }}
-          onClick={() => {
-            this.setState({ isOptionsMenuOpen: false, isConfirmDeleteModalVisible: true })
-          }}
-        />
+        {this.props.isEditable && (
+          <MenuItem
+            title='Delete Dashboard'
+            icon='trash'
+            style={{ color: 'var(--react-autoql-danger-color)' }}
+            onClick={() => {
+              this.setState({ isOptionsMenuOpen: false, isConfirmDeleteModalVisible: true })
+            }}
+          />
+        )}
       </Menu>
     )
   }
@@ -246,19 +262,21 @@ export class DashboardToolbarWithoutRef extends React.Component {
               {this.dashboardSlicingFeatureToggle && !this.props.isEditing && this.renderFilterInput()}
               {!this.props.isEditing ? (
                 <>
-                  {/* <div
-                    style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '8px', opacity: 0.7 }}
-                  >
-                    <Icon
-                      type='schedule'
-                      tooltip={this.getRefreshIntervalText()}
-                      tooltipID={this.props.tooltipID}
-                      style={{ marginRight: '6px', fontSize: '1.2rem' }}
-                    />
-                    <span data-tooltip-content={this.getRefreshIntervalText()} data-tooltip-id={this.props.tooltipID}>
-                      {this.getRefreshIntervalDisplay()}
-                    </span>
-                  </div> */}
+                  {this.props.enableAutoRefresh && (
+                    <div
+                      style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '8px', opacity: 0.7 }}
+                    >
+                      <Icon
+                        type='schedule'
+                        tooltip={this.getRefreshIntervalText()}
+                        tooltipID={this.props.tooltipID}
+                        style={{ marginRight: '6px', fontSize: '1.2rem' }}
+                      />
+                      <span data-tooltip-content={this.getRefreshIntervalText()} data-tooltip-id={this.props.tooltipID}>
+                        {this.getRefreshIntervalDisplay()}
+                      </span>
+                    </div>
+                  )}
                   <Button
                     iconOnly
                     icon='refresh'
@@ -289,7 +307,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
                   </Button>
                 </div>
               )}
-              {this.props.isEditable && !this.props.isEditing && (
+              {!this.props.isEditing && (
                 <Popover
                   align='end'
                   positions={['bottom', 'left', 'top', 'right']}

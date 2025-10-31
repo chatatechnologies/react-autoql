@@ -1,3 +1,7 @@
 .average-line-text-bg {
-  fill: var(--react-autoql-background-color-secondary);
+  // Fill and stroke are set inline to support per-series colors
+}
+
+.average-line-label {
+  // Fill is set inline to support per-series colors
 }

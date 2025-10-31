@@ -32,16 +32,6 @@ describe('test each response case', () => {
         expect(wrapper.exists()).toBe(true)
       })
     })
-
-    // describe('props', () => {
-    //   test('does not throw warning with expected props', () => {
-    //     checkProps(QueryOutput, defaultProps)
-    //   })
-    //   describe('showMask', () => {
-    //     test('showMask false does not show mask on drawer open', () => {})
-    //     test('showMask true shows mask on drawer open', () => {})
-    //   })
-    // })
   }
 })
 
@@ -49,7 +39,7 @@ describe('supported display types', () => {
   test('support charts even for 1 row of data', async () => {
     const queryResponse = _cloneDeep(testCases[8])
     queryResponse.data.data.rows = [queryResponse.data.data.rows[0]]
-    const queryOutput = mount(<QueryOutputWithoutTheme queryResponse={queryResponse} />)
+    const queryOutput = mount(<QueryOutputWithoutTheme queryResponse={queryResponse} queryFn={() => {}} />)
     const supportedDisplayTypes = queryOutput.instance().getCurrentSupportedDisplayTypes()
     expect(supportedDisplayTypes).toEqual(['table', 'column', 'bar'])
     queryOutput.unmount()
@@ -73,7 +63,7 @@ describe('test table edge cases', () => {
       queryOutput.unmount()
     })
     describe('display type is updated when column visibility is changed', () => {
-      const queryOutputVisible = mount(<QueryOutput queryResponse={testCaseHiddenColumns} />)
+      const queryOutputVisible = mount(<QueryOutput queryResponse={testCaseHiddenColumns} queryFn={() => {}} />)
 
       test('display type is text if all columns hidden', () => {
         const displayType = queryOutputVisible.find(QueryOutputWithoutTheme).instance().state.displayType
@@ -119,7 +109,11 @@ describe('test table edge cases', () => {
 
       // Mount with initial table configs
       const queryOutput = mount(
-        <QueryOutputWithoutTheme queryResponse={testCase} initialTableConfigs={initialTableConfigs} />,
+        <QueryOutputWithoutTheme
+          queryResponse={testCase}
+          initialTableConfigs={initialTableConfigs}
+          queryFn={() => {}}
+        />,
       )
 
       const instance = queryOutput.instance()
@@ -158,7 +152,11 @@ describe('test table edge cases', () => {
 
       // Mount with invalid initial table configs
       const queryOutput = mount(
-        <QueryOutputWithoutTheme queryResponse={testCase} initialTableConfigs={initialTableConfigs} />,
+        <QueryOutputWithoutTheme
+          queryResponse={testCase}
+          initialTableConfigs={initialTableConfigs}
+          queryFn={() => {}}
+        />,
       )
 
       const instance = queryOutput.instance()
@@ -195,7 +193,11 @@ describe('test table edge cases', () => {
 
       // Mount with initial table configs
       const queryOutput = mount(
-        <QueryOutputWithoutTheme queryResponse={testCase} initialTableConfigs={initialTableConfigs} />,
+        <QueryOutputWithoutTheme
+          queryResponse={testCase}
+          initialTableConfigs={initialTableConfigs}
+          queryFn={() => {}}
+        />,
       )
 
       const instance = queryOutput.instance()
@@ -212,6 +214,113 @@ describe('test table edge cases', () => {
       // The config should still be valid for the new display type
       expect(instance.tableConfig.stringColumnIndex).toBeGreaterThanOrEqual(0)
       expect(instance.tableConfig.stringColumnIndex).toBeLessThan(testCase.data.data.columns.length)
+
+      queryOutput.unmount()
+    })
+  })
+})
+
+describe('pivot table filtering', () => {
+  const setupPivotTableTest = () => {
+    const testCase = _cloneDeep(testCases[8])
+    return {
+      testCase,
+      queryOutput: mount(
+        <QueryOutputWithoutTheme queryResponse={testCase} initialDisplayType='pivot_table' queryFn={() => {}} />,
+      ),
+    }
+  }
+
+  describe('onTableParamsChange triggers pivot data regeneration', () => {
+    test('calls generatePivotData when shouldGeneratePivotData returns true', () => {
+      const { queryOutput } = setupPivotTableTest()
+
+      const instance = queryOutput.instance()
+
+      const generatePivotDataSpy = jest.spyOn(instance, 'generatePivotData')
+      instance.shouldGeneratePivotData = jest.fn().mockReturnValue(true)
+
+      instance.onTableParamsChange({}, {})
+
+      expect(generatePivotDataSpy).toHaveBeenCalled()
+
+      generatePivotDataSpy.mockRestore()
+      queryOutput.unmount()
+    })
+
+    test('does not call generatePivotData when shouldGeneratePivotData returns false', () => {
+      const { queryOutput } = setupPivotTableTest()
+
+      const instance = queryOutput.instance()
+
+      const generatePivotDataSpy = jest.spyOn(instance, 'generatePivotData')
+      instance.shouldGeneratePivotData = jest.fn().mockReturnValue(false)
+
+      instance.onTableParamsChange({}, {})
+
+      expect(generatePivotDataSpy).not.toHaveBeenCalled()
+
+      generatePivotDataSpy.mockRestore()
+      queryOutput.unmount()
+    })
+  })
+
+  describe('generatePivotTableData filters data correctly', () => {
+    test('filters data based on formattedTableParams.filters', () => {
+      const { testCase, queryOutput } = setupPivotTableTest()
+
+      const instance = queryOutput.instance()
+
+      instance.formattedTableParams = {
+        filters: [
+          {
+            id: testCase.data.data.columns[0].name,
+            value: testCase.data.data.rows[0][0],
+            operator: 'equals',
+          },
+        ],
+      }
+
+      const forceUpdateSpy = jest.spyOn(instance, 'forceUpdate')
+
+      instance.generatePivotTableData()
+
+      expect(forceUpdateSpy).toHaveBeenCalled()
+      expect(instance.pivotTableData).toBeDefined()
+      expect(instance.pivotTableColumns).toBeDefined()
+
+      forceUpdateSpy.mockRestore()
+      queryOutput.unmount()
+    })
+  })
+
+  describe('generatePivotData state updates', () => {
+    test('updates visiblePivotRowChangeCount when dataChanged is true', () => {
+      const { queryOutput } = setupPivotTableTest()
+
+      const instance = queryOutput.instance()
+
+      const initialCount = instance.state.visiblePivotRowChangeCount || 0
+      instance.setState({ visiblePivotRowChangeCount: initialCount })
+
+      instance.generatePivotData({ dataChanged: true })
+
+      expect(instance.state.visiblePivotRowChangeCount).toBe(initialCount + 1)
+
+      queryOutput.unmount()
+    })
+
+    test('does not increment visiblePivotRowChangeCount when dataChanged is false', () => {
+      const { queryOutput } = setupPivotTableTest()
+
+      const instance = queryOutput.instance()
+
+      const initialCount = instance.state.visiblePivotRowChangeCount || 0
+      instance.setState({ visiblePivotRowChangeCount: initialCount })
+
+      instance.generatePivotData({ dataChanged: false })
+
+      expect(instance.state.visiblePivotRowChangeCount).toBe(initialCount)
 
       queryOutput.unmount()
     })

@@ -72,10 +72,10 @@ describe('renders correctly', () => {
         showRegressionLine: false,
       })
 
-      // Toggle regression line
+      // Toggle regression line (should turn off average line due to radio button behavior)
       wrapper.instance().toggleRegressionLine()
       expect(onChartControlsChange).toHaveBeenCalledWith({
-        showAverageLine: true,
+        showAverageLine: false,
         showRegressionLine: true,
       })
     })
