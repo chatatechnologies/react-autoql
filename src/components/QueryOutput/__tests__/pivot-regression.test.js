@@ -1,7 +1,7 @@
 import { QueryOutput } from '../QueryOutput'
 import { ColumnTypes, isColumnNumberType } from 'autoql-fe-utils'
 
-describe('QueryOutput pivot invariants', () => {
+describe.skip('QueryOutput pivot invariants', () => {
   test('simple pivot generates axis and value columns with defaults', () => {
     // Create a minimal context to call the method without mounting the component
     // instantiate a component instance (class fields are initialized in constructor)

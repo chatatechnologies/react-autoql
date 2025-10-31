@@ -32,16 +32,6 @@ describe('test each response case', () => {
         expect(wrapper.exists()).toBe(true)
       })
     })
-
-    // describe('props', () => {
-    //   test('does not throw warning with expected props', () => {
-    //     checkProps(QueryOutput, defaultProps)
-    //   })
-    //   describe('showMask', () => {
-    //     test('showMask false does not show mask on drawer open', () => {})
-    //     test('showMask true shows mask on drawer open', () => {})
-    //   })
-    // })
   }
 })
 
