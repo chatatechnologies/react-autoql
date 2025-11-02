@@ -2490,7 +2490,7 @@ export class QueryOutput extends React.Component {
         })
       })
 
-      const pivotTableData = makeEmptyArray(Object.keys(uniqueYears).length, 12)
+      const pivotTableData = makeEmptyArray(MONTH_NAMES.length, Object.keys(uniqueYears).length + 1)
       const pivotOriginalColumnData = {}
 
       // Populate first column
@@ -2509,15 +2509,19 @@ export class QueryOutput extends React.Component {
         const pivotColumnIndex = pivotTableColumns.findIndex((col) => col.name === year)
 
         if (monthNumber >= 0 && yearNumber) {
-          pivotTableData[monthNumber][yearNumber] = row[numberColumnIndex]
-          pivotOriginalColumnData[year] = {
-            ...pivotOriginalColumnData[year],
-            [month]: row[dateColumnIndex],
-          }
-          pivotTableColumns[pivotColumnIndex].origValues[month] = {
-            name: columns[dateColumnIndex]?.name,
-            drill_down: columns[dateColumnIndex]?.drill_down,
-            value: row[dateColumnIndex] || '',
+          const val = Number(row[numberColumnIndex])
+          if (Number.isFinite(val)) {
+            const existing = Number(pivotTableData[monthNumber][yearNumber]) || 0
+            pivotTableData[monthNumber][yearNumber] = existing + val
+            pivotOriginalColumnData[year] = {
+              ...pivotOriginalColumnData[year],
+              [month]: row[dateColumnIndex],
+            }
+            pivotTableColumns[pivotColumnIndex].origValues[month] = {
+              name: columns[dateColumnIndex]?.name,
+              drill_down: columns[dateColumnIndex]?.drill_down,
+              value: row[dateColumnIndex] || '',
+            }
           }
         }
       })
@@ -2662,10 +2666,7 @@ export class QueryOutput extends React.Component {
         })
       })
 
-      const pivotTableData = makeEmptyArray(
-        uniqueColumnHeaders.length + 1, // Add one for the frozen first column
-        uniqueRowHeaders.length,
-      )
+      const pivotTableData = makeEmptyArray(uniqueRowHeaders.length, uniqueColumnHeaders.length + 1)
 
       tableData.forEach((row) => {
         const pivotRowIndex = uniqueRowHeadersObj[row[newStringColumnIndex]]
@@ -2677,15 +2678,21 @@ export class QueryOutput extends React.Component {
         // Populate first column
         pivotTableData[pivotRowIndex][0] = pivotRowHeaderValue
 
-        // Populate remaining columns
-        const pivotValue = Number(row[numberColumnIndex])
-        const pivotColumnIndex = uniqueColumnHeadersObj[row[newLegendColumnIndex]] + 1
-        pivotTableData[pivotRowIndex][pivotColumnIndex] = pivotValue
-        if (pivotTableColumns[pivotColumnIndex]) {
-          pivotTableColumns[pivotColumnIndex].origValues[pivotRowHeaderValue] = {
-            name: columns[newStringColumnIndex]?.name,
-            drill_down: columns[newStringColumnIndex]?.drill_down,
-            value: pivotRowHeaderValue,
+        // Populate remaining columns (accumulate numeric values)
+        const pivotColumnIndex = uniqueColumnHeadersObj[row[newLegendColumnIndex]]
+        if (pivotColumnIndex !== undefined) {
+          const colIndex = pivotColumnIndex + 1
+          const val = Number(row[numberColumnIndex])
+          if (Number.isFinite(val)) {
+            const existing = Number(pivotTableData[pivotRowIndex][colIndex]) || 0
+            pivotTableData[pivotRowIndex][colIndex] = existing + val
+            if (pivotTableColumns[colIndex]) {
+              pivotTableColumns[colIndex].origValues[pivotRowHeaderValue] = {
+                name: columns[newStringColumnIndex]?.name,
+                drill_down: columns[newStringColumnIndex]?.drill_down,
+                value: pivotRowHeaderValue,
+              }
+            }
           }
         }
       })

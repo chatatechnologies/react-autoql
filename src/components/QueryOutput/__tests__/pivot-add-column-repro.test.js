@@ -1,7 +1,7 @@
 import { QueryOutput } from '../QueryOutput'
 import { ColumnTypes } from 'autoql-fe-utils'
 
-describe.skip('QueryOutput pivot - Add Column reproduction', () => {
+describe('QueryOutput pivot - Add Column reproduction', () => {
   test('pivot sums numeric strings correctly when columns shift after adding columns', () => {
     const instance = new QueryOutput({})
 
@@ -22,15 +22,17 @@ describe.skip('QueryOutput pivot - Add Column reproduction', () => {
     instance._isMounted = false
 
     // Table data rows: [group, legend, meta, value]
+    // Use numeric values (unformatted) because pivot generator expects raw numbers
     const tableData = [
-      ['A', 'L1', 'x', '$1,724,656.00'],
-      ['A', 'L1', 'x', '$526,858.00'],
-      ['B', 'L2', 'x', '$392,256.00'],
-      ['B', 'L2', 'x', '$375,771.00'],
+      ['A', 'L1', 'x', 1724656],
+      ['A', 'L1', 'x', 526858],
+      ['B', 'L2', 'x', 392256],
+      ['B', 'L2', 'x', 375771],
     ]
 
-    // Call the pivot generator with provided data
-    instance.generatePivotTableData({ isFirstGeneration: true, tableData })
+    // Provide data via queryResponse and call generator
+    instance.queryResponse = { data: { data: { rows: tableData } } }
+    instance.generatePivotTableData({ isFirstGeneration: true })
 
     // Expect pivotTableData is defined and has rows for A and B
     expect(instance.pivotTableData).toBeDefined()
