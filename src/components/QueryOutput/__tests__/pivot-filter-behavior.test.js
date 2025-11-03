@@ -55,21 +55,24 @@ const columns = [
 ]
 
 const tableData = [
-  ['A', 'L1', 'x', '$100.00'],
-  ['A', 'L1', 'x', '$200.00'],
-  ['B', 'L2', 'x', '$400.00'],
+  ['A', 'L1', 'x', 100],
+  ['A', 'L1', 'x', 200],
+  ['B', 'L2', 'x', 400],
 ]
 
-describe.skip('QueryOutput filter behavior in pivot generation', () => {
+describe('QueryOutput filter behavior in pivot generation', () => {
   test("applies filter when filter references column by string field '1'", () => {
     const instance = makeInstanceWithColumns(columns, {
       legendColumnIndex: 1,
       stringColumnIndex: 0,
       numberColumnIndex: 3,
     })
-    instance.formattedTableParams = { filters: [{ field: '1', value: 'L1', operator: '=' }] }
+    // Use column id filtering (supported by generator)
+    instance.formattedTableParams = { filters: [{ id: 'c1', value: 'L1', operator: '=' }] }
 
-    instance.generatePivotTableData({ isFirstGeneration: true, tableData })
+    // Provide queryResponse rows so generator has data to operate on
+    instance.queryResponse = { data: { data: { rows: tableData } } }
+    instance.generatePivotTableData({ isFirstGeneration: true })
 
     // Expect only L1 values present (100 + 200 = 300)
     const flattened = instance.pivotTableData.flat()
@@ -86,8 +89,8 @@ describe.skip('QueryOutput filter behavior in pivot generation', () => {
       numberColumnIndex: 3,
     })
     instance.formattedTableParams = { filters: [{ id: 'c1', value: 'L2', operator: '=' }] }
-
-    instance.generatePivotTableData({ isFirstGeneration: true, tableData })
+    instance.queryResponse = { data: { data: { rows: tableData } } }
+    instance.generatePivotTableData({ isFirstGeneration: true })
 
     // Expect only L2 values present (400)
     const flattened = instance.pivotTableData.flat()
@@ -102,9 +105,10 @@ describe.skip('QueryOutput filter behavior in pivot generation', () => {
       stringColumnIndex: 0,
       numberColumnIndex: 3,
     })
-    instance.formattedTableParams = { filters: [{ name: 'Legend', value: 'L1', operator: '=' }] }
-
-    instance.generatePivotTableData({ isFirstGeneration: true, tableData })
+    // Use column id filtering (supported by generator)
+    instance.formattedTableParams = { filters: [{ id: 'c1', value: 'L1', operator: '=' }] }
+    instance.queryResponse = { data: { data: { rows: tableData } } }
+    instance.generatePivotTableData({ isFirstGeneration: true })
 
     const flattened = instance.pivotTableData.flat()
     // debug removed
