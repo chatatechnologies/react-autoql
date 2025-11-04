@@ -89,6 +89,7 @@ class DashboardWithoutTheme extends React.Component {
     showToolbar: PropTypes.bool,
     refreshInterval: PropTypes.number,
     dashboardId: PropTypes.string,
+    enableAutoRefresh: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -120,6 +121,7 @@ class DashboardWithoutTheme extends React.Component {
     onSaveClick: () => {},
     onDeleteCallback: () => {},
     dashboardId: undefined,
+    enableAutoRefresh: false,
   }
 
   static getDerivedStateFromProps(nextProps, prevState) {
@@ -851,7 +853,7 @@ class DashboardWithoutTheme extends React.Component {
               onAddTileClick={this.addTile}
               onUndoClick={this.undo}
               onRedoClick={this.redo}
-              onRefreshClick={this.executeDashboard}
+              onRefreshClick={this.props.enableAutoRefresh ? this.executeCachedDashboard : this.executeDashboard}
               onDownloadClick={this.exportDashboard}
               onSaveClick={() => {
                 Promise.resolve(this.props.onSaveCallback ? this.props.onSaveCallback() : undefined).then((result) => {
@@ -866,6 +868,7 @@ class DashboardWithoutTheme extends React.Component {
                 this.props.stopEditingCallback()
               }}
               refreshInterval={this.props.refreshInterval}
+              enableAutoRefresh={this.props.enableAutoRefresh}
             />
           )}
           <div

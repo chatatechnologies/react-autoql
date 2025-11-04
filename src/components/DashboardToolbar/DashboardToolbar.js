@@ -27,7 +27,6 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onDeleteClick: PropTypes.func,
     onEditClick: PropTypes.func,
     onRefreshClick: PropTypes.func,
-    onCachedRefreshClick: PropTypes.func,
     onAddTileClick: PropTypes.func,
     onUndoClick: PropTypes.func,
     onRedoClick: PropTypes.func,
@@ -36,6 +35,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     tooltipID: PropTypes.string,
     title: PropTypes.string,
     refreshInterval: PropTypes.number,
+    enableAutoRefresh: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -44,7 +44,6 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onDeleteClick: () => {},
     onEditClick: () => {},
     onRefreshClick: () => {},
-    onCachedRefreshClick: () => {},
     onAddTileClick: () => {},
     onUndoClick: () => {},
     onRedoClick: () => {},
@@ -53,6 +52,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     tooltipID: undefined,
     title: 'Untitled Dashboard',
     refreshInterval: 60,
+    enableAutoRefresh: false,
   }
 
   state = {
@@ -82,23 +82,26 @@ export class DashboardToolbarWithoutRef extends React.Component {
     this.setState({ isRenameModalOpen: false })
   }
 
-  formatRefreshInterval = (useFullWords = false) => {
+  formatRefreshInterval = () => {
     const { refreshInterval } = this.props
+    const totalMinutes = Math.floor(refreshInterval / 60)
 
-    if (refreshInterval >= 60) {
-      const minutes = Math.floor(refreshInterval / 60)
-      const seconds = refreshInterval % 60
-      if (seconds === 0) {
-        return `${minutes} ${minutes === 1 ? 'min' : 'mins'}`
+    // Check for days (1440 minutes = 1 day)
+    if (totalMinutes >= 1440) {
+      return '1 day'
+    } else if (totalMinutes >= 60) {
+      // Handle hours (60 minutes = 1 hour)
+      const hours = Math.floor(totalMinutes / 60)
+      const minutes = totalMinutes % 60
+
+      if (minutes === 0) {
+        return `${hours} ${hours === 1 ? 'hr' : 'hrs'}`
       } else {
-        return `${minutes} ${minutes === 1 ? 'min' : 'mins'} ${seconds} ${seconds === 1 ? 'sec' : 'secs'}`
+        return `${hours} ${hours === 1 ? 'hr' : 'hrs'} ${minutes} ${minutes === 1 ? 'min' : 'mins'}`
       }
     } else {
-      if (useFullWords) {
-        return `${refreshInterval} ${refreshInterval === 1 ? 'second' : 'seconds'}`
-      } else {
-        return `${refreshInterval} ${refreshInterval === 1 ? 'sec' : 'secs'}`
-      }
+      // Minutes only (minimum is 1 minute)
+      return `${totalMinutes} ${totalMinutes === 1 ? 'min' : 'mins'}`
     }
   }
 
@@ -262,26 +265,28 @@ export class DashboardToolbarWithoutRef extends React.Component {
               {this.dashboardSlicingFeatureToggle && !this.props.isEditing && this.renderFilterInput()}
               {!this.props.isEditing ? (
                 <>
-                  <div
-                    style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '8px', opacity: 0.7 }}
-                  >
-                    <Icon
-                      type='schedule'
-                      tooltip={this.getRefreshIntervalText()}
-                      tooltipID={this.props.tooltipID}
-                      style={{ marginRight: '6px', fontSize: '1.2rem' }}
-                    />
-                    <span data-tooltip-content={this.getRefreshIntervalText()} data-tooltip-id={this.props.tooltipID}>
-                      {this.getRefreshIntervalDisplay()}
-                    </span>
-                  </div>
+                  {this.props.enableAutoRefresh && (
+                    <div
+                      style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '8px', opacity: 0.7 }}
+                    >
+                      <Icon
+                        type='schedule'
+                        tooltip={this.getRefreshIntervalText()}
+                        tooltipID={this.props.tooltipID}
+                        style={{ marginRight: '6px', fontSize: '1.2rem' }}
+                      />
+                      <span data-tooltip-content={this.getRefreshIntervalText()} data-tooltip-id={this.props.tooltipID}>
+                        {this.getRefreshIntervalDisplay()}
+                      </span>
+                    </div>
+                  )}
                   <Button
                     iconOnly
                     icon='refresh'
                     border={false}
                     tooltip='Refresh Dashboard Data'
                     tooltipID={this.props.tooltipID}
-                    onClick={this.props.onCachedRefreshClick}
+                    onClick={this.props.onRefreshClick}
                   />
                 </>
               ) : (

@@ -132,19 +132,6 @@ export default class ChataTable extends React.Component {
     this.tableOptions.ajaxRequestFunc = (url, config, params) => this.ajaxRequestFunc(props, params)
     this.tableOptions.ajaxResponse = (url, params, response) => this.ajaxResponseFunc(props, response)
 
-    if (props.pivot) {
-      this.useInfiniteScroll = false
-      this.tableOptions.sortMode = LOCAL_OR_REMOTE.LOCAL
-      this.tableOptions.filterMode = LOCAL_OR_REMOTE.LOCAL
-      this.tableOptions.paginationMode = LOCAL_OR_REMOTE.LOCAL
-      this.tableOptions.progressiveLoad = false
-      // Remove ajax handlers so TableWrapper uses provided data directly
-      delete this.tableOptions.ajaxRequestFunc
-      delete this.tableOptions.ajaxRequesting
-      delete this.tableOptions.ajaxResponse
-      delete this.tableOptions.ajaxURL
-    }
-
     this.summaryStats = {}
 
     // Persistent column mapping that survives table rebuilds and component remounts
@@ -179,6 +166,12 @@ export default class ChataTable extends React.Component {
       firstRender: true,
       scrollTop: 0,
     }
+  }
+
+  // For pivot tables, remove ajax/progressive/pagination options so Tabulator treats them as static tables.
+  getTableWrapperOptions = () => {
+    // Return a deep-cloned tableOptions so TableWrapper handles pivot cleanup without breaking remote sorting/filtering
+    return _cloneDeep(this.tableOptions || {})
   }
 
   static propTypes = {
@@ -618,7 +611,7 @@ export default class ChataTable extends React.Component {
         }
 
         if (column?.type === ColumnTypes.QUANTITY || column?.type === ColumnTypes.DOLLAR_AMT) {
-          const columnData = rows.map((r) => r[columnIndex])
+          const columnData = rows.map((r) => r[columnIndex]).filter((val) => Number.isFinite(val))
           stats[columnIndex] = {
             avg: formatElement({ element: mean(columnData), column, config: props.dataFormatting }),
             sum: formatElement({ element: sum(columnData), column, config: props.dataFormatting }),
@@ -1602,14 +1595,17 @@ export default class ChataTable extends React.Component {
     if (this.ref?.tabulator && sorterValues && Array.isArray(sorterValues)) {
       sorterValues.forEach((sorter) => {
         try {
-          AsyncErrorHandler.handleTabulatorSort(
-            this.ref.tabulator,
-            sorter.field,
-            sorter.dir,
-            this.props.onErrorCallback,
-          )
+          //   AsyncErrorHandler.handleTabulatorSort(
+          //     this.ref.tabulator,
+          //     sorter.field,
+          //     sorter.dir,
+          //     this.props.onErrorCallback,
+          //   )
+          // } catch (_) {
+          //   // Error already reported by AsyncErrorHandler
+          this.ref.tabulator.setSort(sorter.field, sorter.dir)
         } catch (_) {
-          // Error already reported by AsyncErrorHandler
+          // Error silently handled by tabulator
         }
       })
     }
@@ -1667,11 +1663,19 @@ export default class ChataTable extends React.Component {
     const targetColumn = columns?.find((col) => col.getField() === column.field)
 
     if (targetColumn) {
+      // Capture current filter values before freezing/unfreezing
+      const currentFilters = this.ref?.tabulator?.getHeaderFilters()
+
       const isCurrentlyFrozen = this.isColumnFrozen(column)
       targetColumn.updateDefinition({ frozen: !isCurrentlyFrozen })
-      // Re-attach event listeners after DOM recreation
+
+      // Re-attach event listeners and restore filters after DOM recreation
       setTimeout(() => {
         this.setHeaderInputEventListeners()
+        // Restore filter values after column recreation
+        if (currentFilters && currentFilters.length > 0) {
+          this.setFilters(currentFilters)
+        }
       }, 0)
     }
   }
@@ -2549,7 +2553,7 @@ export default class ChataTable extends React.Component {
                     data-test='autoql-tabulator-table'
                     columns={this.getFilteredTabulatorColumnDefinitions()}
                     data={this.getRows(this.props)}
-                    options={this.tableOptions}
+                    options={this.getTableWrapperOptions()}
                     hidden={this.props.hidden}
                     data-custom-attr='test-custom-attribute'
                     className='react-autoql-table'
