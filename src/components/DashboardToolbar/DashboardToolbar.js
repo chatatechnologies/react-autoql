@@ -86,10 +86,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     const { refreshInterval } = this.props
     const totalMinutes = Math.floor(refreshInterval / 60)
 
-    // Check for days (1440 minutes = 1 day)
-    if (totalMinutes >= 1440) {
-      return '1 day'
-    } else if (totalMinutes >= 60) {
+    if (totalMinutes >= 60) {
       // Handle hours (60 minutes = 1 hour)
       const hours = Math.floor(totalMinutes / 60)
       const minutes = totalMinutes % 60
