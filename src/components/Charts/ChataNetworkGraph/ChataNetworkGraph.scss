@@ -1,0 +1,20 @@
+.recenter-button-rect {
+  box-shadow: 0px 2px 3px -2px var(--react-autoql-box-shadow-color);
+  stroke-width: 1px;
+  stroke: var(--react-autoql-border-color);
+  fill: var(--react-autoql-background-color-secondary);
+
+  &:hover {
+    stroke: var(--react-autoql-accent-color);
+  }
+}
+
+.recenter-button-icon {
+  pointer-events: none;
+}
+
+.recenter-button-icon,
+.recenter-button-rect {
+  opacity: 1 !important;
+  transition: all 0.2s ease;
+}
