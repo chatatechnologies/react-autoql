@@ -110,6 +110,7 @@ import {
   maximum,
   sum,
   median,
+  networkIcon,
 } from '../../svgIcons.js'
 
 import './Icon.scss'
@@ -421,6 +422,10 @@ export default class Icon extends React.Component {
       }
       case 'microphone': {
         icon = <FaMicrophoneAlt />
+        break
+      }
+      case 'network': {
+        icon = networkIcon
         break
       }
       case 'more-vertical': {
