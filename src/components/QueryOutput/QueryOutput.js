@@ -90,7 +90,7 @@ export class QueryOutput extends React.Component {
   constructor(props) {
     super(props)
     this.minWidth = props.minWidth || 400
-    const isChart = isChartType(this.getDisplayTypeFromInitial(props))
+    const isChart = typeof isChartType === 'function' && isChartType(this.getDisplayTypeFromInitial(props))
     this.minHeight = 300
     this.resizeMultiplier = props.resizeMultiplier || 1.5
     this.COMPONENT_KEY = uuid()
@@ -145,9 +145,7 @@ export class QueryOutput extends React.Component {
       }
     }
 
-    // --------- generate data before mount --------
     this.generateAllData()
-    // -------------------------------------------
 
     // Set initial table params to be any filters or sorters that
     // are already present in the current query
@@ -316,6 +314,19 @@ export class QueryOutput extends React.Component {
       showRegressionLine: false,
     },
     onChartControlsChange: () => {},
+  }
+
+  makeEmptyArrayShared(w, h, value) {
+    const hasValue = arguments.length >= 3
+    const cellValue = hasValue ? value : ''
+    const arr = []
+    for (let i = 0; i < h; i++) {
+      arr[i] = []
+      for (let j = 0; j < w; j++) {
+        arr[i][j] = cellValue
+      }
+    }
+    return arr
   }
 
   componentDidMount = () => {
@@ -1530,6 +1541,14 @@ export class QueryOutput extends React.Component {
     return this.tableRef?._isMounted && this.tableRef.getTabulatorHeaderFilters()
   }
 
+  // Resolves a Tabulator header filter field to its corresponding column index in the columns array.
+  resolveHeaderFilterColumnIndex = (field, columns) => {
+    if (field === undefined || field === null) return undefined
+    const parsed = parseInt(field, 10)
+    if (!isNaN(parsed)) return parsed
+    return columns.find((col) => col.field === field || col.id === field)?.index
+  }
+
   toggleTableFilter = (filterOn, scrollToFirstFilteredColumn) => {
     if (this.state.displayType === 'table') {
       return this.tableRef?._isMounted && this.tableRef.toggleIsFiltering(filterOn, scrollToFirstFilteredColumn)
@@ -1842,9 +1861,42 @@ export class QueryOutput extends React.Component {
       this.ALLOW_NUMERIC_STRING_COLUMNS,
       defaultDateColumn,
     )
+    // Prefer the chart's ordinal/axis column if set; otherwise pick a groupable, non-total/non-near-unique string column with the highest unique count.
+    let chosenStringIndex =
+      this.tableConfig?.stringColumnIndex >= 0 ? this.tableConfig.stringColumnIndex : stringColumnIndex
+    try {
+      const rows = this.tableData || this.queryResponse?.data?.data?.rows || []
+      const rowCount = rows?.length || 0
+
+      const candidates = (stringColumnIndices || [])
+        .filter((idx) => idx !== undefined && idx !== null && columns[idx])
+        .map((idx) => {
+          const vals = rows
+            .map((r) => r?.[idx])
+            .filter((v) => v !== null && v !== undefined && `${v}`.toString().trim() !== '')
+          const uniqueCount = new Set(vals).size
+          const col = columns[idx]
+          return { idx, uniqueCount, groupable: !!col?.groupable, display_name: col?.display_name, name: col?.name }
+        })
+
+      const looksLikeTotal = (s) => (s || '').toString().toLowerCase().includes('total')
+      const isNearUnique = (c) => rowCount > 0 && c.uniqueCount >= Math.floor(rowCount * 0.9)
+
+      const preferred = candidates.filter((c) => c.groupable)
+      const pool = preferred.length ? preferred : candidates
+      const filtered = pool.filter(
+        (c) => !looksLikeTotal(c.display_name) && !looksLikeTotal(c.name) && !isNearUnique(c),
+      )
+      const finalPool = filtered.length ? filtered : pool
+
+      if (finalPool.length) {
+        finalPool.sort((a, b) => b.uniqueCount - a.uniqueCount)
+        chosenStringIndex = finalPool[0].idx
+      }
+    } catch (e) {}
 
     this.tableConfig.stringColumnIndices = stringColumnIndices
-    this.tableConfig.stringColumnIndex = stringColumnIndex
+    this.tableConfig.stringColumnIndex = chosenStringIndex
 
     const { amountOfNumberColumns } = getColumnTypeAmounts(columns) ?? {}
 
@@ -2488,7 +2540,11 @@ export class QueryOutput extends React.Component {
         })
       })
 
-      const pivotTableData = makeEmptyArray(MONTH_NAMES.length, Object.keys(uniqueYears).length + 1)
+      const pivotTableData = this.makeEmptyArrayShared(
+        Object.keys(uniqueYears).length + 1,
+        MONTH_NAMES.length,
+        undefined,
+      )
       const pivotOriginalColumnData = {}
 
       // Populate first column
@@ -2549,6 +2605,19 @@ export class QueryOutput extends React.Component {
       tableData = tableData.filter((row) => row[0] !== null)
 
       const columns = this.getColumns()
+      const { legendColumnIndex, stringColumnIndex, numberColumnIndex } = this.tableConfig
+
+      tableData = tableData.filter((row) => {
+        const stringVal = row?.[stringColumnIndex]
+        const legendVal = row?.[legendColumnIndex]
+        const numVal = row?.[numberColumnIndex]
+
+        const isStringEmpty = stringVal === null || stringVal === undefined || `${stringVal}`.toString().trim() === ''
+        const isLegendEmpty = legendVal === null || legendVal === undefined || `${legendVal}`.toString().trim() === ''
+        const isNumEmpty = numVal === null || numVal === undefined || Number.isNaN(Number(numVal))
+
+        return !isStringEmpty && !isLegendEmpty && !isNumEmpty
+      })
 
       if (this.formattedTableParams?.filters?.length) {
         this.formattedTableParams.filters.forEach((filter) => {
@@ -2559,28 +2628,91 @@ export class QueryOutput extends React.Component {
         })
       }
 
-      const { legendColumnIndex, stringColumnIndex, numberColumnIndex } = this.tableConfig
+      // Apply any active Tabulator header filters so the pivot reflects the filtered table view.
+      try {
+        const headerFilters = this.getTabulatorHeaderFilters?.()
+        if (headerFilters) {
+          if (Array.isArray(headerFilters)) {
+            headerFilters.forEach((headFilter) => {
+              if (!headFilter) return
+              const field = headFilter.field ?? headFilter[0]
+              const value = headFilter.value ?? headFilter[1]
+              if (field === undefined || value === undefined) return
+              let filterColumnIndex
+              const parsed = parseInt(field, 10)
+              if (!isNaN(parsed)) filterColumnIndex = parsed
+              if (filterColumnIndex === undefined)
+                filterColumnIndex = columns.find((col) => col.field === field || col.id === field)?.index
+              if (filterColumnIndex !== undefined) {
+                tableData = filterDataByColumn(
+                  tableData,
+                  columns,
+                  filterColumnIndex,
+                  value,
+                  headFilter.type || headFilter.operator,
+                )
+              }
+            })
+          } else if (typeof headerFilters === 'object') {
+            Object.entries(headerFilters).forEach(([field, value]) => {
+              if (value === undefined || value === null || value === '') return
+              let filterColumnIndex
+              const parsed = parseInt(field, 10)
+              if (!isNaN(parsed)) filterColumnIndex = parsed
+              if (filterColumnIndex === undefined)
+                filterColumnIndex = columns.find((col) => col.field === field || col.id === field)?.index
+              if (filterColumnIndex !== undefined) {
+                tableData = filterDataByColumn(tableData, columns, filterColumnIndex, value, undefined)
+              }
+            })
+          }
+        }
+      } catch (err) {
+        // ignore header filter parsing errors and continue
+      }
 
-      let uniqueRowHeaders = sortDataByDate(tableData, columns, 'desc', 'isTable')
+      // Respect user sorters first, fall back to date sort if none provided
+      const userSorters = this.formattedTableParams?.sorters || []
+      let sortedData = null
+      if (userSorters.length > 0) {
+        const primary = userSorters[0]
+        let sortColumnIndex = columns.find((col) => col.id === primary?.id)?.index
+        if (sortColumnIndex === undefined && primary?.field !== undefined) {
+          const parsed = parseInt(primary.field, 10)
+          sortColumnIndex = !isNaN(parsed) ? parsed : columns.find((col) => col.field === primary.field)?.index
+        }
+        const sortDirection = (primary?.sort || primary?.dir)?.toString().toUpperCase() === 'DESC' ? 'desc' : 'asc'
+        if (sortColumnIndex !== undefined)
+          sortedData = sortDataByColumn(tableData, columns, sortColumnIndex, sortDirection)
+      }
+      if (!sortedData) sortedData = sortDataByDate(tableData, columns, 'desc', 'isTable')
+
+      // Build unique header lists, stripping out null/undefined/empty-string values
+      let uniqueRowHeaders = sortedData
         .map((d) => d[stringColumnIndex])
+        .filter((v) => v !== null && v !== undefined && `${v}`.toString().trim() !== '')
         .filter(onlyUnique)
 
       let uniqueColumnHeaders = sortDataByDate(tableData, columns, 'desc', 'isTable')
         .map((d) => d[legendColumnIndex])
+        .filter((v) => v !== null && v !== undefined && `${v}`.toString().trim() !== '')
         .filter(onlyUnique)
 
       let newStringColumnIndex = stringColumnIndex
       let newLegendColumnIndex = legendColumnIndex
 
-      // Make sure the longer list is in the legend, UNLESS its a date type
-      // DATE types should always go in the axis if possible
-      // BUT: Don't switch if we have saved axis preferences (respect user choice)
-      const hasSavedAxisConfig = this.props.initialTableConfigs?.tableConfig
+      const hasSavedAxisConfig =
+        this.tableConfig &&
+        this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns) &&
+        this.isColumnIndexValid(this.tableConfig.legendColumnIndex, columns)
 
+      let didSwapAxes = false
       if (
         isFirstGeneration &&
         !hasSavedAxisConfig && // Skip switching if user has saved preferences
-        (isColumnDateType(columns[legendColumnIndex]) ||
+        // Only switch if legend is a date AND it would not shrink the number of row headers,
+        // or if the legend has more unique headers than the rows (original behavior).
+        ((isColumnDateType(columns[legendColumnIndex]) && uniqueColumnHeaders?.length >= uniqueRowHeaders?.length) ||
           (uniqueColumnHeaders?.length > uniqueRowHeaders?.length &&
             (!isColumnDateType(columns[stringColumnIndex]) || uniqueColumnHeaders.length > MAX_LEGEND_LABELS)))
       ) {
@@ -2590,6 +2722,25 @@ export class QueryOutput extends React.Component {
         const tempValues = [...uniqueRowHeaders]
         uniqueRowHeaders = [...uniqueColumnHeaders]
         uniqueColumnHeaders = tempValues
+        didSwapAxes = true
+      }
+
+      try {
+        if (!columns[newStringColumnIndex]?.groupable) {
+          const found = columns.findIndex((col, i) => col?.groupable && i !== newLegendColumnIndex)
+          if (found >= 0) {
+            newStringColumnIndex = found
+          }
+        }
+
+        if (!columns[newLegendColumnIndex]?.groupable) {
+          const found = columns.findIndex((col, i) => col?.groupable && i !== newStringColumnIndex)
+          if (found >= 0) {
+            newLegendColumnIndex = found
+          }
+        }
+      } catch (e) {
+        /* ignore */
       }
 
       if (isColumnStringType(columns[newLegendColumnIndex]) && !isColumnDateType(columns[stringColumnIndex])) {
@@ -2664,12 +2815,27 @@ export class QueryOutput extends React.Component {
         })
       })
 
-      const pivotTableData = makeEmptyArray(uniqueRowHeaders.length, uniqueColumnHeaders.length + 1)
+      const pivotTableData = this.makeEmptyArrayShared(
+        uniqueColumnHeaders.length + 1,
+        uniqueRowHeaders.length,
+        undefined,
+      )
 
-      tableData.forEach((row) => {
+      let aggregatedRowCount = 0
+      let skippedRowCount = 0
+      const skippedRowExamples = []
+      sortedData.forEach((row) => {
         const pivotRowIndex = uniqueRowHeadersObj[row[newStringColumnIndex]]
         const pivotRowHeaderValue = row[newStringColumnIndex]
-        if (!pivotRowHeaderValue || !pivotTableData[pivotRowIndex]) {
+        if (!pivotRowHeaderValue || pivotRowIndex === undefined || !pivotTableData[pivotRowIndex]) {
+          skippedRowCount += 1
+          if (skippedRowExamples.length < 20) {
+            skippedRowExamples.push({
+              rowPreview: row.slice ? row.slice(0, 6) : row,
+              pivotRowHeaderValue,
+              pivotRowIndex,
+            })
+          }
           return
         }
 
@@ -2691,6 +2857,7 @@ export class QueryOutput extends React.Component {
                 value: pivotRowHeaderValue,
               }
             }
+            aggregatedRowCount += 1
           }
         }
       })
