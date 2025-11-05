@@ -626,7 +626,10 @@ export default class ChataChart extends React.Component {
       return null
     }
 
-    const isTruncated = this.state.isDataTruncated && this.props.type !== DisplayTypes.PIE
+    const isTruncated =
+      this.state.isDataTruncated &&
+      this.props.type !== DisplayTypes.PIE &&
+      this.props.type !== DisplayTypes.NETWORK_GRAPH
 
     if (this.props.isDataLimited || isTruncated) {
       return <DataLimitWarning tooltipID={this.props.tooltipID} rowLimit={this.props.rowLimit} />
