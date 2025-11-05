@@ -7,7 +7,7 @@ import _isEmpty from 'lodash.isempty'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
 
-import { TOOLTIP_COPY_TEXTS } from '../../js/Constants'
+import { TABULATOR_LOCAL_ROW_LIMIT, TOOLTIP_COPY_TEXTS } from '../../js/Constants'
 
 import {
   AggTypes,
@@ -112,7 +112,11 @@ export class QueryOutput extends React.Component {
     this.columnDateRanges = getColumnDateRanges(response)
     this.queryID = this.queryResponse?.data?.data?.query_id
     this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
-    this.tableParams = {}
+    this.tableParams = {
+      sort: props?.initialTableParams?.sort || [],
+      filter: props?.initialTableParams?.filter || [],
+      page: 1,
+    }
     this.tableID = uuid()
     this.pivotTableID = uuid()
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
@@ -130,6 +134,9 @@ export class QueryOutput extends React.Component {
 
     // Supported display types may have changed after initial data generation
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
+
+    // Sort data if data is local
+    this.sortLocalData(response, columns, props?.initialFormattedTableParams)
 
     const displayType = this.getDisplayTypeFromInitial(props)
     if (props.onDisplayTypeChange) {
@@ -151,11 +158,12 @@ export class QueryOutput extends React.Component {
     this.generateAllData()
     // -------------------------------------------
 
-    // Set initial table params to be any filters or sorters that
+    // Set initial table params to be any filters that
     // are already present in the current query
+    // Note: We handle sorting ourselves, so we don't pass sorters to Tabulator
     this.formattedTableParams = {
       filters: props?.initialFormattedTableParams?.filters || [],
-      sorters: props?.initialFormattedTableParams?.sorters || [],
+      sorters: [],
     }
 
     this.DEFAULT_TABLE_PAGE_SIZE = 100
@@ -318,6 +326,41 @@ export class QueryOutput extends React.Component {
       showRegressionLine: false,
     },
     onChartControlsChange: () => {},
+  }
+
+  sortLocalData = (response, columns, initialFormattedTableParams) => {
+    // Sort data if data is local (count_rows < TABULATOR_LOCAL_ROW_LIMIT)
+    // If initialFormattedTableParams.sorters exist, use those; otherwise sort by first visible column
+    if (
+      response?.data?.data?.count_rows < TABULATOR_LOCAL_ROW_LIMIT &&
+      columns &&
+      columns.length > 0 &&
+      response?.data?.data?.rows &&
+      response.data.data.rows.length > 0
+    ) {
+      const initialSorters = initialFormattedTableParams?.sorters || []
+
+      if (initialSorters.length > 0) {
+        // Sort by initial sorters
+        let sortedData = response.data.data.rows
+        for (const sorter of initialSorters) {
+          const columnIndex = columns.findIndex((col) => col.field === sorter.field)
+          if (columnIndex !== -1) {
+            sortedData = sortDataByColumn(sortedData, columns, columnIndex, sorter.dir || 'asc')
+          }
+        }
+        response.data.data.rows = sortedData
+      } else {
+        // Sort by first visible column ascending
+        const firstVisibleColumn = columns.find((col) => col.is_visible !== false)
+        if (firstVisibleColumn) {
+          const columnIndex = columns.findIndex((col) => col.field === firstVisibleColumn.field)
+          if (columnIndex !== -1) {
+            response.data.data.rows = sortDataByColumn(response.data.data.rows, columns, columnIndex, 'asc')
+          }
+        }
+      }
+    }
   }
 
   componentDidMount = () => {
