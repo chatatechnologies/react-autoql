@@ -70,7 +70,11 @@ export default class ChataTable extends React.Component {
     if (isNaN(this.totalPages) || !this.totalPages) {
       this.totalPages = 1
     }
-    this.useInfiniteScroll = props.useInfiniteScroll ?? !this.isLocal
+    if (props.useInfiniteScroll === false) {
+      this.useInfiniteScroll = false
+    } else {
+      this.useInfiniteScroll = !this.isLocal
+    }
 
     this.originalQueryData = _cloneDeep(props.response?.data?.data?.rows)
     if (props.pivot) {
