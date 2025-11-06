@@ -1357,7 +1357,9 @@ export class QueryOutput extends React.Component {
             })
           }
 
-          const allFilters = this.getCombinedFilters([clickedFilter])
+          // Handle array of filters (e.g., for network graph links with multiple filters)
+          const filtersToCombine = Array.isArray(clickedFilter) ? clickedFilter : [clickedFilter]
+          const allFilters = this.getCombinedFilters(filtersToCombine)
           let response
           try {
             response = await this.queryFn({ tableFilters: allFilters, pageSize })
@@ -1502,7 +1504,49 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  onChartClick = ({ row, columnIndex, columns, stringColumnIndex, legendColumn, activeKey, filter }) => {
+  onChartClick = ({
+    row,
+    columnIndex,
+    columns,
+    stringColumnIndex,
+    legendColumn,
+    activeKey,
+    filter,
+    filters,
+    stringColumnIndices,
+    rows,
+  }) => {
+    // Support for multiple filters (e.g., network graph links with source and target filters)
+    if (filters && Array.isArray(filters) && filters.length > 0) {
+      return this.processDrilldown({
+        supportedByAPI: false,
+        activeKey,
+        filter: filters,
+      })
+    }
+
+    // Support for multiple columns with rows (e.g., network graph links)
+    if (
+      stringColumnIndices &&
+      Array.isArray(stringColumnIndices) &&
+      rows &&
+      Array.isArray(rows) &&
+      stringColumnIndices.length === rows.length
+    ) {
+      const constructedFilters = stringColumnIndices.map((colIndex, i) => {
+        const row = rows[i]
+        return this.constructFilter({
+          column: this.state.columns[colIndex],
+          value: row[colIndex],
+        })
+      })
+      return this.processDrilldown({
+        supportedByAPI: false,
+        activeKey,
+        filter: constructedFilters,
+      })
+    }
+
     if (filter) {
       return this.processDrilldown({
         supportedByAPI: false,
