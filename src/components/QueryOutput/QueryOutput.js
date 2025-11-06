@@ -110,11 +110,7 @@ export class QueryOutput extends React.Component {
     this.columnDateRanges = getColumnDateRanges(response)
     this.queryID = this.queryResponse?.data?.data?.query_id
     this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
-    this.tableParams = {
-      sort: props?.initialTableParams?.sort || [],
-      filter: props?.initialTableParams?.filter || [],
-      page: 1,
-    }
+    this.tableParams = {}
     this.tableID = uuid()
     this.pivotTableID = uuid()
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
