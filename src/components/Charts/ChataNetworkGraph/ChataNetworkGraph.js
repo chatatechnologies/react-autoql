@@ -163,11 +163,23 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
             maximumFractionDigits: 4,
           }).format(Number(d.amountSent || 0))
 
-      const totalSentTitle = weightColumn?.display_name || 'Total Sent'
-      const senderLabel = sourceColumn?.display_name || 'Sender'
-      const receiverLabel = targetColumn?.display_name || 'Receiver'
+      const formattedAmountReceived = weightColumn
+        ? formatElement({
+            element: d.amountReceived || 0,
+            column: weightColumn,
+            config: formattingConfig,
+          })
+        : new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
+            maximumFractionDigits: 4,
+          }).format(Number(d.amountReceived || 0))
 
-      return `
+      const weightColumnName = weightColumn?.display_name || 'Amount'
+      const senderColumnName = sourceColumn?.display_name || 'Sender'
+      const receiverColumnName = targetColumn?.display_name || 'Receiver'
+      const senderLabel = senderColumnName
+      const receiverLabel = receiverColumnName
+
+      let tooltipContent = `
        <div>
          <strong>${d.name}</strong><br/>
          <br/>
@@ -175,14 +187,29 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
          ${d.isSender ? `✓ ${senderLabel}` : `✗ ${senderLabel}`}<br/>
          ${d.isReceiver ? `✓ ${receiverLabel}` : `✗ ${receiverLabel}`}<br/>
          <br/>
-         <strong>Total ${totalSentTitle}:</strong><br/>
+      `
+
+      // Add amount sent if node is a sender
+      if (d.isSender && d.amountSent > 0) {
+        tooltipContent += `<strong>Total ${weightColumnName} (${senderColumnName}):</strong><br/>
          ${formattedAmountSent}<br/>
-         <br/>
-         <strong>Network Stats:</strong><br/>
+         <br/>`
+      }
+
+      // Add amount received if node is a receiver
+      if (d.isReceiver && d.amountReceived > 0) {
+        tooltipContent += `<strong>Total ${weightColumnName} (${receiverColumnName}):</strong><br/>
+         ${formattedAmountReceived}<br/>
+         <br/>`
+      }
+
+      tooltipContent += `<strong>Network Stats:</strong><br/>
          Unique Connections: ${d.connections}<br/>
          Total Records: ${d.totalTransfers || 0}
        </div>
      `
+
+      return tooltipContent
     },
     [props.columns, props.dataFormatting, props.autoQLConfig],
   )
@@ -230,6 +257,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
           connections: 0,
           totalTransfers: 0,
           amountSent: 0,
+          amountReceived: 0,
           isSender: false, // Will be updated based on actual data
         })
         connectionCounts.set(source, new Set())
@@ -243,6 +271,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
           connections: 0,
           totalTransfers: 0,
           amountSent: 0,
+          amountReceived: 0,
           isSender: false, // Will be updated based on actual data
         })
         connectionCounts.set(target, new Set())
@@ -271,6 +300,9 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
       // Track amount sent per node
       nodeMap.get(source).amountSent += weight
+
+      // Track amount received per node
+      nodeMap.get(target).amountReceived += weight
 
       // Track total transfers (count of individual transactions)
       nodeMap.get(source).totalTransfers += 1
