@@ -384,6 +384,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       .selectAll('[data-tooltip-id]')
       .attr('data-tooltip-id', null)
       .attr('data-tooltip-html', null)
+      .attr('data-tooltip-float', null)
       .style('pointer-events', 'none')
 
     if (!event.active) simulationRef.current?.alphaTarget(0.4).restart()
@@ -414,7 +415,6 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         })
       svg
         .selectAll('.link')
-        .attr('data-tooltip-id', props.chartTooltipID)
         .style('pointer-events', 'all')
         .each(function (d) {
           // Restore the tooltip HTML for links
@@ -486,15 +486,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
   // Update visibility of nodes and links based on filters without recreating
   const updateVisibility = useCallback(() => {
-    console.log('[ChataNetworkGraph] updateVisibility called', {
-      showSenders,
-      showReceivers,
-      showBoth,
-      hasNodeSelection: !!nodeSelectionRef.current,
-      hasLinkSelection: !!linkSelectionRef.current,
-    })
     if (!nodeSelectionRef.current || !linkSelectionRef.current) {
-      console.log('[ChataNetworkGraph] updateVisibility: missing selections, returning')
       return
     }
 
@@ -520,19 +512,22 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       }
     })
 
-    // Update link visibility
-    linkSelectionRef.current.each(function (d) {
-      const sourceId = typeof d.source === 'object' ? d.source.id : d.source
-      const targetId = typeof d.target === 'object' ? d.target.id : d.target
-      const shouldShow = visibleNodeIds.has(sourceId) && visibleNodeIds.has(targetId)
+    // Update link visibility (both hover layer and visible links)
+    const svg = select(chartRef.current)
+    if (svg) {
+      svg.selectAll('line.link').each(function (d) {
+        const sourceId = typeof d.source === 'object' ? d.source.id : d.source
+        const targetId = typeof d.target === 'object' ? d.target.id : d.target
+        const shouldShow = visibleNodeIds.has(sourceId) && visibleNodeIds.has(targetId)
 
-      const linkElement = select(this)
-      if (shouldShow) {
-        linkElement.style('display', null)
-      } else {
-        linkElement.style('display', 'none')
-      }
-    })
+        const linkElement = select(this)
+        if (shouldShow) {
+          linkElement.style('display', null)
+        } else {
+          linkElement.style('display', 'none')
+        }
+      })
+    }
 
     // Don't restart simulation - just hide/show nodes to keep them still
   }, [showSenders, showReceivers, showBoth])
@@ -638,6 +633,14 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
               return `${originalStrokeWidth}px`
             })
           }
+
+          // Keep hover layer stroke width constant at 8 pixels regardless of zoom
+          // Actual stroke width = desired visual width / zoom scale
+          const hoverLayerVisualWidth = 8 // Always 8 pixels on screen
+          const svg = select(chartRef.current)
+          if (svg) {
+            svg.selectAll('line.hover-layer').style('stroke-width', `${hoverLayerVisualWidth / zoomScale}px`)
+          }
         })
 
       // Prevent scroll from bubbling to outer window
@@ -694,20 +697,33 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         d.originalStrokeWidth = 1
       })
 
-      const linkSelection = linkGroup
-        .selectAll('line')
+      // Create invisible hover layer for easier hovering when zoomed out
+      linkGroup
+        .selectAll('line.hover-layer')
         .data(links)
         .enter()
         .append('line')
-        .attr('class', (d) => `link ${d.edge_type}`)
+        .attr('class', (d) => `link hover-layer ${d.edge_type}`)
+        .style('stroke', 'transparent')
+        .style('stroke-width', '8') // Thicker invisible stroke for easier hovering
+        .style('pointer-events', 'all')
+        .style('cursor', 'pointer')
+        .attr('data-tooltip-id', props.chartTooltipID)
+        .attr('data-tooltip-float', true)
+        .attr('data-tooltip-html', generateLinkTooltipHTML)
+
+      // Create visible links on top
+      const linkSelection = linkGroup
+        .selectAll('line.visible-link')
+        .data(links)
+        .enter()
+        .append('line')
+        .attr('class', (d) => `link visible-link ${d.edge_type}`)
         .style('stroke', (d) => 'var(--react-autoql-text-color-placeholder)')
         .style('stroke-width', (d) => d.originalStrokeWidth)
         .style('outline', 'none')
-        .style('pointer-events', 'all')
-        .style('cursor', 'pointer')
+        .style('pointer-events', 'none') // Let hover layer handle pointer events
         .attr('marker-end', 'url(#arrowhead)')
-        .attr('data-tooltip-id', props.chartTooltipID)
-        .attr('data-tooltip-html', generateLinkTooltipHTML)
 
       linkSelectionRef.current = linkSelection
 
@@ -790,42 +806,72 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
       simulation.on('tick', () => {
         if (!linkSelectionRef.current) return
-        linkSelectionRef.current
+
+        // Function to calculate link endpoints
+        const getLinkCoords = (d) => {
+          const sourceRadius = getNodeRadius(d.source)
+          const targetRadius = getNodeRadius(d.target)
+          const dx = d.target.x - d.source.x
+          const dy = d.target.y - d.source.y
+          const distance = Math.sqrt(dx * dx + dy * dy)
+
+          if (distance === 0) {
+            return {
+              x1: d.source.x,
+              y1: d.source.y,
+              x2: d.target.x,
+              y2: d.target.y,
+            }
+          }
+
+          const sourceRatio = sourceRadius / distance
+          const targetRatio = targetRadius / distance
+
+          return {
+            x1: d.source.x + dx * sourceRatio,
+            y1: d.source.y + dy * sourceRatio,
+            x2: d.target.x - dx * targetRatio,
+            y2: d.target.y - dy * targetRatio,
+          }
+        }
+
+        // Update hover layer (invisible, thicker for easier hovering)
+        linkGroup
+          .selectAll('line.hover-layer')
           .attr('x1', (d) => {
-            const sourceRadius = getNodeRadius(d.source)
-            const dx = d.target.x - d.source.x
-            const dy = d.target.y - d.source.y
-            const distance = Math.sqrt(dx * dx + dy * dy)
-            if (distance === 0) return d.source.x
-            const ratio = sourceRadius / distance
-            return d.source.x + dx * ratio
+            const coords = getLinkCoords(d)
+            return coords.x1
           })
           .attr('y1', (d) => {
-            const sourceRadius = getNodeRadius(d.source)
-            const dx = d.target.x - d.source.x
-            const dy = d.target.y - d.source.y
-            const distance = Math.sqrt(dx * dx + dy * dy)
-            if (distance === 0) return d.source.y
-            const ratio = sourceRadius / distance
-            return d.source.y + dy * ratio
+            const coords = getLinkCoords(d)
+            return coords.y1
           })
           .attr('x2', (d) => {
-            const targetRadius = getNodeRadius(d.target)
-            const dx = d.source.x - d.target.x
-            const dy = d.source.y - d.target.y
-            const distance = Math.sqrt(dx * dx + dy * dy)
-            if (distance === 0) return d.target.x
-            const ratio = targetRadius / distance
-            return d.target.x + dx * ratio
+            const coords = getLinkCoords(d)
+            return coords.x2
           })
           .attr('y2', (d) => {
-            const targetRadius = getNodeRadius(d.target)
-            const dx = d.source.x - d.target.x
-            const dy = d.source.y - d.target.y
-            const distance = Math.sqrt(dx * dx + dy * dy)
-            if (distance === 0) return d.target.y
-            const ratio = targetRadius / distance
-            return d.target.y + dy * ratio
+            const coords = getLinkCoords(d)
+            return coords.y2
+          })
+
+        // Update visible links
+        linkSelectionRef.current
+          .attr('x1', (d) => {
+            const coords = getLinkCoords(d)
+            return coords.x1
+          })
+          .attr('y1', (d) => {
+            const coords = getLinkCoords(d)
+            return coords.y1
+          })
+          .attr('x2', (d) => {
+            const coords = getLinkCoords(d)
+            return coords.x2
+          })
+          .attr('y2', (d) => {
+            const coords = getLinkCoords(d)
+            return coords.y2
           })
 
         if (!nodeSelectionRef.current) return
@@ -1006,17 +1052,8 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
   // Update visibility when filters change (without recreating visualization)
   useEffect(() => {
-    console.log('[ChataNetworkGraph] Filter state changed', {
-      showSenders,
-      showReceivers,
-      showBoth,
-      hasNodeSelection: !!nodeSelectionRef.current,
-      hasLinkSelection: !!linkSelectionRef.current,
-    })
     if (nodeSelectionRef.current && linkSelectionRef.current) {
       updateVisibility()
-    } else {
-      console.log('[ChataNetworkGraph] Filter state changed but selections not ready')
     }
   }, [showSenders, showReceivers, showBoth, updateVisibility])
 
@@ -1028,14 +1065,12 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
     let mouseDownTarget = null
 
     const handleMouseDown = (event) => {
-      console.log('[ChataNetworkGraph] handleMouseDown fired', { target: event.target, tagName: event.target.tagName })
       mouseDownPos = { x: event.clientX, y: event.clientY }
       mouseDownTarget = event.target
     }
 
     const handleMouseUp = (event) => {
       if (!mouseDownPos || !mouseDownTarget) {
-        console.log('[ChataNetworkGraph] handleMouseUp: No mousedown data', { mouseDownPos, mouseDownTarget })
         return
       }
 
@@ -1043,14 +1078,8 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       const moveDistance = Math.sqrt(
         Math.pow(event.clientX - mouseDownPos.x, 2) + Math.pow(event.clientY - mouseDownPos.y, 2),
       )
-      console.log('[ChataNetworkGraph] handleMouseUp: Move distance', {
-        moveDistance,
-        target: event.target,
-        mouseDownTarget,
-      })
       if (moveDistance > 5) {
         // This was a drag, not a click
-        console.log('[ChataNetworkGraph] handleMouseUp: Detected drag, ignoring')
         mouseDownPos = null
         mouseDownTarget = null
         return
@@ -1058,19 +1087,12 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
       const svgElement = chartRef.current
       if (!svgElement) {
-        console.log('[ChataNetworkGraph] handleMouseUp: No SVG element')
         return
       }
 
       // Check if click is inside the SVG element
       const clickTarget = event.target
       const isInsideSVG = svgElement.contains(clickTarget) || svgElement === clickTarget
-      console.log('[ChataNetworkGraph] handleMouseUp: Click check', {
-        clickTarget,
-        isInsideSVG,
-        tagName: clickTarget.tagName,
-        className: clickTarget.getAttribute?.('class'),
-      })
 
       // Check if click is inside dropdown
       const checkElement = (el) => {
@@ -1091,10 +1113,6 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       for (let i = 0; i < 10 && current; i++) {
         if (checkElement(current)) {
           isInsideDropdown = true
-          console.log('[ChataNetworkGraph] handleMouseUp: Found dropdown element', {
-            current,
-            className: current.getAttribute?.('class'),
-          })
           break
         }
         current = current.parentElement || current.parentNode
@@ -1105,24 +1123,18 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
       // Don't close if clicking inside dropdown or filter button
       if (isInsideDropdown) {
-        console.log('[ChataNetworkGraph] handleMouseUp: Click inside dropdown, not closing')
         mouseDownPos = null
         mouseDownTarget = null
         return
       }
 
       // Close dropdown for any other click (inside SVG graph area or outside SVG)
-      console.log('[ChataNetworkGraph] handleMouseUp: Closing dropdown')
       setShowFilterDropdown(false)
       mouseDownPos = null
       mouseDownTarget = null
     }
 
     const handleClick = (event) => {
-      console.log('[ChataNetworkGraph] Document click handler fired', {
-        target: event.target,
-        tagName: event.target.tagName,
-      })
       const svgElement = chartRef.current
       if (!svgElement) return
 
@@ -1148,10 +1160,6 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       for (let i = 0; i < 10 && current; i++) {
         if (checkElement(current)) {
           isInsideDropdown = true
-          console.log('[ChataNetworkGraph] Document click: Found dropdown element', {
-            current,
-            className: current.getAttribute?.('class'),
-          })
           break
         }
         current = current.parentElement || current.parentNode
@@ -1161,7 +1169,6 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       }
 
       if (!isInsideDropdown && isInsideSVG) {
-        console.log('[ChataNetworkGraph] Document click: Closing dropdown')
         setShowFilterDropdown(false)
       }
     }
@@ -1203,7 +1210,6 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         }}
         onClick={(e) => {
           // Close dropdown when clicking on the graph (but not on buttons or dropdown)
-          console.log('[ChataNetworkGraph] SVG onClick fired', { target: e.target, tagName: e.target.tagName })
           const target = e.target
           const tagName = target.tagName?.toLowerCase()
           const className = target.getAttribute?.('class') || ''
@@ -1214,8 +1220,6 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
             className.includes('filter-button') ||
             className.includes('node-filter-button') ||
             className.includes('recenter-button')
-
-          console.log('[ChataNetworkGraph] SVG onClick: Check', { isButtonOrDropdown, tagName, className })
 
           // If clicking on graph elements (nodes, links, or SVG background) and not on buttons/dropdown, close dropdown
           if (
@@ -1238,10 +1242,6 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
                 currentClass.includes('recenter-button')
               ) {
                 isInsideButtonOrDropdown = true
-                console.log('[ChataNetworkGraph] SVG onClick: Found button/dropdown in parent chain', {
-                  current,
-                  currentClass,
-                })
                 break
               }
               current = current.parentElement || current.parentNode
@@ -1251,13 +1251,8 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
             }
 
             if (!isInsideButtonOrDropdown) {
-              console.log('[ChataNetworkGraph] SVG onClick: Closing dropdown')
               setShowFilterDropdown(false)
-            } else {
-              console.log('[ChataNetworkGraph] SVG onClick: Not closing, inside button/dropdown')
             }
-          } else {
-            console.log('[ChataNetworkGraph] SVG onClick: Not a graph element or is button/dropdown')
           }
         }}
       />
@@ -1306,7 +1301,6 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
                 strokeWidth='1'
                 opacity={0}
                 onClick={(e) => {
-                  console.log('[ChataNetworkGraph] Filter button clicked', { showFilterDropdown, event: e })
                   e.stopPropagation()
                   setShowFilterDropdown(!showFilterDropdown)
                 }}
@@ -1345,12 +1339,10 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
                     opacity={0}
                     pointerEvents='all'
                     onMouseDown={(e) => {
-                      console.log('[ChataNetworkGraph] Senders mousedown', { showSenders, event: e, target: e.target })
                       e.stopPropagation()
                       e.preventDefault()
                     }}
                     onClick={(e) => {
-                      console.log('[ChataNetworkGraph] Senders clicked', { showSenders, event: e, target: e.target })
                       e.stopPropagation()
                       e.preventDefault()
                       setShowSenders(!showSenders)
@@ -1381,20 +1373,10 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
                     opacity={0}
                     pointerEvents='all'
                     onMouseDown={(e) => {
-                      console.log('[ChataNetworkGraph] Receivers mousedown', {
-                        showReceivers,
-                        event: e,
-                        target: e.target,
-                      })
                       e.stopPropagation()
                       e.preventDefault()
                     }}
                     onClick={(e) => {
-                      console.log('[ChataNetworkGraph] Receivers clicked', {
-                        showReceivers,
-                        event: e,
-                        target: e.target,
-                      })
                       e.stopPropagation()
                       e.preventDefault()
                       setShowReceivers(!showReceivers)
@@ -1425,12 +1407,10 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
                     opacity={0}
                     pointerEvents='all'
                     onMouseDown={(e) => {
-                      console.log('[ChataNetworkGraph] Both mousedown', { showBoth, event: e, target: e.target })
                       e.stopPropagation()
                       e.preventDefault()
                     }}
                     onClick={(e) => {
-                      console.log('[ChataNetworkGraph] Both clicked', { showBoth, event: e, target: e.target })
                       e.stopPropagation()
                       e.preventDefault()
                       setShowBoth(!showBoth)
