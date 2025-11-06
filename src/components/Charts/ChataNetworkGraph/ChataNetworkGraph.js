@@ -350,17 +350,44 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         return
       }
 
-      // Skip if node is both sender and receiver
-      if (nodeData.isSender && nodeData.isReceiver) {
-        return
-      }
-
       if (!props.onChartClick) {
         return
       }
 
       const { sourceColumnIndex, targetColumnIndex } = findNetworkColumns(props.columns)
       if (sourceColumnIndex === -1 || targetColumnIndex === -1) {
+        return
+      }
+
+      // Use the raw value stored in the node data (exact value from original data, no formatting)
+      // This ensures the filter matches exactly with the database values
+      const rawNodeValue = nodeData.rawValue
+
+      if (rawNodeValue === null || rawNodeValue === undefined) {
+        console.warn('[ChataNetworkGraph] handleNodeClick: node missing rawValue', {
+          nodeId: nodeData.id,
+          nodeData,
+        })
+        return
+      }
+
+      // Special case: node is both sender and receiver - use OR filter
+      if (nodeData.isSender && nodeData.isReceiver) {
+        // Create two rows: one for source column, one for target column
+        const sourceRow = new Array(props.columns.length).fill(null)
+        sourceRow[sourceColumnIndex] = rawNodeValue
+
+        const targetRow = new Array(props.columns.length).fill(null)
+        targetRow[targetColumnIndex] = rawNodeValue
+
+        // Pass filters with OR flag to indicate they should be combined with OR logic
+        props.onChartClick({
+          stringColumnIndices: [sourceColumnIndex, targetColumnIndex],
+          rows: [sourceRow, targetRow],
+          columns: props.columns,
+          activeKey: `node-${nodeData.id}`,
+          useOrLogic: true, // Flag to indicate OR logic should be used
+        })
         return
       }
 
@@ -375,18 +402,6 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       }
 
       if (stringColumnIndex === -1) {
-        return
-      }
-
-      // Use the raw value stored in the node data (exact value from original data, no formatting)
-      // This ensures the filter matches exactly with the database values
-      const rawNodeValue = nodeData.rawValue
-
-      if (rawNodeValue === null || rawNodeValue === undefined) {
-        console.warn('[ChataNetworkGraph] handleNodeClick: node missing rawValue', {
-          nodeId: nodeData.id,
-          nodeData,
-        })
         return
       }
 

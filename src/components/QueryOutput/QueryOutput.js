@@ -1315,11 +1315,30 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  getFilterDrilldownWithOr = ({ stringColumnIndices, rows }) => {
+    try {
+      // Filter rows where ANY of the column/value pairs match (OR logic)
+      const filteredRows = this.tableData?.filter((origRow) => {
+        return stringColumnIndices.some((colIndex, i) => {
+          const row = rows[i]
+          return `${origRow[colIndex]}` === `${row[colIndex]}`
+        })
+      })
+
+      const drilldownResponse = _cloneDeep(this.queryResponse)
+      drilldownResponse.data.data.rows = filteredRows
+      drilldownResponse.data.data.count_rows = filteredRows.length
+      return drilldownResponse
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   cancelCurrentRequest = () => {
     this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
   }
 
-  processDrilldown = async ({ groupBys, supportedByAPI, row, activeKey, stringColumnIndex, filter }) => {
+  processDrilldown = async ({ groupBys, supportedByAPI, row, activeKey, stringColumnIndex, filter, useOrLogic }) => {
     if (getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns) {
       try {
         // This will be a new query so we want to reset the page size back to default
@@ -1357,21 +1376,37 @@ export class QueryOutput extends React.Component {
             })
           }
 
-          // Handle array of filters (e.g., for network graph links with multiple filters)
-          const filtersToCombine = Array.isArray(clickedFilter) ? clickedFilter : [clickedFilter]
-          const allFilters = this.getCombinedFilters(filtersToCombine)
           let response
-          try {
-            response = await this.queryFn({ tableFilters: allFilters, pageSize })
-          } catch (error) {
-            response = error
+          // If useOrLogic is true, filter client-side with OR logic
+          if (useOrLogic && clickedFilter?.useOrLogic && clickedFilter?.stringColumnIndices && clickedFilter?.rows) {
+            // For OR logic, filter client-side instead of sending to backend
+            // Use setTimeout to show loading state, just like other filter drilldowns
+            setTimeout(() => {
+              response = this.getFilterDrilldownWithOr({
+                stringColumnIndices: clickedFilter.stringColumnIndices,
+                rows: clickedFilter.rows,
+              })
+              this.props.onDrilldownEnd({
+                response,
+                originalQueryID: this.queryID,
+                drilldownFilters: [],
+              })
+            }, 800)
+          } else {
+            // Normal AND logic - combine filters and send to backend
+            const filtersToCombine = Array.isArray(clickedFilter) ? clickedFilter : [clickedFilter]
+            const allFilters = this.getCombinedFilters(filtersToCombine)
+            try {
+              response = await this.queryFn({ tableFilters: allFilters, pageSize })
+            } catch (error) {
+              response = error
+            }
+            this.props.onDrilldownEnd({
+              response,
+              originalQueryID: this.queryID,
+              drilldownFilters: allFilters,
+            })
           }
-
-          this.props.onDrilldownEnd({
-            response,
-            originalQueryID: this.queryID,
-            drilldownFilters: allFilters,
-          })
         }
       } catch (error) {
         console.error(error)
@@ -1432,6 +1467,7 @@ export class QueryOutput extends React.Component {
     // Include new filters if they exist
     if (newFilters && newFilters.length > 0) {
       newFilters.forEach((newFilter) => {
+        // Normal filter (AND logic)
         const existingFilterIndex = allFilters.findIndex((filter) => filter.name === newFilter.name)
         if (existingFilterIndex >= 0) {
           // Filter already exists, overwrite existing filter with new value
@@ -1515,6 +1551,7 @@ export class QueryOutput extends React.Component {
     filters,
     stringColumnIndices,
     rows,
+    useOrLogic,
   }) => {
     // Support for multiple filters (e.g., network graph links with source and target filters)
     if (filters && Array.isArray(filters) && filters.length > 0) {
@@ -1525,7 +1562,7 @@ export class QueryOutput extends React.Component {
       })
     }
 
-    // Support for multiple columns with rows (e.g., network graph links)
+    // Support for multiple columns with rows (e.g., network graph links, or nodes that are both sender and receiver)
     if (
       stringColumnIndices &&
       Array.isArray(stringColumnIndices) &&
@@ -1533,6 +1570,21 @@ export class QueryOutput extends React.Component {
       Array.isArray(rows) &&
       stringColumnIndices.length === rows.length
     ) {
+      // If useOrLogic is true, pass the data needed for client-side OR filtering
+      if (useOrLogic) {
+        return this.processDrilldown({
+          supportedByAPI: false,
+          activeKey,
+          filter: {
+            stringColumnIndices,
+            rows,
+            useOrLogic: true,
+          },
+          useOrLogic: true,
+        })
+      }
+
+      // Normal AND logic for links - construct filters and send to backend
       const constructedFilters = stringColumnIndices.map((colIndex, i) => {
         const row = rows[i]
         return this.constructFilter({
@@ -1544,6 +1596,7 @@ export class QueryOutput extends React.Component {
         supportedByAPI: false,
         activeKey,
         filter: constructedFilters,
+        useOrLogic: false,
       })
     }
 
