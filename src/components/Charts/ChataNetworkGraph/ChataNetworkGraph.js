@@ -4,11 +4,10 @@ import { select } from 'd3-selection'
 import { drag } from 'd3-drag'
 import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide } from 'd3-force'
 import { zoom, zoomIdentity } from 'd3-zoom'
-import { MdOutlineFitScreen } from 'react-icons/md'
-
+import { MdOutlineFitScreen, MdFilterList } from 'react-icons/md'
 import { findNetworkColumns, formatElement, getAutoQLConfig } from 'autoql-fe-utils'
-
 import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers'
+import { Tooltip } from '../../Tooltip'
 
 import './ChataNetworkGraph.scss'
 
@@ -23,6 +22,13 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
   const [nodes, setNodes] = useState([])
   const [links, setLinks] = useState([])
   const [simulation, setSimulation] = useState(null)
+  const [showSenders, setShowSenders] = useState(true)
+  const [showReceivers, setShowReceivers] = useState(true)
+  const [showBoth, setShowBoth] = useState(true)
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false)
+
+  const nodeSelectionRef = useRef(null)
+  const linkSelectionRef = useRef(null)
 
   // Suppress ResizeObserver loop errors (harmless warnings)
   useEffect(() => {
@@ -163,26 +169,53 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
             maximumFractionDigits: 4,
           }).format(Number(d.amountSent || 0))
 
-      const totalSentTitle = weightColumn?.display_name || 'Total Sent'
-      const senderLabel = sourceColumn?.display_name || 'Sender'
-      const receiverLabel = targetColumn?.display_name || 'Receiver'
+      const formattedAmountReceived = weightColumn
+        ? formatElement({
+            element: d.amountReceived || 0,
+            column: weightColumn,
+            config: formattingConfig,
+          })
+        : new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
+            maximumFractionDigits: 4,
+          }).format(Number(d.amountReceived || 0))
 
-      return `
+      const weightColumnName = weightColumn?.display_name || 'Amount'
+      const senderColumnName = sourceColumn?.display_name || 'Sender'
+      const receiverColumnName = targetColumn?.display_name || 'Receiver'
+      const senderLabel = senderColumnName
+      const receiverLabel = receiverColumnName
+
+      let tooltipContent = `
        <div>
-         <strong>${d.name}</strong><br/>
+         <strong>${d?.name || 'Unknown'}</strong><br/>
          <br/>
          <strong>Roles:</strong><br/>
-         ${d.isSender ? `✓ ${senderLabel}` : `✗ ${senderLabel}`}<br/>
-         ${d.isReceiver ? `✓ ${receiverLabel}` : `✗ ${receiverLabel}`}<br/>
+         ${d?.isSender ? `✓ ${senderLabel}` : `✗ ${senderLabel}`}<br/>
+         ${d?.isReceiver ? `✓ ${receiverLabel}` : `✗ ${receiverLabel}`}<br/>
          <br/>
-         <strong>Total ${totalSentTitle}:</strong><br/>
+      `
+
+      // Add amount sent if node is a sender
+      if (d?.isSender && d?.amountSent > 0) {
+        tooltipContent += `<strong>Total ${weightColumnName} (${senderColumnName}):</strong><br/>
          ${formattedAmountSent}<br/>
-         <br/>
-         <strong>Network Stats:</strong><br/>
-         Unique Connections: ${d.connections}<br/>
-         Total Records: ${d.totalTransfers || 0}
+         <br/>`
+      }
+
+      // Add amount received if node is a receiver
+      if (d?.isReceiver && d?.amountReceived > 0) {
+        tooltipContent += `<strong>Total ${weightColumnName} (${receiverColumnName}):</strong><br/>
+         ${formattedAmountReceived}<br/>
+         <br/>`
+      }
+
+      tooltipContent += `<strong>Network Stats:</strong><br/>
+         Unique Connections: ${d?.connections || 0}<br/>
+         Total Records: ${d?.totalTransfers || 0}
        </div>
      `
+
+      return tooltipContent
     },
     [props.columns, props.dataFormatting, props.autoQLConfig],
   )
@@ -222,14 +255,20 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       nodeRoles.get(source).isSender = true
       nodeRoles.get(target).isReceiver = true
 
+      // Store raw values for drilldown filtering (exact values from data, no formatting)
+      const rawSourceValue = row[sourceColumnIndex]
+      const rawTargetValue = row[targetColumnIndex]
+
       // Add source node
       if (!nodeMap.has(source)) {
         nodeMap.set(source, {
           id: source,
           name: source,
+          rawValue: rawSourceValue, // Store raw value for exact filter matching
           connections: 0,
           totalTransfers: 0,
           amountSent: 0,
+          amountReceived: 0,
           isSender: false, // Will be updated based on actual data
         })
         connectionCounts.set(source, new Set())
@@ -240,9 +279,11 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         nodeMap.set(target, {
           id: target,
           name: target,
+          rawValue: rawTargetValue, // Store raw value for exact filter matching
           connections: 0,
           totalTransfers: 0,
           amountSent: 0,
+          amountReceived: 0,
           isSender: false, // Will be updated based on actual data
         })
         connectionCounts.set(target, new Set())
@@ -259,18 +300,26 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         linkMap.get(edgeKey).weight += weight
         linkMap.get(edgeKey).count += 1
       } else {
+        // Store raw values for drilldown filtering (exact values from data, no formatting)
+        const sourceNode = nodeMap.get(source)
+        const targetNode = nodeMap.get(target)
         linkMap.set(edgeKey, {
           source,
           target,
+          sourceRawValue: sourceNode?.rawValue, // Store raw value for exact filter matching
+          targetRawValue: targetNode?.rawValue, // Store raw value for exact filter matching
           weight,
           count: 1,
           weight_category: getWeightCategory(weight),
-          edge_type: getEdgeType(source, target, nodeMap.get(source), nodeMap.get(target)),
+          edge_type: getEdgeType(source, target, sourceNode, targetNode),
         })
       }
 
       // Track amount sent per node
       nodeMap.get(source).amountSent += weight
+
+      // Track amount received per node
+      nodeMap.get(target).amountReceived += weight
 
       // Track total transfers (count of individual transactions)
       nodeMap.get(source).totalTransfers += 1
@@ -292,6 +341,143 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
     return { nodes, links }
   }, [])
+
+  // Helper function to handle node click (drilldown)
+  const handleNodeClick = useCallback(
+    (event, nodeData) => {
+      // Validate nodeData
+      if (!nodeData || !nodeData.id) {
+        return
+      }
+
+      if (!props.onChartClick) {
+        return
+      }
+
+      const { sourceColumnIndex, targetColumnIndex } = findNetworkColumns(props.columns)
+      if (sourceColumnIndex === -1 || targetColumnIndex === -1) {
+        return
+      }
+
+      // Use the raw value stored in the node data (exact value from original data, no formatting)
+      // This ensures the filter matches exactly with the database values
+      const rawNodeValue = nodeData.rawValue
+
+      if (rawNodeValue === null || rawNodeValue === undefined) {
+        console.warn('[ChataNetworkGraph] handleNodeClick: node missing rawValue', {
+          nodeId: nodeData.id,
+          nodeData,
+        })
+        return
+      }
+
+      // Special case: node is both sender and receiver - use OR filter
+      if (nodeData.isSender && nodeData.isReceiver) {
+        // Create two rows: one for source column, one for target column
+        const sourceRow = new Array(props.columns.length).fill(null)
+        sourceRow[sourceColumnIndex] = rawNodeValue
+
+        const targetRow = new Array(props.columns.length).fill(null)
+        targetRow[targetColumnIndex] = rawNodeValue
+
+        // Pass filters with OR flag to indicate they should be combined with OR logic
+        props.onChartClick({
+          stringColumnIndices: [sourceColumnIndex, targetColumnIndex],
+          rows: [sourceRow, targetRow],
+          columns: props.columns,
+          activeKey: `node-${nodeData.id}`,
+          useOrLogic: true, // Flag to indicate OR logic should be used
+        })
+        return
+      }
+
+      // Determine which column to use based on node role
+      let stringColumnIndex = -1
+      if (nodeData.isSender && !nodeData.isReceiver) {
+        // Node is only a sender - filter by source column
+        stringColumnIndex = sourceColumnIndex
+      } else if (nodeData.isReceiver && !nodeData.isSender) {
+        // Node is only a receiver - filter by target column
+        stringColumnIndex = targetColumnIndex
+      }
+
+      if (stringColumnIndex === -1) {
+        return
+      }
+
+      // Create a row with the exact raw node value at the correct column index
+      // No formatting, no trimming - use the exact value from the original data
+      const row = new Array(props.columns.length).fill(null)
+      row[stringColumnIndex] = rawNodeValue
+
+      // Use standard onChartClick pattern
+      props.onChartClick({
+        row,
+        columnIndex: stringColumnIndex,
+        columns: props.columns,
+        stringColumnIndex,
+        activeKey: `node-${nodeData.id}`,
+      })
+    },
+    [props.columns, props.onChartClick, props.data],
+  )
+
+  // Helper function to handle link click (drilldown)
+  const handleLinkClick = useCallback(
+    (event, linkData) => {
+      if (!props.onChartClick) {
+        return
+      }
+
+      const { sourceColumnIndex, targetColumnIndex } = findNetworkColumns(props.columns)
+      if (sourceColumnIndex === -1 || targetColumnIndex === -1) {
+        return
+      }
+
+      const sourceValue = typeof linkData.source === 'object' ? linkData.source.id : linkData.source
+      const targetValue = typeof linkData.target === 'object' ? linkData.target.id : linkData.target
+
+      // Use the raw values stored in the link data (exact values from original data, no formatting)
+      // This ensures the filter matches exactly with the database values
+      const sourceNode = typeof linkData.source === 'object' ? linkData.source : null
+      const targetNode = typeof linkData.target === 'object' ? linkData.target : null
+
+      const rawSourceValue = sourceNode?.rawValue || linkData.sourceRawValue
+      const rawTargetValue = targetNode?.rawValue || linkData.targetRawValue
+
+      if (
+        rawSourceValue === null ||
+        rawSourceValue === undefined ||
+        rawTargetValue === null ||
+        rawTargetValue === undefined
+      ) {
+        console.warn('[ChataNetworkGraph] handleLinkClick: missing raw values', {
+          sourceValue,
+          targetValue,
+          sourceNode,
+          targetNode,
+          linkData,
+        })
+        return
+      }
+
+      // Create rows with the exact raw values at the correct column indices
+      // No formatting, no trimming - use the exact values from the original data
+      const sourceRowForFilter = new Array(props.columns.length).fill(null)
+      sourceRowForFilter[sourceColumnIndex] = rawSourceValue
+
+      const targetRowForFilter = new Array(props.columns.length).fill(null)
+      targetRowForFilter[targetColumnIndex] = rawTargetValue
+
+      props.onChartClick({
+        stringColumnIndices: [sourceColumnIndex, targetColumnIndex],
+        rows: [sourceRowForFilter, targetRowForFilter],
+        columns: props.columns,
+        activeKey: `link-${sourceValue}-${targetValue}`,
+      })
+    },
+    [props.columns, props.onChartClick, props.data],
+  )
 
   // Helper functions
   const formatNodeName = useCallback((name) => {
@@ -325,27 +511,35 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
   }, [])
 
   const getNodeColor = useCallback((d) => {
+    // Add null check
+    if (!d) return '#28A745'
     // Nodes that are both sender and receiver get blue color
     if (d.isSender && d.isReceiver) return '#28A8E0' // Blue for both sender and receiver
     if (d.isSender) return '#DC3545' // Red for sender only
     return '#28A745' // Green for other nodes (receivers)
   }, [])
 
+  // Track drag state to distinguish clicks from drags
+  const dragStateRef = useRef({ isDragging: false, startPos: null, nodeData: null })
+
   // Drag event handlers
   const dragstarted = useCallback((event, d) => {
+    // Track drag start position and node data
+    dragStateRef.current = {
+      isDragging: false,
+      startPos: { x: event.x, y: event.y },
+      nodeData: d,
+    }
+
     // Disable dynamic zooming when user starts dragging
     if (window.userInteracting !== undefined) {
       window.userInteracting = true
       window.initialZooming = false
     }
 
-    // Disable all tooltips during drag
+    // Disable all tooltips during drag (only remove tooltip-id, keep HTML to avoid regeneration)
     const svg = select(chartRef.current)
-    svg
-      .selectAll('[data-tooltip-id]')
-      .attr('data-tooltip-id', null)
-      .attr('data-tooltip-html', null)
-      .style('pointer-events', 'none')
+    svg.selectAll('[data-tooltip-id]').attr('data-tooltip-id', null).style('pointer-events', 'none')
 
     if (!event.active) simulationRef.current?.alphaTarget(0.4).restart()
     d.fx = d.x
@@ -353,6 +547,15 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
   }, [])
 
   const dragged = useCallback((event, d) => {
+    // Check if mouse moved more than 5 pixels (indicating a drag, not a click)
+    if (dragStateRef.current.startPos) {
+      const moveDistance = Math.sqrt(
+        Math.pow(event.x - dragStateRef.current.startPos.x, 2) + Math.pow(event.y - dragStateRef.current.startPos.y, 2),
+      )
+      if (moveDistance > 5) {
+        dragStateRef.current.isDragging = true
+      }
+    }
     d.fx = event.x
     d.fy = event.y
   }, [])
@@ -361,34 +564,33 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
     (event, d) => {
       if (!event.active) simulationRef.current?.alphaTarget(0)
 
-      // Re-enable all tooltips after drag
-      const svg = select(chartRef.current)
-      svg
-        .selectAll('.node')
-        .attr('data-tooltip-id', props.chartTooltipID)
-        .style('pointer-events', 'all')
-        .each(function (d) {
-          // Restore the tooltip HTML for nodes
-          const node = select(this)
+      // Use the node data from the event (d) instead of dragStateRef
+      // If this was a click (not a drag), trigger drilldown
+      if (!dragStateRef.current.isDragging && d && d.id) {
+        // Stop event propagation to prevent link click handlers from firing
+        if (event.sourceEvent) {
+          event.sourceEvent.stopPropagation()
+        }
+        // Use setTimeout to ensure this happens after drag handlers complete
+        setTimeout(() => {
+          handleNodeClick(event, d)
+        }, 0)
+      }
 
-          node.attr('data-tooltip-html', generateNodeTooltipHTML(d))
-        })
-      svg
-        .selectAll('.link')
-        .attr('data-tooltip-id', props.chartTooltipID)
-        .style('pointer-events', 'all')
-        .each(function (d) {
-          // Restore the tooltip HTML for links
-          const link = select(this)
-          link.attr('data-tooltip-html', generateLinkTooltipHTML(d))
-        })
+      // Reset drag state
+      dragStateRef.current = { isDragging: false, startPos: null, nodeData: null }
+
+      // Re-enable all tooltips after drag (restore tooltip-id, HTML was preserved)
+      const svg = select(chartRef.current)
+      svg.selectAll('.node').attr('data-tooltip-id', props.chartTooltipID).style('pointer-events', 'all')
+      svg.selectAll('.link.hover-layer').attr('data-tooltip-id', props.chartTooltipID).style('pointer-events', 'all')
 
       // Mark user interaction complete so future auto-stop applies only to initial animation
       if (window.userInteracting !== undefined) {
         window.userInteracting = false
       }
     },
-    [props.chartTooltipID],
+    [props.chartTooltipID, handleNodeClick],
   )
 
   // Function to calculate initial scale based on node count and available space
@@ -444,6 +646,56 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
     },
     [getNodeRadius],
   )
+
+  // Update visibility of nodes and links based on filters without recreating
+  const updateVisibility = useCallback(() => {
+    if (!nodeSelectionRef.current || !linkSelectionRef.current) {
+      return
+    }
+
+    const visibleNodeIds = new Set()
+
+    // Update node visibility
+    nodeSelectionRef.current.each(function (d) {
+      // Add null check
+      if (!d) return
+      const isSenderOnly = d.isSender && !d.isReceiver
+      const isReceiverOnly = d.isReceiver && !d.isSender
+      const isBoth = d.isSender && d.isReceiver
+
+      let shouldShow = false
+      if (isBoth) shouldShow = showBoth
+      else if (isSenderOnly) shouldShow = showSenders
+      else if (isReceiverOnly) shouldShow = showReceivers
+
+      const nodeElement = select(this)
+      if (shouldShow) {
+        nodeElement.style('display', null)
+        visibleNodeIds.add(d.id)
+      } else {
+        nodeElement.style('display', 'none')
+      }
+    })
+
+    // Update link visibility (both hover layer and visible links)
+    const svg = select(chartRef.current)
+    if (svg) {
+      svg.selectAll('line.link').each(function (d) {
+        const sourceId = typeof d.source === 'object' ? d.source.id : d.source
+        const targetId = typeof d.target === 'object' ? d.target.id : d.target
+        const shouldShow = visibleNodeIds.has(sourceId) && visibleNodeIds.has(targetId)
+
+        const linkElement = select(this)
+        if (shouldShow) {
+          linkElement.style('display', null)
+        } else {
+          linkElement.style('display', 'none')
+        }
+      })
+    }
+
+    // Don't restart simulation - just hide/show nodes to keep them still
+  }, [showSenders, showReceivers, showBoth])
 
   // Create network visualization
   const createNetworkVisualization = useCallback(() => {
@@ -513,6 +765,47 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
           // Simply apply the D3 zoom transform directly
           container.attr('transform', event.transform)
+
+          // Ensure nodes have minimum visual size of 1px radius
+          // Visual radius = actualRadius * zoomScale
+          // If visualRadius < 1, we need actualRadius >= 1 / zoomScale
+          const minVisualRadius = 1.0 // 1px radius
+          const zoomScale = event.transform.k
+          if (nodeSelectionRef.current) {
+            nodeSelectionRef.current.attr('r', (d) => {
+              const originalRadius = d.originalRadius || getNodeRadius(d)
+              const visualRadius = originalRadius * zoomScale
+              // If visual size would be less than minimum, increase actual radius
+              if (visualRadius < minVisualRadius) {
+                return minVisualRadius / zoomScale
+              }
+              return originalRadius
+            })
+          }
+
+          // Ensure links have minimum visual stroke width of 0.5px
+          // Visual stroke width = actualStrokeWidth * zoomScale
+          // If visualStrokeWidth < 0.5, we need actualStrokeWidth >= 0.5 / zoomScale
+          const minVisualStrokeWidth = 0.5 // 0.5px stroke width
+          if (linkSelectionRef.current) {
+            linkSelectionRef.current.style('stroke-width', (d) => {
+              const originalStrokeWidth = d.originalStrokeWidth || 1
+              const visualStrokeWidth = originalStrokeWidth * zoomScale
+              // If visual size would be less than minimum, increase actual stroke width
+              if (visualStrokeWidth < minVisualStrokeWidth) {
+                return `${minVisualStrokeWidth / zoomScale}px`
+              }
+              return `${originalStrokeWidth}px`
+            })
+          }
+
+          // Keep hover layer stroke width constant at 8 pixels regardless of zoom
+          // Actual stroke width = desired visual width / zoom scale
+          const hoverLayerVisualWidth = 8 // Always 8 pixels on screen
+          const svg = select(chartRef.current)
+          if (svg) {
+            svg.selectAll('line.hover-layer').style('stroke-width', `${hoverLayerVisualWidth / zoomScale}px`)
+          }
         })
 
       // Prevent scroll from bubbling to outer window
@@ -564,39 +857,89 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       // Create links
       const linkGroup = container.append('g').attr('class', 'links')
 
-      const link = linkGroup
-        .selectAll('line')
+      // Store original stroke width in link data
+      links.forEach((d) => {
+        d.originalStrokeWidth = 1
+      })
+
+      // Create invisible hover layer for easier hovering when zoomed out
+      linkGroup
+        .selectAll('line.hover-layer')
         .data(links)
         .enter()
         .append('line')
-        .attr('class', (d) => `link ${d.edge_type}`)
-        .style('stroke', (d) => 'var(--react-autoql-text-color-placeholder)')
-        .style('stroke-width', 1)
-        .style('outline', 'none')
+        .attr('class', (d) => `link hover-layer ${d.edge_type}`)
+        .style('stroke', 'transparent')
+        .style('stroke-width', '8') // Thicker invisible stroke for easier hovering
         .style('pointer-events', 'all')
         .style('cursor', 'pointer')
-        .attr('marker-end', 'url(#arrowhead)')
+        .style('outline', 'none')
         .attr('data-tooltip-id', props.chartTooltipID)
+        .attr('data-tooltip-float', true)
         .attr('data-tooltip-html', generateLinkTooltipHTML)
+        .on('click', function (event, d) {
+          // Check if the click target is actually a node (nodes should take priority)
+          const target = event.target
+          // If the click target is a circle (node), don't handle the link click
+          if (target.tagName === 'circle' || target.classList.contains('node')) {
+            return
+          }
+          event.stopPropagation()
+          handleLinkClick(event, d)
+        })
+
+      // Create visible links on top
+      const linkSelection = linkGroup
+        .selectAll('line.visible-link')
+        .data(links)
+        .enter()
+        .append('line')
+        .attr('class', (d) => `link visible-link ${d.edge_type}`)
+        .style('stroke', (d) => 'var(--react-autoql-text-color-placeholder)')
+        .style('stroke-width', (d) => d.originalStrokeWidth)
+        .style('outline', 'none')
+        .style('pointer-events', 'none') // Let hover layer handle pointer events
+        .attr('marker-end', 'url(#arrowhead)')
+
+      linkSelectionRef.current = linkSelection
 
       // Create nodes
       const nodeGroup = container.append('g').attr('class', 'nodes')
 
-      const node = nodeGroup
+      // Store original radius in node data
+      nodes.forEach((d) => {
+        d.originalRadius = getNodeRadius(d)
+      })
+
+      const nodeSelection = nodeGroup
         .selectAll('circle')
         .data(nodes)
         .enter()
         .append('circle')
         .attr('class', 'node')
-        .attr('r', (d) => getNodeRadius(d))
+        .attr('r', (d) => d.originalRadius)
         .style('fill', (d) => getNodeColor(d))
         .style('stroke', '#fff')
         .style('stroke-width', '1.5px')
-        .style('cursor', 'move')
+        .style('cursor', (d) => {
+          // Only show pointer cursor for nodes that can be clicked (not both sender and receiver)
+          if (!d) return 'move'
+          if (d.isSender && d.isReceiver) {
+            return 'move'
+          }
+          return 'pointer'
+        })
         .style('outline', 'none')
+        .style('pointer-events', 'all')
         .attr('data-tooltip-id', props.chartTooltipID)
         .attr('data-tooltip-html', generateNodeTooltipHTML)
+        .on('click', function (event, d) {
+          // Stop propagation to prevent link clicks from firing
+          event.stopPropagation()
+        })
         .call(drag().on('start', dragstarted).on('drag', dragged).on('end', dragended))
+
+      nodeSelectionRef.current = nodeSelection
 
       // Set initial positions spread out in a reasonable area
       const spreadRadius = Math.min(chartWidth, chartHeight) * 0.2 // Reasonable spread
@@ -618,6 +961,9 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       // This prevents jumps on the first zoom
       const initialZoomTransform = zoomIdentity.translate(deltaX || 0, deltaY || 0).scale(initialScale)
       svg.call(zoomBehavior.transform, initialZoomTransform)
+
+      // Set initial visibility based on filters
+      updateVisibility()
 
       // Add background rectangle for panning (after positioning is set)
       const background = svg
@@ -647,45 +993,77 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       const MAX_CONSECUTIVE_SLOW_TICKS = 60 // e.g., ~1s at 60fps
 
       simulation.on('tick', () => {
-        link
+        if (!linkSelectionRef.current) return
+
+        // Function to calculate link endpoints
+        const getLinkCoords = (d) => {
+          const sourceRadius = getNodeRadius(d.source)
+          const targetRadius = getNodeRadius(d.target)
+          const dx = d.target.x - d.source.x
+          const dy = d.target.y - d.source.y
+          const distance = Math.sqrt(dx * dx + dy * dy)
+
+          if (distance === 0) {
+            return {
+              x1: d.source.x,
+              y1: d.source.y,
+              x2: d.target.x,
+              y2: d.target.y,
+            }
+          }
+
+          const sourceRatio = sourceRadius / distance
+          const targetRatio = targetRadius / distance
+
+          return {
+            x1: d.source.x + dx * sourceRatio,
+            y1: d.source.y + dy * sourceRatio,
+            x2: d.target.x - dx * targetRatio,
+            y2: d.target.y - dy * targetRatio,
+          }
+        }
+
+        // Update hover layer (invisible, thicker for easier hovering)
+        linkGroup
+          .selectAll('line.hover-layer')
           .attr('x1', (d) => {
-            const sourceRadius = getNodeRadius(d.source)
-            const dx = d.target.x - d.source.x
-            const dy = d.target.y - d.source.y
-            const distance = Math.sqrt(dx * dx + dy * dy)
-            if (distance === 0) return d.source.x
-            const ratio = sourceRadius / distance
-            return d.source.x + dx * ratio
+            const coords = getLinkCoords(d)
+            return coords.x1
           })
           .attr('y1', (d) => {
-            const sourceRadius = getNodeRadius(d.source)
-            const dx = d.target.x - d.source.x
-            const dy = d.target.y - d.source.y
-            const distance = Math.sqrt(dx * dx + dy * dy)
-            if (distance === 0) return d.source.y
-            const ratio = sourceRadius / distance
-            return d.source.y + dy * ratio
+            const coords = getLinkCoords(d)
+            return coords.y1
           })
           .attr('x2', (d) => {
-            const targetRadius = getNodeRadius(d.target)
-            const dx = d.source.x - d.target.x
-            const dy = d.source.y - d.target.y
-            const distance = Math.sqrt(dx * dx + dy * dy)
-            if (distance === 0) return d.target.x
-            const ratio = targetRadius / distance
-            return d.target.x + dx * ratio
+            const coords = getLinkCoords(d)
+            return coords.x2
           })
           .attr('y2', (d) => {
-            const targetRadius = getNodeRadius(d.target)
-            const dx = d.source.x - d.target.x
-            const dy = d.source.y - d.target.y
-            const distance = Math.sqrt(dx * dx + dy * dy)
-            if (distance === 0) return d.target.y
-            const ratio = targetRadius / distance
-            return d.target.y + dy * ratio
+            const coords = getLinkCoords(d)
+            return coords.y2
           })
 
-        node.attr('cx', (d) => d.x).attr('cy', (d) => d.y)
+        // Update visible links
+        linkSelectionRef.current
+          .attr('x1', (d) => {
+            const coords = getLinkCoords(d)
+            return coords.x1
+          })
+          .attr('y1', (d) => {
+            const coords = getLinkCoords(d)
+            return coords.y1
+          })
+          .attr('x2', (d) => {
+            const coords = getLinkCoords(d)
+            return coords.x2
+          })
+          .attr('y2', (d) => {
+            const coords = getLinkCoords(d)
+            return coords.y2
+          })
+
+        if (!nodeSelectionRef.current) return
+        nodeSelectionRef.current.attr('cx', (d) => d.x).attr('cy', (d) => d.y)
 
         // Dynamic zooming during initial simulation to keep everything in view
         if (window.initialZooming && !window.userInteracting && simulation.alpha() > 0.1) {
@@ -787,6 +1165,11 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
     dragended,
     calculateInitialScale,
     createBoundaryForce,
+    updateVisibility,
+    handleLinkClick,
+    handleNodeClick,
+    generateNodeTooltipHTML,
+    generateLinkTooltipHTML,
   ])
 
   // Destroy visualization
@@ -859,6 +1242,145 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
     }
   }, [nodes, links, createNetworkVisualization])
 
+  // Update visibility when filters change (without recreating visualization)
+  useEffect(() => {
+    if (nodeSelectionRef.current && linkSelectionRef.current) {
+      updateVisibility()
+    }
+  }, [showSenders, showReceivers, showBoth, updateVisibility])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!showFilterDropdown) return
+
+    let mouseDownPos = null
+    let mouseDownTarget = null
+
+    const handleMouseDown = (event) => {
+      mouseDownPos = { x: event.clientX, y: event.clientY }
+      mouseDownTarget = event.target
+    }
+
+    const handleMouseUp = (event) => {
+      if (!mouseDownPos || !mouseDownTarget) {
+        return
+      }
+
+      // Check if this was a click (mouse moved less than 5px) vs a drag
+      const moveDistance = Math.sqrt(
+        Math.pow(event.clientX - mouseDownPos.x, 2) + Math.pow(event.clientY - mouseDownPos.y, 2),
+      )
+      if (moveDistance > 5) {
+        // This was a drag, not a click
+        mouseDownPos = null
+        mouseDownTarget = null
+        return
+      }
+
+      const svgElement = chartRef.current
+      if (!svgElement) {
+        return
+      }
+
+      // Check if click is inside the SVG element
+      const clickTarget = event.target
+      const isInsideSVG = svgElement.contains(clickTarget) || svgElement === clickTarget
+
+      // Check if click is inside dropdown
+      const checkElement = (el) => {
+        if (!el) return false
+        const className = el.getAttribute?.('class') || ''
+        return (
+          className.includes('filter-dropdown') ||
+          className.includes('filter-dropdown-item-rect') ||
+          className.includes('filter-dropdown-item-text') ||
+          className.includes('filter-dropdown-background') ||
+          className.includes('filter-button') ||
+          className.includes('node-filter-button')
+        )
+      }
+
+      let current = clickTarget
+      let isInsideDropdown = false
+      for (let i = 0; i < 10 && current; i++) {
+        if (checkElement(current)) {
+          isInsideDropdown = true
+          break
+        }
+        current = current.parentElement || current.parentNode
+        if (current === svgElement) {
+          break
+        }
+      }
+
+      // Don't close if clicking inside dropdown or filter button
+      if (isInsideDropdown) {
+        mouseDownPos = null
+        mouseDownTarget = null
+        return
+      }
+
+      // Close dropdown for any other click (inside SVG graph area or outside SVG)
+      setShowFilterDropdown(false)
+      mouseDownPos = null
+      mouseDownTarget = null
+    }
+
+    const handleClick = (event) => {
+      const svgElement = chartRef.current
+      if (!svgElement) return
+
+      const clickTarget = event.target
+      const isInsideSVG = svgElement.contains(clickTarget) || svgElement === clickTarget
+
+      // Check if click is inside dropdown
+      const checkElement = (el) => {
+        if (!el) return false
+        const className = el.getAttribute?.('class') || ''
+        return (
+          className.includes('filter-dropdown') ||
+          className.includes('filter-dropdown-item-rect') ||
+          className.includes('filter-dropdown-item-text') ||
+          className.includes('filter-dropdown-background') ||
+          className.includes('filter-button') ||
+          className.includes('node-filter-button')
+        )
+      }
+
+      let current = clickTarget
+      let isInsideDropdown = false
+      for (let i = 0; i < 10 && current; i++) {
+        if (checkElement(current)) {
+          isInsideDropdown = true
+          break
+        }
+        current = current.parentElement || current.parentNode
+        if (current === svgElement) {
+          break
+        }
+      }
+
+      if (!isInsideDropdown && isInsideSVG) {
+        setShowFilterDropdown(false)
+      }
+    }
+
+    // Use a small delay to avoid closing immediately when opening
+    const timeoutId = setTimeout(() => {
+      // Use capture phase to catch events before they're handled by zoom behavior
+      document.addEventListener('mousedown', handleMouseDown, true)
+      document.addEventListener('mouseup', handleMouseUp, true)
+      document.addEventListener('click', handleClick, true)
+    }, 100)
+
+    return () => {
+      clearTimeout(timeoutId)
+      document.removeEventListener('mousedown', handleMouseDown, true)
+      document.removeEventListener('mouseup', handleMouseUp, true)
+      document.removeEventListener('click', handleClick, true)
+    }
+  }, [showFilterDropdown])
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -878,16 +1400,56 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         style={{
           background: 'var(--react-autoql-background-color-secondary, #f9f9f9)',
         }}
+        onClick={(e) => {
+          // Close dropdown when clicking on the graph (but not on buttons or dropdown)
+          const target = e.target
+          const tagName = target.tagName?.toLowerCase()
+          const className = target.getAttribute?.('class') || ''
+
+          // Check if click is on a button or dropdown element
+          const isButtonOrDropdown =
+            className.includes('filter-dropdown') ||
+            className.includes('filter-button') ||
+            className.includes('node-filter-button') ||
+            className.includes('recenter-button')
+
+          // If clicking on graph elements (nodes, links, or SVG background) and not on buttons/dropdown, close dropdown
+          if (
+            !isButtonOrDropdown &&
+            (target === chartRef.current ||
+              target.tagName === 'svg' ||
+              tagName === 'circle' ||
+              tagName === 'line' ||
+              tagName === 'g')
+          ) {
+            // Double-check by walking up the parent chain to make sure we're not inside a button/dropdown
+            let current = target
+            let isInsideButtonOrDropdown = false
+            for (let i = 0; i < 10 && current; i++) {
+              const currentClass = current.getAttribute?.('class') || ''
+              if (
+                currentClass.includes('filter-dropdown') ||
+                currentClass.includes('filter-button') ||
+                currentClass.includes('node-filter-button') ||
+                currentClass.includes('recenter-button')
+              ) {
+                isInsideButtonOrDropdown = true
+                break
+              }
+              current = current.parentElement || current.parentNode
+              if (current === chartRef.current) {
+                break
+              }
+            }
+
+            if (!isInsideButtonOrDropdown) {
+              setShowFilterDropdown(false)
+            }
+          }
+        }}
       />
       {/* Recenter button as SVG element */}
-      <g
-        onClick={recenter}
-        style={{ cursor: 'pointer', outline: 'none' }}
-        className='recenter-button'
-        transform={`translate(${(props.width || 600) - 50}, 10)`}
-        data-tooltip-id={props.chartTooltipID}
-        data-tooltip-html='Fit to screen'
-      >
+      <g className='recenter-button' transform={`translate(${(props.width || 600) - 50}, 10)`}>
         <rect
           className='recenter-button-rect'
           width='30'
@@ -895,12 +1457,178 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
           rx='4'
           strokeWidth='1'
           opacity={0} // Use opacity 0 so it doesnt show in the exported PNG
+          onClick={recenter}
+          data-tooltip-id={props.chartTooltipID}
+          data-tooltip-html='Fit to screen'
         />
         <g transform='translate(5, 5)'>
           {/* Use opacity 0 so it doesnt show in the exported PNG */}
           <MdOutlineFitScreen className='recenter-button-icon' size={20} style={{ opacity: 0 }} />
         </g>
       </g>
+      {/* Filter button with dropdown */}
+      {(() => {
+        const { sourceColumnIndex, targetColumnIndex } = findNetworkColumns(props.columns)
+        const sourceColumn = sourceColumnIndex !== -1 ? props.columns[sourceColumnIndex] : null
+        const targetColumn = targetColumnIndex !== -1 ? props.columns[targetColumnIndex] : null
+        const senderLabel = sourceColumn?.display_name || 'Sender'
+        const receiverLabel = targetColumn?.display_name || 'Receiver'
+        const chartWidth = props.width || 600
+        const buttonX = chartWidth - 50
+        const buttonY = 45 // Right under the recenter button (10 + 30 + 5)
+        const buttonSize = 30
+        const dropdownWidth = 140
+        const dropdownItemHeight = 28
+        const dropdownY = buttonY + buttonSize + 5
+
+        return (
+          <g className='node-filter-button'>
+            {/* Filter button */}
+            <g className='filter-button' transform={`translate(${buttonX}, ${buttonY})`}>
+              <rect
+                className='filter-button-rect'
+                width={buttonSize}
+                height={buttonSize}
+                rx='4'
+                strokeWidth='1'
+                opacity={0}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowFilterDropdown(!showFilterDropdown)
+                }}
+                data-tooltip-id={props.chartTooltipID}
+                data-tooltip-html='Filter nodes'
+              />
+              <g transform='translate(5, 5)'>
+                <MdFilterList className='filter-button-icon' size={20} style={{ opacity: 0 }} />
+              </g>
+            </g>
+            {/* Dropdown menu */}
+            {showFilterDropdown && (
+              <g
+                className='filter-dropdown'
+                transform={`translate(${buttonX - dropdownWidth + buttonSize}, ${dropdownY})`}
+              >
+                <rect
+                  className='filter-dropdown-background'
+                  width={dropdownWidth}
+                  height={dropdownItemHeight * 3 + 8}
+                  rx='4'
+                  fill='var(--react-autoql-background-color-secondary)'
+                  stroke='var(--react-autoql-border-color)'
+                  strokeWidth='1'
+                  opacity={0}
+                  onClick={(e) => e.stopPropagation()}
+                />
+                {/* Senders option */}
+                <g transform={`translate(4, 4)`}>
+                  <rect
+                    className={`filter-dropdown-item-rect ${showSenders ? 'filter-dropdown-item-selected' : ''}`}
+                    width={dropdownWidth - 8}
+                    height={dropdownItemHeight}
+                    rx='2'
+                    fill={showSenders ? 'var(--react-autoql-hover-color)' : 'transparent'}
+                    opacity={0}
+                    pointerEvents='all'
+                    onMouseDown={(e) => {
+                      e.stopPropagation()
+                      e.preventDefault()
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      e.preventDefault()
+                      setShowSenders(!showSenders)
+                    }}
+                  />
+                  <text
+                    className='filter-dropdown-item-text'
+                    x={8}
+                    y={dropdownItemHeight / 2}
+                    dominantBaseline='middle'
+                    fill='var(--react-autoql-text-color-primary)'
+                    fontSize='12'
+                    opacity={0}
+                    pointerEvents='none'
+                  >
+                    <tspan x={8}>{showSenders ? '✓' : ' '}</tspan>
+                    <tspan x={20}>{senderLabel}s</tspan>
+                  </text>
+                </g>
+                {/* Receivers option */}
+                <g transform={`translate(4, ${4 + dropdownItemHeight})`}>
+                  <rect
+                    className={`filter-dropdown-item-rect ${showReceivers ? 'filter-dropdown-item-selected' : ''}`}
+                    width={dropdownWidth - 8}
+                    height={dropdownItemHeight}
+                    rx='2'
+                    fill={showReceivers ? 'var(--react-autoql-hover-color)' : 'transparent'}
+                    opacity={0}
+                    pointerEvents='all'
+                    onMouseDown={(e) => {
+                      e.stopPropagation()
+                      e.preventDefault()
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      e.preventDefault()
+                      setShowReceivers(!showReceivers)
+                    }}
+                  />
+                  <text
+                    className='filter-dropdown-item-text'
+                    x={8}
+                    y={dropdownItemHeight / 2}
+                    dominantBaseline='middle'
+                    fill='var(--react-autoql-text-color-primary)'
+                    fontSize='12'
+                    opacity={0}
+                    pointerEvents='none'
+                  >
+                    <tspan x={8}>{showReceivers ? '✓' : ' '}</tspan>
+                    <tspan x={20}>{receiverLabel}s</tspan>
+                  </text>
+                </g>
+                {/* Both option */}
+                <g transform={`translate(4, ${4 + dropdownItemHeight * 2})`}>
+                  <rect
+                    className={`filter-dropdown-item-rect ${showBoth ? 'filter-dropdown-item-selected' : ''}`}
+                    width={dropdownWidth - 8}
+                    height={dropdownItemHeight}
+                    rx='2'
+                    fill={showBoth ? 'var(--react-autoql-hover-color)' : 'transparent'}
+                    opacity={0}
+                    pointerEvents='all'
+                    onMouseDown={(e) => {
+                      e.stopPropagation()
+                      e.preventDefault()
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      e.preventDefault()
+                      setShowBoth(!showBoth)
+                    }}
+                  />
+                  <text
+                    className='filter-dropdown-item-text'
+                    x={8}
+                    y={dropdownItemHeight / 2}
+                    dominantBaseline='middle'
+                    fill='var(--react-autoql-text-color-primary)'
+                    fontSize='12'
+                    opacity={0}
+                    pointerEvents='none'
+                  >
+                    <tspan x={8}>{showBoth ? '✓' : ' '}</tspan>
+                    <tspan x={20}>Both</tspan>
+                  </text>
+                </g>
+              </g>
+            )}
+          </g>
+        )
+      })()}
+      {/* Separate tooltip IDs for nodes and links to avoid conflicts with float prop */}
+      <Tooltip tooltipId={`${props.chartTooltipID}-links`} float={true} />
     </g>
   )
 })

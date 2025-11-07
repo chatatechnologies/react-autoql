@@ -3,9 +3,15 @@
   stroke-width: 1px;
   stroke: var(--react-autoql-border-color);
   fill: var(--react-autoql-background-color-secondary);
+  cursor: pointer;
+  outline: none;
 
   &:hover {
     stroke: var(--react-autoql-accent-color);
+  }
+
+  &:focus {
+    outline: none;
   }
 }
 
@@ -17,4 +23,57 @@
 .recenter-button-rect {
   opacity: 1 !important;
   transition: all 0.2s ease;
+}
+
+.filter-button-rect {
+  box-shadow: 0px 2px 3px -2px var(--react-autoql-box-shadow-color);
+  stroke-width: 1px;
+  stroke: var(--react-autoql-border-color);
+  fill: var(--react-autoql-background-color-secondary);
+  cursor: pointer;
+  outline: none;
+
+  &:hover {
+    stroke: var(--react-autoql-accent-color);
+  }
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.filter-button-icon {
+  pointer-events: none;
+  color: var(--react-autoql-text-color-primary);
+}
+
+.filter-button-icon,
+.filter-button-rect {
+  opacity: 1 !important;
+  transition: all 0.2s ease;
+}
+
+.filter-dropdown-background {
+  filter: drop-shadow(0px 2px 8px rgba(0, 0, 0, 0.15));
+}
+
+.filter-dropdown-item-rect {
+  cursor: pointer;
+  pointer-events: all;
+  transition: fill 0.2s ease;
+
+  &:hover {
+    fill: var(--react-autoql-hover-color) !important;
+  }
+}
+
+.filter-dropdown-item-text {
+  pointer-events: none;
+  user-select: none;
+}
+
+.filter-dropdown-background,
+.filter-dropdown-item-rect,
+.filter-dropdown-item-text {
+  opacity: 1 !important;
 }
