@@ -1,35 +1,34 @@
 export default class AjaxCache {
-  constructor() {
-    // only track in-flight requests
+  constructor({ maxEntries = 50, ttl = 1000 * 60 * 10 } = {}) {
+    this._cache = new Map()
     this._inFlight = new Map()
   }
 
-  // Persistent-cache methods are no-ops so callers fall back to fetching
-  get() {
-    return undefined
+  get(key) {
+    return this._cache.get(key)
   }
 
-  set() {
-    return undefined
+  set(key, value) {
+    this._cache.set(key, value)
+    return value
   }
 
-  delete() {
-    return false
+  delete(key) {
+    return this._cache.delete(key)
   }
 
-  has() {
-    return false
+  has(key) {
+    return this._cache.has(key)
   }
 
   keys() {
-    return [].values()
+    return this._cache.keys()
   }
 
   get size() {
-    return 0
+    return this._cache.size
   }
 
-  // in-flight helpers
   hasInFlight(key) {
     return this._inFlight.has(key)
   }

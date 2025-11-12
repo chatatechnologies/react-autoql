@@ -144,7 +144,7 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  serializeParams = (params) => {
+  serializeTableParams = (params) => {
     try {
       const normalized = {
         filters: params?.filters ?? [],
@@ -671,7 +671,7 @@ export default class ChataTable extends React.Component {
           this.setState({ pageLoading: true })
         }
         // Cache params/rows for this ajax call; deduplicate in-flight requests with a promise
-        const _cacheKey = this.serializeParams(nextTableParamsFormatted)
+        const _cacheKey = this.serializeTableParams(nextTableParamsFormatted)
 
         // Try to read cached entry (AjaxCache handles TTL eviction)
         let cachedEntry = this._ajaxCache.get(_cacheKey)
@@ -747,8 +747,7 @@ export default class ChataTable extends React.Component {
         const _rowsFinal = responseWrapper?.data?.data?.rows ?? []
         const totalPages = this.getTotalPages(responseWrapper)
 
-        // keep quick-access copies for fallbacks
-        this._currentAjaxRows = _rowsFinal
+        // keep totalPages as fallback for ajaxResponseFunc
         this._currentAjaxTotalPages = totalPages
 
         // Capture the full filtered count before slicing
@@ -925,22 +924,17 @@ export default class ChataTable extends React.Component {
 
       // Try to read a cached page (inline)
       try {
-        const _key = this.serializeParams(tableParams)
-        let entry = this._ajaxCache.get(_key)
-        const now = Date.now()
-        if (entry && entry.ts && now - entry.ts > this._ajaxCacheTTL) {
-          this._ajaxCache.delete(_key)
-          entry = null
-        }
+        const _key = this.serializeTableParams(tableParams)
+        const entry = this._ajaxCache.get(_key)
 
         if (entry && entry.rows) {
           const page = tableParams.page || 1
           const start = (page - 1) * this.pageSize
           rows = entry.rows.slice(start, start + this.pageSize)
-        } else if (this._ajaxInFlight.has(_key)) {
+        } else if (this._ajaxCache.hasInFlight(_key)) {
           // Wait for in-flight request then try to read cache
-          return this._ajaxInFlight
-            .get(_key)
+          return this._ajaxCache
+            .getInFlight(_key)
             .then(() => this.getNewPage(props, tableParams))
             .catch(() => this.getNewPage(props, tableParams))
         }
@@ -956,7 +950,7 @@ export default class ChataTable extends React.Component {
       const response = { page: tableParams.page, rows }
 
       // If cache has totalPages for these params, include it so Tabulator stops loading
-      const _entry = this._ajaxCache.get(this.serializeParams(tableParams))
+      const _entry = this._ajaxCache.get(this.serializeTableParams(tableParams))
       if (_entry) response.last_page = _entry.totalPages
 
       return Promise.resolve(response)
@@ -990,10 +984,6 @@ export default class ChataTable extends React.Component {
           this.forceUpdate()
         }, 0)
       }
-    } else {
-      // When Tabulator provides no response (null/undefined), normalize to
-      // an empty array so callers/tests that expect an array receive []
-      return []
     }
 
     return modResponse
@@ -1364,7 +1354,7 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  onRemoveColumnClick = () => {
+  onRemoveColumnClick = async () => {
     const column = _cloneDeep(this.state.contextMenuColumn)
 
     this.setState({ contextMenuColumn: undefined })
@@ -1376,20 +1366,18 @@ export default class ChataTable extends React.Component {
 
     if (currentAdditionalSelectColumns?.length !== newAdditionalSelectColumns?.length) {
       this.setPageLoading(true)
-      this.queryFn({ newColumns: newAdditionalSelectColumns })
-        .then((response) => {
-          if (response?.data?.data?.rows) {
-            this.props.updateColumnsAndData(response)
-          } else {
-            throw new Error('Column deletion failed')
-          }
-        })
-        .catch((error) => {
-          console.error(error)
-        })
-        .finally(() => {
-          this.setPageLoading(false)
-        })
+      try {
+        const response = await this.queryFn({ newColumns: newAdditionalSelectColumns })
+        if (response?.data?.data?.rows) {
+          this.props.updateColumnsAndData(response)
+        } else {
+          throw new Error('Column deletion failed')
+        }
+      } catch (error) {
+        console.error(error)
+      } finally {
+        this.setPageLoading(false)
+      }
     } else {
       const newColumns = this.props.columns.map((col) => {
         if (col.name === column.name) {
@@ -1402,11 +1390,14 @@ export default class ChataTable extends React.Component {
         return col
       })
 
-      setColumnVisibility({ ...this.props.authentication, columns: newColumns })
-        .then(() => this.props.updateColumns(newColumns))
-        .catch((error) => {
-          console.error(error)
-        })
+      try {
+        await setColumnVisibility({ ...this.props.authentication, columns: newColumns })
+      } catch (error) {
+        console.error(error)
+      } finally {
+        // Always update the UI, whether the visibility save succeeded or failed
+        this.props.updateColumns(newColumns)
+      }
     }
   }
 
