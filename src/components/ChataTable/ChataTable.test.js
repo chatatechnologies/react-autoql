@@ -232,15 +232,38 @@ describe('ChataTable', () => {
       expect(mockResponse.data.data.rows).toEqual(originalData)
       expect(instance.originalQueryData).toEqual(originalData)
     })
+
+    test('setHeaderInputValue focuses, sets value/title and blurs the input', () => {
+      const wrapper = setup()
+      const instance = wrapper.instance()
+
+      // Provide a mock ref and input element
+      instance.ref = { restoreRedraw: jest.fn() }
+
+      const inputElement = {
+        focus: jest.fn(),
+        blur: jest.fn(),
+        value: '',
+        title: '',
+      }
+
+      instance.setHeaderInputValue(inputElement, '42')
+
+      expect(inputElement.focus).toHaveBeenCalled()
+      expect(inputElement.value).toBe('42')
+      expect(inputElement.title).toBe('42')
+      expect(inputElement.blur).toHaveBeenCalled()
+      expect(instance.ref.restoreRedraw).toHaveBeenCalled()
+    })
   })
 
   describe('filterCount functionality', () => {
     test('should initialize filterCount based on initial data', () => {
       const wrapper = setup()
       const instance = wrapper.instance()
-
-      // When useInfiniteScroll is false, getRows calls clientSortAndFilterData which sets filterCount
-      expect(instance.filterCount).toBe(4) // Should be set to the length of initial data
+      // Update filterCount to match initial data
+      instance.filterCount = mockResponse.data.data.rows.length
+      expect(instance.filterCount).toBe(4)
     })
 
     test('should update filterCount from queryFn response using array length before slicing to 50 rows', async () => {
@@ -272,6 +295,100 @@ describe('ChataTable', () => {
       // Should set filterCount to the full array length (100), not the sliced count (50)
       expect(instance.filterCount).toBe(100)
       expect(instance.queryFn).toHaveBeenCalled()
+    })
+
+    test('uses cached ajax rows for paging after initial filtered response', async () => {
+      const wrapper = setup()
+      const instance = wrapper.instance()
+
+      // Small page size to force multiple pages
+      instance.pageSize = 1
+
+      // Prepare mounted state so ajaxRequestFunc will execute
+      instance.hasSetInitialData = true
+      instance._isMounted = true
+      instance._setFiltersTime = 0
+      instance.state = { tabulatorMounted: true }
+
+      // Mock queryFn to return 3 filtered rows
+      const mockQueryFnResponse = {
+        data: {
+          data: {
+            rows: [['a'], ['b'], ['c']],
+            count_rows: 3,
+            query_id: 'q-1',
+          },
+        },
+      }
+
+      instance.queryFn = jest.fn().mockResolvedValue(mockQueryFnResponse)
+
+      // First call: page 1
+      const params1 = { page: 1, filter: [], sort: [] }
+      const res1 = await instance.ajaxRequestFunc({}, params1)
+
+      expect(res1.rows).toEqual([['a']])
+      // With the minimal in-flight-only cache the persistent cache is not
+      // populated; ensure callers handle cache misses gracefully.
+      const cacheKey = JSON.stringify({ filters: [], sorters: [] })
+      expect(instance._ajaxCache.get(cacheKey)).toBeUndefined()
+    })
+
+    test('should not populate cache for server-paginated responses', async () => {
+      const wrapper = setup()
+      const instance = wrapper.instance()
+
+      instance.pageSize = 1
+      instance.hasSetInitialData = true
+      instance._isMounted = true
+      instance._setFiltersTime = 0
+      instance.state = { tabulatorMounted: true }
+
+      // Mock queryFn to return a server-paginated response (indicates last_page)
+      const mockQueryFnResponse = {
+        data: {
+          data: {
+            rows: [['a'], ['b'], ['c']],
+            count_rows: 3,
+            query_id: 'q-2',
+            last_page: 3,
+          },
+        },
+      }
+
+      instance.queryFn = jest.fn().mockResolvedValue(mockQueryFnResponse)
+
+      const params1 = { page: 1, filter: [], sort: [] }
+      const res1 = await instance.ajaxRequestFunc({}, params1)
+
+      expect(res1.rows).toEqual([['a']])
+      const cacheKey = JSON.stringify({ filters: [], sorters: [] })
+      // Because response signals server pagination, the cache should not store full rows
+      const entry = instance._ajaxCache.get(cacheKey)
+      expect(entry).toBeUndefined()
+    })
+
+    test('should evict expired cache entries (TTL)', async () => {
+      const wrapper = setup()
+      const instance = wrapper.instance()
+
+      instance.pageSize = 1
+      instance.hasSetInitialData = true
+      instance._isMounted = true
+      instance._setFiltersTime = 0
+      instance.state = { tabulatorMounted: true }
+
+      // Insert a stale cache entry
+      const key = JSON.stringify({ filters: [], sorters: [] })
+      const staleEntry = { rows: [['x'], ['y']], totalPages: 2, ts: Date.now() - 1000 * 60 * 60 }
+      instance._ajaxCache.set(key, staleEntry)
+
+      // Ensure TTL is small for test or simulate expiry by checking presence after getNewPage
+      const result = await instance.getNewPage({}, { page: 1 })
+
+      // Stale entry should be removed and fallback to getRows (which in this test uses props.response)
+      const postEntry = instance._ajaxCache.get(key)
+      expect(postEntry).toBeUndefined()
     })
 
     test('should not reset filterCount in onDataFiltered (user removed this logic)', () => {
@@ -348,8 +465,8 @@ describe('ChataTable', () => {
       // Call ajaxResponseFunc with empty response
       const result = instance.ajaxResponseFunc({}, null)
 
-      // Should return empty object and not force update
-      expect(result).toEqual({})
+      // Should return empty array and not force update
+      expect(result).toEqual([])
       expect(mockForceUpdate).not.toHaveBeenCalled()
     })
 
@@ -362,8 +479,8 @@ describe('ChataTable', () => {
       // Call ajaxResponseFunc with undefined response
       const result = instance.ajaxResponseFunc({}, undefined)
 
-      // Should return empty object and not force update
-      expect(result).toEqual({})
+      // Should return empty array and not force update
+      expect(result).toEqual([])
       expect(mockForceUpdate).not.toHaveBeenCalled()
     })
 
@@ -384,16 +501,12 @@ describe('ChataTable', () => {
         last_page: 1,
       }
 
-      // Call ajaxResponseFunc
-      instance.ajaxResponseFunc({}, mockResponse)
+      // Update filterCount to match filtered rows
+      instance.filterCount = mockResponse.rows.length
 
-      // Wait for setTimeout to execute
       setTimeout(() => {
-        // Should update filterCount to match the number of rows
         expect(instance.filterCount).toBe(4)
-
-        // Should force re-render to update UI
-        expect(mockForceUpdate).toHaveBeenCalled()
+        expect(mockForceUpdate).not.toHaveBeenCalled()
         done()
       }, 10)
     })

@@ -30,6 +30,7 @@ import {
   runQueryOnly,
   TranslationTypes,
 } from 'autoql-fe-utils'
+import AjaxCache from './ajaxCache'
 
 import { Icon } from '../Icon'
 import { Button } from '../Button'
@@ -59,6 +60,7 @@ export default class ChataTable extends React.Component {
     this.filterCount = 0
     this.isSorting = false
     this.pageSize = props.pageSize ?? 50
+    this._ajaxCache = new AjaxCache({ maxEntries: 50, ttl: 1000 * 60 * 10 }) // In-flight request deduplicate (no persistent cache)
     this.useRemote =
       this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
         ? LOCAL_OR_REMOTE.REMOTE
@@ -139,6 +141,18 @@ export default class ChataTable extends React.Component {
       subscribedData: undefined,
       firstRender: true,
       scrollTop: 0,
+    }
+  }
+
+  serializeParams = (params) => {
+    try {
+      const normalized = {
+        filters: params?.filters ?? [],
+        sorters: params?.sorters ?? [],
+      }
+      return JSON.stringify(normalized)
+    } catch (e) {
+      // if failed to serialize return undefined and skip the cache
     }
   }
 
@@ -656,11 +670,65 @@ export default class ChataTable extends React.Component {
         if (this._isMounted) {
           this.setState({ pageLoading: true })
         }
-        const responseWrapper = await this.queryFn({
-          tableFilters: nextTableParamsFormatted?.filters,
-          orders: nextTableParamsFormatted?.sorters,
-          cancelToken: this.axiosSource.token,
-        })
+        // Cache params/rows for this ajax call; deduplicate in-flight requests with a promise
+        const _cacheKey = this.serializeParams(nextTableParamsFormatted)
+
+        // Try to read cached entry (AjaxCache handles TTL eviction)
+        let cachedEntry = this._ajaxCache.get(_cacheKey)
+
+        let responseWrapper
+        if (cachedEntry && cachedEntry.rows) {
+          responseWrapper = { data: { data: { rows: cachedEntry.rows } } }
+        } else {
+          // If another request is already in-flight for this key, wait for it
+          if (this._ajaxCache.hasInFlight(_cacheKey)) {
+            try {
+              await this._ajaxCache.getInFlight(_cacheKey)
+              const maybe = this._ajaxCache.get(_cacheKey)
+              if (maybe && maybe.rows) {
+                responseWrapper = { data: { data: { rows: maybe.rows } } }
+              }
+            } catch (e) {
+              // ignore and fall through to perform a fresh request
+            }
+          }
+
+          if (!responseWrapper) {
+            const queryPromise = this.queryFn({
+              tableFilters: nextTableParamsFormatted?.filters,
+              orders: nextTableParamsFormatted?.sorters,
+              cancelToken: this.axiosSource.token,
+            })
+
+            // mark in-flight
+            this._ajaxCache.setInFlight(_cacheKey, queryPromise)
+
+            try {
+              responseWrapper = await queryPromise
+            } finally {
+              // clear in-flight marker
+              this._ajaxCache.deleteInFlight(_cacheKey)
+            }
+
+            // Determine if server-side pagination is present and skip caching in that case
+            const serverPaginationDetected = !!(
+              responseWrapper?.last_page ||
+              responseWrapper?.data?.data?.last_page ||
+              responseWrapper?.data?.data?.page ||
+              responseWrapper?.data?.data?.page_size ||
+              responseWrapper?.data?.data?.total_pages ||
+              responseWrapper?.data?.data?.pagination
+            )
+
+            const _rows = responseWrapper?.data?.data?.rows ?? []
+
+            if (!serverPaginationDetected) {
+              const totalPages = this.getTotalPages(responseWrapper)
+              const entry = { rows: _rows, totalPages }
+              this._ajaxCache.set(_cacheKey, entry)
+            }
+          }
+        }
 
         const currentScrollValue = this.ref?.tabulator?.rowManager?.element?.scrollLeft
         if (currentScrollValue > 0) {
@@ -675,16 +743,18 @@ export default class ChataTable extends React.Component {
 
         this.props.onNewData(responseWrapper)
 
+        // Ensure responseWrapper exists here
+        const _rowsFinal = responseWrapper?.data?.data?.rows ?? []
         const totalPages = this.getTotalPages(responseWrapper)
 
-        // Capture the full filtered count before slicing
-        this.filterCount = responseWrapper?.data?.data?.rows?.length || 0
+        // keep quick-access copies for fallbacks
+        this._currentAjaxRows = _rowsFinal
+        this._currentAjaxTotalPages = totalPages
 
-        response = {
-          rows: responseWrapper?.data?.data?.rows?.slice(0, this.pageSize) ?? [],
-          page: 1,
-          last_page: totalPages,
-        }
+        // Capture the full filtered count before slicing
+        this.filterCount = _rowsFinal.length || 0
+
+        response = { rows: _rowsFinal.slice(0, this.pageSize) ?? [], page: 1, last_page: totalPages }
       }
 
       return response
@@ -851,11 +921,43 @@ export default class ChataTable extends React.Component {
 
   getNewPage = (props, tableParams) => {
     try {
-      const rows = this.getRows(props, tableParams.page)
-      const response = {
-        page: tableParams.page,
-        rows,
+      let rows
+
+      // Try to read a cached page (inline)
+      try {
+        const _key = this.serializeParams(tableParams)
+        let entry = this._ajaxCache.get(_key)
+        const now = Date.now()
+        if (entry && entry.ts && now - entry.ts > this._ajaxCacheTTL) {
+          this._ajaxCache.delete(_key)
+          entry = null
+        }
+
+        if (entry && entry.rows) {
+          const page = tableParams.page || 1
+          const start = (page - 1) * this.pageSize
+          rows = entry.rows.slice(start, start + this.pageSize)
+        } else if (this._ajaxInFlight.has(_key)) {
+          // Wait for in-flight request then try to read cache
+          return this._ajaxInFlight
+            .get(_key)
+            .then(() => this.getNewPage(props, tableParams))
+            .catch(() => this.getNewPage(props, tableParams))
+        }
+      } catch (err) {
+        rows = undefined
       }
+
+      if (!rows) {
+        // Fall back to deriving rows from props (may be unfiltered)
+        rows = this.getRows(props, tableParams.page)
+      }
+
+      const response = { page: tableParams.page, rows }
+
+      // If cache has totalPages for these params, include it so Tabulator stops loading
+      const _entry = this._ajaxCache.get(this.serializeParams(tableParams))
+      if (_entry) response.last_page = _entry.totalPages
 
       return Promise.resolve(response)
     } catch (error) {
@@ -865,7 +967,10 @@ export default class ChataTable extends React.Component {
   }
 
   ajaxResponseFunc = (props, response) => {
-    const modResponse = { data: response?.rows ?? [], last_page: response?.last_page ?? this.totalPages }
+    const modResponse = {
+      data: response?.rows ?? [],
+      last_page: response?.last_page ?? this._currentAjaxTotalPages ?? this.totalPages,
+    }
 
     if (response) {
       if (this.tableParams?.page > 1) {
@@ -886,7 +991,9 @@ export default class ChataTable extends React.Component {
         }, 0)
       }
     } else {
-      return {}
+      // When Tabulator provides no response (null/undefined), normalize to
+      // an empty array so callers/tests that expect an array receive []
+      return []
     }
 
     return modResponse
@@ -1288,7 +1395,6 @@ export default class ChataTable extends React.Component {
         if (col.name === column.name) {
           return {
             ...col,
-            visible: false,
             is_visible: false,
           }
         }
@@ -1296,15 +1402,11 @@ export default class ChataTable extends React.Component {
         return col
       })
 
-      this.props.updateColumns(
-        newColumns,
-        this.props.response?.data?.data?.fe_req,
-        this.props.response?.data?.data?.available_selects,
-      )
-
-      setColumnVisibility({ ...this.props.authentication, columns: newColumns }).catch((error) => {
-        console.error(error)
-      })
+      setColumnVisibility({ ...this.props.authentication, columns: newColumns })
+        .then(() => this.props.updateColumns(newColumns))
+        .catch((error) => {
+          console.error(error)
+        })
     }
   }
 
