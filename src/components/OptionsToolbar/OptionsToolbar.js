@@ -123,12 +123,8 @@ export class OptionsToolbar extends React.Component {
     clearTimeout(this.pivotTableCSVDownloadTimeout)
   }
 
-  countTabulatorHeaderFilters = (tabulatorHeaderFilters) => {
-    if (!tabulatorHeaderFilters) return 0
-    return Array.isArray(tabulatorHeaderFilters)
-      ? tabulatorHeaderFilters.length
-      : Object.keys(tabulatorHeaderFilters || {}).length
-  }
+  countTabulatorHeaderFilters = (filters) =>
+    Array.isArray(filters) ? filters.length : filters ? Object.keys(filters).length : 0
 
   renderOpenInNewBtn = () => {
     return (

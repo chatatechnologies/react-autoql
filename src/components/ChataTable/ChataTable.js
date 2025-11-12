@@ -72,11 +72,7 @@ export default class ChataTable extends React.Component {
     if (isNaN(this.totalPages) || !this.totalPages) {
       this.totalPages = 1
     }
-    if (props.useInfiniteScroll === false) {
-      this.useInfiniteScroll = false
-    } else {
-      this.useInfiniteScroll = !this.isLocal
-    }
+    this.useInfiniteScroll = props.useInfiniteScroll !== false && !this.isLocal
 
     this.originalQueryData = _cloneDeep(props.response?.data?.data?.rows)
     if (props.pivot) {
@@ -146,11 +142,8 @@ export default class ChataTable extends React.Component {
 
   serializeTableParams = (params) => {
     try {
-      const normalized = {
-        filters: params?.filters ?? [],
-        sorters: params?.sorters ?? [],
-      }
-      return JSON.stringify(normalized)
+      const { filters = [], sorters = [] } = params ?? {}
+      return JSON.stringify({ filters, sorters })
     } catch (e) {
       // if failed to serialize return undefined and skip the cache
     }
@@ -423,6 +416,25 @@ export default class ChataTable extends React.Component {
     return 1
   }
 
+  hasServerSidePagination = (response) => {
+    // If server provides a total count that's larger than the rows returned,
+    // treat this as server-side pagination (only a page of rows was returned).
+    const rowsLen = response?.data?.data?.rows?.length ?? 0
+    const totalFromServer = response?.data?.data?.count_rows
+    if (typeof totalFromServer === 'number' && totalFromServer > rowsLen) {
+      return true
+    }
+
+    return !!(
+      response?.last_page ||
+      response?.data?.data?.last_page ||
+      response?.data?.data?.page ||
+      response?.data?.data?.page_size ||
+      response?.data?.data?.total_pages ||
+      response?.data?.data?.pagination
+    )
+  }
+
   setInfiniteScroll = () => {
     if (!this.ref?.tabulator?.options) {
       return
@@ -670,63 +682,48 @@ export default class ChataTable extends React.Component {
         if (this._isMounted) {
           this.setState({ pageLoading: true })
         }
-        // Cache params/rows for this ajax call; deduplicate in-flight requests with a promise
         const _cacheKey = this.serializeTableParams(nextTableParamsFormatted)
-
-        // Try to read cached entry (AjaxCache handles TTL eviction)
         let cachedEntry = this._ajaxCache.get(_cacheKey)
 
         let responseWrapper
-        if (cachedEntry && cachedEntry.rows) {
+        if (cachedEntry?.rows) {
           responseWrapper = { data: { data: { rows: cachedEntry.rows } } }
-        } else {
-          // If another request is already in-flight for this key, wait for it
-          if (this._ajaxCache.hasInFlight(_cacheKey)) {
-            try {
-              await this._ajaxCache.getInFlight(_cacheKey)
-              const maybe = this._ajaxCache.get(_cacheKey)
-              if (maybe && maybe.rows) {
-                responseWrapper = { data: { data: { rows: maybe.rows } } }
-              }
-            } catch (e) {
-              // ignore and fall through to perform a fresh request
+        } else if (this._ajaxCache.hasInFlight(_cacheKey)) {
+          try {
+            await this._ajaxCache.getInFlight(_cacheKey)
+            const cached = this._ajaxCache.get(_cacheKey)
+            if (cached?.rows) {
+              responseWrapper = { data: { data: { rows: cached.rows } } }
             }
+          } catch (e) {
+            // fall through to fresh request
+          }
+        }
+
+        if (!responseWrapper) {
+          const queryPromise = this.queryFn({
+            tableFilters: nextTableParamsFormatted?.filters,
+            orders: nextTableParamsFormatted?.sorters,
+            cancelToken: this.axiosSource.token,
+          })
+
+          this._ajaxCache.setInFlight(_cacheKey, queryPromise)
+          try {
+            responseWrapper = await queryPromise
+          } finally {
+            this._ajaxCache.deleteInFlight(_cacheKey)
           }
 
-          if (!responseWrapper) {
-            const queryPromise = this.queryFn({
-              tableFilters: nextTableParamsFormatted?.filters,
-              orders: nextTableParamsFormatted?.sorters,
-              cancelToken: this.axiosSource.token,
+          const _rows = responseWrapper?.data?.data?.rows ?? []
+          const countFromServer = responseWrapper?.data?.data?.count_rows
+          if (!this.hasServerSidePagination(responseWrapper)) {
+            this._ajaxCache.set(_cacheKey, {
+              rows: _rows,
+              totalPages: this.getTotalPages(responseWrapper),
+              countFromServer,
             })
-
-            // mark in-flight
-            this._ajaxCache.setInFlight(_cacheKey, queryPromise)
-
-            try {
-              responseWrapper = await queryPromise
-            } finally {
-              // clear in-flight marker
-              this._ajaxCache.deleteInFlight(_cacheKey)
-            }
-
-            // Determine if server-side pagination is present and skip caching in that case
-            const serverPaginationDetected = !!(
-              responseWrapper?.last_page ||
-              responseWrapper?.data?.data?.last_page ||
-              responseWrapper?.data?.data?.page ||
-              responseWrapper?.data?.data?.page_size ||
-              responseWrapper?.data?.data?.total_pages ||
-              responseWrapper?.data?.data?.pagination
-            )
-
-            const _rows = responseWrapper?.data?.data?.rows ?? []
-
-            if (!serverPaginationDetected) {
-              const totalPages = this.getTotalPages(responseWrapper)
-              const entry = { rows: _rows, totalPages }
-              this._ajaxCache.set(_cacheKey, entry)
-            }
+          } else if (typeof countFromServer === 'number') {
+            this._ajaxCache.set(_cacheKey, { countFromServer, rows: undefined })
           }
         }
 
@@ -746,13 +743,9 @@ export default class ChataTable extends React.Component {
         // Ensure responseWrapper exists here
         const _rowsFinal = responseWrapper?.data?.data?.rows ?? []
         const totalPages = this.getTotalPages(responseWrapper)
-
-        // keep totalPages as fallback for ajaxResponseFunc
         this._currentAjaxTotalPages = totalPages
-
-        // Capture the full filtered count before slicing
-        this.filterCount = _rowsFinal.length || 0
-
+        const countFromServer = responseWrapper?.data?.data?.count_rows
+        this.filterCount = typeof countFromServer === 'number' ? countFromServer : _rowsFinal.length || 0
         response = { rows: _rowsFinal.slice(0, this.pageSize) ?? [], page: 1, last_page: totalPages }
       }
 
@@ -865,13 +858,10 @@ export default class ChataTable extends React.Component {
 
     let newRows
     if (props.pivot) {
-      // For pivot tables we want to render the full local dataset so users can
-      // scroll through all aggregated rows. Returning a sliced page here caused
-      // the UI to only show the first `pageSize` rows (default 50).
+      // Return full dataset for pivot tables (no slicing to avoid limiting displayed rows)
       newRows = this.originalQueryData ?? []
     } else if (!this.useInfiniteScroll) {
       const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows
-
       newRows = sortedData?.slice(start, end) ?? []
     } else {
       newRows = props.response?.data?.data?.rows?.slice(start, end) ?? []
@@ -921,37 +911,32 @@ export default class ChataTable extends React.Component {
   getNewPage = (props, tableParams) => {
     try {
       let rows
+      const _key = this.serializeTableParams(tableParams)
+      const entry = this._ajaxCache.get(_key)
 
-      // Try to read a cached page (inline)
-      try {
-        const _key = this.serializeTableParams(tableParams)
-        const entry = this._ajaxCache.get(_key)
-
-        if (entry && entry.rows) {
-          const page = tableParams.page || 1
-          const start = (page - 1) * this.pageSize
-          rows = entry.rows.slice(start, start + this.pageSize)
-        } else if (this._ajaxCache.hasInFlight(_key)) {
-          // Wait for in-flight request then try to read cache
-          return this._ajaxCache
-            .getInFlight(_key)
-            .then(() => this.getNewPage(props, tableParams))
-            .catch(() => this.getNewPage(props, tableParams))
-        }
-      } catch (err) {
-        rows = undefined
+      if (entry?.rows) {
+        const page = tableParams.page || 1
+        const start = (page - 1) * this.pageSize
+        rows = entry.rows.slice(start, start + this.pageSize)
+      } else if (this._ajaxCache.hasInFlight(_key)) {
+        return this._ajaxCache
+          .getInFlight(_key)
+          .then(() => this.getNewPage(props, tableParams))
+          .catch(() => this.getNewPage(props, tableParams))
       }
 
       if (!rows) {
-        // Fall back to deriving rows from props (may be unfiltered)
         rows = this.getRows(props, tableParams.page)
       }
 
       const response = { page: tableParams.page, rows }
-
-      // If cache has totalPages for these params, include it so Tabulator stops loading
-      const _entry = this._ajaxCache.get(this.serializeTableParams(tableParams))
-      if (_entry) response.last_page = _entry.totalPages
+      const _entry = this._ajaxCache.get(_key)
+      if (_entry) {
+        response.last_page = _entry.totalPages
+        if (typeof _entry.countFromServer === 'number') {
+          this.filterCount = _entry.countFromServer
+        }
+      }
 
       return Promise.resolve(response)
     } catch (error) {
@@ -968,17 +953,14 @@ export default class ChataTable extends React.Component {
 
     if (response) {
       if (this.tableParams?.page > 1) {
-        // Only restore redraw for new page - doing this for filter/sort will reset the scroll value
         this.ref?.restoreRedraw()
       }
 
       const isLastPage = (response?.rows?.length ?? 0) < this.pageSize
-
       if (isLastPage !== this.state.isLastPage && this._isMounted) {
         this.setState({ isLastPage })
       }
-      // Force re-render to update filter count display after data is processed
-      // Note: this.filterCount is already set correctly in ajaxRequestFunc from the queryFn response
+
       if (this._isMounted) {
         setTimeout(() => {
           this.forceUpdate()

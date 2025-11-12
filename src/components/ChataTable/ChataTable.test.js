@@ -370,9 +370,10 @@ describe('ChataTable', () => {
 
       expect(res1.rows).toEqual([['a']])
       const cacheKey = JSON.stringify({ filters: [], sorters: [] })
-      // Because response signals server pagination, the cache should NOT store it
+      // For server-paginated responses, we store only the countFromServer (not rows) so filterCount stays correct
       const entry = instance._ajaxCache.get(cacheKey)
-      expect(entry).toBeUndefined()
+      expect(entry?.countFromServer).toBe(3)
+      expect(entry?.rows).toBeUndefined()
     })
 
     test('should skip cache on getNewPage when no cached entry exists', async () => {

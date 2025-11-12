@@ -1,5 +1,6 @@
 export default class AjaxCache {
   constructor({ maxEntries = 50, ttl = 1000 * 60 * 10 } = {}) {
+    // Parameters for future eviction policies (LRU, TTL-based)
     this._cache = new Map()
     this._inFlight = new Map()
   }
