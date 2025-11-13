@@ -103,8 +103,8 @@ export class DashboardToolbarWithoutRef extends React.Component {
   }
 
   getRefreshButtonTooltip = () => {
-    const { refreshInterval } = this.props
-    if (!refreshInterval) {
+    const { refreshInterval, enableAutoRefresh } = this.props
+    if (!refreshInterval || !enableAutoRefresh) {
       return 'Refresh Dashboard Data'
     }
     return `Click to refresh now. Dashboard auto-refreshes every ${this.formatRefreshInterval()}.`
