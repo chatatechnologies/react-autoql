@@ -801,9 +801,17 @@ export default class ChataTable extends React.Component {
     // Filters
     if (params.tableFilters?.length) {
       params.tableFilters.forEach((filter) => {
-        const filterColumnIndex = this.props.columns.find((col) => col.id === filter.id)?.index
+        let columnIndex
+        if (filter.id) {
+          columnIndex = this.props.columns.find((col) => col.id === filter.id)?.index
+        } else if (filter.field !== undefined) {
+          const idx = parseInt(filter.field, 10)
+          columnIndex = isNaN(idx) ? undefined : idx
+        }
 
-        data = filterDataByColumn(data, this.props.columns, filterColumnIndex, filter.value, filter.operator)
+        if (columnIndex !== undefined) {
+          data = filterDataByColumn(data, this.props.columns, columnIndex, filter.value, filter.operator)
+        }
       })
     }
 
@@ -1296,9 +1304,12 @@ export default class ChataTable extends React.Component {
     }
 
     inputElement.focus()
-    this.ref?.restoreRedraw()
     inputElement.value = value
     inputElement.title = value
+    if (typeof inputElement.dispatchEvent === 'function') {
+      inputElement.dispatchEvent(new Event('input', { bubbles: true }))
+      inputElement.dispatchEvent(new Event('change', { bubbles: true }))
+    }
     inputElement.blur()
   }
 

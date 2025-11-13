@@ -251,6 +251,7 @@ describe('ChataTable', () => {
         blur: jest.fn(),
         value: '',
         title: '',
+        dispatchEvent: jest.fn(),
       }
 
       instance.setHeaderInputValue(inputElement, '42')
@@ -258,8 +259,9 @@ describe('ChataTable', () => {
       expect(inputElement.focus).toHaveBeenCalled()
       expect(inputElement.value).toBe('42')
       expect(inputElement.title).toBe('42')
+      expect(inputElement.dispatchEvent).toHaveBeenCalledWith(expect.objectContaining({ type: 'input' }))
+      expect(inputElement.dispatchEvent).toHaveBeenCalledWith(expect.objectContaining({ type: 'change' }))
       expect(inputElement.blur).toHaveBeenCalled()
-      expect(instance.ref.restoreRedraw).toHaveBeenCalled()
     })
   })
 
