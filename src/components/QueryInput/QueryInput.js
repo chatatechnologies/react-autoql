@@ -30,7 +30,6 @@ import {
 
 import { Icon } from '../Icon'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
-import { Spinner } from '../Spinner'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import SampleQueryList from '../DataExplorer/SampleQueryList'
 import FieldSelector from '../FieldSelector'
@@ -49,6 +48,11 @@ class QueryInput extends React.Component {
     this.MAX_QUERY_HISTORY = 5
     this.autoCompleteTimer = undefined
     this.autoCompleteArray = []
+
+    // Store selectedColumns per topic context for persistence
+    this.selectedColumnsByTopic = {}
+    // Store dataPreview per topic context to avoid refetching
+    this.dataPreviewByTopic = {}
 
     this.state = {
       inputValue: '',
@@ -172,23 +176,40 @@ class QueryInput extends React.Component {
   }
 
   onTopicClick = (topic) => {
+    // Restore selectedColumns and dataPreview for this topic if they exist
+    const topicKey = topic?.context || 'default'
+    const savedColumns = this.selectedColumnsByTopic[topicKey] || []
+    const cachedDataPreview = this.dataPreviewByTopic[topicKey]
+
     // Set the selected topic and expand the container
     this.setState(
       {
         selectedTopic: topic,
         isExpanded: true,
-        isDataPreviewLoading: true,
-        selectedColumns: [],
-        dataPreview: undefined,
+        isDataPreviewLoading: !cachedDataPreview, // Only show loading if we don't have cached data
+        selectedColumns: savedColumns,
+        dataPreview: cachedDataPreview, // Use cached data if available
       },
       () => {
-        // Fetch data preview after state is set
-        this.fetchDataPreviewData()
+        // Only fetch data preview if we don't have cached data
+        if (!cachedDataPreview) {
+          this.fetchDataPreviewData()
+        }
       },
     )
   }
 
   collapseSuggestions = () => {
+    // Save selectedColumns and dataPreview for current topic before collapsing (even if empty)
+    if (this.state.selectedTopic?.context) {
+      const topicKey = this.state.selectedTopic.context
+      this.selectedColumnsByTopic[topicKey] = [...(this.state.selectedColumns || [])]
+      // Cache dataPreview if it exists
+      if (this.state.dataPreview) {
+        this.dataPreviewByTopic[topicKey] = this.state.dataPreview
+      }
+    }
+
     this.setState({
       selectedTopic: null,
       isExpanded: false,
@@ -241,7 +262,14 @@ class QueryInput extends React.Component {
           <FieldSelector
             columns={columns}
             selectedColumns={this.state.selectedColumns}
-            onColumnsChange={(selectedColumns) => this.setState({ selectedColumns })}
+            onColumnsChange={(selectedColumns) => {
+              this.setState({ selectedColumns })
+              // Persist selectedColumns for current topic
+              if (this.state.selectedTopic?.context) {
+                const topicKey = this.state.selectedTopic.context
+                this.selectedColumnsByTopic[topicKey] = [...selectedColumns]
+              }
+            }}
             selectedSubject={this.state.selectedTopic}
             selectedTopic={null}
             loading={this.state.isDataPreviewLoading}
@@ -270,7 +298,8 @@ class QueryInput extends React.Component {
 
   getColumnsForSuggestions = () => {
     // Only include columns if user has explicitly selected them
-    // Otherwise return undefined to prevent re-fetching when data preview loads
+    // QueryInput quick topics should never include valueLabel
+    // For quick topics, pass columns without values to keep query_to_start empty
     if (!this.state.selectedColumns?.length) {
       return undefined
     }
@@ -280,6 +309,7 @@ class QueryInput extends React.Component {
     this.state.selectedColumns.forEach((columnIndex) => {
       const column = this.state.dataPreview?.data?.data?.columns[columnIndex]
       if (column && !columns[column.name]) {
+        // Pass columns without values for quick topics to keep query_to_start empty
         columns[column.name] = { value: '' }
 
         if (column.alt_name) {
@@ -315,6 +345,12 @@ class QueryInput extends React.Component {
               column.isGroupable = this.isColumnGroupable(column)
               column.isFilterable = this.isColumnFilterable(column)
             })
+          }
+
+          // Cache the data preview for this topic
+          if (this.state.selectedTopic?.context) {
+            const topicKey = this.state.selectedTopic.context
+            this.dataPreviewByTopic[topicKey] = response
           }
 
           this.setState({ dataPreview: response, isDataPreviewLoading: false })
