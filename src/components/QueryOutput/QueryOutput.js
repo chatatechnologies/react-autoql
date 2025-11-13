@@ -106,7 +106,7 @@ export class QueryOutput extends React.Component {
     }
 
     let response = props.queryResponse
-    this.queryResponse = response
+    this.queryResponse = _cloneDeep(response)
     this.columnDateRanges = getColumnDateRanges(response)
     this.queryID = this.queryResponse?.data?.data?.query_id
     this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
@@ -134,7 +134,7 @@ export class QueryOutput extends React.Component {
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
 
     // Sort data if data is local
-    this.sortLocalData(response, columns, props?.initialFormattedTableParams)
+    this.sortLocalData(columns, props?.initialFormattedTableParams)
 
     const displayType = this.getDisplayTypeFromInitial(props)
     if (props.onDisplayTypeChange) {
@@ -324,35 +324,40 @@ export class QueryOutput extends React.Component {
     onChartControlsChange: () => {},
   }
 
-  sortLocalData = (response, columns, initialFormattedTableParams) => {
+  sortLocalData = (columns, initialFormattedTableParams) => {
     // Sort data if data is local (count_rows < TABULATOR_LOCAL_ROW_LIMIT)
     // If initialFormattedTableParams.sorters exist, use those; otherwise sort by first visible column
     if (
-      response?.data?.data?.count_rows < TABULATOR_LOCAL_ROW_LIMIT &&
+      this.queryResponse?.data?.data?.count_rows < TABULATOR_LOCAL_ROW_LIMIT &&
       columns &&
       columns.length > 0 &&
-      response?.data?.data?.rows &&
-      response.data.data.rows.length > 0
+      this.queryResponse?.data?.data?.rows &&
+      this.queryResponse.data.data.rows.length > 0
     ) {
       const initialSorters = initialFormattedTableParams?.sorters || []
 
       if (initialSorters.length > 0) {
         // Sort by initial sorters
-        let sortedData = response.data.data.rows
+        let sortedData = this.queryResponse.data.data.rows
         for (const sorter of initialSorters) {
           const columnIndex = columns.findIndex((col) => col.field === sorter.field)
           if (columnIndex !== -1) {
             sortedData = sortDataByColumn(sortedData, columns, columnIndex, sorter.dir || 'asc')
           }
         }
-        response.data.data.rows = sortedData
+        this.queryResponse.data.data.rows = sortedData
       } else {
         // Sort by first visible column ascending
         const firstVisibleColumn = columns.find((col) => col.is_visible !== false)
         if (firstVisibleColumn) {
           const columnIndex = columns.findIndex((col) => col.field === firstVisibleColumn.field)
           if (columnIndex !== -1) {
-            response.data.data.rows = sortDataByColumn(response.data.data.rows, columns, columnIndex, 'asc')
+            this.queryResponse.data.data.rows = sortDataByColumn(
+              this.queryResponse.data.data.rows,
+              columns,
+              columnIndex,
+              'asc',
+            )
           }
         }
       }
@@ -894,7 +899,7 @@ export class QueryOutput extends React.Component {
     if (response && this._isMounted) {
       this.pivotTableID = uuid()
       this.isOriginalData = false
-      this.queryResponse = response
+      this.queryResponse = _cloneDeep(response)
       this.tableData = response?.data?.data?.rows || []
 
       const additionalSelects = this.getAdditionalSelectsFromResponse(response)
@@ -1720,7 +1725,7 @@ export class QueryOutput extends React.Component {
 
   onNewData = (response) => {
     this.isOriginalData = false
-    this.queryResponse = response
+    this.queryResponse = _cloneDeep(response)
     this.tableData = response?.data?.data?.rows || []
 
     if (this.shouldGeneratePivotData()) {
