@@ -3461,8 +3461,8 @@ export class QueryOutput extends React.Component {
             <span>
               Query cancelled{' '}
               <Icon
-                data-tooltip-content='Pressing the ESC key will cancel the current query request. If you wish to re-run your last query, simply press the UP arrow in the input bar then hit ENTER.'
-                data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
+                tooltip='Pressing the ESC key will cancel the current query request. If you wish to re-run your last query, simply press the UP arrow in the input bar then hit ENTER.'
+                tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
                 type='question'
               />
             </span>
