@@ -148,7 +148,7 @@
 
   &.unread {
     .react-autoql-notification-display-name-container .react-autoql-notification-display-name {
-      font-weight: 500;
+      font-weight: 600;
       color: var(--react-autoql-accent-color);
 
       .react-autoql-icon svg {
@@ -240,8 +240,245 @@
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+    align-items: center;
     padding-left: 22px;
     cursor: pointer;
+
+    .react-autoql-notification-header-right {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      padding-right: 8px;
+
+      .react-autoql-notification-summary-container {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: center;
+        min-height: 40px;
+        text-align: right;
+        padding: 8px 12px;
+        padding-right: 16px;
+        border-right: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+        margin: 8px;
+        margin-right: 0;
+
+        .react-autoql-notification-summary-single-value {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 4px;
+          height: 100%;
+
+          .react-autoql-notification-summary-label {
+            font-size: 11px;
+            opacity: 0.7;
+            color: var(--react-autoql-text-color-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+            margin-bottom: 2px;
+          }
+
+          .react-autoql-notification-summary-value-container {
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
+            gap: 6px;
+            flex: 1;
+
+            .react-autoql-notification-summary-sparkline {
+              flex-shrink: 0;
+              display: flex;
+              align-items: center;
+
+              svg {
+                height: 100%;
+                width: auto;
+              }
+            }
+
+            .react-autoql-notification-summary-value-content {
+              display: flex;
+              flex-direction: column;
+              align-items: flex-end;
+              gap: 2px;
+
+              .react-autoql-notification-summary-value-number {
+                font-size: 24px;
+                font-weight: 700;
+                color: var(--react-autoql-text-color-primary);
+                line-height: 1.2;
+
+                &.react-autoql-notification-summary-value-unread {
+                  color: var(--react-autoql-accent-color);
+                }
+              }
+
+              .react-autoql-notification-summary-value-percent {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                font-size: 16px;
+                font-weight: 600;
+                line-height: 1.2;
+
+                &.react-autoql-notification-summary-value-negative {
+                  color: #dc3545; // Red for negative values
+                }
+
+                &.react-autoql-notification-summary-value-positive {
+                  color: #28a745; // Green for positive values
+                }
+
+                .react-autoql-notification-summary-percent-icon {
+                  font-size: 14px;
+                  flex-shrink: 0;
+
+                  &.react-autoql-notification-summary-percent-icon-up {
+                    color: #28a745; // Green for upward trend
+                  }
+
+                  &.react-autoql-notification-summary-percent-icon-down {
+                    color: #dc3545; // Red for downward trend
+                  }
+                }
+              }
+            }
+          }
+
+          .react-autoql-notification-summary-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--react-autoql-text-color-primary);
+            line-height: 1.2;
+
+            &.react-autoql-notification-summary-value-unread {
+              color: var(--react-autoql-accent-color);
+            }
+
+            &.react-autoql-notification-summary-value-negative {
+              color: #dc3545; // Red for negative values
+            }
+
+            &.react-autoql-notification-summary-value-positive {
+              color: #28a745; // Green for positive values
+            }
+          }
+        }
+
+        .react-autoql-notification-summary-trend {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 4px;
+
+          .react-autoql-notification-summary-trend-content {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+
+            svg {
+              flex-shrink: 0;
+            }
+
+            .react-autoql-notification-summary-trend-value-container {
+              display: flex;
+              flex-direction: column;
+              align-items: flex-end;
+              gap: 2px;
+
+              .react-autoql-notification-summary-trend-label {
+                font-size: 10px;
+                opacity: 0.6;
+                color: var(--react-autoql-text-color-primary);
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                font-weight: 500;
+              }
+
+              .react-autoql-notification-summary-trend-value-wrapper {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+
+                .react-autoql-notification-summary-trend-value {
+                  font-size: 16px;
+                  font-weight: 700;
+                  color: var(--react-autoql-accent-color);
+                }
+
+                &.react-autoql-notification-summary-trend-value-positive {
+                  .react-autoql-notification-summary-trend-value {
+                    color: #28a745; // Green for positive change
+                  }
+                }
+
+                &.react-autoql-notification-summary-trend-value-negative {
+                  .react-autoql-notification-summary-trend-value {
+                    color: #dc3545; // Red for negative change
+                  }
+                }
+
+                .react-autoql-notification-summary-trend-icon {
+                  font-size: 12px;
+                  flex-shrink: 0;
+
+                  &.react-autoql-notification-summary-trend-icon-up {
+                    color: #28a745; // Green for upward trend
+                  }
+
+                  &.react-autoql-notification-summary-trend-icon-down {
+                    color: #dc3545; // Red for downward trend
+                  }
+                }
+              }
+            }
+          }
+
+          .react-autoql-notification-summary-label {
+            font-size: 11px;
+            opacity: 0.7;
+            color: var(--react-autoql-text-color-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+          }
+        }
+
+        .react-autoql-notification-summary-list {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 4px;
+
+          .react-autoql-notification-summary-value {
+            color: var(--react-autoql-text-color-primary);
+
+            &.react-autoql-notification-summary-value-unread {
+              color: var(--react-autoql-accent-color);
+            }
+
+            .react-autoql-notification-summary-count {
+              font-size: 24px;
+              font-weight: 700;
+              line-height: 1.2;
+            }
+          }
+
+          .react-autoql-notification-summary-label {
+            font-size: 11px;
+            opacity: 0.7;
+            color: var(--react-autoql-text-color-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+          }
+        }
+      }
+    }
   }
 
   .react-autoql-notification-query-title {
@@ -434,6 +671,7 @@
 
     .react-autoql-notification-display-name {
       font-size: 18px;
+      font-weight: 600;
       color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.7));
       .react-autoql-icon {
         font-size: 0.875em;
@@ -458,6 +696,69 @@
         .react-autoql-icon {
           margin-right: 3px;
         }
+      }
+    }
+  }
+
+  .react-autoql-notification-summary-container-expanded {
+    padding: 12px 20px;
+    border-top: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.05));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 50px;
+
+    .react-autoql-notification-summary-single-value {
+      font-size: 32px;
+      font-weight: 500;
+      color: var(--react-autoql-text-color-primary);
+      opacity: 0.9;
+
+      .react-autoql-notification-summary-value {
+        &.react-autoql-notification-summary-value-unread {
+          color: var(--react-autoql-accent-color);
+        }
+      }
+    }
+
+    .react-autoql-notification-summary-trend {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      svg {
+        flex-shrink: 0;
+      }
+
+      .react-autoql-notification-summary-trend-value {
+        font-size: 18px;
+        font-weight: 500;
+        color: var(--react-autoql-text-color-primary);
+        opacity: 0.8;
+      }
+    }
+
+    .react-autoql-notification-summary-list {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      font-size: 16px;
+
+      .react-autoql-notification-summary-value {
+        color: var(--react-autoql-text-color-primary);
+
+        &.react-autoql-notification-summary-value-unread {
+          color: var(--react-autoql-accent-color);
+        }
+      }
+
+      .react-autoql-notification-summary-count {
+        font-weight: 600;
+        font-size: 20px;
+      }
+
+      .react-autoql-notification-summary-label {
+        opacity: 0.7;
       }
     }
   }

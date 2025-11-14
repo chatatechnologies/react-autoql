@@ -24,6 +24,7 @@ import { Menu, MenuItem } from '../../Menu'
 import { LoadingDots } from '../../LoadingDots'
 import { ConfirmPopover } from '../../ConfirmPopover'
 import { ConditionBuilder } from '../ConditionBuilder'
+import NotificationDataSummary from './NotificationDataSummary'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { NotificationQueryResponse } from '../NotificationQueryResponse'
 
@@ -280,6 +281,7 @@ export default class NotificationItem extends React.Component {
 
     return this.props.notification.message
   }
+
   renderProjectName = () => {
     return (
       <div className='react-autoql-notification-project-name'>
@@ -300,7 +302,16 @@ export default class NotificationItem extends React.Component {
             </span>
           </div>
         </div>
-        {this.state.enableMoreOptionsMenu && this.moreOptionsButton()}
+        <div className='react-autoql-notification-header-right'>
+          <div className='react-autoql-notification-summary-container'>
+            <NotificationDataSummary
+              notification={this.props.notification}
+              dataFormatting={this.props.dataFormatting}
+              isUnread={this.isUnread()}
+            />
+          </div>
+          {this.state.enableMoreOptionsMenu && this.moreOptionsButton()}
+        </div>
         {this.renderExpandArrow()}
       </div>
     )
