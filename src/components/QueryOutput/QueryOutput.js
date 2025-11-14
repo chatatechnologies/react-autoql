@@ -70,6 +70,7 @@ import {
   formatFiltersForTabulator,
   formatSortersForTabulator,
   DisplayTypes,
+  isSelectableNumberColumn,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -179,6 +180,87 @@ export class QueryOutput extends React.Component {
       originalLegendState: this.originalLegendState,
     }
     this.updateMaxConstraints()
+  }
+
+  // Wrap getNumberColumnIndices to prefer an existing secondary index when inferring defaults.
+  getNumberColumnIndicesWithPreferred = (
+    columns,
+    isPivot = false,
+    defaultAmountColumn = undefined,
+    preferredSecondIndex = undefined,
+  ) => {
+    const cols = columns || this.getColumns() || []
+    const result = getNumberColumnIndices(cols, isPivot, defaultAmountColumn) || {}
+
+    // Local pure normalizer: returns a new result object with preferred index applied
+    const normalize = (res, allCols, preferred) => {
+      const origAll = Array.isArray(res.allNumberColumnIndices) ? [...res.allNumberColumnIndices] : []
+      const origPrimary = Array.isArray(res.numberColumnIndices) ? [...res.numberColumnIndices] : []
+      const origSecondary = Array.isArray(res.numberColumnIndices2) ? [...res.numberColumnIndices2] : []
+
+      const validIndex = (i) => Number.isInteger(i) && allCols[i] && isSelectableNumberColumn(allCols[i])
+
+      let out = { ...res }
+
+      // apply preferred secondary index when valid
+      if (preferred != null) {
+        const p = Number(preferred)
+        if (Number.isInteger(p) && p >= 0 && p < allCols.length && isColumnNumberType(allCols[p])) {
+          if (out.numberColumnIndex !== p) {
+            out = {
+              ...out,
+              numberColumnIndex2: p,
+              numberColumnIndices2: [p],
+              allNumberColumnIndices: Array.from(new Set([...(origAll || []), p])),
+            }
+          }
+        }
+      }
+
+      const filteredAll = (out.allNumberColumnIndices ?? []).filter(validIndex)
+      const filteredPrimary = (out.numberColumnIndices ?? []).filter(validIndex)
+      const filteredSecondary = (out.numberColumnIndices2 ?? []).filter(validIndex)
+
+      const final = {
+        ...out,
+        allNumberColumnIndices: filteredAll.length ? filteredAll : origAll,
+        numberColumnIndices: filteredPrimary.length ? filteredPrimary : origPrimary,
+        numberColumnIndices2: filteredSecondary.length ? filteredSecondary : origSecondary,
+      }
+
+      if (typeof final.numberColumnIndex === 'number' && !validIndex(final.numberColumnIndex)) {
+        final.numberColumnIndex = final.numberColumnIndices?.[0] ?? undefined
+      }
+      if (typeof final.numberColumnIndex2 === 'number' && !validIndex(final.numberColumnIndex2)) {
+        final.numberColumnIndex2 = final.numberColumnIndices2?.[0] ?? undefined
+      }
+
+      return final
+    }
+
+    return normalize(result, cols, preferredSecondIndex)
+  }
+
+  // Find and set a sensible fallback for second-axis number column when current selections are removed.
+  findAndSetFallbackNumberColumnIndex2 = (excludedIndices = [], preferred) => {
+    const candidates =
+      this.getNumberColumnIndicesWithPreferred(
+        this.getColumns(),
+        this.usePivotDataForChart(),
+        this.queryResponse?.data?.data?.default_amount_column,
+        preferred,
+      )?.allNumberColumnIndices || []
+
+    const fallback = candidates.find(
+      (i) => i !== undefined && i !== null && !excludedIndices.includes(i) && isColumnNumberType(this.getColumns()[i]),
+    )
+
+    if (fallback !== undefined && fallback >= 0) {
+      this.tableConfig.numberColumnIndex2 = fallback
+      this.tableConfig.numberColumnIndices2 = [fallback]
+      return fallback
+    }
+    return undefined
   }
 
   static propTypes = {
@@ -1801,6 +1883,12 @@ export class QueryOutput extends React.Component {
       return
     }
 
+    const cols = this.getColumns()
+    const rowsExist = !!(this.tableData?.length || this.queryResponse?.data?.data?.rows?.length)
+    if (!cols || !cols.length || !rowsExist) {
+      return
+    }
+
     if (this.tableConfig.legendColumnIndex === index) {
       let stringColumnIndex = this.tableConfig.stringColumnIndex
       this.tableConfig.stringColumnIndex = this.tableConfig.legendColumnIndex
@@ -1810,7 +1898,12 @@ export class QueryOutput extends React.Component {
     }
 
     if (this.tableConfig.numberColumnIndices.includes(index)) {
-      const numberColumnIndices = getNumberColumnIndices(this.getColumns())?.allNumberColumnIndices
+      const numberColumnIndices = this.getNumberColumnIndicesWithPreferred(
+        this.getColumns(),
+        this.usePivotDataForChart(),
+        this.queryResponse?.data?.data?.default_amount_column,
+        this.tableConfig?.numberColumnIndex2,
+      )?.allNumberColumnIndices
       const newNumberColumnIndices = numberColumnIndices?.filter((i) => i !== index)
       this.tableConfig.numberColumnIndices = newNumberColumnIndices
       this.tableConfig.numberColumnIndex = newNumberColumnIndices[0]
@@ -1820,18 +1913,8 @@ export class QueryOutput extends React.Component {
       this.tableConfig.numberColumnIndices2 = this.tableConfig.numberColumnIndices2.filter((i) => i !== index)
 
       if (!this.tableConfig.numberColumnIndices2.length) {
-        const numberColumnIndex2 = this.getColumns().find(
-          (col) =>
-            col.is_visible &&
-            col.index !== index && // Must not be the same as the string index
-            !this.tableConfig.numberColumnIndices.includes(col.index) && // Must not already be in the first number column index array
-            isColumnNumberType(col), // Must be number type
-        )?.index
-
-        if (numberColumnIndex2 >= 0) {
-          this.tableConfig.numberColumnIndex2 = numberColumnIndex2
-          this.tableConfig.numberColumnIndices2 = [numberColumnIndex2]
-        }
+        const preferred = this.tableConfig?.numberColumnIndex2
+        this.findAndSetFallbackNumberColumnIndex2([index, this.tableConfig.numberColumnIndex], preferred)
       } else if (this.tableConfig.numberColumnIndex2 === index) {
         this.tableConfig.numberColumnIndex2 = this.tableConfig.numberColumnIndices2[0]
       }
@@ -1846,6 +1929,12 @@ export class QueryOutput extends React.Component {
   }
 
   onChangeLegendColumnIndex = (index) => {
+    const cols = this.getColumns()
+    const rowsExist = !!(this.tableData?.length || this.queryResponse?.data?.data?.rows?.length)
+    if (!cols || !cols.length || !rowsExist) {
+      return
+    }
+
     const currentLegendColumnIndex = this.tableConfig.legendColumnIndex
 
     this.tableConfig.legendColumnIndex = index
@@ -1868,6 +1957,21 @@ export class QueryOutput extends React.Component {
       }
     }
 
+    // If legend was a selected second-axis column, remove it and attempt to preserve/derive a fallback
+    if (this.tableConfig.numberColumnIndices2.includes(index)) {
+      this.tableConfig.numberColumnIndices2 = this.tableConfig.numberColumnIndices2.filter((i) => i !== index)
+
+      if (!this.tableConfig.numberColumnIndices2.length) {
+        const preferred = this.tableConfig?.numberColumnIndex2
+        this.findAndSetFallbackNumberColumnIndex2(
+          [this.tableConfig.numberColumnIndex, this.tableConfig.stringColumnIndex],
+          preferred,
+        )
+      } else if (this.tableConfig.numberColumnIndex2 === index) {
+        this.tableConfig.numberColumnIndex2 = this.tableConfig.numberColumnIndices2[0]
+      }
+    }
+
     if (this.usePivotDataForChart()) {
       this.generatePivotTableData()
     }
@@ -1877,6 +1981,12 @@ export class QueryOutput extends React.Component {
   }
 
   onChangeNumberColumnIndices = (indices, indices2, newColumns) => {
+    const cols = newColumns ?? this.getColumns()
+    const rowsExist = !!(this.tableData?.length || this.queryResponse?.data?.data?.rows?.length)
+    if (!cols || !cols.length || !rowsExist) {
+      return
+    }
+
     if (indices) {
       this.tableConfig.numberColumnIndices = indices
       this.tableConfig.numberColumnIndex = indices[0]
@@ -1935,7 +2045,12 @@ export class QueryOutput extends React.Component {
         quantityColumnIndices,
         ratioColumnIndices,
         allNumberColumnIndices,
-      } = getNumberColumnIndices(columns, this.usePivotDataForChart())
+      } = this.getNumberColumnIndicesWithPreferred(
+        columns,
+        this.usePivotDataForChart(),
+        this.queryResponse?.data?.data?.default_amount_column,
+        this.pivotTableConfig?.numberColumnIndex2,
+      )
 
       this.pivotTableConfig.numberColumnIndices = numberColumnIndices
       this.pivotTableConfig.numberColumnIndex = numberColumnIndex
@@ -2045,10 +2160,11 @@ export class QueryOutput extends React.Component {
       currencyColumnIndices,
       quantityColumnIndices,
       ratioColumnIndices,
-    } = getNumberColumnIndices(
+    } = this.getNumberColumnIndicesWithPreferred(
       columns,
       this.usePivotDataForChart(),
       this.queryResponse?.data?.data?.default_amount_column,
+      this.tableConfig?.numberColumnIndex2,
     )
 
     if (
