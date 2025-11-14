@@ -205,7 +205,7 @@ export class QueryOutput extends React.Component {
       // apply preferred secondary index when valid
       if (preferred != null) {
         const p = Number(preferred)
-        if (Number.isInteger(p) && p >= 0 && p < allCols.length && isColumnNumberType(allCols[p])) {
+        if (Number.isInteger(p) && p >= 0 && p < allCols.length && isSelectableNumberColumn(allCols[p])) {
           if (out.numberColumnIndex !== p) {
             out = {
               ...out,
@@ -252,7 +252,8 @@ export class QueryOutput extends React.Component {
       )?.allNumberColumnIndices || []
 
     const fallback = candidates.find(
-      (i) => i !== undefined && i !== null && !excludedIndices.includes(i) && isColumnNumberType(this.getColumns()[i]),
+      (i) =>
+        i !== undefined && i !== null && !excludedIndices.includes(i) && isSelectableNumberColumn(this.getColumns()[i]),
     )
 
     if (fallback !== undefined && fallback >= 0) {

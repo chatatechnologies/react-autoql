@@ -145,7 +145,7 @@ export default class ChataTable extends React.Component {
       const { filters = [], sorters = [] } = params ?? {}
       return JSON.stringify({ filters, sorters })
     } catch (e) {
-      // if failed to serialize return undefined and skip the cache
+      return 'serialize_error'
     }
   }
 
