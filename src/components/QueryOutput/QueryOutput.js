@@ -111,7 +111,11 @@ export class QueryOutput extends React.Component {
     this.columnDateRanges = getColumnDateRanges(response)
     this.queryID = this.queryResponse?.data?.data?.query_id
     this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
-    this.tableParams = {}
+    this.tableParams = {
+      filter: props?.initialTableParams?.filter || [],
+      sort: props?.initialTableParams?.sort || [],
+      page: props?.initialTableParams?.page || 1,
+    }
     this.tableID = uuid()
     this.pivotTableID = uuid()
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
@@ -1854,7 +1858,7 @@ export class QueryOutput extends React.Component {
     d?.label && this.handleLegendClick(d.label)
 
     if (!d) {
-      console.debug('no legend item was provided on click event')
+      // no-op when no legend item provided
       return
     }
 

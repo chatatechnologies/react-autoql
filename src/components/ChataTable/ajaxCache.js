@@ -1,6 +1,6 @@
 export default class AjaxCache {
   constructor({ maxEntries = 50, ttl = 1000 * 60 * 10 } = {}) {
-    // Parameters for future eviction policies (LRU, TTL-based)
+    // Simple in-memory LRU cache (Map order used to track recency).
     this._cache = new Map()
     this._inFlight = new Map()
     this._maxEntries = Number.isInteger(maxEntries) && maxEntries > 0 ? maxEntries : 50
@@ -18,19 +18,32 @@ export default class AjaxCache {
       this._cache.delete(key)
       return undefined
     }
+
+    // Bump entry to end of Map to mark it recently used.
+    try {
+      this._cache.delete(key)
+      this._cache.set(key, entry)
+    } catch (e) {}
+
     return entry.value
   }
 
   set(key, value) {
     const expiresAt = this._ttl ? Date.now() + this._ttl : undefined
+
+    // If key already exists, delete first so set() moves it to end
+    if (this._cache.has(key)) {
+      this._cache.delete(key)
+    }
     this._cache.set(key, { value, expiresAt })
 
-    // Evict oldest entries when over limit
+    // Evict least-recently-used entries (oldest Map entries) when over limit
     while (this._cache.size > this._maxEntries) {
       const oldestKey = this._cache.keys().next().value
       if (oldestKey === undefined) break
       this._cache.delete(oldestKey)
     }
+
     return value
   }
 
