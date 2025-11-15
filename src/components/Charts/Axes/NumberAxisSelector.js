@@ -1,10 +1,16 @@
 import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
-import _isEqual from 'lodash.isequal'
-import _cloneDeep from 'lodash.clonedeep'
+
 import { isMobile } from 'react-device-detect'
-import { AGG_TYPES, AggTypes, COLUMN_TYPES, isColumnStringType } from 'autoql-fe-utils'
+import {
+  AGG_TYPES,
+  AggTypes,
+  COLUMN_TYPES,
+  isColumnStringType,
+  getNumberColumnIndices,
+  isSelectableNumberColumn,
+} from 'autoql-fe-utils'
 
 import { Button } from '../../Button'
 import { Select } from '../../Select'
@@ -29,6 +35,11 @@ export default class NumberAxisSelector extends React.Component {
       checkedColumns,
       columns: props.columns,
     }
+  }
+
+  onColumnSelection = (selected, selectedColumns) => {
+    const selectedColumnIndices = selectedColumns.map((col) => col.index)
+    this.setState({ selectedColumns: selectedColumnIndices })
   }
 
   static propTypes = {
@@ -75,11 +86,25 @@ export default class NumberAxisSelector extends React.Component {
   }
 
   getColumnsOfType = (type) => {
-    const columns = this.state.columns?.filter((col) => {
-      return col.type === type && col.is_visible && col.index !== this.props.stringColumnIndex
-    })
+    const cols = this.state.columns || []
+    const result = getNumberColumnIndices(cols, this.props.isAggregated) || {}
+    const allNumberIndices = result.allNumberColumnIndices ?? []
 
-    return columns
+    const filtered = allNumberIndices
+      .filter((i) => i != null)
+      .filter((i) => {
+        const c = cols[i]
+        return c && i !== this.props.stringColumnIndex && isSelectableNumberColumn(c) && c.type === type
+      })
+      .map((i) => cols[i])
+
+    if (filtered.length) return filtered
+
+    return (
+      this.state.columns?.filter(
+        (col) => col.type === type && isSelectableNumberColumn(col) && col.index !== this.props.stringColumnIndex,
+      ) ?? []
+    )
   }
 
   getSelectableListItems = (type) => {
@@ -96,7 +121,7 @@ export default class NumberAxisSelector extends React.Component {
       const item = {
         key: `selectable-list-item-${this.COMPONENT_KEY}-${type}-${col.index}`,
         content: (
-          <div className='agg-selector-column-item' key={`column-agg-type-symbol-${this.COMPONENT_KEY}`}>
+          <div className='agg-selector-column-item'>
             {!this.props.isAggregation && col.aggType && (
               <Select
                 className='agg-type-symbol'
@@ -156,47 +181,21 @@ export default class NumberAxisSelector extends React.Component {
     return items
   }
 
-  getOtherAxisColumns = () => {
-    if (!this.props.hasSecondAxis) {
-      return []
-    }
-
-    return this.props.isSecondAxis ? this.props.numberColumnIndices ?? [] : this.props.numberColumnIndices2 ?? []
-  }
-
-  getAllChecked = (type) => {
-    const columnsOfType = this.getColumnsOfType(type)
-    return columnsOfType.every((col) => this.state.checkedColumns.includes(col.index))
-  }
-
-  onColumnSelection = (selected, selectedColumns) => {
-    const selectedColumnIndices = selectedColumns.map((col) => col.index)
-    this.setState({ selectedColumns: selectedColumnIndices })
-  }
-
   onColumnCheck = (columns) => {
     const { checkedColumns } = this.state
-    const newCheckedColumns = _cloneDeep(checkedColumns)
+    const newCheckedColumns = [...checkedColumns]
 
     columns.forEach((col) => {
-      const indexOfCheckedColumns = newCheckedColumns.indexOf(col.columnIndex)
-      if (col.checked && indexOfCheckedColumns === -1) {
-        newCheckedColumns.push(col.columnIndex)
-      } else if (!col.checked && indexOfCheckedColumns > -1) {
-        newCheckedColumns.splice(indexOfCheckedColumns, 1)
-      }
+      const idx = newCheckedColumns.indexOf(col.columnIndex)
+      if (col.checked && idx === -1) newCheckedColumns.push(col.columnIndex)
+      if (!col.checked && idx > -1) newCheckedColumns.splice(idx, 1)
     })
 
-    this.setState({
-      checkedColumns: newCheckedColumns,
-    })
+    this.setState({ checkedColumns: newCheckedColumns })
   }
 
   renderSelectorContent = ({ position, nudgedLeft, nudgedTop }) => {
-    if (this.props.hidden) {
-      return null
-    }
-
+    if (this.props.hidden) return null
     return (
       <div ref={(r) => (this.popoverContentRef = r)} className='number-axis-selector-popover'>
         <div className='number-axis-selector-popover-content'>

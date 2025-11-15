@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import _isEqual from 'lodash.isequal'
 import { isMobile } from 'react-device-detect'
-import { TABLE_TYPES, CHART_TYPES } from 'autoql-fe-utils'
+import { TABLE_TYPES, DisplayTypes, isChartType } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
 import { Button } from '../Button'
@@ -59,7 +59,7 @@ class VizToolbar extends React.Component {
   }
 
   showDisplayTypeButton = (displayType) => {
-    if (this.props.disableCharts && CHART_TYPES.includes(displayType)) {
+    if (this.props.disableCharts && isChartType(displayType)) {
       return false
     }
 
@@ -116,7 +116,7 @@ class VizToolbar extends React.Component {
       return null
     }
 
-    if (TABLE_TYPES.includes(displayType) || CHART_TYPES.includes(displayType)) {
+    if (TABLE_TYPES.includes(displayType) || isChartType(displayType)) {
       return (
         <ErrorBoundary>
           <div
@@ -125,20 +125,29 @@ class VizToolbar extends React.Component {
             } viz-toolbar ${this.props.vertical ? 'vertical' : ''}`}
             data-test='viz-toolbar'
           >
-            {this.createVisButton('table', 'Table', <Icon type='table' />)}
-            {this.createVisButton('pivot_table', 'Pivot View', <Icon type='pivot-table' />)}
-            {this.createVisButton('column', 'Column Chart', <Icon type='column-chart' />)}
-            {this.createVisButton('bar', 'Bar Chart', <Icon type='bar-chart' />)}
-            {this.createVisButton('line', 'Line Chart', <Icon type='line-chart' />)}
-            {this.createVisButton('pie', 'Pie Chart', <Icon type='pie-chart' />)}
-            {this.createVisButton('heatmap', 'Heatmap', <Icon type='heatmap' />)}
-            {this.createVisButton('bubble', 'Bubble Chart', <Icon type='bubble-chart' />)}
-            {this.createVisButton('stacked_bar', 'Stacked Bar Chart', <Icon type='stacked-bar-chart' />)}
-            {this.createVisButton('stacked_column', 'Stacked Column Chart', <Icon type='stacked-column-chart' />)}
-            {this.createVisButton('stacked_line', 'Stacked Area Chart', <Icon type='stacked-line-chart' />)}
-            {this.createVisButton('column_line', 'Column Line Combo Chart', <Icon type='column-line-chart' />)}
-            {this.createVisButton('histogram', 'Histogram', <Icon type='histogram-chart' />)}
-            {this.createVisButton('scatterplot', 'Scatterplot', <Icon type='scatterplot' />)}
+            {this.createVisButton(DisplayTypes.TABLE, 'Table', <Icon type='table' />)}
+            {this.createVisButton(DisplayTypes.PIVOT_TABLE, 'Pivot View', <Icon type='pivot-table' />)}
+            {this.createVisButton(DisplayTypes.COLUMN, 'Column Chart', <Icon type='column-chart' />)}
+            {this.createVisButton(DisplayTypes.BAR, 'Bar Chart', <Icon type='bar-chart' />)}
+            {this.createVisButton(DisplayTypes.LINE, 'Line Chart', <Icon type='line-chart' />)}
+            {this.createVisButton(DisplayTypes.PIE, 'Pie Chart', <Icon type='pie-chart' />)}
+            {this.createVisButton(DisplayTypes.HEATMAP, 'Heatmap', <Icon type='heatmap' />)}
+            {this.createVisButton(DisplayTypes.BUBBLE, 'Bubble Chart', <Icon type='bubble-chart' />)}
+            {this.createVisButton(DisplayTypes.STACKED_BAR, 'Stacked Bar Chart', <Icon type='stacked-bar-chart' />)}
+            {this.createVisButton(
+              DisplayTypes.STACKED_COLUMN,
+              'Stacked Column Chart',
+              <Icon type='stacked-column-chart' />,
+            )}
+            {this.createVisButton(DisplayTypes.STACKED_LINE, 'Stacked Area Chart', <Icon type='stacked-line-chart' />)}
+            {this.createVisButton(
+              DisplayTypes.COLUMN_LINE,
+              'Column Line Combo Chart',
+              <Icon type='column-line-chart' />,
+            )}
+            {this.createVisButton(DisplayTypes.HISTOGRAM, 'Histogram', <Icon type='histogram-chart' />)}
+            {this.createVisButton(DisplayTypes.SCATTERPLOT, 'Scatterplot', <Icon type='scatterplot' />)}
+            {this.createVisButton(DisplayTypes.NETWORK_GRAPH, 'Network Graph', <Icon type='network' />)}
           </div>
           {!this.props.tooltipID && (
             <Tooltip tooltipId={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`} delayShow={800} />
