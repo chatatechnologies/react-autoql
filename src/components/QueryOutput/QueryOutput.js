@@ -2378,15 +2378,10 @@ export class QueryOutput extends React.Component {
             return false
           }
 
-          const formattedElement = formatElement({
-            element: rowValue,
-            column: col,
-            config: self.props.dataFormatting,
-          })
-
-          const shouldFilter = `${formattedElement}`.toLowerCase().includes(`${headerValue}`.toLowerCase())
-
-          return shouldFilter
+          const formattedElement = formatElement({ element: rowValue, column: col, config: self.props.dataFormatting })
+          return String(formattedElement ?? '')
+            .toLowerCase()
+            .includes(String(headerValue ?? '').toLowerCase())
         } catch (error) {
           console.error(error)
           this.props.onErrorCallback(error)
@@ -2400,21 +2395,29 @@ export class QueryOutput extends React.Component {
             return false
           }
 
-          const trimmedValue = headerValue.trim()
-          if (trimmedValue.length >= 2) {
-            const number = Number(trimmedValue.substr(1).replace(/[^0-9.]/g, ''))
-            if (trimmedValue[0] === '>' && trimmedValue[1] === '=') {
-              return rowValue >= number
-            } else if (trimmedValue[0] === '>') {
-              return rowValue > number
-            } else if (trimmedValue[0] === '<' && trimmedValue[1] === '=') {
-              return rowValue <= number
-            } else if (trimmedValue[0] === '<') {
-              return rowValue < number
-            } else if (trimmedValue[0] === '!' && trimmedValue[1] === '=') {
-              return rowValue !== number
-            } else if (trimmedValue[0] === '=') {
-              return rowValue === number
+          const trimmedValue = String(headerValue ?? '').trim()
+          if (trimmedValue) {
+            const match = trimmedValue.match(/^(>=|<=|!=|>|<|!|=)\s*(.*)$/)
+            if (match) {
+              const op = match[1]
+              const num = Number((match[2] || '').replace(/[^0-9.]/g, ''))
+              switch (op) {
+                case '>=':
+                  return rowValue >= num
+                case '>':
+                  return rowValue > num
+                case '<=':
+                  return rowValue <= num
+                case '<':
+                  return rowValue < num
+                case '!=':
+                case '!':
+                  return rowValue !== num
+                case '=':
+                  return rowValue === num
+                default:
+                  break
+              }
             }
           }
 
