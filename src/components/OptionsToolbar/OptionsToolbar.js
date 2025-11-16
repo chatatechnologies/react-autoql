@@ -122,6 +122,10 @@ export class OptionsToolbar extends React.Component {
     clearTimeout(this.temporaryStateTimeout)
     clearTimeout(this.pivotTableCSVDownloadTimeout)
   }
+
+  countTabulatorHeaderFilters = (filters) =>
+    Array.isArray(filters) ? filters.length : filters ? Object.keys(filters).length : 0
+
   renderOpenInNewBtn = () => {
     return (
       <Button
@@ -567,8 +571,10 @@ export class OptionsToolbar extends React.Component {
 
   renderFilterBtn = () => {
     const tabulatorHeaderFilters = this.props.responseRef?.getTabulatorHeaderFilters()
+    const tabulatorHeaderFiltersCount = this.countTabulatorHeaderFilters(tabulatorHeaderFilters)
+
     const isFiltered =
-      !!this.props.responseRef?.formattedTableParams?.filters?.length && !!tabulatorHeaderFilters?.length
+      !!this.props.responseRef?.formattedTableParams?.filters?.length && tabulatorHeaderFiltersCount > 0
     const displayType = this.props.responseRef?.state?.displayType
     const isTable = displayType === 'table'
 
