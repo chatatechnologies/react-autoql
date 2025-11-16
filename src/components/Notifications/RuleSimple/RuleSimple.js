@@ -1546,9 +1546,7 @@ export default class RuleSimple extends React.Component {
         ?.filter((col) => !!additionalSelects?.find((select) => select.columns[0] === col.name))
         ?.map((col) => col.index) ?? []
 
-    const disabledColumns = Array.from(
-      new Set([...groupableColumns, ...stringColumnIndices, ...additionalSelectColumns]),
-    )
+    const disabledColumns = Array.from(new Set([...groupableColumns, ...stringColumnIndices]))
 
     return (
       <SelectableTable

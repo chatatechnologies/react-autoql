@@ -81,7 +81,11 @@ export default class ChataTable extends React.Component {
     if (isNaN(this.totalPages) || !this.totalPages) {
       this.totalPages = 1
     }
-    this.useInfiniteScroll = props.useInfiniteScroll ?? !this.isLocal
+    if (props.useInfiniteScroll === false) {
+      this.useInfiniteScroll = false
+    } else {
+      this.useInfiniteScroll = !this.isLocal
+    }
 
     this.originalQueryData = _cloneDeep(props.response?.data?.data?.rows)
     if (props.pivot) {
@@ -1186,7 +1190,10 @@ export default class ChataTable extends React.Component {
 
     let newRows
     if (props.pivot) {
-      newRows = this.originalQueryData?.slice(start, end) ?? []
+      // For pivot tables we want to render the full local dataset so users can
+      // scroll through all aggregated rows. Returning a sliced page here caused
+      // the UI to only show the first `pageSize` rows (default 50).
+      newRows = this.originalQueryData ?? []
     } else if (!this.useInfiniteScroll) {
       const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows
 
