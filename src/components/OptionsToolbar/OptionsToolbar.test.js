@@ -134,3 +134,57 @@ describe('filter button', () => {
     queryOutputComponent.unmount()
   })
 })
+
+describe('filter badge rendering', () => {
+  test('shows badge when header filters provided as array', () => {
+    // Create a minimal mock responseRef
+    const responseRef = {
+      getTabulatorHeaderFilters: () => [{ field: '1' }],
+      formattedTableParams: { filters: [{ field: '1' }] },
+      state: { displayType: 'table' },
+      isFilteringTable: () => false,
+      toggleTableFilter: () => {},
+      changeDisplayType: () => {},
+    }
+
+    const wrapper = shallow(<OptionsToolbar {...OptionsToolbar.defaultProps} responseRef={responseRef} />)
+    const instance = wrapper.instance()
+    const btn = instance.renderFilterBtn()
+    const icon = btn.props.children
+    expect(icon.props.showBadge).toBe(true)
+  })
+
+  test('shows badge when header filters provided as object', () => {
+    const responseRef = {
+      getTabulatorHeaderFilters: () => ({ 1: { field: '1' } }),
+      formattedTableParams: { filters: [{ field: '1' }] },
+      state: { displayType: 'table' },
+      isFilteringTable: () => false,
+      toggleTableFilter: () => {},
+      changeDisplayType: () => {},
+    }
+
+    const wrapper = shallow(<OptionsToolbar {...OptionsToolbar.defaultProps} responseRef={responseRef} />)
+    const instance = wrapper.instance()
+    const btn = instance.renderFilterBtn()
+    const icon = btn.props.children
+    expect(icon.props.showBadge).toBe(true)
+  })
+
+  test('does not show badge when no filters', () => {
+    const responseRef = {
+      getTabulatorHeaderFilters: () => null,
+      formattedTableParams: { filters: [] },
+      state: { displayType: 'table' },
+      isFilteringTable: () => false,
+      toggleTableFilter: () => {},
+      changeDisplayType: () => {},
+    }
+
+    const wrapper = shallow(<OptionsToolbar {...OptionsToolbar.defaultProps} responseRef={responseRef} />)
+    const instance = wrapper.instance()
+    const btn = instance.renderFilterBtn()
+    const icon = btn.props.children
+    expect(icon.props.showBadge).toBe(false)
+  })
+})
