@@ -570,6 +570,9 @@ export default class ChataTable extends React.Component {
     if (this.hasSetInitialData || data?.length || !this.props.response?.data?.data?.rows?.length) {
       this.hasSetInitialData = true
       this.isSettingInitialData = false
+      // Track when initial data was set so timing-protection logic can avoid
+      // firing AJAX requests immediately after initial processing.
+      this._setInitialDataTime = Date.now()
       this.clearLoadingIndicators()
     }
   }
