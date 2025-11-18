@@ -23,6 +23,7 @@ import {
   getGroupBysFromPivotTable,
   getGroupBysFromTable,
   isTableType,
+  getVisibleColumns,
   isChartType,
   areAllColumnsHidden,
   sortDataByDate,
