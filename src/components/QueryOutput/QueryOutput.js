@@ -7,7 +7,7 @@ import _isEmpty from 'lodash.isempty'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
 
-import { TABULATOR_LOCAL_ROW_LIMIT, TOOLTIP_COPY_TEXTS } from '../../js/Constants'
+import { TOOLTIP_COPY_TEXTS } from '../../js/Constants'
 
 import {
   AggTypes,
@@ -20,7 +20,6 @@ import {
   getDefaultDisplayType,
   onlyUnique,
   formatElement,
-  makeEmptyArray,
   getGroupBysFromPivotTable,
   getGroupBysFromTable,
   isTableType,
