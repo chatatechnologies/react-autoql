@@ -23,7 +23,10 @@ export default class AjaxCache {
     try {
       this._cache.delete(key)
       this._cache.set(key, entry)
-    } catch (e) {}
+    } catch (e) {
+      // Map operations should not fail under normal circumstances; log for debugging so issues can be diagnosed instead of being silently swallowed; use warn to avoid noisy stack traces in production logs; eslint-disable-next-line no-console
+      console.warn('AjaxCache: Failed to update entry recency', e)
+    }
 
     return entry.value
   }

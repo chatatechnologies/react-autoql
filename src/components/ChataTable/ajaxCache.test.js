@@ -1,5 +1,42 @@
 import AjaxCache from './ajaxCache'
 
+describe('AjaxCache maxEntries handling and eviction', () => {
+  test('defaults to 50 when maxEntries is 0', () => {
+    const c = new AjaxCache({ maxEntries: 0 })
+    expect(c._maxEntries).toBe(50)
+  })
+
+  test('defaults to 50 when maxEntries is negative', () => {
+    const c = new AjaxCache({ maxEntries: -5 })
+    expect(c._maxEntries).toBe(50)
+  })
+
+  test('evicts least-recently-used entries when over limit', () => {
+    const c = new AjaxCache({ maxEntries: 2, ttl: 0 })
+    c.set('a', 1)
+    c.set('b', 2)
+    // At this point cache has ['a','b']
+    c.set('c', 3)
+    // Should have evicted 'a'
+    expect(c.has('a')).toBe(false)
+    expect(c.has('b')).toBe(true)
+    expect(c.has('c')).toBe(true)
+    expect(c.size).toBeLessThanOrEqual(2)
+  })
+
+  test('get bumps entry recency so it is not evicted', () => {
+    const c = new AjaxCache({ maxEntries: 2, ttl: 0 })
+    c.set('a', 1)
+    c.set('b', 2)
+    // Access 'a' to mark it recent
+    expect(c.get('a')).toBe(1)
+    // Add 'c' which should evict the least recent (which should be 'b')
+    c.set('c', 3)
+    expect(c.has('a')).toBe(true)
+    expect(c.has('b')).toBe(false)
+    expect(c.has('c')).toBe(true)
+  })
+})
 describe('AjaxCache', () => {
   describe('persistent cache', () => {
     test('get/set/has/delete work correctly', () => {

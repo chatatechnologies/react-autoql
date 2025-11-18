@@ -287,7 +287,7 @@ const ReverseTranslation = ({
       const newArray = constructRTArray(newParsedInterpretation)
       executePrerequisites(newArray)
     }
-  }, [queryResponse?.data?.data?.parsed_interpretation])
+  }, [queryResponse?.data?.data?.parsed_interpretation, textOnly, onValueLabelClick, enableEditReverseTranslation])
 
   // todo: see if we can update and remove this useEffect and use queryRepsonse instead
   useEffect(() => {

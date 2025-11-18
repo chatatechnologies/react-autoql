@@ -18,7 +18,10 @@ export default class StringAxisSelector extends React.Component {
       if (!col.is_visible || !isSelectableStringColumn(col)) return acc
       const isOnNumberAxis = this.props.numberColumnIndices?.includes(col.index)
       const isOnSecondNumberAxis = this.props.hasSecondAxis && this.props.numberColumnIndices2?.includes(col.index)
-      if ((!isOnNumberAxis && !isOnSecondNumberAxis) || (col.groupable && isColumnStringType(col))) acc.push(i)
+      const isOnAnyNumberAxis = isOnNumberAxis || isOnSecondNumberAxis
+      // Include if: not on any number axis, OR (groupable and explicitly a string column)
+      const shouldInclude = !isOnAnyNumberAxis || (col.groupable && isColumnStringType(col))
+      if (shouldInclude) acc.push(i)
       return acc
     }, [])
   }

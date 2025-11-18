@@ -90,21 +90,20 @@ export default class NumberAxisSelector extends React.Component {
     const result = getNumberColumnIndices(cols, this.props.isAggregated) || {}
     const allNumberIndices = result.allNumberColumnIndices ?? []
 
+    // Try using indices returned by getNumberColumnIndices first
     const filtered = allNumberIndices
-      .filter((i) => i != null)
       .filter((i) => {
         const c = cols[i]
-        return c && i !== this.props.stringColumnIndex && isSelectableNumberColumn(c) && c.type === type
+        return c != null && i !== this.props.stringColumnIndex && isSelectableNumberColumn(c) && c.type === type
       })
       .map((i) => cols[i])
 
-    if (filtered.length) return filtered
-
-    return (
-      this.state.columns?.filter(
-        (col) => col.type === type && isSelectableNumberColumn(col) && col.index !== this.props.stringColumnIndex,
-      ) ?? []
-    )
+    // Fallback to direct column scan when helper returned no candidates
+    return filtered.length > 0
+      ? filtered
+      : cols.filter(
+          (col) => col.type === type && isSelectableNumberColumn(col) && col.index !== this.props.stringColumnIndex,
+        )
   }
 
   getSelectableListItems = (type) => {

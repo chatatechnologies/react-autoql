@@ -1800,12 +1800,10 @@ export class QueryOutput extends React.Component {
     const hasIncomingFilters = Array.isArray(incoming.filters) && incoming.filters.length > 0
     const hasIncomingSorters = Array.isArray(incoming.sorters) && incoming.sorters.length > 0
 
-    // Assign only when incoming has data or when there are no existing formatted params
-    if (
-      hasIncomingFilters ||
-      hasIncomingSorters ||
-      !(this.formattedTableParams?.filters?.length || this.formattedTableParams?.sorters?.length)
-    ) {
+    // Guard: only update if incoming has data OR we truly have no existing params
+    const hasExistingParams =
+      (this.formattedTableParams?.filters?.length || this.formattedTableParams?.sorters?.length) > 0
+    if (hasIncomingFilters || hasIncomingSorters || !hasExistingParams) {
       this.formattedTableParams = formattedTableParams
     }
 

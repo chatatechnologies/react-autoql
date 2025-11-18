@@ -188,3 +188,32 @@ describe('filter badge rendering', () => {
     expect(icon.props.showBadge).toBe(false)
   })
 })
+
+// Unit tests for countTabulatorHeaderFilters utility method
+describe('countTabulatorHeaderFilters (unit)', () => {
+  test('returns 0 for null/undefined', () => {
+    const inst = new OptionsToolbar({})
+    expect(inst.countTabulatorHeaderFilters(null)).toBe(0)
+    expect(inst.countTabulatorHeaderFilters(undefined)).toBe(0)
+  })
+
+  test('returns length for arrays', () => {
+    const inst = new OptionsToolbar({})
+    expect(inst.countTabulatorHeaderFilters([])).toBe(0)
+    expect(inst.countTabulatorHeaderFilters([1, 2])).toBe(2)
+  })
+
+  test('returns number of keys for objects', () => {
+    const inst = new OptionsToolbar({})
+    expect(inst.countTabulatorHeaderFilters({})).toBe(0)
+    expect(inst.countTabulatorHeaderFilters({ a: 1, b: 2 })).toBe(2)
+  })
+
+  test('returns 0 for primitive non-object types', () => {
+    const inst = new OptionsToolbar({})
+    expect(inst.countTabulatorHeaderFilters('')).toBe(0)
+    expect(inst.countTabulatorHeaderFilters('x')).toBe(0)
+    expect(inst.countTabulatorHeaderFilters(42)).toBe(0)
+    expect(inst.countTabulatorHeaderFilters(true)).toBe(0)
+  })
+})
