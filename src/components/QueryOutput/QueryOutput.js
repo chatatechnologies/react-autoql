@@ -7,7 +7,7 @@ import _isEmpty from 'lodash.isempty'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
 
-import { TOOLTIP_COPY_TEXTS } from '../../js/Constants'
+import { TOOLTIP_COPY_TEXTS, TABULATOR_LOCAL_ROW_LIMIT } from '../../js/Constants'
 
 import {
   AggTypes,
