@@ -1,7 +1,7 @@
 import React from 'react'
 import { v4 as uuid } from 'uuid'
 import { isMobile } from 'react-device-detect'
-import { isColumnDateType } from 'autoql-fe-utils'
+import { isColumnDateType, isColumnStringType, isSelectableStringColumn } from 'autoql-fe-utils'
 
 import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
@@ -14,20 +14,16 @@ export default class StringAxisSelector extends React.Component {
   }
 
   getAllStringColumnIndices = () => {
-    const columnIndices = []
-    this.props.columns.forEach((col, i) => {
-      if (!col.is_visible) {
-        return
-      }
-
+    return this.props.columns.reduce((acc, col, i) => {
+      if (!col.is_visible || !isSelectableStringColumn(col)) return acc
       const isOnNumberAxis = this.props.numberColumnIndices?.includes(col.index)
       const isOnSecondNumberAxis = this.props.hasSecondAxis && this.props.numberColumnIndices2?.includes(col.index)
-
-      if ((!isOnNumberAxis && !isOnSecondNumberAxis) || (col.groupable && col.isStringType)) {
-        columnIndices.push(i)
-      }
-    })
-    return columnIndices
+      const isOnAnyNumberAxis = isOnNumberAxis || isOnSecondNumberAxis
+      // Include if: not on any number axis, OR (groupable and explicitly a string column)
+      const shouldInclude = !isOnAnyNumberAxis || (col.groupable && isColumnStringType(col))
+      if (shouldInclude) acc.push(i)
+      return acc
+    }, [])
   }
 
   getDateColumnIndices = () => {
@@ -56,8 +52,8 @@ export default class StringAxisSelector extends React.Component {
       maxHeight = minHeight
     }
 
-    if (maxHeight > Window.innerHeight) {
-      maxHeight = Window.innerHeight
+    if (maxHeight > window.innerHeight) {
+      maxHeight = window.innerHeight
     }
 
     let columnIndices = []
