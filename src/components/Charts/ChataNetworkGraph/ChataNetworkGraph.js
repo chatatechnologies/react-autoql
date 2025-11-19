@@ -8,6 +8,8 @@ import { MdOutlineFitScreen, MdFilterList } from 'react-icons/md'
 import { findNetworkColumns, formatElement, getAutoQLConfig } from 'autoql-fe-utils'
 import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers'
 import { Tooltip } from '../../Tooltip'
+import { Popover } from '../../Popover'
+import ColumnSelector from './ColumnSelector'
 
 import './ChataNetworkGraph.scss'
 
@@ -26,6 +28,19 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
   const [showReceivers, setShowReceivers] = useState(true)
   const [showBoth, setShowBoth] = useState(true)
   const [showFilterDropdown, setShowFilterDropdown] = useState(false)
+  const [showSourceDropdown, setShowSourceDropdown] = useState(false)
+  const [showTargetDropdown, setShowTargetDropdown] = useState(false)
+
+  // Initialize selected columns from detected network columns
+  const { sourceColumnIndex: detectedSourceIndex, targetColumnIndex: detectedTargetIndex } = findNetworkColumns(
+    props.columns || [],
+  )
+  const [selectedSourceColumnIndex, setSelectedSourceColumnIndex] = useState(
+    detectedSourceIndex !== -1 ? detectedSourceIndex : null,
+  )
+  const [selectedTargetColumnIndex, setSelectedTargetColumnIndex] = useState(
+    detectedTargetIndex !== -1 ? detectedTargetIndex : null,
+  )
 
   const nodeSelectionRef = useRef(null)
   const linkSelectionRef = useRef(null)
@@ -111,7 +126,12 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
   // Generate tooltip HTML for network links
   const generateLinkTooltipHTML = useCallback(
     (d) => {
-      const { sourceColumnIndex, targetColumnIndex, weightColumnIndex } = findNetworkColumns(props.columns)
+      // Use selected columns or fall back to auto-detected
+      const detected = findNetworkColumns(props.columns)
+      const sourceColumnIndex = selectedSourceColumnIndex ?? detected.sourceColumnIndex
+      const targetColumnIndex = selectedTargetColumnIndex ?? detected.targetColumnIndex
+      const { weightColumnIndex } = detected
+
       const sourceColName =
         sourceColumnIndex !== -1 ? props.columns[sourceColumnIndex]?.display_name || 'Source' : 'Source'
       const targetColName =
@@ -146,14 +166,18 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
        </div>
      `
     },
-    [props.columns, props.dataFormatting, props.autoQLConfig],
+    [props.columns, props.dataFormatting, props.autoQLConfig, selectedSourceColumnIndex, selectedTargetColumnIndex],
   )
 
   // Generate tooltip HTML for network nodes
   const generateNodeTooltipHTML = useCallback(
     (d) => {
-      // Get column info for proper formatting and labels
-      const { sourceColumnIndex, targetColumnIndex, weightColumnIndex } = findNetworkColumns(props.columns)
+      // Get column info for proper formatting and labels - use selected columns or fall back to auto-detected
+      const detected = findNetworkColumns(props.columns)
+      const sourceColumnIndex = selectedSourceColumnIndex ?? detected.sourceColumnIndex
+      const targetColumnIndex = selectedTargetColumnIndex ?? detected.targetColumnIndex
+      const { weightColumnIndex } = detected
+
       const sourceColumn = sourceColumnIndex !== -1 ? props.columns[sourceColumnIndex] : null
       const targetColumn = targetColumnIndex !== -1 ? props.columns[targetColumnIndex] : null
       const weightColumn = weightColumnIndex !== -1 ? props.columns[weightColumnIndex] : null
@@ -217,16 +241,32 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
       return tooltipContent
     },
-    [props.columns, props.dataFormatting, props.autoQLConfig],
+    [props.columns, props.dataFormatting, props.autoQLConfig, selectedSourceColumnIndex, selectedTargetColumnIndex],
   )
 
   // Process network data from tabular data
-  const processNetworkData = useCallback((data, columns) => {
+  const processNetworkData = useCallback((data, columns, sourceColIndex, targetColIndex) => {
     if (!data || !Array.isArray(data) || data.length === 0) {
       return { nodes: [], links: [] }
     }
 
-    const { sourceColumnIndex, targetColumnIndex, weightColumnIndex } = findNetworkColumns(columns) // Using autoql-fe-utils
+    // Use provided column indices or fall back to auto-detection
+    let sourceColumnIndex = sourceColIndex
+    let targetColumnIndex = targetColIndex
+
+    if (
+      sourceColumnIndex === null ||
+      sourceColumnIndex === undefined ||
+      targetColumnIndex === null ||
+      targetColumnIndex === undefined
+    ) {
+      const detected = findNetworkColumns(columns)
+      sourceColumnIndex = sourceColumnIndex ?? detected.sourceColumnIndex
+      targetColumnIndex = targetColumnIndex ?? detected.targetColumnIndex
+    }
+
+    // Get weight column index (always auto-detect this)
+    const { weightColumnIndex } = findNetworkColumns(columns)
 
     if (sourceColumnIndex === -1 || targetColumnIndex === -1) {
       return { nodes: [], links: [] }
@@ -345,6 +385,11 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
   // Helper function to handle node click (drilldown)
   const handleNodeClick = useCallback(
     (event, nodeData) => {
+      // Close any open popovers when clicking on a node
+      setShowFilterDropdown(false)
+      setShowSourceDropdown(false)
+      setShowTargetDropdown(false)
+
       // Validate nodeData
       if (!nodeData || !nodeData.id) {
         return
@@ -354,7 +399,11 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         return
       }
 
-      const { sourceColumnIndex, targetColumnIndex } = findNetworkColumns(props.columns)
+      // Use selected columns or fall back to auto-detected
+      const detected = findNetworkColumns(props.columns)
+      const sourceColumnIndex = selectedSourceColumnIndex ?? detected.sourceColumnIndex
+      const targetColumnIndex = selectedTargetColumnIndex ?? detected.targetColumnIndex
+
       if (sourceColumnIndex === -1 || targetColumnIndex === -1) {
         return
       }
@@ -419,17 +468,35 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         activeKey: `node-${nodeData.id}`,
       })
     },
-    [props.columns, props.onChartClick, props.data],
+    [
+      props.columns,
+      props.onChartClick,
+      props.data,
+      selectedSourceColumnIndex,
+      selectedTargetColumnIndex,
+      setShowFilterDropdown,
+      setShowSourceDropdown,
+      setShowTargetDropdown,
+    ],
   )
 
   // Helper function to handle link click (drilldown)
   const handleLinkClick = useCallback(
     (event, linkData) => {
+      // Close any open popovers when clicking on a link
+      setShowFilterDropdown(false)
+      setShowSourceDropdown(false)
+      setShowTargetDropdown(false)
+
       if (!props.onChartClick) {
         return
       }
 
-      const { sourceColumnIndex, targetColumnIndex } = findNetworkColumns(props.columns)
+      // Use selected columns or fall back to auto-detected
+      const detected = findNetworkColumns(props.columns)
+      const sourceColumnIndex = selectedSourceColumnIndex ?? detected.sourceColumnIndex
+      const targetColumnIndex = selectedTargetColumnIndex ?? detected.targetColumnIndex
+
       if (sourceColumnIndex === -1 || targetColumnIndex === -1) {
         return
       }
@@ -476,7 +543,16 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         activeKey: `link-${sourceValue}-${targetValue}`,
       })
     },
-    [props.columns, props.onChartClick, props.data],
+    [
+      props.columns,
+      props.onChartClick,
+      props.data,
+      selectedSourceColumnIndex,
+      selectedTargetColumnIndex,
+      setShowFilterDropdown,
+      setShowSourceDropdown,
+      setShowTargetDropdown,
+    ],
   )
 
   // Helper functions
@@ -746,8 +822,14 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       zoomBehaviorRef.current = zoomBehavior
         .scaleExtent([0.001, 32]) // Allow zooming out/in much further to see all networks
         .filter((event) => {
-          // Allow both wheel and mouse events for zoom and pan
-          return event.type === 'wheel' || event.type === 'mousedown' || event.type === 'mousemove'
+          // Allow wheel, mouse, and touch events for zoom and pan (mobile support)
+          return (
+            event.type === 'wheel' ||
+            event.type === 'mousedown' ||
+            event.type === 'mousemove' ||
+            event.type === 'touchstart' ||
+            event.type === 'touchmove'
+          )
         })
         .on('zoom', (event) => {
           // Only disable dynamic zooming if this is a user interaction, not a programmatic update
@@ -1202,11 +1284,11 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       return
     }
 
-    const processedData = processNetworkData(data, columns)
+    const processedData = processNetworkData(data, columns, selectedSourceColumnIndex, selectedTargetColumnIndex)
 
     setNodes(processedData.nodes)
     setLinks(processedData.links)
-  }, [props.data, props.columns, processNetworkData])
+  }, [props.data, props.columns, processNetworkData, selectedSourceColumnIndex, selectedTargetColumnIndex])
 
   // Create visualization when nodes/links change
   useEffect(() => {
@@ -1251,7 +1333,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    if (!showFilterDropdown) return
+    if (!showFilterDropdown && !showSourceDropdown && !showTargetDropdown) return
 
     let mouseDownPos = null
     let mouseDownTarget = null
@@ -1289,28 +1371,69 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       // Check if click is inside dropdown
       const checkElement = (el) => {
         if (!el) return false
-        const className = el.getAttribute?.('class') || ''
-        return (
-          className.includes('filter-dropdown') ||
-          className.includes('filter-dropdown-item-rect') ||
-          className.includes('filter-dropdown-item-text') ||
-          className.includes('filter-dropdown-background') ||
-          className.includes('filter-button') ||
-          className.includes('node-filter-button')
-        )
+
+        // Check for SVG elements (filter dropdown)
+        const svgClass = el.getAttribute?.('class') || ''
+        if (svgClass) {
+          if (
+            svgClass.includes('filter-dropdown') ||
+            svgClass.includes('filter-dropdown-item-rect') ||
+            svgClass.includes('filter-dropdown-item-text') ||
+            svgClass.includes('filter-dropdown-background') ||
+            svgClass.includes('filter-button') ||
+            svgClass.includes('node-filter-button') ||
+            svgClass.includes('source-button') ||
+            svgClass.includes('source-dropdown') ||
+            svgClass.includes('target-button') ||
+            svgClass.includes('target-dropdown')
+          ) {
+            return true
+          }
+        }
+
+        // Check for HTML elements (column selection dropdowns inside foreignObject)
+        // Check both className property and class attribute
+        const htmlClass = el.className || el.getAttribute?.('class') || ''
+        if (htmlClass) {
+          const classString = typeof htmlClass === 'string' ? htmlClass : htmlClass.baseVal || ''
+          if (
+            classString.includes('source-dropdown-item') ||
+            classString.includes('target-dropdown-item') ||
+            classString.includes('source-dropdown') ||
+            classString.includes('target-dropdown')
+          ) {
+            return true
+          }
+        }
+
+        // Check if element is a foreignObject (which contains the column dropdowns)
+        const tagName = el.tagName?.toLowerCase() || ''
+        if (tagName === 'foreignobject') {
+          return true
+        }
+
+        return false
       }
 
       let current = clickTarget
       let isInsideDropdown = false
-      for (let i = 0; i < 10 && current; i++) {
+      // Traverse up the DOM tree, checking both parentElement and parentNode
+      // to handle both HTML and SVG elements
+      for (let i = 0; i < 30 && current; i++) {
         if (checkElement(current)) {
           isInsideDropdown = true
           break
         }
-        current = current.parentElement || current.parentNode
-        if (current === svgElement) {
+
+        // Move to parent - try both parentElement (HTML) and parentNode (SVG)
+        const parent = current.parentElement || current.parentNode
+
+        // Stop if we've reached the SVG element or document body
+        if (parent === svgElement || parent === document.body || !parent) {
           break
         }
+
+        current = parent
       }
 
       // Don't close if clicking inside dropdown or filter button
@@ -1320,8 +1443,10 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         return
       }
 
-      // Close dropdown for any other click (inside SVG graph area or outside SVG)
+      // Close dropdowns for any other click (inside SVG graph area or outside SVG)
       setShowFilterDropdown(false)
+      setShowSourceDropdown(false)
+      setShowTargetDropdown(false)
       mouseDownPos = null
       mouseDownTarget = null
     }
@@ -1336,32 +1461,75 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       // Check if click is inside dropdown
       const checkElement = (el) => {
         if (!el) return false
-        const className = el.getAttribute?.('class') || ''
-        return (
-          className.includes('filter-dropdown') ||
-          className.includes('filter-dropdown-item-rect') ||
-          className.includes('filter-dropdown-item-text') ||
-          className.includes('filter-dropdown-background') ||
-          className.includes('filter-button') ||
-          className.includes('node-filter-button')
-        )
+
+        // Check for SVG elements (filter dropdown)
+        const svgClass = el.getAttribute?.('class') || ''
+        if (svgClass) {
+          if (
+            svgClass.includes('filter-dropdown') ||
+            svgClass.includes('filter-dropdown-item-rect') ||
+            svgClass.includes('filter-dropdown-item-text') ||
+            svgClass.includes('filter-dropdown-background') ||
+            svgClass.includes('filter-button') ||
+            svgClass.includes('node-filter-button') ||
+            svgClass.includes('source-button') ||
+            svgClass.includes('source-dropdown') ||
+            svgClass.includes('target-button') ||
+            svgClass.includes('target-dropdown')
+          ) {
+            return true
+          }
+        }
+
+        // Check for HTML elements (column selection dropdowns inside foreignObject)
+        // Check both className property and class attribute
+        const htmlClass = el.className || el.getAttribute?.('class') || ''
+        if (htmlClass) {
+          const classString = typeof htmlClass === 'string' ? htmlClass : htmlClass.baseVal || ''
+          if (
+            classString.includes('source-dropdown-item') ||
+            classString.includes('target-dropdown-item') ||
+            classString.includes('source-dropdown') ||
+            classString.includes('target-dropdown')
+          ) {
+            return true
+          }
+        }
+
+        // Check if element is a foreignObject (which contains the column dropdowns)
+        const tagName = el.tagName?.toLowerCase() || ''
+        if (tagName === 'foreignobject') {
+          return true
+        }
+
+        return false
       }
 
       let current = clickTarget
       let isInsideDropdown = false
-      for (let i = 0; i < 10 && current; i++) {
+      // Traverse up the DOM tree, checking both parentElement and parentNode
+      // to handle both HTML and SVG elements
+      for (let i = 0; i < 30 && current; i++) {
         if (checkElement(current)) {
           isInsideDropdown = true
           break
         }
-        current = current.parentElement || current.parentNode
-        if (current === svgElement) {
+
+        // Move to parent - try both parentElement (HTML) and parentNode (SVG)
+        const parent = current.parentElement || current.parentNode
+
+        // Stop if we've reached the SVG element or document body
+        if (parent === svgElement || parent === document.body || !parent) {
           break
         }
+
+        current = parent
       }
 
       if (!isInsideDropdown && isInsideSVG) {
         setShowFilterDropdown(false)
+        setShowSourceDropdown(false)
+        setShowTargetDropdown(false)
       }
     }
 
@@ -1379,7 +1547,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       document.removeEventListener('mouseup', handleMouseUp, true)
       document.removeEventListener('click', handleClick, true)
     }
-  }, [showFilterDropdown])
+  }, [showFilterDropdown, showSourceDropdown, showTargetDropdown])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -1406,50 +1574,86 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
           const tagName = target.tagName?.toLowerCase()
           const className = target.getAttribute?.('class') || ''
 
-          // Check if click is on a button or dropdown element
-          const isButtonOrDropdown =
-            className.includes('filter-dropdown') ||
-            className.includes('filter-button') ||
-            className.includes('node-filter-button') ||
-            className.includes('recenter-button')
+          // Helper function to check if element is inside a dropdown or button
+          const checkElement = (el) => {
+            if (!el) return false
 
-          // If clicking on graph elements (nodes, links, or SVG background) and not on buttons/dropdown, close dropdown
-          if (
-            !isButtonOrDropdown &&
-            (target === chartRef.current ||
-              target.tagName === 'svg' ||
-              tagName === 'circle' ||
-              tagName === 'line' ||
-              tagName === 'g')
-          ) {
-            // Double-check by walking up the parent chain to make sure we're not inside a button/dropdown
-            let current = target
-            let isInsideButtonOrDropdown = false
-            for (let i = 0; i < 10 && current; i++) {
-              const currentClass = current.getAttribute?.('class') || ''
+            // Check tag name first
+            const elTagName = el.tagName?.toLowerCase() || ''
+            if (elTagName === 'foreignobject') {
+              return true
+            }
+
+            // Check for SVG elements - be more specific about button rects
+            const svgClass = el.getAttribute?.('class') || ''
+            if (svgClass) {
+              // Only consider it "inside" if it's actually a button rect, not just a button group
               if (
-                currentClass.includes('filter-dropdown') ||
-                currentClass.includes('filter-button') ||
-                currentClass.includes('node-filter-button') ||
-                currentClass.includes('recenter-button')
+                svgClass.includes('filter-button-rect') ||
+                svgClass.includes('recenter-button-rect') ||
+                svgClass.includes('source-button-rect') ||
+                svgClass.includes('target-button-rect')
               ) {
-                isInsideButtonOrDropdown = true
-                break
-              }
-              current = current.parentElement || current.parentNode
-              if (current === chartRef.current) {
-                break
+                return true
               }
             }
 
-            if (!isInsideButtonOrDropdown) {
-              setShowFilterDropdown(false)
+            // Check for HTML elements (popover content)
+            const htmlClass = el.className || el.getAttribute?.('class') || ''
+            if (htmlClass) {
+              const classString = typeof htmlClass === 'string' ? htmlClass : htmlClass.baseVal || ''
+              if (
+                classString.includes('source-dropdown-item') ||
+                classString.includes('target-dropdown-item') ||
+                classString.includes('filter-dropdown-item') ||
+                classString.includes('source-dropdown-popover-content') ||
+                classString.includes('target-dropdown-popover-content') ||
+                classString.includes('filter-dropdown-popover-content') ||
+                classString.includes('source-dropdown-container') ||
+                classString.includes('target-dropdown-container') ||
+                classString.includes('filter-dropdown-container')
+              ) {
+                return true
+              }
             }
+
+            return false
+          }
+
+          // Check if we're clicking on a button rect specifically - if so, don't close (let button handle it)
+          const isButtonRect =
+            tagName === 'rect' &&
+            (className.includes('source-button-rect') ||
+              className.includes('target-button-rect') ||
+              className.includes('filter-button-rect') ||
+              className.includes('recenter-button-rect'))
+
+          // Check if we're inside a button or popover by walking up the parent chain
+          let current = target
+          let isInsideButtonOrDropdown = false
+          for (let i = 0; i < 30 && current; i++) {
+            if (checkElement(current)) {
+              isInsideButtonOrDropdown = true
+              break
+            }
+            const parent = current.parentElement || current.parentNode
+            if (parent === chartRef.current || !parent || parent === document.body) {
+              break
+            }
+            current = parent
+          }
+
+          // Close popovers if clicking on SVG background or graph elements, but not on buttons/popovers
+          // Always close when clicking on the SVG itself (background) or graph elements
+          if (!isButtonRect && !isInsideButtonOrDropdown) {
+            setShowFilterDropdown(false)
+            setShowSourceDropdown(false)
+            setShowTargetDropdown(false)
           }
         }}
       />
       {/* Recenter button as SVG element */}
-      <g className='recenter-button' transform={`translate(${(props.width || 600) - 50}, 10)`}>
+      <g className='recenter-button' transform={`translate(${(props.width || 600) - 32}, 10)`}>
         <rect
           className='recenter-button-rect'
           width='30'
@@ -1468,163 +1672,137 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       </g>
       {/* Filter button with dropdown */}
       {(() => {
-        const { sourceColumnIndex, targetColumnIndex } = findNetworkColumns(props.columns)
+        // Use selected columns or fall back to auto-detected
+        const detected = findNetworkColumns(props.columns)
+        const sourceColumnIndex = selectedSourceColumnIndex ?? detected.sourceColumnIndex
+        const targetColumnIndex = selectedTargetColumnIndex ?? detected.targetColumnIndex
         const sourceColumn = sourceColumnIndex !== -1 ? props.columns[sourceColumnIndex] : null
         const targetColumn = targetColumnIndex !== -1 ? props.columns[targetColumnIndex] : null
         const senderLabel = sourceColumn?.display_name || 'Sender'
         const receiverLabel = targetColumn?.display_name || 'Receiver'
         const chartWidth = props.width || 600
-        const buttonX = chartWidth - 50
+        const buttonX = chartWidth - 32
         const buttonY = 45 // Right under the recenter button (10 + 30 + 5)
         const buttonSize = 30
         const dropdownWidth = 140
         const dropdownItemHeight = 28
         const dropdownY = buttonY + buttonSize + 5
 
-        return (
-          <g className='node-filter-button'>
-            {/* Filter button */}
-            <g className='filter-button' transform={`translate(${buttonX}, ${buttonY})`}>
-              <rect
-                className='filter-button-rect'
-                width={buttonSize}
-                height={buttonSize}
-                rx='4'
-                strokeWidth='1'
-                opacity={0}
+        // Render function for filter dropdown content
+        const renderFilterDropdownContent = () => {
+          const filterOptions = [
+            {
+              key: 'senders',
+              label: `${senderLabel}s`,
+              isSelected: showSenders,
+              onClick: () => setShowSenders(!showSenders),
+            },
+            {
+              key: 'receivers',
+              label: `${receiverLabel}s`,
+              isSelected: showReceivers,
+              onClick: () => setShowReceivers(!showReceivers),
+            },
+            {
+              key: 'both',
+              label: 'Both',
+              isSelected: showBoth,
+              onClick: () => setShowBoth(!showBoth),
+            },
+          ]
+
+          return (
+            <div className='filter-dropdown-popover-content'>
+              <div
+                className='filter-dropdown-container'
                 onClick={(e) => {
                   e.stopPropagation()
-                  setShowFilterDropdown(!showFilterDropdown)
                 }}
-                data-tooltip-id={props.chartTooltipID}
-                data-tooltip-html='Filter nodes'
-              />
-              <g transform='translate(5, 5)'>
-                <MdFilterList className='filter-button-icon' size={20} style={{ opacity: 0 }} />
-              </g>
-            </g>
-            {/* Dropdown menu */}
-            {showFilterDropdown && (
-              <g
-                className='filter-dropdown'
-                transform={`translate(${buttonX - dropdownWidth + buttonSize}, ${dropdownY})`}
               >
+                {filterOptions.map((option) => (
+                  <div
+                    key={option.key}
+                    className={`filter-dropdown-item ${option.isSelected ? 'filter-dropdown-item-selected' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      option.onClick()
+                    }}
+                  >
+                    <span className='filter-dropdown-item-check'>{option.isSelected ? '✓' : ' '}</span>
+                    <span>{option.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        }
+
+        return (
+          <g className='node-filter-button'>
+            <Popover
+              isOpen={showFilterDropdown}
+              content={renderFilterDropdownContent}
+              onClickOutside={() => {
+                setShowFilterDropdown(false)
+              }}
+              parentElement={props.popoverParentElement}
+              boundaryElement={props.popoverParentElement}
+              positions={['left']}
+              align='center'
+              padding={5}
+            >
+              <g className='filter-button' transform={`translate(${buttonX}, ${buttonY})`}>
                 <rect
-                  className='filter-dropdown-background'
-                  width={dropdownWidth}
-                  height={dropdownItemHeight * 3 + 8}
+                  className='filter-button-rect'
+                  width={buttonSize}
+                  height={buttonSize}
                   rx='4'
-                  fill='var(--react-autoql-background-color-secondary)'
-                  stroke='var(--react-autoql-border-color)'
                   strokeWidth='1'
                   opacity={0}
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowFilterDropdown(!showFilterDropdown)
+                    setShowSourceDropdown(false) // Close source dropdown when opening filter
+                    setShowTargetDropdown(false) // Close target dropdown when opening filter
+                  }}
+                  data-tooltip-id={props.chartTooltipID}
+                  data-tooltip-html='Filter nodes'
                 />
-                {/* Senders option */}
-                <g transform={`translate(4, 4)`}>
-                  <rect
-                    className={`filter-dropdown-item-rect ${showSenders ? 'filter-dropdown-item-selected' : ''}`}
-                    width={dropdownWidth - 8}
-                    height={dropdownItemHeight}
-                    rx='2'
-                    fill={showSenders ? 'var(--react-autoql-hover-color)' : 'transparent'}
-                    opacity={0}
-                    pointerEvents='all'
-                    onMouseDown={(e) => {
-                      e.stopPropagation()
-                      e.preventDefault()
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      e.preventDefault()
-                      setShowSenders(!showSenders)
-                    }}
-                  />
-                  <text
-                    className='filter-dropdown-item-text'
-                    x={8}
-                    y={dropdownItemHeight / 2}
-                    dominantBaseline='middle'
-                    fill='var(--react-autoql-text-color-primary)'
-                    fontSize='12'
-                    opacity={0}
-                    pointerEvents='none'
-                  >
-                    <tspan x={8}>{showSenders ? '✓' : ' '}</tspan>
-                    <tspan x={20}>{senderLabel}s</tspan>
-                  </text>
-                </g>
-                {/* Receivers option */}
-                <g transform={`translate(4, ${4 + dropdownItemHeight})`}>
-                  <rect
-                    className={`filter-dropdown-item-rect ${showReceivers ? 'filter-dropdown-item-selected' : ''}`}
-                    width={dropdownWidth - 8}
-                    height={dropdownItemHeight}
-                    rx='2'
-                    fill={showReceivers ? 'var(--react-autoql-hover-color)' : 'transparent'}
-                    opacity={0}
-                    pointerEvents='all'
-                    onMouseDown={(e) => {
-                      e.stopPropagation()
-                      e.preventDefault()
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      e.preventDefault()
-                      setShowReceivers(!showReceivers)
-                    }}
-                  />
-                  <text
-                    className='filter-dropdown-item-text'
-                    x={8}
-                    y={dropdownItemHeight / 2}
-                    dominantBaseline='middle'
-                    fill='var(--react-autoql-text-color-primary)'
-                    fontSize='12'
-                    opacity={0}
-                    pointerEvents='none'
-                  >
-                    <tspan x={8}>{showReceivers ? '✓' : ' '}</tspan>
-                    <tspan x={20}>{receiverLabel}s</tspan>
-                  </text>
-                </g>
-                {/* Both option */}
-                <g transform={`translate(4, ${4 + dropdownItemHeight * 2})`}>
-                  <rect
-                    className={`filter-dropdown-item-rect ${showBoth ? 'filter-dropdown-item-selected' : ''}`}
-                    width={dropdownWidth - 8}
-                    height={dropdownItemHeight}
-                    rx='2'
-                    fill={showBoth ? 'var(--react-autoql-hover-color)' : 'transparent'}
-                    opacity={0}
-                    pointerEvents='all'
-                    onMouseDown={(e) => {
-                      e.stopPropagation()
-                      e.preventDefault()
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      e.preventDefault()
-                      setShowBoth(!showBoth)
-                    }}
-                  />
-                  <text
-                    className='filter-dropdown-item-text'
-                    x={8}
-                    y={dropdownItemHeight / 2}
-                    dominantBaseline='middle'
-                    fill='var(--react-autoql-text-color-primary)'
-                    fontSize='12'
-                    opacity={0}
-                    pointerEvents='none'
-                  >
-                    <tspan x={8}>{showBoth ? '✓' : ' '}</tspan>
-                    <tspan x={20}>Both</tspan>
-                  </text>
+                <g transform='translate(5, 5)'>
+                  <MdFilterList className='filter-button-icon' size={20} style={{ opacity: 0 }} />
                 </g>
               </g>
-            )}
+            </Popover>
           </g>
+        )
+      })()}
+      {/* Source and Target column selection buttons */}
+      {(() => {
+        const chartWidth = props.width || 600
+        const buttonX = chartWidth - 32
+        const sourceButtonY = 80 // Right under the filter button (45 + 30 + 5)
+        const targetButtonY = 115 // Right under the source button (80 + 30 + 5)
+        const buttonSize = 30
+
+        return (
+          <ColumnSelector
+            columns={props.columns}
+            selectedSourceColumnIndex={selectedSourceColumnIndex}
+            selectedTargetColumnIndex={selectedTargetColumnIndex}
+            setSelectedSourceColumnIndex={setSelectedSourceColumnIndex}
+            setSelectedTargetColumnIndex={setSelectedTargetColumnIndex}
+            showSourceDropdown={showSourceDropdown}
+            showTargetDropdown={showTargetDropdown}
+            setShowSourceDropdown={setShowSourceDropdown}
+            setShowTargetDropdown={setShowTargetDropdown}
+            setShowFilterDropdown={setShowFilterDropdown}
+            popoverParentElement={props.popoverParentElement}
+            chartTooltipID={props.chartTooltipID}
+            buttonX={buttonX}
+            sourceButtonY={sourceButtonY}
+            targetButtonY={targetButtonY}
+            buttonSize={buttonSize}
+          />
         )
       })()}
       {/* Separate tooltip IDs for nodes and links to avoid conflicts with float prop */}
