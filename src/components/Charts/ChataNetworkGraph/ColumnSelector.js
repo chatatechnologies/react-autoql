@@ -42,18 +42,18 @@ const ColumnSelector = (props) => {
     : Math.min(dropdownItemHeight * stringColumns.length + 8, maxDropdownHeight)
 
   // Get selected column names for tooltips
-  const selectedSourceColumn = stringColumns.find(
-    (col) => col.columnIndex === selectedSourceColumnIndex
-  ) || (stringColumns.length > 0 && selectedSourceColumnIndex === null ? stringColumns[0] : null)
-  const selectedTargetColumn = stringColumns.find(
-    (col) => col.columnIndex === selectedTargetColumnIndex
-  ) || (stringColumns.length > 1 && selectedTargetColumnIndex === null ? stringColumns[1] : null)
+  const selectedSourceColumn =
+    stringColumns.find((col) => col.columnIndex === selectedSourceColumnIndex) ||
+    (stringColumns.length > 0 && selectedSourceColumnIndex === null ? stringColumns[0] : null)
+  const selectedTargetColumn =
+    stringColumns.find((col) => col.columnIndex === selectedTargetColumnIndex) ||
+    (stringColumns.length > 1 && selectedTargetColumnIndex === null ? stringColumns[1] : null)
 
   const sourceTooltipHtml = selectedSourceColumn
-    ? `Source column<br/>${selectedSourceColumn.display_name || selectedSourceColumn.name}`
+    ? `Source column<br/><em>(${selectedSourceColumn.display_name || selectedSourceColumn.name})</em>`
     : 'Source column'
   const targetTooltipHtml = selectedTargetColumn
-    ? `Target column<br/>${selectedTargetColumn.display_name || selectedTargetColumn.name}`
+    ? `Target column<br/><em>(${selectedTargetColumn.display_name || selectedTargetColumn.name})</em>`
     : 'Target column'
 
   const renderSourceDropdownContent = () => {
@@ -74,8 +74,7 @@ const ColumnSelector = (props) => {
           >
             {stringColumns.map((col, index) => {
               const isSelected =
-                selectedSourceColumnIndex === col.columnIndex ||
-                (selectedSourceColumnIndex === null && index === 0)
+                selectedSourceColumnIndex === col.columnIndex || (selectedSourceColumnIndex === null && index === 0)
               return (
                 <div
                   key={`source-${col.columnIndex}`}
@@ -115,8 +114,7 @@ const ColumnSelector = (props) => {
           >
             {stringColumns.map((col, index) => {
               const isSelected =
-                selectedTargetColumnIndex === col.columnIndex ||
-                (selectedTargetColumnIndex === null && index === 1)
+                selectedTargetColumnIndex === col.columnIndex || (selectedTargetColumnIndex === null && index === 1)
               return (
                 <div
                   key={`target-${col.columnIndex}`}
@@ -239,4 +237,3 @@ ColumnSelector.propTypes = {
 }
 
 export default ColumnSelector
-

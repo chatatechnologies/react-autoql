@@ -4,12 +4,12 @@ import { select } from 'd3-selection'
 import { drag } from 'd3-drag'
 import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide } from 'd3-force'
 import { zoom, zoomIdentity } from 'd3-zoom'
-import { MdOutlineFitScreen, MdFilterList } from 'react-icons/md'
 import { findNetworkColumns, formatElement, getAutoQLConfig } from 'autoql-fe-utils'
 import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers'
 import { Tooltip } from '../../Tooltip'
-import { Popover } from '../../Popover'
 import ColumnSelector from './ColumnSelector'
+import NodeFilterButton from './NodeFilterButton'
+import RecenterButton from './RecenterButton'
 
 import './ChataNetworkGraph.scss'
 
@@ -343,6 +343,8 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         // Store raw values for drilldown filtering (exact values from data, no formatting)
         const sourceNode = nodeMap.get(source)
         const targetNode = nodeMap.get(target)
+        const sourceRole = nodeRoles.get(source)
+        const targetRole = nodeRoles.get(target)
         linkMap.set(edgeKey, {
           source,
           target,
@@ -351,7 +353,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
           weight,
           count: 1,
           weight_category: getWeightCategory(weight),
-          edge_type: getEdgeType(source, target, sourceNode, targetNode),
+          edge_type: getEdgeType(source, target, sourceRole, targetRole),
         })
       }
 
@@ -569,11 +571,11 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
     return 'small'
   }, [])
 
-  const getEdgeType = useCallback((source, target, sourceNode, targetNode) => {
+  const getEdgeType = useCallback((source, target, sourceRole, targetRole) => {
     // Use actual node roles from the data instead of keyword matching
-    if (sourceNode?.isSender && targetNode?.isSender) return 'sender-to-sender'
-    if (sourceNode?.isSender && targetNode?.isReceiver) return 'sender-to-receiver'
-    if (sourceNode?.isReceiver && targetNode?.isReceiver) return 'receiver-to-receiver'
+    if (sourceRole?.isSender && targetRole?.isSender) return 'sender-to-sender'
+    if (sourceRole?.isSender && targetRole?.isReceiver) return 'sender-to-receiver'
+    if (sourceRole?.isReceiver && targetRole?.isReceiver) return 'receiver-to-receiver'
     return 'standard'
   }, [])
 
@@ -1652,128 +1654,43 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
           }
         }}
       />
-      {/* Recenter button as SVG element */}
-      <g className='recenter-button' transform={`translate(${(props.width || 600) - 32}, 10)`}>
-        <rect
-          className='recenter-button-rect'
-          width='30'
-          height='30'
-          rx='4'
-          strokeWidth='1'
-          opacity={0} // Use opacity 0 so it doesnt show in the exported PNG
-          onClick={recenter}
-          data-tooltip-id={props.chartTooltipID}
-          data-tooltip-html='Fit to screen'
-        />
-        <g transform='translate(5, 5)'>
-          {/* Use opacity 0 so it doesnt show in the exported PNG */}
-          <MdOutlineFitScreen className='recenter-button-icon' size={20} style={{ opacity: 0 }} />
-        </g>
-      </g>
+      {/* Recenter button */}
+      <RecenterButton
+        onRecenter={recenter}
+        chartTooltipID={props.chartTooltipID}
+        chartWidth={props.width || 600}
+        buttonX={(props.width || 600) - 32}
+        buttonY={10}
+      />
       {/* Filter button with dropdown */}
       {(() => {
-        // Use selected columns or fall back to auto-detected
-        const detected = findNetworkColumns(props.columns)
-        const sourceColumnIndex = selectedSourceColumnIndex ?? detected.sourceColumnIndex
-        const targetColumnIndex = selectedTargetColumnIndex ?? detected.targetColumnIndex
-        const sourceColumn = sourceColumnIndex !== -1 ? props.columns[sourceColumnIndex] : null
-        const targetColumn = targetColumnIndex !== -1 ? props.columns[targetColumnIndex] : null
-        const senderLabel = sourceColumn?.display_name || 'Sender'
-        const receiverLabel = targetColumn?.display_name || 'Receiver'
         const chartWidth = props.width || 600
         const buttonX = chartWidth - 32
         const buttonY = 45 // Right under the recenter button (10 + 30 + 5)
         const buttonSize = 30
-        const dropdownWidth = 140
-        const dropdownItemHeight = 28
-        const dropdownY = buttonY + buttonSize + 5
-
-        // Render function for filter dropdown content
-        const renderFilterDropdownContent = () => {
-          const filterOptions = [
-            {
-              key: 'senders',
-              label: `${senderLabel}s`,
-              isSelected: showSenders,
-              onClick: () => setShowSenders(!showSenders),
-            },
-            {
-              key: 'receivers',
-              label: `${receiverLabel}s`,
-              isSelected: showReceivers,
-              onClick: () => setShowReceivers(!showReceivers),
-            },
-            {
-              key: 'both',
-              label: 'Both',
-              isSelected: showBoth,
-              onClick: () => setShowBoth(!showBoth),
-            },
-          ]
-
-          return (
-            <div className='filter-dropdown-popover-content'>
-              <div
-                className='filter-dropdown-container'
-                onClick={(e) => {
-                  e.stopPropagation()
-                }}
-              >
-                {filterOptions.map((option) => (
-                  <div
-                    key={option.key}
-                    className={`filter-dropdown-item ${option.isSelected ? 'filter-dropdown-item-selected' : ''}`}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      option.onClick()
-                    }}
-                  >
-                    <span className='filter-dropdown-item-check'>{option.isSelected ? '✓' : ' '}</span>
-                    <span>{option.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )
-        }
 
         return (
-          <g className='node-filter-button'>
-            <Popover
-              isOpen={showFilterDropdown}
-              content={renderFilterDropdownContent}
-              onClickOutside={() => {
-                setShowFilterDropdown(false)
-              }}
-              parentElement={props.popoverParentElement}
-              boundaryElement={props.popoverParentElement}
-              positions={['left']}
-              align='center'
-              padding={5}
-            >
-              <g className='filter-button' transform={`translate(${buttonX}, ${buttonY})`}>
-                <rect
-                  className='filter-button-rect'
-                  width={buttonSize}
-                  height={buttonSize}
-                  rx='4'
-                  strokeWidth='1'
-                  opacity={0}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowFilterDropdown(!showFilterDropdown)
-                    setShowSourceDropdown(false) // Close source dropdown when opening filter
-                    setShowTargetDropdown(false) // Close target dropdown when opening filter
-                  }}
-                  data-tooltip-id={props.chartTooltipID}
-                  data-tooltip-html='Filter nodes'
-                />
-                <g transform='translate(5, 5)'>
-                  <MdFilterList className='filter-button-icon' size={20} style={{ opacity: 0 }} />
-                </g>
-              </g>
-            </Popover>
-          </g>
+          <NodeFilterButton
+            columns={props.columns}
+            selectedSourceColumnIndex={selectedSourceColumnIndex}
+            selectedTargetColumnIndex={selectedTargetColumnIndex}
+            showSenders={showSenders}
+            showReceivers={showReceivers}
+            showBoth={showBoth}
+            setShowSenders={setShowSenders}
+            setShowReceivers={setShowReceivers}
+            setShowBoth={setShowBoth}
+            showFilterDropdown={showFilterDropdown}
+            setShowFilterDropdown={setShowFilterDropdown}
+            setShowSourceDropdown={setShowSourceDropdown}
+            setShowTargetDropdown={setShowTargetDropdown}
+            popoverParentElement={props.popoverParentElement}
+            chartTooltipID={props.chartTooltipID}
+            chartWidth={chartWidth}
+            buttonX={buttonX}
+            buttonY={buttonY}
+            buttonSize={buttonSize}
+          />
         )
       })()}
       {/* Source and Target column selection buttons */}
