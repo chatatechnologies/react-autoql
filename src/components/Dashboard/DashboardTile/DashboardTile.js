@@ -799,6 +799,7 @@ export class DashboardTile extends React.Component {
   onDataConfigChange = (dataConfig) => this.debouncedSetParamsForTile({ dataConfig })
   onDisplayTypeChange = (displayType) => this.debouncedSetParamsForTile({ displayType })
   onBucketSizeChange = (bucketSize) => this.debouncedSetParamsForTile({ bucketSize })
+  onNetworkColumnChange = (networkColumnConfig) => this.debouncedSetParamsForTile({ networkColumnConfig })
 
   onChartControlsChange = (chartControls) => this.debouncedSetParamsForTile({ chartControls })
 
@@ -1273,6 +1274,8 @@ export class DashboardTile extends React.Component {
         onPageSizeChange: this.onPageSizeChange,
         onBucketSizeChange: this.onBucketSizeChange,
         bucketSize: this.props.tile.bucketSize,
+        networkColumnConfig: this.props.tile.networkColumnConfig,
+        onNetworkColumnChange: this.onNetworkColumnChange,
         initialFormattedTableParams: (() => {
           const feReqFilters = this.props.tile?.queryResponse?.data?.data?.fe_req?.filters
           const filtersToUse = feReqFilters?.length > 0 ? feReqFilters : this.props.tile?.tableFilters

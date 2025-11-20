@@ -59,6 +59,7 @@ const ColumnSelector = (props) => {
   const renderSourceDropdownContent = () => {
     return (
       <div className='source-dropdown-popover-content'>
+        <div className='source-dropdown-title'>Source column</div>
         <CustomScrollbars
           autoHeight={!isMobile}
           autoHeightMin={35}
@@ -99,6 +100,7 @@ const ColumnSelector = (props) => {
   const renderTargetDropdownContent = () => {
     return (
       <div className='target-dropdown-popover-content'>
+        <div className='target-dropdown-title'>Target column</div>
         <CustomScrollbars
           autoHeight={!isMobile}
           autoHeightMin={35}

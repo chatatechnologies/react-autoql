@@ -61,6 +61,7 @@ const NodeFilterButton = (props) => {
 
     return (
       <div className='filter-dropdown-popover-content'>
+        <div className='filter-dropdown-title'>Filter nodes</div>
         <div
           className='filter-dropdown-container'
           onClick={(e) => {

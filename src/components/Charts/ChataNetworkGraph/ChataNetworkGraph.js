@@ -31,19 +31,76 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
   const [showSourceDropdown, setShowSourceDropdown] = useState(false)
   const [showTargetDropdown, setShowTargetDropdown] = useState(false)
 
-  // Initialize selected columns from detected network columns
+  // Initialize selected columns from persisted config, detected network columns, or null
   const { sourceColumnIndex: detectedSourceIndex, targetColumnIndex: detectedTargetIndex } = findNetworkColumns(
     props.columns || [],
   )
+  const persistedSourceIndex = props.networkColumnConfig?.sourceColumnIndex
+  const persistedTargetIndex = props.networkColumnConfig?.targetColumnIndex
+
   const [selectedSourceColumnIndex, setSelectedSourceColumnIndex] = useState(
-    detectedSourceIndex !== -1 ? detectedSourceIndex : null,
+    persistedSourceIndex !== undefined && persistedSourceIndex !== null
+      ? persistedSourceIndex
+      : detectedSourceIndex !== -1
+      ? detectedSourceIndex
+      : null,
   )
   const [selectedTargetColumnIndex, setSelectedTargetColumnIndex] = useState(
-    detectedTargetIndex !== -1 ? detectedTargetIndex : null,
+    persistedTargetIndex !== undefined && persistedTargetIndex !== null
+      ? persistedTargetIndex
+      : detectedTargetIndex !== -1
+      ? detectedTargetIndex
+      : null,
   )
 
   const nodeSelectionRef = useRef(null)
   const linkSelectionRef = useRef(null)
+
+  // Sync with persisted config when it changes from props
+  useEffect(() => {
+    if (props.networkColumnConfig) {
+      if (
+        props.networkColumnConfig.sourceColumnIndex !== undefined &&
+        props.networkColumnConfig.sourceColumnIndex !== selectedSourceColumnIndex
+      ) {
+        setSelectedSourceColumnIndex(props.networkColumnConfig.sourceColumnIndex)
+      }
+      if (
+        props.networkColumnConfig.targetColumnIndex !== undefined &&
+        props.networkColumnConfig.targetColumnIndex !== selectedTargetColumnIndex
+      ) {
+        setSelectedTargetColumnIndex(props.networkColumnConfig.targetColumnIndex)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.networkColumnConfig?.sourceColumnIndex, props.networkColumnConfig?.targetColumnIndex])
+
+  // Wrapper functions that call the callback when columns change
+  const handleSourceColumnChange = useCallback(
+    (columnIndex) => {
+      setSelectedSourceColumnIndex(columnIndex)
+      if (props.onNetworkColumnChange) {
+        props.onNetworkColumnChange({
+          sourceColumnIndex: columnIndex,
+          targetColumnIndex: selectedTargetColumnIndex,
+        })
+      }
+    },
+    [props.onNetworkColumnChange, selectedTargetColumnIndex],
+  )
+
+  const handleTargetColumnChange = useCallback(
+    (columnIndex) => {
+      setSelectedTargetColumnIndex(columnIndex)
+      if (props.onNetworkColumnChange) {
+        props.onNetworkColumnChange({
+          sourceColumnIndex: selectedSourceColumnIndex,
+          targetColumnIndex: columnIndex,
+        })
+      }
+    },
+    [props.onNetworkColumnChange, selectedSourceColumnIndex],
+  )
 
   // Suppress ResizeObserver loop errors (harmless warnings)
   useEffect(() => {
@@ -1706,8 +1763,8 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
             columns={props.columns}
             selectedSourceColumnIndex={selectedSourceColumnIndex}
             selectedTargetColumnIndex={selectedTargetColumnIndex}
-            setSelectedSourceColumnIndex={setSelectedSourceColumnIndex}
-            setSelectedTargetColumnIndex={setSelectedTargetColumnIndex}
+            setSelectedSourceColumnIndex={handleSourceColumnChange}
+            setSelectedTargetColumnIndex={handleTargetColumnChange}
             showSourceDropdown={showSourceDropdown}
             showTargetDropdown={showTargetDropdown}
             setShowSourceDropdown={setShowSourceDropdown}
@@ -1736,6 +1793,11 @@ ChataNetworkGraph.propTypes = {
   columns: PropTypes.array.isRequired,
   height: PropTypes.number,
   width: PropTypes.number,
+  networkColumnConfig: PropTypes.shape({
+    sourceColumnIndex: PropTypes.number,
+    targetColumnIndex: PropTypes.number,
+  }),
+  onNetworkColumnChange: PropTypes.func,
 }
 
 ChataNetworkGraph.defaultProps = {
