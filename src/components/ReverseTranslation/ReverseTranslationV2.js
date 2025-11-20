@@ -264,13 +264,10 @@ const ReverseTranslation = ({
 
     let cancelled = false
 
-    // Only execute prerequisites (which may perform network calls and validation)
-    // when the component is interactive (has an onValueLabelClick handler)
-    // or when edit mode is enabled. When used as a read-only/text-only
-    // display (e.g. `textOnly` in notifications), skip prerequisites and
-    // avoid noisy console errors.
-    if (!textOnly && (onValueLabelClick || enableEditReverseTranslation) && reverseTranslationArray?.length) {
+    if (onValueLabelClick && reverseTranslationArray?.length) {
       executePrerequisites(reverseTranslationArray)
+    } else {
+      console.error('Prerequisites not met to render Reverse Translation')
     }
 
     return () => {
@@ -280,25 +277,18 @@ const ReverseTranslation = ({
   }, [])
 
   useEffect(() => {
-    // Only run prerequisites when the component is interactive (not textOnly)
-    if (!textOnly && (onValueLabelClick || enableEditReverseTranslation)) {
-      const newParsedInterpretation = queryResponse?.data?.data?.parsed_interpretation
-      initialParsedInterpretations.current = newParsedInterpretation
-      const newArray = constructRTArray(newParsedInterpretation)
-      executePrerequisites(newArray)
-    }
-  }, [queryResponse?.data?.data?.parsed_interpretation, textOnly, onValueLabelClick, enableEditReverseTranslation])
+    const newParsedInterpretation = queryResponse?.data?.data?.parsed_interpretation
+    initialParsedInterpretations.current = newParsedInterpretation
+    const newArray = constructRTArray(newParsedInterpretation)
+    executePrerequisites(newArray)
+  }, [queryResponse?.data?.data?.parsed_interpretation])
 
   // todo: see if we can update and remove this useEffect and use queryRepsonse instead
   useEffect(() => {
-    // localRTFilterResponse updates should also only trigger prerequisites
-    // when the component is intended to be interactive.
-    if (!textOnly && (onValueLabelClick || enableEditReverseTranslation)) {
-      const newParsedInterpretation = localRTFilterResponse?.data?.data?.parsed_interpretation
-      initialParsedInterpretations.current = newParsedInterpretation
-      const newArray = constructRTArray(newParsedInterpretation)
-      executePrerequisites(newArray)
-    }
+    const newParsedInterpretation = localRTFilterResponse?.data?.data?.parsed_interpretation
+    initialParsedInterpretations.current = newParsedInterpretation
+    const newArray = constructRTArray(newParsedInterpretation)
+    executePrerequisites(newArray)
   }, [localRTFilterResponse?.data?.data?.parsed_interpretation])
 
   useEffect(() => {
