@@ -1716,13 +1716,13 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         onRecenter={recenter}
         chartTooltipID={props.chartTooltipID}
         chartWidth={props.width || 600}
-        buttonX={(props.width || 600) - 32}
+        buttonX={(props.width || 600) - 37}
         buttonY={10}
       />
       {/* Filter button with dropdown */}
       {(() => {
         const chartWidth = props.width || 600
-        const buttonX = chartWidth - 32
+        const buttonX = chartWidth - 37
         const buttonY = 45 // Right under the recenter button (10 + 30 + 5)
         const buttonSize = 30
 
@@ -1753,7 +1753,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       {/* Source and Target column selection buttons */}
       {(() => {
         const chartWidth = props.width || 600
-        const buttonX = chartWidth - 32
+        const buttonX = chartWidth - 37
         const sourceButtonY = 80 // Right under the filter button (45 + 30 + 5)
         const targetButtonY = 115 // Right under the source button (80 + 30 + 5)
         const buttonSize = 30
