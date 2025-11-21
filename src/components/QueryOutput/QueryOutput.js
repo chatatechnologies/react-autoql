@@ -7,7 +7,7 @@ import _isEmpty from 'lodash.isempty'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
 
-import { TABULATOR_LOCAL_ROW_LIMIT, TOOLTIP_COPY_TEXTS } from '../../js/Constants'
+import { TOOLTIP_COPY_TEXTS } from '../../js/Constants'
 
 import {
   AggTypes,
@@ -20,7 +20,6 @@ import {
   getDefaultDisplayType,
   onlyUnique,
   formatElement,
-  makeEmptyArray,
   getGroupBysFromPivotTable,
   getGroupBysFromTable,
   isTableType,
@@ -134,9 +133,6 @@ export class QueryOutput extends React.Component {
 
     // Supported display types may have changed after initial data generation
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
-
-    // Sort data if data is local
-    this.sortLocalData(columns, props?.initialFormattedTableParams)
 
     const displayType = this.getDisplayTypeFromInitial(props)
     if (props.onDisplayTypeChange) {
@@ -324,46 +320,6 @@ export class QueryOutput extends React.Component {
       showRegressionLine: false,
     },
     onChartControlsChange: () => {},
-  }
-
-  sortLocalData = (columns, initialFormattedTableParams) => {
-    // Sort data if data is local (count_rows < TABULATOR_LOCAL_ROW_LIMIT)
-    // If initialFormattedTableParams.sorters exist, use those; otherwise sort by first visible column
-    if (
-      this.queryResponse?.data?.data?.count_rows < TABULATOR_LOCAL_ROW_LIMIT &&
-      columns &&
-      columns.length > 0 &&
-      this.queryResponse?.data?.data?.rows &&
-      this.queryResponse.data.data.rows.length > 0
-    ) {
-      const initialSorters = initialFormattedTableParams?.sorters || []
-
-      if (initialSorters.length > 0) {
-        // Sort by initial sorters
-        let sortedData = this.queryResponse.data.data.rows
-        for (const sorter of initialSorters) {
-          const columnIndex = columns.findIndex((col) => col.field === sorter.field)
-          if (columnIndex !== -1) {
-            sortedData = sortDataByColumn(sortedData, columns, columnIndex, sorter.dir || 'asc')
-          }
-        }
-        this.queryResponse.data.data.rows = sortedData
-      } else {
-        // Sort by first visible column ascending
-        const firstVisibleColumn = columns.find((col) => col.is_visible !== false)
-        if (firstVisibleColumn) {
-          const columnIndex = columns.findIndex((col) => col.field === firstVisibleColumn.field)
-          if (columnIndex !== -1) {
-            this.queryResponse.data.data.rows = sortDataByColumn(
-              this.queryResponse.data.data.rows,
-              columns,
-              columnIndex,
-              'asc',
-            )
-          }
-        }
-      }
-    }
   }
 
   makeEmptyArrayShared(w, h, value) {
@@ -3388,6 +3344,8 @@ export class QueryOutput extends React.Component {
           isResizing={this.props.isResizing || this.state.isResizing}
           isAnimating={this.props.isAnimating}
           isDrilldownChartHidden={this.props.isDrilldownChartHidden}
+          networkColumnConfig={this.props.networkColumnConfig}
+          onNetworkColumnChange={this.props.onNetworkColumnChange}
           enableDynamicCharting={this.props.enableDynamicCharting}
           tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
           chartTooltipID={this.props.chartTooltipID ?? this.CHART_TOOLTIP_ID}
