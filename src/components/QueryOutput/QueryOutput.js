@@ -108,6 +108,8 @@ export class QueryOutput extends React.Component {
     this.queryResponse = _cloneDeep(response)
     this.columnDateRanges = getColumnDateRanges(response)
     this.queryID = this.queryResponse?.data?.data?.query_id
+    this.drilldownQueryID =
+      this.queryResponse?.data?.data?.drilldown_query_id || this.queryResponse?.data?.data?.query_id
     this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
     this.tableParams = {
       sort: props?.initialTableParams?.sort || [],
@@ -1312,7 +1314,7 @@ export class QueryOutput extends React.Component {
             const response = await runDrilldown({
               ...getAuthentication(this.props.authentication),
               ...getAutoQLConfig(this.props.autoQLConfig),
-              queryID: this.queryID,
+              queryID: this.drilldownQueryID,
               source: this.props.source,
               groupBys,
               pageSize,
