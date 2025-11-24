@@ -308,7 +308,7 @@ const ReverseTranslation = ({
         data-test='react-autoql-condition-link'
         onClick={(e) => {
           e.stopPropagation()
-          if (disableAction) return
+          if (disableAction || !onValueLabelClick) return
           onValueLabelClick(chunk.eng)
         }}
       >
