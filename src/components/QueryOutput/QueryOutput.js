@@ -2766,10 +2766,10 @@ export class QueryOutput extends React.Component {
                 // Parse operator from value string if it contains comparison operators
                 let op,
                   val = value
-                const match = typeof value === 'string' ? value.trim().match(/^(>=|<=|!=|>|<|!|=)\s*(.*)$/) : null
+                const match = typeof value === 'string' ? value.trim().match(/^([<>]=?|!=)\s*(.*)$/) : null
                 if (match) {
                   op = match[1]
-                  val = match[2]
+                  val = match[2] ? match[2].trim() : match[2]
                 }
                 tableData = filterDataByColumn(tableData, columns, filterColumnIndex, val, op)
               }
