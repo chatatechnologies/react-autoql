@@ -2735,21 +2735,23 @@ export class QueryOutput extends React.Component {
             headerFilters.forEach((headFilter) => {
               if (!headFilter) return
               const field = headFilter.field ?? headFilter[0]
-              const value = headFilter.value ?? headFilter[1]
-              if (field === undefined || value === undefined) return
+              const rawValue = headFilter.value ?? headFilter[1]
+              if (field === undefined || rawValue === undefined) return
               let filterColumnIndex
               const parsed = parseInt(field, 10)
               if (!isNaN(parsed)) filterColumnIndex = parsed
               if (filterColumnIndex === undefined)
                 filterColumnIndex = columns.find((col) => col.field === field || col.id === field)?.index
               if (filterColumnIndex !== undefined) {
-                tableData = filterDataByColumn(
-                  tableData,
-                  columns,
-                  filterColumnIndex,
-                  value,
-                  headFilter.type || headFilter.operator,
-                )
+                // Parse operator from rawValue string if it contains a comparison operator
+                let op = headFilter.type || headFilter.operator,
+                  val = rawValue
+                const match = typeof rawValue === 'string' ? rawValue.trim().match(/^([<>]=?|!=)\s*(.*)$/) : null
+                if (match) {
+                  op = match[1]
+                  val = match[2] ? match[2].trim() : match[2]
+                }
+                tableData = filterDataByColumn(tableData, columns, filterColumnIndex, val, op)
               }
             })
           } else if (typeof headerFilters === 'object') {
