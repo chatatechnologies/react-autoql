@@ -2763,7 +2763,15 @@ export class QueryOutput extends React.Component {
               if (filterColumnIndex === undefined)
                 filterColumnIndex = columns.find((col) => col.field === field || col.id === field)?.index
               if (filterColumnIndex !== undefined) {
-                tableData = filterDataByColumn(tableData, columns, filterColumnIndex, value, undefined)
+                // Parse operator from value string if it contains comparison operators
+                let op,
+                  val = value
+                const match = typeof value === 'string' ? value.trim().match(/^(>=|<=|!=|>|<|!|=)\s*(.*)$/) : null
+                if (match) {
+                  op = match[1]
+                  val = match[2]
+                }
+                tableData = filterDataByColumn(tableData, columns, filterColumnIndex, val, op)
               }
             })
           }
