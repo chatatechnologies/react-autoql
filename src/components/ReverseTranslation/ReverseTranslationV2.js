@@ -264,11 +264,7 @@ const ReverseTranslation = ({
 
     let cancelled = false
 
-    // Only execute prerequisites (which may perform network calls and validation)
-    // when the component is interactive (has an onValueLabelClick handler)
-    // or when edit mode is enabled. When used as a read-only/text-only
-    // display (e.g. `textOnly` in notifications), skip prerequisites and
-    // avoid noisy console errors.
+    // Skip prerequisites for read-only/text-only rendering
     if (!textOnly && (onValueLabelClick || enableEditReverseTranslation) && reverseTranslationArray?.length) {
       executePrerequisites(reverseTranslationArray)
     }
@@ -280,7 +276,6 @@ const ReverseTranslation = ({
   }, [])
 
   useEffect(() => {
-    // Only run prerequisites when the component is interactive (not textOnly)
     if (!textOnly && (onValueLabelClick || enableEditReverseTranslation)) {
       const newParsedInterpretation = queryResponse?.data?.data?.parsed_interpretation
       initialParsedInterpretations.current = newParsedInterpretation
@@ -289,10 +284,8 @@ const ReverseTranslation = ({
     }
   }, [queryResponse?.data?.data?.parsed_interpretation])
 
-  // todo: see if we can update and remove this useEffect and use queryRepsonse instead
+  // todo: consolidate with queryResponse useEffect
   useEffect(() => {
-    // localRTFilterResponse updates should also only trigger prerequisites
-    // when the component is intended to be interactive.
     if (!textOnly && (onValueLabelClick || enableEditReverseTranslation)) {
       const newParsedInterpretation = localRTFilterResponse?.data?.data?.parsed_interpretation
       initialParsedInterpretations.current = newParsedInterpretation
