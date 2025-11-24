@@ -534,7 +534,6 @@ export default class ChataTable extends React.Component {
           this.getRTForRemoteFilterAndSort()
         } catch (error) {
           console.error('Error in debounced getRTForRemoteFilterAndSort:', error)
-          this.props.onErrorCallback?.(error)
         }
       }, 100)
     }
@@ -864,7 +863,6 @@ export default class ChataTable extends React.Component {
       return Promise.resolve(response)
     } catch (error) {
       console.error(error)
-      this.props.onErrorCallback?.(error)
       return Promise.reject(error)
     }
   }
@@ -1283,7 +1281,6 @@ export default class ChataTable extends React.Component {
         }
       } catch (error) {
         console.error(error)
-        this.props.onErrorCallback?.(error)
       } finally {
         this.setPageLoading(false)
       }
@@ -1308,7 +1305,6 @@ export default class ChataTable extends React.Component {
 
       setColumnVisibility({ ...this.props.authentication, columns: newColumns }).catch((error) => {
         console.error(error)
-        this.props.onErrorCallback?.(error)
       })
     }
   }
