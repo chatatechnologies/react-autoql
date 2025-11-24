@@ -261,10 +261,9 @@ const ReverseTranslation = ({
 
   useEffect(() => {
     isMounted.current = true
-
     let cancelled = false
 
-    // Skip prerequisites for read-only/text-only rendering
+    // Skip prerequisites for read-only/text-only rendering modes
     if (!textOnly && (onValueLabelClick || enableEditReverseTranslation) && reverseTranslationArray?.length) {
       executePrerequisites(reverseTranslationArray)
     }
@@ -284,7 +283,7 @@ const ReverseTranslation = ({
     }
   }, [queryResponse?.data?.data?.parsed_interpretation])
 
-  // todo: consolidate with queryResponse useEffect
+  // todo: consolidate with queryResponse effect
   useEffect(() => {
     if (!textOnly && (onValueLabelClick || enableEditReverseTranslation)) {
       const newParsedInterpretation = localRTFilterResponse?.data?.data?.parsed_interpretation

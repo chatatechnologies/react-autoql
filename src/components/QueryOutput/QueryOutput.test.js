@@ -329,46 +329,24 @@ describe('pivot table filtering', () => {
   describe('filter-by-zero support', () => {
     test('should allow numeric 0 as a valid filter value', () => {
       const queryOutput = mount(<QueryOutputWithoutTheme queryResponse={testCases[8]} queryFn={() => {}} />)
-      const instance = queryOutput.instance()
-
-      // Simulate header filters with numeric 0
-      const headerFilters = {
-        0: 0,
-        1: '10',
-      }
-
-      // The filter should not skip numeric 0
-      // This test verifies the fix: if (value === undefined || value === null) return
-      // Previously: if (value === undefined || value === null || value === '') return
-      // would have rejected 0 as falsy
+      const headerFilters = { 0: 0, 1: '10' }
+      // Verify 0 is not treated as falsy (should not skip)
       expect(headerFilters[0]).toBe(0)
       expect(headerFilters[0] !== undefined && headerFilters[0] !== null).toBe(true)
-
       queryOutput.unmount()
     })
 
     test('should allow string "0" as a valid filter value', () => {
       const queryOutput = mount(<QueryOutputWithoutTheme queryResponse={testCases[8]} queryFn={() => {}} />)
-      const instance = queryOutput.instance()
-
-      // String "0" should be treated as a valid filter value
-      const headerFilters = {
-        0: '0',
-      }
-
-      // Should not be filtered out
-      expect(headerFilters[0]).toBe('0')
+      const headerFilters = { 0: '0' }
       const value = headerFilters[0]
       const isValid = value !== undefined && value !== null && !(typeof value === 'string' && value.trim() === '')
       expect(isValid).toBe(true)
-
       queryOutput.unmount()
     })
 
     test('should skip empty string but not zero values', () => {
       const queryOutput = mount(<QueryOutputWithoutTheme queryResponse={testCases[8]} queryFn={() => {}} />)
-      const instance = queryOutput.instance()
-
       const testValues = [
         { value: 0, shouldPass: true, description: 'numeric 0' },
         { value: '0', shouldPass: true, description: 'string "0"' },
@@ -378,13 +356,10 @@ describe('pivot table filtering', () => {
         { value: false, shouldPass: true, description: 'false' },
         { value: '  ', shouldPass: false, description: 'whitespace string' },
       ]
-
       testValues.forEach(({ value, shouldPass, description }) => {
-        // Apply the fixed logic
         const passes = value !== undefined && value !== null && !(typeof value === 'string' && value.trim() === '')
         expect(passes).toBe(shouldPass, `Failed for ${description}`)
       })
-
       queryOutput.unmount()
     })
   })

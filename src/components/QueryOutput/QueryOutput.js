@@ -2754,7 +2754,7 @@ export class QueryOutput extends React.Component {
             })
           } else if (typeof headerFilters === 'object') {
             Object.entries(headerFilters).forEach(([field, value]) => {
-              // Allow 0, '0', and other falsy numbers; only skip undefined, null, and empty strings
+              // Skip only undefined, null, and empty strings - allow 0, '0', false
               if (value === undefined || value === null) return
               if (typeof value === 'string' && value.trim() === '') return
               let filterColumnIndex
