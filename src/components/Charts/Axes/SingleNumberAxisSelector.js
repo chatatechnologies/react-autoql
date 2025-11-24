@@ -1,7 +1,7 @@
 import React from 'react'
 import { v4 as uuid } from 'uuid'
 import { isMobile } from 'react-device-detect'
-import { isColumnNumberType, getNumberColumnIndices, isSelectableNumberColumn } from 'autoql-fe-utils'
+import { isColumnNumberType } from 'autoql-fe-utils'
 
 import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
@@ -30,15 +30,12 @@ export default class SingleNumberAxisSelector extends React.Component {
       maxHeight = minHeight
     }
 
-    if (maxHeight > window.innerHeight) maxHeight = window.innerHeight
+    if (maxHeight > Window.innerHeight) {
+      maxHeight = Window.innerHeight
+    }
 
-    const cols = columns || []
-    const result = getNumberColumnIndices(cols, this.props.isAggregated) || {}
-    const allNumberIndices = result.allNumberColumnIndices ?? []
-    const candidateCols = allNumberIndices
-      .filter((i) => i != null)
-      .map((i) => cols[i])
-      .filter((c) => c && isSelectableNumberColumn(c) && isColumnNumberType(c))
+    const filteredColumns = columns.filter((col) => col.is_visible)
+
     return (
       <div
         className={isMobile ? 'mobile-string-axis-selector-popover-content' : 'string-axis-selector-popover-content'}
@@ -52,21 +49,24 @@ export default class SingleNumberAxisSelector extends React.Component {
             }}
           >
             <ul className='axis-selector-content'>
-              {candidateCols.map((col) => {
-                const colIndex = col.index
-                return (
-                  <li
-                    className={`string-select-list-item ${col.id === scale.column?.id ? 'active' : ''}`}
-                    key={`string-column-select-${col.id}`}
-                    onClick={() => {
-                      this.props.closeSelector()
-                      scale.changeColumnIndices([colIndex])
-                    }}
-                  >
-                    {col.display_name}
-                  </li>
-                )
-              })}
+              {filteredColumns
+                .filter((col) => isColumnNumberType(col))
+                .map((col) => {
+                  const colIndex = columns.find((origColumn) => origColumn.id === col.id)?.index
+
+                  return (
+                    <li
+                      className={`string-select-list-item ${col.id === scale.column?.id ? 'active' : ''}`}
+                      key={`string-column-select-${col.id}`}
+                      onClick={() => {
+                        this.props.closeSelector()
+                        scale.changeColumnIndices([colIndex])
+                      }}
+                    >
+                      {col.display_name}
+                    </li>
+                  )
+                })}
             </ul>
           </div>
         </CustomScrollbars>
