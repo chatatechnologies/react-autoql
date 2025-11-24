@@ -665,6 +665,7 @@ export class QueryOutput extends React.Component {
       }
     } catch (error) {
       console.error(error)
+      this.props.onErrorCallback?.(error)
     }
   }
 
@@ -979,6 +980,7 @@ export class QueryOutput extends React.Component {
       this.tableParams.filter = newFilters
     } catch (error) {
       console.error(error)
+      this.props.onErrorCallback?.(error)
     }
   }
 
@@ -1360,6 +1362,7 @@ export class QueryOutput extends React.Component {
       } catch (error) {
         response = this.handleQueryFnError(error)
         console.error(error)
+        this.props.onErrorCallback?.(error)
       }
     } else {
       try {
@@ -1384,6 +1387,7 @@ export class QueryOutput extends React.Component {
       } catch (error) {
         response = this.handleQueryFnError(error)
         console.error(error)
+        this.props.onErrorCallback?.(error)
       }
     }
 
@@ -1404,6 +1408,7 @@ export class QueryOutput extends React.Component {
       return drilldownResponse
     } catch (error) {
       console.error(error)
+      this.props.onErrorCallback?.(error)
     }
   }
 
@@ -1423,6 +1428,7 @@ export class QueryOutput extends React.Component {
       return drilldownResponse
     } catch (error) {
       console.error(error)
+      this.props.onErrorCallback?.(error)
     }
   }
 
@@ -1502,6 +1508,7 @@ export class QueryOutput extends React.Component {
         }
       } catch (error) {
         console.error(error)
+        this.props.onErrorCallback?.(error)
         this.props.onDrilldownEnd({ error: 'Error processing drilldown' })
       }
     }
@@ -2936,7 +2943,9 @@ export class QueryOutput extends React.Component {
             })
           } else if (typeof headerFilters === 'object') {
             Object.entries(headerFilters).forEach(([field, value]) => {
-              if (value === undefined || value === null || value === '') return
+              // Allow 0, '0', and other falsy numbers; only skip undefined, null, and empty strings
+              if (value === undefined || value === null) return
+              if (typeof value === 'string' && value.trim() === '') return
               let filterColumnIndex
               const parsed = parseInt(field, 10)
               if (!isNaN(parsed)) filterColumnIndex = parsed

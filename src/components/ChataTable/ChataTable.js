@@ -344,6 +344,7 @@ export default class ChataTable extends React.Component {
       this.cancelCurrentRequest()
     } catch (error) {
       console.error(error)
+      this.props.onErrorCallback?.(error)
     }
   }
 
@@ -559,6 +560,7 @@ export default class ChataTable extends React.Component {
           this.getRTForRemoteFilterAndSort()
         } catch (error) {
           console.error('Error in debounced getRTForRemoteFilterAndSort:', error)
+          this.props.onErrorCallback?.(error)
         }
       }, 100)
     }
@@ -579,6 +581,7 @@ export default class ChataTable extends React.Component {
 
   onDataLoadError = (error) => {
     console.error(error)
+    this.props.onErrorCallback?.(error)
   }
 
   setLoading = (loading) => {
@@ -756,6 +759,7 @@ export default class ChataTable extends React.Component {
     } catch (error) {
       if (error?.data?.message !== REQUEST_CANCELLED_ERROR) {
         console.error(error)
+        this.props.onErrorCallback?.(error)
         this.clearLoadingIndicators()
       } else {
         return
@@ -952,6 +956,7 @@ export default class ChataTable extends React.Component {
       return Promise.resolve(response)
     } catch (error) {
       console.error(error)
+      this.props.onErrorCallback?.(error)
       return Promise.reject(error)
     }
   }
@@ -1371,6 +1376,7 @@ export default class ChataTable extends React.Component {
         }
       } catch (error) {
         console.error(error)
+        this.props.onErrorCallback?.(error)
       } finally {
         this.setPageLoading(false)
       }
@@ -1390,6 +1396,7 @@ export default class ChataTable extends React.Component {
         await setColumnVisibility({ ...this.props.authentication, columns: newColumns })
       } catch (error) {
         console.error(error)
+        this.props.onErrorCallback?.(error)
       } finally {
         // Always update the UI, whether the visibility save succeeded or failed
         this.props.updateColumns(newColumns)
@@ -1592,6 +1599,7 @@ export default class ChataTable extends React.Component {
       }
     } catch (error) {
       console.error(error)
+      this.props.onErrorCallback?.(error)
     }
 
     return []

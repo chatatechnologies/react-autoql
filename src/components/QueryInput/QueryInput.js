@@ -728,7 +728,7 @@ class QueryInput extends React.Component {
   }
 
   onSuggestionsFetchRequested = ({ value }) => {
-    if (!value) {
+    if (value === undefined || value === null || value === '') {
       return
     }
 
