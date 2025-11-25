@@ -551,6 +551,15 @@ export default class ChataTable extends React.Component {
       this.debounceSetState({ loading: false })
     }
 
+    // Update tableParams.filter immediately from current header filters so badge shows correctly
+    // This must be done BEFORE setFilterBadgeClasses() to ensure badge reflects current filter state
+    if (this._isMounted && this.state.tabulatorMounted) {
+      const headerFilters = this.ref?.tabulator?.getHeaderFilters()
+      if (headerFilters) {
+        this.tableParams.filter = _cloneDeep(headerFilters)
+      }
+    }
+
     // Debounce getRTForRemoteFilterAndSort to prevent multiple calls after hide/show columns
     if (!this.useInfiniteScroll && !this.props.pivot && this.tableParams?.filter?.length > 0) {
       if (this._debounceTimeout) clearTimeout(this._debounceTimeout)
@@ -1159,6 +1168,9 @@ export default class ChataTable extends React.Component {
   }
 
   setFilterBadgeClasses = () => {
+    // This method updates the CSS class on column headers to show/hide filter badges
+    // It relies on tableParams.filter being populated with current filters
+    // The badge shows on columns that have active filters applied
     if (this._isMounted && this.state.tabulatorMounted) {
       this.ref?.tabulator?.getColumns()?.forEach((column) => {
         const isFiltering = !!this.tableParams?.filter?.find((filter) => filter.field === column.getField())
