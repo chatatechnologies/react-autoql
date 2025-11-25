@@ -757,59 +757,60 @@ describe('ChataTable', () => {
   })
 
   describe('setFilterBadgeClasses for pivot tables', () => {
-    test('applies is-filtered class to pivot columns when origColumn index matches filter field', () => {
+    test('applies is-filtered class to pivot columns when field matches directly', () => {
       const wrapper = setup({ pivot: true })
       const instance = wrapper.instance()
 
       // Mock classList
-      const classListWithFilter = {
+      const classListForColumn1 = {
         add: jest.fn(),
         remove: jest.fn(),
       }
 
-      const classListWithoutFilter = {
+      const classListForColumn2 = {
         add: jest.fn(),
         remove: jest.fn(),
       }
 
       // Mock tabulator and columns with pivot structure
-      const mockColumnWithOrigColumn = {
-        getField: () => '1',
+      // In pivot tables, field values are '0', '1', '2', etc representing column positions
+      const mockColumn1 = {
+        getField: () => '1', // Value column for first month
         getDefinition: () => ({
-          origColumn: { index: 2 },
+          origColumn: { index: 5 }, // Refers to Total Sales column
         }),
         getElement: () => ({
-          classList: classListWithFilter,
+          classList: classListForColumn1,
         }),
       }
 
-      const mockColumnWithoutFilterMatch = {
-        getField: () => '0',
+      const mockColumn2 = {
+        getField: () => '2', // Value column for second month
         getDefinition: () => ({
-          origColumn: { index: 0 },
+          origColumn: { index: 5 }, // Also refers to Total Sales
         }),
         getElement: () => ({
-          classList: classListWithoutFilter,
+          classList: classListForColumn2,
         }),
       }
 
       instance.ref = {
         tabulator: {
-          getColumns: () => [mockColumnWithoutFilterMatch, mockColumnWithOrigColumn],
+          getColumns: () => [mockColumn1, mockColumn2],
         },
       }
       instance._isMounted = true
       instance.state.tabulatorMounted = true
 
-      // Set filters targeting column index 2
-      instance.tableParams.filter = [{ field: '2', value: 'test', type: '=' }]
+      // Filter with field='1' (first value column was filtered)
+      instance.tableParams.filter = [{ field: '1', value: '<1000', type: '<' }]
 
       // Call the badge function
       instance.setFilterBadgeClasses()
 
-      // Verify the filtered column gets the is-filtered class
-      expect(classListWithFilter.add).toHaveBeenCalledWith('is-filtered')
-      expect(classListWithoutFilter.remove).toHaveBeenCalledWith('is-filtered')
+      // Verify only column1 gets the is-filtered class
+      expect(classListForColumn1.add).toHaveBeenCalledWith('is-filtered')
+      expect(classListForColumn2.remove).toHaveBeenCalledWith('is-filtered')
     })
 
     test('removes is-filtered class from pivot columns when no matching filter', () => {
@@ -824,7 +825,7 @@ describe('ChataTable', () => {
       const mockColumn = {
         getField: () => '1',
         getDefinition: () => ({
-          origColumn: { index: 2 },
+          origColumn: { index: 5 },
         }),
         getElement: () => ({
           classList,
@@ -839,8 +840,8 @@ describe('ChataTable', () => {
       instance._isMounted = true
       instance.state.tabulatorMounted = true
 
-      // Set filters with field '5' which doesn't match origColumn index 2
-      instance.tableParams.filter = [{ field: '5', value: 'test', type: '=' }]
+      // Filter on different column (field='2', but this column is field='1')
+      instance.tableParams.filter = [{ field: '2', value: 'test', type: '=' }]
 
       // Call the badge function
       instance.setFilterBadgeClasses()
@@ -850,7 +851,7 @@ describe('ChataTable', () => {
       expect(classList.add).not.toHaveBeenCalled()
     })
 
-    test('handles pivot columns without origColumn gracefully', () => {
+    test('handles pivot columns with field=0 (row headers) correctly', () => {
       const wrapper = setup({ pivot: true })
       const instance = wrapper.instance()
 
@@ -859,9 +860,11 @@ describe('ChataTable', () => {
         remove: jest.fn(),
       }
 
-      const mockColumn = {
-        getField: () => '0',
-        getDefinition: () => ({}), // No origColumn
+      const mockRowHeaderColumn = {
+        getField: () => '0', // Row header column
+        getDefinition: () => ({
+          origColumn: { index: 0 }, // Refers to Product column
+        }),
         getElement: () => ({
           classList,
         }),
@@ -869,103 +872,20 @@ describe('ChataTable', () => {
 
       instance.ref = {
         tabulator: {
-          getColumns: () => [mockColumn],
+          getColumns: () => [mockRowHeaderColumn],
         },
       }
       instance._isMounted = true
       instance.state.tabulatorMounted = true
 
-      instance.tableParams.filter = [{ field: '2', value: 'test', type: '=' }]
+      // No filters
+      instance.tableParams.filter = []
 
       // Should not throw
       expect(() => instance.setFilterBadgeClasses()).not.toThrow()
 
-      // Column should have filter class removed since no match
+      // Column should have filter class removed
       expect(classList.remove).toHaveBeenCalledWith('is-filtered')
-    })
-
-    test('shows badge only on value columns when filter is on value column (not on legend columns)', () => {
-      const wrapper = setup({ pivot: true })
-      const instance = wrapper.instance()
-
-      // This simulates the actual pivot table structure:
-      // - Row header column (Product)
-      // - Multiple value columns (one for each month)
-      // Each value column has origColumn=5 (Total Sales) and origPivotColumn=3 (Month)
-
-      const rowHeaderClassList = {
-        add: jest.fn(),
-        remove: jest.fn(),
-      }
-
-      const valueColumn1ClassList = {
-        add: jest.fn(),
-        remove: jest.fn(),
-      }
-
-      const valueColumn2ClassList = {
-        add: jest.fn(),
-        remove: jest.fn(),
-      }
-
-      // Row header column (field='0', no origColumn)
-      const rowHeaderColumn = {
-        getField: () => '0',
-        getDefinition: () => ({
-          cssClass: 'pivot-category',
-        }),
-        getElement: () => ({
-          classList: rowHeaderClassList,
-        }),
-      }
-
-      // Value column for "October 2025" (field='1', origColumn.index=5 for Total Sales)
-      const valueColumn1 = {
-        getField: () => '1',
-        getDefinition: () => ({
-          origColumn: { index: 5 }, // Total Sales column
-          origPivotColumn: { index: 3 }, // Month column (for grouping)
-          name: 'October 2025',
-        }),
-        getElement: () => ({
-          classList: valueColumn1ClassList,
-        }),
-      }
-
-      // Value column for "November 2025"
-      const valueColumn2 = {
-        getField: () => '2',
-        getDefinition: () => ({
-          origColumn: { index: 5 }, // Total Sales column
-          origPivotColumn: { index: 3 }, // Month column
-          name: 'November 2025',
-        }),
-        getElement: () => ({
-          classList: valueColumn2ClassList,
-        }),
-      }
-
-      instance.ref = {
-        tabulator: {
-          getColumns: () => [rowHeaderColumn, valueColumn1, valueColumn2],
-        },
-      }
-      instance._isMounted = true
-      instance.state.tabulatorMounted = true
-
-      // Filter is on Total Sales column (index 5), with value < 1000
-      instance.tableParams.filter = [{ field: '5', value: '<1000', type: '>' }]
-
-      // Call the badge function
-      instance.setFilterBadgeClasses()
-
-      // Both value columns should have the badge since they both use the filtered Total Sales column
-      expect(valueColumn1ClassList.add).toHaveBeenCalledWith('is-filtered')
-      expect(valueColumn2ClassList.add).toHaveBeenCalledWith('is-filtered')
-
-      // Row header column should NOT have the badge since it doesn't have origColumn
-      expect(rowHeaderClassList.remove).toHaveBeenCalledWith('is-filtered')
-      expect(rowHeaderClassList.add).not.toHaveBeenCalled()
     })
   })
 })
