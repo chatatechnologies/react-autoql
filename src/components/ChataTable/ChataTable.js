@@ -30,7 +30,6 @@ import {
   runQueryOnly,
   TranslationTypes,
 } from 'autoql-fe-utils'
-import AjaxCache from './ajaxCache'
 
 import { Icon } from '../Icon'
 import { Button } from '../Button'
@@ -60,7 +59,6 @@ export default class ChataTable extends React.Component {
     this.filterCount = 0
     this.isSorting = false
     this.pageSize = props.pageSize ?? 50
-    this._ajaxCache = new AjaxCache({ maxEntries: 50, ttl: 1000 * 60 * 10 }) // In-flight request deduplicate (no persistent cache)
     this.useRemote =
       this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
         ? LOCAL_OR_REMOTE.REMOTE
@@ -126,19 +124,7 @@ export default class ChataTable extends React.Component {
       this.tableOptions.ajaxRequestFunc = (url, config, params) => this.ajaxRequestFunc(props, params)
       this.tableOptions.ajaxResponse = (url, params, response) => this.ajaxResponseFunc(props, response)
     }
-
     this.summaryStats = {}
-
-    // DEBUG: Log initial filters for pivot tables
-    if (props.pivot && props.initialTableParams?.filter?.length) {
-      console.log('[ChataTable Constructor] Pivot table with initial filters:', {
-        filters: props.initialTableParams.filter,
-        columnCount: props.columns?.length,
-      })
-      props.columns?.forEach((col, idx) => {
-        console.log(`  Column ${idx}: name=${col.name}, field=${col.field}, id=${col.id}`)
-      })
-    }
 
     this.state = {
       isFiltering: false,
@@ -150,15 +136,6 @@ export default class ChataTable extends React.Component {
       subscribedData: undefined,
       firstRender: true,
       scrollTop: 0,
-    }
-  }
-
-  serializeTableParams = (params) => {
-    try {
-      const { filters = [], sorters = [] } = params ?? {}
-      return JSON.stringify({ filters, sorters })
-    } catch (e) {
-      return 'serialize_error'
     }
   }
 
@@ -429,25 +406,6 @@ export default class ChataTable extends React.Component {
     return 1
   }
 
-  hasServerSidePagination = (response) => {
-    // If server provides a total count that's larger than the rows returned,
-    // treat this as server-side pagination (only a page of rows was returned).
-    const rowsLen = response?.data?.data?.rows?.length ?? 0
-    const totalFromServer = response?.data?.data?.count_rows
-    if (typeof totalFromServer === 'number' && totalFromServer > rowsLen) {
-      return true
-    }
-
-    return !!(
-      response?.last_page ||
-      response?.data?.data?.last_page ||
-      response?.data?.data?.page ||
-      response?.data?.data?.page_size ||
-      response?.data?.data?.total_pages ||
-      response?.data?.data?.pagination
-    )
-  }
-
   setInfiniteScroll = () => {
     if (!this.ref?.tabulator?.options) {
       return
@@ -498,24 +456,19 @@ export default class ChataTable extends React.Component {
     this.tableParams.filter = _cloneDeep(headerFilters)
     this.tableParams.sort = headerSorters
 
-    // DEBUG: Log when filters are updated
-    if (this.props.pivot && this.tableParams.filter?.length) {
-      console.log('[ChataTable] Filter updated for pivot table')
-      console.log(
-        '  tableParams.filter:',
-        this.tableParams.filter.map((f) => {
-          const matchingColumn = this.props.columns?.find((c) => c.field === f.field || c.id === f.field)
-          return {
-            field: f.field,
-            value: f.value,
-            matchingColumnName: matchingColumn?.name,
-            matchingColumnType: matchingColumn?.type,
-          }
-        }),
-      )
+    const tableParamsFormatted = formatTableParams(this.tableParams, this.props.columns)
+
+    // Validate params are safe before sending to backend
+    if (!tableParamsFormatted || typeof tableParamsFormatted !== 'object') {
+      console.error('Invalid tableParamsFormatted:', tableParamsFormatted)
+      return
     }
 
-    const tableParamsFormatted = formatTableParams(this.tableParams, this.props.columns)
+    // Validate filter objects
+    if (Array.isArray(tableParamsFormatted.filters) && tableParamsFormatted.filters.some((f) => !f || typeof f !== 'object')) {
+      console.error('Invalid filter objects detected')
+      return
+    }
 
     try {
       await runQueryOnly({
@@ -713,50 +666,27 @@ export default class ChataTable extends React.Component {
         if (this._isMounted) {
           this.setState({ pageLoading: true })
         }
-        const _cacheKey = this.serializeTableParams(nextTableParamsFormatted)
-        let cachedEntry = this._ajaxCache.get(_cacheKey)
 
-        let responseWrapper
-        if (cachedEntry?.rows) {
-          responseWrapper = { data: { data: { rows: cachedEntry.rows } } }
-        } else if (this._ajaxCache.hasInFlight(_cacheKey)) {
-          try {
-            await this._ajaxCache.getInFlight(_cacheKey)
-            const cached = this._ajaxCache.get(_cacheKey)
-            if (cached?.rows) {
-              responseWrapper = { data: { data: { rows: cached.rows } } }
-            }
-          } catch (e) {
-            // fall through to fresh request
+        // Validate params before sending to API
+        if (!nextTableParamsFormatted || typeof nextTableParamsFormatted !== 'object') {
+          console.error('Invalid nextTableParamsFormatted:', nextTableParamsFormatted)
+          return response
+        }
+
+        // Ensure filters array is valid
+        if (Array.isArray(nextTableParamsFormatted.filters)) {
+          const invalidFilters = nextTableParamsFormatted.filters.filter((f) => !f || typeof f !== 'object')
+          if (invalidFilters.length > 0) {
+            console.error('Invalid filter objects detected in nextTableParamsFormatted:', invalidFilters)
+            return response
           }
         }
 
-        if (!responseWrapper) {
-          const queryPromise = this.queryFn({
-            tableFilters: nextTableParamsFormatted?.filters,
-            orders: nextTableParamsFormatted?.sorters,
-            cancelToken: this.axiosSource.token,
-          })
-
-          this._ajaxCache.setInFlight(_cacheKey, queryPromise)
-          try {
-            responseWrapper = await queryPromise
-          } finally {
-            this._ajaxCache.deleteInFlight(_cacheKey)
-          }
-
-          const _rows = responseWrapper?.data?.data?.rows ?? []
-          const countFromServer = responseWrapper?.data?.data?.count_rows
-          if (!this.hasServerSidePagination(responseWrapper)) {
-            this._ajaxCache.set(_cacheKey, {
-              rows: _rows,
-              totalPages: this.getTotalPages(responseWrapper),
-              countFromServer,
-            })
-          } else if (typeof countFromServer === 'number') {
-            this._ajaxCache.set(_cacheKey, { countFromServer, rows: undefined })
-          }
-        }
+        const responseWrapper = await this.queryFn({
+          tableFilters: nextTableParamsFormatted?.filters,
+          orders: nextTableParamsFormatted?.sorters,
+          cancelToken: this.axiosSource.token,
+        })
 
         const currentScrollValue = this.ref?.tabulator?.rowManager?.element?.scrollLeft
         if (currentScrollValue > 0) {
@@ -949,34 +879,8 @@ export default class ChataTable extends React.Component {
 
   getNewPage = (props, tableParams) => {
     try {
-      let rows
-      const _key = this.serializeTableParams(tableParams)
-      const entry = this._ajaxCache.get(_key)
-
-      if (entry?.rows) {
-        const page = tableParams.page || 1
-        const start = (page - 1) * this.pageSize
-        rows = entry.rows.slice(start, start + this.pageSize)
-      } else if (this._ajaxCache.hasInFlight(_key)) {
-        return this._ajaxCache
-          .getInFlight(_key)
-          .then(() => this.getNewPage(props, tableParams))
-          .catch(() => this.getNewPage(props, tableParams))
-      }
-
-      if (!rows) {
-        rows = this.getRows(props, tableParams.page)
-      }
-
+      const rows = this.getRows(props, tableParams.page)
       const response = { page: tableParams.page, rows }
-      const _entry = this._ajaxCache.get(_key)
-      if (_entry) {
-        response.last_page = _entry.totalPages
-        if (typeof _entry.countFromServer === 'number') {
-          this.filterCount = _entry.countFromServer
-        }
-      }
-
       return Promise.resolve(response)
     } catch (error) {
       console.error(error)
@@ -1188,93 +1092,56 @@ export default class ChataTable extends React.Component {
 
   setFilterBadgeClasses = () => {
     if (this._isMounted && this.state.tabulatorMounted) {
-      const filters = this.tableParams?.filter ?? []
-      const isPivot = this.props.pivot
+      try {
+        const allColumns = this.ref?.tabulator?.getColumns?.()
+        if (!allColumns) return
 
-      // DEBUG: Log filter and column information
-      if (filters.length > 0 && isPivot) {
-        console.log('=== PIVOT TABLE BADGE DEBUG ===')
-        console.log(
-          'Active filters:',
-          filters.map((f) => ({ 
-            field: f.field, 
-            value: f.value,
-            operator: f.type,
-            type: typeof f.field 
-          })),
-        )
-        console.log(
-          'Filter details - looking for column with field/id matching:',
-          filters.map(f => f.field)
-        )
-        console.log(
-          'Columns in props:',
-          this.props.columns?.map((c, i) => ({
-            index: i,
-            field: c.field,
-            id: c.id,
-            name: c.name,
-            pivot: c.pivot,
-            origPivotColumn: !!c.origPivotColumn,
-          })),
-        )
-      }
+        const filters = this.tableParams?.filter ?? []
+        const isPivot = this.props.pivot
+        const filtersByField = {}
 
-      const allColumns = this.ref?.tabulator?.getColumns()
-      if (filters.length > 0 && isPivot) {
-        console.log(`Props columns: ${this.props.columns?.length}, Tabulator columns: ${allColumns?.length}`)
-        console.log('Tabulator columns:', allColumns?.map((c, i) => ({ index: i, field: c?.getField(), name: c?.getDefinition?.()?.name })))
-      }
+        // Build a quick lookup of fields that are filtered
+        filters.forEach((f) => {
+          if (f?.field) filtersByField[f.field] = true
+        })
 
-      allColumns?.forEach((column, colIndex) => {
-        const columnField = column?.getField()
-        const columnDef = column?.getDefinition?.()
-        const origColumn = columnDef?.origColumn
-        const isPivotDataColumn = !!columnDef?.origPivotColumn
+        // Process all columns
+        allColumns.forEach((column) => {
+          try {
+            const field = column.getField?.()
+            const columnElement = column?.getElement?.()
+            const origColumn = column?.getDefinition?.()?.origColumn
+            const isFiltered = !!filtersByField[field] || (isPivot && origColumn && !!filtersByField[origColumn.field])
 
-        let matchesField = false
-        let matchesOrigColumn = false
-
-        // For regular (non-pivot) tables, match by field directly
-        if (!isPivot) {
-          matchesField = filters.some((filter) => filter.field === columnField)
-        }
-
-        // For pivot tables, match against origColumn field or id
-        if (isPivot && origColumn) {
-          const origField = origColumn.field
-          const origId = origColumn.id
-          const origIndex = origColumn.index
-
-          if (filters.length > 0) {
-            console.log(
-              `  [Col ${colIndex}] field=${columnField}, name="${columnDef?.name}", isPivotData=${isPivotDataColumn}, origColumn={field:${origField}, id:${origId}, index:${origIndex}}`,
-            )
-          }
-
-          matchesOrigColumn = filters.some((filter) => {
-            const matches =
-              filter.field === origField || filter.field === origId || String(filter.field) === String(origIndex)
-            if (filters.length > 0) {
-              console.log(`    Checking filter.field=${filter.field} => ${matches}`)
+            if (isFiltered) {
+              columnElement?.classList.add('is-filtered')
+            } else {
+              columnElement?.classList.remove('is-filtered')
             }
-            return matches
-          })
-        }
+          } catch (err) {
+            // Silently ignore per-column errors
+          }
+        })
 
-        const columnElement = column?.getElement()
-        const shouldShowBadge = matchesField || matchesOrigColumn
-
-        if (filters.length > 0 && isPivot) {
-          console.log(`  => [Col ${colIndex}] Badge=${shouldShowBadge}`)
+        // For pivots, mark column group headers
+        if (isPivot) {
+          try {
+            const container = document.getElementById(`react-autoql-table-container-${this.TABLE_ID}`)
+            container?.querySelectorAll('.tabulator-col-group')?.forEach((groupEl) => {
+              const hasFilteredColumn = !!groupEl.querySelector('.tabulator-col.is-filtered')
+              if (hasFilteredColumn) {
+                groupEl.classList.add('is-filtered')
+              } else {
+                groupEl.classList.remove('is-filtered')
+              }
+            })
+          } catch (err) {
+            // Silently ignore group processing errors
+          }
         }
-
-        if (shouldShowBadge) {
-          columnElement?.classList.add('is-filtered')
-        } else {
-          columnElement?.classList.remove('is-filtered')
-        }
-      })
+      } catch (err) {
+        console.error('Error in setFilterBadgeClasses:', err)
+      }
     }
   }
 

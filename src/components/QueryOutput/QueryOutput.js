@@ -1669,7 +1669,11 @@ export class QueryOutput extends React.Component {
 
   onTableParamsChange = (params, formattedTableParams = {}) => {
     this.tableParams = _cloneDeep(params)
-    this.formattedTableParams = formattedTableParams
+    
+    // Guard: preserve existing formattedTableParams on empty payload
+    if (Object.keys(formattedTableParams).length > 0) {
+      this.formattedTableParams = formattedTableParams
+    }
 
     this.props.onTableParamsChange?.(this.tableParams, this.formattedTableParams)
 
@@ -1678,7 +1682,7 @@ export class QueryOutput extends React.Component {
       this.generatePivotData()
     }
 
-    // This will update the filter badge in OptionsToolbar
+    // Update filter badge in OptionsToolbar
     setTimeout(() => {
       this.updateToolbars()
     }, 0)
@@ -2741,64 +2745,48 @@ export class QueryOutput extends React.Component {
         })
       }
 
-      // Apply any active Tabulator header filters so the pivot reflects the filtered table view.
+      // Apply any active Tabulator header filters so the pivot reflects the filtered table view
       try {
         const headerFilters = this.getTabulatorHeaderFilters?.()
         if (headerFilters) {
-          if (Array.isArray(headerFilters)) {
-            headerFilters.forEach((headFilter) => {
-              if (!headFilter) return
-              const field = headFilter.field ?? headFilter[0]
-              const rawValue = headFilter.value ?? headFilter[1]
-              if (field === undefined || rawValue === undefined) return
-              let filterColumnIndex
-              const parsed = parseInt(field, 10)
-              if (!isNaN(parsed)) filterColumnIndex = parsed
-              if (filterColumnIndex === undefined)
-                filterColumnIndex = columns.find((col) => col.field === field || col.id === field)?.index
-              if (filterColumnIndex !== undefined) {
-                // Parse operator prefix from value if present, else use Tabulator's type
-                let op = headFilter.type || headFilter.operator,
-                  val = rawValue
-                const parsed = QueryOutput.extractOperatorFromValue(rawValue)
-                if (parsed) {
-                  op = parsed.operator
-                  val = parsed.cleanValue
-                }
-                tableData = filterDataByColumn(tableData, columns, filterColumnIndex, val, op)
+          const filters = Array.isArray(headerFilters)
+            ? headerFilters.map((f) => ({ field: f.field ?? f[0], value: f.value ?? f[1], type: f.type, operator: f.operator }))
+            : Object.entries(headerFilters).map(([field, value]) => ({ field, value, type: undefined, operator: undefined }))
+
+          filters.forEach(({ field, value, type, operator }, idx) => {
+            if (field === undefined || value === undefined) {
+              return
+            }
+            if (typeof value === 'string' && value.trim() === '') {
+              return
+            }
+
+            // Skip custom filter functions (e.g., date range pickers)
+            if (typeof type === 'function') {
+              return
+            }
+
+            let columnIndex = parseInt(field, 10)
+            if (isNaN(columnIndex)) {
+              columnIndex = columns.find((col) => col.field === field || col.id === field)?.index
+            }
+
+            if (columnIndex !== undefined) {
+              let op = type || operator
+              let val = value
+              const parsed = QueryOutput.extractOperatorFromValue(value)
+              if (parsed) {
+                op = parsed.operator
+                val = parsed.cleanValue
               }
-            })
-          } else if (typeof headerFilters === 'object') {
-            Object.entries(headerFilters).forEach(([field, value]) => {
-              // Skip only undefined, null, and empty strings - allow 0, '0', false
-              if (value === undefined || value === null) return
-              if (typeof value === 'string' && value.trim() === '') return
-              let filterColumnIndex
-              const parsed = parseInt(field, 10)
-              if (!isNaN(parsed)) filterColumnIndex = parsed
-              if (filterColumnIndex === undefined)
-                filterColumnIndex = columns.find((col) => col.field === field || col.id === field)?.index
-              if (filterColumnIndex !== undefined) {
-                // Parse operator prefix from value if present
-                let op,
-                  val = value
-                const parsed = QueryOutput.extractOperatorFromValue(value)
-                if (parsed) {
-                  op = parsed.operator
-                  val = parsed.cleanValue
-                } else {
-                  op = undefined
-                }
-                tableData = filterDataByColumn(tableData, columns, filterColumnIndex, val, op)
-              }
-            })
-          }
+              tableData = filterDataByColumn(tableData, columns, columnIndex, val, op)
+            }
+          })
         }
       } catch (err) {
-        // ignore header filter parsing errors and continue
+        console.error('[generatePivotTableData] Error applying header filters:', err)
       }
 
-      // Respect user sorters first, fall back to date sort if none provided
       const userSorters = this.formattedTableParams?.sorters || []
       let sortedData = null
       if (userSorters.length > 0) {
@@ -2824,6 +2812,19 @@ export class QueryOutput extends React.Component {
         .map((d) => d[legendColumnIndex])
         .filter((v) => v !== null && v !== undefined && `${v}`.toString().trim() !== '')
         .filter(onlyUnique)
+
+      // Guard: If after filtering we have no data, don't attempt to create pivot table
+      // This prevents malformed column structures when filter results in 0 rows
+      if (!uniqueRowHeaders || uniqueRowHeaders.length === 0 || !uniqueColumnHeaders || uniqueColumnHeaders.length === 0) {
+        this.pivotTableColumns = []
+        this.pivotTableData = []
+        this.numberOfPivotTableRows = 0
+        this.setPivotTableConfig(true)
+        if (this._isMounted) {
+          this.forceUpdate()
+        }
+        return
+      }
 
       let newStringColumnIndex = stringColumnIndex
       let newLegendColumnIndex = legendColumnIndex
@@ -2940,16 +2941,6 @@ export class QueryOutput extends React.Component {
           headerFilter: false,
           headerFilterLiveFilter: false,
         }
-
-        // DEBUG: Log pivot column creation
-        console.log(`[generatePivotTableData] Creating pivot column ${i}:`, {
-          name: columnName,
-          field: `${i + 1}`,
-          origColumnIndex: numberColumnIndex,
-          origColumnName: columns[numberColumnIndex]?.name,
-          origColumnField: columns[numberColumnIndex]?.field,
-          origColumnId: columns[numberColumnIndex]?.id,
-        })
 
         pivotTableColumns.push(newPivotCol)
       })
