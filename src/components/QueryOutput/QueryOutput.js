@@ -2746,7 +2746,7 @@ export class QueryOutput extends React.Component {
                 // Parse operator from rawValue string if it contains a comparison operator
                 let op = headFilter.type || headFilter.operator,
                   val = rawValue
-                const match = typeof rawValue === 'string' ? rawValue.trim().match(/^([<>]=?|!=)\s*(.*)$/) : null
+                const match = typeof rawValue === 'string' ? rawValue.trim().match(/^([<>]=?|!=|=)\s*(.*)$/) : null
                 if (match) {
                   op = match[1]
                   val = match[2] ? match[2].trim() : match[2]
@@ -2768,7 +2768,7 @@ export class QueryOutput extends React.Component {
                 // Parse operator from value string if it contains comparison operators
                 let op,
                   val = value
-                const match = typeof value === 'string' ? value.trim().match(/^([<>]=?|!=)\s*(.*)$/) : null
+                const match = typeof value === 'string' ? value.trim().match(/^([<>]=?|!=|=)\s*(.*)$/) : null
                 if (match) {
                   op = match[1]
                   val = match[2] ? match[2].trim() : match[2]
