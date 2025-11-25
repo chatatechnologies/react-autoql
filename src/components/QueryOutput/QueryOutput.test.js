@@ -363,4 +363,53 @@ describe('pivot table filtering', () => {
       queryOutput.unmount()
     })
   })
+
+  describe('comparison operators in header filters', () => {
+    test('should parse != (not equal) operator from header filter strings', () => {
+      const testCases = [
+        { input: '!=100', expectedOp: '!=', expectedVal: '100' },
+        { input: '!= 100', expectedOp: '!=', expectedVal: '100' },
+        { input: '!=  100', expectedOp: '!=', expectedVal: '100' },
+      ]
+
+      testCases.forEach(({ input, expectedOp, expectedVal }) => {
+        const match = input.trim().match(/^([<>]=?|!=|=)\s*(.*)$/)
+        expect(match).not.toBeNull()
+        expect(match[1]).toBe(expectedOp)
+        expect(match[2].trim()).toBe(expectedVal)
+      })
+    })
+
+    test('should parse = (equality) operator from header filter strings', () => {
+      const testCases = [
+        { input: '=100', expectedOp: '=', expectedVal: '100' },
+        { input: '= 100', expectedOp: '=', expectedVal: '100' },
+        { input: '=  100', expectedOp: '=', expectedVal: '100' },
+      ]
+
+      testCases.forEach(({ input, expectedOp, expectedVal }) => {
+        const match = input.trim().match(/^([<>]=?|!=|=)\s*(.*)$/)
+        expect(match).not.toBeNull()
+        expect(match[1]).toBe(expectedOp)
+        expect(match[2].trim()).toBe(expectedVal)
+      })
+    })
+
+    test('should parse all comparison operators correctly', () => {
+      const testCases = [
+        { input: '>100', expectedOp: '>' },
+        { input: '>=100', expectedOp: '>=' },
+        { input: '<100', expectedOp: '<' },
+        { input: '<=100', expectedOp: '<=' },
+        { input: '!=100', expectedOp: '!=' },
+        { input: '=100', expectedOp: '=' },
+      ]
+
+      testCases.forEach(({ input, expectedOp }) => {
+        const match = input.trim().match(/^([<>]=?|!=|=)\s*(.*)$/)
+        expect(match).not.toBeNull()
+        expect(match[1]).toBe(expectedOp)
+      })
+    })
+  })
 })
