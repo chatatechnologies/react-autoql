@@ -347,7 +347,6 @@ export class QueryOutput extends React.Component {
       this.forceUpdate()
     } catch (error) {
       console.error(error)
-      this.props.onErrorCallback?.(error)
     }
   }
 
@@ -1014,7 +1013,6 @@ export class QueryOutput extends React.Component {
       }
     } catch (error) {
       console.error('Error generating pivot data', error)
-      this.props.onErrorCallback?.(error)
       this.pivotTableData = undefined
     }
 
@@ -2762,7 +2760,9 @@ export class QueryOutput extends React.Component {
             })
           } else if (typeof headerFilters === 'object') {
             Object.entries(headerFilters).forEach(([field, value]) => {
-              if (value === undefined || value === null || value === '') return
+              // Skip only undefined, null, and empty strings - allow 0, '0', false
+              if (value === undefined || value === null) return
+              if (typeof value === 'string' && value.trim() === '') return
               let filterColumnIndex
               const parsed = parseInt(field, 10)
               if (!isNaN(parsed)) filterColumnIndex = parsed
@@ -2978,7 +2978,6 @@ export class QueryOutput extends React.Component {
       }
     } catch (error) {
       console.error(error)
-      this.props.onErrorCallback?.(error)
     }
   }
 

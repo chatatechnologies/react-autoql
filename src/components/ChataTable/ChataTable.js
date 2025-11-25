@@ -1257,7 +1257,7 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  onRemoveColumnClick = () => {
+  onRemoveColumnClick = async () => {
     const column = _cloneDeep(this.state.contextMenuColumn)
 
     this.setState({ contextMenuColumn: undefined })
@@ -1269,20 +1269,18 @@ export default class ChataTable extends React.Component {
 
     if (currentAdditionalSelectColumns?.length !== newAdditionalSelectColumns?.length) {
       this.setPageLoading(true)
-      this.queryFn({ newColumns: newAdditionalSelectColumns })
-        .then((response) => {
-          if (response?.data?.data?.rows) {
-            this.props.updateColumnsAndData(response)
-          } else {
-            throw new Error('Column deletion failed')
-          }
-        })
-        .catch((error) => {
-          console.error(error)
-        })
-        .finally(() => {
-          this.setPageLoading(false)
-        })
+      try {
+        const response = await this.queryFn({ newColumns: newAdditionalSelectColumns })
+        if (response?.data?.data?.rows) {
+          this.props.updateColumnsAndData(response)
+        } else {
+          throw new Error('Column deletion failed')
+        }
+      } catch (error) {
+        console.error(error)
+      } finally {
+        this.setPageLoading(false)
+      }
     } else {
       const newColumns = this.props.columns.map((col) => {
         if (col.name === column.name) {
