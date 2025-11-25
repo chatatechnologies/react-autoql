@@ -2701,6 +2701,31 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  isColumnFiltered = (columnIndex, columns = this.state.columns) => {
+    // Check if the column at the given index has any active filters
+    const headerFilters = this.getTabulatorHeaderFilters?.()
+    if (!headerFilters) return false
+
+    const targetColumn = columns[columnIndex]
+    if (!targetColumn) return false
+
+    if (Array.isArray(headerFilters)) {
+      return headerFilters.some((filter) => {
+        if (!filter) return false
+        const field = filter.field ?? filter[0]
+        // Check if filter field matches the target column's field or ID
+        return field === targetColumn.field || field === targetColumn.id || parseInt(field, 10) === columnIndex
+      })
+    } else if (typeof headerFilters === 'object') {
+      return Object.keys(headerFilters).some((field) => {
+        // Check if filter field matches the target column's field or ID
+        return field === targetColumn.field || field === targetColumn.id || parseInt(field, 10) === columnIndex
+      })
+    }
+
+    return false
+  }
+
   generatePivotTableData = ({ isFirstGeneration } = {}) => {
     try {
       this.pivotTableColumnsLimited = false
@@ -2906,6 +2931,7 @@ export class QueryOutput extends React.Component {
       const pivotTableColumns = []
 
       // First column will be the row headers defined by the string column
+      const rowHeaderCssClass = `pivot-category${this.isColumnFiltered(newStringColumnIndex, columns) ? ' is-filtered' : ''}`
       pivotTableColumns.push({
         ...columns[newStringColumnIndex],
         frozen: true,
@@ -2913,7 +2939,7 @@ export class QueryOutput extends React.Component {
         is_visible: true,
         field: '0',
         resizable: false,
-        cssClass: 'pivot-category',
+        cssClass: rowHeaderCssClass,
         pivot: true,
         headerFilter: false,
         headerFilterLiveFilter: false,
@@ -2925,6 +2951,12 @@ export class QueryOutput extends React.Component {
           column: columns[newLegendColumnIndex],
           config: getDataFormatting(this.props.dataFormatting),
         })
+
+        // Check if this value column (numberColumnIndex) or legend column (newLegendColumnIndex) has a filter
+        const isValueColumnFiltered = this.isColumnFiltered(numberColumnIndex, columns)
+        const isLegendColumnFiltered = this.isColumnFiltered(newLegendColumnIndex, columns)
+        const shouldShowBadge = isValueColumnFiltered || isLegendColumnFiltered
+        const valueCssClass = shouldShowBadge ? 'is-filtered' : ''
 
         pivotTableColumns.push({
           ...columns[numberColumnIndex],
@@ -2939,6 +2971,7 @@ export class QueryOutput extends React.Component {
           is_visible: true,
           headerFilter: false,
           headerFilterLiveFilter: false,
+          cssClass: valueCssClass,
         })
       })
 
