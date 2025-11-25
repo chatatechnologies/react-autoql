@@ -1161,7 +1161,25 @@ export default class ChataTable extends React.Component {
   setFilterBadgeClasses = () => {
     if (this._isMounted && this.state.tabulatorMounted) {
       this.ref?.tabulator?.getColumns()?.forEach((column) => {
-        const isFiltering = !!this.tableParams?.filter?.find((filter) => filter.field === column.getField())
+        let isFiltering = false
+
+        // For regular tables, match by field
+        if (!!this.tableParams?.filter?.find((filter) => filter.field === column.getField())) {
+          isFiltering = true
+        }
+
+        // For pivot tables, also check if this column's origColumn index matches a filter
+        if (!isFiltering && this.props.pivot) {
+          const columnDef = column?.getDefinition?.()
+          const origColumnIndex = columnDef?.origColumn?.index
+          if (origColumnIndex !== undefined) {
+            isFiltering = !!this.tableParams?.filter?.find((filter) => {
+              const filterFieldAsNumber = parseInt(filter.field, 10)
+              return !isNaN(filterFieldAsNumber) && filterFieldAsNumber === origColumnIndex
+            })
+          }
+        }
+
         const columnElement = column?.getElement()
 
         if (isFiltering) {
