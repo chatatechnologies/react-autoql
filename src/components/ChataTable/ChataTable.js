@@ -129,6 +129,17 @@ export default class ChataTable extends React.Component {
 
     this.summaryStats = {}
 
+    // DEBUG: Log initial filters for pivot tables
+    if (props.pivot && props.initialTableParams?.filter?.length) {
+      console.log('[ChataTable Constructor] Pivot table with initial filters:', {
+        filters: props.initialTableParams.filter,
+        columnCount: props.columns?.length,
+      })
+      props.columns?.forEach((col, idx) => {
+        console.log(`  Column ${idx}: name=${col.name}, field=${col.field}, id=${col.id}`)
+      })
+    }
+
     this.state = {
       isFiltering: false,
       isSorting: false,
@@ -310,7 +321,6 @@ export default class ChataTable extends React.Component {
       this.setHeaderInputEventListeners()
       this.setFilters()
       this.setSorters()
-      this.setFilterBadgeClasses()
       this.clearLoadingIndicators()
     }
 
@@ -487,6 +497,12 @@ export default class ChataTable extends React.Component {
 
     this.tableParams.filter = _cloneDeep(headerFilters)
     this.tableParams.sort = headerSorters
+
+    // DEBUG: Log when filters are updated
+    if (this.props.pivot && this.tableParams.filter?.length) {
+      console.log('[ChataTable] setFilterBadgeClasses called, updating filter badge for pivot table')
+      console.log('  tableParams.filter:', this.tableParams.filter.map(f => ({ field: f.field, value: f.value })))
+    }
 
     const tableParamsFormatted = formatTableParams(this.tableParams, this.props.columns)
 
@@ -1161,25 +1177,55 @@ export default class ChataTable extends React.Component {
 
   setFilterBadgeClasses = () => {
     if (this._isMounted && this.state.tabulatorMounted) {
-      this.ref?.tabulator?.getColumns()?.forEach((column) => {
-        let isFiltering = false
+      const filters = this.tableParams?.filter ?? []
+      const isPivot = this.props.pivot
 
-        // For regular tables, match by field
-        if (!!this.tableParams?.filter?.find((filter) => filter.field === column.getField())) {
-          isFiltering = true
+      // DEBUG: Log filter and column information
+      if (filters.length > 0 && isPivot) {
+        console.log('=== PIVOT TABLE BADGE DEBUG ===')
+        console.log('Active filters:', filters.map(f => ({ field: f.field, value: f.value, type: typeof f.field })))
+      }
+
+      this.ref?.tabulator?.getColumns()?.forEach((column) => {
+        const columnField = column?.getField()
+        const columnDef = column?.getDefinition?.()
+        const origColumn = columnDef?.origColumn
+
+        let matchesField = false
+        let matchesOrigColumn = false
+
+        // For regular (non-pivot) tables, match by field directly
+        if (!isPivot) {
+          matchesField = filters.some((filter) => filter.field === columnField)
         }
 
-        // For pivot tables, match by field directly (field values like '0', '1', '2' correspond to column positions)
-        // Each value column in a pivot table has field='1', '2', etc, and all value columns share the same origColumn
-        // So we just need to match the field values directly
-        if (!isFiltering && this.props.pivot) {
-          const columnField = column.getField()
-          isFiltering = !!this.tableParams?.filter?.find((filter) => filter.field === columnField)
+        // For pivot tables, match against origColumn field or id
+        if (isPivot && origColumn) {
+          const origField = origColumn.field
+          const origId = origColumn.id
+          const origIndex = origColumn.index
+
+          if (filters.length > 0) {
+            console.log(`  Column: field=${columnField}, origColumn={field:${origField}, id:${origId}, index:${origIndex}, name:${origColumn.name}}`)
+          }
+
+          matchesOrigColumn = filters.some((filter) => {
+            const matches = filter.field === origField || filter.field === origId || String(filter.field) === String(origIndex)
+            if (filters.length > 0) {
+              console.log(`    Checking filter.field=${filter.field} against origField=${origField}, origId=${origId}, origIndex=${origIndex} => ${matches}`)
+            }
+            return matches
+          })
         }
 
         const columnElement = column?.getElement()
+        const shouldShowBadge = matchesField || matchesOrigColumn
 
-        if (isFiltering) {
+        if (filters.length > 0 && isPivot) {
+          console.log(`  => Badge=${shouldShowBadge}`)
+        }
+
+        if (shouldShowBadge) {
           columnElement?.classList.add('is-filtered')
         } else {
           columnElement?.classList.remove('is-filtered')
