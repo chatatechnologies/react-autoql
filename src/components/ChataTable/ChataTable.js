@@ -500,8 +500,19 @@ export default class ChataTable extends React.Component {
 
     // DEBUG: Log when filters are updated
     if (this.props.pivot && this.tableParams.filter?.length) {
-      console.log('[ChataTable] setFilterBadgeClasses called, updating filter badge for pivot table')
-      console.log('  tableParams.filter:', this.tableParams.filter.map(f => ({ field: f.field, value: f.value })))
+      console.log('[ChataTable] Filter updated for pivot table')
+      console.log(
+        '  tableParams.filter:',
+        this.tableParams.filter.map((f) => {
+          const matchingColumn = this.props.columns?.find((c) => c.field === f.field || c.id === f.field)
+          return {
+            field: f.field,
+            value: f.value,
+            matchingColumnName: matchingColumn?.name,
+            matchingColumnType: matchingColumn?.type,
+          }
+        }),
+      )
     }
 
     const tableParamsFormatted = formatTableParams(this.tableParams, this.props.columns)
@@ -1183,13 +1194,43 @@ export default class ChataTable extends React.Component {
       // DEBUG: Log filter and column information
       if (filters.length > 0 && isPivot) {
         console.log('=== PIVOT TABLE BADGE DEBUG ===')
-        console.log('Active filters:', filters.map(f => ({ field: f.field, value: f.value, type: typeof f.field })))
+        console.log(
+          'Active filters:',
+          filters.map((f) => ({ 
+            field: f.field, 
+            value: f.value,
+            operator: f.type,
+            type: typeof f.field 
+          })),
+        )
+        console.log(
+          'Filter details - looking for column with field/id matching:',
+          filters.map(f => f.field)
+        )
+        console.log(
+          'Columns in props:',
+          this.props.columns?.map((c, i) => ({
+            index: i,
+            field: c.field,
+            id: c.id,
+            name: c.name,
+            pivot: c.pivot,
+            origPivotColumn: !!c.origPivotColumn,
+          })),
+        )
       }
 
-      this.ref?.tabulator?.getColumns()?.forEach((column) => {
+      const allColumns = this.ref?.tabulator?.getColumns()
+      if (filters.length > 0 && isPivot) {
+        console.log(`Props columns: ${this.props.columns?.length}, Tabulator columns: ${allColumns?.length}`)
+        console.log('Tabulator columns:', allColumns?.map((c, i) => ({ index: i, field: c?.getField(), name: c?.getDefinition?.()?.name })))
+      }
+
+      allColumns?.forEach((column, colIndex) => {
         const columnField = column?.getField()
         const columnDef = column?.getDefinition?.()
         const origColumn = columnDef?.origColumn
+        const isPivotDataColumn = !!columnDef?.origPivotColumn
 
         let matchesField = false
         let matchesOrigColumn = false
@@ -1206,13 +1247,16 @@ export default class ChataTable extends React.Component {
           const origIndex = origColumn.index
 
           if (filters.length > 0) {
-            console.log(`  Column: field=${columnField}, origColumn={field:${origField}, id:${origId}, index:${origIndex}, name:${origColumn.name}}`)
+            console.log(
+              `  [Col ${colIndex}] field=${columnField}, name="${columnDef?.name}", isPivotData=${isPivotDataColumn}, origColumn={field:${origField}, id:${origId}, index:${origIndex}}`,
+            )
           }
 
           matchesOrigColumn = filters.some((filter) => {
-            const matches = filter.field === origField || filter.field === origId || String(filter.field) === String(origIndex)
+            const matches =
+              filter.field === origField || filter.field === origId || String(filter.field) === String(origIndex)
             if (filters.length > 0) {
-              console.log(`    Checking filter.field=${filter.field} against origField=${origField}, origId=${origId}, origIndex=${origIndex} => ${matches}`)
+              console.log(`    Checking filter.field=${filter.field} => ${matches}`)
             }
             return matches
           })
@@ -1222,7 +1266,7 @@ export default class ChataTable extends React.Component {
         const shouldShowBadge = matchesField || matchesOrigColumn
 
         if (filters.length > 0 && isPivot) {
-          console.log(`  => Badge=${shouldShowBadge}`)
+          console.log(`  => [Col ${colIndex}] Badge=${shouldShowBadge}`)
         }
 
         if (shouldShowBadge) {
