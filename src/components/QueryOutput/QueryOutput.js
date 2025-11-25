@@ -732,6 +732,13 @@ export class QueryOutput extends React.Component {
     )
   }
 
+  static extractOperatorFromValue = (value) => {
+    // Extract comparison operator prefix if present, else return null
+    if (typeof value !== 'string') return null
+    const match = value.trim().match(/^([<>=!]=?|!)\s*(.*)$/)
+    return match ? { operator: match[1], cleanValue: match[2] } : null
+  }
+
   getDisplayTypeFromInitial = (props) => {
     // Set the initial display type based on prop value, response, and supported display types
     // Start by setting the displayType to the provided initialDisplayType prop value
@@ -2722,7 +2729,14 @@ export class QueryOutput extends React.Component {
         this.formattedTableParams.filters.forEach((filter) => {
           const filterColumnIndex = columns.find((col) => col.id === filter.id)?.index
           if (filterColumnIndex !== undefined) {
-            tableData = filterDataByColumn(tableData, columns, filterColumnIndex, filter.value, filter.operator)
+            let op = filter.operator,
+              val = filter.value
+            const parsed = QueryOutput.extractOperatorFromValue(filter.value)
+            if (parsed) {
+              op = parsed.operator
+              val = parsed.cleanValue
+            }
+            tableData = filterDataByColumn(tableData, columns, filterColumnIndex, val, op)
           }
         })
       }
@@ -2743,13 +2757,13 @@ export class QueryOutput extends React.Component {
               if (filterColumnIndex === undefined)
                 filterColumnIndex = columns.find((col) => col.field === field || col.id === field)?.index
               if (filterColumnIndex !== undefined) {
-                // Parse operator from rawValue string if it contains a comparison operator
+                // Parse operator prefix from value if present, else use Tabulator's type
                 let op = headFilter.type || headFilter.operator,
                   val = rawValue
-                const match = typeof rawValue === 'string' ? rawValue.trim().match(/^([<>]=?|!=|=)\s*(.*)$/) : null
-                if (match) {
-                  op = match[1]
-                  val = match[2]
+                const parsed = QueryOutput.extractOperatorFromValue(rawValue)
+                if (parsed) {
+                  op = parsed.operator
+                  val = parsed.cleanValue
                 }
                 tableData = filterDataByColumn(tableData, columns, filterColumnIndex, val, op)
               }
@@ -2765,13 +2779,15 @@ export class QueryOutput extends React.Component {
               if (filterColumnIndex === undefined)
                 filterColumnIndex = columns.find((col) => col.field === field || col.id === field)?.index
               if (filterColumnIndex !== undefined) {
-                // Parse operator from value string if it contains comparison operators
+                // Parse operator prefix from value if present
                 let op,
                   val = value
-                const match = typeof value === 'string' ? value.trim().match(/^([<>]=?|!=|=)\s*(.*)$/) : null
-                if (match) {
-                  op = match[1]
-                  val = match[2]
+                const parsed = QueryOutput.extractOperatorFromValue(value)
+                if (parsed) {
+                  op = parsed.operator
+                  val = parsed.cleanValue
+                } else {
+                  op = undefined
                 }
                 tableData = filterDataByColumn(tableData, columns, filterColumnIndex, val, op)
               }

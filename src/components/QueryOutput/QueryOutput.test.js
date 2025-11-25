@@ -411,5 +411,111 @@ describe('pivot table filtering', () => {
         expect(match[1]).toBe(expectedOp)
       })
     })
+
+    test('should parse ! (not) operator from header filter strings', () => {
+      const testCases = [
+        { input: '!test', expectedOp: '!', expectedVal: 'test' },
+        { input: '! test', expectedOp: '!', expectedVal: 'test' },
+        { input: '!  test', expectedOp: '!', expectedVal: 'test' },
+      ]
+
+      testCases.forEach(({ input, expectedOp, expectedVal }) => {
+        const match = input.trim().match(/^([<>=!]=?|!)\s*(.*)$/)
+        expect(match).not.toBeNull()
+        expect(match[1]).toBe(expectedOp)
+        expect(match[2].trim()).toBe(expectedVal)
+      })
+    })
+  })
+
+  describe('QueryOutput.extractOperatorFromValue helper function', () => {
+    test('should extract != operator and clean value', () => {
+      const result = QueryOutputWithoutTheme.extractOperatorFromValue('!=100')
+      expect(result).not.toBeNull()
+      expect(result.operator).toBe('!=')
+      expect(result.cleanValue).toBe('100')
+    })
+
+    test('should extract = operator and clean value', () => {
+      const result = QueryOutputWithoutTheme.extractOperatorFromValue('=test')
+      expect(result).not.toBeNull()
+      expect(result.operator).toBe('=')
+      expect(result.cleanValue).toBe('test')
+    })
+
+    test('should extract < operator and clean value', () => {
+      const result = QueryOutputWithoutTheme.extractOperatorFromValue('<50')
+      expect(result).not.toBeNull()
+      expect(result.operator).toBe('<')
+      expect(result.cleanValue).toBe('50')
+    })
+
+    test('should extract > operator and clean value', () => {
+      const result = QueryOutputWithoutTheme.extractOperatorFromValue('>100')
+      expect(result).not.toBeNull()
+      expect(result.operator).toBe('>')
+      expect(result.cleanValue).toBe('100')
+    })
+
+    test('should extract <= operator and clean value', () => {
+      const result = QueryOutputWithoutTheme.extractOperatorFromValue('<=99')
+      expect(result).not.toBeNull()
+      expect(result.operator).toBe('<=')
+      expect(result.cleanValue).toBe('99')
+    })
+
+    test('should extract >= operator and clean value', () => {
+      const result = QueryOutputWithoutTheme.extractOperatorFromValue('>=50')
+      expect(result).not.toBeNull()
+      expect(result.operator).toBe('>=')
+      expect(result.cleanValue).toBe('50')
+    })
+
+    test('should extract ! operator and clean value', () => {
+      const result = QueryOutputWithoutTheme.extractOperatorFromValue('!test')
+      expect(result).not.toBeNull()
+      expect(result.operator).toBe('!')
+      expect(result.cleanValue).toBe('test')
+    })
+
+    test('should handle whitespace around operator', () => {
+      const result = QueryOutputWithoutTheme.extractOperatorFromValue('!= 100')
+      expect(result).not.toBeNull()
+      expect(result.operator).toBe('!=')
+      expect(result.cleanValue).toBe('100')
+    })
+
+    test('should handle multiple spaces around operator', () => {
+      const result = QueryOutputWithoutTheme.extractOperatorFromValue('>=   test')
+      expect(result).not.toBeNull()
+      expect(result.operator).toBe('>=')
+      expect(result.cleanValue).toBe('test')
+    })
+
+    test('should return null for values without operators', () => {
+      const result = QueryOutputWithoutTheme.extractOperatorFromValue('plaintext')
+      expect(result).toBeNull()
+    })
+
+    test('should return null for non-string values', () => {
+      expect(QueryOutputWithoutTheme.extractOperatorFromValue(123)).toBeNull()
+      expect(QueryOutputWithoutTheme.extractOperatorFromValue(null)).toBeNull()
+      expect(QueryOutputWithoutTheme.extractOperatorFromValue(undefined)).toBeNull()
+      expect(QueryOutputWithoutTheme.extractOperatorFromValue({ value: '100' })).toBeNull()
+    })
+
+    test('should preserve special characters in clean value', () => {
+      const result = QueryOutputWithoutTheme.extractOperatorFromValue('!=$100')
+      expect(result).not.toBeNull()
+      expect(result.operator).toBe('!=')
+      expect(result.cleanValue).toBe('$100')
+    })
+
+    test('should preserve leading/trailing spaces in clean value', () => {
+      const result = QueryOutputWithoutTheme.extractOperatorFromValue('=test value')
+      expect(result).not.toBeNull()
+      expect(result.operator).toBe('=')
+      expect(result.cleanValue).toBe('test value')
+    })
   })
 })

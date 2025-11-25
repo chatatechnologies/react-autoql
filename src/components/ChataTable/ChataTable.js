@@ -1084,40 +1084,33 @@ export default class ChataTable extends React.Component {
   }
 
   setFilters = async (newFilters) => {
-    // Track when setFilters was called to prevent duplicate AJAX requests
     this._setFiltersTime = Date.now()
 
     const filterValues = newFilters || this.tableParams?.filter
+    if (!filterValues) return
 
-    if (filterValues) {
+    try {
+      this.ref?.tabulator?.blockRedraw()
       try {
-        // Block all table redraws/data loads while setting filters
-        this.ref?.tabulator?.blockRedraw()
-
-        try {
-          filterValues.forEach((filter) => {
-            // Get all columns to check if the target column exists
-            const columns = this.ref.tabulator.getColumns()
-            const targetColumn = columns.find((col) => col.getField() === filter.field)
-
-            if (targetColumn && targetColumn.getDefinition().headerFilter) {
-              this.ref?.tabulator?.setHeaderFilterValue(filter.field, filter.value)
-            }
-          })
-        } finally {
-          // Always restore redraw even if there's an error - this will trigger ONE AJAX request with all filters
-          this.ref?.tabulator?.restoreRedraw()
-        }
-
-        // Final check after all filters set - with cleanup
-        this._filterCheckTimeout = setTimeout(() => {
-          this._filterCheckTimeout = null
-        }, 10)
-      } catch (error) {
-        console.error('CHATATABLE - error setting filters:', error)
+        filterValues.forEach((filter) => {
+          const columns = this.ref.tabulator.getColumns()
+          const targetColumn = columns.find((col) => col.getField() === filter.field)
+          if (targetColumn?.getDefinition().headerFilter) {
+            // Extract clean value (remove operator prefix for Tabulator display)
+            const match = typeof filter.value === 'string' ? filter.value.trim().match(/^([<>=!]=?|!)\s*(.*)$/) : null
+            const displayValue = match ? match[2] : filter.value
+            this.ref?.tabulator?.setHeaderFilterValue(filter.field, displayValue)
+          }
+        })
+      } finally {
+        this.ref?.tabulator?.restoreRedraw()
       }
+      this._filterCheckTimeout = setTimeout(() => {
+        this._filterCheckTimeout = null
+      }, 10)
+    } catch (error) {
+      console.error('Error setting filters:', error)
     }
-
     this.setFilterBadgeClasses()
   }
 
