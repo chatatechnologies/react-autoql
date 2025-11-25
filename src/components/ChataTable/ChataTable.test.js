@@ -883,5 +883,89 @@ describe('ChataTable', () => {
       // Column should have filter class removed since no match
       expect(classList.remove).toHaveBeenCalledWith('is-filtered')
     })
+
+    test('shows badge only on value columns when filter is on value column (not on legend columns)', () => {
+      const wrapper = setup({ pivot: true })
+      const instance = wrapper.instance()
+
+      // This simulates the actual pivot table structure:
+      // - Row header column (Product)
+      // - Multiple value columns (one for each month)
+      // Each value column has origColumn=5 (Total Sales) and origPivotColumn=3 (Month)
+
+      const rowHeaderClassList = {
+        add: jest.fn(),
+        remove: jest.fn(),
+      }
+
+      const valueColumn1ClassList = {
+        add: jest.fn(),
+        remove: jest.fn(),
+      }
+
+      const valueColumn2ClassList = {
+        add: jest.fn(),
+        remove: jest.fn(),
+      }
+
+      // Row header column (field='0', no origColumn)
+      const rowHeaderColumn = {
+        getField: () => '0',
+        getDefinition: () => ({
+          cssClass: 'pivot-category',
+        }),
+        getElement: () => ({
+          classList: rowHeaderClassList,
+        }),
+      }
+
+      // Value column for "October 2025" (field='1', origColumn.index=5 for Total Sales)
+      const valueColumn1 = {
+        getField: () => '1',
+        getDefinition: () => ({
+          origColumn: { index: 5 }, // Total Sales column
+          origPivotColumn: { index: 3 }, // Month column (for grouping)
+          name: 'October 2025',
+        }),
+        getElement: () => ({
+          classList: valueColumn1ClassList,
+        }),
+      }
+
+      // Value column for "November 2025"
+      const valueColumn2 = {
+        getField: () => '2',
+        getDefinition: () => ({
+          origColumn: { index: 5 }, // Total Sales column
+          origPivotColumn: { index: 3 }, // Month column
+          name: 'November 2025',
+        }),
+        getElement: () => ({
+          classList: valueColumn2ClassList,
+        }),
+      }
+
+      instance.ref = {
+        tabulator: {
+          getColumns: () => [rowHeaderColumn, valueColumn1, valueColumn2],
+        },
+      }
+      instance._isMounted = true
+      instance.state.tabulatorMounted = true
+
+      // Filter is on Total Sales column (index 5), with value < 1000
+      instance.tableParams.filter = [{ field: '5', value: '<1000', type: '>' }]
+
+      // Call the badge function
+      instance.setFilterBadgeClasses()
+
+      // Both value columns should have the badge since they both use the filtered Total Sales column
+      expect(valueColumn1ClassList.add).toHaveBeenCalledWith('is-filtered')
+      expect(valueColumn2ClassList.add).toHaveBeenCalledWith('is-filtered')
+
+      // Row header column should NOT have the badge since it doesn't have origColumn
+      expect(rowHeaderClassList.remove).toHaveBeenCalledWith('is-filtered')
+      expect(rowHeaderClassList.add).not.toHaveBeenCalled()
+    })
   })
 })

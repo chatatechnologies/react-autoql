@@ -1168,10 +1168,13 @@ export default class ChataTable extends React.Component {
           isFiltering = true
         }
 
-        // For pivot tables, also check if this column's origColumn index matches a filter
+        // For pivot tables, check if this column's origColumn index matches a filter
+        // Only check origColumn (the actual value column), NOT origPivotColumn (the legend/grouping column)
         if (!isFiltering && this.props.pivot) {
           const columnDef = column?.getDefinition?.()
           const origColumnIndex = columnDef?.origColumn?.index
+          
+          // Only show badge if this column has an origColumn and it matches the filter
           if (origColumnIndex !== undefined) {
             isFiltering = !!this.tableParams?.filter?.find((filter) => {
               const filterFieldAsNumber = parseInt(filter.field, 10)
