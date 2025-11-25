@@ -2749,7 +2749,7 @@ export class QueryOutput extends React.Component {
                 const match = typeof rawValue === 'string' ? rawValue.trim().match(/^([<>]=?|!=|=)\s*(.*)$/) : null
                 if (match) {
                   op = match[1]
-                  val = match[2] ? match[2].trim() : match[2]
+                  val = match[2]
                 }
                 tableData = filterDataByColumn(tableData, columns, filterColumnIndex, val, op)
               }
@@ -2771,7 +2771,7 @@ export class QueryOutput extends React.Component {
                 const match = typeof value === 'string' ? value.trim().match(/^([<>]=?|!=|=)\s*(.*)$/) : null
                 if (match) {
                   op = match[1]
-                  val = match[2] ? match[2].trim() : match[2]
+                  val = match[2]
                 }
                 tableData = filterDataByColumn(tableData, columns, filterColumnIndex, val, op)
               }
