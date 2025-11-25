@@ -540,17 +540,20 @@ export default class Axis extends Component {
     }
 
     return (
-      <>
-        <tspan data-test='axis-label'>
-          <tspan ref={(r) => (this.titleText = r)}>{title}</tspan>
-        </tspan>
+      <tspan data-test='axis-label'>
+        <tspan ref={(r) => (this.titleText = r)}>{title}</tspan>
         {this.shouldRenderAxisSelector() && (
-          <tspan className='react-autoql-axis-selector-arrow' data-test='dropdown-arrow' opacity='0' fontSize='8px'>
+          <tspan
+            className='react-autoql-axis-selector-arrow'
+            data-test='dropdown-arrow'
+            opacity='0' // use css to style so it isnt exported in the png
+            fontSize='8px'
+          >
             {' '}
             &#9660;
           </tspan>
         )}
-      </>
+      </tspan>
     )
   }
 
@@ -831,41 +834,15 @@ export default class Axis extends Component {
   }
 
   shouldRenderAxisSelector = () => {
-    const scaleType = this.props.scale?.type
-
-    // If there is nothing to choose from, don't render
-    if (scaleType === 'LINEAR' && (this.props.scale?.allFields?.length ?? 0) <= 1) {
+    if (this.props.scale?.type === 'LINEAR' && this.props.scale?.allFields?.length <= 1) {
       return false
-    }
-
-    if (scaleType === 'BAND' && !this.props.isAggregated && (this.props.scale?.allFields?.length ?? 0) <= 1) {
+    } else if (this.props.scale?.type === 'BAND' && !this.props.isAggregated && this.props.scale?.allFields <= 1) {
       return false
-    }
-
-    // Aggregated charts with a legend should always allow selector
-    if (this.props.isAggregated && this.props.legendLocation) {
+    } else if (this.props.isAggregated && this.props.legendLocation) {
       return true
     }
 
-    // If the scale explicitly indicates a dropdown, use that
-    if (this.props.scale?.hasDropdown) {
-      return true
-    }
-
-    // Otherwise, fall back to checking whether there are multiple candidate
-    // columns available for the selector so the UI can still surface it
-    // even when `scale.hasDropdown` is not set.
-    if (scaleType === 'LINEAR') {
-      const amountOfNumberColumns =
-        (this.props.numberColumnIndices?.length ?? 0) + (this.props.numberColumnIndices2?.length ?? 0)
-      return amountOfNumberColumns > 1
-    }
-
-    if (scaleType === 'BAND') {
-      return (this.props.stringColumnIndices?.length ?? 0) > 1
-    }
-
-    return false
+    return this.props.scale?.hasDropdown
   }
 
   shouldRenderAxisScaler = () => {

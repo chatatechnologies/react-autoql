@@ -443,3 +443,39 @@ export const networkIcon = (
     <path className='chart-icon-svg-0' d='M4.5,11.5L11.5,11.5' strokeWidth='1' fill='none' stroke='currentColor' strokeDasharray='1,1' />
   </svg>
 )
+
+export const sourceColumnIcon = (
+  <svg x='0px' y='0px' width='20px' height='20px' viewBox='0 0 20 20'>
+    <g className='source-button-icon'>
+      {/* Source icon: filled circle with 3 lines pointing away (3-pointed pattern) - Red for sender */}
+      {/* Circle: r=3.5, strokeWidth=1, so outer edge is at r=4 */}
+      <circle cx='10' cy='10' r='3.5' fill='#DC3545' stroke='currentColor' strokeWidth='1' />
+      {/* Points at radius 10 from center, lines from circle edge (r=4) to points */}
+      {/* 3 evenly spaced points: 90° (top), 210° (bottom-left), 330° (bottom-right) */}
+      {/* Line 1: Top (90°) - circle edge at (10, 6), point at (10, 0) */}
+      <line x1='10' y1='6' x2='10' y2='0' stroke='currentColor' strokeWidth='1.5' />
+      {/* Line 2: Bottom-right (330°) - circle edge at (13.46, 11.5), point at (18.66, 15) */}
+      <line x1='13.46' y1='11.5' x2='18.66' y2='15' stroke='currentColor' strokeWidth='1.5' />
+      {/* Line 3: Bottom-left (210°) - circle edge at (6.54, 11.5), point at (1.34, 15) */}
+      <line x1='6.54' y1='11.5' x2='1.34' y2='15' stroke='currentColor' strokeWidth='1.5' />
+    </g>
+  </svg>
+)
+
+export const targetColumnIcon = (
+  <svg x='0px' y='0px' width='20px' height='20px' viewBox='0 0 20 20'>
+    <g className='target-button-icon'>
+      {/* Target icon: filled circle with 3 lines pointing to it (3-pointed pattern) - Green for receiver */}
+      {/* Circle: r=3.5, strokeWidth=1, so outer edge is at r=4 */}
+      <circle cx='10' cy='10' r='3.5' fill='#28A745' stroke='currentColor' strokeWidth='1' />
+      {/* Points at radius 10 from center, lines from points to circle edge (r=4) */}
+      {/* 3 evenly spaced points: 90° (top), 210° (bottom-left), 330° (bottom-right) */}
+      {/* Line 1: Top (90°) - point at (10, 0), circle edge at (10, 6) */}
+      <line x1='10' y1='0' x2='10' y2='6' stroke='currentColor' strokeWidth='1.5' />
+      {/* Line 2: Bottom-right (330°) - point at (18.66, 15), circle edge at (13.46, 11.5) */}
+      <line x1='18.66' y1='15' x2='13.46' y2='11.5' stroke='currentColor' strokeWidth='1.5' />
+      {/* Line 3: Bottom-left (210°) - point at (1.34, 15), circle edge at (6.54, 11.5) */}
+      <line x1='1.34' y1='15' x2='6.54' y2='11.5' stroke='currentColor' strokeWidth='1.5' />
+    </g>
+  </svg>
+)
