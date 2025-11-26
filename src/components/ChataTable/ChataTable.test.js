@@ -3,7 +3,6 @@ import { shallow } from 'enzyme'
 
 import { findByTestAttr } from '../../../test/testUtils'
 import ChataTable from './ChataTable'
-import AjaxCache from './ajaxCache'
 
 // Mock Tabulator
 jest.mock('tabulator-tables', () => ({
@@ -48,9 +47,6 @@ const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
   const wrapper = shallow(<ChataTable {...setupProps} />)
   const instance = wrapper.instance()
-
-  // Instantiate AjaxCache with TTL=0 to prevent unexpected evictions in tests
-  instance._ajaxCache = new AjaxCache({ maxEntries: 50, ttl: 0 })
 
   if (state) {
     wrapper.setState(state)
@@ -303,100 +299,6 @@ describe('ChataTable', () => {
       // Should set filterCount to the full array length (100), not the sliced count (50)
       expect(instance.filterCount).toBe(100)
       expect(instance.queryFn).toHaveBeenCalled()
-    })
-
-    test('uses cached ajax rows for paging after initial filtered response', async () => {
-      const wrapper = setup()
-      const instance = wrapper.instance()
-
-      // Small page size to force multiple pages
-      instance.pageSize = 1
-
-      // Prepare mounted state so ajaxRequestFunc will execute
-      instance.hasSetInitialData = true
-      instance._isMounted = true
-      instance._setFiltersTime = 0
-      instance.state = { tabulatorMounted: true }
-
-      // Mock queryFn to return 3 filtered rows
-      const mockQueryFnResponse = {
-        data: {
-          data: {
-            rows: [['a'], ['b'], ['c']],
-            count_rows: 3,
-            query_id: 'q-1',
-          },
-        },
-      }
-
-      instance.queryFn = jest.fn().mockResolvedValue(mockQueryFnResponse)
-
-      // First call: page 1
-      const params1 = { page: 1, filter: [], sort: [] }
-      const res1 = await instance.ajaxRequestFunc({}, params1)
-
-      expect(res1.rows).toEqual([['a']])
-      // Cache should be populated with the response (since no server pagination detected)
-      const cacheKey = JSON.stringify({ filters: [], sorters: [] })
-      const cached = instance._ajaxCache.get(cacheKey)
-      expect(cached).toBeDefined()
-      expect(cached.rows).toEqual([['a'], ['b'], ['c']])
-    })
-
-    test('should not populate cache for server-paginated responses', async () => {
-      const wrapper = setup()
-      const instance = wrapper.instance()
-
-      instance.pageSize = 1
-      instance.hasSetInitialData = true
-      instance._isMounted = true
-      instance._setFiltersTime = 0
-      instance.state = { tabulatorMounted: true }
-
-      // Mock queryFn to return a server-paginated response (indicates last_page)
-      const mockQueryFnResponse = {
-        data: {
-          data: {
-            rows: [['a'], ['b'], ['c']],
-            count_rows: 3,
-            query_id: 'q-2',
-            last_page: 3,
-          },
-        },
-      }
-
-      instance.queryFn = jest.fn().mockResolvedValue(mockQueryFnResponse)
-
-      const params1 = { page: 1, filter: [], sort: [] }
-      const res1 = await instance.ajaxRequestFunc({}, params1)
-
-      expect(res1.rows).toEqual([['a']])
-      const cacheKey = JSON.stringify({ filters: [], sorters: [] })
-      // For server-paginated responses, we store only the countFromServer (not rows) so filterCount stays correct
-      const entry = instance._ajaxCache.get(cacheKey)
-      expect(entry?.countFromServer).toBe(3)
-      expect(entry?.rows).toBeUndefined()
-    })
-
-    test('should skip cache on getNewPage when no cached entry exists', async () => {
-      const wrapper = setup()
-      const instance = wrapper.instance()
-
-      instance.pageSize = 1
-      instance.hasSetInitialData = true
-      instance._isMounted = true
-      instance._setFiltersTime = 0
-      instance.state = { tabulatorMounted: true }
-
-      // When cache is empty, getNewPage should fall back to getRows
-      const key = JSON.stringify({ filters: [], sorters: [] })
-      const result = await instance.getNewPage({}, { page: 1 })
-
-      // Should have retrieved rows from props.response (via getRows fallback)
-      expect(result.rows).toBeDefined()
-      // Cache entry should not exist (no cache population in minimal cache)
-      const entry = instance._ajaxCache.get(key)
-      expect(entry).toBeUndefined()
     })
 
     test('should not reset filterCount in onDataFiltered (user removed this logic)', () => {

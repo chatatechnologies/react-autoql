@@ -30,7 +30,6 @@ import {
   runQueryOnly,
   TranslationTypes,
 } from 'autoql-fe-utils'
-import AjaxCache from './ajaxCache'
 
 import { Icon } from '../Icon'
 import { Button } from '../Button'
@@ -60,7 +59,6 @@ export default class ChataTable extends React.Component {
     this.filterCount = 0
     this.isSorting = false
     this.pageSize = props.pageSize ?? 50
-    this._ajaxCache = new AjaxCache({ maxEntries: 50, ttl: 1000 * 60 * 10 }) // In-flight request deduplicate (no persistent cache)
     this.useRemote =
       this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
         ? LOCAL_OR_REMOTE.REMOTE
@@ -685,50 +683,11 @@ export default class ChataTable extends React.Component {
         if (this._isMounted) {
           this.setState({ pageLoading: true })
         }
-        const _cacheKey = this.serializeTableParams(nextTableParamsFormatted)
-        let cachedEntry = this._ajaxCache.get(_cacheKey)
-
-        let responseWrapper
-        if (cachedEntry?.rows) {
-          responseWrapper = { data: { data: { rows: cachedEntry.rows } } }
-        } else if (this._ajaxCache.hasInFlight(_cacheKey)) {
-          try {
-            await this._ajaxCache.getInFlight(_cacheKey)
-            const cached = this._ajaxCache.get(_cacheKey)
-            if (cached?.rows) {
-              responseWrapper = { data: { data: { rows: cached.rows } } }
-            }
-          } catch (e) {
-            // fall through to fresh request
-          }
-        }
-
-        if (!responseWrapper) {
-          const queryPromise = this.queryFn({
-            tableFilters: nextTableParamsFormatted?.filters,
-            orders: nextTableParamsFormatted?.sorters,
-            cancelToken: this.axiosSource.token,
-          })
-
-          this._ajaxCache.setInFlight(_cacheKey, queryPromise)
-          try {
-            responseWrapper = await queryPromise
-          } finally {
-            this._ajaxCache.deleteInFlight(_cacheKey)
-          }
-
-          const _rows = responseWrapper?.data?.data?.rows ?? []
-          const countFromServer = responseWrapper?.data?.data?.count_rows
-          if (!this.hasServerSidePagination(responseWrapper)) {
-            this._ajaxCache.set(_cacheKey, {
-              rows: _rows,
-              totalPages: this.getTotalPages(responseWrapper),
-              countFromServer,
-            })
-          } else if (typeof countFromServer === 'number') {
-            this._ajaxCache.set(_cacheKey, { countFromServer, rows: undefined })
-          }
-        }
+        const responseWrapper = await this.queryFn({
+          tableFilters: nextTableParamsFormatted?.filters,
+          orders: nextTableParamsFormatted?.sorters,
+          cancelToken: this.axiosSource.token,
+        })
 
         const currentScrollValue = this.ref?.tabulator?.rowManager?.element?.scrollLeft
         if (currentScrollValue > 0) {
@@ -921,33 +880,8 @@ export default class ChataTable extends React.Component {
 
   getNewPage = (props, tableParams) => {
     try {
-      let rows
-      const _key = this.serializeTableParams(tableParams)
-      const entry = this._ajaxCache.get(_key)
-
-      if (entry?.rows) {
-        const page = tableParams.page || 1
-        const start = (page - 1) * this.pageSize
-        rows = entry.rows.slice(start, start + this.pageSize)
-      } else if (this._ajaxCache.hasInFlight(_key)) {
-        return this._ajaxCache
-          .getInFlight(_key)
-          .then(() => this.getNewPage(props, tableParams))
-          .catch(() => this.getNewPage(props, tableParams))
-      }
-
-      if (!rows) {
-        rows = this.getRows(props, tableParams.page)
-      }
-
+      const rows = this.getRows(props, tableParams.page)
       const response = { page: tableParams.page, rows }
-      const _entry = this._ajaxCache.get(_key)
-      if (_entry) {
-        response.last_page = _entry.totalPages
-        if (typeof _entry.countFromServer === 'number') {
-          this.filterCount = _entry.countFromServer
-        }
-      }
 
       return Promise.resolve(response)
     } catch (error) {
