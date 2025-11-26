@@ -739,6 +739,13 @@ export class QueryOutput extends React.Component {
     )
   }
 
+  static extractOperatorFromValue = (value) => {
+    // Extract comparison operator prefix if present, else return null
+    if (typeof value !== 'string') return null
+    const match = value.trim().match(/^([<>=!]=?|!)\s*(.*)$/)
+    return match ? { operator: match[1], cleanValue: match[2] } : null
+  }
+
   getDisplayTypeFromInitial = (props) => {
     // Set the initial display type based on prop value, response, and supported display types
     // Start by setting the displayType to the provided initialDisplayType prop value
@@ -2730,7 +2737,14 @@ export class QueryOutput extends React.Component {
         this.formattedTableParams.filters.forEach((filter) => {
           const filterColumnIndex = columns.find((col) => col.id === filter.id)?.index
           if (filterColumnIndex !== undefined) {
-            tableData = filterDataByColumn(tableData, columns, filterColumnIndex, filter.value, filter.operator)
+            let op = filter.operator,
+              val = filter.value
+            const parsed = QueryOutput.extractOperatorFromValue(filter.value)
+            if (parsed) {
+              op = parsed.operator
+              val = parsed.cleanValue
+            }
+            tableData = filterDataByColumn(tableData, columns, filterColumnIndex, val, op)
           }
         })
       }
@@ -2743,21 +2757,23 @@ export class QueryOutput extends React.Component {
             headerFilters.forEach((headFilter) => {
               if (!headFilter) return
               const field = headFilter.field ?? headFilter[0]
-              const value = headFilter.value ?? headFilter[1]
-              if (field === undefined || value === undefined) return
+              const rawValue = headFilter.value ?? headFilter[1]
+              if (field === undefined || rawValue === undefined) return
               let filterColumnIndex
               const parsed = parseInt(field, 10)
               if (!isNaN(parsed)) filterColumnIndex = parsed
               if (filterColumnIndex === undefined)
                 filterColumnIndex = columns.find((col) => col.field === field || col.id === field)?.index
               if (filterColumnIndex !== undefined) {
-                tableData = filterDataByColumn(
-                  tableData,
-                  columns,
-                  filterColumnIndex,
-                  value,
-                  headFilter.type || headFilter.operator,
-                )
+                // Parse operator prefix from value if present, else use Tabulator's type
+                let op = headFilter.type || headFilter.operator,
+                  val = rawValue
+                const parsed = QueryOutput.extractOperatorFromValue(rawValue)
+                if (parsed) {
+                  op = parsed.operator
+                  val = parsed.cleanValue
+                }
+                tableData = filterDataByColumn(tableData, columns, filterColumnIndex, val, op)
               }
             })
           } else if (typeof headerFilters === 'object') {
@@ -2771,7 +2787,17 @@ export class QueryOutput extends React.Component {
               if (filterColumnIndex === undefined)
                 filterColumnIndex = columns.find((col) => col.field === field || col.id === field)?.index
               if (filterColumnIndex !== undefined) {
-                tableData = filterDataByColumn(tableData, columns, filterColumnIndex, value, undefined)
+                // Parse operator prefix from value if present
+                let op,
+                  val = value
+                const parsed = QueryOutput.extractOperatorFromValue(value)
+                if (parsed) {
+                  op = parsed.operator
+                  val = parsed.cleanValue
+                } else {
+                  op = undefined
+                }
+                tableData = filterDataByColumn(tableData, columns, filterColumnIndex, val, op)
               }
             })
           }
