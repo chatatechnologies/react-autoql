@@ -1202,7 +1202,10 @@ export default class ChataTable extends React.Component {
             const targetColumn = columns.find((col) => col.getField() === filter.field)
 
             if (targetColumn && targetColumn.getDefinition().headerFilter) {
-              this.ref?.tabulator?.setHeaderFilterValue(filter.field, filter.value)
+              // Extract clean value (remove operator prefix for Tabulator display)
+              const match = typeof filter.value === 'string' ? filter.value.trim().match(/^([<>=!]=?|!)\s*(.*)$/) : null
+              const displayValue = match ? match[2] : filter.value
+              this.ref?.tabulator?.setHeaderFilterValue(filter.field, displayValue)
             }
           })
         } finally {
