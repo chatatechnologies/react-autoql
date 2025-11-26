@@ -70,7 +70,11 @@ export default class ChataTable extends React.Component {
     if (isNaN(this.totalPages) || !this.totalPages) {
       this.totalPages = 1
     }
-    this.useInfiniteScroll = props.useInfiniteScroll !== false && !this.isLocal
+    if (props.useInfiniteScroll === false) {
+      this.useInfiniteScroll = false
+    } else {
+      this.useInfiniteScroll = !this.isLocal
+    }
 
     this.originalQueryData = _cloneDeep(props.response?.data?.data?.rows)
     if (props.pivot) {
@@ -137,15 +141,6 @@ export default class ChataTable extends React.Component {
       subscribedData: undefined,
       firstRender: true,
       scrollTop: 0,
-    }
-  }
-
-  serializeTableParams = (params) => {
-    try {
-      const { filters = [], sorters = [] } = params ?? {}
-      return JSON.stringify({ filters, sorters })
-    } catch (e) {
-      return 'serialize_error'
     }
   }
 
@@ -416,25 +411,6 @@ export default class ChataTable extends React.Component {
     return 1
   }
 
-  hasServerSidePagination = (response) => {
-    // If server provides a total count that's larger than the rows returned,
-    // treat this as server-side pagination (only a page of rows was returned).
-    const rowsLen = response?.data?.data?.rows?.length ?? 0
-    const totalFromServer = response?.data?.data?.count_rows
-    if (typeof totalFromServer === 'number' && totalFromServer > rowsLen) {
-      return true
-    }
-
-    return !!(
-      response?.last_page ||
-      response?.data?.data?.last_page ||
-      response?.data?.data?.page ||
-      response?.data?.data?.page_size ||
-      response?.data?.data?.total_pages ||
-      response?.data?.data?.pagination
-    )
-  }
-
   setInfiniteScroll = () => {
     if (!this.ref?.tabulator?.options) {
       return
@@ -568,9 +544,6 @@ export default class ChataTable extends React.Component {
     if (this.hasSetInitialData || data?.length || !this.props.response?.data?.data?.rows?.length) {
       this.hasSetInitialData = true
       this.isSettingInitialData = false
-      // Track when initial data was set so timing-protection logic can avoid
-      // firing AJAX requests immediately after initial processing.
-      this._setInitialDataTime = Date.now()
       this.clearLoadingIndicators()
     }
   }
@@ -702,13 +675,16 @@ export default class ChataTable extends React.Component {
 
         this.props.onNewData(responseWrapper)
 
-        // Ensure responseWrapper exists here
-        const _rowsFinal = responseWrapper?.data?.data?.rows ?? []
         const totalPages = this.getTotalPages(responseWrapper)
-        this._currentAjaxTotalPages = totalPages
-        const countFromServer = responseWrapper?.data?.data?.count_rows
-        this.filterCount = typeof countFromServer === 'number' ? countFromServer : _rowsFinal.length || 0
-        response = { rows: _rowsFinal.slice(0, this.pageSize) ?? [], page: 1, last_page: totalPages }
+
+        // Capture the full filtered count before slicing
+        this.filterCount = responseWrapper?.data?.data?.rows?.length || 0
+
+        response = {
+          rows: responseWrapper?.data?.data?.rows?.slice(0, this.pageSize) ?? [],
+          page: 1,
+          last_page: totalPages,
+        }
       }
 
       return response
@@ -763,17 +739,9 @@ export default class ChataTable extends React.Component {
     // Filters
     if (params.tableFilters?.length) {
       params.tableFilters.forEach((filter) => {
-        let columnIndex
-        if (filter.id) {
-          columnIndex = this.props.columns.find((col) => col.id === filter.id)?.index
-        } else if (filter.field !== undefined) {
-          const idx = parseInt(filter.field, 10)
-          columnIndex = isNaN(idx) ? undefined : idx
-        }
+        const filterColumnIndex = this.props.columns.find((col) => col.id === filter.id)?.index
 
-        if (columnIndex !== undefined) {
-          data = filterDataByColumn(data, this.props.columns, columnIndex, filter.value, filter.operator)
-        }
+        data = filterDataByColumn(data, this.props.columns, filterColumnIndex, filter.value, filter.operator)
       })
     }
 
@@ -828,10 +796,13 @@ export default class ChataTable extends React.Component {
 
     let newRows
     if (props.pivot) {
-      // Return full dataset for pivot tables (no slicing to avoid limiting displayed rows)
+      // For pivot tables we want to render the full local dataset so users can
+      // scroll through all aggregated rows. Returning a sliced page here caused
+      // the UI to only show the first `pageSize` rows (default 50).
       newRows = this.originalQueryData ?? []
     } else if (!this.useInfiniteScroll) {
       const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows
+
       newRows = sortedData?.slice(start, end) ?? []
     } else {
       newRows = props.response?.data?.data?.rows?.slice(start, end) ?? []
@@ -891,26 +862,28 @@ export default class ChataTable extends React.Component {
   }
 
   ajaxResponseFunc = (props, response) => {
-    const modResponse = {
-      data: response?.rows ?? [],
-      last_page: response?.last_page ?? this._currentAjaxTotalPages ?? this.totalPages,
-    }
+    const modResponse = { data: response?.rows ?? [], last_page: response?.last_page ?? this.totalPages }
 
     if (response) {
       if (this.tableParams?.page > 1) {
+        // Only restore redraw for new page - doing this for filter/sort will reset the scroll value
         this.ref?.restoreRedraw()
       }
 
       const isLastPage = (response?.rows?.length ?? 0) < this.pageSize
+
       if (isLastPage !== this.state.isLastPage && this._isMounted) {
         this.setState({ isLastPage })
       }
-
+      // Force re-render to update filter count display after data is processed
+      // Note: this.filterCount is already set correctly in ajaxRequestFunc from the queryFn response
       if (this._isMounted) {
         setTimeout(() => {
           this.forceUpdate()
         }, 0)
       }
+    } else {
+      return {}
     }
 
     return modResponse
@@ -1241,12 +1214,9 @@ export default class ChataTable extends React.Component {
     }
 
     inputElement.focus()
+    this.ref?.restoreRedraw()
     inputElement.value = value
     inputElement.title = value
-    if (typeof inputElement.dispatchEvent === 'function') {
-      inputElement.dispatchEvent(new Event('input', { bubbles: true }))
-      inputElement.dispatchEvent(new Event('change', { bubbles: true }))
-    }
     inputElement.blur()
   }
 
@@ -1313,6 +1283,7 @@ export default class ChataTable extends React.Component {
         if (col.name === column.name) {
           return {
             ...col,
+            visible: false,
             is_visible: false,
           }
         }
@@ -1320,14 +1291,15 @@ export default class ChataTable extends React.Component {
         return col
       })
 
-      try {
-        await setColumnVisibility({ ...this.props.authentication, columns: newColumns })
-      } catch (error) {
+      this.props.updateColumns(
+        newColumns,
+        this.props.response?.data?.data?.fe_req,
+        this.props.response?.data?.data?.available_selects,
+      )
+
+      setColumnVisibility({ ...this.props.authentication, columns: newColumns }).catch((error) => {
         console.error(error)
-      } finally {
-        // Always update the UI, whether the visibility save succeeded or failed
-        this.props.updateColumns(newColumns)
-      }
+      })
     }
   }
 

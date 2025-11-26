@@ -261,14 +261,9 @@ const ReverseTranslation = ({
 
   useEffect(() => {
     isMounted.current = true
-
     let cancelled = false
 
-    // Only execute prerequisites (which may perform network calls and validation)
-    // when the component is interactive (has an onValueLabelClick handler)
-    // or when edit mode is enabled. When used as a read-only/text-only
-    // display (e.g. `textOnly` in notifications), skip prerequisites and
-    // avoid noisy console errors.
+    // Skip prerequisites for read-only/text-only rendering modes
     if (!textOnly && (onValueLabelClick || enableEditReverseTranslation) && reverseTranslationArray?.length) {
       executePrerequisites(reverseTranslationArray)
     }
@@ -280,19 +275,16 @@ const ReverseTranslation = ({
   }, [])
 
   useEffect(() => {
-    // Only run prerequisites when the component is interactive (not textOnly)
     if (!textOnly && (onValueLabelClick || enableEditReverseTranslation)) {
       const newParsedInterpretation = queryResponse?.data?.data?.parsed_interpretation
       initialParsedInterpretations.current = newParsedInterpretation
       const newArray = constructRTArray(newParsedInterpretation)
       executePrerequisites(newArray)
     }
-  }, [queryResponse?.data?.data?.parsed_interpretation, textOnly, onValueLabelClick, enableEditReverseTranslation])
+  }, [queryResponse?.data?.data?.parsed_interpretation])
 
-  // todo: see if we can update and remove this useEffect and use queryRepsonse instead
+  // todo: consolidate with queryResponse effect
   useEffect(() => {
-    // localRTFilterResponse updates should also only trigger prerequisites
-    // when the component is intended to be interactive.
     if (!textOnly && (onValueLabelClick || enableEditReverseTranslation)) {
       const newParsedInterpretation = localRTFilterResponse?.data?.data?.parsed_interpretation
       initialParsedInterpretations.current = newParsedInterpretation
@@ -315,7 +307,7 @@ const ReverseTranslation = ({
         data-test='react-autoql-condition-link'
         onClick={(e) => {
           e.stopPropagation()
-          if (disableAction) return
+          if (disableAction || !onValueLabelClick) return
           onValueLabelClick(chunk.eng)
         }}
       >

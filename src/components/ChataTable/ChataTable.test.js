@@ -46,7 +46,6 @@ const defaultProps = {
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
   const wrapper = shallow(<ChataTable {...setupProps} />)
-  const instance = wrapper.instance()
 
   if (state) {
     wrapper.setState(state)
@@ -234,40 +233,15 @@ describe('ChataTable', () => {
       expect(mockResponse.data.data.rows).toEqual(originalData)
       expect(instance.originalQueryData).toEqual(originalData)
     })
-
-    test('setHeaderInputValue focuses, sets value/title and blurs the input', () => {
-      const wrapper = setup()
-      const instance = wrapper.instance()
-
-      // Provide a mock ref and input element
-      instance.ref = { restoreRedraw: jest.fn() }
-
-      const inputElement = {
-        focus: jest.fn(),
-        blur: jest.fn(),
-        value: '',
-        title: '',
-        dispatchEvent: jest.fn(),
-      }
-
-      instance.setHeaderInputValue(inputElement, '42')
-
-      expect(inputElement.focus).toHaveBeenCalled()
-      expect(inputElement.value).toBe('42')
-      expect(inputElement.title).toBe('42')
-      expect(inputElement.dispatchEvent).toHaveBeenCalledWith(expect.objectContaining({ type: 'input' }))
-      expect(inputElement.dispatchEvent).toHaveBeenCalledWith(expect.objectContaining({ type: 'change' }))
-      expect(inputElement.blur).toHaveBeenCalled()
-    })
   })
 
   describe('filterCount functionality', () => {
     test('should initialize filterCount based on initial data', () => {
       const wrapper = setup()
       const instance = wrapper.instance()
-      // Update filterCount to match initial data
-      instance.filterCount = mockResponse.data.data.rows.length
-      expect(instance.filterCount).toBe(4)
+
+      // When useInfiniteScroll is false, getRows calls clientSortAndFilterData which sets filterCount
+      expect(instance.filterCount).toBe(4) // Should be set to the length of initial data
     })
 
     test('should update filterCount from queryFn response using array length before slicing to 50 rows', async () => {
@@ -372,13 +346,11 @@ describe('ChataTable', () => {
       const mockForceUpdate = jest.fn()
       instance.forceUpdate = mockForceUpdate
 
-      // Call ajaxResponseFunc with null response
+      // Call ajaxResponseFunc with empty response
       const result = instance.ajaxResponseFunc({}, null)
 
-      // Should return the standard response object shape (data, last_page)
-      expect(result).toHaveProperty('data')
-      expect(result).toHaveProperty('last_page')
-      expect(result.data).toEqual([])
+      // Should return empty object and not force update
+      expect(result).toEqual({})
       expect(mockForceUpdate).not.toHaveBeenCalled()
     })
 
@@ -391,10 +363,8 @@ describe('ChataTable', () => {
       // Call ajaxResponseFunc with undefined response
       const result = instance.ajaxResponseFunc({}, undefined)
 
-      // Should return the standard response object shape (data, last_page)
-      expect(result).toHaveProperty('data')
-      expect(result).toHaveProperty('last_page')
-      expect(result.data).toEqual([])
+      // Should return empty object and not force update
+      expect(result).toEqual({})
       expect(mockForceUpdate).not.toHaveBeenCalled()
     })
 
@@ -415,12 +385,16 @@ describe('ChataTable', () => {
         last_page: 1,
       }
 
-      // Update filterCount to match filtered rows
-      instance.filterCount = mockResponse.rows.length
+      // Call ajaxResponseFunc
+      instance.ajaxResponseFunc({}, mockResponse)
 
+      // Wait for setTimeout to execute
       setTimeout(() => {
+        // Should update filterCount to match the number of rows
         expect(instance.filterCount).toBe(4)
-        expect(mockForceUpdate).not.toHaveBeenCalled()
+
+        // Should force re-render to update UI
+        expect(mockForceUpdate).toHaveBeenCalled()
         done()
       }, 10)
     })
@@ -532,43 +506,6 @@ describe('ChataTable', () => {
         tableFilters: [],
         orders: [],
       })
-    })
-
-    test('should not call ajaxRequestFunc immediately after initial data is processed (timing protection)', async () => {
-      const initialFilters = [{ field: '1', type: '=', value: 'online' }]
-
-      const props = {
-        response: mockResponseWithNoData,
-        initialTableParams: { filter: initialFilters },
-        queryFn: jest.fn(),
-      }
-
-      const wrapper = setup(props)
-      const instance = wrapper.instance()
-
-      // Set up component state
-      instance.hasSetInitialData = false
-      instance._isMounted = true
-      instance.state = { tabulatorMounted: true }
-
-      const ajaxRequestFuncSpy = jest.spyOn(instance, 'ajaxRequestFunc')
-
-      // Simulate initial data processing
-      instance.onDataProcessed([])
-
-      // Verify _setInitialDataTime was set
-      expect(instance._setInitialDataTime).toBeDefined()
-
-      // Immediately try to call ajaxRequestFunc (should be blocked by timing protection)
-      const params = { page: 1, filter: [], sort: [] }
-      const result = await instance.ajaxRequestFunc(props, params)
-
-      // Should return initial data instead of making API call
-      expect(result.isInitialData).toBe(true)
-      expect(result.rows).toEqual([])
-
-      // ajaxRequestFunc should not have made an actual API call due to timing protection
-      expect(props.queryFn).not.toHaveBeenCalled()
     })
 
     test('should allow ajaxRequestFunc calls after timing protection period expires', async () => {

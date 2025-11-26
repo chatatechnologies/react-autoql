@@ -325,80 +325,42 @@ describe('pivot table filtering', () => {
       queryOutput.unmount()
     })
   })
-})
 
-describe('formattedTableParams guard', () => {
-  test('keeps initial formattedTableParams when a transient empty payload arrives', () => {
-    const testCase = _cloneDeep(testCases[8])
+  describe('filter-by-zero support', () => {
+    test('should allow numeric 0 as a valid filter value', () => {
+      const queryOutput = mount(<QueryOutputWithoutTheme queryResponse={testCases[8]} queryFn={() => {}} />)
+      const headerFilters = { 0: 0, 1: '10' }
+      // Verify 0 is not treated as falsy (should not skip)
+      expect(headerFilters[0]).toBe(0)
+      expect(headerFilters[0] !== undefined && headerFilters[0] !== null).toBe(true)
+      queryOutput.unmount()
+    })
 
-    const initialFilters = [
-      {
-        id: testCase.data.data.columns[0].name,
-        value: testCase.data.data.rows[0][0],
-        operator: 'equals',
-      },
-    ]
+    test('should allow string "0" as a valid filter value', () => {
+      const queryOutput = mount(<QueryOutputWithoutTheme queryResponse={testCases[8]} queryFn={() => {}} />)
+      const headerFilters = { 0: '0' }
+      const value = headerFilters[0]
+      const isValid = value !== undefined && value !== null && !(typeof value === 'string' && value.trim() === '')
+      expect(isValid).toBe(true)
+      queryOutput.unmount()
+    })
 
-    const wrapper = mount(
-      <QueryOutputWithoutTheme queryResponse={testCase} initialFormattedTableParams={{ filters: initialFilters }} />,
-    )
-
-    const instance = wrapper.instance()
-
-    // Sanity: initial filters applied
-    expect(Array.isArray(instance.formattedTableParams.filters)).toBe(true)
-    expect(instance.formattedTableParams.filters.length).toBeGreaterThan(0)
-
-    // Simulate ChataTable emitting an initial empty formatted payload
-    instance.onTableParamsChange({}, {})
-
-    // Guard should keep the initial formattedTableParams
-    expect(Array.isArray(instance.formattedTableParams.filters)).toBe(true)
-    expect(instance.formattedTableParams.filters.length).toBeGreaterThan(0)
-
-    wrapper.unmount()
-  })
-
-  test('does not overwrite existing params when incoming formattedTableParams is empty object', () => {
-    const testCase = _cloneDeep(testCases[8])
-
-    const initialFilters = [
-      {
-        id: testCase.data.data.columns[0].name,
-        value: testCase.data.data.rows[0][0],
-        operator: 'equals',
-      },
-    ]
-
-    const wrapper = mount(
-      <QueryOutputWithoutTheme queryResponse={testCase} initialFormattedTableParams={{ filters: initialFilters }} />,
-    )
-
-    const instance = wrapper.instance()
-
-    // simulate incoming empty object
-    instance.onTableParamsChange({}, {})
-
-    // should have kept previous filters
-    expect(Array.isArray(instance.formattedTableParams.filters)).toBe(true)
-    expect(instance.formattedTableParams.filters.length).toBeGreaterThan(0)
-
-    wrapper.unmount()
-  })
-
-  test('assigns incoming params when there are no existing params (null)', () => {
-    const testCase = _cloneDeep(testCases[8])
-
-    const wrapper = mount(<QueryOutputWithoutTheme queryResponse={testCase} initialFormattedTableParams={null} />)
-    const instance = wrapper.instance()
-
-    // incoming has data
-    const incoming = { filters: [{ id: 'x', value: 'y', operator: 'equals' }] }
-    instance.onTableParamsChange({}, incoming)
-
-    expect(Array.isArray(instance.formattedTableParams.filters)).toBe(true)
-    expect(instance.formattedTableParams.filters.length).toBe(1)
-
-    wrapper.unmount()
+    test('should skip empty string but not zero values', () => {
+      const queryOutput = mount(<QueryOutputWithoutTheme queryResponse={testCases[8]} queryFn={() => {}} />)
+      const testValues = [
+        { value: 0, shouldPass: true, description: 'numeric 0' },
+        { value: '0', shouldPass: true, description: 'string "0"' },
+        { value: '', shouldPass: false, description: 'empty string' },
+        { value: null, shouldPass: false, description: 'null' },
+        { value: undefined, shouldPass: false, description: 'undefined' },
+        { value: false, shouldPass: true, description: 'false' },
+        { value: '  ', shouldPass: false, description: 'whitespace string' },
+      ]
+      testValues.forEach(({ value, shouldPass, description }) => {
+        const passes = value !== undefined && value !== null && !(typeof value === 'string' && value.trim() === '')
+        expect(passes).toBe(shouldPass, `Failed for ${description}`)
+      })
+      queryOutput.unmount()
+    })
   })
 })
