@@ -324,6 +324,8 @@ export default class ChataTable extends React.Component {
       if (!this.props.hidden) {
         this.setTableHeight()
       }
+      // Refresh filter badges after initial filters are set
+      this.setFilterBadgeClasses()
     }
     this.summaryStats = this.calculateSummaryStats(this.props)
   }
