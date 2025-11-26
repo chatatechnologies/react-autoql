@@ -7,7 +7,7 @@ import _isEmpty from 'lodash.isempty'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
 
-import { TOOLTIP_COPY_TEXTS } from '../../js/Constants'
+import { TOOLTIP_COPY_TEXTS, TABULATOR_LOCAL_ROW_LIMIT } from '../../js/Constants'
 
 import {
   AggTypes,
@@ -134,6 +134,9 @@ export class QueryOutput extends React.Component {
     // Supported display types may have changed after initial data generation
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
 
+    // Sort data if data is local
+    this.sortLocalData(response, columns, props?.initialFormattedTableParams)
+
     const displayType = this.getDisplayTypeFromInitial(props)
     if (props.onDisplayTypeChange) {
       props.onDisplayTypeChange(displayType)
@@ -152,12 +155,22 @@ export class QueryOutput extends React.Component {
 
     this.generateAllData()
 
-    // Set initial table params to be any filters that
-    // are already present in the current query
-    // Note: We handle sorting ourselves, so we don't pass sorters to Tabulator
     this.formattedTableParams = {
       filters: props?.initialFormattedTableParams?.filters || [],
       sorters: [],
+    }
+
+    // apply any initial formatted filters/sorters to tableParams
+    try {
+      const initial = props?.initialFormattedTableParams || {}
+      if (Array.isArray(initial.filters) && initial.filters.length > 0) {
+        this.tableParams.filter = formatFiltersForTabulator(initial.filters, columns)
+      }
+      if (Array.isArray(initial.sorters) && initial.sorters.length > 0) {
+        this.tableParams.sort = formatSortersForTabulator(initial.sorters, columns)
+      }
+    } catch (err) {
+      // ignore formatting errors
     }
 
     this.DEFAULT_TABLE_PAGE_SIZE = 100
@@ -181,6 +194,41 @@ export class QueryOutput extends React.Component {
       originalLegendState: this.originalLegendState,
     }
     this.updateMaxConstraints()
+  }
+
+  sortLocalData = (response, columns, initialFormattedTableParams) => {
+    // Sort data if data is local (count_rows < TABULATOR_LOCAL_ROW_LIMIT)
+    // If initialFormattedTableParams.sorters exist, use those; otherwise sort by first visible column
+    if (
+      response?.data?.data?.count_rows < TABULATOR_LOCAL_ROW_LIMIT &&
+      columns &&
+      columns.length > 0 &&
+      response?.data?.data?.rows &&
+      response.data.data.rows.length > 0
+    ) {
+      const initialSorters = initialFormattedTableParams?.sorters || []
+
+      if (initialSorters.length > 0) {
+        // Sort by initial sorters
+        let sortedData = response.data.data.rows
+        for (const sorter of initialSorters) {
+          const columnIndex = columns.findIndex((col) => col.field === sorter.field)
+          if (columnIndex !== -1) {
+            sortedData = sortDataByColumn(sortedData, columns, columnIndex, sorter.dir || 'asc')
+          }
+        }
+        response.data.data.rows = sortedData
+      } else {
+        // Sort by first visible column ascending
+        const firstVisibleColumn = columns.find((col) => col.is_visible !== false)
+        if (firstVisibleColumn) {
+          const columnIndex = columns.findIndex((col) => col.field === firstVisibleColumn.field)
+          if (columnIndex !== -1) {
+            response.data.data.rows = sortDataByColumn(response.data.data.rows, columns, columnIndex, 'asc')
+          }
+        }
+      }
+    }
   }
 
   static propTypes = {

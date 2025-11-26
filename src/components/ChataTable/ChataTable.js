@@ -317,6 +317,8 @@ export default class ChataTable extends React.Component {
       if (!this.props.hidden) {
         this.setTableHeight()
       }
+      // Refresh filter badges after initial filters are set
+      this.setFilterBadgeClasses()
     }
     this.summaryStats = this.calculateSummaryStats(this.props)
   }
@@ -409,6 +411,25 @@ export default class ChataTable extends React.Component {
     }
 
     return 1
+  }
+
+  hasServerSidePagination = (response) => {
+    // If server provides a total count that's larger than the rows returned,
+    // treat this as server-side pagination (only a page of rows was returned).
+    const rowsLen = response?.data?.data?.rows?.length ?? 0
+    const totalFromServer = response?.data?.data?.count_rows
+    if (typeof totalFromServer === 'number' && totalFromServer > rowsLen) {
+      return true
+    }
+
+    return !!(
+      response?.last_page ||
+      response?.data?.data?.last_page ||
+      response?.data?.data?.page ||
+      response?.data?.data?.page_size ||
+      response?.data?.data?.total_pages ||
+      response?.data?.data?.pagination
+    )
   }
 
   setInfiniteScroll = () => {
@@ -525,6 +546,15 @@ export default class ChataTable extends React.Component {
       this.debounceSetState({ loading: false })
     }
 
+    // Update tableParams.filter immediately from current header filters so badge shows correctly
+    // This must be done BEFORE setFilterBadgeClasses() to ensure badge reflects current filter state
+    if (this._isMounted && this.state.tabulatorMounted) {
+      const headerFilters = this.ref?.tabulator?.getHeaderFilters()
+      if (headerFilters) {
+        this.tableParams.filter = _cloneDeep(headerFilters)
+      }
+    }
+
     // Debounce getRTForRemoteFilterAndSort to prevent multiple calls after hide/show columns
     if (!this.useInfiniteScroll && !this.props.pivot && this.tableParams?.filter?.length > 0) {
       if (this._debounceTimeout) clearTimeout(this._debounceTimeout)
@@ -544,6 +574,9 @@ export default class ChataTable extends React.Component {
     if (this.hasSetInitialData || data?.length || !this.props.response?.data?.data?.rows?.length) {
       this.hasSetInitialData = true
       this.isSettingInitialData = false
+      // Track when initial data was set so timing-protection logic can avoid
+      // firing AJAX requests immediately after initial processing.
+      this._setInitialDataTime = Date.now()
       this.clearLoadingIndicators()
     }
   }
@@ -1066,6 +1099,9 @@ export default class ChataTable extends React.Component {
   }
 
   setFilterBadgeClasses = () => {
+    // This method updates the CSS class on column headers to show/hide filter badges
+    // It relies on tableParams.filter being populated with current filters
+    // The badge shows on columns that have active filters applied
     if (this._isMounted && this.state.tabulatorMounted) {
       this.ref?.tabulator?.getColumns()?.forEach((column) => {
         const isFiltering = !!this.tableParams?.filter?.find((filter) => filter.field === column.getField())
@@ -1081,13 +1117,12 @@ export default class ChataTable extends React.Component {
   }
 
   setFilters = async (newFilters) => {
+    // Track when setFilters was called to prevent duplicate AJAX requests
     this._setFiltersTime = Date.now()
 
     const filterValues = newFilters || this.tableParams?.filter
-    if (!filterValues) return
 
-    try {
-      this.ref?.tabulator?.blockRedraw()
+    if (filterValues) {
       try {
         filterValues.forEach((filter) => {
           const columns = this.ref.tabulator.getColumns()
@@ -1099,14 +1134,12 @@ export default class ChataTable extends React.Component {
             this.ref?.tabulator?.setHeaderFilterValue(filter.field, displayValue)
           }
         })
-      } finally {
-        this.ref?.tabulator?.restoreRedraw()
+      } catch (error) {
+        console.error('Error setting filters:', error)
       }
       this._filterCheckTimeout = setTimeout(() => {
         this._filterCheckTimeout = null
       }, 10)
-    } catch (error) {
-      console.error('Error setting filters:', error)
     }
     this.setFilterBadgeClasses()
   }
@@ -1207,9 +1240,12 @@ export default class ChataTable extends React.Component {
     }
 
     inputElement.focus()
-    this.ref?.restoreRedraw()
     inputElement.value = value
     inputElement.title = value
+    if (typeof inputElement.dispatchEvent === 'function') {
+      inputElement.dispatchEvent(new Event('input', { bubbles: true }))
+      inputElement.dispatchEvent(new Event('change', { bubbles: true }))
+    }
     inputElement.blur()
   }
 
