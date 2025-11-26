@@ -1188,6 +1188,13 @@ export default class ChataTable extends React.Component {
       this.currentDateRangeSelections = {
         [column.field]: this.state.dateRangeSelection,
       }
+
+      // Manually update tableParams.filter since we're directly setting the input value
+      // This ensures pivot tables can see the filter when they regenerate
+      const headerFilters = this.ref?.tabulator?.getHeaderFilters()
+      if (headerFilters) {
+        this.tableParams.filter = _cloneDeep(headerFilters)
+      }
     }
 
     this.setState({ datePickerColumn: undefined })
