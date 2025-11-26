@@ -484,6 +484,21 @@ export default class ChataTable extends React.Component {
 
     const tableParamsFormatted = formatTableParams(this.tableParams, this.props.columns)
 
+    // Validate params are safe before sending to backend
+    if (!tableParamsFormatted || typeof tableParamsFormatted !== 'object') {
+      console.error('Invalid tableParamsFormatted:', tableParamsFormatted)
+      return
+    }
+
+    // Validate filter objects
+    if (
+      Array.isArray(tableParamsFormatted.filters) &&
+      tableParamsFormatted.filters.some((f) => !f || typeof f !== 'object')
+    ) {
+      console.error('Invalid filter objects detected')
+      return
+    }
+
     try {
       await runQueryOnly({
         ...getAuthentication(this.props.authentication),
@@ -684,6 +699,22 @@ export default class ChataTable extends React.Component {
         if (this._isMounted) {
           this.setState({ scrollLoading: true })
         }
+
+        // Validate params before sending to API
+        if (!nextTableParamsFormatted || typeof nextTableParamsFormatted !== 'object') {
+          console.error('Invalid nextTableParamsFormatted:', nextTableParamsFormatted)
+          return response
+        }
+
+        // Ensure filters array is valid
+        if (Array.isArray(nextTableParamsFormatted.filters)) {
+          const invalidFilters = nextTableParamsFormatted.filters.filter((f) => !f || typeof f !== 'object')
+          if (invalidFilters.length > 0) {
+            console.error('Invalid filter objects detected in nextTableParamsFormatted:', invalidFilters)
+            return response
+          }
+        }
+
         response = await this.getNewPage(this.props, nextTableParamsFormatted)
       } else {
         if (this._isMounted) {
@@ -1099,20 +1130,57 @@ export default class ChataTable extends React.Component {
   }
 
   setFilterBadgeClasses = () => {
-    // This method updates the CSS class on column headers to show/hide filter badges
-    // It relies on tableParams.filter being populated with current filters
-    // The badge shows on columns that have active filters applied
     if (this._isMounted && this.state.tabulatorMounted) {
-      this.ref?.tabulator?.getColumns()?.forEach((column) => {
-        const isFiltering = !!this.tableParams?.filter?.find((filter) => filter.field === column.getField())
-        const columnElement = column?.getElement()
+      try {
+        const allColumns = this.ref?.tabulator?.getColumns?.()
+        if (!allColumns) return
 
-        if (isFiltering) {
-          columnElement?.classList.add('is-filtered')
-        } else {
-          columnElement?.classList.remove('is-filtered')
+        const filters = this.tableParams?.filter ?? []
+        const isPivot = this.props.pivot
+        const filtersByField = {}
+
+        // Build a quick lookup of fields that are filtered
+        filters.forEach((f) => {
+          if (f?.field) filtersByField[f.field] = true
+        })
+
+        // Process all columns
+        allColumns.forEach((column) => {
+          try {
+            const field = column.getField?.()
+            const columnElement = column?.getElement?.()
+            const origColumn = column?.getDefinition?.()?.origColumn
+            const isFiltered = !!filtersByField[field] || (isPivot && origColumn && !!filtersByField[origColumn.field])
+
+            if (isFiltered) {
+              columnElement?.classList.add('is-filtered')
+            } else {
+              columnElement?.classList.remove('is-filtered')
+            }
+          } catch (err) {
+            // Silently ignore per-column errors
+          }
+        })
+
+        // For pivots, mark column group headers
+        if (isPivot) {
+          try {
+            const container = document.getElementById(`react-autoql-table-container-${this.TABLE_ID}`)
+            container?.querySelectorAll('.tabulator-col-group')?.forEach((groupEl) => {
+              const hasFilteredColumn = !!groupEl.querySelector('.tabulator-col.is-filtered')
+              if (hasFilteredColumn) {
+                groupEl.classList.add('is-filtered')
+              } else {
+                groupEl.classList.remove('is-filtered')
+              }
+            })
+          } catch (err) {
+            // Silently ignore group processing errors
+          }
         }
-      })
+      } catch (err) {
+        console.error('Error in setFilterBadgeClasses:', err)
+      }
     }
   }
 
@@ -1124,23 +1192,33 @@ export default class ChataTable extends React.Component {
 
     if (filterValues) {
       try {
-        filterValues.forEach((filter) => {
-          const columns = this.ref.tabulator.getColumns()
-          const targetColumn = columns.find((col) => col.getField() === filter.field)
-          if (targetColumn?.getDefinition().headerFilter) {
-            // Extract clean value (remove operator prefix for Tabulator display)
-            const match = typeof filter.value === 'string' ? filter.value.trim().match(/^([<>=!]=?|!)\s*(.*)$/) : null
-            const displayValue = match ? match[2] : filter.value
-            this.ref?.tabulator?.setHeaderFilterValue(filter.field, displayValue)
-          }
-        })
+        // Block all table redraws/data loads while setting filters
+        this.ref?.tabulator?.blockRedraw()
+
+        try {
+          filterValues.forEach((filter) => {
+            // Get all columns to check if the target column exists
+            const columns = this.ref.tabulator.getColumns()
+            const targetColumn = columns.find((col) => col.getField() === filter.field)
+
+            if (targetColumn && targetColumn.getDefinition().headerFilter) {
+              this.ref?.tabulator?.setHeaderFilterValue(filter.field, filter.value)
+            }
+          })
+        } finally {
+          // Always restore redraw even if there's an error - this will trigger ONE AJAX request with all filters
+          this.ref?.tabulator?.restoreRedraw()
+        }
+
+        // Final check after all filters set - with cleanup
+        this._filterCheckTimeout = setTimeout(() => {
+          this._filterCheckTimeout = null
+        }, 10)
       } catch (error) {
-        console.error('Error setting filters:', error)
+        console.error('CHATATABLE - error setting filters:', error)
       }
-      this._filterCheckTimeout = setTimeout(() => {
-        this._filterCheckTimeout = null
-      }, 10)
     }
+
     this.setFilterBadgeClasses()
   }
 
@@ -1240,12 +1318,9 @@ export default class ChataTable extends React.Component {
     }
 
     inputElement.focus()
+    this.ref?.restoreRedraw()
     inputElement.value = value
     inputElement.title = value
-    if (typeof inputElement.dispatchEvent === 'function') {
-      inputElement.dispatchEvent(new Event('input', { bubbles: true }))
-      inputElement.dispatchEvent(new Event('change', { bubbles: true }))
-    }
     inputElement.blur()
   }
 
