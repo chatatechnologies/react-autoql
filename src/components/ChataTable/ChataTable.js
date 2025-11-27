@@ -1111,49 +1111,46 @@ export default class ChataTable extends React.Component {
         const allColumns = this.ref?.tabulator?.getColumns?.()
         if (!allColumns) return
 
-        const filters = this.tableParams?.filter ?? []
-        const isPivot = this.props.pivot
-        const filtersByField = {}
-        filters.forEach((f) => {
-          if (f?.field) filtersByField[f.field] = true
-        })
+        const filters = this.tableParams?.filter
+        if (!filters || !Array.isArray(filters) || !filters.length) {
+          // No active filters: remove any existing badges
+          allColumns.forEach((column) => {
+            const el = column?.getElement?.()
+            el?.classList.remove('is-filtered')
+          })
+          // ensure pivot groups cleaned up
+          if (this.props.pivot) {
+            const container = document.getElementById(`react-autoql-table-container-${this.TABLE_ID}`)
+            container?.querySelectorAll('.tabulator-col-group')?.forEach((g) => g.classList.remove('is-filtered'))
+          }
+          return
+        }
+
+        const filteredFields = new Set(filters.map((f) => f?.field).filter(Boolean))
+        const isPivot = !!this.props.pivot
 
         allColumns.forEach((column) => {
-          try {
-            const field = column.getField?.()
-            const columnElement = column?.getElement?.()
-            const origColumn = column?.getDefinition?.()?.origColumn
-            const columnName = column?.getDefinition?.()?.name
-            const isFiltered =
-              !!filtersByField[field] ||
-              !!filtersByField[columnName] ||
-              (isPivot && origColumn && !!filtersByField[origColumn.field])
+          const field = column.getField?.()
+          const def = column.getDefinition?.() || {}
+          const columnElement = column.getElement?.()
+          const columnName = def.name
+          const origField = def.origColumn?.field
 
-            if (isFiltered) {
-              columnElement?.classList.add('is-filtered')
-            } else {
-              columnElement?.classList.remove('is-filtered')
-            }
-          } catch (err) {
-            // Silently ignore per-column errors
-          }
+          const isFiltered =
+            filteredFields.has(field) ||
+            filteredFields.has(columnName) ||
+            (isPivot && origField && filteredFields.has(origField))
+
+          if (isFiltered) columnElement?.classList.add('is-filtered')
+          else columnElement?.classList.remove('is-filtered')
         })
 
-        // For pivots, mark column group headers
         if (isPivot) {
-          try {
-            const container = document.getElementById(`react-autoql-table-container-${this.TABLE_ID}`)
-            container?.querySelectorAll('.tabulator-col-group')?.forEach((groupEl) => {
-              const hasFilteredColumn = !!groupEl.querySelector('.tabulator-col.is-filtered')
-              if (hasFilteredColumn) {
-                groupEl.classList.add('is-filtered')
-              } else {
-                groupEl.classList.remove('is-filtered')
-              }
-            })
-          } catch (err) {
-            // Silently ignore group processing errors
-          }
+          const container = document.getElementById(`react-autoql-table-container-${this.TABLE_ID}`)
+          container?.querySelectorAll('.tabulator-col-group')?.forEach((groupEl) => {
+            const hasFiltered = !!groupEl.querySelector('.tabulator-col.is-filtered')
+            groupEl.classList.toggle('is-filtered', hasFiltered)
+          })
         }
       } catch (err) {
         console.error('Error in setFilterBadgeClasses:', err)
@@ -1337,51 +1334,45 @@ export default class ChataTable extends React.Component {
 
   onRemoveColumnClick = async () => {
     const column = _cloneDeep(this.state.contextMenuColumn)
-
     this.setState({ contextMenuColumn: undefined })
 
     const currentAdditionalSelectColumns = this.props.response?.data?.data?.fe_req?.additional_selects ?? []
-    const newAdditionalSelectColumns = currentAdditionalSelectColumns?.filter((select) => {
-      return select?.columns[0]?.replace(/ /g, '') !== column?.name?.replace(/ /g, '')
+    const newAdditionalSelectColumns = currentAdditionalSelectColumns.filter((select) => {
+      return select?.columns?.[0]?.replace(/ /g, '') !== column?.name?.replace(/ /g, '')
     })
 
-    if (currentAdditionalSelectColumns?.length !== newAdditionalSelectColumns?.length) {
+    // If this removal requires a server-side schema change, request new data
+    if (currentAdditionalSelectColumns.length !== newAdditionalSelectColumns.length) {
       this.setPageLoading(true)
       try {
         const response = await this.queryFn({ newColumns: newAdditionalSelectColumns })
         if (response?.data?.data?.rows) {
           this.props.updateColumnsAndData(response)
         } else {
-          throw new Error('Column deletion failed')
+          console.error('Column deletion failed: no rows returned')
         }
       } catch (error) {
         console.error(error)
       } finally {
         this.setPageLoading(false)
       }
-    } else {
-      const newColumns = this.props.columns.map((col) => {
-        if (col.name === column.name) {
-          return {
-            ...col,
-            visible: false,
-            is_visible: false,
-          }
-        }
-
-        return col
-      })
-
-      this.props.updateColumns(
-        newColumns,
-        this.props.response?.data?.data?.fe_req,
-        this.props.response?.data?.data?.available_selects,
-      )
-
-      setColumnVisibility({ ...this.props.authentication, columns: newColumns }).catch((error) => {
-        console.error(error)
-      })
+      return
     }
+
+    // Otherwise, simply hide the column locally and persist visibility
+    const newColumns = this.props.columns.map((col) =>
+      col.name === column.name ? { ...col, visible: false, is_visible: false } : col,
+    )
+
+    this.props.updateColumns(
+      newColumns,
+      this.props.response?.data?.data?.fe_req,
+      this.props.response?.data?.data?.available_selects,
+    )
+
+    setColumnVisibility({ ...this.props.authentication, columns: newColumns }).catch((error) => {
+      console.error(error)
+    })
   }
 
   updateColumn = (field, newParams) => {
@@ -1637,6 +1628,20 @@ export default class ChataTable extends React.Component {
     )
   }
 
+  // Helper to open pivot axis selector and compute its popover location
+  openPivotAxisSelectorForElement = (element) => {
+    if (!element) return
+    const rect = element.getBoundingClientRect()
+    const tableRect = this.tableContainer?.getBoundingClientRect() || { top: 0, left: 0 }
+    this.setState({
+      pivotAxisSelectorOpen: true,
+      pivotAxisSelectorLocation: {
+        top: rect.bottom - tableRect.top,
+        left: rect.left - tableRect.left,
+      },
+    })
+  }
+
   buildPivotAxisTitleElement = (col) => {
     const container = document.createElement('div')
     container.className = 'pivot-axis-title-container'
@@ -1657,15 +1662,7 @@ export default class ChataTable extends React.Component {
 
     const openSelector = (e) => {
       e.stopPropagation()
-      const rect = container.getBoundingClientRect()
-      const tableRect = this.tableContainer?.getBoundingClientRect() || { top: 0, left: 0 }
-      this.setState({
-        pivotAxisSelectorOpen: true,
-        pivotAxisSelectorLocation: {
-          top: rect.bottom - tableRect.top,
-          left: rect.left - tableRect.left,
-        },
-      })
+      this.openPivotAxisSelectorForElement(container)
     }
 
     container.addEventListener('click', openSelector)

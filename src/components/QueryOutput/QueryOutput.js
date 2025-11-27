@@ -69,6 +69,7 @@ import {
   formatFiltersForTabulator,
   formatSortersForTabulator,
   DisplayTypes,
+  createFilterFunction,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -87,31 +88,35 @@ import './QueryOutput.scss'
 
 const extractOperatorFromValue = (value) => {
   if (typeof value !== 'string') return null
-  const m = value.trim().match(/^([<>=!]=?|!)\s*(.*)$/)
+  const m = value.trim().match(/^([<>=!]=?)\s*(.*)$/)
   return m ? { operator: m[1], cleanValue: m[2] } : null
 }
 
-// If the response contains local rows (below TABULATOR_LOCAL_ROW_LIMIT),
-// apply initial formatted sorters (if any) or a sensible default sort.
+// Apply sorters to local rows (when row count < TABULATOR_LOCAL_ROW_LIMIT)
 const sortLocalData = (response, columns, initialFormattedTableParams) => {
   const rows = response?.data?.data?.rows || []
-  const countRows = response?.data?.data?.count_rows || 0
-  if (countRows >= TABULATOR_LOCAL_ROW_LIMIT || !columns?.length || !rows.length) return
+  if (!rows.length || rows.length >= TABULATOR_LOCAL_ROW_LIMIT || !Array.isArray(columns) || !columns.length) return
 
-  const sorters = initialFormattedTableParams?.sorters || []
+  const sorters = Array.isArray(initialFormattedTableParams?.sorters) ? initialFormattedTableParams.sorters : []
+
   if (sorters.length) {
-    let sorted = rows
-    for (const s of sorters) {
+    // Apply sorters in order; reduce makes the flow explicit and easier to reason about
+    const sorted = sorters.reduce((accRows, s) => {
       const idx = columns.findIndex((c) => c.field === s.field)
-      if (idx >= 0) sorted = sortDataByColumn(sorted, columns, idx, s.dir || 'asc')
-    }
+      if (idx >= 0) return sortDataByColumn(accRows, columns, idx, s.dir || 'asc')
+      return accRows
+    }, rows)
+
     response.data.data.rows = sorted
     return
   }
 
+  // Fallback: sort by first visible column
   const firstVisible = columns.find((c) => c.is_visible !== false)
-  const idx = firstVisible ? columns.findIndex((c) => c.field === firstVisible.field) : -1
-  if (idx >= 0) response.data.data.rows = sortDataByColumn(rows, columns, idx, 'asc')
+  if (firstVisible) {
+    const idx = columns.findIndex((c) => c.field === firstVisible.field)
+    if (idx >= 0) response.data.data.rows = sortDataByColumn(rows, columns, idx, 'asc')
+  }
 }
 
 export class QueryOutput extends React.Component {
@@ -184,28 +189,31 @@ export class QueryOutput extends React.Component {
 
     this.generateAllData()
 
-    this.formattedTableParams = {
-      filters: props?.initialFormattedTableParams?.filters || [],
-      sorters: [],
-    }
-
     try {
-      const initial = props?.initialFormattedTableParams || {}
-      const feReq = this.queryResponse?.data?.data?.fe_req || {}
-      const filtersToApply = initial.filters?.length > 0 ? initial.filters : feReq.filters || []
-      const sortersToApply =
-        initial.sorters?.length > 0
-          ? initial.sorters
-          : (feReq.orders || []).map((o) => ({ field: o.name, dir: o.sort?.toLowerCase() || 'asc' }))
+      const initial = props?.initialFormattedTableParams ?? {}
+      const feReq = this.queryResponse?.data?.data?.fe_req ?? {}
 
-      if (filtersToApply?.length > 0) {
-        this.tableParams.filter = formatFiltersForTabulator(filtersToApply, columns)
-        this.formattedTableParams.filters = filtersToApply
-      }
-      if (sortersToApply?.length > 0) {
-        this.tableParams.sort = formatSortersForTabulator(sortersToApply, columns)
-      }
-    } catch (err) {}
+      const filters =
+        Array.isArray(initial.filters) && initial.filters.length
+          ? initial.filters
+          : Array.isArray(feReq.filters)
+          ? feReq.filters
+          : []
+
+      const sorters =
+        Array.isArray(initial.sorters) && initial.sorters.length
+          ? initial.sorters
+          : Array.isArray(feReq.orders)
+          ? feReq.orders.map((o) => ({ field: o.name, dir: o.sort?.toLowerCase() || 'asc' }))
+          : []
+
+      if (filters.length) this.tableParams.filter = formatFiltersForTabulator(filters, columns)
+      if (sorters.length) this.tableParams.sort = formatSortersForTabulator(sorters, columns)
+
+      this.formattedTableParams = { filters, sorters }
+    } catch (err) {
+      this.formattedTableParams = { filters: [], sorters: [] }
+    }
 
     this.DEFAULT_TABLE_PAGE_SIZE = 100
     this.shouldEnableResize = props.enableResizing && isChart
@@ -2263,96 +2271,27 @@ export class QueryOutput extends React.Component {
   }
 
   setFilterFunction = (col) => {
-    const self = this
-    if (col.type === ColumnTypes.DATE) {
-      return (headerValue, rowValue, rowData, filterParams) => {
+    // Import the filter function from autoql-fe-utils
+    const filterFn = createFilterFunction({ column: col, dataFormatting: this.props.dataFormatting })
+
+    // Wrap the filter function to preserve error callback behavior
+    // This wrapper is necessary because react-autoql needs to call onErrorCallback for error handling
+    if (filterFn && typeof filterFn === 'function') {
+      const wrappedFn = (headerValue, rowValue, rowData, filterParams) => {
         try {
-          if (!rowValue) {
-            return false
-          }
-
-          const rowValueDayJS = getDayJSObj({ value: rowValue, column: col, config: this.props.dataFormatting })
-
-          const dates = headerValue.split(' to ')
-          const precision = getPrecisionForDayJS(getFilterPrecision(col.precision))
-          const startDate = dayjs.utc(dates[0]).startOf(precision)
-          const endDate = dayjs.utc(dates[1] ?? dates[0]).endOf(precision)
-
-          const isAfterStartDate = startDate.isSameOrBefore(rowValueDayJS)
-          const isBeforeEndDate = rowValueDayJS.isSameOrBefore(endDate)
-
-          return isAfterStartDate && isBeforeEndDate
+          return filterFn(headerValue, rowValue, rowData, filterParams)
         } catch (error) {
           console.error(error)
-          this.props.onErrorCallback(error)
+          if (this.props.onErrorCallback) {
+            this.props.onErrorCallback(error)
+          }
           return false
         }
       }
-    } else if (col.type === 'DATE_STRING') {
-      return (headerValue, rowValue, rowData, filterParams) => {
-        try {
-          if (!rowValue) {
-            return false
-          }
-
-          const formattedElement = formatElement({
-            element: rowValue,
-            column: col,
-            config: self.props.dataFormatting,
-          })
-
-          const shouldFilter = `${formattedElement}`.toLowerCase().includes(`${headerValue}`.toLowerCase())
-
-          return shouldFilter
-        } catch (error) {
-          console.error(error)
-          this.props.onErrorCallback(error)
-          return false
-        }
-      }
-    } else if (col.type === 'DOLLAR_AMT' || col.type === 'QUANTITY' || col.type === 'PERCENT' || col.type === 'RATIO') {
-      return (headerValue, rowValue, rowData, filterParams) => {
-        try {
-          if (!rowValue && rowValue !== 0) {
-            return false
-          }
-
-          const trimmedValue = headerValue.trim()
-          if (trimmedValue.length >= 2) {
-            const number = Number(trimmedValue.substr(1).replace(/[^0-9.]/g, ''))
-            if (trimmedValue[0] === '>' && trimmedValue[1] === '=') {
-              return rowValue >= number
-            } else if (trimmedValue[0] === '>') {
-              return rowValue > number
-            } else if (trimmedValue[0] === '<' && trimmedValue[1] === '=') {
-              return rowValue <= number
-            } else if (trimmedValue[0] === '<') {
-              return rowValue < number
-            } else if (trimmedValue[0] === '!' && trimmedValue[1] === '=') {
-              return rowValue !== number
-            } else if (trimmedValue[0] === '=') {
-              return rowValue === number
-            }
-          }
-
-          // No logical operators detected, just compare numbers
-          const filterNumber = headerValue?.toString()
-          const formattedNumber = formatElement({
-            element: rowValue,
-            column: col,
-            config: self.props.dataFormatting,
-          })
-
-          return !isNaN(formattedNumber) && parseFloat(formattedNumber) === parseFloat(filterNumber)
-        } catch (error) {
-          console.error(error)
-          this.props.onErrorCallback(error)
-          return false
-        }
-      }
+      return wrappedFn
     }
 
-    return undefined
+    return filterFn
   }
 
   setSorterFunction = (col) => {
