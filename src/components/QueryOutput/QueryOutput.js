@@ -7,7 +7,7 @@ import _isEmpty from 'lodash.isempty'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
 
-import { TOOLTIP_COPY_TEXTS } from '../../js/Constants'
+import { TOOLTIP_COPY_TEXTS, TABULATOR_LOCAL_ROW_LIMIT } from '../../js/Constants'
 
 import {
   AggTypes,
@@ -108,6 +108,8 @@ export class QueryOutput extends React.Component {
     this.queryResponse = _cloneDeep(response)
     this.columnDateRanges = getColumnDateRanges(response)
     this.queryID = this.queryResponse?.data?.data?.query_id
+    this.drilldownQueryID =
+      this.queryResponse?.data?.data?.drilldown_query_id || this.queryResponse?.data?.data?.query_id
     this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
     this.tableParams = {
       sort: props?.initialTableParams?.sort || [],
@@ -132,6 +134,9 @@ export class QueryOutput extends React.Component {
     // Supported display types may have changed after initial data generation
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
 
+    // Sort data if data is local
+    this.sortLocalData(response, columns, props?.initialFormattedTableParams)
+
     const displayType = this.getDisplayTypeFromInitial(props)
     if (props.onDisplayTypeChange) {
       props.onDisplayTypeChange(displayType)
@@ -150,13 +155,28 @@ export class QueryOutput extends React.Component {
 
     this.generateAllData()
 
-    // Set initial table params to be any filters that
-    // are already present in the current query
-    // Note: We handle sorting ourselves, so we don't pass sorters to Tabulator
     this.formattedTableParams = {
       filters: props?.initialFormattedTableParams?.filters || [],
       sorters: [],
     }
+
+    try {
+      const initial = props?.initialFormattedTableParams || {}
+      const feReq = this.queryResponse?.data?.data?.fe_req || {}
+      const filtersToApply = initial.filters?.length > 0 ? initial.filters : feReq.filters || []
+      const sortersToApply =
+        initial.sorters?.length > 0
+          ? initial.sorters
+          : (feReq.orders || []).map((o) => ({ field: o.name, dir: o.sort?.toLowerCase() || 'asc' }))
+
+      if (filtersToApply?.length > 0) {
+        this.tableParams.filter = formatFiltersForTabulator(filtersToApply, columns)
+        this.formattedTableParams.filters = filtersToApply
+      }
+      if (sortersToApply?.length > 0) {
+        this.tableParams.sort = formatSortersForTabulator(sortersToApply, columns)
+      }
+    } catch (err) {}
 
     this.DEFAULT_TABLE_PAGE_SIZE = 100
     this.shouldEnableResize = props.enableResizing && isChart
@@ -179,6 +199,26 @@ export class QueryOutput extends React.Component {
       originalLegendState: this.originalLegendState,
     }
     this.updateMaxConstraints()
+  }
+
+  sortLocalData = (response, columns, initialFormattedTableParams) => {
+    const rows = response?.data?.data?.rows
+    const countRows = response?.data?.data?.count_rows
+    if (countRows >= TABULATOR_LOCAL_ROW_LIMIT || !columns?.length || !rows?.length) return
+
+    const initialSorters = initialFormattedTableParams?.sorters || []
+    if (initialSorters.length > 0) {
+      let sortedData = rows
+      for (const sorter of initialSorters) {
+        const idx = columns.findIndex((col) => col.field === sorter.field)
+        if (idx !== -1) sortedData = sortDataByColumn(sortedData, columns, idx, sorter.dir || 'asc')
+      }
+      response.data.data.rows = sortedData
+    } else {
+      const firstVisible = columns.find((col) => col.is_visible !== false)
+      const idx = firstVisible ? columns.findIndex((col) => col.field === firstVisible.field) : -1
+      if (idx !== -1) response.data.data.rows = sortDataByColumn(rows, columns, idx, 'asc')
+    }
   }
 
   static propTypes = {

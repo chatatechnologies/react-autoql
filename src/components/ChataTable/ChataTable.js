@@ -312,6 +312,8 @@ export default class ChataTable extends React.Component {
       if (!this.props.hidden) {
         this.setTableHeight()
       }
+      // Refresh filter badges after initial filters are set
+      this.setFilterBadgeClasses()
     }
     this.summaryStats = this.calculateSummaryStats(this.props)
   }
@@ -1099,19 +1101,20 @@ export default class ChataTable extends React.Component {
         const filters = this.tableParams?.filter ?? []
         const isPivot = this.props.pivot
         const filtersByField = {}
-
-        // Build a quick lookup of fields that are filtered
         filters.forEach((f) => {
           if (f?.field) filtersByField[f.field] = true
         })
 
-        // Process all columns
         allColumns.forEach((column) => {
           try {
             const field = column.getField?.()
             const columnElement = column?.getElement?.()
             const origColumn = column?.getDefinition?.()?.origColumn
-            const isFiltered = !!filtersByField[field] || (isPivot && origColumn && !!filtersByField[origColumn.field])
+            const columnName = column?.getDefinition?.()?.name
+            const isFiltered =
+              !!filtersByField[field] ||
+              !!filtersByField[columnName] ||
+              (isPivot && origColumn && !!filtersByField[origColumn.field])
 
             if (isFiltered) {
               columnElement?.classList.add('is-filtered')
