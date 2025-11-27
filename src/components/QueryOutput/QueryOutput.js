@@ -85,6 +85,35 @@ import { dataFormattingType, autoQLConfigType, authenticationType } from '../../
 
 import './QueryOutput.scss'
 
+const extractOperatorFromValue = (value) => {
+  if (typeof value !== 'string') return null
+  const m = value.trim().match(/^([<>=!]=?|!)\s*(.*)$/)
+  return m ? { operator: m[1], cleanValue: m[2] } : null
+}
+
+// If the response contains local rows (below TABULATOR_LOCAL_ROW_LIMIT),
+// apply initial formatted sorters (if any) or a sensible default sort.
+const sortLocalData = (response, columns, initialFormattedTableParams) => {
+  const rows = response?.data?.data?.rows || []
+  const countRows = response?.data?.data?.count_rows || 0
+  if (countRows >= TABULATOR_LOCAL_ROW_LIMIT || !columns?.length || !rows.length) return
+
+  const sorters = initialFormattedTableParams?.sorters || []
+  if (sorters.length) {
+    let sorted = rows
+    for (const s of sorters) {
+      const idx = columns.findIndex((c) => c.field === s.field)
+      if (idx >= 0) sorted = sortDataByColumn(sorted, columns, idx, s.dir || 'asc')
+    }
+    response.data.data.rows = sorted
+    return
+  }
+
+  const firstVisible = columns.find((c) => c.is_visible !== false)
+  const idx = firstVisible ? columns.findIndex((c) => c.field === firstVisible.field) : -1
+  if (idx >= 0) response.data.data.rows = sortDataByColumn(rows, columns, idx, 'asc')
+}
+
 export class QueryOutput extends React.Component {
   constructor(props) {
     super(props)
@@ -135,7 +164,7 @@ export class QueryOutput extends React.Component {
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
 
     // Sort data if data is local
-    this.sortLocalData(response, columns, props?.initialFormattedTableParams)
+    sortLocalData(response, columns, props?.initialFormattedTableParams)
 
     const displayType = this.getDisplayTypeFromInitial(props)
     if (props.onDisplayTypeChange) {
@@ -199,26 +228,6 @@ export class QueryOutput extends React.Component {
       originalLegendState: this.originalLegendState,
     }
     this.updateMaxConstraints()
-  }
-
-  sortLocalData = (response, columns, initialFormattedTableParams) => {
-    const rows = response?.data?.data?.rows
-    const countRows = response?.data?.data?.count_rows
-    if (countRows >= TABULATOR_LOCAL_ROW_LIMIT || !columns?.length || !rows?.length) return
-
-    const initialSorters = initialFormattedTableParams?.sorters || []
-    if (initialSorters.length > 0) {
-      let sortedData = rows
-      for (const sorter of initialSorters) {
-        const idx = columns.findIndex((col) => col.field === sorter.field)
-        if (idx !== -1) sortedData = sortDataByColumn(sortedData, columns, idx, sorter.dir || 'asc')
-      }
-      response.data.data.rows = sortedData
-    } else {
-      const firstVisible = columns.find((col) => col.is_visible !== false)
-      const idx = firstVisible ? columns.findIndex((col) => col.field === firstVisible.field) : -1
-      if (idx !== -1) response.data.data.rows = sortDataByColumn(rows, columns, idx, 'asc')
-    }
   }
 
   static propTypes = {
@@ -777,13 +786,6 @@ export class QueryOutput extends React.Component {
     )
   }
 
-  static extractOperatorFromValue = (value) => {
-    // Extract comparison operator prefix if present, else return null
-    if (typeof value !== 'string') return null
-    const match = value.trim().match(/^([<>=!]=?|!)\s*(.*)$/)
-    return match ? { operator: match[1], cleanValue: match[2] } : null
-  }
-
   getDisplayTypeFromInitial = (props) => {
     // Set the initial display type based on prop value, response, and supported display types
     // Start by setting the displayType to the provided initialDisplayType prop value
@@ -831,6 +833,7 @@ export class QueryOutput extends React.Component {
     return this.formatColumnsForTable(
       this.queryResponse?.data?.data?.columns,
       this.getAdditionalSelectsFromResponse(this.queryResponse),
+      this.props.initialAggConfig,
     )
   }
 
@@ -1790,10 +1793,7 @@ export class QueryOutput extends React.Component {
   onLegendClick = (d) => {
     d?.label && this.handleLegendClick(d.label)
 
-    if (!d) {
-      console.debug('no legend item was provided on click event')
-      return
-    }
+    if (!d) return
 
     const columnIndex = d?.columnIndex
     const usePivotData = this.usePivotDataForChart()
@@ -1859,10 +1859,28 @@ export class QueryOutput extends React.Component {
 
     if (this.usePivotDataForChart()) {
       this.generatePivotTableData()
+      // Force chart to re-render with new pivot data by updating chartID
+      if (this._isMounted) {
+        this.setState({
+          chartID: uuid(),
+          visiblePivotRowChangeCount: (this.state.visiblePivotRowChangeCount || 0) + 1,
+        })
+      }
     }
 
     this.onTableConfigChange()
     this.forceUpdate()
+  }
+
+  getPivotRowSelectorOptions = () => {
+    const cols = this.getColumns() || []
+    if (!this.tableConfig) return []
+    return cols
+      .filter(
+        (c) =>
+          c.is_visible !== false && !this.tableConfig.numberColumnIndices?.includes(c.index) && isColumnStringType(c),
+      )
+      .map((c) => ({ value: c.index, label: c.display_name || c.name }))
   }
 
   onChangeLegendColumnIndex = (index) => {
@@ -2375,7 +2393,7 @@ export class QueryOutput extends React.Component {
     return queryResponse?.data?.data?.fe_req?.columns?.find((column) => newCol.name === column.name)
   }
 
-  copyToClipboard(text, element) {
+  copyToClipboard = (text, element) => {
     const successTimeout = 1500
     const errorTimeout = 3000
     const textarea = document.createElement('textarea')
@@ -2781,7 +2799,7 @@ export class QueryOutput extends React.Component {
           if (filterColumnIndex !== undefined) {
             let op = filter.operator,
               val = filter.value
-            const parsed = QueryOutput.extractOperatorFromValue(filter.value)
+            const parsed = extractOperatorFromValue(filter.value)
             if (parsed) {
               op = parsed.operator
               val = parsed.cleanValue
@@ -2830,7 +2848,7 @@ export class QueryOutput extends React.Component {
             if (columnIndex !== undefined) {
               let op = type || operator
               let val = value
-              const parsed = QueryOutput.extractOperatorFromValue(value)
+              const parsed = extractOperatorFromValue(value)
               if (parsed) {
                 op = parsed.operator
                 val = parsed.cleanValue
@@ -3371,6 +3389,10 @@ export class QueryOutput extends React.Component {
           pivot
           queryText={this.queryResponse?.data?.data?.text}
           isLoadingLocal={this.props.isLoadingLocal}
+          pivotAxisOptions={this.getPivotRowSelectorOptions()}
+          pivotAxisCurrentIndex={this.tableConfig?.stringColumnIndex}
+          onPivotAxisChange={this.onChangeStringColumnIndex}
+          originalColumns={this.getColumns()}
         />
       </ErrorBoundary>
     )

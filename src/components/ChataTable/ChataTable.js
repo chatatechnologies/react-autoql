@@ -40,6 +40,7 @@ import TableWrapper from './TableWrapper'
 import { DateRangePicker } from '../DateRangePicker'
 import { DataLimitWarning } from '../DataLimitWarning'
 import { columnOptionsList } from './tabulatorConstants'
+import { CustomScrollbars } from '../CustomScrollbars'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { DATASET_TOO_LARGE, TABULATOR_LOCAL_ROW_LIMIT, LOCAL_OR_REMOTE } from '../../js/Constants'
 import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
@@ -136,6 +137,8 @@ export default class ChataTable extends React.Component {
       subscribedData: undefined,
       firstRender: true,
       scrollTop: 0,
+      pivotAxisSelectorOpen: false,
+      pivotAxisSelectorLocation: null,
     }
   }
 
@@ -175,6 +178,11 @@ export default class ChataTable extends React.Component {
     onUpdateFilterResponse: PropTypes.func,
     isDrilldown: PropTypes.bool,
     scope: PropTypes.string,
+    // Pivot axis selector props
+    pivotAxisOptions: PropTypes.arrayOf(PropTypes.shape({ value: PropTypes.number, label: PropTypes.string })),
+    pivotAxisCurrentIndex: PropTypes.number,
+    onPivotAxisChange: PropTypes.func,
+    originalColumns: PropTypes.arrayOf(PropTypes.shape({})),
   }
 
   static defaultProps = {
@@ -204,6 +212,11 @@ export default class ChataTable extends React.Component {
     onUpdateFilterResponse: () => {},
     isDrilldown: false,
     scope: undefined,
+    // Pivot axis selector defaults
+    pivotAxisOptions: [],
+    pivotAxisCurrentIndex: undefined,
+    onPivotAxisChange: () => {},
+    originalColumns: [],
   }
 
   componentDidMount = () => {
@@ -1536,9 +1549,16 @@ export default class ChataTable extends React.Component {
     try {
       if (this.props.pivot && this.props.columns?.length) {
         const columns = []
+        const hasAxisOptions = this.props.pivotAxisOptions?.length > 1
+
         this.props.columns.forEach((col, i) => {
           if (i === 0) {
-            columns.push(col)
+            // First column is the pivot row header - add titleFormatter for axis selector
+            const pivotCol = { ...col }
+            if (hasAxisOptions) {
+              pivotCol.titleFormatter = (cell) => this.buildPivotAxisTitleElement(col)
+            }
+            columns.push(pivotCol)
           } else {
             if (!columns[1]) {
               columns.push({
@@ -1569,6 +1589,94 @@ export default class ChataTable extends React.Component {
     }
 
     return []
+  }
+
+  renderPivotAxisSelectorPopover = () => {
+    if (!this.props.pivot || !this.props.pivotAxisOptions?.length) {
+      return null
+    }
+
+    const options = this.props.pivotAxisOptions || []
+    const activeIndex = this.props.pivotAxisCurrentIndex
+
+    return (
+      <Popover
+        isOpen={this.state.pivotAxisSelectorOpen}
+        onClickOutside={() => this.setState({ pivotAxisSelectorOpen: false })}
+        positions={['bottom', 'top']}
+        align='start'
+        content={
+          <div className='pivot-axis-selector-popover'>
+            <CustomScrollbars maxHeight={220}>
+              <ul className='pivot-axis-selector-list'>
+                {options.map((opt) => (
+                  <li
+                    key={`pivot-axis-option-${opt.value}`}
+                    className={`pivot-axis-selector-item ${opt.value === activeIndex ? 'active' : ''}`}
+                    onClick={() => {
+                      this.setState({ pivotAxisSelectorOpen: false })
+                      this.props.onPivotAxisChange(opt.value)
+                    }}
+                  >
+                    {opt.label}
+                  </li>
+                ))}
+              </ul>
+            </CustomScrollbars>
+          </div>
+        }
+      >
+        <div
+          style={{
+            position: 'absolute',
+            top: this.state.pivotAxisSelectorLocation?.top,
+            left: this.state.pivotAxisSelectorLocation?.left,
+          }}
+        />
+      </Popover>
+    )
+  }
+
+  buildPivotAxisTitleElement = (col) => {
+    const container = document.createElement('div')
+    container.className = 'pivot-axis-title-container'
+    container.setAttribute('role', 'button')
+    container.setAttribute('aria-haspopup', 'listbox')
+    container.tabIndex = 0
+
+    const titleSpan = document.createElement('span')
+    titleSpan.className = 'pivot-axis-title-text'
+    titleSpan.textContent = col.title || col.display_name || ''
+
+    const arrowSpan = document.createElement('span')
+    arrowSpan.className = 'pivot-axis-title-arrow'
+    arrowSpan.textContent = '▼'
+
+    container.appendChild(titleSpan)
+    container.appendChild(arrowSpan)
+
+    const openSelector = (e) => {
+      e.stopPropagation()
+      const rect = container.getBoundingClientRect()
+      const tableRect = this.tableContainer?.getBoundingClientRect() || { top: 0, left: 0 }
+      this.setState({
+        pivotAxisSelectorOpen: true,
+        pivotAxisSelectorLocation: {
+          top: rect.bottom - tableRect.top,
+          left: rect.left - tableRect.left,
+        },
+      })
+    }
+
+    container.addEventListener('click', openSelector)
+    container.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault()
+        openSelector(e)
+      }
+    })
+
+    return container
   }
 
   renderPivotTableRowWarning = () => {
@@ -1860,6 +1968,7 @@ export default class ChataTable extends React.Component {
           {this.renderDateRangePickerPopover()}
           {this.renderCustomColumnPopover()}
           {this.renderHeaderContextMenuPopover()}
+          {this.renderPivotAxisSelectorPopover()}
           {this.renderTableRowCount()}
         </div>
         <Tooltip
