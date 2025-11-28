@@ -507,43 +507,6 @@ describe('ChataTable', () => {
       })
     })
 
-    test('should not call ajaxRequestFunc immediately after initial data is processed (timing protection)', async () => {
-      const initialFilters = [{ field: '1', type: '=', value: 'online' }]
-
-      const props = {
-        response: mockResponseWithNoData,
-        initialTableParams: { filter: initialFilters },
-        queryFn: jest.fn(),
-      }
-
-      const wrapper = setup(props)
-      const instance = wrapper.instance()
-
-      // Set up component state
-      instance.hasSetInitialData = false
-      instance._isMounted = true
-      instance.state = { tabulatorMounted: true }
-
-      const ajaxRequestFuncSpy = jest.spyOn(instance, 'ajaxRequestFunc')
-
-      // Simulate initial data processing
-      instance.onDataProcessed([])
-
-      // Verify _setInitialDataTime was set
-      expect(instance._setInitialDataTime).toBeDefined()
-
-      // Immediately try to call ajaxRequestFunc (should be blocked by timing protection)
-      const params = { page: 1, filter: [], sort: [] }
-      const result = await instance.ajaxRequestFunc(props, params)
-
-      // Should return initial data instead of making API call
-      expect(result.isInitialData).toBe(true)
-      expect(result.rows).toEqual([])
-
-      // ajaxRequestFunc should not have made an actual API call due to timing protection
-      expect(props.queryFn).not.toHaveBeenCalled()
-    })
-
     test('should allow ajaxRequestFunc calls after timing protection period expires', async () => {
       const initialFilters = [{ field: '1', type: '=', value: 'online' }]
 

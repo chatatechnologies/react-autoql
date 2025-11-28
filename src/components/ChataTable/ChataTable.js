@@ -124,17 +124,19 @@ export default class ChataTable extends React.Component {
       ...this.props.tableOptions,
     }
 
-    this.tableOptions.sortMode = LOCAL_OR_REMOTE.REMOTE
-    this.tableOptions.filterMode = LOCAL_OR_REMOTE.REMOTE
-    this.tableOptions.pagination = false
-    this.tableOptions.paginationMode = LOCAL_OR_REMOTE.REMOTE
-    this.tableOptions.paginationSize = this.pageSize
-    this.tableOptions.paginationInitialPage = 1
-    this.tableOptions.progressiveLoad = 'scroll' // v4: ajaxProgressiveLoad
-    this.tableOptions.ajaxURL = 'https://required-placeholder-url.com'
-    this.tableOptions.ajaxRequesting = (url, params) => this.ajaxRequesting(props, params)
-    this.tableOptions.ajaxRequestFunc = (url, config, params) => this.ajaxRequestFunc(props, params)
-    this.tableOptions.ajaxResponse = (url, params, response) => this.ajaxResponseFunc(props, response)
+    if (props.response?.data?.data?.rows?.length) {
+      this.tableOptions.sortMode = LOCAL_OR_REMOTE.REMOTE
+      this.tableOptions.filterMode = LOCAL_OR_REMOTE.REMOTE
+      this.tableOptions.pagination = false
+      this.tableOptions.paginationMode = LOCAL_OR_REMOTE.REMOTE
+      this.tableOptions.paginationSize = this.pageSize
+      this.tableOptions.paginationInitialPage = 1
+      this.tableOptions.progressiveLoad = 'scroll' // v4: ajaxProgressiveLoad
+      this.tableOptions.ajaxURL = 'https://required-placeholder-url.com'
+      this.tableOptions.ajaxRequesting = (url, params) => this.ajaxRequesting(props, params)
+      this.tableOptions.ajaxRequestFunc = (url, config, params) => this.ajaxRequestFunc(props, params)
+      this.tableOptions.ajaxResponse = (url, params, response) => this.ajaxResponseFunc(props, response)
+    }
 
     this.summaryStats = {}
 
@@ -824,7 +826,6 @@ export default class ChataTable extends React.Component {
     if (this.hasSetInitialData || data?.length || !this.props.response?.data?.data?.rows?.length) {
       this.hasSetInitialData = true
       this.isSettingInitialData = false
-      this._setInitialDataTime = Date.now()
       this.clearLoadingIndicators()
     }
   }
@@ -977,10 +978,9 @@ export default class ChataTable extends React.Component {
 
     try {
       // Check if table just mounted - avoid any AJAX requests for recently mounted tables
-      const hasRecentlySetHeaderFilters = this.state.tabulatorMounted && Date.now() - (this._setFiltersTime || 0) < 1000
-      const hasRecentlySetInitialData = Date.now() - (this._setInitialDataTime || 0) < 1000
+      const hasRecentlySetHeaderFilters = this.state.tabulatorMounted && Date.now() - (this._setFiltersTime || 0) < 2000 // 2 seconds
 
-      if (!this.hasSetInitialData || !this._isMounted || hasRecentlySetHeaderFilters || hasRecentlySetInitialData) {
+      if (!this.hasSetInitialData || !this._isMounted || hasRecentlySetHeaderFilters) {
         return initialData
       }
 
@@ -1687,7 +1687,7 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  onRemoveColumnClick = () => {
+  onRemoveColumnClick = async () => {
     const column = _cloneDeep(this.state.contextMenuColumn)
 
     this.setState({ contextMenuColumn: undefined })
@@ -1699,22 +1699,18 @@ export default class ChataTable extends React.Component {
 
     if (currentAdditionalSelectColumns?.length !== newAdditionalSelectColumns?.length) {
       this.setPageLoading(true)
-      this.queryFn({ newColumns: newAdditionalSelectColumns })
-        .then((response) => {
-          if (response?.data?.data?.rows) {
-            this.props.updateColumnsAndData(response)
-            this.summaryStats = this.summaryStatsCalculator.calculate(this.props)
-            this.lifecycleManager.safeForceUpdate()
-          } else {
-            throw new Error('Column deletion failed')
-          }
-        })
-        .catch((error) => {
-          console.error(error)
-        })
-        .finally(() => {
-          this.setPageLoading(false)
-        })
+      try {
+        const response = await this.queryFn({ newColumns: newAdditionalSelectColumns })
+        if (response?.data?.data?.rows) {
+          this.props.updateColumnsAndData(response)
+        } else {
+          throw new Error('Column deletion failed')
+        }
+      } catch (error) {
+        console.error(error)
+      } finally {
+        this.setPageLoading(false)
+      }
     } else {
       const newColumns = this.props.columns.map((col) => {
         if (col.name === column.name) {

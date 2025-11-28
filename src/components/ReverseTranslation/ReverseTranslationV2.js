@@ -262,19 +262,11 @@ const ReverseTranslation = (props = {}) => {
 
   useEffect(() => {
     isMounted.current = true
-
     let cancelled = false
 
-    if (onValueLabelClick && reverseTranslationArray?.length) {
+    // Skip prerequisites for read-only/text-only rendering modes
+    if (!textOnly && (onValueLabelClick || enableEditReverseTranslation) && reverseTranslationArray?.length) {
       executePrerequisites(reverseTranslationArray)
-    } else {
-      // Only log if there's actually a missing prerequisite, don't crash
-      if (!onValueLabelClick) {
-        console.warn('ReverseTranslation: onValueLabelClick callback not provided')
-      }
-      if (!reverseTranslationArray?.length) {
-        console.warn('ReverseTranslation: no reverse translation array available')
-      }
     }
 
     return () => {
@@ -284,17 +276,22 @@ const ReverseTranslation = (props = {}) => {
   }, [])
 
   useEffect(() => {
-    const newParsedInterpretation = queryResponse?.data?.data?.parsed_interpretation
-    initialParsedInterpretations.current = newParsedInterpretation
-    const newArray = constructRTArray(newParsedInterpretation)
-    executePrerequisites(newArray)
+    if (!textOnly && (onValueLabelClick || enableEditReverseTranslation)) {
+      const newParsedInterpretation = queryResponse?.data?.data?.parsed_interpretation
+      initialParsedInterpretations.current = newParsedInterpretation
+      const newArray = constructRTArray(newParsedInterpretation)
+      executePrerequisites(newArray)
+    }
   }, [queryResponse?.data?.data?.parsed_interpretation])
 
+  // todo: consolidate with queryResponse effect
   useEffect(() => {
-    const newParsedInterpretation = localRTFilterResponse?.data?.data?.parsed_interpretation
-    initialParsedInterpretations.current = newParsedInterpretation
-    const newArray = constructRTArray(newParsedInterpretation)
-    executePrerequisites(newArray)
+    if (!textOnly && (onValueLabelClick || enableEditReverseTranslation)) {
+      const newParsedInterpretation = localRTFilterResponse?.data?.data?.parsed_interpretation
+      initialParsedInterpretations.current = newParsedInterpretation
+      const newArray = constructRTArray(newParsedInterpretation)
+      executePrerequisites(newArray)
+    }
   }, [localRTFilterResponse?.data?.data?.parsed_interpretation])
 
   useEffect(() => {
@@ -311,7 +308,7 @@ const ReverseTranslation = (props = {}) => {
         data-test='react-autoql-condition-link'
         onClick={(e) => {
           e.stopPropagation()
-          if (disableAction) return
+          if (disableAction || !onValueLabelClick) return
           onValueLabelClick(chunk.eng)
         }}
       >
