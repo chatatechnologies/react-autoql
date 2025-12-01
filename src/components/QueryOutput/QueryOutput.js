@@ -347,7 +347,6 @@ export class QueryOutput extends React.Component {
       this.forceUpdate()
     } catch (error) {
       console.error(error)
-      this.props.onErrorCallback?.(error)
     }
   }
 
@@ -459,7 +458,11 @@ export class QueryOutput extends React.Component {
 
         // If new number column indices conflict, reset table config to resolve the arrays
         // The config should stay the same as much as possible while removing the overlapping indices
-        if (!this.isTableConfigValid(this.tableConfig, this.state.columns, this.state.displayType)) {
+        // Don't reset if there's an error response (timeout, service unavailable, etc.) to preserve saved config
+        if (
+          !this.hasError(this.queryResponse) &&
+          !this.isTableConfigValid(this.tableConfig, this.state.columns, this.state.displayType)
+        ) {
           this.setTableConfig()
         }
       }
@@ -669,9 +672,10 @@ export class QueryOutput extends React.Component {
 
   checkAndUpdateTableConfigs = (displayType) => {
     // Check if table configs are still valid for new display type
+    // Don't reset if there's an error response (timeout, service unavailable, etc.) to preserve saved config
     const isTableConfigValid = this.isTableConfigValid(this.tableConfig, this.getColumns(), displayType)
 
-    if (!isTableConfigValid) {
+    if (!this.hasError(this.queryResponse) && !isTableConfigValid) {
       this.setTableConfig()
     }
 
@@ -982,6 +986,7 @@ export class QueryOutput extends React.Component {
       this.tableData = this.queryResponse?.data?.data?.rows
 
       // Only set table config if no valid initial config was provided AND this is during mount
+      // Don't reset if there's an error response (timeout, service unavailable, etc.) to preserve saved config
       const isDuringMount = !this._isMounted
       const displayType = this.state?.displayType || this.getDisplayTypeFromInitial(this.props)
       const hasValidInitialConfig =
@@ -989,7 +994,7 @@ export class QueryOutput extends React.Component {
         this.props.initialTableConfigs?.tableConfig &&
         this.isTableConfigValid(this.props.initialTableConfigs.tableConfig, columns, displayType)
 
-      if (!hasValidInitialConfig) {
+      if (!this.hasError(this.queryResponse) && !hasValidInitialConfig) {
         this.setTableConfig()
       }
 
@@ -1012,7 +1017,6 @@ export class QueryOutput extends React.Component {
       }
     } catch (error) {
       console.error('Error generating pivot data', error)
-      this.props.onErrorCallback?.(error)
       this.pivotTableData = undefined
     }
 
@@ -2760,7 +2764,9 @@ export class QueryOutput extends React.Component {
             })
           } else if (typeof headerFilters === 'object') {
             Object.entries(headerFilters).forEach(([field, value]) => {
-              if (value === undefined || value === null || value === '') return
+              // Skip only undefined, null, and empty strings - allow 0, '0', false
+              if (value === undefined || value === null) return
+              if (typeof value === 'string' && value.trim() === '') return
               let filterColumnIndex
               const parsed = parseInt(field, 10)
               if (!isNaN(parsed)) filterColumnIndex = parsed
@@ -2976,7 +2982,6 @@ export class QueryOutput extends React.Component {
       }
     } catch (error) {
       console.error(error)
-      this.props.onErrorCallback?.(error)
     }
   }
 
