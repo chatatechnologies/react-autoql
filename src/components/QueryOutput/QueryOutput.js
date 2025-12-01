@@ -177,6 +177,7 @@ export class QueryOutput extends React.Component {
       hiddenLegendLabels: [],
       legendStateByChart: {},
       originalLegendState: this.originalLegendState,
+      networkColumnConfig: props.initialNetworkColumnConfig || null,
     }
     this.updateMaxConstraints()
   }
@@ -203,6 +204,11 @@ export class QueryOutput extends React.Component {
     enableDynamicCharting: PropTypes.bool,
     onTableConfigChange: PropTypes.func,
     onAggConfigChange: PropTypes.func,
+    initialNetworkColumnConfig: PropTypes.shape({
+      sourceColumnIndex: PropTypes.number,
+      targetColumnIndex: PropTypes.number,
+    }),
+    onNetworkColumnChange: PropTypes.func,
     onNoneOfTheseClick: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     onRTValueLabelClick: PropTypes.func,
@@ -291,6 +297,8 @@ export class QueryOutput extends React.Component {
     isEditing: false,
     onTableConfigChange: () => {},
     onAggConfigChange: () => {},
+    initialNetworkColumnConfig: undefined,
+    onNetworkColumnChange: () => {},
     onQueryValidationSelectOption: () => {},
     onErrorCallback: () => {},
     onDrilldownStart: () => {},
@@ -639,6 +647,14 @@ export class QueryOutput extends React.Component {
 
     if (this.pivotTableRef?._isMounted) {
       this.pivotTableRef.forceUpdate()
+    }
+  }
+
+  onNetworkColumnChange = (networkColumnConfig) => {
+    this.setState({ networkColumnConfig })
+    // Call parent callback if provided
+    if (this.props.onNetworkColumnChange) {
+      this.props.onNetworkColumnChange(networkColumnConfig)
     }
   }
 
@@ -3351,8 +3367,8 @@ export class QueryOutput extends React.Component {
           isResizing={this.props.isResizing || this.state.isResizing}
           isAnimating={this.props.isAnimating}
           isDrilldownChartHidden={this.props.isDrilldownChartHidden}
-          networkColumnConfig={this.props.networkColumnConfig}
-          onNetworkColumnChange={this.props.onNetworkColumnChange}
+          networkColumnConfig={this.state.networkColumnConfig}
+          onNetworkColumnChange={this.onNetworkColumnChange}
           enableDynamicCharting={this.props.enableDynamicCharting}
           tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
           chartTooltipID={this.props.chartTooltipID ?? this.CHART_TOOLTIP_ID}
