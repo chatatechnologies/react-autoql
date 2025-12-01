@@ -177,6 +177,7 @@ export class QueryOutput extends React.Component {
       hiddenLegendLabels: [],
       legendStateByChart: {},
       originalLegendState: this.originalLegendState,
+      networkColumnConfig: props.initialNetworkColumnConfig || null,
     }
     this.updateMaxConstraints()
   }
@@ -203,6 +204,11 @@ export class QueryOutput extends React.Component {
     enableDynamicCharting: PropTypes.bool,
     onTableConfigChange: PropTypes.func,
     onAggConfigChange: PropTypes.func,
+    initialNetworkColumnConfig: PropTypes.shape({
+      sourceColumnIndex: PropTypes.number,
+      targetColumnIndex: PropTypes.number,
+    }),
+    onNetworkColumnChange: PropTypes.func,
     onNoneOfTheseClick: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     onRTValueLabelClick: PropTypes.func,
@@ -291,6 +297,8 @@ export class QueryOutput extends React.Component {
     isEditing: false,
     onTableConfigChange: () => {},
     onAggConfigChange: () => {},
+    initialNetworkColumnConfig: undefined,
+    onNetworkColumnChange: () => {},
     onQueryValidationSelectOption: () => {},
     onErrorCallback: () => {},
     onDrilldownStart: () => {},
@@ -642,6 +650,14 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  onNetworkColumnChange = (networkColumnConfig) => {
+    this.setState({ networkColumnConfig })
+    // Call parent callback if provided
+    if (this.props.onNetworkColumnChange) {
+      this.props.onNetworkColumnChange(networkColumnConfig)
+    }
+  }
+
   onTableConfigChange = (initialized = true) => {
     const tableConfig = _cloneDeep(this.tableConfig)
     const pivotTableConfig = _cloneDeep(this.pivotTableConfig)
@@ -811,6 +827,10 @@ export class QueryOutput extends React.Component {
   }
 
   usePivotDataForChart = () => {
+    // Network graphs always use original data, never pivot data
+    if (this.state?.displayType === DisplayTypes.NETWORK_GRAPH) {
+      return false
+    }
     return this.potentiallySupportsPivot() && !this.potentiallySupportsDatePivot()
   }
 
@@ -3299,6 +3319,7 @@ export class QueryOutput extends React.Component {
     }
 
     const usePivotData = this.usePivotDataForChart()
+
     if (usePivotData && (!this.pivotTableData || !this.pivotTableColumns || !this.pivotTableConfig)) {
       return this.renderMessage('Error: There was no data supplied for this chart')
     }
@@ -3314,8 +3335,7 @@ export class QueryOutput extends React.Component {
     const data = usePivotData ? this.state.visiblePivotRows || this.pivotTableData : this.tableData
     const columns = usePivotData ? this.pivotTableColumns : this.state.columns
 
-    const isPivotDataLimited =
-      this.usePivotDataForChart() && (this.pivotTableRowsLimited || this.pivotTableColumnsLimited)
+    const isPivotDataLimited = usePivotData && (this.pivotTableRowsLimited || this.pivotTableColumnsLimited)
 
     return (
       <ErrorBoundary>
@@ -3347,8 +3367,8 @@ export class QueryOutput extends React.Component {
           isResizing={this.props.isResizing || this.state.isResizing}
           isAnimating={this.props.isAnimating}
           isDrilldownChartHidden={this.props.isDrilldownChartHidden}
-          networkColumnConfig={this.props.networkColumnConfig}
-          onNetworkColumnChange={this.props.onNetworkColumnChange}
+          networkColumnConfig={this.state.networkColumnConfig}
+          onNetworkColumnChange={this.onNetworkColumnChange}
           enableDynamicCharting={this.props.enableDynamicCharting}
           tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
           chartTooltipID={this.props.chartTooltipID ?? this.CHART_TOOLTIP_ID}

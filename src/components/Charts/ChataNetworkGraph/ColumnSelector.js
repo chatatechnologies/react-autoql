@@ -171,7 +171,7 @@ const ColumnSelector = (props) => {
               data-tooltip-id={chartTooltipID}
               data-tooltip-html={sourceTooltipHtml}
             />
-            <g transform='translate(5, 5)' className='source-button-icon'>
+            <g transform='translate(5, 5)' className='source-button-icon' opacity={0}>
               {sourceColumnIcon}
             </g>
           </g>
@@ -209,7 +209,7 @@ const ColumnSelector = (props) => {
               data-tooltip-id={chartTooltipID}
               data-tooltip-html={targetTooltipHtml}
             />
-            <g transform='translate(5, 5)' className='target-button-icon'>
+            <g transform='translate(5, 5)' className='target-button-icon' opacity={0}>
               {targetColumnIcon}
             </g>
           </g>
