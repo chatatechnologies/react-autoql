@@ -49,6 +49,7 @@ export default class ChatMessage extends React.Component {
       isResizable: false,
       isUserResizing: false,
       currentHeight: 400,
+      networkColumnConfig: this.props.initialNetworkColumnConfig || null,
     }
 
     // Minimum height for the message container
@@ -269,6 +270,10 @@ export default class ChatMessage extends React.Component {
     this.setState({ dataConfig: config })
   }
 
+  onNetworkColumnChange = (networkColumnConfig) => {
+    this.setState({ networkColumnConfig })
+  }
+
   renderFetchingFileMessage = () => {
     return (
       <div>
@@ -338,6 +343,8 @@ export default class ChatMessage extends React.Component {
           enableDynamicCharting={this.props.enableDynamicCharting}
           initialTableConfigs={this.state.dataConfig}
           onTableConfigChange={this.updateDataConfig}
+          networkColumnConfig={this.state.networkColumnConfig}
+          onNetworkColumnChange={this.onNetworkColumnChange}
           onNoneOfTheseClick={this.props.onNoneOfTheseClick}
           autoChartAggregations={this.props.autoChartAggregations}
           showQueryInterpretation={false}
