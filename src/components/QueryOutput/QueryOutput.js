@@ -807,6 +807,10 @@ export class QueryOutput extends React.Component {
   }
 
   usePivotDataForChart = () => {
+    // Network graphs always use original data, never pivot data
+    if (this.state?.displayType === DisplayTypes.NETWORK_GRAPH) {
+      return false
+    }
     return this.potentiallySupportsPivot() && !this.potentiallySupportsDatePivot()
   }
 
@@ -3294,6 +3298,7 @@ export class QueryOutput extends React.Component {
     }
 
     const usePivotData = this.usePivotDataForChart()
+
     if (usePivotData && (!this.pivotTableData || !this.pivotTableColumns || !this.pivotTableConfig)) {
       return this.renderMessage('Error: There was no data supplied for this chart')
     }
@@ -3309,8 +3314,7 @@ export class QueryOutput extends React.Component {
     const data = usePivotData ? this.state.visiblePivotRows || this.pivotTableData : this.tableData
     const columns = usePivotData ? this.pivotTableColumns : this.state.columns
 
-    const isPivotDataLimited =
-      this.usePivotDataForChart() && (this.pivotTableRowsLimited || this.pivotTableColumnsLimited)
+    const isPivotDataLimited = usePivotData && (this.pivotTableRowsLimited || this.pivotTableColumnsLimited)
 
     return (
       <ErrorBoundary>
