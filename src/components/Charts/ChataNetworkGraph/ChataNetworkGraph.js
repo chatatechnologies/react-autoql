@@ -857,7 +857,17 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       const container = svg.append('g')
 
       // Add arrow definitions for directed edges
-      svg
+      // Get computed CSS value for PNG export (CSS variables don't work in PNG)
+      // Get from document root to ensure we have the computed value
+      const getComputedCSSValue = (cssVar) => {
+        const root = document.documentElement
+        const computed = window.getComputedStyle(root)
+        const value = computed.getPropertyValue(cssVar).trim()
+        return value || '#999999' // Fallback color if CSS variable not found
+      }
+      const linkColor = getComputedCSSValue('--react-autoql-text-color-placeholder')
+
+      const marker = svg
         .append('defs')
         .append('marker')
         .attr('id', 'arrowhead')
@@ -867,9 +877,12 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         .attr('markerWidth', 6)
         .attr('markerHeight', 6)
         .attr('orient', 'auto')
+
+      marker
         .append('path')
         .attr('d', 'M0,-5L10,0L0,5')
-        .attr('fill', 'var(--react-autoql-text-color-placeholder)')
+        .attr('class', 'network-link-arrowhead')
+        .attr('fill', linkColor) // Attribute for PNG export
         .style('stroke', 'none')
 
       // Add zoom behavior
@@ -1035,8 +1048,8 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         .data(links)
         .enter()
         .append('line')
-        .attr('class', (d) => `link visible-link ${d.edge_type}`)
-        .style('stroke', (d) => 'var(--react-autoql-text-color-placeholder)')
+        .attr('class', (d) => `link visible-link network-link ${d.edge_type}`)
+        .attr('stroke', linkColor) // Attribute for PNG export
         .style('stroke-width', (d) => d.originalStrokeWidth)
         .style('outline', 'none')
         .style('pointer-events', 'none') // Let hover layer handle pointer events
