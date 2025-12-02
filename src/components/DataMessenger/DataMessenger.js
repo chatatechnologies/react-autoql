@@ -843,6 +843,7 @@ export class DataMessenger extends React.Component {
           scope={this.props.scope}
           customToolbarOptions={this.props.customToolbarOptions}
           enableCustomColumns={this.props.enableCustomColumns}
+          disableAggregationMenu={this.props.disableAggregationMenu}
           enableQueryInputTopics={this.props.enableQueryInputTopics}
         />
       </ErrorBoundary>
