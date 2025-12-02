@@ -1280,7 +1280,7 @@ export class DashboardTile extends React.Component {
         onPageSizeChange: this.onPageSizeChange,
         onBucketSizeChange: this.onBucketSizeChange,
         bucketSize: this.props.tile.bucketSize,
-        networkColumnConfig: this.props.tile.networkColumnConfig,
+        initialNetworkColumnConfig: this.props.tile.networkColumnConfig,
         onNetworkColumnChange: this.onNetworkColumnChange,
         initialFormattedTableParams: (() => {
           const feReqFilters = this.props.tile?.queryResponse?.data?.data?.fe_req?.filters
