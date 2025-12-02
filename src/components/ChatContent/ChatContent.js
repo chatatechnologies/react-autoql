@@ -501,6 +501,7 @@ export default class ChatContent extends React.Component {
                     onMessageResize={this.onMessageResize}
                     enableCustomColumns={this.props.enableCustomColumns}
                     disableAggregationMenu={this.props.disableAggregationMenu}
+                    allowCustomColumnsOnDrilldown={this.props.allowCustomColumnsOnDrilldown}
                     preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
                   />
                 )

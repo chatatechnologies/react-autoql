@@ -163,7 +163,14 @@ const AddColumnBtnWithoutRef = forwardRef((props, ref) => {
   })
   const availableHiddenColumns = getHiddenColumns(queryResponse?.data?.data?.columns)
 
-  if (!availableSelectColumns?.length && !availableHiddenColumns?.length && !enableCustomOption()) {
+  // Force render when allowCustom is true and custom option is enabled (for drilldowns with no available selects)
+  const shouldRender =
+    availableSelectColumns?.length ||
+    availableHiddenColumns?.length ||
+    enableCustomOption() ||
+    (allowCustom && !disableAddCustomColumnOption)
+
+  if (!shouldRender) {
     return null
   }
 

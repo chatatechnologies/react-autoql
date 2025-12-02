@@ -365,6 +365,7 @@ export default class ChatMessage extends React.Component {
           onUpdateFilterResponse={this.onUpdateFilterResponse}
           enableCustomColumns={isDataPreview ? false : this.props.enableCustomColumns}
           disableAggregationMenu={this.props.disableAggregationMenu}
+          allowCustomColumnsOnDrilldown={this.props.allowCustomColumnsOnDrilldown}
           preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
         />
       )
