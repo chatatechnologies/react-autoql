@@ -570,7 +570,6 @@ export default class ChataTable extends React.Component {
     if (this.hasSetInitialData || data?.length || !this.props.response?.data?.data?.rows?.length) {
       this.hasSetInitialData = true
       this.isSettingInitialData = false
-      this._setInitialDataTime = Date.now()
       this.clearLoadingIndicators()
     }
   }
@@ -659,7 +658,7 @@ export default class ChataTable extends React.Component {
         this.state.tabulatorMounted && Date.now() - (this._setFiltersTime || 0) < DEBOUNCE_MS
       const hasRecentlySetInitialData = Date.now() - (this._setInitialDataTime || 0) < DEBOUNCE_MS
 
-      if (!this.hasSetInitialData || !this._isMounted || hasRecentlySetHeaderFilters || hasRecentlySetInitialData) {
+      if (!this.hasSetInitialData || !this._isMounted || hasRecentlySetHeaderFilters) {
         return initialData
       }
 

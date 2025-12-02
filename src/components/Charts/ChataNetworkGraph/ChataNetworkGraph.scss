@@ -272,6 +272,16 @@
   display: block;
   max-width: 100%;
   height: auto;
+
+  // Links - CSS takes priority for theme changes, but attributes ensure PNG export works
+  .network-link {
+    stroke: var(--react-autoql-text-color-placeholder) !important;
+  }
+
+  // Arrowheads - CSS takes priority for theme changes, but attributes ensure PNG export works
+  .network-link-arrowhead {
+    fill: var(--react-autoql-text-color-placeholder) !important;
+  }
 }
 
 @media (max-width: 768px) {
