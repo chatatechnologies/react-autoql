@@ -70,6 +70,7 @@ import {
   formatSortersForTabulator,
   DisplayTypes,
   createFilterFunction,
+  extractOperatorFromValue,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -85,39 +86,6 @@ import { withTheme } from '../../theme'
 import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
 
 import './QueryOutput.scss'
-
-const extractOperatorFromValue = (value) => {
-  if (typeof value !== 'string') return null
-  const m = value.trim().match(/^([<>=!]=?)\s*(.*)$/)
-  return m ? { operator: m[1], cleanValue: m[2] } : null
-}
-
-// Apply sorters to local rows (when row count < TABULATOR_LOCAL_ROW_LIMIT)
-const sortLocalData = (response, columns, initialFormattedTableParams) => {
-  const rows = response?.data?.data?.rows || []
-  if (!rows.length || rows.length >= TABULATOR_LOCAL_ROW_LIMIT || !Array.isArray(columns) || !columns.length) return
-
-  const sorters = Array.isArray(initialFormattedTableParams?.sorters) ? initialFormattedTableParams.sorters : []
-
-  if (sorters.length) {
-    // Apply sorters in order; reduce makes the flow explicit and easier to reason about
-    const sorted = sorters.reduce((accRows, s) => {
-      const idx = columns.findIndex((c) => c.field === s.field)
-      if (idx >= 0) return sortDataByColumn(accRows, columns, idx, s.dir || 'asc')
-      return accRows
-    }, rows)
-
-    response.data.data.rows = sorted
-    return
-  }
-
-  // Fallback: sort by first visible column
-  const firstVisible = columns.find((c) => c.is_visible !== false)
-  if (firstVisible) {
-    const idx = columns.findIndex((c) => c.field === firstVisible.field)
-    if (idx >= 0) response.data.data.rows = sortDataByColumn(rows, columns, idx, 'asc')
-  }
-}
 
 export class QueryOutput extends React.Component {
   constructor(props) {
@@ -167,9 +135,6 @@ export class QueryOutput extends React.Component {
 
     // Supported display types may have changed after initial data generation
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
-
-    // Sort data if data is local
-    sortLocalData(response, columns, props?.initialFormattedTableParams)
 
     const displayType = this.getDisplayTypeFromInitial(props)
     if (props.onDisplayTypeChange) {
