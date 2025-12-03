@@ -69,6 +69,8 @@ class DashboardWithoutTheme extends React.Component {
     executeOnMount: PropTypes.bool,
     dataPageSize: PropTypes.number,
     executeOnStopEditing: PropTypes.bool,
+    disableAggregationMenu: PropTypes.bool,
+    allowCustomColumnsOnDrilldown: PropTypes.bool,
     isEditing: PropTypes.bool,
     isEditable: PropTypes.bool,
     notExecutedText: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
@@ -816,6 +818,8 @@ class DashboardWithoutTheme extends React.Component {
             autoChartAggregations={this.props.autoChartAggregations}
             onDrilldownStart={this.onDrilldownStart}
             onDrilldownEnd={this.onDrilldownEnd}
+            disableAggregationMenu={this.props.disableAggregationMenu}
+            allowCustomColumnsOnDrilldown={this.props.allowCustomColumnsOnDrilldown}
             onCSVDownloadStart={this.props.onCSVDownloadStart}
             onCSVDownloadProgress={this.props.onCSVDownloadProgress}
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
