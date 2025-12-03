@@ -121,6 +121,8 @@ export class DashboardTile extends React.Component {
     deleteTile: PropTypes.func,
     dataPageSize: PropTypes.number,
     queryResponse: PropTypes.shape({}),
+    disableAggregationMenu: PropTypes.bool,
+    allowCustomColumnsOnDrilldown: PropTypes.bool,
     notExecutedText: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
     onErrorCallback: PropTypes.func,
     onSuccessCallback: PropTypes.func,
@@ -1282,6 +1284,8 @@ export class DashboardTile extends React.Component {
         bucketSize: this.props.tile.bucketSize,
         initialNetworkColumnConfig: this.props.tile.networkColumnConfig,
         onNetworkColumnChange: this.onNetworkColumnChange,
+        disableAggregationMenu: this.props.disableAggregationMenu,
+        allowCustomColumnsOnDrilldown: this.props.allowCustomColumnsOnDrilldown,
         initialFormattedTableParams: (() => {
           const feReqFilters = this.props.tile?.queryResponse?.data?.data?.fe_req?.filters
           const filtersToUse = feReqFilters?.length > 0 ? feReqFilters : this.props.tile?.tableFilters
@@ -1377,6 +1381,8 @@ export class DashboardTile extends React.Component {
         onBucketSizeChange: this.onSecondBucketSizeChange,
         onColumnChange: this.onSecondColumnChange,
         bucketSize: this.props.tile.secondBucketSize,
+        disableAggregationMenu: this.props.disableAggregationMenu,
+        allowCustomColumnsOnDrilldown: this.props.allowCustomColumnsOnDrilldown,
         initialFormattedTableParams: (() => {
           const queryResponse = this.props.tile?.secondQueryResponse || this.props.tile?.queryResponse
           const feReqFilters = queryResponse?.data?.data?.fe_req?.filters
