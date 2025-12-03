@@ -247,8 +247,6 @@ export class QueryOutput extends React.Component {
     onResize: PropTypes.func,
     localRTFilterResponse: PropTypes.shape({}),
     enableCustomColumns: PropTypes.bool,
-    disableAggregationMenu: PropTypes.bool,
-    allowCustomColumnsOnDrilldown: PropTypes.bool,
     preferRegularTableInitialDisplayType: PropTypes.bool,
     drilldownFilters: PropTypes.arrayOf(PropTypes.shape({})),
     enableChartControls: PropTypes.bool,
@@ -320,8 +318,6 @@ export class QueryOutput extends React.Component {
     onResize: () => {},
     localRTFilterResponse: undefined,
     enableCustomColumns: true,
-    disableAggregationMenu: false,
-    allowCustomColumnsOnDrilldown: false,
     preferRegularTableInitialDisplayType: false,
     drilldownFilters: undefined,
     enableChartControls: true,
@@ -3183,12 +3179,8 @@ export class QueryOutput extends React.Component {
   renderAddColumnBtn = () => {
     const isSingleValue = isSingleValueResponse(this.queryResponse)
     const allColumnsHidden = areAllColumnsHidden(this.getColumns())
-    const isDrilldownResponse = isDrilldown(this.queryResponse)
-    // Allow button to show on drilldowns if allowCustomColumnsOnDrilldown is true
-    const shouldAllowColumnAddition =
-      this.props.allowColumnAddition || (isDrilldownResponse && this.props.allowCustomColumnsOnDrilldown)
 
-    if (!allColumnsHidden && shouldAllowColumnAddition && (this.state.displayType === 'table' || isSingleValue)) {
+    if (!allColumnsHidden && this.props.allowColumnAddition && (this.state.displayType === 'table' || isSingleValue)) {
       return (
         <AddColumnBtn
           queryResponse={this.queryResponse}
@@ -3196,10 +3188,7 @@ export class QueryOutput extends React.Component {
           tooltipID={this.props.tooltipID}
           onAddColumnClick={this.onAddColumnClick}
           onCustomClick={this.onAddColumnClick}
-          disableAddCustomColumnOption={
-            !this.props.enableCustomColumns || (isDrilldownResponse && !this.props.allowCustomColumnsOnDrilldown)
-          }
-          disableAggregationMenu={this.props.disableAggregationMenu}
+          disableAddCustomColumnOption={!this.props.enableCustomColumns || isDrilldown(this.queryResponse)}
           className={isSingleValue ? 'single-value-add-col-btn' : 'table-add-col-btn'}
           isAddingColumn={this.state.isAddingColumn}
         />
