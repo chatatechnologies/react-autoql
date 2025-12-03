@@ -17,10 +17,16 @@ export class SummaryStatsCalculator {
       props.columns?.forEach((column, columnIndex) => {
         if (column.mutator) return
 
+        // Use both index AND field as keys for backwards compatibility and easier lookup
+        // IMPORTANT: Use string keys consistently for both index and field
         if (isColumnSummable(column)) {
-          stats[columnIndex] = this.calculateNumberStats(rows, columnIndex, column)
+          const columnStats = this.calculateNumberStats(rows, columnIndex, column)
+          stats[String(columnIndex)] = columnStats  // String index
+          stats[String(column.field)] = columnStats  // String field
         } else if (column?.type === ColumnTypes.DATE) {
-          stats[columnIndex] = this.calculateDateStats(rows, columnIndex, column)
+          const columnStats = this.calculateDateStats(rows, columnIndex, column)
+          stats[String(columnIndex)] = columnStats  // String index
+          stats[String(column.field)] = columnStats  // String field
         }
       })
     } catch (error) {

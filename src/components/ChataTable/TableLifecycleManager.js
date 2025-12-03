@@ -46,12 +46,6 @@ export class TableLifecycleManager {
       50,
     )
   }
-
-  safeForceUpdate() {
-    if (this.component._isMounted) {
-      this.component.forceUpdate()
-    }
-  }
 }
 
 export class TimeoutManager {

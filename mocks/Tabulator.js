@@ -62,6 +62,18 @@ class ColumnComponent {
   getFormatter() {
     return this.definition.formatter
   }
+
+  getElement() {
+    // Provide a minimal DOM-like object with offsetWidth for table layout code
+    if (!this._element) {
+      this._element = { offsetWidth: Number(this.definition?.width) || 100 }
+    }
+    return this._element
+  }
+
+  getDefinition() {
+    return this.definition
+  }
 }
 
 class RowComponent {
@@ -271,6 +283,11 @@ class Tabulator {
     this.element.appendChild(table)
 
     this.eventSubscription.tableBuilt?.()
+  }
+
+  // Test shim - expose a Tabulator-style API for getting column components
+  getColumns() {
+    return this.columns
   }
 
   _buildTableCell(dataItem, columnComponent, cellComponent) {

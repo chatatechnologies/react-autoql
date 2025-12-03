@@ -113,6 +113,8 @@ export default class ChataTable extends React.Component {
       initialFilter: undefined, // Let getRows do initial sorting and filtering
       progressiveLoadScrollMargin: 50, // Trigger next ajax load when scroll bar is 800px or less from the bottom of the table.
       movableColumns: true,
+      smoothScroll: true,
+      touchUndoSize: 5,
       downloadEncoder: function (fileContents, mimeType) {
         //fileContents - the unencoded contents of the file
         //mimeType - the suggested mime type for the output
@@ -365,6 +367,9 @@ export default class ChataTable extends React.Component {
   componentDidMount = () => {
     this._isMounted = true
     this._setFiltersTime = Date.now() // Track when component mounted to avoid duplicate requests
+
+    this.initializeHelpers()
+
     if (!this.props.autoHeight) {
       this.initialTableHeight = this.tabulatorContainer?.clientHeight
       this.lockedTableHeight = this.initialTableHeight
@@ -473,7 +478,7 @@ export default class ChataTable extends React.Component {
         this.setTableHeight()
       }
     }
-    this.summaryStats = this.calculateSummaryStats(this.props)
+    this.updateSummaryStats(this.props)
   }
 
   componentWillUnmount = () => {
@@ -481,12 +486,6 @@ export default class ChataTable extends React.Component {
       this._isMounted = false
       this.timeoutManager.clearAllTimeouts()
       clearTimeout(this.setStateTimeout)
-
-      // Clear any pending filter check timeouts to prevent state updates after unmount
-      if (this._filterCheckTimeout) {
-        clearTimeout(this._filterCheckTimeout)
-        this._filterCheckTimeout = null
-      }
 
       this.cancelCurrentRequest()
 
@@ -681,6 +680,7 @@ export default class ChataTable extends React.Component {
     if (useInfiniteScroll) {
       this.setInfiniteScroll(true)
     }
+    this.updateSummaryStats(this.props)
 
     return this.ref?.updateData(data)
   }
@@ -763,6 +763,10 @@ export default class ChataTable extends React.Component {
     if (this.isSorting) {
       this.isSorting = false
       this.setLoading(false)
+
+      this.updateSummaryStats(this.props)
+
+      this.scheduleTooltipRefresh(100)
     }
   }
 
@@ -820,6 +824,7 @@ export default class ChataTable extends React.Component {
     }
 
     this.setFilterBadgeClasses()
+    this.scheduleTooltipRefresh(100)
   }
 
   onDataProcessed = (data) => {
@@ -1024,12 +1029,12 @@ export default class ChataTable extends React.Component {
 
         this.props.onTableParamsChange?.(params, nextTableParamsFormatted)
 
-        // If columns were reordered locally, align the incoming server data to the current visual order
+        // Reorder server-side data to match visual column order (client-side is already ordered)
         let alignedResponse = responseWrapper
         try {
-          // Use stored mapping if available, fallback to columnMapping
           const mappingToUse = this.storedColumnMapping || this.columnMapping
-          if (Array.isArray(mappingToUse) && mappingToUse.length > 0) {
+          const isServerSideData = this.useInfiniteScroll || typeof params.newColumns !== 'undefined'
+          if (isServerSideData && Array.isArray(mappingToUse) && mappingToUse.length > 0) {
             alignedResponse = this.reorderResponseData(responseWrapper, mappingToUse)
           }
         } catch (e) {
@@ -1067,22 +1072,11 @@ export default class ChataTable extends React.Component {
   }
 
   clientSortAndFilterData = (params) => {
-    // Use FE for sorting and filtering
     let response = _cloneDeep(this.props.response)
-    let data = _cloneDeep(this.originalQueryData)
+    let data = this.props.pivot
+      ? _cloneDeep(this.originalQueryData)
+      : _cloneDeep(this.props.response?.data?.data?.rows || this.originalQueryData)
 
-    // // Apply column reordering to match the response data structure
-    // if (this.columnMapping && this.columnMapping.length > 0) {
-    //   data = data.map((row) => {
-    //     const newRow = []
-    //     this.columnMapping.forEach((originalIndex) => {
-    //       newRow.push(row[originalIndex])
-    //     })
-    //     return newRow
-    //   })
-    // }
-
-    // // Filters - use the column index directly since we've already updated them in onColumnMoved
     if (this.props.pivot) {
       if (params?.orders?.length) {
         const primaryOrder = params.orders[0]
@@ -1098,7 +1092,6 @@ export default class ChataTable extends React.Component {
           sortColumnIndex = this.props.columns.findIndex((col) => col.id === primaryOrder.id)
         }
 
-        // handles sorting by column index/field for pivot tables
         if (sortColumnIndex !== undefined && sortColumnIndex !== -1) {
           const sortDirection = primaryOrder.sort === 'DESC' ? 'desc' : 'asc'
           data = sortDataByColumn(data, this.props.columns, sortColumnIndex, sortDirection)
@@ -1119,7 +1112,6 @@ export default class ChataTable extends React.Component {
       params.tableFilters.forEach((filter) => {
         const column = this.props.columns.find((col) => col.id === filter.id)
         if (column) {
-          // Use the column's current index which was updated in onColumnMoved
           data = filterDataByColumn(data, this.props.columns, column.index, filter.value, filter.operator)
         }
       })
@@ -1128,11 +1120,9 @@ export default class ChataTable extends React.Component {
     // Update filterCount for local filtering
     this.filterCount = data?.length || 0
 
-    // Sorters - use the column index directly since we've already updated them in onColumnMoved
     if (params.orders?.length) {
       const column = this.props.columns.find((col) => col.id === params?.orders[0]?.id)
       if (column) {
-        // Use the column's current index which was updated in onColumnMoved
         const sortDirection = params.orders[0].sort === 'DESC' ? 'desc' : 'asc'
         data = sortDataByColumn(data, this.props.columns, column.index, sortDirection)
       }
@@ -1140,11 +1130,6 @@ export default class ChataTable extends React.Component {
 
     response.data.data.rows = data
     response.data.data.count_rows = data.length
-
-    // If columns were reordered, we need to update the response columns too
-    if (this.columnMapping && this.columnMapping.length > 0 && response.data?.data?.columns) {
-      response.data.data.columns = this.columnMapping.map((originalIndex) => response.data.data.columns[originalIndex])
-    }
 
     setTimeout(() => {
       this.updateSummaryStats({
@@ -1259,15 +1244,14 @@ export default class ChataTable extends React.Component {
   }
 
   ajaxResponseFunc = (props, response) => {
-    const modResponse = { data: response?.rows ?? [], last_page: response?.last_page ?? this.totalPages }
+    const isLastPage = (response?.rows?.length ?? 0) < this.pageSize
+    const modResponse = { data: response?.rows ?? [], last_page: isLastPage }
 
     if (response) {
       if (this.tableParams?.page > 1) {
         // Only restore redraw for new page - doing this for filter/sort will reset the scroll value
         this.ref?.restoreRedraw()
       }
-
-      const isLastPage = (response?.rows?.length ?? 0) < this.pageSize
 
       if (isLastPage !== this.state.isLastPage && this._isMounted) {
         this.setState({ isLastPage })
@@ -1404,66 +1388,141 @@ export default class ChataTable extends React.Component {
   }
 
   setHeaderInputEventListeners = (cols) => {
-    const columns = cols ?? this.props.columns
-    if (!columns) {
+    // Prevent duplicate calls if already in progress
+    if (this._settingEventListeners) {
       return
     }
 
-    columns.forEach((col, i) => {
-      const inputElement = document.querySelector(
-        `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"] .tabulator-col-content input`,
-      )
+    const columns = cols ?? this.props.columns
+    if (!columns?.length) {
+      return
+    }
 
-      const headerElement = document.querySelector(
-        `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"]:not(.tabulator-col-group) .tabulator-col-title-holder`,
-      )
+    this._settingEventListeners = true
 
-      if (headerElement) {
-        headerElement.setAttribute('data-tooltip-id', `selectable-table-column-header-tooltip-${this.TABLE_ID}`)
-        headerElement.setAttribute('data-tooltip-content', JSON.stringify({ ...col, index: i }))
+    let pivotSummaryStats = null
+    if (this.props.pivot && this.props.data && this.props.data.length > 0) {
+      pivotSummaryStats = columns.map((col, i) => {
+        if (i === 0) return null
+        const values = this.props.data.map((row) => row[i])
+        const sum = values.reduce((acc, val) => {
+          const num = typeof val === 'number' ? val : parseFloat(val)
+          return isNaN(num) ? acc : acc + num
+        }, 0)
+        return sum
+      })
+    }
 
-        if (!this.props.pivot) {
-          headerElement.addEventListener('contextmenu', (e) => this.headerContextMenuClick(e, col))
+    try {
+      columns.forEach((col, i) => {
+        if (this.props.pivot && pivotSummaryStats) {
+          if (!this.summaryStats) this.summaryStats = {}
+          this.summaryStats[i] = pivotSummaryStats[i]
         }
+        this.setupColumnHeader(col, i)
+        this.setupColumnInput(col, i)
+      })
+    } finally {
+      this._settingEventListeners = false
+    }
+  }
+
+  findInputElement = (fieldRef, index) => {
+    if (!this.ref?.tabulator) {
+      return null
+    }
+
+    try {
+      // Try to get column by field reference first
+      const column = this.ref.tabulator.getColumn(fieldRef)
+      if (column && typeof column.getElement === 'function') {
+        const columnElement = column.getElement()
+        return columnElement?.querySelector('.tabulator-col-content input') || null
       }
 
-      if (inputElement) {
-        inputElement.removeEventListener('keydown', this.inputKeydownListener)
-        inputElement.addEventListener('keydown', this.inputKeydownListener)
-
-        const clearBtn = document.querySelector(`#react-autoql-clear-btn-${this.TABLE_ID}-${col.field}`)
-        if (!clearBtn) {
-          this.renderHeaderInputClearBtn(inputElement, col)
-        }
-
-        if (col.type === ColumnTypes.DATE && !col.pivot) {
-          // Open Calendar Picker when user clicks on this field
-          inputElement.removeEventListener('click', (e) => this.inputDateClickListener(e, col))
-          inputElement.addEventListener('click', (e) => this.inputDateClickListener(e, col))
-
-          // Do not allow user to type in this field
-          const keyboardEvents = ['keypress', 'keydown', 'keyup']
-          keyboardEvents.forEach((evt) => {
-            inputElement.removeEventListener(evt, this.inputDateKeypressListener)
-            inputElement.addEventListener(evt, this.inputDateKeypressListener)
-          })
-        }
+      // Fallback: get column by index if field reference doesn't work
+      const allColumns = this.ref.tabulator.getColumns()
+      if (allColumns && allColumns[index] && typeof allColumns[index].getElement === 'function') {
+        const columnElement = allColumns[index].getElement()
+        return columnElement?.querySelector('.tabulator-col-content input') || null
       }
-    })
+    } catch (error) {
+      // Silent fallback to DOM query if Tabulator API fails
+    }
+
+    return document.querySelector(
+      `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${fieldRef}"] .tabulator-col-content input`,
+    )
+  }
+
+  attachInputListeners = (inputElement, col) => {
+    // Remove existing listeners to prevent duplicates
+    inputElement.removeEventListener('keydown', this.inputKeydownListener)
+    inputElement.addEventListener('keydown', this.inputKeydownListener)
+
+    if (col.type === ColumnTypes.DATE && !col.pivot) {
+      inputElement.removeEventListener('click', (e) => this.inputDateClickListener(e, col))
+      inputElement.addEventListener('click', (e) => this.inputDateClickListener(e, col))
+
+      const keyboardEvents = ['keypress', 'keydown', 'keyup']
+      keyboardEvents.forEach((evt) => {
+        inputElement.removeEventListener(evt, this.inputDateKeypressListener)
+        inputElement.addEventListener(evt, this.inputDateKeypressListener)
+      })
+    }
+  }
+
+  ensureClearButton = (inputElement, col) => {
+    const clearBtn = document.querySelector(`#react-autoql-clear-btn-${this.TABLE_ID}-${col.field}`)
+    if (!clearBtn) {
+      this.renderHeaderInputClearBtn(inputElement, col)
+    }
   }
 
   setFilterBadgeClasses = () => {
-    if (this._isMounted && this.state.tabulatorMounted) {
-      this.ref?.tabulator?.getColumns()?.forEach((column) => {
-        const isFiltering = !!this.tableParams?.filter?.find((filter) => filter.field === column.getField())
-        const columnElement = column?.getElement()
+    if (!this._isMounted || !this.state.tabulatorMounted || !this.ref?.tabulator) {
+      return
+    }
 
-        if (isFiltering) {
-          columnElement?.classList.add('is-filtered')
-        } else {
-          columnElement?.classList.remove('is-filtered')
+    try {
+      const activeFilters = {}
+      if (this.tableParams?.filter) {
+        this.tableParams.filter.forEach((filter) => {
+          if (filter.field) {
+            activeFilters[filter.field] = true
+          }
+        })
+      }
+
+      const columns = this.ref.tabulator.getColumns()
+      if (!columns || !Array.isArray(columns)) {
+        return
+      }
+
+      columns.forEach((column) => {
+        if (!column || typeof column.getField !== 'function') return
+
+        try {
+          const field = column.getField()
+          const isFiltering = !!activeFilters[field]
+
+          const getElement = column.getElement
+          if (typeof getElement !== 'function') return
+
+          const columnElement = getElement.call(column)
+          if (!columnElement || !columnElement.classList) return
+
+          if (isFiltering) {
+            columnElement.classList.add('is-filtered')
+          } else {
+            columnElement.classList.remove('is-filtered')
+          }
+        } catch (err) {
+          // Silent fail for individual column to prevent breaking the entire table
         }
       })
+    } catch (err) {
+      // Silent fail to prevent breaking the entire component
     }
   }
 
@@ -1532,15 +1591,15 @@ export default class ChataTable extends React.Component {
         }
 
         // Final check after all filters set - with cleanup
-        this._filterCheckTimeout = setTimeout(() => {
-          this._filterCheckTimeout = null
-        }, 10)
+        this.setTimeout('filterCheck', () => {}, 10)
       } catch (error) {
         console.error('CHATATABLE - error setting filters:', error)
       }
     }
 
     this.setFilterBadgeClasses()
+
+    this.scheduleTooltipRefresh(100)
   }
 
   onDateRangeSelectionApplied = () => {
@@ -1922,8 +1981,22 @@ export default class ChataTable extends React.Component {
 
         return columns
       } else if (this.props.columns?.length) {
-        const filteredColumns = this.props.columns.map((col) => {
-          const newCol = {}
+        const filteredColumns = this.props.columns.map((col, index) => {
+          // Create a safe copy of the column with essential properties
+          const newCol = {
+            index,
+          }
+
+          if (col.field) {
+            newCol.field = col.field
+          } else if (col.name) {
+            newCol.field = col.name.replace(/\s+/g, '_').toLowerCase()
+          } else if (col.display_name) {
+            newCol.field = col.display_name.replace(/\s+/g, '_').toLowerCase()
+          } else {
+            newCol.field = `column_${index}`
+          }
+
           Object.keys(col).forEach((option) => {
             if (columnOptionsList.includes(option)) {
               newCol[option] = col[option]
@@ -2012,15 +2085,67 @@ export default class ChataTable extends React.Component {
     const newResponse = _cloneDeep(response)
 
     if (newResponse.data?.data?.rows) {
+      // Build a mapping from the original column index (props.columns index)
+      // to the response row index. Prefer exact index, otherwise try to
+      // match by column name/display_name/field. This keeps rows aligned
+      // even when response.columns ordering or presence differs.
+      const responseColumns = newResponse.data.data.columns || []
+      const responseIndexForOriginal = columnIndexMapping.map((originalIndex) => {
+        if (typeof originalIndex === 'number' && responseColumns[originalIndex]) {
+          return originalIndex
+        }
+        const propsCol = this.props?.columns?.[originalIndex]
+        if (!propsCol) return originalIndex
+        const matchIndex = responseColumns.findIndex((c) => {
+          return (
+            c?.name === propsCol.name ||
+            c?.display_name === propsCol.display_name ||
+            c?.field === propsCol.field ||
+            c?.name === propsCol.field ||
+            String(c?.field) === String(originalIndex) ||
+            String(c?.name) === String(propsCol.name)
+          )
+        })
+        return matchIndex >= 0 ? matchIndex : originalIndex
+      })
+
       newResponse.data.data.rows = newResponse.data.data.rows.map((row) =>
-        columnIndexMapping.map((originalIndex) => row[originalIndex]),
+        responseIndexForOriginal.map((respIdx) => row[respIdx]),
       )
     }
 
     if (newResponse.data?.data?.columns) {
-      newResponse.data.data.columns = columnIndexMapping.map(
-        (originalIndex) => newResponse.data.data.columns[originalIndex],
-      )
+      const responseColumns = newResponse.data.data.columns || []
+      // Rebuild response.columns in visual order. For each original index
+      // try to use the response column at that index, otherwise match by
+      // field/name/display_name to find the correct response column.
+      newResponse.data.data.columns = columnIndexMapping.map((originalIndex) => {
+        if (typeof originalIndex === 'number' && responseColumns[originalIndex]) return responseColumns[originalIndex]
+        const propsCol = this.props?.columns?.[originalIndex]
+        if (propsCol) {
+          const match = responseColumns.find((c) => {
+            return (
+              c?.name === propsCol.name ||
+              c?.display_name === propsCol.display_name ||
+              c?.field === propsCol.field ||
+              String(c?.field) === String(propsCol.field) ||
+              String(c?.name) === String(propsCol.name)
+            )
+          })
+          if (match) return match
+          // If no match, fall back to constructing a minimal response-shaped object
+          return {
+            display_name: propsCol.display_name || propsCol.title || propsCol.field || String(originalIndex),
+            name: propsCol.name || propsCol.field || String(originalIndex),
+            type: propsCol.type || 'STRING',
+            is_visible: typeof propsCol.visible === 'boolean' ? propsCol.visible : true,
+            groupable: propsCol.groupable,
+            aggType: propsCol.aggType,
+          }
+        }
+        // Last resort: return a minimal placeholder object
+        return { display_name: String(originalIndex), name: String(originalIndex), type: 'STRING', is_visible: true }
+      })
     }
 
     return newResponse
@@ -2093,6 +2218,7 @@ export default class ChataTable extends React.Component {
       this.persistentColumnMapping = [...mapping]
       this.savePersistedMappings(mapping, this.storedColumnMapping)
       const newResponse = this.reorderResponseData(this.props.response, mapping)
+
       this.tableParams.sort = []
       if (newResponse && !Array.isArray(newResponse)) {
         this.props.updateColumnsAndData(newResponse)
@@ -2104,8 +2230,14 @@ export default class ChataTable extends React.Component {
       console.error('Error updating column order:', error)
     }
     if (this.props.keepScrolledRight) this.scrollToRight()
-    this.setHeaderInputEventListeners()
-    this.lifecycleManager.safeForceUpdate()
+    // If the updateColumnsAndData call triggered an unmount of this
+    // component (common when parent replaces the table), avoid
+    // performing further work that may call setState on an
+    // unmounted component. Check `_isMounted` before proceeding.
+    if (this._isMounted) {
+      this.setHeaderInputEventListeners()
+      this.forceUpdate()
+    }
   }
 
   onColumnResized = (column) => {
@@ -2185,123 +2317,32 @@ export default class ChataTable extends React.Component {
 
   renderHeaderTooltipContent = ({ content }) => {
     try {
-      let column
-      try {
-        column = JSON.parse(content)
-      } catch (error) {
-        return null
-      }
+      const column = this.parseTooltipContent(content)
+      if (!column) return null
 
-      if (!column) {
-        return null
-      }
-
-      const name = column.display_name
-      const altName = column.title
-      const type = COLUMN_TYPES[column?.type]?.description
-      const icon = COLUMN_TYPES[column?.type]?.icon
-
-      const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
-      const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(MAX_DATA_PAGE_SIZE)
-
-      const stats = this.summaryStats[column.index]
-
-      return (
-        <div>
-          <div className='selectable-table-tooltip-title'>
-            <span>
-              {name}
-              {altName !== name ? ` (${altName})` : ''}
-            </span>
-          </div>
-          {!!type && (
-            <div className='selectable-table-tooltip-section selectable-table-tooltip-subtitle'>
-              {!!icon && <Icon type={icon} />}
-              <span>{type}</span>
-            </div>
-          )}
-          {!!column.fnSummary && (
-            <div className='selectable-table-tooltip-section'>
-              <span>
-                <strong>Custom formula:</strong>
-                <span> = {column.fnSummary}</span>
-              </span>
-            </div>
-          )}
-          {(column?.type === ColumnTypes.QUANTITY ||
-            column?.type === ColumnTypes.DOLLAR_AMT ||
-            column?.type === ColumnTypes.DATE) &&
-            stats &&
-            (this.useInfiniteScroll && isDataLimited(this.props.response) ? (
-              <div className='selectable-table-tooltip-section'>
-                <span>
-                  <Icon type='warning' /> {`Summary stats unavailable - ${DATASET_TOO_LARGE}`}
-                </span>
-              </div>
-            ) : (
-              <>
-                {(column?.type === ColumnTypes.QUANTITY || column?.type === ColumnTypes.DOLLAR_AMT) && (
-                  <div className='selectable-table-tooltip-section'>
-                    <span>
-                      <strong>Total: </strong>
-                      <span>
-                        {formatElement({
-                          element: stats?.sum,
-                          column,
-                          config: getDataFormatting(this.props.dataFormatting),
-                        })}
-                      </span>
-                    </span>
-                  </div>
-                )}
-                {(column?.type === ColumnTypes.QUANTITY || column?.type === ColumnTypes.DOLLAR_AMT) && (
-                  <div className='selectable-table-tooltip-section'>
-                    <span>
-                      <strong>Average: </strong>
-                      <span>
-                        {formatElement({
-                          element: stats?.avg,
-                          column,
-                          config: getDataFormatting(this.props.dataFormatting),
-                        })}
-                      </span>
-                    </span>
-                  </div>
-                )}
-                {column?.type === ColumnTypes.DATE && stats?.min !== null && (
-                  <div className='selectable-table-tooltip-section'>
-                    <span>
-                      <strong>Earliest: </strong>
-                      <span>
-                        {formatElement({
-                          element: stats.min,
-                          column,
-                          config: getDataFormatting(this.props.dataFormatting),
-                        })}
-                      </span>
-                    </span>
-                  </div>
-                )}
-                {column?.type === ColumnTypes.DATE && stats?.max !== null && (
-                  <div className='selectable-table-tooltip-section'>
-                    <span>
-                      <strong>Latest: </strong>
-                      <span>
-                        {formatElement({
-                          element: stats.max,
-                          column,
-                          config: getDataFormatting(this.props.dataFormatting),
-                        })}
-                      </span>
-                    </span>
-                  </div>
-                )}
-              </>
-            ))}
-        </div>
-      )
+      const tooltipProps = this.extractTooltipProps(column)
+      return this.renderTooltipSections(tooltipProps)
     } catch (error) {
+      console.error('Error in renderHeaderTooltipContent:', error)
       return null
+    }
+  }
+
+  parseTooltipContent = (content) => {
+    if (!content) return null
+
+    try {
+      if (typeof content === 'string') {
+        return JSON.parse(content)
+      }
+      return content
+    } catch (err) {
+      try {
+        const unescaped = typeof content === 'string' ? content.replace(/&quot;/g, '"') : content
+        return JSON.parse(unescaped)
+      } catch (e) {
+        return null
+      }
     }
   }
 
@@ -2456,14 +2497,54 @@ export default class ChataTable extends React.Component {
     let colWidths = []
     let columns = this.props.columns || []
     let summaryStats = []
+    // Prefer visual column order from Tabulator when available so summary
+    // totals track moved columns. `columns` is the canonical list (original
+    // order), but Tabulator may present a different visual order after
+    // drag-and-drop. Build `visualColumns` and a mapping back to original
+    // indices so summaryStats align with what the user sees.
+    let visualColumns = columns
     let scrollRef = null
     let isPivot = this.props.pivot && columns && this.props.data && this.props.data.length > 0
     let isRegular = !this.props.pivot && columns && this.props.response?.data?.data?.rows?.length > 0
 
     if (isPivot || isRegular) {
-      // Always recalculate summary stats using filtered/visible data, matching tooltip
       const statsObject = this.summaryStatsCalculator.calculate(this.props, this.ref)
-      summaryStats = columns.map((col, index) => statsObject[index] || null)
+      // Build visual order directly from Tabulator to ensure moved columns are reflected
+      if (this.ref?.tabulator && Array.isArray(this.ref.tabulator.getColumns)) {
+        const tabCols = this.ref.tabulator.getColumns()
+        if (tabCols && tabCols.length > 0) {
+          visualColumns = []
+          summaryStats = []
+          tabCols.forEach((tabCol) => {
+            const field = tabCol.getField?.() || tabCol.field
+            // Find the column in current props.columns by field
+            const colIndex = columns.findIndex((c) => c.field === field)
+            if (colIndex >= 0 && columns[colIndex]) {
+              visualColumns.push(columns[colIndex])
+              // Look up stats by field for stability across reordering
+              const stats =
+                statsObject[field] ||
+                statsObject[colIndex] ||
+                statsObject[String(field)] ||
+                statsObject[String(colIndex)] ||
+                null
+              summaryStats.push(stats)
+            }
+          })
+        }
+      }
+      // Fall back to original order if Tabulator unavailable
+      if (visualColumns.length === 0 || summaryStats.length === 0) {
+        visualColumns = columns
+        summaryStats = columns.map(
+          (col, idx) =>
+            statsObject[col.field] ||
+            statsObject[idx] ||
+            statsObject[String(col.field)] ||
+            statsObject[String(idx)] ||
+            null,
+        )
+      }
 
       const hasVisibleSummable = columns.some((col, i) => {
         return (
@@ -2480,6 +2561,7 @@ export default class ChataTable extends React.Component {
         scrollRef = this.summaryScrollRef
         if (this.ref?.tabulator) {
           const tabCols = this.ref.tabulator.getColumns()
+          // Build colWidths in the same visual order as visualColumns and summaryStats
           colWidths = tabCols.map((col, idx) => {
             const el = col.getElement()
             return el ? el.offsetWidth : 100
@@ -2493,7 +2575,8 @@ export default class ChataTable extends React.Component {
             this._summaryResizeListenerAdded = true
           }
         } else {
-          colWidths = columns.map((col, idx) => col.width || 100)
+          // If no Tabulator, use original column widths
+          colWidths = visualColumns.map((col, idx) => col.width || 100)
         }
 
         setTimeout(() => {
@@ -2517,6 +2600,11 @@ export default class ChataTable extends React.Component {
           }
         }, 0)
 
+        // Use visualColumns (Tabulator order) for rendering the summary so
+        // totals follow moved columns. `columnsForSummary` is aligned with
+        // `colWidths` and `summaryStats` computed above.
+        const columnsForSummary = visualColumns
+
         summaryRow = (
           <div
             className={`custom-summary-row${isPivot ? ' pivot-summary-row' : ''}`}
@@ -2524,8 +2612,8 @@ export default class ChataTable extends React.Component {
             ref={scrollRef}
           >
             {React.Children.toArray([
-              this.summaryRowRenderer?.render('total', columns, summaryStats, colWidths, isPivot),
-              this.summaryRowRenderer?.render('average', columns, summaryStats, colWidths, isPivot),
+              this.summaryRowRenderer?.render('total', columnsForSummary, summaryStats, colWidths, isPivot),
+              this.summaryRowRenderer?.render('average', columnsForSummary, summaryStats, colWidths, isPivot),
             ])}
           </div>
         )

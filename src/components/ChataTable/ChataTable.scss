@@ -92,30 +92,13 @@
       &:hover {
         overflow: auto !important;
       }
-      .tabulator-tableholder {
-        overflow: hidden;
+      // Force-hide Tabulator's built-in summary row/footer
+      .tabulator-footer {
+        display: none !important;
+        opacity: 0 !important;
+        height: 0 !important;
+        pointer-events: none !important;
       }
-      .tabulator-header {
-        border-bottom: 2px solid var(--react-autoql-border-color);
-        overflow: hidden;
-
-        .tabulator-header-contents {
-          overflow: hidden;
-          .tabulator-headers {
-            border-bottom: 2px solid var(--react-autoql-border-color);
-            .tabulator-col {
-              background: transparent;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  &.resizing {
-    width: 100vw;
-
-    .react-autoql-table {
       visibility: hidden;
       opacity: 0;
       pointer-events: none;
@@ -366,7 +349,7 @@
 
       &:last-child {
         border-bottom: none;
-        margin-bottom: 15px;
+        margin-bottom: 0px;
       }
 
       .tabulator-cell {
@@ -434,45 +417,20 @@
       background-color: var(--react-autoql-background-color-secondary);
     }
 
+    // Hide Tabulator's horizontal scrollbar visually, but keep it functional
     .tabulator-tableholder {
       overflow: auto;
       background-color: inherit;
-
-      // Enable smooth scrolling on mobile devices
       -webkit-overflow-scrolling: touch;
-
-      // Ensure table content has minimum width to trigger horizontal scrolling
       .tabulator-table {
         min-width: max-content;
       }
-
-      // On mobile devices, always show scrollbars for better touch interaction
-      @media (hover: none) and (pointer: coarse) {
-        overflow: auto !important;
-        // Let browser handle all touch interactions naturally
-        touch-action: auto;
-        // Enable momentum scrolling on iOS and add performance optimizations
-        -webkit-overflow-scrolling: touch;
-        // Hardware acceleration for smoother scrolling
-        -webkit-transform: translateZ(0);
-        transform: translateZ(0);
-        // Optimize rendering for mobile
-        will-change: scroll-position;
-
-        // Ensure scrollbars are visible on mobile
-        &::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-
-        &::-webkit-scrollbar-track {
-          background: transparent;
-        }
-
-        &::-webkit-scrollbar-thumb {
-          background-color: var(--react-autoql-scrollbar-thumb-color, rgba(0, 0, 0, 0.3));
-          border-radius: 4px;
-        }
+      scrollbar-width: none; /* Firefox */
+      &::-webkit-scrollbar {
+        display: none; /* Chrome, Safari */
+        width: 0 !important;
+        height: 0 !important;
+        background: transparent !important;
       }
     }
   }

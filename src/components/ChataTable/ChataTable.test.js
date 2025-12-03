@@ -1,5 +1,6 @@
 import React from 'react'
 import { shallow } from 'enzyme'
+import { renderToStaticMarkup } from 'react-dom/server'
 
 import { findByTestAttr } from '../../../test/testUtils'
 import ChataTable from './ChataTable'
@@ -8,6 +9,10 @@ import ChataTable from './ChataTable'
 jest.mock('tabulator-tables', () => ({
   __esModule: true,
   default: jest.fn(),
+}))
+
+jest.mock('../Tooltip', () => ({
+  Tooltip: ({ render }) => (render ? render({}) : null),
 }))
 
 const mockColumns = [
@@ -591,6 +596,47 @@ describe('ChataTable', () => {
 
       // Should return the unfiltered data
       expect(result.rows).toEqual(mockResponseWithData.data.data.rows)
+    })
+  })
+
+  describe('Summary alignment', () => {
+    test('summary totals are computed for numeric columns', () => {
+      const columns = [
+        { field: 'a', visible: true, is_visible: true, type: 'NUMBER', index: 0 },
+        { field: 'b', visible: true, is_visible: true, type: 'NUMBER', index: 1 },
+      ]
+
+      const props = {
+        columns,
+        response: { data: { data: { rows: [[1, 2]] } } },
+        data: undefined,
+        pivot: false,
+        pageSize: 50,
+        initialTableParams: {},
+        tableOptions: {},
+        queryFn: () => Promise.resolve({ data: { data: { rows: [] } } }),
+        updateColumns: () => {},
+        onTableParamsChange: () => {},
+        onNewData: () => {},
+      }
+
+      const instance = new ChataTable(props)
+
+      instance.summaryStatsCalculator = {
+        calculate: () => [
+          { sum: 10, avg: 5 },
+          { sum: 20, avg: 10 },
+        ],
+      }
+
+      instance.ref = null
+      instance.TABLE_ID = 'test'
+      instance._isMounted = true
+      instance.state = { tabulatorMounted: false }
+
+      const html = renderToStaticMarkup(instance.render())
+      expect(html).toContain('10')
+      expect(html).toContain('20')
     })
   })
 })

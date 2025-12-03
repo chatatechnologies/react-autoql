@@ -353,6 +353,8 @@ export default class TableWrapper extends React.Component {
     tabulator.on('dataFiltering', this.props.onDataFiltering)
     tabulator.on('dataFiltered', this.props.onDataFiltered)
     tabulator.on('scrollVertical', this.props.onScrollVertical)
+    tabulator.on('columnMoved', this.props.onColumnMoved)
+    tabulator.on('columnResized', this.props.onColumnResized)
   }
 
   recreateTabulatorForPivot = (data) => {
