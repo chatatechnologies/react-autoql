@@ -19,6 +19,7 @@ const NodeFilterButton = (props) => {
     setShowFilterDropdown,
     setShowSourceDropdown,
     setShowTargetDropdown,
+    setShowAmountDropdown,
     popoverParentElement,
     chartTooltipID,
     chartWidth,
@@ -113,6 +114,7 @@ const NodeFilterButton = (props) => {
               setShowFilterDropdown(!showFilterDropdown)
               setShowSourceDropdown(false) // Close source dropdown when opening filter
               setShowTargetDropdown(false) // Close target dropdown when opening filter
+              setShowAmountDropdown(false) // Close amount dropdown when opening filter
             }}
             data-tooltip-id={chartTooltipID}
             data-tooltip-html='Filter nodes'
@@ -140,6 +142,7 @@ NodeFilterButton.propTypes = {
   setShowFilterDropdown: PropTypes.func.isRequired,
   setShowSourceDropdown: PropTypes.func.isRequired,
   setShowTargetDropdown: PropTypes.func.isRequired,
+  setShowAmountDropdown: PropTypes.func.isRequired,
   popoverParentElement: PropTypes.object,
   chartTooltipID: PropTypes.string.isRequired,
   chartWidth: PropTypes.number.isRequired,

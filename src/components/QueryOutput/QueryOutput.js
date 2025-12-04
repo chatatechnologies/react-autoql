@@ -207,6 +207,7 @@ export class QueryOutput extends React.Component {
     initialNetworkColumnConfig: PropTypes.shape({
       sourceColumnIndex: PropTypes.number,
       targetColumnIndex: PropTypes.number,
+      weightColumnIndex: PropTypes.number,
     }),
     onNetworkColumnChange: PropTypes.func,
     onNoneOfTheseClick: PropTypes.func,
