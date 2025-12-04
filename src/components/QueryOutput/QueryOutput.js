@@ -2300,6 +2300,17 @@ export class QueryOutput extends React.Component {
     return 'Filter'
   }
 
+  calculatePivotColumnMinWidth = (title) => {
+    // Calculate min width dynamically based on title length
+    if (!title) {
+      return '104px'
+    }
+    const charWidth = 10 // pixels per character (approximate for default font)
+    const extraSpace = 44 // padding (28px) + gap (3px) + arrow (7px)
+    const calculatedWidth = Math.max(104, title.length * charWidth + extraSpace)
+    return calculatedWidth + 'px'
+  }
+
   getAggConfig = (columns) => {
     if (!columns) {
       return null
@@ -2593,7 +2604,8 @@ export class QueryOutput extends React.Component {
         title: 'Month',
         name: 'Month',
         field: '0',
-        resizable: false,
+        resizable: true,
+        minWidth: this.calculatePivotColumnMinWidth('Month'),
         frozen: true,
         visible: true,
         is_visible: true,
@@ -2916,7 +2928,8 @@ export class QueryOutput extends React.Component {
         visible: true,
         is_visible: true,
         field: '0',
-        resizable: false,
+        resizable: true,
+        minWidth: this.calculatePivotColumnMinWidth(columns[newStringColumnIndex].display_name),
         cssClass: 'pivot-category',
         pivot: true,
         headerFilter: false,
