@@ -834,22 +834,15 @@ export default class Axis extends Component {
   }
 
   shouldRenderAxisSelector = () => {
-    const { scale, isAggregated, legendLocation, originalColumns, columns } = this.props
-    const scaleType = scale?.type
-    const isStringAxis = scaleType === 'BAND' || scaleType === 'TIME'
-
-    if (!isStringAxis) {
-      return scale?.hasDropdown
-    }
-
-    if (isAggregated && legendLocation) {
+    if (this.props.scale?.type === 'LINEAR' && this.props.scale?.allFields?.length <= 1) {
+      return false
+    } else if (this.props.scale?.type === 'BAND' && !this.props.isAggregated && this.props.scale?.allFields <= 1) {
+      return false
+    } else if (this.props.isAggregated && this.props.legendLocation) {
       return true
     }
 
-    const cols = originalColumns || columns
-    const groupableCount = cols?.filter((col) => col?.groupable && col?.is_visible)?.length ?? 0
-
-    return groupableCount > 1 || scale?.hasDropdown
+    return this.props.scale?.hasDropdown
   }
 
   shouldRenderAxisScaler = () => {
