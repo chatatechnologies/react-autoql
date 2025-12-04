@@ -479,3 +479,14 @@ export const targetColumnIcon = (
     </g>
   </svg>
 )
+
+export const amountColumnIcon = (
+  <svg x='0px' y='0px' width='20px' height='20px' viewBox='0 0 20 20'>
+    <g className='amount-button-icon'>
+      {/* Three circles of different sizes to represent node size variation - using green/red/green colors */}
+      <circle cx='6.5' cy='10' r='2.5' fill='#28A745' stroke='currentColor' strokeWidth='1' />
+      <circle cx='10' cy='10' r='3.5' fill='#DC3545' stroke='currentColor' strokeWidth='1' />
+      <circle cx='13.5' cy='10' r='4.5' fill='#28A745' stroke='currentColor' strokeWidth='1' />
+    </g>
+  </svg>
+)
