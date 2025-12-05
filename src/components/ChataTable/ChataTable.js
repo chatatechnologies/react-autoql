@@ -43,7 +43,7 @@ import { columnOptionsList } from './tabulatorConstants'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { DATASET_TOO_LARGE, TABULATOR_LOCAL_ROW_LIMIT, LOCAL_OR_REMOTE } from '../../js/Constants'
 import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
-import PivotAxisSelector, { buildPivotAxisTitleElement, computePivotAxisSelectorLocation } from './PivotAxisSelector'
+import PivotAxisSelector, { computePivotAxisSelectorLocation } from './PivotAxisSelector'
 
 import './ChataTable.scss'
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
@@ -341,6 +341,7 @@ export default class ChataTable extends React.Component {
       clearTimeout(this.clickListenerTimeout)
       clearTimeout(this.setDimensionsTimeout)
       clearTimeout(this.setStateTimeout)
+      clearTimeout(this._debounceTimeout)
 
       // Clear any pending filter check timeouts to prevent state updates after unmount
       if (this._filterCheckTimeout) {
@@ -450,26 +451,6 @@ export default class ChataTable extends React.Component {
     return this.ref?.updateData(data)
   }
 
-  transposeTable = () => {
-    // This is a WIP
-    if (this.ref?.tabulator) {
-      const newColumns = [
-        { name: 'Property', field: '0', frozen: true },
-        { name: 'Value', field: '1' },
-      ]
-
-      const row = this.props.response?.data?.data?.rows[0]
-      const newData = this.props.columns?.map((column, i) => {
-        return [column?.display_name, formatElement({ element: row[i], column, config: this.props.dataFormatting })]
-      })
-
-      this.ref.tabulator.options['headerVisible'] = false
-      this.ref.tabulator.options['layout'] = 'fitData'
-      this.ref.tabulator.setColumns(newColumns)
-      this.ref.tabulator.setData(newData)
-    }
-  }
-
   getRTForRemoteFilterAndSort = async () => {
     let headerFilters = []
     let headerSorters = []
@@ -555,6 +536,7 @@ export default class ChataTable extends React.Component {
     if (!this.useInfiniteScroll && !this.props.pivot && this.tableParams?.filter?.length > 0) {
       if (this._debounceTimeout) clearTimeout(this._debounceTimeout)
       this._debounceTimeout = setTimeout(() => {
+        if (!this._isMounted) return
         try {
           this.getRTForRemoteFilterAndSort()
         } catch (error) {
@@ -1128,7 +1110,10 @@ export default class ChataTable extends React.Component {
       const origField = def.origColumn?.field
       const isFiltered = filteredFields.has(field) || filteredFields.has(def.name) || filteredFields.has(origField)
 
-      column.getElement?.()?.classList.toggle('is-filtered', isFiltered)
+      const element = column.getElement?.()
+      if (element?.classList) {
+        element.classList.toggle('is-filtered', isFiltered)
+      }
     })
   }
 
@@ -1542,15 +1527,10 @@ export default class ChataTable extends React.Component {
     try {
       if (this.props.pivot && this.props.columns?.length) {
         const columns = []
-        const hasAxisOptions = this.props.pivotAxisOptions?.length > 1
 
         this.props.columns.forEach((col, i) => {
           if (i === 0) {
-            // First column is the pivot row header - add titleFormatter for axis selector
             const pivotCol = { ...col }
-            if (hasAxisOptions) {
-              pivotCol.titleFormatter = (cell) => this.buildPivotAxisTitleElement(col)
-            }
             columns.push(pivotCol)
           } else {
             if (!columns[1]) {
@@ -1611,8 +1591,25 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  buildPivotAxisTitleElement = (col) => {
-    return buildPivotAxisTitleElement(col, (element) => this.openPivotAxisSelectorForElement(element))
+  openPivotAxisSelectorAboveRowCount = (e) => {
+    if (!this.tableContainer) return
+
+    const button = e?.currentTarget
+    let location = button ? computePivotAxisSelectorLocation(button, this.tableContainer) : null
+
+    // If position calculation fails, center relative to table container
+    if (!location) {
+      const containerRect = this.tableContainer.getBoundingClientRect()
+      location = {
+        top: containerRect.height / 2 - 50,
+        left: containerRect.width / 2 - 75,
+      }
+    }
+
+    this.setState({
+      pivotAxisSelectorOpen: true,
+      pivotAxisSelectorLocation: location,
+    })
   }
 
   renderPivotTableRowWarning = () => {
@@ -1705,12 +1702,31 @@ export default class ChataTable extends React.Component {
     const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(rowLimit)
 
     return (
-      <div className='table-row-count'>
-        <span>
-          {`Scrolled ${currentRowsFormatted} / ${
-            totalRowCount > rowLimit ? rowLimitFormatted + '+' : totalRowsFormatted
-          } rows`}
-        </span>
+      <div>
+        {this.props.pivot && this.props.pivotAxisOptions?.length > 1 && (
+          <div className='table-pivot-axis-selector-container'>
+            {(() => {
+              const selectedOption = this.props.pivotAxisOptions?.find(
+                (opt) => opt.value === this.props.pivotAxisCurrentIndex,
+              )
+              // Ensure consistency: if pivotAxisCurrentIndex is set, a matching option should exist
+              const displayLabel =
+                selectedOption?.label || (this.props.pivotAxisCurrentIndex !== undefined ? 'Axis' : 'Select')
+              return (
+                <button className='table-pivot-axis-selector-btn' onClick={this.openPivotAxisSelectorAboveRowCount}>
+                  {displayLabel} ▼
+                </button>
+              )
+            })()}
+          </div>
+        )}
+        <div className='table-row-count'>
+          <span>
+            {`Scrolled ${currentRowsFormatted} / ${
+              totalRowCount > rowLimit ? rowLimitFormatted + '+' : totalRowsFormatted
+            } rows`}
+          </span>
+        </div>
       </div>
     )
   }

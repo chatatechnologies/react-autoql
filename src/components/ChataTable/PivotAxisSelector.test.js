@@ -1,7 +1,7 @@
 import React from 'react'
 import { shallow } from 'enzyme'
 
-import PivotAxisSelector, { buildPivotAxisTitleElement, computePivotAxisSelectorLocation } from './PivotAxisSelector'
+import PivotAxisSelector, { computePivotAxisSelectorLocation } from './PivotAxisSelector'
 
 describe('PivotAxisSelector', () => {
   const mockOptions = [
@@ -73,90 +73,6 @@ describe('PivotAxisSelector', () => {
       expect(PivotAxisSelector.propTypes.location).toBeDefined()
       expect(PivotAxisSelector.propTypes.onClose).toBeDefined()
       expect(PivotAxisSelector.propTypes.onChange).toBeDefined()
-    })
-  })
-
-  describe('buildPivotAxisTitleElement', () => {
-    test('creates div container with correct attributes', () => {
-      const col = { title: 'Test Column', display_name: 'Test Display' }
-      const element = buildPivotAxisTitleElement(col, jest.fn())
-
-      expect(element.className).toBe('pivot-axis-title-container')
-      expect(element.getAttribute('role')).toBe('button')
-      expect(element.getAttribute('aria-haspopup')).toBe('listbox')
-      expect(element.tabIndex).toBe(0)
-    })
-
-    test('uses title when available', () => {
-      const col = { title: 'Title Name', display_name: 'Display Name' }
-      const element = buildPivotAxisTitleElement(col, jest.fn())
-      const titleSpan = element.querySelector('.pivot-axis-title-text')
-
-      expect(titleSpan.textContent).toBe('Title Name')
-    })
-
-    test('falls back to display_name when title unavailable', () => {
-      const col = { display_name: 'Display Name' }
-      const element = buildPivotAxisTitleElement(col, jest.fn())
-      const titleSpan = element.querySelector('.pivot-axis-title-text')
-
-      expect(titleSpan.textContent).toBe('Display Name')
-    })
-
-    test('creates title and arrow spans', () => {
-      const col = { title: 'Test' }
-      const element = buildPivotAxisTitleElement(col, jest.fn())
-
-      const titleSpan = element.querySelector('.pivot-axis-title-text')
-      const arrowSpan = element.querySelector('.pivot-axis-title-arrow')
-
-      expect(titleSpan).toBeTruthy()
-      expect(arrowSpan).toBeTruthy()
-      expect(arrowSpan.textContent).toBe('▼')
-    })
-
-    test('calls onOpen when clicked', () => {
-      const onOpen = jest.fn()
-      const col = { title: 'Test' }
-      const element = buildPivotAxisTitleElement(col, onOpen)
-
-      const event = new MouseEvent('click')
-      element.dispatchEvent(event)
-
-      expect(onOpen).toHaveBeenCalledWith(element)
-    })
-
-    test('calls onOpen when Enter key pressed', () => {
-      const onOpen = jest.fn()
-      const col = { title: 'Test' }
-      const element = buildPivotAxisTitleElement(col, onOpen)
-
-      const event = new KeyboardEvent('keydown', { key: 'Enter' })
-      element.dispatchEvent(event)
-
-      expect(onOpen).toHaveBeenCalledWith(element)
-    })
-
-    test('calls onOpen when Space key pressed', () => {
-      const onOpen = jest.fn()
-      const col = { title: 'Test' }
-      const element = buildPivotAxisTitleElement(col, onOpen)
-
-      const event = new KeyboardEvent('keydown', { key: ' ' })
-      element.dispatchEvent(event)
-
-      expect(onOpen).toHaveBeenCalledWith(element)
-    })
-
-    test('does not call onOpen for other keys', () => {
-      const onOpen = jest.fn()
-      const col = { title: 'Test' }
-      const element = buildPivotAxisTitleElement(col, onOpen)
-
-      const event = new KeyboardEvent('keydown', { key: 'a' })
-      element.dispatchEvent(event)
-
-      expect(onOpen).not.toHaveBeenCalled()
     })
   })
 

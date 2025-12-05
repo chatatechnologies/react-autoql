@@ -838,10 +838,12 @@ export default class Axis extends Component {
     const scaleType = scale?.type
     const isStringAxis = scaleType === 'BAND' || scaleType === 'TIME'
 
+    // For numeric (LINEAR) axes
     if (!isStringAxis) {
-      return scale?.hasDropdown
+      return scale?.allFields?.length > 1 || scale?.hasDropdown
     }
 
+    // For string axes, show selector if aggregated with legend or multiple groupable columns
     if (isAggregated && legendLocation) {
       return true
     }

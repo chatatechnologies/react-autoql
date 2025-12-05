@@ -11,10 +11,11 @@ const PivotAxisSelector = ({ isOpen, options, activeIndex, location, onClose, on
     <Popover
       isOpen={isOpen}
       onClickOutside={onClose}
-      positions={['bottom', 'top']}
+      positions={['top', 'bottom']}
       align='start'
+      padding={0}
       content={
-        <div className='pivot-axis-selector-popover'>
+        <div className='pivot-axis-selector-container'>
           <CustomScrollbars maxHeight={220}>
             <ul className='pivot-axis-selector-list'>
               {options.map((opt) => (
@@ -55,40 +56,6 @@ PivotAxisSelector.defaultProps = {
   location: null,
   onClose: () => {},
   onChange: () => {},
-}
-
-export const buildPivotAxisTitleElement = (col, onOpen) => {
-  const container = document.createElement('div')
-  container.className = 'pivot-axis-title-container'
-  container.setAttribute('role', 'button')
-  container.setAttribute('aria-haspopup', 'listbox')
-  container.tabIndex = 0
-
-  const titleSpan = document.createElement('span')
-  titleSpan.className = 'pivot-axis-title-text'
-  titleSpan.textContent = col.title || col.display_name || ''
-
-  const arrowSpan = document.createElement('span')
-  arrowSpan.className = 'pivot-axis-title-arrow'
-  arrowSpan.textContent = '▼'
-
-  container.appendChild(titleSpan)
-  container.appendChild(arrowSpan)
-
-  const openSelector = (e) => {
-    e.stopPropagation()
-    onOpen(container)
-  }
-
-  container.addEventListener('click', openSelector)
-  container.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      openSelector(e)
-    }
-  })
-
-  return container
 }
 
 export const computePivotAxisSelectorLocation = (element, tableContainer) => {

@@ -451,6 +451,7 @@ export class QueryOutput extends React.Component {
       if (this.state.isResizing !== prevState.isResizing) {
         if (!this.state.isResizing && prevState.isResizing) {
           setTimeout(() => {
+            if (!this._isMounted) return
             this.refreshLayout()
           }, 50)
         }
@@ -1390,6 +1391,7 @@ export class QueryOutput extends React.Component {
             // For OR logic, filter client-side instead of sending to backend
             // Use setTimeout to show loading state, just like other filter drilldowns
             setTimeout(() => {
+              if (!this._isMounted) return
               response = this.getFilterDrilldownWithOr({
                 stringColumnIndices: clickedFilter.stringColumnIndices,
                 rows: clickedFilter.rows,
@@ -1726,6 +1728,7 @@ export class QueryOutput extends React.Component {
 
     // Update filter badge in OptionsToolbar
     setTimeout(() => {
+      if (!this._isMounted) return
       this.updateToolbars()
     }, 0)
   }
@@ -1871,7 +1874,9 @@ export class QueryOutput extends React.Component {
     return cols
       .filter(
         (c) =>
-          c.is_visible !== false && !this.tableConfig.numberColumnIndices?.includes(c.index) && isColumnStringType(c),
+          c.is_visible !== false &&
+          !this.tableConfig.numberColumnIndices?.includes(c.index) &&
+          (isColumnStringType(c) || c.custom),
       )
       .map((c) => ({ value: c.index, label: c.display_name || c.name }))
   }

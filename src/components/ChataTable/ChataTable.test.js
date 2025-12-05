@@ -902,7 +902,7 @@ describe('ChataTable', () => {
       const result = instance.renderTableRowCount()
       expect(result).not.toBeNull()
       // Should use pivot data length (3), not response count_rows (2)
-      expect(result.props.children.props.children).toContain('3')
+      expect(JSON.stringify(result)).toContain('Scrolled 3')
     })
 
     test('uses filterCount for filtered non-pivot tables', () => {
@@ -926,7 +926,7 @@ describe('ChataTable', () => {
 
       const result = instance.renderTableRowCount()
       expect(result).not.toBeNull()
-      expect(result.props.children.props.children).toContain('2')
+      expect(JSON.stringify(result)).toContain('Scrolled 2')
     })
 
     test('calculates visible rows based on scroll position', () => {
@@ -950,7 +950,7 @@ describe('ChataTable', () => {
       expect(result).not.toBeNull()
       // With scrollTop=600, clientHeight=300, rowHeight=30: (600+300)/30 = 30 visible rows
       // But total is 4, so should show 4
-      expect(result.props.children.props.children).toContain('4')
+      expect(JSON.stringify(result)).toContain('Scrolled 4')
     })
   })
 
