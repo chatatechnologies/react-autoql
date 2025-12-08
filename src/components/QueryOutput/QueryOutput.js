@@ -1252,6 +1252,8 @@ export class QueryOutput extends React.Component {
           queryID: this.props.originalQueryID,
           orders: this.formattedTableParams?.sorters,
           cancelToken: this.axiosSource.token,
+          newColumns: queryRequestData?.additional_selects,
+          displayOverrides: queryRequestData?.display_overrides,
           ...args,
           tableFilters: allFilters,
         })
