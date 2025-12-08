@@ -1670,29 +1670,34 @@ export default class ChataTable extends React.Component {
       return null
     }
 
-    const totalRowCount = this.props.pivot
-      ? this.originalQueryData?.length
-      : this.tableParams?.filter?.length > 0 && this.filterCount > 0
-      ? this.filterCount
-      : this.props.response?.data?.data?.count_rows
-
-    if (!totalRowCount) {
-      return null
+    let currentRowCount = 50
+    if (this.props.data?.length < 50) {
+      currentRowCount = this.props.data?.length
     }
 
-    let currentRowCount = totalRowCount
-    const tableHolder = this.tableContainer?.querySelector('.tabulator-tableholder')
-    const firstRow = this.tableContainer?.querySelector('.tabulator-row')
+    let totalRowCount = this.props.pivot ? this.props.data?.length : this.props.response?.data?.data?.count_rows
 
-    if (tableHolder && firstRow) {
-      const scrollTop = this.state.scrollTop ?? tableHolder.scrollTop ?? 0
-      const rowHeight = firstRow.offsetHeight || 0
-      const containerHeight = tableHolder.clientHeight || 0
+    // If filters are applied, use the full filtered count captured before slicing
+    if (this.tableParams?.filter?.length > 0) {
+      if (this.filterCount > 0) {
+        totalRowCount = this.filterCount
+      }
+    }
+
+    // Calculate which group of 50 records user has scrolled to
+    if (this.tableContainer) {
+      const tableHolder = this.tableContainer?.querySelector('.tabulator-tableholder')
+      const scrollTop = tableHolder?.scrollTop || 0
+      const rowHeight = this.tableContainer?.querySelector('.tabulator-row')?.offsetHeight || 0
 
       if (rowHeight > 0) {
-        const visibleRows = Math.ceil((scrollTop + containerHeight) / rowHeight)
-        currentRowCount = Math.min(visibleRows, totalRowCount)
+        const visibleRows = Math.ceil(scrollTop / rowHeight)
+        currentRowCount = Math.min((Math.floor(visibleRows / 50) + 1) * 50, totalRowCount)
       }
+    }
+
+    if (!totalRowCount || !(currentRowCount > 0)) {
+      return null
     }
 
     const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
