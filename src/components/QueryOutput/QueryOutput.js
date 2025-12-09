@@ -2546,12 +2546,15 @@ export class QueryOutput extends React.Component {
             (newCol?.name ?? '').replace(/ /g, '').toLowerCase()
           )
         })
+
+        const isCustom = customSelect || newCol?.is_custom
+
         const cleanName = getCleanColumnName(newCol?.name)
         const availableSelect = this.queryResponse?.data?.data?.available_selects?.find((select) => {
           return select?.table_column?.trim() === cleanName
         })
 
-        if (customSelect && !availableSelect) {
+        if (isCustom && !availableSelect) {
           newCol.custom = true
         }
       }
