@@ -11,6 +11,7 @@ import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
 import FilterAutocomplete from './DashboardFilterAutocomplete'
 import { Chip } from '../Chip'
+import DashboardSlicer from './DashboardSlicer'
 
 import './DashboardToolbar.scss'
 
@@ -32,10 +33,14 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onRedoClick: PropTypes.func,
     onRenameClick: PropTypes.func,
     onDownloadClick: PropTypes.func,
+    onSlicerChange: PropTypes.func,
     tooltipID: PropTypes.string,
     title: PropTypes.string,
     refreshInterval: PropTypes.number,
     enableAutoRefresh: PropTypes.bool,
+    dashboardId: PropTypes.string,
+    authentication: PropTypes.shape({}),
+    context: PropTypes.string,
   }
 
   static defaultProps = {
@@ -49,10 +54,15 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onRedoClick: () => {},
     onRenameClick: () => {},
     onDownloadClick: () => {},
+    onSlicerChange: () => {},
     tooltipID: undefined,
     title: 'Untitled Dashboard',
     refreshInterval: 60,
     enableAutoRefresh: false,
+    dashboardId: undefined,
+    authentication: undefined,
+    context: undefined,
+    value: null,
   }
 
   state = {
@@ -61,6 +71,78 @@ export class DashboardToolbarWithoutRef extends React.Component {
     isRenameModalOpen: false,
     dashboardFilters: [],
     dashboardName: '',
+    selectedSlicer: null,
+  }
+
+  componentDidMount = () => {
+    // Load slicer from localStorage
+    this.loadSlicerFromStorage()
+  }
+
+  getStorageKey = () => {
+    const dashboardId = this.props.dashboardId || 'default'
+    return `react-autoql-dashboard-slicer-${dashboardId}`
+  }
+
+  loadSlicerFromStorage = () => {
+    try {
+      const storageKey = this.getStorageKey()
+      const storedSlicer = localStorage.getItem(storageKey)
+      if (storedSlicer) {
+        const slicer = JSON.parse(storedSlicer)
+        this.setState({ selectedSlicer: slicer })
+        // Notify parent so it can be applied to queries
+        this.props.onSlicerChange(slicer)
+      }
+    } catch (error) {
+      console.error('Error loading slicer from localStorage:', error)
+    }
+  }
+
+  saveSlicerToStorage = (slicer) => {
+    try {
+      const storageKey = this.getStorageKey()
+      if (slicer) {
+        localStorage.setItem(storageKey, JSON.stringify(slicer))
+      } else {
+        localStorage.removeItem(storageKey)
+      }
+    } catch (error) {
+      console.error('Error saving slicer to localStorage:', error)
+    }
+  }
+
+  handleSlicerChange = (slicer) => {
+    this.setState({ selectedSlicer: slicer })
+    // Save to localStorage as fallback
+    this.saveSlicerToStorage(slicer)
+    // Notify parent to apply to tiles
+    this.props.onSlicerChange(slicer)
+  }
+
+  handleRemoveSlicer = () => {
+    this.setState({ selectedSlicer: null })
+    // Clear localStorage
+    this.saveSlicerToStorage(null)
+    // Notify parent to remove from tiles
+    this.props.onSlicerChange(null)
+  }
+
+  renderSlicerChip = () => {
+    if (!this.state.selectedSlicer) {
+      return null
+    }
+
+    const displayName = this.state.selectedSlicer.format_txt || this.state.selectedSlicer.value
+    const showMessage = this.state.selectedSlicer.show_message
+
+    return (
+      <Chip onDelete={this.handleRemoveSlicer}>
+        <span>
+          <strong>{displayName}</strong> {showMessage && <em>({showMessage})</em>}
+        </span>
+      </Chip>
+    )
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -342,6 +424,20 @@ export class DashboardToolbarWithoutRef extends React.Component {
               </div>
             </div>
           ) : null}
+          <div className='react-autoql-dashboard-slicer-container'>
+            {this.state.selectedSlicer ? (
+              this.renderSlicerChip()
+            ) : (
+              <DashboardSlicer
+                authentication={this.props.authentication}
+                context={this.props.context}
+                value={this.state.selectedSlicer}
+                onChange={this.handleSlicerChange}
+                placeholder='Select a slicer...'
+                dashboardId={this.props.dashboardId}
+              />
+            )}
+          </div>
         </div>
         <ConfirmModal
           isVisible={this.state.isConfirmCloseModalOpen}

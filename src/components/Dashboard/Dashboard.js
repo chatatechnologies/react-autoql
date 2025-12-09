@@ -56,6 +56,7 @@ class DashboardWithoutTheme extends React.Component {
       isReportProblemOpen: false,
       isResizingDrilldown: false,
       uneditedDashboardTiles: null,
+      dashboardSlicer: null,
     }
   }
 
@@ -139,14 +140,6 @@ class DashboardWithoutTheme extends React.Component {
     return null
   }
 
-  componentDidMount = () => {
-    this._isMounted = true
-    if (this.props.executeOnMount) {
-      this.executeDashboard()
-    }
-    window.addEventListener('resize', this.onWindowResize)
-  }
-
   shouldComponentUpdate = (nextProps, nextState) => {
     return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
   }
@@ -162,12 +155,30 @@ class DashboardWithoutTheme extends React.Component {
       this.setState({ uneditedDashboardTiles: _cloneDeep(this.props.tiles) })
     }
 
+    // Re-execute dashboard when slicer changes
+    if (prevState.dashboardSlicer !== this.state.dashboardSlicer) {
+      this.executeDashboard()
+    }
+
     if (this.props.isEditing !== prevProps.isEditing) {
       this.resetTileStateLog()
       this.setState({ isDragging: true }, () => {
         this.setState({ isDragging: false })
       })
     }
+  }
+
+  componentDidMount = () => {
+    this._isMounted = true
+    if (this.props.executeOnMount) {
+      this.executeDashboard()
+    }
+    window.addEventListener('resize', this.onWindowResize)
+  }
+
+  handleSlicerChange = (slicer) => {
+    // Just store in state, don't modify tiles
+    this.setState({ dashboardSlicer: slicer })
   }
 
   componentWillUnmount = () => {
@@ -801,7 +812,14 @@ class DashboardWithoutTheme extends React.Component {
                     enableCSVDownload: false,
                   }
             }
-            tile={{ ...tile, i: tile.key, maxH: 10, minH: 2, minW: 3 }}
+            tile={{
+              ...tile,
+              i: tile.key,
+              maxH: 10,
+              minH: 2,
+              minW: 3,
+            }}
+            dashboardSlicer={this.state.dashboardSlicer}
             displayType={tile.displayType}
             secondDisplayType={tile.secondDisplayType}
             secondDisplayPercentage={tile.secondDisplayPercentage}
@@ -871,6 +889,9 @@ class DashboardWithoutTheme extends React.Component {
                 this.debouncedOnChange(this.state.uneditedDashboardTiles)
                 this.props.stopEditingCallback()
               }}
+              onSlicerChange={this.handleSlicerChange}
+              dashboardId={this.props.dashboardId}
+              value={this.state.dashboardSlicer}
               refreshInterval={this.props.refreshInterval}
               enableAutoRefresh={this.props.enableAutoRefresh}
             />

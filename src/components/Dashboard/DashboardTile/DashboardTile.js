@@ -100,12 +100,12 @@ export class DashboardTile extends React.Component {
       initialFormattedTableParams: {
         filters: tile?.tableFilters,
         sorters: tile?.orders,
-        sessionFilters: tile?.filters,
+        sessionFilters: tile?.filters || [],
       },
       initialSecondFormattedTableParams: {
         filters: tile?.secondTableFilters,
         sorters: tile?.secondOrders,
-        sessionFilters: tile?.filters,
+        sessionFilters: tile?.filters || [],
       },
     }
   }
@@ -136,6 +136,7 @@ export class DashboardTile extends React.Component {
     dashboardId: PropTypes.string,
     tileKey: PropTypes.string,
     isCachedRefresh: PropTypes.bool,
+    dashboardSlicer: PropTypes.shape({}),
   }
 
   static defaultProps = {
@@ -166,6 +167,7 @@ export class DashboardTile extends React.Component {
     dashboardId: undefined,
     tileKey: undefined,
     isCachedRefresh: false,
+    dashboardSlicer: null,
   }
 
   componentDidMount = () => {
@@ -351,7 +353,14 @@ export class DashboardTile extends React.Component {
       const currentDisplayOverrides = isSecondHalf
         ? this.props.tile?.secondDisplayOverrides
         : this.props.tile?.displayOverrides
-      const currentSessionFilters = isSecondHalf ? this.props.tile.secondFilters : this.props.tile.filters
+      // Get session filters from tile (existing tile-specific filters)
+      let currentSessionFilters = isSecondHalf ? this.props.tile.secondFilters : this.props.tile.filters || []
+
+      // Merge dashboard slicer if present (applied at query execution time)
+      if (this.props.dashboardSlicer && !isSecondHalf) {
+        // Combine tile filters with dashboard slicer
+        currentSessionFilters = [...currentSessionFilters, this.props.dashboardSlicer]
+      }
       const currentOrders = isSecondHalf ? this.props.tile.secondOrders : this.props.tile.orders
       const currentFilter = isSecondHalf ? this.props.tile.secondTableFilters : this.props.tile.tableFilters
       const cancelToken = useSecondAxiosSource ? this.secondAxiosSource?.token : this.axiosSource?.token
@@ -370,8 +379,8 @@ export class DashboardTile extends React.Component {
         tableFilters: currentFilter,
         // Hardcode this for now until we change the filter lock blacklist to a whitelist
         // mergeSources(this.props.source, source),
-        source: 'dashboards.user',
-        scope: 'dashboards',
+        source: 'data_messenger.user', // 'dashboards.user',
+        scope: 'data_messenger', // 'dashboards',
         userSelection,
         cancelToken,
         pageSize,
@@ -1194,8 +1203,8 @@ export class DashboardTile extends React.Component {
         shouldRender={!this.props.isDragging}
         allowColumnAddition={this.props.isEditing}
         enableTableContextMenu={this.props.isEditing}
-        source='dashboards.user'
-        scope='dashboards'
+        source='data_messenger.user' // 'dashboards.user'
+        scope='data_messenger' // 'dashboards'
         autoHeight={false}
         height='100%'
         width='100%'
@@ -1286,7 +1295,7 @@ export class DashboardTile extends React.Component {
           return {
             filters: filtersToUse,
             sorters: this.props.tile?.orders,
-            sessionFilters: this.props.tile?.filters,
+            sessionFilters: this.props.tile?.filters || [],
           }
         })(),
         enableChartControls: true,
