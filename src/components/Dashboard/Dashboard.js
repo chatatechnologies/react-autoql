@@ -142,7 +142,30 @@ class DashboardWithoutTheme extends React.Component {
   componentDidMount = () => {
     this._isMounted = true
     if (this.props.executeOnMount) {
-      this.executeDashboard()
+      // Execute only tiles that don't have queryResponse
+      // Use requestAnimationFrame to ensure tile refs are set
+      requestAnimationFrame(() => {
+        if (!this._isMounted) return
+
+        const tiles = this.props.tiles || []
+        const tilesToExecute = tiles.filter((tile) => !tile.queryResponse && !tile.secondQueryResponse)
+
+        if (tilesToExecute.length > 0) {
+          const promises = []
+          tilesToExecute.forEach((tile) => {
+            const tileRef = this.tileRefs[tile.key] || this.tileRefs[tile.i]
+            if (tileRef && tileRef.processTile) {
+              promises.push(tileRef.processTile())
+            }
+          })
+
+          if (promises.length > 0) {
+            Promise.all(promises).catch((error) => {
+              console.error('Error executing tiles:', error)
+            })
+          }
+        }
+      })
     }
     window.addEventListener('resize', this.onWindowResize)
   }
