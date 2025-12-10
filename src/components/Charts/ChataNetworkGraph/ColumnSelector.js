@@ -1,9 +1,10 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { isMobile } from 'react-device-detect'
+import { isColumnNumberType } from 'autoql-fe-utils'
 import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
-import { sourceColumnIcon, targetColumnIcon } from '../../../svgIcons'
+import { sourceColumnIcon, targetColumnIcon, amountColumnIcon } from '../../../svgIcons'
 
 const ColumnSelector = (props) => {
   const {
@@ -12,16 +13,21 @@ const ColumnSelector = (props) => {
     selectedTargetColumnIndex,
     setSelectedSourceColumnIndex,
     setSelectedTargetColumnIndex,
+    selectedAmountColumnIndex,
+    setSelectedAmountColumnIndex,
     showSourceDropdown,
     showTargetDropdown,
     setShowSourceDropdown,
     setShowTargetDropdown,
+    showAmountDropdown,
+    setShowAmountDropdown,
     setShowFilterDropdown,
     popoverParentElement,
     chartTooltipID,
     buttonX,
     sourceButtonY,
     targetButtonY,
+    amountButtonY,
     buttonSize,
   } = props
 
@@ -32,6 +38,9 @@ const ColumnSelector = (props) => {
   const stringColumns = (columns || [])
     .map((col, idx) => ({ ...col, columnIndex: idx }))
     .filter((col) => col.type === 'STRING' || col.type === 'TEXT')
+  const numericColumns = (columns || [])
+    .map((col, idx) => ({ ...col, columnIndex: idx }))
+    .filter((col) => isColumnNumberType(col))
 
   // On mobile, use a large maxHeight to fill the container, otherwise use calculated height
   const sourceDropdownHeight = isMobile
@@ -40,6 +49,9 @@ const ColumnSelector = (props) => {
   const targetDropdownHeight = isMobile
     ? window.innerHeight - 200
     : Math.min(dropdownItemHeight * stringColumns.length + 8, maxDropdownHeight)
+  const amountDropdownHeight = isMobile
+    ? window.innerHeight - 200
+    : Math.min(dropdownItemHeight * numericColumns.length + 8, maxDropdownHeight)
 
   // Get selected column names for tooltips
   const selectedSourceColumn =
@@ -48,6 +60,9 @@ const ColumnSelector = (props) => {
   const selectedTargetColumn =
     stringColumns.find((col) => col.columnIndex === selectedTargetColumnIndex) ||
     (stringColumns.length > 1 && selectedTargetColumnIndex === null ? stringColumns[1] : null)
+  const selectedAmountColumn =
+    numericColumns.find((col) => col.columnIndex === selectedAmountColumnIndex) ||
+    (numericColumns.length > 0 && selectedAmountColumnIndex === null ? numericColumns[0] : null)
 
   const sourceTooltipHtml = selectedSourceColumn
     ? `Source column<br/><em>(${selectedSourceColumn.display_name || selectedSourceColumn.name})</em>`
@@ -55,6 +70,9 @@ const ColumnSelector = (props) => {
   const targetTooltipHtml = selectedTargetColumn
     ? `Target column<br/><em>(${selectedTargetColumn.display_name || selectedTargetColumn.name})</em>`
     : 'Target column'
+  const amountTooltipHtml = selectedAmountColumn
+    ? `Amount column<br/><em>(${selectedAmountColumn.display_name || selectedAmountColumn.name})</em>`
+    : 'Amount column'
 
   const renderSourceDropdownContent = () => {
     return (
@@ -138,6 +156,52 @@ const ColumnSelector = (props) => {
     )
   }
 
+  const renderAmountDropdownContent = () => {
+    const hasNumericColumns = numericColumns.length > 0
+
+    return (
+      <div className='amount-dropdown-popover-content'>
+        <div className='amount-dropdown-title'>Amount column</div>
+        {hasNumericColumns ? (
+          <CustomScrollbars
+            autoHeight={!isMobile}
+            autoHeightMin={35}
+            maxHeight={isMobile ? undefined : amountDropdownHeight}
+            suppressScrollX
+            style={isMobile ? { flex: 1, display: 'flex', flexDirection: 'column', height: '100%' } : undefined}
+          >
+            <div
+              className='amount-dropdown-container'
+              onClick={(e) => {
+                e.stopPropagation()
+              }}
+            >
+              {numericColumns.map((col) => {
+                const isSelected = selectedAmountColumnIndex === col.columnIndex
+                return (
+                  <div
+                    key={`amount-${col.columnIndex}`}
+                    className={`amount-dropdown-item ${isSelected ? 'amount-dropdown-item-selected' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setSelectedAmountColumnIndex(col.columnIndex)
+                      setShowAmountDropdown(false)
+                    }}
+                  >
+                    <span className='amount-dropdown-item-check'>{isSelected ? '✓' : ' '}</span>
+                    <span>{col.display_name || col.name}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </CustomScrollbars>
+        ) : (
+          <div className='amount-dropdown-empty'>No numeric columns available</div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <>
       {/* Source column button */}
@@ -166,6 +230,7 @@ const ColumnSelector = (props) => {
                 e.stopPropagation()
                 setShowSourceDropdown(!showSourceDropdown)
                 setShowTargetDropdown(false) // Close target dropdown when opening source
+                setShowAmountDropdown(false) // Close amount dropdown when opening source
                 setShowFilterDropdown(false) // Close filter dropdown when opening source
               }}
               data-tooltip-id={chartTooltipID}
@@ -204,6 +269,7 @@ const ColumnSelector = (props) => {
                 e.stopPropagation()
                 setShowTargetDropdown(!showTargetDropdown)
                 setShowSourceDropdown(false) // Close source dropdown when opening target
+                setShowAmountDropdown(false) // Close amount dropdown when opening target
                 setShowFilterDropdown(false) // Close filter dropdown when opening target
               }}
               data-tooltip-id={chartTooltipID}
@@ -211,6 +277,45 @@ const ColumnSelector = (props) => {
             />
             <g transform='translate(5, 5)' className='target-button-icon' opacity={0}>
               {targetColumnIcon}
+            </g>
+          </g>
+        </Popover>
+      </g>
+
+      {/* Amount column button */}
+      <g className='amount-button-group'>
+        <Popover
+          isOpen={showAmountDropdown}
+          content={renderAmountDropdownContent}
+          onClickOutside={() => {
+            setShowAmountDropdown(false)
+          }}
+          parentElement={popoverParentElement}
+          boundaryElement={popoverParentElement}
+          positions={['left']}
+          align='center'
+          padding={5}
+        >
+          <g className='amount-button' transform={`translate(${buttonX}, ${amountButtonY})`}>
+            <rect
+              className='amount-button-rect'
+              width={buttonSize}
+              height={buttonSize}
+              rx='4'
+              strokeWidth='1'
+              opacity={0}
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowAmountDropdown(!showAmountDropdown)
+                setShowSourceDropdown(false)
+                setShowTargetDropdown(false)
+                setShowFilterDropdown(false)
+              }}
+              data-tooltip-id={chartTooltipID}
+              data-tooltip-html={amountTooltipHtml}
+            />
+            <g transform='translate(5, 5)' className='amount-button-icon' opacity={0}>
+              {amountColumnIcon}
             </g>
           </g>
         </Popover>
@@ -223,18 +328,23 @@ ColumnSelector.propTypes = {
   columns: PropTypes.array.isRequired,
   selectedSourceColumnIndex: PropTypes.number,
   selectedTargetColumnIndex: PropTypes.number,
+  selectedAmountColumnIndex: PropTypes.number,
   setSelectedSourceColumnIndex: PropTypes.func.isRequired,
   setSelectedTargetColumnIndex: PropTypes.func.isRequired,
+  setSelectedAmountColumnIndex: PropTypes.func.isRequired,
   showSourceDropdown: PropTypes.bool.isRequired,
   showTargetDropdown: PropTypes.bool.isRequired,
+  showAmountDropdown: PropTypes.bool.isRequired,
   setShowSourceDropdown: PropTypes.func.isRequired,
   setShowTargetDropdown: PropTypes.func.isRequired,
+  setShowAmountDropdown: PropTypes.func.isRequired,
   setShowFilterDropdown: PropTypes.func.isRequired,
   popoverParentElement: PropTypes.object,
   chartTooltipID: PropTypes.string.isRequired,
   buttonX: PropTypes.number.isRequired,
   sourceButtonY: PropTypes.number.isRequired,
   targetButtonY: PropTypes.number.isRequired,
+  amountButtonY: PropTypes.number.isRequired,
   buttonSize: PropTypes.number.isRequired,
 }
 

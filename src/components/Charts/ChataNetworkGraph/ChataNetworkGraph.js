@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback, forwardRef } from 'react'
+import React, { useEffect, useRef, useState, useCallback, forwardRef, useMemo } from 'react'
 import PropTypes from 'prop-types'
 import { select } from 'd3-selection'
 import { drag } from 'd3-drag'
@@ -30,13 +30,17 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
   const [showFilterDropdown, setShowFilterDropdown] = useState(false)
   const [showSourceDropdown, setShowSourceDropdown] = useState(false)
   const [showTargetDropdown, setShowTargetDropdown] = useState(false)
+  const [showAmountDropdown, setShowAmountDropdown] = useState(false)
 
   // Initialize selected columns from persisted config, detected network columns, or null
-  const { sourceColumnIndex: detectedSourceIndex, targetColumnIndex: detectedTargetIndex } = findNetworkColumns(
-    props.columns || [],
-  )
+  const {
+    sourceColumnIndex: detectedSourceIndex,
+    targetColumnIndex: detectedTargetIndex,
+    weightColumnIndex: detectedWeightIndex,
+  } = useMemo(() => findNetworkColumns(props.columns || []), [props.columns])
   const persistedSourceIndex = props.networkColumnConfig?.sourceColumnIndex
   const persistedTargetIndex = props.networkColumnConfig?.targetColumnIndex
+  const persistedWeightIndex = props.networkColumnConfig?.weightColumnIndex
 
   const [selectedSourceColumnIndex, setSelectedSourceColumnIndex] = useState(
     persistedSourceIndex !== undefined && persistedSourceIndex !== null
@@ -50,6 +54,13 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       ? persistedTargetIndex
       : detectedTargetIndex !== -1
       ? detectedTargetIndex
+      : null,
+  )
+  const [selectedWeightColumnIndex, setSelectedWeightColumnIndex] = useState(
+    persistedWeightIndex !== undefined && persistedWeightIndex !== null
+      ? persistedWeightIndex
+      : detectedWeightIndex !== -1
+      ? detectedWeightIndex
       : null,
   )
 
@@ -71,9 +82,19 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       ) {
         setSelectedTargetColumnIndex(props.networkColumnConfig.targetColumnIndex)
       }
+      if (
+        props.networkColumnConfig.weightColumnIndex !== undefined &&
+        props.networkColumnConfig.weightColumnIndex !== selectedWeightColumnIndex
+      ) {
+        setSelectedWeightColumnIndex(props.networkColumnConfig.weightColumnIndex)
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.networkColumnConfig?.sourceColumnIndex, props.networkColumnConfig?.targetColumnIndex])
+  }, [
+    props.networkColumnConfig?.sourceColumnIndex,
+    props.networkColumnConfig?.targetColumnIndex,
+    props.networkColumnConfig?.weightColumnIndex,
+  ])
 
   // Wrapper functions that call the callback when columns change
   const handleSourceColumnChange = useCallback(
@@ -83,10 +104,11 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         props.onNetworkColumnChange({
           sourceColumnIndex: columnIndex,
           targetColumnIndex: selectedTargetColumnIndex,
+          weightColumnIndex: selectedWeightColumnIndex,
         })
       }
     },
-    [props.onNetworkColumnChange, selectedTargetColumnIndex],
+    [props.onNetworkColumnChange, selectedTargetColumnIndex, selectedWeightColumnIndex],
   )
 
   const handleTargetColumnChange = useCallback(
@@ -96,10 +118,25 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         props.onNetworkColumnChange({
           sourceColumnIndex: selectedSourceColumnIndex,
           targetColumnIndex: columnIndex,
+          weightColumnIndex: selectedWeightColumnIndex,
         })
       }
     },
-    [props.onNetworkColumnChange, selectedSourceColumnIndex],
+    [props.onNetworkColumnChange, selectedSourceColumnIndex, selectedWeightColumnIndex],
+  )
+
+  const handleWeightColumnChange = useCallback(
+    (columnIndex) => {
+      setSelectedWeightColumnIndex(columnIndex)
+      if (props.onNetworkColumnChange) {
+        props.onNetworkColumnChange({
+          sourceColumnIndex: selectedSourceColumnIndex,
+          targetColumnIndex: selectedTargetColumnIndex,
+          weightColumnIndex: columnIndex,
+        })
+      }
+    },
+    [props.onNetworkColumnChange, selectedSourceColumnIndex, selectedTargetColumnIndex],
   )
 
   // Suppress ResizeObserver loop errors (harmless warnings)
@@ -187,17 +224,23 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       const detected = findNetworkColumns(props.columns)
       const sourceColumnIndex = selectedSourceColumnIndex ?? detected.sourceColumnIndex
       const targetColumnIndex = selectedTargetColumnIndex ?? detected.targetColumnIndex
-      const { weightColumnIndex } = detected
+      const weightColumnIndex =
+        selectedWeightColumnIndex !== null && selectedWeightColumnIndex !== undefined
+          ? selectedWeightColumnIndex
+          : detected.weightColumnIndex
 
       const sourceColName =
         sourceColumnIndex !== -1 ? props.columns[sourceColumnIndex]?.display_name || 'Source' : 'Source'
       const targetColName =
         targetColumnIndex !== -1 ? props.columns[targetColumnIndex]?.display_name || 'Target' : 'Target'
       const weightColName =
-        weightColumnIndex !== -1 ? props.columns[weightColumnIndex]?.display_name || 'Weight' : 'Weight'
+        weightColumnIndex !== -1 && weightColumnIndex !== null
+          ? props.columns[weightColumnIndex]?.display_name || 'Amount'
+          : 'Amount'
 
       const formattingConfig = props.dataFormatting || getAutoQLConfig(props.autoQLConfig)?.dataFormatting
-      const weightColumn = weightColumnIndex !== -1 ? props.columns[weightColumnIndex] : null
+      const weightColumn =
+        weightColumnIndex !== -1 && weightColumnIndex !== null ? props.columns[weightColumnIndex] : null
       const formattedWeight = weightColumn
         ? formatElement({
             element: d.weight || 0,
@@ -223,7 +266,14 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
        </div>
      `
     },
-    [props.columns, props.dataFormatting, props.autoQLConfig, selectedSourceColumnIndex, selectedTargetColumnIndex],
+    [
+      props.columns,
+      props.dataFormatting,
+      props.autoQLConfig,
+      selectedSourceColumnIndex,
+      selectedTargetColumnIndex,
+      selectedWeightColumnIndex,
+    ],
   )
 
   // Generate tooltip HTML for network nodes
@@ -233,11 +283,15 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       const detected = findNetworkColumns(props.columns)
       const sourceColumnIndex = selectedSourceColumnIndex ?? detected.sourceColumnIndex
       const targetColumnIndex = selectedTargetColumnIndex ?? detected.targetColumnIndex
-      const { weightColumnIndex } = detected
+      const weightColumnIndex =
+        selectedWeightColumnIndex !== null && selectedWeightColumnIndex !== undefined
+          ? selectedWeightColumnIndex
+          : detected.weightColumnIndex
 
       const sourceColumn = sourceColumnIndex !== -1 ? props.columns[sourceColumnIndex] : null
       const targetColumn = targetColumnIndex !== -1 ? props.columns[targetColumnIndex] : null
-      const weightColumn = weightColumnIndex !== -1 ? props.columns[weightColumnIndex] : null
+      const weightColumn =
+        weightColumnIndex !== -1 && weightColumnIndex !== null ? props.columns[weightColumnIndex] : null
 
       const formattingConfig = props.dataFormatting || getAutoQLConfig(props.autoQLConfig)?.dataFormatting
       const formattedAmountSent = weightColumn
@@ -298,11 +352,18 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
       return tooltipContent
     },
-    [props.columns, props.dataFormatting, props.autoQLConfig, selectedSourceColumnIndex, selectedTargetColumnIndex],
+    [
+      props.columns,
+      props.dataFormatting,
+      props.autoQLConfig,
+      selectedSourceColumnIndex,
+      selectedTargetColumnIndex,
+      selectedWeightColumnIndex,
+    ],
   )
 
   // Process network data from tabular data
-  const processNetworkData = useCallback((data, columns, sourceColIndex, targetColIndex) => {
+  const processNetworkData = useCallback((data, columns, sourceColIndex, targetColIndex, weightColIndex) => {
     if (!data || !Array.isArray(data) || data.length === 0) {
       return { nodes: [], links: [] }
     }
@@ -322,8 +383,12 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       targetColumnIndex = targetColumnIndex ?? detected.targetColumnIndex
     }
 
-    // Get weight column index (always auto-detect this)
-    const { weightColumnIndex } = findNetworkColumns(columns)
+    // Get weight column index (prefer provided selection, otherwise auto-detect)
+    let weightColumnIndex = weightColIndex
+    if (weightColumnIndex === null || weightColumnIndex === undefined) {
+      const { weightColumnIndex: autoDetectedWeightColumnIndex } = findNetworkColumns(columns)
+      weightColumnIndex = autoDetectedWeightColumnIndex
+    }
 
     if (sourceColumnIndex === -1 || targetColumnIndex === -1) {
       return { nodes: [], links: [] }
@@ -338,7 +403,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
     data.forEach((row, index) => {
       const source = formatNodeName(row[sourceColumnIndex])
       const target = formatNodeName(row[targetColumnIndex])
-      const weight = weightColumnIndex !== -1 ? parseFloat(row[weightColumnIndex]) || 1 : 1
+      const weight = weightColumnIndex !== -1 && weightColumnIndex !== null ? parseFloat(row[weightColumnIndex]) || 1 : 1
 
       // Track roles
       if (!nodeRoles.has(source)) {
@@ -448,6 +513,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       setShowFilterDropdown(false)
       setShowSourceDropdown(false)
       setShowTargetDropdown(false)
+      setShowAmountDropdown(false)
 
       // Validate nodeData
       if (!nodeData || !nodeData.id) {
@@ -546,6 +612,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       setShowFilterDropdown(false)
       setShowSourceDropdown(false)
       setShowTargetDropdown(false)
+      setShowAmountDropdown(false)
 
       if (!props.onChartClick) {
         return
@@ -1356,11 +1423,24 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       return
     }
 
-    const processedData = processNetworkData(data, columns, selectedSourceColumnIndex, selectedTargetColumnIndex)
+    const processedData = processNetworkData(
+      data,
+      columns,
+      selectedSourceColumnIndex,
+      selectedTargetColumnIndex,
+      selectedWeightColumnIndex,
+    )
 
     setNodes(processedData.nodes)
     setLinks(processedData.links)
-  }, [props.data, props.columns, processNetworkData, selectedSourceColumnIndex, selectedTargetColumnIndex])
+  }, [
+    props.data,
+    props.columns,
+    processNetworkData,
+    selectedSourceColumnIndex,
+    selectedTargetColumnIndex,
+    selectedWeightColumnIndex,
+  ])
 
   // Create visualization when nodes/links change
   useEffect(() => {
@@ -1405,7 +1485,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    if (!showFilterDropdown && !showSourceDropdown && !showTargetDropdown) return
+    if (!showFilterDropdown && !showSourceDropdown && !showTargetDropdown && !showAmountDropdown) return
 
     let mouseDownPos = null
     let mouseDownTarget = null
@@ -1457,7 +1537,9 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
             svgClass.includes('source-button') ||
             svgClass.includes('source-dropdown') ||
             svgClass.includes('target-button') ||
-            svgClass.includes('target-dropdown')
+            svgClass.includes('target-dropdown') ||
+            svgClass.includes('amount-button') ||
+            svgClass.includes('amount-dropdown')
           ) {
             return true
           }
@@ -1471,8 +1553,10 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
           if (
             classString.includes('source-dropdown-item') ||
             classString.includes('target-dropdown-item') ||
+            classString.includes('amount-dropdown-item') ||
             classString.includes('source-dropdown') ||
-            classString.includes('target-dropdown')
+            classString.includes('target-dropdown') ||
+            classString.includes('amount-dropdown')
           ) {
             return true
           }
@@ -1519,6 +1603,8 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       setShowFilterDropdown(false)
       setShowSourceDropdown(false)
       setShowTargetDropdown(false)
+      setShowAmountDropdown(false)
+      setShowAmountDropdown(false)
       mouseDownPos = null
       mouseDownTarget = null
     }
@@ -1547,7 +1633,9 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
             svgClass.includes('source-button') ||
             svgClass.includes('source-dropdown') ||
             svgClass.includes('target-button') ||
-            svgClass.includes('target-dropdown')
+            svgClass.includes('target-dropdown') ||
+            svgClass.includes('amount-button') ||
+            svgClass.includes('amount-dropdown')
           ) {
             return true
           }
@@ -1561,8 +1649,10 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
           if (
             classString.includes('source-dropdown-item') ||
             classString.includes('target-dropdown-item') ||
+            classString.includes('amount-dropdown-item') ||
             classString.includes('source-dropdown') ||
-            classString.includes('target-dropdown')
+            classString.includes('target-dropdown') ||
+            classString.includes('amount-dropdown')
           ) {
             return true
           }
@@ -1601,7 +1691,8 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       if (!isInsideDropdown && isInsideSVG) {
         setShowFilterDropdown(false)
         setShowSourceDropdown(false)
-        setShowTargetDropdown(false)
+      setShowTargetDropdown(false)
+      setShowAmountDropdown(false)
       }
     }
 
@@ -1619,7 +1710,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       document.removeEventListener('mouseup', handleMouseUp, true)
       document.removeEventListener('click', handleClick, true)
     }
-  }, [showFilterDropdown, showSourceDropdown, showTargetDropdown])
+  }, [showFilterDropdown, showSourceDropdown, showTargetDropdown, showAmountDropdown])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -1664,7 +1755,8 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
                 svgClass.includes('filter-button-rect') ||
                 svgClass.includes('recenter-button-rect') ||
                 svgClass.includes('source-button-rect') ||
-                svgClass.includes('target-button-rect')
+                svgClass.includes('target-button-rect') ||
+                svgClass.includes('amount-button-rect')
               ) {
                 return true
               }
@@ -1683,7 +1775,10 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
                 classString.includes('filter-dropdown-popover-content') ||
                 classString.includes('source-dropdown-container') ||
                 classString.includes('target-dropdown-container') ||
-                classString.includes('filter-dropdown-container')
+                classString.includes('filter-dropdown-container') ||
+                classString.includes('amount-dropdown-item') ||
+                classString.includes('amount-dropdown-popover-content') ||
+                classString.includes('amount-dropdown-container')
               ) {
                 return true
               }
@@ -1697,6 +1792,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
             tagName === 'rect' &&
             (className.includes('source-button-rect') ||
               className.includes('target-button-rect') ||
+              className.includes('amount-button-rect') ||
               className.includes('filter-button-rect') ||
               className.includes('recenter-button-rect'))
 
@@ -1721,6 +1817,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
             setShowFilterDropdown(false)
             setShowSourceDropdown(false)
             setShowTargetDropdown(false)
+            setShowAmountDropdown(false)
           }
         }}
       />
@@ -1754,6 +1851,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
             setShowFilterDropdown={setShowFilterDropdown}
             setShowSourceDropdown={setShowSourceDropdown}
             setShowTargetDropdown={setShowTargetDropdown}
+            setShowAmountDropdown={setShowAmountDropdown}
             popoverParentElement={props.popoverParentElement}
             chartTooltipID={props.chartTooltipID}
             chartWidth={chartWidth}
@@ -1769,6 +1867,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         const buttonX = chartWidth - 37
         const sourceButtonY = 80 // Right under the filter button (45 + 30 + 5)
         const targetButtonY = 115 // Right under the source button (80 + 30 + 5)
+        const amountButtonY = 150 // Right under the target button (115 + 30 + 5)
         const buttonSize = 30
 
         return (
@@ -1776,18 +1875,23 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
             columns={props.columns}
             selectedSourceColumnIndex={selectedSourceColumnIndex}
             selectedTargetColumnIndex={selectedTargetColumnIndex}
+            selectedAmountColumnIndex={selectedWeightColumnIndex}
             setSelectedSourceColumnIndex={handleSourceColumnChange}
             setSelectedTargetColumnIndex={handleTargetColumnChange}
+            setSelectedAmountColumnIndex={handleWeightColumnChange}
             showSourceDropdown={showSourceDropdown}
             showTargetDropdown={showTargetDropdown}
+            showAmountDropdown={showAmountDropdown}
             setShowSourceDropdown={setShowSourceDropdown}
             setShowTargetDropdown={setShowTargetDropdown}
+            setShowAmountDropdown={setShowAmountDropdown}
             setShowFilterDropdown={setShowFilterDropdown}
             popoverParentElement={props.popoverParentElement}
             chartTooltipID={props.chartTooltipID}
             buttonX={buttonX}
             sourceButtonY={sourceButtonY}
             targetButtonY={targetButtonY}
+            amountButtonY={amountButtonY}
             buttonSize={buttonSize}
           />
         )
@@ -1809,6 +1913,7 @@ ChataNetworkGraph.propTypes = {
   networkColumnConfig: PropTypes.shape({
     sourceColumnIndex: PropTypes.number,
     targetColumnIndex: PropTypes.number,
+    weightColumnIndex: PropTypes.number,
   }),
   onNetworkColumnChange: PropTypes.func,
 }

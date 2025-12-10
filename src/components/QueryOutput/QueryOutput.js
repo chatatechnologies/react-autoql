@@ -7,7 +7,7 @@ import _isEmpty from 'lodash.isempty'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
 
-import { TOOLTIP_COPY_TEXTS, TABULATOR_LOCAL_ROW_LIMIT } from '../../js/Constants'
+import { TOOLTIP_COPY_TEXTS } from '../../js/Constants'
 
 import {
   AggTypes,
@@ -229,6 +229,7 @@ export class QueryOutput extends React.Component {
     initialNetworkColumnConfig: PropTypes.shape({
       sourceColumnIndex: PropTypes.number,
       targetColumnIndex: PropTypes.number,
+      weightColumnIndex: PropTypes.number,
     }),
     onNetworkColumnChange: PropTypes.func,
     onNoneOfTheseClick: PropTypes.func,
@@ -269,6 +270,8 @@ export class QueryOutput extends React.Component {
     onResize: PropTypes.func,
     localRTFilterResponse: PropTypes.shape({}),
     enableCustomColumns: PropTypes.bool,
+    disableAggregationMenu: PropTypes.bool,
+    allowCustomColumnsOnDrilldown: PropTypes.bool,
     preferRegularTableInitialDisplayType: PropTypes.bool,
     drilldownFilters: PropTypes.arrayOf(PropTypes.shape({})),
     enableChartControls: PropTypes.bool,
@@ -340,6 +343,8 @@ export class QueryOutput extends React.Component {
     onResize: () => {},
     localRTFilterResponse: undefined,
     enableCustomColumns: true,
+    disableAggregationMenu: false,
+    allowCustomColumnsOnDrilldown: false,
     preferRegularTableInitialDisplayType: false,
     drilldownFilters: undefined,
     enableChartControls: true,
@@ -1271,6 +1276,8 @@ export class QueryOutput extends React.Component {
           queryID: this.props.originalQueryID,
           orders: this.formattedTableParams?.sorters,
           cancelToken: this.axiosSource.token,
+          newColumns: queryRequestData?.additional_selects,
+          displayOverrides: queryRequestData?.display_overrides,
           ...args,
           tableFilters: allFilters,
         })
@@ -2528,12 +2535,15 @@ export class QueryOutput extends React.Component {
             (newCol?.name ?? '').replace(/ /g, '').toLowerCase()
           )
         })
+
+        const isCustom = customSelect || newCol?.is_custom
+
         const cleanName = getCleanColumnName(newCol?.name)
         const availableSelect = this.queryResponse?.data?.data?.available_selects?.find((select) => {
           return select?.table_column?.trim() === cleanName
         })
 
-        if (customSelect && !availableSelect) {
+        if (isCustom && !availableSelect) {
           newCol.custom = true
         }
       }
@@ -2799,7 +2809,7 @@ export class QueryOutput extends React.Component {
           })
         }
       } catch (err) {
-        console.error('[generatePivotTableData] Error applying header filters:', err)
+        // ignore header filter parsing errors and continue
       }
 
       const userSorters = this.formattedTableParams?.sorters || []
@@ -3203,8 +3213,12 @@ export class QueryOutput extends React.Component {
   renderAddColumnBtn = () => {
     const isSingleValue = isSingleValueResponse(this.queryResponse)
     const allColumnsHidden = areAllColumnsHidden(this.getColumns())
+    const isDrilldownResponse = isDrilldown(this.queryResponse)
+    // Allow button to show on drilldowns if allowCustomColumnsOnDrilldown is true
+    const shouldAllowColumnAddition =
+      this.props.allowColumnAddition || (isDrilldownResponse && this.props.allowCustomColumnsOnDrilldown)
 
-    if (!allColumnsHidden && this.props.allowColumnAddition && (this.state.displayType === 'table' || isSingleValue)) {
+    if (!allColumnsHidden && shouldAllowColumnAddition && (this.state.displayType === 'table' || isSingleValue)) {
       return (
         <AddColumnBtn
           queryResponse={this.queryResponse}
@@ -3212,7 +3226,10 @@ export class QueryOutput extends React.Component {
           tooltipID={this.props.tooltipID}
           onAddColumnClick={this.onAddColumnClick}
           onCustomClick={this.onAddColumnClick}
-          disableAddCustomColumnOption={!this.props.enableCustomColumns || isDrilldown(this.queryResponse)}
+          disableAddCustomColumnOption={
+            !this.props.enableCustomColumns || (isDrilldownResponse && !this.props.allowCustomColumnsOnDrilldown)
+          }
+          disableAggregationMenu={this.props.disableAggregationMenu}
           className={isSingleValue ? 'single-value-add-col-btn' : 'table-add-col-btn'}
           isAddingColumn={this.state.isAddingColumn}
         />
