@@ -1510,6 +1510,84 @@ export default class ChataTable extends React.Component {
     }
   }
 
+  setFilterBadgeClasses = () => {
+    if (!this._isMounted || !this.state.tabulatorMounted || !this.ref?.tabulator) {
+      return
+    }
+
+    try {
+      const activeFilters = {}
+      if (this.tableParams?.filter) {
+        this.tableParams.filter.forEach((filter) => {
+          if (filter.field) {
+            activeFilters[filter.field] = true
+          }
+        })
+      }
+
+      const columns = this.ref.tabulator.getColumns()
+      if (!columns || !Array.isArray(columns)) {
+        return
+      }
+
+      columns.forEach((column) => {
+        if (!column || typeof column.getField !== 'function') return
+
+        try {
+          const field = column.getField()
+          const isFiltering = !!activeFilters[field]
+
+          const getElement = column.getElement
+          if (typeof getElement !== 'function') return
+
+          const columnElement = getElement.call(column)
+          if (!columnElement || !columnElement.classList) return
+
+          if (isFiltering) {
+            columnElement.classList.add('is-filtered')
+          } else {
+            columnElement.classList.remove('is-filtered')
+          }
+        } catch (err) {
+          // Silent fail for individual column to prevent breaking the entire table
+        }
+      })
+    } catch (err) {
+      // Silent fail to prevent breaking the entire component
+    }
+  }
+
+  setupColumnHeader = (col, index) => {
+    const fieldRef = this.generateFieldReference(col, index)
+    const headerElement = this.findHeaderElement(fieldRef, index)
+
+    if (headerElement) {
+      const tooltipData = this.createTooltipData(col, fieldRef, index)
+      this.setTooltipAttributes(headerElement, tooltipData, index, fieldRef)
+
+      if (!this.props.pivot) {
+        headerElement.addEventListener('contextmenu', (e) => this.headerContextMenuClick(e, col))
+      }
+    }
+  }
+
+  setupColumnInput = (col, index) => {
+    const fieldRef = this.generateFieldReference(col, index)
+    const inputElement = this.findInputElement(fieldRef, index)
+
+    if (inputElement) {
+      this.attachInputListeners(inputElement, col)
+      this.ensureClearButton(inputElement, col)
+    }
+  }
+
+  ensureClearButton = (inputElement, col) => {
+    const clearBtn = document.querySelector(`#react-autoql-clear-btn-${this.TABLE_ID}-${col.field}`)
+    if (!clearBtn) {
+      this.renderHeaderInputClearBtn(inputElement, col)
+    }
+  }
+
   // setFilterBadgeClasses = () => {
   //   if (!this._isMounted || !this.state.tabulatorMounted || !this.ref?.tabulator) {
   //     return
@@ -1692,11 +1770,8 @@ export default class ChataTable extends React.Component {
           this.ref?.tabulator?.restoreRedraw()
         }
 
-        // // Final check after all filters set - with cleanup
-        // this.setTimeout('filterCheck', () => {}, 10)
-        this._filterCheckTimeout = setTimeout(() => {
-          this._filterCheckTimeout = null
-        }, 10)
+        // Final check after all filters set - with cleanup
+        this.setTimeout('filterCheck', () => {}, 10)
       } catch (error) {
         console.error('CHATATABLE - error setting filters:', error)
       }
@@ -1893,12 +1968,11 @@ export default class ChataTable extends React.Component {
       //     this.props.response?.data?.data?.available_selects,
       //   )
 
-      //   setColumnVisibility({ ...this.props.authentication, columns: newColumns }).catch((error) => {
-      //     console.error(error)
-      //   })
-      //   this.summaryStats = this.summaryStatsCalculator.calculate(this.props)
-      //   this.lifecycleManager.safeForceUpdate()
-      return
+      setColumnVisibility({ ...this.props.authentication, columns: newColumns }).catch((error) => {
+        console.error(error)
+      })
+      this.summaryStats = this.summaryStatsCalculator.calculate(this.props)
+      this.lifecycleManager.safeForceUpdate()
     }
 
     const newColumns = this.props.columns.map((col) =>

@@ -2497,156 +2497,165 @@ export class QueryOutput extends React.Component {
       return null
     }
 
-    const formattedColumns = columns.map((col, i) => {
-      const newCol = _cloneDeep(col)
+    const formattedColumns = columns
+      .map((col, i) => {
+        // Ensure we always produce a column object so indexes remain aligned
+        // with row data. If `col` is invalid, create a minimal placeholder.
+        const safeCol =
+          !col || typeof col !== 'object'
+            ? { display_name: String(i), name: String(i), type: 'STRING', is_visible: true }
+            : col
 
-      newCol.id = col.id ?? uuid()
-      newCol.field = `${i}`
-      newCol.title = col.display_name
+        const newCol = _cloneDeep(safeCol)
 
-      newCol.mutateLink = 'Custom'
+        newCol.id = col.id ?? uuid()
+        newCol.field = `${i}`
+        newCol.title = col.display_name
 
-      // Visibility flag: this can be changed through the column visibility editor modal
-      newCol.visible = col.is_visible
-      newCol.download = col.is_visible
+        newCol.mutateLink = 'Custom'
 
-      newCol.minWidth = '90px'
-      if (newCol.type === ColumnTypes.DATE) {
-        newCol.minWidth = '125px'
-      }
+        // Visibility flag: this can be changed through the column visibility editor modal
+        newCol.visible = col.is_visible
+        newCol.download = col.is_visible
 
-      newCol.maxWidth = false
+        newCol.minWidth = '90px'
+        if (newCol.type === ColumnTypes.DATE) {
+          newCol.minWidth = '125px'
+        }
 
-      if (isColumnNumberType(newCol)) {
-        newCol.hozAlign = 'right'
-      } else {
-        newCol.hozAlign = 'center'
-      }
+        newCol.maxWidth = false
 
-      const drilldownGroupby = this.getDrilldownGroupby(this.queryResponse, newCol)
+        if (isColumnNumberType(newCol)) {
+          newCol.hozAlign = 'right'
+        } else {
+          newCol.hozAlign = 'center'
+        }
 
-      newCol.cssClass = `${newCol.type}`
-      if (drilldownGroupby) {
-        newCol.cssClass = `${newCol.cssClass} DRILLDOWN`
-      }
+        const drilldownGroupby = this.getDrilldownGroupby(this.queryResponse, newCol)
 
-      // Cell formatting
-      newCol.formatter = (cell, formatterParams, onRendered) => {
-        const cellValue = cell.getValue()
-        const wrapper = document.createElement('div')
-        wrapper.className = 'react-autoql-cell-value-wrapper'
-        const valueContainer = document.createElement('div')
-        valueContainer.className = 'react-autoql-cell-value'
-        const formattedValue = formatElement({
-          element: cellValue,
-          column: newCol,
-          config: getDataFormatting(this.props.dataFormatting),
-          htmlElement: cell.getElement(),
+        newCol.cssClass = `${newCol.type}`
+        if (drilldownGroupby) {
+          newCol.cssClass = `${newCol.cssClass} DRILLDOWN`
+        }
+
+        // Cell formatting
+        newCol.formatter = (cell, formatterParams, onRendered) => {
+          const cellValue = cell.getValue()
+          const wrapper = document.createElement('div')
+          wrapper.className = 'react-autoql-cell-value-wrapper'
+          const valueContainer = document.createElement('div')
+          valueContainer.className = 'react-autoql-cell-value'
+          const formattedValue = formatElement({
+            element: cellValue,
+            column: newCol,
+            config: getDataFormatting(this.props.dataFormatting),
+            htmlElement: cell.getElement(),
+          })
+
+          valueContainer.innerHTML = formattedValue ?? ''
+
+          wrapper.appendChild(valueContainer)
+
+          if (cellValue != null && cellValue !== '') {
+            onRendered(() => {
+              const cellElement = cell.getElement()
+              this.addCopyToClipboardListener(
+                cellElement,
+                cellValue,
+                newCol,
+                getDataFormatting(this.props.dataFormatting),
+                this.props.tooltipID ?? this.TOOLTIP_ID,
+              )
+            })
+          }
+
+          return wrapper
+        }
+
+        // Always have filtering enabled, but only
+        // display if filtering is toggled by user
+        newCol.headerFilter = col.headerFilter ?? 'input'
+        newCol.headerFilterPlaceholder = this.setHeaderFilterPlaceholder(newCol)
+        newCol.headerFilterLiveFilter = false
+
+        // Need to set custom filters for cells that are
+        // displayed differently than the data (ie. dates)
+        newCol.headerFilterFunc = this.setFilterFunction(newCol)
+
+        // Allow proper chronological sorting for date strings
+        newCol.sorter = this.setSorterFunction(newCol)
+        newCol.headerSort = col.headerSort ?? !!this.props.enableTableSorting
+        newCol.headerSortStartingDir = 'desc'
+        newCol.headerClick = (e, col) => {
+          // To allow tabulator to sort, we must first restore redrawing,
+          // then the component will disable it again afterwards automatically
+          if (this.state.displayType === 'table') {
+            this.tableRef?.ref?.restoreRedraw()
+          } else if (this.state.displayType === 'pivot_table') {
+            this.pivotTableRef?.ref?.restoreRedraw()
+          }
+        }
+
+        // Column header context menu
+        // Keep for future use
+        // newCol.headerContextMenu = [
+        //   {
+        //     label: 'Hide Column',
+        //     action: function (e, column, a, b, c) {
+        //       column.hide()
+        //     },
+        //   },
+        // ]
+
+        // Show drilldown filter value in column title so user knows they can't filter on this column
+        if (drilldownGroupby) {
+          newCol.isDrilldownColumn = true
+          newCol.tooltipTitle = newCol.title
+          newCol.title = `${newCol.title} <em>(Clicked: "${drilldownGroupby.value}")</em>`
+        }
+
+        // Set aggregate type is data is list query
+        let aggType = col.aggType
+        if (aggConfig?.[col?.name]) {
+          aggType = aggConfig[col.name]
+        }
+        if (isListQuery(columns)) {
+          if (isColumnNumberType(col)) {
+            newCol.aggType = aggType || AggTypes.SUM
+          } else {
+            newCol.aggType = aggType || AggTypes.COUNT
+          }
+        }
+
+        // Check if a date range is available
+        const dateRange = this.columnDateRanges.find((rangeObj) => {
+          return newCol.type === ColumnTypes.DATE && (rangeObj.columnName === newCol.display_name || !!newCol.groupable)
         })
 
-        valueContainer.innerHTML = formattedValue ?? ''
+        if (dateRange) {
+          newCol.dateRange = dateRange
+        }
 
-        wrapper.appendChild(valueContainer)
-
-        if (cellValue != null && cellValue !== '') {
-          onRendered(() => {
-            const cellElement = cell.getElement()
-            this.addCopyToClipboardListener(
-              cellElement,
-              cellValue,
-              newCol,
-              getDataFormatting(this.props.dataFormatting),
-              this.props.tooltipID ?? this.TOOLTIP_ID,
+        if (additionalSelects?.length > 0 && isColumnNumberType(newCol)) {
+          const customSelect = additionalSelects.find((select) => {
+            return (
+              (select?.columns?.[0] ?? '').replace(/ /g, '').toLowerCase() ===
+              (newCol?.name ?? '').replace(/ /g, '').toLowerCase()
             )
           })
+          const cleanName = getCleanColumnName(newCol?.name)
+          const availableSelect = this.queryResponse?.data?.data?.available_selects?.find((select) => {
+            return select?.table_column?.trim() === cleanName
+          })
+
+          if (customSelect && !availableSelect) {
+            newCol.custom = true
+          }
         }
 
-        return wrapper
-      }
-
-      // Always have filtering enabled, but only
-      // display if filtering is toggled by user
-      newCol.headerFilter = col.headerFilter ?? 'input'
-      newCol.headerFilterPlaceholder = this.setHeaderFilterPlaceholder(newCol)
-      newCol.headerFilterLiveFilter = false
-
-      // Need to set custom filters for cells that are
-      // displayed differently than the data (ie. dates)
-      newCol.headerFilterFunc = this.setFilterFunction(newCol)
-
-      // Allow proper chronological sorting for date strings
-      newCol.sorter = this.setSorterFunction(newCol)
-      newCol.headerSort = col.headerSort ?? !!this.props.enableTableSorting
-      newCol.headerSortStartingDir = 'desc'
-      newCol.headerClick = (e, col) => {
-        // To allow tabulator to sort, we must first restore redrawing,
-        // then the component will disable it again afterwards automatically
-        if (this.state.displayType === 'table') {
-          this.tableRef?.ref?.restoreRedraw()
-        } else if (this.state.displayType === 'pivot_table') {
-          this.pivotTableRef?.ref?.restoreRedraw()
-        }
-      }
-
-      // Column header context menu
-      // Keep for future use
-      // newCol.headerContextMenu = [
-      //   {
-      //     label: 'Hide Column',
-      //     action: function (e, column, a, b, c) {
-      //       column.hide()
-      //     },
-      //   },
-      // ]
-
-      // Show drilldown filter value in column title so user knows they can't filter on this column
-      if (drilldownGroupby) {
-        newCol.isDrilldownColumn = true
-        newCol.tooltipTitle = newCol.title
-        newCol.title = `${newCol.title} <em>(Clicked: "${drilldownGroupby.value}")</em>`
-      }
-
-      // Set aggregate type is data is list query
-      let aggType = col.aggType
-      if (aggConfig?.[col?.name]) {
-        aggType = aggConfig[col.name]
-      }
-      if (isListQuery(columns)) {
-        if (isColumnNumberType(col)) {
-          newCol.aggType = aggType || AggTypes.SUM
-        } else {
-          newCol.aggType = aggType || AggTypes.COUNT
-        }
-      }
-
-      // Check if a date range is available
-      const dateRange = this.columnDateRanges.find((rangeObj) => {
-        return newCol.type === ColumnTypes.DATE && (rangeObj.columnName === newCol.display_name || !!newCol.groupable)
+        return newCol
       })
-
-      if (dateRange) {
-        newCol.dateRange = dateRange
-      }
-
-      if (additionalSelects?.length > 0 && isColumnNumberType(newCol)) {
-        const customSelect = additionalSelects.find((select) => {
-          return (
-            (select?.columns?.[0] ?? '').replace(/ /g, '').toLowerCase() ===
-            (newCol?.name ?? '').replace(/ /g, '').toLowerCase()
-          )
-        })
-        const cleanName = getCleanColumnName(newCol?.name)
-        const availableSelect = this.queryResponse?.data?.data?.available_selects?.find((select) => {
-          return select?.table_column?.trim() === cleanName
-        })
-
-        if (customSelect && !availableSelect) {
-          newCol.custom = true
-        }
-      }
-
-      return newCol
-    })
+      .filter((col) => col !== null)
 
     return formattedColumns
   }
@@ -2833,6 +2842,31 @@ export class QueryOutput extends React.Component {
       tableData = tableData.filter((row) => row[0] !== null)
 
       const columns = this.getColumns()
+
+      // Ensure tableConfig is valid for the current columns after any reordering.
+      // Recompute tableConfig if any of the indices used by pivot generation
+      // are not valid for the current column set. Invalid indices occur when
+      // users reorder columns visually and the stored indices are stale.
+      const numberIndex = this.tableConfig?.numberColumnIndex
+      const stringIndex = this.tableConfig?.stringColumnIndex
+      const legendIndex = this.tableConfig?.legendColumnIndex
+
+      // If any index is out of range OR the inferred column types no longer
+      // match what pivot generation expects (number for value, non-number for
+      // string/legend) then recompute a valid tableConfig for the current columns.
+      const needRecompute =
+        !this.tableConfig ||
+        !this.isColumnIndexValid(legendIndex, columns) ||
+        !this.isColumnIndexValid(stringIndex, columns) ||
+        !this.isColumnIndexValid(numberIndex, columns) ||
+        (numberIndex !== undefined && !isColumnNumberType(columns[numberIndex])) ||
+        (stringIndex !== undefined && isColumnNumberType(columns[stringIndex])) ||
+        (legendIndex !== undefined && !columns[legendIndex]?.groupable && !isColumnDateType(columns[legendIndex]))
+
+      if (needRecompute) {
+        this.setTableConfig(columns)
+      }
+
       const { legendColumnIndex, stringColumnIndex, numberColumnIndex } = this.tableConfig
 
       tableData = tableData.filter((row) => {
